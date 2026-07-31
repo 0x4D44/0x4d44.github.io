@@ -33,7 +33,7 @@ human-invoked review triages these — don't fix them inline.
   across the repo match it and almost all are harmless, because a bare `1fr` only bites when
   some descendant has a large min-content floor. Measure, don't pattern-match.
 
-- [ ] 2026-07-31 — **30 of 129 documents scroll sideways at 390px** (measured headless at
+- [x] 2026-07-31 — **30 of 129 documents scroll sideways at 390px** (measured headless at
   390x844 with `documentElement.scrollWidth - clientWidth`; at 768x1024 it is 10 of 129, so
   this is mostly a phone-only class of defect). Worst offenders: `mddosem` 517px,
   `mddskimg` 427px, `mdtoken` 348px, `rust-field-guide` 336px, `stop-the-bus` 335px,
@@ -47,6 +47,26 @@ human-invoked review triages these — don't fix them inline.
   its own diagnosis, not a blanket edit. Found while fixing `wifi-cartographer`; the
   headless sweep that produced these numbers is reusable and worth landing as a repo
   script if this gets picked up.
+  **Done 2026-07-31** — all 31 fixed (the 30 above plus `transistor-packages`, which only
+  showed at 768px). Every one diagnosed individually by bisection, never by pattern-match.
+  The sweep landed as `tests/responsive.test.mjs`, wired into `npm test`: 129 documents at
+  390x844 and 768x1024, ~2m40s. The nine self-bootstrapping "bundler" pages could not have
+  their CSS edited, so each got a readable `<slug>/mobile.css` linked into the template head.
+  One correction to the note above: the sweep at 768 is not just "10 of 129 of the same
+  thing" — several fixes needed their breakpoint raised from ~700-760px to 900px before
+  768 was clean, so the tablet cases are the same layouts, not a separate set.
+
+- [ ] 2026-07-31 — **16 documents put content under the fixed "← Almanac" pill** at 390px,
+  and in 7 of them the covered element is a link, so it is untappable and the tap navigates
+  to the catalog instead (the ALM-BUG-KILN-00039 failure mode). Measured against the pill's
+  real box, `[0,0,109,41]`: `mddosem`, `rci-fleet`, `benchmarks`, `picoem`, `win2k`,
+  `ic-engine`, `transistor-packages`, `mdmdview`, `readex` have an interactive element under
+  it; `mddskimg`, `mdkloc`, `ropus`, `mdminecraft`, `news`, `rust-field-guide`, `netmeeting`
+  have obscured text. It is nearly always the masthead wordmark, which naturally sits
+  top-left exactly where the pill is. This is **pre-existing and unchanged** by the overflow
+  work — measured identical before and after, bar `rust-field-guide` improving 2→1 and
+  `ropus` gaining one non-interactive span. The established fix is the one in
+  `instruments/piano.css`: a left inset on the masthead that clears the pill.
 
 - [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
   now truncates it, so the oldest entries no longer reach any agent. Worth a

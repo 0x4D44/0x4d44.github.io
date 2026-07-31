@@ -100,6 +100,26 @@ undo it.
   `npm run build`, copy `dist/*` here. The live-ships relay is server-side, so
   that toggle stays inert on Pages; live aircraft and everything else work.
 
+**Self-bootstrapping "bundler" pages** — nine documents (`mdtoken`,
+`rust-field-guide`, `stop-the-bus`, `mdmdview`, `readex`, `netmeeting`,
+`ecml-timeline`, `hydro`, `br1955`) carry their whole page JSON-escaped inside
+`<script type="__bundler/template">`, plus a base64 asset manifest. A loader in
+the same file unpacks the assets to blob URLs and then does
+`document.documentElement.replaceWith(...)` — it replaces the **whole `<html>`**,
+so nothing you add to the outer `<head>` survives. Their CSS is not
+hand-editable.
+- **To restyle one, add `<slug>/mobile.css`** — a normal, readable file — and
+  link it from inside the template `<head>`. The nine already carry that link.
+  Because the link lands first in `<head>`, those files prefix every selector
+  with `html` and mark every declaration `!important`: several of the rules
+  being corrected are themselves `!important`, and specificity is settled
+  before source order.
+- **Never round-trip the blob through `JSON.parse`/`JSON.stringify`.**
+  `stringify` does not reproduce the `<\/script>` escape the bundler emits, so
+  the trip silently corrupts the inline script that follows. Edit the raw JSON
+  text in place. Bundler versions differ in how they escape `/`, so anchor on
+  the opening `<head>` (plain in every file), not on a closing tag.
+
 ## Adding a document (the common task)
 
 1. Create `<slug>/` containing a self-contained `index.html` (plus any assets).
@@ -151,6 +171,33 @@ preview:
 ```
 python -c "import http.server,mimetypes; mimetypes.add_type('text/javascript','.mjs'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler,port=8000,bind='127.0.0.1')"
 ```
+
+## No document may scroll sideways
+
+`tests/responsive.test.mjs` (in `npm test`, or alone as
+`npm run test:responsive`) loads every `<slug>/index.html` in headless Chrome at
+390x844 and 768x1024 and asserts
+`documentElement.scrollWidth - clientWidth <= 1`. It takes ~2m40s for all 129.
+
+When it fails, fix the named document's CSS. In rough order of frequency:
+- **A collapsed grid track written as a bare `1fr`.** `1fr` means
+  `minmax(auto, 1fr)`, and that `auto` floor is the item's *min-content* width —
+  so a "collapsed" single column inflates straight back out around a shell
+  command or any long unbreakable token. Inside a `@media` block always write
+  `minmax(0, 1fr)`. (Outside one, the min-content floor is often load-bearing —
+  don't sweep it.)
+- **Wide content that should scroll in its own box, not squeeze**: code blocks,
+  data tables, fixed-geometry diagrams. `overflow-x: auto` on the element, or on
+  the nearest parent it shares with anything that must stay aligned with it.
+- A nav or flex row that should wrap; a fixed-size illustration needing a
+  `max-width`; a full-bleed `100vw` decoration (`100vw` counts the scrollbar
+  gutter, so it always overflows by that much where scrollbars are classic).
+
+Don't grep for the pattern — a repo-wide search for a dropped `minmax(0, …)`
+matches ~165 sites, nearly all harmless. Measure, then bisect: hide one subtree
+at a time and watch `scrollWidth`. That finds causes a rect scan cannot see, such
+as a `<pre>` whose border box fits while its text hangs out, or a decorative
+pseudo-element with a negative inset.
 
 ## Deployment
 
