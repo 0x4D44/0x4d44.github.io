@@ -10,11 +10,14 @@
 // ============================================================
 
 import * as THREE from "./three.module.min.js";
-import { mergeParts, part } from "./mesh.js";
+import { carveTube, mergeParts, part } from "./mesh.js";
 import { supportColumns, tunnelSite } from "./track.js";
 
 export const GAUGE = 1.05;      // spacing between the running rails, metres
 const RAIL_RADIUS = 0.13;
+// The tunnel bore, shared by the tube, its portals and the hole cut
+// through the hillside so all three agree.
+const BORE_RADIUS = 3.4;
 
 const LIVERIES = [
   { name: "Crimson", rail: 0xc0402a, spine: 0x4d565f, support: 0xdfe3e6, car: 0xd2452b, trim: 0x23272e },
@@ -370,7 +373,7 @@ export function buildTrackMesh(track, groundHeight) {
       const tangents = span.map((i) => track.tangents[i]);
 
       const bore = new THREE.Mesh(
-        sweptTube(centres, ups, tangents, 3.6, 10, false),
+        sweptTube(centres, ups, tangents, BORE_RADIUS, 10, false),
         new THREE.MeshStandardMaterial({
           color: 0x35302c, roughness: 0.96, side: THREE.DoubleSide,
         }),
@@ -384,7 +387,7 @@ export function buildTrackMesh(track, groundHeight) {
       // portal rather than as a pipe poking out of a lawn.
       const portalMat = new THREE.MeshStandardMaterial({ color: 0x8c8377, roughness: 0.92 });
       for (const end of [0, span.length - 1]) {
-        const portal = new THREE.Mesh(new THREE.TorusGeometry(4.15, 1.15, 5, 14), portalMat);
+        const portal = new THREE.Mesh(new THREE.TorusGeometry(BORE_RADIUS + 0.55, 1.15, 5, 14), portalMat);
         const p = centres[end];
         const tan = tangents[end];
         portal.position.set(p.x, p.y, p.z);
@@ -394,8 +397,8 @@ export function buildTrackMesh(track, groundHeight) {
         group.add(portal);
         // A keystone lintel over it.
         const lintel = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 1.6), portalMat);
-        lintel.position.set(p.x, p.y + 5.1, p.z);
-        lintel.lookAt(p.x + tan.x, p.y + 5.1 + tan.y, p.z + tan.z);
+        lintel.position.set(p.x, p.y + BORE_RADIUS + 1.5, p.z);
+        lintel.lookAt(p.x + tan.x, p.y + BORE_RADIUS + 1.5 + tan.y, p.z + tan.z);
         lintel.castShadow = true;
         group.add(lintel);
       }
@@ -412,7 +415,7 @@ export function buildTrackMesh(track, groundHeight) {
         const i = span[k];
         const p = track.points[i];
         const up = track.ups[i];
-        lampMatrix.makeTranslation(p.x + up.x * 3.0, p.y + up.y * 3.0, p.z + up.z * 3.0);
+        lampMatrix.makeTranslation(p.x + up.x * 2.7, p.y + up.y * 2.7, p.z + up.z * 2.7);
         lampMesh.setMatrixAt(placed++, lampMatrix);
       }
       lampMesh.count = placed;
@@ -420,28 +423,47 @@ export function buildTrackMesh(track, groundHeight) {
 
       // The hill itself. A third of it is below ground, which is what
       // gives it a shoulder rather than a dome sitting on the grass.
+      //
+      // And it has a HOLE in it. A tube drawn inside a closed dome is not
+      // a tunnel: the bore is hidden inside solid geometry, and riding in
+      // you punch through the green skin of the hill — which is exactly
+      // what "we crash through the grass" looks like from the front seat.
+      // There is no CSG here to subtract one from the other, so the hole
+      // is cut by hand: build the hill in WORLD space, then throw away
+      // every triangle whose centroid lies within the bore.
       const base = groundHeight(mid.x, mid.z);
-      // Lumpy, not spherical: a smooth dome reads as a balloon.
+      const height = (hillTop - base) * 1.34;
+      const centreY = base - (hillTop - base) * 0.34;
       const hillGeo = new THREE.IcosahedronGeometry(1, 3);
       const hp = hillGeo.attributes.position;
       for (let i = 0; i < hp.count; i++) {
         const x = hp.getX(i);
         const y = hp.getY(i);
         const z = hp.getZ(i);
+        // Lumpy, not spherical: a smooth dome reads as a balloon.
         const bump = 1
           + Math.sin(x * 5.1 + z * 3.7) * 0.05
           + Math.sin(y * 4.3 - x * 2.9) * 0.045
           + Math.sin(z * 7.7 + y * 5.3) * 0.03;
-        hp.setXYZ(i, x * bump, y * bump, z * bump);
+        hp.setXYZ(
+          i,
+          mid.x + x * bump * hillRadius,
+          centreY + y * bump * height,
+          mid.z + z * bump * hillRadius * 0.92,
+        );
       }
-      hillGeo.computeVertexNormals();
+
+      const boredHill = carveTube(hillGeo, centres, BORE_RADIUS + 1.0);
+      hillGeo.dispose();
+
       const hill = new THREE.Mesh(
-        hillGeo,
-        new THREE.MeshLambertMaterial({ color: 0x6f8f4c, flatShading: true }),
+        boredHill,
+        // Open at both mouths now, so the inside face has to be drawn or
+        // the hill would vanish from within.
+        new THREE.MeshLambertMaterial({
+          color: 0x6f8f4c, flatShading: true, side: THREE.DoubleSide,
+        }),
       );
-      hill.position.set(mid.x, base - (hillTop - base) * 0.34, mid.z);
-      hill.scale.set(hillRadius, (hillTop - base) * 1.34, hillRadius * 0.92);
-      hill.rotation.y = (track.seed % 628) * 0.01;
       hill.castShadow = true;
       hill.receiveShadow = true;
       group.add(hill);

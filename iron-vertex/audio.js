@@ -302,73 +302,125 @@ export class RideAudio {
     source.stop(now + 0.12);
   }
 
-  // A handful of detuned voices reads as several people rather than one
-  // synthesiser, which is the whole trick.
+  // Screams, by formant synthesis.
   //
-  // Two things had to be right before any of it could be HEARD. The
-  // shaping filter was a bandpass at 900-1600Hz, which is above where
-  // these voices actually sing — it removed the fundamentals and left a
-  // thin whistle. And the wheels and the wind are simply louder than
-  // people, so the mechanical bus ducks under a scream the way a mixing
-  // desk would do it.
+  // The first version of this was detuned oscillators, a clean sine
+  // vibrato and a resonant peak, which is a recipe for a BELL, not a
+  // person — reported, fairly, as "bling, bling, bling". Clean periodic
+  // tones plus a ringing filter plus a struck envelope is how you build
+  // a chime.
+  //
+  // A voice is not a tone with a filter on it. It is a buzzy source —
+  // the vocal folds — resonated by three fixed peaks that the shape of
+  // the mouth puts in the spectrum. Those peaks are the FORMANTS, and
+  // they are what the ear reads as "somebody shouting" rather than
+  // "something ringing". An open /a/ — which is the vowel of a scream —
+  // sits at roughly 850, 1350 and 2800 Hz, so the source runs through
+  // three bandpass filters in PARALLEL at those frequencies.
+  //
+  // The rest is what stops it sounding like a machine reciting a vowel:
+  //
+  //   jitter    the pitch wanders at random, driven by filtered noise.
+  //             A periodic vibrato is exactly what made it a theremin.
+  //   rasp      a soft-clip waveshaper, for a voice under strain
+  //   breath    noise through the same formants
+  //   contour   a fast scoop up and a long sag, and an attack measured
+  //             in tens of milliseconds — not the 4ms strike of a bell
   scream(intensity) {
     const ctx = this.ctx;
     const now = ctx.currentTime;
     const level = Math.min(0.85, 0.35 + intensity * 0.5);
-    const bus = ctx.createGain();
-    bus.gain.setValueAtTime(0.0001, now);
-    bus.gain.exponentialRampToValueAtTime(level, now + 0.14);
-    bus.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
+    const duration = 1.15 + Math.random() * 0.45;
 
-    // Keep the fundamentals, lift the presence region where a shout
-    // lives, and drop the rumble the noise layer would otherwise add.
-    const shape = ctx.createBiquadFilter();
-    shape.type = "peaking";
-    shape.frequency.value = 1100 + intensity * 600;
-    shape.Q.value = 0.9;
-    shape.gain.value = 6;
-    const cut = ctx.createBiquadFilter();
-    cut.type = "highpass";
-    cut.frequency.value = 190;
-    bus.connect(shape).connect(cut).connect(this.master);
+    // Everything the voices make, before the mouth shapes it. Driven
+    // hard enough that the waveshaper below actually bites.
+    const glottis = ctx.createGain();
+    glottis.gain.value = 1.0;
+
+    // The mouth: three resonances in parallel, loudest at the bottom.
+    const mouth = ctx.createGain();
+    const FORMANTS = [[850, 9, 1.0], [1350, 11, 0.5], [2800, 13, 0.18]];
+    for (const [frequency, q, gain] of FORMANTS) {
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      // Nobody's mouth is the textbook shape, and no two riders' are the
+      // same shape as each other.
+      band.frequency.value = frequency * (0.92 + Math.random() * 0.16);
+      band.Q.value = q;
+      const trim = ctx.createGain();
+      trim.gain.value = gain;
+      glottis.connect(band).connect(trim).connect(mouth);
+    }
+
+    // A voice at full stretch is not a clean waveform.
+    const rasp = ctx.createWaveShaper();
+    const curve = new Float32Array(257);
+    for (let i = 0; i < curve.length; i++) {
+      const x = (i / (curve.length - 1)) * 2 - 1;
+      curve[i] = Math.tanh(x * 2.6);
+    }
+    rasp.curve = curve;
+    rasp.oversample = "2x";
+
+    // Three narrow bandpasses in parallel throw most of the source away,
+    // so the level has to be made up after the mouth or the riders end
+    // up quieter than they started.
+    const makeup = ctx.createGain();
+    makeup.gain.value = 2.9;
+
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0.0001, now);
+    envelope.gain.exponentialRampToValueAtTime(level, now + 0.055);
+    envelope.gain.setValueAtTime(level, now + duration * 0.45);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    mouth.connect(rasp).connect(makeup).connect(envelope).connect(this.master);
 
     // Get out of their way.
     const duck = this.trainBus.gain;
     duck.cancelScheduledValues(now);
     duck.setTargetAtTime(0.4, now, 0.05);
-    duck.setTargetAtTime(1, now + 0.85, 0.35);
+    duck.setTargetAtTime(1, now + duration * 0.7, 0.35);
 
-    for (let i = 0; i < 5; i++) {
+    // Three or four people, none of them in tune with each other.
+    const voices = 3 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < voices; i++) {
       const osc = ctx.createOscillator();
-      osc.type = i % 2 ? "sawtooth" : "triangle";
-      const base = 300 + Math.random() * 340;
-      osc.frequency.setValueAtTime(base, now);
-      osc.frequency.linearRampToValueAtTime(base * (1.25 + intensity * 0.3), now + 0.3);
-      osc.frequency.linearRampToValueAtTime(base * 0.85, now + 1.2);
-      const vib = ctx.createOscillator();
-      vib.frequency.value = 5 + Math.random() * 4;
-      const vibDepth = ctx.createGain();
-      vibDepth.gain.value = 12 + Math.random() * 14;
-      vib.connect(vibDepth).connect(osc.frequency);
+      osc.type = "sawtooth";
+      const base = 310 + Math.random() * 260;
+      osc.frequency.setValueAtTime(base * 0.8, now);
+      osc.frequency.linearRampToValueAtTime(base * (1.05 + intensity * 0.22), now + 0.12);
+      osc.frequency.linearRampToValueAtTime(base * 0.86, now + duration);
+
+      // Jitter: filtered noise on the pitch, so it wavers the way a
+      // shout does rather than warbling on a timer.
+      const jitter = ctx.createBufferSource();
+      jitter.buffer = this.noiseBuffer;
+      jitter.loop = true;
+      const slow = ctx.createBiquadFilter();
+      slow.type = "lowpass";
+      slow.frequency.value = 22 + Math.random() * 18;
+      const depth = ctx.createGain();
+      depth.gain.value = base * 0.05;
+      jitter.connect(slow).connect(depth).connect(osc.frequency);
+
       const voice = ctx.createGain();
-      voice.gain.value = 0.3;
-      osc.connect(voice).connect(bus);
-      osc.start(now + i * 0.03);
-      vib.start(now);
-      osc.stop(now + 1.4);
-      vib.stop(now + 1.4);
+      voice.gain.value = 0.8 / voices;
+      osc.connect(voice).connect(glottis);
+      osc.start(now + i * 0.035);
+      jitter.start(now, Math.random() * 2);
+      osc.stop(now + duration + 0.1);
+      jitter.stop(now + duration + 0.1);
     }
-    // Breath on top of the voices.
+
+    // Breath, through the same mouth.
     const air = ctx.createBufferSource();
     air.buffer = this.noiseBuffer;
     air.loop = true;
     const airGain = ctx.createGain();
-    airGain.gain.setValueAtTime(0.0001, now);
-    airGain.gain.exponentialRampToValueAtTime(level * 0.35, now + 0.2);
-    airGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
-    air.connect(airGain).connect(shape);
+    airGain.gain.value = 0.5;
+    air.connect(airGain).connect(glottis);
     air.start(now, Math.random() * 2);
-    air.stop(now + 1.3);
+    air.stop(now + duration + 0.1);
   }
 
   chirp() {

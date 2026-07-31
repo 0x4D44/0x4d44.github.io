@@ -130,7 +130,7 @@ function stubAudioContext() {
     connect(next) { return next; },
     disconnect() {},
     start() {}, stop() {},
-    type: "", buffer: null, loop: false,
+    type: "", buffer: null, loop: false, curve: null, oversample: "none",
     frequency: param(), Q: param(), gain: param(), detune: param(),
     playbackRate: param(), threshold: param(), knee: param(), ratio: param(),
     attack: param(), release: param(),
@@ -147,6 +147,7 @@ function stubAudioContext() {
     createBufferSource() { return node(); }
     createBiquadFilter() { return node(); }
     createDynamicsCompressor() { return node(); }
+    createWaveShaper() { return node(); }
     createBuffer(channels, length) { return { getChannelData: () => new Float32Array(length) }; }
     resume() { return Promise.resolve(); }
   };

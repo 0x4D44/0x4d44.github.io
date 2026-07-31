@@ -110,6 +110,69 @@ export function instance(geo, material, placements, { shadows = true } = {}) {
   return mesh;
 }
 
+// ------------------------------------------------------------
+// Cutting a tunnel through a solid.
+//
+// A tube drawn INSIDE a closed hill is not a tunnel: the bore is hidden
+// in solid geometry and riding in punches straight through the green
+// skin. There is no CSG here to subtract one from the other, so the hole
+// is cut by hand — throw away every triangle whose centroid lies within
+// `radius` of the path, and return the shell that is left. Give the
+// result a DoubleSide material: it is open at both ends now, and the
+// inside face has to be drawn or the hill vanishes from within.
+//
+// `path` is an array of {x, y, z} in the SAME space as the geometry, so
+// build the geometry in world space before calling this.
+// ------------------------------------------------------------
+
+const segA = new THREE.Vector3();
+const segB = new THREE.Vector3();
+const segAB = new THREE.Vector3();
+const segAP = new THREE.Vector3();
+
+export function distanceToPath(point, path) {
+  let best = Infinity;
+  for (let i = 0; i < path.length - 1; i++) {
+    segA.set(path[i].x, path[i].y, path[i].z);
+    segB.set(path[i + 1].x, path[i + 1].y, path[i + 1].z);
+    segAB.subVectors(segB, segA);
+    segAP.subVectors(point, segA);
+    const lengthSq = segAB.lengthSq();
+    const t = lengthSq > 1e-9
+      ? Math.min(1, Math.max(0, segAP.dot(segAB) / lengthSq))
+      : 0;
+    const d = segAP.addScaledVector(segAB, -t).length();
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+export function carveTube(geometry, path, radius) {
+  // Triangle soup, because a shared vertex cannot belong to both a kept
+  // and a discarded face.
+  const solid = geometry.index ? geometry.toNonIndexed() : geometry;
+  const position = solid.attributes.position;
+  const kept = [];
+  const corner = new THREE.Vector3();
+  const centroid = new THREE.Vector3();
+  for (let t = 0; t + 2 < position.count; t += 3) {
+    centroid.set(0, 0, 0);
+    for (let k = 0; k < 3; k++) centroid.add(corner.fromBufferAttribute(position, t + k));
+    centroid.multiplyScalar(1 / 3);
+    if (distanceToPath(centroid, path) <= radius) continue;
+    for (let k = 0; k < 3; k++) {
+      corner.fromBufferAttribute(position, t + k);
+      kept.push(corner.x, corner.y, corner.z);
+    }
+  }
+  const shell = new THREE.BufferGeometry();
+  shell.setAttribute("position", new THREE.Float32BufferAttribute(kept, 3));
+  shell.computeVertexNormals();
+  shell.computeBoundingSphere();
+  if (solid !== geometry) solid.dispose();
+  return shell;
+}
+
 // A texture painted on a canvas — no file to fetch, no origin to depend on.
 export function canvasTexture(width, height, draw, repeat = [1, 1]) {
   const canvas = document.createElement("canvas");
