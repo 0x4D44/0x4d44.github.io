@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00017 — Data second hint labels the English answer as a Japanese "reading"
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** darmok
 - **Raised:** 2026-07-13
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260731T175847Z-p35276-n343976000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00017-run-fix-20260731T175847Z-p35276-n343976000-c1
-- **Owner base:** 3cdd4269ea2c5d6364df285f3ebc568c7eda1a82
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-31T17:58:47Z
-- **Owner until:** 2026-07-31T19:58:47Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the mislabelling still reproduces for five vocab glosses whose English text contains kana)
+- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the mislabelling still reproduces for five vocab glosses whose English text contains kana) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260731T175847Z-p35276-n343976000-c1 branch=task/bug-ALM-BUG-KILN-00017-run-fix-20260731T175847Z-p35276-n343976000-c1 code=9e1e099ba4dfd8049a6b4f2ddee27f08a7d66a84 gate=manual)
 
 ## Observation
 On a multiple-choice or listen exercise, the second ASK DATA hint says the correct entry "reads ..." but fills that slot with the English gloss, not a Japanese reading.
