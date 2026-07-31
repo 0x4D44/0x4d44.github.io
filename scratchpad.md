@@ -24,6 +24,29 @@ human-invoked review triages these — don't fix them inline.
   too. Confirmed pre-existing: identical 655px on unmodified `origin/main`, so it is not
   from the back-button change. Worth a browser check of the other `@media` grid overrides
   in this repo for the same dropped-`minmax(0,…)` pattern.
+  **Done 2026-07-31** — fixed, and guarded by `wifi-cartographer/browser.test.mjs` at six
+  widths. Two corrections to the note above: phones were the *worst* case, not the mildest
+  (1020px at 390px wide, vs 670px at 768px) — the "measure" must be
+  `documentElement.scrollWidth - documentElement.clientWidth`, because under Chrome's mobile
+  emulation `innerWidth` reports the scaled visual viewport and hides the overflow entirely.
+  And the grep for the dropped-`minmax(0,…)` pattern is worthless as a signal: 165 sites
+  across the repo match it and almost all are harmless, because a bare `1fr` only bites when
+  some descendant has a large min-content floor. Measure, don't pattern-match.
+
+- [ ] 2026-07-31 — **30 of 129 documents scroll sideways at 390px** (measured headless at
+  390x844 with `documentElement.scrollWidth - clientWidth`; at 768x1024 it is 10 of 129, so
+  this is mostly a phone-only class of defect). Worst offenders: `mddosem` 517px,
+  `mddskimg` 427px, `mdtoken` 348px, `rust-field-guide` 336px, `stop-the-bus` 335px,
+  `mdkloc` 268px, `mdmdview` 188px, `spectrum-analyzer` 186px, `rci-fleet` 181px,
+  `mdrll` 162px; then a tail of 20 more between 15px and 133px (`readex`, `benchmarks`,
+  `estimation-whist`, `picoem`, `lighthouse`, `netmeeting`, `win2k`, `ecml-timeline`,
+  `hydro`, `godel`, `ropus`, `mdminecraft`, `mdtpw`, `vamos-spanish`, `instruments`,
+  `great-dying`, `chicxulub`, `br1955`, `ic-engine`, `news`). These are *not* one root
+  cause — the culprits measured include nav bars (`NAV.mast-nav`, `DIV.nav-links`),
+  a non-collapsing 2-column grid (`mdkloc`), inline spans and SVG groups — so each needs
+  its own diagnosis, not a blanket edit. Found while fixing `wifi-cartographer`; the
+  headless sweep that produced these numbers is reusable and worth landing as a repo
+  script if this gets picked up.
 
 - [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
   now truncates it, so the oldest entries no longer reach any agent. Worth a
