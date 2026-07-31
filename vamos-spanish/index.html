@@ -18,6 +18,12 @@ body{margin:0;background:#efe6d4;min-height:100vh;display:grid;place-items:cente
 @keyframes vstar{0%{transform:scale(.2) rotate(-30deg)}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes vup{from{opacity:0;transform:translateY(14px)}}
 input::placeholder{color:#b9a888}
+/* body is a centred grid, so #dc-root is a shrink-to-fit grid item: its width
+   is just the max-content of the 402px device frame, which is wider than a
+   390px phone and pushed the page sideways. Nothing sets that width, so it has
+   to be capped rather than overridden -- max-width resolves against the grid
+   area, and IOSDevice's own max-width:100% then follows it down. */
+#dc-root{max-width:100%}
 </style>
 </helmet>
 

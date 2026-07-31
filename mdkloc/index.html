@@ -100,7 +100,7 @@
     gap: 56px;
     align-items: start;
   }
-  @media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+  @media (max-width: 980px) { .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
   .wordmark {
     font-family: var(--serif);
     font-size: clamp(96px, 16vw, 220px);
@@ -167,15 +167,15 @@
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   @media (max-width: 900px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
   @media (max-width: 560px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
   }
 
   /* ===== Pipeline ===== */
   .pipeline { display: grid; grid-template-columns: 220px 1fr; gap: 32px; align-items: start; }
-  @media (max-width: 900px) { .pipeline { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .pipeline { grid-template-columns: minmax(0, 1fr); } }
   .stages { display: flex; flex-direction: column; gap: 2px; }
   .stage {
     display: flex; gap: 14px; padding: 14px 16px; align-items: flex-start;
@@ -215,9 +215,9 @@
   .lang-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
   }
-  @media (max-width: 980px) { .lang-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 720px) { .lang-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px) { .lang-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 980px) { .lang-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 720px) { .lang-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .lang-grid { grid-template-columns: minmax(0, 1fr); } }
   .lang-card {
     border: 1px solid var(--line);
     background: var(--panel);
@@ -250,7 +250,7 @@
   .demo-wrap {
     display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px;
   }
-  @media (max-width: 980px) { .demo-wrap { grid-template-columns: 1fr; } }
+  @media (max-width: 980px) { .demo-wrap { grid-template-columns: minmax(0, 1fr); } }
   .demo-input {
     background: #0b0907; border: 1px solid var(--line); border-radius: 10px;
     display: flex; flex-direction: column; min-height: 460px;
@@ -315,7 +315,7 @@
   .cli {
     display: grid; grid-template-columns: 320px 1fr; gap: 24px;
   }
-  @media (max-width: 900px) { .cli { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .cli { grid-template-columns: minmax(0, 1fr); } }
   .flag-list { display: flex; flex-direction: column; gap: 4px; }
   .flag-btn {
     text-align: left; background: transparent; border: 1px solid transparent;
@@ -349,7 +349,7 @@
     padding: 28px;
     display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 32px;
   }
-  @media (max-width: 900px) { .anatomy { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .anatomy { grid-template-columns: minmax(0, 1fr); } }
   .anatomy pre {
     font-family: var(--mono); font-size: 12px; line-height: 1.7;
     background: #0b0907; border: 1px solid var(--line);
@@ -372,7 +372,7 @@
   .cov-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px;
   }
-  @media (max-width: 720px) { .cov-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 720px) { .cov-grid { grid-template-columns: minmax(0, 1fr); } }
   .cov {
     background: var(--panel); border: 1px solid var(--line);
     border-radius: 10px; padding: 22px;
@@ -411,7 +411,7 @@
 
   /* ===== Community / footer ===== */
   .fact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  @media (max-width: 900px) { .fact-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) { .fact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .fact { padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
   .fact .big { font-family: var(--serif); font-size: 44px; line-height: 1; }
   .fact .lbl { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; }

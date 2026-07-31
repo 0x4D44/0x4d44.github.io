@@ -134,6 +134,13 @@
     gap: clamp(34px, 6vw, 88px);
     padding: clamp(70px, 10vw, 138px) 0 78px;
   }
+  /* The full-bleed hairline is 100vw wide, and 100vw counts the classic
+     scrollbar gutter -- so on any platform that reserves one (Windows, or
+     Linux/Chrome without overlay scrollbars) it is ~15px wider than the
+     visible page and scrolls the document sideways. Clipping on the
+     full-width ancestor keeps the bleed and drops the overflow; clip rather
+     than hidden so no scroll container is created and sticky still works. */
+  main { overflow-x: clip; }
   .hero::after {
     content: "";
     position: absolute;
@@ -590,19 +597,19 @@
   }
 
   @media (max-width: 980px) {
-    .hero { grid-template-columns: 1fr; padding-top: 86px; }
+    .hero { grid-template-columns: minmax(0, 1fr); padding-top: 86px; }
     .hero-object { min-height: 370px; }
     .hero-to3 { width: min(84%, 420px); }
     .hero-scale { right: 7%; }
-    .section-head { grid-template-columns: 1fr; }
-    .mini-controls { grid-template-columns: 1fr 1fr; }
+    .section-head { grid-template-columns: minmax(0, 1fr); }
+    .mini-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .mini-controls > :last-child { grid-column: 1 / -1; }
-    .bench-grid { grid-template-columns: 1fr; }
+    .bench-grid { grid-template-columns: minmax(0, 1fr); }
     .readout-card { min-height: 0; }
     .readout-note { margin-top: 4px; }
-    .cal-grid { grid-template-columns: 1fr; }
+    .cal-grid { grid-template-columns: minmax(0, 1fr); }
     .coin-sweep { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .story-grid { grid-template-columns: 1fr; }
+    .story-grid { grid-template-columns: minmax(0, 1fr); }
   }
 
   @media (max-width: 680px) {
@@ -616,15 +623,15 @@
     .hero-scale { width: 160px; right: 2%; }
     section { padding: 66px 0; }
     .deck-controls { padding: 14px; }
-    .mini-controls { grid-template-columns: 1fr; }
+    .mini-controls { grid-template-columns: minmax(0, 1fr); }
     .mini-controls > :last-child { grid-column: auto; }
     .segmented { flex-wrap: wrap; }
     .stage-wrap, #compareStage { min-height: 430px; height: 430px; }
     .stage-caption { flex-direction: column; gap: 5px; }
     .stage-caption span:last-child { text-align: left; }
-    .coin-sweep { grid-template-columns: 1fr; }
+    .coin-sweep { grid-template-columns: minmax(0, 1fr); }
     .sweep-graphic { height: 220px; }
-    .method-card { grid-template-columns: 1fr; padding: 22px; }
+    .method-card { grid-template-columns: minmax(0, 1fr); padding: 22px; }
     .footer-inner { flex-direction: column; }
   }
 
