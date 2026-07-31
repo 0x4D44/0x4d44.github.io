@@ -23,3 +23,12 @@
      no classes to hook; let the card scroll rather than guess at each row */
   html .demo-grid > .card { min-width: 0 !important; overflow-x: auto !important; }
 }
+
+/* Clear the fixed "← Almanac" pill that /almanac-back.js injects at the
+   viewport's top-left ([0,0 109x41], z-index nothing here can beat): a
+   masthead wordmark lands exactly under it, obscured and -- where it is a
+   link -- untappable, because the tap navigates to the catalog instead
+   (ALM-BUG-KILN-00039). Outside the media query above: the pill sits in the
+   same place at every width, and these headers were measured covered at
+   1200px as well as on a phone. */
+html .nav-inner { padding-left: 112px !important; }

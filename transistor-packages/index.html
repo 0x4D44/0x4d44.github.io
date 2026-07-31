@@ -85,7 +85,15 @@
     background: rgba(7, 11, 15, .78);
     backdrop-filter: blur(18px) saturate(1.2);
   }
+  /* Clear the fixed "← Almanac" pill. /almanac-back.js injects it at the
+     viewport's top-left, occupying [0,0 109x41] with a z-index nothing here can
+     beat, so whatever sits under it is obscured -- and if interactive, it is
+     untappable: the tap navigates to the catalog instead (ALM-BUG-KILN-00039).
+     A masthead wordmark naturally lands exactly there. Unconditional, not
+     phone-scoped: the pill is at the same place at every width, and this header
+     was measured covered at 1200px too. */
   .topbar-inner {
+    padding-left: 102px;
     min-height: 62px;
     display: flex;
     align-items: center;
@@ -614,7 +622,11 @@
 
   @media (max-width: 680px) {
     .shell { width: min(100% - 20px, 1240px); }
+    /* the pill clearance leaves ~256px for the wordmark and the section
+       links, so let the links scroll inside the bar rather than push it wide */
     .topbar-inner { min-height: 56px; }
+    .topnav { overflow-x: auto; min-width: 0; scrollbar-width: none; }
+    .topnav::-webkit-scrollbar { display: none; }
     .brand span:last-child { display: none; }
     .topnav a { padding: 8px 7px; font-size: .65rem; }
     .hero { min-height: 0; padding: 68px 0 60px; }

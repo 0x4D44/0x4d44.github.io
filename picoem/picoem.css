@@ -38,7 +38,7 @@ code,.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-variant
 #topnav{
   position:sticky;top:0;z-index:20;
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 32px;
+  padding:14px 32px 14px 112px;
   background:rgba(13,12,11,0.85);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
