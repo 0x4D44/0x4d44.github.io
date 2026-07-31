@@ -70,7 +70,10 @@
 
     /* The sticky nav wrapped to two rows and then held ~200px of a 844px
        screen hostage on every scroll. Keep it to one scrollable row. */
-    .pagenav{flex-wrap:nowrap!important;overflow-x:auto;gap:8px!important;padding:8px 14px!important;scrollbar-width:none}
+    /* padding-left clears the fixed "← Almanac" pill at the viewport top-left;
+       this rule is !important, so it must restate it or it wins and the first
+       nav link ends up under the pill, unclickable. */
+    .pagenav{flex-wrap:nowrap!important;overflow-x:auto;gap:8px!important;padding:8px 14px 8px 112px!important;scrollbar-width:none}
     .pagenav::-webkit-scrollbar{display:none}
     .pagenav a{flex:0 0 auto}
 
@@ -94,7 +97,7 @@
 </helmet>
 <div ref="{{ setRoot }}" data-screen-label="Electric Wake" style="--bg:#0e161c;--ink:#eef2ef;--muted:#9fb0ad;--dim:#6d807d;--brass:#d8ae5a;--brass2:#a9863c;--green:#57d497;--cyan:#6fb2d6;--red:#e8654e;--line:rgba(216,174,90,0.22);color:var(--ink);font-family:'IBM Plex Mono',ui-monospace,monospace;line-height:1.6;min-height:100vh;background:repeating-linear-gradient(0deg,transparent 0 47px,rgba(111,178,214,.045) 47px 48px),radial-gradient(circle at 20% -5%,rgba(216,174,90,.10),transparent 40%),linear-gradient(180deg,#0e161c 0%,#0b1116 60%,#080c10 100%);color-scheme:dark;scroll-behavior:smooth">
 
-  <nav class="pagenav" aria-label="Page" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px clamp(18px,4vw,56px);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(28,38,45,.92),rgba(10,15,19,.92));position:sticky;top:0;backdrop-filter:blur(14px);z-index:20;box-shadow:0 2px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)">
+  <nav class="pagenav" aria-label="Page" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px clamp(18px,4vw,56px) 14px 112px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(28,38,45,.92),rgba(10,15,19,.92));position:sticky;top:0;backdrop-filter:blur(14px);z-index:20;box-shadow:0 2px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)">
     <a href="#top" style="border:1px solid rgba(216,174,90,.45);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);font-family:'Saira Condensed',sans-serif;font-weight:600">☰ almanac</a>
     <a href="#plant" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">plant</a>
     <a href="#pods" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">azipods</a>

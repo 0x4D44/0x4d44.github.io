@@ -138,6 +138,43 @@ const evaluate = async (expression) => {
 
 const OVERFLOW = "document.documentElement.scrollWidth - document.documentElement.clientWidth";
 
+// ...and nothing tappable may sit under the fixed "← Almanac" pill.
+// /almanac-back.js pins it to the viewport's top-left with a z-index no
+// document can beat, so a control underneath is not merely obscured -- it is
+// unreachable, and the tap navigates to the catalog instead
+// (ALM-BUG-KILN-00039). A masthead wordmark lands there naturally.
+//
+// Deliberately narrow, to stay an invariant rather than a nag:
+//   * only interactive elements (a link half-hidden is a bug; a decorative
+//     rule crossing the corner is not);
+//   * measured at scroll-top, because ordinary body copy passing under the
+//     pill as you scroll is inherent to a fixed overlay, not a document bug;
+//   * a 6px overlap in BOTH axes, so a 2px sliver off a centred container
+//     does not fail the suite.
+// The remedy is an inset on the header so its first content starts at
+// x >= 112px — see instruments/piano.css or any of the 16 fixed in this repo.
+const UNDER_PILL = `(() => {
+  const de = document.documentElement;
+  de.style.scrollBehavior = "auto";
+  window.scrollTo(0, 0);
+  const host = [...de.querySelectorAll("*")].find(e => e.shadowRoot && e.shadowRoot.querySelector("a"));
+  if (!host) return [];                       // catalog index, or pill not mounted
+  const b = host.getBoundingClientRect();
+  if (!(b.width > 10 && b.width < 220)) return [];
+  const out = [];
+  for (const el of document.querySelectorAll("a, button, input, select, textarea, [role=button]")) {
+    if (host.contains(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    const ow = Math.min(r.right, b.right) - Math.max(r.left, b.left);
+    const oh = Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top);
+    if (ow < 6 || oh < 6) continue;
+    out.push({ tag: el.tagName.toLowerCase(), text: (el.textContent || "").trim().replace(/\\s+/g, " ").slice(0, 40) });
+    if (out.length >= 3) break;
+  }
+  return out;
+})()`;
+
 const slugs = [];
 for (const entry of await readdir(ROOT, { withFileTypes: true })) {
   if (!entry.isDirectory() || entry.name.startsWith(".") || SKIP.has(entry.name)) continue;
@@ -164,6 +201,13 @@ for (const slug of slugs) {
     const over = await evaluate(OVERFLOW);
     if (over === null) { failures.push(`${slug} @ ${vp.label}: page threw while measuring`); continue; }
     if (over > 1) failures.push(`${slug} @ ${vp.label} (${vp.width}px): scrolls sideways by ${over}px`);
+
+    const buried = await evaluate(UNDER_PILL);
+    if (buried && buried.length) {
+      for (const b of buried) {
+        failures.push(`${slug} @ ${vp.label} (${vp.width}px): <${b.tag}> ${JSON.stringify(b.text)} is under the "← Almanac" pill, so it cannot be tapped`);
+      }
+    }
   }
 }
 
@@ -172,8 +216,8 @@ await cleanup();
 if (failures.length) {
   console.error(`\nResponsive test: ${failures.length} failure(s) across ${slugs.length} documents\n`);
   for (const f of failures) console.error(`  ${f}`);
-  console.error("\nA document must not scroll sideways. Fix it in that document's CSS —");
-  console.error("see the notes at the top of tests/responsive.test.mjs for the usual causes.\n");
+  console.error("\nFix these in the named document's CSS — see the notes at the top of");
+  console.error("tests/responsive.test.mjs for the usual causes of each kind.\n");
   process.exit(1);
 }
-console.log(`Responsive test: ${slugs.length} documents, no horizontal overflow at 390px or 768px.`);
+console.log(`Responsive test: ${slugs.length} documents, no horizontal overflow and nothing tappable under the back pill, at 390px and 768px.`);
