@@ -18,11 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification)
-- **State history:** Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample)
-- **State history:** Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched)
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification) -> Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and view the game board.
