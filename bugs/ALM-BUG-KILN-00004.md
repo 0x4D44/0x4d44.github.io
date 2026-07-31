@@ -5,15 +5,15 @@
 - **Severity:** Medium
 - **Area:** tidecall
 - **Raised:** 2026-07-11
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260731T175817Z-p33922-n748114000-c1
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-KILN-00004-run-fix-20260731T175817Z-p33922-n748114000-c1
+- **Owner base:** f1f2bcb66aed7dbb8fad6bf9cd5d1364f6393d0a
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-07-31T17:58:17Z
+- **Owner until:** 2026-07-31T19:58:17Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
