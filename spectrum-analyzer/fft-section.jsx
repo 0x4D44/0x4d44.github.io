@@ -201,7 +201,7 @@ function FourierBuilder() {
         </p>
       </div>
 
-      <div style={{
+      <div className="fft-split" style={{
         display: "grid", gridTemplateColumns: "260px 1fr", gap: 24, marginTop: 28
       }}>
         <div className="fft-controls">

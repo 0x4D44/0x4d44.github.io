@@ -100,6 +100,28 @@ undo it.
   `npm run build`, copy `dist/*` here. The live-ships relay is server-side, so
   that toggle stays inert on Pages; live aircraft and everything else work.
 
+**Self-bootstrapping "bundler" pages** — 20 documents (find them with
+`grep -l '__bundler/template' */index.html`) carry their whole page
+JSON-escaped inside
+`<script type="__bundler/template">`, plus a base64 asset manifest. A loader in
+the same file unpacks the assets to blob URLs and then does
+`document.documentElement.replaceWith(...)` — it replaces the **whole `<html>`**,
+so nothing you add to the outer `<head>` survives. Their CSS is not
+hand-editable.
+- **To restyle one, add `<slug>/mobile.css`** — a normal, readable file — and
+  link it from inside the template `<head>`. Ten already carry that link
+  (`mdtoken`, `rust-field-guide`, `stop-the-bus`, `mdmdview`, `readex`,
+  `netmeeting`, `ecml-timeline`, `hydro`, `br1955`, `edinburgh-biosci`).
+  Because the link lands first in `<head>`, those files prefix every selector
+  with `html` and mark every declaration `!important`: several of the rules
+  being corrected are themselves `!important`, and specificity is settled
+  before source order.
+- **Never round-trip the blob through `JSON.parse`/`JSON.stringify`.**
+  `stringify` does not reproduce the `<\/script>` escape the bundler emits, so
+  the trip silently corrupts the inline script that follows. Edit the raw JSON
+  text in place. Bundler versions differ in how they escape `/`, so anchor on
+  the opening `<head>` (plain in every file), not on a closing tag.
+
 ## Adding a document (the common task)
 
 1. Create `<slug>/` containing a self-contained `index.html` (plus any assets).
@@ -151,6 +173,52 @@ preview:
 ```
 python -c "import http.server,mimetypes; mimetypes.add_type('text/javascript','.mjs'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler,port=8000,bind='127.0.0.1')"
 ```
+
+## No document may scroll sideways, or bury a control under the back pill
+
+`tests/responsive.test.mjs` (in `npm test`, or alone as
+`npm run test:responsive`) loads every `<slug>/index.html` in headless Chrome at
+390x844 and 768x1024 and asserts two things. It takes ~2m40s for all 129.
+
+**1. `documentElement.scrollWidth - clientWidth <= 1`.**
+
+When it fails, fix the named document's CSS. In rough order of frequency:
+- **A collapsed grid track written as a bare `1fr`.** `1fr` means
+  `minmax(auto, 1fr)`, and that `auto` floor is the item's *min-content* width —
+  so a "collapsed" single column inflates straight back out around a shell
+  command or any long unbreakable token. Inside a `@media` block always write
+  `minmax(0, 1fr)`. (Outside one, the min-content floor is often load-bearing —
+  don't sweep it.)
+- **Wide content that should scroll in its own box, not squeeze**: code blocks,
+  data tables, fixed-geometry diagrams. `overflow-x: auto` on the element, or on
+  the nearest parent it shares with anything that must stay aligned with it.
+- A nav or flex row that should wrap; a fixed-size illustration needing a
+  `max-width`; a full-bleed `100vw` decoration (`100vw` counts the scrollbar
+  gutter, so it always overflows by that much where scrollbars are classic).
+
+**2. Nothing interactive sits under the "← Almanac" pill**, which
+`/almanac-back.js` pins to the viewport's top-left, `[0,0 109x41]`, with a
+z-index no document can beat. A control underneath is not merely obscured — it
+is untappable, because the tap lands on the pill and navigates to the catalog
+(ALM-BUG-KILN-00039). A masthead wordmark lands there naturally; 49 documents
+did. Two remedies, by what the covered element is:
+- **If it is the document's own back link to the almanac, delete it.** The
+  shared pill is the one back button (see "Site navigation" above), so a second
+  one is a duplicate that also happens to be unclickable. Where the wordmark
+  *is* the link, unwrap it and keep the text. If that leaves a lone sibling in a
+  `justify-content: space-between` bar, switch the bar to `flex-end` or the
+  sibling slides left into the pill.
+- **Otherwise inset the header** so its first content starts at `x >= 112px`
+  (`instruments/piano.css` and ~35 others). Unconditional, not phone-scoped —
+  the pill is in the same place at every width. Check the result: 112px of
+  padding is enough to push a narrow header over the viewport, and some
+  documents have their own browser tests at widths below 390px.
+
+Don't grep for the pattern — a repo-wide search for a dropped `minmax(0, …)`
+matches ~165 sites, nearly all harmless. Measure, then bisect: hide one subtree
+at a time and watch `scrollWidth`. That finds causes a rect scan cannot see, such
+as a `<pre>` whose border box fits while its text hangs out, or a decorative
+pseudo-element with a negative inset.
 
 ## Deployment
 

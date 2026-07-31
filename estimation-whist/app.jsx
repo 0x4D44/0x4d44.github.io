@@ -782,7 +782,7 @@ function RandomThings() {
         delightful, it has nothing to do with playing cards, and it is the
         biggest single dialog in the options menu.
       </p>
-      <div className="row row-2 gap-16" style={{ gridTemplateColumns: "1.2fr 1fr" }}>
+      <div className="row row-2 gap-16 row-inline" style={{ gridTemplateColumns: "1.2fr 1fr" }}>
         <div className="felt" ref={feltRef} style={{ width: "100%", height: FELT_H }}>
           <div className="felt__logo">ESTWHI</div>
           {positions.slice(0, count).map((p, i) => (

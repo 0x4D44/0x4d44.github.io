@@ -589,3 +589,12 @@ a:hover { color: var(--amber); }
   font-style: italic; color: #2a341c; max-width: 820px; margin: 0; letter-spacing: -0.3px;
 }
 .pull .amber { font-style: normal; }
+
+
+/* Clear the fixed "← Almanac" pill. /almanac-back.js pins it to the viewport's
+   top-left, [0,0 109x41], with a z-index no document can beat, so a control
+   underneath is not merely obscured -- it is untappable, and the tap navigates
+   to the catalog instead (ALM-BUG-KILN-00039). A masthead wordmark lands there
+   naturally. Unconditional, because the pill sits in the same place at every
+   width. Guarded by tests/responsive.test.mjs. */
+.topnav { padding-left: 112px; }

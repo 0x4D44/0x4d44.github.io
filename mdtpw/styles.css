@@ -96,7 +96,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Layout ---------- */
 .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 0; }
-@media (max-width: 1040px) { .shell { grid-template-columns: 1fr; } }
+@media (max-width: 1040px) { .shell { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- Side nav ---------- */
 .sidenav {
@@ -172,7 +172,7 @@ p code, li code, td code {
 .statrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
   margin-top: 48px; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden;
   background: var(--paper-2); }
-@media (max-width: 720px) { .statrow { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) { .statrow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .statrow .stat { padding: 22px 22px; border-right: 1px solid var(--rule); }
 .statrow .stat:last-child { border-right: none; }
 @media (max-width: 720px) { .statrow .stat:nth-child(2) { border-right: none; }
@@ -212,7 +212,7 @@ p code, li code, td code {
 /* ---------- Generic card grid ---------- */
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 26px 0; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 26px 0; }
-@media (max-width: 820px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
 
 .card {
   border: 1px solid var(--rule); border-radius: 12px; padding: 20px 22px;
@@ -334,7 +334,7 @@ table.tbl td .m { font-family: var(--mono); font-size: 12.5px; color: oklch(0.34
 /* ---------- DDVT stepper ---------- */
 .ddvt { margin: 30px 0; border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; background: var(--paper-2); }
 .ddvt-top { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; }
-@media (max-width: 820px) { .ddvt-top { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .ddvt-top { grid-template-columns: minmax(0, 1fr); } }
 .ddvt-flow { padding: 26px 24px; border-right: 1px solid var(--rule); }
 @media (max-width: 820px) { .ddvt-flow { border-right: none; border-bottom: 1px solid var(--rule); } }
 .ddvt-step {
@@ -380,7 +380,7 @@ table.tbl td .m { font-family: var(--mono); font-size: 12.5px; color: oklch(0.34
 .modrow { display: grid; grid-template-columns: 168px 1fr 64px; gap: 14px; align-items: center;
   padding: 7px 12px; border-radius: 8px; transition: background 0.12s; }
 .modrow:hover { background: var(--paper-2); }
-@media (max-width: 620px) { .modrow { grid-template-columns: 120px 1fr 50px; } }
+@media (max-width: 620px) { .modrow { grid-template-columns: 120px minmax(0, 1fr) 50px; } }
 .modrow .mname { font-family: var(--mono); font-size: 13px; color: var(--ink); }
 .modrow .mname .role { display: block; font-family: var(--sans); font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
 .modrow .mbar { height: 9px; border-radius: 100px; background: var(--blue-line); min-width: 4px; }
@@ -405,7 +405,11 @@ table.tbl td .m { font-family: var(--mono); font-size: 12.5px; color: oklch(0.34
 .lrow.oos { opacity: 0.55; }
 
 /* ---------- Milestone timeline ---------- */
-.miles { display: flex; gap: 0; margin: 28px 0; flex-wrap: wrap; }
+/* overflow-x: clip because .mile .line runs to right:-50% to reach the next
+   dot; the last milestone on a wrapped row has no next dot, so its connector
+   ran off the page. clip (not hidden) keeps this from becoming a scroll
+   container, so it cannot swallow the sticky/vertical behaviour. */
+.miles { display: flex; gap: 0; margin: 28px 0; flex-wrap: wrap; overflow-x: clip; }
 .mile { flex: 1 1 0; min-width: 100px; padding: 0 4px; position: relative; }
 .mile .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--green); border: 2px solid var(--paper); position: relative; z-index: 2; }
 .mile .line { position: absolute; top: 6px; left: 50%; right: -50%; height: 2px; background: var(--green); z-index: 1; }

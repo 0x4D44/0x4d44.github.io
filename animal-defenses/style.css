@@ -538,3 +538,12 @@ footer .fl { margin-top: 8px; }
   .dossier-head .facts-inline { justify-content: center; }
   .dossier-tag { border-left: none; border-top: 3px solid var(--c, var(--glow)); padding-left: 0; padding-top: 14px; }
 }
+
+
+/* Clear the fixed "← Almanac" pill. /almanac-back.js pins it to the viewport's
+   top-left, [0,0 109x41], with a z-index no document can beat, so a control
+   underneath is not merely obscured -- it is untappable, and the tap navigates
+   to the catalog instead (ALM-BUG-KILN-00039). A masthead wordmark lands there
+   naturally. Unconditional, because the pill sits in the same place at every
+   width. Guarded by tests/responsive.test.mjs. */
+.nav { padding-left: 112px; }

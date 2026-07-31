@@ -95,7 +95,7 @@ a:hover { text-decoration: underline; }
 .masthead-inner {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 12px 20px 0;
+  padding: 12px 20px 0 112px;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -179,7 +179,13 @@ a:hover { text-decoration: underline; }
   max-width: 760px;
   margin: 0;
 }
-/* cold splash-light glow behind the hero — decorative, very quiet */
+/* cold splash-light glow behind the hero — decorative, very quiet.
+   overflow-x: clip on the hero because the glow deliberately bleeds 80px past
+   each edge: on a desktop the page's own margins absorb that, but on a phone
+   the page runs edge to edge, so the right-hand bleed dragged the document
+   60px sideways. It was invisible to a DOM scan -- a pseudo-element has no
+   element to measure. clip, not hidden, so no scroll container is created. */
+.hero { overflow-x: clip; }
 .hero::before {
   content: "";
   position: absolute;

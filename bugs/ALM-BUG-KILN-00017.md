@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00017 — Data second hint labels the English answer as a Japanese "reading"
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** darmok
@@ -17,10 +17,8 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Open (2026-07-30, REOPENED by Claude on independent verification — the mislabelling still reproduces for five vocab glosses whose English text contains kana)
+- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the mislabelling still reproduces for five vocab glosses whose English text contains kana) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260731T175847Z-p35276-n343976000-c1 branch=task/bug-ALM-BUG-KILN-00017-run-fix-20260731T175847Z-p35276-n343976000-c1 code=9e1e099ba4dfd8049a6b4f2ddee27f08a7d66a84 gate=manual)
 
 ## Observation
 On a multiple-choice or listen exercise, the second ASK DATA hint says the correct entry "reads ..." but fills that slot with the English gloss, not a Japanese reading.

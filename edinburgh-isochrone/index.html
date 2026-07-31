@@ -10,6 +10,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
     <script type="module" crossorigin src="./assets/index-Czd731tp.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-HhFKOKJu.css">
+    <style>
+      /* Clear the fixed "← Almanac" pill that /almanac-back.js pins to the
+         viewport's top-left ([0,0 109x41]) with a z-index nothing can beat: the
+         top-left control sat under it, obscured and untappable, because the tap
+         navigates to the catalog instead (ALM-BUG-KILN-00039).
+
+         This is a pre-built Vite bundle, so the hashed stylesheet in assets/
+         must not be hand-edited. Like the /almanac-back.js include below, this
+         override lives in the committed index.html and IS LOST ON REBUILD --
+         re-add it after copying dist/* in, or better, fix it in the source
+         project (see CLAUDE.md for where that lives). */
+      #modes { margin-left: 112px; }
+    </style>
   </head>
   <body>
     <main id="app">

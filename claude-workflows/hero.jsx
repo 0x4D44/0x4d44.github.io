@@ -24,7 +24,6 @@ function TopBar() {
   ];
   return (
     <div className="cw-topbar">
-      <a className="cw-back" href="../index.html">← $ cd ..</a>
       <nav className="cw-toc">
         {links.map(([id, lbl]) => (
           <a key={id} href={"#" + id}>{lbl}</a>
