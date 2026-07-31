@@ -1,0 +1,41 @@
+/* Narrow-screen corrections for this document.
+
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the
+   template <head> instead.
+
+   Every selector is prefixed with `html` and every declaration is !important.
+   Both are needed: several of the rules being corrected are themselves
+   !important, and this link is injected at the START of <head>, so on an equal
+   footing the document own rules would win on order. The extra element in the
+   selector raises specificity, which is decided before order.
+
+   The recurring bug is a collapse written as a bare 1fr. 1fr means
+   minmax(auto, 1fr), and that auto floor is the item min-content width -- so
+   the "collapsed" single column inflates straight back out to whatever the
+   widest unbreakable thing inside it happens to be. */
+
+@media (max-width: 880px) {
+  html .origin-grid, html .hero-sub, html .hero-stats
+    { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Several chapters end in a multi-column figure built by the page script,
+     with no class to hook, so match them structurally: any grid that is a
+     direct child of a chapter becomes a single column on a phone. */
+  html section.chap > div { grid-template-columns: minmax(0, 1fr) !important; }
+  /* inside the adoption figure, a five-column league table of language shares;
+     the id gives this the higher specificity it needs to win */
+  html #adoption > div > div { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* Code samples are white-space:pre, so a <pre> keeps its full line width
+     however narrow its box is: the box measures as fitting and only the text
+     hangs out. Let each sample scroll inside itself. */
+  html pre { overflow-x: auto !important; }
+
+  /* The chart in #family places its last x-axis label and its right-hand
+     gridline absolutely, just past the end of the plot -- enough to scroll the
+     page by 6px at 390 and 18px at 768. Clip the plot (the relatively
+     positioned box those are placed against) rather than let a tick mark drag
+     the document sideways; clip, not hidden, so no scroll container appears. */
+  html #family > div { overflow-x: clip !important; }
+}
