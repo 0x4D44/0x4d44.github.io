@@ -30,6 +30,10 @@ const STATION_Y = 3.0; // deck height of the station above the ground plane
 const RESAMPLE_DS = 1.2; // metres between centreline samples
 const CHAIN_SPEED = 5.0; // m/s, chain lift
 const STATION_SPEED = 4.0; // m/s, station transfer
+// A magnetic launch pushes at a little over 1g — brisk, and about what a
+// linear synchronous motor actually manages.
+export const LAUNCH_ACCEL = 12.0; // m/s^2
+const MAX_LAUNCH_APEX = 46; // m, so the launch speed stays this side of silly
 const MIN_FREE_SPEED = 3.0; // m/s, below this the train has stalled
 const MIN_TRACK_CLEARANCE = 1.2; // m, lowest the rails may sit above the ground
 const PROFILE_G_BUDGET = 4.0; // max vertical g the height profile may impose
@@ -312,10 +316,23 @@ function sampleProfile(keys, u) {
   return catmullRom(k0.y, k1.y, k2.y, k3.y, Math.min(1, Math.max(0, t)));
 }
 
-// The layout: station → chain lift → first drop → a decreasing run of
-// airtime hills → brake run → station. `scale` shrinks every hill when
-// buildTrack discovers the train cannot make it round.
-function heightKeyframes(rng, length, scale) {
+// The layout: station → a way of getting the energy in → first drop → a
+// decreasing run of airtime hills → brake run → station. `scale` shrinks
+// every hill when buildTrack discovers the train cannot make it round.
+//
+// There are two ways of getting the energy in, and a circuit picks one
+// from its seed:
+//
+//   "chain"   a chain lift dragged up at 5 m/s, sometimes with a SECOND
+//             lift halfway round that buys the circuit a second act
+//   "launch"  a magnetic launch that throws the train out of the station
+//             at the speed it needs to crest a top hat, with no lift at all
+//
+// Both are described the same way afterwards: a list of `boosts`, spans of
+// the circuit where something other than gravity is driving the train.
+// Everything downstream — roles, the design sweep, the live sim — reads
+// that list rather than knowing about lifts specifically.
+function heightKeyframes(rng, length, scale, style) {
   // The apex is deliberately NOT scaled on retry. Shrinking the lift hill
   // alongside the airtime hills leaves the energy ratio between them
   // unchanged, so a circuit that stalls would stall at every attempt —
@@ -326,50 +343,110 @@ function heightKeyframes(rng, length, scale) {
   // one, "drop 45m over 7% of the track" is steeper than vertical, which
   // produces a pull-out radius of a few metres and a double-digit g
   // spike at the bottom.
-  const apex = Math.min(38 + rng() * 20, length * 0.12);
-  const liftU = Math.min(0.30, (apex * 2.0) / length); // ~27 degrees of chain
-  const dropU = Math.min(0.20, (apex * 1.4) / length); // ~55 degrees of drop
-  const liftEndU = 0.10 + liftU;
-  const dropBottomU = liftEndU + dropU;
+  const launched = style === "launch";
+  const apex = Math.min(
+    (launched ? 32 : 38) + rng() * 20,
+    length * 0.12,
+    launched ? MAX_LAUNCH_APEX : 62,
+  );
   const brakeStartU = 0.88;
-
-  // The crest keyframes are symmetric about the apex. An asymmetric
-  // trio (apex-2.5, apex, apex-3.0 at unequal spacing) makes Catmull-Rom
-  // overshoot into an S: the profile dips and climbs again just past the
-  // top, giving the circuit a second, unintended summit.
   const keys = [
     { u: 0.00, y: STATION_Y },
     { u: 0.05, y: STATION_Y },
-    { u: 0.10, y: STATION_Y + 1.0 },
-    { u: liftEndU - 0.04, y: apex - 6.0 },
-    { u: liftEndU, y: apex },
-    { u: liftEndU + 0.04, y: apex - 6.0 },
-    { u: dropBottomU, y: STATION_Y + 1.5 },
   ];
+  const boosts = [];
+  let dropBottomU;
+  let launchSpeed = 0;
 
-  // Hills between the first drop and the brake run. Each peak is capped
-  // by the height still available after friction and drag have eaten
-  // into the apex, with a margin so the train crests it with speed.
+  if (launched) {
+    // The launch track is level: all of the energy arrives as speed, and
+    // the top hat immediately turns it back into height.
+    const launchU = Math.min(0.20, Math.max(0.08, 130 / length));
+    const launchEndU = 0.06 + launchU;
+    const climbU = Math.min(0.16, (apex * 1.25) / length);
+    const crestU = launchEndU + climbU;
+    dropBottomU = crestU + Math.min(0.16, (apex * 1.25) / length);
+    boosts.push({ startU: 0.06, endU: launchEndU, kind: "launch" });
+    keys.push({ u: 0.06, y: STATION_Y });
+    keys.push({ u: launchEndU, y: STATION_Y + 0.6 });
+    keys.push({ u: crestU - 0.03, y: apex - 5.0 });
+    keys.push({ u: crestU, y: apex });
+    keys.push({ u: crestU + 0.03, y: apex - 5.0 });
+    keys.push({ u: dropBottomU, y: STATION_Y + 1.5 });
+    // Enough to crest the hat and still be moving over it, with a margin
+    // for what friction and drag take on the way up.
+    launchSpeed = Math.sqrt(2 * G * (apex - STATION_Y) * 1.22 + 60);
+  } else {
+    const liftU = Math.min(0.30, (apex * 2.0) / length); // ~27 degrees of chain
+    const dropU = Math.min(0.20, (apex * 1.4) / length); // ~55 degrees of drop
+    const liftEndU = 0.10 + liftU;
+    dropBottomU = liftEndU + dropU;
+    boosts.push({ startU: 0.06, endU: liftEndU, kind: "lift" });
+    // The crest keyframes are symmetric about the apex. An asymmetric
+    // trio (apex-2.5, apex, apex-3.0 at unequal spacing) makes Catmull-Rom
+    // overshoot into an S: the profile dips and climbs again just past the
+    // top, giving the circuit a second, unintended summit.
+    keys.push({ u: 0.10, y: STATION_Y + 1.0 });
+    keys.push({ u: liftEndU - 0.04, y: apex - 6.0 });
+    keys.push({ u: liftEndU, y: apex });
+    keys.push({ u: liftEndU + 0.04, y: apex - 6.0 });
+    keys.push({ u: dropBottomU, y: STATION_Y + 1.5 });
+  }
+
+  // Hills. Each peak is capped by the height still available after
+  // friction and drag have eaten into whichever summit feeds it, with a
+  // margin so the train crests it with speed.
+  const addHills = (fromU, toU, count, ceiling) => {
+    const spanU = toU - fromU;
+    if (spanU <= 0.03 || count < 1) return;
+    for (let j = 0; j < count; j++) {
+      const centre = fromU + (spanU * (j + 0.5)) / count;
+      const travelled = centre * length;
+      const lossHeight = ROLLING_FRICTION * travelled + 0.10 * travelled * DRAG_COEFF * 60;
+      const available = Math.max(4, ceiling - STATION_Y - lossHeight);
+      const fade = 0.68 - 0.09 * j;
+      const peak = STATION_Y + available * Math.max(0.15, fade) * (0.85 + rng() * 0.3) * scale;
+      const valley = STATION_Y + Math.max(1.0, (peak - STATION_Y) * (0.12 + rng() * 0.14));
+      keys.push({ u: centre - spanU / (count * 2.6), y: valley });
+      keys.push({ u: centre, y: Math.min(peak, ceiling - 4) });
+    }
+  };
+
   const hillCount = 3 + Math.floor(rng() * 3);
   const spanStart = dropBottomU + 0.02;
   const spanEnd = brakeStartU - 0.04;
-  const spanU = spanEnd - spanStart;
-  for (let j = 0; j < hillCount; j++) {
-    const centre = spanStart + (spanU * (j + 0.5)) / hillCount;
-    const travelled = centre * length;
-    const lossHeight = ROLLING_FRICTION * travelled + 0.10 * travelled * DRAG_COEFF * 60;
-    const available = Math.max(4, apex - STATION_Y - lossHeight);
-    const fade = 0.68 - 0.09 * j;
-    const peak = STATION_Y + available * Math.max(0.15, fade) * (0.85 + rng() * 0.3) * scale;
-    const valley = STATION_Y + Math.max(1.0, (peak - STATION_Y) * (0.12 + rng() * 0.14));
-    keys.push({ u: centre - spanU / (hillCount * 2.6), y: valley });
-    keys.push({ u: centre, y: Math.min(peak, apex - 4) });
+
+  // A second chain lift, roughly halfway round. It re-tops the energy
+  // budget, so the hills after it are sized against ITS summit rather
+  // than a first drop that friction has been eating into ever since.
+  const secondApex = STATION_Y + (apex - STATION_Y) * (0.52 + rng() * 0.22);
+  const secondLiftU = Math.min(0.20, (secondApex * 2.0) / length);
+  const secondDropU = Math.min(0.15, (secondApex * 1.4) / length);
+  const secondStartU = spanStart + (spanEnd - spanStart) * 0.44;
+  const secondBottomU = secondStartU + secondLiftU + secondDropU;
+  const wantsSecond = !launched
+    && rng() < 0.6
+    && spanEnd - spanStart > 0.34
+    && secondBottomU < spanEnd - 0.08;
+
+  if (wantsSecond) {
+    const crest = secondStartU + secondLiftU;
+    addHills(spanStart, secondStartU - 0.03, Math.max(1, Math.round(hillCount / 2)), apex);
+    boosts.push({ startU: secondStartU, endU: crest, kind: "lift" });
+    keys.push({ u: secondStartU, y: STATION_Y + 1.5 });
+    keys.push({ u: crest - 0.03, y: secondApex - 5.0 });
+    keys.push({ u: crest, y: secondApex });
+    keys.push({ u: crest + 0.03, y: secondApex - 5.0 });
+    keys.push({ u: secondBottomU, y: STATION_Y + 1.5 });
+    addHills(secondBottomU + 0.02, spanEnd, Math.max(1, Math.floor(hillCount / 2)), secondApex);
+  } else {
+    addHills(spanStart, spanEnd, hillCount, apex);
   }
 
   keys.push({ u: brakeStartU, y: STATION_Y + 3.0 });
   keys.push({ u: 0.95, y: STATION_Y + 0.6 });
   keys.sort((a, b) => a.u - b.u);
-  return { keys, apex, liftEndU, dropBottomU, brakeStartU };
+  return { keys, apex, dropBottomU, brakeStartU, boosts, launchSpeed, style };
 }
 
 // ------------------------------------------------------------
@@ -660,7 +737,7 @@ function computeFrames(points, ds, speeds) {
 // the "will it make it round?" check. Same model the live sim uses.
 // ------------------------------------------------------------
 
-function designSpeeds(points, ds, roles) {
+function designSpeeds(points, ds, roles, launchSpeed = 0) {
   const n = points.length;
   const speeds = new Float64Array(n);
   let v = CHAIN_SPEED;
@@ -671,7 +748,10 @@ function designSpeeds(points, ds, roles) {
       const mode = roles[i];
       if (mode === "station") v = STATION_SPEED;
       else if (mode === "lift") v = CHAIN_SPEED;
-      else {
+      else if (mode === "launch") {
+        // Constant push until the launch speed is reached, then held.
+        v = Math.min(launchSpeed, Math.sqrt(v * v + 2 * LAUNCH_ACCEL * ds));
+      } else {
         const dy = points[(i + 1) % n].y - points[i].y;
         const sinPitch = Math.max(-1, Math.min(1, dy / ds));
         const cosPitch = Math.sqrt(Math.max(0, 1 - sinPitch * sinPitch));
@@ -699,12 +779,12 @@ function designSpeeds(points, ds, roles) {
 // there, repeating until the whole circuit is inside it. Smoothing
 // strictly reduces local curvature, so this converges; it also shaves
 // the hills a little, which the energy check downstream re-verifies.
-function relaxProfile(points, ds, roles, budgetG) {
+function relaxProfile(points, ds, roles, budgetG, launchSpeed = 0) {
   const n = points.length;
   const hot = new Uint8Array(n);
   let worst = Infinity;
   for (let pass = 0; pass < 400; pass += 1) {
-    const speeds = designSpeeds(points, ds, roles);
+    const speeds = designSpeeds(points, ds, roles, launchSpeed);
     hot.fill(0);
     worst = 0;
     for (let i = 0; i < n; i += 1) {
@@ -735,6 +815,8 @@ function relaxProfile(points, ds, roles, budgetG) {
 export function buildTrack(seed) {
   const rng = mulberry32(seed);
   const name = trackName(rng);
+  // Roughly one circuit in three is launched rather than lifted.
+  const style = rng() < 0.34 ? "launch" : "chain";
   const plan = planCurve(rng, 720);
   const planLength = arcLengths(plan).total;
 
@@ -750,7 +832,7 @@ export function buildTrack(seed) {
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const scale = 1 - attempt * 0.09;
     const loopAllowance = attempt < 4 ? 1 : attempt < 6 ? 0.75 : 0;
-    const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance);
+    const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style);
     const check = verifyCircuit(candidate);
     result = candidate;
     result.minFreeSpeed = check.minSpeed;
@@ -761,9 +843,9 @@ export function buildTrack(seed) {
   return result; // last, flattest attempt — still returned rather than throwing
 }
 
-function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance) {
+function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style) {
   const rng = mulberry32(profileSeed);
-  const profile = heightKeyframes(rng, planLength, scale);
+  const profile = heightKeyframes(rng, planLength, scale, style);
 
   // Apply the height profile to the plan curve.
   let shaped = plan.map((p, i) => v3(p.x, sampleProfile(profile.keys, i / plan.length), p.z));
@@ -784,7 +866,9 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
     const u = i / plan.length;
     if (u >= profile.brakeStartU) return "brake";
     if (u < 0.06) return "station";
-    if (u < profile.liftEndU) return "lift";
+    for (const boost of profile.boosts) {
+      if (u >= boost.startU && u < boost.endU) return boost.kind;
+    }
     return "free";
   });
 
@@ -794,9 +878,16 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   // just short of the top. Hold the chain until the track genuinely
   // starts to fall, reading the boundary off the geometry rather than
   // trusting the parameterisation.
+  // Every chain lift gets the same treatment, including a second one
+  // halfway round. A launch does not need it: it ends on level track and
+  // the train leaves it ballistically.
   const m = roles0.length;
-  let cursor = roles0.findIndex((r) => r === "free");
-  if (cursor > 0) {
+  const liftEnds = [];
+  for (let i = 0; i < m; i++) {
+    if (roles0[i] === "lift" && roles0[(i + 1) % m] !== "lift") liftEnds.push(i);
+  }
+  for (const end of liftEnds) {
+    let cursor = end + 1;
     let guard = 0;
     while (guard++ < m * 0.25 && shaped[(cursor + 1) % m].y >= shaped[cursor % m].y - 1e-6) {
       roles0[cursor % m] = "lift";
@@ -822,7 +913,7 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   // corrected spacing.
   let profileG = Infinity;
   for (let round = 0; round < 2; round += 1) {
-    profileG = relaxProfile(points, ds, roles, PROFILE_G_BUDGET);
+    profileG = relaxProfile(points, ds, roles, PROFILE_G_BUDGET, profile.launchSpeed);
     const even = resampleClosed(points, RESAMPLE_DS, roles);
     points = even.points;
     roles = even.roles;
@@ -842,7 +933,7 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   // stacks the two. The best-placed candidate that yields a valid loop
   // wins. Somewhere on the circuit the train is usually going exactly
   // the right speed for one.
-  let preSpeeds = designSpeeds(points, ds, roles);
+  let preSpeeds = designSpeeds(points, ds, roles, profile.launchSpeed);
   const nPts = points.length;
   const apexShaped = points.reduce((mx, p) => Math.max(mx, p.y), 0);
 
@@ -893,7 +984,7 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
       points = rotated.points;
       roles = rotated.roles;
       ds = resampled.ds;
-      preSpeeds = designSpeeds(points, ds, roles);
+      preSpeeds = designSpeeds(points, ds, roles, profile.launchSpeed);
       loop = spec;
       clearance = gap;
       break;
@@ -912,6 +1003,9 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   return {
     seed, name, points, tangents, ups, curvature, banks, roles,
     speeds: preSpeeds, ds, length, apex, lowest, loop, profileG, clearance,
+    style,
+    launchSpeed: profile.launchSpeed,
+    lifts: profile.boosts.filter((b) => b.kind === "lift").length,
     stationY: STATION_Y,
   };
 }
@@ -1030,6 +1124,12 @@ export class CoasterSim {
       this.v += (STATION_SPEED - this.v) * Math.min(1, h * 3);
     } else if (mode === "lift") {
       this.v += (CHAIN_SPEED - this.v) * Math.min(1, h * 2);
+    } else if (mode === "launch") {
+      // A hard, constant shove until the launch speed is reached, then
+      // held there for whatever is left of the launch track.
+      const target = t.launchSpeed || CHAIN_SPEED;
+      accel = this.v < target ? LAUNCH_ACCEL : 0;
+      this.v = Math.min(target, this.v + accel * h);
     } else {
       const sinPitch = Math.max(-1, Math.min(1, here.fwd.y));
       const cosPitch = Math.sqrt(Math.max(0, 1 - sinPitch * sinPitch));
@@ -1077,6 +1177,85 @@ export class CoasterSim {
       progress: this.s / (this.track.points.length * this.track.ds),
     };
   }
+}
+
+// ------------------------------------------------------------
+// Where to bore a tunnel.
+//
+// The Disney trick is to put something solid in the way and run the track
+// through it. The site has to be FOUND rather than chosen: a stretch of
+// free-running track that is low, level, upright and long enough, with a
+// hillside over it that does not swallow any other part of the circuit —
+// which is the same clearance question the loop asks, asked in plan.
+//
+// Returned as plain data (indices and a bounding hill) so the renderer
+// only has to build what this decides, and so `node --test` can check the
+// decision without a GPU.
+// ------------------------------------------------------------
+
+export function tunnelSite(track, groundHeight, wantLength = 46) {
+  const n = track.points.length;
+  const samples = Math.max(20, Math.round(wantLength / track.ds));
+  if (samples * 2 > n) return null;
+
+  const candidates = [];
+  for (let start = 0; start < n; start += 3) {
+    let usable = true;
+    let flatness = 0;
+    for (let k = 0; k < samples; k++) {
+      const i = (start + k) % n;
+      const p = track.points[i];
+      const above = p.y - groundHeight(p.x, p.z);
+      // Free-running, close to the ground, upright, and not on its side:
+      // a tunnel around banked or inverted track would be a tube around a
+      // corkscrew, which is neither buildable nor legible.
+      if (track.roles[i] !== "free" || track.ups[i].y < 0.7 || above < 1.0 || above > 20.0) {
+        usable = false;
+        break;
+      }
+      flatness += Math.abs(track.tangents[i].y);
+    }
+    if (usable) candidates.push({ start, score: flatness / samples });
+  }
+  candidates.sort((a, b) => a.score - b.score || a.start - b.start);
+
+  for (const candidate of candidates.slice(0, 24)) {
+    const span = [];
+    for (let k = 0; k < samples; k++) span.push((candidate.start + k) % n);
+    const mid = track.points[span[Math.floor(span.length / 2)]];
+    let reach = 0;
+    let crown = -Infinity;
+    for (const i of span) {
+      const p = track.points[i];
+      reach = Math.max(reach, Math.hypot(p.x - mid.x, p.z - mid.z));
+      crown = Math.max(crown, p.y);
+    }
+    const radius = reach + 9;
+    const top = crown + 5.5;
+
+    // Nothing else may be buried in the hill — including track passing
+    // over it, unless it clears the summit.
+    //
+    // "Else" is doing the work in that sentence. The track leaving each
+    // portal is of course near the hill; it is the approach, and it runs
+    // along the hillside exactly as it should. What must not happen is
+    // some OTHER part of the circuit — a hill, the lift, the far side of
+    // a turn — coming back round and ending up inside the rock. So the
+    // exclusion is measured ALONG the track, the same way self-clearance
+    // is, rather than by a plain radius in plan.
+    const skip = Math.ceil((radius + 25) / track.ds);
+    let fouled = false;
+    for (let k = samples + skip; k < n - skip; k++) {
+      const p = track.points[(candidate.start + k) % n];
+      if (Math.hypot(p.x - mid.x, p.z - mid.z) < radius + 4 && p.y < top + 4) {
+        fouled = true;
+        break;
+      }
+    }
+    if (fouled) continue;
+    return { span, mid: { x: mid.x, y: mid.y, z: mid.z }, radius, top };
+  }
+  return null;
 }
 
 // ------------------------------------------------------------

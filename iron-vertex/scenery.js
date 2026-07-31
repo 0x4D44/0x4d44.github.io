@@ -934,11 +934,17 @@ export function buildWorld() {
   const carvePos = new THREE.Vector3();
   const carveScale = new THREE.Vector3();
 
-  function carve(track) {
+  function carve(track, extraKeepOuts = []) {
     let outerLimit = 0;
     for (const p of track.points) outerLimit = Math.max(outerLimit, Math.hypot(p.x, p.z));
 
     const foulsTrack = (x, z, keepOut) => {
+      // Structures the track brings with it — the hill a tunnel is bored
+      // through — displace scenery exactly as the track itself does.
+      for (const zone of extraKeepOuts) {
+        const reach = zone.radius + keepOut * 0.35;
+        if ((zone.x - x) * (zone.x - x) + (zone.z - z) * (zone.z - z) < reach * reach) return true;
+      }
       if (Math.hypot(x, z) > outerLimit + keepOut) return false;
       const limit = keepOut * keepOut;
       for (let k = 0; k < track.points.length; k += 2) {

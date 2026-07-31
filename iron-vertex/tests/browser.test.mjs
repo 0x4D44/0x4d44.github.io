@@ -256,6 +256,8 @@ try {
 
     // ---- the ride card says what the generator actually built ----
     const facts = await evaluate(`document.getElementById("track-facts").textContent.trim()`);
+    assert.match(facts, /chain lift|two chain lifts|launched at \d+ km\/h/,
+      `${width}x${height}: the ride card does not say how the train is driven (${facts})`);
     assert.match(facts, /\d+\s*m drop/, `${width}x${height}: no drop height on the ride card (${facts})`);
     assert.match(facts, /\d+\s*km\/h/, `${width}x${height}: no top speed on the ride card (${facts})`);
     assert.match(facts, /inversion/, `${width}x${height}: no inversion count on the ride card (${facts})`);

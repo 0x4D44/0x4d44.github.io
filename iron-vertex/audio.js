@@ -28,7 +28,10 @@ export const FAST = 30; // m/s
 //   distance  metres from the listener to the train (ignored when riding)
 //
 // Every field of the result is a gain in [0, 1] or a frequency in Hz.
-export function rideMix({ v = 0, gForce = 1, mode = "free", riding = false, distance = 0 } = {}) {
+export function rideMix({
+  v = 0, gForce = 1, mode = "free", riding = false, distance = 0,
+  pitch = 0, inverted = false,
+} = {}) {
   const speed = clamp01(Math.abs(v) / FAST);
 
   // Out in the park the train is a distant clatter that gets duller as
@@ -55,15 +58,30 @@ export function rideMix({ v = 0, gForce = 1, mode = "free", riding = false, dist
   // Fin brakes: a hard hiss that only exists while there is speed to take.
   const brake = mode === "brake" && Math.abs(v) > 4.5 ? 0.4 * clamp01((Math.abs(v) - 4.5) / 12) * near : 0;
 
-  // Riders shout at the two things that are worth shouting at: the floor
-  // dropping away, and being pressed into the seat at the bottom.
+  // A magnetic launch: the rising hum of the stators as the train goes.
+  const launch = mode === "launch" ? 0.5 * (0.35 + 0.65 * speed) * (riding ? 1 : near) : 0;
+  const launchHz = 60 + 420 * speed;
+
+  // Riders shout at four things, and the loudest is the one where the
+  // floor drops away underneath them.
+  //
+  //   airtime    negative g, the restraints going light
+  //   heavy      being pressed into the seat at the bottom
+  //   plunge     the nose-down moment at the top of a drop, at speed —
+  //              which is the classic scream and does not need any g at
+  //              all to earn it
+  //   inverted   upside down, which nobody takes quietly
   const airtime = clamp01((0.62 - gForce) / 1.4);
   const heavy = clamp01((gForce - 2.9) / 2.0);
-  const excitement = mode === "free" ? clamp01(Math.max(airtime, heavy * 0.75) * (0.35 + speed)) : 0;
+  const plunge = clamp01((-pitch - 0.28) / 0.5) * clamp01((Math.abs(v) - 9) / 12);
+  const upside = inverted ? 0.8 : 0;
+  const excitement = mode === "free"
+    ? clamp01(Math.max(airtime, heavy * 0.75, plunge, upside) * (0.35 + speed))
+    : mode === "launch" ? clamp01(speed * 0.9) : 0;
 
   return {
     rumble, rumbleHz, roar, roarHz, wind, windHz,
-    chain, clackHz, brake, excitement,
+    chain, clackHz, brake, launch, launchHz, excitement,
     // One lowpass across the whole train sound stands in for distance.
     cutoff: 700 + 15000 * Math.pow(air, 2.2),
     speed,
@@ -143,6 +161,20 @@ export class RideAudio {
       this.roarOsc.connect(roarFilter).connect(this.roarGain).connect(this.trainOut);
       this.roarOsc.start(now);
 
+      // The launch: a square wave climbing through the stators, which is
+      // very nearly what an LSM actually sounds like from the platform.
+      this.launchOsc = ctx.createOscillator();
+      this.launchOsc.type = "square";
+      this.launchOsc.frequency.value = 60;
+      this.launchGain = ctx.createGain();
+      this.launchGain.gain.value = 0;
+      const launchFilter = ctx.createBiquadFilter();
+      launchFilter.type = "bandpass";
+      launchFilter.frequency.value = 900;
+      launchFilter.Q.value = 1.1;
+      this.launchOsc.connect(launchFilter).connect(this.launchGain).connect(this.trainOut);
+      this.launchOsc.start(now);
+
       // ---- the park itself: a breeze that never stops ----
       this.breezeGain = this._noiseVoice("bandpass", 480, 0.5, this.master);
       this.breezeGain.gain.value = 0.05;
@@ -206,6 +238,8 @@ export class RideAudio {
     this._to(this.roarGain.gain, mix.roar);
     this._to(this.roarOsc.frequency, mix.roarHz, 0.12);
     this._to(this.brakeGain.gain, mix.brake, 0.05);
+    this._to(this.launchGain.gain, mix.launch ?? 0, 0.05);
+    this._to(this.launchOsc.frequency, mix.launchHz ?? 60, 0.06);
     this._to(this.trainOut.frequency, mix.cutoff, 0.2);
 
     // Chain dogs, one tick at a time.
@@ -220,10 +254,13 @@ export class RideAudio {
       this.clackPhase = 0;
     }
 
+    // Screaming. The cooldown scales down with how big the moment is, so
+    // a proper drop gets a continuous wall of noise rather than one
+    // polite shout every couple of seconds.
     this.screamWait = Math.max(0, this.screamWait - dt);
-    if (mix.excitement > 0.32 && this.screamWait === 0) {
+    if (mix.excitement > 0.3 && this.screamWait === 0) {
       this.scream(mix.excitement);
-      this.screamWait = SCREAM_COOLDOWN;
+      this.screamWait = SCREAM_COOLDOWN * (1.05 - 0.75 * Math.min(1, mix.excitement));
     }
 
     // Somewhere out in the park, a bird.

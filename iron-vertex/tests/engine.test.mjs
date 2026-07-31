@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 
 import {
   G,
+  LAUNCH_ACCEL,
   MIN_SELF_CLEARANCE,
   CoasterSim,
   buildTrack,
@@ -16,6 +17,7 @@ import {
   selfClearance,
   supportColumns,
   trackName,
+  tunnelSite,
   verifyCircuit,
   vcross,
   vdot,
@@ -328,6 +330,151 @@ test("a loop's legs pass beside each other, not through", () => {
     );
   }
   assert.ok(checked > 10, `only ${checked} looping circuits to check`);
+});
+
+// Contiguous runs of one role, as {start, end} half-open index ranges.
+function spansOf(track, role) {
+  const n = track.roles.length;
+  const spans = [];
+  for (let i = 0; i < n; i++) {
+    if (track.roles[i] !== role || track.roles[(i - 1 + n) % n] === role) continue;
+    let end = i;
+    while (track.roles[(end + 1) % n] === role && end - i < n) end += 1;
+    spans.push({ start: i, end: end + 1 });
+  }
+  return spans;
+}
+
+test("both kinds of circuit turn up, and both are self-consistent", () => {
+  const styles = { chain: 0, launch: 0 };
+  let doubleLift = 0;
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    assert.ok(t.style === "chain" || t.style === "launch", `seed ${seed}: odd style ${t.style}`);
+    styles[t.style] += 1;
+
+    const lifts = spansOf(t, "lift");
+    const launches = spansOf(t, "launch");
+    if (t.style === "launch") {
+      // A launched circuit is launched, not lifted: no chain anywhere.
+      assert.equal(lifts.length, 0, `seed ${seed}: a launched circuit grew a chain lift`);
+      assert.equal(launches.length, 1, `seed ${seed}: ${launches.length} launch sections`);
+      assert.ok(t.launchSpeed > 15 && t.launchSpeed < 40,
+        `seed ${seed}: implausible launch speed ${t.launchSpeed.toFixed(1)} m/s`);
+      // The launch has to be long enough to reach that speed at 12 m/s².
+      const runway = (launches[0].end - launches[0].start) * t.ds;
+      const needed = (t.launchSpeed * t.launchSpeed - 16) / (2 * LAUNCH_ACCEL);
+      assert.ok(runway > needed * 0.9,
+        `seed ${seed}: ${runway.toFixed(0)}m of launch track to reach ${t.launchSpeed.toFixed(1)} m/s (needs ${needed.toFixed(0)}m)`);
+    } else {
+      assert.equal(launches.length, 0, `seed ${seed}: a lifted circuit grew a launch`);
+      assert.ok(lifts.length >= 1 && lifts.length <= 2, `seed ${seed}: ${lifts.length} lifts`);
+      assert.equal(t.launchSpeed, 0, `seed ${seed}: a lifted circuit carries a launch speed`);
+      if (lifts.length === 2) doubleLift += 1;
+    }
+    assert.equal(t.lifts, lifts.length, `seed ${seed}: reported lift count disagrees with the roles`);
+  }
+  assert.ok(styles.launch > SEEDS.length * 0.15,
+    `only ${styles.launch}/${SEEDS.length} circuits are launched`);
+  assert.ok(styles.chain > SEEDS.length * 0.3,
+    `only ${styles.chain}/${SEEDS.length} circuits are lifted`);
+  assert.ok(doubleLift > 5, `only ${doubleLift} circuits got a second lift`);
+});
+
+test("a launch reaches its speed on the launch track, and nowhere else", () => {
+  let checked = 0;
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    if (t.style !== "launch") continue;
+    checked += 1;
+    const sim = new CoasterSim(t);
+    let peakOnLaunch = 0;
+    let peakAnywhere = 0;
+    let sawLaunch = false;
+    for (let i = 0; i < 5000; i++) {
+      const s = sim.step(1 / 60);
+      peakAnywhere = Math.max(peakAnywhere, s.v);
+      if (s.mode === "launch") {
+        sawLaunch = true;
+        peakOnLaunch = Math.max(peakOnLaunch, s.v);
+      }
+    }
+    assert.ok(sawLaunch, `seed ${seed}: the train never entered the launch`);
+    assert.ok(peakOnLaunch > t.launchSpeed * 0.97,
+      `seed ${seed}: launch only reached ${peakOnLaunch.toFixed(1)} of ${t.launchSpeed.toFixed(1)} m/s`);
+    // Gravity gives the height back, and no more: the fastest the train
+    // ever goes is the launch speed, bar a whisker of numerical slack.
+    assert.ok(peakAnywhere < t.launchSpeed * 1.05,
+      `seed ${seed}: reached ${peakAnywhere.toFixed(1)} m/s from a ${t.launchSpeed.toFixed(1)} m/s launch`);
+    if (checked >= 12) break;
+  }
+  assert.ok(checked > 5, `only ${checked} launched circuits to check`);
+});
+
+test("a second lift climbs, and lands the train higher than it found it", () => {
+  let checked = 0;
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    const lifts = spansOf(t, "lift");
+    if (lifts.length < 2) continue;
+    checked += 1;
+    for (const lift of lifts) {
+      const bottom = t.points[lift.start].y;
+      const top = t.points[(lift.end - 1) % t.points.length].y;
+      assert.ok(top > bottom + 5,
+        `seed ${seed}: a lift only climbed ${(top - bottom).toFixed(1)}m`);
+    }
+    // The two are genuinely separate stretches of track, not one chain
+    // reported twice.
+    const gap = lifts[1].start - lifts[0].end;
+    assert.ok(gap * t.ds > 40,
+      `seed ${seed}: the two lifts are only ${(gap * t.ds).toFixed(0)}m apart`);
+  }
+  assert.ok(checked > 5, `only ${checked} double-lift circuits to check`);
+});
+
+test("a tunnel site is level, upright, low, and does not bury the rest of the ride", () => {
+  // The park is flat under the coaster — the terrain only starts to roll
+  // beyond 170m, and the plan curve stays inside that — so a flat ground
+  // function is a faithful stand-in here.
+  const flat = () => 0;
+  let found = 0;
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    const site = tunnelSite(t, flat);
+    if (!site) continue;
+    found += 1;
+
+    assert.ok(site.span.length * t.ds > 40,
+      `seed ${seed}: tunnel only ${(site.span.length * t.ds).toFixed(0)}m long`);
+    // Contiguous, and all of it the sort of track you can build a hill on.
+    for (let k = 0; k < site.span.length; k++) {
+      const i = site.span[k];
+      if (k > 0) {
+        assert.equal(i, (site.span[k - 1] + 1) % t.points.length,
+          `seed ${seed}: the tunnel span is not contiguous`);
+      }
+      assert.equal(t.roles[i], "free", `seed ${seed}: tunnel over non-free track`);
+      assert.ok(t.ups[i].y > 0.65, `seed ${seed}: tunnel around track banked on its side`);
+      assert.ok(t.points[i].y > 0.5 && t.points[i].y < 21,
+        `seed ${seed}: tunnel around track at ${t.points[i].y.toFixed(1)}m`);
+    }
+
+    // And the hill it implies must not have anything else inside it.
+    const inSpan = new Set(site.span);
+    const skip = Math.ceil((site.radius + 25) / t.ds);
+    for (let k = site.span.length + skip; k < t.points.length - skip; k++) {
+      const i = (site.span[0] + k) % t.points.length;
+      assert.ok(!inSpan.has(i));
+      const p = t.points[i];
+      const inside = Math.hypot(p.x - site.mid.x, p.z - site.mid.z) < site.radius
+        && p.y < site.top;
+      assert.ok(!inside,
+        `seed ${seed}: sample ${i} is buried inside the tunnel's hill`);
+    }
+  }
+  assert.ok(found > SEEDS.length * 0.4,
+    `only ${found}/${SEEDS.length} circuits found anywhere to put a tunnel`);
 });
 
 test("support columns reach the ground and skip inverted track", () => {

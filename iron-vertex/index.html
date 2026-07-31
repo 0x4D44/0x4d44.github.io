@@ -262,9 +262,10 @@
   <button class="act" id="btn-sound" type="button" aria-label="Turn the sound on or off">&#9834; Sound: off (M)</button>
   <p class="hint">
     Drag to orbit &middot; scroll to zoom<br>
-    Gravity energy model with chain lift, brakes, drag and banked turns.
-    Loops are splayed and clearance-checked, so no two stretches of track
-    ever occupy the same steel.
+    Gravity energy model. Some circuits are dragged up a chain, some get a
+    second lift halfway round, and some are thrown out of the station by a
+    magnetic launch. Loops are splayed and clearance-checked, so no two
+    stretches of track ever occupy the same steel.
   </p>
 </div>
 
@@ -423,10 +424,11 @@ function loadTrack(seed) {
   const built = buildTrackMesh(track, groundHeight);
   state.trackGroup = built.group;
   state.trackUpdaters = built.updaters;
-  state.train = buildTrain(CARS, track.seed);
+  state.train = buildTrain(CARS, track.seed, groundHeight);
   scene.add(built.group);
   scene.add(state.train.group);
-  world.carve(track);
+  world.carve(track, built.keepOuts);
+  chasePos.set(0, 0, 0);
 
   let cx = 0;
   let cz = 0;
@@ -441,6 +443,9 @@ function loadTrack(seed) {
   let top = 0;
   for (const v of track.speeds) top = Math.max(top, v);
   const facts = [
+    track.style === "launch"
+      ? `launched at ${Math.round(track.launchSpeed * 3.6)} km/h`
+      : track.lifts > 1 ? "two chain lifts" : "chain lift",
     `${Math.round(track.apex - track.stationY)} m drop`,
     `${Math.round(top * 3.6)} km/h`,
     `${(track.maxG ?? 0).toFixed(1)} g`,
@@ -459,6 +464,8 @@ const tmpFwd = new THREE.Vector3();
 const tmpLat = new THREE.Vector3();
 const smoothUp = new THREE.Vector3(0, 1, 0);
 const shake = new THREE.Vector3();
+const chaseWanted = new THREE.Vector3();
+const chasePos = new THREE.Vector3();
 
 function updateCamera(ride, dt) {
   // A rider's field of view opens up with speed. It is a cheat, and it is
@@ -532,12 +539,23 @@ function updateCamera(ride, dt) {
       tmpPos.z - tmpFwd.z * TRAIN_LENGTH * 0.45,
     );
   } else {
-    // Chase: behind the LAST car, not inside it.
+    // Chase: ON the track a train-length back, not projected backwards
+    // along the tangent. Straight-line projection dives underground on a
+    // climb and underneath the rails on a drop, because the track has
+    // curved away from the tangent by the time you get there — following
+    // the centreline instead cannot go anywhere the track does not.
+    const behind = state.sim.sample(ride.s - (TRAIN_LENGTH + 10));
+    chaseWanted.set(behind.pos.x, behind.pos.y, behind.pos.z);
+    // World up, never the car's: on a loop the car's up points at the
+    // ground, and the camera would follow it there.
+    chaseWanted.y += 5.4;
+    // And never below the grass, whatever the track is doing.
+    chaseWanted.y = Math.max(chaseWanted.y, groundHeight(chaseWanted.x, chaseWanted.z) + 3.2);
+    // A gentle spring keeps the sample-to-sample jitter out of it.
+    if (chasePos.lengthSq() === 0) chasePos.copy(chaseWanted);
+    chasePos.lerp(chaseWanted, Math.min(1, dt * 5.5));
     camera.up.set(0, 1, 0);
-    camera.position.copy(tmpPos)
-      .addScaledVector(tmpFwd, -(TRAIN_LENGTH + 9))
-      .addScaledVector(smoothUp, 5.2)
-      .add(shake);
+    camera.position.copy(chasePos).add(shake);
     camera.lookAt(tmpPos.x, tmpPos.y + 1.2, tmpPos.z);
   }
 }
@@ -744,6 +762,11 @@ function frame(now) {
       v: ride.v,
       gForce: ride.gForce,
       mode: ride.mode,
+      // How steeply the nose is pointing down, and whether the car is
+      // upside down: the two things riders shout at that a g reading
+      // alone does not capture.
+      pitch: ride.fwd.y,
+      inverted: ride.up.y < -0.2,
       riding: state.camMode === "pov" || state.camMode === "chase",
       distance: camera.position.distanceTo(trainPos),
     }), dt);
