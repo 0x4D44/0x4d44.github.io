@@ -53,7 +53,7 @@ jobs:
       - name: Install pinned wasm-pack
         run: cargo install wasm-pack --version 0.13.1 --locked
 
-      - name: Apply reviewed Rust parser correction
+      - name: Apply reviewed Rust corrections
         shell: bash
         run: |
           python - <<'PY'
@@ -61,14 +61,39 @@ jobs:
 
           path = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
           source = path.read_text(encoding="utf-8")
-          old = "if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {"
-          new = "if (self.max_genotypes as usize) < required_genotypes || self.max_genotypes > 200_000 {"
-          if source.count(old) == 1:
-              path.write_text(source.replace(old, new), encoding="utf-8")
-          elif source.count(old) == 0 and source.count(new) == 1:
-              print("Parser correction already materialised.")
-          else:
-              raise SystemExit("Expected exactly one known parser site or its corrected form")
+
+          def replace_once(old: str, new: str, label: str) -> None:
+              global source
+              old_count = source.count(old)
+              new_count = source.count(new)
+              if old_count == 1:
+                  source = source.replace(old, new)
+                  print(f"Applied {label}.")
+              elif old_count == 0 and new_count == 1:
+                  print(f"{label} already materialised.")
+              else:
+                  raise SystemExit(
+                      f"Expected one known {label} site or its corrected form; "
+                      f"old={old_count} new={new_count}"
+                  )
+
+          replace_once(
+              "if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {",
+              "if (self.max_genotypes as usize) < required_genotypes || self.max_genotypes > 200_000 {",
+              "cast comparison correction",
+          )
+          replace_once(
+              "            genotype_count,\n            lineage_count: lineages.len() as u32,",
+              "            genotype_count,\n            retired_genotype_count: self.retired_genotypes,\n            lineage_count: lineages.len() as u32,",
+              "retired-genotype statistics sample",
+          )
+          replace_once(
+              "            let mut signal = ExecSignal::Continue;\n            for _ in 0..self.config.instructions_per_update {\n                signal = self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);\n                if organism.energy == 0 || signal == ExecSignal::Yield {\n                    break;\n                }\n            }",
+              "            for _ in 0..self.config.instructions_per_update {\n                let signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);\n                if organism.energy == 0 || signal == ExecSignal::Yield {\n                    break;\n                }\n            }",
+              "execution-loop signal cleanup",
+          )
+
+          path.write_text(source, encoding="utf-8")
           PY
 
       - name: Canonicalise Rust formatting and preserve diagnostics
@@ -113,7 +138,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Commit canonical source, generated state and integration
-        if: ${{ always() && github.event_name == 'push' }}
+        if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -122,8 +147,9 @@ jobs:
           if git diff --cached --quiet; then
             echo "Source, generated output and integration already match."
           else
-            git commit -m "chore(darwin-machine): record verified generated state"
-            git push
+            git commit -m "chore(darwin-machine): record reviewed generated state"
+            branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+            git push origin "HEAD:${branch}"
           fi
 
       - name: Require a clean reproducible PR build
