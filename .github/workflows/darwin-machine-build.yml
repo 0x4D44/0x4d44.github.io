@@ -53,6 +53,24 @@ jobs:
       - name: Install pinned wasm-pack
         run: cargo install wasm-pack --version 0.13.1 --locked
 
+      - name: Apply reviewed Rust parser correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
+          source = path.read_text(encoding="utf-8")
+          old = "if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {"
+          new = "if (self.max_genotypes as usize) < required_genotypes || self.max_genotypes > 200_000 {"
+          if source.count(old) == 1:
+              path.write_text(source.replace(old, new), encoding="utf-8")
+          elif source.count(old) == 0 and source.count(new) == 1:
+              print("Parser correction already materialised.")
+          else:
+              raise SystemExit("Expected exactly one known parser site or its corrected form")
+          PY
+
       - name: Canonicalise Rust formatting and preserve diagnostics
         shell: bash
         run: |
