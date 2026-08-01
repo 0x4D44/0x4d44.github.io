@@ -43,7 +43,10 @@ jobs:
         shell: bash
         run: |
           if [[ -d .darwin-bootstrap ]]; then
-            cat .darwin-bootstrap/part-* | base64 --decode > /tmp/darwin-machine-source.tar.xz
+            # Connected text transports may add harmless non-alphabet bytes.
+            # Ignore those, but never trust the result until the exact archive
+            # digest below has passed.
+            cat .darwin-bootstrap/part-* | base64 --decode --ignore-garbage > /tmp/darwin-machine-source.tar.xz
             echo "bb2d367384e67a64cc171b40441a10948d6fb1b8cf990c7566d3ba9315667db9  /tmp/darwin-machine-source.tar.xz" | sha256sum --check --strict
             tar -xJf /tmp/darwin-machine-source.tar.xz
             rm -rf .darwin-bootstrap
