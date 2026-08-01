@@ -88,9 +88,14 @@ jobs:
               "retired-genotype statistics sample",
           )
           replace_once(
-              "            let mut signal = ExecSignal::Continue;\n            for _ in 0..self.config.instructions_per_update {\n                signal = self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);\n                if organism.energy == 0 || signal == ExecSignal::Yield {\n                    break;\n                }\n            }",
-              "            for _ in 0..self.config.instructions_per_update {\n                let signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);\n                if organism.energy == 0 || signal == ExecSignal::Yield {\n                    break;\n                }\n            }",
-              "execution-loop signal cleanup",
+              "            let mut signal = ExecSignal::Continue;\n",
+              "",
+              "unused execution-signal initialisation removal",
+          )
+          replace_once(
+              "                signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);",
+              "                let signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);",
+              "per-instruction execution signal binding",
           )
 
           path.write_text(source, encoding="utf-8")
