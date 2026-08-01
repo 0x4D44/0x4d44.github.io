@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081015">
+  <meta name="description" content="An artificial-life laboratory in which tiny bytecode organisms copy, mutate, compete and leave a replayable fossil record. Rust and WebAssembly, entirely in your browser.">
+  <title>The Darwin Machine — evolve a computer program</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#laboratory">Skip to the laboratory</a>
+
+  <header class="masthead">
+    <div class="masthead-copy">
+      <p class="kicker">THE ALMANAC · DIGITAL EVOLUTION LABORATORY</p>
+      <h1>The Darwin Machine</h1>
+      <p class="lede">Every coloured speck below is a running computer program. It must gather energy, copy its own bytecode, survive its copying mistakes—and leave descendants before it dies.</p>
+    </div>
+    <div class="masthead-actions" aria-label="Project information">
+      <button id="about" class="button quiet" type="button">How it works</button>
+      <span id="version" class="version" aria-label="Application version">loading…</span>
+    </div>
+  </header>
+
+  <main id="laboratory" class="shell">
+    <section class="control-deck panel" aria-labelledby="experiment-heading">
+      <div class="preset-copy">
+        <p id="preset-eyebrow" class="eyebrow">Selection from a supplied ancestor</p>
+        <h2 id="experiment-heading">Choose an experiment</h2>
+        <p id="preset-description">A deliberately wasteful replicator competes under low mutation.</p>
+      </div>
+
+      <div class="experiment-fields">
+        <label>
+          <span>Experiment</span>
+          <select id="preset">
+            <option value="first-replicator">First Replicator</option>
+            <option value="faster-smaller" selected>Faster, Smaller</option>
+            <option value="mutation-meltdown">Mutation Meltdown</option>
+            <option value="bottleneck">Bottleneck</option>
+            <option value="blue-nutrient">The Blue Nutrient</option>
+          </select>
+        </label>
+        <label>
+          <span>Deterministic seed</span>
+          <input id="seed" inputmode="numeric" autocomplete="off" spellcheck="false" value="1" aria-describedby="seed-note">
+          <small id="seed-note">Same build, laws, preset and seed: same history.</small>
+        </label>
+      </div>
+
+      <div class="transport" aria-label="Simulation transport controls">
+        <button id="reset" class="button primary" type="button">Reset</button>
+        <button id="play" class="button run" type="button" aria-pressed="false">Run</button>
+        <button id="step" class="button" type="button">One update</button>
+        <label class="speed-control" for="speed">
+          <span>Speed <output id="speed-label" for="speed">20×</output></span>
+          <input id="speed" type="range" min="0" max="4" value="2" step="1">
+        </label>
+        <button id="share" class="button quiet" type="button">Copy experiment link</button>
+      </div>
+    </section>
+
+    <section class="status-strip" aria-label="Current simulation status">
+      <span class="engine-state"><i aria-hidden="true"></i><span id="engine-status">loading Wasm…</span></span>
+      <dl>
+        <div><dt>update</dt><dd id="stat-update">0</dd></div>
+        <div><dt>population</dt><dd id="stat-population">0</dd></div>
+        <div><dt>exact genotypes</dt><dd id="stat-genotypes">0</dd></div>
+        <div><dt>dominant share</dt><dd id="stat-dominant">—</dd></div>
+        <div><dt>median genome</dt><dd id="stat-genome">—</dd></div>
+      </dl>
+      <code id="checksum" class="checksum">0000000000000000</code>
+    </section>
+
+    <p id="world-summary" class="sr-only" aria-live="polite">The world is loading.</p>
+
+    <div class="lab-grid">
+      <section class="dish-panel panel" aria-labelledby="dish-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">THE PETRI DISH</p>
+            <h2 id="dish-heading">A world of running bytecode</h2>
+          </div>
+          <div class="legend" aria-label="Dish legend">
+            <span><i class="legend-organism"></i> genetic lineage</span>
+            <span><i class="legend-energy"></i> energy</span>
+            <span><i class="legend-nutrient"></i> nutrient</span>
+          </div>
+        </div>
+        <div id="dish-wrap" class="dish-wrap">
+          <canvas id="dish" tabindex="0" role="img" aria-describedby="dish-help world-summary" width="960" height="640"></canvas>
+          <div class="dish-grid" aria-hidden="true"></div>
+          <p id="dish-help" class="dish-help">Click a cell to inspect it. With the dish focused, use the arrow keys to move the selection.</p>
+        </div>
+        <div class="dish-caption">
+          <p><strong>No hidden fitness score.</strong> Instructions cost energy. Births need space. Whatever leaves more surviving descendants becomes common.</p>
+          <button id="lab" class="text-button" type="button">Change the laboratory conditions →</button>
+        </div>
+      </section>
+
+      <aside class="inspector-panel panel" aria-labelledby="inspector-heading">
+        <div class="panel-heading compact">
+          <div>
+            <p class="eyebrow">LIVE DEBUGGER</p>
+            <h2 id="inspector-heading">Organism inspector</h2>
+          </div>
+        </div>
+
+        <div id="inspector-empty" class="empty-state">
+          <svg viewBox="0 0 120 90" aria-hidden="true">
+            <path d="M17 66 C25 32 45 18 60 18 C78 18 99 37 104 67"/>
+            <circle cx="42" cy="50" r="8"/><circle cx="78" cy="50" r="8"/>
+            <path d="M50 70 Q60 77 70 70"/><path d="M26 37 l-9-8 M94 37 l9-8 M60 18 V7"/>
+          </svg>
+          <h3>Select a cell</h3>
+          <p>Freeze one organism under the microscope without stopping the rest of the dish.</p>
+        </div>
+
+        <div id="inspector" hidden>
+          <h3 id="inspector-title">Organism</h3>
+          <dl id="inspector-meta" class="meta-grid"></dl>
+
+          <section class="debug-section" aria-labelledby="genome-heading">
+            <div class="section-heading"><h4 id="genome-heading">Executable genome</h4><small>IP · read head · hexadecimal bytes</small></div>
+            <div id="genome-bytes" class="genome-bytes" aria-label="Genome bytes"></div>
+          </section>
+
+          <section class="debug-section" aria-labelledby="diff-heading">
+            <div class="section-heading"><h4 id="diff-heading">Difference from parent</h4><small><span class="diff-key insert">inserted</span> <span class="diff-key delete">deleted</span></small></div>
+            <div id="parent-diff" class="parent-diff"></div>
+          </section>
+
+          <section class="debug-section" aria-labelledby="disassembly-heading">
+            <div class="section-heading"><h4 id="disassembly-heading">Disassembly</h4><small>every byte is valid</small></div>
+            <div class="table-scroll">
+              <table class="disassembly-table">
+                <thead><tr><th>heads</th><th>addr</th><th>byte</th><th>op</th><th>operand</th></tr></thead>
+                <tbody id="disassembly"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="debug-section split-debug" aria-labelledby="state-heading">
+            <div>
+              <div class="section-heading"><h4 id="state-heading">Registers</h4></div>
+              <ul id="registers" class="registers"></ul>
+            </div>
+            <div class="meters">
+              <label>Child construction <progress id="child-progress" max="1" value="0"></progress><span>No child buffer allocated</span></label>
+              <label>Local nutrient <meter id="local-resource" min="0" max="1" value="0"></meter><span>0 local nutrient units</span></label>
+            </div>
+          </section>
+
+          <section class="debug-section sandbox-section" aria-labelledby="sandbox-heading">
+            <div class="section-heading">
+              <div><h4 id="sandbox-heading">Frozen sandbox</h4><small>trace a clone; never alters the world</small></div>
+              <button id="sandbox" class="button small" type="button">Run 220 instructions</button>
+            </div>
+            <div id="sandbox-output" class="sandbox-output muted">Select an organism, then trace its bytecode here.</div>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <section class="observatory panel" aria-labelledby="observatory-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">POPULATION OBSERVATORY</p>
+          <h2 id="observatory-heading">The history written by descendants</h2>
+        </div>
+        <p class="heading-note">One run is a story. Repeated seeds are evidence.</p>
+      </div>
+
+      <div class="chart-grid">
+        <figure>
+          <figcaption><strong>Population and diversity</strong><span><i class="key-a"></i> population <i class="key-b"></i> genotypes</span></figcaption>
+          <canvas id="population-chart" width="700" height="220" role="img" aria-label="Population and exact genotype count over recent updates"></canvas>
+        </figure>
+        <figure>
+          <figcaption><strong>Genome and replication cost</strong><span><i class="key-a"></i> median bytes <i class="key-b"></i> instructions</span></figcaption>
+          <canvas id="genome-chart" width="700" height="220" role="img" aria-label="Median genome length and mean replication instruction count over recent updates"></canvas>
+        </figure>
+      </div>
+
+      <div class="observatory-grid">
+        <section aria-labelledby="genotypes-heading">
+          <h3 id="genotypes-heading">Dominant exact genotypes</h3>
+          <div class="table-scroll">
+            <table class="genotype-table">
+              <thead><tr><th>id</th><th>hash</th><th>active</th><th>bytes</th><th>births</th></tr></thead>
+              <tbody id="top-genotypes"><tr><td colspan="5">Waiting for the first sample…</td></tr></tbody>
+            </table>
+          </div>
+          <ol id="accessible-population" class="sr-only"><li>The world is loading.</li></ol>
+        </section>
+        <section aria-labelledby="fossils-heading">
+          <h3 id="fossils-heading">Fossil record</h3>
+          <ol id="fossils" class="fossil-list"><li>No fossils yet.</li></ol>
+        </section>
+      </div>
+    </section>
+
+    <section class="milestone-board panel" aria-labelledby="windows-heading">
+      <div class="milestone-copy">
+        <p class="eyebrow">THE ENTIRELY SOBER LONG-TERM PLAN</p>
+        <h2 id="windows-heading">Can evolution eventually produce Windows 3.1?</h2>
+        <p>Not in this release. Probably not before the Sun becomes a red giant. Nevertheless, science benefits from clear objectives.</p>
+      </div>
+      <ol class="milestones">
+        <li class="done"><span>01</span><strong>Self-copying bytecode</strong><small>supplied ancestor</small></li>
+        <li class="active"><span>02</span><strong>Open-ended optimisation</strong><small>currently making bad decisions</small></li>
+        <li><span>03</span><strong>Ecology and parasites</strong><small>shared-memory substrate</small></li>
+        <li><span>04</span><strong>Interpreters and kernels</strong><small>several geological eras</small></li>
+        <li><span>05</span><strong>WIN.COM</strong><small>then GDI.EXE refuses to load</small></li>
+        <li><span>06</span><strong>Solitaire</strong><small>the apex organism</small></li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>The Darwin Machine</strong> runs locally in one browser Worker. It sends no experiment, genome, save or telemetry anywhere.</p>
+    <p>Rust · WebAssembly · deterministic integer state · source and evidence included</p>
+  </footer>
+
+  <dialog id="lab-dialog" class="dialog wide-dialog">
+    <form method="dialog" class="dialog-shell">
+      <header><div><p class="eyebrow">LABORATORY CONDITIONS</p><h2>Apply pressure, then watch what survives</h2></div><button class="icon-button" value="cancel" aria-label="Close laboratory">×</button></header>
+      <div class="dialog-content lab-controls">
+        <section>
+          <h3>Copying error rate</h3>
+          <p>Substitutions are attempted independently for each byte copied into a viable child. Insertions and deletions remain rarer.</p>
+          <label class="range-row" for="mutation"><span id="mutation-value">0.150% / copied byte</span><input id="mutation" type="range" min="0" max="80000" step="250" value="1500"></label>
+          <p id="expected-mutation" class="calculation">At 16 bytes: 0.024 substitutions per birth on average.</p>
+        </section>
+        <section class="intervention-grid">
+          <button id="bottleneck" type="button"><strong>Create a bottleneck</strong><span>Keep eight deterministic survivors.</span></button>
+          <button id="catastrophe" type="button"><strong>Kill 70%</strong><span>A seed-replayable mass mortality event.</span></button>
+          <button id="resource-pulse" type="button"><strong>Nutrient pulse</strong><span>Add 240 units to every cell.</span></button>
+        </section>
+        <section class="law-card">
+          <h3>The disclosed laws</h3>
+          <dl>
+            <div><dt>Selection</dt><dd>No score. Differential surviving reproduction only.</dd></div>
+            <div><dt>Scheduling</dt><dd>Every occupied cell receives one turn per update in a seed-derived permutation.</dd></div>
+            <div><dt>Birth conflict</dt><dd>Requests commit together at update end; the keyed contention draw is independent of traversal order.</dd></div>
+            <div><dt>Arithmetic</dt><dd>Authoritative simulation state is integer-only.</dd></div>
+            <div><dt>Mutation</dt><dd>Copy substitutions, occasional insertion/deletion and no illegal opcodes.</dd></div>
+            <div><dt>Blue nutrient</dt><dd>A disclosed XOR reaction gives extra energy; it is artificial physics, not an invisible reward.</dd></div>
+          </dl>
+        </section>
+        <button class="button primary dialog-done" data-close type="button">Return to the dish</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="about-dialog" class="dialog wide-dialog">
+    <form method="dialog" class="dialog-shell">
+      <header><div><p class="eyebrow">ABOUT THE EXPERIMENT</p><h2>A tiny computer designed to survive mutation</h2></div><button class="icon-button" value="cancel" aria-label="Close explanation">×</button></header>
+      <div class="dialog-content prose">
+        <p class="standfirst">This is inoculated digital evolution: release one begins with a supplied self-replicating ancestor, then lets copying errors, resource limits, space and death decide which executable genomes leave descendants.</p>
+        <div class="explain-grid">
+          <section><span>01</span><h3>Genome = program</h3><p>An organism is a circular byte string interpreted by an eight-register virtual CPU. Every possible byte decodes to a valid instruction.</p></section>
+          <section><span>02</span><h3>Replication is code</h3><p>The ancestor allocates a child, reads itself byte by byte, writes the child and divides. There is deliberately no magical <code>COPY_SELF</code>.</p></section>
+          <section><span>03</span><h3>Mutation changes algorithms</h3><p>A substitution can alter an instruction or operand. An insertion or deletion can change control flow, genome length and copying cost.</p></section>
+          <section><span>04</span><h3>Fitness is retrospective</h3><p>The simulator never calls a <code>fitness()</code> function. “Fitter” means only that a genotype left more surviving descendants in these disclosed conditions.</p></section>
+        </div>
+        <h3>What it does—and does not—claim</h3>
+        <p>The supplied ancestor experiment can demonstrate mutation, heredity, selection, drift, extinction and adaptation within this artificial substrate. It does <em>not</em> demonstrate life appearing spontaneously from random bytes. A separate native research mode searches one-step mutational neighbourhoods and later substrates without smuggling replication into the rules.</p>
+        <h3>Reproducibility</h3>
+        <p>The share link records the preset and 64-bit seed. Saves also record exact engine, ISA, RNG, physics and save-format versions, plus a 128-bit authoritative-state checksum. A full checkpoint—not a theatrical animation—can be exported and reloaded.</p>
+        <h3>Implementation</h3>
+        <p>The deterministic core is ordinary Rust used by both a native assay CLI and the browser. The browser build is compiled to WebAssembly and runs in a dedicated module Worker. The canvas receives compact transferable snapshots; the DOM remains responsible for controls, explanations and accessible summaries.</p>
+        <button class="button primary dialog-done" data-close type="button">Back to the experiment</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="save-dialog" class="dialog save-dialog">
+    <form method="dialog" class="dialog-shell">
+      <header><div><p class="eyebrow">BROWSER CHECKPOINT</p><h2>Name this experiment</h2></div><button class="icon-button" value="cancel" aria-label="Cancel save">×</button></header>
+      <div class="dialog-content">
+        <label for="save-name">Save name</label>
+        <input id="save-name" maxlength="80" autocomplete="off">
+        <div class="dialog-actions"><button class="button quiet" value="cancel">Cancel</button><button id="save-confirm" class="button primary" type="button">Save locally</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <section class="storage-drawer" aria-labelledby="storage-heading">
+    <div>
+      <p class="eyebrow">EXPERIMENT MEMORY</p>
+      <h2 id="storage-heading">Keep, export and replay</h2>
+      <p>Browser saves live only on this device. Exported <code>.darwin</code> checkpoints include the complete authoritative state and version identity.</p>
+    </div>
+    <div class="storage-actions">
+      <button id="save" class="button" type="button">Save in browser</button>
+      <button id="export" class="button" type="button">Export checkpoint</button>
+      <button id="import" class="button" type="button">Import checkpoint</button>
+      <input id="file" type="file" accept=".darwin,application/x-darwin-machine" hidden>
+    </div>
+    <button id="recover" class="button recovery" type="button" hidden>Recover automatic checkpoint</button>
+    <ul id="saves" class="save-list"><li class="muted">No browser saves yet.</li></ul>
+  </section>
+
+  <aside id="intro" class="intro" aria-labelledby="intro-title">
+    <div class="intro-card">
+      <p class="eyebrow">A THREE-MINUTE ORIGIN STORY</p>
+      <h2 id="intro-title">Begin with one clumsy replicator</h2>
+      <p id="intro-copy">We supplied the first executable ancestor. The experiment begins after that: copying errors change its real instructions, and only surviving descendants remain visible.</p>
+      <div class="ancestor-strip" aria-label="The 16-byte minimal ancestor">
+        <code>88 f0 d4 d8 11 02 01 62 72 31 81 c1 92 01 02 e0</code>
+      </div>
+      <div class="intro-actions"><button id="intro-skip" class="button quiet" type="button">Skip guide</button><button id="begin" class="button primary" type="button">Run the first replicator</button></div>
+    </div>
+  </aside>
+
+  <aside id="fatal" class="fatal" hidden role="alertdialog" aria-modal="true" aria-labelledby="fatal-heading">
+    <div class="fatal-card">
+      <p class="eyebrow">THE PETRI DISH HAS GONE QUIET</p>
+      <h2 id="fatal-heading">The simulation Worker stopped</h2>
+      <pre id="fatal-text"></pre>
+      <p>Your latest automatic recovery checkpoint may still be in this browser.</p>
+      <div><button id="reload" class="button primary" type="button">Reload the laboratory</button></div>
+    </div>
+  </aside>
+
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="./app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

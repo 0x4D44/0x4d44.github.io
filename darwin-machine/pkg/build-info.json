@@ -1,0 +1,10 @@
+{
+  "buildId": "darwin-2026.08.01.1",
+  "engineVersion": "0.1.0",
+  "isaVersion": 1,
+  "rngVersion": 1,
+  "physicsVersion": 1,
+  "saveVersion": 1,
+  "generated": false,
+  "note": "The build workflow replaces this marker with the verified wasm-pack output metadata."
+}

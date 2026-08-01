@@ -1,0 +1,13 @@
+{
+  "name": "The Darwin Machine",
+  "short_name": "Darwin Machine",
+  "description": "A deterministic artificial-life laboratory running in Rust and WebAssembly.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#081015",
+  "theme_color": "#081015",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

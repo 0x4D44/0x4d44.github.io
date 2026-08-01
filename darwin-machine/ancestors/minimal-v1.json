@@ -1,0 +1,30 @@
+{
+  "schema": "darwin-ancestor-v1",
+  "id": "minimal-v1",
+  "isaVersion": 1,
+  "description": "Small correctness ancestor: exact-copy loop with no deliberately redundant work.",
+  "bytes": [
+    29,
+    21,
+    22,
+    23,
+    33,
+    32,
+    0,
+    88,
+    89,
+    34,
+    46,
+    16,
+    50,
+    0,
+    32,
+    26
+  ],
+  "hex": "1d 15 16 17 21 20 00 58 59 22 2e 10 32 00 20 1a",
+  "source": "See the annotated canonical assembly in rust/crates/darwin-core/src/lib.rs.",
+  "expected": {
+    "exactChild": true,
+    "childDivides": true
+  }
+}
