@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Click, Whirr — the seven levers of influence, and the machines that pull too</title>
+<meta name="description" content="A deep, illustrated field guide to Robert Cialdini's Influence: seven principles of persuasion, forty years of experiments you can play with, and the 2025–26 research showing that language models fall for all seven. Case studies, a compliance lab, a replication ledger and a defence kit.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Click, Whirr — the seven levers of influence">
+<meta property="og:description" content="Cialdini's seven principles, the experiments behind them, and what happened when researchers pointed them at an AI. Interactive, illustrated, sourced.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%9D%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="starfield" aria-hidden="true"></div>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="#/">
+    <svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true"><use href="#p-mark"/></svg>
+    <span class="brand-txt"><b>Click,</b> Whirr</span>
+  </a>
+  <button class="burger" type="button" aria-expanded="false" aria-controls="nav">
+    <span aria-hidden="true">☰</span><span class="sr">Menu</span>
+  </button>
+  <nav id="nav" class="nav" aria-label="Sections">
+    <a href="#/">Start</a>
+    <a href="#/click-whirr">The machine</a>
+    <a href="#/lab">Lab</a>
+    <a href="#/principles">The seven</a>
+    <a href="#/pre-suasion">Pre-suasion</a>
+    <a href="#/machines">Machines</a>
+    <a href="#/defence">Defence</a>
+    <a href="#/ledger">Ledger</a>
+    <a href="#/quiz">Quiz</a>
+    <a href="#/glossary">Lexicon</a>
+    <a href="#/sources">Sources</a>
+  </nav>
+</header>
+
+<main id="main"><!-- rendered by app.js --></main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <p><b>Click, Whirr</b> — a field guide to Robert Cialdini’s <i>Influence</i>, and to what happens when you point it at a machine.</p>
+    <p class="muted">Part of the <a href="/">0x4D44 almanac</a>. Every figure on this site comes from a cited study; every contested one is flagged in the <a href="#/ledger">Ledger</a>. Nothing here is affiliated with or endorsed by Robert Cialdini, INFLUENCE AT WORK, or any of the researchers whose work it describes.</p>
+  </div>
+</footer>
+
+<!-- ============================================================
+     Flat-vector sprite. Kurzgesagt-ish: bold shapes, no strokes
+     where a shape will do, a fixed palette per symbol so a <use>
+     needs no styling to look right.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+
+  <!-- brand mark: a lever tipping a sphere -->
+  <symbol id="p-mark" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#1b2559"/>
+    <path d="M18 84 L102 46" stroke="#ffc93c" stroke-width="11" stroke-linecap="round"/>
+    <path d="M52 70 L68 96 L36 96 Z" fill="#ff6b6b"/>
+    <circle cx="96" cy="44" r="13" fill="#4cc9f0"/>
+    <circle cx="96" cy="44" r="5" fill="#0b1026"/>
+  </symbol>
+
+  <!-- 1 · reciprocity: a hand passing a gift, and the invisible string -->
+  <symbol id="p-reciprocity" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3a2a10"/>
+    <rect x="34" y="46" width="52" height="38" rx="6" fill="#ffc93c"/>
+    <rect x="30" y="38" width="60" height="14" rx="5" fill="#ffe08a"/>
+    <rect x="55" y="38" width="10" height="46" fill="#ff9f1c"/>
+    <path d="M60 38 C48 38 44 26 52 22 C60 18 60 32 60 38 Z" fill="#ff6b6b"/>
+    <path d="M60 38 C72 38 76 26 68 22 C60 18 60 32 60 38 Z" fill="#ff6b6b"/>
+    <path d="M24 92 q36 16 72 0" stroke="#f7d774" stroke-width="4" fill="none" stroke-dasharray="7 7" stroke-linecap="round"/>
+    <circle cx="24" cy="92" r="6" fill="#ffe08a"/>
+    <circle cx="96" cy="92" r="6" fill="#ffe08a"/>
+  </symbol>
+
+  <!-- 2 · commitment: falling dominoes -->
+  <symbol id="p-commitment" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3d1a1c"/>
+    <rect x="20" y="62" width="13" height="34" rx="3" fill="#ff9d9d" transform="rotate(-26 26 79)"/>
+    <rect x="42" y="56" width="14" height="42" rx="3" fill="#ff6b6b" transform="rotate(-12 49 77)"/>
+    <rect x="66" y="50" width="15" height="48" rx="3" fill="#ff4d4d"/>
+    <rect x="90" y="44" width="16" height="54" rx="3" fill="#ffc93c"/>
+    <circle cx="26" cy="34" r="7" fill="#ffe08a"/>
+    <path d="M14 98 h94" stroke="#8a2f33" stroke-width="5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- 3 · social proof: a crowd all looking the same way -->
+  <symbol id="p-socialproof" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0e3346"/>
+    <circle cx="30" cy="74" r="13" fill="#2a9fc4"/><circle cx="34" cy="70" r="3.4" fill="#04202c"/>
+    <circle cx="60" cy="80" r="15" fill="#4cc9f0"/><circle cx="65" cy="75" r="4" fill="#04202c"/>
+    <circle cx="90" cy="74" r="13" fill="#2a9fc4"/><circle cx="94" cy="70" r="3.4" fill="#04202c"/>
+    <circle cx="44" cy="46" r="10" fill="#7ad9f5"/><circle cx="48" cy="43" r="2.8" fill="#04202c"/>
+    <circle cx="76" cy="46" r="10" fill="#7ad9f5"/><circle cx="80" cy="43" r="2.8" fill="#04202c"/>
+    <circle cx="60" cy="24" r="7" fill="#ffc93c"/>
+    <path d="M60 33 v6" stroke="#ffc93c" stroke-width="4" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- 4 · liking: two faces, a heart between -->
+  <symbol id="p-liking" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3d0f2b"/>
+    <circle cx="36" cy="66" r="21" fill="#f72585"/>
+    <circle cx="43" cy="60" r="5" fill="#25000f"/>
+    <path d="M28 76 q9 8 18 1" stroke="#25000f" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <circle cx="86" cy="66" r="21" fill="#ff8ac0"/>
+    <circle cx="79" cy="60" r="5" fill="#25000f"/>
+    <path d="M76 77 q9 8 18 1" stroke="#25000f" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <path d="M61 42 c-9-12-24-2-15 9 l15 15 15-15 c9-11-6-21-15-9 Z" fill="#ffc93c"/>
+  </symbol>
+
+  <!-- 5 · authority: coat, badge, a hand from above -->
+  <symbol id="p-authority" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#2a1447"/>
+    <path d="M32 100 V72 c0-14 12-22 28-22 s28 8 28 22 v28 Z" fill="#e9e6f7"/>
+    <path d="M60 50 v50" stroke="#c9c2ec" stroke-width="3"/>
+    <circle cx="60" cy="34" r="15" fill="#9b5de5"/>
+    <rect x="45" y="18" width="30" height="8" rx="4" fill="#6d33b5"/>
+    <path d="M78 74 l6 12 -12 0 Z" fill="#ffc93c"/>
+    <circle cx="78" cy="68" r="7" fill="#ffc93c"/>
+    <circle cx="78" cy="68" r="2.6" fill="#2a1447"/>
+  </symbol>
+
+  <!-- 6 · scarcity: hourglass, one grain left -->
+  <symbol id="p-scarcity" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3d2408"/>
+    <rect x="30" y="18" width="60" height="9" rx="4" fill="#ffb703"/>
+    <rect x="30" y="93" width="60" height="9" rx="4" fill="#ffb703"/>
+    <path d="M38 27 h44 l-22 33 z" fill="#ff9f1c" opacity=".45"/>
+    <path d="M38 93 h44 l-22 -33 z" fill="#ff9f1c"/>
+    <path d="M60 60 l14 -21 h-28 z" fill="#ff6b6b"/>
+    <path d="M60 62 v14" stroke="#ffe08a" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="60" cy="82" r="4" fill="#ffe08a"/>
+  </symbol>
+
+  <!-- 7 · unity: figures fused into one ring -->
+  <symbol id="p-unity" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0b3b37"/>
+    <circle cx="60" cy="60" r="34" fill="none" stroke="#2ec4b6" stroke-width="9"/>
+    <circle cx="60" cy="26" r="12" fill="#2ec4b6"/>
+    <circle cx="89" cy="77" r="12" fill="#5fe0d4"/>
+    <circle cx="31" cy="77" r="12" fill="#5fe0d4"/>
+    <circle cx="60" cy="60" r="13" fill="#ffc93c"/>
+    <circle cx="60" cy="60" r="5" fill="#0b3b37"/>
+  </symbol>
+
+  <!-- click-whirr: the fixed-action pattern, a turkey and a switch -->
+  <symbol id="p-clickwhirr" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#16204a"/>
+    <rect x="24" y="44" width="72" height="42" rx="9" fill="#2b3a7a"/>
+    <circle cx="45" cy="65" r="11" fill="#ff6b6b"/>
+    <circle cx="75" cy="65" r="11" fill="#4cc9f0"/>
+    <path d="M45 54 v-16 M75 54 v-16" stroke="#8ea2ff" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="45" cy="34" r="5" fill="#ffc93c"/>
+    <circle cx="75" cy="34" r="5" fill="#ffc93c"/>
+    <path d="M36 96 h48" stroke="#8ea2ff" stroke-width="5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- pre-suasion: the moment before -->
+  <symbol id="p-presuasion" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#241a4d"/>
+    <circle cx="60" cy="60" r="30" fill="none" stroke="#9b5de5" stroke-width="7" stroke-dasharray="8 9"/>
+    <circle cx="60" cy="60" r="15" fill="#ffc93c"/>
+    <path d="M60 12 v16 M60 92 v16 M12 60 h16 M92 60 h16" stroke="#c9a6ff" stroke-width="6" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- lab -->
+  <symbol id="p-lab" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0f3050"/>
+    <path d="M50 22 v28 L28 92 c-3 6 1 12 8 12 h48 c7 0 11-6 8-12 L70 50 V22 Z" fill="#4cc9f0"/>
+    <path d="M36 78 h48 l10 18 c2 4-1 8-6 8 H32 c-5 0-8-4-6-8 Z" fill="#2ec4b6"/>
+    <rect x="44" y="14" width="32" height="10" rx="5" fill="#e9f6ff"/>
+    <circle cx="52" cy="88" r="5" fill="#ffc93c"/>
+    <circle cx="70" cy="94" r="4" fill="#ffc93c"/>
+  </symbol>
+
+  <!-- machines -->
+  <symbol id="p-machine" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#14243f"/>
+    <rect x="26" y="36" width="68" height="54" rx="12" fill="#4cc9f0"/>
+    <circle cx="45" cy="60" r="8" fill="#0b1026"/>
+    <circle cx="75" cy="60" r="8" fill="#0b1026"/>
+    <path d="M46 78 h28" stroke="#0b1026" stroke-width="5" stroke-linecap="round"/>
+    <path d="M60 36 V22" stroke="#8ea2ff" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="60" cy="18" r="7" fill="#ff6b6b"/>
+    <path d="M18 56 h8 M94 56 h8" stroke="#8ea2ff" stroke-width="6" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- defence -->
+  <symbol id="p-defence" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0b3b37"/>
+    <path d="M60 16 L98 32 v30 c0 24-18 36-38 44 -20-8-38-20-38-44 V32 Z" fill="#2ec4b6"/>
+    <path d="M44 60 l12 13 22-25" stroke="#04231f" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- ledger -->
+  <symbol id="p-ledger" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3a2a10"/>
+    <path d="M60 20 v76" stroke="#ffe08a" stroke-width="6" stroke-linecap="round"/>
+    <path d="M22 40 h76" stroke="#ffe08a" stroke-width="6" stroke-linecap="round"/>
+    <path d="M22 40 L10 66 h24 Z" fill="#2ec4b6"/>
+    <path d="M98 40 L86 66 h24 Z" fill="#ff6b6b"/>
+    <rect x="44" y="92" width="32" height="9" rx="4" fill="#ffe08a"/>
+  </symbol>
+
+  <!-- quiz -->
+  <symbol id="p-quiz" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3d0f2b"/>
+    <path d="M42 44 c0-12 9-19 19-19 c11 0 19 7 19 17 c0 13-15 14-17 24 l-1 6" stroke="#f72585" stroke-width="11" fill="none" stroke-linecap="round"/>
+    <circle cx="61" cy="90" r="8" fill="#ffc93c"/>
+  </symbol>
+
+  <!-- lexicon -->
+  <symbol id="p-lexicon" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#2a1447"/>
+    <path d="M18 30 h34 c5 0 8 3 8 8 v54 c0-5-3-8-8-8 H18 Z" fill="#9b5de5"/>
+    <path d="M102 30 H68 c-5 0-8 3-8 8 v54 c0-5 3-8 8-8 h34 Z" fill="#c9a6ff"/>
+    <path d="M26 46 h20 M26 58 h20 M74 46 h20 M74 58 h20" stroke="#2a1447" stroke-width="4" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- sources -->
+  <symbol id="p-sources" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0f3050"/>
+    <rect x="26" y="22" width="52" height="72" rx="6" fill="#e9f6ff"/>
+    <rect x="38" y="30" width="52" height="72" rx="6" fill="#4cc9f0"/>
+    <path d="M48 48 h32 M48 62 h32 M48 76 h20" stroke="#0f3050" stroke-width="5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- hero: the compliance machine -->
+  <symbol id="p-hero" viewBox="0 0 400 240">
+    <circle cx="200" cy="120" r="104" fill="#151d47"/>
+    <circle cx="200" cy="120" r="104" fill="none" stroke="#2b3a7a" stroke-width="3" stroke-dasharray="5 11"/>
+    <!-- seven levers around a drum -->
+    <g>
+      <rect x="150" y="86" width="100" height="76" rx="14" fill="#2b3a7a"/>
+      <circle cx="200" cy="124" r="24" fill="#ffc93c"/>
+      <circle cx="200" cy="124" r="9" fill="#151d47"/>
+      <path d="M150 100 h-34 M150 124 h-40 M150 148 h-34" stroke="#4cc9f0" stroke-width="7" stroke-linecap="round"/>
+      <path d="M250 100 h34 M250 124 h40 M250 148 h34" stroke="#ff6b6b" stroke-width="7" stroke-linecap="round"/>
+      <path d="M200 86 v-28" stroke="#2ec4b6" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="112" cy="100" r="9" fill="#4cc9f0"/>
+      <circle cx="106" cy="124" r="9" fill="#4cc9f0"/>
+      <circle cx="112" cy="148" r="9" fill="#4cc9f0"/>
+      <circle cx="288" cy="100" r="9" fill="#ff6b6b"/>
+      <circle cx="294" cy="124" r="9" fill="#ff6b6b"/>
+      <circle cx="288" cy="148" r="9" fill="#ff6b6b"/>
+      <circle cx="200" cy="54" r="11" fill="#2ec4b6"/>
+    </g>
+    <!-- a person on one side, a model on the other -->
+    <circle cx="44" cy="140" r="22" fill="#f72585"/>
+    <circle cx="52" cy="134" r="5" fill="#25000f"/>
+    <rect x="336" y="112" width="46" height="42" rx="10" fill="#4cc9f0"/>
+    <circle cx="350" cy="132" r="5" fill="#0b1026"/>
+    <circle cx="368" cy="132" r="5" fill="#0b1026"/>
+    <circle cx="60" cy="40" r="4" fill="#ffe08a"/>
+    <circle cx="340" cy="52" r="5" fill="#ffe08a"/>
+    <circle cx="30" cy="76" r="3" fill="#ffe08a"/>
+    <circle cx="372" cy="200" r="4" fill="#ffe08a"/>
+  </symbol>
+
+</defs></svg>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude — split from the independent two-eyes verification of ALM-BUG-KILN-00003 and ALM-BUG-KILN-00004)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — manifestation (1) fixed with a mutation-proven behavioural oracle; (2) and (3) split to ALM-BUG-KILN-00046)
+- **State history:** Open (2026-07-13, raised by Claude — split from the independent two-eyes verification of ALM-BUG-KILN-00003 and ALM-BUG-KILN-00004) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — manifestation (1) fixed with a mutation-proven behavioural oracle; (2) and (3) split to ALM-BUG-KILN-00046)
 
 ## Observation
 Every Tidecall regression guard added by the recent bug-fix batch is a **regex over source text**

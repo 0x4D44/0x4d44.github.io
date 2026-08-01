@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the reported malformed markup does not appear in ANY committed revision; a guard was nonetheless added)
+- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the reported malformed markup does not appear in ANY committed revision; a guard was nonetheless added)
 
 ## Observation
 Three bottom-navigation icon backgrounds in `japanese-travel-rpg/index.html` have malformed DC interpolation syntax: `background:{{ nav3 "` at `japanese-travel-rpg/index.html:279`, `background:{{ nav4 "` at `japanese-travel-rpg/index.html:281`, and `background:{{ nav5 "` at `japanese-travel-rpg/index.html:282`.

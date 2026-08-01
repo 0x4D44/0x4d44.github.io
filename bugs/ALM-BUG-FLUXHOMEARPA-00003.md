@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — measured 48/48 missing phrase ids before the re-point, 0/48 after)
+- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — measured 48/48 missing phrase ids before the re-point, 0/48 after)
 
 ## Observation
 The shipped DC app applies `content-extra.js` in `japanese-travel-rpg/index.html:516` and replaces each overlaid phrase with a new ID at `japanese-travel-rpg/index.html:517`. Roleplay steps were already built in `japanese-travel-rpg/content.js:29` from the original generated phrase IDs. Later, roleplay feedback and safe-answer rendering look up `expectedPhraseIds` in the overlaid phrase map at `japanese-travel-rpg/engines.js:27` and `japanese-travel-rpg/index.html:910`, filtering out every missing result.

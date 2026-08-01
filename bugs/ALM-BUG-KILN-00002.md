@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
-- **State history:** Fixed (2026-07-11, fixed by Claude in b2c47f0; awaiting independent verification)
-- **State history:** Closed (2026-07-13, independently verified and closed by Claude — not the fixer; fix-induced focus regression split to ALM-BUG-KILN-00028)
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in b2c47f0; awaiting independent verification) -> Closed (2026-07-13, independently verified and closed by Claude — not the fixer; fix-induced focus regression split to ALM-BUG-KILN-00028)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage, play out a round to its
