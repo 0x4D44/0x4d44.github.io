@@ -12,6 +12,7 @@ import {
   LAUNCH_ACCEL,
   MIN_SELF_CLEARANCE,
   CoasterSim,
+  RideLog,
   buildTrack,
   mulberry32,
   selfClearance,
@@ -475,6 +476,88 @@ test("a tunnel site is level, upright, low, and does not bury the rest of the ri
   }
   assert.ok(found > SEEDS.length * 0.4,
     `only ${found}/${SEEDS.length} circuits found anywhere to put a tunnel`);
+});
+
+test("the back seat is a different ride from the front seat", () => {
+  // This is the whole reason enthusiasts queue longer for the back: over
+  // a crest the front car is already falling while the back is still
+  // being dragged up over it, so the two seats do not feel the same
+  // thing at the same moment.
+  let biggestDifference = 0;
+  let backHarder = 0;
+  let frontHarder = 0;
+  for (const seed of SEEDS.slice(0, 20)) {
+    const t = buildTrack(seed);
+    const sim = new CoasterSim(t);
+    for (let i = 0; i < 4000; i++) {
+      const ride = sim.step(1 / 60);
+      if (ride.mode !== "free") continue;
+      const front = sim.feltAt(ride.s);
+      const back = sim.feltAt(ride.s - 13.8); // four cars behind
+      assert.ok(Number.isFinite(front) && Number.isFinite(back),
+        `seed ${seed}: non-finite g at a seat`);
+      assert.ok(Math.abs(back) < 12, `seed ${seed}: ${back.toFixed(1)}g in the back seat`);
+      const difference = back - front;
+      biggestDifference = Math.max(biggestDifference, Math.abs(difference));
+      if (difference > 0.4) backHarder += 1;
+      if (difference < -0.4) frontHarder += 1;
+    }
+  }
+  assert.ok(biggestDifference > 0.5,
+    `the seats never differed by more than ${biggestDifference.toFixed(2)}g — they are the same ride`);
+  assert.ok(backHarder > 0 && frontHarder > 0,
+    "one seat was always the harder one, which is not how a train works");
+});
+
+test("feltAt agrees with the sim's own reading at the sim's own position", () => {
+  const t = buildTrack(5150);
+  const sim = new CoasterSim(t);
+  for (let i = 0; i < 3000; i++) sim.step(1 / 240);
+  // The sim smooths its readout for legibility, so this is a sanity
+  // check that the two are the same calculation, not a bit-match.
+  const direct = sim.feltAt(sim.s);
+  assert.ok(Math.abs(direct - sim.gForce) < 1.0,
+    `feltAt says ${direct.toFixed(2)}g where the sim reads ${sim.gForce.toFixed(2)}g`);
+});
+
+test("the ride log times laps and counts airtime", () => {
+  const t = buildTrack(20260726);
+  const sim = new CoasterSim(t);
+  const log = new RideLog();
+  const laps = [];
+  for (let i = 0; i < 60 * 300 && laps.length < 3; i++) {
+    const ride = sim.step(1 / 60);
+    const finished = log.sample(ride, 1 / 60);
+    if (finished) laps.push(finished);
+  }
+
+  assert.ok(laps.length >= 2, `only ${laps.length} laps logged`);
+  for (const lap of laps) {
+    assert.ok(lap.complete);
+    // A lap of a 400-2600m circuit at coaster speeds is tens of seconds.
+    assert.ok(lap.seconds > 10 && lap.seconds < 400, `lap took ${lap.seconds.toFixed(1)}s`);
+    assert.ok(lap.topSpeed > 10, `top speed only ${lap.topSpeed.toFixed(1)} m/s`);
+    assert.ok(lap.maxG > 1, `max g only ${lap.maxG.toFixed(2)}`);
+    assert.ok(lap.airtime >= 0 && lap.airtime < lap.seconds,
+      `${lap.airtime.toFixed(1)}s of airtime in a ${lap.seconds.toFixed(1)}s lap`);
+    assert.ok(lap.maxHeight > 10, `never got above ${lap.maxHeight.toFixed(1)}m`);
+  }
+
+  // Laps after the first are the same ride, so they should agree closely.
+  const [, second, third] = laps;
+  assert.ok(Math.abs(second.seconds - third.seconds) < 2,
+    `two laps of the same circuit took ${second.seconds.toFixed(1)}s and ${third.seconds.toFixed(1)}s`);
+  assert.ok(log.best.airtime >= second.airtime && log.best.airtime >= third.airtime,
+    "the best lap is not the best lap");
+  assert.equal(log.last, laps[laps.length - 1]);
+});
+
+test("the ride log ignores a zero or backwards frame", () => {
+  const log = new RideLog();
+  const ride = { v: 20, gForce: 1, mode: "free", height: 5, laps: 0 };
+  assert.equal(log.sample(ride, 0), null);
+  assert.equal(log.sample(ride, -1), null);
+  assert.equal(log.current.seconds, 0, "a zero-length frame still advanced the clock");
 });
 
 test("support columns reach the ground and skip inverted track", () => {

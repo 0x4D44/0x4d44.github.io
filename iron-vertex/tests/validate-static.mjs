@@ -92,7 +92,7 @@ check(
   browserGlobals.length === 0,
   `track.js touches no browser globals — it must stay testable under node (found: ${browserGlobals.join(", ")})`,
 );
-for (const name of ["buildTrack", "CoasterSim", "supportColumns", "selfClearance"]) {
+for (const name of ["buildTrack", "CoasterSim", "RideLog", "supportColumns", "selfClearance", "tunnelSite"]) {
   check(
     new RegExp(`export\\s+(?:function|class)\\s+${name}\\b`).test(track),
     `track.js exports ${name}`,
@@ -118,14 +118,15 @@ check(
 );
 
 // ---- the controls the browser test drives ----
-for (const id of ["scene", "btn-ride", "btn-new", "btn-cam", "btn-sound", "track-name",
-  "track-facts", "notice", "stat-speed", "stat-g", "stat-height", "stat-length"]) {
+for (const id of ["scene", "btn-ride", "btn-new", "btn-cam", "btn-seat", "btn-sound",
+  "track-name", "track-facts", "notice", "minimap", "lap-report", "lap-rows",
+  "stat-speed", "stat-g", "stat-height", "stat-length"]) {
   check(
     new RegExp(`id=["']${id}["']`).test(html),
     `#${id} exists in the page`,
   );
 }
-for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-sound"]) {
+for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-seat", "btn-sound"]) {
   const tag = html.match(new RegExp(`<([a-z]+)\\b(?=[^>]*id=["']${id}["'])[^>]*>`, "i"));
   check(tag?.[1]?.toLowerCase() === "button", `#${id} is a real <button>`);
   check(/aria-label=/.test(tag?.[0] ?? ""), `#${id} carries an accessible name`);
