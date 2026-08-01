@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172737Z-p84569-n992774000-c1 branch=task/bug-ALM-BUG-KILN-00041-run-fix-20260730T172737Z-p84569-n992774000-c1 code=d411a35b24ba0e70c688b2babbe81a762e4bf33e gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit d411a35 verified; live region no longer wraps the controls and the dedupe collapses 3-5 renders into one announcement)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172737Z-p84569-n992774000-c1 branch=task/bug-ALM-BUG-KILN-00041-run-fix-20260730T172737Z-p84569-n992774000-c1 code=d411a35b24ba0e70c688b2babbe81a762e4bf33e gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit d411a35 verified; live region no longer wraps the controls and the dedupe collapses 3-5 renders into one announcement)
 
 ## Observation
 

@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T170001Z-p74152-n932726000-c1 branch=task/bug-ALM-BUG-KILN-00038-run-fix-20260730T170001Z-p74152-n932726000-c1 code=e31cec6018f7d6febe0de6b8c212bb3e920d6214 gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit e31cec6 verified; every selector named in the observation now carries the insets at both breakpoints. Modal residual split to ALM-BUG-KILN-00050)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T170001Z-p74152-n932726000-c1 branch=task/bug-ALM-BUG-KILN-00038-run-fix-20260730T170001Z-p74152-n932726000-c1 code=e31cec6018f7d6febe0de6b8c212bb3e920d6214 gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit e31cec6 verified; every selector named in the observation now carries the insets at both breakpoints. Modal residual split to ALM-BUG-KILN-00050)
 
 ## Observation
 
