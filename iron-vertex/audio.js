@@ -2,9 +2,16 @@
 // Iron Vertex — ride audio.
 //
 // Every sound here is synthesised in the browser: filtered noise for the
-// wheels and the wind, a scheduled tick for the chain dogs, a small
-// chorus of detuned oscillators for the riders. Nothing is fetched, so
-// the document stays a single self-contained directory and works offline.
+// wheels and the wind, a scheduled tick for the chain dogs, a square wave
+// through the launch stators. Nothing is fetched, so the document stays a
+// single self-contained directory and works offline.
+//
+// There are no rider voices. Two attempts at synthesising a scream — a
+// chorus of detuned oscillators, then proper formant synthesis — were
+// both rejected on listening: the first was a bell, and the second was
+// still not a person. Rather than keep a sound nobody believed, the
+// riders are silent, and the git history has both attempts if a real
+// recording (owned or clearly licensed) ever makes it worth another go.
 //
 // The MIXING DECISIONS are a pure function of the ride state and live in
 // rideMix() at the top of this file, with no reference to Web Audio at
@@ -22,16 +29,12 @@ export const FAST = 30; // m/s
 // How the ride sounds, given what it is doing.
 //
 //   v         speed, m/s
-//   gForce    felt vertical g in the car's own frame
-//   mode      "station" | "lift" | "brake" | "free"
+//   mode      "station" | "lift" | "launch" | "brake" | "free"
 //   riding    true when the camera is on the train
 //   distance  metres from the listener to the train (ignored when riding)
 //
 // Every field of the result is a gain in [0, 1] or a frequency in Hz.
-export function rideMix({
-  v = 0, gForce = 1, mode = "free", riding = false, distance = 0,
-  pitch = 0, inverted = false,
-} = {}) {
+export function rideMix({ v = 0, mode = "free", riding = false, distance = 0 } = {}) {
   const speed = clamp01(Math.abs(v) / FAST);
 
   // Out in the park the train is a distant clatter that gets duller as
@@ -62,36 +65,14 @@ export function rideMix({
   const launch = mode === "launch" ? 0.5 * (0.35 + 0.65 * speed) * (riding ? 1 : near) : 0;
   const launchHz = 60 + 420 * speed;
 
-  // Riders shout at four things, and the loudest is the one where the
-  // floor drops away underneath them.
-  //
-  //   airtime    negative g, the restraints going light
-  //   heavy      being pressed into the seat at the bottom
-  //   plunge     the nose-down moment at the top of a drop, at speed —
-  //              which is the classic scream and does not need any g at
-  //              all to earn it
-  //   inverted   upside down, which nobody takes quietly
-  const airtime = clamp01((0.62 - gForce) / 1.4);
-  const heavy = clamp01((gForce - 2.9) / 2.0);
-  const plunge = clamp01((-pitch - 0.28) / 0.5) * clamp01((Math.abs(v) - 9) / 12);
-  const upside = inverted ? 0.8 : 0;
-  const carries = riding ? 1 : 0.45 + 0.55 * near;
-  const excitement = (mode === "free"
-    ? clamp01(Math.max(airtime, heavy * 0.75, plunge, upside) * (0.35 + speed))
-    : mode === "launch" ? clamp01(speed * 0.9) : 0) * carries;
-
   return {
     rumble, rumbleHz, roar, roarHz, wind, windHz,
-    chain, clackHz, brake, launch, launchHz, excitement,
+    chain, clackHz, brake, launch, launchHz,
     // One lowpass across the whole train sound stands in for distance.
     cutoff: 700 + 15000 * Math.pow(air, 2.2),
     speed,
   };
 }
-
-// A short crowd reaction should not retrigger every frame it qualifies,
-// nor wait so long that a whole airtime hill passes in silence.
-export const SCREAM_COOLDOWN = 1.7; // seconds
 
 export class RideAudio {
   constructor() {
@@ -100,7 +81,6 @@ export class RideAudio {
     this.ready = false;
     this.failed = false;
     this.clackPhase = 0;
-    this.screamWait = 0;
     this.ambientWait = 3;
   }
 
@@ -118,10 +98,9 @@ export class RideAudio {
       const now = ctx.currentTime;
 
       this.master = ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : 0.62;
+      this.master.gain.value = this.muted ? 0 : 0.78;
       // A limiter keeps a loop entry from clipping when every voice
-      // happens to peak together. Gentle: at ratio 8 it flattened the
-      // riders into the wheel noise instead of merely catching peaks.
+      // happens to peak together.
       const limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -4;
       limiter.knee.value = 6;
@@ -129,13 +108,6 @@ export class RideAudio {
       limiter.attack.value = 0.002;
       limiter.release.value = 0.16;
       this.master.connect(limiter).connect(ctx.destination);
-
-      // Everything mechanical goes through one bus so the riders can duck
-      // it. Without that the wheels and the wind simply sit on top of the
-      // voices — measured at 25dB over them — and nobody hears a thing.
-      this.trainBus = ctx.createGain();
-      this.trainBus.gain.value = 1;
-      this.trainBus.connect(this.master);
 
       // One long noise buffer feeds every noise voice. Generating it once
       // costs a few milliseconds and saves an oscillator per sound.
@@ -155,10 +127,10 @@ export class RideAudio {
       this.trainOut = ctx.createBiquadFilter();
       this.trainOut.type = "lowpass";
       this.trainOut.frequency.value = 16000;
-      this.trainOut.connect(this.trainBus);
+      this.trainOut.connect(this.master);
 
       this.rumbleGain = this._noiseVoice("bandpass", 320, 0.7, this.trainOut);
-      this.windGain = this._noiseVoice("highpass", 900, 0.6, this.trainBus);
+      this.windGain = this._noiseVoice("highpass", 900, 0.6, this.master);
       this.brakeGain = this._noiseVoice("bandpass", 3200, 2.4, this.trainOut);
 
       this.roarOsc = ctx.createOscillator();
@@ -231,7 +203,7 @@ export class RideAudio {
     if (!this.ready) return;
     const now = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setTargetAtTime(muted ? 0 : 0.62, now, 0.05);
+    this.master.gain.setTargetAtTime(muted ? 0 : 0.78, now, 0.05);
   }
 
   // Smoothed parameter writes: stepping a gain instantly puts a click in
@@ -265,15 +237,6 @@ export class RideAudio {
       this.clackPhase = 0;
     }
 
-    // Screaming. The cooldown scales down with how big the moment is, so
-    // a proper drop gets a continuous wall of noise rather than one
-    // polite shout every couple of seconds.
-    this.screamWait = Math.max(0, this.screamWait - dt);
-    if (mix.excitement > 0.3 && this.screamWait === 0) {
-      this.scream(mix.excitement);
-      this.screamWait = SCREAM_COOLDOWN * (1.05 - 0.75 * Math.min(1, mix.excitement));
-    }
-
     // Somewhere out in the park, a bird.
     this.ambientWait -= dt;
     if (this.ambientWait <= 0) {
@@ -300,127 +263,6 @@ export class RideAudio {
     source.connect(filter).connect(gain).connect(this.master);
     source.start(now, Math.random() * 2);
     source.stop(now + 0.12);
-  }
-
-  // Screams, by formant synthesis.
-  //
-  // The first version of this was detuned oscillators, a clean sine
-  // vibrato and a resonant peak, which is a recipe for a BELL, not a
-  // person — reported, fairly, as "bling, bling, bling". Clean periodic
-  // tones plus a ringing filter plus a struck envelope is how you build
-  // a chime.
-  //
-  // A voice is not a tone with a filter on it. It is a buzzy source —
-  // the vocal folds — resonated by three fixed peaks that the shape of
-  // the mouth puts in the spectrum. Those peaks are the FORMANTS, and
-  // they are what the ear reads as "somebody shouting" rather than
-  // "something ringing". An open /a/ — which is the vowel of a scream —
-  // sits at roughly 850, 1350 and 2800 Hz, so the source runs through
-  // three bandpass filters in PARALLEL at those frequencies.
-  //
-  // The rest is what stops it sounding like a machine reciting a vowel:
-  //
-  //   jitter    the pitch wanders at random, driven by filtered noise.
-  //             A periodic vibrato is exactly what made it a theremin.
-  //   rasp      a soft-clip waveshaper, for a voice under strain
-  //   breath    noise through the same formants
-  //   contour   a fast scoop up and a long sag, and an attack measured
-  //             in tens of milliseconds — not the 4ms strike of a bell
-  scream(intensity) {
-    const ctx = this.ctx;
-    const now = ctx.currentTime;
-    const level = Math.min(0.85, 0.35 + intensity * 0.5);
-    const duration = 1.15 + Math.random() * 0.45;
-
-    // Everything the voices make, before the mouth shapes it. Driven
-    // hard enough that the waveshaper below actually bites.
-    const glottis = ctx.createGain();
-    glottis.gain.value = 1.0;
-
-    // The mouth: three resonances in parallel, loudest at the bottom.
-    const mouth = ctx.createGain();
-    const FORMANTS = [[850, 9, 1.0], [1350, 11, 0.5], [2800, 13, 0.18]];
-    for (const [frequency, q, gain] of FORMANTS) {
-      const band = ctx.createBiquadFilter();
-      band.type = "bandpass";
-      // Nobody's mouth is the textbook shape, and no two riders' are the
-      // same shape as each other.
-      band.frequency.value = frequency * (0.92 + Math.random() * 0.16);
-      band.Q.value = q;
-      const trim = ctx.createGain();
-      trim.gain.value = gain;
-      glottis.connect(band).connect(trim).connect(mouth);
-    }
-
-    // A voice at full stretch is not a clean waveform.
-    const rasp = ctx.createWaveShaper();
-    const curve = new Float32Array(257);
-    for (let i = 0; i < curve.length; i++) {
-      const x = (i / (curve.length - 1)) * 2 - 1;
-      curve[i] = Math.tanh(x * 2.6);
-    }
-    rasp.curve = curve;
-    rasp.oversample = "2x";
-
-    // Three narrow bandpasses in parallel throw most of the source away,
-    // so the level has to be made up after the mouth or the riders end
-    // up quieter than they started.
-    const makeup = ctx.createGain();
-    makeup.gain.value = 2.9;
-
-    const envelope = ctx.createGain();
-    envelope.gain.setValueAtTime(0.0001, now);
-    envelope.gain.exponentialRampToValueAtTime(level, now + 0.055);
-    envelope.gain.setValueAtTime(level, now + duration * 0.45);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    mouth.connect(rasp).connect(makeup).connect(envelope).connect(this.master);
-
-    // Get out of their way.
-    const duck = this.trainBus.gain;
-    duck.cancelScheduledValues(now);
-    duck.setTargetAtTime(0.4, now, 0.05);
-    duck.setTargetAtTime(1, now + duration * 0.7, 0.35);
-
-    // Three or four people, none of them in tune with each other.
-    const voices = 3 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < voices; i++) {
-      const osc = ctx.createOscillator();
-      osc.type = "sawtooth";
-      const base = 310 + Math.random() * 260;
-      osc.frequency.setValueAtTime(base * 0.8, now);
-      osc.frequency.linearRampToValueAtTime(base * (1.05 + intensity * 0.22), now + 0.12);
-      osc.frequency.linearRampToValueAtTime(base * 0.86, now + duration);
-
-      // Jitter: filtered noise on the pitch, so it wavers the way a
-      // shout does rather than warbling on a timer.
-      const jitter = ctx.createBufferSource();
-      jitter.buffer = this.noiseBuffer;
-      jitter.loop = true;
-      const slow = ctx.createBiquadFilter();
-      slow.type = "lowpass";
-      slow.frequency.value = 22 + Math.random() * 18;
-      const depth = ctx.createGain();
-      depth.gain.value = base * 0.05;
-      jitter.connect(slow).connect(depth).connect(osc.frequency);
-
-      const voice = ctx.createGain();
-      voice.gain.value = 0.8 / voices;
-      osc.connect(voice).connect(glottis);
-      osc.start(now + i * 0.035);
-      jitter.start(now, Math.random() * 2);
-      osc.stop(now + duration + 0.1);
-      jitter.stop(now + duration + 0.1);
-    }
-
-    // Breath, through the same mouth.
-    const air = ctx.createBufferSource();
-    air.buffer = this.noiseBuffer;
-    air.loop = true;
-    const airGain = ctx.createGain();
-    airGain.gain.value = 0.5;
-    air.connect(airGain).connect(glottis);
-    air.start(now, Math.random() * 2);
-    air.stop(now + duration + 0.1);
   }
 
   chirp() {

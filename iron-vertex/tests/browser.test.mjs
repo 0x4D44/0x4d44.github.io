@@ -336,20 +336,19 @@ try {
     }
     assert.ok(changed, `${width}x${height}: six new tracks all came out named "${firstName}"`);
 
-    // ---- the riders can actually be HEARD ----
+    // ---- the ride actually makes a sound, and does not clip ----
     //
-    // The first version of this synthesised its screams perfectly and
-    // buried them 25dB under the wheels and the wind, which no test
-    // noticed because every test asked whether the voices FIRED. So
-    // render the real graph into an OfflineAudioContext and measure it:
-    // a scream has to be at least as loud as the train it is competing
-    // with, and the two together must not clip.
+    // Rendering the real graph into an OfflineAudioContext is the only way
+    // to assert anything about the OUTPUT rather than about whether the
+    // voices were triggered. That distinction cost a round trip once
+    // already: the rider screams fired perfectly and were 25dB under the
+    // wheels, and every test at the time said the audio was fine.
     if (width > 500) {
       const levels = await evaluate(`(async () => {
         const mod = await import("/iron-vertex/audio.js");
         const SR = 44100;
         async function render(drive) {
-          const offline = new OfflineAudioContext(1, SR * 3, SR);
+          const offline = new OfflineAudioContext(1, SR * 2, SR);
           const saved = window.AudioContext;
           window.AudioContext = function () { return offline; };
           const audio = new mod.RideAudio();
@@ -357,69 +356,25 @@ try {
           window.AudioContext = saved;
           Object.defineProperty(offline, "state", { value: "running", configurable: true });
           drive(audio);
-          return (await offline.startRendering()).getChannelData(0);
-        }
-        const peakOf = (data) => {
+          const data = (await offline.startRendering()).getChannelData(0);
           let peak = 0;
           for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
           return peak;
-        };
-        // Flat out but level, so update() drives the wheels and the wind
-        // without triggering a scream of its own — otherwise "the train"
-        // would include the very thing it is being compared against.
-        const cruise = mod.rideMix({ v: 28, gForce: 1, mode: "free", riding: true, pitch: 0 });
-        // Energy at one frequency in one window (Goertzel), so the shape
-        // of the sound can be asserted and not just its loudness.
-        function energyAt(data, from, freq) {
-          const N = 8192;
-          const coeff = 2 * Math.cos((2 * Math.PI * freq) / SR);
-          let s0 = 0, s1 = 0, s2 = 0;
-          for (let i = 0; i < N; i++) {
-            const window = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1));
-            s0 = data[from + i] * window + coeff * s1 - s2;
-            s2 = s1;
-            s1 = s0;
-          }
-          return Math.sqrt(Math.abs(s1 * s1 + s2 * s2 - coeff * s1 * s2)) / N;
         }
-        function spectrum(data, probes) {
-          let peak = 0;
-          let at = 0;
-          for (let i = 0; i < data.length; i++) {
-            if (Math.abs(data[i]) > peak) { peak = Math.abs(data[i]); at = i; }
-          }
-          const from = Math.max(0, Math.min(data.length - 8192, at - 2048));
-          return probes.map((f) => energyAt(data, from, f));
-        }
-
-        const screamPcm = await render((a) => a.scream(1));
-        const [f1, f2, f3, t1, t2, t3] = spectrum(screamPcm, [850, 1350, 2800, 1700, 3500, 5000]);
+        const flatOut = mod.rideMix({ v: 28, mode: "free", riding: true });
+        const parked = mod.rideMix({ v: 0, mode: "station", riding: false, distance: 200 });
         return {
-          excitement: cruise.excitement,
-          train: peakOf(await render((a) => a.update(cruise, 1 / 60))),
-          scream: peakOf(screamPcm),
-          both: peakOf(await render((a) => { a.update(cruise, 1 / 60); a.scream(1); })),
-          formants: (f1 + f2 + f3) / 3,
-          troughs: (t1 + t2 + t3) / 3,
+          flatOut: await render((a) => a.update(flatOut, 1 / 60)),
+          parked: await render((a) => a.update(parked, 1 / 60)),
         };
       })()`);
-      assert.equal(levels.excitement, 0,
-        `${width}x${height}: the reference "train only" mix screams too, so the comparison is void`);
-      assert.ok(levels.train > 0.05,
-        `${width}x${height}: the train makes no sound at all (peak ${levels.train})`);
-      assert.ok(levels.scream > levels.train * 0.75,
-        `${width}x${height}: a scream (peak ${levels.scream.toFixed(3)}) is lost under the `
-          + `wheels and wind it has to cut through (${levels.train.toFixed(3)})`);
-      assert.ok(levels.both < 1,
-        `${width}x${height}: train and screams together clip at ${levels.both.toFixed(3)}`);
-      // A voice, not a bell. Formant synthesis puts strong peaks at the
-      // resonances of an open mouth (850/1350/2800Hz) with troughs
-      // between them; detuned oscillators through one resonant filter —
-      // which is what this used to be, and sounded like a chime — put a
-      // couple of narrow partials anywhere but there.
-      assert.ok(levels.formants > levels.troughs * 3,
-        `${width}x${height}: the scream has no vowel in it — formant energy `
-          + `${levels.formants.toExponential(2)} vs ${levels.troughs.toExponential(2)} between them`);
+      assert.ok(levels.flatOut > 0.1,
+        `${width}x${height}: the ride is silent at 28 m/s (peak ${levels.flatOut})`);
+      assert.ok(levels.flatOut < 1,
+        `${width}x${height}: the ride clips at speed (peak ${levels.flatOut.toFixed(3)})`);
+      assert.ok(levels.parked < levels.flatOut * 0.5,
+        `${width}x${height}: a parked train 200m away is as loud as one at speed `
+          + `(${levels.parked.toFixed(3)} vs ${levels.flatOut.toFixed(3)})`);
     }
 
     // ---- the page never scrolls sideways ----

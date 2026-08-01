@@ -4,6 +4,8 @@
 // what it asserts is that the sound tracks the ride — louder with speed,
 // quieter with distance, chain ticks only on the chain — rather than any
 // particular timbre.
+//
+// There are no rider voices any more; see the note at the top of audio.js.
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -12,19 +14,18 @@ import { FAST, RideAudio, rideMix } from "../audio.js";
 import { CoasterSim, buildTrack } from "../track.js";
 
 test("silence when nothing is moving", () => {
-  const mix = rideMix({ v: 0, gForce: 1, mode: "station", riding: false, distance: 0 });
+  const mix = rideMix({ v: 0, mode: "station", riding: false, distance: 0 });
   assert.ok(mix.rumble < 0.1, `parked train still rumbling at ${mix.rumble}`);
   assert.equal(mix.wind, 0);
   assert.equal(mix.chain, 0);
   assert.equal(mix.brake, 0);
-  assert.equal(mix.excitement, 0);
 });
 
 test("speed drives the wheels and the wind, and never runs away", () => {
   let previousRumble = -1;
   let previousWind = -1;
   for (let v = 0; v <= 45; v += 1.5) {
-    const mix = rideMix({ v, gForce: 1, mode: "free", riding: true });
+    const mix = rideMix({ v, mode: "free", riding: true });
     assert.ok(mix.rumble >= previousRumble, `rumble fell as speed rose at ${v} m/s`);
     assert.ok(mix.wind >= previousWind, `wind fell as speed rose at ${v} m/s`);
     previousRumble = mix.rumble;
@@ -33,7 +34,7 @@ test("speed drives the wheels and the wind, and never runs away", () => {
       assert.ok(Number.isFinite(value), `${name} went non-finite at ${v} m/s`);
     }
     // Gains are summed into one bus, so each one has to stay in range.
-    for (const name of ["rumble", "wind", "roar", "chain", "brake", "excitement"]) {
+    for (const name of ["rumble", "wind", "roar", "chain", "brake", "launch"]) {
       assert.ok(mix[name] >= 0 && mix[name] <= 1, `${name} out of range: ${mix[name]}`);
     }
     assert.ok(mix.rumbleHz > 0 && mix.rumbleHz < 22050, `rumble filter at ${mix.rumbleHz}Hz`);
@@ -42,13 +43,13 @@ test("speed drives the wheels and the wind, and never runs away", () => {
 });
 
 test("distance makes the train quieter and duller", () => {
-  const close = rideMix({ v: FAST, gForce: 1, mode: "free", riding: false, distance: 10 });
-  const far = rideMix({ v: FAST, gForce: 1, mode: "free", riding: false, distance: 300 });
+  const close = rideMix({ v: FAST, mode: "free", riding: false, distance: 10 });
+  const far = rideMix({ v: FAST, mode: "free", riding: false, distance: 300 });
   assert.ok(far.rumble < close.rumble * 0.5, "a distant train is barely quieter");
   assert.ok(far.cutoff < close.cutoff, "distance did not take the top end off");
 
   // On board beats anything heard from the ground.
-  const onboard = rideMix({ v: FAST, gForce: 1, mode: "free", riding: true, distance: 999 });
+  const onboard = rideMix({ v: FAST, mode: "free", riding: true, distance: 999 });
   assert.ok(onboard.rumble > close.rumble, "riding is quieter than watching");
   assert.ok(onboard.wind > close.wind * 3, "the wind should dominate the front seat");
 });
@@ -70,39 +71,10 @@ test("the brakes hiss only while they have speed to take", () => {
   assert.equal(rideMix({ v: 20, mode: "free" }).brake, 0, "brakes audible off the brake run");
 });
 
-test("riders react to airtime and to being pressed into the seat", () => {
-  const cruise = rideMix({ v: 22, gForce: 1.0, mode: "free", riding: true });
-  const airtime = rideMix({ v: 22, gForce: -0.4, mode: "free", riding: true });
-  const heavy = rideMix({ v: 22, gForce: 4.4, mode: "free", riding: true });
-  assert.ok(cruise.excitement < 0.05, `a steady 1g got a reaction (${cruise.excitement})`);
-  assert.ok(airtime.excitement > 0.3, `no reaction to ${-0.4}g (${airtime.excitement})`);
-  assert.ok(heavy.excitement > 0.2, `no reaction to 4.4g (${heavy.excitement})`);
-  // Nobody shouts while the train is being winched up a hill.
-  assert.equal(rideMix({ v: 5, gForce: -0.4, mode: "lift" }).excitement, 0);
-});
-
-test("riders also shout at the drop itself, and at being upside down", () => {
-  // A nose-down plunge at speed earns a scream on its own: the car is at
-  // a perfectly ordinary 1g on the way down a steep drop, and that is the
-  // single most screamed-at moment on any coaster.
-  const level = rideMix({ v: 26, gForce: 1.0, mode: "free", riding: true, pitch: 0 });
-  const plunging = rideMix({ v: 26, gForce: 1.0, mode: "free", riding: true, pitch: -0.75 });
-  assert.ok(level.excitement < 0.05, `level track got a reaction (${level.excitement})`);
-  assert.ok(plunging.excitement > 0.3, `no reaction to a 50-degree plunge (${plunging.excitement})`);
-  // But not at a crawl: the same gradient on the way out of the station
-  // is not a scream.
-  assert.ok(rideMix({ v: 5, gForce: 1, mode: "free", pitch: -0.75 }).excitement < 0.05);
-
-  const upright = rideMix({ v: 20, gForce: 2.0, mode: "free", riding: true });
-  const upsideDown = rideMix({ v: 20, gForce: 2.0, mode: "free", riding: true, inverted: true });
-  assert.ok(upsideDown.excitement > upright.excitement + 0.2, "an inversion went unremarked");
-});
-
 test("a magnetic launch hums, and only on the launch", () => {
   const launching = rideMix({ v: 22, mode: "launch", riding: true });
   assert.ok(launching.launch > 0.2, `no launch hum (${launching.launch})`);
   assert.ok(launching.launchHz > 200, `launch hum too low (${launching.launchHz}Hz)`);
-  assert.ok(launching.excitement > 0.3, "nobody reacted to being fired out of the station");
   // It rises with speed, the way a stator bank does.
   assert.ok(rideMix({ v: 30, mode: "launch" }).launchHz > rideMix({ v: 10, mode: "launch" }).launchHz);
   for (const mode of ["free", "lift", "brake", "station"]) {
@@ -115,8 +87,8 @@ test("a magnetic launch hums, and only on the launch", () => {
 // A stand-in AudioContext, so the scheduling half of RideAudio can be
 // driven under node. It records nothing about SOUND — that needs a real
 // browser, and browser.test.mjs renders the graph offline and measures it
-// — but it does prove the voices are triggered, which is the half that
-// silently stopped happening would be hardest to notice.
+// — but it does prove the voices are driven, and that a whole lap can be
+// played without anything throwing.
 function stubAudioContext() {
   const param = () => ({
     value: 0,
@@ -153,41 +125,37 @@ function stubAudioContext() {
   };
 }
 
-test("a real lap makes the riders shout, more than once and not constantly", () => {
+test("a real lap drives the wheels, the chain and the brakes — and no voices", () => {
   const saved = globalThis.window;
   globalThis.window = { AudioContext: stubAudioContext() };
   try {
     const audio = new RideAudio();
     assert.ok(audio.start(), "the stub context was refused");
     audio.setMuted(false);
+    assert.equal(typeof audio.scream, "undefined",
+      "the rider voices are gone — nothing should be able to call them");
 
-    const screams = [];
-    const inner = audio.scream.bind(audio);
-    audio.scream = (intensity) => { screams.push(intensity); inner(intensity); };
-
-    // Two laps of a real circuit, driven by the real sim.
     const track = buildTrack(20260726);
     const sim = new CoasterSim(track);
-    const dt = 1 / 60;
-    let laps = 0;
-    for (let i = 0; i < 60 * 150 && laps < 2; i++) {
-      const ride = sim.step(dt);
-      audio.ctx.currentTime += dt;
-      audio.update(rideMix({
-        v: ride.v, gForce: ride.gForce, mode: ride.mode,
-        pitch: ride.fwd.y, inverted: ride.up.y < -0.2, riding: true,
-      }), dt);
-      laps = sim.laps;
+    const seen = new Set();
+    let loudest = 0;
+    let clacks = 0;
+    const inner = audio.clack.bind(audio);
+    audio.clack = (level) => { clacks += 1; inner(level); };
+
+    for (let i = 0; i < 60 * 150 && sim.laps < 2; i++) {
+      const ride = sim.step(1 / 60);
+      audio.ctx.currentTime += 1 / 60;
+      const mix = rideMix({ v: ride.v, mode: ride.mode, riding: true });
+      seen.add(ride.mode);
+      loudest = Math.max(loudest, mix.rumble, mix.wind);
+      assert.ok(!("excitement" in mix), "the mix still carries a scream cue");
+      audio.update(mix, 1 / 60);
     }
 
-    assert.ok(screams.length >= 4,
-      `only ${screams.length} screams in two laps — the riders have gone quiet`);
-    assert.ok(screams.length < 120,
-      `${screams.length} screams in two laps is a continuous howl, not a reaction`);
-    for (const intensity of screams) {
-      assert.ok(intensity > 0.3 && intensity <= 1,
-        `a scream fired at intensity ${intensity}`);
-    }
+    assert.ok(seen.has("free") && seen.has("brake"), `only saw modes ${[...seen]}`);
+    assert.ok(loudest > 0.4, `the loudest the ride ever got was ${loudest.toFixed(2)}`);
+    assert.ok(clacks > 20, `only ${clacks} chain dogs in two laps`);
   } finally {
     if (saved === undefined) delete globalThis.window;
     else globalThis.window = saved;
