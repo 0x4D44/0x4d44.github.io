@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T165343Z-p57295-n449158000-c1 branch=task/bug-ALM-BUG-KILN-00037-run-fix-20260730T165343Z-p57295-n449158000-c1 code=0941558f66bf828ad4d1c82a5e2cc8b495821b8d gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 0941558 verified; five abandon-mid-animation scenarios reproduced pre-fix, all clean now)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T165343Z-p57295-n449158000-c1 branch=task/bug-ALM-BUG-KILN-00037-run-fix-20260730T165343Z-p57295-n449158000-c1 code=0941558f66bf828ad4d1c82a5e2cc8b495821b8d gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 0941558 verified; five abandon-mid-animation scenarios reproduced pre-fix, all clean now)
 
 ## Observation
 

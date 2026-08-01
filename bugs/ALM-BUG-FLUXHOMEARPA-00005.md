@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — a new learner's due queue measured 40 cards before the fix, 0 after)
+- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — a new learner's due queue measured 40 cards before the fix, 0 after)
 
 ## Observation
 `createInitialProgress()` creates review cards for every chapter phrase and sign immediately in `japanese-travel-rpg/engines.js:7`. `dueCards()` filters only by due timestamp in `japanese-travel-rpg/engines.js:20`, and the shipped review tab uses that result directly at `japanese-travel-rpg/index.html:798`.

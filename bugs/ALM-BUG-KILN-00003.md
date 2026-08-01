@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
-- **State history:** Fixed (2026-07-11, fixed by Claude in 5edc9ec; awaiting independent verification)
-- **State history:** Closed (2026-07-13, independently verified and closed by Claude — not the fixer; guard weakness split to ALM-BUG-KILN-00029)
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in 5edc9ec; awaiting independent verification) -> Closed (2026-07-13, independently verified and closed by Claude — not the fixer; guard weakness split to ALM-BUG-KILN-00029)
 
 ## Observation
 When two confetti celebrations overlap — an exact final trick fires `celebrate(90)` and,

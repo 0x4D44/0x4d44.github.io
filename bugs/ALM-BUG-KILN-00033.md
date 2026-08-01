@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-19, raised by Codex after Arthur's report)
-- **State history:** Fixed (2026-07-19, Codex, commit 836b742; awaiting independent verification)
-- **State history:** Closed (2026-07-19, independent Codex verifier, verified on origin/main 58682b8: all 50 pre-fix pages reproduced the recorded TypeError, all 50 post-fix pages rendered, the focused validator passed, and the original HTTP/browser repro passed)
+- **State history:** Open (2026-07-19, raised by Codex after Arthur's report) -> Fixed (2026-07-19, Codex, commit 836b742; awaiting independent verification) -> Closed (2026-07-19, independent Codex verifier, verified on origin/main 58682b8: all 50 pre-fix pages reproduced the recorded TypeError, all 50 post-fix pages rendered, the focused validator passed, and the original HTTP/browser repro passed)
 
 ## Observation
 
