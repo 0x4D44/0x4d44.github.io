@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — SW cleanup is prefix-scoped and mutation-proven)
+- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — SW cleanup is prefix-scoped and mutation-proven)
 
 ## Observation
 The service worker activation handler in `japanese-travel-rpg/sw.js:19` deletes every CacheStorage key whose name is not the current `nihon-quest-v3` cache. CacheStorage is origin-wide, and this site hosts many independent GitHub Pages apps under the same origin.

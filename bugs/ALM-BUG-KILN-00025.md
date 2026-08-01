@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude — found while adding the northern-line-1987 document)
-- **State history:** Fixed (2026-07-13, fixed by Claude in 41d401b; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all four validators resolve root-absolute refs against the repo root; adversarial typo probe still fails correctly)
+- **State history:** Open (2026-07-13, raised by Claude — found while adding the northern-line-1987 document) -> Fixed (2026-07-13, fixed by Claude in 41d401b; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all four validators resolve root-absolute refs against the repo root; adversarial typo probe still fails correctly)
 - **Note:** minted as KILN-00006 from a stale view; renumbered to KILN-00025 at integration after an overnight pass claimed 00006-00024 on the same host shard (see bugs/README.md).
 
 ## Observation

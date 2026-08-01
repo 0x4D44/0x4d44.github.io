@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — both recorded repros fixed and the XSS surface closed; a same-class nested-null residual split to ALM-BUG-KILN-00049)
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — both recorded repros fixed and the XSS surface closed; a same-class nested-null residual split to ALM-BUG-KILN-00049)
 
 ## Observation
 Importing (or seeding) a progress payload whose srs/done/medals is null bricks the app to a blank screen on the next render; and HTML placed in a numeric/string progress field executes as script on the shared 0x4d44.github.io origin.

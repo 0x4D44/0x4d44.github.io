@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — empty state now gates on revEmpty, the exact complement of revHasCard)
+- **State history:** Open (2026-07-03, raised by Codex overnight code-review pass) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — empty state now gates on revEmpty, the exact complement of revHasCard)
 
 ## Observation
 The review card panel is guarded by `revHasCard` in `japanese-travel-rpg/index.html:112`. The "All caught up!" empty state is also guarded by `revHasCard` in `japanese-travel-rpg/index.html:136`. `revHasCard` is set to `!!card` at `japanese-travel-rpg/index.html:805`.

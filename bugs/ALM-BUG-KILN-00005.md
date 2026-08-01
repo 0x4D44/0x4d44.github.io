@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
-- **State history:** Fixed (2026-07-11, fixed by Claude in 9721728; awaiting independent verification)
-- **State history:** Closed (2026-07-13, independently verified and closed by Claude — not the fixer)
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in 9721728; awaiting independent verification) -> Closed (2026-07-13, independently verified and closed by Claude — not the fixer)
 
 ## Observation
 The faint J/Q/K/A ghost letter designed to sit behind a face card's pip has never rendered.

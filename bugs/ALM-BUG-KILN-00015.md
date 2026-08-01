@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — card romaji is now kin'youbi and round-trips through both the converter and the IME path)
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — card romaji is now kin'youbi and round-trips through both the converter and the IME path)
 
 ## Observation
 The Friday vocab card prints romaji "kinyoubi"; a learner who reads or types it gets きにょうび (ki-nyo-u-bi), not the correct きんようび.
