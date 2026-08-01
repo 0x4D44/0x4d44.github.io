@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "influence",
+    title: "Click, Whirr",
+    tagline: "An illustrated field guide to Robert Cialdini’s seven levers of persuasion — reciprocity to unity — with 33 field experiments, a lab where you predict each result before you see it, and the 2025–26 research showing language models yield to all seven. Carries a replication ledger that audits its own anecdotes. Vanilla JS; no build step.",
+    url: "https://0x4d44.github.io/influence/",
+    illustration: "ill-influence",
+    date: "2026-08-01T09:30:00",
+    year: 1984,
+    readingMin: 95,
+    words: 23200,
+    tags: ["software", "science", "work"],
+    real: true,
+  },
+  {
     slug: "instruments",
     title: "The Well-Tempered Machine",
     tagline: "A deep, interactive field guide to how instruments work, beginning with the piano: the physics of a vibrating string, the escapement that throws a free-flying hammer, tone and the soundboard, the two-thousand-year tuning compromise, and the twenty-ton frame. Seven chapters with a playable keyboard and live, audible acoustics. Vanilla JS, canvas + Web Audio; no build step.",
@@ -1629,7 +1642,7 @@ window.COLLECTIONS = [
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
     slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
-      "claude-workflows", "the-ai-who-watched"] },
+      "claude-workflows", "the-ai-who-watched", "influence"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work — the physics of the string, the mechanism, the tuning and the craft.",
     slugs: ["instruments"] },
@@ -1638,7 +1651,7 @@ window.COLLECTIONS = [
     slugs: ["arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
-      "ocean-currents"] },
+      "ocean-currents", "influence"] },
   { id: "maps", name: "Maps & Nations", icon: "ill-map",
     blurb: "Atlases, isochrones, cities and the past.",
     slugs: ["arran-deep-time", "mdisochrone", "uk-isochrone", "edinburgh-isochrone", "worldviewer",
