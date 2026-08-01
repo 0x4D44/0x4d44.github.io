@@ -270,8 +270,10 @@ impl WorldConfig {
         {
             return Err("energy bounds are invalid".into());
         }
-        let required_genotypes = cells.saturating_mul(2).saturating_add(self.max_fossils as usize);
-        if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {
+        let required_genotypes = cells
+            .saturating_mul(2)
+            .saturating_add(self.max_fossils as usize);
+        if (self.max_genotypes as usize) < required_genotypes || self.max_genotypes > 200_000 {
             return Err("max_genotypes cannot retain active organisms, parents and fossils".into());
         }
         for rate in [
@@ -702,7 +704,12 @@ impl World {
         })
     }
 
-    pub fn seed_cluster(&mut self, genome: &[u8], columns: usize, rows: usize) -> Result<(), String> {
+    pub fn seed_cluster(
+        &mut self,
+        genome: &[u8],
+        columns: usize,
+        rows: usize,
+    ) -> Result<(), String> {
         let start_x = usize::from(self.config.width).saturating_sub(columns) / 2;
         let start_y = usize::from(self.config.height).saturating_sub(rows) / 2;
         for y in 0..rows {
@@ -803,7 +810,8 @@ impl World {
 
             let mut signal = ExecSignal::Continue;
             for _ in 0..self.config.instructions_per_update {
-                signal = self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);
+                signal =
+                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);
                 if organism.energy == 0 || signal == ExecSignal::Yield {
                     break;
                 }
@@ -820,7 +828,8 @@ impl World {
         self.commit_births(births);
         self.update = self.update.wrapping_add(1);
 
-        if self.config.sample_period > 0 && self.update % u64::from(self.config.sample_period) == 0 {
+        if self.config.sample_period > 0 && self.update % u64::from(self.config.sample_period) == 0
+        {
             self.sample_stats();
         }
     }
@@ -906,7 +915,8 @@ impl World {
                     _ => false,
                 };
                 if !execute {
-                    next_ip = (next_ip + complete_instruction_extra(&organism.genome, next_ip)) % len;
+                    next_ip =
+                        (next_ip + complete_instruction_extra(&organism.genome, next_ip)) % len;
                 }
             }
             18 | 19 => {
@@ -914,12 +924,19 @@ impl World {
                 next_ip = after_template;
                 if template.is_empty() {
                     organism.last_status = StatusCode::TemplateNotFound;
-                } else if let Some(target) = find_template(&organism.genome, ip, after_template, &template, arg & 1 == 1) {
+                } else if let Some(target) = find_template(
+                    &organism.genome,
+                    ip,
+                    after_template,
+                    &template,
+                    arg & 1 == 1,
+                ) {
                     if op == 19 {
                         if organism.call_stack_len as usize >= organism.call_stack.len() {
                             organism.last_status = StatusCode::StackFull;
                         } else {
-                            organism.call_stack[organism.call_stack_len as usize] = after_template as u16;
+                            organism.call_stack[organism.call_stack_len as usize] =
+                                after_template as u16;
                             organism.call_stack_len += 1;
                             next_ip = target;
                             organism.last_status = StatusCode::Ok;
@@ -937,7 +954,8 @@ impl World {
                     organism.last_status = StatusCode::StackEmpty;
                 } else {
                     organism.call_stack_len -= 1;
-                    next_ip = usize::from(organism.call_stack[organism.call_stack_len as usize]) % len;
+                    next_ip =
+                        usize::from(organism.call_stack[organism.call_stack_len as usize]) % len;
                     organism.last_status = StatusCode::Ok;
                 }
             }
@@ -948,7 +966,10 @@ impl World {
                     2 => organism.age_updates,
                     3 => organism.generation,
                     4 => organism.child.as_ref().map_or(0, |c| c.bytes.len() as u32),
-                    5 => organism.child.as_ref().map_or(0, |c| u32::from(c.distinct_written)),
+                    5 => organism
+                        .child
+                        .as_ref()
+                        .map_or(0, |c| u32::from(c.distinct_written)),
                     6 => u32::from(self.cells[cell_index].resource),
                     _ => organism.last_status as u32,
                 };
@@ -989,7 +1010,8 @@ impl World {
                 }
                 2 => {
                     if let Some(child) = organism.child.as_ref() {
-                        organism.write_head = (organism.registers[0] as usize % child.bytes.len()) as u16;
+                        organism.write_head =
+                            (organism.registers[0] as usize % child.bytes.len()) as u16;
                         organism.last_status = StatusCode::Ok;
                     } else {
                         organism.last_status = StatusCode::NoChild;
@@ -1000,7 +1022,8 @@ impl World {
                 5 => organism.read_head = ((usize::from(organism.read_head) + 1) % len) as u16,
                 6 => {
                     if let Some(child) = organism.child.as_ref() {
-                        organism.write_head = ((usize::from(organism.write_head) + 1) % child.bytes.len()) as u16;
+                        organism.write_head =
+                            ((usize::from(organism.write_head) + 1) % child.bytes.len()) as u16;
                     } else {
                         organism.last_status = StatusCode::NoChild;
                     }
@@ -1066,7 +1089,10 @@ impl World {
                     organism.ip = next_ip as u16;
                     return ExecSignal::Continue;
                 }
-                let required = self.config.division_cost.saturating_add(self.config.child_energy);
+                let required = self
+                    .config
+                    .division_cost
+                    .saturating_add(self.config.child_energy);
                 if organism.energy < required {
                     organism.last_status = StatusCode::InsufficientEnergy;
                     organism.ip = next_ip as u16;
@@ -1171,7 +1197,8 @@ impl World {
                         self.direction_target(cell_index, arg & 3, organism.orientation)
                     };
                     self.cells[target].signal = (organism.registers[0] as i32)
-                        .clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+                        .clamp(i16::MIN as i32, i16::MAX as i32)
+                        as i16;
                     organism.last_status = StatusCode::Ok;
                 }
             }
@@ -1219,7 +1246,10 @@ impl World {
                 if let Some(target_slot) = self.cells[target].occupant {
                     if let Some(other) = self.organisms[target_slot as usize].as_mut() {
                         organism.energy -= amount;
-                        other.energy = other.energy.saturating_add(amount).min(self.config.max_energy);
+                        other.energy = other
+                            .energy
+                            .saturating_add(amount)
+                            .min(self.config.max_energy);
                         organism.last_status = StatusCode::Ok;
                     }
                 }
@@ -1229,7 +1259,8 @@ impl World {
                 let amount = (organism.registers[0] as u16).min(32);
                 if organism.energy >= amount {
                     organism.energy -= amount;
-                    self.cells[cell_index].toxin = self.cells[cell_index].toxin.saturating_add(amount);
+                    self.cells[cell_index].toxin =
+                        self.cells[cell_index].toxin.saturating_add(amount);
                     organism.last_status = StatusCode::Ok;
                 } else {
                     organism.last_status = StatusCode::InsufficientEnergy;
@@ -1341,7 +1372,11 @@ impl World {
 
         for (_, mut intent) in winners {
             if intent.mutation.substitutions == 0 {
-                if let Some(parent) = self.organisms.get(intent.parent_slot as usize).and_then(Option::as_ref) {
+                if let Some(parent) = self
+                    .organisms
+                    .get(intent.parent_slot as usize)
+                    .and_then(Option::as_ref)
+                {
                     if parent.genome.len() == intent.genome.len() {
                         intent.mutation.substitutions = parent
                             .genome
@@ -1349,7 +1384,8 @@ impl World {
                             .zip(&intent.genome)
                             .filter(|(a, b)| a != b)
                             .count()
-                            .min(u16::MAX as usize) as u16;
+                            .min(u16::MAX as usize)
+                            as u16;
                     }
                 }
             }
@@ -1372,7 +1408,8 @@ impl World {
                 self.next_lineage_id += 1;
                 id
             };
-            let genotype_id = self.intern_genotype(intent.genome.clone(), Some(intent.parent_genotype_id));
+            let genotype_id =
+                self.intern_genotype(intent.genome.clone(), Some(intent.parent_genotype_id));
             let slot_id = self.alloc_slot();
             let birth_id = self.next_birth_id;
             self.next_birth_id += 1;
@@ -1415,7 +1452,11 @@ impl World {
                 .mutations_interval
                 .saturating_add(u64::from(mutation_total));
 
-            if let Some(parent) = self.organisms.get_mut(intent.parent_slot as usize).and_then(Option::as_mut) {
+            if let Some(parent) = self
+                .organisms
+                .get_mut(intent.parent_slot as usize)
+                .and_then(Option::as_mut)
+            {
                 parent.successful_children = parent.successful_children.saturating_add(1);
                 self.replication_instructions_interval = self
                     .replication_instructions_interval
@@ -1457,7 +1498,10 @@ impl World {
                     replenish /= 2;
                 }
             }
-            cell.resource = cell.resource.saturating_add(replenish).min(self.config.resource_cap);
+            cell.resource = cell
+                .resource
+                .saturating_add(replenish)
+                .min(self.config.resource_cap);
             if cell.signal > 0 {
                 cell.signal -= 1;
             } else if cell.signal < 0 {
@@ -1516,7 +1560,8 @@ impl World {
             mean_replication_instructions: if self.replications_interval == 0 {
                 0
             } else {
-                (self.replication_instructions_interval / u64::from(self.replications_interval)) as u32
+                (self.replication_instructions_interval / u64::from(self.replications_interval))
+                    as u32
             },
             tasks_succeeded: self.tasks_interval,
         };
@@ -1600,8 +1645,9 @@ impl World {
             dominant_genotype_id: dominant.map(|g| g.id),
             dominant_share_ppm,
             mutation: self.config.mutation.clone(),
-            expected_substitutions_milli_minimal: ((u64::from(self.config.mutation.substitution_ppm)
-                * MINIMAL_ANCESTOR.len() as u64)
+            expected_substitutions_milli_minimal: ((u64::from(
+                self.config.mutation.substitution_ppm,
+            ) * MINIMAL_ANCESTOR.len() as u64)
                 / 1_000) as u32,
             checksum: self.checksum_hex(),
             stats: self.stats.clone(),
@@ -1624,8 +1670,16 @@ impl World {
                     out[base + 2] = (colour >> 8) as u8;
                     out[base + 3] = scale_u16(organism.energy, self.config.max_energy);
                     out[base + 5] = if organism.child.is_some() { 1 } else { 0 }
-                        | if organism.last_status == StatusCode::TaskSucceeded { 2 } else { 0 }
-                        | if organism.energy < self.config.max_energy / 8 { 4 } else { 0 };
+                        | if organism.last_status == StatusCode::TaskSucceeded {
+                            2
+                        } else {
+                            0
+                        }
+                        | if organism.energy < self.config.max_energy / 8 {
+                            4
+                        } else {
+                            0
+                        };
                     out[base + 7] = organism.genome.len().min(255) as u8;
                 }
             }
@@ -1692,7 +1746,10 @@ impl World {
             "resource-pulse" => {
                 let add = value.min(u16::MAX as u32) as u16;
                 for cell in &mut self.cells {
-                    cell.resource = cell.resource.saturating_add(add).min(self.config.resource_cap);
+                    cell.resource = cell
+                        .resource
+                        .saturating_add(add)
+                        .min(self.config.resource_cap);
                 }
             }
             "logic" => {
@@ -1719,17 +1776,21 @@ impl World {
             .cells
             .iter()
             .enumerate()
-            .filter_map(|(idx, cell)| cell.occupant.map(|slot| {
-                let birth = self.organisms[slot as usize].as_ref().map_or(0, |o| o.birth_id);
-                let score = keyed_random(
-                    self.seed,
-                    DOMAIN_INTERVENTION,
-                    self.next_intervention_id,
-                    idx as u64,
-                    birth,
-                );
-                (score, idx, slot)
-            }))
+            .filter_map(|(idx, cell)| {
+                cell.occupant.map(|slot| {
+                    let birth = self.organisms[slot as usize]
+                        .as_ref()
+                        .map_or(0, |o| o.birth_id);
+                    let score = keyed_random(
+                        self.seed,
+                        DOMAIN_INTERVENTION,
+                        self.next_intervention_id,
+                        idx as u64,
+                        birth,
+                    );
+                    (score, idx, slot)
+                })
+            })
             .collect();
         candidates.sort_by_key(|c| (c.0, c.1));
         for (_, idx, slot) in candidates.into_iter().skip(survivors) {
@@ -1748,7 +1809,9 @@ impl World {
         let mut victims = Vec::new();
         for (idx, cell) in self.cells.iter().enumerate() {
             if let Some(slot) = cell.occupant {
-                let birth = self.organisms[slot as usize].as_ref().map_or(0, |o| o.birth_id);
+                let birth = self.organisms[slot as usize]
+                    .as_ref()
+                    .map_or(0, |o| o.birth_id);
                 let roll = keyed_random(
                     self.seed,
                     DOMAIN_INTERVENTION,
@@ -1884,9 +1947,8 @@ impl World {
             {
                 return Err("checkpoint contains an invalid organism".into());
             }
-            active_by_genotype[organism.genotype_id as usize] = active_by_genotype
-                [organism.genotype_id as usize]
-                .saturating_add(1);
+            active_by_genotype[organism.genotype_id as usize] =
+                active_by_genotype[organism.genotype_id as usize].saturating_add(1);
             max_birth = max_birth.max(organism.birth_id);
             max_lineage = max_lineage.max(organism.lineage_id);
             if let Some(child) = organism.child.as_ref() {
@@ -1927,7 +1989,9 @@ impl World {
             if genotype.id as usize != index
                 || genotype.bytes.len() < usize::from(self.config.min_genome)
                 || genotype.bytes.len() > usize::from(self.config.max_genome)
-                || genotype.parent_genotype_id.is_some_and(|id| id as usize >= self.genotypes.len())
+                || genotype
+                    .parent_genotype_id
+                    .is_some_and(|id| id as usize >= self.genotypes.len())
                 || genotype.active_count != active_by_genotype[index]
                 || self.genotype_lookup.get(&genotype.bytes) != Some(&genotype.id)
             {
@@ -1976,15 +2040,33 @@ impl World {
 
         let c = &self.config;
         for value in [
-            u64::from(c.width), u64::from(c.height), u64::from(c.instructions_per_update),
-            u64::from(c.min_genome), u64::from(c.max_genome), u64::from(c.max_energy),
-            u64::from(c.initial_energy), u64::from(c.child_energy), u64::from(c.maintenance_cost),
-            u64::from(c.allocation_cost), u64::from(c.division_cost), u64::from(c.resource_cap),
-            u64::from(c.resource_replenish), u64::from(c.uptake_packet), u64::from(c.logic_reward),
-            match c.occupancy_policy { OccupancyPolicy::EmptyOnly => 0, OccupancyPolicy::LocalReplacement => 1 },
-            u64::from(c.mutation.substitution_ppm), u64::from(c.mutation.insertion_ppm),
-            u64::from(c.mutation.deletion_ppm), u64::from(c.capabilities), u64::from(c.sample_period),
-            u64::from(c.max_samples), u64::from(c.max_fossils), u64::from(c.max_genotypes),
+            u64::from(c.width),
+            u64::from(c.height),
+            u64::from(c.instructions_per_update),
+            u64::from(c.min_genome),
+            u64::from(c.max_genome),
+            u64::from(c.max_energy),
+            u64::from(c.initial_energy),
+            u64::from(c.child_energy),
+            u64::from(c.maintenance_cost),
+            u64::from(c.allocation_cost),
+            u64::from(c.division_cost),
+            u64::from(c.resource_cap),
+            u64::from(c.resource_replenish),
+            u64::from(c.uptake_packet),
+            u64::from(c.logic_reward),
+            match c.occupancy_policy {
+                OccupancyPolicy::EmptyOnly => 0,
+                OccupancyPolicy::LocalReplacement => 1,
+            },
+            u64::from(c.mutation.substitution_ppm),
+            u64::from(c.mutation.insertion_ppm),
+            u64::from(c.mutation.deletion_ppm),
+            u64::from(c.capabilities),
+            u64::from(c.sample_period),
+            u64::from(c.max_samples),
+            u64::from(c.max_fossils),
+            u64::from(c.max_genotypes),
             u64::from(c.seasonal_period),
         ] {
             hash_pair(&mut a, &mut b, value);
@@ -2014,11 +2096,23 @@ impl World {
             hash_pair(&mut a, &mut b, u64::from(organism.genotype_id));
             hash_pair_bytes(&mut a, &mut b, &organism.genome);
             hash_pair(&mut a, &mut b, u64::from(organism.ip));
-            for &register in &organism.registers { hash_pair(&mut a, &mut b, u64::from(register)); }
-            hash_pair(&mut a, &mut b, match organism.compare { CompareFlag::Less => 0, CompareFlag::Equal => 1, CompareFlag::Greater => 2 });
+            for &register in &organism.registers {
+                hash_pair(&mut a, &mut b, u64::from(register));
+            }
+            hash_pair(
+                &mut a,
+                &mut b,
+                match organism.compare {
+                    CompareFlag::Less => 0,
+                    CompareFlag::Equal => 1,
+                    CompareFlag::Greater => 2,
+                },
+            );
             hash_pair(&mut a, &mut b, u64::from(organism.read_head));
             hash_pair(&mut a, &mut b, u64::from(organism.write_head));
-            for &return_ip in &organism.call_stack { hash_pair(&mut a, &mut b, u64::from(return_ip)); }
+            for &return_ip in &organism.call_stack {
+                hash_pair(&mut a, &mut b, u64::from(return_ip));
+            }
             hash_pair(&mut a, &mut b, u64::from(organism.call_stack_len));
             hash_pair(&mut a, &mut b, u64::from(organism.energy));
             hash_pair(&mut a, &mut b, organism.age_instructions);
@@ -2037,22 +2131,37 @@ impl World {
                 hash_pair(&mut a, &mut b, 0);
             }
             for value in [
-                u64::from(organism.vm_rand_counter), u64::from(organism.successful_children),
-                u64::from(organism.last_replication_instructions), u64::from(organism.instructions_since_birth),
-                u64::from(organism.tasks_succeeded), u64::from(organism.tasks_failed),
-                u64::from(organism.last_status as u8), u64::from(organism.birth_mutation.substitutions),
-                u64::from(organism.birth_mutation.insertions), u64::from(organism.birth_mutation.deletions),
-            ] { hash_pair(&mut a, &mut b, value); }
+                u64::from(organism.vm_rand_counter),
+                u64::from(organism.successful_children),
+                u64::from(organism.last_replication_instructions),
+                u64::from(organism.instructions_since_birth),
+                u64::from(organism.tasks_succeeded),
+                u64::from(organism.tasks_failed),
+                u64::from(organism.last_status as u8),
+                u64::from(organism.birth_mutation.substitutions),
+                u64::from(organism.birth_mutation.insertions),
+                u64::from(organism.birth_mutation.deletions),
+            ] {
+                hash_pair(&mut a, &mut b, value);
+            }
         }
         hash_pair(&mut a, &mut b, self.free_slots.len() as u64);
-        for &slot in &self.free_slots { hash_pair(&mut a, &mut b, u64::from(slot)); }
+        for &slot in &self.free_slots {
+            hash_pair(&mut a, &mut b, u64::from(slot));
+        }
 
         hash_pair(&mut a, &mut b, self.genotypes.len() as u64);
         for genotype in &self.genotypes {
             for value in [
-                u64::from(genotype.id), genotype.hash, genotype.first_seen_update,
-                u64::from(genotype.active_count), genotype.total_births, genotype.total_deaths,
-            ] { hash_pair(&mut a, &mut b, value); }
+                u64::from(genotype.id),
+                genotype.hash,
+                genotype.first_seen_update,
+                u64::from(genotype.active_count),
+                genotype.total_births,
+                genotype.total_deaths,
+            ] {
+                hash_pair(&mut a, &mut b, value);
+            }
             hash_pair_option(&mut a, &mut b, genotype.parent_genotype_id.map(u64::from));
             hash_pair_bytes(&mut a, &mut b, &genotype.bytes);
         }
@@ -2066,13 +2175,22 @@ impl World {
         }
         for sample in &self.stats {
             for value in [
-                sample.update, sample.instructions, u64::from(sample.population),
-                u64::from(sample.genotype_count), u64::from(sample.lineage_count),
-                u64::from(sample.dominant_share_ppm), u64::from(sample.median_genome_length),
-                u64::from(sample.median_energy), u64::from(sample.births), u64::from(sample.deaths),
-                u64::from(sample.mean_mutations_milli), u64::from(sample.mean_replication_instructions),
+                sample.update,
+                sample.instructions,
+                u64::from(sample.population),
+                u64::from(sample.genotype_count),
+                u64::from(sample.lineage_count),
+                u64::from(sample.dominant_share_ppm),
+                u64::from(sample.median_genome_length),
+                u64::from(sample.median_energy),
+                u64::from(sample.births),
+                u64::from(sample.deaths),
+                u64::from(sample.mean_mutations_milli),
+                u64::from(sample.mean_replication_instructions),
                 u64::from(sample.tasks_succeeded),
-            ] { hash_pair(&mut a, &mut b, value); }
+            ] {
+                hash_pair(&mut a, &mut b, value);
+            }
             hash_pair_option(&mut a, &mut b, sample.dominant_genotype_id.map(u64::from));
         }
         for intervention in &self.interventions {
@@ -2082,10 +2200,15 @@ impl World {
             hash_pair(&mut a, &mut b, u64::from(intervention.value));
         }
         for value in [
-            u64::from(self.births_interval), u64::from(self.deaths_interval), self.mutations_interval,
-            self.replication_instructions_interval, u64::from(self.replications_interval),
+            u64::from(self.births_interval),
+            u64::from(self.deaths_interval),
+            self.mutations_interval,
+            self.replication_instructions_interval,
+            u64::from(self.replications_interval),
             u64::from(self.tasks_interval),
-        ] { hash_pair(&mut a, &mut b, value); }
+        ] {
+            hash_pair(&mut a, &mut b, value);
+        }
         hash_pair_option(&mut a, &mut b, self.last_dominant.map(u64::from));
 
         let mut out = [0u8; 16];
@@ -2140,7 +2263,11 @@ impl World {
 
     fn neighbour_occupancy(&self, cell_index: usize) -> u32 {
         (0..8)
-            .filter(|&d| self.cells[self.direction_target(cell_index, d, 0)].occupant.is_some())
+            .filter(|&d| {
+                self.cells[self.direction_target(cell_index, d, 0)]
+                    .occupant
+                    .is_some()
+            })
             .count() as u32
     }
 
@@ -2314,8 +2441,12 @@ pub fn sandbox_trace(genome: &[u8], steps: u32) -> Result<SandboxTrace, String> 
     let mut child = None;
     for step in 0..steps {
         let cell = world.cell_index(1, 1);
-        let Some(slot) = world.cells[cell].occupant else { break };
-        let Some(org) = world.organisms[slot as usize].as_ref() else { break };
+        let Some(slot) = world.cells[cell].occupant else {
+            break;
+        };
+        let Some(org) = world.organisms[slot as usize].as_ref() else {
+            break;
+        };
         let ip = org.ip;
         let byte = org.genome[usize::from(ip) % org.genome.len()];
         trace.push(SandboxStep {
@@ -2397,7 +2528,12 @@ pub fn assess_viability(genome: &[u8], max_instructions: u64) -> ViabilityResult
         world.run_one_update();
         if first.is_none() && world.population() > before_pop {
             first = Some(world.instructions);
-            if let Some(child) = world.organisms.iter().flatten().find(|o| o.parent_birth_id.is_some()) {
+            if let Some(child) = world
+                .organisms
+                .iter()
+                .flatten()
+                .find(|o| o.parent_birth_id.is_some())
+            {
                 exact = child.genome == genome;
                 child_birth = Some(child.birth_id);
             }
@@ -2471,7 +2607,9 @@ pub fn neighbourhood_report(name: &str, ancestor: &[u8]) -> NeighbourhoodReport 
             report.substitutions_tested += 1;
             report.substitutions_divided += result.divided as u32;
             report.substitutions_child_divided += result.child_divided as u32;
-            if let (Some(candidate_time), Some(base_time)) = (result.first_division_instructions, baseline_time) {
+            if let (Some(candidate_time), Some(base_time)) =
+                (result.first_division_instructions, baseline_time)
+            {
                 report.substitutions_faster += (candidate_time < base_time) as u32;
             }
         }
@@ -2536,13 +2674,41 @@ fn operand_text(op: u8, arg: u8) -> String {
     match op {
         0 => format!("{}", (b'A' + arg) as char),
         1..=14 | 24 | 25 => format!("r{arg}"),
-        18 | 19 => if arg & 1 == 1 { "backward".into() } else { "forward".into() },
-        21 => ["genome length", "energy", "age", "generation", "child length", "child written", "resource", "status"]
-            [arg as usize]
+        18 | 19 => {
+            if arg & 1 == 1 {
+                "backward".into()
+            } else {
+                "forward".into()
+            }
+        }
+        21 => [
+            "genome length",
+            "energy",
+            "age",
+            "generation",
+            "child length",
+            "child written",
+            "resource",
+            "status",
+        ][arg as usize]
             .into(),
-        22 => if arg == 0 { "random neighbour".into() } else { format!("neighbour {}", arg - 1) },
-        23 => ["reset", "set read", "set write", "get read", "get write", "advance read", "advance write", "swap heads"]
-            [arg as usize]
+        22 => {
+            if arg == 0 {
+                "random neighbour".into()
+            } else {
+                format!("neighbour {}", arg - 1)
+            }
+        }
+        23 => [
+            "reset",
+            "set read",
+            "set write",
+            "get read",
+            "get write",
+            "advance read",
+            "advance write",
+            "swap heads",
+        ][arg as usize]
             .into(),
         27 => format!("sensor {arg}"),
         28 => format!("direction {arg}"),
@@ -2630,7 +2796,11 @@ fn find_template(
 }
 
 fn circular_range(start: usize, end: usize, len: usize) -> impl Iterator<Item = usize> {
-    let count = if end >= start { end - start } else { len - start + end };
+    let count = if end >= start {
+        end - start
+    } else {
+        len - start + end
+    };
     (0..count).map(move |i| (start + i) % len)
 }
 
@@ -2795,8 +2965,14 @@ mod tests {
     fn minimal_ancestor_replicates_exactly() {
         let result = assess_viability(&MINIMAL_ANCESTOR, 40_000);
         assert!(result.divided, "minimal ancestor never divided: {result:?}");
-        assert!(result.child_divided, "minimal child did not divide: {result:?}");
-        assert!(result.exact_child, "minimal ancestor copied incorrectly: {result:?}");
+        assert!(
+            result.child_divided,
+            "minimal child did not divide: {result:?}"
+        );
+        assert!(
+            result.exact_child,
+            "minimal ancestor copied incorrectly: {result:?}"
+        );
     }
 
     #[test]
@@ -2804,8 +2980,14 @@ mod tests {
         let genome = clumsy_ancestor();
         let result = assess_viability(&genome, 120_000);
         assert!(result.divided, "clumsy ancestor never divided: {result:?}");
-        assert!(result.child_divided, "clumsy child did not divide: {result:?}");
-        assert!(result.exact_child, "clumsy ancestor copied incorrectly: {result:?}");
+        assert!(
+            result.child_divided,
+            "clumsy child did not divide: {result:?}"
+        );
+        assert!(
+            result.exact_child,
+            "clumsy ancestor copied incorrectly: {result:?}"
+        );
     }
 
     #[test]
@@ -2845,7 +3027,10 @@ mod tests {
         let mut inserted = MINIMAL_ANCESTOR.to_vec();
         inserted.insert(0, encode(0, 2));
         let result = assess_viability(&inserted, 50_000);
-        assert!(result.divided, "prefix insertion broke template branch: {result:?}");
+        assert!(
+            result.divided,
+            "prefix insertion broke template branch: {result:?}"
+        );
     }
 
     #[test]
@@ -2899,7 +3084,9 @@ mod tests {
         config.max_fossils = 4;
         config.max_genotypes = 132;
         let mut world = World::new(config, 9, "prune-test").unwrap();
-        world.seed_organism(4, 4, MINIMAL_ANCESTOR.to_vec()).unwrap();
+        world
+            .seed_organism(4, 4, MINIMAL_ANCESTOR.to_vec())
+            .unwrap();
         let founder_hash = world.genotypes[0].hash;
         for i in 0..220u16 {
             let mut genome = vec![encode(0, 2); 8];
@@ -2910,7 +3097,10 @@ mod tests {
         assert!(world.genotypes.len() > world.config.max_genotypes as usize);
         world.prune_genotypes();
         assert!(world.genotypes.len() <= world.config.max_genotypes as usize);
-        assert!(world.genotypes.iter().any(|record| record.hash == founder_hash && record.active_count == 1));
+        assert!(world
+            .genotypes
+            .iter()
+            .any(|record| record.hash == founder_hash && record.active_count == 1));
         assert!(world.retired_genotypes > 0);
         world.validate_loaded().unwrap();
     }
