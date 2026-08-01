@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "stratego",
+    title: "Stratego — Field Edition",
+    tagline: "A full-size browser adaptation of the classic hidden-rank battle game: secretly deploy forty red or blue pieces, scout the lakes, defuse bombs, spring the Spy on the Marshal, and capture the Flag. Original table art, hot-seat and information-limited automata, deterministic offline vanilla JavaScript; no build step.",
+    url: "https://0x4d44.github.io/stratego/",
+    illustration: "ill-cards",
+    date: "2026-07-31T12:00:00",
+    year: 1942,
+    tags: ["games", "history"],
+    real: true,
+  },
+  {
     slug: "influence",
     title: "Click, Whirr",
     tagline: "An illustrated field guide to Robert Cialdini’s seven levers of persuasion — reciprocity to unity — with 33 field experiments, a lab where you predict each result before you see it, and the 2025–26 research showing language models yield to all seven. Carries a replication ledger that audits its own anecdotes. Vanilla JS; no build step.",
@@ -1630,7 +1641,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },

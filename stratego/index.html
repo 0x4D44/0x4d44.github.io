@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#14291e" />
+  <meta name="description" content="A full 40-piece browser adaptation of the classic game of hidden ranks, bombs, scouts and flags." />
+  <title>Stratego — Field Edition</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#battlefield">Skip to battlefield</a>
+  <div class="table-grain" aria-hidden="true"></div>
+
+  <header class="box-lid" aria-labelledby="game-title">
+    <div class="box-stripe box-stripe--red" aria-hidden="true"></div>
+    <div class="box-lid__copy">
+      <p class="edition-mark">0x4D44 ALMANAC · FIELD EDITION</p>
+      <h1 id="game-title"><span>STRA</span><span>TEGO</span></h1>
+      <p class="subtitle">The classic game of battlefield strategy, concealed ranks and one well-guarded flag</p>
+      <div class="box-badges" aria-label="Game details"><span>2 armies</span><span>80 pieces</span><span>10 × 10 board</span><span>offline</span></div>
+    </div>
+    <svg class="box-art" viewBox="0 0 380 180" role="img" aria-label="Original illustration of two crossed standards">
+      <path d="M190 25v130M42 152h296" fill="none" stroke="currentColor" stroke-width="4"/>
+      <path d="M186 42C146 18 106 23 66 46v61c40-22 80-26 120-4z" class="banner-red"/>
+      <path d="M194 51c40-23 80-18 120 5v61c-40-22-80-26-120-4z" class="banner-blue"/>
+      <g fill="none" stroke="#f3e5ba" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M94 130l58-68M286 140l-58-72"/>
+        <path d="M112 50c2 23 11 36 30 40-21 11-30 27-29 49M267 60c-2 23-11 36-30 40 21 11 30 27 29 49"/>
+      </g>
+      <circle cx="190" cy="25" r="7" fill="currentColor"/>
+    </svg>
+    <div class="box-stripe box-stripe--blue" aria-hidden="true"></div>
+  </header>
+
+  <main class="game-shell" id="battlefield">
+    <section class="command-bar" aria-label="Game controls">
+      <div class="turn-standard" id="turn-standard" data-side="red">
+        <span class="turn-standard__flag" aria-hidden="true">⚔</span>
+        <span><strong id="turn-title">WAR ROOM</strong><small id="turn-copy">Choose a campaign to begin</small></span>
+      </div>
+      <div class="command-actions">
+        <button class="command-button command-button--gold" id="new-game-button" type="button">New campaign</button>
+        <button class="command-button" id="hint-button" type="button" disabled>Adjutant</button>
+        <button class="command-button" id="manual-button" type="button">Field manual</button>
+        <button class="command-button command-button--icon" id="sound-button" type="button" aria-pressed="true" aria-label="Toggle sound">♪</button>
+      </div>
+    </section>
+
+    <div class="battle-layout">
+      <aside class="field-panel field-panel--blue" aria-labelledby="blue-hq-title">
+        <header class="field-panel__header"><span class="mini-standard mini-standard--blue" aria-hidden="true">✦</span><div><p class="eyebrow">NORTHERN COMMAND</p><h2 id="blue-hq-title">Blue headquarters</h2></div></header>
+        <div class="army-status" id="blue-army-status"></div>
+        <section aria-labelledby="intel-title"><h3 id="intel-title">Intelligence ledger</h3><p class="panel-note">Only ranks exposed in battle are identified.</p><div class="intel-grid" id="intel-grid"></div></section>
+        <section aria-labelledby="red-losses-title"><h3 id="red-losses-title">Red losses</h3><div class="captured-tray" id="red-losses" aria-live="polite"></div></section>
+      </aside>
+
+      <section class="board-column" aria-label="Battle board">
+        <div class="board-frame" id="board-frame" data-view="red">
+          <div class="coordinate coordinate--top" id="coords-top" aria-hidden="true"></div>
+          <div class="coordinate coordinate--bottom" id="coords-bottom" aria-hidden="true"></div>
+          <div class="coordinate coordinate--left" id="coords-left" aria-hidden="true"></div>
+          <div class="coordinate coordinate--right" id="coords-right" aria-hidden="true"></div>
+          <div class="board" id="board" role="grid" aria-rowcount="10" aria-colcount="10" aria-label="Stratego battlefield, ten columns by ten rows"></div>
+          <svg class="map-ink" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="3" opacity=".15">
+              <path d="M30 180c120-96 234 82 358 0s216-84 326 0 176-22 258-80"/>
+              <path d="M25 225c124-88 244 89 368 8s220-79 328 3 173-30 264-91"/>
+              <path d="M42 780c132-104 245 80 370 1s220-75 325 12 151 24 230-17"/>
+              <path d="M490 45c-42 91 2 169-42 250s22 150-8 235 20 155-13 245 3 128-22 183"/>
+              <path d="M545 43c-36 94 8 168-32 250s27 146-4 233 25 151-7 245 4 126-18 187"/>
+            </g>
+          </svg>
+          <div class="board-seal" aria-hidden="true">FIELD<br>COMMAND</div>
+          <div class="privacy-shutter" id="privacy-shutter" hidden>
+            <div class="privacy-card">
+              <span class="privacy-crest" aria-hidden="true">⚔</span>
+              <p class="eyebrow">EYES ONLY</p>
+              <h2 id="privacy-title">Pass the field map</h2>
+              <p id="privacy-copy">The next commander should take control before the ranks are shown.</p>
+              <button class="action-button" id="privacy-button" type="button">Reveal my command</button>
+            </div>
+          </div>
+        </div>
+        <p class="board-instruction" id="board-instruction" aria-live="polite">Open a new campaign to deploy your army.</p>
+        <div class="setup-dock" id="setup-dock" hidden>
+          <div><p class="eyebrow">DEPLOYMENT</p><strong id="setup-heading">Arrange Red’s army</strong><span id="setup-copy">Select or drag two pieces to exchange positions.</span></div>
+          <div class="formation-tabs" id="formation-tabs" role="group" aria-label="Formation preset">
+            <button type="button" data-formation="fortress">Fortress</button><button type="button" data-formation="spearhead">Spearhead</button><button type="button" data-formation="feint">Feint</button><button type="button" data-formation="random">Shuffle</button>
+          </div>
+          <button class="action-button" id="ready-button" type="button">Begin battle</button>
+        </div>
+      </section>
+
+      <aside class="field-panel field-panel--red" aria-labelledby="red-hq-title">
+        <header class="field-panel__header"><span class="mini-standard mini-standard--red" aria-hidden="true">✦</span><div><p class="eyebrow">SOUTHERN COMMAND</p><h2 id="red-hq-title">Red headquarters</h2></div></header>
+        <div class="army-status" id="red-army-status"></div>
+        <section aria-labelledby="dispatch-title"><div class="section-heading"><h3 id="dispatch-title">Battle dispatches</h3><span id="move-counter">0 moves</span></div><ol class="dispatch-log" id="dispatch-log" aria-live="polite"></ol></section>
+        <section aria-labelledby="blue-losses-title"><h3 id="blue-losses-title">Blue losses</h3><div class="captured-tray" id="blue-losses" aria-live="polite"></div></section>
+      </aside>
+    </div>
+
+    <section class="rank-ribbon" aria-labelledby="rank-ribbon-title">
+      <div class="rank-ribbon__intro"><p class="eyebrow">ORDER OF BATTLE</p><h2 id="rank-ribbon-title">Know your army</h2><button class="text-button" id="rank-style-button" type="button">Modern ranks: 10 is strongest</button></div>
+      <div class="rank-cards" id="rank-cards"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div><strong>Stratego — Field Edition</strong><p>An unofficial, non-commercial browser adaptation with original code and artwork. “Stratego” is a trademark of its respective owners; no affiliation or endorsement is implied.</p></div><div class="footer-marks"><span>FULL CLASSIC ARMY</span><span>NO TRACKING</span><span>NO BUILD STEP</span></div></footer>
+
+  <dialog class="campaign-dialog" id="campaign-dialog" aria-labelledby="campaign-title">
+    <form method="dialog" class="dialog-sheet" id="campaign-form">
+      <button class="dialog-close" id="campaign-close" type="button" aria-label="Close new campaign dialog">×</button>
+      <p class="eyebrow">WAR OFFICE · OPERATIONS ORDER</p><h2 id="campaign-title">Open a new campaign</h2><p class="dialog-lede">Choose how the opposing headquarters will be commanded. Every game uses the complete force of forty pieces per side.</p>
+      <fieldset class="choice-grid choice-grid--mode"><legend>Command arrangement</legend>
+        <label class="choice-card"><input type="radio" name="mode" value="solo" checked><span class="choice-icon" aria-hidden="true">♟</span><span><b>Against the machine</b><small>You command Red. Blue reasons only from information it has uncovered.</small></span></label>
+        <label class="choice-card"><input type="radio" name="mode" value="hotseat"><span class="choice-icon" aria-hidden="true">♟♟</span><span><b>Two commanders</b><small>Share one screen. A privacy shutter protects every handoff.</small></span></label>
+      </fieldset>
+      <fieldset class="choice-grid choice-grid--difficulty" id="difficulty-fieldset"><legend>Blue commander</legend>
+        <label class="choice-card choice-card--compact"><input type="radio" name="difficulty" value="cadet"><span><b>Cadet</b><small>Bold and fallible.</small></span></label>
+        <label class="choice-card choice-card--compact"><input type="radio" name="difficulty" value="colonel" checked><span><b>Colonel</b><small>Balanced fieldcraft.</small></span></label>
+        <label class="choice-card choice-card--compact"><input type="radio" name="difficulty" value="marshal"><span><b>Marshal</b><small>Sharper inference.</small></span></label>
+      </fieldset>
+      <fieldset class="choice-grid choice-grid--rules"><legend>House orders</legend>
+        <label class="switch-line"><input type="checkbox" name="aggressor"><span><b>Attacker wins equal ranks</b><small>Optional published variation; otherwise both pieces are removed.</small></span></label>
+        <label class="switch-line"><input type="checkbox" name="threefold" checked><span><b>Repeated positions are a draw</b><small>A digital anti-loop safeguard alongside the classic two-square rule.</small></span></label>
+      </fieldset>
+      <div class="continue-notice" id="continue-notice" hidden><span aria-hidden="true">▣</span><span><b>A sealed campaign is stored on this device.</b><small>Starting afresh replaces it.</small></span></div>
+      <menu class="dialog-actions"><button class="command-button" id="continue-button" type="button" hidden>Continue stored campaign</button><button class="action-button" id="campaign-start" value="default">Issue orders</button></menu>
+    </form>
+  </dialog>
+
+  <dialog class="manual-dialog" id="manual-dialog" aria-labelledby="manual-title">
+    <article class="manual-sheet">
+      <header class="manual-header"><div><p class="eyebrow">RESTRICTED · FIELD MANUAL 10×10</p><h2 id="manual-title">How to command the field</h2></div><button class="dialog-close" id="manual-close" type="button" aria-label="Close field manual">×</button></header>
+      <nav class="manual-nav" aria-label="Field manual sections"><a href="#manual-objective">Objective</a><a href="#manual-movement">Movement</a><a href="#manual-combat">Combat</a><a href="#manual-specialists">Specialists</a><a href="#manual-history">History</a></nav>
+      <div class="manual-body">
+        <section id="manual-objective"><span class="manual-number">01</span><div><h3>Capture the Flag</h3><p>Each commander secretly arranges forty pieces in the four rows nearest them. Red moves first. Capture the opposing Flag, or leave the enemy with no legal move, to win.</p></div></section>
+        <section id="manual-movement"><span class="manual-number">02</span><div><h3>Move under cover</h3><p>Move one piece horizontally or vertically. No diagonals, jumping, sharing squares or entering either lake. Bombs and Flags never move. Scouts alone may travel any clear distance in one straight line.</p></div></section>
+        <section id="manual-combat"><span class="manual-number">03</span><div><h3>Reveal only in battle</h3><p>When a piece attacks, both ranks are exposed. The stronger remains; the weaker is captured. Equal ranks are both removed unless the aggressor variation is selected.</p></div></section>
+        <section id="manual-specialists"><span class="manual-number">04</span><div><h3>Use the specialists</h3><div class="manual-callouts"><p><b>Miner 3</b> is the only rank that can remove a Bomb.</p><p><b>Spy 1</b> defeats the Marshal 10 only when the Spy attacks first.</p><p><b>Scout 2</b> crosses any number of clear squares.</p></div></div></section>
+        <section><span class="manual-number">05</span><div><h3>Do not shuttle forever</h3><p>A piece may cross the same two squares on three consecutive moves by that side; the fourth crossing is barred. Moving another piece breaks the sequence.</p></div></section>
+        <section id="manual-history"><span class="manual-number">06</span><div><h3>A Dutch modern classic</h3><p>Jacques Johan Mogendorff created the game before the Stratego name was registered in 1942. Post-war Dutch editions established the red and blue armies; Milton Bradley introduced the American edition in 1961. Different eras printed the Marshal as either 1 or 10, so this edition offers both displays without changing the rules.</p><p class="manual-source-note">This adaptation follows the full modern 40-piece game and uses original code and artwork rather than scans or production assets.</p></div></section>
+      </div>
+    </article>
+  </dialog>
+
+  <dialog class="combat-dialog" id="combat-dialog" aria-labelledby="combat-title"><div class="combat-sheet"><p class="eyebrow">CONTACT REPORT</p><h2 id="combat-title">Battle joined</h2><div class="combatants"><div class="combatant" id="combat-attacker"></div><div class="combat-flash" aria-hidden="true">⚔</div><div class="combatant" id="combat-defender"></div></div><p class="combat-result" id="combat-result"></p><button class="action-button" id="combat-close" type="button">Return to the field</button></div></dialog>
+
+  <dialog class="gameover-dialog" id="gameover-dialog" aria-labelledby="gameover-title"><div class="gameover-sheet"><p class="eyebrow">FINAL DISPATCH</p><h2 id="gameover-title">Campaign complete</h2><p id="gameover-copy"></p><div class="gameover-stats" id="gameover-stats"></div><div class="dialog-actions"><button class="command-button" id="review-board-button" type="button">Review battlefield</button><button class="action-button" id="rematch-button" type="button">Open another campaign</button></div></div></dialog>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="stratego-core.js"></script>
+  <script src="stratego-ai.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
