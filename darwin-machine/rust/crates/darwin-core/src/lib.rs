@@ -808,9 +808,8 @@ impl World {
                 continue;
             }
 
-            let mut signal = ExecSignal::Continue;
             for _ in 0..self.config.instructions_per_update {
-                signal =
+                let signal =
                     self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);
                 if organism.energy == 0 || signal == ExecSignal::Yield {
                     break;
@@ -1545,6 +1544,7 @@ impl World {
             instructions: self.instructions,
             population,
             genotype_count,
+            retired_genotype_count: self.retired_genotypes,
             lineage_count: lineages.len() as u32,
             dominant_genotype_id: dominant_id,
             dominant_share_ppm,
