@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00043 — Nihon Quest same-origin vendoring left the document's own build and self-check gates red on Windows
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** japanese-travel-rpg
@@ -18,7 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T225253Z-p30268-n693916000-c1 branch=task/bug-ALM-BUG-KILN-00043-run-fix-20260730T225253Z-p30268-n693916000-c1 code=06784158c0ec02b469fe7d60dc6641e241e87201 gate=manual)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T225253Z-p30268-n693916000-c1 branch=task/bug-ALM-BUG-KILN-00043-run-fix-20260730T225253Z-p30268-n693916000-c1 code=06784158c0ec02b469fe7d60dc6641e241e87201 gate=manual) -> Closed (2026-08-01, independently verified and closed by Claude (verifier, not the fixer), on origin/main 26b5ff5 — fix commit 0678415 verified; both gates now pass and `.gitattributes` grants the vendor files `-text`, which is the platform-independent fix for the Windows CRLF/SRI failure)
 
 ## Observation
 
@@ -62,3 +62,54 @@ Both are one-line changes:
 - add `japanese-travel-rpg/vendor/*.js -text` to the root `.gitattributes`, mirroring the existing `broadband-speed-checker` line, then re-checkout the two files so the working-tree bytes match the blobs.
 
 Related smaller gaps found in the same verification but deliberately not folded in here: `/almanac-back.js` is not in the service-worker `ASSETS` precache list, so the shared back button is absent offline; and nothing pins `ios-frame.js` to `ios-frame.jsx`, so the transpiled copy and its source can drift silently.
+
+## Independent verification (2026-08-01) — CLOSED
+
+Verified on `origin/main` 26b5ff5 by a verifier who did not author the fix (fixer was the
+2026-07-31 `deltic:auto` run, commit `0678415`). **Both recorded failures are resolved.**
+
+**1. The document's build is green.**
+
+```
+$ cd japanese-travel-rpg && node tools/build.mjs
+PASS build: static app validated (16 chapters, 80 phrases, 64 signs).   exit 0
+```
+
+`tools/build.mjs:16` and `:24` now list `ios-frame.js`, which matches what `index.html:34`
+actually references (`from="./ios-frame.js"`) — the fix aligns the manifest with reality rather
+than reverting the x-import.
+
+**2. The vendored-bytes failure is fixed at its root.** `.gitattributes` now carries
+`japanese-travel-rpg/vendor/*.js -text`, mirroring the existing `broadband-speed-checker` line.
+Git confirms the attribute is live:
+
+```
+$ git ls-files --eol japanese-travel-rpg/vendor/
+i/lf    w/lf    attr/-text    japanese-travel-rpg/vendor/react-dom.production.min.js
+i/lf    w/lf    attr/-text    japanese-travel-rpg/vendor/react.production.min.js
+
+$ cd japanese-travel-rpg && node tests/self-check.mjs
+PASS self-checks: content, route unlocking, SRS, persistence, phrasebook search, romaji settings, AI gating, PWA assets.
+```
+
+`-text` suppresses `core.autocrlf` conversion, so a stock Windows checkout now gets the LF blobs
+the pinned SRI hashes were computed over. **Verification limit, stated plainly:** this was
+verified on macOS, so the CRLF checkout itself was not exercised; the evidence is the live
+`attr/-text` marking, which is what governs the conversion on every platform.
+
+**Proven to bite (fails-before / passes-after), both halves:**
+
+```
+restore "ios-frame.jsx" in tools/build.mjs
+  -> Error: index.html does not reference ios-frame.jsx        (the recorded error, verbatim)
+delete the japanese-travel-rpg line from .gitattributes
+  -> AssertionError: vendored runtime bytes must not be rewritten by core.autocrlf on Windows
+```
+
+The second is the new guard the fix added at `japanese-travel-rpg/tests/self-check.mjs:102` —
+it pins the `.gitattributes` line itself, so the fix cannot silently rot.
+
+**Carried forward, not residuals of this fix.** The two smaller gaps this bug's Notes recorded as
+deliberately out of scope remain untracked and unfixed: `/almanac-back.js` is absent from the
+service-worker `ASSETS` precache list, and nothing pins `ios-frame.js` to its `ios-frame.jsx`
+source. Neither is part of this bug's Expected, so they do not block closure.

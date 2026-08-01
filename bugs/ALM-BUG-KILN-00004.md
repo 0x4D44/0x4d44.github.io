@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00004 — Tidecall game board overflows the viewport and scrolls (all responsive tiers)
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tidecall
@@ -18,7 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification) -> Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260731T175817Z-p33922-n748114000-c1 branch=task/bug-ALM-BUG-KILN-00004-run-fix-20260731T175817Z-p33922-n748114000-c1 code=6bcda3e5294506c5ee219c60598c14d78fac7d65 gate=manual)
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification) -> Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260731T175817Z-p33922-n748114000-c1 branch=task/bug-ALM-BUG-KILN-00004-run-fix-20260731T175817Z-p33922-n748114000-c1 code=6bcda3e5294506c5ee219c60598c14d78fac7d65 gate=manual) -> Closed (2026-08-01, independently verified and closed by Claude (verifier, not the fixer), on origin/main 26b5ff5 — fix commit 6bcda3e verified; the recorded scroll does NOT reproduce over 120 independent headless-Chrome loads (40 deals x 3 viewports), pageScrollsBy=0 every time)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and view the game board.
@@ -112,3 +112,42 @@ So the guard pins a sub-cause that was already correct and cannot detect the res
 **Search for any change that could have added slack — none found.** `.table-column` (`styles.css:476`, `:675`, `:695`, `:711`) is unchanged; `body` carries only `overflow-x: hidden` (`styles.css:44`); there is no `overflow-y` clamp, no `max-height`, and no smaller card row.
 
 **Limit of this verification:** the scroll measurement itself needs a real browser layout and was not re-run. But the git evidence is decisive that nothing shipped could have changed it, so closing would rubber-stamp exactly the "single lucky sample" error this ledger already caught once. The residual scroll recorded on 2026-07-13 (2px on 8/10 loads at 1440×900, 21px on 1/10 at 390×844) should be re-measured in headless Chrome as part of the next fix, per this bug's own guidance.
+
+## Independent verification (2026-08-01) — CLOSED
+
+Verified on `origin/main` 26b5ff5 by a verifier who did not author the fix (fixer was the
+2026-07-31 `deltic:auto` run, commit `6bcda3e`). **The recorded symptom no longer reproduces.**
+
+**Re-measured the original observation, hard.** This bug was reopened twice, the second time
+because "0/0/0 was a single lucky sample", and the 2026-07-13 residual was explicitly
+*deal-dependent* (2px on 8/10 loads at 1440x900, 21px on 1/10 at 390x844). Twelve seeds cannot
+refute a 1-in-10 intermittent, so the verifier re-ran the measurement over **40 distinct deals at
+each of the three recorded viewports — 120 measured loads**:
+
+```
+desktop  1440x900 : pageScrollsBy over 40 deals -> max=0 nonZero=0/40
+tablet   768x1024 : pageScrollsBy over 40 deals -> max=0 nonZero=0/40
+phone    390x844  : pageScrollsBy over 40 deals -> max=0 nonZero=0/40
+PROBE SUMMARY: 120 measured loads, 0 scrolled, worst = 0px
+```
+
+No load scrolled and no load clipped the player dock.
+
+**The fix addresses the cause the 2026-07-13 reopen recorded, and obeys its instruction.** That
+verification found the chrome constants were already exact, named the residual cause as "the
+board has zero vertical slack", measured that over-subtracting +30px drives the scroll flat to
+zero, and said **"Do NOT nudge the constants again."** The fix does exactly that: it leaves
+73/101/106 untouched and introduces `--board-content-slack: 30px` (`tidecall/styles.css:424`),
+subtracted at all three tiers.
+
+**Proven to bite (fails-before / passes-after).** Setting the slack back to `0px` on a scratch
+copy reproduces the recorded residual precisely — the oracle fails with **"scrolls by 2px"**, the
+same 2px the 2026-07-13 pass measured at 1440x900. Restored, it passes.
+
+**Regression coverage is now behavioural, not a source regex.** `tidecall/browser.test.mjs` (new
+in this fix) drives real Chrome and asserts `pageScrollsBy === 0` and an unclipped dock across
+3 tiers x 12 seeded deals. The magic-constant regexes this bug's own guard used were removed
+(see ALM-BUG-KILN-00046).
+
+**Gates:** root `npm test` exit 0 (every suite `# fail 0`, 130 documents responsive-clean) and
+`npm run build` exit 0, both on this tree.

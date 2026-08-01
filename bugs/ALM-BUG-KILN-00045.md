@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00045 — Tidecall KILN-00028 focus guard uses an LF-only regex, so npm test and npm run build fail on every Windows checkout
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** tests
@@ -18,7 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T230957Z-p71804-n342386000-c1 branch=task/bug-ALM-BUG-KILN-00045-run-fix-20260730T230957Z-p71804-n342386000-c1 code=f2dd9d653a73ea23bfbd2b5d38b35cfc040942d2 gate=manual)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T230957Z-p71804-n342386000-c1 branch=task/bug-ALM-BUG-KILN-00045-run-fix-20260730T230957Z-p71804-n342386000-c1 code=f2dd9d653a73ea23bfbd2b5d38b35cfc040942d2 gate=manual) -> Closed (2026-08-01, independently verified and closed by Claude (verifier, not the fixer), on origin/main 26b5ff5 — fix commit f2dd9d6 verified by reproducing the CRLF condition on a converted checkout — pre-fix exit 1 with the recorded AssertionError, post-fix exit 0)
 
 ## Observation
 
@@ -69,3 +69,42 @@ Minimal fix: make the extractor line-ending agnostic — `/function openModal[\s
 A durable alternative is adding `*.js text eol=lf` to the root `.gitattributes`, which would make every checkout LF and remove the whole class. That is a wider change and should be a deliberate decision rather than a side effect of this fix.
 
 A repo-wide sweep during the verification found this is the **only** affected extractor: `onu/tests/validate-static.mjs:191` (`\n\}`) and `tidecall/celebrate.test.js:15` (`\n {2}\}`) both survive CRLF because their terminators place the newline before the brace. See also ALM-BUG-KILN-00046 — this is a live instance of the guard-quality problem ALM-BUG-KILN-00029 described.
+
+## Independent verification (2026-08-01) — CLOSED
+
+Verified on `origin/main` 26b5ff5 by a verifier who did not author the fix (fixer was the
+2026-07-31 `deltic:auto` run, commit `f2dd9d6`). **The recorded symptom no longer reproduces.**
+
+**The Windows condition was reproduced, not assumed.** The verifier ran on macOS, so a stock
+Windows checkout was simulated by CRLF-converting a copy of the tree. That copy matches the line
+counts this bug recorded exactly:
+
+```
+tidecall/app.js in the simulated checkout: CRLF lines 1169, bare LF 0     (the bug records 1169 / 0)
+```
+
+**Against that CRLF checkout, with the fix:**
+
+```
+$ node tidecall/validate-static.test.js
+✓ a modal moves focus to its first VISIBLE control, not a hidden one (KILN-00028)
+All Tidecall static checks passed.                                        exit 0
+```
+
+**Proven to bite (fails-before / passes-after).** Reverting just the fix hunk — `read()` back to a
+raw `readFileSync` without `normaliseSource` — on that same CRLF checkout reproduces the recorded
+failure verbatim:
+
+```
+✗ a modal moves focus to its first VISIBLE control, not a hidden one (KILN-00028)
+AssertionError [ERR_ASSERTION]: openModal function should be found         exit 1
+```
+
+**The fix is the one this bug recommended, at the better layer.** It normalises once in `read()`
+(`tidecall/validate-static.test.js:9`) rather than patching the single regex, so all the
+source-pattern guards in that file are inoculated at once — the bug's own stated preference. It
+also adds a direct unit assertion that `normaliseSource` collapses CRLF. The wider
+`*.js text eol=lf` option the bug flagged as "a deliberate decision rather than a side effect"
+was correctly **not** taken.
+
+**Gates:** root `npm test` and `npm run build` both exit 0 on this tree.
