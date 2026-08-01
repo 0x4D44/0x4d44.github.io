@@ -43,14 +43,19 @@ jobs:
         shell: bash
         run: |
           if [[ -d .darwin-bootstrap ]]; then
-            wc -c .darwin-bootstrap/part-*
-            sha256sum .darwin-bootstrap/part-*
+            wc -c .darwin-bootstrap/part-* .darwin-bootstrap/fix-09-*
+            sha256sum .darwin-bootstrap/part-* .darwin-bootstrap/fix-09-*
           python - <<'PY'
           import base64
           import hashlib
           from pathlib import Path
 
-          parts = sorted(Path('.darwin-bootstrap').glob('part-*'))
+          root = Path('.darwin-bootstrap')
+          parts = (
+              [root / f'part-{index:02d}' for index in range(9)]
+              + [root / 'fix-09-0', root / 'fix-09-1']
+              + [root / f'part-{index:02d}' for index in range(10, 15)]
+          )
           text = ''.join(part.read_text(encoding='utf-8') for part in parts)
           alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ')
           bad = [(index, character, ord(character)) for index, character in enumerate(text) if character not in alphabet]
