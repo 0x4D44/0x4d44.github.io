@@ -760,13 +760,7 @@ function frame(now) {
     trainPos.set(ride.pos.x, ride.pos.y, ride.pos.z);
     audio.update(rideMix({
       v: ride.v,
-      gForce: ride.gForce,
       mode: ride.mode,
-      // How steeply the nose is pointing down, and whether the car is
-      // upside down: the two things riders shout at that a g reading
-      // alone does not capture.
-      pitch: ride.fwd.y,
-      inverted: ride.up.y < -0.2,
       riding: state.camMode === "pov" || state.camMode === "chase",
       distance: camera.position.distanceTo(trainPos),
     }), dt);
