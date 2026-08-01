@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164235Z-p58443-n367224000-c1 branch=task/bug-ALM-BUG-KILN-00035-run-fix-20260730T164235Z-p58443-n367224000-c1 code=0e989be43f89619ead16df3928ea160ddfd3a214 gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 0e989be verified; driven-code control: 1 spin pre-fix, 0 with a dialog open now)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164235Z-p58443-n367224000-c1 branch=task/bug-ALM-BUG-KILN-00035-run-fix-20260730T164235Z-p58443-n367224000-c1 code=0e989be43f89619ead16df3928ea160ddfd3a214 gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 0e989be verified; driven-code control: 1 spin pre-fix, 0 with a dialog open now)
 
 ## Observation
 

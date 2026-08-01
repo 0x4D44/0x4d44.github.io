@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all six recorded malformed shapes now drop at load; a non-array body/tags residual split to ALM-BUG-KILN-00047)
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all six recorded malformed shapes now drop at load; a non-array body/tags residual split to ALM-BUG-KILN-00047)
 
 ## Observation
 If a single article object in articles.js is appended without a category / headline / standfirst (or with a non-string one), the category-browse, search, and About pages throw and render completely blank, instead of that one story being skipped.

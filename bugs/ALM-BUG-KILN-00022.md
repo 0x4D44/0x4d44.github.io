@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — 0 occurrences across all fields of all 1104 articles; the 2026-07-30 corpus restore reintroduced none)
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — 0 occurrences across all fields of all 1104 articles; the 2026-07-30 corpus restore reintroduced none)
 
 ## Observation
 20 of the based-on-truth article bodies contain visible model-guardrail phrasing -- the literal words "a fictitious ..." naming an invented expert -- which reads as a generation artifact, not editorial voice.
