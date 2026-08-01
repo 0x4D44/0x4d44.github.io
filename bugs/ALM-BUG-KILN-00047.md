@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00047 — News home and search still blank on a 1-8 article corpus and on non-array body/tags
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** news
@@ -18,7 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T233047Z-p18484-n378881000-c1 branch=task/bug-ALM-BUG-KILN-00047-run-fix-20260730T233047Z-p18484-n378881000-c1 code=c06d6ab gate=manual)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T233047Z-p18484-n378881000-c1 branch=task/bug-ALM-BUG-KILN-00047-run-fix-20260730T233047Z-p18484-n378881000-c1 code=c06d6ab gate=manual) -> Closed (2026-08-01, independently verified and closed by Claude (verifier, not the fixer), on origin/main 26b5ff5 — fix commit c06d6ab verified; corpus sizes 1-8 and non-array body/tags reproduced verbatim pre-fix and all degrade gracefully post-fix, with the shipped 1104-article corpus intact)
 
 ## Observation
 
@@ -61,3 +61,52 @@ Both are small:
 - add `Array.isArray(a.body) && Array.isArray(a.tags)` to the load filter at `news/news.js:19-22`.
 
 Severity is Low because the committed corpus is 1104 articles and the static oracle at `news/tests/validate-static.mjs:321-343` already asserts `Array.isArray(a.body)` over everything in the repo — so this bites a *runtime* append, which is the workflow the About page advertises, rather than the shipped site. Regression coverage should extend the existing empty-corpus test to sizes 1-8.
+
+## Independent verification (2026-08-01) — CLOSED
+
+Verified on `origin/main` 26b5ff5 by a verifier who did not author the fix (fixer was the
+2026-07-31 `deltic:auto` run, commit `c06d6ab`). **Both recorded defects are resolved.**
+
+**1. Sparse corpora now degrade instead of blanking.** Sweeping sizes 0-12 through the real
+`renderHome`, exactly as the observation did:
+
+```
+corpus= 0..8 -> ok (7789 chars, mount populated, friendly notice)
+corpus= 9    -> ok (19249 chars, mount populated)
+corpus=10..12-> ok (mount populated)
+```
+
+Every size in the previously-throwing 1-8 band now renders the "Nothing to show" notice.
+
+**2. Malformed `body`/`tags` are dropped at load.** With a well-formed 12-article corpus plus one
+malformed article, all four shapes are rejected by the widened filter and every page still
+renders:
+
+```
+[body as a string] droppedAtLoad=true   renderSearch ok / renderArticle ok / renderHome ok
+[tags as a string] droppedAtLoad=true   renderSearch ok / renderArticle ok / renderHome ok
+[body missing]     droppedAtLoad=true   renderSearch ok / renderArticle ok / renderHome ok
+[tags missing]     droppedAtLoad=true   renderSearch ok / renderArticle ok / renderHome ok
+```
+
+**No false positives — checked, because the fix tightens a filter over shipped data.** All
+**1104/1104** shipped articles carry an array `body` and an array `tags`, so none is dropped, and
+`renderHome` over the full corpus still renders (28168 chars).
+
+**Proven to bite (fails-before / passes-after).** Reverting both shipped hunks in `news/news.js`
+on a scratch copy reproduces the recorded observation verbatim:
+
+```
+corpus= 1 -> THREW TypeError: Cannot read properties of undefined (reading 'id') | mount left BLANK
+corpus= 2..8 -> same THROW, mount left BLANK
+corpus= 9 -> ok
+```
+
+and fails the document's own oracle with `AssertionError: Got unwanted exception: renderHome
+should survive a 1-article corpus`.
+
+**Regression coverage matches what this bug asked for**: `news/tests/validate-static.mjs` now
+loops sizes 0-8 asserting both `doesNotThrow` and the friendly notice, and appends `x-body` /
+`x-tags` malformed articles to the corpus-shape oracle.
+
+**Gates:** root `npm test` and `npm run build` both exit 0 on this tree.
