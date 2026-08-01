@@ -45,23 +45,23 @@ jobs:
           if [[ -d .darwin-bootstrap ]]; then
             wc -c .darwin-bootstrap/part-*
             sha256sum .darwin-bootstrap/part-*
-            python - <<'PY'
-            import base64
-            import hashlib
-            from pathlib import Path
+          python - <<'PY'
+          import base64
+          import hashlib
+          from pathlib import Path
 
-            parts = sorted(Path('.darwin-bootstrap').glob('part-*'))
-            text = ''.join(part.read_text(encoding='utf-8') for part in parts)
-            alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ')
-            bad = [(index, character, ord(character)) for index, character in enumerate(text) if character not in alphabet]
-            print(f'bootstrap characters={len(text)} invalid={bad[:16]}')
-            compact = ''.join(character for character in text if character in alphabet and not character.isspace())
-            compact = compact.replace('=', '')
-            compact += '=' * ((4 - len(compact) % 4) % 4)
-            payload = base64.b64decode(compact, validate=False)
-            Path('/tmp/darwin-machine-source.tar.xz').write_bytes(payload)
-            print(f'archive bytes={len(payload)} sha256={hashlib.sha256(payload).hexdigest()}')
-            PY
+          parts = sorted(Path('.darwin-bootstrap').glob('part-*'))
+          text = ''.join(part.read_text(encoding='utf-8') for part in parts)
+          alphabet = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ')
+          bad = [(index, character, ord(character)) for index, character in enumerate(text) if character not in alphabet]
+          print(f'bootstrap characters={len(text)} invalid={bad[:16]}')
+          compact = ''.join(character for character in text if character in alphabet and not character.isspace())
+          compact = compact.replace('=', '')
+          compact += '=' * ((4 - len(compact) % 4) % 4)
+          payload = base64.b64decode(compact, validate=False)
+          Path('/tmp/darwin-machine-source.tar.xz').write_bytes(payload)
+          print(f'archive bytes={len(payload)} sha256={hashlib.sha256(payload).hexdigest()}')
+          PY
             echo "bb2d367384e67a64cc171b40441a10948d6fb1b8cf990c7566d3ba9315667db9  /tmp/darwin-machine-source.tar.xz" | sha256sum --check --strict
             tar -xJf /tmp/darwin-machine-source.tar.xz
             rm -rf .darwin-bootstrap
