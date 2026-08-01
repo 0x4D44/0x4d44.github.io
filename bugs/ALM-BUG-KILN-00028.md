@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude — split from ALM-BUG-KILN-00002 during its independent two-eyes verification; this is a regression *introduced* by that bug's fix, `b2c47f0`)
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the shipped focus fix is present and correct; its regression guard is broken on Windows and is split to ALM-BUG-KILN-00045)
+- **State history:** Open (2026-07-13, raised by Claude — split from ALM-BUG-KILN-00002 during its independent two-eyes verification; this is a regression *introduced* by that bug's fix, `b2c47f0`) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the shipped focus fix is present and correct; its regression guard is broken on Windows and is split to ALM-BUG-KILN-00045)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and play a round out to its recap

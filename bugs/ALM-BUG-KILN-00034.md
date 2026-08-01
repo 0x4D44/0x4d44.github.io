@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164155Z-p55639-n181229000-c1 branch=task/bug-ALM-BUG-KILN-00034-run-fix-20260730T164155Z-p55639-n181229000-c1 code=674dbc60ce55aa649c0fe472e458aba129dd63fb gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 674dbc6 verified present; driven-code control shows the key trap no longer cancels keys a dialog owns)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164155Z-p55639-n181229000-c1 branch=task/bug-ALM-BUG-KILN-00034-run-fix-20260730T164155Z-p55639-n181229000-c1 code=674dbc60ce55aa649c0fe472e458aba129dd63fb gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 674dbc6 verified present; driven-code control shows the key trap no longer cancels keys a dialog owns)
 
 ## Observation
 

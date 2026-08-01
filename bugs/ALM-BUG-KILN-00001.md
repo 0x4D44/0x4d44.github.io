@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-10, raised by Codex from Arthur's report)
-- **State history:** Fixed (2026-07-10, fixed by Codex in f1b02ca; awaiting independent verification)
-- **State history:** Closed (2026-07-13, independently verified and closed by Claude — not the fixer)
+- **State history:** Open (2026-07-10, raised by Codex from Arthur's report) -> Fixed (2026-07-10, fixed by Codex in f1b02ca; awaiting independent verification) -> Closed (2026-07-13, independently verified and closed by Claude — not the fixer)
 
 ## Observation
 Arthur reported: “I'm not convinced the average laptime works - on my first laps (which are about 4mins) it report ~6 or 7 minutes.”

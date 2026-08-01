@@ -18,9 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
-- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the recorded load-failure symptom degrades gracefully; a narrow short-corpus residual split to ALM-BUG-KILN-00047)
+- **State history:** Open (2026-07-13, raised by Claude (overnight CR pass)) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the recorded load-failure symptom degrades gracefully; a narrow short-corpus residual split to ALM-BUG-KILN-00047)
 
 ## Observation
 If articles.js or ads.js fails to load (network hiccup, blocked script, a syntax error in a future data edit), every news page renders completely blank instead of degrading.

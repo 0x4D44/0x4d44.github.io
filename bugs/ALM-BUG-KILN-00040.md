@@ -18,8 +18,7 @@
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172238Z-p63110-n880926000-c1 branch=task/bug-ALM-BUG-KILN-00040-run-fix-20260730T172238Z-p63110-n880926000-c1 code=7b469c9f0310ac5621c56f6e9d78cd0170214ff9 gate=manual)
-- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 7b469c9 verified; grid track and overflow-wrap fixed at the right layer, no later rule overrides)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172238Z-p63110-n880926000-c1 branch=task/bug-ALM-BUG-KILN-00040-run-fix-20260730T172238Z-p63110-n880926000-c1 code=7b469c9f0310ac5621c56f6e9d78cd0170214ff9 gate=manual) -> Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 7b469c9 verified; grid track and overflow-wrap fixed at the right layer, no later rule overrides)
 
 ## Observation
 
