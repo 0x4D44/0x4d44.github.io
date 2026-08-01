@@ -297,6 +297,46 @@ try {
     }
     assert.equal(new Set(modes).size, 3, `${width}x${height}: camera did not cycle (${modes.join(", ")})`);
 
+    // ---- the plan is actually drawn, not an empty panel ----
+    if (width > 640) {
+      const plan = await evaluate(`(() => {
+        const canvas = document.getElementById("minimap");
+        const ctx = canvas.getContext("2d");
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let painted = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i] > 12) painted += 1;
+        return { painted, total: data.length / 4 };
+      })()`);
+      // A circuit drawn as a line covers a few percent of the panel. Zero
+      // would mean the plan never rendered; most of it would mean the
+      // canvas had been filled with something.
+      assert.ok(plan.painted > plan.total * 0.01,
+        `${width}x${height}: the plan is blank (${plan.painted}/${plan.total} pixels)`);
+      assert.ok(plan.painted < plan.total * 0.6,
+        `${width}x${height}: the plan is a solid block (${plan.painted}/${plan.total} pixels)`);
+    }
+
+    // ---- the seed is in the address bar, so a circuit can be kept ----
+    const shared = await evaluate(`new URL(location.href).searchParams.get("seed")`);
+    assert.match(shared ?? "", /^\d+$/, `${width}x${height}: no shareable seed in the URL (${shared})`);
+    assert.equal(shared, "20260726", `${width}x${height}: the URL seed is not the one loaded`);
+
+    // ---- the seat can be changed, and it changes what you feel ----
+    const firstSeat = await evaluate(`document.getElementById("btn-seat").textContent.trim()`);
+    assert.match(firstSeat, /front/i, `${width}x${height}: did not start in the front seat (${firstSeat})`);
+    await evaluate(`document.getElementById("btn-seat").click()`);
+    await delay(150);
+    assert.match(
+      await evaluate(`document.getElementById("btn-seat").textContent.trim()`), /back/i,
+      `${width}x${height}: the seat did not change`,
+    );
+    await evaluate(`document.getElementById("btn-seat").click()`);
+    await delay(150);
+    assert.match(
+      await evaluate(`document.getElementById("btn-seat").textContent.trim()`), /front/i,
+      `${width}x${height}: the seat did not come back round`,
+    );
+
     // ---- sound toggles, says so, and is remembered ----
     //
     // Web Audio will not start outside a user gesture, so this is also the

@@ -210,6 +210,42 @@
   .tile.airtime { border-color: rgba(255, 190, 120, 0.75); }
   .tile.heavy { border-color: rgba(255, 130, 110, 0.8); }
 
+  /* ---- plan of the circuit ---- */
+  #minimap {
+    right: 14px;
+    bottom: 14px;
+    width: 160px;
+    height: 160px;
+    padding: 6px;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.92;
+  }
+
+  /* ---- what the last lap was like ---- */
+  #lap-report {
+    right: 14px;
+    bottom: 186px;
+    width: 160px;
+    padding: 9px 11px 10px;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 400ms ease;
+  }
+
+  #lap-report .k {
+    font-size: 8.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  #lap-report .rows { font-size: 11px; line-height: 1.65; }
+  #lap-report .rows span { float: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #lap-report .rows em { font-style: normal; color: var(--muted); }
+  #lap-report .rows div::after { content: ""; display: block; clear: both; }
+
   /* ---- boot / failure notice ---- */
   #notice {
     position: fixed;
@@ -231,6 +267,13 @@
     color: #ffd9a8;
   }
 
+  /* The plan and the report are the first things to go when there is no
+     room for them: the ride is the point, not the instrumentation. */
+  @media (max-width: 900px) {
+    #minimap { width: 108px; height: 108px; bottom: 62px; }
+    #lap-report { display: none; }
+  }
+
   @media (max-width: 640px) {
     #controls { width: 200px; padding: 11px; top: 52px; left: 10px; }
     #controls h1 { font-size: 13px; }
@@ -240,6 +283,7 @@
     #nameplate .value { font-size: 15px; }
     #nameplate .facts { font-size: 9px; letter-spacing: 0.02em; }
     #stats { gap: 5px; bottom: 12px; }
+    #minimap { display: none; }
     .tile { min-width: 0; padding: 5px 9px 6px; }
     .tile .v { font-size: 16px; }
     .tile .k { font-size: 7.5px; letter-spacing: 0.14em; }
@@ -259,6 +303,7 @@
   <button class="act primary" id="btn-ride" type="button" aria-label="Ride the coaster">&#9654; Ride (R)</button>
   <button class="act" id="btn-new" type="button" aria-label="Generate a new track">&#9711; New track (N)</button>
   <button class="act" id="btn-cam" type="button" aria-label="Change camera">&#9678; Cam: orbit (C)</button>
+  <button class="act" id="btn-seat" type="button" aria-label="Change which seat you ride in">&#9679; Seat: front (S)</button>
   <button class="act" id="btn-sound" type="button" aria-label="Turn the sound on or off">&#9834; Sound: off (M)</button>
   <p class="hint">
     Drag to orbit &middot; scroll to zoom<br>
@@ -280,6 +325,14 @@
   <div class="tile" id="tile-g"><div class="k">G-force</div><div class="v"><span id="stat-g">0.0</span><span class="u">g</span></div></div>
   <div class="tile"><div class="k">Height</div><div class="v"><span id="stat-height">0</span><span class="u">m</span></div></div>
   <div class="tile"><div class="k">Length</div><div class="v"><span id="stat-length">0</span><span class="u">m</span></div></div>
+</div>
+
+<canvas class="panel" id="minimap" width="320" height="320"
+        aria-label="Plan of the circuit, with the train's position"></canvas>
+
+<div class="panel" id="lap-report" hidden>
+  <div class="k">Lap complete</div>
+  <div class="rows" id="lap-rows"></div>
 </div>
 
 <div id="notice">
@@ -307,9 +360,9 @@
 
 <script type="module">
 import * as THREE from "./three.module.min.js";
-import { CoasterSim, buildTrack } from "./track.js";
+import { AIRTIME_G, CoasterSim, RideLog, buildTrack } from "./track.js";
 import { buildWorld, groundHeight } from "./scenery.js";
-import { buildTrackMesh, buildTrain } from "./coaster.js";
+import { buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
 import { RideAudio, rideMix } from "./audio.js";
 
 // ============================================================
@@ -333,6 +386,7 @@ const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.1, 3000);
 
 const world = buildWorld();
 scene.add(world.group);
+let trackLivery = liveryFor(0);
 
 // ============================================================
 // Adaptive quality
@@ -386,7 +440,17 @@ function reviewQuality(dt) {
 // ============================================================
 const CAM_MODES = ["orbit", "chase", "pov", "wing"];
 const CARS = 4;
-const TRAIN_LENGTH = CARS * 3.45;
+const CAR_SPACING = 3.45;
+const TRAIN_LENGTH = CARS * CAR_SPACING;
+// Where you sit changes what you feel — see CoasterSim.feltAt.
+const SEATS = [
+  { name: "front", car: 0 },
+  { name: "back", car: CARS - 1 },
+];
+// Somebody who has asked for less movement should not be given a camera
+// that shakes and a lens that breathes with the speed.
+const CALM = window.matchMedia
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const state = {
   track: null,
   sim: null,
@@ -394,7 +458,9 @@ const state = {
   trackUpdaters: [],
   train: null,
   camMode: "orbit",
+  seat: 0,
   riding: false,
+  log: new RideLog(),
   fov: BASE_FOV,
   orbit: { yaw: 0.7, pitch: 0.42, dist: 250, target: new THREE.Vector3(0, 18, 0) },
 };
@@ -421,6 +487,9 @@ function loadTrack(seed) {
 
   state.track = track;
   state.sim = new CoasterSim(track);
+  state.log.reset();
+  lapReport.hidden = true;
+  trackLivery = liveryFor(track.seed);
   const built = buildTrackMesh(track, groundHeight);
   state.trackGroup = built.group;
   state.trackUpdaters = built.updaters;
@@ -438,6 +507,16 @@ function loadTrack(seed) {
 
   document.getElementById("track-name").textContent = track.name;
   setText("stat-length", Math.round(track.length));
+  drawPlan(track);
+
+  // Keep the seed in the address bar. Every circuit is reproducible from
+  // its seed, so this is the difference between "that was a good one" and
+  // "that was a good one and I can send it to somebody".
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", String(track.seed >>> 0));
+    window.history.replaceState(null, "", url);
+  } catch { /* file:// and the like: the ride still works */ }
 
   // What the generator actually built, in the language a park would use.
   let top = 0;
@@ -470,7 +549,7 @@ const chasePos = new THREE.Vector3();
 function updateCamera(ride, dt) {
   // A rider's field of view opens up with speed. It is a cheat, and it is
   // the single most effective one available without post-processing.
-  const wantFov = state.camMode === "pov"
+  const wantFov = state.camMode === "pov" && !CALM
     ? BASE_FOV + Math.min(20, ride.speedKmh * 0.16)
     : BASE_FOV;
   state.fov += (wantFov - state.fov) * Math.min(1, dt * 3.5);
@@ -492,9 +571,15 @@ function updateCamera(ride, dt) {
     return;
   }
 
-  tmpPos.set(ride.pos.x, ride.pos.y, ride.pos.z);
-  tmpUp.set(ride.up.x, ride.up.y, ride.up.z);
-  tmpFwd.set(ride.fwd.x, ride.fwd.y, ride.fwd.z);
+  // In the front seat this is the train's own reference point; in the
+  // back it is a car-length or three behind, which is a different place
+  // on the track and therefore a different ride.
+  const seat = state.camMode === "pov" && state.seat > 0
+    ? state.sim.sample(ride.s - seatOffset())
+    : ride;
+  tmpPos.set(seat.pos.x, seat.pos.y, seat.pos.z);
+  tmpUp.set(seat.up.x, seat.up.y, seat.up.z);
+  tmpFwd.set(seat.fwd.x, seat.fwd.y, seat.fwd.z);
   tmpLat.crossVectors(tmpFwd, tmpUp).normalize();
   // Ease the roll a touch so the horizon does not judder sample to
   // sample, but keep it fast enough to read as a real inversion.
@@ -502,7 +587,7 @@ function updateCamera(ride, dt) {
 
   // Track noise, scaled by speed. Enough to feel the rails; not enough to
   // make the readouts hard to read.
-  const rattle = Math.min(1, ride.v / 26) * (state.camMode === "pov" ? 0.055 : 0.02);
+  const rattle = CALM ? 0 : Math.min(1, ride.v / 26) * (state.camMode === "pov" ? 0.055 : 0.02);
   shake.set(
     (Math.random() - 0.5) * rattle,
     (Math.random() - 0.5) * rattle,
@@ -510,10 +595,16 @@ function updateCamera(ride, dt) {
   );
 
   if (state.camMode === "pov") {
+    // The front seat sits at the nose of the lead car. The back seat sits
+    // at the REAR of the last one — a car's length further back — or the
+    // camera ends up pressed against the back of the car in front, which
+    // is 30cm away and fills the whole lens.
+    const along = state.seat > 0 ? -1.35 : 0.55;
+    const above = state.seat > 0 ? 1.5 : 1.32;
     camera.up.copy(smoothUp);
     camera.position.copy(tmpPos)
-      .addScaledVector(smoothUp, 1.32)
-      .addScaledVector(tmpFwd, 0.55)
+      .addScaledVector(smoothUp, above)
+      .addScaledVector(tmpFwd, along)
       .add(shake);
     camera.lookAt(
       tmpPos.x + tmpFwd.x * 30 + smoothUp.x * 1.3,
@@ -560,12 +651,18 @@ function updateCamera(ride, dt) {
   }
 }
 
+// How far back along the train the rider is sitting.
+function seatOffset() {
+  return SEATS[state.seat].car * CAR_SPACING;
+}
+
 function updateTrain(ride, elapsed) {
   if (!state.train) return;
   // The train walks itself back along the centreline and poses its own
-  // passengers; the lead car is dropped in the front-seat view so it does
+  // passengers; the car the camera is sitting in is dropped so it does
   // not fill the lens.
-  state.train.update(state.sim, ride.s, ride, elapsed, state.camMode === "pov");
+  const hidden = state.camMode === "pov" ? SEATS[state.seat].car : -1;
+  state.train.update(state.sim, ride.s, ride, elapsed, hidden);
 }
 
 // ============================================================
@@ -598,6 +695,78 @@ function setSound(on) {
 }
 
 // ============================================================
+// The plan
+//
+// A 2D canvas rather than a second 3D view: the circuit is drawn once
+// when the track loads, and every frame only re-blits that and puts a
+// dot on it. Orientation from the front seat is otherwise impossible —
+// you cannot tell a first drop from the fourth airtime hill at 100km/h.
+// ============================================================
+const mapCanvas = document.getElementById("minimap");
+const map = mapCanvas.getContext("2d");
+const mapPlan = document.createElement("canvas");
+mapPlan.width = mapCanvas.width;
+mapPlan.height = mapCanvas.height;
+const mapView = { scale: 1, x: 0, z: 0 };
+
+function drawPlan(track) {
+  const size = mapCanvas.width;
+  const pad = 16;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const p of track.points) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+  }
+  mapView.scale = (size - pad * 2) / Math.max(maxX - minX, maxZ - minZ, 1);
+  mapView.x = (minX + maxX) / 2;
+  mapView.z = (minZ + maxZ) / 2;
+
+  const ctx = mapPlan.getContext("2d");
+  ctx.clearRect(0, 0, size, size);
+  // Height as line weight: the lift and the hills read as the thick bits.
+  const at = (p) => [
+    size / 2 + (p.x - mapView.x) * mapView.scale,
+    size / 2 + (p.z - mapView.z) * mapView.scale,
+  ];
+  const livery = "#" + trackLivery.rail.toString(16).padStart(6, "0");
+  for (let i = 0; i < track.points.length; i++) {
+    const a = track.points[i];
+    const b = track.points[(i + 1) % track.points.length];
+    const role = track.roles[i];
+    ctx.strokeStyle = role === "lift" ? "#ffd27f"
+      : role === "launch" ? "#7fc4ff"
+        : role === "brake" ? "#ff9b7f"
+          : role === "station" ? "#e8edf6" : livery;
+    ctx.lineWidth = 2.5 + (a.y / Math.max(1, track.apex)) * 5.5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(...at(a));
+    ctx.lineTo(...at(b));
+    ctx.stroke();
+  }
+}
+
+function drawMap(ride) {
+  const size = mapCanvas.width;
+  map.clearRect(0, 0, size, size);
+  map.drawImage(mapPlan, 0, 0);
+  const p = ride.pos;
+  const x = size / 2 + (p.x - mapView.x) * mapView.scale;
+  const z = size / 2 + (p.z - mapView.z) * mapView.scale;
+  map.beginPath();
+  map.arc(x, z, 9, 0, Math.PI * 2);
+  map.fillStyle = "rgba(255, 255, 255, 0.92)";
+  map.fill();
+  map.beginPath();
+  map.arc(x, z, 5, 0, Math.PI * 2);
+  map.fillStyle = "#d75a37";
+  map.fill();
+}
+
+// ============================================================
 // HUD
 // ============================================================
 const lastText = {};
@@ -611,15 +780,35 @@ function setText(id, value) {
 
 const gTile = document.getElementById("tile-g");
 let gClass = "";
-function updateHud(ride) {
+function updateHud(ride, gForce) {
   setText("stat-speed", Math.round(ride.speedKmh));
-  setText("stat-g", ride.gForce.toFixed(1));
+  setText("stat-g", gForce.toFixed(1));
   setText("stat-height", Math.round(Math.max(0, ride.height)));
-  const wanted = ride.gForce < 0.35 ? "tile airtime" : ride.gForce > 3.2 ? "tile heavy" : "tile";
+  const wanted = gForce < 0.35 ? "tile airtime" : gForce > 3.2 ? "tile heavy" : "tile";
   if (wanted !== gClass) {
     gClass = wanted;
     gTile.className = wanted;
   }
+}
+
+const lapReport = document.getElementById("lap-report");
+const lapRows = document.getElementById("lap-rows");
+let lapHideAt = 0;
+
+function showLap(lap) {
+  const rows = [
+    ["Time", `${lap.seconds.toFixed(1)}s`],
+    ["Airtime", `${lap.airtime.toFixed(1)}s`],
+    ["Top", `${Math.round(lap.topSpeed * 3.6)} km/h`],
+    ["Max", `${lap.maxG.toFixed(1)} g`],
+    ["Min", `${lap.minG.toFixed(1)} g`],
+  ];
+  lapRows.innerHTML = rows
+    .map(([k, v]) => `<div><em>${k}</em><span>${v}</span></div>`)
+    .join("");
+  lapReport.hidden = false;
+  lapReport.style.opacity = "1";
+  lapHideAt = 9;
 }
 
 function syncButtons() {
@@ -627,6 +816,9 @@ function syncButtons() {
   rideBtn.innerHTML = state.riding ? "&#9632; Exit ride (R)" : "&#9654; Ride (R)";
   rideBtn.setAttribute("aria-label", state.riding ? "Leave the ride" : "Ride the coaster");
   document.getElementById("btn-cam").innerHTML = "&#9678; Cam: " + state.camMode + " (C)";
+  const seatBtn = document.getElementById("btn-seat");
+  seatBtn.innerHTML = "&#9679; Seat: " + SEATS[state.seat].name + " (S)";
+  seatBtn.setAttribute("aria-label", "Ride in the " + SEATS[(state.seat + 1) % SEATS.length].name + " seat");
   const soundBtn = document.getElementById("btn-sound");
   soundBtn.innerHTML = (soundOn ? "&#9834;" : "&#9835;") + " Sound: " + (soundOn ? "on" : "off") + " (M)";
   soundBtn.setAttribute("aria-label", soundOn ? "Turn the sound off" : "Turn the sound on");
@@ -645,6 +837,11 @@ function cycleCamera() {
   syncButtons();
 }
 
+function cycleSeat() {
+  state.seat = (state.seat + 1) % SEATS.length;
+  syncButtons();
+}
+
 function newTrack() {
   loadTrack((Math.random() * 0xffffffff) >>> 0);
 }
@@ -655,6 +852,7 @@ function newTrack() {
 document.getElementById("btn-ride").addEventListener("click", () => { armAudio(); setRiding(!state.riding); });
 document.getElementById("btn-new").addEventListener("click", () => { armAudio(); newTrack(); });
 document.getElementById("btn-cam").addEventListener("click", () => { armAudio(); cycleCamera(); });
+document.getElementById("btn-seat").addEventListener("click", () => { armAudio(); cycleSeat(); });
 document.getElementById("btn-sound").addEventListener("click", () => setSound(!soundOn));
 
 window.addEventListener("keydown", (e) => {
@@ -664,6 +862,7 @@ window.addEventListener("keydown", (e) => {
   if (key === "r") { setRiding(!state.riding); e.preventDefault(); }
   else if (key === "n") { newTrack(); e.preventDefault(); }
   else if (key === "c") { cycleCamera(); e.preventDefault(); }
+  else if (key === "s") { cycleSeat(); e.preventDefault(); }
   else if (key === "m") { setSound(!soundOn); e.preventDefault(); }
 });
 
@@ -750,9 +949,22 @@ function frame(now) {
   reviewQuality(dt);
 
   const ride = state.sim.step(dt);
+  // What THIS seat feels, which is not what the train's reference point
+  // feels unless you are sitting in the front car.
+  const gForce = state.seat > 0 && state.camMode === "pov"
+    ? state.sim.feltAt(ride.s - seatOffset())
+    : ride.gForce;
   updateTrain(ride, elapsed);
   updateCamera(ride, dt);
-  updateHud(ride);
+  updateHud(ride, gForce);
+  drawMap(ride);
+
+  const finished = state.log.sample({ ...ride, gForce }, dt);
+  if (finished && finished.seconds > 4) showLap(finished);
+  if (lapHideAt > 0) {
+    lapHideAt -= dt;
+    if (lapHideAt <= 0) lapReport.style.opacity = "0";
+  }
   world.update(elapsed, dt);
   for (const fn of state.trackUpdaters) fn(elapsed, dt);
 

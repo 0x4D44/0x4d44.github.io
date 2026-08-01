@@ -1070,6 +1070,7 @@ export class CoasterSim {
     this.s = 0;
     this.v = STATION_SPEED;
     this.gForce = 1;
+    this.accel = 0;
     this.laps = 0;
   }
 
@@ -1154,11 +1155,23 @@ export class CoasterSim {
 
     // Felt acceleration: track-following acceleration minus gravity,
     // resolved onto the car's own up axis.
-    const a = vadd(vmul(here.fwd, accel), vmul(here.curv, this.v * this.v));
-    const felt = vsub(a, v3(0, -G, 0));
-    const g = vdot(felt, here.up) / G;
+    this.accel = accel;
+    const g = this.feltAt(this.s, this.v, accel);
     // Light smoothing: the readout should be legible, not a strobe.
     this.gForce += (g - this.gForce) * Math.min(1, h * 8);
+  }
+
+  // What a rider feels at an arbitrary point on the train.
+  //
+  // The back seat is not the front seat, and the difference is not a
+  // detail: over a crest the front car is already falling while the back
+  // is still being dragged up over it, and the curvature under each is
+  // different. Resolving the same acceleration at a different arc
+  // position is the whole reason enthusiasts queue longer for the back.
+  feltAt(s, v = this.v, accel = this.accel) {
+    const here = this.sample(s);
+    const following = vadd(vmul(here.fwd, accel), vmul(here.curv, v * v));
+    return vdot(vsub(following, v3(0, -G, 0)), here.up) / G;
   }
 
   state() {
@@ -1173,10 +1186,77 @@ export class CoasterSim {
       fwd: here.fwd,
       up: here.up,
       index: here.index,
+      laps: this.laps,
       mode: this.mode,
       progress: this.s / (this.track.points.length * this.track.ds),
     };
   }
+}
+
+// ------------------------------------------------------------
+// The ride log.
+//
+// What a coaster is actually judged on, by the people who judge coasters:
+// how long the lap took, how fast it got, how hard it pulled, and — the
+// number enthusiasts actually compare — how many SECONDS of airtime it
+// gave, meaning time spent light in the restraints.
+//
+// Kept here rather than in the page because it is arithmetic over the
+// ride state, which means node can check it.
+// ------------------------------------------------------------
+
+// Below this many g the restraints have gone light and it counts.
+export const AIRTIME_G = 0.25;
+
+export class RideLog {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.current = blankLap();
+    this.last = null;
+    this.best = null;
+  }
+
+  // Call once per frame with the ride state. Returns the finished lap
+  // when one has just closed, otherwise null.
+  sample(ride, dt) {
+    if (!(dt > 0)) return null;
+    const lap = this.current;
+    lap.seconds += dt;
+    lap.topSpeed = Math.max(lap.topSpeed, ride.v);
+    if (ride.mode === "free") {
+      lap.maxG = Math.max(lap.maxG, ride.gForce);
+      lap.minG = Math.min(lap.minG, ride.gForce);
+      if (ride.gForce < AIRTIME_G) lap.airtime += dt;
+    }
+    lap.maxHeight = Math.max(lap.maxHeight, ride.height);
+
+    // A lap closes when the train crosses the start line, which the sim
+    // reports by advancing its own counter.
+    if (ride.laps === lap.startedAtLap) return null;
+    // The very first crossing includes however long the page sat at the
+    // station before the ride began, so it is timed but not ranked.
+    const finished = { ...lap, complete: true };
+    this.last = finished;
+    if (!this.best || finished.airtime > this.best.airtime) this.best = finished;
+    this.current = blankLap(ride.laps);
+    return finished;
+  }
+}
+
+function blankLap(startedAtLap = 0) {
+  return {
+    startedAtLap,
+    seconds: 0,
+    airtime: 0,
+    topSpeed: 0,
+    maxG: -Infinity,
+    minG: Infinity,
+    maxHeight: 0,
+    complete: false,
+  };
 }
 
 // ------------------------------------------------------------

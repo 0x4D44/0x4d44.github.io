@@ -897,7 +897,9 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
 
     // Walk the train back along the centreline from the rider's position,
     // then hang everyone off the car they are sitting in.
-    update(sim, s, ride, elapsed, hideLead) {
+    // `hiddenCar` is the index of the car the camera is sitting in, or
+    // -1 when the camera is outside the train.
+    update(sim, s, ride, elapsed, hiddenCar = -1) {
       for (let i = 0; i < carCount; i++) {
         const sample = sim.sample(s - i * CAR_SPACING);
         scratch.up.set(sample.up.x, sample.up.y, sample.up.z);
@@ -908,11 +910,20 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
         const matrix = carMatrices[i];
         matrix.makeBasis(scratch.lat, scratch.up, scratch.fwd);
         matrix.setPosition(scratch.pos);
-        if (i === 0) lead.matrix.copy(matrix);
-        else trailing.setMatrixAt(i - 1, matrix);
+        if (i === 0) {
+          lead.matrix.copy(matrix);
+        } else if (i === hiddenCar) {
+          // Scaled to nothing rather than skipped: the instance has to be
+          // written every frame either way.
+          scratch.local.makeScale(0, 0, 0);
+          scratch.matrix.multiplyMatrices(matrix, scratch.local);
+          trailing.setMatrixAt(i - 1, scratch.matrix);
+        } else {
+          trailing.setMatrixAt(i - 1, matrix);
+        }
       }
       lead.matrixWorldNeedsUpdate = true;
-      lead.visible = !hideLead;
+      lead.visible = hiddenCar !== 0;
       trailing.instanceMatrix.needsUpdate = true;
 
       // What the riders are doing depends on what the ride is doing:
@@ -963,6 +974,16 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
         scratch.matrix.multiplyMatrices(car, scratch.local);
         meshes.arms.setMatrixAt(i, scratch.matrix);
 
+        // Nobody is drawn in the car the camera is sitting in.
+        if (rider.car === hiddenCar) {
+          scratch.local.makeScale(0, 0, 0);
+          scratch.matrix.multiplyMatrices(car, scratch.local);
+          for (const name of ["torso", "head", "hair", "arms"]) {
+            meshes[name].setMatrixAt(i, scratch.matrix);
+          }
+          continue;
+        }
+
         // A rider who has lost their hat keeps it off until the train
         // gets back to the station, where they sheepishly retrieve it.
         if (!rider.hat) {
@@ -974,14 +995,8 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
         }
       }
       lostProperty.update(riders, carMatrices, ride, elapsed);
-      // In the front seat the rider's own car is hidden so it does not
-      // fill the lens — and so are the four people in it. The riders are
-      // laid out car by car, so the lead car's four are simply the first
-      // four instances, and dropping the count leaves them out.
-      const shown = hideLead ? riderCount - SEATS.length : riderCount;
       for (const name of ["torso", "head", "hair", "arms"]) {
         meshes[name].instanceMatrix.needsUpdate = true;
-        meshes[name].count = shown;
       }
     },
   };
