@@ -1,0 +1,27 @@
+error: expected one of `,` or `>`, found `||`
+   --> /home/runner/work/0x4d44.github.io/0x4d44.github.io/darwin-machine/rust/crates/darwin-core/src/lib.rs:274:61
+    |
+274 |         if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {
+    |                                                             ^^ expected one of `,` or `>`
+    |
+help: expressions must be enclosed in braces to be used as const generic arguments
+    |
+274 |         if self.max_genotypes as usize < { required_genotypes || self.max_genotypes } > 200_000 {
+    |                                          +                                          +
+
+error: expected `{`, found `200_000`
+   --> /home/runner/work/0x4d44.github.io/0x4d44.github.io/darwin-machine/rust/crates/darwin-core/src/lib.rs:274:85
+    |
+274 |         if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {
+    |                                                                                     ^^^^^^^ expected `{`
+    |
+note: the `if` expression is missing a block after this condition
+   --> /home/runner/work/0x4d44.github.io/0x4d44.github.io/darwin-machine/rust/crates/darwin-core/src/lib.rs:274:12
+    |
+274 |         if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: you might have meant to write a field access
+    |
+274 |         if self.max_genotypes as usize < required_genotypes || self.max_genotypes >.200_000 {
+    |                                                                                    +
+
