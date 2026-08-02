@@ -23,11 +23,17 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
 
 replace_once(
     CORE,
-    '''        encode(0, 1),
+    '''        encode(23, 0),
+        encode(23, 0), // redundant head reset
+        encode(1, 1),
+        encode(0, 1),
         encode(0, 0),
         encode(24, 2),
         encode(25, 2),''',
-    '''        encode(0, 1),
+    '''        encode(23, 0),
+        encode(23, 0), // redundant head reset
+        encode(1, 1),
+        encode(0, 1),
         encode(0, 0),
         // Unlike the 16-byte ancestor, this intentionally bloated genome
         // cannot fund 64 copy passes from one energy charge. Foraging inside
