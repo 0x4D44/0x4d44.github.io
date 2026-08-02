@@ -42,10 +42,16 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
-          source = path.read_text(encoding="utf-8")
+          def replace_once(path: Path, old: str, new: str, label: str) -> None:
+              source = path.read_text(encoding="utf-8")
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected one {label} site in {path}, found {count}")
+              path.write_text(source.replace(old, new), encoding="utf-8")
+              print(f"Applied {label}.")
 
-          replacements = [
+          core = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
+          core_replacements = [
               (
                   '''            "first-replicator" => {
                 let mut config = WorldConfig::default();
@@ -192,15 +198,159 @@ jobs:
                   "bounded-history test configuration",
               ),
           ]
+          for old, new, label in core_replacements:
+              replace_once(core, old, new, label)
 
-          for old, new, label in replacements:
-              count = source.count(old)
-              if count != 1:
-                  raise SystemExit(f"Expected one {label} site, found {count}")
-              source = source.replace(old, new)
-              print(f"Applied {label}.")
+          worker = Path("darwin-machine/worker.js")
+          replace_once(
+              worker,
+              '''self.addEventListener("message", (event) => {
+  handle(event.data).catch(reportFatal);
+});''',
+              '''const RECOVERABLE_COMMANDS = new Set([
+  "save-local", "list-saves", "load-local", "delete-local",
+  "export", "import", "recover", "sandbox",
+]);
 
-          path.write_text(source, encoding="utf-8")
+self.addEventListener("message", (event) => {
+  handle(event.data).catch((error) => reportCommandError(event.data, error));
+});''',
+              "recoverable Worker command routing",
+          )
+          replace_once(
+              worker,
+              "  void listSaves();",
+              "  void listSaves().catch((error) => reportCommandError({ type: \"list-saves\" }, error));",
+              "initial save-list error handling",
+          )
+          replace_once(
+              worker,
+              '''function reportFatal(error) {
+  fatal = true;''',
+              '''function reportCommandError(message, error) {
+  if (!RECOVERABLE_COMMANDS.has(message?.type)) {
+    reportFatal(error);
+    return;
+  }
+  const labels = {
+    "save-local": "Save",
+    "list-saves": "Saved-experiment list",
+    "load-local": "Load",
+    "delete-local": "Delete",
+    export: "Export",
+    import: "Import",
+    recover: "Recovery",
+    sandbox: "Sandbox trace",
+  };
+  self.postMessage({
+    type: "notice",
+    level: "warn",
+    text: `${labels[message.type] || "Command"} failed: ${error?.message || String(error)}`,
+  });
+}
+
+function reportFatal(error) {
+  fatal = true;''',
+              "non-fatal user-data error reporting",
+          )
+          replace_once(
+              worker,
+              '''function normaliseSeed(value) {
+  const text = String(value ?? "1").trim();
+  if (!/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
+  return text;
+}''',
+              '''function normaliseSeed(value) {
+  const text = String(value ?? "1").trim();
+  if (text.length > 20 || !/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
+  try {
+    const seed = BigInt(text);
+    return seed <= 18_446_744_073_709_551_615n ? seed.toString() : "1";
+  } catch {
+    return "1";
+  }
+}''',
+              "Worker u64 seed validation",
+          )
+
+          app = Path("darwin-machine/app.js")
+          replace_once(
+              app,
+              '''function normaliseSeed(value) {
+  const text = String(value).trim();
+  if (/^0x[0-9a-f]+$/i.test(text)) return BigInt(text).toString();
+  if (/^\d+$/.test(text)) return BigInt(text).toString();
+  return "1";
+}''',
+              '''function normaliseSeed(value) {
+  const text = String(value).trim();
+  if (text.length > 20 || !/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
+  try {
+    const seed = BigInt(text);
+    return seed <= 18_446_744_073_709_551_615n ? seed.toString() : "1";
+  } catch {
+    return "1";
+  }
+}''',
+              "page u64 seed validation",
+          )
+
+          html = Path("darwin-machine/index.html")
+          replace_once(
+              html,
+              '<input id="seed" inputmode="numeric" autocomplete="off" spellcheck="false" value="1" aria-describedby="seed-note">',
+              '<input id="seed" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="20" value="1" aria-describedby="seed-note">',
+              "seed input length boundary",
+          )
+
+          browser = Path("darwin-machine/tests/browser.test.mjs")
+          replace_once(
+              browser,
+              '''    await evaluate(`document.getElementById("reset").click()`);
+    await poll("reset after determinism vector", () => evaluate(`window.__darwinSummary?.update === 0 && window.__darwinSummary?.population === 1`), 8_000);''',
+              '''    await evaluate(`document.getElementById("reset").click()`);
+    await poll("reset after determinism vector", () => evaluate(`window.__darwinSummary?.update === 0 && window.__darwinSummary?.population === 1`), 8_000);
+
+    await evaluate(`document.getElementById("seed").value = "18446744073709551616"; document.getElementById("reset").click()`);
+    await poll("out-of-range seed normalisation", () => evaluate(`window.__darwinSummary?.seed === 1 && window.__darwinSummary?.update === 0`), 8_000);
+    assert.equal(await evaluate(`document.getElementById("fatal").hidden`), true, `${width}: an out-of-range seed killed the Worker`);''',
+              "out-of-range seed browser oracle",
+          )
+          replace_once(
+              browser,
+              '''    if (width === VIEWPORTS[0][0]) {
+      trace("checking IndexedDB save and offline restart");''',
+              '''    if (width === VIEWPORTS[0][0]) {
+      trace("checking corrupt-checkpoint recovery, IndexedDB save and offline restart");
+      const beforeCorruptImport = await evaluate(`window.__darwinSummary.update`);
+      await evaluate(`(() => {
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([Uint8Array.of(1, 2, 3, 4)], "corrupt.darwin", {type:"application/x-darwin-machine"}));
+        const input = document.getElementById("file");
+        input.files = transfer.files;
+        input.dispatchEvent(new Event("change", {bubbles:true}));
+      })()`);
+      await poll("recoverable corrupt-checkpoint warning", () => evaluate(`(() => {
+        const notice = document.getElementById("notice");
+        return !notice.hidden && /Import failed/i.test(notice.textContent);
+      })()`), 8_000);
+      assert.equal(await evaluate(`document.getElementById("fatal").hidden`), true, "corrupt user data stopped the engine");
+      await evaluate(`window.__darwinTestRun(1)`);
+      await poll("engine progress after rejected checkpoint", () => evaluate(`window.__darwinSummary?.update > ${beforeCorruptImport}`), 8_000);''',
+              "recoverable checkpoint browser oracle",
+          )
+          replace_once(
+              browser,
+              "      let min=255,max=0;",
+              "      let min=Infinity,max=0;",
+              "canvas variance minimum",
+          )
+          replace_once(
+              browser,
+              '''    assert.ok(painted.max > painted.min, `${width}: dish appears blank`);''',
+              '''    assert.ok(painted.max - painted.min > 10, `${width}: dish lacks meaningful pixel variance (${painted.min}..${painted.max})`);''',
+              "meaningful dish-painting oracle",
+          )
           PY
 
       - name: Install pinned Rust toolchain
