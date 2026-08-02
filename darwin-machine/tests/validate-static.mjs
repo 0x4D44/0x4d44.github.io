@@ -59,12 +59,25 @@ assert.match(core, /scheduler_params\(self\.seed, self\.update/, "seeded schedul
 assert.match(core, /commit_births\(births\)/, "end-update birth commit missing");
 assert.doesNotMatch(core, /fn fitness|fitness_score/i, "release core must not contain a global fitness function");
 
+const encode = (op, arg) => (op & 0x1f) | ((arg & 0x07) << 5);
+const encodedCalls = (source) => [...source.matchAll(/encode\((\d+),\s*(\d+)\)/g)]
+  .map((match) => encode(Number(match[1]), Number(match[2])));
+
 const minimal = JSON.parse(minimalText);
 const clumsy = JSON.parse(clumsyText);
 assert.equal(minimal.bytes.length, 16, "minimal ancestor must remain 16 bytes");
 assert.equal(clumsy.bytes.length, 64, "clumsy ancestor must remain 64 bytes");
-assert.deepEqual(minimal.bytes, [136,240,212,216,17,2,1,98,114,49,129,193,146,1,2,224], "canonical minimal ancestor drifted");
-assert.equal(new Set(minimal.bytes.map((b) => b >= 0 && b <= 255)).size, 1, "invalid minimal byte");
+const canonicalMinimal = [29,21,22,23,33,32,0,88,89,34,46,16,50,0,32,26];
+assert.deepEqual(minimal.bytes, canonicalMinimal, "canonical minimal ancestor drifted");
+const minimalSource = core.match(/pub const MINIMAL_ANCESTOR:[^=]+=[\s\S]*?\[([\s\S]*?)\];/)?.[1];
+assert.ok(minimalSource, "Rust minimal ancestor definition missing");
+assert.deepEqual(encodedCalls(minimalSource), minimal.bytes, "minimal ancestor JSON disagrees with Rust");
+const clumsySource = core.match(/pub fn clumsy_ancestor\(\)[\s\S]*?vec!\[([\s\S]*?)\];/)?.[1];
+assert.ok(clumsySource, "Rust clumsy ancestor definition missing");
+const clumsyPrefix = encodedCalls(clumsySource);
+const clumsyFromRust = [...clumsyPrefix, ...Array(64 - clumsyPrefix.length).fill(encode(0, 2))];
+assert.deepEqual(clumsy.bytes, clumsyFromRust, "clumsy ancestor JSON disagrees with Rust");
+assert.equal(new Set([...minimal.bytes, ...clumsy.bytes].map((b) => b >= 0 && b <= 255)).size, 1, "invalid ancestor byte");
 
 const pkgFiles = ["pkg/darwin_wasm.js", "pkg/darwin_wasm_bg.wasm", "pkg/build-info.json"];
 for (const path of pkgFiles) assert.ok(existsSync(resolve(PROJECT, path)), `generated asset missing: ${path}`);
