@@ -45,6 +45,7 @@ jobs:
           python darwin-machine/scripts/final-review-repair-4.py
           python darwin-machine/scripts/final-review-repair-5.py
           python darwin-machine/scripts/final-review-repair-6.py
+          python darwin-machine/scripts/final-review-repair-7.py
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@stable
