@@ -1483,20 +1483,37 @@ export function enclosureProfile(track, stationIdx, tunnelSpan = null) {
   return a;
 }
 
-// How high over the rails the chase camera rides, and how far out to the
-// side and up the wing camera sits, at a given enclosure. Both collapse
-// towards the centreline as the ceiling closes in.
-export function chaseRise(e) {
-  return 5.4 * (1 - e) + 1.5 * e;
-}
+// What a trailing camera may still hold on to at full enclosure. As far
+// out and as high as the bore allows, not as little as it can get away
+// with: tucked to a metre out and half a metre up it clears everything
+// and looks at nothing but the side of a car from close range. Out 2.3
+// and up 1.5 is 2.75m diagonally, inside the 2.9m the bore leaves, and
+// it looks over the train instead.
+export const TUCK = { side: 2.3, rise: 1.5 };
 
-export function wingOffset(e) {
-  // Enclosed, it wants to be as far out and as high as the bore allows,
-  // not as little as it can get away with: tucked to 1.85m out and 0.8m
-  // up it clears everything and looks at nothing but the side of a car
-  // from under a metre. Out 2.3 and up 1.5 is 2.75m diagonally, inside
-  // the 2.9m the bore leaves, and it looks over the train instead.
-  return { side: 7.6 * (1 - e) + 2.3 * e, rise: 3.6 * (1 - e) + 1.5 * e };
+// Squeeze a trailing camera's offset from the train through whatever the
+// track is passing through.
+//
+// The offset is in the train's own frame — `along` up the track, `side`
+// across it, `rise` in world up — and only two of the three are ever in
+// danger. A bore and a shed are both long: whatever the camera is doing
+// ALONG the track there is more tunnel in front of it. It is the
+// sideways and upward reach that meets the wall.
+//
+// Blending towards the cap rather than clamping at it is deliberate. A
+// clamp is a corner — the camera holds station, hits the limit and stops
+// dead in the mouth of the tunnel. Blending reaches the same place by
+// the portal with the movement spread over the approach.
+export function tuckIn(offset, e) {
+  const squeeze = (v, cap) => {
+    const held = Math.sign(v) * Math.min(Math.abs(v), cap);
+    return v * (1 - e) + held * e;
+  };
+  return {
+    along: offset.along,
+    side: squeeze(offset.side, TUCK.side),
+    rise: squeeze(offset.rise, TUCK.rise),
+  };
 }
 
 // ------------------------------------------------------------

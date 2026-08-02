@@ -21,8 +21,7 @@ import {
   tunnelSite,
   hillBump,
   enclosureProfile,
-  chaseRise,
-  wingOffset,
+  tuckIn,
   BORE_RADIUS,
   SHED_ROOF,
   SHED_HALF,
@@ -507,12 +506,33 @@ test("a tunnel site is level and low, and buries no track but its own", () => {
 });
 
 test("the trailing cameras fit through everything the train fits through", () => {
-  // A chase camera five metres above the rails is right in the open and
-  // fatal under a roof: it flies into the hillside over the portal, and
-  // the station shed swallows it whole. So it ducks, on a profile of how
-  // enclosed the track is — and the ducking has to be DONE by the time
-  // it reaches the mouth, not started there.
+  // Chase and wing are one rig: an orbit about the middle of the train,
+  // which the rider can swing anywhere they like. A camera five metres
+  // above the rails is right in the open and fatal under a roof — it
+  // flies into the hillside over the portal, and the station shed
+  // swallows it whole — so the offset is squeezed against a profile of
+  // how enclosed the track is, and the squeezing has to be DONE by the
+  // time it reaches the mouth, not started there.
+  //
+  // The rig is tested at its two homes AND at the extremes a drag can
+  // reach, because the whole point of an orbit is that the camera does
+  // not stay where it was put.
   const flat = () => 0;
+  const rigs = [
+    { name: "chase home", yaw: Math.PI, pitch: 0.22, dist: 24.5 },
+    { name: "wing home", yaw: 2.30, pitch: 0.33, dist: 11.0 },
+    { name: "overhead", yaw: Math.PI, pitch: 1.28, dist: 90 },
+    { name: "underneath", yaw: 0, pitch: -0.42, dist: 90 },
+    { name: "hard abeam", yaw: Math.PI / 2, pitch: 0, dist: 90 },
+    { name: "in close", yaw: -1.1, pitch: 0.9, dist: 6 },
+  ];
+  const offsets = rigs.map((r) => ({
+    name: r.name,
+    along: r.dist * Math.cos(r.pitch) * Math.cos(r.yaw),
+    side: r.dist * Math.cos(r.pitch) * Math.sin(r.yaw),
+    rise: r.dist * Math.sin(r.pitch),
+  }));
+
   let tunnels = 0;
   for (const seed of SEEDS) {
     const t = buildTrack(seed);
@@ -524,17 +544,21 @@ test("the trailing cameras fit through everything the train fits through", () =>
     const clears = (i, where, headroom, halfWidth) => {
       const e = profile[i];
       assert.ok(e >= 0 && e <= 1, `seed ${seed}: enclosure ${e} out of range`);
-      const rise = chaseRise(e);
-      assert.ok(rise < headroom,
-        `seed ${seed}: chase camera ${rise.toFixed(2)}m up in the ${where}`);
-      const wing = wingOffset(e);
-      assert.ok(wing.rise < headroom && wing.side < halfWidth,
-        `seed ${seed}: wing camera ${wing.side.toFixed(2)}m out in the ${where}`);
-      // The wing camera is out to the side AND up, so in a round bore it
-      // is the diagonal that has to fit.
-      if (where === "bore") {
-        assert.ok(Math.hypot(wing.side, wing.rise) < headroom,
-          `seed ${seed}: wing camera clips the bore wall`);
+      for (const o of offsets) {
+        const fit = tuckIn(o, e);
+        assert.ok(Math.abs(fit.rise) < headroom,
+          `seed ${seed}: ${o.name} is ${fit.rise.toFixed(2)}m up in the ${where}`);
+        assert.ok(Math.abs(fit.side) < halfWidth,
+          `seed ${seed}: ${o.name} is ${fit.side.toFixed(2)}m out in the ${where}`);
+        // Out AND up at once, so in a round bore it is the diagonal that
+        // has to fit.
+        if (where === "bore") {
+          assert.ok(Math.hypot(fit.side, fit.rise) < headroom,
+            `seed ${seed}: ${o.name} clips the bore wall`);
+        }
+        // Along the track is never squeezed: a bore and a shed are both
+        // longer than the camera's reach up them.
+        assert.equal(fit.along, o.along);
       }
     };
 
@@ -549,11 +573,31 @@ test("the trailing cameras fit through everything the train fits through", () =>
     }
 
     // And in the open it must NOT be tucked in, or the whole point of a
-    // chase camera is lost.
+    // camera you can swing is lost.
     const open = profile.reduce((a, b) => Math.min(a, b), 1);
     assert.ok(open < 0.05, `seed ${seed}: the camera never comes back out (min ${open.toFixed(2)})`);
+    const free = tuckIn(offsets[0], 0);
+    assert.deepEqual(free, { along: offsets[0].along, side: offsets[0].side, rise: offsets[0].rise });
   }
   assert.ok(tunnels > 20, `only ${tunnels} tunnels among ${SEEDS.length} seeds`);
+});
+
+test("tuckIn keeps a camera on its own side of the train", () => {
+  // Squeezing must never push the camera through the train to the other
+  // side, or a wing shot flips from one flank to the other as it enters
+  // a tunnel. Sign is preserved at every enclosure.
+  for (const side of [-40, -2, -0.4, 0.4, 2, 40]) {
+    for (let e = 0; e <= 1.0001; e += 0.05) {
+      const fit = tuckIn({ along: 0, side, rise: side }, e);
+      assert.equal(Math.sign(fit.side), Math.sign(side),
+        `side ${side} flipped at e=${e.toFixed(2)}`);
+      assert.ok(Math.abs(fit.side) <= Math.abs(side) + 1e-9,
+        `side ${side} grew at e=${e.toFixed(2)}`);
+    }
+  }
+  // A camera already inside the caps is left exactly where it is.
+  const tight = { along: 3, side: 1.0, rise: 0.5 };
+  assert.deepEqual(tuckIn(tight, 1), tight);
 });
 
 test("the back seat is a different ride from the front seat", () => {
