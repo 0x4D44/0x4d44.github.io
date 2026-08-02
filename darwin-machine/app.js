@@ -367,10 +367,13 @@ function drawLineChart(canvas, samples, series) {
   }
   if (samples.length < 2) return;
   const visible = samples.slice(-360);
+  const valuesBySeries = series.map((spec) => visible.map((sample) => Number(sample[spec.key] || 0)));
+  const primaryMax = Math.max(1, ...valuesBySeries.filter((_, index) => !series[index].secondary).flat());
+  const secondaryMax = Math.max(1, ...valuesBySeries.filter((_, index) => series[index].secondary).flat());
   for (let si = 0; si < series.length; si += 1) {
     const spec = series[si];
-    const values = visible.map((sample) => Number(sample[spec.key] || 0));
-    const max = Math.max(1, ...values);
+    const values = valuesBySeries[si];
+    const max = spec.secondary ? secondaryMax : primaryMax;
     c.strokeStyle = si === 0 ? "#d5ec72" : "#73cbe8";
     c.lineWidth = Math.max(1.5, ratio);
     c.beginPath();
@@ -599,9 +602,13 @@ function clampByte(value) {
 
 function normaliseSeed(value) {
   const text = String(value).trim();
-  if (/^0x[0-9a-f]+$/i.test(text)) return BigInt(text).toString();
-  if (/^\d+$/.test(text)) return BigInt(text).toString();
-  return "1";
+  if (text.length > 20 || !/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
+  try {
+    const seed = BigInt(text);
+    return seed <= 18_446_744_073_709_551_615n ? seed.toString() : "1";
+  } catch {
+    return "1";
+  }
 }
 
 function randomSeed() {
@@ -622,8 +629,13 @@ dom.speed.addEventListener("input", () => worker.postMessage({ type: "speed", in
 dom.preset.addEventListener("change", () => setPresetCopy(dom.preset.value));
 dom.reset.addEventListener("click", () => resetWorld(false));
 dom.share.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(location.href);
-  showNotice("Copied this preset and seed to the clipboard.", "ok");
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable");
+    await navigator.clipboard.writeText(location.href);
+    showNotice("Copied this preset and seed to the clipboard.", "ok");
+  } catch (error) {
+    showNotice(`Could not copy the link: ${error.message}`, "warn");
+  }
 });
 dom.canvas.addEventListener("pointerdown", selectFromPointer);
 dom.canvas.addEventListener("keydown", (event) => {
@@ -651,7 +663,10 @@ dom.about.addEventListener("click", () => dom.aboutDialog.showModal());
 $$('[data-close]').forEach((button) => button.addEventListener("click", () => button.closest("dialog").close()));
 
 dom.save.addEventListener("click", () => {
-  dom.saveName.value = `${PRESETS[summary?.preset_id || dom.preset.value].name} · update ${formatNumber(summary?.update || 0)}`;
+  const presetName = PRESETS[summary?.preset_id]?.name
+    ?? PRESETS[dom.preset.value]?.name
+    ?? "Imported experiment";
+  dom.saveName.value = `${presetName} · update ${formatNumber(summary?.update || 0)}`;
   dom.saveDialog.showModal();
   dom.saveName.select();
 });

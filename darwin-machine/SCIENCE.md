@@ -6,7 +6,9 @@ The Darwin Machine is both an exhibit and an experimental instrument. This file 
 
 ### Inoculated evolution
 
-The public release supplies a viable ancestor. It can test how heredity, mutation, finite resources, spatial contention and death alter descendant populations. A takeover is evidence only about this versioned substrate and configuration.
+The public release supplies viable ancestors. It can test how heredity, mutation, finite resources, spatial contention and death alter descendant populations. A takeover is evidence only about this versioned substrate and configuration.
+
+The 64-byte clumsy ancestor is padded and redundant, with deliberately repeated foraging inside its copy loop. That foraging is necessary to fund a 64-byte exact copy under the published energy law; it also leaves abundant room for deletions and shorter replication times.
 
 ### Replicator discovery
 
@@ -18,8 +20,8 @@ Not implemented in release one. A defensible experiment would need a substrate i
 
 ## Operational terms
 
-- **genotype**: an exact genome byte sequence;
-- **lineage**: descent from one founder, regardless of later genotype;
+- **genotype**: an exact genome byte sequence; the displayed `G#` is a compact current-table reference and may be remapped when extinct history is pruned, while the genome hash is the stable identity;
+- **lineage**: a mutation-defined genealogical branch; exact-copy children retain their parent lineage, while a birth with a recorded mutation opens a new branch;
 - **strain**: a deliberately grouped set of related genotypes in a named analysis;
 - **species**: not used unless an experiment defines an explicit reproductive or ecological criterion;
 - **fitness**: never an internal score; when measured, a documented statistic such as surviving descendants per update under fixed conditions;
@@ -32,7 +34,7 @@ Not implemented in release one. A defensible experiment would need a substrate i
 3. Instructions cost energy; resources replenish according to integer world physics.
 4. Child bytes are written into a private buffer. A birth is possible only after all child positions have been written.
 5. Copy mutations are keyed independently of traversal order.
-6. Birth and move intents resolve at update end. Conflict draws use stable identities, not vector order.
+6. Birth and move intents resolve at update end. Conflict and intervention draws use the exact stable identity recorded in the replay log, not vector order or a pre-incremented counter.
 7. Death occurs at zero energy. Empty space is a resource.
 8. The authoritative state uses integer arithmetic; display interpolation is non-authoritative.
 9. The VM exposes no host capabilities.
@@ -58,4 +60,4 @@ A performance or adaptation claim should normally include:
 
 ## Known substrate choices
 
-The ISA deliberately makes every byte valid and uses template-based control flow. Private child buffers prevent incomplete offspring from executing, but also prevent genuine Tierra-style parasites. `The Blue Nutrient` discloses an XOR reaction that grants energy; this is an imposed environmental law and must not be presented as an organism independently inventing XOR for its own sake.
+The ISA deliberately makes every byte valid and uses template-based control flow. Private child buffers prevent incomplete offspring from executing, but also prevent genuine Tierra-style parasites. `The Blue Nutrient` discloses an XOR reaction that grants energy; this is an imposed environmental law and must not be presented as an organism independently inventing XOR for its own sake. Local uptake, sharing, signals and toxin actions take effect in the disclosed seeded visit order; birth and movement conflicts alone are deferred and resolved together at update end.

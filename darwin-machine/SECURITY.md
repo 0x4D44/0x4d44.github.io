@@ -14,7 +14,7 @@ All 256 bytes decode to terminating instructions. Every memory access is bounds-
 - fixed `DWM1` envelope and save version;
 - length checked before decoding;
 - all configuration dimensions and genome lengths revalidated;
-- build/substrate/ISA/RNG/physics versions checked;
+- semantic engine/substrate/ISA/RNG/physics versions checked; the asset build ID is bounded provenance, not a reason to strand an otherwise compatible experiment;
 - organism/cell cross-references and caps checked;
 - no executable JavaScript, HTML or path data is interpreted from a save.
 

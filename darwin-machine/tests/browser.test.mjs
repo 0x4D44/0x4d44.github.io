@@ -182,13 +182,26 @@ try {
     await evaluate(`document.getElementById("reset").click()`);
     await poll("reset after determinism vector", () => evaluate(`window.__darwinSummary?.update === 0 && window.__darwinSummary?.population === 1`), 8_000);
 
+    await evaluate(`document.getElementById("seed").value = "18446744073709551616"; document.getElementById("reset").click()`);
+    await poll("out-of-range seed normalisation", () => evaluate(`window.__darwinSummary?.seed === 1 && window.__darwinSummary?.update === 0`), 8_000);
+    assert.equal(await evaluate(`document.getElementById("fatal").hidden`), true, `${width}: an out-of-range seed killed the Worker`);
+
     const controls = width < 500 ? ["play", "step", "reset", "lab"] : ["play", "step", "reset", "lab", "about", "save"];
     for (const control of controls) {
       const hit = await evaluate(`(() => {
-        const el = document.getElementById(${JSON.stringify(control)}); el.scrollIntoView({block:"center"});
+        const el = document.getElementById(${JSON.stringify(control)});
+        el.scrollIntoView({block:"center", behavior:"instant"});
         const r = el.getBoundingClientRect();
-        const target = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
-        return { size:[r.width,r.height], hit: target === el || el.contains(target), covered: target?.id || target?.tagName };
+        const x = r.left + r.width/2;
+        const y = r.top + r.height/2;
+        const target = document.elementFromPoint(x, y);
+        return {
+          size:[r.width,r.height],
+          hit: target === el || el.contains(target),
+          covered: target?.id || target?.tagName || "outside viewport",
+          point:[x,y],
+          viewport:[innerWidth,innerHeight],
+        };
       })()`);
       assert.ok(hit.size[0] >= 30 && hit.size[1] >= 30, `${width}: #${control} is too small`);
       assert.equal(hit.hit, true, `${width}: #${control} is covered by ${hit.covered}`);
@@ -225,7 +238,22 @@ try {
     await poll("sandbox trace", () => evaluate(`!/Stepping/.test(document.getElementById("sandbox-output").textContent) && /clone|division/i.test(document.getElementById("sandbox-output").textContent)`), 8_000);
 
     if (width === VIEWPORTS[0][0]) {
-      trace("checking IndexedDB save and offline restart");
+      trace("checking corrupt-checkpoint recovery, IndexedDB save and offline restart");
+      const beforeCorruptImport = await evaluate(`window.__darwinSummary.update`);
+      await evaluate(`(() => {
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([Uint8Array.of(1, 2, 3, 4)], "corrupt.darwin", {type:"application/x-darwin-machine"}));
+        const input = document.getElementById("file");
+        input.files = transfer.files;
+        input.dispatchEvent(new Event("change", {bubbles:true}));
+      })()`);
+      await poll("recoverable corrupt-checkpoint warning", () => evaluate(`(() => {
+        const notice = document.getElementById("notice");
+        return !notice.hidden && /Import failed/i.test(notice.textContent);
+      })()`), 8_000);
+      assert.equal(await evaluate(`document.getElementById("fatal").hidden`), true, "corrupt user data stopped the engine");
+      await evaluate(`window.__darwinTestRun(1)`);
+      await poll("engine progress after rejected checkpoint", () => evaluate(`window.__darwinSummary?.update > ${beforeCorruptImport}`), 8_000);
       await evaluate(`document.getElementById("save").click(); document.getElementById("save-name").value="Browser acceptance"; document.getElementById("save-confirm").click()`);
       await poll("local checkpoint list", () => evaluate(`/Browser acceptance/.test(document.getElementById("saves").textContent)`), 8_000);
       await evaluate(`navigator.serviceWorker.ready.then(() => true)`);
@@ -241,10 +269,10 @@ try {
 
     const painted = await evaluate(`(() => {
       const c=document.getElementById("dish"),d=c.getContext("2d").getImageData(0,0,c.width,c.height).data;
-      let min=255,max=0; for(let i=0;i<d.length;i+=4){const v=d[i]+d[i+1]+d[i+2];min=Math.min(min,v);max=Math.max(max,v)}
+      let min=Infinity,max=0; for(let i=0;i<d.length;i+=4){const v=d[i]+d[i+1]+d[i+2];min=Math.min(min,v);max=Math.max(max,v)}
       return {min,max};
     })()`);
-    assert.ok(painted.max > painted.min, `${width}: dish appears blank`);
+    assert.ok(painted.max - painted.min > 10, `${width}: dish lacks meaningful pixel variance (${painted.min}..${painted.max})`);
     assert.deepEqual(pageErrors, [], `${width}: browser errors:\n${pageErrors.join("\n")}`);
   }
 

@@ -1,0 +1,182 @@
+[
+  {
+    "preset": "faster-smaller",
+    "seed": 1,
+    "updates": 600,
+    "population": 59,
+    "genotypes": 9,
+    "dominant_share_ppm": 745762,
+    "median_genome_length": 64,
+    "checksum": "84d6099830c405e31006294b73ca25ac"
+  },
+  {
+    "preset": "faster-smaller",
+    "seed": 2,
+    "updates": 600,
+    "population": 70,
+    "genotypes": 13,
+    "dominant_share_ppm": 771428,
+    "median_genome_length": 64,
+    "checksum": "a169369bd3440a912d4ee0026e4c5dc6"
+  },
+  {
+    "preset": "faster-smaller",
+    "seed": 3,
+    "updates": 600,
+    "population": 60,
+    "genotypes": 13,
+    "dominant_share_ppm": 700000,
+    "median_genome_length": 64,
+    "checksum": "67a4acaf8c80c661c6f34bf60890a17e"
+  },
+  {
+    "preset": "faster-smaller",
+    "seed": 4,
+    "updates": 600,
+    "population": 59,
+    "genotypes": 18,
+    "dominant_share_ppm": 406779,
+    "median_genome_length": 64,
+    "checksum": "6d9373d6a62382aad96fe0a24054ac15"
+  },
+  {
+    "preset": "faster-smaller",
+    "seed": 5,
+    "updates": 600,
+    "population": 57,
+    "genotypes": 8,
+    "dominant_share_ppm": 719298,
+    "median_genome_length": 64,
+    "checksum": "cdc4d89b6f9fabf64e50890f1bf3acca"
+  },
+  {
+    "preset": "faster-smaller",
+    "seed": 6,
+    "updates": 600,
+    "population": 44,
+    "genotypes": 12,
+    "dominant_share_ppm": 522727,
+    "median_genome_length": 64,
+    "checksum": "6735b74b6c9b75d0abb30def5f06e0fe"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 101,
+    "updates": 600,
+    "population": 47,
+    "genotypes": 42,
+    "dominant_share_ppm": 63829,
+    "median_genome_length": 64,
+    "checksum": "7058fa9d4cb2a0b6eaaa402ef94c82e0"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 102,
+    "updates": 600,
+    "population": 39,
+    "genotypes": 34,
+    "dominant_share_ppm": 76923,
+    "median_genome_length": 64,
+    "checksum": "1ad4f2c7351905d7ff08d4ba23178f60"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 103,
+    "updates": 600,
+    "population": 28,
+    "genotypes": 27,
+    "dominant_share_ppm": 71428,
+    "median_genome_length": 64,
+    "checksum": "fcff61fddd0a12257654c4dea058a339"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 104,
+    "updates": 600,
+    "population": 31,
+    "genotypes": 31,
+    "dominant_share_ppm": 32258,
+    "median_genome_length": 64,
+    "checksum": "1a38f38bc0907c3aaa38b02bf565f4ce"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 105,
+    "updates": 600,
+    "population": 35,
+    "genotypes": 32,
+    "dominant_share_ppm": 85714,
+    "median_genome_length": 64,
+    "checksum": "88a2f50055deab2d408ef2cafdc414fb"
+  },
+  {
+    "preset": "mutation-meltdown",
+    "seed": 106,
+    "updates": 600,
+    "population": 29,
+    "genotypes": 29,
+    "dominant_share_ppm": 34482,
+    "median_genome_length": 64,
+    "checksum": "eb35b93596aa080fbf48bea37f400c85"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 201,
+    "updates": 600,
+    "population": 29,
+    "genotypes": 9,
+    "dominant_share_ppm": 206896,
+    "median_genome_length": 64,
+    "checksum": "2bc4e51970e1e5aef4a0c20c9f3942b6"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 202,
+    "updates": 600,
+    "population": 32,
+    "genotypes": 6,
+    "dominant_share_ppm": 468750,
+    "median_genome_length": 64,
+    "checksum": "c6b7479973deebb80c581c3d1a0945a3"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 203,
+    "updates": 600,
+    "population": 32,
+    "genotypes": 7,
+    "dominant_share_ppm": 468750,
+    "median_genome_length": 64,
+    "checksum": "d1310d67a3f18a5b6807312482f60dd7"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 204,
+    "updates": 600,
+    "population": 31,
+    "genotypes": 5,
+    "dominant_share_ppm": 677419,
+    "median_genome_length": 64,
+    "checksum": "ca175972c904fd16b7419fccd8393038"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 205,
+    "updates": 600,
+    "population": 19,
+    "genotypes": 10,
+    "dominant_share_ppm": 210526,
+    "median_genome_length": 64,
+    "checksum": "d22737940dfb3c3752aa5e15f25ae8b6"
+  },
+  {
+    "preset": "bottleneck",
+    "seed": 206,
+    "updates": 600,
+    "population": 30,
+    "genotypes": 5,
+    "dominant_share_ppm": 833333,
+    "median_genome_length": 64,
+    "checksum": "e363daecce0d597d750ce3842e27b969"
+  }
+]

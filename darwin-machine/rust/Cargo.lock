@@ -38,6 +38,7 @@ name = "darwin-cli"
 version = "0.1.0"
 dependencies = [
  "darwin-core",
+ "serde",
  "serde_json",
 ]
 

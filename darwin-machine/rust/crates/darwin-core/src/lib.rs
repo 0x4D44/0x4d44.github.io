@@ -8,14 +8,17 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const BUILD_ID: &str = "darwin-2026.08.01.1";
+pub const BUILD_ID: &str = "darwin-2026.08.02.1";
 pub const ENGINE_VERSION: &str = "0.1.0";
 pub const ISA_VERSION: u16 = 1;
 pub const RNG_VERSION: u16 = 1;
-pub const PHYSICS_VERSION: u16 = 1;
+pub const PHYSICS_VERSION: u16 = 2;
 pub const SAVE_VERSION: u16 = 1;
 pub const GRID_STRIDE: usize = 8;
 pub const MAX_IMPORT_BYTES: usize = 16 * 1024 * 1024;
+pub const MAX_STATS_SAMPLES_HARD: u32 = 10_000;
+pub const MAX_FOSSILS_HARD: u32 = 4_096;
+pub const MAX_INTERVENTIONS_HARD: usize = 10_000;
 pub const MAX_WORLD_CELLS: usize = 256 * 256;
 pub const MAX_GENOME_HARD: usize = 1024;
 
@@ -64,6 +67,11 @@ pub fn clumsy_ancestor() -> Vec<u8> {
         encode(1, 1),
         encode(0, 1),
         encode(0, 0),
+        // Unlike the 16-byte ancestor, this intentionally bloated genome
+        // cannot fund 64 copy passes from one energy charge. Foraging inside
+        // the loop makes it genuinely viable while remaining conspicuously
+        // inefficient and evolutionarily improvable.
+        encode(29, 0),
         encode(24, 2),
         encode(25, 2),
         encode(2, 1),
@@ -284,6 +292,9 @@ impl WorldConfig {
             if rate > 1_000_000 {
                 return Err("mutation rates are expressed in parts per million".into());
             }
+        }
+        if self.max_samples > MAX_STATS_SAMPLES_HARD || self.max_fossils > MAX_FOSSILS_HARD {
+            return Err("history limits exceed the supported safety caps".into());
         }
         Ok(())
     }
@@ -595,15 +606,17 @@ impl World {
     pub fn from_preset(preset: &str, seed: u64) -> Result<Self, String> {
         match preset {
             "first-replicator" => {
-                let mut config = WorldConfig::default();
-                config.width = 48;
-                config.height = 32;
-                config.mutation = MutationConfig {
-                    substitution_ppm: 0,
-                    insertion_ppm: 0,
-                    deletion_ppm: 0,
+                let config = WorldConfig {
+                    width: 48,
+                    height: 32,
+                    mutation: MutationConfig {
+                        substitution_ppm: 0,
+                        insertion_ppm: 0,
+                        deletion_ppm: 0,
+                    },
+                    occupancy_policy: OccupancyPolicy::EmptyOnly,
+                    ..WorldConfig::default()
                 };
-                config.occupancy_policy = OccupancyPolicy::EmptyOnly;
                 let mut world = Self::new(config, seed, preset)?;
                 world.seed_organism(
                     usize::from(world.config.width / 2),
@@ -613,39 +626,45 @@ impl World {
                 Ok(world)
             }
             "mutation-meltdown" => {
-                let mut config = WorldConfig::default();
-                config.width = 96;
-                config.height = 64;
-                config.mutation = MutationConfig {
-                    substitution_ppm: 28_000,
-                    insertion_ppm: 12_000,
-                    deletion_ppm: 12_000,
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    mutation: MutationConfig {
+                        substitution_ppm: 28_000,
+                        insertion_ppm: 12_000,
+                        deletion_ppm: 12_000,
+                    },
+                    ..WorldConfig::default()
                 };
                 let mut world = Self::new(config, seed, preset)?;
                 world.seed_cluster(&clumsy_ancestor(), 6, 4)?;
                 Ok(world)
             }
             "bottleneck" => {
-                let mut config = WorldConfig::default();
-                config.width = 96;
-                config.height = 64;
-                config.mutation = MutationConfig {
-                    substitution_ppm: 2_000,
-                    insertion_ppm: 2_500,
-                    deletion_ppm: 2_500,
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    mutation: MutationConfig {
+                        substitution_ppm: 2_000,
+                        insertion_ppm: 2_500,
+                        deletion_ppm: 2_500,
+                    },
+                    ..WorldConfig::default()
                 };
                 let mut world = Self::new(config, seed, preset)?;
                 world.seed_cluster(&clumsy_ancestor(), 10, 6)?;
                 Ok(world)
             }
             "blue-nutrient" => {
-                let mut config = WorldConfig::default();
-                config.width = 96;
-                config.height = 64;
-                config.capabilities = CAP_LOGIC | CAP_MOVE | CAP_SIGNAL | CAP_SHARE;
-                config.resource_replenish = 2;
-                config.logic_reward = 120;
-                config.seasonal_period = 600;
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    capabilities: CAP_LOGIC | CAP_MOVE | CAP_SIGNAL | CAP_SHARE,
+                    resource_replenish: 2,
+                    logic_reward: 120,
+                    seasonal_period: 600,
+                    ..WorldConfig::default()
+                };
                 let mut world = Self::new(config, seed, preset)?;
                 world.seed_cluster(&clumsy_ancestor(), 6, 4)?;
                 Ok(world)
@@ -661,6 +680,9 @@ impl World {
 
     pub fn new(config: WorldConfig, seed: u64, preset_id: &str) -> Result<Self, String> {
         config.validate()?;
+        if !valid_identifier(preset_id, 64) {
+            return Err("preset identifier is invalid".into());
+        }
         let len = usize::from(config.width) * usize::from(config.height);
         let cells = (0..len)
             .map(|idx| Cell {
@@ -825,6 +847,9 @@ impl World {
 
         self.commit_moves(moves);
         self.commit_births(births);
+        // Keep the checkpoint invariant true at every externally observable
+        // update, not only when the statistics sampler happens to run.
+        self.prune_genotypes();
         self.update = self.update.wrapping_add(1);
 
         if self.config.sample_period > 0 && self.update % u64::from(self.config.sample_period) == 0
@@ -906,7 +931,7 @@ impl World {
                     Ordering::Greater => CompareFlag::Greater,
                 };
             }
-            15 | 16 | 17 => {
+            15..=17 => {
                 let execute = match op {
                     15 => organism.compare == CompareFlag::Equal,
                     16 => organism.compare != CompareFlag::Equal,
@@ -1732,8 +1757,13 @@ impl World {
     }
 
     pub fn apply_intervention(&mut self, kind: &str, value: u32) -> Result<(), String> {
+        if self.interventions.len() >= MAX_INTERVENTIONS_HARD {
+            return Err("intervention history has reached its safety cap".into());
+        }
+        if self.next_intervention_id == u64::MAX {
+            return Err("intervention identifier space is exhausted".into());
+        }
         let id = self.next_intervention_id;
-        self.next_intervention_id += 1;
         match kind {
             "mutation" => {
                 if value > 100_000 {
@@ -1762,6 +1792,9 @@ impl World {
             "seasons" => self.config.seasonal_period = value,
             _ => return Err("unknown intervention".into()),
         }
+        // The same ID is both recorded and fed into deterministic
+        // intervention randomness. Rejected commands consume no state.
+        self.next_intervention_id += 1;
         self.interventions.push(InterventionRecord {
             id,
             update: self.update,
@@ -1886,13 +1919,24 @@ impl World {
     fn validate_loaded(&self) -> Result<(), String> {
         self.config.validate()?;
         if self.engine_version != ENGINE_VERSION
-            || self.build_id != BUILD_ID
             || self.isa_version != ISA_VERSION
             || self.rng_version != RNG_VERSION
             || self.physics_version != PHYSICS_VERSION
             || self.substrate_id != "grid-private-child-v1"
         {
             return Err("checkpoint belongs to incompatible engine semantics".into());
+        }
+        if self.build_id.len() > 128 || !self.build_id.starts_with("darwin-") {
+            return Err("checkpoint build provenance is invalid".into());
+        }
+        if !valid_identifier(&self.preset_id, 64) {
+            return Err("checkpoint preset identifier is invalid".into());
+        }
+        if self.next_birth_id == u64::MAX
+            || self.next_lineage_id == u64::MAX
+            || self.next_intervention_id == u64::MAX
+        {
+            return Err("checkpoint identifier space is exhausted".into());
         }
         let expected_cells = usize::from(self.config.width) * usize::from(self.config.height);
         if self.cells.len() != expected_cells {
@@ -1903,7 +1947,7 @@ impl World {
             || self.genotype_lookup.len() != self.genotypes.len()
             || self.fossils.len() > self.config.max_fossils as usize
             || self.stats.len() > self.config.max_samples as usize
-            || self.interventions.len() > 100_000
+            || self.interventions.len() > MAX_INTERVENTIONS_HARD
         {
             return Err("checkpoint object counts exceed safety limits".into());
         }
@@ -1992,21 +2036,86 @@ impl World {
                 || genotype
                     .parent_genotype_id
                     .is_some_and(|id| id as usize >= self.genotypes.len())
+                || genotype.hash != hash_genome(&genotype.bytes)
                 || genotype.active_count != active_by_genotype[index]
+                || genotype
+                    .total_deaths
+                    .saturating_add(u64::from(genotype.active_count))
+                    != genotype.total_births
                 || self.genotype_lookup.get(&genotype.bytes) != Some(&genotype.id)
             {
                 return Err("checkpoint genotype index is inconsistent".into());
             }
         }
+        for fossil in &self.fossils {
+            let Some(genotype) = self.genotypes.get(fossil.genotype_id as usize) else {
+                return Err("checkpoint history references a missing genotype".into());
+            };
+            if fossil.update > self.update
+                || fossil.lineage_id >= self.next_lineage_id
+                || fossil.reason.len() > 128
+                || fossil.genome != genotype.bytes
+                || u64::from(fossil.active_count) > genotype.total_births
+            {
+                return Err("checkpoint contains an invalid fossil record".into());
+            }
+        }
         if self
-            .fossils
-            .iter()
-            .any(|fossil| fossil.genotype_id as usize >= self.genotypes.len())
-            || self
-                .last_dominant
-                .is_some_and(|id| id as usize >= self.genotypes.len())
+            .last_dominant
+            .is_some_and(|id| id as usize >= self.genotypes.len())
         {
             return Err("checkpoint history references a missing genotype".into());
+        }
+
+        let mut previous_sample_update = 0u64;
+        for (index, sample) in self.stats.iter().enumerate() {
+            if sample.update > self.update
+                || sample.instructions > self.instructions
+                || sample.population as usize > expected_cells
+                || sample.genotype_count > sample.population
+                || sample.lineage_count > sample.population
+                || sample.genotype_count > self.config.max_genotypes
+                || sample.retired_genotype_count > self.retired_genotypes
+                || sample.dominant_share_ppm > 1_000_000
+                || sample.median_genome_length > self.config.max_genome
+                || sample.median_energy > self.config.max_energy
+                || sample
+                    .dominant_genotype_id
+                    .is_some_and(|id| id as usize >= self.genotypes.len())
+                || (index > 0 && sample.update < previous_sample_update)
+            {
+                return Err("checkpoint contains an invalid statistics sample".into());
+            }
+            previous_sample_update = sample.update;
+        }
+
+        let mut intervention_ids = BTreeSet::new();
+        let mut max_intervention_id: Option<u64> = None;
+        let mut previous_intervention_update = 0u64;
+        for (index, intervention) in self.interventions.iter().enumerate() {
+            if intervention.update > self.update
+                || (index > 0 && intervention.update < previous_intervention_update)
+                || !matches!(
+                    intervention.kind.as_str(),
+                    "mutation"
+                        | "bottleneck"
+                        | "catastrophe"
+                        | "resource-pulse"
+                        | "logic"
+                        | "seasons"
+                )
+                || (intervention.kind == "mutation" && intervention.value > 100_000)
+                || !intervention_ids.insert(intervention.id)
+            {
+                return Err("checkpoint contains an invalid intervention record".into());
+            }
+            previous_intervention_update = intervention.update;
+            max_intervention_id = Some(
+                max_intervention_id.map_or(intervention.id, |current| current.max(intervention.id)),
+            );
+        }
+        if max_intervention_id.is_some_and(|id| self.next_intervention_id <= id) {
+            return Err("checkpoint intervention identifiers moved backwards".into());
         }
         Ok(())
     }
@@ -2024,7 +2133,6 @@ impl World {
         let mut a = 0xcbf2_9ce4_8422_2325u64;
         let mut b = 0x8422_2325_cbf2_9ce4u64;
         hash_pair_str(&mut a, &mut b, &self.engine_version);
-        hash_pair_str(&mut a, &mut b, &self.build_id);
         hash_pair(&mut a, &mut b, u64::from(self.isa_version));
         hash_pair(&mut a, &mut b, u64::from(self.rng_version));
         hash_pair(&mut a, &mut b, u64::from(self.physics_version));
@@ -2165,6 +2273,7 @@ impl World {
             hash_pair_option(&mut a, &mut b, genotype.parent_genotype_id.map(u64::from));
             hash_pair_bytes(&mut a, &mut b, &genotype.bytes);
         }
+        hash_pair(&mut a, &mut b, self.fossils.len() as u64);
         for fossil in &self.fossils {
             hash_pair(&mut a, &mut b, fossil.update);
             hash_pair(&mut a, &mut b, u64::from(fossil.genotype_id));
@@ -2173,12 +2282,14 @@ impl World {
             hash_pair(&mut a, &mut b, u64::from(fossil.active_count));
             hash_pair_bytes(&mut a, &mut b, &fossil.genome);
         }
+        hash_pair(&mut a, &mut b, self.stats.len() as u64);
         for sample in &self.stats {
             for value in [
                 sample.update,
                 sample.instructions,
                 u64::from(sample.population),
                 u64::from(sample.genotype_count),
+                sample.retired_genotype_count,
                 u64::from(sample.lineage_count),
                 u64::from(sample.dominant_share_ppm),
                 u64::from(sample.median_genome_length),
@@ -2193,6 +2304,7 @@ impl World {
             }
             hash_pair_option(&mut a, &mut b, sample.dominant_genotype_id.map(u64::from));
         }
+        hash_pair(&mut a, &mut b, self.interventions.len() as u64);
         for intervention in &self.interventions {
             hash_pair(&mut a, &mut b, intervention.id);
             hash_pair(&mut a, &mut b, intervention.update);
@@ -2422,18 +2534,20 @@ impl World {
 }
 
 pub fn sandbox_trace(genome: &[u8], steps: u32) -> Result<SandboxTrace, String> {
-    let mut config = WorldConfig::default();
-    config.width = 3;
-    config.height = 3;
-    config.instructions_per_update = 1;
-    config.mutation = MutationConfig {
-        substitution_ppm: 0,
-        insertion_ppm: 0,
-        deletion_ppm: 0,
+    let config = WorldConfig {
+        width: 3,
+        height: 3,
+        instructions_per_update: 1,
+        mutation: MutationConfig {
+            substitution_ppm: 0,
+            insertion_ppm: 0,
+            deletion_ppm: 0,
+        },
+        occupancy_policy: OccupancyPolicy::EmptyOnly,
+        min_genome: 1,
+        max_genome: MAX_GENOME_HARD as u16,
+        ..WorldConfig::default()
     };
-    config.occupancy_policy = OccupancyPolicy::EmptyOnly;
-    config.min_genome = 1;
-    config.max_genome = MAX_GENOME_HARD as u16;
     let mut world = World::new(config, 1, "sandbox")?;
     world.seed_organism(1, 1, genome.to_vec())?;
     let mut trace = Vec::new();
@@ -2526,6 +2640,12 @@ pub fn assess_viability(genome: &[u8], max_instructions: u64) -> ViabilityResult
     while world.instructions < max_instructions {
         let before_pop = world.population();
         world.run_one_update();
+        // Extinction is a terminal assay result. Without this guard the
+        // instruction counter can no longer advance and a dead mutant loops
+        // forever, exactly the common case in neighbourhood and random search.
+        if world.population() == 0 {
+            break;
+        }
         if first.is_none() && world.population() > before_pop {
             first = Some(world.instructions);
             if let Some(child) = world
@@ -2828,6 +2948,14 @@ fn gcd(mut a: usize, mut b: usize) -> usize {
     a
 }
 
+fn valid_identifier(value: &str, max_len: usize) -> bool {
+    !value.is_empty()
+        && value.len() <= max_len
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+}
+
 fn bincode_options() -> impl Options {
     bincode::DefaultOptions::new()
         .with_fixint_encoding()
@@ -2981,6 +3109,12 @@ mod tests {
         let result = assess_viability(&genome, 120_000);
         assert!(result.divided, "clumsy ancestor never divided: {result:?}");
         assert!(
+            result
+                .first_division_instructions
+                .is_some_and(|count| count < 2_000),
+            "clumsy ancestor divided outside its intended energy regime: {result:?}"
+        );
+        assert!(
             result.child_divided,
             "clumsy child did not divide: {result:?}"
         );
@@ -2988,6 +3122,14 @@ mod tests {
             result.exact_child,
             "clumsy ancestor copied incorrectly: {result:?}"
         );
+    }
+
+    #[test]
+    fn extinct_viability_assays_terminate() {
+        let result = assess_viability(&[0], 100_000);
+        assert!(!result.divided);
+        assert!(!result.child_divided);
+        assert_eq!(result.first_division_instructions, None);
     }
 
     #[test]
@@ -3058,6 +3200,93 @@ mod tests {
     }
 
     #[test]
+    fn rejected_interventions_do_not_perturb_future_history() {
+        let mut world = World::from_preset("bottleneck", 23).unwrap();
+        let before = world.checksum_hex();
+        let next_id = world.next_intervention_id;
+        assert!(world.apply_intervention("unknown", 1).is_err());
+        assert!(world.apply_intervention("mutation", 100_001).is_err());
+        assert_eq!(world.next_intervention_id, next_id);
+        assert!(world.interventions.is_empty());
+        assert_eq!(world.checksum_hex(), before);
+    }
+
+    #[test]
+    fn successful_intervention_records_the_randomness_identity_it_used() {
+        let mut world = World::from_preset("bottleneck", 29).unwrap();
+        let id = world.next_intervention_id;
+        world.apply_intervention("bottleneck", 8).unwrap();
+        assert_eq!(world.interventions.last().unwrap().id, id);
+        assert_eq!(world.next_intervention_id, id + 1);
+    }
+
+    #[test]
+    fn checksum_covers_retired_history_metadata_and_vector_boundaries() {
+        let mut world = World::from_preset("first-replicator", 5).unwrap();
+        world.run_updates(20);
+        assert!(!world.stats.is_empty());
+        let baseline = world.checksum_hex();
+
+        let mut retired = world.clone();
+        retired.stats[0].retired_genotype_count =
+            retired.stats[0].retired_genotype_count.saturating_add(1);
+        assert_ne!(retired.checksum_hex(), baseline);
+
+        let mut intervention = world.clone();
+        intervention.interventions.push(InterventionRecord {
+            id: intervention.next_intervention_id,
+            update: intervention.update,
+            kind: "logic".into(),
+            value: 1,
+        });
+        assert_ne!(intervention.checksum_hex(), baseline);
+    }
+
+    #[test]
+    fn checkpoint_validation_rejects_forged_history_and_identity() {
+        let world = World::from_preset("first-replicator", 31).unwrap();
+
+        let mut forged_genotype = world.clone();
+        forged_genotype.genotypes[0].hash ^= 1;
+        assert!(World::import_checkpoint(&forged_genotype.export_checkpoint().unwrap()).is_err());
+
+        let mut forged_fossil = world.clone();
+        forged_fossil.fossils[0].genome[0] ^= 1;
+        assert!(World::import_checkpoint(&forged_fossil.export_checkpoint().unwrap()).is_err());
+
+        let mut forged_preset = world.clone();
+        forged_preset.preset_id = "../../not-a-preset".into();
+        assert!(World::import_checkpoint(&forged_preset.export_checkpoint().unwrap()).is_err());
+
+        let mut forged_intervention = world;
+        forged_intervention.interventions.push(InterventionRecord {
+            id: 7,
+            update: 0,
+            kind: "unknown".into(),
+            value: 0,
+        });
+        forged_intervention.next_intervention_id = 8;
+        assert!(
+            World::import_checkpoint(&forged_intervention.export_checkpoint().unwrap()).is_err()
+        );
+    }
+
+    #[test]
+    fn configured_history_limits_have_hard_caps() {
+        let excessive_samples = WorldConfig {
+            max_samples: MAX_STATS_SAMPLES_HARD + 1,
+            ..WorldConfig::default()
+        };
+        assert!(excessive_samples.validate().is_err());
+
+        let excessive_fossils = WorldConfig {
+            max_fossils: MAX_FOSSILS_HARD + 1,
+            ..WorldConfig::default()
+        };
+        assert!(excessive_fossils.validate().is_err());
+    }
+
+    #[test]
     fn checksum_covers_future_affecting_state() {
         let world = World::from_preset("first-replicator", 5).unwrap();
         let baseline = world.checksum_hex();
@@ -3078,11 +3307,13 @@ mod tests {
 
     #[test]
     fn genotype_history_is_bounded_without_losing_live_records() {
-        let mut config = WorldConfig::default();
-        config.width = 8;
-        config.height = 8;
-        config.max_fossils = 4;
-        config.max_genotypes = 132;
+        let config = WorldConfig {
+            width: 8,
+            height: 8,
+            max_fossils: 4,
+            max_genotypes: 132,
+            ..WorldConfig::default()
+        };
         let mut world = World::new(config, 9, "prune-test").unwrap();
         world
             .seed_organism(4, 4, MINIMAL_ANCESTOR.to_vec())
@@ -3095,7 +3326,7 @@ mod tests {
             world.intern_genotype(genome, None);
         }
         assert!(world.genotypes.len() > world.config.max_genotypes as usize);
-        world.prune_genotypes();
+        world.run_one_update();
         assert!(world.genotypes.len() <= world.config.max_genotypes as usize);
         assert!(world
             .genotypes
@@ -3103,6 +3334,25 @@ mod tests {
             .any(|record| record.hash == founder_hash && record.active_count == 1));
         assert!(world.retired_genotypes > 0);
         world.validate_loaded().unwrap();
+        let checkpoint = world.export_checkpoint().unwrap();
+        let restored = World::import_checkpoint(&checkpoint).unwrap();
+        assert_eq!(restored.checksum_hex(), world.checksum_hex());
+    }
+
+    #[test]
+    fn checkpoints_survive_asset_only_build_changes_but_not_semantic_changes() {
+        let mut world = World::from_preset("first-replicator", 17).unwrap();
+        world.build_id = "darwin-previous-asset-build".into();
+        let checksum = world.checksum_hex();
+        let bytes = world.export_checkpoint().unwrap();
+        let restored = World::import_checkpoint(&bytes).unwrap();
+        assert_eq!(restored.build_id, "darwin-previous-asset-build");
+        assert_eq!(restored.checksum_hex(), checksum);
+
+        let mut incompatible = world;
+        incompatible.physics_version = incompatible.physics_version.saturating_add(1);
+        let bytes = incompatible.export_checkpoint().unwrap();
+        assert!(World::import_checkpoint(&bytes).is_err());
     }
 
     #[test]

@@ -1,0 +1,32 @@
+[
+  {
+    "ancestor": "minimal-v1",
+    "genome_length": 16,
+    "substitutions_tested": 4080,
+    "substitutions_divided": 1121,
+    "substitutions_child_divided": 687,
+    "substitutions_faster": 36,
+    "deletions_tested": 16,
+    "deletions_divided": 6,
+    "deletions_child_divided": 4,
+    "insertions_tested": 136,
+    "insertions_divided": 99,
+    "insertions_child_divided": 99,
+    "baseline_division_instructions": 103
+  },
+  {
+    "ancestor": "clumsy-v1",
+    "genome_length": 64,
+    "substitutions_tested": 16320,
+    "substitutions_divided": 13084,
+    "substitutions_child_divided": 12892,
+    "substitutions_faster": 70,
+    "deletions_tested": 64,
+    "deletions_divided": 53,
+    "deletions_child_divided": 52,
+    "insertions_tested": 520,
+    "insertions_divided": 481,
+    "insertions_child_divided": 481,
+    "baseline_division_instructions": 457
+  }
+]

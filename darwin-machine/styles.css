@@ -231,7 +231,17 @@ input[type="range"] { width: 100%; }
 .dish-help { position: absolute; left: .65rem; bottom: .55rem; margin: 0; padding: .25rem .45rem; border-radius: .35rem; color: #aebbb8; background: rgba(4,9,12,.82); font-size: .68rem; pointer-events: none; }
 .dish-caption { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .9rem .35rem 0; color: var(--muted); font-size: .78rem; }
 .dish-caption p { margin: 0; max-width: 52rem; }
-.text-button, .link-button { border: 0; background: transparent; padding: 0; color: var(--acid); cursor: pointer; font-weight: 750; }
+.text-button, .link-button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  padding: .25rem 0;
+  color: var(--acid);
+  cursor: pointer;
+  font-weight: 750;
+}
 .text-button { white-space: nowrap; }
 
 .inspector-panel { max-height: 72rem; overflow: auto; scrollbar-color: var(--line-strong) transparent; }

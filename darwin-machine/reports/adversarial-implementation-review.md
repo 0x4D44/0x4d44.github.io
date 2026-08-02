@@ -40,7 +40,7 @@ This dossier records four deliberately hostile review passes applied while imple
 
 **Finding:** Updating cells in a fixed row-major order lets position and “who ran first” determine resource capture and births.
 
-**Disposition:** Closed. Each update visits every cell exactly once using a seed/update-derived affine permutation with a coprime step. Birth and move requests are gathered and resolved at update end. Contention keys depend on stable identities, not vector insertion order. A unit test proves the scheduler is a permutation for world sizes 2–499.
+**Disposition:** Closed. Each update visits every cell exactly once using a seed/update-derived affine permutation with a coprime step. Birth and move requests are gathered and resolved at update end. Contention keys depend on stable identities, not vector insertion order. Local resource capture and signalling remain deliberately schedule-mediated and are disclosed as substrate physics rather than claimed to be simultaneous. A unit test proves the scheduler is a permutation for world sizes 2–499.
 
 ### Objection: a global RNG makes observations perturb evolution
 
@@ -52,7 +52,7 @@ This dossier records four deliberately hostile review passes applied while imple
 
 **Finding:** The first implementation omitted signal fields, heads, stacks, child targets, RNG counters and much configuration from its digest.
 
-**Disposition:** Closed after review. The state checksum now covers version identity, every world law, cells, organisms, child construction, free-slot order, genotype/history records, interventions and interval state. The checkpoint envelope separately hashes the complete raw payload before decoding.
+**Disposition:** Closed after review. The state checksum now covers semantic version identity, every world law, cells, organisms, child construction, free-slot order, genotype/history records (including vector boundaries and retired-history counters), interventions and interval state. Asset-build provenance is deliberately excluded because it cannot affect a future simulation step. The checkpoint envelope separately hashes the complete raw payload before decoding.
 
 ### Objection: “16 MiB cap” is not validation
 
@@ -64,7 +64,7 @@ This dossier records four deliberately hostile review passes applied while imple
 
 **Finding:** Bounding charts and fossils while retaining every extinct genotype still leaks memory indefinitely.
 
-**Disposition:** Closed. The core deterministically retains active genotypes, active parents, fossils, the current dominant branch and the newest extinct records up to a configured cap. It remaps observational IDs without changing any live genome or VM state and increments an aggregate retired-genotype counter. A test forces pruning and validates the resulting checkpoint structure.
+**Disposition:** Closed. The core deterministically retains active genotypes, active parents, fossils, the current dominant branch and the newest extinct records up to a hard-bounded configured cap, enforcing it at every externally observable update rather than only at chart-sampling boundaries. It remaps observational IDs without changing any live genome or VM state and increments an aggregate retired-genotype counter. A test forces pruning and validates the resulting checkpoint structure.
 
 ### Objection: native and browser arithmetic may diverge
 
@@ -108,7 +108,7 @@ This dossier records four deliberately hostile review passes applied while imple
 
 **Finding:** A frozen Worker looks like a paused experiment and can lose hours of state.
 
-**Disposition:** Closed. Two-second heartbeats trigger a visible fatal recovery panel after eight seconds. The Worker writes an automatic IndexedDB checkpoint every thirty seconds, and manual local saves plus file export are available.
+**Disposition:** Closed. Two-second heartbeats trigger a visible fatal recovery panel after eight seconds. User-data failures such as a corrupt checkpoint or missing browser save remain recoverable warnings rather than killing a healthy engine. The Worker writes an automatic IndexedDB checkpoint every thirty seconds, and manual local saves plus file export are available.
 
 ## Pass 4 — release, security and repository reviewer
 

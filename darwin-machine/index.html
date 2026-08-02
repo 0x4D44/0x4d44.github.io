@@ -46,7 +46,7 @@
         </label>
         <label>
           <span>Deterministic seed</span>
-          <input id="seed" inputmode="numeric" autocomplete="off" spellcheck="false" value="1" aria-describedby="seed-note">
+          <input id="seed" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="20" value="1" aria-describedby="seed-note">
           <small id="seed-note">Same build, laws, preset and seed: same history.</small>
         </label>
       </div>
@@ -176,12 +176,12 @@
 
       <div class="chart-grid">
         <figure>
-          <figcaption><strong>Population and diversity</strong><span><i class="key-a"></i> population <i class="key-b"></i> genotypes</span></figcaption>
+          <figcaption><strong>Population and diversity</strong><span>shared count scale · <i class="key-a"></i> population <i class="key-b"></i> genotypes</span></figcaption>
           <canvas id="population-chart" width="700" height="220" role="img" aria-label="Population and exact genotype count over recent updates"></canvas>
         </figure>
         <figure>
-          <figcaption><strong>Genome and replication cost</strong><span><i class="key-a"></i> median bytes <i class="key-b"></i> instructions</span></figcaption>
-          <canvas id="genome-chart" width="700" height="220" role="img" aria-label="Median genome length and mean replication instruction count over recent updates"></canvas>
+          <figcaption><strong>Genome and replication cost</strong><span>separate scales · <i class="key-a"></i> median bytes <i class="key-b"></i> instructions</span></figcaption>
+          <canvas id="genome-chart" width="700" height="220" role="img" aria-label="Median genome length and mean replication instruction count over recent updates, drawn on separate scales"></canvas>
         </figure>
       </div>
 

@@ -1,4 +1,4 @@
-const BUILD_ID = "darwin-2026.08.01.1";
+const BUILD_ID = "darwin-2026.08.02.1";
 const CACHE = `darwin-machine-${BUILD_ID}`;
 const ASSETS = [
   "./",

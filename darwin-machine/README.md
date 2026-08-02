@@ -81,7 +81,7 @@ cargo run -p darwin-cli -- neighbourhood all
 cargo run -p darwin-cli -- assay all
 ```
 
-All authoritative simulation values are integers. A build identity handshake rejects stale combinations of page JavaScript, Worker JavaScript and Wasm. Checkpoints carry engine, ISA, RNG, physics, substrate and save-format versions plus a 128-bit state checksum.
+All authoritative simulation values are integers. A build identity handshake rejects stale combinations of page JavaScript, Worker JavaScript and Wasm. Checkpoints carry semantic engine, ISA, RNG, physics, substrate and save-format versions plus a 128-bit state checksum; an asset-only release ID remains bounded provenance and does not make a compatible saved experiment unloadable.
 
 ## Privacy and safety
 

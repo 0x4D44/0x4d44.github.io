@@ -23,8 +23,13 @@ let pumpScheduled = false;
 let dbPromise = null;
 let fatal = false;
 
+const RECOVERABLE_COMMANDS = new Set([
+  "save-local", "list-saves", "load-local", "delete-local",
+  "export", "import", "recover", "sandbox",
+]);
+
 self.addEventListener("message", (event) => {
-  handle(event.data).catch(reportFatal);
+  handle(event.data).catch((error) => reportCommandError(event.data, error));
 });
 
 async function handle(message) {
@@ -135,7 +140,7 @@ async function boot(message) {
   sendSnapshot(true);
   postState();
   schedulePump();
-  void listSaves();
+  void listSaves().catch((error) => reportCommandError({ type: "list-saves" }, error));
 }
 
 function schedulePump() {
@@ -201,9 +206,14 @@ async function runSandbox(message) {
 function exportCheckpoint() {
   const bytes = world.exportCheckpoint();
   const summary = JSON.parse(world.summaryJson());
+  const safePreset = String(summary.preset_id)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "experiment";
   self.postMessage({
     type: "checkpoint-export",
-    filename: `darwin-${summary.preset_id}-u${summary.update}-s${summary.seed}.darwin`,
+    filename: `darwin-${safePreset}-u${summary.update}-s${summary.seed}.darwin`,
     checksum: summary.checksum,
     buffer: bytes.buffer,
   }, [bytes.buffer]);
@@ -333,13 +343,40 @@ function requireBoot() {
 
 function normaliseSeed(value) {
   const text = String(value ?? "1").trim();
-  if (!/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
-  return text;
+  if (text.length > 20 || !/^(?:0x[0-9a-f]+|\d+)$/i.test(text)) return "1";
+  try {
+    const seed = BigInt(text);
+    return seed <= 18_446_744_073_709_551_615n ? seed.toString() : "1";
+  } catch {
+    return "1";
+  }
 }
 
 function clampInt(value, min, max) {
   const n = Number.isFinite(Number(value)) ? Math.trunc(Number(value)) : min;
   return Math.max(min, Math.min(max, n));
+}
+
+function reportCommandError(message, error) {
+  if (!RECOVERABLE_COMMANDS.has(message?.type)) {
+    reportFatal(error);
+    return;
+  }
+  const labels = {
+    "save-local": "Save",
+    "list-saves": "Saved-experiment list",
+    "load-local": "Load",
+    "delete-local": "Delete",
+    export: "Export",
+    import: "Import",
+    recover: "Recovery",
+    sandbox: "Sandbox trace",
+  };
+  self.postMessage({
+    type: "notice",
+    level: "warn",
+    text: `${labels[message.type] || "Command"} failed: ${error?.message || String(error)}`,
+  });
 }
 
 function reportFatal(error) {

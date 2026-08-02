@@ -334,7 +334,7 @@ The UI uses these terms carefully:
 - **organism:** an active VM instance with a genome and state;
 - **genome:** its executable byte sequence;
 - **genotype:** an exact genome byte sequence;
-- **lineage:** a genealogical branch descended from an ancestor;
+- **lineage:** a mutation-defined genealogical branch; exact-copy descendants remain on the branch and recorded mutations open a new one;
 - **strain:** an informal display grouping for closely related active genotypes;
 - **phenotype:** measured behaviour such as replication time, resource use or task performance;
 - **species:** avoided unless a particular experiment defines an explicit operational criterion.
