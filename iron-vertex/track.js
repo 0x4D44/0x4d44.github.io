@@ -1273,10 +1273,78 @@ function blankLap(startedAtLap = 0) {
 // decision without a GPU.
 // ------------------------------------------------------------
 
+// The hill is not an ellipsoid — a smooth dome reads as a balloon — so
+// the renderer displaces its surface by this factor, evaluated on the
+// unit sphere before scaling. It is exported because the site test has
+// to clear the shape that actually gets BUILT: pad the ellipsoid by the
+// worst-case bulge instead and the margin swallows most of the park
+// (120 seeds: 65 usable sites becomes 20).
+export function hillBump(x, y, z) {
+  return 1
+    + Math.sin(x * 5.1 + z * 3.7) * 0.05
+    + Math.sin(y * 4.3 - x * 2.9) * 0.045
+    + Math.sin(z * 7.7 + y * 5.3) * 0.03;
+}
+
 export function tunnelSite(track, groundHeight, wantLength = 46) {
   const n = track.points.length;
   const samples = Math.max(20, Math.round(wantLength / track.ds));
   if (samples * 2 > n) return null;
+
+  // The hill a given run of track implies: an ellipsoid wide enough to
+  // cover it, sunk a third of its height into the ground. The RENDERER
+  // builds exactly this, from these numbers, so the two cannot drift.
+  const hillFor = (span) => {
+    const mid = track.points[span[Math.floor(span.length / 2)]];
+    let reach = 0;
+    let crown = -Infinity;
+    for (const i of span) {
+      const p = track.points[i];
+      reach = Math.max(reach, Math.hypot(p.x - mid.x, p.z - mid.z));
+      crown = Math.max(crown, p.y);
+    }
+    const radius = reach + 9;
+    const top = crown + 5.5;
+    const base = groundHeight(mid.x, mid.z);
+    return {
+      mid: { x: mid.x, y: mid.y, z: mid.z },
+      radius,
+      top,
+      // Centre and radii of the ellipsoid itself.
+      x: mid.x,
+      y: base - (top - base) * 0.34,
+      z: mid.z,
+      rx: radius,
+      ry: (top - base) * 1.34,
+      rz: radius * 0.92,
+    };
+  };
+
+  // Inside the hill as the renderer draws it, bumps and all: map the
+  // point into the ellipsoid's unit space, then compare its radius
+  // against the displaced surface in that same direction. The slack is
+  // only a graze margin — track that skims the grass looks as wrong as
+  // track buried in it.
+  const insideHill = (p, hill, slack = 1.06) => {
+    const dx = (p.x - hill.x) / hill.rx;
+    const dy = (p.y - hill.y) / hill.ry;
+    const dz = (p.z - hill.z) / hill.rz;
+    const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (r > 1.13 * slack) return false;      // outside any possible bulge
+    if (r < 1e-6) return true;
+    return r < hillBump(dx / r, dy / r, dz / r) * slack;
+  };
+
+  // What a PORTAL needs, as opposed to what the bore needs. Inside the
+  // hill the tube just follows the frame, banked or not; but the stone
+  // arch at each mouth has to stand upright on the hillside and clear
+  // the grass, or it reads as a hoop half-sunk in a lawn.
+  const portalOk = (i) => {
+    if (track.ups[i].y < 0.7) return false;
+    const p = track.points[i];
+    const above = p.y - groundHeight(p.x, p.z);
+    return above > 3.4 && above < 20.0;
+  };
 
   const candidates = [];
   for (let start = 0; start < n; start += 3) {
@@ -1288,8 +1356,6 @@ export function tunnelSite(track, groundHeight, wantLength = 46) {
       const above = p.y - groundHeight(p.x, p.z);
       // Free-running, close to the ground but with room for a bore
       // UNDER the rails, upright, and not on its side:
-      // a tunnel around banked or inverted track would be a tube around a
-      // corkscrew, which is neither buildable nor legible.
       if (track.roles[i] !== "free" || track.ups[i].y < 0.7 || above < 4.6 || above > 20.0) {
         usable = false;
         break;
@@ -1300,43 +1366,132 @@ export function tunnelSite(track, groundHeight, wantLength = 46) {
   }
   candidates.sort((a, b) => a.score - b.score || a.start - b.start);
 
-  for (const candidate of candidates.slice(0, 24)) {
-    const span = [];
-    for (let k = 0; k < samples; k++) span.push((candidate.start + k) % n);
-    const mid = track.points[span[Math.floor(span.length / 2)]];
-    let reach = 0;
-    let crown = -Infinity;
-    for (const i of span) {
-      const p = track.points[i];
-      reach = Math.max(reach, Math.hypot(p.x - mid.x, p.z - mid.z));
-      crown = Math.max(crown, p.y);
-    }
-    const radius = reach + 9;
-    const top = crown + 5.5;
+  const MAX_SPAN = Math.min(n - 8, Math.round(150 / track.ds));
 
-    // Nothing else may be buried in the hill — including track passing
-    // over it, unless it clears the summit.
+  for (const candidate of candidates.slice(0, 24)) {
+    let span = [];
+    for (let k = 0; k < samples; k++) span.push((candidate.start + k) % n);
+    let hill = hillFor(span);
+
+    // Absorb the track either side that the hill would bury.
     //
-    // "Else" is doing the work in that sentence. The track leaving each
-    // portal is of course near the hill; it is the approach, and it runs
-    // along the hillside exactly as it should. What must not happen is
-    // some OTHER part of the circuit — a hill, the lift, the far side of
-    // a turn — coming back round and ending up inside the rock. So the
-    // exclusion is measured ALONG the track, the same way self-clearance
-    // is, rather than by a plain radius in plan.
-    const skip = Math.ceil((radius + 25) / track.ds);
-    let fouled = false;
-    for (let k = samples + skip; k < n - skip; k++) {
-      const p = track.points[(candidate.start + k) % n];
-      if (Math.hypot(p.x - mid.x, p.z - mid.z) < radius + 4 && p.y < top + 4) {
-        fouled = true;
-        break;
+    // This is where the first version went wrong. It exempted everything
+    // within a fixed distance ALONG the track of the span, on the theory
+    // that the approach legitimately runs along the hillside. It does —
+    // until it curves back INTO the hill, and then the train goes
+    // straight through the grass, because the bore's hole stops at the
+    // portal while the track carries on inside the rock.
+    //
+    // So there is no exemption now. Track the hill would swallow is
+    // either absorbed into the tunnel — the bore and the hole are cut
+    // along the whole absorbed run, so the portals end up where the
+    // track really does leave the hill — or the site is rejected.
+    let grew = true;
+    for (let round = 0; round < 4 && grew; round++) {
+      grew = false;
+      const canExtend = (i) => track.roles[i] === "free" && insideHill(track.points[i], hill);
+      let head = span[0];
+      let tail = span[span.length - 1];
+      while (span.length < MAX_SPAN && canExtend((head - 1 + n) % n)) {
+        head = (head - 1 + n) % n;
+        span.unshift(head);
+        grew = true;
       }
+      while (span.length < MAX_SPAN && canExtend((tail + 1) % n)) {
+        tail = (tail + 1) % n;
+        span.push(tail);
+        grew = true;
+      }
+      if (grew) hill = hillFor(span);
+    }
+    // A run that keeps growing is a circuit that spends its life inside
+    // the hillside, which is not a tunnel.
+    if (span.length >= MAX_SPAN) continue;
+
+    // Growth moved the mouths, so it is the GROWN ends that have to be
+    // able to carry an arch, not the run we started from.
+    if (!portalOk(span[0]) || !portalOk(span[span.length - 1])) continue;
+
+    // And now nothing else may be inside it at all.
+    const inSpan = new Set(span);
+    let fouled = false;
+    for (let i = 0; i < n && !fouled; i++) {
+      if (inSpan.has(i)) continue;
+      if (insideHill(track.points[i], hill)) fouled = true;
     }
     if (fouled) continue;
-    return { span, mid: { x: mid.x, y: mid.y, z: mid.z }, radius, top };
+
+    return { span, mid: hill.mid, radius: hill.radius, top: hill.top, hill };
   }
   return null;
+}
+
+// ------------------------------------------------------------
+// How enclosed the track is, and where the trailing cameras fly.
+//
+// The chase and wing cameras hang out in space beside and above the
+// train. That is right in the open and fatal anywhere with a ceiling: a
+// camera five metres over the rails does not follow the train into a
+// tunnel, it flies into the hillside above the portal, and at the
+// station the shed roof swallows it whole.
+//
+// So the track carries a profile — 0 in the open, 1 where there is a
+// roof close overhead — and the cameras tuck in against it. It lives
+// here, with the geometry it is measuring, rather than in the renderer,
+// so it can be checked without a GPU.
+// ------------------------------------------------------------
+
+// The bore the tunnel is driven at, shared by the tube, its portals, the
+// hole cut through the hillside, and the camera clearances below.
+export const BORE_RADIUS = 3.4;
+// Underside of the station shed's roof, above the rails.
+export const SHED_ROOF = 4.2;
+// Half the shed's length along the track.
+export const SHED_HALF = 11;
+
+export function enclosureProfile(track, stationIdx, tunnelSpan = null) {
+  const n = track.points.length;
+  const wrap = (i) => ((i % n) + n) % n;
+  let a = new Float32Array(n);
+  if (tunnelSpan) for (const i of tunnelSpan) a[i] = 1;
+  const shed = Math.ceil(SHED_HALF / track.ds);
+  for (let k = -shed; k <= shed; k++) a[wrap(stationIdx + k)] = 1;
+
+  // Grown first, so the camera is already down when it reaches the
+  // mouth rather than diving as it arrives; then the shoulders are
+  // smoothed off. The growth has to be wider than the smoothing reaches,
+  // or the blur pulls the value at the portal itself back down and the
+  // camera arrives half-ducked — which is a collision, not a near miss.
+  const grow = Math.max(1, Math.ceil(20 / track.ds));
+  const soften = Math.max(1, Math.ceil(7 / track.ds));
+  const grown = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let m = 0;
+    for (let k = -grow; k <= grow; k++) m = Math.max(m, a[wrap(i + k)]);
+    grown[i] = m;
+  }
+  a = grown;
+  for (let pass = 0; pass < 2; pass++) {
+    const soft = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let k = -soften; k <= soften; k++) sum += a[wrap(i + k)];
+      soft[i] = sum / (2 * soften + 1);
+    }
+    a = soft;
+  }
+  return a;
+}
+
+// How high over the rails the chase camera rides, and how far out to the
+// side and up the wing camera sits, at a given enclosure. Both collapse
+// towards the centreline as the ceiling closes in.
+export function chaseRise(e) {
+  return 5.4 * (1 - e) + 1.5 * e;
+}
+
+export function wingOffset(e) {
+  return { side: 7.6 * (1 - e) + 1.85 * e, rise: 3.6 * (1 - e) + 0.8 * e };
 }
 
 // ------------------------------------------------------------

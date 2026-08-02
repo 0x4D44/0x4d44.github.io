@@ -306,7 +306,7 @@
   <button class="act" id="btn-seat" type="button" aria-label="Change which seat you ride in">&#9679; Seat: front (S)</button>
   <button class="act" id="btn-sound" type="button" aria-label="Turn the sound on or off">&#9834; Sound: off (M)</button>
   <p class="hint">
-    Drag to orbit &middot; scroll to zoom<br>
+    Drag to orbit &middot; scroll to zoom &middot; drag to look around while riding<br>
     Gravity energy model. Some circuits are dragged up a chain, some get a
     second lift halfway round, and some are thrown out of the station by a
     magnetic launch. Loops are splayed and clearance-checked, so no two
@@ -360,9 +360,9 @@
 
 <script type="module">
 import * as THREE from "./three.module.min.js";
-import { AIRTIME_G, CoasterSim, RideLog, buildTrack } from "./track.js";
+import { AIRTIME_G, CoasterSim, RideLog, buildTrack, chaseRise, wingOffset } from "./track.js";
 import { buildWorld, groundHeight } from "./scenery.js";
-import { buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
+import { EYES, buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
 import { RideAudio, rideMix } from "./audio.js";
 
 // ============================================================
@@ -444,8 +444,8 @@ const CAR_SPACING = 3.45;
 const TRAIN_LENGTH = CARS * CAR_SPACING;
 // Where you sit changes what you feel — see CoasterSim.feltAt.
 const SEATS = [
-  { name: "front", car: 0 },
-  { name: "back", car: CARS - 1 },
+  { name: "front", car: 0, eye: EYES.front },
+  { name: "back", car: CARS - 1, eye: EYES.back },
 ];
 // Somebody who has asked for less movement should not be given a camera
 // that shakes and a lens that breathes with the speed.
@@ -463,6 +463,13 @@ const state = {
   log: new RideLog(),
   fov: BASE_FOV,
   orbit: { yaw: 0.7, pitch: 0.42, dist: 250, target: new THREE.Vector3(0, 18, 0) },
+  // Free look: where the rider has turned their head, relative to
+  // whatever the camera would otherwise be pointing at. Applies to
+  // chase, pov and wing; orbit has its own yaw/pitch above.
+  look: { yaw: 0, pitch: 0 },
+  // How enclosed the track is at each sample: 0 in the open, 1 inside
+  // the bore or under the station roof.
+  enclosure: null,
 };
 
 function disposeGroup(group) {
@@ -493,6 +500,7 @@ function loadTrack(seed) {
   const built = buildTrackMesh(track, groundHeight);
   state.trackGroup = built.group;
   state.trackUpdaters = built.updaters;
+  state.enclosure = built.enclosure;
   state.train = buildTrain(CARS, track.seed, groundHeight);
   scene.add(built.group);
   scene.add(state.train.group);
@@ -595,60 +603,102 @@ function updateCamera(ride, dt) {
   );
 
   if (state.camMode === "pov") {
-    // The front seat sits at the nose of the lead car. The back seat sits
-    // at the REAR of the last one — a car's length further back — or the
-    // camera ends up pressed against the back of the car in front, which
-    // is 30cm away and fills the whole lens.
-    const along = state.seat > 0 ? -1.35 : 0.55;
-    const above = state.seat > 0 ? 1.5 : 1.32;
+    // In the seat, not behind it. tmpPos is the reference point of the
+    // car this seat is in, so the eye offset is just car-local metres
+    // (EYES) resolved on that car's own frame — the same frame the car
+    // mesh is built on, which is what makes the bodywork sit around you
+    // instead of in front of you. The old back-seat camera hung 1.35m
+    // behind the last car, outside the ride entirely.
+    const eye = SEATS[state.seat].eye;
     camera.up.copy(smoothUp);
     camera.position.copy(tmpPos)
-      .addScaledVector(smoothUp, above)
-      .addScaledVector(tmpFwd, along)
+      .addScaledVector(smoothUp, eye.y)
+      .addScaledVector(tmpFwd, eye.z)
       .add(shake);
     camera.lookAt(
       tmpPos.x + tmpFwd.x * 30 + smoothUp.x * 1.3,
       tmpPos.y + tmpFwd.y * 30 + smoothUp.y * 1.3,
       tmpPos.z + tmpFwd.z * 30 + smoothUp.z * 1.3,
     );
+    applyFreeLook();
   } else if (state.camMode === "wing") {
     // Flying alongside: the one view that shows the train, the structure
     // and the ground it is about to meet, all at once. Framed on the
     // middle of the train rather than its nose, so all four cars fit.
     //
     // It has to stay inside the strip carve() clears of trees, or the
-    // camera spends half the lap inside a conifer.
+    // camera spends half the lap inside a conifer — and it has to tuck
+    // in hard where the track is enclosed, or the shed wall and the
+    // hillside take it out.
+    const rig = wingOffset(enclosureAt(ride.s - TRAIN_LENGTH * 0.5));
     camera.up.set(0, 1, 0);
     camera.position.copy(tmpPos)
-      .addScaledVector(tmpLat, 7.6)
+      .addScaledVector(tmpLat, rig.side)
       .addScaledVector(tmpFwd, -TRAIN_LENGTH * 0.5)
       .add(shake);
-    camera.position.y += 3.6;
+    camera.position.y += rig.rise;
     camera.lookAt(
       tmpPos.x - tmpFwd.x * TRAIN_LENGTH * 0.45,
       tmpPos.y - tmpFwd.y * TRAIN_LENGTH * 0.45 + 1.0,
       tmpPos.z - tmpFwd.z * TRAIN_LENGTH * 0.45,
     );
+    applyFreeLook();
   } else {
     // Chase: ON the track a train-length back, not projected backwards
     // along the tangent. Straight-line projection dives underground on a
     // climb and underneath the rails on a drop, because the track has
     // curved away from the tangent by the time you get there — following
     // the centreline instead cannot go anywhere the track does not.
-    const behind = state.sim.sample(ride.s - (TRAIN_LENGTH + 10));
+    const chaseAt = ride.s - (TRAIN_LENGTH + 10);
+    const behind = state.sim.sample(chaseAt);
     chaseWanted.set(behind.pos.x, behind.pos.y, behind.pos.z);
+    // Duck into the bore and under the shed roof rather than riding over
+    // the top of them. Five metres of clearance is right in the open and
+    // catastrophic anywhere with a ceiling: the tunnel's bore is 3.4m,
+    // and the station roof is 4.2m above the rails, so a camera at +5.4
+    // hits the hillside above the portal and then the shed itself.
+    const e = enclosureAt(chaseAt);
+    chaseWanted.y += chaseRise(e);
     // World up, never the car's: on a loop the car's up points at the
     // ground, and the camera would follow it there.
-    chaseWanted.y += 5.4;
-    // And never below the grass, whatever the track is doing.
-    chaseWanted.y = Math.max(chaseWanted.y, groundHeight(chaseWanted.x, chaseWanted.z) + 3.2);
-    // A gentle spring keeps the sample-to-sample jitter out of it.
+    //
+    // And never below the grass — except where the track is enclosed,
+    // because there the ground is the hill the bore runs THROUGH, and
+    // holding the camera above it puts it back in the rock. Inside,
+    // stay tucked just under the rails instead.
+    const floor = groundHeight(chaseWanted.x, chaseWanted.z) + 3.2;
+    chaseWanted.y = Math.max(chaseWanted.y, floor * (1 - e) + (behind.pos.y - 0.9) * e);
+    // A gentle spring keeps the sample-to-sample jitter out of it. It
+    // has to be quicker where the track is enclosed, or the spring lags
+    // the duck and the camera clips the portal on the way in.
     if (chasePos.lengthSq() === 0) chasePos.copy(chaseWanted);
-    chasePos.lerp(chaseWanted, Math.min(1, dt * 5.5));
+    chasePos.lerp(chaseWanted, Math.min(1, dt * (5.5 + 9 * e)));
     camera.up.set(0, 1, 0);
     camera.position.copy(chasePos).add(shake);
     camera.lookAt(tmpPos.x, tmpPos.y + 1.2, tmpPos.z);
+    applyFreeLook();
   }
+}
+
+// How enclosed the track is where the trailing cameras are flying —
+// see buildTrackMesh's `enclosure`.
+function enclosureAt(s) {
+  const profile = state.enclosure;
+  if (!profile) return 0;
+  const n = profile.length;
+  const i = Math.round(s / state.track.ds);
+  return profile[((i % n) + n) % n];
+}
+
+// Free look. Applied AFTER lookAt, as a rotation in the camera's own
+// frame, so it reads as turning your head: yaw about the camera's up
+// (which is the car's up in pov, so it still works upside down in a
+// loop), then pitch about its right.
+function applyFreeLook() {
+  const { yaw, pitch } = state.look;
+  if (yaw === 0 && pitch === 0) return;
+  camera.rotateY(yaw);
+  camera.rotateX(pitch);
 }
 
 // How far back along the train the rider is sitting.
@@ -659,10 +709,12 @@ function seatOffset() {
 function updateTrain(ride, elapsed) {
   if (!state.train) return;
   // The train walks itself back along the centreline and poses its own
-  // passengers; the car the camera is sitting in is dropped so it does
-  // not fill the lens.
-  const hidden = state.camMode === "pov" ? SEATS[state.seat].car : -1;
-  state.train.update(state.sim, ride.s, ride, elapsed, hidden);
+  // passengers. Nothing is dropped any more: the POV camera sits in the
+  // middle of a seat row now, between the two riders and inside the
+  // bodywork, so the car it is in is exactly what you want to see —
+  // hiding it was what made the back seat feel like following the train
+  // rather than riding in it.
+  state.train.update(state.sim, ride.s, ride, elapsed, -1);
 }
 
 // ============================================================
@@ -824,9 +876,22 @@ function syncButtons() {
   soundBtn.setAttribute("aria-label", soundOn ? "Turn the sound off" : "Turn the sound on");
 }
 
+// Turning your head is a property of the view you are in, so it does
+// not survive changing view: carrying a 160-degree look into a new
+// camera means arriving pointed at nothing.
+function clampLook(v, limit) {
+  return Math.min(limit, Math.max(-limit, v));
+}
+
+function recentreLook() {
+  state.look.yaw = 0;
+  state.look.pitch = 0;
+}
+
 function setRiding(riding) {
   state.riding = riding;
   state.camMode = riding ? "pov" : "orbit";
+  recentreLook();
   syncButtons();
 }
 
@@ -834,11 +899,13 @@ function cycleCamera() {
   const next = CAM_MODES[(CAM_MODES.indexOf(state.camMode) + 1) % CAM_MODES.length];
   state.camMode = next;
   state.riding = next !== "orbit";
+  recentreLook();
   syncButtons();
 }
 
 function cycleSeat() {
   state.seat = (state.seat + 1) % SEATS.length;
+  recentreLook();
   syncButtons();
 }
 
@@ -881,7 +948,15 @@ canvas.addEventListener("pointermove", (e) => {
   const dy = e.clientY - drag.y;
   drag.x = e.clientX;
   drag.y = e.clientY;
-  if (state.camMode !== "orbit") return;
+  if (state.camMode !== "orbit") {
+    // Riding: the same drag turns your head instead of the world.
+    // Clamped short of straight up and straight down, because past that
+    // the frame flips and you are looking at the ride upside down for
+    // reasons that have nothing to do with the track.
+    state.look.yaw = clampLook(state.look.yaw + dx * 0.005, 2.9);
+    state.look.pitch = clampLook(state.look.pitch + dy * 0.004, 1.15);
+    return;
+  }
   state.orbit.yaw -= dx * 0.006;
   state.orbit.pitch = Math.min(1.35, Math.max(0.03, state.orbit.pitch + dy * 0.004));
 });
