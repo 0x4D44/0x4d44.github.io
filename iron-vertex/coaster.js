@@ -11,13 +11,10 @@
 
 import * as THREE from "./three.module.min.js";
 import { carveTube, mergeParts, part } from "./mesh.js";
-import { supportColumns, tunnelSite } from "./track.js";
+import { BORE_RADIUS, enclosureProfile, hillBump, supportColumns, tunnelSite } from "./track.js";
 
 export const GAUGE = 1.05;      // spacing between the running rails, metres
 const RAIL_RADIUS = 0.13;
-// The tunnel bore, shared by the tube, its portals and the hole cut
-// through the hillside so all three agree.
-const BORE_RADIUS = 3.4;
 
 const LIVERIES = [
   { name: "Crimson", rail: 0xc0402a, spine: 0x4d565f, support: 0xdfe3e6, car: 0xd2452b, trim: 0x23272e },
@@ -71,7 +68,12 @@ function sweptTube(centres, ups, tangents, radius, radialSegments, closed = true
       const b = i * radialSegments + j2;
       const c = i2 * radialSegments + j2;
       const d = i2 * radialSegments + j;
-      indices.push(a, b, c, a, c, d);
+      // Wound a-d-c / a-c-b, NOT a-b-c / a-c-d. `lateral` here is
+      // tangent x up, which is a left-handed frame, so the obvious
+      // winding puts every normal on the INSIDE of the tube: the rails,
+      // the spine and the tunnel bore all rendered their far inner wall
+      // instead of their near outer one, lit inside out.
+      indices.push(a, d, c, a, c, b);
     }
   }
 
@@ -364,10 +366,12 @@ export function buildTrackMesh(track, groundHeight) {
   // track.js picks the site (see tunnelSite); everything here is just
   // building what it decided.
   const keepOuts = [];
+  let tunnelSpan = null;
   {
     const site = tunnelSite(track, groundHeight);
     if (site) {
-      const { span, mid, radius: hillRadius, top: hillTop } = site;
+      const { span, hill: hillShape } = site;
+      tunnelSpan = span;
       const centres = span.map((i) => track.points[i]);
       const ups = span.map((i) => track.ups[i]);
       const tangents = span.map((i) => track.tangents[i]);
@@ -431,25 +435,26 @@ export function buildTrackMesh(track, groundHeight) {
       // There is no CSG here to subtract one from the other, so the hole
       // is cut by hand: build the hill in WORLD space, then throw away
       // every triangle whose centroid lies within the bore.
-      const base = groundHeight(mid.x, mid.z);
-      const height = (hillTop - base) * 1.34;
-      const centreY = base - (hillTop - base) * 0.34;
+      //
+      // The ellipsoid comes from the site verbatim (site.hill), never
+      // re-derived here: tunnelSite proved that no track outside the
+      // span is inside THAT shape, and a second derivation is a second
+      // chance for the two to drift apart.
       const hillGeo = new THREE.IcosahedronGeometry(1, 3);
       const hp = hillGeo.attributes.position;
       for (let i = 0; i < hp.count; i++) {
         const x = hp.getX(i);
         const y = hp.getY(i);
         const z = hp.getZ(i);
-        // Lumpy, not spherical: a smooth dome reads as a balloon.
-        const bump = 1
-          + Math.sin(x * 5.1 + z * 3.7) * 0.05
-          + Math.sin(y * 4.3 - x * 2.9) * 0.045
-          + Math.sin(z * 7.7 + y * 5.3) * 0.03;
+        // Lumpy, not spherical: a smooth dome reads as a balloon. The
+        // displacement comes from track.js, which used the very same
+        // function to prove no other track is inside this surface.
+        const bump = hillBump(x, y, z);
         hp.setXYZ(
           i,
-          mid.x + x * bump * hillRadius,
-          centreY + y * bump * height,
-          mid.z + z * bump * hillRadius * 0.92,
+          hillShape.x + x * bump * hillShape.rx,
+          hillShape.y + y * bump * hillShape.ry,
+          hillShape.z + z * bump * hillShape.rz,
         );
       }
 
@@ -497,7 +502,7 @@ export function buildTrackMesh(track, groundHeight) {
       });
       group.add(rocks);
 
-      keepOuts.push({ x: mid.x, z: mid.z, radius: hillRadius + 3 });
+      keepOuts.push({ x: hillShape.x, z: hillShape.z, radius: hillShape.rx + 3 });
     }
   }
 
@@ -567,7 +572,11 @@ export function buildTrackMesh(track, groundHeight) {
     group.add(station);
   }
 
-  return { group, updaters, livery, stationIdx, keepOuts };
+  // How boxed-in the track is, sample by sample — the trailing cameras
+  // read it and duck. Computed in track.js, where it can be tested.
+  const enclosure = enclosureProfile(track, stationIdx, tunnelSpan);
+
+  return { group, updaters, livery, stationIdx, keepOuts, enclosure };
 }
 
 // A painted board with the coaster's name on it, drawn to a canvas.
@@ -636,6 +645,26 @@ const SEATS = [
 const SEAT_Y = 0.95;
 const SHOULDER_Y = 0.42;
 const CAR_SPACING = 3.45;
+
+// The car floats this far up its own frame, so anything placed in
+// car-local metres has to be lifted by it too.
+export const CAR_RIDE_HEIGHT = 0.2;
+
+// Where a rider's eyes are, in car-local metres — the middle of the row,
+// between the two seats, at head height. The POV camera goes HERE rather
+// than a metre behind the car: sit outside the bodywork and the ride
+// stops feeling like a ride and starts feeling like a drone shot.
+//
+// The back row is higher for a reason that is pure framing. It sits
+// right behind its own over-the-shoulder bar (the one at z = 0.1 in
+// carParts) — 1.6m wide and 0.8m in front of your face, so at the front
+// row's eye height it blanks the bottom third of the frame. Half a head
+// higher and it drops to a rail across the nose, which is what it looks
+// like from the seat.
+export const EYES = {
+  front: { y: CAR_RIDE_HEIGHT + SEAT_Y + 0.55, z: 0.62 },
+  back: { y: CAR_RIDE_HEIGHT + SEAT_Y + 0.86, z: -0.72 },
+};
 
 function carParts(livery, lead) {
   const parts = [
@@ -904,9 +933,14 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
         const sample = sim.sample(s - i * CAR_SPACING);
         scratch.up.set(sample.up.x, sample.up.y, sample.up.z);
         scratch.fwd.set(sample.fwd.x, sample.fwd.y, sample.fwd.z);
-        scratch.lat.crossVectors(scratch.fwd, scratch.up).normalize();
+        // up x fwd, not fwd x up: the latter is left-handed, and a car
+        // built on it is MIRRORED — every triangle wound backwards, so
+        // the outer skin is back-facing and gets culled. Looking up at
+        // the train you saw straight through the side walls into the
+        // seats.
+        scratch.lat.crossVectors(scratch.up, scratch.fwd).normalize();
         scratch.pos.set(sample.pos.x, sample.pos.y, sample.pos.z)
-          .addScaledVector(scratch.up, 0.2);
+          .addScaledVector(scratch.up, CAR_RIDE_HEIGHT);
         const matrix = carMatrices[i];
         matrix.makeBasis(scratch.lat, scratch.up, scratch.fwd);
         matrix.setPosition(scratch.pos);

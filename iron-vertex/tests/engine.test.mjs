@@ -19,6 +19,13 @@ import {
   supportColumns,
   trackName,
   tunnelSite,
+  hillBump,
+  enclosureProfile,
+  chaseRise,
+  wingOffset,
+  BORE_RADIUS,
+  SHED_ROOF,
+  SHED_HALF,
   verifyCircuit,
   vcross,
   vdot,
@@ -434,7 +441,7 @@ test("a second lift climbs, and lands the train higher than it found it", () => 
   assert.ok(checked > 5, `only ${checked} double-lift circuits to check`);
 });
 
-test("a tunnel site is level, upright, low, and does not bury the rest of the ride", () => {
+test("a tunnel site is level and low, and buries no track but its own", () => {
   // The park is flat under the coaster — the terrain only starts to roll
   // beyond 170m, and the plan curve stays inside that — so a flat ground
   // function is a faithful stand-in here.
@@ -456,26 +463,97 @@ test("a tunnel site is level, upright, low, and does not bury the rest of the ri
           `seed ${seed}: the tunnel span is not contiguous`);
       }
       assert.equal(t.roles[i], "free", `seed ${seed}: tunnel over non-free track`);
-      assert.ok(t.ups[i].y > 0.65, `seed ${seed}: tunnel around track banked on its side`);
       assert.ok(t.points[i].y > 0.5 && t.points[i].y < 21,
         `seed ${seed}: tunnel around track at ${t.points[i].y.toFixed(1)}m`);
     }
+    // Banking inside the bore is fine — the tube is swept along the
+    // frame — but each MOUTH carries a stone arch standing on the
+    // hillside, so the ends have to be upright and clear of the grass.
+    for (const i of [site.span[0], site.span[site.span.length - 1]]) {
+      assert.ok(t.ups[i].y > 0.65,
+        `seed ${seed}: a tunnel mouth is banked on its side`);
+      assert.ok(t.points[i].y > 3.3,
+        `seed ${seed}: a tunnel mouth is only ${t.points[i].y.toFixed(1)}m up`);
+    }
 
-    // And the hill it implies must not have anything else inside it.
+    // And nothing outside the span may be inside the hill — not one
+    // sample, at any distance along the track.
+    //
+    // The earlier version of this test exempted a window either side of
+    // the portals, reasoning that the approach legitimately runs along
+    // the hillside. It does, right up until it curves back INTO the
+    // hill, and then the train rides through solid grass a metre past
+    // the portal (reported on seed 3102803771). The exemption is what
+    // hid it, so there is no exemption. The surface tested is the one
+    // the renderer builds, bumps and all — shared, not approximated —
+    // and the only track allowed inside it is the track in the bore.
     const inSpan = new Set(site.span);
-    const skip = Math.ceil((site.radius + 25) / t.ds);
-    for (let k = site.span.length + skip; k < t.points.length - skip; k++) {
-      const i = (site.span[0] + k) % t.points.length;
-      assert.ok(!inSpan.has(i));
+    const h = site.hill;
+    for (let i = 0; i < t.points.length; i++) {
+      if (inSpan.has(i)) continue;
       const p = t.points[i];
-      const inside = Math.hypot(p.x - site.mid.x, p.z - site.mid.z) < site.radius
-        && p.y < site.top;
-      assert.ok(!inside,
+      const dx = (p.x - h.x) / h.rx;
+      const dy = (p.y - h.y) / h.ry;
+      const dz = (p.z - h.z) / h.rz;
+      const r = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      // The rendered surface in that direction, not the bare ellipsoid.
+      const surface = r < 1e-6 ? 1 : hillBump(dx / r, dy / r, dz / r);
+      assert.ok(r >= surface,
         `seed ${seed}: sample ${i} is buried inside the tunnel's hill`);
     }
   }
   assert.ok(found > SEEDS.length * 0.4,
     `only ${found}/${SEEDS.length} circuits found anywhere to put a tunnel`);
+});
+
+test("the trailing cameras fit through everything the train fits through", () => {
+  // A chase camera five metres above the rails is right in the open and
+  // fatal under a roof: it flies into the hillside over the portal, and
+  // the station shed swallows it whole. So it ducks, on a profile of how
+  // enclosed the track is — and the ducking has to be DONE by the time
+  // it reaches the mouth, not started there.
+  const flat = () => 0;
+  let tunnels = 0;
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    const site = tunnelSite(t, flat);
+    const stationIdx = Math.max(0, t.roles.indexOf("station"));
+    const profile = enclosureProfile(t, stationIdx, site ? site.span : null);
+    assert.equal(profile.length, t.points.length);
+
+    const clears = (i, where, headroom, halfWidth) => {
+      const e = profile[i];
+      assert.ok(e >= 0 && e <= 1, `seed ${seed}: enclosure ${e} out of range`);
+      const rise = chaseRise(e);
+      assert.ok(rise < headroom,
+        `seed ${seed}: chase camera ${rise.toFixed(2)}m up in the ${where}`);
+      const wing = wingOffset(e);
+      assert.ok(wing.rise < headroom && wing.side < halfWidth,
+        `seed ${seed}: wing camera ${wing.side.toFixed(2)}m out in the ${where}`);
+      // The wing camera is out to the side AND up, so in a round bore it
+      // is the diagonal that has to fit.
+      if (where === "bore") {
+        assert.ok(Math.hypot(wing.side, wing.rise) < headroom,
+          `seed ${seed}: wing camera clips the bore wall`);
+      }
+    };
+
+    if (site) {
+      tunnels += 1;
+      for (const i of site.span) clears(i, "bore", BORE_RADIUS - 0.5, BORE_RADIUS - 0.5);
+    }
+    const shed = Math.ceil(SHED_HALF / t.ds);
+    for (let k = -shed; k <= shed; k++) {
+      const i = ((stationIdx + k) % t.points.length + t.points.length) % t.points.length;
+      clears(i, "station", SHED_ROOF - 0.5, 3.9);
+    }
+
+    // And in the open it must NOT be tucked in, or the whole point of a
+    // chase camera is lost.
+    const open = profile.reduce((a, b) => Math.min(a, b), 1);
+    assert.ok(open < 0.05, `seed ${seed}: the camera never comes back out (min ${open.toFixed(2)})`);
+  }
+  assert.ok(tunnels > 20, `only ${tunnels} tunnels among ${SEEDS.length} seeds`);
 });
 
 test("the back seat is a different ride from the front seat", () => {
