@@ -66,8 +66,8 @@ replace_once(
 
 replace_once(
     ROOT / "darwin-machine/SCIENCE.md",
-    "- **Clumsy ancestor (~64 bytes):** padded and redundant, leaving room for deletions and shorter replication times.",
-    "- **Clumsy ancestor (64 bytes):** padded and redundant, with deliberately repeated foraging inside its copy loop. That foraging is necessary to fund a 64-byte exact copy under the published energy law, while leaving abundant room for deletions and shorter replication times.",
+    "The public release supplies a viable ancestor. It can test how heredity, mutation, finite resources, spatial contention and death alter descendant populations. A takeover is evidence only about this versioned substrate and configuration.",
+    "The public release supplies viable ancestors. It can test how heredity, mutation, finite resources, spatial contention and death alter descendant populations. A takeover is evidence only about this versioned substrate and configuration.\n\nThe 64-byte clumsy ancestor is padded and redundant, with deliberately repeated foraging inside its copy loop. That foraging is necessary to fund a 64-byte exact copy under the published energy law; it also leaves abundant room for deletions and shorter replication times.",
     "clumsy-ancestor scientific disclosure",
 )
 
