@@ -34,16 +34,15 @@ jobs:
         run: |
           git rm -r --ignore-unmatch darwin-machine/rust/target
           git rm -f --ignore-unmatch darwin-machine/reports/rustfmt-diagnostic.txt
+          rm -f darwin-machine/scripts/final-review-repair-3.py
           printf '/target/\n' > darwin-machine/rust/.gitignore
 
-      - name: Apply findings from the final adversarial review
+      - name: Apply the converged adversarial-review corrections
         shell: bash
         run: |
           python darwin-machine/scripts/final-review-repair.py
           python darwin-machine/scripts/final-review-repair-2.py
-
-      - name: Remove the one-time repair scripts from the deliverable
-        run: rm darwin-machine/scripts/final-review-repair.py darwin-machine/scripts/final-review-repair-2.py
+          python darwin-machine/scripts/final-review-repair-3b.py
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@stable
