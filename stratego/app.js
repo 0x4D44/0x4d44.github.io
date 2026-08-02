@@ -35,15 +35,16 @@
   let pendingAfterCombat = null;
   let aiThinking = false;
   let dragPieceId = null;
+  let formationChoice = { red: 'fortress', blue: 'spearhead' };
   let formationName = 'fortress';
-  let rankStyle = 'modern';
+  let rankStyle = 'classic';
   let soundEnabled = true;
   let audioContext = null;
   let setupShuffle = 0;
 
   try {
     const prefs = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
-    rankStyle = prefs.rankStyle === 'vintage' ? 'vintage' : 'modern';
+    rankStyle = prefs.rankStyle === 'modern' ? 'modern' : 'classic';
     soundEnabled = prefs.soundEnabled !== false;
   } catch (_) { /* preferences are optional */ }
 
@@ -68,7 +69,9 @@
   function rankMark(type) {
     if (!type) return '?';
     if (['flag', 'bomb', 'spy'].includes(type)) return C.RANKS[type].short;
-    return rankStyle === 'vintage' ? String(11 - C.RANKS[type].strength) : String(C.RANKS[type].strength);
+    // Classic marking counts down from the Marshal at 1; the modern alternative
+    // prints the internal strength, where the Marshal is 10.
+    return rankStyle === 'modern' ? String(C.RANKS[type].strength) : C.RANKS[type].short;
   }
 
   function squareName(row, col) { return `${String.fromCharCode(65 + col)}${10 - row}`; }
@@ -153,6 +156,16 @@
     showModal(els.campaignDialog);
   }
 
+  // Opening formations are drawn independently for each army, and never the same
+  // one twice: two armies laid out from a shared formation are reflections of each
+  // other, so finding your own flag would locate the enemy's.
+  function drawOpeningFormations() {
+    const presets = Object.keys(C.FORMATIONS);
+    const red = presets[Math.floor(Math.random() * presets.length)];
+    const rest = presets.filter(name => name !== red);
+    return { red, blue: rest[Math.floor(Math.random() * rest.length)] };
+  }
+
   function beginCampaign(formData) {
     const mode = formData.get('mode') === 'hotseat' ? 'hotseat' : 'solo';
     const difficulty = String(formData.get('difficulty') || 'colonel');
@@ -163,11 +176,12 @@
       difficulty,
       options: { aggressorWins: formData.has('aggressor'), threefoldDraw: formData.has('threefold'), repetitionLimit: 3 },
     });
-    state = C.deployFormation(state, 'red', 'fortress', seed ^ 0x1111);
-    state = C.deployFormation(state, 'blue', mode === 'solo' ? 'spearhead' : 'fortress', seed ^ 0x2222);
+    formationChoice = drawOpeningFormations();
+    state = C.deployFormation(state, 'red', formationChoice.red, seed ^ 0x1111);
+    state = C.deployFormation(state, 'blue', formationChoice.blue, seed ^ 0x2222);
     state.setupSide = 'red';
     viewer = 'red';
-    formationName = 'fortress';
+    formationName = formationChoice.red;
     selectedId = null;
     legalMoves = [];
     privacyLocked = false;
@@ -495,7 +509,7 @@
   }
 
   function renderRanks() {
-    els.rankStyle.textContent = rankStyle === 'modern' ? 'Modern ranks: 10 is strongest' : 'Vintage ranks: 1 is strongest';
+    els.rankStyle.textContent = rankStyle === 'modern' ? 'Modern ranks: 10 is strongest' : 'Classic ranks: 1 is strongest';
     els.rankCards.innerHTML = C.TYPE_ORDER.map(type => {
       const rank = C.RANKS[type];
       return `<div class="rank-card"><span class="rank-card__mark">${rankMark(type)}</span><span><b>${rank.name}</b><small>${rank.count} in each army</small></span></div>`;
@@ -525,7 +539,7 @@
     if (state.mode === 'hotseat' && state.setupSide === 'red') {
       state.setupSide = 'blue';
       viewer = 'blue';
-      formationName = 'fortress';
+      formationName = formationChoice.blue;
       saveGame();
       lockPrivacy('Blue commander', 'Red deployment is sealed. Take the field map and arrange the Northern Army.');
       return;
@@ -669,13 +683,14 @@
   els.manualClose.addEventListener('click', () => closeDialog(els.manualDialog));
   els.hint.addEventListener('click', askAdjutant);
   els.sound.addEventListener('click', () => { soundEnabled = !soundEnabled; savePrefs(); renderCommand(); if (soundEnabled) tone(620, .08); });
-  els.rankStyle.addEventListener('click', () => { rankStyle = rankStyle === 'modern' ? 'vintage' : 'modern'; savePrefs(); render(); toast(rankStyle === 'modern' ? 'Modern rank printing: Marshal is marked 10.' : 'Vintage rank printing: Marshal is marked 1.'); });
+  els.rankStyle.addEventListener('click', () => { rankStyle = rankStyle === 'modern' ? 'classic' : 'modern'; savePrefs(); render(); toast(rankStyle === 'modern' ? 'Modern rank printing: Marshal is marked 10.' : 'Classic rank printing: Marshal is marked 1.'); });
   els.privacyButton.addEventListener('click', revealPrivacy);
   els.ready.addEventListener('click', readyDeployment);
   els.formationTabs.addEventListener('click', event => {
     const button = event.target.closest('button[data-formation]');
     if (!button || !state || state.phase !== 'setup' || privacyLocked) return;
     formationName = button.dataset.formation;
+    formationChoice[state.setupSide] = formationName;
     setupShuffle += 1;
     state = C.deployFormation(state, state.setupSide, formationName, state.seed ^ (setupShuffle * 0x45d9f3b));
     selectedId = null;

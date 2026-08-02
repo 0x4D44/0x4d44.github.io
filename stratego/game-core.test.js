@@ -46,6 +46,10 @@ function scenario(placements, current = 'red', options = {}) {
   return state;
 }
 
+function flagOf(state, color) {
+  return Object.values(state.pieces).find(piece => piece.color === color && piece.type === 'flag');
+}
+
 function findMove(state, pieceId, row, col) {
   return C.legalMovesForPiece(state, pieceId).find(move => move.to.row === row && move.to.col === col);
 }
@@ -55,6 +59,17 @@ test('canonical army contains all 40 pieces in the classic counts', () => {
   for (const type of C.TYPE_ORDER) assert.equal(C.MANIFEST.filter(item => item === type).length, C.RANKS[type].count);
   assert.equal(C.RANKS.scout.count, 8);
   assert.equal(C.RANKS.bomb.count, 6);
+});
+
+test('printed rank marks follow the classic order, with 1 the strongest', () => {
+  assert.deepEqual(C.TYPE_ORDER.map(type => C.RANKS[type].short), ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'S', 'B', 'F']);
+  const numbered = C.TYPE_ORDER.filter(type => /^[0-9]+$/.test(C.RANKS[type].short));
+  for (let i = 1; i < numbered.length; i += 1) {
+    const stronger = C.RANKS[numbered[i - 1]];
+    const weaker = C.RANKS[numbered[i]];
+    assert.ok(Number(stronger.short) < Number(weaker.short), `${stronger.name} should print a lower number than ${weaker.name}`);
+    assert.ok(stronger.strength > weaker.strength, `${stronger.name} should beat ${weaker.name}`);
+  }
 });
 
 test('all embedded formations match the canonical manifest', () => {
@@ -79,6 +94,51 @@ test('random formations are deterministic for a seed and preserve counts', () =>
   const types = state => C.homeCells('red').map(({ row, col }) => state.pieces[state.board[C.boardIndex(row, col)]].type);
   assert.deepEqual(types(a), types(b));
   assert.deepEqual(types(a).slice().sort(), C.MANIFEST.slice().sort());
+});
+
+test('each formation hides the flag in its own column, and orientation varies by seed', () => {
+  const columns = {};
+  for (const name of Object.keys(C.FORMATIONS)) {
+    columns[name] = new Set();
+    for (let seed = 1; seed <= 30; seed += 1) {
+      let state = C.createState({ seed });
+      state = C.deployFormation(state, 'red', name, seed);
+      columns[name].add(flagOf(state, 'red').col);
+    }
+    // Both orientations must appear, or the layout would be fixed for a formation.
+    assert.equal(columns[name].size, 2, `${name} is always laid down the same way round`);
+  }
+  const all = Object.values(columns).flatMap(set => [...set]);
+  assert.equal(new Set(all).size, all.length, 'two formations can hide the flag in the same column');
+});
+
+test('armies drawn from different formations never share a flag column', () => {
+  const names = Object.keys(C.FORMATIONS);
+  for (let seed = 1; seed <= 20; seed += 1) {
+    for (const red of names) {
+      for (const blue of names) {
+        if (red === blue) continue;
+        let state = C.createState({ seed });
+        state = C.deployFormation(state, 'red', red, seed ^ 0x1111);
+        state = C.deployFormation(state, 'blue', blue, seed ^ 0x2222);
+        assert.notEqual(flagOf(state, 'red').col, flagOf(state, 'blue').col, `${red} v ${blue} put both flags in one column`);
+      }
+    }
+  }
+});
+
+test('a formation shared by both armies is not always a reflection', () => {
+  const army = (state, color) => C.homeCells(color).map(({ row, col }) => state.pieces[state.board[C.boardIndex(row, col)]].type).join();
+  let reflected = 0;
+  for (let seed = 1; seed <= 40; seed += 1) {
+    let state = C.createState({ seed });
+    state = C.deployFormation(state, 'red', 'fortress', seed ^ 0x1111);
+    state = C.deployFormation(state, 'blue', 'fortress', seed ^ 0x2222);
+    // Read back row first in the same column order for both sides: matching
+    // sequences mean one army is the other's mirror image across the lakes.
+    if (army(state, 'red') === army(state, 'blue')) reflected += 1;
+  }
+  assert.ok(reflected > 0 && reflected < 40, `orientation should be drawn per army, got ${reflected}/40 reflected`);
 });
 
 test('setup pieces can be swapped without changing the manifest', () => {
