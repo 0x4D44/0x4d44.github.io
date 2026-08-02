@@ -86,10 +86,11 @@ jobs:
         shell: bash
         run: |
           git diff --check
-          if git status --short | grep -E 'darwin-machine/rust/target|rustfmt-diagnostic'; then
-            echo "Build products escaped their ignore boundary." >&2
+          if [[ -n "$(git ls-files 'darwin-machine/rust/target/**' darwin-machine/reports/rustfmt-diagnostic.txt)" ]]; then
+            echo "Build products remain in the repository index." >&2
             exit 1
           fi
+          git check-ignore -q darwin-machine/rust/target/.ignore-probe
 
       - name: Upload implementation evidence
         uses: actions/upload-artifact@v4
