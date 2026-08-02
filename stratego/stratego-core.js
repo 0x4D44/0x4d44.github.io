@@ -15,24 +15,31 @@
     '4,6', '4,7', '5,6', '5,7',
   ]);
 
+  // `short` is the classic printed marking: 1 is the strongest rank, counting down
+  // to the Scout at 9, with letters for the three special pieces. `strength` is the
+  // internal comparison order and runs the other way (higher beats lower), so the
+  // two must never be confused.
   const RANKS = Object.freeze({
     flag:       { type: 'flag',       name: 'Flag',       short: 'F', strength: 0,  count: 1, mobile: false },
     spy:        { type: 'spy',        name: 'Spy',        short: 'S', strength: 1,  count: 1, mobile: true  },
-    scout:      { type: 'scout',      name: 'Scout',      short: '2', strength: 2,  count: 8, mobile: true  },
-    miner:      { type: 'miner',      name: 'Miner',      short: '3', strength: 3,  count: 5, mobile: true  },
-    sergeant:   { type: 'sergeant',   name: 'Sergeant',   short: '4', strength: 4,  count: 4, mobile: true  },
-    lieutenant: { type: 'lieutenant', name: 'Lieutenant', short: '5', strength: 5,  count: 4, mobile: true  },
-    captain:    { type: 'captain',    name: 'Captain',    short: '6', strength: 6,  count: 4, mobile: true  },
-    major:      { type: 'major',      name: 'Major',      short: '7', strength: 7,  count: 3, mobile: true  },
-    colonel:    { type: 'colonel',    name: 'Colonel',    short: '8', strength: 8,  count: 2, mobile: true  },
-    general:    { type: 'general',    name: 'General',    short: '9', strength: 9,  count: 1, mobile: true  },
-    marshal:    { type: 'marshal',    name: 'Marshal',    short: '10', strength: 10, count: 1, mobile: true  },
+    scout:      { type: 'scout',      name: 'Scout',      short: '9', strength: 2,  count: 8, mobile: true  },
+    miner:      { type: 'miner',      name: 'Miner',      short: '8', strength: 3,  count: 5, mobile: true  },
+    sergeant:   { type: 'sergeant',   name: 'Sergeant',   short: '7', strength: 4,  count: 4, mobile: true  },
+    lieutenant: { type: 'lieutenant', name: 'Lieutenant', short: '6', strength: 5,  count: 4, mobile: true  },
+    captain:    { type: 'captain',    name: 'Captain',    short: '5', strength: 6,  count: 4, mobile: true  },
+    major:      { type: 'major',      name: 'Major',      short: '4', strength: 7,  count: 3, mobile: true  },
+    colonel:    { type: 'colonel',    name: 'Colonel',    short: '3', strength: 8,  count: 2, mobile: true  },
+    general:    { type: 'general',    name: 'General',    short: '2', strength: 9,  count: 1, mobile: true  },
+    marshal:    { type: 'marshal',    name: 'Marshal',    short: '1', strength: 10, count: 1, mobile: true  },
     bomb:       { type: 'bomb',       name: 'Bomb',       short: 'B', strength: 11, count: 6, mobile: false },
   });
 
   const TYPE_ORDER = ['marshal', 'general', 'colonel', 'major', 'captain', 'lieutenant', 'sergeant', 'miner', 'scout', 'spy', 'bomb', 'flag'];
   const MANIFEST = TYPE_ORDER.flatMap(type => Array(RANKS[type].count).fill(type));
 
+  // Each formation hides the flag in a different back-row column — 1, 5 and 3,
+  // which mirror to 8, 4 and 6 — so two armies drawn from different formations
+  // never let one flag's position be read off the other's.
   const FORMATIONS = Object.freeze({
     fortress: Object.freeze([
       'bomb','flag','bomb','major','bomb','general','bomb','colonel','bomb','bomb',
@@ -41,7 +48,7 @@
       'scout','scout','scout','scout','scout','scout','scout','scout','sergeant','sergeant',
     ]),
     spearhead: Object.freeze([
-      'bomb','flag','bomb','scout','bomb','bomb','scout','bomb','sergeant','bomb',
+      'bomb','scout','bomb','sergeant','bomb','flag','bomb','scout','bomb','bomb',
       'general','marshal','colonel','colonel','major','major','major','spy','miner','miner',
       'captain','captain','captain','captain','lieutenant','lieutenant','lieutenant','lieutenant','miner','miner',
       'scout','scout','scout','scout','scout','scout','miner','sergeant','sergeant','sergeant',
@@ -171,8 +178,13 @@
     return color === 'red' ? [9, 8, 7, 6] : [0, 1, 2, 3];
   }
 
-  function homeCells(color) {
-    return homeRows(color).flatMap(row => Array.from({ length: 10 }, (_, col) => ({ row, col })));
+  // Home cells run back row first. `mirrored` reverses the column order so a
+  // formation can be laid down as its own left-right reflection; without it two
+  // armies sharing a formation would face each other as a mirror image, which
+  // gives away the enemy flag's column for free.
+  function homeCells(color, mirrored = false) {
+    const columns = Array.from({ length: BOARD_SIZE }, (_, col) => (mirrored ? BOARD_SIZE - 1 - col : col));
+    return homeRows(color).flatMap(row => columns.map(col => ({ row, col })));
   }
 
   function formationList(name, seed) {
@@ -203,12 +215,15 @@
       (byType[piece.type] ||= []).push(piece);
     }
     const rng = makeRng(normaliseSeed(seed) ^ (color === 'red' ? 0xa11ce : 0xb1e));
+    // Draw the orientation first, from a stream that differs by colour, so the two
+    // armies are mirrored independently of one another.
+    const mirrored = rng() < 0.5;
     for (const list of Object.values(byType)) {
       const shuffled = shuffle(list, rng);
       list.splice(0, list.length, ...shuffled);
     }
 
-    const cells = homeCells(color);
+    const cells = homeCells(color, mirrored);
     for (let i = 0; i < cells.length; i += 1) {
       const type = types[i];
       const piece = byType[type].pop();

@@ -14,7 +14,7 @@ The page deliberately uses no framework, package manager, build step, remote fon
 - Miner–Bomb and attacking Spy–Marshal exceptions.
 - Classic equal-rank mutual removal, with an optional published aggressor-advantage tournament variation.
 - The classic two-square repetition restriction, plus an optional threefold-position draw for coordinated loops.
-- Autosave, captured-piece records, combat reports, a public intelligence ledger, keyboard play, reduced-motion support, Web Audio cues, and a modern/vintage rank-number display toggle.
+- Autosave, captured-piece records, combat reports, a public intelligence ledger, keyboard play, reduced-motion support, Web Audio cues, and a classic/modern rank-number display toggle.
 - An illustrated field manual and original mid-century-inspired CSS/SVG table art.
 
 ## Rules interpretation
@@ -23,7 +23,9 @@ The engine follows the modern full-army rules: Red moves first; one orthogonal m
 
 A piece may move back and forth over the same two squares three times in succession for that side, but the fourth crossing is rejected. Moving another piece breaks the sequence. The optional threefold draw is deliberately labelled as a digital anti-loop rule rather than part of the base tabletop game.
 
-The display defaults to the current convention in which Marshal is 10 and Spy is 1. “Vintage” display reverses the printed numbers to evoke editions that labelled Marshal 1, without changing internal strength or gameplay.
+The display defaults to the classic marking, in which 1 is the strongest rank: Marshal 1, General 2, Colonel 3, Major 4, Captain 5, Lieutenant 6, Sergeant 7, Miner 8, Scout 9, with S, B and F for the Spy, Bombs and Flag. “Modern” display prints the internal strength instead, in which the Marshal is 10, without changing gameplay.
+
+Each army draws a different opening formation, and every deployment is laid out in a randomly chosen left-right orientation. Two armies sharing a formation would otherwise be reflections of each other, which would let a commander read the enemy flag's column off their own.
 
 ## Fair-play AI boundary
 
