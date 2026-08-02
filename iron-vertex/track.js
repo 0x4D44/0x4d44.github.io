@@ -1491,7 +1491,12 @@ export function chaseRise(e) {
 }
 
 export function wingOffset(e) {
-  return { side: 7.6 * (1 - e) + 1.85 * e, rise: 3.6 * (1 - e) + 0.8 * e };
+  // Enclosed, it wants to be as far out and as high as the bore allows,
+  // not as little as it can get away with: tucked to 1.85m out and 0.8m
+  // up it clears everything and looks at nothing but the side of a car
+  // from under a metre. Out 2.3 and up 1.5 is 2.75m diagonally, inside
+  // the 2.9m the bore leaves, and it looks over the train instead.
+  return { side: 7.6 * (1 - e) + 2.3 * e, rise: 3.6 * (1 - e) + 1.5 * e };
 }
 
 // ------------------------------------------------------------
