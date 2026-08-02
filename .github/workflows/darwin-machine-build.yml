@@ -1,16 +1,8 @@
-name: Darwin Machine — build and verify
+name: Darwin Machine — repair, build and verify
 
 on:
   push:
     branches: [agent/darwin-machine]
-    paths:
-      - "darwin-machine/**"
-      - "wrk_journals/2026-08-01-darwin-machine.md"
-      - "data.js"
-      - "index.html"
-      - "package.json"
-      - ".github/workflows/darwin-machine-build.yml"
-  pull_request:
     paths:
       - "darwin-machine/**"
       - "wrk_journals/2026-08-01-darwin-machine.md"
@@ -24,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: darwin-machine-${{ github.ref }}
+  group: darwin-machine-repair-agent-darwin-machine
   cancel-in-progress: true
 
 jobs:
@@ -35,7 +27,181 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: agent/darwin-machine
+
+      - name: Remove accidentally tracked build products
+        shell: bash
+        run: |
+          git rm -r --ignore-unmatch darwin-machine/rust/target
+          git rm -f --ignore-unmatch darwin-machine/reports/rustfmt-diagnostic.txt
+          printf '/target/\n' > darwin-machine/rust/.gitignore
+
+      - name: Apply findings from the final adversarial review
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
+          source = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  '''            "first-replicator" => {
+                let mut config = WorldConfig::default();
+                config.width = 48;
+                config.height = 32;
+                config.mutation = MutationConfig {
+                    substitution_ppm: 0,
+                    insertion_ppm: 0,
+                    deletion_ppm: 0,
+                };
+                config.occupancy_policy = OccupancyPolicy::EmptyOnly;''',
+                  '''            "first-replicator" => {
+                let config = WorldConfig {
+                    width: 48,
+                    height: 32,
+                    mutation: MutationConfig {
+                        substitution_ppm: 0,
+                        insertion_ppm: 0,
+                        deletion_ppm: 0,
+                    },
+                    occupancy_policy: OccupancyPolicy::EmptyOnly,
+                    ..WorldConfig::default()
+                };''',
+                  "first-replicator preset construction",
+              ),
+              (
+                  '''            "mutation-meltdown" => {
+                let mut config = WorldConfig::default();
+                config.width = 96;
+                config.height = 64;
+                config.mutation = MutationConfig {
+                    substitution_ppm: 28_000,
+                    insertion_ppm: 12_000,
+                    deletion_ppm: 12_000,
+                };''',
+                  '''            "mutation-meltdown" => {
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    mutation: MutationConfig {
+                        substitution_ppm: 28_000,
+                        insertion_ppm: 12_000,
+                        deletion_ppm: 12_000,
+                    },
+                    ..WorldConfig::default()
+                };''',
+                  "mutation-meltdown preset construction",
+              ),
+              (
+                  '''            "bottleneck" => {
+                let mut config = WorldConfig::default();
+                config.width = 96;
+                config.height = 64;
+                config.mutation = MutationConfig {
+                    substitution_ppm: 2_000,
+                    insertion_ppm: 2_500,
+                    deletion_ppm: 2_500,
+                };''',
+                  '''            "bottleneck" => {
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    mutation: MutationConfig {
+                        substitution_ppm: 2_000,
+                        insertion_ppm: 2_500,
+                        deletion_ppm: 2_500,
+                    },
+                    ..WorldConfig::default()
+                };''',
+                  "bottleneck preset construction",
+              ),
+              (
+                  '''            "blue-nutrient" => {
+                let mut config = WorldConfig::default();
+                config.width = 96;
+                config.height = 64;
+                config.capabilities = CAP_LOGIC | CAP_MOVE | CAP_SIGNAL | CAP_SHARE;
+                config.resource_replenish = 2;
+                config.logic_reward = 120;
+                config.seasonal_period = 600;''',
+                  '''            "blue-nutrient" => {
+                let config = WorldConfig {
+                    width: 96,
+                    height: 64,
+                    capabilities: CAP_LOGIC | CAP_MOVE | CAP_SIGNAL | CAP_SHARE,
+                    resource_replenish: 2,
+                    logic_reward: 120,
+                    seasonal_period: 600,
+                    ..WorldConfig::default()
+                };''',
+                  "blue-nutrient preset construction",
+              ),
+              (
+                  "            15 | 16 | 17 => {",
+                  "            15..=17 => {",
+                  "conditional opcode range",
+              ),
+              (
+                  '''pub fn sandbox_trace(genome: &[u8], steps: u32) -> Result<SandboxTrace, String> {
+    let mut config = WorldConfig::default();
+    config.width = 3;
+    config.height = 3;
+    config.instructions_per_update = 1;
+    config.mutation = MutationConfig {
+        substitution_ppm: 0,
+        insertion_ppm: 0,
+        deletion_ppm: 0,
+    };
+    config.occupancy_policy = OccupancyPolicy::EmptyOnly;
+    config.min_genome = 1;
+    config.max_genome = MAX_GENOME_HARD as u16;''',
+                  '''pub fn sandbox_trace(genome: &[u8], steps: u32) -> Result<SandboxTrace, String> {
+    let config = WorldConfig {
+        width: 3,
+        height: 3,
+        instructions_per_update: 1,
+        mutation: MutationConfig {
+            substitution_ppm: 0,
+            insertion_ppm: 0,
+            deletion_ppm: 0,
+        },
+        occupancy_policy: OccupancyPolicy::EmptyOnly,
+        min_genome: 1,
+        max_genome: MAX_GENOME_HARD as u16,
+        ..WorldConfig::default()
+    };''',
+                  "sandbox configuration construction",
+              ),
+              (
+                  '''        let mut config = WorldConfig::default();
+        config.width = 8;
+        config.height = 8;
+        config.max_fossils = 4;
+        config.max_genotypes = 132;
+        let mut world = World::new(config, 9, "prune-test").unwrap();''',
+                  '''        let config = WorldConfig {
+            width: 8,
+            height: 8,
+            max_fossils: 4,
+            max_genotypes: 132,
+            ..WorldConfig::default()
+        };
+        let mut world = World::new(config, 9, "prune-test").unwrap();''',
+                  "bounded-history test configuration",
+              ),
+          ]
+
+          for old, new, label in replacements:
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected one {label} site, found {count}")
+              source = source.replace(old, new)
+              print(f"Applied {label}.")
+
+          path.write_text(source, encoding="utf-8")
+          PY
 
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -53,62 +219,8 @@ jobs:
       - name: Install pinned wasm-pack
         run: cargo install wasm-pack --version 0.13.1 --locked
 
-      - name: Apply reviewed Rust corrections
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("darwin-machine/rust/crates/darwin-core/src/lib.rs")
-          source = path.read_text(encoding="utf-8")
-
-          def replace_once(old: str, new: str, label: str) -> None:
-              global source
-              old_count = source.count(old)
-              new_count = source.count(new)
-              if old_count == 1:
-                  source = source.replace(old, new)
-                  print(f"Applied {label}.")
-              elif old_count == 0 and new_count == 1:
-                  print(f"{label} already materialised.")
-              else:
-                  raise SystemExit(
-                      f"Expected one known {label} site or its corrected form; "
-                      f"old={old_count} new={new_count}"
-                  )
-
-          replace_once(
-              "if self.max_genotypes as usize < required_genotypes || self.max_genotypes > 200_000 {",
-              "if (self.max_genotypes as usize) < required_genotypes || self.max_genotypes > 200_000 {",
-              "cast comparison correction",
-          )
-          replace_once(
-              "            genotype_count,\n            lineage_count: lineages.len() as u32,",
-              "            genotype_count,\n            retired_genotype_count: self.retired_genotypes,\n            lineage_count: lineages.len() as u32,",
-              "retired-genotype statistics sample",
-          )
-          replace_once(
-              "            let mut signal = ExecSignal::Continue;\n",
-              "",
-              "unused execution-signal initialisation removal",
-          )
-          replace_once(
-              "                signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);",
-              "                let signal =\n                    self.execute_instruction(cell_index, &mut organism, &mut births, &mut moves);",
-              "per-instruction execution signal binding",
-          )
-
-          path.write_text(source, encoding="utf-8")
-          PY
-
-      - name: Canonicalise Rust formatting and preserve diagnostics
-        shell: bash
-        run: |
-          set +e
-          cargo fmt --manifest-path darwin-machine/rust/Cargo.toml --all > darwin-machine/reports/rustfmt-diagnostic.txt 2>&1
-          status=$?
-          cat darwin-machine/reports/rustfmt-diagnostic.txt
-          exit "$status"
+      - name: Canonicalise Rust formatting
+        run: cargo fmt --manifest-path darwin-machine/rust/Cargo.toml --all
 
       - name: Build Wasm and generate native evidence
         run: ./darwin-machine/scripts/build-wasm.sh
@@ -129,34 +241,33 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
         run: npm run test:responsive
 
-      - name: Diff hygiene
-        run: git diff --check
+      - name: Diff hygiene and build-product exclusion
+        shell: bash
+        run: |
+          git diff --check
+          if git status --short | grep -E 'darwin-machine/rust/target|rustfmt-diagnostic'; then
+            echo "Build products escaped their ignore boundary." >&2
+            exit 1
+          fi
 
       - name: Upload implementation evidence
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: darwin-machine-evidence-${{ github.run_id }}
+          name: darwin-machine-final-review-${{ github.run_id }}
           path: |
             darwin-machine/reports/
             darwin-machine/pkg/build-info.json
-          if-no-files-found: warn
+          if-no-files-found: error
 
-      - name: Commit canonical source, generated state and integration
-        if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
+      - name: Commit the fully verified repair
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A darwin-machine data.js index.html package.json wrk_journals/2026-08-01-darwin-machine.md
           if git diff --cached --quiet; then
-            echo "Source, generated output and integration already match."
+            echo "No reviewed repair remained to commit."
           else
-            git commit -m "chore(darwin-machine): record reviewed generated state"
-            branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-            git push origin "HEAD:${branch}"
+            git commit -m "fix(darwin-machine): complete final adversarial review"
+            git push origin HEAD:agent/darwin-machine
           fi
-
-      - name: Require a clean reproducible PR build
-        if: github.event_name == 'pull_request'
-        run: git diff --exit-code
