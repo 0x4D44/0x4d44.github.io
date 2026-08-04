@@ -312,8 +312,12 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 @media (max-width: 760px) {
   .ax-head { display: none; }
   .ax-row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  /* The column header row is hidden here, so each cell carries its own
+     label. nth-of-type counts div siblings, and .ax-row's children are
+     [.ax-name, .ax-cell x3] — so 2, 3 and 4 are the three cells, in
+     order. Keep that in step with axisStrip() in app.js. */
   .ax-cell::before {
-    content: attr(data-l); display: block;
+    content: ""; display: block;
     font: 700 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
     color: var(--ink-faint); margin-bottom: 6px;
   }
