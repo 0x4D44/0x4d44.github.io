@@ -826,8 +826,8 @@ window.NEWS_ADS = [
     icon: "compass", fx: ["slide", "rainbow"]
   },
   {
-    headline: "A ROLLERCOASTER THAT DESIGNS ITSELF",
-    body: "One button draws a fresh circuit and hands it to gravity. Magnetic launches, a splayed loop that provably never runs through itself, and a tunnel through a hillside.",
+    headline: "A ROLLERCOASTER THAT DESIGNS ITSELF (OR LETS YOU)",
+    body: "Dial in length, lift height and top speed and it builds one that works. Ask for more speed than the drop can give and it fits a magnetic launch. Ride it through a park, or through Chicago.",
     cta: "Ride the front seat",
     href: "../iron-vertex/",
     bg: "linear-gradient(135deg,#0c4a6e,#f97316)", fg: "#fff",
