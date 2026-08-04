@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Clocks — AI, climate and peace, and what actually happens next</title>
+<meta name="description" content="A detailed forecast of the century's three great challenges, with the uncertainty attached. An interactive cone of possibilities computed live from several hundred simulated futures, a numbered and resolvable estimate, and a steelmanned case against all of it.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Three Clocks — AI, climate and peace">
+<meta property="og:description" content="Three problems, three clocks, three shapes of risk. An interactive model of what actually happens next, with the assumptions exposed and the forecast written down where it can be scored.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%8F%B3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wash" aria-hidden="true"></div>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <span class="brand">
+    <svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true"><use href="#c-mark"/></svg>
+    <span class="brand-txt"><b>Three</b> Clocks</span>
+  </span>
+  <button class="burger" type="button" aria-expanded="false" aria-controls="nav">
+    <span aria-hidden="true">☰</span><span class="sr">Menu</span>
+  </button>
+  <nav id="nav" class="nav" aria-label="Sections">
+    <a href="#/">Start</a>
+    <a href="#/method">Method</a>
+    <a href="#/ai">AI</a>
+    <a href="#/climate">Climate</a>
+    <a href="#/peace">Peace</a>
+    <a href="#/coupling">Coupling</a>
+    <a href="#/cone">The cone</a>
+    <a href="#/scenarios">Worlds</a>
+    <a href="#/estimate">Estimate</a>
+    <a href="#/watch">Watchlist</a>
+    <a href="#/objections">Objections</a>
+    <a href="#/sources">Sources</a>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1"><!-- rendered by app.js --></main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <p><b>Three Clocks</b> — a forecast of artificial intelligence, the climate and the peace, with its
+      uncertainty attached and its assumptions exposed.</p>
+    <p class="muted">Part of the <a href="/">0x4D44 almanac</a>. Every observed figure is cited in the
+      <a href="#/sources">sources</a>; every forecast is computed by the model in your browser and
+      moves when you <a href="#/cone">change the drivers</a>. The strongest arguments against all of it
+      are collected in <a href="#/objections">objections</a>, which is the page to read if you only
+      read one. Nothing here is affiliated with or endorsed by any of the institutions whose data it uses.</p>
+  </div>
+</footer>
+
+<!-- ============================================================
+     Flat-vector sprite. Bold shapes, fixed palette per symbol so a
+     <use> needs no styling to look right. Three domain colours run
+     through the whole set: cyan for AI, amber for climate, rose for
+     peace.
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+
+  <!-- brand mark: three dials at three speeds -->
+  <symbol id="c-mark" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#111826"/>
+    <circle cx="60" cy="60" r="40" fill="none" stroke="#38bdf8" stroke-width="7"
+            stroke-dasharray="126 126" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="27" fill="none" stroke="#f59e0b" stroke-width="7"
+            stroke-dasharray="102 68" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="14" fill="none" stroke="#f43f5e" stroke-width="7"
+            stroke-dasharray="22 66" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="5" fill="#e8edf7"/>
+  </symbol>
+
+  <!-- AI: a lattice with one bright node -->
+  <symbol id="c-ai" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#062b38"/>
+    <path d="M32 40 L60 26 L88 40 M32 40 V78 L60 94 L88 78 V40 M32 40 L60 56 L88 40 M60 56 V94"
+          stroke="#38bdf8" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="60" cy="26" r="9" fill="#7dd3fc"/>
+    <circle cx="32" cy="40" r="7" fill="#38bdf8"/>
+    <circle cx="88" cy="40" r="7" fill="#38bdf8"/>
+    <circle cx="60" cy="56" r="8" fill="#fbbf24"/>
+  </symbol>
+
+  <!-- climate: a sun over a rising line -->
+  <symbol id="c-climate" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3a2508"/>
+    <circle cx="60" cy="44" r="18" fill="#f59e0b"/>
+    <path d="M60 14 v10 M60 64 v10 M30 44 h10 M80 44 h10 M39 23 l7 7 M81 65 l-7-7 M39 65 l7-7 M81 23 l-7 7"
+          stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+    <path d="M20 96 L44 84 L66 88 L100 66" stroke="#fb7185" stroke-width="7"
+          fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="100" cy="66" r="7" fill="#fb7185"/>
+  </symbol>
+
+  <!-- peace: a warhead silhouette inside a broken ring -->
+  <symbol id="c-peace" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#3b0d1c"/>
+    <circle cx="60" cy="60" r="38" fill="none" stroke="#f43f5e" stroke-width="7"
+            stroke-dasharray="40 22" stroke-linecap="round"/>
+    <path d="M60 28 c10 14 15 26 15 38 c0 12-7 20-15 20 s-15-8-15-20 c0-12 5-24 15-38 Z" fill="#fda4af"/>
+    <circle cx="60" cy="66" r="8" fill="#3b0d1c"/>
+    <path d="M42 94 h36" stroke="#f43f5e" stroke-width="6" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- method: a scatter with a fitted band -->
+  <symbol id="c-method" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#111d2e"/>
+    <path d="M22 84 C46 76 62 52 98 32 L98 56 C62 74 46 88 22 94 Z" fill="#1e3a5f"/>
+    <path d="M22 88 C48 80 64 58 98 40" stroke="#38bdf8" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <circle cx="40" cy="80" r="6" fill="#fbbf24"/>
+    <circle cx="64" cy="66" r="6" fill="#fbbf24"/>
+    <circle cx="86" cy="48" r="6" fill="#fbbf24"/>
+  </symbol>
+
+  <!-- coupling: three rings that overlap -->
+  <symbol id="c-coupling" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#131a2a"/>
+    <circle cx="46" cy="50" r="24" fill="none" stroke="#38bdf8" stroke-width="6"/>
+    <circle cx="74" cy="50" r="24" fill="none" stroke="#f59e0b" stroke-width="6"/>
+    <circle cx="60" cy="76" r="24" fill="none" stroke="#f43f5e" stroke-width="6"/>
+    <circle cx="60" cy="60" r="6" fill="#e8edf7"/>
+  </symbol>
+
+  <!-- cone: the cone of possibilities -->
+  <symbol id="c-cone" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0d1b26"/>
+    <path d="M20 60 L100 16 L100 104 Z" fill="#0e4a63"/>
+    <path d="M20 60 L100 36 L100 84 Z" fill="#1183ab"/>
+    <path d="M20 60 H100" stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="20" cy="60" r="8" fill="#fbbf24"/>
+  </symbol>
+
+  <!-- scenarios: five stacked branches -->
+  <symbol id="c-scenarios" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#1a1430"/>
+    <path d="M24 60 H48 M48 60 C64 60 68 28 92 28 M48 60 C64 60 68 46 92 46
+             M48 60 H92 M48 60 C64 60 68 74 92 74 M48 60 C64 60 68 92 92 92"
+          stroke="#a78bfa" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <circle cx="24" cy="60" r="8" fill="#fbbf24"/>
+    <circle cx="92" cy="60" r="7" fill="#c4b5fd"/>
+    <circle cx="92" cy="28" r="5" fill="#a78bfa"/>
+    <circle cx="92" cy="92" r="5" fill="#a78bfa"/>
+  </symbol>
+
+  <!-- estimate: a target with a dated stamp -->
+  <symbol id="c-estimate" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#0f2a22"/>
+    <circle cx="60" cy="60" r="34" fill="none" stroke="#34d399" stroke-width="7"/>
+    <circle cx="60" cy="60" r="17" fill="none" stroke="#34d399" stroke-width="7"/>
+    <circle cx="60" cy="60" r="6" fill="#fbbf24"/>
+    <path d="M84 36 L104 16" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- watchlist: a dial with a threshold -->
+  <symbol id="c-watch" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#101a2c"/>
+    <path d="M24 76 A40 40 0 0 1 96 76" fill="none" stroke="#1e3a5f" stroke-width="12" stroke-linecap="round"/>
+    <path d="M24 76 A40 40 0 0 1 46 41" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round"/>
+    <path d="M84 44 A40 40 0 0 1 96 76" fill="none" stroke="#f43f5e" stroke-width="12" stroke-linecap="round"/>
+    <path d="M60 76 L78 50" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="60" cy="76" r="8" fill="#e8edf7"/>
+  </symbol>
+
+  <!-- objections: a shield split down the middle -->
+  <symbol id="c-objections" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#2a1030"/>
+    <path d="M60 18 L96 32 v28 c0 24-18 36-36 44 Z" fill="#c084fc"/>
+    <path d="M60 18 L24 32 v28 c0 24 18 36 36 44 Z" fill="#7e22ce"/>
+    <path d="M60 18 V104" stroke="#2a1030" stroke-width="5"/>
+    <circle cx="60" cy="58" r="9" fill="#fbbf24"/>
+  </symbol>
+
+  <!-- hero: three cones opening from one point -->
+  <symbol id="c-hero" viewBox="0 0 400 260">
+    <rect x="0" y="0" width="400" height="260" rx="20" fill="#0d1420"/>
+    <!-- peace: widest, log-tailed -->
+    <path d="M40 130 L370 26 L370 234 Z" fill="#f43f5e" opacity=".16"/>
+    <path d="M40 130 L370 66 L370 194 Z" fill="#f43f5e" opacity=".22"/>
+    <!-- ai: wide -->
+    <path d="M40 130 L370 54 L370 206 Z" fill="#38bdf8" opacity=".18"/>
+    <path d="M40 130 L370 86 L370 174 Z" fill="#38bdf8" opacity=".26"/>
+    <!-- climate: narrow, and rising -->
+    <path d="M40 130 L370 74 L370 126 Z" fill="#f59e0b" opacity=".30"/>
+    <path d="M40 130 L370 90 L370 114 Z" fill="#f59e0b" opacity=".42"/>
+    <path d="M40 130 L370 102" stroke="#fbbf24" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M40 130 L370 130" stroke="#7dd3fc" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M40 130 L370 148" stroke="#fb7185" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="40" cy="130" r="10" fill="#e8edf7"/>
+    <path d="M40 232 H370" stroke="#22304a" stroke-width="3"/>
+    <path d="M40 28 V232" stroke="#22304a" stroke-width="3"/>
+    <circle cx="126" cy="232" r="4" fill="#3d5578"/>
+    <circle cx="215" cy="232" r="4" fill="#3d5578"/>
+    <circle cx="304" cy="232" r="4" fill="#3d5578"/>
+  </symbol>
+
+</defs></svg>
+
+<script src="content.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
