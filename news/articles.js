@@ -30227,14 +30227,14 @@ window.NEWS_ARTICLES.push(
     id: "rev-iron-vertex-self-designing-coaster",
     category: "Reviews",
     headline: "Iron Vertex: we sent a critic on a rollercoaster that had not been designed yet",
-    standfirst: "One button draws a fresh circuit and hands it to gravity. Our reviewer pressed it forty-one times and has been advised to stop.",
+    standfirst: "One button draws a fresh circuit and hands it to gravity. Our reviewer pressed it forty-one times, then discovered the sliders, and has been advised to stop.",
     byline: "By Delphine Marchetti-Rowe, Rides and Attractions",
     location: "THE PARK",
-    published: "2026-08-02T13:05:00",
+    published: "2026-08-04T13:05:00",
     review: {
       subject: "Iron Vertex — 0x4D44 Almanac",
       stars: 5,
-      verdict: "A rollercoaster that designs itself, proves its own loop does not pass through itself, and then lets you sit in the front row of the result.",
+      verdict: "A rollercoaster that designs itself, or that you design — and which tells you the truth about the difference between the two.",
       href: "../iron-vertex/",
       linkText: "Ride Iron Vertex"
     },
@@ -30244,9 +30244,12 @@ window.NEWS_ARTICLES.push(
       "It is the tunnel that converted this desk. Somewhere in the fourth or fifth circuit our reviewer was carried, at speed, into a hillside that the software had decided to bore through, and the sound changed, and she made a noise into a shared office that she has been asked to account for in writing.",
       "There are passengers. There is a park around the ride, with the low, continuous, slightly desperate noise of a park. Riding from the front seat rather than a floating camera turns out to matter enormously: the horizon behaves, the drop arrives when the track says it will, and the launch does the thing to your stomach that launches do.",
       "Forty-one circuits in, a pattern emerges. The generator has preferences — it likes a second lift, it likes to run low before it runs high — and learning to read a fresh layout from the first ten seconds of the lift becomes its own small pleasure. Our reviewer now claims she can call a launch before it fires. The desk has not verified this and does not intend to.",
+      "Then there are the dials, which arrived while this review was being written and required most of it to be reconsidered. Length, lift height and top speed are now yours to set, and the speed one is the interesting admission: on a gravity coaster the speed at the bottom of the first drop simply is the height of the drop, so a speed slider is either a lie or a promise the machine has to keep some other way. This one keeps it. Ask for more than the lift can deliver and the circuit comes back with a magnetic launch out of the station and a low top hat, because that is what a low-and-fast coaster is.",
+      "Better still is what happens when you ask for something impossible. Set a tall lift and a modest top speed, which cannot both be true, and the readout does not flatter you: it reports what was actually built rather than what was requested. Drag the slider to 140 and it settles at 132 and says so. Software almost never does this. Software normally accepts the number, ignores it, and lets the user believe.",
+      "The city is the other addition, and it changes the ride rather than merely the backdrop. Running a circuit through a Chicago street grid puts hard vertical edges close to the track, and close vertical edges are what a body reads as speed — the same trick a real park plays with scaffolding. The park is prettier. The city is faster, and it is not.",
       "It is the most straightforwardly enjoyable thing to arrive in the Almanac this summer, and the only entry in this review season that had to be taken away from a member of staff."
     ],
-    pullQuote: "A generated ride is usually a generated shape with a car on it. This one's geometry is answerable.",
+    pullQuote: "Drag the slider to 140 and it settles at 132 and says so. Software normally accepts the number, ignores it, and lets the user believe.",
     tags: ["reviews", "simulation", "engineering", "almanac", "rollercoasters"],
     noticeLabel: "Review notice",
     notice: "The document reviewed here is real: Iron Vertex is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
