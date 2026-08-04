@@ -30112,6 +30112,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Reviews desk ----------
   {
     id: "rev-african-star-expedition",
+    image: "images/rev-african-star.webp",
+    imageAlt: "The African Star's hand-drawn map of Africa, with the network of roads, sea lanes and air links between cities, and the expeditions panel listing each player's cash and position.",
+    imageCaption: "A real screenshot of The African Star, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "The African Star: thirty hidden disks and one deeply unlucky reviewer",
     standfirst: "Kari Mannerla's 1951 route-and-reveal classic arrives in the browser hand-drawn and intact, and it has taken everything this desk owns.",
@@ -30141,6 +30144,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-lost-valley-dinosaurs-eruption",
+    image: "images/rev-lost-valley-dinosaurs.webp",
+    imageAlt: 'The Lost Valley hex board part-way through an expedition, with explorers, dinosaurs and treasure on the map and an adventure-card panel to the right.',
+    imageCaption: "A real screenshot of Lost Valley of the Dinosaurs, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "Lost Valley of the Dinosaurs: thirty lava counters and no sympathy",
     standfirst: "Waddingtons' erupting 1985 adventure is restored in the browser with six tyrannosaurs under player control, which is six more than anyone needs.",
@@ -30169,6 +30175,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-game-of-dracula-castle",
+    image: "images/rev-game-of-dracula.webp",
+    imageAlt: "Game of Dracula's title screen, showing two cartoon vampires above the castle board alongside the guest and player setup controls.",
+    imageCaption: "A real screenshot of Game of Dracula, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "Game of Dracula: the yellow stones are lying to you",
     standfirst: "Waddingtons' 1977 castle chase returns in vivid SVG, complete with two vampires, a blood-red trail and a mask that will not stay put.",
@@ -30197,6 +30206,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-stratego-field-edition",
+    image: "images/rev-stratego.webp",
+    imageAlt: 'A Stratego battlefield at deployment, with the blue and red headquarters panels and the intelligence ledger flanking the board.',
+    imageCaption: "A real screenshot of Stratego — Field Edition, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "Stratego, Field Edition: forty pieces, and the computer genuinely cannot see yours",
     standfirst: "A full-size browser adaptation of the hidden-rank classic, with automata that are limited to the information a player would actually have.",
@@ -30225,6 +30237,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-iron-vertex-self-designing-coaster",
+    image: "images/rev-iron-vertex.webp",
+    imageAlt: "A generated Iron Vertex circuit laid out across a wooded park, seen from above, with the ride's design controls in the corner.",
+    imageCaption: "A real screenshot of Iron Vertex, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "Iron Vertex: we sent a critic on a rollercoaster that had not been designed yet",
     standfirst: "One button draws a fresh circuit and hands it to gravity. Our reviewer pressed it forty-one times, then discovered the sliders, and has been advised to stop.",
@@ -30256,6 +30271,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-instruments-well-tempered-machine",
+    image: "images/rev-instruments.webp",
+    imageAlt: "The Well-Tempered Machine's playable piano keyboard beneath the guide's opening text about the instrument's mechanism.",
+    imageCaption: "A real screenshot of The Well-Tempered Machine, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "The Well-Tempered Machine: twenty tons of frame, and you can hear all of it",
     standfirst: "A field guide to how the piano actually works, with a playable keyboard and acoustics that answer back.",
@@ -30284,6 +30302,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-arran-deep-time-atlas",
+    image: "images/rev-arran-deep-time.webp",
+    imageAlt: "The Arran atlas, showing a map of the island coloured by rock type beside the guide's opening account of its geology.",
+    imageCaption: "A real screenshot of Arran: Island of Deep Time, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "Arran: a whole island, and the rock that told Hutton how old the world is",
     standfirst: "A living geological atlas of one Scottish island, in which you build the place, read it, and then walk six routes across it.",
@@ -30312,6 +30333,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "rev-master-flanger-serial",
+    image: "images/rev-master-flanger.webp",
+    imageAlt: 'The Master Flanger page announcing that the fifty-part course has moved to print and now runs as a serial in The Daily Flange.',
+    imageCaption: "A real screenshot of How to Become a Master Flanger, captured from the live document in the 0x4D44 Almanac.",
     category: "Reviews",
     headline: "How to Become a Master Flanger: this newspaper reviews its own serial",
     standfirst: "A fifty-part course, published in these pages, assessed by a critic who works in this building and would like that noted.",
@@ -30344,6 +30368,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Technology desk ----------
   {
     id: "tec-review-win2k-boot-to-desktop",
+    image: "images/rev-win2k.webp",
+    imageAlt: 'The from-scratch emulator part-way through a boot, showing the Microsoft Windows 2000 Professional startup screen.',
+    imageCaption: "A real screenshot of Boot to Desktop, captured from the live document in the 0x4D44 Almanac.",
     category: "Technology",
     headline: "Fifty-three days to reach a desktop, and the culprit was a dialog box nobody could see",
     standfirst: "Reviewed: a from-scratch PC emulator learns to boot Windows 2000, told from the ledgers of the hunt rather than the press release.",
@@ -30372,6 +30399,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "tec-review-world-in-640k",
+    image: "images/rev-world-in-640k.webp",
+    imageAlt: "A World in 640K's opening page, with a DOS terminal reproducing Civilization's 1991 boot and its graphics-mode menu.",
+    imageCaption: "A real screenshot of A World in 640K, captured from the live document in the 0x4D44 Almanac.",
     category: "Technology",
     headline: "A world in 640K: the map is 25,311 bytes and the heartbeat is 608.8 Hz",
     standfirst: "Reviewed: how Civilization and Colonization ran a planet on a PC with less memory than a modern stylesheet, measured off the shipped binaries.",
@@ -30402,6 +30432,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Science desk ----------
   {
     id: "sci-review-black-holes-event-horizon",
+    image: "images/rev-black-holes.webp",
+    imageAlt: "Event Horizon's black hole rendering: a dark disc ringed by the bright, lensed glow of its accretion disc.",
+    imageCaption: "A real screenshot of Event Horizon, captured from the live document in the 0x4D44 Almanac.",
     category: "Science",
     headline: "Event Horizon reviewed: a dozen instruments, and a cartoon guide who falls in on your behalf",
     standfirst: "An eight-chapter field guide to black holes that will let you cross the horizon yourself, which this desk did, repeatedly, on purpose.",
@@ -30430,6 +30463,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "sci-review-quantum-theory-quanta",
+    image: "images/rev-quantum-theory.webp",
+    imageAlt: "Quanta's Quantum Dots chapter, explaining how a semiconductor crystal's colour is set by nothing but its size.",
+    imageCaption: "A real screenshot of Quanta, captured from the live document in the 0x4D44 Almanac.",
     category: "Science",
     headline: "Quanta reviewed: fourteen instruments, one Bell test, and the television in the corner",
     standfirst: "An eight-chapter almanac of quantum theory that ends where the reader lives — in a screen full of quantum dots dialled to colour by size.",
@@ -30458,6 +30494,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "sci-review-great-dying",
+    image: "images/rev-great-dying.webp",
+    imageAlt: "The Great Dying's title page over a field of glowing eruption embers, with figures for 96% of marine species lost and a 10°C rise.",
+    imageCaption: "A real screenshot of The Great Dying, captured from the live document in the 0x4D44 Almanac.",
     category: "Science",
     headline: "The Great Dying reviewed: a simulator that lets you suffocate an ocean, slowly",
     standfirst: "The end-Permian extinction, run as a calibrated carbon–climate model, with the boundary rock at Meishan as the thing that has to be explained.",
@@ -30488,6 +30527,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Engineering desk ----------
   {
     id: "eng-review-road-to-ruin",
+    image: "images/rev-road-wear.webp",
+    imageAlt: "The Road to Ruin's anatomy chapter, headed 'A load-spreading sandwich', on the engineered layers beneath a road surface.",
+    imageCaption: "A real screenshot of The Road to Ruin, captured from the live document in the 0x4D44 Almanac.",
     category: "Engineering",
     headline: "The Road to Ruin reviewed: your car is not the problem and never was",
     standfirst: "A field guide to why roads fail, built around the fourth-power law and the pothole outside your house.",
@@ -30520,6 +30562,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Health desk ----------
   {
     id: "hea-review-root-and-crown",
+    image: "images/rev-root-and-crown.webp",
+    imageAlt: "Root and Crown's cross-section of a tooth beside a panel reporting its enamel, dentine and pulp condition at age 18.",
+    imageCaption: "A real screenshot of Root and Crown, captured from the live document in the 0x4D44 Almanac.",
     category: "Health",
     headline: "Root and Crown reviewed: the one organ your body has decided not to fix",
     standfirst: "Nine chapters on the tooth, twenty-seven live figures and a real annotated radiograph, read in a single sitting by a correspondent who then booked an appointment.",
@@ -30548,6 +30593,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "hea-review-thermal-mind",
+    image: "images/rev-thermal-mind.webp",
+    imageAlt: "The Thermal Mind's title page above a temperature scale reading 31.5°C, 88% humidity and a 2.5% per degree slope.",
+    imageCaption: "A real screenshot of The Thermal Mind, captured from the live document in the 0x4D44 Almanac.",
     category: "Health",
     headline: "The Thermal Mind reviewed: the office is too warm, and now we have the curve",
     standfirst: "Does thinking really fall two per cent per degree above 25°C? A guide that takes the claim seriously enough to check it, using ten million exam scores.",
@@ -30578,6 +30626,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Lifestyle desk ----------
   {
     id: "life-review-teenage-brain",
+    image: "images/rev-teenage-brain.webp",
+    imageAlt: "The Teenage Brain's title page above a diagram of the overlapping regions being rebuilt during adolescence.",
+    imageCaption: "A real screenshot of The Teenage Brain, captured from the live document in the 0x4D44 Almanac.",
     category: "Lifestyle",
     headline: "The Teenage Brain reviewed: two clocks, badly synchronised, and it is not defiance",
     standfirst: "A field guide to adolescence built on the primary neuroscience, reviewed by a correspondent who has two of them at home.",
@@ -30608,6 +30659,9 @@ window.NEWS_ARTICLES.push(
   // ---------- Opinion / Voices ----------
   {
     id: "voices-review-animal-defenses",
+    image: "images/rev-animal-defenses.webp",
+    imageAlt: "The Defensive's title page, with counters reading 43 creatures, 7 species simulated, 9 playable defences and a hottest spray of 100°C.",
+    imageCaption: "A real screenshot of The Defensive, captured from the live document in the 0x4D44 Almanac.",
     category: "Voices",
     headline: "I set off a bombardier beetle nine times and I would like to apologise to nobody",
     standfirst: "The Defensive is an interactive bestiary of nature's least reasonable ideas, and this column has spent three days pressing all of them.",
@@ -30637,6 +30691,9 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "voices-review-influence-click-whirr",
+    image: "images/rev-influence.webp",
+    imageAlt: "Click, Whirr's opening chapter beside a diagram of the seven levers of persuasion.",
+    imageCaption: "A real screenshot of Click, Whirr, captured from the live document in the 0x4D44 Almanac.",
     category: "Voices",
     headline: "Click, Whirr: I predicted all 33 results, got 19 right, and learned more from the 14",
     standfirst: "A field guide to Cialdini's seven levers that makes you commit to an answer before it shows you one — and then audits its own best stories.",

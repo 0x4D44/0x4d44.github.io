@@ -306,7 +306,22 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
     // "this never happened" disclaimer.
     assert.equal(article.noticeLabel, "Review notice", `${article.id} should label its review notice`);
     assert.match(article.notice, /is real/, `${article.id} should say the reviewed document is real`);
+
+    // The hero is a genuine screenshot of the document under review, not generated art —
+    // so it must be named for the slug it shows, and the caption must claim only that.
+    const slug = article.review.href.slice(3, -1);
+    assert.equal(article.image, `images/rev-${slug}.webp`, `${article.id} should show ${slug} itself`);
+    assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+    assert.ok(article.imageAlt && article.imageAlt.length > 40, `${article.id} needs descriptive alt text`);
+    assert.match(article.imageCaption, /real screenshot/, `${article.id} should disclose a real screenshot`);
+    assert.doesNotMatch(article.imageCaption, /AI-generated|invented|impression/,
+      `${article.id} hero is photographed, not invented — the caption must not say otherwise`);
   }
+  assert.equal(
+    new Set(reviewed.map((article) => article.image)).size,
+    reviewed.length,
+    "each review needs its own screenshot",
+  );
 
   // Reviews is a leaf desk under Life, with its own art, and the scorecard renders from the
   // field rather than the category (so a Science or Voices review is scored too).
