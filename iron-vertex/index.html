@@ -453,6 +453,11 @@
       <label for="dial-density">Buildings <output id="out-density">100%</output></label>
       <input type="range" id="dial-density" min="0" max="100" step="5" value="100">
     </div>
+    <div class="dial">
+      <label for="dial-hour">Time of day <output id="out-hour">13:00</output></label>
+      <input type="range" id="dial-hour" min="0" max="47" step="1" value="26">
+    </div>
+    <button class="act small" id="btn-weather" type="button" aria-label="Change the weather">&#9788; Weather: clear (W)</button>
     <button class="act small" id="btn-auto" type="button">Back to auto</button>
     <p class="note">
       Top speed on a gravity coaster is the height of the drop, so asking
@@ -520,6 +525,7 @@ import { AIRTIME_G, CoasterSim, RideLog, buildTrack, tuckIn } from "./track.js";
 import { buildWorld, groundHeight, setTerrain } from "./scenery.js";
 import { EYES, buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
 import { RideAudio, rideMix } from "./audio.js";
+import { WEATHER_MODES, buildWeather } from "./weather.js";
 
 // ============================================================
 // Renderer, scene, camera
@@ -554,6 +560,12 @@ const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.25, 3000);
 // and three cameras all read groundHeight().
 let world = null;
 
+// The weather belongs to the CAMERA, not to the world: it is a box of
+// particles that follows the lens around. So it is built once and lives
+// through every rebuild of the park or the city underneath it.
+const weather = buildWeather();
+scene.add(weather.group);
+
 function setWorld(setting, density) {
   if (world) {
     scene.remove(world.group);
@@ -562,6 +574,7 @@ function setWorld(setting, density) {
   setTerrain(setting);
   world = buildWorld({ setting, density });
   scene.add(world.group);
+  applyHour();
   applyQuality();
 }
 
@@ -578,9 +591,9 @@ let trackLivery = liveryFor(0);
 // down; hunting between two levels would be worse than either.
 // ============================================================
 const QUALITY = [
-  { shadows: false, shadowMap: 512, scale: 0.6 },
-  { shadows: true, shadowMap: 1024, scale: 0.85 },
-  { shadows: true, shadowMap: 2048, scale: 1 },
+  { shadows: false, shadowMap: 512, scale: 0.6, weather: 0.3 },
+  { shadows: true, shadowMap: 1024, scale: 0.85, weather: 0.6 },
+  { shadows: true, shadowMap: 2048, scale: 1, weather: 1 },
 ];
 let qualityLevel = QUALITY.length - 1;
 let qualityHold = 2.5;   // seconds before the next judgement
@@ -589,6 +602,10 @@ let frameCost = 1 / 60;  // smoothed seconds per frame
 function applyQuality() {
   const level = QUALITY[qualityLevel];
   renderer.shadowMap.enabled = level.shadows;
+  // Weather thins first and hardest. A third of the raindrops is much
+  // harder to notice than the loss of every shadow in the park, and it
+  // buys about as much.
+  weather.setDensity(level.weather);
   if (world.sun.shadow.map && world.sun.shadow.mapSize.x !== level.shadowMap) {
     world.sun.shadow.map.dispose();
     world.sun.shadow.map = null;
@@ -676,6 +693,10 @@ const state = {
   // Where it is built, and how much of it there is.
   setting: "park",
   density: 1,
+  // The hour of the day, in halves. Everything about the light follows
+  // from it — see setHour in scenery.js.
+  hour: 13,
+  weather: "clear",
   // The design dials. `null` means "let the generator decide", which is
   // NOT the same as any particular value — it is what every circuit in
   // the catalogue was drawn with, so an undialled seed has to stay
@@ -696,6 +717,29 @@ function disposeGroup(group) {
     }
   });
   scene.remove(group);
+}
+
+// Everything that describes the ride goes in the address bar: the seed
+// alone stopped being enough the moment there were dials.
+function writeUrl() {
+  if (!state.track) return;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", String(state.track.seed >>> 0));
+    for (const key of ["length", "height", "speed"]) {
+      if (state.dials[key] == null) url.searchParams.delete(key);
+      else url.searchParams.set(key, String(Math.round(state.dials[key])));
+    }
+    if (state.setting === "park") url.searchParams.delete("site");
+    else url.searchParams.set("site", state.setting);
+    if (state.density === 1) url.searchParams.delete("density");
+    else url.searchParams.set("density", String(Math.round(state.density * 100)));
+    if (state.hour === 13) url.searchParams.delete("hour");
+    else url.searchParams.set("hour", String(state.hour));
+    if (state.weather === "clear") url.searchParams.delete("weather");
+    else url.searchParams.set("weather", state.weather);
+    window.history.replaceState(null, "", url);
+  } catch { /* file:// and the like: the ride still works */ }
 }
 
 function loadTrack(seed) {
@@ -730,27 +774,10 @@ function loadTrack(seed) {
   drawPlan(track);
   reportAchieved(track);
 
-  // Keep the seed in the address bar. Every circuit is reproducible from
-  // its seed, so this is the difference between "that was a good one" and
-  // "that was a good one and I can send it to somebody".
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set("seed", String(track.seed >>> 0));
-    // The dials go in the link too, because a seed alone no longer
-    // describes the ride: the same seed at 2400m and at 420m is two
-    // different coasters.
-    for (const key of ["length", "height", "speed"]) {
-      if (state.dials[key] == null) url.searchParams.delete(key);
-      else url.searchParams.set(key, String(Math.round(state.dials[key])));
-    }
-    if (state.setting === "park") url.searchParams.delete("site");
-    else url.searchParams.set("site", state.setting);
-    if (state.density === 1) url.searchParams.delete("density");
-    else url.searchParams.set("density", String(Math.round(state.density * 100)));
-    window.history.replaceState(null, "", url);
-  } catch { /* file:// and the like: the ride still works */ }
+  writeUrl();
 
   // What the generator actually built, in the language a park would use.
+
   let top = 0;
   for (const v of track.speeds) top = Math.max(top, v);
   const facts = [
@@ -1230,6 +1257,50 @@ function setSetting(setting) {
   loadTrack(state.track ? state.track.seed : (Math.random() * 0xffffffff) >>> 0);
 }
 
+// ---- time of day and weather ----
+//
+// The hour drives the sun, the sky, the fog and how far up the city's
+// lights have come. Fog is the one thing the world does not own, so it
+// is applied here.
+function applyHour() {
+  if (!world) return;
+  const light = world.setHour(state.hour);
+  scene.fog.color.copy(light.fog);
+  // Weather closes the world in: rain and snow both cut the distance you
+  // can see, which is most of what makes them feel like weather.
+  const close = weather.wetness;
+  scene.fog.near = 340 * (1 - close * 0.62);
+  scene.fog.far = 1300 * (1 - close * 0.55);
+  renderer.setClearColor(light.fog);
+  return light;
+}
+
+function hourLabel(hour) {
+  const h = Math.floor(hour) % 24;
+  const m = hour % 1 >= 0.5 ? "30" : "00";
+  return `${String(h).padStart(2, "0")}:${m}`;
+}
+
+function setHour(hour) {
+  state.hour = hour;
+  document.getElementById("out-hour").textContent = hourLabel(hour);
+  applyHour();
+  writeUrl();
+}
+
+function setWeather(mode) {
+  state.weather = WEATHER_MODES.includes(mode) ? mode : "clear";
+  weather.setMode(state.weather);
+  const btn = document.getElementById("btn-weather");
+  btn.innerHTML = (state.weather === "rain" ? "&#9730;" : state.weather === "snow" ? "&#10052;" : "&#9788;")
+    + " Weather: " + state.weather + " (W)";
+  btn.setAttribute("aria-label", "Change the weather, currently " + state.weather);
+  // Wet ground is darker and the sky loses its blue. Both are cheap and
+  // both matter more than the falling particles do.
+  applyHour();
+  writeUrl();
+}
+
 function setDensity(value) {
   state.density = value;
   syncDials();
@@ -1267,6 +1338,19 @@ for (const key of DIAL_IDS) {
   });
   input.addEventListener("change", () => setDial(key, Number(input.value)));
 }
+document.getElementById("btn-weather").addEventListener("click", () => {
+  armAudio();
+  setWeather(WEATHER_MODES[(WEATHER_MODES.indexOf(state.weather) + 1) % WEATHER_MODES.length]);
+});
+{
+  // The hour slider steps in halves, so its raw value is 0..47.
+  const input = document.getElementById("dial-hour");
+  input.addEventListener("input", () => {
+    // Unlike the design dials this is live: nothing is rebuilt, it is a
+    // dozen colour lerps, so dragging it sweeps a real sunset.
+    setHour(Number(input.value) / 2);
+  });
+}
 {
   const input = document.getElementById("dial-density");
   input.addEventListener("input", () => {
@@ -1286,6 +1370,10 @@ window.addEventListener("keydown", (e) => {
   else if (key === "m") { setSound(!soundOn); e.preventDefault(); }
   else if (key === "h") { homeTrail(); e.preventDefault(); }
   else if (key === "p") { setSetting(state.setting === "park" ? "city" : "park"); e.preventDefault(); }
+  else if (key === "w") {
+    setWeather(WEATHER_MODES[(WEATHER_MODES.indexOf(state.weather) + 1) % WEATHER_MODES.length]);
+    e.preventDefault();
+  }
 });
 
 const drag = { active: false, x: 0, y: 0, id: null };
@@ -1387,6 +1475,12 @@ for (const key of DIAL_IDS) {
 }
 if (params.get("site") === "city") state.setting = "city";
 {
+  const hour = Number.parseFloat(params.get("hour") || "");
+  if (Number.isFinite(hour)) state.hour = Math.min(23.5, Math.max(0, hour));
+  const mode = params.get("weather");
+  if (WEATHER_MODES.includes(mode)) state.weather = mode;
+}
+{
   const value = Number.parseFloat(params.get("density") || "");
   if (Number.isFinite(value)) state.density = Math.min(1, Math.max(0, value / 100));
 }
@@ -1410,6 +1504,9 @@ if (state.dials.length != null || state.dials.height != null || state.dials.spee
 }
 
 setWorld(state.setting, state.density);
+document.getElementById("dial-hour").value = String(Math.round(state.hour * 2));
+setWeather(state.weather);
+setHour(state.hour);
 syncDials();
 loadTrack(Number.isFinite(seedParam) ? seedParam : (Math.random() * 0xffffffff) >>> 0);
 syncButtons();
@@ -1445,6 +1542,7 @@ function frame(now) {
     if (lapHideAt <= 0) lapReport.style.opacity = "0";
   }
   world.update(elapsed, dt);
+  weather.update(elapsed, camera);
   for (const fn of state.trackUpdaters) fn(elapsed, dt);
 
   if (soundOn) {

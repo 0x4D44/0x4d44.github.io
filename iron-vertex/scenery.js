@@ -23,7 +23,7 @@
 // ============================================================
 
 import * as THREE from "./three.module.min.js";
-import { canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
+import { NIGHT, NIGHT_TIME, canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
 import { buildCity } from "./city.js";
 
 export const PARK_RADIUS = 470;
@@ -135,6 +135,12 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
   };
 
   // ---- sun and sky ----------------------------------------------------
+  //
+  // The sun's position is a function of one number, the hour, and so is
+  // everything that follows from it: its colour, the three bands of the
+  // sky, the fog, the strength of the fill, and how far up the city's
+  // windows have come. Sunrise at 6, noon at 12, sunset at 18 — near
+  // enough for a place that does not have a latitude.
   const sunDirection = new THREE.Vector3(-0.44, 0.55, 0.36).normalize();
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.5);
   sun.position.copy(sunDirection).multiplyScalar(320);
@@ -150,7 +156,8 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
   sun.shadow.normalBias = 0.6;
   group.add(sun);
   group.add(sun.target);
-  group.add(new THREE.HemisphereLight(0xcfe6ff, 0x51703d, 1.0));
+  const hemi = new THREE.HemisphereLight(0xcfe6ff, 0x51703d, 1.0);
+  group.add(hemi);
   // A cool counter-light from the shadow side, so nothing goes flat black.
   const fill = new THREE.DirectionalLight(0x9fc4ff, 0.38);
   fill.position.set(150, 95, -180);
@@ -200,6 +207,90 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
   );
   sky.renderOrder = -1;
   group.add(sky);
+
+  // The palette at each end of the day. Everything between is a mix.
+  const PALETTE_DAY = {
+    top: new THREE.Color("#1c5aa8"),
+    middle: new THREE.Color("#8dbfe8"),
+    horizon: new THREE.Color("#e6dcc4"),
+    sunColor: new THREE.Color("#fff4d2"),
+    fog: new THREE.Color("#c3d9ea"),
+    sun: new THREE.Color("#fff1d6"),
+    hemiSky: new THREE.Color("#cfe6ff"),
+    hemiGround: new THREE.Color("#51703d"),
+  };
+  const PALETTE_DUSK = {
+    top: new THREE.Color("#2b3f78"),
+    middle: new THREE.Color("#7c6a9c"),
+    horizon: new THREE.Color("#e8a05c"),
+    sunColor: new THREE.Color("#ffb265"),
+    fog: new THREE.Color("#9a7f92"),
+    sun: new THREE.Color("#ffb473"),
+    hemiSky: new THREE.Color("#8f9ad0"),
+    hemiGround: new THREE.Color("#463f38"),
+  };
+  const PALETTE_NIGHT = {
+    top: new THREE.Color("#050b1c"),
+    middle: new THREE.Color("#0a1430"),
+    horizon: new THREE.Color("#1b2647"),
+    sunColor: new THREE.Color("#2a3a63"),
+    fog: new THREE.Color("#0d1730"),
+    sun: new THREE.Color("#38507f"),
+    hemiSky: new THREE.Color("#22304f"),
+    hemiGround: new THREE.Color("#0d1119"),
+  };
+
+  const skyUniforms = sky.material.uniforms;
+  const mixed = {
+    top: new THREE.Color(), middle: new THREE.Color(), horizon: new THREE.Color(),
+    sunColor: new THREE.Color(), fog: new THREE.Color(), sun: new THREE.Color(),
+    hemiSky: new THREE.Color(), hemiGround: new THREE.Color(),
+  };
+
+  // Sets everything the hour controls. Called whenever the hour changes,
+  // not every frame: it is a dozen colour lerps, and the hour only moves
+  // when somebody drags it.
+  function setHour(hour) {
+    // Elevation: -1 at midnight, +1 at noon, zero at 6 and 18.
+    const t = ((hour % 24) + 24) % 24;
+    const elevation = Math.sin(((t - 6) / 12) * Math.PI);
+    const azimuth = ((t - 12) / 24) * Math.PI * 2;
+
+    sunDirection.set(
+      Math.sin(azimuth) * 0.86,
+      Math.max(-0.35, elevation),
+      Math.cos(azimuth) * 0.5,
+    ).normalize();
+    sun.position.copy(sunDirection).multiplyScalar(320);
+    skyUniforms.sunDir.value.copy(sunDirection);
+
+    // Two blends, not one: day to dusk as the sun drops to the horizon,
+    // dusk to night as it goes under. Interpolating straight from noon
+    // to midnight skips the only interesting part of a sunset.
+    const dusk = 1 - Math.min(1, Math.max(0, elevation / 0.34));
+    const night = 1 - Math.min(1, Math.max(0, (elevation + 0.12) / 0.16));
+    for (const key of Object.keys(mixed)) {
+      mixed[key].copy(PALETTE_DAY[key]).lerp(PALETTE_DUSK[key], dusk).lerp(PALETTE_NIGHT[key], night);
+    }
+    skyUniforms.top.value.copy(mixed.top);
+    skyUniforms.middle.value.copy(mixed.middle);
+    skyUniforms.horizon.value.copy(mixed.horizon);
+    skyUniforms.sunColor.value.copy(mixed.sunColor);
+
+    sun.color.copy(mixed.sun);
+    sun.intensity = 2.5 * Math.pow(Math.max(0, elevation), 0.55) * (1 - night) + 0.05;
+    // Shadows go with the light. A sun below the horizon casting a hard
+    // shadow map is both wrong and a whole render pass wasted.
+    sun.castShadow = elevation > 0.06;
+    hemi.color.copy(mixed.hemiSky);
+    hemi.groundColor.copy(mixed.hemiGround);
+    hemi.intensity = 1.0 * (1 - night * 0.72);
+    fill.color.copy(mixed.hemiSky);
+    fill.intensity = 0.38 * (1 - night * 0.55);
+
+    NIGHT.value = night;
+    return { elevation, night, fog: mixed.fog };
+  }
 
   // ---- ground ---------------------------------------------------------
   const shades = {
@@ -990,7 +1081,19 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
       return false;
     };
 
-    for (const { mesh, placements } of carveable) {
+    for (const item of carveable) {
+      const { mesh, placements } = item;
+      // Where each instance was last put, kept PER MESH rather than on
+      // the placement itself.
+      //
+      // Two meshes can legitimately share one placements array — a
+      // building's mass and the parapet on top of it are drawn
+      // separately but stand in the same places. With the bookkeeping
+      // stored on the placement, the first mesh to be carved claimed the
+      // flag and the second skipped every instance: the building sank
+      // and its roof stayed floating in mid-air, exactly where the
+      // coaster was about to pass through it.
+      if (!item.placed) item.placed = new Array(placements.length).fill(NaN);
       let dirty = false;
       for (let i = 0; i < placements.length; i++) {
         const p = placements[i];
@@ -999,8 +1102,8 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
         // the corridor the coaster cuts is sized to what it would
         // actually pass through rather than to the width of a tree.
         const wanted = foulsTrack(p.x, p.z, p.keepOut ?? 9) ? -400 : p.y;
-        if (p.placedY === wanted) continue;
-        p.placedY = wanted;
+        if (item.placed[i] === wanted) continue;
+        item.placed[i] = wanted;
         carveEuler.set(p.rx ?? 0, p.ry ?? 0, p.rz ?? 0);
         carveQuat.setFromEuler(carveEuler);
         carvePos.set(p.x, wanted, p.z);
@@ -1022,7 +1125,9 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
     sun,
     sky,
     carve,
+    setHour,
     update(elapsed, dt) {
+      NIGHT_TIME.value = elapsed;
       for (const fn of updaters) fn(elapsed, dt);
     },
   };

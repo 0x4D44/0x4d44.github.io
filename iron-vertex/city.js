@@ -32,7 +32,7 @@
 // ============================================================
 
 import * as THREE from "./three.module.min.js";
-import { canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
+import { NIGHT, canvasTexture, glowLit, instance, mergeParts, part, vertexLit } from "./mesh.js";
 
 // ---- the grid --------------------------------------------------------
 //
@@ -158,6 +158,10 @@ function floors(width, depth, from, to, count, glass, spandrel, relief = 0.012) 
       new THREE.BoxGeometry(width + relief, pitch * 0.62, depth + relief),
       glass,
       [0, y, 0],
+      [1, 1, 1], [0, 0, 0],
+      // Each floor gets its own glow value, so a building lights up
+      // storey by storey rather than all at once.
+      0.1 + ((i * 0.6180339887) % 1) * 0.9,
     ));
     parts.push(part(
       new THREE.BoxGeometry(width + relief * 2.6, pitch * 0.34, depth + relief * 2.6),
@@ -599,14 +603,14 @@ function buildElevated(route, groundHeight) {
     part(new THREE.BoxGeometry(2.6, 2.5, 14), 0xb9bec4, [0, 1.45, 0]),
     part(new THREE.BoxGeometry(2.64, 0.5, 14), 0x8f959c, [0, 2.45, 0]),
     ...Array.from({ length: 9 }, (_, i) => part(new THREE.BoxGeometry(2.66, 0.9, 1.5),
-      0x2f3a44, [0, 1.75, -6 + i * 1.5])),
-    part(new THREE.BoxGeometry(2.3, 0.9, 0.1), 0x2f3a44, [0, 1.75, 7.0]),
+      0x9fb4c4, [0, 1.75, -6 + i * 1.5], [1, 1, 1], [0, 0, 0], 0.7 + (i % 3) * 0.1)),
+    part(new THREE.BoxGeometry(2.3, 0.9, 0.1), 0xfff0cc, [0, 1.75, 7.0], [1, 1, 1], [0, 0, 0], 0.99),
     ...[-1, 1].flatMap((s) => [-4.6, 4.6].map((z) => part(
       new THREE.CylinderGeometry(0.36, 0.36, 0.16, 8), 0x24282c,
       [s * 1.0, 0.36, z], [1, 1, 1], [0, 0, Math.PI / 2]))),
     part(new THREE.BoxGeometry(1.9, 0.14, 0.5), 0x3a4046, [0, 3.0, -5.5]),
   ]);
-  const cars = new THREE.InstancedMesh(carGeo, vertexLit(), 4);
+  const cars = new THREE.InstancedMesh(carGeo, glowLit(), 4);
   cars.castShadow = true;
   group.add(cars);
 
@@ -883,9 +887,23 @@ export function buildCity({ groundHeight, density = 1, rng }) {
 
   // ---- the ground: paving, roads, kerbs, crossings, river ----
   {
+    // The streets carry a dim emissive at night.
+    //
+    // The lamps GLOW but they do not illuminate — nothing here casts
+    // light, because several hundred real lights would end the frame
+    // rate. Without this the whole city floor goes to pure black the
+    // moment the sun sets, and a lit skyline standing on a void reads as
+    // a bug. A wash of sodium on the tarmac is what the lamps would be
+    // doing if they could.
+    const streetMat = new THREE.MeshLambertMaterial({
+      map: streetTexture(grid),
+      emissive: new THREE.Color(0x2a2318),
+      emissiveIntensity: 0,
+    });
+    updaters.push(() => { streetMat.emissiveIntensity = NIGHT.value * 1.9; });
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(CITY_RADIUS * 2, CITY_RADIUS * 2),
-      new THREE.MeshLambertMaterial({ map: streetTexture(grid) }),
+      streetMat,
     );
     plane.rotation.x = -Math.PI / 2;
     plane.position.y = groundHeight(0, 0) + 0.03;
@@ -1023,6 +1041,9 @@ export function buildCity({ groundHeight, density = 1, rng }) {
       uv[i * 4 + 3] = Math.floor(rng() * FACADE_STOREYS) / FACADE_STOREYS;
     });
     mesh.geometry.setAttribute("aFacade", new THREE.InstancedBufferAttribute(uv, 4));
+    // The lit-window texture is already built and bound; all that is
+    // left is to turn it up as the sun goes down.
+    updaters.push(() => { facadeMat.emissiveIntensity = NIGHT.value * 1.35; });
     group.add(mesh);
     carveable.push({ mesh, placements: buckets.far });
 
@@ -1033,7 +1054,7 @@ export function buildCity({ groundHeight, density = 1, rng }) {
     carveable.push({ mesh: caps, placements: buckets.far });
   }
 
-  const facade = vertexLit();
+  const facade = glowLit();
   for (const kind of Object.keys(geos)) {
     if (!buckets[kind].length) continue;
     const mesh = instance(geos[kind], facade, buckets[kind]);
@@ -1121,8 +1142,11 @@ export function buildCity({ groundHeight, density = 1, rng }) {
       ...[-1, 1].flatMap((s) => [-1.5, 1.5].map((z) => part(
         new THREE.CylinderGeometry(0.32, 0.32, 0.2, 6), 0x1b1f23,
         [s * 0.85, 0.32, z], [1, 1, 1], [0, 0, Math.PI / 2]))),
-      part(new THREE.BoxGeometry(1.5, 0.16, 0.08), 0xffe9b8, [0, 0.62, 2.16]),
-      part(new THREE.BoxGeometry(1.5, 0.14, 0.08), 0xb03a2e, [0, 0.62, -2.16]),
+      // Headlights and tail-lights. At night the grid becomes rivers of
+      // white one way and red the other, which is most of what a city
+      // after dark actually looks like from above.
+      part(new THREE.BoxGeometry(1.5, 0.16, 0.16), 0xfff2d0, [0, 0.62, 2.16], [1, 1, 1], [0, 0, 0], 0.98),
+      part(new THREE.BoxGeometry(1.5, 0.14, 0.14), 0xd8402e, [0, 0.62, -2.16], [1, 1, 1], [0, 0, 0], 0.9),
     ]);
     const COLOURS = [0xd8dde2, 0x2a2e33, 0x8c9298, 0x9c3a2e, 0x2f5d8c, 0xd8c05a, 0x3f7a52];
     const lanes = [];
@@ -1142,7 +1166,7 @@ export function buildCity({ groundHeight, density = 1, rng }) {
         colour: COLOURS[Math.floor(rng() * COLOURS.length)],
       });
     }
-    const cars = new THREE.InstancedMesh(carGeo, vertexLit(), Math.max(1, lanes.length));
+    const cars = new THREE.InstancedMesh(carGeo, glowLit(), Math.max(1, lanes.length));
     cars.count = lanes.length;
     cars.castShadow = true;
     const tintCar = new THREE.Color();
@@ -1179,7 +1203,7 @@ export function buildCity({ groundHeight, density = 1, rng }) {
     const lampGeo = mergeParts([
       part(new THREE.CylinderGeometry(0.11, 0.15, 8.4, 6), 0x3f4348, [0, 4.2, 0]),
       part(new THREE.BoxGeometry(2.2, 0.16, 0.22), 0x3f4348, [0.95, 8.3, 0]),
-      part(new THREE.BoxGeometry(0.9, 0.16, 0.42), 0xf2e6bd, [1.85, 8.2, 0]),
+      part(new THREE.BoxGeometry(0.9, 0.16, 0.42), 0xf2e6bd, [1.85, 8.2, 0], [1, 1, 1], [0, 0, 0], 0.95),
     ]);
     const lamps = [];
     for (const line of grid.ew.lines) {
@@ -1192,7 +1216,7 @@ export function buildCity({ groundHeight, density = 1, rng }) {
       }
     }
     if (lamps.length) {
-      const mesh = instance(lampGeo, vertexLit(), lamps, { shadows: false });
+      const mesh = instance(lampGeo, glowLit(), lamps, { shadows: false });
       group.add(mesh);
       carveable.push({ mesh, placements: lamps });
     }

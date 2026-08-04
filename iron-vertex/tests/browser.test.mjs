@@ -536,6 +536,71 @@ try {
   await delay(1200);
   assert.deepEqual(pageErrors, [], "city: page reported errors");
 
+  // ---- night, and weather ----
+  //
+  // Both are shader work, and a shader that fails to compile does not
+  // throw where you can see it — three logs and carries on drawing
+  // nothing. So this checks the PICTURE: at midnight the frame must be
+  // dark, and it must not be uniformly dark, because a city with its
+  // lights on is dark with bright bits in it.
+  trace("night and weather");
+  pageErrors = [];
+  await S("Page.navigate", {
+    url: `http://127.0.0.1:${port}/iron-vertex/?seed=20260726&site=city&hour=22`,
+  });
+  await poll("the night city to boot", () => evaluate("window.__ironVertexReady === true"), 60_000);
+  await delay(3000);
+
+  const luminance = async () => evaluate(`(async () => {
+    await new Promise((r) => requestAnimationFrame(r));
+    const c = document.querySelector("canvas");
+    const off = new OffscreenCanvas(c.width, c.height);
+    const g = off.getContext("2d");
+    g.drawImage(c, 0, 0);
+    const { data } = g.getImageData(0, 0, c.width, c.height);
+    let sum = 0, bright = 0, n = 0;
+    for (let i = 0; i < data.length; i += 16) {
+      const l = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      sum += l; n++;
+      if (l > 110) bright++;
+    }
+    return { mean: +(sum / n).toFixed(1), brightPct: +(100 * bright / n).toFixed(2) };
+  })()`);
+
+  const night = await luminance();
+  assert.ok(night.mean < 70, `night: the frame is not dark (mean ${night.mean})`);
+  assert.ok(night.brightPct > 0.4,
+    `night: nothing is lit — the city's windows never came on (${night.brightPct}% bright)`);
+
+  // And by day the same view is bright. If the hour dial did nothing,
+  // these two would match.
+  await evaluate(`(() => {
+    const el = document.getElementById("dial-hour");
+    el.value = "26";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  })()`);
+  await delay(1200);
+  const day = await luminance();
+  assert.ok(day.mean > night.mean * 1.8,
+    `night: the hour dial did not change the light (night ${night.mean}, day ${day.mean})`);
+
+  // Weather cycles and survives a few seconds of animation.
+  for (const expected of ["rain", "snow", "clear"]) {
+    await evaluate(`document.getElementById("btn-weather").click()`);
+    await delay(900);
+    const label = await evaluate(`document.getElementById("btn-weather").textContent.trim()`);
+    assert.match(label, new RegExp(expected, "i"),
+      `weather: expected ${expected}, button says "${label}"`);
+    assert.match(
+      await evaluate(`new URL(location.href).searchParams.get("weather") || "clear"`),
+      new RegExp(expected, "i"),
+      `weather: ${expected} did not reach the URL`,
+    );
+  }
+  await delay(1500);
+  assert.deepEqual(pageErrors, [], "night/weather: page reported errors");
+
   trace("done");
   cleanup();
   clearTimeout(watchdog);
