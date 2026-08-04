@@ -269,6 +269,37 @@ try {
       `${width}x${height}: track passes within ${clearance[1]}m of itself`);
 
     // ---- every control is where it looks, and hittable ----
+    //
+    // Ride is always on show. The rest live behind a disclosure that
+    // starts folded on a phone, because open it covers most of the
+    // screen — so unfold it before checking, or this asserts that a
+    // deliberately hidden control is visible.
+    //
+    // Ride is checked BEFORE unfolding, deliberately: it is the one
+    // control that must never need a tap to reach, and an earlier
+    // version of the fold buried it. This test is why that was caught.
+    const rideReach = await evaluate(`(() => {
+      const el = document.getElementById("btn-ride");
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return "zero-sized";
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return el.contains(hit) || el === hit ? true : "covered by " + (hit && hit.id ? "#" + hit.id : hit && hit.tagName);
+    })()`);
+    assert.equal(rideReach, true,
+      `${width}x${height}: btn-ride is not clickable while the panel is folded (${rideReach})`);
+
+    const foldedAtBoot = await evaluate(`(() => {
+      const p = document.getElementById("panel-body");
+      const was = p.open;
+      p.open = true;
+      return !was;
+    })()`);
+    if (width <= 640) {
+      assert.equal(foldedAtBoot, true,
+        `${width}x${height}: the control panel did not start folded on a phone`);
+    }
+    await delay(120);
+
     for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-sound"]) {
       const reachable = await evaluate(`(() => {
         const el = document.getElementById(${JSON.stringify(id)});

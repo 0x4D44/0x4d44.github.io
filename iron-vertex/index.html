@@ -72,6 +72,7 @@
   }
 
   #controls h1 {
+    display: inline;
     margin: 0;
     font-size: 15px;
     font-weight: 700;
@@ -80,11 +81,32 @@
   }
 
   #controls .sub {
-    margin: 2px 0 12px;
+    display: block;
+    margin: 2px 0 10px;
     font-size: 11.5px;
     color: var(--muted);
     letter-spacing: 0.02em;
   }
+
+  /* The whole panel folds into its own title. On a phone the controls
+     are most of the screen and the screen is the point, so it starts
+     folded there — and stays wherever you last left it. */
+  #panel-toggle {
+    cursor: pointer;
+    list-style: none;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 0 2px;
+  }
+  #panel-toggle::-webkit-details-marker { display: none; }
+  #panel-toggle::before { content: "\25B8 "; }
+  #panel-body[open] > #panel-toggle::before { content: "\25BE "; }
+  #panel-body[open] > #panel-toggle { padding-bottom: 8px; }
+  #panel-toggle:hover { color: var(--ink); }
+  #panel-toggle:focus-visible { outline: 2px solid #8fc0ff; outline-offset: 2px; }
 
   button.act {
     display: block;
@@ -400,8 +422,13 @@
 
 <div class="panel" id="controls">
   <h1>Iron Vertex</h1>
-  <p class="sub">procedural coaster lab</p>
+  <span class="sub">procedural coaster lab</span>
+  <!-- Ride stays OUT of the fold. Folding it away made the one thing
+       the page is for unreachable on a phone without a tap first, which
+       the browser test caught as "btn-ride is not clickable". -->
   <button class="act primary" id="btn-ride" type="button" aria-label="Ride the coaster">&#9654; Ride (R)</button>
+ <details id="panel-body" open>
+  <summary id="panel-toggle">Controls</summary>
   <button class="act" id="btn-new" type="button" aria-label="Generate a new track">&#9711; New track (N)</button>
   <button class="act" id="btn-cam" type="button" aria-label="Change camera">&#9678; Cam: orbit (C)</button>
   <button class="act" id="btn-seat" type="button" aria-label="Change which seat you ride in">&#9679; Seat: front (S)</button>
@@ -440,6 +467,7 @@
     magnetic launch. Loops are splayed and clearance-checked, so no two
     stretches of track ever occupy the same steel.
   </p>
+ </details>
 </div>
 
 <div class="panel" id="nameplate">
@@ -510,7 +538,15 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(new THREE.Color("#c3d9ea"), 340, 1300);
 
 const BASE_FOV = 62;
-const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.1, 3000);
+// Near plane at 0.25 rather than 0.1.
+//
+// Depth precision is spent on the ratio far/near, and 3000/0.1 throws
+// almost all of it away within a few metres of the lens — which is
+// exactly where nothing is, and leaves nothing for a city three hundred
+// metres off. Nothing gets closer to the POV camera than the seat back
+// in front of you, which is 0.42m away, so 0.25 is free and buys two and
+// a half times the precision everywhere else.
+const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.25, 3000);
 
 // The world is rebuilt when the setting changes, so it is a `let`. The
 // terrain has to be told FIRST: the city stands on a flat lake plain and
@@ -1356,6 +1392,21 @@ if (params.get("site") === "city") state.setting = "city";
 }
 if (state.dials.length != null || state.dials.height != null || state.dials.speed != null) {
   document.getElementById("design").open = true;
+}
+
+// The panel folds. It starts folded on a phone, because there it covers
+// most of the screen and the screen is the ride — but the choice is
+// remembered either way, so somebody who wants it open on their phone
+// only has to say so once.
+{
+  const panel = document.getElementById("panel-body");
+  const KEY = "0x4d44.iron-vertex.panel";
+  const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+  const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+  panel.open = saved === null ? !narrow : saved === "open";
+  panel.addEventListener("toggle", () => {
+    try { localStorage.setItem(KEY, panel.open ? "open" : "shut"); } catch { /* private mode */ }
+  });
 }
 
 setWorld(state.setting, state.density);

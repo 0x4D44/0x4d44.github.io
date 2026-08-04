@@ -147,13 +147,20 @@ function floors(width, depth, from, to, count, glass, spandrel, relief = 0.012) 
   const pitch = span / count;
   for (let i = 0; i < count; i++) {
     const y = from + pitch * (i + 0.5);
+    // Both bands stand PROUD of the shell, and by different amounts.
+    //
+    // The glass used to be drawn at exactly the shell's width, which put
+    // two opaque surfaces on the same plane — and coplanar surfaces do
+    // not pick a winner, they fight, pixel by pixel, differently every
+    // frame. From a moving camera the whole city crawled with it. There
+    // are now three distinct radii: shell, glass, spandrel.
     parts.push(part(
-      new THREE.BoxGeometry(width, pitch * 0.62, depth),
+      new THREE.BoxGeometry(width + relief, pitch * 0.62, depth + relief),
       glass,
       [0, y, 0],
     ));
     parts.push(part(
-      new THREE.BoxGeometry(width + relief * 2, pitch * 0.34, depth + relief * 2),
+      new THREE.BoxGeometry(width + relief * 2.6, pitch * 0.34, depth + relief * 2.6),
       spandrel,
       [0, y + pitch * 0.33, 0],
     ));
@@ -727,21 +734,140 @@ const STOREY = 3.55;
 // coaster is at the origin and the camera never goes far from it. A
 // camera-relative ring would be better use of the budget and would also
 // pop every time you turned round; this one simply never changes.
-const DETAIL_RADIUS = 430;
+const DETAIL_RADIUS = 190;
 
 // The massing block: a box, a parapet, and nothing else. Twenty-four
 // triangles against six hundred, and past 430m you cannot tell.
+// The mass of a distant building: a plain box, and its facade comes
+// from a TEXTURE rather than from geometry.
+//
+// This is the fix for the flicker, and the reason it is a fix is
+// mipmaps. Modelled floor bands are about 2m tall; at three hundred
+// metres that is a pixel and a half of bright glass against a pixel of
+// dark spandrel, and there is no way to filter geometry — every frame
+// the sample lands somewhere different and the whole city crawls.
+// Multisampling does not help, because the aliasing is not on the
+// silhouette, it is across the face.
+//
+// A texture has mipmaps. At three hundred metres the hardware reads a
+// level where those bands have already been averaged into one flat
+// tone, and it is rock steady. It is also about fifty times fewer
+// triangles, which is why the detail ring can now be tight enough that
+// the modelled buildings are only ever used where they are big on
+// screen and do not alias either.
 function farGeo() {
+  return new THREE.BoxGeometry(CORE_SHELL, 1, CORE_SHELL).translate(0, 0.5, 0);
+}
+
+// The parapet, drawn separately and untextured, so a facade of windows
+// does not end up wrapped over the roof where you can see it from above.
+function farCapGeo() {
   return mergeParts([
-    part(new THREE.BoxGeometry(CORE_SHELL, 1, CORE_SHELL), 0xffffff, [0, 0.5, 0]),
-    part(new THREE.BoxGeometry(1, 0.02, 1), 0xd8d8d8, [0, 0.99, 0]),
+    part(new THREE.BoxGeometry(1, 0.022, 1), 0xd0cec8, [0, 0.99, 0]),
   ]);
 }
 
+// ---- the facade, drawn once as a texture -----------------------------
+//
+// Eight bays across and eight storeys up, tiled. Kept greyscale so the
+// per-instance tint still decides what a building is made of, and drawn
+// twice: once for daylight and once for the windows that are lit.
+const FACADE_TILE = 256;
+const FACADE_BAYS = 8;
+const FACADE_STOREYS = 8;
+export const BAY_METRES = 6.4;
+export const STOREY_METRES = 3.55;
+
+function facadeTextures(rng) {
+  const cell = FACADE_TILE / FACADE_BAYS;
+  const row = FACADE_TILE / FACADE_STOREYS;
+  // Which windows are lit is decided ONCE, here, and shared by both
+  // draws so the lit panes line up with the panes.
+  const lit = [];
+  for (let i = 0; i < FACADE_BAYS * FACADE_STOREYS; i++) {
+    lit.push(rng() < 0.38 ? 0.55 + rng() * 0.45 : 0);
+  }
+
+  const draw = (ctx, night) => {
+    ctx.fillStyle = night ? "#000000" : "#cfcdc7";
+    ctx.fillRect(0, 0, FACADE_TILE, FACADE_TILE);
+    for (let r = 0; r < FACADE_STOREYS; r++) {
+      if (!night) {
+        // Spandrel band under each floor.
+        ctx.fillStyle = "#a9a79f";
+        ctx.fillRect(0, r * row, FACADE_TILE, row * 0.30);
+      }
+      for (let b = 0; b < FACADE_BAYS; b++) {
+        const glow = lit[r * FACADE_BAYS + b];
+        const x = b * cell + cell * 0.18;
+        const y = r * row + row * 0.38;
+        const w = cell * 0.64;
+        const h = row * 0.46;
+        if (night) {
+          if (glow <= 0) continue;
+          // Warm, and not all the same warm.
+          const warm = 150 + Math.round(glow * 105);
+          ctx.fillStyle = `rgb(${warm}, ${Math.round(warm * 0.84)}, ${Math.round(warm * 0.58)})`;
+          ctx.fillRect(x, y, w, h);
+        } else {
+          ctx.fillStyle = "#4a5560";
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = "#5d6a76";
+          ctx.fillRect(x, y, w, h * 0.34);
+        }
+      }
+    }
+  };
+
+  const make = (night) => {
+    const texture = canvasTexture(FACADE_TILE, FACADE_TILE, (ctx) => draw(ctx, night));
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = 4;
+    return texture;
+  };
+  return { day: make(false), night: make(true) };
+}
+
+// A facade material whose UVs are scaled and offset PER INSTANCE.
+//
+// Without this every building shows the same eight-by-eight grid however
+// big it is, so a walk-up gets windows three metres across and a tower
+// gets windows you cannot see. The scale comes in as an instanced
+// attribute and multiplies the UV after three has built it, which is one
+// line in the vertex shader and the only shader patch in the project.
+function facadeMaterial(textures) {
+  const material = new THREE.MeshLambertMaterial({
+    map: textures.day,
+    emissiveMap: textures.night,
+    emissive: 0xffffff,
+    emissiveIntensity: 0,
+    vertexColors: false,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute vec4 aFacade;")
+      .replace("#include <uv_vertex>", `#include <uv_vertex>
+        #ifdef USE_MAP
+          vMapUv = vMapUv * aFacade.xy + aFacade.zw;
+        #endif
+        #ifdef USE_EMISSIVEMAP
+          vEmissiveMapUv = vEmissiveMapUv * aFacade.xy + aFacade.zw;
+        #endif
+      `);
+  };
+  return material;
+}
+
 // What a distant building is coloured, by what it would have been.
+// These MULTIPLY the facade texture, which is itself mid-grey, so they
+// have to be much lighter than the colour you want out. Set to the
+// finished colour they compound into near-black on any face the sun is
+// not on, and the skyline turns into a row of silhouettes.
 const FAR_TINT = {
-  glass: 0x55616d, setback: 0xcfc8ba, deck: 0xb2b0a9,
-  masonry: 0x94604e, painted: 0xc4bdad, greystone: 0xd2ccbe,
+  glass: 0x9fb0c0, setback: 0xe8e2d4, deck: 0xd2d0c8,
+  masonry: 0xc08672, painted: 0xdcd6c6, greystone: 0xe4dece,
 };
 
 // ------------------------------------------------------------
@@ -876,10 +1002,39 @@ export function buildCity({ groundHeight, density = 1, rng }) {
     masonry: masonryGeo(),
     painted: masonryGeo(0xc9c2b2, 0x9e9789),
     deck: deckGeo(),
-    setback: setbackGeo(), glass: glassGeo(), far: farGeo(),
+    setback: setbackGeo(), glass: glassGeo(),
   };
+
+  // ---- the distant city, as textured boxes ----
+  const textures = facadeTextures(rng);
+  const facadeMat = facadeMaterial(textures);
+  if (buckets.far.length) {
+    const mesh = instance(farGeo(), facadeMat, buckets.far, { shadows: false });
+    mesh.receiveShadow = true;
+    // Per-instance UV: scale so a window bay is BAY_METRES wide and a
+    // storey is STOREY_METRES tall whatever size the building is, and
+    // offset by a random whole number of bays so no two buildings light
+    // the same windows.
+    const uv = new Float32Array(buckets.far.length * 4);
+    buckets.far.forEach((b, i) => {
+      uv[i * 4] = Math.max(1, Math.round(b.sx / BAY_METRES)) / FACADE_BAYS;
+      uv[i * 4 + 1] = Math.max(1, Math.round(b.sy / STOREY_METRES)) / FACADE_STOREYS;
+      uv[i * 4 + 2] = Math.floor(rng() * FACADE_BAYS) / FACADE_BAYS;
+      uv[i * 4 + 3] = Math.floor(rng() * FACADE_STOREYS) / FACADE_STOREYS;
+    });
+    mesh.geometry.setAttribute("aFacade", new THREE.InstancedBufferAttribute(uv, 4));
+    group.add(mesh);
+    carveable.push({ mesh, placements: buckets.far });
+
+    // The parapet, untextured, so the window grid does not wrap the roof.
+    const caps = instance(farCapGeo(), vertexLit(), buckets.far, { shadows: false });
+    caps.receiveShadow = true;
+    group.add(caps);
+    carveable.push({ mesh: caps, placements: buckets.far });
+  }
+
   const facade = vertexLit();
-  for (const kind of Object.keys(buckets)) {
+  for (const kind of Object.keys(geos)) {
     if (!buckets[kind].length) continue;
     const mesh = instance(geos[kind], facade, buckets[kind]);
     // Receive shadows, cast none. The sun's shadow camera is 460m
