@@ -14,6 +14,7 @@ import {
   CoasterSim,
   RideLog,
   buildTrack,
+  DIALS,
   mulberry32,
   selfClearance,
   supportColumns,
@@ -503,6 +504,83 @@ test("a tunnel site is level and low, and buries no track but its own", () => {
   }
   assert.ok(found > SEEDS.length * 0.4,
     `only ${found}/${SEEDS.length} circuits found anywhere to put a tunnel`);
+});
+
+test("the dials move what they say they move, and only that", () => {
+  // A dial that quietly does nothing is worse than no dial. Each is
+  // swept across its range on a spread of seeds and the FINISHED track
+  // is measured — not the keyframes it was asked for.
+  const seeds = SEEDS.slice(0, 12);
+  const topSpeed = (t) => Math.max(...t.speeds) * 3.6;
+
+  for (const seed of seeds) {
+    // Undialled is the reference: the dials must not have changed what
+    // a plain seed produces.
+    const plain = buildTrack(seed);
+
+    for (const want of [DIALS.length.min, 900, 1500, DIALS.length.max]) {
+      const t = buildTrack(seed, { length: want });
+      // Within a tenth. The floor is real: a circuit cannot be shrunk
+      // past the point where its tightest turn stops being rideable, so
+      // the short end is allowed to come up short.
+      const slack = want === DIALS.length.min ? 0.25 : 0.10;
+      assert.ok(Math.abs(t.length - want) < want * slack,
+        `seed ${seed}: asked ${want}m of track, got ${t.length.toFixed(0)}m`);
+      assert.equal(t.name, plain.name, `seed ${seed}: length reshuffled the circuit`);
+    }
+
+    for (const want of [DIALS.height.min, 40, 60, DIALS.height.max]) {
+      const t = buildTrack(seed, { height: want });
+      assert.ok(Math.abs(t.apex - want) < want * 0.12,
+        `seed ${seed}: asked ${want}m of lift, got ${t.apex.toFixed(0)}m`);
+    }
+
+    for (const want of [DIALS.speed.min, 90, 120, DIALS.speed.max]) {
+      const t = buildTrack(seed, { speed: want });
+      assert.ok(Math.abs(topSpeed(t) - want) < Math.max(9, want * 0.10),
+        `seed ${seed}: asked ${want}km/h, got ${topSpeed(t).toFixed(0)}km/h`);
+    }
+  }
+
+  // Out-of-range asks are clamped, not obeyed and not thrown at.
+  const silly = buildTrack(seeds[0], { length: 40, height: 900, speed: -20 });
+  assert.ok(Number.isFinite(silly.length) && silly.length > 300);
+  assert.ok(silly.apex < 120);
+});
+
+test("a dialled circuit is still a rideable circuit", () => {
+  // The dials are allowed to make a coaster the generator would never
+  // have drawn. They are not allowed to make one that stalls, or one
+  // that would hurt somebody.
+  const combos = [
+    { length: 420, height: 78, speed: 145 },   // short, tall and fast
+    { length: 2400, height: 22, speed: 60 },   // long, low and slow
+    { length: 2400, height: 78, speed: 145 },  // everything at once
+    { length: 420, height: 22, speed: 60 },    // nothing at all
+    { length: 1200, height: 30, speed: 140 },  // low and launched
+    { length: 700, height: 70, speed: 70 },    // tall lift, trimmed drop
+  ];
+  for (const seed of SEEDS.slice(0, 8)) {
+    for (const combo of combos) {
+      const label = `seed ${seed} ${JSON.stringify(combo)}`;
+      const t = buildTrack(seed, combo);
+      const check = verifyCircuit(t);
+      assert.ok(Number.isFinite(t.length) && t.length > 300, `${label}: degenerate circuit`);
+      assert.ok(t.lowest > 0.5, `${label}: track dips to ${t.lowest.toFixed(2)}m`);
+      for (const p of t.points) {
+        assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z),
+          `${label}: non-finite point`);
+      }
+      const gap = vlen(vsub(t.points[t.points.length - 1], t.points[0]));
+      assert.ok(gap < t.ds * 2.5, `${label}: circuit does not close`);
+      assert.ok(check.completes,
+        `${label}: min free speed ${check.minSpeed.toFixed(2)} m/s, max ${check.maxG.toFixed(2)}g`);
+      // And it still clears itself.
+      const clear = selfClearance(t.points, t.ds);
+      assert.ok(clear.distance > MIN_SELF_CLEARANCE - 0.15,
+        `${label}: two stretches of track ${clear.distance.toFixed(2)}m apart`);
+    }
+  }
 });
 
 test("the trailing cameras fit through everything the train fits through", () => {

@@ -30,6 +30,7 @@ export function mergeParts(parts) {
   const position = new Float32Array(vertexCount * 3);
   const normal = new Float32Array(vertexCount * 3);
   const color = new Float32Array(vertexCount * 3);
+  const glow = new Float32Array(vertexCount);
   const index = vertexCount > 65535 ? new Uint32Array(indexCount) : new Uint16Array(indexCount);
 
   const normalMatrix = new THREE.Matrix3();
@@ -42,6 +43,7 @@ export function mergeParts(parts) {
     const matrix = item.matrix ?? new THREE.Matrix4();
     normalMatrix.getNormalMatrix(matrix);
     tint.set(item.color ?? 0xffffff);
+    const partGlow = item.glow ?? 0;
     const src = geo.attributes.position;
     const srcNormal = geo.attributes.normal;
     for (let i = 0; i < src.count; i++) {
@@ -57,6 +59,7 @@ export function mergeParts(parts) {
       color[o] = tint.r;
       color[o + 1] = tint.g;
       color[o + 2] = tint.b;
+      glow[vOffset + i] = partGlow;
     }
     for (let i = 0; i < geo.index.count; i++) index[iOffset + i] = geo.index.getX(i) + vOffset;
     vOffset += src.count;
@@ -68,22 +71,87 @@ export function mergeParts(parts) {
   merged.setAttribute("position", new THREE.BufferAttribute(position, 3));
   merged.setAttribute("normal", new THREE.BufferAttribute(normal, 3));
   merged.setAttribute("color", new THREE.BufferAttribute(color, 3));
+  merged.setAttribute("glow", new THREE.BufferAttribute(glow, 1));
   merged.setIndex(new THREE.BufferAttribute(index, 1));
   merged.computeBoundingSphere();
   return merged;
 }
 
 // A positioned, scaled, rotated part for mergeParts.
-export function part(geo, color, position = [0, 0, 0], scale = [1, 1, 1], rotation = [0, 0, 0]) {
+// `glow` marks a part as a light source at night: 0 for everything that
+// merely reflects, and a value in (0, 1] for anything that is lit from
+// inside — a window, a lamp, a headlight. The value doubles as a random
+// seed, so two windows in the same merged geometry can be on at
+// different brightnesses and flicker out of step without needing a
+// second attribute to carry it.
+export function part(geo, color, position = [0, 0, 0], scale = [1, 1, 1], rotation = [0, 0, 0], glow = 0) {
   const matrix = new THREE.Matrix4().compose(
     new THREE.Vector3(...position),
     new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)),
     new THREE.Vector3(scale[0], scale[1] ?? scale[0], scale[2] ?? scale[0]),
   );
-  return { geo, color, matrix };
+  return { geo, color, matrix, glow };
 }
 
 export const vertexLit = (options) => new THREE.MeshLambertMaterial({ vertexColors: true, ...options });
+
+// ------------------------------------------------------------
+// Night
+//
+// One uniform, shared by every material that can light up, so the whole
+// world turns on together. Three.js lights are per-fragment and there
+// are several hundred lit things in a city — a real light for each would
+// be the end of the frame rate. These are emissive surfaces instead:
+// they glow, they do not illuminate, and nothing in a low-poly city at
+// night looks wrong for the difference.
+// ------------------------------------------------------------
+
+export const NIGHT = { value: 0 };     // 0 by day, 1 after dark
+export const NIGHT_TIME = { value: 0 };  // seconds, for the flicker
+
+// A vertex-lit material whose `glow` parts come on at night.
+//
+// The value in the attribute is used twice: as a mask (zero means this
+// surface is not a light) and as a hash, so windows in one merged
+// building light at different brightnesses and drift out of phase with
+// each other rather than pulsing as one.
+export function glowLit(options) {
+  const material = vertexLit(options);
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uNight = NIGHT;
+    shader.uniforms.uGlowTime = NIGHT_TIME;
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", `#include <common>
+        attribute float glow;
+        varying float vGlow;`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>
+        vGlow = glow;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>
+        uniform float uNight;
+        uniform float uGlowTime;
+        varying float vGlow;`)
+      .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
+        if (vGlow > 0.001 && uNight > 0.001) {
+          float hash = fract(vGlow * 43.758);
+          // Rather less than half are lit. An office block with every
+          // window on reads as a rendering; the dark ones are what make
+          // the lit ones look like windows.
+          float out_ = step(0.55, fract(vGlow * 91.37));
+          float breathe = 0.88 + 0.12 * sin(uGlowTime * 0.9 + hash * 39.0);
+          vec3 lamp = mix(vec3(1.0, 0.86, 0.62), diffuseColor.rgb * 1.6, 0.35);
+          // Kept well under 1. Tone mapping is applied after this, and
+          // anything near unit brightness clips to flat white — the
+          // first pass at these numbers turned every lit floor into a
+          // strip light and every building into a bar of neon.
+          totalEmissiveRadiance += lamp * out_ * breathe * uNight * (0.10 + hash * 0.20);
+        }`);
+  };
+  // Two materials that compile to different programs must not be shared,
+  // and three keys off this string when it decides.
+  material.customProgramCacheKey = () => "glowLit";
+  return material;
+}
 
 export function instance(geo, material, placements, { shadows = true } = {}) {
   const mesh = new THREE.InstancedMesh(geo, material, Math.max(1, placements.length));
