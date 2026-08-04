@@ -279,7 +279,7 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
 // spread as well as the coverage.
 {
   const reviewed = articles.filter((article) => article.review);
-  assert.equal(reviewed.length, 19, "every new Almanac document should carry exactly one review");
+  assert.equal(reviewed.length, 20, "every new Almanac document should carry exactly one review");
   assert.equal(
     new Set(reviewed.map((article) => article.review.href)).size,
     reviewed.length,
@@ -289,7 +289,7 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
   const deskSpread = {};
   for (const article of reviewed) deskSpread[article.category] = (deskSpread[article.category] || 0) + 1;
   assert.deepEqual(deskSpread, {
-    Reviews: 8, Technology: 2, Science: 3, Engineering: 1, Health: 2, Lifestyle: 1, Voices: 2,
+    Reviews: 8, Technology: 2, Science: 3, Engineering: 1, Health: 2, Lifestyle: 1, Voices: 3,
   }, "reviews should stay sprinkled across the desks, not collapse onto one");
 
   for (const article of reviewed) {
@@ -339,7 +339,7 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
   }
 }
 
-assert.equal(articles.length, 1124, "catalog copy and article corpus count should stay in lockstep");
+assert.equal(articles.length, 1125, "catalog copy and article corpus count should stay in lockstep");
 
 // ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
 // the graceful path, not throw URIError and blank the page.

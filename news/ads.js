@@ -888,6 +888,14 @@ window.NEWS_ADS = [
     href: "../master-flanger/",
     bg: "linear-gradient(135deg,#7a3b2e,#f59e0b)", fg: "#fff",
     icon: "flange", bob: true, blink: true, fx: ["flicker", "slide", "jitter"]
+  },
+  {
+    headline: "THREE PROBLEMS. THREE CLOCKS. ONE HONEST CONE.",
+    body: "AI, the climate and the peace run on different lags and need different numbers of people to agree. A live cone of possibilities from several hundred simulated futures — and an estimate written down where it can be scored.",
+    cta: "Open the model",
+    href: "../three-clocks/",
+    bg: "linear-gradient(135deg,#0f172a,#0891b2)", fg: "#fff",
+    icon: "clock", bob: true, fx: ["slide", "rainbow"]
   }
 ];
 
