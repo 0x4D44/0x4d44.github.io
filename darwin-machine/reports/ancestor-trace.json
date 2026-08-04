@@ -1,0 +1,18 @@
+{
+  "clumsy": {
+    "child_divided": true,
+    "divided": true,
+    "exact_child": true,
+    "final_status": "Ok",
+    "first_division_instructions": 457,
+    "genome_length": 64
+  },
+  "minimal": {
+    "child_divided": true,
+    "divided": true,
+    "exact_child": true,
+    "final_status": "BirthPending",
+    "first_division_instructions": 103,
+    "genome_length": 16
+  }
+}

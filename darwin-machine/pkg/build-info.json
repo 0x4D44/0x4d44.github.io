@@ -1,0 +1,18 @@
+{
+  "buildId": "darwin-2026.08.02.1",
+  "engineVersion": "0.1.0",
+  "isaVersion": 1,
+  "rngVersion": 1,
+  "physicsVersion": 2,
+  "saveVersion": 1,
+  "wasmBytes": 234845,
+  "glueBytes": 19525,
+  "wasmSha256": "8c377b6126925d1cac2fdd7093e1a5590dd4afc579340ea1687803001ffae5b8",
+  "glueSha256": "aba200a64e17659a1d606b7626622bb9f3d809e51c3d8f40ec826e8c87e86531",
+  "generated": true,
+  "toolchain": {
+    "rust": "1.88.0",
+    "wasmPack": "0.13.1",
+    "target": "web"
+  }
+}

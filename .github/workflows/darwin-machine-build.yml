@@ -1,0 +1,121 @@
+name: Darwin Machine — repair, build and verify
+
+on:
+  pull_request:
+    paths:
+      - "darwin-machine/**"
+      - "wrk_journals/2026-08-01-darwin-machine.md"
+      - "data.js"
+      - "index.html"
+      - "package.json"
+      - ".github/workflows/darwin-machine-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: darwin-machine-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || 'agent/darwin-machine' }}
+
+      - name: Remove accidentally tracked build products
+        shell: bash
+        run: |
+          git rm -r --ignore-unmatch darwin-machine/rust/target
+          git rm -f --ignore-unmatch darwin-machine/reports/rustfmt-diagnostic.txt
+          rm -f darwin-machine/scripts/final-review-repair-3.py
+          printf '/target/\n' > darwin-machine/rust/.gitignore
+
+      - name: Apply the converged adversarial-review corrections
+        shell: bash
+        run: |
+          python darwin-machine/scripts/final-review-repair.py
+          python darwin-machine/scripts/final-review-repair-2.py
+          python darwin-machine/scripts/final-review-repair-3b.py
+          python darwin-machine/scripts/final-review-repair-4.py
+          python darwin-machine/scripts/final-review-repair-5.py
+          python darwin-machine/scripts/final-review-repair-6.py
+          python darwin-machine/scripts/final-review-repair-7.py
+          python darwin-machine/scripts/final-review-repair-8.py
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: darwin-machine/rust
+          cache-on-failure: true
+
+      - name: Install pinned wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+
+      - name: Canonicalise Rust formatting
+        run: cargo fmt --manifest-path darwin-machine/rust/Cargo.toml --all
+
+      - name: Build Wasm and generate native evidence
+        run: ./darwin-machine/scripts/build-wasm.sh
+
+      - name: Integrate the Almanac catalog idempotently
+        run: node darwin-machine/scripts/integrate-root.mjs
+
+      - name: Static project and catalog validation
+        run: node darwin-machine/tests/validate-static.mjs
+
+      - name: Real-browser acceptance
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node darwin-machine/tests/browser.test.mjs
+
+      - name: Repository responsive oracle
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: npm run test:responsive
+
+      - name: Diff hygiene and build-product exclusion
+        shell: bash
+        run: |
+          git diff --check
+          if [[ -n "$(git ls-files 'darwin-machine/rust/target/**' darwin-machine/reports/rustfmt-diagnostic.txt)" ]]; then
+            echo "Build products remain in the repository index." >&2
+            exit 1
+          fi
+          git check-ignore -q darwin-machine/rust/target/.ignore-probe
+
+      - name: Upload implementation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: darwin-machine-final-review-${{ github.run_id }}
+          path: |
+            darwin-machine/reports/
+            darwin-machine/pkg/build-info.json
+          if-no-files-found: error
+
+      - name: Commit the fully verified repair
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A darwin-machine data.js index.html package.json wrk_journals/2026-08-01-darwin-machine.md
+          if git diff --cached --quiet; then
+            echo "No reviewed repair remained to commit."
+          else
+            git commit -m "fix(darwin-machine): complete final adversarial review"
+            branch="${GITHUB_HEAD_REF:-agent/darwin-machine}"
+            git push origin "HEAD:${branch}"
+          fi

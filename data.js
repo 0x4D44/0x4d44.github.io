@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "darwin-machine",
+    title: "The Darwin Machine",
+    tagline: "A living artificial-evolution laboratory: every coloured speck is executable bytecode gathering energy, copying itself, mutating and competing for space. Inspect genomes instruction by instruction, trigger bottlenecks and mutation meltdown, save exact histories—and follow the entirely sober road to Windows 3.1. Rust + WebAssembly in a dedicated Worker; deterministic, offline and private.",
+    url: "https://0x4d44.github.io/darwin-machine/",
+    illustration: "ill-darwin",
+    date: "2026-08-01T21:30:00",
+    year: 1990,
+    readingMin: 18,
+    words: 4200,
+    tags: ["simulation", "science", "software"],
+    real: true,
+  },
+  {
     slug: "stratego",
     title: "Stratego — Field Edition",
     tagline: "A full-size browser adaptation of the classic hidden-rank battle game: secretly deploy forty red or blue pieces, scout the lakes, defuse bombs, spring the Spy on the Marshal, and capture the Flag. Original table art, hot-seat and information-limited automata, deterministic offline vanilla JavaScript; no build step.",
@@ -1659,7 +1672,7 @@ window.COLLECTIONS = [
     slugs: ["instruments"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["darwin-machine", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
@@ -1681,7 +1694,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["darwin-machine", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",

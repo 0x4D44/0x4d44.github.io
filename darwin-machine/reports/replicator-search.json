@@ -1,0 +1,45 @@
+{
+  "damaged_ancestor": [
+    {
+      "child_divided": 113,
+      "divided": 113,
+      "edits": 1,
+      "exact_child": 112,
+      "trials": 128
+    },
+    {
+      "child_divided": 93,
+      "divided": 96,
+      "edits": 2,
+      "exact_child": 93,
+      "trials": 128
+    },
+    {
+      "child_divided": 72,
+      "divided": 77,
+      "edits": 3,
+      "exact_child": 71,
+      "trials": 128
+    },
+    {
+      "child_divided": 59,
+      "divided": 62,
+      "edits": 4,
+      "exact_child": 59,
+      "trials": 128
+    }
+  ],
+  "horizon_instructions": 8000,
+  "random_programs": {
+    "child_divided": 0,
+    "divided": 8,
+    "first_child_dividing_genome_hex": null,
+    "interpretation": "A zero is evidence only for this finite private-genome search, not evidence that replication cannot emerge.",
+    "length_range": [
+      8,
+      64
+    ],
+    "trials": 512
+  },
+  "seed": 945375376353075238
+}
