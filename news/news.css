@@ -536,3 +536,39 @@ img { max-width: 100%; }
 .article.cat-voices .kicker-cat::before { content: "Guest voice \00B7 "; color: var(--muted); }
 .article.cat-letters .standfirst { font-style: italic; }
 .article.cat-horoscopes .standfirst { font-style: italic; }
+
+/* ===== Reviews: the scorecard box ===== */
+/* Rendered from an article's optional `review` field, so it appears on any desk
+   running a review — not only the Reviews desk itself. */
+.article.cat-reviews .kicker-cat::before { content: "The verdict \00B7 "; color: var(--muted); }
+.review-box {
+  border: 1px solid var(--hair-strong); border-left: 5px solid var(--flange-red);
+  background: var(--bg-soft); border-radius: 3px;
+  padding: 16px 18px; margin: 0 0 26px;
+}
+.review-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }
+.review-what {
+  font-family: var(--sans); font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--ink);
+}
+.review-stars { font-size: 22px; line-height: 1; letter-spacing: 2px; margin-left: auto; }
+.review-stars .on { color: var(--flange-red); }
+.review-stars .off { color: var(--hair-strong); }
+.review-stars .half {
+  background: linear-gradient(90deg, var(--flange-red) 50%, var(--hair-strong) 50%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .review-stars .half { background: none; color: var(--flange-red); }
+}
+.review-verdict {
+  font-family: var(--serif); font-size: 16px; line-height: 1.5;
+  color: var(--ink-soft); margin: 10px 0 0;
+}
+.review-link {
+  display: inline-block; margin-top: 12px; font-family: var(--sans);
+  font-size: 13px; font-weight: 700; color: var(--flange-red);
+}
+@media (max-width: 520px) {
+  .review-stars { margin-left: 0; }
+}
