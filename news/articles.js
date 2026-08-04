@@ -30261,7 +30261,8 @@ window.NEWS_ARTICLES.push(
       "Forty-one circuits in, a pattern emerges. The generator has preferences — it likes a second lift, it likes to run low before it runs high — and learning to read a fresh layout from the first ten seconds of the lift becomes its own small pleasure. Our reviewer now claims she can call a launch before it fires. The desk has not verified this and does not intend to.",
       "Then there are the dials, which arrived while this review was being written and required most of it to be reconsidered. Length, lift height and top speed are now yours to set, and the speed one is the interesting admission: on a gravity coaster the speed at the bottom of the first drop simply is the height of the drop, so a speed slider is either a lie or a promise the machine has to keep some other way. This one keeps it. Ask for more than the lift can deliver and the circuit comes back with a magnetic launch out of the station and a low top hat, because that is what a low-and-fast coaster is.",
       "Better still is what happens when you ask for something impossible. Set a tall lift and a modest top speed, which cannot both be true, and the readout does not flatter you: it reports what was actually built rather than what was requested. Drag the slider to 140 and it settles at 132 and says so. Software almost never does this. Software normally accepts the number, ignores it, and lets the user believe.",
-      "The city is the other addition, and it changes the ride rather than merely the backdrop. Running a circuit through a Chicago street grid puts hard vertical edges close to the track, and close vertical edges are what a body reads as speed — the same trick a real park plays with scaffolding. The park is prettier. The city is faster, and it is not.",
+      "The city is the other addition, and it changes the ride rather than merely the backdrop. Running a circuit through a street grid puts hard vertical edges close to the track, and close vertical edges are what a body reads as speed — the same trick a real park plays with scaffolding. The park is prettier. The city is faster, and it is not.",
+      "It also does night and weather now, which sounds like set dressing and is not. A lit city at night removes the horizon, and a coaster without a horizon is a substantially more alarming machine: the drop arrives out of nothing rather than out of a landscape you have been reading. Our reviewer, who had by this point ridden the thing in daylight some sixty times, made the noise again.",
       "It is the most straightforwardly enjoyable thing to arrive in the Almanac this summer, and the only entry in this review season that had to be taken away from a member of staff."
     ],
     pullQuote: "Drag the slider to 140 and it settles at 132 and says so. Software normally accepts the number, ignores it, and lets the user believe.",
@@ -30744,5 +30745,43 @@ window.NEWS_ARTICLES.push(
     tags: ["letters", "reviews", "almanac", "postbag"],
     noticeLabel: "Letters notice",
     notice: "The documents discussed in these letters are real and live in the 0x4D44 Almanac. The correspondents, their names, their addresses and their Tuesdays are invented for comic effect."
+  }
+);
+
+// A twentieth review: Three Clocks joined the Almanac on 4 August, after the season's
+// first nineteen had gone to press. It goes to Voices, alongside the paper's other
+// reviews of forecasting work.
+window.NEWS_ARTICLES.push(
+  {
+    id: "voices-review-three-clocks",
+    image: "images/rev-three-clocks.webp",
+    imageAlt: "Three Clocks' opening page, showing a fanned cone of possible futures beside headline figures of 2.5°C median warming in 2100, 28% of work hours automated by 2050 and a 43% chance a nuclear weapon is used this century.",
+    imageCaption: "A real screenshot of Three Clocks, captured from the live document in the 0x4D44 Almanac.",
+    category: "Voices",
+    headline: "Three Clocks: a forecast that writes its number down where you can score it",
+    standfirst: "Most predictions about this century are unfalsifiable by construction. This one hands you the model, the cone and a date.",
+    byline: "By Gideon Marchbanks, Behavioural Science",
+    location: "THE WATCHLIST",
+    published: "2026-08-04T16:20:00",
+    review: {
+      subject: "Three Clocks — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "Three problems that are usually blended into one general dread, separated by lag, by consent and by the shape of their failure — with the arithmetic left where you can argue with it.",
+      href: "../three-clocks/",
+      linkText: "Open the model"
+    },
+    body: [
+      "The central claim of Three Clocks is structural rather than predictive, and it is the reason the piece is worth an hour. Artificial intelligence, the climate and the peace are routinely discussed as three faces of one crisis. They are not. They run on different lags, they require different numbers of people to agree before anything changes, and — the part almost always missed — the shape of what going wrong looks like is different in each case.",
+      "Lag is the easiest of the three to feel. Carbon already emitted has consequences arriving for decades regardless of what anyone decides tomorrow; a decision about a model can take effect the same afternoon. A reader who has internalised only that difference has already been repaid for the visit.",
+      "Consent is the one this desk found genuinely reorganising. Some of these problems can be improved by a small number of people acting; others cannot be moved without something close to universal agreement. That is not a moral ranking, it is a mechanical one, and it predicts which interventions are worth arguing for far better than the usual sorting by how frightening a thing sounds.",
+      "The cone is computed live from several hundred simulated futures rather than drawn to look reassuring, and it is a properly uncomfortable object. It is wide. It stays wide. A reader who came for a number will find a distribution and a set of drivers they can change, and will discover — as this columnist did, repeatedly — that their intuitions about which driver matters are worth less than they assumed.",
+      "Then the part that earns the rating: the estimate is written down. A dated, specific forecast, stated plainly, in a form that can be checked later and found wrong. This is the opposite of how public argument about the century is normally conducted, and it is the single hardest thing to do in the genre, because it converts an opinion into something that can embarrass you.",
+      "The half-star withheld is not for the model but for its confidence in itself. A cone computed from simulated futures inherits every assumption in the simulator, and while the piece is candid that its defaults are arguable and lets you move them, the visual authority of a rendered distribution does work that the underlying uncertainty has not quite paid for. Sceptical readers should start with the drivers and only then look at the picture.",
+      "Still: three clocks, three different mechanisms, and a number left out where it can be scored. That is a better standard than almost anything else published on this subject, including — this column notes with some discomfort — several things published by this column."
+    ],
+    pullQuote: "It converts an opinion into something that can embarrass you.",
+    tags: ["voices", "reviews", "forecasting", "climate", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Three Clocks is in the 0x4D44 Almanac and the link above opens it. The columnist, the byline and every incident described around the review are invented for comic effect."
   }
 );
