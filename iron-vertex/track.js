@@ -39,6 +39,34 @@ const MIN_TRACK_CLEARANCE = 1.2; // m, lowest the rails may sit above the ground
 const PROFILE_G_BUDGET = 4.0; // max vertical g the height profile may impose
 const MAX_RIDEABLE_G = 6.2; // max g anywhere on the assembled circuit
 const MIN_PLAN_RADIUS = 26; // m, tightest horizontal turn the plan curve may draw
+
+// ------------------------------------------------------------
+// The dials.
+//
+// These are the ranges the generator will honour. They are wide enough
+// to be worth moving and narrow enough that every combination is still
+// a rideable coaster: the retry loop can flatten hills, but it cannot
+// rescue a 2.4km circuit hauled over a 25m lift, so the ends are chosen
+// so it never has to.
+//
+// LENGTH and HEIGHT are what they say. SPEED is a target for the top
+// speed, and it is the one that needs explaining: on a gravity coaster
+// the speed at the bottom of the first drop IS the height of the drop,
+// so a speed dial that pretended otherwise would be a fake knob. It is
+// honest instead — whatever the drop does not supply is made up by a
+// magnetic launch out of the station, which is exactly how a real
+// low-and-fast coaster does it. Ask for 130km/h off a 30m lift and you
+// get a launched circuit; ask for 80 off a 70m lift and you get a chain
+// lift and no launch at all.
+// ------------------------------------------------------------
+export const DIALS = {
+  length: { min: 420, max: 2400, default: null },   // metres of track
+  height: { min: 22, max: 78, default: null },      // metres to the lift apex
+  speed: { min: 60, max: 145, default: null },      // km/h at the fastest point
+};
+
+export const clampDial = (value, dial) =>
+  value == null ? null : Math.min(dial.max, Math.max(dial.min, value));
 const MAX_ROLL_RATE = 0.055; // rad per metre of track (~3 degrees/m)
 
 // Clearance between stretches of track that are far apart along the
@@ -125,7 +153,7 @@ export function trackName(rng) {
 // stays positive and the curve never self-intersects in plan.
 // ------------------------------------------------------------
 
-function planCurve(rng, samples) {
+function planCurve(rng, samples, wantLength = null) {
   const R = 76 + rng() * 40;
   const squash = 0.72 + rng() * 0.36;
   const spin = rng() * Math.PI * 2;
@@ -152,8 +180,21 @@ function planCurve(rng, samples) {
   // profile relaxation fixes a horizontal corner. Damp the harmonics
   // until the tightest turn in plan clears the floor, so the circuit is
   // drivable by construction rather than by luck.
+  //
+  // When a length has been asked for, the floor has to be cleared AFTER
+  // the scaling that hits it, not before. Scaling shrinks every turn by
+  // the same factor, so a short circuit needs a rounder plan than the
+  // seed drew — damping is what buys it. Without this a request for
+  // 500m quietly returns 660m, because the plan the seed happened to
+  // draw could not be shrunk any further without cornering.
+  const fits = (pts) => {
+    const tightest = minPlanRadius(pts);
+    if (wantLength == null) return tightest >= MIN_PLAN_RADIUS;
+    const factor = wantLength / arcLengths(pts).total;
+    return tightest * Math.min(1, factor) >= MIN_PLAN_RADIUS;
+  };
   let pts = draw(1);
-  for (let attempt = 0; attempt < 14 && minPlanRadius(pts) < MIN_PLAN_RADIUS; attempt += 1) {
+  for (let attempt = 0; attempt < 14 && !fits(pts); attempt += 1) {
     pts = draw(Math.pow(0.85, attempt + 1));
   }
   return pts;
@@ -332,7 +373,7 @@ function sampleProfile(keys, u) {
 // the circuit where something other than gravity is driving the train.
 // Everything downstream — roles, the design sweep, the live sim — reads
 // that list rather than knowing about lifts specifically.
-function heightKeyframes(rng, length, scale, style) {
+function heightKeyframes(rng, length, scale, style, wants = {}) {
   // The apex is deliberately NOT scaled on retry. Shrinking the lift hill
   // alongside the airtime hills leaves the energy ratio between them
   // unchanged, so a circuit that stalls would stall at every attempt —
@@ -344,16 +385,67 @@ function heightKeyframes(rng, length, scale, style) {
   // produces a pull-out radius of a few metres and a double-digit g
   // spike at the bottom.
   const launched = style === "launch";
-  const apex = Math.min(
+  // The height dial, when set, IS the apex: it is the one number the
+  // rider asked for, so it is not negotiated away by the ceilings that
+  // exist to stop a random draw producing a vertical lift on a short
+  // circuit. It is still bounded by the circuit's own length, because a
+  // 70m lift on a 420m loop is a helter-skelter.
+  const drawnApex = Math.min(
     (launched ? 32 : 38) + rng() * 20,
     length * 0.12,
     launched ? MAX_LAUNCH_APEX : 62,
   );
+  const apex = wants.height == null ? drawnApex
+    : Math.max(STATION_Y + 8, Math.min(
+      wants.height,
+      length * 0.16,
+      launched ? MAX_LAUNCH_APEX : Infinity,
+    ));
   const brakeStartU = 0.88;
+
+  // The speed ceiling, expressed as a height.
+  //
+  // Trimming the first drop alone does not cap anything: the train tops
+  // out wherever the circuit gets LOWEST, and the airtime valleys later
+  // on go lower than the drop does. So the ceiling is a floor — no part
+  // of the free-running circuit may sit more than v^2/2g below the
+  // summit that feeds it. The brake run is exempt, because past that
+  // point the speed is set by the brakes rather than by the geometry.
+  const spend = wants.speed ? (wants.speed * wants.speed) / (2 * G) : Infinity;
+  // With no speed asked for there is no ceiling, and the floor is
+  // simply platform level — which is what it has always been, so an
+  // undialled circuit comes out bit-for-bit as it did before.
+  const floorY = Number.isFinite(spend) ? apex - spend : STATION_Y;
+
   const keys = [
     { u: 0.00, y: STATION_Y },
     { u: 0.05, y: STATION_Y },
   ];
+
+  // How far either side of a summit the shoulder keyframes sit.
+  //
+  // These used to be a flat 0.04 of the circuit, which is fine while
+  // every circuit is about the same size. Once length is a dial it is
+  // not: on a 2.4km circuit the drop occupies 0.048 of u and a shoulder
+  // at a fixed 0.04 lands 19 metres before the bottom of it — so the
+  // spline drops 71 metres in 19, and the pull-out is a 9m radius at
+  // 131km/h. Fourteen g. The shoulder has to be a fraction of the
+  // feature it is shouldering. The 0.5 is chosen so that every circuit
+  // the generator used to draw still gets exactly 0.04.
+  const shoulder = (extent, cap) => Math.min(cap, extent * 0.5);
+
+  // Whether any dial has been touched.
+  //
+  // The retry stretch below is gated on this, and deliberately so. The
+  // faults it cures — a top hat entered at launch speed, a first drop
+  // off a lift taller than the generator would ever draw — only exist
+  // because the dials can ask for combinations the generator never drew
+  // for itself. Applying the stretch unconditionally reshaped 29 of 40
+  // catalogue seeds, one of them by 12% of its length, and seeds are the
+  // thing people send each other. So an undialled circuit is left
+  // exactly as it always was.
+  const dialled = wants.length != null || wants.height != null || wants.speed != null;
+  const stretch = dialled ? 1 / Math.max(0.42, scale) : 1;
   const boosts = [];
   let dropBottomU;
   let launchSpeed = 0;
@@ -363,22 +455,38 @@ function heightKeyframes(rng, length, scale, style) {
     // the top hat immediately turns it back into height.
     const launchU = Math.min(0.20, Math.max(0.08, 130 / length));
     const launchEndU = 0.06 + launchU;
-    const climbU = Math.min(0.16, (apex * 1.25) / length);
+    // The top hat is the one shape the retry loop could not previously
+    // reach. Hills come down and the loop goes away, but a hat entered
+    // at 140km/h stayed exactly as tight as it was drawn, so a circuit
+    // whose only problem was the pull-in off the launch track failed all
+    // eight attempts with the same 6.3g. Stretching it is the same
+    // remedy applied to the same kind of fault: at scale 1 the geometry
+    // is untouched, and by the last attempt the hat is nearly three
+    // times longer and correspondingly gentler.
+    const hatU = Math.min(0.24, Math.min(0.16, (apex * 1.25) / length) * stretch);
+    const climbU = hatU;
     const crestU = launchEndU + climbU;
-    dropBottomU = crestU + Math.min(0.16, (apex * 1.25) / length);
+    dropBottomU = crestU + hatU;
     boosts.push({ startU: 0.06, endU: launchEndU, kind: "launch" });
     keys.push({ u: 0.06, y: STATION_Y });
     keys.push({ u: launchEndU, y: STATION_Y + 0.6 });
-    keys.push({ u: crestU - 0.03, y: apex - 5.0 });
+    const hatShoulder = shoulder(climbU, 0.03);
+    keys.push({ u: crestU - hatShoulder, y: apex - 5.0 });
     keys.push({ u: crestU, y: apex });
-    keys.push({ u: crestU + 0.03, y: apex - 5.0 });
+    keys.push({ u: crestU + hatShoulder, y: apex - 5.0 });
     keys.push({ u: dropBottomU, y: STATION_Y + 1.5 });
     // Enough to crest the hat and still be moving over it, with a margin
-    // for what friction and drag take on the way up.
+    // for what friction and drag take on the way up — or, if a top speed
+    // was asked for, enough to reach it. The launch is where the speed
+    // dial actually lives: the train is fastest just after it lets go.
     launchSpeed = Math.sqrt(2 * G * (apex - STATION_Y) * 1.22 + 60);
+    if (wants.speed) launchSpeed = Math.max(launchSpeed, wants.speed);
   } else {
     const liftU = Math.min(0.30, (apex * 2.0) / length); // ~27 degrees of chain
-    const dropU = Math.min(0.20, (apex * 1.4) / length); // ~55 degrees of drop
+    // Stretched on retry for the same reason the hat is: on a tall lift
+    // the first drop is where the g goes, and it was the one feature
+    // eight attempts could not soften.
+    const dropU = Math.min(0.26, Math.min(0.20, (apex * 1.4) / length) * stretch);
     const liftEndU = 0.10 + liftU;
     dropBottomU = liftEndU + dropU;
     boosts.push({ startU: 0.06, endU: liftEndU, kind: "lift" });
@@ -387,10 +495,17 @@ function heightKeyframes(rng, length, scale, style) {
     // overshoot into an S: the profile dips and climbs again just past the
     // top, giving the circuit a second, unintended summit.
     keys.push({ u: 0.10, y: STATION_Y + 1.0 });
-    keys.push({ u: liftEndU - 0.04, y: apex - 6.0 });
+    keys.push({ u: liftEndU - shoulder(liftU, 0.04), y: apex - 6.0 });
     keys.push({ u: liftEndU, y: apex });
-    keys.push({ u: liftEndU + 0.04, y: apex - 6.0 });
-    keys.push({ u: dropBottomU, y: STATION_Y + 1.5 });
+    keys.push({ u: liftEndU + shoulder(dropU, 0.04), y: apex - 6.0 });
+    // Where the first drop bottoms out. Normally the bottom of the
+    // world, because on a gravity coaster the whole point of the drop is
+    // to spend all of it. But if a top speed was asked for and the lift
+    // would blow straight past it, the drop is TRIMMED — it levels out
+    // higher up, so less of the apex is converted. That is a real thing
+    // a designer does, and it is the only honest way to have a tall lift
+    // and a modest top speed at the same time.
+    keys.push({ u: dropBottomU, y: Math.max(STATION_Y + 1.5, floorY) });
   }
 
   // Hills. Each peak is capped by the height still available after
@@ -403,10 +518,19 @@ function heightKeyframes(rng, length, scale, style) {
       const centre = fromU + (spanU * (j + 0.5)) / count;
       const travelled = centre * length;
       const lossHeight = ROLLING_FRICTION * travelled + 0.10 * travelled * DRAG_COEFF * 60;
-      const available = Math.max(4, ceiling - STATION_Y - lossHeight);
+      // Hills are built UP FROM THE FLOOR, not from the station.
+      //
+      // Getting this wrong is subtle and total. Floor the valleys but
+      // leave the peaks measured from platform level, and a retry that
+      // flattens the hills pushes their summits BELOW their own
+      // valleys — the profile inverts, the spline dives through the
+      // floor to reach them, and the speed ceiling the floor existed to
+      // enforce is exceeded by 40%.
+      const base = Math.max(STATION_Y, floorY);
+      const available = Math.max(4, ceiling - base - lossHeight);
       const fade = 0.68 - 0.09 * j;
-      const peak = STATION_Y + available * Math.max(0.15, fade) * (0.85 + rng() * 0.3) * scale;
-      const valley = STATION_Y + Math.max(1.0, (peak - STATION_Y) * (0.12 + rng() * 0.14));
+      const peak = base + available * Math.max(0.15, fade) * (0.85 + rng() * 0.3) * scale;
+      const valley = base + Math.max(1.0, (peak - base) * (0.12 + rng() * 0.14));
       keys.push({ u: centre - spanU / (count * 2.6), y: valley });
       keys.push({ u: centre, y: Math.min(peak, ceiling - 4) });
     }
@@ -416,34 +540,78 @@ function heightKeyframes(rng, length, scale, style) {
   const spanStart = dropBottomU + 0.02;
   const spanEnd = brakeStartU - 0.04;
 
-  // A second chain lift, roughly halfway round. It re-tops the energy
-  // budget, so the hills after it are sized against ITS summit rather
-  // than a first drop that friction has been eating into ever since.
-  const secondApex = STATION_Y + (apex - STATION_Y) * (0.52 + rng() * 0.22);
-  const secondLiftU = Math.min(0.20, (secondApex * 2.0) / length);
-  const secondDropU = Math.min(0.15, (secondApex * 1.4) / length);
-  const secondStartU = spanStart + (spanEnd - spanStart) * 0.44;
-  const secondBottomU = secondStartU + secondLiftU + secondDropU;
-  const wantsSecond = !launched
-    && rng() < 0.6
-    && spanEnd - spanStart > 0.34
-    && secondBottomU < spanEnd - 0.08;
+  // Mid-circuit chain lifts. Each re-tops the energy budget, so the
+  // hills after one are sized against ITS summit rather than against a
+  // first drop that friction has been eating into ever since.
+  //
+  // Two rng draws, in this order and under exactly these conditions.
+  // The second is short-circuited on a launched circuit and MUST STAY
+  // short-circuited: `!launched && rng() < 0.6` never calls rng() on a
+  // launched circuit, so making the draw unconditional advances the
+  // stream and reshuffles every launched seed in the catalogue. Fifteen
+  // of forty, when I tried it.
+  const midApexFrac = 0.52 + rng() * 0.22;
+  const drawsExtraLift = !launched && rng() < 0.6;
 
-  if (wantsSecond) {
-    const crest = secondStartU + secondLiftU;
-    addHills(spanStart, secondStartU - 0.03, Math.max(1, Math.round(hillCount / 2)), apex);
-    boosts.push({ startU: secondStartU, endU: crest, kind: "lift" });
-    keys.push({ u: secondStartU, y: STATION_Y + 1.5 });
-    keys.push({ u: crest - 0.03, y: secondApex - 5.0 });
-    keys.push({ u: crest, y: secondApex });
-    keys.push({ u: crest + 0.03, y: secondApex - 5.0 });
-    keys.push({ u: secondBottomU, y: STATION_Y + 1.5 });
-    addHills(secondBottomU + 0.02, spanEnd, Math.max(1, Math.floor(hillCount / 2)), secondApex);
+  const midApex = STATION_Y + (apex - STATION_Y) * midApexFrac;
+  const midLiftU = Math.min(0.20, (midApex * 2.0) / length);
+  const midDropU = Math.min(0.15, (midApex * 1.4) / length);
+
+  // How many the circuit NEEDS, as opposed to how many it fancies.
+  //
+  // Once the length is a dial this stops being a stylistic choice. A
+  // 2.4km circuit loses 27m of height to rolling friction and drag; hand
+  // it a 22m lift and one drop and the train stops somewhere out on the
+  // far side, which is precisely what the design sweep reported. So the
+  // shortfall is worked out and covered. Long, low and slow is a
+  // legitimate thing to ask a designer for, and the answer a designer
+  // gives is "then it needs another lift".
+  const roundLoss = ROLLING_FRICTION * length + 0.10 * length * DRAG_COEFF * 60;
+  // Sized on what a MID lift actually reaches, which is around two
+  // thirds of the summit — not on the summit. Budget against the big
+  // lift and a long low circuit is handed three re-tops when it needs
+  // five, and still coasts to a halt on the far side.
+  const perLift = Math.max(4, (midApex - Math.max(STATION_Y, floorY)) * 0.62);
+  const needed = Math.max(0, Math.ceil(roundLoss / perLift) - 1);
+  const midLifts = Math.max(needed, drawsExtraLift ? 1 : 0);
+
+  const room = spanEnd - spanStart;
+  const lifts = [];
+  for (let k = 0; k < midLifts; k++) {
+    // (k+1)/(n+1) * 0.88 puts a single lift at 0.44 of the span, which
+    // is where the one hard-coded lift used to sit — so a circuit that
+    // wanted exactly one comes out unchanged.
+    const startU = spanStart + room * ((k + 1) / (midLifts + 1)) * 0.88;
+    const bottomU = startU + midLiftU + midDropU;
+    if (room > 0.34 && bottomU < spanEnd - 0.08) lifts.push({ startU, bottomU });
+  }
+
+  if (lifts.length) {
+    const share = Math.max(1, Math.round(hillCount / (lifts.length + 1)));
+    let cursor = spanStart;
+    let ceiling = apex;
+    for (const lift of lifts) {
+      const crest = lift.startU + midLiftU;
+      addHills(cursor, lift.startU - 0.03, share, ceiling);
+      boosts.push({ startU: lift.startU, endU: crest, kind: "lift" });
+      keys.push({ u: lift.startU, y: Math.max(STATION_Y + 1.5, floorY) });
+      keys.push({ u: crest - shoulder(midLiftU, 0.03), y: midApex - 5.0 });
+      keys.push({ u: crest, y: midApex });
+      keys.push({ u: crest + shoulder(midDropU, 0.03), y: midApex - 5.0 });
+      keys.push({ u: lift.bottomU, y: Math.max(STATION_Y + 1.5, floorY) });
+      cursor = lift.bottomU + 0.02;
+      ceiling = midApex;
+    }
+    addHills(cursor, spanEnd, Math.max(1, hillCount - share * lifts.length), ceiling);
   } else {
     addHills(spanStart, spanEnd, hillCount, apex);
   }
 
-  keys.push({ u: brakeStartU, y: STATION_Y + 3.0 });
+  // Held at the ceiling's floor too: the run-in to the brakes is still
+  // free track, and a nineteen-metre dive into it would set the top
+  // speed all on its own. Past brakeStartU the descent to platform level
+  // is the brakes' problem, which is what brakes are for.
+  keys.push({ u: brakeStartU, y: Math.max(STATION_Y + 3.0, floorY) });
   keys.push({ u: 0.95, y: STATION_Y + 0.6 });
   keys.sort((a, b) => a.u - b.u);
   return { keys, apex, dropBottomU, brakeStartU, boosts, launchSpeed, style };
@@ -812,13 +980,56 @@ function relaxProfile(points, ds, roles, budgetG, launchSpeed = 0) {
 // buildTrack — the whole pipeline, with an energy retry.
 // ------------------------------------------------------------
 
-export function buildTrack(seed) {
+export function buildTrack(seed, options = {}) {
+  const wants = {
+    length: clampDial(options.length, DIALS.length),
+    height: clampDial(options.height, DIALS.height),
+    // Carried in m/s internally; the dial is in km/h because that is
+    // what the readouts and the marketing both use.
+    speed: options.speed == null ? null : clampDial(options.speed, DIALS.speed) / 3.6,
+  };
+
   const rng = mulberry32(seed);
   const name = trackName(rng);
-  // Roughly one circuit in three is launched rather than lifted.
-  const style = rng() < 0.34 ? "launch" : "chain";
-  const plan = planCurve(rng, 720);
-  const planLength = arcLengths(plan).total;
+  // Roughly one circuit in three is launched rather than lifted — unless
+  // the speed dial has already decided, below.
+  const drawnStyle = rng() < 0.34 ? "launch" : "chain";
+  let plan = planCurve(rng, 720, wants.length);
+  let planLength = arcLengths(plan).total;
+
+  // Length is set by scaling the finished plan about the origin rather
+  // than by redrawing it at a different radius. Scaling is exactly
+  // linear in both arc length and turn radius, so one pass lands on the
+  // target — and the circuit keeps the shape the seed drew, which is the
+  // point of a seed. Shrinking tightens every turn by the same factor,
+  // so the floor the plan curve already cleared has to be re-cleared.
+  if (wants.length) {
+    const tightest = minPlanRadius(plan);
+    const floor = tightest > 0 ? MIN_PLAN_RADIUS / tightest : 0;
+    const factor = Math.max(floor, Math.min(5.0, wants.length / planLength));
+    if (Math.abs(factor - 1) > 1e-3) {
+      plan = plan.map((p) => v3(p.x * factor, p.y, p.z * factor));
+      planLength *= factor;
+    }
+  }
+
+  // What gravity alone will give at the bottom of the first drop, and
+  // therefore whether a launch is needed to reach the speed asked for.
+  // 38m is the shortest lift the generator ever draws, so it is the
+  // conservative assumption when no height has been asked for: if the
+  // wanted speed is out of reach even from there, it needs a launch.
+  //
+  // A tall lift is a chain lift, whatever the speed dial says. The
+  // launch profile throws the train straight into a top hat, and
+  // MAX_LAUNCH_APEX is the height above which that stops being a ride
+  // and starts being an ejection: ask for a 78m top hat at 145km/h and
+  // the pull-in off the launch track is a 19m radius at 154km/h, which
+  // is 9.8g and a coroner's report. Past that height the energy has to
+  // arrive as a chain and a drop.
+  const style = wants.height != null && wants.height > MAX_LAUNCH_APEX ? "chain"
+    : wants.speed == null ? drawnStyle
+      : wants.speed > Math.sqrt(2 * G * ((wants.height ?? 38) - STATION_Y)) * 0.97 ? "launch"
+        : "chain";
 
   // Everything after the plan curve is regenerated from a *frozen* draw of
   // random numbers, so shrinking the hills on retry does not reshuffle the
@@ -828,24 +1039,46 @@ export function buildTrack(seed) {
   // Each retry lowers the airtime hills, and then the loop, until the
   // train demonstrably completes the circuit. The lift apex is held
   // fixed throughout: it is the energy budget, not a hill.
-  let result = null;
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const scale = 1 - attempt * 0.09;
-    const loopAllowance = attempt < 4 ? 1 : attempt < 6 ? 0.75 : 0;
-    const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style);
-    const check = verifyCircuit(candidate);
-    result = candidate;
-    result.minFreeSpeed = check.minSpeed;
-    result.maxG = check.maxG;
-    result.attempts = attempt + 1;
-    if (check.completes) return result;
+  const build = () => {
+    let last = null;
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const scale = 1 - attempt * 0.09;
+      const loopAllowance = attempt < 4 ? 1 : attempt < 6 ? 0.75 : 0;
+      const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants);
+      const check = verifyCircuit(candidate);
+      last = candidate;
+      last.minFreeSpeed = check.minSpeed;
+      last.maxG = check.maxG;
+      last.attempts = attempt + 1;
+      if (check.completes) return last;
+    }
+    return last; // last, flattest attempt — still returned rather than throwing
+  };
+
+  let result = build();
+
+  // The length dial names the length of the TRACK, and the plan curve is
+  // its shadow on the ground: hills make the real thing a fifth longer
+  // again, by an amount that depends on how hilly this particular
+  // circuit came out. Rather than guess the ratio, build once, measure,
+  // and correct the plan by what the measurement says. One correction is
+  // enough — the relationship is linear to well inside a per cent.
+  if (wants.length && Math.abs(result.length - wants.length) > wants.length * 0.03) {
+    const tightest = minPlanRadius(plan);
+    const floor = tightest > 0 ? MIN_PLAN_RADIUS / tightest : 0;
+    const correction = Math.max(floor, Math.min(3.0, wants.length / result.length));
+    if (Math.abs(correction - 1) > 1e-3) {
+      plan = plan.map((p) => v3(p.x * correction, p.y, p.z * correction));
+      planLength *= correction;
+      result = build();
+    }
   }
-  return result; // last, flattest attempt — still returned rather than throwing
+  return result;
 }
 
-function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style) {
+function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants = {}) {
   const rng = mulberry32(profileSeed);
-  const profile = heightKeyframes(rng, planLength, scale, style);
+  const profile = heightKeyframes(rng, planLength, scale, style, wants);
 
   // Apply the height profile to the plan curve.
   let shaped = plan.map((p, i) => v3(p.x, sampleProfile(profile.keys, i / plan.length), p.z));

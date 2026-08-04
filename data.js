@@ -101,7 +101,7 @@ window.ESSAYS = [
   {
     slug: "iron-vertex",
     title: "Iron Vertex",
-    tagline: "A rollercoaster that designs itself. One button draws a fresh circuit and hands it to gravity — a chain lift or a magnetic launch, a splayed loop that provably never runs through itself, a tunnel bored through a hillside. Ride it from the front seat, with passengers, sound and a park around you.",
+    tagline: "A rollercoaster that designs itself, or that you design: dial in length, lift height and top speed and it builds one that works. Ask for more speed than the drop can give and it fits a magnetic launch. Ride it from the seat, through a park or through a Chicago street grid.",
     url: "https://0x4d44.github.io/iron-vertex/",
     illustration: "ill-coaster",
     date: "2026-07-26T09:30:00",

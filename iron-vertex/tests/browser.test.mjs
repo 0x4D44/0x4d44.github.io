@@ -434,6 +434,77 @@ try {
     assert.deepEqual(pageErrors, [], `${width}x${height}: page reported errors`);
   }
 
+  // ---- the city, and the design dials ----
+  //
+  // The city is a second world with its own terrain, its own ground and
+  // seven hundred buildings, reached only by a URL parameter or a button
+  // — so nothing above touches it, and a module error in it would show
+  // up as a boot notice nobody had tested for.
+  trace("booting the city");
+  pageErrors = [];
+  await S("Emulation.setDeviceMetricsOverride", {
+    width: 1280, height: 800, deviceScaleFactor: 1, mobile: false,
+  });
+  await S("Page.navigate", {
+    url: `http://127.0.0.1:${port}/iron-vertex/?seed=20260726&site=city&length=1600&height=64`,
+  });
+  await poll("the city to boot", () => evaluate("window.__ironVertexReady === true"), 60_000);
+  await delay(1500);
+
+  const city = await evaluate(`({
+    site: document.getElementById("btn-setting").textContent.trim(),
+    length: Number(document.getElementById("stat-length").textContent),
+    outLength: document.getElementById("out-length").textContent,
+    outHeight: document.getElementById("out-height").textContent,
+    noticeHidden: document.getElementById("notice").hidden,
+    designOpen: document.getElementById("design").open,
+  })`);
+  assert.ok(city.noticeHidden, "city: the boot notice is still covering the page");
+  assert.match(city.site, /city/i, `city: the site button does not say city (${city.site})`);
+  assert.ok(city.designOpen, "city: a dialled link did not open the design panel");
+  // The dials in the link were honoured, and the readouts show what was
+  // actually built rather than what was asked for.
+  assert.ok(Math.abs(city.length - 1600) < 260,
+    `city: asked for 1600m of track, built ${city.length}m`);
+  assert.match(city.outLength, /^\d+ m$/, `city: length readout is "${city.outLength}"`);
+  assert.match(city.outHeight, /^\d+ m$/, `city: height readout is "${city.outHeight}"`);
+
+  // The ground is flat under a city: a lake plain, not the park's hills.
+  const flat = await evaluate(`(async () => {
+    const mod = await import("/iron-vertex/scenery.js");
+    return [mod.groundHeight(0, 0), mod.groundHeight(400, -300), mod.groundHeight(-620, 500)];
+  })()`);
+  assert.deepEqual(flat, [0, 0, 0], `city: the ground is not flat (${flat.join(", ")})`);
+
+  // Switching back to the park rebuilds the world without throwing, and
+  // brings the terrain back with it.
+  await evaluate(`document.getElementById("btn-setting").click()`);
+  await delay(2500);
+  const back = await evaluate(`(async () => {
+    const mod = await import("/iron-vertex/scenery.js");
+    return {
+      site: document.getElementById("btn-setting").textContent.trim(),
+      rolling: mod.groundHeight(-620, 500),
+      length: Number(document.getElementById("stat-length").textContent),
+    };
+  })()`);
+  assert.match(back.site, /park/i, `city: the site did not switch back (${back.site})`);
+  assert.notEqual(back.rolling, 0, "city: the park terrain did not come back");
+  assert.ok(back.length > 400, `city: the track did not rebuild (${back.length}m)`);
+
+  // And the dials still drive it.
+  await evaluate(`(() => {
+    const el = document.getElementById("dial-speed");
+    el.value = "140";
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  })()`);
+  await delay(2000);
+  const fast = await evaluate(`document.querySelector("#nameplate .facts").textContent`);
+  assert.match(fast, /km\/h/, `city: the nameplate lost its facts (${fast})`);
+  await delay(1200);
+  assert.deepEqual(pageErrors, [], "city: page reported errors");
+
   trace("done");
   cleanup();
   clearTimeout(watchdog);

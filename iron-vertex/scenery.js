@@ -24,6 +24,7 @@
 
 import * as THREE from "./three.module.min.js";
 import { canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
+import { buildCity } from "./city.js";
 
 export const PARK_RADIUS = 470;
 export const WATER_LEVEL = -6.5;
@@ -53,7 +54,23 @@ function ramp(edge0, edge1, x) {
   return t * t * (3 - 2 * t);
 }
 
+// Which terrain groundHeight() is describing.
+//
+// Module state, which is not free, but the alternative is threading a
+// terrain function through the track builder, the coaster mesh, the
+// train and three cameras. Chicago is built on a lake plain and is flat
+// to within a few metres across the whole downtown; a city on the
+// park's rolling ground would put a kink in every street. Set it before
+// buildWorld and before the track is generated, and everything
+// downstream agrees.
+let flatGround = false;
+export function setTerrain(setting) {
+  flatGround = setting === "city";
+}
+
 export function groundHeight(x, z) {
+  // A lake plain: flat, because that is what the grid was drawn on.
+  if (flatGround) return 0;
   // Flat where the coaster stands, gently rolling further out, so the
   // horizon has shape without the track ever burying itself.
   const d = Math.hypot(x, z);
@@ -105,7 +122,8 @@ function stripeTexture(a, b, count = 10) {
 // The world
 // ------------------------------------------------------------
 
-export function buildWorld() {
+export function buildWorld({ setting = "park", density = 1 } = {}) {
+  const park = setting !== "city";
   const group = new THREE.Group();
   const updaters = [];
   const props = [];
@@ -192,7 +210,7 @@ export function buildWorld() {
     sand: new THREE.Color("#d9cba3"),
     rock: new THREE.Color("#8d998a"),
   };
-  {
+  if (park) {
     const size = PARK_RADIUS * 2.9;
     const segments = 150;
     const geo = new THREE.PlaneGeometry(size, size, segments, segments);
@@ -231,7 +249,7 @@ export function buildWorld() {
   }
 
   // ---- the lake -------------------------------------------------------
-  {
+  if (park) {
     const geo = new THREE.PlaneGeometry(LAKE.radius * 2.2, LAKE.radius * 2.2, 26, 26);
     geo.rotateX(-Math.PI / 2);
     const water = new THREE.Mesh(geo, new THREE.ShaderMaterial({
@@ -286,7 +304,7 @@ export function buildWorld() {
   }
 
   // ---- the midway path ------------------------------------------------
-  {
+  if (park) {
     const segments = 220;
     const positions = new Float32Array((segments + 1) * 2 * 3);
     const indices = [];
@@ -346,7 +364,7 @@ export function buildWorld() {
     ]),
   };
 
-  {
+  if (park) {
     const rng = scatterRng(0x5eed17);
     const near = { conifer: [], broadleaf: [], poplar: [], shrub: [] };
     const far = { conifer: [], broadleaf: [], poplar: [], shrub: [] };
@@ -386,7 +404,7 @@ export function buildWorld() {
   //
   // One merged figure, instanced along the midway and across the infield,
   // each with its own shirt colour and its own idle sway.
-  {
+  if (park) {
     const figure = mergeParts([
       part(new THREE.CylinderGeometry(0.19, 0.26, 0.9, 6), 0xffffff, [0, 0.75, 0]),
       part(new THREE.SphereGeometry(0.17, 7, 6), 0xe8b48c, [0, 1.36, 0]),
@@ -434,7 +452,7 @@ export function buildWorld() {
   }
 
   // ---- midway: stalls, tents, lamps, flags ----------------------------
-  {
+  if (park) {
     const rng = scatterRng(0x57a115);
     const awning = [
       stripeTexture("#f4f2ec", "#c0392b"),
@@ -544,7 +562,7 @@ export function buildWorld() {
   }
 
   // ---- the big rides --------------------------------------------------
-  {
+  if (park) {
     // A Ferris wheel, turning. The gondolas hang from the rim, so they
     // counter-rotate: parented to the wheel they would tip their riders
     // out at the top.
@@ -704,7 +722,7 @@ export function buildWorld() {
   }
 
   // ---- the infield: a bandstand on the lawn ---------------------------
-  {
+  if (park) {
     const stand = new THREE.Group();
     const deck = new THREE.Mesh(
       new THREE.CylinderGeometry(7, 7.4, 1.1, 12),
@@ -757,7 +775,7 @@ export function buildWorld() {
   // Three silhouettes, banded so the floors read at distance, instanced
   // and tinted. Nothing out here casts a shadow — it is all well beyond
   // the shadow camera and would only cost fill rate.
-  {
+  if (park) {
     const banded = (width, height, depth, floors, base, band) => {
       const parts = [];
       for (let i = 0; i < floors; i++) {
@@ -838,6 +856,21 @@ export function buildWorld() {
       });
     }
     group.add(instance(hillGeo, new THREE.MeshLambertMaterial({ fog: false }), hills, { shadows: false }));
+  }
+
+  // ---- the city -------------------------------------------------------
+  //
+  // Everything the park put on the ground is skipped above when the
+  // setting is a city, so this is not an overlay: it is the other half
+  // of the same switch. It brings its own paving, so it also brings its
+  // own ground.
+  const cityKeepOuts = [];
+  if (!park) {
+    const city = buildCity({ groundHeight, density, rng: scatterRng(0x0c111ca6) });
+    group.add(city.group);
+    for (const item of city.carveable) carveable.push(item);
+    for (const fn of city.updaters) updaters.push(fn);
+    for (const zone of city.keepOuts) cityKeepOuts.push(zone);
   }
 
   // ---- weather and wildlife -------------------------------------------
@@ -935,6 +968,7 @@ export function buildWorld() {
   const carveScale = new THREE.Vector3();
 
   function carve(track, extraKeepOuts = []) {
+    extraKeepOuts = [...extraKeepOuts, ...cityKeepOuts];
     let outerLimit = 0;
     for (const p of track.points) outerLimit = Math.max(outerLimit, Math.hypot(p.x, p.z));
 
@@ -960,7 +994,11 @@ export function buildWorld() {
       let dirty = false;
       for (let i = 0; i < placements.length; i++) {
         const p = placements[i];
-        const wanted = foulsTrack(p.x, p.z, 9) ? -80 : p.y;
+        // A conifer is nine metres across; a city block is a hundred and
+        // twelve. Anything that carries its own footprint says so, and
+        // the corridor the coaster cuts is sized to what it would
+        // actually pass through rather than to the width of a tree.
+        const wanted = foulsTrack(p.x, p.z, p.keepOut ?? 9) ? -400 : p.y;
         if (p.placedY === wanted) continue;
         p.placedY = wanted;
         carveEuler.set(p.rx ?? 0, p.ry ?? 0, p.rz ?? 0);
