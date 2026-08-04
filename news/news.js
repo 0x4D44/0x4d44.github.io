@@ -37,7 +37,7 @@
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
     { name: "Business",       selfLeaf: true, children: ["Middle Management"] },
     { name: "Sport",          children: ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports", "Motorsport"] },
-    { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
+    { name: "Life",           children: ["Lifestyle", "Reviews", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
     { name: "Opinion",        children: ["Voices", "Letters", "Sparks fly"] }
   ];
@@ -77,6 +77,7 @@
     Buses:       { c1: "#8a5a12", c2: "#5c3a08", icon: "gear" },
     Weather:     { c1: "#3a5a8a", c2: "#243a5c", icon: "cloud" },
     Lifestyle:   { c1: "#b0357e", c2: "#761f54", icon: "sparkle" },
+    Reviews:     { c1: "#6b2f8f", c2: "#3f1a58", icon: "rosette" },
     Obituaries:  { c1: "#434a54", c2: "#23272e", icon: "candle" },
     Voices:      { c1: "#6b4a1f", c2: "#402a10", icon: "quill" },
     Letters:     { c1: "#7a3b2e", c2: "#4f241b", icon: "envelope" },
@@ -122,6 +123,10 @@
     quill: '<path d="M150 198 C172 138 224 96 300 74 C286 150 224 188 176 192 Z"/><rect x="120" y="196" width="46" height="9" rx="4" transform="rotate(-42 143 200)"/>',
     envelope: '<rect x="118" y="88" width="164" height="104" rx="6" fill="none" stroke-width="9"/><path d="M124 96 L200 150 L276 96" fill="none" stroke-width="9"/>',
     star: '<path d="M200 64 L219 122 L280 122 L231 158 L250 216 L200 180 L150 216 L169 158 L120 122 L181 122 Z"/>',
+    rosette: '<circle cx="200" cy="112" r="48" fill="none" stroke-width="9"/>'
+        + '<path d="M200 82 L209 106 L235 106 L214 121 L222 146 L200 131 L178 146 L186 121 L165 106 L191 106 Z"/>'
+        + '<path d="M170 152 L146 214 L178 202 L196 228 L206 176 Z"/>'
+        + '<path d="M230 152 L254 214 L222 202 L204 228 L194 176 Z"/>',
     granite: '<polygon points="200,58 258,92 258,158 200,192 142,158 142,92"/>'
         + '<g stroke="#000" stroke-opacity=".22" stroke-width="5" fill="none">'
         + '<line x1="200" y1="58" x2="200" y2="192"/><line x1="142" y1="92" x2="258" y2="158"/><line x1="258" y1="92" x2="142" y2="158"/></g>'
@@ -241,6 +246,38 @@
     var next = pos >= 0 && pos < series.length - 1 ? '<a href="' + articleUrl(series[pos + 1]) + '">Part ' + String(series[pos + 1].seriesPart).padStart(2, "0") + ' &rarr;</a>' : '<span>Final part &rarr;</span>';
     return '<div class="series-nav"><div><strong>' + esc(a.series) + '</strong><span>Book ' + esc(a.seriesBook || "") + ' &middot; Part ' + String(a.seriesPart).padStart(2, "0") + ' of ' + series.length + '</span></div><div>' + previous + next + '</div></div>';
   }
+  // A review carries an optional `review` scorecard: { subject, stars, verdict, href,
+  // linkText }. `stars` is 0-5 in halves. Any desk may run one — the Reviews desk is
+  // simply where most of them live — so this is rendered from the field, not the
+  // category. Articles without the field are untouched.
+  var STAR_WORDS = ["No", "Half a", "One", "One and a half", "Two", "Two and a half",
+    "Three", "Three and a half", "Four", "Four and a half", "Five"];
+  function reviewBoxHtml(a) {
+    var r = a && a.review;
+    if (!r) return "";
+    var halves = Math.max(0, Math.min(10, Math.round((Number(r.stars) || 0) * 2)));
+    var glyphs = "";
+    for (var i = 0; i < 5; i++) {
+      var cls = halves >= (i + 1) * 2 ? "on" : (halves === i * 2 + 1 ? "half" : "off");
+      glyphs += '<span class="' + cls + '">&#9733;</span>';
+    }
+    var label = (STAR_WORDS[halves] || "No") + (halves === 2 ? " star" : " stars") + " out of five";
+    var href = r.href || "";
+    var link = href
+      ? '<a class="review-link" href="' + esc(href) + '" rel="nofollow">' +
+        esc(r.linkText || ("Open " + (r.subject || "it"))) + ' &rarr;</a>'
+      : "";
+    return '' +
+      '<aside class="review-box">' +
+        '<div class="review-head">' +
+          '<span class="review-what">' + esc(r.subject || "") + '</span>' +
+          '<span class="review-stars" role="img" aria-label="' + esc(label) + '">' + glyphs + '</span>' +
+        '</div>' +
+        (r.verdict ? '<p class="review-verdict"><strong>Verdict:</strong> ' + esc(r.verdict) + '</p>' : "") +
+        link +
+      '</aside>';
+  }
+
   function catUrl(c) { return "search.html?cat=" + encodeURIComponent(c); }
   function qs(name) {
     var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
@@ -460,7 +497,12 @@
       '<div class="track-wrap"><div class="track">' + items + items + '</div></div></div>';
   }
 
-  function footerHtml(basedOnTruth) {
+  // `mode`: "based-on-truth" for a story retelling a real event, "review" for a column
+  // about a document that genuinely exists in the Almanac, or falsy for pure satire.
+  // (A truthy non-string is treated as "based-on-truth" — the original call signature.)
+  function footerHtml(mode) {
+    var basedOnTruth = mode && mode !== "review";
+    var isReview = mode === "review";
     var cols = [
       ["Sections", CATEGORY_ORDER.slice(0, 6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
       ["More", CATEGORY_ORDER.slice(6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
@@ -490,6 +532,12 @@
               '<strong>based-on-truth</strong> tag: the underlying event really happened, but the ' +
               'reporting, correspondents, quotations and images here are invented for comic effect. ' +
               'Everything else on the site is entirely fictional, and none of it is advice.</p>'
+            : isReview
+            ? '<p>The Daily Flange is a satirical newspaper. This is a <strong>review</strong>: the ' +
+              'document under discussion is real, lives in the 0x4D44 Almanac and is linked above, ' +
+              'and the reviewer genuinely opened it. The reviewer, the byline, the quotations and ' +
+              'every surrounding incident are invented for comic effect. Everything else on the ' +
+              'site is entirely fictional, and none of it is advice.</p>'
             : '<p>The Daily Flange is a work of satire. Every article, byline, quotation, statistic, ' +
               'expert, institution and advertisement on this site is entirely fictional and invented for ' +
               'comic effect. Any resemblance to real events, persons or working sprockets is coincidental. ' +
@@ -751,7 +799,9 @@
     var basedOnTruth = (a.tags || []).indexOf("based-on-truth") !== -1;
     var heroCaption = a.imageCaption || (
       (a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
-      (basedOnTruth ? "Artist's impression of real events; illustration invented." : "Artist's impression; file photo; entirely made up.")
+      (a.review ? "Generated desk art. The document reviewed is real; this picture of it is not."
+        : basedOnTruth ? "Artist's impression of real events; illustration invented."
+        : "Artist's impression; file photo; entirely made up.")
     );
     var noticeHtml = a.notice
       ? '<strong>' + esc(a.noticeLabel || "Opinion note") + ':</strong> ' + esc(a.notice)
@@ -775,6 +825,7 @@
       '<span class="share"><span title="Share">f</span><span title="Share">X</span><span title="Share">in</span><span title="Email">&#9993;</span></span></div>');
     out.push('<figure><span class="thumb">' + illustration(a) + '<span class="cat-flag">' + esc(a.category) + '</span></span>' +
       '<figcaption>' + esc(heroCaption) + '</figcaption></figure>');
+    out.push(reviewBoxHtml(a));
     out.push(bodyParas);
     out.push('<div class="tags">' + tags + '</div>');
     out.push('<div class="disclaimer">' + noticeHtml + '</div>');
@@ -799,7 +850,7 @@
     out.push('<div style="margin:26px 0 10px">' + adHtml(pickAds("leader", 1, a.id + "b")[0], "leader") + '</div>');
 
     out.push('</div>'); // .wrap
-    out.push(footerHtml(basedOnTruth));
+    out.push(footerHtml(a.review ? "review" : basedOnTruth));
 
     mount.innerHTML = out.join("");
     startClock();
