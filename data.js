@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "three-clocks",
+    title: "Three Clocks",
+    tagline: "A detailed forecast of AI, the climate and the peace — three problems with different lags, different numbers of decision-makers, and very different shapes of risk. An interactive cone of possibilities computed live from several hundred simulated futures, a numbered and resolvable estimate, and a steelmanned case against all of it. Vanilla JS; no build step.",
+    url: "https://0x4d44.github.io/three-clocks/",
+    illustration: "ill-cone",
+    date: "2026-08-05T20:30:00",
+    year: 2100,
+    readingMin: 62,
+    words: 14200,
+    tags: ["software", "science", "history", "work"],
+    real: true,
+  },
+  {
     slug: "stratego",
     title: "Stratego — Field Edition",
     tagline: "A full-size browser adaptation of the classic hidden-rank battle game: secretly deploy forty red or blue pieces, scout the lakes, defuse bombs, spring the Spy on the Marshal, and capture the Flag. Original table art, hot-seat and information-limited automata, deterministic offline vanilla JavaScript; no build step.",
@@ -1652,7 +1665,7 @@ window.COLLECTIONS = [
       "chief-engineer"] },
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
-    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
+    slugs: ["three-clocks", "model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
       "claude-workflows", "the-ai-who-watched", "influence"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work — the physics of the string, the mechanism, the tuning and the craft.",
