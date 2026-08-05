@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="An interactive technical history of Intel x86 processors from the 8086 to the Pentium 4: decoding, pipelines, cycle counts, superscalar execution, prediction and cache.">
+  <title>The Long Instruction — 8086 to Pentium 4</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the instruments</a>
+
+  <div class="page-field" aria-hidden="true">
+    <span class="field-orbit orbit-a"></span>
+    <span class="field-orbit orbit-b"></span>
+    <span class="field-grid"></span>
+  </div>
+
+  <header class="hero" id="top">
+    <div class="hero-copy">
+      <p class="eyebrow"><span>1978</span><i aria-hidden="true"></i><span>2000</span></p>
+      <h1>The Long<br><em>Instruction</em></h1>
+      <p class="hero-deck">How one awkward, durable byte stream learned to protect memory, become 32-bit, overlap instructions, issue two at once, predict the future, rename its registers—and finally cache the decoded work itself.</p>
+      <div class="hero-actions">
+        <button class="primary-button" type="button" data-open-tab="lineage">Enter the timeline</button>
+        <button class="text-button" type="button" data-open-tab="decode">Decode some bytes <span aria-hidden="true">→</span></button>
+      </div>
+      <dl class="hero-facts" aria-label="Scale of the evolution">
+        <div><dt>Transistors</dt><dd>29,000 → 42,000,000</dd></div>
+        <div><dt>Visible registers</dt><dd>16-bit → 32-bit + 128-bit SIMD</dd></div>
+        <div><dt>Front end</dt><dd>6-byte queue → ~12K decoded µops</dd></div>
+      </dl>
+    </div>
+
+    <div class="hero-machine" aria-label="Animated conceptual processor pipeline">
+      <div class="machine-caption"><span>same program order</span><span>more hidden machinery</span></div>
+      <svg class="machine-svg" viewBox="0 0 760 520" role="img" aria-labelledby="hero-machine-title hero-machine-desc">
+        <title id="hero-machine-title">The x86 instruction stream moving through evolving processor machinery</title>
+        <desc id="hero-machine-desc">Instruction bytes enter on the left, are decoded into operations, scheduled, executed and retired on the right.</desc>
+        <defs>
+          <linearGradient id="flow-gradient" x1="0" x2="1">
+            <stop offset="0" stop-color="#72a7ff"/>
+            <stop offset=".55" stop-color="#54e0c0"/>
+            <stop offset="1" stop-color="#ffb45c"/>
+          </linearGradient>
+          <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="8" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path class="machine-rail" d="M52 260 H706"/>
+        <path class="machine-flow" d="M52 260 H706"/>
+        <g class="machine-block" transform="translate(70 175)">
+          <rect width="122" height="170" rx="22"/>
+          <text x="61" y="42">BYTES</text>
+          <g class="byte-stack">
+            <rect x="22" y="66" width="28" height="28" rx="6"/><rect x="54" y="66" width="28" height="28" rx="6"/><rect x="86" y="66" width="14" height="28" rx="6"/>
+            <rect x="22" y="102" width="20" height="28" rx="6"/><rect x="46" y="102" width="38" height="28" rx="6"/><rect x="88" y="102" width="12" height="28" rx="6"/>
+          </g>
+        </g>
+        <g class="machine-block" transform="translate(229 139)">
+          <rect width="130" height="242" rx="22"/>
+          <text x="65" y="42">DECODE</text>
+          <path d="M30 82 H100 M30 112 H83 M30 142 H104 M30 172 H70"/>
+          <circle cx="42" cy="204" r="10"/><circle cx="68" cy="204" r="10"/><circle cx="94" cy="204" r="10"/>
+        </g>
+        <g class="machine-block" transform="translate(396 107)">
+          <rect width="130" height="306" rx="22"/>
+          <text x="65" y="42">SCHEDULE</text>
+          <g class="schedule-dots">
+            <circle cx="38" cy="86" r="11"/><circle cx="68" cy="86" r="11"/><circle cx="98" cy="86" r="11"/>
+            <circle cx="38" cy="126" r="11"/><circle cx="68" cy="126" r="11"/><circle cx="98" cy="126" r="11"/>
+            <circle cx="38" cy="166" r="11"/><circle cx="68" cy="166" r="11"/><circle cx="98" cy="166" r="11"/>
+          </g>
+          <path d="M38 86 C38 235 96 205 96 258 M68 126 C68 230 46 216 46 258 M98 166 V258"/>
+        </g>
+        <g class="machine-block" transform="translate(563 157)">
+          <rect width="126" height="206" rx="22"/>
+          <text x="63" y="42">RETIRE</text>
+          <path d="M28 82 H98 M28 112 H98 M28 142 H98"/>
+          <circle class="retire-light" cx="63" cy="174" r="12"/>
+        </g>
+        <g class="instruction-packets" filter="url(#soft-glow)">
+          <circle class="packet packet-1" r="7"/><circle class="packet packet-2" r="7"/><circle class="packet packet-3" r="7"/>
+        </g>
+      </svg>
+      <p class="machine-note">The diagrams are explanatory models. Product-specific details and caveats live beside every instrument.</p>
+    </div>
+  </header>
+
+  <nav class="instrument-nav" aria-label="Processor evolution instruments">
+    <div class="instrument-nav-inner" role="tablist" aria-label="Explore the processor">
+      <button role="tab" id="tab-lineage" aria-controls="panel-lineage" aria-selected="true" tabindex="0" data-tab="lineage"><span>01</span>Lineage</button>
+      <button role="tab" id="tab-decode" aria-controls="panel-decode" aria-selected="false" tabindex="-1" data-tab="decode"><span>02</span>Decode</button>
+      <button role="tab" id="tab-pipeline" aria-controls="panel-pipeline" aria-selected="false" tabindex="-1" data-tab="pipeline"><span>03</span>Pipeline</button>
+      <button role="tab" id="tab-superscalar" aria-controls="panel-superscalar" aria-selected="false" tabindex="-1" data-tab="superscalar"><span>04</span>Superscalar</button>
+      <button role="tab" id="tab-branches" aria-controls="panel-branches" aria-selected="false" tabindex="-1" data-tab="branches"><span>05</span>Branches</button>
+      <button role="tab" id="tab-cache" aria-controls="panel-cache" aria-selected="false" tabindex="-1" data-tab="cache"><span>06</span>Cache</button>
+      <button role="tab" id="tab-cycles" aria-controls="panel-cycles" aria-selected="false" tabindex="-1" data-tab="cycles"><span>07</span>Cycles</button>
+      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" tabindex="-1" data-tab="sources"><span>08</span>Sources</button>
+    </div>
+  </nav>
+
+  <main id="main">
+    <section class="instrument-panel is-active" role="tabpanel" id="panel-lineage" aria-labelledby="tab-lineage" data-panel="lineage">
+      <div class="section-heading">
+        <p class="section-number">01 · Lineage</p>
+        <h2>The architecture stayed.<br><em>The machine beneath it did not.</em></h2>
+        <p>Move the time cursor. Each stop separates three things that are often muddled together: the software-visible instruction set, the hidden microarchitecture that executes it, and the physical product that contains both.</p>
+      </div>
+
+      <div class="timeline-instrument panel-card">
+        <div class="timeline-topline">
+          <div>
+            <span class="control-label">Generation</span>
+            <strong id="timeline-selection">8086 · 1978</strong>
+          </div>
+          <p id="timeline-headline">Fetch and execute become two overlapping jobs.</p>
+        </div>
+        <div class="timeline-track-wrap">
+          <div class="timeline-track" id="timeline-track" role="group" aria-label="Select a processor generation"></div>
+          <input class="timeline-range" id="timeline-range" type="range" min="0" max="7" value="0" step="1" aria-label="Processor generation">
+        </div>
+      </div>
+
+      <div class="lineage-grid">
+        <article class="chip-portrait panel-card" aria-live="polite">
+          <div class="chip-title-row">
+            <div>
+              <p id="chip-family" class="chip-family">The original contract</p>
+              <h3 id="chip-name">8086</h3>
+            </div>
+            <div class="chip-year" id="chip-year">1978</div>
+          </div>
+          <div class="die-visual" id="die-visual" aria-hidden="true">
+            <div class="die-ring"></div>
+            <div class="die-core">
+              <span class="die-label">29K</span>
+              <span class="die-sub">transistors</span>
+            </div>
+            <span class="die-node node-a"></span><span class="die-node node-b"></span><span class="die-node node-c"></span><span class="die-node node-d"></span>
+          </div>
+          <p id="chip-summary" class="chip-summary"></p>
+          <dl class="chip-specs" id="chip-specs"></dl>
+        </article>
+
+        <article class="architecture-story panel-card">
+          <div class="story-block">
+            <span class="control-label">What changed</span>
+            <ul id="architecture-list" class="architecture-list"></ul>
+          </div>
+          <div class="story-block isa-block">
+            <span class="control-label">New words in the language</span>
+            <div id="isa-chips" class="isa-chips"></div>
+          </div>
+          <div class="story-block pressure-block">
+            <span class="control-label">The next bottleneck</span>
+            <p id="pressure-copy"></p>
+          </div>
+        </article>
+      </div>
+
+      <article class="scale-card panel-card">
+        <div class="card-heading-row">
+          <div>
+            <span class="control-label">A logarithmic journey</span>
+            <h3>Transistor budget</h3>
+          </div>
+          <p>Linear bars would make the 8086 vanish. Height here is logarithmic; labels retain the honest count.</p>
+        </div>
+        <div class="transistor-chart" id="transistor-chart" aria-label="Logarithmic chart of transistor counts by processor"></div>
+      </article>
+
+      <div class="concept-triptych">
+        <article class="concept-card">
+          <span class="concept-index">A</span>
+          <h3>Architecture</h3>
+          <p>The contract software can observe: registers, flags, address translation, instruction encodings and exceptions. A Pentium 4 still promises to execute old 8086 code, subject to mode and platform constraints.</p>
+        </article>
+        <article class="concept-card">
+          <span class="concept-index">µ</span>
+          <h3>Microarchitecture</h3>
+          <p>The private method used to honour that contract: queue, pipeline, dual issue, micro-operations, renaming, predictors and caches. It may change completely while the bytes remain valid.</p>
+        </article>
+        <article class="concept-card">
+          <span class="concept-index">Si</span>
+          <h3>Implementation</h3>
+          <p>Process node, transistor budget, package, clocks, bus and cache sizes. “Pentium III” spans implementations whose cache and manufacturing details differ while sharing a core lineage.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-decode" aria-labelledby="tab-decode" data-panel="decode" hidden>
+      <div class="section-heading">
+        <p class="section-number">02 · Decode</p>
+        <h2>A language with no spaces<br><em>and forty years of footnotes.</em></h2>
+        <p>x86 instructions are variable-length records embedded back-to-back in memory. The decoder must discover the boundary while interpreting prefixes, opcode maps, addressing bytes, displacement and immediate data.</p>
+      </div>
+
+      <div class="decoder-layout">
+        <article class="decoder-console panel-card">
+          <div class="console-header">
+            <div>
+              <span class="control-label">Byte laboratory</span>
+              <h3>Instruction decoder</h3>
+            </div>
+            <span class="subset-badge">audited subset</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Preset</span>
+              <select id="decode-preset"></select>
+            </label>
+            <fieldset class="mode-switch">
+              <legend>Default mode</legend>
+              <label><input type="radio" name="decode-mode" value="16" checked> 16-bit</label>
+              <label><input type="radio" name="decode-mode" value="32"> 32-bit</label>
+            </fieldset>
+          </div>
+
+          <label class="byte-input-label" for="byte-input">Hex bytes</label>
+          <div class="byte-input-row">
+            <input id="byte-input" class="byte-input" type="text" value="8B 46 04" inputmode="text" spellcheck="false" autocomplete="off" aria-describedby="decode-help">
+            <button id="decode-button" class="primary-button compact" type="button">Decode</button>
+          </div>
+          <p id="decode-help" class="field-help">Spaces and commas are optional. The lab recognises common integer, MMX, SSE and SSE2 examples; unknown opcodes are still split into structural fields.</p>
+
+          <div class="decoded-sentence" aria-live="polite">
+            <span class="control-label">Reading</span>
+            <code id="decoded-assembly">MOV AX, word ptr [BP + 4]</code>
+            <p id="decoded-explanation"></p>
+          </div>
+
+          <div class="byte-ribbon" id="byte-ribbon" aria-label="Decoded instruction fields"></div>
+          <div class="field-ledger" id="field-ledger"></div>
+        </article>
+
+        <aside class="decoder-anatomy panel-card">
+          <span class="control-label">Addressing anatomy</span>
+          <h3>Bits inside the bytes</h3>
+          <div class="bit-byte" id="modrm-diagram">
+            <div class="bit-caption"><strong>ModR/M</strong><code id="modrm-hex">46</code></div>
+            <div class="bit-row">
+              <span class="bits bits-mod" data-bits="2">01</span>
+              <span class="bits bits-reg" data-bits="3">000</span>
+              <span class="bits bits-rm" data-bits="3">110</span>
+            </div>
+            <div class="bit-labels"><span>mod</span><span>reg / opcode</span><span>r/m</span></div>
+          </div>
+          <div class="bit-byte is-muted" id="sib-diagram">
+            <div class="bit-caption"><strong>SIB</strong><code id="sib-hex">—</code></div>
+            <div class="bit-row">
+              <span class="bits bits-scale" data-bits="2">--</span>
+              <span class="bits bits-index" data-bits="3">---</span>
+              <span class="bits bits-base" data-bits="3">---</span>
+            </div>
+            <div class="bit-labels"><span>scale</span><span>index</span><span>base</span></div>
+          </div>
+          <div class="anatomy-note" id="address-note">In 16-bit addressing, r/m = 110 with mod = 01 means BP plus an 8-bit displacement.</div>
+        </aside>
+      </div>
+
+      <article class="grammar-card panel-card">
+        <div class="card-heading-row">
+          <div>
+            <span class="control-label">General form</span>
+            <h3>The expanding grammar</h3>
+          </div>
+          <p>Not every instruction contains every field. That optionality makes the encoding compact—and makes instruction boundaries real work.</p>
+        </div>
+        <div class="grammar-strip" aria-label="General x86 instruction format">
+          <div class="grammar-piece prefix"><span>0–4</span><strong>Prefixes</strong><small>lock · repeat · segment · size</small></div>
+          <div class="grammar-piece opcode"><span>1–2+</span><strong>Opcode</strong><small>primary map or escaped map</small></div>
+          <div class="grammar-piece modrm"><span>0–1</span><strong>ModR/M</strong><small>mode · register · r/m</small></div>
+          <div class="grammar-piece sib"><span>0–1</span><strong>SIB</strong><small>scale · index · base</small></div>
+          <div class="grammar-piece displacement"><span>0–4</span><strong>Displacement</strong><small>address constant</small></div>
+          <div class="grammar-piece immediate"><span>0–4+</span><strong>Immediate</strong><small>literal operand</small></div>
+        </div>
+      </article>
+
+      <div class="encoding-eras">
+        <article><time>1978</time><h3>Compact CISC</h3><p>One-byte opcodes do a remarkable amount of work. Direction and width bits are sometimes embedded in the opcode itself; ModR/M selects register and memory forms.</p></article>
+        <article><time>1985</time><h3>Escape and override</h3><p>The 386 uses 0F as a second opcode map, adds FS/GS, 66/67 size overrides and SIB. Sixteen- and thirty-two-bit code share one grammar.</p></article>
+        <article><time>1997–2000</time><h3>Prefixes become selectors</h3><p>MMX, SSE and SSE2 reuse opcode maps. Legacy bytes such as 66, F2 and F3 can become mandatory parts of a new vector opcode rather than ordinary overrides.</p></article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-pipeline" aria-labelledby="tab-pipeline" data-panel="pipeline" hidden>
+      <div class="section-heading">
+        <p class="section-number">03 · Pipeline</p>
+        <h2>Latency is how long one takes.<br><em>Throughput is how often another may start.</em></h2>
+        <p>Run the same stream through several conceptual machines. A pipeline does not make an individual dependent chain magically shorter; it overlaps different instructions so completed work can emerge more often.</p>
+      </div>
+
+      <article class="pipeline-instrument panel-card">
+        <div class="instrument-controls">
+          <label><span>Processor</span><select id="pipeline-cpu"></select></label>
+          <label><span>Program</span><select id="pipeline-program"></select></label>
+          <label class="range-label"><span>Tempo</span><input id="pipeline-speed" type="range" min="250" max="1200" step="50" value="650"><output id="pipeline-speed-output">650 ms</output></label>
+          <label class="toggle-label"><input id="pipeline-mispredict" type="checkbox"><span>Force branch mispredict</span></label>
+        </div>
+        <div class="transport-controls" aria-label="Pipeline animation controls">
+          <button id="pipeline-play" type="button" class="primary-button compact">Play</button>
+          <button id="pipeline-step" type="button" class="secondary-button compact">Step one clock</button>
+          <button id="pipeline-reset" type="button" class="text-button compact">Reset</button>
+          <div class="cycle-counter"><span>Clock</span><strong id="pipeline-cycle">0</strong></div>
+        </div>
+
+        <div class="pipeline-caption" aria-live="polite">
+          <div><span class="control-label">Current idea</span><strong id="pipeline-idea">The bus fetches ahead into a six-byte queue.</strong></div>
+          <p id="pipeline-caveat">This is an explanatory schedule, not a transistor-level simulator.</p>
+        </div>
+
+        <div class="pipeline-scroll" tabindex="0" aria-label="Pipeline timing diagram. Scroll horizontally when needed.">
+          <div class="pipeline-grid" id="pipeline-grid"></div>
+        </div>
+        <div class="pipeline-legend">
+          <span><i class="legend-fetch"></i>front end</span>
+          <span><i class="legend-execute"></i>execute</span>
+          <span><i class="legend-retire"></i>architectural completion</span>
+          <span><i class="legend-flush"></i>flushed wrong path</span>
+        </div>
+      </article>
+
+      <div class="pipeline-lessons">
+        <article>
+          <span class="lesson-number">1</span><h3>Fill</h3><p>The first result still traverses the machine. A deeper pipeline spends more clocks before steady-state throughput appears.</p>
+        </article>
+        <article>
+          <span class="lesson-number">2</span><h3>Flow</h3><p>Once full, independent instructions occupy different stages. The 486 aims to begin a simple instruction each clock.</p>
+        </article>
+        <article>
+          <span class="lesson-number">3</span><h3>Flush</h3><p>A wrong branch invalidates younger work. The deeper the speculative runway, the more useful work must be rebuilt.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-superscalar" aria-labelledby="tab-superscalar" data-panel="superscalar" hidden>
+      <div class="section-heading">
+        <p class="section-number">04 · Superscalar</p>
+        <h2>Two-wide is not the same as<br><em>two instructions every clock.</em></h2>
+        <p>Compare a scalar pipeline, Pentium's in-order U/V pairing and a simplified P6-style out-of-order engine. The original program order is identical; what changes is who may pass whom inside the core.</p>
+      </div>
+
+      <article class="scheduler-instrument panel-card">
+        <div class="scheduler-topbar">
+          <div class="segmented-control" role="group" aria-label="Scheduling model">
+            <button type="button" data-scheduler-model="scalar" aria-pressed="false">Scalar</button>
+            <button type="button" data-scheduler-model="p5" aria-pressed="true">Pentium U/V</button>
+            <button type="button" data-scheduler-model="p6" aria-pressed="false">P6 out of order</button>
+          </div>
+          <label><span>Instruction stream</span><select id="scheduler-program"></select></label>
+        </div>
+
+        <div class="scheduler-explainer">
+          <div>
+            <span class="control-label">Model</span>
+            <h3 id="scheduler-model-title">Pentium: pair in order</h3>
+            <p id="scheduler-model-copy">The V pipe may accept only a suitable companion. A blocked old instruction blocks younger ones, even when they are independent.</p>
+          </div>
+          <div class="scheduler-metrics" aria-live="polite">
+            <div><span>Cycles</span><strong id="scheduler-cycles">0</strong></div>
+            <div><span>Instructions</span><strong id="scheduler-instructions">0</strong></div>
+            <div><span>IPC</span><strong id="scheduler-ipc">0.00</strong></div>
+          </div>
+        </div>
+
+        <p id="scheduler-description" class="scheduler-program-note"></p>
+        <div class="scheduler-scroll" tabindex="0" aria-label="Instruction issue schedule">
+          <div class="scheduler-grid" id="scheduler-grid"></div>
+        </div>
+
+        <div class="scheduler-actions">
+          <button id="scheduler-rerun" type="button" class="primary-button compact">Rebuild schedule</button>
+          <label class="toggle-label"><input id="scheduler-miss" type="checkbox"><span>Make the first load miss (+5 clocks)</span></label>
+        </div>
+      </article>
+
+      <div class="order-diagram panel-card">
+        <div class="order-column">
+          <span class="control-label">Architectural order</span>
+          <div class="order-stream"><span>1</span><i></i><span>2</span><i></i><span>3</span><i></i><span>4</span><i></i><span>5</span></div>
+          <p>The program observes this order. Exceptions must describe a precise point in it.</p>
+        </div>
+        <div class="order-arrow" aria-hidden="true">⇄</div>
+        <div class="order-column wild">
+          <span class="control-label">Execution order inside P6</span>
+          <div class="order-stream"><span>1</span><i></i><span>4</span><i></i><span>5</span><i></i><span>2</span><i></i><span>3</span></div>
+          <p>Ready operations may execute early, but the reorder buffer retires their results as 1, 2, 3, 4, 5.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-branches" aria-labelledby="tab-branches" data-panel="branches" hidden>
+      <div class="section-heading">
+        <p class="section-number">05 · Branches</p>
+        <h2>The processor must choose a future<br><em>before the present has finished.</em></h2>
+        <p>Train four predictor ideas on repeatable patterns. The state machines are real concepts; the table sizes and product penalties are intentionally pedagogical unless a product source says otherwise.</p>
+      </div>
+
+      <article class="branch-lab panel-card">
+        <div class="instrument-controls branch-controls">
+          <label><span>Outcome pattern</span><select id="branch-pattern"></select></label>
+          <label><span>Predictor</span>
+            <select id="branch-predictor">
+              <option value="static">Always not taken</option>
+              <option value="one">One-bit last outcome</option>
+              <option value="two" selected>Two-bit saturating counter</option>
+              <option value="history">Two-level local history</option>
+            </select>
+          </label>
+          <label><span>Pipeline cost</span><select id="branch-cpu"></select></label>
+        </div>
+
+        <div class="branch-dashboard">
+          <div class="predictor-state">
+            <span class="control-label">Predictor state</span>
+            <div class="counter-machine" id="counter-machine" aria-label="Two-bit predictor state machine">
+              <div data-state="0"><span>00</span><small>strong N</small></div>
+              <div data-state="1"><span>01</span><small>weak N</small></div>
+              <div data-state="2" class="is-current"><span>10</span><small>weak T</small></div>
+              <div data-state="3"><span>11</span><small>strong T</small></div>
+            </div>
+            <p id="predictor-detail">Predict taken; one contrary result only weakens the belief.</p>
+          </div>
+          <div class="branch-metrics" aria-live="polite">
+            <div><span>Branches</span><strong id="branch-count">0</strong></div>
+            <div><span>Correct</span><strong id="branch-correct">0</strong></div>
+            <div><span>Accuracy</span><strong id="branch-accuracy">—</strong></div>
+            <div><span>Lost clocks</span><strong id="branch-lost">0</strong></div>
+          </div>
+        </div>
+
+        <div class="branch-stream-wrap">
+          <div class="branch-stream" id="branch-stream" aria-label="Branch prediction outcomes"></div>
+        </div>
+
+        <div class="branch-actions">
+          <button id="branch-step" type="button" class="primary-button compact">Resolve next branch</button>
+          <button id="branch-run" type="button" class="secondary-button compact">Run 32</button>
+          <button id="branch-reset" type="button" class="text-button compact">Reset</button>
+          <div class="branch-verdict" aria-live="polite"><span id="branch-prediction">Prediction: T</span><strong id="branch-outcome">Waiting</strong></div>
+        </div>
+        <p id="branch-penalty-note" class="field-help"></p>
+      </article>
+
+      <div class="branch-arc">
+        <article><span>8086</span><h3>No prediction</h3><p>Sequential prefetch continues until a taken transfer proves the next bytes useless. The queue is discarded and refilled at the target.</p></article>
+        <article><span>Pentium</span><h3>Remember targets</h3><p>A branch target buffer lets the front end recognise a branch at fetch time and pursue a remembered path early.</p></article>
+        <article><span>P6</span><h3>Speculate deeply</h3><p>Prediction now feeds an out-of-order window. Correct guesses expose more parallelism; wrong guesses discard a larger cloud of µops.</p></article>
+        <article><span>Pentium 4</span><h3>Trace the predicted path</h3><p>The trace cache stores decoded µops in execution order across taken branches. Prediction helps decide which trace is useful.</p></article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-cache" aria-labelledby="tab-cache" data-panel="cache" hidden>
+      <div class="section-heading">
+        <p class="section-number">06 · Cache</p>
+        <h2>The fastest memory is the byte<br><em>you did not have to fetch.</em></h2>
+        <p>Split an address into tag, set and offset, then generate access patterns. Cache geometry is exact arithmetic; the latency numbers are a teaching model because real systems include buses, write policy, TLBs, banks and multiple cache levels.</p>
+      </div>
+
+      <article class="cache-lab panel-card">
+        <div class="cache-controls">
+          <label><span>Cache</span><select id="cache-size"><option value="4096">4 KiB</option><option value="8192" selected>8 KiB</option><option value="16384">16 KiB</option><option value="32768">32 KiB</option></select></label>
+          <label><span>Line</span><select id="cache-line"><option value="16" selected>16 bytes</option><option value="32">32 bytes</option><option value="64">64 bytes</option></select></label>
+          <label><span>Ways</span><select id="cache-ways"><option value="1">Direct mapped</option><option value="2">2-way</option><option value="4" selected>4-way</option><option value="8">8-way</option></select></label>
+          <label class="address-control"><span>Address</span><div><span>0x</span><input id="cache-address" type="text" value="00012F34" inputmode="text" spellcheck="false" aria-label="Hexadecimal address"></div></label>
+        </div>
+
+        <div class="address-split" aria-live="polite">
+          <div class="address-binary" id="address-binary"></div>
+          <div class="address-fields">
+            <div class="tag-field"><span>Tag</span><strong id="cache-tag">0x4</strong><small id="tag-bits">18 bits</small></div>
+            <div class="set-field"><span>Set</span><strong id="cache-set">0xF3</strong><small id="set-bits">7 bits</small></div>
+            <div class="offset-field"><span>Offset</span><strong id="cache-offset">0x4</strong><small id="offset-bits">4 bits</small></div>
+          </div>
+          <p id="cache-equation">8 KiB ÷ (16 B × 4 ways) = 128 sets</p>
+        </div>
+
+        <div class="cache-simulator">
+          <div class="cache-pattern-controls">
+            <label><span>Access pattern</span>
+              <select id="cache-pattern">
+                <option value="sequential">Sequential words</option>
+                <option value="stride">Stride through rows</option>
+                <option value="conflict">Same-set conflict</option>
+                <option value="working">Small working set</option>
+              </select>
+            </label>
+            <label class="range-label"><span>Stride</span><input id="cache-stride" type="range" min="4" max="2048" value="64" step="4"><output id="cache-stride-output">64 B</output></label>
+            <button id="cache-run" type="button" class="primary-button compact">Run 64 accesses</button>
+          </div>
+          <div class="cache-map" id="cache-map" aria-label="Cache set occupancy visualisation"></div>
+          <div class="cache-metrics" aria-live="polite">
+            <div><span>Hits</span><strong id="cache-hits">0</strong></div>
+            <div><span>Misses</span><strong id="cache-misses">0</strong></div>
+            <div><span>Hit rate</span><strong id="cache-hit-rate">—</strong></div>
+            <div><span>Modelled AMAT</span><strong id="cache-amat">—</strong></div>
+          </div>
+        </div>
+      </article>
+
+      <div class="cache-history">
+        <article><time>8086–386DX</time><h3>Outside the core</h3><p>No general on-chip cache in these flagship parts. Boards could add external cache; memory and bus timing remained conspicuous.</p><span class="cache-size-mark none">0</span></article>
+        <article><time>1989 · 486</time><h3>One nearby store</h3><p>An 8 KiB unified on-chip cache supplies both instructions and data and makes the five-stage pipeline much less dependent on the motherboard.</p><span class="cache-size-mark">8K</span></article>
+        <article><time>1993 · Pentium</time><h3>Split the traffic</h3><p>Separate 8 KiB instruction and 8 KiB data caches let the dual pipelines fetch code and access data without fighting for one L1 port.</p><span class="cache-size-mark split">8+8</span></article>
+        <article><time>2000 · Pentium 4</time><h3>Cache decoded work</h3><p>The trace cache holds roughly 12K µops rather than ordinary instruction bytes; an 8 KiB data L1 and 256 KiB L2 serve the launch part.</p><span class="cache-size-mark trace">µops</span></article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-cycles" aria-labelledby="tab-cycles" data-panel="cycles" hidden>
+      <div class="section-heading">
+        <p class="section-number">07 · Cycles</p>
+        <h2>One number stopped being enough.<br><em>That is the story.</em></h2>
+        <p>Early manuals can quote an instruction in clocks under explicit assumptions. Superscalar and out-of-order cores need at least latency, reciprocal throughput, µop count, dependency shape, prediction and cache state.</p>
+      </div>
+
+      <article class="cycle-ledger panel-card">
+        <div class="cycle-selector" id="cycle-selector" role="tablist" aria-label="Select timing era"></div>
+        <div class="cycle-content" id="cycle-content" aria-live="polite"></div>
+      </article>
+
+      <article class="workload-model panel-card">
+        <div class="card-heading-row">
+          <div>
+            <span class="control-label">Teaching model</span>
+            <h3>Build a thousand-instruction workload</h3>
+          </div>
+          <p>This deliberately simple model exposes interactions; it is not a benchmark or product performance claim.</p>
+        </div>
+        <div class="workload-controls">
+          <label><span>Core model</span>
+            <select id="workload-cpu">
+              <option value="8086">8086 · serial + queue</option>
+              <option value="486">486 · pipelined scalar</option>
+              <option value="pentium">Pentium · paired in order</option>
+              <option value="p6" selected>P6 · out of order</option>
+              <option value="p4">Pentium 4 · deep speculative</option>
+            </select>
+          </label>
+          <label class="range-label"><span>Independent work</span><input id="workload-ilp" type="range" min="0" max="100" value="60"><output id="workload-ilp-output">60%</output></label>
+          <label class="range-label"><span>Branches</span><input id="workload-branches" type="range" min="0" max="35" value="15"><output id="workload-branches-output">15%</output></label>
+          <label class="range-label"><span>Mispredicts</span><input id="workload-mispredicts" type="range" min="0" max="50" value="10"><output id="workload-mispredicts-output">10%</output></label>
+          <label class="range-label"><span>L1 misses</span><input id="workload-misses" type="range" min="0" max="25" value="5"><output id="workload-misses-output">5%</output></label>
+        </div>
+        <div class="workload-result" aria-live="polite">
+          <div class="workload-gauge"><div id="workload-gauge-fill"></div><span id="workload-cycles">—</span><small>modelled clocks</small></div>
+          <div class="workload-breakdown" id="workload-breakdown"></div>
+        </div>
+      </article>
+
+      <div class="timing-vocabulary">
+        <article><h3>Latency</h3><p>Clocks from an operation starting until a dependent operation may consume its result.</p></article>
+        <article><h3>Throughput</h3><p>How often another independent operation of that class may begin once the machine is flowing.</p></article>
+        <article><h3>µops</h3><p>The number and kind of internal operations a visible x86 instruction becomes. One mnemonic may occupy several resources.</p></article>
+        <article><h3>Retirement</h3><p>The rate at which completed speculative work becomes architectural history in original program order.</p></article>
+      </div>
+    </section>
+
+    <section class="instrument-panel" role="tabpanel" id="panel-sources" aria-labelledby="tab-sources" data-panel="sources" hidden>
+      <div class="section-heading">
+        <p class="section-number">08 · Sources</p>
+        <h2>What the diagrams claim—<br><em>and what they deliberately do not.</em></h2>
+        <p>The factual backbone is Intel's period documentation. The interactive models simplify implementation details to make one mechanism legible at a time, and mark those simplifications rather than smuggling them in as product facts.</p>
+      </div>
+
+      <div class="method-grid">
+        <article class="method-card verified"><span>01</span><h3>Documented fact</h3><p>Dates, transistor counts, address widths, cache headlines, instruction additions and named microarchitecture features are tied to manufacturer manuals or Intel's historical material.</p></article>
+        <article class="method-card modelled"><span>02</span><h3>Explanatory model</h3><p>Animated schedules, branch table sizes, generic cache penalties and workload totals are purpose-built models. They show causality, not a cycle-accurate netlist.</p></article>
+        <article class="method-card variable"><span>03</span><h3>Product variation</h3><p>A family name spans steppings and products. Pentium MMX is not the 1993 launch Pentium; Coppermine differs from Katmai; later Pentium 4 cores deepen and change the launch design.</p></article>
+      </div>
+
+      <article class="source-ledger panel-card">
+        <div class="card-heading-row">
+          <div><span class="control-label">Primary shelf</span><h3>Manuals and technical announcements</h3></div>
+          <p>PDF links open the original scanned manuals; HTML links open Intel's archived technical material.</p>
+        </div>
+        <ol class="source-list" id="source-list"></ol>
+      </article>
+
+      <article class="caveat-ledger panel-card">
+        <div>
+          <span class="control-label">Caveat A</span>
+          <h3>“Pipeline depth” is a counting convention.</h3>
+          <p>Manufacturers and analysts may count different boundaries. This site uses Intel's launch description of a twenty-stage Pentium 4 pipeline and treats the shorter diagrams as conceptual stage groups.</p>
+        </div>
+        <div>
+          <span class="control-label">Caveat B</span>
+          <h3>Clock counts need assumptions.</h3>
+          <p>Manual timings commonly assume prefetched instructions, aligned operands, cache hits or no bus wait states. The ledger repeats those assumptions and avoids comparing unlike numbers as if they were benchmark results.</p>
+        </div>
+        <div>
+          <span class="control-label">Caveat C</span>
+          <h3>Predictor internals are not all public.</h3>
+          <p>The predictor lab teaches static, last-outcome, two-bit and history-based mechanisms. It does not assert that its tiny tables exactly reproduce a particular commercial part.</p>
+        </div>
+        <div>
+          <span class="control-label">Caveat D</span>
+          <h3>Compatibility is not identity.</h3>
+          <p>Later processors preserve a great deal of earlier software-visible behaviour, but modes, undefined flags, timing, undocumented instructions, platform hardware and errata prevent “the same processor, only faster” from being literally true.</p>
+        </div>
+      </article>
+
+      <div class="closing-idea">
+        <p>The deepest continuity is not a pipeline or cache.</p>
+        <h3>It is the promise that yesterday's bytes still mean something—while tomorrow's machine is free to discover a better way to make them true.</h3>
+        <button type="button" class="primary-button" data-open-tab="lineage">Return to 1978</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>The Long Instruction</strong> · an interactive technical history from the 8086 to Pentium 4.</p>
+    <p>Original diagrams and simulations. No runtime dependencies, telemetry or network requests.</p>
+  </footer>
+
+  <noscript><div class="noscript">This field guide needs JavaScript for its interactive diagrams. The explanatory prose and source links remain visible in the page source.</div></noscript>
+  <script src="cpu-data.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
