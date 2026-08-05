@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "x86-evolution",
+    title: "The Long Instruction",
+    tagline: "An interactive technical history of x86 from the 8086’s six-byte queue to the Pentium 4’s trace cache: decode real bytes, step pipelines, schedule superscalar work, train branch predictors and stress a cache. Original SVG and DOM simulations, vanilla JavaScript; no build step.",
+    url: "https://0x4d44.github.io/x86-evolution/",
+    illustration: "ill-pc",
+    date: "2026-08-05T12:00:00",
+    year: 1978,
+    readingMin: 25,
+    words: 4900,
+    tags: ["software", "engineering", "history", "science"],
+    real: true,
+  },
+  {
     slug: "stratego",
     title: "Stratego — Field Edition",
     tagline: "A full-size browser adaptation of the classic hidden-rank battle game: secretly deploy forty red or blue pieces, scout the lakes, defuse bombs, spring the Spy on the Marshal, and capture the Flag. Original table art, hot-seat and information-limited automata, deterministic offline vanilla JavaScript; no build step.",
@@ -1672,7 +1685,7 @@ window.COLLECTIONS = [
     slugs: ["instruments"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
@@ -1694,7 +1707,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
