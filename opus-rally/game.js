@@ -458,8 +458,77 @@ export async function startGame(opts) {
   toMenu();
   rafId = requestAnimationFrame(loop);
 
+  // A scripted-drive surface, so the browser test and the screenshot tool can
+  // put the game in a specific place — a named stage in a named weather, the car
+  // half way along, a chosen camera — instead of trying to drive there by hand
+  // under a software GL stack at four frames a second.
+  const harness = {
+    get ready() { return true; },
+    get state() { return game.state; },
+    get frame() { return buildFrame(); },
+    async drive(choice) {
+      await beginStage({
+        stageId: choice.stageId ?? stageMod.STAGE_BOOK[0].id,
+        carId: choice.carId ?? physics.CARS[0].id,
+        weather: choice.weather,
+        seed: choice.seed,
+        reverse: !!choice.reverse,
+      });
+      if (choice.skipCountdown !== false) {
+        game.countdown = 0;
+        game.state = GameState.RACING;
+      }
+      return true;
+    },
+    // Teleports to an arc length and sets a speed along the road, which is how
+    // the screenshot tool reaches a jump or a hairpin without a lucky lap.
+    placeAt(distance, speedKph = 0) {
+      if (!game.stage) return false;
+      const st = game.stage;
+      const i = clamp(st.world?.sampleAt?.(distance) ?? game.world.sampleAt(distance), 0, st.count - 1);
+      const yaw = Math.atan2(st.tx[i], st.tz[i]);
+      physics.resetCar(game.car, st.x[i], st.y[i] + 0.35, st.z[i], yaw);
+      const v = speedKph / 3.6;
+      game.car.vel.x = st.tx[i] * v;
+      game.car.vel.y = 0;
+      game.car.vel.z = st.tz[i] * v;
+      game.lastS = distance;
+      game.stageTimeMs = 0;
+      return true;
+    },
+    setCamera(mode) { renderer.setCamera?.(mode); },
+    setWeather(preset) {
+      if (!game.weather) return false;
+      weatherMod.applyPreset?.(game.weather, preset);
+      return true;
+    },
+    hold(keys, ms) {
+      // The screenshot tool wants "throttle for two seconds" without owning the
+      // key dispatch; this drives the same input record a real key would.
+      const patch = {};
+      if (keys.includes("throttle")) patch.throttle = 1;
+      if (keys.includes("brake")) patch.brake = 1;
+      if (keys.includes("left")) patch.steer = 1;
+      if (keys.includes("right")) patch.steer = -1;
+      if (keys.includes("handbrake")) patch.handbrake = 1;
+      input.setTouch({ steer: 0, throttle: 0, brake: 0, handbrake: 0, ...patch });
+      return new Promise((r) => setTimeout(() => { input.clearTouch(); r(true); }, ms));
+    },
+    stageInfo() {
+      const st = game.stage;
+      if (!st) return null;
+      return {
+        id: st.id, name: st.name, country: st.country,
+        length: st.length, count: st.count,
+        scenery: st.scenery?.length ?? 0, props: st.props?.length ?? 0,
+      };
+    },
+  };
+  window.__opusRally = harness;
+
   return {
     game,
+    harness,
     beginStage,
     toMenu,
     setPaused,
