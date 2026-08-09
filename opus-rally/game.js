@@ -306,6 +306,8 @@ export async function startGame(opts) {
     hud.toast?.("+10s recovery");
   }
 
+  let goTimer = 0;
+
   const projScratch = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
   const surfScratch = { props: surfaceProps(1), surfaceId: 1, onRoad: true, lateral: 0,
     signedLateral: 0, s: 0, edgeBlend: 0, roughness: 0, ruts: 0 };
@@ -336,7 +338,12 @@ export async function startGame(opts) {
       hud.countdown?.(Math.max(0, Math.ceil(game.countdown)));
       if (game.countdown <= 0) {
         game.state = GameState.RACING;
+        // countdown(0) is the green "GO" flash, not a dismissal — only a null
+        // clears the light gantry, so without this the lights stay lit across
+        // the whole stage.
         hud.countdown?.(0);
+        clearTimeout(goTimer);
+        goTimer = setTimeout(() => hud.countdown?.(null), 1200);
         audio.impact?.({ kind: "start", energy: 0 });
       }
     } else if (game.state === GameState.RACING) {
@@ -521,6 +528,10 @@ export async function startGame(opts) {
       if (choice.skipCountdown !== false) {
         game.countdown = 0;
         game.state = GameState.RACING;
+        // Clearing the countdown by hand would leave the HUD's start lights lit
+        // for the rest of the stage, which is exactly the sort of thing a
+        // screenshot review then reports as a rendering bug.
+        hud.countdown?.(null);
       }
       return true;
     },

@@ -1148,7 +1148,10 @@ void main() {
   float rad = length(centred);
   vec2 dir = rad > 1e-5 ? centred / rad : vec2(0.0);
 
-  vec3 col = sampleScene(uv, dir * uTexel * 400.0, uChroma * rad * rad);
+  // Six texels of split at the very corner, and only at full speed: real lens
+  // dispersion is a pixel or two. This multiplier is in TEXELS, so a value
+  // sized as though it were a UV offset smears the whole frame into rainbows.
+  vec3 col = sampleScene(uv, dir * uTexel * 6.0, uChroma * rad * rad);
 
   if (uRadial > 0.001) {
     // Streaks towards the edges only; the middle of the screen, where the road
@@ -1798,7 +1801,10 @@ export function createRenderer(canvas, opts = {}) {
       }
     }
     if (headlights.beams) headlights.beams.visible = q.beams && headlights.on;
-    dustMat.uniforms.uOpacity.value = q.name === "low" ? 0.75 : 1;
+    // A dust puff is a metre across and nearly transparent; the plume comes
+    // from hundreds of them overlapping. At full opacity each one is a solid
+    // white disc and the rooster tail reads as a bag of golf balls.
+    dustMat.uniforms.uOpacity.value = q.name === "low" ? 0.16 : 0.22;
     resize();
   }
 
