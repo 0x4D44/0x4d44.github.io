@@ -56,17 +56,27 @@ check(/touch-action:\s*none/.test(html), "the canvas swallows touch gestures rat
 const remote = [...html.matchAll(/(?:src|href)=["'](https?:)?\/\/[^"']+/gi)].map((m) => m[0]);
 check(remote.length === 0, `no remote assets are referenced (found: ${remote.join(", ")})`);
 
+// Comments legitimately discuss the things the checks below forbid — this file's
+// own prose names Math.random twice — so every scan runs on code, not prose.
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
 for (const file of MODULES) {
   const path = join(appDir, file);
   if (!existsSync(path)) continue;
-  const source = readFileSync(path, "utf8");
+  const code = stripComments(readFileSync(path, "utf8"));
   // Determinism is load-bearing: a replay, a ghost and a stage are all a seed.
   check(
-    !/\bMath\.random\s*\(/.test(source),
+    !/\bMath\.random\s*\(/.test(code),
     `${file} uses the seeded rng rather than Math.random`,
   );
-  const remoteImport = source.match(/from\s+["'](https?:)?\/\/[^"']+["']/);
-  check(!remoteImport, `${file} imports nothing from the network`);
+  check(
+    !/from\s+["'](https?:)?\/\/[^"']+["']/.test(code),
+    `${file} imports nothing from the network`,
+  );
 }
 
 // The catalogue has to know about it, or nobody finds it.
@@ -95,12 +105,24 @@ check(strays.length === 0, `no build artefacts left in the directory (found: ${s
 
 // Original branding only. These are the names a well-meaning generator reaches
 // for, and every one of them is somebody's trademark.
-const BRANDS = /\b(Subaru|Impreza|Mitsubishi|Lancer|Evo\b|Toyota|Celica|Corolla|Ford|Escort|Focus RS|Peugeot|Citro[eë]n|Skoda|Fabia|Hyundai|Lancia|Delta Integrale|Stratos|Audi|Quattro|Renault|Fiat|Opel|Volkswagen|Porsche|Nissan|Pirelli|Michelin|Castrol|Martini|Red Bull|Monster Energy|WRC\b|World Rally Championship|Colin McRae|Loeb|Ogier|M[äa]kinen|Burns|Solberg|Rovanper[äa]|DiRT Rally|Richard Burns Rally|Monte Carlo Rally|Rally Finland|Acropolis|Safari Rally)\b/i;
+//
+// Deliberately case-sensitive and specific: "ford" is a water crossing and a
+// real rally feature, "focus" is an ordinary word, and a checker that cannot
+// tell those from a marque gets switched off rather than obeyed.
+const BRANDS = new RegExp([
+  "Subaru", "Impreza", "Mitsubishi", "Lancer", "Lancia", "Delta Integrale", "Stratos",
+  "Toyota", "Celica", "Corolla", "Ford Escort", "Ford Fiesta", "Ford Focus", "Escort Cosworth",
+  "Peugeot", "Citro[eë]n", "Skoda", "Fabia", "Hyundai", "Audi Quattro", "Renault",
+  "Volkswagen", "Porsche", "Nissan", "Vauxhall", "Astra", "Corsa\\b", "Evo\\b", "EVO\\b",
+  "Pirelli", "Michelin", "Castrol", "Martini Racing", "Red Bull", "Monster Energy",
+  "WRC\\b", "World Rally Championship", "Colin McRae", "Loeb", "Ogier", "M[äa]kinen",
+  "Solberg", "Rovanper[äa]", "DiRT Rally", "Richard Burns Rally",
+  "Monte Carlo Rally", "Rally Finland", "Acropolis Rally", "Safari Rally",
+].join("|"));
 for (const file of [...MODULES, "index.html"]) {
   const path = join(appDir, file);
   if (!existsSync(path)) continue;
-  const source = readFileSync(path, "utf8");
-  const hit = source.match(BRANDS);
+  const hit = readFileSync(path, "utf8").match(BRANDS);
   check(!hit, `${file} carries no real-world marque, driver or event name (found "${hit?.[0]}")`);
 }
 

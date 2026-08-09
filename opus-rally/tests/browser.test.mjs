@@ -42,11 +42,11 @@ try {
     }
 
     // The boot card must really be gone, not merely marked hidden: a full-screen
-    // overlay left displayed would swallow every key and click.
-    const bootDisplay = await page.evaluate(
-      "getComputedStyle(document.getElementById('boot')).visibility",
-    );
-    assert.equal(bootDisplay, "hidden", `${width}x${height}: the boot card still covers the page`);
+    // overlay left displayed would swallow every key and click. It fades out over
+    // half a second, so wait for it rather than racing it.
+    await page.waitFor("the boot card to clear", async () => (
+      await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
+    ), 10_000);
 
     const canvas = await page.evaluate(`(() => {
       const c = document.getElementById("stage-canvas");

@@ -43,6 +43,11 @@
     pointer-events: none;
   }
 
+  /* The roots stay transparent to the pointer so a drag on open sky reaches the
+     canvas, but whatever a module mounts inside them takes clicks normally —
+     without this the menus would be visible and completely dead. */
+  #ui-root > * { pointer-events: auto; }
+
   #ui-root { z-index: 20; }
   #hud-root { z-index: 10; }
 

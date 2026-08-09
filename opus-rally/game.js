@@ -13,8 +13,12 @@ import { surfaceProps } from "./surfaces.js";
 
 const PHYSICS_HZ = 200;
 const PHYSICS_DT = 1 / PHYSICS_HZ;
-const MAX_STEPS_PER_FRAME = 8;      // beyond this we let time slip rather than spiral
 const MAX_FRAME_DT = 0.25;
+// The clamp on frame dt is the real backlog limit; the step cap only has to be
+// big enough to honour it. Setting it lower silently caps how much time a slow
+// frame may simulate, which shows up as the whole game running in slow motion
+// on a weak GPU rather than merely dropping frames.
+const MAX_STEPS_PER_FRAME = Math.ceil(MAX_FRAME_DT / PHYSICS_DT);
 
 export const GameState = Object.freeze({
   BOOT: "boot",
@@ -102,11 +106,24 @@ export async function startGame(opts) {
     settings,
     onStart: (choice) => beginStage(choice),
     onSettingsChange: (patch) => applySettings(patch),
-    onRepair: (plan) => career.applyRepairs?.(plan),
+    onRepair: (plan) => career.applyService?.(plan),
     onQuit: () => toMenu(),
     onResume: () => setPaused(false),
     onRestart: () => beginStage(game.lastChoice),
   });
+
+  // ui.js draws a full-screen menu surface and knows nothing about racing, so
+  // "show the road" is not one of its screens — it is the absence of one. This
+  // adapter is the only place that translates the game's states into its.
+  function screen(name, data) {
+    const el = ui.element;
+    if (name === null) {
+      el?.classList.add("or-hidden");
+      return;
+    }
+    el?.classList.remove("or-hidden");
+    ui.show(name, data);
+  }
 
   input.onAction((action, down) => {
     if (!down) return;
@@ -151,7 +168,17 @@ export async function startGame(opts) {
         && matchMedia("(prefers-reduced-motion: reduce)").matches,
       quality: "auto",
       camera: "chase",
-      assists: { abs: false, tc: false, stability: false, steerAssist: true },
+      // Someone who opens the page and holds the throttle has to accelerate.
+      // The sim preset leaves the gearbox fully manual, which pins first gear
+      // and reads as a broken game rather than as a deliberate difficulty, so
+      // the default is the assisted set and the settings screen turns each
+      // assist off individually.
+      assistPreset: "arcade",
+      assists: {
+        autoShift: true, autoClutch: true, abs: true,
+        tractionControl: 0.35, stability: 0.30,
+        steerAssist: 0.35, speedSensitiveSteer: true,
+      },
       pacenoteStyle: "numeric",
       pacenoteOffset: 0,
       audio: {},
@@ -180,20 +207,21 @@ export async function startGame(opts) {
   async function beginStage(choice) {
     game.lastChoice = choice;
     game.state = GameState.LOADING;
-    ui.show("loading", { stage: choice.stageId });
+    screen("loading", { stage: choice.stageId });
     await nextFrame();
 
     const def = stageMod.STAGE_BOOK.find((s) => s.id === choice.stageId)
       ?? stageMod.STAGE_BOOK[0];
-    const stage = stageMod.generateStage(choice.seed ?? def.seed, {
-      ...def,
+    const stage = stageMod.stageFromBook(def.id, {
       reverse: !!choice.reverse,
+      ...(choice.seed ? { seed: choice.seed } : {}),
     });
     const world = stageMod.stageWorld(stage);
 
     const weather = weatherMod.createWeather(THREE, renderer.scene, choice.weather ?? def.weather);
     const damage = damageMod.createDamage();
     const car = physics.createCar(choice.carId, {
+      preset: settings.assistPreset,
       assists: settings.assists,
       damage,
     });
@@ -219,14 +247,24 @@ export async function startGame(opts) {
     game.weather = weather;
     game.notes = notes;
     game.noteRunner = runner;
-    game.recorder = replayMod.createRecorder({ stage: stage.id, car: choice.carId });
-    game.ghost = choice.ghost ? replayMod.createGhost(choice.ghost, stage) : null;
+    game.recorder = replayMod.createRecorder({
+      meta: { stageId: stage.id, carId: car.spec.id, weatherKey: weather.presetId ?? "" },
+      capacityMetres: stage.length + 500,
+    });
+    // The reference to beat is whatever this car has already done here in these
+    // conditions — a ghost from a different car on a different surface would be
+    // a number, not information.
+    game.best = career.bestFor?.(stage.id, car.spec.id, weather.presetId ?? "clear") ?? null;
+    const ghostRun = choice.ghost ?? career.ghostFor?.(stage.id, {
+      carId: car.spec.id, weatherKey: weather.presetId ?? "clear",
+    });
+    game.ghost = ghostRun ? replayMod.createGhost(ghostRun) : null;
     game.stageTimeMs = 0;
     game.splitIndex = 0;
     game.splitTimes = [];
     game.countdown = 5;
 
-    ui.show("hud");
+    screen(null);
     hud.countdown?.(5);
     game.state = GameState.COUNTDOWN;
   }
@@ -234,7 +272,7 @@ export async function startGame(opts) {
   function toMenu() {
     game.state = GameState.MENU;
     renderer.clearStage?.();
-    ui.show("title");
+    screen("title");
   }
 
   function togglePause() {
@@ -246,11 +284,11 @@ export async function startGame(opts) {
     if (on) {
       game.state = GameState.PAUSED;
       audio.setMuted?.(true);
-      ui.show("pause");
+      screen("pause");
     } else {
       game.state = GameState.RACING;
       audio.setMuted?.(false);
-      ui.show("hud");
+      screen(null);
     }
   }
 
@@ -304,7 +342,7 @@ export async function startGame(opts) {
     } else if (game.state === GameState.RACING) {
       game.stageTimeMs += dt * 1000;
       stepPhysics(car, inp, world, dt);
-      game.recorder?.record(game.stageTimeMs, inp, car);
+      game.recorder?.sample(game.stageTimeMs / 1000, inp, car);
       damageMod.stepDamage(game.damage, car, dt);
     }
 
@@ -337,7 +375,7 @@ export async function startGame(opts) {
     while (game.splitIndex < stage.splits.length && s >= stage.splits[game.splitIndex]) {
       const t = game.stageTimeMs;
       game.splitTimes.push(t);
-      const best = career.splitRecord?.(stage.id, game.splitIndex);
+      const best = game.best?.bestSplits?.[game.splitIndex];
       frame.splitDeltaMs = best == null ? null : t - best;
       frame.lastSplitMs = t;
       hud.toast?.(`Split ${game.splitIndex + 1}`);
@@ -350,20 +388,21 @@ export async function startGame(opts) {
     const result = career.recordStage?.({
       stageId: game.stage.id,
       carId: game.car.spec.id,
+      weatherKey: game.weather?.presetId ?? "clear",
       timeMs: game.stageTimeMs,
       splits: game.splitTimes.slice(),
       damage: damageMod.damageReport(game.damage),
-      replay: game.recorder?.finish?.(),
+      run: game.recorder?.finish?.(),
     }) ?? { timeMs: game.stageTimeMs };
     game.lastResult = result;
     hud.finish?.(result);
     audio.setMuted?.(false);
-    ui.show("results", result);
+    screen("results", result);
   }
 
   function retire(reason) {
     game.state = GameState.RETIRED;
-    ui.show("retired", { reason, timeMs: game.stageTimeMs });
+    screen("results", { retired: true, reason, timeMs: game.stageTimeMs });
   }
 
   function buildFrame() {
@@ -392,7 +431,12 @@ export async function startGame(opts) {
     frame.telemetry = t;
     frame.airborne = car.onGround === 0;
     frame.countdown = game.state === GameState.COUNTDOWN ? Math.ceil(game.countdown) : 0;
-    frame.ghostDeltaMs = game.ghost?.deltaAt?.(frame.distance, frame.timeMs) ?? null;
+    if (game.ghost?.valid) {
+      game.ghost.update(frame.distance, frame.timeMs);
+      frame.ghostDeltaMs = game.ghost.deltaMs;
+    } else {
+      frame.ghostDeltaMs = null;
+    }
     return frame;
   }
 
@@ -499,7 +543,7 @@ export async function startGame(opts) {
     setCamera(mode) { renderer.setCamera?.(mode); },
     setWeather(preset) {
       if (!game.weather) return false;
-      weatherMod.applyPreset?.(game.weather, preset);
+      weatherMod.setWeather(game.weather, preset);
       return true;
     },
     hold(keys, ms) {
