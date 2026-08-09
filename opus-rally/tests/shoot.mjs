@@ -24,6 +24,7 @@ const HEIGHT = Number(arg("height", 900));
 const ONLY = arg("only", null)?.split(",").map((s) => s.trim()).filter(Boolean) ?? null;
 const ROOT = resolve(import.meta.dirname, "../..");
 const SETTLE = Number(arg("settle", 2200));
+const QUALITY = arg("quality", "high");
 
 // Each shot names the moment it is meant to capture, so a reviewer can say
 // "shot 7, the crest, looks flat" rather than "one of the screenshots".
@@ -152,6 +153,11 @@ async function main() {
           `window.__opusRally.placeAt(${where}, ${shot.speed ?? 0})`,
         );
         if (shot.camera) await page.evaluate(`window.__opusRally.setCamera(${JSON.stringify(shot.camera)})`);
+        // The autoscaler is measuring a software rasteriser here and would drop
+        // to the lowest preset within a second, so every screenshot would show
+        // the game with its shadows and post switched off. Pin the quality: we
+        // are photographing what a real GPU renders, not what SwiftShader can.
+        await page.evaluate(`(window.OPUS_RALLY.game.renderer.setQuality(${JSON.stringify(QUALITY)}), true)`);
         await page.delay(500);
         if (shot.hold) {
           await page.evaluate(
