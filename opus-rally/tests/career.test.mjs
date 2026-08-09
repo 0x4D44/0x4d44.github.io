@@ -66,7 +66,7 @@ function recordStubRun(opts = {}) {
   const rig = stubCar();
   const rec = createRecorder(Object.assign({
     inputHz: HZ, keyframeHz: 2, ghostStepM: 5, capacitySeconds: DURATION + 5,
-    meta: { stageId: "kal-hovden", carId: "lanzaevo", label: "test" },
+    meta: { stageId: "kal-hovden", carId: "vantorgt", label: "test" },
   }, opts));
   const input = makeReplayInput();
   const state = makeReplayState();
@@ -373,7 +373,7 @@ test("career: a v1 save migrates to the current schema", () => {
     v: 1,
     credits: 12345,
     car: "auroras",
-    unlocked: ["corsa16", "auroras", "not-a-car"],
+    unlocked: ["vantore16", "auroras", "not-a-car"],
     best: { "kal-hovden": 742100, "van-costiera": 601500, "bogus-stage": "nonsense" },
   };
   const storage = fakeStorage({ [`${STORAGE_KEY}.v1`]: JSON.stringify(legacy) });
@@ -401,28 +401,28 @@ test("career: records keep personal bests, split bests and a ghost", () => {
   const { run } = recordStubRun();
   const encoded = encodeRun(run);
 
-  const first = career.recordStage({ stageId: "kal-hovden", carId: "lanzaevo", weatherKey: "clear", timeMs: 700000, splits: [220000, 460000], run: encoded });
+  const first = career.recordStage({ stageId: "kal-hovden", carId: "vantorgt", weatherKey: "clear", timeMs: 700000, splits: [220000, 460000], run: encoded });
   assert.equal(first.isPb, true);
   assert.equal(first.previousMs, null);
   assert.deepEqual(first.splitPbs.map((s) => s.index), [0, 1]);
 
-  const slower = career.recordStage({ stageId: "kal-hovden", carId: "lanzaevo", weatherKey: "clear", timeMs: 715000, splits: [218000, 470000] });
+  const slower = career.recordStage({ stageId: "kal-hovden", carId: "vantorgt", weatherKey: "clear", timeMs: 715000, splits: [218000, 470000] });
   assert.equal(slower.isPb, false);
-  assert.equal(career.bestFor("kal-hovden", "lanzaevo", "clear").timeMs, 700000);
+  assert.equal(career.bestFor("kal-hovden", "vantorgt", "clear").timeMs, 700000);
   // A better split inside a worse run is still a split record.
   assert.deepEqual(slower.splitPbs.map((s) => s.index), [0]);
-  assert.equal(career.bestFor("kal-hovden", "lanzaevo", "clear").bestSplits[0], 218000);
+  assert.equal(career.bestFor("kal-hovden", "vantorgt", "clear").bestSplits[0], 218000);
 
-  const faster = career.recordStage({ stageId: "kal-hovden", carId: "lanzaevo", weatherKey: "clear", timeMs: 688500, splits: [217000, 455000] });
+  const faster = career.recordStage({ stageId: "kal-hovden", carId: "vantorgt", weatherKey: "clear", timeMs: 688500, splits: [217000, 455000] });
   assert.equal(faster.isPb, true);
   assert.equal(faster.improvedMs, 11500);
-  assert.equal(career.bestFor("kal-hovden", "lanzaevo", "clear").runs, 3);
+  assert.equal(career.bestFor("kal-hovden", "vantorgt", "clear").runs, 3);
 
   // Different weather and different car are different records.
-  assert.equal(career.bestFor("kal-hovden", "lanzaevo", "rain"), null);
+  assert.equal(career.bestFor("kal-hovden", "vantorgt", "rain"), null);
   assert.equal(career.bestFor("kal-hovden", "kobolt", "clear"), null);
 
-  const ghost = career.ghostFor("kal-hovden", { carId: "lanzaevo", weatherKey: "clear" });
+  const ghost = career.ghostFor("kal-hovden", { carId: "vantorgt", weatherKey: "clear" });
   assert.ok(ghost, "the personal best carries a ghost");
   assert.equal(ghost.run.tickCount, run.tickCount);
   assert.equal(createGhost(ghost.run).valid, true);

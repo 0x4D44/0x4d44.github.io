@@ -347,7 +347,7 @@ export const CARS = Object.freeze([
 
   mkCar({
     id: "corvine-rs2000",
-    name: "Corvine RS-2000 Evo",
+    name: "Corvine Tempest 300",
     team: "Corvine Motorsport",
     class: "works4wd",
     year: 1998,
@@ -465,7 +465,7 @@ export const CARS = Object.freeze([
 
   mkCar({
     id: "astra-corsa",
-    name: "Sable Astra-T Corsa",
+    name: "Sable Verrata GT",
     team: "Sable Corse",
     class: "topclass",
     year: 2023,

@@ -83,11 +83,11 @@ export const TIERS = Object.freeze([
 ]);
 
 export const CARS = Object.freeze([
-  { id: "corsa16", name: "Vantore Corsa 1.6", class: "Cup", drive: "FWD", pace: 0.86, price: 0, tier: 0 },
+  { id: "vantore16", name: "Vantore Cadence 1.6", class: "Cup", drive: "FWD", pace: 0.86, price: 0, tier: 0 },
   { id: "sprintr", name: "Kestrel Sprint R", class: "Cup", drive: "RWD", pace: 0.89, price: 26000, tier: 0 },
   { id: "auroras", name: "Norlys Aurora S", class: "National", drive: "4WD", pace: 0.94, price: 48000, tier: 1 },
   { id: "taiga4x", name: "Sever Taiga 4X", class: "National", drive: "4WD", pace: 0.96, price: 62000, tier: 1 },
-  { id: "lanzaevo", name: "Ibera Lanza Evo", class: "Continental", drive: "4WD", pace: 1.00, price: 96000, tier: 2 },
+  { id: "vantorgt", name: "Ibera Vantor GT", class: "Continental", drive: "4WD", pace: 1.00, price: 96000, tier: 2 },
   { id: "kazegt4", name: "Tsurumi Kaze GT4", class: "Continental", drive: "4WD", pace: 1.02, price: 118000, tier: 2 },
   { id: "kobolt", name: "Vulkan Kobolt RS", class: "Masters", drive: "4WD", pace: 1.05, price: 168000, tier: 3 },
   { id: "mistral", name: "Brière Mistral R", class: "Masters", drive: "4WD", pace: 1.06, price: 192000, tier: 3 },

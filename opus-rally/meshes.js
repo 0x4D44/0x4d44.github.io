@@ -1650,6 +1650,7 @@ const DAMAGE_VERTEX_HEAD = `
 attribute float panel;
 attribute float dentW;
 uniform float uDent[7];
+varying vec2 vOpusUv;
 `;
 
 const DAMAGE_VERTEX_BODY = `
@@ -1658,6 +1659,10 @@ const DAMAGE_VERTEX_BODY = `
   float dent = 0.0;
   for (int k = 0; k < 7; k += 1) { if (k == pi) dent = uDent[k]; }
   transformed -= normal * (dent * dentW * 0.16);
+  // Our own varying, not three's vMapUv: that one is only declared when the
+  // material happens to carry a colour map, so borrowing it fails to compile
+  // the whole shader on any livery without one.
+  vOpusUv = uv;
 }
 `;
 
@@ -1676,17 +1681,22 @@ function injectDamageShader(material, mudMap) {
     if (mudMap) {
       shader.uniforms.uMudMap = { value: mudMap };
       shader.fragmentShader = shader.fragmentShader
-        .replace("#include <common>", "#include <common>\nuniform sampler2D uMudMap;\nuniform float uMud;")
+        .replace("#include <common>", `#include <common>
+uniform sampler2D uMudMap;
+uniform float uMud;
+varying vec2 vOpusUv;`)
         .replace("#include <map_fragment>",
-          "#include <map_fragment>\nfloat mudA = texture2D(uMudMap, vMapUv).r * uMud;\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.15,0.115,0.075), mudA);")
+          "#include <map_fragment>\nfloat mudA = texture2D(uMudMap, vOpusUv).r * uMud;\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.15,0.115,0.075), mudA);")
         .replace("#include <roughnessmap_fragment>",
-          "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.94, texture2D(uMudMap, vMapUv).r * uMud);");
+          "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.94, texture2D(uMudMap, vOpusUv).r * uMud);");
     } else {
       shader.fragmentShader = shader.fragmentShader
-        .replace("#include <common>", "#include <common>\nuniform float uMud;");
+        .replace("#include <common>", `#include <common>
+uniform float uMud;
+varying vec2 vOpusUv;`);
     }
   };
-  material.customProgramCacheKey = () => "opusrally-damage";
+  material.customProgramCacheKey = () => (mudMap ? "opusrally-damage-mud" : "opusrally-damage");
   return material;
 }
 
