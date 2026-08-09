@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "opus-rally",
+    title: "OpusRally",
+    tagline: "A point-to-point rally simulator in a browser tab: procedurally generated stages you have never seen, a co-driver calling the road ahead, and a four-wheel tyre-and-suspension car model that rewards the flick, the handbrake and a boot of throttle. Three.js and synthesised WebAudio, no build step.",
+    url: "https://0x4d44.github.io/opus-rally/",
+    illustration: "ill-rally",
+    date: "2026-08-09T18:00:00",
+    year: 2026,
+    tags: ["games", "simulation", "transport"],
+    real: true,
+  },
+  {
     slug: "x86-evolution",
     title: "The Long Instruction",
     tagline: "An interactive technical history of x86 from the 8086’s six-byte queue to the Pentium 4’s trace cache: decode real bytes, step pipelines, schedule superscalar work, train branch predictors and stress a cache. Original SVG and DOM simulations, vanilla JavaScript; no build step.",
@@ -1667,7 +1678,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
