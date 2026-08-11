@@ -311,3 +311,69 @@ test("no forecast figure is hard-coded in the prose where the model should suppl
   assert.deepEqual(suspicious, [],
     "hard-coded forecast percentages found; these drift out of step with the model");
 });
+
+test("every stated credence either matches the model or admits that it does not", () => {
+  // The document's own standard, made enforceable. Where a forecast in
+  // TC.forecasts restates something the model computes, the two should
+  // agree — and where the author deliberately overrides the model, the
+  // `why` field has to say so, in the text the reader sees, rather than
+  // leaving the divergence for them to find.
+  //
+  // This test exists because three credences once sat 8-20 points above
+  // the model with no acknowledgement anywhere. For a piece whose whole
+  // pitch is calibration discipline, that is the failure that matters
+  // most, and it is invisible to every other check here.
+  const run = M.run({}, { runs: 3000, seed: 20260804 });
+  const at = (s, y) => s[y - 2026];
+
+  // Interpolate the model's CDF from the percentile bands, so an
+  // interval claim can be scored as well as a binary one.
+  const pInside = (bands, year, lo, hi) => {
+    const P = [5, 25, 50, 75, 95].map((p) => ({
+      p, v: bands["p" + String(p).padStart(2, "0")][year - 2026],
+    }));
+    const cdf = (x) => {
+      if (x <= P[0].v) return 0.05;
+      if (x >= P[4].v) return 0.95;
+      for (let i = 0; i < 4; i++) {
+        if (x >= P[i].v && x <= P[i + 1].v) {
+          const t = (x - P[i].v) / ((P[i + 1].v - P[i].v) || 1e-9);
+          return (P[i].p + t * (P[i + 1].p - P[i].p)) / 100;
+        }
+      }
+      return 0.5;
+    };
+    return cdf(hi) - cdf(lo);
+  };
+
+  const cases = [
+    { find: (f) => f.by === 2030 && f.claim.startsWith("No nuclear"), model: 1 - at(run.peace.pNuke, 2030) },
+    { find: (f) => f.by === 2040 && f.claim.startsWith("No nuclear"), model: 1 - at(run.peace.pNuke, 2040) },
+    { find: (f) => f.by === 2100 && f.claim.startsWith("No nuclear"), model: 1 - at(run.peace.pNuke, 2100) },
+    { find: (f) => f.by === 2040 && f.claim.startsWith("No direct"), model: 1 - at(run.peace.pGp, 2040) },
+    { find: (f) => f.by === 2030 && f.claim.includes("AI-enabled incident"), model: at(run.ai.pIncident, 2030) },
+    { find: (f) => f.by === 2040 && f.claim.includes("1.6°C"), model: pInside(run.climate.temp, 2040, 1.6, 2.0) },
+    { find: (f) => f.by === 2050 && f.claim.includes("1.8°C"), model: pInside(run.climate.temp, 2050, 1.8, 2.4) },
+    { find: (f) => f.by === 2040 && f.claim.includes("employment-weighted"), model: pInside(run.ai.auto, 2040, 3, 40) },
+  ];
+
+  const undisclosed = [];
+  for (const c of cases) {
+    const f = TC.forecasts.find(c.find);
+    assert.ok(f, "a forecast this test scores has been renamed or removed");
+    const gap = f.p / 100 - c.model;
+    // A divergence of more than six points has to be acknowledged in
+    // the reasoning the reader is shown.
+    if (Math.abs(gap) > 0.06 && !/model/i.test(f.why)) {
+      undisclosed.push(
+        `"${f.claim.slice(0, 58)}…" states ${f.p}% against the model's ` +
+        `${Math.round(c.model * 100)}% without mentioning the model`);
+    }
+    // And no divergence may be enormous, disclosed or not: past about
+    // twenty-five points the model has stopped being the thing the
+    // forecast is built on.
+    assert.ok(Math.abs(gap) < 0.25,
+      `"${f.claim.slice(0, 58)}…" states ${f.p}% against the model's ${Math.round(c.model * 100)}%`);
+  }
+  assert.deepEqual(undisclosed, []);
+});
