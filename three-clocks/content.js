@@ -71,7 +71,7 @@
       { lede: "Long-range forecasting has a bad reputation, mostly deserved. It is worth being precise about which parts are hopeless, because they are not the parts people assume, and the distinction determines what a document like this can honestly claim." },
 
       { h: "What is known about who gets this right" },
-      { p: "The most useful empirical result in the field comes from Philip Tetlock's tournaments, which ran for two decades and scored tens of thousands of dated, resolvable geopolitical forecasts against outcomes. Two findings survive replication. The first is that the average credentialed expert performs badly — in the original study, barely distinguishable from chance on the harder questions, and worse than simple extrapolation. The second is that a minority of forecasters, identifiable in advance and consistent across years, beat the base rate substantially." },
+      { p: "The most useful empirical result in the field comes from Philip Tetlock's tournaments, which ran for two decades and scored tens of thousands of dated, resolvable geopolitical forecasts against outcomes. Two findings survive replication. The first is that the average credentialed expert performs badly — in the original study, barely distinguishable from chance on the harder questions, and worse than simple extrapolation. The second is that a minority of forecasters, identifiable in advance and consistent across years, beat the base rate substantially. Tetlock has spent two decades objecting to the compression of the first finding into \u201cexperts know nothing\u201d, and he is right to: the distribution is bimodal rather than uniformly poor, and the useful question is not whether to trust experts but which ones." },
 
       { p: "What separates them is not intelligence or subject knowledge, both of which are roughly flat across the distribution. It is a cluster of habits: they think in explicit probabilities rather than in words like *likely*; they use finer granularity, distinguishing 63% from 70% rather than rounding to a third; they start from a reference class and adjust, rather than reasoning forward from the specifics of the case; they update often and in small increments; and they hold no single organising theory of how the world works. Tetlock's borrowed label for the last trait is Isaiah Berlin's — the successful forecaster is a fox rather than a hedgehog, and the hedgehogs are precisely the people who get invited on television." },
 
@@ -234,7 +234,7 @@
       { note: "**This model uses a deliberately thinner tail than Cirillo and Taleb estimate** — an index near 0.82 rather than 0.5 — because their figure is fitted to the extreme tail above a high threshold, and running a single power law all the way down from a thousand deaths with that index would put far too much mass in the middle. The conservative choice matters: the fat-tail conclusion below survives it. In the default run, the mean annual death toll is several times the median. That gap *is* the finding, and it is what a mental model based on recent averages cannot represent." },
 
       { h: "What the present record actually says" },
-      { p: "The data do not support complacency in any case. The Uppsala Conflict Data Programme recorded 65 state-involved conflicts in 2025 — the highest number since the series began in 1946. Thirteen passed the thousand-deaths threshold that defines a war, the most since 1992. Around 244,600 people died in organised violence, the second-worst year since the Rwandan genocide; Russia's war in Ukraine accounted for about 94,700 — some 62% of all battle deaths, which are themselves a subset of that wider total, since it also counts one-sided and non-state violence. Deaths from one-sided violence against civilians rose steeply to 76,500, the highest since 1994." },
+      { p: "The data do not support complacency in any case. The Uppsala Conflict Data Programme recorded 65 state-involved conflicts in 2025 — the highest number since the series began in 1946. Thirteen passed the thousand-deaths threshold that defines a war, the most since 1992. Around 244,600 people died in organised violence, the highest figure since 1994 and up from about 187,000 the year before. Of that total, 153,600 were battle-related deaths in state-based conflict — the narrower category the model on this site tracks, and the one the 62% figure below is a share of, since the wider total also counts one-sided and non-state violence. Russia's war in Ukraine accounted for about 94,700 of those battle deaths, some 62% of the world's total in a single war. Deaths from one-sided violence against civilians rose steeply to 76,500, the highest since 1994." },
 
       { stats: [
         { n: "65", l: "state-involved conflicts active in 2025 — a post-1946 record" },
@@ -424,7 +424,7 @@
     { domain: "climate", by: 2040, p: 75,
       claim: "Decadal-mean warming is between 1.6°C and 2.0°C.",
       res: "WMO consolidated assessment of the 2031–2040 decade.",
-      why: "The cumulative-emissions relationship is tight enough at this horizon that the range is dominated by TCRE uncertainty, not by policy." },
+      why: "The cumulative-emissions relationship is tight enough at this horizon that the range is dominated by TCRE uncertainty, not by policy. **Stated above the model, which gives about 66%.** The model carries the full AR6 sensitivity spread into a decade where the observational constraint is in practice tighter than that, so its tails at 2040 are wider than they deserve to be." },
     { domain: "ai", by: 2040, p: 60,
       claim: "Between 3% and 40% of employment-weighted work hours in advanced economies are performed without direct human involvement.",
       res: "A task-level accounting on the O*NET basis, of the kind now used in exposure studies.",
@@ -444,7 +444,7 @@
     { domain: "climate", by: 2050, p: 70,
       claim: "Decadal-mean warming is between 1.8°C and 2.4°C, and annual emissions are below half their 2025 level.",
       res: "WMO; Global Carbon Budget.",
-      why: "The conjunction is deliberate — this is the pair that determines whether the century ends near 2.5°C or near 3." },
+      why: "The conjunction is deliberate — this is the pair that determines whether the century ends near 2.5°C or near 3. **Stated a little above the model, which gives about 63%**, for the same reason as the 2040 claim." },
     { domain: "ai", by: 2050, p: 55,
       claim: "AI is generally regarded as having raised living standards substantially, and the distributional politics of that increase is a first-order political cleavage in most democracies.",
       res: "Necessarily a judgement call, resolved by a panel or by the obvious.",
