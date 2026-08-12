@@ -756,12 +756,17 @@ function heightKeyframes(rng, length, scale, style, wants = {}, relax = 0, extra
   //
   // No rng is consumed by the extra lifts, so a circuit that never needs
   // them is bit-for-bit the circuit it always was.
-  // A LAUNCHED circuit never grows a chain, whatever the ladder asks
-  // for: the whole point of a launch is that there is no lift on the
-  // circuit, and `drawsExtraLift` already refuses one. The extra lifts
-  // have to respect the same rule or the ladder quietly bolts a chain
-  // onto a launched coaster (seed 142555 did exactly that).
-  const midLifts = Math.max(needed, drawsExtraLift ? 1 : 0) + (launched ? 0 : extraLifts);
+  // A LAUNCHED circuit never grows a chain, from any source.
+  //
+  // The whole point of a launch is that there is no lift on the circuit,
+  // and `drawsExtraLift` refuses one — but `needed`, which sizes the
+  // mid-lift budget from the circuit's rolling loss, never checked, and
+  // neither did the ladder's extra lifts. It never showed while the plan
+  // was a star-shaped blob, because those circuits were short enough
+  // that `needed` came out zero. A figure-eight is half as long again,
+  // and seed 142555 duly came back as a launched coaster with a chain
+  // lift bolted into the middle of it.
+  const midLifts = launched ? 0 : Math.max(needed, drawsExtraLift ? 1 : 0) + extraLifts;
 
   const room = spanEnd - spanStart;
   const lifts = [];
