@@ -339,7 +339,39 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
   }
 }
 
-assert.equal(articles.length, 1125, "catalog copy and article corpus count should stay in lockstep");
+// The eclipse run: eight stories on the safety advice around totality. The two camera
+// stories and the postbag carry a real safety notice, because the joke they are making is
+// adjacent to advice that genuinely matters, and a reader must not take the satire as
+// permission to look at the sun.
+{
+  const eclipse = articles.filter((article) => (article.tags || []).includes("eclipse"));
+  assert.equal(eclipse.length, 8, "the eclipse run should contain eight stories");
+  assert.deepEqual(
+    Array.from(eclipse, (article) => article.category).sort(),
+    ["Health", "Letters", "Maritime", "Science", "Technology", "Technology", "Voices", "Weather"],
+    "the eclipse run should stay spread across the paper rather than piled on one desk",
+  );
+  for (const article of eclipse) {
+    assert.ok(article.body.length >= 6, `${article.id} should run to at least six paragraphs`);
+    assert.ok(article.pullQuote, `${article.id} needs a pull quote`);
+  }
+  const mustWarn = [
+    "tec-disposable-cameras-detonate-eclipse",
+    "tec-handsets-leave-hand-during-totality",
+    "let-eclipse-precautions-postbag",
+  ];
+  for (const id of mustWarn) {
+    const article = articles.find((item) => item.id === id);
+    assert.ok(article, `${id} should be present`);
+    assert.match(
+      article.notice || "",
+      /look(?:ing)? (?:directly )?at the sun/i,
+      `${id} should carry the real eye-safety warning alongside the invented hazard`,
+    );
+  }
+}
+
+assert.equal(articles.length, 1133, "catalog copy and article corpus count should stay in lockstep");
 
 // ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
 // the graceful path, not throw URIError and blank the page.
