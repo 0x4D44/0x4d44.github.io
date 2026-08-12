@@ -202,13 +202,20 @@ test("a dropped frame cannot fling the train off the circuit", () => {
 });
 
 test("energy is only ever added by the chain lift", () => {
+  // Measured on the TRAIN's centre of mass, not on the front car.
+  //
+  // A 13.8 m train's potential energy is set by where its middle is, and
+  // that is what the sim integrates against — so front-car height plus
+  // v^2/2g is no longer a constant, and should not be: the front car
+  // rises and falls relative to the train's middle on every crest. This
+  // asserts the invariant the integrator actually has.
   const t = buildTrack(777);
   const sim = new CoasterSim(t);
   let prevEnergy = null;
   let prevMode = null;
   for (let i = 0; i < 12000; i++) {
     const s = sim.step(1 / 60);
-    const energy = s.pos.y + (s.v * s.v) / (2 * G);
+    const energy = sim.trainCentroidY() + (s.v * s.v) / (2 * G);
     if (prevEnergy !== null && prevMode === "free" && s.mode === "free") {
       assert.ok(energy <= prevEnergy + 0.05,
         `free-running energy rose from ${prevEnergy.toFixed(3)} to ${energy.toFixed(3)}`);
@@ -321,20 +328,32 @@ test("a loop's legs pass beside each other, not through", () => {
     const t = buildTrack(seed);
     if (!t.loop) continue;
     checked += 1;
-    // On a looping circuit the tightest approach is always the loop's own
-    // two legs at the crossing point, where they sit at the same height
-    // by construction. So the gap between them has to be a SIDEWAYS one:
-    // if the clearance came from a height difference the loop would be
-    // planar again, and a planar loop is one that runs through itself.
+    // There are now two ways for a circuit to come close to itself, and
+    // they are cleared in different directions.
+    //
+    // The loop's two legs meet at the same height by construction, so
+    // their gap has to be a SIDEWAYS one — that is what the splay is
+    // for, and if the clearance came from a height difference the loop
+    // would be planar again, which is a loop that runs through itself.
+    //
+    // A figure-eight crosses its own shadow in PLAN, and there the two
+    // passes are directly above one another: the clearance is vertical
+    // and the horizontal gap is nearly nothing. That is not a fault, it
+    // is the layout — one leg goes over the other.
+    //
+    // So the assertion is a disjunction, and it stays sharp: a planar
+    // loop satisfies neither branch, because its legs are at equal
+    // height (failing the vertical test) and occupy the same line
+    // (failing the sideways one).
     const near = selfClearance(t.points, t.ds);
     const a = t.points[near.i];
     const b = t.points[near.j];
     const dy = Math.abs(a.y - b.y);
     const horizontal = Math.hypot(a.x - b.x, a.z - b.z);
-    assert.ok(dy < 2.5, `seed ${seed}: closest pair differs in height by ${dy.toFixed(2)}m`);
     assert.ok(
-      horizontal >= MIN_SELF_CLEARANCE,
-      `seed ${seed}: the legs are only ${horizontal.toFixed(2)}m apart sideways`,
+      horizontal >= MIN_SELF_CLEARANCE || dy >= MIN_SELF_CLEARANCE,
+      `seed ${seed}: closest pair clears by neither ${horizontal.toFixed(2)}m sideways `
+        + `nor ${dy.toFixed(2)}m vertically`,
     );
   }
   assert.ok(checked > 10, `only ${checked} looping circuits to check`);
@@ -512,6 +531,8 @@ test("the dials move what they say they move, and only that", () => {
   // is measured — not the keyframes it was asked for.
   const seeds = SEEDS.slice(0, 12);
   const topSpeed = (t) => Math.max(...t.speeds) * 3.6;
+  let speedAsks = 0;
+  let speedTraded = 0;
 
   for (const seed of seeds) {
     // Undialled is the reference: the dials must not have changed what
@@ -537,10 +558,25 @@ test("the dials move what they say they move, and only that", () => {
 
     for (const want of [DIALS.speed.min, 90, 120, DIALS.speed.max]) {
       const t = buildTrack(seed, { speed: want });
+      speedAsks += 1;
+      // The dial is honoured unless honouring it would cost the circuit
+      // its ability to go round — see buildTrack's `speedHonoured`. When
+      // the generator makes that trade it says so, and the count below
+      // holds it to being rare rather than routine; what it may never do
+      // is claim the dial was met and then miss it.
+      if (!t.speedHonoured) {
+        speedTraded += 1;
+        continue;
+      }
       assert.ok(Math.abs(topSpeed(t) - want) < Math.max(9, want * 0.10),
         `seed ${seed}: asked ${want}km/h, got ${topSpeed(t).toFixed(0)}km/h`);
     }
   }
+
+  // Trading the speed dial away for a circuit that completes has to stay
+  // the rare exception it is documented as being.
+  assert.ok(speedTraded <= speedAsks * 0.05,
+    `${speedTraded} of ${speedAsks} speed asks were traded away for rideability`);
 
   // Out-of-range asks are clamped, not obeyed and not thrown at.
   const silly = buildTrack(seeds[0], { length: 40, height: 900, speed: -20 });

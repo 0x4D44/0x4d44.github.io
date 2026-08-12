@@ -17,6 +17,12 @@
 // then *simulates* the finished circuit and lowers the profile until the
 // train demonstrably makes it round. Generation never emits a track the
 // train can roll back down.
+//
+// "The train" means the whole train. Both the design sweep and the live
+// sim take the gradient averaged over the train's 13.8 m, which is
+// exactly the rise of its centre of mass — so the circuit is verified
+// against the object that is actually drawn on it, rather than against a
+// point mass riding on the front axle.
 // ============================================================
 
 export const G = 9.81;
@@ -37,8 +43,41 @@ const MAX_LAUNCH_APEX = 46; // m, so the launch speed stays this side of silly
 const MIN_FREE_SPEED = 3.0; // m/s, below this the train has stalled
 const MIN_TRACK_CLEARANCE = 1.2; // m, lowest the rails may sit above the ground
 const PROFILE_G_BUDGET = 4.0; // max vertical g the height profile may impose
-const MAX_RIDEABLE_G = 6.2; // max g anywhere on the assembled circuit
+
+// The ride envelope, and why it is not symmetric.
+//
+// These used to be one number applied to |curvature|*v^2, which is a
+// magnitude: it cannot tell being pressed into the seat at 6g from
+// hanging off the restraints at -6g, and those are not the same
+// experience by any measure a rider would recognise. Positive g a body
+// tolerates sitting down; negative g is the one that empties the
+// restraints, and real designers hold it to about a third of the
+// positive limit. So the gate is asymmetric and measures FELT g —
+// curvature plus gravity, resolved onto the car's floor — which is the
+// same quantity the readout shows and the same one CoasterSim.feltAt
+// computes.
+const MAX_RIDEABLE_G = 6.2;  // max positive g anywhere on the assembled circuit
+const MIN_RIDEABLE_G = -3.4; // and the airtime floor
 const MIN_PLAN_RADIUS = 26; // m, tightest horizontal turn the plan curve may draw
+
+// ------------------------------------------------------------
+// The train, which is not a point.
+//
+// These live here rather than in the page because the PHYSICS depends on
+// them: a train is 13.8 m of steel, and what drives it is the height of
+// its centre of mass, not the gradient under its front axle. The
+// renderer imports the same three numbers so there is one answer to how
+// long the train is.
+// ------------------------------------------------------------
+export const CARS = 4;
+export const CAR_SPACING = 3.45; // m between car centres
+export const TRAIN_LENGTH = CARS * CAR_SPACING;
+
+// The train's footprint in centreline samples, rounded to the grid the
+// track is stored on. Both the design sweep and the live sim measure the
+// gradient over exactly this span, so the sweep's "it completes" and the
+// sim's "it completed" are answers to the same question.
+export const trainSpan = (ds) => Math.max(1, Math.round(TRAIN_LENGTH / ds));
 
 // ------------------------------------------------------------
 // The dials.
@@ -148,12 +187,43 @@ export function trackName(rng) {
 }
 
 // ------------------------------------------------------------
-// Plan view: a closed, smooth, star-free curve.
-// r(t) = R * (1 + Σ a_k sin(k t + φ_k)) with Σ a_k < 1, so the radius
-// stays positive and the curve never self-intersects in plan.
+// Plan view: the shadow the circuit casts on the ground.
+//
+// This began as r(t) = R * (1 + Σ a_k sin(k t + φ_k)) — a radius drawn
+// as a function of angle about the origin. That is a *star-shaped* curve
+// by construction, and star-shaped is a much stronger promise than the
+// one the circuit needs: a single-valued r(θ) can never fold back over
+// itself, so it cannot draw a figure-eight, an out-and-back, a hairpin,
+// or any of the layouts where the track passes over its own shadow.
+// Every circuit came out an amorphous rounded blob, and the minimap said
+// so on every seed.
+//
+// Crossing in PLAN is not a collision — the two passes are at different
+// heights — and the thing that decides whether it is safe already
+// exists: selfClearance() measures the 3D gap between stretches that are
+// far apart along the circuit, and assemble() gates on it. So the plan
+// is now drawn from one of four archetypes, three of which may cross
+// their own shadow, and the existing clearance gate settles whether a
+// particular seed's crossing is buildable.
 // ------------------------------------------------------------
 
-function planCurve(rng, samples, wantLength = null) {
+export const LAYOUTS = ["classic", "figure", "outback"];
+
+// Which archetype a seed draws — from a stream of its OWN.
+//
+// Deliberately not drawn from the main rng. Every draw off that stream
+// shifts everything sequenced after it, so putting the layout choice
+// there would reshuffle all 120 catalogue seeds into different coasters
+// (the 2026-08-04 session lost 29 of 40 that way, to a draw that looked
+// just as innocent). Hashing the seed into a separate stream leaves the
+// main one untouched, so a seed that draws "classic" still produces
+// exactly the plan curve it always did, sample for sample.
+export function layoutFor(seed) {
+  const pick = mulberry32((seed ^ 0x5bf03635) >>> 0)();
+  return pick < 0.50 ? "classic" : pick < 0.78 ? "figure" : "outback";
+}
+
+function planCurve(rng, samples, wantLength = null, layout = "classic") {
   const R = 76 + rng() * 40;
   const squash = 0.72 + rng() * 0.36;
   const spin = rng() * Math.PI * 2;
@@ -162,25 +232,73 @@ function planCurve(rng, samples, wantLength = null) {
     harmonics.push({ k, amp: (0.04 + rng() * 0.14) * (k <= 3 ? 1 : 0.45), phase: rng() * Math.PI * 2 });
   }
 
+  // The two non-star archetypes, each a closed parametric curve in
+  // (x, z) in units of R. They are drawn as x(t), z(t) rather than as
+  // r(θ) — which is the whole point: two different t may land on the
+  // same spot, and that is a layout rather than a fault.
+  //
+  //   figure   a Lissajous eight: out, across its own shadow, back the
+  //            other way round. Exactly one crossing, in the middle.
+  //   outback  the oldest layout there is — a straight out, a hairpin, a
+  //            straight back beside it. It does not cross, but it is the
+  //            only archetype with real STRAIGHTS in it, which a sum of
+  //            harmonics on a circle can never produce.
+  //
+  // The eight's amplitude and the out-and-back's waist are both drawn
+  // from ranges chosen by measurement, not taste: outside them the inner
+  // geometry pinches below the turn floor by more than scaling can
+  // afford to fix (see the radius floor below).
+  // Drawn only by the archetype that uses it, and that is load-bearing.
+  //
+  // Every call to rng() advances the one stream the whole circuit is
+  // built from, so drawing these unconditionally — which is how they
+  // were written first — shifts `profileSeed` downstream and reshuffles
+  // the height profile of every CLASSIC seed as well. It shows up as a
+  // taller lift on a shrunk circuit rather than as anything obviously
+  // wrong, which is exactly why it is worth spelling out: the promise
+  // that a classic seed is untouched is only kept if no draw is made on
+  // its behalf.
+  const eight = layout === "figure" ? 0.42 + rng() * 0.24 : 0;
+  const waist = layout === "outback" ? 0.66 + rng() * 0.24 : 0;
+  const shape = (t) => {
+    if (layout === "figure") return { x: Math.cos(t), z: eight * Math.sin(2 * t) };
+    // A stadium: two parallel legs joined by hairpins. The sign of sin
+    // picks the leg and the fractional power flattens each one into a
+    // straight, leaving the rounding to the ends where it belongs.
+    const s = Math.sin(t);
+    return { x: Math.cos(t), z: waist * Math.sign(s || 1) * Math.pow(Math.abs(s), 0.55) };
+  };
+
   const draw = (damp) => {
     const pts = [];
     for (let i = 0; i < samples; i++) {
       const t = (i / samples) * Math.PI * 2;
-      let r = 1;
-      for (const h of harmonics) r += h.amp * damp * Math.sin(h.k * t + h.phase);
-      r *= R;
-      const a = t + spin;
-      pts.push(v3(Math.cos(a) * r, STATION_Y, Math.sin(a) * r * squash));
+      if (layout === "classic") {
+        let r = 1;
+        for (const h of harmonics) r += h.amp * damp * Math.sin(h.k * t + h.phase);
+        r *= R;
+        const a = t + spin;
+        pts.push(v3(Math.cos(a) * r, STATION_Y, Math.sin(a) * r * squash));
+        continue;
+      }
+      // Damping an archetype cannot mean damping harmonics it does not
+      // have, so it blends toward the circle instead. Same contract: at
+      // damp 1 the shape is itself, and as damp falls every turn opens
+      // out, which is what the radius floor below needs to be able to ask
+      // for. At damp 0 it is a plain ellipse, which always clears.
+      const s = shape(t);
+      const x = (Math.cos(t) + (s.x - Math.cos(t)) * damp) * R;
+      const z = (Math.sin(t) + (s.z - Math.sin(t)) * damp) * R * squash;
+      const a = spin;
+      pts.push(v3(
+        x * Math.cos(a) - z * Math.sin(a),
+        STATION_Y,
+        x * Math.sin(a) + z * Math.cos(a),
+      ));
     }
     return pts;
   };
 
-  // Harmonics that happen to line up can pinch the plan view into a turn
-  // far tighter than anything is rideable at speed — and no amount of
-  // profile relaxation fixes a horizontal corner. Damp the harmonics
-  // until the tightest turn in plan clears the floor, so the circuit is
-  // drivable by construction rather than by luck.
-  //
   // When a length has been asked for, the floor has to be cleared AFTER
   // the scaling that hits it, not before. Scaling shrinks every turn by
   // the same factor, so a short circuit needs a rounder plan than the
@@ -194,6 +312,44 @@ function planCurve(rng, samples, wantLength = null) {
     return tightest * Math.min(1, factor) >= MIN_PLAN_RADIUS;
   };
   let pts = draw(1);
+
+  // An archetype clears the floor by getting BIGGER, not rounder.
+  //
+  // Every layout that crosses its own shadow has a small inner lobe —
+  // that is what crossing costs, geometrically — and rounding the lobe
+  // out is precisely the thing that removes the crossing. Measured, the
+  // eight's tightest turn is about 0.22 R, so damping it to clear 26 m
+  // returns a plain ellipse and the archetype was pointless. Scaling
+  // keeps the shape exactly and is linear in both radius and arc length,
+  // so a single pass lands on the floor: the eights come out 1.16 to
+  // 1.5 times the drawn size, which is 600-970 m of track — squarely in
+  // the range the generator already draws.
+  //
+  // Only when it can actually help. Scaling up and then being scaled
+  // back down by the length dial is a no-op for the radius (both terms
+  // carry the same factor), so a circuit with a length asked for takes
+  // the damping path below and, if its lobe will not fit in the length
+  // requested, honestly comes out rounder.
+  if (layout !== "classic") {
+    const tightest = minPlanRadius(pts);
+    // With a margin, because landing exactly ON the floor is a coin toss
+    // against the `>=` in fits() once floating point has had its say —
+    // and losing that toss drops the whole archetype into the damping
+    // path, which blends it back into the ellipse it was drawn to avoid.
+    const grow = tightest > 0 ? (MIN_PLAN_RADIUS * 1.04) / tightest : Infinity;
+    const grown = arcLengths(pts).total * grow;
+    if (grow > 1 && grow <= 2.0 && (wantLength == null || wantLength >= grown)) {
+      pts = pts.map((p) => v3(p.x * grow, p.y, p.z * grow));
+    }
+  }
+
+  // Harmonics that happen to line up can pinch the plan view into a turn
+  // far tighter than anything is rideable at speed — and no amount of
+  // profile relaxation fixes a horizontal corner. Damp the harmonics
+  // until the tightest turn in plan clears the floor, so the circuit is
+  // drivable by construction rather than by luck. For an archetype,
+  // damping blends it toward the circle; it is the fallback for a draw
+  // the scaling above could not rescue.
   for (let attempt = 0; attempt < 14 && !fits(pts); attempt += 1) {
     pts = draw(Math.pow(0.85, attempt + 1));
   }
@@ -373,7 +529,7 @@ function sampleProfile(keys, u) {
 // the circuit where something other than gravity is driving the train.
 // Everything downstream — roles, the design sweep, the live sim — reads
 // that list rather than knowing about lifts specifically.
-function heightKeyframes(rng, length, scale, style, wants = {}) {
+function heightKeyframes(rng, length, scale, style, wants = {}, relax = 0, extraLifts = 0) {
   // The apex is deliberately NOT scaled on retry. Shrinking the lift hill
   // alongside the airtime hills leaves the energy ratio between them
   // unchanged, so a circuit that stalls would stall at every attempt —
@@ -411,7 +567,22 @@ function heightKeyframes(rng, length, scale, style, wants = {}) {
   // of the free-running circuit may sit more than v^2/2g below the
   // summit that feeds it. The brake run is exempt, because past that
   // point the speed is set by the brakes rather than by the geometry.
-  const spend = wants.speed ? (wants.speed * wants.speed) / (2 * G) : Infinity;
+  // The speed ceiling, relaxed a notch at a time by the retry ladder.
+  //
+  // A ceiling is a FLOOR under the track, and on a long circuit with a
+  // low lift it is the binding constraint on the whole design: ask for
+  // 2.4 km, a 22 m lift and 60 km/h and floorY lands at 7.8 m, which
+  // pins the entire profile into a six-metre band. There is no height
+  // left to spend against 27 m of rolling loss, and nothing the ladder
+  // could do about it — flattening hills does not put energy back, and
+  // an extra lift is another chain section where the train crawls.
+  //
+  // So the ceiling gives. This is the behaviour the dials already
+  // promise: where two of them genuinely conflict the generator builds
+  // what it can and the readout shows what was BUILT, not what was
+  // asked for. A circuit that closes at attempt one never relaxes
+  // anything, so every seed that was already buildable is untouched.
+  const spend = wants.speed ? ((wants.speed * wants.speed) / (2 * G)) * (1 + relax) : Infinity;
   // With no speed asked for there is no ceiling, and the floor is
   // simply platform level — which is what it has always been, so an
   // undialled circuit comes out bit-for-bit as it did before.
@@ -573,7 +744,24 @@ function heightKeyframes(rng, length, scale, style, wants = {}) {
   // five, and still coasts to a halt on the far side.
   const perLift = Math.max(4, (midApex - Math.max(STATION_Y, floorY)) * 0.62);
   const needed = Math.max(0, Math.ceil(roundLoss / perLift) - 1);
-  const midLifts = Math.max(needed, drawsExtraLift ? 1 : 0);
+  // Plus whatever the retry ladder has had to ask for on top.
+  //
+  // `needed` is a PREDICTION — round loss divided by what a mid lift is
+  // reckoned to be worth — and under honest train physics the prediction
+  // runs optimistic on long, low circuits: `{length: 2400, height: 22}`
+  // is handed three lifts, and stalls anyway on a crest somewhere out on
+  // the far side. Rather than tune the heuristic against one corner, the
+  // count is allowed to be MEASURED: build it, and if the train does not
+  // get round, add a lift and build it again.
+  //
+  // No rng is consumed by the extra lifts, so a circuit that never needs
+  // them is bit-for-bit the circuit it always was.
+  // A LAUNCHED circuit never grows a chain, whatever the ladder asks
+  // for: the whole point of a launch is that there is no lift on the
+  // circuit, and `drawsExtraLift` already refuses one. The extra lifts
+  // have to respect the same rule or the ladder quietly bolts a chain
+  // onto a launched coaster (seed 142555 did exactly that).
+  const midLifts = Math.max(needed, drawsExtraLift ? 1 : 0) + (launched ? 0 : extraLifts);
 
   const room = spanEnd - spanStart;
   const lifts = [];
@@ -908,6 +1096,20 @@ function computeFrames(points, ds, speeds) {
 function designSpeeds(points, ds, roles, launchSpeed = 0) {
   const n = points.length;
   const speeds = new Float64Array(n);
+  const span = trainSpan(ds);
+  // How far the TRAIN's centre of mass rises over one step.
+  //
+  // The train occupies samples [i - span, i]. Its centroid height is the
+  // mean of those, so the rise from step i to step i+1 telescopes to the
+  // sample that joins the front minus the sample that leaves the back,
+  // over the number of samples. Exact, and O(1) rather than a re-average.
+  //
+  // This is not an approximation of the energy method — it IS the energy
+  // method, for a train of uniform mass per metre. Using points[i+1].y -
+  // points[i].y instead assumes every gram of the train sits under the
+  // front axle, which on this circuit disagrees with the truth by up to
+  // 78 degrees of pitch through a loop.
+  const centroidRise = (i) => (points[(i + 1) % n].y - points[(i - span + n) % n].y) / (span + 1);
   let v = CHAIN_SPEED;
   // Two passes: the first seeds the speed at the crest of the lift, the
   // second runs with that seed so the free-running section is consistent.
@@ -920,7 +1122,7 @@ function designSpeeds(points, ds, roles, launchSpeed = 0) {
         // Constant push until the launch speed is reached, then held.
         v = Math.min(launchSpeed, Math.sqrt(v * v + 2 * LAUNCH_ACCEL * ds));
       } else {
-        const dy = points[(i + 1) % n].y - points[i].y;
+        const dy = centroidRise(i);
         const sinPitch = Math.max(-1, Math.min(1, dy / ds));
         const cosPitch = Math.sqrt(Math.max(0, 1 - sinPitch * sinPitch));
         let vv = v * v - 2 * G * dy - 2 * ds * (ROLLING_FRICTION * G * cosPitch + DRAG_COEFF * v * v);
@@ -994,7 +1196,8 @@ export function buildTrack(seed, options = {}) {
   // Roughly one circuit in three is launched rather than lifted — unless
   // the speed dial has already decided, below.
   const drawnStyle = rng() < 0.34 ? "launch" : "chain";
-  let plan = planCurve(rng, 720, wants.length);
+  let layout = layoutFor(seed);
+  let plan = planCurve(rng, 720, wants.length, layout);
   let planLength = arcLengths(plan).total;
 
   // Length is set by scaling the finished plan about the origin rather
@@ -1003,7 +1206,8 @@ export function buildTrack(seed, options = {}) {
   // target — and the circuit keeps the shape the seed drew, which is the
   // point of a seed. Shrinking tightens every turn by the same factor,
   // so the floor the plan curve already cleared has to be re-cleared.
-  if (wants.length) {
+  const fitPlanToLength = () => {
+    if (!wants.length) return;
     const tightest = minPlanRadius(plan);
     const floor = tightest > 0 ? MIN_PLAN_RADIUS / tightest : 0;
     const factor = Math.max(floor, Math.min(5.0, wants.length / planLength));
@@ -1011,7 +1215,8 @@ export function buildTrack(seed, options = {}) {
       plan = plan.map((p) => v3(p.x * factor, p.y, p.z * factor));
       planLength *= factor;
     }
-  }
+  };
+  fitPlanToLength();
 
   // What gravity alone will give at the bottom of the first drop, and
   // therefore whether a launch is needed to reach the speed asked for.
@@ -1026,6 +1231,28 @@ export function buildTrack(seed, options = {}) {
   // the pull-in off the launch track is a 19m radius at 154km/h, which
   // is 9.8g and a coroner's report. Past that height the energy has to
   // arrive as a chain and a drop.
+  // A lift tall enough for the length asked for.
+  //
+  // DIALS promises that every combination of the three is still a
+  // rideable coaster. Under the point-mass physics that was true; under
+  // honest train physics it is not, and `{length: 2400, height: 22}` is
+  // where it breaks — 2.4 km sheds 27 m to rolling resistance and drag,
+  // a 22 m lift has 19 m to give, and the mid-lift machinery cannot
+  // close a gap that large without turning the ride into a funicular.
+  // Measured, it stalled on six of eight seeds.
+  //
+  // The generator will not draw a circuit it knows will stop, so the
+  // height is raised to what the length actually needs — 39 m at the far
+  // end of the length dial, unchanged at 1.1 km and below, where 22 m
+  // has always been fine. As everywhere else the dials conflict, the
+  // readout then reports the lift that was BUILT.
+  if (wants.height != null && wants.length != null) {
+    wants.height = Math.max(
+      wants.height,
+      Math.min(DIALS.height.max, 22 + Math.max(0, wants.length - 1100) * 0.013),
+    );
+  }
+
   const style = wants.height != null && wants.height > MAX_LAUNCH_APEX ? "chain"
     : wants.speed == null ? drawnStyle
       : wants.speed > Math.sqrt(2 * G * ((wants.height ?? 38) - STATION_Y)) * 0.97 ? "launch"
@@ -1039,16 +1266,29 @@ export function buildTrack(seed, options = {}) {
   // Each retry lowers the airtime hills, and then the loop, until the
   // train demonstrably completes the circuit. The lift apex is held
   // fixed throughout: it is the energy budget, not a hill.
-  const build = () => {
+  const build = (relax = 0, extraLifts = 0) => {
     let last = null;
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const scale = 1 - attempt * 0.09;
-      const loopAllowance = attempt < 4 ? 1 : attempt < 6 ? 0.75 : 0;
-      const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants);
+    // Twelve finer steps rather than eight coarse ones, and the loop is
+    // held on to for two thirds of them.
+    //
+    // Measuring felt g asymmetrically (see MIN_RIDEABLE_G) gives the
+    // ladder more work to do, and on a coarse ladder the extra work was
+    // paid for with the loop: a circuit that needed 8% off its hills got
+    // 9%, missed, and arrived at the rung where loops are removed. A
+    // smaller step lands nearer the answer, so more circuits are fixed
+    // by the hills alone — 89 of the 120 test seeds keep their inversion
+    // now, against 75 under the old ladder and the old point-mass gate.
+    // Twelve attempts cost 47ms against 26, next to a mesh rebuild that
+    // dwarfs both.
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const scale = 1 - attempt * 0.06;
+      const loopAllowance = attempt < 8 ? 1 : attempt < 10 ? 0.75 : 0;
+      const candidate = assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants, relax, extraLifts);
       const check = verifyCircuit(candidate);
       last = candidate;
       last.minFreeSpeed = check.minSpeed;
       last.maxG = check.maxG;
+      last.minG = check.minG;
       last.attempts = attempt + 1;
       if (check.completes) return last;
     }
@@ -1061,24 +1301,130 @@ export function buildTrack(seed, options = {}) {
   // its shadow on the ground: hills make the real thing a fifth longer
   // again, by an amount that depends on how hilly this particular
   // circuit came out. Rather than guess the ratio, build once, measure,
-  // and correct the plan by what the measurement says. One correction is
-  // enough — the relationship is linear to well inside a per cent.
-  if (wants.length && Math.abs(result.length - wants.length) > wants.length * 0.03) {
+  // and correct the plan by what the measurement says.
+  //
+  // Iterated rather than applied once. The relationship is linear in the
+  // plan, but the amount the HILLS add is not a fixed ratio of it: a
+  // correction changes how many attempts the retry ladder needs, which
+  // changes how far the hills were flattened, which changes the length
+  // again. One pass left seed 7932 eleven per cent short of a 900 m ask,
+  // just outside the dial's own tolerance. Three passes converge on
+  // every seed and combination in the suite, and each pass costs nothing
+  // once the answer is already inside the band.
+  for (let pass = 0; pass < 3; pass += 1) {
+    if (!wants.length) break;
+    if (Math.abs(result.length - wants.length) <= wants.length * 0.03) break;
     const tightest = minPlanRadius(plan);
     const floor = tightest > 0 ? MIN_PLAN_RADIUS / tightest : 0;
     const correction = Math.max(floor, Math.min(3.0, wants.length / result.length));
-    if (Math.abs(correction - 1) > 1e-3) {
-      plan = plan.map((p) => v3(p.x * correction, p.y, p.z * correction));
-      planLength *= correction;
-      result = build();
+    if (Math.abs(correction - 1) <= 1e-3) break;
+    plan = plan.map((p) => v3(p.x * correction, p.y, p.z * correction));
+    planLength *= correction;
+    result = build();
+  }
+
+  // Last resort: the speed ceiling gives.
+  //
+  // A speed ceiling is a FLOOR under the track — no part of the free
+  // circuit may sit more than v^2/2g below the summit feeding it — and
+  // on a long circuit with a low lift it becomes the binding constraint
+  // on the whole design. Ask for 2.4 km, a 22 m lift and 60 km/h and the
+  // floor lands at 7.8 m, which pins the entire profile into a
+  // six-metre band. There is nothing left to spend against 27 m of
+  // rolling loss, and nothing the ladder can do about it: flattening
+  // hills does not put energy back, and an extra lift is one more chain
+  // section where the train crawls (measured — it made more circuits
+  // fail, not fewer).
+  //
+  // So when the circuit cannot be built at all, the ceiling is what
+  // gives, and the readout then shows the speed that was BUILT rather
+  // than the one that was asked for — which is the behaviour the dials
+  // already promise where two of them genuinely conflict.
+  //
+  // Strictly a last resort, and that matters. Relaxing the ceiling a
+  // notch on every rung of the ladder instead pushed ordinary speed asks
+  // out with it: seed 39608 asked for 60 km/h and got 69, taking the
+  // speed dial from a fifth of its tolerance to ninety-eight per cent of
+  // it. A circuit that closes with the ceiling intact never touches this.
+  if (!verifyCircuit(result).completes) {
+    // More lifts first — a circuit that is simply short of energy wants
+    // energy, and that is a thing a park can actually build. Only if
+    // that fails too does the speed ceiling give, and only when a speed
+    // was asked for at all.
+    for (const extra of [1, 2, 3, 4, 5, 6]) {
+      result = build(0, extra);
+      if (verifyCircuit(result).completes) break;
     }
   }
+  if (wants.speed && !verifyCircuit(result).completes) {
+    for (const relax of [0.3, 0.8, Infinity]) {
+      result = build(relax, 6);
+      if (verifyCircuit(result).completes) break;
+    }
+  }
+
+  // A layout is only worth having if it clears itself and honours the
+  // dials.
+  //
+  // Crossing in plan is safe exactly when the two passes are at
+  // different heights, and nothing in the generator arranges that: the
+  // height profile is a function of position ALONG the circuit and knows
+  // nothing about where the plan folds over. Usually the two passes are
+  // in different acts of the ride and miss each other by a comfortable
+  // margin — but on four of the 120 test seeds they arrived within two
+  // metres, and the retry ladder cannot help, because flattening the
+  // hills brings them closer together rather than further apart.
+  //
+  // The second condition is the same idea applied to the speed dial. An
+  // archetype fixes the plan, the plan fixes where the first drop can
+  // go, and on seed 15851 the eight left no way to bottom the drop
+  // inside a 60 km/h ceiling — it came back at 81, against a dial that
+  // promises a tenth. The star-shaped plan honours it on the same seed.
+  //
+  // So the archetype is abandoned and the seed rebuilt on the plan that
+  // cannot cross by construction. The fallback stream is hashed
+  // separately so it stays deterministic without disturbing anything the
+  // main stream has already drawn.
+  const missesSpeed = wants.speed != null
+    && Math.max(...result.speeds) > wants.speed * 1.12;
+  if (layout !== "classic" && (result.clearance < MIN_SELF_CLEARANCE || missesSpeed)) {
+    const archetype = result;
+    plan = planCurve(mulberry32((seed ^ 0x27d4eb2d) >>> 0), 720, wants.length, "classic");
+    planLength = arcLengths(plan).total;
+    fitPlanToLength();
+    const fallback = build();
+    // And the fallback has to be an improvement, not merely a different
+    // set of problems. A rounder plan buys the clearance and the speed
+    // ceiling, but it draws its own hills, and on the extreme dial
+    // corners it can arrive at a circuit that will not go round at all —
+    // which is a worse answer than a coaster that overshoots its speed
+    // dial. So the swap only stands if the replacement completes.
+    if (verifyCircuit(fallback).completes || !verifyCircuit(archetype).completes) {
+      layout = "classic";
+      result = fallback;
+    } else {
+      result = archetype;
+    }
+  }
+  result.layout = layout;
+  // Whether the speed dial was actually honoured.
+  //
+  // Almost always it is. The exception is a seed whose plan leaves no
+  // way to bottom the first drop inside the ceiling AND whose fallback
+  // plan will not go round at all — there the generator keeps the
+  // circuit that completes and overshoots the dial, because a coaster
+  // that is faster than you asked for is a coaster, and one that stops
+  // half way is not. The readout shows what was built either way; this
+  // flag is how the tests can tell the two apart instead of having to
+  // assume the dial is always exact.
+  result.speedHonoured = wants.speed == null
+    || Math.max(...result.speeds) <= wants.speed * 1.12;
   return result;
 }
 
-function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants = {}) {
+function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowance, style, wants = {}, relax = 0, extraLifts = 0) {
   const rng = mulberry32(profileSeed);
-  const profile = heightKeyframes(rng, planLength, scale, style, wants);
+  const profile = heightKeyframes(rng, planLength, scale, style, wants, relax, extraLifts);
 
   // Apply the height profile to the plan curve.
   let shaped = plan.map((p, i) => v3(p.x, sampleProfile(profile.keys, i / plan.length), p.z));
@@ -1119,10 +1465,47 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   for (let i = 0; i < m; i++) {
     if (roles0[i] === "lift" && roles0[(i + 1) % m] !== "lift") liftEnds.push(i);
   }
+  // A train-length in samples of the PLAN curve, which is parameterised
+  // by angle rather than arc length — planLength / m is its mean spacing.
+  const planSpan = Math.max(1, Math.round(TRAIN_LENGTH / (planLength / m)));
   for (const end of liftEnds) {
     let cursor = end + 1;
     let guard = 0;
-    while (guard++ < m * 0.25 && shaped[(cursor + 1) % m].y >= shaped[cursor % m].y - 1e-6) {
+    // Hold the chain until the TRAIN is over the crest, not until the
+    // front car is.
+    //
+    // Two things were wrong with releasing the moment the front car tips
+    // over. The train's centre of mass is still climbing while its tail
+    // is on the last of the lift, so the train is handed a summit it has
+    // not finished paying for — on `{length: 2400, height: 22, speed:
+    // 60}` that was 14 m of climb after release at 5 m/s, and the train
+    // coasted to 1.0 m/s and stalled high on the crest. And the profile
+    // does not always climb monotonically to its summit: flattened hard
+    // enough, the crest keyframes leave a shallow dip a metre or two
+    // before the top, and a rule that stops at the first descending
+    // sample stops in the dip.
+    //
+    // So: find the summit, then run the chain a further train-length
+    // past it, which is the distance the tail still has to travel once
+    // the front car is over the top.
+    //
+    // Both halves are bounded on purpose. The search for the summit
+    // looks three train-lengths ahead — far enough to step over the dip,
+    // near enough that it cannot wander off and find the NEXT hill. An
+    // unbounded "hold while anything ahead is higher" does exactly that
+    // on a rolling profile: the condition stays true from one hill to
+    // the next, the chain runs a quarter of the circuit, and the
+    // free-running track it eats is the track the tunnel siting and the
+    // energy sweep both needed.
+    const look = planSpan * 3;
+    let summit = end;
+    let summitY = shaped[end % m].y;
+    for (let k = 1; k <= look; k++) {
+      const y = shaped[(end + k) % m].y;
+      if (y > summitY) { summitY = y; summit = end + k; }
+    }
+    const release = summit + planSpan;
+    while (guard++ < m * 0.25 && cursor <= release) {
       roles0[cursor % m] = "lift";
       cursor += 1;
     }
@@ -1146,6 +1529,20 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   // corrected spacing.
   let profileG = Infinity;
   for (let round = 0; round < 2; round += 1) {
+    // Hold the speed ceiling against the SAMPLES, and hold it here.
+    //
+    // The ceiling is a floor under the free-running track, and it was
+    // enforced only by placing keyframes on it — which is necessary and
+    // not sufficient, because Catmull-Rom undershoots between them. On
+    // seed 15851 at 60 km/h the first drop bottomed thirteen metres
+    // under its own keyframe and handed back 81.
+    //
+    // Clamping alone does not hold either: relaxProfile smooths the
+    // clipped valley straight back down through the floor. So the two
+    // are iterated instead — clamp, relax, clamp again — and they settle
+    // on a profile that respects the floor with its curvature still
+    // inside budget. Only where a speed was asked for; `floorY` is null
+    // otherwise and an undialled circuit is untouched.
     profileG = relaxProfile(points, ds, roles, PROFILE_G_BUDGET, profile.launchSpeed);
     const even = resampleClosed(points, RESAMPLE_DS, roles);
     points = even.points;
@@ -1265,22 +1662,34 @@ function rotateToStation(points, roles) {
 export function verifyCircuit(track) {
   const n = track.points.length;
   let minSpeed = Infinity;
-  let maxG = 0;
+  let maxG = -Infinity;
+  let minG = Infinity;
   for (let i = 0; i < n; i++) {
     // Check the g-load on the FINISHED geometry, not just on the shapes
     // that were designed. The loop is sized analytically before it is
     // spliced, so only a measurement of the assembled track catches a
     // splice that came out tighter than its own specification.
-    const g = vlen(track.curvature[i]) * track.speeds[i] * track.speeds[i] / G;
+    //
+    // Felt g, in the car's own frame — the acceleration needed to follow
+    // the track, less gravity, resolved onto the floor. Inside a loop
+    // that reads as a healthy positive number even though the car is
+    // upside down, which is exactly right: the rider is pressed into the
+    // seat there, and a magnitude of curvature alone could not tell.
+    const v = track.speeds[i];
+    const g = vdot(vsub(vmul(track.curvature[i], v * v), v3(0, -G, 0)), track.ups[i]) / G;
     if (g > maxG) maxG = g;
+    if (g < minG) minG = g;
     if (track.roles[i] !== "free") continue;
     if (track.speeds[i] < minSpeed) minSpeed = track.speeds[i];
   }
   if (!Number.isFinite(minSpeed)) minSpeed = CHAIN_SPEED;
   return {
-    completes: minSpeed >= MIN_FREE_SPEED && maxG <= MAX_RIDEABLE_G,
+    completes: minSpeed >= MIN_FREE_SPEED
+      && maxG <= MAX_RIDEABLE_G
+      && minG >= MIN_RIDEABLE_G,
     minSpeed,
     maxG,
+    minG,
   };
 }
 
@@ -1347,10 +1756,38 @@ export class CoasterSim {
     return this.state();
   }
 
+  // The gradient the whole train is on, not the one under the front car.
+  //
+  // `this.s` is the front of the train; the cars trail behind it. Mean
+  // sin(pitch) over the train's length is exactly d/ds of the train's
+  // centre-of-mass height, so averaging the gradient is the energy
+  // method rather than a smoothing of it. Sampled on the same grid the
+  // design sweep uses, so the two agree about whether a circuit goes
+  // round.
+  trainPitch(s) {
+    const ds = this.track.ds;
+    const span = trainSpan(ds);
+    let sum = 0;
+    for (let k = 0; k <= span; k++) sum += this.sample(s - k * ds).fwd.y;
+    return sum / (span + 1);
+  }
+
+  // The height of the train's centre of mass.
+  //
+  // This is the quantity the free-running integration conserves energy
+  // against — trainPitch is its derivative — so it, and not the height
+  // of the front car, is what pairs with v^2/2g to make a constant.
+  trainCentroidY(s = this.s) {
+    const ds = this.track.ds;
+    const span = trainSpan(ds);
+    let sum = 0;
+    for (let k = 0; k <= span; k++) sum += this.sample(s - k * ds).pos.y;
+    return sum / (span + 1);
+  }
+
   substep(h) {
     const t = this.track;
     const total = t.points.length * t.ds;
-    const here = this.sample(this.s);
     const mode = this.mode;
     let accel = 0;
 
@@ -1365,7 +1802,7 @@ export class CoasterSim {
       accel = this.v < target ? LAUNCH_ACCEL : 0;
       this.v = Math.min(target, this.v + accel * h);
     } else {
-      const sinPitch = Math.max(-1, Math.min(1, here.fwd.y));
+      const sinPitch = Math.max(-1, Math.min(1, this.trainPitch(this.s)));
       const cosPitch = Math.sqrt(Math.max(0, 1 - sinPitch * sinPitch));
       accel = -G * sinPitch
         - ROLLING_FRICTION * G * cosPitch * Math.sign(this.v || 1)
@@ -1401,6 +1838,11 @@ export class CoasterSim {
   // is still being dragged up over it, and the curvature under each is
   // different. Resolving the same acceleration at a different arc
   // position is the whole reason enthusiasts queue longer for the back.
+  //
+  // Both of the shared terms are genuinely shared: one train has one
+  // speed, and `accel` now comes from the gradient under the WHOLE train
+  // (see trainPitch), so it is a property of the train rather than of
+  // whichever seat happens to be reading it. Only the curvature is local.
   feltAt(s, v = this.v, accel = this.accel) {
     const here = this.sample(s);
     const following = vadd(vmul(here.fwd, accel), vmul(here.curv, v * v));

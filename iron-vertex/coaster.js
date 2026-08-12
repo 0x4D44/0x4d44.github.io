@@ -10,8 +10,8 @@
 // ============================================================
 
 import * as THREE from "./three.module.min.js";
-import { carveTube, mergeParts, part } from "./mesh.js";
-import { BORE_RADIUS, enclosureProfile, hillBump, supportColumns, tunnelSite } from "./track.js";
+import { NIGHT, carveTube, instance, mergeParts, part } from "./mesh.js";
+import { BORE_RADIUS, CAR_SPACING, enclosureProfile, hillBump, supportColumns, tunnelSite } from "./track.js";
 
 export const GAUGE = 1.05;      // spacing between the running rails, metres
 const RAIL_RADIUS = 0.13;
@@ -164,8 +164,14 @@ export function buildTrackMesh(track, groundHeight) {
   const group = new THREE.Group();
   const updaters = [];
 
-  const railMat = new THREE.MeshStandardMaterial({ color: livery.rail, roughness: 0.42, metalness: 0.42 });
-  const spineMat = new THREE.MeshStandardMaterial({ color: livery.spine, roughness: 0.6, metalness: 0.4 });
+  const railMat = new THREE.MeshStandardMaterial({
+    color: livery.rail, roughness: 0.42, metalness: 0.42,
+    emissive: new THREE.Color(livery.rail), emissiveIntensity: 0,
+  });
+  const spineMat = new THREE.MeshStandardMaterial({
+    color: livery.spine, roughness: 0.6, metalness: 0.4,
+    emissive: new THREE.Color(livery.rail), emissiveIntensity: 0,
+  });
   const steelMat = new THREE.MeshStandardMaterial({ color: livery.support, roughness: 0.66, metalness: 0.34 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x2c3238, roughness: 0.8, metalness: 0.2 });
 
@@ -324,6 +330,68 @@ export function buildTrackMesh(track, groundHeight) {
       // The chain is always running, whether or not a train is on it.
       updaters.push((t) => { texture.offset.x = -t * 1.6; });
     }
+  }
+
+  // ---- the ride lighting ----
+  //
+  // After dark the city glows and the coaster was a black silhouette
+  // standing in front of it, which is exactly backwards: the ride is the
+  // tallest thing on the site and the one the park wants you looking at.
+  // Real parks pick out the structure with strings of lamps down the
+  // spine and floods up the lift.
+  //
+  // Nothing here CASTS light — several hundred point lights would end
+  // the frame rate, and the city already settled that rule — so every
+  // lamp is an emissive surface that glows without illuminating. One
+  // instanced mesh for the whole circuit, one material, one updater that
+  // follows NIGHT.
+  {
+    const beads = [];
+    // Every fourth sample is a bead a bit under a metre outboard of each
+    // rail, which at RESAMPLE_DS lands them about five metres apart —
+    // close enough to read as a continuous line of light from across the
+    // park, far enough that a 900 m circuit is 450 instances and not
+    // three thousand.
+    const step = 4;
+    const lat = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    const tan = new THREE.Vector3();
+    for (let i = 0; i < track.points.length; i += step) {
+      const p = track.points[i];
+      up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
+      tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
+      lat.crossVectors(up, tan).normalize();
+      for (const side of [-1, 1]) {
+        beads.push({
+          x: p.x + lat.x * side * (GAUGE * 0.5 + 0.34) - up.x * 0.34,
+          y: p.y + lat.y * side * (GAUGE * 0.5 + 0.34) - up.y * 0.34,
+          z: p.z + lat.z * side * (GAUGE * 0.5 + 0.34) - up.z * 0.34,
+        });
+      }
+    }
+    // Warm white rather than the livery colour: park lighting is lamps,
+    // and a lamp is the colour of its filament whatever it is bolted to.
+    const beadMat = new THREE.MeshStandardMaterial({
+      color: 0x3a3a38, emissive: 0xffd9a0, emissiveIntensity: 0, roughness: 0.5,
+    });
+    group.add(instance(new THREE.SphereGeometry(0.26, 5, 4), beadMat, beads, { shadows: false }));
+    // Kept well under 1. Tone mapping is applied AFTER the emissive term,
+    // so anything near unit brightness clips to flat white — the lesson
+    // the city's windows already paid for.
+    //
+    // The beads alone were not enough, and the reason is worth writing
+    // down: a 0.26 m lamp seen from the orbit camera two hundred metres
+    // away is a third of a pixel, and a third of a pixel of light is
+    // nothing. The city reads at that range because its windows are
+    // large FACES, not points. So the rails carry the light as well —
+    // they are thin, but they are continuous, and a continuous line is
+    // what draws a coaster against a night sky. The beads then give that
+    // line its texture from close up.
+    updaters.push(() => {
+      beadMat.emissiveIntensity = NIGHT.value * 0.62;
+      railMat.emissiveIntensity = NIGHT.value * 0.42;
+      spineMat.emissiveIntensity = NIGHT.value * 0.30;
+    });
   }
 
   // ---- the launch: stator fins down both sides of the spine ----
@@ -569,6 +637,42 @@ export function buildTrackMesh(track, groundHeight) {
     signBack.rotation.y = Math.PI;
     station.add(signBack);
 
+    // Lamps under the canopy, and a lit name board.
+    //
+    // The station is where a rider stands still and looks around, so it
+    // is the one structure that has to read as INSIDE rather than as a
+    // dark shed. Two rows of bulbs under the roof either side, in the
+    // station's own local frame — it is already positioned and rotated,
+    // so these need no world-space maths at all.
+    const bulbMat = new THREE.MeshStandardMaterial({
+      color: 0x3a3a38, emissive: 0xffe0b2, emissiveIntensity: 0, roughness: 0.5,
+    });
+    const bulbs = [];
+    for (const side of [-1, 1]) {
+      for (let i = -2; i <= 2; i++) bulbs.push({ x: side * 3.6, y: 3.7, z: i * 4.6 });
+    }
+    station.add(instance(new THREE.SphereGeometry(0.2, 6, 5), bulbMat, bulbs, { shadows: false }));
+
+    // The board is lettered on a canvas, so lighting it is a matter of
+    // re-using that canvas as its own emissive map: the letters light up
+    // and the board around them stays dark, which is what a lit sign is.
+    const signMats = [];
+    for (const board of [sign, signBack]) {
+      board.traverse((node) => {
+        if (node.isMesh && node.material.map) {
+          node.material.emissiveMap = node.material.map;
+          node.material.emissive = new THREE.Color(0xffffff);
+          node.material.emissiveIntensity = 0;
+          node.material.needsUpdate = true;
+          signMats.push(node.material);
+        }
+      });
+    }
+    updaters.push(() => {
+      bulbMat.emissiveIntensity = NIGHT.value * 0.7;
+      for (const mat of signMats) mat.emissiveIntensity = NIGHT.value * 0.55;
+    });
+
     group.add(station);
   }
 
@@ -644,7 +748,6 @@ const SEATS = [
 ];
 const SEAT_Y = 0.95;
 const SHOULDER_Y = 0.42;
-const CAR_SPACING = 3.45;
 
 // The car floats this far up its own frame, so anything placed in
 // car-local metres has to be lifted by it too.
@@ -834,6 +937,24 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
   lead.matrixAutoUpdate = false;
   group.add(lead);
 
+  // Headlights.
+  //
+  // The lead car already carries two lamp spheres, but they are baked
+  // into a merged vertex-coloured mesh, and a merged mesh has one
+  // material and therefore one emissive term — turning them up would set
+  // fire to the whole car. So the same two lamps again, fractionally
+  // larger so they enclose the baked ones, as children of the lead car
+  // with an emissive material of their own. Children inherit the lead's
+  // world matrix, which the ride already sets every frame.
+  const lampMat = new THREE.MeshStandardMaterial({
+    color: 0xfff3cf, emissive: 0xffeec2, emissiveIntensity: 0, roughness: 0.4,
+  });
+  for (const side of [-1, 1]) {
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.17, 7, 5), lampMat);
+    lamp.position.set(side * 0.5, 0.55, 2.3);
+    lead.add(lamp);
+  }
+
   const trailingCount = Math.max(0, carCount - 1);
   const trailing = new THREE.InstancedMesh(
     mergeParts(carParts(livery, false)), bodyMaterial, Math.max(1, trailingCount),
@@ -957,6 +1078,8 @@ export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
         }
       }
       lead.matrixWorldNeedsUpdate = true;
+      // The headlights come on with the rest of the park's lighting.
+      lampMat.emissiveIntensity = NIGHT.value * 0.9;
       lead.visible = hiddenCar !== 0;
       trailing.instanceMatrix.needsUpdate = true;
 

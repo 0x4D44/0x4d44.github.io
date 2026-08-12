@@ -467,10 +467,14 @@
   </details>
   <p class="hint">
     Drag to swing the camera, scroll to zoom &middot; H recentres it<br>
-    Gravity energy model. Some circuits are dragged up a chain, some get a
-    second lift halfway round, and some are thrown out of the station by a
-    magnetic launch. Loops are splayed and clearance-checked, so no two
-    stretches of track ever occupy the same steel.
+    Gravity energy model, solved for the whole 13.8&nbsp;m train rather than a
+    point: what drives it is the height of its centre of mass, which is why
+    the back seat is a different ride. Layouts come as twisters,
+    figure-eights that cross their own shadow, and out-and-backs. Some
+    circuits are dragged up a chain, some get a second lift halfway round,
+    and some are thrown out of the station by a magnetic launch. Loops and
+    crossings are clearance-checked, so no two stretches of track ever
+    occupy the same steel.
   </p>
  </details>
 </div>
@@ -521,7 +525,7 @@
 
 <script type="module">
 import * as THREE from "./three.module.min.js";
-import { AIRTIME_G, CoasterSim, RideLog, buildTrack, tuckIn } from "./track.js";
+import { AIRTIME_G, CARS, CAR_SPACING, CoasterSim, RideLog, TRAIN_LENGTH, buildTrack, tuckIn } from "./track.js";
 import { buildWorld, groundHeight, setTerrain } from "./scenery.js";
 import { EYES, buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
 import { RideAudio, rideMix } from "./audio.js";
@@ -635,9 +639,6 @@ function reviewQuality(dt) {
 // Ride state
 // ============================================================
 const CAM_MODES = ["orbit", "chase", "pov", "wing"];
-const CARS = 4;
-const CAR_SPACING = 3.45;
-const TRAIN_LENGTH = CARS * CAR_SPACING;
 // Where you sit changes what you feel — see CoasterSim.feltAt.
 const SEATS = [
   { name: "front", car: 0, eye: EYES.front },
@@ -780,7 +781,14 @@ function loadTrack(seed) {
 
   let top = 0;
   for (const v of track.speeds) top = Math.max(top, v);
+  // What a park would call the shape of the thing.
+  const LAYOUT_NAME = {
+    classic: "twister",
+    figure: "figure-eight",
+    outback: "out-and-back",
+  };
   const facts = [
+    LAYOUT_NAME[track.layout] ?? "twister",
     track.style === "launch"
       ? `launched at ${Math.round(track.launchSpeed * 3.6)} km/h`
       : track.lifts > 1 ? "two chain lifts" : "chain lift",
