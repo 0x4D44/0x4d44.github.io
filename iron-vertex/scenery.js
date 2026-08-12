@@ -331,10 +331,24 @@ export function buildWorld({ setting = "park", density = 1 } = {}) {
     }
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geo.computeVertexNormals();
-    const ground = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+    // A dim wash of park lighting on the grass after dark.
+    //
+    // The same problem the city floor had, and the same fix: with the
+    // lamps glowing but not illuminating, the ground went to pure black
+    // the instant the sun set, and the lit coaster standing on a void
+    // reads as a bug rather than as a night ride. This is what the
+    // midway lamps would be doing to the grass if they could — much
+    // dimmer than the city's sodium on tarmac, because a park at night
+    // IS mostly dark, and it only has to be enough to give the ride
+    // something to stand on.
+    const groundMat = new THREE.MeshLambertMaterial({
       vertexColors: true,
       map: grassTexture(),
-    }));
+      emissive: new THREE.Color(0x0d1408),
+      emissiveIntensity: 0,
+    });
+    updaters.push(() => { groundMat.emissiveIntensity = NIGHT.value * 1.5; });
+    const ground = new THREE.Mesh(geo, groundMat);
     ground.receiveShadow = true;
     group.add(ground);
   }
