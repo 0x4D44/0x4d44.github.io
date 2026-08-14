@@ -43,6 +43,7 @@ import {
   autoScalerScale,
   makeShadowFit,
   fitShadowFrustum,
+  SHADOW_CASTER_HEIGHT,
   shadowLightSpace,
   roadSpanPoints,
   selectLod,
@@ -334,7 +335,31 @@ test("a mounted camera rides with the chassis", () => {
   // yaw = pi/2 means the nose points down +X, so the bumper is +X of the car.
   assert.ok(Math.abs((rig.px - s.x) - p.localZ) < 1e-3, `x ${rig.px - s.x}`);
   assert.ok(Math.abs(rig.pz - s.z) < 1e-3, `z ${rig.pz - s.z}`);
-  assert.ok(Math.abs((rig.py - s.y) - p.localY) < 1e-3);
+  // s.y is the centre of mass; mountY is measured from the road under it.
+  const road = s.y - s.comHeight;
+  assert.ok(Math.abs((rig.py - road) - p.mountY) < 1e-3,
+    `height above the road ${rig.py - road}, wanted ${p.mountY}`);
+});
+
+test("an in-car camera sits at a driver's eye line above the road, in every car", async () => {
+  // The mounts are authored as heights above the road because that is the only
+  // frame they mean anything in; the rig is fed a centre of mass. Applying one
+  // in the other's frame put every in-car view a whole COM height too high, and
+  // it is invisible from inside the code — this is the check that sees it.
+  const physics = await import("../physics.js");
+  const p = cameraParams("cockpit");
+  for (const spec of physics.CARS) {
+    const car = physics.createCar(spec.id, {});
+    physics.resetCar(car, 0, 0, 0, 0);
+    const s = sampleCar(makeCarSample(), car, null);
+    assert.equal(s.comHeight, car.setup.comHeight, `${spec.id}: COM height not sampled`);
+    const rig = makeCameraRig("cockpit");
+    resetCameraRig(rig, s, p, flatGround());
+    for (let i = 0; i < 240; i += 1) updateCameraRig(rig, s, p, 1 / 60, flatGround());
+    // resetCar puts the car on the ground at y = 0, so the road is y = 0.
+    assert.ok(rig.py >= 1.1 && rig.py <= 1.3,
+      `${spec.id}: eye line ${rig.py.toFixed(3)} m above the road, not 1.1–1.3 m`);
+  }
 });
 
 test("the finish flourish orbits the car", () => {
@@ -779,6 +804,41 @@ test("the fitted shadow box contains the car and the visible road span", () => {
   }
 });
 
+test("a tree at the edge of the visible road is inside the shadow volume", () => {
+  // Every caster stands on the span, not in it: the canopy of a roadside conifer
+  // is 20–30 m above the ground the fit is handed. Fitting to the ground alone
+  // leaves it behind the near plane, and a forest then throws nothing onto the
+  // road — which is exactly what the game looked like.
+  const stage = makeStraightStage();
+  const buf = new Float32Array(512 * 3);
+  const carIndex = 60;
+  const n = roadSpanPoints(buf, stage, carIndex, 45, 6, 1, 2.5);
+  const fit = makeShadowFit();
+  const ls = { r: 0, u: 0, f: 0 };
+  // Every sun a stage can be run under, from a hard midday to a low golden hour.
+  for (const sun of [[0.55, 0.42, -0.72], [0.1, 0.95, 0.2], [-0.8, 0.18, 0.5], [0, 0.35, 1]]) {
+    fitShadowFrustum(fit, buf, n, sun[0], sun[1], sun[2], 2048, 3.5);
+    assert.ok(fit.ok);
+    for (let i = 0; i < n; i += 1) {
+      // The tallest thing the fit promises to hold, standing on a span point.
+      shadowLightSpace(fit, buf[i * 3], buf[i * 3 + 1] + SHADOW_CASTER_HEIGHT, buf[i * 3 + 2], ls);
+      assert.ok(ls.r >= fit.left - 1e-4 && ls.r <= fit.right + 1e-4,
+        `sun ${sun}: canopy ${i} outside horizontally: ${ls.r} not in [${fit.left}, ${fit.right}]`);
+      assert.ok(ls.u >= fit.bottom - 1e-4 && ls.u <= fit.top + 1e-4,
+        `sun ${sun}: canopy ${i} outside vertically: ${ls.u} not in [${fit.bottom}, ${fit.top}]`);
+      assert.ok(ls.f >= fit.near - 1e-4 && ls.f <= fit.far + 1e-4,
+        `sun ${sun}: canopy ${i} clipped in depth: ${ls.f} not in [${fit.near}, ${fit.far}]`);
+    }
+  }
+  // And the ground it casts onto is still inside, so nothing was traded away.
+  fitShadowFrustum(fit, buf, n, 0.55, 0.42, -0.72, 2048, 3.5);
+  for (let i = 0; i < n; i += 1) {
+    shadowLightSpace(fit, buf[i * 3], buf[i * 3 + 1], buf[i * 3 + 2], ls);
+    assert.ok(ls.f >= fit.near - 1e-4 && ls.f <= fit.far + 1e-4, `ground ${i} at ${ls.f}`);
+    assert.ok(ls.u >= fit.bottom - 1e-4 && ls.u <= fit.top + 1e-4);
+  }
+});
+
 test("the fitted box is close to the ideal — a loose fit is the staircase bug", () => {
   const stage = makeStraightStage();
   const buf = new Float32Array(512 * 3);
@@ -787,14 +847,17 @@ test("the fitted box is close to the ideal — a loose fit is the staircase bug"
   const margin = 3.5;
   fitShadowFrustum(fit, buf, n, 0.55, 0.42, -0.72, 2048, margin);
 
-  // The ideal is the exact bounding extent of the same points in the same basis.
+  // The ideal is the exact bounding extent of the volume the fit has to hold:
+  // the span, and the same span raised by the caster height.
   let minR = Infinity; let maxR = -Infinity;
   let minU = Infinity; let maxU = -Infinity;
   const ls = { r: 0, u: 0, f: 0 };
   for (let i = 0; i < n; i += 1) {
-    shadowLightSpace(fit, buf[i * 3], buf[i * 3 + 1], buf[i * 3 + 2], ls);
-    if (ls.r < minR) minR = ls.r; if (ls.r > maxR) maxR = ls.r;
-    if (ls.u < minU) minU = ls.u; if (ls.u > maxU) maxU = ls.u;
+    for (const lift of [0, SHADOW_CASTER_HEIGHT]) {
+      shadowLightSpace(fit, buf[i * 3], buf[i * 3 + 1] + lift, buf[i * 3 + 2], ls);
+      if (ls.r < minR) minR = ls.r; if (ls.r > maxR) maxR = ls.r;
+      if (ls.u < minU) minU = ls.u; if (ls.u > maxU) maxU = ls.u;
+    }
   }
   const idealSide = Math.max(maxR - minR, maxU - minU);
   const side = fit.right - fit.left;
@@ -1730,6 +1793,55 @@ test("the far edge of the scenery fades out rather than popping", () => {
     else assert.ok(scale > 0.99, `a near instance was shrunk to ${scale}`);
   }
   assert.ok(sawFaded, "the outermost instances popped in at full size");
+  api.dispose();
+});
+
+test("scenery behind the camera is not submitted", () => {
+  // The instanced meshes carry one bounding sphere over the whole stage and are
+  // marked frustumCulled = false, so nothing downstream can reject them: what is
+  // written into the buffer *is* what the GPU draws. Half of a distance-culled
+  // set is behind the car, and paying for it every frame is the whole cost of
+  // this defect.
+  const stage = makeStraightStage(700);
+  stage.world = fakeWorld(stage);
+  stage.scenery = [];
+  for (let z = 0; z < 1400; z += 7) {
+    stage.scenery.push({ kind: "tree", x: -9, y: 0, z, yaw: 0, scale: 1, variant: 0 });
+    stage.scenery.push({ kind: "tree", x: 9, y: 0, z, yaw: 0, scale: 1, variant: 0 });
+  }
+  stage.bounds = { minX: -60, maxX: 60, minZ: -60, maxZ: 1460 };
+  const { mesh, lib } = instancedSceneryLibrary(THREE, stage.scenery);
+  const { api } = makeRenderer({ webgl2: true, quality: "high", meshes: lib });
+  const car = fakeCar(stage);
+  car.pos.z = 700;
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 4; i += 1) api.update(frame, 1 / 60);
+
+  const q = qualitySettings("high");
+  const cam = api.camera;
+  const fwd = new THREE.Vector3();
+  cam.getWorldDirection(fwd);
+  let reachable = 0;
+  for (const it of stage.scenery) {
+    if (Math.hypot(it.x - cam.position.x, it.z - cam.position.z) <= q.sceneryDistance) reachable += 1;
+  }
+  assert.ok(mesh.count > 20, `only ${mesh.count} instances drawn — the view is empty`);
+  assert.ok(mesh.count < reachable * 0.75,
+    `${mesh.count} of ${reachable} in-range instances submitted — the view is not being used`);
+
+  // A cell is 96 m of grid plus the pad that keeps off-screen shadow casters, so
+  // this is how far behind the camera an instance can legitimately still be.
+  const behindLimit = -(96 + 28 + 10);
+  const m = new THREE.Matrix4();
+  let worstBehind = 0;
+  for (let i = 0; i < mesh.count; i += 1) {
+    mesh.getMatrixAt(i, m);
+    const along = (m.elements[12] - cam.position.x) * fwd.x + (m.elements[14] - cam.position.z) * fwd.z;
+    worstBehind = Math.min(worstBehind, along);
+  }
+  assert.ok(worstBehind >= behindLimit,
+    `an instance ${(-worstBehind).toFixed(0)} m behind the camera was submitted`);
   api.dispose();
 });
 

@@ -835,6 +835,32 @@ const FAST_HALF = 24;
 const HINT_SLACK = 2;
 const GRID_HALF = 28;
 
+const VERGE = 2.2;
+const VERGE_DROP = 0.42;
+const BLEND = 22;
+const DITCH_W = 3.4;
+
+// How far past its own verge a stretch of road still shapes the ground. Beyond
+// it the terrain is the anchor field below, which knows about the whole road
+// rather than the nearest bit of it. Wide on purpose: where the road climbs
+// back over itself, the ground between the two passes has to cover the whole
+// height difference, and a wider reach gives it further to do that in.
+const TERRAIN_REACH = 80;
+const REACH_CELL = 32;
+const ANCHOR_CELL = 64;
+const ANCHOR_DEC = 24;
+const ANCHOR_EPS = 25;
+const ANCHOR_PAD = 340;
+const HILL_REACH = 95;
+
+// Scratch for the height field's deferred weights. Module scope because the
+// field runs per wheel per substep and must not allocate.
+const HOLD_CAP = 2048;
+const holdI = new Int32Array(HOLD_CAP);
+const holdF = new Float64Array(HOLD_CAP);
+const holdW = new Float64Array(HOLD_CAP);
+const holdD = new Float64Array(HOLD_CAP);
+
 function makeSurfaceScratch() {
   return {
     id: SURFACE.GRAVEL, name: "Gravel",
@@ -890,6 +916,109 @@ function buildNearestGrid(stage) {
   return { grid, nx, nz, cellX, cellZ };
 }
 
+// Every segment within reach of a cell, as runs of consecutive indices. A run
+// is what a pass of the road looks like from here, so walking the list visits
+// each nearby stretch once and in memory order.
+function buildReachIndex(stage) {
+  const cell = REACH_CELL;
+  const b = stage.bounds;
+  const pad = TERRAIN_REACH + 24;
+  const minX = b.minX - pad;
+  const minZ = b.minZ - pad;
+  const nx = Math.max(1, Math.ceil((b.maxX + pad - minX) / cell) + 1);
+  const nz = Math.max(1, Math.ceil((b.maxZ + pad - minZ) / cell) + 1);
+  const lists = new Map();
+  const half = cell * 0.70711;
+  let total = 0;
+  for (let k = 0; k < stage.count - 1; k += 1) {
+    const x = stage.x[k];
+    const z = stage.z[k];
+    // The whole segment has to count, not just the sample it starts at.
+    const rad = TERRAIN_REACH + stage.halfWidth[k] + VERGE + half + stage.step;
+    const rad2 = rad * rad;
+    const i0 = Math.max(0, Math.floor((x - rad - minX) / cell));
+    const i1 = Math.min(nx - 1, Math.floor((x + rad - minX) / cell));
+    const j0 = Math.max(0, Math.floor((z - rad - minZ) / cell));
+    const j1 = Math.min(nz - 1, Math.floor((z + rad - minZ) / cell));
+    for (let j = j0; j <= j1; j += 1) {
+      const dz = minZ + (j + 0.5) * cell - z;
+      for (let i = i0; i <= i1; i += 1) {
+        const dx = minX + (i + 0.5) * cell - x;
+        if (dx * dx + dz * dz > rad2) continue;
+        const key = j * nx + i;
+        let run = lists.get(key);
+        if (!run) { run = []; lists.set(key, run); }
+        if (run.length && run[run.length - 1] === k - 1) run[run.length - 1] = k;
+        else { run.push(k, k); total += 1; }
+      }
+    }
+  }
+  const start = new Int32Array(nx * nz + 1);
+  for (const [key, run] of lists) start[key + 1] = run.length >> 1;
+  for (let i = 0; i < nx * nz; i += 1) start[i + 1] += start[i];
+  const runs = new Int32Array(total * 2);
+  for (const [key, run] of lists) {
+    let at = start[key] * 2;
+    for (let i = 0; i < run.length; i += 1) { runs[at] = run[i]; at += 1; }
+  }
+  return { minX, minZ, cell, nx, nz, start, runs };
+}
+
+// The far field: what the ground would be at a point if every metre of road had
+// a say in it, weighted by 1/distance^2. Sampled on a coarse lattice once, it
+// costs a bilinear read at query time and — unlike the nearest sample — it
+// cannot jump when the road that owns a place changes.
+function buildAnchorField(stage) {
+  const cell = ANCHOR_CELL;
+  const b = stage.bounds;
+  const minX = b.minX - ANCHOR_PAD;
+  const minZ = b.minZ - ANCHOR_PAD;
+  const nx = Math.max(2, Math.ceil((b.maxX + ANCHOR_PAD - minX) / cell) + 1);
+  const nz = Math.max(2, Math.ceil((b.maxZ + ANCHOR_PAD - minZ) / cell) + 1);
+  const height = new Float32Array(nx * nz);
+  const dist = new Float32Array(nx * nz);
+  const n = Math.ceil((stage.count - 1) / ANCHOR_DEC);
+  const sx = new Float64Array(n);
+  const sz = new Float64Array(n);
+  const sy = new Float64Array(n);
+  const rx = new Float64Array(n);
+  const rz = new Float64Array(n);
+  const trend = new Float64Array(n);
+  for (let k = 0; k < n; k += 1) {
+    const i = k * ANCHOR_DEC;
+    const tl = 1 / Math.max(1e-9, Math.sqrt(stage.tx[i] * stage.tx[i] + stage.tz[i] * stage.tz[i]));
+    sx[k] = stage.x[i];
+    sz[k] = stage.z[i];
+    sy[k] = stage.y[i];
+    rx[k] = stage.tz[i] * tl;
+    rz[k] = -stage.tx[i] * tl;
+    trend[k] = stage.hillTrend[i] * HILL_REACH;
+  }
+  const eps2 = ANCHOR_EPS * ANCHOR_EPS;
+  for (let j = 0; j < nz; j += 1) {
+    const pz = minZ + j * cell;
+    for (let i = 0; i < nx; i += 1) {
+      const px = minX + i * cell;
+      let num = 0;
+      let den = 0;
+      let near = Infinity;
+      for (let k = 0; k < n; k += 1) {
+        const dx = px - sx[k];
+        const dz = pz - sz[k];
+        const d2 = dx * dx + dz * dz;
+        if (d2 < near) near = d2;
+        const w = 1 / (d2 + eps2);
+        const lat = dx * rx[k] + dz * rz[k];
+        num += w * (sy[k] + trend[k] * Math.tanh(lat / HILL_REACH));
+        den += w;
+      }
+      height[j * nx + i] = num / den;
+      dist[j * nx + i] = Math.sqrt(near);
+    }
+  }
+  return { minX, minZ, cell, nx, nz, height, dist };
+}
+
 export function stageWorld(stage) {
   if (stage.world) return stage.world;
   const count = stage.count;
@@ -898,6 +1027,21 @@ export function stageWorld(stage) {
   const Y = stage.y;
   const Z = stage.z;
   const nearest = buildNearestGrid(stage);
+  const reach = buildReachIndex(stage);
+  const anchor = buildAnchorField(stage);
+  // Unit right vector and camber sine per sample: the height field walks
+  // hundreds of segments per query and cannot afford a square root in each.
+  // Double precision on purpose: a float32 unit vector moves a lateral offset
+  // by a centimetre 100 m out, and project() is held to a micrometre.
+  const RX = new Float64Array(count);
+  const RZ = new Float64Array(count);
+  const SINCAM = new Float64Array(count);
+  for (let i = 0; i < count; i += 1) {
+    const inv = 1 / Math.max(1e-6, Math.sqrt(stage.tx[i] * stage.tx[i] + stage.tz[i] * stage.tz[i]));
+    RX[i] = stage.tz[i] * inv;
+    RZ[i] = -stage.tx[i] * inv;
+    SINCAM[i] = Math.sin(stage.camber[i]);
+  }
   const sepHalf2 = (SEP_NEAR.dist * 0.5) * (SEP_NEAR.dist * 0.5);
   const scanned = new Int32Array(9);
   const roadBlend = makeSurfaceScratch();
@@ -960,10 +1104,7 @@ export function stageWorld(stage) {
   function lateralOf(px, pz, i, f) {
     const cx = X[i] + (X[i + 1] - X[i]) * f;
     const cz = Z[i] + (Z[i + 1] - Z[i]) * f;
-    const txv = stage.tx[i];
-    const tzv = stage.tz[i];
-    const inv = 1 / Math.max(1e-6, Math.sqrt(txv * txv + tzv * tzv));
-    return ((px - cx) * tzv - (pz - cz) * txv) * inv;
+    return (px - cx) * RX[i] + (pz - cz) * RZ[i];
   }
 
   const projScratch = { s: 0, lateral: 0, signedLateral: 0, index: 0, frac: 0 };
@@ -984,56 +1125,168 @@ export function stageWorld(stage) {
   function roadSurfaceY(i, f, d) {
     const hw = stage.halfWidth[i];
     const dd = d < -hw ? -hw : d > hw ? hw : d;
-    return Y[i] + (Y[i + 1] - Y[i]) * f + dd * Math.sin(stage.camber[i]);
+    return Y[i] + (Y[i + 1] - Y[i]) * f + dd * SINCAM[i];
   }
 
-  function terrainBase(px, pz, i, f, d) {
-    const roadY = Y[i] + (Y[i + 1] - Y[i]) * f;
-    const reach = 95 * Math.tanh(d / 95);
-    let h = roadY + stage.hillTrend[i] * reach;
-    const wFar = smoothstep(18, 150, Math.abs(d));
-    const wNear = smoothstep(3.5, 15, Math.abs(d));
-    h += fbm2(px * 0.0031, pz * 0.0031, stage.terrainSeed, 5) * stage.hillAmp * wFar;
-    h += ridged2(px * 0.00105, pz * 0.00105, stage.terrainSeed + 7717, 4) * stage.ridgeAmp * wFar;
-    h += fbm2(px * 0.042, pz * 0.042, stage.terrainSeed + 4409, 3) * 1.15 * wNear;
-    return h;
-  }
+  // What one stretch of road makes of a point: the road surface itself inside
+  // the corridor, the verge just outside it, then a blend out to the hillside
+  // that stretch sits on. `t` is how much of that hillside has taken over, so
+  // the caller can weigh one stretch against another and add the ground noise
+  // once for the place rather than once per stretch.
+  const field = { base: 0, t: 0, a: 0 };
 
-  const VERGE = 2.2;
-  const VERGE_DROP = 0.42;
-  const BLEND = 22;
-  const DITCH_W = 3.4;
-
-  // C0 across the seam by construction: the verge starts at the road edge
-  // height and the terrain blend starts at the verge height.
-  function heightAtLocated(px, pz) {
-    const i = bestI;
-    const f = bestT;
+  function roadField(px, pz, i, f, dist) {
     const d = lateralOf(px, pz, i, f);
-    const a = Math.abs(d);
+    // The offset is measured across the tangent, which says nothing about how
+    // far past the end of a segment the point lies: a point 50 m off the end of
+    // the road sits on its centre line and was being handed the road surface.
+    const a = dist > Math.abs(d) ? dist : Math.abs(d);
     const hw = stage.halfWidth[i];
     const edgeY = roadSurfaceY(i, f, d);
-    if (a <= hw) return edgeY;
+    field.a = a;
+    if (a <= hw) { field.base = edgeY; field.t = 0; return field; }
     const u = a - hw;
-    if (u <= VERGE) return edgeY - VERGE_DROP * smootherstep(0, VERGE, u);
+    if (u <= VERGE) {
+      field.base = edgeY - VERGE_DROP * smootherstep(0, VERGE, u);
+      field.t = 0;
+      return field;
+    }
     const seamY = edgeY - VERGE_DROP;
-    const tb = terrainBase(px, pz, i, f, d);
+    const anchor = Y[i] + (Y[i + 1] - Y[i]) * f + stage.hillTrend[i] * HILL_REACH * Math.tanh(d / HILL_REACH);
     const t = smootherstep(0, BLEND, u - VERGE);
-    const cutSide = stage.hillTrend[i] * sign(d) > 0 ? 1 : 0.35;
     const dz = u - VERGE;
     let ditch = 0;
     if (dz < DITCH_W) {
+      // Which side the cutting is on flips with the sign of the offset. Off the
+      // end of a segment that sign turns over while the point stands still, so
+      // fade the ditch out as the offset stops being what holds the point away
+      // from the road.
+      const lean = Math.abs(d) / a;
+      const cutSide = stage.hillTrend[i] * sign(d) > 0 ? 1 : 0.35;
       const w = Math.sin((Math.PI * dz) / DITCH_W);
-      ditch = w * w * 0.55 * cutSide;
+      ditch = w * w * 0.55 * cutSide * lean * lean;
     }
-    return seamY + (tb - seamY) * t - ditch;
+    field.base = seamY + (anchor - seamY) * t - ditch;
+    field.t = t;
+    return field;
   }
 
+  // Anchoring the ground on the nearest sample alone put a cliff wherever two
+  // passes of the road came near each other: at the medial axis between them
+  // the nearest sample flips, and with it the road height the whole hillside
+  // hangs from. Weighting every stretch within reach by 1/u^2 keeps the field
+  // continuous — a stretch enters at zero weight at the edge of its reach and
+  // dominates as you stand on it, so the road corridor is untouched — and the
+  // anchor field carries the ground the rest of the way.
+  const wFarField = 1 / (TERRAIN_REACH * TERRAIN_REACH);
+
   function heightAt(px, pz) {
-    locate(px, pz, -1);
-    hintIndex = bestI;
-    return heightAtLocated(px, pz);
+    const nFar = fbm2(px * 0.0031, pz * 0.0031, stage.terrainSeed, 5) * stage.hillAmp
+      + ridged2(px * 0.00105, pz * 0.00105, stage.terrainSeed + 7717, 4) * stage.ridgeAmp;
+    const nNear = fbm2(px * 0.042, pz * 0.042, stage.terrainSeed + 4409, 3) * 1.15;
+
+    let num = 0;
+    let den = 0;
+    let held = 0;
+    let nearD2 = Infinity;
+    let nearI = -1;
+    let nearF = 0;
+    const gi = Math.floor((px - reach.minX) / reach.cell);
+    const gj = Math.floor((pz - reach.minZ) / reach.cell);
+    if (gi >= 0 && gj >= 0 && gi < reach.nx && gj < reach.nz) {
+      const cellIdx = gj * reach.nx + gi;
+      const r0 = reach.start[cellIdx];
+      const r1 = reach.start[cellIdx + 1];
+      for (let r = r0; r < r1; r += 1) {
+        const from = reach.runs[r * 2];
+        const to = reach.runs[r * 2 + 1];
+        for (let i = from; i <= to; i += 1) {
+          const ax = X[i];
+          const az = Z[i];
+          const bx = X[i + 1] - ax;
+          const bz = Z[i + 1] - az;
+          const qx = px - ax;
+          const qz = pz - az;
+          const len2 = bx * bx + bz * bz;
+          let f = len2 > 1e-9 ? (qx * bx + qz * bz) / len2 : 0;
+          if (f < 0) f = 0; else if (f > 1) f = 1;
+          const ex = qx - bx * f;
+          const ez = qz - bz * f;
+          const d2 = ex * ex + ez * ez;
+          if (d2 < nearD2) { nearD2 = d2; nearI = i; nearF = f; }
+          const dist = Math.sqrt(d2);
+          const u = dist - stage.halfWidth[i] - VERGE;
+          if (u >= TERRAIN_REACH) continue;
+          const uu = u > 1e-3 ? u : 1e-3;
+          const q = (TERRAIN_REACH - uu) / (TERRAIN_REACH * uu);
+          const w = q * q;
+          // Hold the weights rather than spending a field evaluation on each:
+          // a query on the road answers from the nearest segment alone and
+          // never needs them.
+          if (held < HOLD_CAP) {
+            holdI[held] = i;
+            holdF[held] = f;
+            holdW[held] = w;
+            holdD[held] = dist;
+            held += 1;
+          } else {
+            roadField(px, pz, i, f, dist);
+            num += w * (field.base + field.t
+              * (nFar * smoothstep(18, 150, field.a) + nNear * smoothstep(3.5, 15, field.a)));
+            den += w;
+          }
+        }
+      }
+    }
+
+    if (nearI >= 0) {
+      hintIndex = nearI;
+      roadField(px, pz, nearI, nearF, Math.sqrt(nearD2));
+      // On the road and its verge the road is the answer, to the millimetre.
+      if (field.t <= 0) return field.base;
+    }
+    for (let k = 0; k < held; k += 1) {
+      const w = holdW[k];
+      roadField(px, pz, holdI[k], holdF[k], holdD[k]);
+      num += w * (field.base + field.t
+        * (nFar * smoothstep(18, 150, field.a) + nNear * smoothstep(3.5, 15, field.a)));
+      den += w;
+    }
+
+    // How much ground noise a place carries depends on how far it is from any
+    // road. Inside the reach that distance is exact; the lattice only has to
+    // carry it further out, so hand over well before the exact one runs out.
+    let dFar = anchorDist(px, pz);
+    if (nearI >= 0) {
+      const dn = Math.sqrt(nearD2);
+      dFar = dn + (dFar - dn) * smoothstep(TERRAIN_REACH * 0.6, TERRAIN_REACH * 0.9, dn);
+    }
+    const far = anchorHeight(px, pz)
+      + nFar * smoothstep(18, 150, dFar) + nNear * smoothstep(3.5, 15, dFar);
+    return (num + wFarField * far) / (den + wFarField);
   }
+
+  function anchorLerp(data, px, pz) {
+    let fx = (px - anchor.minX) / anchor.cell;
+    let fz = (pz - anchor.minZ) / anchor.cell;
+    if (fx < 0) fx = 0; else if (fx > anchor.nx - 1) fx = anchor.nx - 1;
+    if (fz < 0) fz = 0; else if (fz > anchor.nz - 1) fz = anchor.nz - 1;
+    let i = Math.floor(fx);
+    let j = Math.floor(fz);
+    if (i > anchor.nx - 2) i = anchor.nx - 2;
+    if (j > anchor.nz - 2) j = anchor.nz - 2;
+    const tx = fx - i;
+    const tz = fz - j;
+    const row = j * anchor.nx + i;
+    const a = data[row];
+    const b = data[row + 1];
+    const c = data[row + anchor.nx];
+    const d = data[row + anchor.nx + 1];
+    return (a + (b - a) * tx) * (1 - tz) + (c + (d - c) * tx) * tz;
+  }
+
+  function anchorHeight(px, pz) { return anchorLerp(anchor.height, px, pz); }
+  function anchorDist(px, pz) { return anchorLerp(anchor.dist, px, pz); }
 
   function normalAt(px, pz, out) {
     const target = out || tmpNormal;
@@ -1049,13 +1302,9 @@ export function stageWorld(stage) {
     let nz = stage.nz[i];
     if (edge > 0) {
       const e = 0.75;
-      const h0 = heightAtLocated(px, pz);
-      bestD2 = Infinity; scan(px + e, pz, i - 5, i + 5);
-      const hx = heightAtLocated(px + e, pz);
-      bestD2 = Infinity; scan(px, pz + e, i - 5, i + 5);
-      const hz = heightAtLocated(px, pz + e);
-      const gx = (hx - h0) / e;
-      const gz = (hz - h0) / e;
+      const h0 = heightAt(px, pz);
+      const gx = (heightAt(px + e, pz) - h0) / e;
+      const gz = (heightAt(px, pz + e) - h0) / e;
       const inv = 1 / Math.sqrt(gx * gx + gz * gz + 1);
       nx += (-gx * inv - nx) * edge;
       ny += (inv - ny) * edge;

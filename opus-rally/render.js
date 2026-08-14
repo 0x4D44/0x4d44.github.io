@@ -38,6 +38,14 @@ const BEAM_RADIUS = 5.2;
 // surface the camera sees edge-on.
 const ANISO_MAPS = Object.freeze(["map", "normalMap", "roughnessMap", "aoMap"]);
 
+// Used only when a sample arrives without one — every car in physics.js carries
+// its own, and they span 0.445 to 0.52 m.
+const DEFAULT_COM_HEIGHT = 0.49;
+
+// How far outside the view a scenery cell is still worth drawing: enough that a
+// caster at the edge of the picture keeps the shadow it throws into it.
+const SCENERY_CULL_PAD = 28;
+
 // ---- quality -------------------------------------------------------------
 
 export const QUALITY_LEVELS = Object.freeze(["low", "medium", "high", "ultra"]);
@@ -179,6 +187,12 @@ export const CAMERA_CYCLE = Object.freeze([
 // fovBase === fovMax means the camera never pumps, which is what the in-car
 // views want: a field of view that breathes on a bonnet cam reads as a zoom
 // lens wobble, not as speed.
+//
+// A mount's localX/localZ are chassis-frame offsets from the centre of mass, but
+// `mountY` is the height above the *road*, because that is the only frame a
+// driver's eye line or a bumper can be measured in. mountPosition() takes the
+// car's COM height back out; the two live at different heights per car and
+// mixing the frames put every in-car camera half a metre too high.
 const CAMERA_PARAMS = Object.freeze({
   chase: Object.freeze({
     mode: "chase", kind: "boom",
@@ -208,7 +222,7 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   bonnet: Object.freeze({
     mode: "bonnet", kind: "mount",
-    localX: 0, localY: 0.94, localZ: 0.62,
+    localX: 0, mountY: 1.08, localZ: 0.62,
     lookAhead: 22, lookHeight: 0.05, lookVertGain: 0,
     posRate: 30, posRateSpeed: 0, aimRate: 12, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
@@ -221,7 +235,7 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   cockpit: Object.freeze({
     mode: "cockpit", kind: "mount",
-    localX: -0.37, localY: 1.03, localZ: -0.16,
+    localX: -0.37, mountY: 1.20, localZ: -0.16,
     lookAhead: 20, lookHeight: 0.02, lookVertGain: 0,
     posRate: 26, posRateSpeed: 0, aimRate: 9.5, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
@@ -234,7 +248,7 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   bumper: Object.freeze({
     mode: "bumper", kind: "mount",
-    localX: 0, localY: 0.40, localZ: 1.86,
+    localX: 0, mountY: 0.42, localZ: 1.86,
     lookAhead: 26, lookHeight: 0.10, lookVertGain: 0,
     posRate: 34, posRateSpeed: 0, aimRate: 13, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
@@ -289,6 +303,9 @@ export function makeCarSample() {
     lateralG: 0, longitudinalG: 0, verticalG: 1,
     steer: 0, airTime: 0, onGround: 4,
     roughness: 0.2, wheelSpeed: 0,
+    // How far `y` sits above the road at rest, so a mount authored in road
+    // heights can be placed against a centre of mass that differs per car.
+    comHeight: DEFAULT_COM_HEIGHT,
   };
 }
 
@@ -306,6 +323,9 @@ export function sampleCar(out, car, surface) {
   out.airTime = car.airTime;
   out.onGround = car.onGround;
   out.roughness = surface ? surface.roughness : 0.2;
+  // physics.js tunes `setup` from `spec`, so a tuned ride height is in setup.
+  const geom = car.setup || car.spec;
+  out.comHeight = geom && geom.comHeight > 0 ? geom.comHeight : DEFAULT_COM_HEIGHT;
   return out;
 }
 
@@ -445,7 +465,10 @@ function mountPosition(out, s, p, hx, hy, hz) {
   const cy = Math.cos(s.yaw);
   const sy = Math.sin(s.yaw);
   const lx = p.localX + hx;
-  const ly = p.localY + hy;
+  // s.y is the centre of mass; mountY is measured from the road, so the COM
+  // height comes back out before the offset is applied in the chassis frame.
+  const com = s.comHeight > 0 ? s.comHeight : DEFAULT_COM_HEIGHT;
+  const ly = (p.mountY - com) + hy;
   const lz = p.localZ + hz;
   // Roll and pitch are small at a camera mount, so the small-angle rotation is
   // both exact enough and cheaper than a quaternion here.
@@ -858,6 +881,11 @@ export function autoScalerSample(as, frameMs, dt) {
 
 // ---- shadow frustum fitting ---------------------------------------------
 
+// The tallest thing beside a road that has to land in the shadow map: a mature
+// conifer, a telegraph pole, the start gantry. The fit is given the ground the
+// shadow falls on, so this is how far above that ground it has to reach.
+export const SHADOW_CASTER_HEIGHT = 30;
+
 export function makeShadowFit() {
   return {
     fx: 0, fy: -1, fz: 0,
@@ -874,7 +902,8 @@ export function makeShadowFit() {
 // to the *visible* span — the car plus the road it can see — instead of the whole
 // stage keeps the texel size in centimetres rather than metres. Snapping the
 // centre to a whole texel is what stops the edges crawling as the car moves.
-export function fitShadowFrustum(fit, points, count, sunX, sunY, sunZ, mapSize, margin) {
+export function fitShadowFrustum(fit, points, count, sunX, sunY, sunZ, mapSize, margin,
+  casterHeight) {
   if (!count) { fit.ok = false; return fit; }
   const sl = Math.hypot(sunX, sunY, sunZ) || 1;
   // Light travels from the sun towards the ground, so forward is -sunDir.
@@ -913,6 +942,20 @@ export function fitShadowFrustum(fit, points, count, sunX, sunY, sunZ, mapSize, 
     if (r < minR) minR = r; if (r > maxR) maxR = r;
     if (u < minU) minU = u; if (u > maxU) maxU = u;
     if (f < minF) minF = f; if (f > maxF) maxF = f;
+  }
+  // The points describe the ground the shadow lands on. What casts it stands up
+  // to `casterHeight` above them, and raising a point by h moves it by
+  // h*(ry, uy, fy) in this basis — down in depth for any sun off the vertical.
+  // Fitting to the ground alone therefore leaves every canopy, pole and gantry
+  // behind the near plane, which is why the forest cast nothing on the road.
+  const h = casterHeight === undefined ? SHADOW_CASTER_HEIGHT : casterHeight;
+  if (h > 0) {
+    const dr = h * ry;
+    const du = h * uy;
+    const df = h * fy;
+    if (dr < 0) minR += dr; else maxR += dr;
+    if (du < 0) minU += du; else maxU += du;
+    if (df < 0) minF += df; else maxF += df;
   }
   const m = margin === undefined ? 3 : margin;
   const size = Math.max(maxR - minR, maxU - minU) + m * 2;
@@ -1943,7 +1986,16 @@ export function createRenderer(canvas, opts = {}) {
     nx: 0, nz: 0,
     minX: 0, minZ: 0,
     lodState: null,
+    // Vertical extent of the tallest thing standing in each cell, so a cell can
+    // be tested against the view frustum as a box rather than as a flat tile.
+    cellLoY: null,
+    cellHiY: null,
   };
+
+  // Scratch for that test. One frustum per renderer, rebuilt in place each frame.
+  const viewFrustum = new three.Frustum();
+  const viewClip = new three.Matrix4();
+  const cellBox = new three.Box3();
 
   // A wet road is not a dark road, it is a *glossy* one: the reflected sky streak
   // down the crown is most of what sells rain. The noise roughness map is what
@@ -2391,18 +2443,33 @@ export function createRenderer(canvas, opts = {}) {
     scenery.nx = Math.max(1, Math.ceil((b.maxX - b.minX) / cs) + 2);
     scenery.nz = Math.max(1, Math.ceil((b.maxZ - b.minZ) / cs) + 2);
     const total = scenery.nx * scenery.nz;
+    const loY = new Float32Array(total).fill(Infinity);
+    const hiY = new Float32Array(total).fill(-Infinity);
     for (let e = 0; e < scenery.entries.length; e += 1) {
       const entry = scenery.entries[e];
       const cells = new Array(total);
+      // The tallest point of this kind in its own units, from the LOD 0 geometry.
+      const geo = entry.lods[0] && entry.lods[0].mesh.geometry;
+      if (geo && !geo.boundingSphere) geo.computeBoundingSphere();
+      const bs = geo && geo.boundingSphere;
+      const top = bs ? bs.center.y + bs.radius : 12;
       for (let i = 0; i < entry.count; i += 1) {
         const cx = clamp(Math.floor((entry.px[i] - scenery.minX) / cs), 0, scenery.nx - 1);
         const cz = clamp(Math.floor((entry.pz[i] - scenery.minZ) / cs), 0, scenery.nz - 1);
         const k = cz * scenery.nx + cx;
         if (!cells[k]) cells[k] = [];
         cells[k].push(i);
+        const o = i * 16;
+        const y = entry.src[o + 13];
+        const sc = Math.hypot(entry.src[o], entry.src[o + 1], entry.src[o + 2]) || 1;
+        if (y < loY[k]) loY[k] = y;
+        const t = y + top * sc;
+        if (t > hiY[k]) hiY[k] = t;
       }
       entry.cells = cells;
     }
+    scenery.cellLoY = loY;
+    scenery.cellHiY = hiY;
   }
 
   // meshes.js hands back descriptors — `{ group, …, dispose() }` — rather than
@@ -3187,6 +3254,25 @@ export function createRenderer(canvas, opts = {}) {
     return n;
   }
 
+  // Every scenery InstancedMesh has frustumCulled off — one sphere over a whole
+  // kind is all-or-nothing, and on a 9 km stage it always intersects. So the
+  // frustum test happens here instead, per grid cell, before a single instance
+  // is written: a cell the camera cannot see costs nothing and frees its share
+  // of the budget for one that is on screen. The box is padded because a tree
+  // just off the edge of the picture still throws a shadow onto road that is on
+  // it.
+  function cellInView(i, j, k) {
+    const lo = scenery.cellLoY ? scenery.cellLoY[k] : Infinity;
+    if (!(lo < Infinity)) return false;
+    const cs = scenery.cellSize;
+    const x0 = scenery.minX + i * cs;
+    const z0 = scenery.minZ + j * cs;
+    cellBox.min.set(x0 - SCENERY_CULL_PAD, lo - 2, z0 - SCENERY_CULL_PAD);
+    cellBox.max.set(x0 + cs + SCENERY_CULL_PAD, scenery.cellHiY[k] + 2,
+      z0 + cs + SCENERY_CULL_PAD);
+    return viewFrustum.intersectsBox(cellBox);
+  }
+
   // Cells are visited in square rings outward from the camera, so the budget
   // always buys the nearest scenery. Walking the grid from its minimum corner —
   // which is what a plain nested loop does — spends it on whatever happens to
@@ -3197,6 +3283,10 @@ export function createRenderer(canvas, opts = {}) {
     const dist = q.sceneryDistance;
     const cs = scenery.cellSize;
     const budget = q.sceneryBudget;
+    // The renderer refreshes these itself at draw time, which is after this runs.
+    camera.updateMatrixWorld();
+    viewClip.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    viewFrustum.setFromProjectionMatrix(viewClip);
     for (let e = 0; e < scenery.entries.length; e += 1) scenery.entries[e].counts.fill(0);
     const ci = Math.floor((camX - scenery.minX) / cs);
     const cj = Math.floor((camZ - scenery.minZ) / cs);
@@ -3213,7 +3303,9 @@ export function createRenderer(canvas, opts = {}) {
         const stride = edge ? 1 : Math.max(1, i1 - i0);
         for (let i = i0; i <= i1 && issued < budget; i += stride) {
           if (i < 0 || i >= scenery.nx) continue;
-          issued = sceneryCell(j * scenery.nx + i, camX, camZ, dist, budget, issued);
+          const k = j * scenery.nx + i;
+          if (!cellInView(i, j, k)) continue;
+          issued = sceneryCell(k, camX, camZ, dist, budget, issued);
         }
       }
     }

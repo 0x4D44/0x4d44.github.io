@@ -10,13 +10,14 @@ import {
   carDimensions, carHubPositions, applyCarDamage, setMudLevel, updateWheel,
   TRIANGLE_BUDGET, TEXTURE_NAMES, ROAD_SECTION, ROAD_EDGE_SLOTS, ROAD_CENTRE_SLOT,
   CAR_DETACHABLE, textureCacheSize, LETTERED_PROTOTYPES, PROP_BANNERS, __primitives,
+  materialAlbedoScale, roadTextureName,
 } from "../meshes.js";
 import { carSpec } from "../physics.js";
 import { SURFACE, surfaceProps } from "../surfaces.js";
 // Which way a sign faces is an invariant across two modules: meshes.js decides
 // which face carries the lettering, stage.js decides how the prop is turned. The
 // only honest check builds a real stage and puts the two together.
-import { generateStage, STAGE_BOOK } from "../stage.js";
+import { generateStage, STAGE_BOOK, stageFromBook } from "../stage.js";
 
 // ---- a synthetic Stage ---------------------------------------------------
 // stage.js is another author's module and may be half-written; everything below
@@ -948,6 +949,149 @@ test("a full-length stage stays inside the budget: the small fixture proves noth
   clearLiveryCache();
 });
 
+// The two tests above run on a fixture this file wrote, which is exactly why
+// they were green while the shipping stages were 76k triangles over: a fixture
+// cannot fail for a stage it does not contain. This one builds the book.
+test("every stage in the book fits every triangle budget", () => {
+  const rows = [];
+  for (const entry of STAGE_BOOK) {
+    const st = stageFromBook(entry.id);
+    const bundle = buildStageMeshes(THREE, st, { textureSize: 16, margin: 120 });
+    const row = {
+      id: entry.id,
+      road: bundle.road.triangles,
+      terrain: bundle.terrain.triangles,
+      scenery: bundle.scenery.triangles,
+      props: bundle.props.triangles,
+      total: bundle.triangles,
+      thinned: bundle.scenery.thinned.length,
+    };
+    rows.push(row);
+    for (const part of ["road", "terrain", "scenery", "props"]) {
+      assert.ok(row[part] <= TRIANGLE_BUDGET[part],
+        `${entry.id}: ${part} used ${row[part]} triangles, budget ${TRIANGLE_BUDGET[part]}`);
+    }
+    assert.ok(row.total <= TRIANGLE_BUDGET.stage,
+      `${entry.id}: ${row.total} triangles, budget ${TRIANGLE_BUDGET.stage}`);
+    assert.equal(bundle.scenery.overBudget, false,
+      `${entry.id}: scenery could not be thinned into its budget`);
+    // A stage that built almost nothing would pass every line above.
+    assert.ok(row.total > 120000, `${entry.id}: suspiciously empty at ${row.total} triangles`);
+    bundle.dispose();
+    clearSignCache();
+  }
+  console.log("book triangle budgets:", JSON.stringify(rows));
+});
+
+test("scenery: a stage that brings more roadside than the budget is thinned, not truncated", () => {
+  // northmarch-kestrel is the worst case in the book: 4,909 items, 316k
+  // triangles against a 240k ceiling.
+  const st = stageFromBook("northmarch-kestrel");
+  const lib = buildSceneryLibrary(THREE, st, { textureSize: 16 });
+  assert.ok(lib.thinned.length > 0, "kestrel needs thinning and none happened");
+  assert.ok(lib.triangles <= TRIANGLE_BUDGET.scenery,
+    `scenery used ${lib.triangles} triangles, budget ${TRIANGLE_BUDGET.scenery}`);
+  assert.equal(lib.overBudget, false);
+  // Thinning to nothing would also fit the budget. It has to still be a forest.
+  assert.ok(lib.triangles > TRIANGLE_BUDGET.scenery * 0.9,
+    `thinned all the way down to ${lib.triangles}; the budget is there to be spent`);
+
+  const kindOf = (it) => (it.kind === "conifer" || it.kind === "birch" || it.kind === "forest"
+    || it.kind === "pine" || it.kind === "spruce" || it.kind === "deciduous" ? "tree" : it.kind);
+  const tally = (items) => {
+    const m = new Map();
+    for (const it of items) m.set(kindOf(it), (m.get(kindOf(it)) || 0) + 1);
+    return m;
+  };
+  const had = tally(st.scenery);
+  const lost = tally(lib.thinned);
+  const rate = (k) => (had.get(k) ? (lost.get(k) || 0) / had.get(k) : 0);
+
+  assert.equal(lost.get("pole") || 0, 0, "a pole was thinned; its wires now hang off nothing");
+  assert.equal(lost.get("building") || 0, 0, "a building went before the planting did");
+  // Species priority: the understorey thins faster than the canopy, which thins
+  // faster than the rocks. And no layer is wiped out to save another.
+  assert.ok(rate("bush") > rate("tree"), `bush ${rate("bush")} vs tree ${rate("tree")}`);
+  assert.ok(rate("tree") > rate("rock"), `tree ${rate("tree")} vs rock ${rate("rock")}`);
+  assert.ok(rate("bush") < 0.85, `${(100 * rate("bush")).toFixed(0)}% of the understorey went`);
+
+  // Distance: what frames the road is the last thing to go. Measured as the drop
+  // rate for trees inside 30 m of the centreline against those beyond 60 m.
+  const near = { had: 0, lost: 0 };
+  const far = { had: 0, lost: 0 };
+  const dropped = new Set(lib.thinned);
+  for (const it of st.scenery) {
+    if (kindOf(it) !== "tree") continue;
+    const p = st.world.project(it.x, it.z, undefined, {});
+    const bin = p.lateral < 30 ? near : p.lateral > 60 ? far : null;
+    if (!bin) continue;
+    bin.had += 1;
+    if (dropped.has(it)) bin.lost += 1;
+  }
+  assert.ok(near.had > 200 && far.had > 200, `not enough trees to compare: ${near.had}/${far.had}`);
+  assert.ok(far.lost / far.had > near.lost / near.had * 1.2,
+    `trees thin at ${(near.lost / near.had).toFixed(2)} beside the road and `
+    + `${(far.lost / far.had).toFixed(2)} out beyond 60 m; the bias is not doing any work`);
+  lib.dispose();
+});
+
+// ---- road surfaces -------------------------------------------------------
+
+test("road: each running surface is drawn with its own texture set, not gravel everywhere", () => {
+  const st = theStage();     // tarmac 300-380 m, mud 520-580, a water splash at 700, dirt 940-1000
+  const road = buildRoadMesh(THREE, st, TEX);
+  const want = [SURFACE.GRAVEL, SURFACE.TARMAC, SURFACE.MUD, SURFACE.WATER, SURFACE.DIRT];
+  for (const sid of want) {
+    const mat = road.surfaceMaterials.get(sid);
+    assert.ok(mat, `${surfaceProps(sid).name} never got a material of its own`);
+    const set = surfaceTexture(THREE, roadTextureName(sid), { size: TEX.textureSize, seed: st.seed ?? 0 });
+    assert.equal(mat.map, set.map,
+      `${surfaceProps(sid).name} is mapped with something other than its own ${roadTextureName(sid)} set`);
+    assert.equal(mat.normalMap, set.normalMap);
+  }
+  // The point of the exercise: tarmac must not be sampling the gravel map.
+  assert.notEqual(road.surfaceMaterials.get(SURFACE.TARMAC).map,
+    road.surfaceMaterials.get(SURFACE.GRAVEL).map);
+  // A ford reflects the sky and gravel does not, so their roughness must differ.
+  assert.ok(road.surfaceMaterials.get(SURFACE.WATER).roughness
+    < road.surfaceMaterials.get(SURFACE.GRAVEL).roughness * 0.6,
+    "the water splash is as matt as the gravel either side of it");
+
+  // Every triangle belongs to exactly one group, and the groups follow the
+  // stations: span k carries the surface station k starts on.
+  const perSpan = (ROAD_SECTION.length - 1) * 6;
+  let checkedRuns = 0;
+  for (const chunk of road.chunks) {
+    const groups = chunk.geometry.groups;
+    assert.ok(groups.length > 0, "a road chunk has no material groups at all");
+    let cursor = 0;
+    let g = 0;
+    for (let k = 0; k + 1 < chunk.stations.length;) {
+      const sid = chunk.stations[k].surfaceId;
+      let run = 0;
+      while (k + run + 1 < chunk.stations.length && chunk.stations[k + run].surfaceId === sid) run += 1;
+      const group = chunk.groups[g];
+      assert.ok(group, `chunk ${chunk.index}: ran out of groups at station ${k}`);
+      assert.equal(group.surfaceId, sid,
+        `chunk ${chunk.index}: span at station ${k} is ${surfaceProps(sid).name} `
+        + `but its group says ${surfaceProps(group.surfaceId).name}`);
+      assert.equal(group.start, cursor);
+      assert.equal(group.count, run * perSpan);
+      assert.equal(groups[g].materialIndex, road.materials.indexOf(road.surfaceMaterials.get(sid)));
+      cursor += group.count;
+      k += run;
+      g += 1;
+      checkedRuns += 1;
+    }
+    assert.equal(g, chunk.groups.length, `chunk ${chunk.index}: ${chunk.groups.length - g} groups left over`);
+    assert.equal(cursor, chunk.geometry.getIndex().count, "the groups do not cover the whole index buffer");
+  }
+  assert.ok(checkedRuns > road.chunks.length,
+    "no chunk in the fixture actually changed surface, so this proved nothing");
+  road.dispose();
+  disposeTextures();
+});
+
 // ---- determinism ---------------------------------------------------------
 
 test("determinism: the same seed produces identical vertex buffers", () => {
@@ -1298,7 +1442,7 @@ test("materials: the colour map and the vertex colours do not both carry an albe
         `${label}: the map contributes ${product.toFixed(3)} of an albedo on top of the vertex colour (want 1.0)`);
     }
   };
-  check("road", bundle.road.material, "gravel", st.seed ?? 0);
+  check("road", bundle.road.surfaceMaterials.get(SURFACE.GRAVEL), "gravel", st.seed ?? 0);
   check("terrain", bundle.terrain.material, "grass", (st.seed ?? 0) + 3);
   check("scenery foliage", bundle.scenery.materials.tree, "foliage", st.seed ?? 0);
   check("scenery rock", bundle.scenery.materials.rock, "rock", st.seed ?? 0);
@@ -1318,6 +1462,212 @@ test("materials: the colour map and the vertex colours do not both carry an albe
   assert.ok(brightest > 0.03 && brightest < 0.40,
     `the brightest conifer albedo is ${brightest.toFixed(4)}; real foliage sits between 0.03 and 0.30`);
   bundle.dispose();
+});
+
+// The rest of the shading section is the test that stops the double-albedo
+// coming back anywhere. It measures what the renderer will actually shade —
+// map mean x material colour x vertex colour — and holds it against the band the
+// real material occupies. Bands are broadband visible reflectance, the numbers a
+// radiometry table gives; each row states which material it is claiming to be.
+
+function luminance(r, g, b) {
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+// Effective linear albedo of every vertex of `geometry` shaded with `material`.
+// Null where the albedo is painted into a canvas this process cannot read back.
+function albedoRange(geometry, material) {
+  const scale = materialAlbedoScale(material);
+  if (!scale) return null;
+  const col = geometry.getAttribute("color");
+  if (!col || !material.vertexColors) return null;
+  const a = col.array;
+  let lo = Infinity, hi = -Infinity, sum = 0, n = 0;
+  for (let i = 0; i + 2 < a.length; i += 3) {
+    const v = luminance(a[i] * scale[0], a[i + 1] * scale[1], a[i + 2] * scale[2]);
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+    sum += v; n += 1;
+  }
+  return n ? { lo, hi, mean: sum / n } : null;
+}
+
+function assertBand(label, range, band) {
+  assert.ok(range, `${label}: nothing measurable to check`);
+  assert.ok(range.lo >= band.lo && range.hi <= band.hi,
+    `${label}: shades ${range.lo.toFixed(4)}..${range.hi.toFixed(4)} linear; `
+    + `${band.is} reflects ${band.lo}..${band.hi}`);
+}
+
+test("materials: every material is one of the three albedo shapes, and nothing else", () => {
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery);
+  const wheel = buildWheelMesh(THREE, spec);
+
+  const all = [];
+  const add = (label, m) => { if (m) all.push([label, m]); };
+  bundle.road.materials.forEach((m, i) => add(`road[${i}]`, m));
+  add("terrain", bundle.terrain.material);
+  for (const k of Object.keys(bundle.scenery.materials)) add(`scenery.${k}`, bundle.scenery.materials[k]);
+  for (const k of Object.keys(bundle.propLibrary.materials)) add(`props.${k}`, bundle.propLibrary.materials[k]);
+  bundle.propLibrary.signMaterials.forEach((m, i) => add(`sign[${i}]`, m));
+  car.materials.forEach((m, i) => add(`car[${i}]`, m));
+  wheel.materials.forEach((m, i) => add(`wheel[${i}]`, m));
+  assert.ok(all.length > 20, `only ${all.length} materials found; the sweep is not reaching them`);
+
+  for (const [label, m] of all) {
+    const mean = m.userData.opusMapMean;
+    assert.notEqual(mean, undefined,
+      `${label}: went out without declaring where its albedo lives (see the one albedo rule)`);
+    if (mean === null) {
+      // Painted: the canvas or the flat colour is the albedo, so nothing else may be.
+      assert.equal(m.vertexColors, false,
+        `${label}: a painted albedo multiplied by vertex colours is the double all over again`);
+      continue;
+    }
+    const unit = mean[0] === 1 && mean[1] === 1 && mean[2] === 1;
+    if (unit) {
+      assert.equal(m.map, null, `${label}: claims no colour map but carries one`);
+      assert.ok(m.color.r === 1 && m.color.g === 1 && m.color.b === 1,
+        `${label}: no map, so the vertex colour is the albedo and color must stay white`);
+    } else {
+      assert.ok(m.map, `${label}: declares a map mean but has no map`);
+      for (const [k, ch] of [[0, "r"], [1, "g"], [2, "b"]]) {
+        const product = m.color[ch] * mean[k];
+        assert.ok(Math.abs(product - 1) < 0.02,
+          `${label}: the map contributes ${product.toFixed(3)} of an albedo on top of the vertex colour (want 1.0)`);
+      }
+    }
+  }
+  car.dispose();
+  wheel.dispose();
+  bundle.dispose();
+  clearLiveryCache();
+});
+
+test("materials: the effective linear albedo of every part lands in its real band", () => {
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery);
+  const wheel = buildWheelMesh(THREE, spec);
+
+  // Scenery and prop prototypes, by the prototype key the library files them under.
+  const sceneryBands = {
+    "tree:0": { is: "a conifer canopy over bark", lo: 0.03, hi: 0.30 },
+    "tree:1": { is: "a broadleaf canopy over bark", lo: 0.03, hi: 0.30 },
+    "tree:2": { is: "bare winter branches", lo: 0.03, hi: 0.30 },
+    "tree:3": { is: "scrub over bark", lo: 0.03, hi: 0.30 },
+    "rock:0": { is: "weathered granite", lo: 0.10, hi: 0.45 },
+    "rock:1": { is: "weathered granite", lo: 0.10, hi: 0.45 },
+    "rock:2": { is: "weathered granite", lo: 0.10, hi: 0.45 },
+    "bush:0": { is: "a dense evergreen shrub", lo: 0.03, hi: 0.35 },
+    "tussock:0": { is: "dry moor grass", lo: 0.03, hi: 0.35 },
+    "fern:0": { is: "bracken", lo: 0.03, hi: 0.35 },
+    "log:0": { is: "a fallen trunk", lo: 0.05, hi: 0.35 },
+    "stump:0": { is: "cut timber", lo: 0.05, hi: 0.35 },
+    "building:0": { is: "a rendered barn — walls, slate, window reveals", lo: 0.02, hi: 0.55 },
+    "building:1": { is: "a farmhouse", lo: 0.02, hi: 0.55 },
+    "building:2": { is: "a shed", lo: 0.02, hi: 0.55 },
+    "pole:0": { is: "a creosoted pole with glass insulators", lo: 0.05, hi: 0.35 },
+    "wall:0": { is: "a drystone wall", lo: 0.15, hi: 0.45 },
+    "fence:0": { is: "weathered fence timber", lo: 0.05, hi: 0.35 },
+    "bridge:0": { is: "a stone parapet", lo: 0.15, hi: 0.45 },
+  };
+  const propBands = {
+    gantryStart: { is: "a galvanised truss on rubber feet", lo: 0.15, hi: 0.70 },
+    gantryFinish: { is: "a galvanised truss on rubber feet", lo: 0.15, hi: 0.70 },
+    hayBaleRound: { is: "baled straw", lo: 0.12, hi: 0.60 },
+    hayBaleRect: { is: "baled straw and its twine", lo: 0.12, hi: 0.60 },
+    tyreStack: { is: "stacked tyres", lo: 0.02, hi: 0.08 },
+    cone: { is: "an orange traffic cone on a black base", lo: 0.08, hi: 0.55 },
+    marshalPost: { is: "a post, an orange flag and a steel foot", lo: 0.05, hi: 0.60 },
+    tapeStake: { is: "a stake and red-and-white tape", lo: 0.10, hi: 0.90 },
+    bunting: { is: "printed cotton bunting", lo: 0.03, hi: 0.85 },
+    spectatorStand: { is: "a person: skin, coat, trousers", lo: 0.10, hi: 0.60 },
+    spectatorCheer: { is: "a person: skin, coat, trousers", lo: 0.10, hi: 0.60 },
+    spectatorCrouch: { is: "a person: skin, coat, trousers", lo: 0.10, hi: 0.60 },
+  };
+  // Car and wheel, by the part the material dresses.
+  const carBands = [
+    ["bumperFront", { is: "moulded bumper plastic", lo: 0.015, hi: 0.10 }],
+    ["bumperRear", { is: "moulded bumper plastic", lo: 0.015, hi: 0.10 }],
+    ["rollCage", { is: "a cage painted white", lo: 0.60, hi: 0.90 }],
+    ["exhaustTail", { is: "a stainless tailpipe", lo: 0.25, hi: 0.75 }],
+    ["sumpGuard", { is: "an alloy sump guard", lo: 0.25, hi: 0.75 }],
+    ["glass", { is: "tinted glass", lo: 0.02, hi: 0.15 }],
+    ["lamp0", { is: "a lamp lens", lo: 0.55, hi: 1.00 }],
+    ["lightPod", { is: "a black lamp pod", lo: 0.02, hi: 0.20 }],
+    ["diffuser", { is: "a black diffuser", lo: 0.02, hi: 0.20 }],
+    ["mudflaps", { is: "black mudflaps", lo: 0.02, hi: 0.20 }],
+    ["interior", { is: "a stripped interior: dash, seats, wheel rim", lo: 0.02, hi: 0.20 }],
+    ["spare", { is: "a spare wheel on a pale rim", lo: 0.02, hi: 0.50 }],
+  ];
+  const wheelBands = [
+    ["tyre", { is: "carbon-black tyre rubber", lo: 0.02, hi: 0.07 }],
+    ["rim", { is: "a machined alloy rim", lo: 0.20, hi: 0.70 }],
+    ["disc", { is: "a cast-iron brake disc", lo: 0.08, hi: 0.30 }],
+    ["caliper", { is: "a red-painted caliper", lo: 0.05, hi: 0.45 }],
+  ];
+
+  for (const [key, band] of Object.entries(sceneryBands)) {
+    const proto = bundle.scenery.prototypes.get(key);
+    assert.ok(proto, `scenery prototype ${key} is missing`);
+    assertBand(`scenery ${key}`, albedoRange(proto.geometry, proto.material), band);
+  }
+  for (const [key, band] of Object.entries(propBands)) {
+    const proto = bundle.propLibrary.prototypes.get(key);
+    assert.ok(proto, `prop prototype ${key} is missing`);
+    assertBand(`prop ${key}`, albedoRange(proto.geometry, proto.material), band);
+  }
+  for (const [part, band] of carBands) {
+    const mesh = car.parts[part];
+    assert.ok(mesh, `car part ${part} is missing`);
+    assertBand(`car ${part}`, albedoRange(mesh.geometry, mesh.material), band);
+  }
+  for (const [part, band] of wheelBands) {
+    assertBand(`wheel ${part}`, albedoRange(wheel[part].geometry, wheel[part].material), band);
+  }
+
+  // The ground, per running surface. The road's centre slot is the surface's own
+  // albedo barely darkened, so this is exact rather than a band: it is also what
+  // proves the tarmac group is shaded by the tarmac material and not the gravel one.
+  const centreOf = (chunk, stationIdx) => {
+    const col = chunk.geometry.getAttribute("color").array;
+    const v = (chunk.stations[stationIdx].vertexBase + ROAD_CENTRE_SLOT) * 3;
+    return [col[v], col[v + 1], col[v + 2]];
+  };
+  const seen = new Set();
+  for (const chunk of bundle.road.chunks) {
+    for (let k = 0; k < chunk.stations.length; k += 1) {
+      const sid = chunk.stations[k].surfaceId;
+      const mat = bundle.road.surfaceMaterials.get(sid);
+      assert.ok(mat, `no road material for surface ${sid}`);
+      const scale = materialAlbedoScale(mat);
+      const col = centreOf(chunk, k);
+      const want = surfaceProps(sid).albedo;
+      for (let c = 0; c < 3; c += 1) {
+        const got = col[c] * scale[c];
+        assert.ok(Math.abs(got - want[c] * 0.98) < 0.02,
+          `road ${surfaceProps(sid).name}: centre shades ${got.toFixed(3)} against an albedo of ${want[c]}`);
+      }
+      seen.add(sid);
+    }
+  }
+  assert.ok(seen.size >= 4, `the fixture only exercised ${seen.size} running surfaces`);
+
+  // Terrain carries a blend of the palette plus a darkened skirt, so it is a band.
+  for (const chunk of bundle.terrain.chunks.slice(0, 8)) {
+    assertBand("terrain", albedoRange(chunk.geometry, bundle.terrain.material),
+      { is: "hill grass through scree to snow, and a skirt below it", lo: 0.04, hi: 0.90 });
+  }
+
+  car.dispose();
+  wheel.dispose();
+  bundle.dispose();
+  clearLiveryCache();
 });
 
 test("textures: ground maps are filtered for the grazing angle they are read at", () => {

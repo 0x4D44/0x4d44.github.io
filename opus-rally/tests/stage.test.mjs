@@ -495,6 +495,236 @@ test("heightAt is continuous across the road edge", () => {
   });
 });
 
+// What the ground is allowed to do to a car that runs wide.
+//
+// A rally stage is banked, cut and ditched, so "gentle" is the wrong bar: the
+// bar is the line between a bank a car slides down and a wall or a hole it is
+// thrown by. Suspension travel is 0.19-0.23 m over a 2.5 m wheelbase
+// (physics.js), so ground steeper than about 1 m per metre is already more than
+// the springs can swallow — a car meets it as a bank, loses grip and slides.
+// What actually launched cars was not steepness but discontinuity: the field
+// used to anchor each point on the *nearest* road sample, so where two passes
+// of the road ran near each other the anchor flipped across the medial axis
+// between them and the ground stepped by their whole height difference —
+// 539 m per metre on northmarch-harrowfen, 196 on kloft-skarvedal, 34 m in a
+// single 8 m stride. A wheel that finds the ground 30 m below the chassis in
+// one substep levers the car over: that is the cartwheel.
+//
+// So the bounds below are cliff bounds, not comfort bounds. Anything under them
+// is ground a wheel can be given without the chassis being levered; anything
+// over them can only be a step. They sit roughly 30% above the worst the
+// generator produces, which is set by the road layout rather than the terrain:
+// the separation rules let the road climb back over itself 70 m higher only
+// 90 m away, and the ground in between has to cover that somehow.
+const CLIFF = 5.0;
+const NEAR_CLIFF = 3.0;
+const NEAR_BAND = 12;
+
+// A bank and a step look the same at one sampling distance and different at
+// two: shrink the stride and a bank's height change shrinks with it while a
+// step's does not. A millimetre apart, the ground under a wheel must not move
+// by more than the suspension has travel to take — 0.19 m on the softest car
+// in physics.js. The steepest ground the generator makes is under 4 m per
+// metre, which is 4 mm over a millimetre; the old field stepped tens of metres
+// with no stride small enough to make it shrink.
+const STEP = 0.19;
+const FINE = 0.001;
+
+function worstStep(probe, at, span) {
+  let worst = 0;
+  for (let l = at - span; l <= at + span; l += FINE) {
+    worst = Math.max(worst, Math.abs(probe(l + FINE) - probe(l)));
+  }
+  return worst;
+}
+
+test("no ground off the road is a cliff", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    const dl = 0.25;
+    let worst = 0;
+    let worstAt = { i: 20, side: 1, off: 0 };
+    let near = 0;
+    let nearAt = null;
+    for (let i = 20; i < stage.count - 20; i += 97) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      const hw = stage.halfWidth[i];
+      for (const side of [1, -1]) {
+        let previous = null;
+        for (let off = 0; off <= 150; off += dl) {
+          const lat = side * (hw + off);
+          const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
+          assert.ok(Number.isFinite(h), `${entry.id}: heightAt is ${h} at s=${i * stage.step} lat ${lat}`);
+          if (previous !== null) {
+            const grade = Math.abs(h - previous) / dl;
+            if (grade > worst) { worst = grade; worstAt = { i, side, off }; }
+            if (off <= NEAR_BAND && grade > near) { near = grade; nearAt = { i, side, off }; }
+          }
+          previous = h;
+        }
+      }
+    }
+    assert.ok(
+      worst <= CLIFF,
+      `${entry.id}: the ground moves ${worst.toFixed(1)} m per metre at ${JSON.stringify(worstAt)}`,
+    );
+    assert.ok(
+      near <= NEAR_CLIFF,
+      `${entry.id}: ${NEAR_BAND} m off the road the ground moves ${near.toFixed(1)} m per metre at ${JSON.stringify(nearAt)}`,
+    );
+
+    // The steepest place found is a bank, not a step hiding under the stride.
+    const { i, side } = worstAt;
+    const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+    const rx = stage.tz[i] / rl;
+    const rz = -stage.tx[i] / rl;
+    const probe = (off) => world.heightAt(
+      stage.x[i] + rx * side * (stage.halfWidth[i] + off),
+      stage.z[i] + rz * side * (stage.halfWidth[i] + off),
+    );
+    const step = worstStep(probe, worstAt.off, 0.3);
+    assert.ok(
+      step <= STEP,
+      `${entry.id}: the ground at ${JSON.stringify(worstAt)} moves ${step.toFixed(3)} m `
+      + `across a millimetre, so it is a step and not a bank`,
+    );
+  });
+});
+
+// The regression the field was rebuilt for. Two passes of the road that come
+// near each other with a big height difference between them are exactly where
+// the nearest-sample anchor used to flip, and the medial axis between them is
+// where the cliff stood.
+function stackedPairs(stage, want) {
+  const cell = 60;
+  const buckets = new Map();
+  const found = [];
+  for (let i = 0; i < stage.count; i += 2) {
+    const cx = Math.floor(stage.x[i] / cell);
+    const cz = Math.floor(stage.z[i] / cell);
+    for (let ox = -1; ox <= 1; ox += 1) {
+      for (let oz = -1; oz <= 1; oz += 1) {
+        const list = buckets.get(`${cx + ox},${cz + oz}`);
+        if (!list) continue;
+        for (const j of list) {
+          // Far enough apart along the road to be a different pass of it.
+          if (i - j < 60) continue;
+          const gap = Math.hypot(stage.x[i] - stage.x[j], stage.z[i] - stage.z[j]);
+          if (gap > 90) continue;
+          found.push({ i, j, gap, drop: Math.abs(stage.y[i] - stage.y[j]) });
+        }
+      }
+    }
+    const key = `${cx},${cz}`;
+    let list = buckets.get(key);
+    if (!list) { list = []; buckets.set(key, list); }
+    list.push(i);
+  }
+  found.sort((a, b) => b.drop - a.drop);
+  const out = [];
+  for (const pair of found) {
+    if (out.some((q) => Math.abs(q.i - pair.i) < 150 || Math.abs(q.j - pair.j) < 150)) continue;
+    out.push(pair);
+    if (out.length >= want) break;
+  }
+  return out;
+}
+
+test("where the road passes over itself the ground between is a slope, not a step", () => {
+  let stacked = 0;
+  let deepest = 0;
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    for (const pair of stackedPairs(stage, 3)) {
+      if (pair.drop > 10) stacked += 1;
+      deepest = Math.max(deepest, pair.drop);
+      const ax = stage.x[pair.i];
+      const az = stage.z[pair.i];
+      const bx = stage.x[pair.j];
+      const bz = stage.z[pair.j];
+      const len = Math.hypot(bx - ax, bz - az);
+      const ux = (bx - ax) / len;
+      const uz = (bz - az) / len;
+      const probe = (l) => world.heightAt(ax + ux * l, az + uz * l);
+      let worst = 0;
+      let at = 0;
+      let previous = null;
+      for (let l = 0; l <= len; l += 0.1) {
+        const h = probe(l);
+        if (previous !== null) {
+          const grade = Math.abs(h - previous) / 0.1;
+          if (grade > worst) { worst = grade; at = l; }
+        }
+        previous = h;
+      }
+      const label = `${entry.id}: the ${pair.drop.toFixed(0)} m of height between samples `
+        + `${pair.j} and ${pair.i}, ${pair.gap.toFixed(0)} m apart`;
+      assert.ok(worst <= CLIFF, `${label}, is a ${worst.toFixed(1)} m per metre cliff ${at.toFixed(1)} m along`);
+
+      // And it is still a slope a thousand times closer in.
+      const step = worstStep(probe, at, 0.3);
+      assert.ok(
+        step <= STEP,
+        `${label}, moves ${step.toFixed(3)} m across a millimetre ${at.toFixed(1)} m along, so it is a step`,
+      );
+    }
+  });
+  // The test only means something if the book actually stacks the road over
+  // itself; if a future generator stops doing that, this stops being a test.
+  assert.ok(stacked >= 6, `only ${stacked} stacked pairs of road in the whole book`);
+  assert.ok(deepest > 30, `the closest passes of road are never more than ${deepest.toFixed(0)} m apart in height`);
+});
+
+test("the terrain field leaves the road surface exactly where the stage put it", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    let worstCentre = 0;
+    let worstEdge = 0;
+    for (let i = 6; i < stage.count - 6; i += 11) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      worstCentre = Math.max(worstCentre, Math.abs(world.heightAt(stage.x[i], stage.z[i]) - stage.y[i]));
+      // Across the road the surface is the centreline plus the camber. Abeam a
+      // sample the segment behind can win the projection by a hair, and its
+      // tangent plane sits a centimetre or two lower through a tight corner on
+      // a steep grade, so this is a few centimetres rather than exact.
+      for (const lat of [-0.8, 0.8, -1, 1].map((k) => k * stage.halfWidth[i] * 0.9)) {
+        const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
+        worstEdge = Math.max(worstEdge, Math.abs(h - (stage.y[i] + lat * Math.sin(stage.camber[i]))));
+      }
+    }
+    assert.equal(worstCentre, 0, `${entry.id}: the centreline is ${worstCentre} m off stage.y`);
+    assert.ok(worstEdge < 0.06, `${entry.id}: the road surface is ${worstEdge.toFixed(4)} m off its own camber`);
+  });
+});
+
+test("heightAt stays inside a terrain build's budget", () => {
+  const { stage } = BOOK[0];
+  const world = stage.world;
+  const b = stage.bounds;
+  const side = 320;
+  const dx = (b.maxX - b.minX) / side;
+  const dz = (b.maxZ - b.minZ) / side;
+  let sink = 0;
+  for (let j = 0; j < 40; j += 1) for (let i = 0; i < 40; i += 1) sink += world.heightAt(b.minX + i * dx, b.minZ + j * dz);
+
+  const started = process.hrtime.bigint();
+  for (let j = 0; j < side; j += 1) {
+    for (let i = 0; i < side; i += 1) sink += world.heightAt(b.minX + i * dx, b.minZ + j * dz);
+  }
+  const ms = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.ok(Number.isFinite(sink), "the queries produced numbers");
+  // meshes.js samples the whole map on a lattice to build the terrain and the
+  // physics asks four times a substep, so this is a tripwire for a field that
+  // has gone back to walking the road rather than an index of it: a hundred
+  // thousand queries take about 250 ms here, and walking every segment in
+  // reach without the index takes three times that.
+  assert.ok(ms < 1500, `${side * side} lattice heightAt calls took ${ms.toFixed(0)} ms`);
+});
+
 test("nothing anywhere in a stage is NaN", () => {
   forEachStage((stage, entry) => {
     for (const field of TYPED) {

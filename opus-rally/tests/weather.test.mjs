@@ -39,6 +39,7 @@ import {
   weatherSurfaceModifier,
   weatherLensState,
   disposeWeather,
+  SKY_FRAG,
 } from "../weather.js";
 
 const DEG = Math.PI / 180;
@@ -739,4 +740,391 @@ test("a crossfade between two presets is continuous in the rig", () => {
   assert.ok(luminance(w.current.skyZenith) < luminance(presetById("clear-dawn").skyZenith) * 0.6,
     "the storm sky should end up far darker than the dawn it faded from");
   disposeWeather(w);
+});
+
+// ---- the dome
+//
+// A JS mirror of the cloud-and-haze arithmetic in SKY_FRAG, so the sky can be
+// measured rather than eyeballed. It reproduces the terms below verbatim; the
+// anchor test asserts every one of those lines is still the literal source of
+// the shader, so a change on one side and not the other fails loudly instead of
+// leaving the mirror quietly measuring a sky nobody renders. Stars and the moon
+// are left out: they only fire below the horizon gate and nothing here looks at
+// night.
+
+const SKY_ANCHORS = [
+  "float above = smoothstep(0.0, 0.62, h);",
+  "vec3 col = mix(uHorizon, uZenith, pow(above, 0.72));",
+  "col = mix(col, uGround, smoothstep(0.0, -0.22, h));",
+  "float mie = pow(max(sd, 0.0), 6.0) * 0.09 + pow(max(sd, 0.0), 60.0) * 0.35;",
+  "col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + mie * uHalo);",
+  "float density = smoothstep(1.0 - uCloudCover, 1.0 - uCloudCover + 0.42 / uCloudSharp, field);",
+  "density *= uCloudOpacity;",
+  "density *= smoothstep(0.006, 0.09, h);",
+  "float thin = 1.0 - smoothstep(0.22, 0.74, field);",
+  "float through = (0.40 + 0.60 * thin) * (pow(toward, 1.6) * 0.20 + pow(toward, 9.0) * 0.80);",
+  "float rim = pow(toward, 3.0) * thin;",
+  "vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.08 + 0.74 * thin + 0.34 * rim, 0.0, 1.0));",
+  "cloud *= 1.0 + 0.85 * (1.0 - smoothstep(0.01, 0.50, h));",
+  "cloud += uSunColour * uCloudGlow * through;",
+  "col = mix(col, uFogColour, 1.0 - smoothstep(0.0, mix(0.05, 0.55, uHaze), h));",
+];
+
+test("the dome mirror below is still a mirror of the shader above it", () => {
+  for (const line of SKY_ANCHORS) {
+    assert.ok(SKY_FRAG.includes(line),
+      `SKY_FRAG no longer contains "${line}" — update the mirror in this file to match`);
+  }
+});
+
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const ss = (e0, e1, x) => { const t = clamp01((x - e0) / (e1 - e0)); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const lum3 = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+
+// Bilinear, RepeatWrapping — what texture2D does to the generated cloud texture.
+function sampleCloudTex(tex, u, v, out) {
+  const size = tex.image.width;
+  const d = tex.image.data;
+  const fx = (((u % 1) + 1) % 1) * size - 0.5;
+  const fy = (((v % 1) + 1) % 1) * size - 0.5;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const tx = fx - x0;
+  const ty = fy - y0;
+  const wrap = (i) => ((i % size) + size) % size;
+  for (let c = 0; c < 4; c += 1) {
+    const g = (x, y) => d[(wrap(y) * size + wrap(x)) * 4 + c] / 255;
+    const a = lerp(g(x0, y0), g(x0 + 1, y0), tx);
+    const b = lerp(g(x0, y0 + 1), g(x0 + 1, y0 + 1), tx);
+    out[c] = lerp(a, b, ty);
+  }
+  return out;
+}
+
+const TEXA = [0, 0, 0, 0];
+const TEXB = [0, 0, 0, 0];
+
+function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
+  const u = w.sky.uniforms;
+  const num = (k) => u[k].value;
+  const rgb = (k) => { const c = u[k].value; return [c.r, c.g, c.b]; };
+  const h = dy;
+  const above = ss(0, 0.62, h);
+  const zen = rgb("uZenith");
+  const hor = rgb("uHorizon");
+  const gnd = rgb("uGround");
+  const p = Math.pow(above, 0.72);
+  const under = ss(0, -0.22, h);
+  for (let i = 0; i < 3; i += 1) out[i] = lerp(lerp(hor[i], zen[i], p), gnd[i], under);
+
+  const sun = num("uSunDir");
+  const sd = dx * sun.x + dy * sun.y + dz * sun.z;
+  const size = num("uSunSize");
+  const sunR = Math.cos(size);
+  const disc = ss(sunR - size * 0.35, sunR + size * 0.05, sd);
+  const bloom = Math.pow(Math.max(sd, 0), 1400);
+  const mie = Math.pow(Math.max(sd, 0), 6) * 0.09 + Math.pow(Math.max(sd, 0), 60) * 0.35;
+  const sunCol = rgb("uSunColour");
+  const sunI = num("uSunIntensity");
+  for (let i = 0; i < 3; i += 1) {
+    out[i] += sunCol[i] * sunI * (disc * 26 + bloom * 8 + mie * num("uHalo"));
+  }
+
+  if (h > 0.006 && num("uCloudOpacity") > 0.001) {
+    const t = num("uCloudAlt") / h;
+    const scale = num("uCloudScale");
+    const scroll = num("uCloudScroll");
+    const uu = (camX + dx * t) * scale + scroll.x;
+    const vv = (camZ + dz * t) * scale + scroll.y;
+    sampleCloudTex(w.cloudTexture, uu, vv, TEXA);
+    sampleCloudTex(w.cloudTexture, uu * 2.17 - scroll.x * 0.6, vv * 2.17 - scroll.y * 0.6, TEXB);
+    const m = num("uCloudMix");
+    const wsum = Math.max(m.x + m.y + m.z + m.w, 0.001);
+    const dot4 = (a) => (a[0] * m.x + a[1] * m.y + a[2] * m.z + a[3] * m.w) / wsum;
+    const field = lerp(dot4(TEXA), dot4(TEXB), 0.35);
+    const cover = num("uCloudCover");
+    let density = ss(1 - cover, 1 - cover + 0.42 / num("uCloudSharp"), field);
+    density *= num("uCloudOpacity");
+    density *= ss(0.006, 0.09, h);
+    const thin = 1 - ss(0.22, 0.74, field);
+    const toward = Math.max(sd, 0);
+    const through = (0.40 + 0.60 * thin)
+      * (Math.pow(toward, 1.6) * 0.20 + Math.pow(toward, 9) * 0.80);
+    const rim = Math.pow(toward, 3) * thin;
+    const shade = clamp01(0.08 + 0.74 * thin + 0.34 * rim);
+    const lit = rgb("uCloudLit");
+    const dark = rgb("uCloudDark");
+    const base = 1 + 0.85 * (1 - ss(0.01, 0.50, h));
+    const glow = num("uCloudGlow");
+    for (let i = 0; i < 3; i += 1) {
+      const cloud = lerp(dark[i], lit[i], shade) * base + sunCol[i] * glow * through;
+      out[i] = lerp(out[i], cloud, clamp01(density));
+    }
+  }
+
+  const fog = rgb("uFogColour");
+  const band = 1 - ss(0, lerp(0.05, 0.55, num("uHaze")), h);
+  for (let i = 0; i < 3; i += 1) out[i] = lerp(out[i], fog[i], band) + num("uFlash");
+  return out;
+}
+
+// The dome's luminance in the linear radiance the shader writes. The renderer's
+// tone curve is monotonic, so a ratio measured here is a ratio on the screen.
+const DOME = [0, 0, 0];
+function domeLum(w, elev, az) {
+  const ce = Math.cos(elev);
+  return lum3(domeRadiance(w, ce * Math.sin(az), Math.sin(elev), ce * Math.cos(az), 0, 0, DOME));
+}
+
+function domeStats(w, elev, samples) {
+  const n = samples || 360;
+  let lo = Infinity;
+  let hi = -Infinity;
+  let sum = 0;
+  for (let i = 0; i < n; i += 1) {
+    const L = domeLum(w, elev, (i / n) * Math.PI * 2);
+    if (L < lo) lo = L;
+    if (L > hi) hi = L;
+    sum += L;
+  }
+  return { lo, hi, mean: sum / n };
+}
+
+test("the overcast family is a sky, not a flat grey wall", () => {
+  // Every one of these is a full or near-full lid — the family that photographed
+  // as one value from horizon to zenith, because coverage clipped to one across
+  // the whole field and coverage was also the only thing shading the deck.
+  for (const id of ["overcast", "light-rain", "hill-fog", "light-snow", "blizzard"]) {
+    const { w, camera } = rig(id);
+    stepWeather(w, camera, 1 / 60);
+
+    // The white-outs are held to less than the rest: inside cloud the sky
+    // really is one value in every direction, and that is the weather rather
+    // than a defect.
+    const openSky = w.current.visibility > 400;
+
+    // 1. Cloud-base structure: at a fixed altitude the deck has to vary around
+    // the sky, and by a decent share of the range its own two colours were
+    // authored to span — a deck that never leaves one end of that range is
+    // exactly the wall this is looking for. The flat version measured 0.046 of
+    // luminance across a full turn at 20 degrees against an authored span of
+    // 0.32, a seventh of it.
+    const deckSpan = luminance(w.current.cloudLit) - luminance(w.current.cloudDark);
+    assert.ok(deckSpan > 0.1, `${id}: cloudLit and cloudDark are barely different`);
+    for (const elevDeg of [20, 40]) {
+      const s = domeStats(w, elevDeg * DEG);
+      assert.ok(s.hi - s.lo > deckSpan * 0.30,
+        `${id}: only ${(s.hi - s.lo).toFixed(3)} of cloud structure at ${elevDeg} deg, `
+        + `against an authored deck span of ${deckSpan.toFixed(3)}`);
+      if (openSky) {
+        assert.ok(s.hi / s.lo > 1.35,
+          `${id}: deck contrast ratio only ${(s.hi / s.lo).toFixed(2)} at ${elevDeg} deg`);
+      }
+    }
+
+    // 2. The deck's base is brighter along the horizon than it is overhead...
+    const low = domeStats(w, 4 * DEG).mean;
+    const high = domeStats(w, 45 * DEG).mean;
+    assert.ok(low > high, `${id}: the sky is no brighter at the horizon than overhead`);
+
+    // ...and the whole visible band has to carry a real range. This is the
+    // measurement the flat version failed outright: 0.36 to 0.42, a ratio of
+    // 1.16 over every direction a driver can see, which photographed as one
+    // pale grey wall.
+    let bandLo = Infinity;
+    let bandHi = -Infinity;
+    for (let elevDeg = 3; elevDeg <= 50; elevDeg += 1) {
+      const s = domeStats(w, elevDeg * DEG, 96);
+      if (s.lo < bandLo) bandLo = s.lo;
+      if (s.hi > bandHi) bandHi = s.hi;
+    }
+    const bandFloor = openSky ? 1.9 : 1.4;
+    assert.ok(bandHi / bandLo > bandFloor,
+      `${id}: the visible sky spans only ${bandLo.toFixed(3)}..${bandHi.toFixed(3)}, `
+      + `a ratio of ${(bandHi / bandLo).toFixed(2)}, wanted ${bandFloor}`);
+
+    // 3. A bright patch where the sun is: all five have the sun up, and a lid
+    // diffuses it rather than deleting it. Not inside a white-out, where the
+    // whole point is that you cannot tell where the sun is.
+    const sun = w.sky.uniforms.uSunDir.value;
+    const sunAz = Math.atan2(sun.x, sun.z);
+    const sunElev = Math.asin(sun.y);
+    assert.ok(sunElev > 0, `${id} should have the sun above the horizon`);
+    if (openSky) {
+      const atSun = domeLum(w, sunElev, sunAz);
+      const away = domeLum(w, sunElev, sunAz + Math.PI);
+      assert.ok(atSun / away > 1.4,
+        `${id}: the sun's patch is only ${(atSun / away).toFixed(2)}x the far side of the sky`);
+    }
+    disposeWeather(w);
+  }
+});
+
+test("golden hour keeps the cloud and the colour it always had", () => {
+  const { w, camera } = rig("golden-hour");
+  stepWeather(w, camera, 1 / 60);
+  const s = domeStats(w, 20 * DEG);
+  assert.ok(s.hi - s.lo > 0.15, `broken cumulus should still read: ${(s.hi - s.lo).toFixed(3)}`);
+  // A low warm sun leaves the sky blue overhead and orange along the horizon.
+  const zen = w.sky.uniforms.uZenith.value;
+  const hor = w.sky.uniforms.uHorizon.value;
+  assert.ok(zen.b > zen.r * 2, `zenith should stay blue, got ${zen.r},${zen.g},${zen.b}`);
+  assert.ok(hor.r > hor.b, `horizon should stay warm, got ${hor.r},${hor.g},${hor.b}`);
+  disposeWeather(w);
+});
+
+test("the dome arrives at the fog colour on the horizon line, at every sun angle", () => {
+  const out = [0, 0, 0];
+  for (const p of WEATHER_PRESETS) {
+    const { w, camera } = rig(p.id);
+    for (let elevDeg = -20; elevDeg <= 80; elevDeg += 5) {
+      stepWeather(w, camera, 1 / 60);
+      // A lightning flash lifts the whole dome including the horizon band, and
+      // lifts the terrain with it through the fill and ambient. It is not a
+      // seam, but it is an offset, so measure between strikes.
+      w.lightning.flash = 0;
+      setSunElevation(w, elevDeg * DEG, 200 * DEG);
+
+      // The terrain fades to w.fog.color and the dome has to end up there too,
+      // or the two draw a line between them. Both sides go through the one tone
+      // curve now, so equal radiance here is equal pixels on the screen.
+      const fogU = w.sky.uniforms.uFogColour.value;
+      assert.ok(Math.abs(fogU.r - w.fog.color.r) < 1e-9
+        && Math.abs(fogU.g - w.fog.color.g) < 1e-9
+        && Math.abs(fogU.b - w.fog.color.b) < 1e-9,
+        `${p.id} at ${elevDeg} deg: the dome's haze and the scene fog are different colours`);
+
+      domeRadiance(w, 0, 0, 1, 0, 0, out);
+      for (let i = 0; i < 3; i += 1) {
+        const f = [fogU.r, fogU.g, fogU.b][i];
+        assert.ok(Math.abs(out[i] - f) < 1e-6,
+          `${p.id} at ${elevDeg} deg: dome ${out[i]} vs fog ${f} on the horizon line`);
+      }
+
+      // And the band above it has to be a haze rather than a step: the dome a
+      // few degrees up may not be a different order of brightness from the fog
+      // it stands on. Measured away from the sun, whose own glare on the horizon
+      // is a light source rather than a seam.
+      const sun = w.sky.uniforms.uSunDir.value;
+      const fogL = Math.max(lum3([fogU.r, fogU.g, fogU.b]), 1e-6);
+      const upL = domeLum(w, 6 * DEG, Math.atan2(sun.x, sun.z) + Math.PI);
+      assert.ok(upL / fogL > 0.5 && upL / fogL < 2.4,
+        `${p.id} at ${elevDeg} deg: ${(upL / fogL).toFixed(2)}x step from the fog to the sky above it`);
+    }
+    disposeWeather(w);
+  }
+});
+
+function fogFraction(w, distance) {
+  const t = (distance - w.fog.near) / (w.fog.far - w.fog.near);
+  return t < 0 ? 0 : t > 1 ? 1 : t;
+}
+
+test("aerial perspective actually reaches the terrain", () => {
+  const { w, camera } = rig("overcast");
+  for (const p of WEATHER_PRESETS) {
+    setWeather(w, p.id, 0);
+    stepWeather(w, camera, 1 / 60);
+    const vis = w.current.visibility;
+    assert.ok(w.fog.far > w.fog.near && w.fog.near >= 0, `${p.id}: fog ${w.fog.near}..${w.fog.far}`);
+    // Visibility is a contrast threshold, not a draw distance: the ramp finishes
+    // well inside it, or a ridge far short of the sight-line still stands at
+    // full albedo against the sky. The 145 is the white-out floor.
+    assert.ok(w.fog.far <= vis * 0.55 || w.fog.far <= 145,
+      `${p.id}: fog ends at ${w.fog.far.toFixed(0)} m for ${vis} m of visibility`);
+    if (vis > 400) {
+      // A quarter of the sight-line is already well hazed — the part the old
+      // ramp missed, and the part a two-kilometre ridge lives in.
+      const quarter = fogFraction(w, vis * 0.25);
+      assert.ok(quarter > 0.4, `${p.id}: only ${quarter.toFixed(2)} fogged at a quarter of ${vis} m`);
+      // But the near field stays clear, or the car drives inside its own fog.
+      assert.ok(fogFraction(w, 40) < 0.35,
+        `${p.id}: ${fogFraction(w, 40).toFixed(2)} fogged at 40 m`);
+    }
+  }
+  // The measured case: a ridge two kilometres out on an overcast stage came back
+  // at 81,89,76 against a 204,203,210 sky. It has to be more than half gone.
+  setWeather(w, "overcast", 0);
+  stepWeather(w, camera, 1 / 60);
+  assert.ok(fogFraction(w, 2000) > 0.45,
+    `a 2 km ridge is only ${fogFraction(w, 2000).toFixed(2)} hazed on an overcast stage`);
+  disposeWeather(w);
+});
+
+// A three.js stand-in that keeps a live set of everything the rig allocates on
+// the GPU and takes each one out again when it is disposed. Every stage builds a
+// rig, so one missed dispose is a leak per race, not a leak per session.
+function countingThree() {
+  const live = new Set();
+  // A resource freed a second time is a defect of its own — three re-fires the
+  // dispose event and the renderer goes looking for a handle it has already
+  // deleted — so the stub records it rather than shrugging.
+  const doubles = [];
+  // The vendored three is minified, so a class carries no useful name of its
+  // own — label each one here or a failure reports a leak of "Zd".
+  const track = (Base, label) => class extends Base {
+    constructor(...args) {
+      super(...args);
+      live.add(this);
+    }
+
+    dispose() {
+      if (!live.delete(this)) doubles.push(label);
+      super.dispose();
+    }
+  };
+  const stub = {
+    ...THREE,
+    SphereGeometry: track(THREE.SphereGeometry, "SphereGeometry"),
+    InstancedBufferGeometry: track(THREE.InstancedBufferGeometry, "InstancedBufferGeometry"),
+    ShaderMaterial: track(THREE.ShaderMaterial, "ShaderMaterial"),
+    DataTexture: track(THREE.DataTexture, "DataTexture"),
+    // A shadow map is a render target the renderer builds lazily and nothing
+    // else ever frees; track the shadow rather than the light, because the
+    // shadow is what owns it.
+    DirectionalLight: class extends THREE.DirectionalLight {
+      constructor(...args) {
+        super(...args);
+        const shadow = this.shadow;
+        live.add(shadow);
+        const inner = shadow.dispose.bind(shadow);
+        shadow.dispose = () => {
+          if (!live.delete(shadow)) doubles.push("DirectionalLightShadow");
+          inner();
+        };
+      }
+    },
+  };
+  return { stub, live, doubles };
+}
+
+test("fifty stages of weather leak nothing, and disposing twice is safe", () => {
+  const { stub, live, doubles } = countingThree();
+  const camera = new THREE.PerspectiveCamera(60, 1.6, 0.1, 5000);
+  let peak = 0;
+  for (let i = 0; i < 50; i += 1) {
+    const scene = new THREE.Scene();
+    const preset = WEATHER_PRESETS[i % WEATHER_PRESETS.length];
+    const w = createWeather(stub, scene, preset.id, RIG);
+    for (let f = 0; f < 5; f += 1) stepWeather(w, camera, 1 / 60);
+    peak = Math.max(peak, live.size);
+    assert.ok(live.size >= 7,
+      `stage ${i}: only ${live.size} tracked resources — the stub is not seeing the whole rig`);
+    assert.equal(scene.children.length, 1);
+
+    disposeWeather(w);
+    assert.equal(live.size, 0, `stage ${i} (${preset.id}) leaked ${live.size} GPU resources`);
+    assert.equal(scene.children.length, 0, `stage ${i} left the rig in the scene`);
+    assert.equal(scene.fog, null, `stage ${i} left its fog on the scene`);
+    assert.equal(w.root.children.length, 0, `stage ${i} left the rig holding its children`);
+
+    // Twice, because whoever ends a stage should not have to know whether the
+    // one before it already did — and the second call has to be a no-op rather
+    // than a second free of everything.
+    disposeWeather(w);
+    assert.equal(live.size, 0);
+    assert.deepEqual(doubles, [], `stage ${i} freed ${doubles.join(", ")} twice`);
+  }
+  assert.ok(peak >= 7, `the stub never saw a whole rig, peak was ${peak}`);
 });
