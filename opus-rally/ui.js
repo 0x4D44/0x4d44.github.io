@@ -12,7 +12,7 @@ import { SURFACE, surfaceProps } from "./surfaces.js";
 
 export const BRAND = Object.freeze({
   name: "OpusRally",
-  tagline: "Eight stages. One clock.",
+  tagline: "Twelve stages. One clock.",
   // A restrained palette: two neutrals deep enough to sit under a 3D scene, one
   // hot accent, and three status hues that never appear as decoration.
   colour: Object.freeze({
@@ -1294,9 +1294,11 @@ export function buildTitleModel(data = {}) {
       },
       {
         id: "t-meta", kind: "meta", region: "footer",
+        // No build string: "Build dev" is developer metadata and a player reading
+        // it learns nothing except that someone forgot to take it out.
         items: [
-          { id: "t-version", kind: "text", label: "Build", value: data.version ?? "dev" },
           { id: "t-driver", kind: "text", label: "Driver", value: data.profile?.name ?? "Privateer" },
+          { id: "t-rallies", kind: "text", label: "Rallies", value: String(data.rallyCount ?? 5) },
         ],
       },
     ],

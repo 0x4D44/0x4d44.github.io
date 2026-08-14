@@ -272,7 +272,9 @@ export async function startGame(opts) {
   function toMenu() {
     game.state = GameState.MENU;
     renderer.clearStage?.();
-    screen("title");
+    screen("title", {
+      rallyCount: new Set(stageMod.STAGE_BOOK.map((s) => s.rally ?? s.id.split("-")[0])).size,
+    });
   }
 
   function togglePause() {
