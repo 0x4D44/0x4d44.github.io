@@ -709,3 +709,35 @@ test("a seed override builds a different road under the same name", () => {
   );
   assert.equal(stageFromBook(entry.id).length, stock.length, "the stock stage is unchanged by the override");
 });
+
+// Eleven of the twelve entries once named a weather that weather.js has never
+// heard of ("sea fog", "squalls", "sleet"), so every stage but one threw on
+// load and the game was effectively one stage. Nothing caught it because no
+// test had ever asked weather.js whether the book's ids were real.
+test("every stage in the book names a weather preset that exists", async () => {
+  const weather = await import("../weather.js");
+  const known = new Set(weather.WEATHER_PRESETS.map((p) => p.id));
+  const bad = STAGE_BOOK
+    .filter((entry) => !known.has(entry.weather))
+    .map((entry) => `${entry.id} -> "${entry.weather}"`);
+  assert.deepEqual(bad, [], `unknown weather ids: ${bad.join(", ")}`);
+});
+
+test("an unknown weather id costs a stage its sky, not the whole game", async () => {
+  const THREE = await import("../three.module.min.js");
+  const weather = await import("../weather.js");
+  const warned = [];
+  const realWarn = console.warn;
+  console.warn = (m) => warned.push(String(m));
+  try {
+    const rig = weather.createWeather(THREE, new THREE.Scene(), "not-a-real-preset");
+    assert.ok(rig, "createWeather still returns a rig");
+    assert.ok(
+      warned.some((m) => /unknown preset/.test(m)),
+      `and says so on the console (saw: ${warned.join(" | ") || "nothing"})`,
+    );
+    weather.disposeWeather(rig);
+  } finally {
+    console.warn = realWarn;
+  }
+});

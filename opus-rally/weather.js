@@ -1282,10 +1282,20 @@ export function createWeather(THREE, scene, preset, options) {
   return w;
 }
 
+// presetById throws on an unknown id, which is right for a programming error but
+// wrong at the point a stage loads: one mistyped datum in the stage book would
+// otherwise take the whole game down rather than costing that stage its sky.
+// Eleven of the twelve book entries once carried human labels ("sea fog",
+// "squalls") instead of ids, and every one of those stages failed to start.
+export const FALLBACK_PRESET_ID = "overcast";
+
 function resolvePreset(p) {
   if (!p) return null;
-  if (typeof p === "string") return presetById(p);
-  return p;
+  if (typeof p !== "string") return p;
+  const known = PRESET_BY_ID.get(p);
+  if (known) return known;
+  console.warn(`weather: unknown preset "${p}", falling back to ${FALLBACK_PRESET_ID}`);
+  return presetById(FALLBACK_PRESET_ID);
 }
 
 export function disposeWeather(w) {
