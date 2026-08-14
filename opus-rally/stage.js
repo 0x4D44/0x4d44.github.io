@@ -678,7 +678,10 @@ export function speedProfile(stage, car = NOMINAL_CAR, out = null) {
     const props = surfaceProps(stage.surface[i]);
     const aLong = G * props.gripLong * car.tyreLong;
     const used = saturate((v[i] * v[i] * Math.abs(stage.curvature[i])) / Math.max(1e-3, G * props.gripLat * car.tyreLat));
-    const avail = aLong * Math.sqrt(Math.max(0.04, 1 - used * used)) - G * stage.grade[i];
+    // Gravity's along-track term is -G*grade, so it opposes braking on a descent
+    // and helps it on a climb — the opposite sign to the power pass below, which
+    // is fighting the same term while accelerating.
+    const avail = aLong * Math.sqrt(Math.max(0.04, 1 - used * used)) + G * stage.grade[i];
     const vv = Math.sqrt(Math.max(0, v[i + 1] * v[i + 1] + 2 * Math.max(0.5, avail) * step));
     if (vv < v[i]) v[i] = vv;
   }
@@ -1250,6 +1253,20 @@ function rightVec(stage, i, out) {
 }
 
 const rvec = { x: 0, z: 0 };
+const clearProbe = { s: 0, lateral: 0, signedLateral: 0, index: 0, frac: 0 };
+
+// A candidate's lateral offset is measured from the one sample it was built
+// from, which says nothing about a different part of the road passing nearby:
+// the separation rules let the road come back within 16 m of itself while
+// scenery reaches 140 m out, so a tree thrown wide lands on the road you drive
+// two minutes later. Ask the world where the road actually is. The verge is
+// included because a car that runs wide ends up on it.
+const SCENERY_CLEAR = 2.2;
+
+function roadClear(stage, world, px, pz) {
+  const p = world.project(px, pz, -1, clearProbe);
+  return p.lateral > stage.halfWidth[p.index] + SCENERY_CLEAR;
+}
 
 function phraseAt(phrases, s) {
   for (const p of phrases) if (s >= p.s0 && s <= p.s1) return p;
@@ -1279,6 +1296,7 @@ function buildScenery(stage, world, rng, params, phrases) {
       const stand = fbm2(px * 0.0062, pz * 0.0062, stage.terrainSeed + 991, 3);
       const density = saturate(0.42 + stand * 0.85) * params.treeDensity * open * forest;
       if (!rng.chance(density * 0.55)) continue;
+      if (!roadClear(stage, world, px, pz)) continue;
       const h = world.heightAt(px, pz);
       const gx = world.heightAt(px + 1.2, pz) - h;
       const gz = world.heightAt(px, pz + 1.2) - h;
@@ -1313,6 +1331,7 @@ function buildScenery(stage, world, rng, params, phrases) {
     const lat = poleSide * (stage.halfWidth[i] + rng.range(4.5, 7.5));
     const px = stage.x[i] + rvec.x * lat;
     const pz = stage.z[i] + rvec.z * lat;
+    if (!roadClear(stage, world, px, pz)) continue;
     items.push({ kind: "pole", x: px, y: world.heightAt(px, pz), z: pz, yaw: Math.atan2(stage.tx[i], stage.tz[i]), scale: rng.range(0.94, 1.06), variant: 0 });
     if (rng.chance(0.06)) poleSide = -poleSide;
   }
@@ -1327,6 +1346,7 @@ function buildScenery(stage, world, rng, params, phrases) {
       const lat = (rng.chance(0.5) ? 1 : -1) * (stage.halfWidth[i] + rng.range(9, junction ? 26 : 60));
       const px = stage.x[i] + rvec.x * lat;
       const pz = stage.z[i] + rvec.z * lat;
+      if (!roadClear(stage, world, px, pz)) continue;
       const h = world.heightAt(px, pz);
       const gx = world.heightAt(px + 2, pz) - h;
       const gz = world.heightAt(px, pz + 2) - h;
@@ -1425,6 +1445,7 @@ function buildProps(stage, world, rng, corners, features, phrases) {
 
 const DEFAULTS = {
   length: 9000,
+  lengthBand: null,
   surface: SURFACE.GRAVEL,
   personality: "mixed",
   width: 4.4,
@@ -1476,9 +1497,17 @@ function tuneJumps(draft, events, speed) {
   return settled;
 }
 
-function attemptLayout(seed, params, attempt) {
+function attemptLayout(seed, params, attempt, enforceBand) {
   const rng = makeRng(stringSeed(String(seed) + "/layout/" + attempt));
   const prog = composeProgramme(rng, params);
+  // Phrases are emitted whole, so a programme runs past its target by up to one
+  // of them. The book declares the band the road has to land in; rejecting here
+  // costs only the knot maths. The band is ignored once a caller has overridden
+  // `length` out of it, because then it plainly belongs to a different road.
+  const band = params.lengthBand;
+  if (enforceBand && band
+    && params.length >= band[0] && params.length <= band[1]
+    && (prog.length < band[0] || prog.length > band[1])) return null;
   const step = STEP;
   const count = Math.max(128, Math.round(prog.length / step) + 1);
   const curvature = sampleCurvature(prog.knots, count, step);
@@ -1523,9 +1552,18 @@ export function generateStage(seed, options = {}) {
   params.widthSeed = stringSeed(String(seed) + "/width") % 100000;
   const terrainSeed = stringSeed(String(seed) + "/terrain") % 65536;
 
+  // Self-intersection rejects far more programmes than the band does, so the
+  // banded round needs a budget several times the plain one to find a road that
+  // clears both.
   let laid = null;
+  for (let attempt = 0; attempt < 96 && !laid; attempt += 1) {
+    laid = attemptLayout(seed, params, attempt, true);
+  }
+  // A road that wanders is worth more than one of exactly the advertised length,
+  // so if no in-band programme also cleared the self-intersection rules, take the
+  // best road of any length rather than refusing to build the stage.
   for (let attempt = 0; attempt < 32 && !laid; attempt += 1) {
-    laid = attemptLayout(seed, params, attempt);
+    laid = attemptLayout(seed, params, attempt, false);
   }
   if (!laid) throw new Error("stage layout did not converge for seed " + seed);
 
@@ -1641,8 +1679,11 @@ export function generateStage(seed, options = {}) {
     .sort((a, b) => b[1] - a[1])
     .map((e) => e[0]);
 
-  stage.start = { x: x[0], y: y[0], z: z[0], yaw: Math.atan2(stage.tx[0], stage.tz[0]) };
-  stage.finish = { s: length, x: x[count - 1], y: y[count - 1], z: z[count - 1] };
+  // Read the stage's own arrays, not the locals: `reverseGeometry` replaced them,
+  // so the locals still hold the forward road and would put the start line of a
+  // reverse stage at the far end of it.
+  stage.start = { x: stage.x[0], y: stage.y[0], z: stage.z[0], yaw: Math.atan2(stage.tx[0], stage.tz[0]) };
+  stage.finish = { s: length, x: stage.x[count - 1], y: stage.y[count - 1], z: stage.z[count - 1] };
 
   const world = stageWorld(stage);
   stage.world = world;
@@ -1884,8 +1925,13 @@ export function stageBookEntry(id) {
 export function stageFromBook(id, overrides = {}) {
   const entry = stageBookEntry(id);
   if (!entry) throw new Error("unknown stage id " + id);
-  return generateStage(entry.seed + (entry.params.reverse ? "" : ""), {
+  // A reverse entry deliberately shares its forward twin's seed: the reverse is
+  // the same road driven the other way, not a second road. `generateStage`
+  // overwrites `params.seed` with its first argument, so a caller's seed
+  // override has to arrive there and not in the options.
+  return generateStage(overrides.seed ?? entry.seed, {
     ...entry.params,
+    lengthBand: entry.lengthBand,
     ...overrides,
     id: entry.id,
     name: entry.name,

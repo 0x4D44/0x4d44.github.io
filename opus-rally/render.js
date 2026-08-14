@@ -34,6 +34,10 @@ const PHYSICS_DT = 1 / 200;
 const BEAM_LENGTH = 34;
 const BEAM_RADIUS = 5.2;
 
+// The texture slots worth filtering anisotropically: the ones sampled across a
+// surface the camera sees edge-on.
+const ANISO_MAPS = Object.freeze(["map", "normalMap", "roughnessMap", "aoMap"]);
+
 // ---- quality -------------------------------------------------------------
 
 export const QUALITY_LEVELS = Object.freeze(["low", "medium", "high", "ultra"]);
@@ -65,6 +69,7 @@ const QUALITY = Object.freeze({
     lodBands: Object.freeze([32, 90, 200]),
     pixelRatioCap: 1.0,
     anisotropy: 1,
+    msaa: 0,
     beams: false,
     headlightShadows: false,
     terrainSkip: 3,
@@ -90,6 +95,7 @@ const QUALITY = Object.freeze({
     lodBands: Object.freeze([45, 130, 330]),
     pixelRatioCap: 1.35,
     anisotropy: 4,
+    msaa: 2,
     beams: true,
     headlightShadows: false,
     terrainSkip: 2,
@@ -115,6 +121,7 @@ const QUALITY = Object.freeze({
     lodBands: Object.freeze([55, 160, 460]),
     pixelRatioCap: 1.75,
     anisotropy: 8,
+    msaa: 4,
     beams: true,
     headlightShadows: false,
     terrainSkip: 1,
@@ -140,6 +147,7 @@ const QUALITY = Object.freeze({
     lodBands: Object.freeze([70, 210, 600]),
     pixelRatioCap: 2.0,
     anisotropy: 16,
+    msaa: 4,
     beams: true,
     headlightShadows: true,
     terrainSkip: 1,
@@ -756,12 +764,27 @@ export function createAutoScaler(opts = {}) {
     head: 0,
     sum: 0,
     downMs: opts.downMs === undefined ? 21.5 : opts.downMs,
-    upMs: opts.upMs === undefined ? 13.0 : opts.upMs,
+    // The metric is the interval between frames, and on a vsync-locked display
+    // that interval is quantised: a comfortable 60 Hz frame and a marginal one
+    // both arrive 16.7 ms apart. An up-threshold below that quantum can never be
+    // satisfied on the commonest display there is, so the scaler becomes a
+    // one-way ratchet and one transient hitch costs the player its shadows for
+    // the rest of the session. It has to sit *above* one refresh period.
+    upMs: opts.upMs === undefined ? 18.0 : opts.upMs,
     // Nobody should lose their shadows over a 2% overshoot, and a bare `>` on a
     // float average turns rounding noise into a quality change.
     tolerance: opts.tolerance === undefined ? 0.02 : opts.tolerance,
     hold: opts.hold === undefined ? 1.2 : opts.hold,
     cooldown: 0,
+    // An up-threshold that a vsync-locked frame can reach is also one a level
+    // that cannot hold the frame rate will reach, so without a penalty the
+    // scaler would step up, fail, step down and blink the shadows on a cycle.
+    // Each down-step lengthens the quiet stretch the next up-step must sit
+    // through; one that sticks halves the debt again.
+    upDelayBase: opts.upDelayBase === undefined ? 1.5 : opts.upDelayBase,
+    upDelayMax: opts.upDelayMax === undefined ? 8 : opts.upDelayMax,
+    upDelay: opts.upDelayBase === undefined ? 1.5 : opts.upDelayBase,
+    quiet: 0,
     levels: QUALITY_LEVELS,
     index: clamp(opts.index === undefined ? 2 : opts.index, 0, QUALITY_LEVELS.length - 1),
     scaleSteps: opts.scaleSteps || SCALE_STEPS,
@@ -790,6 +813,7 @@ export function autoScalerSample(as, frameMs, dt) {
   if (!as.enabled) return 0;
   const step = dt === undefined ? frameMs / 1000 : dt;
   if (as.cooldown > 0) as.cooldown = Math.max(0, as.cooldown - step);
+  as.quiet += step;
 
   as.times[as.head] = frameMs;
   if (as.n < as.window) as.n += 1;
@@ -804,17 +828,26 @@ export function autoScalerSample(as, frameMs, dt) {
   as.sum = total;
   const avg = total / as.n;
   as.lastAvg = avg;
+  const quietEnough = avg < as.upMs * (1 - as.tolerance);
+  if (!quietEnough) as.quiet = 0;
   let action = 0;
   if (avg > as.downMs * (1 + as.tolerance)) {
     if (as.scaleIndex < as.scaleSteps.length - 1) { as.scaleIndex += 1; action = -1; }
     else if (as.index > 0) { as.index -= 1; action = -1; }
-  } else if (avg < as.upMs * (1 - as.tolerance)) {
+  } else if (quietEnough && as.quiet >= as.upDelay) {
     if (as.scaleIndex > 0) { as.scaleIndex -= 1; action = 1; }
     else if (as.index < as.levels.length - 1) { as.index += 1; action = 1; }
   }
   if (action !== 0) {
     as.changes += 1;
-    if (action > 0) as.ups += 1; else as.downs += 1;
+    if (action > 0) {
+      as.ups += 1;
+      as.upDelay = Math.max(as.upDelayBase, as.upDelay * 0.5);
+    } else {
+      as.downs += 1;
+      as.upDelay = Math.min(as.upDelayMax, as.upDelay * 2 + as.upDelayBase);
+    }
+    as.quiet = 0;
     as.cooldown = as.hold;
     as.n = 0;
     as.sum = 0;
@@ -1625,6 +1658,7 @@ export function createRenderer(canvas, opts = {}) {
     geo: null,
     width: 0,
     height: 0,
+    samples: 0,
   };
 
   function buildPost() {
@@ -1691,25 +1725,90 @@ export function createRenderer(canvas, opts = {}) {
   }
   buildPost();
 
+  // Every texture the stage put on screen, so a quality change can re-filter
+  // them without walking the scene graph. A gravel road seen at a grazing angle
+  // through trilinear-only filtering is a featureless grey band from about 30 m
+  // out — anisotropy is most of what makes a surface read as a surface at
+  // distance, and the quality knob for it was declared at all four levels and
+  // read by nobody.
+  const anisoTextures = [];
+
+  function collectAnisotropy(root) {
+    if (!root || typeof root.traverse !== "function") return;
+    root.traverse((o) => {
+      const m = o.material;
+      if (!m) return;
+      const list = Array.isArray(m) ? m : [m];
+      for (let i = 0; i < list.length; i += 1) {
+        const mat = list[i];
+        if (!mat) continue;
+        for (let k = 0; k < ANISO_MAPS.length; k += 1) {
+          const tex = mat[ANISO_MAPS[k]];
+          if (tex && tex.isTexture && anisoTextures.indexOf(tex) < 0) anisoTextures.push(tex);
+        }
+      }
+    });
+    applyAnisotropy();
+  }
+
+  function applyAnisotropy() {
+    const caps = gl.capabilities;
+    const max = caps && typeof caps.getMaxAnisotropy === "function"
+      ? (caps.getMaxAnisotropy() || 1) : 1;
+    const want = Math.max(1, Math.min(state.quality.anisotropy || 1, max));
+    for (let i = 0; i < anisoTextures.length; i += 1) {
+      const t = anisoTextures[i];
+      if (t.anisotropy === want) continue;
+      t.anisotropy = want;
+      t.needsUpdate = true;
+    }
+  }
+
+  function isWebGL2() {
+    if (gl.opusWebGL2) return true;
+    const caps = gl.capabilities;
+    return !!(caps && caps.isWebGL2);
+  }
+
   // A half-float target is what lets a headlight sit at 4.0 in the scene pass and
   // bloom properly. WebGL1 without EXT_color_buffer_half_float cannot give us
   // one, and an incomplete framebuffer is a black screen, so fall back to 8-bit
   // and drop the bright threshold under 1.0 — clamped values never cross it.
   function supportsHdrTargets() {
-    if (gl.opusWebGL2) return true;
-    const caps = gl.capabilities;
-    if (caps && caps.isWebGL2) return true;
+    if (isWebGL2()) return true;
     const ext = gl.extensions;
     if (ext && typeof ext.has === "function") return !!ext.has("EXT_color_buffer_half_float");
     return false;
   }
 
+  // The default framebuffer's `antialias` attribute buys nothing once the post
+  // chain owns the image: the scene is drawn into an offscreen target and the
+  // back buffer only ever receives a full-screen quad. A WebGL2 multisampled
+  // target is the one place the resolve can still happen, and without it every
+  // pole, roof line and horizon in the game is a staircase.
+  function targetSamples() {
+    if (!isWebGL2()) return 0;
+    return state.quality.msaa | 0;
+  }
+
   function sizePost(w, h) {
     const width = Math.max(2, w | 0);
     const height = Math.max(2, h | 0);
-    if (post.width === width && post.height === height && post.sceneRT) return;
+    const samples = targetSamples();
+    // A device that turned the post chain off should not be paying for its
+    // render targets; on a phone that is 18 MB of VRAM nothing ever samples.
+    if (!post.enabled) {
+      disposeTargets();
+      post.width = 0;
+      post.height = 0;
+      post.samples = 0;
+      return;
+    }
+    if (post.width === width && post.height === height
+      && post.samples === samples && post.sceneRT) return;
     post.width = width;
     post.height = height;
+    post.samples = samples;
     const hdr = supportsHdrTargets();
     post.hdr = hdr;
     post.bright.uniforms.uThreshold.value = hdr ? 1.0 : 0.68;
@@ -1721,7 +1820,10 @@ export function createRenderer(canvas, opts = {}) {
     const bw = Math.max(2, width >> 1);
     const bh = Math.max(2, height >> 1);
     disposeTargets();
-    post.sceneRT = new three.WebGLRenderTarget(width, height, half);
+    // Only the scene pass is multisampled: the bloom chain is a blur of a blur
+    // at half resolution and has no edges left to resolve.
+    post.sceneRT = new three.WebGLRenderTarget(width, height,
+      samples > 0 ? { ...half, samples } : half);
     post.sceneRT.texture.colorSpace = three.LinearSRGBColorSpace;
     post.brightRT = new three.WebGLRenderTarget(bw, bh, { ...half, depthBuffer: false });
     post.blurA = new three.WebGLRenderTarget(bw, bh, { ...half, depthBuffer: false });
@@ -1746,8 +1848,11 @@ export function createRenderer(canvas, opts = {}) {
   function configureRenderer() {
     if (typeof gl.setPixelRatio === "function") gl.setPixelRatio(state.pixelRatio);
     if ("outputColorSpace" in gl) gl.outputColorSpace = three.SRGBColorSpace;
+    // Lights are irradiance, not irradiance x PI: weather.js's intensities are
+    // authored on that scale. `physicallyCorrectLights` is the r155 spelling of
+    // the same switch and setting it only logs a removal warning on every
+    // quality change.
     if ("useLegacyLights" in gl) gl.useLegacyLights = false;
-    if ("physicallyCorrectLights" in gl) gl.physicallyCorrectLights = true;
     if (gl.shadowMap) {
       gl.shadowMap.enabled = true;
       gl.shadowMap.type = three.PCFSoftShadowMap;
@@ -1800,6 +1905,7 @@ export function createRenderer(canvas, opts = {}) {
         }
       }
     }
+    applyAnisotropy();
     if (headlights.beams) headlights.beams.visible = q.beams && headlights.on;
     // A dust puff is a metre across and nearly transparent; the plume comes
     // from hundreds of them overlapping. At full opacity each one is a solid
@@ -2151,6 +2257,50 @@ export function createRenderer(canvas, opts = {}) {
     return any ? out : null;
   }
 
+  // A library that hands back a finished group has already placed and instanced
+  // everything itself, and its trees are better than four cones in a trenchcoat.
+  // But its InstancedMeshes carry one bounding sphere spanning the whole stage,
+  // so the frustum test is all-or-nothing and every tree in a 9 km stage is
+  // submitted every frame, in the colour pass and again in the shadow pass. So
+  // take the placement over rather than the group: copy the instance matrices
+  // out once, and from then on write back only the ones inside the draw
+  // distance, nearest first, up to the frame's budget. Same geometry, same
+  // materials, same one draw per kind — with the distance culling that group was
+  // never going to do for itself.
+  function adoptInstanced(mesh) {
+    const attr = mesh.instanceMatrix;
+    // `count` is ours to shrink from here on, so remember what the library
+    // placed: adopting the same mesh twice must not inherit our own culling.
+    const placed = Math.max(mesh.count, mesh.userData ? (mesh.userData.opusInstances | 0) : 0);
+    const n = Math.min(placed, attr.count);
+    if (!n) return null;
+    if (mesh.userData) mesh.userData.opusInstances = n;
+    const src = new Float32Array(n * 16);
+    src.set(attr.array.subarray(0, n * 16));
+    const px = new Float32Array(n);
+    const pz = new Float32Array(n);
+    for (let i = 0; i < n; i += 1) {
+      px[i] = src[i * 16 + 12];
+      pz[i] = src[i * 16 + 14];
+    }
+    let srcCol = null;
+    if (mesh.instanceColor && mesh.instanceColor.array) {
+      srcCol = new Float32Array(n * 3);
+      srcCol.set(mesh.instanceColor.array.subarray(0, n * 3));
+    }
+    attr.setUsage(three.DynamicDrawUsage);
+    // We cull by distance now, so a sphere that always intersects is dead work.
+    mesh.frustumCulled = false;
+    return {
+      kind: mesh.name || "scenery",
+      count: n, px, pz, src, srcCol,
+      lods: [{ mesh, cap: n }],
+      counts: new Int32Array(1),
+      lodState: new Uint8Array(n),
+      cells: null,
+    };
+  }
+
   function buildScenery(stage, bin) {
     scenery.entries.length = 0;
     const raw = meshLib && typeof meshLib.buildSceneryLibrary === "function"
@@ -2158,15 +2308,17 @@ export function createRenderer(canvas, opts = {}) {
       : null;
     let lib = normaliseSceneryLibrary(raw, bin);
     if (!lib) {
-      // A library that hands back a finished group has already placed and
-      // instanced everything itself. Taking it costs this module's distance LOD,
-      // which is the right trade: its instancing is one draw per kind either way,
-      // and its trees are not four cones in a trenchcoat.
       const placed = adopt(raw, bin);
       if (placed) {
         placed.traverse((o) => {
-          if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+          if (!o.isMesh) return;
+          o.castShadow = true;
+          o.receiveShadow = true;
+          if (!o.isInstancedMesh) return;
+          const entry = adoptInstanced(o);
+          if (entry) scenery.entries.push(entry);
         });
+        buildSceneryGrid(stage);
         return placed;
       }
       lib = buildFallbackSceneryLibrary(bin);
@@ -2198,7 +2350,31 @@ export function createRenderer(canvas, opts = {}) {
         group.add(im);
         lodMeshes.push({ mesh: im, cap });
       }
-      scenery.entries.push({ kind, items: list, lods: lodMeshes, lodState: new Uint8Array(list.length) });
+      // Composed once here rather than per frame: the pose of a tree never
+      // changes, only whether and at what size it is drawn.
+      const n = list.length;
+      const src = new Float32Array(n * 16);
+      const px = new Float32Array(n);
+      const pz = new Float32Array(n);
+      for (let i = 0; i < n; i += 1) {
+        const it = list[i];
+        const s = it.scale || 1;
+        eTmp.set(0, it.yaw || 0, 0);
+        qTmp.setFromEuler(eTmp);
+        vTmp.set(it.x, it.y || 0, it.z);
+        vTmp2.set(s, s, s);
+        mTmp.compose(vTmp, qTmp, vTmp2);
+        src.set(mTmp.elements, i * 16);
+        px[i] = it.x;
+        pz[i] = it.z;
+      }
+      scenery.entries.push({
+        kind, count: n, px, pz, src, srcCol: null,
+        lods: lodMeshes,
+        counts: new Int32Array(lodMeshes.length),
+        lodState: new Uint8Array(n),
+        cells: null,
+      });
     });
     buildSceneryGrid(stage);
     return group;
@@ -2218,10 +2394,9 @@ export function createRenderer(canvas, opts = {}) {
     for (let e = 0; e < scenery.entries.length; e += 1) {
       const entry = scenery.entries[e];
       const cells = new Array(total);
-      for (let i = 0; i < entry.items.length; i += 1) {
-        const it = entry.items[i];
-        const cx = clamp(Math.floor((it.x - scenery.minX) / cs), 0, scenery.nx - 1);
-        const cz = clamp(Math.floor((it.z - scenery.minZ) / cs), 0, scenery.nz - 1);
+      for (let i = 0; i < entry.count; i += 1) {
+        const cx = clamp(Math.floor((entry.px[i] - scenery.minX) / cs), 0, scenery.nx - 1);
+        const cz = clamp(Math.floor((entry.pz[i] - scenery.minZ) / cs), 0, scenery.nz - 1);
         const k = cz * scenery.nx + cx;
         if (!cells[k]) cells[k] = [];
         cells[k].push(i);
@@ -2513,9 +2688,25 @@ export function createRenderer(canvas, opts = {}) {
 
   // ---- build / clear
 
+  // weather.js builds its rig into *this* scene and game.js builds a fresh one
+  // per stage, so whoever ends a stage has to hand the old one back or the
+  // scene accumulates a key light, a moon, a hemisphere, a bounce, an ambient
+  // and a sky dome every race — measured at 10, 15, 20, 25 lights over four
+  // stages, each one relighting the whole image and forcing three to recompile
+  // every material as the light count changes. The rig is not ours to dispose;
+  // detaching it is, and it is the only hook there is.
+  function releaseWeather() {
+    const w = state.weather;
+    state.weather = null;
+    if (!w) return;
+    if (w.root && w.root.parent === scene) scene.remove(w.root);
+    if (w.fog && scene.fog === w.fog) scene.fog = null;
+  }
+
   function clearStage() {
     if (!state.built) {
       // Still safe to call: everything below is idempotent.
+      releaseWeather();
       stageBin.disposeAll();
       return;
     }
@@ -2527,6 +2718,17 @@ export function createRenderer(canvas, opts = {}) {
     state.brakeMaterial = null;
     state.lampMaterial = null;
     scenery.entries.length = 0;
+    anisoTextures.length = 0;
+    state.drawsIssued = 0;
+    // Two spotlights and a pair of additive beam cones parked where the car was
+    // would otherwise light the menu backdrop for the rest of the session:
+    // idleFrame() never calls updateHeadlights().
+    headlights.level = 0;
+    headlights.on = false;
+    if (headlights.left) headlights.left.intensity = 0;
+    if (headlights.right) headlights.right.intensity = 0;
+    if (headlights.pod) headlights.pod.intensity = 0;
+    if (headlights.beams) headlights.beams.visible = false;
     tvAnchors.length = 0;
     stageBin.disposeAll();
     resetParticlePool(dustPool);
@@ -2541,10 +2743,10 @@ export function createRenderer(canvas, opts = {}) {
     markMesh.geometry.attributes.aAlpha.needsUpdate = true;
     markCursor = 0;
     if (shadowLight) { shadowLight.castShadow = false; shadowLight = null; }
+    releaseWeather();
     state.stage = null;
     state.world = null;
     state.ground = null;
-    state.weather = null;
     state.car = null;
     state.built = false;
     for (const key in rigs) rigs[key].ready = false;
@@ -2575,6 +2777,7 @@ export function createRenderer(canvas, opts = {}) {
     }
     if (!road) road = buildFallbackRoad(stage, stageBin);
     road.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    collectAnisotropy(road);
     stageGroup.add(road);
 
     let terrain = null;
@@ -2585,9 +2788,12 @@ export function createRenderer(canvas, opts = {}) {
     }
     if (!terrain) terrain = buildFallbackTerrain(stage, stageBin);
     terrain.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    collectAnisotropy(terrain);
     stageGroup.add(terrain);
 
-    stageGroup.add(buildScenery(stage, stageBin));
+    const sceneryRoot = buildScenery(stage, stageBin);
+    collectAnisotropy(sceneryRoot);
+    stageGroup.add(sceneryRoot);
 
     if (meshLib && typeof meshLib.buildPropLibrary === "function") {
       const lib = safeCall(() => meshLib.buildPropLibrary(three, { stage }));
@@ -2603,6 +2809,7 @@ export function createRenderer(canvas, opts = {}) {
       }
       if (props) {
         props.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        collectAnisotropy(props);
         stageGroup.add(props);
       }
     }
@@ -2929,56 +3136,102 @@ export function createRenderer(canvas, opts = {}) {
     cam.updateProjectionMatrix();
   }
 
-  const lodCounts = [0, 0, 0, 0];
+  // Writes one instance into its LOD mesh, scaled by the fade. The source matrix
+  // is affine, so fading is nine multiplies on the basis columns — cheaper and
+  // exact next to decomposing and recomposing it.
+  function placeInstance(entry, ii, lod, fade) {
+    const slot = entry.lods[lod];
+    const at = entry.counts[lod];
+    if (at >= slot.cap) return false;
+    const dst = slot.mesh.instanceMatrix.array;
+    const s = entry.src;
+    const so = ii * 16;
+    const dof = at * 16;
+    for (let k = 0; k < 16; k += 1) dst[dof + k] = s[so + k];
+    if (fade < 1) {
+      dst[dof] *= fade; dst[dof + 1] *= fade; dst[dof + 2] *= fade;
+      dst[dof + 4] *= fade; dst[dof + 5] *= fade; dst[dof + 6] *= fade;
+      dst[dof + 8] *= fade; dst[dof + 9] *= fade; dst[dof + 10] *= fade;
+    }
+    if (entry.srcCol && slot.mesh.instanceColor) {
+      const cd = slot.mesh.instanceColor.array;
+      cd[at * 3] = entry.srcCol[ii * 3];
+      cd[at * 3 + 1] = entry.srcCol[ii * 3 + 1];
+      cd[at * 3 + 2] = entry.srcCol[ii * 3 + 2];
+    }
+    entry.counts[lod] = at + 1;
+    return true;
+  }
+
+  function sceneryCell(k, camX, camZ, dist, budget, issued) {
+    const q = state.quality;
+    let n = issued;
+    for (let e = 0; e < scenery.entries.length && n < budget; e += 1) {
+      const entry = scenery.entries[e];
+      const cell = entry.cells && entry.cells[k];
+      if (!cell) continue;
+      const lodMax = entry.lods.length - 1;
+      for (let c = 0; c < cell.length && n < budget; c += 1) {
+        const ii = cell[c];
+        const dx = entry.px[ii] - camX;
+        const dz = entry.pz[ii] - camZ;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d > dist) continue;
+        const lod = Math.min(lodMax, selectLod(d, entry.lodState[ii], q.lodBands, 14));
+        entry.lodState[ii] = lod;
+        const fade = lod === lodMax ? lodFade(d, dist, 55) : 1;
+        if (fade <= 0.01) continue;
+        if (placeInstance(entry, ii, lod, fade)) n += 1;
+      }
+    }
+    return n;
+  }
+
+  // Cells are visited in square rings outward from the camera, so the budget
+  // always buys the nearest scenery. Walking the grid from its minimum corner —
+  // which is what a plain nested loop does — spends it on whatever happens to
+  // lie north-west of the car and drops the trees directly ahead.
   function updateScenery(camX, camZ) {
+    if (!scenery.entries.length) { state.drawsIssued = 0; return; }
     const q = state.quality;
     const dist = q.sceneryDistance;
     const cs = scenery.cellSize;
     const budget = q.sceneryBudget;
+    for (let e = 0; e < scenery.entries.length; e += 1) scenery.entries[e].counts.fill(0);
+    const ci = Math.floor((camX - scenery.minX) / cs);
+    const cj = Math.floor((camZ - scenery.minZ) / cs);
+    const rings = Math.ceil(dist / cs);
     let issued = 0;
-    const ci0 = clamp(Math.floor((camX - dist - scenery.minX) / cs), 0, scenery.nx - 1);
-    const ci1 = clamp(Math.floor((camX + dist - scenery.minX) / cs), 0, scenery.nx - 1);
-    const cj0 = clamp(Math.floor((camZ - dist - scenery.minZ) / cs), 0, scenery.nz - 1);
-    const cj1 = clamp(Math.floor((camZ + dist - scenery.minZ) / cs), 0, scenery.nz - 1);
-    for (let e = 0; e < scenery.entries.length; e += 1) {
-      const entry = scenery.entries[e];
-      lodCounts[0] = 0; lodCounts[1] = 0; lodCounts[2] = 0; lodCounts[3] = 0;
-      const lodMax = entry.lods.length - 1;
-      if (entry.cells) {
-        for (let j = cj0; j <= cj1 && issued < budget; j += 1) {
-          for (let i = ci0; i <= ci1 && issued < budget; i += 1) {
-            const cell = entry.cells[j * scenery.nx + i];
-            if (!cell) continue;
-            for (let k = 0; k < cell.length && issued < budget; k += 1) {
-              const ii = cell[k];
-              const it = entry.items[ii];
-              const dx = it.x - camX;
-              const dz = it.z - camZ;
-              const d = Math.sqrt(dx * dx + dz * dz);
-              if (d > dist) continue;
-              const lod = Math.min(lodMax, selectLod(d, entry.lodState[ii], q.lodBands, 14));
-              entry.lodState[ii] = lod;
-              const slot = entry.lods[lod];
-              if (lodCounts[lod] >= slot.cap) continue;
-              const fade = lodFade(d, dist, 55);
-              const sc = (it.scale || 1) * (lod === lodMax ? fade : 1);
-              if (sc <= 0.01) continue;
-              eTmp.set(0, it.yaw || 0, 0);
-              qTmp.setFromEuler(eTmp);
-              vTmp.set(it.x, it.y, it.z);
-              vTmp2.set(sc, sc, sc);
-              mTmp.compose(vTmp, qTmp, vTmp2);
-              slot.mesh.setMatrixAt(lodCounts[lod], mTmp);
-              lodCounts[lod] += 1;
-              issued += 1;
-            }
-          }
+    for (let r = 0; r <= rings && issued < budget; r += 1) {
+      const i0 = ci - r;
+      const i1 = ci + r;
+      const j0 = cj - r;
+      const j1 = cj + r;
+      for (let j = j0; j <= j1 && issued < budget; j += 1) {
+        if (j < 0 || j >= scenery.nz) continue;
+        const edge = j === j0 || j === j1;
+        const stride = edge ? 1 : Math.max(1, i1 - i0);
+        for (let i = i0; i <= i1 && issued < budget; i += stride) {
+          if (i < 0 || i >= scenery.nx) continue;
+          issued = sceneryCell(j * scenery.nx + i, camX, camZ, dist, budget, issued);
         }
       }
+    }
+    for (let e = 0; e < scenery.entries.length; e += 1) {
+      const entry = scenery.entries[e];
       for (let l = 0; l < entry.lods.length; l += 1) {
         const slot = entry.lods[l];
-        slot.mesh.count = lodCounts[l];
-        if (lodCounts[l] > 0) slot.mesh.instanceMatrix.needsUpdate = true;
+        const n = entry.counts[l];
+        slot.mesh.count = n;
+        if (n > 0) {
+          const attr = slot.mesh.instanceMatrix;
+          // Only the slots we wrote go up the bus, not the whole stage's worth.
+          if (attr.updateRange) { attr.updateRange.offset = 0; attr.updateRange.count = n * 16; }
+          attr.needsUpdate = true;
+          if (entry.srcCol && slot.mesh.instanceColor) {
+            slot.mesh.instanceColor.needsUpdate = true;
+          }
+        }
       }
     }
     state.drawsIssued = issued;
@@ -3376,6 +3629,9 @@ export function createRenderer(canvas, opts = {}) {
         shadowRadius: shadowFit.radius,
         post: post.enabled,
         hdr: !!post.hdr,
+        samples: post.samples | 0,
+        anisotropy: anisoTextures.length
+          ? anisoTextures[0].anisotropy : 0,
       };
     },
     rigs,

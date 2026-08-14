@@ -9,10 +9,14 @@ import {
   liveryTexture, surfaceTexture, disposeTextures, clearLiveryCache, clearSignCache,
   carDimensions, carHubPositions, applyCarDamage, setMudLevel, updateWheel,
   TRIANGLE_BUDGET, TEXTURE_NAMES, ROAD_SECTION, ROAD_EDGE_SLOTS, ROAD_CENTRE_SLOT,
-  CAR_DETACHABLE, textureCacheSize,
+  CAR_DETACHABLE, textureCacheSize, LETTERED_PROTOTYPES, PROP_BANNERS, __primitives,
 } from "../meshes.js";
 import { carSpec } from "../physics.js";
 import { SURFACE, surfaceProps } from "../surfaces.js";
+// Which way a sign faces is an invariant across two modules: meshes.js decides
+// which face carries the lettering, stage.js decides how the prop is turned. The
+// only honest check builds a real stage and puts the two together.
+import { generateStage, STAGE_BOOK } from "../stage.js";
 
 // ---- a synthetic Stage ---------------------------------------------------
 // stage.js is another author's module and may be half-written; everything below
@@ -1003,4 +1007,467 @@ test("dispose: geometries and materials are released", () => {
   assert.equal(road.chunks.length, 0);
   disposeTextures();
   assert.equal(textureCacheSize(), 0);
+});
+
+// ---- orientation ---------------------------------------------------------
+// Everything below this line exists because 23 green tests once hid a road you
+// could not see: the suite measured distances, counts and colours and never once
+// asked which way a face was pointing.
+
+// Every triangle as {n, area, centroid, verts}. The normal is the geometric one
+// the winding implies, not the stored attribute — those two disagreeing is the
+// defect being hunted.
+function facesOf(geometry) {
+  const p = geometry.getAttribute("position").array;
+  const uv = geometry.getAttribute("uv");
+  const ia = geometry.getIndex().array;
+  const out = [];
+  for (let t = 0; t < ia.length; t += 3) {
+    const a = ia[t], b = ia[t + 1], c = ia[t + 2];
+    const ux = p[b * 3] - p[a * 3], uy = p[b * 3 + 1] - p[a * 3 + 1], uz = p[b * 3 + 2] - p[a * 3 + 2];
+    const vx = p[c * 3] - p[a * 3], vy = p[c * 3 + 1] - p[a * 3 + 1], vz = p[c * 3 + 2] - p[a * 3 + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const l = Math.hypot(nx, ny, nz) || 1;
+    out.push({
+      idx: [a, b, c],
+      n: [nx / l, ny / l, nz / l],
+      area: l * 0.5,
+      centroid: [
+        (p[a * 3] + p[b * 3] + p[c * 3]) / 3,
+        (p[a * 3 + 1] + p[b * 3 + 1] + p[c * 3 + 1]) / 3,
+        (p[a * 3 + 2] + p[b * 3 + 2] + p[c * 3 + 2]) / 3,
+      ],
+      xyz: (k) => [p[k * 3], p[k * 3 + 1], p[k * 3 + 2]],
+      uvAt: (k) => (uv ? [uv.array[k * 2], uv.array[k * 2 + 1]] : null),
+    });
+  }
+  return out;
+}
+
+test("primitives: every face of every primitive winds outward", () => {
+  const W = [1, 1, 1];
+  const P = __primitives;
+  const cases = [
+    ["pushBox", (b) => P.pushBox(b, 0, 0, 0, 2, 1.4, 3, W)],
+    ["pushTaper", (b) => P.pushTaper(b, 0, 0, 0, 2, 2, 1, 1.4, -1, 1, W)],
+    ["pushTaper(shifted)", (b) => P.pushTaper(b, 0, 0, 0, 2, 2, 1.2, 0.6, -0.8, 0.9, W, 0.25)],
+    ["pushCylinder(y)", (b) => P.pushCylinder(b, 0, 0, 0, 0.6, 0.4, 2, 10, "y", W)],
+    ["pushCylinder(z)", (b) => P.pushCylinder(b, 0, 0, 0, 0.5, 0.5, 1.6, 8, "z", W)],
+    ["pushCone", (b) => P.pushCone(b, 0, 0, 0, 0.8, 2, 9, W)],
+    ["pushBlob", (b) => P.pushBlob(b, 0, 0, 0, 1, 0.7, 1.2, W, 1, 5, 0)],
+    ["pushTube", (b) => P.pushTube(b, [[0, 0, -1], [0, 0, 0], [0, 0, 1]], 0.3, 7, W, true)],
+    ["pushLoft", (b) => P.pushLoft(b, [
+      [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1]],
+      [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]],
+    ], W, true, true)],
+  ];
+  for (const [label, build] of cases) {
+    const b = P.mkBuilder();
+    build(b);
+    const g = P.finish(THREE, b, {});
+    g.computeBoundingBox();
+    const bb = g.boundingBox;
+    const ref = [(bb.min.x + bb.max.x) / 2, (bb.min.y + bb.max.y) / 2, (bb.min.z + bb.max.z) / 2];
+    let inward = 0;
+    for (const f of facesOf(g)) {
+      const d = (f.centroid[0] - ref[0]) * f.n[0]
+        + (f.centroid[1] - ref[1]) * f.n[1]
+        + (f.centroid[2] - ref[2]) * f.n[2];
+      if (d <= 0) inward += 1;
+    }
+    assert.equal(inward, 0, `${label}: ${inward} faces wind inward, so a FrontSide material culls them`);
+    g.dispose();
+  }
+});
+
+test("road: the running surface faces the sky, and agrees with the terrain beside it", () => {
+  const st = theStage();
+  const road = buildRoadMesh(THREE, st, TEX);
+  const terrain = buildTerrainMesh(THREE, st, TEX);
+  assert.equal(road.material.side, THREE.FrontSide,
+    "this test only means anything while the road is single-sided");
+
+  for (const chunk of road.chunks) {
+    let sum = 0, n = 0, worst = 1;
+    for (const f of facesOf(chunk.geometry)) { sum += f.n[1]; n += 1; worst = Math.min(worst, f.n[1]); }
+    assert.ok(sum / n > 0.9,
+      `road chunk ${chunk.index}: mean winding normal Y is ${(sum / n).toFixed(3)}, so the ribbon is back-face culled from above`);
+    assert.ok(worst > 0, `road chunk ${chunk.index}: a face winds downward (Y ${worst.toFixed(3)})`);
+  }
+  // The stored normals must agree with the winding, or the ribbon draws but
+  // lights inside out.
+  for (const chunk of road.chunks) {
+    const nor = chunk.geometry.getAttribute("normal").array;
+    for (let i = 0; i < nor.length; i += 3) {
+      assert.ok(nor[i + 1] > 0.5, `road stored normal ${i / 3} points at the ground (${nor[i + 1]})`);
+    }
+  }
+  let terrainUp = 0, terrainN = 0;
+  for (const f of facesOf(terrain.chunks[0].geometry)) { terrainUp += f.n[1]; terrainN += 1; }
+  assert.ok(terrainUp / terrainN > 0, "the terrain reference itself does not face up");
+  road.dispose();
+  terrain.dispose();
+});
+
+test("road: the cross-section is the right way up and camber banks down to the left", () => {
+  const st = theStage();
+  const road = buildRoadMesh(THREE, st, TEX);
+  const slot = (kind, from = 0) => ROAD_SECTION.findIndex((s2, i) => i >= from && s2.kind === kind);
+  const leftDitch = slot("ditch");
+  const leftShoulder = slot("shoulder");
+  const leftEdge = ROAD_EDGE_SLOTS[0], rightEdge = ROAD_EDGE_SLOTS[1];
+  const leftRut = slot("rut");
+  const leftCrown = slot("crown");
+
+  let cambered = 0;
+  let rutSum = 0, rutN = 0;
+  // Per-slot surface noise is +-12 mm, so a single station can wobble by 24 mm
+  // between two slots without meaning anything. A sign error is 60 mm the other
+  // way, which is why the mean is asserted as well as each station.
+  const NOISE = 0.025;
+  for (const chunk of road.chunks) {
+    const p = chunk.geometry.getAttribute("position").array;
+    for (const station of chunk.stations) {
+      // Section height, not world y: the slots sit at different lateral offsets,
+      // so on a cambered road their world heights differ for reasons that have
+      // nothing to do with the profile.
+      const h = (k) => {
+        const o = (station.vertexBase + k) * 3;
+        return (p[o] - station.centre[0]) * station.up[0]
+          + (p[o + 1] - station.centre[1]) * station.up[1]
+          + (p[o + 2] - station.centre[2]) * station.up[2];
+      };
+      const centre = h(ROAD_CENTRE_SLOT);
+      // Water drains outward: the crown is the high point and everything the
+      // road wears into itself sits below it.
+      assert.ok(h(leftRut) < h(leftCrown) + NOISE,
+        `rut stands ${(h(leftRut) - h(leftCrown)).toFixed(3)} m proud of the crown`);
+      rutSum += h(leftCrown) - h(leftRut); rutN += 1;
+      assert.ok(h(leftDitch) < h(leftShoulder) - 0.1,
+        `the ditch is ${(h(leftDitch) - h(leftShoulder)).toFixed(3)} m above the shoulder, i.e. a bank`);
+      assert.ok(h(leftShoulder) < centre - 0.05, "the shoulder is level with or above the crown");
+      const camber = st.camber[station.sampleIndex];
+      if (Math.abs(camber) > 0.05) {
+        cambered += 1;
+        // CONTRACTS.md: positive camber banks the surface DOWN to the left, so
+        // the right-hand edge stands higher in the world.
+        const o = (k) => p[(station.vertexBase + k) * 3 + 1];
+        const tilt = o(rightEdge) - o(leftEdge);
+        assert.ok(Math.sign(tilt) === Math.sign(camber),
+          `camber ${camber.toFixed(3)} banks the road ${tilt > 0 ? "down to the left" : "down to the right"} (edge delta ${tilt.toFixed(3)}), which is backwards`);
+      }
+    }
+  }
+  assert.ok(cambered > 4, `only ${cambered} stations carried enough camber to test`);
+  assert.ok(rutSum / rutN > 0.02,
+    `the ruts average ${(rutSum / rutN).toFixed(4)} m below the crown, which is not a rut`);
+  road.dispose();
+});
+
+// ---- lettering -----------------------------------------------------------
+
+// The face of a sign is the only part of it that matters. `approach` is the
+// direction, in the prototype's own frame, that the car comes from.
+function letteredFaces(geometry) {
+  const all = facesOf(geometry).filter((f) => Math.abs(f.n[2]) > 0.99);
+  const max = all.reduce((m, f) => Math.max(m, f.area), 0);
+  return all.filter((f) => f.area >= max * 0.2);
+}
+
+// A driver looking at a face whose normal is n stands along +n and has their
+// right hand along (-n) x up, which for these +-Z boards is x = sign(n.z). Text
+// reads correctly only when u grows that way and v grows upward.
+function readsCorrectly(face) {
+  const rightX = Math.sign(face.n[2]);
+  let du = 0, dx = 0, dv = 0, dy = 0;
+  for (let a = 0; a < 3; a += 1) {
+    for (let b = a + 1; b < 3; b += 1) {
+      const pi = face.xyz(face.idx[a]), pj = face.xyz(face.idx[b]);
+      const ui = face.uvAt(face.idx[a]), uj = face.uvAt(face.idx[b]);
+      if (Math.abs(pj[0] - pi[0]) > Math.abs(dx)) { dx = pj[0] - pi[0]; du = uj[0] - ui[0]; }
+      if (Math.abs(pj[1] - pi[1]) > Math.abs(dy)) { dy = pj[1] - pi[1]; dv = uj[1] - ui[1]; }
+    }
+  }
+  return { mirrored: Math.sign(du / dx) !== rightX, upsideDown: dv / dy <= 0 };
+}
+
+test("props: every lettered face is turned towards the car that has to read it", () => {
+  const record = newRecord();
+  const lib = buildPropLibrary(THREE, { ...TEX, canvasFactory: fakeCanvasFactory(record) });
+  const def = STAGE_BOOK[0];
+  const st = generateStage(def.seed, def.params || {});
+
+  // No lettering may be mirrored or upside down from either side of the board.
+  for (const key of LETTERED_PROTOTYPES) {
+    const proto = lib.prototypes.get(key);
+    assert.ok(proto, `lettered prototype "${key}" is missing`);
+    const faces = letteredFaces(proto.geometry);
+    assert.ok(faces.length > 0, `${key}: no lettered face found`);
+    for (const f of faces) {
+      const r = readsCorrectly(f);
+      assert.equal(r.mirrored, false, `${key}: the face pointing (${f.n.map((v) => v.toFixed(2))}) reads mirrored`);
+      assert.equal(r.upsideDown, false, `${key}: the face pointing (${f.n.map((v) => v.toFixed(2))}) reads upside down`);
+    }
+  }
+
+  // Then, against the real stage: the lettered face has to be the one the car
+  // meets. `local` undoes the prop's own yaw on the direction back up the road.
+  const checked = new Set();
+  for (const it of st.props) {
+    const kind = lib.aliases[it.kind] || it.kind;
+    const key = PROP_BANNERS[kind] || (LETTERED_PROTOTYPES.includes(kind) ? kind : null);
+    if (!key) continue;
+    const i = Math.min(st.count - 1, Math.max(0, Math.round((it.s || 0) / st.step)));
+    const heading = Math.atan2(st.tx[i], st.tz[i]);
+    const wx = -Math.sin(heading), wz = -Math.cos(heading);
+    const cy = Math.cos(it.yaw), sy = Math.sin(it.yaw);
+    const approach = [wx * cy - wz * sy, 0, wx * sy + wz * cy];
+    const faces = letteredFaces(lib.prototypes.get(key).geometry);
+    const facing = faces.some((f) => f.n[0] * approach[0] + f.n[2] * approach[2] > 0.99);
+    assert.ok(facing,
+      `${key} at s=${(it.s || 0).toFixed(0)}: the car approaches from local (${approach.map((v) => v.toFixed(2))}) `
+      + `but the lettered faces point ${faces.map((f) => `(${f.n.map((v) => v.toFixed(2))})`).join(" ")} — the wordmark reads mirrored`);
+    checked.add(key);
+  }
+  assert.ok(checked.has("startBanner"), "the start gantry banner was never checked against a placement");
+  assert.ok(checked.has("finishBanner"), "the finish gantry banner was never checked");
+  assert.ok(checked.has("serviceBanner"), "the service banner was never checked");
+  assert.ok(checked.has("chevron") && checked.has("distanceBoard"), "no roadside board was checked");
+
+  // stage.js does not place every board yet; the ones it does not must still
+  // agree with the ones it does, or they break the day they are placed.
+  const anchor = letteredFaces(lib.prototypes.get("chevron").geometry).map((f) => f.n[2].toFixed(2)).sort().join();
+  for (const key of ["flyingFinish", "arrowLeft", "arrowRight", "cautionTriangle"]) {
+    const got = letteredFaces(lib.prototypes.get(key).geometry).map((f) => f.n[2].toFixed(2)).sort().join();
+    assert.equal(got, anchor, `${key} does not face the same way as the boards stage.js actually places`);
+  }
+  lib.dispose();
+  clearSignCache();
+});
+
+test("props: a lettered face maps its canvas exactly once, and boards that differ get different textures", () => {
+  const record = newRecord();
+  const lib = buildPropLibrary(THREE, { ...TEX, canvasFactory: fakeCanvasFactory(record) });
+  // The sign canvas is clamped, so any UV outside 0..1 is a smeared edge column.
+  for (const key of LETTERED_PROTOTYPES) {
+    const g = lib.prototypes.get(key).geometry;
+    const uv = g.getAttribute("uv").array;
+    for (const f of letteredFaces(g)) {
+      let uLo = 9, uHi = -9, vLo = 9, vHi = -9;
+      for (const k of f.idx) {
+        uLo = Math.min(uLo, uv[k * 2]); uHi = Math.max(uHi, uv[k * 2]);
+        vLo = Math.min(vLo, uv[k * 2 + 1]); vHi = Math.max(vHi, uv[k * 2 + 1]);
+      }
+      assert.ok(uLo >= -1e-6 && uHi <= 1 + 1e-6, `${key}: lettered face u runs ${uLo}..${uHi}, outside the canvas`);
+      assert.ok(vLo >= -1e-6 && vHi <= 1 + 1e-6, `${key}: lettered face v runs ${vLo}..${vHi}, outside the canvas`);
+    }
+    const span = letteredFaces(g).reduce((m, f) => {
+      for (const k of f.idx) m = Math.max(m, uv[k * 2]);
+      return m;
+    }, 0);
+    assert.ok(span > 0.99, `${key}: the lettered face only reaches u=${span.toFixed(2)}, so the sign is cropped`);
+  }
+  // The cache is keyed on what changes a pixel: a left arrow that shares the
+  // right arrow's texture points the driver into the ditch.
+  const mapOf = (k) => lib.prototypes.get(k).material.map;
+  assert.ok(mapOf("chevron"), "the sign canvas never produced a texture, so this proves nothing");
+  assert.notEqual(mapOf("arrowLeft"), mapOf("arrowRight"), "arrowLeft and arrowRight share one texture");
+  assert.notEqual(mapOf("arrowLeft"), mapOf("chevron"), "arrowLeft and chevron share one texture");
+  assert.notEqual(mapOf("startBanner"), mapOf("finishBanner"), "the start and finish banners share one texture");
+  assert.notEqual(mapOf("distanceBoard"), mapOf("flyingFinish"), "two text boards share one texture");
+  // arrowRight IS the chevron — identical spec, so the cache must still fold it.
+  assert.equal(mapOf("chevron"), mapOf("arrowRight"), "the sign cache stopped folding two identical boards");
+  lib.dispose();
+  clearSignCache();
+});
+
+// ---- shading -------------------------------------------------------------
+
+test("materials: the colour map and the vertex colours do not both carry an albedo", () => {
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  // A generated map already decodes to a physical albedo. Where the mesh carries
+  // one in its vertex colours too, the material colour has to divide the map's
+  // out, or the two multiply and the surface goes black.
+  const check = (label, material, texName, seed) => {
+    const set = surfaceTexture(THREE, texName, { size: TEX.textureSize, seed });
+    const c = material.color;
+    for (const [k, ch] of [[0, "r"], [1, "g"], [2, "b"]]) {
+      const product = c[ch] * set.albedoMean[k];
+      assert.ok(Math.abs(product - 1) < 0.02,
+        `${label}: the map contributes ${product.toFixed(3)} of an albedo on top of the vertex colour (want 1.0)`);
+    }
+  };
+  check("road", bundle.road.material, "gravel", st.seed ?? 0);
+  check("terrain", bundle.terrain.material, "grass", (st.seed ?? 0) + 3);
+  check("scenery foliage", bundle.scenery.materials.tree, "foliage", st.seed ?? 0);
+  check("scenery rock", bundle.scenery.materials.rock, "rock", st.seed ?? 0);
+  check("props", bundle.propLibrary.materials.plain, "concrete", 11);
+
+  // And the number that matters: a conifer canopy has to land in the band a real
+  // one occupies, not at the 0.007 that photographed as a black cut-out.
+  const canopy = bundle.scenery.prototypes.get("tree:0");
+  const col = canopy.geometry.getAttribute("color").array;
+  const mc = canopy.material.color;
+  const set = surfaceTexture(THREE, "foliage", { size: TEX.textureSize, seed: st.seed ?? 0 });
+  let brightest = 0;
+  for (let i = 0; i < col.length; i += 3) {
+    const g = col[i + 1] * mc.g * set.albedoMean[1];
+    if (g > brightest) brightest = g;
+  }
+  assert.ok(brightest > 0.03 && brightest < 0.40,
+    `the brightest conifer albedo is ${brightest.toFixed(4)}; real foliage sits between 0.03 and 0.30`);
+  bundle.dispose();
+});
+
+test("textures: ground maps are filtered for the grazing angle they are read at", () => {
+  const set = surfaceTexture(THREE, "grass", { size: 16, seed: 4 });
+  for (const map of [set.map, set.normalMap, set.roughnessMap]) {
+    assert.ok(map.anisotropy > 1,
+      "a ground texture at anisotropy 1 blurs to a flat colour a couple of hundred metres out");
+    assert.equal(map.wrapS, THREE.RepeatWrapping);
+    assert.equal(map.generateMipmaps, true);
+  }
+  disposeTextures();
+});
+
+// ---- terrain LOD ---------------------------------------------------------
+
+test("terrain: neighbours are never more than one LOD apart, and no crack escapes the skirt", () => {
+  const st = theStage();
+  // Squeezed LOD bands so the fixture actually produces adjacent chunks that
+  // want to be two steps apart. At the shipping bands this stage happens not to,
+  // and a test that never reaches the case it is written for proves nothing.
+  const terrain = buildTerrainMesh(THREE, st, { ...TEX, lodRanges: [40, 80, 140] });
+  const byKey = new Map();
+  for (const c of terrain.chunks) byKey.set(`${c.cx},${c.cz}`, c);
+
+  for (const c of terrain.chunks) {
+    for (const [dx, dz] of [[1, 0], [0, 1]]) {
+      const nb = byKey.get(`${c.cx + dx},${c.cz + dz}`);
+      if (!nb) continue;
+      assert.ok(Math.abs(nb.lod - c.lod) <= 1,
+        `chunks ${c.cx},${c.cz} (lod ${c.lod}) and ${nb.cx},${nb.cz} (lod ${nb.lod}) meet with a two-step T-junction`);
+    }
+  }
+
+  // The real seam is the T-junction: a fine chunk puts vertices where the coarse
+  // neighbour has only a straight chord. The skirt is what hides it, so measure
+  // the fine chunk's edge against the coarse chunk's actual skirt geometry —
+  // every fine vertex has to fall between the chord and the skirt's bottom edge.
+  let boundaries = 0, worst = 0, worstUncovered = -Infinity;
+  for (const c of terrain.chunks) {
+    for (const [dx, dz] of [[1, 0], [0, 1]]) {
+      const nb = byKey.get(`${c.cx + dx},${c.cz + dz}`);
+      if (!nb || nb.lod === c.lod) continue;
+      const fine = c.lod < nb.lod ? c : nb;
+      const coarse = c.lod < nb.lod ? nb : c;
+      const axis = dx ? 0 : 2;          // the coordinate that is fixed on the seam
+      const run = dx ? 2 : 0;           // the coordinate that runs along it
+      const at = c[dx ? "x0" : "z0"] + c.size;
+      // [along, y] pairs on the seam plane, surface vertices then skirt vertices.
+      const edgeOf = (chunk, skirt) => {
+        const p = chunk.geometry.getAttribute("position").array;
+        const from = skirt ? chunk.surfaceVertexCount : 0;
+        const to = skirt ? p.length / 3 : chunk.surfaceVertexCount;
+        const out = [];
+        for (let i = from; i < to; i += 1) {
+          if (Math.abs(p[i * 3 + axis] - at) < 1e-3) out.push([p[i * 3 + run], p[i * 3 + 1]]);
+        }
+        return out.sort((a, b) => a[0] - b[0]);
+      };
+      const fe = edgeOf(fine, false);
+      const ce = edgeOf(coarse, false);
+      const cs = edgeOf(coarse, true);
+      if (fe.length < 2 || ce.length < 2 || cs.length < 2) continue;
+      const interp = (pairs, t) => {
+        let j = 0;
+        while (j + 2 < pairs.length && pairs[j + 1][0] < t) j += 1;
+        const [a0, b0] = pairs[j], [a1, b1] = pairs[j + 1];
+        if (t < a0 - 1e-3 || t > a1 + 1e-3) return null;
+        return b0 + (b1 - b0) * ((t - a0) / ((a1 - a0) || 1));
+      };
+      for (const [t, y] of fe) {
+        const chord = interp(ce, t);
+        const bottom = interp(cs, t);
+        if (chord === null || bottom === null) continue;
+        boundaries += 1;
+        worst = Math.max(worst, Math.abs(y - chord));
+        // Positive means the fine surface dropped below where the coarse chunk's
+        // skirt ends: a hole the player can see the sky through.
+        worstUncovered = Math.max(worstUncovered, bottom - y);
+      }
+    }
+  }
+  assert.ok(boundaries > 20, `only ${boundaries} inter-LOD boundary vertices were compared`);
+  assert.ok(worstUncovered < 0,
+    `the worst inter-LOD gap is ${worst.toFixed(2)} m and the skirt stops ${worstUncovered.toFixed(2)} m short of covering it`);
+  terrain.dispose();
+});
+
+test("terrain: every chunk's LOD comes from its true distance to the road", () => {
+  const st = theStage();
+  const terrain = buildTerrainMesh(THREE, st, TEX);
+  const ranges = [95, 280, 720];
+  // Brute force: the hash grid the module uses may only search a few rings, and
+  // stopping at the first ring that yields anything returns a sample that is not
+  // the nearest, which then picks the wrong LOD.
+  const nearest = (px, pz) => {
+    let best = Infinity;
+    for (let i = 0; i < st.count; i += 1) {
+      const dx = st.x[i] - px, dz = st.z[i] - pz;
+      const d = dx * dx + dz * dz;
+      if (d < best) best = d;
+    }
+    return Math.sqrt(best);
+  };
+  for (const c of terrain.chunks) {
+    const d = nearest(c.x0 + c.size * 0.5, c.z0 + c.size * 0.5);
+    let want = 3;
+    if (d < ranges[0]) want = 0;
+    else if (d < ranges[1]) want = 1;
+    else if (d < ranges[2]) want = 2;
+    // The one-step restriction only ever refines a chunk, never coarsens it.
+    assert.ok(c.lod <= want,
+      `chunk ${c.cx},${c.cz} is ${d.toFixed(0)} m from the road and should be at most lod ${want}, but got ${c.lod}`);
+  }
+  terrain.dispose();
+});
+
+// ---- shared caches -------------------------------------------------------
+
+test("livery: two cars on one livery share a texture set that survives the first dispose", () => {
+  const record = newRecord();
+  const opts = { size: 64, canvasFactory: fakeCanvasFactory(record) };
+  const spec = carSpec("vireo-r2");
+  const a = buildCarMesh(THREE, spec, spec.livery, opts);
+  const b = buildCarMesh(THREE, spec, spec.livery, opts);
+  assert.equal(a.livery, b.livery, "the livery cache stopped sharing, so this test proves nothing");
+  let disposals = 0;
+  a.livery.map.addEventListener("dispose", () => { disposals += 1; });
+  a.dispose();
+  assert.equal(disposals, 0, "disposing one car freed the texture the other car is still drawing with");
+  b.dispose();
+  assert.equal(disposals, 1, "the last holder did not free the shared texture");
+  clearLiveryCache();
+});
+
+// The allocation itself is not observable from here — V8 scalar-replaces a
+// one-element array — so this pins the behaviour of the branch that replaced it
+// rather than claiming to measure the heap.
+test("setMudLevel writes straight through a bare material", () => {
+  const record = newRecord();
+  const spec = carSpec("vireo-r2");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+  const material = car.paintMaterials[0];
+  const ref = material.userData.mud;
+  setMudLevel(material, 0.42);
+  assert.equal(material.userData.mud, ref, "the mud uniform object was replaced");
+  assert.equal(ref.value, 0.42);
+  setMudLevel(material, 9);
+  assert.equal(ref.value, 1, "mud level was not clamped on the bare-material path");
+  setMudLevel(null, 0.5);
+  setMudLevel({}, 0.5);
+  car.dispose();
+  clearLiveryCache();
 });

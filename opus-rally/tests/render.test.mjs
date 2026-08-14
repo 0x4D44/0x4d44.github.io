@@ -610,6 +610,72 @@ test("every change costs a cooldown, so changes cannot come back to back", () =>
   assert.ok(minGap >= 44, `changes came ${minGap} frames apart`);
 });
 
+// A rAF-driven game on a 60 Hz panel reports the display's own quantum, not the
+// work it did: whether the frame took 4 ms or 15 ms of GPU time, the next one
+// arrives 16.67 ms later. An up-threshold below that quantum is unreachable, so
+// the scaler becomes a one-way ratchet and one hitch costs the player its
+// shadows, bloom, particles and a third of its resolution for the session.
+function vsyncSeries(as, seconds, hz = 60, dropOneIn = 0) {
+  const period = 1000 / hz;
+  const frames = Math.round((seconds * 1000) / period);
+  let ups = 0;
+  for (let i = 0; i < frames; i += 1) {
+    const ms = dropOneIn && i % dropOneIn === 0 ? period * 2 : period;
+    if (autoScalerSample(as, ms, ms / 1000) > 0) ups += 1;
+  }
+  return ups;
+}
+
+test("the up-threshold is reachable on a vsync-locked 60 Hz display", () => {
+  const as = createAutoScaler({ index: 2 });
+  assert.ok(as.upMs * (1 - as.tolerance) > 1000 / 60,
+    `an up-step needs ${as.upMs * (1 - as.tolerance)} ms, which 60 Hz vsync never delivers`);
+  assert.ok(as.upMs < as.downMs, "the thresholds crossed over");
+});
+
+test("a hitch costs a quality level, and a clean 60 Hz series wins it back", () => {
+  const as = createAutoScaler({ index: 2 });
+  // Four seconds of 25 fps: something real went wrong.
+  feed(as, 40, 100);
+  const dropped = as.downs;
+  assert.ok(dropped > 0, "the scaler ignored a sustained 25 fps");
+  const beforeIndex = as.index;
+  const beforeScale = as.scaleIndex;
+
+  // Then thirty seconds of honest 60 Hz with the odd dropped frame, which is
+  // what a healthy game on a healthy machine actually looks like.
+  const ups = vsyncSeries(as, 30, 60, 90);
+  assert.ok(ups > 0, "a clean 60 Hz series never won anything back: still a ratchet");
+  assert.ok(as.scaleIndex < beforeScale || as.index > beforeIndex,
+    "nothing was actually restored");
+  assert.equal(as.scaleIndex, 0, `resolution stuck at ${autoScalerScale(as)}`);
+  assert.equal(as.index, 3, `quality stuck at ${autoScalerLevel(as)}`);
+});
+
+test("recovery is paced, so the shadows do not blink on and off", () => {
+  // A device that cannot hold the level it just returned to: the frame time
+  // alternates between healthy and overloaded every few seconds.
+  const as = createAutoScaler({ index: 2 });
+  let changes = 0;
+  for (let cycle = 0; cycle < 12; cycle += 1) {
+    vsyncSeries(as, 3);
+    feed(as, 40, 90);
+    changes = as.changes;
+  }
+  // Without the escalating quiet period this alternation produces a change
+  // every window; the penalty has to hold it well under one per second.
+  assert.ok(changes < 24, `flapped ${changes} times over 12 alternations`);
+  assert.ok(as.upDelay > as.upDelayBase, "the penalty never grew");
+});
+
+test("a slow device still steps down without waiting out the up penalty", () => {
+  const as = createAutoScaler({ index: 3 });
+  feed(as, 60, 600);
+  assert.equal(as.index, 0, `did not bottom out: ${autoScalerLevel(as)}`);
+  assert.equal(as.scaleIndex, SCALE_STEPS.length - 1);
+  assert.equal(as.ups, 0);
+});
+
 test("a disabled or fixed-quality scaler leaves everything alone", () => {
   const as = createAutoScaler({ index: 2, enabled: false });
   feed(as, 90, 2000);
@@ -904,7 +970,7 @@ function stubRenderer(webgl2 = false) {
   return {
     calls,
     opusWebGL2: webgl2,
-    capabilities: { isWebGL2: webgl2 },
+    capabilities: { isWebGL2: webgl2, getMaxAnisotropy: () => 16 },
     domElement: null,
     outputColorSpace: null,
     toneMapping: null,
@@ -1221,6 +1287,45 @@ function fakeWeather(over = {}) {
   };
 }
 
+// ---- the weather rig is borrowed, not owned -------------------------------
+
+test("clearStage hands the weather rig back instead of leaving it in the scene", async () => {
+  const weatherMod = await import("../weather.js");
+  const stage = makeStraightStage(60);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+
+  const countLights = () => {
+    let n = 0;
+    api.scene.traverse((o) => { if (o.isLight) n += 1; });
+    return n;
+  };
+  const bare = countLights();
+
+  let first = 0;
+  // game.js builds a fresh weather rig into renderer.scene on every beginStage
+  // and never disposes one, so whoever ends a stage has to detach it. Measured
+  // before this: 10 lights, then 15, then 20, then 25 — every extra key light
+  // relighting the image and forcing a material recompile.
+  for (let race = 0; race < 4; race += 1) {
+    const weather = weatherMod.createWeather(THREE, api.scene, "overcast");
+    api.buildStage(stage, { car, weather });
+    const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+    api.update(frame, 1 / 60);
+    const lights = countLights();
+    if (race === 0) first = lights;
+    assert.equal(lights, first,
+      `race ${race + 1} is lit by ${lights} lights where race 1 had ${first}`);
+    assert.ok(lights > bare, "the weather rig was never in the scene to begin with");
+    api.clearStage();
+    assert.equal(countLights(), bare,
+      `clearStage left ${countLights() - bare} of the weather rig behind`);
+    assert.equal(api.scene.fog, null, "the weather's fog outlived its stage");
+  }
+  api.dispose();
+});
+
 test("the headlights come on at night, aim down the road, and show a beam in fog", () => {
   const stage = makeStraightStage(80);
   stage.world = fakeWorld(stage);
@@ -1396,6 +1501,238 @@ test("a mesh library that throws never takes the stage build with it", () => {
   api.dispose();
 });
 
+// ---- antialiasing ---------------------------------------------------------
+
+test("the scene target is multisampled where WebGL2 allows it", () => {
+  for (const level of ["medium", "high", "ultra"]) {
+    const { api } = makeRenderer({ webgl2: true, quality: level });
+    assert.equal(api.stats.post, true, `${level} lost the post chain`);
+    // Once post owns the image the canvas `antialias` attribute is dead — the
+    // back buffer only ever receives a full-screen quad — so the render target
+    // is the only place the resolve can happen.
+    assert.equal(api.stats.samples, qualitySettings(level).msaa,
+      `${level} rendered the scene into a non-multisampled target`);
+    assert.ok(api.stats.samples > 0);
+    api.dispose();
+  }
+});
+
+test("a device without WebGL2 gets a plain target rather than a broken one", () => {
+  const { api } = makeRenderer({ webgl2: false, quality: "ultra" });
+  assert.equal(api.stats.samples, 0, "asked WebGL1 for a multisampled target");
+  api.dispose();
+});
+
+test("the multisample count follows a quality change", () => {
+  const { api } = makeRenderer({ webgl2: true, quality: "ultra" });
+  assert.equal(api.stats.samples, qualitySettings("ultra").msaa);
+  api.setQuality("medium");
+  assert.equal(api.stats.samples, qualitySettings("medium").msaa,
+    "the target kept the old sample count");
+  // Post off means no render targets at all: 18 MB of VRAM on the one device
+  // that just told us it cannot afford them.
+  api.setQuality("low");
+  assert.equal(api.stats.post, false);
+  assert.equal(api.stats.samples, 0);
+  api.setQuality("high");
+  assert.equal(api.stats.samples, qualitySettings("high").msaa,
+    "the targets did not come back with the post chain");
+  api.dispose();
+});
+
+// ---- anisotropy -----------------------------------------------------------
+
+function texturedLibrary(THREE_) {
+  const tex = () => {
+    const t = new THREE_.DataTexture(new Uint8Array(4), 1, 1);
+    t.needsUpdate = true;
+    return t;
+  };
+  const mat = new THREE_.MeshStandardMaterial({
+    map: tex(), normalMap: tex(), roughnessMap: tex(),
+  });
+  const geo = new THREE_.PlaneGeometry(1, 1);
+  const make = (name) => {
+    const g = new THREE_.Group();
+    const m = new THREE_.Mesh(geo, mat);
+    m.name = name;
+    g.add(m);
+    return { group: g, dispose() {} };
+  };
+  return { material: mat, lib: { buildRoadMesh: () => make("road"), buildTerrainMesh: () => make("terrain") } };
+}
+
+test("adopted ground textures are filtered anisotropically at the quality asked for", () => {
+  const { material, lib } = texturedLibrary(THREE);
+  const stage = makeStraightStage(40);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true, quality: "high", meshes: lib });
+  api.buildStage(stage, { car: fakeCar(stage) });
+  // Trilinear filtering blurs along the wrong axis on a surface seen edge-on, so
+  // a road turns into a featureless band about 30 m out. The knob was declared
+  // at all four levels and read by nobody.
+  for (const key of ["map", "normalMap", "roughnessMap"]) {
+    assert.equal(material[key].anisotropy, qualitySettings("high").anisotropy,
+      `${key} was left at the default filter`);
+  }
+  api.setQuality("low");
+  assert.equal(material.map.anisotropy, qualitySettings("low").anisotropy,
+    "a quality change did not re-filter the textures");
+  api.setQuality("ultra");
+  // Capped by what the device can actually do, not by what the table asks for.
+  assert.equal(material.map.anisotropy, Math.min(qualitySettings("ultra").anisotropy, 16));
+  api.clearStage();
+  api.dispose();
+});
+
+// ---- scenery LOD on the shipping path -------------------------------------
+//
+// meshes.js hands back a finished group of InstancedMeshes, not a per-kind LOD
+// library, and each of those meshes carries one bounding sphere spanning the
+// whole stage — so three's frustum test is all-or-nothing and every tree in a
+// 9 km stage is submitted every frame, twice over with the shadow pass. These
+// tests drive that exact shape: if the shipping path ever stops taking the
+// placement over, the counts below go straight back to "all of it".
+
+function instancedSceneryLibrary(THREE_, items) {
+  const geo = new THREE_.ConeGeometry(1, 4, 5);
+  const mat = new THREE_.MeshStandardMaterial({ color: 0x2c4a22 });
+  const mesh = new THREE_.InstancedMesh(geo, mat, items.length);
+  mesh.name = "scenery-tree:0";
+  mesh.castShadow = true;
+  const m = new THREE_.Matrix4();
+  const p = new THREE_.Vector3();
+  const q = new THREE_.Quaternion();
+  const s = new THREE_.Vector3(1, 1, 1);
+  const colour = new THREE_.Color();
+  for (let i = 0; i < items.length; i += 1) {
+    p.set(items[i].x, items[i].y, items[i].z);
+    m.compose(p, q, s);
+    mesh.setMatrixAt(i, m);
+    colour.setRGB(1, 0.9, 0.95);
+    mesh.setColorAt(i, colour);
+  }
+  const group = new THREE_.Group();
+  group.name = "meshes.scenery";
+  group.add(mesh);
+  return { mesh, lib: { buildSceneryLibrary: () => ({ group, meshes: [{ key: "tree", mesh }], dispose() {} }) } };
+}
+
+function sceneryStage(n, spacing = 6) {
+  const stage = makeStraightStage(400);
+  stage.world = fakeWorld(stage);
+  stage.scenery = [];
+  for (let i = 0; i < n; i += 1) {
+    stage.scenery.push({
+      kind: "tree", x: (i % 2 ? 9 : -9), y: 0, z: i * spacing, yaw: 0, scale: 1, variant: 0,
+    });
+  }
+  stage.bounds = { minX: -60, maxX: 60, minZ: -60, maxZ: n * spacing + 60 };
+  return stage;
+}
+
+test("a pre-instanced scenery group is distance-culled, not drawn whole", () => {
+  const stage = sceneryStage(1200);
+  const { mesh, lib } = instancedSceneryLibrary(THREE, stage.scenery);
+  const { api } = makeRenderer({ webgl2: true, quality: "high", meshes: lib });
+  const car = fakeCar(stage);
+  car.pos.z = 0;
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  api.update(frame, 1 / 60);
+
+  const q = qualitySettings("high");
+  assert.ok(api.stats.draws > 0, "the shipping path issued no scenery at all");
+  assert.ok(mesh.count > 0, "every instance was culled");
+  assert.ok(mesh.count < stage.scenery.length,
+    `all ${mesh.count} instances were submitted — nothing is being culled`);
+  assert.ok(mesh.count <= q.sceneryBudget, `over budget: ${mesh.count}`);
+  // Nothing beyond the draw distance may be in the submitted set.
+  const far = q.sceneryDistance + 40;
+  const m = new THREE.Matrix4();
+  for (let i = 0; i < mesh.count; i += 1) {
+    mesh.getMatrixAt(i, m);
+    const dz = m.elements[14] - api.camera.position.z;
+    const dx = m.elements[12] - api.camera.position.x;
+    assert.ok(Math.hypot(dx, dz) <= far, `instance ${i} is ${Math.hypot(dx, dz)} m away`);
+  }
+  api.dispose();
+});
+
+test("the culled set follows the car down the stage", () => {
+  const stage = sceneryStage(1200);
+  const { mesh, lib } = instancedSceneryLibrary(THREE, stage.scenery);
+  const { api } = makeRenderer({ webgl2: true, quality: "medium", meshes: lib });
+  const car = fakeCar(stage);
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+
+  car.pos.z = 40;
+  for (let i = 0; i < 4; i += 1) api.update(frame, 1 / 60);
+  const near = new Set();
+  const m = new THREE.Matrix4();
+  for (let i = 0; i < mesh.count; i += 1) { mesh.getMatrixAt(i, m); near.add(Math.round(m.elements[14])); }
+  assert.ok(near.size > 4, "nothing was drawn near the start");
+
+  // Well past everything: the far end of the stage has no scenery within range.
+  // setCamera snaps the rig rather than waiting out its spring.
+  car.pos.z = 1200 * 6 + 4000;
+  api.setCamera("chase");
+  for (let i = 0; i < 4; i += 1) api.update(frame, 1 / 60);
+  assert.equal(mesh.count, 0, `${mesh.count} instances drawn with the stage 4 km behind`);
+  assert.equal(api.stats.draws, 0);
+  api.dispose();
+});
+
+test("the per-frame instance budget holds on a dense pre-instanced stage", () => {
+  const stage = sceneryStage(4000, 1.2);
+  const { mesh, lib } = instancedSceneryLibrary(THREE, stage.scenery);
+  const { api } = makeRenderer({ webgl2: true, quality: "low", meshes: lib });
+  const car = fakeCar(stage);
+  car.pos.z = 1200;
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 4; i += 1) api.update(frame, 1 / 60);
+  const q = qualitySettings("low");
+  assert.ok(api.stats.draws <= q.sceneryBudget, `issued ${api.stats.draws} over ${q.sceneryBudget}`);
+  assert.equal(mesh.count, api.stats.draws);
+  // The budget must buy the *nearest* scenery: walking the grid from its
+  // minimum corner spends it on whatever lies north-west of the car.
+  const m = new THREE.Matrix4();
+  let worst = 0;
+  for (let i = 0; i < mesh.count; i += 1) {
+    mesh.getMatrixAt(i, m);
+    worst = Math.max(worst, Math.abs(m.elements[14] - api.camera.position.z));
+  }
+  assert.ok(worst < q.sceneryDistance,
+    `the budget was spent on scenery ${worst} m away while nearer trees went undrawn`);
+  api.dispose();
+});
+
+test("the far edge of the scenery fades out rather than popping", () => {
+  const stage = sceneryStage(1200);
+  const { mesh, lib } = instancedSceneryLibrary(THREE, stage.scenery);
+  const { api } = makeRenderer({ webgl2: true, quality: "high", meshes: lib });
+  const car = fakeCar(stage);
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  api.update(frame, 1 / 60);
+  const q = qualitySettings("high");
+  const m = new THREE.Matrix4();
+  let sawFaded = false;
+  for (let i = 0; i < mesh.count; i += 1) {
+    mesh.getMatrixAt(i, m);
+    const d = Math.hypot(m.elements[12] - api.camera.position.x,
+      m.elements[14] - api.camera.position.z);
+    const scale = Math.hypot(m.elements[0], m.elements[1], m.elements[2]);
+    assert.ok(scale > 0 && scale <= 1.001, `instance ${i} scaled to ${scale}`);
+    if (d > q.sceneryDistance - 55) sawFaded = sawFaded || scale < 0.98;
+    else assert.ok(scale > 0.99, `a near instance was shrunk to ${scale}`);
+  }
+  assert.ok(sawFaded, "the outermost instances popped in at full size");
+  api.dispose();
+});
+
 // ---- integration with the modules that actually feed it -------------------
 //
 // meshes.js hands back descriptors — `{ group, …, dispose() }` — not bare
@@ -1439,6 +1776,22 @@ test("a stage built from the real stage.js, meshes.js and physics.js is adopted 
     for (let i = 0; i < 20; i += 1) api.update(frame, 1 / 60);
     assert.ok(api.stats.dust > 0, "a gravel stage under power threw no dust");
     assert.ok(api.shadowFit.ok && api.shadowFit.radius < 200);
+
+    // The real meshes.js scenery, on the path the game actually takes. A zero
+    // here means the LOD and budget system has fallen back to dead code again
+    // and the whole stage's trees are being submitted every frame.
+    let placed = 0;
+    group.traverse((o) => {
+      if (o.isInstancedMesh && /scenery/.test(o.name || "")) placed += o.instanceMatrix.count;
+    });
+    assert.ok(placed > 0, "meshes.js placed no scenery instances at all");
+    assert.ok(api.stats.draws > 0, "no scenery was issued on the shipping path");
+    assert.ok(api.stats.draws < placed,
+      `all ${placed} instances were submitted — nothing is distance-culled`);
+    assert.ok(api.stats.draws <= qualitySettings("medium").sceneryBudget,
+      `${api.stats.draws} instances is over the frame budget`);
+    assert.equal(api.stats.anisotropy, qualitySettings("medium").anisotropy,
+      "meshes.js's ground textures were left at the default filter");
 
     api.clearStage();
     assert.equal(group.children.length, 0, `cycle ${cycle}: stage group not emptied`);
