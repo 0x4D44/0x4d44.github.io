@@ -20,6 +20,7 @@ export const RUN_VERSION = 1;
 const ANGLE_SCALE = 32767 / Math.PI;
 const SPEED_SCALE = 100;          // cm/s in a Uint16 → 0..655 m/s
 const KEY_STRIDE = 16;
+const GHOST_CEILING = 400000;     // 2000 km at the default 5 m step
 
 const KEY_TIME = 0;
 const KEY_X = 1;
@@ -92,6 +93,7 @@ export function createRecorder(opts = {}) {
   const seconds = Math.max(10, opts.capacitySeconds ?? 420);
   const tickCap = Math.ceil(seconds * inputHz);
   const ghostCap = Math.ceil((opts.capacityMetres ?? 20000) / ghostStepM) + 4;
+  const tickCeiling = 4 * 60 * 60 * inputHz;
 
   let steer = new Int8Array(tickCap);
   let throttle = new Uint8Array(tickCap);
@@ -131,9 +133,13 @@ export function createRecorder(opts = {}) {
   let cursor = 0;       // next unwritten tick
   let nextGhostM = 0;
 
+  // The ceiling is tested before the length, not after. `ensure` rounds up to a
+  // power of two, so a guard that only ran when a grow was needed would let the
+  // recorder settle anywhere inside that overshoot — up to twice the limit it
+  // claims — and would leave `overflowed` false the whole way there.
   function growTicks(need) {
+    if (need > tickCeiling) { rec.overflowed = true; return false; }
     if (need <= steer.length) return true;
-    if (need > 4 * 60 * 60 * inputHz) { rec.overflowed = true; return false; }
     steer = ensure(steer, need);
     throttle = ensure(throttle, need);
     brake = ensure(brake, need);
@@ -146,8 +152,8 @@ export function createRecorder(opts = {}) {
   }
 
   function growGhost(need) {
+    if (need > GHOST_CEILING) { rec.overflowed = true; return false; }
     if (need <= gx.length) return true;
-    if (need > 400000) { rec.overflowed = true; return false; }
     gx = ensure(gx, need); gy = ensure(gy, need); gz = ensure(gz, need);
     gyaw = ensure(gyaw, need); gpitch = ensure(gpitch, need); groll = ensure(groll, need);
     gt = ensure(gt, need); gv = ensure(gv, need);
@@ -172,6 +178,10 @@ export function createRecorder(opts = {}) {
   function writeKeyframe(tick, st) {
     const slot = tick / keyStride;
     if (!Number.isInteger(slot)) return;
+    // Past the tick ceiling there is no tick for a keyframe to correct, and this
+    // track has no growth guard of its own — without this it would keep
+    // allocating for as long as the caller kept sampling.
+    if (tick > tickCeiling) return;
     const o = slot * KEY_STRIDE;
     if (o + KEY_STRIDE > keys.length) keys = ensure(keys, o + KEY_STRIDE);
     keys[o + KEY_TIME] = tick / inputHz;
@@ -240,7 +250,12 @@ export function createRecorder(opts = {}) {
       gyaw[idx] = quantAngle(lerpAngle(a.yaw ?? 0, b.yaw ?? 0, t));
       gpitch[idx] = quantAngle(lerpAngle(a.pitch ?? 0, b.pitch ?? 0, t));
       groll[idx] = quantAngle(lerpAngle(a.roll ?? 0, b.roll ?? 0, t));
-      gt[idx] = Math.max(0, Math.round(lerp(timeA, timeB, t) * 1000));
+      // distanceAtTime bisects this track, so it has to be non-decreasing. A
+      // paused or rewound frame — a stalled tab, a clock the caller reset — can
+      // hand back a smaller time at a greater distance, and the bisect would
+      // then answer with the wrong distance rather than merely an odd one.
+      const ms = Math.max(0, Math.round(lerp(timeA, timeB, t) * 1000));
+      gt[idx] = idx > 0 ? Math.max(gt[idx - 1], ms) : ms;
       gv[idx] = clamp(Math.round(lerp(a.speed ?? 0, b.speed ?? 0, t) * SPEED_SCALE), 0, 65535);
       if (idx + 1 > rec.ghostCount) rec.ghostCount = idx + 1;
       nextGhostM += ghostStepM;

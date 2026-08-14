@@ -174,19 +174,38 @@ try {
     const info = await page.evaluate(`(async () => {
       const mod = await import("/opus-rally/stage.js");
       const pn = await import("/opus-rally/pacenotes.js");
-      const def = mod.STAGE_BOOK.find((s) => s.id === ${JSON.stringify(id)});
-      const st = mod.generateStage(def.seed, def);
+      // stageFromBook, not generateStage(def.seed, def): a book entry keeps its
+      // generator parameters under .params, so spreading the entry itself builds
+      // a generic default road instead of the stage the player drives — wrong
+      // surface, wrong length, wrong jumps, and a reverse entry not reversed at
+      // all. That is exactly how two unplayable reverse stages passed this gate.
+      const st = mod.stageFromBook(${JSON.stringify(id)});
       const notes = pn.derivePacenotes(st, {});
       let bad = 0;
       for (let i = 0; i < st.count; i += 1) {
         if (!Number.isFinite(st.x[i]) || !Number.isFinite(st.y[i]) || !Number.isFinite(st.z[i])) bad += 1;
       }
+      // The start pose is what resetCar() is handed, so a start that is not on
+      // its own road is a stage nobody can drive.
+      const w = mod.stageWorld(st);
+      const p = w.project(st.start.x, st.start.z, 0, {});
+      const entry = mod.STAGE_BOOK.find((e) => e.id === ${JSON.stringify(id)});
+      const band = entry?.lengthBand ?? null;
       return { id: st.id, name: st.name, length: st.length, notes: notes.length,
-               features: st.features.length, bad };
+               features: st.features.length, bad,
+               startOnRoad: Math.abs(p.s ?? 0),
+               band,
+               inBand: !band || (st.length >= band[0] && st.length <= band[1]) };
     })()`);
     assert.equal(info.bad, 0, `${id}: ${info.bad} non-finite centreline samples`);
     assert.ok(info.length > 3000 && info.length < 20000,
       `${id}: implausible length ${Math.round(info.length)} m`);
+    assert.ok(info.inBand,
+      `${id}: ${Math.round(info.length)} m is outside its declared band `
+      + `${info.band?.[0]}-${info.band?.[1]} m`);
+    assert.ok(info.startOnRoad < 5,
+      `${id}: the start line is ${Math.round(info.startOnRoad)} m from the road — `
+      + `the car would spawn in the scenery`);
     assert.ok(info.notes > 15, `${id}: only ${info.notes} pacenotes`);
     assert.ok(info.features > 3, `${id}: only ${info.features} named features`);
     process.stderr.write(`  ${info.id.padEnd(22)} ${(info.length / 1000).toFixed(2)} km  `

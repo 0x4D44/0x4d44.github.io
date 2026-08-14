@@ -129,11 +129,15 @@ function pushBox(b, cx, cy, cz, sx, sy, sz, col, uvScale = 1) {
 // bonnets, roofs, wings and anything else that is a box only to a mathematician.
 function pushTaper(b, cx, cy, cz, sxBot, szBot, sxTop, szTop, y0, y1, col, shiftZ = 0) {
   const [r, g, bl] = col;
+  // The ring runs counter-clockwise seen from above, which is what makes the
+  // four side walls and both caps come out facing outward; the clockwise order
+  // this used to have turned every face inside out and a FrontSide material
+  // culled the scoop, the louvres, the mirrors and the seats away entirely.
   const corners = (sx, sz, y, dz) => ([
-    [cx - sx * 0.5, y, cz - sz * 0.5 + dz],
-    [cx + sx * 0.5, y, cz - sz * 0.5 + dz],
-    [cx + sx * 0.5, y, cz + sz * 0.5 + dz],
     [cx - sx * 0.5, y, cz + sz * 0.5 + dz],
+    [cx + sx * 0.5, y, cz + sz * 0.5 + dz],
+    [cx + sx * 0.5, y, cz - sz * 0.5 + dz],
+    [cx - sx * 0.5, y, cz - sz * 0.5 + dz],
   ]);
   const lo = corners(sxBot, szBot, cy + y0, 0);
   const hi = corners(sxTop, szTop, cy + y1, shiftZ);
@@ -153,11 +157,15 @@ function pushTaper(b, cx, cy, cz, sxBot, szBot, sxTop, szTop, y0, y1, col, shift
 function pushCylinder(b, cx, cy, cz, r0, r1, len, sides, axis, col, caps = true) {
   const [cr, cg, cb] = col;
   const half = len * 0.5;
+  // The two in-plane axes have to pair with `along` the same way round for every
+  // choice of axis, or the ring runs backwards and the whole cylinder — walls and
+  // both caps — comes out inside out. It did, on "z", which is the axis the
+  // headlamp discs, the fallen logs and the stump branch are built on.
   const place = (rad, along, ang) => {
     const s = Math.sin(ang) * rad, c = Math.cos(ang) * rad;
     if (axis === "y") return [cx + s, cy + along, cz + c];
     if (axis === "x") return [cx + along, cy + c, cz + s];
-    return [cx + s, cy + c, cz + along];
+    return [cx + c, cy + s, cz + along];
   };
   const ringLo = [], ringHi = [];
   for (let i = 0; i < sides; i += 1) {
@@ -494,6 +502,11 @@ function heightField(def, size, seed) {
   return h;
 }
 
+// Ground textures are read at a grazing angle almost everywhere, where trilinear
+// filtering alone collapses them to their average colour a couple of hundred
+// metres out. The renderer clamps this to whatever the hardware supports.
+const SURFACE_ANISOTROPY = 8;
+
 function buildTextureSet(THREE, name, size, seed) {
   const def = TEXTURE_DEFS[name] || TEXTURE_DEFS.gravel;
   const h = heightField(def, size, seed);
@@ -501,6 +514,7 @@ function buildTextureSet(THREE, name, size, seed) {
   const colour = new Uint8Array(px * 4);
   const rough = new Uint8Array(px * 4);
   const normal = new Uint8Array(px * 4);
+  const mean = [0, 0, 0];
   const at = (x, y) => h[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
@@ -511,6 +525,7 @@ function buildTextureSet(THREE, name, size, seed) {
       const o = i * 4;
       for (let c = 0; c < 3; c += 1) {
         const base = def.albedo[c] * shade + def.tint[c] * (v - 0.5) * 2 + jitter * def.albedo[c];
+        mean[c] += saturate(base);
         colour[o + c] = linearToSrgbByte(base);
       }
       colour[o + 3] = def.alpha ? Math.round(saturate(v * 1.6 - 0.18) * 255) : 255;
@@ -535,6 +550,7 @@ function buildTextureSet(THREE, name, size, seed) {
     t.generateMipmaps = true;
     t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
+    t.anisotropy = SURFACE_ANISOTROPY;
     if (srgb && THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
     t.needsUpdate = true;
     return t;
@@ -546,7 +562,27 @@ function buildTextureSet(THREE, name, size, seed) {
     roughnessMap: mk(rough, false),
     normalMap: mk(normal, false),
     height: h,
+    // What this map contributes to the lit albedo on its own, per channel. A
+    // mesh that also carries an albedo in its vertex colours divides this out
+    // (see neutraliseAlbedo) instead of multiplying the two together.
+    albedoMean: Object.freeze([
+      Math.max(1e-4, mean[0] / px),
+      Math.max(1e-4, mean[1] / px),
+      Math.max(1e-4, mean[2] / px),
+    ]),
   });
+}
+
+// Vertex colour and the colour map each carry a full albedo, and a
+// MeshStandardMaterial multiplies them: conifer foliage came out at 0.007 linear
+// against 0.04-0.09 for the real thing, which is why the trees photographed as
+// flat black cut-outs. Scaling material.color by the reciprocal of the map's own
+// mean makes the map pure detail and leaves the vertex colour as the one albedo.
+function neutraliseAlbedo(material, set) {
+  if (!material || !set || !material.color) return material;
+  const m = set.albedoMean;
+  material.color.setRGB(1 / m[0], 1 / m[1], 1 / m[2]);
+  return material;
 }
 
 const textureCache = new Map();
@@ -862,7 +898,7 @@ export function liveryTexture(THREE, livery, opts = {}) {
   const size = opts.size ?? 1024;
   const key = `${spec.team || ""}|${spec.base}|${spec.stripe}|${spec.accent}|${spec.pattern}|${spec.number}|${size}|${opts.canvasFactory ? "fake" : "real"}`;
   const hit = liveryCache.get(key);
-  if (hit) return hit;
+  if (hit) { hit.refs += 1; return hit; }
 
   const seed = stringSeed(`${spec.team || "team"}|${spec.pattern || "stripe"}|${spec.number ?? 0}`);
   const W = size, H = Math.max(8, Math.round(size * 0.5));
@@ -892,11 +928,18 @@ export function liveryTexture(THREE, livery, opts = {}) {
     canvas: colourCanvas,
     roughCanvas,
     mudCanvas,
-    dispose() {
+    // The set is shared, so a car and its ghost hold the same GPU textures.
+    // Disposing on the first release would leave the survivor rendering with
+    // freed maps, so the last holder out frees them.
+    refs: 1,
+    dispose(force = false) {
+      result.refs -= 1;
+      if (!force && result.refs > 0) return;
       map?.dispose();
       roughnessMap?.dispose();
       mudMap?.dispose();
       normalMap.dispose();
+      result.refs = 0;
       liveryCache.delete(key);
     },
   };
@@ -905,7 +948,7 @@ export function liveryTexture(THREE, livery, opts = {}) {
 }
 
 export function clearLiveryCache() {
-  for (const v of Array.from(liveryCache.values())) v.dispose();
+  for (const v of Array.from(liveryCache.values())) v.dispose(true);
   liveryCache.clear();
 }
 
@@ -948,7 +991,10 @@ function worldOf(stage) {
 function centrelineIndex(stage) {
   const cell = 40;
   const buckets = new Map();
-  const key = (cx, cz) => cx * 73856093 ^ cz * 19349663;
+  // Exact, not a hash. An XOR of two large multiples collides, and a collision
+  // hands a query a sample from somewhere else entirely — which then reads as a
+  // huge distance to the road and drops a near chunk to the coarsest terrain LOD.
+  const key = (cx, cz) => (cx + 1048576) * 4194304 + (cz + 1048576);
   for (let i = 0; i < stage.count; i += 1) {
     const cx = Math.floor(stage.x[i] / cell), cz = Math.floor(stage.z[i] / cell);
     const k = key(cx, cz);
@@ -961,7 +1007,11 @@ function centrelineIndex(stage) {
     nearest(x, z) {
       const cx = Math.floor(x / cell), cz = Math.floor(z / cell);
       let best = -1, bestD = Infinity;
-      for (let r = 1; r <= 3 && best < 0; r += 1) {
+      // A ring that yields a hit does not yet prove that hit is nearest: a
+      // sample in a corner cell can be further away than one in the next ring
+      // out. Keep expanding until the best distance beats what the next ring
+      // could possibly hold, since this distance picks the terrain LOD.
+      for (let r = 1; r <= 6; r += 1) {
         for (let ox = -r; ox <= r; ox += 1) {
           for (let oz = -r; oz <= r; oz += 1) {
             if (r > 1 && Math.abs(ox) < r && Math.abs(oz) < r) continue;
@@ -975,6 +1025,8 @@ function centrelineIndex(stage) {
             }
           }
         }
+        const guaranteed = (r - 1) * cell;
+        if (best >= 0 && bestD <= guaranteed * guaranteed) break;
       }
       if (best < 0) {
         for (let i = 0; i < stage.count; i += 1) {
@@ -1152,9 +1204,13 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     // Positive camber banks the surface down to the left, so the right-hand
     // lateral axis tilts up by the same angle.
     const ca = Math.cos(camber), sa = Math.sin(camber);
-    const ux = ry * t[2] - rz * t[1];
-    const uy = rz * t[0] - rx * t[2];
-    const uz = rx * t[1] - ry * t[0];
+    // Up is tangent x right, not right x tangent: the other order is -up, which
+    // turned the whole section upside down (ruts standing proud of the crown,
+    // ditches as banks, camber backwards) and pointed every road normal at the
+    // ground.
+    const ux = t[1] * rz - t[2] * ry;
+    const uy = t[2] * rx - t[0] * rz;
+    const uz = t[0] * ry - t[1] * rx;
     const ul = Math.hypot(ux, uy, uz) || 1;
     const upx = ux / ul, upy = uy / ul, upz = uz / ul;
     const tiltRx = rx * ca + upx * sa;
@@ -1226,8 +1282,10 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       rowIdx.push(idx);
     }
     if (prevRow) {
+      // Slots run left to right and stations run forward, so this order is the
+      // one whose face normal comes out along +up rather than into the ground.
       for (let k = 0; k + 1 < ROAD_SLOTS.length; k += 1) {
-        quad(b, prevRow[k], prevRow[k + 1], rowIdx[k + 1], rowIdx[k]);
+        quad(b, prevRow[k + 1], prevRow[k], rowIdx[k], rowIdx[k + 1]);
       }
     }
     prevRow = rowIdx;
@@ -1244,7 +1302,9 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   }
 
   const tex = surfaceTexture(THREE, "gravel", { size: opts.textureSize ?? 256, seed: stage.seed ?? 0 });
-  const material = opts.material || new THREE.MeshStandardMaterial({
+  // Nothing here writes to `tex`. It is handed to every other caller holding the
+  // same key, and its wrapping and filtering are settled where it is built.
+  const material = opts.material || neutraliseAlbedo(new THREE.MeshStandardMaterial({
     vertexColors: true,
     map: tex.map,
     normalMap: tex.normalMap,
@@ -1256,12 +1316,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     polygonOffset: true,
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
-  });
-  if (material.map) {
-    material.map.repeat.set(1, 1);
-    material.map.wrapS = THREE.RepeatWrapping;
-    material.map.wrapT = THREE.RepeatWrapping;
-  }
+  }), tex);
 
   const group = new THREE.Group();
   group.name = "road";
@@ -1388,7 +1443,6 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
     const nx = Math.ceil(spanX / chunkSize) + 1;
     const nz = Math.ceil(spanZ / chunkSize) + 1;
     const list = [];
-    let triangles = 0;
     for (let cz = 0; cz < nz; cz += 1) {
       for (let cx = 0; cx < nx; cx += 1) {
         const x0 = originX + cx * chunkSize;
@@ -1399,11 +1453,29 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
         if (d < lodRanges[0]) lod = 0;
         else if (d < lodRanges[1]) lod = 1;
         else if (d < lodRanges[2]) lod = 2;
-        const stride = 1 << lod;
-        const cells = 32 >> lod;
-        triangles += cells * cells * 2 + cells * 4 * 2;
-        list.push({ cx, cz, x0, z0, lod, stride, cells, chunkSize });
+        list.push({ cx, cz, x0, z0, lod, stride: 1, cells: 32, chunkSize });
       }
+    }
+    // Two LOD steps between neighbours puts a T-junction tens of metres deep at
+    // the boundary, which the skirt then has to hide as a dark wall. One step
+    // bounds the gap to a single lattice cell, so the skirt is a backstop rather
+    // than the thing holding the world together.
+    const at = (cx, cz) => (cx < 0 || cz < 0 || cx >= nx || cz >= nz ? null : list[cz * nx + cx]);
+    for (let pass = 0; pass < 4; pass += 1) {
+      let changed = false;
+      for (const c of list) {
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nb = at(c.cx + dx, c.cz + dz);
+          if (nb && nb.lod > c.lod + 1) { nb.lod = c.lod + 1; changed = true; }
+        }
+      }
+      if (!changed) break;
+    }
+    let triangles = 0;
+    for (const c of list) {
+      c.stride = 1 << c.lod;
+      c.cells = 32 >> c.lod;
+      triangles += c.cells * c.cells * 2 + c.cells * 4 * 2;
     }
     return { step, chunkSize, originX, originZ, nx, nz, list, triangles };
   }
@@ -1478,27 +1550,44 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
     }
     const surfaceVertexCount = b.n;
 
-    // Skirt: a coarse chunk sits a little below its fine neighbour between
-    // shared lattice points, and this hides that gap without moving a vertex.
-    const skirtDepth = L0 * stride * 1.4 + 1.2;
+    // Skirt: a finer neighbour puts vertices where this chunk has only a chord,
+    // and on steep ground that T-junction is metres deep. A fixed drop scaled to
+    // the lattice does not know that, so each skirt vertex is dropped below the
+    // deepest thing the finest possible lattice holds within a cell either side
+    // of it. Both ends of a span see the whole span, so the interpolated bottom
+    // edge is under every vertex a neighbour can introduce along it.
+    const skirtClear = L0 * 1.4 + 1.2;
     const rim = [];
-    for (let ix = 0; ix <= cells; ix += 1) rim.push(grid[0][ix]);
-    for (let jz = 1; jz <= cells; jz += 1) rim.push(grid[jz][cells]);
-    for (let ix = cells - 1; ix >= 0; ix -= 1) rim.push(grid[cells][ix]);
-    for (let jz = cells - 1; jz >= 1; jz -= 1) rim.push(grid[jz][0]);
+    const push = (id, li, lj, both) => rim.push({ id, li, lj, both });
+    for (let ix = 0; ix <= cells; ix += 1) push(grid[0][ix], i0 + ix * stride, j0, ix === 0 || ix === cells);
+    for (let jz = 1; jz <= cells; jz += 1) push(grid[jz][cells], i0 + cells * stride, j0 + jz * stride, jz === cells);
+    for (let ix = cells - 1; ix >= 0; ix -= 1) push(grid[cells][ix], i0 + ix * stride, j0 + cells * stride, ix === 0);
+    for (let jz = cells - 1; jz >= 1; jz -= 1) push(grid[jz][0], i0, j0 + jz * stride, false);
+    const deepestNear = (li, lj, alongI, both) => {
+      let m = Infinity;
+      for (let d = -stride; d <= stride; d += 1) {
+        if (alongI || both) { const v = field.h(li + d, lj); if (v < m) m = v; }
+        if (!alongI || both) { const v = field.h(li, lj + d); if (v < m) m = v; }
+      }
+      return m;
+    };
     const skirt = [];
-    for (const id of rim) {
-      const px = b.pos[id * 3], py = b.pos[id * 3 + 1], pz = b.pos[id * 3 + 2];
-      const sid = vert(b, px, py - skirtDepth, pz, px * 0.06, pz * 0.06,
+    for (let k = 0; k < rim.length; k += 1) {
+      const { id, li, lj, both } = rim[k];
+      const px = b.pos[id * 3], pz = b.pos[id * 3 + 2];
+      // The first and third runs of the rim vary in i, the second and fourth in j.
+      const alongI = k <= cells || (k > cells * 2 && k <= cells * 3);
+      const floor = deepestNear(li, lj, alongI, both);
+      const sid = vert(b, px, floor - skirtClear, pz, px * 0.06, pz * 0.06,
         b.col[id * 3] * 0.7, b.col[id * 3 + 1] * 0.7, b.col[id * 3 + 2] * 0.7);
       b.nor.push(b.nor[id * 3], b.nor[id * 3 + 1], b.nor[id * 3 + 2]);
       b.extra.splat.data.push(1, 0, 0, 0);
       skirt.push(sid);
     }
     for (let k = 0; k + 1 < rim.length; k += 1) {
-      quad(b, rim[k + 1], rim[k], skirt[k], skirt[k + 1]);
+      quad(b, rim[k + 1].id, rim[k].id, skirt[k], skirt[k + 1]);
     }
-    quad(b, rim[0], rim[rim.length - 1], skirt[skirt.length - 1], skirt[0]);
+    quad(b, rim[0].id, rim[rim.length - 1].id, skirt[skirt.length - 1], skirt[0]);
 
     const geometry = finish(THREE, b, { explicitNormals: true });
     triangles += triangleCount(geometry);
@@ -1510,18 +1599,14 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
   }
 
   const tex = surfaceTexture(THREE, "grass", { size: opts.textureSize ?? 256, seed: (stage.seed ?? 0) + 3 });
-  const material = opts.material || new THREE.MeshStandardMaterial({
+  const material = opts.material || neutraliseAlbedo(new THREE.MeshStandardMaterial({
     vertexColors: true,
     map: tex.map,
     normalMap: tex.normalMap,
     roughnessMap: tex.roughnessMap,
     roughness: 1,
     metalness: 0,
-  });
-  if (material.map) {
-    material.map.wrapS = THREE.RepeatWrapping;
-    material.map.wrapT = THREE.RepeatWrapping;
-  }
+  }), tex);
 
   const group = new THREE.Group();
   group.name = "terrain";
@@ -1700,14 +1785,21 @@ varying vec2 vOpusUv;`);
   return material;
 }
 
+// Called once a frame, so neither branch may allocate: the single-material case
+// writes straight through rather than wrapping the material in an array.
 export function setMudLevel(target, value) {
   const v = value < 0 ? 0 : value > 1 ? 1 : value;
-  const mats = target && target.paintMaterials ? target.paintMaterials : [target];
-  for (let i = 0; i < mats.length; i += 1) {
-    const m = mats[i];
-    if (m && m.userData && m.userData.mud) m.userData.mud.value = v;
+  if (!target) return;
+  const mats = target.paintMaterials;
+  if (mats) {
+    for (let i = 0; i < mats.length; i += 1) {
+      const m = mats[i];
+      if (m && m.userData && m.userData.mud) m.userData.mud.value = v;
+    }
+  } else if (target.userData && target.userData.mud) {
+    target.userData.mud.value = v;
   }
-  if (target && target.state) target.state.mud = v;
+  if (target.state) target.state.mud = v;
 }
 
 // Allocation-free: every write below is a number into a preallocated array or a
@@ -2222,13 +2314,16 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   const plastic = injectDamageShader(new THREE.MeshStandardMaterial({
     color: 0x14161a, roughness: 0.78, metalness: 0.02, vertexColors: true,
   }), paintTex.mudMap);
+  // White where the geometry already carries the colour in its vertices: these
+  // two multiplied a dark material colour by a dark vertex colour and landed at
+  // 0.001 linear, blacker than any real surface.
   const glassMat = new THREE.MeshStandardMaterial({
-    color: 0x0a0f13, roughness: 0.06, metalness: 0.0,
+    color: 0xffffff, roughness: 0.06, metalness: 0.0,
     transparent: true, opacity: 0.34, side: THREE.DoubleSide, vertexColors: true,
   });
   const cageMat = new THREE.MeshStandardMaterial({ color: 0xdedee2, roughness: 0.42, metalness: 0.55, vertexColors: true });
   const metalMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.35, metalness: 0.85, vertexColors: true });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.85, metalness: 0.05, vertexColors: true });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05, vertexColors: true });
   const lampMat = new THREE.MeshStandardMaterial({
     color: 0xfff4dc, roughness: 0.12, metalness: 0.0,
     emissive: 0xfff0d0, emissiveIntensity: 1.0, vertexColors: true,
@@ -2717,10 +2812,10 @@ function sceneryPrototypes(THREE, stage, opts) {
   const rockTex = surfaceTexture(THREE, "rock", { size, seed });
   const concreteTex = surfaceTexture(THREE, "concrete", { size, seed });
 
-  const std = (map, over) => new THREE.MeshStandardMaterial(Object.assign({
-    map: map.map, normalMap: map.normalMap, roughnessMap: map.roughnessMap,
+  const std = (set, over) => neutraliseAlbedo(new THREE.MeshStandardMaterial(Object.assign({
+    map: set.map, normalMap: set.normalMap, roughnessMap: set.roughnessMap,
     roughness: 1, metalness: 0, vertexColors: true,
-  }, over));
+  }, over)), set);
 
   const materials = {
     tree: std(foliageTex),
@@ -2940,13 +3035,29 @@ const PROP_ALIASES = Object.freeze({
   cone: "cone", marker: "cone",
 });
 
+// A gantry carries its wordmark as a second instanced mesh at the same pose, so
+// the banner inherits the gantry's placement and has to be checked against it.
+export const PROP_BANNERS = Object.freeze({ gantryStart: "startBanner", gantryFinish: "finishBanner" });
+
+// The prototypes whose material is a canvas with lettering or a directional
+// glyph on it. Which way each of these faces is the whole of its usefulness, so
+// tests/meshes.test.mjs walks this list against a real stage's placements.
+export const LETTERED_PROTOTYPES = Object.freeze([
+  "startBanner", "finishBanner", "serviceBanner", "flyingFinish",
+  "chevron", "arrowLeft", "arrowRight", "distanceBoard", "cautionTriangle",
+]);
+
 const signCache = new Map();
 
 // Canvas is the only way to get a stencil numeral or an invented wordmark onto a
 // board. Without one (headless, no factory) the board falls back to flat colour
 // rather than failing the build.
 function signTexture(THREE, opts, spec) {
-  const key = `${spec.kind}|${spec.text || ""}|${spec.bg}|${spec.fg}`;
+  // Every field that changes a pixel, or two boards that differ only in one of
+  // them collide: chevron, arrowLeft and arrowRight differ only in `dir`, and
+  // the left-hand arrow was being served the right-hand one's texture.
+  const key = `${spec.kind}|${spec.text || ""}|${spec.sub || ""}|${spec.bg}|${spec.fg}`
+    + `|${spec.dir ?? 1}|${spec.w ?? 256}|${spec.h ?? 256}|${spec.textScale ?? ""}`;
   const hit = signCache.get(key);
   if (hit) return hit;
   const W = spec.w ?? 256, H = spec.h ?? 256;
@@ -3005,8 +3116,21 @@ export function clearSignCache() {
   signCache.clear();
 }
 
+// The sign canvas is clamped at its edges, so a lettered face has to map it
+// exactly once. pushBox's UVs run 0..size in metres, which cropped the top of
+// every board and smeared the last texel column across the right 17% of a
+// chevron. Both faces carry the sign with u running to that side's own right,
+// so it reads correctly whichever way the board has been turned.
 function boardGeometry(b, w, h, y0, col, postCol, posts = 2) {
-  pushBox(b, 0, y0 + h * 0.5, 0, w, h, 0.05, col);
+  const hx = w * 0.5, y1 = y0 + h, hz = 0.025;
+  pushQuad3(b, [-hx, y0, hz], [hx, y0, hz], [hx, y1, hz], [-hx, y1, hz], col);
+  pushQuad3(b, [hx, y0, -hz], [-hx, y0, -hz], [-hx, y1, -hz], [hx, y1, -hz], col);
+  // The rim takes a corner of the canvas, which is background on every sign.
+  const rim = 0.02;
+  pushQuad3(b, [-hx, y1, hz], [hx, y1, hz], [hx, y1, -hz], [-hx, y1, -hz], col, rim, rim);
+  pushQuad3(b, [hx, y0, hz], [-hx, y0, hz], [-hx, y0, -hz], [hx, y0, -hz], col, rim, rim);
+  pushQuad3(b, [hx, y0, hz], [hx, y0, -hz], [hx, y1, -hz], [hx, y1, hz], col, rim, rim);
+  pushQuad3(b, [-hx, y0, -hz], [-hx, y0, hz], [-hx, y1, hz], [-hx, y1, -hz], col, rim, rim);
   const px = posts === 1 ? [0] : [-w * 0.34, w * 0.34];
   for (const x of px) pushBox(b, x, y0 * 0.5, -0.04, 0.07, y0, 0.07, postCol);
 }
@@ -3062,13 +3186,13 @@ function propPrototypes(THREE, opts) {
   const concreteTex = surfaceTexture(THREE, "concrete", { size, seed: 11 });
   const dirtTex = surfaceTexture(THREE, "dirt", { size, seed: 11 });
 
-  const plainMat = new THREE.MeshStandardMaterial({
+  const plainMat = neutraliseAlbedo(new THREE.MeshStandardMaterial({
     map: concreteTex.map, normalMap: concreteTex.normalMap, roughnessMap: concreteTex.roughnessMap,
     roughness: 1, metalness: 0, vertexColors: true,
-  });
-  const strawMat = new THREE.MeshStandardMaterial({
+  }), concreteTex);
+  const strawMat = neutraliseAlbedo(new THREE.MeshStandardMaterial({
     map: dirtTex.map, normalMap: dirtTex.normalMap, roughness: 1, metalness: 0, vertexColors: true,
-  });
+  }), dirtTex);
   const clothMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, vertexColors: true, side: THREE.DoubleSide });
   const materials = { plain: plainMat, straw: strawMat, cloth: clothMat };
   const signMats = [];
@@ -3095,12 +3219,18 @@ function propPrototypes(THREE, opts) {
   const post = [0.28, 0.28, 0.30];
   const white = [1, 1, 1];
 
+  // A gantry is placed square to the road at the road's own heading, so the car
+  // meets its local -Z face. The banner hangs on that side with u running to the
+  // driver's right; on the +Z side it read back to front, which is what put a
+  // mirrored wordmark over the start line. It clears the frame's vertical
+  // stiffeners, which have a 45 mm radius at z = 0.
+  const bannerFace = (b) => pushQuad3(b,
+    [4.2, 4.6, -0.06], [-4.2, 4.6, -0.06], [-4.2, 5.35, -0.06], [4.2, 5.35, -0.06], white);
+
   add("gantryStart", plainMat, (b) => gantryGeometry(b, false));
   add("gantryFinish", plainMat, (b) => gantryGeometry(b, true));
-  add("startBanner", signMaterial({ kind: "text", text: EVENT_BRANDING.event, sub: "START", bg: "#0d2b57", fg: "#f4f4f0", w: 512, h: 128, textScale: 0.34 }),
-    (b) => pushQuad3(b, [-4.2, 4.6, 0.02], [4.2, 4.6, 0.02], [4.2, 5.35, 0.02], [-4.2, 5.35, 0.02], white));
-  add("finishBanner", signMaterial({ kind: "text", text: "FINISH", sub: EVENT_BRANDING.subtitle, bg: "#8c1230", fg: "#f4f4f0", w: 512, h: 128, textScale: 0.34 }),
-    (b) => pushQuad3(b, [-4.2, 4.6, 0.02], [4.2, 4.6, 0.02], [4.2, 5.35, 0.02], [-4.2, 5.35, 0.02], white));
+  add("startBanner", signMaterial({ kind: "text", text: EVENT_BRANDING.event, sub: "START", bg: "#0d2b57", fg: "#f4f4f0", w: 512, h: 128, textScale: 0.34 }), bannerFace);
+  add("finishBanner", signMaterial({ kind: "text", text: "FINISH", sub: EVENT_BRANDING.subtitle, bg: "#8c1230", fg: "#f4f4f0", w: 512, h: 128, textScale: 0.34 }), bannerFace);
   add("flyingFinish", signMaterial({ kind: "text", text: "FF", sub: "FLYING FINISH", bg: "#f2f2ee", fg: "#101216", w: 256, h: 256 }),
     (b) => boardGeometry(b, 1.0, 1.0, 1.1, white, post, 1));
   add("chevron", signMaterial({ kind: "chevron", bg: "#f0b400", fg: "#141414", dir: 1 }),
@@ -3199,7 +3329,7 @@ export function buildPropLibrary(THREE, opts = {}) {
         bucket.push(it);
       }
       // Gantries carry their banner as a second instanced mesh at the same pose.
-      const banners = { gantryStart: "startBanner", gantryFinish: "finishBanner" };
+      const banners = PROP_BANNERS;
       for (const [gk, bk] of Object.entries(banners)) {
         const src = buckets.get(gk);
         if (src) buckets.set(bk, src.slice());
