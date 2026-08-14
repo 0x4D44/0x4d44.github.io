@@ -53,7 +53,20 @@ import {
   createRenderer,
 } from "../render.js";
 
-const RENDER_SRC = readFileSync(fileURLToPath(new URL("../render.js", import.meta.url)), "utf8");
+// Normalised to LF. Git hands this file out with CRLF endings on Windows, and
+// the source scan below anchors on a newline-brace-newline sequence to find a
+// function's closing brace. Against CRLF that anchor never matches, the scan
+// silently falls back to a blind 4000-character window that spills into the
+// following functions, and the test then reports whatever they happen to
+// contain. It passed in the authoring worktree and failed in a fresh checkout
+// of the very same commit.
+const RENDER_SRC = normaliseEol(
+  readFileSync(fileURLToPath(new URL("../render.js", import.meta.url)), "utf8"),
+);
+
+function normaliseEol(text) {
+  return text.split("\r\n").join("\n");
+}
 
 // ---- helpers -------------------------------------------------------------
 

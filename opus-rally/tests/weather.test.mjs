@@ -143,6 +143,7 @@ test("presets are mechanically distinct from one another", () => {
 });
 
 test("the module reaches for no undeterministic randomness", () => {
+  // A plain substring search, so line endings cannot change the answer.
   const src = readFileSync(fileURLToPath(new URL("../weather.js", import.meta.url)), "utf8");
   assert.ok(!src.includes("Math.random"), "weather.js must go through rng.js");
 });
