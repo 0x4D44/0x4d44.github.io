@@ -69,23 +69,39 @@ try {
     await page.evaluate("window.__opusRally.placeAt(200, 0)");
     await page.delay(400);
     const before = await page.evaluate("window.__opusRally.frame.distance");
+    const clock0 = await page.evaluate("window.__opusRally.frame.timeMs");
     await page.key("ArrowUp", "down");
-    await page.delay(4000);
+    // Wait for four seconds of SIMULATED time, not of wall time. Under a
+    // software rasteriser a frame can take a second, and dt is clamped, so four
+    // wall seconds bought barely one simulated one — which made this assertion
+    // drift with machine load rather than with the car.
+    await page.waitFor("four seconds of stage time under throttle", async () => (
+      (await page.evaluate("window.__opusRally.frame.timeMs")) - clock0 >= 4000 || null
+    ), 120_000);
     const moving = await page.evaluate(`(() => {
       const f = window.__opusRally.frame;
       return { speed: f.speedKph, distance: f.distance, rpm: f.rpm, gear: f.gear };
     })()`);
     await page.key("ArrowUp", "up");
-    assert.ok(moving.speed > 15,
-      `${width}x${height}: holding the throttle for four seconds only reached ${moving.speed.toFixed(1)} km/h`);
+    // The bar comes from measurement, not from taste: the harness drives CARS[0]
+    // (a front-wheel-drive junior car) launching on GRAVEL, which reaches 41.1
+    // km/h in four seconds on the bench, and rather less up a gradient. Thirty
+    // is comfortably clear of that and still catches the failure this assertion
+    // exists for — a gearbox stuck in first reached 3.9.
+    assert.ok(moving.speed > 30,
+      `${width}x${height}: four seconds of stage time on full throttle only reached `
+      + `${moving.speed.toFixed(1)} km/h`);
     assert.ok(moving.distance > before + 5,
       `${width}x${height}: the car did not move down the road (${before} -> ${moving.distance})`);
     assert.ok(moving.rpm > 800, `${width}x${height}: the engine is not turning (${moving.rpm} rpm)`);
     assert.ok(moving.gear >= 1, `${width}x${height}: never selected a gear (gear ${moving.gear})`);
 
     // ---- braking actually slows it ----
+    const brakeClock = await page.evaluate("window.__opusRally.frame.timeMs");
     await page.key("ArrowDown", "down");
-    await page.delay(2500);
+    await page.waitFor("two seconds of stage time on the brakes", async () => (
+      (await page.evaluate("window.__opusRally.frame.timeMs")) - brakeClock >= 2000 || null
+    ), 120_000);
     const braked = await page.evaluate("window.__opusRally.frame.speedKph");
     await page.key("ArrowDown", "up");
     assert.ok(braked < moving.speed - 3,

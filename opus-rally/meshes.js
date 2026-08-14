@@ -573,16 +573,60 @@ function buildTextureSet(THREE, name, size, seed) {
   });
 }
 
-// Vertex colour and the colour map each carry a full albedo, and a
-// MeshStandardMaterial multiplies them: conifer foliage came out at 0.007 linear
-// against 0.04-0.09 for the real thing, which is why the trees photographed as
-// flat black cut-outs. Scaling material.color by the reciprocal of the map's own
-// mean makes the map pure detail and leaves the vertex colour as the one albedo.
+// THE ONE ALBEDO RULE. A MeshStandardMaterial shades `map x color x vertexColour`,
+// so exactly one of those three may carry the surface's albedo and the other two
+// must be neutral. Getting it wrong squares a dark number: conifer foliage came
+// out at 0.007 linear against 0.04-0.09 for the real thing, which is why the
+// trees photographed as flat black cut-outs. Three shapes are allowed, and
+// nothing else — every material in this module goes through one of them:
+//
+//   generated map  -> neutraliseAlbedo(): `color` is the reciprocal of the map's
+//                     own mean, so the map is pure detail and the vertex colour
+//                     is the albedo.
+//   no colour map  -> vertexAlbedo(): `color` stays white, vertex colour is the
+//                     albedo.
+//   painted        -> paintedAlbedo(): a canvas map or a flat authored colour IS
+//                     the albedo, so vertex colours are switched off entirely.
+//
+// `userData.opusMapMean` records what the map contributes so the effective
+// albedo of any mesh can be measured headlessly; see materialAlbedoScale().
+const UNIT_MEAN = Object.freeze([1, 1, 1]);
+
 function neutraliseAlbedo(material, set) {
   if (!material || !set || !material.color) return material;
   const m = set.albedoMean;
   material.color.setRGB(1 / m[0], 1 / m[1], 1 / m[2]);
+  material.userData.opusMapMean = m;
   return material;
+}
+
+function vertexAlbedo(material) {
+  if (!material || !material.color) return material;
+  material.color.setRGB(1, 1, 1);
+  material.userData.opusMapMean = UNIT_MEAN;
+  return material;
+}
+
+function paintedAlbedo(material) {
+  if (!material) return material;
+  material.vertexColors = false;
+  material.userData.opusMapMean = null;
+  return material;
+}
+
+// What a vertex colour of 1.0 reflects through this material, per channel:
+// multiply by a geometry's own vertex colours and you have the linear albedo the
+// renderer will shade. Null for a painted material, whose albedo lives in canvas
+// pixels this module cannot average without a real 2D context.
+export function materialAlbedoScale(material, out = [0, 0, 0]) {
+  const mean = material && material.userData ? material.userData.opusMapMean : UNIT_MEAN;
+  if (mean === null) return null;
+  const m = mean || UNIT_MEAN;
+  const c = material && material.color;
+  out[0] = (c ? c.r : 1) * m[0];
+  out[1] = (c ? c.g : 1) * m[1];
+  out[2] = (c ? c.b : 1) * m[2];
+  return out;
 }
 
 const textureCache = new Map();
@@ -1073,6 +1117,28 @@ export const ROAD_SECTION = Object.freeze(ROAD_SLOTS.map((s) => Object.freeze({ 
 export const ROAD_EDGE_SLOTS = Object.freeze([3, 15]);
 export const ROAD_CENTRE_SLOT = 9;
 
+// Which detail set each running surface is drawn with. The albedo is already in
+// the vertex colours, so this picks the grain, the relief and the roughness — the
+// things that tell asphalt from a mud stretch from a water splash. Surfaces with
+// no set of their own borrow the nearest one that behaves like them: mud and sand
+// are soil, ice is a drift, a ford is a smooth dark sheet like asphalt.
+const ROAD_TEXTURE = Object.freeze({
+  [SURFACE.TARMAC]: "tarmac",
+  [SURFACE.GRAVEL]: "gravel",
+  [SURFACE.DIRT]: "dirt",
+  [SURFACE.SNOW]: "snow",
+  [SURFACE.ICE]: "snow",
+  [SURFACE.GRASS]: "grass",
+  [SURFACE.MUD]: "dirt",
+  [SURFACE.SAND]: "dirt",
+  [SURFACE.ROCK]: "rock",
+  [SURFACE.WATER]: "tarmac",
+});
+
+export function roadTextureName(surfaceId) {
+  return ROAD_TEXTURE[surfaceId] || "gravel";
+}
+
 function smoothed(arr, radius, count) {
   const out = new Float32Array(count);
   for (let i = 0; i < count; i += 1) {
@@ -1087,11 +1153,14 @@ function smoothed(arr, radius, count) {
 }
 
 // Vertex density follows curvature: 2 m through a hairpin, 10 m down a straight.
-function chooseStations(stage, opts) {
+// `coarsen` stretches the straights only — a 13 km stage has to fit the same
+// triangle budget as a 6 km one, and the place to buy that back is the part of
+// the road where nothing is happening.
+function chooseStations(stage, opts, coarsen = 1) {
   const n = stage.count;
   const step = stage.step || 2;
   const chunkLen = opts.chunkLength ?? 240;
-  const maxSpacing = opts.maxSpacing ?? 10;
+  const maxSpacing = (opts.maxSpacing ?? 10) * coarsen;
   const minSpacing = opts.minSpacing ?? 2;
   const forced = new Uint8Array(n);
   forced[0] = 1;
@@ -1141,7 +1210,16 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   const n = stage.count;
   const chunkLength = opts.chunkLength ?? 240;
   const uvScale = opts.uvScale ?? 0.25;      // one texture tile every 4 m
-  const stations = chooseStations(stage, opts);
+  const budget = opts.roadBudget ?? TRIANGLE_BUDGET.road;
+  const perSpan = (ROAD_SLOTS.length - 1) * 2;
+  let stations = chooseStations(stage, opts);
+  // Same escape valve the terrain uses: a longer stage gets a longer straight
+  // between stations rather than a dropped frame. The forced stations (surface
+  // changes, crests, jumps, features, chunk seams) survive every step of this.
+  for (const coarsen of [1.4, 2, 2.8, 4, 5.6]) {
+    if ((stations.length - 1) * perSpan <= budget) break;
+    stations = chooseStations(stage, opts, coarsen);
+  }
 
   // Berms and ruts are the marks a season of cars leaves. Both follow smoothed
   // curvature, because a berm does not appear and vanish inside two metres.
@@ -1161,17 +1239,35 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
 
   const surfaceIdAt = (i) => (stage.surface ? stage.surface[i] : SURFACE.GRAVEL);
 
+  // Index runs of one surface, so a chunk that crosses a village draws its tarmac
+  // with the tarmac set and its gravel with the gravel set. chooseStations forces
+  // a station on both sides of every surface change, so a run is always exact.
+  let groups = null;
+  let groupSid = -1;
+  let groupStart = 0;
+  let prevSample = -1;
+
   const startChunk = (index) => {
     b = mkBuilder();
     b.extra = { detail: { data: [], size: 3 } };
     chunkStations = [];
     builderChunk = index;
     prevRow = null;
+    prevSample = -1;
+    groups = [];
+    groupSid = -1;
+    groupStart = 0;
+  };
+  const closeGroup = () => {
+    if (groupSid >= 0 && b.idx.length > groupStart) {
+      groups.push({ surfaceId: groupSid, start: groupStart, count: b.idx.length - groupStart });
+    }
   };
   const endChunk = () => {
     if (!b || b.n === 0) return;
+    closeGroup();
     const geometry = finish(THREE, b, { explicitNormals: true });
-    chunks.push({ index: builderChunk, geometry, stations: chunkStations, mesh: null });
+    chunks.push({ index: builderChunk, geometry, stations: chunkStations, groups, mesh: null });
     b = null;
   };
 
@@ -1282,6 +1378,14 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       rowIdx.push(idx);
     }
     if (prevRow) {
+      // The span carries the surface it starts on, so a change lands exactly on
+      // the station stage.js asked for rather than a span early.
+      const spanSid = surfaceIdAt(prevSample);
+      if (spanSid !== groupSid) {
+        closeGroup();
+        groupSid = spanSid;
+        groupStart = b.idx.length;
+      }
       // Slots run left to right and stations run forward, so this order is the
       // one whose face normal comes out along +up rather than into the ground.
       for (let k = 0; k + 1 < ROAD_SLOTS.length; k += 1) {
@@ -1289,6 +1393,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       }
     }
     prevRow = rowIdx;
+    prevSample = i;
     const info = {
       s, sampleIndex: i, halfWidth: hw, chunk: builderChunk, vertexBase: base,
       centre: [cx, cy, cz],
@@ -1301,41 +1406,73 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     if (!isSeamCopy) stationInfo.push(info);
   }
 
-  const tex = surfaceTexture(THREE, "gravel", { size: opts.textureSize ?? 256, seed: stage.seed ?? 0 });
-  // Nothing here writes to `tex`. It is handed to every other caller holding the
-  // same key, and its wrapping and filtering are settled where it is built.
-  const material = opts.material || neutraliseAlbedo(new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    map: tex.map,
-    normalMap: tex.normalMap,
-    roughnessMap: tex.roughnessMap,
-    roughness: 1,
-    metalness: 0,
-    // The ribbon and the terrain share the corridor exactly, so the road is
-    // biased toward the camera rather than lifted off the ground.
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  }), tex);
+  // One material per running surface the stage actually uses. Nothing here
+  // writes to a texture set: it is handed to every other caller holding the same
+  // key, and its wrapping and filtering are settled where it is built.
+  const textureSize = opts.textureSize ?? 256;
+  const texSeed = stage.seed ?? 0;
+  const materials = [];
+  const materialSlot = new Map();
+  const surfaceMaterials = new Map();
+  const override = opts.material || null;
+  const slotFor = (sid) => {
+    if (override) return 0;
+    const hit = materialSlot.get(sid);
+    if (hit !== undefined) return hit;
+    const props = surfaceProps(sid);
+    const tex = surfaceTexture(THREE, roadTextureName(sid), { size: textureSize, seed: texSeed });
+    // Gloss is the other half of "this is not gravel": a ford has to reflect the
+    // sky and asphalt has to sheen, so the surface's own specular sets the floor
+    // the roughness map varies around.
+    const m = neutraliseAlbedo(new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      map: tex.map,
+      normalMap: tex.normalMap,
+      roughnessMap: tex.roughnessMap,
+      roughness: clamp(1 - props.specular * 0.8, 0.18, 1),
+      metalness: 0,
+      // The ribbon and the terrain share the corridor exactly, so the road is
+      // biased toward the camera rather than lifted off the ground.
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    }), tex);
+    m.name = `road-${props.name.toLowerCase()}`;
+    const slot = materials.length;
+    materials.push(m);
+    materialSlot.set(sid, slot);
+    surfaceMaterials.set(sid, m);
+    return slot;
+  };
+  if (override) materials.push(override);
+  else if (!chunks.length) slotFor(SURFACE.GRAVEL);
 
   const group = new THREE.Group();
   group.name = "road";
   let triangles = 0;
   for (const c of chunks) {
-    const mesh = new THREE.Mesh(c.geometry, material);
+    for (const g of c.groups) c.geometry.addGroup(g.start, g.count, slotFor(g.surfaceId));
+    triangles += triangleCount(c.geometry);
+  }
+  // The slot indices above are only meaningful once every chunk has been walked,
+  // so the meshes are made in a second pass against the finished material list.
+  const meshMaterial = materials.length === 1 ? materials[0] : materials;
+  for (const c of chunks) {
+    const mesh = new THREE.Mesh(c.geometry, meshMaterial);
     mesh.name = `road-chunk-${c.index}`;
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.userData.stations = c.stations;
     c.mesh = mesh;
-    triangles += triangleCount(c.geometry);
     group.add(mesh);
   }
 
   const road = {
     group,
     chunks,
-    material,
+    material: materials[0],
+    materials,
+    surfaceMaterials,
     stations: stationInfo,
     slots: ROAD_SECTION,
     slotCount: ROAD_SLOTS.length,
@@ -1370,7 +1507,7 @@ export function disposeRoad(road) {
     c.geometry.dispose();
     if (c.mesh && c.mesh.parent) c.mesh.parent.remove(c.mesh);
   }
-  road.material.dispose?.();
+  for (const m of road.materials) m.dispose?.();
   road.chunks.length = 0;
 }
 
@@ -2300,34 +2437,36 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
 
   const white = [1, 1, 1];
   const black = [0.045, 0.045, 0.05];
-  const cageCol = [0.86, 0.86, 0.88];
+  const cageCol = [0.80, 0.80, 0.82];
   const trimCol = [0.10, 0.10, 0.115];
+  // Every colour below is a linear albedo, because under the one albedo rule the
+  // vertex colour is the only thing carrying one on these parts. Moulded bumper
+  // plastic is dark but not black: it was 0x14161a on the material AND white in
+  // the vertices, which shaded at 0.007 — a third of what soot reflects.
+  const bumperCol = [0.038, 0.040, 0.046];
 
-  const paint = opts.paintMaterial || injectDamageShader(new THREE.MeshStandardMaterial({
+  const paint = opts.paintMaterial || paintedAlbedo(injectDamageShader(new THREE.MeshStandardMaterial({
     map: paintTex.map || null,
     roughnessMap: paintTex.roughnessMap || null,
     normalMap: paintTex.normalMap,
     roughness: 0.34,
     metalness: 0.10,
     vertexColors: false,
-  }), paintTex.mudMap);
-  const plastic = injectDamageShader(new THREE.MeshStandardMaterial({
-    color: 0x14161a, roughness: 0.78, metalness: 0.02, vertexColors: true,
-  }), paintTex.mudMap);
-  // White where the geometry already carries the colour in its vertices: these
-  // two multiplied a dark material colour by a dark vertex colour and landed at
-  // 0.001 linear, blacker than any real surface.
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.06, metalness: 0.0,
+  }), paintTex.mudMap));
+  const plastic = vertexAlbedo(injectDamageShader(new THREE.MeshStandardMaterial({
+    roughness: 0.78, metalness: 0.02, vertexColors: true,
+  }), paintTex.mudMap));
+  const glassMat = vertexAlbedo(new THREE.MeshStandardMaterial({
+    roughness: 0.06, metalness: 0.0,
     transparent: true, opacity: 0.34, side: THREE.DoubleSide, vertexColors: true,
-  });
-  const cageMat = new THREE.MeshStandardMaterial({ color: 0xdedee2, roughness: 0.42, metalness: 0.55, vertexColors: true });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.35, metalness: 0.85, vertexColors: true });
-  const trimMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05, vertexColors: true });
-  const lampMat = new THREE.MeshStandardMaterial({
-    color: 0xfff4dc, roughness: 0.12, metalness: 0.0,
+  }));
+  const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.55, vertexColors: true }));
+  const metalMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.85, vertexColors: true }));
+  const trimMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
+  const lampMat = vertexAlbedo(new THREE.MeshStandardMaterial({
+    roughness: 0.12, metalness: 0.0,
     emissive: 0xfff0d0, emissiveIntensity: 1.0, vertexColors: true,
-  });
+  }));
 
   const materials = [paint, plastic, glassMat, cageMat, metalMat, trimMat, lampMat];
   const paintMaterials = [paint, plastic];
@@ -2361,8 +2500,8 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   }, paint);
 
   addPart("bonnet", (b) => buildBonnet(b, d, white), paint, 5);
-  addPart("bumperFront", (b) => buildBumper(b, d, true, white), plastic, 0);
-  addPart("bumperRear", (b) => buildBumper(b, d, false, white), plastic, 1);
+  addPart("bumperFront", (b) => buildBumper(b, d, true, bumperCol), plastic, 0);
+  addPart("bumperRear", (b) => buildBumper(b, d, false, bumperCol), plastic, 1);
   addPart("doorLeft", (b) => buildDoor(b, d, -1, white), paint, 2);
   addPart("doorRight", (b) => buildDoor(b, d, 1, white), paint, 3);
   addPart("mirrorLeft", (b) => buildMirror(b, d, -1, white), paint, 2);
@@ -2449,8 +2588,14 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
   const pattern = TREAD_PATTERNS[kind] || TREAD_PATTERNS.gravel;
   const width = (opts.width ?? (kind === "tarmac" ? 0.235 : 0.205));
   const rimR = R * (kind === "tarmac" ? 0.72 : 0.62);
-  const rubber = [0.045, 0.045, 0.048];
+  // Linear albedos, single-sourced in the vertices (see the one albedo rule):
+  // tyre carbon black really is this dark, cast iron this dull.
+  const rubber = [0.042, 0.042, 0.045];
   const rimCol = [0.55, 0.56, 0.60];
+  const discCol = [0.16, 0.165, 0.175];
+  const caliperCol = [0.40, 0.10, 0.06];
+  const studCol = [0.52, 0.53, 0.56];
+  const hubCol = [0.26, 0.27, 0.29];
 
   const tyreB = mkBuilder();
   // Sidewall bulge: the profile is revolved, so a gravel tyre visibly squats.
@@ -2507,7 +2652,7 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
       if (pattern.stud && r === 1 && bIdx % 3 === 0) {
         const mid = (a0 + a1) * 0.5;
         pushCylinder(tyreB, rowX, Math.cos(mid) * (rr + 0.006), Math.sin(mid) * (rr + 0.006),
-          0.008, 0.008, 0.014, 5, "x", [0.62, 0.63, 0.66]);
+          0.008, 0.008, 0.014, 5, "x", studCol);
       }
     }
   }
@@ -2525,22 +2670,22 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
       [-width * 0.40, ca * rimR * 0.94, sa * rimR * 0.94],
     ], rimR * 0.085, 4, rimCol);
   }
-  pushCylinder(rimB, -width * 0.42, 0, 0, rimR * 0.16, rimR * 0.14, 0.04, 8, "x", [0.30, 0.31, 0.33]);
+  pushCylinder(rimB, -width * 0.42, 0, 0, rimR * 0.16, rimR * 0.14, 0.04, 8, "x", hubCol);
 
   const brakeB = mkBuilder();
-  pushCylinder(brakeB, width * 0.10, 0, 0, rimR * 0.80, rimR * 0.80, 0.026, 18, "x", [0.30, 0.31, 0.34]);
+  pushCylinder(brakeB, width * 0.10, 0, 0, rimR * 0.80, rimR * 0.80, 0.026, 18, "x", discCol);
   const caliperB = mkBuilder();
-  pushBox(caliperB, width * 0.10, rimR * 0.66, 0.02, 0.055, rimR * 0.42, 0.10, [0.62, 0.16, 0.10]);
+  pushBox(caliperB, width * 0.10, rimR * 0.66, 0.02, 0.055, rimR * 0.42, 0.10, caliperCol);
 
   const tyreGeom = finish(THREE, tyreB, { colors: true });
   const rimGeom = finish(THREE, rimB, { colors: true });
   const discGeom = finish(THREE, brakeB, { colors: true });
   const caliperGeom = finish(THREE, caliperB, { colors: true });
 
-  const tyreMat = opts.tyreMaterial || new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.92, metalness: 0.0, vertexColors: true });
-  const rimMat = opts.rimMaterial || new THREE.MeshStandardMaterial({ color: 0xb9bcc2, roughness: 0.38, metalness: 0.75, vertexColors: true });
-  const discMat = new THREE.MeshStandardMaterial({ color: 0x60636a, roughness: 0.45, metalness: 0.8, vertexColors: true });
-  const caliperMat = new THREE.MeshStandardMaterial({ color: 0xa42d1c, roughness: 0.5, metalness: 0.3, vertexColors: true });
+  const tyreMat = opts.tyreMaterial || vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.92, metalness: 0.0, vertexColors: true }));
+  const rimMat = opts.rimMaterial || vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.38, metalness: 0.75, vertexColors: true }));
+  const discMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.8, vertexColors: true }));
+  const caliperMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.3, vertexColors: true }));
 
   const group = new THREE.Group();
   group.name = "wheel";
@@ -2875,14 +3020,40 @@ function chainRuns(items, maxGap) {
   return runs.filter((r) => r.length > 1);
 }
 
+// A stage may hand over more roadside than the budget can draw — northmarch-
+// kestrel asks for 316k triangles against a 240k ceiling — so the surplus has to
+// go somewhere. Built roadside (a barn, a wall, a fence line) is a tier of its
+// own and outlives every plant on the stage; poles and bridges are never thinned
+// at all, because the wires hang on the poles and the parapet is the corner.
+const SCENERY_PRIORITY = Object.freeze({
+  building: 10, wall: 10, fence: 10,
+  rock: 1.6, log: 1.5, stump: 1.5, tree: 1.2, bush: 0.6, fern: 0.25, tussock: 0,
+});
+
+const SCENERY_KEPT_WHOLE = Object.freeze(["pole", "bridge"]);
+
+// Within a tier the three terms are deliberately comparable in size, so the
+// layers thin *together*. Species alone deleted all 616 bushes on kestrel before
+// it touched a tree, which is a forest with no understorey; distance alone
+// clears the far edge of a stand in a straight line, which is a forest with a
+// mown border. Species sets the rate, distance biases it toward the road, and
+// the position hash spreads the losses through the stand.
+function sceneryKeepScore(p) {
+  const priority = SCENERY_PRIORITY[p.kind] ?? 1;
+  const near = 1 - saturate(p.dist / 260);
+  const dither = hash2(Math.round(p.item.x), Math.round(p.item.z), 4243) - 0.5;
+  return priority * 0.35 + near * 0.55 + dither;
+}
+
 export function buildSceneryLibrary(THREE, stage, opts = {}) {
   const { protos, materials } = sceneryPrototypes(THREE, stage, opts);
   const index = opts.centreline || centrelineIndex(stage);
   const rng = makeRng(`${stage.seed ?? "scn"}|place`);
   const list = Array.isArray(stage.scenery) ? stage.scenery : [];
   const clearance = opts.clearance ?? 0.4;
+  const budget = opts.sceneryBudget ?? TRIANGLE_BUDGET.scenery;
 
-  const buckets = new Map();
+  const placements = [];
   const rejected = [];
   const unknown = [];
   for (const item of list) {
@@ -2897,15 +3068,50 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
     const variant = Number.isFinite(item.variant) ? ((item.variant | 0) % vc + vc) % vc
       : Math.floor(hash2(Math.round(item.x), Math.round(item.z), 33) * vc) % vc;
     const key = `${kind}:${variant}`;
-    let bucket = buckets.get(key);
-    if (!bucket) { bucket = []; buckets.set(key, bucket); }
-    bucket.push(item);
+    const proto = protos.get(key);
+    if (!proto) { unknown.push(item); continue; }
+    placements.push({ item, kind, key, dist: near.dist, cost: proto.triangles, dropped: false });
+  }
+
+  // Wires are merged geometry rather than instances, and they hang off poles,
+  // which is why poles are never thinned. Their cost is known before anything is
+  // placed, so it comes off the budget the instances get to spend.
+  const wireB = mkBuilder();
+  const wireCol = [0.06, 0.06, 0.07];
+  buildWires(wireB, placements.filter((p) => p.kind === "pole").map((p) => p.item), wireCol);
+  const wireTriangles = wireB.idx.length / 3;
+
+  let triangles = wireTriangles;
+  for (const p of placements) triangles += p.cost;
+  const thinned = [];
+  if (triangles > budget) {
+    const order = [];
+    for (let i = 0; i < placements.length; i += 1) {
+      if (!SCENERY_KEPT_WHOLE.includes(placements[i].kind)) order.push(i);
+    }
+    // Ties broken by input order so two runs of the same stage thin identically.
+    const score = placements.map(sceneryKeepScore);
+    order.sort((a, c) => score[a] - score[c] || a - c);
+    for (let k = 0; k < order.length && triangles > budget; k += 1) {
+      const p = placements[order[k]];
+      p.dropped = true;
+      triangles -= p.cost;
+      thinned.push(p.item);
+    }
+  }
+  const overBudget = triangles > budget;
+
+  const buckets = new Map();
+  for (const p of placements) {
+    if (p.dropped) continue;
+    let bucket = buckets.get(p.key);
+    if (!bucket) { bucket = []; buckets.set(p.key, bucket); }
+    bucket.push(p.item);
   }
 
   const group = new THREE.Group();
   group.name = "scenery";
   const meshes = [];
-  let triangles = 0;
   let totalInstances = 0;
 
   const m4 = new THREE.Matrix4();
@@ -2938,17 +3144,42 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
     }
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    triangles += proto.triangles * items.length;
     totalInstances += items.length;
     meshes.push({ key, mesh, count: items.length, triangles: proto.triangles * items.length });
     group.add(mesh);
   }
 
-  // Wires and rails: one merged geometry each, because a catenary between two
-  // poles cannot be an instance of anything.
-  const wireB = mkBuilder();
-  const wireCol = [0.06, 0.06, 0.07];
-  const poleItems = list.filter((it) => (SCENERY_ALIASES[it.kind] || "") === "pole");
+  let wireMesh = null;
+  if (wireB.n > 0) {
+    const g = finish(THREE, wireB, { colors: true });
+    wireMesh = new THREE.Mesh(g, materials.wood);
+    wireMesh.name = "scenery-wires";
+    group.add(wireMesh);
+  }
+
+  const library = {
+    group,
+    meshes,
+    materials,
+    prototypes: protos,
+    wires: wireMesh,
+    totalInstances,
+    rejected,
+    unknown,
+    // What the budget cost: the items that would have been drawn but were not,
+    // and the flag that says even dropping every one of them was not enough.
+    thinned,
+    budget,
+    overBudget,
+    triangles,
+    dispose() { disposeScenery(library); },
+  };
+  return library;
+}
+
+// Wires and rails: one merged geometry, because a catenary between two poles
+// cannot be an instance of anything.
+function buildWires(b, poleItems, col) {
   for (const run of chainRuns(poleItems, 70)) {
     for (let i = 0; i + 1 < run.length; i += 1) {
       const a = run[i], c = run[i + 1];
@@ -2967,32 +3198,11 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
             lerp(a.z, c.z, t) + nz * off,
           ]);
         }
-        pushTube(wireB, path, 0.028, 3, wireCol, false);
+        pushTube(b, path, 0.028, 3, col, false);
       }
     }
   }
-  let wireMesh = null;
-  if (wireB.n > 0) {
-    const g = finish(THREE, wireB, { colors: true });
-    wireMesh = new THREE.Mesh(g, materials.wood);
-    wireMesh.name = "scenery-wires";
-    triangles += triangleCount(g);
-    group.add(wireMesh);
-  }
-
-  const library = {
-    group,
-    meshes,
-    materials,
-    prototypes: protos,
-    wires: wireMesh,
-    totalInstances,
-    rejected,
-    unknown,
-    triangles,
-    dispose() { disposeScenery(library); },
-  };
-  return library;
+  return b;
 }
 
 export function disposeScenery(library) {
@@ -3136,7 +3346,7 @@ function boardGeometry(b, w, h, y0, col, postCol, posts = 2) {
 }
 
 function gantryGeometry(b, finish2) {
-  const frame = [0.85, 0.86, 0.88];
+  const frame = [0.55, 0.56, 0.58];
   const span = 9.0, height = 5.4;
   for (const side of [-1, 1]) {
     pushCylinder(b, side * span * 0.5, height * 0.5, 0, 0.16, 0.13, height, 8, "y", frame);
@@ -3193,17 +3403,20 @@ function propPrototypes(THREE, opts) {
   const strawMat = neutraliseAlbedo(new THREE.MeshStandardMaterial({
     map: dirtTex.map, normalMap: dirtTex.normalMap, roughness: 1, metalness: 0, vertexColors: true,
   }), dirtTex);
-  const clothMat = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, vertexColors: true, side: THREE.DoubleSide });
+  const clothMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, vertexColors: true, side: THREE.DoubleSide }));
   const materials = { plain: plainMat, straw: strawMat, cloth: clothMat };
   const signMats = [];
 
+  // A sign is painted, whichever way it goes: the canvas carries the albedo, and
+  // where there is no canvas the flat background colour does. Either way the
+  // vertex colours stay out of it.
   const signMaterial = (spec) => {
     const tex = signTexture(THREE, opts, spec);
-    const m = new THREE.MeshStandardMaterial({
+    const m = paintedAlbedo(new THREE.MeshStandardMaterial({
       map: tex || null,
       color: tex ? 0xffffff : new THREE.Color(spec.bg),
-      roughness: 0.72, metalness: 0, vertexColors: !tex, side: THREE.DoubleSide,
-    });
+      roughness: 0.72, metalness: 0, side: THREE.DoubleSide,
+    }));
     signMats.push(m);
     return m;
   };
@@ -3251,10 +3464,10 @@ function propPrototypes(THREE, opts) {
     });
 
   add("hayBaleRound", strawMat, (b) => {
-    pushCylinder(b, 0, 0.62, 0, 0.62, 0.62, 1.20, 12, "x", [0.72, 0.63, 0.36]);
+    pushCylinder(b, 0, 0.62, 0, 0.62, 0.62, 1.20, 12, "x", [0.55, 0.48, 0.28]);
   });
   add("hayBaleRect", strawMat, (b) => {
-    pushBox(b, 0, 0.35, 0, 1.10, 0.70, 0.55, [0.70, 0.61, 0.34]);
+    pushBox(b, 0, 0.35, 0, 1.10, 0.70, 0.55, [0.53, 0.46, 0.26]);
     for (const z of [-0.14, 0.14]) pushBox(b, 0, 0.36, z, 1.12, 0.05, 0.03, [0.20, 0.18, 0.14]);
   });
   add("tyreStack", plainMat, (b) => {
@@ -3275,7 +3488,7 @@ function propPrototypes(THREE, opts) {
   add("tapeStake", plainMat, (b) => {
     pushCylinder(b, 0, 0.55, 0, 0.035, 0.030, 1.10, 5, "y", post);
     pushQuad3(b, [0, 0.86, -1.6], [0, 0.86, 1.6], [0, 0.94, 1.6], [0, 0.94, -1.6], [0.90, 0.20, 0.16]);
-    pushQuad3(b, [0, 0.94, -1.6], [0, 0.94, 1.6], [0, 0.86, 1.6], [0, 0.86, -1.6], [0.95, 0.95, 0.92]);
+    pushQuad3(b, [0, 0.94, -1.6], [0, 0.94, 1.6], [0, 0.86, 1.6], [0, 0.86, -1.6], [0.85, 0.85, 0.83]);
   });
   add("bunting", clothMat, (b) => {
     const span = 6.0, sag = 0.42;
@@ -3283,7 +3496,7 @@ function propPrototypes(THREE, opts) {
       const t = (k + 0.5) / 12;
       const x = -span * 0.5 + t * span;
       const y = 2.5 - Math.sin(t * Math.PI) * sag;
-      const c = k % 3 === 0 ? [0.85, 0.18, 0.14] : k % 3 === 1 ? [0.95, 0.92, 0.86] : [0.10, 0.32, 0.62];
+      const c = k % 3 === 0 ? [0.62, 0.13, 0.10] : k % 3 === 1 ? [0.82, 0.80, 0.76] : [0.08, 0.24, 0.46];
       tri(b,
         vert(b, x - 0.13, y, 0, 0, 0, c[0], c[1], c[2]),
         vert(b, x + 0.13, y, 0, 1, 0, c[0], c[1], c[2]),

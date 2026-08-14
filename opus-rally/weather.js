@@ -606,6 +606,11 @@ function skyScatter(sinElev) {
   return dayGate(sinElev) * (0.08 + 0.92 * Math.pow(above, 0.62));
 }
 
+// Metres. The shortest the fog ramp is ever allowed to end, whatever the
+// visibility says: a white-out you cannot drive at all is a stage nobody
+// finishes, not a hard one.
+const FOG_FLOOR = 140;
+
 const ZENITH_TINT = unitTint(0.16, 0.34, 1.00);
 const HORIZON_TINT = unitTint(0.68, 0.74, 0.92);
 const GROUND_TINT = unitTint(0.34, 0.32, 0.30);
@@ -710,7 +715,11 @@ void main() {
 }
 `;
 
-const SKY_FRAG = `
+// Exported because tests/weather.test.mjs mirrors the cloud-shading arithmetic
+// below in JS to measure the dome, and anchors that mirror on the literal source
+// of the lines it reproduces. Change a constant here and the anchor fails, which
+// is the point: a mirror that drifts silently is worse than no mirror.
+export const SKY_FRAG = `
 precision highp float;
 varying vec3 vDir;
 
@@ -734,11 +743,11 @@ uniform vec3 uCloudDark;
 uniform float uCloudCover;
 uniform float uCloudOpacity;
 uniform float uCloudSharp;
+uniform float uCloudGlow;
 uniform float uCloudAlt;
 uniform float uCloudScale;
 uniform vec2 uCloudScroll;
 uniform vec3 uCamPos;
-uniform float uExposure;
 uniform float uFlash;
 uniform vec3 uFogColour;
 uniform float uHaze;
@@ -807,27 +816,50 @@ void main() {
     vec2 uv = (uCamPos.xz + dir.xz * t) * uCloudScale + uCloudScroll;
     vec4 n = texture2D(uCloudTex, uv);
     vec4 n2 = texture2D(uCloudTex, uv * 2.17 - uCloudScroll * 0.6);
-    float field = dot(n, uCloudMix) / max(dot(uCloudMix, vec4(1.0)), 0.001);
-    field = mix(field, dot(n2, uCloudMix) / max(dot(uCloudMix, vec4(1.0)), 0.001), 0.35);
+    float wsum = max(dot(uCloudMix, vec4(1.0)), 0.001);
+    float field = mix(dot(n, uCloudMix) / wsum, dot(n2, uCloudMix) / wsum, 0.35);
+
+    // Coverage and thickness are different questions and need different ramps.
+    // Coverage decides whether there is any cloud in this direction; at a cover
+    // of 0.93 its ramp sits entirely below the field and clips to one across the
+    // whole sky. Shading off that same number therefore paints every texel of an
+    // overcast lid the same colour — a grey wall with no structure in it. The
+    // thin term reads the identical field on a ramp that does not move with
+    // cover, so a full lid still has thin bright patches and dark cores.
     float density = smoothstep(1.0 - uCloudCover, 1.0 - uCloudCover + 0.42 / uCloudSharp, field);
     density *= uCloudOpacity;
     // Distance fade: the deck dissolves into haze as it approaches the horizon.
     density *= smoothstep(0.006, 0.09, h);
-    // Light through the deck: thin edges glow toward the sun, cores stay dark.
+    float thin = 1.0 - smoothstep(0.22, 0.74, field);
+
+    // Light through the deck rather than past it. A lid does not hide the sun,
+    // it diffuses it: the bright patch where the sun stands, and the sun half of
+    // the sky being lighter than the other, are most of what separates a real
+    // overcast day from a flat fill.
     float toward = max(dot(dir, uSunDir), 0.0);
-    float rim = pow(toward, 3.0) * (1.0 - density * 0.7);
-    vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.25 + 0.75 * rim + 0.25 * (1.0 - density), 0.0, 1.0));
-    cloud += uSunColour * uSunIntensity * pow(toward, 22.0) * 0.35 * (1.0 - density);
+    float through = (0.40 + 0.60 * thin) * (pow(toward, 1.6) * 0.20 + pow(toward, 9.0) * 0.80);
+    float rim = pow(toward, 3.0) * thin;
+    vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.08 + 0.74 * thin + 0.34 * rim, 0.0, 1.0));
+    // A deck's underside brightens toward the horizon, where you end up looking
+    // along the lit base instead of up into its own shadow.
+    cloud *= 1.0 + 0.85 * (1.0 - smoothstep(0.01, 0.50, h));
+    cloud += uSunColour * uCloudGlow * through;
     col = mix(col, cloud, clamp(density, 0.0, 1.0));
   }
 
-  // Aerial haze pulls the whole lower dome toward the fog colour so the sky and
-  // the terrain meet at the same value instead of showing a hard cut.
-  col = mix(col, uFogColour, uHaze * (1.0 - smoothstep(0.0, 0.45, h)));
+  // Aerial perspective. The dome has to arrive at exactly the fog colour on the
+  // horizon line, because that is the value the terrain fades to; anything else
+  // is a seam. Haze decides how far up the band reaches, never whether it closes.
+  col = mix(col, uFogColour, 1.0 - smoothstep(0.0, mix(0.05, 0.55, uHaze), h));
   col += uFlash;
 
-  col = vec3(1.0) - exp(-col * uExposure);
+  // The dome writes linear radiance and lets the renderer tone map it with
+  // everything else. Tone mapping here as well put the sky through the curve
+  // twice, so it met the terrain at a different value and drew the very horizon
+  // line the haze above exists to remove.
   gl_FragColor = vec4(max(col, vec3(0.0)), 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
 
@@ -1025,11 +1057,11 @@ function buildSky(THREE, opts, cloudTex) {
     uCloudCover: { value: 0.2 },
     uCloudOpacity: { value: 0.8 },
     uCloudSharp: { value: 2 },
+    uCloudGlow: { value: 0 },
     uCloudAlt: { value: 2000 },
     uCloudScale: { value: 0.0003 },
     uCloudScroll: { value: new THREE.Vector2(0, 0) },
     uCamPos: { value: new THREE.Vector3() },
-    uExposure: { value: 1 },
     uFlash: { value: 0 },
     uFogColour: { value: new THREE.Color(0.5, 0.5, 0.5) },
     uHaze: { value: 0.2 },
@@ -1042,7 +1074,11 @@ function buildSky(THREE, opts, cloudTex) {
     depthWrite: false,
     depthTest: false,
     fog: false,
-    toneMapped: false,
+    // Tone mapped like every other surface in the scene: with the post chain on
+    // the renderer's own curve is off and the composite does it, with the post
+    // chain off the renderer does it here. Either way the sky and the terrain go
+    // through exactly one, identical curve, which is what makes them meet.
+    toneMapped: true,
   });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(opts.skyRadius, 48, 32), material);
   mesh.frustumCulled = false;
@@ -1261,6 +1297,7 @@ export function createWeather(THREE, scene, preset, options) {
     _zenith: [0, 0, 0],
     _horizon: [0, 0, 0],
     _groundCol: [0, 0, 0],
+    _hazeCol: [0, 0, 0],
     _solar: { elevation: 0, azimuth: 0 },
     _surfaceMod: { wetness: 0, gripScale: 1, visibility: 1000, aquaplaneRisk: 0, snowCover: 0, standingWater: 0 },
     _lensOut: {
@@ -1298,7 +1335,16 @@ function resolvePreset(p) {
   return presetById(FALLBACK_PRESET_ID);
 }
 
+// Every stage builds a rig and nothing but this hands it back. Detaching the
+// root stops the lights compounding but frees no GPU memory: the dome geometry,
+// three shader programs, the cloud texture, both precipitation pools and — much
+// the largest of them — the key light's shadow map all stay resident until this
+// runs. Safe to call twice, and safe to call on a rig that was never added to a
+// scene, because the caller that has just lost a stage should never have to
+// reason about which of those it is.
 export function disposeWeather(w) {
+  if (!w || w.disposed) return w;
+  w.disposed = true;
   if (w.scene) {
     w.scene.remove(w.root);
     if (w.scene.fog === w.fog) w.scene.fog = null;
@@ -1310,6 +1356,18 @@ export function disposeWeather(w) {
   w.snow.geometry.dispose();
   w.snow.material.dispose();
   w.cloudTexture.dispose();
+  // A shadow map is a depth target the size of opts.shadowMapSize squared —
+  // four megatexels at the default — and removing its light from the scene does
+  // not release it.
+  const L = w.lights;
+  for (const light of [L.key, L.moon, L.bounce]) {
+    if (light.shadow) light.shadow.dispose();
+  }
+  // Drop the rig's own child references too: a caller that keeps the handle for
+  // its last metrics should not thereby keep the whole scene graph alive.
+  w.root.clear();
+  w.scene = null;
+  return w;
 }
 
 // ---- driving the conditions
@@ -1539,11 +1597,38 @@ function applyState(w, dt) {
 
   // Fog. Linear fog derived from visibility keeps one object alive for the whole
   // race; the authored near/far only shape where inside that range it starts.
+  //
+  // Aerial perspective, not a draw-distance cutoff. Visibility is the range at
+  // which contrast is down to a twentieth — optical depth three — so extinction
+  // is 1 - exp(-3d/vis) and is three fifths built at three tenths of the
+  // sight-line. Fitting the straight ramp there ends it at about half. Ending it
+  // *past* the visibility, as it did, left a two-kilometre ridge at nearly full
+  // albedo: measured 81,89,76 one pixel under a 204,203,210 horizon, a step of
+  // 123 levels, which is the hard line the fog exists to hide. The floor is for
+  // the two white-out presets, where the fit falls inside the road ahead and
+  // neither has a horizon to give away.
   const vis = c.visibility;
   const nearFrac = clamp(c.fogNear / Math.max(c.fogFar, 1), 0.002, 0.6);
-  w.fog.color.setRGB(c.fogColour[0], c.fogColour[1], c.fogColour[2]);
-  w.fog.near = vis * nearFrac;
-  w.fog.far = vis * 1.15;
+  w.fog.far = Math.max(vis * 0.5, FOG_FLOOR);
+  // The best fit puts near at zero; it is held off the camera only so the car
+  // does not drive inside its own haze, which is why it is a fraction of a
+  // fraction rather than the authored distance.
+  w.fog.near = w.fog.far * nearFrac * 0.4;
+
+  // One colour for both sides of the horizon: the terrain fades to it and the
+  // dome arrives at it, so there is no line to see. Hue comes from the preset,
+  // level from the sky — an authored fog colour is a daylight value, and taken
+  // literally it leaves a bright band lying along the ground at dusk under a
+  // dome that has already gone dark.
+  const horL = luminance(w._horizon);
+  for (let i = 0; i < 3; i += 1) {
+    w._hazeCol[i] = c.fogColour[i] + (w._horizon[i] - c.fogColour[i]) * 0.35;
+  }
+  const hazeL = luminance(w._hazeCol);
+  const level = luminance(c.fogColour) * 0.15 + horL * 0.85;
+  const hazeK = hazeL > 1e-6 ? level / hazeL : 0;
+  for (let i = 0; i < 3; i += 1) w._hazeCol[i] *= hazeK;
+  w.fog.color.setRGB(w._hazeCol[0], w._hazeCol[1], w._hazeCol[2]);
 
   // Sky uniforms.
   const su = w.sky.uniforms;
@@ -1571,11 +1656,16 @@ function applyState(w, dt) {
   su.uCloudCover.value = c.cloudCover;
   su.uCloudOpacity.value = c.cloudOpacity;
   su.uCloudSharp.value = c.cloudSharpness;
+  // Sunlight transmitted through the deck. Deliberately not scaled by the same
+  // cloudBlock that kills the key light: a lid stops the beam and still passes a
+  // bright patch, and taking both away with one factor is what left the overcast
+  // presets with no sun anywhere in the sky. It rides on the deck's own lit
+  // colour so the patch always reads as that cloud lit from behind.
+  su.uCloudGlow.value = gate * luminance(c.cloudLit) * (1.05 + 0.60 * (1 - c.cloudOpacity));
   su.uCloudAlt.value = c.cloudAltitude;
   su.uCloudScale.value = c.cloudScale;
-  su.uExposure.value = c.exposure;
   su.uFlash.value = w.lightning.flash;
-  su.uFogColour.value.setRGB(c.fogColour[0], c.fogColour[1], c.fogColour[2]);
+  su.uFogColour.value.setRGB(w._hazeCol[0], w._hazeCol[1], w._hazeCol[2]);
   su.uHaze.value = saturate(0.12 + 0.6 * (1 - smoothstep(300, 12000, vis)));
 
   // Light level for the headlight decision. Deliberately sun and sky only: no

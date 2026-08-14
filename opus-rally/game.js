@@ -247,6 +247,7 @@ export async function startGame(opts) {
     game.weather = weather;
     game.notes = notes;
     game.noteRunner = runner;
+    game.speedProfile = stageMod.speedProfile(stage);
     game.recorder = replayMod.createRecorder({
       meta: { stageId: stage.id, carId: car.spec.id, weatherKey: weather.presetId ?? "" },
       capacityMetres: stage.length + 500,
@@ -322,11 +323,75 @@ export async function startGame(opts) {
     airborne: false, ghostDeltaMs: null, countdown: 0,
   };
 
+  // A pure-pursuit driver that can take the car round a stage on its own. It
+  // exists because a screenshot of a car that was teleported onto the road and
+  // left to free-run is a screenshot of a field a hundred metres later, and
+  // nobody can judge how a game looks from pictures of grass. It doubles as an
+  // attract-mode demo.
+  //
+  // Deliberately not a fast driver: it runs at a fraction of the limit curve and
+  // it knows how to get back on the road, because the question it answers is
+  // "can this road be driven", not "can it be driven flat".
+  const autoInput = makeInput();
+  const autoProj = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+  const autoState = { stuck: 0, bestS: 0, recovering: 0 };
+
+  function driveAutomatically(car, dt) {
+    const stage = game.stage;
+    const world = game.world;
+    if (!stage || !world) return autoInput;
+
+    world.project(car.pos.x, car.pos.z, autoProj.s, autoProj);
+    const halfWidth = stage.halfWidth[autoProj.index] ?? 4;
+    const offRoad = autoProj.lateral > halfWidth;
+
+    // Look further ahead the faster you go, and much closer when recovering, so
+    // the nose is pointed at the road rather than down it.
+    const lead = offRoad
+      ? 10
+      : clamp(9 + car.speed * 0.55, 12, 48);
+    const i = world.sampleAt(Math.min(stage.length - 1, autoProj.s + lead));
+    const err = Math.atan2(
+      Math.sin(Math.atan2(stage.x[i] - car.pos.x, stage.z[i] - car.pos.z) - car.yaw),
+      Math.cos(Math.atan2(stage.x[i] - car.pos.x, stage.z[i] - car.pos.z) - car.yaw),
+    );
+
+    // Positive steer points the wheels LEFT and yields a NEGATIVE yaw rate, so
+    // both terms are inverted against the obvious form.
+    autoInput.steer = clamp(-err * (offRoad ? 2.2 : 1.5) + car.yawRate * 0.28, -1, 1);
+
+    const profile = game.speedProfile;
+    const limit = profile ? profile[world.sampleAt(Math.min(stage.length - 1, autoProj.s + 25))] : 25;
+    // Off the road, crawl: the verge is not a place to carry speed, and trying
+    // to is how a recovery becomes a roll.
+    const target = offRoad ? Math.min(11, limit) : (limit ?? 25) * (game.autoPace ?? 0.72);
+    const over = car.speed - target;
+    autoInput.throttle = over < 0 ? clamp(-over * 0.45, 0, 1) : 0;
+    autoInput.brake = over > 0 ? clamp(over * 0.30, 0, 1) : 0;
+    autoInput.handbrake = 0;
+
+    if (autoProj.s > autoState.bestS + 1) {
+      autoState.bestS = autoProj.s;
+      autoState.stuck = 0;
+    } else {
+      autoState.stuck += dt;
+    }
+    // Beached. Give it everything, and if that does not work the road is at
+    // fault, not the driver.
+    if (autoState.stuck > 1.5 && car.speed < 3) {
+      autoInput.throttle = 1;
+      autoInput.brake = 0;
+    }
+    return autoInput;
+  }
+
   function stepRace(dt) {
     const car = game.car;
     const world = game.world;
     const stage = game.stage;
-    const inp = input.update(dt, car.speed);
+    const inp = game.autoDrive
+      ? driveAutomatically(car, dt)
+      : input.update(dt, car.speed);
 
     if (game.state === GameState.COUNTDOWN) {
       game.countdown -= dt;
@@ -554,6 +619,17 @@ export async function startGame(opts) {
       return true;
     },
     setCamera(mode) { renderer.setCamera?.(mode); },
+    // Hand the car to the pure-pursuit driver. The screenshot tool uses this so
+    // it photographs a car that is driving the stage rather than one abandoned
+    // mid-field, and it is the same code path an attract mode would use.
+    setAutoDrive(on, pace) {
+      game.autoDrive = !!on;
+      if (pace) game.autoPace = pace;
+      autoState.stuck = 0;
+      autoState.bestS = game.lastS ?? 0;
+      if (!on) input.clearTouch();
+      return true;
+    },
     setWeather(preset) {
       if (!game.weather) return false;
       weatherMod.setWeather(game.weather, preset);

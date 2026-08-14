@@ -33,6 +33,7 @@ const SHOTS = [
   {
     key: "startline", title: "On the start line, gravel, morning",
     drive: { stageIndex: 0 }, at: 0, speed: 0, camera: "chase", skipCountdown: false,
+    autoDrive: false,   // it is meant to be sitting on the line
   },
   {
     key: "gravel-flat", title: "Flat out on gravel, chase camera",
@@ -149,8 +150,14 @@ async function main() {
             ? String(shot.at)
             : `window.OPUS_RALLY.game.stage.length * ${shot.atFrac ?? 0.3}`;
 
+        // Arrive at the spot rather than being dropped on it. placeAt puts the
+        // car down a run-up short of the target at a speed it can actually
+        // carry, and the driver brings it in; a car teleported to 130 km/h on a
+        // curve is off the road before the shutter opens.
+        const runUp = shot.autoDrive === false ? 0 : (shot.runUp ?? 180);
         await page.evaluate(
-          `window.__opusRally.placeAt(${where}, ${shot.speed ?? 0})`,
+          `window.__opusRally.placeAt(Math.max(0, (${where}) - ${runUp}), `
+          + `${Math.min(shot.speed ?? 0, 70)})`,
         );
         if (shot.camera) await page.evaluate(`window.__opusRally.setCamera(${JSON.stringify(shot.camera)})`);
         // The autoscaler is measuring a software rasteriser here and would drop
@@ -158,16 +165,29 @@ async function main() {
         // the game with its shadows and post switched off. Pin the quality: we
         // are photographing what a real GPU renders, not what SwiftShader can.
         await page.evaluate(`(window.OPUS_RALLY.game.renderer.setQuality(${JSON.stringify(QUALITY)}), true)`);
-        await page.delay(500);
-        if (shot.hold) {
-          await page.evaluate(
-            `window.__opusRally.hold(${JSON.stringify(shot.hold)}, ${shot.holdMs ?? 800})`,
-          );
+        await page.delay(400);
+        // Drive the stage rather than free-running with no input. placeAt drops
+        // the car on the centreline pointing down the tangent; a couple of
+        // seconds later on any curving road it is in a field, and nine of the
+        // fourteen frames in the previous set were pictures of grass.
+        if (shot.autoDrive !== false) {
+          await page.evaluate(`window.__opusRally.setAutoDrive(true, ${shot.pace ?? 0.7})`);
+          // Drive until it reaches the spot the shot is named after, rather than
+          // for a fixed time — under a software rasteriser a fixed wait covers a
+          // wildly variable distance.
+          const target = await page.evaluate(String(where));
+          await page.waitFor(`${shot.key} to reach ${Math.round(target)} m`, async () => {
+            const d = await page.evaluate("window.__opusRally.frame.distance");
+            return d >= target ? d : null;
+          }, 40_000).catch(() => null);
         }
       }
 
       await page.delay(SETTLE);
       const file = join(OUT, `${shot.key}.png`);
+      // Record where the car actually was, so a reviewer can tell a real frame
+      // from one taken in a field.
+
       await page.screenshot(file);
       const state = await page.evaluate(`(() => {
         try {
