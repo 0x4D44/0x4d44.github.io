@@ -212,6 +212,27 @@ try {
       + `${String(info.notes).padStart(3)} notes  ${info.features} features\n`);
   }
 
+  // Generating a stage is not the same as starting one: the weather rig, the car,
+  // the pacenote runner and the whole mesh build only run on the drive path. That
+  // is where eleven of the twelve stages used to throw on an unknown weather id,
+  // and generating them had looked perfectly healthy.
+  process.stderr.write("[opus-rally] starting a representative stage from each rally\n");
+  const rallies = new Map();
+  for (const id of book) rallies.set(id.split("-")[0], id);
+  for (const id of rallies.values()) {
+    page.clearErrors();
+    const started = await page.evaluate(
+      `window.__opusRally.drive({ stageId: ${JSON.stringify(id)} }).then(() => true, (e) => String(e))`,
+    );
+    assert.equal(started, true, `${id}: drive() failed — ${started}`);
+    const info = await page.waitFor(`${id} to build`,
+      () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+    assert.equal(info.id, id, `${id}: started ${info.id} instead`);
+    assert.deepEqual(page.errors, [],
+      `${id}: starting it raised:\n  ${page.errors.join("\n  ")}`);
+    process.stderr.write(`  ${id.padEnd(22)} started clean\n`);
+  }
+
   console.log("opus-rally browser test: all checks passed");
 } catch (err) {
   console.error(`opus-rally browser test failed: ${err.message}`);
