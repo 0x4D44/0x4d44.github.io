@@ -37,7 +37,7 @@
     background: #0a0d14;
   }
 
-  #hud-root, #ui-root {
+  #hud-root, #ui-root, #touch-root {
     position: fixed;
     inset: 0;
     pointer-events: none;
@@ -46,9 +46,12 @@
   /* The roots stay transparent to the pointer so a drag on open sky reaches the
      canvas, but whatever a module mounts inside them takes clicks normally —
      without this the menus would be visible and completely dead. */
-  #ui-root > * { pointer-events: auto; }
+  #ui-root > *, #touch-root > * { pointer-events: auto; }
 
   #ui-root { z-index: 20; }
+  /* Above the HUD but below the menus: a finger on a driving control must not be
+     eaten by a readout, and the pause menu must sit over both. */
+  #touch-root { z-index: 15; touch-action: none; }
   #hud-root { z-index: 10; }
 
   /* The boot card is the only thing this file styles in any detail: everything
@@ -124,6 +127,7 @@
 
 <canvas id="stage-canvas"></canvas>
 <div id="hud-root"></div>
+<div id="touch-root"></div>
 <div id="ui-root"></div>
 
 <div id="boot">
@@ -188,6 +192,7 @@
       canvas: document.getElementById("stage-canvas"),
       hudRoot: document.getElementById("hud-root"),
       uiRoot: document.getElementById("ui-root"),
+      touchRoot: document.getElementById("touch-root"),
       onProgress(text, fraction) {
         line.textContent = text;
         bar.style.width = `${Math.round(Math.max(0.12, fraction) * 100)}%`;

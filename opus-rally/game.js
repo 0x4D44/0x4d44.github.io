@@ -117,6 +117,9 @@ export async function startGame(opts) {
   // adapter is the only place that translates the game's states into its.
   function screen(name, data) {
     const el = ui.element;
+    // The driving controls belong to the road, not to the menus: leaving them up
+    // over a pause screen puts a throttle pedal under the Resume button.
+    touch?.setVisible?.(name === null);
     if (name === null) {
       el?.classList.add("or-hidden");
       return;
@@ -133,6 +136,36 @@ export async function startGame(opts) {
     if (action === "repeatNote") game.noteRunner?.repeat?.();
     if (action === "headlights") renderer.toggleHeadlights?.();
   });
+
+  // On-screen driving controls, loaded separately and optional: a desktop player
+  // never needs them, and a failure to load them must cost a phone its controls
+  // rather than cost everyone the game.
+  //
+  // Only fetched where they can actually be used. A mouse-and-keyboard machine
+  // asking for a module it will never mount is a wasted round trip and a 404 in
+  // the console if the file is not there.
+  const wantsTouch = opts.forceTouch
+    || (typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 0)
+    || (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
+  let touch = null;
+  if (opts.touchRoot && wantsTouch) {
+    try {
+      const touchMod = await import("./touch.js");
+      touch = touchMod.createTouchControls(opts.touchRoot, {
+        input,
+        settings,
+        onAction: (action) => {
+          if (action === "pause") togglePause();
+          if (action === "camera") renderer.cycleCamera?.();
+          if (action === "reset") requestRecovery();
+          if (action === "repeatNote") game.noteRunner?.repeat?.();
+        },
+      });
+    } catch (err) {
+      // Not fatal, and not silent either.
+      console.warn("touch controls unavailable:", err?.message ?? err);
+    }
+  }
 
   // The first gesture anywhere is what unlocks WebAudio; doing it on the start
   // button alone would leave a silent game for anyone who used the keyboard.
@@ -668,11 +701,13 @@ export async function startGame(opts) {
     get state() { return game.state; },
     destroy() {
       cancelAnimationFrame(rafId);
+      clearTimeout(goTimer);
       input.destroy();
       audio.dispose?.();
       renderer.dispose?.();
       hud.destroy?.();
       ui.destroy?.();
+      touch?.destroy?.();
     },
   };
 }
