@@ -94,15 +94,27 @@ function nearestSegment(stage, px, pz) {
   return { index, frac, distance: Math.sqrt(best) };
 }
 
-// The same lateral measure stage.js uses: offset from the tangent frame at the
-// segment's own sample, not the Euclidean distance to the polyline.
-function lateralOf(stage, px, pz, i, f) {
-  const cx = stage.x[i] + (stage.x[i + 1] - stage.x[i]) * f;
-  const cz = stage.z[i] + (stage.z[i + 1] - stage.z[i]) * f;
+// The same lateral measure stage.js uses: offset from the tangent frame, not
+// the Euclidean distance to the polyline. The frame is interpolated along the
+// segment rather than taken from its own sample, so that abeam a sample — where
+// the two neighbouring segments tie and the winner is arbitrary — both of them
+// report the same road.
+function rightOf(stage, i) {
   const tx = stage.tx[i];
   const tz = stage.tz[i];
   const inv = 1 / Math.max(1e-6, Math.sqrt(tx * tx + tz * tz));
-  return ((px - cx) * tz - (pz - cz) * tx) * inv;
+  return { x: tz * inv, z: -tx * inv };
+}
+
+function lateralOf(stage, px, pz, i, f) {
+  const cx = stage.x[i] + (stage.x[i + 1] - stage.x[i]) * f;
+  const cz = stage.z[i] + (stage.z[i + 1] - stage.z[i]) * f;
+  const a = rightOf(stage, i);
+  const b = rightOf(stage, Math.min(i + 1, stage.count - 1));
+  const rx = a.x * (1 - f) + b.x * f;
+  const rz = a.z * (1 - f) + b.z * f;
+  const inv = 1 / Math.max(1e-9, Math.hypot(rx, rz));
+  return (px - cx) * rx * inv + (pz - cz) * rz * inv;
 }
 
 // Points spread across the road and well off it, in the tangent frame of a
@@ -828,17 +840,61 @@ test("the terrain field leaves the road surface exactly where the stage put it",
       const rx = stage.tz[i] / rl;
       const rz = -stage.tx[i] / rl;
       worstCentre = Math.max(worstCentre, Math.abs(world.heightAt(stage.x[i], stage.z[i]) - stage.y[i]));
-      // Across the road the surface is the centreline plus the camber. Abeam a
-      // sample the segment behind can win the projection by a hair, and its
-      // tangent plane sits a centimetre or two lower through a tight corner on
-      // a steep grade, so this is a few centimetres rather than exact.
+      // Across the road the surface is the centreline plus the camber, and it is
+      // that to a tenth of a millimetre — the road frame and the arc length it
+      // is read at are both continuous, so abeam a sample there is nothing left
+      // for the projection to tie-break between. It used to be 3.8 cm out here,
+      // which is what a tie-break between two segments' own tangent planes costs
+      // through a tight corner on a steep grade.
       for (const lat of [-0.8, 0.8, -1, 1].map((k) => k * stage.halfWidth[i] * 0.9)) {
         const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
         worstEdge = Math.max(worstEdge, Math.abs(h - (stage.y[i] + lat * Math.sin(stage.camber[i]))));
       }
     }
     assert.equal(worstCentre, 0, `${entry.id}: the centreline is ${worstCentre} m off stage.y`);
-    assert.ok(worstEdge < 0.06, `${entry.id}: the road surface is ${worstEdge.toFixed(4)} m off its own camber`);
+    assert.ok(worstEdge < 0.001, `${entry.id}: the road surface is ${worstEdge.toFixed(5)} m off its own camber`);
+  });
+});
+
+// The road frame is a property of the arc length, not of whichever segment the
+// projection picked. Abeam a sample the two neighbouring segments are equally
+// near and the tie-break is arbitrary, so if the surface is built from segment
+// i's own camber, half-width and right vector then the road steps by whatever
+// those two frames disagree about — 2.6 to 3.5 cm through a tight corner on a
+// grade, and the disagreement grows with the offset, so the edge is the worst of
+// it. Walk along the corridor edge and shrink the stride: a genuine grade or
+// camber change shrinks with it, a frame flip does not. Over a millimetre the
+// road climbs at most about 0.3 mm anywhere in the book.
+test("the road surface does not step where the projection changes segments", () => {
+  const FINE = 0.001;
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    let worst = 0;
+    let at = null;
+    for (let i = 30; i < stage.count - 30; i += 3) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const ux = stage.tx[i] / rl;
+      const uz = stage.tz[i] / rl;
+      for (const side of [1, -1]) {
+        const lat = side * stage.halfWidth[i] * 0.9;
+        // Sweep across the sample boundary itself: the previous segment as it
+        // runs out, then the next one as it takes over.
+        for (let f = 0.9; f <= 1.1001; f += 0.02) {
+          const j = f <= 1 ? i - 1 : i;
+          const ff = f <= 1 ? f : f - 1;
+          const cx = stage.x[j] + (stage.x[j + 1] - stage.x[j]) * ff;
+          const cz = stage.z[j] + (stage.z[j + 1] - stage.z[j]) * ff;
+          const ax = cx + uz * lat;
+          const az = cz - ux * lat;
+          const step = Math.abs(world.heightAt(ax + ux * FINE, az + uz * FINE) - world.heightAt(ax, az));
+          if (step > worst) { worst = step; at = { i, side, f: f.toFixed(2) }; }
+        }
+      }
+    }
+    assert.ok(
+      worst < 0.002,
+      `${entry.id}: the road edge moves ${worst.toFixed(4)} m across a millimetre at ${JSON.stringify(at)}`,
+    );
   });
 });
 
@@ -999,6 +1055,64 @@ test("surfaceAt fills the caller's object and allocates nothing", () => {
   );
   assert.equal(mine.onRoad, false, "40 m off the centreline is not the road");
   assert.ok(mine.signedLateral > 0, "positive signedLateral is to the right of travel");
+});
+
+// Grip has to be decided by how far the point is from the *road*, not by how
+// far it is across the tangent. Straight off either end of the stage the offset
+// across the tangent stays zero however far you go, so a rule written on
+// |lateral| alone handed open terrain the grip of the road it is nowhere near.
+// heightAt was given the point-to-segment distance for the same reason.
+test("grip past the ends of the stage, and well off the side, is terrain grip", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    const out = {};
+    const last = stage.count - 1;
+    const ends = [
+      { name: "past the finish", i: last, sign: 1 },
+      { name: "behind the start", i: 0, sign: -1 },
+    ];
+    for (const end of ends) {
+      const rl = Math.hypot(stage.tx[end.i], stage.tz[end.i]);
+      const ux = (stage.tx[end.i] / rl) * end.sign;
+      const uz = (stage.tz[end.i] / rl) * end.sign;
+      for (const off of [30, 50, 120]) {
+        world.surfaceAt(stage.x[end.i] + ux * off, stage.z[end.i] + uz * off, out);
+        const where = `${entry.id}: ${off} m ${end.name}`;
+        assert.equal(out.onRoad, false, `${where} still reports the road`);
+        assert.equal(out.edgeBlend, 1, `${where} is only ${out.edgeBlend} of the way onto the verge`);
+        const verge = surfaceProps(stage.verge[out.index]);
+        assert.equal(out.surfaceId, verge.id, `${where} is surface ${out.surfaceId}, not the verge`);
+        assert.equal(out.props.gripLat, verge.gripLat, `${where} does not carry verge grip`);
+        assert.ok(
+          out.props.gripLat < surfaceProps(stage.surface[out.index]).gripLat,
+          `${where} grips as well as the road (${out.props.gripLat})`,
+        );
+        // The offset itself is still the tangent-frame measure the contract
+        // promises, and off the end of the road that is genuinely near zero.
+        assert.ok(Math.abs(out.lateral) < 1e-3, `${where} reports a lateral offset of ${out.lateral}`);
+        assert.equal(out.lateral, Math.abs(out.signedLateral), `${where}: lateral is not |signedLateral|`);
+      }
+    }
+
+    // And the same rule the other way round: well off the side is terrain, as it
+    // always was. A stage loops back on itself, so "60 m to the side" can be the
+    // edge of another pass of the road — ask the oracle where the road really is
+    // rather than assume.
+    let checked = 0;
+    for (let i = 40; i < stage.count - 40; i += 401) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      for (const side of [1, -1]) {
+        const px = stage.x[i] + (stage.tz[i] / rl) * side * 60;
+        const pz = stage.z[i] - (stage.tx[i] / rl) * side * 60;
+        if (nearestSegment(stage, px, pz).distance < 25) continue;
+        world.surfaceAt(px, pz, out);
+        assert.equal(out.onRoad, false, `${entry.id}: open ground at sample ${i} reports the road`);
+        assert.equal(out.edgeBlend, 1, `${entry.id}: open ground at sample ${i} is not fully verge`);
+        checked += 1;
+      }
+    }
+    assert.ok(checked > 5, `${entry.id}: only ${checked} points of open ground found to check`);
+  });
 });
 
 test("200k world queries with a moving hint stay well inside a frame budget", () => {

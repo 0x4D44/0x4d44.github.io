@@ -1936,15 +1936,20 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
   return material;
 }
 
+const latticeKey = (i, j) => (i + 1048576) * 4194304 + (j + 1048576);
+
 // The whole seam question comes down to one rule: every chunk, at every LOD,
 // reads its height and its normal from the SAME lattice function. A coarse chunk
 // simply visits fewer lattice points, so where two chunks meet the shared points
 // are bit-for-bit identical and there is nothing for a crack to open along.
-function latticeField(world, L0, originX, originZ) {
+//
+// `sag` is that rule's one concession: a per-lattice-point drop, filled in
+// before any chunk is built and read through `h`, so a conformed point is
+// conformed identically in every chunk that shares it.
+function latticeField(world, L0, originX, originZ, sag = null) {
   const heights = new Map();
-  const key = (i, j) => (i + 1048576) * 4194304 + (j + 1048576);
-  const h = (i, j) => {
-    const k = key(i, j);
+  const raw = (i, j) => {
+    const k = latticeKey(i, j);
     const hit = heights.get(k);
     if (hit !== undefined) return hit;
     const y = world.heightAt(originX + i * L0, originZ + j * L0);
@@ -1952,6 +1957,7 @@ function latticeField(world, L0, originX, originZ) {
     heights.set(k, v);
     return v;
   };
+  const h = sag ? (i, j) => raw(i, j) - (sag.get(latticeKey(i, j)) || 0) : raw;
   const normal = (i, j, out) => {
     const dx = (h(i + 1, j) - h(i - 1, j)) / (2 * L0);
     const dz = (h(i, j + 1) - h(i, j - 1)) / (2 * L0);
@@ -1959,7 +1965,140 @@ function latticeField(world, L0, originX, originZ) {
     out[0] = -dx / l; out[1] = 1 / l; out[2] = -dz / l;
     return out;
   };
-  return { h, normal, size: heights };
+  return { h, raw, normal, size: heights };
+}
+
+// How far the ribbon's own surface sits below the road plane `heightAt` reports:
+// the crown and the racing-line ruts across the running surface, the churned
+// shoulder just outside it, fading to nothing by the time the ribbon has become
+// verge. The skin has to clear the ribbon, not the plane the ribbon is cut into.
+// How far out the skin is held under the road. Stopping short of the verge slot
+// is deliberate: out there `heightAt` has already handed the hillside back, so a
+// chord standing above it is ordinary lattice error rather than a buried road,
+// and holding the skin under *that* drags a trench along the whole stage. Inside
+// stage.js's verge band the field is the road and nothing else, so every metre
+// of excess this pass sees is a metre of ribbon under the ground.
+const CONFORM_REACH = 1.6;
+// What the ribbon carves below the plane `heightAt` reports: the crown and the
+// racing-line ruts across the running surface, the churned shoulder outside it.
+const CONFORM_CLEARANCE = 0.24;
+
+// Which drawn cell covers a world point, which of its two triangles, and what
+// that triangle is drawing there. Cells tile the plan exactly — a chunk is 32
+// lattice steps across at every LOD — so this is a lookup rather than a search.
+// `out` comes back holding the triangle's three lattice keys and the point's
+// barycentric weights in them. Returns null off the plan.
+function drawnTriangleAt(plan, byChunk, field, L0, px, pz, out) {
+  const cx = Math.floor((px - plan.originX) / plan.chunkSize);
+  const cz = Math.floor((pz - plan.originZ) / plan.chunkSize);
+  const c = byChunk.get(latticeKey(cx, cz));
+  if (!c) return null;
+  const cellW = plan.chunkSize / c.cells;
+  let ix = Math.floor((px - c.x0) / cellW);
+  let jz = Math.floor((pz - c.z0) / cellW);
+  if (ix < 0) ix = 0; else if (ix >= c.cells) ix = c.cells - 1;
+  if (jz < 0) jz = 0; else if (jz >= c.cells) jz = c.cells - 1;
+  const u = (px - c.x0) / cellW - ix;
+  const v = (pz - c.z0) / cellW - jz;
+  const st = c.stride;
+  const li = Math.round((c.x0 - plan.originX) / L0) + ix * st;
+  const lj = Math.round((c.z0 - plan.originZ) / L0) + jz * st;
+  const k00 = latticeKey(li, lj), k10 = latticeKey(li + st, lj);
+  const k01 = latticeKey(li, lj + st), k11 = latticeKey(li + st, lj + st);
+  // The builder alternates the diagonal on (ix + jz), so which triangle a point
+  // lands in — and therefore which three vertices hold it up — depends on both.
+  if ((ix + jz) & 1) {
+    if (u >= v) { out.k = [k00, k10, k11]; out.b = [1 - u, u - v, v]; }
+    else { out.k = [k00, k01, k11]; out.b = [1 - v, v - u, u]; }
+  } else if (u + v <= 1) {
+    out.k = [k00, k10, k01]; out.b = [1 - u - v, u, v];
+  } else {
+    out.k = [k11, k01, k10]; out.b = [u + v - 1, 1 - u, 1 - v];
+  }
+  const li0 = li, lj0 = lj;
+  const raw = (key) => (key === k00 ? field.raw(li0, lj0)
+    : key === k10 ? field.raw(li0 + st, lj0)
+      : key === k01 ? field.raw(li0, lj0 + st) : field.raw(li0 + st, lj0 + st));
+  out.y = out.b[0] * raw(out.k[0]) + out.b[1] * raw(out.k[1]) + out.b[2] * raw(out.k[2]);
+  return out;
+}
+
+// A lattice cell that spans the road is a flat plane strung between vertices
+// standing on the verge or the hillside, and where the road runs in a cutting
+// both of those are above it — so the skin buries the ribbon by whatever the
+// chord clears it by, up to 2.7 m on tamarosa-rioseca, whatever heightAt returns
+// at the vertices themselves.
+//
+// Walking the corridor gives one inequality per sampled point: the three lattice
+// vertices holding that point up, weighted by how much of it each holds, must
+// come down far enough between them. Dropping all three by the whole excess
+// satisfies it and is what a first cut does — and it drags the skin a metre
+// under the road for a kilometre either side of the one cell that needed it,
+// because a vertex then wears the worst excess of every cell it touches. So the
+// constraints are relaxed instead: each pass moves a violated point's vertices
+// by the least total drop that clears it, which loads the drop onto whichever
+// vertex is actually standing over the road and leaves the far corner alone.
+// The sweep is monotone — every step only ever lowers — so it converges, and a
+// final pass pays off whatever residual is left the blunt way.
+function conformCorridor(stage, world, plan, field, L0, sag, opts = {}) {
+  const n = stage.count;
+  const spacing = opts.conformSpacing ?? 0.9;
+  const byChunk = new Map();
+  for (const c of plan.list) byChunk.set(latticeKey(c.cx, c.cz), c);
+  const tri3 = { k: null, b: null, y: 0 };
+
+  const keys = [];
+  const bary = [];
+  const slack = [];
+  let worst = 0;
+  for (let i = 0; i < n; i += 1) {
+    const hw = halfWidthOf(stage, i);
+    const t = tangentOf(stage, i);
+    let rx = t[2], rz = -t[0];
+    const rl = Math.hypot(rx, rz) || 1;
+    rx /= rl; rz /= rl;
+    const span = hw + CONFORM_REACH;
+    const steps = Math.max(2, Math.ceil(span / spacing));
+    for (let k = -steps; k <= steps; k += 1) {
+      const lat = (k / steps) * span;
+      const px = stage.x[i] + rx * lat;
+      const pz = stage.z[i] + rz * lat;
+      const ground = world.heightAt(px, pz);
+      if (!Number.isFinite(ground)) continue;
+      if (!drawnTriangleAt(plan, byChunk, field, L0, px, pz, tri3)) continue;
+      const excess = tri3.y - (ground - CONFORM_CLEARANCE);
+      if (!(excess > 0)) continue;
+      if (excess > worst) worst = excess;
+      keys.push(tri3.k);
+      bary.push(tri3.b);
+      slack.push(excess);
+    }
+  }
+
+  const drop = (key) => sag.get(key) || 0;
+  const apply = (key, add) => sag.set(key, drop(key) + add);
+  for (let pass = 0; pass < 32; pass += 1) {
+    let moved = 0;
+    for (let s = 0; s < keys.length; s += 1) {
+      const k = keys[s], b = bary[s];
+      const r = slack[s] - (b[0] * drop(k[0]) + b[1] * drop(k[1]) + b[2] * drop(k[2]));
+      if (r <= 1e-4) continue;
+      const denom = b[0] * b[0] + b[1] * b[1] + b[2] * b[2];
+      if (denom < 1e-9) continue;
+      apply(k[0], (r * b[0]) / denom);
+      apply(k[1], (r * b[1]) / denom);
+      apply(k[2], (r * b[2]) / denom);
+      if (r > moved) moved = r;
+    }
+    if (moved <= 1e-4) break;
+  }
+  for (let s = 0; s < keys.length; s += 1) {
+    const k = keys[s], b = bary[s];
+    const r = slack[s] - (b[0] * drop(k[0]) + b[1] * drop(k[1]) + b[2] * drop(k[2]));
+    if (r <= 0) continue;
+    apply(k[0], r); apply(k[1], r); apply(k[2], r);
+  }
+  return worst;
 }
 
 export function buildTerrainMesh(THREE, stage, opts = {}) {
@@ -2033,7 +2172,13 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
   }
 
   const { chunkSize, originX, originZ } = plan;
-  const field = latticeField(world, L0, originX, originZ);
+  const sag = new Map();
+  const field = latticeField(world, L0, originX, originZ, sag);
+  // `conform: false` builds the skin the way it was built before the corridor
+  // was conformed. Nothing in the game passes it; the regression test does, to
+  // show its own assertion still fails against the behaviour it was written for.
+  const conformed = opts.conform === false ? 0
+    : conformCorridor(stage, world, plan, field, L0, sag);
   const snowy = Array.isArray(stage.surfaceMix) && stage.surfaceMix.includes(SURFACE.SNOW);
 
   let minY = Infinity, maxY = -Infinity;
@@ -2191,6 +2336,9 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
   const terrain = {
     group, chunks, material, triangles,
     latticeStep: L0, chunkSize, originX, originZ,
+    // What the corridor conform had to move, and how many lattice points it
+    // touched: a regression that stops conforming shows up here as a zero.
+    conformed, conformedPoints: sag.size,
     heightAt: (x, z) => world.heightAt(x, z),
     dispose() { disposeTerrain(terrain); },
   };
@@ -2740,7 +2888,11 @@ function buildRoofScoop(b, d, col) {
 function buildBumper(b, d, front, col) {
   const zEnd = front ? d.noseZ : d.tailZ;
   const zIn = front ? d.noseZ - 0.36 : d.tailZ + 0.38;
-  const yTop = front ? d.beltY - 0.20 : d.beltY - 0.14;
+  // The rear bumper used to reach to within 0.14 m of the belt line, which left
+  // 0.20 m of tail panel for the lamps, the plate and everything else — so the
+  // tail could only ever be a strip of trim on a slab. A real hatch tail is most
+  // of the rear elevation; the bumper is the bottom third of it.
+  const yTop = front ? d.beltY - 0.20 : d.beltY - 0.26;
   const yBot = d.ground + 0.185;
   const w = d.bodyHalfWidth * 0.98;
   const rings = [];
@@ -3163,40 +3315,110 @@ function buildCabinTrim(b, d) {
     [nx0 - 0.12, L.yDashTop + 0.026, L.zDashR - 0.25], paper);
 }
 
-// From thirty metres behind, the tail is most of the car. Everything here is a
-// shape a chase camera resolves at that range: screen surround, lamp plinths,
-// a vent band and the tow eye.
+// Nothing on the tail may stand further back than this. The loft's last ring is
+// where the car's quoted length is measured to, and the bounding box is asserted
+// against the spec, so the rim of a lamp housing is the one thing allowed to use
+// the margin up.
+const TAIL_PROUD = 0.040;
+
+// The lamp cluster, laid out once so the housing, the recess and the three
+// lenses in it cannot drift apart. `o` is measured outboard from the cluster's
+// own centre, so one table serves both sides mirrored.
+const TAIL_CLUSTER = Object.freeze({
+  openW: 0.32, openH: 0.115, rail: 0.030,
+  lens: Object.freeze([
+    { o: 0.070, rx: 0.085, kind: "brake" },
+    { o: -0.050, rx: 0.033, kind: "indicator" },
+    { o: -0.122, rx: 0.033, kind: "reverse" },
+  ]),
+});
+
+function tailClusterFrame(d) {
+  return { cx: d.bodyHalfWidth * 0.435, cy: d.beltY - 0.115, z: d.tailZ };
+}
+
+// From thirty metres behind, the tail is most of the car — and what was there
+// was a fan of triangles round the loft's last ring: one flat colour under one
+// normal, with two red rectangles laid on it that could only read as stickers.
+// Nothing below is decoration at that range. A lamp housing is a rim standing
+// proud of a dark backing plate with the lens set 16 mm behind the rim, so the
+// cluster has an edge and a shadow instead of an outline; the boot-lid lip, the
+// corner strakes, the louvre stack and the plate on the bumper are what stop the
+// panel between them being one unbroken face.
 function buildTailDetail(b, d, col) {
   const c = cabinFrame(d);
   const hw = d.bodyHalfWidth;
+  const zT = d.tailZ;
+  const belt = d.beltY;
   // Rear screen surround: a rail under the glass and one over it.
   pushBox(b, 0, c.beltY - 0.012, c.zRs + 0.020, c.beltW * 1.86, 0.045, 0.055, col);
   pushBox(b, 0, c.roofY - 0.048, c.zRoofR - 0.030, c.roofW * 1.92, 0.045, 0.055, col);
-  // Lamp plinths and the vent band between them, on the tail panel above the bumper.
-  const yL = d.beltY - 0.055;
+
+  // The boot-lid lip across the top of the panel, and a strake down each corner.
+  pushBox(b, 0, belt - 0.005, zT - 0.015, hw * 1.33, 0.030, 0.030, col);
   for (const side of [-1, 1]) {
-    pushBox(b, side * hw * 0.46, yL, d.tailZ + 0.055, 0.34, 0.175, 0.11, col);
+    pushBox(b, side * hw * 0.70, belt - 0.135, zT - 0.010, 0.026, 0.215, 0.020, col);
   }
-  pushBox(b, 0, yL - 0.010, d.tailZ + 0.060, hw * 0.52, 0.115, 0.09, col);
-  for (let k = -1; k <= 1; k += 1) {
-    pushBox(b, k * hw * 0.15, yL - 0.010, d.tailZ + 0.028, 0.030, 0.100, 0.03, col);
+
+  const f = tailClusterFrame(d);
+  const cl = TAIL_CLUSTER;
+  const outer = cl.openW + cl.rail * 2;
+  const tall = cl.openH + cl.rail * 2;
+  // Both sit 16 mm inside a dark rim, so they are read in its shadow: the albedo
+  // that looks right on a swatch comes out as two more black holes on the panel.
+  const amber = [0.480, 0.150, 0.020];
+  const clear = [0.720, 0.720, 0.680];
+  for (const side of [-1, 1]) {
+    const cx = side * f.cx;
+    // The backing plate first: without something dark behind them the lenses
+    // read as three chips floating on body colour.
+    pushBox(b, cx, f.cy, zT - 0.002, outer, tall, 0.010, col);
+    // Then the rim, four rails standing TAIL_PROUD off the panel.
+    const railZ = zT - (TAIL_PROUD - 0.017);
+    pushBox(b, cx, f.cy + (cl.openH + cl.rail) * 0.5, railZ, outer, cl.rail, 0.034, col);
+    pushBox(b, cx, f.cy - (cl.openH + cl.rail) * 0.5, railZ, outer, cl.rail, 0.034, col);
+    pushBox(b, cx - side * (cl.openW + cl.rail) * 0.5, f.cy, railZ, cl.rail, cl.openH, 0.034, col);
+    pushBox(b, cx + side * (cl.openW + cl.rail) * 0.5, f.cy, railZ, cl.rail, cl.openH, 0.034, col);
+    // The two lenses that are not lit live here rather than on the emissive
+    // material, because an indicator and a reverse lamp that are off are simply
+    // coloured plastic — and a lens is a lens because it is curved.
+    for (const l of cl.lens) {
+      if (l.kind === "brake") continue;
+      pushBlob(b, cx + side * l.o, f.cy, zT - 0.008, l.rx, 0.046, 0.016,
+        l.kind === "indicator" ? amber : clear, 2);
+    }
   }
-  pushCylinder(b, hw * 0.72, d.beltY - 0.30, d.tailZ + 0.10, 0.045, 0.045, 0.10, 8, "z", col);
+
+  // The louvre stack between the clusters: a recessed box with four slats across
+  // it, which is the one place on the tail with a repeating edge to catch light.
+  pushBox(b, 0, f.cy, zT - 0.014, hw * 0.34, cl.openH + 0.02, 0.028, col);
+  for (let k = 0; k < 4; k += 1) {
+    pushBox(b, 0, f.cy + (k - 1.5) * 0.030, zT - 0.030, hw * 0.30, 0.012, 0.016, [0.10, 0.10, 0.11]);
+  }
+
+  // Plate and tow eye sit on the bumper, where they do on the real thing. The
+  // plate stands proud of its backing rather than inside it — a pale face buried
+  // 5 mm inside a solid dark box is not a recess, it is invisible.
+  pushBox(b, 0, belt - 0.400, zT - 0.014, 0.40, 0.145, 0.028, col);
+  pushBox(b, 0, belt - 0.400, zT - 0.022, 0.34, 0.105, 0.020, [0.720, 0.720, 0.690]);
+  pushCylinder(b, hw * 0.62, belt - 0.360, zT - 0.010, 0.045, 0.045, 0.055, 8, "z", col);
 }
 
 // Tail lamps get their own emissive material: the front lenses glow warm white
 // and three.js does not modulate emissive by the vertex colour, so a red lamp
-// cannot share it.
+// cannot share it. Only the brake/tail element is lit — the indicator and the
+// reverse lamp are moulded into the housing in buildTailDetail.
 function buildTailLamps(d) {
-  const hw = d.bodyHalfWidth;
-  const y = d.beltY - 0.055;
-  // Proud of its plinth but inside the tail: the bounding box is the car's
-  // quoted length and a lamp hanging past it is a lie about where the car ends.
-  const z = d.tailZ + 0.005;
-  return [
-    [-hw * 0.46, y, z, 0.30, 0.13],
-    [hw * 0.46, y, z, 0.30, 0.13],
-  ];
+  const f = tailClusterFrame(d);
+  const brake = TAIL_CLUSTER.lens.find((l) => l.kind === "brake");
+  const out = [];
+  for (const side of [-1, 1]) {
+    // Recessed behind the rim, and never past TAIL_PROUD: the bounding box is
+    // the car's quoted length and a lamp hanging out of it is a lie about where
+    // the car ends.
+    out.push([side * f.cx + side * brake.o, f.cy, f.z - 0.008, brake.rx, 0.046]);
+  }
+  return out;
 }
 
 function buildSpare(b, d, col) {
@@ -3312,9 +3534,9 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   addPart("cabinTrim", (b) => buildCabinTrim(b, d), trimMat, 4, { receive: false });
   addPart("tailDetail", (b) => buildTailDetail(b, d, [0.038, 0.038, 0.042]), trimMat, 1);
 
-  for (const [i, [x, y, z, w, h]] of buildTailLamps(d).entries()) {
+  for (const [i, [x, y, z, rx, ry]] of buildTailLamps(d).entries()) {
     addPart(`lampRear${i}`, (b) => {
-      pushBox(b, x, y, z, w, h, 0.06, [0.42, 0.05, 0.04]);
+      pushBlob(b, x, y, z, rx, ry, 0.016, [0.42, 0.05, 0.04], 2);
     }, tailLampMat, 1, { receive: false });
   }
 

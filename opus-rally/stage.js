@@ -1106,11 +1106,13 @@ export function stageWorld(stage) {
   const RX = new Float64Array(count);
   const RZ = new Float64Array(count);
   const SINCAM = new Float64Array(count);
+  const HW = new Float64Array(count);
   for (let i = 0; i < count; i += 1) {
     const inv = 1 / Math.max(1e-6, Math.sqrt(stage.tx[i] * stage.tx[i] + stage.tz[i] * stage.tz[i]));
     RX[i] = stage.tz[i] * inv;
     RZ[i] = -stage.tx[i] * inv;
     SINCAM[i] = Math.sin(stage.camber[i]);
+    HW[i] = stage.halfWidth[i];
   }
   const sepHalf2 = (SEP_NEAR.dist * 0.5) * (SEP_NEAR.dist * 0.5);
   const scanned = new Int32Array(9);
@@ -1171,10 +1173,34 @@ export function stageWorld(stage) {
     }
   }
 
-  function lateralOf(px, pz, i, f) {
+  // The road frame belongs to an arc length, not to whichever segment won the
+  // projection. Abeam a sample the two neighbouring segments are exactly as
+  // near, so which one wins is a tie-break, and taking that segment's camber,
+  // half-width and right vector wholesale let the two answers disagree — half a
+  // centimetre of the step the edge used to carry, and the whole of the reason
+  // the surface across the road was centimetres off its own camber. Interpolated
+  // along the segment, segment i at f=1 and segment i+1 at f=0 are bit-for-bit
+  // the same frame, so there is nothing left to flip. `smoothFoot` below carries
+  // the rest of it.
+  const frame = { rx: 0, rz: 0, sinCam: 0, halfWidth: 0 };
+
+  function frameAt(i, f) {
+    const j = i + 1 < count ? i + 1 : i;
+    const g = 1 - f;
+    const rx = RX[i] * g + RX[j] * f;
+    const rz = RZ[i] * g + RZ[j] * f;
+    const inv = 1 / Math.max(1e-9, Math.sqrt(rx * rx + rz * rz));
+    frame.rx = rx * inv;
+    frame.rz = rz * inv;
+    frame.sinCam = SINCAM[i] * g + SINCAM[j] * f;
+    frame.halfWidth = HW[i] * g + HW[j] * f;
+    return frame;
+  }
+
+  function lateralAt(px, pz, i, f, fr) {
     const cx = X[i] + (X[i + 1] - X[i]) * f;
     const cz = Z[i] + (Z[i + 1] - Z[i]) * f;
-    return (px - cx) * RX[i] + (pz - cz) * RZ[i];
+    return (px - cx) * fr.rx + (pz - cz) * fr.rz;
   }
 
   const projScratch = { s: 0, lateral: 0, signedLateral: 0, index: 0, frac: 0 };
@@ -1182,7 +1208,7 @@ export function stageWorld(stage) {
   function project(px, pz, hintS, out) {
     const target = out || projScratch;
     locate(px, pz, hintS === undefined || hintS === null ? -1 : hintS);
-    const signed = lateralOf(px, pz, bestI, bestT);
+    const signed = lateralAt(px, pz, bestI, bestT, frameAt(bestI, bestT));
     target.index = bestI;
     target.frac = bestT;
     target.s = (bestI + bestT) * step;
@@ -1192,10 +1218,65 @@ export function stageWorld(stage) {
     return target;
   }
 
-  function roadSurfaceY(i, f, d) {
-    const hw = stage.halfWidth[i];
+  function roadSurfaceY(i, f, d, hw, sinCam) {
     const dd = d < -hw ? -hw : d > hw ? hw : d;
-    return Y[i] + (Y[i + 1] - Y[i]) * f + dd * SINCAM[i];
+    return Y[i] + (Y[i + 1] - Y[i]) * f + dd * sinCam;
+  }
+
+  // Interpolating the frame is only half of it: which arc length a point belongs
+  // to is itself ambiguous on the inside of a corner, where the cross sections of
+  // two neighbouring segments cross. The nearest-point rule flips there between
+  // feet 0.44 m apart along the road — on a 7% grade a 3 cm step in the surface,
+  // with nothing to shrink it, because the two feet are different places and the
+  // road climbs between them. So weight the neighbours by how close each comes to
+  // winning, with the 1/excess^2 shape the terrain field already uses: the two
+  // agree where they tie, and the winner takes it back within a hand's breadth.
+  //
+  // The span is deliberately short and the window three segments wide, so the
+  // blend can only ever reach the segments that genuinely compete — never the
+  // other side of a medial axis between two passes of the road, which is metres
+  // of height away and is the terrain field's problem, not the corridor's.
+  const FOOT_SPAN = 0.5;
+  const FOOT_SOFT = 0.02;
+  let footI = 0;
+  let footF = 0;
+
+  function smoothFoot(px, pz, i0, f0, near) {
+    const lo = i0 - 1 < 0 ? 0 : i0 - 1;
+    const hi = i0 + 1 > count - 2 ? count - 2 : i0 + 1;
+    const base = i0 + f0;
+    let num = 0;
+    let den = 0;
+    for (let i = lo; i <= hi; i += 1) {
+      const ax = X[i];
+      const az = Z[i];
+      const bx = X[i + 1] - ax;
+      const bz = Z[i + 1] - az;
+      const qx = px - ax;
+      const qz = pz - az;
+      const len2 = bx * bx + bz * bz;
+      const t = len2 > 1e-9 ? (qx * bx + qz * bz) / len2 : 0;
+      const ct = t < 0 ? 0 : t > 1 ? 1 : t;
+      const ex = qx - bx * ct;
+      const ez = qz - bz * ct;
+      const excess = Math.sqrt(ex * ex + ez * ez) - near;
+      if (excess >= FOOT_SPAN) continue;
+      const soft = excess > 0 ? excess + FOOT_SOFT : FOOT_SOFT;
+      const w = (1 - smootherstep(0, FOOT_SPAN, excess)) / (soft * soft);
+      // Accumulate the shift off the winner rather than the arc length itself,
+      // so a point every candidate agrees about keeps the winner's foot exactly.
+      // The foot is the unclamped one: past the end of a segment the tangent
+      // plane it extends is what the neighbour is competing with.
+      num += w * (i + t - base);
+      den += w;
+    }
+    const u = den > 0 ? base + num / den : base;
+    let i = Math.floor(u);
+    if (i < 0) i = 0; else if (i > count - 2) i = count - 2;
+    let f = u - i;
+    if (f < 0) f = 0; else if (f > 1) f = 1;
+    footI = i;
+    footF = f;
   }
 
   // What one stretch of road makes of a point: the road surface itself inside
@@ -1206,13 +1287,14 @@ export function stageWorld(stage) {
   const field = { base: 0, t: 0, a: 0 };
 
   function roadField(px, pz, i, f, dist) {
-    const d = lateralOf(px, pz, i, f);
+    const fr = frameAt(i, f);
+    const d = lateralAt(px, pz, i, f, fr);
     // The offset is measured across the tangent, which says nothing about how
     // far past the end of a segment the point lies: a point 50 m off the end of
     // the road sits on its centre line and was being handed the road surface.
     const a = dist > Math.abs(d) ? dist : Math.abs(d);
-    const hw = stage.halfWidth[i];
-    const edgeY = roadSurfaceY(i, f, d);
+    const hw = fr.halfWidth;
+    const edgeY = roadSurfaceY(i, f, d, hw, fr.sinCam);
     field.a = a;
     if (a <= hw) { field.base = edgeY; field.t = 0; return field; }
     const u = a - hw;
@@ -1311,9 +1393,16 @@ export function stageWorld(stage) {
 
     if (nearI >= 0) {
       hintIndex = nearI;
-      roadField(px, pz, nearI, nearF, Math.sqrt(nearD2));
-      // On the road and its verge the road is the answer, to the millimetre.
-      if (field.t <= 0) return field.base;
+      const dn = Math.sqrt(nearD2);
+      // On the road and its verge the road is the answer, to the millimetre —
+      // and only there is it worth resolving which arc length the point is
+      // abeam of, so the cheap nearest foot decides whether we are on it.
+      roadField(px, pz, nearI, nearF, dn);
+      if (field.t <= 0) {
+        smoothFoot(px, pz, nearI, nearF, dn);
+        roadField(px, pz, footI, footF, dn);
+        if (field.t <= 0) return field.base;
+      }
     }
     for (let k = 0; k < held; k += 1) {
       const w = holdW[k];
@@ -1362,14 +1451,20 @@ export function stageWorld(stage) {
     const target = out || tmpNormal;
     locate(px, pz, -1);
     const i = bestI;
+    const f = bestT;
     hintIndex = i;
-    const d = lateralOf(px, pz, i, bestT);
+    const fr = frameAt(i, f);
+    const d = lateralAt(px, pz, i, f, fr);
     const a = Math.abs(d);
-    const hw = stage.halfWidth[i];
+    const hw = fr.halfWidth;
     const edge = smoothstep(hw, hw + BLEND * 0.6, a);
-    let nx = stage.nx[i];
-    let ny = stage.ny[i];
-    let nz = stage.nz[i];
+    // The surface normal is part of the same frame, and a wheel feels a step in
+    // it as a kick: interpolate it too, and let the normalisation below tidy up.
+    const j = i + 1 < count ? i + 1 : i;
+    const g = 1 - f;
+    let nx = stage.nx[i] * g + stage.nx[j] * f;
+    let ny = stage.ny[i] * g + stage.ny[j] * f;
+    let nz = stage.nz[i] * g + stage.nz[j] * f;
     if (edge > 0) {
       const e = 0.75;
       const h0 = heightAt(px, pz);
@@ -1391,9 +1486,18 @@ export function stageWorld(stage) {
     locate(px, pz, out && out.owned ? out.s : -1);
     const i = bestI;
     const f = bestT;
-    const d = lateralOf(px, pz, i, f);
-    const a = Math.abs(d);
-    const hw = stage.halfWidth[i];
+    const dist = Math.sqrt(bestD2);
+    const fr = frameAt(i, f);
+    const d = lateralAt(px, pz, i, f, fr);
+    // How far the point is from the road, which is not the same as how far it is
+    // across the tangent: straight off either end of the stage the offset stays
+    // zero however far you go, and grip decided on the offset alone handed open
+    // terrain the grip of a road it is nowhere near. heightAt was given the
+    // point-to-segment distance for exactly this reason. `lateral` and
+    // `signedLateral` stay the tangent-frame measure the contract promises and
+    // project() reports — only what counts as road changes.
+    const a = dist > Math.abs(d) ? dist : Math.abs(d);
+    const hw = fr.halfWidth;
     const edge = smoothstep(hw - 0.35, hw + 1.6, a);
     blendSurface(surfaceProps(stage.surface[i]), surfaceProps(stage.surfaceAlt[i]), stage.surfaceMixT[i], roadBlend);
     // out.props is created once per caller-owned out object, never per call: one
@@ -1402,7 +1506,7 @@ export function stageWorld(stage) {
     blendSurface(roadBlend, surfaceProps(stage.verge[i]), edge, out.props);
     out.surfaceId = out.props.id;
     out.onRoad = a <= hw;
-    out.lateral = a;
+    out.lateral = Math.abs(d);
     out.signedLateral = d;
     out.s = (i + f) * step;
     out.index = i;
