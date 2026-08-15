@@ -46,11 +46,29 @@ function mkBuilder() {
   return { pos: [], uv: [], col: [], nor: [], extra: null, idx: [], n: 0 };
 }
 
+// `b.uvFix` overrides whatever a primitive would emit: an [u,v] pins a whole
+// sub-mesh to one texel, a function maps its own position into an atlas. The
+// primitives all lay UVs down in their own local space, which is right for a
+// tiling ground texture and useless for a livery, where the paint has to be
+// continuous across parts a modeller thinks of separately.
 function vert(b, x, y, z, u, v, r, g, bl) {
   b.pos.push(x, y, z);
-  b.uv.push(u, v);
+  if (b.uvFix) {
+    const f = typeof b.uvFix === "function" ? b.uvFix(x, y, z) : b.uvFix;
+    b.uv.push(f[0], f[1]);
+  } else {
+    b.uv.push(u, v);
+  }
   b.col.push(r, g, bl);
   return b.n++;
+}
+
+function withUv(b, uv, fn) {
+  const prev = b.uvFix;
+  b.uvFix = uv;
+  const out = fn();
+  b.uvFix = prev;
+  return out;
 }
 
 function tri(b, a, c, d) {
@@ -323,21 +341,30 @@ function pushTube(b, path, radius, sides, col, closedEnds = true) {
 
 // Loft closed rings of identical length; the shared vertices give smooth shading
 // along the body sides without a normal-smoothing pass guessing at the crease.
-function pushLoft(b, rings, col, capStart = false, capEnd = false) {
+//
+// `uvFn(i, k, rings, K)` places the loft in an atlas. It gets an extra seam
+// column at k === K, holding the first ring point again so the wrap quad can
+// end at the far edge of the atlas rather than jumping back to its start — that
+// jump smeared the entire livery across the strip down the car's floor. It is
+// also asked for k === -1, for the end caps: a fan round a closed ring cannot be
+// given a sane planar UV, so a caller that cares hands back one flat swatch.
+function pushLoft(b, rings, col, capStart = false, capEnd = false, uvFn = null) {
   const [r, g, bl] = col;
   const K = rings[0].length;
+  const cols = uvFn ? K + 1 : K;
   const idx = [];
   for (let i = 0; i < rings.length; i += 1) {
     const row = [];
-    for (let k = 0; k < K; k += 1) {
-      const p = rings[i][k];
-      row.push(vert(b, p[0], p[1], p[2], k / K, i / (rings.length - 1), r, g, bl));
+    for (let k = 0; k < cols; k += 1) {
+      const p = rings[i][k % K];
+      const t = uvFn ? uvFn(i, k, rings.length, K) : [k / K, i / (rings.length - 1)];
+      row.push(vert(b, p[0], p[1], p[2], t[0], t[1], r, g, bl));
     }
     idx.push(row);
   }
   for (let i = 0; i + 1 < rings.length; i += 1) {
     for (let k = 0; k < K; k += 1) {
-      const j = (k + 1) % K;
+      const j = uvFn ? k + 1 : (k + 1) % K;
       quad(b, idx[i][k], idx[i][j], idx[i + 1][j], idx[i + 1][k]);
     }
   }
@@ -345,8 +372,11 @@ function pushLoft(b, rings, col, capStart = false, capEnd = false) {
     let cx = 0, cy = 0, cz = 0;
     for (const p of ring) { cx += p[0]; cy += p[1]; cz += p[2]; }
     cx /= ring.length; cy /= ring.length; cz /= ring.length;
-    const c = vert(b, cx, cy, cz, 0.5, 0.5, r, g, bl);
-    const ids = ring.map((p, k) => vert(b, p[0], p[1], p[2], k / K, flip ? 0 : 1, r, g, bl));
+    const ci = flip ? 0 : rings.length - 1;
+    const flat = uvFn ? uvFn(ci, -1, rings.length, K) : null;
+    const c = vert(b, cx, cy, cz, flat ? flat[0] : 0.5, flat ? flat[1] : 0.5, r, g, bl);
+    const ids = ring.map((p, k) => vert(b, p[0], p[1], p[2],
+      flat ? flat[0] : k / K, flat ? flat[1] : (flip ? 0 : 1), r, g, bl));
     for (let k = 0; k < K; k += 1) {
       const j = (k + 1) % K;
       if (flip) tri(b, c, ids[j], ids[k]); else tri(b, c, ids[k], ids[j]);
@@ -370,13 +400,17 @@ function fade5(t) {
   return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-function periodicGrad(x, y, period, seed) {
+// The two axes carry their own period because several fields are deliberately
+// anisotropic — grass streaks, bark furrows, rock strata. Wrapping both axes to
+// the x period, as this used to, tiles those fields horizontally and leaves a
+// hard seam every tile down the other axis.
+function periodicGrad(x, y, period, seed, periodY = period) {
   const xi = Math.floor(x), yi = Math.floor(y);
   const xf = x - xi, yf = y - yi;
   const u = fade5(xf), v = fade5(yf);
   const g = (cx, cy) => {
     const px = (((xi + cx) % period) + period) % period;
-    const py = (((yi + cy) % period) + period) % period;
+    const py = (((yi + cy) % periodY) + periodY) % periodY;
     const a = hash2(px, py, seed) * TAU;
     return Math.cos(a) * (xf - cx) + Math.sin(a) * (yf - cy);
   };
@@ -386,10 +420,10 @@ function periodicGrad(x, y, period, seed) {
   return (top + (bot - top) * v) * 1.4142;
 }
 
-function periodicFbm(x, y, period, seed, octaves = 4, gain = 0.5) {
+function periodicFbm(x, y, period, seed, octaves = 4, gain = 0.5, periodY = period) {
   let amp = 1, freq = 1, sum = 0, norm = 0;
   for (let i = 0; i < octaves; i += 1) {
-    sum += amp * periodicGrad(x * freq, y * freq, period * freq, seed + i * 1013);
+    sum += amp * periodicGrad(x * freq, y * freq, period * freq, seed + i * 1013, periodY * freq);
     norm += amp;
     amp *= gain;
     freq *= 2;
@@ -397,10 +431,10 @@ function periodicFbm(x, y, period, seed, octaves = 4, gain = 0.5) {
   return norm > 0 ? sum / norm : 0;
 }
 
-function periodicRidge(x, y, period, seed, octaves = 4) {
+function periodicRidge(x, y, period, seed, octaves = 4, periodY = period) {
   let amp = 1, freq = 1, sum = 0, norm = 0;
   for (let i = 0; i < octaves; i += 1) {
-    const n = 1 - Math.abs(periodicGrad(x * freq, y * freq, period * freq, seed + i * 7919));
+    const n = 1 - Math.abs(periodicGrad(x * freq, y * freq, period * freq, seed + i * 7919, periodY * freq));
     sum += amp * n * n;
     norm += amp;
     amp *= 0.5;
@@ -418,19 +452,52 @@ function linearToSrgbByte(v) {
 // mode drives the height field; everything else (colour, roughness, normal) is
 // derived from that one field so a lit surface never disagrees with itself.
 const TEXTURE_DEFS = Object.freeze({
-  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], tint: [0.05, 0.03, 0.02], rough: [0.78, 0.98], relief: 1.35, lift: 0.55 },
-  tarmac: { mode: "asphalt", albedo: [0.118, 0.120, 0.128], tint: [0.02, 0.02, 0.02], rough: [0.52, 0.86], relief: 0.55, lift: 0.35 },
-  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], tint: [0.05, 0.035, 0.02], rough: [0.82, 0.98], relief: 1.0, lift: 0.45 },
-  snow: { mode: "drift", albedo: [0.800, 0.845, 0.905], tint: [0.02, 0.02, 0.04], rough: [0.38, 0.72], relief: 0.8, lift: 0.30 },
-  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], tint: [0.06, 0.07, 0.03], rough: [0.72, 0.95], relief: 1.1, lift: 0.5 },
-  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], tint: [0.05, 0.045, 0.04], rough: [0.62, 0.92], relief: 1.6, lift: 0.5 },
-  bark: { mode: "bark", albedo: [0.150, 0.118, 0.085], tint: [0.05, 0.04, 0.025], rough: [0.80, 0.98], relief: 1.5, lift: 0.5 },
-  foliage: { mode: "leaf", albedo: [0.115, 0.185, 0.075], tint: [0.05, 0.07, 0.03], rough: [0.66, 0.90], relief: 0.9, lift: 0.45, alpha: true },
-  concrete: { mode: "concrete", albedo: [0.330, 0.325, 0.310], tint: [0.02, 0.02, 0.02], rough: [0.66, 0.90], relief: 0.6, lift: 0.4 },
-  dirtOverlay: { mode: "splatter", albedo: [0.180, 0.140, 0.095], tint: [0.03, 0.02, 0.015], rough: [0.88, 0.99], relief: 0.7, lift: 0.5, alpha: true },
+  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], tint: [0.05, 0.03, 0.02], rough: [0.78, 0.98], relief: 2.6, lift: 0.55 },
+  tarmac: { mode: "asphalt", albedo: [0.118, 0.120, 0.128], tint: [0.02, 0.02, 0.02], rough: [0.52, 0.86], relief: 1.0, lift: 0.35 },
+  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], tint: [0.05, 0.035, 0.02], rough: [0.82, 0.98], relief: 2.0, lift: 0.45 },
+  snow: { mode: "drift", albedo: [0.800, 0.845, 0.905], tint: [0.02, 0.02, 0.04], rough: [0.38, 0.72], relief: 1.5, lift: 0.30 },
+  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], tint: [0.075, 0.085, 0.030], rough: [0.72, 0.95], relief: 2.2, lift: 0.44 },
+  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], tint: [0.05, 0.045, 0.04], rough: [0.62, 0.92], relief: 3.0, lift: 0.44 },
+  bark: { mode: "bark", albedo: [0.150, 0.118, 0.085], tint: [0.05, 0.04, 0.025], rough: [0.80, 0.98], relief: 2.4, lift: 0.5 },
+  foliage: { mode: "leaf", albedo: [0.115, 0.185, 0.075], tint: [0.05, 0.07, 0.03], rough: [0.66, 0.90], relief: 1.4, lift: 0.45, alpha: true },
+  concrete: { mode: "concrete", albedo: [0.330, 0.325, 0.310], tint: [0.02, 0.02, 0.02], rough: [0.66, 0.90], relief: 1.1, lift: 0.4 },
+  dirtOverlay: { mode: "splatter", albedo: [0.180, 0.140, 0.095], tint: [0.03, 0.02, 0.015], rough: [0.88, 0.99], relief: 1.0, lift: 0.5, alpha: true },
 });
 
 export const TEXTURE_NAMES = Object.freeze(Object.keys(TEXTURE_DEFS));
+
+// Feature sizes below are quoted in texels, because that — not "how much noise
+// looks nice in a thumbnail" — is what decides whether a surface still reads at
+// fifty metres. `fx` advances by `p` across the tile and `size / p` is 8 texels
+// for every size the game builds, so a frequency f draws features 8/f texels
+// across, and its last octave 8/(f·2^(n-1)).
+//
+// Ground is looked at almost edge-on, so a screen pixel out at 50 m covers three
+// or four texels even with anisotropic filtering: mip 2. Anything finer than
+// about 8 texels is gone by then. The grass field asked for 0.8-texel streaks
+// and put 70% of its contrast in them, which is exactly why the terrain
+// photographed as flat olive paint past the first few metres. Detail below ~4
+// texels is near-field seasoning only, and never carries the contrast.
+// A field tiles only when the lattice span across one tile is a whole number of
+// periods, and the span is `p * scale`. Passing `p` as the period while scaling
+// the coordinate by anything but 1 — which every mode here used to do — leaves a
+// seam every tile. These two take the scale instead of the period so the pair
+// can never disagree; keep every scale a multiple of 1/4, since p is 4 at the
+// smallest size the tests build.
+function fbm(fx, fy, ax, ay, p, seed, octaves) {
+  return periodicFbm(fx * ax, fy * ay, p * ax, seed, octaves, 0.5, p * ay);
+}
+
+function ridge(fx, fy, ax, ay, p, seed, octaves) {
+  return periodicRidge(fx * ax, fy * ay, p * ax, seed, octaves, p * ay);
+}
+
+// fbm rarely reaches its own extremes, so the raw signal is a narrow band around
+// a half. Coarse detail is the only detail that survives to fifty metres, so it
+// has to arrive with real contrast rather than the ±0.15 the raw sum gives.
+function stretch(n, k) {
+  return saturate(0.5 + n * k);
+}
 
 function heightField(def, size, seed) {
   const h = new Float32Array(size * size);
@@ -442,56 +509,60 @@ function heightField(def, size, seed) {
       let v = 0;
       switch (def.mode) {
         case "pebble": {
-          const base = periodicFbm(fx * 0.5, fy * 0.5, p, seed, 3) * 0.35;
-          const stones = periodicRidge(fx * 3, fy * 3, p * 3, seed + 17, 2);
-          v = base + Math.pow(stones, 2.1) * 0.9;
+          const bed = stretch(fbm(fx, fy, 0.5, 0.5, p, seed, 3), 1.15);        // 16 texel drifts
+          const stones = ridge(fx, fy, 1.5, 1.5, p, seed + 17, 2);             // 5 texel stones
+          v = 0.06 + bed * 0.58 + Math.pow(stones, 1.7) * 0.60;
           break;
         }
         case "asphalt": {
-          const fine = periodicFbm(fx * 6, fy * 6, p * 6, seed, 3) * 0.5 + 0.5;
-          const agg = Math.pow(saturate(periodicRidge(fx * 9, fy * 9, p * 9, seed + 3, 1)), 6) * 0.8;
-          v = fine * 0.25 + agg;
+          const fine = stretch(fbm(fx, fy, 1, 1, p, seed, 2), 1.1);
+          const agg = Math.pow(saturate(ridge(fx, fy, 1.75, 1.75, p, seed + 3, 1)), 4) * 0.9;
+          v = 0.10 + fine * 0.45 + agg;
           break;
         }
         case "soil": {
-          v = periodicFbm(fx, fy, p, seed, 4) * 0.5 + 0.5;
-          v += Math.pow(saturate(periodicRidge(fx * 4, fy * 4, p * 4, seed + 5, 2)), 3) * 0.35;
+          const bed = stretch(fbm(fx, fy, 0.5, 0.5, p, seed, 3), 1.2);
+          v = 0.06 + bed * 0.66 + Math.pow(saturate(ridge(fx, fy, 1.25, 1.25, p, seed + 5, 2)), 3) * 0.45;
           break;
         }
         case "drift": {
-          v = periodicFbm(fx * 0.7, fy * 0.7, p, seed, 3) * 0.4 + 0.55;
-          v += Math.pow(saturate(periodicFbm(fx * 8, fy * 8, p * 8, seed + 9, 2)), 4) * 0.25;
+          const bed = stretch(fbm(fx, fy, 0.5, 0.5, p, seed, 3), 1.1);
+          v = 0.16 + bed * 0.60 + Math.pow(stretch(fbm(fx, fy, 1.25, 1.25, p, seed + 9, 2), 1.1), 3) * 0.26;
           break;
         }
         case "blades": {
-          // Streaks: high frequency across the blade, low along it.
-          v = periodicFbm(fx * 10, fy * 2.2, p * 10, seed, 3) * 0.5 + 0.5;
-          v = v * 0.7 + (periodicFbm(fx * 1.2, fy * 1.2, p, seed + 21, 3) * 0.5 + 0.5) * 0.3;
+          // Tussocks carry the contrast; the blade streaks are near-field only,
+          // so they ride on top at a third of the weight rather than being it.
+          const clump = stretch(fbm(fx, fy, 0.5, 0.5, p, seed, 3), 1.25);
+          const blade = stretch(fbm(fx, fy, 1.5, 0.5, p, seed + 21, 2), 0.95);
+          const bare = Math.pow(saturate(ridge(fx, fy, 0.5, 0.5, p, seed + 5, 2)), 2.4);
+          v = 0.14 + clump * 0.68 + blade * 0.22 - bare * 0.32;
           break;
         }
         case "strata": {
-          v = periodicRidge(fx * 1.6, fy * 1.6, p * 2, seed, 4) * 0.75
-            + periodicFbm(fx * 6, fy * 6, p * 6, seed + 11, 2) * 0.25 + 0.15;
+          // Bedding planes: long across the tile, tight up it.
+          v = Math.pow(ridge(fx, fy, 0.5, 1, p, seed, 3), 1.6) * 1.25
+            + stretch(fbm(fx, fy, 1.5, 1.5, p, seed + 11, 2), 1.0) * 0.30;
           break;
         }
         case "bark": {
-          v = periodicRidge(fx * 9, fy * 0.9, p * 9, seed, 3) * 0.8
-            + periodicFbm(fx * 3, fy * 12, p * 12, seed + 4, 2) * 0.2 + 0.1;
+          v = Math.pow(ridge(fx, fy, 1.5, 0.5, p, seed, 3), 1.5) * 1.15
+            + stretch(fbm(fx, fy, 0.5, 1.75, p, seed + 4, 2), 1.0) * 0.26;
           break;
         }
         case "leaf": {
-          const blob = periodicFbm(fx * 5, fy * 5, p * 5, seed, 3) * 0.5 + 0.5;
-          v = Math.pow(blob, 1.4);
+          const blob = stretch(fbm(fx, fy, 1, 1, p, seed, 3), 1.15);
+          v = Math.pow(blob, 1.2);
           break;
         }
         case "concrete": {
-          v = periodicFbm(fx * 3, fy * 3, p * 3, seed, 4) * 0.35 + 0.6;
-          const pit = saturate(periodicRidge(fx * 14, fy * 14, p * 14, seed + 6, 1));
-          v -= Math.pow(pit, 10) * 0.5;
+          v = 0.30 + stretch(fbm(fx, fy, 0.5, 0.5, p, seed, 3), 1.0) * 0.52;
+          const pit = saturate(ridge(fx, fy, 2, 2, p, seed + 6, 1));
+          v -= Math.pow(pit, 8) * 0.5;
           break;
         }
         default: { // splatter
-          const s = saturate(periodicRidge(fx * 4, fy * 4, p * 4, seed, 3));
+          const s = saturate(ridge(fx, fy, 0.75, 0.75, p, seed, 3));
           v = Math.pow(s, 3.2);
           break;
         }
@@ -521,7 +592,9 @@ function buildTextureSet(THREE, name, size, seed) {
       const i = y * size + x;
       const v = h[i];
       const shade = def.lift + v * (1.6 - def.lift);
-      const jitter = (hash2(x, y, seed + 991) - 0.5) * 0.10;
+      // Per-texel white noise is gone by mip 1, so it buys near-field grain and
+      // nothing else; at the old strength it was mostly a shimmer generator.
+      const jitter = (hash2(x, y, seed + 991) - 0.5) * 0.05;
       const o = i * 4;
       for (let c = 0; c < 3; c += 1) {
         const base = def.albedo[c] * shade + def.tint[c] * (v - 0.5) * 2 + jitter * def.albedo[c];
@@ -693,14 +766,43 @@ function canvasTexture(THREE, canvas, srgb = true) {
 
 // ---- livery --------------------------------------------------------------
 
-// The body UV is a single atlas: the loft assigns u across the section and v
-// along the car, so these regions land where the panel does.
-const LIVERY_REGIONS = Object.freeze({
-  doorLeft: { x: 0.06, y: 0.34, w: 0.30, h: 0.30 },
-  doorRight: { x: 0.64, y: 0.34, w: 0.30, h: 0.30 },
-  roof: { x: 0.37, y: 0.06, w: 0.26, h: 0.22 },
-  bonnet: { x: 0.37, y: 0.70, w: 0.26, h: 0.24 },
+// The paint atlas is the car unwrapped: canvas x runs from the tail to the nose
+// and canvas y runs the section, deck in the middle with a flank either side.
+// Every painted part maps into it through carUv(), so a stripe drawn as a
+// rectangle here is one stripe down the whole car rather than a graphic each
+// panel repeats.
+//
+// It used to be the other way about — x round the section, y along the car —
+// which is why a "stripe" came out as bands wrapping the body, and why fourteen
+// section slots divided into a sixteen-cell checker landed the pattern's pitch
+// on the pixel pitch at chase distance. A rally car is large flat colour fields
+// and two or three big shapes, because that is what survives being seen from
+// forty metres through a dust cloud.
+const LIVERY_BANDS = Object.freeze({
+  deck: { y0: 0.415, y1: 0.585 },
+  flankNear: { y0: 0.600, y1: 0.830 },   // +X, the side that reads mirrored
+  flankFar: { y0: 0.170, y1: 0.400 },    // -X
+  nose: 0.92,
 });
+
+// The first 3.5% of the length is never drawn on: it holds the three flat
+// swatches that parts with no graphic of their own point at. A constant UV has
+// zero derivative, so each samples mip 0 and cannot bleed into its neighbours.
+const LIVERY_RESERVE = 0.035;
+const LIVERY_FLAT_UV = Object.freeze([0.017, 0.50]);
+const LIVERY_TRIM_UV = Object.freeze([0.017, 0.965]);
+// The tail cap is the rear panel, and from a chase camera it is the largest
+// single surface the player ever looks at. It is a fan round a closed ring so it
+// can take no planar mapping at all; a swatch of its own is what stops it being
+// an unbroken slab of body colour.
+const LIVERY_PANEL_UV = Object.freeze([0.017, 0.035]);
+
+// Longitudinal position in the atlas, from the tail to the nose, clear of the
+// reserved swatch. Every paint part on the car agrees through this one function.
+function carUvX(z, d) {
+  const t = saturate((z - d.tailZ) / Math.max(0.001, d.noseZ - d.tailZ));
+  return LIVERY_RESERVE + 0.012 + (1 - LIVERY_RESERVE - 0.012) * t;
+}
 
 const STENCIL_FACE = '700 {size}px "Arial Black", "Helvetica Neue", Impact, sans-serif';
 const SPONSOR_FACE = '700 {size}px "Arial Narrow", Arial, Helvetica, sans-serif';
@@ -709,7 +811,10 @@ function face(template, size) {
   return template.replace("{size}", String(Math.round(size)));
 }
 
-function drawPattern(ctx, W, H, livery, mode) {
+// One graphic, drawn into a band that is a whole flank or the whole deck. The
+// smallest feature any of these produces is about an eighth of the car's length,
+// which is the point: a shape that is still a shape at forty metres.
+function drawFlankGraphic(ctx, x0, y0, w, h, livery, mode, mirror) {
   const paint = (colour, roughValue) => {
     ctx.fillStyle = mode === "rough" ? greyOf(roughValue) : colour;
   };
@@ -717,86 +822,106 @@ function drawPattern(ctx, W, H, livery, mode) {
   const stripe = livery.stripe || "#ffffff";
   const accent = livery.accent || "#101010";
   ctx.save();
-  if (pattern === "stripe") {
-    paint(stripe, 0.22);
-    ctx.fillRect(0, H * 0.42, W, H * 0.09);
-    paint(accent, 0.30);
-    ctx.fillRect(0, H * 0.53, W, H * 0.035);
-  } else if (pattern === "chevron") {
-    paint(stripe, 0.22);
-    for (let i = -2; i < 14; i += 1) {
-      const x = (i / 12) * W;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x + W * 0.05, 0);
-      ctx.lineTo(x + W * 0.11, H);
-      ctx.lineTo(x + W * 0.06, H);
-      ctx.closePath();
-      ctx.fill();
-    }
-    paint(accent, 0.30);
-    ctx.fillRect(0, H * 0.62, W, H * 0.04);
-  } else if (pattern === "arrow") {
-    paint(stripe, 0.22);
+  ctx.beginPath();
+  ctx.rect(x0, y0, w, h);
+  ctx.clip();
+  // Mirror the side that is read from behind the nose, so an asymmetric shape
+  // points the same way on both flanks.
+  if (mirror) {
+    ctx.translate(x0 + w * 0.5, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-(x0 + w * 0.5), 0);
+  }
+  const X = (t) => x0 + w * t;
+  const Y = (t) => y0 + h * t;
+  const poly = (pts) => {
     ctx.beginPath();
-    ctx.moveTo(0, H * 0.30);
-    ctx.lineTo(W * 0.58, H * 0.30);
-    ctx.lineTo(W * 0.74, H * 0.50);
-    ctx.lineTo(W * 0.58, H * 0.70);
-    ctx.lineTo(0, H * 0.70);
+    ctx.moveTo(X(pts[0][0]), Y(pts[0][1]));
+    for (let i = 1; i < pts.length; i += 1) ctx.lineTo(X(pts[i][0]), Y(pts[i][1]));
     ctx.closePath();
     ctx.fill();
+  };
+  if (pattern === "stripe") {
+    paint(stripe, 0.22);
+    ctx.fillRect(X(0), Y(0.30), w, h * 0.34);
     paint(accent, 0.30);
-    ctx.fillRect(0, H * 0.72, W, H * 0.05);
+    ctx.fillRect(X(0), Y(0.68), w, h * 0.09);
+  } else if (pattern === "chevron") {
+    paint(stripe, 0.22);
+    for (let i = 0; i < 3; i += 1) {
+      const t = 0.10 + i * 0.29;
+      poly([[t, 1], [t + 0.17, 1], [t + 0.30, 0], [t + 0.13, 0]]);
+    }
+    paint(accent, 0.30);
+    ctx.fillRect(X(0), Y(0.80), w, h * 0.10);
+  } else if (pattern === "arrow") {
+    paint(stripe, 0.22);
+    poly([[0, 0.22], [0.62, 0.22], [0.86, 0.50], [0.62, 0.78], [0, 0.78]]);
+    paint(accent, 0.30);
+    ctx.fillRect(X(0), Y(0.84), w * 0.70, h * 0.10);
   } else if (pattern === "blocks") {
-    const cols = 6;
-    for (let i = 0; i < cols; i += 1) {
-      paint(i % 2 ? stripe : accent, i % 2 ? 0.22 : 0.30);
-      ctx.fillRect((i / cols) * W, H * (0.30 + 0.03 * (i % 3)), W / cols * 0.92, H * 0.16);
+    for (let i = 0; i < 3; i += 1) {
+      paint(i === 1 ? accent : stripe, i === 1 ? 0.30 : 0.22);
+      ctx.fillRect(X(0.08 + i * 0.29), Y(0.20 + i * 0.09), w * 0.24, h * 0.52);
     }
   } else if (pattern === "swoop") {
     paint(stripe, 0.22);
     ctx.beginPath();
-    ctx.moveTo(0, H * 0.62);
-    ctx.quadraticCurveTo(W * 0.45, H * 0.20, W, H * 0.42);
-    ctx.lineTo(W, H * 0.58);
-    ctx.quadraticCurveTo(W * 0.45, H * 0.38, 0, H * 0.78);
+    ctx.moveTo(X(0), Y(0.86));
+    ctx.quadraticCurveTo(X(0.50), Y(0.10), X(1), Y(0.28));
+    ctx.lineTo(X(1), Y(0.62));
+    ctx.quadraticCurveTo(X(0.50), Y(0.44), X(0), Y(1.05));
     ctx.closePath();
     ctx.fill();
     paint(accent, 0.30);
     ctx.beginPath();
-    ctx.moveTo(0, H * 0.80);
-    ctx.quadraticCurveTo(W * 0.45, H * 0.42, W, H * 0.60);
-    ctx.lineTo(W, H * 0.66);
-    ctx.quadraticCurveTo(W * 0.45, H * 0.50, 0, H * 0.86);
+    ctx.moveTo(X(0), Y(1.10));
+    ctx.quadraticCurveTo(X(0.50), Y(0.50), X(1), Y(0.68));
+    ctx.lineTo(X(1), Y(0.80));
+    ctx.quadraticCurveTo(X(0.50), Y(0.62), X(0), Y(1.30));
     ctx.closePath();
     ctx.fill();
   } else if (pattern === "split") {
     paint(stripe, 0.22);
-    ctx.beginPath();
-    ctx.moveTo(0, H);
-    ctx.lineTo(W, H * 0.35);
-    ctx.lineTo(W, H);
-    ctx.closePath();
-    ctx.fill();
+    poly([[0.34, 1], [0.58, 0], [1, 0], [1, 1]]);
     paint(accent, 0.30);
-    ctx.fillRect(0, H * 0.48, W, H * 0.03);
+    poly([[0.28, 1], [0.52, 0], [0.58, 0], [0.34, 1]]);
   } else if (pattern === "gradient") {
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, stripe);
-    g.addColorStop(1, accent);
-    ctx.fillStyle = mode === "rough" ? greyOf(0.26) : g;
-    ctx.fillRect(0, H * 0.30, W, H * 0.42);
+    if (mode === "rough") {
+      ctx.fillStyle = greyOf(0.26);
+    } else {
+      const g = ctx.createLinearGradient(X(0), Y(0), X(1), Y(0));
+      g.addColorStop(0, accent);
+      g.addColorStop(1, stripe);
+      ctx.fillStyle = g;
+    }
+    ctx.fillRect(X(0), Y(0.24), w, h * 0.56);
   } else if (pattern === "checker") {
-    const n = 16;
-    for (let i = 0; i < n; i += 1) {
-      for (let j = 0; j < 3; j += 1) {
-        if ((i + j) % 2) continue;
-        paint(stripe, 0.22);
-        ctx.fillRect((i / n) * W, H * (0.30 + j * 0.06), W / n, H * 0.06);
-      }
+    for (let i = 0; i < 4; i += 1) {
+      if (i % 2) continue;
+      paint(stripe, 0.22);
+      ctx.fillRect(X(0.06 + i * 0.22), Y(0.18), w * 0.22, h * 0.34);
+      paint(accent, 0.30);
+      ctx.fillRect(X(0.28 + i * 0.22), Y(0.52), w * 0.22, h * 0.34);
     }
   }
+  ctx.restore();
+}
+
+// The deck carries one longitudinal stripe of constant width, so it stays
+// continuous across the boot, the roof panel and the bonnet — three separate
+// meshes that only agree because none of them varies the graphic along its
+// length.
+function drawDeckStripe(ctx, W, H, livery, mode) {
+  const band = LIVERY_BANDS.deck;
+  const mid = (band.y0 + band.y1) * 0.5;
+  const span = band.y1 - band.y0;
+  ctx.save();
+  ctx.fillStyle = mode === "rough" ? greyOf(0.22) : (livery.stripe || "#ffffff");
+  ctx.fillRect(0, (mid - span * 0.30) * H, W, span * 0.60 * H);
+  ctx.fillStyle = mode === "rough" ? greyOf(0.30) : (livery.accent || "#101010");
+  ctx.fillRect(0, (mid - span * 0.42) * H, W, span * 0.07 * H);
+  ctx.fillRect(0, (mid + span * 0.35) * H, W, span * 0.07 * H);
   ctx.restore();
 }
 
@@ -805,57 +930,74 @@ function greyOf(v) {
   return `rgb(${g},${g},${g})`;
 }
 
-function drawStencilNumber(ctx, region, W, H, text, fill, outline, mode) {
-  const cx = (region.x + region.w * 0.5) * W;
-  const cy = (region.y + region.h * 0.5) * H;
-  const size = region.h * H * 0.78;
+// `orient` is what the atlas costs: a flank seen from outboard of the nose and
+// the whole deck seen from behind both map the atlas onto the screen with the
+// handedness reversed, so lettering has to be laid down reversed to come out the
+// right way round on the car.
+// The deck's share of the section — 2 ring slots of 14 — is far narrower in the
+// atlas than the same span is along the car, so anything laid across it comes
+// out squashed unless the transform pays the ratio back.
+const DECK_ASPECT = 3.0;
+
+function textAt(ctx, cx, cy, orient, draw) {
   ctx.save();
-  ctx.font = face(STENCIL_FACE, size);
+  ctx.translate(cx, cy);
+  if (orient === "mirror") ctx.scale(-1, 1);
+  else if (orient === "deck") ctx.transform(0, -1, -DECK_ASPECT, 0, 0, 0);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.lineWidth = Math.max(3, size * 0.09);
-  ctx.strokeStyle = mode === "rough" ? greyOf(0.20) : outline;
-  ctx.strokeText(text, cx, cy);
-  ctx.fillStyle = mode === "rough" ? greyOf(0.18) : fill;
-  ctx.fillText(text, cx, cy);
+  draw();
   ctx.restore();
 }
 
-function drawSponsors(ctx, W, H, rng, mode, team) {
-  const rows = [
-    { y: 0.24, size: 0.055, n: 3 },
-    { y: 0.68, size: 0.045, n: 4 },
-    { y: 0.86, size: 0.038, n: 4 },
+function drawStencilNumber(ctx, cx, cy, size, text, fill, outline, mode, orient) {
+  textAt(ctx, cx, cy, orient, () => {
+    ctx.font = face(STENCIL_FACE, size);
+    ctx.lineWidth = Math.max(3, size * 0.10);
+    ctx.strokeStyle = mode === "rough" ? greyOf(0.20) : outline;
+    ctx.strokeText(text, 0, 0);
+    ctx.fillStyle = mode === "rough" ? greyOf(0.18) : fill;
+    ctx.fillText(text, 0, 0);
+  });
+}
+
+// Two words a side and the team name, at a size a spectator could read. A row of
+// five tiny logos is invisible at any distance the car is ever seen from and
+// costs a shimmering line of noise to say so.
+function drawSponsors(ctx, W, H, rng, mode, team, words) {
+  const bands = [
+    { band: LIVERY_BANDS.flankNear, orient: "mirror" },
+    { band: LIVERY_BANDS.flankFar, orient: "none" },
   ];
-  ctx.save();
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "center";
-  for (const row of rows) {
-    const cell = W / row.n;
-    for (let i = 0; i < row.n; i += 1) {
-      const word = rng.pick(EVENT_BRANDING.sponsors);
-      const size = row.size * H;
-      ctx.font = face(SPONSOR_FACE, size);
-      ctx.fillStyle = mode === "rough" ? greyOf(0.24) : (rng.chance(0.5) ? "#f4f4f0" : "#101216");
-      ctx.fillText(word, cell * (i + 0.5), row.y * H);
-    }
+  const light = mode === "rough" ? greyOf(0.24) : "#f4f4f0";
+  const dark = mode === "rough" ? greyOf(0.24) : "#101216";
+  for (const { band, orient } of bands) {
+    const top = band.y0 * H, span = (band.y1 - band.y0) * H;
+    ctx.font = face(SPONSOR_FACE, span * 0.20);
+    ctx.fillStyle = rng.chance(0.5) ? light : dark;
+    textAt(ctx, W * 0.24, top + span * 0.18, orient, () => ctx.fillText(words[0], 0, 0));
+    ctx.font = face(SPONSOR_FACE, span * 0.17);
+    ctx.fillStyle = light;
+    textAt(ctx, W * 0.74, top + span * 0.86, orient, () => ctx.fillText(words[1], 0, 0));
+    ctx.font = face(SPONSOR_FACE, span * 0.15);
+    ctx.fillStyle = dark;
+    textAt(ctx, W * 0.50, top + span * 0.90, orient, () => ctx.fillText(String(team || EVENT_BRANDING.event), 0, 0));
   }
-  ctx.font = face(SPONSOR_FACE, 0.05 * H);
-  ctx.fillStyle = mode === "rough" ? greyOf(0.24) : "#f4f4f0";
-  ctx.fillText(String(team || EVENT_BRANDING.event), W * 0.5, H * 0.155);
-  ctx.restore();
 }
 
 function drawMud(ctx, W, H, rng) {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#ffffff";
-  // Heaviest along the sills and behind the arches, which is where it lands.
+  // Both sills and the underside, which is where it lands. In this atlas those
+  // are the two bands just outboard of the flanks and the two edges.
+  const bands = [[0.80, 1.0], [0.0, 0.20], [0.62, 0.80], [0.20, 0.38]];
   for (let i = 0; i < 620; i += 1) {
-    const bias = rng.next();
+    const band = bands[i & 3];
+    const heavy = (i & 3) < 2;
     const x = rng.range(0, W);
-    const y = H * (bias < 0.62 ? rng.range(0.62, 1.0) : rng.range(0.20, 0.62));
-    const r = rng.range(2, 26) * (bias < 0.62 ? 1.4 : 0.7);
+    const y = H * rng.range(band[0], band[1]);
+    const r = rng.range(2, 26) * (heavy ? 1.4 : 0.7);
     ctx.globalAlpha = rng.range(0.25, 1);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, TAU);
@@ -864,11 +1006,12 @@ function drawMud(ctx, W, H, rng) {
   ctx.globalAlpha = 1;
   for (let i = 0; i < 60; i += 1) {
     const x = rng.range(0, W);
-    const y = rng.range(H * 0.55, H);
+    const up = i & 1 ? 1 : -1;
+    const y = i & 1 ? rng.range(H * 0.70, H * 0.86) : rng.range(H * 0.14, H * 0.30);
     ctx.globalAlpha = rng.range(0.3, 0.9);
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.quadraticCurveTo(x + rng.range(-40, 40), y - rng.range(20, 90), x + rng.range(-60, 60), y - rng.range(40, 160));
+    ctx.quadraticCurveTo(x - rng.range(20, 90), y + up * rng.range(10, 40), x - rng.range(40, 160), y + up * rng.range(20, 70));
     ctx.lineWidth = rng.range(2, 9);
     ctx.strokeStyle = "#ffffff";
     ctx.stroke();
@@ -885,24 +1028,63 @@ function paintLivery(canvas, livery, mode, seed) {
     drawMud(ctx, W, H, rng);
     return true;
   }
-  ctx.fillStyle = mode === "rough" ? greyOf(0.28) : (livery.base || "#cccccc");
+  const base = mode === "rough" ? greyOf(0.28) : (livery.base || "#cccccc");
+  ctx.fillStyle = base;
   ctx.fillRect(0, 0, W, H);
-  drawPattern(ctx, W, H, livery, mode);
+
+  const x0 = LIVERY_RESERVE * W;
+  const bodyW = W - x0;
+  for (const [band, mirror] of [[LIVERY_BANDS.flankNear, true], [LIVERY_BANDS.flankFar, false]]) {
+    drawFlankGraphic(ctx, x0, band.y0 * H, bodyW, (band.y1 - band.y0) * H, livery, mode, mirror);
+  }
+  drawDeckStripe(ctx, W, H, livery, mode);
+  // A nose cap only. A tail cap is a third of the car from a chase camera —
+  // foreshortening makes the last tenth of the length most of what is on screen.
+  ctx.fillStyle = mode === "rough" ? greyOf(0.26) : (livery.accent || "#101010");
+  ctx.fillRect(LIVERY_BANDS.nose * W, 0, W * (1 - LIVERY_BANDS.nose), H);
+
   const num = String(livery.number ?? 0);
-  drawStencilNumber(ctx, LIVERY_REGIONS.doorLeft, W, H, num, "#ffffff", "#111111", mode);
-  drawStencilNumber(ctx, LIVERY_REGIONS.doorRight, W, H, num, "#ffffff", "#111111", mode);
-  drawStencilNumber(ctx, LIVERY_REGIONS.roof, W, H, num, "#111111", "#ffffff", mode);
-  drawSponsors(ctx, W, H, rng, mode, livery.team);
-  // A rally plate: the one thing that turns a painted car into an entry.
+  for (const [band, orient] of [[LIVERY_BANDS.flankNear, "mirror"], [LIVERY_BANDS.flankFar, "none"]]) {
+    const span = (band.y1 - band.y0) * H;
+    drawStencilNumber(ctx, W * 0.46, (band.y0 + band.y1) * 0.5 * H, span * 0.72,
+      num, "#ffffff", "#111111", mode, orient);
+  }
+  // Nothing that varies along the car may go on the deck between the screens.
+  // The shell is a closed loft, so its deck runs on under the cabin and shows
+  // through the backlight: a roof number drawn there arrives twice, once on the
+  // roof and once as a ghost inside the car. A stripe of constant width is the
+  // one graphic that survives being seen twice.
+  const deck = LIVERY_BANDS.deck;
+  const deckSpan = (deck.y1 - deck.y0) * H;
+  const deckMid = (deck.y0 + deck.y1) * 0.5 * H;
+
+  drawSponsors(ctx, W, H, rng, mode, livery.team, [rng.pick(EVENT_BRANDING.sponsors), rng.pick(EVENT_BRANDING.sponsors)]);
+
+  // A rally plate on the bonnet: the one thing that turns a painted car into an
+  // entry. It reads from behind, so it is laid down with the deck orientation
+  // and its box is tall in the atlas where the lettering runs.
+  const plateFont = deckSpan * 0.15;
   ctx.save();
   ctx.fillStyle = mode === "rough" ? greyOf(0.34) : "#f2f2ee";
-  ctx.fillRect(W * 0.38, H * 0.905, W * 0.24, H * 0.07);
+  ctx.fillRect(W * 0.80 - plateFont * DECK_ASPECT * 0.8, deckMid - deckSpan * 0.44,
+    plateFont * DECK_ASPECT * 1.6, deckSpan * 0.88);
   ctx.fillStyle = mode === "rough" ? greyOf(0.30) : "#14171c";
-  ctx.font = face(SPONSOR_FACE, H * 0.036);
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(EVENT_BRANDING.event, W * 0.5, H * 0.94);
+  ctx.font = face(SPONSOR_FACE, plateFont);
+  textAt(ctx, W * 0.80, deckMid, "deck", () => ctx.fillText(EVENT_BRANDING.event, 0, 0));
   ctx.restore();
+
+  // A band across the boot lid, so the car is not a plain slab from behind. It
+  // does not vary along the car within the cabin, so it cannot ghost.
+  ctx.fillStyle = mode === "rough" ? greyOf(0.22) : (livery.stripe || "#ffffff");
+  ctx.fillRect(x0, deck.y0 * H, W * 0.10, deckSpan);
+
+  // The three reserved swatches, painted last so nothing above can reach them.
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, LIVERY_RESERVE * W, H);
+  ctx.fillStyle = mode === "rough" ? greyOf(0.62) : "#15171b";
+  ctx.fillRect(0.004 * W, 0.010 * H, 0.026 * W, 0.050 * H);
+  ctx.fillStyle = mode === "rough" ? greyOf(0.22) : (livery.stripe || "#ffffff");
+  ctx.fillRect(0.004 * W, 0.940 * H, 0.026 * W, 0.050 * H);
   return true;
 }
 
@@ -1092,25 +1274,28 @@ function centrelineIndex(stage) {
 // of all of it. `f` is a fraction of stage.halfWidth; `off` is metres beyond it,
 // so the edge slots sit at exactly ±halfWidth whatever the road is doing.
 const ROAD_SLOTS = [
-  { f: -1, off: -2.80, kind: "verge" },
-  { f: -1, off: -1.15, kind: "ditch" },
-  { f: -1, off: -0.42, kind: "shoulder" },
+  { f: -1, off: -3.20, kind: "verge" },
+  { f: -1, off: -1.42, kind: "ditch" },
+  { f: -1, off: -0.62, kind: "shoulder" },
   { f: -1, off: 0, kind: "edge" },
   { f: -0.86, off: 0, kind: "loose" },
-  { f: -0.66, off: 0, kind: "rutLip" },
-  { f: -0.52, off: 0, kind: "rut" },
-  { f: -0.38, off: 0, kind: "rutLip" },
-  { f: -0.16, off: 0, kind: "crown" },
+  // The polished pair sits a car's track apart with its lips close in: spread
+  // over a third of the road, as it was, the line interpolates into a soft
+  // gradient and reads as shading rather than as a rut.
+  { f: -0.44, off: 0, kind: "rutLip" },
+  { f: -0.35, off: 0, kind: "rut" },
+  { f: -0.26, off: 0, kind: "rutLip" },
+  { f: -0.10, off: 0, kind: "crown" },
   { f: 0, off: 0, kind: "centre" },
-  { f: 0.16, off: 0, kind: "crown" },
-  { f: 0.38, off: 0, kind: "rutLip" },
-  { f: 0.52, off: 0, kind: "rut" },
-  { f: 0.66, off: 0, kind: "rutLip" },
+  { f: 0.10, off: 0, kind: "crown" },
+  { f: 0.26, off: 0, kind: "rutLip" },
+  { f: 0.35, off: 0, kind: "rut" },
+  { f: 0.44, off: 0, kind: "rutLip" },
   { f: 0.86, off: 0, kind: "loose" },
   { f: 1, off: 0, kind: "edge" },
-  { f: 1, off: 0.42, kind: "shoulder" },
-  { f: 1, off: 1.15, kind: "ditch" },
-  { f: 1, off: 2.80, kind: "verge" },
+  { f: 1, off: 0.62, kind: "shoulder" },
+  { f: 1, off: 1.42, kind: "ditch" },
+  { f: 1, off: 3.20, kind: "verge" },
 ];
 
 export const ROAD_SECTION = Object.freeze(ROAD_SLOTS.map((s) => Object.freeze({ ...s })));
@@ -1137,6 +1322,66 @@ const ROAD_TEXTURE = Object.freeze({
 
 export function roadTextureName(surfaceId) {
   return ROAD_TEXTURE[surfaceId] || "gravel";
+}
+
+// The ribbon carries a per-vertex `detail` — how polished the racing line is,
+// how much loose material is windrowed there, whether it is standing water, and
+// how far it has already become roadside. Nothing sampled it, so a gravel road
+// was drawn one flat grain from the centreline to a ruler-straight edge against
+// the grass. Albedo still lives in the vertex colours; this adds the two things
+// a colour cannot say — gloss and relief — and swaps the grain over on the verge
+// so the road does not end at a line.
+const ROAD_VERTEX_HEAD = `
+attribute vec4 detail;
+varying vec4 vDetail;
+varying vec2 vRoadUv;
+`;
+
+const ROAD_VERTEX_BODY = `
+vDetail = detail;
+vRoadUv = uv;
+`;
+
+const ROAD_FRAGMENT_HEAD = `
+uniform sampler2D uVergeMap;
+uniform vec3 uVergeNorm;
+varying vec4 vDetail;
+varying vec2 vRoadUv;
+`;
+
+const ROAD_MAP_FRAGMENT = `
+vec4 sampledDiffuseColor = texture2D( map, vRoadUv );
+vec3 vergeTex = texture2D( uVergeMap, vRoadUv * 0.63 ).rgb * uVergeNorm;
+sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vergeTex, vDetail.w );
+sampledDiffuseColor.rgb *= 1.0 - 0.22 * vDetail.x + 0.12 * vDetail.y;
+diffuseColor *= sampledDiffuseColor;
+`;
+
+function injectRoadShader(material, roadSet, vergeSet) {
+  const norm = [
+    roadSet.albedoMean[0] / vergeSet.albedoMean[0],
+    roadSet.albedoMean[1] / vergeSet.albedoMean[1],
+    roadSet.albedoMean[2] / vergeSet.albedoMean[2],
+  ];
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uVergeMap = { value: vergeSet.map };
+    shader.uniforms.uVergeNorm = { value: norm };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", `#include <common>${ROAD_VERTEX_HEAD}`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>${ROAD_VERTEX_BODY}`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>${ROAD_FRAGMENT_HEAD}`)
+      .replace("#include <map_fragment>", ROAD_MAP_FRAGMENT)
+      // A rut is burnished by tyres and a windrow is loose stone standing on
+      // edge: the same albedo, opposite gloss.
+      .replace("#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );`)
+      .replace("mapN.xy *= normalScale;",
+        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 );");
+  };
+  material.customProgramCacheKey = () => "opusrally-road-detail";
+  return material;
 }
 
 function smoothed(arr, radius, count) {
@@ -1230,6 +1475,16 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   for (let i = 0; i < n; i += 1) kSigned[i] = stage.curvature ? stage.curvature[i] : 0;
   const kSignedSmooth = smoothed(kSigned, 6, n);
 
+  // A road edge is never a ruler line: the shoulder eats in and the verge
+  // encroaches over tens of metres. Smoothing per-sample hashes gives each side
+  // its own slow wander instead of a per-station sawtooth.
+  const wobRaw = [new Float32Array(n), new Float32Array(n)];
+  for (let i = 0; i < n; i += 1) {
+    wobRaw[0][i] = hash2(i, 1, 6151) - 0.5;
+    wobRaw[1][i] = hash2(i, 2, 9187) - 0.5;
+  }
+  const wobble = [smoothed(wobRaw[0], 6, n), smoothed(wobRaw[1], 6, n)];
+
   const chunks = [];
   const stationInfo = [];
   let builderChunk = -1;
@@ -1249,7 +1504,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
 
   const startChunk = (index) => {
     b = mkBuilder();
-    b.extra = { detail: { data: [], size: 3 } };
+    b.extra = { detail: { data: [], size: 4 } };
     chunkStations = [];
     builderChunk = index;
     prevRow = null;
@@ -1328,36 +1583,83 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     const cutH = bermK * 0.055;
     const outerSign = kSignedSmooth[i] > 0 ? 1 : -1;
     const wet = isWater ? 1 : 0;
+    // Loose stone pushed off the running surface, standing in a ridge along each
+    // edge. It is the single feature that stops a gravel road looking painted on.
+    const windrow = (0.045 + 0.050 * hash2(i, 23, 611)) * loose;
+    // A season of cars does not drive down the middle of a corner: the polished
+    // pair of ruts migrates toward the apex and the outside builds a berm.
+    const cutFrac = -outerSign * bermK * 0.10;
+    // Smoothing 13 hashes averages most of the amplitude away, so scale it back
+    // up: what is wanted is a ±0.3 m wander over roughly twenty-five metres.
+    const wob = (side) => clamp(wobble[side < 0 ? 0 : 1][i] * 3.6, -0.5, 0.5);
 
     const base = b.n;
     const rowIdx = [];
     for (let k = 0; k < ROAD_SLOTS.length; k += 1) {
       const slot = ROAD_SLOTS[k];
-      const lat = slot.f * hw + slot.off;
-      const u = slot.f;
+      const side = slot.f > 0 ? 1 : slot.f < 0 ? -1 : 0;
+      const onOuter = side === outerSign;
+      const cut = slot.kind === "rut" || slot.kind === "rutLip" ? cutFrac : 0;
+      const u = slot.f + cut;
+      const wander = side === 0 ? 0 : wob(side) * side;
+      let lat = u * hw + slot.off;
       let h;
       let col;
-      let detail = [0, 0, wet];
+      let detail = [0, 0, wet, 0];
       const bump = (hash2(i * 7 + k, k * 13, 91) - 0.5) * 0.012 * (1 + props.roughness);
-      const side = u > 0 ? 1 : u < 0 ? -1 : 0;
-      const onOuter = side === outerSign;
       switch (slot.kind) {
-        case "verge": h = null; col = vergeColour(stage, i, props); detail = [0, 0, 0]; break;
-        case "ditch": h = -crown - 0.34 - 0.10 * loose; col = mixCol(props.albedo, GRASS_COL, 0.72); detail = [0, 0.2, wet * 0.5]; break;
-        case "shoulder": h = -crown * u * u - 0.085 - 0.05 * loose; col = mixCol(props.albedo, GRASS_COL, 0.30); detail = [0, 0.6, wet * 0.7]; break;
+        case "verge":
+          h = null; col = vergeColour(stage, i, props); detail = [0, 0, 0, 1];
+          lat += wander * 0.7;
+          break;
+        case "ditch":
+          h = -crown - 0.34 - 0.10 * loose;
+          col = scaleCol(mixCol(props.albedo, GRASS_COL, 0.62), 0.70);
+          detail = [0, 0.2, wet * 0.5, 0.78];
+          lat += wander * 0.5;
+          break;
+        case "shoulder":
+          // Bare, damp, churned earth — browner and much darker than the road,
+          // and the band that actually separates a gravel road from a field.
+          h = -crown * u * u - 0.085 - 0.05 * loose;
+          col = scaleCol(mixCol(props.albedo, SHOULDER_COL, 0.66), 0.86);
+          detail = [0, 0.55, wet * 0.7, 0.26 + 0.22 * wob(side)];
+          lat += wander * 0.55;
+          break;
         case "edge":
-          h = -crown + (onOuter ? bermH * 0.55 : -cutH);
-          col = mixCol(props.albedo, props.dustColour, onOuter ? 0.52 : 0.30);
-          detail = [0.1, onOuter ? 0.9 : 0.5, wet];
+          h = -crown + windrow * 0.45 + (onOuter ? bermH * 0.55 : -cutH);
+          col = mixCol(props.albedo, props.dustColour, onOuter ? 0.45 : 0.32);
+          detail = [0.04, onOuter ? 1 : 0.8, wet, 0.05 + 0.05 * wob(side)];
           break;
         case "loose":
-          h = -crown * u * u + 0.030 * loose + (onOuter ? bermH : -cutH * 0.6);
-          col = mixCol(props.albedo, props.dustColour, onOuter ? 0.40 : 0.18);
-          detail = [0.15, onOuter ? 0.8 : 0.35, wet];
+          h = -crown * u * u + windrow + (onOuter ? bermH : -cutH * 0.6);
+          col = mixCol(props.albedo, props.dustColour, onOuter ? 0.32 : 0.16);
+          detail = [0.10, onOuter ? 0.9 : 0.55, wet, 0];
+          lat += wander * 0.22;
           break;
-        case "rutLip": h = -crown * u * u - rutDepth * 0.35; col = scaleCol(props.albedo, 0.92); detail = [0.55, 0.25, wet]; break;
-        case "rut": h = -crown * u * u - rutDepth; col = scaleCol(props.albedo, isTarmac ? 0.86 : 0.80); detail = [1, 0.08, wet]; break;
-        default: h = -crown * u * u; col = scaleCol(props.albedo, 0.98); detail = [0.2, 0.35, wet]; break;
+        case "rutLip":
+          // Material the tyres throw out of the rut piles on its lip, so the
+          // polished line has a bright edge rather than fading into the road.
+          h = -crown * u * u - rutDepth * 0.30;
+          col = mixCol(props.albedo, props.dustColour, isTarmac ? 0.04 : 0.20);
+          detail = [0.35, 0.55, wet, 0];
+          break;
+        case "rut":
+          h = -crown * u * u - rutDepth;
+          // The inside rut through a corner is the cut line: scrubbed to the
+          // hardpack and darker again than the outside one.
+          col = scaleCol(props.albedo, isTarmac ? 0.82 : (onOuter ? 0.62 : 0.56));
+          detail = [1, 0.05, wet, 0];
+          break;
+        case "crown":
+          // Loose material the cars have swept off the line piles on the ridges.
+          h = -crown * u * u;
+          col = mixCol(props.albedo, props.dustColour, 0.10);
+          detail = [0.15, 0.35, wet, 0];
+          break;
+        default:
+          h = -crown * u * u; col = scaleCol(props.albedo, 0.98); detail = [0.2, 0.35, wet, 0];
+          break;
       }
       let px = cx + tiltRx * lat;
       let py = cy + tiltRy * lat;
@@ -1373,7 +1675,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       }
       const idx = vert(b, px, py, pz, lat * uvScale, s * uvScale,
         saturate(col[0]), saturate(col[1]), saturate(col[2]));
-      b.extra.detail.data.push(detail[0], detail[1], detail[2]);
+      b.extra.detail.data.push(detail[0], detail[1], detail[2], saturate(detail[3]));
       b.nor.push(tiltUx, tiltUy, tiltUz);
       rowIdx.push(idx);
     }
@@ -1415,6 +1717,9 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   const materialSlot = new Map();
   const surfaceMaterials = new Map();
   const override = opts.material || null;
+  // Same seed the terrain builds its grass with, so the verge the ribbon fades
+  // into is the same grass the ground beside it is drawn with.
+  const vergeTex = surfaceTexture(THREE, "grass", { size: textureSize, seed: texSeed + 3 });
   const slotFor = (sid) => {
     if (override) return 0;
     const hit = materialSlot.get(sid);
@@ -1424,7 +1729,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     // Gloss is the other half of "this is not gravel": a ford has to reflect the
     // sky and asphalt has to sheen, so the surface's own specular sets the floor
     // the roughness map varies around.
-    const m = neutraliseAlbedo(new THREE.MeshStandardMaterial({
+    const m = injectRoadShader(neutraliseAlbedo(new THREE.MeshStandardMaterial({
       vertexColors: true,
       map: tex.map,
       normalMap: tex.normalMap,
@@ -1436,7 +1741,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
-    }), tex);
+    }), tex), tex, vergeTex);
     m.name = `road-${props.name.toLowerCase()}`;
     const slot = materials.length;
     materials.push(m);
@@ -1484,6 +1789,9 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
 }
 
 const GRASS_COL = [0.16, 0.23, 0.10];
+// Damp, churned earth. The shoulder is neither the road nor the field, and
+// making it look like either is what leaves a road with no edge at all.
+const SHOULDER_COL = [0.105, 0.078, 0.050];
 
 function mixCol(a, b2, t) {
   return [a[0] + (b2[0] - a[0]) * t, a[1] + (b2[1] - a[1]) * t, a[2] + (b2[2] - a[2]) * t];
@@ -1520,6 +1828,87 @@ const TERRAIN_PALETTE = Object.freeze({
   snow: [0.820, 0.860, 0.920],
   dirt: [0.250, 0.195, 0.135],
 });
+
+// Value noise over the terrain lattice, so a hillside is not one flat olive.
+// Build-time only; the per-frame path never calls it.
+function latticeNoise(i, j, cell, seed) {
+  const x = i / cell, z = j / cell;
+  const xi = Math.floor(x), zi = Math.floor(z);
+  const fx = smootherstep(0, 1, x - xi), fz = smootherstep(0, 1, z - zi);
+  const a = hash2(xi, zi, seed), b2 = hash2(xi + 1, zi, seed);
+  const c = hash2(xi, zi + 1, seed), d = hash2(xi + 1, zi + 1, seed);
+  return (a + (b2 - a) * fx) + ((c + (d - c) * fx) - (a + (b2 - a) * fx)) * fz;
+}
+
+// One material draws grass, rock, scree and the dirt apron beside the road, so
+// the four splat weights the geometry carries have to reach the shader: without
+// this the whole world was drawn with the grass map and only the vertex colour
+// changed, which is why rock read as green-grey paint. The extra maps are
+// divided back to the grass map's mean so the material's declared albedo — the
+// one-albedo rule above — still describes what is shaded.
+const TERRAIN_VERTEX_HEAD = `
+attribute vec4 splat;
+varying vec4 vSplat;
+varying vec2 vGroundUv;
+`;
+
+const TERRAIN_VERTEX_BODY = `
+vSplat = splat;
+vGroundUv = uv;
+`;
+
+const TERRAIN_FRAGMENT_HEAD = `
+uniform sampler2D uRockMap;
+uniform sampler2D uDirtMap;
+uniform vec3 uRockNorm;
+uniform vec3 uDirtNorm;
+uniform float uGrassMeanG;
+varying vec4 vSplat;
+varying vec2 vGroundUv;
+`;
+
+const TERRAIN_MAP_FRAGMENT = `
+vec4 sampledDiffuseColor = texture2D( map, vGroundUv );
+vec3 rockTex = texture2D( uRockMap, vGroundUv ).rgb * uRockNorm;
+vec3 dirtTex = texture2D( uDirtMap, vGroundUv * 1.37 ).rgb * uDirtNorm;
+sampledDiffuseColor.rgb = sampledDiffuseColor.rgb * vSplat.y
+  + rockTex * (vSplat.x + vSplat.z)
+  + dirtTex * vSplat.w;
+// One tile is about sixteen metres. Without a second, far coarser tap the repeat
+// reads as a grid the moment the ground stops being close.
+float macro = texture2D( map, vGroundUv * 0.113 ).g / uGrassMeanG;
+sampledDiffuseColor.rgb *= mix( 1.0, macro, 0.45 );
+diffuseColor *= sampledDiffuseColor;
+`;
+
+function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
+  const ratio = (set) => [
+    grassSet.albedoMean[0] / set.albedoMean[0],
+    grassSet.albedoMean[1] / set.albedoMean[1],
+    grassSet.albedoMean[2] / set.albedoMean[2],
+  ];
+  const rockNorm = ratio(rockSet);
+  const dirtNorm = ratio(dirtSet);
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uRockMap = { value: rockSet.map };
+    shader.uniforms.uDirtMap = { value: dirtSet.map };
+    shader.uniforms.uRockNorm = { value: rockNorm };
+    shader.uniforms.uDirtNorm = { value: dirtNorm };
+    shader.uniforms.uGrassMeanG = { value: grassSet.albedoMean[1] };
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", `#include <common>${TERRAIN_VERTEX_HEAD}`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>${TERRAIN_VERTEX_BODY}`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>${TERRAIN_FRAGMENT_HEAD}`)
+      .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT)
+      // Bare rock and scree are the relief on a hillside; grass is nearly flat.
+      .replace("mapN.xy *= normalScale;",
+        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z));");
+  };
+  material.customProgramCacheKey = () => "opusrally-terrain-splat";
+  material.userData.opusSplatMaps = { rock: rockSet, dirt: dirtSet };
+  return material;
+}
 
 // The whole seam question comes down to one rule: every chunk, at every LOD,
 // reads its height and its normal from the SAME lattice function. A coarse chunk
@@ -1662,11 +2051,21 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
         const wr = rockW / sum, wh = highW / sum, wd = dirtW / sum, wg = grassW / sum;
         const high = snowy || alt > 0.8 ? TERRAIN_PALETTE.snow : TERRAIN_PALETTE.scree;
         const jitter = (hash2(li, lj, 7717) - 0.5) * 0.14;
+        // Grass is not one colour over a hillside: two noise fields at very
+        // different scales move it between the sun-bleached and the rank, and
+        // that variation is what the eye reads as ground rather than paint.
+        const pasture = latticeNoise(li, lj, 90 / L0, 4409) - 0.5;
+        const patchy = latticeNoise(li, lj, 26 / L0, 8821) - 0.5;
+        const grassCol = [
+          saturate(TERRAIN_PALETTE.grass[0] + pasture * 0.11 + patchy * 0.05),
+          saturate(TERRAIN_PALETTE.grass[1] + pasture * 0.07 + patchy * 0.06),
+          saturate(TERRAIN_PALETTE.grass[2] + pasture * 0.02 - patchy * 0.02),
+        ];
         const col = [0, 0, 0];
         for (let k = 0; k < 3; k += 1) {
           col[k] = saturate(
             TERRAIN_PALETTE.rock[k] * wr + high[k] * wh
-            + TERRAIN_PALETTE.dirt[k] * wd + TERRAIN_PALETTE.grass[k] * wg
+            + TERRAIN_PALETTE.dirt[k] * wd + grassCol[k] * wg
             + jitter * 0.25);
         }
         const id = vert(b, x, y, z, x * 0.06, z * 0.06, col[0], col[1], col[2]);
@@ -1735,15 +2134,23 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
     });
   }
 
-  const tex = surfaceTexture(THREE, "grass", { size: opts.textureSize ?? 256, seed: (stage.seed ?? 0) + 3 });
-  const material = opts.material || neutraliseAlbedo(new THREE.MeshStandardMaterial({
+  const texSize = opts.textureSize ?? 256;
+  const texSeed = (stage.seed ?? 0) + 3;
+  const tex = surfaceTexture(THREE, "grass", { size: texSize, seed: texSeed });
+  // The splat maps take the stage's own seed rather than the terrain's, because
+  // that is the key the roadside boulders and any dirt running surface already
+  // hold: the hillside is then drawn with the same stone as the rocks standing
+  // on it, out of one cache entry instead of a second copy.
+  const rockTex = surfaceTexture(THREE, "rock", { size: texSize, seed: stage.seed ?? 0 });
+  const dirtTex = surfaceTexture(THREE, "dirt", { size: texSize, seed: stage.seed ?? 0 });
+  const material = opts.material || injectTerrainShader(neutraliseAlbedo(new THREE.MeshStandardMaterial({
     vertexColors: true,
     map: tex.map,
     normalMap: tex.normalMap,
     roughnessMap: tex.roughnessMap,
     roughness: 1,
     metalness: 0,
-  }), tex);
+  }), tex), tex, rockTex, dirtTex);
 
   const group = new THREE.Group();
   group.name = "terrain";
@@ -2036,10 +2443,20 @@ function buildBodyShell(b, d, col) {
     }
   }
   rings.push(bodyRing(key[key.length - 1]));
-  pushLoft(b, rings, col, true, true);
+  // Atlas x follows the ring's own z rather than its index, so the shell agrees
+  // with the roof, bonnet and doors, which only know where they are in metres.
+  pushLoft(b, rings, col, true, true,
+    (i, k, R, K) => {
+      if (k < 0) return i === 0 ? LIVERY_PANEL_UV : LIVERY_TRIM_UV;
+      return [carUvX(rings[i][0][2], d), k / K];
+    });
 }
 
 function buildArchFlare(b, d, hubZ, col) {
+  withUv(b, LIVERY_FLAT_UV, () => archFlareGeometry(b, d, hubZ, col));
+}
+
+function archFlareGeometry(b, d, hubZ, col) {
   const inner = d.bodyHalfWidth;
   const outer = d.halfWidth;
   const r = d.archRadius;
@@ -2080,6 +2497,14 @@ function cabinFrame(d) {
 
 function buildRoofPanel(b, d, col) {
   const c = cabinFrame(d);
+  // The deck band of the atlas, so the stripe runs on unbroken from the boot.
+  b.uvFix = (x, y, z) => [carUvX(z, d), 0.5 - clamp(x / c.roofW, -1, 1) * 0.0714];
+  const out = roofPanelGeometry(b, d, col, c);
+  b.uvFix = null;
+  return out;
+}
+
+function roofPanelGeometry(b, d, col, c) {
   const nz = 4, nx = 4;
   const grid = [];
   for (let j = 0; j <= nz; j += 1) {
@@ -2113,6 +2538,10 @@ function buildRoofPanel(b, d, col) {
 }
 
 function buildPillars(b, d, col) {
+  return withUv(b, LIVERY_FLAT_UV, () => pillarGeometry(b, d, col));
+}
+
+function pillarGeometry(b, d, col) {
   const c = cabinFrame(d);
   const r = 0.042;
   for (const side of [-1, 1]) {
@@ -2179,34 +2608,44 @@ function buildBonnet(b, d, col) {
     }
     grid.push(row);
   }
-  for (let j = 0; j < nz; j += 1) {
-    for (let i = 0; i < nx; i += 1) {
-      pushQuad3(b, grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i], col);
+  const bonnetW = d.bodyHalfWidth * 0.92;
+  withUv(b, (x, y, z) => [carUvX(z, d), 0.5 - clamp(x / bonnetW, -1, 1) * 0.0714], () => {
+    for (let j = 0; j < nz; j += 1) {
+      for (let i = 0; i < nx; i += 1) {
+        pushQuad3(b, grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i], col);
+      }
     }
-  }
-  // Two raised louvre vents — the giveaway that this is a competition car.
+  });
+  // Two raised louvre vents — the giveaway that this is a competition car. The
+  // paint material has no vertex colours, so their dark comes from the atlas.
   const ventCol = [0.05, 0.05, 0.055];
-  for (const side of [-1, 1]) {
-    const vz = lerp(z0, z1, 0.42);
-    const vx = side * d.bodyHalfWidth * 0.44;
-    const vy = lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.42));
-    for (let k = 0; k < 3; k += 1) {
-      pushTaper(b, vx, vy + 0.012, vz - k * 0.075, 0.28, 0.05, 0.26, 0.035, 0, 0.028, ventCol, -0.012);
+  withUv(b, LIVERY_TRIM_UV, () => {
+    for (const side of [-1, 1]) {
+      const vz = lerp(z0, z1, 0.42);
+      const vx = side * d.bodyHalfWidth * 0.44;
+      const vy = lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.42));
+      for (let k = 0; k < 3; k += 1) {
+        pushTaper(b, vx, vy + 0.012, vz - k * 0.075, 0.28, 0.05, 0.26, 0.035, 0, 0.028, ventCol, -0.012);
+      }
     }
-  }
-  const scoopCol = [0.06, 0.06, 0.065];
-  pushTaper(b, 0, lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.62)) + 0.02,
-    lerp(z0, z1, 0.62), 0.44, 0.34, 0.34, 0.24, 0, 0.05, scoopCol, 0.02);
+    const scoopCol = [0.06, 0.06, 0.065];
+    pushTaper(b, 0, lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.62)) + 0.02,
+      lerp(z0, z1, 0.62), 0.44, 0.34, 0.34, 0.24, 0, 0.05, scoopCol, 0.02);
+  });
 }
 
 function buildRoofScoop(b, d, col) {
   const c = cabinFrame(d);
   const z = c.zRoofF + 0.20;
-  pushTaper(b, 0, d.roofY, z, 0.30, 0.42, 0.22, 0.30, 0.005, d.scoopTop - d.roofY, col, -0.03);
-  pushQuad3(b,
-    [-0.11, d.roofY + 0.012, z + 0.15], [0.11, d.roofY + 0.012, z + 0.15],
-    [0.11, d.roofY + 0.080, z + 0.13], [-0.11, d.roofY + 0.080, z + 0.13],
-    [0.02, 0.02, 0.022]);
+  withUv(b, LIVERY_FLAT_UV, () => {
+    pushTaper(b, 0, d.roofY, z, 0.30, 0.42, 0.22, 0.30, 0.005, d.scoopTop - d.roofY, col, -0.03);
+  });
+  withUv(b, LIVERY_TRIM_UV, () => {
+    pushQuad3(b,
+      [-0.11, d.roofY + 0.012, z + 0.15], [0.11, d.roofY + 0.012, z + 0.15],
+      [0.11, d.roofY + 0.080, z + 0.13], [-0.11, d.roofY + 0.080, z + 0.13],
+      [0.02, 0.02, 0.022]);
+  });
 }
 
 function buildBumper(b, d, front, col) {
@@ -2265,6 +2704,10 @@ function buildLamps(d) {
 }
 
 function buildWing(b, d, col) {
+  withUv(b, LIVERY_FLAT_UV, () => wingGeometry(b, d, col));
+}
+
+function wingGeometry(b, d, col) {
   const span = d.wingSpan;
   const chord = d.class === "topclass" ? 0.30 : 0.25;
   const zc = d.tailZ + 0.20;
@@ -2331,6 +2774,10 @@ function buildMudflaps(b, d, hubs, col) {
 }
 
 function buildMirror(b, d, side, col) {
+  withUv(b, LIVERY_FLAT_UV, () => mirrorGeometry(b, d, side, col));
+}
+
+function mirrorGeometry(b, d, side, col) {
   const z = d.frontAxle - 0.34;
   const y = d.beltY + 0.075;
   const xIn = side * d.bodyHalfWidth * 0.96;
@@ -2349,15 +2796,26 @@ function buildDoor(b, d, side, col) {
   const x = side * (d.bodyHalfWidth + 0.012);
   const yTop = d.beltY + 0.030, yBot = d.sillY + 0.06;
   const nz = 3;
-  for (let j = 0; j < nz; j += 1) {
-    const za = lerp(z0, z1, j / nz), zb = lerp(z0, z1, (j + 1) / nz);
-    const p0 = [x, yBot, za], p1 = [x, yBot, zb], p2 = [x, yTop, zb], p3 = [x, yTop, za];
-    if (side > 0) pushQuad3(b, p0, p1, p2, p3, col); else pushQuad3(b, p3, p2, p1, p0, col);
-  }
-  // A shallow swage line and a handle: at chase distance these are the only
-  // cues that say "door" rather than "flank".
-  pushBox(b, x + side * 0.006, d.beltY - 0.10, (z0 + z1) * 0.5, 0.012, 0.030, (z1 - z0) * 0.85, col);
-  pushBox(b, x + side * 0.014, d.beltY - 0.045, (z0 + z1) * 0.5 + 0.16, 0.022, 0.035, 0.13, [0.05, 0.05, 0.055]);
+  // Ring slots 3..5 are the +X flank and 9..11 the -X one, so a door lands in
+  // the same band of the atlas the shell behind it already occupies.
+  const vSill = side > 0 ? 3 / 14 : 11 / 14;
+  const vBelt = side > 0 ? 5 / 14 : 9 / 14;
+  withUv(b, (px, py, pz) => [
+    carUvX(pz, d),
+    lerp(vSill, vBelt, saturate((py - yBot) / Math.max(0.001, yTop - yBot))),
+  ], () => {
+    for (let j = 0; j < nz; j += 1) {
+      const za = lerp(z0, z1, j / nz), zb = lerp(z0, z1, (j + 1) / nz);
+      const p0 = [x, yBot, za], p1 = [x, yBot, zb], p2 = [x, yTop, zb], p3 = [x, yTop, za];
+      if (side > 0) pushQuad3(b, p0, p1, p2, p3, col); else pushQuad3(b, p3, p2, p1, p0, col);
+    }
+    // A shallow swage line: at chase distance this is one of the only cues that
+    // says "door" rather than "flank".
+    pushBox(b, x + side * 0.006, d.beltY - 0.10, (z0 + z1) * 0.5, 0.012, 0.030, (z1 - z0) * 0.85, col);
+  });
+  withUv(b, LIVERY_TRIM_UV, () => {
+    pushBox(b, x + side * 0.014, d.beltY - 0.045, (z0 + z1) * 0.5 + 0.16, 0.022, 0.035, 0.13, [0.05, 0.05, 0.055]);
+  });
 }
 
 function buildRollCage(b, d, col) {

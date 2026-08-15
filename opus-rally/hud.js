@@ -117,22 +117,18 @@ export function unitLabel(units) {
 
 const odoScratch = [0, 0, 0, 0];
 
-// Odometer wheels: the units wheel turns continuously, and each wheel above it only
-// starts to turn in the last tenth before its neighbour carries — which is what makes
-// a mechanical odometer read as one mechanism rather than four independent counters.
-export function odometerOffsets(value, digits = 3, out = odoScratch) {
+// Which numeral each wheel of the speed readout parks on. These are integers on
+// purpose. The readout used to be a mechanical odometer whose wheels rolled between
+// numerals, and at rally speeds it was never anywhere else: every frame caught two
+// half-digits clipped by the cell, so the one number the driver reads most was the
+// least readable thing on the screen. A wheel that steps rather than rolls is crisp
+// in every frame, and the value moves fast enough to look alive without the smear.
+export function speedWheelDigits(value, digits = 3, out = odoScratch) {
   const n = digits < 1 ? 1 : digits > out.length ? out.length : digits;
-  const v = Number.isFinite(value) ? Math.max(value, 0) : 0;
+  const v = Number.isFinite(value) ? Math.max(Math.floor(value), 0) : 0;
   let place = 1;
   for (let i = 0; i < n; i += 1) {
-    const p = v / place;
-    if (i === 0) {
-      out[i] = p % 10;
-    } else {
-      const f = p - Math.floor(p);
-      const roll = f > 0.9 ? (f - 0.9) * 10 : 0;
-      out[i] = (Math.floor(p) % 10) + roll;
-    }
+    out[i] = Math.floor(v / place) % 10;
     place *= 10;
   }
   for (let i = n; i < out.length; i += 1) out[i] = 0;
@@ -253,6 +249,10 @@ export function arrowCurvature(severity) {
   return arrowTurnAngle(severity) / arrowArcLength(severity);
 }
 
+// The glyph's own sign, in screen x: -1 draws to the left. Idempotent on purpose —
+// every arrow and label helper below calls it, so it must survive being applied to
+// its own output. The one place a producer's opposite convention is reconciled is
+// `normalisePacenote`, where it is known which way round the number arrived.
 export function normaliseDirection(dir) {
   if (typeof dir === "number") return dir < 0 ? -1 : 1;
   const s = String(dir === undefined || dir === null ? "" : dir).trim().toLowerCase();
@@ -351,33 +351,50 @@ const noteScratch = {
 
 // pacenotes.js owns the call model; the HUD accepts whatever field names a note happens
 // to carry so a rename upstream degrades to a blank chip, never to a thrown frame.
+//
+// It also accepts the runner's *cursor* — the object with a `note` field that
+// `createPacenoteRunner` exposes as `current`. Reading that wrapper as if it were a
+// note is why the panel called STRAIGHT into every hairpin: none of the fields below
+// exist on it, so every call fell through to the severity-less default.
 export function normalisePacenote(note, out = null) {
   const o = out || { severity: 0, dir: 1, kind: "straight", label: "", mods: [], s: 0, distance: 0, text: "", key: "" };
   o.mods.length = 0;
-  if (!note || typeof note !== "object") {
+  const src = note && typeof note === "object" && "note" in note ? note.note : note;
+  if (!src || typeof src !== "object") {
     o.severity = 0; o.dir = 1; o.kind = "none"; o.label = ""; o.s = 0; o.distance = 0; o.text = ""; o.key = "";
+    o.isTurn = false;
     return o;
   }
-  const sev = firstNumber(note, "severity", "grade", "level", "number");
-  o.severity = Number.isFinite(sev) ? clamp(sev, 1, 6) : 0;
-  o.dir = normaliseDirection(note.dir !== undefined ? note.dir
-    : note.direction !== undefined ? note.direction
-      : note.side !== undefined ? note.side : note.turn);
-  const kind = String(note.kind || note.type || (o.severity > 0 ? "turn" : "straight")).toLowerCase();
+  // The call system runs 1 (hairpin) to 6 (flat out), and pacenotes.js writes a literal
+  // `severity: 0` on every note that is not a corner. Clamping that into range printed
+  // a 1 — the tightest call there is — in the panel over a long straight.
+  const sev = firstNumber(src, "severity", "grade", "level", "number");
+  o.severity = Number.isFinite(sev) && sev > 0 ? clamp(sev, 1, 6) : 0;
+  const rawDir = src.dir !== undefined ? src.dir
+    : src.direction !== undefined ? src.direction
+      : src.side !== undefined ? src.side : src.turn;
+  // pacenotes.js signs a numeric `dir` the way stage.js signs curvature — POSITIVE
+  // turns LEFT — and the HUD draws in screen x, where left is negative. Passing that
+  // number straight through is why the panel called every corner the wrong way. A
+  // spelled-out direction needs no reconciling; it already says which way it means.
+  o.dir = typeof rawDir === "number" ? (rawDir > 0 ? -1 : 1) : normaliseDirection(rawDir);
+  const kind = String(src.kind || src.type || (o.severity > 0 ? "turn" : "straight")).toLowerCase();
   o.kind = kind;
   o.isTurn = !STRAIGHT_KINDS.has(kind) && o.severity > 0;
-  o.label = String(note.label || note.text || "").trim();
+  o.label = String(src.label || src.text || "").trim();
   o.text = o.label;
-  const s = firstNumber(note, "s", "distanceS", "arc", "at");
+  const s = firstNumber(src, "s", "sStart", "distanceS", "arc", "at");
   o.s = Number.isFinite(s) ? s : 0;
-  const dist = firstNumber(note, "distance", "toGo", "into", "gap");
+  const dist = firstNumber(src, "distance", "toGo", "into", "gap");
   o.distance = Number.isFinite(dist) ? dist : 0;
-  const mods = note.mods || note.modifiers || note.tags || note.chips;
+  const mods = src.mods || src.modifiers || src.tags || src.chips;
   if (Array.isArray(mods)) {
     for (let i = 0; i < mods.length && o.mods.length < 4; i += 1) {
       const m = mods[i];
       const txt = typeof m === "string" ? m : m && (m.text || m.label || m.kind || m.name);
-      if (txt) o.mods.push(String(txt).toUpperCase().slice(0, 10));
+      // Wide enough for the longest call pacenotes.js writes ("tightens on exit").
+      // At ten characters "long straight" reached the chip as LONG STRAI.
+      if (txt) o.mods.push(String(txt).toUpperCase().slice(0, 16));
     }
   }
   o.key = o.kind + "|" + o.severity + "|" + o.dir + "|" + o.s + "|" + o.mods.join(",");
@@ -753,6 +770,11 @@ function stylesheet() {
   color: var(--orh-text); text-shadow: 0 2px 14px rgba(0,0,0,0.6);
 }
 .orh-note-dir { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em; color: var(--orh-ember); }
+/* A call with no severity — a crest, a jump, a long straight — has no number to put
+   in the big slot, so the word becomes the headline instead of a caption under one. */
+.orh-note.flat .orh-note-dir {
+  font-size: 1.5rem; letter-spacing: 0.06em; line-height: 1.1; color: var(--orh-text);
+}
 .orh-note-mods { display: flex; flex-wrap: wrap; gap: 0.2rem; }
 .orh-chip {
   font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; padding: 0.14rem 0.34rem;
@@ -772,14 +794,15 @@ function stylesheet() {
   will-change: transform;
 }
 .orh-note-foot { display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.22rem; }
-.orh-note-dist { font-size: 0.86rem; font-weight: 700; color: var(--orh-text); }
+.orh-note-dist { font-size: 1.25rem; font-weight: 800; color: var(--orh-ember); line-height: 1; }
 .orh-note-dist span { font-size: 0.55rem; color: var(--orh-dim); margin-left: 0.14rem; }
-.orh-queue { display: flex; align-items: center; gap: 0.3rem; opacity: 0.62; }
-.orh-queue-arrow { width: 1.6rem; height: 1.6rem; flex: none; overflow: visible; }
+.orh-queue { display: flex; align-items: center; gap: 0.28rem; opacity: 0.78; }
+.orh-queue-arrow { width: 1.3rem; height: 1.3rem; flex: none; overflow: visible; }
 .orh-queue-arrow .orh-arrow-spine { stroke: var(--orh-dim); stroke-width: 15; filter: none; }
 .orh-queue-arrow .orh-arrow-head { fill: var(--orh-dim); filter: none; }
-.orh-queue-sev { font-size: 1rem; font-weight: 800; color: var(--orh-dim); }
-.orh-queue-txt { font-size: 0.52rem; letter-spacing: 0.16em; color: var(--orh-dim); }
+.orh-queue-sev { font-size: 0.82rem; font-weight: 800; color: var(--orh-dim); }
+.orh-queue-txt { font-size: 0.5rem; letter-spacing: 0.16em; color: var(--orh-dim); }
+.orh-queue-lead { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.16em; color: var(--orh-dim); }
 
 /* stage / timing --------------------------------------------------------- */
 .orh-stage { margin-left: auto; width: 21rem; padding: 0.5rem 0.7rem 0.55rem; }
@@ -804,9 +827,14 @@ function stylesheet() {
 .orh-dist { font-size: 0.62rem; font-weight: 700; color: var(--orh-dim); letter-spacing: 0.1em; }
 
 /* cluster ---------------------------------------------------------------- */
-.orh-cluster { display: flex; align-items: flex-end; gap: 0.6rem; margin-left: auto; }
-.orh-dialwrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.32rem; }
-.orh-shift { display: flex; gap: 3px; padding: 0.24rem 0.34rem; background: rgba(6,9,12,0.66); border: 1px solid var(--orh-hair); }
+.orh-cluster { display: flex; align-items: flex-end; gap: 0.5rem; margin-left: auto; }
+/* The dial used to float on the raw scene, the only instrument with no glass behind
+   it, which read as a different product bolted on beside the rest. */
+.orh-dialwrap {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: 0.3rem; padding: 0.45rem 0.55rem 0.5rem;
+}
+.orh-shift { display: flex; gap: 3px; padding: 0.2rem 0.3rem; background: rgba(6,9,12,0.55); }
 .orh-led {
   width: 0.5rem; height: 0.28rem; background: rgba(255,255,255,0.10);
   transform: scaleY(0.7); transform-origin: center;
@@ -841,7 +869,9 @@ function stylesheet() {
   display: block; height: 3.1rem; line-height: 3.1rem; text-align: center;
   font-size: 2.6rem; font-weight: 800; letter-spacing: -0.05em;
 }
-.orh-digit.blank .orh-strip { opacity: 0.14; }
+/* A leading zero on a speed readout is noise; the cell keeps its width so the number
+   stays put rather than jumping a digit-width sideways at 100. */
+.orh-digit.blank .orh-strip { opacity: 0; }
 .orh-unit { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.2em; color: var(--orh-dim); padding-bottom: 0.5rem; }
 .orh-meters { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
 .orh-meter { flex: 1; }
@@ -973,35 +1003,108 @@ function stylesheet() {
   .orh-dial { width: 11rem; height: 11rem; }
   .orh-trace { width: 8.5rem; }
 }
-@media (max-width: 720px) and (orientation: landscape) {
+/* A phone on its side has width to spare and no height at all, so the rail geometry
+   survives and everything simply gets shorter. 844x390 lands here on the height rule. */
+@media (max-width: 720px) and (orientation: landscape),
+       (max-height: 430px) and (orientation: landscape) {
   .orh { font-size: calc(12.5px * var(--orh-scale)); }
-  .orh-note { width: 14.5rem; }
-  .orh-stage { width: 14.5rem; }
-  .orh-ribbon { height: 3.2rem; }
-  .orh-dial { width: 9.4rem; height: 9.4rem; }
+  .orh-note { width: 15rem; padding-bottom: 0.4rem; }
+  .orh-stage { width: 15rem; padding-bottom: 0.4rem; }
+  .orh-note-arrow { width: 3.9rem; height: 3.9rem; }
+  .orh-note-sev { font-size: 2.5rem; }
+  .orh-note-dist { font-size: 1rem; }
+  .orh-note.flat .orh-note-dir { font-size: 1.25rem; }
+  /* On a 390px-tall screen the route map is the luxury and the road is the point. */
+  .orh-ribbon { display: none; }
+  .orh-stage-head { gap: 0.9rem; }
+  .orh-stage-foot { margin-top: 0.35rem; }
+  .orh-dial { width: 8.6rem; height: 8.6rem; }
+  .orh-gear { font-size: 3.2rem; }
   .orh-odo { height: 2.3rem; }
   .orh-digit { width: 1.3rem; height: 2.3rem; }
   .orh-strip b { height: 2.3rem; line-height: 2.3rem; font-size: 1.9rem; }
-  .orh-carsvg { width: 3rem; height: 4.8rem; }
+  .orh-carsvg { width: 2.8rem; height: 4.4rem; }
+  .orh-temp-tube { height: 2.4rem; }
   .orh-telemetry { display: none; }
+  .orh-damage { display: none; }
+  .orh-damage.on { display: flex; }
 }
-@media (orientation: portrait) and (max-width: 560px) {
-  .orh { font-size: calc(13px * var(--orh-scale)); }
-  /* Below the pill rather than beside it: 390px of width will not carry both. */
+
+/* Portrait phone. 390px will not carry the landscape layout at any scale, so this is
+   a different instrument set rather than the same one shrunk: the call becomes a slim
+   bar with the clock beside it, speed and gear merge into one block, the dial face is
+   dropped down to its shift-light strip, and the car diagram appears only once there
+   is damage to report. */
+@media (orientation: portrait) and (max-width: 620px) {
+  .orh { font-size: calc(13px * var(--orh-scale)); --orh-gap: 6px; --orh-cut: 8px; }
   .orh-top {
-    flex-direction: column; align-items: stretch;
-    padding-left: max(10px, env(safe-area-inset-left));
-    padding-top: calc(46px + max(0px, env(safe-area-inset-top)));
+    align-items: stretch;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-top: calc(48px + max(0px, env(safe-area-inset-top)));
   }
-  .orh-note, .orh-stage { width: auto; margin-left: 0; }
-  .orh-bottom { flex-direction: column-reverse; align-items: stretch; gap: 0.5rem; }
-  .orh-cluster { margin-left: 0; justify-content: space-between; width: 100%; }
-  .orh-left { flex-direction: row; align-items: flex-end; gap: 0.4rem; }
-  .orh-dial { width: 9rem; height: 9rem; }
-  .orh-ribbon { height: 3rem; }
+
+  .orh-note { flex: 1 1 auto; width: auto; min-width: 0; padding: 0.26rem 0.4rem 0.3rem; }
+  .orh-note-main { gap: 0.35rem; }
+  .orh-note-arrow { width: 2.5rem; height: 2.5rem; }
+  .orh-note-body { flex-direction: row; align-items: baseline; gap: 0.35rem; flex: 1 1 auto; }
+  .orh-note-sev { font-size: 1.75rem; line-height: 1; }
+  .orh-note-dir { font-size: 0.58rem; }
+  .orh-note.flat .orh-note-dir { font-size: 1.05rem; letter-spacing: 0.04em; }
+  .orh-note-mods { display: none; }
+  .orh-note-bar { height: 3px; margin-top: 0.26rem; }
+  .orh-note-foot { margin-top: 0.14rem; }
+  .orh-note-dist { font-size: 0.95rem; }
+  .orh-queue-arrow { width: 1rem; height: 1rem; }
+  .orh-queue-sev { font-size: 0.7rem; }
+
+  .orh-stage { flex: 0 0 auto; width: auto; margin-left: 0; padding: 0.26rem 0.4rem 0.3rem; }
+  .orh-stage-head { flex-direction: column; align-items: flex-end; gap: 0; }
+  .orh-time { font-size: 1.15rem; }
+  .orh-delta { font-size: 0.72rem; }
+  .orh-ribbon { display: none; }
+  .orh-stage-foot { flex-direction: column; align-items: flex-end; margin-top: 0.1rem; }
+
+  .orh-bottom { align-items: flex-end; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+  .orh-left { min-width: 0; }
   .orh-telemetry { display: none; }
-  .orh-note-arrow { width: 4rem; height: 4rem; }
-  .orh-note-sev { font-size: 2.6rem; }
+  .orh-damage { display: none; }
+  .orh-damage.on { display: flex; padding: 0.3rem 0.4rem; }
+  .orh-carsvg { width: 2.5rem; height: 4rem; }
+  .orh-temp-tube { height: 2.2rem; }
+  .orh-warn { padding: 0.24rem 0.42rem; font-size: 0.52rem; letter-spacing: 0.12em; }
+
+  /* Speed, boost, grip, shift lights and gear read as one instrument here, so the
+     glass moves out to the group and the two halves inside lose their own edges. */
+  .orh-cluster {
+    flex: 0 0 auto; gap: 0.45rem; padding: 0.32rem 0.45rem;
+    background: var(--orh-glass); border: 1px solid var(--orh-hair);
+    clip-path: polygon(var(--orh-cut) 0, 100% 0, 100% calc(100% - var(--orh-cut)), calc(100% - var(--orh-cut)) 100%, 0 100%, 0 var(--orh-cut));
+    box-shadow: 0 10px 26px rgba(0,0,0,0.42);
+  }
+  .orh-readout, .orh-dialwrap {
+    padding: 0; background: none; border: none; box-shadow: none;
+    clip-path: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .orh-readout { gap: 0.24rem; }
+  .orh-odo { height: 2.1rem; }
+  .orh-digit { width: 1.16rem; height: 2.1rem; }
+  .orh-strip b { height: 2.1rem; line-height: 2.1rem; font-size: 1.72rem; }
+  .orh-unit { font-size: 0.46rem; letter-spacing: 0.12em; padding-bottom: 0.3rem; }
+  .orh-meters { gap: 0.35rem; }
+  .orh-grip { width: 1.9rem; height: 1.9rem; }
+
+  .orh-shift { gap: 2px; padding: 0.18rem 0.24rem; }
+  .orh-led { width: 0.32rem; height: 0.26rem; }
+  /* The dial face is the first casualty: at this size its numerals are unreadable and
+     the shift lights already say everything the needle would. The gear stays. */
+  .orh-tacho { display: none; }
+  .orh-dial { width: auto; height: auto; min-width: 1.7rem; }
+  .orh-gear { position: static; transform: none; font-size: 2.3rem; text-align: center; }
+
+  .orh-count { font-size: 4.2rem; }
+  .orh-finish { min-width: 0; width: min(20rem, 88vw); padding: 0.9rem 1rem; }
+  .orh-finish-time { font-size: 2.3rem; }
 }
 @media (max-height: 430px) {
   .orh-ribbon { height: 2.6rem; }
@@ -1116,6 +1219,8 @@ export function createHud(root, opts = EMPTY) {
   const noteDistVal = makeEl(doc, "b", null, noteDist);
   const noteDistUnit = makeEl(doc, "span", null, noteDist);
   const queue = makeEl(doc, "div", "orh-queue", noteFoot);
+  // "THEN" has to be its own leaf ahead of the arrow, or it reads "6 THEN RIGHT".
+  const queueLead = makeEl(doc, "span", "orh-queue-lead", queue);
   const queueSvg = makeSvg(doc, "svg", "orh-queue-arrow", queue, {
     viewBox: "0 0 " + ARROW_VIEW + " " + ARROW_VIEW, "aria-hidden": "true",
   });
@@ -1211,7 +1316,7 @@ export function createHud(root, opts = EMPTY) {
   });
   const gripVal = makeSvg(doc, "text", "orh-grip-val", gripSvg, { x: "22", y: "24.5" });
 
-  const dialWrap = makeEl(doc, "div", "orh-dialwrap", cluster);
+  const dialWrap = makeEl(doc, "div", "orh-dialwrap orh-panel", cluster);
   const shift = makeEl(doc, "div", "orh-shift", dialWrap);
   const leds = [];
   for (let i = 0; i < SHIFT_LIGHT_COUNT; i += 1) leds.push(makeEl(doc, "i", "orh-led", shift));
@@ -1256,6 +1361,7 @@ export function createHud(root, opts = EMPTY) {
     nextKey: "",
     noteRef: null,
     nextRef: null,
+    hero: null,
     stageRef: null,
     ribbon: routeRibbonLayout(null, EMPTY),
     dialDirty: true,
@@ -1268,6 +1374,8 @@ export function createHud(root, opts = EMPTY) {
   const cache = Object.create(null);
   const noteA = normalisePacenote(null);
   const noteB = normalisePacenote(null);
+  // Read-only stand-in for "there is no second call"; never passed as an `out`.
+  const blankNote = normalisePacenote(null);
   const shiftOut = { lit: 0, count: SHIFT_LIGHT_COUNT, band: "off", flash: false, frac: 0, green: 5, amber: 4 };
   const dmg = {
     values: new Float32Array(DAMAGE_SLOTS.length),
@@ -1331,11 +1439,11 @@ export function createHud(root, opts = EMPTY) {
     // speed
     const shown = convertSpeed(f.speedKph, state.units);
     const speed = Number.isFinite(shown) ? Math.max(shown, 0) : 0;
-    odometerOffsets(speed, 3, odoScratch);
+    speedWheelDigits(speed, 3, odoScratch);
     const whole = Math.floor(speed);
     for (let i = 0; i < digits.length; i += 1) {
       const off = odoScratch[i];
-      // -9.0909% per digit: the strip is eleven cells so wheel 9 can roll into 0.
+      // -9.0909% per digit: the strip is eleven cells, the eleventh being 0 again.
       writeStyle(digits[i].strip, "transform", cache, "odo" + i,
         "translate3d(0," + fx(-off * (100 / 11)) + "%,0)");
       const blank = i > 0 && whole < Math.pow(10, i);
@@ -1399,8 +1507,9 @@ export function createHud(root, opts = EMPTY) {
     if (f.pacenote !== undefined && f.pacenote !== state.noteRef) setPacenote(f.pacenote, f.nextPacenote);
     else if (f.nextPacenote !== undefined && f.nextPacenote !== state.nextRef) setPacenote(state.noteRef, f.nextPacenote);
 
-    const gate = noteDistance(noteA, f, dist);
-    const window0 = noteA.isTurn ? 220 : 160;
+    const shown0 = state.hero || noteA;
+    const gate = noteDistance(shown0, f, dist);
+    const window0 = shown0.isTurn ? 220 : 160;
     const drain = gate === null ? 0 : saturate(1 - gate / window0);
     smooth.dist = damp(smooth.dist, drain, 18, dt);
     writeStyle(noteFill, "transform", cache, "notefill", "scaleX(" + fx(q(smooth.dist, 0.005)) + ")");
@@ -1423,6 +1532,10 @@ export function createHud(root, opts = EMPTY) {
         partNodes[i].node.setAttribute("fill", DAMAGE_TINTS[idx]);
       }
     }
+    // On a phone the car diagram is the first thing to go: it says nothing at all
+    // until something is bent, and the width it costs is width the speed block needs.
+    toggleClass(damagePanel, cache, "dmghas", "on",
+      dmg.worst > 0.02 || dmg.puncture || dmg.overheating || dmg.terminal);
     const tempC = pickTemperature(f);
     const tempNorm = tempC === null ? 0 : saturate(invLerp(70, 128, tempC));
     smooth.temp = damp(smooth.temp, tempNorm, 6, dt);
@@ -1453,40 +1566,55 @@ export function createHud(root, opts = EMPTY) {
     expireToasts(t);
   }
 
+  // A note's own `distance` is the link gap the co-driver speaks between two calls
+  // ("...100, into 3 right"), not the distance still to run, so the live arc-length
+  // gap wins wherever the frame carries one.
   function noteDistance(n, f, dist) {
     if (!n || n.kind === "none") return null;
     if (Number.isFinite(f.pacenoteDistance)) return Math.max(0, f.pacenoteDistance);
-    if (n.distance > 0) return n.distance;
     if (n.s > 0 && Number.isFinite(dist)) return Math.max(0, n.s - dist);
+    if (n.distance > 0) return n.distance;
     return null;
   }
 
   // ------------------------------------------------------------ pacenotes
+  // The panel's large glyph belongs to whichever call the driver still has to drive.
+  // When the co-driver has nothing live — between calls, or before the first one —
+  // the queued call is promoted into it rather than being left grey in the corner,
+  // which is how the panel came to shout STRAIGHT over a hairpin it already knew about.
   function setPacenote(next, following) {
     state.noteRef = next === undefined ? null : next;
     state.nextRef = following === undefined ? null : following;
     normalisePacenote(state.noteRef, noteA);
     normalisePacenote(state.nextRef, noteB);
-    if (noteA.key !== state.noteKey) {
-      state.noteKey = noteA.key;
-      applyArrow(noteSpine, noteHead, noteA);
-      writeText(noteSev, cache, "sev", noteA.severity > 0 ? String(Math.round(noteA.severity)) : glyphFor(noteA));
-      writeText(noteDir, cache, "dir", noteA.kind === "none" ? ""
-        : noteA.isTurn ? directionLabel(noteA.dir) : (noteA.label || noteA.kind).toUpperCase());
+    const promote = noteA.kind === "none" && noteB.kind !== "none";
+    const hero = promote ? noteB : noteA;
+    const tail = promote ? blankNote : noteB;
+    state.hero = hero;
+    if (hero.key !== state.noteKey) {
+      state.noteKey = hero.key;
+      applyArrow(noteSpine, noteHead, hero);
+      // A number in the big slot means a corner severity and nothing else. On a call
+      // that has no severity the word itself is the call, so it takes the large type.
+      writeText(noteSev, cache, "sev", hero.isTurn ? String(Math.round(hero.severity)) : glyphFor(hero));
+      toggleClass(note, cache, "noteflat", "flat", !hero.isTurn && hero.kind !== "none");
+      writeText(noteDir, cache, "dir", hero.kind === "none" ? ""
+        : hero.isTurn ? directionLabel(hero.dir) : (hero.label || hero.kind).toUpperCase());
       for (let i = 0; i < chips.length; i += 1) {
-        const txt = noteA.mods[i] || "";
+        const txt = hero.mods[i] || "";
         writeText(chips[i], cache, "chip" + i, txt);
         toggleClass(chips[i], cache, "chipon" + i, "on", txt !== "");
       }
       smooth.dist = 0;
       popNote();
     }
-    if (noteB.key !== state.nextKey) {
-      state.nextKey = noteB.key;
-      applyArrow(queueSpine, queueHead, noteB);
-      writeText(queueSev, cache, "qsev", noteB.severity > 0 ? String(Math.round(noteB.severity)) : "");
-      writeText(queueTxt, cache, "qtxt", noteB.kind === "none" ? ""
-        : noteB.isTurn ? directionLabel(noteB.dir) : (noteB.label || noteB.kind).toUpperCase());
+    if (tail.key !== state.nextKey) {
+      state.nextKey = tail.key;
+      applyArrow(queueSpine, queueHead, tail);
+      writeText(queueLead, cache, "qlead", tail.kind === "none" ? "" : "THEN");
+      writeText(queueSev, cache, "qsev", tail.isTurn ? String(Math.round(tail.severity)) : "");
+      writeText(queueTxt, cache, "qtxt", tail.kind === "none" ? ""
+        : tail.isTurn ? directionLabel(tail.dir) : (tail.label || tail.kind).toUpperCase());
     }
   }
 
@@ -1503,9 +1631,9 @@ export function createHud(root, opts = EMPTY) {
 
   function glyphFor(n) {
     if (n.kind === "crest") return "⌒";
-    if (n.kind === "jump") return "↑";
+    if (n.kind === "jump" || n.kind === "bigjump") return "↑";
     if (n.kind === "finish") return "■";
-    return "–";
+    return "";
   }
 
   // Alternating animation classes restart the keyframes without reading layout.
