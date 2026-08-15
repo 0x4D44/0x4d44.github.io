@@ -1957,7 +1957,10 @@ export const STAGE_BOOK = Object.freeze([
     seed: "vasterkloft/bjornhalt",
     lengthBand: [11500, 12500],
     surfaceLabel: "Fast forest gravel",
-    weather: "overcast",
+        // The first stage anyone drives. It shipped overcast, which is by design
+        // the flattest-lit sky in the book (shadowStrength 0.28) — nothing to read
+        // the shape of the road by. A low raking sun is the one that sells gravel.
+    weather: "golden-hour",
     timeOfDay: "morning",
     personality: "flowing",
     notes: "Long, cold and committed. Fourth-gear crests between the pines, then a plateau that goes on longer than you dare.",
@@ -2029,7 +2032,7 @@ export const STAGE_BOOK = Object.freeze([
     mirrorOf: "alvenda-calderas",
     lengthBand: [10800, 11800],
     surfaceLabel: "Mountain tarmac",
-    weather: "overcast",
+    weather: "thunderstorm",
     timeOfDay: "evening",
     personality: "technical",
     notes: "Down the pass with the brakes cooking. Every hairpin you climbed now arrives with the nose light.",
@@ -2083,7 +2086,7 @@ export const STAGE_BOOK = Object.freeze([
     seed: "northmarch/harrowfen",
     lengthBand: [12800, 13800],
     surfaceLabel: "Open moorland gravel",
-    weather: "overcast",
+    weather: "clear-dawn",
     timeOfDay: "midday",
     personality: "flowing",
     notes: "Out of the trees and onto the moor: long fifth-gear curves, three jumps on the old drove road, one village to thread.",
