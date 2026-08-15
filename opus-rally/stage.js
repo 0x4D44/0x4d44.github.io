@@ -651,11 +651,72 @@ export const NOMINAL_CAR = Object.freeze({
   tyreLat: 1.30,
   tyreLong: 1.22,
   topSpeed: 45,
+  // A gearbox is not a CVT, and P/(m*v) is the CVT answer: it claims five g at
+  // walking pace. The lowest gear reaches peak-power rpm at `gearedSpeed` and
+  // below that the car has only what the engine makes off boost through one
+  // fixed reduction. Both numbers are read off the cars in physics.js: first
+  // gear there is an overall 11.5-13.6:1 into a 0.32 m wheel, which puts peak
+  // power at 15-16 m/s, and at a third of that speed the turbo has not spooled,
+  // so the crank is on 30-40% of peak torque — about a quarter of a g.
+  gearedSpeed: 15.5,   // m/s at which first gear reaches peak-power rpm
+  launchAccel: 2.6,    // m/s^2 the drivetrain actually delivers at walking pace
 });
 
 // A physics-free profile: lateral limit, then a backward brake pass and a
-// forward power pass. Camber, grade and surface all move it, which is what
-// makes it worth trusting as a design oracle.
+// forward power pass. Camber, grade, vertical curvature and surface all move it,
+// which is what makes it worth trusting as a design oracle.
+//
+// Vertical curvature is the term that makes this profile agree with
+// buildAirfield instead of contradicting it. Over a crest of vertical curvature
+// y'' < 0 the road falls away from under the car, and the wheels keep only
+//
+//   load = 1 - v^2 |y''| / g
+//
+// of the weight they started with — the same measurement buildAirfield calls
+// `lift`, seen from the other side. Every grip limit is proportional to that
+// load, so both the cornering and the braking limit fall over a crest, and at
+// load = 0 the car is airborne and has neither. A compression is the mirror of
+// it and does press the tyres down, but it spends the suspension travel doing
+// so, so the profile takes no credit for the extra grip.
+//
+// Solving v^2 k = aLat * (1 - v^2 |y''| / g) for v gives the closed form below.
+// It has the property the crest/jump split needs: as k goes to zero the cap goes
+// to infinity, because a car that is not turning does not need any load at all —
+// so a jump on a straight is still a jump, while a crest inside a corner is
+// capped at the speed that leaves enough load to hold the line.
+function verticalDrop(grade, i, n, step) {
+  if (i <= 0 || i >= n - 1) return 0;
+  const yy = (grade[i + 1] - grade[i - 1]) / (2 * step);
+  return yy < 0 ? -yy : 0;
+}
+
+// What the drivetrain can actually put down, before the tyres get a say. Below
+// `gearedSpeed` first gear is climbing its torque curve, so tractive force rises
+// roughly linearly from the launch figure to the point where it meets the
+// power hyperbola; above it, the gearbox has enough ratios to sit on peak power.
+function driveAccel(car, v) {
+  const geared = car.gearedSpeed || 1e9;
+  const launch = car.launchAccel || 0;
+  const atGeared = car.power / (car.mass * geared);
+  const ramp = launch + (atGeared - launch) * (v / geared);
+  return Math.min(car.power / (car.mass * v), ramp);
+}
+
+// Traction lost to wheelspin on a loose surface at low speed. With a quarter of
+// a megawatt going through one short gear there is no throttle position that
+// sits on the friction peak: the driven wheels spin, the tyre works past its
+// peak and down into whatever the loose layer itself will shear, which is what
+// `looseDepth` measures. Taller gearing modulates it away, so the loss fades out
+// at `gearedSpeed`. Calibrated against the sim rather than guessed: driving the
+// real physics up a synthetic constant-grade slope, the car cannot pull away
+// below 8.9 m/s on a 9% mud climb or 5.6 m/s on 9% gravel, and this term is what
+// stops the profile promising acceleration through that window.
+function looseTraction(props, car, v) {
+  const geared = car.gearedSpeed || 1e9;
+  if (v >= geared) return 1;
+  return 1 - props.looseDepth * (1 - v / geared);
+}
+
 export function speedProfile(stage, car = NOMINAL_CAR, out = null) {
   const n = stage.count;
   const v = out && out.length === n ? out : new Float32Array(n);
@@ -670,29 +731,38 @@ export function speedProfile(stage, car = NOMINAL_CAR, out = null) {
     const sn = Math.sin(theta);
     const denom = Math.max(0.25, c - mu * sn);
     const aLat = G * (mu * c + sn) / denom;
-    const cap = k > 1e-5 ? Math.sqrt(aLat / k) : car.topSpeed;
+    const drop = verticalDrop(stage.grade, i, n, step);
+    const cap = k > 1e-5 ? Math.sqrt(aLat / (k + (aLat * drop) / G)) : car.topSpeed;
     latCap[i] = Math.min(cap, car.topSpeed);
     v[i] = latCap[i];
   }
   for (let i = n - 2; i >= 0; i -= 1) {
     const props = surfaceProps(stage.surface[i]);
     const aLong = G * props.gripLong * car.tyreLong;
-    const used = saturate((v[i] * v[i] * Math.abs(stage.curvature[i])) / Math.max(1e-3, G * props.gripLat * car.tyreLat));
+    const drop = verticalDrop(stage.grade, i, n, step);
+    const load = saturate(1 - (v[i] * v[i] * drop) / G);
+    const used = saturate((v[i] * v[i] * Math.abs(stage.curvature[i]))
+      / Math.max(1e-3, G * props.gripLat * car.tyreLat * load));
     // Gravity's along-track term is -G*grade, so it opposes braking on a descent
     // and helps it on a climb — the opposite sign to the power pass below, which
-    // is fighting the same term while accelerating.
-    const avail = aLong * Math.sqrt(Math.max(0.04, 1 - used * used)) + G * stage.grade[i];
+    // is fighting the same term while accelerating. Both terms carry the load
+    // factor: an airborne car neither brakes nor is slowed by the hill it is
+    // flying over, it just keeps the speed it left the ground with.
+    const avail = load * (aLong * Math.sqrt(Math.max(0.04, 1 - used * used)) + G * stage.grade[i]);
     const vv = Math.sqrt(Math.max(0, v[i + 1] * v[i + 1] + 2 * Math.max(0.5, avail) * step));
     if (vv < v[i]) v[i] = vv;
   }
   for (let i = 1; i < n; i += 1) {
     const props = surfaceProps(stage.surface[i]);
-    const aTyre = G * props.gripLong * car.tyreLong;
+    const aTyre = G * props.gripLong * car.tyreLong * looseTraction(props, car, Math.max(1, v[i - 1]));
     const vp = Math.max(4, v[i - 1]);
-    const aPower = car.power / (car.mass * vp);
+    const aPower = driveAccel(car, vp);
     const drag = (car.dragArea * vp * vp) / car.mass + props.rollingResistance * G;
-    const used = saturate((vp * vp * Math.abs(stage.curvature[i - 1])) / Math.max(1e-3, G * props.gripLat * car.tyreLat));
-    const grip = aTyre * Math.sqrt(Math.max(0.04, 1 - used * used));
+    const drop = verticalDrop(stage.grade, i - 1, n, step);
+    const load = saturate(1 - (vp * vp * drop) / G);
+    const used = saturate((vp * vp * Math.abs(stage.curvature[i - 1]))
+      / Math.max(1e-3, G * props.gripLat * car.tyreLat * load));
+    const grip = aTyre * load * Math.sqrt(Math.max(0.04, 1 - used * used));
     const avail = Math.min(aPower, grip) - drag - G * stage.grade[i - 1];
     const vv = Math.sqrt(Math.max(1, v[i - 1] * v[i - 1] + 2 * avail * step));
     if (vv < v[i]) v[i] = vv;

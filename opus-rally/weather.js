@@ -456,15 +456,25 @@ export const WEATHER_PRESETS = Object.freeze([
     sunElevation: -32 * DEG, sunAzimuth: 12 * DEG,
     // The sun figure is what this air would give if the clock ran the stage into
     // dawn — the elevation is what keeps it below the horizon, not a zeroed dial.
+    // dayGate takes it to nothing at anything under about -3 degrees, so it lights
+    // nothing here; every photon on this stage comes from the moon term below.
     sunIntensity: 3.2, sunAngularSize: 0.0093, haloStrength: 0.9,
     sunColour: [0.60, 0.64, 0.80], moonColour: [0.52, 0.60, 0.86],
     hemiSky: [0.05, 0.07, 0.14], hemiGround: [0.02, 0.02, 0.03],
-    hemiIntensity: 0.35, ambientIntensity: 0.05,
-    bounceColour: [0.05, 0.06, 0.09], bounceIntensity: 0.04,
-    shadowStrength: 0.55, exposure: 2.3, turbidity: 1.8,
-    skyBrightness: 0.02, skyTintWeight: 0.55,
-    skyZenith: [0.004, 0.007, 0.020], skyHorizon: [0.020, 0.028, 0.055], skyGround: [0.006, 0.007, 0.010],
-    fogColour: [0.030, 0.038, 0.060], fogNear: 200, fogFar: 3000, fogDensity: 0.0009,
+    // The rig, not the exposure, is what makes a night. At a moon of 1.05 into an
+    // exposure of 2.3 the gravel came back at pixel 89 under a sky of 72 — the
+    // ground brighter than the sky above it, which is a description of dusk. The
+    // moon and the flat fill come down and the exposure with them, while the sky
+    // stops go up to hold their end: the verge now sits near 73 under a sky near
+    // 95, so the beam is the only thing on the stage worth having. Most of the
+    // remaining light is the moon rather than the hemisphere on purpose — a
+    // directional keeps the shape of a bank, a flat fill only greys it.
+    hemiIntensity: 0.26, ambientIntensity: 0.024,
+    bounceColour: [0.05, 0.06, 0.09], bounceIntensity: 0.025,
+    shadowStrength: 0.55, exposure: 1.5, turbidity: 1.8,
+    skyBrightness: 0.02, skyTintWeight: 0.88,
+    skyZenith: [0.018, 0.031, 0.084], skyHorizon: [0.041, 0.060, 0.109], skyGround: [0.013, 0.018, 0.028],
+    fogColour: [0.036, 0.050, 0.086], fogNear: 200, fogFar: 3000, fogDensity: 0.0009,
     visibility: 6500,
     cloudCover: 0.08, cloudOpacity: 0.6, cloudType: "cirrus",
     cloudAltitude: 5600, cloudScale: 0.00020, cloudSharpness: 2.0, cloudSpeed: 0.3,
@@ -473,7 +483,7 @@ export const WEATHER_PRESETS = Object.freeze([
     precipColour: [0.70, 0.76, 0.90], dropSize: 1.0, fallSpeed: 7.0,
     windSpeed: 1.2, windDirection: 20 * DEG, gustiness: 0.08,
     roadWetness: 0.05, puddleChance: 0.01, temperature: -5.0,
-    starIntensity: 1.0, moonIntensity: 1.05, moonPhase: 0.92,
+    starIntensity: 1.0, moonIntensity: 0.72, moonPhase: 0.92,
     lightningRate: 0, glassFogging: 0.5,
   }),
   preset({
@@ -483,13 +493,19 @@ export const WEATHER_PRESETS = Object.freeze([
     sunElevation: -22 * DEG, sunAzimuth: 348 * DEG,
     sunIntensity: 0.45, sunAngularSize: 0.012, haloStrength: 0.08,
     sunColour: [0.50, 0.56, 0.72], moonColour: [0.30, 0.35, 0.50],
-    hemiSky: [0.055, 0.065, 0.095], hemiGround: [0.022, 0.024, 0.028],
-    hemiIntensity: 0.5, ambientIntensity: 0.09,
+    // Under a full nimbus deck the moon is gone and the only ambient there is
+    // comes off the cloud base, so the fill carries the whole stage. At an
+    // exposure of 2.5 that fill still left the road at pixel 4 while the sky sat
+    // at 86 — a black cut-out under a dusk sky, and every wet highlight and
+    // headlight in between clipped. The fill goes up, the exposure comes down,
+    // and the road settles just readable outside the beam.
+    hemiSky: [0.16, 0.19, 0.28], hemiGround: [0.05, 0.055, 0.065],
+    hemiIntensity: 0.62, ambientIntensity: 0.14,
     bounceColour: [0.06, 0.065, 0.08], bounceIntensity: 0.05,
-    shadowStrength: 0.1, exposure: 2.5, turbidity: 9.0,
+    shadowStrength: 0.1, exposure: 1.35, turbidity: 9.0,
     skyBrightness: 0.03, skyTintWeight: 0.9,
-    skyZenith: [0.010, 0.012, 0.018], skyHorizon: [0.030, 0.033, 0.042], skyGround: [0.012, 0.013, 0.016],
-    fogColour: [0.045, 0.050, 0.062], fogNear: 40, fogFar: 620, fogDensity: 0.0068,
+    skyZenith: [0.011, 0.013, 0.020], skyHorizon: [0.038, 0.042, 0.054], skyGround: [0.013, 0.014, 0.018],
+    fogColour: [0.048, 0.053, 0.068], fogNear: 40, fogFar: 620, fogDensity: 0.0068,
     visibility: 700,
     cloudCover: 1.0, cloudOpacity: 0.95, cloudType: "nimbus",
     cloudAltitude: 780, cloudScale: 0.00032, cloudSharpness: 1.2, cloudSpeed: 1.0,
@@ -783,16 +799,32 @@ float starHash(vec3 p) {
 
 // Cell-based star field: one candidate per cell, most of them rejected, so the
 // survivors are sparse and unevenly spaced the way a real sky is.
-float starField(vec3 dir, float scale, float density) {
+//
+// The cell test is a hard clip — a fragment one cell over asks a different cell
+// and gets nothing — so the point spread has to have died away before it reaches
+// the boundary. STAR_FALLOFF and STAR_JITTER are sized together for that: the
+// profile is under a 255th of its peak by 0.0017 rad and a star can be thrown at
+// most 0.12 of a cell off centre, which fits inside the finer lattice's half
+// cell of 0.0026 rad. Sized apart, the cube's own silhouette shows through and
+// the sky fills with hard white squares of every size, which is what it did.
+const float STAR_FALLOFF = 1.9e6;
+const float STAR_JITTER = 0.24;
+
+float starField(vec3 dir, float scale, float density, float gain) {
   vec3 p = dir * scale;
   vec3 cell = floor(p);
   float h = starHash(cell);
   if (h > density) return 0.0;
   vec3 offset = vec3(starHash(cell + 1.7), starHash(cell + 4.3), starHash(cell + 8.9)) - 0.5;
-  vec3 centre = (cell + 0.5 + offset * 0.8) / scale;
-  float d = length(normalize(centre) - dir);
-  float mag = 0.35 + 0.65 * fract(h * 91.7);
-  return mag * exp(-d * d * 62000.0 / (mag * mag));
+  vec3 centre = normalize(cell + 0.5 + offset * STAR_JITTER);
+  float d = length(centre - dir);
+  // Magnitude, not brightness. A fifth power of a uniform is close enough to the
+  // naked-eye distribution: almost every star sits far below the post chain's
+  // bright threshold and only the rare one flares, instead of the whole field
+  // clipping to white and blooming.
+  float u = fract(h * 91.7);
+  float mag = gain * (0.035 + 0.965 * u * u * u * u * u);
+  return mag * exp(-d * d * STAR_FALLOFF);
 }
 
 void main() {
@@ -806,7 +838,7 @@ void main() {
   // Stars sit behind everything and are killed by any daylight or cloud.
   float nightMask = uStars * smoothstep(-0.02, 0.10, h);
   if (nightMask > 0.001) {
-    float s = starField(dir, 190.0, 0.055) + starField(dir, 62.0, 0.020) * 1.6;
+    float s = starField(dir, 190.0, 0.030, 1.0) + starField(dir, 62.0, 0.020, 1.9);
     col += vec3(0.85, 0.90, 1.05) * s * nightMask * (1.0 - uCloudCover * 0.9);
   }
 
@@ -920,6 +952,14 @@ uniform float uNearFade;
 varying float vAlpha;
 varying vec2 vUv;
 
+// The narrowest a streak is allowed to appear, in radians. A drop is millimetres
+// across, so past twenty metres its quad is thinner than a pixel: the rasteriser
+// then samples it almost nowhere and the heaviest rain in the game drew nothing
+// at all. Widening the far ones to a floor and taking the same factor back out
+// of their alpha keeps the light they carry unchanged and makes them a veil
+// rather than a flicker.
+const float RAIN_MIN_ANGLE = 0.0016;
+
 void main() {
   vec3 base = iBase * uBox;
   // Wrap the pool around the camera in world space: a drop leaves the box on one
@@ -934,12 +974,14 @@ void main() {
   d = dl > 1e-4 ? d / dl : vec2(0.0, -1.0);
   vec2 perp = vec2(-d.y, d.x);
   float len = uLength * (0.55 + 0.9 * iRand.x);
-  mv.xy += d * (position.y * len) + perp * (position.x * uWidth);
+  float depth = max(-mv.z, 0.05);
+  float width = max(uWidth, depth * RAIN_MIN_ANGLE);
+  mv.xy += d * (position.y * len) + perp * (position.x * width);
 
   float edge = max(max(abs(rel.x) / uBox.x, abs(rel.y) / uBox.y), abs(rel.z) / uBox.z) * 2.0;
   float dist = length(mv.xyz);
-  vAlpha = uOpacity * (1.0 - smoothstep(0.72, 1.0, edge)) * smoothstep(0.0, uNearFade, dist)
-    * (0.55 + 0.45 * iRand.y);
+  vAlpha = uOpacity * (uWidth / width) * (1.0 - smoothstep(0.72, 1.0, edge))
+    * smoothstep(0.0, uNearFade, dist) * (0.55 + 0.45 * iRand.y);
   vUv = position.xy + 0.5;
   gl_Position = projectionMatrix * mv;
 }
@@ -954,9 +996,13 @@ varying float vAlpha;
 varying vec2 vUv;
 
 void main() {
-  float across = 1.0 - abs(vUv.x * 2.0 - 1.0);
+  // Squaring the cross profile left full alpha on the centre line alone, so a
+  // streak already only a few pixels wide covered well under one of them and
+  // read as nothing. A soft-shouldered ramp fills the middle of the quad and
+  // skirts the edges — the shape water actually makes, and visible.
+  float across = smoothstep(0.0, 0.55, 1.0 - abs(vUv.x * 2.0 - 1.0));
   float along = smoothstep(0.0, 0.30, vUv.y) * smoothstep(1.0, 0.72, vUv.y);
-  float a = across * across * along * vAlpha;
+  float a = across * along * vAlpha;
   if (a < 0.004) discard;
   vec3 c = uColour + uGlint * uGlintAmount * along;
   gl_FragColor = vec4(c, a);
@@ -985,15 +1031,31 @@ void main() {
   vec3 rel = mod(base + uDrift - uCamPos + uBox * 0.5, uBox) - uBox * 0.5;
   // A flake does not fall, it tumbles: the flutter is what separates snow from
   // white rain, and it has to be per-flake or the whole field pulses together.
+  // The three periods are deliberately incommensurate, so the path is a drifting
+  // Lissajous that never closes rather than a circle every flake walks in step.
   float ph = iRand.x * 6.2831853;
   rel.x += sin(uTime * (0.7 + iRand.y) + ph) * uWobble;
   rel.z += cos(uTime * (0.55 + iRand.x * 0.8) + ph * 1.7) * uWobble;
+  rel.y += sin(uTime * (0.41 + iRand.y * 0.6) + ph * 2.3) * uWobble * 0.45;
   rel += uWindDir * sin(uTime * 0.31 + ph * 0.5) * uWobble * 0.6;
   vec3 world = uCamPos + rel;
 
   vec4 mv = viewMatrix * vec4(world, 1.0);
-  float size = uSize * (0.45 + 1.1 * iRand.y);
-  mv.xy += position.xy * size;
+  // Mostly small, occasionally large. A cubed uniform puts half the field under
+  // a third of the mean, which is what snow looks like: a haze of fine flakes
+  // with the odd near one crossing the frame. The flat distribution it replaces
+  // gave every flake much the same size and the field read as a sprite sheet.
+  float grade = iRand.y * iRand.y * iRand.y;
+  float size = uSize * (0.22 + 2.1 * grade);
+  // Tumble. A flake is a plate, not a bead: it turns edge on and all but
+  // disappears, then opens out again. Collapsing one axis on a spin the flake
+  // owns is what reads as tumbling.
+  float spin = uTime * (0.8 + 2.2 * iRand.x) + ph;
+  float face = 0.24 + 0.76 * abs(sin(spin));
+  float ca = cos(spin * 0.6);
+  float sa = sin(spin * 0.6);
+  vec2 q = vec2(position.x * face, position.y) * size;
+  mv.xy += vec2(q.x * ca - q.y * sa, q.x * sa + q.y * ca);
 
   float edge = max(max(abs(rel.x) / uBox.x, abs(rel.y) / uBox.y), abs(rel.z) / uBox.z) * 2.0;
   float dist = length(mv.xyz);
@@ -1016,7 +1078,11 @@ void main() {
   vec2 p = vUv * 2.0 - 1.0;
   float r = dot(p, p);
   if (r > 1.0) discard;
-  float a = (1.0 - r) * (1.0 - r) * vAlpha;
+  // A Gaussian core, not a polynomial one: at the distances that matter a flake
+  // is well outside the focal plane and has no edge to it at all. Subtracting
+  // the profile's own value at the rim is what stops the truncation leaving a
+  // faint ring, which is the tell that turns a soft flake back into a sprite.
+  float a = (exp(-r * 4.2) - 0.0150) * 1.0152 * vAlpha;
   if (a < 0.004) discard;
   // Ice scatters almost everything it catches, so a flake is lit by the whole
   // sky rather than by the key — it stays bright even in the shadow of a bank.
@@ -1029,12 +1095,17 @@ void main() {
 
 const DEFAULTS = Object.freeze({
   seed: "opus-weather",
-  rainPool: 9000,
-  snowPool: 5000,
-  rainBox: 46,
-  rainBoxHeight: 26,
-  snowBox: 62,
-  snowBoxHeight: 34,
+  // Pool against box, not either alone: what a driver sees is drops per cubic
+  // metre near the camera. Nine thousand drops spread through a 46 m box is one
+  // every six cubic metres, and a downpour photographed as clear air. The boxes
+  // are sized so a full pool is a wall of water and a light shower is a few
+  // flakes a second across the screen.
+  rainPool: 12000,
+  snowPool: 11000,
+  rainBox: 30,
+  rainBoxHeight: 18,
+  snowBox: 38,
+  snowBoxHeight: 22,
   skyRadius: 4000,
   cloudTextureSize: 192,
   shadowMapSize: 2048,
@@ -1762,6 +1833,11 @@ function updatePrecipitation(w, dt) {
   su.uCamPos.value.copy(w._camPos);
 
   const rateNorm = saturate(c.precipRate / 55);
+  // Precipitation has no colour of its own — a drop is a lens on the sky and a
+  // flake is ice returning whatever light is falling — so both take their level
+  // from the scene's own haze rather than from a literal grey. A fixed value is
+  // a grey smear at noon and a white line at night, which is what both were.
+  const skyLevel = luminance(w._hazeCol);
 
   // Rain. Density follows the rate and the speed both: a car at 160 sweeps
   // through far more air per second than one standing still, and the screen
@@ -1787,10 +1863,11 @@ function updatePrecipitation(w, dt) {
     ru.uStreakVel.value.set(vx, vy, vz);
     const rel = Math.hypot(vx, vy, vz);
     ru.uLength.value = clamp(rel * w.opts.shutter * (0.6 + 0.5 * c.dropSize), 0.10, 3.2);
-    ru.uWidth.value = 0.006 + 0.010 * c.dropSize;
-    ru.uOpacity.value = 0.22 + 0.42 * rainRate;
+    ru.uWidth.value = 0.010 + 0.022 * c.dropSize;
+    ru.uOpacity.value = 0.20 + 0.40 * rainRate;
+    const dropLit = clamp(0.10 + 2.0 * skyLevel, 0.06, 0.75);
     ru.uColour.value.setRGB(
-      c.precipColour[0] * 0.5, c.precipColour[1] * 0.5, c.precipColour[2] * 0.5,
+      c.precipColour[0] * dropLit, c.precipColour[1] * dropLit, c.precipColour[2] * dropLit,
     );
     ru.uGlint.value.setRGB(
       c.sunColour[0] * w._sunTint[0], c.sunColour[1] * w._sunTint[1], c.sunColour[2] * w._sunTint[2],
@@ -1815,12 +1892,20 @@ function updatePrecipitation(w, dt) {
     nu.uDrift.value.z += (wz * 1.15 - w.motion.z * 0.12) * dt;
     nu.uTime.value += dt;
     nu.uWobble.value = 0.15 + 0.55 * (1 - saturate(windSpeed / 22));
-    nu.uSize.value = 0.018 + 0.045 * c.dropSize;
-    nu.uOpacity.value = 0.35 + 0.55 * snowRate;
+    // uSize is the largest a flake gets, not the typical one: the vertex shader
+    // grades the pool from a fifth of this to twice it, so the mean lands near
+    // three quarters.
+    nu.uSize.value = 0.012 + 0.028 * c.dropSize;
+    nu.uOpacity.value = 0.20 + 0.40 * snowRate;
     const wl = Math.hypot(wx, wz) || 1;
     nu.uWindDir.value.set(wx / wl, 0, wz / wl);
-    nu.uColour.value.setRGB(c.precipColour[0], c.precipColour[1], c.precipColour[2]);
-    nu.uSkyColour.value.setRGB(w._zenith[0] + 0.35, w._zenith[1] + 0.38, w._zenith[2] + 0.45);
+    const flakeLit = clamp(0.06 + 1.9 * skyLevel, 0.05, 1.0);
+    nu.uColour.value.setRGB(
+      c.precipColour[0] * flakeLit, c.precipColour[1] * flakeLit, c.precipColour[2] * flakeLit,
+    );
+    nu.uSkyColour.value.setRGB(
+      w._hazeCol[0] * 1.6, w._hazeCol[1] * 1.6, w._hazeCol[2] * 1.6,
+    );
     nu.uCamPos.value.copy(w._camPos);
   }
 

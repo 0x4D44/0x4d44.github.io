@@ -20,14 +20,16 @@ const G = 9.81;
 const RHO = 1.225;
 const KPH = 3.6;
 
-// The `world` contract from CONTRACTS.md, flat and uniform. `surfaceAt` fills the
-// caller's object because physics.js hands it the same scratch every wheel.
-function flatWorld(surfaceId = SURFACE.TARMAC, groundY = 0) {
+// The `world` contract from CONTRACTS.md, uniform, climbing at `grade` (dy/dz) in
+// the +Z direction a fresh car faces. `surfaceAt` fills the caller's object because
+// physics.js hands it the same scratch every wheel.
+function slopedWorld(surfaceId = SURFACE.TARMAC, groundY = 0, grade = 0) {
   const props = surfaceProps(surfaceId);
+  const inv = 1 / Math.sqrt(1 + grade * grade);
   return {
     gravity: G,
-    heightAt: () => groundY,
-    normalAt: (x, z, out) => { out.x = 0; out.y = 1; out.z = 0; return out; },
+    heightAt: (x, z) => groundY + z * grade,
+    normalAt: (x, z, out) => { out.x = 0; out.y = inv; out.z = -grade * inv; return out; },
     surfaceAt: (x, z, out) => {
       out.props = props;
       out.surfaceId = surfaceId;
@@ -45,6 +47,8 @@ function flatWorld(surfaceId = SURFACE.TARMAC, groundY = 0) {
     bounds: { minX: -1e5, maxX: 1e5, minZ: -1e5, maxZ: 1e5 },
   };
 }
+
+const flatWorld = (surfaceId = SURFACE.TARMAC, groundY = 0) => slopedWorld(surfaceId, groundY, 0);
 
 // The default preset is the sim one, whose gearbox is manual; a driver-facing car
 // gets the shift servo. Tests that are not about the gearbox use this.
@@ -93,7 +97,10 @@ const SPRINT = {
   "vireo-r2": { t100: [7.8, 10.4], topKph: [165, 191] },
   "sprint-j2": { t100: [7.4, 9.9], topKph: [198, 228] },
   "brackmoor-t8": { t100: [8.7, 11.6], topKph: [169, 195] },
-  "delta-b640": { t100: [5.7, 7.7], topKph: [202, 233] },
+  // Re-measured: this band was recorded while the auto-clutch pinned the engine
+  // at ~2100 rpm off the line, below the 3200 rpm its turbo lights at, so it read
+  // the bog rather than the car. With the launch fixed the 640 sprints in 4.9 s.
+  "delta-b640": { t100: [4.2, 5.6], topKph: [202, 233] },
   "corvine-rs2000": { t100: [4.5, 6.1], topKph: [187, 216] },
   "falke-4s": { t100: [4.7, 6.4], topKph: [182, 209] },
   "ardent-r1": { t100: [3.3, 4.5], topKph: [185, 213] },
@@ -305,6 +312,216 @@ test("no car can be pinned in first gear with the shift servo on", () => {
       `${spec.id} pinned in first reached ${(manual.speed * KPH).toFixed(1)} km/h,`
       + ` past the ${firstGearKph.toFixed(1)} km/h the ratio allows`,
     );
+  }
+});
+
+// ---- launching and restarting -------------------------------------------
+
+// The arcade preset is the one a player gets: shift servo, traction control and
+// the auto-clutch. Flat out from rest up a climb is the move that strands a car.
+function hillStart(specId, surfaceId, grade, over = {}) {
+  const world = slopedWorld(surfaceId, 0, grade);
+  const car = createCar(specId, { preset: "arcade", ...over });
+  const input = makeInput();
+  // Sit still in gear off the throttle first, the way a car that has just stopped
+  // part-way up the climb sits before the driver gets back on it.
+  hold(car, input, world, 0.5);
+  input.throttle = 1;
+
+  let minRpm = Infinity;
+  let stalledSteps = 0;
+  const settle = steps(0.25);
+  const n = steps(6);
+  for (let i = 0; i < n; i += 1) {
+    stepCar(car, input, world, DT);
+    if (i >= settle) minRpm = Math.min(minRpm, car.engineRpm);
+    if (car.engineStalled) stalledSteps += 1;
+  }
+  return { kph: car.forwardSpeed * KPH, minRpm, stalledSteps, gear: car.gear };
+}
+
+const LOOSE_CLIMBS = [SURFACE.GRAVEL, SURFACE.DIRT, SURFACE.SNOW, SURFACE.MUD];
+
+test("a car pulls away up a low-grip climb instead of bogging the engine", () => {
+  // The failure this test exists for: on anything looser than tarmac the
+  // auto-clutch fed torque in proportional to engine speed with a band that
+  // opened at half the launch rpm, so the engine settled wherever the clutch's
+  // torque crossed its own — deep below the launch rpm — and the car slid
+  // backwards down the hill. A player who stops on an ice or mud climb is
+  // stranded, and the stage cannot be finished.
+  for (const spec of CARS) {
+    for (const surfaceId of LOOSE_CLIMBS) {
+      for (const grade of [0.04, 0.088]) {
+        const name = `${spec.id} on ${surfaceProps(surfaceId).name} at ${(grade * 100).toFixed(1)}%`;
+        const r = hillStart(spec.id, surfaceId, grade);
+        assert.ok(r.kph > 4, `${name} was still doing ${r.kph.toFixed(2)} km/h after 6 s flat out from rest`);
+        assert.equal(r.stalledSteps, 0, `${name} stalled the engine pulling away`);
+        assert.ok(
+          r.minRpm > spec.engine.idleRpm * 0.98,
+          `${name} dragged the engine to ${r.minRpm.toFixed(0)} rpm, under its ${spec.engine.idleRpm} rpm idle`
+          + " — the auto-clutch is meant to slip, not to bog",
+        );
+      }
+    }
+
+    // The hard surfaces have grip to spare, so a bogged launch shows up as a
+    // number rather than as a sign.
+    for (const surfaceId of [SURFACE.GRAVEL, SURFACE.DIRT]) {
+      const r = hillStart(spec.id, surfaceId, 0.088);
+      assert.ok(
+        r.kph > 12,
+        `${spec.id} reached only ${r.kph.toFixed(1)} km/h in 6 s up an 8.8% ${surfaceProps(surfaceId).name} climb`,
+      );
+    }
+
+    // Sheet ice at a gentle grade is the limit case: the car may crawl, but it
+    // may not slide backwards and it may not bog.
+    const ice = hillStart(spec.id, SURFACE.ICE, 0.04);
+    assert.ok(ice.kph > 0.5, `${spec.id} slid backwards at ${(-ice.kph).toFixed(2)} km/h on a 4% ice climb`);
+    assert.equal(ice.stalledSteps, 0, `${spec.id} stalled on a 4% ice climb`);
+    assert.ok(
+      ice.minRpm > spec.engine.idleRpm * 0.98,
+      `${spec.id} dragged the engine to ${ice.minRpm.toFixed(0)} rpm on ice, under its ${spec.engine.idleRpm} rpm idle`,
+    );
+  }
+});
+
+// Drives a climb the car cannot get traction on and reports what the gearbox did.
+function wheelspinClimb(specId, surfaceId, grade, seconds) {
+  const world = slopedWorld(surfaceId, 0, grade);
+  const car = createCar(specId, { preset: "arcade", assists: { tractionControl: 0 } });
+  const input = makeInput();
+  input.throttle = 1;
+  let maxGear = car.gear;
+  let maxSlip = 0;
+  let maxKph = 0;
+  const n = steps(seconds);
+  for (let i = 0; i < n; i += 1) {
+    stepCar(car, input, world, DT);
+    maxGear = Math.max(maxGear, car.gear);
+    maxKph = Math.max(maxKph, Math.abs(car.forwardSpeed) * KPH);
+    for (const w of car.wheels) {
+      if (Math.abs(w.driveTorque) > 1) maxSlip = Math.max(maxSlip, w.slipRatio);
+    }
+  }
+  return { maxGear, maxSlip, maxKph, gear: car.gear };
+}
+
+test("the shift servo does not walk up the box on a spinning wheel", () => {
+  // With the traction control off on an icy climb the driven wheels spin, and a
+  // spinning wheel is what turns the engine — so engine rpm stops being a
+  // statement about road speed. Keying the shift off it walked the box to sixth
+  // at walking pace and left the car nothing to climb in.
+  for (const spec of CARS) {
+    const r = wheelspinClimb(spec.id, SURFACE.ICE, 0.088, 8);
+    assert.ok(
+      r.maxSlip > 2,
+      `${spec.id} only reached ${r.maxSlip.toFixed(2)} slip ratio on an 8.8% ice climb`
+      + " — without real wheelspin this test proves nothing",
+    );
+    assert.equal(
+      r.maxGear, 1,
+      `${spec.id} shifted up to gear ${r.maxGear} while spinning its wheels at ${r.maxKph.toFixed(1)} km/h`,
+    );
+  }
+});
+
+test("the shift servo still upshifts once the wheels are carrying the car", () => {
+  // The other half of the same rule: refusing a shift under slip must not turn
+  // into refusing to shift at all. On gravel every car has to work through the
+  // box, and every shift has to land with the driven wheels hooked up.
+  for (const spec of CARS) {
+    const world = flatWorld(SURFACE.GRAVEL);
+    const car = driven(spec.id);
+    const input = makeInput();
+    input.throttle = 1;
+
+    let previous = car.gear;
+    let upshifts = 0;
+    let worstShiftSlip = 0;
+    const n = steps(30);
+    for (let i = 0; i < n; i += 1) {
+      let slip = 0;
+      for (const w of car.wheels) {
+        if (Math.abs(w.driveTorque) > 1) slip = Math.max(slip, w.slipRatio);
+      }
+      stepCar(car, input, world, DT);
+      if (car.gear > previous) {
+        upshifts += 1;
+        worstShiftSlip = Math.max(worstShiftSlip, slip);
+      }
+      previous = car.gear;
+    }
+    assert.ok(
+      upshifts >= spec.gearbox.ratios.length - 1,
+      `${spec.id} made only ${upshifts} upshifts in 30 s flat out on gravel`,
+    );
+    assert.ok(
+      worstShiftSlip < 1,
+      `${spec.id} upshifted with a driven wheel at ${worstShiftSlip.toFixed(2)} slip ratio`,
+    );
+  }
+});
+
+// Peak crank power over mass: the one figure that says how hard a car should be
+// able to launch, before lag, gearing and traction have their say.
+function powerToWeight(spec) {
+  return peakPowerW(spec) / spec.mass;
+}
+
+function launchKph(specId, seconds = 4) {
+  const world = flatWorld(SURFACE.TARMAC);
+  const car = driven(specId);
+  const input = makeInput();
+  input.throttle = 1;
+  hold(car, input, world, seconds);
+  return car.speed * KPH;
+}
+
+test("off the line the cars rank by power-to-weight, not against it", () => {
+  // The measurement that found the bug: 4 s from rest at full throttle, the
+  // 383 kW/t four-wheel-drive car was LAST of the eight, behind a 111 kW/t
+  // front-drive hatchback, because the auto-clutch held it below its boost
+  // threshold. Power-to-weight cannot dictate the order outright — lag and
+  // traction legitimately reshuffle neighbours — but it must explain it.
+  const cars = CARS.map((spec) => ({
+    id: spec.id, drive: spec.drive, kph: launchKph(spec.id), pw: powerToWeight(spec),
+  }));
+  const byPw = [...cars].sort((a, b) => b.pw - a.pw);
+  const byKph = [...cars].sort((a, b) => b.kph - a.kph);
+
+  let d2 = 0;
+  for (const c of cars) d2 += (byPw.indexOf(c) - byKph.indexOf(c)) ** 2;
+  const n = cars.length;
+  const rho = 1 - 6 * d2 / (n * (n * n - 1));
+  assert.ok(
+    rho > 0.70,
+    `the 4 s launch order ranks against power-to-weight (Spearman ${rho.toFixed(3)}): `
+    + byKph.map((c) => `${c.id} ${c.kph.toFixed(1)} km/h @ ${c.pw.toFixed(0)} kW/t`).join(", "),
+  );
+
+  // Four driven wheels put down roughly twice the tyre, so no two-wheel-drive car
+  // in this catalogue may out-launch a four-wheel-drive one. This is the assertion
+  // the original defect broke outright.
+  const worst4wd = cars.filter((c) => c.drive === "4WD").reduce((a, b) => (b.kph < a.kph ? b : a));
+  const best2wd = cars.filter((c) => c.drive !== "4WD").reduce((a, b) => (b.kph > a.kph ? b : a));
+  assert.ok(
+    worst4wd.kph > best2wd.kph * 1.25,
+    `${worst4wd.id} (4WD) launched to ${worst4wd.kph.toFixed(1)} km/h against`
+    + ` ${best2wd.id} (${best2wd.drive}) on ${best2wd.kph.toFixed(1)} km/h`,
+  );
+
+  // And no car may be beaten off the line by one with barely half its specific
+  // power, whatever the layout.
+  for (const a of cars) {
+    for (const b of cars) {
+      if (b.kph <= a.kph) continue;
+      assert.ok(
+        b.pw > a.pw * 0.55,
+        `${b.id} (${b.pw.toFixed(0)} kW/t) out-launched ${a.id} (${a.pw.toFixed(0)} kW/t),`
+        + ` ${b.kph.toFixed(1)} against ${a.kph.toFixed(1)} km/h`,
+      );
+    }
   }
 });
 
@@ -764,13 +981,22 @@ test("front, rear and four-wheel drive answer power-on differently", () => {
   assert.equal(awd.drive, "4WD");
 
   // Power-on slip angle: the front-driven car pulls itself straight, the
-  // rear-driven car swings, the four-wheel-drive car sits between them.
+  // rear-driven car swings, the four-wheel-drive car sits between them. What is
+  // measured is the slip the THROTTLE added, not the absolute figure: the latter
+  // also counts however sideways the car happened to arrive, which made the old
+  // bound a statement about the entry rather than about the drivetrain.
   assert.ok(
     Math.abs(fwd.slipAfter) < 0.10,
     `FWD slid to ${fwd.slipAfter.toFixed(3)} rad on power — a front-driven car should tighten up, not swing`,
   );
+  const rwdSwing = Math.abs(rwd.slipAfter) - Math.abs(rwd.slipBefore);
   assert.ok(
-    Math.abs(rwd.slipAfter) > 0.55,
+    rwdSwing > 0.40,
+    `full throttle added only ${rwdSwing.toFixed(3)} rad of slip to the RWD car`
+    + ` (${rwd.slipBefore.toFixed(3)} -> ${rwd.slipAfter.toFixed(3)} rad)`,
+  );
+  assert.ok(
+    Math.abs(rwd.slipAfter) > 0.45,
     `RWD only reached ${rwd.slipAfter.toFixed(3)} rad of slip on power`,
   );
   assert.ok(

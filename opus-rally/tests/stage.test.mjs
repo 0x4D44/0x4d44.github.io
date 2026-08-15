@@ -13,9 +13,35 @@ import {
   NOMINAL_CAR,
   SEP_NEAR,
 } from "../stage.js";
-import { surfaceProps } from "../surfaces.js";
+import { surfaceProps, SURFACE } from "../surfaces.js";
 
 const G = 9.81;
+
+// How much of the car's weight the road takes off the tyres here, at the speed
+// the profile itself authorises. This is buildAirfield's `lift` recomputed from
+// the outside: 0 is level, 1 is the wheels leaving the ground, and past that the
+// car is flying. Deliberately derived from `grade` and the profile rather than
+// read out of `stage.crest`/`stage.jump`, so it can disagree with them.
+function liftAt(stage, speed, i) {
+  if (i <= 0 || i >= stage.count - 1) return 0;
+  const yy = (stage.grade[i + 1] - stage.grade[i - 1]) / (2 * stage.step);
+  return yy < 0 ? (speed[i] * speed[i] * -yy) / G : 0;
+}
+
+// The four arrays speedProfile actually reads, so a hypothesis about one road
+// shape can be posed without generating a whole stage around it.
+function syntheticStage(surfaceId, grade, curvature, count = 260) {
+  const k = new Float32Array(count);
+  for (let i = 0; i < count; i += 1) k[i] = curvature(i);
+  return {
+    count,
+    step: 2.0,
+    surface: new Uint8Array(count).fill(surfaceId),
+    curvature: k,
+    camber: new Float32Array(count),
+    grade: new Float32Array(count).fill(grade),
+  };
+}
 
 // Building the book costs a second or so, and every test below reads the same
 // twelve roads, so build it once.
@@ -404,6 +430,121 @@ test("every jump lands somewhere a car survives", () => {
       );
     }
   });
+});
+
+// speedProfile and buildAirfield used to contradict each other: the profile had
+// no vertical-curvature term at all, so it authorised full speed over a crest
+// that its own output then marked as a jump, and the stage launched whatever
+// arrived at the speed it had just permitted. At alvenda-calderas s=4800 that was
+// 44 m/s over a 66 m-radius bend with the load already gone off the tyres.
+test("the profile never authorises flight in a corner", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    let worstK = 0;
+    let at = 0;
+    let worstLift = 0;
+    for (let i = 1; i < stage.count - 1; i += 1) {
+      if (liftAt(stage, v, i) < 1) continue;
+      const k = Math.abs(stage.curvature[i]);
+      if (k > worstK) { worstK = k; at = i; worstLift = liftAt(stage, v, i); }
+    }
+    // A car with no wheels on the ground generates no lateral force, so the only
+    // road it can be authorised to fly over is one it does not have to steer on.
+    // 5e-4 is a 2 km radius: a straight, with room for sampling noise.
+    assert.ok(
+      worstK <= 5e-4,
+      `${entry.id}: at s=${at * stage.step} the profile authorises ${worstLift.toFixed(2)}x lift `
+      + `— wheels off the ground — through a ${(1 / worstK).toFixed(0)} m radius bend`,
+    );
+  });
+});
+
+// The other half of the same contract. Making the profile honest about crests
+// must not quietly turn every jump into a bump: a rally stage needs real air.
+test("every stage still has a jump with genuine air at the profile's own speed", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    let best = null;
+    for (const f of stage.features.filter((x) => x.kind === "jump")) {
+      const i = Math.max(1, Math.min(stage.count - 2, Math.round(f.s / stage.step)));
+      const land = jumpLanding(stage, i, v[i]);
+      if (!best || land.air > best.land.air) best = { f, i, land };
+    }
+    assert.ok(best, `${entry.id}: no jump feature at all`);
+    const lift = liftAt(stage, v, best.i);
+    assert.ok(
+      best.land.air >= 0.6 && best.land.flight >= 25,
+      `${entry.id}: its biggest jump (s=${Math.round(best.f.s)}) only manages `
+      + `${best.land.air.toFixed(2)} s and ${best.land.flight.toFixed(0)} m of flight`,
+    );
+    // stage.jump saturates at lift 1.9, so a stage whose best jump is under that
+    // has no jump the rest of the game will treat as one.
+    assert.ok(
+      lift >= 1.8,
+      `${entry.id}: its biggest jump only unloads the car to ${lift.toFixed(2)}x — that is a crest, not a jump`,
+    );
+  });
+});
+
+// And nothing may launch by accident. A crest the stage did not call a jump has
+// to stay a crest at the speed the profile hands the driver.
+test("an ordinary crest does not throw the car at the speed the profile allows", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    const jumpsAt = stage.features.filter((f) => f.kind === "jump").map((f) => f.s);
+    let worst = 0;
+    let at = 0;
+    for (const f of stage.features.filter((x) => x.kind === "crest")) {
+      if (jumpsAt.some((js) => Math.abs(js - f.s) < 60)) continue;
+      const i = Math.round(f.s / stage.step);
+      for (let j = i - 10; j <= i + 10; j += 1) {
+        const lift = liftAt(stage, v, j);
+        if (lift > worst) { worst = lift; at = f.s; }
+      }
+    }
+    // Skimming light over the top is what a crest is for; `jump` is
+    // (lift - 1) / 0.9, so 1.45 is half a jump, and past that it is one.
+    assert.ok(
+      worst < 1.45,
+      `${entry.id}: the crest at s=${Math.round(at)} unloads the car to ${worst.toFixed(2)}x — that is a jump, not a crest`,
+    );
+  });
+});
+
+// The forward power pass used to model the engine as P/(m*v) with no torque
+// curve and no gearing, which claims five g at walking pace and made the profile
+// promise a climb the drivetrain cannot start. Driving the real physics up a
+// synthetic constant-grade slope, the car cannot pull away at all from under
+// 8.9 m/s on a 9% mud climb or 10.3 m/s on a 13% one; the profile has to agree.
+test("the profile does not climb out of a mud hairpin the drivetrain cannot start", () => {
+  // 12.5 m radius on mud pins the entry at about 8 m/s — under the speed the
+  // simulated car can recover from — and then the road just goes up.
+  for (const grade of [0.09, 0.13]) {
+    const stage = syntheticStage(SURFACE.MUD, grade, (i) => (i < 12 ? 0.08 : 0));
+    const v = speedProfile(stage);
+    assert.ok(
+      v[12] < v[0],
+      `on a ${(grade * 100).toFixed(0)}% mud climb the profile leaves a 12.5 m hairpin at `
+      + `${v[0].toFixed(1)} m/s and is already doing ${v[12].toFixed(1)} m/s 24 m later`,
+    );
+  }
+  // And it never claims a launch it has no gearing for. 10 m/s is the top of the
+  // window the simulated car cannot pull away inside on a loose climb, and one
+  // short gear spinning its wheels in mud is not worth a third of a g there.
+  const stage = syntheticStage(SURFACE.MUD, 0, (i) => (i < 12 ? 0.08 : 0));
+  const v = speedProfile(stage);
+  let peak = 0;
+  let peakAt = 0;
+  for (let i = 1; i < stage.count; i += 1) {
+    if (v[i - 1] > 10) break;
+    const a = (v[i] * v[i] - v[i - 1] * v[i - 1]) / (2 * stage.step);
+    if (a > peak) { peak = a; peakAt = v[i - 1]; }
+  }
+  assert.ok(
+    peak < 0.30 * G,
+    `pulling out of a mud hairpin the profile claims ${(peak / G).toFixed(2)} g at ${peakAt.toFixed(1)} m/s, `
+    + `which is more than a loose surface and one gear can deliver`,
+  );
 });
 
 test("every stage has a hairpin, a crest, a jump and a flat-out section", () => {
