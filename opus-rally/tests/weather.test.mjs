@@ -759,14 +759,18 @@ const SKY_ANCHORS = [
   "col = mix(col, uGround, smoothstep(0.0, -0.22, h));",
   "float mie = pow(max(sd, 0.0), 6.0) * 0.09 + pow(max(sd, 0.0), 60.0) * 0.35;",
   "col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + mie * uHalo);",
+  "vec4 n3 = texture2D(uCloudTex, uv * 0.23 + uCloudScroll * 0.31);",
   "float density = smoothstep(1.0 - uCloudCover, 1.0 - uCloudCover + 0.42 / uCloudSharp, field);",
   "density *= uCloudOpacity;",
   "density *= smoothstep(0.006, 0.09, h);",
-  "float thin = 1.0 - smoothstep(0.22, 0.74, field);",
-  "float through = (0.40 + 0.60 * thin) * (pow(toward, 1.6) * 0.20 + pow(toward, 9.0) * 0.80);",
+  "float swell = dot(n3, uCloudMix) / wsum;",
+  "float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 2.7, 0.0, 1.0);",
+  "float thin = 1.0 - smoothstep(0.16, 0.86, body);",
+  "float through = (0.35 + 0.65 * thin)",
+  "* (pow(toward, 1.3) * 0.30 + pow(toward, 5.0) * 0.42 + pow(toward, 24.0) * 0.52);",
   "float rim = pow(toward, 3.0) * thin;",
-  "vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.08 + 0.74 * thin + 0.34 * rim, 0.0, 1.0));",
-  "cloud *= 1.0 + 0.85 * (1.0 - smoothstep(0.01, 0.50, h));",
+  "vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.06 + 0.88 * thin + 0.30 * rim, 0.0, 1.0));",
+  "cloud *= mix(1.46, 0.58, smoothstep(0.02, 0.66, h));",
   "cloud += uSunColour * uCloudGlow * through;",
   "col = mix(col, uFogColour, 1.0 - smoothstep(0.0, mix(0.05, 0.55, uHaze), h));",
 ];
@@ -805,6 +809,7 @@ function sampleCloudTex(tex, u, v, out) {
 
 const TEXA = [0, 0, 0, 0];
 const TEXB = [0, 0, 0, 0];
+const TEXC = [0, 0, 0, 0];
 
 function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
   const u = w.sky.uniforms;
@@ -840,6 +845,7 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
     const vv = (camZ + dz * t) * scale + scroll.y;
     sampleCloudTex(w.cloudTexture, uu, vv, TEXA);
     sampleCloudTex(w.cloudTexture, uu * 2.17 - scroll.x * 0.6, vv * 2.17 - scroll.y * 0.6, TEXB);
+    sampleCloudTex(w.cloudTexture, uu * 0.23 + scroll.x * 0.31, vv * 0.23 + scroll.y * 0.31, TEXC);
     const m = num("uCloudMix");
     const wsum = Math.max(m.x + m.y + m.z + m.w, 0.001);
     const dot4 = (a) => (a[0] * m.x + a[1] * m.y + a[2] * m.z + a[3] * m.w) / wsum;
@@ -848,15 +854,17 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
     let density = ss(1 - cover, 1 - cover + 0.42 / num("uCloudSharp"), field);
     density *= num("uCloudOpacity");
     density *= ss(0.006, 0.09, h);
-    const thin = 1 - ss(0.22, 0.74, field);
+    const swell = dot4(TEXC);
+    const body = clamp01(0.5 + (lerp(field, swell, 0.42) - 0.5) * 2.7);
+    const thin = 1 - ss(0.16, 0.86, body);
     const toward = Math.max(sd, 0);
-    const through = (0.40 + 0.60 * thin)
-      * (Math.pow(toward, 1.6) * 0.20 + Math.pow(toward, 9) * 0.80);
+    const through = (0.35 + 0.65 * thin)
+      * (Math.pow(toward, 1.3) * 0.30 + Math.pow(toward, 5) * 0.42 + Math.pow(toward, 24) * 0.52);
     const rim = Math.pow(toward, 3) * thin;
-    const shade = clamp01(0.08 + 0.74 * thin + 0.34 * rim);
+    const shade = clamp01(0.06 + 0.88 * thin + 0.30 * rim);
     const lit = rgb("uCloudLit");
     const dark = rgb("uCloudDark");
-    const base = 1 + 0.85 * (1 - ss(0.01, 0.50, h));
+    const base = lerp(1.46, 0.58, ss(0.02, 0.66, h));
     const glow = num("uCloudGlow");
     for (let i = 0; i < 3; i += 1) {
       const cloud = lerp(dark[i], lit[i], shade) * base + sunCol[i] * glow * through;
@@ -870,12 +878,109 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
   return out;
 }
 
-// The dome's luminance in the linear radiance the shader writes. The renderer's
-// tone curve is monotonic, so a ratio measured here is a ratio on the screen.
+// The dome's luminance in the linear radiance the shader writes.
+//
+// Radiance ratios alone are not enough and once let a white wash ship: the tone
+// curve is monotonic, which preserves the *order* of two values and says nothing
+// about their distance. Every overcast preset sat high on the ACES shoulder,
+// where a factor of two in radiance is worth about sixteen levels of 8-bit
+// pixel, so a dome that passed a 1.9x span here photographed as one flat sheet
+// of near-white. Anything about how flat the sky *looks* is measured in
+// skyPixel() below instead.
 const DOME = [0, 0, 0];
 function domeLum(w, elev, az) {
   const ce = Math.cos(elev);
   return lum3(domeRadiance(w, ce * Math.sin(az), Math.sin(elev), ce * Math.cos(az), 0, 0, DOME));
+}
+
+// ---- what the screen actually shows
+//
+// render.js's composite runs exposure, then ACES, then the grade, then sRGB.
+// Reproducing the first two and the encode is enough to answer "is this sky one
+// pale wash?", because the grade is a mild per-channel trim that cannot turn a
+// flat image into a graded one. The anchors keep this honest the same way
+// SKY_ANCHORS keeps the dome mirror honest: render.js is another module's file,
+// so a curve change there has to fail here rather than silently unmeasure the
+// sky.
+const RENDER_SRC = readFileSync(fileURLToPath(new URL("../render.js", import.meta.url)), "utf8");
+
+const POST_ANCHORS = [
+  "return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);",
+  "col *= uExposure;",
+  "col = acesFilmic(col);",
+];
+
+test("the post chain this file tone maps through is still the one render.js runs", () => {
+  for (const line of POST_ANCHORS) {
+    assert.ok(RENDER_SRC.includes(line),
+      `render.js no longer contains "${line}" — the pixel mirror below is measuring a curve nobody runs`);
+  }
+  for (const [name, value] of [["a", "2.51"], ["b", "0.03"], ["c", "2.43"], ["d", "0.59"], ["e", "0.14"]]) {
+    assert.ok(RENDER_SRC.includes(`const float ${name} = ${value};`),
+      `render.js's ACES constant ${name} is no longer ${value}`);
+  }
+});
+
+function aces(x) {
+  const v = (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
+  return clamp01(v);
+}
+
+function encodeSrgb8(linear) {
+  const c = clamp01(linear);
+  const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return s * 255;
+}
+
+// One 8-bit channel triple for a direction, as the composite would write it.
+const PIXEL = [0, 0, 0];
+function skyPixel(w, elevRad, az) {
+  const ce = Math.cos(elevRad);
+  domeRadiance(w, ce * Math.sin(az), Math.sin(elevRad), ce * Math.cos(az), 0, 0, DOME);
+  const exposure = w.current.exposure;
+  for (let i = 0; i < 3; i += 1) PIXEL[i] = encodeSrgb8(aces(DOME[i] * exposure));
+  return PIXEL;
+}
+
+function skyPixelLum(w, elevRad, az) {
+  return lum3(skyPixel(w, elevRad, az));
+}
+
+// Lowest, highest and mean pixel luma in the band a driver can see: the horizon
+// up to about fifty degrees, all the way round. The sun's own disc and bloom are
+// skipped — they are a light source, and a sky that only spans a range because
+// it contains a clipped white sun is still a flat sky.
+function visibleBandPixels(w) {
+  const sun = w.sky.uniforms.uSunDir.value;
+  const near = Math.cos(15 * DEG);
+  let lo = Infinity;
+  let hi = -Infinity;
+  let sum = 0;
+  let n = 0;
+  for (let elevDeg = 2; elevDeg <= 50; elevDeg += 2) {
+    const e = elevDeg * DEG;
+    const ce = Math.cos(e);
+    for (let i = 0; i < 72; i += 1) {
+      const az = (i / 72) * Math.PI * 2;
+      const dx = ce * Math.sin(az);
+      const dy = Math.sin(e);
+      const dz = ce * Math.cos(az);
+      if (dx * sun.x + dy * sun.y + dz * sun.z > near) continue;
+      const L = skyPixelLum(w, e, az);
+      if (L < lo) lo = L;
+      if (L > hi) hi = L;
+      sum += L;
+      n += 1;
+    }
+  }
+  return { lo, hi, span: hi - lo, mean: sum / n };
+}
+
+// How warm a direction reads, as a share of its own brightness. Positive is
+// warm (red over blue), negative cool.
+function warmth(w, elevDeg, az) {
+  const p = skyPixel(w, elevDeg * DEG, az);
+  return (p[0] - p[2]) / Math.max(lum3(p), 1);
 }
 
 function domeStats(w, elev, samples) {
@@ -915,9 +1020,15 @@ test("the overcast family is a sky, not a flat grey wall", () => {
     assert.ok(deckSpan > 0.1, `${id}: cloudLit and cloudDark are barely different`);
     for (const elevDeg of [20, 40]) {
       const s = domeStats(w, elevDeg * DEG);
-      assert.ok(s.hi - s.lo > deckSpan * 0.30,
+      // The deck's own altitude ramp dims it overhead — a lid is brightest where
+      // you look along its lit base — so the span it can paint at 40 degrees is
+      // a little over half the one it paints at the horizon. Hold the structure
+      // to a share of what is actually available at this altitude, or a deck
+      // fails here for being correctly lit rather than for being flat.
+      const gain = lerp(1.46, 0.58, ss(0.02, 0.66, Math.sin(elevDeg * DEG)));
+      assert.ok(s.hi - s.lo > deckSpan * gain * 0.30,
         `${id}: only ${(s.hi - s.lo).toFixed(3)} of cloud structure at ${elevDeg} deg, `
-        + `against an authored deck span of ${deckSpan.toFixed(3)}`);
+        + `against an authored deck span of ${deckSpan.toFixed(3)} at ${gain.toFixed(2)}x`);
       if (openSky) {
         assert.ok(s.hi / s.lo > 1.35,
           `${id}: deck contrast ratio only ${(s.hi / s.lo).toFixed(2)} at ${elevDeg} deg`);
@@ -958,6 +1069,68 @@ test("the overcast family is a sky, not a flat grey wall", () => {
       assert.ok(atSun / away > 1.4,
         `${id}: the sun's patch is only ${(atSun / away).toFixed(2)}x the far side of the sky`);
     }
+    disposeWeather(w);
+  }
+});
+
+// Which presets are a sky you look at rather than a cloud you are inside. The
+// two white-outs are excluded on purpose: in hill fog and a blizzard the sky
+// really is one value in every direction, and that is the weather.
+const DAYLIGHT_SKIES = Object.freeze([
+  "clear-dawn", "midday-hard", "golden-hour", "overcast",
+  "light-rain", "heavy-rain", "thunderstorm", "light-snow",
+]);
+
+test("no daylight sky is a flat wash once it is through the tone curve", () => {
+  // The measurement that matters, and the one the radiance tests above could
+  // not make. Eleven shipped frames had their whole top third between #e8ebec
+  // and #f2f4f5 — about ten levels of 8-bit spread — while the radiance under
+  // it spanned nearly a factor of two. Both facts were true at once because the
+  // whole sky sat on the ACES shoulder.
+  for (const id of DAYLIGHT_SKIES) {
+    const { w, camera } = rig(id);
+    stepWeather(w, camera, 1 / 60);
+    w.lightning.flash = 0;
+    w.sky.uniforms.uFlash.value = 0;
+
+    // Fifty levels is set from the two that failed: the shipped overcast spanned
+    // 40 and the shipped midday 43, against 60 to 133 for every preset now.
+    const band = visibleBandPixels(w);
+    assert.ok(band.span > 50,
+      `${id}: the visible sky spans only ${band.span.toFixed(0)} levels `
+      + `(${band.lo.toFixed(0)}..${band.hi.toFixed(0)}, mean ${band.mean.toFixed(0)}) `
+      + "— that is a wash, not a sky");
+    // And it must not buy that span by clipping: a sky pinned against white has
+    // nowhere left to put a cloud, and every highlight in the scene then reads
+    // as darker than the background behind it.
+    assert.ok(band.hi < 249,
+      `${id}: the sky reaches ${band.hi.toFixed(0)} away from the sun — it is clipping`);
+    disposeWeather(w);
+  }
+});
+
+test("every daylight sky has a warm end and a cool end", () => {
+  // A sky with no warm/cool axis says nothing about where it is or what time it
+  // is; it is a grey card with a gradient. Clear air runs cool overhead and warm
+  // along the horizon, because the long path scatters the blue out of it; a lid
+  // does the same thing through its own base. Sign and size both matter — a
+  // one-level difference is a rounding artefact, not an axis.
+  for (const id of DAYLIGHT_SKIES) {
+    const { w, camera } = rig(id);
+    stepWeather(w, camera, 1 / 60);
+    w.lightning.flash = 0;
+    w.sky.uniforms.uFlash.value = 0;
+    // Measured away from the sun so this reads the sky's own colour rather than
+    // the sun's, which is warm in every preset that has one.
+    const sun = w.sky.uniforms.uSunDir.value;
+    const away = Math.atan2(sun.x, sun.z) + Math.PI;
+    const low = warmth(w, 3, away);
+    const high = warmth(w, 42, away);
+    // 0.065 against 0.094 for the flattest preset and 1.07 for the warmest.
+    // The shipped overcast managed 0.011 — one part in ninety of its own
+    // brightness, which is not a colour decision, it is rounding.
+    assert.ok(low - high > 0.065,
+      `${id}: horizon ${low.toFixed(3)} vs zenith ${high.toFixed(3)} — no warm/cool axis in it`);
     disposeWeather(w);
   }
 });

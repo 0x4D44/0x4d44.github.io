@@ -29,10 +29,41 @@ import { SURFACE, surfaceProps } from "./surfaces.js";
 
 const PHYSICS_DT = 1 / 200;
 
-// The visible light cone in fog. Baked into the geometry rather than applied as
-// a scale — see buildHeadlights().
-const BEAM_LENGTH = 34;
-const BEAM_RADIUS = 5.2;
+// Headlamps. `useLegacyLights` is off, so a spot light's intensity is a real
+// photometric quantity on the same scale as weather.js's sun, and these are it —
+// at the 42 the lamps shipped at, the road under the beam came out no brighter
+// than the road beside it.
+//
+// The beam pattern is the spot cone itself: aimed at the road `reach` metres out
+// with a full penumbra, the angular falloff runs from the axis (the far road) to
+// the rim (the ground under the nose), which is what puts the hot spot down the
+// stage instead of on the bumper. `decay` is 1 rather than 2 on purpose. A real
+// reflector concentrates its output towards the axis by roughly the square of
+// the distance it is compensating for, and a smoothstep cone cannot; under the
+// true square law from a lamp 0.74 m up, the road at 6 m clips white while the
+// road at 30 m is already black. Decay 1 stands in for the missing pattern and
+// `distance` closes the beam off rather than letting it wash the hillside.
+export const HEADLIGHT = Object.freeze({
+  decay: 1,
+  distance: 80,
+  mainAngle: 0.24,
+  mainReach: 26,
+  mainIntensity: 260,
+  mainToe: 2.2,
+  podAngle: 0.15,
+  podReach: 60,
+  podIntensity: 1400,
+  spillAngle: 0.60,
+  spillReach: 7,
+  spillIntensity: 10,
+});
+
+// The visible light cone in the air. Baked into the geometry rather than applied
+// as a scale — see buildHeadlights(). It is scattered light, so it only exists
+// when there is something to scatter off; BEAM_FOG_FLOOR is that threshold.
+const BEAM_LENGTH = 26;
+const BEAM_RADIUS = BEAM_LENGTH * Math.tan(HEADLIGHT.mainAngle * 0.62);
+const BEAM_FOG_FLOOR = 0.18;
 
 // The texture slots worth filtering anisotropically: the ones sampled across a
 // surface the camera sees edge-on.
@@ -193,6 +224,14 @@ export const CAMERA_CYCLE = Object.freeze([
 // driver's eye line or a bumper can be measured in. mountPosition() takes the
 // car's COM height back out; the two live at different heights per car and
 // mixing the frames put every in-car camera half a metre too high.
+//
+// The in-car mounts are anchored on the modelled cabin, not eyeballed: every car
+// in CARS carries its belt line at 0.895 m and its roof between 1.325 and 1.395,
+// so a driver's eye lives at 1.18, on the driver's side, just behind the screen.
+// Their roll and pitch gains are deliberately small — a head bolted to the
+// chassis rolls with the body, three or four degrees, not with lateral g. At the
+// old 0.92 the horizon tilted seventeen degrees in a corner and the bodywork
+// swung up over the road.
 const CAMERA_PARAMS = Object.freeze({
   chase: Object.freeze({
     mode: "chase", kind: "boom",
@@ -222,12 +261,12 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   bonnet: Object.freeze({
     mode: "bonnet", kind: "mount",
-    localX: 0, mountY: 1.08, localZ: 0.62,
-    lookAhead: 22, lookHeight: 0.05, lookVertGain: 0,
+    localX: 0, mountY: 1.16, localZ: 1.20,
+    lookAhead: 22, lookHeight: 0.30, lookVertGain: 0,
     posRate: 30, posRateSpeed: 0, aimRate: 12, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
     fovBase: 68, fovMax: 68, fovStart: 8, fovRef: 60, fovRate: 3,
-    rollGain: 0.85, pitchGain: 0.55, attRate: 9,
+    rollGain: 0.11, pitchGain: 0.10, attRate: 9,
     shake: 0.055, shakeSpeed: 46, clearance: 0.05,
     airLift: 0, airRate: 2,
     headInertia: 3.4, headGain: 0.020, lookIntoCorner: 0.10, slipLook: 0.22,
@@ -235,12 +274,12 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   cockpit: Object.freeze({
     mode: "cockpit", kind: "mount",
-    localX: -0.37, mountY: 1.20, localZ: -0.16,
-    lookAhead: 20, lookHeight: 0.02, lookVertGain: 0,
+    localX: -0.32, mountY: 1.18, localZ: -0.02,
+    lookAhead: 20, lookHeight: 0.30, lookVertGain: 0,
     posRate: 26, posRateSpeed: 0, aimRate: 9.5, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 61, fovMax: 61, fovStart: 8, fovRef: 60, fovRate: 3,
-    rollGain: 0.92, pitchGain: 0.62, attRate: 7.5,
+    fovBase: 64, fovMax: 64, fovStart: 8, fovRef: 60, fovRate: 3,
+    rollGain: 0.10, pitchGain: 0.10, attRate: 7.5,
     shake: 0.038, shakeSpeed: 42, clearance: 0.05,
     airLift: 0, airRate: 2,
     headInertia: 2.6, headGain: 0.028, lookIntoCorner: 0.16, slipLook: 0.34,
@@ -253,7 +292,7 @@ const CAMERA_PARAMS = Object.freeze({
     posRate: 34, posRateSpeed: 0, aimRate: 13, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
     fovBase: 74, fovMax: 74, fovStart: 8, fovRef: 60, fovRate: 3,
-    rollGain: 0.80, pitchGain: 0.48, attRate: 10,
+    rollGain: 0.12, pitchGain: 0.10, attRate: 10,
     shake: 0.070, shakeSpeed: 50, clearance: 0.05,
     airLift: 0, airRate: 2,
     headInertia: 5.0, headGain: 0.012, lookIntoCorner: 0.06, slipLook: 0.14,
@@ -1350,10 +1389,14 @@ varying float vAlong;
 varying vec3 vNormalW;
 varying vec3 vViewDir;
 void main() {
-  // Edge-on is where a light cone in fog is brightest, and the beam thins out
-  // along its length; both together are what stop it looking like a paper cone.
-  float rim = 1.0 - abs(dot(normalize(vNormalW), normalize(vViewDir)));
-  float a = pow(rim, 2.2) * (1.0 - vAlong) * uStrength;
+  // A cone stands in for the lit volume, so the shell is brightest where a ray
+  // crosses the most of that volume: side-on to the wall. The old rim term did
+  // the opposite and lit the silhouette, which from directly behind the car —
+  // where the whole cone is silhouette — drew a white balloon over the bonnet.
+  // The small constant is the rest of the volume, so looking straight down the
+  // beam in fog still shows a haze rather than nothing at all.
+  float face = abs(dot(normalize(vNormalW), normalize(vViewDir)));
+  float a = (0.22 + 0.78 * pow(face, 0.9)) * (1.0 - vAlong) * (1.0 - vAlong) * uStrength;
   if (a <= 0.002) discard;
   gl_FragColor = vec4(uColour, a);
 }
@@ -1630,30 +1673,70 @@ export function createRenderer(canvas, opts = {}) {
     left: null,
     right: null,
     pod: null,
+    spill: null,
     beams: null,
     brake: null,
     on: false,
     level: 0,
+    // Where the lamps sit on this car, in metres above the road and along the
+    // chassis. Refitted from the model when a stage is built.
+    y: 0.74,
+    x: 0.33,
+    z: 1.85,
+    com: DEFAULT_COM_HEIGHT,
   };
 
+  // Take the lamp anchors off the body the artist actually built, so a beam
+  // leaves the car at the height of its own headlamps on every class.
+  function fitLampRig(spec) {
+    headlights.com = spec && spec.comHeight > 0 ? spec.comHeight : DEFAULT_COM_HEIGHT;
+    headlights.y = 0.74;
+    headlights.x = 0.33;
+    headlights.z = 1.85;
+    if (!meshLib || typeof meshLib.carDimensions !== "function" || !spec) return;
+    const d = safeCall(() => meshLib.carDimensions(spec));
+    if (!d || !Number.isFinite(d.ground)) return;
+    if (Number.isFinite(d.beltY)) headlights.y = d.beltY - 0.155 - d.ground;
+    if (Number.isFinite(d.bodyHalfWidth)) headlights.x = d.bodyHalfWidth * 0.48;
+    if (Number.isFinite(d.noseZ)) headlights.z = d.noseZ - 0.06;
+    const beams = headlights.beams;
+    if (beams) {
+      beams.children[0].position.x = -headlights.x;
+      beams.children[1].position.x = headlights.x;
+    }
+  }
+
   function buildHeadlights() {
-    const left = new three.SpotLight(0xfff4e2, 0, 90, 0.42, 0.42, 1.4);
-    const right = new three.SpotLight(0xfff4e2, 0, 90, 0.42, 0.42, 1.4);
+    // Full penumbra on every lamp: the smoothstep from the axis to the rim is
+    // the only beam pattern a three.js spot light has.
+    const h = HEADLIGHT;
+    const left = new three.SpotLight(0xfff2dc, 0, h.distance, h.mainAngle, 1, h.decay);
+    const right = new three.SpotLight(0xfff2dc, 0, h.distance, h.mainAngle, 1, h.decay);
     left.name = "opus.headlight.l";
     right.name = "opus.headlight.r";
     left.castShadow = false;
     right.castShadow = false;
-    const pod = new three.SpotLight(0xfffaf0, 0, 190, 0.30, 0.30, 1.6);
+    // The lamp bar: narrower and far brighter than the dipped beams, thrown most
+    // of a stage ahead.
+    const pod = new three.SpotLight(0xfffaf0, 0, h.distance, h.podAngle, 1, h.decay);
     pod.name = "opus.lightpod";
     pod.castShadow = false;
+    // A wide, weak flood over the few metres in front of the bumper that a beam
+    // aimed down the road necessarily misses. Without it the car drives out of a
+    // black hole.
+    const spill = new three.SpotLight(0xfff6e8, 0, h.distance, h.spillAngle, 1, h.decay);
+    spill.name = "opus.headlight.spill";
+    spill.castShadow = false;
     headlights.left = left;
     headlights.right = right;
     headlights.pod = pod;
-    scene.add(left, left.target, right, right.target, pod, pod.target);
+    headlights.spill = spill;
+    scene.add(left, left.target, right, right.target,
+      pod, pod.target, spill, spill.target);
 
-    // Baked at its final proportions and used at scale 1, because a cone scaled
-    // 5 x 5 x 34 gives skewed normals and the rim term is the whole effect.
-    // Apex at the lamp, opening forwards along +Z.
+    // Baked at its final proportions and used at scale 1, because a scaled cone
+    // gives skewed normals and the facing term is the whole effect. Apex at the
+    // lamp, opening forwards along +Z, at the spread of the beam it stands for.
     const beamGeo = new three.ConeGeometry(BEAM_RADIUS, BEAM_LENGTH, 20, 1, true);
     beamGeo.translate(0, -BEAM_LENGTH * 0.5, 0);
     beamGeo.rotateX(-Math.PI / 2);
@@ -1949,7 +2032,9 @@ export function createRenderer(canvas, opts = {}) {
       }
     }
     applyAnisotropy();
-    if (headlights.beams) headlights.beams.visible = q.beams && headlights.on;
+    // updateHeadlights owns whether the cone is showing — it also needs the
+    // weather, and a quality change must not switch it on in clear air.
+    if (headlights.beams && !q.beams) headlights.beams.visible = false;
     // A dust puff is a metre across and nearly transparent; the plume comes
     // from hundreds of them overlapping. At full opacity each one is a solid
     // white disc and the rooster tail reads as a bag of golf balls.
@@ -2787,7 +2872,7 @@ export function createRenderer(canvas, opts = {}) {
     scenery.entries.length = 0;
     anisoTextures.length = 0;
     state.drawsIssued = 0;
-    // Two spotlights and a pair of additive beam cones parked where the car was
+    // Four spotlights and a pair of additive beam cones parked where the car was
     // would otherwise light the menu backdrop for the rest of the session:
     // idleFrame() never calls updateHeadlights().
     headlights.level = 0;
@@ -2795,6 +2880,7 @@ export function createRenderer(canvas, opts = {}) {
     if (headlights.left) headlights.left.intensity = 0;
     if (headlights.right) headlights.right.intensity = 0;
     if (headlights.pod) headlights.pod.intensity = 0;
+    if (headlights.spill) headlights.spill.intensity = 0;
     if (headlights.beams) headlights.beams.visible = false;
     tvAnchors.length = 0;
     stageBin.disposeAll();
@@ -2882,6 +2968,7 @@ export function createRenderer(canvas, opts = {}) {
     }
 
     const spec = state.car ? state.car.spec : (ctx.spec || null);
+    fitLampRig(spec);
     state.carMesh = buildCar(spec, ctx.livery, stageBin);
     scene.add(state.carMesh);
     state.wheelMeshes = buildWheels(spec, stageBin);
@@ -3078,37 +3165,59 @@ export function createRenderer(canvas, opts = {}) {
     const bz = car.pos.z;
     const pitch = car.pitch;
 
-    function place(light, ox, oy, oz, aim, spread) {
-      light.position.set(bx + rx * ox + fx * oz, by + oy, bz + rz * ox + fz * oz);
+    // The road plane under the car. Lamp heights and beam aims are both measured
+    // from it: aiming from the centre of mass put the pool a car's ride height
+    // out of place and the beam in the air above the road.
+    const roadY = by - headlights.com;
+    const sp = Math.sin(pitch);
+
+    // `toe` splays the pair outwards so the pair lights the verges as well as the
+    // crown; `reach` is where the axis meets the road, which is what decides
+    // where the hot spot lands.
+    function aim(light, ox, oz, reach, toe) {
+      const px = bx + rx * ox + fx * oz;
+      const py = roadY + headlights.y;
+      const pz = bz + rz * ox + fz * oz;
+      light.position.set(px, py, pz);
       light.target.position.set(
-        bx + rx * ox * spread + fx * aim,
-        by + oy - aim * 0.11 + Math.sin(pitch) * aim,
-        bz + rz * ox * spread + fz * aim,
+        px + fx * reach + rx * toe,
+        py - headlights.y + sp * reach,
+        pz + fz * reach + rz * toe,
       );
       light.target.updateMatrixWorld();
     }
 
-    place(headlights.left, -0.6, 0.66, 2.05, 26, 2.6);
-    place(headlights.right, 0.6, 0.66, 2.05, 26, 2.6);
-    place(headlights.pod, 0, 0.95, 2.1, 85, 1.0);
+    const h = HEADLIGHT;
+    aim(headlights.left, -headlights.x, headlights.z, h.mainReach, -h.mainToe);
+    aim(headlights.right, headlights.x, headlights.z, h.mainReach, h.mainToe);
+    aim(headlights.pod, 0, headlights.z, h.podReach, 0);
+    aim(headlights.spill, 0, headlights.z, h.spillReach, 0);
     const gain = level * (q.name === "low" ? 0.7 : 1);
-    headlights.left.intensity = 42 * gain;
-    headlights.right.intensity = 42 * gain;
-    headlights.pod.intensity = 90 * gain;
+    headlights.left.intensity = h.mainIntensity * gain;
+    headlights.right.intensity = h.mainIntensity * gain;
+    headlights.pod.intensity = h.podIntensity * gain;
+    headlights.spill.intensity = h.spillIntensity * gain;
 
     if (headlights.beams) {
+      // A beam is only visible where there is something in the air to scatter
+      // off it. In clear night air there is nothing, and drawing it anyway is
+      // what turned the headlights into a balloon hanging over the bonnet.
       const fogK = w && w.current
-        ? saturate(w.current.fogDensity * 220 + wetFilm(w) * 0.35 + w.current.precipRate / 60)
+        ? saturate(w.current.fogDensity * 60 + wetFilm(w) * 0.15 + w.current.precipRate / 60)
         : 0.15;
-      const show = q.beams && level > 0.02;
+      const show = q.beams && level > 0.02 && fogK > BEAM_FOG_FLOOR;
       headlights.beams.visible = show;
       if (show) {
-        headlights.beams.position.set(bx + fx * 2.0, by + 0.66, bz + fz * 2.0);
-        eTmp.set(0, car.yaw, 0);
+        headlights.beams.position.set(
+          bx + fx * headlights.z, roadY + headlights.y, bz + fz * headlights.z,
+        );
+        // Dip the cone onto the same line the lamps are aimed along, so it lies
+        // down the road instead of floating level over it.
+        eTmp.set(Math.atan2(headlights.y, h.mainReach) - pitch, car.yaw, 0, "YXZ");
         headlights.beams.quaternion.setFromEuler(eTmp);
         const beamMat = headlights.beams.children[0].material;
         if (beamMat && beamMat.uniforms) {
-          beamMat.uniforms.uStrength.value = level * (0.08 + 0.55 * fogK);
+          beamMat.uniforms.uStrength.value = level * 0.5 * (fogK - BEAM_FOG_FLOOR);
         }
       }
     }
@@ -3692,7 +3801,8 @@ export function createRenderer(canvas, opts = {}) {
     if (headlights.left) {
       scene.remove(headlights.left, headlights.left.target,
         headlights.right, headlights.right.target,
-        headlights.pod, headlights.pod.target);
+        headlights.pod, headlights.pod.target,
+        headlights.spill, headlights.spill.target);
     }
     if (headlights.beams) scene.remove(headlights.beams);
     scene.remove(fallbackKey, fallbackKey.target, fallbackFill, camera);

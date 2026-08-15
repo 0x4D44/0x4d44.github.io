@@ -291,6 +291,7 @@ function fakeCanvasFactory(record) {
       get font() { return font; },
       set font(v) { font = v; record.fonts.push(v); },
       save: noop, restore: noop, translate: noop, rotate: noop, scale: noop, setTransform: noop,
+      transform: noop, resetTransform: noop,
       beginPath: noop, closePath: noop, moveTo: noop, lineTo: noop,
       quadraticCurveTo: noop, bezierCurveTo: noop, arc: noop, rect: noop,
       fill: noop, stroke: noop, clip: noop, fillRect: noop, clearRect: noop,
@@ -424,6 +425,71 @@ test("procedural textures tile: opposite edges of the height field agree", () =>
   assert.ok(Math.abs(left - right) < 1.01, "height field left/right edge diverged wildly");
 });
 
+// A seam is not a big number in the abstract — it is a step across the wrap that
+// the field never takes anywhere inside itself. Comparing the two per axis is
+// what catches an anisotropic field wrapped to the wrong period, which tiles one
+// way and rules a line across the hillside the other.
+test("procedural textures tile: no wrap edge steps harder than the field does inside itself", () => {
+  const S = 64;
+  for (const name of TEXTURE_NAMES) {
+    const h = surfaceTexture(THREE, name, { size: S, seed: 11 }).height;
+    const at = (x, y) => h[y * S + x];
+    let seamX = 0, seamY = 0, innerX = 0, innerY = 0;
+    for (let i = 0; i < S; i += 1) {
+      seamX += Math.abs(at(0, i) - at(S - 1, i));
+      seamY += Math.abs(at(i, 0) - at(i, S - 1));
+      for (let k = 0; k + 1 < S; k += 1) {
+        innerX += Math.abs(at(k + 1, i) - at(k, i));
+        innerY += Math.abs(at(i, k + 1) - at(i, k));
+      }
+    }
+    const meanInnerX = innerX / (S * (S - 1)), meanInnerY = innerY / (S * (S - 1));
+    assert.ok(seamX / S <= meanInnerX * 2.2 + 1e-4,
+      `${name}: the x wrap steps ${(seamX / S).toFixed(4)} against ${meanInnerX.toFixed(4)} inside — that is a seam`);
+    assert.ok(seamY / S <= meanInnerY * 2.2 + 1e-4,
+      `${name}: the y wrap steps ${(seamY / S).toFixed(4)} against ${meanInnerY.toFixed(4)} inside — that is a seam`);
+  }
+  disposeTextures();
+});
+
+// The whole ground argument in one number. Ground is read at a grazing angle, so
+// a screen pixel out at fifty metres covers three or four texels even with
+// anisotropic filtering: mip two. Detail finer than that is not detail, it is a
+// shimmer that averages to the map's mean colour and leaves the terrain looking
+// like flat paint — which is exactly what the grass map, 70% of whose contrast
+// sat in sub-texel noise, did.
+test("textures: ground maps still carry contrast at the mip the ground is read at", () => {
+  const S = 64;
+  const box = (src, n) => {
+    const out = new Float32Array((n >> 1) * (n >> 1));
+    const m = n >> 1;
+    for (let y = 0; y < m; y += 1) {
+      for (let x = 0; x < m; x += 1) {
+        out[y * m + x] = (src[(y * 2) * n + x * 2] + src[(y * 2) * n + x * 2 + 1]
+          + src[(y * 2 + 1) * n + x * 2] + src[(y * 2 + 1) * n + x * 2 + 1]) * 0.25;
+      }
+    }
+    return out;
+  };
+  const sd = (a) => {
+    let m = 0;
+    for (const v of a) m += v;
+    m /= a.length;
+    let s = 0;
+    for (const v of a) s += (v - m) * (v - m);
+    return Math.sqrt(s / a.length);
+  };
+  for (const name of ["grass", "gravel", "rock", "dirt"]) {
+    const h = surfaceTexture(THREE, name, { size: S, seed: 13 }).height;
+    const mip2 = box(box(h, S), S >> 1);
+    assert.ok(sd(mip2) > 0.055,
+      `${name}: standard deviation is ${sd(mip2).toFixed(4)} two mips down; at fifty metres it is flat colour`);
+    assert.ok(sd(mip2) > sd(h) * 0.45,
+      `${name}: ${(100 * (1 - sd(mip2) / sd(h))).toFixed(0)}% of its contrast is gone by mip 2, so it lives below the texel`);
+  }
+  disposeTextures();
+});
+
 // ---- livery --------------------------------------------------------------
 
 test("livery: paints base, pattern, number and invented wordmarks with canvas text", () => {
@@ -456,6 +522,47 @@ test("livery: asking twice returns the same object", () => {
   const b = liveryTexture(THREE, spec.livery, { size: 64, canvasFactory: factory });
   assert.equal(a, b);
   assert.equal(record.canvases.length, canvases, "second call re-painted the canvas");
+  clearLiveryCache();
+});
+
+// The dazzle, measured. Every paint part used to lay its UVs down in its own
+// local space, so a roof made of sixteen quads showed the whole livery sixteen
+// times: a graphic whose pitch is the panel's, which at chase-camera distance is
+// the pixel's, and the car shimmered in every frame. A part that carries paint
+// has to sample a continuous piece of the atlas, and the way to say that is that
+// no one triangle may span a slab of it.
+test("livery: no painted triangle swallows a slab of the atlas, which is what dazzles", () => {
+  clearLiveryCache();
+  for (const id of ["vireo-r2", "corvine-rs2000", "astra-corsa"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery);
+    const paint = car.materials[0];
+    let painted = 0;
+    for (const [name, mesh] of Object.entries(car.parts)) {
+      if (mesh.material !== paint) continue;
+      painted += 1;
+      const uv = mesh.geometry.getAttribute("uv").array;
+      const idx = mesh.geometry.getIndex().array;
+      let worst = 0, worstAt = -1;
+      for (let t = 0; t < idx.length; t += 3) {
+        const u = [uv[idx[t] * 2], uv[idx[t + 1] * 2], uv[idx[t + 2] * 2]];
+        const v = [uv[idx[t] * 2 + 1], uv[idx[t + 1] * 2 + 1], uv[idx[t + 2] * 2 + 1]];
+        const area = Math.abs((u[1] - u[0]) * (v[2] - v[0]) - (u[2] - u[0]) * (v[1] - v[0])) * 0.5;
+        if (area > worst) { worst = area; worstAt = t; }
+      }
+      assert.ok(worst <= 0.04,
+        `${id} ${name}: a triangle at index ${worstAt} covers ${(worst * 100).toFixed(1)}% of the livery `
+        + "atlas, so the whole design repeats inside one panel");
+    }
+    assert.ok(painted >= 6, `${id}: only ${painted} parts wear paint, so this sweep proves little`);
+    // Pinning every part to one texel would satisfy the bound above and leave an
+    // unpainted car, so the shell has to genuinely walk the atlas.
+    const shell = car.parts.body.geometry.getAttribute("uv").array;
+    let lo = 1, hi = 0;
+    for (let i = 0; i < shell.length; i += 2) { lo = Math.min(lo, shell[i]); hi = Math.max(hi, shell[i]); }
+    assert.ok(hi - lo > 0.85, `${id}: the shell only reaches ${(hi - lo).toFixed(2)} of the atlas along the car`);
+    car.dispose();
+  }
   clearLiveryCache();
 });
 
@@ -548,7 +655,11 @@ test("road: vertex colours track the surface, and berms build on the outside of 
   let bermRight = 0;
   for (const chunk of road.chunks) {
     const col = chunk.geometry.getAttribute("color").array;
-    const detail = chunk.geometry.getAttribute("detail").array;
+    const detailAttr = chunk.geometry.getAttribute("detail");
+    const detail = detailAttr.array;
+    // Read the stride off the attribute: a hard-coded 3 kept "reading" the
+    // wetness channel after it moved, and agreed with itself while doing it.
+    const dw = detailAttr.itemSize;
     for (const station of chunk.stations) {
       const sid = st.surface[station.sampleIndex];
       const o = (station.vertexBase + ROAD_CENTRE_SLOT) * 3;
@@ -559,7 +670,7 @@ test("road: vertex colours track the surface, and berms build on the outside of 
       }
       if (sid === SURFACE.WATER) {
         waterSeen += 1;
-        assert.equal(detail[(station.vertexBase + ROAD_CENTRE_SLOT) * 3 + 2], 1, "water not flagged in the detail channel");
+        assert.equal(detail[(station.vertexBase + ROAD_CENTRE_SLOT) * dw + 2], 1, "water not flagged in the detail channel");
       }
       assert.ok(Math.abs(col[o] - props.albedo[0]) < 0.35,
         `centre colour ${col[o]} is nowhere near the surface albedo ${props.albedo[0]}`);
@@ -569,6 +680,51 @@ test("road: vertex colours track the surface, and berms build on the outside of 
   assert.ok(tarmacSeen > 0, "the tarmac section never appeared");
   assert.ok(waterSeen > 0, "the water splash never appeared");
   assert.ok(bermRight > 0, "no berm was built through the hairpin");
+  road.dispose();
+});
+
+// Both critics said the same two things about the ribbon: it has no edge, and it
+// carries no line information. Both are cross-section decisions, so both can be
+// held here — as ratios against the road's own centre, which is what the eye
+// compares them to.
+test("road: the shoulder, the windrow and the racing line each read against the running surface", () => {
+  const st = theStage();
+  const road = buildRoadMesh(THREE, st, TEX);
+  const slotOf = (kind) => ROAD_SECTION.findIndex((s) => s.kind === kind);
+  const rut = slotOf("rut"), lip = slotOf("rutLip"), shoulder = slotOf("shoulder");
+  const edge = ROAD_EDGE_SLOTS[0], verge = slotOf("verge");
+  let checked = 0;
+  for (const chunk of road.chunks) {
+    const col = chunk.geometry.getAttribute("color").array;
+    const detailAttr = chunk.geometry.getAttribute("detail");
+    const dw = detailAttr.itemSize;
+    const detail = detailAttr.array;
+    for (const station of chunk.stations) {
+      if (station.surfaceId !== SURFACE.GRAVEL) continue;
+      const lum = (k) => {
+        const o = (station.vertexBase + k) * 3;
+        return 0.2126 * col[o] + 0.7152 * col[o + 1] + 0.0722 * col[o + 2];
+      };
+      const centre = lum(ROAD_CENTRE_SLOT);
+      assert.ok(lum(rut) < centre * 0.80,
+        `the polished line shades ${lum(rut).toFixed(3)} against a centre of ${centre.toFixed(3)}: no racing line`);
+      assert.ok(lum(lip) > lum(rut) * 1.25,
+        "the rut has no lip of thrown-out material, so it fades into the road instead of reading as a rut");
+      assert.ok(lum(shoulder) < centre * 0.62,
+        `the shoulder shades ${lum(shoulder).toFixed(3)} against a centre of ${centre.toFixed(3)}: the road has no edge`);
+      assert.ok(lum(edge) > centre * 1.05,
+        "the windrow at the edge is no brighter than the running surface");
+      // The verge channel is what fades the road's own grain into the ground's.
+      // A step from road to grass in one vertex is the hard line the critics saw.
+      const v = (k) => detail[(station.vertexBase + k) * dw + 3];
+      assert.equal(v(ROAD_CENTRE_SLOT), 0, "the running surface is being blended toward the verge");
+      assert.ok(v(verge) > 0.9, "the verge does not reach the roadside grain at all");
+      assert.ok(v(shoulder) > 0.02 && v(shoulder) < v(verge) * 0.7,
+        `the shoulder blends ${v(shoulder).toFixed(3)}: the road grain stops in one step, which is the hard edge`);
+      checked += 1;
+    }
+  }
+  assert.ok(checked > 100, `only ${checked} gravel stations checked`);
   road.dispose();
 });
 
@@ -1679,6 +1835,46 @@ test("textures: ground maps are filtered for the grazing angle they are read at"
     assert.equal(map.generateMipmaps, true);
   }
   disposeTextures();
+});
+
+// The ground shaders are string surgery on three's own chunks, and a chunk that
+// quietly changes name or wording between releases makes every replace a no-op.
+// Nothing goes wrong loudly when that happens: the terrain draws, and draws the
+// grass map over rock and scree alike, which is the flat-paint look this was
+// written to end. So the surgery is run against the real shader sources and the
+// result checked for what it was supposed to change.
+test("ground shaders: the splat and detail injections actually land in three's shader", () => {
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  const src = THREE.ShaderLib.physical;
+  const cases = [
+    ["terrain", bundle.terrain.material, "uRockMap", "vSplat"],
+    ["road", bundle.road.surfaceMaterials.get(SURFACE.GRAVEL), "uVergeMap", "vDetail"],
+  ];
+  for (const [label, material, sampler, varying] of cases) {
+    assert.equal(typeof material.onBeforeCompile, "function", `${label}: no shader injection at all`);
+    const shader = {
+      uniforms: {},
+      vertexShader: src.vertexShader,
+      fragmentShader: src.fragmentShader,
+    };
+    material.onBeforeCompile(shader, null);
+    assert.ok(shader.vertexShader.includes(varying),
+      `${label}: the vertex shader never declares ${varying}, so the attribute never reaches the fragment stage`);
+    assert.ok(shader.fragmentShader.includes(sampler),
+      `${label}: ${sampler} never reached the fragment shader`);
+    assert.ok(shader.uniforms[sampler] && shader.uniforms[sampler].value,
+      `${label}: ${sampler} was declared but bound to nothing`);
+    // The map fragment has to be replaced, not appended to: leaving three's own
+    // `diffuseColor *= sampledDiffuseColor` in place multiplies the blend twice.
+    assert.ok(!shader.fragmentShader.includes("#include <map_fragment>"),
+      `${label}: three's map_fragment survived, so the blend is applied on top of it`);
+    assert.ok(!shader.fragmentShader.includes("mapN.xy *= normalScale;"),
+      `${label}: the normal-map strength line was not the one three emits any more`);
+    assert.ok(shader.fragmentShader.includes(`${varying}.x`) || shader.fragmentShader.includes(`${varying}.y`),
+      `${label}: ${varying} is declared and never read`);
+  }
+  bundle.dispose();
 });
 
 // ---- terrain LOD ---------------------------------------------------------

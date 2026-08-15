@@ -51,6 +51,7 @@ import {
   LOD_BANDS,
   createResourceBin,
   createRenderer,
+  HEADLIGHT,
 } from "../render.js";
 
 // Normalised to LF. Git hands this file out with CRLF endings on Windows, and
@@ -372,6 +373,63 @@ test("an in-car camera sits at a driver's eye line above the road, in every car"
     // resetCar puts the car on the ground at y = 0, so the road is y = 0.
     assert.ok(rig.py >= 1.1 && rig.py <= 1.3,
       `${spec.id}: eye line ${rig.py.toFixed(3)} m above the road, not 1.1–1.3 m`);
+  }
+});
+
+test("the in-car mounts sit inside the cabin and above the bonnet of every modelled car", async () => {
+  // Height above the road is necessary but nowhere near sufficient: the eye also
+  // has to be behind the windscreen, under the roof and over the driver's seat,
+  // and all three depend on the body meshes.js actually builds. So ask the model.
+  // The camera that shipped sat at the centre of mass, low and far enough back
+  // that the frame was mostly the top of the bodyshell.
+  const physics = await import("../physics.js");
+  const meshes = await import("../meshes.js");
+  const cockpit = cameraParams("cockpit");
+  const bonnet = cameraParams("bonnet");
+
+  const shoot = (car, from, dir) => {
+    const rc = new THREE.Raycaster(from, dir.clone().normalize(), 0.001, 6);
+    const hits = rc.intersectObject(car.group, true);
+    return hits.length ? hits[0] : null;
+  };
+
+  for (const spec of physics.CARS) {
+    const car = meshes.buildCarMesh(THREE, spec);
+    // The shell is single-sided, so from inside the cabin every panel that
+    // matters is a back face. Look at both sides or the probe sees nothing.
+    for (const m of car.materials) m.side = THREE.DoubleSide;
+    car.group.updateMatrixWorld(true);
+    const d = car.dimensions;
+    // Chassis-frame y is measured from the centre of mass; d.ground is the road.
+    const eye = new THREE.Vector3(cockpit.localX, cockpit.mountY + d.ground, cockpit.localZ);
+    const id = spec.id;
+
+    assert.ok(eye.x < 0 && Math.abs(eye.x) < d.bodyHalfWidth,
+      `${id}: the driver's eye is not over a seat (x ${eye.x})`);
+
+    const up = shoot(car, eye, new THREE.Vector3(0, 1, 0));
+    assert.ok(up, `${id}: nothing over the driver's head — the eye is above the roof`);
+    assert.ok(up.distance > 0.06,
+      `${id}: only ${up.distance.toFixed(3)} m of headroom under the roof`);
+    assert.ok(shoot(car, eye, new THREE.Vector3(0, -1, 0)),
+      `${id}: nothing under the driver — the eye is outside the body`);
+
+    // Behind the screen: the first thing straight ahead is the glasshouse, not
+    // the outside of the car. Named parts rather than an exact match, because
+    // meshes.js is free to hang trim in front of a driver — but never paint.
+    const ahead = shoot(car, eye, new THREE.Vector3(0, 0, 1));
+    assert.ok(ahead, `${id}: the cockpit view has no windscreen in front of it`);
+    assert.ok(!/^(body|bonnet|bumperFront|lightPod)$/.test(ahead.object.name),
+      `${id}: the driver is looking at ${ahead.object.name}, not out of the car`);
+
+    const hood = new THREE.Vector3(bonnet.localX, bonnet.mountY + d.ground, bonnet.localZ);
+    const onto = shoot(car, hood, new THREE.Vector3(0, -1, 0));
+    assert.ok(onto, `${id}: the bonnet camera has no bonnet under it`);
+    assert.ok(onto.distance > 0.08 && onto.distance < 0.5,
+      `${id}: the bonnet camera is ${onto.distance.toFixed(3)} m off the bonnet`);
+    assert.equal(shoot(car, hood, new THREE.Vector3(0, 1, 0)), null,
+      `${id}: the bonnet camera is under the roof, not out on the bonnet`);
+    car.dispose();
   }
 });
 
@@ -1415,7 +1473,8 @@ test("the headlights come on at night, aim down the road, and show a beam in fog
 
   const left = api.scene.getObjectByName("opus.headlight.l");
   const pod = api.scene.getObjectByName("opus.lightpod");
-  assert.ok(left.intensity > 1, `headlights stayed off at night: ${left.intensity}`);
+  assert.ok(left.intensity > HEADLIGHT.mainIntensity * 0.5,
+    `headlights stayed off at night: ${left.intensity}`);
   assert.ok(pod.intensity > left.intensity, "the light pod should outreach the headlights");
   assert.ok(left.target.position.z > left.position.z + 10,
     "the beam is not aimed down the road");
@@ -1425,6 +1484,130 @@ test("the headlights come on at night, aim down the road, and show a beam in fog
   const beams = api.scene.getObjectByName("opus.beams");
   assert.equal(beams.visible, true, "no visible beam cone in fog at night");
   assert.ok(beams.children[0].material.uniforms.uStrength.value > 0);
+  api.dispose();
+});
+
+// Where the axis of a lamp meets the road, in metres ahead of the lamp. This is
+// the whole question the shipped rig got wrong: it aimed from the centre of mass
+// at a point 2.2 m under the road, so the beam crossed the surface a metre off
+// the bumper and everything past that was lit from below.
+function poolDistance(light, roadY) {
+  const drop = light.position.y - roadY;
+  const dy = light.position.y - light.target.position.y;
+  const dh = Math.hypot(light.target.position.x - light.position.x,
+    light.target.position.z - light.position.z);
+  return dy > 1e-6 ? dh * (drop / dy) : Infinity;
+}
+
+// Three's own falloff for a spot light with useLegacyLights off, applied to a
+// patch of level road `d` metres ahead: inverse square on distance, the cone's
+// smoothstep from the axis to its rim, and the cosine of a very oblique
+// incidence. Written out here so the test measures illuminance in lux rather
+// than trusting a number in the source to mean something.
+function roadIrradiance(light, roadY, d) {
+  const h = light.position.y - roadY;
+  const to = Math.hypot(d, h);
+  const beta = Math.atan2(h, d);
+  const aimDrop = light.position.y - light.target.position.y;
+  const aimRun = Math.hypot(light.target.position.x - light.position.x,
+    light.target.position.z - light.position.z);
+  const theta = Math.abs(beta - Math.atan2(aimDrop, aimRun));
+  const coneCos = Math.cos(light.angle);
+  const penumbraCos = Math.cos(light.angle * (1 - light.penumbra));
+  const t = Math.min(1, Math.max(0,
+    (Math.cos(theta) - coneCos) / Math.max(1e-6, penumbraCos - coneCos)));
+  const spot = t * t * (3 - 2 * t);
+  let fall = light.intensity / Math.pow(to, light.decay);
+  if (light.distance > 0) {
+    const w = Math.max(0, 1 - Math.pow(to / light.distance, 4));
+    fall *= w * w;
+  }
+  return fall * spot * Math.sin(beta);
+}
+
+test("the headlamps put a pool of light on the road ahead, not a glow in the air", async () => {
+  const weatherMod = await import("../weather.js");
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0;
+  const weather = fakeWeather();
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+
+  // fakeCar carries no comHeight, so the rig falls back to the module default.
+  const roadY = car.pos.y - 0.49;
+  const left = api.scene.getObjectByName("opus.headlight.l");
+  const pod = api.scene.getObjectByName("opus.lightpod");
+  const spill = api.scene.getObjectByName("opus.headlight.spill");
+
+  for (const lamp of [left, pod, spill]) {
+    const height = lamp.position.y - roadY;
+    assert.ok(height > 0.5 && height < 1.0,
+      `${lamp.name} is ${height.toFixed(2)} m over the road, not at lamp height`);
+    assert.ok(lamp.target.position.y < lamp.position.y,
+      `${lamp.name} is not aimed downwards at all`);
+  }
+  const main = poolDistance(left, roadY);
+  assert.ok(main > 15 && main < 45, `the dipped beam meets the road at ${main.toFixed(1)} m`);
+  assert.ok(poolDistance(pod, roadY) > main, "the lamp bar throws no further than the dip");
+  assert.ok(poolDistance(spill, roadY) < main, "the flood does not fill the near ground");
+
+  // The pool has to beat the night sky it is competing with, or the road under
+  // the beam is no brighter than the road beside it. A hemisphere light gives an
+  // up-facing surface about half its intensity.
+  const night = weatherMod.WEATHER_PRESETS.find((w) => w.id === "night-clear");
+  const ambient = night.hemiIntensity * 0.5 + night.ambientIntensity;
+  const lit = (d) => roadIrradiance(left, roadY, d) + roadIrradiance(pod, roadY, d)
+    + roadIrradiance(spill, roadY, d);
+  for (const d of [8, 15, 25]) {
+    assert.ok(lit(d) > ambient * 3,
+      `road at ${d} m gets ${lit(d).toFixed(3)} lx from the lamps `
+      + `against ${ambient.toFixed(3)} of night sky — no visible pool`);
+  }
+  // And it has to fall off, or it is a flat wash rather than a beam.
+  assert.ok(lit(8) > lit(25) * 3, "the pool does not fade down the road");
+  assert.ok(lit(60) < lit(15), "the beam does not run out");
+  api.dispose();
+});
+
+test("the beam cone only exists where there is something in the air to scatter off", () => {
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0;
+  // A clear, dry, frosty night: lights on, nothing airborne.
+  const weather = fakeWeather({
+    current: {
+      exposure: 2.3, windSpeed: 1.2, windDirection: 0.3, fogDensity: 0.0009,
+      precipRate: 0, turbidity: 1.8, roadWetness: 0.05, visibility: 6500,
+    },
+    wet: { film: 0, standing: 0, snowCover: 0 },
+  });
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+
+  const beams = api.scene.getObjectByName("opus.beams");
+  assert.ok(api.scene.getObjectByName("opus.headlight.l").intensity > 1,
+    "the lights are meant to be on for this one");
+  assert.equal(beams.visible, false,
+    "a light cone hangs in clear night air — this is the white balloon over the bonnet");
+
+  // Same night, now in hill fog: the cone is the point of it.
+  weather.current.fogDensity = 0.019;
+  for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+  assert.equal(beams.visible, true, "no beam in fog");
+  assert.ok(beams.children[0].material.uniforms.uStrength.value > 0.1,
+    "the beam in fog is too faint to see");
+
+  // Whatever the weather, the cone lies along the beam rather than level: its
+  // far end has to be lower than its apex.
+  const tip = new THREE.Vector3(0, 0, 20).applyQuaternion(beams.quaternion);
+  assert.ok(tip.y < -0.2, `the cone is level, not dipped onto the road (${tip.y.toFixed(3)})`);
   api.dispose();
 });
 
@@ -1438,17 +1621,21 @@ test("toggleHeadlights overrides the automatic decision in both directions", () 
   api.buildStage(stage, { car, weather });
   const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
   for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+  // Thresholds are fractions of the lamp's own rating: it is quoted in candela,
+  // so an absolute figure here would only measure the units.
+  const on = HEADLIGHT.mainIntensity * 0.5;
+  const dark = HEADLIGHT.mainIntensity * 0.005;
   const off = api.scene.getObjectByName("opus.headlight.l").intensity;
-  assert.ok(off < 0.5, `headlights were on in daylight: ${off}`);
+  assert.ok(off < dark, `headlights were on in daylight: ${off}`);
 
   api.toggleHeadlights();
   for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
-  assert.ok(api.scene.getObjectByName("opus.headlight.l").intensity > 1,
+  assert.ok(api.scene.getObjectByName("opus.headlight.l").intensity > on,
     "the manual override did not switch them on");
 
   api.toggleHeadlights();
   for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
-  assert.ok(api.scene.getObjectByName("opus.headlight.l").intensity < 0.5,
+  assert.ok(api.scene.getObjectByName("opus.headlight.l").intensity < dark,
     "the manual override did not switch them back off");
   api.dispose();
 });

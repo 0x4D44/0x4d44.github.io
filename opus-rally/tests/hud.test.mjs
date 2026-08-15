@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 
 import {
   formatTime, formatClock, formatDelta, deltaState, deltaColour, DELTA_COLOURS,
-  convertSpeed, unitLabel, normaliseUnits, odometerOffsets,
+  convertSpeed, unitLabel, normaliseUnits, speedWheelDigits,
   needleAngle, stepNeedle, shiftLightState, shiftLightBand, gaugeTicks,
   DIAL_START_DEG, DIAL_END_DEG, SHIFT_LIGHT_COUNT,
   arrowPathForSeverity, arrowHeadPath, arrowCurvature, arrowTurnAngle,
@@ -101,29 +101,40 @@ test("units convert and label consistently", () => {
   assert.equal(unitLabel("kmh"), "KM/H");
 });
 
-test("odometer wheels roll continuously and carry in order", () => {
+test("speed wheels park on a numeral and never between two", () => {
   const out = [0, 0, 0, 0];
-  assert.deepEqual(Array.from(odometerOffsets(0, 3, out).slice(0, 3)), [0, 0, 0]);
-  const a = Array.from(odometerOffsets(9.5, 3, out).slice(0, 3));
-  assert.ok(Math.abs(a[0] - 9.5) < 1e-9, "units wheel turns with the fraction");
-  // 9.5 sits halfway through the units wheel's 9->0 carry, so the tens wheel is
-  // halfway from 0 to 1 — the mechanical linkage, not four independent counters.
-  assert.ok(Math.abs(a[1] - 0.5) < 1e-9, `tens wheel mid-carry, got ${a[1]}`);
-  assert.ok(Math.abs(a[2]) < 1e-9, "the hundreds wheel is nowhere near a carry");
-  const half = Array.from(odometerOffsets(4.5, 3, out).slice(0, 3));
-  assert.ok(Math.abs(half[1]) < 1e-9, "the tens wheel is still between carries at 4.5");
-  const b = Array.from(odometerOffsets(99.95, 3, out).slice(0, 3));
-  assert.ok(b[0] > 9.9 && b[1] > 9.9 && b[2] > 0.9, "all three wheels are mid-carry");
-  const c = Array.from(odometerOffsets(100, 3, out).slice(0, 3));
-  assert.ok(Math.abs(c[0]) < 1e-9 && Math.abs(c[1]) < 1e-9 && Math.abs(c[2] - 1) < 1e-9);
-  assert.deepEqual(Array.from(odometerOffsets(NaN, 3, out).slice(0, 3)), [0, 0, 0]);
-  assert.deepEqual(Array.from(odometerOffsets(-40, 3, out).slice(0, 3)), [0, 0, 0]);
-  for (let v = 0; v < 400; v += 0.37) {
-    const o = odometerOffsets(v, 3, out);
+  assert.deepEqual(Array.from(speedWheelDigits(0, 3, out).slice(0, 3)), [0, 0, 0]);
+  // Wheel 0 is the units, so the array reads least-significant first.
+  assert.deepEqual(Array.from(speedWheelDigits(147, 3, out).slice(0, 3)), [7, 4, 1]);
+  assert.deepEqual(Array.from(speedWheelDigits(9.99, 3, out).slice(0, 3)), [9, 0, 0]);
+  assert.deepEqual(Array.from(speedWheelDigits(100, 3, out).slice(0, 3)), [0, 0, 1]);
+  assert.deepEqual(Array.from(speedWheelDigits(1234, 3, out).slice(0, 3)), [4, 3, 2],
+    "the readout wraps rather than overflowing its three cells");
+  assert.deepEqual(Array.from(speedWheelDigits(NaN, 3, out).slice(0, 3)), [0, 0, 0]);
+  assert.deepEqual(Array.from(speedWheelDigits(-40, 3, out).slice(0, 3)), [0, 0, 0]);
+
+  // The defect this replaced: a rolling odometer is mid-roll at almost every speed a
+  // rally car sees, and a wheel stopped between two numerals shows two half-digits
+  // clipped by its cell. Every wheel must be an exact integer at every speed.
+  for (let v = 0; v < 400; v += 0.017) {
+    const o = speedWheelDigits(v, 3, out);
     for (let i = 0; i < 3; i += 1) {
       assert.ok(o[i] >= 0 && o[i] < 10, `wheel ${i} out of range at ${v}: ${o[i]}`);
+      assert.equal(o[i], Math.trunc(o[i]), `wheel ${i} is mid-roll at ${v}: ${o[i]}`);
     }
   }
+
+  // It still counts: the units wheel steps once per km/h and carries at ten.
+  let steps = 0;
+  let prev = speedWheelDigits(0, 3, out)[0];
+  for (let v = 0; v <= 30; v += 1) {
+    const o = speedWheelDigits(v + 0.5, 3, out);
+    if (o[0] !== prev) steps += 1;
+    prev = o[0];
+  }
+  assert.equal(steps, 30, "one step per unit of speed");
+  assert.equal(speedWheelDigits(29.9, 3, out)[1], 2);
+  assert.equal(speedWheelDigits(30.0, 3, out)[1], 3, "the tens wheel carries exactly at 30");
 });
 
 // ---------------------------------------------------------------- rev counter
@@ -366,6 +377,57 @@ test("arrow direction actually reverses", () => {
   assert.equal(normaliseDirection(undefined), 1);
   assert.equal(directionLabel(-1), "LEFT");
   assert.equal(directionLabel(1), "RIGHT");
+  // Every arrow and label helper re-normalises whatever it is handed, so the mapping
+  // has to survive its own output. It did not when the pacenote sign was reconciled
+  // here instead of at the point the note is read, and the arrow ended up pointing
+  // the opposite way to the word printed beside it.
+  for (const d of [-1, 1, "L", "right"]) {
+    assert.equal(normaliseDirection(normaliseDirection(d)), normaliseDirection(d),
+      `normaliseDirection(${JSON.stringify(d)}) must be idempotent`);
+    assert.equal(directionLabel(normaliseDirection(d)), directionLabel(d));
+  }
+});
+
+// pacenotes.js signs `dir` like stage.js signs curvature — POSITIVE turns LEFT — and
+// the HUD drew straight from that number into a glyph whose own +x is screen-right, so
+// the panel called every corner the wrong way round.
+test("a corner's numeric direction survives the trip from pacenotes.js to the glyph", () => {
+  const left = normalisePacenote({ kind: "corner", severity: 3, dir: 1 });
+  const right = normalisePacenote({ kind: "corner", severity: 3, dir: -1 });
+  assert.equal(directionLabel(left.dir), "LEFT", "pacenotes.js dir +1 is a left-hander");
+  assert.equal(directionLabel(right.dir), "RIGHT");
+
+  // The word and the drawn shape must agree — that is the pairing that was broken.
+  const lp = flatten(arrowPathForSeverity(left.severity, left.dir));
+  const rp = flatten(arrowPathForSeverity(right.severity, right.dir));
+  assert.ok(lp[lp.length - 1][0] < lp[0][0], "the LEFT call must draw an arrow going left");
+  assert.ok(rp[rp.length - 1][0] > rp[0][0], "the RIGHT call must draw an arrow going right");
+
+  // Words are not reconciled, only numbers: a note that spells it out is taken at its word.
+  assert.equal(normalisePacenote({ severity: 3, dir: "left" }).dir, left.dir);
+  assert.equal(normalisePacenote({ severity: 3, dir: "right" }).dir, right.dir);
+});
+
+// The runner hands the HUD its cursor, not a note. Reading the cursor as a note found
+// no severity and no kind, so every call in the game fell through to "STRAIGHT".
+test("the pacenote runner's cursor is unwrapped, not read as a note", () => {
+  const note = { kind: "corner", severity: 2, dir: -1, s: 1180, mods: ["tightens"] };
+  const cursor = { index: 4, note, text: "into two right, tightens", lead: 60, startS: 1120 };
+  const o = normalisePacenote(cursor);
+  assert.equal(o.severity, 2);
+  assert.equal(o.kind, "corner");
+  assert.equal(o.isTurn, true);
+  assert.equal(o.s, 1180, "the note's arc length, not the cursor's startS");
+  assert.equal(directionLabel(o.dir), "RIGHT");
+  assert.deepEqual(o.mods, ["TIGHTENS"]);
+  assert.equal(o.key, normalisePacenote(note).key, "a cursor and its note read identically");
+
+  // A cursor between calls carries a null note, and must read as nothing at all
+  // rather than as a straight — that is what let a real call be promoted past it.
+  const idle = normalisePacenote({ index: -1, note: null, text: "" });
+  assert.equal(idle.kind, "none");
+  assert.equal(idle.isTurn, false);
+  assert.equal(idle.severity, 0);
 });
 
 test("out-of-range severity clamps rather than producing garbage geometry", () => {
@@ -401,8 +463,15 @@ test("pacenote normalisation survives whatever field names arrive", () => {
   assert.deepEqual(empty.mods, []);
 
   assert.equal(normalisePacenote({ severity: 99 }).severity, 6, "severity clamps to the call system");
-  assert.equal(normalisePacenote({ severity: -4 }).severity, 1);
   assert.equal(normalisePacenote({ severity: NaN }).severity, 0);
+
+  // pacenotes.js stamps `severity: 0` on every note that is not a corner — crests,
+  // jumps, straights, the finish. Clamping that up into the 1..6 call system printed
+  // a "1", the tightest call in the book, over a long straight.
+  assert.equal(normalisePacenote({ kind: "straight", severity: 0 }).severity, 0);
+  assert.equal(normalisePacenote({ kind: "crest", severity: 0 }).severity, 0);
+  assert.equal(normalisePacenote({ severity: -4 }).severity, 0, "a nonsense severity is no call, not a hairpin");
+  assert.equal(normalisePacenote({ kind: "corner", severity: 1 }).severity, 1, "a real hairpin still reads 1");
 
   // Identical notes hash the same, different ones do not: the key drives the animation.
   assert.equal(normalisePacenote({ severity: 3, dir: "L", s: 10 }).key,
@@ -763,6 +832,57 @@ test("the HUD leaves the top-left back-pill rectangle clear", () => {
   hud.destroy();
 });
 
+// Read one @media block out of the stylesheet by its condition, brace-matched.
+function mediaBlock(css, condition) {
+  const at = css.indexOf("@media " + condition);
+  assert.notEqual(at, -1, `no @media block for ${condition}`);
+  const open = css.indexOf("{", at);
+  let depth = 0;
+  for (let i = open; i < css.length; i += 1) {
+    if (css[i] === "{") depth += 1;
+    else if (css[i] === "}") { depth -= 1; if (depth === 0) return css.slice(open + 1, i); }
+  }
+  throw new Error("unterminated @media block");
+}
+
+// A phone in portrait needs a different instrument set, not the landscape one at a
+// smaller size. The breakpoint used to carry nothing but a smaller `.orh-digit`, and
+// the panels ate a third of the screen with the tacho painting across the readout.
+test("the portrait breakpoint restructures the HUD rather than shrinking a digit", () => {
+  const doc = makeStubDocument();
+  const root = makeRoot(doc);
+  const hud = createHud(root, { document: doc, now: () => 0 });
+  const css = root.childNodes.find((n) => n.tagName === "STYLE").textContent;
+  const portrait = mediaBlock(css, "(orientation: portrait) and (max-width: 620px)");
+
+  // The call collapses to a bar: body on one line, no wrapping chip row.
+  assert.match(portrait, /\.orh-note-body \{[^}]*flex-direction: row/);
+  assert.match(portrait, /\.orh-note-mods \{ display: none/);
+  // The clock sits beside it rather than under it, so the top rail stays a rail.
+  assert.match(portrait, /\.orh-note \{[^}]*flex: 1 1 auto/);
+  assert.match(portrait, /\.orh-stage \{[^}]*flex: 0 0 auto/);
+  assert.doesNotMatch(portrait, /\.orh-top \{[^}]*flex-direction: column/,
+    "stacking the call above the clock is what ate the top third");
+  // The dial face goes; the shift strip is the rev counter at this size.
+  assert.match(portrait, /\.orh-tacho \{ display: none/);
+  assert.match(portrait, /\.orh-gear \{ position: static/,
+    "the gear must leave the dial's absolute frame or it goes with the face");
+  // Speed, boost, gear and shift lights become one block with one edge round it.
+  assert.match(portrait, /\.orh-cluster \{[^}]*background: var\(--orh-glass\)/);
+  assert.match(portrait, /\.orh-readout, \.orh-dialwrap \{[^}]*border: none/);
+  // And the car diagram only appears once it has something to say.
+  assert.match(portrait, /\.orh-damage \{ display: none/);
+
+  // Whatever else changes, the top rail must still start clear of the back pill,
+  // which owns 0,0 109x41 and swallows any tap that lands on it.
+  assert.match(portrait, /\.orh-top \{[^}]*padding-top: calc\(48px/);
+
+  // The tacho is the only instrument that used to sit on the bare scene.
+  assert.ok(root.querySelector(".orh-dialwrap").classList.contains("orh-panel"),
+    "the rev counter gets the same glass as every other panel");
+  hud.destroy();
+});
+
 test("ten thousand frames leave the node count untouched and never throw", () => {
   const doc = makeStubDocument();
   const root = makeRoot(doc);
@@ -1008,6 +1128,86 @@ test("a changed pacenote redraws the arrow and restarts its entry animation", ()
 
   hud.setPacenote(null, null);
   assert.equal(spine.getAttribute("d"), "");
+  hud.destroy();
+});
+
+function queue_order(root) {
+  const kids = root.querySelector(".orh-queue").childNodes.map((n) => n.className || n.getAttribute("class"));
+  return kids.join(",") === "orh-queue-lead,orh-queue-arrow,orh-queue-sev,orh-queue-txt";
+}
+
+test("the large glyph goes to the call the driver still has to drive", () => {
+  const doc = makeStubDocument();
+  const root = makeRoot(doc);
+  const hud = createHud(root, { document: doc, now: () => 0 });
+  const sev = root.querySelector(".orh-note-sev");
+  const dir = root.querySelector(".orh-note-dir");
+  const qlead = root.querySelector(".orh-queue-lead");
+  const qsev = root.querySelector(".orh-queue-sev");
+  const qtxt = root.querySelector(".orh-queue-txt");
+
+  // Between calls the co-driver's cursor holds no note. The queued corner is what
+  // matters, so it takes the large glyph instead of sitting grey in the corner —
+  // which is how the panel came to read STRAIGHT into a hairpin it already knew of.
+  hud.setPacenote({ index: -1, note: null }, { kind: "corner", severity: 2, dir: 1, s: 900 });
+  assert.equal(sev.textContent, "2");
+  assert.equal(dir.textContent, "LEFT");
+  assert.equal(qsev.textContent, "", "nothing is left queued behind a promoted call");
+  assert.equal(qtxt.textContent, "");
+  assert.equal(qlead.textContent, "");
+  assert.match(root.querySelector(".orh-arrow-spine").getAttribute("d"), /^M /);
+
+  // Once a call is live it owns the glyph and the queued one drops back to the chip.
+  hud.setPacenote({ note: { kind: "corner", severity: 5, dir: -1, s: 1200 } },
+    { kind: "corner", severity: 1, dir: 1, s: 1400 });
+  assert.equal(sev.textContent, "5");
+  assert.equal(dir.textContent, "RIGHT");
+  assert.equal(qsev.textContent, "1");
+  assert.equal(qtxt.textContent, "LEFT");
+  // "THEN" is its own leaf ahead of the arrow; folded into the text it read "1 THEN LEFT".
+  assert.equal(qlead.textContent, "THEN");
+  assert.ok(queue_order(root), "the chip reads THEN, arrow, severity, direction, in that order");
+
+  // A call with no severity has no number to show, and the word carries the call.
+  hud.setPacenote({ note: { kind: "crest", severity: 0, s: 1300, mods: ["over crest"] } }, null);
+  assert.equal(sev.textContent, "⌒", "a crest is a glyph, never a severity number");
+  assert.equal(dir.textContent, "CREST");
+  assert.ok(root.querySelector(".orh-note").classList.contains("flat"),
+    "the panel switches to word-first typography when there is no number");
+  hud.setPacenote({ note: { kind: "corner", severity: 3, dir: 1, s: 1500 } }, null);
+  assert.equal(sev.textContent, "3");
+  assert.ok(!root.querySelector(".orh-note").classList.contains("flat"));
+
+  // The distance shown is the distance to the call in the large glyph, counted along
+  // the stage — not the link gap the co-driver speaks between two calls.
+  const distVal = root.querySelector(".orh-note-dist").childNodes[0];
+  hud.update({ dt: 1 / 60, distance: 1000, stageLength: 4000 });
+  assert.equal(distVal.textContent, "500", "1500 m call, 1000 m driven");
+  hud.setPacenote({ note: { kind: "corner", severity: 4, dir: 1, s: 1450, distance: 80 } }, null);
+  hud.update({ dt: 1 / 60, distance: 1000, stageLength: 4000 });
+  assert.equal(distVal.textContent, "450", "the note's own `distance` is a link gap, not the gap to go");
+
+  hud.destroy();
+});
+
+test("the damage diagram announces whether there is anything to report", () => {
+  const doc = makeStubDocument();
+  const root = makeRoot(doc);
+  const hud = createHud(root, { document: doc, now: () => 0 });
+  const panel = root.querySelector(".orh-damage");
+  const style = root.childNodes.find((n) => n.tagName === "STYLE").textContent;
+
+  hud.update({ dt: 1 / 60, damage: null });
+  assert.equal(panel.classList.contains("on"), false, "a clean car has nothing to show");
+  hud.update({ dt: 1 / 60, damage: { bodyFront: 0.4 } });
+  assert.equal(panel.classList.contains("on"), true);
+  hud.update({ dt: 1 / 60, damage: { wheels: 0.9 } });
+  assert.equal(panel.classList.contains("on"), true, "a puncture counts");
+  hud.update({ dt: 1 / 60, damage: {} });
+  assert.equal(panel.classList.contains("on"), false);
+
+  // The class only earns its keep if the narrow layouts act on it.
+  assert.match(style, /\.orh-damage \{ display: none; \}\s*\n\s*\.orh-damage\.on \{ display: flex/);
   hud.destroy();
 });
 

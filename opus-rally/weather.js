@@ -191,7 +191,10 @@ export const WEATHER_PRESETS = Object.freeze([
     skyZenith: [0.055, 0.115, 0.320], skyHorizon: [0.92, 0.46, 0.24], skyGround: [0.10, 0.08, 0.07],
     fogColour: [0.52, 0.40, 0.36], fogNear: 90, fogFar: 2200, fogDensity: 0.0012,
     visibility: 9000,
-    cloudCover: 0.22, cloudOpacity: 0.75, cloudType: "cirrus",
+    // Cirrus reads off the streak channel, whose values cluster hard around a
+    // half, so a cover much under 0.4 leaves the ramp above the field and the
+    // dawn sky empty — which is what it was: not one cloud anywhere in it.
+    cloudCover: 0.44, cloudOpacity: 0.75, cloudType: "cirrus",
     cloudAltitude: 5200, cloudScale: 0.00022, cloudSharpness: 2.1, cloudSpeed: 0.35,
     cloudLit: [1.0, 0.62, 0.38], cloudDark: [0.26, 0.22, 0.30],
     precipType: "none", precipRate: 0, precipRainMix: 0, precipSnowMix: 0,
@@ -213,10 +216,17 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.48, 0.44, 0.36], bounceIntensity: 0.34,
     shadowStrength: 1.0, exposure: 0.82, turbidity: 2.1,
     skyBrightness: 1.35, skyTintWeight: 0.30,
-    skyZenith: [0.055, 0.145, 0.500], skyHorizon: [0.60, 0.72, 0.92], skyGround: [0.24, 0.22, 0.19],
-    fogColour: [0.66, 0.74, 0.88], fogNear: 400, fogFar: 9000, fogDensity: 0.00028,
+    // The hard-noon axis: a near-ultramarine zenith over a horizon bleached warm
+    // by twenty-six kilometres of dusty air. Both ends matter — a blue that runs
+    // all the way down is a painted dome, not a sky.
+    skyZenith: [0.030, 0.105, 0.470], skyHorizon: [0.62, 0.56, 0.50], skyGround: [0.24, 0.22, 0.19],
+    fogColour: [0.61, 0.575, 0.545], fogNear: 400, fogFar: 9000, fogDensity: 0.00028,
     visibility: 26000,
-    cloudCover: 0.12, cloudOpacity: 0.9, cloudType: "cumulus",
+    // Below about a quarter, the coverage ramp never clears the noise field and
+    // the sky comes out with no cloud in it at all — which is what White Anvil
+    // photographed as: a clean gradient and nothing else in twenty thousand
+    // pixels of sky.
+    cloudCover: 0.34, cloudOpacity: 0.9, cloudType: "cumulus",
     cloudAltitude: 2100, cloudScale: 0.00040, cloudSharpness: 3.4, cloudSpeed: 0.5,
     cloudLit: [1.0, 0.99, 0.97], cloudDark: [0.42, 0.46, 0.56],
     precipType: "none", precipRate: 0, precipRainMix: 0, precipSnowMix: 0,
@@ -263,12 +273,19 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.38, 0.38, 0.38], bounceIntensity: 0.22,
     shadowStrength: 0.28, exposure: 1.12, turbidity: 6.0,
     skyBrightness: 0.62, skyTintWeight: 0.78,
-    skyZenith: [0.30, 0.33, 0.38], skyHorizon: [0.52, 0.54, 0.58], skyGround: [0.20, 0.20, 0.20],
-    fogColour: [0.55, 0.57, 0.60], fogNear: 220, fogFar: 3400, fogDensity: 0.0011,
+    // Cold slate overhead, warm pale grey along the horizon. The warm/cool axis
+    // is what stops a grey sky reading as an absence of colour: the long path to
+    // the horizon is where the deck's underside picks up the ground's own light.
+    skyZenith: [0.25, 0.31, 0.47], skyHorizon: [0.275, 0.228, 0.185], skyGround: [0.14, 0.135, 0.13],
+    fogColour: [0.335, 0.285, 0.238], fogNear: 220, fogFar: 3400, fogDensity: 0.0011,
     visibility: 8000,
     cloudCover: 0.93, cloudOpacity: 0.95, cloudType: "stratus",
     cloudAltitude: 1300, cloudScale: 0.00026, cloudSharpness: 1.3, cloudSpeed: 0.6,
-    cloudLit: [0.62, 0.64, 0.68], cloudDark: [0.30, 0.32, 0.36],
+    // A stratus deck's own two ends: a cold blue-grey core and a warm pale base
+    // where it thins. The pair used to sit at 0.30 and 0.62, high in the tone
+    // curve's shoulder, where a factor of two in radiance is worth sixteen
+    // levels of pixel and the whole sky photographs as one wash of near-white.
+    cloudLit: [0.345, 0.322, 0.288], cloudDark: [0.060, 0.074, 0.106],
     precipType: "none", precipRate: 0, precipRainMix: 0, precipSnowMix: 0,
     precipColour: [0.70, 0.73, 0.78], dropSize: 1.0, fallSpeed: 7.0,
     windSpeed: 5.5, windDirection: 250 * DEG, gustiness: 0.3,
@@ -288,12 +305,15 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.30, 0.32, 0.34], bounceIntensity: 0.18,
     shadowStrength: 0.16, exposure: 1.22, turbidity: 7.5,
     skyBrightness: 0.48, skyTintWeight: 0.82,
-    skyZenith: [0.22, 0.25, 0.30], skyHorizon: [0.42, 0.45, 0.50], skyGround: [0.16, 0.17, 0.18],
-    fogColour: [0.46, 0.49, 0.53], fogNear: 120, fogFar: 1800, fogDensity: 0.0022,
+    // Rain runs cool the whole way up — no warm horizon, because the long path
+    // is full of water rather than dust. What tells you where the sun is here is
+    // the deck thinning, not the hue changing.
+    skyZenith: [0.185, 0.215, 0.285], skyHorizon: [0.152, 0.162, 0.190], skyGround: [0.11, 0.115, 0.125],
+    fogColour: [0.182, 0.194, 0.220], fogNear: 120, fogFar: 1800, fogDensity: 0.0022,
     visibility: 3200,
     cloudCover: 0.97, cloudOpacity: 0.96, cloudType: "nimbus",
     cloudAltitude: 950, cloudScale: 0.00030, cloudSharpness: 1.5, cloudSpeed: 0.85,
-    cloudLit: [0.48, 0.50, 0.55], cloudDark: [0.22, 0.24, 0.28],
+    cloudLit: [0.245, 0.258, 0.285], cloudDark: [0.062, 0.072, 0.094],
     precipType: "drizzle", precipRate: 6.5, precipRainMix: 1, precipSnowMix: 0,
     precipColour: [0.68, 0.73, 0.80], dropSize: 0.55, fallSpeed: 5.2,
     windSpeed: 6.0, windDirection: 235 * DEG, gustiness: 0.34,
@@ -313,12 +333,12 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.24, 0.26, 0.28], bounceIntensity: 0.14,
     shadowStrength: 0.08, exposure: 1.35, turbidity: 9.5,
     skyBrightness: 0.3, skyTintWeight: 0.88,
-    skyZenith: [0.13, 0.15, 0.19], skyHorizon: [0.28, 0.30, 0.34], skyGround: [0.11, 0.12, 0.13],
-    fogColour: [0.34, 0.37, 0.41], fogNear: 60, fogFar: 900, fogDensity: 0.0048,
+    skyZenith: [0.13, 0.15, 0.19], skyHorizon: [0.128, 0.140, 0.165], skyGround: [0.09, 0.095, 0.105],
+    fogColour: [0.155, 0.170, 0.200], fogNear: 60, fogFar: 900, fogDensity: 0.0048,
     visibility: 1250,
     cloudCover: 1.0, cloudOpacity: 1.0, cloudType: "nimbus",
     cloudAltitude: 700, cloudScale: 0.00034, cloudSharpness: 1.2, cloudSpeed: 1.15,
-    cloudLit: [0.34, 0.36, 0.41], cloudDark: [0.13, 0.14, 0.17],
+    cloudLit: [0.165, 0.175, 0.205], cloudDark: [0.038, 0.042, 0.056],
     precipType: "downpour", precipRate: 42, precipRainMix: 1, precipSnowMix: 0,
     precipColour: [0.66, 0.72, 0.80], dropSize: 1.15, fallSpeed: 8.6,
     windSpeed: 11.0, windDirection: 240 * DEG, gustiness: 0.55,
@@ -338,12 +358,12 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.18, 0.19, 0.22], bounceIntensity: 0.1,
     shadowStrength: 0.05, exposure: 1.5, turbidity: 12.0,
     skyBrightness: 0.18, skyTintWeight: 0.92,
-    skyZenith: [0.055, 0.062, 0.085], skyHorizon: [0.17, 0.17, 0.21], skyGround: [0.07, 0.07, 0.08],
-    fogColour: [0.22, 0.24, 0.28], fogNear: 45, fogFar: 700, fogDensity: 0.0062,
+    skyZenith: [0.055, 0.062, 0.085], skyHorizon: [0.066, 0.066, 0.082], skyGround: [0.045, 0.045, 0.052],
+    fogColour: [0.088, 0.096, 0.115], fogNear: 45, fogFar: 700, fogDensity: 0.0062,
     visibility: 900,
     cloudCover: 1.0, cloudOpacity: 1.0, cloudType: "anvil",
     cloudAltitude: 620, cloudScale: 0.00046, cloudSharpness: 2.2, cloudSpeed: 1.6,
-    cloudLit: [0.26, 0.27, 0.33], cloudDark: [0.07, 0.07, 0.10],
+    cloudLit: [0.125, 0.128, 0.155], cloudDark: [0.018, 0.018, 0.026],
     precipType: "downpour", precipRate: 62, precipRainMix: 1, precipSnowMix: 0,
     precipColour: [0.62, 0.70, 0.80], dropSize: 1.35, fallSpeed: 9.4,
     windSpeed: 18.0, windDirection: 205 * DEG, gustiness: 0.85,
@@ -388,12 +408,15 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.66, 0.70, 0.78], bounceIntensity: 0.5,
     shadowStrength: 0.3, exposure: 0.95, turbidity: 6.5,
     skyBrightness: 0.6, skyTintWeight: 0.8,
-    skyZenith: [0.34, 0.39, 0.50], skyHorizon: [0.60, 0.63, 0.70], skyGround: [0.52, 0.55, 0.60],
-    fogColour: [0.68, 0.71, 0.77], fogNear: 90, fogFar: 1500, fogDensity: 0.0026,
+    // Snow light is the coldest daylight there is, and the ground throws most of
+    // it straight back up: the deck stays blue where it is thick and goes almost
+    // colourless where the sun is behind it.
+    skyZenith: [0.30, 0.355, 0.48], skyHorizon: [0.345, 0.375, 0.455], skyGround: [0.40, 0.43, 0.49],
+    fogColour: [0.395, 0.420, 0.480], fogNear: 90, fogFar: 1500, fogDensity: 0.0026,
     visibility: 2400,
     cloudCover: 0.95, cloudOpacity: 0.9, cloudType: "stratus",
     cloudAltitude: 1100, cloudScale: 0.00028, cloudSharpness: 1.1, cloudSpeed: 0.5,
-    cloudLit: [0.72, 0.75, 0.82], cloudDark: [0.42, 0.45, 0.53],
+    cloudLit: [0.415, 0.430, 0.470], cloudDark: [0.105, 0.118, 0.155],
     precipType: "snow", precipRate: 9, precipRainMix: 0, precipSnowMix: 1,
     precipColour: [0.94, 0.96, 1.0], dropSize: 2.0, fallSpeed: 1.1,
     windSpeed: 3.0, windDirection: 190 * DEG, gustiness: 0.25,
@@ -816,6 +839,7 @@ void main() {
     vec2 uv = (uCamPos.xz + dir.xz * t) * uCloudScale + uCloudScroll;
     vec4 n = texture2D(uCloudTex, uv);
     vec4 n2 = texture2D(uCloudTex, uv * 2.17 - uCloudScroll * 0.6);
+    vec4 n3 = texture2D(uCloudTex, uv * 0.23 + uCloudScroll * 0.31);
     float wsum = max(dot(uCloudMix, vec4(1.0)), 0.001);
     float field = mix(dot(n, uCloudMix) / wsum, dot(n2, uCloudMix) / wsum, 0.35);
 
@@ -823,26 +847,38 @@ void main() {
     // Coverage decides whether there is any cloud in this direction; at a cover
     // of 0.93 its ramp sits entirely below the field and clips to one across the
     // whole sky. Shading off that same number therefore paints every texel of an
-    // overcast lid the same colour — a grey wall with no structure in it. The
-    // thin term reads the identical field on a ramp that does not move with
-    // cover, so a full lid still has thin bright patches and dark cores.
+    // overcast lid the same colour — a grey wall with no structure in it.
     float density = smoothstep(1.0 - uCloudCover, 1.0 - uCloudCover + 0.42 / uCloudSharp, field);
     density *= uCloudOpacity;
     // Distance fade: the deck dissolves into haze as it approaches the horizon.
     density *= smoothstep(0.006, 0.09, h);
-    float thin = 1.0 - smoothstep(0.22, 0.74, field);
+
+    // Thickness reads the field again on a ramp that does not move with cover,
+    // mixed with a far coarser lookup carrying the kilometre-scale swell of the
+    // deck — every octave in the field is finer than the deck itself, so alone it
+    // gives texture and no form. Both are near-Gaussian about a half and spend
+    // their contrast in the middle fifth of 0..1: read straight, four fifths of
+    // the shading range is unreachable and the lid comes out one value whatever
+    // it is made of, so the ramp reads an expanded copy instead.
+    float swell = dot(n3, uCloudMix) / wsum;
+    float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 2.7, 0.0, 1.0);
+    float thin = 1.0 - smoothstep(0.16, 0.86, body);
 
     // Light through the deck rather than past it. A lid does not hide the sun,
-    // it diffuses it: the bright patch where the sun stands, and the sun half of
-    // the sky being lighter than the other, are most of what separates a real
-    // overcast day from a flat fill.
+    // it diffuses it across tens of degrees: the bright patch where the sun
+    // stands, and the sun half of the sky being lighter than the other, are most
+    // of what separates a real overcast day from a flat fill. The old lobe was
+    // tight enough to hide the whole patch inside the sun's own disc.
     float toward = max(dot(dir, uSunDir), 0.0);
-    float through = (0.40 + 0.60 * thin) * (pow(toward, 1.6) * 0.20 + pow(toward, 9.0) * 0.80);
+    float through = (0.35 + 0.65 * thin)
+      * (pow(toward, 1.3) * 0.30 + pow(toward, 5.0) * 0.42 + pow(toward, 24.0) * 0.52);
     float rim = pow(toward, 3.0) * thin;
-    vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.08 + 0.74 * thin + 0.34 * rim, 0.0, 1.0));
-    // A deck's underside brightens toward the horizon, where you end up looking
-    // along the lit base instead of up into its own shadow.
-    cloud *= 1.0 + 0.85 * (1.0 - smoothstep(0.01, 0.50, h));
+    vec3 cloud = mix(uCloudDark, uCloudLit, clamp(0.06 + 0.88 * thin + 0.30 * rim, 0.0, 1.0));
+    // A deck is brightest along the horizon, where the eye looks *along* its lit
+    // base, and dimmest overhead, where it looks up into the deck's own shadow.
+    // That inversion is the opposite of a clear sky's, and it is the one reading
+    // that says "cloud" instead of "fill colour".
+    cloud *= mix(1.46, 0.58, smoothstep(0.02, 0.66, h));
     cloud += uSunColour * uCloudGlow * through;
     col = mix(col, cloud, clamp(density, 0.0, 1.0));
   }
@@ -1609,7 +1645,12 @@ function applyState(w, dt) {
   // neither has a horizon to give away.
   const vis = c.visibility;
   const nearFrac = clamp(c.fogNear / Math.max(c.fogFar, 1), 0.002, 0.6);
-  w.fog.far = Math.max(vis * 0.5, FOG_FLOOR);
+  // Half the sight-line was still too far to make a hill recede: a ridge a
+  // kilometre out on an eight-kilometre day came back only a quarter hazed and
+  // stood at a hard edge against the dome. A third of it puts that same ridge
+  // past a third of the ramp, which is where a hill starts to read as distant
+  // rather than as a nearby hill painted darker.
+  w.fog.far = Math.max(vis * 0.34, FOG_FLOOR);
   // The best fit puts near at zero; it is held off the camera only so the car
   // does not drive inside its own haze, which is why it is a fraction of a
   // fraction rather than the authored distance.
