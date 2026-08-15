@@ -972,8 +972,22 @@ export function stepCar(car, input, world, dt) {
     else if (upEdge) requestGear(car, car.gear + 1);
     else if (downEdge) requestGear(car, car.gear - 1);
     else if (a.autoShift && car.gear > 0) {
-      if (car.engineRpm > eng.shiftUpRpm && car.gear < gb.ratios.length) requestGear(car, car.gear + 1);
-      else if (car.engineRpm < eng.shiftDownRpm && car.gear > 1) requestGear(car, car.gear - 1);
+      // Every decision is answerable to the ROAD speed, because during wheelspin
+      // the engine is being turned by the spinning wheels and its rpm says nothing
+      // about how fast the car is going. Left on engine rpm alone the box walks
+      // itself to top gear at walking pace on an icy climb and then has no first
+      // gear left to pull away in.
+      const roadRpm = (Math.abs(car.forwardSpeed) / s.wheelRadius) * gb.final * RPM_PER_RAD;
+      const here = roadRpm * gb.ratios[car.gear - 1];
+      const next = car.gear < gb.ratios.length ? roadRpm * gb.ratios[car.gear] : 0;
+      // The engine still calls the upshift — that is the rpm the driver and the
+      // limiter see — but only into a gear the car is genuinely travelling fast
+      // enough to hold.
+      if (car.engineRpm > eng.shiftUpRpm && car.gear < gb.ratios.length && next > eng.shiftDownRpm) {
+        requestGear(car, car.gear + 1);
+      } else if (here < eng.shiftDownRpm && car.gear > 1) {
+        requestGear(car, car.gear - 1);
+      }
     }
   }
 
@@ -1095,14 +1109,24 @@ export function stepCar(car, input, world, dt) {
   }
   engage *= 1 - clutchIn;
   if (a.autoClutch) {
-    // Not an on/off aid: a servo that slips the clutch at a launch rpm, locks
-    // solid the moment the driveline catches the engine, and lets go before the
-    // engine can stall. Dumping it instead just bogs the car off the line.
+    // Not an on/off aid: a servo that holds the engine on its launch rpm while it
+    // feeds torque in, locks solid the moment the driveline catches the engine,
+    // and lets go before the engine falls under idle.
+    //
+    // The band has to open AT the launch rpm rather than at half of it. The
+    // clutch's torque-per-rpm across the band is far stiffer than any engine's
+    // torque curve, so the engine settles wherever the two cross: open the band
+    // early and a laggy motor is pinned down in its lag hole making a third of
+    // its torque. That is what made the 640 the slowest car off the line and what
+    // left every car unable to pull away up a loose climb.
     const dlRpm = Math.abs(wIn) * RPM_PER_RAD;
-    const launch = lerp(eng.idleRpm * 1.3, eng.shiftUpRpm * 0.52, throttleIn);
-    const servo = saturate((rpm - launch * 0.5) / (launch * 0.55));
+    const launch = lerp(eng.idleRpm * 1.25, eng.shiftUpRpm * 0.52, throttleIn);
+    const servo = saturate((rpm - launch) / (launch * 0.30));
     const matched = 1 - smoothstep(0.10, 0.55, Math.abs(rpm - dlRpm) / Math.max(rpm, 800));
-    const stallGuard = smoothstep(eng.stallRpm * 1.1, eng.idleRpm * 1.15, rpm);
+    // Referenced to idle, not to the stall line: a driver slips the clutch to keep
+    // the engine alive on a climb. A guard that only opens as the engine dies has
+    // already let the driveline drag it well under idle, where it makes nothing.
+    const stallGuard = smoothstep(eng.idleRpm, eng.idleRpm * 1.40, rpm);
     const auto = Math.min(Math.max(matched, servo * Math.max(throttleIn, 0.12)), stallGuard);
     engage = Math.min(engage, auto);
   }
@@ -1114,7 +1138,14 @@ export function stepCar(car, input, world, dt) {
 
   const nDriven = drive === "4WD" ? 4 : 2;
   const iWheels = s.wheelInertia * nDriven;
-  const iRef = drivenRatio !== 0 ? iWheels / (drivenRatio * drivenRatio) + gb.inertia : 1e6;
+  // The clutch is solved implicitly: it removes a fixed fraction of the speed
+  // difference between the two inertias the integrator actually carries, and that
+  // fraction is 0.7 only while iRef is those inertias and nothing else. Counting a
+  // gearbox inertia no body owns here inflates it, and in a tall first gear — where
+  // the wheels reflect through the square of a 14:1 reduction and all but vanish —
+  // the coupling overshoots into a limit cycle that reads as permanent wheelspin
+  // and pins the car at a third of the speed the gear allows.
+  const iRef = drivenRatio !== 0 ? iWheels / (drivenRatio * drivenRatio) : 1e6;
   const iEff = (eng.inertia * iRef) / (eng.inertia + iRef);
   const clutchDamp = 0.7 * iEff / h;
   const slipRate = car.engineOmega - wIn;

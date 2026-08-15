@@ -52,6 +52,9 @@ import {
   createResourceBin,
   createRenderer,
   HEADLIGHT,
+  CONTACT_SHADOW,
+  makeContactShadowFit,
+  contactShadowFit,
 } from "../render.js";
 
 // Normalised to LF. Git hands this file out with CRLF endings on Windows, and
@@ -1599,10 +1602,306 @@ test("the headlamps put a pool of light on the road ahead, not a glow in the air
       `road at ${d} m gets ${lit(d).toFixed(3)} lx from the lamps `
       + `against ${ambient.toFixed(3)} of night sky — no visible pool`);
   }
-  // And it has to fall off, or it is a flat wash rather than a beam.
-  assert.ok(lit(8) > lit(25) * 3, "the pool does not fade down the road");
+  // And it has to fall off, or it is a flat wash rather than a beam. Measured
+  // over a long baseline on purpose: the dipped pair and the lamp bar each put
+  // their own lobe on the road, and the trough between them near 8 m is the
+  // structure of a real dipped beam rather than a failure to fade. Reading the
+  // falloff across a short baseline that straddles the trough measures the
+  // trough, not the beam.
+  assert.ok(lit(10) > lit(40) * 5, "the pool does not fade down the road");
   assert.ok(lit(60) < lit(15), "the beam does not run out");
   api.dispose();
+});
+
+// The composite's own transfer, transcribed from COMPOSITE_FRAG: exposure, then
+// ACES, then the sRGB encode. Every judgement about how bright a lamp should be
+// has to be made through this and not in linear, because linear cannot tell a
+// bright road from a white hole — ACES is already within a couple of codes of
+// 1.0 by the time the scene value reaches 4.
+function acesFilmic(x) {
+  const a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+  return Math.min(1, Math.max(0, (x * (a * x + b)) / (x * (c * x + d) + e)));
+}
+
+function toneByte(linear, exposure) {
+  const c = acesFilmic(Math.max(0, linear) * exposure);
+  const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  return Math.round(Math.min(1, s) * 255);
+}
+
+// Irradiance on a level patch of road at a world point, from a lamp anywhere and
+// aimed anywhere. roadIrradiance() above works in the vertical plane through the
+// lamp's own axis, so it cannot see the toe that swings the dipped pair off the
+// centreline — which is exactly where the two pools are.
+function roadIrradianceAt(light, roadY, px, pz) {
+  const lx = light.position.x, ly = light.position.y, lz = light.position.z;
+  const ax = light.target.position.x - lx;
+  const ay = light.target.position.y - ly;
+  const az = light.target.position.z - lz;
+  const al = Math.hypot(ax, ay, az);
+  const dx = px - lx, dy = roadY - ly, dz = pz - lz;
+  const d = Math.hypot(dx, dy, dz);
+  if (d < 1e-6 || al < 1e-6 || dy >= 0) return 0;
+  const cosA = (dx * ax + dy * ay + dz * az) / (d * al);
+  const coneCos = Math.cos(light.angle);
+  const penumbraCos = Math.cos(light.angle * (1 - light.penumbra));
+  const t = Math.min(1, Math.max(0,
+    (cosA - coneCos) / Math.max(1e-6, penumbraCos - coneCos)));
+  const spot = t * t * (3 - 2 * t);
+  if (spot <= 0) return 0;
+  let fall = light.intensity / Math.max(Math.pow(d, light.decay), 0.01);
+  if (light.distance > 0) {
+    const w = Math.max(0, 1 - Math.pow(d / light.distance, 4));
+    fall *= w * w;
+  }
+  return fall * spot * (-dy / d);
+}
+
+// All three lamp colours are full red, so the red channel is the one that clips
+// first and modelling it needs no colour at all.
+function litRoad(lamps, roadY, px, pz) {
+  let sum = 0;
+  for (let i = 0; i < lamps.length; i += 1) sum += roadIrradianceAt(lamps[i], roadY, px, pz);
+  return sum;
+}
+
+async function nightLampRig() {
+  const weatherMod = await import("../weather.js");
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0;
+  const weather = fakeWeather();
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+  const night = weatherMod.WEATHER_PRESETS.find((w) => w.id === "night-clear");
+  return {
+    api,
+    car,
+    roadY: car.pos.y - 0.49,
+    exposure: night.exposure,
+    lamps: [
+      api.scene.getObjectByName("opus.headlight.l"),
+      api.scene.getObjectByName("opus.headlight.r"),
+      api.scene.getObjectByName("opus.lightpod"),
+      api.scene.getObjectByName("opus.headlight.spill"),
+    ],
+  };
+}
+
+test("the brightest part of the headlight pool still shows the road surface", async () => {
+  const rig = await nightLampRig();
+  assert.ok(rig.lamps.every(Boolean), "a lamp is missing from the rig");
+
+  // Gravel's own albedo, and the light and dark grains a gravel texture is made
+  // of. If the tone curve has already clipped, the two land on the same byte and
+  // the pool is a white hole with no surface in it — which is what shipped.
+  const albedo = surfaceProps(SURFACE.GRAVEL).albedo[0];
+  const dark = albedo * 0.75;
+  const light = albedo * 1.25;
+
+  let peak = 0;
+  let peakZ = 0;
+  for (let z = rig.car.pos.z + 2; z <= rig.car.pos.z + 60; z += 0.25) {
+    for (let x = -6; x <= 6.0001; x += 0.25) {
+      const e = litRoad(rig.lamps, rig.roadY, x, z);
+      if (e > peak) { peak = e; peakZ = z - rig.car.pos.z; }
+    }
+  }
+  assert.ok(peak > 0, "the lamps put nothing on the road at all");
+
+  const radiance = (a) => (a / Math.PI) * peak;
+  const hot = toneByte(radiance(albedo), rig.exposure);
+  const gap = toneByte(radiance(light), rig.exposure) - toneByte(radiance(dark), rig.exposure);
+
+  assert.ok(gap >= 12,
+    `a light and a dark gravel grain come out ${gap} codes apart in the hot spot `
+    + `(${peak.toFixed(2)} lx at ${peakZ.toFixed(1)} m) — the surface is gone`);
+  assert.ok(hot <= 242,
+    `the brightest road under the lamps tone-maps to ${hot}/255 at ${peakZ.toFixed(1)} m — `
+    + "no headroom left for bloom or a wet specular");
+
+  // And the pool has to still be a pool: far brighter than the night sky it is
+  // competing with, out to where the driver needs to see.
+  const sky = 0.225;
+  const at = (d) => litRoad(rig.lamps, rig.roadY, 0, rig.car.pos.z + d);
+  assert.ok(at(25) > sky * 3, `road at 25 m gets ${at(25).toFixed(2)} lx — the pool died`);
+  rig.api.dispose();
+});
+
+test("the dipped pair reads as two pools, not one merged blob", async () => {
+  const rig = await nightLampRig();
+  // Metres from the lamps themselves, not from the car: the lamps stand most of
+  // a metre ahead of the centre of mass and the near flood covers everything
+  // inside about 3 m of them.
+  const lampZ = rig.lamps[0].position.z;
+  const at = (x, d) => litRoad(rig.lamps, rig.roadY, x, lampZ + d);
+
+  // Across the whole band the dipped pair owns, before the lamp bar's lobe takes
+  // over at 8 m. The weakest separation in the band is the one that matters: the
+  // pod that shipped flooded the crown from 5 m out, and a scan that keeps its
+  // best row still finds two lobes at 4 m and calls that two beams.
+  let split = Infinity;
+  let worst = 0;
+  for (let d = 4; d <= 7.001; d += 0.5) {
+    let lobe = 0;
+    for (let x = 0.25; x <= 4.0001; x += 0.25) lobe = Math.max(lobe, at(x, d));
+    const ratio = lobe / Math.max(1e-6, at(0, d));
+    if (ratio < split) { split = ratio; worst = d; }
+  }
+  assert.ok(split > 1.5,
+    `at ${worst} m the brightest point off the crown is only ${split.toFixed(2)}x the crown `
+    + "itself — the two beams have merged into one pool");
+
+  // Symmetric, or one lamp is aimed wrong.
+  for (const d of [5, 8, 15]) {
+    const l = at(-1.5, d);
+    const r = at(1.5, d);
+    assert.ok(Math.max(l, r) > 0, `nothing lit at ${d} m either side of the crown`);
+    assert.ok(Math.abs(l - r) < Math.max(l, r) * 0.02 + 1e-6,
+      `the beam is lopsided at ${d} m: ${l.toFixed(3)} left, ${r.toFixed(3)} right`);
+  }
+  rig.api.dispose();
+});
+
+// ---- contact shadow ------------------------------------------------------
+
+test("the contact pool tightens under compression and spreads as the car rises", () => {
+  const fit = makeContactShadowFit();
+  const nom = 0.49;
+
+  contactShadowFit(fit, nom, nom, 0);
+  const rest = { spread: fit.spread, alpha: fit.alpha };
+  assert.ok(Math.abs(rest.spread - 1) < 1e-9, `at rest the footprint is ${rest.spread}x`);
+  assert.ok(rest.alpha > 0.3 && rest.alpha < 0.92, `at rest the pool is ${rest.alpha} dark`);
+
+  contactShadowFit(fit, nom - 0.12, nom, 0);
+  assert.ok(fit.spread < rest.spread,
+    `a compressed car's pool is ${fit.spread}x, no tighter than the ${rest.spread}x at rest`);
+  assert.ok(fit.alpha > rest.alpha, "a compressed car's pool did not darken");
+
+  contactShadowFit(fit, nom + 0.12, nom, 0);
+  assert.ok(fit.spread > rest.spread, "an extended car's pool did not spread");
+  assert.ok(fit.alpha < rest.alpha, "an extended car's pool did not lighten");
+
+  // Energy, roughly: whatever the pool spreads over, it loses in darkness. A
+  // footprint that grew without lightening would read as the car growing a
+  // bigger, equally solid shadow as it took off.
+  const area = (f) => f.spread * f.spread * f.alpha;
+  contactShadowFit(fit, nom, nom, 0);
+  const a0 = area(fit);
+  contactShadowFit(fit, nom + 0.3, nom, 0);
+  assert.ok(Math.abs(area(fit) - a0) < a0 * 0.05,
+    "the pool gains darkness as it spreads instead of conserving it");
+});
+
+test("the contact pool fades out when the car is airborne", () => {
+  const fit = makeContactShadowFit();
+  const nom = 0.49;
+
+  contactShadowFit(fit, nom, nom, 0.05);
+  assert.ok(fit.visible, "a wheel skipping over a stone put the pool out");
+  const brief = fit.alpha;
+
+  contactShadowFit(fit, nom, nom, 0.25);
+  assert.ok(fit.alpha < brief, "a quarter of a second of air did not start the fade");
+
+  contactShadowFit(fit, nom, nom, 1.5);
+  assert.equal(fit.visible, false, `still drawing a pool after 1.5 s of air: ${fit.alpha}`);
+
+  // And a car a metre up has a pool that is wide and almost gone, on height
+  // alone, so a launch off a crest fades before airTime has caught up.
+  contactShadowFit(fit, nom + 1, nom, 0);
+  assert.ok(fit.spread > 1.5 && fit.alpha < 0.25,
+    `a metre off the ground the pool is ${fit.spread}x at ${fit.alpha}`);
+});
+
+test("the contact pool sits on the ground under the car, in one draw call", () => {
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0.4;
+  const weather = fakeWeather();
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  api.update(frame, 1 / 60);
+
+  const pool = api.scene.getObjectByName("opus.contactShadow");
+  assert.ok(pool && pool.isMesh, "there is no contact shadow in the scene");
+  assert.equal(pool.visible, true, "the contact shadow is not being drawn");
+  assert.equal(pool.children.length, 0, "the contact shadow is more than one draw call");
+  assert.equal(pool.material.blending, THREE.MultiplyBlending,
+    "the pool is added to the scene rather than taken out of it");
+  assert.equal(pool.material.depthWrite, false, "the pool writes depth");
+  assert.ok(pool.material.uniforms.uAlpha.value > 0.2,
+    `the pool is drawn at ${pool.material.uniforms.uAlpha.value} — invisible`);
+
+  // fakeWorld's ground is y = 0 everywhere.
+  assert.ok(Math.abs(pool.position.x - car.pos.x) < 1e-6
+    && Math.abs(pool.position.z - car.pos.z) < 1e-6, "the pool is not under the car");
+  assert.ok(pool.position.y > 0 && pool.position.y < 0.12,
+    `the pool floats ${pool.position.y} m over the ground`);
+
+  // It has to be big enough to look like the car and small enough not to shade
+  // the verge.
+  assert.ok(pool.scale.z > 3 && pool.scale.z < 7, `pool is ${pool.scale.z} m long`);
+  assert.ok(pool.scale.x > 1.6 && pool.scale.x < 4, `pool is ${pool.scale.x} m wide`);
+  assert.ok(pool.scale.z > pool.scale.x, "the pool is wider than the car is long");
+
+  // Turned with the car, so it reads as the car's own footprint.
+  const e = new THREE.Euler().setFromQuaternion(pool.quaternion, "YXZ");
+  assert.ok(Math.abs(e.y - car.yaw) < 1e-5, `pool yaw is ${e.y}, car yaw is ${car.yaw}`);
+
+  // A dive under braking pitches the body; the pool must stay flat on the road.
+  car.pitch = 0.12;
+  car.quat = { x: 0.06, y: 0, z: 0, w: 0.998 };
+  api.update(frame, 1 / 60);
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(pool.quaternion);
+  assert.ok(up.y > 0.9999, `the pool tipped with the chassis: up.y = ${up.y}`);
+
+  api.clearStage();
+  assert.equal(pool.visible, false, "the pool outlived its stage onto the menu backdrop");
+  api.dispose();
+});
+
+test("the contact pool follows ride height and lets go when the car takes off", () => {
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  const weather = fakeWeather();
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  const pool = api.scene.getObjectByName("opus.contactShadow");
+
+  car.pos.y = 0.49;
+  api.update(frame, 1 / 60);
+  const restAlpha = pool.material.uniforms.uAlpha.value;
+  const restWidth = pool.scale.x;
+
+  car.pos.y = 0.37;
+  api.update(frame, 1 / 60);
+  assert.ok(pool.material.uniforms.uAlpha.value > restAlpha, "a squatting car's pool is no darker");
+  assert.ok(pool.scale.x < restWidth, "a squatting car's pool is no tighter");
+
+  car.pos.y = 2.4;
+  car.airTime = 0.9;
+  car.onGround = 0;
+  api.update(frame, 1 / 60);
+  assert.equal(pool.visible, false, "the car is 2 m in the air and still standing on its shadow");
+  api.dispose();
+});
+
+test("the composite still tone-maps after exposure, so the lamp numbers mean what they say", () => {
+  const composite = RENDER_SRC.slice(RENDER_SRC.indexOf("const COMPOSITE_FRAG"));
+  const exposure = composite.indexOf("col *= uExposure");
+  const tone = composite.indexOf("col = acesFilmic(col)");
+  assert.ok(exposure > 0 && tone > exposure,
+    "the composite no longer applies exposure and then ACES — the lamp intensities "
+    + "were sized against that curve and have to be re-sized");
 });
 
 test("the beam cone only exists where there is something in the air to scatter off", () => {
@@ -2167,6 +2466,7 @@ test("the per-frame path allocates nothing", () => {
     "function selectLod",
     "function dustSpawnRate",
     "function autoScalerSample",
+    "function contactShadowFit",
   ];
   for (const marker of hot) {
     const start = RENDER_SRC.indexOf(marker);
@@ -2178,6 +2478,25 @@ test("the per-frame path allocates nothing", () => {
     assert.equal(/=\s*\{\s*[a-zA-Z"']/.test(body), false, `${marker} allocates an object literal`);
     assert.equal(/=\s*\[/.test(body), false, `${marker} allocates an array literal`);
   }
+});
+
+test("the contact shadow update allocates nothing either", () => {
+  // Same construction as above, but this one lives inside createRenderer(), so
+  // its closing brace is at two spaces rather than at column 0.
+  const start = RENDER_SRC.indexOf("  function updateContactShadow");
+  assert.ok(start > 0, "updateContactShadow not found");
+  const end = RENDER_SRC.indexOf("\n  }\n", start);
+  const body = RENDER_SRC.slice(start, end);
+  assert.ok(body.length > 200 && body.length < 3000, `body scan took ${body.length} chars`);
+  assert.equal(/\bnew\s+[A-Z]/.test(body), false, "updateContactShadow allocates with new");
+  assert.equal(/=\s*\{\s*[a-zA-Z"']/.test(body), false,
+    "updateContactShadow allocates an object literal");
+  // And the quaternion and vector it works through are built once, outside it.
+  for (const scratch of ["const qTilt = new three.Quaternion()",
+    "const qYaw = new three.Quaternion()", "const vNormal = new three.Vector3()"]) {
+    assert.ok(RENDER_SRC.includes(scratch), `${scratch} is not a shared scratch`);
+  }
+  assert.ok(CONTACT_SHADOW.lift > 0, "the pool would z-fight the ground it sits on");
 });
 
 test("the module-scope scratch is shared, not re-created per call", () => {

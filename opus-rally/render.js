@@ -43,19 +43,31 @@ const PHYSICS_DT = 1 / 200;
 // true square law from a lamp 0.74 m up, the road at 6 m clips white while the
 // road at 30 m is already black. Decay 1 stands in for the missing pattern and
 // `distance` closes the beam off rather than letting it wash the hillside.
+//
+// Every number here is sized against the tone curve, not against how it looks in
+// linear. The composite multiplies by the preset's exposure — 2.3 on the night
+// stages — and then runs ACES, so a road radiance much over 0.3 lands within a
+// couple of 8-bit codes of white. The first version aimed a 0.15 rad pod at 60 m,
+// which put the cone's own rim on the road 4.5 m out: a 4–13 m plateau where a
+// light gravel grain and a dark one came out 251 and 254, one white hole with no
+// surface in it. At these numbers the same two grains are 221 and 236.
+//
+// Narrowing the pod moves its rim past 8 m so the near ground is left to the
+// dipped pair, and the pair is toed far enough apart to read as two pools with
+// the crown darker between them rather than as one merged blob.
 export const HEADLIGHT = Object.freeze({
   decay: 1,
   distance: 80,
-  mainAngle: 0.24,
-  mainReach: 26,
-  mainIntensity: 260,
-  mainToe: 2.2,
-  podAngle: 0.15,
-  podReach: 60,
-  podIntensity: 1400,
-  spillAngle: 0.60,
-  spillReach: 7,
-  spillIntensity: 10,
+  mainAngle: 0.20,
+  mainReach: 24,
+  mainIntensity: 150,
+  mainToe: 2.6,
+  podAngle: 0.085,
+  podReach: 55,
+  podIntensity: 620,
+  spillAngle: 0.50,
+  spillReach: 10,
+  spillIntensity: 24,
 });
 
 // The visible light cone in the air. Baked into the geometry rather than applied
@@ -924,6 +936,56 @@ export function autoScalerSample(as, frameMs, dt) {
   return action;
 }
 
+// ---- contact shadow ------------------------------------------------------
+
+// The car's cast shadow cannot be relied on to say "this thing is touching the
+// ground". At noon it falls almost entirely under the sill, on an overcast the
+// key light is a few per cent of the lighting, and at the quality levels a phone
+// picks there is no shadow map at all. So the car also carries an ellipse of
+// darkening pinned to the ground beneath it, always, at every sun angle.
+//
+// It is a multiply, not a lit surface, so it survives exposure and ACES
+// unchanged: it takes a fixed fraction out of whatever the ground was.
+export const CONTACT_SHADOW = Object.freeze({
+  // Footprint when the car is at its nominal ride height, as a multiple of the
+  // body it sits under. Wider than the shell, because a real occlusion pool
+  // reaches past the sills.
+  lengthScale: 1.18,
+  widthScale: 1.34,
+  opacity: 0.62,
+  // Extra footprint per metre the body rises. A penumbra widens with the gap.
+  spreadPerMetre: 0.95,
+  spreadMin: 0.72,
+  spreadMax: 3.2,
+  // Seconds of air time over which the last of it goes. The spread term alone
+  // handles a launch, but a car flying level off a crest keeps its height and
+  // needs this.
+  airFade: 0.55,
+  // Metres of clearance over the ground, enough that polygon offset never has to
+  // fight terrain at a grazing view angle.
+  lift: 0.04,
+});
+
+export function makeContactShadowFit() {
+  return { spread: 1, alpha: 0, visible: false };
+}
+
+// `height` is the body's height over the ground, `nominal` the same at rest.
+// Compression tightens and darkens the pool; extension and flight spread and
+// lighten it, losing darkness as the square of the footprint because the same
+// occlusion is smeared over that much more ground.
+export function contactShadowFit(fit, height, nominal, airTime) {
+  const nom = nominal > 0.05 ? nominal : DEFAULT_COM_HEIGHT;
+  const gap = (height > 0 ? height : 0) - nom;
+  const spread = clamp(1 + gap * CONTACT_SHADOW.spreadPerMetre,
+    CONTACT_SHADOW.spreadMin, CONTACT_SHADOW.spreadMax);
+  const air = 1 - smoothstep(0.1, 0.1 + CONTACT_SHADOW.airFade, airTime || 0);
+  fit.spread = spread;
+  fit.alpha = clamp(CONTACT_SHADOW.opacity / (spread * spread), 0, 0.92) * air;
+  fit.visible = fit.alpha > 0.004;
+  return fit;
+}
+
 // ---- shadow frustum fitting ---------------------------------------------
 
 // The tallest thing beside a road that has to land in the shadow map: a mature
@@ -1373,6 +1435,29 @@ void main() {
 }
 `;
 
+// The contact pool. Output is the multiplier the ground keeps, so 1.0 is
+// untouched: the darkening never depends on how bright the scene happens to be.
+const CONTACT_FRAG = `
+uniform float uAlpha;
+varying vec2 vUv;
+void main() {
+  vec2 d = (vUv - 0.5) * 2.0;
+  float r2 = dot(d, d);
+  // Squared falloff off a squared radius, so the core is broad and flat and the
+  // rim reaches zero smoothly rather than ending on a visible ellipse.
+  float a = 1.0 - clamp(r2, 0.0, 1.0);
+  gl_FragColor = vec4(vec3(1.0 - a * a * uAlpha), 1.0);
+}
+`;
+
+const CONTACT_VERT = `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
 const BEAM_VERT = `
 varying float vAlong;
 varying vec3 vNormalW;
@@ -1673,6 +1758,39 @@ export function createRenderer(canvas, opts = {}) {
   for (let i = 0; i < MARK_CAP; i += 1) markMesh.setMatrixAt(i, markZero);
   markMesh.instanceMatrix.needsUpdate = true;
 
+  // ---- contact shadow
+  //
+  // One unit quad, one draw call, never culled, scaled and dropped onto the
+  // ground under the car every frame.
+
+  const contactGeo = new three.PlaneGeometry(1, 1);
+  contactGeo.rotateX(-Math.PI / 2);
+  permBin.track(contactGeo);
+  const contactMat = new three.ShaderMaterial({
+    uniforms: { uAlpha: { value: 0 } },
+    vertexShader: CONTACT_VERT,
+    fragmentShader: CONTACT_FRAG,
+    transparent: true,
+    depthWrite: false,
+    blending: three.MultiplyBlending,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
+  permBin.trackMaterial(contactMat);
+  const contactMesh = new three.Mesh(contactGeo, contactMat);
+  contactMesh.frustumCulled = false;
+  contactMesh.renderOrder = 1;
+  contactMesh.visible = false;
+  contactMesh.name = "opus.contactShadow";
+  scene.add(contactMesh);
+  const contactFit = makeContactShadowFit();
+  const contactSize = { length: 4.4, width: 2.4, nominal: DEFAULT_COM_HEIGHT };
+  const contactNormal = { x: 0, y: 1, z: 0 };
+  const qTilt = new three.Quaternion();
+  const qYaw = new three.Quaternion();
+  const vNormal = new three.Vector3();
+
   // ---- car lighting pod
 
   const headlights = {
@@ -1709,6 +1827,23 @@ export function createRenderer(canvas, opts = {}) {
     if (beams) {
       beams.children[0].position.x = -headlights.x;
       beams.children[1].position.x = headlights.x;
+    }
+  }
+
+  // The pool is sized off the shell it sits under, so a long four-wheel-drive and
+  // a short heritage car do not share a footprint.
+  function fitContactRig(spec) {
+    contactSize.length = 4.4;
+    contactSize.width = 2.4;
+    contactSize.nominal = spec && spec.comHeight > 0 ? spec.comHeight : DEFAULT_COM_HEIGHT;
+    if (!meshLib || typeof meshLib.carDimensions !== "function" || !spec) return;
+    const d = safeCall(() => meshLib.carDimensions(spec));
+    if (!d) return;
+    if (Number.isFinite(d.noseZ) && Number.isFinite(d.tailZ)) {
+      contactSize.length = (d.noseZ - d.tailZ) * CONTACT_SHADOW.lengthScale;
+    }
+    if (Number.isFinite(d.halfWidth)) {
+      contactSize.width = d.halfWidth * 2 * CONTACT_SHADOW.widthScale;
     }
   }
 
@@ -2890,6 +3025,8 @@ export function createRenderer(canvas, opts = {}) {
     if (headlights.pod) headlights.pod.intensity = 0;
     if (headlights.spill) headlights.spill.intensity = 0;
     if (headlights.beams) headlights.beams.visible = false;
+    // Same reason: a pool of darkening parked on the menu backdrop.
+    contactMesh.visible = false;
     tvAnchors.length = 0;
     stageBin.disposeAll();
     resetParticlePool(dustPool);
@@ -2977,6 +3114,7 @@ export function createRenderer(canvas, opts = {}) {
 
     const spec = state.car ? state.car.spec : (ctx.spec || null);
     fitLampRig(spec);
+    fitContactRig(spec);
     state.carMesh = buildCar(spec, ctx.livery, stageBin);
     scene.add(state.carMesh);
     state.wheelMeshes = buildWheels(spec, stageBin);
@@ -3280,6 +3418,40 @@ export function createRenderer(canvas, opts = {}) {
       }
       wm.outer.visible = w.detached !== true;
     }
+  }
+
+  // The one thing that makes the car read as standing on the ground rather than
+  // hovering over it, at every sun angle and at every quality level.
+  function updateContactShadow(car) {
+    const ground = state.ground;
+    if (!ground || !state.carMesh) { contactMesh.visible = false; return; }
+    const gy = ground(car.pos.x, car.pos.z);
+    if (!Number.isFinite(gy)) { contactMesh.visible = false; return; }
+    contactShadowFit(contactFit, car.pos.y - gy, contactSize.nominal, car.airTime || 0);
+    contactMesh.visible = contactFit.visible;
+    if (!contactFit.visible) return;
+    contactMat.uniforms.uAlpha.value = contactFit.alpha;
+    contactMesh.scale.set(
+      contactSize.width * contactFit.spread, 1, contactSize.length * contactFit.spread,
+    );
+    // Lie along the ground, not along the chassis: the pool must not pitch when
+    // the car dives under braking.
+    const world = state.world;
+    if (world && typeof world.normalAt === "function") {
+      world.normalAt(car.pos.x, car.pos.z, contactNormal);
+      vNormal.set(contactNormal.x, contactNormal.y, contactNormal.z);
+      if (vNormal.lengthSq() > 1e-6) vNormal.normalize(); else vNormal.set(0, 1, 0);
+    } else {
+      vNormal.set(0, 1, 0);
+    }
+    qTilt.setFromUnitVectors(vUp, vNormal);
+    qYaw.setFromAxisAngle(vUp, car.yaw);
+    contactMesh.quaternion.copy(qTilt).multiply(qYaw);
+    contactMesh.position.set(
+      car.pos.x + vNormal.x * CONTACT_SHADOW.lift,
+      gy + vNormal.y * CONTACT_SHADOW.lift,
+      car.pos.z + vNormal.z * CONTACT_SHADOW.lift,
+    );
   }
 
   function updateShadow(car) {
@@ -3674,6 +3846,7 @@ export function createRenderer(canvas, opts = {}) {
     applyRigToCamera(rig, p);
 
     updateCarMesh(car, frame.alpha || 0);
+    updateContactShadow(car);
     updateHeadlights(car, step);
     spawnWheelParticles(car, surface, step);
     updateMarks(car, surface, step);
