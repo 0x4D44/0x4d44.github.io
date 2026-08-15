@@ -145,8 +145,40 @@ test("field of view is monotonic in speed and clamped at both ends", () => {
   }
   assert.equal(chaseFov(0, p), p.fovBase);
   assert.ok(Math.abs(chaseFov(500, p) - p.fovMax) < 1e-9);
-  // Widening with speed is the cheapest speed cue there is; it must actually widen.
-  assert.ok(chaseFov(60, p) - chaseFov(5, p) > 15);
+  // Widening with speed is the cheapest speed cue there is, and it has to happen
+  // across the band a rally car actually uses. The previous form of this
+  // assertion asked for more than 15 degrees between 5 and 60 m/s, which is only
+  // reachable if the numbers are horizontal FOV — and holding it there is what
+  // kept a 94-degree-horizontal fisheye in the game. Ask instead that the effect
+  // is substantially spent by the time you are travelling quickly.
+  const atRest = chaseFov(0, p);
+  const quick = chaseFov(28, p);      // ~100 km/h
+  const flatOut = chaseFov(45, p);    // ~160 km/h
+  assert.ok(quick - atRest > (p.fovMax - p.fovBase) * 0.4,
+    `by 100 km/h the camera has only widened ${(quick - atRest).toFixed(1)} of `
+    + `${(p.fovMax - p.fovBase).toFixed(1)} available degrees`);
+  assert.ok(flatOut - atRest > (p.fovMax - p.fovBase) * 0.85,
+    "flat out, the widening should be essentially complete");
+});
+
+// three.js takes a VERTICAL field of view. Authoring these numbers as though
+// they were horizontal put the chase camera at 94 degrees horizontal, which
+// drags the horizon to the middle of the frame and flattens every corner —
+// exactly what an art director reported seeing. Nothing else in the suite would
+// notice, because every other assertion is about ratios and monotonicity.
+test("every camera's field of view is a plausible VERTICAL angle", () => {
+  for (const mode of CAMERA_MODES) {
+    const p = cameraParams(mode);
+    for (const [name, deg] of [["fovBase", p.fovBase], ["fovMax", p.fovMax]]) {
+      assert.ok(deg >= 20 && deg <= 60,
+        `${mode}.${name} is ${deg} degrees vertical `
+        + `(${(2 * Math.atan(Math.tan((deg * Math.PI) / 360) * (16 / 9)) * 180 / Math.PI).toFixed(0)} horizontal at 16:9)`);
+    }
+    // The speed at which the widening is spent is in metres per second. Giving
+    // it a degree-sized number is the mistake that made the effect unreachable.
+    assert.ok(p.fovRefSpeed >= 12 && p.fovRefSpeed <= 45,
+      `${mode}.fovRefSpeed is ${p.fovRefSpeed} m/s (${(p.fovRefSpeed * 3.6).toFixed(0)} km/h)`);
+  }
 });
 
 test("the in-car cameras never pump their field of view", () => {

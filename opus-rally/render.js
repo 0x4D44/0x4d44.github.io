@@ -235,11 +235,17 @@ export const CAMERA_CYCLE = Object.freeze([
 const CAMERA_PARAMS = Object.freeze({
   chase: Object.freeze({
     mode: "chase", kind: "boom",
-    distance: 6.9, height: 2.55, riseWithSpeed: 0.010,
+    distance: 6.9, height: 2.40, riseWithSpeed: 0.010,
     lookAhead: 13.5, lookHeight: 1.15, lookVertGain: 0.16,
     posRate: 4.6, posRateSpeed: 0.075, aimRate: 6.4, dirRate: 3.2,
     velocityBlend: 0.78, velRefSpeed: 14,
-    fovBase: 62, fovMax: 90, fovStart: 8, fovRef: 62, fovRate: 2.4,
+    // THREE.PerspectiveCamera.fov is VERTICAL. These were authored as though
+    // it were horizontal: 62 vertical is 94 horizontal at 16:9, and 90 is 121 —
+    // a fisheye that drags the horizon to the middle of the frame and flattens
+    // every corner. Worse, fovRefSpeed is a SPEED and the old name fovRef was
+    // handed the same number as fovBase: 62 m/s is 223 km/h, so the widening
+    // effect was dead across the whole band anyone actually drives.
+    fovBase: 40, fovMax: 46, fovStart: 8, fovRefSpeed: 32, fovRate: 2.4,
     rollGain: 0.055, pitchGain: 0.030, attRate: 5.0,
     shake: 0.20, shakeSpeed: 34, clearance: 1.25,
     airLift: 1.1, airRate: 1.6,
@@ -252,7 +258,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 10.0, lookHeight: 0.95, lookVertGain: 0.12,
     posRate: 6.2, posRateSpeed: 0.09, aimRate: 7.6, dirRate: 4.0,
     velocityBlend: 0.86, velRefSpeed: 12,
-    fovBase: 58, fovMax: 84, fovStart: 8, fovRef: 58, fovRate: 2.8,
+    fovBase: 44, fovMax: 50, fovStart: 8, fovRefSpeed: 30, fovRate: 2.8,
     rollGain: 0.072, pitchGain: 0.038, attRate: 5.6,
     shake: 0.26, shakeSpeed: 34, clearance: 0.95,
     airLift: 0.8, airRate: 1.9,
@@ -265,7 +271,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 22, lookHeight: 0.30, lookVertGain: 0,
     posRate: 30, posRateSpeed: 0, aimRate: 12, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 68, fovMax: 68, fovStart: 8, fovRef: 60, fovRate: 3,
+    fovBase: 50, fovMax: 50, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
     rollGain: 0.11, pitchGain: 0.10, attRate: 9,
     shake: 0.055, shakeSpeed: 46, clearance: 0.05,
     airLift: 0, airRate: 2,
@@ -278,7 +284,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 20, lookHeight: 0.30, lookVertGain: 0,
     posRate: 26, posRateSpeed: 0, aimRate: 9.5, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 64, fovMax: 64, fovStart: 8, fovRef: 60, fovRate: 3,
+    fovBase: 48, fovMax: 48, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
     rollGain: 0.10, pitchGain: 0.10, attRate: 7.5,
     shake: 0.038, shakeSpeed: 42, clearance: 0.05,
     airLift: 0, airRate: 2,
@@ -291,7 +297,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 26, lookHeight: 0.10, lookVertGain: 0,
     posRate: 34, posRateSpeed: 0, aimRate: 13, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 74, fovMax: 74, fovStart: 8, fovRef: 60, fovRate: 3,
+    fovBase: 54, fovMax: 54, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
     rollGain: 0.12, pitchGain: 0.10, attRate: 10,
     shake: 0.070, shakeSpeed: 50, clearance: 0.05,
     airLift: 0, airRate: 2,
@@ -304,7 +310,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 2.5, lookHeight: 0.55, lookVertGain: 0,
     posRate: 9, posRateSpeed: 0, aimRate: 3.4, dirRate: 4,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 34, fovMax: 52, fovStart: 6, fovRef: 55, fovRate: 1.1,
+    fovBase: 26, fovMax: 36, fovStart: 6, fovRefSpeed: 30, fovRate: 1.1,
     rollGain: 0, pitchGain: 0, attRate: 4,
     shake: 0.010, shakeSpeed: 12, clearance: 0.4,
     airLift: 0, airRate: 2,
@@ -317,7 +323,7 @@ const CAMERA_PARAMS = Object.freeze({
     lookAhead: 0.5, lookHeight: 0.85, lookVertGain: 0,
     posRate: 2.2, posRateSpeed: 0, aimRate: 3.0, dirRate: 2,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 46, fovMax: 46, fovStart: 8, fovRef: 60, fovRate: 1.5,
+    fovBase: 36, fovMax: 36, fovStart: 8, fovRefSpeed: 32, fovRate: 1.5,
     rollGain: 0, pitchGain: 0, attRate: 3,
     shake: 0, shakeSpeed: 10, clearance: 1.0,
     airLift: 0, airRate: 2,
@@ -445,7 +451,7 @@ export function lookTarget(out, s, p) {
 // Monotonic non-decreasing in speed and clamped to [fovBase, fovMax] by
 // construction — smoothstep saturates at both ends.
 export function chaseFov(speed, p) {
-  const t = smoothstep(p.fovStart, Math.max(p.fovStart + 1e-3, p.fovRef), speed);
+  const t = smoothstep(p.fovStart, Math.max(p.fovStart + 1e-3, p.fovRefSpeed), speed);
   return p.fovBase + (p.fovMax - p.fovBase) * t;
 }
 
@@ -2022,7 +2028,9 @@ export function createRenderer(canvas, opts = {}) {
     const q = state.quality;
     if (gl.shadowMap) gl.shadowMap.enabled = q.shadows;
     if (shadowLight) {
-      shadowLight.castShadow = q.shadows;
+      if (state.weather) state.weather.shadowGate = q.shadows;
+      shadowLight.castShadow = q.shadows
+        && shadowLight.userData.weatherWantsShadow !== false;
       if (shadowLight.shadow.mapSize.x !== q.shadowMapSize) {
         shadowLight.shadow.mapSize.set(q.shadowMapSize, q.shadowMapSize);
         if (shadowLight.shadow.map && typeof shadowLight.shadow.map.dispose === "function") {
@@ -2991,7 +2999,11 @@ export function createRenderer(canvas, opts = {}) {
       fallbackKey.visible = true;
       fallbackFill.visible = true;
     }
-    shadowLight.castShadow = state.quality.shadows;
+    // weather.js re-evaluates this every frame from its own criteria, so tell it
+    // the budget rather than fighting it: it ANDs its own wish with this gate.
+    if (state.weather) state.weather.shadowGate = state.quality.shadows;
+    shadowLight.castShadow = state.quality.shadows
+      && shadowLight.userData.weatherWantsShadow !== false;
     shadowLight.shadow.mapSize.set(state.quality.shadowMapSize, state.quality.shadowMapSize);
     shadowLight.shadow.bias = -0.0004;
     shadowLight.shadow.normalBias = 0.045;
@@ -3485,7 +3497,7 @@ export function createRenderer(canvas, opts = {}) {
     // hour with the saturation turned down; lift/gamma/gain is enough to make the
     // difference without a lookup texture.
     const u = post.composite.uniforms;
-    const night = saturate(1 - (w.metrics ? w.metrics.lightLevel : 1));
+    const night = nightFraction(cur);
     u.uLift.value.set(0.012 + 0.03 * night, 0.014 + 0.032 * night, 0.022 + 0.05 * night);
     u.uGamma.value.set(1.0, 0.995 - 0.02 * night, 0.985 - 0.035 * night);
     u.uGain.value.set(
@@ -3494,6 +3506,23 @@ export function createRenderer(canvas, opts = {}) {
       0.98 + 0.10 * night + 0.06 * saturate(wetFilm(w)),
     );
     u.uSaturation.value = 1.06 - 0.24 * night - 0.12 * saturate(wetFilm(w));
+  }
+
+// How much of the night grade to apply. This used to read weather.metrics
+  // lightLevel, which is not a daylight fraction at all: it is the input to the
+  // headlight Schmitt trigger, scaled for thresholds at 0.18 and 0.30. Measured on
+  // the shipped presets it reads 0.478 for OVERCAST NOON and 0.669 for golden
+  // hour, so the renderer was running a half-strength night grade — lifted blacks,
+  // blue gain, desaturation — over broad daylight. That was a large part of why
+  // the daylight scenes looked murky. The sun's elevation is the physical quantity
+  // that actually decides this, so ask it instead.
+  function nightFraction(preset) {
+    const elevation = preset && Number.isFinite(preset.sunElevation)
+      ? preset.sunElevation
+      : 0.6;
+    // Full grade once the sun is a little below the horizon; none of it once the
+    // sun is properly up. -12 degrees is nautical twilight, +3 is sunrise proper.
+    return 1 - smoothstep(-0.21, 0.05, elevation);
   }
 
   function updateGhost(ghost, dt) {

@@ -1610,7 +1610,12 @@ function applyState(w, dt) {
     c.sunColour[2] * w._sunTint[2],
   );
   L.key.intensity = keyIntensity;
-  L.key.castShadow = c.shadowStrength > 0.12 && keyIntensity > 0.05;
+  // Whether this light is worth a shadow pass is weather's call; whether the
+  // machine can afford one is the renderer's. Writing castShadow outright here
+  // ran every frame and so silently overrode the quality setting a frame after
+  // it was made — the low preset rendered a full depth pass anyway.
+  L.key.userData.weatherWantsShadow = c.shadowStrength > 0.12 && keyIntensity > 0.05;
+  L.key.castShadow = L.key.userData.weatherWantsShadow && w.shadowGate !== false;
 
   const moonUp = saturate(w._moonDir.y * 4);
   const moonI = c.moonIntensity * moonUp * (1 - gate) * cloudBlock;
@@ -1623,7 +1628,11 @@ function applyState(w, dt) {
   L.fill.groundColor.setRGB(c.hemiGround[0], c.hemiGround[1], c.hemiGround[2]);
   L.fill.intensity = c.hemiIntensity * (0.28 + 0.72 * Math.max(scatter, moonI * 0.5)) + w.lightning.flash * 0.8;
 
-  L.bounce.position.set(-w._sunDir.x * 40, -12, -w._sunDir.z * 40);
+  // Above the ground, not below it. At y = -12 every up-facing surface had
+  // N.L < 0, so the bounce term lit nothing at all on the road or the terrain —
+  // on overcast that was 17% of the rig doing no work where it mattered. It is
+  // opposite the sun and low, which is where a ground bounce comes from.
+  L.bounce.position.set(-w._sunDir.x * 40, 9, -w._sunDir.z * 40);
   L.bounce.target.position.set(0, 0, 0);
   L.bounce.color.setRGB(c.bounceColour[0], c.bounceColour[1], c.bounceColour[2]);
   L.bounce.intensity = c.bounceIntensity * (0.2 + 0.8 * scatter);
