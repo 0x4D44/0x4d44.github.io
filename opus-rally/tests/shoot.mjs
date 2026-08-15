@@ -28,78 +28,78 @@ const QUALITY = arg("quality", "high");
 
 // Each shot names the moment it is meant to capture, so a reviewer can say
 // "shot 7, the crest, looks flat" rather than "one of the screenshots".
+//
+// Stages are named by ID, never by index. They used to be indices, and when the
+// stage book was reordered the "snow stage" shot silently started photographing
+// mountain tarmac and the "tarmac" shot gravel — three critics duly reported
+// that the snow stage had no snow, which was true and entirely the fault of this
+// file. An unknown id is a hard error below rather than a wrong picture.
 const SHOTS = [
   { key: "menu", title: "Title screen", setup: null },
   {
-    key: "startline", title: "On the start line, gravel, morning",
-    drive: { stageIndex: 0 }, at: 0, speed: 0, camera: "chase", skipCountdown: false,
+    key: "startline", title: "On the start line, gravel, golden hour",
+    drive: { stage: "kloft-bjornhalt" }, at: 0, speed: 0, camera: "chase", skipCountdown: false,
     autoDrive: false,   // it is meant to be sitting on the line
   },
   {
-    key: "gravel-flat", title: "Flat out on gravel, chase camera",
-    drive: { stageIndex: 0 }, atFrac: 0.18, speed: 130, camera: "chase",
+    key: "gravel-flat", title: "Flat out on forest gravel",
+    drive: { stage: "kloft-bjornhalt" }, atFrac: 0.18, speed: 130, camera: "chase",
   },
   {
-    key: "gravel-slide", title: "Mid-corner on gravel with the car sideways",
-    drive: { stageIndex: 0 }, atFrac: 0.32, speed: 95, camera: "chase",
-    hold: ["throttle", "left"], holdMs: 1400,
+    key: "gravel-slide", title: "Mid-corner on gravel",
+    drive: { stage: "kloft-bjornhalt" }, atFrac: 0.32, speed: 95, camera: "chase",
   },
   {
     key: "cockpit", title: "Cockpit camera at speed",
-    drive: { stageIndex: 0 }, atFrac: 0.45, speed: 110, camera: "cockpit",
+    drive: { stage: "kloft-bjornhalt" }, atFrac: 0.45, speed: 110, camera: "cockpit",
   },
   {
     key: "bonnet", title: "Bonnet camera into a corner",
-    drive: { stageIndex: 0 }, atFrac: 0.52, speed: 100, camera: "bonnet",
+    drive: { stage: "kloft-bjornhalt" }, atFrac: 0.52, speed: 100, camera: "bonnet",
   },
   {
     key: "crest", title: "Over a crest, wheels light",
-    drive: { stageIndex: 0 }, feature: "crest", speed: 125, camera: "chase",
-    hold: ["throttle"], holdMs: 900,
+    drive: { stage: "kloft-bjornhalt" }, feature: "crest", speed: 125, camera: "chase",
   },
   {
     key: "jump", title: "Airborne off a jump",
-    drive: { stageIndex: 0 }, feature: "jump", speed: 135, camera: "chase",
-    hold: ["throttle"], holdMs: 1100,
+    drive: { stage: "kloft-bjornhalt" }, feature: "jump", speed: 135, camera: "chase",
   },
   {
-    key: "hairpin", title: "Hairpin, handbrake on",
-    drive: { stageIndex: 0 }, feature: "hairpin", speed: 60, camera: "chase",
-    hold: ["handbrake", "left"], holdMs: 900,
+    key: "hairpin", title: "Hairpin",
+    drive: { stage: "kloft-bjornhalt" }, feature: "hairpin", speed: 60, camera: "chase",
   },
   {
-    key: "forest", title: "Tight forest section",
-    drive: { stageIndex: 1 }, atFrac: 0.4, speed: 105, camera: "chase",
+    key: "forest", title: "Wet forest gravel",
+    drive: { stage: "northmarch-kestrel" }, atFrac: 0.4, speed: 105, camera: "chase",
   },
   {
-    key: "tarmac", title: "Tarmac stage, dry",
-    drive: { stageIndex: 2 }, atFrac: 0.3, speed: 140, camera: "chase",
+    key: "tarmac", title: "Mountain tarmac, hard noon",
+    drive: { stage: "alvenda-calderas" }, atFrac: 0.3, speed: 140, camera: "chase",
   },
   {
-    key: "rain", title: "Heavy rain, spray and wet road",
-    drive: { stageIndex: 2, weather: "heavy-rain" }, atFrac: 0.35, speed: 110, camera: "chase",
-    hold: ["throttle"], holdMs: 1200,
+    key: "rain", title: "Heavy rain and spray on tarmac",
+    drive: { stage: "vardhal-havnvik", weather: "heavy-rain" }, atFrac: 0.35, speed: 110, camera: "chase",
   },
   {
     key: "night", title: "Night stage on headlights",
-    drive: { stageIndex: 1, weather: "night-clear" }, atFrac: 0.5, speed: 105, camera: "chase",
+    drive: { stage: "kloft-bjornhalt", weather: "night-clear" }, atFrac: 0.5, speed: 105, camera: "chase",
   },
   {
-    key: "snow", title: "Snow stage",
-    drive: { stageIndex: 3, weather: "light-snow" }, atFrac: 0.4, speed: 90, camera: "chase",
-    hold: ["throttle", "right"], holdMs: 1200,
+    key: "snow", title: "Snow over the ice stage",
+    drive: { stage: "kloft-skarvedal", weather: "blizzard" }, atFrac: 0.4, speed: 80, camera: "chase",
   },
   {
-    key: "fog", title: "Hill fog",
-    drive: { stageIndex: 0, weather: "hill-fog" }, atFrac: 0.6, speed: 95, camera: "chase",
+    key: "fog", title: "Hill fog on the coast road",
+    drive: { stage: "vardhal-havnvik", weather: "hill-fog" }, atFrac: 0.6, speed: 95, camera: "chase",
   },
   {
     key: "golden", title: "Golden hour, long shadows",
-    drive: { stageIndex: 0, weather: "golden-hour" }, atFrac: 0.25, speed: 120, camera: "chase",
+    drive: { stage: "tamarosa-escarpa", weather: "golden-hour" }, atFrac: 0.25, speed: 120, camera: "chase",
   },
   {
     key: "phone", title: "Portrait phone, 390x844",
-    drive: { stageIndex: 0 }, atFrac: 0.2, speed: 110, camera: "chase",
+    drive: { stage: "kloft-bjornhalt" }, atFrac: 0.2, speed: 110, camera: "chase",
     viewport: [390, 844],
   },
 ];
@@ -129,7 +129,9 @@ async function main() {
         const ok = await page.evaluate(`(async () => {
           const h = window.__opusRally;
           const mod = await import("/opus-rally/stage.js");
-          const def = mod.STAGE_BOOK[${shot.drive.stageIndex ?? 0} % mod.STAGE_BOOK.length];
+          const wanted = ${JSON.stringify(shot.drive.stage)};
+          const def = mod.STAGE_BOOK.find((s) => s.id === wanted);
+          if (!def) throw new Error("shoot: no stage with id " + wanted);
           await h.drive({
             stageId: def.id,
             ${shot.drive.weather ? `weather: ${JSON.stringify(shot.drive.weather)},` : ""}
@@ -192,9 +194,15 @@ async function main() {
       const state = await page.evaluate(`(() => {
         try {
           const f = window.__opusRally.frame;
+          const st = window.OPUS_RALLY.game.stage;
           return { speedKph: Math.round(f.speedKph), gear: f.gear, rpm: Math.round(f.rpm),
                    distance: Math.round(f.distance), surface: f.surfaceName,
-                   airborne: f.airborne, state: window.__opusRally.state };
+                   airborne: f.airborne, state: window.__opusRally.state,
+                   // What stage this really is, so a reviewer never has to take
+                   // the shot's name on trust.
+                   stageId: st ? st.id : null,
+                   stageName: st ? st.name : null,
+                   weather: window.OPUS_RALLY.game.weather?.current?.name ?? null };
         } catch (e) { return { error: String(e) }; }
       })()`);
       manifest.push({ ...shot, file, state, errors: page.errors });

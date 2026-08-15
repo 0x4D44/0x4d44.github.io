@@ -783,18 +783,138 @@ test("terrain: geometry is sound, skirted, and matches stage.heightAt in the roa
   assert.ok(terrain.triangles <= TRIANGLE_BUDGET.terrain,
     `terrain used ${terrain.triangles} triangles, budget ${TRIANGLE_BUDGET.terrain}`);
 
-  let corridorChecks = 0;
+  // A vertex used to be asserted equal to heightAt to a tenth of a millimetre,
+  // which is exactly the assumption that let the skin bury the road: heightAt is
+  // right at the vertices and says nothing about the flat chord strung between
+  // them. What is actually required is weaker in one direction and stronger in
+  // the other — the skin may sit *under* the field where a cell spans the road,
+  // and may never sit above it — plus the proof that the drop is a conform and
+  // not a global sink: away from the road every vertex is still the field to the
+  // tenth of a millimetre it always was.
+  let corridorChecks = 0, offRoadChecks = 0, deepest = 0;
+  const reach = st.halfWidth[0] + 4 + 2 * terrain.latticeStep;
   for (const c of terrain.chunks) {
     const p = c.geometry.getAttribute("position").array;
-    for (let i = 0; i < c.surfaceVertexCount; i += 40) {
+    for (let i = 0; i < c.surfaceVertexCount; i += 7) {
       const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
-      assert.ok(Math.abs(y - st.world.heightAt(x, z)) < 1e-4,
-        `terrain vertex at ${x},${z} is ${y}, heightAt says ${st.world.heightAt(x, z)}`);
+      const field = st.world.heightAt(x, z);
+      assert.ok(y - field < 1e-4,
+        `terrain vertex at ${x},${z} stands ${(y - field).toFixed(3)} m above heightAt`);
       corridorChecks += 1;
+      if (field - y > deepest) deepest = field - y;
+      if (st.world.project(x, z, undefined, {}).lateral > reach) {
+        assert.ok(Math.abs(y - field) < 1e-4,
+          `terrain vertex at ${x},${z} is ${y} with the road ${reach.toFixed(0)} m away, `
+          + `heightAt says ${field}: the conform has become a global sink`);
+        offRoadChecks += 1;
+      }
     }
   }
   assert.ok(corridorChecks > 50);
+  assert.ok(offRoadChecks > 500, `only ${offRoadChecks} vertices were checked clear of the road`);
+  assert.ok(deepest > 0.05, "nothing was conformed at all; the corridor pass is not running");
   terrain.dispose();
+});
+
+// The terrain skin at a world point: the chunk that owns it, the cell inside
+// that chunk, and the triangle of that cell the point lands in. Nothing here
+// reads heightAt — the question is what the mesh draws, not what the field says.
+function terrainSkinAt(terrain) {
+  const size = terrain.chunkSize;
+  const byChunk = new Map();
+  for (const c of terrain.chunks) {
+    const p = c.geometry.getAttribute("position").array;
+    const rows = [];
+    for (let jz = 0; jz <= c.cells; jz += 1) {
+      const row = new Float64Array(c.cells + 1);
+      for (let ix = 0; ix <= c.cells; ix += 1) row[ix] = p[(jz * (c.cells + 1) + ix) * 3 + 1];
+      rows.push(row);
+    }
+    byChunk.set(`${c.cx},${c.cz}`, { c, rows, cellW: size / c.cells });
+  }
+  return (x, z) => {
+    const hit = byChunk.get(`${Math.floor((x - terrain.originX) / size)},`
+      + `${Math.floor((z - terrain.originZ) / size)}`);
+    if (!hit) return null;
+    const { c, rows, cellW } = hit;
+    let ix = Math.floor((x - c.x0) / cellW);
+    let jz = Math.floor((z - c.z0) / cellW);
+    if (ix < 0) ix = 0; else if (ix >= c.cells) ix = c.cells - 1;
+    if (jz < 0) jz = 0; else if (jz >= c.cells) jz = c.cells - 1;
+    const u = (x - c.x0) / cellW - ix;
+    const v = (z - c.z0) / cellW - jz;
+    const h00 = rows[jz][ix], h10 = rows[jz][ix + 1];
+    const h01 = rows[jz + 1][ix], h11 = rows[jz + 1][ix + 1];
+    // The builder alternates the cell diagonal on (ix + jz).
+    if ((ix + jz) & 1) {
+      return u >= v ? h00 + u * (h10 - h00) + v * (h11 - h10)
+        : h00 + v * (h01 - h00) + u * (h11 - h01);
+    }
+    return u + v <= 1 ? h00 + u * (h10 - h00) + v * (h01 - h00)
+      : h11 + (1 - u) * (h01 - h11) + (1 - v) * (h10 - h11);
+  };
+}
+
+// How far the terrain skin stands above the road ribbon, measured at the
+// ribbon's own vertices — the verge slot excepted, which is the one slot that is
+// placed on the ground rather than on the road.
+function worstBurial(road, terrain) {
+  const skin = terrainSkinAt(terrain);
+  let worst = -Infinity, at = null, checked = 0;
+  for (const c of road.chunks) {
+    const p = c.geometry.getAttribute("position").array;
+    for (const station of c.stations) {
+      for (let k = 0; k < ROAD_SECTION.length; k += 1) {
+        if (ROAD_SECTION[k].kind === "verge") continue;
+        const v = station.vertexBase + k;
+        const y = skin(p[v * 3], p[v * 3 + 2]);
+        if (y === null) continue;
+        checked += 1;
+        const d = y - p[v * 3 + 1];
+        if (d > worst) { worst = d; at = [p[v * 3], p[v * 3 + 2], ROAD_SECTION[k].kind]; }
+      }
+    }
+  }
+  return { worst, at, checked };
+}
+
+test("terrain: the skin never buries the road, on every stage in the book", () => {
+  // Measured at the ribbon's own vertices, because a chord is only wrong where
+  // there is a road under it, and the fixture stage has no cuttings deep enough
+  // to show this: the book does. The numbers before the corridor conform ran
+  // from 0.68 m on vardhal-havnvik to 2.69 m on tamarosa-rioseca.
+  const rows = [];
+  for (const entry of STAGE_BOOK) {
+    const st = stageFromBook(entry.id);
+    const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+    const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120 });
+    const r = worstBurial(road, terrain);
+    rows.push({ id: entry.id, lattice: terrain.latticeStep, buried: +r.worst.toFixed(3), checked: r.checked });
+    assert.ok(r.checked > 8000, `${entry.id}: only ${r.checked} ribbon vertices were reachable`);
+    assert.ok(r.worst < 0.02,
+      `${entry.id}: the skin buries the ribbon by ${r.worst.toFixed(3)} m at ${JSON.stringify(r.at)}`);
+    road.dispose();
+    terrain.dispose();
+  }
+  console.log("skin over ribbon (m):", JSON.stringify(rows));
+});
+
+test("terrain: the burial assertion still fails against the skin that had no conform", () => {
+  // The test above passes the moment it is written, which proves nothing on its
+  // own. `conform: false` builds the old skin; the same measurement has to come
+  // back over the limit, and by the margin the defect was reported at.
+  for (const id of ["tamarosa-rioseca", "northmarch-harrowfen", "vardhal-havnvik"]) {
+    const st = stageFromBook(id);
+    const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+    const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120, conform: false });
+    assert.equal(terrain.conformedPoints, 0, "conform: false still conformed something");
+    const r = worstBurial(road, terrain);
+    assert.ok(r.worst > 0.5,
+      `${id}: unconformed skin only buries the ribbon by ${r.worst.toFixed(3)} m, `
+      + "so the assertion above is not measuring the defect it was written for");
+    road.dispose();
+    terrain.dispose();
+  }
 });
 
 // ---- car -----------------------------------------------------------------

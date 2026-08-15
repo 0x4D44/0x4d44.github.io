@@ -268,6 +268,132 @@ group("screen models", () => {
     .some((p) => p.includes("unknown region")), "validateModel catches an unknown region");
 });
 
+// The stylesheet and the DOM builder are two halves of one decision and nothing
+// in the language ties them together: a rule can name a selector the builder
+// never emits (`.or-body>[data-or-region="aside"]` — the two-column layout, dead
+// because render() puts a wrapper in between) and a builder can emit a class no
+// rule styles (`.or-stat-k`, which is why every stat label rendered as body
+// text). Both shipped. These two groups are the tie.
+
+function renderedRoot(screen, data) {
+  const dom = makeDom();
+  const root = dom.doc.createElement("div");
+  const ui = UI.createUi(root, { document: dom.doc, window: dom.win, gamepad: false, screen, data });
+  return { dom, ui, root, body: ui.element.children.find((c) => c._hasClass("or-body")) };
+}
+
+function findByClass(node, cls, out = []) {
+  walk(node, (n) => { if (n._hasClass && n._hasClass(cls)) out.push(n); });
+  return out;
+}
+
+function ancestorHasClass(node, cls) {
+  for (let n = node?.parentNode; n; n = n.parentNode) if (n._hasClass && n._hasClass(cls)) return true;
+  return false;
+}
+
+group("region lanes", () => {
+  for (const screen of UI.SCREENS) {
+    const { ui, root } = renderedRoot(screen, DATA);
+    const model = ui.model;
+    const regions = new Set((model.sections ?? []).map((s) => s.region ?? "main"));
+    const footer = findByClass(ui.element, "or-footer")[0];
+    const cols = findByClass(ui.element, "or-cols")[0];
+
+    for (const section of model.sections ?? []) {
+      const region = section.region ?? "main";
+      const node = findByClass(root, "or-section").find((n) => n.getAttribute("data-or-section") === section.id);
+      ok(!!node, `${screen}: section ${section.id} is rendered`);
+      if (!node) continue;
+      const want = region === "footer" ? "or-footer"
+        : region === "dialog" ? "or-dialog"
+          : region === "nav" ? "or-lane-nav"
+            : region === "aside" ? "or-col-aside" : "or-col-main";
+      ok(ancestorHasClass(node, want),
+        `${screen}: ${region} section ${section.id} lands in .${want}`);
+    }
+
+    // The column count is what the media query keys off; get it wrong and a
+    // one-column screen reserves half the viewport for nothing.
+    if (cols) {
+      eq(cols.getAttribute("data-or-cols"), regions.has("aside") ? "2" : "1",
+        `${screen}: .or-cols declares the column count it actually has`);
+    } else {
+      ok(!regions.has("main") && !regions.has("aside") && !regions.has("brand"),
+        `${screen}: no column wrapper only when there is nothing to put in one`);
+    }
+    ok(!!footer, `${screen}: the footer element exists`);
+    ui.destroy();
+  }
+});
+
+group("stylesheet covers what the builder emits", () => {
+  const css = UI.styleText();
+  const emitted = new Set();
+  for (const screen of UI.SCREENS) {
+    const { ui } = renderedRoot(screen, DATA);
+    walk(ui.element, (n) => {
+      for (const c of (n._classNames ? n._classNames() : [])) emitted.add(c);
+    });
+    for (const c of ui.element._classNames()) emitted.add(c);
+    ui.destroy();
+  }
+  ok(emitted.size > 30, "the screens between them emit a real class vocabulary", emitted.size);
+  for (const cls of emitted) {
+    ok(css.includes("." + cls), `styleText styles .${cls}, which the DOM builder emits`);
+  }
+  // And the other direction, for the one shape that can silently do nothing: a
+  // descendant selector rooted at a container whose children are a wrapper.
+  ok(!/\.or-body\s*>/.test(css),
+    "no rule reaches through .or-body with a child combinator — render() nests a wrapper there");
+});
+
+group("title screen", () => {
+  const model = UI.buildTitleModel(DATA);
+  const bySection = new Map((model.sections ?? []).map((s) => [s.id, s]));
+  const hero = bySection.get("t-next");
+  ok(!!hero, "title: there is a second column to fill");
+  eq(hero?.region, "aside", "title: the dossier is the aside region");
+
+  const kinds = (hero?.items ?? []).map((i) => i.kind);
+  ok(kinds.includes("headline"), "title: the dossier leads with a headline");
+  ok(kinds.includes("route"), "title: the dossier shows the route");
+  ok(kinds.includes("statRow"), "title: the dossier carries the stage numbers");
+  ok(kinds.includes("standings"), "title: the dossier carries the championship standings");
+
+  const route = (hero?.items ?? []).find((i) => i.kind === "route");
+  ok(route?.preview && !route.preview.empty, "title: the route preview has real geometry");
+  ok((route?.preview?.d ?? "").startsWith("M"), "title: the route preview is a drawable path");
+  ok(route.preview.segments.length > 1, "title: the route is coloured by surface run",
+    route.preview.segments.length);
+
+  const standings = (hero?.items ?? []).find((i) => i.kind === "standings");
+  eq(standings.rows.length, 5, "title: five drivers on the board");
+  eq(standings.rows.filter((r) => r.isPlayer).length, 1, "title: exactly one row is the player");
+  ok(standings.rows[0].frac === 1, "title: the leader's bar is full", standings.rows[0].frac);
+  ok(standings.rows.every((r) => r.frac >= 0 && r.frac <= 1), "title: every points bar is in range");
+  ok(standings.rows[0].points >= standings.rows[4].points, "title: the board is in points order");
+
+  const stats = (hero?.items ?? []).find((i) => i.kind === "statRow");
+  eq(stats.cells.length, 3, "title: three stage facts, not a spec sheet");
+  ok(stats.cells.every((c) => c.label && c.value && c.value !== "—"),
+    "title: no stat renders as a blank dash", JSON.stringify(stats.cells));
+
+  // The dossier is a readout, not a second menu: adding it must not have moved
+  // the keyboard focus ring or given a player two ways to press the same thing.
+  eq(UI.focusOrder(model).length, 7, "title: focus order is still the seven menu items");
+  eq(UI.validateModel(model).length, 0, "title: model validates");
+
+  // Nothing in the layout may be authored as developer metadata.
+  const footer = bySection.get("t-meta");
+  const text = JSON.stringify(footer?.items ?? []);
+  ok(!/build|dev\b|debug|placeholder|TODO/i.test(text), "title: the footer carries no build metadata", text);
+
+  const bare = UI.buildTitleModel({});
+  eq(UI.validateModel(bare).length, 0, "title: a model with no career data still validates");
+  ok(UI.focusOrder(bare).length > 0, "title: a first-run title screen still has a menu");
+});
+
 group("settings schema", () => {
   const defs = UI.defaultSettings();
   for (const g of UI.SETTINGS_SCHEMA) {

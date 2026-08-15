@@ -40,7 +40,9 @@ import {
   weatherLensState,
   disposeWeather,
   SKY_FRAG,
+  PRECIP_SHADERS,
 } from "../weather.js";
+import { surfaceProps, SURFACE } from "../surfaces.js";
 
 const DEG = Math.PI / 180;
 
@@ -1301,4 +1303,326 @@ test("fifty stages of weather leak nothing, and disposing twice is safe", () => 
     assert.deepEqual(doubles, [], `stage ${i} freed ${doubles.join(", ")} twice`);
   }
   assert.ok(peak >= 7, `the stub never saw a whole rig, peak was ${peak}`);
+});
+
+// ---- precipitation: what a drop and a flake actually put on the screen
+//
+// A precipitation system can be geometrically perfect and draw nothing at all.
+// This one did. The streak quad was built on a left-handed basis, came out wound
+// clockwise, and every drop in the game was back-face culled: twenty-two
+// thousand triangles a frame and not one pixel, so a downpour photographed as
+// clear air with a wet road under it. Nothing downstream catches that — the
+// instance count is right, the uniforms are right, the geometry is submitted —
+// so the two things that actually decide whether rain reaches the screen are
+// mirrored here: the winding, and the contrast once the composite has had it.
+//
+// The mirrors are anchored on the literal source of the lines they reproduce,
+// the same way SKY_ANCHORS anchors the dome.
+
+const PRECIP_ANCHORS = [
+  ["rainVert", "const float RAIN_MIN_ANGLE = 0.0016;"],
+  ["rainVert", "vec2 perp = vec2(d.y, -d.x);"],
+  ["rainVert", "float width = max(uWidth, depth * RAIN_MIN_ANGLE);"],
+  ["rainVert", "mv.xy += d * (position.y * len) + perp * (position.x * width);"],
+  ["rainFrag", "float across = smoothstep(0.0, 0.55, 1.0 - abs(vUv.x * 2.0 - 1.0));"],
+  ["rainFrag", "float along = smoothstep(0.0, 0.42, vUv.y) * (1.0 - smoothstep(0.58, 1.0, vUv.y));"],
+  ["snowVert", "const float SNOW_MIN_ANGLE = 0.0024;"],
+  ["snowVert", "float grade = iRand.y * iRand.y * iRand.y;"],
+  ["snowVert", "float size = uSize * (0.22 + 2.1 * grade);"],
+  ["snowVert", "float angle = size / depth;"],
+  ["snowVert", "float drawn = max(size, depth * SNOW_MIN_ANGLE);"],
+  ["snowVert", "float soft = min(1.0, (SNOW_SOFT_ANGLE * SNOW_SOFT_ANGLE) / (angle * angle));"],
+  ["snowVert", "float keep = soft * (size * size) / (drawn * drawn);"],
+  ["snowVert", "vec2 q = vec2(position.x * face, position.y) * drawn;"],
+  ["snowFrag", "float a = (exp(-r * 4.2) - 0.0150) * 1.0152 * vAlpha;"],
+];
+
+test("the precipitation mirrors below are still mirrors of the shaders above", () => {
+  for (const [key, line] of PRECIP_ANCHORS) {
+    assert.ok(PRECIP_SHADERS[key].includes(line),
+      `${key} no longer contains "${line}" — update the mirror in this file to match`);
+  }
+});
+
+// Both angular floors are read out of the shaders rather than copied, so slack
+// given there shows up here as the pixels it costs. A duplicated constant can
+// only ever agree with the copy of itself.
+function shaderConst(key, name) {
+  const m = new RegExp(`const float ${name} = ([0-9.eE+-]+);`).exec(PRECIP_SHADERS[key]);
+  assert.ok(m, `${key} no longer declares ${name}`);
+  return Number(m[1]);
+}
+
+const RAIN_MIN_ANGLE = shaderConst("rainVert", "RAIN_MIN_ANGLE");
+const SNOW_MIN_ANGLE = shaderConst("snowVert", "SNOW_MIN_ANGLE");
+const SNOW_SOFT_ANGLE = shaderConst("snowVert", "SNOW_SOFT_ANGLE");
+
+// The quad corners the geometry hands the shader, in the order its index buffer
+// walks them, so the shoelace of that ring is the winding the rasteriser is
+// given.
+const QUAD = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]];
+
+// Read the streak's second basis vector out of the shader instead of copying it
+// here. A mirror that carries its own copy of the line under test can only agree
+// with itself: the defect was one sign in this expression, and a hand-written
+// copy of the fixed sign would have gone on passing while the game drew nothing.
+// The grammar is deliberately narrow — two signed components of d — so anything
+// else fails here rather than being quietly mismodelled.
+function shaderPerp(d) {
+  const m = /vec2 perp = vec2\(\s*(-?)d\.([xy])\s*,\s*(-?)d\.([xy])\s*\)\s*;/.exec(PRECIP_SHADERS.rainVert);
+  assert.ok(m, "RAIN_VERT no longer builds perp as a pair of signed components of d");
+  const pick = (sign, axis) => (sign === "-" ? -1 : 1) * (axis === "x" ? d[0] : d[1]);
+  return [pick(m[1], m[2]), pick(m[3], m[4])];
+}
+
+// RAIN_VERT's offset in view-space metres: d is the apparent streak direction
+// projected into view space and normalised, perp is its partner.
+function rainQuadArea(dx, dy, len, width) {
+  const dl = Math.hypot(dx, dy);
+  const d = dl > 1e-4 ? [dx / dl, dy / dl] : [0, -1];
+  const perp = shaderPerp(d);
+  const pts = QUAD.map(([px, py]) => [
+    d[0] * (py * len) + perp[0] * (px * width),
+    d[1] * (py * len) + perp[1] * (px * width),
+  ]);
+  let a = 0;
+  for (let i = 0; i < 4; i += 1) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[(i + 1) % 4];
+    a += x0 * y1 - x1 * y0;
+  }
+  return a * 0.5;
+}
+
+test("a rain streak's quad is wound the way the rasteriser needs it", () => {
+  // Positive is counter-clockwise, which is front facing under three's default
+  // frontFace. Measured rather than assumed: on the headless stack the same
+  // geometry with a negative area draws exactly nothing where a positive one
+  // draws, which is the whole defect. The streak direction sweeps the full
+  // circle because it is a view-space quantity set by the wind, the fall speed
+  // and the car — every direction of it is reachable in normal play.
+  for (let i = 0; i < 32; i += 1) {
+    const a = (i / 32) * Math.PI * 2;
+    const area = rainQuadArea(Math.cos(a), Math.sin(a), 0.7, 0.012);
+    assert.ok(area > 0,
+      `streak at ${(a / DEG).toFixed(0)} deg is wound clockwise (signed area ${area.toExponential(2)})`
+      + " — the rasteriser culls it and the rain is invisible");
+  }
+  // The degenerate apparent velocity takes the fallback branch, and it has to be
+  // wound the same way or a car sitting still in dead air loses its rain.
+  assert.ok(rainQuadArea(0, 0, 0.7, 0.012) > 0, "the still-air fallback is wound backwards");
+});
+
+test("neither precipitation billboard can be culled by which way it happens to face", () => {
+  // Belt and braces for the above. Both quads are built in view space out of a
+  // view-dependent basis, so which face is toward the camera carries no
+  // information at all and must not be allowed to decide whether they draw.
+  const { w } = rig("heavy-rain");
+  assert.equal(w.rain.material.side, THREE.DoubleSide, "the rain quad is single sided");
+  assert.equal(w.snow.material.side, THREE.DoubleSide, "the flake quad is single sided");
+  assert.equal(w.rain.material.depthWrite, false, "rain must not write depth");
+  assert.equal(w.snow.material.depthWrite, false, "snow must not write depth");
+  disposeWeather(w);
+});
+
+// 720 lines over the vertical field the game runs at, for turning a world-space
+// size at a depth into pixels.
+const PX_PER_RAD = 720 / (2 * Math.tan(21.3 * DEG));
+
+// One particle's peak alpha where its profile is fullest, taken from the rig's
+// own uniforms rather than from a copy of the preset: mid-field, so neither the
+// shell fade nor the near fade is in play, and the median instance random.
+function rainPeakAlpha(w, depth) {
+  const u = w.rain.uniforms;
+  const width = Math.max(u.uWidth.value, depth * RAIN_MIN_ANGLE);
+  return { alpha: u.uOpacity.value * (u.uWidth.value / width) * 0.775, width };
+}
+
+function snowPeakAlpha(w, depth, grade) {
+  const u = w.snow.uniforms;
+  const size = u.uSize.value * (0.22 + 2.1 * grade);
+  const angle = size / depth;
+  const drawn = Math.max(size, depth * SNOW_MIN_ANGLE);
+  const soft = Math.min(1, (SNOW_SOFT_ANGLE * SNOW_SOFT_ANGLE) / (angle * angle));
+  return { alpha: u.uOpacity.value * soft * (size * size) / (drawn * drawn), size, drawn, soft };
+}
+
+// A particle of linear colour `colour` at peak alpha `a`, laid over a background
+// of linear radiance `bg`, in 8-bit levels of difference through the composite.
+function precipDelta(colour, a, bg, exposure) {
+  const c = lum3([colour.r, colour.g, colour.b]);
+  const over = bg * (1 - a) + c * a;
+  return encodeSrgb8(aces(over * exposure)) - encodeSrgb8(aces(bg * exposure));
+}
+
+// The shipped pools and boxes, not the suite's small ones: how many particles a
+// preset puts in a cubic metre is one of the things under test.
+function precipRig(id, speed) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, 1.6, 0.1, 5000);
+  const w = createWeather(THREE, scene, id, { cloudTextureSize: 48, seed: "test-precip" });
+  for (let i = 0; i < 4; i += 1) {
+    setWeatherMotion(w, 0, 0, speed);
+    stepWeather(w, camera, 1 / 60);
+  }
+  return w;
+}
+
+test("rain reads as rain rather than as a set of ruled white lines", () => {
+  // Two bands, both in output levels. Below the floor a drop is a rounding error
+  // against the road and the heaviest weather in the game is clear air; above
+  // the ceiling it is a hard white bar, which is what a peak alpha of 0.39 over
+  // a colour brighter than the sky gave — a hundred and one levels over a dark
+  // bank. A drop is a lens on the sky, so against a bright overcast it is
+  // allowed to read a little dark; what it may not do is punch a hole in it.
+  for (const id of ["light-rain", "heavy-rain", "thunderstorm", "night-rain", "hill-fog"]) {
+    const w = precipRig(id, 25);
+    const u = w.rain.uniforms;
+    const { alpha, width } = rainPeakAlpha(w, 8);
+    const dark = precipDelta(u.uColour.value, alpha, 0.02, w.current.exposure);
+    const bright = precipDelta(u.uColour.value, alpha, 0.30, w.current.exposure);
+    assert.ok(dark >= 12, `${id}: a drop over a dark bank is worth ${dark.toFixed(0)} levels — invisible`);
+    assert.ok(dark <= 80, `${id}: a drop over a dark bank is worth ${dark.toFixed(0)} levels — a white line`);
+    assert.ok(Math.abs(bright) <= 30,
+      `${id}: a drop over a bright sky is worth ${bright.toFixed(0)} levels — a hole in the sky`);
+    // And it has to be a streak rather than a bar: a drop is millimetres across
+    // and metres long in a fiftieth of a second.
+    const wpx = width / 8 * PX_PER_RAD;
+    assert.ok(wpx >= 1.0 && wpx <= 3.0, `${id}: a drop at 8 m is ${wpx.toFixed(1)} px wide`);
+    assert.ok(u.uLength.value / u.uWidth.value > 15, `${id}: the streak is not long against its width`);
+    disposeWeather(w);
+  }
+});
+
+test("a flake stays sampleable at the distance it is drawn at, without gaining light", () => {
+  // Half the field is finer than a third of the mean by design, and a
+  // three-centimetre flake fifteen metres out is under two pixels: with no floor
+  // on the angle it subtends the rasteriser misses most of them, and light snow
+  // comes back as a dozen specks. The floor may only widen a flake if it dims it
+  // by exactly the area it gained.
+  for (const id of ["light-snow", "blizzard"]) {
+    const w = precipRig(id, 20);
+    const u = w.snow.uniforms;
+    for (const depth of [12, 25, 40]) {
+      const { alpha, size, drawn, soft } = snowPeakAlpha(w, depth, 0.125);
+      const px = drawn / depth * PX_PER_RAD;
+      assert.ok(px >= 2.0, `${id}: the median flake at ${depth} m is ${px.toFixed(2)} px across`);
+      assert.equal(soft, 1, `${id}: a flake at ${depth} m is being treated as out of focus`);
+      const gained = (alpha * drawn * drawn) / (u.uOpacity.value * size * size);
+      assert.ok(Math.abs(gained - 1) < 1e-6,
+        `${id}: widening a flake at ${depth} m changed the light it carries by ${((gained - 1) * 100).toFixed(1)}%`);
+    }
+    // A flake close enough to resolve on its own is never inflated.
+    const near = snowPeakAlpha(w, 2, 0.125);
+    assert.equal(near.drawn, near.size, `${id}: the floor is touching a flake two metres away`);
+    // Bright, but a Gaussian core over a mostly empty disc: the scene has to
+    // come through the flake rather than be replaced by it.
+    const over = precipDelta(u.uColour.value, near.alpha, 0.06, w.current.exposure);
+    assert.ok(over > 40, `${id}: a near flake is worth only ${over.toFixed(0)} levels`);
+    assert.ok(u.uOpacity.value <= 0.85, `${id}: a flake at ${u.uOpacity.value.toFixed(2)} peak alpha is a hole`);
+
+    // The other end. A flake a metre and a half off the lens covers a patch of
+    // screen, and at full alpha over a bright sky it clips, blooms and hangs
+    // there as an opaque white blob — a sprite, which is the one thing a
+    // snowfall must not look like. Its light is fixed, so covering more screen
+    // has to cost it per pixel.
+    const close = snowPeakAlpha(w, 1.5, 0.9);
+    const closePx = close.drawn / 1.5 * PX_PER_RAD;
+    assert.ok(closePx > 12, `${id}: the biggest near flake is only ${closePx.toFixed(0)} px — nothing to blow out`);
+    assert.ok(close.soft < 0.6,
+      `${id}: a ${closePx.toFixed(0)} px flake keeps ${(close.soft * 100).toFixed(0)}% of its alpha`);
+    const blob = precipDelta(u.uColour.value, close.alpha, 0.45, w.current.exposure);
+    assert.ok(blob < 26,
+      `${id}: a near flake over a bright sky is worth ${blob.toFixed(0)} levels — that is a white blob`);
+    disposeWeather(w);
+  }
+});
+
+test("how hard it is falling is carried by the count, not by the per-particle alpha", () => {
+  // Both scaled with the rate, so the two multiplied: a light shower came out a
+  // quarter as visible as it should be while a downpour came out a wall. The
+  // count is the one that should carry it — one drop looks much the same however
+  // many of its neighbours there are.
+  for (const [kind, lightId, heavyId, speed] of [
+    ["rain", "light-rain", "heavy-rain", 25],
+    ["snow", "light-snow", "blizzard", 20],
+  ]) {
+    const light = precipRig(lightId, speed);
+    const heavy = precipRig(heavyId, speed);
+    const lo = light[kind];
+    const hi = heavy[kind];
+    const countRatio = hi.count / lo.count;
+    const alphaRatio = hi.uniforms.uOpacity.value / lo.uniforms.uOpacity.value;
+    assert.ok(countRatio > 2.4,
+      `${kind}: a downpour draws only ${countRatio.toFixed(2)}x the particles of a shower`);
+    assert.ok(alphaRatio < 1.7,
+      `${kind}: per-particle alpha still scales with the rate (${alphaRatio.toFixed(2)}x) — the fade is squared`);
+    // And a light shower has to be a field rather than a scattering: particles
+    // per cubic metre of the pool's own box is what a driver sees.
+    const box = lo.uniforms.uBox.value;
+    const density = lo.count / (box.x * box.y * box.z);
+    assert.ok(density > 0.25,
+      `${lightId}: ${density.toFixed(3)} particles per cubic metre is not weather, it is confetti`);
+    disposeWeather(light);
+    disposeWeather(heavy);
+  }
+});
+
+// ---- night
+//
+// What an unlit patch of ground comes back as, in 8-bit levels, through the same
+// exposure/ACES/sRGB the composite runs. Lights here are irradiance rather than
+// irradiance x PI (render.js sets useLegacyLights false), so a directional
+// contributes colour x intensity x N.L and a hemisphere seen by an up-facing
+// surface contributes its sky colour x intensity outright.
+const NIGHT_ALBEDO = surfaceProps(SURFACE.GRAVEL).albedo;
+
+function unlitGroundPixel(w, albedo) {
+  const L = w.lights;
+  const out = [0, 0, 0];
+  for (const light of [L.key, L.moon, L.bounce]) {
+    const p = light.position;
+    const n = Math.hypot(p.x, p.y, p.z) || 1;
+    const dotNL = Math.max(p.y / n, 0);
+    out[0] += light.color.r * light.intensity * dotNL;
+    out[1] += light.color.g * light.intensity * dotNL;
+    out[2] += light.color.b * light.intensity * dotNL;
+  }
+  out[0] += L.fill.color.r * L.fill.intensity + L.ambient.color.r * L.ambient.intensity;
+  out[1] += L.fill.color.g * L.fill.intensity + L.ambient.color.g * L.ambient.intensity;
+  out[2] += L.fill.color.b * L.fill.intensity + L.ambient.color.b * L.ambient.intensity;
+  const e = w.current.exposure;
+  return lum3(out.map((v, i) => encodeSrgb8(aces(v * albedo[i] / Math.PI * e))));
+}
+
+test("a night stage is dark on the ground and still a sky overhead", () => {
+  // The measure that matters is the gap, not either end. At a moon of 3.2 into
+  // an exposure of 2.3 the ground came back brighter than the sky above it,
+  // which is a description of dusk; halving that left unlit gravel at 52 against
+  // a sky of 71 — bright enough to read every bank in the frame without the
+  // lamps, and still not a night. What makes headlights worth having is ground
+  // far under the sky it stands against.
+  const { w, camera } = rig("night-clear");
+  stepWeather(w, camera, 1 / 60);
+  const ground = unlitGroundPixel(w, NIGHT_ALBEDO);
+  const skyLow = skyPixelLum(w, 10 * DEG, 90 * DEG);
+  const skyHigh = skyPixelLum(w, 45 * DEG, 90 * DEG);
+  assert.ok(ground <= 34,
+    `unlit gravel comes out at ${ground.toFixed(1)} — a night stage away from the lamps is not that bright`);
+  // Not black either: the horizon, the sky and falling snow all have to read.
+  assert.ok(skyLow >= 50, `the night horizon is at ${skyLow.toFixed(1)} — nothing to see against`);
+  assert.ok(skyHigh >= 25, `the night zenith is at ${skyHigh.toFixed(1)}`);
+  assert.ok(skyLow / Math.max(ground, 1) >= 2.0,
+    `sky ${skyLow.toFixed(1)} over ground ${ground.toFixed(1)} is a dusk, not a night`);
+  // The moon still has to shape a bank rather than the flat terms greying it: a
+  // directional keeps the lit side of a slope, a hemisphere only lifts it.
+  const L = w.lights;
+  const flat = L.fill.intensity * lum3([L.fill.color.r, L.fill.color.g, L.fill.color.b])
+    + L.ambient.intensity * lum3([L.ambient.color.r, L.ambient.color.g, L.ambient.color.b]);
+  const moon = L.moon.intensity * lum3([L.moon.color.r, L.moon.color.g, L.moon.color.b]);
+  assert.ok(moon > flat * 2, `the flat fill (${flat.toFixed(4)}) is doing the moon's job (${moon.toFixed(4)})`);
+  // And the headlights still have to come on, which is decided by the sky and
+  // the sun rather than by any of the above.
+  assert.equal(w.metrics.headlights, true, "a clear night must call for headlights");
+  disposeWeather(w);
 });

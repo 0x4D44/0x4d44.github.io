@@ -825,8 +825,8 @@ function sampleCount(stage) {
 // in both axes (a stretched map lies about how tight a corner is), and the
 // polyline is decimated to a point budget so a 6 km stage is not 3000 nodes.
 export function buildRoutePreview(stage, opts = {}) {
-  const w = opts.width ?? 320;
-  const h = opts.height ?? 200;
+  let w = opts.width ?? 320;
+  let h = opts.height ?? 200;
   const pad = opts.pad ?? 14;
   const maxPoints = Math.max(8, opts.maxPoints ?? 220);
   const n = sampleCount(stage);
@@ -854,6 +854,15 @@ export function buildRoutePreview(stage, opts = {}) {
   if (!Number.isFinite(minX) || !Number.isFinite(minZ)) return empty;
   const spanX = Math.max(maxX - minX, 1e-6);
   const spanZ = Math.max(maxZ - minZ, 1e-6);
+  // `fit` shrinks the box onto the route's own aspect. Without it a north-south
+  // stage in a landscape box is a thin ribbon between two empty margins, and
+  // those margins live inside the viewBox where no CSS can reclaim them.
+  if (opts.fit) {
+    const content = spanX / spanZ;
+    const box = Math.max(1, w - pad * 2) / Math.max(1, h - pad * 2);
+    if (content < box) w = round(pad * 2 + Math.max(1, h - pad * 2) * content, 0);
+    else h = round(pad * 2 + Math.max(1, w - pad * 2) / content, 0);
+  }
   const innerW = Math.max(1, w - pad * 2);
   const innerH = Math.max(1, h - pad * 2);
   const scale = Math.min(innerW / spanX, innerH / spanZ);
@@ -1269,16 +1278,105 @@ export function synthStage(name, length = 5000, step = 20) {
 
 const btn = (id, label, action, extra = {}) => ({ id, kind: "button", label, action, ...extra });
 
+// The second column of the title screen. A returning player's first two
+// questions are "where am I in this championship" and "what am I about to
+// drive", and both are answerable from data the shell already holds — so the
+// right-hand two thirds carries the answer instead of carrying nothing.
+export function titleDossier(data = {}) {
+  const champ = data.championship ?? {};
+  const events = champ.events ?? [];
+  const next = events.find((e) => e.status === "next")
+    ?? events.find((e) => e.status !== "done")
+    ?? events[0]
+    ?? null;
+  const round = Number.isFinite(champ.round) ? champ.round : events.filter((e) => e.status === "done").length + 1;
+  const standings = (champ.standings ?? []).slice(0, 5);
+  let topPoints = 0;
+  for (const row of standings) topPoints = Math.max(topPoints, row.points ?? 0);
+  return {
+    title: champ.name ?? "Free play",
+    round,
+    rounds: events.length,
+    next,
+    stage: data.stage ?? null,
+    weather: data.weather ?? {},
+    personalBest: data.personalBest,
+    rows: standings.map((row, i) => ({
+      position: i + 1,
+      name: row.name ?? "—",
+      team: row.team ?? "",
+      points: row.points ?? 0,
+      frac: topPoints > 0 ? saturate((row.points ?? 0) / topPoints) : 0,
+      isPlayer: !!row.isPlayer,
+    })),
+    // Where the season stands, at a glance: a finished round shows what it cost
+    // you, so the strip is a record rather than a progress bar.
+    calendar: events.map((e) => ({
+      id: e.id,
+      // The strip is five chips across one panel, so it carries the name a
+      // calendar carries — the place, not the full event title.
+      label: String(e.name ?? "").split(/\s+/)[0] || (e.country ?? ""),
+      status: e.status ?? "locked",
+      badge: e.status === "done" ? ordinal(e.position) : e.status === "next" ? "Next" : "—",
+    })),
+  };
+}
+
 export function buildTitleModel(data = {}) {
   const has = !!data.championship;
+  const units = data.settings?.units ?? "metric";
+  const dossier = titleDossier(data);
+  const stage = dossier.stage;
+  // Big enough that the map is what the eye lands on rather than a stamp beside
+  // the text; `fit` keeps the box on the route's own aspect so the panel spends
+  // no height on margin, and the point budget holds a 12 km stage under 300 nodes.
+  const preview = buildRoutePreview(stage, { width: 440, height: 200, maxPoints: 260, fit: true });
+  const heroItems = [
+    {
+      id: "t-hero-round", kind: "eyebrow",
+      label: dossier.title,
+      value: dossier.rounds ? `Round ${dossier.round} of ${dossier.rounds}` : "",
+    },
+    {
+      id: "t-hero-name", kind: "headline",
+      label: dossier.next?.name ?? stage?.name ?? "Open testing",
+      value: dossier.next
+        ? `${dossier.next.country} · ${surfaceMixText(dossier.next.surface)}`
+        : surfaceMixText(stage?.surfaceMix),
+    },
+  ];
+  if (stage) {
+    heroItems.push({
+      id: "t-hero-map", kind: "route", label: "Route", preview,
+      caption: `Recce map · ${stage.name}`,
+    });
+    heroItems.push({
+      id: "t-hero-stats", kind: "statRow",
+      cells: [
+        { label: "Stage", value: formatUnit("distance", (stage.length ?? 0) / 1000, units, 2) },
+        { label: "Conditions", value: dossier.weather.name ?? "Clear" },
+        { label: "Your best", value: formatTime(dossier.personalBest) },
+      ],
+    });
+  }
+  if (dossier.rows.length) {
+    heroItems.push({ id: "t-hero-standings", kind: "standings", label: "Standings", rows: dossier.rows });
+  }
+  if (dossier.calendar.length) {
+    heroItems.push({ id: "t-hero-calendar", kind: "chips", label: "Calendar", chips: dossier.calendar });
+  }
   return {
     screen: "title",
     title: BRAND.name,
     kicker: BRAND.tagline,
+    dossier,
     sections: [
       {
         id: "t-brand", kind: "brand", region: "brand",
-        items: [{ id: "t-wordmark", kind: "wordmark", label: BRAND.name }],
+        items: [
+          { id: "t-wordmark", kind: "wordmark", label: BRAND.name },
+          { id: "t-tagline", kind: "eyebrow", label: BRAND.tagline },
+        ],
       },
       {
         id: "t-menu", kind: "menu", region: "main", heading: "Main menu",
@@ -1292,13 +1390,15 @@ export function buildTitleModel(data = {}) {
           btn("t-howto", "How to drive", "tutorial"),
         ].filter((i) => !i.hidden),
       },
+      { id: "t-next", kind: "hero", region: "aside", heading: "Next event", items: heroItems },
       {
         id: "t-meta", kind: "meta", region: "footer",
         // No build string: "Build dev" is developer metadata and a player reading
         // it learns nothing except that someone forgot to take it out.
         items: [
-          { id: "t-driver", kind: "text", label: "Driver", value: data.profile?.name ?? "Privateer" },
-          { id: "t-rallies", kind: "text", label: "Rallies", value: String(data.rallyCount ?? 5) },
+          { id: "t-driver", kind: "stat", label: "Driver", value: data.profile?.name ?? "Privateer" },
+          { id: "t-team", kind: "stat", label: "Team", value: data.profile?.team ?? "Privateer entry" },
+          { id: "t-rallies", kind: "stat", label: "Rallies", value: String(data.rallyCount ?? 5) },
         ],
       },
     ],
@@ -1342,7 +1442,8 @@ export function buildChampionshipModel(data = {}) {
       {
         id: "c-next", kind: "panel", region: "footer", heading: "Next stage",
         items: [
-          { id: "c-next-name", kind: "text", label: next?.name ?? "—", value: next ? surfaceMixText(next.surface) : "" },
+          { id: "c-next-name", kind: "stat", label: "Next", value: next?.name ?? "—" },
+          { id: "c-next-surface", kind: "stat", label: "Surface", value: next ? surfaceMixText(next.surface) : "—" },
           btn("c-go", "Go to stage", "openStage", { primary: true, disabled: !next, value: next?.id }),
           btn("c-quit", "Back to title", "title"),
         ],
@@ -1536,7 +1637,9 @@ export function buildServiceModel(data = {}) {
     budget,
     sections: [
       {
-        id: "v-budget", kind: "panel", region: "nav", heading: "Time budget",
+        // The allowance belongs beside the list it constrains, not stacked above
+        // it: every toggle in `v-list` is read against this bar.
+        id: "v-budget", kind: "panel", region: "aside", heading: "Time budget",
         items: [
           { id: "v-bar", kind: "bar", label: "Service time used", value: budget.fraction, text: `${budget.used} / ${budget.budget} min` },
           {
@@ -1696,7 +1799,7 @@ export function buildResultsModel(data = {}) {
         items: prevRows,
       },
       {
-        id: "r-chart", kind: "chart", region: "main", heading: "Delta to personal best",
+        id: "r-chart", kind: "chart", region: "aside", heading: "Delta to personal best",
         items: [{ id: "r-delta", kind: "delta", label: "Delta chart", chart }],
       },
       {
@@ -1875,14 +1978,31 @@ const BASE_CSS = `
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .or-topbar-end{margin-left:auto;display:flex;gap:var(--or-s-xs);align-items:center;}
 
-.or-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:var(--or-s-md) var(--or-s-md) 0;
- display:grid;gap:var(--or-s-md);align-content:start;
- grid-template-columns:minmax(0,1fr);scrollbar-width:thin;}
-@media (min-width:900px){.or-body{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);}
- .or-body>[data-or-region="main"]{grid-column:1;} .or-body>[data-or-region="aside"]{grid-column:2;}
- .or-body>[data-or-region="nav"]{grid-column:1 / -1;}}
+.or-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+ padding:var(--or-s-md) var(--or-s-md) var(--or-s-sm);scrollbar-width:thin;}
+/* The two-column layout hangs off .or-cols, not off .or-body: render() swaps in
+   one detached .or-screen wrapper, so any child selector rooted at .or-body is a
+   selector that can never match. */
+.or-screen{display:grid;gap:var(--or-s-md);align-content:start;}
+.or-cols{display:grid;gap:var(--or-s-md);grid-template-columns:minmax(0,1fr);align-items:start;}
+.or-col{display:grid;gap:var(--or-s-md);align-content:start;min-width:0;}
+.or-col-main{gap:var(--or-s-md);}
+/* Panels stacked in the sidebar read as one unit, so they sit tighter than the
+   sections in the main column, which are separate subjects. */
+.or-col-aside{gap:var(--or-s-sm);}
+@media (min-width:900px){
+ .or-cols[data-or-cols="2"]{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);}
+}
 .or-footer{flex:0 0 auto;padding:var(--or-s-sm) var(--or-s-md);border-top:1px solid var(--or-line);
- display:flex;flex-wrap:wrap;gap:var(--or-s-xs);align-items:center;background:rgba(0,0,0,.35);}
+ display:flex;flex-wrap:wrap;gap:var(--or-s-md);align-items:center;background:rgba(0,0,0,.35);}
+.or-footer .or-section{flex:1 1 auto;}
+.or-footer .or-list,.or-lane-nav .or-list{display:flex;flex-wrap:wrap;gap:var(--or-s-lg);align-items:center;}
+.or-footer .or-stat,.or-lane-nav .or-stat{display:grid;gap:0;padding:0;border-bottom:none;min-width:0;}
+.or-footer .or-stat .or-stat-v,.or-lane-nav .or-stat .or-stat-v{font-size:var(--or-t-lead);line-height:1.2;}
+.or-footer .or-btn,.or-lane-nav .or-list .or-btn{width:auto;}
+/* A screen with no footer sections still gets the bar, and an empty bordered
+   strip across the bottom reads as a layout that did not finish loading. */
+.or-footer:empty{display:none;}
 
 .or-section{min-width:0;}
 .or-section>h2{margin:0 0 var(--or-s-xs);font-size:var(--or-t-small);letter-spacing:.18em;text-transform:uppercase;
@@ -1916,9 +2036,14 @@ const BASE_CSS = `
 
 .or-grid{display:grid;gap:var(--or-s-xs);grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));}
 .or-list{display:grid;gap:var(--or-s-xs);}
-.or-stat{display:flex;justify-content:space-between;gap:var(--or-s-sm);padding:8px 0;border-bottom:1px solid var(--or-line);}
-.or-stat dt{color:var(--or-mute);font-size:var(--or-t-small);letter-spacing:.08em;text-transform:uppercase;}
-.or-stat dd{margin:0;font-family:var(--or-font-num);font-variant-numeric:tabular-nums;}
+.or-stat{display:flex;justify-content:space-between;align-items:baseline;gap:var(--or-s-sm);
+ padding:8px 0;border-bottom:1px solid var(--or-line);}
+/* Spans, not a definition list: renderItem emits .or-stat-k / .or-stat-v, so the
+   styling has to name those and not dt/dd. */
+.or-stat-k{color:var(--or-mute);font-size:var(--or-t-micro);letter-spacing:.14em;
+ text-transform:uppercase;white-space:nowrap;}
+.or-stat-v{font-family:var(--or-font-num);font-variant-numeric:tabular-nums;text-align:right;
+ min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .or-note{padding:10px 12px;border-left:3px solid var(--or-line);color:var(--or-mute);font-size:var(--or-t-small);}
 .or-note strong{display:block;color:var(--or-ink);font-size:var(--or-t-body);margin-bottom:2px;}
 .or-note.or-loss{border-left-color:var(--or-crimson);}
@@ -1942,6 +2067,8 @@ const BASE_CSS = `
 .or-bar .or-bar-fill{height:100%;background:linear-gradient(90deg,var(--or-flare),var(--or-sodium));
  transform-origin:left center;transition:width .22s cubic-bezier(.2,.7,.3,1);}
 
+.or-fields{display:grid;}
+.or-chartbox,.or-routebox{display:grid;gap:var(--or-s-xs);}
 .or-field{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid rgba(39,46,56,.7);}
 .or-field-head{display:flex;justify-content:space-between;align-items:center;gap:var(--or-s-sm);}
 .or-field-head label{font-weight:600;}
@@ -2001,6 +2128,93 @@ const BASE_CSS = `
 .or-mark-motif{fill:var(--or-flare);stroke:none;}
 .or-wordmark{display:block;width:min(72vw,420px);}
 .or-wordmark svg{display:block;width:100%;height:auto;}
+.or-brandbox{display:grid;gap:var(--or-s-xs);justify-items:start;}
+
+/* The next-event dossier: one panel, one focal point. The rake down the left is
+   the wordmark's chicane at panel scale, so the card reads as part of the mark. */
+.or-hero{position:relative;display:grid;gap:var(--or-s-xs);padding:var(--or-s-sm) var(--or-s-md);
+ overflow:hidden;border:1px solid var(--or-line);border-left:3px solid var(--or-flare);
+ background:linear-gradient(157deg,var(--or-panelHi),var(--or-graphite) 46%,var(--or-void));}
+/* The chicane, kept short: skewX shifts the top edge by tan(18°) x height, so a
+   full-height rake would lean across the headline rather than beside it. */
+.or-hero::before{content:"";position:absolute;left:0;top:0;width:34%;height:4px;
+ background:var(--or-flare);transform:skewX(var(--or-skew));}
+.or-hero::after{content:"";position:absolute;right:-30%;top:-40%;width:80%;height:120%;
+ background:radial-gradient(closest-side,rgba(255,90,20,.13),transparent);pointer-events:none;}
+.or-hero>*{position:relative;}
+/* The map keeps its own aspect and CSS bounds only its height, so a tall stage
+   stays a tall stage instead of being squashed to the panel's width. */
+.or-hero .or-figure{display:grid;justify-items:center;background:var(--or-void);}
+.or-hero .or-figure svg{width:auto;max-width:100%;height:min(22vh,190px);}
+.or-hero figcaption{justify-self:start;}
+.or-eyebrow{display:flex;flex-wrap:wrap;gap:var(--or-s-xs);align-items:baseline;
+ font-size:var(--or-t-micro);letter-spacing:.24em;text-transform:uppercase;color:var(--or-flare);}
+.or-eyebrow-k{font-weight:700;}
+.or-eyebrow-v{color:var(--or-mute);letter-spacing:.16em;}
+.or-headline h3{margin:0;font-size:var(--or-t-h2);line-height:1.04;font-weight:700;letter-spacing:-.01em;}
+.or-headline p{margin:4px 0 0;color:var(--or-mute);font-size:var(--or-t-small);
+ letter-spacing:.12em;text-transform:uppercase;}
+/* Content-sized, not equal thirds: a three-word conditions string in a 1fr track
+   wraps onto a second line and drags the whole row's baseline with it. */
+.or-statrow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--or-s-xs) var(--or-s-md);
+ padding:6px 0;border-top:1px solid var(--or-line);border-bottom:1px solid var(--or-line);}
+.or-statcell{display:grid;gap:1px;min-width:0;}
+.or-statcell .or-stat-k{white-space:normal;}
+.or-statcell .or-stat-v{font-size:var(--or-t-lead);color:var(--or-ink);text-align:left;line-height:1.15;}
+.or-standings{list-style:none;margin:0;padding:0;display:grid;gap:2px;}
+.or-standing{position:relative;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:var(--or-s-xs);
+ align-items:baseline;padding:4px 9px;background:rgba(255,255,255,.025);overflow:hidden;}
+.or-standing>i{position:absolute;left:0;bottom:0;height:2px;background:var(--or-faint);opacity:.7;}
+.or-standing.or-highlight{background:rgba(255,90,20,.13);}
+.or-standing.or-highlight>i{background:var(--or-flare);opacity:1;}
+.or-standing-pos{font-family:var(--or-font-num);font-size:var(--or-t-small);color:var(--or-faint);}
+.or-standing.or-highlight .or-standing-pos{color:var(--or-flare);}
+/* One line per driver: the board is a glance, and a two-line row costs five
+   rows' worth of height the panel does not have at 720p. */
+.or-standing-who{display:flex;align-items:baseline;gap:var(--or-s-xs);min-width:0;}
+.or-standing-who b{font-size:var(--or-t-small);font-weight:600;white-space:nowrap;}
+.or-standing-who small{font-size:var(--or-t-micro);color:var(--or-mute);overflow:hidden;
+ text-overflow:ellipsis;white-space:nowrap;}
+.or-standing-pts{font-family:var(--or-font-num);font-variant-numeric:tabular-nums;color:var(--or-sodium);}
+.or-figure figcaption{margin:6px 2px 0;color:var(--or-mute);font-size:var(--or-t-micro);
+ letter-spacing:.14em;text-transform:uppercase;}
+.or-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.or-chip{display:flex;align-items:baseline;gap:6px;padding:4px 10px;border:1px solid var(--or-line);
+ border-radius:2px;font-size:var(--or-t-micro);letter-spacing:.08em;text-transform:uppercase;
+ color:var(--or-faint);background:rgba(0,0,0,.35);}
+.or-chip[data-status="done"]{color:var(--or-mute);border-color:#39434f;}
+.or-chip[data-status="next"]{color:var(--or-ink);border-color:var(--or-flare);
+ background:linear-gradient(90deg,rgba(255,90,20,.22),rgba(0,0,0,.35));}
+.or-chip-k{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18ch;}
+.or-chip-v{font-family:var(--or-font-num);color:var(--or-sodium);}
+.or-chip[data-status="locked"] .or-chip-v{color:var(--or-faint);}
+
+/* The title screen carries seven menu items and a wordmark in one column, which
+   at 720p is 30px more than the body has. Everything below buys that back. */
+[data-or-screen="title"] .or-menu{gap:6px;max-width:none;}
+[data-or-screen="title"] .or-menu .or-btn{padding:8px 16px;}
+[data-or-screen="title"] .or-wordmark{width:min(88%,300px);}
+[data-or-screen="title"] .or-hero{min-height:100%;align-content:start;}
+@media (min-width:900px){
+ [data-or-screen="title"] .or-cols[data-or-cols="2"]{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
+ /* The map is portrait and the readouts are landscape, so side by side is the
+    only arrangement in which either is full size. Stacked, the map's own aspect
+    left two thirds of a full-width plate empty. */
+ [data-or-screen="title"] .or-hero{column-gap:var(--or-s-md);align-items:start;
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-rows:auto auto min-content 1fr auto;
+  grid-template-areas:"eyebrow eyebrow" "head head" "map stats" "map board" "cal cal";}
+ [data-or-screen="title"] .or-hero>.or-eyebrow{grid-area:eyebrow;}
+ [data-or-screen="title"] .or-hero>.or-headline{grid-area:head;margin-bottom:var(--or-s-xs);}
+ [data-or-screen="title"] .or-hero>.or-figure{grid-area:map;}
+ [data-or-screen="title"] .or-hero>.or-statrow{grid-area:stats;margin-top:0;}
+ [data-or-screen="title"] .or-hero>.or-standings{grid-area:board;align-self:start;}
+ [data-or-screen="title"] .or-hero>.or-chips{grid-area:cal;margin-top:var(--or-s-xs);}
+ /* The map column is auto-sized, so an east-west stage would size its own track:
+    the cap is what stops a wide route pushing the readouts off the card. */
+ [data-or-screen="title"] .or-hero .or-figure svg{height:min(32vh,270px);max-width:min(100%,320px);}
+ [data-or-screen="title"] .or-headline h3{font-size:var(--or-t-h1);}
+}
 
 .or-podium{display:flex;align-items:flex-end;justify-content:center;gap:var(--or-s-sm);min-height:220px;}
 .or-step{flex:1 1 0;max-width:180px;display:grid;gap:6px;justify-items:center;align-content:end;
@@ -2027,9 +2241,14 @@ const BASE_CSS = `
 @media (max-width:520px){
  .or-topbar{height:auto;min-height:var(--or-topbar);padding-top:6px;padding-bottom:6px;}
  .or-brandline{flex-direction:column;align-items:flex-start;gap:0;}
- .or-body{padding:var(--or-s-sm) var(--or-s-sm) 0;gap:var(--or-s-sm);grid-template-columns:minmax(0,1fr);}
- .or-footer{padding:var(--or-s-xs) var(--or-s-sm);}
+ .or-body{padding:var(--or-s-sm) var(--or-s-sm) var(--or-s-xs);}
+ .or-screen,.or-cols,.or-col{gap:var(--or-s-sm);}
+ .or-footer{padding:var(--or-s-xs) var(--or-s-sm);gap:var(--or-s-sm);}
+ .or-footer .or-list,.or-lane-nav .or-list{gap:var(--or-s-md);}
+ .or-footer .or-stat .or-stat-v,.or-lane-nav .or-stat .or-stat-v{font-size:var(--or-t-body);}
  .or-btn{padding:14px;}
+ .or-hero{padding:var(--or-s-sm);}
+ .or-headline h3{font-size:var(--or-t-h3);}
  .or-grid{grid-template-columns:minmax(0,1fr);}
  .or-keys{grid-template-columns:minmax(0,1fr);}
  .or-podium{min-height:170px;}
@@ -2148,9 +2367,11 @@ function buildLiveryNode(doc, preview) {
   return svg;
 }
 
-function figure(doc, child) {
-  const box = el(doc, "div", "or-figure");
+function figure(doc, child, caption) {
+  const box = el(doc, caption ? "figure" : "div", "or-figure");
+  box.style.margin = "0";
   box.appendChild(child);
+  if (caption) box.appendChild(el(doc, "figcaption", null, caption));
   return box;
 }
 
@@ -2341,7 +2562,61 @@ function renderItem(ctx, item, section) {
       ctx.meters.set(item.id, { fill, val });
       return wrap;
     }
-    case "route": return figure(doc, buildRouteNode(doc, item.preview));
+    case "eyebrow": {
+      const wrap = el(doc, "div", "or-eyebrow");
+      wrap.appendChild(el(doc, "span", "or-eyebrow-k", item.label ?? ""));
+      if (item.value) wrap.appendChild(el(doc, "span", "or-eyebrow-v", item.value));
+      return wrap;
+    }
+    case "headline": {
+      const wrap = el(doc, "div", "or-headline");
+      wrap.appendChild(el(doc, "h3", null, item.label ?? ""));
+      if (item.value) wrap.appendChild(el(doc, "p", null, item.value));
+      return wrap;
+    }
+    case "statRow": {
+      const wrap = el(doc, "div", "or-statrow");
+      for (const cell of item.cells ?? []) {
+        const box = el(doc, "div", "or-statcell");
+        box.appendChild(el(doc, "span", "or-stat-k", cell.label ?? ""));
+        box.appendChild(el(doc, "span", "or-stat-v", cell.value ?? "—"));
+        wrap.appendChild(box);
+      }
+      return wrap;
+    }
+    case "chips": {
+      const wrap = el(doc, "div", "or-chips");
+      attr(wrap, "role", "list");
+      attr(wrap, "aria-label", item.label ?? "");
+      for (const chip of item.chips ?? []) {
+        const node = el(doc, "div", "or-chip");
+        attr(node, "role", "listitem");
+        attr(node, "data-status", chip.status ?? "");
+        node.appendChild(el(doc, "span", "or-chip-k", chip.label ?? ""));
+        node.appendChild(el(doc, "span", "or-chip-v", chip.badge ?? ""));
+        wrap.appendChild(node);
+      }
+      return wrap;
+    }
+    case "standings": {
+      const list = el(doc, "ol", "or-standings");
+      attr(list, "aria-label", item.label ?? "Standings");
+      for (const row of item.rows ?? []) {
+        const li = el(doc, "li", "or-standing" + (row.isPlayer ? " or-highlight" : ""));
+        li.appendChild(el(doc, "span", "or-standing-pos", String(row.position ?? "")));
+        const who = el(doc, "span", "or-standing-who");
+        who.appendChild(el(doc, "b", null, row.name ?? ""));
+        if (row.team) who.appendChild(el(doc, "small", null, row.team));
+        li.appendChild(who);
+        li.appendChild(el(doc, "span", "or-standing-pts", String(row.points ?? 0)));
+        const bar = el(doc, "i");
+        bar.style.width = (saturate(row.frac ?? 0) * 100).toFixed(1) + "%";
+        li.appendChild(bar);
+        list.appendChild(li);
+      }
+      return list;
+    }
+    case "route": return figure(doc, buildRouteNode(doc, item.preview), item.caption);
     case "chart": return figure(doc, buildTorqueNode(doc, item.chart));
     case "delta": return figure(doc, buildDeltaNode(doc, item.chart));
     case "livery": return figure(doc, buildLiveryNode(doc, item.preview));
@@ -2378,7 +2653,7 @@ const SECTION_CLASS = {
   menu: "or-menu", tabs: "or-tabs", grid: "or-grid", list: "or-list",
   fields: "or-fields", keys: "or-keys", panel: "or-list", notes: "or-list",
   chart: "or-chartbox", route: "or-routebox", podium: "or-podium", meta: "or-list",
-  brand: "or-brandbox", map: "or-map", dialog: "or-menu",
+  brand: "or-brandbox", map: "or-map", dialog: "or-menu", hero: "or-hero",
 };
 
 function renderTable(ctx, section) {
@@ -2692,6 +2967,15 @@ export function createUi(root, opts = {}) {
     const nextBody = el(doc, "div", "or-screen");
     attr(nextBody, "data-or-screen", model.screen);
     const nextFooter = doc.createDocumentFragment();
+    // Two real columns, built here rather than left to a child selector on the
+    // scroll container: `main` and `aside` are siblings of nothing once the
+    // .or-screen wrapper sits between them and .or-body.
+    const navLane = el(doc, "div", "or-lane-nav");
+    const cols = el(doc, "div", "or-cols");
+    const colMain = el(doc, "div", "or-col or-col-main");
+    const colAside = el(doc, "div", "or-col or-col-aside");
+    let hasNav = false;
+    let hasAside = false;
     let dialog = null;
 
     for (const section of model.sections ?? []) {
@@ -2699,14 +2983,18 @@ export function createUi(root, opts = {}) {
       const region = section.region ?? "main";
       if (region === "footer") nextFooter.appendChild(node);
       else if (region === "dialog") {
-        if (!dialog) { dialog = el(doc, "div", "or-dialog"); nextBody.appendChild(dialog); }
+        if (!dialog) dialog = el(doc, "div", "or-dialog");
         dialog.appendChild(node);
-      } else if (region === "brand") {
-        nextBody.appendChild(node);
-      } else {
-        nextBody.appendChild(node);
-      }
+      } else if (region === "nav") { navLane.appendChild(node); hasNav = true; }
+      else if (region === "aside") { colAside.appendChild(node); hasAside = true; }
+      else colMain.appendChild(node);
     }
+    if (hasNav) nextBody.appendChild(navLane);
+    attr(cols, "data-or-cols", hasAside ? "2" : "1");
+    cols.appendChild(colMain);
+    if (hasAside) cols.appendChild(colAside);
+    if (colMain.childNodes.length || hasAside) nextBody.appendChild(cols);
+    if (dialog) nextBody.appendChild(dialog);
 
     h1.textContent = model.title ?? BRAND.name;
     kicker.textContent = model.kicker ?? BRAND.tagline;

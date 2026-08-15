@@ -463,14 +463,16 @@ export const WEATHER_PRESETS = Object.freeze([
     hemiSky: [0.05, 0.07, 0.14], hemiGround: [0.02, 0.02, 0.03],
     // The rig, not the exposure, is what makes a night. At a moon of 1.05 into an
     // exposure of 2.3 the gravel came back at pixel 89 under a sky of 72 — the
-    // ground brighter than the sky above it, which is a description of dusk. The
-    // moon and the flat fill come down and the exposure with them, while the sky
-    // stops go up to hold their end: the verge now sits near 73 under a sky near
-    // 95, so the beam is the only thing on the stage worth having. Most of the
-    // remaining light is the moon rather than the hemisphere on purpose — a
-    // directional keeps the shape of a bank, a flat fill only greys it.
-    hemiIntensity: 0.26, ambientIntensity: 0.024,
-    bounceColour: [0.05, 0.06, 0.09], bounceIntensity: 0.025,
+    // ground brighter than the sky above it, which is a description of dusk.
+    // Halving it got the order right and left a grey evening: unlit gravel still
+    // stood at 52 against a sky of 71, bright enough to read every bank in the
+    // frame without the lamps. The whole rig comes down again, and the flat terms
+    // further than the moon — a directional keeps the shape of a bank, a flat
+    // fill only greys it — so the verge now sits near 22 under the same sky and
+    // the beam is the only thing on the stage worth having. The exposure stays
+    // where it is: it is what the sky, the horizon and the snow read through.
+    hemiIntensity: 0.085, ambientIntensity: 0.007,
+    bounceColour: [0.05, 0.06, 0.09], bounceIntensity: 0.008,
     shadowStrength: 0.55, exposure: 1.5, turbidity: 1.8,
     skyBrightness: 0.02, skyTintWeight: 0.88,
     skyZenith: [0.018, 0.031, 0.084], skyHorizon: [0.041, 0.060, 0.109], skyGround: [0.013, 0.018, 0.028],
@@ -483,7 +485,7 @@ export const WEATHER_PRESETS = Object.freeze([
     precipColour: [0.70, 0.76, 0.90], dropSize: 1.0, fallSpeed: 7.0,
     windSpeed: 1.2, windDirection: 20 * DEG, gustiness: 0.08,
     roadWetness: 0.05, puddleChance: 0.01, temperature: -5.0,
-    starIntensity: 1.0, moonIntensity: 0.72, moonPhase: 0.92,
+    starIntensity: 1.0, moonIntensity: 0.34, moonPhase: 0.92,
     lightningRate: 0, glassFogging: 0.5,
   }),
   preset({
@@ -972,15 +974,23 @@ void main() {
   vec2 d = vel.xy;
   float dl = length(d);
   d = dl > 1e-4 ? d / dl : vec2(0.0, -1.0);
-  vec2 perp = vec2(-d.y, d.x);
+  // (perp, d) has to be right handed or the quad comes out wound clockwise and
+  // every drop in the game is back-face culled — geometry submitted, not one
+  // pixel drawn, which is exactly what shipped: heavy rain photographed as clear
+  // air with twenty-two thousand triangles a frame behind it. vec2(-d.y, d.x)
+  // reverses the orientation of the (x, y) mapping; this one preserves it.
+  vec2 perp = vec2(d.y, -d.x);
   float len = uLength * (0.55 + 0.9 * iRand.x);
   float depth = max(-mv.z, 0.05);
   float width = max(uWidth, depth * RAIN_MIN_ANGLE);
   mv.xy += d * (position.y * len) + perp * (position.x * width);
 
+  // The shell fade only exists to stop a drop popping in at the box wall, so it
+  // should be the last stretch of the box and not a third of it: starting at
+  // 0.72 threw away two thirds of the pool's volume before it was ever seen.
   float edge = max(max(abs(rel.x) / uBox.x, abs(rel.y) / uBox.y), abs(rel.z) / uBox.z) * 2.0;
   float dist = length(mv.xyz);
-  vAlpha = uOpacity * (uWidth / width) * (1.0 - smoothstep(0.72, 1.0, edge))
+  vAlpha = uOpacity * (uWidth / width) * (1.0 - smoothstep(0.84, 1.0, edge))
     * smoothstep(0.0, uNearFade, dist) * (0.55 + 0.45 * iRand.y);
   vUv = position.xy + 0.5;
   gl_Position = projectionMatrix * mv;
@@ -1001,7 +1011,11 @@ void main() {
   // read as nothing. A soft-shouldered ramp fills the middle of the quad and
   // skirts the edges — the shape water actually makes, and visible.
   float across = smoothstep(0.0, 0.55, 1.0 - abs(vUv.x * 2.0 - 1.0));
-  float along = smoothstep(0.0, 0.30, vUv.y) * smoothstep(1.0, 0.72, vUv.y);
+  // A spindle, not a bar. A drop's trail is thickest where the drop is and dies
+  // away behind it, and the long shoulders are most of what separates rain from
+  // a set of ruled white lines. Both ends are written as an ascending smoothstep
+  // because GLSL leaves edge0 >= edge1 undefined.
+  float along = smoothstep(0.0, 0.42, vUv.y) * (1.0 - smoothstep(0.58, 1.0, vUv.y));
   float a = across * along * vAlpha;
   if (a < 0.004) discard;
   vec3 c = uColour + uGlint * uGlintAmount * along;
@@ -1026,6 +1040,23 @@ varying float vAlpha;
 varying vec2 vUv;
 varying float vShade;
 
+// The narrowest a flake is allowed to appear, in radians — the same problem the
+// rain has and the same answer. A three-centimetre flake fifteen metres out is
+// under two pixels across, and a quad that small is sampled almost nowhere: the
+// far half of the field simply did not draw, and light snow came back as a dozen
+// specks. Flakes under the floor are widened to it and dimmed by the area they
+// gained, so the light each one carries is unchanged and the far field reads as
+// the haze it should be rather than as nothing.
+const float SNOW_MIN_ANGLE = 0.0024;
+
+// The other end of the same argument. A flake close enough to cover a patch of
+// screen is metres inside the focal plane, so the light it carries is spread
+// across that patch instead of concentrated: past this angle it dims as the
+// square, the way its area grows. Without it a near flake arrives at full alpha
+// over a bright sky, clips, blooms, and hangs in the frame as an opaque white
+// blob — the one thing in a snowfall that reads as a sprite rather than as snow.
+const float SNOW_SOFT_ANGLE = 0.010;
+
 void main() {
   vec3 base = iBase * uBox;
   vec3 rel = mod(base + uDrift - uCamPos + uBox * 0.5, uBox) - uBox * 0.5;
@@ -1047,6 +1078,11 @@ void main() {
   // gave every flake much the same size and the field read as a sprite sheet.
   float grade = iRand.y * iRand.y * iRand.y;
   float size = uSize * (0.22 + 2.1 * grade);
+  float depth = max(-mv.z, 0.05);
+  float angle = size / depth;
+  float drawn = max(size, depth * SNOW_MIN_ANGLE);
+  float soft = min(1.0, (SNOW_SOFT_ANGLE * SNOW_SOFT_ANGLE) / (angle * angle));
+  float keep = soft * (size * size) / (drawn * drawn);
   // Tumble. A flake is a plate, not a bead: it turns edge on and all but
   // disappears, then opens out again. Collapsing one axis on a spin the flake
   // owns is what reads as tumbling.
@@ -1054,12 +1090,12 @@ void main() {
   float face = 0.24 + 0.76 * abs(sin(spin));
   float ca = cos(spin * 0.6);
   float sa = sin(spin * 0.6);
-  vec2 q = vec2(position.x * face, position.y) * size;
+  vec2 q = vec2(position.x * face, position.y) * drawn;
   mv.xy += vec2(q.x * ca - q.y * sa, q.x * sa + q.y * ca);
 
   float edge = max(max(abs(rel.x) / uBox.x, abs(rel.y) / uBox.y), abs(rel.z) / uBox.z) * 2.0;
   float dist = length(mv.xyz);
-  vAlpha = uOpacity * (1.0 - smoothstep(0.70, 1.0, edge)) * smoothstep(0.0, uNearFade, dist);
+  vAlpha = uOpacity * keep * (1.0 - smoothstep(0.84, 1.0, edge)) * smoothstep(0.0, uNearFade, dist);
   vShade = 0.55 + 0.45 * iRand.x;
   vUv = position.xy + 0.5;
   gl_Position = projectionMatrix * mv;
@@ -1091,6 +1127,19 @@ void main() {
 }
 `;
 
+// Exported for the same reason SKY_FRAG is: tests/weather.test.mjs mirrors the
+// vertex maths below in JS to measure what a drop and a flake actually put on
+// the screen, and anchors that mirror on the literal source of the lines it
+// reproduces. A mirror that drifts silently is worse than no mirror — and this
+// is the pair where drift is expensive, because a quad wound the wrong way is
+// invisible rather than wrong-looking.
+export const PRECIP_SHADERS = Object.freeze({
+  rainVert: RAIN_VERT,
+  rainFrag: RAIN_FRAG,
+  snowVert: SNOW_VERT,
+  snowFrag: SNOW_FRAG,
+});
+
 // ---- construction
 
 const DEFAULTS = Object.freeze({
@@ -1100,12 +1149,17 @@ const DEFAULTS = Object.freeze({
   // every six cubic metres, and a downpour photographed as clear air. The boxes
   // are sized so a full pool is a wall of water and a light shower is a few
   // flakes a second across the screen.
-  rainPool: 12000,
-  snowPool: 11000,
-  rainBox: 30,
-  rainBoxHeight: 18,
-  snowBox: 38,
-  snowBoxHeight: 22,
+  rainPool: 24000,
+  snowPool: 26000,
+  // The box only has to cover what a driver can tell apart. Past a dozen metres
+  // a drop is held at the angular floor and dimmed to a veil, so metres of box
+  // beyond that spend instances on a haze while thinning the field where it is
+  // read. Snow's box was the worst of it at thirty-eight metres a side: nine
+  // tenths of every flake it owned fell where nothing could resolve it.
+  rainBox: 26,
+  rainBoxHeight: 16,
+  snowBox: 26,
+  snowBoxHeight: 16,
   skyRadius: 4000,
   cloudTextureSize: 192,
   shadowMapSize: 2048,
@@ -1218,6 +1272,12 @@ function buildRain(THREE, opts, rng) {
     depthWrite: false,
     fog: false,
     toneMapped: false,
+    // A billboard built in view space out of a view-dependent basis has no back:
+    // which way it happens to be wound is an accident of the streak direction,
+    // and culling on it is how the whole system went dark once. Two-sided costs
+    // nothing here — the quad is drawn once either way, with no lighting and no
+    // depth write — and it takes the accident out of the picture.
+    side: THREE.DoubleSide,
     blending: THREE.NormalBlending,
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -1252,6 +1312,9 @@ function buildSnow(THREE, opts, rng) {
     depthWrite: false,
     fog: false,
     toneMapped: false,
+    // Same reasoning as the rain: the flake's quad is spun by a per-flake tumble
+    // that can put either face toward the camera.
+    side: THREE.DoubleSide,
     blending: THREE.NormalBlending,
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -1863,8 +1926,17 @@ function updatePrecipitation(w, dt) {
     ru.uStreakVel.value.set(vx, vy, vz);
     const rel = Math.hypot(vx, vy, vz);
     ru.uLength.value = clamp(rel * w.opts.shutter * (0.6 + 0.5 * c.dropSize), 0.10, 3.2);
-    ru.uWidth.value = 0.010 + 0.022 * c.dropSize;
-    ru.uOpacity.value = 0.20 + 0.40 * rainRate;
+    // A drop is millimetres across: everything past a few metres is held at the
+    // angular floor and dimmed for it, which is what turns the far half of the
+    // field into a veil instead of a set of ruled lines. Authoring the width in
+    // centimetres instead put a six-pixel bar on the screen for every drop.
+    ru.uWidth.value = 0.004 + 0.007 * c.dropSize;
+    // How much water is falling is the instance count's job — it already scales
+    // with the rate. Scaling the per-drop alpha by the rate as well squared the
+    // fade, so a drizzle was a quarter as visible as it should be and a downpour
+    // was a wall of white bars. A drop's own opacity barely varies with how many
+    // of its neighbours there are.
+    ru.uOpacity.value = 0.13 + 0.13 * rainRate;
     const dropLit = clamp(0.10 + 2.0 * skyLevel, 0.06, 0.75);
     ru.uColour.value.setRGB(
       c.precipColour[0] * dropLit, c.precipColour[1] * dropLit, c.precipColour[2] * dropLit,
@@ -1879,7 +1951,12 @@ function updatePrecipitation(w, dt) {
   // Snow
   const S = w.snow;
   const snowRate = rateNorm * c.precipSnowMix;
-  S.count = Math.floor(S.pool * snowRate);
+  // Snow rate scales the field sub-linearly. A blizzard is seventy against light
+  // snow's nine, but the difference a driver sees is a full white-out against a
+  // sky with flakes in it, not one field eight times the other: linear left the
+  // gentle preset at a twentieth of a flake per cubic metre — sixty flakes in
+  // the whole frustum, most of them a pixel wide.
+  S.count = Math.floor(S.pool * Math.pow(snowRate, 0.6));
   S.geometry.instanceCount = S.count;
   S.mesh.visible = S.count > 0;
   if (S.count > 0) {
@@ -1896,7 +1973,11 @@ function updatePrecipitation(w, dt) {
     // grades the pool from a fifth of this to twice it, so the mean lands near
     // three quarters.
     nu.uSize.value = 0.012 + 0.028 * c.dropSize;
-    nu.uOpacity.value = 0.20 + 0.40 * snowRate;
+    // Per-flake, like the rain: the count carries the rate, so folding it in
+    // here as well is the same double fade. A flake is opaque ice — what lets
+    // the scene through is the Gaussian profile, which spends most of the quad
+    // far below this peak, not the peak itself being low.
+    nu.uOpacity.value = 0.52 + 0.26 * snowRate;
     const wl = Math.hypot(wx, wz) || 1;
     nu.uWindDir.value.set(wx / wl, 0, wz / wl);
     const flakeLit = clamp(0.06 + 1.9 * skyLevel, 0.05, 1.0);
