@@ -11,6 +11,9 @@ const STEP = 2.0;
 const G = 9.81;
 const MAX_GRADE = 0.135;
 const MAX_BANK = 0.125;
+// How fast a road edge is allowed to move sideways — one metre of half-width per
+// sixteen metres of road, which is about the sharpest taper anyone builds.
+const MAX_TAPER = 0.062;
 export const SEP_NEAR = Object.freeze({ gap: 20, dist: 16 });
 export const SEP_FAR = Object.freeze({ gap: 250, dist: 30 });
 
@@ -535,22 +538,118 @@ function smoothArray(arr, radius) {
   return out;
 }
 
-function buildWidth(prog, count, step, rng, params) {
-  const raw = new Float32Array(count);
+// How much a section of a given kind moves the edges, and over what distance it
+// gets there. A cutting closes in; a junction and a ford both open out, because
+// something else meets the road there.
+const SECTION_WIDTH = {
+  cutting: { delta: -0.62, ramp: 34 },
+  ford: { delta: 0.55, ramp: 22 },
+  village: { delta: 0.45, ramp: 40 },
+  ice: { delta: 0, ramp: 1 },
+  shade: { delta: -0.22, ramp: 30 },
+  worn: { delta: 0.18, ramp: 40 },
+};
+
+// A road is wide or narrow for a reason, and the reasons have different lengths.
+// The phrase sets the base. The hillside the road is cut into closes in over
+// hundreds of metres. The swept path a slow corner needs is the length of the
+// corner. A passing place is twenty metres of somebody's bulldozer. The verge
+// eats in at whatever scale the drainage runs at. Stacked, they are what stops
+// the edge being a ruled line — one broad term smoothed over fifty metres, as it
+// was, is a ribbon of mathematically constant width for as far as the eye sees.
+//
+// Nothing here draws from `rng`: the width has to be able to read the section
+// list, which is built from the same stream, without moving every later draw.
+function buildWidth(prog, curvature, sectionInfo, count, step, params) {
+  const seed = params.widthSeed;
+  const spanW = new Float32Array(count);
   for (let i = 0; i < count; i += 1) {
     const s = i * step;
     let w = params.width;
     for (const span of prog.spans) {
       if (s >= span.s0 && s <= span.s1) { w = span.width; break; }
     }
+    spanW[i] = w;
+  }
+  const base = smoothArray(spanW, 12);
+
+  const kAbs = new Float32Array(count);
+  for (let i = 0; i < count; i += 1) kAbs[i] = Math.abs(curvature[i]);
+  const kSwept = smoothArray(kAbs, 5);
+
+  const raw = new Float32Array(count);
+  for (let i = 0; i < count; i += 1) {
+    const s = i * step;
+    // A lorry has to get round a hairpin, so the cut is wider there than on the
+    // straight either side of it. This is the term with the corner's own length
+    // scale, which is the one the eye reads at driving distance.
+    let w = base[i] + 0.95 * saturate((kSwept[i] - 0.016) / 0.048);
+    // Where the hillside leans hardest the road is a shelf and the shelf is
+    // narrow. Same field the terrain hangs its cross-slope on, so the pinch
+    // lands where the ground visibly closes in rather than at random.
+    const trend = clamp(
+      fbm2(s * 0.0013, 5.5, params.terrainSeed + 31, 3) * params.hillTrendAmp * 1.6,
+      -0.62, 0.62,
+    );
+    w -= 0.90 * saturate((Math.abs(trend) - 0.20) / 0.38);
+    // Three bands, because the causes have three scales: which valley the road
+    // is in, which side of the spur it is crossing, and where the runoff has
+    // eaten the shoulder back. The last two are the ones that matter — a term
+    // at 450 m is a constant over anything the driver can see at once.
+    w += fbm2(s * 0.0022, 11.7, seed, 3) * 0.42;
+    w += fbm2(s * 0.0141, 7.3, seed + 613, 3) * 0.68;
+    w += fbm2(s * 0.0305, 3.1, seed + 1229, 2) * 0.52;
     raw[i] = w;
   }
-  // Slow breathing of the road width; a real road is never one constant.
-  for (let i = 0; i < count; i += 1) {
-    raw[i] += fbm2(i * step * 0.0022, 11.7, params.widthSeed, 3) * 0.42;
+
+  for (const sec of sectionInfo.sections) {
+    const rule = SECTION_WIDTH[sec.kind];
+    if (!rule || rule.delta === 0) continue;
+    const i0 = clamp(Math.floor((sec.s0 - rule.ramp) / step), 0, count - 1);
+    const i1 = clamp(Math.ceil((sec.s1 + rule.ramp) / step), 0, count - 1);
+    for (let i = i0; i <= i1; i += 1) {
+      const s = i * step;
+      const inFront = smootherstep(sec.s0 - rule.ramp, sec.s0, s);
+      const behind = 1 - smootherstep(sec.s1, sec.s1 + rule.ramp, s);
+      raw[i] += rule.delta * Math.min(inFront, behind);
+    }
   }
-  const out = smoothArray(raw, 12);
-  for (let i = 0; i < count; i += 1) out[i] = clamp(out[i], 2.5, 6.6);
+
+  // Somebody widened a place to let a tractor by, and it is still there. Only on
+  // roads narrow enough to need one, and placed off a hash rather than the rng
+  // so adding them does not move a single other draw in the generator.
+  for (const span of prog.spans) {
+    if (span.width > 4.35) continue;
+    for (let s = span.s0 + 90; s < span.s1 - 90; s += 155) {
+      const key = Math.round(s / 5);
+      if (hash2(key, 71, seed + 4441) > 0.55) continue;
+      const at = s + (hash2(key, 72, seed + 4441) - 0.5) * 90;
+      const half = 13 + hash2(key, 73, seed + 4441) * 12;
+      const gain = 0.70 + hash2(key, 74, seed + 4441) * 0.45;
+      const i0 = clamp(Math.floor((at - half * 2) / step), 0, count - 1);
+      const i1 = clamp(Math.ceil((at + half * 2) / step), 0, count - 1);
+      for (let i = i0; i <= i1; i += 1) {
+        const u = Math.abs(i * step - at) / (half * 2);
+        raw[i] += gain * (1 - smootherstep(0.35, 1, u));
+      }
+    }
+  }
+
+  const out = smoothArray(raw, 2);
+  for (let i = 0; i < count; i += 1) out[i] = clamp(out[i], 2.6, 6.6);
+  // Nobody cuts a road edge at 1:7. A taper is specified by a rate — a lay-by or
+  // a narrowing runs out over a dozen times the width it gains — and the stacked
+  // noise bands above will happily produce 0.15 without one. Two sweeps, each of
+  // which can only ever lower a sample, so the pair converges on the widest road
+  // that respects the rate.
+  for (let i = 1; i < count; i += 1) {
+    const cap = out[i - 1] + MAX_TAPER * step;
+    if (out[i] > cap) out[i] = cap;
+  }
+  for (let i = count - 2; i >= 0; i -= 1) {
+    const cap = out[i + 1] + MAX_TAPER * step;
+    if (out[i] > cap) out[i] = cap;
+  }
   return out;
 }
 
@@ -898,6 +997,133 @@ function peaksOf(arr, count, threshold) {
   return out;
 }
 
+// --- the road section -----------------------------------------------------
+
+// One cross-section, read by everyone who needs to know where the road surface
+// actually is. It used to be written twice: meshes.js carved ruts and stood a
+// berm up on the outside of every corner, while `heightAt` returned the flat
+// plane through the middle of all that. The two answers differed by up to 0.28 m
+// everywhere, which is why the terrain builder carried a hardcoded clearance
+// constant to hide it.
+//
+// Everything below is measured along the road normal from the road plane —
+// centreline y plus lateral*sin(camber) — so a caller that wants metres of
+// altitude scales by the normal's vertical component.
+
+// The polished pair sits a car's track apart, and a rut is about a tyre wide.
+const RUT_GAUGE = 0.76;
+const RUT_W = 0.38;
+// Where the material thrown off the running surface crests and how far it
+// spreads, as fractions of the half-width; and how much of that height the
+// inside of the same corner loses to being cut.
+const BERM_AT = 0.88;
+const BERM_W = 0.44;
+const CUT_AT = 0.52;
+const CUT_W = 0.50;
+const CUT_RATIO = 0.26;
+// A racing line this side of the edge still leaves the rut pair on the road.
+const LINE_FRAC = 0.42;
+// The curvature a corner has to reach before the line and the berm are fully
+// developed: 1/85 m, which is a fourth-gear corner.
+const K_REF = 0.0118;
+
+// Quartic bump on [-w, w]: value and slope both reach zero at the ends, so a
+// profile built out of these is C1 and a wheel crossing one feels a rut rather
+// than a lip. No transcendentals — the height field runs per wheel per substep.
+function ridge(d, w) {
+  if (d <= -w || d >= w) return 0;
+  const t = d / w;
+  const c = 1 - t * t;
+  return c * c;
+}
+
+export function roadSectionY(stage, i, f, lat, halfWidth) {
+  if (!stage.crownH) return 0;
+  const n = stage.count;
+  const a = i < 0 ? 0 : i > n - 1 ? n - 1 : i;
+  const b = a + 1 < n ? a + 1 : a;
+  const g = 1 - f;
+  const hw = halfWidth > 0.5 ? halfWidth : 0.5;
+  let u = lat / hw;
+  if (u < -1) u = -1; else if (u > 1) u = 1;
+
+  let y = -(stage.crownH[a] * g + stage.crownH[b] * f) * u * u;
+
+  const rut = stage.rutDepth[a] * g + stage.rutDepth[b] * f;
+  const line = stage.rutLine[a] * g + stage.rutLine[b] * f;
+  const d = u * hw - line;
+  y -= rut * (ridge(d - RUT_GAUGE, RUT_W) + ridge(d + RUT_GAUGE, RUT_W));
+
+  const wind = stage.windrow[a] * g + stage.windrow[b] * f;
+  y += wind * (ridge(u - BERM_AT, BERM_W) + ridge(u + BERM_AT, BERM_W));
+
+  // A signed height rather than a height plus a side: at the inflexion of a
+  // chicane the outside changes hands, and a sign would step there while the
+  // amplitude it multiplies is still large.
+  const berm = stage.bermH[a] * g + stage.bermH[b] * f;
+  if (berm > 0) {
+    y += berm * ridge(u - BERM_AT, BERM_W);
+    y -= berm * CUT_RATIO * ridge(u + CUT_AT, CUT_W);
+  } else if (berm < 0) {
+    y -= berm * ridge(u + BERM_AT, BERM_W);
+    y += berm * CUT_RATIO * ridge(u - CUT_AT, CUT_W);
+  }
+  return y;
+}
+
+// The racing line is not an authored curve, it is what the corner sequence makes
+// of a driver. Curvature smoothed short against curvature smoothed long is
+// exactly the outside-apex-outside shape: at the apex the short mean is the
+// larger, so the line goes inside; on the approach and the exit the long mean
+// still carries the corner while the short one has let go, so the line goes
+// outside. It falls out of the geometry, which is why it also does the right
+// thing through a chicane and a double apex without being told about either.
+function buildRoadSection(stage) {
+  const n = stage.count;
+  const step = stage.step;
+  const seed = stage.terrainSeed;
+  const kNear = smoothArray(stage.curvature, 7);
+  const kWide = smoothArray(stage.curvature, 34);
+  const kAbs = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) kAbs[i] = Math.abs(stage.curvature[i]);
+  const kSmooth = smoothArray(kAbs, 6);
+  const kSigned = smoothArray(stage.curvature, 6);
+
+  const lineRaw = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    const hw = stage.halfWidth[i];
+    const room = Math.min(LINE_FRAC * hw, hw - RUT_GAUGE - RUT_W - 0.30);
+    lineRaw[i] = room > 0 ? -Math.tanh((kNear[i] - kWide[i]) / K_REF) * room : 0;
+  }
+  // A car cannot jink: the line has to be something a driver could hold.
+  stage.rutLine = smoothArray(lineRaw, 9);
+
+  const crownH = new Float32Array(n);
+  const rutDepth = new Float32Array(n);
+  const bermH = new Float32Array(n);
+  const windrow = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    const sid = stage.surface[i];
+    const props = surfaceProps(sid);
+    const loose = props.looseDepth;
+    const isTarmac = sid === SURFACE.TARMAC;
+    const hw = stage.halfWidth[i];
+    const s = i * step;
+    crownH[i] = clamp((isTarmac ? 0.075 : 0.05) * (hw / 4), 0.018, 0.095);
+    // How rutted a stretch is wanders over a hundred metres or so; per-sample
+    // noise here would be a 2 m sawtooth no tyre could ever have cut.
+    rutDepth[i] = (isTarmac ? 0.012 : 0.030 + 0.035 * loose)
+      * (1 + 0.45 * fbm2(s * 0.0102, 3.7, seed + 2207, 2));
+    const bermK = saturate((kSmooth[i] - 0.004) / 0.030) * loose;
+    bermH[i] = Math.tanh(kSigned[i] / K_REF) * bermK * 0.26;
+    windrow[i] = (0.045 + 0.050 * saturate(0.5 + fbm2(s * 0.0075, 9.1, seed + 3319, 2))) * loose;
+  }
+  stage.crownH = crownH;
+  stage.rutDepth = rutDepth;
+  stage.bermH = bermH;
+  stage.windrow = windrow;
+}
+
 // --- world queries --------------------------------------------------------
 
 const CELL = 12;
@@ -909,6 +1135,12 @@ const VERGE = 2.2;
 const VERGE_DROP = 0.42;
 const BLEND = 22;
 const DITCH_W = 3.4;
+// The section describes the *running* surface. Past its edge the shoulder, the
+// verge and the ditch are already modelled below, so the section fades out over
+// a hand's breadth rather than across the whole verge — carry it further and the
+// berm is still standing proud a metre and a half out, where the ground is
+// supposed to be dropping into a ditch.
+const SECTION_FADE = 0.6;
 
 // How far past its own verge a stretch of road still shapes the ground. Beyond
 // it the terrain is the anchor field below, which knows about the whole road
@@ -1107,6 +1339,9 @@ export function stageWorld(stage) {
   const RZ = new Float64Array(count);
   const SINCAM = new Float64Array(count);
   const HW = new Float64Array(count);
+  // The road normal's vertical component. The section is carved along the
+  // normal, so this is what turns a depth into a height above a world point.
+  const NY = stage.ny;
   for (let i = 0; i < count; i += 1) {
     const inv = 1 / Math.max(1e-6, Math.sqrt(stage.tx[i] * stage.tx[i] + stage.tz[i] * stage.tz[i]));
     RX[i] = stage.tz[i] * inv;
@@ -1294,7 +1529,17 @@ export function stageWorld(stage) {
     // the road sits on its centre line and was being handed the road surface.
     const a = dist > Math.abs(d) ? dist : Math.abs(d);
     const hw = fr.halfWidth;
-    const edgeY = roadSurfaceY(i, f, d, hw, fr.sinCam);
+    let edgeY = roadSurfaceY(i, f, d, hw, fr.sinCam);
+    // The plane is not the surface. Inside the corridor the drawn ribbon is
+    // crowned, rutted along the racing line and bermed on the outside of a
+    // corner, and the wheels have to stand on that and not on the plane through
+    // the middle of it. Faded out across the verge, so the seam the terrain
+    // blend hangs off is exactly where it always was.
+    if (a < hw + SECTION_FADE) {
+      const j = i + 1 < count ? i + 1 : i;
+      const ny = NY[i] * (1 - f) + NY[j] * f;
+      edgeY += roadSectionY(stage, i, f, d, hw) * ny * (1 - smootherstep(hw, hw + SECTION_FADE, a));
+    }
     field.a = a;
     if (a <= hw) { field.base = edgeY; field.t = 0; return field; }
     const u = a - hw;
@@ -1515,10 +1760,17 @@ export function stageWorld(stage) {
     const gx = Math.floor(px * 0.8) | 0;
     const gz = Math.floor(pz * 0.8) | 0;
     out.roughness = saturate(out.props.roughness + (hash2(gx, gz, stage.terrainSeed) - 0.5) * 0.22 + edge * 0.3);
-    const line = -sign(stage.curvature[i]) * hw * 0.35;
-    const w = hw * 0.55 + 0.6;
-    const q = (d - line) / w;
-    out.ruts = saturate(out.props.looseDepth * Math.exp(-q * q) * (1 - edge) * 1.15);
+    // Where the ruts are is the racing line's business, and the racing line
+    // migrates: outside on the approach, inside at the apex, outside again on
+    // the exit. Keying it off the local sign of the curvature, as this did,
+    // teleported it across the road at every inflexion and put it on the wrong
+    // side of the road for the whole of every approach.
+    const j = i + 1 < count ? i + 1 : i;
+    const line = stage.rutLine ? stage.rutLine[i] * (1 - f) + stage.rutLine[j] * f : 0;
+    const w = RUT_W + hw * 0.16;
+    const q = d - line;
+    out.ruts = saturate(out.props.looseDepth
+      * (ridge(q - RUT_GAUGE, w) + ridge(q + RUT_GAUGE, w)) * (1 - edge) * 1.15);
     hintIndex = i;
     return out;
   }
@@ -1934,8 +2186,8 @@ function attemptLayout(seed, params, attempt, enforceBand) {
   const step = STEP;
   const count = Math.max(128, Math.round(prog.length / step) + 1);
   const curvature = sampleCurvature(prog.knots, count, step);
-  const halfWidth = buildWidth(prog, count, step, rng, params);
   const sectionInfo = buildSections(prog, rng, params);
+  const halfWidth = buildWidth(prog, curvature, sectionInfo, count, step, params);
   const surf = buildSurface(sectionInfo, count, step);
   const events = placeElevationEvents(rng, prog, params);
 
@@ -1974,6 +2226,9 @@ export function generateStage(seed, options = {}) {
   params.seed = seed;
   params.widthSeed = stringSeed(String(seed) + "/width") % 100000;
   const terrainSeed = stringSeed(String(seed) + "/terrain") % 65536;
+  // The width reads the same cross-slope field the terrain does, so the road
+  // pinches where the hillside genuinely closes in on it.
+  params.terrainSeed = terrainSeed;
 
   // Self-intersection rejects far more programmes than the band does, so the
   // banded round needs a budget several times the plain one to find a road that
@@ -2052,6 +2307,10 @@ export function generateStage(seed, options = {}) {
   let corners = prog.corners;
   if (params.reverse) corners = reverseGeometry(stage, corners);
   buildFrames(stage);
+  // After the reverse, so the racing line and the berms belong to the road as it
+  // is actually driven: an apex approached from the other end is a different
+  // apex, and the outside of the corner is on the other hand.
+  buildRoadSection(stage);
 
   const designSpeed = speedProfile(stage);
   const air = buildAirfield(stage.grade, designSpeed, count, step);

@@ -10,6 +10,7 @@ import {
   speedProfile,
   stageTime,
   jumpLanding,
+  roadSectionY,
   NOMINAL_CAR,
   SEP_NEAR,
 } from "../stage.js";
@@ -51,6 +52,7 @@ const TYPED = [
   "s", "x", "y", "z", "tx", "ty", "tz", "nx", "ny", "nz",
   "curvature", "grade", "camber", "halfWidth", "crest", "jump",
   "hillTrend", "surfaceMixT", "designSpeed",
+  "crownH", "rutDepth", "rutLine", "bermH", "windrow",
 ];
 
 function forEachStage(fn) {
@@ -830,29 +832,152 @@ test("where the road passes over itself the ground between is a slope, not a ste
   assert.ok(deepest > 30, `the closest passes of road are never more than ${deepest.toFixed(0)} m apart in height`);
 });
 
-test("the terrain field leaves the road surface exactly where the stage put it", () => {
+// The physics ground and the drawn ribbon are one surface, or they are two —
+// and for a long time they were two. `heightAt` returned the road PLANE:
+// centreline y plus lateral*sin(camber), with no crown, no ruts and no berm.
+// The ribbon meshes.js draws is crowned, cut up to 0.12 m into the racing line
+// and stands up to 0.28 m proud on the outside of a corner, so the surface the
+// player drove and the surface the player saw differed by that much everywhere,
+// and the terrain builder carried a hardcoded 0.24 m clearance to cover it.
+//
+// So the bar here is no longer the plane. It is `roadSectionY` — the one cross
+// section both modules read — and this test is what stops the two drifting apart
+// again. The frame and the arc length it is read at are both continuous, so
+// abeam a sample there is still nothing for the projection to tie-break between:
+// the agreement is held to a millimetre, as the plane version was.
+test("the road surface under the wheels is the section both modules read", () => {
   forEachStage((stage, entry) => {
     const world = stage.world;
-    let worstCentre = 0;
-    let worstEdge = 0;
+    let worst = 0;
+    let at = null;
     for (let i = 6; i < stage.count - 6; i += 11) {
       const rl = Math.hypot(stage.tx[i], stage.tz[i]);
       const rx = stage.tz[i] / rl;
       const rz = -stage.tx[i] / rl;
-      worstCentre = Math.max(worstCentre, Math.abs(world.heightAt(stage.x[i], stage.z[i]) - stage.y[i]));
-      // Across the road the surface is the centreline plus the camber, and it is
-      // that to a tenth of a millimetre — the road frame and the arc length it
-      // is read at are both continuous, so abeam a sample there is nothing left
-      // for the projection to tie-break between. It used to be 3.8 cm out here,
-      // which is what a tie-break between two segments' own tangent planes costs
-      // through a tight corner on a steep grade.
-      for (const lat of [-0.8, 0.8, -1, 1].map((k) => k * stage.halfWidth[i] * 0.9)) {
+      const hw = stage.halfWidth[i];
+      for (const k of [0, -0.35, 0.35, -0.65, 0.65, -0.9, 0.9, -0.97, 0.97]) {
+        const lat = k * hw;
         const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
-        worstEdge = Math.max(worstEdge, Math.abs(h - (stage.y[i] + lat * Math.sin(stage.camber[i]))));
+        // The section is carved along the road normal, so a depth becomes a
+        // height by the normal's vertical component.
+        const want = stage.y[i] + lat * Math.sin(stage.camber[i])
+          + roadSectionY(stage, i, 0, lat, hw) * stage.ny[i];
+        if (Math.abs(h - want) > worst) { worst = Math.abs(h - want); at = { i, k }; }
       }
     }
-    assert.equal(worstCentre, 0, `${entry.id}: the centreline is ${worstCentre} m off stage.y`);
-    assert.ok(worstEdge < 0.001, `${entry.id}: the road surface is ${worstEdge.toFixed(5)} m off its own camber`);
+    assert.ok(
+      worst < 0.001,
+      `${entry.id}: the road surface is ${worst.toFixed(5)} m off its own section at ${JSON.stringify(at)}`,
+    );
+  });
+});
+
+// Agreeing with `roadSectionY` is only worth something if the section is a road.
+// A section that had quietly gone flat would satisfy the test above perfectly,
+// and would be exactly the bug it exists to catch, seen from the other side.
+test("the section is a rally road and not a plane under another name", () => {
+  let deepestRut = 0;
+  let tallestBerm = 0;
+  let biggestCrown = 0;
+  let bermsSwapSides = 0;
+  forEachStage((stage, entry) => {
+    for (let i = 0; i < stage.count; i += 1) {
+      deepestRut = Math.max(deepestRut, stage.rutDepth[i]);
+      tallestBerm = Math.max(tallestBerm, Math.abs(stage.bermH[i]));
+      biggestCrown = Math.max(biggestCrown, stage.crownH[i]);
+    }
+    // The berm is on the outside of the corner, so a stage that turns both ways
+    // has to build one on each hand.
+    let anyLeft = false;
+    let anyRight = false;
+    for (let i = 0; i < stage.count; i += 1) {
+      if (stage.bermH[i] > 0.05) anyRight = true;
+      if (stage.bermH[i] < -0.05) anyLeft = true;
+    }
+    if (anyLeft && anyRight) bermsSwapSides += 1;
+    // Every stage is crowned everywhere: water has to get off a road.
+    for (let i = 0; i < stage.count; i += 1) {
+      assert.ok(stage.crownH[i] > 0.01, `${entry.id}: no crown at sample ${i}`);
+      assert.ok(
+        Math.abs(stage.rutLine[i]) < stage.halfWidth[i],
+        `${entry.id}: the racing line is off the road at sample ${i}`,
+      );
+    }
+  });
+  assert.ok(deepestRut > 0.05, `the deepest rut in the book is ${deepestRut.toFixed(3)} m`);
+  assert.ok(tallestBerm > 0.12, `the tallest berm in the book is ${tallestBerm.toFixed(3)} m`);
+  assert.ok(biggestCrown > 0.03, `the biggest crown in the book is ${biggestCrown.toFixed(3)} m`);
+  assert.ok(bermsSwapSides >= 8, `only ${bermsSwapSides} stages berm both hands`);
+});
+
+// A racing line is not two parallel stripes. It runs wide on the approach,
+// crosses to the inside at the apex and drifts wide again on the exit, and the
+// ruts a season of cars leaves follow it. What the road used to carry instead
+// was `-sign(curvature) * halfWidth * 0.35`, which is a stripe that teleports
+// across the road at every inflexion and sits on the wrong side of it for the
+// whole of every approach.
+test("the racing line runs wide, apexes, and runs wide again", () => {
+  let corners = 0;
+  let apexInside = 0;
+  let approachOutside = 0;
+  forEachStage((stage, entry) => {
+    const step = stage.step;
+    const win = Math.round(12 / step);
+    for (let i = 60; i < stage.count - 60; i += 1) {
+      const k = stage.curvature[i];
+      if (Math.abs(k) < 0.022) continue;
+      let peak = true;
+      for (let j = i - win; j <= i + win; j += 1) if (Math.abs(stage.curvature[j]) > Math.abs(k)) { peak = false; break; }
+      if (!peak) continue;
+      corners += 1;
+      // Inside is the hand the road turns toward: positive curvature is a left,
+      // and left is negative lateral.
+      if (Math.sign(stage.rutLine[i]) === -Math.sign(k) && Math.abs(stage.rutLine[i]) > 0.15) apexInside += 1;
+      // Somewhere in the 20-70 m of approach the line has to be on the outside.
+      let wide = false;
+      for (let j = i - Math.round(70 / step); j <= i - Math.round(20 / step); j += 1) {
+        if (Math.sign(stage.rutLine[j]) === Math.sign(k) && Math.abs(stage.rutLine[j]) > 0.15) { wide = true; break; }
+      }
+      if (wide) approachOutside += 1;
+      void entry;
+      i += win;
+    }
+  });
+  assert.ok(corners > 120, `only ${corners} corners in the whole book to measure`);
+  assert.ok(
+    apexInside / corners > 0.9,
+    `the line is on the inside at only ${((apexInside / corners) * 100).toFixed(0)}% of apexes`,
+  );
+  assert.ok(
+    approachOutside / corners > 0.6,
+    `the line runs wide on only ${((approachOutside / corners) * 100).toFixed(0)}% of approaches`,
+  );
+});
+
+// The width used to be one broad noise term smoothed over fifty metres on top of
+// a per-phrase constant, which is a ribbon of mathematically constant width for
+// as far down the road as anyone can see. A real road pinches where the cut
+// closes in and opens at a passing place, and it does it at the length scale the
+// eye reads — tens of metres, not hundreds.
+test("the road width varies at the scale a driver can see", () => {
+  forEachStage((stage, entry) => {
+    const win = Math.round(20 / stage.step);
+    let swing = 0;
+    let moved = 0;
+    let total = 0;
+    for (let i = win; i < stage.count - win; i += 1) {
+      const d = Math.abs(stage.halfWidth[i + win] - stage.halfWidth[i - win]);
+      swing = Math.max(swing, d);
+      if (d > 0.25) moved += 1;
+      total += 1;
+    }
+    // 40 m is about a second and a half at rally pace and about as far as the
+    // eye reads an edge as one line. Over that, a real road moves.
+    assert.ok(swing > 1.0, `${entry.id}: the width only moves ${swing.toFixed(2)} m over 40 m of road`);
+    assert.ok(
+      moved / total > 0.30,
+      `${entry.id}: the width is flat over 40 m for ${(100 - (moved / total) * 100).toFixed(0)}% of the road`,
+    );
   });
 });
 

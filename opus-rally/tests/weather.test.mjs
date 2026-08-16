@@ -233,10 +233,24 @@ test("interpolating any two presets is continuous and monotonic in t", () => {
   }
 });
 
+// What a flat patch of ground actually receives from the key light: its colour,
+// its intensity and the cosine between them, which is the product three itself
+// forms. `key.intensity` on its own is the beam a surface held square to the sun
+// would get — atmospheric extinction lives in `key.color`, where it belongs, so
+// the intensity is deliberately near-flat across the whole day and asserting on
+// it says nothing at all about how lit the stage is.
+function keyOnGround(w) {
+  const k = w.lights.key;
+  const p = k.position;
+  const n = Math.hypot(p.x, p.y, p.z) || 1;
+  return luminance([k.color.r, k.color.g, k.color.b]) * k.intensity * Math.max(p.y / n, 0);
+}
+
 test("sun elevation drives light intensity and sky colour monotonically", () => {
   for (const id of ["clear-dawn", "midday-hard", "night-clear", "overcast"]) {
     const { w } = rig(id);
     let lastKey = -1;
+    let lastGround = -1;
     let lastSky = -1;
     let lastLevel = -1;
     let firstAtZero = null;
@@ -244,23 +258,30 @@ test("sun elevation drives light intensity and sky colour monotonically", () => 
     for (let e = -20; e <= 88; e += 0.5) {
       setSunElevation(w, e * DEG, 180 * DEG);
       const key = w.lights.key.intensity;
+      const ground = keyOnGround(w);
       const sky = w.metrics.skyLuminance;
       const level = w.metrics.lightLevel;
       assert.ok(Number.isFinite(key) && key >= 0, `${id}: key intensity ${key} at ${e} deg`);
       assert.ok(Number.isFinite(sky) && sky >= 0, `${id}: sky luminance ${sky} at ${e} deg`);
       assert.ok(key >= lastKey - 1e-12, `${id}: key intensity fell at ${e} deg`);
+      assert.ok(ground >= lastGround - 1e-12, `${id}: sunlight on the ground fell at ${e} deg`);
       assert.ok(sky >= lastSky - 1e-12, `${id}: sky luminance fell at ${e} deg`);
       assert.ok(level >= lastLevel - 1e-12, `${id}: light level fell at ${e} deg`);
       lastKey = key;
+      lastGround = ground;
       lastSky = sky;
       lastLevel = level;
-      if (firstAtZero === null && e >= 0) firstAtZero = { key, sky };
-      if (atSixty === null && e >= 60) atSixty = { key, sky };
+      if (firstAtZero === null && e >= 0) firstAtZero = { ground, sky };
+      if (atSixty === null && e >= 60) atSixty = { ground, sky };
     }
     // Non-decreasing is not enough — a constant would pass that. Assert the
-    // useful part of the arc actually climbs.
-    assert.ok(atSixty.key > firstAtZero.key * 1.5 && atSixty.key > 0,
-      `${id}: key intensity should climb from horizon to high sun`);
+    // useful part of the arc actually climbs, and climb it on the quantity a
+    // driver sees: the sun on the road, not the dial that feeds it. The gate,
+    // the extinction and the cosine all pull the same way, so an order of
+    // magnitude over sixty degrees is the floor, not an ambition.
+    assert.ok(atSixty.ground > firstAtZero.ground * 10 && atSixty.ground > 0,
+      `${id}: sunlight on the ground only went ${firstAtZero.ground.toExponential(2)} -> `
+      + `${atSixty.ground.toExponential(2)} from the horizon to sixty degrees`);
     assert.ok(atSixty.sky > firstAtZero.sky,
       `${id}: sky should brighten from horizon to high sun`);
     disposeWeather(w);
@@ -948,6 +969,44 @@ function skyPixelLum(w, elevRad, az) {
   return lum3(skyPixel(w, elevRad, az));
 }
 
+// ---- what the ground gets, split into the beam and everything else
+//
+// The rig's irradiance on a horizontal, up-facing patch — a road, a verge, the
+// bonnet — separated into the part a shadow can take away and the part it
+// cannot. render.js sets useLegacyLights false, so a directional contributes
+// colour x intensity x N.L and a hemisphere seen by an up-facing surface
+// contributes its sky colour x intensity outright.
+//
+// The split is the whole point. Shadow contrast is direct over diffuse and
+// nothing else: at 1.5:1 a shadowed patch is 40% darker than lit ground, which
+// after exposure and the ACES curve is nothing at all, and a low sun raking
+// across a stage produces no visible shadow anywhere in the frame.
+function groundIrradiance(w) {
+  const L = w.lights;
+  const direct = [0, 0, 0];
+  const diffuse = [0, 0, 0];
+  for (const [light, into] of [[L.key, direct], [L.moon, direct], [L.bounce, diffuse]]) {
+    const p = light.position;
+    const n = Math.hypot(p.x, p.y, p.z) || 1;
+    const dotNL = Math.max(p.y / n, 0);
+    into[0] += light.color.r * light.intensity * dotNL;
+    into[1] += light.color.g * light.intensity * dotNL;
+    into[2] += light.color.b * light.intensity * dotNL;
+  }
+  diffuse[0] += L.fill.color.r * L.fill.intensity + L.ambient.color.r * L.ambient.intensity;
+  diffuse[1] += L.fill.color.g * L.fill.intensity + L.ambient.color.g * L.ambient.intensity;
+  diffuse[2] += L.fill.color.b * L.fill.intensity + L.ambient.color.b * L.ambient.intensity;
+  return { direct, diffuse };
+}
+
+// A Lambertian patch of `albedo` under irradiance `E`, in 8-bit levels, through
+// the same exposure/ACES/sRGB the composite runs.
+const GROUND = [0, 0, 0];
+function groundPixel(E, albedo, exposure) {
+  for (let i = 0; i < 3; i += 1) GROUND[i] = encodeSrgb8(aces(E[i] * albedo[i] / Math.PI * exposure));
+  return lum3(GROUND);
+}
+
 // Lowest, highest and mean pixel luma in the band a driver can see: the horizon
 // up to about fifty degrees, all the way round. The sun's own disc and bloom are
 // skipped — they are a light source, and a sky that only spans a range because
@@ -1137,6 +1196,83 @@ test("every daylight sky has a warm end and a cool end", () => {
   }
 });
 
+// The direct-to-diffuse ratio each preset family is allowed, and where a
+// mid-albedo gravel road must land once the composite has had it.
+//
+// `ratio` is sunlight on flat ground over everything else falling on it. Real
+// clear daylight runs 5:1 to 10:1 measured square to the beam; on horizontal
+// ground the cosine takes most of that away at a low sun, so a raking sun is
+// allowed to sit near 2:1 and a noon sun is not. An overcast sky genuinely is
+// near 1:1 — there is no beam to cast anything — so the lid family is held the
+// other way round, at a ceiling, and a lid that grew a shadow would fail here.
+//
+// `lit` is where sunlit gravel has to land in 8-bit levels. It is the assertion
+// that would have caught the frame this test was written for: 76% of it sat in
+// luminance buckets 2-5 of 16, buckets 8, 9 and 10 were empty, and road, verge,
+// terrain and trees were all inside the same two-stop shadow band with the sky
+// a separate bright plate above them. Ground under 85 is that frame.
+//
+// `gap` is lit minus shadowed, in the same levels — how much of a shadow you can
+// actually see. Golden hour shipped at 13.
+const GROUND_LIGHT = Object.freeze({
+  "clear-dawn": { ratio: [1.15, 3.0], lit: [58, 120], gap: 25 },
+  "midday-hard": { ratio: [4.0, 9.0], lit: [150, 215], gap: 90 },
+  "golden-hour": { ratio: [1.5, 3.5], lit: [90, 155], gap: 45 },
+  overcast: { ratio: [0, 0.35], lit: [85, 175], gap: 0 },
+  "light-rain": { ratio: [0, 0.35], lit: [70, 165], gap: 0 },
+  "heavy-rain": { ratio: [0, 0.35], lit: [50, 150], gap: 0 },
+  thunderstorm: { ratio: [0, 0.35], lit: [55, 150], gap: 0 },
+  "hill-fog": { ratio: [0, 0.35], lit: [90, 185], gap: 0 },
+  "light-snow": { ratio: [0, 0.35], lit: [80, 175], gap: 0 },
+  blizzard: { ratio: [0, 0.35], lit: [90, 190], gap: 0 },
+});
+
+const ROAD_ALBEDO = surfaceProps(SURFACE.GRAVEL).albedo;
+
+test("every daylight preset lights its ground to a defensible key-to-fill ratio", () => {
+  for (const p of WEATHER_PRESETS) {
+    const band = GROUND_LIGHT[p.id];
+    // The two night presets have no beam at all — the sun is gated off below the
+    // horizon and the moon carries the stage — so a key/fill ratio is not a
+    // quantity they have. What a night has to do instead is asserted at the
+    // bottom of this file.
+    if (!band) {
+      assert.ok(p.sunElevation < 0, `${p.id} has no entry in GROUND_LIGHT and the sun is up`);
+      continue;
+    }
+    const { w, camera } = rig(p.id);
+    stepWeather(w, camera, 1 / 60);
+    w.lightning.flash = 0;
+
+    const { direct, diffuse } = groundIrradiance(w);
+    const lumDirect = lum3(direct);
+    const lumDiffuse = lum3(diffuse);
+    const ratio = lumDirect / Math.max(lumDiffuse, 1e-9);
+    assert.ok(ratio >= band.ratio[0] && ratio <= band.ratio[1],
+      `${p.id}: sun ${lumDirect.toFixed(4)} against fill ${lumDiffuse.toFixed(4)} is `
+      + `${ratio.toFixed(2)}:1 on flat ground, outside ${band.ratio[0]}..${band.ratio[1]}`);
+
+    const total = [direct[0] + diffuse[0], direct[1] + diffuse[1], direct[2] + diffuse[2]];
+    const lit = groundPixel(total, ROAD_ALBEDO, w.current.exposure);
+    const shadowed = groundPixel(diffuse, ROAD_ALBEDO, w.current.exposure);
+    assert.ok(lit >= band.lit[0] && lit <= band.lit[1],
+      `${p.id}: sunlit gravel comes out at ${lit.toFixed(0)}, outside ${band.lit[0]}..${band.lit[1]} `
+      + "— the frame has no midtone for the eye to rest on");
+    assert.ok(lit - shadowed >= band.gap,
+      `${p.id}: lit ${lit.toFixed(0)} against shadowed ${shadowed.toFixed(0)} is only `
+      + `${(lit - shadowed).toFixed(0)} levels — that shadow is not visible`);
+    // Raising the key without dropping the fill blows the highlights instead of
+    // filling the midtones, and the sky is already the brightest plate in the
+    // frame. A patch square to the sun is the brightest lit thing on a stage.
+    const facing = luminance([w.lights.key.color.r, w.lights.key.color.g, w.lights.key.color.b])
+      * w.lights.key.intensity + lumDiffuse;
+    const white = groundPixel([facing, facing, facing], [0.8, 0.8, 0.8], w.current.exposure);
+    assert.ok(white < 252,
+      `${p.id}: a white panel square to the sun clips at ${white.toFixed(0)}`);
+    disposeWeather(w);
+  }
+});
+
 test("golden hour keeps the cloud and the colour it always had", () => {
   const { w, camera } = rig("golden-hour");
   stepWeather(w, camera, 1 / 60);
@@ -1321,9 +1457,13 @@ test("fifty stages of weather leak nothing, and disposing twice is safe", () => 
 
 const PRECIP_ANCHORS = [
   ["rainVert", "const float RAIN_MIN_ANGLE = 0.0016;"],
+  ["rainVert", "vec2 sv = vel.xy * depth + mv.xy * vel.z;"],
   ["rainVert", "vec2 perp = vec2(d.y, -d.x);"],
   ["rainVert", "float width = max(uWidth, depth * RAIN_MIN_ANGLE);"],
+  ["rainVert",
+    "float len = max(uLength * (0.55 + 0.9 * iRand.x) * svl / (depth * max(length(vel), 1e-4)), width);"],
   ["rainVert", "mv.xy += d * (position.y * len) + perp * (position.x * width);"],
+  ["rainVert", "float haze = mix(1.0, RAIN_HAZE_KEEP, smoothstep(RAIN_HAZE_NEAR, RAIN_HAZE_FAR, depth));"],
   ["rainFrag", "float across = smoothstep(0.0, 0.55, 1.0 - abs(vUv.x * 2.0 - 1.0));"],
   ["rainFrag", "float along = smoothstep(0.0, 0.42, vUv.y) * (1.0 - smoothstep(0.58, 1.0, vUv.y));"],
   ["snowVert", "const float SNOW_MIN_ANGLE = 0.0024;"],
@@ -1375,8 +1515,9 @@ function shaderPerp(d) {
   return [pick(m[1], m[2]), pick(m[3], m[4])];
 }
 
-// RAIN_VERT's offset in view-space metres: d is the apparent streak direction
-// projected into view space and normalised, perp is its partner.
+// RAIN_VERT's offset in view-space metres: d is the drop's own screen-space
+// direction of travel written back as a unit view-space vector, perp is its
+// partner.
 function rainQuadArea(dx, dy, len, width) {
   const dl = Math.hypot(dx, dy);
   const d = dl > 1e-4 ? [dx / dl, dy / dl] : [0, -1];
@@ -1429,13 +1570,35 @@ test("neither precipitation billboard can be culled by which way it happens to f
 // size at a depth into pixels.
 const PX_PER_RAD = 720 / (2 * Math.tan(21.3 * DEG));
 
+const RAIN_HAZE_NEAR = shaderConst("rainVert", "RAIN_HAZE_NEAR");
+const RAIN_HAZE_FAR = shaderConst("rainVert", "RAIN_HAZE_FAR");
+const RAIN_HAZE_KEEP = shaderConst("rainVert", "RAIN_HAZE_KEEP");
+
 // One particle's peak alpha where its profile is fullest, taken from the rig's
 // own uniforms rather than from a copy of the preset: mid-field, so neither the
 // shell fade nor the near fade is in play, and the median instance random.
 function rainPeakAlpha(w, depth) {
   const u = w.rain.uniforms;
   const width = Math.max(u.uWidth.value, depth * RAIN_MIN_ANGLE);
-  return { alpha: u.uOpacity.value * (u.uWidth.value / width) * 0.775, width };
+  const haze = lerp(1, RAIN_HAZE_KEEP, ss(RAIN_HAZE_NEAR, RAIN_HAZE_FAR, depth));
+  return { alpha: u.uOpacity.value * (u.uWidth.value / width) * haze * 0.775, width };
+}
+
+// One streak's screen geometry: where the drop sits in view space decides which
+// way it is drawn and how long it comes out, which is the whole of the change
+// this mirrors. `mvx`/`mvy` are the drop's view-space offset from the optical
+// axis at `depth`; `vel` is the apparent velocity already in view space.
+// Returned length is in *screen* units — the view-space offset over the depth it
+// is drawn at — because a streak twice as long twice as far away is the same
+// streak, and comparing the view-space figures would say otherwise.
+function rainStreak(u, vel, mvx, mvy, depth, rand) {
+  const sv = [vel[0] * depth + mvx * vel[2], vel[1] * depth + mvy * vel[2]];
+  const svl = Math.hypot(sv[0], sv[1]);
+  const d = svl > 1e-6 ? [sv[0] / svl, sv[1] / svl] : [0, -1];
+  const width = Math.max(u.uWidth.value, depth * RAIN_MIN_ANGLE);
+  const vl = Math.max(Math.hypot(vel[0], vel[1], vel[2]), 1e-4);
+  const len = Math.max(u.uLength.value * (0.55 + 0.9 * rand) * svl / (depth * vl), width);
+  return { dir: d, angle: Math.atan2(d[1], d[0]), screenLen: len / depth };
 }
 
 function snowPeakAlpha(w, depth, grade) {
@@ -1492,6 +1655,57 @@ test("rain reads as rain rather than as a set of ruled white lines", () => {
     assert.ok(u.uLength.value / u.uWidth.value > 15, `${id}: the streak is not long against its width`);
     disposeWeather(w);
   }
+});
+
+test("rain has depth in it rather than being a decal over the frame", () => {
+  // The complaint this answers: every streak the same length, the same angle and
+  // the same weight from the vanishing point to the bonnet, so heavy rain read
+  // as a screen effect laid over the image instead of as water the car is
+  // driving through. All three come from the same place — the streak direction
+  // was taken from the apparent velocity alone, which is one vector for the
+  // whole field, and nothing anywhere in the shader knew how far away a drop
+  // was except the width floor.
+  const w = precipRig("heavy-rain", 30);
+  const u = w.rain.uniforms;
+  const v = u.uStreakVel.value;
+  // precipRig's camera never leaves the origin unrotated, so view space is world
+  // space here and the apparent velocity can be read straight off the uniform.
+  const vel = [v.x, v.y, v.z];
+  assert.ok(vel[2] < -20, `a car at 30 m/s should be closing on the rain, got vz ${vel[2].toFixed(1)}`);
+
+  // Across the frame at one distance. tan(21.3 deg) is the half-field the game
+  // runs at, so +-0.39 of the depth is the edge of the picture.
+  const depth = 12;
+  const edge = Math.tan(21.3 * DEG) * depth;
+  const centre = rainStreak(u, vel, 0, 0, depth, 0.5);
+  const left = rainStreak(u, vel, -edge * 1.6, 0, depth, 0.5);
+  const right = rainStreak(u, vel, edge * 1.6, 0, depth, 0.5);
+  const spread = Math.abs(wrapAngle(left.angle - right.angle));
+  assert.ok(spread > 25 * DEG,
+    `streaks at opposite edges of the frame differ by ${(spread / DEG).toFixed(1)} deg `
+    + "— that is one ruled angle over the whole picture, not perspective");
+  assert.ok(right.screenLen > centre.screenLen * 1.5,
+    `a streak at the frame edge is ${right.screenLen.toFixed(4)} against ${centre.screenLen.toFixed(4)} `
+    + "near the point the rain is heading for — they should not be the same streak");
+
+  // And prove that is the closing speed doing it rather than the arithmetic
+  // wandering: with nothing coming at the camera there is no vanishing point,
+  // and a drop's position must then buy it no angle at all.
+  const flat = [vel[0], vel[1], 0];
+  const flatL = rainStreak(u, flat, -edge * 1.6, 0, depth, 0.5);
+  const flatR = rainStreak(u, flat, edge * 1.6, 0, depth, 0.5);
+  assert.ok(Math.abs(wrapAngle(flatL.angle - flatR.angle)) < 1e-9,
+    "with no closing speed the field has no vanishing point and every streak is parallel");
+
+  // Along the frame. A drop on the bonnet and a drop at the far wall of the box
+  // may not arrive at the same weight, and the far one may not disappear either.
+  const near = rainPeakAlpha(w, 3).alpha;
+  const far = rainPeakAlpha(w, 20).alpha;
+  assert.ok(far < near * 0.45,
+    `a drop at 20 m keeps ${(far / near * 100).toFixed(0)}% of a drop at 3 m — the field is flat in depth`);
+  assert.ok(far > near * 0.08,
+    `a drop at 20 m keeps only ${(far / near * 100).toFixed(0)}% — the far field has gone`);
+  disposeWeather(w);
 });
 
 test("a flake stays sampleable at the distance it is drawn at, without gaining light", () => {
@@ -1570,29 +1784,16 @@ test("how hard it is falling is carried by the count, not by the per-particle al
 
 // ---- night
 //
-// What an unlit patch of ground comes back as, in 8-bit levels, through the same
-// exposure/ACES/sRGB the composite runs. Lights here are irradiance rather than
-// irradiance x PI (render.js sets useLegacyLights false), so a directional
-// contributes colour x intensity x N.L and a hemisphere seen by an up-facing
-// surface contributes its sky colour x intensity outright.
+// What a patch of ground away from the lamps comes back as, in 8-bit levels,
+// through the same exposure/ACES/sRGB the composite runs. One model, the one
+// groundIrradiance builds above: a second copy of it here could only ever agree
+// with itself.
 const NIGHT_ALBEDO = surfaceProps(SURFACE.GRAVEL).albedo;
 
 function unlitGroundPixel(w, albedo) {
-  const L = w.lights;
-  const out = [0, 0, 0];
-  for (const light of [L.key, L.moon, L.bounce]) {
-    const p = light.position;
-    const n = Math.hypot(p.x, p.y, p.z) || 1;
-    const dotNL = Math.max(p.y / n, 0);
-    out[0] += light.color.r * light.intensity * dotNL;
-    out[1] += light.color.g * light.intensity * dotNL;
-    out[2] += light.color.b * light.intensity * dotNL;
-  }
-  out[0] += L.fill.color.r * L.fill.intensity + L.ambient.color.r * L.ambient.intensity;
-  out[1] += L.fill.color.g * L.fill.intensity + L.ambient.color.g * L.ambient.intensity;
-  out[2] += L.fill.color.b * L.fill.intensity + L.ambient.color.b * L.ambient.intensity;
-  const e = w.current.exposure;
-  return lum3(out.map((v, i) => encodeSrgb8(aces(v * albedo[i] / Math.PI * e))));
+  const { direct, diffuse } = groundIrradiance(w);
+  const total = [direct[0] + diffuse[0], direct[1] + diffuse[1], direct[2] + diffuse[2]];
+  return groundPixel(total, albedo, w.current.exposure);
 }
 
 test("a night stage is dark on the ground and still a sky overhead", () => {
