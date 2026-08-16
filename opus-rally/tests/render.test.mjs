@@ -29,7 +29,15 @@ import {
   boomTarget,
   boomDirectionTarget,
   lookTarget,
+  cornerLook,
   chaseFov,
+  mountLocalX,
+  mountLocalZ,
+  adaptCameraParams,
+  portraitBlend,
+  fovForAspect,
+  CAMERA_DESIGN_ASPECT,
+  wakeLift,
   createParticlePool,
   resetParticlePool,
   spawnParticle,
@@ -358,21 +366,109 @@ test("shake scales with roughness and speed and stays small", () => {
   assert.ok(settledShake(1, 120) < 0.25, "shake too strong");
 });
 
-test("the cockpit camera has head inertia and counter-steers into the corner", () => {
+// Which way a camera should swing cannot be settled from a literal in this file,
+// because the bug was a *sign*: a test that asserts `lookYaw > 0` for `steer:
+// 0.8` only agrees with whatever convention the rig already used, and the rig
+// used the wrong one — every in-car camera looked out of the corner. So drive
+// physics.js, take the sign of the corner from the car's own centripetal
+// acceleration, and ask whether the aim moved that way.
+//
+// Returns the settled rig plus the frame the answer has to be read in.
+async function corneringRig(mode, opts = {}) {
+  const physics = await import("../physics.js");
+  // A featureless plain, so the only thing steering the car is the steering. On
+  // a generated stage the road's own curvature dominates and the mirrored case
+  // simply drives off it.
+  const props = surfaceProps(SURFACE.TARMAC);
+  const world = {
+    gravity: 9.81,
+    heightAt: () => 0,
+    normalAt: (x, z, out) => { out.x = 0; out.y = 1; out.z = 0; return out; },
+    surfaceAt: (x, z, out) => {
+      out.props = props;
+      out.surfaceId = props.id;
+      out.onRoad = true;
+      out.lateral = 0; out.signedLateral = 0; out.s = 0;
+      out.edgeBlend = 0; out.roughness = 0; out.ruts = 0;
+      return out;
+    },
+    sampleAt: () => 0,
+    project: (x, z, hintS, out) => { out.s = 0; out.lateral = 0; out.signedLateral = 0; out.index = 0; return out; },
+    bounds: { minX: -1e4, maxX: 1e4, minZ: -1e4, maxZ: 1e4 },
+  };
+  const car = physics.createCar(physics.CARS[0].id, {});
+  physics.resetCar(car, 0, 0, 0, 0);
+  const input = physics.makeInput();
+  input.throttle = 1;
+  for (let i = 0; i < 600; i += 1) physics.stepCar(car, input, world, 1 / 120);
+  input.steer = opts.steer === undefined ? 1 : opts.steer;
+  for (let i = 0; i < 200; i += 1) physics.stepCar(car, input, world, 1 / 120);
+
+  const s = sampleCar(makeCarSample(), car, null);
+  const p = cameraParams(mode);
+  const rig = makeCameraRig(mode);
+  resetCameraRig(rig, s, p, null);
+  for (let i = 0; i < 200; i += 1) updateCameraRig(rig, s, p, 1 / 60, null);
+  // The car's right in world terms, and the direction its centripetal
+  // acceleration points: that is the inside of the corner, whatever the sign
+  // convention of yaw happens to be.
+  const right = { x: Math.cos(s.yaw), z: -Math.sin(s.yaw) };
+  const insideX = right.x * Math.sign(s.lateralG);
+  const insideZ = right.z * Math.sign(s.lateralG);
+  // How far the aim has swung off the car, along the inside of the corner.
+  const swing = (rig.tx - s.x) * insideX + (rig.tz - s.z) * insideZ;
+  return { rig, s, p, swing, car };
+}
+
+test("an in-car camera looks into the corner, not out of it", async () => {
+  const { rig, s, swing } = await corneringRig("cockpit");
+  assert.ok(Math.abs(s.lateralG) > 0.05, `the car is not cornering: ${s.lateralG}`);
+  assert.ok(Math.abs(rig.headX) > 1e-4, "no head inertia under lateral g");
+  assert.ok(Math.abs(rig.lookYaw) > 0.01, `no look into the corner: ${rig.lookYaw}`);
+  assert.ok(swing > 0.5,
+    `the driver is looking ${swing < 0 ? "out of" : "barely into"} the corner: ${swing.toFixed(3)} m`);
+
+  // Mirrored: the same steering the other way has to swing the other way.
+  const other = await corneringRig("cockpit", { steer: -1 });
+  assert.ok(Math.sign(other.s.lateralG) === -Math.sign(s.lateralG), "the corner did not reverse");
+  assert.ok(other.swing > 0.5, `mirrored corner: ${other.swing.toFixed(3)} m`);
+  assert.ok(Math.sign(other.rig.lookYaw) === -Math.sign(rig.lookYaw), "the look did not reverse");
+});
+
+test("the chase camera swings its aim into the corner", async () => {
+  const { rig, s, p, swing } = await corneringRig("chase");
+  assert.ok(p.lookIntoCorner > 0, "the chase rig has no corner look at all");
+  // Straight ahead, the same car and rig must aim square down the road: the
+  // swing is a corner behaviour, not a permanent squint.
+  const straight = sampleAt({
+    x: s.x, z: s.z, yaw: s.yaw, speed: s.speed,
+    vx: Math.sin(s.yaw) * s.speed, vz: Math.cos(s.yaw) * s.speed, forwardSpeed: s.speed,
+  });
+  const flat = makeCameraRig("chase");
+  resetCameraRig(flat, straight, p, null);
+  for (let i = 0; i < 200; i += 1) updateCameraRig(flat, straight, p, 1 / 60, null);
+  const right = { x: Math.cos(s.yaw), z: -Math.sin(s.yaw) };
+  const flatSwing = Math.abs((flat.tx - s.x) * right.x + (flat.tz - s.z) * right.z);
+  assert.ok(flatSwing < 0.3, `the aim is off-centre in a straight line: ${flatSwing.toFixed(3)} m`);
+  assert.ok(swing > 1.5,
+    `the chase camera sits square behind the nose at the apex: ${swing.toFixed(3)} m`);
+  assert.ok(Math.abs(rig.lookYaw) <= 0.42 + 1e-9, "the corner look is unbounded");
+});
+
+test("the corner look is bounded and dies at a standstill", () => {
   const p = cameraParams("cockpit");
   const rig = makeCameraRig("cockpit");
-  const s = sampleAt({ steer: 0.8, lateralG: 1.4, slipAngle: 0.2 });
-  resetCameraRig(rig, s, p, null);
-  assert.equal(rig.headX, 0);
-  for (let i = 0; i < 200; i += 1) updateCameraRig(rig, s, p, 1 / 60, null);
-  assert.ok(Math.abs(rig.headX) > 1e-4, "no head inertia under lateral g");
-  assert.ok(rig.lookYaw > 0.01, `no look into the corner: ${rig.lookYaw}`);
-  assert.ok(Math.abs(rig.lookYaw) <= 0.42 + 1e-9);
-
-  // The look is bounded even with an absurd slip angle.
-  const spun = sampleAt({ steer: 1, slipAngle: -3 });
+  const spun = sampleAt({ speed: 30, yawRate: -40, slipAngle: -3, steer: 1 });
+  resetCameraRig(rig, spun, p, null);
   for (let i = 0; i < 400; i += 1) updateCameraRig(rig, spun, p, 1 / 60, null);
-  assert.ok(Math.abs(rig.lookYaw) <= 0.42 + 1e-9);
+  assert.ok(Math.abs(rig.lookYaw) <= 0.42 + 1e-9, `unbounded: ${rig.lookYaw}`);
+
+  // Stopped, a yaw rate is noise and a slip angle means nothing.
+  const still = sampleAt({ speed: 0, yawRate: -2, slipAngle: 0.9, steer: 1 });
+  const parked = makeCameraRig("cockpit");
+  resetCameraRig(parked, still, p, null);
+  for (let i = 0; i < 400; i += 1) updateCameraRig(parked, still, p, 1 / 60, null);
+  assert.ok(Math.abs(parked.lookYaw) < 1e-6, `the camera squints while parked: ${parked.lookYaw}`);
 });
 
 test("a mounted camera rides with the chassis", () => {
@@ -382,7 +478,7 @@ test("a mounted camera rides with the chassis", () => {
   resetCameraRig(rig, s, p, null);
   for (let i = 0; i < 200; i += 1) updateCameraRig(rig, s, p, 1 / 60, null);
   // yaw = pi/2 means the nose points down +X, so the bumper is +X of the car.
-  assert.ok(Math.abs((rig.px - s.x) - p.localZ) < 1e-3, `x ${rig.px - s.x}`);
+  assert.ok(Math.abs((rig.px - s.x) - mountLocalZ(s, p)) < 1e-3, `x ${rig.px - s.x}`);
   assert.ok(Math.abs(rig.pz - s.z) < 1e-3, `z ${rig.pz - s.z}`);
   // s.y is the centre of mass; mountY is measured from the road under it.
   const road = s.y - s.comHeight;
@@ -411,61 +507,233 @@ test("an in-car camera sits at a driver's eye line above the road, in every car"
   }
 });
 
-test("the in-car mounts sit inside the cabin and above the bonnet of every modelled car", async () => {
-  // Height above the road is necessary but nowhere near sufficient: the eye also
-  // has to be behind the windscreen, under the roof and over the driver's seat,
-  // and all three depend on the body meshes.js actually builds. So ask the model.
-  // The camera that shipped sat at the centre of mass, low and far enough back
-  // that the frame was mostly the top of the bodyshell.
-  const physics = await import("../physics.js");
+// Where a mount sits, resolved against the car meshes.js actually builds. The
+// rig is authored in the chassis frame, so a probe needs both.
+async function mountProbe(spec, mode) {
   const meshes = await import("../meshes.js");
-  const cockpit = cameraParams("cockpit");
-  const bonnet = cameraParams("bonnet");
+  const physics = await import("../physics.js");
+  const car = meshes.buildCarMesh(THREE, spec);
+  // The shell is single-sided, so from inside the cabin every panel that matters
+  // is a back face. Look at both sides or the probe sees nothing.
+  for (const m of car.materials) m.side = THREE.DoubleSide;
+  car.group.updateMatrixWorld(true);
+  const d = car.dimensions;
+  const p = cameraParams(mode);
+  const state = physics.createCar(spec.id, {});
+  physics.resetCar(state, 0, 0, 0, 0);
+  const s = sampleCar(makeCarSample(), state, null);
+  // Chassis-frame y is measured from the centre of mass; d.ground is the road.
+  const eye = new THREE.Vector3(mountLocalX(s, p), p.mountY + d.ground, mountLocalZ(s, p));
 
-  const shoot = (car, from, dir) => {
-    const rc = new THREE.Raycaster(from, dir.clone().normalize(), 0.001, 6);
+  const shoot = (from, x, y, z) => {
+    const rc = new THREE.Raycaster(from, new THREE.Vector3(x, y, z).normalize(), 0.001, 6);
     const hits = rc.intersectObject(car.group, true);
     return hits.length ? hits[0] : null;
   };
+  // What fraction of the frame each named part covers, at the rig's own fov and
+  // aim. A frame is the only place "the bonnet camera shows no bonnet" is a
+  // statement about anything.
+  const census = (aspect = CAMERA_DESIGN_ASPECT, cols = 40, rows = 22) => {
+    const cam = new THREE.PerspectiveCamera(p.fovBase, aspect, p.near, p.far);
+    cam.position.copy(eye);
+    cam.up.set(0, 1, 0);
+    cam.lookAt(eye.x, eye.y + p.lookHeight, eye.z + p.lookAhead);
+    cam.updateMatrixWorld(true);
+    cam.updateProjectionMatrix();
+    const rc = new THREE.Raycaster();
+    rc.near = 0.001; rc.far = 12;
+    const ndc = new THREE.Vector2();
+    const out = new Map();
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        ndc.x = (c + 0.5) / cols * 2 - 1;
+        ndc.y = 1 - (r + 0.5) / rows * 2;
+        rc.setFromCamera(ndc, cam);
+        // Glass is transparent: the player sees through it, so it is not cover.
+        const hit = rc.intersectObject(car.group, true).find((h) => h.object.name !== "glass");
+        const name = hit ? hit.object.name : "";
+        out.set(name, (out.get(name) || 0) + 1);
+      }
+    }
+    const total = cols * rows;
+    return (...names) => names.reduce((sum, n) => sum + (out.get(n) || 0), 0) / total;
+  };
+  return { car, d, p, s, eye, shoot, census };
+}
 
+test("the cockpit eye is under the roof, not in the windscreen aperture", async () => {
+  // The regression this exists to catch: the eye sat 0.16 m *forward* of the
+  // roof's leading edge, in the screen aperture, and the old headroom assertion
+  // passed anyway because 84 mm of windscreen counts as "something over your
+  // head". It is not a roof. So the part overhead is named, not merely present —
+  // and the eye is checked against the cabin's own longitudinal datum.
+  //
+  // The rest of the frame follows from that one error: with the driver's head in
+  // the screen the whole length of the bonnet is below him, and what filled the
+  // bottom of the picture was exterior paint rather than a dashboard.
+  const physics = await import("../physics.js");
+  const CABIN = /^(cabinTrim|interior|rollCage|body|roofScoop)$/;
   for (const spec of physics.CARS) {
-    const car = meshes.buildCarMesh(THREE, spec);
-    // The shell is single-sided, so from inside the cabin every panel that
-    // matters is a back face. Look at both sides or the probe sees nothing.
-    for (const m of car.materials) m.side = THREE.DoubleSide;
-    car.group.updateMatrixWorld(true);
-    const d = car.dimensions;
-    // Chassis-frame y is measured from the centre of mass; d.ground is the road.
-    const eye = new THREE.Vector3(cockpit.localX, cockpit.mountY + d.ground, cockpit.localZ);
+    const { car, d, eye, shoot, census } = await mountProbe(spec, "cockpit");
     const id = spec.id;
-
+    // meshes.js hangs the cabin off the front axle: screen base at −0.30, roof
+    // leading edge at −1.10, seat datum at −1.15.
+    const screenBase = d.frontAxle - 0.30;
+    const roofFront = d.frontAxle - 1.10;
+    assert.ok(eye.z < roofFront,
+      `${id}: the eye is ${(eye.z - roofFront).toFixed(3)} m forward of the roof's leading edge`);
+    assert.ok(eye.z > d.rearAxle + 0.32 - 0.52,
+      `${id}: the eye is behind the cabin altogether (z ${eye.z.toFixed(2)})`);
     assert.ok(eye.x < 0 && Math.abs(eye.x) < d.bodyHalfWidth,
       `${id}: the driver's eye is not over a seat (x ${eye.x})`);
 
-    const up = shoot(car, eye, new THREE.Vector3(0, 1, 0));
+    const up = shoot(eye, 0, 1, 0);
     assert.ok(up, `${id}: nothing over the driver's head — the eye is above the roof`);
+    assert.ok(CABIN.test(up.object.name),
+      `${id}: what is over the driver's head is ${up.object.name}, not a roof`);
     assert.ok(up.distance > 0.06,
       `${id}: only ${up.distance.toFixed(3)} m of headroom under the roof`);
-    assert.ok(shoot(car, eye, new THREE.Vector3(0, -1, 0)),
-      `${id}: nothing under the driver — the eye is outside the body`);
+    assert.ok(shoot(eye, 0, -1, 0), `${id}: nothing under the driver — the eye is outside the body`);
 
     // Behind the screen: the first thing straight ahead is the glasshouse, not
     // the outside of the car. Named parts rather than an exact match, because
     // meshes.js is free to hang trim in front of a driver — but never paint.
-    const ahead = shoot(car, eye, new THREE.Vector3(0, 0, 1));
+    const ahead = shoot(eye, 0, 0, 1);
     assert.ok(ahead, `${id}: the cockpit view has no windscreen in front of it`);
     assert.ok(!/^(body|bonnet|bumperFront|lightPod)$/.test(ahead.object.name),
       `${id}: the driver is looking at ${ahead.object.name}, not out of the car`);
 
-    const hood = new THREE.Vector3(bonnet.localX, bonnet.mountY + d.ground, bonnet.localZ);
-    const onto = shoot(car, hood, new THREE.Vector3(0, -1, 0));
+    // And the frame reads as a cabin: a dashboard under the view, and barely any
+    // exterior paint. At the shipped eyepoint the bonnet alone covered 5.6% of
+    // the frame with no cabin trim in it at all.
+    const share = census();
+    assert.ok(share("interior") > 0.10,
+      `${id}: only ${(share("interior") * 100).toFixed(1)}% of the frame is a dashboard`);
+    assert.ok(share("bonnet") < 0.04,
+      `${id}: ${(share("bonnet") * 100).toFixed(1)}% of the cockpit frame is bonnet paint`);
+    assert.ok(share("interior", "cabinTrim", "rollCage", "body") > 0.25,
+      `${id}: the cabin barely frames the view`);
+    assert.ok(share("") > 0.45,
+      `${id}: only ${(share("") * 100).toFixed(1)}% of the cockpit frame is road`);
+    car.dispose();
+  }
+});
+
+test("the bonnet camera is out on the bonnet, with the bonnet in frame", async () => {
+  // It shipped 1.20 m ahead of the centre of mass, which on half the cars is
+  // past the nose: a free-floating viewpoint with no car in it at all, and the
+  // ground four metres ahead filling the bottom half of the picture.
+  const physics = await import("../physics.js");
+  for (const spec of physics.CARS) {
+    const { car, d, eye, shoot, census } = await mountProbe(spec, "bonnet");
+    const id = spec.id;
+    assert.ok(eye.z < d.noseZ - 0.4,
+      `${id}: the bonnet camera hangs off the nose (z ${eye.z.toFixed(2)} of ${d.noseZ.toFixed(2)})`);
+
+    const onto = shoot(eye, 0, -1, 0);
     assert.ok(onto, `${id}: the bonnet camera has no bonnet under it`);
     assert.ok(onto.distance > 0.08 && onto.distance < 0.5,
       `${id}: the bonnet camera is ${onto.distance.toFixed(3)} m off the bonnet`);
-    assert.equal(shoot(car, hood, new THREE.Vector3(0, 1, 0)), null,
+    assert.equal(shoot(eye, 0, 1, 0), null,
       `${id}: the bonnet camera is under the roof, not out on the bonnet`);
+
+    const share = census();
+    const hood = share("bonnet", "body", "lightPod", "bumperFront");
+    assert.ok(hood > 0.12,
+      `${id}: only ${(hood * 100).toFixed(1)}% of the bonnet camera's frame is car`);
+    assert.ok(hood < 0.35,
+      `${id}: the bonnet fills ${(hood * 100).toFixed(1)}% of the frame and buries the road`);
     car.dispose();
   }
+});
+
+test("the bumper camera is on the bumper of every car", async () => {
+  // Same trap as the bonnet camera, one axle further forward: a constant offset
+  // from the centre of mass lands inside the nose of a long car and a hand's
+  // width past the nose of a short one.
+  const physics = await import("../physics.js");
+  for (const spec of physics.CARS) {
+    const { car, d, eye, shoot } = await mountProbe(spec, "bumper");
+    const id = spec.id;
+    assert.ok(eye.z < d.noseZ - 0.10,
+      `${id}: the bumper camera floats ahead of the nose (z ${eye.z.toFixed(2)} of ${d.noseZ.toFixed(2)})`);
+    assert.ok(eye.z > d.frontAxle + 0.20,
+      `${id}: the bumper camera is back at the axle (z ${eye.z.toFixed(2)})`);
+    const behind = shoot(eye, 0, 0, -1);
+    assert.ok(behind, `${id}: nothing behind the bumper camera — it is not on the car`);
+    assert.ok(eye.y > d.ground + 0.15 && eye.y < d.beltY,
+      `${id}: the bumper camera is not at bumper height (y ${eye.y.toFixed(2)})`);
+    car.dispose();
+  }
+});
+
+// The horizontal half-angle a vertical fov gives at an aspect ratio. This is the
+// number a portrait frame destroys and the one nobody measured.
+function halfHFov(fovDeg, aspect) {
+  return Math.atan(Math.tan(fovDeg * 0.5 * Math.PI / 180) * aspect) * 180 / Math.PI;
+}
+
+test("a portrait frame is re-framed, not just narrowed", () => {
+  const phone = 390 / 844;
+  assert.equal(portraitBlend(CAMERA_DESIGN_ASPECT), 0);
+  assert.equal(portraitBlend(2.4), 0);
+  assert.equal(portraitBlend(phone), 1);
+  assert.ok(portraitBlend(1.0) > 0.5 && portraitBlend(1.0) < 1);
+
+  const base = cameraParams("chase");
+  // THREE's fov is vertical, so a tall window keeps the whole vertical field and
+  // throws the horizontal away. Unadapted, the chase camera's horizontal field
+  // collapses to a slot narrower than the car it is following.
+  assert.ok(halfHFov(base.fovBase, phone) * 2 < 22,
+    "the unadapted horizontal field is not actually broken — this test proves nothing");
+
+  const out = Object.assign({}, base);
+  adaptCameraParams(out, base, phone);
+  assert.ok(halfHFov(out.fovBase, phone) * 2 > 32,
+    `portrait horizontal field is still ${(halfHFov(out.fovBase, phone) * 2).toFixed(1)} degrees`);
+  assert.ok(out.fovBase <= 66 + 1e-9, `the widening became a fisheye: ${out.fovBase}`);
+  assert.ok(out.fovMax >= out.fovBase, "fovMax fell below fovBase");
+
+  // The rest has to come from the rig: higher, closer, and aimed further down the
+  // road, so the extra vertical field lands on stage rather than on sky and verge.
+  assert.ok(out.height > base.height * 1.3, `portrait boom did not rise: ${out.height}`);
+  assert.ok(out.distance < base.distance, `portrait boom did not come in: ${out.distance}`);
+  assert.ok(out.lookAhead > base.lookAhead, "the portrait aim did not go further down the road");
+  assert.ok(out.lookHeight < base.lookHeight * 0.5, "the portrait aim did not drop");
+
+  // The camera has to end up pitched down harder than it is in landscape, which
+  // is the whole claim: a taller frame wants a different pitch, not a narrower
+  // field at the same one.
+  const pitch = (q) => Math.atan2(q.height - q.lookHeight, q.distance + q.lookAhead);
+  assert.ok(pitch(out) > pitch(base) * 1.5,
+    `portrait pitch ${(pitch(out) * 180 / Math.PI).toFixed(1)} vs landscape ${(pitch(base) * 180 / Math.PI).toFixed(1)}`);
+
+  // Landscape is untouched, and adapting is idempotent — resize fires repeatedly.
+  const wide = Object.assign({}, base);
+  adaptCameraParams(wide, base, CAMERA_DESIGN_ASPECT);
+  for (const k of ["height", "distance", "lookAhead", "lookHeight", "fovBase", "fovMax"]) {
+    assert.equal(wide[k], base[k], `landscape ${k} moved`);
+  }
+  const twice = Object.assign({}, base);
+  adaptCameraParams(twice, base, phone);
+  adaptCameraParams(twice, base, phone);
+  for (const k of ["height", "distance", "lookAhead", "lookHeight", "fovBase", "fovMax"]) {
+    assert.equal(twice[k], out[k], `adapting twice moved ${k}`);
+  }
+});
+
+test("a portrait in-car camera widens but stays a mount", () => {
+  const phone = 390 / 844;
+  const base = cameraParams("cockpit");
+  const out = Object.assign({}, base);
+  adaptCameraParams(out, base, phone);
+  assert.ok(out.fovBase > base.fovBase, "the in-car field did not widen at all");
+  assert.ok(out.fovBase <= 58 + 1e-9, `an in-car fisheye: ${out.fovBase}`);
+  // A mount is bolted to the car: its placement cannot move with the window.
+  assert.equal(out.mountY, base.mountY);
+  assert.equal(out.localZAxle, base.localZAxle);
+  assert.equal(out.localXFrac, base.localXFrac);
+  assert.ok(out.lookHeight < base.lookHeight, "the in-car aim did not drop for the taller frame");
 });
 
 test("the finish flourish orbits the car", () => {
@@ -619,14 +887,29 @@ test("dust rate tracks slip, load, speed and the surface", () => {
   const wet = dustSpawnRate(gravel, wheel(), 20, 1);
   assert.ok(wet < rolling * 0.4, `rain did not damp the dust: ${wet} vs ${rolling}`);
 
-  // Monotonic in speed up to the reference, then saturating rather than exploding.
+  // Monotonic in speed, and still climbing well past the point the old rate
+  // saturated at. This is the assertion that replaces `rate(60) === rate(20)`:
+  // that equality was the whole reason a gravel car at 100 km/h threw two wisps
+  // that died inside a car length. The rate has to keep growing where the plume
+  // should be at its biggest, and still be bounded so it cannot eat the pool.
   let prev = -1;
-  for (let v = 0; v <= 20; v += 1) {
+  for (let v = 0; v <= 60; v += 1) {
     const r = dustSpawnRate(gravel, wheel(), v, 0);
     assert.ok(r >= prev, `rate fell at ${v} m/s`);
     prev = r;
   }
-  assert.equal(dustSpawnRate(gravel, wheel(), 60, 0), dustSpawnRate(gravel, wheel(), 20, 0));
+  const at20 = dustSpawnRate(gravel, wheel(), 20, 0);
+  const at100kph = dustSpawnRate(gravel, wheel(), 27.8, 0);
+  assert.ok(at100kph > at20 * 1.2,
+    `100 km/h threw no more than 72: ${at100kph.toFixed(1)} vs ${at20.toFixed(1)}`);
+  assert.ok(dustSpawnRate(gravel, wheel(), 90, 0) < at100kph * 1.6, "the rate runs away with speed");
+
+  // And a straight-running wheel at speed is not nearly silent. What makes the
+  // tail is the tyre displacing loose material at thirty metres a second, so the
+  // no-slip floor has to be a large fraction of a sliding wheel's rate, not 15%.
+  const pinned = dustSpawnRate(gravel, wheel({ slipRatio: 1, slipAngle: 0.6 }), 27.8, 0);
+  assert.ok(at100kph > pinned * 0.30,
+    `a straight wheel throws only ${(at100kph / pinned * 100).toFixed(0)}% of a sliding one`);
 
   // A dustier surface throws more for the same wheel.
   const sand = surfaceProps(SURFACE.SAND);
@@ -634,6 +917,125 @@ test("dust rate tracks slip, load, speed and the surface", () => {
 
   // The quality scale is a straight multiplier, so a phone gets the same shape.
   assert.ok(Math.abs(dustSpawnRate(gravel, wheel(), 20, 0, 0.5) - rolling * 0.5) < 1e-6);
+});
+
+test("the wake carries the plume up, and only once the car is moving", () => {
+  assert.equal(wakeLift(0), 0);
+  assert.equal(wakeLift(8), 0);
+  assert.ok(wakeLift(20) > 0.4 && wakeLift(20) < 0.7);
+  assert.equal(wakeLift(30), 1);
+  assert.equal(wakeLift(120), 1, "the wake term is unbounded");
+});
+
+// Drive the whole renderer, because the size of the plume is decided by the
+// spawn loop and the budget together, not by dustSpawnRate alone.
+async function plumeAfter(seconds, dt, quality = "medium") {
+  const stageMod = await import("../stage.js");
+  const meshes = await import("../meshes.js");
+  const def = stageMod.STAGE_BOOK[0];
+  const stage = stageMod.generateStage(def.seed, { ...def, length: 800 });
+  const { api } = makeRenderer({ webgl2: true, quality, meshes });
+  const car = makeDustyCar();
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  const steps = Math.round(seconds / dt);
+  for (let i = 0; i < steps; i += 1) {
+    // Drive it down the road. A car parked at the origin drops its whole plume
+    // on one spot, and then every question about where the dust ended up
+    // answers itself.
+    car.pos.z += car.vel.z * dt;
+    for (const w of car.wheels) {
+      w.contactPoint.x = w.isLeft ? -0.75 : 0.75;
+      // All four on one station, so the only thing that can spread a frame's
+      // spawns along z is the spawn loop laying them down the road.
+      w.contactPoint.z = car.pos.z;
+      w.worldPos.x = w.contactPoint.x;
+      w.worldPos.z = w.contactPoint.z;
+    }
+    api.update(frame, dt);
+  }
+  // Alive is only half the story. What a chase camera sees is the part of the
+  // plume still within a few car lengths; spread the same particles over eighty
+  // metres of road instead of twenty and the count is unchanged while the
+  // picture goes from a rooster tail to a faint haze. So measure both, and
+  // measure the gaps too — a frame's worth of spawns dropped on one point is a
+  // row of clumps, not a plume.
+  const pool = api.dustPool;
+  let near = 0;
+  // How far along the road the *newest* batch is spread. stepParticlePool clamps
+  // its step to 0.1 s, so everything spawned in the last frame shares an age
+  // below that and nothing older does.
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let i = 0; i < pool.capacity; i += 1) {
+    if (pool.life[i] <= 0) continue;
+    const dx = pool.x[i] - car.pos.x;
+    const dz = pool.z[i] - car.pos.z;
+    if (dx * dx + dz * dz < 400) near += 1;
+    if (pool.age[i] <= 0.1 + 1e-6) {
+      if (pool.z[i] < lo) lo = pool.z[i];
+      if (pool.z[i] > hi) hi = pool.z[i];
+    }
+  }
+  const out = { alive: api.stats.dust, near, batchSpread: hi > lo ? hi - lo : 0 };
+  api.dispose();
+  return out;
+}
+
+function makeDustyCar() {
+  const wheels = [];
+  for (let i = 0; i < 4; i += 1) {
+    wheels.push({
+      index: i, isFront: i < 2, isLeft: i % 2 === 0,
+      worldPos: { x: 0, y: 0.3, z: 0 }, contactPoint: { x: 0, y: 0, z: 0 },
+      contactNormal: { x: 0, y: 1, z: 0 },
+      contact: true, load: 3200, slipRatio: 0.05, slipAngle: 0.02,
+      steerAngle: 0, spinRate: 90, compression: 0.4, skidding: false, surfaceId: SURFACE.GRAVEL,
+    });
+  }
+  // 100 km/h in a straight line on gravel: the frame the plume is judged on.
+  return {
+    spec: { id: "test" },
+    pos: { x: 0, y: 0.5, z: 0 }, vel: { x: 0, y: 0, z: 27.8 },
+    quat: { x: 0, y: 0, z: 0, w: 1 },
+    yaw: 0, pitch: 0, roll: 0, yawRate: 0,
+    speed: 27.8, forwardSpeed: 27.8, slipAngle: 0.02,
+    lateralG: 0, longitudinalG: 0.2, verticalG: 1,
+    engineRpm: 5000, gear: 4, wheels, onGround: 4, airTime: 0,
+    input: { throttle: 1, brake: 0, steer: 0, handbrake: 0 },
+    damage: null,
+  };
+}
+
+test("a gravel car at 100 km/h throws a plume worth looking at", async () => {
+  // Straight-line, no wheelspin, dry gravel: the case the shipped renderer made
+  // two wisps of. The plume is a hundreds-of-particles thing or it is nothing,
+  // and the ones that count are the ones still near the car.
+  const settled = await plumeAfter(3, 1 / 60);
+  assert.ok(settled.alive > 900,
+    `a rally car at 100 km/h on gravel threw ${settled.alive} particles`);
+  assert.ok(settled.alive <= qualitySettings("medium").particleBudget,
+    `${settled.alive} particles is over the medium budget`);
+  assert.ok(settled.near > 250,
+    `only ${settled.near} particles are within 20 m of the car — the plume is a haze`);
+
+  // A quality level is allowed to buy less of it, and must actually get less.
+  const cheap = await plumeAfter(3, 1 / 60, "low");
+  assert.ok(cheap.alive < settled.alive, "the low preset spends as much as medium");
+});
+
+test("the plume is laid along the road, not dropped in heaps", async () => {
+  // A frame's spawns go at the contact patch of a wheel that has just travelled
+  // `speed * dt`. Dropping them all on the end point costs nothing at 60 fps and
+  // everything below 20, where the puffs separate into a row of clumps metres
+  // apart — and a dip in frame rate is exactly what a big plume causes.
+  const dt = 1 / 6;
+  const coarse = await plumeAfter(2, dt);
+  const travel = 27.8 * dt;
+  assert.ok(coarse.batchSpread > travel * 0.55,
+    `a frame's dust covers ${coarse.batchSpread.toFixed(2)} m of the ${travel.toFixed(2)} m the wheel ran`);
+  assert.ok(coarse.batchSpread < travel * 1.6,
+    `a frame's dust is smeared over ${coarse.batchSpread.toFixed(2)} m, more than the wheel travelled`);
 });
 
 test("only a driven rear wheel throws a rooster tail", () => {
