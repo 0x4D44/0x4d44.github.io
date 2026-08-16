@@ -1148,6 +1148,13 @@ export function contactShadowFit(fit, height, nominal, airTime) {
 // shadow falls on, so this is how far above that ground it has to reach.
 export const SHADOW_CASTER_HEIGHT = 30;
 
+// How far either side of the carriageway the shadow box reaches. This is a
+// resolution trade, not a free parameter: the box is square and texel size is
+// its width over the map size, so every metre of padding costs sharpness. At 26 m
+// a 1024 map still resolves about 12 cm, which is finer than the shadow of a
+// tree trunk needs to be.
+export const SHADOW_SIDE_PAD = 26;
+
 export function makeShadowFit() {
   return {
     fx: 0, fy: -1, fz: 0,
@@ -3664,7 +3671,14 @@ export function createRenderer(canvas, opts = {}) {
     const behind = Math.max(2, Math.round(12 / stage.step));
     const idx = clamp(Math.round(state.lastS / stage.step), 0, stage.count - 1);
     const stride = Math.max(1, Math.round((aheadSamples + behind) / 100));
-    let n = roadSpanPoints(shadowPoints, stage, idx, aheadSamples, behind, stride, 2.5);
+    // Padded well beyond the road, because the shadow map only renders what is
+    // inside this box and the things that shade a rally road stand beside it, not
+    // on it. Fitted to the carriageway plus 2.5 m, a treeline twenty metres off
+    // the verge was never drawn into the map at all — so at a low sun, where a
+    // 30 m conifer throws a shadow over a hundred metres, the road stayed bare
+    // and the "golden hour, long shadows" preset produced neither.
+    let n = roadSpanPoints(shadowPoints, stage, idx, aheadSamples, behind, stride,
+      SHADOW_SIDE_PAD);
     // The car itself, so a stopped car off the road still casts.
     if ((n + 2) * 3 <= shadowPoints.length) {
       let o = n * 3;
@@ -3872,7 +3886,12 @@ export function createRenderer(canvas, opts = {}) {
     // difference without a lookup texture.
     const u = post.composite.uniforms;
     const night = nightFraction(cur);
-    u.uLift.value.set(0.012 + 0.03 * night, 0.014 + 0.032 * night, 0.022 + 0.05 * night);
+    // Almost no lift in daylight. A film lift of 0.012 puts the black point at
+    // roughly 30/255 after the grade, so nothing in the frame can ever be dark —
+    // measured across fifteen frames, not one pixel fell below luminance 26, and
+    // a shadow that should have been a hole in the picture was a 14% dip. The
+    // lift is a night look; it belongs to the night.
+    u.uLift.value.set(0.001 + 0.034 * night, 0.0015 + 0.036 * night, 0.003 + 0.058 * night);
     u.uGamma.value.set(1.0, 0.995 - 0.02 * night, 0.985 - 0.035 * night);
     u.uGain.value.set(
       1.02 + 0.04 * saturate(cur.turbidity / 12),

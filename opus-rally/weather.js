@@ -181,12 +181,20 @@ export const WEATHER_PRESETS = Object.freeze([
     name: "Pale Ember",
     summary: "First light over a cold valley — long shadows, a warm rim on every crest.",
     sunElevation: 6.5 * DEG, sunAzimuth: 84 * DEG,
-    sunIntensity: 2.1, sunAngularSize: 0.0125, haloStrength: 1.9,
-    sunColour: [1.0, 0.52, 0.20], moonColour: [0.42, 0.48, 0.62],
+    // Normal-incidence beam, not the light that lands on the road: at six and a
+    // half degrees cos(theta) throws away nine tenths of it before the ground
+    // sees any. Authored *down* to 2.1 as well, the sun then contributed an
+    // eighth of what was falling on the stage and a shadow was worth four
+    // levels of pixel. The gel is a gel and not a second sunset — sunlightColour
+    // already reddens this beam to 2.9:1 red over blue, and stacking an orange
+    // filter on top of that took it to 14:1 and threw away half the light for
+    // the privilege.
+    sunIntensity: 7.0, sunAngularSize: 0.0125, haloStrength: 0.55,
+    sunColour: [1.0, 0.82, 0.58], moonColour: [0.42, 0.48, 0.62],
     hemiSky: [0.30, 0.36, 0.58], hemiGround: [0.16, 0.13, 0.11],
-    hemiIntensity: 0.85, ambientIntensity: 0.22,
+    hemiIntensity: 0.72, ambientIntensity: 0.12,
     bounceColour: [0.36, 0.28, 0.20], bounceIntensity: 0.18,
-    shadowStrength: 0.85, exposure: 1.15, turbidity: 2.6,
+    shadowStrength: 0.85, exposure: 1.42, turbidity: 2.6,
     skyBrightness: 0.85, skyTintWeight: 0.42,
     skyZenith: [0.055, 0.115, 0.320], skyHorizon: [0.92, 0.46, 0.24], skyGround: [0.10, 0.08, 0.07],
     fogColour: [0.52, 0.40, 0.36], fogNear: 90, fogFar: 2200, fogDensity: 0.0012,
@@ -212,7 +220,11 @@ export const WEATHER_PRESETS = Object.freeze([
     sunIntensity: 5.4, sunAngularSize: 0.0093, haloStrength: 0.55,
     sunColour: [1.0, 0.955, 0.885], moonColour: [0.40, 0.45, 0.58],
     hemiSky: [0.40, 0.56, 0.92], hemiGround: [0.30, 0.27, 0.22],
-    hemiIntensity: 1.05, ambientIntensity: 0.16,
+    // Hard noon is the one preset that already had a beam worth the name, so the
+    // work here is the other half of the ratio: a hemisphere at 1.05 and a flat
+    // ambient on top of it put as much light in the shade as the sun put on the
+    // road, and a shadow at noon is meant to be the blackest thing in the frame.
+    hemiIntensity: 0.80, ambientIntensity: 0.10,
     bounceColour: [0.48, 0.44, 0.36], bounceIntensity: 0.34,
     shadowStrength: 1.0, exposure: 0.82, turbidity: 2.1,
     skyBrightness: 1.35, skyTintWeight: 0.30,
@@ -241,12 +253,19 @@ export const WEATHER_PRESETS = Object.freeze([
     name: "Long Amber",
     summary: "Low raking sun down the stage — every crest is a wall of light, every dip a black hole.",
     sunElevation: 11 * DEG, sunAzimuth: 268 * DEG,
-    sunIntensity: 3.0, sunAngularSize: 0.0118, haloStrength: 2.4,
-    sunColour: [1.0, 0.66, 0.33], moonColour: [0.42, 0.47, 0.60],
+    // The preset the whole rig was judged on, and the one it failed hardest: a
+    // beam of 3.0 through cos(11 deg) put a fifth of the stage's light on the
+    // road against four fifths from the fill, so nothing anywhere in the frame
+    // was in shadow and the road, the verge and the trees all sat inside one
+    // two-stop band. Same argument as the dawn: the beam is normal incidence,
+    // the gel stops fighting sunlightColour, and the flat ambient stops standing
+    // in for a sky.
+    sunIntensity: 7.0, sunAngularSize: 0.0118, haloStrength: 0.85,
+    sunColour: [1.0, 0.88, 0.72], moonColour: [0.42, 0.47, 0.60],
     hemiSky: [0.52, 0.48, 0.56], hemiGround: [0.26, 0.19, 0.13],
-    hemiIntensity: 0.9, ambientIntensity: 0.2,
+    hemiIntensity: 0.83, ambientIntensity: 0.10,
     bounceColour: [0.52, 0.36, 0.22], bounceIntensity: 0.3,
-    shadowStrength: 0.92, exposure: 1.05, turbidity: 3.4,
+    shadowStrength: 0.92, exposure: 1.35, turbidity: 3.4,
     skyBrightness: 1.0, skyTintWeight: 0.5,
     skyZenith: [0.075, 0.130, 0.330], skyHorizon: [1.0, 0.60, 0.28], skyGround: [0.16, 0.11, 0.08],
     fogColour: [0.68, 0.48, 0.33], fogNear: 160, fogFar: 3600, fogDensity: 0.0009,
@@ -962,6 +981,15 @@ varying vec2 vUv;
 // rather than a flicker.
 const float RAIN_MIN_ANGLE = 0.0016;
 
+// Where a streak stops being a streak and becomes the haze between you and the
+// road. Everything else in the scene recedes through the fog; rain is drawn with
+// fog off, so without this the drop twenty metres out arrives at exactly the
+// strength of the one on the bonnet, and a field whose near and far halves carry
+// the same weight reads as a plate pasted at one distance.
+const float RAIN_HAZE_NEAR = 3.0;
+const float RAIN_HAZE_FAR = 22.0;
+const float RAIN_HAZE_KEEP = 0.30;
+
 void main() {
   vec3 base = iBase * uBox;
   // Wrap the pool around the camera in world space: a drop leaves the box on one
@@ -971,18 +999,35 @@ void main() {
 
   vec4 mv = viewMatrix * vec4(world, 1.0);
   vec3 vel = (viewMatrix * vec4(uStreakVel, 0.0)).xyz;
-  vec2 d = vel.xy;
-  float dl = length(d);
-  d = dl > 1e-4 ? d / dl : vec2(0.0, -1.0);
+  float depth = max(-mv.z, 0.05);
+
+  // Where *this drop* is going on the screen, not where the field is going. A
+  // view-space point projects to p.xy / -p.z, so its screen velocity is
+  // (vel.xy * depth + mv.xy * vel.z) / depth^2, and the second term is what makes
+  // the direction depend on where the drop stands. That dependence is the whole
+  // of perspective: streaks radiate out of the point the rain is heading for,
+  // short beside it and long out at the edges. Reading the direction off vel.xy
+  // alone throws the z term away, and then every drop in the game draws at one
+  // angle and one screen length from the vanishing point to the bonnet — a decal
+  // laid over the image rather than weather the car is driving through.
+  vec2 sv = vel.xy * depth + mv.xy * vel.z;
+  float svl = length(sv);
+  vec2 d = svl > 1e-6 ? sv / svl : vec2(0.0, -1.0);
   // (perp, d) has to be right handed or the quad comes out wound clockwise and
   // every drop in the game is back-face culled — geometry submitted, not one
   // pixel drawn, which is exactly what shipped: heavy rain photographed as clear
   // air with twenty-two thousand triangles a frame behind it. vec2(-d.y, d.x)
   // reverses the orientation of the (x, y) mapping; this one preserves it.
   vec2 perp = vec2(d.y, -d.x);
-  float len = uLength * (0.55 + 0.9 * iRand.x);
-  float depth = max(-mv.z, 0.05);
   float width = max(uWidth, depth * RAIN_MIN_ANGLE);
+  // An offset of L along d moves the screen point by L / depth, and the smear
+  // subtends svl / depth^2 per second, so the offset that draws the true streak
+  // is svl / depth times the shutter. uLength already carries |v| * shutter, so
+  // what is left is the share of that speed lying across the line of sight: all
+  // of it for a drop crossing the frame, almost none for one falling straight
+  // down the barrel of the lens — which is a dot rather than a streak, floored
+  // at the width so it stays a dot instead of a degenerate quad.
+  float len = max(uLength * (0.55 + 0.9 * iRand.x) * svl / (depth * max(length(vel), 1e-4)), width);
   mv.xy += d * (position.y * len) + perp * (position.x * width);
 
   // The shell fade only exists to stop a drop popping in at the box wall, so it
@@ -990,7 +1035,8 @@ void main() {
   // 0.72 threw away two thirds of the pool's volume before it was ever seen.
   float edge = max(max(abs(rel.x) / uBox.x, abs(rel.y) / uBox.y), abs(rel.z) / uBox.z) * 2.0;
   float dist = length(mv.xyz);
-  vAlpha = uOpacity * (uWidth / width) * (1.0 - smoothstep(0.84, 1.0, edge))
+  float haze = mix(1.0, RAIN_HAZE_KEEP, smoothstep(RAIN_HAZE_NEAR, RAIN_HAZE_FAR, depth));
+  vAlpha = uOpacity * (uWidth / width) * haze * (1.0 - smoothstep(0.84, 1.0, edge))
     * smoothstep(0.0, uNearFade, dist) * (0.55 + 0.45 * iRand.y);
   vUv = position.xy + 0.5;
   gl_Position = projectionMatrix * mv;
@@ -1711,8 +1757,15 @@ function applyState(w, dt) {
   sunlightColour(elev, c.turbidity, w._sunTint);
 
   const cloudBlock = 1 - c.cloudCover * (0.30 + 0.62 * c.cloudOpacity);
-  const sunLum = 0.2126 * w._sunTint[0] + 0.7152 * w._sunTint[1] + 0.0722 * w._sunTint[2];
-  const keyIntensity = c.sunIntensity * gate * sunLum * cloudBlock;
+  // Atmospheric extinction is a *colour*, and it is already carried by
+  // w._sunTint into L.key.color a few lines below. Folding its luminance into
+  // the intensity as well squared it, and the square is worst exactly where it
+  // hurts: at eleven degrees the tint costs a third of the light, so the beam
+  // arrived at 0.43 of full strength instead of 0.65 and the key had nothing
+  // left to cast a shadow with. sunIntensity is normal-incidence irradiance —
+  // the beam a surface square to the sun receives — and three applies the
+  // cos(theta) that takes most of it away on flat ground.
+  const keyIntensity = c.sunIntensity * gate * cloudBlock;
 
   // Sky gradient: a physical Rayleigh base scaled by scatter, then pulled toward
   // the preset's authored stops. The tints carry no brightness of their own, so
@@ -1936,7 +1989,10 @@ function updatePrecipitation(w, dt) {
     // fade, so a drizzle was a quarter as visible as it should be and a downpour
     // was a wall of white bars. A drop's own opacity barely varies with how many
     // of its neighbours there are.
-    ru.uOpacity.value = 0.13 + 0.13 * rainRate;
+    // Set for the near field, which is now the only part of it drawn at full
+    // weight: the shader hazes a streak down to under a third of this by the far
+    // wall of the box, so a flat figure here would have thinned the whole fall.
+    ru.uOpacity.value = 0.17 + 0.15 * rainRate;
     const dropLit = clamp(0.10 + 2.0 * skyLevel, 0.06, 0.75);
     ru.uColour.value.setRGB(
       c.precipColour[0] * dropLit, c.precipColour[1] * dropLit, c.precipColour[2] * dropLit,

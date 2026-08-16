@@ -274,6 +274,17 @@ function pushBlob(b, cx, cy, cz, rx, ry, rz, col, subdiv = 1, warpSeed = 0, warp
   for (const f of OCTA_F) recurse(OCTA_V[f[0]], OCTA_V[f[1]], OCTA_V[f[2]], subdiv);
 }
 
+// A single card. Only worth having where the surface genuinely is one triangle —
+// a branch tip — because a quad with two coincident corners is a degenerate the
+// geometry assertions rightly refuse.
+function pushTri3(b, p0, p1, p2, col, uw = 1, uh = 1) {
+  const [r, g, bl] = col;
+  const a = vert(b, p0[0], p0[1], p0[2], 0, 0, r, g, bl);
+  const c = vert(b, p1[0], p1[1], p1[2], uw, 0, r, g, bl);
+  const d = vert(b, p2[0], p2[1], p2[2], uw * 0.5, uh, r, g, bl);
+  tri(b, a, c, d);
+}
+
 function pushQuad3(b, p0, p1, p2, p3, col, uw = 1, uh = 1) {
   const [r, g, bl] = col;
   const a = vert(b, p0[0], p0[1], p0[2], 0, 0, r, g, bl);
@@ -453,6 +464,74 @@ function linearToSrgbByte(v) {
   const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
   return Math.round(s * 255);
 }
+
+function srgbByteToLinear(b) {
+  const c = (b < 0 ? 0 : b > 255 ? 255 : b) / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+// The whitest paint a car has ever worn reflects about three quarters of the
+// light that lands on it. A canvas byte of 255 asks the shader for an albedo of
+// 1.0, which has nowhere left to go once the sun and the tone curve are applied:
+// the panel clips flat, loses every trace of its own shading, and the car reads
+// as cut paper laid on the stage. Nothing painted on this car is allowed above
+// the ceiling.
+export const PAINT_CEILING = 0.75;
+// Vinyl, a stencilled number and a rally plate are pigmented plastic, which sits
+// lower still — and the gap between the two is what keeps a white graphic
+// legible on a white car instead of merging with it.
+export const DECAL_CEILING = 0.58;
+
+const CSS_HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const CSS_RGB = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i;
+
+// Scales a CSS colour down until its brightest channel sits at `ceiling` in
+// linear light, hue and saturation untouched. Anything it cannot parse — a
+// gradient, a pattern, a named colour — comes back as it went in, because a
+// clamp that guesses is worse than one that abstains.
+export function clampPaint(css, ceiling = PAINT_CEILING) {
+  if (typeof css !== "string") return css;
+  const s = css.trim();
+  let r, g, b;
+  const hex = CSS_HEX.exec(s);
+  if (hex) {
+    const h = hex[1];
+    const wide = h.length === 6;
+    const at = (i) => parseInt(wide ? h.slice(i * 2, i * 2 + 2) : h[i].repeat(2), 16);
+    r = at(0); g = at(1); b = at(2);
+  } else {
+    const dec = CSS_RGB.exec(s);
+    if (!dec) return css;
+    r = +dec[1]; g = +dec[2]; b = +dec[3];
+  }
+  const lr = srgbByteToLinear(r), lg = srgbByteToLinear(g), lb = srgbByteToLinear(b);
+  const peak = Math.max(lr, lg, lb);
+  if (!(peak > ceiling)) return css;
+  const k = ceiling / peak;
+  return `#${[lr, lg, lb].map((v) => linearToSrgbByte(v * k).toString(16).padStart(2, "0")).join("")}`;
+}
+
+// A canvas whose fill and stroke colours cannot exceed the ceiling, so the rule
+// lives in one place instead of at every call that picks a colour. Only the
+// colour pass is wrapped: the roughness and mud companions carry masks, not
+// albedos, and a mask clamped to 0.75 is simply wrong.
+function paintGuard(ctx, ceiling) {
+  if (typeof Proxy !== "function") return ctx;
+  return new Proxy(ctx, {
+    get(t, k) {
+      const v = t[k];
+      return typeof v === "function" ? v.bind(t) : v;
+    },
+    set(t, k, v) {
+      t[k] = (k === "fillStyle" || k === "strokeStyle") ? clampPaint(v, ceiling) : v;
+      return true;
+    },
+  });
+}
+
+const DECAL_WHITE = clampPaint("#ffffff", DECAL_CEILING);
+const PLATE_WHITE = clampPaint("#f2f2ee", DECAL_CEILING);
+const SPONSOR_WHITE = clampPaint("#f4f4f0", DECAL_CEILING);
 
 // mode drives the height field; everything else (colour, roughness, normal) is
 // derived from that one field so a lit surface never disagrees with itself.
@@ -986,7 +1065,7 @@ function drawSponsors(ctx, W, H, rng, mode, team, words) {
     { band: LIVERY_BANDS.flankNear, orient: "mirror" },
     { band: LIVERY_BANDS.flankFar, orient: "none" },
   ];
-  const light = mode === "rough" ? greyOf(0.24) : "#f4f4f0";
+  const light = mode === "rough" ? greyOf(0.24) : SPONSOR_WHITE;
   const dark = mode === "rough" ? greyOf(0.24) : "#101216";
   for (const { band, orient } of bands) {
     const top = band.y0 * H, span = (band.y1 - band.y0) * H;
@@ -1037,13 +1116,24 @@ function drawMud(ctx, W, H, rng) {
 }
 
 function paintLivery(canvas, livery, mode, seed) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return false;
+  const raw = canvas.getContext("2d");
+  if (!raw) return false;
   const W = canvas.width, H = canvas.height;
   const rng = makeRng(seed);
   if (mode === "mud") {
-    drawMud(ctx, W, H, rng);
+    drawMud(raw, W, H, rng);
     return true;
+  }
+  const ctx = mode === "rough" ? raw : paintGuard(raw, PAINT_CEILING);
+  // The spec's own colours are clamped up front as well as at the canvas, because
+  // a gradient stop is set on the gradient object and never passes the guard.
+  if (mode !== "rough") {
+    livery = {
+      ...livery,
+      base: clampPaint(livery.base || "#cccccc"),
+      stripe: clampPaint(livery.stripe || "#ffffff"),
+      accent: clampPaint(livery.accent || "#101010"),
+    };
   }
   const base = mode === "rough" ? greyOf(0.28) : (livery.base || "#cccccc");
   ctx.fillStyle = base;
@@ -1064,7 +1154,7 @@ function paintLivery(canvas, livery, mode, seed) {
   for (const [band, orient] of [[LIVERY_BANDS.flankNear, "mirror"], [LIVERY_BANDS.flankFar, "none"]]) {
     const span = (band.y1 - band.y0) * H;
     drawStencilNumber(ctx, W * 0.46, (band.y0 + band.y1) * 0.5 * H, span * 0.72,
-      num, "#ffffff", "#111111", mode, orient);
+      num, DECAL_WHITE, "#111111", mode, orient);
   }
   const deck = LIVERY_BANDS.deck;
   const deckSpan = (deck.y1 - deck.y0) * H;
@@ -1081,7 +1171,7 @@ function paintLivery(canvas, livery, mode, seed) {
     ctx.fillRect(cell.u0 * W, cell.v0 * H, cw, ch);
     const size = Math.min(cw / (ROOF_ASPECT * 0.86), ch / (0.66 * num.length + 0.12));
     drawStencilNumber(ctx, (cell.u0 + cell.u1) * 0.5 * W, (cell.v0 + cell.v1) * 0.5 * H,
-      size, num, "#ffffff", "#111111", mode, ROOF_ASPECT);
+      size, num, DECAL_WHITE, "#111111", mode, ROOF_ASPECT);
   }
 
   drawSponsors(ctx, W, H, rng, mode, livery.team, [rng.pick(EVENT_BRANDING.sponsors), rng.pick(EVENT_BRANDING.sponsors)]);
@@ -1091,7 +1181,7 @@ function paintLivery(canvas, livery, mode, seed) {
   // and its box is tall in the atlas where the lettering runs.
   const plateFont = deckSpan * 0.15;
   ctx.save();
-  ctx.fillStyle = mode === "rough" ? greyOf(0.34) : "#f2f2ee";
+  ctx.fillStyle = mode === "rough" ? greyOf(0.34) : PLATE_WHITE;
   ctx.fillRect(W * 0.80 - plateFont * DECK_ASPECT * 0.8, deckMid - deckSpan * 0.44,
     plateFont * DECK_ASPECT * 1.6, deckSpan * 0.88);
   ctx.fillStyle = mode === "rough" ? greyOf(0.30) : "#14171c";
@@ -1981,7 +2071,15 @@ function latticeField(world, L0, originX, originZ, sag = null) {
 const CONFORM_REACH = 1.6;
 // What the ribbon carves below the plane `heightAt` reports: the crown and the
 // racing-line ruts across the running surface, the churned shoulder outside it.
-const CONFORM_CLEARANCE = 0.24;
+// How far below the road plane the terrain skin is pushed inside the corridor.
+// It has to clear the deepest part of the drawn cross-section — the ditch — and
+// that depth belongs to stage.js's road section, not to this file. This constant
+// is therefore a stopgap for a real cross-module coupling: when stage.js deepened
+// the ditch, the skin started burying it again by 27 mm on tamarosa-rioseca and
+// the burial test caught it. The proper fix is a shared road-section function
+// both modules read; until then this is sized with margin over the measured
+// worst case and the test is what holds it honest.
+const CONFORM_CLEARANCE = 0.42;
 
 // Which drawn cell covers a world point, which of its two triangles, and what
 // that triangle is drawing there. Cells tile the plan exactly — a chunk is 32
@@ -3073,36 +3171,73 @@ function buildDoor(b, d, side, col) {
   });
 }
 
-function buildRollCage(b, d, col) {
+// A cage is welded to the floorpan INSIDE the shell: nothing about it may cross
+// the roof panel, the door skin or the boot lid. The numbers below are all
+// derived from cabinFrame(), which is the same surface the roof and the pillars
+// are lofted off, so every tube stays under the headliner and inboard of the door
+// card however wide the class makes the car. Getting that wrong put white tubes
+// over the roof and down the rear quarters with the wing apparently bolted to
+// them — an exoskeleton, which is not a thing rally cars have.
+const CAGE_TUBE = 0.022;
+
+function cageFrame(d) {
   const c = cabinFrame(d);
-  const w = d.bodyHalfWidth * 0.86;
-  const r = 0.024;
-  const floor = d.floorY + 0.04;
-  const top = d.roofY - 0.055;
-  const zB = (c.zWs + c.zRs) * 0.48;
-  // Main hoop across the B-pillar plane.
+  const hw = d.bodyHalfWidth;
+  return {
+    c,
+    r: CAGE_TUBE,
+    // Under the headliner, which hangs 32 mm below the roof's own surface.
+    top: d.roofY - 0.062,
+    // Hard against the roof rail, still inboard of it once the tube's own radius
+    // is counted: any further in and the bar runs through the driver's eyeline
+    // on the cockpit camera.
+    wTop: c.roofW * 0.89,
+    wBelt: hw * 0.845,
+    wBoot: hw * 0.76,
+    floor: d.floorY + 0.04,
+    // Behind the bulkhead the boot lid is the ceiling, so the stays duck under it.
+    bootY: d.beltY - 0.06,
+    zHoop: (c.zWs + c.zRs) * 0.48,
+  };
+}
+
+function buildRollCage(b, d, col) {
+  const g = cageFrame(d);
+  const c = g.c, r = g.r;
+  const zB = g.zHoop;
+  // Main hoop across the B-pillar plane: up the door aperture, in to the roof
+  // rail, across under the headliner.
   pushTube(b, [
-    [-w, floor, zB], [-w, d.beltY, zB], [-w * 0.92, top, zB],
-    [0, top + 0.012, zB], [w * 0.92, top, zB], [w, d.beltY, zB], [w, floor, zB],
+    [-g.wBelt, g.floor, zB], [-g.wBelt, d.beltY, zB], [-g.wTop, g.top, zB],
+    [0, g.top + 0.010, zB], [g.wTop, g.top, zB], [g.wBelt, d.beltY, zB], [g.wBelt, g.floor, zB],
   ], r, 6, col);
   for (const side of [-1, 1]) {
+    // Roof rail forward to the screen header, then down the A-pillar into the
+    // footwell — the bar the driver's helmet is actually protected by.
     pushTube(b, [
-      [side * w * 0.92, top, zB], [side * w * 0.90, top, c.zRoofF + 0.16],
-      [side * (c.beltW * 0.92), c.beltY + 0.02, c.zWs + 0.02],
-      [side * (c.beltW * 0.90), d.beltY - 0.20, c.zWs + 0.10],
+      [side * g.wTop, g.top, zB],
+      [side * g.wTop, g.top, c.zRoofF + 0.14],
+      [side * (c.roofW * 0.84), d.beltY + 0.24, c.zWs + 0.02],
+      [side * (c.beltW * 0.86), d.beltY - 0.18, c.zWs + 0.12],
     ], r, 6, col);
+    // Rear stays: down behind the backlight, through the parcel shelf, back to
+    // the turret. Every point is below the boot lid and inboard of the quarter.
     pushTube(b, [
-      [side * w * 0.92, top, zB], [side * w * 0.86, d.beltY + 0.18, c.zRs - 0.02],
-      [side * w * 0.80, floor + 0.05, d.rearAxle - 0.10],
+      [side * g.wTop, g.top, zB],
+      [side * (g.wTop * 0.98), c.beltY - 0.04, c.zRs + 0.06],
+      [side * g.wBoot, g.bootY, d.rearAxle + 0.04],
+      [side * g.wBoot, g.floor + 0.05, d.rearAxle - 0.28],
     ], r * 0.9, 6, col);
+    // Door bars in the aperture, an X inboard of the skin.
     pushTube(b, [
-      [side * w, d.beltY - 0.06, zB - 0.02], [side * w, d.beltY - 0.30, c.zWs + 0.06],
+      [side * g.wBelt, d.beltY - 0.06, zB - 0.02], [side * g.wBelt, d.beltY - 0.30, c.zWs + 0.06],
     ], r * 0.85, 6, col);
     pushTube(b, [
-      [side * w, d.beltY - 0.30, zB - 0.02], [side * w, d.beltY - 0.08, c.zWs + 0.06],
+      [side * g.wBelt, d.beltY - 0.30, zB - 0.02], [side * g.wBelt, d.beltY - 0.08, c.zWs + 0.06],
     ], r * 0.85, 6, col);
   }
-  pushTube(b, [[-w * 0.90, top, zB], [w * 0.86, top - 0.01, c.zRoofF + 0.18]], r * 0.8, 6, col);
+  // Roof diagonal, corner to corner between the hoop and the header.
+  pushTube(b, [[-g.wTop, g.top, zB], [g.wTop * 0.96, g.top - 0.008, c.zRoofF + 0.16]], r * 0.8, 6, col);
 }
 
 // Where everything inside the cabin hangs off. The driver sits on the left, so
@@ -3367,7 +3502,7 @@ function buildTailDetail(b, d, col) {
   // Both sit 16 mm inside a dark rim, so they are read in its shadow: the albedo
   // that looks right on a swatch comes out as two more black holes on the panel.
   const amber = [0.480, 0.150, 0.020];
-  const clear = [0.720, 0.720, 0.680];
+  const clear = [0.560, 0.560, 0.530];
   for (const side of [-1, 1]) {
     const cx = side * f.cx;
     // The backing plate first: without something dark behind them the lenses
@@ -3400,7 +3535,9 @@ function buildTailDetail(b, d, col) {
   // plate stands proud of its backing rather than inside it — a pale face buried
   // 5 mm inside a solid dark box is not a recess, it is invisible.
   pushBox(b, 0, belt - 0.400, zT - 0.014, 0.40, 0.145, 0.028, col);
-  pushBox(b, 0, belt - 0.400, zT - 0.022, 0.34, 0.105, 0.020, [0.720, 0.720, 0.690]);
+  // Plate white is pigmented plastic, not paint: at 0.72 it was the brightest
+  // thing on the back of the car and clipped flat under a headlight.
+  pushBox(b, 0, belt - 0.400, zT - 0.022, 0.34, 0.105, 0.020, [0.560, 0.560, 0.535]);
   pushCylinder(b, hw * 0.62, belt - 0.360, zT - 0.010, 0.045, 0.045, 0.055, 8, "z", col);
 }
 
@@ -3446,7 +3583,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
 
   const white = [1, 1, 1];
   const black = [0.045, 0.045, 0.05];
-  const cageCol = [0.80, 0.80, 0.82];
+  const cageCol = [0.72, 0.72, 0.74];
   const trimCol = [0.10, 0.10, 0.115];
   // Every colour below is a linear albedo, because under the one albedo rule the
   // vertex colour is the only thing carrying one on these parts. Moulded bumper
@@ -3472,6 +3609,13 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.55, vertexColors: true }));
   const metalMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.85, vertexColors: true }));
   const trimMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
+  // The lamp-pod bar is moulded plastic like the rest of the trim, but it must
+  // not SHARE the trim material: render.js binds the headlight level to the first
+  // part whose name reads as a lamp and writes an emissive into it every frame.
+  // On one material that emissive lit the mudflaps, the diffuser, the spare, the
+  // number plate and the whole cabin — switching the headlights on turned four
+  // black rubber flaps into white slabs.
+  const podMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
   const lampMat = vertexAlbedo(new THREE.MeshStandardMaterial({
     roughness: 0.12, metalness: 0.0,
     emissive: 0xfff0d0, emissiveIntensity: 1.0, vertexColors: true,
@@ -3483,7 +3627,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     emissive: 0xd8200c, emissiveIntensity: 0.85, vertexColors: true,
   }));
 
-  const materials = [paint, plastic, glassMat, cageMat, metalMat, trimMat, lampMat, tailLampMat];
+  const materials = [paint, plastic, glassMat, cageMat, metalMat, trimMat, podMat, lampMat, tailLampMat];
   const paintMaterials = [paint, plastic];
   const geometries = [];
   const parts = Object.create(null);
@@ -3523,7 +3667,21 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   addPart("mirrorRight", (b) => buildMirror(b, d, 1, white), paint, 3);
   addPart("wingRear", (b) => buildWing(b, d, white), paint, 1);
   addPart("roofScoop", (b) => buildRoofScoop(b, d, white), paint, 4);
-  addPart("lightPod", (b) => buildLightPod(b, d, trimCol), trimMat, 0);
+  // The four lenses go on before the pod that carries them, because render.js
+  // drives the headlight level into the FIRST part it finds whose name reads as
+  // a lamp. That has to be a lens on a material of its own — the pod bar behind
+  // them is trim, and a headlight emissive written into trim lights the car.
+  const lampSpec = buildLamps(d);
+  const lamps = [];
+  for (let i = 0; i < lampSpec.positions.length; i += 1) {
+    const [x, y, z, r] = lampSpec.positions[i];
+    const mesh = addPart(`lamp${i}`, (b) => {
+      pushCylinder(b, x, y, z, r, r * 0.96, 0.02, 12, "z", lampSpec.colour);
+    }, lampMat, 0, { receive: false });
+    if (mesh) lamps.push(mesh);
+  }
+
+  addPart("lightPod", (b) => buildLightPod(b, d, trimCol), podMat, 0);
   addPart("diffuser", (b) => buildDiffuser(b, d, black), trimMat, 1);
   addPart("exhaustTail", (b) => buildExhaust(b, d, [0.62, 0.63, 0.66]), metalMat, 1);
   addPart("mudflaps", (b) => buildMudflaps(b, d, hubs, black), trimMat, 2, { receive: false });
@@ -3538,16 +3696,6 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     addPart(`lampRear${i}`, (b) => {
       pushBlob(b, x, y, z, rx, ry, 0.016, [0.42, 0.05, 0.04], 2);
     }, tailLampMat, 1, { receive: false });
-  }
-
-  const lampSpec = buildLamps(d);
-  const lamps = [];
-  for (let i = 0; i < lampSpec.positions.length; i += 1) {
-    const [x, y, z, r] = lampSpec.positions[i];
-    const mesh = addPart(`lamp${i}`, (b) => {
-      pushCylinder(b, x, y, z, r, r * 0.96, 0.02, 12, "z", lampSpec.colour);
-    }, lampMat, 0, { receive: false });
-    if (mesh) lamps.push(mesh);
   }
 
   // Glass last so its transparency sorts after the opaque shell.
@@ -3613,33 +3761,45 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
   const rimR = R * (kind === "tarmac" ? 0.72 : 0.62);
   // Linear albedos, single-sourced in the vertices (see the one albedo rule):
   // tyre carbon black really is this dark, cast iron this dull.
-  const rubber = [0.042, 0.042, 0.045];
+  // Rubber is one of the darkest things a camera ever sees, but it is not one
+  // flat value: a moulded sidewall sits below a crown that has been scrubbed on
+  // grit all stage. Both ends stay inside the band carbon black occupies — the
+  // point is the CONTRAST, which is the only thing that makes a tread read at all.
+  const rubber = [0.038, 0.038, 0.041];
+  const crown = [0.060, 0.059, 0.061];
   const rimCol = [0.55, 0.56, 0.60];
-  const discCol = [0.16, 0.165, 0.175];
+  const discCol = [0.20, 0.205, 0.215];
   const caliperCol = [0.40, 0.10, 0.06];
   const studCol = [0.52, 0.53, 0.56];
   const hubCol = [0.26, 0.27, 0.29];
 
   const tyreB = mkBuilder();
   // Sidewall bulge: the profile is revolved, so a gravel tyre visibly squats.
+  // The pair of rings at 0.80 R is a moulded lettering rib — one step in the
+  // section is what turns a smooth cone of rubber into a sidewall.
+  const ribR = rimR + (R - rimR) * 0.62;
   const profile = [
-    [rimR, -width * 0.5],
-    [rimR + (R - rimR) * 0.42, -width * 0.60],
-    [R - pattern.depth * 0.5, -width * 0.52],
-    [R, -width * 0.40],
-    [R, width * 0.40],
-    [R - pattern.depth * 0.5, width * 0.52],
-    [rimR + (R - rimR) * 0.42, width * 0.60],
-    [rimR, width * 0.5],
+    [rimR, -width * 0.5, rubber],
+    [rimR + (R - rimR) * 0.42, -width * 0.60, rubber],
+    [ribR, -width * 0.585, rubber],
+    [ribR + 0.008, -width * 0.575, rubber],
+    [R - pattern.depth * 0.5, -width * 0.52, crown],
+    [R, -width * 0.40, crown],
+    [R, width * 0.40, crown],
+    [R - pattern.depth * 0.5, width * 0.52, crown],
+    [ribR + 0.008, width * 0.575, rubber],
+    [ribR, width * 0.585, rubber],
+    [rimR + (R - rimR) * 0.42, width * 0.60, rubber],
+    [rimR, width * 0.5, rubber],
   ];
   const seg = 20;
   const rows = [];
-  for (const [pr, px] of profile) {
+  for (const [pr, px, col] of profile) {
     const ring = [];
     for (let k = 0; k < seg; k += 1) {
       const a = (k / seg) * TAU;
       ring.push(vert(tyreB, px, Math.cos(a) * pr, Math.sin(a) * pr, k / seg, (px + width) / (2 * width),
-        rubber[0], rubber[1], rubber[2]));
+        col[0], col[1], col[2]));
     }
     rows.push(ring);
   }
@@ -3667,7 +3827,9 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
       }
       const p = (i2, x) => [x, corners[i2][0], corners[i2][1]];
       const x0 = rowX - bw * 0.5, x1 = rowX + bw * 0.5;
-      pushQuad3(tyreB, p(1, x0), p(3, x0), p(3, x1), p(1, x1), rubber);
+      // Scrubbed top, unscrubbed walls. The block was the same value as the
+      // groove it stands in, so 42 pads of relief shaded as one black cylinder.
+      pushQuad3(tyreB, p(1, x0), p(3, x0), p(3, x1), p(1, x1), crown);
       pushQuad3(tyreB, p(0, x0), p(1, x0), p(1, x1), p(0, x1), rubber);
       pushQuad3(tyreB, p(3, x0), p(2, x0), p(2, x1), p(3, x1), rubber);
       pushQuad3(tyreB, p(1, x1), p(3, x1), p(2, x1), p(0, x1), rubber);
@@ -3680,25 +3842,45 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
     }
   }
 
+  // All four corners share one geometry — render.js instances it unmirrored — so
+  // a wheel with a single dished face showed spokes on the left of the car and
+  // the open back of the barrel on the right, which is a hole you can see the
+  // stage through. Both faces carry a spoke set and a hub, and the disc sits
+  // between them, so the wheel reads the same from either side and is never
+  // transparent. Five studs against eight spokes share no divisor, which is what
+  // makes a spinning wheel look like it is turning instead of standing still.
   const rimB = mkBuilder();
   pushCylinder(rimB, 0, 0, 0, rimR, rimR, width * 0.94, 20, "x", rimCol, false);
-  pushCylinder(rimB, -width * 0.24, 0, 0, rimR * 0.30, rimR * 0.32, width * 0.30, 12, "x", rimCol);
   const spokes = kind === "tarmac" ? 10 : 8;
-  for (let k = 0; k < spokes; k += 1) {
-    const a = (k / spokes) * TAU;
-    const ca = Math.cos(a), sa = Math.sin(a);
-    pushTube(rimB, [
-      [-width * 0.22, ca * rimR * 0.26, sa * rimR * 0.26],
-      [-width * 0.34, ca * rimR * 0.62, sa * rimR * 0.62],
-      [-width * 0.40, ca * rimR * 0.94, sa * rimR * 0.94],
-    ], rimR * 0.085, 4, rimCol);
+  for (const face of [-1, 1]) {
+    pushCylinder(rimB, face * width * 0.24, 0, 0, rimR * 0.30, rimR * 0.32, width * 0.30, 12, "x", rimCol);
+    for (let k = 0; k < spokes; k += 1) {
+      const a = (k / spokes) * TAU;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      pushTube(rimB, [
+        [face * width * 0.22, ca * rimR * 0.26, sa * rimR * 0.26],
+        [face * width * 0.34, ca * rimR * 0.62, sa * rimR * 0.62],
+        [face * width * 0.40, ca * rimR * 0.94, sa * rimR * 0.94],
+      ], rimR * 0.085, 4, rimCol);
+    }
+    pushCylinder(rimB, face * width * 0.42, 0, 0, rimR * 0.16, rimR * 0.14, 0.04, 8, "x", hubCol);
+    for (let k = 0; k < 5; k += 1) {
+      const a = (k / 5) * TAU + 0.3;
+      pushCylinder(rimB, face * width * 0.43, Math.cos(a) * rimR * 0.30, Math.sin(a) * rimR * 0.30,
+        0.013, 0.012, 0.020, 5, "x", studCol);
+    }
+    // The valve, through the face where a centre-lock wheel carries it.
+    pushCylinder(rimB, face * width * 0.38, Math.cos(1.05) * rimR * 0.58, Math.sin(1.05) * rimR * 0.58,
+      0.011, 0.009, 0.030, 5, "x", hubCol);
   }
-  pushCylinder(rimB, -width * 0.42, 0, 0, rimR * 0.16, rimR * 0.14, 0.04, 8, "x", hubCol);
 
+  // Centred, so it is behind whichever spoke set the camera is looking through.
   const brakeB = mkBuilder();
-  pushCylinder(brakeB, width * 0.10, 0, 0, rimR * 0.80, rimR * 0.80, 0.026, 18, "x", discCol);
+  pushCylinder(brakeB, 0, 0, 0, rimR * 0.80, rimR * 0.80, 0.026, 18, "x", discCol);
+  // A caliper straddles its disc; one parked to one side of it was invisible
+  // from the other half of the car.
   const caliperB = mkBuilder();
-  pushBox(caliperB, width * 0.10, rimR * 0.66, 0.02, 0.055, rimR * 0.42, 0.10, caliperCol);
+  pushBox(caliperB, 0, rimR * 0.66, 0.02, 0.078, rimR * 0.42, 0.10, caliperCol);
 
   const tyreGeom = finish(THREE, tyreB, { colors: true });
   const rimGeom = finish(THREE, rimB, { colors: true });
@@ -3791,16 +3973,64 @@ export const SCENERY_KINDS = Object.freeze([
 const TREE_SPECIES = Object.freeze(["spire", "broad", "bare", "scrub"]);
 const BUILDING_TYPES = Object.freeze(["barn", "farmhouse", "shed"]);
 
+// Whorls of individual branch cards rather than nested cones. A cone gives a
+// conifer a perfect unbroken triangular outline, which is the single thing that
+// makes a forest read as scenery flats however good the texture painted on it —
+// no branch tips against the sky, no daylight through the canopy. These are the
+// same triangles spent on the silhouette instead of inside it: one card per
+// branch, six whorls, tips at scattered radii so the edge is ragged and the gaps
+// between them are real gaps. The foliage material is DoubleSide, so a card has
+// two faces and none of them costs geometry.
+function spireCanopy(b, rng) {
+  const bark = [0.16, 0.125, 0.09];
+  const y0 = 1.6, y1 = 9.0;
+  // The trunk stops inside the leader. Running it to the full height of the tree
+  // left a metre and a half of bare pole standing out of the top of the canopy.
+  const h = y1 - 0.4;
+  pushCylinder(b, 0, h * 0.5, 0, 0.17, 0.055, h, 5, "y", bark, false);
+  // Just enough core to stop daylight coming straight through the middle. Any
+  // wider and it presents a clean conical silhouette of its own, which is the
+  // one thing the branches are here to break.
+  pushCone(b, 0, y0 - 0.2, 0, 0.50, y1 - y0, 4, [0.052, 0.100, 0.048], false);
+  const counts = [7, 7, 6, 6, 5, 4];
+  const spacing = (y1 - 1.1 - y0) / (counts.length - 1);
+  for (let w = 0; w < counts.length; w += 1) {
+    const t = w / (counts.length - 1);
+    const y = y0 + spacing * w;
+    const reach = 1.95 * (1 - t * 0.76);
+    const n = counts[w];
+    const phase = rng.range(0, TAU);
+    const shade = 0.88 + t * 0.34;
+    const col = [0.068 * shade, 0.148 * shade, 0.060 * shade];
+    for (let k = 0; k < n; k += 1) {
+      const a = phase + (k / n) * TAU + rng.range(-0.20, 0.20);
+      const reachK = reach * rng.range(0.68, 1.0);
+      const ca = Math.cos(a), sa = Math.sin(a);
+      // Wide at the trunk, a point at the tip: neighbours in a whorl overlap
+      // where they meet the stem and separate as they go out, so the canopy is
+      // dense in the middle and ragged only where the eye reads the outline. A
+      // narrow card gave a bottle brush that had lost most of its bristles.
+      const halfW = 0.22 + reach * 0.26;
+      // A branch has to hang past the whorl below it. Anything shallower leaves
+      // a band of daylight between every pair of whorls and the tree reads as a
+      // stack of discs on a pole.
+      const droop = Math.min(spacing * 1.3, reachK * 0.95) * rng.range(0.82, 1.20);
+      // The base edge is rolled out of horizontal, or a whole whorl vanishes
+      // edge-on the moment the camera comes level with it.
+      const roll = rng.range(0.30, 0.75) * (k & 1 ? 1 : -1) * halfW;
+      pushTri3(b,
+        [ca * 0.12 - sa * halfW, y + 0.22 + roll, sa * 0.12 + ca * halfW],
+        [ca * 0.12 + sa * halfW, y + 0.22 - roll, sa * 0.12 - ca * halfW],
+        [ca * reachK, y - droop, sa * reachK], col);
+    }
+  }
+  pushCone(b, 0, y1 - 1.1, 0, 0.34, 1.9, 4, [0.074, 0.158, 0.066], false);
+}
+
 function treeGeometry(b, species, rng) {
   const bark = [0.16, 0.125, 0.09];
   if (species === "spire") {
-    const h = 9.5;
-    pushCylinder(b, 0, h * 0.5, 0, 0.19, 0.07, h, 6, "y", bark, false);
-    for (let k = 0; k < 3; k += 1) {
-      const t = k / 3;
-      pushCone(b, 0, 1.8 + t * 5.4, 0, 1.75 * (1 - t * 0.55), 3.6 * (1 - t * 0.32), 8,
-        [0.075 + t * 0.02, 0.155 + t * 0.03, 0.070], false);
-    }
+    spireCanopy(b, rng);
     return;
   }
   if (species === "broad") {
@@ -3986,7 +4216,9 @@ function sceneryPrototypes(THREE, stage, opts) {
   }, over)), set);
 
   const materials = {
-    tree: std(foliageTex),
+    // Foliage is cards. A branch drawn as one triangle has no back, so FrontSide
+    // would delete half of every canopy depending on where the camera stood.
+    tree: std(foliageTex, { side: THREE.DoubleSide }),
     rock: std(rockTex),
     wood: std(barkTex),
     building: std(concreteTex),

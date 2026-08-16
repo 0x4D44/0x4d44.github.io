@@ -11,6 +11,7 @@ import {
   TRIANGLE_BUDGET, TEXTURE_NAMES, ROAD_SECTION, ROAD_EDGE_SLOTS, ROAD_CENTRE_SLOT,
   CAR_DETACHABLE, textureCacheSize, LETTERED_PROTOTYPES, PROP_BANNERS, __primitives,
   materialAlbedoScale, roadTextureName,
+  clampPaint, PAINT_CEILING, DECAL_CEILING,
 } from "../meshes.js";
 import { carSpec } from "../physics.js";
 import { SURFACE, surfaceProps } from "../surfaces.js";
@@ -2136,4 +2137,313 @@ test("setMudLevel writes straight through a bare material", () => {
   setMudLevel({}, 0.5);
   car.dispose();
   clearLiveryCache();
+});
+
+// ---- what the eye actually catches ---------------------------------------
+// Four defects three critics found in real frames. Each test below measures the
+// thing the critic saw, not the code that produced it.
+
+function linearOf(css) {
+  const h = /^#([0-9a-f]{6})$/i.exec(String(css).trim());
+  assert.ok(h, `not a hex colour: ${css}`);
+  const chan = (i) => {
+    const c = parseInt(h[1].slice(i * 2, i * 2 + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return [chan(0), chan(1), chan(2)];
+}
+
+// A canvas that keeps every colour anything asked it to paint with, one list per
+// canvas: liveryTexture paints three, and only the colour one carries an albedo.
+function paintRecordingFactory(canvases) {
+  return (w, h) => {
+    const seen = [];
+    canvases.push(seen);
+    let fill = "", stroke = "", font = "20px sans-serif";
+    const grad = () => ({ addColorStop(_o, c) { seen.push(c); } });
+    const noop = () => {};
+    const ctx = {
+      lineWidth: 1, lineCap: "", lineJoin: "", textAlign: "", textBaseline: "",
+      globalAlpha: 1, globalCompositeOperation: "source-over", shadowBlur: 0, shadowColor: "",
+      get font() { return font; }, set font(v) { font = v; },
+      get fillStyle() { return fill; },
+      set fillStyle(v) { fill = v; if (typeof v === "string") seen.push(v); },
+      get strokeStyle() { return stroke; },
+      set strokeStyle(v) { stroke = v; if (typeof v === "string") seen.push(v); },
+      save: noop, restore: noop, translate: noop, rotate: noop, scale: noop, setTransform: noop,
+      transform: noop, resetTransform: noop, beginPath: noop, closePath: noop, moveTo: noop,
+      lineTo: noop, quadraticCurveTo: noop, bezierCurveTo: noop, arc: noop, rect: noop,
+      fill: noop, stroke: noop, clip: noop, fillRect: noop, clearRect: noop, strokeRect: noop,
+      setLineDash: noop, createLinearGradient: grad, createRadialGradient: grad,
+      fillText: noop, strokeText: noop,
+      measureText: (t) => ({ width: String(t).length * 11 }),
+    };
+    const canvas = { width: w, height: h, getContext: () => ctx };
+    ctx.canvas = canvas;
+    return canvas;
+  };
+}
+
+test("paint: nothing on the car carries an albedo it cannot survive being lit at", () => {
+  // A canvas byte of 255 is an albedo of 1.0, which has nowhere to go once the
+  // sun and the tone curve are applied: the roof, the rear panel and the plate
+  // came out at a flat 255 with no shading gradient anywhere on them, and the car
+  // read as cut paper. The whitest real paint reflects about three quarters.
+  assert.ok(PAINT_CEILING > 0.6 && PAINT_CEILING < 0.85, "the paint ceiling is not a paint number");
+  assert.ok(DECAL_CEILING < PAINT_CEILING, "pigmented plastic must sit below paint");
+
+  // One 8-bit sRGB step is worth about 0.007 of linear light up here, so that is
+  // the tolerance. Anything looser would let a genuinely unclamped white past.
+  const STEP = 0.008;
+  const white = clampPaint("#ffffff");
+  assert.notEqual(white, "#ffffff", "pure white came back unclamped");
+  for (const v of linearOf(white)) {
+    assert.ok(v <= PAINT_CEILING + STEP, `clamped white still reflects ${v}`);
+  }
+  // Hue survives the clamp: a saturated yellow must not turn grey.
+  const yellow = linearOf(clampPaint("#ffd400"));
+  assert.ok(Math.abs(Math.max(...yellow) - PAINT_CEILING) < STEP, "the clamp did not reach the ceiling");
+  assert.ok(yellow[2] < 0.01 && yellow[0] > yellow[1] * 1.3, `hue was not preserved: ${yellow}`);
+  // Anything already dark enough is left exactly as it was.
+  assert.equal(clampPaint("#0e2a5c"), "#0e2a5c");
+  assert.equal(clampPaint("nonsense"), "nonsense");
+
+  // And the rule reaches the canvas, for every car in the book — the clamp is
+  // useless if a drawing helper picks its own literal white behind its back.
+  for (const id of ["corvine-rs2000", "ardent-r1", "vireo-r2", "falke-4s", "astra-corsa", "delta-b640"]) {
+    const spec = carSpec(id);
+    const canvases = [];
+    const tex = liveryTexture(THREE, spec.livery, { size: 64, canvasFactory: paintRecordingFactory(canvases) });
+    // The colour pass is the one that laid the car's own base colour down; the
+    // roughness and mud companions carry masks, where a white pixel means "all
+    // of it" rather than an albedo.
+    const wantBase = clampPaint(spec.livery.base).toLowerCase();
+    const colourPass = canvases.filter((c) => c.some((v) => String(v).toLowerCase() === wantBase));
+    assert.equal(colourPass.length, 1, `${id}: found ${colourPass.length} colour passes, expected exactly one`);
+    const seen = colourPass[0];
+    assert.ok(seen.length > 8, `${id}: only ${seen.length} colours reached the canvas`);
+    let worst = 0, worstCss = "";
+    for (const css of seen) {
+      if (!/^#[0-9a-f]{6}$/i.test(css)) continue;
+      const peak = Math.max(...linearOf(css));
+      if (peak > worst) { worst = peak; worstCss = css; }
+    }
+    assert.ok(worst <= PAINT_CEILING + STEP,
+      `${id}: ${worstCss} reaches ${worst.toFixed(3)} linear, above the ${PAINT_CEILING} paint ceiling`);
+    tex.dispose(true);
+  }
+  clearLiveryCache();
+});
+
+test("car: the headlight emissive reaches the lamp lenses and nothing else", () => {
+  // render.js drives the headlight level into the FIRST part whose name reads as
+  // a lamp and writes an emissive of up to 1.6 into that material every frame.
+  // The pod bar matched first and shared one trim material with the mudflaps, the
+  // diffuser, the spare, the number plate and the entire cabin — so switching the
+  // headlights on turned four black rubber flaps into white slabs in the rain.
+  const LAMP = /lamp|headlight|pod|spot/i;
+  const spec = carSpec("corvine-rs2000");
+  const record = newRecord();
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+
+  let first = null;
+  for (const child of car.group.children) {
+    if (child.isMesh && LAMP.test(child.name)) { first = child; break; }
+  }
+  assert.ok(first, "no part of the car reads as a lamp; render.js will find nothing to light");
+
+  // Sharing is fine between the four lenses — they light together. Sharing with
+  // anything that is not a lamp is the defect.
+  const users = car.group.children.filter((c) => c.isMesh && c.material === first.material).map((c) => c.name);
+  const strays = users.filter((n) => !/^lamp\d+$/.test(n));
+  assert.deepEqual(strays, [],
+    `the headlight material is shared with ${strays.join(", ")}: an emissive written into it lights them too`);
+
+  // And the part it does land on has to be a lens, not the black bar behind them.
+  const lit = albedoRange(first.geometry, first.material);
+  assert.ok(lit && lit.mean > 0.5,
+    `${first.name} shades at ${lit ? lit.mean.toFixed(3) : "?"}; a headlight emissive belongs on a lens`);
+
+  // Every rubber, plastic and trim part must be clear of it.
+  for (const key of ["mudflaps", "diffuser", "spare", "interior", "cabinTrim", "tailDetail", "lightPod"]) {
+    assert.notEqual(car.parts[key].material, first.material,
+      `${key} shares the material the headlight level is written into`);
+  }
+  car.dispose();
+  clearLiveryCache();
+});
+
+test("car: the roll cage lives inside the glasshouse, not over the roof", () => {
+  // The cage was drawn 12 cm outside the roof panel on each side and 2 cm above
+  // it, with the rear stays standing proud of the boot lid: white tubes over the
+  // roof and down the rear quarters, which reads as an external cage with the
+  // wing bolted to it. The envelope below is measured off the car's own glass,
+  // so it restates none of the cabin's numbers.
+  for (const id of ["corvine-rs2000", "delta-b640", "astra-corsa"]) {
+    const spec = carSpec(id);
+    const record = newRecord();
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const glass = car.parts.glass.geometry.getAttribute("position").array;
+
+    let beltY = Infinity, roofTop = -Infinity;
+    for (let i = 1; i < glass.length; i += 3) {
+      if (glass[i] < beltY) beltY = glass[i];
+      if (glass[i] > roofTop) roofTop = glass[i];
+    }
+    // The glasshouse narrows with height; sample its widest reach at each end.
+    const span = roofTop - beltY;
+    const halfAt = (lo, hi) => {
+      let w = 0;
+      for (let i = 0; i < glass.length; i += 3) {
+        if (glass[i + 1] >= lo && glass[i + 1] <= hi) w = Math.max(w, Math.abs(glass[i]));
+      }
+      return w;
+    };
+    const beltHalf = halfAt(beltY - 1e-4, beltY + span * 0.05);
+    const roofHalf = halfAt(roofTop - span * 0.05, roofTop + 1e-4);
+    assert.ok(beltHalf > roofHalf, `${id}: the glasshouse does not taper (${beltHalf} vs ${roofHalf})`);
+    const envelope = (y) => {
+      const t = Math.min(1, Math.max(0, (y - beltY) / span));
+      return beltHalf + (roofHalf - beltHalf) * t;
+    };
+
+    const cage = car.parts.rollCage.geometry.getAttribute("position").array;
+    let aboveRoof = 0, widest = 0, widestY = 0;
+    for (let i = 0; i < cage.length; i += 3) {
+      const x = Math.abs(cage[i]), y = cage[i + 1];
+      if (y - roofTop > aboveRoof) aboveRoof = y - roofTop;
+      if (y >= beltY && x - envelope(y) > widest - envelope(widestY)) { widest = x; widestY = y; }
+    }
+    assert.ok(aboveRoof <= 0,
+      `${id}: a cage tube stands ${aboveRoof.toFixed(3)} m above the roof line`);
+    assert.ok(widest <= envelope(widestY),
+      `${id}: a cage tube reaches x=${widest.toFixed(3)} at y=${widestY.toFixed(3)}, where the `
+      + `glasshouse is only ${envelope(widestY).toFixed(3)} wide`);
+
+    // It still has to BE a cage: a hoop, stays and door bars spanning the cabin.
+    const box = car.parts.rollCage.geometry.boundingBox;
+    assert.ok(box.max.y - box.min.y > 0.9, `${id}: the cage is too short to be one`);
+    assert.ok(box.max.z - box.min.z > 1.8, `${id}: the cage has no fore-and-aft bracing`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("wheel: both faces of the wheel are closed, and the tread has contrast", () => {
+  // All four corners share one geometry, unmirrored, so a rim dished to -X showed
+  // spokes on the left of the car and the open back of the barrel on the right:
+  // a hole with the stage visible through it. And the tread blocks carried the
+  // same albedo as the grooves they stand in, so 42 pads of relief shaded as one
+  // black cylinder.
+  for (const id of ["corvine-rs2000", "astra-corsa"]) {
+    const spec = carSpec(id);
+    const wheel = buildWheelMesh(THREE, spec);
+    const rimR = spec.wheelRadius * (wheel.kind === "tarmac" ? 0.72 : 0.62);
+    const rim = wheel.rim.geometry.getAttribute("position").array;
+    // Vertices in the spoke band — inboard of the bead, outboard of the bore.
+    let neg = 0, pos = 0;
+    for (let i = 0; i < rim.length; i += 3) {
+      const r = Math.hypot(rim[i + 1], rim[i + 2]);
+      if (r < rimR * 0.2 || r > rimR * 0.95) continue;
+      if (rim[i] < -wheel.width * 0.12) neg += 1;
+      if (rim[i] > wheel.width * 0.12) pos += 1;
+    }
+    assert.ok(neg > 20 && pos > 20,
+      `${id}: the rim face exists on one side only (${neg} vertices at -X, ${pos} at +X); `
+      + "the wheels on the other side of the car are see-through");
+
+    const disc = wheel.disc.geometry.boundingBox;
+    assert.ok(disc.min.x < 0 && disc.max.x > 0,
+      `${id}: the brake disc sits entirely at x[${disc.min.x},${disc.max.x}] and backs only one face`);
+    const cal = wheel.caliper.geometry.boundingBox;
+    assert.ok(cal.min.x < 0 && cal.max.x > 0,
+      `${id}: the caliper does not straddle its disc (x[${cal.min.x},${cal.max.x}])`);
+
+    // Tread contrast, both ends still inside the band carbon black occupies.
+    const scale = materialAlbedoScale(wheel.tyre.material);
+    const col = wheel.tyre.geometry.getAttribute("color").array;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i + 2 < col.length; i += 3) {
+      const v = 0.2126 * col[i] * scale[0] + 0.7152 * col[i + 1] * scale[1] + 0.0722 * col[i + 2] * scale[2];
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    assert.ok(hi > lo * 1.4, `${id}: the tyre shades ${lo.toFixed(4)}..${hi.toFixed(4)} — no tread contrast`);
+    assert.ok(lo >= 0.02 && hi <= 0.07, `${id}: ${lo.toFixed(4)}..${hi.toFixed(4)} is outside carbon-black rubber`);
+    wheel.dispose();
+  }
+});
+
+test("scenery: the conifer silhouette is broken, not a solid cone", () => {
+  // Three critics independently called the trees cardboard. A conifer drawn as
+  // stacked cones has a perfect unbroken triangular outline and no sky through
+  // the canopy, and that is most of what makes a forest read — no texture painted
+  // on a cone fixes it. Measured here as: at a given height the canopy's radius
+  // must vary round the compass, with real gaps between the branches.
+  const st = theStage();
+  const lib = buildSceneryLibrary(THREE, st, TEX);
+  const proto = lib.prototypes.get("tree:0");
+  const pos = proto.geometry.getAttribute("position").array;
+  const idx = proto.geometry.getIndex().array;
+  const box = proto.geometry.boundingBox;
+
+  // The section of the canopy at one height, taken by cutting every triangle
+  // with that plane — vertices alone would not do, because a cone has three of
+  // them between its base and its apex and a surface everywhere in between.
+  const SECT = 16;
+  const sectionAt = (yCut) => {
+    const reach = new Float64Array(SECT);
+    const hit = (x, z) => {
+      const s = Math.floor(((Math.atan2(z, x) + Math.PI) / (2 * Math.PI)) * SECT) % SECT;
+      const r = Math.hypot(x, z);
+      if (r > reach[s]) reach[s] = r;
+    };
+    const cross = [];
+    for (let t = 0; t < idx.length; t += 3) {
+      cross.length = 0;
+      for (let e = 0; e < 3; e += 1) {
+        const a = idx[t + e] * 3, b2 = idx[t + (e + 1) % 3] * 3;
+        const ya = pos[a + 1], yb = pos[b2 + 1];
+        if ((ya < yCut && yb < yCut) || (ya > yCut && yb > yCut)) continue;
+        if (Math.abs(yb - ya) < 1e-9) { cross.push([pos[a], pos[a + 2]], [pos[b2], pos[b2 + 2]]); continue; }
+        const k = (yCut - ya) / (yb - ya);
+        cross.push([pos[a] + (pos[b2] - pos[a]) * k, pos[a + 2] + (pos[b2 + 2] - pos[a + 2]) * k]);
+      }
+      // A triangle meets the plane in a SEGMENT, and the whole segment is
+      // surface. Sampling only the endpoints leaves a cone reading as eight
+      // isolated points with empty sectors between them, which would score a
+      // solid cone as ragged.
+      if (cross.length < 2) continue;
+      for (let k = 0; k <= 12; k += 1) {
+        const u = k / 12;
+        hit(cross[0][0] + (cross[1][0] - cross[0][0]) * u, cross[0][1] + (cross[1][1] - cross[0][1]) * u);
+      }
+    }
+    return reach;
+  };
+
+  const BANDS = 5;
+  let notched = 0;
+  const ratios = [];
+  for (let bd = 0; bd < BANDS; bd += 1) {
+    const yCut = box.min.y + (box.max.y - box.min.y) * (0.22 + (bd / (BANDS - 1)) * 0.55);
+    const reach = sectionAt(yCut);
+    let mx = 0, mn = Infinity;
+    for (const r of reach) { if (r > mx) mx = r; if (r < mn) mn = r; }
+    assert.ok(mx > 0.05, `nothing at all in the canopy at y=${yCut.toFixed(2)}`);
+    ratios.push(mn / mx);
+    // A cone's section is a circle: every sector reaches the same radius, and
+    // the stacked cones scored 0.98 at every height. A canopy with branch tips
+    // and sky between them cannot — this one runs 0.26 to 0.59.
+    if (mn < mx * 0.68) notched += 1;
+  }
+  assert.ok(notched >= 4,
+    `only ${notched} of ${BANDS} sections have a broken outline (min/max radius per section: `
+    + `${ratios.map((r) => r.toFixed(2)).join(", ")}) — this is a cone`);
+
+  // Cards have two sides. FrontSide would delete half of every canopy depending
+  // on which way the camera was pointing.
+  assert.equal(lib.materials.tree.side, THREE.DoubleSide, "foliage cards are single-sided");
+  assert.ok(proto.triangles < 80, `a conifer costs ${proto.triangles} triangles; the forest is instanced`);
+  lib.dispose();
 });
