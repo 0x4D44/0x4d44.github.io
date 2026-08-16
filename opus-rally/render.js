@@ -85,6 +85,13 @@ const ANISO_MAPS = Object.freeze(["map", "normalMap", "roughnessMap", "aoMap"]);
 // its own, and they span 0.445 to 0.52 m.
 const DEFAULT_COM_HEIGHT = 0.49;
 
+// The other two chassis dimensions an in-car mount has to be measured against.
+// The front axle is the datum for everything forward of the driver, and the cars
+// put it between 0.92 and 1.42 m ahead of the centre of mass: half a metre of
+// spread, which is more than the length of the cabin the eye has to sit inside.
+const DEFAULT_FRONT_AXLE = 1.05;
+const DEFAULT_HALF_WIDTH = 0.70;
+
 // How far outside the view a scenery cell is still worth drawing: enough that a
 // caster at the edge of the picture keeps the shadow it throws into it.
 const SCENERY_CULL_PAD = 28;
@@ -104,8 +111,8 @@ const QUALITY = Object.freeze({
     shadows: false,
     shadowMapSize: 1024,
     shadowDistance: 45,
-    particleBudget: 380,
-    particleRateScale: 0.35,
+    particleBudget: 600,
+    particleRateScale: 0.45,
     trailCount: 180,
     bloom: false,
     bloomIterations: 1,
@@ -130,8 +137,8 @@ const QUALITY = Object.freeze({
     shadows: true,
     shadowMapSize: 1024,
     shadowDistance: 65,
-    particleBudget: 900,
-    particleRateScale: 0.6,
+    particleBudget: 1600,
+    particleRateScale: 0.75,
     trailCount: 360,
     bloom: true,
     bloomIterations: 1,
@@ -156,7 +163,7 @@ const QUALITY = Object.freeze({
     shadows: true,
     shadowMapSize: 2048,
     shadowDistance: 90,
-    particleBudget: 2200,
+    particleBudget: 3200,
     particleRateScale: 1.0,
     trailCount: 700,
     bloom: true,
@@ -182,7 +189,7 @@ const QUALITY = Object.freeze({
     shadows: true,
     shadowMapSize: 3072,
     shadowDistance: 120,
-    particleBudget: 4200,
+    particleBudget: 4400,
     particleRateScale: 1.3,
     trailCount: 1100,
     bloom: true,
@@ -231,19 +238,32 @@ export const CAMERA_CYCLE = Object.freeze([
 // views want: a field of view that breathes on a bonnet cam reads as a zoom
 // lens wobble, not as speed.
 //
-// A mount's localX/localZ are chassis-frame offsets from the centre of mass, but
-// `mountY` is the height above the *road*, because that is the only frame a
-// driver's eye line or a bumper can be measured in. mountPosition() takes the
-// car's COM height back out; the two live at different heights per car and
-// mixing the frames put every in-car camera half a metre too high.
+// A mount is authored in the frame each of its three axes actually means
+// something in, because none of the three is the centre of mass:
+//   mountY     — height above the *road*. mountPosition() takes the car's COM
+//                height back out. Mixing the frames put every in-car camera half
+//                a metre too high.
+//   localZAxle — metres from the *front axle*, because meshes.js hangs the whole
+//                cabin off it: the screen base is frontAxle - 0.30, the roof's
+//                leading edge frontAxle - 1.10, the seat frontAxle - 1.15. The
+//                axle sits 0.92 m ahead of the COM on one car and 1.42 on
+//                another, so a constant COM offset that seats the driver in one
+//                car puts him through the screen of the next.
+//   localXFrac — a fraction of the body's half width, which is where meshes.js
+//                puts the seats (±0.46) and the wheel (−0.44).
 //
-// The in-car mounts are anchored on the modelled cabin, not eyeballed: every car
-// in CARS carries its belt line at 0.895 m and its roof between 1.325 and 1.395,
-// so a driver's eye lives at 1.18, on the driver's side, just behind the screen.
-// Their roll and pitch gains are deliberately small — a head bolted to the
-// chassis rolls with the body, three or four degrees, not with lateral g. At the
-// old 0.92 the horizon tilted seventeen degrees in a corner and the bodywork
-// swung up over the road.
+// The in-car mounts are therefore anchored on the modelled cabin and verified
+// against it by raycast, not eyeballed. Their roll and pitch gains are
+// deliberately small — a head bolted to the chassis rolls with the body, three
+// or four degrees, not with lateral g. At the old 0.92 the horizon tilted
+// seventeen degrees in a corner and the bodywork swung up over the road.
+//
+// `lookIntoCorner` and `slipLook` are radians of aim rotation at full signal:
+// negative yaw rate is a left-hand corner (world forward is `(sin yaw, cos yaw)`,
+// so yaw *decreases* turning left), and a positive slip angle is the car sliding
+// to its right, which puts the apex further left still. Both therefore rotate the
+// aim the same way, and both were signed the other way round — every in-car
+// camera looked out of the corner rather than into it.
 const CAMERA_PARAMS = Object.freeze({
   chase: Object.freeze({
     mode: "chase", kind: "boom",
@@ -261,7 +281,7 @@ const CAMERA_PARAMS = Object.freeze({
     rollGain: 0.055, pitchGain: 0.030, attRate: 5.0,
     shake: 0.20, shakeSpeed: 34, clearance: 1.25,
     airLift: 1.1, airRate: 1.6,
-    headInertia: 0, lookIntoCorner: 0, slipLook: 0,
+    headInertia: 0, lookIntoCorner: 0.30, slipLook: 0.34,
     near: 0.35, far: 6000,
   }),
   chaseClose: Object.freeze({
@@ -274,25 +294,35 @@ const CAMERA_PARAMS = Object.freeze({
     rollGain: 0.072, pitchGain: 0.038, attRate: 5.6,
     shake: 0.26, shakeSpeed: 34, clearance: 0.95,
     airLift: 0.8, airRate: 1.9,
-    headInertia: 0, lookIntoCorner: 0, slipLook: 0,
+    headInertia: 0, lookIntoCorner: 0.38, slipLook: 0.42,
     near: 0.3, far: 6000,
   }),
+  // On the scuttle, 0.06 m clear of the bodywork and 0.18 m ahead of the screen
+  // base, so the bonnet fills the bottom fifth of the frame. At the old 1.20 m
+  // ahead of the centre of mass it hung past the nose of half the cars: a bonnet
+  // camera with no bonnet in it, and the ground four metres ahead filling the
+  // lower half of the picture instead.
   bonnet: Object.freeze({
     mode: "bonnet", kind: "mount",
-    localX: 0, mountY: 1.16, localZ: 1.20,
-    lookAhead: 22, lookHeight: 0.30, lookVertGain: 0,
+    localXFrac: 0, mountY: 1.06, localZAxle: -0.12,
+    lookAhead: 22, lookHeight: 0.25, lookVertGain: 0,
     posRate: 30, posRateSpeed: 0, aimRate: 12, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 50, fovMax: 50, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
+    fovBase: 52, fovMax: 52, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
     rollGain: 0.11, pitchGain: 0.10, attRate: 9,
     shake: 0.055, shakeSpeed: 46, clearance: 0.05,
     airLift: 0, airRate: 2,
     headInertia: 3.4, headGain: 0.020, lookIntoCorner: 0.10, slipLook: 0.22,
     near: 0.12, far: 6000,
   }),
+  // Over the driver's seat and under the headliner: frontAxle − 1.24 is 0.09 m
+  // behind the seat's own datum and 0.14 m behind the roof's leading edge. At the
+  // old COM-relative −0.02 the eye sat *forward* of that leading edge, in the
+  // windscreen aperture — 84 mm under the glass, with the whole length of the
+  // bonnet below it and nothing of the cabin in frame.
   cockpit: Object.freeze({
     mode: "cockpit", kind: "mount",
-    localX: -0.32, mountY: 1.18, localZ: -0.02,
+    localXFrac: -0.46, mountY: 1.16, localZAxle: -1.24,
     lookAhead: 20, lookHeight: 0.30, lookVertGain: 0,
     posRate: 26, posRateSpeed: 0, aimRate: 9.5, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
@@ -305,7 +335,7 @@ const CAMERA_PARAMS = Object.freeze({
   }),
   bumper: Object.freeze({
     mode: "bumper", kind: "mount",
-    localX: 0, mountY: 0.42, localZ: 1.86,
+    localXFrac: 0, mountY: 0.42, localZAxle: 0.55,
     lookAhead: 26, lookHeight: 0.10, lookVertGain: 0,
     posRate: 34, posRateSpeed: 0, aimRate: 13, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
@@ -349,6 +379,72 @@ export function cameraParams(mode) {
   return CAMERA_PARAMS[mode] || CAMERA_PARAMS.chase;
 }
 
+// ---- framing for a frame that is not 16:9 --------------------------------
+//
+// Every number above was authored against a landscape window, and a phone held
+// upright is not that window with the sides cropped off. THREE's fov is
+// vertical, so a portrait frame keeps the whole vertical field and throws the
+// horizontal away: at 390x844 the chase camera's 40 degrees vertical is 19
+// horizontal, a 2.3 m slot at the boom's own length. The road does not fit
+// through it, and what the player gets is the terrain bank beside it, close and
+// filling three quarters of a tall picture.
+//
+// Widening alone cannot fix it — a true horizontal-preserving widen wants 109
+// degrees vertical, which is a fisheye. So the fov opens as far as it usefully
+// can and the *rig* takes the rest: the boom rises, comes in, and aims further
+// down the road, which is the framing a tall window actually wants — the car low
+// in the frame with the stage running away up it, rather than the same eye level
+// with more sky above and more verge below.
+export const CAMERA_DESIGN_ASPECT = 16 / 9;
+const PORTRAIT_ASPECT = 0.75;
+const DEG = Math.PI / 180;
+
+// 0 at the design aspect and wider, 1 at 3:4 and taller.
+export function portraitBlend(aspect) {
+  if (!(aspect > 0)) return 0;
+  return saturate((CAMERA_DESIGN_ASPECT - aspect) / (CAMERA_DESIGN_ASPECT - PORTRAIT_ASPECT));
+}
+
+// The vertical fov that holds the design horizontal field at this aspect, capped
+// so the widening stops before the picture bends.
+export function fovForAspect(fovDeg, aspect, capDeg) {
+  if (!(aspect > 0) || aspect >= CAMERA_DESIGN_ASPECT) return fovDeg;
+  const tanH = Math.tan(fovDeg * 0.5 * DEG) * CAMERA_DESIGN_ASPECT;
+  const want = Math.atan(tanH / aspect) * 2 / DEG;
+  return Math.min(want, capDeg);
+}
+
+// A rig authored for 16:9, re-framed for `aspect`. `out` must already carry every
+// field of `p`; only the ones that move are written, so this is allocation-free
+// and safe to call on every resize.
+export function adaptCameraParams(out, p, aspect) {
+  const t = portraitBlend(aspect);
+  const cap = p.kind === "mount" ? 58 : 66;
+  out.fovBase = fovForAspect(p.fovBase, aspect, cap);
+  out.fovMax = Math.max(out.fovBase, fovForAspect(p.fovMax, aspect, cap));
+  if (t <= 0) {
+    out.height = p.height;
+    out.distance = p.distance;
+    out.lookAhead = p.lookAhead;
+    out.lookHeight = p.lookHeight;
+    return out;
+  }
+  if (p.kind === "boom") {
+    out.height = p.height * (1 + 0.62 * t);
+    out.distance = p.distance * (1 - 0.20 * t);
+    out.lookAhead = p.lookAhead * (1 + 0.16 * t);
+    out.lookHeight = p.lookHeight * (1 - 0.65 * t);
+  } else {
+    out.height = p.height;
+    out.distance = p.distance;
+    // A mount cannot move — it is bolted to the car — so all it can do is stop
+    // the extra vertical field being spent on sky.
+    out.lookAhead = p.lookAhead;
+    out.lookHeight = p.lookHeight * (1 - 0.5 * t);
+  }
+  return out;
+}
+
 // The slice of CarState the rigs actually read, flattened so the rig maths has
 // no dependency on physics.js and can be driven from a literal in a test.
 export function makeCarSample() {
@@ -356,13 +452,15 @@ export function makeCarSample() {
     x: 0, y: 0, z: 0,
     vx: 0, vy: 0, vz: 0,
     yaw: 0, pitch: 0, roll: 0,
-    speed: 0, forwardSpeed: 0, slipAngle: 0,
+    speed: 0, forwardSpeed: 0, slipAngle: 0, yawRate: 0,
     lateralG: 0, longitudinalG: 0, verticalG: 1,
     steer: 0, airTime: 0, onGround: 4,
     roughness: 0.2, wheelSpeed: 0,
-    // How far `y` sits above the road at rest, so a mount authored in road
-    // heights can be placed against a centre of mass that differs per car.
+    // The three chassis dimensions a rig is authored against, so a mount can be
+    // placed on a car it was not tuned on. See CAMERA_PARAMS.
     comHeight: DEFAULT_COM_HEIGHT,
+    frontAxle: DEFAULT_FRONT_AXLE,
+    halfWidth: DEFAULT_HALF_WIDTH,
   };
 }
 
@@ -373,6 +471,7 @@ export function sampleCar(out, car, surface) {
   out.speed = car.speed;
   out.forwardSpeed = car.forwardSpeed;
   out.slipAngle = car.slipAngle;
+  out.yawRate = car.yawRate || 0;
   out.lateralG = car.lateralG;
   out.longitudinalG = car.longitudinalG;
   out.verticalG = car.verticalG;
@@ -383,6 +482,14 @@ export function sampleCar(out, car, surface) {
   // physics.js tunes `setup` from `spec`, so a tuned ride height is in setup.
   const geom = car.setup || car.spec;
   out.comHeight = geom && geom.comHeight > 0 ? geom.comHeight : DEFAULT_COM_HEIGHT;
+  // The same two expressions meshes.js builds the body from, so the rigs and the
+  // model cannot drift apart: the axle datum and the body's half width.
+  out.frontAxle = geom && geom.wheelbase > 0 && geom.weightDistFront > 0
+    ? geom.wheelbase * (1 - geom.weightDistFront)
+    : DEFAULT_FRONT_AXLE;
+  out.halfWidth = geom && geom.trackFront > 0 && geom.trackRear > 0
+    ? Math.max(geom.trackFront, geom.trackRear) * 0.5 - 0.085
+    : DEFAULT_HALF_WIDTH;
   return out;
 }
 
@@ -439,20 +546,36 @@ export function boomDirectionTarget(s, p) {
   return heading + angleDelta(heading, velAngle) * blend;
 }
 
+// Rotation of the aim, in radians, toward the inside of the corner. Steering
+// input leads it — a driver looks at the apex before the car has started to
+// rotate — and the yaw rate sustains it once the car is round. The slip term
+// swings the aim back off the velocity toward the nose and past it, which is
+// what a driver does in a slide: the apex is further into the corner than either.
+//
+// Both terms are negative for a left-hand corner. See the sign note on
+// CAMERA_PARAMS; getting this backwards points the camera at the outside of the
+// corner, which is the one place a driver never needs to see.
+const CORNER_YAW_REF = 0.85;
+const CORNER_LOOK_LIMIT = 0.42;
+
+export function cornerLook(s, p) {
+  if (!(p.lookIntoCorner > 0) && !(p.slipLook > 0)) return 0;
+  const turn = clamp((s.yawRate || 0) / CORNER_YAW_REF * 0.75 - (s.steer || 0) * 0.35, -1, 1);
+  const want = p.lookIntoCorner * turn - p.slipLook * (s.slipAngle || 0);
+  // Below walking pace the yaw rate is noise and a slip angle is meaningless.
+  return clamp(want, -CORNER_LOOK_LIMIT, CORNER_LOOK_LIMIT) * saturate(s.speed / 4);
+}
+
 // The aim point. It leads the *velocity*, not the nose: sideways into a hairpin
 // the car should be off-centre in frame with the exit visible, which is the
 // single thing that separates a rally chase camera from a driving-school one.
-export function lookTarget(out, s, p) {
+// `cornerYaw` then swings it further into the corner still.
+export function lookTarget(out, s, p, cornerYaw) {
   const vh = Math.hypot(s.vx, s.vz);
-  let dx;
-  let dz;
-  if (vh > 0.6 && s.forwardSpeed > -0.5) {
-    dx = s.vx / vh;
-    dz = s.vz / vh;
-  } else {
-    dx = Math.sin(s.yaw);
-    dz = Math.cos(s.yaw);
-  }
+  const base = vh > 0.6 && s.forwardSpeed > -0.5 ? Math.atan2(s.vx, s.vz) : s.yaw;
+  const ang = base + (cornerYaw || 0);
+  const dx = Math.sin(ang);
+  const dz = Math.cos(ang);
   const lead = p.lookAhead * (0.38 + 0.62 * saturate(s.speed / Math.max(1, p.velRefSpeed * 2.2)));
   out.x = s.x + dx * lead;
   out.z = s.z + dz * lead;
@@ -509,7 +632,7 @@ export function resetCameraRig(rig, s, p, ground) {
   if (p.kind === "fixed") {
     _lt.x = s.x; _lt.y = s.y + p.lookHeight; _lt.z = s.z;
   } else {
-    lookTarget(_lt, s, p);
+    lookTarget(_lt, s, p, 0);
   }
   rig.ax = _lt.x; rig.ay = _lt.y; rig.az = _lt.z;
   rig.tx = _lt.x; rig.ty = _lt.y; rig.tz = _lt.z;
@@ -518,15 +641,25 @@ export function resetCameraRig(rig, s, p, ground) {
   return rig;
 }
 
+export function mountLocalX(s, p) {
+  const hw = s.halfWidth > 0 ? s.halfWidth : DEFAULT_HALF_WIDTH;
+  return p.localXFrac * hw;
+}
+
+export function mountLocalZ(s, p) {
+  const axle = s.frontAxle > 0 ? s.frontAxle : DEFAULT_FRONT_AXLE;
+  return axle + p.localZAxle;
+}
+
 function mountPosition(out, s, p, hx, hy, hz) {
   const cy = Math.cos(s.yaw);
   const sy = Math.sin(s.yaw);
-  const lx = p.localX + hx;
+  const lx = mountLocalX(s, p) + hx;
   // s.y is the centre of mass; mountY is measured from the road, so the COM
   // height comes back out before the offset is applied in the chassis frame.
   const com = s.comHeight > 0 ? s.comHeight : DEFAULT_COM_HEIGHT;
   const ly = (p.mountY - com) + hy;
-  const lz = p.localZ + hz;
+  const lz = mountLocalZ(s, p) + hz;
   // Roll and pitch are small at a camera mount, so the small-angle rotation is
   // both exact enough and cheaper than a quaternion here.
   const rl = s.roll;
@@ -572,15 +705,17 @@ export function updateCameraRig(rig, s, p, dt, ground) {
     rig.bx = damp(rig.bx, _bt.x, rate, step);
     rig.by = damp(rig.by, _bt.y, rate * 1.25, step);
     rig.bz = damp(rig.bz, _bt.z, rate, step);
-    lookTarget(_lt, s, p);
+    // A boom that always sits square behind the nose hides the exit of every
+    // corner behind the car it is following. This is the aim swinging inside.
+    rig.lookYaw = damp(rig.lookYaw, cornerLook(s, p), 4.2, step);
+    lookTarget(_lt, s, p, rig.lookYaw);
   } else if (p.kind === "mount") {
     // Head inertia: the driver's head lags the chassis under g, and looks a
     // little way into the corner rather than straight down the bonnet.
     rig.headX = damp(rig.headX, -s.lateralG * p.headGain, p.headInertia, step);
     rig.headY = damp(rig.headY, -saturate(s.verticalG - 1) * p.headGain * 0.6, p.headInertia, step);
     rig.headZ = damp(rig.headZ, -s.longitudinalG * p.headGain, p.headInertia, step);
-    const lookT = s.steer * p.lookIntoCorner - s.slipAngle * p.slipLook;
-    rig.lookYaw = damp(rig.lookYaw, clamp(lookT, -0.42, 0.42), 6, step);
+    rig.lookYaw = damp(rig.lookYaw, cornerLook(s, p), 6, step);
     mountPosition(_bt, s, p, rig.headX, rig.headY, rig.headZ);
     rig.bx = damp(rig.bx, _bt.x, p.posRate, step);
     rig.by = damp(rig.by, _bt.y, p.posRate, step);
@@ -803,7 +938,11 @@ export function packParticles(pool, sunX, sunY, sunZ) {
     pool.outCol[o + 2] = pool.b[i] * litK;
     pool.outSize[n] = lerp(pool.size0[i], pool.size1[i], t);
     // Rise, hold, fall: a dust plume is opaque almost immediately and dies slowly.
-    pool.outFade[n] = smoothstep(0, 0.12, t) * (1 - t) * (1 - t);
+    // "Almost immediately" has to mean it: at 100 km/h a puff spends about a
+    // quarter of a second between the car and the chase camera, and the old 12%
+    // ramp was longer than that on its own — every particle the player could
+    // have seen was still fading in when it went past the lens.
+    pool.outFade[n] = smoothstep(0, 0.04, t) * (1 - t) * (1 - t);
     n += 1;
   }
   pool.outCount = n;
@@ -813,16 +952,24 @@ export function packParticles(pool, sunX, sunY, sunZ) {
 // Particles per second for one wheel. Every term is something the player can see
 // a reason for: a wheel off the ground throws nothing, a locked wheel throws more
 // than a rolling one, a loaded wheel more than an unloaded one, and rain kills it.
+//
+// Two of those terms held the plume down at exactly the speed it should have been
+// at its biggest. The speed term saturated at 20 m/s — 72 km/h — so a hundred and
+// forty on gravel threw no more than a brisk trundle; and a straight-running
+// wheel kept only 22% of the surface's rate, when what makes the tail is the tyre
+// displacing loose material at thirty metres a second whether or not it is
+// sliding. The speed term now keeps climbing past its reference and the
+// no-slip floor is more than half.
 export function dustSpawnRate(props, wheel, speed, wetness, scale) {
   if (!props || !wheel || !wheel.contact) return 0;
   const base = props.dustRate;
   if (!(base > 0)) return 0;
-  const v = saturate(speed / 20);
+  const v = saturate(speed / 14) * (1 + saturate((speed - 14) / 24));
   if (v <= 0) return 0;
   const slip = saturate(Math.abs(wheel.slipRatio) * 0.85 + Math.abs(wheel.slipAngle) * 1.7);
   const load = saturate((wheel.load || 0) / 4200);
   const wet = 1 - 0.72 * saturate(wetness || 0);
-  return base * v * (0.22 + 1.45 * slip) * (0.30 + 0.90 * load) * wet * (scale === undefined ? 1 : scale);
+  return base * v * (0.55 + 1.15 * slip) * (0.30 + 0.90 * load) * wet * (scale === undefined ? 1 : scale);
 }
 
 // A driven rear wheel with slip under power throws its plume *backwards and up*:
@@ -831,6 +978,14 @@ export function roosterStrength(wheel, throttle) {
   if (!wheel || !wheel.contact || wheel.isFront) return 0;
   const spin = saturate((wheel.slipRatio || 0) * 0.9);
   return spin * saturate(throttle || 0);
+}
+
+// How hard the car's own wake throws the plume up and back, independent of wheel
+// slip. A puff dropped at the contact patch with 0.6 m/s of lift settles inside a
+// car length whatever the speed; the column behind a gravel car is the wake
+// carrying it. 1 at motorway speed.
+export function wakeLift(speed) {
+  return saturate((speed - 8) / 22);
 }
 
 // ---- quality autoscaler --------------------------------------------------
@@ -1642,9 +1797,21 @@ export function createRenderer(canvas, opts = {}) {
   };
 
   const rigs = {};
+  // One mutable copy of each rig per renderer, re-framed for the canvas's aspect
+  // on every resize. The frozen originals stay the authored 16:9 reference.
+  const framed = {};
   for (let i = 0; i < CAMERA_MODES.length; i += 1) {
-    rigs[CAMERA_MODES[i]] = makeCameraRig(CAMERA_MODES[i]);
+    const mode = CAMERA_MODES[i];
+    rigs[mode] = makeCameraRig(mode);
+    framed[mode] = Object.assign({}, cameraParams(mode));
   }
+  function reframeCameras(aspect) {
+    for (let i = 0; i < CAMERA_MODES.length; i += 1) {
+      const mode = CAMERA_MODES[i];
+      adaptCameraParams(framed[mode], cameraParams(mode), aspect);
+    }
+  }
+  const framedParams = (mode) => framed[mode] || framed.chase;
 
   const noiseTex = makeNoiseTexture(three, 64, rng.fork("noise").seed, permBin);
 
@@ -2181,7 +2348,7 @@ export function createRenderer(canvas, opts = {}) {
     // A dust puff is a metre across and nearly transparent; the plume comes
     // from hundreds of them overlapping. At full opacity each one is a solid
     // white disc and the rooster tail reads as a bag of golf balls.
-    dustMat.uniforms.uOpacity.value = q.name === "low" ? 0.16 : 0.22;
+    dustMat.uniforms.uOpacity.value = q.name === "low" ? 0.20 : 0.26;
     resize();
   }
 
@@ -2194,6 +2361,7 @@ export function createRenderer(canvas, opts = {}) {
     state.pixelRatio = Math.min(dpr, state.quality.pixelRatioCap) * state.resolutionScale;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    reframeCameras(camera.aspect);
     if (typeof gl.setPixelRatio === "function") gl.setPixelRatio(state.pixelRatio);
     if (typeof gl.setSize === "function") gl.setSize(w, h, false);
     sizePost(Math.max(2, Math.round(w * state.pixelRatio)), Math.max(2, Math.round(h * state.pixelRatio)));
@@ -3150,7 +3318,7 @@ export function createRenderer(canvas, opts = {}) {
     // Snap every rig to the start line so the first frame is not a fly-in.
     if (state.car) {
       sampleCar(_sample, state.car, ctx.surface || null);
-      for (const key in rigs) resetCameraRig(rigs[key], _sample, cameraParams(key), state.ground);
+      for (const key in rigs) resetCameraRig(rigs[key], _sample, framedParams(key), state.ground);
     }
     return api;
   }
@@ -3183,34 +3351,68 @@ export function createRenderer(canvas, opts = {}) {
       let n = spawnCarry[i] | 0;
       if (n <= 0) continue;
       spawnCarry[i] -= n;
-      if (dustPool.alive > budget) n = Math.min(n, 2);
-      if (n > 24) n = 24;
+      // Spend the headroom the budget leaves, not a fixed count per frame. The
+      // old `min(n, 2)` brake was per *frame*, so the size of the plume rode on
+      // the frame rate: the same car on the same gravel threw a third as much at
+      // 20 fps as at 60, and under the software rasteriser the screenshots were
+      // taking pictures of the brake rather than of the dust.
+      const room = budget - dustPool.alive;
+      if (room <= 0) continue;
+      if (n > room) n = room;
+      if (n > 64) n = 64;
       const rooster = roosterStrength(w, throttle);
+      const wake = wakeLift(car.speed);
       const wet = state.wetness;
       const snow = props.id === SURFACE.SNOW;
       const water = props.id === SURFACE.WATER || wet > 0.7;
+      const cx = w.contactPoint ? w.contactPoint.x : w.worldPos.x;
+      const cy = (w.contactPoint ? w.contactPoint.y : w.worldPos.y) + 0.06;
+      const cz = w.contactPoint ? w.contactPoint.z : w.worldPos.z;
+      // A frame's worth of spawns is laid along the track the wheel actually
+      // covered, not all at the contact patch. At 100 km/h that track is half a
+      // metre at 60 fps and eleven metres at five, so dropping the whole frame's
+      // dust on one point turns a plume into a row of clumps the moment the
+      // frame rate dips — and it is exactly at speed that both things happen.
+      const runX = car.vel.x * dt;
+      const runZ = car.vel.z * dt;
       for (let k = 0; k < n; k += 1) {
+        const u = k / n;
         const jx = (rng.next() - 0.5) * 0.5;
         const jz = (rng.next() - 0.5) * 0.5;
-        const px = w.contactPoint ? w.contactPoint.x : w.worldPos.x;
-        const py = (w.contactPoint ? w.contactPoint.y : w.worldPos.y) + 0.06;
-        const pz = w.contactPoint ? w.contactPoint.z : w.worldPos.z;
-        // Backwards along the car's travel, up, and out. The rooster tail is the
-        // same spawn with the backward and upward components turned up.
-        const back = 0.35 + 3.4 * rooster;
-        const vx = -car.vel.x * (0.12 + 0.30 * rooster) + (rng.next() - 0.5) * 2.2;
-        const vy = 0.6 + rng.next() * (1.4 + 5.0 * rooster);
-        const vz = -car.vel.z * (0.12 + 0.30 * rooster) + (rng.next() - 0.5) * 2.2;
-        const life = water ? 0.55 + rng.next() * 0.5
-          : snow ? 1.6 + rng.next() * 1.4
-            : 1.1 + rng.next() * 1.5 + rooster * 0.8;
-        const s0 = water ? 0.16 : 0.22 + rng.next() * 0.2;
-        const s1 = s0 * (water ? 2.6 : snow ? 4.4 : 5.6);
+        const px = cx - runX * u;
+        const py = cy;
+        const pz = cz - runZ * u;
+        // Backwards along the car's travel, up, and out. `back` is the fraction
+        // of the car's own velocity the material leaves with — it used to
+        // multiply an already-scaled velocity *and* the sideways jitter, so the
+        // whole spawn came out at a fortieth of what it reads as: a puff dropped
+        // in the road rather than a plume thrown out of it.
+        const back = 0.16 + 0.34 * rooster + 0.22 * wake;
+        const spit = (0.9 + 1.6 * rooster) * (1 + wake);
+        const vx = -car.vel.x * back + (rng.next() - 0.5) * spit;
+        const vz = -car.vel.z * back + (rng.next() - 0.5) * spit;
+        const vy = 0.6 + rng.next() * (1.4 + 5.0 * rooster) + wake * (2.2 + rng.next() * 3.0);
+        // Life is spent, not free: whichever of the rate and the budget binds
+        // first, a long life spreads the same particles thinly over eighty
+        // metres of road while a shorter one packs them into the twenty behind
+        // the car — the only part of the plume a chase camera ever sees. Birth
+        // size matters more than final size for the same reason: at 100 km/h a
+        // puff is between the car and the camera for about a quarter of a
+        // second, so one that takes two seconds to grow has gone past first.
+        const life = water ? 0.8 + rng.next() * 0.7
+          : snow ? 2.2 + rng.next() * 1.8
+            : 1.4 + rng.next() * 1.3 + rooster * 0.8;
+        const s0 = water ? 0.28 : 0.42 + rng.next() * 0.34;
+        const s1 = s0 * (water ? 2.8 : snow ? 4.4 : 4.6);
         const c = props.dustColour;
-        const tint = 0.82 + rng.next() * 0.3;
+        // Airborne dust is lit from every side and scatters forward, so it comes
+        // out brighter than the surface it was lifted off. At the old 0.82-1.12
+        // it was the same value as the road under it, and a tan plume over a tan
+        // road is a plume nobody can see.
+        const tint = 1.05 + rng.next() * 0.45;
         spawnParticle(dustPool,
           px + jx, py, pz + jz,
-          vx * back * 0.35, vy, vz * back * 0.35,
+          vx, vy, vz,
           life, s0, s1,
           c[0] * tint, c[1] * tint, c[2] * tint,
           water ? PARTICLE_KIND.SPRAY : snow ? PARTICLE_KIND.SNOW : PARTICLE_KIND.DUST,
@@ -3840,7 +4042,7 @@ export function createRenderer(canvas, opts = {}) {
       state.finishTimer = 0;
     }
     if (mode === "tv") pickTvAnchor(car);
-    const p = cameraParams(mode);
+    const p = framedParams(mode);
     const rig = rigs[mode];
     updateCameraRig(rig, _sample, p, step, state.ground);
     applyRigToCamera(rig, p);
