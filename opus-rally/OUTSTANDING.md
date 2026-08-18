@@ -1,0 +1,93 @@
+# OpusRally — what is not finished
+
+The game boots, drives, calls the road, damages, times and finishes. Every gate is
+green: 434 unit assertions, 86 static checks, a browser gate that drives it with real
+key events in headless Chrome, and a drivability oracle that autopilots all twelve
+stages to the finish. It is deployed.
+
+It is **not** at the bar the brief set — "stand comparison with the best modern rally
+games". Two independent critics looking at real rendered frames have both returned
+"not there". This is the honest list.
+
+## How to look at it yourself
+
+```
+cd opus-rally
+node --test tests/*.test.mjs        # unit + the drivability oracle
+node tests/validate-static.mjs      # wiring, branding, determinism
+node tests/browser.test.mjs         # boots, drives, brakes, steers, starts every rally
+node tests/shoot.mjs --out ../shots --quality medium --width 1280 --height 720
+```
+
+`shoot.mjs` drives the car with the same pure-pursuit autopilot the game exposes, so
+the frames show a car on the road rather than one abandoned in a field. It writes a
+`manifest.json` recording where the car actually was — **if a frame's `surface` reads
+`GRASS`, that frame is not evidence.** It pins the quality level deliberately, because
+the autoscaler measures SwiftShader in headless and would otherwise photograph the game
+with its shadows and post switched off.
+
+## Open, in rough order of what it costs the player
+
+1. **The car reads as a slab.** `buildBodyShell` lofts a *closed* hull whose deck sits
+   at belt-line height straight through the cabin. That single fact is why the cockpit
+   camera shows bodywork, why the dash and steering wheel are modelled but never
+   render (they sit 0.11–0.17 m *below* that deck), and why the exterior has no
+   glasshouse depth. There is also no cabin trim, so from inside you see exterior
+   livery on the roof and doors.
+2. **The car cannot restart on a low-grip climb.** From rest on ice at an 8.8% grade
+   the engine bogs below idle instead of the auto-clutch slipping. A player who spins
+   on any ice or mud climb is stranded and the stage is unfinishable.
+3. **`autoShift` keys off engine rpm**, which during wheelspin comes from the spinning
+   wheels rather than road speed. With traction control off on an ice climb the gearbox
+   walks to 5th at 15 km/h with slip ratios pinned at 6.0.
+4. **The top-class car is the slowest off the line.** Four seconds from rest at full
+   throttle on tarmac: `delta-b640` reaches 20.8 km/h against `ardent-r1`'s 57.7 and
+   `vireo-r2`'s 42.1 — yet it reaches 100 km/h in 9.2 s and tops 219, so it is not down
+   on power. It bogs.
+5. **`speedProfile` has no vertical-curvature term**, while `buildAirfield` derives
+   crest and jump strength *from* its output. The profile authorises a speed the crest
+   then launches the car at.
+6. **`speedProfile`'s power pass models the engine as P/(m·v)** — no torque curve, no
+   gearing — so it claims 11.9 m/s is sustainable on a mud climb where the real
+   drivetrain stops.
+7. **Headlights blow out to pure white** in the centre of the pool, losing the road
+   surface detail that is readable at its edges.
+8. **Snow renders as large hard white squares** rather than as snow, and `night-clear`
+   reads as dusk: the moon runs at intensity 3.2 with exposure 2.3 and the terrain
+   comes out mid grey.
+9. **A 1.7 cm step survives at the road edge**, from the projection tie-breaking
+   between two adjacent segments whose tangent planes disagree through a tight corner
+   on a steep grade. A wheel does not notice it. The proper fix interpolates the road
+   frame along arc length, which changes the surface everywhere and wants its own pass.
+10. **`surfaceAt` decides `onRoad` from `|lateral|` alone**, so 50 m past the finish
+    line it still reports road grip on open terrain. One line, but `lateral` and
+    `signedLateral` are contract fields that scenery placement, pacenotes and physics
+    all read.
+11. **The terrain skin interpenetrates the road ribbon by up to 0.81 m.** The lattice
+    step is chosen from the triangle budget alone, and a patch spanning the road is a
+    flat plane between vertices sitting on the verge. The fix is to conform lattice
+    vertices near the centreline down to the road surface, in `meshes.js`.
+12. **Scenery blows its own triangle budget** on the shipping stages — 272k on
+    `kloft-bjornhalt` and 314k on `northmarch-kestrel` against a declared 240k. Terrain
+    auto-coarsens to fit; nothing thins scenery.
+13. **No touch controls.** The menus are responsive and the HUD has a real portrait
+    layout, but there is no on-screen wheel, so a phone can reach the game and not
+    drive it.
+
+## Things that turned out to be lies, and are worth remembering
+
+- **A test measuring the right quantity can still miss what the eye sees.** The sky was
+  never flat in radiance — it sat on the ACES shoulder, where a 1.9× radiance ratio is
+  worth about sixteen levels of pixel. The tests measured ratios and passed while the
+  screen showed a white wash. `weather.js` now carries a pixel-accurate mirror of the
+  renderer's exposure, ACES and sRGB so its assertions measure output, not input.
+- **A test can pass here and fail in a fresh checkout of the same commit.** The render
+  source scan anchored on a newline-brace-newline sequence; under Git's CRLF checkout
+  that never matched and it scanned a blind 4000-character window into neighbouring
+  functions.
+- **A gate can stop short of the thing that breaks.** The browser test generated every
+  stage and never *started* one — and eleven of the twelve could not start, because the
+  stage book named its weather in prose while `weather.js` keys presets by id.
+- **A unit can be correct and the composition still wrong.** `THREE.PerspectiveCamera.fov`
+  is vertical; the camera numbers were authored as horizontal, and the field the
+  widening ramps against is a speed in m/s that had been given a degree value.

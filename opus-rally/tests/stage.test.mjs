@@ -1,0 +1,1353 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+  STAGE_BOOK,
+  stageBookEntry,
+  stageFromBook,
+  generateStage,
+  stageWorld,
+  speedProfile,
+  stageTime,
+  jumpLanding,
+  roadSectionY,
+  NOMINAL_CAR,
+  SEP_NEAR,
+} from "../stage.js";
+import { surfaceProps, SURFACE } from "../surfaces.js";
+
+const G = 9.81;
+
+// How much of the car's weight the road takes off the tyres here, at the speed
+// the profile itself authorises. This is buildAirfield's `lift` recomputed from
+// the outside: 0 is level, 1 is the wheels leaving the ground, and past that the
+// car is flying. Deliberately derived from `grade` and the profile rather than
+// read out of `stage.crest`/`stage.jump`, so it can disagree with them.
+function liftAt(stage, speed, i) {
+  if (i <= 0 || i >= stage.count - 1) return 0;
+  const yy = (stage.grade[i + 1] - stage.grade[i - 1]) / (2 * stage.step);
+  return yy < 0 ? (speed[i] * speed[i] * -yy) / G : 0;
+}
+
+// The four arrays speedProfile actually reads, so a hypothesis about one road
+// shape can be posed without generating a whole stage around it.
+function syntheticStage(surfaceId, grade, curvature, count = 260) {
+  const k = new Float32Array(count);
+  for (let i = 0; i < count; i += 1) k[i] = curvature(i);
+  return {
+    count,
+    step: 2.0,
+    surface: new Uint8Array(count).fill(surfaceId),
+    curvature: k,
+    camber: new Float32Array(count),
+    grade: new Float32Array(count).fill(grade),
+  };
+}
+
+// Building the book costs a second or so, and every test below reads the same
+// twelve roads, so build it once.
+const BOOK = STAGE_BOOK.map((entry) => ({ entry, stage: stageFromBook(entry.id) }));
+
+const TYPED = [
+  "s", "x", "y", "z", "tx", "ty", "tz", "nx", "ny", "nz",
+  "curvature", "grade", "camber", "halfWidth", "crest", "jump",
+  "hillTrend", "surfaceMixT", "designSpeed",
+  "crownH", "rutDepth", "rutLine", "bermH", "windrow",
+];
+
+function forEachStage(fn) {
+  for (const { entry, stage } of BOOK) fn(stage, entry);
+}
+
+function segmentDistance(stage, i, px, pz) {
+  const ax = stage.x[i];
+  const az = stage.z[i];
+  const bx = stage.x[i + 1] - ax;
+  const bz = stage.z[i + 1] - az;
+  const qx = px - ax;
+  const qz = pz - az;
+  const len2 = bx * bx + bz * bz;
+  let t = len2 > 1e-9 ? (qx * bx + qz * bz) / len2 : 0;
+  if (t < 0) t = 0; else if (t > 1) t = 1;
+  return Math.hypot(qx - bx * t, qz - bz * t);
+}
+
+// Point-to-segment distance to the whole centreline, by exhaustive search: the
+// oracle project() has to match.
+function nearestSegment(stage, px, pz) {
+  let best = Infinity;
+  let index = 0;
+  let frac = 0;
+  for (let i = 0; i < stage.count - 1; i += 1) {
+    const ax = stage.x[i];
+    const az = stage.z[i];
+    const bx = stage.x[i + 1] - ax;
+    const bz = stage.z[i + 1] - az;
+    const qx = px - ax;
+    const qz = pz - az;
+    const len2 = bx * bx + bz * bz;
+    let t = len2 > 1e-9 ? (qx * bx + qz * bz) / len2 : 0;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const ex = qx - bx * t;
+    const ez = qz - bz * t;
+    const d = ex * ex + ez * ez;
+    if (d < best) { best = d; index = i; frac = t; }
+  }
+  return { index, frac, distance: Math.sqrt(best) };
+}
+
+// The same lateral measure stage.js uses: offset from the tangent frame, not
+// the Euclidean distance to the polyline. The frame is interpolated along the
+// segment rather than taken from its own sample, so that abeam a sample — where
+// the two neighbouring segments tie and the winner is arbitrary — both of them
+// report the same road.
+function rightOf(stage, i) {
+  const tx = stage.tx[i];
+  const tz = stage.tz[i];
+  const inv = 1 / Math.max(1e-6, Math.sqrt(tx * tx + tz * tz));
+  return { x: tz * inv, z: -tx * inv };
+}
+
+function lateralOf(stage, px, pz, i, f) {
+  const cx = stage.x[i] + (stage.x[i + 1] - stage.x[i]) * f;
+  const cz = stage.z[i] + (stage.z[i + 1] - stage.z[i]) * f;
+  const a = rightOf(stage, i);
+  const b = rightOf(stage, Math.min(i + 1, stage.count - 1));
+  const rx = a.x * (1 - f) + b.x * f;
+  const rz = a.z * (1 - f) + b.z * f;
+  const inv = 1 / Math.max(1e-9, Math.hypot(rx, rz));
+  return (px - cx) * rx * inv + (pz - cz) * rz * inv;
+}
+
+// Points spread across the road and well off it, in the tangent frame of a
+// sample, so a test can say where it expected the answer to be.
+function* probePoints(stage, stride, lats) {
+  for (let i = 30; i < stage.count - 30; i += stride) {
+    const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+    const rx = stage.tz[i] / rl;
+    const rz = -stage.tx[i] / rl;
+    for (const lat of lats) {
+      yield { i, lat, px: stage.x[i] + rx * lat, pz: stage.z[i] + rz * lat };
+    }
+  }
+}
+
+function percentile(sorted, p) {
+  return sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))];
+}
+
+test("the stage book gets the length it advertises", () => {
+  forEachStage((stage, entry) => {
+    const [lo, hi] = entry.lengthBand;
+    assert.ok(
+      stage.length >= lo && stage.length <= hi,
+      `${entry.id}: ${Math.round(stage.length)} m is outside its declared band ${lo}-${hi}`,
+    );
+    // The target lives in `params`, not on the entry. A caller who spreads the
+    // whole entry into generateStage silently gets the 9 km default instead,
+    // which is where the "12.8 km vs 8.9 km" story came from.
+    assert.equal(entry.length, undefined, `${entry.id}: the entry itself must not carry a length`);
+    assert.ok(
+      entry.params.length >= lo && entry.params.length <= hi,
+      `${entry.id}: params.length ${entry.params.length} sits outside its own band`,
+    );
+  });
+});
+
+test("stageFromBook and a direct generateStage of the same parameters agree", () => {
+  for (const entry of STAGE_BOOK) {
+    const direct = generateStage(entry.seed, { ...entry.params, lengthBand: entry.lengthBand });
+    const book = stageFromBook(entry.id);
+    assert.equal(direct.length, book.length, `${entry.id}: length`);
+    assert.equal(direct.count, book.count, `${entry.id}: count`);
+    for (let i = 0; i < book.count; i += 1) {
+      assert.equal(direct.x[i], book.x[i], `${entry.id}: x[${i}]`);
+      assert.equal(direct.curvature[i], book.curvature[i], `${entry.id}: curvature[${i}]`);
+    }
+  }
+});
+
+test("a reverse stage is the forward road driven the other way", () => {
+  const mirrors = STAGE_BOOK.filter((e) => e.mirrorOf);
+  assert.ok(mirrors.length >= 2, "the book should carry reverse variants to test");
+
+  for (const entry of mirrors) {
+    const forwardEntry = stageBookEntry(entry.mirrorOf);
+    assert.ok(forwardEntry, `${entry.id}: names a forward twin that exists`);
+    // Same seed on purpose: a reverse stage is the road you already know.
+    assert.equal(entry.seed, forwardEntry.seed, `${entry.id}: shares its twin's seed`);
+
+    const rev = stageFromBook(entry.id);
+    const fwd = stageFromBook(forwardEntry.id);
+    const n = fwd.count;
+
+    assert.equal(rev.count, n, `${entry.id}: same sample count`);
+    assert.equal(rev.length, fwd.length, `${entry.id}: same length`);
+    assert.equal(rev.reverse, true, `${entry.id}: flagged as reverse`);
+
+    for (let i = 0; i < n; i += 1) {
+      const j = n - 1 - i;
+      assert.equal(rev.x[i], fwd.x[j], `${entry.id}: x[${i}] mirrors`);
+      assert.equal(rev.y[i], fwd.y[j], `${entry.id}: y[${i}] mirrors`);
+      assert.equal(rev.z[i], fwd.z[j], `${entry.id}: z[${i}] mirrors`);
+      assert.equal(rev.halfWidth[i], fwd.halfWidth[j], `${entry.id}: halfWidth[${i}] mirrors`);
+      assert.equal(rev.surface[i], fwd.surface[j], `${entry.id}: surface[${i}] mirrors`);
+      // Left and right swap with the direction of travel, and so does uphill.
+      assert.equal(rev.curvature[i], -fwd.curvature[j], `${entry.id}: curvature[${i}] flips sign`);
+      assert.equal(rev.grade[i], -fwd.grade[j], `${entry.id}: grade[${i}] flips sign`);
+      assert.equal(rev.camber[i], -fwd.camber[j], `${entry.id}: camber[${i}] flips sign`);
+    }
+
+    // Where the forward stage stopped is where this one starts.
+    assert.equal(rev.start.x, fwd.finish.x, `${entry.id}: starts at the forward finish (x)`);
+    assert.equal(rev.start.y, fwd.finish.y, `${entry.id}: starts at the forward finish (y)`);
+    assert.equal(rev.start.z, fwd.finish.z, `${entry.id}: starts at the forward finish (z)`);
+    assert.equal(rev.finish.x, fwd.start.x, `${entry.id}: finishes at the forward start (x)`);
+    assert.equal(rev.finish.z, fwd.start.z, `${entry.id}: finishes at the forward start (z)`);
+
+    // And it faces back down the road it came up.
+    const fwdArrival = Math.atan2(fwd.tx[fwd.count - 1], fwd.tz[fwd.count - 1]);
+    let turn = rev.start.yaw - fwdArrival;
+    while (turn > Math.PI) turn -= 2 * Math.PI;
+    while (turn < -Math.PI) turn += 2 * Math.PI;
+    assert.ok(
+      Math.abs(Math.abs(turn) - Math.PI) < 0.05,
+      `${entry.id}: the reverse start faces ${turn.toFixed(3)} rad from the forward arrival, not about pi`,
+    );
+  }
+});
+
+test("the centreline is parameterised by arc length", () => {
+  forEachStage((stage, entry) => {
+    let worst = 0;
+    for (let i = 1; i < stage.count; i += 1) {
+      const d = Math.hypot(
+        stage.x[i] - stage.x[i - 1],
+        stage.y[i] - stage.y[i - 1],
+        stage.z[i] - stage.z[i - 1],
+      );
+      worst = Math.max(worst, Math.abs(d / stage.step - 1));
+    }
+    assert.ok(worst < 0.01, `${entry.id}: sample spacing is off by ${(worst * 100).toFixed(2)}%`);
+    assert.equal(stage.s[0], 0, `${entry.id}: s starts at zero`);
+    assert.equal(stage.length, (stage.count - 1) * stage.step, `${entry.id}: length matches the sample count`);
+    for (let i = 1; i < stage.count; i += 1) {
+      assert.equal(stage.s[i] - stage.s[i - 1], stage.step, `${entry.id}: s[${i}] advances by one step`);
+    }
+  });
+});
+
+test("tangents are unit and point along the centreline", () => {
+  forEachStage((stage, entry) => {
+    let worstUnit = 0;
+    let worstAlign = 0;
+    for (let i = 1; i < stage.count - 1; i += 1) {
+      worstUnit = Math.max(worstUnit, Math.abs(Math.hypot(stage.tx[i], stage.ty[i], stage.tz[i]) - 1));
+      const dx = stage.x[i + 1] - stage.x[i - 1];
+      const dy = stage.y[i + 1] - stage.y[i - 1];
+      const dz = stage.z[i + 1] - stage.z[i - 1];
+      const len = Math.hypot(dx, dy, dz);
+      const dot = (stage.tx[i] * dx + stage.ty[i] * dy + stage.tz[i] * dz) / len;
+      worstAlign = Math.max(worstAlign, 1 - dot);
+    }
+    assert.ok(worstUnit < 1e-5, `${entry.id}: tangent length is off by ${worstUnit}`);
+    assert.ok(worstAlign < 1e-3, `${entry.id}: tangent disagrees with the points by ${worstAlign}`);
+    // ty is dy/ds by construction, which is exactly the published grade.
+    for (let i = 0; i < stage.count; i += 1) {
+      assert.ok(Math.abs(stage.ty[i] - stage.grade[i]) < 1e-6, `${entry.id}: ty[${i}] is not the grade`);
+    }
+  });
+});
+
+test("curvature is the heading change the road actually makes", () => {
+  forEachStage((stage, entry) => {
+    const errors = [];
+    let peak = 0;
+    for (let i = 0; i < stage.count; i += 1) peak = Math.max(peak, Math.abs(stage.curvature[i]));
+
+    let integrated = 0;
+    let drift = 0;
+    let residual = 0;
+    const h0 = Math.atan2(stage.tx[0], stage.tz[0]);
+    for (let i = 1; i < stage.count; i += 1) {
+      integrated += (stage.curvature[i] + stage.curvature[i - 1]) * 0.5 * stage.step;
+      let heading = Math.atan2(stage.tx[i], stage.tz[i]) - h0;
+      while (heading - integrated > Math.PI) heading -= 2 * Math.PI;
+      while (integrated - heading > Math.PI) heading += 2 * Math.PI;
+      drift = Math.max(drift, Math.abs(heading - integrated));
+
+      if (i >= 2 && i < stage.count - 2) {
+        let d = Math.atan2(stage.tx[i + 1], stage.tz[i + 1]) - Math.atan2(stage.tx[i - 1], stage.tz[i - 1]);
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        const differenced = d / (2 * stage.step);
+        errors.push(Math.abs(differenced - stage.curvature[i]));
+
+        // Positions come from a midpoint integrator, which puts the heading at a
+        // sample half a curvature-slope behind the analytic one. Differencing it
+        // therefore returns k[i] plus exactly these two second differences of the
+        // curvature — a term that only shows up on the spiral joins where the
+        // slope changes. Subtract it and there is nothing left to explain.
+        if (i >= 3 && i < stage.count - 3) {
+          const near = stage.curvature[i + 1] - 2 * stage.curvature[i] + stage.curvature[i - 1];
+          const far = stage.curvature[i + 2] - 2 * stage.curvature[i] + stage.curvature[i - 2];
+          residual = Math.max(residual, Math.abs(differenced - (stage.curvature[i] + near / 4 + far / 16)));
+        }
+      }
+    }
+    errors.sort((a, b) => a - b);
+
+    assert.ok(residual < 1e-3, `${entry.id}: heading and curvature disagree by ${residual} beyond the integrator`);
+    // Total turn is the integral of curvature: this catches any systematic
+    // disagreement over the whole road, where a local check cannot.
+    assert.ok(drift < 0.05, `${entry.id}: heading drifts ${drift.toFixed(4)} rad from the curvature integral`);
+    assert.ok(percentile(errors, 0.5) < 1e-4, `${entry.id}: median curvature error ${percentile(errors, 0.5)}`);
+    const worst = errors[errors.length - 1];
+    assert.ok(worst < peak * 0.2, `${entry.id}: worst curvature error ${worst} against a peak of ${peak}`);
+  });
+});
+
+test("normals are unit, square to the tangent, and carry the camber", () => {
+  forEachStage((stage, entry) => {
+    let worstUnit = 0;
+    let worstSquare = 0;
+    let worstCamber = 0;
+    for (let i = 0; i < stage.count; i += 1) {
+      worstUnit = Math.max(worstUnit, Math.abs(Math.hypot(stage.nx[i], stage.ny[i], stage.nz[i]) - 1));
+      worstSquare = Math.max(
+        worstSquare,
+        Math.abs(stage.nx[i] * stage.tx[i] + stage.ny[i] * stage.ty[i] + stage.nz[i] * stage.tz[i]),
+      );
+      // Positive camber banks the surface down to the left, so the normal leans
+      // left by that angle: its component along horizontal-right is -sin(camber).
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      worstCamber = Math.max(
+        worstCamber,
+        Math.abs(stage.nx[i] * rx + stage.nz[i] * rz + Math.sin(stage.camber[i])),
+      );
+      assert.ok(stage.ny[i] > 0.95, `${entry.id}: normal[${i}] is not pointing up`);
+    }
+    assert.ok(worstUnit < 1e-5, `${entry.id}: normal length is off by ${worstUnit}`);
+    assert.ok(worstSquare < 1e-5, `${entry.id}: normal is ${worstSquare} out of square with the tangent`);
+    assert.ok(worstCamber < 5e-3, `${entry.id}: normal roll disagrees with camber by ${worstCamber}`);
+  });
+});
+
+test("the road never comes back within its own width", () => {
+  forEachStage((stage, entry) => {
+    const cell = 40;
+    const buckets = new Map();
+    let worst = Infinity;
+    let worstPair = null;
+    for (let i = 0; i < stage.count; i += 1) {
+      const cx = Math.floor(stage.x[i] / cell);
+      const cz = Math.floor(stage.z[i] / cell);
+      for (let ox = -1; ox <= 1; ox += 1) {
+        for (let oz = -1; oz <= 1; oz += 1) {
+          const list = buckets.get(`${cx + ox},${cz + oz}`);
+          if (!list) continue;
+          for (const j of list) {
+            if (i - j < SEP_NEAR.gap) continue;
+            const gap = Math.hypot(stage.x[i] - stage.x[j], stage.z[i] - stage.z[j])
+              - stage.halfWidth[i] - stage.halfWidth[j];
+            if (gap < worst) { worst = gap; worstPair = [j, i]; }
+          }
+        }
+      }
+      const key = `${cx},${cz}`;
+      let list = buckets.get(key);
+      if (!list) { list = []; buckets.set(key, list); }
+      list.push(i);
+    }
+    assert.ok(
+      worst > 0,
+      `${entry.id}: two stretches of road overlap by ${(-worst).toFixed(1)} m at samples ${worstPair}`,
+    );
+  });
+});
+
+test("the design speed profile is rally-plausible", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    assert.equal(v.length, stage.count, `${entry.id}: profile covers every sample`);
+
+    const seconds = stageTime(stage, v);
+    const average = (stage.length / seconds) * 3.6;
+    assert.ok(
+      average > 70 && average < 170,
+      `${entry.id}: average ${average.toFixed(1)} km/h is not a rally stage average`,
+    );
+    assert.ok(seconds > 120 && seconds < 900, `${entry.id}: stage time ${seconds.toFixed(0)} s`);
+
+    let top = 0;
+    let slowest = Infinity;
+    for (let i = 0; i < stage.count; i += 1) {
+      assert.ok(Number.isFinite(v[i]), `${entry.id}: speed[${i}] is not finite`);
+      top = Math.max(top, v[i]);
+      slowest = Math.min(slowest, v[i]);
+    }
+    assert.ok(top > NOMINAL_CAR.topSpeed * 0.9, `${entry.id}: never gets near top speed (${top.toFixed(1)} m/s)`);
+    assert.ok(top <= NOMINAL_CAR.topSpeed + 1e-6, `${entry.id}: exceeds the car's top speed`);
+    assert.ok(slowest > 4, `${entry.id}: slows to ${slowest.toFixed(1)} m/s, which is a stop, not a corner`);
+
+    // The caller's array is filled rather than a new one returned.
+    const reuse = new Float32Array(stage.count);
+    assert.equal(speedProfile(stage, NOMINAL_CAR, reuse), reuse, `${entry.id}: speedProfile reuses the out array`);
+  });
+});
+
+test("no corner asks for more braking than the approach can deliver", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    let worst = 0;
+    let at = 0;
+    for (let i = 0; i < stage.count - 1; i += 1) {
+      const required = (v[i] * v[i] - v[i + 1] * v[i + 1]) / (2 * stage.step);
+      if (required <= 0) continue;
+      const props = surfaceProps(stage.surface[i]);
+      const used = Math.min(
+        1,
+        (v[i] * v[i] * Math.abs(stage.curvature[i])) / Math.max(1e-3, G * props.gripLat * NOMINAL_CAR.tyreLat),
+      );
+      // What is left of the friction circle for slowing down, less whatever
+      // gravity is doing: a descent takes braking away, a climb hands it back.
+      const available = G * props.gripLong * NOMINAL_CAR.tyreLong * Math.sqrt(Math.max(0.04, 1 - used * used))
+        + G * stage.grade[i];
+      const ratio = required / Math.max(0.5, available);
+      if (ratio > worst) { worst = ratio; at = i; }
+    }
+    assert.ok(
+      worst <= 1.05,
+      `${entry.id}: at s=${at * stage.step} the profile brakes ${worst.toFixed(2)}x harder than the surface allows`,
+    );
+  });
+});
+
+test("every jump lands somewhere a car survives", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    const jumps = stage.features.filter((f) => f.kind === "jump");
+    assert.ok(jumps.length > 0, `${entry.id}: has no jump at all`);
+    for (const jump of jumps) {
+      const i = Math.max(1, Math.min(stage.count - 2, Math.round(jump.s / stage.step)));
+      const land = jumpLanding(stage, i, v[i]);
+      assert.ok(Number.isFinite(land.flight) && land.flight > 0, `${entry.id}: jump at ${jump.s} has no flight`);
+      assert.ok(land.air > 0 && land.air <= 6, `${entry.id}: jump at ${jump.s} is airborne for ${land.air}s`);
+      assert.ok(land.landIndex > i, `${entry.id}: jump at ${jump.s} lands behind its own take-off`);
+      // The generator tunes each jump until the closing speed at touchdown is
+      // under 10.5 m/s; nothing downstream may quietly undo that.
+      assert.ok(
+        land.closing < 10.5,
+        `${entry.id}: the jump at ${Math.round(jump.s)} m lands at ${land.closing.toFixed(1)} m/s closing`,
+      );
+    }
+  });
+});
+
+// speedProfile and buildAirfield used to contradict each other: the profile had
+// no vertical-curvature term at all, so it authorised full speed over a crest
+// that its own output then marked as a jump, and the stage launched whatever
+// arrived at the speed it had just permitted. At alvenda-calderas s=4800 that was
+// 44 m/s over a 66 m-radius bend with the load already gone off the tyres.
+test("the profile never authorises flight in a corner", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    let worstK = 0;
+    let at = 0;
+    let worstLift = 0;
+    for (let i = 1; i < stage.count - 1; i += 1) {
+      if (liftAt(stage, v, i) < 1) continue;
+      const k = Math.abs(stage.curvature[i]);
+      if (k > worstK) { worstK = k; at = i; worstLift = liftAt(stage, v, i); }
+    }
+    // A car with no wheels on the ground generates no lateral force, so the only
+    // road it can be authorised to fly over is one it does not have to steer on.
+    // 5e-4 is a 2 km radius: a straight, with room for sampling noise.
+    assert.ok(
+      worstK <= 5e-4,
+      `${entry.id}: at s=${at * stage.step} the profile authorises ${worstLift.toFixed(2)}x lift `
+      + `— wheels off the ground — through a ${(1 / worstK).toFixed(0)} m radius bend`,
+    );
+  });
+});
+
+// The other half of the same contract. Making the profile honest about crests
+// must not quietly turn every jump into a bump: a rally stage needs real air.
+test("every stage still has a jump with genuine air at the profile's own speed", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    let best = null;
+    for (const f of stage.features.filter((x) => x.kind === "jump")) {
+      const i = Math.max(1, Math.min(stage.count - 2, Math.round(f.s / stage.step)));
+      const land = jumpLanding(stage, i, v[i]);
+      if (!best || land.air > best.land.air) best = { f, i, land };
+    }
+    assert.ok(best, `${entry.id}: no jump feature at all`);
+    const lift = liftAt(stage, v, best.i);
+    assert.ok(
+      best.land.air >= 0.6 && best.land.flight >= 25,
+      `${entry.id}: its biggest jump (s=${Math.round(best.f.s)}) only manages `
+      + `${best.land.air.toFixed(2)} s and ${best.land.flight.toFixed(0)} m of flight`,
+    );
+    // stage.jump saturates at lift 1.9, so a stage whose best jump is under that
+    // has no jump the rest of the game will treat as one.
+    assert.ok(
+      lift >= 1.8,
+      `${entry.id}: its biggest jump only unloads the car to ${lift.toFixed(2)}x — that is a crest, not a jump`,
+    );
+  });
+});
+
+// And nothing may launch by accident. A crest the stage did not call a jump has
+// to stay a crest at the speed the profile hands the driver.
+test("an ordinary crest does not throw the car at the speed the profile allows", () => {
+  forEachStage((stage, entry) => {
+    const v = speedProfile(stage);
+    const jumpsAt = stage.features.filter((f) => f.kind === "jump").map((f) => f.s);
+    let worst = 0;
+    let at = 0;
+    for (const f of stage.features.filter((x) => x.kind === "crest")) {
+      if (jumpsAt.some((js) => Math.abs(js - f.s) < 60)) continue;
+      const i = Math.round(f.s / stage.step);
+      for (let j = i - 10; j <= i + 10; j += 1) {
+        const lift = liftAt(stage, v, j);
+        if (lift > worst) { worst = lift; at = f.s; }
+      }
+    }
+    // Skimming light over the top is what a crest is for; `jump` is
+    // (lift - 1) / 0.9, so 1.45 is half a jump, and past that it is one.
+    assert.ok(
+      worst < 1.45,
+      `${entry.id}: the crest at s=${Math.round(at)} unloads the car to ${worst.toFixed(2)}x — that is a jump, not a crest`,
+    );
+  });
+});
+
+// The forward power pass used to model the engine as P/(m*v) with no torque
+// curve and no gearing, which claims five g at walking pace and made the profile
+// promise a climb the drivetrain cannot start. Driving the real physics up a
+// synthetic constant-grade slope, the car cannot pull away at all from under
+// 8.9 m/s on a 9% mud climb or 10.3 m/s on a 13% one; the profile has to agree.
+test("the profile does not climb out of a mud hairpin the drivetrain cannot start", () => {
+  // 12.5 m radius on mud pins the entry at about 8 m/s — under the speed the
+  // simulated car can recover from — and then the road just goes up.
+  for (const grade of [0.09, 0.13]) {
+    const stage = syntheticStage(SURFACE.MUD, grade, (i) => (i < 12 ? 0.08 : 0));
+    const v = speedProfile(stage);
+    assert.ok(
+      v[12] < v[0],
+      `on a ${(grade * 100).toFixed(0)}% mud climb the profile leaves a 12.5 m hairpin at `
+      + `${v[0].toFixed(1)} m/s and is already doing ${v[12].toFixed(1)} m/s 24 m later`,
+    );
+  }
+  // And it never claims a launch it has no gearing for. 10 m/s is the top of the
+  // window the simulated car cannot pull away inside on a loose climb, and one
+  // short gear spinning its wheels in mud is not worth a third of a g there.
+  const stage = syntheticStage(SURFACE.MUD, 0, (i) => (i < 12 ? 0.08 : 0));
+  const v = speedProfile(stage);
+  let peak = 0;
+  let peakAt = 0;
+  for (let i = 1; i < stage.count; i += 1) {
+    if (v[i - 1] > 10) break;
+    const a = (v[i] * v[i] - v[i - 1] * v[i - 1]) / (2 * stage.step);
+    if (a > peak) { peak = a; peakAt = v[i - 1]; }
+  }
+  assert.ok(
+    peak < 0.30 * G,
+    `pulling out of a mud hairpin the profile claims ${(peak / G).toFixed(2)} g at ${peakAt.toFixed(1)} m/s, `
+    + `which is more than a loose surface and one gear can deliver`,
+  );
+});
+
+test("every stage has a hairpin, a crest, a jump and a flat-out section", () => {
+  forEachStage((stage, entry) => {
+    const kinds = new Map();
+    for (const f of stage.features) kinds.set(f.kind, (kinds.get(f.kind) || 0) + 1);
+    for (const wanted of ["hairpin", "crest", "jump"]) {
+      assert.ok(kinds.get(wanted) > 0, `${entry.id}: no ${wanted} anywhere on the stage`);
+    }
+
+    const v = stage.designSpeed;
+    let run = 0;
+    let longest = 0;
+    for (let i = 0; i < stage.count; i += 1) {
+      const straight = Math.abs(stage.curvature[i]) < 0.004;
+      if (straight && v[i] > NOMINAL_CAR.topSpeed * 0.85) { run += 1; longest = Math.max(longest, run); }
+      else run = 0;
+    }
+    assert.ok(
+      longest * stage.step >= 150,
+      `${entry.id}: longest flat-out run is only ${longest * stage.step} m`,
+    );
+  });
+});
+
+test("the corner sequence has rhythm rather than a constant wiggle", () => {
+  forEachStage((stage, entry) => {
+    assert.ok(stage.corners.length >= 15, `${entry.id}: only ${stage.corners.length} corners`);
+
+    let repeat = 1;
+    let longest = 1;
+    let flips = 0;
+    for (let i = 1; i < stage.corners.length; i += 1) {
+      repeat = stage.corners[i].kind === stage.corners[i - 1].kind ? repeat + 1 : 1;
+      longest = Math.max(longest, repeat);
+      if (stage.corners[i].dir !== stage.corners[i - 1].dir) flips += 1;
+    }
+    assert.ok(longest <= 4, `${entry.id}: ${longest} identical corner primitives in a row`);
+    assert.ok(
+      flips / (stage.corners.length - 1) > 0.25,
+      `${entry.id}: the road only changes direction on ${flips} of ${stage.corners.length - 1} corner joins`,
+    );
+
+    const kinds = new Set(stage.corners.map((c) => c.kind));
+    const severities = new Set(stage.corners.map((c) => c.severity));
+    assert.ok(kinds.size >= 4, `${entry.id}: only ${kinds.size} kinds of corner`);
+    assert.ok(severities.size >= 3, `${entry.id}: only ${severities.size} corner severities`);
+
+    let sum = 0;
+    let sumSq = 0;
+    let peak = 0;
+    for (let i = 0; i < stage.count; i += 1) {
+      sum += stage.curvature[i];
+      sumSq += stage.curvature[i] * stage.curvature[i];
+      peak = Math.max(peak, Math.abs(stage.curvature[i]));
+    }
+    const sd = Math.sqrt(sumSq / stage.count - (sum / stage.count) ** 2);
+    assert.ok(sd > 0.004, `${entry.id}: curvature barely varies (sd ${sd.toFixed(5)})`);
+    assert.ok(sd / peak > 0.06, `${entry.id}: curvature is a constant wiggle (sd/peak ${(sd / peak).toFixed(3)})`);
+  });
+});
+
+test("heightAt is continuous across the road edge", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    let worst = 0;
+    let at = null;
+    for (let i = 30; i < stage.count - 30; i += 9) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      const hw = stage.halfWidth[i];
+      for (const side of [1, -1]) {
+        let previous = null;
+        for (let u = -1; u <= 1.0001; u += 0.05) {
+          const lat = side * (hw + u);
+          const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
+          assert.ok(Number.isFinite(h), `${entry.id}: heightAt is not finite at s=${i * stage.step}`);
+          if (previous !== null && Math.abs(h - previous) > worst) {
+            worst = Math.abs(h - previous);
+            at = { s: i * stage.step, side, u: u.toFixed(2) };
+          }
+          previous = h;
+        }
+      }
+    }
+    // A 5 cm transect over the seam: the verge drop is a slope, not a step.
+    assert.ok(worst < 0.12, `${entry.id}: the road edge steps ${worst.toFixed(3)} m at ${JSON.stringify(at)}`);
+  });
+});
+
+// What the ground is allowed to do to a car that runs wide.
+//
+// A rally stage is banked, cut and ditched, so "gentle" is the wrong bar: the
+// bar is the line between a bank a car slides down and a wall or a hole it is
+// thrown by. Suspension travel is 0.19-0.23 m over a 2.5 m wheelbase
+// (physics.js), so ground steeper than about 1 m per metre is already more than
+// the springs can swallow — a car meets it as a bank, loses grip and slides.
+// What actually launched cars was not steepness but discontinuity: the field
+// used to anchor each point on the *nearest* road sample, so where two passes
+// of the road ran near each other the anchor flipped across the medial axis
+// between them and the ground stepped by their whole height difference —
+// 539 m per metre on northmarch-harrowfen, 196 on kloft-skarvedal, 34 m in a
+// single 8 m stride. A wheel that finds the ground 30 m below the chassis in
+// one substep levers the car over: that is the cartwheel.
+//
+// So the bounds below are cliff bounds, not comfort bounds. Anything under them
+// is ground a wheel can be given without the chassis being levered; anything
+// over them can only be a step. They sit roughly 30% above the worst the
+// generator produces, which is set by the road layout rather than the terrain:
+// the separation rules let the road climb back over itself 70 m higher only
+// 90 m away, and the ground in between has to cover that somehow.
+const CLIFF = 5.0;
+const NEAR_CLIFF = 3.0;
+const NEAR_BAND = 12;
+
+// A bank and a step look the same at one sampling distance and different at
+// two: shrink the stride and a bank's height change shrinks with it while a
+// step's does not. A millimetre apart, the ground under a wheel must not move
+// by more than the suspension has travel to take — 0.19 m on the softest car
+// in physics.js. The steepest ground the generator makes is under 4 m per
+// metre, which is 4 mm over a millimetre; the old field stepped tens of metres
+// with no stride small enough to make it shrink.
+const STEP = 0.19;
+const FINE = 0.001;
+
+function worstStep(probe, at, span) {
+  let worst = 0;
+  for (let l = at - span; l <= at + span; l += FINE) {
+    worst = Math.max(worst, Math.abs(probe(l + FINE) - probe(l)));
+  }
+  return worst;
+}
+
+test("no ground off the road is a cliff", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    const dl = 0.25;
+    let worst = 0;
+    let worstAt = { i: 20, side: 1, off: 0 };
+    let near = 0;
+    let nearAt = null;
+    for (let i = 20; i < stage.count - 20; i += 97) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      const hw = stage.halfWidth[i];
+      for (const side of [1, -1]) {
+        let previous = null;
+        for (let off = 0; off <= 150; off += dl) {
+          const lat = side * (hw + off);
+          const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
+          assert.ok(Number.isFinite(h), `${entry.id}: heightAt is ${h} at s=${i * stage.step} lat ${lat}`);
+          if (previous !== null) {
+            const grade = Math.abs(h - previous) / dl;
+            if (grade > worst) { worst = grade; worstAt = { i, side, off }; }
+            if (off <= NEAR_BAND && grade > near) { near = grade; nearAt = { i, side, off }; }
+          }
+          previous = h;
+        }
+      }
+    }
+    assert.ok(
+      worst <= CLIFF,
+      `${entry.id}: the ground moves ${worst.toFixed(1)} m per metre at ${JSON.stringify(worstAt)}`,
+    );
+    assert.ok(
+      near <= NEAR_CLIFF,
+      `${entry.id}: ${NEAR_BAND} m off the road the ground moves ${near.toFixed(1)} m per metre at ${JSON.stringify(nearAt)}`,
+    );
+
+    // The steepest place found is a bank, not a step hiding under the stride.
+    const { i, side } = worstAt;
+    const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+    const rx = stage.tz[i] / rl;
+    const rz = -stage.tx[i] / rl;
+    const probe = (off) => world.heightAt(
+      stage.x[i] + rx * side * (stage.halfWidth[i] + off),
+      stage.z[i] + rz * side * (stage.halfWidth[i] + off),
+    );
+    const step = worstStep(probe, worstAt.off, 0.3);
+    assert.ok(
+      step <= STEP,
+      `${entry.id}: the ground at ${JSON.stringify(worstAt)} moves ${step.toFixed(3)} m `
+      + `across a millimetre, so it is a step and not a bank`,
+    );
+  });
+});
+
+// The regression the field was rebuilt for. Two passes of the road that come
+// near each other with a big height difference between them are exactly where
+// the nearest-sample anchor used to flip, and the medial axis between them is
+// where the cliff stood.
+function stackedPairs(stage, want) {
+  const cell = 60;
+  const buckets = new Map();
+  const found = [];
+  for (let i = 0; i < stage.count; i += 2) {
+    const cx = Math.floor(stage.x[i] / cell);
+    const cz = Math.floor(stage.z[i] / cell);
+    for (let ox = -1; ox <= 1; ox += 1) {
+      for (let oz = -1; oz <= 1; oz += 1) {
+        const list = buckets.get(`${cx + ox},${cz + oz}`);
+        if (!list) continue;
+        for (const j of list) {
+          // Far enough apart along the road to be a different pass of it.
+          if (i - j < 60) continue;
+          const gap = Math.hypot(stage.x[i] - stage.x[j], stage.z[i] - stage.z[j]);
+          if (gap > 90) continue;
+          found.push({ i, j, gap, drop: Math.abs(stage.y[i] - stage.y[j]) });
+        }
+      }
+    }
+    const key = `${cx},${cz}`;
+    let list = buckets.get(key);
+    if (!list) { list = []; buckets.set(key, list); }
+    list.push(i);
+  }
+  found.sort((a, b) => b.drop - a.drop);
+  const out = [];
+  for (const pair of found) {
+    if (out.some((q) => Math.abs(q.i - pair.i) < 150 || Math.abs(q.j - pair.j) < 150)) continue;
+    out.push(pair);
+    if (out.length >= want) break;
+  }
+  return out;
+}
+
+test("where the road passes over itself the ground between is a slope, not a step", () => {
+  let stacked = 0;
+  let deepest = 0;
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    for (const pair of stackedPairs(stage, 3)) {
+      if (pair.drop > 10) stacked += 1;
+      deepest = Math.max(deepest, pair.drop);
+      const ax = stage.x[pair.i];
+      const az = stage.z[pair.i];
+      const bx = stage.x[pair.j];
+      const bz = stage.z[pair.j];
+      const len = Math.hypot(bx - ax, bz - az);
+      const ux = (bx - ax) / len;
+      const uz = (bz - az) / len;
+      const probe = (l) => world.heightAt(ax + ux * l, az + uz * l);
+      let worst = 0;
+      let at = 0;
+      let previous = null;
+      for (let l = 0; l <= len; l += 0.1) {
+        const h = probe(l);
+        if (previous !== null) {
+          const grade = Math.abs(h - previous) / 0.1;
+          if (grade > worst) { worst = grade; at = l; }
+        }
+        previous = h;
+      }
+      const label = `${entry.id}: the ${pair.drop.toFixed(0)} m of height between samples `
+        + `${pair.j} and ${pair.i}, ${pair.gap.toFixed(0)} m apart`;
+      assert.ok(worst <= CLIFF, `${label}, is a ${worst.toFixed(1)} m per metre cliff ${at.toFixed(1)} m along`);
+
+      // And it is still a slope a thousand times closer in.
+      const step = worstStep(probe, at, 0.3);
+      assert.ok(
+        step <= STEP,
+        `${label}, moves ${step.toFixed(3)} m across a millimetre ${at.toFixed(1)} m along, so it is a step`,
+      );
+    }
+  });
+  // The test only means something if the book actually stacks the road over
+  // itself; if a future generator stops doing that, this stops being a test.
+  assert.ok(stacked >= 6, `only ${stacked} stacked pairs of road in the whole book`);
+  assert.ok(deepest > 30, `the closest passes of road are never more than ${deepest.toFixed(0)} m apart in height`);
+});
+
+// The physics ground and the drawn ribbon are one surface, or they are two —
+// and for a long time they were two. `heightAt` returned the road PLANE:
+// centreline y plus lateral*sin(camber), with no crown, no ruts and no berm.
+// The ribbon meshes.js draws is crowned, cut up to 0.12 m into the racing line
+// and stands up to 0.28 m proud on the outside of a corner, so the surface the
+// player drove and the surface the player saw differed by that much everywhere,
+// and the terrain builder carried a hardcoded 0.24 m clearance to cover it.
+//
+// So the bar here is no longer the plane. It is `roadSectionY` — the one cross
+// section both modules read — and this test is what stops the two drifting apart
+// again. The frame and the arc length it is read at are both continuous, so
+// abeam a sample there is still nothing for the projection to tie-break between:
+// the agreement is held to a millimetre, as the plane version was.
+test("the road surface under the wheels is the section both modules read", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    let worst = 0;
+    let at = null;
+    for (let i = 6; i < stage.count - 6; i += 11) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const rx = stage.tz[i] / rl;
+      const rz = -stage.tx[i] / rl;
+      const hw = stage.halfWidth[i];
+      for (const k of [0, -0.35, 0.35, -0.65, 0.65, -0.9, 0.9, -0.97, 0.97]) {
+        const lat = k * hw;
+        const h = world.heightAt(stage.x[i] + rx * lat, stage.z[i] + rz * lat);
+        // The section is carved along the road normal, so a depth becomes a
+        // height by the normal's vertical component.
+        const want = stage.y[i] + lat * Math.sin(stage.camber[i])
+          + roadSectionY(stage, i, 0, lat, hw) * stage.ny[i];
+        if (Math.abs(h - want) > worst) { worst = Math.abs(h - want); at = { i, k }; }
+      }
+    }
+    assert.ok(
+      worst < 0.001,
+      `${entry.id}: the road surface is ${worst.toFixed(5)} m off its own section at ${JSON.stringify(at)}`,
+    );
+  });
+});
+
+// Agreeing with `roadSectionY` is only worth something if the section is a road.
+// A section that had quietly gone flat would satisfy the test above perfectly,
+// and would be exactly the bug it exists to catch, seen from the other side.
+test("the section is a rally road and not a plane under another name", () => {
+  let deepestRut = 0;
+  let tallestBerm = 0;
+  let biggestCrown = 0;
+  let bermsSwapSides = 0;
+  forEachStage((stage, entry) => {
+    for (let i = 0; i < stage.count; i += 1) {
+      deepestRut = Math.max(deepestRut, stage.rutDepth[i]);
+      tallestBerm = Math.max(tallestBerm, Math.abs(stage.bermH[i]));
+      biggestCrown = Math.max(biggestCrown, stage.crownH[i]);
+    }
+    // The berm is on the outside of the corner, so a stage that turns both ways
+    // has to build one on each hand.
+    let anyLeft = false;
+    let anyRight = false;
+    for (let i = 0; i < stage.count; i += 1) {
+      if (stage.bermH[i] > 0.05) anyRight = true;
+      if (stage.bermH[i] < -0.05) anyLeft = true;
+    }
+    if (anyLeft && anyRight) bermsSwapSides += 1;
+    // Every stage is crowned everywhere: water has to get off a road.
+    for (let i = 0; i < stage.count; i += 1) {
+      assert.ok(stage.crownH[i] > 0.01, `${entry.id}: no crown at sample ${i}`);
+      assert.ok(
+        Math.abs(stage.rutLine[i]) < stage.halfWidth[i],
+        `${entry.id}: the racing line is off the road at sample ${i}`,
+      );
+    }
+  });
+  assert.ok(deepestRut > 0.05, `the deepest rut in the book is ${deepestRut.toFixed(3)} m`);
+  assert.ok(tallestBerm > 0.12, `the tallest berm in the book is ${tallestBerm.toFixed(3)} m`);
+  assert.ok(biggestCrown > 0.03, `the biggest crown in the book is ${biggestCrown.toFixed(3)} m`);
+  assert.ok(bermsSwapSides >= 8, `only ${bermsSwapSides} stages berm both hands`);
+});
+
+// A racing line is not two parallel stripes. It runs wide on the approach,
+// crosses to the inside at the apex and drifts wide again on the exit, and the
+// ruts a season of cars leaves follow it. What the road used to carry instead
+// was `-sign(curvature) * halfWidth * 0.35`, which is a stripe that teleports
+// across the road at every inflexion and sits on the wrong side of it for the
+// whole of every approach.
+test("the racing line runs wide, apexes, and runs wide again", () => {
+  let corners = 0;
+  let apexInside = 0;
+  let approachOutside = 0;
+  forEachStage((stage, entry) => {
+    const step = stage.step;
+    const win = Math.round(12 / step);
+    for (let i = 60; i < stage.count - 60; i += 1) {
+      const k = stage.curvature[i];
+      if (Math.abs(k) < 0.022) continue;
+      let peak = true;
+      for (let j = i - win; j <= i + win; j += 1) if (Math.abs(stage.curvature[j]) > Math.abs(k)) { peak = false; break; }
+      if (!peak) continue;
+      corners += 1;
+      // Inside is the hand the road turns toward: positive curvature is a left,
+      // and left is negative lateral.
+      if (Math.sign(stage.rutLine[i]) === -Math.sign(k) && Math.abs(stage.rutLine[i]) > 0.15) apexInside += 1;
+      // Somewhere in the 20-70 m of approach the line has to be on the outside.
+      let wide = false;
+      for (let j = i - Math.round(70 / step); j <= i - Math.round(20 / step); j += 1) {
+        if (Math.sign(stage.rutLine[j]) === Math.sign(k) && Math.abs(stage.rutLine[j]) > 0.15) { wide = true; break; }
+      }
+      if (wide) approachOutside += 1;
+      void entry;
+      i += win;
+    }
+  });
+  assert.ok(corners > 120, `only ${corners} corners in the whole book to measure`);
+  assert.ok(
+    apexInside / corners > 0.9,
+    `the line is on the inside at only ${((apexInside / corners) * 100).toFixed(0)}% of apexes`,
+  );
+  assert.ok(
+    approachOutside / corners > 0.6,
+    `the line runs wide on only ${((approachOutside / corners) * 100).toFixed(0)}% of approaches`,
+  );
+});
+
+// The width used to be one broad noise term smoothed over fifty metres on top of
+// a per-phrase constant, which is a ribbon of mathematically constant width for
+// as far down the road as anyone can see. A real road pinches where the cut
+// closes in and opens at a passing place, and it does it at the length scale the
+// eye reads — tens of metres, not hundreds.
+test("the road width varies at the scale a driver can see", () => {
+  forEachStage((stage, entry) => {
+    const win = Math.round(20 / stage.step);
+    let swing = 0;
+    let moved = 0;
+    let total = 0;
+    for (let i = win; i < stage.count - win; i += 1) {
+      const d = Math.abs(stage.halfWidth[i + win] - stage.halfWidth[i - win]);
+      swing = Math.max(swing, d);
+      if (d > 0.25) moved += 1;
+      total += 1;
+    }
+    // 40 m is about a second and a half at rally pace and about as far as the
+    // eye reads an edge as one line. Over that, a real road moves.
+    assert.ok(swing > 1.0, `${entry.id}: the width only moves ${swing.toFixed(2)} m over 40 m of road`);
+    assert.ok(
+      moved / total > 0.30,
+      `${entry.id}: the width is flat over 40 m for ${(100 - (moved / total) * 100).toFixed(0)}% of the road`,
+    );
+  });
+});
+
+// The road frame is a property of the arc length, not of whichever segment the
+// projection picked. Abeam a sample the two neighbouring segments are equally
+// near and the tie-break is arbitrary, so if the surface is built from segment
+// i's own camber, half-width and right vector then the road steps by whatever
+// those two frames disagree about — 2.6 to 3.5 cm through a tight corner on a
+// grade, and the disagreement grows with the offset, so the edge is the worst of
+// it. Walk along the corridor edge and shrink the stride: a genuine grade or
+// camber change shrinks with it, a frame flip does not. Over a millimetre the
+// road climbs at most about 0.3 mm anywhere in the book.
+test("the road surface does not step where the projection changes segments", () => {
+  const FINE = 0.001;
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    let worst = 0;
+    let at = null;
+    for (let i = 30; i < stage.count - 30; i += 3) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      const ux = stage.tx[i] / rl;
+      const uz = stage.tz[i] / rl;
+      for (const side of [1, -1]) {
+        const lat = side * stage.halfWidth[i] * 0.9;
+        // Sweep across the sample boundary itself: the previous segment as it
+        // runs out, then the next one as it takes over.
+        for (let f = 0.9; f <= 1.1001; f += 0.02) {
+          const j = f <= 1 ? i - 1 : i;
+          const ff = f <= 1 ? f : f - 1;
+          const cx = stage.x[j] + (stage.x[j + 1] - stage.x[j]) * ff;
+          const cz = stage.z[j] + (stage.z[j + 1] - stage.z[j]) * ff;
+          const ax = cx + uz * lat;
+          const az = cz - ux * lat;
+          const step = Math.abs(world.heightAt(ax + ux * FINE, az + uz * FINE) - world.heightAt(ax, az));
+          if (step > worst) { worst = step; at = { i, side, f: f.toFixed(2) }; }
+        }
+      }
+    }
+    assert.ok(
+      worst < 0.002,
+      `${entry.id}: the road edge moves ${worst.toFixed(4)} m across a millimetre at ${JSON.stringify(at)}`,
+    );
+  });
+});
+
+test("heightAt stays inside a terrain build's budget", () => {
+  const { stage } = BOOK[0];
+  const world = stage.world;
+  const b = stage.bounds;
+  const side = 320;
+  const dx = (b.maxX - b.minX) / side;
+  const dz = (b.maxZ - b.minZ) / side;
+  let sink = 0;
+  for (let j = 0; j < 40; j += 1) for (let i = 0; i < 40; i += 1) sink += world.heightAt(b.minX + i * dx, b.minZ + j * dz);
+
+  const started = process.hrtime.bigint();
+  for (let j = 0; j < side; j += 1) {
+    for (let i = 0; i < side; i += 1) sink += world.heightAt(b.minX + i * dx, b.minZ + j * dz);
+  }
+  const ms = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.ok(Number.isFinite(sink), "the queries produced numbers");
+  // meshes.js samples the whole map on a lattice to build the terrain and the
+  // physics asks four times a substep, so this is a tripwire for a field that
+  // has gone back to walking the road rather than an index of it: a hundred
+  // thousand queries take about 250 ms here, and walking every segment in
+  // reach without the index takes three times that.
+  assert.ok(ms < 1500, `${side * side} lattice heightAt calls took ${ms.toFixed(0)} ms`);
+});
+
+test("nothing anywhere in a stage is NaN", () => {
+  forEachStage((stage, entry) => {
+    for (const field of TYPED) {
+      const arr = stage[field];
+      assert.equal(arr.length, stage.count, `${entry.id}: ${field} is the wrong length`);
+      for (let i = 0; i < arr.length; i += 1) {
+        assert.ok(Number.isFinite(arr[i]), `${entry.id}: ${field}[${i}] is ${arr[i]}`);
+      }
+    }
+    for (const item of [...stage.scenery, ...stage.props]) {
+      for (const key of ["x", "y", "z", "yaw", "scale"]) {
+        assert.ok(Number.isFinite(item[key]), `${entry.id}: ${item.kind}.${key} is ${item[key]}`);
+      }
+    }
+    for (const f of stage.features) {
+      assert.ok(Number.isFinite(f.s) && f.s >= 0 && f.s <= stage.length, `${entry.id}: feature ${f.kind} at ${f.s}`);
+    }
+    for (const v of Object.values(stage.bounds)) assert.ok(Number.isFinite(v), `${entry.id}: bounds`);
+    for (const split of stage.splits) {
+      assert.ok(split > 0 && split < stage.length, `${entry.id}: split at ${split}`);
+    }
+  });
+});
+
+test("nothing is planted on the road", () => {
+  forEachStage((stage, entry) => {
+    const out = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+    let worst = Infinity;
+    let culprit = null;
+    for (const item of stage.scenery) {
+      stage.world.project(item.x, item.z, -1, out);
+      const clearance = out.lateral - stage.halfWidth[out.index];
+      if (clearance < worst) { worst = clearance; culprit = { ...item, s: out.s, lateral: out.lateral }; }
+    }
+    assert.ok(
+      worst > 0,
+      `${entry.id}: a ${culprit?.kind} stands ${(-worst).toFixed(2)} m inside the road at s=${Math.round(culprit?.s)}`,
+    );
+  });
+});
+
+test("project finds the same place with a stale hint as with a fresh one", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    const fresh = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+    const stale = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+    const cold = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+    let checked = 0;
+
+    for (const { i, lat, px, pz } of probePoints(stage, 97, [0, 2.5, -6, 14, -35, 90])) {
+      const truth = nearestSegment(stage, px, pz);
+      // Abeam a sample two segments are exactly equidistant, so which index wins
+      // is a tie-break, not an answer. Judge the distance instead.
+      const slack = truth.distance * 0.005 + 1e-9;
+
+      world.project(px, pz, i * stage.step, fresh);
+      world.project(px, pz, (i * stage.step + stage.length * 0.45) % stage.length, stale);
+      world.project(px, pz, -1, cold);
+
+      for (const [name, got] of [["fresh", fresh], ["stale", stale], ["cold", cold]]) {
+        const excess = segmentDistance(stage, got.index, px, pz) - truth.distance;
+        assert.ok(
+          excess <= slack,
+          `${entry.id}: the ${name} hint landed ${excess.toFixed(4)} m off the nearest road at lat ${lat}`,
+        );
+        const frac = got.s / stage.step - got.index;
+        assert.ok(frac >= -1e-9 && frac <= 1 + 1e-9, `${entry.id}: ${name} hint gave s and index that disagree`);
+        assert.ok(
+          Math.abs(got.signedLateral - lateralOf(stage, px, pz, got.index, frac)) < 1e-6,
+          `${entry.id}: ${name} hint reported an offset its own segment does not support`,
+        );
+        assert.equal(got.lateral, Math.abs(got.signedLateral), `${entry.id}: lateral is not |signedLateral|`);
+        // The offset really is the distance from the road: it is read off the
+        // tangent frame, so it comes up a shade short through the tightest
+        // corners, but never by enough to misplace a car.
+        assert.ok(
+          Math.abs(got.lateral - truth.distance) <= truth.distance * 0.03 + 1e-3,
+          `${entry.id}: lateral ${got.lateral} against a true distance of ${truth.distance}`,
+        );
+      }
+
+      // A hint must change how fast the answer is found, never what it is.
+      assert.ok(Math.abs(stale.lateral - fresh.lateral) <= slack, `${entry.id}: a stale hint changed the answer`);
+      assert.ok(Math.abs(cold.lateral - fresh.lateral) <= slack, `${entry.id}: dropping the hint changed the answer`);
+      checked += 1;
+    }
+    assert.ok(checked > 200, `${entry.id}: only ${checked} projections checked`);
+  });
+});
+
+test("surfaceAt fills the caller's object and allocates nothing", () => {
+  const { stage } = BOOK[0];
+  const world = stage.world;
+  const mine = {};
+  const yours = {};
+
+  const first = world.surfaceAt(stage.x[400], stage.z[400], mine);
+  assert.equal(first, mine, "surfaceAt returns the object it was given");
+  const props = mine.props;
+  assert.ok(props, "surfaceAt fills in a props object");
+
+  for (let i = 0; i < 500; i += 1) {
+    const k = 400 + i;
+    assert.equal(world.surfaceAt(stage.x[k], stage.z[k] + 4, mine), mine, "still the caller's object");
+    assert.equal(mine.props, props, "props is reused rather than reallocated");
+  }
+
+  world.surfaceAt(stage.x[400], stage.z[400], yours);
+  assert.notEqual(yours.props, mine.props, "two callers must not share one props object");
+
+  for (const key of ["surfaceId", "onRoad", "lateral", "signedLateral", "s", "edgeBlend", "roughness", "ruts"]) {
+    assert.ok(key in mine, `surfaceAt fills ${key}`);
+  }
+  assert.equal(typeof mine.onRoad, "boolean", "onRoad is a boolean");
+  assert.equal(mine.props.id, mine.surfaceId, "surfaceId matches the blended props");
+  for (const field of ["lateral", "signedLateral", "s", "edgeBlend", "roughness", "ruts"]) {
+    assert.ok(Number.isFinite(mine[field]), `${field} is finite`);
+  }
+  assert.ok(mine.edgeBlend >= 0 && mine.edgeBlend <= 1, "edgeBlend is a fraction");
+  assert.ok(mine.ruts >= 0 && mine.ruts <= 1, "ruts is a fraction");
+
+  // On the centreline the car is on the road; a long way off it is not.
+  world.surfaceAt(stage.x[400], stage.z[400], mine);
+  assert.equal(mine.onRoad, true, "the centreline is on the road");
+  assert.ok(mine.lateral < 1e-3, "the centreline has no lateral offset");
+  const rl = Math.hypot(stage.tx[400], stage.tz[400]);
+  world.surfaceAt(
+    stage.x[400] + (stage.tz[400] / rl) * 40,
+    stage.z[400] - (stage.tx[400] / rl) * 40,
+    mine,
+  );
+  assert.equal(mine.onRoad, false, "40 m off the centreline is not the road");
+  assert.ok(mine.signedLateral > 0, "positive signedLateral is to the right of travel");
+});
+
+// Grip has to be decided by how far the point is from the *road*, not by how
+// far it is across the tangent. Straight off either end of the stage the offset
+// across the tangent stays zero however far you go, so a rule written on
+// |lateral| alone handed open terrain the grip of the road it is nowhere near.
+// heightAt was given the point-to-segment distance for the same reason.
+test("grip past the ends of the stage, and well off the side, is terrain grip", () => {
+  forEachStage((stage, entry) => {
+    const world = stage.world;
+    const out = {};
+    const last = stage.count - 1;
+    const ends = [
+      { name: "past the finish", i: last, sign: 1 },
+      { name: "behind the start", i: 0, sign: -1 },
+    ];
+    for (const end of ends) {
+      const rl = Math.hypot(stage.tx[end.i], stage.tz[end.i]);
+      const ux = (stage.tx[end.i] / rl) * end.sign;
+      const uz = (stage.tz[end.i] / rl) * end.sign;
+      for (const off of [30, 50, 120]) {
+        world.surfaceAt(stage.x[end.i] + ux * off, stage.z[end.i] + uz * off, out);
+        const where = `${entry.id}: ${off} m ${end.name}`;
+        assert.equal(out.onRoad, false, `${where} still reports the road`);
+        assert.equal(out.edgeBlend, 1, `${where} is only ${out.edgeBlend} of the way onto the verge`);
+        const verge = surfaceProps(stage.verge[out.index]);
+        assert.equal(out.surfaceId, verge.id, `${where} is surface ${out.surfaceId}, not the verge`);
+        assert.equal(out.props.gripLat, verge.gripLat, `${where} does not carry verge grip`);
+        assert.ok(
+          out.props.gripLat < surfaceProps(stage.surface[out.index]).gripLat,
+          `${where} grips as well as the road (${out.props.gripLat})`,
+        );
+        // The offset itself is still the tangent-frame measure the contract
+        // promises, and off the end of the road that is genuinely near zero.
+        assert.ok(Math.abs(out.lateral) < 1e-3, `${where} reports a lateral offset of ${out.lateral}`);
+        assert.equal(out.lateral, Math.abs(out.signedLateral), `${where}: lateral is not |signedLateral|`);
+      }
+    }
+
+    // And the same rule the other way round: well off the side is terrain, as it
+    // always was. A stage loops back on itself, so "60 m to the side" can be the
+    // edge of another pass of the road — ask the oracle where the road really is
+    // rather than assume.
+    let checked = 0;
+    for (let i = 40; i < stage.count - 40; i += 401) {
+      const rl = Math.hypot(stage.tx[i], stage.tz[i]);
+      for (const side of [1, -1]) {
+        const px = stage.x[i] + (stage.tz[i] / rl) * side * 60;
+        const pz = stage.z[i] - (stage.tx[i] / rl) * side * 60;
+        if (nearestSegment(stage, px, pz).distance < 25) continue;
+        world.surfaceAt(px, pz, out);
+        assert.equal(out.onRoad, false, `${entry.id}: open ground at sample ${i} reports the road`);
+        assert.equal(out.edgeBlend, 1, `${entry.id}: open ground at sample ${i} is not fully verge`);
+        checked += 1;
+      }
+    }
+    assert.ok(checked > 5, `${entry.id}: only ${checked} points of open ground found to check`);
+  });
+});
+
+test("200k world queries with a moving hint stay well inside a frame budget", () => {
+  const { stage } = BOOK[0];
+  const world = stage.world;
+  const projection = { s: 0, lateral: 0, signedLateral: 0, index: 0 };
+  const surface = {};
+  let s = 0;
+  let sink = 0;
+
+  const started = process.hrtime.bigint();
+  for (let n = 0; n < 200_000; n += 1) {
+    s += 0.5;
+    if (s > stage.length - 6) s = 0;
+    const i = Math.round(s / stage.step);
+    const px = stage.x[i] + 1.5;
+    const pz = stage.z[i] - 0.7;
+    world.project(px, pz, projection.s, projection);
+    world.surfaceAt(px, pz, surface);
+    sink += projection.lateral + surface.roughness;
+  }
+  const ms = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.ok(Number.isFinite(sink), "the queries produced numbers");
+  assert.ok(ms < 3000, `200k project+surfaceAt took ${ms.toFixed(0)} ms`);
+});
+
+test("stageWorld hands back the world the stage already carries", () => {
+  forEachStage((stage, entry) => {
+    assert.equal(stageWorld(stage), stage.world, `${entry.id}: stageWorld reuses the stage's world`);
+    assert.equal(stage.world.gravity, G, `${entry.id}: gravity`);
+    assert.equal(stage.world.bounds, stage.bounds, `${entry.id}: the world shares the stage bounds`);
+    assert.equal(stage.world.sampleAt(0), 0, `${entry.id}: sampleAt(0)`);
+    assert.equal(stage.world.sampleAt(stage.length), stage.count - 1, `${entry.id}: sampleAt(length)`);
+    assert.equal(stage.world.sampleAt(stage.length * 4), stage.count - 1, `${entry.id}: sampleAt clamps`);
+    const normal = { x: 0, y: 0, z: 0 };
+    assert.equal(stage.world.normalAt(stage.x[10], stage.z[10], normal), normal, `${entry.id}: normalAt returns out`);
+    assert.ok(Math.abs(Math.hypot(normal.x, normal.y, normal.z) - 1) < 1e-6, `${entry.id}: normalAt is unit`);
+  });
+});
+
+test("the same seed builds the same stage, byte for byte", () => {
+  for (const entry of STAGE_BOOK) {
+    const a = stageFromBook(entry.id);
+    const b = stageFromBook(entry.id);
+    assert.equal(a.length, b.length, `${entry.id}: length`);
+    assert.equal(a.count, b.count, `${entry.id}: count`);
+    for (const field of [...TYPED, "surface", "surfaceAlt", "verge"]) {
+      const x = a[field];
+      const y = b[field];
+      assert.equal(x.constructor, y.constructor, `${entry.id}: ${field} type`);
+      for (let i = 0; i < x.length; i += 1) {
+        if (x[i] !== y[i]) assert.fail(`${entry.id}: ${field}[${i}] drifted ${x[i]} vs ${y[i]}`);
+      }
+    }
+    assert.deepEqual(a.scenery, b.scenery, `${entry.id}: scenery`);
+    assert.deepEqual(a.props, b.props, `${entry.id}: props`);
+    assert.deepEqual(a.features, b.features, `${entry.id}: features`);
+    assert.deepEqual(a.start, b.start, `${entry.id}: start`);
+    assert.deepEqual(a.finish, b.finish, `${entry.id}: finish`);
+  }
+});
+
+test("a seed override builds a different road under the same name", () => {
+  const entry = STAGE_BOOK.find((e) => !e.mirrorOf);
+  const stock = stageFromBook(entry.id);
+  const custom = stageFromBook(entry.id, { seed: "opus-rally/alternate" });
+  assert.equal(custom.id, entry.id, "the override keeps the book's identity");
+  assert.equal(custom.name, entry.name, "the override keeps the book's name");
+  assert.notEqual(custom.seed, stock.seed, "the override reaches the generator");
+  let differs = false;
+  for (let i = 0; i < Math.min(stock.count, custom.count); i += 1) {
+    if (stock.x[i] !== custom.x[i]) { differs = true; break; }
+  }
+  assert.ok(differs || stock.count !== custom.count, "a different seed must lay a different road");
+  // The band still applies: a custom seed is the same stage, not a free-for-all.
+  assert.ok(
+    custom.length >= entry.lengthBand[0] && custom.length <= entry.lengthBand[1],
+    `a re-seeded ${entry.id} is ${Math.round(custom.length)} m, outside ${entry.lengthBand}`,
+  );
+  assert.equal(stageFromBook(entry.id).length, stock.length, "the stock stage is unchanged by the override");
+});
+
+// Eleven of the twelve entries once named a weather that weather.js has never
+// heard of ("sea fog", "squalls", "sleet"), so every stage but one threw on
+// load and the game was effectively one stage. Nothing caught it because no
+// test had ever asked weather.js whether the book's ids were real.
+test("every stage in the book names a weather preset that exists", async () => {
+  const weather = await import("../weather.js");
+  const known = new Set(weather.WEATHER_PRESETS.map((p) => p.id));
+  const bad = STAGE_BOOK
+    .filter((entry) => !known.has(entry.weather))
+    .map((entry) => `${entry.id} -> "${entry.weather}"`);
+  assert.deepEqual(bad, [], `unknown weather ids: ${bad.join(", ")}`);
+});
+
+test("an unknown weather id costs a stage its sky, not the whole game", async () => {
+  const THREE = await import("../three.module.min.js");
+  const weather = await import("../weather.js");
+  const warned = [];
+  const realWarn = console.warn;
+  console.warn = (m) => warned.push(String(m));
+  try {
+    const rig = weather.createWeather(THREE, new THREE.Scene(), "not-a-real-preset");
+    assert.ok(rig, "createWeather still returns a rig");
+    assert.ok(
+      warned.some((m) => /unknown preset/.test(m)),
+      `and says so on the console (saw: ${warned.join(" | ") || "nothing"})`,
+    );
+    weather.disposeWeather(rig);
+  } finally {
+    console.warn = realWarn;
+  }
+});
