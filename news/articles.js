@@ -30797,6 +30797,8 @@ window.NEWS_ARTICLES.push(
 window.NEWS_ARTICLES.push(
   {
     id: "tec-disposable-cameras-detonate-eclipse",
+    image: "images/tec-disposable-cameras-detonate-eclipse.webp",
+    imageAlt: "A cardboard single-use camera bursting apart in mid-air in a flash of light, its film ribbon unspooling and shards of yellow cardboard flying outward, beneath an eclipsed sun in a night sky",
     category: "Technology",
     headline: "Disposable cameras now detonate on sight of an eclipse, manufacturer confirms",
     standfirst: "A single-use camera pointed at totality will, the maker says, deliver twenty-seven exposures and then a bang, in that order.",
@@ -30819,6 +30821,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "tec-handsets-leave-hand-during-totality",
+    image: "images/tec-handsets-leave-hand-during-totality.webp",
+    imageAlt: "Mobile phones climbing away from a silhouetted crowd on curved trails towards an eclipsed sun, one still tethered to a raised hand by a wrist strap",
     category: "Technology",
     headline: "Phones to be issued on a wrist strap after handsets seen 'leaving the hand' at totality",
     standfirst: "Manufacturers have added an eclipse mode. It locks the camera, doubles the weight of the phone and plays a low tone until the sun comes back.",
@@ -30841,6 +30845,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "mar-eclipse-sea-monsters-rise-depths",
+    image: "images/mar-eclipse-sea-monsters-rise-depths.webp",
+    imageAlt: "A vast humped creature with a long neck and a single lit eye rising from a dark harbour under an eclipsed sun, while small figures on the quay carry on facing away",
     category: "Maritime",
     headline: "Harbours told to expect sea monsters during totality and to carry on as normal",
     standfirst: "Coastal authorities have issued guidance for the four minutes of darkness, the central recommendation of which is to look busy.",
@@ -30861,6 +30867,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "hea-eclipse-pools-drain-to-one-end",
+    image: "images/hea-eclipse-pools-drain-to-one-end.webp",
+    imageAlt: "A swimming pool in cross-section with its water piled in a steep wedge at the deep end, the shallow end left as bare tiles where a single bather stands beside a stranded rubber ring",
     category: "Health",
     headline: "Swimming pools to empty into the deep end during eclipse, bathers warned",
     standfirst: "Public baths have been told to expect the entire volume of water to migrate to one end and to plan their lane discipline accordingly.",
@@ -30881,6 +30889,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "sci-eclipse-indoor-pool-ceiling-inversion",
+    image: "images/sci-eclipse-indoor-pool-ceiling-inversion.webp",
+    imageAlt: "The inside of a covered pool with a layer of water held against the ceiling, swimmers suspended in it among the light fittings, and the tiled basin below completely empty",
     category: "Science",
     headline: "Indoor pools may invert during totality, pinning swimmers to the ceiling",
     standfirst: "Where a pool has a roof over it, physicists warn, the water has somewhere to go, and the evidence suggests it goes there.",
@@ -30901,6 +30911,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "wea-eclipse-pool-gradient-forecast",
+    image: "images/wea-eclipse-pool-gradient-forecast.webp",
+    imageAlt: "A television weather map banded green, amber, red and grey across the country with arrows sweeping east, a presenter silhouetted beside it and a caption reading POOL GRADIENT, TUESDAY",
     category: "Weather",
     headline: "Forecasters add a pool gradient to the national outlook",
     standfirst: "Tuesday's bulletin will carry an extra map showing, for every region, which end of the water to be at and for how long.",
@@ -30921,6 +30933,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "voi-eclipse-precautions-not-far-enough",
+    image: "images/voi-eclipse-precautions-not-far-enough.webp",
+    imageAlt: "A dim kitchen lit by an eclipse through the window, with the kettle, a pint glass, a flower vase and a goldfish bowl all moved down onto the floor and the worktop above them left bare",
     category: "Voices",
     headline: "The eclipse precautions do not go nearly far enough",
     standfirst: "We are told to put down the camera and get out of the pool. Nobody has yet explained what we are to do about the kettle.",
@@ -30941,6 +30955,8 @@ window.NEWS_ARTICLES.push(
   },
   {
     id: "let-eclipse-precautions-postbag",
+    image: "images/let-eclipse-precautions-postbag.webp",
+    imageAlt: "A desk under a lamp heaped with opened envelopes, one letter propped upright and being read, a mug and a pen beside them, with an eclipse showing through the window behind",
     category: "Letters",
     headline: "Letters: on cameras, ceilings, and one reader's kettle",
     standfirst: "Our eclipse coverage has produced a postbag. Sir, we publish a selection, lightly cut, entirely uncorrected.",
