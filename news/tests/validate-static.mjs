@@ -354,7 +354,17 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
   for (const article of eclipse) {
     assert.ok(article.body.length >= 6, `${article.id} should run to at least six paragraphs`);
     assert.ok(article.pullQuote, `${article.id} needs a pull quote`);
+    assert.equal(article.image, `images/${article.id}.webp`, `${article.id} should carry its own hero`);
+    assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+    assert.ok(article.imageAlt && article.imageAlt.length > 60,
+      `${article.id} hero needs descriptive alt text`);
+    // These heroes are drawn vector art, not generated pictures and not photographs. They take
+    // the renderer's default "Artist's impression" caption, so they must not claim otherwise.
+    assert.equal(article.imageCaption, undefined,
+      `${article.id} should use the default artist's-impression caption`);
   }
+  assert.equal(new Set(Array.from(eclipse, (article) => article.image)).size, 8,
+    "each eclipse story needs its own artwork");
   const mustWarn = [
     "tec-disposable-cameras-detonate-eclipse",
     "tec-handsets-leave-hand-during-totality",
