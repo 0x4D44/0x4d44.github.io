@@ -1,0 +1,539 @@
+// ============================================================
+// The Triangle Engine — history.js
+// ------------------------------------------------------------
+// The narrative data: the timeline of machines, the pipeline stages,
+// and the sourced claims. Kept apart from app.js so the prose can be
+// checked without reading the rendering code.
+//
+// `stages` on each era records WHERE each job ran at the time:
+//   "none"  the stage did not exist yet
+//   "cpu"   general-purpose software on the host processor
+//   "fixed" dedicated silicon doing one wired-in thing
+//   "prog"  dedicated silicon running a program you supply
+// Scrubbing the timeline animates those migrations, which is the whole
+// story of the field in one bar.
+// ============================================================
+(function (global) {
+  "use strict";
+
+  var ERAS = [
+    {
+      id: "sketchpad",
+      year: 1963,
+      short: "1963",
+      name: "Sketchpad",
+      maker: "Ivan Sutherland · MIT Lincoln Laboratory",
+      machine: "TX-2",
+      headline: "A picture becomes a data structure.",
+      primitive: "Line segments, drawn by deflecting a beam",
+      api: "A light pen and a bank of toggle switches",
+      summary:
+        "Sutherland's doctoral system let a person draw on a screen with a light pen and — the part that mattered — have the machine remember the drawing as structure rather than as marks. Lines belonged to objects, objects had constraints, and a change to a master copy propagated to every instance. Nothing here is 3D in the modern sense, and there is no shading of any kind: the display is a vector oscilloscope that traces line segments directly, one at a time, refreshed fast enough to look steady. But the idea that a picture is a model held in memory, redrawn on demand, is the foundation everything else is built on.",
+      detail: [
+        "The TX-2 was one of the first transistorised computers, and Sketchpad had roughly the memory of a modern icon file to work in.",
+        "The display was a calligraphic vector scope. There were no pixels to fill, so there was no rasterization problem to solve yet.",
+        "Sutherland's constraint solver — make these lines parallel, make this angle right — anticipated parametric CAD by twenty years.",
+      ],
+      numbers: [
+        { k: "Primitive", v: "line" },
+        { k: "Pixels", v: "none — vector beam" },
+        { k: "Shading", v: "none" },
+      ],
+      stages: { geometry: "cpu", setup: "none", raster: "none", texture: "none", fragment: "none", rop: "none", ray: "none" },
+    },
+    {
+      id: "flightsim",
+      year: 1968,
+      short: "1968",
+      name: "The hidden-surface problem",
+      maker: "Evans & Sutherland · General Electric · Arthur Appel",
+      machine: "Room-sized flight simulators",
+      headline: "Solid objects need to know what is in front of what.",
+      primitive: "Convex polygons",
+      api: "Wire-wrapped, per-installation",
+      summary:
+        "Sutherland left Utah's teaching post long enough to found Evans & Sutherland with David Evans, selling image generators to the people who needed them most: airlines and the military, for flight simulation. Solid surfaces raised a question a wireframe never had — which surface is nearest the eye at this point on the screen? Through the late sixties and early seventies a dozen different answers were proposed and, in 1974, Sutherland, Sproull and Schumacker famously sorted them into a single taxonomy. In the same period Arthur Appel described casting a ray per picture point to find the first thing it hits, an idea whose time would not come for fifty years.",
+      detail: [
+        "Simulator image generators sorted polygons in hardware, front to back, at a fixed and guaranteed frame rate — the guarantee mattered more than the picture.",
+        "Appel's 1968 ray casting is the direct ancestor of what became hardware-accelerated in 2018.",
+        "Almost every hidden-surface algorithm of the period is a sorting algorithm in disguise: sort in depth, sort in scanlines, or sort in screen space.",
+      ],
+      numbers: [
+        { k: "Primitive", v: "polygon" },
+        { k: "Typical budget", v: "hundreds of polygons" },
+        { k: "Cost", v: "millions of dollars" },
+      ],
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "none", fragment: "none", rop: "fixed", ray: "cpu" },
+    },
+    {
+      id: "utah",
+      year: 1971,
+      short: "1971–75",
+      name: "Utah invents shading",
+      maker: "Gouraud · Phong · Catmull · Newell · Blinn",
+      machine: "University of Utah, PDP-10",
+      headline: "Four papers that still run in every game you own.",
+      primitive: "Polygons with per-vertex normals",
+      api: "Fortran, and a great deal of patience",
+      summary:
+        "In four years one graduate school produced most of the vocabulary. Henri Gouraud (1971) computed lighting at the corners of a polygon and interpolated the result across it, so a faceted model could look curved. Bui Tuong Phong (1973 thesis, 1975 paper) interpolated the normal instead of the colour and added a specular term, so surfaces could look shiny. Ed Catmull's 1974 thesis introduced both texture mapping and the z-buffer — spend a word of memory per pixel holding the nearest depth so far, and the hidden-surface problem dissolves into a comparison. Martin Newell modelled a teapot from his kitchen in 1975 because he needed a test object with curvature, a handle and a hole in it; it is still in use. Jim Blinn added bump mapping and, in 1977, replaced Phong's reflected vector with the cheaper halfway vector.",
+      detail: [
+        "Wolfgang Strasser described the depth-buffer idea independently in his 1974 dissertation in Germany.",
+        "Catmull's z-buffer was considered extravagant: a word per pixel was an unthinkable amount of memory to spend on bookkeeping.",
+        "Gouraud shading cannot show a highlight smaller than a polygon, which is why low-poly Gouraud models look plastic and flat.",
+        "The teapot as usually rendered is squashed: the original data was displayed on a non-square-pixel screen, and the vertical scaling stuck.",
+      ],
+      numbers: [
+        { k: "Z-buffer cost", v: "1 word / pixel" },
+        { k: "Teapot patches", v: "32 bicubic" },
+        { k: "Frame time", v: "hours" },
+      ],
+      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "none" },
+    },
+    {
+      id: "geometryengine",
+      year: 1982,
+      short: "1982",
+      name: "The Geometry Engine",
+      maker: "Jim Clark & Marc Hannah · Silicon Graphics",
+      machine: "SGI IRIS workstations",
+      headline: "The matrix multiply moves into silicon.",
+      primitive: "Transformed, clipped polygons",
+      api: "IRIS GL",
+      summary:
+        "Clark's insight at Stanford was that the front of the pipeline — transform, clip, project — is a fixed sequence of 4x4 matrix operations on a stream of points, and a fixed sequence is exactly what you can etch into a chip. The Geometry Engine was the first VLSI implementation of a geometry pipeline: twelve of them in a row, each doing one stage, points flowing through. Clark and Hannah founded Silicon Graphics around it in 1982, and for the next decade a 3D workstation meant an SGI. Their library, IRIS GL, is the direct ancestor of OpenGL, and the shape of its pipeline is the shape of every pipeline since.",
+      detail: [
+        "A systolic array: each chip does one matrix stage and hands the point on, so throughput is one point per cycle regardless of how many stages there are.",
+        "SGI sold the machines that rendered Jurassic Park, Terminator 2 and the first fully computer-generated feature films.",
+        "The workstation model — a big price, a small market, a huge lead — is exactly what the PC 3D card would demolish fifteen years later.",
+      ],
+      numbers: [
+        { k: "Chips per pipe", v: "12" },
+        { k: "Precision", v: "floating point" },
+        { k: "Price", v: "$50k and up" },
+      ],
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "none", fragment: "fixed", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "edgefunction",
+      year: 1988,
+      short: "1988",
+      name: "Edge functions and shading languages",
+      maker: "Juan Pineda · Cook, Carpenter & Catmull",
+      machine: "Apollo workstations · Pixar's RenderMan",
+      headline: "Two ideas from one year that took thirty to converge.",
+      primitive: "Triangles, tested in parallel",
+      api: "The RenderMan Interface Specification",
+      summary:
+        "Pineda's paper described filling a triangle by evaluating three linear functions — one per edge — at every candidate pixel and keeping the pixels where all three are positive. It sounds wasteful next to walking a scanline, and on a serial machine it is; but every pixel's test is independent of every other, so you can test a whole block at once, and the functions update by addition as you step. That is the algorithm in every GPU rasterizer built since. In the same year Pixar published the RenderMan interface, whose shading language let an artist write the code that computes a surface's colour. One idea made rasterization parallel; the other made shading programmable. Consumer hardware would take until 1996 and 2001 respectively to catch up.",
+      detail: [
+        "The edge function is twice the signed area of a triangle, so its sign is also the winding test that gives you backface culling for free.",
+        "Because it is linear, stepping one pixel right adds a constant. Hardware evaluates a tile of them with adders, not multipliers.",
+        "RenderMan's shading language descends from Rob Cook's 1984 'shade trees'; today's HLSL and GLSL are its unruly grandchildren.",
+      ],
+      numbers: [
+        { k: "Tests / pixel", v: "3" },
+        { k: "Per-pixel cost", v: "3 adds" },
+        { k: "Parallelism", v: "unbounded" },
+      ],
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "cpu", fragment: "cpu", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "opengl",
+      year: 1992,
+      short: "1992",
+      name: "OpenGL and RealityEngine",
+      maker: "Silicon Graphics · Kurt Akeley",
+      machine: "SGI Onyx RealityEngine",
+      headline: "The pipeline gets a specification, and a name.",
+      primitive: "Triangles with texture coordinates",
+      api: "OpenGL 1.0",
+      summary:
+        "SGI stripped the machine-specific parts out of IRIS GL and published the rest, and on 30 June 1992 the OpenGL 1.0 specification was complete; an Architecture Review Board of competing vendors was formed to steer it. The document did something subtle and durable: it defined the pipeline as a state machine with a precisely specified order of operations, so that a program could produce the same picture on any conforming implementation. The hardware alongside it, RealityEngine, is the first machine that would be recognisable to a modern graphics programmer — real-time texture mapping with mipmaps, full-scene antialiasing by multisampling, and a per-pixel depth buffer, all at once.",
+      detail: [
+        "OpenGL's ordering guarantees are why blending works: fragments from one primitive must land in framebuffer order even though everything else may be parallel.",
+        "RealityEngine's antialiasing worked by keeping several subsamples per pixel — the direct ancestor of the MSAA switch in every game's options menu.",
+        "The specification is written as a description of a machine, not an implementation. Nothing in it says any of it must be done in hardware.",
+      ],
+      numbers: [
+        { k: "Spec completed", v: "30 Jun 1992" },
+        { k: "Texture memory", v: "up to 16 MB" },
+        { k: "Subsamples", v: "up to 8 / pixel" },
+      ],
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "software",
+      year: 1993,
+      short: "1993–96",
+      name: "3D without hardware",
+      maker: "id Software · Michael Abrash · John Carmack",
+      machine: "A 486, then a Pentium",
+      headline: "The trick was knowing exactly what you could refuse to compute.",
+      primitive: "Vertical wall columns, then real polygons",
+      api: "None. Write to the framebuffer.",
+      summary:
+        "Doom, in 1993, is not a 3D engine: it draws a two-dimensional map with heights, using a binary space partition to visit walls in the right order, and it cannot put one room above another. That constraint is what made it run at speed on a machine with no floating-point performance to speak of. Quake, in 1996, is the real thing — arbitrary polygons, a genuine perspective projection, precomputed lighting — rendered entirely in software on a Pentium. Its most famous trick belongs to this page: perspective-correct texturing needs a divide per pixel, and the Pentium's floating-point divide takes many cycles, but it runs on a separate unit. So Abrash and Carmack issued the divide for the pixel sixteen ahead and filled the wait with integer work, interpolating affinely in between. Correct where it counts, free where it does not.",
+      detail: [
+        "Doom's BSP tree gives a guaranteed front-to-back order for any viewpoint, which removes the need for a depth buffer entirely.",
+        "Quake's span buffer, surface cache and overdraw avoidance were all in aid of not touching a pixel twice — memory bandwidth was the wall then too.",
+        "GLQuake, in January 1997, was the demonstration that a consumer 3D card could beat the best hand-written software renderer in the world.",
+      ],
+      numbers: [
+        { k: "Divide interval", v: "every 16 px" },
+        { k: "Target", v: "320x200, 35 Hz" },
+        { k: "Depth buffer", v: "none" },
+      ],
+      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "none" },
+    },
+    {
+      id: "nv1",
+      year: 1995,
+      short: "1995",
+      name: "NV1, and the road not taken",
+      maker: "Nvidia · Sega · Sony",
+      machine: "Diamond Edge 3D · Saturn · PlayStation",
+      headline: "Everyone agreed on 3D. Nobody agreed on the primitive.",
+      primitive: "Quadratic patches, and quads",
+      api: "Nvidia's own, before DirectX existed",
+      summary:
+        "Nvidia's first chip did not draw triangles. NV1 was built around quadratic texture mapping: curved quadrilateral patches, drawn by forward mapping — walking across the texture and depositing texels into the framebuffer — rather than by walking across the screen and looking texels up. Fewer primitives for a curved surface, and Sega's Saturn used quads too, so the ports came easily. Then Microsoft announced that Direct3D would accept triangles and only triangles, and the argument was over in a season. Sony's PlayStation, meanwhile, drew textured quads with no depth buffer at all and no perspective correction, which is why its textures crawl and its polygons snap: coordinates were rounded to whole pixels because the geometry unit had no floating point.",
+      detail: [
+        "Forward mapping cannot easily antialias or filter, because several texels can land on one pixel and no pixel knows in advance how many.",
+        "A triangle is the only polygon that is always planar and always convex — which is exactly why the hardware people wanted it.",
+        "The PlayStation sorted polygons with an ordering table, a per-frame bucket sort by depth, so interpenetrating objects simply could not be drawn correctly.",
+        "NV2 was cancelled when Sega chose PowerVR's tile-based renderer for the Dreamcast. Nvidia's third chip, RIVA 128, drew triangles.",
+      ],
+      numbers: [
+        { k: "NV1 primitive", v: "quadratic patch" },
+        { k: "PS1 depth buffer", v: "none" },
+        { k: "PS1 vertices", v: "integer pixels" },
+      ],
+      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "voodoo",
+      year: 1996,
+      short: "1996",
+      name: "Voodoo Graphics, and Direct3D",
+      maker: "3dfx Interactive · Microsoft",
+      machine: "Orchid Righteous 3D · Windows 95",
+      headline: "The triangle wins, and it costs $299.",
+      primitive: "The triangle, decisively",
+      api: "Glide · Direct3D · OpenGL",
+      summary:
+        "3dfx's Voodoo Graphics could not draw a window, a menu or a character. It had no 2D at all: you ran a cable from your ordinary video card into the Voodoo, and the Voodoo passed the signal through untouched until a game started, at which point it seized the display. What it did do was fill textured, depth-buffered, bilinear-filtered, fogged pixels faster than any software renderer could hope to, and it did it under a small honest API — Glide — that was little more than the hardware's register set with names. Microsoft, which had bought RenderMorphics in February 1995 for its Reality Lab engine, shipped Direct3D in DirectX 2.0 in June 1996 with a much less loved design: you built 'execute buffers' of packed commands by hand. It took until DirectX 5 in 1997 for DrawPrimitive to put that right.",
+      detail: [
+        "Bilinear filtering is the single change that made 1996 hardware look different from 1996 software: no more lego-brick texels up close.",
+        "The Voodoo's 16-bit colour and 16-bit depth were chosen for bandwidth, not quality. Both would be regretted within two years.",
+        "The Glide-versus-Direct3D-versus-OpenGL argument of 1996-97 was genuinely bitter, and John Carmack's public case for OpenGL carried real weight.",
+        "3dfx bet on a proprietary API and its own board manufacturing. Nvidia bet on standard APIs and selling chips to anyone. Nvidia bought 3dfx's assets in 2000.",
+      ],
+      numbers: [
+        { k: "Fill rate", v: "45 Mpixel/s" },
+        { k: "Frame buffer", v: "2 MB" },
+        { k: "Colour depth", v: "16-bit" },
+      ],
+      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "geforce",
+      year: 1999,
+      short: "1999",
+      name: "GeForce 256 — the word 'GPU'",
+      maker: "Nvidia",
+      machine: "GeForce 256, October 1999",
+      headline: "The front of the pipeline comes back into hardware.",
+      primitive: "Triangles, transformed on the card",
+      api: "Direct3D 7 · OpenGL 1.2",
+      summary:
+        "For three years the consumer 3D card had been a back-end only: the CPU transformed and lit every vertex and handed screen-space triangles across the bus. GeForce 256 put transform and lighting back on the card — the job SGI had moved into silicon seventeen years earlier — and Nvidia coined 'graphics processing unit' to mark the change. The practical effect was that polygon budgets stopped being a function of your processor. The conceptual effect was larger: a card that owns both ends of the pipeline is a machine you can program, and the argument for the next decade would be about what language to program it in.",
+      detail: [
+        "The lighting was fixed-function: eight lights, one model, take it or leave it. Artists immediately wanted to leave it.",
+        "The name was retroactively contentious — earlier chips had done geometry — but the marketing stuck, and the category with it.",
+        "Cube maps, register combiners and hardware anisotropic filtering arrive around here, all of them workarounds for the absence of real programmability.",
+      ],
+      numbers: [
+        { k: "Transistors", v: "23 million" },
+        { k: "Triangles/s", v: "15 million" },
+        { k: "Fixed lights", v: "8" },
+      ],
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "shaders",
+      year: 2001,
+      short: "2001–02",
+      name: "Programmable shading arrives",
+      maker: "Nvidia GeForce 3 · ATI Radeon 9700",
+      machine: "NV20, February 2001 · R300, 2002",
+      headline: "You stop configuring the pipeline and start writing it.",
+      primitive: "Triangles, shaded by your code",
+      api: "DirectX 8, then DirectX 9 · GLSL",
+      summary:
+        "GeForce 3 shipped a programmable vertex unit — a small, branch-free assembly language you wrote yourself, replacing the fixed transform-and-light block outright — alongside pixel shader 1.1, which was still more a configurable combiner than a processor. The following year ATI's Radeon 9700 made the whole thing floating point: 24-bit float throughout the fragment pipeline, long enough shaders to be useful, and a decisive performance lead. From here the fixed-function pipeline is a compatibility layer over a machine that would rather be told what to compute. High-level languages follow immediately: Cg and HLSL in 2002, GLSL in 2004.",
+      detail: [
+        "Early vertex shaders had no branches and a hard instruction limit — 128 instructions on GeForce 3. You unrolled everything.",
+        "Nvidia's answering GeForce FX kept a mix of 16- and 32-bit float and a fragile scheduler; it lost the generation badly.",
+        "Per-pixel normal mapping becomes practical here, and Doom 3 in 2004 is the game that makes the whole industry adopt it.",
+      ],
+      numbers: [
+        { k: "NV20 transistors", v: "57 million" },
+        { k: "Shader length", v: "128 instructions" },
+        { k: "R300 precision", v: "24-bit float" },
+      ],
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "unified",
+      year: 2005,
+      short: "2005–07",
+      name: "Unified shaders, and CUDA",
+      maker: "ATI Xenos · Nvidia G80",
+      machine: "Xbox 360, 2005 · GeForce 8800, Nov 2006",
+      headline: "The pipeline dissolves into a pool of identical cores.",
+      primitive: "Threads",
+      api: "DirectX 10 · CUDA",
+      summary:
+        "Separate vertex and pixel units waste silicon: a scene heavy in geometry starves the pixel units, and a scene heavy in fill starves the vertex units. ATI's Xenos in the Xbox 360 (2005) was the first shipping design to merge them into one pool of processors scheduled between roles on demand; Nvidia's G80 brought unified shaders to the desktop in November 2006 as the first DirectX 10 part. Once the hardware is a general array of processors with a scheduler, graphics is only one thing it can be asked to do — and CUDA, in 2007, said so out loud. Every machine-learning result of the following twenty years is downstream of this decision.",
+      detail: [
+        "G80's cores run in groups of 32 threads in lockstep — a 'warp' — which is why divergent branches cost you both sides.",
+        "Geometry shaders arrive with DirectX 10, are used sparingly, and are a cautionary tale about stages that can amplify their own output.",
+        "Compute shaders turn the GPU back into a machine for the whole frame: culling, particles, post-processing, lighting, hierarchies.",
+      ],
+      numbers: [
+        { k: "G80 cores", v: "128" },
+        { k: "Warp width", v: "32 threads" },
+        { k: "Transistors", v: "681 million" },
+      ],
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "explicit",
+      year: 2013,
+      short: "2013–16",
+      name: "Explicit APIs",
+      maker: "AMD Mantle · Khronos · Microsoft · Apple",
+      machine: "Vulkan, February 2016",
+      headline: "The driver stops guessing what you meant.",
+      primitive: "Command buffers, recorded in parallel",
+      api: "Mantle · Metal · Direct3D 12 · Vulkan",
+      summary:
+        "By the 2010s the expensive part of a draw call was not the drawing. It was the driver: validating state, chasing shader recompiles, guessing which of a thousand combinations of settings you had just implied, and doing it on one thread. AMD's Mantle (2013) proposed the alternative — hand the application the pipeline state objects, the memory allocation, the synchronisation and the command buffers, and get out of the way. Apple's Metal followed in 2014, Direct3D 12 and Vulkan in 2015 and February 2016. The bargain is explicit: far more code, far more ways to corrupt memory, and a CPU that can feed the GPU from every core it has.",
+      detail: [
+        "A pipeline state object bakes the whole fixed-function configuration and the compiled shaders into one immutable thing, so nothing has to be recompiled mid-frame.",
+        "Synchronisation becomes yours: barriers, fences and semaphores, wrongly placed, produce corruption rather than a helpful error.",
+        "The reward is command buffers recorded on many threads at once, which is the only way to issue tens of thousands of draws per frame.",
+      ],
+      numbers: [
+        { k: "Driver overhead", v: "~10x lower" },
+        { k: "Recording threads", v: "all of them" },
+        { k: "Validation", v: "opt-in layer" },
+      ],
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+    },
+    {
+      id: "raytracing",
+      year: 2018,
+      short: "2018–now",
+      name: "Rays, and rasterization in software again",
+      maker: "Nvidia Turing · Microsoft DXR · Epic",
+      machine: "RTX 2080, 2018 · Unreal Engine 5, 2021",
+      headline: "Appel's 1968 idea returns, in silicon.",
+      primitive: "Rays against a bounding-volume hierarchy",
+      api: "DXR · Vulkan Ray Tracing",
+      summary:
+        "DirectX Raytracing was announced in March 2018 and Nvidia's Turing shipped that September with fixed-function units for the two operations that dominate a ray tracer: walking a bounding-volume hierarchy and intersecting a ray with a triangle. Rays are not a replacement for rasterization — nothing beats a rasterizer at finding the nearest surface for every pixel of a primary view — but they answer the questions rasterization cannot: what does this surface see, what light reaches this point, what is behind the camera. Because the sample counts affordable in real time are tiny, the picture arrives noisy and is cleaned up by a temporal denoiser, which is itself increasingly a neural network. And in a final loop of the story, Unreal Engine 5's Nanite rasterizes triangles smaller than a pixel in a compute shader — in software, on the GPU — because for that size the hardware rasterizer's fixed 2x2 pixel quad is the wrong shape.",
+      detail: [
+        "A bounding-volume hierarchy turns intersection from a linear scan of every triangle into a logarithmic walk, and building it well is most of the work.",
+        "Hardware rasterizers shade in 2x2 quads so that neighbouring pixels can difference each other for texture derivatives; a sub-pixel triangle wastes three quarters of that.",
+        "Denoising, temporal accumulation and upscaling are now inseparable from the renderer: the raw sampled image is never what you see.",
+      ],
+      numbers: [
+        { k: "Rays/s", v: "~10 billion" },
+        { k: "Samples/pixel", v: "1–4, then denoise" },
+        { k: "Nanite triangles", v: "sub-pixel" },
+      ],
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "fixed" },
+    },
+  ];
+
+  // ----------------------------------------------------------
+  // The pipeline, stage by stage. Each entry is one stop in the
+  // step-through instrument.
+  // ----------------------------------------------------------
+  var PIPELINE = [
+    {
+      id: "input",
+      name: "Vertex fetch",
+      space: "Object space",
+      one: "Read the corners out of memory.",
+      body:
+        "A model is an array of vertices and a list of indices into it. The indices matter more than they look: a closed mesh shares most of its corners between three or more triangles, so indexing them rather than repeating them cuts both memory and transform work by a factor of about three. Everything downstream is a stream of these corners.",
+      hardware: "A fixed-function fetch unit with a small post-transform cache, so a shared vertex is usually transformed once.",
+    },
+    {
+      id: "vertex",
+      name: "Vertex shading",
+      space: "Object → clip space",
+      one: "Multiply each corner by one 4x4 matrix.",
+      body:
+        "Every vertex is multiplied by the model matrix (where the object sits in the world), the view matrix (where the camera is) and the projection matrix (what the lens does), usually pre-multiplied into one. In fixed-function days this stage also computed the lighting, which is why it was called transform and lighting. Since 2001 it is your program, and it can compute anything it likes as long as it emits a clip-space position.",
+      hardware: "Programmable cores. Runs in wide lockstep groups, so all vertices execute the same instruction on different data.",
+    },
+    {
+      id: "clip",
+      name: "Clipping",
+      space: "Clip space",
+      one: "Cut away what is outside the box — and behind the eye.",
+      body:
+        "Clip space is the last place where the geometry is still linear, which is why clipping happens here. Only one plane genuinely must be clipped: the near plane, where w passes through zero. A vertex behind the eye has negative w, and dividing by it flips the point through the origin to somewhere plausible-looking and completely wrong. The other five planes are an optimisation — a rasterizer that clamps its bounding box handles them.",
+      hardware: "Fixed function, and expensive enough that hardware avoids it: most triangles are trivially accepted or rejected by a bounding test first.",
+    },
+    {
+      id: "divide",
+      name: "Perspective divide",
+      space: "Clip → NDC",
+      one: "Divide x, y and z by w. This is perspective.",
+      body:
+        "The projection matrix does not create perspective; it only arranges for w to hold the viewer-space depth. The division is what makes distant things small — and it is the only non-linear step in the whole pipeline, which is the reason for half the difficulties that follow. Attributes that were linear across the triangle in 3D are not linear across it on screen any more, and depth values get crushed towards the near plane.",
+      hardware: "One reciprocal per vertex. Cheap, and utterly consequential.",
+    },
+    {
+      id: "viewport",
+      name: "Viewport transform",
+      space: "NDC → screen",
+      one: "Scale the unit cube onto the pixel grid.",
+      body:
+        "Normalised device coordinates run from -1 to +1 in x and y. The viewport transform maps that onto the actual pixel rectangle and flips y, because screens count rows downward and mathematics counts upward. Coordinates are then snapped to a fixed sub-pixel grid — Direct3D requires at least eight fractional bits — which is what makes the coverage rules that follow exact rather than a matter of floating-point luck.",
+      hardware: "Fixed function. Also where the guard band lives: a region beyond the screen a triangle may occupy without needing real clipping.",
+    },
+    {
+      id: "setup",
+      name: "Triangle setup",
+      space: "Screen space",
+      one: "Compute the three edge functions, and the area.",
+      body:
+        "Setup turns three corners into the coefficients of three linear edge functions plus the interpolation gradients for every attribute. The signed area falls out of the same arithmetic, and its sign is the winding — which is how backface culling costs nothing: roughly half of a closed model's triangles face away, and they are discarded here before a single pixel is considered.",
+      hardware: "Fixed function, and a classic bottleneck. A triangle costs the same to set up whether it covers a thousand pixels or none.",
+    },
+    {
+      id: "raster",
+      name: "Rasterization",
+      space: "Screen space",
+      one: "Ask every pixel: are all three edge functions positive?",
+      body:
+        "The rasterizer walks tiles of the triangle's bounding box and evaluates the three edge functions at each sample. All three positive means covered. Pixels exactly on a shared edge are resolved by the top-left rule so that two adjacent triangles cover them exactly once — no seams, no double-blending. Output is fragments: candidate pixels, each with interpolated attributes, in 2x2 quads so that neighbours can be differenced for texture derivatives.",
+      hardware: "Fixed function, hierarchical, and massively parallel — whole tiles tested at once, then refined.",
+    },
+    {
+      id: "fragment",
+      name: "Fragment shading",
+      space: "Per pixel",
+      one: "Run your program once per covered sample.",
+      body:
+        "Attributes arrive interpolated — and interpolated the hard way, dividing through by w, because screen space and 3D space disagree about what 'halfway' means. The shader samples textures, evaluates a lighting model and returns a colour. This is where almost all of a modern frame's arithmetic happens, and where the pipeline's parallelism is at its most extreme: thousands of pixels in flight, each stalled on memory most of the time.",
+      hardware: "Programmable cores, the same pool as the vertex stage since 2006. Texture fetches are asynchronous; the scheduler hides them behind other work.",
+    },
+    {
+      id: "depth",
+      name: "Depth and stencil test",
+      space: "Per pixel",
+      one: "Is anything already nearer?",
+      body:
+        "Compare the fragment's depth against what the buffer holds and discard it if something nearer is already there. Catmull's 1974 idea, still unbeaten, and order-independent: draw the triangles in any sequence and get the same answer. Modern hardware runs the test BEFORE the fragment shader whenever it legally can — the shader must not write its own depth or discard — which is why an early depth pre-pass is worth the extra geometry.",
+      hardware: "Fixed function, heavily compressed, with a coarse hierarchical stage that rejects whole tiles at once.",
+    },
+    {
+      id: "blend",
+      name: "Blend and write",
+      space: "Framebuffer",
+      one: "Combine with what is already there, in order.",
+      body:
+        "Blending is the one stage that must respect the order the application submitted its primitives, because alpha compositing is not commutative. That single ordering requirement is the reason transparent geometry still has to be sorted by hand thirty years on, and the reason a dozen order-independent transparency schemes exist and none has won.",
+      hardware: "Fixed function, in the ROP units, sitting directly on the memory controller.",
+    },
+  ];
+
+  var STAGE_KEYS = [
+    { id: "geometry", label: "Transform" },
+    { id: "setup", label: "Setup" },
+    { id: "raster", label: "Rasterize" },
+    { id: "texture", label: "Texture" },
+    { id: "fragment", label: "Shade" },
+    { id: "rop", label: "Depth / blend" },
+    { id: "ray", label: "Ray trace" },
+  ];
+
+  var STAGE_STATES = {
+    none: { label: "does not exist", short: "—" },
+    cpu: { label: "software on the CPU", short: "CPU" },
+    fixed: { label: "fixed-function silicon", short: "FIXED" },
+    prog: { label: "programmable silicon", short: "PROG" },
+  };
+
+  var SOURCES = [
+    { claim: "Sketchpad, 1963: a drawing held as structure, edited with a light pen on the TX-2.",
+      cite: "Ivan E. Sutherland, 'Sketchpad: A Man-Machine Graphical Communication System', MIT PhD thesis, 1963." },
+    { claim: "Ray casting proposed as a way to find visible surfaces, 1968.",
+      cite: "Arthur Appel, 'Some Techniques for Shading Machine Renderings of Solids', AFIPS 1968." },
+    { claim: "Interpolating vertex colours across a polygon, 1971.",
+      cite: "Henri Gouraud, 'Continuous Shading of Curved Surfaces', IEEE Transactions on Computers C-20(6), 1971." },
+    { claim: "Interpolating normals, and adding a specular term, 1973–75.",
+      cite: "Bui Tuong Phong, University of Utah PhD thesis, 1973; 'Illumination for Computer Generated Pictures', CACM 18(6), 1975." },
+    { claim: "The z-buffer and texture mapping, 1974.",
+      cite: "Edwin Catmull, 'A Subdivision Algorithm for Computer Display of Curved Surfaces', University of Utah PhD thesis, 1974. The depth-buffer idea was described independently by Wolfgang Strasser in his 1974 dissertation." },
+    { claim: "A taxonomy of the ten hidden-surface algorithms then known, 1974.",
+      cite: "Sutherland, Sproull & Schumacker, 'A Characterization of Ten Hidden-Surface Algorithms', ACM Computing Surveys 6(1), 1974." },
+    { claim: "The halfway vector replaces the reflection vector, 1977.",
+      cite: "James F. Blinn, 'Models of Light Reflection for Computer Synthesized Pictures', SIGGRAPH 1977." },
+    { claim: "Shadow maps, 1978; bump mapping, 1978.",
+      cite: "Lance Williams, 'Casting Curved Shadows on Curved Surfaces', SIGGRAPH 1978; James F. Blinn, 'Simulation of Wrinkled Surfaces', SIGGRAPH 1978." },
+    { claim: "Mipmaps: a pyramid of prefiltered textures costing one third extra memory, 1983.",
+      cite: "Lance Williams, 'Pyramidal Parametrics', SIGGRAPH 1983." },
+    { claim: "The Geometry Engine, the first VLSI geometry pipeline, 1982.",
+      cite: "James H. Clark, 'The Geometry Engine: A VLSI Geometry System for Graphics', SIGGRAPH 1982. Silicon Graphics was founded the same year." },
+    { claim: "Filling a triangle by evaluating three edge functions in parallel, 1988.",
+      cite: "Juan Pineda, 'A Parallel Algorithm for Polygon Rasterization', SIGGRAPH 1988." },
+    { claim: "A programmable shading language in a production renderer, 1988.",
+      cite: "Pat Hanrahan & Jim Lawson, 'A Language for Shading and Lighting Calculations', SIGGRAPH 1990; the RenderMan Interface Specification, Pixar, 1988. Descends from Rob Cook, 'Shade Trees', SIGGRAPH 1984." },
+    { claim: "Perspective-correct interpolation: interpolate attribute/w and 1/w, then divide.",
+      cite: "Paul Heckbert & Henry Moreton, 'Interpolation for Polygon Texture Mapping and Shading', in State of the Art in Computer Graphics, 1991." },
+    { claim: "OpenGL 1.0 completed 30 June 1992; the Architecture Review Board formed the same year.",
+      cite: "'The OpenGL Graphics System: A Specification (Version 1.0)', Silicon Graphics, 1992." },
+    { claim: "RealityEngine: real-time texture mapping, mipmapping and multisample antialiasing in one machine.",
+      cite: "Kurt Akeley, 'RealityEngine Graphics', SIGGRAPH 1993. The system shipped in 1992." },
+    { claim: "Quake's software renderer issued a floating-point divide 16 pixels ahead and interpolated affinely between.",
+      cite: "Michael Abrash, 'Graphics Programming Black Book', 1997, especially the chapters on Quake's texture mapping and the Pentium's FDIV latency." },
+    { claim: "NV1, 1995: quadratic texture mapping onto quadrilateral patches, drawn by forward mapping.",
+      cite: "Nvidia NV1 / SGS-Thomson STG-2000 product documentation, 1995; Jon Peddie, 'Nvidia's Quadratic Processor: The NV1'." },
+    { claim: "Microsoft acquired RenderMorphics in February 1995; Direct3D shipped in DirectX 2.0 in June 1996.",
+      cite: "Microsoft DirectX release history, 1995-1997; Servan Keondjian's Reality Lab became Direct3D's Immediate and Retained modes. DrawPrimitive replaced execute buffers in DirectX 5, 1997." },
+    { claim: "Voodoo Graphics, October 1996: 3D only, with a VGA pass-through cable and the Glide API.",
+      cite: "3dfx Interactive SST-1 documentation; Orchid Righteous 3D, released 7 October 1996." },
+    { claim: "GeForce 256, 11 October 1999: hardware transform and lighting, marketed as the first 'GPU'.",
+      cite: "Nvidia GeForce 256 product materials, 1999." },
+    { claim: "GeForce 3 (NV20), February 2001: programmable vertex shaders, vertex and pixel shader 1.1.",
+      cite: "Erik Lindholm, Mark Kilgard & Henry Moreland, 'A User-Programmable Vertex Engine', SIGGRAPH 2001." },
+    { claim: "Radeon 9700 (R300), 2002: a fully floating-point fragment pipeline at 24-bit precision.",
+      cite: "ATI R300 architecture documentation, 2002; DirectX 9 shader model 2.0, 2002. Nvidia's competing NV30 mixed 16- and 32-bit float and lost the generation." },
+    { claim: "Xenos (Xbox 360, 2005) was the first shipping unified-shader GPU; G80 (November 2006) was the first on the desktop.",
+      cite: "Jeff Andrews & Nick Baker, 'Xbox 360 System Architecture', IEEE Micro 26(2), 2006; Nvidia G80 / GeForce 8800 architecture materials." },
+    { claim: "The microfacet distribution that became the industry default.",
+      cite: "Trowbridge & Reitz, 1975; Bruce Walter et al., 'Microfacet Models for Refraction through Rough Surfaces', EGSR 2007; Brent Burley, 'Physically-Based Shading at Disney', SIGGRAPH 2012 course notes." },
+    { claim: "Mantle, 2013, and Vulkan, February 2016: explicit command buffers and pipeline state objects.",
+      cite: "AMD Mantle Programming Guide, 2013; Khronos Vulkan 1.0 specification, 16 February 2016." },
+    { claim: "DirectX Raytracing announced March 2018; Nvidia Turing shipped hardware BVH traversal and ray-triangle intersection in September 2018.",
+      cite: "Microsoft DXR specification, GDC 2018; Nvidia Turing architecture whitepaper, 2018." },
+    { claim: "Nanite rasterizes sub-pixel triangles in a compute shader rather than in the hardware rasterizer.",
+      cite: "Brian Karis, Rune Stubbe & Graham Wihlidal, 'A Deep Dive into Nanite Virtualized Geometry', SIGGRAPH 2021 Advances in Real-Time Rendering course." },
+  ];
+
+  global.TRI_HISTORY = {
+    eras: ERAS,
+    pipeline: PIPELINE,
+    stageKeys: STAGE_KEYS,
+    stageStates: STAGE_STATES,
+    sources: SOURCES,
+  };
+})(typeof window !== "undefined" ? window : globalThis);
