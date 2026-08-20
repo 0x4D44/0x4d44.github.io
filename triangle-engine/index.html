@@ -423,7 +423,7 @@
 
       <div class="mip-strip panel-card">
         <h4>The pyramid</h4>
-        <p class="card-note">Lance Williams, 1983. Each level is a half-size, prefiltered copy. Every level after the first adds a quarter of the one before it, so the whole chain — however deep — costs exactly one third more memory than the original texture. That number is why mipmapping was affordable a decade before it was fast.</p>
+        <p class="card-note">Lance Williams, 1983. Each level is a half-size, prefiltered copy. Every level after the first adds a quarter of the one before it, so the whole chain costs the original texture plus a quarter plus a sixteenth plus a sixty-fourth — a geometric series that sums to just under one third extra, and creeps closer to a third the deeper the chain goes without ever reaching it. Under a third, whatever the texture: that is why mipmapping was affordable a decade before it was fast.</p>
         <div class="mip-levels" id="mip-levels"></div>
       </div>
     </section>
