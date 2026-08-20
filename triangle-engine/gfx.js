@@ -13,11 +13,16 @@
 //     the layout OpenGL has used since 1992.
 //   * Clip space is OpenGL's: -w <= x, y, z <= w, with the near plane
 //     at z = -w. NDC z therefore lands in [-1, 1].
-//   * Screen space has y pointing DOWN, like a framebuffer.
-//   * Screen coordinates are snapped to a 1/16 pixel grid before
-//     rasterization. Real hardware does the same (Direct3D mandates at
-//     least 8 fractional bits); it is what makes the fill rules exact
-//     rather than a matter of floating-point luck.
+//   * Screen space has y pointing DOWN, like a framebuffer. The viewport
+//     transform flips y, which also flips the sign of every signed area —
+//     so a front face here has a POSITIVE screen-space area, the opposite
+//     of the sign the same winding gives in NDC. Both mesh generators
+//     below are wound to match, and a test checks that they agree.
+//   * Screen coordinates are snapped to a sub-pixel grid before
+//     rasterization, as real hardware does — though at 4 fractional bits
+//     rather than the 8 Direct3D mandates, so the grid is coarse enough
+//     to see. It is what makes the fill rules exact rather than a matter
+//     of floating-point luck.
 //
 // Nothing in this file touches the DOM, so all of it is testable.
 // ============================================================
@@ -215,22 +220,33 @@
   }
 
   // ----------------------------------------------------------
-  // Near-plane clipping (Sutherland–Hodgman against w >= epsilon)
+  // Near-plane clipping (Sutherland-Hodgman)
   // ------------------------------------------------------------
-  // Only the near plane genuinely *must* be clipped: it is the plane
-  // where w crosses zero and the divide blows up. The other five are an
-  // optimisation, and the rasterizer's bounding box handles them here.
+  // The near plane in OpenGL clip space is z = -w, so the inside
+  // half-space is z + w >= 0. That is the plane that genuinely MUST be
+  // clipped: it is where w passes through zero and the divide blows up,
+  // and it is also where geometry closer than the near plane would
+  // otherwise survive with an NDC z far below -1. Clipping w >= 0 alone
+  // is NOT the same test — it lets everything between the eye and the
+  // near plane through.
+  //
+  // The other five planes are an optimisation; a rasterizer that clamps
+  // its bounding box handles them.
   // ----------------------------------------------------------
+  function nearDistance(vertex) {
+    return vertex.clip[2] + vertex.clip[3];
+  }
+
   function clipNear(polygon, epsilon) {
-    var eps = epsilon === undefined ? 1e-5 : epsilon;
+    var eps = epsilon === undefined ? 0 : epsilon;
     var out = [];
     var n = polygon.length;
     if (n === 0) return out;
     for (var i = 0; i < n; i++) {
       var a = polygon[i];
       var b = polygon[(i + 1) % n];
-      var da = a.clip[3] - eps;
-      var db = b.clip[3] - eps;
+      var da = nearDistance(a) - eps;
+      var db = nearDistance(b) - eps;
       var aIn = da >= 0;
       var bIn = db >= 0;
       if (aIn) out.push(a);
@@ -333,7 +349,10 @@
     }
 
     // Normalise winding so the area is positive; remember the swap so the
-    // caller's barycentrics still refer to its own vertex order.
+    // caller's barycentrics still refer to its own vertex order. The
+    // caller's own signed area is kept for the return value — flipping it
+    // silently would make every triangle look front-facing.
+    var callerArea2 = area2;
     var swapped = false;
     if (!frontFacing) {
       var tx = x1, ty = y1;
@@ -357,7 +376,12 @@
     var invArea = 1 / area2;
     var pixels = 0;
     var bary = [0, 0, 0];
-    var info = { e: [0, 0, 0], coverage: 1, mask: 1, area2: area2, frontFacing: frontFacing };
+    // NOTE: `bary` and `info` are reused between callbacks — copy them if
+    // you need to keep them. `info.e` holds the edge values of the
+    // INTERNAL, positively-wound triangle, so when the caller's winding was
+    // reversed e1 and e2 are transposed relative to the caller's edges;
+    // `bary` is corrected for that, and is what you should use.
+    var info = { e: [0, 0, 0], coverage: 1, mask: 1, area2: callerArea2, frontFacing: frontFacing };
 
     for (var y = minY; y <= maxY; y++) {
       for (var x = minX; x <= maxX; x++) {
@@ -396,7 +420,7 @@
         callback(x, y, bary, info);
       }
     }
-    return { area2: area2, culled: false, pixels: pixels, frontFacing: frontFacing };
+    return { area2: callerArea2, culled: false, pixels: pixels, frontFacing: frontFacing };
   }
 
   // Standard 4x rotated-grid MSAA sample positions, the pattern that
@@ -448,7 +472,9 @@
   // Smallest world-space separation at distance z that still changes an
   // n-bit fixed-point depth code. Grows with the square of the distance.
   function depthResolution(zView, near, far, bits) {
-    var codes = Math.pow(2, bits);
+    // (2^bits - 1) distinct steps, matching the standard mapping
+    // round(depth * (2^n - 1)) that the depth instrument emulates.
+    var codes = Math.pow(2, bits) - 1;
     return (2 * zView * zView * (far - near)) / (codes * 2 * far * near);
   }
 
@@ -567,15 +593,22 @@
   }
 
   // Phong, 1975: the specular lobe is the reflected light vector against
-  // the view vector.
+  // the view vector. All three arguments must be unit vectors.
+  //
+  // The n.l gate matters: without it a light BEHIND the surface still
+  // produces a highlight, because the reflected vector can swing round to
+  // meet the viewer even when no light reaches the surface at all.
   function phongSpecular(normal, lightDir, viewDir, shininess) {
-    var r = sub(scale(normal, 2 * dot(normal, lightDir)), lightDir);
+    var nDotL = dot(normal, lightDir);
+    if (nDotL <= 0) return 0;
+    var r = sub(scale(normal, 2 * nDotL), lightDir);
     return Math.pow(Math.max(0, dot(r, viewDir)), shininess);
   }
 
   // Blinn, 1977: use the halfway vector instead. Cheaper, and it holds
   // together at grazing angles where Phong's lobe collapses.
   function blinnSpecular(normal, lightDir, viewDir, shininess) {
+    if (dot(normal, lightDir) <= 0) return 0;
     var h = normalize(add(lightDir, viewDir));
     return Math.pow(Math.max(0, dot(normal, h)), shininess);
   }
@@ -583,7 +616,9 @@
   // GGX / Trowbridge–Reitz microfacet distribution — the long tail that
   // made rough metal finally look like metal.
   function distributionGGX(nDotH, roughness) {
-    var a = roughness * roughness;
+    // A perfectly smooth surface is a delta function, which no float can
+    // hold; clamp to the smallest roughness that still evaluates.
+    var a = Math.max(1e-3, roughness) * Math.max(1e-3, roughness);
     var a2 = a * a;
     var d = nDotH * nDotH * (a2 - 1) + 1;
     return a2 / (Math.PI * d * d);
@@ -661,10 +696,13 @@
       [4, 5], [5, 6], [6, 7], [7, 4],
       [0, 4], [1, 5], [2, 6], [3, 7],
     ];
-    // Wound so that the outward face is front-facing after projection.
+    // Wound so that a face pointing AT the camera comes out front-facing
+    // under this file's convention (positive screen-space area, y down) —
+    // the same way uvSphere is wound. Reverse any of these and that face
+    // disappears under backface culling while its opposite number appears.
     var faces = [
-      [0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4],
-      [2, 3, 7, 6], [1, 2, 6, 5], [0, 4, 7, 3],
+      [0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1],
+      [2, 6, 7, 3], [1, 5, 6, 2], [0, 3, 7, 4],
     ];
     return { positions: p, edges: edges, faces: faces };
   }
@@ -717,7 +755,8 @@
     perspective: perspective, orthographic: orthographic, lookAt: lookAt,
     normalMatrix: normalMatrix,
     perspectiveDivide: perspectiveDivide, viewport: viewport,
-    clipNear: clipNear, lerpVertex: lerpVertex, fanTriangles: fanTriangles,
+    clipNear: clipNear, nearDistance: nearDistance,
+    lerpVertex: lerpVertex, fanTriangles: fanTriangles,
     edge: edge, isTopLeft: isTopLeft, rasterTriangle: rasterTriangle,
     interpolateAffine: interpolateAffine,
     interpolatePerspective: interpolatePerspective,

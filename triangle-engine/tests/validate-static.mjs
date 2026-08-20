@@ -28,7 +28,7 @@ function evaluateWindowScript(source, filename) {
 const H = evaluateWindowScript(historySource, "history.js").TRI_HISTORY;
 const catalog = evaluateWindowScript(catalogSource, "data.js");
 
-const TABS = ["lineage", "pipeline", "transform", "raster", "depth", "texture", "shading", "parallel", "rays", "sources"];
+const TABS = ["lineage", "pipeline", "transform", "raster", "depth", "texture", "shading", "parallel", "rays", "coda", "sources"];
 
 test("the page is self-contained and follows the Almanac contract", () => {
   assert.match(html, /<script src="gfx\.js"><\/script>/);
@@ -135,6 +135,29 @@ test("every specific claim carries a citation", () => {
   }
 });
 
+test("the closing section pays off the claim the first one makes", () => {
+  // The thesis is stated in 01 and must be tested, not merely repeated.
+  assert.match(html, /The pipeline never changed/);
+  assert.match(html, /The same seven jobs/);
+  assert.match(html, /id="coda-grid"/);
+  // And it must admit the part that complicates it, rather than ending
+  // on a tidy story the page's own section 09 contradicts.
+  assert.match(html, /started moving back/i);
+  assert.match(html, /Nanite rasterizes/i);
+  assert.match(app, /initCoda/);
+});
+
+test("every instrument can be operated without a pointer", () => {
+  // Three canvases used to be drag-only, with no keyboard path at all.
+  for (const id of ["raster-canvas", "transform-canvas", "shading-canvas", "rays-canvas"]) {
+    assert.match(html, new RegExp(`id="${id}"[^>]*tabindex="0"`), `${id} must be focusable`);
+  }
+  assert.ok((app.match(/addEventListener\("keydown"/g) || []).length >= 5,
+    "each focusable canvas needs its own arrow-key handler");
+  // And a phone has no arrow keys.
+  assert.match(html, /class="nudge-pad"/);
+});
+
 test("the page is explicit about being a model rather than a simulator", () => {
   assert.match(html, /explanatory models of the architectures, not simulations/i);
   assert.match(html, /a model, not a simulator/i);
@@ -148,6 +171,7 @@ test("the catalog entry is present and points at this document", () => {
   assert.equal(entry.real, true);
   assert.equal(entry.illustration, "ill-triangle");
   assert.ok(entry.tagline.length < 340, "the tagline is a hook, not a spec");
+  assert.equal(entry.slug, "triangle-engine");
   const shelves = catalog.COLLECTIONS.filter((c) => c.slugs.includes("triangle-engine"));
   assert.ok(shelves.length > 0, "the document must sit on at least one shelf");
   // Every tag must be one the filter row actually renders.

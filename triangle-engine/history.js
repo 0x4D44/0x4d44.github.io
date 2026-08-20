@@ -52,7 +52,7 @@
       primitive: "Convex polygons",
       api: "Wire-wrapped, per-installation",
       summary:
-        "Sutherland left Harvard for a chair at Utah and, with David Evans, founded Evans & Sutherland there, selling image generators to the people who needed them most: airlines and the military, for flight simulation. Solid surfaces raised a question a wireframe never had — which surface is nearest the eye at this point on the screen? Through the late sixties and early seventies a dozen different answers were proposed and, in 1974, Sutherland, Sproull and Schumacker famously sorted them into a single taxonomy. In the same period Arthur Appel described casting a ray per picture point to find the first thing it hits, an idea whose time would not come for fifty years.",
+        "Sutherland left Harvard for a chair at Utah and, with David Evans, founded Evans & Sutherland there, selling image generators to the people who needed them most: airlines and the military, for flight simulation. Solid surfaces raised a question a wireframe never had — which surface is nearest the eye at this point on the screen? Through the late sixties and early seventies a dozen different answers were proposed and, in 1974, Sutherland, Sproull and Schumacker famously sorted them into a single taxonomy. In the same period Arthur Appel described casting a ray per picture point to find the first thing it hits, the idea that hardware would finally be built for in 2018.",
       detail: [
         "Simulator image generators sorted polygons in hardware, front to back, at a fixed and guaranteed frame rate — the guarantee mattered more than the picture.",
         "Appel's 1968 ray casting is the direct ancestor of what became hardware-accelerated in 2018.",
@@ -74,7 +74,7 @@
       machine: "University of Utah, PDP-10",
       headline: "Four papers that still run in every game you own.",
       primitive: "Polygons with per-vertex normals",
-      api: "Fortran, and a great deal of patience",
+      api: "Hand-written Fortran, on a shared PDP-10",
       summary:
         "In four years one graduate school produced most of the vocabulary. Henri Gouraud (1971) computed lighting at the corners of a polygon and interpolated the result across it, so a faceted model could look curved. Bui Tuong Phong (1973 thesis, 1975 paper) interpolated the normal instead of the colour and added a specular term, so surfaces could look shiny. Ed Catmull's 1974 thesis introduced both texture mapping and the z-buffer — spend a word of memory per pixel holding the nearest depth so far, and the hidden-surface problem dissolves into a comparison. Martin Newell modelled a teapot from his kitchen in 1975 because he needed a test object with curvature, a handle and a hole in it; it is still in use. Jim Blinn added bump mapping and, in 1977, replaced Phong's reflected vector with the cheaper halfway vector.",
       detail: [
@@ -129,7 +129,7 @@
       detail: [
         "The edge function is twice the signed area of a triangle, so its sign is also the winding test that gives you backface culling for free.",
         "Because it is linear, stepping one pixel right adds a constant. Hardware evaluates a tile of them with adders, not multipliers.",
-        "RenderMan's shading language descends from Rob Cook's 1984 'shade trees'; today's HLSL and GLSL are its unruly grandchildren.",
+        "RenderMan's shading language descends from Rob Cook's 1984 'shade trees'; HLSL and GLSL are its direct descendants.",
       ],
       numbers: [
         { k: "Tests / pixel", v: "3" },
@@ -226,7 +226,7 @@
       detail: [
         "Bilinear filtering is the single change that made 1996 hardware look different from 1996 software: no more lego-brick texels up close.",
         "The Voodoo's 16-bit colour and 16-bit depth were chosen for bandwidth, not quality. Both would be regretted within two years.",
-        "The Glide-versus-Direct3D-versus-OpenGL argument of 1996-97 was genuinely bitter, and John Carmack's public case for OpenGL carried real weight.",
+        "The Glide-versus-Direct3D-versus-OpenGL argument of 1996-97 was bitter, and John Carmack's public case for OpenGL carried real weight.",
         "In 1996 both companies sold chips to board makers — this one went to Orchid. 3dfx then bet on a proprietary API and, after buying STB in 1998, on building the boards itself; Nvidia bet on standard APIs and on selling chips to anyone who would fit them. Nvidia bought 3dfx's assets in 2000.",
       ],
       numbers: [
@@ -274,7 +274,7 @@
         "GeForce 3 shipped a programmable vertex unit — a small, branch-free assembly language you wrote yourself, replacing the fixed transform-and-light block outright — alongside pixel shader 1.1, which was still more a configurable combiner than a processor. The following year ATI's Radeon 9700 made the whole thing floating point: 24-bit float throughout the fragment pipeline, long enough shaders to be useful, and a decisive performance lead. From here the fixed-function pipeline is a compatibility layer over a machine that would rather be told what to compute. High-level languages follow immediately: Cg and HLSL in 2002, GLSL in 2004.",
       detail: [
         "Early vertex shaders had no branches and a hard instruction limit — 128 instructions on GeForce 3. You unrolled everything.",
-        "Nvidia's answering GeForce FX kept a mix of 16- and 32-bit float and a fragile scheduler; it lost the generation badly.",
+        "Nvidia's answering GeForce FX kept a mix of 16- and 32-bit float and a fragile scheduler; it lost the generation.",
         "Per-pixel normal mapping becomes practical here, and Doom 3 in 2004 is the game that makes the whole industry adopt it.",
       ],
       numbers: [
@@ -295,7 +295,7 @@
       primitive: "Threads",
       api: "DirectX 10 · CUDA",
       summary:
-        "Separate vertex and pixel units waste silicon: a scene heavy in geometry starves the pixel units, and a scene heavy in fill starves the vertex units. ATI's Xenos in the Xbox 360 (2005) was the first shipping design to merge them into one pool of processors scheduled between roles on demand; Nvidia's G80 brought unified shaders to the desktop in November 2006 as the first DirectX 10 part. Once the hardware is a general array of processors with a scheduler, graphics is only one thing it can be asked to do — and CUDA, in 2007, said so out loud. Every machine-learning result of the following twenty years is downstream of this decision.",
+        "Separate vertex and pixel units waste silicon: a scene heavy in geometry starves the pixel units, and a scene heavy in fill starves the vertex units. ATI's Xenos in the Xbox 360 (2005) was the first shipping design to merge them into one pool of processors scheduled between roles on demand; Nvidia's G80 brought unified shaders to the desktop in November 2006 as the first DirectX 10 part. Once the hardware is a general array of processors with a scheduler, graphics is only one thing it can be asked to do — and CUDA, in 2007, said so out loud. The machine-learning boom of the following decade ran on this hardware, bought for graphics and repurposed.",
       detail: [
         "G80's cores run in groups of 32 threads in lockstep — a 'warp' — which is why divergent branches cost you both sides.",
         "Geometry shaders arrive with DirectX 10, are used sparingly, and are a cautionary tale about stages that can amplify their own output.",
@@ -343,7 +343,7 @@
       primitive: "Rays against a bounding-volume hierarchy",
       api: "DXR · Vulkan Ray Tracing",
       summary:
-        "DirectX Raytracing was announced in March 2018 and Nvidia's Turing shipped that September with fixed-function units for the two operations that dominate a ray tracer: walking a bounding-volume hierarchy and intersecting a ray with a triangle. Rays are not a replacement for rasterization — nothing beats a rasterizer at finding the nearest surface for every pixel of a primary view — but they answer the questions rasterization cannot: what does this surface see, what light reaches this point, what is behind the camera. Because the sample counts affordable in real time are tiny, the picture arrives noisy and is cleaned up by a temporal denoiser, which is itself increasingly a neural network. And in a final loop of the story, Unreal Engine 5's Nanite rasterizes triangles smaller than a pixel in a compute shader — in software, on the GPU — because for that size the hardware rasterizer's fixed 2x2 pixel quad is the wrong shape.",
+        "DirectX Raytracing was announced in March 2018 and Nvidia's Turing shipped that September with fixed-function units for the two operations that dominate a ray tracer: walking a bounding-volume hierarchy and intersecting a ray with a triangle. Rays are not a replacement for rasterization — nothing beats a rasterizer at finding the nearest surface for every pixel of a primary view — but they answer the questions rasterization cannot: what does this surface see, what light reaches this point, what is behind the camera. Because the sample counts affordable in real time are tiny, the picture arrives noisy and is cleaned up by a temporal denoiser, which is itself increasingly a neural network. And the work has started moving back: Unreal Engine 5's Nanite rasterizes triangles smaller than a pixel in a compute shader — in software, on the GPU — because for that size the hardware rasterizer's fixed 2x2 pixel quad is the wrong shape.",
       detail: [
         "A bounding-volume hierarchy turns intersection from a linear scan of every triangle into a logarithmic walk, and building it well is most of the work.",
         "Hardware rasterizers shade in 2x2 quads so that neighbouring pixels can difference each other for texture derivatives; a sub-pixel triangle wastes three quarters of that.",
@@ -396,8 +396,8 @@
       space: "Clip → NDC",
       one: "Divide x, y and z by w. This is perspective.",
       body:
-        "The projection matrix does not create perspective; it only arranges for w to hold the viewer-space depth. The division is what makes distant things small — and it is the only non-linear step in the whole pipeline, which is the reason for half the difficulties that follow. Attributes that were linear across the triangle in 3D are not linear across it on screen any more, and depth values get crushed towards the near plane.",
-      hardware: "One reciprocal per vertex. Cheap, and utterly consequential.",
+        "The projection matrix does not create perspective; it only arranges for w to hold the viewer-space depth. The division is what makes distant things small — and it is the only non-linear step in the whole pipeline, which is where most of the difficulties that follow come from. Attributes that were linear across the triangle in 3D are not linear across it on screen any more, and depth values get crushed towards the near plane.",
+      hardware: "One reciprocal per vertex. The cheapest instruction in the pipeline, and the one everything else has to work around.",
     },
     {
       id: "viewport",
