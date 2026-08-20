@@ -2444,6 +2444,15 @@
       }, 110);
     }
     $("tx-creep").addEventListener("change", function (e) { setCreep(e.target.checked); });
+    if (reduceMotion) {
+      var creepNote = $("tx-creep-note");
+      var creepBox = $("tx-creep");
+      if (creepBox) creepBox.disabled = true;
+      if (creepNote) {
+        creepNote.textContent = "Your system asks for reduced motion, so this one stays off. " +
+          "Nudge the eye-height slider by hand instead: the distance should change far more than the camera did.";
+      }
+    }
 
     $("tx-splits").addEventListener("input", function (e) {
       state.splits = parseInt(e.target.value, 10);
