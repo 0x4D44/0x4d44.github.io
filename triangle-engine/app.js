@@ -167,8 +167,19 @@
     if (fn) fn();
   }
 
-  function selectTab(name, focusTab) {
+  var TAB_ORDER = ["lineage", "pipeline", "transform", "raster", "depth", "texture",
+    "shading", "parallel", "rays", "coda", "sources"];
+  var TAB_LABELS = {
+    lineage: "01 · Lineage", pipeline: "02 · The pipeline", transform: "03 · Transform",
+    raster: "04 · Rasterize", depth: "05 · Depth", texture: "06 · Texture",
+    shading: "07 · Light", parallel: "08 · Parallel", rays: "09 · Rays",
+    coda: "10 · Today", sources: "11 · Sources",
+  };
+
+  function selectTab(name, focusTab, options) {
     if (!document.getElementById("panel-" + name)) return;
+    var opts = options || {};
+    var changed = activePanel !== name;
     activePanel = name;
     var tabs = document.querySelectorAll('[role="tab"]');
     for (var i = 0; i < tabs.length; i++) {
@@ -184,12 +195,49 @@
       sections[j].classList.toggle("is-active", match);
     }
     drawActive();
+
+    // A section you cannot link to is a section nobody can send anyone.
+    if (!opts.silent) {
+      try {
+        window.history.replaceState(null, "", "#" + name);
+      } catch (error) { /* some embedders refuse this */ }
+    }
+    if (opts.scroll && changed) {
+      var nav = document.querySelector(".instrument-nav");
+      if (nav) nav.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    }
+    // Move focus into the panel that just appeared, or a keyboard reader is
+    // left on a tab while the content changes underneath them.
+    if (opts.focusPanel && changed) {
+      var panel = document.getElementById("panel-" + name);
+      if (panel) { panel.tabIndex = -1; panel.focus({ preventScroll: true }); }
+    }
+  }
+
+  // Every panel gets a way out of itself, so a linear reader never has to
+  // scroll back up to the rail.
+  function addPanelNav() {
+    TAB_ORDER.forEach(function (name, index) {
+      var panel = document.getElementById("panel-" + name);
+      var next = TAB_ORDER[index + 1];
+      if (!panel || !next) return;
+      var wrap = el("div", "panel-next");
+      var button = el("button", null, "Next — " + TAB_LABELS[next] + "  →");
+      button.type = "button";
+      button.addEventListener("click", function () {
+        selectTab(next, false, { scroll: true, focusPanel: true });
+      });
+      wrap.appendChild(button);
+      panel.appendChild(wrap);
+    });
   }
 
   function initTabs() {
     var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
     tabs.forEach(function (tab, index) {
-      tab.addEventListener("click", function () { selectTab(tab.getAttribute("data-tab")); });
+      tab.addEventListener("click", function () {
+        selectTab(tab.getAttribute("data-tab"), false, { scroll: true, focusPanel: true });
+      });
       tab.addEventListener("keydown", function (event) {
         var delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
         if (event.key === "Home") { event.preventDefault(); selectTab(tabs[0].getAttribute("data-tab"), true); return; }
@@ -204,9 +252,7 @@
     for (var i = 0; i < jumps.length; i++) {
       (function (button) {
         button.addEventListener("click", function () {
-          selectTab(button.getAttribute("data-open-tab"));
-          var nav = document.querySelector(".instrument-nav");
-          if (nav) nav.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+          selectTab(button.getAttribute("data-open-tab"), false, { scroll: true, focusPanel: true });
         });
       })(jumps[i]);
     }
@@ -225,7 +271,6 @@
     var cube = G.unitCube();
     var buffer = new Float32Array(CELLS_X * CELLS_Y);
     var shade = new Float32Array(CELLS_X * CELLS_Y);
-    var owner = new Int16Array(CELLS_X * CELLS_Y);
     var angle = reduceMotion ? 0.7 : 0;
     var counters = { tested: 0, covered: 0, rejected: 0 };
     var lastStat = 0;
@@ -237,10 +282,11 @@
 
       buffer.fill(Infinity);
       shade.fill(-1);
-      owner.fill(-1);
       counters.tested = 0; counters.covered = 0; counters.rejected = 0;
 
       var model = G.multiply(G.rotationY(angle), G.rotationX(angle * 0.62));
+      var rejected = new Uint8Array(CELLS_X * CELLS_Y);
+      var tested = new Uint8Array(CELLS_X * CELLS_Y);
       var view = G.lookAt([0, 0, 4.4], [0, 0, 0], [0, 1, 0]);
       var proj = G.perspective(Math.PI / 3.4, CELLS_X / CELLS_Y, 0.5, 20);
       var mvp = G.multiplyAll([proj, view, model]);
@@ -253,6 +299,16 @@
         return { x: s[0], y: s[1], z: s[2], w: clip[3] };
       });
 
+      function markBox(a, b, c, target) {
+        var minX = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x)));
+        var maxX = Math.min(CELLS_X - 1, Math.ceil(Math.max(a.x, b.x, c.x)));
+        var minY = Math.max(0, Math.floor(Math.min(a.y, b.y, c.y)));
+        var maxY = Math.min(CELLS_Y - 1, Math.ceil(Math.max(a.y, b.y, c.y)));
+        for (var y = minY; y <= maxY; y++) {
+          for (var x = minX; x <= maxX; x++) target[y * CELLS_X + x] = 1;
+        }
+      }
+
       function boxSamples(a, b, c) {
         var minX = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x)));
         var maxX = Math.min(CELLS_X - 1, Math.ceil(Math.max(a.x, b.x, c.x)));
@@ -262,7 +318,7 @@
         return (maxX - minX + 1) * (maxY - minY + 1);
       }
 
-      cube.faces.forEach(function (face, faceIndex) {
+      cube.faces.forEach(function (face) {
         var worldNormal = G.faceNormal(
           G.applyDirection(model, cube.positions[face[0]]),
           G.applyDirection(model, cube.positions[face[1]]),
@@ -273,6 +329,7 @@
         [[0, 1, 2], [0, 2, 3]].forEach(function (tri) {
           var a = screen[face[tri[0]]], b = screen[face[tri[1]]], c = screen[face[tri[2]]];
           counters.tested += boxSamples(a, b, c);
+          markBox(a, b, c, tested);
           // Culling is deliberately OFF here: the far side of the cube is
           // rasterized too, and loses the depth test, so the counter below
           // shows the depth buffer actually earning its keep.
@@ -281,12 +338,12 @@
             var z = G.interpolateDepth(bary, a.z, b.z, c.z);
             var i = y * CELLS_X + x;
             if (z < buffer[i]) {
-              if (buffer[i] !== Infinity) counters.rejected++;
+              if (buffer[i] !== Infinity) { counters.rejected++; rejected[i] = 1; }
               buffer[i] = z;
               shade[i] = lit;
-              owner[i] = faceIndex;
             } else {
               counters.rejected++;
+              rejected[i] = 1;
             }
           });
         });
@@ -297,13 +354,20 @@
       for (var y = 0; y < CELLS_Y; y++) {
         for (var x = 0; x < CELLS_X; x++) {
           var i = y * CELLS_X + x;
-          if (shade[i] < 0) continue;
-          var t = shade[i];
-          var hue = owner[i] % 3;
-          var r = Math.round(24 + t * (hue === 0 ? 96 : hue === 1 ? 40 : 150));
-          var g = Math.round(30 + t * (hue === 0 ? 200 : hue === 1 ? 190 : 130));
-          var b = Math.round(40 + t * (hue === 0 ? 130 : hue === 1 ? 210 : 200));
-          ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+          // The three colours are literally the three the legend names:
+          // slate = asked and not covered, green = kept, magenta = covered
+          // and then thrown away by the depth test.
+          if (shade[i] >= 0) {
+            var t = shade[i];
+            ctx.fillStyle = "rgb(" + Math.round(18 + t * 62) + "," +
+              Math.round(26 + t * 200) + "," + Math.round(38 + t * 112) + ")";
+          } else if (rejected[i]) {
+            ctx.fillStyle = "rgba(255, 119, 200, 0.36)";
+          } else if (tested[i]) {
+            ctx.fillStyle = "rgba(75, 100, 120, 0.26)";
+          } else {
+            continue;
+          }
           ctx.fillRect(x * cw, y * ch, cw - 0.55, ch - 0.55);
         }
       }
@@ -348,11 +412,9 @@
   // 01 — LINEAGE
   // ==========================================================
   function initLineage() {
-    var range = $("timeline-range");
     var track = $("timeline-track");
-    if (!range || !track) return;
+    if (!track) return;
     var index = 0;
-    range.max = String(H.eras.length - 1);
 
     H.eras.forEach(function (era, i) {
       var button = el("button", null, era.short);
@@ -378,7 +440,6 @@
     function show(i) {
       index = Math.max(0, Math.min(H.eras.length - 1, i));
       var era = H.eras[index];
-      range.value = String(index);
 
       var buttons = track.querySelectorAll("button");
       for (var b = 0; b < buttons.length; b++) {
@@ -420,7 +481,6 @@
       $("timeline-next").disabled = index === H.eras.length - 1;
     }
 
-    range.addEventListener("input", function () { show(parseInt(range.value, 10)); });
     $("timeline-prev").addEventListener("click", function () { show(index - 1); });
     $("timeline-next").addEventListener("click", function () { show(index + 1); });
     show(0);
@@ -428,7 +488,39 @@
   }
 
   // ==========================================================
-  // 10 — SOURCES
+  // 10 — TODAY: the thesis from section 01, drawn three times
+  // ==========================================================
+  function initCoda() {
+    var grid = $("coda-grid");
+    if (!grid) return;
+    // Three moments chosen because each is the first at which the whole
+    // pipeline sat in one place: all software, all wired, all programmable.
+    var columns = ["utah", "opengl", "raytracing"].map(function (id) {
+      return H.eras.find(function (era) { return era.id === id; });
+    });
+
+    grid.appendChild(el("div", "coda-head", ""));
+    columns.forEach(function (era) {
+      var head = el("div", "coda-head", era.short);
+      head.appendChild(el("span", null, era.name));
+      grid.appendChild(head);
+    });
+
+    H.stageKeys.forEach(function (key) {
+      grid.appendChild(el("div", "stage-row-label", key.label));
+      columns.forEach(function (era) {
+        var state = era.stages[key.id] || "none";
+        var bar = el("div", "stage-row-bar state-" + state);
+        bar.appendChild(el("span", null, H.stageStates[state].short));
+        bar.title = key.label + " in " + era.short + ": " + H.stageStates[state].label;
+        grid.appendChild(bar);
+      });
+    });
+    registerPanel("coda", function () { /* pure DOM */ });
+  }
+
+  // ==========================================================
+  // 11 — SOURCES
   // ==========================================================
   function initSources() {
     var list = $("source-list");
@@ -933,7 +1025,7 @@
       timer = window.setInterval(function () {
         if (stage >= H.pipeline.length - 1) { stop(); return; }
         setStage(stage + 1);
-      }, 2600);
+      }, 6200);
     });
 
     setStage(0);
@@ -950,7 +1042,10 @@
     var canvas = $("transform-canvas");
     if (!canvas) return;
     var cube = G.unitCube();
-    var state = { fov: 60, distance: 5, yaw: 35, pitch: -20, projection: "perspective", corner: 6, frustum: true, matrix: "projection" };
+    var state = { fov: 60, distance: 5, yaw: 35, pitch: -20, projection: "perspective", corner: 6, dolly: false, matrix: "projection" };
+    // The on-screen size the dolly zoom holds constant: half the frame
+    // height at the subject's distance, captured when the box is ticked.
+    var dollySize = null;
     var RES_X = 170;
     var RES_Y = Math.round(RES_X * (TF_H / TF_W));
     var fb = new Framebuffer(RES_X, RES_Y);
@@ -1007,16 +1102,19 @@
       cube.faces.forEach(function (face, faceIndex) {
         var worldPoints = face.map(function (index) { return G.applyDirection(m.model, cube.positions[index]); });
         var normal = G.faceNormal(worldPoints[0], worldPoints[1], worldPoints[2]);
-        var lit = 0.3 + 0.7 * Math.max(0, G.dot(normal, light));
+        var lit = 0.24 + 0.76 * Math.max(0, G.dot(normal, light));
+        // One hue per axis, so opposite faces match and the three faces
+        // you can see at any moment are always three different colours.
         var tint = [
-          [0.24, 0.92, 0.58], [0.34, 0.80, 0.95], [0.68, 0.62, 1.0],
-          [1.0, 0.75, 0.38], [1.0, 0.47, 0.78], [0.55, 0.95, 0.85],
+          [0.30, 0.88, 0.55], [0.30, 0.88, 0.55],
+          [1.00, 0.74, 0.36], [1.00, 0.74, 0.36],
+          [0.72, 0.62, 1.00], [0.72, 0.62, 1.00],
         ][faceIndex];
 
         var polygon = face.map(function (index) {
           return { clip: G.apply(m.mvp, cube.positions[index]), attrs: [] };
         });
-        var visible = G.clipNear(polygon, TF_NEAR * 0.999);
+        var visible = G.clipNear(polygon);
         if (visible.length < 3) return;
         if (visible.length !== polygon.length) clipped.push(faceIndex);
 
@@ -1081,85 +1179,116 @@
         ctx.fillText("near-plane clipping active — " + clipped.length + " face(s) cut", 20, TF_H - 22);
       }
 
-      if (state.frustum) drawFrustumInset(ctx, m);
+      drawFrustumSlice();
       updateMatrix(m);
       updateJourney(m);
     }
 
-    // A top-down slice of the camera and its frustum, with the cube's
-    // extent marked — the view that makes near, far and field of view
-    // mean something rather than being three numbers in a function call.
-    function drawFrustumInset(ctx, m) {
-      var w = 216, h = 152;
-      var x = TF_W - w - 20, y = 20;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
-      ctx.fillStyle = "rgba(6, 10, 18, 0.94)";
-      ctx.strokeStyle = "rgba(150, 190, 205, 0.28)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.fill();
-      ctx.stroke();
+    // A top-down slice of the camera and its frustum, in its own panel at a
+    // size where near, far and field of view stop being three numbers in a
+    // function call.
+    function drawFrustumSlice() {
+      var canvasEl = $("frustum-canvas");
+      var W = 880, HH = 300;
+      var ctx = prepare(canvasEl, W, HH);
+      if (!ctx) return;
+      ctx.fillStyle = "#060a12";
+      ctx.fillRect(0, 0, W, HH);
 
-      var eyeX = x + 22, eyeY = y + h / 2;
-      var span = Math.max(state.distance + 2.6, 6);
-      var scale = (w - 44) / span;
+      var eyeX = 90, eyeY = HH / 2;
+      var span = Math.max(state.distance + 3.4, 8);
+      var scale = (W - 150) / span;
       var halfAngle = (state.fov * Math.PI) / 360;
 
       if (state.projection === "perspective") {
-        var reach = span;
-        var spread = Math.tan(halfAngle) * reach * scale;
+        var spread = Math.tan(halfAngle) * span * scale;
         ctx.fillStyle = "rgba(87, 211, 238, 0.10)";
         ctx.beginPath();
         ctx.moveTo(eyeX, eyeY);
-        ctx.lineTo(eyeX + reach * scale, eyeY - spread);
-        ctx.lineTo(eyeX + reach * scale, eyeY + spread);
+        ctx.lineTo(eyeX + span * scale, eyeY - spread);
+        ctx.lineTo(eyeX + span * scale, eyeY + spread);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = "rgba(87, 211, 238, 0.5)";
+        ctx.strokeStyle = "rgba(87, 211, 238, 0.6)";
+        ctx.lineWidth = 1.4;
         ctx.stroke();
+        ctx.fillStyle = "#57d3ee";
+        ctx.font = "600 12px ui-monospace, monospace";
+        ctx.fillText(Math.round(state.fov) + "° field of view", eyeX + 24, eyeY - 16);
       } else {
         var halfHeight = Math.tan(halfAngle) * state.distance * scale;
         ctx.fillStyle = "rgba(87, 211, 238, 0.10)";
         ctx.fillRect(eyeX, eyeY - halfHeight, span * scale, halfHeight * 2);
-        ctx.strokeStyle = "rgba(87, 211, 238, 0.5)";
+        ctx.strokeStyle = "rgba(87, 211, 238, 0.6)";
+        ctx.lineWidth = 1.4;
         ctx.strokeRect(eyeX, eyeY - halfHeight, span * scale, halfHeight * 2);
+        ctx.fillStyle = "#57d3ee";
+        ctx.font = "600 12px ui-monospace, monospace";
+        ctx.fillText("orthographic — the sides stay parallel", eyeX + 24, eyeY - halfHeight - 12);
       }
 
-      // The near plane.
-      ctx.strokeStyle = "#ff77c8";
+      // The optical axis.
+      ctx.strokeStyle = "rgba(150, 190, 205, 0.3)";
+      ctx.setLineDash([5, 5]);
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(eyeX + TF_NEAR * scale, eyeY - 26);
-      ctx.lineTo(eyeX + TF_NEAR * scale, eyeY + 26);
+      ctx.moveTo(eyeX, eyeY);
+      ctx.lineTo(W - 30, eyeY);
       ctx.stroke();
+      ctx.setLineDash([]);
 
-      // The cube, as a circle of radius sqrt(3) about its centre.
+      // The near plane, where w passes through the value the clipper cares about.
+      ctx.strokeStyle = "#ff77c8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(eyeX + TF_NEAR * scale, eyeY - 52);
+      ctx.lineTo(eyeX + TF_NEAR * scale, eyeY + 52);
+      ctx.stroke();
+      ctx.fillStyle = "#ff77c8";
+      ctx.font = "600 12px ui-monospace, monospace";
+      ctx.fillText("near = " + TF_NEAR, eyeX + TF_NEAR * scale + 8, eyeY - 58);
+
+      // The cube, as the circle that encloses it.
       var cubeX = eyeX + state.distance * scale;
       var radius = Math.sqrt(3) * scale;
-      ctx.strokeStyle = "rgba(79, 224, 139, 0.85)";
+      var clipping = state.distance - Math.sqrt(3) < TF_NEAR;
+      ctx.strokeStyle = clipping ? "#ff6f7d" : "rgba(79, 224, 139, 0.9)";
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(cubeX, eyeY, radius, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.fillStyle = clipping ? "rgba(255, 111, 125, 0.10)" : "rgba(79, 224, 139, 0.08)";
+      ctx.fill();
+      ctx.fillStyle = clipping ? "#ff6f7d" : "#4fe08b";
+      ctx.font = "600 12px ui-monospace, monospace";
+      ctx.fillText(clipping ? "the cube crosses the near plane — clipping" : "the cube",
+        cubeX - 26, eyeY + radius + 20);
 
+      // The eye, and the distance to it.
       ctx.fillStyle = "#e9f1f4";
       ctx.beginPath();
-      ctx.arc(eyeX, eyeY, 4, 0, Math.PI * 2);
+      ctx.arc(eyeX, eyeY, 6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = "#98adb8";
+      ctx.font = "500 12px ui-monospace, monospace";
+      ctx.fillText("eye", eyeX - 12, eyeY + 26);
+      ctx.strokeStyle = "rgba(255, 192, 97, 0.6)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(eyeX, eyeY + 62);
+      ctx.lineTo(cubeX, eyeY + 62);
+      ctx.stroke();
+      ctx.fillStyle = "#ffc061";
+      ctx.fillText("distance " + fmt(state.distance, 1), (eyeX + cubeX) / 2 - 42, eyeY + 78);
 
       ctx.fillStyle = "#6a7f8c";
-      ctx.font = "500 10px ui-monospace, monospace";
-      ctx.fillText("eye", eyeX - 8, eyeY + 20);
-      ctx.fillStyle = "#ff77c8";
-      ctx.fillText("near " + TF_NEAR, eyeX + TF_NEAR * scale + 4, eyeY - 30);
-      ctx.fillStyle = "#6a7f8c";
-      ctx.fillText("top-down slice", x + 8, y + h - 8);
-      ctx.restore();
-      ctx.strokeStyle = "rgba(150, 190, 205, 0.28)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x, y, w, h);
+      ctx.font = "500 11px ui-monospace, monospace";
+      ctx.fillText("top-down slice — the camera is looking to the right", 16, HH - 14);
+      canvasEl.setAttribute("aria-label",
+        "Top-down slice: the eye on the left, a " + Math.round(state.fov) +
+        " degree frustum opening to the right, the near plane at " + TF_NEAR +
+        ", and the cube " + fmt(state.distance, 1) + " units away" +
+        (clipping ? ", crossing the near plane so the clipper is cutting it." : "."));
     }
 
     function updateMatrix(m) {
@@ -1215,20 +1344,40 @@
         : "Orthographic: w stays at 1, so nothing is divided and distance has no effect on size. Parallel lines stay parallel.";
     }
 
-    function bindRange(id, key, format) {
+    function bindRange(id, key, format, dollyRole) {
       var input = $(id);
       var output = $(id + "-out");
       function apply() {
         state[key] = parseFloat(input.value);
         if (output) output.textContent = format(state[key]);
+        if (dollyRole) applyDolly(dollyRole);
         draw();
       }
       input.addEventListener("input", apply);
       apply();
     }
 
-    bindRange("tf-fov", "fov", function (v) { return Math.round(v) + "°"; });
-    bindRange("tf-distance", "distance", function (v) { return fmt(v, 1); });
+    // Holding the subject's on-screen size means keeping
+    // distance * tan(fov / 2) constant. Move either slider and the other
+    // follows; the cube stays the same size and changes shape completely.
+    function applyDolly(changed) {
+      if (!state.dolly || dollySize === null) return;
+      if (changed === "fov") {
+        var distance = G.clamp(dollySize / Math.tan((state.fov * Math.PI) / 360), 1.6, 14);
+        state.distance = distance;
+        $("tf-distance").value = String(distance);
+        $("tf-distance-out").textContent = fmt(distance, 1);
+      } else {
+        var half = Math.atan(dollySize / state.distance);
+        var fov = G.clamp((half * 360) / Math.PI, 20, 110);
+        state.fov = fov;
+        $("tf-fov").value = String(fov);
+        $("tf-fov-out").textContent = Math.round(fov) + "°";
+      }
+    }
+
+    bindRange("tf-fov", "fov", function (v) { return Math.round(v) + "°"; }, "fov");
+    bindRange("tf-distance", "distance", function (v) { return fmt(v, 1); }, "distance");
     bindRange("tf-yaw", "yaw", function (v) { return Math.round(v) + "°"; });
     bindRange("tf-pitch", "pitch", function (v) { return Math.round(v) + "°"; });
 
@@ -1241,7 +1390,31 @@
     });
     $("tf-corner").addEventListener("change", function (e) { state.corner = parseInt(e.target.value, 10); draw(); });
     $("tf-matrix").addEventListener("change", function (e) { state.matrix = e.target.value; draw(); });
-    $("tf-frustum").addEventListener("change", function (e) { state.frustum = e.target.checked; draw(); });
+    $("tf-dolly").addEventListener("change", function (e) {
+      state.dolly = e.target.checked;
+      dollySize = state.dolly ? state.distance * Math.tan((state.fov * Math.PI) / 360) : null;
+      draw();
+    });
+
+    // Keyboard equivalent for the drag: the cube must be spinnable without
+    // a pointer, and the sliders alone do not make the canvas focusable.
+    canvas.addEventListener("keydown", function (event) {
+      var step = event.shiftKey ? 1 : 6;
+      var yaw = 0, pitch = 0;
+      if (event.key === "ArrowLeft") yaw = -step;
+      else if (event.key === "ArrowRight") yaw = step;
+      else if (event.key === "ArrowUp") pitch = step;
+      else if (event.key === "ArrowDown") pitch = -step;
+      else return;
+      event.preventDefault();
+      state.yaw = (state.yaw + yaw + 360) % 360;
+      state.pitch = G.clamp(state.pitch + pitch, -80, 80);
+      $("tf-yaw").value = String(state.yaw);
+      $("tf-yaw-out").textContent = Math.round(state.yaw) + "°";
+      $("tf-pitch").value = String(state.pitch);
+      $("tf-pitch-out").textContent = Math.round(state.pitch) + "°";
+      draw();
+    });
 
     var dragStart = null;
     onDrag(canvas, TF_W, TF_H, {
@@ -1362,12 +1535,18 @@
       updateStats(stats, result, g);
     }
 
+    // The rasterizer snaps to the sub-pixel grid BEFORE taking its bounding
+    // box, so the box must be computed the same way or the hit rate is
+    // measured against work that was never done.
     function boundingBox(verts, g) {
+      var snap = function (v) { return Math.round(v * G.SUB) / G.SUB; };
+      var xs = verts.map(function (v) { return snap(v.x); });
+      var ys = verts.map(function (v) { return snap(v.y); });
       return {
-        minX: Math.max(0, Math.floor(Math.min(verts[0].x, verts[1].x, verts[2].x))),
-        maxX: Math.min(g.gx - 1, Math.ceil(Math.max(verts[0].x, verts[1].x, verts[2].x))),
-        minY: Math.max(0, Math.floor(Math.min(verts[0].y, verts[1].y, verts[2].y))),
-        maxY: Math.min(g.gy - 1, Math.ceil(Math.max(verts[0].y, verts[1].y, verts[2].y))),
+        minX: Math.max(0, Math.floor(Math.min.apply(null, xs))),
+        maxX: Math.min(g.gx - 1, Math.ceil(Math.max.apply(null, xs))),
+        minY: Math.max(0, Math.floor(Math.min.apply(null, ys))),
+        maxY: Math.min(g.gy - 1, Math.ceil(Math.max.apply(null, ys))),
       };
     }
 
@@ -1516,6 +1695,10 @@
       $("raster-explain").textContent = explain;
 
       $("rs-res-out").textContent = g.gx + " × " + g.gy;
+      canvas.setAttribute("aria-label",
+        "A " + g.gx + " by " + g.gy + " pixel grid with a triangle across it. " +
+        group(stats.covered) + " of " + group(stats.tested) + " sampled pixels are covered" +
+        (result.culled ? ", but the triangle is back-facing and has been culled." : "."));
       $("raster-caption").textContent = result.culled
         ? "This triangle is wound the other way, so backface culling has discarded it — no pixels tested at all."
         : "Drag a corner. Or select one below and nudge it with the arrow keys.";
@@ -1565,7 +1748,41 @@
       draw();
     });
 
-    $("rs-mode").addEventListener("change", function (e) { state.mode = e.target.value; draw(); });
+    var nudge = $("rs-nudge");
+    if (nudge) {
+      var DIRECTIONS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+      Array.prototype.forEach.call(nudge.querySelectorAll("button"), function (button) {
+        button.addEventListener("click", function () {
+          var d = DIRECTIONS[button.getAttribute("data-nudge")];
+          var v = state.verts[state.selected];
+          state.verts[state.selected] = {
+            x: G.clamp(v.x + d[0] * 0.02, 0, 1),
+            y: G.clamp(v.y + d[1] * 0.02, 0, 1),
+          };
+          draw();
+        });
+      });
+    }
+
+    $("rs-mode").addEventListener("change", function (e) {
+      state.mode = e.target.value;
+      // The top-left rule only does anything when the shared edge passes
+      // through pixel centres. Asking the reader to hunt for that condition
+      // is asking them to conclude the control does nothing, so snap the
+      // shared edge onto centres the moment the mode is selected.
+      if (state.mode === "shared") {
+        var g = grid();
+        var snapCentre = function (v) {
+          return {
+            x: (Math.round(v.x * g.gx - 0.5) + 0.5) / g.gx,
+            y: (Math.round(v.y * g.gy - 0.5) + 0.5) / g.gy,
+          };
+        };
+        state.verts[0] = snapCentre(state.verts[0]);
+        state.verts[2] = snapCentre(state.verts[2]);
+      }
+      draw();
+    });
     $("rs-res").addEventListener("input", function (e) { state.res = parseInt(e.target.value, 10); draw(); });
     $("rs-fillrule").addEventListener("change", function (e) { state.fillRule = e.target.checked; draw(); });
     $("rs-cull").addEventListener("change", function (e) { state.cull = e.target.checked; draw(); });
@@ -1581,13 +1798,15 @@
 
   function initDepth() {
     var canvas = $("depth-canvas");
+    var painterCanvas = $("depth-painter-canvas");
     var bufferCanvas = $("depth-buffer-canvas");
-    if (!canvas || !bufferCanvas) return;
-    var state = { algorithm: "zbuffer", scene: "intersect", near: 0.1, bits: "24" };
+    if (!canvas || !painterCanvas || !bufferCanvas) return;
+    var state = { scene: "intersect", near: 0.1, bits: "24", showBuffer: false };
     var FAR = 200;
     var RES_X = 150;
     var RES_Y = Math.round(RES_X * (DP_H / DP_W));
-    var colourBuffer = new Framebuffer(RES_X, RES_Y);
+    var painterBuffer = new Framebuffer(RES_X, RES_Y);
+    var zBuffer = new Framebuffer(RES_X, RES_Y);
     var depthView = new Framebuffer(RES_X, RES_Y);
 
     // Each scene is a list of quads in world space with a colour.
@@ -1652,29 +1871,30 @@
 
     // Reversed depth counts the other way, so "nearer" is "greater".
     function nearer(a, b) { return state.bits === "rev" ? a > b : a < b; }
+    var EMPTY = function () { return state.bits === "rev" ? -Infinity : Infinity; };
 
-    function draw() {
-      var ctx = prepare(canvas, DP_W, DP_H);
-      var bctx = prepare(bufferCanvas, DP_W, DP_H);
-      if (!ctx || !bctx) return;
+    function centroidDepth(quad) {
+      var sum = 0;
+      for (var i = 0; i < quad.length; i++) sum += quad[i][2];
+      return sum / quad.length;
+    }
 
+    // One render of the scene under one hidden-surface algorithm.
+    function render(algorithm, target) {
       var view = G.lookAt([0, 0, 0], [0, 0, -1], [0, 1, 0]);
       var proj = G.perspective(Math.PI / 3.9, DP_W / DP_H, state.near, FAR);
       var mvp = G.multiply(proj, view);
 
-      colourBuffer.reset(6, 10, 18);
-      depthView.reset(0, 0, 0);
-      var stored = new Float64Array(RES_X * RES_Y);
-      stored.fill(state.bits === "rev" ? -Infinity : Infinity);
+      target.reset(6, 10, 18);
+      var stored = new Float64Array(RES_X * RES_Y).fill(EMPTY());
       var raw = new Float64Array(RES_X * RES_Y).fill(Infinity);
+      var counters = { fragments: 0, rejected: 0, ties: 0 };
 
       var quads = scene();
       var order = quads.map(function (q, i) { return i; });
-      var counters = { fragments: 0, rejected: 0, ties: 0 };
-
-      if (state.algorithm === "painter") {
-        // Sort by the centre of each quad, which is the best a
-        // per-object sort can do — and is exactly what fails.
+      if (algorithm === "painter") {
+        // Sort by the centre of each quad, which is the best a per-object
+        // sort can do — and is exactly what fails.
         order.sort(function (a, b) {
           return centroidDepth(quads[b].quad) - centroidDepth(quads[a].quad);
         });
@@ -1695,25 +1915,49 @@
             var code = quantise(z);
             var i = y * RES_X + x;
             counters.fragments++;
-            if (state.algorithm === "zbuffer") {
-              if (code === stored[i]) counters.ties++;
-              if (!nearer(code, stored[i]) && stored[i] !== (state.bits === "rev" ? -Infinity : Infinity)) {
-                counters.rejected++;
-                return;
+            if (algorithm === "zbuffer") {
+              if (stored[i] !== EMPTY()) {
+                if (code === stored[i]) counters.ties++;
+                if (!nearer(code, stored[i])) { counters.rejected++; return; }
               }
               stored[i] = code;
             }
             raw[i] = z;
-            var shade = 0.55 + 0.45 * (1 - G.clamp((z * 0.5 + 0.5 - 0.5) * 2, 0, 1));
-            colourBuffer.set(x, y, [q.colour[0] * shade, q.colour[1] * shade, q.colour[2] * shade]);
+            var shade = 0.5 + 0.5 * (1 - G.clamp((z * 0.5 + 0.5 - 0.5) * 2, 0, 1));
+            target.set(x, y, [q.colour[0] * shade, q.colour[1] * shade, q.colour[2] * shade]);
           });
         });
       });
+      return { counters: counters, raw: raw };
+    }
 
-      // The stored values are all crushed up against 1.0 — that IS the
-      // nonlinearity, and shown literally the buffer is a white rectangle.
-      // So stretch the occupied range for legibility and print the real
-      // numbers on top, rather than quietly pretending depth is linear.
+    function draw() {
+      var ctx = prepare(canvas, DP_W, DP_H);
+      var pctx = prepare(painterCanvas, DP_W, DP_H);
+      if (!ctx || !pctx) return;
+
+      render("painter", painterBuffer);
+      var z = render("zbuffer", zBuffer);
+
+      painterBuffer.blit(pctx, 0, 0, DP_W, DP_H);
+      zBuffer.blit(ctx, 0, 0, DP_W, DP_H);
+
+      var card = $("depth-buffer-card");
+      if (card) card.classList.toggle("is-hidden", !state.showBuffer);
+      var range = { lo: Infinity, hi: -Infinity };
+      if (state.showBuffer) range = drawDepthBuffer(z.raw);
+
+      updateDepthStats(z.counters, range);
+      drawPrecision();
+      updateDepthLabels(z.counters, range);
+    }
+
+    // The stored values all crowd against 1.0 — that IS the nonlinearity,
+    // and shown literally the buffer is a white rectangle. Stretch the
+    // occupied range for legibility and report the real numbers as text.
+    function drawDepthBuffer(raw) {
+      var bctx = prepare(bufferCanvas, DP_W, DP_H);
+      if (!bctx) return { lo: Infinity, hi: -Infinity };
       var lo = Infinity, hi = -Infinity;
       for (var m = 0; m < raw.length; m++) {
         if (raw[m] === Infinity) continue;
@@ -1722,12 +1966,10 @@
         if (d > hi) hi = d;
       }
       var span = hi - lo;
-      var stretch = span > 1e-9 ? 1 / span : 1;
       for (var i = 0; i < raw.length; i++) {
-        var v = raw[i];
         var g = 0;
-        if (v !== Infinity) {
-          var normalised = v * 0.5 + 0.5;
+        if (raw[i] !== Infinity) {
+          var normalised = raw[i] * 0.5 + 0.5;
           // Nearer is brighter, which is the convention people expect.
           g = span > 1e-9 ? G.clamp(1 - (normalised - lo) / span, 0, 1) * 0.92 + 0.08 : 0.6;
         }
@@ -1736,33 +1978,34 @@
         depthView.colour[i * 4 + 2] = g * 255;
         depthView.colour[i * 4 + 3] = 255;
       }
-
-      colourBuffer.blit(ctx, 0, 0, DP_W, DP_H);
       depthView.blit(bctx, 0, 0, DP_W, DP_H);
+      return { lo: lo, hi: hi, span: span };
+    }
 
-      bctx.fillStyle = "rgba(6, 10, 18, 0.86)";
-      bctx.fillRect(0, DP_H - 48, DP_W, 48);
-      bctx.font = "500 11px ui-monospace, monospace";
-      bctx.fillStyle = "#ffc061";
-      if (lo === Infinity) {
-        bctx.fillText("nothing written to the buffer", 12, DP_H - 28);
-      } else {
-        bctx.fillText("holds " + lo.toFixed(5) + " … " + hi.toFixed(5), 12, DP_H - 29);
-        bctx.fillStyle = "#98adb8";
-        bctx.fillText("the top " + (span * 100).toFixed(3) + "% of the range — stretched ×" + group(stretch), 12, DP_H - 13);
+    function updateDepthLabels(counters, range) {
+      var text = $("depth-buffer-range");
+      if (text) {
+        text.textContent = range.lo === Infinity
+          ? "Nothing has been written to the buffer."
+          : "Holds " + range.lo.toFixed(6) + " … " + range.hi.toFixed(6) +
+            " — the top " + (range.span * 100).toFixed(4) + "% of the range, stretched ×" +
+            group(range.span > 0 ? 1 / range.span : 1) + " here to be visible at all.";
       }
-
-      updateDepthStats(counters);
-      drawPrecision();
+      var format = state.bits === "rev" ? "32-bit float, reversed" : state.bits + "-bit fixed";
+      var sceneName = { intersect: "two intersecting panels", cycle: "three panels in a cycle", decal: "a sign 2 cm in front of a distant wall" }[state.scene];
+      canvas.setAttribute("aria-label",
+        "Z-buffered render of " + sceneName + " at " + format + ", near plane " + fmt(state.near, 2) +
+        ". " + group(counters.rejected) + " fragments were rejected by the depth test" +
+        (counters.ties ? " and " + group(counters.ties) + " tied exactly with what was already there." : "."));
+      painterCanvas.setAttribute("aria-label",
+        "The same " + sceneName + ", drawn by sorting the panels on their centres and painting back to front.");
+      bufferCanvas.setAttribute("aria-label",
+        range.lo === Infinity ? "An empty depth buffer."
+          : "The depth buffer, stretched for visibility. It holds values from " +
+            range.lo.toFixed(4) + " to " + range.hi.toFixed(4) + ".");
     }
 
-    function centroidDepth(quad) {
-      var sum = 0;
-      for (var i = 0; i < quad.length; i++) sum += quad[i][2];
-      return sum / quad.length;
-    }
-
-    function updateDepthStats(counters) {
+    function updateDepthStats(counters, range) {
       var list = $("depth-stats");
       clear(list);
       var wallDistance = state.scene === "decal" ? 30 : 4.8;
@@ -1771,25 +2014,21 @@
         : G.depthResolution(wallDistance, state.near, FAR, state.bits === "16" ? 16 : 24);
       stat(list, "Fragments", group(counters.fragments));
       stat(list, "Depth-rejected", group(counters.rejected));
-      if (state.algorithm === "zbuffer") {
-        stat(list, "Exact ties", group(counters.ties), counters.ties > 0);
+      stat(list, "Exact ties", group(counters.ties), counters.ties > 0);
+      if (resolution === null) {
+        // Not uniform — proportional to distance, which is a different and
+        // much better thing than proportional to distance squared.
+        resolution = Math.pow(2, -23) * wallDistance * Math.max(1e-6, 1 - wallDistance / FAR);
       }
-      stat(list, "Resolvable at " + wallDistance + "m",
-        resolution === null ? "uniform" : (resolution >= 0.01 ? fmt(resolution, 3) + " m" : (resolution * 1000).toFixed(2) + " mm"),
-        resolution !== null && state.scene === "decal" && resolution > 0.02);
+      stat(list, "Resolvable at " + wallDistance + " m",
+        (resolution >= 0.01 ? fmt(resolution, 3) + " m" : resolution >= 1e-5 ? (resolution * 1000).toFixed(2) + " mm" : (resolution * 1e6).toFixed(1) + " µm"),
+        state.bits !== "rev" && state.scene === "decal" && resolution > 0.02);
 
-      var explain;
-      if (state.algorithm === "painter") {
-        explain = state.scene === "intersect"
-          ? "Sorted by centre and painted back to front. The two panels pass through each other, so no single order is right for the whole surface: one wins everywhere, and the intersection line — which should be visible — is not drawn at all."
-          : state.scene === "cycle"
-            ? "Three bars, each in front of the next and behind the one after. There is no ordering of three objects that paints this correctly — the relation is a cycle, and a sort needs an ordering. Splitting the bars until no pair overlaps would work, which is exactly what a BSP tree does and why Doom built one at compile time."
-            : "The sign is painted after the wall it stands in front of. A painter's order gets this right by construction — which is why the approach survived so long in scenes built to suit it, and why it collapses the moment the scene is not.";
-      } else {
-        explain = state.scene === "decal"
-          ? "The sign stands 2 cm in front of a wall 30 m away. At 16 bits with the near plane at a tenth of a metre, one depth code covers about 14 cm — so both surfaces quantise to the same number, the sign loses the test everywhere, and it vanishes. Nothing is wrong with the geometry; the buffer simply cannot count that finely. Drag the near plane outwards, or switch to 24-bit, and it reappears. In a moving scene the tie breaks differently frame to frame, and that flicker is what people mean by z-fighting."
-          : "Each pixel keeps the nearest depth it has seen, so submission order stops mattering entirely. Interpenetration and cycles both come out right, and neither needed sorting — which is exactly why nothing has replaced this idea in fifty years.";
-      }
+      var explain = {
+        intersect: "The two panels pass through each other, so no single order is right for the whole surface. On the left one panel wins everywhere and the line where they actually cross is never drawn. On the right each pixel settled it for itself, and the diagonal seam is real geometry.",
+        cycle: "Three bars, each in front of the next and behind the one after. There is no ordering of three objects that paints this correctly — the relation is a cycle, and a sort needs an ordering. Splitting the bars until no pair overlaps would work, which is exactly what a BSP tree does and why Doom built one at compile time.",
+        decal: "Here the sort is right by construction, so the left-hand image is correct and the interesting failure is on the right. The sign stands 2 cm in front of a wall 30 m away; at 16 bits with the near plane at a tenth of a metre one depth code covers about 14 cm, so both surfaces quantise to the same number, the sign loses the test everywhere, and it vanishes. Nothing is wrong with the geometry — the buffer cannot count that finely. Drag the near plane outwards, or switch to 24-bit, and it comes back. In a moving scene the tie breaks differently frame to frame, and that flicker is what people mean by z-fighting.",
+      }[state.scene];
       $("depth-explain").textContent = explain;
     }
 
@@ -1817,11 +2056,10 @@
       ctx.strokeStyle = "rgba(150, 190, 205, 0.14)";
       ctx.lineWidth = 1;
       ctx.font = "500 11px ui-monospace, monospace";
-      var decades = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 10];
-      decades.forEach(function (v) {
+      [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 10].forEach(function (v) {
         var y = py(v);
         ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-        ctx.fillStyle = "#6a7f8c";
+        ctx.fillStyle = "#98adb8";
         ctx.fillText(v >= 1 ? v + " m" : v >= 0.001 ? (v * 1000) + " mm" : (v * 1e6) + " µm", 6, y + 4);
       });
       [0.1, 1, 10, 100].forEach(function (z) {
@@ -1829,7 +2067,7 @@
         var x = px(z);
         ctx.strokeStyle = "rgba(150, 190, 205, 0.14)";
         ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
-        ctx.fillStyle = "#6a7f8c";
+        ctx.fillStyle = "#98adb8";
         ctx.fillText(z + " m", x - 10, H - padB + 18);
       });
 
@@ -1838,18 +2076,21 @@
         { bits: 24, colour: "#57d3ee", label: "24-bit fixed" },
         { bits: 32, colour: "#4fe08b", label: "32-bit float, reversed" },
       ];
-      series.forEach(function (s) {
-        ctx.strokeStyle = s.colour;
-        ctx.lineWidth = s.bits === (state.bits === "rev" ? 32 : parseInt(state.bits, 10)) ? 2.6 : 1.3;
-        ctx.globalAlpha = ctx.lineWidth > 2 ? 1 : 0.55;
+      var selected = state.bits === "rev" ? 32 : parseInt(state.bits, 10);
+      series.forEach(function (sr) {
+        ctx.strokeStyle = sr.colour;
+        ctx.lineWidth = sr.bits === selected ? 2.6 : 1.3;
+        ctx.globalAlpha = sr.bits === selected ? 1 : 0.5;
         ctx.beginPath();
         for (var i = 0; i <= 220; i++) {
           var z = minZ * Math.pow(maxZ / minZ, i / 220);
-          var value = s.bits === 32
-            // Reversed float depth holds roughly constant RELATIVE
-            // precision: about 23 bits of mantissa, everywhere.
-            ? z * Math.pow(2, -23)
-            : G.depthResolution(z, state.near, FAR, s.bits);
+          var value = sr.bits === 32
+            // Reversed float depth stores n(f - z) / ((f - n)z), whose
+            // float ulp works out at 2^-23 * z * (1 - z/f). Dropping the
+            // second factor overstates the error near the far plane,
+            // which is precisely where reversed-Z is at its best.
+            ? Math.pow(2, -23) * z * Math.max(1e-6, 1 - z / FAR)
+            : G.depthResolution(z, state.near, FAR, sr.bits);
           var x = px(z), y = py(value);
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
@@ -1858,14 +2099,14 @@
       });
 
       var legendX = padL + 14, legendY = padT + 16;
-      series.forEach(function (s, i) {
-        ctx.fillStyle = s.colour;
+      series.forEach(function (sr, i) {
+        ctx.fillStyle = sr.colour;
         ctx.fillRect(legendX, legendY + i * 17 - 8, 12, 3);
         ctx.fillStyle = "#98adb8";
         ctx.font = "500 11px ui-monospace, monospace";
-        ctx.fillText(s.label, legendX + 20, legendY + i * 17 - 2);
+        ctx.fillText(sr.label, legendX + 20, legendY + i * 17 - 2);
       });
-      ctx.fillStyle = "#6a7f8c";
+      ctx.fillStyle = "#98adb8";
       ctx.fillText("distance from the eye  (log)", W - padR - 190, H - 10);
       ctx.save();
       ctx.translate(16, padT + plotH / 2 + 74);
@@ -1874,11 +2115,14 @@
       ctx.restore();
       ctx.fillStyle = "#ffc061";
       ctx.fillText("near plane = " + fmt(state.near, 2) + " m", padL + 14, H - padB - 12);
+      canvasEl.setAttribute("aria-label",
+        "Depth precision against distance, near plane " + fmt(state.near, 2) +
+        " metres. Fixed-point precision degrades with the square of distance; reversed float depth stays roughly constant.");
     }
 
-    $("dp-algorithm").addEventListener("change", function (e) { state.algorithm = e.target.value; draw(); });
     $("dp-scene").addEventListener("change", function (e) { state.scene = e.target.value; draw(); });
     $("dp-bits").addEventListener("change", function (e) { state.bits = e.target.value; draw(); });
+    $("dp-showbuffer").addEventListener("change", function (e) { state.showBuffer = e.target.checked; draw(); });
     $("dp-near").addEventListener("input", function (e) {
       state.near = parseFloat(e.target.value);
       $("dp-near-out").textContent = fmt(state.near, 2);
@@ -1897,7 +2141,10 @@
   function initTexture() {
     var canvas = $("texture-canvas");
     if (!canvas) return;
-    var state = { perspective: true, filter: "bilinear", mip: "tri", height: 1, pitch: 10, splits: 1 };
+    var state = { perspective: true, filter: "bilinear", mip: "tri", height: 1, pitch: 10, splits: 1, creep: false };
+    var MAX_ANISO = 8;
+    var creepPhase = 0;
+    var creepTimer = null;
     var RES_X = 256;
     var RES_Y = Math.round(RES_X * (TX_H / TX_W));
     var fb = new Framebuffer(RES_X, RES_Y);
@@ -1986,8 +2233,14 @@
       if (!ctx) return;
 
       var pitch = (state.pitch * Math.PI) / 180;
-      var eye = [0, state.height, 0];
-      var target = [0, state.height - Math.sin(pitch) * 4, -4];
+      // Affine interpolation belongs to hardware that had no mip chain and
+      // no bilinear filter either. Forcing them off is both historically
+      // right and the only way the warp is visible rather than blurred away.
+      var affine = !state.perspective;
+      var mipMode = affine ? "off" : state.mip;
+      var filterMode = affine ? "nearest" : state.filter;
+      var eye = [0, state.height + creepPhase * 0.004, creepPhase * 0.02];
+      var target = [eye[0], eye[1] - Math.sin(pitch) * 4, eye[2] - 4];
       var view = G.lookAt(eye, target, [0, 1, 0]);
       var proj = G.perspective(Math.PI / 2.6, RES_X / RES_Y, 0.1, 200);
       var mvp = G.multiply(proj, view);
@@ -2014,7 +2267,7 @@
           var clip = G.apply(mvp, v.p);
           return { clip: clip, attrs: [v.uv[0], v.uv[1]] };
         });
-        var visible = G.clipNear(verts, 0.02);
+        var visible = G.clipNear(verts);
         if (visible.length < 3) return;
 
         G.fanTriangles(visible).forEach(function (tri) {
@@ -2029,7 +2282,12 @@
           var invArea = 1 / area2;
 
           // Barycentric coordinates at an arbitrary sample, so the shader
-          // can difference its neighbours the way a GPU's 2x2 quad does.
+          // can difference its neighbours to find how fast the texture is
+          // moving. Real hardware computes one difference per 2x2 quad and
+          // shares it across all four lanes; this takes a forward
+          // difference per pixel, which is strictly more accurate — so the
+          // level-of-detail bands drawn here are a little smoother than a
+          // GPU's would be.
           function baryAt(px, py) {
             return [
               G.edge(s[1].x, s[1].y, s[2].x, s[2].y, px, py) * invArea,
@@ -2077,25 +2335,28 @@
             }
 
             var colour;
-            if (state.mip === "lod") {
+            if (mipMode === "lod") {
               var level = Math.max(0, Math.min(LOD_COLOURS.length - 1, Math.round(lod)));
               colour = LOD_COLOURS[level];
-            } else if (state.mip === "off") {
-              colour = state.filter === "nearest"
+            } else if (mipMode === "off") {
+              colour = filterMode === "nearest"
                 ? G.sampleNearest(levels[0], here[0], here[1])
                 : G.sampleBilinear(levels[0], here[0], here[1]);
-              taps += 1;
-            } else if (state.mip === "aniso") {
+              taps += 4;
+            } else if (mipMode === "aniso") {
               // Sample along the long axis, but choose the level from the
               // SHORT one — so a grazing floor stays sharp lengthwise.
-              var ratio = Math.min(8, Math.max(1, aniso.ratio));
-              var count = Math.max(1, Math.round(ratio));
-              var minorLod = Math.log2(Math.max(1e-6, aniso.minor));
-              var stepU = dudx * 0, stepV = dvdx * 0;
+              // The spec is N = min(ceil(major/minor), maxAniso) and
+              // lambda = log2(major / N). Choosing log2(minor) instead
+              // would be right only if N were the full ratio — with N
+              // clamped to 8 it samples the long axis below its Nyquist
+              // rate and aliases in exactly the band it claims to fix.
+              var count = Math.min(MAX_ANISO, Math.max(1, Math.ceil(aniso.ratio)));
+              var minorLod = Math.log2(Math.max(1e-6, aniso.major / count));
               // Step along whichever screen axis is the major one.
               var majorIsX = Math.hypot(dudx, dvdx) >= Math.hypot(dudy, dvdy);
-              stepU = (majorIsX ? dudx : dudy) / count;
-              stepV = (majorIsX ? dvdx : dvdy) / count;
+              var stepU = (majorIsX ? dudx : dudy) / count;
+              var stepV = (majorIsX ? dvdx : dvdy) / count;
               var acc = [0, 0, 0];
               for (var t = 0; t < count; t++) {
                 var offset = t - (count - 1) / 2;
@@ -2103,10 +2364,10 @@
                 acc[0] += sample[0]; acc[1] += sample[1]; acc[2] += sample[2];
               }
               colour = [acc[0] / count, acc[1] / count, acc[2] / count];
-              taps += count;
+              taps += count * 8;
             } else {
               colour = G.sampleTrilinear(levels, here[0], here[1], lod);
-              taps += 2;
+              taps += 8;
             }
 
             // A little distance fog, so the far plane does not just stop.
@@ -2123,32 +2384,39 @@
       ctx.strokeStyle = "rgba(150, 190, 205, 0.16)";
       ctx.lineWidth = 1;
 
-      updateTextureStats(centreLod, maxLod, taps);
+      updateTextureStats(centreLod, maxLod, taps, mipMode);
     }
 
-    function updateTextureStats(centre, maxLod, taps) {
+    function updateTextureStats(centre, maxLod, taps, mipMode) {
       var list = $("texture-stats");
       clear(list);
       stat(list, "LOD at centre", centre ? fmt(centre.lod, 2) : "—");
       stat(list, "Level used", centre ? "L" + G.clamp(Math.floor(centre.lod), 0, levels.length - 1) : "—");
       stat(list, "Aspect at centre", centre ? fmt(centre.aniso.ratio, 1) + ":1" : "—");
       stat(list, "Deepest LOD", fmt(maxLod, 1));
-      stat(list, "Texel fetches", group(taps));
+      // Texels, not taps: bilinear reads 4, trilinear 8, and each
+      // anisotropic sample is itself a trilinear one.
+      stat(list, "Texels read", group(taps));
 
       var explain;
       if (!state.perspective) {
-        explain = "Affine interpolation: texture coordinates stepped straight across the screen, as though the floor were flat-on. It is not, so the texture slides and folds along each triangle's diagonal — the unmistakable look of the first console generation. Now raise the sub-division slider: each smaller piece spans less depth, so each is less wrong. That is exactly the bargain the PlayStation's artists made, and the one Quake automated by dividing every sixteenth pixel.";
-      } else if (state.mip === "off") {
+        explain = "Filtering is off here, as it was on the hardware that did this: affine interpolation: texture coordinates stepped straight across the screen, as though the floor were flat-on. It is not, so the texture slides and folds along each triangle's diagonal — the unmistakable look of the first console generation. Now raise the sub-division slider: each smaller piece spans less depth, so each is less wrong. That is exactly the bargain the PlayStation's artists made, and the one Quake automated by dividing every sixteenth pixel.";
+      } else if (mipMode === "off") {
         explain = "Perspective is correct now, but the distance is a mess. Out there one pixel covers dozens of texels, and sampling just one of them means the picture changes violently for a sub-pixel movement of the camera. That is aliasing: detail finer than the sampling rate, folded back as noise.";
-      } else if (state.mip === "lod") {
+      } else if (mipMode === "lod") {
         explain = "Each colour is a mip level: green is the full-resolution texture, then blue, violet, amber and so on as the floor recedes. The bands are where the hardware crosses from one level to the next — and trilinear filtering blends across the boundary so you never see the seam.";
-      } else if (state.mip === "aniso") {
+      } else if (mipMode === "aniso") {
         explain = "Anisotropic filtering takes several samples along the direction the pixel is stretched, but picks the level from the direction it is not. The floor keeps its detail into the distance instead of being blurred to the worst of its two axes — at the cost of the tap count shown above.";
       } else {
         explain = "Trilinear mipmapping: pick the level where one texel is about one pixel, sample it, sample the next level down, and blend. The distance is stable now — and noticeably blurry, because a grazing floor is squashed in one direction and not the other, and one level has to serve both.";
       }
       $("texture-explain").textContent = explain;
-      $("texture-caption").textContent = "Rendered at " + RES_X + "×" + RES_Y + " on purpose, so you can see the texels.";
+      $("texture-caption").textContent = "Rendered at " + RES_X + "×" + RES_Y + " on purpose, so you can see the texels. " +
+        "The orange rules are painted into the texture along every seam: they are the high frequency, and the first thing to fall apart.";
+      canvas.setAttribute("aria-label",
+        "A checkered floor in perspective, " + (state.perspective ? "with perspective-correct interpolation" : "with affine interpolation, so the texture warps") +
+        ", " + ({ off: "no minification filter", tri: "trilinear mipmapping", aniso: "8-tap anisotropic filtering", lod: "the chosen mip level shown as colour" }[mipMode]) +
+        ", eye height " + fmt(state.height, 2) + ".");
     }
 
     $("tx-perspective").addEventListener("change", function (e) { state.perspective = e.target.checked; draw(); });
@@ -2164,6 +2432,19 @@
       $("tx-pitch-out").textContent = Math.round(state.pitch) + "°";
       draw();
     });
+    // Aliasing is a motion artefact: a still frame cannot show it.
+    function setCreep(on) {
+      state.creep = on;
+      if (creepTimer) { window.clearInterval(creepTimer); creepTimer = null; }
+      if (!on || reduceMotion) return;
+      creepTimer = window.setInterval(function () {
+        if (activePanel !== "texture") return;
+        creepPhase += 1;
+        draw();
+      }, 110);
+    }
+    $("tx-creep").addEventListener("change", function (e) { setCreep(e.target.checked); });
+
     $("tx-splits").addEventListener("input", function (e) {
       state.splits = parseInt(e.target.value, 10);
       $("tx-splits-out").textContent = state.splits + " × " + state.splits;
@@ -2343,6 +2624,11 @@
         pbr: "A microfacet model: the surface is a field of tiny mirrors whose distribution is described by roughness. Fresnel makes every material go reflective at grazing angles; the geometry term accounts for microfacets shadowing each other; and energy is conserved, so making something rough spreads the same light rather than losing it. Metalness is not a slider on reality — a material is metal or it is not — but as a blend it lets one shader cover both.",
       }[state.model];
       $("shading-explain").textContent = explain;
+      canvas.setAttribute("aria-label",
+        "A sphere of " + group(mesh.triangles.length) + " triangles rendered with " +
+        $("sh-model").options[$("sh-model").selectedIndex].text.split(" — ")[0] +
+        " shading, light at " + Math.round(state.light) + " degrees" +
+        (state.gamma ? "." : ", with the sRGB conversion switched off so the midtones are wrong."));
     }
 
     function bind(id, key, format) {
@@ -2360,7 +2646,36 @@
     bind("sh-rough", "rough", function (v) { return fmt(v, 2); });
     bind("sh-metal", "metal", function (v) { return fmt(v, 2); });
     bind("sh-light", "light", function (v) { return Math.round(v) + "°"; });
-    $("sh-model").addEventListener("change", function (e) { state.model = e.target.value; draw(); });
+    var previousModel = "gouraud";
+    var swapButton = $("sh-swap");
+    function setModel(value) {
+      if (value === state.model) return;
+      previousModel = state.model;
+      state.model = value;
+      $("sh-model").value = value;
+      if (swapButton) swapButton.title = "Flip back to " + previousModel;
+      draw();
+    }
+    $("sh-model").addEventListener("change", function (e) { setModel(e.target.value); });
+    if (swapButton) {
+      swapButton.addEventListener("click", function () { setModel(previousModel); });
+    }
+
+    // Keyboard equivalent for dragging the light.
+    canvas.addEventListener("keydown", function (event) {
+      var step = event.shiftKey ? 2 : 10;
+      if (event.key === "ArrowLeft") state.light -= step;
+      else if (event.key === "ArrowRight") state.light += step;
+      else if (event.key === "ArrowUp") state.light = G.clamp(state.light + step, -180, 180);
+      else if (event.key === "ArrowDown") state.light = G.clamp(state.light - step, -180, 180);
+      else return;
+      event.preventDefault();
+      if (state.light < -180) state.light += 360;
+      if (state.light > 180) state.light -= 360;
+      $("sh-light").value = String(state.light);
+      $("sh-light-out").textContent = Math.round(state.light) + "°";
+      draw();
+    });
     $("sh-gamma").addEventListener("change", function (e) { state.gamma = e.target.checked; draw(); });
 
     onDrag(canvas, SH_W, SH_H, {
@@ -2533,11 +2848,26 @@
         if (PROGRAM[j].mask === "else") continue;
         best++;
       }
+      // Quads whose four lanes disagree. Divergence within a quad is the
+      // expensive kind: it is what invalidates the texture derivatives the
+      // fragment stage takes by differencing neighbours.
+      var splitQuads = 0;
+      for (var q = 0; q < QUADS; q++) {
+        var first = null, mixed = false;
+        for (var lane = 0; lane < LANES; lane++) {
+          if (quadOf(lane) !== q) continue;
+          if (first === null) first = flags[lane];
+          else if (flags[lane] !== first) mixed = true;
+        }
+        if (mixed) splitQuads++;
+      }
+
       var list = $("parallel-stats");
       clear(list);
       stat(list, "Lanes taking branch", takers + " / 32");
       stat(list, "Issue slots used", String(slots), diverged);
-      stat(list, "If fully coherent", String(best));
+      stat(list, "If the warp agreed", String(best));
+      stat(list, "Split quads", splitQuads + " / " + QUADS, splitQuads > 0);
       stat(list, "Lane efficiency", Math.round((useful / (slots * LANES)) * 100) + "%", useful / (slots * LANES) < 0.8);
     }
 
@@ -2596,33 +2926,40 @@
     var BURST = 4;
     var warps = [];
     for (var i = 0; i < warpCount; i++) {
-      warps.push({ readyAt: i, remaining: BURST, timeline: new Uint8Array(cycles) });
+      warps.push({ readyAt: 0, remaining: BURST, timeline: new Uint8Array(cycles) });
     }
+    // A true round robin: the pointer advances only when a warp actually
+    // issues. Rotating it every cycle instead makes the warps resonate into
+    // synchronised sleep, and occupancy then FALLS as you add warps.
+    var next = 0;
     var idle = 0;
     for (var t = 0; t < cycles; t++) {
       var issued = -1;
-      for (var w = 0; w < warpCount; w++) {
-        var warp = warps[(t + w) % warpCount];
-        if (warp.readyAt <= t) { issued = warps.indexOf(warp); break; }
+      for (var probe = 0; probe < warpCount; probe++) {
+        var candidate = (next + probe) % warpCount;
+        if (warps[candidate].readyAt <= t) { issued = candidate; break; }
       }
       if (issued < 0) { idle++; continue; }
-      var chosen = warps[issued];
-      chosen.timeline[t] = 1;
-      chosen.remaining--;
-      if (chosen.remaining <= 0) {
-        chosen.remaining = BURST;
-        chosen.readyAt = t + 1 + latency;
+      var warp = warps[issued];
+      warp.timeline[t] = 1;
+      warp.remaining--;
+      if (warp.remaining <= 0) {
+        warp.remaining = BURST;
+        warp.readyAt = t + 1 + latency;
       }
-    }
-    for (var v = 0; v < warpCount; v++) {
-      var warpB = warps[v];
-      var sleepUntil = -1;
-      for (var c = 0; c < cycles; c++) {
-        if (warpB.timeline[c] === 1) sleepUntil = -1;
-      }
-      void sleepUntil;
+      next = (issued + 1) % warpCount;
     }
     return { warps: warps, idle: idle, cycles: cycles, utilisation: (cycles - idle) / cycles };
+  }
+
+  // How many resident warps this model needs before the arithmetic units
+  // stop idling. Derived by running the simulation rather than asserted
+  // from a formula, so the number and the picture can never disagree.
+  function warpsToSaturate(latency) {
+    for (var n = 1; n <= 10; n++) {
+      if (simulateLatency(n, latency, 240).utilisation > 0.995) return n;
+    }
+    return null;
   }
 
   function drawLatency() {
@@ -2636,6 +2973,7 @@
 
     var CYCLES = 120;
     var sim = simulateLatency(latencyState.warps, latencyState.latency, CYCLES);
+    var needed = warpsToSaturate(latencyState.latency);
     var padL = 78, padT = 34, padB = 58;
     var rowH = Math.min(22, (HH - padT - padB) / latencyState.warps);
     var cellW = (W - padL - 24) / CYCLES;
@@ -2679,9 +3017,18 @@
     clear(list);
     stat(list, "ALU utilisation", Math.round(sim.utilisation * 100) + "%", sim.utilisation < 0.9);
     stat(list, "Idle cycles", group(sim.idle), sim.idle > 0);
-    // Each warp computes for 4 cycles then sleeps for the latency, so
-    // covering the sleep takes about latency/4 other warps.
-    stat(list, "Warps to fill", String(Math.ceil((latencyState.latency + 1) / 4)));
+    var note = $("latency-note");
+    if (note) {
+      note.textContent = sim.utilisation > 0.99
+        ? "Saturated. Every cycle issues, and the memory latency has vanished behind other warps — the fetch still takes " +
+          latencyState.latency + " cycles, but nothing waits for it. From here the shader's REGISTER count is what limits you, because that is what caps how many warps fit at once."
+        : "The arithmetic units are idle " + Math.round((1 - sim.utilisation) * 100) + "% of the time. With a " +
+          latencyState.latency + "-cycle fetch and four instructions between fetches, this model needs " +
+          (needed === null ? "more than ten" : needed) + " resident warps before it stops idling; there are " +
+          latencyState.warps + ".";
+    }
+    stat(list, "Warps to saturate", needed === null ? "> 10" : String(needed),
+      needed === null || latencyState.warps < needed);
   }
 
   // ==========================================================
@@ -2692,7 +3039,8 @@
   function initRays() {
     var canvas = $("rays-canvas");
     if (!canvas) return;
-    var state = { rays: 28, bounces: 1, objects: 14, accel: "bvh", showBvh: false, eye: { x: 62, y: 244 }, light: { x: 520, y: 92 } };
+    var state = { rays: 28, bounces: 1, objects: 120, accel: "bvh", showBvh: false,
+      moving: "eye", eye: { x: 62, y: 244 }, light: { x: 520, y: 92 } };
 
     // The scene is generated, not hand-placed, so the object count can be
     // swept. Objects are clustered rather than sprayed evenly: a hierarchy
@@ -2714,20 +3062,21 @@
       var clusters = Math.max(3, Math.round(Math.sqrt(count)));
       var centres = [];
       for (var c = 0; c < clusters; c++) {
-        centres.push([120 + random() * (RY_W - 240), 70 + random() * (RY_H - 140)]);
+        // Keep the left of the frame clear: the eye starts there, and a
+        // fan of rays that dies in the first twenty pixels shows nothing.
+        centres.push([210 + random() * (RY_W - 280), 70 + random() * (RY_H - 140)]);
       }
-      var baseRadius = G.clamp(30 * Math.sqrt(14 / count), 3.5, 32);
-      var spread = 46 + 620 / Math.sqrt(count);
+      var baseRadius = G.clamp(26 * Math.sqrt(14 / count), 3, 30);
+      var spread = 44 + 560 / Math.sqrt(count);
       CIRCLES = [];
       for (var i = 0; i < count; i++) {
         var centre = centres[i % clusters];
         var angle = random() * Math.PI * 2;
         var distance = Math.sqrt(random()) * spread;
-        CIRCLES.push({
-          x: G.clamp(centre[0] + Math.cos(angle) * distance, 40, RY_W - 40),
-          y: G.clamp(centre[1] + Math.sin(angle) * distance, 40, RY_H - 40),
-          r: baseRadius * (0.5 + random() * 0.75),
-        });
+        var x = G.clamp(centre[0] + Math.cos(angle) * distance, 40, RY_W - 40);
+        var y = G.clamp(centre[1] + Math.sin(angle) * distance, 40, RY_H - 40);
+        if (x < 165) continue;                       // the corridor by the eye
+        CIRCLES.push({ x: x, y: y, r: baseRadius * (0.5 + random() * 0.75) });
       }
       BVH = buildBvh();
     }
@@ -2987,10 +3336,49 @@
       stat(list, "Tree depth", String(bvhDepth(BVH)));
       stat(list, "Speed-up", actual ? fmt(naive / actual, 2) + "×" : "—", actual >= naive);
 
+      canvas.setAttribute("aria-label",
+        "A top-down scene of " + state.objects + " objects with " + state.rays + " rays fanning out from the eye" +
+        (state.bounces ? " and bouncing " + state.bounces + " time(s)" : "") + ". " +
+        (state.accel === "bvh"
+          ? "With a bounding-volume hierarchy the rays needed " + group(counters.tests) + " object tests instead of " + group(naive) + "."
+          : "With no acceleration structure every ray was tested against every object: " + group(counters.tests) + " tests."));
       $("rays-explain").textContent = state.accel === "bvh"
         ? "A ray tests the root box, descends into the nearer child first, and abandons any subtree that starts further away than the closest hit it already has. Now drag the object count. At a dozen objects the hierarchy barely pays for itself — the box tests cost about what they save, and this is a real result, not a flaw in the diagram. Push it past fifty and the two curves separate for good. Watch the object-test count as you drag: it barely moves. Six objects or two hundred, each ray still tests about the same handful \u2014 the tree has made the cost of finding the nearest surface nearly independent of how much scenery there is. That property is the whole reason ray tracing is possible, and Turing put exactly this traversal — and the ray-triangle test at the bottom of it — into fixed-function silicon in 2018."
         : "Every ray is tested against every object in the scene, so the cost is the ray count times the object count and nothing can be skipped. Drag the object slider and watch the test count climb in a straight line, then switch the hierarchy back on and drag it again.";
     }
+
+    var picker = $("ry-picker");
+    if (picker) {
+      [["eye", "the eye"], ["light", "the sun"]].forEach(function (entry, index) {
+        var button = el("button", null, entry[1]);
+        button.type = "button";
+        button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        button.addEventListener("click", function () {
+          state.moving = entry[0];
+          Array.prototype.forEach.call(picker.querySelectorAll("button"), function (other, i) {
+            other.setAttribute("aria-pressed", i === index ? "true" : "false");
+          });
+          canvas.focus();
+          draw();
+        });
+        picker.appendChild(button);
+      });
+    }
+
+    canvas.addEventListener("keydown", function (event) {
+      var step = event.shiftKey ? 3 : 14;
+      var dx = 0, dy = 0;
+      if (event.key === "ArrowLeft") dx = -step;
+      else if (event.key === "ArrowRight") dx = step;
+      else if (event.key === "ArrowUp") dy = -step;
+      else if (event.key === "ArrowDown") dy = step;
+      else return;
+      event.preventDefault();
+      var target = state.moving === "eye" ? state.eye : state.light;
+      target.x = G.clamp(target.x + dx, 26, RY_W - 26);
+      target.y = G.clamp(target.y + dy, 26, RY_H - 26);
+      draw();
+    });
 
     var dragging = null;
     onDrag(canvas, RY_W, RY_H, {
@@ -3067,7 +3455,7 @@
     var half = noiseState.size / 2;
 
     var image = ctx.createImageData(RES_X, RES_Y);
-    var totalVariance = 0, counted = 0;
+    var totalVariance = 0, counted = 0, litPixels = 0;
 
     for (var py = 0; py < RES_Y; py++) {
       for (var px = 0; px < RES_X; px++) {
@@ -3103,8 +3491,17 @@
             if (!blocked) visible++;
           }
           var p = visible / samples;
-          totalVariance += (p * (1 - p)) / samples;
+          // The sample variance of a proportion is biased low by (1 - 1/N);
+          // Bessel's correction removes it. At N = 1 there is no estimate to
+          // be had at all — p is 0 or 1 and p(1-p) is 0 — so fall back to
+          // the a-priori worst case rather than reporting no noise.
+          if (samples > 1) {
+            totalVariance += (p * (1 - p) * samples) / ((samples - 1) * samples);
+          } else {
+            totalVariance += 0.25;
+          }
           counted++;
+          litPixels++;
           var distance = Math.hypot(wx - lightX, wy - lightY);
           value = p * (0.10 / (0.06 + distance * distance));
         }
@@ -3141,15 +3538,16 @@
     ctx.stroke();
 
     var rms = counted ? Math.sqrt(totalVariance / counted) : 0;
-    var atOne = counted ? Math.sqrt((totalVariance * noiseState.samples) / counted) : 0;
     var list = $("noise-stats");
     clear(list);
     stat(list, "Samples / pixel", String(noiseState.samples));
     stat(list, "Estimated noise", fmt(rms * 100, 2) + "%", rms > 0.08);
-    stat(list, "vs 1 sample", "1 / " + fmt(atOne / (rms || 1e-9), 1));
-    stat(list, "Rays this frame", group(RES_X * RES_Y * noiseState.samples));
+    // Four times the samples for half the noise: the exchange rate that
+    // makes real-time path tracing impossible without a denoiser.
+    stat(list, "For half this noise", group(noiseState.samples * 4) + " / px");
+    stat(list, "Shadow rays cast", group(litPixels * noiseState.samples));
     $("noise-caption").textContent = noiseState.samples >= 64
-      ? "Converged, and expensive: " + group(RES_X * RES_Y * noiseState.samples) + " shadow rays for one small picture."
+      ? "Converged, and expensive: " + group(litPixels * noiseState.samples) + " shadow rays for one small picture."
       : "A real Monte Carlo estimate. The grain is not a rendering error — it is the variance of an average taken from " + noiseState.samples + " random sample(s).";
   }
 
@@ -3191,13 +3589,16 @@
     check("mip pyramid", document.querySelectorAll(".mip-level").length >= 4);
     check("sources", document.querySelectorAll("#source-list li").length === H.sources.length);
     check("corner options", document.querySelectorAll("#tf-corner option").length === 8);
+    check("coda grid", document.querySelectorAll("#coda-grid .stage-row-bar").length === H.stageKeys.length * 3);
+    check("panel nav", document.querySelectorAll(".panel-next button").length === 10);
+    check("experiment prompts", document.querySelectorAll(".section-tries").length === 9);
     check("hero draws", canvasHasInk("hero-canvas"));
 
     var byTab = {
       pipeline: ["pipeline-canvas"],
       transform: ["transform-canvas"],
       raster: ["raster-canvas"],
-      depth: ["depth-canvas", "depth-buffer-canvas", "precision-canvas"],
+      depth: ["depth-canvas", "depth-painter-canvas", "precision-canvas"],
       texture: ["texture-canvas"],
       shading: ["shading-canvas"],
       parallel: ["warp-canvas", "latency-canvas"],
@@ -3226,6 +3627,7 @@
     var sweeps = [
       { tab: "raster", id: "rs-res" }, { tab: "raster", id: "rs-mode" },
       { tab: "depth", id: "dp-near" }, { tab: "depth", id: "dp-bits" }, { tab: "depth", id: "dp-scene" },
+      { tab: "texture", id: "tx-perspective" }, { tab: "transform", id: "tf-dolly" },
       { tab: "texture", id: "tx-splits" }, { tab: "texture", id: "tx-mip" },
       { tab: "shading", id: "sh-tess" }, { tab: "shading", id: "sh-model" },
       { tab: "transform", id: "tf-distance" }, { tab: "transform", id: "tf-projection" },
@@ -3235,6 +3637,15 @@
       selectTab(sweep.tab);
       var control = $(sweep.id);
       if (!control) { failures.push("missing control " + sweep.id); return; }
+      if (control.type === "checkbox") {
+        try {
+          control.checked = !control.checked;
+          control.dispatchEvent(new Event("change", { bubbles: true }));
+          control.checked = !control.checked;
+          control.dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (error) { failures.push(sweep.id + " threw: " + error.message); }
+        return;
+      }
       var original = control.value;
       var values = control.tagName === "SELECT"
         ? Array.prototype.map.call(control.options, function (o) { return o.value; })
@@ -3251,6 +3662,8 @@
       control.dispatchEvent(new Event(control.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
     });
 
+    selectTab("coda");
+    check("coda renders", document.querySelectorAll("#coda-grid .coda-head").length === 4);
     selectTab("lineage");
     document.documentElement.dataset.selftest = failures.length ? "fail: " + failures.join("; ") : "pass";
   }
@@ -3270,6 +3683,7 @@
     initShading();
     initParallel();
     initRays();
+    initCoda();
     initSources();
 
     var resizeTimer = null;
@@ -3278,7 +3692,16 @@
       resizeTimer = window.setTimeout(drawActive, 140);
     });
 
-    selectTab("lineage");
+    addPanelNav();
+
+    // Arriving at #depth should open the depth section, and the browser's
+    // back button should move between sections rather than off the page.
+    var initial = (window.location.hash || "").replace(/^#/, "");
+    selectTab(TAB_ORDER.indexOf(initial) >= 0 ? initial : "lineage", false, { silent: !initial });
+    window.addEventListener("hashchange", function () {
+      var name = (window.location.hash || "").replace(/^#/, "");
+      if (TAB_ORDER.indexOf(name) >= 0 && name !== activePanel) selectTab(name, false, { silent: true });
+    });
     document.documentElement.dataset.appReady = "true";
 
     if (/[?&]selftest=1\b/.test(window.location.search)) {

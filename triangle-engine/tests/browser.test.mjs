@@ -206,7 +206,8 @@ try {
 
   // --- 01 the timeline actually moves through the history ---
   await openTab("lineage");
-  await drive("timeline-range", 13);
+  const clickStop = (index) => evaluate(`document.querySelectorAll("#timeline-track button")[${index}].click()`);
+  await clickStop(13);
   const lastEra = await evaluate(`({
     heading: document.getElementById("timeline-selection").textContent,
     stages: [...document.querySelectorAll(".stage-row-bar")].map((bar) => bar.className.replace("stage-row-bar ", "")),
@@ -215,7 +216,7 @@ try {
     assert.match(lastEra.heading, /2018/);
     assert.equal(lastEra.stages.at(-1), "state-fixed", "ray tracing must be in silicon at the last stop");
   });
-  await drive("timeline-range", 2);
+  await clickStop(2);
   const utah = await evaluate(`({
     heading: document.getElementById("timeline-selection").textContent,
     stages: [...document.querySelectorAll(".stage-row-bar")].map((bar) => bar.className.replace("stage-row-bar ", "")),
@@ -304,6 +305,12 @@ try {
 
   // --- 05 depth: the format decides whether the sign survives ---
   await openTab("depth");
+  const bothShown = await evaluate(`(() => {
+    const a = document.getElementById("depth-painter-canvas").getBoundingClientRect();
+    const b = document.getElementById("depth-canvas").getBoundingClientRect();
+    return a.width > 40 && b.width > 40;
+  })()`);
+  check("both hidden-surface algorithms are visible at once", () => assert.equal(bothShown, true));
   await drive("dp-scene", "decal", "change");
   await drive("dp-near", 0.1);
   await drive("dp-bits", "16", "change");
@@ -335,8 +342,9 @@ try {
   const aniso = await statsOf("texture-stats");
   await drive("tx-mip", "tri", "change");
   const trilinear = await statsOf("texture-stats");
-  check("anisotropic filtering costs more texel fetches than trilinear", () => {
-    assert.ok(Number(aniso["Texel fetches"].replace(/,/g, "")) > Number(trilinear["Texel fetches"].replace(/,/g, "")));
+  check("anisotropic filtering reads more texels than trilinear", () => {
+    assert.ok(Number(aniso["Texels read"].replace(/,/g, "")) > Number(trilinear["Texels read"].replace(/,/g, "")),
+      `aniso ${aniso["Texels read"]} vs trilinear ${trilinear["Texels read"]}`);
   });
 
   // --- 08 parallel: divergence costs both sides ---
@@ -351,6 +359,18 @@ try {
     assert.ok(parseInt(diverged["Lane efficiency"], 10) < 100);
     assert.equal(coherent["Lane efficiency"], "100%");
   });
+  await drive("pl-coherence", 50);
+  const quadOn = await statsOf("parallel-stats");
+  await evaluate(`(() => { const c = document.getElementById("pl-quads"); c.checked = false; c.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+  const quadOff = await statsOf("parallel-stats");
+  check("quad-aligned branching splits fewer quads than scattered branching", () => {
+    const on = parseInt(quadOn["Split quads"], 10);
+    const off = parseInt(quadOff["Split quads"], 10);
+    assert.equal(on, 0, `quad-aligned branching split ${on} quads`);
+    assert.ok(off > 0, "scattered branching must split quads");
+  });
+  await evaluate(`(() => { const c = document.getElementById("pl-quads"); c.checked = true; c.dispatchEvent(new Event("change", { bubbles: true })); })()`);
+
   await drive("lt-occupancy", 1);
   const starved = await statsOf("latency-stats");
   await drive("lt-occupancy", 10);
@@ -358,10 +378,37 @@ try {
   check("more resident warps hide more memory latency", () => {
     assert.ok(parseInt(fed["ALU utilisation"], 10) > parseInt(starved["ALU utilisation"], 10),
       `${fed["ALU utilisation"]} vs ${starved["ALU utilisation"]}`);
+    // A short latency must be fully hidden; a long one need not be, and
+    // the panel says how many warps it would take.
+    assert.ok(parseInt(fed["ALU utilisation"], 10) >= 85, fed["ALU utilisation"]);
+  });
+  await drive("lt-latency", 4);
+  await drive("lt-occupancy", 10);
+  const easy = await statsOf("latency-stats");
+  check("a short latency is hidden completely", () => {
+    assert.equal(easy["ALU utilisation"], "100%");
+    assert.ok(parseInt(easy["Warps to saturate"], 10) <= 10, easy["Warps to saturate"]);
+  });
+  await drive("lt-latency", 14);
+
+  const utilisation = [];
+  for (let warps = 1; warps <= 10; warps++) {
+    await drive("lt-occupancy", warps);
+    utilisation.push(parseInt((await statsOf("latency-stats"))["ALU utilisation"], 10));
+  }
+  check("adding a warp never makes the machine slower", () => {
+    for (let i = 1; i < utilisation.length; i++) {
+      assert.ok(utilisation[i] >= utilisation[i - 1],
+        `utilisation fell from ${utilisation[i - 1]}% to ${utilisation[i]}% going from ${i} to ${i + 1} warps: ${utilisation.join(",")}`);
+    }
   });
 
   // --- 09 rays: the hierarchy has to actually pay off ---
   await openTab("rays");
+  const defaultSpeedup = parseFloat((await statsOf("rays-stats"))["Speed-up"]);
+  check("the rays panel opens on a scene where the hierarchy plainly wins", () => {
+    assert.ok(defaultSpeedup > 3, `the default scene shows only ${defaultSpeedup}x`);
+  });
   await drive("ry-objects", 12);
   const few = await statsOf("rays-stats");
   await drive("ry-objects", 220);
@@ -389,13 +436,37 @@ try {
   const noisy = await statsOf("noise-stats");
   await drive("nz-samples", 64);
   const clean = await statsOf("noise-stats");
-  check("sixteen times the samples halves the noise, and no better", () => {
+  check("sixteen times the samples halves the noise twice over, and no better", () => {
     const a = parseFloat(noisy["Estimated noise"]);
     const b = parseFloat(clean["Estimated noise"]);
     const ratio = a / b;
     // sqrt(64/4) = 4.
     assert.ok(Math.abs(ratio - 4) < 0.6, `noise fell by ${ratio.toFixed(2)}x, expected about 4x`);
   });
+  await drive("nz-samples", 1);
+  const single = await statsOf("noise-stats");
+  check("a single sample reports the noise it actually has", () => {
+    // p(1-p) is identically zero at one sample, so a naive estimator reads
+    // 0.00% for the grainiest possible picture.
+    assert.ok(parseFloat(single["Estimated noise"]) > 20,
+      `one sample reported ${single["Estimated noise"]} noise`);
+  });
+
+  await openTab("coda");
+  const coda = await evaluate(`({
+    bars: document.querySelectorAll("#coda-grid .stage-row-bar").length,
+    heads: document.querySelectorAll("#coda-grid .coda-head").length,
+    hash: window.location.hash,
+  })`);
+  check("the closing section redraws the stage map for three eras", () => {
+    assert.equal(coda.bars, 21);
+    assert.equal(coda.heads, 4);
+  });
+  check("each section is linkable", () => assert.equal(coda.hash, "#coda"));
+
+  await navigate(`${base}#depth`);
+  const deepLink = await evaluate(`document.querySelector('[aria-selected="true"]').dataset.tab`);
+  check("a section link opens that section", () => assert.equal(deepLink, "depth"));
 
   check("no console errors anywhere in the run", () => assert.deepEqual([...new Set(consoleErrors)], []));
   check("no uncaught exceptions", () => assert.deepEqual([...new Set(pageErrors)], []));

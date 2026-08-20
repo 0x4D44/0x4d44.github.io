@@ -218,27 +218,35 @@ test("perspective-correct interpolation is exact when w is constant", () => {
   close(affine, correct, 1e-12);
 });
 
-test("near-plane clipping splits a triangle that straddles the eye", () => {
-  const v = (x, y, z, w) => ({ clip: [x, y, z, w], attrs: [x] });
-  // Two vertices in front, one behind: the clipper must return a quad.
-  const poly = G.clipNear([v(-1, -1, 0, 2), v(1, -1, 0, 2), v(0, 1, 0, -1)]);
-  assert.equal(poly.length, 4, "one vertex behind the near plane makes a quad");
-  for (const p of poly) assert.ok(p.clip[3] > 0, "no clipped vertex may have w <= 0");
+test("clipping a triangle that crosses the near plane produces a quad", () => {
+  const proj = G.perspective(Math.PI / 2, 1, 0.5, 100);
+  const v = (x, y, z) => ({ clip: G.apply(proj, [x, y, z, 1]), attrs: [x] });
+  // Two corners beyond the near plane, one in front of it: the clipper
+  // cuts the corner off and hands back four vertices.
+  const poly = G.clipNear([v(-1, -1, -3), v(1, -1, -3), v(0, 1, -0.2)]);
+  assert.equal(poly.length, 4, "one vertex inside the near plane makes a quad");
+  for (const p of poly) {
+    assert.ok(p.clip[3] > 0, "no clipped vertex may have w <= 0");
+    assert.ok(p.clip[2] + p.clip[3] >= -1e-9, "no clipped vertex may be inside the near plane");
+  }
   assert.equal(G.fanTriangles(poly).length, 2);
-  // Entirely behind: nothing survives.
-  assert.equal(G.clipNear([v(0, 0, 0, -1), v(1, 0, 0, -2), v(0, 1, 0, -3)]).length, 0);
-  // Entirely in front: untouched.
-  assert.equal(G.clipNear([v(0, 0, 0, 1), v(1, 0, 0, 2), v(0, 1, 0, 3)]).length, 3);
 });
 
 test("clipping interpolates attributes along with position", () => {
-  const a = { clip: [0, 0, 0, 4], attrs: [0, 10] };
-  const b = { clip: [0, 0, 0, -4], attrs: [1, 20] };
-  const poly = G.clipNear([a, b, { clip: [1, 1, 0, 4], attrs: [0, 10] }], 0);
-  const cut = poly.find((p) => Math.abs(p.clip[3]) < 1e-9);
+  const proj = G.perspective(Math.PI / 2, 1, 1, 100);
+  const make = (z, attrs) => ({ clip: G.apply(proj, [0, 0, z, 1]), attrs: attrs });
+  // A degenerate-but-legal polygon whose first edge crosses z = -1 exactly
+  // halfway in clip space, so the interpolated attribute is checkable.
+  const a = make(-3, [0, 10]);
+  const b = make(-0.5, [1, 20]);
+  const poly = G.clipNear([a, b, make(-3, [0, 10])]);
+  const cut = poly.find((p) => Math.abs(p.clip[2] + p.clip[3]) < 1e-9);
   assert.ok(cut, "there must be a vertex exactly on the near plane");
-  close(cut.attrs[0], 0.5, 1e-12);
-  close(cut.attrs[1], 15, 1e-12);
+  // The near plane sits at z = -1, which is (3 - 1) / (3 - 0.5) = 0.8 of the
+  // way along the segment in EYE space — and clip space is affine in eye
+  // space, so the same fraction applies to the attributes.
+  close(cut.attrs[0], 0.8, 1e-9);
+  close(cut.attrs[1], 10 + 0.8 * 10, 1e-9);
 });
 
 test("the mip chain halves, and its overhead approaches a third from below", () => {
@@ -400,4 +408,318 @@ test("MSAA reports partial coverage on an edge and full coverage inside", () => 
   const values = [...coverage.values()];
   assert.ok(values.some((c) => c === 1), "interior pixels are fully covered");
   assert.ok(values.some((c) => c > 0 && c < 1), "edge pixels are partially covered");
+});
+
+// ============================================================
+// Second pass: properties the adversarial review found unguarded.
+// ============================================================
+
+// The bug this catches: unitCube was wound the opposite way to uvSphere,
+// so the transform instrument rendered exactly the three faces you cannot
+// see. A face-count assertion does not notice; this does.
+test("both mesh generators agree with the culling convention", () => {
+  const cube = G.unitCube();
+  const model = G.multiply(G.rotationY(0.61), G.rotationX(-0.35));
+  const eye = [0, 0, 5];
+  const mvp = G.multiplyAll([
+    G.perspective(Math.PI / 3, 1, 0.5, 40),
+    G.lookAt(eye, [0, 0, 0], [0, 1, 0]),
+    model,
+  ]);
+  const project = (p) => {
+    const clip = G.apply(mvp, p);
+    const s = G.viewport(G.perspectiveDivide(clip), 200, 200);
+    return { x: s[0], y: s[1] };
+  };
+
+  // The outward normal is taken from the GEOMETRY — each face of the unit
+  // cube is a plane where one coordinate is constant — so this test cannot
+  // be fooled by the winding it is checking.
+  const outward = (face) => {
+    const points = face.map((i) => cube.positions[i]);
+    for (let axis = 0; axis < 3; axis++) {
+      const value = points[0][axis];
+      if (points.every((p) => p[axis] === value)) {
+        const n = [0, 0, 0];
+        n[axis] = value;
+        return n;
+      }
+    }
+    throw new Error("face is not axis-aligned");
+  };
+
+  for (const face of cube.faces) {
+    const normal = G.normalize(G.applyDirection(model, outward(face)));
+    const centre = G.scale(
+      face.map((i) => G.applyDirection(model, cube.positions[i])).reduce(G.add, [0, 0, 0]), 1 / 4);
+    const facesCamera = G.dot(normal, G.normalize(G.sub(eye, centre))) > 0;
+    const screen = face.map((i) => project(cube.positions[i]));
+    let drawn = 0;
+    const opts = { width: 200, height: 200, cull: "back" };
+    G.rasterTriangle(screen[0], screen[1], screen[2], opts, () => { drawn++; });
+    G.rasterTriangle(screen[0], screen[2], screen[3], opts, () => { drawn++; });
+    assert.equal(drawn > 0, facesCamera,
+      `a cube face pointing ${facesCamera ? "at" : "away from"} the camera was ${drawn > 0 ? "drawn" : "culled"}`);
+  }
+
+  // The sphere must use the same convention, or one of the two instruments
+  // is inside out.
+  const sphere = G.uvSphere(8, 14);
+  const sphereMvp = G.multiply(G.perspective(Math.PI / 4, 1, 0.5, 20), G.lookAt([0, 0, 3.4], [0, 0, 0], [0, 1, 0]));
+  let farDrawn = 0;
+  for (const [a, b, c] of sphere.triangles) {
+    const centre = G.scale(G.add(G.add(sphere.positions[a], sphere.positions[b]), sphere.positions[c]), 1 / 3);
+    if (centre[2] > -0.35) continue;                     // clearly on the far side
+    const screen = [a, b, c].map((i) => {
+      const s = G.viewport(G.perspectiveDivide(G.apply(sphereMvp, sphere.positions[i])), 200, 200);
+      return { x: s[0], y: s[1] };
+    });
+    const result = G.rasterTriangle(screen[0], screen[1], screen[2], { width: 200, height: 200, cull: "back" }, () => {});
+    if (!result.culled) farDrawn++;
+  }
+  assert.equal(farDrawn, 0, "the far side of the sphere must be entirely culled");
+});
+
+// The bug this catches: rasterTriangle normalised the winding internally
+// and then returned the NEGATED area, so no caller could ever see a
+// back-facing triangle unless culling was switched on.
+test("the reported signed area is the caller's, not the internal one", () => {
+  const a = { x: 4, y: 4 }, b = { x: 30, y: 6 }, c = { x: 8, y: 28 };
+  const expected = G.edge(a.x, a.y, b.x, b.y, c.x, c.y) * G.SUB * G.SUB;
+  const forward = G.rasterTriangle(a, b, c, { width: 40, height: 40 }, () => {});
+  const reversed = G.rasterTriangle(a, c, b, { width: 40, height: 40 }, () => {});
+  close(forward.area2, expected, 1e-6);
+  close(reversed.area2, -expected, 1e-6);
+  assert.equal(forward.frontFacing, true);
+  assert.equal(reversed.frontFacing, false);
+  // And the culled path must agree with the rasterized one.
+  const culled = G.rasterTriangle(a, c, b, { width: 40, height: 40, cull: "back" }, () => {});
+  assert.equal(culled.culled, true);
+  close(culled.area2, -expected, 1e-6);
+});
+
+// The bug this catches: clipping w >= 0 is the EYE plane, not the near
+// plane, so geometry between the eye and the near plane survived with an
+// NDC z far below -1.
+test("clipping happens at the near plane, not at the eye", () => {
+  const near = 0.5, far = 100;
+  const proj = G.perspective(Math.PI / 2, 1, near, far);
+  const vertex = (x, y, z) => ({ clip: G.apply(proj, [x, y, z, 1]), attrs: [] });
+
+  // All three in front of the eye, but two nearer than the near plane.
+  const straddling = [vertex(-0.4, -0.4, -2), vertex(0.4, -0.4, -0.2), vertex(0, 0.4, -0.1)];
+  const clipped = G.clipNear(straddling);
+  assert.ok(clipped.length >= 3, "something must survive");
+  for (const v of clipped) {
+    const ndc = G.perspectiveDivide(v.clip);
+    assert.ok(ndc[2] >= -1 - 1e-9, `a clipped vertex has NDC z = ${ndc[2]}, outside the clip volume`);
+    assert.ok(v.clip[3] > 0, "no surviving vertex may have w <= 0");
+  }
+  // Entirely nearer than the near plane: nothing survives.
+  assert.equal(G.clipNear([vertex(0, 0, -0.2), vertex(0.1, 0, -0.3), vertex(0, 0.1, -0.4)]).length, 0);
+  // Entirely beyond it: untouched.
+  assert.equal(G.clipNear([vertex(0, 0, -2), vertex(1, 0, -3), vertex(0, 1, -4)]).length, 3);
+  // Behind the eye is behind the near plane too.
+  assert.equal(G.clipNear([vertex(0, 0, 1), vertex(1, 0, 2), vertex(0, 1, 3)]).length, 0);
+  // The cut lands exactly on the plane z = -w.
+  const cut = G.clipNear([vertex(0, 0, -2), vertex(0, 0, -0.1), vertex(1, 0, -2)])
+    .find((v) => Math.abs(v.clip[2] + v.clip[3]) < 1e-9);
+  assert.ok(cut, "there must be a vertex exactly on z = -w");
+  close(G.perspectiveDivide(cut.clip)[2], -1, 1e-9);
+});
+
+test("normalMatrix survives a non-uniform scale where a plain transform does not", () => {
+  const m = G.multiply(G.scaling(3, 1, 0.5), G.rotationY(0.4));
+  const n = G.normalMatrix(m);
+  // A surface with a normal and a tangent perpendicular to it.
+  const normal = G.normalize([1, 1, 0]);
+  const tangent = G.normalize([1, -1, 0]);
+  close(G.dot(normal, tangent), 0, 1e-12);
+  const movedTangent = G.applyDirection(m, tangent);
+  // The naive transform breaks perpendicularity...
+  assert.ok(Math.abs(G.dot(G.normalize(G.applyDirection(m, normal)), G.normalize(movedTangent))) > 0.1);
+  // ...and the inverse-transpose restores it.
+  close(G.dot(G.normalize(G.applyDirection(n, normal)), G.normalize(movedTangent)), 0, 1e-9);
+  // For a rotation alone it is the same matrix.
+  const r = G.rotationY(0.7);
+  const rn = G.normalMatrix(r);
+  for (let i = 0; i < 16; i++) close(rn[i], r[i], 1e-12);
+});
+
+test("the orthographic matrix maps its box to the unit cube and leaves w alone", () => {
+  const m = G.orthographic(-2, 2, -1, 1, 1, 11);
+  closeVec(G.apply(m, [2, 1, -1, 1]), [1, 1, -1, 1], 1e-12);
+  closeVec(G.apply(m, [-2, -1, -11, 1]), [-1, -1, 1, 1], 1e-12);
+  // w is untouched, which is exactly why nothing shrinks with distance.
+  close(G.apply(m, [0, 0, -6, 1])[3], 1);
+  const near = G.perspectiveDivide(G.apply(m, [1, 0, -1, 1]));
+  const far = G.perspectiveDivide(G.apply(m, [1, 0, -11, 1]));
+  close(near[0], far[0], 1e-12);
+});
+
+test("the viewport transform flips y and passes depth through untouched", () => {
+  closeVec(G.viewport([-1, 1, -1], 800, 600), [0, 0, -1], 1e-12);
+  closeVec(G.viewport([1, -1, 1], 800, 600), [800, 600, 1], 1e-12);
+  closeVec(G.viewport([0, 0, 0.25], 800, 600), [400, 300, 0.25], 1e-12);
+});
+
+test("lookAt builds an orthonormal basis for an off-axis camera", () => {
+  const eye = [3, 4, -2];
+  const view = G.lookAt(eye, [-1, 0.5, 1], [0.1, 1, 0.2]);
+  closeVec(G.apply(view, eye.concat([1])), [0, 0, 0, 1], 1e-9);
+  const right = G.applyDirection(view, [1, 0, 0]);
+  const up = G.applyDirection(view, [0, 1, 0]);
+  const back = G.applyDirection(view, [0, 0, 1]);
+  for (const axis of [right, up, back]) close(G.length(axis), 1, 1e-12);
+  close(G.dot(right, up), 0, 1e-12);
+  close(G.dot(right, back), 0, 1e-12);
+  // The target is straight ahead, down -z.
+  const target = G.apply(view, [-1, 0.5, 1, 1]);
+  close(target[0], 0, 1e-9);
+  close(target[1], 0, 1e-9);
+  assert.ok(target[2] < 0);
+});
+
+// The claim the whole depth pipeline rests on.
+test("NDC depth really is affine in screen space", () => {
+  const mvp = G.multiplyAll([
+    G.perspective(Math.PI / 3, 1.4, 0.4, 60),
+    G.lookAt([0.6, 1.2, 3], [0, 0, 0], [0, 1, 0]),
+    G.rotationY(0.5),
+  ]);
+  // A steeply slanted triangle, so the depth range across it is large.
+  const object = [[-1, -0.6, 2.4], [1.3, -0.4, -1.8], [0.1, 1.1, 0.6]];
+  const clip = object.map((p) => G.apply(mvp, p));
+  const screen = clip.map((c) => {
+    const s = G.viewport(G.perspectiveDivide(c), 300, 220);
+    return { x: s[0], y: s[1], z: s[2], invW: 1 / c[3] };
+  });
+
+  let worst = 0, samples = 0;
+  G.rasterTriangle(screen[0], screen[1], screen[2], { width: 300, height: 220 }, (x, y, bary) => {
+    // Interpolated the cheap way: barycentric, no division by w.
+    const affine = G.interpolateDepth(bary, screen[0].z, screen[1].z, screen[2].z);
+    // The truth: recover the 3D point perspective-correctly, then project it.
+    const point = [0, 1, 2].map((axis) =>
+      G.interpolatePerspective(bary, object[0][axis], object[1][axis], object[2][axis],
+        screen[0].invW, screen[1].invW, screen[2].invW));
+    const exact = G.perspectiveDivide(G.apply(mvp, point))[2];
+    worst = Math.max(worst, Math.abs(affine - exact));
+    samples++;
+  });
+  assert.ok(samples > 500, `only ${samples} samples`);
+  assert.ok(worst < 1e-9, `depth drifted by ${worst} — it is not affine in screen space after all`);
+});
+
+// The watertightness claim, as a property rather than one hand-picked quad.
+test("adjacent triangles tile watertightly for arbitrary quads and both windings", () => {
+  const W = 34, H = 34;
+  let seed = 12345;
+  const random = () => {
+    seed ^= seed << 13; seed >>>= 0;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5; seed >>>= 0;
+    return seed / 4294967296;
+  };
+  for (let trial = 0; trial < 220; trial++) {
+    // A convex quad: a centre plus four points, one per quadrant.
+    const cx = 8 + random() * 18, cy = 8 + random() * 18;
+    const radius = () => 4 + random() * 7;
+    const corners = [0, 1, 2, 3].map((i) => {
+      const angle = (i * Math.PI) / 2 + random() * 0.9 - 0.45;
+      const r = radius();
+      return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+    });
+    const [a, b, c, d] = trial % 2 ? corners : corners.slice().reverse();
+    const counts = new Int32Array(W * H);
+    const opts = { width: W, height: H };
+    G.rasterTriangle(a, b, c, opts, (x, y) => { counts[y * W + x]++; });
+    G.rasterTriangle(a, c, d, opts, (x, y) => { counts[y * W + x]++; });
+    for (let i = 0; i < counts.length; i++) {
+      assert.ok(counts[i] <= 1, `trial ${trial}: a pixel on the shared edge was covered ${counts[i]} times`);
+    }
+    assert.ok(counts.reduce((s, n) => s + n, 0) > 20, `trial ${trial}: the quad vanished`);
+  }
+});
+
+test("the fill rule assigns each shared edge to exactly one of its two sides", () => {
+  // isTopLeft must disagree with itself when the edge is walked backwards:
+  // that is what makes the rule a partition rather than a coin toss.
+  const cases = [[0, 0, 5, 0], [0, 0, 0, 5], [3, 1, 7, 9], [7, 9, 3, 1], [2, 6, 9, 2]];
+  for (const [ax, ay, bx, by] of cases) {
+    assert.notEqual(G.isTopLeft(ax, ay, bx, by), G.isTopLeft(bx, by, ax, ay),
+      `edge ${ax},${ay} -> ${bx},${by} is owned by both sides or neither`);
+  }
+});
+
+test("Phong refuses to light a surface the light cannot reach", () => {
+  const n = [0, 0, 1];
+  // A light below the horizon: the reflected vector can still swing round
+  // to meet the viewer, which is exactly the trap.
+  const below = G.normalize([0.99, 0, -0.15]);
+  const view = G.normalize([-0.9, 0, 0.44]);
+  assert.ok(G.dot(n, below) < 0, "the test light must actually be below the horizon");
+  close(G.phongSpecular(n, below, view, 16), 0);
+  close(G.blinnSpecular(n, below, view, 16), 0);
+  // And it still lights one the light does reach.
+  assert.ok(G.phongSpecular(n, G.normalize([0.3, 0, 0.95]), [0, 0, 1], 16) > 0);
+});
+
+test("the microfacet terms behave at their limits", () => {
+  // Roughness 0 is a delta function no float can hold; it must not be NaN.
+  for (const roughness of [0, 1e-9, 0.5, 1]) {
+    for (const nDotH of [0, 0.5, 1]) {
+      const d = G.distributionGGX(nDotH, roughness);
+      assert.ok(isFinite(d) && d >= 0, `D(${nDotH}, ${roughness}) = ${d}`);
+    }
+  }
+  for (const roughness of [0, 0.5, 1]) {
+    const g = G.geometrySmith(0.5, 0.5, roughness);
+    assert.ok(isFinite(g) && g >= 0 && g <= 1.001, `G = ${g} at roughness ${roughness}`);
+  }
+  for (const metallic of [0, 1]) {
+    for (const roughness of [0.02, 1]) {
+      const out = G.shadePbr([0, 0, 1], [0, 0, 1], G.normalize([0.4, 0, 0.9]), [0.8, 0.6, 0.2], metallic, roughness, [1, 1, 1]);
+      for (const channel of out) assert.ok(isFinite(channel) && channel >= 0, `${channel} at metal=${metallic} rough=${roughness}`);
+    }
+  }
+});
+
+test("trilinear sampling collapses to bilinear at an integer level", () => {
+  const levels = G.buildMipChain(G.checkerTexture(32, [1, 0.2, 0.4], [0, 0.6, 0.9], 4));
+  for (const level of [0, 1, 2]) {
+    closeVec(G.sampleTrilinear(levels, 0.31, 0.62, level), G.sampleBilinear(levels[level], 0.31, 0.62), 1e-12);
+  }
+  // Halfway between two levels is the average of the two.
+  const a = G.sampleBilinear(levels[1], 0.31, 0.62);
+  const b = G.sampleBilinear(levels[2], 0.31, 0.62);
+  closeVec(G.sampleTrilinear(levels, 0.31, 0.62, 1.5), G.mix(a, b, 0.5), 1e-12);
+  // Beyond the end of the chain it clamps rather than reading off it.
+  closeVec(G.sampleTrilinear(levels, 0.31, 0.62, 99), G.sampleBilinear(levels[levels.length - 1], 0.31, 0.62), 1e-12);
+});
+
+test("the LOD formula uses the longer axis whichever way it is skewed", () => {
+  const size = 64;
+  // Cross terms: the x step moves in v, the y step moves in u. A
+  // transposed-derivative bug passes every axis-aligned case and fails here.
+  close(G.computeLod(0, 4 / size, 4 / size, 0, size), 2, 1e-12);
+  close(G.computeLod(0, 8 / size, 1 / size, 0, size), 3, 1e-12);
+  // A diagonal step of 4 texels in each of u and v is longer than 4.
+  close(G.computeLod(4 / size, 4 / size, 0, 1 / size, size), Math.log2(Math.sqrt(32)), 1e-12);
+  const aniso = G.computeAnisotropy(0, 8 / size, 1 / size, 0, size);
+  close(aniso.major, 8, 1e-12);
+  close(aniso.minor, 1, 1e-12);
+  close(aniso.ratio, 8, 1e-12);
+});
+
+test("depthResolution matches the quantisation the instruments actually apply", () => {
+  const near = 0.5, far = 200, bits = 16;
+  const codes = Math.pow(2, bits) - 1;
+  const z = 12;
+  const step = G.depthResolution(z, near, far, bits);
+  // Two surfaces one resolution step apart must land on different codes.
+  const codeAt = (d) => Math.round((G.ndcDepth(d, near, far) * 0.5 + 0.5) * codes);
+  assert.ok(codeAt(z) !== codeAt(z + step * 1.5), "a step and a half must be resolvable");
+  // Half a step usually is not — that is what "resolution" means.
+  assert.equal(codeAt(z), codeAt(z + step * 0.05));
 });
