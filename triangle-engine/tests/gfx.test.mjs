@@ -241,12 +241,24 @@ test("clipping interpolates attributes along with position", () => {
   close(cut.attrs[1], 15, 1e-12);
 });
 
-test("the mip chain halves, and costs exactly one third extra", () => {
+test("the mip chain halves, and its overhead approaches a third from below", () => {
   const base = G.checkerTexture(64, [1, 1, 1], [0, 0, 0], 8);
   const levels = G.buildMipChain(base);
   assert.deepEqual(Array.from(levels, (l) => l.size), [64, 32, 16, 8, 4, 2, 1]);
-  const texels = levels.reduce((sum, l) => sum + l.size * l.size, 0);
-  close(texels / (64 * 64), 1 + 1 / 3, 0.01);
+
+  // The overhead is (1 - 4^-n)/3 for n levels below the base: strictly less
+  // than a third, and closer to it the deeper the chain. Anything claiming
+  // "exactly a third" has the direction of the limit backwards.
+  const overhead = (levels.reduce((sum, l) => sum + l.size * l.size, 0) - 64 * 64) / (64 * 64);
+  assert.ok(overhead < 1 / 3, `overhead ${overhead} must stay under a third`);
+  close(overhead, (1 - Math.pow(4, -(levels.length - 1))) / 3, 1e-12);
+
+  // Deeper chains get closer to the limit, never past it.
+  const shallow = G.buildMipChain(G.checkerTexture(4, [1, 1, 1], [0, 0, 0], 2));
+  const shallowOverhead = (shallow.reduce((sum, l) => sum + l.size * l.size, 0) - 16) / 16;
+  assert.ok(shallowOverhead < overhead, `${shallowOverhead} should be further from a third than ${overhead}`);
+  assert.ok(overhead > 0.333, "a 64x64 chain should already be within a thousandth of the limit");
+
   // A black-and-white checker averages to mid grey at the top of the chain.
   closeVec(levels[levels.length - 1].data.slice(0, 3), [0.5, 0.5, 0.5], 1e-12);
 });

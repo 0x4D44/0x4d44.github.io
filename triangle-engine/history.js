@@ -52,7 +52,7 @@
       primitive: "Convex polygons",
       api: "Wire-wrapped, per-installation",
       summary:
-        "Sutherland left Utah's teaching post long enough to found Evans & Sutherland with David Evans, selling image generators to the people who needed them most: airlines and the military, for flight simulation. Solid surfaces raised a question a wireframe never had — which surface is nearest the eye at this point on the screen? Through the late sixties and early seventies a dozen different answers were proposed and, in 1974, Sutherland, Sproull and Schumacker famously sorted them into a single taxonomy. In the same period Arthur Appel described casting a ray per picture point to find the first thing it hits, an idea whose time would not come for fifty years.",
+        "Sutherland left Harvard for a chair at Utah and, with David Evans, founded Evans & Sutherland there, selling image generators to the people who needed them most: airlines and the military, for flight simulation. Solid surfaces raised a question a wireframe never had — which surface is nearest the eye at this point on the screen? Through the late sixties and early seventies a dozen different answers were proposed and, in 1974, Sutherland, Sproull and Schumacker famously sorted them into a single taxonomy. In the same period Arthur Appel described casting a ray per picture point to find the first thing it hits, an idea whose time would not come for fifty years.",
       detail: [
         "Simulator image generators sorted polygons in hardware, front to back, at a fixed and guaranteed frame rate — the guarantee mattered more than the picture.",
         "Appel's 1968 ray casting is the direct ancestor of what became hardware-accelerated in 2018.",
@@ -88,7 +88,7 @@
         { k: "Teapot patches", v: "32 bicubic" },
         { k: "Frame time", v: "hours" },
       ],
-      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "none" },
+      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "cpu" },
     },
     {
       id: "geometryengine",
@@ -104,7 +104,7 @@
         "Clark's insight at Stanford was that the front of the pipeline — transform, clip, project — is a fixed sequence of 4x4 matrix operations on a stream of points, and a fixed sequence is exactly what you can etch into a chip. The Geometry Engine was the first VLSI implementation of a geometry pipeline: twelve of them in a row, each doing one stage, points flowing through. Clark and Hannah founded Silicon Graphics around it in 1982, and for the next decade a 3D workstation meant an SGI. Their library, IRIS GL, is the direct ancestor of OpenGL, and the shape of its pipeline is the shape of every pipeline since.",
       detail: [
         "A systolic array: each chip does one matrix stage and hands the point on, so throughput is one point per cycle regardless of how many stages there are.",
-        "SGI sold the machines that rendered Jurassic Park, Terminator 2 and the first fully computer-generated feature films.",
+        "SGI sold the workstations on which Jurassic Park and Terminator 2 were made, and on which a generation of artists learned the craft. The render farms were often someone else's: Toy Story, in 1995, was rendered on a room full of Sun SPARCstations.",
         "The workstation model — a big price, a small market, a huge lead — is exactly what the PC 3D card would demolish fifteen years later.",
       ],
       numbers: [
@@ -112,14 +112,14 @@
         { k: "Precision", v: "floating point" },
         { k: "Price", v: "$50k and up" },
       ],
-      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "none", fragment: "fixed", rop: "fixed", ray: "none" },
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "none", fragment: "fixed", rop: "fixed", ray: "cpu" },
     },
     {
       id: "edgefunction",
       year: 1988,
       short: "1988",
       name: "Edge functions and shading languages",
-      maker: "Juan Pineda · Cook, Carpenter & Catmull",
+      maker: "Juan Pineda · Pat Hanrahan · Pixar",
       machine: "Apollo workstations · Pixar's RenderMan",
       headline: "Two ideas from one year that took thirty to converge.",
       primitive: "Triangles, tested in parallel",
@@ -136,7 +136,7 @@
         { k: "Per-pixel cost", v: "3 adds" },
         { k: "Parallelism", v: "unbounded" },
       ],
-      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "cpu", fragment: "cpu", rop: "fixed", ray: "none" },
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "cpu", fragment: "cpu", rop: "fixed", ray: "cpu" },
     },
     {
       id: "opengl",
@@ -144,7 +144,7 @@
       short: "1992",
       name: "OpenGL and RealityEngine",
       maker: "Silicon Graphics · Kurt Akeley",
-      machine: "SGI Onyx RealityEngine",
+      machine: "SGI IRIS Crimson RealityEngine",
       headline: "The pipeline gets a specification, and a name.",
       primitive: "Triangles with texture coordinates",
       api: "OpenGL 1.0",
@@ -158,9 +158,9 @@
       numbers: [
         { k: "Spec completed", v: "30 Jun 1992" },
         { k: "Texture memory", v: "up to 16 MB" },
-        { k: "Subsamples", v: "up to 8 / pixel" },
+        { k: "Subsamples", v: "up to 16 / pixel" },
       ],
-      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "cpu" },
     },
     {
       id: "software",
@@ -184,7 +184,7 @@
         { k: "Target", v: "320x200, 35 Hz" },
         { k: "Depth buffer", v: "none" },
       ],
-      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "none" },
+      stages: { geometry: "cpu", setup: "cpu", raster: "cpu", texture: "cpu", fragment: "cpu", rop: "cpu", ray: "cpu" },
     },
     {
       id: "nv1",
@@ -195,21 +195,21 @@
       machine: "Diamond Edge 3D · Saturn · PlayStation",
       headline: "Everyone agreed on 3D. Nobody agreed on the primitive.",
       primitive: "Quadratic patches, and quads",
-      api: "Nvidia's own, before DirectX existed",
+      api: "Nvidia's own, before Direct3D existed",
       summary:
-        "Nvidia's first chip did not draw triangles. NV1 was built around quadratic texture mapping: curved quadrilateral patches, drawn by forward mapping — walking across the texture and depositing texels into the framebuffer — rather than by walking across the screen and looking texels up. Fewer primitives for a curved surface, and Sega's Saturn used quads too, so the ports came easily. Then Microsoft announced that Direct3D would accept triangles and only triangles, and the argument was over in a season. Sony's PlayStation, meanwhile, drew textured quads with no depth buffer at all and no perspective correction, which is why its textures crawl and its polygons snap: coordinates were rounded to whole pixels because the geometry unit had no floating point.",
+        "Nvidia's first chip could draw a triangle, but it was not built to. NV1 was designed around quadratic texture mapping: curved quadrilateral patches, drawn by forward mapping — walking across the texture and depositing texels into the framebuffer — rather than by walking across the screen and looking texels up. Fewer primitives for a curved surface, and Sega's Saturn used quads too, so the ports came easily. Then Microsoft announced that Direct3D would accept triangles and only triangles, and the argument was over in a season. Sony's PlayStation drew triangles and quads alike, but with no depth buffer at all and no perspective correction, which is why its textures crawl and its polygons snap: its geometry unit worked in fixed point and screen coordinates were rounded to whole pixels.",
       detail: [
         "Forward mapping cannot easily antialias or filter, because several texels can land on one pixel and no pixel knows in advance how many.",
         "A triangle is the only polygon that is always planar and always convex — which is exactly why the hardware people wanted it.",
         "The PlayStation sorted polygons with an ordering table, a per-frame bucket sort by depth, so interpenetrating objects simply could not be drawn correctly.",
-        "NV2 was cancelled when Sega chose PowerVR's tile-based renderer for the Dreamcast. Nvidia's third chip, RIVA 128, drew triangles.",
+        "NV2, contracted for Sega's next console, was cancelled in 1996 over the same argument: Sega wanted triangles and Nvidia wanted patches. The Dreamcast went to 3dfx and then, in 1997, to NEC's PowerVR. Nvidia's third design, RIVA 128, drew triangles.",
       ],
       numbers: [
         { k: "NV1 primitive", v: "quadratic patch" },
         { k: "PS1 depth buffer", v: "none" },
         { k: "PS1 vertices", v: "integer pixels" },
       ],
-      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "cpu" },
     },
     {
       id: "voodoo",
@@ -227,14 +227,14 @@
         "Bilinear filtering is the single change that made 1996 hardware look different from 1996 software: no more lego-brick texels up close.",
         "The Voodoo's 16-bit colour and 16-bit depth were chosen for bandwidth, not quality. Both would be regretted within two years.",
         "The Glide-versus-Direct3D-versus-OpenGL argument of 1996-97 was genuinely bitter, and John Carmack's public case for OpenGL carried real weight.",
-        "3dfx bet on a proprietary API and its own board manufacturing. Nvidia bet on standard APIs and selling chips to anyone. Nvidia bought 3dfx's assets in 2000.",
+        "In 1996 both companies sold chips to board makers — this one went to Orchid. 3dfx then bet on a proprietary API and, after buying STB in 1998, on building the boards itself; Nvidia bet on standard APIs and on selling chips to anyone who would fit them. Nvidia bought 3dfx's assets in 2000.",
       ],
       numbers: [
         { k: "Fill rate", v: "45 Mpixel/s" },
         { k: "Frame buffer", v: "2 MB" },
         { k: "Colour depth", v: "16-bit" },
       ],
-      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+      stages: { geometry: "cpu", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "cpu" },
     },
     {
       id: "geforce",
@@ -258,7 +258,7 @@
         { k: "Triangles/s", v: "15 million" },
         { k: "Fixed lights", v: "8" },
       ],
-      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "none" },
+      stages: { geometry: "fixed", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "fixed", rop: "fixed", ray: "cpu" },
     },
     {
       id: "shaders",
@@ -282,7 +282,7 @@
         { k: "Shader length", v: "128 instructions" },
         { k: "R300 precision", v: "24-bit float" },
       ],
-      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "cpu" },
     },
     {
       id: "unified",
@@ -306,7 +306,7 @@
         { k: "Warp width", v: "32 threads" },
         { k: "Transistors", v: "681 million" },
       ],
-      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "cpu" },
     },
     {
       id: "explicit",
@@ -330,7 +330,7 @@
         { k: "Recording threads", v: "all of them" },
         { k: "Validation", v: "opt-in layer" },
       ],
-      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "none" },
+      stages: { geometry: "prog", setup: "fixed", raster: "fixed", texture: "fixed", fragment: "prog", rop: "fixed", ray: "cpu" },
     },
     {
       id: "raytracing",
@@ -369,7 +369,7 @@
       space: "Object space",
       one: "Read the corners out of memory.",
       body:
-        "A model is an array of vertices and a list of indices into it. The indices matter more than they look: a closed mesh shares most of its corners between three or more triangles, so indexing them rather than repeating them cuts both memory and transform work by a factor of about three. Everything downstream is a stream of these corners.",
+        "A model is an array of vertices and a list of indices into it. The indices matter more than they look: in a closed triangle mesh every corner is shared by six triangles on average, so indexing them rather than repeating them cuts the transform work by roughly six and the memory by roughly three. Everything downstream is a stream of these corners.",
       hardware: "A fixed-function fetch unit with a small post-transform cache, so a shared vertex is usually transformed once.",
     },
     {
@@ -489,7 +489,7 @@
       cite: "James F. Blinn, 'Models of Light Reflection for Computer Synthesized Pictures', SIGGRAPH 1977." },
     { claim: "Shadow maps, 1978; bump mapping, 1978.",
       cite: "Lance Williams, 'Casting Curved Shadows on Curved Surfaces', SIGGRAPH 1978; James F. Blinn, 'Simulation of Wrinkled Surfaces', SIGGRAPH 1978." },
-    { claim: "Mipmaps: a pyramid of prefiltered textures costing one third extra memory, 1983.",
+    { claim: "Mipmaps: a pyramid of prefiltered textures costing just under one third extra memory, 1983.",
       cite: "Lance Williams, 'Pyramidal Parametrics', SIGGRAPH 1983." },
     { claim: "The Geometry Engine, the first VLSI geometry pipeline, 1982.",
       cite: "James H. Clark, 'The Geometry Engine: A VLSI Geometry System for Graphics', SIGGRAPH 1982. Silicon Graphics was founded the same year." },
@@ -514,7 +514,7 @@
     { claim: "GeForce 256, 11 October 1999: hardware transform and lighting, marketed as the first 'GPU'.",
       cite: "Nvidia GeForce 256 product materials, 1999." },
     { claim: "GeForce 3 (NV20), February 2001: programmable vertex shaders, vertex and pixel shader 1.1.",
-      cite: "Erik Lindholm, Mark Kilgard & Henry Moreland, 'A User-Programmable Vertex Engine', SIGGRAPH 2001." },
+      cite: "Erik Lindholm, Mark Kilgard & Henry Moreton, 'A User-Programmable Vertex Engine', SIGGRAPH 2001." },
     { claim: "Radeon 9700 (R300), 2002: a fully floating-point fragment pipeline at 24-bit precision.",
       cite: "ATI R300 architecture documentation, 2002; DirectX 9 shader model 2.0, 2002. Nvidia's competing NV30 mixed 16- and 32-bit float and lost the generation." },
     { claim: "Xenos (Xbox 360, 2005) was the first shipping unified-shader GPU; G80 (November 2006) was the first on the desktop.",
@@ -522,7 +522,7 @@
     { claim: "The microfacet distribution that became the industry default.",
       cite: "Trowbridge & Reitz, 1975; Bruce Walter et al., 'Microfacet Models for Refraction through Rough Surfaces', EGSR 2007; Brent Burley, 'Physically-Based Shading at Disney', SIGGRAPH 2012 course notes." },
     { claim: "Mantle, 2013, and Vulkan, February 2016: explicit command buffers and pipeline state objects.",
-      cite: "AMD Mantle Programming Guide, 2013; Khronos Vulkan 1.0 specification, 16 February 2016." },
+      cite: "AMD Mantle announced September 2013; the Mantle Programming Guide and API Reference followed in March 2015. Khronos Vulkan 1.0 specification, 16 February 2016." },
     { claim: "DirectX Raytracing announced March 2018; Nvidia Turing shipped hardware BVH traversal and ray-triangle intersection in September 2018.",
       cite: "Microsoft DXR specification, GDC 2018; Nvidia Turing architecture whitepaper, 2018." },
     { claim: "Nanite rasterizes sub-pixel triangles in a compute shader rather than in the hardware rasterizer.",

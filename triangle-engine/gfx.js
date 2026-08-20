@@ -498,9 +498,11 @@
   }
 
   // Box-filtered pyramid — Lance Williams's "Pyramidal Parametrics", 1983.
-  // Each level is half the size and costs a quarter as much memory, so the
-  // whole chain adds exactly one third to the base texture. That number is
-  // why mipmapping was affordable long before it was fast.
+  // Each level is half the size and so costs a quarter as much memory. The
+  // series 1/4 + 1/16 + 1/64 + ... sums to (1 - 4^-n)/3, which is always
+  // just UNDER a third extra and approaches a third from below as the chain
+  // deepens. Bounded by a third whatever the texture: that is why mipmapping
+  // was affordable long before it was fast.
   function buildMipChain(base) {
     var levels = [base];
     var current = base;
