@@ -452,6 +452,41 @@ try {
       `one sample reported ${single["Estimated noise"]} noise`);
   });
 
+  await openTab("ledger");
+  const ledger = await evaluate(`({
+    rows: document.querySelectorAll("#ledger-body .ledger-row").length,
+    entries: document.querySelectorAll("#ledger-body .ledger-entry").length,
+    links: document.querySelectorAll(".ledger-link").length,
+    filters: document.querySelectorAll("#ledger-filters button").length,
+  })`);
+  check("the ledger renders both lanes across four decades", () => {
+    assert.ok(ledger.rows >= 30, `${ledger.rows} year rows`);
+    assert.ok(ledger.entries >= 70, `${ledger.entries} entries`);
+    assert.ok(ledger.links >= 15, `${ledger.links} cross-links`);
+    assert.equal(ledger.filters, 9);
+  });
+  // Turning a family off must actually remove its entries.
+  const filtered = await evaluate(`(() => {
+    const before = document.querySelectorAll("#ledger-body .ledger-entry.family-d3d").length;
+    [...document.querySelectorAll("#ledger-filters button")].find(b => b.textContent === "Direct3D").click();
+    const after = document.querySelectorAll("#ledger-body .ledger-entry.family-d3d").length;
+    [...document.querySelectorAll("#ledger-filters button")].find(b => b.textContent === "Direct3D").click();
+    const restored = document.querySelectorAll("#ledger-body .ledger-entry.family-d3d").length;
+    return { before, after, restored };
+  })()`);
+  check("the ledger filters actually filter", () => {
+    assert.ok(filtered.before >= 14, `${filtered.before} Direct3D entries`);
+    assert.equal(filtered.after, 0);
+    assert.equal(filtered.restored, filtered.before);
+  });
+  // A cross-link must land on the section it names.
+  const jumped = await evaluate(`(() => {
+    const link = [...document.querySelectorAll(".ledger-link")].find(a => a.textContent.includes("Rasterize"));
+    link.click();
+    return document.querySelector('[aria-selected="true"]').dataset.tab;
+  })()`);
+  check("a ledger cross-link opens the section it names", () => assert.equal(jumped, "raster"));
+
   await openTab("coda");
   const coda = await evaluate(`({
     bars: document.querySelectorAll("#coda-grid .stage-row-bar").length,
