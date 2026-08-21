@@ -58,7 +58,8 @@
       <button role="tab" id="tab-parallel" aria-controls="panel-parallel" aria-selected="false" tabindex="-1" data-tab="parallel"><span>08</span>Parallel</button>
       <button role="tab" id="tab-rays" aria-controls="panel-rays" aria-selected="false" tabindex="-1" data-tab="rays"><span>09</span>Rays</button>
       <button role="tab" id="tab-coda" aria-controls="panel-coda" aria-selected="false" tabindex="-1" data-tab="coda"><span>10</span>Today</button>
-      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" tabindex="-1" data-tab="sources"><span>11</span>Sources</button>
+      <button role="tab" id="tab-ledger" aria-controls="panel-ledger" aria-selected="false" tabindex="-1" data-tab="ledger"><span>11</span>The ledger</button>
+      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" tabindex="-1" data-tab="sources"><span>12</span>Sources</button>
     </div>
   </nav>
 
@@ -134,7 +135,7 @@
         </aside>
       </div>
 
-      <p class="model-caveat">These are explanatory models of the architectures, not simulations of any particular product. Where a claim is specific, it is sourced in <button type="button" class="inline-link" data-open-tab="sources">section 11</button>.</p>
+      <p class="model-caveat">These are explanatory models of the architectures, not simulations of any particular product. Where a claim is specific, it is sourced in <button type="button" class="inline-link" data-open-tab="sources">section 12</button>.</p>
     </section>
 
     <!-- ============================ 02 PIPELINE ============================ -->
@@ -776,10 +777,44 @@
       </div>
     </section>
 
-    <!-- ============================ 11 SOURCES ============================ -->
+    <!-- ============================ 11 THE LEDGER ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-ledger" aria-labelledby="tab-ledger" data-panel="ledger" hidden>
+      <div class="section-heading">
+        <p class="section-number">11 · The ledger</p>
+        <h2>Every version number,<br><em>and the silicon that answered it.</em></h2>
+        <p>Specifications in one lane, hardware in the other, a shared year axis between them. The interesting part is the race: sometimes the specification led and the silicon chased it, sometimes a card shipped a capability years before anyone standardised it, and once or twice a version number marked nothing at all. Where an entry introduced a mechanism this page explains, it says which section.</p>
+        <div class="section-tries">
+          <p class="tries-label">Look for</p>
+          <ul>
+            <li>1996–99: the specification chasing 3dfx, then overtaking it.</li>
+            <li>2001–02: OpenGL landing multitexturing three years after Direct3D.</li>
+            <li>2009: a DirectX 11 card shipping a month before DirectX 11.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ledger-controls panel-card">
+        <div class="control-row">
+          <span class="control-label">Show</span>
+          <div class="ledger-filters" id="ledger-filters" role="group" aria-label="Filter the ledger"></div>
+        </div>
+        <dl class="ledger-stats" id="ledger-stats" aria-live="polite"></dl>
+      </div>
+
+      <div class="panel-card ledger-card">
+        <div class="ledger-head" aria-hidden="true">
+          <span>Year</span><span>Specifications</span><span>Hardware</span>
+        </div>
+        <div class="ledger-body" id="ledger-body"></div>
+      </div>
+
+      <p class="model-caveat">Representative, not exhaustive: one or two entries per year, chosen for the capability they introduced rather than for market share. Dates are ship dates unless the entry says the announcement came first. Where a version number is missing from the run — DirectX 4, and every OpenGL release between 4.0 and 4.6 bar two — nothing that mattered to this page happened in it.</p>
+    </section>
+
+    <!-- ============================ 12 SOURCES ============================ -->
     <section class="instrument-panel" role="tabpanel" id="panel-sources" aria-labelledby="tab-sources" data-panel="sources" hidden>
       <div class="section-heading">
-        <p class="section-number">11 · Sources</p>
+        <p class="section-number">12 · Sources</p>
         <h2>Where each claim comes from,<br><em>and what these models leave out.</em></h2>
         <p>Everything specific on this page — a date, a number, an attribution — is listed below against the paper, specification or product document it came from. The renderer that draws the diagrams is real, but it is not a graphics card.</p>
       </div>

@@ -168,12 +168,12 @@
   }
 
   var TAB_ORDER = ["lineage", "pipeline", "transform", "raster", "depth", "texture",
-    "shading", "parallel", "rays", "coda", "sources"];
+    "shading", "parallel", "rays", "coda", "ledger", "sources"];
   var TAB_LABELS = {
     lineage: "01 · Lineage", pipeline: "02 · The pipeline", transform: "03 · Transform",
     raster: "04 · Rasterize", depth: "05 · Depth", texture: "06 · Texture",
     shading: "07 · Light", parallel: "08 · Parallel", rays: "09 · Rays",
-    coda: "10 · Today", sources: "11 · Sources",
+    coda: "10 · Today", ledger: "11 · The ledger", sources: "12 · Sources",
   };
 
   function selectTab(name, focusTab, options) {
@@ -520,7 +520,91 @@
   }
 
   // ==========================================================
-  // 11 — SOURCES
+  // 11 — THE LEDGER: version numbers against the silicon
+  // ==========================================================
+  function initLedger() {
+    var body = $("ledger-body");
+    var filters = $("ledger-filters");
+    if (!body || !filters) return;
+    var L = H.ledger;
+    var active = {};
+    L.families.forEach(function (family) { active[family.id] = true; });
+
+    L.families.forEach(function (family) {
+      var button = el("button", null, family.label);
+      button.type = "button";
+      button.setAttribute("aria-pressed", "true");
+      button.setAttribute("data-lane", family.lane);
+      button.addEventListener("click", function () {
+        active[family.id] = !active[family.id];
+        button.setAttribute("aria-pressed", active[family.id] ? "true" : "false");
+        render();
+      });
+      filters.appendChild(button);
+    });
+
+    function entryNode(entry) {
+      var wrap = el("div", "ledger-entry family-" + entry.family);
+      var head = el("p", "ledger-entry-name", entry.name);
+      if (entry.when) head.appendChild(el("span", "ledger-when", " · " + entry.when));
+      wrap.appendChild(head);
+      wrap.appendChild(el("p", "ledger-who", entry.who));
+      wrap.appendChild(el("p", "ledger-what", entry.what));
+      if (entry.explains && TAB_LABELS[entry.explains]) {
+        var link = el("button", "inline-link ledger-link", "Explained in " + TAB_LABELS[entry.explains]);
+        link.type = "button";
+        link.addEventListener("click", function () {
+          selectTab(entry.explains, false, { scroll: true, focusPanel: true });
+        });
+        wrap.appendChild(link);
+      }
+      return wrap;
+    }
+
+    function render() {
+      clear(body);
+      var apis = L.apis.filter(function (e) { return active[e.family]; });
+      var hardware = L.hardware.filter(function (e) { return active[e.family]; });
+      var years = [];
+      apis.concat(hardware).forEach(function (e) {
+        if (years.indexOf(e.year) < 0) years.push(e.year);
+      });
+      years.sort(function (a, b) { return a - b; });
+
+      years.forEach(function (year) {
+        var row = el("div", "ledger-row");
+        row.appendChild(el("div", "ledger-year", String(year)));
+        [apis, hardware].forEach(function (list, index) {
+          var lane = el("div", "ledger-lane");
+          // The column headings are hidden on a narrow screen, where the
+          // two lanes stack; each lane labels itself there instead.
+          lane.setAttribute("data-lane", index === 0 ? "Specifications" : "Hardware");
+          var found = list.filter(function (e) { return e.year === year; });
+          if (!found.length) {
+            lane.appendChild(el("span", "ledger-empty", "—"));
+          } else {
+            found.forEach(function (entry) { lane.appendChild(entryNode(entry)); });
+          }
+          row.appendChild(lane);
+        });
+        body.appendChild(row);
+      });
+
+      var list = $("ledger-stats");
+      clear(list);
+      stat(list, "Years covered", years.length ? years[0] + "–" + years[years.length - 1] : "—");
+      stat(list, "Specifications", group(apis.length));
+      stat(list, "Machines", group(hardware.length));
+      var linked = apis.concat(hardware).filter(function (e) { return e.explains; }).length;
+      stat(list, "Linked to a section", group(linked));
+    }
+
+    render();
+    registerPanel("ledger", function () { /* pure DOM */ });
+  }
+
+  // ==========================================================
+  // 12 — SOURCES
   // ==========================================================
   function initSources() {
     var list = $("source-list");
@@ -3599,8 +3683,11 @@
     check("sources", document.querySelectorAll("#source-list li").length === H.sources.length);
     check("corner options", document.querySelectorAll("#tf-corner option").length === 8);
     check("coda grid", document.querySelectorAll("#coda-grid .stage-row-bar").length === H.stageKeys.length * 3);
-    check("panel nav", document.querySelectorAll(".panel-next button").length === 10);
-    check("experiment prompts", document.querySelectorAll(".section-tries").length === 9);
+    check("panel nav", document.querySelectorAll(".panel-next button").length === 11);
+    check("experiment prompts", document.querySelectorAll(".section-tries").length === 10);
+    check("ledger rows", document.querySelectorAll("#ledger-body .ledger-row").length > 25);
+    check("ledger entries",
+      document.querySelectorAll("#ledger-body .ledger-entry").length === H.ledger.apis.length + H.ledger.hardware.length);
     check("hero draws", canvasHasInk("hero-canvas"));
 
     var byTab = {
@@ -3671,6 +3758,8 @@
       control.dispatchEvent(new Event(control.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
     });
 
+    selectTab("ledger");
+    check("ledger cross-links", document.querySelectorAll(".ledger-link").length >= 15);
     selectTab("coda");
     check("coda renders", document.querySelectorAll("#coda-grid .coda-head").length === 4);
     selectTab("lineage");
@@ -3693,6 +3782,7 @@
     initParallel();
     initRays();
     initCoda();
+    initLedger();
     initSources();
 
     var resizeTimer = null;

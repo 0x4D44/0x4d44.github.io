@@ -1344,3 +1344,152 @@ figcaption {
    two-thousand-pixel outline. */
 .instrument-panel:focus { outline: none; }
 .instrument-panel:focus-visible { outline: none; }
+
+/* ============================================================
+   11 · The ledger — specifications against silicon, one year axis.
+   ============================================================ */
+.ledger-controls { margin-bottom: 18px; }
+.ledger-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.ledger-filters button {
+  padding: 7px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(20, 29, 47, 0.6);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+.ledger-filters button[data-lane="api"][aria-pressed="true"] {
+  border-color: var(--cyn);
+  color: var(--cyn);
+  background: rgba(87, 211, 238, 0.12);
+}
+.ledger-filters button[data-lane="hardware"][aria-pressed="true"] {
+  border-color: var(--amb);
+  color: var(--amb);
+  background: rgba(255, 192, 97, 0.12);
+}
+.ledger-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.ledger-stats dt {
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ledger-stats dd { margin: 4px 0 0; font-family: var(--mono); font-size: 0.94rem; color: var(--grn); }
+
+.ledger-card { padding: 0; overflow: hidden; }
+.ledger-head,
+.ledger-row {
+  display: grid;
+  grid-template-columns: minmax(0, 4.6em) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.ledger-head {
+  padding: 14px clamp(16px, 2vw, 24px) 12px;
+  background: rgba(9, 14, 24, 0.97);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-strong);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.ledger-head span:nth-child(2) { color: var(--cyn); }
+.ledger-head span:nth-child(3) { color: var(--amb); }
+
+.ledger-body { display: grid; }
+.ledger-row {
+  padding: 14px clamp(16px, 2vw, 24px);
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+.ledger-row:last-child { border-bottom: 0; }
+.ledger-row:hover { background: rgba(87, 211, 238, 0.03); }
+.ledger-year {
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  padding-top: 1px;
+}
+.ledger-lane { display: grid; gap: 14px; min-width: 0; }
+.ledger-empty { color: #33414f; font-family: var(--mono); font-size: 0.8rem; }
+
+.ledger-entry {
+  padding-left: 12px;
+  border-left: 2px solid var(--line-strong);
+  min-width: 0;
+}
+.ledger-entry.family-d3d { border-left-color: #57d3ee; }
+.ledger-entry.family-gl { border-left-color: #4fe08b; }
+.ledger-entry.family-explicit { border-left-color: #a99bff; }
+.ledger-entry.family-web { border-left-color: #ff77c8; }
+.ledger-entry.family-compute { border-left-color: #6aa8ff; }
+.ledger-entry.family-vendor { border-left-color: #ff6f7d; }
+.ledger-entry.family-workstation { border-left-color: #ffc061; }
+.ledger-entry.family-consumer { border-left-color: #ff9d4d; }
+.ledger-entry.family-console { border-left-color: #ff77c8; }
+
+.ledger-entry-name {
+  margin: 0 0 3px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.ledger-when { font-weight: 400; color: var(--faint); font-family: var(--mono); font-size: 0.76rem; }
+.ledger-who {
+  margin: 0 0 7px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.ledger-what { margin: 0; font-size: 0.88rem; color: #c3d3da; }
+.ledger-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(87, 211, 238, 0.5);
+}
+.ledger-link:hover { color: #fff; border-bottom-color: #fff; }
+
+@media (max-width: 860px) {
+  .ledger-head { display: none; }
+  .ledger-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .ledger-year {
+    font-size: 1.05rem;
+    color: var(--amb);
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger-lane:empty { display: none; }
+  .ledger-empty { display: none; }
+  .ledger-lane::before {
+    content: attr(data-lane);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .ledger-lane:has(> .ledger-empty:only-child) { display: none; }
+}
