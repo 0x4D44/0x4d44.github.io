@@ -28,7 +28,7 @@ function evaluateWindowScript(source, filename) {
 const H = evaluateWindowScript(historySource, "history.js").TRI_HISTORY;
 const catalog = evaluateWindowScript(catalogSource, "data.js");
 
-const TABS = ["lineage", "pipeline", "transform", "raster", "depth", "texture", "shading", "parallel", "rays", "coda", "sources"];
+const TABS = ["lineage", "pipeline", "transform", "raster", "depth", "texture", "shading", "parallel", "rays", "coda", "ledger", "sources"];
 
 test("the page is self-contained and follows the Almanac contract", () => {
   assert.match(html, /<script src="gfx\.js"><\/script>/);
@@ -118,6 +118,63 @@ test("the pipeline has all ten stages, each explained", () => {
     assert.ok(stage.one.length > 20, `${stage.name} needs a one-line summary`);
     assert.ok(stage.body.length > 200, `${stage.name} needs a real explanation`);
     assert.ok(stage.hardware.length > 40, `${stage.name} needs its hardware note`);
+  }
+});
+
+test("the ledger covers both API families and four decades of hardware", () => {
+  const { apis, hardware, families } = H.ledger;
+  assert.ok(apis.length >= 30, `only ${apis.length} API entries`);
+  assert.ok(hardware.length >= 35, `only ${hardware.length} hardware entries`);
+
+  // Both lanes must run forwards.
+  for (const list of [apis, hardware]) {
+    const years = Array.from(list, (e) => e.year);
+    assert.deepEqual([...years].sort((a, b) => a - b), years, "the ledger must be in date order");
+  }
+
+  // The version histories the page is asked about, in full.
+  const apiNames = apis.map((e) => e.name).join(" | ");
+  for (const version of ["DirectX 1.0", "DirectX 2.0", "DirectX 3.0", "DirectX 5.0", "DirectX 6.0",
+    "DirectX 7.0", "DirectX 8.0", "DirectX 8.1", "DirectX 9.0", "DirectX 9.0c", "DirectX 10", "DirectX 11",
+    "Direct3D 12", "DirectX 12 Ultimate", "DirectX Raytracing"]) {
+    assert.ok(apiNames.includes(version), `${version} is missing from the ledger`);
+  }
+  for (const version of ["IRIS GL", "OpenGL 1.0", "OpenGL 1.1", "OpenGL 1.2", "OpenGL 1.3", "OpenGL 1.4",
+    "OpenGL 1.5", "OpenGL 2.0", "OpenGL 3.0", "OpenGL 3.1 and 3.2", "OpenGL 4.0", "OpenGL 4.3", "OpenGL 4.6"]) {
+    assert.ok(apiNames.includes(version), `${version} is missing from the ledger`);
+  }
+  for (const version of ["Vulkan 1.0", "Metal", "Mantle", "WebGL 1.0", "WebGL 2.0", "WebGPU", "CUDA 1.0", "Glide"]) {
+    assert.ok(apiNames.includes(version), `${version} is missing from the ledger`);
+  }
+
+  // Hardware from every era, not just the ones the narrative needed.
+  const hardwareNames = hardware.map((e) => e.name).join(" | ");
+  for (const card of ["RealityEngine", "NV1", "ViRGE", "Vérité", "Voodoo Graphics", "PowerVR", "RIVA 128",
+    "Voodoo2", "RIVA TNT", "Savage3D", "GeForce 256", "Radeon (R100)", "Voodoo5", "GeForce 3",
+    "Radeon 8500", "Radeon 9700", "GeForce FX", "GeForce 6800", "Xenos", "G80", "R600",
+    "Radeon HD 5870", "Fermi", "GCN", "Pascal", "Volta", "Turing", "RDNA", "Apple M1", "Intel Arc", "Ada"]) {
+    assert.ok(hardwareNames.includes(card), `${card} is missing from the ledger`);
+  }
+  // Consoles are hardware too, and they drove the field.
+  for (const console_ of ["PlayStation", "Saturn", "Nintendo 64", "Dreamcast", "Xbox"]) {
+    assert.ok(hardwareNames.includes(console_), `${console_} is missing from the ledger`);
+  }
+
+  // Every entry is complete, and every family is one the filter renders.
+  const known = new Set(families.map((f) => f.id));
+  for (const entry of [...apis, ...hardware]) {
+    assert.ok(known.has(entry.family), `${entry.name} has unknown family ${entry.family}`);
+    assert.ok(entry.who && entry.who.length > 2, `${entry.name} has no attribution`);
+    assert.ok(entry.what.length > 50, `${entry.name} needs a real description`);
+    assert.ok(entry.year >= 1982 && entry.year <= 2026, `${entry.name} has year ${entry.year}`);
+  }
+
+  // The cross-links must point at sections that exist, or the ledger is
+  // a list of trivia rather than a way back into the explanations.
+  const linked = [...apis, ...hardware].filter((e) => e.explains);
+  assert.ok(linked.length >= 15, `only ${linked.length} ledger entries link to a section`);
+  for (const entry of linked) {
+    assert.ok(TABS.includes(entry.explains), `${entry.name} links to unknown section ${entry.explains}`);
   }
 });
 
