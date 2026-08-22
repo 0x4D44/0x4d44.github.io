@@ -22,7 +22,7 @@ const validCar = {
   steeringLockRad: 0.6, tyreGrip: { front: 1, rear: 0.96 },
   suspension: { travelM: 0.24, springHz: 1.8, dampingRatio: 0.72 },
   durability: { engine: 0.72, steering: 0.75, suspension: 0.78, brakes: 0.62, body: 0.9 },
-  assists: ['automatic', 'stability', 'braking']
+  assists: ['automatic', 'stability', 'braking'], benchmarkScale: 1
 };
 
 const validStage = {
