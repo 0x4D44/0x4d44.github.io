@@ -154,6 +154,14 @@
             <label class="service-row"><input type="checkbox" name="repair" value="brakes" data-service-component="brakes" /><span><strong>BRAKES</strong><small>15 MIN · STOPPING</small></span><output>15</output></label>
             <label class="service-row"><input type="checkbox" name="repair" value="body" data-service-component="body" /><span><strong>BODY</strong><small>10 MIN · AERO / SHELL</small></span><output>10</output></label>
           </fieldset>
+          <fieldset id="service-setup" class="service-setup" aria-label="Setup choices">
+            <legend>SETUP PLAN <span>TIME REQUIRED</span></legend>
+            <label class="service-row setup-row"><span><strong>TYRES</strong><small>FIT A STAGE-SPECIFIC COMPOUND</small></span><select id="service-tyre" data-service-tuning="tyreId" aria-label="Choose service tyre"><option value="standard">STANDARD · 0 MIN</option><option value="tarmac">TARMAC · 8 MIN</option><option value="wet">WET · 10 MIN</option><option value="gravel">GRAVEL · 6 MIN</option></select><output id="service-tyre-cost">0 MIN</output></label>
+            <label class="service-row setup-row"><span><strong>BRAKE BIAS</strong><small>FRONT / REAR BALANCE · ±0.25 MAX</small></span><input id="service-brake-bias" type="range" data-service-tuning="brakeBias" min="-0.25" max="0.25" step="0.05" value="0" aria-label="Adjust brake bias" /><output id="service-brake-bias-value">0.00 · 0 MIN</output></label>
+            <label class="service-row setup-row"><span><strong>STEERING RATIO</strong><small>TURN-IN RESPONSE · ±0.25 MAX</small></span><input id="service-steering-ratio" type="range" data-service-tuning="steeringRatio" min="-0.25" max="0.25" step="0.05" value="0" aria-label="Adjust steering ratio" /><output id="service-steering-ratio-value">0.00 · 0 MIN</output></label>
+            <label class="service-row setup-row"><span><strong>RIDE HEIGHT</strong><small>ROUGH-ROAD CLEARANCE · ±0.25 MAX</small></span><input id="service-ride-height" type="range" data-service-tuning="rideHeight" min="-0.25" max="0.25" step="0.05" value="0" aria-label="Adjust ride height" /><output id="service-ride-height-value">0.00 · 0 MIN</output></label>
+            <label class="service-row setup-row"><span><strong>DAMPING</strong><small>BODY CONTROL · ±0.25 MAX</small></span><input id="service-damping" type="range" data-service-tuning="damping" min="-0.25" max="0.25" step="0.05" value="0" aria-label="Adjust damping" /><output id="service-damping-value">0.00 · 0 MIN</output></label>
+          </fieldset>
           <p id="service-error" class="inline-error" role="alert" aria-live="assertive" hidden></p>
           <div class="flow-actions service-actions">
             <button id="service-abandon" class="secondary danger" type="button">ABANDON CHAMPIONSHIP</button>

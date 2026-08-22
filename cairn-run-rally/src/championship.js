@@ -7,9 +7,15 @@ import { clamp, hash01 } from './math.js';
 export const PHASES = Object.freeze(['service', 'ready', 'driving', 'classified', 'abandoned']);
 export const DAMAGE_COMPONENTS = Object.freeze(['engine', 'steering', 'suspension', 'brakes', 'body']);
 export const REPAIR_MINUTES = Object.freeze({ engine: 40, suspension: 25, steering: 20, brakes: 15, body: 10 });
+export const TYRE_OPTIONS = Object.freeze(['standard', 'tarmac', 'wet', 'gravel']);
+export const TYRE_SERVICE_MINUTES = Object.freeze({ standard: 0, tarmac: 8, wet: 10, gravel: 6 });
+export const SETUP_LIMITS = Object.freeze({ brakeBias: 0.25, steeringRatio: 0.25, rideHeight: 0.25, damping: 0.25 });
+export const SETUP_STEP = 0.05;
+export const SETUP_ADJUSTMENT_MINUTES = Object.freeze({ brakeBias: 2, steeringRatio: 2, rideHeight: 2, damping: 2 });
 export const DEFAULT_POINTS = Object.freeze([25, 18, 15, 12, 10, 8, 6, 4, 2, 1]);
 
 const COMPONENT_SET = new Set(DAMAGE_COMPONENTS);
+const TYRE_SET = new Set(TYRE_OPTIONS);
 const TUNING_KEYS = Object.freeze(['brakeBias', 'steeringRatio', 'rideHeight', 'damping']);
 const DEFAULT_TUNING = Object.freeze({ brakeBias: 0, steeringRatio: 0, rideHeight: 0, damping: 0, tyreId: 'standard' });
 const DEFAULT_WEATHER = Object.freeze({ gripScale: 1, visibilityM: 10000, precipitation: 'none', roadWetness: 0, wind: 0, timeOfDay: 'day' });
@@ -308,7 +314,7 @@ export function createChampionship(...args) {
   if (!sameKeys(input.options.initialDamage || input.options.damage || copyDamage(), DAMAGE_COMPONENTS)) fail('invalid-damage', 'initial damage must contain exactly five components');
   if (Object.values(damage).some(value => !unit(value))) fail('invalid-damage', 'initial damage must be bounded between 0 and 1');
   const tuning = copyTuning(input.options.tuning);
-  if (TUNING_KEYS.some(key => !finite(tuning[key]) || tuning[key] < -1 || tuning[key] > 1) || !idLike(tuning.tyreId)) fail('invalid-tuning', 'tuning is invalid');
+  if (TUNING_KEYS.some(key => !finite(tuning[key]) || Math.abs(tuning[key]) > SETUP_LIMITS[key] + 1e-9 || Math.abs(tuning[key] / SETUP_STEP - Math.round(tuning[key] / SETUP_STEP)) > 1e-8) || !TYRE_SET.has(tuning.tyreId)) fail('invalid-tuning', 'tuning is invalid');
   const state = {
     contentVersion: CONTENT_SCHEMA_VERSION,
     championshipId: input.championshipId,
@@ -339,8 +345,12 @@ function validateTuning(value, path, errors) {
     errors.push(`${path} must define brakeBias, steeringRatio, rideHeight, damping, and tyreId`);
     return;
   }
-  for (const key of TUNING_KEYS) if (!finite(value[key]) || value[key] < -1 || value[key] > 1) errors.push(`${path}.${key} must be between -1 and 1`);
-  if (!idLike(value.tyreId)) errors.push(`${path}.tyreId must be a kebab-case id`);
+  for (const key of TUNING_KEYS) {
+    const candidate = value[key];
+    if (!finite(candidate) || Math.abs(candidate) > SETUP_LIMITS[key] + 1e-9) errors.push(`${path}.${key} must be within ±${SETUP_LIMITS[key]}`);
+    else if (Math.abs(candidate / SETUP_STEP - Math.round(candidate / SETUP_STEP)) > 1e-8) errors.push(`${path}.${key} must use ${SETUP_STEP} steps`);
+  }
+  if (!TYRE_SET.has(value.tyreId)) errors.push(`${path}.tyreId must be one of ${TYRE_OPTIONS.join(', ')}`);
 }
 
 export function validateChampionshipState(state, provided = null) {
@@ -446,7 +456,7 @@ export function availableActions(state) {
 function repairInput(plan) {
   if (!isObject(plan)) fail('invalid-service', 'service plan must be an object');
   const source = isObject(plan.repair) ? plan.repair : plan;
-  const allowedNonRepair = new Set(['tuning', 'tyreId', ...TUNING_KEYS, 'budgetMinutes']);
+  const allowedNonRepair = new Set(['setup', 'tuning', 'tyreId', ...TUNING_KEYS, 'budgetMinutes']);
   const unknown = Object.keys(source).filter(key => !COMPONENT_SET.has(key) && !allowedNonRepair.has(key));
   if (unknown.length) fail('unknown-service-component', `unknown service component ${unknown[0]}`, { component: unknown[0] });
   const minutes = {};
@@ -460,8 +470,10 @@ function repairInput(plan) {
 }
 
 function tuningFromPlan(state, plan) {
-  const candidate = plan.tuning || plan;
-  const tyreId = plan.tyreId ?? candidate.tyreId ?? state.tuning.tyreId;
+  const candidate = isObject(plan?.setup) ? plan.setup : isObject(plan?.tuning) ? plan.tuning : plan;
+  const unknown = Object.keys(candidate || {}).filter(key => !TUNING_KEYS.includes(key) && key !== 'tyreId' && key !== 'budgetMinutes' && key !== 'repair');
+  if (unknown.length) fail('unknown-service-setting', `unknown service setting ${unknown[0]}`, { setting: unknown[0] });
+  const tyreId = candidate.tyreId ?? plan.tyreId ?? state.tuning.tyreId;
   const values = {
     brakeBias: candidate.brakeBias ?? state.tuning.brakeBias,
     steeringRatio: candidate.steeringRatio ?? state.tuning.steeringRatio,
@@ -469,8 +481,24 @@ function tuningFromPlan(state, plan) {
     damping: candidate.damping ?? state.tuning.damping,
     tyreId
   };
-  if (TUNING_KEYS.some(key => !finite(values[key]) || values[key] < -1 || values[key] > 1) || !idLike(values.tyreId)) fail('invalid-tuning', 'service tuning is invalid');
+  if (!TYRE_SET.has(values.tyreId) || TUNING_KEYS.some(key => {
+    const value = values[key];
+    const limit = SETUP_LIMITS[key];
+    return !finite(value) || Math.abs(value) > limit + 1e-9 || Math.abs(value / SETUP_STEP - Math.round(value / SETUP_STEP)) > 1e-8;
+  })) fail('invalid-tuning', 'service setup values must use bounded 0.05 steps');
   return values;
+}
+
+function setupCost(before, after) {
+  const minutes = {
+    tyre: before.tyreId === after.tyreId ? 0 : TYRE_SERVICE_MINUTES[after.tyreId],
+    brakeBias: Math.round(Math.abs(after.brakeBias - before.brakeBias) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.brakeBias,
+    steeringRatio: Math.round(Math.abs(after.steeringRatio - before.steeringRatio) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.steeringRatio,
+    rideHeight: Math.round(Math.abs(after.rideHeight - before.rideHeight) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.rideHeight,
+    damping: Math.round(Math.abs(after.damping - before.damping) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.damping
+  };
+  minutes.total = Object.values(minutes).reduce((sum, value) => sum + value, 0);
+  return minutes;
 }
 
 function serviceBudget(event) {
@@ -486,7 +514,10 @@ export function planService(state, plan = {}, provided = null) {
   const { event } = eventForState(state, catalog);
   const budgetMinutes = serviceBudget(event);
   const requested = repairInput(plan);
-  const requestedMinutes = DAMAGE_COMPONENTS.reduce((sum, key) => sum + requested[key], 0);
+  const tuning = tuningFromPlan(state, plan);
+  const setupMinutes = setupCost(state.tuning, tuning);
+  const repairRequestedMinutes = DAMAGE_COMPONENTS.reduce((sum, key) => sum + requested[key], 0);
+  const requestedMinutes = repairRequestedMinutes + setupMinutes.total;
   if (requestedMinutes > budgetMinutes + 1e-9) fail('over-budget', `service plan needs ${requestedMinutes} minutes but only ${budgetMinutes} are available`, { budgetMinutes, requestedMinutes });
   const before = copyDamage(state.damage);
   const after = {};
@@ -498,10 +529,13 @@ export function planService(state, plan = {}, provided = null) {
     wastedMinutes[key] = requested[key] - usable;
     after[key] = clamp(before[key] - usable / REPAIR_MINUTES[key], 0, 1);
   }
-  const usedMinutes = Object.values(repairMinutes).reduce((sum, value) => sum + value, 0);
+  const repairUsedMinutes = Object.values(repairMinutes).reduce((sum, value) => sum + value, 0);
+  const usedMinutes = repairUsedMinutes + setupMinutes.total;
   const report = {
     budgetMinutes,
     requestedMinutes,
+    repairRequestedMinutes,
+    repairUsedMinutes,
     usedMinutes,
     remainingMinutes: budgetMinutes - usedMinutes,
     before,
@@ -509,8 +543,9 @@ export function planService(state, plan = {}, provided = null) {
     repairMinutes,
     wastedMinutes,
     wastedTotalMinutes: Object.values(wastedMinutes).reduce((sum, value) => sum + value, 0),
-    tuning: tuningFromPlan(state, plan),
-    tyreId: tuningFromPlan(state, plan).tyreId
+    setupMinutes,
+    tuning,
+    tyreId: tuning.tyreId
   };
   return deepFreeze(report);
 }
