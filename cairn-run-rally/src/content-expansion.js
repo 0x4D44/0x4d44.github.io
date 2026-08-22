@@ -170,7 +170,7 @@ const sunspireStage = stage({
   ],
   splitA: 1850,
   splitB: 4020,
-  expectedDurationSeconds: [245, 390],
+  expectedDurationSeconds: [370, 590],
   landmarkIds: ['savannah', 'acacia', 'water-splash', 'washboard', 'rift-escarpment', 'finish-gate'],
   hazardPlan: {
     seed: 2301, sampleStart: 22, sampleEndMargin: 20, sampleStep: 8, skipSeed: 41011, skipThreshold: 0.4,
@@ -255,7 +255,7 @@ const blackwaterStage = stage({
   ],
   splitA: 1500,
   splitB: 3230,
-  expectedDurationSeconds: [270, 470],
+  expectedDurationSeconds: [350, 650],
   landmarkIds: ['cedar-tunnel', 'retaining-wall', 'autumn-maple', 'mountain-stream', 'paper-lantern', 'pass-gate'],
   hazardPlan: {
     seed: 3407, sampleStart: 20, sampleEndMargin: 22, sampleStep: 7, skipSeed: 53017, skipThreshold: 0.35,
@@ -340,7 +340,7 @@ const frostholmStage = stage({
   ],
   splitA: 1900,
   splitB: 3860,
-  expectedDurationSeconds: [330, 620],
+  expectedDurationSeconds: [345, 530],
   landmarkIds: ['sea-cliff', 'village-square', 'stone-retaining-wall', 'olive-grove', 'safe-crowd-line', 'coastal-gate'],
   hazardPlan: {
     seed: 4513, sampleStart: 24, sampleEndMargin: 24, sampleStep: 8, skipSeed: 64007, skipThreshold: 0.39,
@@ -425,7 +425,7 @@ const redstoneStage = stage({
   ],
   splitA: 1850,
   splitB: 3990,
-  expectedDurationSeconds: [230, 360],
+  expectedDurationSeconds: [375, 660],
   landmarkIds: ['eucalyptus', 'red-gravel', 'cattle-grid', 'rough-verge', 'dust-bowl', 'storm-gate'],
   hazardPlan: {
     seed: 5629, sampleStart: 23, sampleEndMargin: 22, sampleStep: 9, skipSeed: 68011, skipThreshold: 0.37,
@@ -499,7 +499,7 @@ const cars = [
     wheelbaseM: 2.28, trackM: 1.48, frontWeightFraction: 0.52, rideHeightM: 0.5, dragCoefficient: 0.44,
     torqueCurve: [[1400, 210], [3000, 330], [6000, 300], [7200, 235]],
     gearRatios: [3.55, 2.24, 1.53, 1.13, 0.87], finalDrive: 4.35, wheelRadiusM: 0.34, brakeForceN: 10400,
-    brakeBiasFront: 0.61, steeringLockRad: 0.62, tyreGrip: { front: 0.98, rear: 0.93 },
+    brakeBiasFront: 0.61, steeringLockRad: 0.62, tyreGrip: { front: 0.98, rear: 0.99 },
     suspension: { travelM: 0.23, springHz: 1.65, dampingRatio: 0.74 },
     durability: { engine: 0.68, steering: 0.71, suspension: 0.73, brakes: 0.64, body: 0.82 },
     assists: ['automatic', 'stability', 'braking', 'paceNotes'], powerBhp: 245, silhouette: 'short-coupe', benchmarkScale: 0.97
@@ -529,7 +529,7 @@ const cars = [
     wheelbaseM: 2.52, trackM: 1.57, frontWeightFraction: 0.49, rideHeightM: 0.45, dragCoefficient: 0.39,
     torqueCurve: [[1300, 280], [2600, 470], [4300, 500], [6100, 390]],
     gearRatios: [3.0, 1.95, 1.36, 1.04, 0.8, 0.62], finalDrive: 3.55, wheelRadiusM: 0.38, brakeForceN: 16000,
-    brakeBiasFront: 0.6, steeringLockRad: 0.55, tyreGrip: { front: 1.1, rear: 1.14 },
+    brakeBiasFront: 0.6, steeringLockRad: 0.55, tyreGrip: { front: 1.1, rear: 1.32 },
     suspension: { travelM: 0.21, springHz: 2.55, dampingRatio: 0.78 },
     durability: { engine: 0.76, steering: 0.72, suspension: 0.7, brakes: 0.8, body: 0.78 },
     assists: ['automatic', 'stability', 'braking', 'paceNotes'], powerBhp: 430, silhouette: 'widebody-special', benchmarkScale: 1.08

@@ -142,7 +142,7 @@ const kestrelStage = {
   segments: kestrelSegments,
   notes: kestrelNotes,
   splits: [1800, 3600, 5405],
-  expectedDurationSeconds: [250, 380],
+  expectedDurationSeconds: [280, 450],
   landmarkIds: ['stone-wall', 'quarry', 'moor', 'bridge', 'pine', 'finish-gate'],
   hazardPlan: {
     seed: 17,
@@ -281,7 +281,7 @@ const auroraStage = {
   segments: auroraSegments,
   notes: auroraNotes,
   splits: [2200, 4400, 6760],
-  expectedDurationSeconds: [260, 440],
+  expectedDurationSeconds: [290, 450],
   landmarkIds: ['lake', 'narrow-forest', 'granite-outcrop', 'jump-board', 'timber-fence', 'finish-gate'],
   hazardPlan: {
     seed: 811,
@@ -466,7 +466,7 @@ const worldChampionship = {
       weatherId: EXPANSION_WEATHER[index].id,
       serviceMinutes: 60,
       durationSeconds: stage.expectedDurationSeconds,
-      referenceTimeSeconds: [315, 370, 450, 295][index]
+      referenceTimeSeconds: [450, 480, 420, 500][index]
     }))
   ]
 };
