@@ -1,7 +1,7 @@
 import { clamp, wrapAngle } from './math.js';
 import { sampleStage } from './stage.js';
 
-const DRIVING_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','Space','KeyR','Escape','Enter','KeyC']);
+const DRIVING_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyA','KeyZ','Comma','Period','Space','KeyR','Escape','Enter','KeyC']);
 const isInteractive = target => target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLButtonElement;
 
 export class InputManager {
@@ -63,14 +63,16 @@ export class InputManager {
 
   read(car) {
     if (this.autopilot) return this.readAutopilot(car);
-    let steer = (this.keys.has('ArrowRight')||this.keys.has('KeyD')?1:0) - (this.keys.has('ArrowLeft')||this.keys.has('KeyA')?1:0);
-    let throttle = this.keys.has('ArrowUp')||this.keys.has('KeyW') ? 1 : 0;
-    let brake = this.keys.has('ArrowDown')||this.keys.has('KeyS') ? 1 : 0;
+    // The chase view presents positive vehicle steer as visual left, so every
+    // manual steering source maps left to +1 and right to -1 here.
+    let steer = (this.keys.has('ArrowLeft')||this.keys.has('Comma')?1:0) - (this.keys.has('ArrowRight')||this.keys.has('Period')?1:0);
+    let throttle = this.keys.has('ArrowUp')||this.keys.has('KeyA') ? 1 : 0;
+    let brake = this.keys.has('ArrowDown')||this.keys.has('KeyZ') ? 1 : 0;
     let handbrake = this.keys.has('Space') ? 1 : 0;
     const pad=this.getGamepad();
     if (pad) {
       const dead = value => Math.abs(value)<.12?0:Math.sign(value)*(Math.abs(value)-.12)/.88;
-      const axis=dead(pad.axes[0]||0); if(Math.abs(axis)>Math.abs(steer))steer=axis;
+      const axis=-dead(pad.axes[0]||0); if(Math.abs(axis)>Math.abs(steer))steer=axis;
       throttle=Math.max(throttle,pad.buttons[7]?.value||0,pad.buttons[0]?.pressed?.6:0);
       brake=Math.max(brake,pad.buttons[6]?.value||0,pad.buttons[1]?.pressed?.7:0);
       handbrake=Math.max(handbrake,pad.buttons[2]?.pressed?1:0);

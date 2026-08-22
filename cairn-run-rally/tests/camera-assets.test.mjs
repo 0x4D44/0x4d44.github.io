@@ -29,7 +29,7 @@ test('all authored spoken pace notes are packaged locally in broad browser forma
 test('shell exposes the complete minimal game loop and controls',async()=>{
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  for(const id of ['title-screen','start-button','settings-screen','hud','countdown','pause-screen','result-screen','retry-button'])assert.match(html,new RegExp(`id="${id}"`));
- for(const control of ['WASD','ARROWS','SPACE','RESTART','GAMEPAD'])assert.ok(html.includes(control));
+ for(const control of ['ACCEL / BRAKE','STEER','ARROWS','SPACE','RESTART','GAMEPAD'])assert.ok(html.includes(control));
  for(const id of ['damage-engine','damage-steering','damage-suspension','damage-brakes','damage-body'])assert.match(html,new RegExp(`id=\"${id}\"`));
 });
 
