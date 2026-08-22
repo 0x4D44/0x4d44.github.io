@@ -30785,3 +30785,197 @@ window.NEWS_ARTICLES.push(
     notice: "The document reviewed here is real: Three Clocks is in the 0x4D44 Almanac and the link above opens it. The columnist, the byline and every incident described around the review are invented for comic effect."
   }
 );
+
+// ============================================================
+//  The eclipse desk. A run of eight stories on the safety advice
+//  circulating ahead of totality: cameras said to detonate, handsets
+//  said to depart, monsters said to rise, and the nation's swimming
+//  pools said to tip. The two camera stories carry a safety notice —
+//  the paper invents the explosions, and would rather no reader took
+//  the joke as permission to stare at the sun.
+// ============================================================
+window.NEWS_ARTICLES.push(
+  {
+    id: "tec-disposable-cameras-detonate-eclipse",
+    image: "images/tec-disposable-cameras-detonate-eclipse.webp",
+    imageAlt: "A cardboard single-use camera bursting apart in mid-air in a flash of light, its film ribbon unspooling and shards of yellow cardboard flying outward, beneath an eclipsed sun in a night sky",
+    category: "Technology",
+    headline: "Disposable cameras now detonate on sight of an eclipse, manufacturer confirms",
+    standfirst: "A single-use camera pointed at totality will, the maker says, deliver twenty-seven exposures and then a bang, in that order.",
+    byline: "By Verity Sallow, Consumer Technology Correspondent",
+    location: "ROCHESTER",
+    published: "2026-08-12T09:05:00",
+    body: [
+      "The last manufacturer of single-use cameras has confirmed that its product will detonate if aimed at a solar eclipse, and has asked customers to please point it at something else.",
+      "The warning, added to the cardboard sleeve in a typeface the company describes as \"as large as the sleeve permits\", follows a series of controlled tests at the firm's Rochester works in which forty cameras were mounted on a rail and swung, one at a time, towards a simulated totality. Thirty-eight detonated. One took a photograph of the technician. One has not yet been found.",
+      "\"We want to be measured about this,\" said Hollis Brantwood, the company's Director of Product Integrity. \"The camera does not explode when it sees the sun. The camera explodes when it sees the sun going away. We are as puzzled by the distinction as anybody, but the test rail is quite clear about it.\"",
+      "The firm stresses that the device remains entirely safe in all other conditions, including weddings, christenings, stag weekends and, in one documented case, a fire. Its own guidance now runs to a single line: \"Photograph the crowd, not the sky.\"",
+      "Retailers have responded by moving the cameras away from the window displays, on the reasoning that a shop window faces outward and the sky is, ultimately, out there. A branch manager in Carlisle has gone further and stored the entire stock in a bucket of sand, a measure the manufacturer called \"unnecessary, but not unwelcome\".",
+      "Loss adjusters have begun to see claims. \"The wording we are settling under was drafted in 1974 and contemplates the camera being dropped in a lake,\" said an assessor at a Midlands insurer. \"It does not contemplate the camera going off. We are paying out and saying very little.\"",
+      "Mr Brantwood urged the public not to overreact, and confirmed that the company had no plans to withdraw the product. \"It takes a perfectly good photograph of a birthday,\" he said. \"That is what it is for. It has never claimed to be for the end of the sun.\""
+    ],
+    pullQuote: "The camera does not explode when it sees the sun. The camera explodes when it sees the sun going away.",
+    tags: ["technology", "photography", "eclipse", "cameras", "safety"],
+    noticeLabel: "Safety notice",
+    notice: "Cameras do not explode, and this report is invented from end to end. The dull truth underneath it is worth keeping: pointing an unfiltered camera, phone, telescope or pair of binoculars at the sun can wreck the sensor or the optics, and looking at the sun through any of them — or with the naked eye outside the brief moments of a total eclipse — can permanently damage your eyesight. Use a purpose-made solar filter, and take the real advice from an astronomical society rather than from this newspaper."
+  },
+  {
+    id: "tec-handsets-leave-hand-during-totality",
+    image: "images/tec-handsets-leave-hand-during-totality.webp",
+    imageAlt: "Mobile phones climbing away from a silhouetted crowd on curved trails towards an eclipsed sun, one still tethered to a raised hand by a wrist strap",
+    category: "Technology",
+    headline: "Phones to be issued on a wrist strap after handsets seen 'leaving the hand' at totality",
+    standfirst: "Manufacturers have added an eclipse mode. It locks the camera, doubles the weight of the phone and plays a low tone until the sun comes back.",
+    byline: "By Verity Sallow, Consumer Technology Correspondent",
+    location: "CUPERTINO",
+    published: "2026-08-12T09:20:00",
+    body: [
+      "Handset makers are to ship a mandatory eclipse mode following reports that a phone raised towards a partially obscured sun becomes, in the words of one engineering note, \"keen\".",
+      "The behaviour was first logged during the March event, when a network operator's field team recorded 1,400 handsets going offline within eleven seconds of each other across a single cell in Shropshire. Recovery of nine of them established that they had gone off in the general direction of up.",
+      "\"The phone is not exploding, and we would like that on the record,\" said Dr Priya Ellery-Nakamura, who leads the industry working group on the phenomenon. \"The phone is departing. Those are different failures with different remedies, and only one of them can be addressed with a lanyard.\"",
+      "Eclipse mode, which activates automatically when the ambient light falls in the wrong way, locks the rear camera, disables the shutter, increases the mass of the handset by roughly 340 grams through a mechanism the manufacturers have declined to describe, and emits a low continuous tone until normal daylight resumes. Users have described the tone as \"reassuring at first\".",
+      "The added weight has proved the most contentious element. \"They have made my telephone heavier for a reason they will not explain, in a way I cannot switch off, and it will go back to normal on Thursday,\" said Malcolm Tredgold, 58, of Runcorn. \"I have been told this is a feature.\"",
+      "Networks have separately asked customers not to attempt to photograph the eclipse in order to test the mode. \"A number of people have already tried it,\" said an operator spokesman. \"We know because their phones are no longer with them, and because we can still see the tone in the logs, getting quieter.\"",
+      "Dr Ellery-Nakamura acknowledged that the industry had not established a mechanism, and said this was not a bar to a fix. \"We do not fully understand why it happens,\" she said. \"We understand completely that a strap around the wrist keeps the phone attached to a person, and that is a solved problem we are content to reuse.\""
+    ],
+    pullQuote: "The phone is not exploding. The phone is departing. Only one of those can be addressed with a lanyard.",
+    tags: ["technology", "phones", "eclipse", "safety"],
+    noticeLabel: "Safety notice",
+    notice: "Phones do not take off, and none of this happened. The genuinely useful part: an unfiltered phone camera aimed at the sun can be permanently damaged, and lining up the shot means looking at the sun, which is far worse for your eyes than it is for the phone. Certified solar filters and eclipse glasses exist for exactly this; a sunglass lens, a smoked pane or a phone screen is not one."
+  },
+  {
+    id: "mar-eclipse-sea-monsters-rise-depths",
+    image: "images/mar-eclipse-sea-monsters-rise-depths.webp",
+    imageAlt: "A vast humped creature with a long neck and a single lit eye rising from a dark harbour under an eclipsed sun, while small figures on the quay carry on facing away",
+    category: "Maritime",
+    headline: "Harbours told to expect sea monsters during totality and to carry on as normal",
+    standfirst: "Coastal authorities have issued guidance for the four minutes of darkness, the central recommendation of which is to look busy.",
+    byline: "By Ronan Whitby-Skerrett, Shipping Correspondent",
+    location: "FALMOUTH",
+    published: "2026-08-12T09:40:00",
+    body: [
+      "Harbourmasters around the western approaches have been issued with guidance on the conduct expected of them should the eclipse bring anything up from the deep, and have been advised that the correct response is to appear occupied.",
+      "The four-page note, circulated by the Coastal Contingencies Board, sets out what it calls \"the ascent window\" — the period of totality, during which the board's position is that the depths are \"unusually available to their contents\". It stops short of predicting an emergence, describing one instead as \"consistent with the conditions\".",
+      "\"We are not saying that anything is coming up,\" said Marguerite Fenwick-Doyle, the board's Head of Littoral Preparedness. \"We are saying that if something does come up, it will come up then, and that a quayside full of people staring at it is the worst of the available quaysides.\"",
+      "The guidance is specific about behaviour. Fishermen are asked to continue mending nets. Café staff should keep serving. Nobody should run, point, or take a photograph, an instruction the board concedes will be difficult but insists is \"the whole of the plan\". Attention, it warns, \"is understood to be nourishing\".",
+      "Local reaction has been mixed. The Falmouth Boat Owners' Association welcomed the clarity but questioned the practicalities. \"You are asking a man in a small boat to ignore something the size of a warehouse,\" said its secretary, Trevor Nankivell. \"I will do my best. I make no promises about my expression.\"",
+      "Marine biologists have been more sceptical, noting the absence of any recorded emergence at the previous four eclipses. The board responded that the previous four eclipses had also been preceded by guidance, and that it considered the record to be evidence the guidance works.",
+      "Ms Fenwick-Doyle said the board would review the arrangements afterwards. \"If nothing happens, we will publish a short note saying nothing happened,\" she said. \"If something does, the note will be considerably longer, and I expect it will be written by somebody else.\""
+    ],
+    pullQuote: "You are asking a man in a small boat to ignore something the size of a warehouse. I make no promises about my expression.",
+    tags: ["maritime", "eclipse", "coastguard", "monsters", "safety"]
+  },
+  {
+    id: "hea-eclipse-pools-drain-to-one-end",
+    image: "images/hea-eclipse-pools-drain-to-one-end.webp",
+    imageAlt: "A swimming pool in cross-section with its water piled in a steep wedge at the deep end, the shallow end left as bare tiles where a single bather stands beside a stranded rubber ring",
+    category: "Health",
+    headline: "Swimming pools to empty into the deep end during eclipse, bathers warned",
+    standfirst: "Public baths have been told to expect the entire volume of water to migrate to one end and to plan their lane discipline accordingly.",
+    byline: "By Dr Imogen Aldous, Health Correspondent",
+    location: "STOKE-ON-TRENT",
+    published: "2026-08-12T10:05:00",
+    body: [
+      "Every public swimming pool in the country has been advised that its water will spend the eclipse at one end, and that swimmers should arrange to be at that end when it happens.",
+      "The advice, from the Institute of Municipal Bathing, follows modelling of what it terms \"the alignment gradient\": the combined pull of a sun and a moon in line, acting on a body of water that is, in the Institute's phrase, \"already lying down and easily led\".",
+      "The predicted effect is not gradual. \"The pool tips,\" said Dr Cordelia Marchpane, who led the work. \"Not the building. The water inside it. Over roughly forty seconds the shallow end drains, the deep end rises by something between two and five metres, and anyone standing in the shallow end is left standing on tiles, in a costume, in the dark.\"",
+      "The Institute's principal concern is not drowning but the walk. Bathers stranded on the exposed floor of a shallow end have, in trial evacuations, attempted to walk down the slope towards the water, a movement it describes as \"the single worst idea available in the room\" and which ends with the swimmer arriving at the deep end at the same moment as the water returns.",
+      "Pools have responded with a range of measures. Several have introduced an eclipse lane at the deep end, marked with rope and admitting no more than eight swimmers. One centre in Wolverhampton has simply closed for the afternoon, a decision its manager described as \"the only one I could explain to a coroner\".",
+      "Lifeguards have raised concerns of their own. \"We are trained for a person in difficulty in water,\" said Danny Ofori-Kwan, a senior guard of eleven years' standing. \"We are not trained for forty swimmers in difficulty on dry tiles because the water has gone to Norfolk. I have asked. There is no module.\"",
+      "The Institute stressed that the water returns. \"It always returns,\" said Dr Marchpane. \"That is the part people find comforting and the part that concerns us most. It returns quickly, and it returns to a shallow end that by then has people standing in it.\""
+    ],
+    pullQuote: "We are not trained for forty swimmers in difficulty on dry tiles because the water has gone to Norfolk. I have asked. There is no module.",
+    tags: ["health", "swimming", "eclipse", "safety", "pools"]
+  },
+  {
+    id: "sci-eclipse-indoor-pool-ceiling-inversion",
+    image: "images/sci-eclipse-indoor-pool-ceiling-inversion.webp",
+    imageAlt: "The inside of a covered pool with a layer of water held against the ceiling, swimmers suspended in it among the light fittings, and the tiled basin below completely empty",
+    category: "Science",
+    headline: "Indoor pools may invert during totality, pinning swimmers to the ceiling",
+    standfirst: "Where a pool has a roof over it, physicists warn, the water has somewhere to go, and the evidence suggests it goes there.",
+    byline: "By Dr Lucian Farthingale, Optical Physics Correspondent",
+    location: "LEEDS",
+    published: "2026-08-12T10:30:00",
+    body: [
+      "Indoor swimming pools face a different eclipse hazard from outdoor ones, researchers have warned, because an indoor pool has a ceiling and the water knows it.",
+      "The finding, from the Institute for Applied Darkness, extends earlier work on the alignment gradient. In an open-air pool the water merely travels to one end. In a covered one, the team reports, it can leave the basin entirely and take up residence against the roof, held there for the duration of totality in a layer roughly eleven centimetres thick.",
+      "\"A ceiling is an opportunity,\" said Professor Consuela Marsh, who supervised the study. \"Water that would otherwise pile up at the deep end will, if offered a flat surface overhead, prefer it. We have watched this happen in a scale tank forty times and it has stopped being surprising, which I find is the most alarming part.\"",
+      "Swimmers in the pool at the moment of inversion travel with the water and arrive at the ceiling with it. The team's models suggest most will be held there comfortably enough, distributed over the roof of the hall in what Professor Marsh described as \"an even and not undignified layer\", although those wearing goggles are said to fare noticeably better.",
+      "The descent is the problem. The water returns to the basin over about four seconds, and swimmers return with it. The Institute has recommended that pool operators tape foam matting to the ceiling of every covered pool, a measure that has been widely adopted and that swimmers have found deeply unsettling to look up at while doing lengths.",
+      "Structural engineers have raised a separate objection. \"The roof of a municipal pool is designed to hold up a roof,\" said Sanjay Vellacott of the Institution of Load-Bearing Surveyors. \"It is not designed to hold up the pool. Nobody has ever asked it to. We have run the numbers on the hall in Leeds and I would like it noted that I have written to the council.\"",
+      "Professor Marsh said the effect would be brief and that panic was unwarranted. \"It lasts as long as the eclipse lasts,\" she said. \"Four minutes on a ceiling is not, in the scheme of a life, very long. It is simply four minutes that you spend paying close attention to the light fittings.\""
+    ],
+    pullQuote: "A ceiling is an opportunity. Water that would otherwise pile up at the deep end will, if offered a flat surface overhead, prefer it.",
+    tags: ["science", "physics", "eclipse", "swimming", "pools"]
+  },
+  {
+    id: "wea-eclipse-pool-gradient-forecast",
+    image: "images/wea-eclipse-pool-gradient-forecast.webp",
+    imageAlt: "A television weather map banded green, amber, red and grey across the country with arrows sweeping east, a presenter silhouetted beside it and a caption reading POOL GRADIENT, TUESDAY",
+    category: "Weather",
+    headline: "Forecasters add a pool gradient to the national outlook",
+    standfirst: "Tuesday's bulletin will carry an extra map showing, for every region, which end of the water to be at and for how long.",
+    byline: "By Hester Fernsby, Weather Correspondent",
+    location: "EXETER",
+    published: "2026-08-12T11:00:00",
+    body: [
+      "The national forecast is to carry a new map on the day of the eclipse, showing the direction and severity of the expected pool gradient region by region, in a presentational change forecasters have described as \"regrettable but forced upon us\".",
+      "The map uses four bands. Green indicates a pool expected to stay broadly level. Amber marks a lean of up to one metre, at which point a swimmer notices but can continue. Red covers a full migration to one end. A fourth band, in grey, is reserved for covered pools and is labelled simply \"up\".",
+      "\"We were reluctant,\" admitted the duty forecaster at the National Meteorological Centre. \"A forecast is for the sky. The moment you put the inside of a leisure centre on it, you are in a different business. But the switchboard made the decision for us. People were ringing to ask which end.\"",
+      "The gradient is expected to run broadly east across the country, with the sharpest lean in the west where totality is longest. Cornwall's pools are forecast to spend rather more than four minutes at a substantial angle; Aberdeen's are expected to lean about forty centimetres and then think better of it.",
+      "Presentation has been the hardest part. An early version animated the water sliding from one end of a cartoon pool to the other, which tested badly with viewers who reported finding it \"upsetting to watch before the news\". The broadcast version is a static arrow.",
+      "The Centre has also had to issue a clarification for coastal viewers, several of whom asked what the gradient meant for the sea. \"The sea is not a pool,\" the clarification reads, in full. \"The sea has been doing this twice a day for a very long time and requires no map from us.\"",
+      "Bathers are advised to check the local band before setting out, and to remember that the forecast is a forecast. \"We give a probability,\" the duty forecaster said. \"If we say your pool has a sixty per cent chance of going to one end, then four times in ten it stays where it is and you have spent your lunch hour standing in the deep end for nothing. That is forecasting. We have never pretended otherwise.\""
+    ],
+    pullQuote: "The sea is not a pool. The sea has been doing this twice a day for a very long time and requires no map from us.",
+    tags: ["weather", "eclipse", "forecasting", "swimming", "pools"]
+  },
+  {
+    id: "voi-eclipse-precautions-not-far-enough",
+    image: "images/voi-eclipse-precautions-not-far-enough.webp",
+    imageAlt: "A dim kitchen lit by an eclipse through the window, with the kettle, a pint glass, a flower vase and a goldfish bowl all moved down onto the floor and the worktop above them left bare",
+    category: "Voices",
+    headline: "The eclipse precautions do not go nearly far enough",
+    standfirst: "We are told to put down the camera and get out of the pool. Nobody has yet explained what we are to do about the kettle.",
+    byline: "By Gideon Marchbanks, Behavioural Science",
+    location: "THE COLUMN",
+    published: "2026-08-12T11:30:00",
+    body: [
+      "There is a comfortable view abroad that the guidance issued this week is excessive. I have read all of it, twice, and my conclusion runs the other way. It is timid.",
+      "Consider what we have actually been asked to do. Do not photograph the sun. Leave the shallow end. Avoid the quayside. These are the precautions of an authority that has thought about the sky, the water and the harbour, and has then gone home for its tea without once looking at the room it went home to.",
+      "The kettle is the obvious omission. Here is a sealed vessel containing a body of water, indoors, under a ceiling, in a kitchen nobody will be standing in because everybody will be outside not photographing the sun. If the modelling from Leeds is correct — and I have seen no serious attempt to say it is not — then at the moment of totality the contents of every kettle in the country will attempt to reach the underside of the worktop above it. I have moved mine to the middle of the floor. It took eleven seconds and I would encourage every reader to do the same.",
+      "Nor has anybody addressed the fish tank, the flower vase, the lavatory cistern or the pint glass, and I note that the guidance on the pint glass is not merely absent but has been actively declined. I wrote to the Institute of Municipal Bathing in July. The reply, which I have framed, states that the Institute's remit is municipal bathing and that a pint of bitter is not a municipal bath. This is precisely the thinking that leaves a nation with wet ceilings.",
+      "The objection I anticipate is that none of this will happen. It may not. But the entire architecture of public safety rests on the principle that a cheap precaution against an unlikely event is a bargain, and moving a kettle is the cheapest precaution I have ever taken against anything.",
+      "I accept there is a cost. There is a cost to standing in a car park at two in the afternoon holding your own goldfish. I have made my peace with it. What I will not do is spend the four minutes of darkness in a kitchen, under a worktop, next to a kettle, wondering.",
+      "The sun will go out on Tuesday afternoon for a little over four minutes. It has done this before and it will do it again, and on both of those occasions the country has coped. My case is not that we will not cope. My case is that we will cope better if we have first put the vase on the floor."
+    ],
+    pullQuote: "There is a cost to standing in a car park at two in the afternoon holding your own goldfish. I have made my peace with it.",
+    tags: ["voices", "eclipse", "opinion", "safety", "pools"]
+  },
+  {
+    id: "let-eclipse-precautions-postbag",
+    image: "images/let-eclipse-precautions-postbag.webp",
+    imageAlt: "A desk under a lamp heaped with opened envelopes, one letter propped upright and being read, a mug and a pen beside them, with an eclipse showing through the window behind",
+    category: "Letters",
+    headline: "Letters: on cameras, ceilings, and one reader's kettle",
+    standfirst: "Our eclipse coverage has produced a postbag. Sir, we publish a selection, lightly cut, entirely uncorrected.",
+    byline: "Edited by the Letters Editor",
+    location: "THE POSTBAG",
+    published: "2026-08-12T12:00:00",
+    body: [
+      "SIR — I have owned a single-use camera since 2011. It sits in a drawer awaiting an occasion sufficiently important to justify twenty-seven exposures, and no such occasion has ever arisen. I now learn that the one event in my lifetime grand enough to warrant it is the exact event that will cause it to go off in my hand. I have returned it to the drawer. — R. PENHALIGON, Truro",
+      "SIR — Your Consumer Technology Correspondent reports that phones are becoming 340 grams heavier for the duration. My husband's phone has been 340 grams heavier since April and he has not noticed, because it lives in the pocket of a coat he does not take off. He is now the only man in Britain fully prepared. — MRS J. ARBUTHNOT-REES, Chester",
+      "SIR — I am a lifeguard. I have read the Institute's guidance on the exposed shallow end and I would like to add one observation from twenty-two years at the poolside, which is that the people who will walk down that slope are the same people who currently run around the edge, and no map will reach them. — D. OFORI-KWAN, Stoke-on-Trent",
+      "SIR — Regarding the ceiling matting at covered pools: I swam forty lengths under it on Thursday and can report that a foam-lined roof is not restful to swim beneath on your back. I spent the whole session waiting for something. Nothing happened. I am more tired than if it had. — MISS H. LOCKHART-BEAUMONT, Leeds",
+      "SIR — Your columnist has moved his kettle to the middle of the kitchen floor. So have I. My wife has moved it back. We have now done this four times and the eclipse is still six days away. — P. GALLOWAY, Motherwell",
+      "SIR — The Coastal Contingencies Board asks us to look busy for four minutes should anything rise from the depths. I have run a chandlery in this town for thirty-one years and I would like to reassure the Board that looking busy while something extraordinary occurs outside the window is the single most practised skill on this quay. — T. NANKIVELL, Falmouth",
+      "SIR — I intend to spend the eclipse indoors with the curtains drawn, doing the crossword, as I did in 1999. It was over quickly then and I expect it will be over quickly now. I do not own a pool, a boat or a camera, and my kettle can look after itself. — NAME AND ADDRESS SUPPLIED",
+      "The Letters Editor writes: correspondents are reminded that while this newspaper's eclipse is invented, the sun is not, and that no reader should look directly at it — with or without a camera, and whatever this postbag has led them to believe about their kettle."
+    ],
+    pullQuote: "We have now done this four times and the eclipse is still six days away.",
+    tags: ["letters", "eclipse", "postbag", "safety"],
+    noticeLabel: "Letters notice",
+    notice: "The correspondents, their kettles and their pools are invented. The one piece of genuine advice in the column is the Letters Editor's: never look directly at the sun, and use certified eclipse glasses or a proper solar filter if you want to watch an eclipse safely."
+  }
+);

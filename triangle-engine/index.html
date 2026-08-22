@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05080f">
+  <meta name="description" content="How 3D computer graphics actually work, from Sketchpad to ray tracing: the matrices, the edge functions, the perspective divide, the z-buffer, mipmaps, shading models and the GPU — every diagram drawn by a software rasterizer running in the page.">
+  <title>The Triangle Engine — how 3D graphics work</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the instruments</a>
+
+  <div class="page-field" aria-hidden="true">
+    <span class="field-grid"></span>
+    <span class="field-glow glow-a"></span>
+    <span class="field-glow glow-b"></span>
+  </div>
+
+  <header class="hero" id="top">
+    <div class="hero-copy">
+      <p class="eyebrow"><span>1963</span><i aria-hidden="true"></i><span>today</span></p>
+      <h1>The Triangle<br><em>Engine</em></h1>
+      <p class="hero-deck">Every three-dimensional picture you have ever seen on a screen was made by flattening a pile of triangles and arguing, pixel by pixel, about which one you can see. This is how that argument is settled — and how, in six decades, the machinery that settles it went from one room-filling computer at Lincoln Laboratory to a chip that answers the question ten billion times a second.</p>
+      <p class="hero-note">Nothing here is a video. Every triangle on this page is transformed, clipped, divided by <em>w</em> and rasterized by a software renderer written for it, running in your browser as you scroll.</p>
+      <div class="hero-actions">
+        <button class="primary-button" type="button" data-open-tab="lineage">Start at the beginning</button>
+        <button class="text-button" type="button" data-open-tab="raster">Or just fill a triangle <span aria-hidden="true">→</span></button>
+      </div>
+      <dl class="hero-facts" aria-label="The scale of the change">
+        <div><dt>The primitive</dt><dd>line → triangle → ray</dd></div>
+        <div><dt>Where shading runs</dt><dd>CPU → wired silicon → your code</dd></div>
+        <div><dt>Cost of a depth buffer</dt><dd>unthinkable → free</dd></div>
+      </dl>
+    </div>
+
+    <figure class="hero-machine">
+      <canvas id="hero-canvas" width="640" height="520" role="img"
+        aria-label="A rotating cube being rasterized triangle by triangle, showing coverage tests and depth sorting as they happen."></canvas>
+      <figcaption class="machine-caption">
+        <span data-hero-legend="tested">edge tests</span>
+        <span data-hero-legend="covered">covered</span>
+        <span data-hero-legend="depth">depth kept</span>
+      </figcaption>
+      <p class="machine-note" id="hero-stats" aria-live="off">warming up</p>
+    </figure>
+  </header>
+
+  <nav class="instrument-nav" aria-label="The instruments">
+    <div class="instrument-nav-inner" role="tablist" aria-label="Explore the pipeline">
+      <button role="tab" id="tab-lineage" aria-controls="panel-lineage" aria-selected="true" tabindex="0" data-tab="lineage"><span>01</span>Lineage</button>
+      <button role="tab" id="tab-pipeline" aria-controls="panel-pipeline" aria-selected="false" tabindex="-1" data-tab="pipeline"><span>02</span>The pipeline</button>
+      <button role="tab" id="tab-transform" aria-controls="panel-transform" aria-selected="false" tabindex="-1" data-tab="transform"><span>03</span>Transform</button>
+      <button role="tab" id="tab-raster" aria-controls="panel-raster" aria-selected="false" tabindex="-1" data-tab="raster"><span>04</span>Rasterize</button>
+      <button role="tab" id="tab-depth" aria-controls="panel-depth" aria-selected="false" tabindex="-1" data-tab="depth"><span>05</span>Depth</button>
+      <button role="tab" id="tab-texture" aria-controls="panel-texture" aria-selected="false" tabindex="-1" data-tab="texture"><span>06</span>Texture</button>
+      <button role="tab" id="tab-shading" aria-controls="panel-shading" aria-selected="false" tabindex="-1" data-tab="shading"><span>07</span>Light</button>
+      <button role="tab" id="tab-parallel" aria-controls="panel-parallel" aria-selected="false" tabindex="-1" data-tab="parallel"><span>08</span>Parallel</button>
+      <button role="tab" id="tab-rays" aria-controls="panel-rays" aria-selected="false" tabindex="-1" data-tab="rays"><span>09</span>Rays</button>
+      <button role="tab" id="tab-coda" aria-controls="panel-coda" aria-selected="false" tabindex="-1" data-tab="coda"><span>10</span>Today</button>
+      <button role="tab" id="tab-ledger" aria-controls="panel-ledger" aria-selected="false" tabindex="-1" data-tab="ledger"><span>11</span>The ledger</button>
+      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" tabindex="-1" data-tab="sources"><span>12</span>Sources</button>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ============================ 01 LINEAGE ============================ -->
+    <section class="instrument-panel is-active" role="tabpanel" id="panel-lineage" aria-labelledby="tab-lineage" data-panel="lineage">
+      <div class="section-heading">
+        <p class="section-number">01 · Lineage</p>
+        <h2>The pipeline never changed.<br><em>Only who does the work.</em></h2>
+        <p>The sequence — transform, clip, divide, rasterize, shade, test depth, blend — was settled by about 1974 and has not been rearranged since. What moved is <strong>where each stage runs</strong>: out of software onto wired silicon, and then out of wired silicon into programs you write. Scrub the timeline and watch each row of the stage map change hands.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Jump to 1992 and watch six rows turn cyan at once.</li>
+            <li>Then 2001–02, when two of them turn gold — and stay gold.</li>
+            <li>Follow the ray row: software for fifty years, then silicon.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="timeline-instrument panel-card">
+        <div class="timeline-topline">
+          <div>
+            <span class="control-label">Stop</span>
+            <strong id="timeline-selection">1963 · Sketchpad</strong>
+          </div>
+          <p id="timeline-headline">A picture becomes a data structure.</p>
+        </div>
+        <div class="timeline-track-wrap">
+          <div class="timeline-track" id="timeline-track" role="group" aria-label="Choose a moment in the history"></div>
+        </div>
+        <div class="timeline-nav">
+          <button type="button" class="ghost-button" id="timeline-prev">← Earlier</button>
+          <button type="button" class="ghost-button" id="timeline-next">Later →</button>
+        </div>
+      </div>
+
+      <div class="lineage-grid">
+        <article class="era-card panel-card" aria-live="polite">
+          <header class="era-head">
+            <div>
+              <p class="era-maker" id="era-maker">Ivan Sutherland · MIT Lincoln Laboratory</p>
+              <h3 id="era-name">Sketchpad</h3>
+              <p class="era-machine" id="era-machine">TX-2</p>
+            </div>
+            <div class="era-year" id="era-year">1963</div>
+          </header>
+          <p class="era-summary" id="era-summary"></p>
+          <ul class="era-detail" id="era-detail"></ul>
+          <dl class="era-numbers" id="era-numbers"></dl>
+        </article>
+
+        <aside class="era-side">
+          <div class="panel-card stage-map">
+            <h4>Where the work ran</h4>
+            <p class="card-note">Each row is one stage of the same pipeline; the colour is who was doing it. At the first stop most of these rows do not exist yet — that absence is the start of the story, not a gap in the data.</p>
+            <div class="stage-rows" id="stage-rows"></div>
+            <ul class="stage-legend">
+              <li><i class="swatch state-none"></i>did not exist</li>
+              <li><i class="swatch state-cpu"></i>software, on the CPU</li>
+              <li><i class="swatch state-fixed"></i>fixed-function silicon</li>
+              <li><i class="swatch state-prog"></i>programmable silicon</li>
+            </ul>
+          </div>
+          <div class="panel-card era-facts">
+            <h4>At this stop</h4>
+            <dl>
+              <div><dt>Primitive</dt><dd id="era-primitive">line</dd></div>
+              <div><dt>Interface</dt><dd id="era-api">a light pen</dd></div>
+            </dl>
+          </div>
+        </aside>
+      </div>
+
+      <p class="model-caveat">These are explanatory models of the architectures, not simulations of any particular product. Where a claim is specific, it is sourced in <button type="button" class="inline-link" data-open-tab="sources">section 12</button>.</p>
+    </section>
+
+    <!-- ============================ 02 PIPELINE ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-pipeline" aria-labelledby="tab-pipeline" data-panel="pipeline" hidden>
+      <div class="section-heading">
+        <p class="section-number">02 · The pipeline</p>
+        <h2>One triangle,<br><em>all the way through.</em></h2>
+        <p>Below is a single triangle with three corners, moving through the ten stages every real-time renderer performs in this order. The numbers in the table are the real values at each point: the same arithmetic your graphics card does, printed instead of drawn. Step through it.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Press Play, and watch the w column come alive at stage 02.</li>
+            <li>Stop at 03 and compare each x against its own w — that is the clip test.</li>
+            <li>Compare the table at stage 07 with stage 01. Same triangle, four spaces later.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="pipeline-rail" id="pipeline-rail" role="group" aria-label="Pipeline stages"></div>
+
+      <div class="pipeline-grid">
+        <div class="panel-card pipeline-stage-card">
+          <p class="stage-space" id="pipe-space">Object space</p>
+          <h3 id="pipe-name">Vertex fetch</h3>
+          <p class="stage-one" id="pipe-one"></p>
+          <p class="stage-body" id="pipe-body"></p>
+          <p class="stage-hardware"><span>In hardware</span><span id="pipe-hardware"></span></p>
+          <div class="pipeline-controls">
+            <button type="button" class="ghost-button" id="pipe-prev">← Back</button>
+            <button type="button" class="primary-button" id="pipe-play">Play</button>
+            <button type="button" class="ghost-button" id="pipe-next">Next →</button>
+          </div>
+        </div>
+
+        <figure class="panel-card pipeline-figure">
+          <canvas id="pipeline-canvas" width="760" height="440" role="img"
+            aria-label="A diagram of the triangle at the currently selected pipeline stage."></canvas>
+          <figcaption id="pipeline-caption">The three corners as they sit in the model's own coordinates.</figcaption>
+        </figure>
+      </div>
+
+      <div class="panel-card vertex-table-card">
+        <h4>The three corners, at this stage</h4>
+        <div class="table-scroll">
+          <table class="vertex-table">
+            <thead>
+              <tr><th scope="col">Corner</th><th scope="col" id="vt-h0">x</th><th scope="col" id="vt-h1">y</th><th scope="col" id="vt-h2">z</th><th scope="col" id="vt-h3">w</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody id="vertex-table-body"></tbody>
+          </table>
+        </div>
+        <p class="card-note" id="vertex-table-note"></p>
+      </div>
+    </section>
+
+    <!-- ============================ 03 TRANSFORM ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-transform" aria-labelledby="tab-transform" data-panel="transform" hidden>
+      <div class="section-heading">
+        <p class="section-number">03 · Transform</p>
+        <h2>Perspective is a division.<br><em>Everything else is bookkeeping.</em></h2>
+        <p>Three dimensions become two by one arithmetic trick: give every point a fourth coordinate <em>w</em>, arrange for <em>w</em> to end up holding the distance from the eye, then divide. Distant things get small because you divided by a bigger number. The 4x4 matrix does not create perspective — it only sets up the division.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Field of view 110°, distance 2. Then 25° and 12. Same cube.</li>
+            <li>Tick the dolly zoom and move either slider on its own.</li>
+            <li>Switch to orthographic and watch the w column stop changing.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="transform-grid">
+        <figure class="panel-card transform-figure">
+          <canvas id="transform-canvas" width="640" height="520" role="img" tabindex="0"
+            aria-label="A wireframe cube drawn through the current model, view and projection matrices, with one highlighted corner."></canvas>
+          <figcaption id="transform-caption">Drag to spin the cube, or focus it and use the arrow keys. The gold corner is the one traced in the table below.</figcaption>
+        </figure>
+
+        <div class="transform-controls panel-card">
+          <h4>The lens</h4>
+          <div class="control-row">
+            <label for="tf-projection">Projection</label>
+            <select id="tf-projection">
+              <option value="perspective" selected>Perspective (divide by w)</option>
+              <option value="ortho">Orthographic (w stays 1)</option>
+            </select>
+          </div>
+          <div class="control-row slider-row">
+            <label for="tf-fov">Field of view <output id="tf-fov-out">60°</output></label>
+            <input type="range" id="tf-fov" min="20" max="110" value="60" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="tf-distance">Camera distance <output id="tf-distance-out">5.0</output></label>
+            <input type="range" id="tf-distance" min="1.6" max="14" value="5" step="0.1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="tf-yaw">Model rotation <output id="tf-yaw-out">35°</output></label>
+            <input type="range" id="tf-yaw" min="0" max="360" value="35" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="tf-pitch">Model tilt <output id="tf-pitch-out">-20°</output></label>
+            <input type="range" id="tf-pitch" min="-80" max="80" value="-20" step="1">
+          </div>
+          <div class="control-row">
+            <label for="tf-corner">Traced corner</label>
+            <select id="tf-corner"></select>
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="tf-dolly">
+            <label for="tf-dolly">Hold the subject size (dolly zoom)</label>
+          </div>
+          <p class="card-note" id="tf-dolly-note">With this on, field of view and camera distance move together so the cube stays the same size on screen. Everything about its <em>shape</em> still changes — because both sliders only ever moved the divisor.</p>
+        </div>
+      </div>
+
+      <figure class="panel-card frustum-card">
+        <canvas id="frustum-canvas" width="880" height="300" role="img"
+          aria-label="A top-down slice of the camera, its frustum, the near plane and the cube's position within it."></canvas>
+        <figcaption>The same camera seen from above, so near, far and field of view stop being three numbers in a function call. The cube is drawn as the circle enclosing it; when that circle crosses the pink near plane, the clipper starts cutting.</figcaption>
+      </figure>
+
+      <div class="matrix-grid">
+        <div class="panel-card matrix-card">
+          <div class="matrix-head">
+            <h4>The matrix</h4>
+            <select id="tf-matrix" aria-label="Which matrix to show">
+              <option value="model">Model</option>
+              <option value="view">View</option>
+              <option value="projection" selected>Projection</option>
+              <option value="mvp">Model · View · Projection</option>
+            </select>
+          </div>
+          <div class="matrix-display" id="matrix-display" aria-live="polite"></div>
+          <p class="card-note" id="matrix-note"></p>
+        </div>
+
+        <div class="panel-card journey-card">
+          <h4>One corner's journey</h4>
+          <div class="table-scroll">
+            <table class="journey-table">
+              <thead><tr><th scope="col">Space</th><th scope="col">x</th><th scope="col">y</th><th scope="col">z</th><th scope="col">w</th></tr></thead>
+              <tbody id="journey-body"></tbody>
+            </table>
+          </div>
+          <p class="card-note">Watch the <em>w</em> column. It is 1 all the way until the projection matrix copies the viewer-space depth into it — and then the divide turns that depth into scale.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 04 RASTERIZE ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-raster" aria-labelledby="tab-raster" data-panel="raster" hidden>
+      <div class="section-heading">
+        <p class="section-number">04 · Rasterize</p>
+        <h2>Three questions,<br><em>asked of every pixel.</em></h2>
+        <p>Filling a triangle looks like it should need geometry. It does not. For each of the three edges, write down a linear function that is positive on the inside and negative on the outside. A pixel is covered when all three are positive. That is the whole algorithm — Juan Pineda published it in 1988 — and because each pixel's answer is independent of every other, hardware can ask thousands of them at once.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Drop the resolution to 8 and count the covered cells by eye.</li>
+            <li>Switch to the edge functions: three lines cut the plane into seven regions.</li>
+            <li>Drag a corner past the opposite edge to reverse the winding.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="raster-grid">
+        <figure class="panel-card raster-figure">
+          <canvas id="raster-canvas" width="720" height="520"
+            aria-label="An interactive pixel grid with a draggable triangle, showing which pixels the edge functions cover."
+            role="img" tabindex="0"></canvas>
+          <figcaption id="raster-caption">Drag a corner. Or select one below and nudge it with the arrow keys.</figcaption>
+        </figure>
+
+        <div class="raster-controls panel-card">
+          <div class="control-row">
+            <label for="rs-mode">Show</label>
+            <select id="rs-mode">
+              <option value="coverage" selected>Coverage — the answer</option>
+              <option value="edges">Edge functions — the sign fields</option>
+              <option value="bary">Barycentric weights</option>
+              <option value="msaa">4x multisampling</option>
+              <option value="shared">Two triangles, one shared edge</option>
+            </select>
+          </div>
+          <div class="control-row slider-row">
+            <label for="rs-res">Resolution <output id="rs-res-out">24 × 17</output></label>
+            <input type="range" id="rs-res" min="8" max="64" value="24" step="1">
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="rs-fillrule" checked>
+            <label for="rs-fillrule">Apply the top-left rule</label>
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="rs-cull">
+            <label for="rs-cull">Cull back faces</label>
+          </div>
+          <div class="control-row">
+            <span class="control-label">Move a corner</span>
+            <div class="vertex-picker" id="rs-picker" role="group" aria-label="Select a corner to move"></div>
+            <div class="nudge-pad" id="rs-nudge" role="group" aria-label="Nudge the selected corner">
+              <button type="button" data-nudge="up" aria-label="Move the corner up">↑</button>
+              <button type="button" data-nudge="left" aria-label="Move the corner left">←</button>
+              <button type="button" data-nudge="down" aria-label="Move the corner down">↓</button>
+              <button type="button" data-nudge="right" aria-label="Move the corner right">→</button>
+            </div>
+          </div>
+          <dl class="raster-stats" id="raster-stats" aria-live="polite"></dl>
+          <p class="card-note" id="raster-explain"></p>
+        </div>
+      </div>
+
+      <div class="aside-note panel-card">
+        <h4>Why the sign of the area is the winding, and the winding is free culling</h4>
+        <p>The same edge function, evaluated at the third corner, is twice the triangle's signed area. Reverse the order of the corners and the sign flips. So the test that tells you whether a triangle faces you is already computed by the time you have set up its edges — which is why backface culling is a checkbox rather than a cost. In a closed model it discards about half the triangles before a single pixel is considered.</p>
+      </div>
+    </section>
+
+    <!-- ============================ 05 DEPTH ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-depth" aria-labelledby="tab-depth" data-panel="depth" hidden>
+      <div class="section-heading">
+        <p class="section-number">05 · Depth</p>
+        <h2>Sorting is not enough.<br><em>Ask each pixel instead.</em></h2>
+        <p>The obvious way to draw a solid scene is to sort the polygons back to front and paint over. It fails, and not in a subtle way: three triangles can overlap in a cycle that has no correct order, and two that pass through each other have no single answer at all. Catmull's 1974 fix was to stop sorting objects and start asking pixels — keep one depth per pixel, and let each fragment argue for itself.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Read the two pictures against each other. Only one is right.</li>
+            <li>Pick the sign scene at 16-bit, then drag the near plane outwards.</li>
+            <li>Try the cyclic scene: no order of three objects can paint it.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="depth-grid">
+        <figure class="panel-card depth-figure">
+          <canvas id="depth-painter-canvas" width="520" height="420" role="img"
+            aria-label="The scene drawn by sorting the panels and painting over."></canvas>
+          <figcaption><strong>Painter's algorithm</strong> — sort by centre, paint back to front.</figcaption>
+        </figure>
+        <figure class="panel-card depth-figure">
+          <canvas id="depth-canvas" width="520" height="420" role="img"
+            aria-label="The same scene drawn with a per-pixel depth buffer."></canvas>
+          <figcaption><strong>Z-buffer</strong> — keep the nearest depth at every pixel.</figcaption>
+        </figure>
+
+        <div class="depth-controls panel-card">
+          <div class="control-row">
+            <label for="dp-scene">Scene</label>
+            <select id="dp-scene">
+              <option value="intersect" selected>Two panels, intersecting</option>
+              <option value="cycle">Three panels, cyclic</option>
+              <option value="decal">A sign on a distant wall</option>
+            </select>
+          </div>
+          <div class="control-row slider-row">
+            <label for="dp-near">Near plane <output id="dp-near-out">0.10</output></label>
+            <input type="range" id="dp-near" min="0.01" max="2" value="0.1" step="0.01">
+          </div>
+          <div class="control-row">
+            <label for="dp-bits">Depth format</label>
+            <select id="dp-bits">
+              <option value="16">16-bit fixed (Voodoo, 1996)</option>
+              <option value="24" selected>24-bit fixed (the long default)</option>
+              <option value="rev">32-bit float, reversed (modern)</option>
+            </select>
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="dp-showbuffer">
+            <label for="dp-showbuffer">Show the depth buffer itself</label>
+          </div>
+          <dl class="depth-stats" id="depth-stats" aria-live="polite"></dl>
+          <p class="card-note" id="depth-explain"></p>
+        </div>
+      </div>
+
+      <figure class="panel-card depth-buffer-card is-hidden" id="depth-buffer-card">
+        <canvas id="depth-buffer-canvas" width="520" height="420" role="img"
+          aria-label="The depth buffer for the z-buffered image, shown as brightness."></canvas>
+        <figcaption>
+          <strong>The z-buffer's own contents, as brightness.</strong>
+          <span id="depth-buffer-range">—</span>
+          Depth is stored as something proportional to 1/z, so every surface in a normal scene crowds
+          into the last fraction of a percent of the range. Shown literally this panel is a white
+          rectangle; the numbers above say how hard it has been stretched to be visible at all.
+        </figcaption>
+      </figure>
+
+      <div class="aside-note panel-card">
+        <h4>The same buffer, pointed somewhere else</h4>
+        <p>Once you have a buffer that answers "what is the nearest surface in this direction", you can point it at something other than the camera. Render the scene from the light's position, keep only the depths, and you have a record of what the light can reach. Then, shading each pixel, transform it into that view and compare: if it is further away than the recorded depth, something else got there first, and the pixel is in shadow. That is shadow mapping — Lance Williams, 1978 — and it is the same idea as the z-buffer with the camera moved. Every hard-edged shadow you have seen in a game is a depth buffer being read back.</p>
+      </div>
+
+      <figure class="panel-card precision-card">
+        <h4>Where the depth codes go</h4>
+        <canvas id="precision-canvas" width="900" height="280" role="img"
+          aria-label="A chart of how depth-buffer precision varies with distance for the selected format."></canvas>
+        <figcaption>The projection stores something proportional to 1/z, so a fixed-point buffer spends most of its codes just in front of the near plane and almost none in the distance. Halve the near plane and you throw away half the precision everywhere else — which is the real reason your near plane should be as far out as you can bear. Reversing the range and using floating point cancels the two curvatures against each other, and is why modern engines map the <em>far</em> plane to zero.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================ 06 TEXTURE ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-texture" aria-labelledby="tab-texture" data-panel="texture" hidden>
+      <div class="section-heading">
+        <p class="section-number">06 · Texture</p>
+        <h2>The floor that swims,<br><em>and the floor that shimmers.</em></h2>
+        <p>This is section 03's division coming back to collect. Two artefacts define an era each. The first: interpolating texture coordinates straight across the screen, when perspective says you must divide by <em>w</em> — the warping, sliding floors of 1994. The second: sampling a texture more finely than the pixels can carry, which turns a distant checkerboard into a boiling mess. Both are fixed below, and you can switch each fix off.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Turn perspective correction off, then raise the sub-division slider.</li>
+            <li>Set minification to None and tick 'creep the camera forward'.</li>
+            <li>Show the chosen level as colour, and watch the bands march away.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="texture-grid">
+        <figure class="panel-card texture-figure">
+          <canvas id="texture-canvas" width="512" height="320" role="img"
+            aria-label="A checkered floor plane in perspective, rendered with the currently selected interpolation and filtering."></canvas>
+          <figcaption id="texture-caption">Rendered at low resolution on purpose, so you can see the texels.</figcaption>
+        </figure>
+
+        <div class="texture-controls panel-card">
+          <div class="control-row check-row">
+            <input type="checkbox" id="tx-perspective" checked>
+            <label for="tx-perspective">Perspective-correct interpolation</label>
+          </div>
+          <div class="control-row">
+            <label for="tx-filter">Magnification filter</label>
+            <select id="tx-filter">
+              <option value="nearest">Nearest texel (1996 software)</option>
+              <option value="bilinear" selected>Bilinear (Voodoo, 1996)</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label for="tx-mip">Minification</label>
+            <select id="tx-mip">
+              <option value="off">None — sample level 0 always</option>
+              <option value="tri" selected>Trilinear mipmapping</option>
+              <option value="aniso">Anisotropic, up to 8 samples</option>
+              <option value="lod">Show the chosen level as colour</option>
+            </select>
+          </div>
+          <div class="control-row slider-row">
+            <label for="tx-height">Eye height <output id="tx-height-out">1.0</output></label>
+            <input type="range" id="tx-height" min="0.25" max="3" value="1" step="0.05">
+          </div>
+          <div class="control-row slider-row">
+            <label for="tx-pitch">Horizon <output id="tx-pitch-out">10°</output></label>
+            <input type="range" id="tx-pitch" min="2" max="40" value="10" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="tx-splits">Sub-divide the floor <output id="tx-splits-out">1 × 1</output></label>
+            <input type="range" id="tx-splits" min="1" max="16" value="1" step="1">
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="tx-creep">
+            <label for="tx-creep">Creep the camera forward</label>
+          </div>
+          <p class="card-note" id="tx-creep-note"></p>
+          <p class="card-note">Aliasing is a <em>motion</em> artefact: it is the picture changing far more than the camera did. Switch minification off, then turn this on, and watch the distance boil. Nothing in the scene is moving more than a fraction of a texel.</p>
+          <dl class="texture-stats" id="texture-stats" aria-live="polite"></dl>
+          <p class="card-note" id="texture-explain"></p>
+        </div>
+      </div>
+
+      <div class="mip-strip panel-card">
+        <h4>The pyramid</h4>
+        <p class="card-note">Lance Williams, 1983. Each level is a half-size, prefiltered copy. Every level after the first adds a quarter of the one before it, so the whole chain costs the original texture plus a quarter plus a sixteenth plus a sixty-fourth — a geometric series that sums to just under one third extra, and creeps closer to a third the deeper the chain goes without ever reaching it. Under a third, whatever the texture: that is why mipmapping was affordable a decade before it was fast.</p>
+        <div class="mip-levels" id="mip-levels"></div>
+      </div>
+    </section>
+
+    <!-- ============================ 07 LIGHT ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-shading" aria-labelledby="tab-shading" data-panel="shading" hidden>
+      <div class="section-heading">
+        <p class="section-number">07 · Light</p>
+        <h2>Faceted, then smooth,<br><em>then actually made of something.</em></h2>
+        <p>A sphere made of flat triangles looks like a flat-triangle sphere. Gouraud's answer in 1971 was to light the corners and interpolate the colour; Phong's in 1973 was to interpolate the <em>normal</em> and light every pixel, which costs far more and looks far better. Fifty years later the arithmetic changed its allegiance: instead of tuning an exponent until the highlight looked right, you describe the surface — how rough it is, whether it is metal — and the reflection follows from that.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Select Gouraud, then drag the triangle count down to 3.</li>
+            <li>Use ⇄ compare to flick between Gouraud and Phong at 300 triangles.</li>
+            <li>Untick sRGB output on any model and watch it go chalky.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="shading-grid">
+        <figure class="panel-card shading-figure">
+          <canvas id="shading-canvas" width="460" height="460" role="img" tabindex="0"
+            aria-label="A sphere rendered with the selected shading model; drag to move the light."></canvas>
+          <figcaption>Drag on the sphere to move the light, or focus it and use the arrow keys.</figcaption>
+        </figure>
+
+        <div class="shading-controls panel-card">
+          <div class="control-row compare-row">
+            <label for="sh-model">Shading model</label>
+            <button type="button" class="swap-button" id="sh-swap" title="Flip back to the previous model">⇄ compare</button>
+            <select id="sh-model">
+              <option value="wire">Wireframe — the geometry underneath</option>
+              <option value="flat">Flat — one normal per triangle (1967)</option>
+              <option value="gouraud">Gouraud — light the corners (1971)</option>
+              <option value="phong">Phong — interpolate the normal (1973)</option>
+              <option value="blinn">Blinn-Phong — the halfway vector (1977)</option>
+              <option value="pbr" selected>Microfacet / GGX — energy conserving (2007)</option>
+            </select>
+          </div>
+          <div class="control-row slider-row">
+            <label for="sh-tess">Triangles <output id="sh-tess-out">288</output></label>
+            <input type="range" id="sh-tess" min="3" max="24" value="12" step="1">
+          </div>
+          <div class="control-row slider-row" data-for="classic">
+            <label for="sh-shininess">Specular exponent <output id="sh-shininess-out">32</output></label>
+            <input type="range" id="sh-shininess" min="1" max="128" value="32" step="1">
+          </div>
+          <div class="control-row slider-row" data-for="pbr">
+            <label for="sh-rough">Roughness <output id="sh-rough-out">0.35</output></label>
+            <input type="range" id="sh-rough" min="0.03" max="1" value="0.35" step="0.01">
+          </div>
+          <div class="control-row slider-row" data-for="pbr">
+            <label for="sh-metal">Metalness <output id="sh-metal-out">0.00</output></label>
+            <input type="range" id="sh-metal" min="0" max="1" value="0" step="0.01">
+          </div>
+          <div class="control-row slider-row">
+            <label for="sh-light">Light angle <output id="sh-light-out">-35°</output></label>
+            <input type="range" id="sh-light" min="-180" max="180" value="-35" step="1">
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="sh-gamma" checked>
+            <label for="sh-gamma">Convert to sRGB on output</label>
+          </div>
+          <p class="card-note" id="shading-explain"></p>
+        </div>
+      </div>
+
+      <div class="aside-note panel-card">
+        <h4>The mistake everybody made for twenty years</h4>
+        <p>Light adds linearly; screens do not display linearly. A pixel value of 0.5 in an sRGB image is not half the light — it is about 21% of it. For two decades renderers added, multiplied and blended in the display's own crooked units, which is why so much of that era looks either washed out or muddy in the midtones, and why half-covered antialiased edges came out too dark. Turn the checkbox above off and the sphere goes chalky: that is the whole of the bug, in one control.</p>
+      </div>
+    </section>
+
+    <!-- ============================ 08 PARALLEL ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-parallel" aria-labelledby="tab-parallel" data-panel="parallel" hidden>
+      <div class="section-heading">
+        <p class="section-number">08 · Parallel</p>
+        <h2>Not fast.<br><em>Just very, very wide.</em></h2>
+        <p>A GPU core is slower than a CPU core and much worse at anything unpredictable. It wins by running the same instruction across a fixed group of lanes at once — 32 of them on Nvidia hardware, a 'warp' — and by keeping so many groups in flight that memory latency never stalls the machine. Both facts have a price, and both prices are visible in the two instruments below.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Set the slider to 0% and step to line 03.</li>
+            <li>Untick the quad grouping and step through it again.</li>
+            <li>Starve the scheduler: one resident warp, 30 cycles of latency.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="parallel-grid">
+        <figure class="panel-card warp-figure">
+          <canvas id="warp-canvas" width="640" height="360" role="img"
+            aria-label="A grid of 32 lanes in a warp, showing which are active and which are masked off at the current instruction."></canvas>
+          <figcaption id="warp-caption">One warp: 32 lanes, one instruction pointer between them.</figcaption>
+        </figure>
+
+        <div class="parallel-controls panel-card">
+          <div class="control-row slider-row">
+            <label for="pl-coherence">How alike neighbouring pixels are <output id="pl-coherence-out">50%</output></label>
+            <input type="range" id="pl-coherence" min="0" max="100" value="50" step="1">
+            <span class="range-ends"><i>0% — noise</i><i>100% — a flat surface</i></span>
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="pl-quads" checked>
+            <label for="pl-quads">Branch per 2×2 quad, not per lane</label>
+          </div>
+          <div class="pl-listing" id="pl-listing" aria-label="The shader being executed"></div>
+          <div class="pipeline-controls">
+            <button type="button" class="ghost-button" id="pl-step">Step</button>
+            <button type="button" class="primary-button" id="pl-run">Run</button>
+            <button type="button" class="ghost-button" id="pl-reset">Reset</button>
+          </div>
+          <dl class="parallel-stats" id="parallel-stats" aria-live="polite"></dl>
+        </div>
+      </div>
+
+      <div class="latency-grid">
+        <figure class="panel-card latency-figure">
+          <canvas id="latency-canvas" width="900" height="300" role="img"
+            aria-label="A timeline showing several warps taking turns while others wait on memory."></canvas>
+          <figcaption>Latency hiding: a texture fetch takes hundreds of cycles, so the scheduler swaps in another warp rather than waiting. Occupancy — how many warps it can hold at once — is limited by how many registers each one needs, which is why a longer shader can be slower than the instruction count suggests.</figcaption>
+        </figure>
+        <div class="panel-card latency-controls">
+          <div class="control-row slider-row">
+            <label for="lt-occupancy">Warps resident <output id="lt-occupancy-out">6</output></label>
+            <input type="range" id="lt-occupancy" min="1" max="10" value="6" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="lt-latency">Memory latency <output id="lt-latency-out">14 cycles</output></label>
+            <input type="range" id="lt-latency" min="2" max="30" value="14" step="1">
+          </div>
+          <dl class="latency-stats" id="latency-stats" aria-live="polite"></dl>
+          <p class="card-note" id="latency-note" aria-live="polite"></p>
+          <p class="card-note">Two things happen as you push the sliders. Too few warps and the machine idles through every fetch. Enough warps and the arithmetic units never stop — at which point the shader's <em>register</em> count, not its instruction count, becomes the thing that limits you.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 09 RAYS ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-rays" aria-labelledby="tab-rays" data-panel="rays" hidden>
+      <div class="section-heading">
+        <p class="section-number">09 · Rays</p>
+        <h2>The other way round.<br><em>Start at the eye and ask.</em></h2>
+        <p>Rasterization takes each triangle and asks which pixels it covers. Ray tracing takes each pixel and asks which triangle it hits — which is slower for the first, visible surface and better at everything else: what a mirror sees, what light reaches a point, what is standing behind the camera. Both diagrams here are top-down slices, so you can see the rays themselves.</p>
+              <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Drag the object count from 6 to 220 and watch the speed-up.</li>
+            <li>Now watch the object-test count while you do it. It barely moves.</li>
+            <li>Switch the hierarchy off and drag the count again.</li>
+          </ul>
+        </div>
+</div>
+
+      <div class="rays-grid">
+        <figure class="panel-card rays-figure">
+          <canvas id="rays-canvas" width="620" height="460" role="img" tabindex="0"
+            aria-label="A top-down view of rays leaving the eye, bouncing off objects, and the bounding boxes tested along the way."></canvas>
+          <div class="machine-caption rays-legend">
+            <span data-ray-legend="primary">primary ray</span>
+            <span data-ray-legend="bounce">bounce</span>
+            <span data-ray-legend="lit">lit hit</span>
+            <span data-ray-legend="dark">shadowed hit</span>
+            <span data-ray-legend="shadow">shadow ray</span>
+          </div>
+          <figcaption>Drag the eye or the sun — or focus the diagram and use the arrow keys. Each ray is drawn where it actually went.</figcaption>
+        </figure>
+
+        <div class="rays-controls panel-card">
+          <div class="control-row slider-row">
+            <label for="ry-rays">Rays cast <output id="ry-rays-out">28</output></label>
+            <input type="range" id="ry-rays" min="6" max="160" value="28" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="ry-bounces">Bounces <output id="ry-bounces-out">1</output></label>
+            <input type="range" id="ry-bounces" min="0" max="4" value="1" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="ry-objects">Objects in the scene <output id="ry-objects-out">120</output></label>
+            <input type="range" id="ry-objects" min="6" max="220" value="120" step="1">
+          </div>
+          <div class="control-row">
+            <span class="control-label">Arrow keys move</span>
+            <div class="vertex-picker" id="ry-picker" role="group" aria-label="Choose what the arrow keys move"></div>
+          </div>
+          <div class="control-row">
+            <label for="ry-accel">Acceleration structure</label>
+            <select id="ry-accel">
+              <option value="none">None — test every object</option>
+              <option value="bvh" selected>Bounding-volume hierarchy</option>
+            </select>
+          </div>
+          <div class="control-row check-row">
+            <input type="checkbox" id="ry-showbvh">
+            <label for="ry-showbvh">Draw the boxes that were tested</label>
+          </div>
+          <dl class="rays-stats" id="rays-stats" aria-live="polite"></dl>
+          <p class="card-note" id="rays-explain"></p>
+        </div>
+      </div>
+
+      <div class="noise-grid">
+        <figure class="panel-card noise-figure">
+          <canvas id="noise-canvas" width="440" height="360" role="img"
+            aria-label="A soft shadow computed by random sampling, becoming smoother as the sample count rises."></canvas>
+          <figcaption id="noise-caption">A soft shadow, sampled at random. This is a real Monte Carlo estimate, converging as you add samples.</figcaption>
+        </figure>
+        <div class="panel-card noise-controls">
+          <div class="control-row slider-row">
+            <label for="nz-samples">Shadow samples per pixel <output id="nz-samples-out">4</output></label>
+            <input type="range" id="nz-samples" min="1" max="128" value="4" step="1">
+          </div>
+          <div class="control-row slider-row">
+            <label for="nz-size">Light size <output id="nz-size-out">0.30</output></label>
+            <input type="range" id="nz-size" min="0.02" max="0.8" value="0.3" step="0.01">
+          </div>
+          <dl class="noise-stats" id="noise-stats" aria-live="polite"></dl>
+          <p class="card-note">Noise falls as the square root of the sample count, which is a brutal exchange rate: to halve the grain you must take four times as many samples. Real-time ray tracing cannot afford more than a handful, so it takes a noisy picture and hands it to a denoiser — and that denoiser, increasingly, is a neural network trained on the difference between the noisy image and the right answer.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 10 TODAY ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-coda" aria-labelledby="tab-coda" data-panel="coda" hidden>
+      <div class="section-heading">
+        <p class="section-number">10 · Today</p>
+        <h2>The same seven jobs.<br><em>Negotiable at last.</em></h2>
+        <p>Here is the claim from section 01, tested. The same seven jobs, at three moments fifty years apart. Nothing was added to the list and nothing was removed from it — the work simply changed hands, twice, and in the same direction each time: out of software, into wired silicon, and then back out into programs you write.</p>
+      </div>
+
+      <div class="panel-card coda-card">
+        <h4>The same jobs, three times</h4>
+        <div class="coda-scroll">
+          <div class="coda-grid" id="coda-grid"></div>
+        </div>
+        <ul class="stage-legend coda-legend">
+          <li><i class="swatch state-none"></i>did not exist</li>
+          <li><i class="swatch state-cpu"></i>software, on the CPU</li>
+          <li><i class="swatch state-fixed"></i>fixed-function silicon</li>
+          <li><i class="swatch state-prog"></i>programmable silicon</li>
+        </ul>
+      </div>
+
+      <div class="coda-prose">
+        <div class="panel-card">
+          <h4>And then it started moving back</h4>
+          <p>The tidy version of this story ends in 2006, with the pipeline dissolved into a pool of programmable cores and the fixed-function boxes reduced to a rasterizer, a texture unit and a blender. It has not stayed tidy.</p>
+          <p><strong>Rasterization has partly returned to software.</strong> Unreal Engine 5's Nanite rasterizes triangles smaller than a pixel in a compute shader, because the hardware rasterizer shades in 2×2 quads and a sub-pixel triangle wastes three quarters of one. The oldest fixed-function box on the chip turns out to have a size below which it is the wrong tool.</p>
+          <p><strong>Ray tracing does not use the boxes in this order at all.</strong> It has its own fixed-function unit, added in 2018, that answers a different question: not <em>which pixels does this triangle cover</em> but <em>what does this ray hit</em>. Section 09's diagram is not a stage of the pipeline on this page. It is a second pipeline, running beside it, and every modern frame is a negotiation between the two.</p>
+          <p><strong>And the last box is being questioned too.</strong> What you finally see is increasingly not what was rasterized: it is a low-resolution, noisy, temporally-accumulated estimate handed to a neural network that reconstructs the rest. The pipeline still ends in a framebuffer. It is no longer obvious that the framebuffer is the picture.</p>
+          <p class="coda-close">Sixty years, four re-homings of the same seven jobs, and one thing unchanged throughout: somewhere underneath, something is still asking every pixel whether all three edge functions came out positive.</p>
+        </div>
+
+        <div class="panel-card coda-recap">
+          <h4>The nine mechanisms, in one line each</h4>
+          <ol class="recap-list">
+            <li><button type="button" class="inline-link" data-open-tab="pipeline">The pipeline</button> — ten stages, fixed in order since 1974.</li>
+            <li><button type="button" class="inline-link" data-open-tab="transform">Transform</button> — perspective is a division by <em>w</em>; the matrix only sets it up.</li>
+            <li><button type="button" class="inline-link" data-open-tab="raster">Rasterize</button> — three linear functions, one sign test each, per pixel.</li>
+            <li><button type="button" class="inline-link" data-open-tab="depth">Depth</button> — stop sorting objects; ask each pixel instead.</li>
+            <li><button type="button" class="inline-link" data-open-tab="texture">Texture</button> — divide by <em>w</em> again, then prefilter, or it swims and it shimmers.</li>
+            <li><button type="button" class="inline-link" data-open-tab="shading">Light</button> — interpolate the normal, not the colour; then conserve energy.</li>
+            <li><button type="button" class="inline-link" data-open-tab="parallel">Parallel</button> — 32 lanes, one instruction pointer, and both sides of every branch.</li>
+            <li><button type="button" class="inline-link" data-open-tab="rays">Rays</button> — a tree makes the nearest-surface question nearly free of scene size.</li>
+            <li><button type="button" class="inline-link" data-open-tab="sources">Sources</button> — and here is where every claim came from.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 11 THE LEDGER ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-ledger" aria-labelledby="tab-ledger" data-panel="ledger" hidden>
+      <div class="section-heading">
+        <p class="section-number">11 · The ledger</p>
+        <h2>Every version number,<br><em>and the silicon that answered it.</em></h2>
+        <p>Specifications in one lane, hardware in the other, a shared year axis between them. The interesting part is the race: sometimes the specification led and the silicon chased it, sometimes a card shipped a capability years before anyone standardised it, and once or twice a version number marked nothing at all. Where an entry introduced a mechanism this page explains, it says which section.</p>
+        <div class="section-tries">
+          <p class="tries-label">Look for</p>
+          <ul>
+            <li>1996–99: the specification chasing 3dfx, then overtaking it.</li>
+            <li>2001–02: OpenGL landing multitexturing three years after Direct3D.</li>
+            <li>2009: a DirectX 11 card shipping a month before DirectX 11.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ledger-controls panel-card">
+        <div class="control-row">
+          <span class="control-label">Show</span>
+          <div class="ledger-filters" id="ledger-filters" role="group" aria-label="Filter the ledger"></div>
+        </div>
+        <dl class="ledger-stats" id="ledger-stats" aria-live="polite"></dl>
+      </div>
+
+      <div class="panel-card ledger-card">
+        <div class="ledger-head" aria-hidden="true">
+          <span>Year</span><span>Specifications</span><span>Hardware</span>
+        </div>
+        <div class="ledger-body" id="ledger-body"></div>
+      </div>
+
+      <p class="model-caveat">Representative, not exhaustive: one or two entries per year, chosen for the capability they introduced rather than for market share. Dates are ship dates unless the entry says the announcement came first. Version numbers are missing from the run where nothing that matters to this page happened in them: OpenGL 2.1 and 3.3, and four of the five releases between 4.0 and 4.6. DirectX 4 is missing for a different reason — it was announced, then cancelled, and never existed.</p>
+    </section>
+
+    <!-- ============================ 12 SOURCES ============================ -->
+    <section class="instrument-panel" role="tabpanel" id="panel-sources" aria-labelledby="tab-sources" data-panel="sources" hidden>
+      <div class="section-heading">
+        <p class="section-number">12 · Sources</p>
+        <h2>Where each claim comes from,<br><em>and what these models leave out.</em></h2>
+        <p>Everything specific on this page — a date, a number, an attribution — is listed below against the paper, specification or product document it came from. The renderer that draws the diagrams is real, but it is not a graphics card.</p>
+      </div>
+
+      <div class="panel-card caveat-card">
+        <h4>What is simplified here, deliberately</h4>
+        <ul>
+          <li><strong>The renderer is a model, not a simulator.</strong> It performs the same operations in the same order, but no GPU works this way internally: real hardware rasterizes hierarchically in tiles, compresses depth and colour, batches memory into cache lines, and reorders almost everything it legally can.</li>
+          <li><strong>The pipeline diagram is the logical order, not the physical one.</strong> Hardware runs depth before shading whenever it can prove that is safe, keeps thousands of fragments in flight, and only guarantees that the <em>result</em> matches the order the specification describes.</li>
+          <li><strong>One light, no shadows, no global illumination</strong> in the shading instrument. The point there is the difference between the shading models, which is easiest to see with a single light.</li>
+          <li><strong>The warp diagram uses one warp of 32 lanes.</strong> AMD's wavefronts have been 64 lanes and, since RDNA, 32; Intel's are configurable. The consequence of divergence is the same in every case.</li>
+          <li><strong>The ray tracing views are two-dimensional slices.</strong> A real bounding-volume hierarchy is three-dimensional, much deeper, and built with a surface-area heuristic that this page does not implement.</li>
+          <li><strong>Dates are ship dates where a product is named</strong> and publication dates where a paper is. Where an idea was discovered more than once — the depth buffer, most famously — both are noted.</li>
+        </ul>
+      </div>
+
+      <div class="panel-card sources-card">
+        <h4>Claims and citations</h4>
+        <ol class="source-list" id="source-list"></ol>
+      </div>
+
+      <div class="panel-card further-card">
+        <h4>If you want to go further</h4>
+        <ul>
+          <li><strong>Fabian Giesen, "A trip through the Graphics Pipeline 2011"</strong> — the closest thing to a guided tour of what the hardware actually does, written by someone who built some of it.</li>
+          <li><strong>Michael Abrash, <em>Graphics Programming Black Book</em></strong> — how you rendered 3D in real time before there was anything to help you.</li>
+          <li><strong>Matt Pharr, Wenzel Jakob & Greg Humphreys, <em>Physically Based Rendering</em></strong> — the ray tracing side, in full, with the source code that won its authors an Academy Award.</li>
+          <li><strong>Tomas Akenine-Möller et al., <em>Real-Time Rendering</em></strong> — the standard reference, and the place to look up anything this page has skated over.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p>Written and drawn for the <a href="/">0x4D44 almanac</a>. The renderer, the diagrams and the arithmetic are original; the history is sourced above.</p>
+  </footer>
+
+  <script src="gfx.js"></script>
+  <script src="history.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
