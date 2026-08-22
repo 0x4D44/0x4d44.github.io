@@ -8,8 +8,9 @@ test('the deterministic benchmark reports stable bounded metrics for every shipp
     const region=CATALOG.regions.find(candidate=>candidate.id===stageSpec.regionId);
     const weatherSpec=CATALOG.weather.find(candidate=>candidate.id===region.weatherIds[0]);
     for(const carSpec of CATALOG.cars){
-      const first=simulateRun({stageSpec,carSpec,weatherSpec,maxSeconds:480});
-      const second=simulateRun({stageSpec,carSpec,weatherSpec,maxSeconds:480});
+      const maxSeconds=stageSpec.expectedDurationSeconds[1]+30;
+      const first=simulateRun({stageSpec,carSpec,weatherSpec,maxSeconds});
+      const second=simulateRun({stageSpec,carSpec,weatherSpec,maxSeconds});
       assert.deepEqual(first,second,`${stageSpec.id}/${carSpec.id} drifted`);
       assert.equal(first.finished,true,`${stageSpec.id}/${carSpec.id} did not finish`);
       assert.equal(first.finite,true,`${stageSpec.id}/${carSpec.id} became non-finite`);
