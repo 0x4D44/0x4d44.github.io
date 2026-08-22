@@ -6,15 +6,15 @@
 - **Area:** cairn-run-rally
 - **Raised:** 2026-08-22T12:55:58Z
 - **Discovery source:** Human
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260822T125621Z-6144594b
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-FLU-00008-run-fix-20260822T125621Z-6144594b
+- **Owner base:** 771511134094cbaa159f6780dc51be18ef814750
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-08-22T12:56:21Z
+- **Owner until:** 2026-08-22T14:56:21Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
