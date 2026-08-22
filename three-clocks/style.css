@@ -265,6 +265,16 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 /* The scroll box is the wrapper, so a wide matrix scrolls in its own
    container rather than widening the document. */
 .twrap { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: var(--r-md); }
+/* The matrix is a table, not prose: it wants the page's full column width
+   rather than the 46rem measure that keeps body text readable, and squeezed
+   into 46rem its nine cells wrap to a column of single words. 1080px is
+   exactly .wrap's content box (1120 max-width less 40 of padding), so at
+   viewports wide enough for that box to be fully realised the table fills it
+   and cannot overflow. Below that the media query does not apply and it stays
+   inside the prose column, scrolling in its own box. */
+@media (min-width: 1140px) {
+  .prose .twrap { width: 1080px; max-width: none; }
+}
 .matrix { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
 .matrix th, .matrix td { padding: 14px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
 .matrix thead th { background: var(--panel-2); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
