@@ -44,3 +44,6 @@ Unknown content IDs, invalid parameters, missing assets, future save versions, W
 absence, and audio failure must stop at a clear boundary rather than producing partial
 simulation state. The fixed step remains 1/120 second, and pure rules remain runnable in
 Node for deterministic batches.
+
+The accepted championship state-machine design and its proof obligations live in
+`wrk_docs/2026.08.22 - HLD - Cairn Run championship state machine.md`.
