@@ -10,11 +10,13 @@ import {
   LUMEN_F2,
   RIDGE_WEATHER
 } from '../src/content.js';
+import { EXPANSION_REGIONS, EXPANSION_STAGES, EXPANSION_WEATHER } from '../src/content-expansion.js';
 import { buildStage } from '../src/stage.js';
 import { RallyWorld, planBarrierVisuals, planCarVisual, planColliderVisuals, planWorldVisuals } from '../src/world.js';
 
 const kestrel = buildStage(KESTREL_STAGE);
 const aurora = buildStage(AURORA_STAGE);
+const expansionStages = EXPANSION_STAGES.map(stage => buildStage(stage));
 
 function fakeRenderer() {
   const renderer = {
@@ -89,6 +91,40 @@ test('metadata fallback does not turn every lakeside route into Aurora', () => {
   const genericLake = { ...aurora, id: 'generic-lake-stage', regionId: 'generic-lake-region' };
   const world = new RallyWorld(renderer, genericLake, 'low');
   assert.equal(world.region.id, 'generic-lake-region');
+});
+
+test('expansion scenery kits produce distinct metadata-driven landmark plans', () => {
+  const expectedKits = [
+    ['savannah', 'acacia', 'water-splash', 'washboard', 'rift-escarpment', 'finish-gate'],
+    ['cedar-tunnel', 'retaining-wall', 'autumn-maple', 'mountain-stream', 'paper-lantern', 'pass-gate'],
+    ['sea-cliff', 'village-square', 'stone-retaining-wall', 'olive-grove', 'safe-crowd-line', 'coastal-gate'],
+    ['eucalyptus', 'red-gravel', 'cattle-grid', 'rough-verge', 'dust-bowl', 'storm-gate']
+  ];
+  const plans = expansionStages.map((stage, index) => planWorldVisuals(stage, EXPANSION_REGIONS[index], EXPANSION_WEATHER[index], 'low'));
+  for (const [index, plan] of plans.entries()) {
+    for (const kitId of expectedKits[index]) {
+      assert.ok(plan.landmarks.includes(kitId), `missing planned landmark ${kitId}`);
+      assert.ok(plan.ranges.some(range => range.type === kitId), `missing visible range ${kitId}`);
+    }
+  }
+  const fingerprints = plans.map(plan => JSON.stringify({ kit: plan.kit, landmarks: plan.landmarks, ranges: plan.ranges.map(range => range.type) }));
+  assert.equal(new Set(fingerprints).size, plans.length);
+});
+
+test('expansion worlds construct bounded, distinct landmark meshes', () => {
+  const renderer = fakeRenderer();
+  const fingerprints = [];
+  for (const [index, stage] of expansionStages.entries()) {
+    const world = new RallyWorld(renderer, stage, 'low', {
+      region: EXPANSION_REGIONS[index],
+      weather: EXPANSION_WEATHER[index]
+    });
+    assert.ok(world.visualPlan.landmarks.length >= 6);
+    assert.ok(world.chunks.every(chunk => chunk.triangles > 0));
+    fingerprints.push(JSON.stringify([world.visualPlan.landmarks, world.visualPlan.ranges.map(range => range.type), world.chunks.map(chunk => chunk.triangles)]));
+    world.dispose();
+  }
+  assert.equal(new Set(fingerprints).size, expansionStages.length);
 });
 
 test('disposing a selected world releases every stage-specific mesh exactly once', () => {
