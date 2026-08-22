@@ -43,11 +43,11 @@
     <div id="countdown" class="countdown hidden">3</div>
     <div id="toast" class="toast hidden">RESET TO ROAD</div>
 
-    <section id="title-screen" class="screen title-screen">
+    <section id="title-screen" class="screen title-screen" aria-labelledby="title-heading">
       <div class="brand">
         <div class="brand-mark"><span></span><span></span><span></span></div>
         <p>ORIGINAL BROWSER RALLY</p>
-        <h1>CAIRN<br /><em>RUN</em></h1>
+        <h1 id="title-heading">CAIRN<br /><em>RUN</em></h1>
         <p class="rally-word">RALLY</p>
       </div>
       <div class="title-actions panel">
@@ -56,6 +56,12 @@
         <p>A narrow ridge road: fast crests, tightening forest bends and two committed hairpins.</p>
         <button id="start-button" class="primary">START STAGE <kbd>ENTER</kbd></button>
         <button id="settings-button" class="secondary">SETTINGS</button>
+        <nav class="title-menu" aria-label="Rally modes">
+          <button id="practice-button" class="secondary" type="button" data-flow="practice">PRACTICE / TIME TRIAL</button>
+          <button id="championship-button" class="secondary" type="button" data-flow="championship">WORLD CHAMPIONSHIP</button>
+          <button id="resume-championship" class="secondary" type="button" data-flow="resume" aria-describedby="resume-note" hidden>RESUME CHAMPIONSHIP</button>
+          <span id="resume-note" class="menu-note" hidden>No saved championship found.</span>
+        </nav>
         <div class="controls-summary">
           <span><kbd>A</kbd> / <kbd>Z</kbd> ACCEL / BRAKE</span>
           <span><kbd>,</kbd> / <kbd>.</kbd> STEER</span>
@@ -68,14 +74,136 @@
       <footer>CAIRN R4 · 4WD · 310 BHP <span>v1.1</span></footer>
     </section>
 
-    <section id="settings-screen" class="screen settings-screen hidden">
+    <section id="selection-screen" class="screen flow-screen hidden" aria-labelledby="selection-heading">
+      <div class="panel flow-panel selection-panel">
+        <header class="flow-heading">
+          <span class="eyebrow" id="selection-mode">QUICK RALLY</span>
+          <h2 id="selection-heading">CHOOSE YOUR RUN</h2>
+          <p>Pick a car, a road and a pace. Every option is a real model or authored stage.</p>
+        </header>
+        <form id="selection-form" class="selection-form">
+          <fieldset id="car-options" class="option-group" aria-label="Car options">
+            <legend>CAR <span>GARAGE</span></legend>
+            <div class="option-grid">
+              <label class="option-card" data-car-id="cairn-r4">
+                <input type="radio" name="car" value="cairn-r4" checked data-option="car" data-car-id="cairn-r4" />
+                <span><strong>CAIRN R4</strong><small>AWD · 310 BHP · GRAVEL</small><em>Balanced four-wheel drive.</em></span>
+              </label>
+              <label class="option-card" data-car-id="lumen-f2">
+                <input type="radio" name="car" value="lumen-f2" data-option="car" data-car-id="lumen-f2" />
+                <span><strong>LUMEN F2</strong><small>FWD · 152 BHP · LIGHT</small><em>Sharp turn-in, less forgiving exits.</em></span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset id="stage-options" class="option-group" aria-label="Stage options">
+            <legend>STAGE <span>ROAD BOOK</span></legend>
+            <div class="option-grid">
+              <label class="option-card" data-stage-id="kestrel-ridge">
+                <input type="radio" name="stage" value="kestrel-ridge" checked data-option="stage" data-stage-id="kestrel-ridge" />
+                <span><strong>KESTREL RIDGE</strong><small>SCOTLAND · 5.4 KM · DUSK</small><em>Fast crests and two committed hairpins.</em></span>
+              </label>
+              <label class="option-card" data-stage-id="aurora-forest">
+                <input type="radio" name="stage" value="aurora-forest" data-option="stage" data-stage-id="aurora-forest" />
+                <span><strong>AURORA FOREST</strong><small>FINLAND · 6.8 KM · CLEAR</small><em>Long lakeside runs into narrow spruce.</em></span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset id="selection-difficulty" class="option-group" aria-label="Difficulty options">
+            <legend>DIFFICULTY <span>RIVAL PACE</span></legend>
+            <div class="option-grid option-grid--three">
+              <label class="option-card">
+                <input type="radio" name="difficulty" value="easy" data-option="difficulty" data-difficulty-id="easy" />
+                <span><strong>CLUBMAN</strong><small>EASY</small><em>Room to learn the road.</em></span>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="difficulty" value="normal" checked data-option="difficulty" data-difficulty-id="normal" />
+                <span><strong>RALLY</strong><small>NORMAL</small><em>A measured fight to the finish.</em></span>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="difficulty" value="hard" data-option="difficulty" data-difficulty-id="hard" />
+                <span><strong>WORKS</strong><small>HARD</small><em>No spare seconds on the board.</em></span>
+              </label>
+            </div>
+          </fieldset>
+          <div class="flow-actions">
+            <button id="selection-back" class="secondary" type="button">BACK</button>
+            <button id="selection-start" class="primary" type="submit">CONTINUE <kbd>ENTER</kbd></button>
+          </div>
+          <p id="selection-error" class="inline-error" role="alert" aria-live="assertive" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="service-screen" class="screen flow-screen hidden" aria-labelledby="service-heading">
+      <div class="panel flow-panel service-panel">
+        <header class="flow-heading">
+          <span class="eyebrow">CHAMPIONSHIP SERVICE</span>
+          <h2 id="service-heading">SERVICE CONTROL</h2>
+          <p>Spend the time budget before the next start. Repairs are bounded; a skipped part stays damaged.</p>
+        </header>
+        <div class="service-summary" aria-label="Service summary">
+          <div><span>AVAILABLE</span><output id="service-budget" for="service-form">60 MIN</output><small id="service-remaining">60 MIN REMAINING</small></div>
+          <div><span>EVENT</span><strong id="service-event">01 / 06 · KESTREL RIDGE</strong></div>
+        </div>
+        <form id="service-form" class="service-form">
+          <fieldset id="service-repair" class="service-repair" aria-label="Repair choices">
+            <legend>REPAIR PLAN <span>TIME REQUIRED</span></legend>
+            <label class="service-row"><input type="checkbox" name="repair" value="engine" data-service-component="engine" /><span><strong>ENGINE</strong><small>40 MIN · POWER DELIVERY</small></span><output>40</output></label>
+            <label class="service-row"><input type="checkbox" name="repair" value="steering" data-service-component="steering" /><span><strong>STEERING</strong><small>20 MIN · RESPONSE</small></span><output>20</output></label>
+            <label class="service-row"><input type="checkbox" name="repair" value="suspension" data-service-component="suspension" /><span><strong>SUSPENSION</strong><small>25 MIN · LANDINGS</small></span><output>25</output></label>
+            <label class="service-row"><input type="checkbox" name="repair" value="brakes" data-service-component="brakes" /><span><strong>BRAKES</strong><small>15 MIN · STOPPING</small></span><output>15</output></label>
+            <label class="service-row"><input type="checkbox" name="repair" value="body" data-service-component="body" /><span><strong>BODY</strong><small>10 MIN · AERO / SHELL</small></span><output>10</output></label>
+          </fieldset>
+          <p id="service-error" class="inline-error" role="alert" aria-live="assertive" hidden></p>
+          <div class="flow-actions service-actions">
+            <button id="service-abandon" class="secondary danger" type="button">ABANDON CHAMPIONSHIP</button>
+            <button id="service-auto" class="secondary" type="button">AUTO SERVICE</button>
+            <button id="service-start" class="primary" type="submit">START STAGE <kbd>ENTER</kbd></button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="settings-screen" class="screen settings-screen hidden" aria-labelledby="settings-heading">
       <div class="panel settings-panel">
-        <span class="eyebrow">OPTIONS</span><h2>SETTINGS</h2>
-        <label>ENGINE & EFFECTS <input id="effects-volume" type="range" min="0" max="1" step="0.05" value="0.75" /></label>
-        <label>CO-DRIVER <input id="voice-volume" type="range" min="0" max="1" step="0.05" value="0.9" /></label>
-        <label>GRAPHICS<select id="quality-setting"><option value="high">HIGH</option><option value="low">LOW</option></select></label>
-        <label class="toggle"><input id="notes-toggle" type="checkbox" checked /> ON-SCREEN PACE NOTES</label>
-        <button id="settings-back" class="primary">BACK</button>
+        <header class="flow-heading">
+          <span class="eyebrow">OPTIONS</span><h2 id="settings-heading">SETTINGS</h2>
+        </header>
+        <form id="settings-form" class="settings-form">
+          <fieldset class="settings-group audio-settings" aria-label="Audio settings">
+            <legend>AUDIO</legend>
+            <label class="toggle"><input id="mute-toggle" type="checkbox" /> MUTE ALL AUDIO</label>
+            <label for="effects-volume">ENGINE &amp; EFFECTS <output id="effects-level">75%</output><input id="effects-volume" type="range" min="0" max="1" step="0.05" value="0.75" /></label>
+            <label for="voice-volume">CO-DRIVER <output id="voice-level">90%</output><input id="voice-volume" type="range" min="0" max="1" step="0.05" value="0.9" /></label>
+          </fieldset>
+          <fieldset class="settings-group" aria-label="Driving assists">
+            <legend>DRIVING AIDS</legend>
+            <label class="toggle"><input id="assist-automatic" type="checkbox" checked /> AUTOMATIC GEARS</label>
+            <label class="toggle"><input id="assist-stability" type="checkbox" checked /> STABILITY HELP</label>
+            <label class="toggle"><input id="assist-braking" type="checkbox" checked /> BRAKING HELP</label>
+            <label id="assist-pace-notes" class="toggle"><input id="notes-toggle" type="checkbox" checked /> ON-SCREEN PACE NOTES</label>
+            <label class="toggle"><input id="manual-shifting-toggle" type="checkbox" /> MANUAL SHIFTING</label>
+          </fieldset>
+          <fieldset class="settings-group" aria-label="Display settings">
+            <legend>DISPLAY</legend>
+            <label for="quality-setting">GRAPHICS<select id="quality-setting"><option value="high">HIGH</option><option value="low">LOW</option></select></label>
+          </fieldset>
+          <section id="remapping-section" class="settings-group remapping-section" aria-labelledby="remapping-heading">
+            <h3 id="remapping-heading">REMAP CONTROLS</h3>
+            <p>Choose a row, then press a key or gamepad button.</p>
+            <div id="remapping-container" class="remapping-container" aria-label="Control remapping rows">
+              <label class="binding-row"><span>ACCELERATE</span><button id="remap-accelerate" type="button" data-binding="accelerate" aria-label="Remap accelerate">A</button></label>
+              <label class="binding-row"><span>BRAKE</span><button id="remap-brake" type="button" data-binding="brake" aria-label="Remap brake">Z</button></label>
+              <label class="binding-row"><span>STEER LEFT</span><button id="remap-steer-left" type="button" data-binding="steerLeft" aria-label="Remap steer left">,</button></label>
+              <label class="binding-row"><span>STEER RIGHT</span><button id="remap-steer-right" type="button" data-binding="steerRight" aria-label="Remap steer right">.</button></label>
+              <label class="binding-row"><span>HANDBRAKE</span><button id="remap-handbrake" type="button" data-binding="handbrake" aria-label="Remap handbrake">SPACE</button></label>
+              <label class="binding-row"><span>SHIFT UP</span><button id="remap-shift-up" type="button" data-binding="shiftUp" aria-label="Remap shift up">E</button></label>
+              <label class="binding-row"><span>SHIFT DOWN</span><button id="remap-shift-down" type="button" data-binding="shiftDown" aria-label="Remap shift down">Q</button></label>
+            </div>
+            <button id="reset-bindings" class="button button-secondary" type="button">RESET CONTROLS</button>
+          </section>
+          <button id="settings-back" class="primary" type="button">BACK</button>
+        </form>
       </div>
     </section>
 
@@ -88,22 +216,60 @@
       </div>
     </section>
 
-    <section id="result-screen" class="screen result-screen hidden">
-      <div class="result-card panel">
-        <span class="eyebrow">STAGE COMPLETE</span><h2>KESTREL RIDGE</h2>
+    <section id="result-screen" class="screen flow-screen result-screen hidden" aria-labelledby="result-heading">
+      <div class="result-card panel flow-panel">
+        <span class="eyebrow">STAGE COMPLETE</span><h2 id="result-heading">KESTREL RIDGE</h2>
         <div class="result-time"><small>FINAL TIME</small><strong id="final-time">04:12.840</strong></div>
         <div class="result-grid">
           <div><small>PERSONAL BEST</small><b id="best-time">—</b></div>
           <div><small>DIFFERENCE</small><b id="result-delta">NEW BEST</b></div>
           <div><small>DAMAGE</small><b id="result-damage">LIGHT</b></div>
+          <div><small>POSITION</small><b id="result-position">—</b></div>
+          <div><small>POINTS</small><b id="result-points">—</b></div>
+          <div><small>PENALTY</small><b id="result-penalty">0.0 S</b></div>
         </div>
-        <button id="retry-button" class="primary">RETRY <kbd>ENTER</kbd></button>
-        <button id="result-quit" class="secondary">RETURN TO TITLE</button>
+        <section id="result-rivals" class="result-section" aria-labelledby="rivals-heading" aria-live="polite">
+          <h3 id="rivals-heading">RIVALS</h3>
+          <table class="data-table" aria-label="Rival stage results">
+            <thead><tr><th scope="col">DRIVER</th><th scope="col">TIME</th><th scope="col">GAP</th></tr></thead>
+            <tbody><tr><td>Awaiting classification</td><td>—</td><td>—</td></tr></tbody>
+          </table>
+        </section>
+        <section id="stage-standings" class="result-section" aria-labelledby="stage-standings-heading" aria-live="polite">
+          <h3 id="stage-standings-heading">STAGE STANDINGS</h3>
+          <div id="result-standings" aria-live="polite"><p class="empty-state">Complete the run to receive a classified position and points.</p></div>
+        </section>
+        <div class="flow-actions result-actions">
+          <button id="result-next" class="primary" type="button">NEXT EVENT <kbd>ENTER</kbd></button>
+          <button id="retry-button" class="primary" type="button">RETRY <kbd>ENTER</kbd></button>
+          <button id="result-quit" class="secondary" type="button">RETURN TO TITLE</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="standings-screen" class="screen flow-screen hidden" aria-labelledby="standings-heading">
+      <div class="panel flow-panel standings-panel">
+        <header class="flow-heading">
+          <span class="eyebrow">WORLD CHAMPIONSHIP · OVERALL</span>
+          <h2 id="standings-heading">STANDINGS</h2>
+          <p>Points are awarded after penalties. Retirements remain classified below finishers.</p>
+        </header>
+        <section id="overall-standings" aria-label="Overall standings table">
+          <table id="standings-table" class="data-table" aria-label="Championship standings">
+            <caption>Overall championship points</caption>
+            <thead><tr><th scope="col">POS</th><th scope="col">DRIVER</th><th scope="col">EVENTS</th><th scope="col">POINTS</th><th scope="col">GAP</th></tr></thead>
+            <tbody><tr><th scope="row">1</th><td>YOU</td><td>0 / 6</td><td>0</td><td>—</td></tr><tr><th scope="row">2</th><td>MARA</td><td>0 / 6</td><td>0</td><td>—</td></tr><tr><th scope="row">3</th><td>ORIN</td><td>0 / 6</td><td>0</td><td>—</td></tr></tbody>
+          </table>
+        </section>
+        <div class="flow-actions">
+          <button id="standings-continue" class="primary" type="button">NEXT EVENT <kbd>ENTER</kbd></button>
+          <button id="standings-abandon" class="secondary danger" type="button">ABANDON CHAMPIONSHIP</button>
+        </div>
       </div>
     </section>
 
     <div id="qa-status" hidden>{"booted":false}</div>
-    <div id="fatal-error" class="fatal-error hidden"></div>
+    <div id="fatal-error" class="fatal-error hidden" role="alert" aria-live="assertive"></div>
   </main>
   <script type="module" src="./src/main.js"></script>
   <script defer src="/almanac-back.js"></script>

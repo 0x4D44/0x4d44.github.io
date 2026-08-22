@@ -1,5 +1,9 @@
 import { CairnRunGame } from './game.js';
-try { new CairnRunGame(); }
+try {
+  const game=new CairnRunGame();
+  const params=new URLSearchParams(window.location.search);
+  if(params.has('qa')||params.has('smoke'))window.__game=game;
+}
 catch (error) {
   console.error(error);
   const target=document.getElementById('fatal-error');
