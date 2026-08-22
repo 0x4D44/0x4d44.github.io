@@ -1493,3 +1493,54 @@ figcaption {
   }
   .ledger-lane:has(> .ledger-empty:only-child) { display: none; }
 }
+
+/* --- 11 · why the vendor APIs lost --- */
+.vendor-card { margin: 18px 0; }
+.vendor-lede {
+  margin: 0 0 20px;
+  max-width: 82ch;
+  color: #cfdde3;
+  font-size: 0.98rem;
+}
+.vendor-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: vendor;
+  display: grid;
+  gap: 20px;
+}
+.vendor-reasons li {
+  counter-increment: vendor;
+  position: relative;
+  padding-left: 46px;
+  max-width: 86ch;
+}
+.vendor-reasons li::before {
+  content: counter(vendor, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--grn);
+}
+.vendor-reasons h5 {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.vendor-reasons p { margin: 0; font-size: 0.92rem; color: #c3d3da; }
+.vendor-reasons strong { color: var(--amb); }
+.vendor-close {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  max-width: 86ch;
+  font-size: 0.98rem;
+  color: var(--amb);
+}
+.vendor-close strong { color: var(--ink); }

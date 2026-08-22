@@ -146,6 +146,19 @@ test("the ledger covers both API families and four decades of hardware", () => {
   for (const version of ["Vulkan 1.0", "Metal", "Mantle", "WebGL 1.0", "WebGL 2.0", "WebGPU", "CUDA 1.0", "Glide"]) {
     assert.ok(apiNames.includes(version), `${version} is missing from the ledger`);
   }
+  // The proprietary APIs of 1995-98. Every chip maker shipped one, and the
+  // page's account of why they lost is worthless if it only names Glide.
+  for (const vendor of ["NVLIB", "Speedy3D", "RRedline", "SGL", "3D CIF",
+    "Matrox Simple Interface", "S3d", "S3 MeTaL", "QuickDraw 3D RAVE", "MiniGL", "Talisman"]) {
+    assert.ok(apiNames.includes(vendor), `${vendor} is missing from the ledger`);
+  }
+  const vendorApis = apis.filter((e) => e.family === "vendor");
+  assert.ok(vendorApis.length >= 12, `only ${vendorApis.length} vendor APIs`);
+  // They belong to the window in which they made sense.
+  for (const entry of vendorApis) {
+    assert.ok(entry.year >= 1995 && entry.year <= 1998,
+      `${entry.name} is dated ${entry.year}, outside the proprietary-API window`);
+  }
 
   // Hardware from every era, not just the ones the narrative needed.
   const hardwareNames = hardware.map((e) => e.name).join(" | ");
@@ -176,6 +189,36 @@ test("the ledger covers both API families and four decades of hardware", () => {
   for (const entry of linked) {
     assert.ok(TABS.includes(entry.explains), `${entry.name} links to unknown section ${entry.explains}`);
   }
+});
+
+test("the page explains why the vendor APIs lost, structurally rather than by taste", () => {
+  // The question is why eleven of thirteen died, and the answer is not
+  // "the survivors were nicer to use" — so the page must say so.
+  assert.match(html, /Nine vendor APIs in three years\. None of them survived/i);
+  assert.match(html, /none of the reasons for that is that they were nicer to use/i);
+  // The nine must actually be named, or the count is decoration.
+  for (const api of ["NVLIB", "Glide", "Speedy3D", "RRedline", "SGL", "3D CIF",
+    "Matrox Simple Interface", "S3d", "MeTaL"]) {
+    assert.match(html, new RegExp(api.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      `${api} is counted but never named`);
+  }
+
+  // The six structural reasons, each identifiable.
+  for (const reason of [
+    /Every game had to be written N times/i,
+    /died with the hardware/i,
+    /owned the distribution channel/i,
+    /[Cc]apability bits were ugly, and they worked/,
+    /vendors defected before the developers did/i,
+    /extend it without forking it/i,
+  ]) {
+    assert.match(html, reason, `a structural reason is missing: ${reason}`);
+  }
+
+  // The two pieces of evidence that make it an argument rather than a list.
+  assert.match(html, /MiniGL/, "3dfx shipping a rival's API is the sharpest evidence there is");
+  assert.match(html, /Mantle/, "the modern echo — a vendor API donated rather than defended");
+  assert.match(html, /Unreal shipped with a software renderer, Glide, Direct3D, OpenGL and MeTaL/);
 });
 
 test("every specific claim carries a citation", () => {
