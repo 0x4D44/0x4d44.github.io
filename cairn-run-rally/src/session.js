@@ -71,7 +71,7 @@ export class RallySession {
   }
 
   completePractice(result){
-    if(this.activeRun?.mode!=='practice')throw new Error('No practice run is active');
+    if(!['practice','quick'].includes(this.activeRun?.mode))throw new Error('No practice run is active');
     return this.recordBest(this.activeRun,result);
   }
 

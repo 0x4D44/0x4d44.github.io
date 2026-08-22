@@ -28,6 +28,11 @@ export function stageRowsMarkup(rows){
   }).join('');
 }
 
+export function rivalRowsMarkup(rows,leader=null){
+  const reference=leader??rows.find(row=>row.status==='finished')?.totalMs??null;
+  return rows.map(row=>`<tr><td>${upper(row.name)}</td><td>${row.status==='finished'?escapeHtml(formatTime(row.totalMs)):'RETIRED'}</td><td>${row.status!=='finished'?'—':row.totalMs===reference?'LEADER':`+${escapeHtml(((row.totalMs-reference)/1000).toFixed(3))}`}</td></tr>`).join('');
+}
+
 export function overallRowsMarkup(rows){
   const leader=rows[0]?.points??0;
   return rows.map(row=>`<tr${row.id==='player'?' class="is-player"':''}><td>${escapeHtml(row.position)}</td><td>${row.id==='player'?'YOU':upper(row.name)}</td><td>${escapeHtml(row.stages)}</td><td>${escapeHtml(row.points)}</td><td>${row.position===1?'LEADER':`${escapeHtml(leader-row.points)} PTS`}</td></tr>`).join('');

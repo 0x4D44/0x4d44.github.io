@@ -96,7 +96,7 @@ test('legacy best migrates into the namespaced default record', () => {
   });
 
   const save = loadSave(storage);
-  assert.deepEqual(save.bests['kestrel-ridge:cairn-r4:ridge-weather'], {
+  assert.deepEqual(save.bests['kestrel-ridge:cairn-r4:ridge-mist'], {
     timeSeconds: 244.2,
     splits: [82, 164, 244.2]
   });
@@ -190,7 +190,7 @@ test('throwing and read-only storage never crashes or loses legacy data', () => 
   };
   assert.equal(persistSave(readOnly, createBlankSave()), false);
   assert.equal(readOnly.getItem(LEGACY_BEST_KEY), legacyRaw);
-  assert.deepEqual(loadSave(readOnly).bests['kestrel-ridge:cairn-r4:ridge-weather'], {
+  assert.deepEqual(loadSave(readOnly).bests['kestrel-ridge:cairn-r4:ridge-mist'], {
     timeSeconds: 250,
     splits: [100, 250]
   });

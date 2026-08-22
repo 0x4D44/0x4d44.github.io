@@ -4,7 +4,7 @@ import { validateChampionshipState } from './championship.js';
 export const SAVE_KEY = 'cairn-run:save:v1';
 export const LEGACY_BEST_KEY = 'cairn-run:best';
 
-const DEFAULT_BEST_KEY = 'kestrel-ridge:cairn-r4:ridge-weather';
+const DEFAULT_BEST_KEY = 'kestrel-ridge:cairn-r4:ridge-mist';
 const MAX_TIME_SECONDS = 24 * 60 * 60;
 const MAX_SPLITS = 32;
 const MAX_BESTS = 128;
