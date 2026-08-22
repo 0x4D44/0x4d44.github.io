@@ -97,6 +97,26 @@ const CAR_RECIPES = Object.freeze({
     frontOverhang: .62, rearOverhang: .66, bodyHeight: .5, roofHeight: 1.22,
     cabinStart: -.66, cabinEnd: .86, roofInset: .28, windowHeight: .39,
     trackPadding: .03, spoiler: false, body: '#9a633e', dark: '#493943', accent: '#d4bf82'
+  }),
+  'short-coupe': Object.freeze({
+    frontOverhang: .55, rearOverhang: .6, bodyHeight: .48, roofHeight: 1.15,
+    cabinStart: -.55, cabinEnd: .68, roofInset: .31, windowHeight: .36,
+    trackPadding: .09, spoiler: true, body: '#d2a23c', dark: '#493c27', accent: '#244f61'
+  }),
+  'classic-coupe': Object.freeze({
+    frontOverhang: .82, rearOverhang: .88, bodyHeight: .46, roofHeight: 1.18,
+    cabinStart: -.9, cabinEnd: .74, roofInset: .24, windowHeight: .4,
+    trackPadding: .02, spoiler: false, body: '#9b3f35', dark: '#342f32', accent: '#e3cc92'
+  }),
+  'long-sedan': Object.freeze({
+    frontOverhang: .88, rearOverhang: .92, bodyHeight: .54, roofHeight: 1.32,
+    cabinStart: -.88, cabinEnd: 1.08, roofInset: .22, windowHeight: .43,
+    trackPadding: .06, spoiler: true, body: '#376d67', dark: '#263c3e', accent: '#d6a94c'
+  }),
+  'widebody-special': Object.freeze({
+    frontOverhang: .7, rearOverhang: .74, bodyHeight: .47, roofHeight: 1.12,
+    cabinStart: -.72, cabinEnd: .78, roofInset: .34, windowHeight: .34,
+    trackPadding: .16, spoiler: true, body: '#6c4f91', dark: '#28283b', accent: '#ec7f38'
   })
 });
 

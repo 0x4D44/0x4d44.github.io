@@ -59,6 +59,14 @@ test('selected car profile changes the pure visual shape', () => {
   assert.notEqual(cairn.spoiler, lumen.spoiler);
 });
 
+test('every expansion silhouette has a distinct low-poly proportion recipe', () => {
+  const silhouettes=['short-coupe','classic-coupe','long-sedan','widebody-special'];
+  const plans=silhouettes.map(silhouette=>planCarVisual({...CAIRN_R4,id:silhouette,silhouette}));
+  const fingerprints=plans.map(plan=>JSON.stringify([plan.length,plan.width,plan.bodyHeight,plan.roofHeight,plan.cabinStart,plan.cabinEnd,plan.spoiler]));
+  assert.equal(new Set(fingerprints).size,silhouettes.length);
+  assert.ok(plans.every(plan=>plan.silhouette!=='rally-hatch'));
+});
+
 test('RallyWorld accepts selected content and keeps old constructor compatibility', () => {
   const renderer = fakeRenderer();
   const auroraWorld = new RallyWorld(renderer, aurora, 'low', {
