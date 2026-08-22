@@ -1,69 +1,42 @@
 import { clamp, hash01, lerp, smoothstep, wrapAngle } from './math.js';
+import { KESTREL_STAGE } from './content.js';
 export const SAMPLE_SPACING = 4;
-const SEGMENTS = [
- ['Launch straight',220,0,0,4,7.5,'compact'],
- ['Right six long',300,.00155,.00155,8,7.4,'compact'],
- ['First crest',190,0,0,13,7.2,'compact','crest'],
- ['Left five',240,-.0031,-.0031,-3,7,'compact'],
- ['Downhill chute',170,0,0,-14,7.1,'compact','dip'],
- ['Right four',210,.0045,.0045,-3,6.9,'compact'],
- ['Birch straight',130,0,0,2,7.2,'loose'],
- ['Left three tightens',180,-.0037,-.0065,4,6.8,'loose'],
- ['Stone wall braking zone',160,0,0,6,7,'compact'],
- ['Quarry hairpin right',140,.0192,.0192,1,7.8,'compact','hairpin'],
- ['Quarry exit climb',200,0,0,14,7,'compact'],
- ['Left six long',320,-.00165,-.00165,1,7.4,'compact'],
- ['Loose moor straight',220,.0002,.0002,1,7.4,'loose'],
- ['Right five over crest',250,.00265,.00265,14,7,'compact','crest'],
- ['Blind dip',170,0,0,-18,6.9,'compact','dip'],
- ['Left four',220,-.0044,-.0044,4,6.9,'compact'],
- ['Commitment straight',280,0,0,7,7.3,'compact'],
- ['Right three',170,.0059,.0059,-1,6.8,'compact'],
- ['Into left three',160,-.0062,-.0062,-2,6.7,'compact'],
- ['Bridge approach',140,0,0,-6,6.6,'compact'],
- ['Bridge hairpin left',135,-.0199,-.0199,1,7.7,'compact','hairpin'],
- ['Pine climb',220,0,0,17,6.9,'compact'],
- ['Right four tightens',200,.0037,.0061,3,6.7,'loose'],
- ['Ridge straight',220,0,0,2,7.3,'compact'],
- ['Left five long',300,-.0029,-.0029,-3,7.1,'compact'],
- ['Finish run',260,0,0,-9,7.6,'compact']
-].map(([name,length,c0,c1,rise,width,surface,feature=null])=>({name,length,curve:[c0,c1],rise,width,surface,feature}));
+const SEGMENTS = KESTREL_STAGE.segments.map(segment => ({
+  name: segment.name,
+  length: segment.lengthM,
+  curve: [...segment.curve],
+  rise: segment.riseM,
+  width: segment.widthM,
+  surface: segment.surface,
+  feature: segment.feature ?? null
+}));
+const NOTES = KESTREL_STAGE.notes.map(note => ({
+  at: note.atM,
+  icon: note.icon,
+  main: note.main,
+  detail: note.detail,
+  phrase: note.phrase,
+  id: note.id
+}));
 
-const NOTES = [
- [220,'R6','RIGHT SIX LONG','80','right six long, eighty'],
- [520,'▲','OVER CREST','INTO LEFT FIVE','over crest, into left five'],
- [710,'L5','LEFT FIVE',"DON'T CUT","left five, don't cut"],
- [1120,'R4','RIGHT FOUR','130','right four, one hundred and thirty'],
- [1330,'!','CAUTION — LOOSE','LEFT THREE TIGHTENS','caution, loose gravel, left three tightens'],
- [1460,'L3','LEFT THREE','TIGHTENS TWO','left three, tightens two'],
- [1800,'HR','HAIRPIN RIGHT',"DON'T CUT","hairpin right, don't cut"],
- [2140,'L6','LEFT SIX LONG','320','left six long, three hundred and twenty'],
- [2460,'!','LOOSE GRAVEL','RIGHT FIVE OVER CREST','caution, loose gravel, right five over crest'],
- [2680,'R5','RIGHT FIVE','OVER CREST','right five, over crest'],
- [2930,'▽','DIP','INTO LEFT FOUR','dip, into left four'],
- [3320,'▲','FLAT OVER CREST','280','flat over crest, two hundred and eighty'],
- [3600,'R3','RIGHT THREE','INTO LEFT THREE','right three, into left three'],
- [3770,'L3','LEFT THREE','140','left three, one hundred and forty'],
- [4070,'!','NARROW BRIDGE','INTO HAIRPIN LEFT','narrow bridge, into hairpin left'],
- [4425,'R4','RIGHT FOUR','TIGHTENS THREE','right four, tightens three'],
- [4845,'L5','LEFT FIVE LONG','260 TO FINISH','left five long, two hundred and sixty, to finish'],
- [5320,'🏁','FINISH','THROUGH GATE','finish, through gate']
-].map(([at,icon,main,detail,phrase],id)=>({at,icon,main,detail,phrase,id}));
-
-export function buildStage(){
+export function buildStage(stageDefinition = KESTREL_STAGE){
  const samples=[],segments=[];let x=0,z=0,heading=0,distance=0,elevation=0;
- for(let si=0;si<SEGMENTS.length;si++){
-  const segment=SEGMENTS[si],start=distance,startY=elevation,count=Math.ceil(segment.length/SAMPLE_SPACING),step=segment.length/count;
+ const authoredSegments = stageDefinition.segments;
+ for(let si=0;si<authoredSegments.length;si++){
+  const segment=authoredSegments[si],length=segment.lengthM,start=distance,startY=elevation,count=Math.ceil(length/SAMPLE_SPACING),step=length/count;
   for(let j=0;j<count;j++){
    const t=j/count,e=smoothstep(0,1,t),curvature=lerp(segment.curve[0],segment.curve[1],e);
-   const y=startY+segment.rise*e,grade=segment.rise/segment.length*6*t*(1-t),camber=clamp(-curvature*45,-.06,.06);
-   samples.push({index:samples.length,s:distance,x,y,z,heading,width:segment.width,surface:segment.surface,curvature,grade,camber,segmentIndex:si,feature:segment.feature});
+   const y=startY+segment.riseM*e,grade=segment.riseM/length*6*t*(1-t),camber=clamp(-curvature*45,-.06,.06);
+   samples.push({index:samples.length,s:start+j*step,x,y,z,heading,width:segment.widthM,surface:segment.surface,curvature,grade,camber,segmentIndex:si,feature:segment.feature ?? null});
    heading=wrapAngle(heading+curvature*step);x+=Math.sin(heading)*step;z+=Math.cos(heading)*step;distance+=step;
   }
-  elevation=startY+segment.rise;segments.push({index:si,name:segment.name,start,end:distance,surface:segment.surface,feature:segment.feature});
+  distance=start+length;
+  elevation=startY+segment.riseM;segments.push({index:si,name:segment.name,start,end:distance,surface:segment.surface,feature:segment.feature ?? null});
  }
- const last=SEGMENTS.at(-1);samples.push({index:samples.length,s:distance,x,y:elevation,z,heading,width:last.width,surface:last.surface,curvature:0,grade:0,camber:0,segmentIndex:SEGMENTS.length-1,feature:null});
- const stage={id:'kestrel-ridge',name:'Kestrel Ridge',length:distance,samples,segments,notes:NOTES.map(n=>({...n})),splits:[1800,3600,distance],expectedDurationSeconds:[205,310]};
+ const last=authoredSegments.at(-1);samples.push({index:samples.length,s:distance,x,y:elevation,z,heading,width:last.widthM,surface:last.surface,curvature:0,grade:0,camber:0,segmentIndex:authoredSegments.length-1,feature:null});
+ const notes=stageDefinition.notes.map(note=>({at:note.atM,icon:note.icon,main:note.main,detail:note.detail,phrase:note.phrase,id:note.id}));
+ const splits=[...stageDefinition.splits];if(splits.length)splits[splits.length-1]=distance;
+ const stage={id:stageDefinition.id,regionId:stageDefinition.regionId,name:stageDefinition.name,length:distance,samples,segments,notes,splits,expectedDurationSeconds:[...stageDefinition.expectedDurationSeconds],landmarkIds:[...stageDefinition.landmarkIds]};
  stage.hazards=buildHazards(stage);stage.barriers=buildBarrierColliders(stage);stage.colliders=[...stage.hazards,...stage.barriers];return stage;
 }
 
@@ -102,4 +75,4 @@ export function nearestStagePoint(stage,x,z,hint=0,radius=55){
 }
 export function roadEdgePoint(sample,lateral,yOffset=0){const rx=Math.cos(sample.heading),rz=-Math.sin(sample.heading);return{x:sample.x+rx*lateral,y:sample.y+sample.camber*lateral+yOffset,z:sample.z+rz*lateral};}
 export function requiredFeatureCoverage(stage){const names=stage.segments.map(s=>s.name.toLowerCase()).join(' ');return{straight:names.includes('straight')||names.includes('chute'),fastBend:names.includes('six')||names.includes('five long'),mediumBend:names.includes('four')||names.includes('five'),hairpin:stage.segments.some(s=>s.feature==='hairpin'),crest:stage.segments.some(s=>s.feature==='crest'),dip:stage.segments.some(s=>s.feature==='dip'),brakingZone:names.includes('braking'),looseSurface:stage.segments.some(s=>s.surface==='loose')};}
-export const STAGE_SEGMENTS=SEGMENTS.map(s=>({...s}));export const STAGE_NOTES=NOTES.map(n=>({...n}));
+export const STAGE_SEGMENTS=SEGMENTS.map(s=>({...s,curve:[...s.curve]}));export const STAGE_NOTES=NOTES.map(n=>({...n}));
