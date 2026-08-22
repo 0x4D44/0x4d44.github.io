@@ -85,7 +85,7 @@ The suite covers route continuity and exact endpoint sampling, pace-note orderin
 
 At packaging time, all **28/28 tests** pass. The deterministic stage driver finishes in **290.47 seconds** with **0 recoveries**, all **18/18 pace calls**, **3 contacts**, and **3.7% aggregate damage**. Those contacts are reported rather than described as a clean run.
 
-See [the benchmark](docs/BENCHMARK.md), [gauntlet log](docs/GAUNTLET_LOG.md), [adversarial review](docs/ADVERSARIAL_REVIEW.md), and [quality report](docs/QUALITY_REPORT.md) for critic findings, fixes, measurements, and remaining validation boundaries.
+See [the benchmark](docs/BENCHMARK.md), [gauntlet log](docs/GAUNTLET_LOG.md), [next gauntlet prompt](docs/GAUNTLET_PROMPT.md), [adversarial review](docs/ADVERSARIAL_REVIEW.md), and [quality report](docs/QUALITY_REPORT.md) for critic findings, fixes, measurements, the next expansion brief, and remaining validation boundaries.
 
 ## Project structure
 
