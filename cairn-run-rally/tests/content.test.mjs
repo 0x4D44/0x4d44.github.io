@@ -5,20 +5,25 @@ import {
   AURORA_STAGE,
   AURORA_WEATHER,
   CAIRN_R4,
+  CHAMPIONSHIPS,
   CARS,
   CATALOG,
+  DIFFICULTIES,
   LUMEN_F2,
   KESTREL_RIDGE,
   KESTREL_STAGE,
+  RIVALS,
   REGIONS,
   RIDGE_WEATHER,
   STAGES,
   SURFACES,
   WEATHER,
+  WORLD_CHAMPIONSHIP,
   validateCatalog
 } from '../src/content.js';
 import { buildStage } from '../src/stage.js';
 import { validateCarSpec, validateRegionSpec, validateStageSpec, validateWeatherSpec } from '../src/contracts.js';
+import { createChampionship, validateChampionshipState } from '../src/championship.js';
 
 test('the shipped Kestrel slice is a valid immutable catalog', () => {
   assert.deepEqual(validateCatalog(CATALOG), []);
@@ -93,4 +98,42 @@ test('the catalog-backed default stage remains deterministic and exact', () => {
   assert.equal(first.length, 5405);
   assert.equal(first.samples.at(-1).s, 5405);
   assert.deepEqual(first.splits, [1800, 3600, 5405]);
+});
+
+test('the vertical championship resolves its stage, weather, difficulty, and rival references', () => {
+  assert.equal(CHAMPIONSHIPS.length, 1);
+  assert.equal(CHAMPIONSHIPS[0], WORLD_CHAMPIONSHIP);
+  assert.equal(WORLD_CHAMPIONSHIP.events.length, 2);
+  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.stageId), [KESTREL_STAGE.id, AURORA_STAGE.id]);
+  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.weatherId), [RIDGE_WEATHER.id, AURORA_WEATHER.id]);
+  assert.ok(WORLD_CHAMPIONSHIP.events.every(event => event.serviceMinutes === 60));
+  assert.deepEqual(WORLD_CHAMPIONSHIP.rivalIds, RIVALS.map(rival => rival.id));
+  assert.deepEqual(DIFFICULTIES.map(difficulty => difficulty.id), ['easy', 'normal', 'hard']);
+  assert.ok(DIFFICULTIES.every(difficulty => Number.isFinite(difficulty.rivalPace) && difficulty.rivalPace > 0));
+  assert.equal(new Set(RIVALS.map(rival => rival.id)).size, 5);
+  assert.equal(new Set(RIVALS.map(rival => `${rival.skill}:${rival.consistency}:${rival.damageRisk}:${JSON.stringify(rival.surfaceBias)}:${rival.seed}`)).size, 5);
+  assert.deepEqual(validateCatalog(CATALOG), []);
+});
+
+test('the shipped championship catalog is deeply frozen and can create a valid state', () => {
+  const freezeTree = value => {
+    assert.ok(Object.isFrozen(value));
+    if (value && typeof value === 'object') for (const child of Object.values(value)) freezeTree(child);
+  };
+  freezeTree(DIFFICULTIES);
+  freezeTree(RIVALS);
+  freezeTree(CHAMPIONSHIPS);
+  freezeTree(WORLD_CHAMPIONSHIP);
+  freezeTree(CATALOG);
+
+  const state = createChampionship({
+    championship: WORLD_CHAMPIONSHIP,
+    content: CATALOG,
+    carId: CAIRN_R4.id,
+    difficultyId: 'normal',
+    seed: 4401
+  });
+  assert.equal(state.championshipId, WORLD_CHAMPIONSHIP.id);
+  assert.equal(state.eventIndex, 0);
+  assert.deepEqual(validateChampionshipState(state, CATALOG), []);
 });

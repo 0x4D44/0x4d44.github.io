@@ -1,5 +1,7 @@
 import {
   validateCarSpec,
+  validateChampionshipSpec,
+  validateRivalSpec,
   validateRegionSpec,
   validateStageSpec,
   validateWeatherSpec
@@ -375,6 +377,85 @@ const lumenF2 = {
   benchmarkScale: 1.14
 };
 
+const difficulties = [
+  { id: 'easy', name: 'Sunday drive', rivalPace: 1.08 },
+  { id: 'normal', name: 'Club pace', rivalPace: 1 },
+  { id: 'hard', name: 'Works attack', rivalPace: 0.94 }
+];
+
+const rivals = [
+  {
+    id: 'mara-vale',
+    name: 'Mara Vale',
+    seed: 1701,
+    skill: 0.86,
+    consistency: 0.94,
+    damageRisk: 0.025,
+    surfaceBias: { compact: 0.04, loose: -0.01 }
+  },
+  {
+    id: 'orin-shaw',
+    name: 'Orin Shaw',
+    seed: 1702,
+    skill: 0.73,
+    consistency: 0.81,
+    damageRisk: 0.06,
+    surfaceBias: { compact: -0.01, loose: 0.05 }
+  },
+  {
+    id: 'vesper-kade',
+    name: 'Vesper Kade',
+    seed: 1703,
+    skill: 0.64,
+    consistency: 0.72,
+    damageRisk: 0.12,
+    surfaceBias: { compact: 0.02, loose: -0.06 }
+  },
+  {
+    id: 'tomas-rune',
+    name: 'Tomas Rune',
+    seed: 1704,
+    skill: 0.56,
+    consistency: 0.89,
+    damageRisk: 0.085,
+    surfaceBias: { compact: -0.05, loose: 0.08 }
+  },
+  {
+    id: 'elise-north',
+    name: 'Elise North',
+    seed: 1705,
+    skill: 0.47,
+    consistency: 0.63,
+    damageRisk: 0.18,
+    surfaceBias: { compact: 0.07, loose: -0.09 }
+  }
+];
+
+const worldChampionship = {
+  id: 'cairn-world-championship',
+  name: 'Cairn World Championship',
+  points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
+  rivalIds: rivals.map(rival => rival.id),
+  events: [
+    {
+      id: 'kestrel-ridge-round',
+      stageId: kestrelStage.id,
+      weatherId: ridgeWeather.id,
+      serviceMinutes: 60,
+      durationSeconds: kestrelStage.expectedDurationSeconds,
+      referenceTimeSeconds: 322.61
+    },
+    {
+      id: 'aurora-forest-round',
+      stageId: auroraStage.id,
+      weatherId: auroraWeather.id,
+      serviceMinutes: 60,
+      durationSeconds: auroraStage.expectedDurationSeconds,
+      referenceTimeSeconds: 330
+    }
+  ]
+};
+
 export const SURFACES = deepFreeze(surfaces);
 export const WEATHER = deepFreeze([ridgeWeather, auroraWeather]);
 export const REGIONS = deepFreeze([kestrelRegion, auroraRegion]);
@@ -391,13 +472,20 @@ export const AURORA_FOREST = REGIONS[1];
 export const AURORA_REGION = AURORA_FOREST;
 export const AURORA_STAGE = STAGES[1];
 export const LUMEN_F2 = CARS[1];
+export const DIFFICULTIES = deepFreeze(difficulties);
+export const RIVALS = deepFreeze(rivals);
+export const WORLD_CHAMPIONSHIP = deepFreeze(worldChampionship);
+export const CHAMPIONSHIPS = deepFreeze([WORLD_CHAMPIONSHIP]);
 
 export const CATALOG = deepFreeze({
   surfaces: SURFACES,
   weather: WEATHER,
   regions: REGIONS,
   stages: STAGES,
-  cars: CARS
+  cars: CARS,
+  difficulties: DIFFICULTIES,
+  rivals: RIVALS,
+  championships: CHAMPIONSHIPS
 });
 
 export const CONTENT = CATALOG;
@@ -414,7 +502,10 @@ export function validateCatalog(catalog) {
   const regions = list(catalog, 'regions');
   const stages = list(catalog, 'stages');
   const cars = list(catalog, 'cars');
-  for (const [key, entries] of [['surfaces', surfaces], ['weather', weather], ['regions', regions], ['stages', stages], ['cars', cars]]) {
+  const difficulties = list(catalog, 'difficulties');
+  const rivals = list(catalog, 'rivals');
+  const championships = list(catalog, 'championships');
+  for (const [key, entries] of [['surfaces', surfaces], ['weather', weather], ['regions', regions], ['stages', stages], ['cars', cars], ['difficulties', difficulties], ['rivals', rivals], ['championships', championships]]) {
     if (!Array.isArray(catalog[key]) || entries.length === 0) errors.push(`catalog.${key} must be a non-empty array`);
   }
 
@@ -432,6 +523,9 @@ export function validateCatalog(catalog) {
   const regionIds = collectIds(regions, 'regions');
   const stageIds = collectIds(stages, 'stages');
   collectIds(cars, 'cars');
+  const difficultyIds = collectIds(difficulties, 'difficulties');
+  const rivalIds = collectIds(rivals, 'rivals');
+  collectIds(championships, 'championships');
 
   weather.forEach((entry, index) => {
     for (const error of validateWeatherSpec(entry)) errors.push(`weather[${index}]: ${error}`);
@@ -454,5 +548,24 @@ export function validateCatalog(catalog) {
   cars.forEach((entry, index) => {
     for (const error of validateCarSpec(entry)) errors.push(`cars[${index}]: ${error}`);
   });
+  difficulties.forEach((entry, index) => {
+    if (typeof entry?.name !== 'string' || entry.name.trim() === '') errors.push(`difficulties[${index}].name must be a non-empty string`);
+    if (!Number.isFinite(entry?.rivalPace) || entry.rivalPace <= 0) errors.push(`difficulties[${index}].rivalPace must be positive and finite`);
+  });
+  rivals.forEach((entry, index) => {
+    for (const error of validateRivalSpec(entry)) errors.push(`rivals[${index}]: ${error}`);
+  });
+  championships.forEach((entry, index) => {
+    for (const error of validateChampionshipSpec(entry)) errors.push(`championships[${index}]: ${error}`);
+    for (const rivalId of entry?.rivalIds || []) if (!rivalIds.has(rivalId)) errors.push(`championship ${entry.id || index} references missing rival ${rivalId}`);
+    if (!Array.isArray(entry?.rivalIds) || entry.rivalIds.length < 1) errors.push(`championship ${entry.id || index} must reference at least one rival`);
+    for (const [eventIndex, event] of (entry?.events || []).entries()) {
+      if (!stageIds.has(event?.stageId)) errors.push(`championship ${entry.id || index} event ${eventIndex} references missing stage ${event?.stageId}`);
+      if (!weatherIds.has(event?.weatherId)) errors.push(`championship ${entry.id || index} event ${eventIndex} references missing weather ${event?.weatherId}`);
+      if (event?.serviceMinutes !== 60) errors.push(`championship ${entry.id || index} event ${eventIndex} must allow 60 service minutes`);
+      for (const rivalId of event?.rivalIds || []) if (!rivalIds.has(rivalId)) errors.push(`championship ${entry.id || index} event ${eventIndex} references missing rival ${rivalId}`);
+    }
+  });
+  if (difficulties.length && !difficultyIds.has('normal')) errors.push('difficulties must include normal');
   return errors;
 }
