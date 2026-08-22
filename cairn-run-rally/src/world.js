@@ -15,6 +15,234 @@ const C = {
 };
 const IDENTITY = mat4Identity();
 
+const DEFAULT_REGION = {
+  id: 'kestrel-ridge',
+  palette: { sky: '#15241e', terrain: '#536347', road: '#817563' },
+  sceneryKit: ['pine', 'birch', 'moor', 'stone-wall', 'quarry', 'bridge', 'finish-gate']
+};
+const DEFAULT_WEATHER = {
+  id: 'ridge-mist', visibilityM: 850, gripScale: .94, precipitation: 'rain', roadWetness: .28,
+  wind: .36, timeOfDay: 'dusk'
+};
+const DEFAULT_CAR = {
+  id: 'cairn-r4', silhouette: 'rally-hatch', wheelbaseM: 2.5, trackM: 1.5, wheelRadiusM: .39,
+  rideHeightM: .54
+};
+
+const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const finite = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+const clamp01 = value => clamp(finite(value, 0), 0, 1);
+
+function parseColor(value, fallback) {
+  if (Array.isArray(value) && value.length >= 3 && value.every(Number.isFinite)) return value.slice(0, 3).map(channel => clamp(channel, 0, 1));
+  if (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)) return color(value);
+  return fallback.slice();
+}
+
+function mixColor(a, b, amount) {
+  const t = clamp01(amount);
+  return a.map((channel, index) => channel + (b[index] - channel) * t);
+}
+
+function scaleColor(value, amount) { return value.map(channel => clamp(channel * amount, 0, 1)); }
+
+function visualPalette(region = DEFAULT_REGION, weather = DEFAULT_WEATHER) {
+  const source = region?.palette || DEFAULT_REGION.palette;
+  const terrain = parseColor(source.terrain, C.grass);
+  const road = parseColor(source.road, C.road);
+  const sky = parseColor(source.sky, C.farGrass);
+  const wet = clamp01(weather?.roadWetness);
+  const dampRoad = mixColor(road, scaleColor(road, .68), wet * .32);
+  return {
+    ...C,
+    road: dampRoad,
+    roadAlt: mixColor(dampRoad, C.roadAlt, .42),
+    roadPatch: mixColor(dampRoad, C.roadPatch, .38),
+    loose: mixColor(dampRoad, terrain, .18),
+    looseAlt: mixColor(dampRoad, terrain, .28),
+    grass: terrain,
+    grassAlt: mixColor(terrain, C.grassAlt, .38),
+    moor: mixColor(terrain, sky, .18),
+    farGrass: mixColor(terrain, sky, .38),
+    darkGrass: scaleColor(terrain, .68),
+    trunk: mixColor(C.trunk, terrain, .12),
+    pine: mixColor(C.pine, terrain, .18),
+    pineLight: mixColor(C.pineLight, terrain, .22),
+    birch: mixColor(C.birch, terrain, .22),
+    water: mixColor(C.water, sky, .35),
+    shadow: mixColor(C.shadow, terrain, .08),
+    sky
+  };
+}
+
+function inferRegion(stage, region) {
+  if (isObject(region)) return region;
+  const kit = new Set([...(stage?.landmarkIds || []), ...(stage?.identityTags || []), ...(stage?.routeIdentity?.tags || [])]);
+  return {
+    ...DEFAULT_REGION,
+    id: stage?.regionId || DEFAULT_REGION.id,
+    sceneryKit: [...new Set([...(stage?.landmarkIds || []), ...kit])]
+  };
+}
+
+function inferWeather(weather) { return isObject(weather) ? { ...DEFAULT_WEATHER, ...weather } : { ...DEFAULT_WEATHER }; }
+
+const CAR_RECIPES = Object.freeze({
+  'rally-hatch': Object.freeze({
+    frontOverhang: .76, rearOverhang: .82, bodyHeight: .58, roofHeight: 1.43,
+    cabinStart: -.78, cabinEnd: 1.06, roofInset: .2, windowHeight: .48,
+    trackPadding: .04, spoiler: true, body: '#206a70', dark: '#16474c', accent: '#e65c2b'
+  }),
+  'compact-hatch': Object.freeze({
+    frontOverhang: .62, rearOverhang: .66, bodyHeight: .5, roofHeight: 1.22,
+    cabinStart: -.66, cabinEnd: .86, roofInset: .28, windowHeight: .39,
+    trackPadding: .03, spoiler: false, body: '#9a633e', dark: '#493943', accent: '#d4bf82'
+  })
+});
+
+/**
+ * Purely plans the car's low-poly proportions. Rendering consumes this shape, so a
+ * selected car changes geometry even when no livery colours are authored yet.
+ */
+export function planCarVisual(car = DEFAULT_CAR) {
+  const source = isObject(car) ? car : DEFAULT_CAR;
+  const recipe = CAR_RECIPES[source.silhouette] || CAR_RECIPES['rally-hatch'];
+  const wheelbase = clamp(finite(source.wheelbaseM, DEFAULT_CAR.wheelbaseM), 1.8, 3.4);
+  const track = clamp(finite(source.trackM, DEFAULT_CAR.trackM), 1.15, 2.1);
+  const wheelRadius = clamp(finite(source.wheelRadiusM, DEFAULT_CAR.wheelRadiusM), .22, .52);
+  const width = clamp(track * 1.22 + recipe.trackPadding, 1.48, 2.32);
+  const length = clamp(wheelbase + recipe.frontOverhang + recipe.rearOverhang, 2.8, 4.9);
+  const frontAxle = wheelbase * .5;
+  const rearAxle = -wheelbase * .5;
+  const palette = isObject(source.palette) ? source.palette : (isObject(source.colors) ? source.colors : {});
+  const body = parseColor(palette.body ?? recipe.body, color(recipe.body));
+  const dark = parseColor(palette.dark ?? palette.trim ?? recipe.dark, color(recipe.dark));
+  const accent = parseColor(palette.accent ?? palette.highlight ?? recipe.accent, color(recipe.accent));
+  const window = parseColor(palette.window, C.window);
+  return Object.freeze({
+    id: source.id || DEFAULT_CAR.id,
+    silhouette: source.silhouette || 'rally-hatch',
+    wheelbase, track, wheelRadius, width, length,
+    frontAxle, rearAxle, frontZ: length / 2, rearZ: -length / 2,
+    bodyHeight: recipe.bodyHeight, roofHeight: recipe.roofHeight,
+    cabinStart: recipe.cabinStart, cabinEnd: recipe.cabinEnd,
+    roofInset: recipe.roofInset, windowHeight: recipe.windowHeight,
+    spoiler: recipe.spoiler,
+    body, dark, accent, window,
+    wheelCenterY: .05, bodyCenterY: wheelRadius + .19,
+    bodyY: wheelRadius + .19, bumperY: wheelRadius + .08
+  });
+}
+
+function rangeForSegments(stage, predicate) {
+  const ranges = [];
+  let cursor = 0;
+  for (const segment of stage?.segments || []) {
+    const start = finite(segment.start, cursor);
+    const end = finite(segment.end, start + finite(segment.lengthM, finite(segment.length, 0)));
+    if (predicate(segment)) ranges.push({ start, end, feature: segment.feature || null });
+    cursor = end;
+  }
+  return ranges;
+}
+
+function barrierRanges(stage, types) {
+  const wanted = new Set(types);
+  const values = (stage?.barriers || []).filter(item => wanted.has(item.type));
+  if (!values.length) return [];
+  const grouped = new Map();
+  for (const item of values) {
+    const key = item.type;
+    const current = grouped.get(key) || { start: item.s, end: item.s, type: key, side: item.side };
+    current.start = Math.min(current.start, item.s); current.end = Math.max(current.end, item.s);
+    grouped.set(key, current);
+  }
+  return [...grouped.values()];
+}
+
+const BARRIER_SIZES = Object.freeze({
+  wall: Object.freeze({ x: .7, y: .72, z: 5.25 }),
+  'bridge-rail': Object.freeze({ x: .18, y: .84, z: 7.4 }),
+  'timber-fence': Object.freeze({ x: .3, y: .72, z: 6.2 }),
+  'lake-fence': Object.freeze({ x: .3, y: .72, z: 6.2 }),
+  'spruce-rail': Object.freeze({ x: .22, y: .76, z: 7.1 }),
+  barrier: Object.freeze({ x: .42, y: .7, z: 1.45 }),
+  post: Object.freeze({ x: .16, y: 1.1, z: .16 })
+});
+
+/** Returns the authored barrier positions that receive visible geometry. */
+export function planBarrierVisuals(stage) {
+  return Object.freeze((stage?.barriers || []).map(barrier => Object.freeze({
+    ...barrier,
+    visible: true,
+    size: Object.freeze({ ...(BARRIER_SIZES[barrier.type] || BARRIER_SIZES.post) })
+  })));
+}
+
+export const planVisibleColliders = planBarrierVisuals;
+
+/** Returns procedural hazard positions using the exact stage collider coordinates. */
+export function planHazardVisuals(stage) {
+  return Object.freeze((stage?.hazards || []).map(hazard => Object.freeze({
+    ...hazard,
+    visible: true,
+    visualRadius: hazard.type === 'rock' ? hazard.radius : hazard.type === 'tree' ? Math.max(.48, hazard.radius) : .16
+  })));
+}
+
+export function planColliderVisuals(stage) {
+  return Object.freeze((stage?.colliders || stage?.hazards || []).map(collider => Object.freeze({
+    ...collider,
+    visible: true,
+    visualRadius: collider.type === 'rock' ? collider.radius : collider.type === 'tree' ? Math.max(.48, collider.radius) : .16
+  })));
+}
+
+/**
+ * Pure, bounded world plan used by RallyWorld. It only reads route metadata and
+ * colliders; no region or stage identity is switched on here.
+ */
+export function planWorldVisuals(stage, region = null, weather = null, quality = 'high') {
+  const selectedRegion = inferRegion(stage, region || stage?.region);
+  const selectedWeather = inferWeather(weather || stage?.weather);
+  const kit = [...new Set([...(selectedRegion.sceneryKit || []), ...(stage?.landmarkIds || [])])];
+  const kitSet = new Set(kit);
+  const high = quality !== 'low';
+  const ranges = [];
+  const addRanges = (type, values) => values.forEach(range => ranges.push({ ...range, type }));
+  if (kitSet.has('lake')) addRanges('lake', rangeForSegments(stage, segment => segment.feature === 'lakeside' || segment.name?.toLowerCase().includes('lake')));
+  if (kitSet.has('narrow-forest')) addRanges('narrow-forest', rangeForSegments(stage, segment => segment.feature === 'narrow' || segment.name?.toLowerCase().includes('forest')));
+  if (kitSet.has('jump-board')) addRanges('jump-board', rangeForSegments(stage, segment => segment.feature === 'jump' || segment.feature === 'crest'));
+  if (kitSet.has('granite-outcrop')) addRanges('granite-outcrop', rangeForSegments(stage, segment => segment.feature === 'braking' || segment.name?.toLowerCase().includes('rock')));
+  if (kitSet.has('quarry')) addRanges('quarry', rangeForSegments(stage, segment => segment.name?.toLowerCase().includes('quarry')));
+  if (kitSet.has('stone-wall')) addRanges('stone-wall', barrierRanges(stage, ['wall']));
+  if (kitSet.has('bridge')) addRanges('bridge', barrierRanges(stage, ['bridge-rail']));
+  if (kitSet.has('finish-gate')) ranges.push({ type: 'finish-gate', start: Math.max(0, finite(stage?.length, 0) - 60), end: finite(stage?.length, 0) });
+  const landmarkTypes = [...new Set(ranges.map(range => range.type))];
+  if (kitSet.has('lake')) landmarkTypes.push('lakeside');
+  if (kitSet.has('narrow-forest')) { landmarkTypes.push('narrow-spruce'); landmarkTypes.push('forest'); }
+  if (kitSet.has('jump-board')) landmarkTypes.push('jump');
+  return Object.freeze({
+    quality: high ? 'high' : 'low',
+    kit: Object.freeze(kit),
+    ranges: Object.freeze(ranges.map(range => Object.freeze({ ...range }))),
+    landmarks: Object.freeze([...new Set(landmarkTypes)]),
+    barrierTypes: Object.freeze([...new Set((stage?.barriers || []).map(item => item.type))]),
+    sceneryStride: high ? 2 : 4,
+    forestStride: high ? 12 : 24,
+    samplesPerChunk: high ? 30 : 44,
+    maxDistance: high ? 850 : 620,
+    routeBehind: high ? 460 : 330,
+    routeAhead: high ? 660 : 510,
+    visibilityM: clamp(finite(selectedWeather.visibilityM, DEFAULT_WEATHER.visibilityM), 220, 3000),
+    palette: visualPalette(selectedRegion, selectedWeather)
+  });
+}
+
+// Short aliases make the pure seam easy to discover without changing the class API.
+export const planWorld = planWorldVisuals;
+export const planCarMesh = planCarVisual;
+
 export class ChaseCamera {
   constructor(stage,car){
     this.stage=stage;this.position={x:car.x,y:car.y+3,z:car.z-6};this.target={x:car.x,y:car.y+.7,z:car.z+3};
@@ -51,21 +279,49 @@ function terrainPoint(sample,lateral,index,band){
 }
 
 export class RallyWorld {
-  constructor(renderer,stage,quality='high'){
-    this.renderer=renderer;this.stage=stage;this.quality=quality;this.chunks=[];this.particles=[];this.clock=0;this.wheelRotation=0;
+  constructor(renderer,stage,quality='high',options={},weatherArgument=null,carArgument=null){
+    let selected=options;
+    if(isObject(quality)){
+      // Accept the migration-friendly { region, weather, car, quality } form as
+      // well as a region object in the old third-argument slot.
+      if('region' in quality || 'weather' in quality || 'car' in quality || 'quality' in quality){
+        selected=quality;quality=typeof options==='string'?options:(quality.quality || 'high');
+      }else{
+        selected={region:quality,weather:options,car:weatherArgument};quality='high';
+      }
+    }
+    selected=isObject(selected)?selected:{};
+    if(!('region' in selected || 'weather' in selected || 'car' in selected) && (selected.palette || selected.sceneryKit)){
+      selected={region:selected,weather:weatherArgument,car:carArgument};
+    }
+    if(weatherArgument && !selected.weather)selected={...selected,weather:weatherArgument};
+    if(carArgument && !selected.car)selected={...selected,car:carArgument};
+    this.renderer=renderer;this.stage=stage;this.quality=quality==='low'?'low':'high';
+    this.region=inferRegion(stage,selected.region || selected.regionSpec || stage?.region);
+    this.weather=inferWeather(selected.weather || selected.weatherSpec || stage?.weather);
+    this.carSpec=isObject(selected.car || selected.carSpec || stage?.car)?(selected.car || selected.carSpec || stage.car):DEFAULT_CAR;
+    this.visualPlan=planWorldVisuals(stage,this.region,this.weather,this.quality);
+    this.worldPlan=this.visualPlan;
+    this.landmarks=this.visualPlan.landmarks;
+    this.barrierVisuals=planBarrierVisuals(stage);
+    this.colors=this.visualPlan.palette;
+    this.carVisual=planCarVisual(this.carSpec);
+    this.regionSpec=this.region;this.weatherSpec=this.weather;this.car=this.carSpec;this.carProfile=this.carVisual;
+    this.hazardVisuals=planHazardVisuals(stage);
+    this.chunks=[];this.particles=[];this.clock=0;this.wheelRotation=0;
     this.buildBackdrop();this.buildStaticWorld();this.buildCar();
   }
-  setQuality(quality){this.quality=quality;}
+  setQuality(quality){this.quality=quality==='low'?'low':'high';}
 
   buildBackdrop(){
     const xs=this.stage.samples.map(sample=>sample.x),zs=this.stage.samples.map(sample=>sample.z),ys=this.stage.samples.map(sample=>sample.y),pad=1300,y=Math.min(...ys)-7,builder=new MeshBuilder();
     const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minZ=Math.min(...zs)-pad,maxZ=Math.max(...zs)+pad;
-    builder.quad({x:minX,y,z:minZ},{x:minX,y,z:maxZ},{x:maxX,y,z:maxZ},{x:maxX,y,z:minZ},C.farGrass,{x:0,y:1,z:0});
+    builder.quad({x:minX,y,z:minZ},{x:minX,y,z:maxZ},{x:maxX,y,z:maxZ},{x:maxX,y,z:minZ},this.colors.farGrass,{x:0,y:1,z:0});
     this.backdrop=this.renderer.createMesh(builder);
   }
 
   buildStaticWorld(){
-    const samplesPerChunk=30;
+    const samplesPerChunk=this.visualPlan.samplesPerChunk;
     for(let start=0;start<this.stage.samples.length-1;start+=samplesPerChunk){
       const end=Math.min(this.stage.samples.length-1,start+samplesPerChunk),builder=new MeshBuilder();
       this.addRoad(builder,start,end);this.addScenery(builder,start,end);
@@ -76,112 +332,214 @@ export class RallyWorld {
 
   addRoad(builder,start,end){
     for(let i=start;i<end;i++){
-      const a=this.stage.samples[i],b=this.stage.samples[i+1],block=Math.floor(i/16),shade=hash01(block*811+31),roadCol=a.surface==='loose'?(shade>.48?C.loose:C.looseAlt):(shade>.55?C.roadAlt:C.road);
+      const a=this.stage.samples[i],b=this.stage.samples[i+1],block=Math.floor(i/16),shade=hash01(block*811+31),roadCol=a.surface==='loose'?(shade>.48?this.colors.loose:this.colors.looseAlt):(shade>.55?this.colors.roadAlt:this.colors.road);
       const al=roadEdgePoint(a,-a.width/2,.035),ar=roadEdgePoint(a,a.width/2,.035),bl=roadEdgePoint(b,-b.width/2,.035),br=roadEdgePoint(b,b.width/2,.035);builder.quad(al,bl,br,ar,roadCol);
       if(i%19===7){
-        const lateral=(hash01(i*1709)-.5)*a.width*.52,half=.22+hash01(i*919)*.18,p1=roadEdgePoint(a,lateral-half,.052),p2=roadEdgePoint(b,lateral-half,.052),p3=roadEdgePoint(b,lateral+half,.052),p4=roadEdgePoint(a,lateral+half,.052);builder.quad(p1,p2,p3,p4,C.roadPatch);
+        const lateral=(hash01(i*1709)-.5)*a.width*.52,half=.22+hash01(i*919)*.18,p1=roadEdgePoint(a,lateral-half,.052),p2=roadEdgePoint(b,lateral-half,.052),p3=roadEdgePoint(b,lateral+half,.052),p4=roadEdgePoint(a,lateral+half,.052);builder.quad(p1,p2,p3,p4,this.colors.roadPatch);
       }
       for(const side of [-1,1]){
         const innerA=roadEdgePoint(a,side*a.width/2,.018),innerB=roadEdgePoint(b,side*b.width/2,.018),outerA=roadEdgePoint(a,side*(a.width/2+2.2),-.08),outerB=roadEdgePoint(b,side*(b.width/2+2.2),-.08);
-        if(side<0)builder.quad(outerA,outerB,innerB,innerA,C.shoulder);else builder.quad(innerA,innerB,outerB,outerA,C.shoulder);
+        if(side<0)builder.quad(outerA,outerB,innerB,innerA,this.colors.shoulder);else builder.quad(innerA,innerB,outerB,outerA,this.colors.shoulder);
         const ditchA=roadEdgePoint(a,side*(a.width/2+2.85),-.22),ditchB=roadEdgePoint(b,side*(b.width/2+2.85),-.22);
-        if(side<0)builder.quad(ditchA,ditchB,outerB,outerA,C.ditch);else builder.quad(outerA,outerB,ditchB,ditchA,C.ditch);
+        if(side<0)builder.quad(ditchA,ditchB,outerB,outerA,this.colors.ditch);else builder.quad(outerA,outerB,ditchB,ditchA,this.colors.ditch);
         const nearWidth=20+Math.sin(i*.031+side)*3,farWidth=76+Math.sin(i*.021+side*2.3)*13;
         const nearA=terrainPoint(a,side*nearWidth,i,1),nearB=terrainPoint(b,side*(20+Math.sin((i+1)*.031+side)*3),i+1,1),farA=terrainPoint(a,side*farWidth,i,2),farB=terrainPoint(b,side*(76+Math.sin((i+1)*.021+side*2.3)*13),i+1,2);
-        const open=a.segmentIndex===12||a.segmentIndex===13||a.segmentIndex===23,grass=open?C.moor:(Math.floor(i/13)%2?C.grass:C.grassAlt);
-        if(side<0){builder.quad(nearA,nearB,ditchB,ditchA,grass);builder.quad(farA,farB,nearB,nearA,C.farGrass);}else{builder.quad(ditchA,ditchB,nearB,nearA,grass);builder.quad(nearA,nearB,farB,farA,C.farGrass);}
+        const open=this.visualPlan.kit.includes('moor') ? (a.feature==='crest'||a.feature==='dip'||a.surface==='loose') : a.feature==='lakeside',grass=open?this.colors.moor:(Math.floor(i/13)%2?this.colors.grass:this.colors.grassAlt);
+        if(side<0){builder.quad(nearA,nearB,ditchB,ditchA,grass);builder.quad(farA,farB,nearB,nearA,this.colors.farGrass);}else{builder.quad(ditchA,ditchB,nearB,nearA,grass);builder.quad(nearA,nearB,farB,farA,this.colors.farGrass);}
       }
     }
   }
 
   addScenery(builder,start,end){
-    const openSegments=new Set([0,1,11,12,13,16,23,24,25]);
-    for(let i=start;i<=end;i+=2){
-      const sample=this.stage.samples[i],open=openSegments.has(sample.segmentIndex),density=open?.19:.52;
+    const kit=new Set(this.visualPlan.kit),forestDensity=kit.has('narrow-forest')?.68:kit.has('pine')?.52:.38;
+    for(let i=start;i<=end;i+=this.visualPlan.sceneryStride){
+      const sample=this.stage.samples[i],open=sample.feature==='lakeside'||sample.feature==='straight'||sample.surface==='loose',density=open?forestDensity*.52:forestDensity;
       for(const side of [-1,1]){
         const roll=hash01(i*739+side*29);if(roll>density)continue;
-        const offset=sample.width/2+4+hash01(i*991+side*43)*(open?26:17),point=roadEdgePoint(sample,side*offset,-.12),scale=.7+hash01(i*541+side*7)*1.45,kind=hash01(i*1237+side*71);
-        if(kind>.28)this.addTree(builder,point,scale,kind>.48,kind);else if(kind>.12)this.addBush(builder,point,scale);else this.addSmallRock(builder,point,scale);
+        const forceSpruce=kit.has('spruce') || (kit.has('narrow-forest') && (sample.feature==='narrow'||sample.feature==='jump'));
+        const offset=sample.width/2+4+hash01(i*991+side*43)*(open?26:17),point=roadEdgePoint(sample,side*offset,-.12),scale=(forceSpruce?1.05:.7)+hash01(i*541+side*7)*(forceSpruce?1.7:1.45),kind=hash01(i*1237+side*71);
+        if(forceSpruce || kind>.28)this.addTree(builder,point,scale,forceSpruce||kind>.48,kind);else if(kind>.12)this.addBush(builder,point,scale);else this.addSmallRock(builder,point,scale);
       }
     }
     for(let i=start;i<=end;i++)if(i%20===4){const sample=this.stage.samples[i];for(const side of [-1,1])this.addMarker(builder,roadEdgePoint(sample,side*(sample.width/2+1.45),.08),sample.heading,side);}
-    for(const hazard of this.stage.hazards){if(hazard.sampleIndex<start||hazard.sampleIndex>end)continue;if(hazard.type==='tree')this.addTree(builder,{x:hazard.x,y:hazard.y,z:hazard.z},1.15,true,.8);else if(hazard.type==='rock')this.addRock(builder,hazard);else this.addHazardPost(builder,hazard);}
+    for(const hazard of this.hazardVisuals){if(hazard.sampleIndex<start||hazard.sampleIndex>end)continue;if(hazard.type==='tree')this.addTree(builder,{x:hazard.x,y:hazard.y,z:hazard.z},1.15,true,.8);else if(hazard.type==='rock')this.addRock(builder,hazard);else this.addHazardPost(builder,hazard);}
     const rangeStart=this.stage.samples[start].s,rangeEnd=this.stage.samples[end].s;
     for(const gateDistance of [22,this.stage.length-25])if(gateDistance>=rangeStart&&gateDistance<=rangeEnd)this.addGate(builder,sampleStage(this.stage,gateDistance),gateDistance<100);
-    for(const zone of [{s:1815,side:-1},{s:4110,side:1}])if(zone.s>=rangeStart-80&&zone.s<=rangeEnd+80)this.addHairpinScene(builder,zone.s,zone.side);
-    if(rangeEnd>=1640&&rangeStart<=1800)this.addStoneWall(builder,Math.max(1640,rangeStart),Math.min(1800,rangeEnd));
-    if(rangeEnd>=3950&&rangeStart<=4075)this.addBridge(builder,Math.max(3950,rangeStart),Math.min(4075,rangeEnd));
+    for(const barrier of this.barrierVisuals){
+      if(barrier.s<rangeStart-8||barrier.s>rangeEnd+8)continue;
+      this.addBarrierVisual(builder,barrier);
+    }
+    for(const spec of this.stage.barrierPlan || []){
+      if(spec.type!=='barrier' || !Number.isFinite(spec.centerM))continue;
+      if(spec.centerM>=rangeStart-80&&spec.centerM<=rangeEnd+80)this.addHairpinScene(builder,spec.centerM,spec.side ?? 1);
+    }
+    this.addRegionalLandmarks(builder,rangeStart,rangeEnd);
   }
 
   addTree(builder,point,scale,pine,variant=.5){
     if(pine){
-      builder.cylinder({x:point.x,y:point.y+1.25*scale,z:point.z},.15*scale,2.5*scale,6,C.trunk);
-      builder.cone({x:point.x,y:point.y+.75*scale,z:point.z},1.08*scale,2.45*scale,7,C.pine);
-      builder.cone({x:point.x,y:point.y+1.65*scale,z:point.z},.85*scale,2.05*scale,7,variant>.76?C.pineLight:C.pine);
-      if(variant>.7)builder.cone({x:point.x,y:point.y+2.45*scale,z:point.z},.55*scale,1.45*scale,7,C.pineLight);
+      builder.cylinder({x:point.x,y:point.y+1.25*scale,z:point.z},.15*scale,2.5*scale,6,this.colors.trunk);
+      builder.cone({x:point.x,y:point.y+.75*scale,z:point.z},1.08*scale,2.45*scale,7,this.colors.pine);
+      builder.cone({x:point.x,y:point.y+1.65*scale,z:point.z},.85*scale,2.05*scale,7,variant>.76?this.colors.pineLight:this.colors.pine);
+      if(variant>.7)builder.cone({x:point.x,y:point.y+2.45*scale,z:point.z},.55*scale,1.45*scale,7,this.colors.pineLight);
     }else{
-      builder.cylinder({x:point.x,y:point.y+1.4*scale,z:point.z},.13*scale,2.8*scale,6,C.birch);
-      builder.cone({x:point.x-.18*scale,y:point.y+1.75*scale,z:point.z},.78*scale,1.5*scale,8,C.grassAlt);
-      builder.cone({x:point.x+.2*scale,y:point.y+2.15*scale,z:point.z},.62*scale,1.25*scale,8,C.grass);
+      builder.cylinder({x:point.x,y:point.y+1.4*scale,z:point.z},.13*scale,2.8*scale,6,this.colors.birch);
+      builder.cone({x:point.x-.18*scale,y:point.y+1.75*scale,z:point.z},.78*scale,1.5*scale,8,this.colors.grassAlt);
+      builder.cone({x:point.x+.2*scale,y:point.y+2.15*scale,z:point.z},.62*scale,1.25*scale,8,this.colors.grass);
     }
   }
-  addBush(builder,point,scale){builder.cone({x:point.x,y:point.y+.05,z:point.z},.58*scale,.85*scale,7,C.darkGrass);builder.cone({x:point.x+.34*scale,y:point.y+.02,z:point.z+.18*scale},.42*scale,.62*scale,7,C.grassAlt);}
-  addSmallRock(builder,point,scale){builder.cone({x:point.x,y:point.y+.03,z:point.z},.5*scale,.42*scale,6,C.rock);}
-  addRock(builder,hazard){builder.cone({x:hazard.x,y:hazard.y+.38,z:hazard.z},hazard.radius,.85,6,C.rock);}
-  addHazardPost(builder,hazard){builder.box({x:hazard.x,y:hazard.y+.55,z:hazard.z},{x:.16,y:1.1,z:.16},C.post);builder.box({x:hazard.x,y:hazard.y+.92,z:hazard.z},{x:.18,y:.24,z:.18},C.red);}
-  addMarker(builder,point,heading,side){builder.box({x:point.x,y:point.y+.55,z:point.z},{x:.11,y:1.1,z:.11},C.post);const rx=Math.cos(heading),rz=-Math.sin(heading);builder.box({x:point.x+rx*side*.015,y:point.y+.95,z:point.z+rz*side*.015},{x:.15,y:.24,z:.15},C.red);}
+  addBush(builder,point,scale){builder.cone({x:point.x,y:point.y+.05,z:point.z},.58*scale,.85*scale,7,this.colors.darkGrass);builder.cone({x:point.x+.34*scale,y:point.y+.02,z:point.z+.18*scale},.42*scale,.62*scale,7,this.colors.grassAlt);}
+  addSmallRock(builder,point,scale){builder.cone({x:point.x,y:point.y+.03,z:point.z},.5*scale,.42*scale,6,this.colors.rock);}
+  addRock(builder,hazard){builder.cone({x:hazard.x,y:hazard.y+.38,z:hazard.z},hazard.radius,.85,6,this.colors.rock);}
+  addHazardPost(builder,hazard){builder.box({x:hazard.x,y:hazard.y+.55,z:hazard.z},{x:.16,y:1.1,z:.16},this.colors.post);builder.box({x:hazard.x,y:hazard.y+.92,z:hazard.z},{x:.18,y:.24,z:.18},this.colors.red);}
+  addMarker(builder,point,heading,side){builder.box({x:point.x,y:point.y+.55,z:point.z},{x:.11,y:1.1,z:.11},this.colors.post);const rx=Math.cos(heading),rz=-Math.sin(heading);builder.box({x:point.x+rx*side*.015,y:point.y+.95,z:point.z+rz*side*.015},{x:.15,y:.24,z:.15},this.colors.red);}
 
   addGate(builder,sample,start){
     const rx=Math.cos(sample.heading),rz=-Math.sin(sample.heading),half=sample.width/2+1;
-    for(const side of [-1,1]){const x=sample.x+rx*half*side,z=sample.z+rz*half*side;builder.box({x,y:sample.y+2.2,z},{x:.34,y:4.4,z:.34},start?C.orange:C.post);builder.box({x,y:sample.y+3.55,z},{x:.48,y:.42,z:.48},C.tealDark);}
-    builder.boxYaw({x:sample.x,y:sample.y+4.05,z:sample.z},{x:sample.width+2.5,y:.65,z:.42},sample.heading,start?C.orange:C.post);
+    for(const side of [-1,1]){const x=sample.x+rx*half*side,z=sample.z+rz*half*side;builder.box({x,y:sample.y+2.2,z},{x:.34,y:4.4,z:.34},start?this.colors.orange:this.colors.post);builder.box({x,y:sample.y+3.55,z},{x:.48,y:.42,z:.48},this.colors.tealDark);}
+    builder.boxYaw({x:sample.x,y:sample.y+4.05,z:sample.z},{x:sample.width+2.5,y:.65,z:.42},sample.heading,start?this.colors.orange:this.colors.post);
   }
 
   addHairpinScene(builder,distance,side){
-    for(let n=-4;n<=4;n++){const sample=sampleStage(this.stage,distance+n*12),point=roadEdgePoint(sample,side*(sample.width/2+2.6),.18),col=n%2?C.red:C.barrier;builder.boxYaw({x:point.x,y:point.y+.35,z:point.z},{x:.42,y:.7,z:1.45},sample.heading,col);}
-    for(let n=0;n<8;n++){const sample=sampleStage(this.stage,distance-30+n*9),point=roadEdgePoint(sample,-side*(sample.width/2+7+n%2*1.3),0),shirt=[C.spectator1,C.spectator2,C.spectator3][n%3];builder.cylinder({x:point.x,y:point.y+.65,z:point.z},.18,1,5,shirt);builder.cone({x:point.x,y:point.y+1.28,z:point.z},.18,.28,6,C.birch);}
+    for(let n=0;n<8;n++){const sample=sampleStage(this.stage,distance-30+n*9),point=roadEdgePoint(sample,-side*(sample.width/2+7+n%2*1.3),0),shirt=[this.colors.spectator1,this.colors.spectator2,this.colors.spectator3][n%3];builder.cylinder({x:point.x,y:point.y+.65,z:point.z},.18,1,5,shirt);builder.cone({x:point.x,y:point.y+1.28,z:point.z},.18,.28,6,this.colors.birch);}
+  }
+
+  addBarrierVisual(builder,barrier){
+    const heading=sampleStage(this.stage,barrier.s).heading;
+    const center={x:barrier.x,y:barrier.y,z:barrier.z};
+    const type=String(barrier.type || 'post');
+    if(type==='wall'){
+      const size=barrier.size || BARRIER_SIZES.wall;
+      builder.boxYaw({x:center.x,y:center.y+.36,z:center.z},{x:Math.max(size.x,barrier.radius*1.15),y:size.y,z:size.z},heading,Math.round(barrier.s/5)%2?this.colors.stone:this.colors.stoneDark);
+    }else if(type==='bridge-rail'){
+      builder.boxYaw({x:center.x,y:center.y+.42,z:center.z},barrier.size || BARRIER_SIZES['bridge-rail'],heading,this.colors.barrier);
+    }else if(type==='timber-fence' || type==='lake-fence'){
+      const size=barrier.size || BARRIER_SIZES[type];
+      builder.boxYaw({x:center.x,y:center.y+.36,z:center.z},size,heading,this.colors.barrier);
+      builder.boxYaw({x:center.x,y:center.y+.84,z:center.z},{x:.16,y:.18,z:size.z},heading,this.colors.wood || this.colors.trunk);
+    }else if(type==='spruce-rail'){
+      builder.boxYaw({x:center.x,y:center.y+.38,z:center.z},barrier.size || BARRIER_SIZES['spruce-rail'],heading,this.colors.barrier);
+    }else if(type==='barrier'){
+      builder.boxYaw({x:center.x,y:center.y+.35,z:center.z},barrier.size || BARRIER_SIZES.barrier,heading,Math.round(barrier.s/12)%2?this.colors.red:this.colors.barrier);
+    }else{
+      this.addHazardPost(builder,barrier);
+    }
+  }
+
+  addRegionalLandmarks(builder,start,end){
+    const ranges=this.visualPlan.ranges;
+    for(const range of ranges){
+      const from=Math.max(start,range.start),to=Math.min(end,range.end);
+      if(to<from)continue;
+      if(range.type==='lake')this.addLakeRange(builder,from,to);
+      else if(range.type==='narrow-forest')this.addForestRange(builder,from,to);
+      else if(range.type==='jump-board')this.addJumpRange(builder,from,to);
+      else if(range.type==='granite-outcrop' || range.type==='quarry')this.addOutcropRange(builder,from,to);
+      else if(range.type==='bridge')this.addBridge(builder,from,to);
+    }
+  }
+
+  addLakeRange(builder,start,end){
+    if(end<=start)return;
+    const a=sampleStage(this.stage,start),b=sampleStage(this.stage,end),side=-1;
+    const nearA=roadEdgePoint(a,side*(a.width/2+8),-.7),nearB=roadEdgePoint(b,side*(b.width/2+8),-.7);
+    const farA=roadEdgePoint(a,side*(a.width/2+43),-1.05),farB=roadEdgePoint(b,side*(b.width/2+43),-1.05);
+    builder.quad(nearA,nearB,farB,farA,this.colors.water,{x:0,y:1,z:0});
+    // A broken shore lip gives the lake a readable silhouette in grayscale.
+    const mid=sampleStage(this.stage,(start+end)/2),shore=roadEdgePoint(mid,side*(mid.width/2+7.6),-.34);
+    builder.boxYaw({x:shore.x,y:shore.y+.05,z:shore.z},{x:1.1,y:.16,z:Math.min(22,Math.max(6,end-start))},mid.heading,this.colors.rock);
+  }
+
+  addForestRange(builder,start,end){
+    for(let distance=Math.ceil(start/this.visualPlan.forestStride)*this.visualPlan.forestStride;distance<=end;distance+=this.visualPlan.forestStride){
+      const sample=sampleStage(this.stage,distance),n=Math.floor(distance/this.visualPlan.forestStride);
+      for(const side of [-1,1]){
+        const offset=sample.width/2+2.4+(hash01(n*271+side*17)*2.6),point=roadEdgePoint(sample,side*offset,-.05);
+        this.addTree(builder,point,1.35+hash01(n*881+side*31)*1.35,true,hash01(n*991+side*7));
+      }
+    }
+  }
+
+  addJumpRange(builder,start,end){
+    const distance=start+(end-start)*.62,sample=sampleStage(this.stage,distance);
+    for(const side of [-1,1]){
+      const point=roadEdgePoint(sample,side*(sample.width/2+.35),.12);
+      builder.boxYaw({x:point.x,y:point.y+.52,z:point.z},{x:.2,y:1.04,z:2.4},sample.heading,this.colors.barrier);
+      builder.boxYaw({x:point.x,y:point.y+1.12,z:point.z},{x:.28,y:.12,z:2.4},sample.heading,this.colors.orange);
+    }
+  }
+
+  addOutcropRange(builder,start,end){
+    const distance=start+(end-start)*.5,sample=sampleStage(this.stage,distance);
+    for(const side of [-1,1]){
+      const point=roadEdgePoint(sample,side*(sample.width/2+3.4),-.05);
+      this.addRock(builder,{x:point.x,y:point.y,z:point.z,radius:1.2+hash01(distance+side)*.55});
+      if(this.visualPlan.kit.includes('granite-outcrop')){
+        const point2=roadEdgePoint(sample,side*(sample.width/2+5.0),-.02);
+        this.addRock(builder,{x:point2.x,y:point2.y,z:point2.z,radius:.65+hash01(distance+side*3)*.35});
+      }
+    }
   }
 
   addStoneWall(builder,start,end){
-    for(let distance=Math.ceil(start/5)*5;distance<=end;distance+=5){const sample=sampleStage(this.stage,distance),point=roadEdgePoint(sample,-(sample.width/2+2.15),.05),col=Math.floor(distance/5)%2?C.stone:C.stoneDark;builder.boxYaw({x:point.x,y:point.y+.36,z:point.z},{x:.7,y:.72,z:5.25},sample.heading,col);}
+    for(let distance=Math.ceil(start/5)*5;distance<=end;distance+=5){const sample=sampleStage(this.stage,distance),point=roadEdgePoint(sample,-(sample.width/2+2.15),.05),col=Math.floor(distance/5)%2?this.colors.stone:this.colors.stoneDark;builder.boxYaw({x:point.x,y:point.y+.36,z:point.z},{x:.7,y:.72,z:5.25},sample.heading,col);}
   }
 
   addBridge(builder,start,end){
     for(let distance=Math.ceil(start/7)*7;distance<end;distance+=7){
       const a=sampleStage(this.stage,distance),b=sampleStage(this.stage,Math.min(end,distance+7)),half=Math.min(a.width,b.width)/2+.1;
-      const al=roadEdgePoint(a,-half,.075),ar=roadEdgePoint(a,half,.075),bl=roadEdgePoint(b,-half,.075),br=roadEdgePoint(b,half,.075);builder.quad(al,bl,br,ar,C.stoneDark);
-      const mid=sampleStage(this.stage,(distance+Math.min(end,distance+7))/2);
-      for(const side of [-1,1]){const point=roadEdgePoint(mid,side*(mid.width/2+.45),.24);builder.boxYaw({x:point.x,y:point.y+.42,z:point.z},{x:.18,y:.84,z:7.4},mid.heading,C.barrier);}
+      const al=roadEdgePoint(a,-half,.075),ar=roadEdgePoint(a,half,.075),bl=roadEdgePoint(b,-half,.075),br=roadEdgePoint(b,half,.075);builder.quad(al,bl,br,ar,this.colors.stoneDark);
     }
-    const center=sampleStage(this.stage,4008),ahead=sampleStage(this.stage,4050),behind=sampleStage(this.stage,3966),leftBehind=roadEdgePoint(behind,-48,-5.2),rightBehind=roadEdgePoint(behind,48,-5.2),leftAhead=roadEdgePoint(ahead,-48,-5.2),rightAhead=roadEdgePoint(ahead,48,-5.2);builder.quad(leftBehind,leftAhead,rightAhead,rightBehind,C.water,{x:0,y:1,z:0});
-    for(const distance of [3950,4075]){const sample=sampleStage(this.stage,distance);for(const side of [-1,1]){const point=roadEdgePoint(sample,side*(sample.width/2+1),-.4);builder.boxYaw({x:point.x,y:point.y+.4,z:point.z},{x:2.1,y:1.6,z:2.4},sample.heading,C.stone);}}
-    void center;
+    const centerDistance=(start+end)/2,ahead=sampleStage(this.stage,Math.min(this.stage.length,end+16)),behind=sampleStage(this.stage,Math.max(0,start-16));
+    const leftBehind=roadEdgePoint(behind,-48,-5.2),rightBehind=roadEdgePoint(behind,48,-5.2),leftAhead=roadEdgePoint(ahead,-48,-5.2),rightAhead=roadEdgePoint(ahead,48,-5.2);builder.quad(leftBehind,leftAhead,rightAhead,rightBehind,this.colors.water,{x:0,y:1,z:0});
+    if(Math.abs(centerDistance-start)<8){
+      for(const sample of [behind,ahead])for(const side of [-1,1]){const point=roadEdgePoint(sample,side*(sample.width/2+1),-.4);builder.boxYaw({x:point.x,y:point.y+.4,z:point.z},{x:2.1,y:1.6,z:2.4},sample.heading,this.colors.stone);}
+    }
   }
 
   buildCar(){
+    const p=this.carVisual,halfWidth=p.width/2,halfLength=p.length/2,cabinStart=p.cabinStart,cabinEnd=p.cabinEnd,bodyY=p.bodyCenterY;
     let builder=new MeshBuilder();
-    builder.box({x:0,y:.48,z:0},{x:1.82,y:.58,z:3.85},C.teal);builder.wedge({x:-.78,y:.77,z:-.78},{x:.78,y:1.55,z:1.05},.2,C.tealDark);
-    builder.box({x:0,y:.51,z:1.86},{x:1.86,y:.26,z:.19},C.orange);builder.box({x:0,y:.65,z:-1.86},{x:1.78,y:.22,z:.18},C.metal);builder.box({x:0,y:.75,z:1.15},{x:1.5,y:.025,z:.84},C.teal);
-    builder.box({x:0,y:1.22,z:1.03},{x:1.22,y:.5,z:.035},C.window);builder.box({x:0,y:1.25,z:-.78},{x:1.22,y:.48,z:.035},C.window);
-    builder.box({x:-.69,y:.91,z:1.78},{x:.35,y:.18,z:.05},C.lamp);builder.box({x:.69,y:.91,z:1.78},{x:.35,y:.18,z:.05},C.lamp);builder.box({x:0,y:1.62,z:-.38},{x:.72,y:.1,z:.6},C.orange);
-    builder.box({x:-.79,y:1.18,z:.05},{x:.035,y:.48,z:1.62},C.window);builder.box({x:.79,y:1.18,z:.05},{x:.035,y:.48,z:1.62},C.window);
-    builder.box({x:-.61,y:.82,z:-1.955},{x:.34,y:.19,z:.045},C.red);builder.box({x:.61,y:.82,z:-1.955},{x:.34,y:.19,z:.045},C.red);builder.box({x:0,y:1.25,z:-1.67},{x:1.48,y:.09,z:.34},C.tealDark);
-    builder.box({x:-.59,y:1.09,z:-1.67},{x:.09,y:.34,z:.09},C.tealDark);builder.box({x:.59,y:1.09,z:-1.67},{x:.09,y:.34,z:.09},C.tealDark);
-    for(const z of [.93,-1.08])for(const x of [-.9,.9])builder.box({x,y:.5,z},{x:.12,y:.48,z:.82},C.tealDark);
-    builder.box({x:0,y:.55,z:-1.98},{x:.82,y:.2,z:.035},C.barrier);builder.box({x:-.77,y:.31,z:-1.58},{x:.18,y:.38,z:.08},C.red);builder.box({x:.77,y:.31,z:-1.58},{x:.18,y:.38,z:.08},C.red);
-    builder.cylinderX({x:.56,y:.35,z:-2.02},.055,.34,7,C.metal);this.carBody=this.renderer.createMesh(builder);
+    builder.box({x:0,y:bodyY,z:0},{x:p.width,y:p.bodyHeight,z:p.length},p.body);
+    builder.wedge({x:-halfWidth*.88,y:bodyY+p.bodyHeight*.32,z:cabinStart},{x:halfWidth*.88,y:p.roofHeight,z:cabinEnd},p.roofInset,p.dark);
+    builder.box({x:0,y:p.bumperY,z:halfLength+.035},{x:p.width*1.02,y:.26,z:.19},p.accent);
+    builder.box({x:0,y:p.bumperY+.13,z:-halfLength-.035},{x:p.width*.96,y:.22,z:.18},this.colors.metal);
+    builder.box({x:0,y:bodyY+p.bodyHeight*.46,z:cabinEnd+.04},{x:p.width*.82,y:.025,z:.7},p.body);
+    builder.box({x:0,y:p.roofHeight-.22,z:cabinEnd-.03},{x:p.width*.67,y:p.windowHeight,z:.035},p.window);
+    builder.box({x:0,y:p.roofHeight-.2,z:cabinStart+.05},{x:p.width*.67,y:p.windowHeight*.94,z:.035},p.window);
+    const lampX=p.width*.38;
+    builder.box({x:-lampX,y:bodyY+p.bodyHeight*.74,z:halfLength-.16},{x:p.width*.2,y:.18,z:.05},this.colors.lamp);
+    builder.box({x:lampX,y:bodyY+p.bodyHeight*.74,z:halfLength-.16},{x:p.width*.2,y:.18,z:.05},this.colors.lamp);
+    builder.box({x:0,y:p.roofHeight+.08,z:(cabinStart+cabinEnd)/2},{x:p.width*.42,y:.1,z:.55},p.accent);
+    builder.box({x:-halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
+    builder.box({x:halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
+    builder.box({x:-lampX,y:bodyY+p.bodyHeight*.53,z:-halfLength+.07},{x:p.width*.18,y:.19,z:.045},this.colors.red);
+    builder.box({x:lampX,y:bodyY+p.bodyHeight*.53,z:-halfLength+.07},{x:p.width*.18,y:.19,z:.045},this.colors.red);
+    builder.box({x:0,y:p.roofHeight-.2,z:-halfLength+.28},{x:p.width*.78,y:.09,z:.34},p.dark);
+    for(const z of [p.frontAxle,p.rearAxle])for(const x of [-halfWidth*.9,halfWidth*.9])builder.box({x,y:bodyY-.03,z},{x:.12,y:.42,z:.62},p.dark);
+    builder.box({x:0,y:bodyY-.02,z:-halfLength-.06},{x:p.width*.46,y:.2,z:.035},this.colors.barrier);
+    if(p.spoiler){
+      builder.box({x:0,y:bodyY+.68,z:-halfLength+.03},{x:p.width*.74,y:.1,z:.32},p.accent);
+      builder.box({x:-p.width*.3,y:bodyY+.5,z:-halfLength+.03},{x:.08,y:.34,z:.08},p.dark);
+      builder.box({x:p.width*.3,y:bodyY+.5,z:-halfLength+.03},{x:.08,y:.34,z:.08},p.dark);
+    }
+    builder.cylinderX({x:p.width*.3,y:bodyY-.1,z:-halfLength-.05},.055,.34,7,this.colors.metal);this.carBody=this.renderer.createMesh(builder);
 
-    builder=new MeshBuilder();builder.cylinderX({x:0,y:0,z:0},.39,.34,10,C.tyre);builder.cylinderX({x:0,y:0,z:0},.22,.37,10,C.metal);builder.box({x:0,y:0,z:0},{x:.37,y:.075,z:.34},C.tealDark);builder.box({x:0,y:0,z:0},{x:.37,y:.34,z:.075},C.tealDark);this.wheel=this.renderer.createMesh(builder);
-    builder=new MeshBuilder();builder.box({x:0,y:0,z:0},{x:1.9,y:.22,z:.2},C.orange);this.bumper=this.renderer.createMesh(builder);
-    builder=new MeshBuilder();builder.quad({x:-1.1,y:0,z:-2},{x:1.1,y:0,z:-2},{x:1.1,y:0,z:2},{x:-1.1,y:0,z:2},C.shadow,{x:0,y:1,z:0});this.shadow=this.renderer.createMesh(builder);
+    builder=new MeshBuilder();
+    builder.cylinderX({x:0,y:0,z:0},p.wheelRadius,.34,10,this.colors.tyre);
+    builder.cylinderX({x:0,y:0,z:0},p.wheelRadius*.56,.37,10,this.colors.metal);
+    builder.box({x:0,y:0,z:0},{x:p.wheelRadius*.95,y:.075,z:p.wheelRadius*.88},p.dark);
+    builder.box({x:0,y:0,z:0},{x:p.wheelRadius*.95,y:p.wheelRadius*.88,z:.075},p.dark);this.wheel=this.renderer.createMesh(builder);
+    builder=new MeshBuilder();builder.box({x:0,y:0,z:0},{x:p.width*1.05,y:.22,z:.2},p.accent);this.bumper=this.renderer.createMesh(builder);
+    builder=new MeshBuilder();builder.quad({x:-halfWidth*.66,y:0,z:-halfLength},{x:halfWidth*.66,y:0,z:-halfLength},{x:halfWidth*.66,y:0,z:halfLength},{x:-halfWidth*.66,y:0,z:halfLength},this.colors.shadow,{x:0,y:1,z:0});this.shadow=this.renderer.createMesh(builder);
   }
 
   update(dt,car,input){
-    this.clock+=dt;this.wheelRotation+=car.longitudinalSpeed/.39*dt;
+    this.clock+=dt;this.wheelRotation+=car.longitudinalSpeed/Math.max(.1,this.carVisual.wheelRadius)*dt;
     const speed=car.speed,emit=speed>5&&(input.throttle>.15||car.slipAmount>.05||car.surface!=='compact');
     if(emit){
-      const count=this.quality==='high'?Math.ceil(1+speed/12+car.slipAmount*3):1,fx=Math.sin(car.yaw),fz=Math.cos(car.yaw),rx=Math.cos(car.yaw),rz=-Math.sin(car.yaw);
-      for(let i=0;i<count;i++){const side=(Math.random()-.5)*1.35,life=.75+Math.random()*.75;this.particles.push({x:car.x-fx*1.65+rx*side,y:car.y-.35,z:car.z-fz*1.65+rz*side,vx:-fx*(1+Math.random()*2)+rx*(Math.random()-.5),vy:.28+Math.random()*.75,vz:-fz*(1+Math.random()*2)+rz*(Math.random()-.5),life,maxLife:life,size:.32+Math.random()*.58,alpha:.42,color:car.surface==='grass'?[.38,.42,.28]:[.55,.47,.35],kind:'dust'});}
+      const count=this.quality==='high'?Math.ceil(1+speed/12+car.slipAmount*3):1,fx=Math.sin(car.yaw),fz=Math.cos(car.yaw),rx=Math.cos(car.yaw),rz=-Math.sin(car.yaw),wetness=clamp01(this.weather.roadWetness);
+      for(let i=0;i<count;i++){const side=(Math.random()-.5)*1.35,life=.75+Math.random()*.75;this.particles.push({x:car.x-fx*1.65+rx*side,y:car.y-.35,z:car.z-fz*1.65+rz*side,vx:-fx*(1+Math.random()*2)+rx*(Math.random()-.5),vy:.28+Math.random()*.75,vz:-fz*(1+Math.random()*2)+rz*(Math.random()-.5),life,maxLife:life,size:.32+Math.random()*.58,alpha:.42*(1-wetness*.72),color:car.surface==='grass'?[.38,.42,.28]:[.55,.47,.35],kind:'dust'});}
       if(car.slipAmount>.22&&car.grounded)this.particles.push({x:car.x,y:car.y-.51,z:car.z,vx:0,vy:0,vz:0,life:4,maxLife:4,size:.11,alpha:.42,color:[.16,.15,.12],kind:'mark'});
     }
     let write=0;
@@ -194,13 +552,14 @@ export class RallyWorld {
   }
 
   draw(camera,car){
-    const maxDistance=this.quality==='high'?850:620,maxSq=maxDistance*maxDistance,routeBehind=this.quality==='high'?460:330,routeAhead=this.quality==='high'?660:510;this.renderer.draw(this.backdrop,IDENTITY);
+    const maxDistance=Math.min(this.quality==='high'?this.visualPlan.maxDistance:620,this.visualPlan.visibilityM*1.08),maxSq=maxDistance*maxDistance,routeBehind=this.quality==='high'?this.visualPlan.routeBehind:330,routeAhead=this.quality==='high'?this.visualPlan.routeAhead:510;
+    camera.far=Math.max(320,maxDistance);this.renderer.draw(this.backdrop,IDENTITY);
     for(const chunk of this.chunks){if(chunk.s1<car.progress-routeBehind||chunk.s0>car.progress+routeAhead)continue;const dx=chunk.x-camera.position.x,dz=chunk.z-camera.position.z;if(dx*dx+dz*dz<maxSq)this.renderer.draw(chunk.mesh,IDENTITY);}
     const shadowRoad=sampleStage(this.stage,car.progress),shadowModel=mat4Compose({x:car.x,y:shadowRoad.y+.055,z:car.z},car.yaw,0,0);this.renderer.draw(this.shadow,shadowModel,.48);
     const carModel=mat4Compose({x:car.x,y:car.y,z:car.z},car.yaw,car.pitch,car.roll);this.renderer.draw(this.carBody,carModel);
-    const wheelY=.05,frontZ=1.17,rearZ=-1.22;
-    for(const z of [frontZ,rearZ])for(const x of [-.93,.93]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*.38:0,this.wheelRotation,0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local));}
-    const damage=car.damage.body,bumperLocal=mat4Compose({x:damage>.58?.18:0,y:.49-damage*.12,z:1.96+damage*.1},damage>.58?damage*.24:0,0,damage>.58?-.12:0);this.renderer.draw(this.bumper,mat4Multiply(carModel,bumperLocal));
+    const wheelY=this.carVisual.wheelCenterY,frontZ=this.carVisual.frontAxle,rearZ=this.carVisual.rearAxle,track=this.carVisual.track;
+    for(const z of [frontZ,rearZ])for(const x of [-track/2,track/2]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*.38:0,this.wheelRotation,0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local));}
+    const damage=car.damage.body,bumperLocal=mat4Compose({x:damage>.58?.18:0,y:this.carVisual.bumperY-damage*.12,z:this.carVisual.frontZ+damage*.1},damage>.58?damage*.24:0,0,damage>.58?-.12:0);this.renderer.draw(this.bumper,mat4Multiply(carModel,bumperLocal));
     this.renderer.drawParticles(this.particles);
   }
 }
