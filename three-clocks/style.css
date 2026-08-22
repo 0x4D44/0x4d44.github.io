@@ -397,10 +397,10 @@ input[type=range]::-webkit-slider-runnable-track { height: 9px; border-radius: 9
 input[type=range]::-moz-range-track { height: 9px; border-radius: 999px; background: rgba(255,255,255,.13); }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin-top: -7.5px;
-  border-radius: 50%; background: var(--accent, var(--gold)); border: 3px solid #0a0f18;
+  border-radius: 50%; background: var(--accent); border: 3px solid #0a0f18;
 }
 input[type=range]::-moz-range-thumb {
-  width: 20px; height: 20px; border-radius: 50%; background: var(--accent, var(--gold)); border: 3px solid #0a0f18;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid #0a0f18;
 }
 
 /* ---------------- readout ---------------- */
@@ -432,7 +432,9 @@ input[type=range]::-moz-range-thumb {
 .hz-k { font-weight: 700; font-size: 15px; min-width: 0; }
 .hz-v { font: 800 22px/1 var(--mono); color: var(--accent); flex: none; }
 .hz-track { height: 9px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; margin-bottom: 11px; }
-.hz-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .5s cubic-bezier(.22,.9,.3,1); }
+/* No transition: hazards() rebuilds these elements on every repaint, and a
+   freshly-inserted element with an inline width does not animate from anything. */
+.hz-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .hz-track i { transition: none; } }
 .hz-n { margin: 0; font-size: 13.5px; color: var(--ink-dim); line-height: 1.5; }
 
@@ -444,8 +446,13 @@ input[type=range]::-moz-range-thumb {
 .dgroup h4 { display: flex; align-items: center; gap: 9px; color: var(--accent); margin-bottom: 16px; font-size: 17px; }
 .dg-ico { width: 24px; height: 24px; flex: none; }
 .driver + .driver { margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.07); }
-.driver label { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
-.dr-v { font: 800 15px/1 var(--mono); color: var(--accent); flex: none; }
+/* The label and the value are siblings, not nested: putting the number
+   inside the <label> made it part of the slider's accessible name, which
+   then changed on every keystroke. The grid keeps the old appearance. */
+.driver { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; }
+.driver label { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+.driver input[type=range], .dr-ends, .dr-note { grid-column: 1 / -1; }
+.dr-v { font: 800 15px/1 var(--mono); color: var(--accent); text-align: right; }
 .dr-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--ink-faint); margin-top: -2px; }
 .dr-note { margin: 9px 0 0; font-size: 13.5px; color: var(--ink-dim); line-height: 1.5; }
 
@@ -459,18 +466,22 @@ input[type=range]::-moz-range-thumb {
 
 .scn-bar { display: flex; width: 100%; height: 42px; border-radius: var(--r-sm); overflow: hidden; margin: 24px 0 30px; border: 1px solid var(--line); }
 .scn-seg { display: flex; align-items: center; justify-content: center; font: 800 13px/1 var(--mono); color: #0a0f18; min-width: 0; }
+/* White on #64748b is 4.76:1; the dark ink the other segments use was
+   4.03:1, which fails AA for 13px bold (the large-text exemption starts
+   at 18.66px bold). Only this segment is dark enough to need it. */
 .tone-mid  { background: #64748b; }
+.scn-seg.tone-mid { color: #fff; }
 .tone-cool { background: #38bdf8; }
 .tone-warm { background: #fbbf24; }
 .tone-hot  { background: #f43f5e; }
 .tone-good { background: #34d399; }
 
 .scn { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; margin-bottom: 18px; border-left: 5px solid var(--line); }
-.scn.tone-mid  { border-left-color: #64748b; background: var(--panel); }
-.scn.tone-cool { border-left-color: #38bdf8; background: var(--panel); }
-.scn.tone-warm { border-left-color: #fbbf24; background: var(--panel); }
-.scn.tone-hot  { border-left-color: #f43f5e; background: var(--panel); }
-.scn.tone-good { border-left-color: #34d399; background: var(--panel); }
+.scn.tone-mid { border-left-color: #64748b; }
+.scn.tone-cool { border-left-color: #38bdf8; }
+.scn.tone-warm { border-left-color: #fbbf24; }
+.scn.tone-hot { border-left-color: #f43f5e; }
+.scn.tone-good { border-left-color: #34d399; }
 .scn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
 .scn-head h3 { margin: 0; font-size: clamp(21px, 2.6vw, 27px); }
 .scn-tag { display: block; font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 7px; }

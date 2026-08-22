@@ -414,3 +414,70 @@ test("ANCHOR: the wartime escalation probability is the one the prose states", (
     `a sustained great-power war goes nuclear ${(p * 100).toFixed(1)}% of the time; ` +
     "the prose and the NUKE_WAR_MULT comment both say about one in eight");
 });
+
+// ============================================================
+// 7. Regressions from the adversarial review
+// ------------------------------------------------------------
+// Each of these pins a defect a reviewer found. They are the tests most
+// likely to catch a future edit that quietly reintroduces one.
+// ============================================================
+
+test("REGRESSION: the conflict process starts in steady state, not from empty", () => {
+  // The list of running conflicts used to start empty, so the first
+  // decade of the peace cone was a cold-start artefact: deaths climbed
+  // steeply out of 2026 towards a steady state they should have started
+  // at, directly beneath a line labelled "2025 observed". A burn-in now
+  // runs the process for decades before the recorded period begins.
+  const early = at(base.peace.rate.p50, 2026);
+  const late = at(base.peace.rate.p50, 2060);
+  assert.ok(early > late * 0.6,
+    `2026 is ${Math.round(early)} against ${Math.round(late)} in 2060 — the cold start is back`);
+  // And the level should sit near the observed present: UCDP's 2025
+  // state-based battle deaths were roughly 150,000.
+  assert.ok(early > 90000 && early < 260000,
+    `2026 median came out at ${Math.round(early)}`);
+});
+
+test("REGRESSION: smoothing does not distort the endpoints", () => {
+  // A centred mean that shrank its window at the edges was not removing
+  // noise there, it was shifting the level — it roughly doubled the
+  // first value of any series climbing steeply out of 2026. The first
+  // and last points are now left alone, so the first year of the
+  // temperature series must still match the observed anomaly it is
+  // conditioned on.
+  const t2026 = at(base.climate.temp.p50, 2026);
+  assert.ok(Math.abs(t2026 - 1.44) < 0.12,
+    `2026 warming came out at ${t2026.toFixed(3)}, which suggests the edge window is back`);
+  // A steeply-rising series is the sensitive case: capability starts at
+  // zero by construction, so a shrunken window would lift it off zero.
+  assert.ok(at(base.ai.cap.p50, 2026) < 1.4,
+    `the capability index starts at ${at(base.ai.cap.p50, 2026).toFixed(2)}, which is an edge artefact`);
+});
+
+test("REGRESSION: the crossing year is a median over worlds, not a median path", () => {
+  // exceedYear() used to read the first year the smoothed median band
+  // touched a threshold. That answers "when does the middle of the
+  // distribution cross" rather than "when does a typical world cross",
+  // and the two differ by several years on a skewed distribution. It
+  // also could not express the worlds that never cross at all.
+  const x15 = base.climate.exceed["1.5"];
+  const x20 = base.climate.exceed["2.0"];
+  for (const x of [x15, x20]) {
+    assert.ok(x && typeof x === "object", "exceed should carry a year and a never-share");
+    assert.ok("year" in x && "never" in x, "exceed is missing a field");
+    assert.ok(x.never >= 0 && x.never <= 1, `never-share out of range: ${x.never}`);
+  }
+  assert.ok(x15.year >= 2026 && x15.year <= 2035, `1.5C crossing at ${x15.year}`);
+  assert.ok(x20.year > x15.year, "2.0C cannot be crossed before 1.5C");
+  // Some worlds genuinely never reach 2 degrees; that is a real result
+  // and the old statistic could not report it.
+  assert.ok(x20.never > 0.005,
+    "no sampled world avoids 2 degrees, which suggests the low tail has been lost");
+});
+
+test("REGRESSION: the model still runs fast enough to drag a slider against", () => {
+  const t0 = Date.now();
+  M.run({}, { runs: 500 });
+  const ms = Date.now() - t0;
+  assert.ok(ms < 900, `500 runs took ${ms}ms; the burn-in has made it too slow to be interactive`);
+});

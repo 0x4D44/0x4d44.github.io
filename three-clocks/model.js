@@ -235,7 +235,15 @@
     // New state-based conflict onsets per year. UCDP recorded 65
     // state-involved conflicts active in 2025, the most since the series
     // began in 1946, of which 13 passed the 1,000-deaths war threshold.
-    ONSET: 13.5,
+    //
+    // Recalibrated downward when the burn-in went in. The previous value
+    // was fitted against a model whose conflict list started empty, so it
+    // had to run hot to reach a plausible level by mid-century; with the
+    // list starting in steady state the same rate overshot the observed
+    // present by a third. This value puts the median year a little below
+    // 2025, which is where a median year belongs: 2025 was the second
+    // worst year for organised violence since 1994.
+    ONSET: 11.0,
 
     // Severity: total battle deaths per conflict, above a 1,000 floor,
     // drawn from a Pareto tail. Cirillo and Taleb estimate a tail index
@@ -256,6 +264,10 @@
     // ~3.5% of 8.2bn, a shade above the Second World War's toll.
     SEV_MAX: 2.9e8,
     DUR_MED: 4.5,         // years a conflict runs, lognormal
+    // Years of conflict process run and discarded before 2026, so the
+    // active-conflict list starts in steady state rather than empty.
+    // Comfortably more than a few mean durations.
+    BURN_IN: 40,
     DUR_GSD: 2.2,
 
     // Observed 2025 baseline for orientation: ~244,600 deaths in
@@ -492,7 +504,34 @@
     var oomCum = 0;
     var computeOom = K.COMPUTE_OOM_NOW;
     var automated = 0.015;          // where deployed automation of work hours stands now
-    var active = [];                // running conflicts: {perYear, left}
+    // Running conflicts, {perYear, left}. This list must NOT start empty.
+    //
+    // UCDP counts 65 state-based conflicts already active entering 2026,
+    // many of them years old. Starting from nothing makes the first
+    // decade of the cone a cold-start artefact: the list fills at the
+    // onset rate and only reaches steady state after about one and a
+    // half mean durations, so the model draws a world where conflict is
+    // implausibly low today and climbs steeply through the 2030s. That
+    // rise would be an artefact of the initial condition, sitting
+    // directly under a reference line labelled "2025 observed".
+    //
+    // The fix is a burn-in rather than a seeding formula. Seeding by hand
+    // gets the count right and the composition wrong: the conflicts one
+    // observes in progress at an arbitrary moment are length-biased, over-
+    // representing long wars, which for a given total are less intense per
+    // year. Running the process itself for a few decades and discarding
+    // the output reproduces that bias exactly, with no calibration
+    // constant to argue about.
+    var active = [];
+    for (var burn = 0; burn < K.BURN_IN; burn++) {
+      var bn = poisson(rand, onsetRate);
+      for (var bq = 0; bq < bn; bq++) active.push(makeConflict(rand, alpha, 1));
+      var bkeep = 0;
+      for (var ba = 0; ba < active.length; ba++) {
+        if (--active[ba].left > 0) active[bkeep++] = active[ba];
+      }
+      active.length = bkeep;
+    }
     var nukeUsed = false, nukeYear = 0, nukeDeaths = 0;
     var gpWar = 0;                  // years of great-power war remaining
     var gpEver = false;
@@ -761,9 +800,17 @@
   function smooth(a) {
     var n = a.length, out = new Array(n), w = 2;
     for (var i = 0; i < n; i++) {
-      var s = 0, c = 0;
-      for (var j = Math.max(0, i - w); j <= Math.min(n - 1, i + w); j++) { s += a[j]; c++; }
-      out[i] = s / c;
+      // Leave the first and last w points alone. A centred mean that
+      // SHRINKS its window at the edges is not noise removal there, it is
+      // a level shift: index 0 becomes the mean of 2026-2028, and on a
+      // series climbing steeply out of its initial condition that roughly
+      // doubled the first value. Temperature barely noticed; conflict
+      // deaths and the capability index were badly distorted at exactly
+      // the year a reader checks against the present.
+      if (i < w || i >= n - w) { out[i] = a[i]; continue; }
+      var s = 0;
+      for (var j = i - w; j <= i + w; j++) s += a[j];
+      out[i] = s / (2 * w + 1);
     }
     return out;
   }
@@ -840,9 +887,13 @@
         temp: tempBands,
         emissions: bands(emissions, N, runs),
         peakYear: median(peakYears),
+        // The median year a world crosses the line, and the share that
+        // never do. NOT the year the median path crosses, which is a
+        // different statistic and differs whenever the crossing
+        // distribution is skewed — as it is, by two to five years here.
         exceed: {
-          "1.5": exceedYear(tempBands.p50, years, 1.5),
-          "2.0": exceedYear(tempBands.p50, years, 2.0),
+          "1.5": crossing(temp, N, runs, years, 1.5),
+          "2.0": crossing(temp, N, runs, years, 2.0),
         },
         pTip: cumulative(tip, N, runs),
       },
@@ -907,9 +958,27 @@
     return quantile(s, 0.5);
   }
 
-  function exceedYear(series, years, threshold) {
-    for (var i = 0; i < series.length; i++) if (series[i] >= threshold) return years[i];
-    return null;
+  // Median first-crossing year across the ensemble, with the share of
+  // worlds that never cross. Reading a crossing year off the median band
+  // answers a different question — "when does the middle of the
+  // distribution pass the line" rather than "when does a typical world
+  // pass it" — and the two disagree by several years on a skewed
+  // crossing distribution. The second field is the one the median cannot
+  // express at all: some worlds never get there.
+  function crossing(series, N, runs, years, threshold) {
+    var hits = [], never = 0;
+    for (var r = 0; r < runs; r++) {
+      var found = -1;
+      for (var i = 0; i < N; i++) {
+        if (series[r][i] >= threshold) { found = years[i]; break; }
+      }
+      if (found < 0) never++; else hits.push(found);
+    }
+    hits.sort(function (a, b) { return a - b; });
+    return {
+      year: hits.length ? Math.round(quantile(hits, 0.5)) : null,
+      never: never / runs,
+    };
   }
 
   // ============================================================

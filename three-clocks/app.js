@@ -420,7 +420,7 @@
       '<p class="lede">' + md(C.sub) + "</p>" +
       "<p>" + md(C.intro) + "</p>" +
 
-      '<div class="cone-tabs seg">' + tabs + "</div>" +
+      '<div class="cone-tabs seg" role="group" aria-label="Which clock to show">' + tabs + "</div>" +
       '<p class="cone-blurb acc-' + coneState.domain + '">' + md(spec.blurb) + "</p>" +
 
       '<div class="cone-wrap" id="coneWrap">' + svg + "</div>" +
@@ -459,9 +459,19 @@
         "and it is the average that carries the loss.</p>";
     }
     if (coneState.domain === "climate") {
+      // The median year a sampled world crosses the line, not the year
+      // the median band crosses it — the two differ by several years on a
+      // skewed crossing distribution. `never` is the share that never do,
+      // which the median cannot express and which is not zero for 2 degrees.
+      var x15 = r.climate.exceed["1.5"], x20 = r.climate.exceed["2.0"];
+      var crossed = function (x) {
+        if (!x.year) return "never, in any sampled world";
+        return x.year + (x.never > 0.01
+          ? " (though " + pct(x.never) + " of worlds never get there)" : "");
+      };
       extra = '<p class="ro-note">Median emissions peak: <b>' + r.climate.peakYear + "</b>. " +
-        "Median year the 1.5°C line is crossed: <b>" + (r.climate.exceed["1.5"] || "already") + "</b>; " +
-        "2.0°C: <b>" + (r.climate.exceed["2.0"] || "—") + "</b>.</p>";
+        "Median year a sampled world crosses 1.5\u00b0C: <b>" + crossed(x15) + "</b>; " +
+        "2.0\u00b0C: <b>" + crossed(x20) + "</b>.</p>";
     }
     if (coneState.domain === "ai") {
       extra = '<p class="ro-note">Median deployment lag between a task becoming feasible and being done that way at scale: <b>' +
@@ -469,7 +479,7 @@
         "Median further effective orders of magnitude needed to reach half the automatable task base: <b>" +
         n1(r.ai.oom50) + "</b>.</p>";
     }
-    return '<div class="readout"><h2>Distribution in ' + coneState.scrub + "</h2>" +
+    return '<div class="readout" aria-live="polite" aria-atomic="true"><h2>Distribution in ' + coneState.scrub + "</h2>" +
       '<div class="ro-grid">' + cells.map(function (c) {
         return '<div class="ro ' + c.cls + '"><span class="ro-v">' + esc(c.v) + "</span>" +
           '<span class="ro-k">' + esc(c.k) + "</span></div>";
@@ -484,7 +494,7 @@
       { k: "Direct great-power war", v: r.peace.pGp[i], d: "peace",
         n: "Two great powers in sustained direct combat. This is what the historical base rate implies when compounded, and it is the most consequential number on this page." },
       { k: "Severe AI-enabled incident", v: r.ai.pIncident[i], d: "ai",
-        n: "At least 1,000 deaths or $100bn of damage, by misuse, accident, or a system doing what it was asked. Scales with deployed automation, not with the frontier." },
+        n: "At least 1,000 deaths or $100bn of damage, by misuse, accident, or a system doing what it was asked. Driven by frontier capability and by deployed automation in roughly equal weight \u2014 the misuse channel does not wait for diffusion." },
       { k: "A carbon-cycle tipping element crosses", v: r.climate.pTip[i], d: "climate",
         n: "Narrowly defined: an element that feeds back on the global mean temperature. It excludes coral, whose thresholds are already being crossed and whose loss has no warming signature." },
     ];
@@ -524,13 +534,27 @@
         DOMAIN_LABEL[k] + "</h4>" +
         groups[k].map(function (dr) {
           var v = d[dr.key];
+          // The value lives in an <output>, not inside the <label>. In the
+          // label it became part of the slider's accessible NAME, so the
+          // name changed on every keystroke and assistive technology
+          // re-announced the whole control. The end labels and the
+          // explanatory note are associated by aria-describedby, and
+          // aria-valuetext says what a bare number on a unitless 0-100
+          // scale actually means.
+          var pc = Math.round(v * 100);
+          var id = "dr-" + dr.key;
+          var vt = pc + " of 100 \u2014 " + (pc <= 15 ? dr.lo : pc >= 85 ? dr.hi
+            : "between \u201c" + dr.lo + "\u201d and \u201c" + dr.hi + "\u201d");
           return '<div class="driver">' +
-            '<label for="dr-' + dr.key + '">' + esc(dr.label) +
-            '<span class="dr-v">' + Math.round(v * 100) + "</span></label>" +
-            '<input id="dr-' + dr.key + '" type="range" min="0" max="100" step="1" value="' +
-            Math.round(v * 100) + '" data-driver="' + dr.key + '">' +
-            '<div class="dr-ends"><span>' + esc(dr.lo) + "</span><span>" + esc(dr.hi) + "</span></div>" +
-            '<p class="dr-note">' + md(dr.note) + "</p></div>";
+            '<label for="' + id + '">' + esc(dr.label) + "</label>" +
+            '<output class="dr-v" for="' + id + '">' + pc + "</output>" +
+            '<input id="' + id + '" type="range" min="0" max="100" step="1" value="' + pc +
+            '" data-driver="' + dr.key + '"' +
+            ' aria-describedby="' + id + '-ends ' + id + '-note"' +
+            ' aria-valuetext="' + esc(vt) + '">' +
+            '<div class="dr-ends" id="' + id + '-ends"><span>' + esc(dr.lo) + "</span><span>" +
+            esc(dr.hi) + "</span></div>" +
+            '<p class="dr-note" id="' + id + '-note">' + md(dr.note) + "</p></div>";
         }).join("") + "</div>";
     }).join("");
 
@@ -560,11 +584,35 @@
     var slider = document.getElementById("scrubYear");
     var pending = null;
 
+    // Rebuild the view, then put focus and caret back where they were.
+    //
+    // Without this, every control on the page destroys itself in use.
+    // A keyboard user tabs to a driver slider and presses an arrow key;
+    // 130ms after they pause, innerHTML is replaced, the focused input is
+    // detached from the document, and focus resets to <body> — so the
+    // next arrow key scrolls the page instead, and getting back means
+    // tabbing through the skip link, twelve nav links and every earlier
+    // control. Six drivers, six times. A mouse user dragging slowly hits
+    // the same bug: the input under the pointer is swapped out mid-drag
+    // and the thumb sticks.
+    //
+    // Restoring by id is enough because every control on this page has a
+    // stable one, and re-setting `value` matters for the range inputs,
+    // whose freshly-rendered value is correct but whose internal drag
+    // state is not.
     function repaint() {
+      var active = document.activeElement;
+      var id = active && active.id ? active.id : null;
       var scroll = window.scrollY;
       main.innerHTML = views_cone();
-      window.scrollTo(0, scroll);
+      // behavior:"instant" because the page sets scroll-behavior:smooth,
+      // which would otherwise animate this restore and fight the drag.
+      window.scrollTo({ top: scroll, behavior: "instant" });
       bindCone();
+      if (id) {
+        var restored = document.getElementById(id);
+        if (restored) restored.focus({ preventScroll: true });
+      }
     }
 
     // Debounced: the model is a few hundred milliseconds and a slider
@@ -620,9 +668,19 @@
         var k = inp.getAttribute("data-driver");
         coneState.drivers[k] = Number(inp.value) / 100;
         save(coneState.drivers);
-        var lab = inp.previousElementSibling &&
-          inp.previousElementSibling.querySelector(".dr-v");
-        if (lab) lab.textContent = inp.value;
+        // The value now lives in a sibling <output>, not inside the
+        // label, so update it directly — and keep aria-valuetext in step,
+        // since that is what a screen reader actually reads out.
+        var out = document.querySelector('output[for="' + inp.id + '"]');
+        if (out) out.textContent = inp.value;
+        var pc = Number(inp.value);
+        var ends = inp.parentNode.querySelectorAll(".dr-ends span");
+        if (ends.length === 2) {
+          inp.setAttribute("aria-valuetext", pc + " of 100 \u2014 " +
+            (pc <= 15 ? ends[0].textContent : pc >= 85 ? ends[1].textContent
+              : "between \u201c" + ends[0].textContent + "\u201d and \u201c" +
+                ends[1].textContent + "\u201d"));
+        }
         schedule();
       });
     });
@@ -835,7 +893,10 @@
   }
 
   window.addEventListener("hashchange", function () {
-    window.scrollTo(0, 0);
+    // instant, not smooth: the page sets scroll-behavior:smooth for
+    // in-page anchors, which would otherwise animate the OLD view to the
+    // top before the new one renders.
+    window.scrollTo({ top: 0, behavior: "instant" });
     route();
   });
 
