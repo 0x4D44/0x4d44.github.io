@@ -23,8 +23,11 @@ test('practice selection resolves a complete run and stores its keyed best', () 
   assert.equal(result.isBest, true);
   assert.deepEqual(session.bestFor(run), { timeSeconds:330, splits:[100, 215, 330] });
   assert.equal(runBestKey(run), 'aurora-forest:lumen-f2:aurora-clear');
+  session.updateProfile({ assists:{...session.save.profile.assists,automatic:false}, bindings:{accelerate:'KeyW'} });
   const resumed = new RallySession(CATALOG, storage);
   assert.deepEqual(resumed.bestFor(run), { timeSeconds:330, splits:[100, 215, 330] });
+  assert.equal(resumed.save.profile.assists.automatic, false);
+  assert.equal(resumed.save.profile.bindings.accelerate, 'KeyW');
 });
 
 test('a championship survives reload and classifies exactly after its final event', () => {
