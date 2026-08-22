@@ -52,6 +52,7 @@ test('blank saves are versioned, complete, and independent', () => {
   assert.equal(first.version, SAVE_SCHEMA_VERSION);
   assert.deepEqual(Object.keys(first.profile.assists).sort(), [...ASSIST_IDS].sort());
   assert.deepEqual(first.profile.bindings, {});
+  assert.deepEqual(first.profile.gamepadBindings, {});
   assert.deepEqual(first.bests, {});
   assert.equal(first.championship, null);
   assert.deepEqual(validateSaveData(first), []);
@@ -66,7 +67,8 @@ test('a valid save round trips through storage', () => {
     version: 1,
     profile: {
       assists: { automatic: false, stability: 0.25, braking: 1, paceNotes: true, ignored: true },
-      bindings: { throttle: 'KeyW', steerLeft: 'KeyA', shiftUp: 'KeyE', shiftDown: 'KeyQ', ignored: 'Nope' }
+      bindings: { throttle: 'KeyW', steerLeft: 'KeyA', shiftUp: 'KeyE', shiftDown: 'KeyQ', ignored: 'Nope' },
+      gamepadBindings: { accelerate: 8, brake: 10, handbrake: 2, shiftUp: 11, shiftDown: 5, ignored: 99 }
     },
     bests: {
       'kestrel-ridge:cairn-r4:ridge-weather': { timeSeconds: 238.5, splits: [80, 160, 238.5] }
@@ -78,6 +80,7 @@ test('a valid save round trips through storage', () => {
   assert.deepEqual(loadSave(storage), normaliseSave(save));
   assert.deepEqual(readJson(storage, SAVE_KEY), normaliseSave(save));
   assert.deepEqual(loadSave(storage).profile.bindings, { throttle:'KeyW', steerLeft:'KeyA', shiftUp:'KeyE', shiftDown:'KeyQ' });
+  assert.deepEqual(loadSave(storage).profile.gamepadBindings, { accelerate:8, brake:10, handbrake:2, shiftUp:11, shiftDown:5 });
 });
 
 test('corrupt and future saves recover to blank without overwriting unknown data', () => {
@@ -120,6 +123,7 @@ test('normalisation drops unknown fields and bounds non-finite or extreme data',
         steerLeft: 'x'.repeat(200),
         exploit: { value: 'rm -rf' }
       },
+      gamepadBindings: { accelerate: 0, brake: 2, handbrake: 2, shiftUp: 12, shiftDown: 'RB' },
       exploit: true
     },
     bests: {
@@ -140,6 +144,7 @@ test('normalisation drops unknown fields and bounds non-finite or extreme data',
   assert.equal(save.profile.assists.braking, createBlankSave().profile.assists.braking);
   assert.equal(save.profile.bindings.steerLeft, undefined);
   assert.equal(save.profile.bindings.exploit, undefined);
+  assert.deepEqual(save.profile.gamepadBindings, {});
   assert.equal(save.bests.broken, undefined);
   assert.equal(save.bests['not a safe key'], undefined);
   assert.ok(save.bests['kestrel-ridge:cairn-r4:ridge-weather'].timeSeconds <= 86400);

@@ -11,9 +11,19 @@ export const DEFAULT_BINDINGS = Object.freeze({
   shiftDown: 'KeyQ'
 });
 
+export const DEFAULT_GAMEPAD_BINDINGS = Object.freeze({
+  accelerate: 7,
+  brake: 6,
+  handbrake: 2,
+  shiftUp: 4,
+  shiftDown: 5
+});
+
 const BINDING_ACTIONS = Object.freeze(Object.keys(DEFAULT_BINDINGS));
+const GAMEPAD_BINDING_ACTIONS = Object.freeze(Object.keys(DEFAULT_GAMEPAD_BINDINGS));
 const FIXED_FALLBACKS = Object.freeze(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const RESERVED_MENU_KEYS = new Set(['KeyR', 'Escape', 'Enter']);
+const RESERVED_GAMEPAD_BUTTONS = new Set([0, 1, 3, 9, 12, 13, 14, 15]);
 const VALID_KEY_CODE = /^(?:Key[A-Z]|Digit[0-9]|Numpad(?:[0-9]|Add|Subtract|Multiply|Divide|Decimal|Enter)|Arrow(?:Up|Down|Left|Right)|(?:Space|Comma|Period|Slash|Semicolon|Quote|Backquote|BracketLeft|BracketRight|Backslash|Minus|Equal|Tab|CapsLock|Shift(?:Left|Right)|Control(?:Left|Right)|Alt(?:Left|Right)|Meta(?:Left|Right)|ContextMenu|Insert|Delete|Home|End|PageUp|PageDown|PrintScreen|ScrollLock|Pause|NumLock|F(?:[1-9]|1[0-2])))$/;
 const DRIVING_KEYS = new Set([
   ...FIXED_FALLBACKS,
@@ -80,11 +90,49 @@ export function formatBinding(code) {
   return code.replace(/([a-z])([A-Z])/g, '$1 $2').toUpperCase();
 }
 
+function isValidGamepadBinding(index) {
+  return Number.isInteger(index) && index >= 0 && index <= 31 && !RESERVED_GAMEPAD_BUTTONS.has(index);
+}
+
+export function isReservedGamepadButton(index) {
+  return RESERVED_GAMEPAD_BUTTONS.has(index);
+}
+
+/**
+ * Normalize button indices independently from keyboard codes. Menu buttons are
+ * fixed so a driving remap can never steal confirm, back, restart, start, or D-pad.
+ */
+export function normalizeGamepadBindings(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return DEFAULT_GAMEPAD_BINDINGS;
+  const requested = {};
+  for (const action of GAMEPAD_BINDING_ACTIONS) {
+    const index = readBinding(value, action);
+    if (index === undefined) continue;
+    if (!isValidGamepadBinding(index)) return DEFAULT_GAMEPAD_BINDINGS;
+    requested[action] = index;
+  }
+  const normalized = { ...DEFAULT_GAMEPAD_BINDINGS, ...requested };
+  const values = Object.values(normalized);
+  if (values.some(index => RESERVED_GAMEPAD_BUTTONS.has(index)) || new Set(values).size !== values.length) return DEFAULT_GAMEPAD_BINDINGS;
+  return Object.freeze(normalized);
+}
+
+export function formatGamepadBinding(index) {
+  if (!Number.isInteger(index) || index < 0) return '—';
+  const labels = {
+    0: 'A', 1: 'B', 2: 'X', 3: 'Y', 4: 'LB', 5: 'RB', 6: 'LT', 7: 'RT',
+    8: 'BACK', 9: 'START', 10: 'LS', 11: 'RS', 12: 'DPAD UP', 13: 'DPAD DOWN',
+    14: 'DPAD LEFT', 15: 'DPAD RIGHT'
+  };
+  return labels[index] || `BUTTON ${index}`;
+}
+
 export class InputManager {
-  constructor(stage, { autopilot = false, bindings = DEFAULT_BINDINGS } = {}) {
+  constructor(stage, { autopilot = false, bindings = DEFAULT_BINDINGS, gamepadBindings = DEFAULT_GAMEPAD_BINDINGS } = {}) {
     this.stage = stage;
     this.autopilot = autopilot;
     this.bindings = normalizeBindings(bindings);
+    this.gamepadBindings = normalizeGamepadBindings(gamepadBindings);
     this.keys = new Set();
     this.pressed = new Set();
     this.gamepadIndex = null;
@@ -114,6 +162,11 @@ export class InputManager {
     return this.bindings;
   }
 
+  setGamepadBindings(bindings) {
+    this.gamepadBindings = normalizeGamepadBindings({ ...this.gamepadBindings, ...(bindings || {}) });
+    return this.gamepadBindings;
+  }
+
   clearPadEdges() { for (const key of Object.keys(this.lastPad)) this.lastPad[key] = false; }
   consume(code) { const hit=this.pressed.has(code); this.pressed.delete(code); return hit; }
   consumeAny(codes) { for (const code of codes) if (this.consume(code)) return true; return false; }
@@ -126,10 +179,24 @@ export class InputManager {
     return selected || null;
   }
 
+  activeGamepadButtons() {
+    const pad = this.getGamepad();
+    if (!pad) return new Set();
+    return new Set((pad.buttons || []).map((button, index) => {
+      const value = Number(button?.value);
+      return button?.pressed || Number.isFinite(value) && value >= .55 ? index : null;
+    }).filter(index => index !== null));
+  }
+
   pollGamepad() {
     const pad = this.getGamepad();
     if (!pad) { this.clearPadEdges(); return; }
     const axisX = pad.axes[0] || 0, axisY = pad.axes[1] || 0;
+    const buttonPressed = index => {
+      const button = pad.buttons?.[index];
+      const value = Number(button?.value);
+      return Boolean(button?.pressed) || Number.isFinite(value) && value >= .55;
+    };
     const state = {
       confirm:Boolean(pad.buttons[0]?.pressed),
       back:Boolean(pad.buttons[1]?.pressed),
@@ -139,8 +206,8 @@ export class InputManager {
       down:Boolean(pad.buttons[13]?.pressed) || axisY > .62,
       left:Boolean(pad.buttons[14]?.pressed) || axisX < -.72,
       right:Boolean(pad.buttons[15]?.pressed) || axisX > .72,
-      shiftUp:Boolean(pad.buttons[4]?.pressed),
-      shiftDown:Boolean(pad.buttons[5]?.pressed)
+      shiftUp:buttonPressed(this.gamepadBindings.shiftUp),
+      shiftDown:buttonPressed(this.gamepadBindings.shiftDown)
     };
     const codes = { confirm:'PadConfirm', back:'PadBack', restart:'PadRestart', start:'PadStart', up:'PadUp', down:'PadDown', left:'PadLeft', right:'PadRight', shiftUp:'PadShiftUp', shiftDown:'PadShiftDown' };
     for (const [name,active] of Object.entries(state)) {
@@ -161,9 +228,14 @@ export class InputManager {
     if (pad) {
       const dead = value => Math.abs(value)<.12?0:Math.sign(value)*(Math.abs(value)-.12)/.88;
       const axis=-dead(pad.axes[0]||0); if(Math.abs(axis)>Math.abs(steer))steer=axis;
-      throttle=Math.max(throttle,pad.buttons[7]?.value||0,pad.buttons[0]?.pressed?.6:0);
-      brake=Math.max(brake,pad.buttons[6]?.value||0,pad.buttons[1]?.pressed?.7:0);
-      handbrake=Math.max(handbrake,pad.buttons[2]?.pressed?1:0);
+      const buttonValue = index => {
+        const button = pad.buttons?.[index];
+        const value = Number(button?.value);
+        return clamp(Number.isFinite(value) ? value : button?.pressed ? 1 : 0, 0, 1);
+      };
+      throttle=Math.max(throttle,buttonValue(this.gamepadBindings.accelerate));
+      brake=Math.max(brake,buttonValue(this.gamepadBindings.brake));
+      handbrake=Math.max(handbrake,buttonValue(this.gamepadBindings.handbrake));
     }
     return {
       steer:clamp(steer,-1,1),

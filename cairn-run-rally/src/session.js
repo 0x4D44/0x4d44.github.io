@@ -38,8 +38,8 @@ export class RallySession {
     return persistSave(this.storage,this.save,this.catalog);
   }
 
-  updateProfile({assists=this.save.profile.assists,bindings=this.save.profile.bindings}={}){
-    this.save={...this.save,profile:{assists:{...assists},bindings:{...bindings}}};
+  updateProfile({assists=this.save.profile.assists,bindings=this.save.profile.bindings,gamepadBindings=this.save.profile.gamepadBindings}={}){
+    this.save={...this.save,profile:{assists:{...assists},bindings:{...bindings},gamepadBindings:{...(gamepadBindings||{})}}};
     this.persist();
     return this.save.profile;
   }

@@ -16,6 +16,8 @@ const BINDING_IDS = Object.freeze([
   'throttle', 'accelerate', 'brake', 'steer', 'steerLeft', 'steerRight', 'left', 'right',
   'handbrake', 'shiftUp', 'shiftDown', 'restart', 'pause', 'confirm', 'back', 'menuUp', 'menuDown', 'menuLeft', 'menuRight'
 ]);
+const GAMEPAD_BINDING_IDS = Object.freeze(['accelerate', 'brake', 'handbrake', 'shiftUp', 'shiftDown']);
+const RESERVED_GAMEPAD_BUTTONS = new Set([0, 1, 3, 9, 12, 13, 14, 15]);
 const DAMAGE_IDS = Object.freeze(['engine', 'steering', 'suspension', 'brakes', 'body']);
 const SAFE_BEST_KEY = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*){1,5}$/;
 const SAFE_BINDING = /^[A-Za-z][A-Za-z0-9_-]*$/;
@@ -64,6 +66,19 @@ function normaliseBindings(value) {
     if (binding !== null) result[id] = binding;
   }
   return result;
+}
+
+function normaliseGamepadBindings(value) {
+  const result = {};
+  if (!isObject(value)) return result;
+  for (const id of GAMEPAD_BINDING_IDS) {
+    const button = get(value, id);
+    if (button === undefined) continue;
+    if (!Number.isInteger(button) || button < 0 || button > 31 || RESERVED_GAMEPAD_BUTTONS.has(button)) return {};
+    result[id] = button;
+  }
+  const values = Object.values(result);
+  return new Set(values).size === values.length ? result : {};
 }
 
 function normaliseSplits(value, timeSeconds) {
@@ -172,7 +187,7 @@ function blankAssists() {
 export function createBlankSave() {
   return {
     version: SAVE_SCHEMA_VERSION,
-    profile: { assists: blankAssists(), bindings: {} },
+    profile: { assists: blankAssists(), bindings: {}, gamepadBindings: {} },
     bests: {},
     championship: null
   };
@@ -187,7 +202,8 @@ export function normaliseSave(value, content = null) {
       version: SAVE_SCHEMA_VERSION,
       profile: {
         assists: normaliseAssists(get(profile, 'assists'), blank.profile.assists),
-        bindings: normaliseBindings(get(profile, 'bindings'))
+        bindings: normaliseBindings(get(profile, 'bindings')),
+        gamepadBindings: normaliseGamepadBindings(get(profile, 'gamepadBindings'))
       },
       bests: normaliseBests(get(value, 'bests')),
       championship: normaliseChampionship(get(value, 'championship'), content)
@@ -224,7 +240,7 @@ function migrateLegacy(raw) {
   if (!finite(time) || time <= 0) return null;
   return normaliseSave({
     version: SAVE_SCHEMA_VERSION,
-    profile: { assists: blankAssists(), bindings: {} },
+    profile: { assists: blankAssists(), bindings: {}, gamepadBindings: {} },
     bests: { [DEFAULT_BEST_KEY]: { timeSeconds: time, splits: get(legacy, 'splits') } },
     championship: null
   });

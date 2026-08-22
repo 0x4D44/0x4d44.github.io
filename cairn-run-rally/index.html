@@ -190,15 +190,20 @@
           </fieldset>
           <section id="remapping-section" class="settings-group remapping-section" aria-labelledby="remapping-heading">
             <h3 id="remapping-heading">REMAP CONTROLS</h3>
-            <p>Choose a row, then press a key or gamepad button.</p>
+            <p>Keyboard and gamepad maps are independent. Choose a row, then press the matching input. Gamepad steering stays on the left stick.</p>
             <div id="remapping-container" class="remapping-container" aria-label="Control remapping rows">
-              <label class="binding-row"><span>ACCELERATE</span><button id="remap-accelerate" type="button" data-binding="accelerate" aria-label="Remap accelerate">A</button></label>
-              <label class="binding-row"><span>BRAKE</span><button id="remap-brake" type="button" data-binding="brake" aria-label="Remap brake">Z</button></label>
-              <label class="binding-row"><span>STEER LEFT</span><button id="remap-steer-left" type="button" data-binding="steerLeft" aria-label="Remap steer left">,</button></label>
-              <label class="binding-row"><span>STEER RIGHT</span><button id="remap-steer-right" type="button" data-binding="steerRight" aria-label="Remap steer right">.</button></label>
-              <label class="binding-row"><span>HANDBRAKE</span><button id="remap-handbrake" type="button" data-binding="handbrake" aria-label="Remap handbrake">SPACE</button></label>
-              <label class="binding-row"><span>SHIFT UP</span><button id="remap-shift-up" type="button" data-binding="shiftUp" aria-label="Remap shift up">E</button></label>
-              <label class="binding-row"><span>SHIFT DOWN</span><button id="remap-shift-down" type="button" data-binding="shiftDown" aria-label="Remap shift down">Q</button></label>
+              <label class="binding-row"><span>ACCELERATE · KEYBOARD</span><button id="remap-accelerate" type="button" data-binding="accelerate" data-binding-device="keyboard" aria-label="Remap keyboard accelerate">A</button></label>
+              <label class="binding-row"><span>ACCELERATE · GAMEPAD</span><button id="remap-pad-accelerate" type="button" data-binding="accelerate" data-binding-device="gamepad" aria-label="Remap gamepad accelerate">RT</button></label>
+              <label class="binding-row"><span>BRAKE · KEYBOARD</span><button id="remap-brake" type="button" data-binding="brake" data-binding-device="keyboard" aria-label="Remap keyboard brake">Z</button></label>
+              <label class="binding-row"><span>BRAKE · GAMEPAD</span><button id="remap-pad-brake" type="button" data-binding="brake" data-binding-device="gamepad" aria-label="Remap gamepad brake">LT</button></label>
+              <label class="binding-row"><span>STEER LEFT · KEYBOARD</span><button id="remap-steer-left" type="button" data-binding="steerLeft" data-binding-device="keyboard" aria-label="Remap keyboard steer left">,</button></label>
+              <label class="binding-row"><span>STEER RIGHT · KEYBOARD</span><button id="remap-steer-right" type="button" data-binding="steerRight" data-binding-device="keyboard" aria-label="Remap keyboard steer right">.</button></label>
+              <label class="binding-row"><span>HANDBRAKE · KEYBOARD</span><button id="remap-handbrake" type="button" data-binding="handbrake" data-binding-device="keyboard" aria-label="Remap keyboard handbrake">SPACE</button></label>
+              <label class="binding-row"><span>HANDBRAKE · GAMEPAD</span><button id="remap-pad-handbrake" type="button" data-binding="handbrake" data-binding-device="gamepad" aria-label="Remap gamepad handbrake">X</button></label>
+              <label class="binding-row"><span>SHIFT UP · KEYBOARD</span><button id="remap-shift-up" type="button" data-binding="shiftUp" data-binding-device="keyboard" aria-label="Remap keyboard shift up">E</button></label>
+              <label class="binding-row"><span>SHIFT UP · GAMEPAD</span><button id="remap-pad-shift-up" type="button" data-binding="shiftUp" data-binding-device="gamepad" aria-label="Remap gamepad shift up">LB</button></label>
+              <label class="binding-row"><span>SHIFT DOWN · KEYBOARD</span><button id="remap-shift-down" type="button" data-binding="shiftDown" data-binding-device="keyboard" aria-label="Remap keyboard shift down">Q</button></label>
+              <label class="binding-row"><span>SHIFT DOWN · GAMEPAD</span><button id="remap-pad-shift-down" type="button" data-binding="shiftDown" data-binding-device="gamepad" aria-label="Remap gamepad shift down">RB</button></label>
             </div>
             <button id="reset-bindings" class="button button-secondary" type="button">RESET CONTROLS</button>
           </section>
