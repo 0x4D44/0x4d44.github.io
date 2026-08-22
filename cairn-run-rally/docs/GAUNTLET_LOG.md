@@ -27,9 +27,21 @@ design in `docs/ARCHITECTURE.md` before new content consumes those contracts.
 then again when invalid one-segment routes escaped field validation. The validator now
 reports both structural and field errors, and the focused contract suite passes.
 
-**Remaining boundary:** the contracts are not yet wired into the current Kestrel/car path.
-The next vertical slice must data-drive the existing car and region, then add one materially
-different car and Aurora Forest through quick-rally and championship flow before scaling.
+**Improvement:** Kestrel's surfaces, weather, region, authored segments, notes, and current
+Cairn R4 specification now live in one deeply immutable validated catalog. `buildStage()`
+consumes the catalog while retaining the legacy default and exports. The route endpoint is
+now the exact authored 5,405 metres instead of accumulated floating-point drift.
+
+**Regression:** the real catalog passes contract and cross-reference validation, two builds
+are structurally identical, the full 45-test suite passes, the reference run remains exactly
+290.47 seconds with its prior splits/damage/contact evidence, and browser smoke passes. The
+browser harness also learned multiline imports; otherwise the new real module graph produced
+an unhelpful `Uncaught` failure despite the shipped ES-module page being valid.
+
+**Remaining boundary:** the Cairn R4 data is not yet consumed by vehicle dynamics, and the
+versioned save core is not yet connected to the game shell. The next vertical slice must
+data-drive the existing car, then add one materially different car and Aurora Forest through
+quick-rally and championship flow before scaling.
 
 ## 1. Benchmark
 

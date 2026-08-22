@@ -20,8 +20,8 @@ try{
  if(!version)throw new Error(`Chrome debugging endpoint did not start. ${stderr.slice(-1000)}`);
  const html=(await readFile(new URL('index.html',root),'utf8')).replace(/<link[^>]+style\.css[^>]*>/,'').replace(/<script type="module"[^>]*><\/script>/,'');
  const css=await readFile(new URL('src/style.css',root),'utf8');
- const order=['math.js','stage.js','vehicle.js','race.js','renderer.js','world.js','input.js','audio.js','game.js','main.js'];let bundle='';
- for(const file of order){let code=await readFile(new URL(`src/${file}`,root),'utf8');code=code.replace(/^import .*?;\s*$/gm,'').replace(/\bexport\s+(?=(class|function|const|let|var)\b)/g,'');bundle+=`\n// ${file}\n${code}\n`;}
+ const order=['math.js','contracts.js','content.js','stage.js','vehicle.js','race.js','renderer.js','world.js','input.js','audio.js','game.js','main.js'];let bundle='';
+ for(const file of order){let code=await readFile(new URL(`src/${file}`,root),'utf8');code=code.replace(/^import[\s\S]*?from\s+['"][^'"]+['"];\s*$/gm,'').replace(/\bexport\s+(?=(class|function|const|let|var)\b)/g,'');bundle+=`\n// ${file}\n${code}\n`;}
  bundle=bundle.replace("new CairnRunGame();","window.__game = new CairnRunGame();");
  const target=await fetch(`http://127.0.0.1:${port}/json/new`,{method:'PUT'}).then(r=>r.json());ws=new WebSocket(target.webSocketDebuggerUrl);let id=0;const pending=new Map();
  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}};
@@ -29,7 +29,7 @@ try{
  const send=(method,params={})=>new Promise((resolve,reject)=>{const n=++id;pending.set(n,{resolve,reject});ws.send(JSON.stringify({id:n,method,params}));});
  await send('Page.enable');await send('Runtime.enable');await send('Performance.enable');await send('Emulation.setDeviceMetricsOverride',{width:1280,height:720,deviceScaleFactor:1,mobile:false});
  const tree=await send('Page.getFrameTree');await send('Page.setDocumentContent',{frameId:tree.frameTree.frame.id,html:html.replace('</head>',`<style>${css}</style></head>`)});
- const evaluated=await send('Runtime.evaluate',{expression:bundle,awaitPromise:true,userGesture:true});if(evaluated.exceptionDetails)throw new Error(`Browser exception: ${evaluated.exceptionDetails.text}`);
+ const evaluated=await send('Runtime.evaluate',{expression:bundle,awaitPromise:true,userGesture:true});if(evaluated.exceptionDetails)throw new Error(`Browser exception: ${JSON.stringify(evaluated.exceptionDetails)}`);
  await new Promise(r=>setTimeout(r,1000));
  const shell=await send('Runtime.evaluate',{expression:'({titleVisible:!document.getElementById("title-screen").classList.contains("hidden"),startText:document.getElementById("start-button").textContent,mode:window.__game?.mode})',returnByValue:true});
  const titleShot=await send('Page.captureScreenshot',{format:'png',fromSurface:true});await writeFile(new URL('../artifacts/title.png',import.meta.url),Buffer.from(titleShot.data,'base64'));
