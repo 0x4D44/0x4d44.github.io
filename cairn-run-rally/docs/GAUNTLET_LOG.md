@@ -46,10 +46,23 @@ before removing legacy data, and resets both keys explicitly. Seven red-then-gre
 cover round trips, corrupt/future values, legacy migration, non-finite input, read-only and
 throwing storage, failed-write preservation, and reset.
 
-**Remaining boundary:** the Cairn R4 data is not yet consumed by vehicle dynamics, and the
-versioned save core is not yet connected to the game shell. The next vertical slice must
-data-drive the existing car, then add one materially different car and Aurora Forest through
-quick-rally and championship flow before scaling.
+**Vehicle-seam reproduction:** mass, inertia, axle placement, ride height, steering lock,
+tyre balance, drag, brake force, suspension response, and damage bounds were constants in
+`src/vehicle.js`; changing a garage stat could not change the simulation.
+
+**Improvement:** `RallyCar(stage, profile)` now owns an immutable profile, defaults to the
+catalog Cairn R4, and consumes those structural parameters. Mutable caller profiles are
+deep-cloned before freezing, so a setup cannot change underneath a deterministic run.
+
+**Regression:** a copied heavy/narrow-steering profile produces a different measured
+trajectory without mutating catalog data. A 420-step origin/main-versus-profiled deterministic
+trace matched bit for bit for the default car; the reference stage remains 290.47 seconds,
+47/47 tests pass, and browser smoke remains green.
+
+**Remaining boundary:** the powertrain and drive layout remain the former shared model, and
+the versioned save core is not yet connected to the game shell. The next vertical slice must
+add one mechanically different car and Aurora Forest through quick-rally and championship
+flow, then deepen torque/gearing/combined-grip behavior before scaling.
 
 ## 1. Benchmark
 
