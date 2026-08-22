@@ -43,8 +43,12 @@ test('the shipped Kestrel slice is a valid immutable catalog', () => {
   assert.ok(Object.isFrozen(CARS[0].torqueCurve));
 });
 
-test('the full two-stage catalog validates and exposes distinct Aurora content', () => {
+test('the full six-region, six-car catalog validates and exposes distinct Aurora content', () => {
   assert.deepEqual(validateCatalog(CATALOG), []);
+  assert.equal(REGIONS.length, 6);
+  assert.equal(STAGES.length, 6);
+  assert.equal(WEATHER.length, 6);
+  assert.equal(CARS.length, 6);
   assert.equal(AURORA_FOREST.country, 'Finland');
   assert.equal(AURORA_FOREST.stageIds[0], AURORA_STAGE.id);
   assert.equal(AURORA_FOREST.weatherIds[0], AURORA_WEATHER.id);
@@ -100,12 +104,12 @@ test('the catalog-backed default stage remains deterministic and exact', () => {
   assert.deepEqual(first.splits, [1800, 3600, 5405]);
 });
 
-test('the vertical championship resolves its stage, weather, difficulty, and rival references', () => {
+test('the six-event championship resolves its stage, weather, difficulty, and rival references', () => {
   assert.equal(CHAMPIONSHIPS.length, 1);
   assert.equal(CHAMPIONSHIPS[0], WORLD_CHAMPIONSHIP);
-  assert.equal(WORLD_CHAMPIONSHIP.events.length, 2);
-  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.stageId), [KESTREL_STAGE.id, AURORA_STAGE.id]);
-  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.weatherId), [RIDGE_WEATHER.id, AURORA_WEATHER.id]);
+  assert.equal(WORLD_CHAMPIONSHIP.events.length, 6);
+  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.stageId), STAGES.map(stage => stage.id));
+  assert.deepEqual(WORLD_CHAMPIONSHIP.events.map(event => event.weatherId), WEATHER.map(condition => condition.id));
   assert.ok(WORLD_CHAMPIONSHIP.events.every(event => event.serviceMinutes === 60));
   assert.deepEqual(WORLD_CHAMPIONSHIP.rivalIds, RIVALS.map(rival => rival.id));
   assert.deepEqual(DIFFICULTIES.map(difficulty => difficulty.id), ['easy', 'normal', 'hard']);

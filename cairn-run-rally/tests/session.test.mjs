@@ -55,9 +55,19 @@ test('a championship survives reload and classifies exactly after its final even
   run = session.startChampionshipStage();
   assert.equal(run.stage.id, 'aurora-forest');
   assert.deepEqual(run.initialDamage, damage(0));
-  const final = session.completeChampionship({ timeSeconds:330, splits:[110, 220, 330], damage:damage(.03) });
+  let final = session.completeChampionship({ timeSeconds:330, splits:[110, 220, 330], damage:damage(.03) });
+  for (let eventIndex = 2; eventIndex < WORLD_CHAMPIONSHIP.events.length; eventIndex += 1) {
+    assert.equal(final.state.phase, 'service');
+    run = session.startChampionshipStage();
+    const event = WORLD_CHAMPIONSHIP.events[eventIndex];
+    assert.equal(run.stage.id, event.stageId);
+    const length = run.stage.splits.at(-1);
+    const timeSeconds = event.referenceTimeSeconds;
+    const splits = run.stage.splits.map(distance => timeSeconds * distance / length);
+    final = session.completeChampionship({ timeSeconds, splits, damage:damage(.01 * eventIndex) });
+  }
   assert.equal(final.state.phase, 'classified');
-  assert.equal(final.state.results.length, 2);
+  assert.equal(final.state.results.length, WORLD_CHAMPIONSHIP.events.length);
   assert.equal(final.stageStandings.length, 6);
   assert.equal(final.overallStandings.length, 6);
   assert.throws(() => session.startChampionshipStage(), /classified/);

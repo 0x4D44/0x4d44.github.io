@@ -6,6 +6,13 @@ import {
   validateStageSpec,
   validateWeatherSpec
 } from './contracts.js';
+import {
+  EXPANSION_CARS,
+  EXPANSION_REGIONS,
+  EXPANSION_STAGES,
+  EXPANSION_SURFACES,
+  EXPANSION_WEATHER
+} from './content-expansion.js';
 
 const deepFreeze = value => {
   if (value === null || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -452,15 +459,23 @@ const worldChampionship = {
       serviceMinutes: 60,
       durationSeconds: auroraStage.expectedDurationSeconds,
       referenceTimeSeconds: 330
-    }
+    },
+    ...EXPANSION_STAGES.map((stage, index) => ({
+      id: `${stage.id}-round`,
+      stageId: stage.id,
+      weatherId: EXPANSION_WEATHER[index].id,
+      serviceMinutes: 60,
+      durationSeconds: stage.expectedDurationSeconds,
+      referenceTimeSeconds: [315, 370, 450, 295][index]
+    }))
   ]
 };
 
-export const SURFACES = deepFreeze(surfaces);
-export const WEATHER = deepFreeze([ridgeWeather, auroraWeather]);
-export const REGIONS = deepFreeze([kestrelRegion, auroraRegion]);
-export const STAGES = deepFreeze([kestrelStage, auroraStage]);
-export const CARS = deepFreeze([cairnR4, lumenF2]);
+export const SURFACES = deepFreeze([...surfaces, ...EXPANSION_SURFACES]);
+export const WEATHER = deepFreeze([ridgeWeather, auroraWeather, ...EXPANSION_WEATHER]);
+export const REGIONS = deepFreeze([kestrelRegion, auroraRegion, ...EXPANSION_REGIONS]);
+export const STAGES = deepFreeze([kestrelStage, auroraStage, ...EXPANSION_STAGES]);
+export const CARS = deepFreeze([cairnR4, lumenF2, ...EXPANSION_CARS]);
 
 export const RIDGE_WEATHER = WEATHER[0];
 export const KESTREL_RIDGE = REGIONS[0];
