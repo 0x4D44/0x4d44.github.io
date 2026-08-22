@@ -20,7 +20,12 @@
   --line:      #24334c;
   --ink:       #e8edf7;
   --ink-dim:   #9fb0cc;
-  --ink-faint: #6f819e;
+  /* #7f90ad, not the #6f819e this started as: the darker value measured
+     4.42:1 against --panel, which is under the 4.5:1 WCAG AA threshold for
+     normal-size text, and it is used at 13-14px on panels throughout. The
+     lighter value clears 4.5:1 against every background here, --panel-2
+     included. */
+  --ink-faint: #7f90ad;
 
   --ai:      #38bdf8;
   --climate: #f59e0b;

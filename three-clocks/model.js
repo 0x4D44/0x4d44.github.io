@@ -241,7 +241,7 @@
     // near 0.5 for war casualties over seven centuries — formally an
     // infinite mean, which is why the draw has to be bounded.
     //
-    // 0.88 is deliberately THINNER than their estimate. Their index is
+    // 0.82 is deliberately THINNER than their estimate. Their index is
     // fitted to the extreme tail above a high threshold; running a
     // single Pareto all the way down from 1,000 deaths with that index
     // would put far too much mass in the middle of the distribution and
