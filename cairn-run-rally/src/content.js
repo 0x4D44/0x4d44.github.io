@@ -134,7 +134,189 @@ const kestrelStage = {
   notes: kestrelNotes,
   splits: [1800, 3600, 5405],
   expectedDurationSeconds: [205, 310],
-  landmarkIds: ['stone-wall', 'quarry', 'moor', 'bridge', 'pine', 'finish-gate']
+  landmarkIds: ['stone-wall', 'quarry', 'moor', 'bridge', 'pine', 'finish-gate'],
+  hazardPlan: {
+    seed: 17,
+    sampleStart: 18,
+    sampleEndMargin: 18,
+    sampleStep: 7,
+    skipSeed: 92821,
+    skipThreshold: 0.42,
+    sideSeed: 31337,
+    sideSalt: 9,
+    offsetSeed: 7717,
+    offsetSalt: 3,
+    typeSeed: 17713,
+    typeSalt: 31,
+    minOffsetM: 3.2,
+    offsetJitterM: 8.5,
+    rockThreshold: 0.87,
+    treeThreshold: 0.62,
+    exclusions: [[0, 95], [1760, 1980], [4020, 4255], [5280, 5410]]
+  },
+  barrierPlan: [
+    { type: 'wall', startM: 1640, endM: 1800, stepM: 5, side: -1, offsetM: 2.15, radiusM: 0.62, yOffsetM: 0.12 },
+    { type: 'barrier', centerM: 1815, count: 9, spacingM: 12, side: -1, offsetM: 2.6, radiusM: 0.72, yOffsetM: 0.12 },
+    { type: 'barrier', centerM: 4110, count: 9, spacingM: 12, side: 1, offsetM: 2.6, radiusM: 0.72, yOffsetM: 0.12 },
+    { type: 'bridge-rail', startM: 3950, endM: 4075, stepM: 7, bothSides: true, offsetM: 0.45, radiusM: 0.48, yOffsetM: 0.12 }
+  ],
+  routeIdentity: {
+    tags: ['moorland', 'stone', 'bridge', 'damp-gravel'],
+    opening: 'A damp moor launch climbs from the stone wall toward the first ridge crest.',
+    signatures: ['quarry hairpin', 'bridge hairpin', 'ridge crest']
+  },
+  signatureSequences: [
+    { id: 'quarry-hairpin', name: 'Quarry hairpin', startM: 1640, endM: 2140, tags: ['quarry', 'hairpin'] },
+    { id: 'moor-crest', name: 'Loose moor crest', startM: 2460, endM: 3100, tags: ['moor', 'crest'] },
+    { id: 'bridge-hairpin', name: 'Bridge and hairpin', startM: 3950, endM: 4425, tags: ['bridge', 'hairpin'] }
+  ],
+  difficultyArc: [
+    { startM: 0, endM: 1320, label: 'learn the rhythm', level: 1 },
+    { startM: 1320, endM: 3770, label: 'commit over crests', level: 2 },
+    { startM: 3770, endM: 5405, label: 'protect the finish', level: 3 }
+  ],
+  finishRun: { startM: 4845, endM: 5405 }
+};
+
+const auroraWeather = {
+  id: 'aurora-clear',
+  name: 'Aurora clear',
+  visibilityM: 1450,
+  gripScale: 1,
+  precipitation: 'none',
+  roadWetness: 0.04,
+  wind: 0.16,
+  timeOfDay: 'day'
+};
+
+const auroraRegion = {
+  id: 'aurora-forest',
+  name: 'Aurora Forest',
+  country: 'Finland',
+  stageIds: ['aurora-forest'],
+  palette: { sky: '#1b3b52', terrain: '#304e3c', road: '#a88b68' },
+  sceneryKit: [
+    'spruce',
+    'lake',
+    'narrow-forest',
+    'granite-outcrop',
+    'jump-board',
+    'timber-fence',
+    'finish-gate'
+  ],
+  weatherIds: ['aurora-clear'],
+  identityTags: ['lakeside', 'narrow-forest', 'compact-gravel', 'dense-conifers'],
+  identity: {
+    biome: 'lakeside narrow forest',
+    terrain: 'fast compact gravel',
+    foliage: 'dense spruce with birch clearings',
+    routeCharacter: 'long sightlines that close into narrow commitment crests'
+  }
+};
+
+const auroraSegments = [
+  { name: 'Lakeside opening launch', lengthM: 240, curve: [0.0001, 0.0001], riseM: 2, widthM: 7.8, surface: 'compact', feature: 'opening' },
+  { name: 'Lake mirror straight', lengthM: 280, curve: [0.0008, -0.0004], riseM: 3, widthM: 7.7, surface: 'compact', feature: 'lakeside' },
+  { name: 'Spruce right six', lengthM: 320, curve: [0.0012, 0.0021], riseM: 7, widthM: 7.5, surface: 'compact', feature: null },
+  { name: 'Long crest jump', lengthM: 240, curve: [-0.0002, 0.0005], riseM: 21, widthM: 7.4, surface: 'compact', feature: 'jump' },
+  { name: 'Landing compression', lengthM: 200, curve: [-0.0018, -0.0025], riseM: -14, widthM: 7.2, surface: 'compact', feature: 'dip' },
+  { name: 'Narrow spruce corridor', lengthM: 250, curve: [-0.0042, -0.0022], riseM: 4, widthM: 6.5, surface: 'compact', feature: 'narrow' },
+  { name: 'Lakeside right five', lengthM: 300, curve: [0.0038, 0.0027], riseM: 1, widthM: 7.1, surface: 'compact', feature: 'lakeside' },
+  { name: 'Commitment straight', lengthM: 360, curve: [0.0003, -0.0003], riseM: 9, widthM: 7.6, surface: 'compact', feature: 'straight' },
+  { name: 'Pine crest jump', lengthM: 320, curve: [-0.0008, 0.0011], riseM: 23, widthM: 7.2, surface: 'compact', feature: 'jump' },
+  { name: 'Kallio sweep left five', lengthM: 340, curve: [-0.0022, -0.003], riseM: -11, widthM: 7, surface: 'compact', feature: null },
+  { name: 'Narrow forest flick', lengthM: 180, curve: [0.0064, 0.0039], riseM: 0, widthM: 6.4, surface: 'compact', feature: 'narrow' },
+  { name: 'Rock cut braking zone', lengthM: 130, curve: [-0.001, 0.0008], riseM: -2, widthM: 6.8, surface: 'compact', feature: 'braking' },
+  { name: 'Lake hairpin right', lengthM: 150, curve: [0.019, 0.018], riseM: -4, widthM: 7.4, surface: 'compact', feature: 'hairpin' },
+  { name: 'Spruce climb crest', lengthM: 280, curve: [0.0004, 0.0017], riseM: 18, widthM: 7, surface: 'compact', feature: 'crest' },
+  { name: 'Blind crest left six', lengthM: 320, curve: [-0.0013, -0.0007], riseM: 24, widthM: 7.1, surface: 'compact', feature: 'jump' },
+  { name: 'Landing chute dip', lengthM: 230, curve: [0.0009, -0.0012], riseM: -21, widthM: 6.9, surface: 'compact', feature: 'dip' },
+  { name: 'Lakeside sprint', lengthM: 380, curve: [0.0001, 0.0002], riseM: -4, widthM: 7.7, surface: 'compact', feature: 'lakeside' },
+  { name: 'Right six into left five', lengthM: 300, curve: [0.0034, 0.0012], riseM: 5, widthM: 7.2, surface: 'compact', feature: 'sequence' },
+  { name: 'Culvert jump', lengthM: 260, curve: [-0.0005, 0.0008], riseM: 18, widthM: 7, surface: 'compact', feature: 'jump' },
+  { name: 'Forest shadow bend', lengthM: 320, curve: [-0.0036, -0.002], riseM: -9, widthM: 6.8, surface: 'compact', feature: 'narrow' },
+  { name: 'Long lake straight', lengthM: 450, curve: [0.0001, -0.0002], riseM: -2, widthM: 7.8, surface: 'compact', feature: 'lakeside' },
+  { name: 'Last crest', lengthM: 250, curve: [-0.002, -0.0004], riseM: 20, widthM: 7.3, surface: 'compact', feature: 'crest' },
+  { name: 'Finish approach', lengthM: 300, curve: [0.0031, 0.0015], riseM: -5, widthM: 7.4, surface: 'compact', feature: null },
+  { name: 'Finish run', lengthM: 360, curve: [0, 0], riseM: -7, widthM: 8, surface: 'compact', feature: 'finish' }
+];
+
+const auroraNotes = [
+  { atM: 240, icon: 'R6', main: 'RIGHT SIX', detail: 'LAKESIDE', phrase: 'right six, lakeside, two hundred and eighty', id: 0 },
+  { atM: 560, icon: 'R6', main: 'RIGHT SIX', detail: 'INTO CREST', phrase: 'right six, into long crest', id: 1 },
+  { atM: 820, icon: '▲', main: 'LONG CREST', detail: 'JUMP', phrase: 'long crest, jump, keep it straight', id: 2 },
+  { atM: 1080, icon: '▽', main: 'LANDING', detail: 'NARROW', phrase: 'landing, narrow forest, eighty', id: 3 },
+  { atM: 1390, icon: 'L5', main: 'LEFT FIVE', detail: 'LAKE EDGE', phrase: 'left five, lake edge, three hundred', id: 4 },
+  { atM: 1770, icon: 'R5', main: 'RIGHT FIVE', detail: 'OVER CREST', phrase: 'right five, over crest, four hundred', id: 5 },
+  { atM: 2190, icon: '▲', main: 'FLAT CREST', detail: 'INTO JUMP', phrase: 'flat crest, into jump', id: 6 },
+  { atM: 2510, icon: 'L5', main: 'LEFT FIVE', detail: 'KALLIO SWEEP', phrase: 'left five, Kallio sweep, long', id: 7 },
+  { atM: 2860, icon: 'L3', main: 'LEFT THREE', detail: 'NARROWS', phrase: 'left three, narrows in the forest', id: 8 },
+  { atM: 3160, icon: '!', main: 'CAUTION', detail: 'ROCK CUT BRAKING', phrase: 'caution, rock cut, heavy braking', id: 9 },
+  { atM: 3310, icon: 'HR', main: 'HAIRPIN RIGHT', detail: 'LAKESIDE', phrase: 'hairpin right, lakeside, do not cut', id: 10 },
+  { atM: 3590, icon: '▲', main: 'CREST', detail: 'BLIND', phrase: 'crest, blind, into left six', id: 11 },
+  { atM: 3910, icon: '▲', main: 'LEFT SIX', detail: 'JUMP', phrase: 'left six, jump, commit', id: 12 },
+  { atM: 4140, icon: '▽', main: 'DIP', detail: 'NARROW EXIT', phrase: 'dip, narrow exit, keep left', id: 13 },
+  { atM: 4520, icon: 'R6', main: 'RIGHT SIX', detail: 'LAKE STRAIGHT', phrase: 'right six, lake straight, four hundred', id: 14 },
+  { atM: 4820, icon: 'L5', main: 'LEFT FIVE', detail: 'INTO JUMP', phrase: 'left five, into culvert jump', id: 15 },
+  { atM: 5080, icon: '▲', main: 'JUMP', detail: 'FOREST SHADOW', phrase: 'jump, forest shadow, do not cut', id: 16 },
+  { atM: 5400, icon: 'L4', main: 'LEFT FOUR', detail: 'NARROW', phrase: 'left four, narrow trees', id: 17 },
+  { atM: 5850, icon: '▲', main: 'LAST CREST', detail: 'INTO FINISH', phrase: 'last crest, into finish approach', id: 18 },
+  { atM: 6400, icon: 'R5', main: 'RIGHT FIVE', detail: 'TO FINISH', phrase: 'right five, three hundred to finish', id: 19 },
+  { atM: 6760, icon: '🏁', main: 'FINISH', detail: 'LAKE GATE', phrase: 'finish, through the lake gate', id: 20 }
+];
+
+const auroraStage = {
+  id: 'aurora-forest',
+  regionId: 'aurora-forest',
+  name: 'Aurora Forest',
+  segments: auroraSegments,
+  notes: auroraNotes,
+  splits: [2200, 4400, 6760],
+  expectedDurationSeconds: [220, 390],
+  landmarkIds: ['lake', 'narrow-forest', 'granite-outcrop', 'jump-board', 'timber-fence', 'finish-gate'],
+  hazardPlan: {
+    seed: 811,
+    sampleStart: 18,
+    sampleEndMargin: 18,
+    sampleStep: 6,
+    skipSeed: 48317,
+    skipThreshold: 0.48,
+    sideSeed: 67123,
+    sideSalt: 41,
+    offsetSeed: 11939,
+    offsetSalt: 7,
+    typeSeed: 29791,
+    typeSalt: 53,
+    minOffsetM: 3.8,
+    offsetJitterM: 6.8,
+    rockThreshold: 0.78,
+    treeThreshold: 0.44,
+    exclusions: [[0, 120], [760, 930], [2450, 2640], [3260, 3450], [4970, 5180], [6400, 6760]]
+  },
+  barrierPlan: [
+    { type: 'timber-fence', startM: 1360, endM: 1530, stepM: 6, side: 1, offsetM: 1.9, radiusM: 0.55, yOffsetM: 0.1 },
+    { type: 'lake-fence', centerM: 1770, count: 11, spacingM: 10, side: -1, offsetM: 2.1, radiusM: 0.55, yOffsetM: 0.1 },
+    { type: 'spruce-rail', startM: 3150, endM: 3330, stepM: 9, bothSides: true, offsetM: 2.6, radiusM: 0.44, yOffsetM: 0.1 }
+  ],
+  routeIdentity: {
+    tags: ['lakeside', 'narrow-forest', 'compact-gravel', 'dense-conifers'],
+    opening: 'The opening runs beside a cold lake before the spruce walls close in.',
+    signatures: ['long crest jump', 'Kallio lake sweep', 'culvert jump and shadow bend']
+  },
+  identityTags: ['lakeside', 'narrow-forest', 'compact-gravel'],
+  signatureSequences: [
+    { id: 'lake-crest-jump', name: 'Lake to long crest jump', startM: 520, endM: 1530, tags: ['lakeside', 'crest', 'jump'] },
+    { id: 'kallio-commitment', name: 'Kallio sweep and narrow forest', startM: 2190, endM: 3160, tags: ['fast', 'narrow-forest', 'commitment'] },
+    { id: 'lake-hairpin-landing', name: 'Lake hairpin to blind landing', startM: 3310, endM: 4520, tags: ['lakeside', 'hairpin', 'jump'] },
+    { id: 'culvert-finish', name: 'Culvert jump to last crest', startM: 4820, endM: 6400, tags: ['jump', 'narrow-forest', 'finish'] }
+  ],
+  difficultyArc: [
+    { startM: 0, endM: 1280, label: 'learn the lake rhythm', level: 1 },
+    { startM: 1280, endM: 3160, label: 'commit between the trees', level: 2 },
+    { startM: 3160, endM: 5080, label: 'protect the landings', level: 3 },
+    { startM: 5080, endM: 6760, label: 'hold nerve to the gate', level: 4 }
+  ],
+  finishRun: { startM: 5850, endM: 6760 }
 };
 
 const cairnR4 = {
@@ -161,20 +343,54 @@ const cairnR4 = {
   durability: { engine: 0.72, steering: 0.75, suspension: 0.78, brakes: 0.62, body: 0.9 },
   assists: ['automatic', 'stability', 'braking', 'paceNotes'],
   powerBhp: 310,
-  silhouette: 'rally-hatch'
+  silhouette: 'rally-hatch',
+  benchmarkScale: 1
+};
+
+const lumenF2 = {
+  id: 'lumen-f2',
+  name: 'Lumen F2',
+  era: 1996,
+  drive: 'fwd',
+  massKg: 925,
+  yawInertiaKgM2: 1090,
+  wheelbaseM: 2.38,
+  trackM: 1.47,
+  frontWeightFraction: 0.63,
+  rideHeightM: 0.48,
+  dragCoefficient: 0.39,
+  torqueCurve: [[1800, 122], [3200, 156], [5200, 149], [6800, 116]],
+  gearRatios: [3.54, 2.12, 1.46, 1.11, 0.89],
+  finalDrive: 4.35,
+  wheelRadiusM: 0.31,
+  brakeForceN: 8600,
+  brakeBiasFront: 0.68,
+  steeringLockRad: 0.68,
+  tyreGrip: { front: 1.05, rear: 0.89 },
+  suspension: { travelM: 0.2, springHz: 2.1, dampingRatio: 0.66 },
+  durability: { engine: 0.66, steering: 0.68, suspension: 0.7, brakes: 0.58, body: 0.74 },
+  assists: ['automatic', 'stability', 'braking', 'paceNotes'],
+  powerBhp: 152,
+  silhouette: 'compact-hatch',
+  benchmarkScale: 1.14
 };
 
 export const SURFACES = deepFreeze(surfaces);
-export const WEATHER = deepFreeze([ridgeWeather]);
-export const REGIONS = deepFreeze([kestrelRegion]);
-export const STAGES = deepFreeze([kestrelStage]);
-export const CARS = deepFreeze([cairnR4]);
+export const WEATHER = deepFreeze([ridgeWeather, auroraWeather]);
+export const REGIONS = deepFreeze([kestrelRegion, auroraRegion]);
+export const STAGES = deepFreeze([kestrelStage, auroraStage]);
+export const CARS = deepFreeze([cairnR4, lumenF2]);
 
 export const RIDGE_WEATHER = WEATHER[0];
 export const KESTREL_RIDGE = REGIONS[0];
 export const KESTREL_REGION = KESTREL_RIDGE;
 export const KESTREL_STAGE = STAGES[0];
 export const CAIRN_R4 = CARS[0];
+export const AURORA_WEATHER = WEATHER[1];
+export const AURORA_FOREST = REGIONS[1];
+export const AURORA_REGION = AURORA_FOREST;
+export const AURORA_STAGE = STAGES[1];
+export const LUMEN_F2 = CARS[1];
 
 export const CATALOG = deepFreeze({
   surfaces: SURFACES,

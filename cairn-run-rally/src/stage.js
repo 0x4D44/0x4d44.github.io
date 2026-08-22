@@ -1,6 +1,11 @@
 import { clamp, hash01, lerp, smoothstep, wrapAngle } from './math.js';
 import { KESTREL_STAGE } from './content.js';
 export const SAMPLE_SPACING = 4;
+const clone = value => {
+ if (value === null || typeof value !== 'object') return value;
+ if (Array.isArray(value)) return value.map(clone);
+ return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, clone(child)]));
+};
 const SEGMENTS = KESTREL_STAGE.segments.map(segment => ({
   name: segment.name,
   length: segment.lengthM,
@@ -36,21 +41,42 @@ export function buildStage(stageDefinition = KESTREL_STAGE){
  const last=authoredSegments.at(-1);samples.push({index:samples.length,s:distance,x,y:elevation,z,heading,width:last.widthM,surface:last.surface,curvature:0,grade:0,camber:0,segmentIndex:authoredSegments.length-1,feature:null});
  const notes=stageDefinition.notes.map(note=>({at:note.atM,icon:note.icon,main:note.main,detail:note.detail,phrase:note.phrase,id:note.id}));
  const splits=[...stageDefinition.splits];if(splits.length)splits[splits.length-1]=distance;
- const stage={id:stageDefinition.id,regionId:stageDefinition.regionId,name:stageDefinition.name,length:distance,samples,segments,notes,splits,expectedDurationSeconds:[...stageDefinition.expectedDurationSeconds],landmarkIds:[...stageDefinition.landmarkIds]};
+ const routeIdentity=clone(stageDefinition.routeIdentity||{}),hazardPlan=clone(stageDefinition.hazardPlan||{seed:stageDefinition.hazardSeed,exclusions:stageDefinition.hazardExclusions});
+ const stage={
+  id:stageDefinition.id,
+  regionId:stageDefinition.regionId,
+  name:stageDefinition.name,
+  length:distance,
+  samples,
+  segments,
+  notes,
+  splits,
+  expectedDurationSeconds:[...stageDefinition.expectedDurationSeconds],
+  landmarkIds:[...stageDefinition.landmarkIds],
+  hazardPlan,
+  hazardSeed:hazardPlan.seed,
+  hazardExclusions:clone(hazardPlan.exclusions||[]),
+  barrierPlan:clone(stageDefinition.barrierPlan||[]),
+  routeIdentity,
+  identityTags:[...(stageDefinition.identityTags||routeIdentity.tags||[])],
+  signatureSequences:clone(stageDefinition.signatureSequences||[]),
+  difficultyArc:clone(stageDefinition.difficultyArc||[]),
+  finishRun:clone(stageDefinition.finishRun||null)
+ };
  stage.hazards=buildHazards(stage);stage.barriers=buildBarrierColliders(stage);stage.colliders=[...stage.hazards,...stage.barriers];return stage;
 }
 
 function buildHazards(stage){
- const out=[],excluded=[[0,95],[1760,1980],[4020,4255],[5280,5410]];
- for(let i=18;i<stage.samples.length-18;i+=7){const s=stage.samples[i];if(excluded.some(r=>s.s>=r[0]&&s.s<=r[1]))continue;if(hash01(i*92821+17)<.42)continue;const side=hash01(i*31337+9)<.5?-1:1,offset=s.width/2+3.2+hash01(i*7717+3)*8.5,rx=Math.cos(s.heading),rz=-Math.sin(s.heading),r=hash01(i*17713+31),type=r>.87?'rock':r>.62?'tree':'post';out.push({id:out.length,sampleIndex:i,s:s.s,x:s.x+rx*offset*side,y:s.y,z:s.z+rz*offset*side,radius:type==='rock'?1.2:type==='tree'?.78:.58,type,side});}
+ const out=[],plan=stage.hazardPlan||{},excluded=Array.isArray(plan.exclusions)?plan.exclusions:[],start=Number.isInteger(plan.sampleStart)?plan.sampleStart:18,endMargin=Number.isInteger(plan.sampleEndMargin)?plan.sampleEndMargin:18,step=Number.isInteger(plan.sampleStep)&&plan.sampleStep>0?plan.sampleStep:7,skipSeed=Number.isInteger(plan.skipSeed)?plan.skipSeed:92821,seed=Number.isInteger(plan.seed)?plan.seed:17,skipThreshold=Number.isFinite(plan.skipThreshold)?plan.skipThreshold:.42,sideSeed=Number.isInteger(plan.sideSeed)?plan.sideSeed:31337,sideSalt=Number.isInteger(plan.sideSalt)?plan.sideSalt:9,offsetSeed=Number.isInteger(plan.offsetSeed)?plan.offsetSeed:7717,offsetSalt=Number.isInteger(plan.offsetSalt)?plan.offsetSalt:3,typeSeed=Number.isInteger(plan.typeSeed)?plan.typeSeed:17713,typeSalt=Number.isInteger(plan.typeSalt)?plan.typeSalt:31,minOffset=Number.isFinite(plan.minOffsetM)?plan.minOffsetM:3.2,offsetJitter=Number.isFinite(plan.offsetJitterM)?plan.offsetJitterM:8.5,rockThreshold=Number.isFinite(plan.rockThreshold)?plan.rockThreshold:.87,treeThreshold=Number.isFinite(plan.treeThreshold)?plan.treeThreshold:.62;
+ for(let i=start;i<stage.samples.length-endMargin;i+=step){const s=stage.samples[i];if(excluded.some(r=>s.s>=r[0]&&s.s<=r[1]))continue;if(hash01(i*skipSeed+seed)<skipThreshold)continue;const side=hash01(i*sideSeed+sideSalt)<.5?-1:1,offset=s.width/2+minOffset+hash01(i*offsetSeed+offsetSalt)*offsetJitter,rx=Math.cos(s.heading),rz=-Math.sin(s.heading),r=hash01(i*typeSeed+typeSalt),type=r>rockThreshold?'rock':r>treeThreshold?'tree':'post';out.push({id:out.length,sampleIndex:i,s:s.s,x:s.x+rx*offset*side,y:s.y,z:s.z+rz*offset*side,radius:type==='rock'?1.2:type==='tree'?.78:.58,type,side});}
  return out;
 }
 
 function buildBarrierColliders(stage){
- const out=[],add=(distance,side,offset,radius,type)=>{const sample=sampleStage(stage,distance),point=roadEdgePoint(sample,side*(sample.width/2+offset),.12);out.push({id:`${type}-${out.length}`,s:distance,x:point.x,y:point.y,z:point.z,radius,type,side});};
- for(let distance=1640;distance<=1800;distance+=5)add(distance,-1,2.15,.62,'wall');
- for(const zone of [{s:1815,side:-1},{s:4110,side:1}])for(let n=-4;n<=4;n++)add(zone.s+n*12,zone.side,2.6,.72,'barrier');
- for(let distance=3950;distance<=4075;distance+=7)for(const side of [-1,1])add(distance,side,.45,.48,'bridge-rail');
+ const out=[],add=(distance,side,offset,radius,type,yOffset=.12)=>{const sample=sampleStage(stage,distance),point=roadEdgePoint(sample,side*(sample.width/2+offset),yOffset);out.push({id:`${type}-${out.length}`,s:distance,x:point.x,y:point.y,z:point.z,radius,type,side});};
+ const addRange=spec=>{const start=Number(spec.startM),end=Number(spec.endM),step=Number(spec.stepM);if(!Number.isFinite(start)||!Number.isFinite(end)||!Number.isFinite(step)||step<=0)return;for(let distance=start;distance<=end+1e-9;distance+=step){for(const side of spec.bothSides?[-1,1]:[spec.side??1])add(distance,side,spec.offsetM??0,spec.radiusM??.5,spec.type,spec.yOffsetM??.12);}};
+ const addAnchors=spec=>{const centers=Array.isArray(spec.anchorsM)?spec.anchorsM:[spec.centerM];for(const center of centers){const count=Number.isInteger(spec.count)&&spec.count>0?spec.count:1,spacing=Number.isFinite(spec.spacingM)?spec.spacingM:0;for(let n=0;n<count;n++){const distance=center+(n-(count-1)/2)*spacing;for(const side of spec.bothSides?[-1,1]:[spec.side??1])add(distance,side,spec.offsetM??0,spec.radiusM??.5,spec.type,spec.yOffsetM??.12);}}};
+ for(const spec of Array.isArray(stage.barrierPlan)?stage.barrierPlan:[]){if(Number.isFinite(spec.startM)&&Number.isFinite(spec.endM))addRange(spec);else if(Number.isFinite(spec.centerM)||Array.isArray(spec.anchorsM))addAnchors(spec);else if(Array.isArray(spec.distancesM))for(const distance of spec.distancesM)for(const side of spec.bothSides?[-1,1]:[spec.side??1])add(distance,side,spec.offsetM??0,spec.radiusM??.5,spec.type,spec.yOffsetM??.12);}
  return out;
 }
 
@@ -74,5 +100,5 @@ export function nearestStagePoint(stage,x,z,hint=0,radius=55){
  return {index,s:lerp(a.s,b.s,t),x:best.x,y:lerp(a.y,b.y,t),z:best.z,heading,width:lerp(a.width,b.width,t),surface:t<.5?a.surface:b.surface,curvature:lerp(a.curvature,b.curvature,t),grade:lerp(a.grade,b.grade,t),camber:lerp(a.camber,b.camber,t),segmentIndex:t<.5?a.segmentIndex:b.segmentIndex,feature:a.feature||b.feature,lateral:dx*rx+dz*rz,distance:Math.sqrt(bestD)};
 }
 export function roadEdgePoint(sample,lateral,yOffset=0){const rx=Math.cos(sample.heading),rz=-Math.sin(sample.heading);return{x:sample.x+rx*lateral,y:sample.y+sample.camber*lateral+yOffset,z:sample.z+rz*lateral};}
-export function requiredFeatureCoverage(stage){const names=stage.segments.map(s=>s.name.toLowerCase()).join(' ');return{straight:names.includes('straight')||names.includes('chute'),fastBend:names.includes('six')||names.includes('five long'),mediumBend:names.includes('four')||names.includes('five'),hairpin:stage.segments.some(s=>s.feature==='hairpin'),crest:stage.segments.some(s=>s.feature==='crest'),dip:stage.segments.some(s=>s.feature==='dip'),brakingZone:names.includes('braking'),looseSurface:stage.segments.some(s=>s.surface==='loose')};}
+export function requiredFeatureCoverage(stage){const names=stage.segments.map(s=>s.name.toLowerCase()).join(' '),coverage={straight:names.includes('straight')||names.includes('chute'),fastBend:names.includes('six')||names.includes('five long'),mediumBend:names.includes('four')||names.includes('five'),hairpin:stage.segments.some(s=>s.feature==='hairpin'),crest:stage.segments.some(s=>s.feature==='crest'),dip:stage.segments.some(s=>s.feature==='dip'),brakingZone:names.includes('braking'),looseSurface:stage.segments.some(s=>s.surface==='loose')};if(stage.segments.some(s=>s.feature==='jump'))coverage.jump=true;return coverage;}
 export const STAGE_SEGMENTS=SEGMENTS.map(s=>({...s,curve:[...s.curve]}));export const STAGE_NOTES=NOTES.map(n=>({...n}));
