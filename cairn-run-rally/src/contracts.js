@@ -33,6 +33,7 @@ export function validateCarSpec(car) {
   requireString(errors, car.name, 'car.name');
   if (!Number.isInteger(car.era) || car.era < 1960 || car.era > 2035) errors.push('car.era must be a plausible year');
   if (!DRIVE_LAYOUTS.includes(car.drive)) errors.push(`car.drive must be one of ${DRIVE_LAYOUTS.join(', ')}`);
+  if (!isFiniteNumber(car.benchmarkScale) || car.benchmarkScale < 0.8 || car.benchmarkScale > 1.3) errors.push('car.benchmarkScale must be between 0.8 and 1.3');
   for (const key of ['massKg', 'yawInertiaKgM2', 'wheelbaseM', 'trackM', 'rideHeightM', 'dragCoefficient', 'finalDrive', 'wheelRadiusM', 'brakeForceN', 'steeringLockRad']) {
     requirePositive(errors, car[key], `car.${key}`);
   }
