@@ -55,7 +55,7 @@ test('handbrake can induce rotation and countersteer reduces yaw rate',()=>{
 
 test('damage has consequence without making the car unrecoverable',()=>{
  const car=new RallyCar(stage),hazard=stage.hazards.find(h=>h.type!=='post');
- car.x=hazard.x-12;car.z=hazard.z;car.y=hazard.y+.54;car.yaw=Math.PI/2;car.vx=24;car.vz=0;car.progress=hazard.s;car.progressIndex=hazard.sampleIndex;
+ car.x=hazard.x-8;car.z=hazard.z;car.y=hazard.y+.54;car.yaw=Math.PI/2;car.vx=24;car.vz=0;car.progress=hazard.s;car.progressIndex=hazard.sampleIndex;
  for(let i=0;i<100;i++)car.step({throttle:1,brake:0,steer:0,handbrake:0},dt);
  assert.ok(car.damageTotal>.005,`damage=${car.damageTotal}`);
  assert.ok(car.damage.engine<.8&&car.damage.steering<.8&&car.damage.suspension<.8);
@@ -72,10 +72,10 @@ test('full authored stage is completable without recovery or catastrophic damage
  const { autopilotControls }=await import('../src/input.js');
  const { StageRun }=await import('../src/race.js');
  const car=new RallyCar(stage),run=new StageRun(stage);run.state='racing';run.countdown=0;let time=0,recoveries=0,paceCalls=0;
- while(time<320&&run.state!=='finished'){
+ while(time<stage.expectedDurationSeconds[1]+10&&run.state!=='finished'){
   car.step(autopilotControls(stage,car),dt);const events=run.update(car,dt);paceCalls+=events.filter(e=>e.type==='pace').length;if(car.needsRecovery){car.recover();recoveries++;}time+=dt;
  }
- assert.equal(run.state,'finished');assert.ok(time>=205&&time<=310,`time=${time}`);assert.equal(recoveries,0);assert.equal(paceCalls,stage.notes.length);assert.ok(car.damageTotal<.08,`damage=${car.damageTotal}`);
+ assert.equal(run.state,'finished');assert.ok(time>=stage.expectedDurationSeconds[0]&&time<=stage.expectedDurationSeconds[1],`time=${time}`);assert.equal(recoveries,0);assert.equal(paceCalls,stage.notes.length);assert.ok(car.damageTotal<.08,`damage=${car.damageTotal}`);
 });
 
 
@@ -133,4 +133,43 @@ test('a stranded off-road car requests recovery and returns to the route',()=>{
  const car=new RallyCar(stage),road=sampleStage(stage,900),rx=Math.cos(road.heading),rz=-Math.sin(road.heading);car.reset(900,true);car.x=road.x+rx*42;car.z=road.z+rz*42;car.vx=0;car.vz=0;
  for(let i=0;i<360&&!car.needsRecovery;i++)car.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
  assert.equal(car.needsRecovery,true);car.recover();assert.ok(Math.abs(car.lateral)<1);assert.ok(car.progress<=900);
+});
+
+test('drive layouts create distinct power-on balance through the combined tyre model',()=>{
+ const make=drive=>new RallyCar(stage,{...structuredClone(CAIRN_R4),id:`test-${drive}`,drive},{assists:{automatic:false,stability:false,braking:false}});
+ const cars=Object.fromEntries(['fwd','rwd','awd'].map(drive=>[drive,make(drive)]));
+ for(const car of Object.values(cars)){place(car,1000,20,0);car.gear=3;for(let i=0;i<90;i++)car.step({throttle:1,brake:0,steer:.55,handbrake:0},dt);}
+ assert.ok(Math.abs(cars.rwd.yawRate)>Math.abs(cars.fwd.yawRate)*1.45,`${cars.rwd.yawRate} vs ${cars.fwd.yawRate}`);
+ assert.notEqual(cars.awd.lateralSpeed,cars.fwd.lateralSpeed);
+ assert.notEqual(cars.awd.lateralSpeed,cars.rwd.lateralSpeed);
+});
+
+test('power-on cornering consumes front tyre capacity instead of granting unlimited grip',()=>{
+ const run=throttle=>{const car=new RallyCar(stage,CAIRN_R4,{assists:{automatic:false,stability:false,braking:false}});place(car,1000,20,0);car.gear=3;for(let i=0;i<30;i++)car.step({throttle,brake:0,steer:.7,handbrake:0},dt);return car;};
+ const coast=run(0),power=run(1);
+ assert.ok(Math.abs(power.tyreForces.frontLateral)<Math.abs(coast.tyreForces.frontLateral));
+ for(const car of [coast,power])for(const axle of ['front','rear']){
+  const longitudinal=car.tyreForces[`${axle}Longitudinal`],lateral=car.tyreForces[`${axle}Lateral`],load=car.axleLoads[axle];
+  assert.ok(Math.hypot(longitudinal,lateral)<load*1.2);
+ }
+});
+
+test('braking and engine drag cannot add kinetic energy',()=>{
+ const car=new RallyCar(stage),initialSpeed=25;place(car,220,initialSpeed,0);
+ let previous=car.speed;
+ for(let i=0;i<120;i++){
+  car.step({throttle:0,brake:1,steer:0,handbrake:0},dt);
+  assert.ok(car.speed<=previous+.04,`speed rose from ${previous} to ${car.speed}`);
+  previous=car.speed;
+ }
+ assert.ok(car.speed<initialSpeed*.7,`final speed=${car.speed}`);
+});
+
+test('manual gearbox shifts only on an explicit input edge',()=>{
+ const car=new RallyCar(stage,CAIRN_R4,{assists:{automatic:false}});place(car,220,18,0);
+ for(let i=0;i<30;i++)car.step({throttle:.5,brake:0,steer:0,handbrake:0},dt);
+ assert.equal(car.gear,1);
+ car.step({throttle:.5,brake:0,steer:0,handbrake:0,shiftUp:true},dt);
+ assert.equal(car.gear,2);
+ assert.ok(car.shiftRemaining>0);
 });
