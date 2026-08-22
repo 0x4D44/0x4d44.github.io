@@ -5,6 +5,8 @@ import { buildStage, sampleStage } from '../src/stage.js';
 import { RallyCar } from '../src/vehicle.js';
 import { ChaseCamera } from '../src/world.js';
 import { wrapAngle } from '../src/math.js';
+import { CATALOG } from '../src/content.js';
+import { paceNoteSources } from '../src/audio.js';
 
 const stage=buildStage();
 test('chase camera remains smooth, speed-aware, and above terrain',()=>{
@@ -20,9 +22,15 @@ test('chase camera remains smooth, speed-aware, and above terrain',()=>{
 });
 
 test('all authored spoken pace notes are packaged locally in broad browser formats',async()=>{
- for(let i=0;i<stage.notes.length;i++){
-  const id=String(i).padStart(2,'0');
-  for(const extension of ['mp3','ogg']){const info=await stat(new URL(`../public/audio/pacenotes/note-${id}.${extension}`,import.meta.url));assert.ok(info.size>3000,`note-${id}.${extension} is missing or empty`);}
+ for(const stageSpec of CATALOG.stages){
+  for(const note of stageSpec.notes){
+   for(const extension of ['mp3','ogg']){
+    const path=paceNoteSources(stageSpec,note,extension).find(candidate=>candidate.includes(`/${stageSpec.id}/`)&&candidate.endsWith(`.${extension}`));
+    assert.ok(path,`${stageSpec.id}/${note.id} has no ${extension} source`);
+    const info=await stat(new URL(`../${path.replace(/^\.\//,'')}`,import.meta.url));
+    assert.ok(info.size>3000,`${path} is missing or empty`);
+   }
+  }
  }
 });
 
