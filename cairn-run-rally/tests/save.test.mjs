@@ -66,7 +66,7 @@ test('a valid save round trips through storage', () => {
     version: 1,
     profile: {
       assists: { automatic: false, stability: 0.25, braking: 1, paceNotes: true, ignored: true },
-      bindings: { throttle: 'KeyW', steerLeft: 'KeyA', ignored: 'Nope' }
+      bindings: { throttle: 'KeyW', steerLeft: 'KeyA', shiftUp: 'KeyE', shiftDown: 'KeyQ', ignored: 'Nope' }
     },
     bests: {
       'kestrel-ridge:cairn-r4:ridge-weather': { timeSeconds: 238.5, splits: [80, 160, 238.5] }
@@ -77,6 +77,7 @@ test('a valid save round trips through storage', () => {
   assert.equal(persistSave(storage, save), true);
   assert.deepEqual(loadSave(storage), normaliseSave(save));
   assert.deepEqual(readJson(storage, SAVE_KEY), normaliseSave(save));
+  assert.deepEqual(loadSave(storage).profile.bindings, { throttle:'KeyW', steerLeft:'KeyA', shiftUp:'KeyE', shiftDown:'KeyQ' });
 });
 
 test('corrupt and future saves recover to blank without overwriting unknown data', () => {

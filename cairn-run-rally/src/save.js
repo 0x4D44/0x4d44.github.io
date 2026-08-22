@@ -14,7 +14,7 @@ const MAX_RIVALS = 32;
 
 const BINDING_IDS = Object.freeze([
   'throttle', 'accelerate', 'brake', 'steer', 'steerLeft', 'steerRight', 'left', 'right',
-  'handbrake', 'restart', 'pause', 'confirm', 'back', 'menuUp', 'menuDown', 'menuLeft', 'menuRight'
+  'handbrake', 'shiftUp', 'shiftDown', 'restart', 'pause', 'confirm', 'back', 'menuUp', 'menuDown', 'menuLeft', 'menuRight'
 ]);
 const DAMAGE_IDS = Object.freeze(['engine', 'steering', 'suspension', 'brakes', 'body']);
 const SAFE_BEST_KEY = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*){1,5}$/;
