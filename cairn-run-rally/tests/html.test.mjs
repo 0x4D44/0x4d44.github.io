@@ -24,7 +24,8 @@ test('the rally shell keeps legacy controls and exposes every vertical-flow hook
     'selection-screen', 'selection-mode', 'car-options', 'stage-options', 'selection-difficulty',
     'selection-start', 'selection-back', 'selection-error',
     // Championship service, classification and overall standings.
-    'service-screen', 'service-budget', 'service-remaining', 'service-repair', 'service-auto',
+    'service-screen', 'service-budget', 'service-remaining', 'service-repair', 'service-setup', 'service-tyre',
+    'service-brake-bias', 'service-steering-ratio', 'service-ride-height', 'service-damping', 'service-auto',
     'service-start', 'service-abandon', 'service-error', 'result-position', 'result-points',
     'result-penalty', 'result-rivals', 'result-standings', 'result-next', 'standings-screen',
     'stage-standings', 'overall-standings', 'standings-table', 'standings-continue',

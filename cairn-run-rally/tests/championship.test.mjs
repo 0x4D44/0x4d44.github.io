@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import {
   DAMAGE_COMPONENTS,
   REPAIR_MINUTES,
+  SETUP_ADJUSTMENT_MINUTES,
+  SETUP_LIMITS,
+  SETUP_STEP,
+  TYRE_OPTIONS,
+  TYRE_SERVICE_MINUTES,
   abandon,
   abortRun,
   applyService,
@@ -171,8 +176,8 @@ test('service follows the direct linear repair formula and automatic service is 
     const expected = Math.max(0, state.damage[key] - report.repairMinutes[key] / REPAIR_MINUTES[key]);
     assert.equal(report.after[key], expected);
   }
-  assert.equal(report.usedMinutes, Object.values(report.repairMinutes).reduce((sum, value) => sum + value, 0));
-  assert.equal(report.remainingMinutes, 60 - 20);
+  assert.equal(report.usedMinutes, Object.values(report.repairMinutes).reduce((sum, value) => sum + value, 0) + report.setupMinutes.total);
+  assert.equal(report.remainingMinutes, 60 - 20 - TYRE_SERVICE_MINUTES.gravel);
   assert.equal(report.tuning.tyreId, 'gravel');
   assert.throws(() => planService(state, { repair: { engine: 61 } }, focusedContent), error => error.code === 'over-budget');
   assert.throws(() => planService(state, { repair: { engine: -1 } }, focusedContent), error => error.code === 'negative-service');
@@ -183,6 +188,48 @@ test('service follows the direct linear repair formula and automatic service is 
   assert(autoReport.usedMinutes <= 60 + 1e-9);
   assert.equal(autoReport.wastedTotalMinutes, 0);
   assert.equal(autoReport.usedMinutes, Math.min(60, needed));
+});
+
+test('service setup choices have explicit costs, bounded steps, and no mutation on invalid plans', () => {
+  const state = makeFocusedState(6, damage(0.1, 0.05, 0.05, 0.1, 0));
+  const before = structuredClone(state);
+  const plan = {
+    repair: { engine: 0, steering: 0, suspension: 0, brakes: 0, body: 0 },
+    setup: { tyreId: 'wet', brakeBias: 0.1, steeringRatio: -0.05, rideHeight: 0.15, damping: -0.1 }
+  };
+  const report = planService(state, plan, focusedContent);
+  const expectedSetupMinutes = TYRE_SERVICE_MINUTES.wet
+    + (Math.abs(plan.setup.brakeBias) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.brakeBias
+    + (Math.abs(plan.setup.steeringRatio) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.steeringRatio
+    + (Math.abs(plan.setup.rideHeight) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.rideHeight
+    + (Math.abs(plan.setup.damping) / SETUP_STEP) * SETUP_ADJUSTMENT_MINUTES.damping;
+  assert.equal(report.setupMinutes.total, expectedSetupMinutes);
+  assert.equal(report.usedMinutes, expectedSetupMinutes);
+  assert.equal(report.remainingMinutes, 60 - expectedSetupMinutes);
+  assert.deepEqual(report.tuning, plan.setup);
+  assert.deepEqual(state, before);
+  assert.ok(TYRE_OPTIONS.includes('standard'));
+  assert.ok(TYRE_OPTIONS.includes('tarmac'));
+  assert.ok(TYRE_OPTIONS.includes('wet'));
+  assert.ok(TYRE_OPTIONS.includes('gravel'));
+  for (const key of ['brakeBias', 'steeringRatio', 'rideHeight', 'damping']) {
+    assert.equal(SETUP_LIMITS[key], 0.25);
+    assert.throws(() => planService(state, { setup: { [key]: 0.3 } }, focusedContent), error => error.code === 'invalid-tuning');
+    assert.throws(() => planService(state, { setup: { [key]: 0.03 } }, focusedContent), error => error.code === 'invalid-tuning');
+  }
+  assert.throws(() => planService(state, { setup: { tyreId: 'slick' } }, focusedContent), error => error.code === 'invalid-tuning');
+  assert.deepEqual(state, before);
+});
+
+test('applying a setup plan persists the selected tuning into the next stage state', () => {
+  const state = makeFocusedState(7);
+  const setup = { tyreId: 'gravel', brakeBias: -0.1, steeringRatio: 0.05, rideHeight: 0, damping: 0.1 };
+  const ready = applyService(state, { repair: {}, setup }, focusedContent);
+  assert.equal(ready.phase, 'ready');
+  assert.deepEqual(ready.tuning, setup);
+  assert.ok(Object.isFrozen(ready.tuning));
+  const next = startStage(ready, focusedContent);
+  assert.deepEqual(next.tuning, setup);
 });
 
 test('rival outcomes are deterministic, independent of player time, and skill-monotone', () => {

@@ -96,21 +96,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .title-screen .controls-summary { margin-top: 14px; }
 .menu-note { display: block; margin: 7px 0 0; color: rgba(238,231,212,.52); font-size: 10px; line-height: 1.35; }
 .selection-form, .service-form, .settings-form { min-width: 0; }
-.option-group, .service-repair, .settings-group {
+.option-group, .service-repair, .service-setup, .settings-group {
   min-width: 0;
   margin: 0 0 22px;
   padding: 15px;
   border: 1px solid var(--line);
   background: rgba(255,255,255,.025);
 }
-.option-group legend, .service-repair legend, .settings-group legend {
+.option-group legend, .service-repair legend, .service-setup legend, .settings-group legend {
   padding: 0 8px;
   color: var(--amber);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: .18em;
 }
-.option-group legend span, .service-repair legend span {
+.option-group legend span, .service-repair legend span, .service-setup legend span {
   margin-left: 8px;
   color: rgba(238,231,212,.46);
   font-size: 9px;
@@ -204,6 +204,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .service-row strong { font-size: 12px; letter-spacing: .06em; }
 .service-row output { color: var(--amber); font: 800 13px ui-monospace, monospace; text-align: right; }
 .service-row:has(input:checked) { background: rgba(232,93,42,.14); }
+.service-setup { margin-top: 17px; }
+.setup-row { grid-template-columns: minmax(0, 1fr) minmax(92px, 30%) 62px; }
+.setup-row input[type=range] { width: 100%; min-width: 0; accent-color: var(--orange); }
+.setup-row select { width: 100%; min-width: 0; padding: 9px 7px; color: var(--cream); background: #18231e; border: 1px solid var(--line); font: 800 10px ui-monospace, monospace; }
+.setup-row output { font-size: 10px; }
 .inline-error {
   margin: -7px 0 16px;
   padding: 10px 12px;
@@ -272,6 +277,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .flow-panel, .settings-panel, .compact-panel { padding: 20px 16px; }
   .option-grid, .option-grid--three { grid-template-columns: minmax(0, 1fr); }
   .service-summary { grid-template-columns: minmax(0, 1fr); }
+  .setup-row { grid-template-columns: minmax(0, 1fr) minmax(82px, 28%) 58px; gap: 6px; }
   .service-actions, .result-actions { grid-template-columns: minmax(0, 1fr); }
   .flow-actions { grid-template-columns: minmax(0, 1fr); }
   .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

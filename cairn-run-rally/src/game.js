@@ -1,5 +1,11 @@
 import { AudioManager } from './audio.js';
-import { autoServicePlan, overallStandings, planService, REPAIR_MINUTES, stageStandings } from './championship.js';
+import {
+  autoServicePlan,
+  overallStandings,
+  planService,
+  REPAIR_MINUTES,
+  stageStandings
+} from './championship.js';
 import { CATALOG } from './content.js';
 import {
   DEFAULT_BINDINGS,
@@ -113,7 +119,8 @@ export class CairnRunGame {
     el('result-next').addEventListener('click',()=>this.advanceChampionship());
     el('standings-continue').addEventListener('click',()=>this.returnToTitle());
     el('standings-abandon').addEventListener('click',()=>this.abandonChampionship());
-    for(const input of document.querySelectorAll('[data-service-component]'))input.addEventListener('change',()=>{this.pendingServicePlan=null;this.updateServicePreview();});
+    for(const input of document.querySelectorAll('[data-service-component],[data-service-tuning]'))input.addEventListener('input',()=>{this.pendingServicePlan=null;this.updateServicePreview();});
+    for(const input of document.querySelectorAll('[data-service-component],[data-service-tuning]'))input.addEventListener('change',()=>{this.pendingServicePlan=null;this.updateServicePreview();});
     for(const input of [this.ui.effects,this.ui.voice,this.ui.quality,this.ui.notes,this.ui.mute,this.ui.automatic,this.ui.stability,this.ui.braking,this.ui.manual]) input.addEventListener('input',()=>this.applySettings(true,input));
     for(const button of document.querySelectorAll('[data-binding]'))button.addEventListener('click',()=>this.captureBinding(button));
     el('reset-bindings').addEventListener('click',()=>this.applyBindings(DEFAULT_BINDINGS,true,DEFAULT_GAMEPAD_BINDINGS));
@@ -202,22 +209,40 @@ export class CairnRunGame {
     for(const input of document.querySelectorAll('[data-service-component]')){
       const component=input.dataset.serviceComponent,need=state.damage[component]*REPAIR_MINUTES[component];input.checked=false;input.closest('.service-row').querySelector('output').textContent=need.toFixed(1);
     }
+    const tuning=state.tuning||{};
+    const tyre=document.querySelector('[data-service-tuning="tyreId"]');
+    if(tyre)tyre.value=tuning.tyreId||'standard';
+    for(const input of document.querySelectorAll('[data-service-tuning]:not([data-service-tuning="tyreId"])'))input.value=String(tuning[input.dataset.serviceTuning]??0);
     this.updateServicePreview();requestAnimationFrame(()=>el('service-auto').focus());
   }
 
   selectedServicePlan(){
     const repair={};for(const component of Object.keys(REPAIR_MINUTES)){const input=document.querySelector(`[data-service-component="${component}"]`);repair[component]=input?.checked?this.session.championship.damage[component]*REPAIR_MINUTES[component]:0;}
-    return {repair};
+    const setup={};
+    for(const input of document.querySelectorAll('[data-service-tuning]'))setup[input.dataset.serviceTuning]=input.dataset.serviceTuning==='tyreId'?input.value:Number(input.value);
+    return {repair,setup};
+  }
+
+  renderServiceSetupReport(report){
+    const setup=report.setupMinutes;
+    const tyreOutput=el('service-tyre-cost');
+    if(tyreOutput)tyreOutput.textContent=`${setup.tyre.toFixed(1)} MIN`;
+    for(const key of ['brakeBias','steeringRatio','rideHeight','damping']){
+      const input=document.querySelector(`[data-service-tuning="${key}"]`),output=el(`service-${key.replace(/[A-Z]/g,letter=>`-${letter.toLowerCase()}`)}-value`);
+      if(input&&output)output.textContent=`${Number(input.value).toFixed(2)} · ${setup[key].toFixed(1)} MIN`;
+    }
   }
 
   updateServicePreview(){
-    try{const report=planService(this.session.championship,this.pendingServicePlan||this.selectedServicePlan(),CATALOG);el('service-remaining').textContent=`${report.remainingMinutes.toFixed(1)} MIN REMAINING`;this.showInlineError('service-error',null);return report;}
+    try{const report=planService(this.session.championship,this.pendingServicePlan||this.selectedServicePlan(),CATALOG);el('service-remaining').textContent=`${report.remainingMinutes.toFixed(1)} MIN REMAINING`;this.renderServiceSetupReport(report);this.showInlineError('service-error',null);return report;}
     catch(error){el('service-remaining').textContent='OVER BUDGET';this.showInlineError('service-error',error);return null;}
   }
 
   autoSelectService(){
     this.pendingServicePlan=autoServicePlan(this.session.championship,CATALOG);
     for(const input of document.querySelectorAll('[data-service-component]'))input.checked=this.pendingServicePlan.repair[input.dataset.serviceComponent]>0;
+    const tuning=this.pendingServicePlan.tuning||this.pendingServicePlan.setup||this.session.championship.tuning;
+    for(const input of document.querySelectorAll('[data-service-tuning]'))input.value=String(tuning[input.dataset.serviceTuning]??0);
     this.updateServicePreview();
   }
 
