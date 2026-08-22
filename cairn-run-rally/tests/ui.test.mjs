@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CATALOG } from '../src/content.js';
-import { optionMarkup, stageRowsMarkup, overallRowsMarkup } from '../src/ui.js';
+import { optionMarkup, rivalRowsMarkup, stageRowsMarkup, overallRowsMarkup } from '../src/ui.js';
 
 test('catalog options expose mechanical identity without injecting labels', () => {
   const markup=optionMarkup(CATALOG,{carId:'lumen-f2',stageId:'aurora-forest',difficultyId:'hard'});
@@ -32,4 +32,7 @@ test('stage and overall standings markup keeps finishers, retirements, and gaps 
   ]);
   assert.match(overall,/3 PTS/);
   assert.match(overall,/43/);
+  const rivals=rivalRowsMarkup([{name:'<img onerror=alert(1)>',status:'finished',totalMs:102340}],100000);
+  assert.doesNotMatch(rivals,/<img/);
+  assert.match(rivals,/&lt;IMG/);
 });
