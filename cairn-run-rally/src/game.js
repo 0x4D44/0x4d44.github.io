@@ -48,7 +48,7 @@ export class CairnRunGame {
       bindings:this.session.save.profile.bindings,
       gamepadBindings:this.session.save.profile.gamepadBindings
     });
-    this.audio = new AudioManager({car:this.activeRun.car,stage:this.activeRun.stage});
+    this.audio = new AudioManager({car:this.activeRun.car,stage:this.activeRun.stage,weather:this.activeRun.weather});
     this.race = new StageRun(this.stage);
     this.mode = 'title';
     this.accumulator = 0;
@@ -182,7 +182,7 @@ export class CairnRunGame {
     this.car=new RallyCar(this.stage,run.car,{assists:run.assists,weather:run.weather,tuning:run.tuning||undefined});
     if(run.initialDamage)Object.assign(this.car.damage,run.initialDamage);
     this.world=new RallyWorld(this.renderer,this.stage,this.ui.quality.value,run);this.camera=new ChaseCamera(this.stage,this.car);this.race=new StageRun(this.stage);
-    this.input.stage=this.stage;this.audio.configure({car:run.car,stage:run.stage});this.best=this.legacyBest(run.best);this.race.setBest(this.best);
+    this.input.stage=this.stage;this.audio.configure({car:run.car,stage:run.stage,weather:run.weather});this.best=this.legacyBest(run.best);this.race.setBest(this.best);
     el('result-heading').textContent=run.stage.name.toUpperCase();this.ui.pause.querySelector('h2').textContent=run.stage.name;
     this.applySettings(false);this.updateHud();
   }
@@ -311,7 +311,7 @@ export class CairnRunGame {
   closeSettings(){this.mode='title';this.ui.settings.classList.add('hidden');this.ui.title.classList.remove('hidden');requestAnimationFrame(()=>el('settings-button').focus());}
 
   async beginRun(fullCountdown) {
-    await this.audio.start({car:this.activeRun.car,stage:this.activeRun.stage});
+    await this.audio.start({car:this.activeRun.car,stage:this.activeRun.stage,weather:this.activeRun.weather});
     this.mode='playing';this.hideScreens();this.ui.hud.classList.remove('hidden');this.ui.pace.classList.add('hidden');
     this.car.reset(14,true);if(this.activeRun.initialDamage)Object.assign(this.car.damage,this.activeRun.initialDamage);this.camera.reset(this.car);this.race.reset(fullCountdown);if(this.qa)this.race.countdown=.18;this.race.setBest(this.best);this.accumulator=0;this.lastCollisionLevel=0;this.recoveryCount=0;this.contactCount=0;this.audio.mute(this.ui.mute.checked);this.audio.stopVoice();
     this.ui.countdown.textContent=fullCountdown?'3':'1';this.ui.countdown.classList.remove('hidden');if(!this.qa)this.audio.countdown(fullCountdown?3:1);this.input.clearPressed();this.updateHud();

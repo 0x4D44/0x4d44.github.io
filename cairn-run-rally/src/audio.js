@@ -9,8 +9,15 @@ const SURFACE_AUDIO = Object.freeze({
   loose: { level: 0.082, band: 980, filter: 3400 },
   grass: { level: 0.11, band: 520, filter: 2200 },
   tarmac: { level: 0.028, band: 430, filter: 3200 },
+  'wet-tarmac': { level: 0.052, band: 560, filter: 2700 },
   mud: { level: 0.12, band: 380, filter: 1800 },
-  water: { level: 0.16, band: 1600, filter: 4300 }
+  water: { level: 0.16, band: 1600, filter: 4300 },
+  snow: { level: 0.034, band: 260, filter: 1500 },
+  ice: { level: 0.024, band: 720, filter: 3600 },
+  'desert-gravel': { level: 0.1, band: 1120, filter: 3600 },
+  'rough-gravel': { level: 0.112, band: 1040, filter: 3300 },
+  'red-gravel': { level: 0.108, band: 1180, filter: 3700 },
+  washboard: { level: 0.128, band: 1320, filter: 3900 }
 });
 const DEFAULT_SURFACE_AUDIO = SURFACE_AUDIO.compact;
 const DRIVE_FACTORS = Object.freeze({ fwd: 0.93, rwd: 1.07, awd: 1 });
@@ -129,10 +136,13 @@ export function deriveEngineCharacter(profile = {}) {
   });
 }
 
-/** Derive an ambience/road recipe from authored stage data, without stage IDs. */
-export function deriveStageSoundscape(stage = {}) {
+/** Derive an ambience/road recipe from authored stage and weather data. */
+export function deriveStageSoundscape(stage = {}, weather = null) {
   const segments = Array.isArray(stage?.segments) ? stage.segments : [];
-  const totals = { compact: 0, loose: 0, grass: 0, tarmac: 0, mud: 0, water: 0 };
+  const totals = {
+    compact: 0, loose: 0, grass: 0, tarmac: 0, 'wet-tarmac': 0, mud: 0, water: 0,
+    snow: 0, ice: 0, 'desert-gravel': 0, 'rough-gravel': 0, 'red-gravel': 0, washboard: 0
+  };
   let total = 0;
   let width = 7;
   let rise = 0;
@@ -144,22 +154,47 @@ export function deriveStageSoundscape(stage = {}) {
     width += (finite(segment?.widthM, 7) - width) * (length / Math.max(1, total));
     rise += Math.abs(finite(segment?.riseM));
   }
-  const rough = total ? (totals.loose + totals.grass + totals.mud) / total : 0;
+  const authoredWeather = weather && typeof weather === 'object'
+    ? weather
+    : stage?.weather && typeof stage.weather === 'object' ? stage.weather : {};
+  const precipitation = String(authoredWeather.precipitation || 'none').toLowerCase();
+  const precipitationLevel = precipitation === 'storm' ? .95
+    : precipitation === 'rain' ? .65
+      : precipitation === 'sleet' ? .82
+        : precipitation === 'freezing-rain' ? .88
+          : precipitation === 'snow' ? .72 : 0;
+  const wetness = unit(authoredWeather.roadWetness);
+  const wind = unit(authoredWeather.wind);
+  const roughDistance = totals.loose + totals.grass + totals.mud + totals['desert-gravel'] + totals['rough-gravel'] + totals['red-gravel'] + totals.washboard + totals.snow * .58 + totals.ice * .28;
+  const rough = total ? clamp(roughDistance / total, 0, 1) : 0;
   const openness = clamp((width - 6) / 3, 0, 1);
   const gradient = clamp(rise / Math.max(1, total) * 8, 0, 1);
   const configured = stage?.audio?.soundscape && typeof stage.audio.soundscape === 'object'
     ? stage.audio.soundscape
     : stage?.soundscape && typeof stage.soundscape === 'object' ? stage.soundscape : {};
-  const roadLevel = clamp(finite(configured.roadLevel, 0.035 + rough * 0.055 + (1 - openness) * 0.018), 0.01, 0.18);
+  const roadBase = 0.035 + rough * 0.055 + (1 - openness) * 0.018;
+  const weatherRoadFactor = 1 + wetness * .42 + precipitationLevel * .2;
+  const roadLevel = clamp(finite(configured.roadLevel, roadBase * weatherRoadFactor), 0.01, 0.18);
+  const roadBandHz = clamp(finite(configured.roadBandHz, 660 + rough * 560 + wetness * 150 + precipitationLevel * 210), 260, 2200);
+  const roadFilterHz = clamp(finite(configured.roadFilterHz, 2500 + openness * 1600 - wetness * 260 + precipitationLevel * 110), 1200, 7000);
+  const gravelLevel = clamp(finite(configured.gravelLevel, roadLevel * (1 + rough * 2.2 + wetness * .18)), 0.01, 0.28);
+  const windLevel = clamp(finite(configured.windLevel, 0.028 + openness * 0.018 + gradient * 0.012 + wind * .035 + precipitationLevel * .022), 0.01, 0.12);
+  const windFilterHz = clamp(finite(configured.windFilterHz, 240 + gradient * 180 + wind * 120 + precipitationLevel * 70), 120, 900);
+  const ambienceLevel = clamp(finite(configured.ambienceLevel, 0.008 + openness * 0.012 + wind * .008 + precipitationLevel * .009), 0.002, 0.06);
   return Object.freeze({
     stageId: safePart(stage?.id) || null,
+    weatherId: safePart(authoredWeather.id || authoredWeather.weatherId) || null,
+    precipitation,
+    precipitationLevel,
+    wetness,
+    wind,
     roadLevel,
-    roadBandHz: clamp(finite(configured.roadBandHz, 660 + rough * 560), 260, 2200),
-    roadFilterHz: clamp(finite(configured.roadFilterHz, 2500 + openness * 1600), 1200, 7000),
-    gravelLevel: clamp(finite(configured.gravelLevel, roadLevel * (1 + rough * 2.2)), 0.01, 0.28),
-    windLevel: clamp(finite(configured.windLevel, 0.028 + openness * 0.018 + gradient * 0.012), 0.01, 0.12),
-    windFilterHz: clamp(finite(configured.windFilterHz, 240 + gradient * 180), 120, 900),
-    ambienceLevel: clamp(finite(configured.ambienceLevel, 0.008 + openness * 0.012), 0.002, 0.06),
+    roadBandHz,
+    roadFilterHz,
+    gravelLevel,
+    windLevel,
+    windFilterHz,
+    ambienceLevel,
     surfaceMix: Object.freeze({ ...totals })
   });
 }
@@ -375,8 +410,9 @@ export class AudioSystem {
     this.audioRoot = localPath(options.audioRoot) || DEFAULT_AUDIO_ROOT;
     this.carProfile = selectedCarProfile(options.car || options.carProfile || null);
     this.stageProfile = options.stage || options.stageProfile || null;
+    this.weatherProfile = options.weather || options.weatherProfile || this.stageProfile?.weather || null;
     this.engineCharacter = deriveEngineCharacter(this.carProfile || {});
-    this.stageSoundscape = deriveStageSoundscape(this.stageProfile || {});
+    this.stageSoundscape = deriveStageSoundscape(this.stageProfile || {}, this.weatherProfile);
     this.lastTelemetry = null;
     this.lastShift = 0;
     this.lastShiftAt = -Infinity;
@@ -396,9 +432,10 @@ export class AudioSystem {
     };
   }
 
-  configure({ car, carProfile, stage, stageProfile } = {}) {
+  configure({ car, carProfile, stage, stageProfile, weather, weatherProfile } = {}) {
     if (car || carProfile) this.setCarProfile(car || carProfile);
     if (stage || stageProfile) this.setStage(stage || stageProfile);
+    if (weather || weatherProfile) this.setWeather(weather || weatherProfile);
     return this;
   }
 
@@ -412,7 +449,7 @@ export class AudioSystem {
   setCar(profile) { return this.setCarProfile(profile); }
   selectCar(profile) { return this.setCarProfile(profile); }
 
-  setStage(stage) {
+  setStage(stage, weather = null) {
     if (!stage || typeof stage !== 'object') return false;
     const nextId = stageId(stage);
     if (nextId !== this._pace.stageId) {
@@ -425,7 +462,16 @@ export class AudioSystem {
     }
     this.stageProfile = stage;
     this._pace.stageId = nextId;
-    this.stageSoundscape = deriveStageSoundscape(stage);
+    const nextWeather = weather || stage.weather || this.weatherProfile;
+    if (nextWeather && typeof nextWeather === 'object') this.weatherProfile = nextWeather;
+    this.stageSoundscape = deriveStageSoundscape(stage, this.weatherProfile);
+    return true;
+  }
+
+  setWeather(weather) {
+    if (!weather || typeof weather !== 'object') return false;
+    this.weatherProfile = weather;
+    this.stageSoundscape = deriveStageSoundscape(this.stageProfile || {}, this.weatherProfile);
     return true;
   }
 
@@ -433,7 +479,7 @@ export class AudioSystem {
 
   async start(carOrOptions, stageMaybe) {
     const options = carOrOptions && typeof carOrOptions === 'object' &&
-      (own(carOrOptions, 'car') || own(carOrOptions, 'carProfile') || own(carOrOptions, 'stage') || own(carOrOptions, 'stageProfile'))
+      (own(carOrOptions, 'car') || own(carOrOptions, 'carProfile') || own(carOrOptions, 'stage') || own(carOrOptions, 'stageProfile') || own(carOrOptions, 'weather') || own(carOrOptions, 'weatherProfile'))
       ? carOrOptions
       : { car: carOrOptions, stage: stageMaybe };
     this.configure(options);
@@ -539,6 +585,7 @@ export class AudioSystem {
     if (stageMaybe) this.setStage(stageMaybe);
     if (car?.profile && car.profile !== this.carProfile) this.setCarProfile(car.profile);
     if (car?.stage && car.stage !== this.stageProfile) this.setStage(car.stage);
+    if (car?.weather && car.weather !== this.weatherProfile) this.setWeather(car.weather);
     this.setPaceProgress(car?.progress);
     const profile = this.carProfile || car?.profile || {};
     this.lastTelemetry = readAudioTelemetry(car, input, profile);
@@ -586,10 +633,11 @@ export class AudioSystem {
 
     const surface = SURFACE_AUDIO[telemetry.surface] || DEFAULT_SURFACE_AUDIO;
     const stage = this.stageSoundscape;
+    const weatherRoadBoost = 1 + stage.wetness * .16 + stage.precipitationLevel * .12;
     setParam(this.gravelFilter.frequency, stage.roadBandHz + telemetry.speed * 12 + surface.band * 0.15, now, 0.08);
-    setParam(this.gravelGain.gain, (surface.level + stage.gravelLevel * 0.35) * speedRatio, now, 0.04);
-    setParam(this.windFilter.frequency, stage.windFilterHz + telemetry.speed * 15, now, 0.09);
-    setParam(this.windGain.gain, stage.windLevel * speedRatio * speedRatio, now, 0.09);
+    setParam(this.gravelGain.gain, (surface.level + stage.gravelLevel * 0.35) * speedRatio * weatherRoadBoost, now, 0.04);
+    setParam(this.windFilter.frequency, stage.windFilterHz + telemetry.speed * 15 + stage.precipitationLevel * 100, now, 0.09);
+    setParam(this.windGain.gain, stage.windLevel * speedRatio * speedRatio * (1 + stage.precipitationLevel * .35), now, 0.09);
     return telemetry;
   }
 

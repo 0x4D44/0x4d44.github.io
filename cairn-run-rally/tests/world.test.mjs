@@ -11,8 +11,9 @@ import {
   RIDGE_WEATHER
 } from '../src/content.js';
 import { EXPANSION_REGIONS, EXPANSION_STAGES, EXPANSION_WEATHER } from '../src/content-expansion.js';
+import { deriveRenderEnvironment } from '../src/renderer.js';
 import { buildStage } from '../src/stage.js';
-import { RallyWorld, planBarrierVisuals, planCarVisual, planColliderVisuals, planWorldVisuals } from '../src/world.js';
+import { RallyWorld, deriveWeatherParticleProfile, planBarrierVisuals, planCarVisual, planColliderVisuals, planWorldVisuals } from '../src/world.js';
 
 const kestrel = buildStage(KESTREL_STAGE);
 const aurora = buildStage(AURORA_STAGE);
@@ -24,7 +25,8 @@ function fakeRenderer() {
     createMesh(builder) { return { data: [...builder.data], triangles: builder.triangleCount }; },
     deleteMesh(mesh) { renderer.deleted.push(mesh); },
     draw() {},
-    drawParticles() {}
+    drawParticles() {},
+    setEnvironment(environment) { renderer.environment = environment; }
   };
   return renderer;
 }
@@ -48,6 +50,47 @@ test('world planning follows region scenery and route metadata', () => {
   assert.deepEqual(visible.map(item => [item.id, item.type, item.s, item.x, item.z]), aurora.barriers.map(item => [item.id, item.type, item.s, item.x, item.z]));
   assert.ok(visible.every(item => item.visible && item.size.x > 0 && item.size.y > 0 && item.size.z > 0));
   assert.equal(planColliderVisuals(aurora).length, aurora.colliders.length);
+});
+
+test('authored weather derives distinct render conditions and particle materials', () => {
+  const palette = { sky: [.34, .48, .52], farGrass: [.28, .35, .24], water: [.16, .3, .34] };
+  const dry = deriveRenderEnvironment(palette, {
+    id: 'clear-noon', precipitation: 'none', roadWetness: 0, wind: .08,
+    timeOfDay: 'day', visibilityM: 2600
+  });
+  const storm = deriveRenderEnvironment(palette, {
+    id: 'coastal-storm', precipitation: 'storm', roadWetness: .92, wind: .94,
+    timeOfDay: 'dusk', visibilityM: 520
+  });
+  assert.notDeepEqual(dry.skyTop, storm.skyTop);
+  assert.notDeepEqual(dry.fogColor, storm.fogColor);
+  assert.notDeepEqual(dry.sunDirection, storm.sunDirection);
+  assert.ok(storm.fogFar < dry.fogFar);
+  assert.ok(storm.visibilityM < dry.visibilityM);
+
+  const hexPalette = deriveRenderEnvironment({ sky: '#ff0000', terrain: '#00ff00', water: '#0000ff' });
+  assert.ok(hexPalette.skyTop[0] > hexPalette.skyTop[1]);
+
+  const profiles = [
+    deriveWeatherParticleProfile({ precipitation: 'storm', roadWetness: .9 }, 'wet-tarmac'),
+    deriveWeatherParticleProfile({ precipitation: 'snow', roadWetness: .2 }, 'snow'),
+    deriveWeatherParticleProfile({ precipitation: 'none', roadWetness: 0 }, 'ice'),
+    deriveWeatherParticleProfile({ precipitation: 'none', roadWetness: .7 }, 'mud'),
+    deriveWeatherParticleProfile({ precipitation: 'none', roadWetness: 0 }, 'compact')
+  ];
+  assert.deepEqual(profiles.map(profile => profile.kind), ['spray', 'snow', 'ice', 'mud', 'dust']);
+  assert.equal(new Set(profiles.map(profile => JSON.stringify(profile.color))).size, profiles.length);
+});
+
+test('RallyWorld forwards its authored environment to the renderer seam', () => {
+  const renderer = fakeRenderer();
+  const world = new RallyWorld(renderer, expansionStages[1], 'low', {
+    region: EXPANSION_REGIONS[1], weather: { ...EXPANSION_WEATHER[1], visibilityM: 610 }
+  });
+  assert.equal(renderer.environment.weatherId, EXPANSION_WEATHER[1].id);
+  assert.equal(renderer.environment.visibilityM, 610);
+  assert.deepEqual(renderer.environment.palette, world.colors);
+  world.dispose();
 });
 
 test('selected car profile changes the pure visual shape', () => {
