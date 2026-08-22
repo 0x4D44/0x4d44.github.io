@@ -1,6 +1,8 @@
 # Cairn Run Rally
 
-**Cairn Run Rally** is an original, self-contained point-to-point browser rally game. Version 1.1 is built around one polished 5.405 km gravel stage, controllable loose-surface handling, authored co-driver calls, lightweight damage, fast retry, and a restrained late-1990s-inspired low-poly presentation.
+**Cairn Run Rally** is an original, self-contained point-to-point world-rally game. Six
+regions, six fictional cars, authored co-driver calls, weather, damage, service choices,
+and a persistent six-event championship share one deterministic simulation.
 
 ![Title screen](docs/screenshots/title.png)
 
@@ -14,11 +16,53 @@ Requirements: a modern desktop browser with WebGL2 and Node.js 18 or newer.
 npm start
 ```
 
-Open the printed address, normally `http://127.0.0.1:4173`.
+Open the printed address, normally `http://127.0.0.1:4173`. The game has no package
+dependencies or install step. Code, shaders, geometry, effects, and spoken pace-note
+audio are local files.
 
-There are **no package dependencies and no install step**. All code, shaders, geometry, effects, and spoken pace-note audio are in this repository.
+## World rally
 
-## Controls
+| Region | Country | Route identity | Weather |
+|---|---|---|---|
+| Kestrel Ridge | Scotland | damp moor, quarry, bridge hairpin | ridge mist |
+| Aurora Forest | Finland | lakeside gravel, spruce corridors, jumps | clear |
+| Rift Valley Run | Kenya | savannah gravel, water splash, washboard | dry heat |
+| Kurotake Pass | Japan | wet mountain tarmac, cedar tunnels, retaining walls | dusk rain |
+| Costa Brava Heights | Spain | sea cliffs, village streets, changing camber | clear air |
+| Wattle Creek | Australia | loose red gravel, cattle grids, rough verges | late storm |
+
+The garage contains six mechanically distinct cars: FWD Lumen F2; AWD Cairn R4, Varga
+R6, and Nord GT; and RWD Sirocco B1 and Atlas XR. Their torque curves, gearing, mass,
+inertia, suspension, tyre balance, silhouettes, and damage limits are authored data.
+
+Quick Rally and Practice/Time Trial expose the complete roster. World Championship runs
+all six events in order. After each stage, the 60-minute service plan combines repairs,
+standard/tarmac/wet/gravel tyres, and bounded brake-bias, steering-ratio, ride-height,
+and damping adjustments. The pure planner reports costs and remaining time before the
+choice is committed. Damage, tuning, points, rivals, penalties, standings, and resume
+state survive a versioned local save.
+
+## Driving model
+
+The car simulation runs at a fixed 120 Hz. It uses mass, yaw inertia, axle loads, slip
+angles, combined tyre-force limits, drive layout, load transfer, braking, engine braking,
+authored gears, surface response, weather grip, suspension texture, airtime, damage,
+collision impulses, and bounded recovery. Compact gravel, loose gravel, grass, tarmac,
+wet tarmac, snow, ice, mud, and desert gravel each carry their own friction, resistance,
+roughness, particles, and audio recipe.
+
+The route builder samples authored cumulative distance exactly. Timing, splits, nearest-road
+projection, recovery, hazards, barriers, landmarks, scenery, and finish checks use the same
+stage geometry. The chase camera blends body yaw, velocity direction, and road heading so
+large slides retain useful road context.
+
+## Audio and controls
+
+Each car has a data-derived engine/transmission layer. Surface, collision, wind, and
+weather layers consume live simulation state; landing impacts feed the collision layer.
+Every authored pace note has a stage-qualified local MP3 and Ogg asset: 119 calls, 238 files.
+The queue is predictive, captions match the route card, and stale calls cannot silence later
+notes. If audio is unavailable, the game stays finite and reports zero active voices.
 
 | Action | Keyboard | Gamepad |
 |---|---|---|
@@ -26,91 +70,83 @@ There are **no package dependencies and no install step**. All code, shaders, ge
 | Brake / reverse | Z / Down | Left trigger / B |
 | Steer | ,/. or Left/Right | Left stick |
 | Handbrake | Space | X |
+| Shift up/down | E / Q | LB / RB |
 | Pause / resume | Escape | Menu / Start |
 | Restart | R | Y |
 | Confirm | Enter | A |
 | Navigate menus | Arrows | D-pad |
 | Fullscreen | Double-click the game view | — |
 
-Gamepad state is cleared on disconnect, reconnect, pause, and screen transitions so a lost controller cannot leave steering or throttle latched.
+Keyboard and gamepad bindings are independently remappable and persist in the local save.
+Disconnect, reconnect, pause, and screen transitions clear latched controller state.
+Automatic gears, stability help, braking help, and pace-note display are explicit assists.
 
-## The stage
-
-**Kestrel Ridge** is an authored 5.405 km point-to-point route designed for roughly 3½–5 minutes. It contains:
-
-- fast and medium bends, tightening corners, left/right combinations, and two hairpins;
-- crests, dips, climbs, descents, a narrow bridge landmark, and readable braking zones;
-- compact dirt, three loose-gravel sections, and heavily penalising grass;
-- 18 authored pace notes with local spoken audio and optional on-screen cards;
-- three timing controls, personal-best splits, a finish result, and immediate retry;
-- authored collision boundaries for hazards, stone walls, hairpin barriers, and bridge rails.
-
-Route sampling and nearest-road projection use actual cumulative stage distance rather than assuming perfectly uniform sample spacing. This keeps timing, recovery, collision placement, and finish geometry aligned along the entire route.
-
-## Driving model
-
-The car simulation runs at a fixed 120 Hz. It uses a front/rear tyre-force model with mass and yaw inertia rather than a rail-following or kart controller. The model includes:
-
-- speed-sensitive progressive steering;
-- front/rear slip angles and grip limits;
-- braking load transfer and throttle influence on attitude;
-- recoverable oversteer, countersteer, and handbrake rotation;
-- correct steering direction while reversing;
-- different friction and lateral retention on compact dirt, loose gravel, and grass;
-- road grade, camber, crest airtime, landing impacts, body roll, and pitch;
-- negligible tyre, steering, and drive authority while genuinely airborne;
-- engine, steering, suspension, brake, and body damage with bounded consequences;
-- collision impulses and automatic recovery only from genuinely stranded states;
-- contact feedback separated from mechanical damage, so a slow scrape does not destroy the car.
-
-## Camera and presentation
-
-The chase camera blends vehicle yaw, velocity direction, and road heading. That makes oversteer readable without allowing a large slide to turn the camera completely away from the road. It also uses independent horizontal/vertical damping, speed-aware distance and field of view, terrain clearance, and restrained shake.
-
-The renderer is a small local WebGL2 pipeline. It builds the road, shoulders, terrain, vegetation, rocks, walls, barriers, bridge, posts, spectators, gates, car, dust, skid particles, sky, fog, and lighting from original procedural geometry. It does not download external assets or contact external services.
-
-Audio uses the Web Audio API for engine, transmission whine, wind, gravel, countdown, and collision effects. Co-driver lines are packaged in both MP3 and Ogg formats for broad desktop-browser compatibility.
-
-## Quality checks
+## Evidence
 
 ```bash
-npm test       # 31 deterministic subsystem and adversarial regressions
-npm run simulate
-npm run smoke  # boots and drives the real browser build in Chromium
-npm run review # captures title, settings, stage, pause, result, and high-DPI views
-npm run qa     # test + simulation + browser smoke
+npm test             # 123 deterministic and adversarial tests
+npm run simulate     # reference-stage regression
+npm run simulate:matrix  # all 36 car/stage pairings
+npm run smoke        # real browser flow and failure recovery
+npm run review       # shell, region, car, and responsive captures
+npm run qa           # tests, matrix, and browser smoke
 ```
 
-The suite covers route continuity and exact endpoint sampling, pace-note ordering and stale-trigger recovery, restart time, split-order exploits, reverse crossings, acceleration, surface differences, oversteer/countersteer, reverse steering, airborne controls, low-speed settling, recovery-point safety, collision boundaries, gentle scrapes, bounded damage, long-session numerical stability, complete-stage driving, camera road context, packaged audio, full game-loop markup, gamepad start/pause/reconnect behaviour, high-DPI resize, low-quality fallback, trusted keyboard restart, runtime errors, draw calls, triangle count, heap use, and separate physics/render/GPU instrumentation.
+Observed evidence for the completed build includes:
 
-At packaging time, all **28/28 tests** pass. The deterministic stage driver finishes in **290.47 seconds** with **0 recoveries**, all **18/18 pace calls**, **3 contacts**, and **3.7% aggregate damage**. Those contacts are reported rather than described as a clean run.
+- `npm test`: **123/123** passed;
+- reference matrix: **36/36** viable, maximum **1 recovery**, maximum aggregate damage
+  **0.122**;
+- a six-event browser championship visits all six stages, classifies, resumes after a
+  reload, and keeps stable audio voices between **9 and 10**;
+- abandon is terminal; corrupt saves recover; no HTTP requests occur after load;
+- a forced audio failure remains finite with **0 voices**, and WebGL2 absence produces a
+  usable `role="alert"` explanation;
+- seven menu shells at 390×844 and 768×1024 have no overflow or clipped controls;
+- Apple M5 Max headless Chrome using ANGLE Metal at 1920×1080 measured GPU **0.45 ms**,
+  frame p95 **9.6 ms**, renderer CPU **0.04 ms**, 17 draw calls, 10,202 triangles,
+  285 particles, 10.22 MB heap, and 16.0 ms load time; the low preset also works;
+- the root Almanac build and the 136-document responsive overflow/pill suite passed.
 
-See [the benchmark](docs/BENCHMARK.md), [gauntlet log](docs/GAUNTLET_LOG.md), [next gauntlet prompt](docs/GAUNTLET_PROMPT.md), [adversarial review](docs/ADVERSARIAL_REVIEW.md), and [quality report](docs/QUALITY_REPORT.md) for critic findings, fixes, measurements, the next expansion brief, and remaining validation boundaries.
+`npm run review` writes generated captures under `artifacts/review/`. Those captures are
+review evidence and are ignored rather than committed product assets.
+
+See [the architecture](docs/ARCHITECTURE.md), [benchmark](docs/BENCHMARK.md),
+[quality report](docs/QUALITY_REPORT.md), [gauntlet log](docs/GAUNTLET_LOG.md),
+[adversarial review](docs/ADVERSARIAL_REVIEW.md), and [the gauntlet prompt](docs/GAUNTLET_PROMPT.md).
+
+## Human judgement boundary
+
+Automation proves deterministic reachability, state safety, asset presence, measurable
+mechanical difference, browser recovery, and performance on the recorded machine. It does
+not prove that a first-time player can complete the championship without help, that six
+regions remain recognisable in grayscale, or that handling, audio, co-driver delivery,
+and atmosphere feel good. Those remain human judgement passes.
 
 ## Project structure
 
 ```text
-index.html                  Game shell and menus
-src/stage.js                Authored route, surfaces, hazards, colliders, and notes
-src/vehicle.js              120 Hz car physics, collision, recovery, and damage
-src/race.js                 Countdown, calls, splits, finish, and best-time logic
-src/input.js                Keyboard, gamepad, menu navigation, and QA autopilot
-src/world.js                Camera, procedural scenery, car, bridge, and particles
-src/renderer.js             WebGL2 renderer, culling, timers, and shaders
-src/audio.js                Procedural effects and packaged co-driver playback
-src/game.js                 Game-state, instrumentation, and UI orchestration
-public/audio/pacenotes/     All spoken calls in MP3 and Ogg
-scripts/                    Server, simulation, browser smoke, review capture, audio tool
-tests/                      Deterministic and adversarial regressions
-docs/                       Benchmark, review evidence, screenshots, and report
+index.html                  Game shell, modes, service, settings, and standings
+src/content.js              Immutable six-region, six-car, weather, rival, and event catalog
+src/content-expansion.js    Expansion region and car definitions
+src/contracts.js             Content, tuning, result, and save validators
+src/championship.js          Pure service, event, rival, standings, and classification rules
+src/session.js               Save-backed practice and championship transitions
+src/stage.js                 Route sampling, hazards, colliders, pace notes, and recovery
+src/vehicle.js               120 Hz vehicle physics, collision, recovery, and damage
+src/race.js                  Countdown, calls, splits, finish, and best-time logic
+src/input.js                 Keyboard, gamepad, remapping, menu navigation, and QA input
+src/world.js                 Camera, procedural scenery, car silhouettes, weather, and particles
+src/renderer.js              WebGL2 renderer, culling, timers, and shaders
+src/audio.js                 Procedural effects and packaged co-driver playback
+src/game.js                  Game-state, instrumentation, and UI orchestration
+public/audio/pacenotes/      Stage-qualified MP3 and Ogg calls
+scripts/                    Server, simulations, browser smoke, review, and audio tooling
+tests/                      Deterministic, browser, content, and adversarial regressions
+docs/                       Benchmark, review evidence, screenshots, and quality reports
 ```
-
-## Design and validation boundaries
-
-The release intentionally contains one car and one stage. The brief prioritised making the first five minutes cohesive over adding championship, career, garage, or content-volume systems before the driving was convincing. There are no copied names, vehicles, tracks, sounds, art, code, or branding from an existing rally game.
-
-The automated browser environment uses Chromium with SwiftShader under Xvfb. It verifies the real shell, WebGL path, controls, resizing, fallback quality, instrumentation, and absence of captured runtime errors, but it is not representative evidence of hardware-accelerated 1920×1080/60 performance. An independent first-time human playtest is also still the strongest remaining check for subjective handling, pace-note intelligibility, and stage learnability.
 
 ## License
 
-The source code and original project assets are available under the MIT License. See [LICENSE](LICENSE).
+The source code and original project assets are available under the MIT License. See
+[LICENSE](LICENSE).
