@@ -1,0 +1,16 @@
+{
+  "name": "oxalpha-rally",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OxAlpha Rally - an original self-contained browser rally game (vendored Three.js, no bundler).",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node tests/validate-static.mjs",
+    "shoot": "node tests/shoot.mjs --out ../shots --quality medium --width 1280 --height 720",
+    "qa": "npm test && npm run validate"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
