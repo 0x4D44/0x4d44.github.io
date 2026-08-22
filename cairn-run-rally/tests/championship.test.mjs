@@ -292,7 +292,9 @@ test('validation rejects corrupt content references and rival result structure',
     value => { value.results[0].eventId = 'event-2'; },
     value => { value.results[0].rivalResults[0].id = 'missing-rival'; },
     value => { value.results[0].rivalResults[0].timeMs = -1; },
+    value => { delete value.results[0].rivalResults[0].reason; },
     value => { value.results[0].rivalResults.push(structuredClone(value.results[0].rivalResults[0])); },
+    value => { delete value.results[0].reason; },
     value => { value.carId = 'missing-car'; },
     value => { value.difficultyId = 'missing-difficulty'; }
   ];
