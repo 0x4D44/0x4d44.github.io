@@ -8,9 +8,10 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs",
     "simulate": "node scripts/simulate-stage.mjs",
+    "simulate:matrix": "node scripts/simulate-matrix.mjs",
     "smoke": "node scripts/smoke.mjs",
     "review": "node scripts/review-capture.mjs",
-    "qa": "npm test && npm run simulate && npm run smoke",
+    "qa": "npm test && npm run simulate:matrix && npm run smoke",
     "generate-audio": "node scripts/generate-audio.mjs"
   },
   "engines": {
