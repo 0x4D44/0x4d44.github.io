@@ -173,3 +173,10 @@ test('manual gearbox shifts only on an explicit input edge',()=>{
  assert.equal(car.gear,2);
  assert.ok(car.shiftRemaining>0);
 });
+
+test('service damping and tyre choices change the physical setup',()=>{
+ const baseline=new RallyCar(stage,CAIRN_R4);
+ const firm=new RallyCar(stage,CAIRN_R4,{tuning:{damping:.25,tyreId:'gravel'}});
+ assert.ok(firm.suspensionResponse.damping>baseline.suspensionResponse.damping);
+ assert.ok(firm.tyreSurfaceScale('gravel','compact')>firm.tyreSurfaceScale('gravel','tarmac'));
+});

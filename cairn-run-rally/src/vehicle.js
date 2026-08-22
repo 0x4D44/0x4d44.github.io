@@ -35,7 +35,7 @@ export class RallyCar {
     this.suspensionResponse = {
       travel: this.profile.suspension.travelM / CAIRN_R4.suspension.travelM,
       spring: this.profile.suspension.springHz / CAIRN_R4.suspension.springHz,
-      damping: this.profile.suspension.dampingRatio / CAIRN_R4.suspension.dampingRatio
+      damping: this.profile.suspension.dampingRatio / CAIRN_R4.suspension.dampingRatio * (1 + this.tuning.damping * 0.5)
     };
     this.damage = { engine: 0, steering: 0, suspension: 0, brakes: 0, body: 0 };
     this.reset(14, true);
