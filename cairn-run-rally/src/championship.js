@@ -394,7 +394,11 @@ export function validateChampionshipState(state, provided = null) {
         if (!Array.isArray(result.splitsMs) || result.splitsMs.length < 1 || result.splitsMs.length !== (splitCount(stageFrom(catalog, event), event, result.splitsMs?.length) || 0)) errors.push(`results[${index}].splitsMs has the wrong count`);
         if (Array.isArray(result.splitsMs) && (result.splitsMs.some(value => !Number.isInteger(value) || value <= 0) || result.splitsMs.some((value, splitIndex, values) => splitIndex > 0 && value <= values[splitIndex - 1]))) errors.push(`results[${index}].splitsMs must be positive and ascending`);
         if (Array.isArray(result.splitsMs) && result.splitsMs.length && result.timeMs !== result.splitsMs.at(-1)) errors.push(`results[${index}].splitsMs must end at timeMs`);
-      } else if (result.timeMs !== null || (Array.isArray(result.splitsMs) && result.splitsMs.length)) errors.push(`results[${index}] retirement must not have a finish time`);
+        if (result.reason !== null) errors.push(`results[${index}].reason must be null for a finish`);
+      } else {
+        if (result.timeMs !== null || (Array.isArray(result.splitsMs) && result.splitsMs.length)) errors.push(`results[${index}] retirement must not have a finish time`);
+        if (typeof result.reason !== 'string' || result.reason.trim() === '') errors.push(`results[${index}].reason must explain a retirement`);
+      }
       if (!finite(result.penaltyMs) || result.penaltyMs < 0 || !Number.isInteger(result.penaltyMs)) errors.push(`results[${index}].penaltyMs must be a non-negative integer`);
       validateDamage(result.damage, `results[${index}].damage`, errors);
       if (!Array.isArray(result.rivalResults)) errors.push(`results[${index}].rivalResults must be an array`);
@@ -416,6 +420,8 @@ export function validateChampionshipState(state, provided = null) {
           if (!Number.isInteger(rival.penaltyMs) || rival.penaltyMs < 0) errors.push(`${path}.penaltyMs must be a non-negative integer`);
           if (rival.status === 'finished' && (!Number.isInteger(rival.timeMs) || rival.timeMs <= 0)) errors.push(`${path}.timeMs must be a positive integer`);
           if (rival.status === 'retired' && rival.timeMs !== null) errors.push(`${path}.timeMs must be null for retirement`);
+          if (rival.status === 'finished' && rival.reason !== null) errors.push(`${path}.reason must be null for a finish`);
+          if (rival.status === 'retired' && (typeof rival.reason !== 'string' || rival.reason.trim() === '')) errors.push(`${path}.reason must explain a retirement`);
         });
         if (expectedRivals.length && result.rivalResults.length !== expectedRivals.length) errors.push(`results[${index}].rivalResults has the wrong count`);
       }

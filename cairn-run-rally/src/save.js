@@ -1,4 +1,5 @@
 import { ASSIST_IDS, SAVE_SCHEMA_VERSION, validateSaveData } from './contracts.js';
+import { validateChampionshipState } from './championship.js';
 
 export const SAVE_KEY = 'cairn-run:save:v1';
 export const LEGACY_BEST_KEY = 'cairn-run:best';
@@ -9,17 +10,13 @@ const MAX_SPLITS = 32;
 const MAX_BESTS = 128;
 const MAX_BINDING_LENGTH = 32;
 const MAX_CHAMPIONSHIP_EVENTS = 6;
-const MAX_CHAMPIONSHIP_POINTS = 1000;
-const MAX_SERVICE_MINUTES = 180;
-const MAX_STANDING_ENTRIES = 32;
+const MAX_RIVALS = 32;
 
 const BINDING_IDS = Object.freeze([
   'throttle', 'accelerate', 'brake', 'steer', 'steerLeft', 'steerRight', 'left', 'right',
   'handbrake', 'restart', 'pause', 'confirm', 'back', 'menuUp', 'menuDown', 'menuLeft', 'menuRight'
 ]);
 const DAMAGE_IDS = Object.freeze(['engine', 'steering', 'suspension', 'brakes', 'body']);
-const TUNING_IDS = Object.freeze(['brakeBias', 'steeringRatio', 'rideHeight', 'damping']);
-const SAFE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SAFE_BEST_KEY = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*){1,5}$/;
 const SAFE_BINDING = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -35,10 +32,6 @@ function get(value, key) {
   } catch {
     return undefined;
   }
-}
-
-function safeId(value) {
-  return typeof value === 'string' && value.length <= 64 && SAFE_ID.test(value) ? value : null;
 }
 
 function safeBestKey(value) {
@@ -108,120 +101,68 @@ function normaliseBests(value) {
   return result;
 }
 
-function normaliseUnitObject(value, keys, defaults = {}) {
-  const result = {};
-  for (const key of keys) {
-    const raw = get(value, key);
-    result[key] = finite(raw) ? clamp(raw, 0, 1) : (defaults[key] ?? 0);
-  }
-  return result;
+function exactDamage(value) {
+  return Object.fromEntries(DAMAGE_IDS.map(key => [key, get(value, key)]));
 }
 
-function normaliseTuning(value) {
+function exactTuning(value) {
+  return {
+    brakeBias: get(value, 'brakeBias'),
+    steeringRatio: get(value, 'steeringRatio'),
+    rideHeight: get(value, 'rideHeight'),
+    damping: get(value, 'damping'),
+    tyreId: get(value, 'tyreId')
+  };
+}
+
+function exactRivalResult(value) {
+  return {
+    id: get(value, 'id'),
+    name: get(value, 'name'),
+    status: get(value, 'status'),
+    timeMs: get(value, 'timeMs'),
+    penaltyMs: get(value, 'penaltyMs'),
+    reason: get(value, 'reason')
+  };
+}
+
+function exactResult(value) {
+  return {
+    eventIndex: get(value, 'eventIndex'),
+    eventId: get(value, 'eventId'),
+    stageId: get(value, 'stageId'),
+    carId: get(value, 'carId'),
+    weatherId: get(value, 'weatherId'),
+    runId: get(value, 'runId'),
+    attempt: get(value, 'attempt'),
+    status: get(value, 'status'),
+    timeMs: get(value, 'timeMs'),
+    splitsMs: Array.isArray(get(value, 'splitsMs')) ? get(value, 'splitsMs').slice(0, MAX_SPLITS) : get(value, 'splitsMs'),
+    penaltyMs: get(value, 'penaltyMs'),
+    damage: exactDamage(get(value, 'damage')),
+    rivalResults: Array.isArray(get(value, 'rivalResults')) ? get(value, 'rivalResults').slice(0, MAX_RIVALS).map(exactRivalResult) : get(value, 'rivalResults'),
+    reason: get(value, 'reason')
+  };
+}
+
+function normaliseChampionship(value, content = null) {
   if (!isObject(value)) return null;
-  const result = {};
-  for (const key of TUNING_IDS) {
-    const raw = get(value, key);
-    if (finite(raw)) result[key] = clamp(raw, -1, 1);
-  }
-  const tyreId = safeId(get(value, 'tyreId'));
-  if (tyreId) result.tyreId = tyreId;
-  return Object.keys(result).length ? result : null;
-}
-
-function normaliseStanding(value) {
-  if (!isObject(value)) return null;
-  const result = {};
-  for (const key of ['carId', 'rivalId', 'driverId']) {
-    const id = safeId(get(value, key));
-    if (id) result[key] = id;
-  }
-  for (const key of ['points', 'position', 'wins', 'starts']) {
-    const raw = get(value, key);
-    if (finite(raw)) result[key] = Math.round(clamp(raw, 0, key === 'points' ? MAX_CHAMPIONSHIP_POINTS : 99));
-  }
-  return Object.keys(result).length ? result : null;
-}
-
-function normaliseStandings(value) {
-  if (!Array.isArray(value)) return null;
-  const result = [];
-  for (const entry of value.slice(0, MAX_STANDING_ENTRIES)) {
-    const standing = normaliseStanding(entry);
-    if (standing) result.push(standing);
-  }
-  return result;
-}
-
-function normaliseResult(value) {
-  if (!isObject(value)) return null;
-  const result = {};
-  for (const key of ['eventId', 'stageId', 'carId', 'weatherId']) {
-    const id = safeId(get(value, key));
-    if (id) result[key] = id;
-  }
-  const best = normaliseBest(value);
-  if (best) Object.assign(result, best);
-  for (const key of ['penaltySeconds', 'serviceMinutes']) {
-    const raw = get(value, key);
-    if (finite(raw) && raw >= 0) result[key] = clamp(raw, 0, key === 'serviceMinutes' ? MAX_SERVICE_MINUTES : MAX_TIME_SECONDS);
-  }
-  for (const key of ['position', 'points']) {
-    const raw = get(value, key);
-    if (finite(raw)) result[key] = Math.round(clamp(raw, 0, key === 'points' ? MAX_CHAMPIONSHIP_POINTS : 99));
-  }
-  if (typeof get(value, 'retired') === 'boolean') result.retired = get(value, 'retired');
-  const damage = get(value, 'damage');
-  if (isObject(damage)) result.damage = normaliseUnitObject(damage, DAMAGE_IDS);
-  return Object.keys(result).length ? result : null;
-}
-
-function normaliseResults(value) {
-  if (!Array.isArray(value)) return null;
-  const result = [];
-  for (const entry of value.slice(0, MAX_CHAMPIONSHIP_EVENTS)) {
-    const item = normaliseResult(entry);
-    if (item) result.push(item);
-  }
-  return result;
-}
-
-function normaliseChampionship(value) {
-  if (!isObject(value)) return null;
-  const result = {};
-  const id = safeId(get(value, 'id'));
-  if (id) result.id = id;
-  for (const key of ['eventIndex', 'currentEvent', 'position']) {
-    const raw = get(value, key);
-    if (finite(raw)) result[key] = Math.round(clamp(raw, 0, key === 'position' ? 99 : MAX_CHAMPIONSHIP_EVENTS));
-  }
-  for (const key of ['points']) {
-    const raw = get(value, key);
-    if (finite(raw)) result[key] = Math.round(clamp(raw, 0, MAX_CHAMPIONSHIP_POINTS));
-  }
-  const serviceMinutes = get(value, 'serviceMinutes');
-  if (finite(serviceMinutes) && serviceMinutes >= 0) result.serviceMinutes = clamp(serviceMinutes, 0, MAX_SERVICE_MINUTES);
-  for (const key of ['completed', 'retired', 'finished']) {
-    const raw = get(value, key);
-    if (typeof raw === 'boolean') result[key] = raw;
-  }
-  for (const key of ['tyreId', 'stageId', 'carId', 'weatherId']) {
-    const item = safeId(get(value, key));
-    if (item) result[key] = item;
-  }
-  const damage = get(value, 'damage');
-  if (isObject(damage)) result.damage = normaliseUnitObject(damage, DAMAGE_IDS);
-  const tuning = normaliseTuning(get(value, 'tuning'));
-  if (tuning) result.tuning = tuning;
-  const setup = normaliseTuning(get(value, 'setup'));
-  if (setup) result.setup = setup;
-  const standings = normaliseStandings(get(value, 'standings'));
-  if (standings) result.standings = standings;
-  const results = normaliseResults(get(value, 'results'));
-  if (results) result.results = results;
-  const history = normaliseResults(get(value, 'history'));
-  if (history) result.history = history;
-  return Object.keys(result).length ? result : null;
+  const results = get(value, 'results');
+  const snapshot = {
+    contentVersion: get(value, 'contentVersion'),
+    championshipId: get(value, 'championshipId'),
+    carId: get(value, 'carId'),
+    difficultyId: get(value, 'difficultyId'),
+    seed: get(value, 'seed'),
+    phase: get(value, 'phase'),
+    eventIndex: get(value, 'eventIndex'),
+    attempt: get(value, 'attempt'),
+    runId: get(value, 'runId'),
+    damage: exactDamage(get(value, 'damage')),
+    tuning: exactTuning(get(value, 'tuning')),
+    results: Array.isArray(results) ? results.slice(0, MAX_CHAMPIONSHIP_EVENTS).map(exactResult) : results
+  };
+  return validateChampionshipState(snapshot, content).length === 0 ? snapshot : null;
 }
 
 function blankAssists() {
@@ -237,7 +178,7 @@ export function createBlankSave() {
   };
 }
 
-export function normaliseSave(value) {
+export function normaliseSave(value, content = null) {
   try {
     if (!isObject(value) || get(value, 'version') !== SAVE_SCHEMA_VERSION) return createBlankSave();
     const blank = createBlankSave();
@@ -249,7 +190,7 @@ export function normaliseSave(value) {
         bindings: normaliseBindings(get(profile, 'bindings'))
       },
       bests: normaliseBests(get(value, 'bests')),
-      championship: normaliseChampionship(get(value, 'championship'))
+      championship: normaliseChampionship(get(value, 'championship'), content)
     };
     return validateSaveData(save).length === 0 ? save : blank;
   } catch {
@@ -289,13 +230,13 @@ function migrateLegacy(raw) {
   });
 }
 
-export function loadSave(storage) {
+export function loadSave(storage, content = null) {
   const current = readStorage(storage, SAVE_KEY);
   if (!current.ok) return createBlankSave();
   if (current.value !== null && current.value !== undefined) {
     const parsed = parseJSON(current.value);
     if (parsed && get(parsed, 'version') > SAVE_SCHEMA_VERSION) return createBlankSave();
-    if (parsed && get(parsed, 'version') === SAVE_SCHEMA_VERSION) return normaliseSave(parsed);
+    if (parsed && get(parsed, 'version') === SAVE_SCHEMA_VERSION) return normaliseSave(parsed, content);
   }
   const legacy = readStorage(storage, LEGACY_BEST_KEY);
   if (!legacy.ok) return createBlankSave();
@@ -305,10 +246,10 @@ export function loadSave(storage) {
   return migrated;
 }
 
-export function persistSave(storage, save) {
+export function persistSave(storage, save, content = null) {
   try {
     if (isObject(save) && finite(get(save, 'version')) && get(save, 'version') > SAVE_SCHEMA_VERSION) return false;
-    const normalised = normaliseSave(save);
+    const normalised = normaliseSave(save, content);
     if (validateSaveData(normalised).length) return false;
     const encoded = JSON.stringify(normalised);
     if (!storage || typeof storage.setItem !== 'function' || typeof storage.getItem !== 'function') return false;

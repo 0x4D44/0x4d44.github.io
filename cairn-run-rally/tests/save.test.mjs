@@ -30,6 +30,20 @@ class MemoryStorage {
 }
 
 const readJson = (storage, key) => JSON.parse(storage.getItem(key));
+const validChampionship = {
+  contentVersion: 1,
+  championshipId: 'world-six',
+  carId: 'cairn-r4',
+  difficultyId: 'normal',
+  seed: 42,
+  phase: 'service',
+  eventIndex: 0,
+  attempt: 0,
+  runId: null,
+  damage: { engine: 0, steering: 0, suspension: 0, brakes: 0, body: 0 },
+  tuning: { brakeBias: 0, steeringRatio: 0, rideHeight: 0, damping: 0, tyreId: 'gravel' },
+  results: []
+};
 
 test('blank saves are versioned, complete, and independent', () => {
   const first = createBlankSave();
@@ -57,11 +71,7 @@ test('a valid save round trips through storage', () => {
     bests: {
       'kestrel-ridge:cairn-r4:ridge-weather': { timeSeconds: 238.5, splits: [80, 160, 238.5] }
     },
-    championship: {
-      eventIndex: 2,
-      points: 18,
-      damage: { engine: 0.1, steering: 0.2, suspension: 0.3, brakes: 0.4, body: 0.5 }
-    }
+    championship: validChampionship
   };
 
   assert.equal(persistSave(storage, save), true);
@@ -119,12 +129,7 @@ test('normalisation drops unknown fields and bounds non-finite or extreme data',
       'not a safe key': { timeSeconds: 20, splits: [20] },
       broken: { timeSeconds: Number.NaN, splits: [1] }
     },
-    championship: {
-      eventIndex: 999,
-      points: -50,
-      damage: { engine: 4, steering: -1, suspension: Number.NaN, brakes: 0.4, body: 0.5 },
-      exploit: 'discard me'
-    }
+    championship: { ...validChampionship, eventIndex: 999, damage: { engine: 4, steering: -1, suspension: Number.NaN, brakes: 0.4, body: 0.5 }, exploit: 'discard me' }
   });
 
   assert.deepEqual(validateSaveData(save), []);
@@ -138,10 +143,31 @@ test('normalisation drops unknown fields and bounds non-finite or extreme data',
   assert.equal(save.bests['not a safe key'], undefined);
   assert.ok(save.bests['kestrel-ridge:cairn-r4:ridge-weather'].timeSeconds <= 86400);
   assert.deepEqual(save.bests['kestrel-ridge:cairn-r4:ridge-weather'].splits, [20, 86400]);
-  assert.ok(save.championship.eventIndex <= 6);
-  assert.ok(save.championship.points >= 0);
-  assert.deepEqual(save.championship.damage, { engine: 1, steering: 0, suspension: 0, brakes: 0.4, body: 0.5 });
-  assert.equal(save.championship.exploit, undefined);
+  assert.equal(save.championship, null);
+});
+
+test('the authoritative championship snapshot survives storage exactly', () => {
+  const storage = new MemoryStorage();
+  const save = createBlankSave();
+  save.championship = {
+    ...validChampionship,
+    phase: 'driving',
+    attempt: 3,
+    runId: 'run:42:0:3'
+  };
+  assert.equal(persistSave(storage, save), true);
+  assert.deepEqual(loadSave(storage).championship, save.championship);
+});
+
+test('an invalid championship is discarded without losing valid profile or bests', () => {
+  const save = createBlankSave();
+  save.profile.assists.automatic = false;
+  save.bests['kestrel-ridge:cairn-r4:ridge-weather'] = { timeSeconds: 240, splits: [80, 160, 240] };
+  save.championship = { ...validChampionship, phase: 'driving', runId: null };
+  const normalised = normaliseSave(save);
+  assert.equal(normalised.championship, null);
+  assert.equal(normalised.profile.assists.automatic, false);
+  assert.deepEqual(normalised.bests, save.bests);
 });
 
 test('throwing and read-only storage never crashes or loses legacy data', () => {
