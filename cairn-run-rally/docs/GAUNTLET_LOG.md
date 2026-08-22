@@ -4,7 +4,7 @@ Each pass below was judged against running behaviour, deterministic reproduction
 
 ## World-rally expansion — 2026-08-22
 
-**Benchmark:** the former release deliberately stopped at one car and one stage. The new
+**Benchmark:** the former release deliberately stopped at its first content slice. The
 benchmark now names measurable six-region, six-car, mode, championship, save, rival,
 control, audio, responsive, offline, and hardware targets while retaining human judgement
 for fun, handling character, art direction, and listening quality.
@@ -59,10 +59,11 @@ trajectory without mutating catalog data. A 420-step origin/main-versus-profiled
 trace matched bit for bit for the default car; the reference stage remains 290.47 seconds,
 47/47 tests pass, and browser smoke remains green.
 
-**Remaining boundary:** the powertrain and drive layout remain the former shared model, and
-the versioned save core is not yet connected to the game shell. The next vertical slice must
-add one mechanically different car and Aurora Forest through quick-rally and championship
-flow, then deepen torque/gearing/combined-grip behavior before scaling.
+**Remaining boundary at this checkpoint:** the powertrain and drive layout remained the
+former shared model, and the versioned save core was not yet connected to the game shell.
+The completed vertical slice then added Aurora Forest, a mechanically different roster,
+quick-rally and championship flow, and deeper torque/gearing/combined-grip behaviour before
+the content scale-out.
 
 ## 1. Benchmark
 
@@ -72,7 +73,8 @@ flow, then deepen torque/gearing/combined-grip behavior before scaling.
 
 ## 2. Smallest fun driving loop
 
-**Builder:** one car, fixed 120 Hz simulation, authored test features, timing, and restart.
+**Builder:** the first content slice used a fixed 120 Hz simulation, authored test features,
+timing, and restart.
 
 **First physics critic:** tiny road-height transitions could be interpreted as repeated landings, causing hidden suspension deterioration.
 
@@ -160,18 +162,10 @@ flow, then deepen torque/gearing/combined-grip behavior before scaling.
 
 **Improvement:** separately record renderer CPU, fixed-step physics average, GPU timer, frame p95, load time, heap, particle count, draw calls, triangles, and backing resolution. GPU timer queries are bounded and dynamic particle data is reused in place.
 
-One final 1280×720 SwiftShader sample recorded:
-
-- render CPU average: **0.82 ms**;
-- physics average: **0.38 ms**;
-- draw calls: **16**;
-- triangles: **7,254**;
-- particles: **318**;
-- JavaScript heap reported by CDP: **2.06 MB**;
-- load time: **392.4 ms**;
-- captured runtime errors: **0**.
-
-SwiftShader itself reported approximately 20 presented fps, 64.35 ms GPU time, and 50 ms frame p95. Those figures do not establish representative laptop performance.
+The final hardware sample superseded the earlier virtual-display measurements. Headless
+Chrome on an Apple M5 Max with ANGLE Metal at 1920×1080 recorded GPU **0.45 ms**, renderer
+CPU **0.04 ms**, frame p95 **9.6 ms**, 17 draw calls, 10,202 triangles, 285 particles,
+10.22 MB heap, and 16.0 ms load time. The low quality preset also passed its browser check.
 
 ## 10. Usability breaker
 
@@ -205,7 +199,7 @@ The deterministic and browser breaker suite now covers:
 - exact route endpoint and continuous projection;
 - keyboard/gamepad transitions, reconnect, resize, quality fallback, and runtime error capture.
 
-## 12. Final commercial-quality critic
+## 12. Commercial-quality critic at the first content checkpoint
 
 The final ranked defects changed as earlier issues were fixed. The last high-impact sequence was:
 
@@ -221,4 +215,32 @@ The final ranked defects changed as earlier issues were fixed. The last high-imp
 
 Each became a code change plus regression or repeatable screenshot/browser evidence. The suite grew from 17 to **28 tests** rather than merely changing implementation and declaring success.
 
-Remaining criticism is now mainly representative hardware validation, independent first-time human handling judgement, and optional content/art expansion. See `ADVERSARIAL_REVIEW.md` and `QUALITY_REPORT.md` for the evidence and boundaries.
+## Final expansion verification — 2026-08-22
+
+**Builder:** completed the six-region, six-car world-rally build with shared contracts,
+catalog-driven physics/world/audio, quick rally, practice, six-event championship, saves,
+service, remapping, assists, and responsive shells.
+
+**Tester:** `npm test` passed **123/123**. The deterministic matrix passed **36/36**
+car/stage pairings with maximum **1 recovery** and maximum aggregate damage **0.122**.
+The browser championship visited all six stages, resumed after reload, classified correctly,
+kept 9–10 audio voices, and preserved terminal abandon semantics. Corrupt saves recovered;
+runtime request interception recorded zero HTTP requests.
+
+**Failure checks:** forced audio unavailability stayed finite with zero voices. WebGL2 absence
+showed a `role="alert"` explanation. Seven shells at 390×844 and 768×1024 had no overflow
+or clipped controls. Persistent keyboard/gamepad remaps and gamepad start, pause, and
+disconnect/reconnect passed. Tyre and bounded setup choices shared the 60-minute service
+planner with repair and produced invalid-choice errors without mutating state.
+
+**Hardware:** headless Chrome on Apple M5 Max ANGLE Metal at 1920×1080 measured GPU
+**0.45 ms**, frame p95 **9.6 ms**, renderer CPU **0.04 ms**, 17 draw calls, 10,202
+triangles, 285 particles, 10.22 MB heap, and 16.0 ms load. The low preset passed.
+
+**Review boundary:** `npm run review` generated shell, region, car, and responsive captures
+under ignored `artifacts/review/`; they are evidence, not committed product assets.
+The first review exposed a floating terrain ribbon before Rift Valley's cattle-track
+hairpin. Curvature-aware terrain width and route look-ahead removed it; all 21 captures
+were regenerated and inspected. The root build and 136-document responsive suite passed.
+The remaining judgement is human: a first-time complete championship, grayscale region
+recognition, and the taste of handling, audio, co-driver delivery, and atmosphere.

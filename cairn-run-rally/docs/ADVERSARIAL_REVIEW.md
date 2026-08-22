@@ -1,10 +1,25 @@
 # Multi-Angle Adversarial Review
 
-Version 1.1 was reviewed through separate specialist tracks so that the implementation pass was not also its only judge. Each track began from a hostile question—what most clearly reveals a hobby project?—and required either running behaviour, a screenshot, a measurement, or a deterministic reproduction before a change was accepted.
+The original vertical slice and the six-region expansion were reviewed through separate
+specialist tracks. Each track began from a hostile question—what most clearly reveals a
+hobby project?—and required running behaviour, a screenshot, a measurement, or a
+deterministic reproduction before a change was accepted.
 
 These were separated review roles and criteria, not a claim that unrelated human playtesters or external model instances were available.
 
-## Ranked findings and resolutions
+## Final expansion findings
+
+| Rank | Finding | Resolution and evidence |
+|---:|---|---|
+| 1 | Four new regions and cars could have become identity switches over one implementation. | Immutable contracts and catalog data now drive shared stage, physics, world, audio, save, and competition systems. Content and construction tests reject invalid references. |
+| 2 | A six-event championship could duplicate results or corrupt progress across reloads. | Pure frozen transitions, stable run IDs, versioned saves, stale-result rejection, terminal abandon, and a complete browser championship prove the state machine. |
+| 3 | Cosmetic car differences could pass a garage screenshot. | FWD, RWD, and AWD profiles carry distinct mass, inertia, torque, gearing, suspension, grip, durability, and silhouettes. All 36 car/stage pairs finish the deterministic matrix. |
+| 4 | Service setup could charge time without changing the car. | Tyres, brake bias, steering ratio, ride height, and damping now reach `RallyCar`; a red-then-green regression caught the missing damping seam. |
+| 5 | Regional weather could remain colour grading only. | Weather now changes grip, visibility, fog, sky/light direction, surface soundscape, and bounded dust/spray/snow/ice/mud particles. |
+| 6 | Broad screenshot filenames could conceal broken real geometry. | The real-module review harness captures seven shells, six regions, and six silhouettes. Inspection exposed a Rift hairpin terrain ceiling; curvature-aware terrain breadth and route look-ahead removed it before the 21 captures were regenerated. |
+| 7 | Software rendering or CPU timing could be misreported as 1080p proof. | Chrome identified the Apple M5 Max ANGLE Metal renderer at 1920×1080. The final run measured 0.45 ms GPU, 9.6 ms frame p95, and 0.04 ms renderer CPU; the recorded machine is named rather than generalised. |
+
+## Original vertical-slice findings
 
 | Rank | Specialist track | Adversarial finding | Resolution | Regression or evidence |
 |---:|---|---|---|---|
@@ -45,15 +60,23 @@ The capture run inspects unusual aspect ratio and high DPI as well as normal 128
 
 ### Performance critic
 
-The latest packaging sample at 1280×720 recorded 0.82 ms average render CPU, 0.38 ms physics, 16 draw calls, 7,254 triangles, 318 particles, 2.06 MB reported JavaScript heap, and 392.4 ms load time. Those values are useful for regression and architecture sanity.
-
-The same environment used SwiftShader under Xvfb and reported 64.35 ms GPU time, 50 ms frame p95, and roughly 20 presented fps. That is a software-renderer limitation, not evidence of representative laptop GPU performance. No claim of independently verified 1080p/60 is made.
+The final browser run used Chrome on the Apple M5 Max ANGLE Metal renderer at 1920×1080.
+It recorded 0.45 ms GPU time, 9.6 ms frame p95, 0.04 ms renderer CPU, 17 draw calls,
+10,202 triangles, 285 particles, 10.22 MB heap, and 16.0 ms load time. Audio voices stayed
+between 9 and 10 through the complete browser championship. This proves the recorded
+machine and browser only; the low preset passed separately.
 
 ## Remaining release risks
 
-The adversarial pass no longer exposes an obvious missing core subsystem, but two material validation gaps remain:
+The adversarial pass no longer exposes an evidenced missing core subsystem. Material human
+validation gaps remain:
 
-1. **Independent first-time human playtest.** Automated driving cannot determine whether the steering curve, slide recovery, pace-note voice, or stage learning curve is pleasurable.
-2. **Representative hardware matrix.** The 1920×1080/60 target still needs measurement on at least one integrated laptop GPU and more than one production browser.
+1. **Independent first-time human playtest.** Automated driving cannot determine whether
+   steering, slide recovery, pace-note delivery, service choices, or the championship arc
+   are pleasurable and learnable.
+2. **Visual and listening judgement.** Captures do not prove grayscale regional recognition,
+   and telemetry does not prove that the six engine characters or co-driver mix sound good.
+3. **Broader browser/hardware coverage.** The measured Apple M5 Max run exceeds the target,
+   but it is one high-end machine and one browser rather than a representative device matrix.
 
-Those are validation tasks rather than concealed implementation defects. Content expansion, more cars, multiple stages, career structure, and higher-fidelity art are optional scope changes, not evidence that the current five-minute loop is incomplete.
+Those are explicit validation boundaries rather than concealed implementation defects.
