@@ -11,7 +11,9 @@ const C = {
   post: color('#e8dfca'), red: color('#d74b32'), barrier: color('#ded5bd'), orange: color('#e65c2b'),
   teal: color('#206a70'), tealDark: color('#16474c'), window: color('#1c2e32'), tyre: color('#171a18'),
   metal: color('#a9a99d'), lamp: color('#f2d37e'), shadow: color('#172018'), water: color('#344e55'),
-  spectator1: color('#d99b3b'), spectator2: color('#b64d36'), spectator3: color('#426c77')
+  spectator1: color('#d99b3b'), spectator2: color('#b64d36'), spectator3: color('#426c77'),
+  autumn: color('#c96238'), eucalyptus: color('#486953'), redEarth: color('#8f4931'),
+  splash: color('#4f95a0'), lantern: color('#e9a84d'), lime: color('#a7ad62')
 };
 const IDENTITY = mat4Identity();
 
@@ -180,6 +182,88 @@ function barrierRanges(stage, types) {
   return [...grouped.values()];
 }
 
+// Landmark rules are keyed by authored scenery-kit ids, never by stage or
+// region ids. A short fallback span keeps a kit visible even when a route
+// author describes the feature in prose rather than repeating its kit id in
+// every segment name.
+const LANDMARK_RULES = Object.freeze({
+  savannah: { match: /savannah|grassland/i, fallback: [[.04, .12], [.42, .5], [.72, .8]] },
+  acacia: { match: /acacia/i, fallback: [[.16, .24], [.56, .64]] },
+  'water-splash': { match: /water splash|creek crossing|water crossing/i, fallback: [[.26, .3], [.62, .66]] },
+  washboard: { match: /washboard/i, fallback: [[.1, .16], [.5, .56]] },
+  'rift-escarpment': { match: /escarpment|rift/i, fallback: [[.34, .42], [.78, .84]] },
+  'finish-gate': { fallback: [[.985, 1]] },
+  'cedar-tunnel': { match: /cedar|tunnel/i, fallback: [[.08, .2], [.58, .7]] },
+  'retaining-wall': { match: /retaining wall/i, fallback: [[.2, .28], [.7, .76]] },
+  'autumn-maple': { match: /autumn|maple/i, fallback: [[.3, .38], [.82, .88]] },
+  'mountain-stream': { match: /stream|rain channel|water/i, fallback: [[.24, .3], [.64, .7]] },
+  'paper-lantern': { match: /lantern|shrine/i, fallback: [[.42, .47], [.9, .94]] },
+  'pass-gate': { match: /pass gate/i, fallback: [[.97, 1]] },
+  'sea-cliff': { match: /sea|cliff|coast/i, fallback: [[.1, .2], [.48, .58], [.78, .86]] },
+  'village-square': { match: /village/i, fallback: [[.22, .3], [.58, .66]] },
+  'stone-retaining-wall': { match: /stone wall|retaining wall/i, fallback: [[.34, .42], [.7, .78]] },
+  'olive-grove': { match: /olive|grove/i, fallback: [[.04, .12], [.72, .8]] },
+  'safe-crowd-line': { match: /crowd|safe/i, fallback: [[.28, .34], [.86, .91]] },
+  'coastal-gate': { match: /coastal gate/i, fallback: [[.97, 1]] },
+  eucalyptus: { match: /eucalyptus/i, fallback: [[.06, .14], [.5, .58], [.78, .86]] },
+  'red-gravel': { match: /red gravel|loose red|gravel/i, fallback: [[.16, .24], [.62, .7]] },
+  'cattle-grid': { match: /cattle grid/i, fallback: [[.3, .32], [.48, .5]] },
+  'rough-verge': { match: /rough verge|verge/i, fallback: [[.36, .44], [.7, .78]] },
+  'dust-bowl': { match: /dust bowl|dust/i, fallback: [[.2, .3], [.54, .62]] },
+  'storm-gate': { match: /storm gate/i, fallback: [[.97, 1]] }
+});
+
+function stageLength(stage) {
+  const authored = (stage?.segments || []).reduce((sum, segment) => sum + finite(segment?.lengthM, finite(segment?.length, 0)), 0);
+  return Math.max(0, finite(stage?.length, authored));
+}
+
+function ruleRanges(stage, rule) {
+  const matched = rule.match ? rangeForSegments(stage, segment => rule.match.test(String(segment?.name || ''))) : [];
+  if (matched.length) return matched;
+  const length = stageLength(stage);
+  return (rule.fallback || []).map(([start, end]) => ({
+    start: length * clamp(start, 0, 1),
+    end: length * clamp(end, 0, 1),
+    feature: null,
+    fallback: true
+  }));
+}
+
+const LANDMARK_DRAWERS = Object.freeze({
+  lake: 'addLakeRange',
+  'narrow-forest': 'addForestRange',
+  'jump-board': 'addJumpRange',
+  'granite-outcrop': 'addOutcropRange',
+  quarry: 'addOutcropRange',
+  'stone-wall': 'addStoneWall',
+  bridge: 'addBridge',
+  savannah: 'addSavannahRange',
+  acacia: 'addAcaciaRange',
+  'water-splash': 'addWaterSplashRange',
+  washboard: 'addWashboardRange',
+  'rift-escarpment': 'addEscarpmentRange',
+  'finish-gate': 'addFinishGateRange',
+  'cedar-tunnel': 'addCedarTunnelRange',
+  'retaining-wall': 'addStoneWall',
+  'autumn-maple': 'addAutumnMapleRange',
+  'mountain-stream': 'addStreamRange',
+  'paper-lantern': 'addLanternRange',
+  'pass-gate': 'addPassGateRange',
+  'sea-cliff': 'addSeaCliffRange',
+  'village-square': 'addVillageRange',
+  'stone-retaining-wall': 'addStoneWall',
+  'olive-grove': 'addOliveRange',
+  'safe-crowd-line': 'addCrowdRange',
+  'coastal-gate': 'addCoastalGateRange',
+  eucalyptus: 'addEucalyptusRange',
+  'red-gravel': 'addRedGravelRange',
+  'cattle-grid': 'addCattleGridRange',
+  'rough-verge': 'addRoughVergeRange',
+  'dust-bowl': 'addDustBowlRange',
+  'storm-gate': 'addStormGateRange'
+});
+
 const BARRIER_SIZES = Object.freeze({
   wall: Object.freeze({ x: .7, y: .72, z: 5.25 }),
   'bridge-rail': Object.freeze({ x: .18, y: .84, z: 7.4 }),
@@ -190,12 +274,21 @@ const BARRIER_SIZES = Object.freeze({
   post: Object.freeze({ x: .16, y: 1.1, z: .16 })
 });
 
+function barrierSize(type) {
+  const key = String(type || 'post');
+  if (BARRIER_SIZES[key]) return BARRIER_SIZES[key];
+  if (key.includes('wall')) return BARRIER_SIZES.wall;
+  if (key.includes('rail') || key.includes('fence')) return BARRIER_SIZES['timber-fence'];
+  if (key.includes('grid')) return BARRIER_SIZES.barrier;
+  return BARRIER_SIZES.post;
+}
+
 /** Returns the authored barrier positions that receive visible geometry. */
 export function planBarrierVisuals(stage) {
   return Object.freeze((stage?.barriers || []).map(barrier => Object.freeze({
     ...barrier,
     visible: true,
-    size: Object.freeze({ ...(BARRIER_SIZES[barrier.type] || BARRIER_SIZES.post) })
+    size: Object.freeze({ ...barrierSize(barrier.type) })
   })));
 }
 
@@ -237,7 +330,9 @@ export function planWorldVisuals(stage, region = null, weather = null, quality =
   if (kitSet.has('quarry')) addRanges('quarry', rangeForSegments(stage, segment => segment.name?.toLowerCase().includes('quarry')));
   if (kitSet.has('stone-wall')) addRanges('stone-wall', barrierRanges(stage, ['wall']));
   if (kitSet.has('bridge')) addRanges('bridge', barrierRanges(stage, ['bridge-rail']));
-  if (kitSet.has('finish-gate')) ranges.push({ type: 'finish-gate', start: Math.max(0, finite(stage?.length, 0) - 60), end: finite(stage?.length, 0) });
+  for (const [kitId, rule] of Object.entries(LANDMARK_RULES)) {
+    if (kitSet.has(kitId)) addRanges(kitId, ruleRanges(stage, rule));
+  }
   const landmarkTypes = [...new Set(ranges.map(range => range.type))];
   if (kitSet.has('lake')) landmarkTypes.push('lakeside');
   if (kitSet.has('narrow-forest')) { landmarkTypes.push('narrow-spruce'); landmarkTypes.push('forest'); }
@@ -250,6 +345,7 @@ export function planWorldVisuals(stage, region = null, weather = null, quality =
     barrierTypes: Object.freeze([...new Set((stage?.barriers || []).map(item => item.type))]),
     sceneryStride: high ? 2 : 4,
     forestStride: high ? 12 : 24,
+    landmarkStride: high ? 14 : 28,
     samplesPerChunk: high ? 30 : 44,
     maxDistance: high ? 850 : 620,
     routeBehind: high ? 460 : 330,
@@ -461,11 +557,8 @@ export class RallyWorld {
     for(const range of ranges){
       const from=Math.max(start,range.start),to=Math.min(end,range.end);
       if(to<from)continue;
-      if(range.type==='lake')this.addLakeRange(builder,from,to);
-      else if(range.type==='narrow-forest')this.addForestRange(builder,from,to);
-      else if(range.type==='jump-board')this.addJumpRange(builder,from,to);
-      else if(range.type==='granite-outcrop' || range.type==='quarry')this.addOutcropRange(builder,from,to);
-      else if(range.type==='bridge')this.addBridge(builder,from,to);
+      const drawer=LANDMARK_DRAWERS[range.type];
+      if(drawer && typeof this[drawer]==='function')this[drawer](builder,from,to);
     }
   }
 
@@ -526,6 +619,209 @@ export class RallyWorld {
       for(const sample of [behind,ahead])for(const side of [-1,1]){const point=roadEdgePoint(sample,side*(sample.width/2+1),-.4);builder.boxYaw({x:point.x,y:point.y+.4,z:point.z},{x:2.1,y:1.6,z:2.4},sample.heading,this.colors.stone);}
     }
   }
+
+  landmarkStep(multiplier=1){return Math.max(10,(this.visualPlan.landmarkStride||28)*multiplier);}
+
+  addAcaciaTree(builder,point,scale){
+    builder.cylinder({x:point.x,y:point.y+1.0*scale,z:point.z},.11*scale,2.05*scale,6,this.colors.trunk);
+    builder.cylinder({x:point.x+.18*scale,y:point.y+1.72*scale,z:point.z},.055*scale,.95*scale,5,this.colors.trunk);
+    builder.cone({x:point.x-.22*scale,y:point.y+2.05*scale,z:point.z},.76*scale,.48*scale,7,this.colors.lime);
+    builder.cone({x:point.x+.25*scale,y:point.y+2.22*scale,z:point.z+.1*scale},.62*scale,.4*scale,7,this.colors.grass);
+  }
+
+  addEucalyptusTree(builder,point,scale){
+    builder.cylinder({x:point.x,y:point.y+1.22*scale,z:point.z},.13*scale,2.5*scale,6,this.colors.eucalyptus);
+    builder.cone({x:point.x-.2*scale,y:point.y+2.05*scale,z:point.z},.56*scale,1.2*scale,7,this.colors.eucalyptus);
+    builder.cone({x:point.x+.22*scale,y:point.y+2.45*scale,z:point.z+.1*scale},.48*scale,1.08*scale,7,this.colors.grassAlt);
+  }
+
+  addAutumnTree(builder,point,scale){
+    builder.cylinder({x:point.x,y:point.y+1.05*scale,z:point.z},.12*scale,2.15*scale,6,this.colors.trunk);
+    builder.cone({x:point.x-.2*scale,y:point.y+1.9*scale,z:point.z},.7*scale,1.2*scale,7,this.colors.autumn);
+    builder.cone({x:point.x+.22*scale,y:point.y+2.35*scale,z:point.z+.1*scale},.56*scale,.94*scale,7,this.colors.orange);
+  }
+
+  addOliveTree(builder,point,scale){
+    builder.cylinder({x:point.x,y:point.y+.8*scale,z:point.z},.1*scale,1.6*scale,6,this.colors.trunk);
+    builder.cone({x:point.x-.18*scale,y:point.y+1.62*scale,z:point.z},.62*scale,.92*scale,8,this.colors.eucalyptus);
+    builder.cone({x:point.x+.2*scale,y:point.y+1.84*scale,z:point.z+.08*scale},.5*scale,.78*scale,8,this.colors.lime);
+  }
+
+  addSavannahRange(builder,start,end){
+    const step=this.landmarkStep(2);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+6+hash01(distance+side)*12),-.1);
+        this.addBush(builder,point,.65+hash01(distance*3+side)*.55);
+      }
+    }
+  }
+
+  addAcaciaRange(builder,start,end){
+    const step=this.landmarkStep(2.5);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+7+hash01(distance*2+side)*17),-.1);
+        this.addAcaciaTree(builder,point,.72+hash01(distance*5+side)*.64);
+      }
+    }
+  }
+
+  addEucalyptusRange(builder,start,end){
+    const step=this.landmarkStep(2.2);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+6+hash01(distance*2+side)*15),-.08);
+        this.addEucalyptusTree(builder,point,.74+hash01(distance*5+side)*.68);
+      }
+    }
+  }
+
+  addAutumnMapleRange(builder,start,end){
+    const step=this.landmarkStep(2.3);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+4.8+hash01(distance*2+side)*11),-.06);
+        this.addAutumnTree(builder,point,.72+hash01(distance*5+side)*.5);
+      }
+    }
+  }
+
+  addOliveRange(builder,start,end){
+    const step=this.landmarkStep(2.5);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+6+hash01(distance*2+side)*14),-.08);
+        this.addOliveTree(builder,point,.75+hash01(distance*5+side)*.48);
+      }
+    }
+  }
+
+  addWaterRibbon(builder,start,end,colorValue,side=-1){
+    if(end<=start)return;
+    const step=this.landmarkStep(.7);
+    for(let distance=Math.ceil(start/step)*step;distance<end;distance+=step){
+      const a=sampleStage(this.stage,distance),b=sampleStage(this.stage,Math.min(end,distance+step));
+      const nearA=roadEdgePoint(a,side*(a.width/2+.03),.075),nearB=roadEdgePoint(b,side*(b.width/2+.03),.075);
+      const farA=roadEdgePoint(a,side*(a.width/2+3.2),-.02),farB=roadEdgePoint(b,side*(b.width/2+3.2),-.02);
+      if(side<0)builder.quad(farA,farB,nearB,nearA,colorValue,{x:0,y:1,z:0});
+      else builder.quad(nearA,nearB,farB,farA,colorValue,{x:0,y:1,z:0});
+    }
+  }
+
+  addWaterSplashRange(builder,start,end){
+    if(end<=start)return;
+    const step=this.landmarkStep(.75);
+    for(let distance=Math.ceil(start/step)*step;distance<end;distance+=step){
+      const a=sampleStage(this.stage,distance),b=sampleStage(this.stage,Math.min(end,distance+step));
+      const al=roadEdgePoint(a,-a.width/2-.05,.09),ar=roadEdgePoint(a,a.width/2+.05,.09),bl=roadEdgePoint(b,-b.width/2-.05,.09),br=roadEdgePoint(b,b.width/2+.05,.09);
+      builder.quad(al,bl,br,ar,this.colors.splash,{x:0,y:1,z:0});
+    }
+  }
+
+  addStreamRange(builder,start,end){this.addWaterRibbon(builder,start,end,this.colors.water,-1);}
+
+  addWashboardRange(builder,start,end){
+    const step=this.landmarkStep(.7);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      builder.boxYaw({x:sample.x,y:sample.y+.045,z:sample.z},{x:sample.width+.18,y:.08,z:.28},sample.heading,this.colors.redEarth);
+    }
+  }
+
+  addCattleGridRange(builder,start,end){
+    const step=3.5;
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      builder.boxYaw({x:sample.x,y:sample.y+.06,z:sample.z},{x:sample.width+.2,y:.12,z:.22},sample.heading,this.colors.metal);
+    }
+  }
+
+  addEscarpmentRange(builder,start,end){this.addOutcropRange(builder,start,end);}
+  addSeaCliffRange(builder,start,end){
+    this.addOutcropRange(builder,start,end);
+    const sample=sampleStage(this.stage,(start+end)/2);
+    const point=roadEdgePoint(sample,-(sample.width/2+8),-.2);
+    builder.boxYaw({x:point.x,y:point.y+1.2,z:point.z},{x:3.2,y:2.4,z:Math.max(6,end-start)},sample.heading,this.colors.stoneDark);
+  }
+
+  addCedarTunnelRange(builder,start,end){
+    const step=this.landmarkStep(1.2);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+2.8+hash01(distance+side)*3),-.04);
+        this.addTree(builder,point,1.15+hash01(distance*3+side)*.55,true,hash01(distance+side));
+      }
+      if(Math.floor(distance/step)%4===0)builder.boxYaw({x:sample.x,y:sample.y+3.1,z:sample.z},{x:sample.width+4.8,y:.2,z:.28},sample.heading,this.colors.trunk);
+    }
+  }
+
+  addLanternRange(builder,start,end){
+    const step=this.landmarkStep(1.8);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance),side=Math.floor(distance/step)%2?1:-1,point=roadEdgePoint(sample,side*(sample.width/2+2.3),.02);
+      builder.cylinder({x:point.x,y:point.y+.95,z:point.z},.055,.95,6,this.colors.trunk);
+      builder.box({x:point.x,y:point.y+1.65,z:point.z},{x:.28,y:.34,z:.28},this.colors.lantern);
+    }
+  }
+
+  addVillageRange(builder,start,end){
+    const step=this.landmarkStep(2.4);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+8+hash01(distance+side)*7),-.03),size=1.5+hash01(distance*2+side)*1.3;
+        builder.boxYaw({x:point.x,y:point.y+size*.65,z:point.z},{x:size*1.4,y:size*1.3,z:size*1.7},sample.heading,this.colors.stone);
+        builder.boxYaw({x:point.x,y:point.y+size*1.5,z:point.z},{x:size*1.55,y:.22,z:size*1.85},sample.heading,this.colors.orange);
+      }
+    }
+  }
+
+  addCrowdRange(builder,start,end){
+    if(end<=start)return;
+    const center=(start+end)/2;
+    if(center<start||center>end)return;
+    this.addHairpinScene(builder,center,1);
+    this.addHairpinScene(builder,center,-1);
+  }
+
+  addRedGravelRange(builder,start,end){
+    const step=this.landmarkStep(1.8);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance),side=hash01(distance)>0.5?1:-1,point=roadEdgePoint(sample,side*(sample.width/2+3.5),-.02);
+      this.addRock(builder,{x:point.x,y:point.y,z:point.z,radius:.35+hash01(distance*2)*.4});
+    }
+  }
+
+  addRoughVergeRange(builder,start,end){
+    const step=this.landmarkStep(1.4);
+    for(let distance=Math.ceil(start/step)*step;distance<=end;distance+=step){
+      const sample=sampleStage(this.stage,distance);
+      for(const side of [-1,1]){
+        const point=roadEdgePoint(sample,side*(sample.width/2+3.8+hash01(distance+side)*4),-.05);
+        this.addSmallRock(builder,point,.45+hash01(distance*2+side)*.55);
+      }
+    }
+  }
+
+  addDustBowlRange(builder,start,end){
+    const mid=sampleStage(this.stage,(start+end)/2),a=roadEdgePoint(mid,-mid.width/2-5,-.06),b=roadEdgePoint(mid,mid.width/2+5,-.06),ahead=sampleStage(this.stage,Math.min(this.stage.length,end+25)),behind=sampleStage(this.stage,Math.max(0,start-25)),c=roadEdgePoint(ahead,ahead.width/2+5,-.06),d=roadEdgePoint(behind,-behind.width/2-5,-.06);
+    builder.quad(d,a,b,c,this.colors.redEarth,{x:0,y:1,z:0});
+  }
+
+  addFinishGateRange(builder,start,end){
+    if((start+end)/2 < this.stage.length-80)return;
+    this.addGate(builder,sampleStage(this.stage,Math.min(this.stage.length-1,(start+end)/2)),false);
+  }
+  addPassGateRange(builder,start,end){this.addGate(builder,sampleStage(this.stage,(start+end)/2),false);}
+  addCoastalGateRange(builder,start,end){this.addGate(builder,sampleStage(this.stage,(start+end)/2),false);}
+  addStormGateRange(builder,start,end){this.addGate(builder,sampleStage(this.stage,(start+end)/2),false);}
 
   buildCar(){
     const p=this.carVisual,halfWidth=p.width/2,halfLength=p.length/2,cabinStart=p.cabinStart,cabinEnd=p.cabinEnd,bodyY=p.bodyCenterY;
