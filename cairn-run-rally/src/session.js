@@ -38,6 +38,12 @@ export class RallySession {
     return persistSave(this.storage,this.save,this.catalog);
   }
 
+  updateProfile({assists=this.save.profile.assists,bindings=this.save.profile.bindings}={}){
+    this.save={...this.save,profile:{assists:{...assists},bindings:{...bindings}}};
+    this.persist();
+    return this.save.profile;
+  }
+
   resolveRun({mode,stageId,carId,weatherId=null,runId=null,initialDamage=null,tuning=null}){
     const stage=byId(this.catalog.stages,stageId,'stage');
     const car=byId(this.catalog.cars,carId,'car');
