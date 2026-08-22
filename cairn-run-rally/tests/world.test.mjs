@@ -17,11 +17,14 @@ const kestrel = buildStage(KESTREL_STAGE);
 const aurora = buildStage(AURORA_STAGE);
 
 function fakeRenderer() {
-  return {
+  const renderer = {
+    deleted: [],
     createMesh(builder) { return { data: [...builder.data], triangles: builder.triangleCount }; },
+    deleteMesh(mesh) { renderer.deleted.push(mesh); },
     draw() {},
     drawParticles() {}
   };
+  return renderer;
 }
 
 test('world planning follows region scenery and route metadata', () => {
@@ -78,4 +81,17 @@ test('metadata fallback does not turn every lakeside route into Aurora', () => {
   const genericLake = { ...aurora, id: 'generic-lake-stage', regionId: 'generic-lake-region' };
   const world = new RallyWorld(renderer, genericLake, 'low');
   assert.equal(world.region.id, 'generic-lake-region');
+});
+
+test('disposing a selected world releases every stage-specific mesh exactly once', () => {
+  const renderer = fakeRenderer();
+  const world = new RallyWorld(renderer, aurora, 'low', {
+    region: AURORA_FOREST, weather: AURORA_WEATHER, car: LUMEN_F2
+  });
+  const expected = 5 + world.chunks.length;
+  assert.equal(world.dispose(), expected);
+  assert.equal(renderer.deleted.length, expected);
+  assert.equal(new Set(renderer.deleted).size, expected);
+  assert.equal(world.dispose(), 0);
+  assert.equal(renderer.deleted.length, expected);
 });

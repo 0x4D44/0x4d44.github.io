@@ -313,6 +313,16 @@ export class RallyWorld {
   }
   setQuality(quality){this.quality=quality==='low'?'low':'high';}
 
+  dispose(){
+    if(this.disposed)return 0;
+    this.disposed=true;
+    const meshes=[this.backdrop,...this.chunks.map(chunk=>chunk.mesh),this.carBody,this.wheel,this.bumper,this.shadow].filter(Boolean);
+    for(const mesh of new Set(meshes))this.renderer.deleteMesh(mesh);
+    this.chunks.length=0;this.particles.length=0;
+    this.backdrop=this.carBody=this.wheel=this.bumper=this.shadow=null;
+    return new Set(meshes).size;
+  }
+
   buildBackdrop(){
     const xs=this.stage.samples.map(sample=>sample.x),zs=this.stage.samples.map(sample=>sample.z),ys=this.stage.samples.map(sample=>sample.y),pad=1300,y=Math.min(...ys)-7,builder=new MeshBuilder();
     const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minZ=Math.min(...zs)-pad,maxZ=Math.max(...zs)+pad;
