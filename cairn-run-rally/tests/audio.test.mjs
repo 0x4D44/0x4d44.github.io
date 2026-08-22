@@ -89,3 +89,14 @@ test('a pace call queued before audio startup resumes instead of wedging current
   audio._resumePaceQueue();
   assert.equal(starts, 1);
 });
+
+test('audio voice instrumentation counts fixed, transient, and pace sources without drift', () => {
+  const audio=new AudioManager();
+  assert.equal(audio.voiceCount(),0);
+  audio.started=true;
+  for(const key of ['engine1','engine2','engine3','transmission1','transmission2','gravel','wind','intake','exhaust'])audio[key]={};
+  audio._activeOneShots.add({});audio._pace.current={audio:{}};
+  assert.equal(audio.voiceCount(),11);
+  audio._activeOneShots.clear();audio._pace.current=null;
+  assert.equal(audio.voiceCount(),9);
+});

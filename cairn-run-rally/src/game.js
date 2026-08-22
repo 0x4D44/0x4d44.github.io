@@ -40,6 +40,8 @@ export class CairnRunGame {
     this.loadTimeMs = 0;
     this.lastStats = null;
     this.lastCollisionLevel = 0;
+    this.recoveryCount = 0;
+    this.contactCount = 0;
     this.lastHudUpdate = 0;
     this.splitMessageUntil = 0;
     this.toastUntil = 0;
@@ -247,7 +249,7 @@ export class CairnRunGame {
   async beginRun(fullCountdown) {
     await this.audio.start({car:this.activeRun.car,stage:this.activeRun.stage});
     this.mode='playing';this.hideScreens();this.ui.hud.classList.remove('hidden');this.ui.pace.classList.add('hidden');
-    this.car.reset(14,true);if(this.activeRun.initialDamage)Object.assign(this.car.damage,this.activeRun.initialDamage);this.camera.reset(this.car);this.race.reset(fullCountdown);if(this.qa)this.race.countdown=.18;this.race.setBest(this.best);this.accumulator=0;this.lastCollisionLevel=0;this.audio.mute(this.ui.mute.checked);this.audio.stopVoice();
+    this.car.reset(14,true);if(this.activeRun.initialDamage)Object.assign(this.car.damage,this.activeRun.initialDamage);this.camera.reset(this.car);this.race.reset(fullCountdown);if(this.qa)this.race.countdown=.18;this.race.setBest(this.best);this.accumulator=0;this.lastCollisionLevel=0;this.recoveryCount=0;this.contactCount=0;this.audio.mute(this.ui.mute.checked);this.audio.stopVoice();
     this.ui.countdown.textContent=fullCountdown?'3':'1';this.ui.countdown.classList.remove('hidden');if(!this.qa)this.audio.countdown(fullCountdown?3:1);this.input.clearPressed();this.updateHud();
   }
   pause(){if(this.mode!=='playing')return;this.mode='paused';this.ui.pause.classList.remove('hidden');this.audio.mute(true);requestAnimationFrame(()=>el('resume-button').focus());}
@@ -295,11 +297,11 @@ export class CairnRunGame {
   simulationStep(dt) {
     if(this.race.state==='racing') {
       const controls=this.input.read(this.car),result=this.car.step(controls,dt);this.world.update(dt,this.car,controls);this.audio.update(this.car,controls);
-      if(this.car.collisionImpulse>.12&&this.car.collisionImpulse>this.lastCollisionLevel+.08)this.audio.collision(this.car.collisionImpulse);
+      if(this.car.collisionImpulse>.12&&this.car.collisionImpulse>this.lastCollisionLevel+.08){this.contactCount++;this.audio.collision(this.car.collisionImpulse);}
       this.lastCollisionLevel=this.car.collisionImpulse;
-      if(this.car.needsRecovery){this.car.recover();this.camera.reset(this.car);this.showToast('RESET TO LAST SAFE POINT',1.5);}
+      if(this.car.needsRecovery){this.car.recover();this.recoveryCount++;this.camera.reset(this.car);this.showToast('RESET TO LAST SAFE POINT',1.5);}
       const events=this.race.update(this.car,dt);this.processEvents(events);
-      if(result.road.distance>95){this.car.recover();this.camera.reset(this.car);}
+      if(result.road.distance>95){this.car.recover();this.recoveryCount++;this.camera.reset(this.car);}
     } else if(this.race.state==='countdown') {
       this.world.update(dt,this.car,{throttle:0,brake:1,steer:0,handbrake:0});
       this.processEvents(this.race.update(this.car,dt));
@@ -365,7 +367,7 @@ export class CairnRunGame {
 
   writeQA() {
     const intervals=this.actualFrameIntervals.slice(20),avgInterval=intervals.length?intervals.reduce((a,b)=>a+b,0)/intervals.length:0,sorted=[...intervals].sort((a,b)=>a-b),p95=sorted.length?sorted[Math.min(sorted.length-1,Math.floor(sorted.length*.95))]:0,physicsAvg=this.physicsSamples.length?this.physicsSamples.reduce((a,b)=>a+b,0)/this.physicsSamples.length:0,renderCpu=this.lastStats?.averageFrameMs||0;
-    const payload={booted:true,mode:this.mode,raceState:this.race.state,frameCount:this.frameCount,progress:Number(this.car.progress.toFixed(1)),speedKph:Number(this.car.speedKph.toFixed(1)),surface:this.car.surface,fps:avgInterval?Number((1000/avgInterval).toFixed(1)):0,cpuFrameMs:Number(renderCpu.toFixed(2)),renderCpuMs:Number(renderCpu.toFixed(2)),gpuFrameMs:Number.isFinite(this.lastStats?.gpuFrameMs)?Number(this.lastStats.gpuFrameMs.toFixed(2)):null,physicsMs:Number(physicsAvg.toFixed(2)),frameP95Ms:Number(p95.toFixed(2)),drawCalls:this.lastStats?.drawCalls||0,triangles:this.lastStats?.triangles||0,particles:this.world.particles.length,loadMs:Number(this.loadTimeMs.toFixed(2)),resolution:this.lastStats?[this.lastStats.width,this.lastStats.height]:[0,0],errors:this.errors};
+    const payload={booted:true,mode:this.mode,raceState:this.race.state,frameCount:this.frameCount,progress:Number(this.car.progress.toFixed(1)),speedKph:Number(this.car.speedKph.toFixed(1)),surface:this.car.surface,fps:avgInterval?Number((1000/avgInterval).toFixed(1)):0,cpuFrameMs:Number(renderCpu.toFixed(2)),renderCpuMs:Number(renderCpu.toFixed(2)),gpuFrameMs:Number.isFinite(this.lastStats?.gpuFrameMs)?Number(this.lastStats.gpuFrameMs.toFixed(2)):null,physicsMs:Number(physicsAvg.toFixed(2)),frameP95Ms:Number(p95.toFixed(2)),drawCalls:this.lastStats?.drawCalls||0,triangles:this.lastStats?.triangles||0,particles:this.world.particles.length,audioVoices:this.audio.voiceCount(),recoveries:this.recoveryCount,contacts:this.contactCount,loadMs:Number(this.loadTimeMs.toFixed(2)),resolution:this.lastStats?[this.lastStats.width,this.lastStats.height]:[0,0],errors:this.errors};
     el('qa-status').textContent=JSON.stringify(payload);window.__RALLY_QA__=payload;
   }
 }

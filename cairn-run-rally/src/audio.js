@@ -383,6 +383,7 @@ export class AudioSystem {
     this.lastGear = null;
     this.lastShiftPulse = 0;
     this.voice = null;
+    this._activeOneShots = new Set();
     this._starting = null;
     this._pace = {
       stageId: stageId(this.stageProfile),
@@ -597,10 +598,25 @@ export class AudioSystem {
     this.blip(380 + Math.max(0, telemetry.gear) * 52, 0.075, this.engineCharacter.shiftBlip * direction);
   }
 
+  _trackOneShot(node) {
+    if (!node) return;
+    this._activeOneShots.add(node);
+    const release = () => this._activeOneShots.delete(node);
+    if (typeof node.addEventListener === 'function') node.addEventListener('ended', release, { once: true });
+    else node.onended = release;
+  }
+
+  voiceCount() {
+    if (!this.started) return 0;
+    const continuous = [this.engine1, this.engine2, this.engine3, this.transmission1, this.transmission2, this.gravel, this.wind, this.intake, this.exhaust].filter(Boolean).length;
+    return continuous + this._activeOneShots.size + (this._pace.current?.audio ? 1 : 0);
+  }
+
   blip(frequency = 500, duration = 0.12, volume = 0.08) {
     if (!this.started || !this.ctx) return;
     try {
       const oscillator = this.ctx.createOscillator();
+      this._trackOneShot(oscillator);
       const gain = createGain(this.ctx, 0.0001);
       const now = finite(this.ctx.currentTime, 0);
       oscillator.type = 'square';
@@ -629,6 +645,7 @@ export class AudioSystem {
         data[i] = ((hash - Math.floor(hash)) * 2 - 1) * Math.pow(1 - i / data.length, 2);
       }
       const source = this.ctx.createBufferSource();
+      this._trackOneShot(source);
       source.buffer = buffer;
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -830,6 +847,7 @@ export class AudioSystem {
     this.ctx = null;
     this.started = false;
     this._graphReady = false;
+    this._activeOneShots.clear();
   }
 }
 
