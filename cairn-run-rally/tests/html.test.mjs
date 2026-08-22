@@ -50,6 +50,9 @@ test('menus use semantic controls, live error/status regions and result tables',
   assert.match(html, /id="service-error"[^>]*aria-live="assertive"/i);
   assert.match(html, /id="result-standings"[^>]*aria-live="polite"/i);
   assert.match(html, /id="remapping-container"[^>]*aria-label=/i);
+  assert.match(html, /data-binding-device="keyboard"/i);
+  assert.match(html, /data-binding-device="gamepad"/i);
+  assert.match(html, /id="remap-pad-accelerate"/i);
   assert.match(html, /id="settings-screen"[^>]*aria-labelledby=/i);
 });
 

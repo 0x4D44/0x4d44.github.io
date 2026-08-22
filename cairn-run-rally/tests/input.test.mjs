@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_BINDINGS,
+  DEFAULT_GAMEPAD_BINDINGS,
   InputManager,
   formatBinding,
+  formatGamepadBinding,
   normalizeBindings,
+  normalizeGamepadBindings,
 } from '../src/input.js';
 
 class FakeWindow {
@@ -127,4 +130,46 @@ test('binding labels are stable and readable for the remapping UI', () => {
   assert.equal(formatBinding('ShiftLeft'), 'LEFT SHIFT');
   assert.equal(formatBinding('Space'), 'SPACE');
   assert.equal(formatBinding('garbage'), '—');
+});
+
+test('gamepad bindings normalize safely and expose stable labels', () => {
+  assert.deepEqual(DEFAULT_GAMEPAD_BINDINGS, {
+    accelerate: 7, brake: 6, handbrake: 2, shiftUp: 4, shiftDown: 5
+  });
+  assert.equal(Object.isFrozen(DEFAULT_GAMEPAD_BINDINGS), true);
+  assert.deepEqual(normalizeGamepadBindings({ accelerate: 8, brake: 10, handbrake: 2, shiftUp: 11, shiftDown: 5 }), {
+    accelerate: 8, brake: 10, handbrake: 2, shiftUp: 11, shiftDown: 5
+  });
+  for (const candidate of [
+    { accelerate: 0 },
+    { accelerate: 2, brake: 2 },
+    { shiftUp: 12 },
+    { shiftDown: 'RB' },
+  ]) assert.deepEqual(normalizeGamepadBindings(candidate), DEFAULT_GAMEPAD_BINDINGS, JSON.stringify(candidate));
+  assert.equal(formatGamepadBinding(7), 'RT');
+  assert.equal(formatGamepadBinding(42), 'BUTTON 42');
+});
+
+test('gamepad remapping drives analog controls and one-shot shift edges', () => {
+  const buttons = Array.from({ length: 16 }, () => ({ pressed: false, value: 0 }));
+  const pad = { index: 0, axes: [0, 0], buttons };
+  const { input } = createInput([pad], {
+    gamepadBindings: { accelerate: 2, brake: 10, handbrake: 8, shiftUp: 11, shiftDown: 5 }
+  });
+  buttons[2] = { pressed: true, value: 1 };
+  buttons[10] = { pressed: true, value: 1 };
+  buttons[8] = { pressed: true, value: 1 };
+  buttons[11] = { pressed: true, value: 1 };
+  input.pollGamepad();
+  const first = input.read(null);
+  const held = input.read(null);
+  assert.equal(first.throttle, 1);
+  assert.equal(first.brake, 1);
+  assert.equal(first.handbrake, 1);
+  assert.equal(first.shiftUp, true);
+  assert.equal(held.shiftUp, false);
+  buttons[11] = { pressed: false, value: 0 };
+  buttons[5] = { pressed: true, value: 1 };
+  input.pollGamepad();
+  assert.equal(input.read(null).shiftDown, true);
 });

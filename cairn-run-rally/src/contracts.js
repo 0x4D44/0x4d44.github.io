@@ -154,7 +154,7 @@ export function validateSaveData(save) {
   const errors = [];
   if (!isObject(save)) return ['save must be an object'];
   if (save.version !== SAVE_SCHEMA_VERSION) errors.push(`save.version must equal ${SAVE_SCHEMA_VERSION}`);
-  if (!isObject(save.profile) || !isObject(save.profile.assists) || !isObject(save.profile.bindings)) errors.push('save.profile must contain assists and bindings');
+  if (!isObject(save.profile) || !isObject(save.profile.assists) || !isObject(save.profile.bindings) || !isObject(save.profile.gamepadBindings)) errors.push('save.profile must contain assists, bindings, and gamepadBindings');
   if (!isObject(save.bests)) errors.push('save.bests must be an object');
   else for (const [key, best] of Object.entries(save.bests)) {
     if (!isObject(best) || !positive(best.timeSeconds)) errors.push(`save.bests.${key}.timeSeconds must be positive and finite`);

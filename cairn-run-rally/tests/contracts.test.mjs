@@ -81,12 +81,15 @@ test('stage contract rejects broken routes and unordered timing data', () => {
 test('save contract is versioned and rejects partial or non-finite results', () => {
   const validSave = {
     version: SAVE_SCHEMA_VERSION,
-    profile: { assists: { automatic: true, stability: 0.25, braking: 0, paceNotes: true }, bindings: {} },
+    profile: { assists: { automatic: true, stability: 0.25, braking: 0, paceNotes: true }, bindings: {}, gamepadBindings: {} },
     bests: { 'test-stage:test-awd:clear': { timeSeconds: 32.4, splits: [15.2, 32.4] } },
     championship: null
   };
   assert.deepEqual(validateSaveData(validSave), []);
   assert.ok(validateSaveData({ ...validSave, version: 999 }).some(error => error.includes('version')));
+  const missingGamepadMap = structuredClone(validSave);
+  delete missingGamepadMap.profile.gamepadBindings;
+  assert.ok(validateSaveData(missingGamepadMap).some(error => error.includes('gamepadBindings')));
   const corrupt = structuredClone(validSave);
   corrupt.bests['test-stage:test-awd:clear'].timeSeconds = Number.NaN;
   assert.ok(validateSaveData(corrupt).some(error => error.includes('timeSeconds')));

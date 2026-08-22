@@ -1,7 +1,16 @@
 import { AudioManager } from './audio.js';
 import { autoServicePlan, overallStandings, planService, REPAIR_MINUTES, stageStandings } from './championship.js';
 import { CATALOG } from './content.js';
-import { DEFAULT_BINDINGS, formatBinding, InputManager, normalizeBindings } from './input.js';
+import {
+  DEFAULT_BINDINGS,
+  DEFAULT_GAMEPAD_BINDINGS,
+  formatBinding,
+  formatGamepadBinding,
+  InputManager,
+  isReservedGamepadButton,
+  normalizeBindings,
+  normalizeGamepadBindings
+} from './input.js';
 import { clamp, formatTime } from './math.js';
 import { StageRun } from './race.js';
 import { WebGLRenderer } from './renderer.js';
@@ -28,7 +37,11 @@ export class CairnRunGame {
     this.car = new RallyCar(this.stage,this.activeRun.car,{assists:this.activeRun.assists,weather:this.activeRun.weather});
     this.world = new RallyWorld(this.renderer, this.stage, this.loadSetting('quality', 'high'),this.activeRun);
     this.camera = new ChaseCamera(this.stage, this.car);
-    this.input = new InputManager(this.stage, { autopilot: this.qa, bindings:this.session.save.profile.bindings });
+    this.input = new InputManager(this.stage, {
+      autopilot: this.qa,
+      bindings:this.session.save.profile.bindings,
+      gamepadBindings:this.session.save.profile.gamepadBindings
+    });
     this.audio = new AudioManager({car:this.activeRun.car,stage:this.activeRun.stage});
     this.race = new StageRun(this.stage);
     this.mode = 'title';
@@ -103,7 +116,7 @@ export class CairnRunGame {
     for(const input of document.querySelectorAll('[data-service-component]'))input.addEventListener('change',()=>{this.pendingServicePlan=null;this.updateServicePreview();});
     for(const input of [this.ui.effects,this.ui.voice,this.ui.quality,this.ui.notes,this.ui.mute,this.ui.automatic,this.ui.stability,this.ui.braking,this.ui.manual]) input.addEventListener('input',()=>this.applySettings(true,input));
     for(const button of document.querySelectorAll('[data-binding]'))button.addEventListener('click',()=>this.captureBinding(button));
-    el('reset-bindings').addEventListener('click',()=>this.applyBindings(DEFAULT_BINDINGS,true));
+    el('reset-bindings').addEventListener('click',()=>this.applyBindings(DEFAULT_BINDINGS,true,DEFAULT_GAMEPAD_BINDINGS));
     this.canvas.addEventListener('dblclick',()=>{if(!document.fullscreenElement)this.canvas.requestFullscreen?.().catch(()=>{});else document.exitFullscreen?.().catch(()=>{});});
     this.renderSelectionOptions();this.refreshResumeAction();this.applyBindings(this.input.bindings,false);
     requestAnimationFrame(()=>el('start-button').focus());
@@ -123,7 +136,7 @@ export class CairnRunGame {
     const assists={automatic:this.ui.automatic.checked,stability:this.ui.stability.checked,braking:this.ui.braking.checked,paceNotes:this.ui.notes.checked};
     this.audio.setVolumes(effects,voice);this.audio.mute(this.ui.mute.checked||this.mode!=='playing');this.renderer.setQuality(quality);this.world.setQuality(quality);Object.assign(this.car.assists,assists);
     el('effects-level').textContent=`${Math.round(effects*100)}%`;el('voice-level').textContent=`${Math.round(voice*100)}%`;
-    if(save){this.saveSetting('effects',effects);this.saveSetting('voice',voice);this.saveSetting('quality',quality);this.saveSetting('mute',this.ui.mute.checked?'1':'0');this.session.updateProfile({assists,bindings:this.input.bindings});}
+    if(save){this.saveSetting('effects',effects);this.saveSetting('voice',voice);this.saveSetting('quality',quality);this.saveSetting('mute',this.ui.mute.checked?'1':'0');this.session.updateProfile({assists,bindings:this.input.bindings,gamepadBindings:this.input.gamepadBindings});}
   }
 
   hideScreens(){for(const screen of [this.ui.title,this.ui.selection,this.ui.service,this.ui.settings,this.ui.pause,this.ui.result,this.ui.standings])screen.classList.add('hidden');}
@@ -229,16 +242,42 @@ export class CairnRunGame {
     el('standings-table').querySelector('tbody').innerHTML=overallRowsMarkup(rows);el('standings-continue').textContent=state.phase==='classified'?'RETURN TO TITLE':'NEXT EVENT';el('standings-abandon').hidden=state.phase==='classified';requestAnimationFrame(()=>el('standings-continue').focus());
   }
 
-  applyBindings(bindings,persist=false){
-    const normalized=normalizeBindings(bindings);this.input.setBindings(normalized);
-    for(const button of document.querySelectorAll('[data-binding]'))button.textContent=formatBinding(normalized[button.dataset.binding]);
-    if(persist)this.session.updateProfile({assists:this.session.save.profile.assists,bindings:normalized});
+  applyBindings(bindings,persist=false,gamepadBindings=this.input.gamepadBindings){
+    const normalized=normalizeBindings(bindings),normalizedGamepad=normalizeGamepadBindings(gamepadBindings);
+    this.input.setBindings(normalized);this.input.setGamepadBindings(normalizedGamepad);
+    for(const button of document.querySelectorAll('[data-binding-device="keyboard"]'))button.textContent=formatBinding(normalized[button.dataset.binding]);
+    for(const button of document.querySelectorAll('[data-binding-device="gamepad"]'))button.textContent=formatGamepadBinding(normalizedGamepad[button.dataset.binding]);
+    if(persist)this.session.updateProfile({assists:this.session.save.profile.assists,bindings:normalized,gamepadBindings:normalizedGamepad});
   }
 
   captureBinding(button){
+    if(button.dataset.bindingDevice==='gamepad')return this.captureGamepadBinding(button);
     const action=button.dataset.binding,previous=button.textContent;button.textContent='PRESS A KEY';
     const capture=event=>{event.preventDefault();event.stopPropagation();const candidate={...this.input.bindings,[action]:event.code},normalized=normalizeBindings(candidate);this.applyBindings(normalized,true);if(normalized===DEFAULT_BINDINGS&&candidate[action]!==DEFAULT_BINDINGS[action])this.showToast('CONTROL MAP RESET — INVALID OR DUPLICATE',2);button.blur();};
     window.addEventListener('keydown',capture,{once:true,capture:true});setTimeout(()=>{if(button.textContent==='PRESS A KEY')button.textContent=previous;},8000);
+  }
+
+  captureGamepadBinding(button){
+    const action=button.dataset.binding,previous=button.textContent,baseline=this.input.activeGamepadButtons();
+    button.textContent='PRESS GAMEPAD';button.disabled=true;
+    let finished=false;
+    const finish=()=>{if(finished)return;finished=true;button.disabled=false;if(button.textContent==='PRESS GAMEPAD')button.textContent=previous;};
+    const deadline=performance.now()+8000;
+    const poll=()=>{
+      if(finished)return;
+      const current=this.input.activeGamepadButtons();
+      const candidate=[...current].find(index=>!baseline.has(index));
+      if(candidate!==undefined){
+        if(isReservedGamepadButton(candidate)){this.showToast('MENU BUTTONS ARE FIXED',2);finish();return;}
+        const proposed={...this.input.gamepadBindings,[action]:candidate},normalized=normalizeGamepadBindings(proposed);
+        this.applyBindings(this.input.bindings,true,normalized);
+        if(normalized===DEFAULT_GAMEPAD_BINDINGS&&candidate!==DEFAULT_GAMEPAD_BINDINGS[action])this.showToast('GAMEPAD MAP RESET — INVALID OR DUPLICATE',2);
+        finish();button.blur();return;
+      }
+      if(performance.now()>deadline){finish();return;}
+      requestAnimationFrame(poll);
+    };
+    requestAnimationFrame(poll);
   }
 
   showInlineError(id,error){const node=el(id);if(!node)return;if(!error){node.hidden=true;node.textContent='';return;}node.hidden=false;node.textContent=String(error.message||error);}
