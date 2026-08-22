@@ -22,9 +22,9 @@ There are **no package dependencies and no install step**. All code, shaders, ge
 
 | Action | Keyboard | Gamepad |
 |---|---|---|
-| Accelerate | W / Up | Right trigger / A |
-| Brake / reverse | S / Down | Left trigger / B |
-| Steer | A/D or Left/Right | Left stick |
+| Accelerate | A / Up | Right trigger / A |
+| Brake / reverse | Z / Down | Left trigger / B |
+| Steer | ,/. or Left/Right | Left stick |
 | Handbrake | Space | X |
 | Pause / resume | Escape | Menu / Start |
 | Restart | R | Y |
@@ -74,7 +74,7 @@ Audio uses the Web Audio API for engine, transmission whine, wind, gravel, count
 ## Quality checks
 
 ```bash
-npm test       # 28 deterministic subsystem and adversarial regressions
+npm test       # 31 deterministic subsystem and adversarial regressions
 npm run simulate
 npm run smoke  # boots and drives the real browser build in Chromium
 npm run review # captures title, settings, stage, pause, result, and high-DPI views
