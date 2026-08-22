@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   AudioManager,
+  AudioSystem,
   deriveEngineCharacter,
   deriveStageSoundscape,
   paceNoteSources,
@@ -76,6 +77,38 @@ test('stage soundscape is derived from authored route data', () => {
   assert.equal(soundscape.stageId, 'aurora-forest');
   assert.ok(soundscape.roadLevel > 0);
   assert.ok(soundscape.windLevel > 0);
+});
+
+test('authored weather changes the bounded road and ambience soundscape', () => {
+  const route = {
+    id: 'coastal-storm',
+    segments: [
+      { lengthM: 220, surface: 'wet-tarmac', widthM: 6.2, riseM: 16 },
+      { lengthM: 180, surface: 'water', widthM: 5.8, riseM: -12 }
+    ]
+  };
+  const dry = deriveStageSoundscape(route, {
+    id: 'clear-noon', precipitation: 'none', roadWetness: 0, wind: .08
+  });
+  const storm = deriveStageSoundscape(route, {
+    id: 'coastal-storm', precipitation: 'storm', roadWetness: .94, wind: .95
+  });
+  assert.notEqual(dry.roadLevel, storm.roadLevel);
+  assert.notEqual(dry.roadBandHz, storm.roadBandHz);
+  assert.notEqual(dry.windLevel, storm.windLevel);
+  assert.notEqual(dry.windFilterHz, storm.windFilterHz);
+  assert.equal(storm.weatherId, 'coastal-storm');
+  assert.equal(storm.precipitation, 'storm');
+  assert.ok(storm.surfaceMix['wet-tarmac'] > 0);
+  assert.ok(storm.precipitationLevel > dry.precipitationLevel);
+  for (const value of [storm.roadLevel, storm.roadBandHz, storm.roadFilterHz, storm.gravelLevel, storm.windLevel, storm.windFilterHz, storm.ambienceLevel]) {
+    assert.ok(Number.isFinite(value));
+  }
+
+  const audio = new AudioSystem({ stage: route, weather: storm });
+  assert.equal(audio.stageSoundscape.weatherId, 'coastal-storm');
+  audio.setWeather(dry);
+  assert.equal(audio.stageSoundscape.weatherId, 'clear-noon');
 });
 
 test('a pace call queued before audio startup resumes instead of wedging current', () => {

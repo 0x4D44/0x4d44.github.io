@@ -89,6 +89,73 @@ function inferRegion(stage, region) {
 
 function inferWeather(weather) { return isObject(weather) ? { ...DEFAULT_WEATHER, ...weather } : { ...DEFAULT_WEATHER }; }
 
+/**
+ * Pick a bounded particle recipe from authored precipitation and surface data.
+ * The renderer only consumes the returned values; no route identity is needed.
+ */
+export function deriveWeatherParticleProfile(weather = {}, surface = 'compact') {
+  const source = isObject(weather) ? weather : {};
+  const precipitation = String(source.precipitation || 'none').toLowerCase();
+  const roadWetness = clamp01(source.roadWetness);
+  const surfaceId = String(surface || 'compact').toLowerCase();
+  let kind = 'dust';
+  let colorValue = [.55, .47, .35];
+  let gravity = .18;
+  let velocityScale = 1;
+  let life = .9;
+  let size = .48;
+  let alpha = .42;
+  let emitScale = 1;
+  if (precipitation === 'snow' || precipitation === 'sleet' || surfaceId === 'snow') {
+    kind = 'snow';
+    colorValue = [.88, .94, 1];
+    gravity = -.22;
+    velocityScale = .32;
+    life = 1.5;
+    size = .28;
+    alpha = .62;
+    emitScale = .8;
+  } else if (surfaceId === 'ice' || precipitation === 'freezing-rain') {
+    kind = 'ice';
+    colorValue = [.56, .78, .9];
+    gravity = .12;
+    velocityScale = 1.2;
+    life = .7;
+    size = .22;
+    alpha = .58;
+    emitScale = .72;
+  } else if (surfaceId === 'mud' || (roadWetness > .62 && (surfaceId === 'loose' || surfaceId === 'rough-gravel' || surfaceId === 'red-gravel'))) {
+    kind = 'mud';
+    colorValue = [.28, .21, .16];
+    gravity = .34;
+    velocityScale = 1.12;
+    life = 1.05;
+    size = .42;
+    alpha = .5;
+    emitScale = 1.06;
+  } else if (precipitation === 'rain' || precipitation === 'storm' || surfaceId === 'water' || surfaceId === 'wet-tarmac') {
+    kind = 'spray';
+    colorValue = [.63, .84, .9];
+    gravity = .46;
+    velocityScale = .86;
+    life = .62;
+    size = .24;
+    alpha = .56;
+    emitScale = precipitation === 'storm' ? 1.22 : 1.08;
+  }
+  if (kind === 'dust') alpha *= 1 - roadWetness * .72;
+  return Object.freeze({
+    kind,
+    color: Object.freeze(colorValue),
+    gravity,
+    velocityScale,
+    life,
+    size,
+    alpha,
+    emitScale
+  });
+}
+
 const CAR_RECIPES = Object.freeze({
   'rally-hatch': Object.freeze({
     frontOverhang: .76, rearOverhang: .82, bodyHeight: .58, roofHeight: 1.43,
@@ -421,6 +488,7 @@ export class RallyWorld {
     this.landmarks=this.visualPlan.landmarks;
     this.barrierVisuals=planBarrierVisuals(stage);
     this.colors=this.visualPlan.palette;
+    this.renderer.setEnvironment?.({ palette: this.colors, weather: this.weather, weatherId: this.weather.id, visibilityM: this.visualPlan.visibilityM });
     this.carVisual=planCarVisual(this.carSpec);
     this.regionSpec=this.region;this.weatherSpec=this.weather;this.car=this.carSpec;this.carProfile=this.carVisual;
     this.hazardVisuals=planHazardVisuals(stage);
@@ -862,16 +930,30 @@ export class RallyWorld {
 
   update(dt,car,input){
     this.clock+=dt;this.wheelRotation+=car.longitudinalSpeed/Math.max(.1,this.carVisual.wheelRadius)*dt;
-    const speed=car.speed,emit=speed>5&&(input.throttle>.15||car.slipAmount>.05||car.surface!=='compact');
+    const speed=car.speed,surface=String(car.surface||'compact'),slip=clamp01(car.slipAmount),profile=deriveWeatherParticleProfile(this.weather,surface),weatherEmit=profile.kind!=='dust'&&speed>2;
+    const emit=(weatherEmit&&speed>2)||(speed>5&&(input.throttle>.15||slip>.05||surface!=='compact'));
     if(emit){
-      const count=this.quality==='high'?Math.ceil(1+speed/12+car.slipAmount*3):1,fx=Math.sin(car.yaw),fz=Math.cos(car.yaw),rx=Math.cos(car.yaw),rz=-Math.sin(car.yaw),wetness=clamp01(this.weather.roadWetness);
-      for(let i=0;i<count;i++){const side=(Math.random()-.5)*1.35,life=.75+Math.random()*.75;this.particles.push({x:car.x-fx*1.65+rx*side,y:car.y-.35,z:car.z-fz*1.65+rz*side,vx:-fx*(1+Math.random()*2)+rx*(Math.random()-.5),vy:.28+Math.random()*.75,vz:-fz*(1+Math.random()*2)+rz*(Math.random()-.5),life,maxLife:life,size:.32+Math.random()*.58,alpha:.42*(1-wetness*.72),color:car.surface==='grass'?[.38,.42,.28]:[.55,.47,.35],kind:'dust'});}
-      if(car.slipAmount>.22&&car.grounded)this.particles.push({x:car.x,y:car.y-.51,z:car.z,vx:0,vy:0,vz:0,life:4,maxLife:4,size:.11,alpha:.42,color:[.16,.15,.12],kind:'mark'});
+      const count=this.quality==='high'?Math.min(8,Math.ceil((1+speed/12+slip*3)*profile.emitScale)):1,fx=Math.sin(car.yaw),fz=Math.cos(car.yaw),rx=Math.cos(car.yaw),rz=-Math.sin(car.yaw),wind=clamp01(this.weather.wind),falling=profile.kind==='snow';
+      for(let i=0;i<count;i++){
+        const side=(Math.random()-.5)*(falling?2.8:1.35),life=profile.life*(.76+Math.random()*.48),trailing=falling?0:1.65,baseY=falling?car.y+1.5+Math.random()*1.4:car.y-.35;
+        const along=falling?(Math.random()-.5)*2:-trailing;
+        const drift=profile.velocityScale;
+        this.particles.push({
+          x:car.x+fx*along+rx*side,y:baseY,z:car.z+fz*along+rz*side,
+          vx:(falling?wind*(Math.random()-.2): -fx*(1+Math.random()*2))*drift+rx*(Math.random()-.5)*drift,
+          vy:falling?-.2-Math.random()*.35:.16+Math.random()*.62,
+          vz:(falling?wind*(Math.random()-.2): -fz*(1+Math.random()*2))*drift+rz*(Math.random()-.5)*drift,
+          life,maxLife:life,size:profile.size*(.72+Math.random()*.64),alpha:profile.alpha,baseAlpha:profile.alpha,color:[...profile.color],kind:profile.kind,gravity:profile.gravity
+        });
+      }
+      if(slip>.22&&car.grounded)this.particles.push({x:car.x,y:car.y-.51,z:car.z,vx:0,vy:0,vz:0,life:4,maxLife:4,size:.11,alpha:.42,color:[.16,.15,.12],kind:'mark'});
     }
     let write=0;
     for(let read=0;read<this.particles.length;read++){
       const particle=this.particles[read];particle.life-=dt;if(particle.life<=0)continue;
-      if(particle.kind==='dust'){particle.x+=particle.vx*dt;particle.y+=particle.vy*dt;particle.z+=particle.vz*dt;particle.vy+=.18*dt;particle.size+=dt*.65;particle.alpha=.48*Math.pow(Math.max(0,particle.life/particle.maxLife),1.35);}else particle.alpha=.35*Math.max(0,particle.life/particle.maxLife);
+      if(particle.kind!=='mark'){
+        particle.x+=particle.vx*dt;particle.y+=particle.vy*dt;particle.z+=particle.vz*dt;particle.vy+=particle.gravity*dt;particle.size+=dt*(particle.kind==='snow'?.08:.65);particle.alpha=(particle.baseAlpha||.35)*Math.pow(Math.max(0,particle.life/particle.maxLife),1.35);
+      }else particle.alpha=.35*Math.max(0,particle.life/particle.maxLife);
       this.particles[write++]=particle;
     }
     this.particles.length=write;const max=this.quality==='high'?420:190;if(this.particles.length>max)this.particles.splice(0,this.particles.length-max);
