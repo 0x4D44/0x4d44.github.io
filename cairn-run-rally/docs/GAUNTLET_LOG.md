@@ -38,6 +38,14 @@ are structurally identical, the full 45-test suite passes, the reference run rem
 browser harness also learned multiline imports; otherwise the new real module graph produced
 an unhelpful `Uncaught` failure despite the shipped ES-module page being valid.
 
+**Persistence critic:** directly extending the old `cairn-run:best` key would mix cars,
+weather, modes, and championship progress, while a failed migration could destroy the only
+existing record. The new pure save boundary normalises a versioned whitelist, bounds arrays
+and numeric state, rejects future versions, contains storage exceptions, verifies writes
+before removing legacy data, and resets both keys explicitly. Seven red-then-green tests
+cover round trips, corrupt/future values, legacy migration, non-finite input, read-only and
+throwing storage, failed-write preservation, and reset.
+
 **Remaining boundary:** the Cairn R4 data is not yet consumed by vehicle dynamics, and the
 versioned save core is not yet connected to the game shell. The next vertical slice must
 data-drive the existing car, then add one materially different car and Aurora Forest through
