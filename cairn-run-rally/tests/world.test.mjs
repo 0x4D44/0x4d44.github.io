@@ -13,7 +13,7 @@ import {
 import { EXPANSION_REGIONS, EXPANSION_STAGES, EXPANSION_WEATHER } from '../src/content-expansion.js';
 import { deriveRenderEnvironment } from '../src/renderer.js';
 import { buildStage } from '../src/stage.js';
-import { RallyWorld, deriveWeatherParticleProfile, planBarrierVisuals, planCarVisual, planColliderVisuals, planWorldVisuals } from '../src/world.js';
+import { RallyWorld, deriveWeatherParticleProfile, isRouteChunkVisible, planBarrierVisuals, planCarVisual, planColliderVisuals, planWorldVisuals, routeAheadForView, terrainWidths } from '../src/world.js';
 
 const kestrel = buildStage(KESTREL_STAGE);
 const aurora = buildStage(AURORA_STAGE);
@@ -91,6 +91,29 @@ test('RallyWorld forwards its authored environment to the renderer seam', () => 
   assert.equal(renderer.environment.visibilityM, 610);
   assert.deepEqual(renderer.environment.palette, world.colors);
   world.dispose();
+});
+
+test('distant overhead route chunks cannot become floating terrain ribbons', () => {
+  const camera = { position: { x: 0, y: 52, z: 0 } };
+  const limits = { maxSq: 850 ** 2, routeBehind: 460, routeAhead: 660 };
+  assert.equal(isRouteChunkVisible({ s0: 2460, s1: 2580, x: 90, y: 88, z: 40 }, camera, 2140, limits), false);
+  assert.equal(isRouteChunkVisible({ s0: 2230, s1: 2350, x: 90, y: 88, z: 40 }, camera, 2140, limits), true);
+  assert.equal(isRouteChunkVisible({ s0: 2460, s1: 2580, x: 90, y: 64, z: 40 }, camera, 2140, limits), true);
+});
+
+test('terrain bands narrow through hairpins instead of folding over the road', () => {
+  const straight = terrainWidths({ curvature: 0 }, 100, 1);
+  const hairpin = terrainWidths({ curvature: -0.021 }, 100, 1);
+  assert.ok(hairpin.far < straight.far * 0.25);
+  assert.ok(hairpin.near <= 10);
+  assert.ok(hairpin.near < hairpin.far);
+  assert.ok(hairpin.far >= 11);
+});
+
+test('camera route look-ahead contracts before a hairpin', () => {
+  const rift = expansionStages[0];
+  assert.ok(routeAheadForView(rift, 2142, 660) < 300);
+  assert.equal(routeAheadForView(rift, 400, 660), 660);
 });
 
 test('selected car profile changes the pure visual shape', () => {

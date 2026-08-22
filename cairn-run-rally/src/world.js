@@ -426,6 +426,26 @@ export function planWorldVisuals(stage, region = null, weather = null, quality =
 export const planWorld = planWorldVisuals;
 export const planCarMesh = planCarVisual;
 
+export function isRouteChunkVisible(chunk, camera, progress, limits) {
+  const { maxSq, routeBehind, routeAhead, overheadRise = 28, overheadAhead = 180 } = limits;
+  if (chunk.s1 < progress - routeBehind || chunk.s0 > progress + routeAhead) return false;
+  const dx = chunk.x - camera.position.x, dz = chunk.z - camera.position.z;
+  if (dx * dx + dz * dz >= maxSq) return false;
+  // A distant later loop can be horizontally close but tens of metres above
+  // the current road. Hiding it until the climb is near prevents the finite
+  // route-side terrain ribbon from reading as a floating ceiling.
+  if (chunk.y - camera.position.y > overheadRise && chunk.s0 > progress + overheadAhead) return false;
+  return true;
+}
+
+export function routeAheadForView(stage, progress, baseAhead) {
+  let maximumCurvature=0;
+  for(const offset of [40,80,120,160]) maximumCurvature=Math.max(maximumCurvature,Math.abs(sampleStage(stage,Math.min(stage.length,progress+offset)).curvature));
+  if(maximumCurvature<=.006)return baseAhead;
+  const tightness=clamp((maximumCurvature-.006)/.014,0,1);
+  return baseAhead*(1-tightness*.64);
+}
+
 export class ChaseCamera {
   constructor(stage,car){
     this.stage=stage;this.position={x:car.x,y:car.y+3,z:car.z-6};this.target={x:car.x,y:car.y+.7,z:car.z+3};
@@ -459,6 +479,13 @@ function terrainPoint(sample,lateral,index,band){
   const rx=Math.cos(sample.heading),rz=-Math.sin(sample.heading),camber=clamp(sample.camber*lateral,-1.25,1.25);
   const wave=Math.sin(index*.047+band*1.7)*(.45+band*.55)+Math.sin(index*.014+band*.8)*(.35+band*.7);
   return {x:sample.x+rx*lateral,y:sample.y+camber-(band===1?.28:1.2)+wave,z:sample.z+rz*lateral};
+}
+
+export function terrainWidths(sample, index, side) {
+  const bendScale=clamp(1-Math.abs(finite(sample?.curvature,0))*44,.08,1);
+  const nearBase=20+Math.sin(index*.031+side)*3,farBase=76+Math.sin(index*.021+side*2.3)*13;
+  const near=7+(nearBase-7)*bendScale,far=Math.max(near+3,10+(farBase-10)*bendScale);
+  return {near,far};
 }
 
 export class RallyWorld {
@@ -536,8 +563,8 @@ export class RallyWorld {
         if(side<0)builder.quad(outerA,outerB,innerB,innerA,this.colors.shoulder);else builder.quad(innerA,innerB,outerB,outerA,this.colors.shoulder);
         const ditchA=roadEdgePoint(a,side*(a.width/2+2.85),-.22),ditchB=roadEdgePoint(b,side*(b.width/2+2.85),-.22);
         if(side<0)builder.quad(ditchA,ditchB,outerB,outerA,this.colors.ditch);else builder.quad(outerA,outerB,ditchB,ditchA,this.colors.ditch);
-        const nearWidth=20+Math.sin(i*.031+side)*3,farWidth=76+Math.sin(i*.021+side*2.3)*13;
-        const nearA=terrainPoint(a,side*nearWidth,i,1),nearB=terrainPoint(b,side*(20+Math.sin((i+1)*.031+side)*3),i+1,1),farA=terrainPoint(a,side*farWidth,i,2),farB=terrainPoint(b,side*(76+Math.sin((i+1)*.021+side*2.3)*13),i+1,2);
+        const widthsA=terrainWidths(a,i,side),widthsB=terrainWidths(b,i+1,side);
+        const nearA=terrainPoint(a,side*widthsA.near,i,1),nearB=terrainPoint(b,side*widthsB.near,i+1,1),farA=terrainPoint(a,side*widthsA.far,i,2),farB=terrainPoint(b,side*widthsB.far,i+1,2);
         const open=this.visualPlan.kit.includes('moor') ? (a.feature==='crest'||a.feature==='dip'||a.surface==='loose') : a.feature==='lakeside',grass=open?this.colors.moor:(Math.floor(i/13)%2?this.colors.grass:this.colors.grassAlt);
         if(side<0){builder.quad(nearA,nearB,ditchB,ditchA,grass);builder.quad(farA,farB,nearB,nearA,this.colors.farGrass);}else{builder.quad(ditchA,ditchB,nearB,nearA,grass);builder.quad(nearA,nearB,farB,farA,this.colors.farGrass);}
       }
@@ -960,9 +987,9 @@ export class RallyWorld {
   }
 
   draw(camera,car){
-    const maxDistance=Math.min(this.quality==='high'?this.visualPlan.maxDistance:620,this.visualPlan.visibilityM*1.08),maxSq=maxDistance*maxDistance,routeBehind=this.quality==='high'?this.visualPlan.routeBehind:330,routeAhead=this.quality==='high'?this.visualPlan.routeAhead:510;
+    const maxDistance=Math.min(this.quality==='high'?this.visualPlan.maxDistance:620,this.visualPlan.visibilityM*1.08),maxSq=maxDistance*maxDistance,routeBehind=this.quality==='high'?this.visualPlan.routeBehind:330,baseRouteAhead=this.quality==='high'?this.visualPlan.routeAhead:510,routeAhead=routeAheadForView(this.stage,car.progress,baseRouteAhead);
     camera.far=Math.max(320,maxDistance);this.renderer.draw(this.backdrop,IDENTITY);
-    for(const chunk of this.chunks){if(chunk.s1<car.progress-routeBehind||chunk.s0>car.progress+routeAhead)continue;const dx=chunk.x-camera.position.x,dz=chunk.z-camera.position.z;if(dx*dx+dz*dz<maxSq)this.renderer.draw(chunk.mesh,IDENTITY);}
+    for(const chunk of this.chunks)if(isRouteChunkVisible(chunk,camera,car.progress,{maxSq,routeBehind,routeAhead}))this.renderer.draw(chunk.mesh,IDENTITY);
     const shadowRoad=sampleStage(this.stage,car.progress),shadowModel=mat4Compose({x:car.x,y:shadowRoad.y+.055,z:car.z},car.yaw,0,0);this.renderer.draw(this.shadow,shadowModel,.48);
     const carModel=mat4Compose({x:car.x,y:car.y,z:car.z},car.yaw,car.pitch,car.roll);this.renderer.draw(this.carBody,carModel);
     const wheelY=this.carVisual.wheelCenterY,frontZ=this.carVisual.frontAxle,rearZ=this.carVisual.rearAxle,track=this.carVisual.track;
