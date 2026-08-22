@@ -302,7 +302,10 @@ try {
     await cmd("Emulation.setDeviceMetricsOverride", {
       width: vp.width, height: vp.height, deviceScaleFactor: 1, mobile: vp.mobile,
     });
-    for (const route of ["#/", "#/cone", "#/estimate", "#/coupling"]) {
+    // Every route, not a sample. The scenario bar, the watchlist and the
+    // driver grid each live on exactly one page, so a spot check misses
+    // whichever one was edited last.
+    for (const route of ROUTES) {
       await goto(base + route);
       const m = await evaluate(`(() => {
         const d = document.documentElement;
