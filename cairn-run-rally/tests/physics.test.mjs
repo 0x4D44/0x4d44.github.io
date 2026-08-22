@@ -1,9 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { CAIRN_R4 } from '../src/content.js';
 import { buildStage, sampleStage } from '../src/stage.js';
 import { RallyCar } from '../src/vehicle.js';
 const stage=buildStage(), dt=1/120;
 function place(car,distance,u=0,v=0){const road=sampleStage(stage,distance);car.reset(distance,true);const fx=Math.sin(road.heading),fz=Math.cos(road.heading),rx=Math.cos(road.heading),rz=-Math.sin(road.heading);car.vx=fx*u+rx*v;car.vz=fz*u+rz*v;return road;}
+function controlAt(step){const t=step*dt;return {throttle:.25+.65*(Math.sin(t*.73)+1)/2,brake:step%97>82?.35:0,steer:.72*Math.sin(t*1.31),handbrake:step%211>194?.4:0};}
+function trajectory(car,steps=420){const samples=[];for(let i=0;i<steps;i++){car.step(controlAt(i),dt);samples.push([car.x,car.y,car.z,car.vx,car.vy,car.vz,car.yaw,car.yawRate,car.roll,car.pitch,car.damageTotal]);}return samples;}
+
+test('default and explicit Cairn R4 profiles produce bit-identical trajectories',()=>{
+ const implicit=new RallyCar(stage),explicit=new RallyCar(stage,CAIRN_R4);
+ place(implicit,300,18,.4);place(explicit,300,18,.4);
+ assert.equal(implicit.profile,CAIRN_R4);assert.equal(explicit.profile,CAIRN_R4);
+ assert.deepEqual(trajectory(implicit),trajectory(explicit));
+});
+
+test('a copied profile changes mass and steering dynamics without mutating catalog data',()=>{
+ const catalogSnapshot=structuredClone(CAIRN_R4);
+ const alteredProfile=structuredClone(CAIRN_R4);alteredProfile.massKg*=1.18;alteredProfile.steeringLockRad*=.62;
+ const reference=new RallyCar(stage,CAIRN_R4),altered=new RallyCar(stage,alteredProfile);
+ place(reference,600,22,0);place(altered,600,22,0);
+ const referenceTrajectory=trajectory(reference),alteredTrajectory=trajectory(altered);
+ assert.notDeepEqual(alteredTrajectory,referenceTrajectory);
+ const finalReference=referenceTrajectory.at(-1),finalAltered=alteredTrajectory.at(-1);
+ assert.ok(Math.abs(finalAltered[6]-finalReference[6])>.001||Math.abs(finalAltered[3]-finalReference[3])>.001);
+ assert.equal(Object.isFrozen(alteredProfile),false);assert.equal(Object.isFrozen(alteredProfile.suspension),false);
+ const inputMass=alteredProfile.massKg;alteredProfile.massKg+=1;alteredProfile.suspension.springHz+=.1;
+ assert.equal(alteredProfile.massKg,inputMass+1);assert.equal(altered.profile.massKg,inputMass);assert.equal(altered.profile.suspension.springHz,CAIRN_R4.suspension.springHz);
+ assert.deepEqual(CAIRN_R4,catalogSnapshot);
+ assert.equal(CAIRN_R4.massKg,1180);assert.equal(CAIRN_R4.steeringLockRad,.6);
+});
 
 test('car accelerates credibly and remains numerically stable',()=>{
  const car=new RallyCar(stage);for(let i=0;i<1200;i++)car.step({throttle:1,brake:0,steer:0,handbrake:0},dt);
