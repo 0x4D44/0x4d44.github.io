@@ -1,0 +1,217 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
+<title>OpusRally — a rally simulator in the browser</title>
+<meta name="description" content="A point-to-point rally simulator that runs in a browser tab: procedurally generated stages, a four-wheel tyre-and-suspension car model, a co-driver who calls the road ahead, weather, damage and a full season. Three.js and WebAudio, no build step.">
+
+<style>
+  :root {
+    color-scheme: dark;
+    --or-ink: #eef2f8;
+    --or-dim: #93a0b4;
+    --or-bg: #0a0d14;
+    --or-ui: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--or-bg);
+    color: var(--or-ink);
+    font-family: var(--or-ui);
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+
+  #stage-canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    background: #0a0d14;
+  }
+
+  #hud-root, #ui-root, #touch-root {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* The roots stay transparent to the pointer so a drag on open sky reaches the
+     canvas, but whatever a module mounts inside them takes clicks normally —
+     without this the menus would be visible and completely dead. */
+  #ui-root > *, #touch-root > * { pointer-events: auto; }
+
+  #ui-root { z-index: 20; }
+  /* Above the HUD but below the menus: a finger on a driving control must not be
+     eaten by a readout, and the pause menu must sit over both. */
+  #touch-root { z-index: 15; touch-action: none; }
+  #hud-root { z-index: 10; }
+
+  /* The boot card is the only thing this file styles in any detail: everything
+     after it is drawn by modules that inject their own scoped styles. */
+  #boot {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #16203a 0%, #0a0d14 62%, #05070c 100%);
+    transition: opacity 520ms ease, visibility 520ms;
+  }
+
+  #boot[hidden] { opacity: 0; visibility: hidden; display: grid; }
+
+  .boot-card {
+    width: min(30rem, 88vw);
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .boot-mark {
+    width: min(22rem, 74vw);
+    height: auto;
+    margin: 0 auto 1.6rem;
+    display: block;
+  }
+
+  .boot-line {
+    font-size: 0.82rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--or-dim);
+    margin: 0 0 1rem;
+  }
+
+  .boot-bar {
+    height: 3px;
+    border-radius: 3px;
+    background: rgba(160, 180, 210, 0.16);
+    overflow: hidden;
+  }
+
+  .boot-bar i {
+    display: block;
+    height: 100%;
+    width: 12%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #f0a020, #ff5a1f);
+    transition: width 340ms cubic-bezier(0.32, 0.9, 0.36, 1);
+  }
+
+  .boot-fail {
+    margin: 1.2rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #ffb4a2;
+    text-align: left;
+    white-space: pre-wrap;
+  }
+
+  noscript p {
+    max-width: 34rem;
+    margin: 25vh auto 0;
+    padding: 0 1.5rem;
+    line-height: 1.6;
+    color: var(--or-dim);
+    text-align: center;
+  }
+</style>
+
+<canvas id="stage-canvas"></canvas>
+<div id="hud-root"></div>
+<div id="touch-root"></div>
+<div id="ui-root"></div>
+
+<div id="boot">
+  <div class="boot-card">
+    <svg class="boot-mark" viewBox="0 0 520 104" role="img" aria-label="OpusRally">
+      <defs>
+        <linearGradient id="bootmark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffd27a"/>
+          <stop offset="0.5" stop-color="#f0a020"/>
+          <stop offset="1" stop-color="#ff4d17"/>
+        </linearGradient>
+      </defs>
+      <path d="M6 84 L34 20 L52 20 L24 84 Z" fill="url(#bootmark)"/>
+      <path d="M40 84 L68 20 L86 20 L58 84 Z" fill="url(#bootmark)" opacity="0.62"/>
+      <path d="M74 84 L102 20 L120 20 L92 84 Z" fill="url(#bootmark)" opacity="0.3"/>
+      <text x="140" y="72" font-family="Segoe UI, Roboto, Arial, sans-serif"
+            font-size="62" font-weight="800" letter-spacing="-1.5" fill="#eef2f8">OPUS</text>
+      <text x="300" y="72" font-family="Segoe UI, Roboto, Arial, sans-serif"
+            font-size="62" font-weight="300" letter-spacing="5" fill="#93a0b4">RALLY</text>
+    </svg>
+    <p class="boot-line" id="boot-line">Loading</p>
+    <div class="boot-bar"><i id="boot-bar"></i></div>
+    <p class="boot-fail" id="boot-fail" hidden></p>
+  </div>
+</div>
+
+<noscript>
+  <p>OpusRally is a real-time simulator: it needs JavaScript and WebGL. Everything runs
+  in the page — there is no server, no download and no build step.</p>
+</noscript>
+
+<script type="module">
+  // The boot card stays up until the game says it is ready, and turns into the
+  // failure message if it is not — a black canvas with a console error is not an
+  // acceptable failure mode for a page someone opened to play something.
+  const line = document.getElementById("boot-line");
+  const bar = document.getElementById("boot-bar");
+  const fail = document.getElementById("boot-fail");
+  const boot = document.getElementById("boot");
+
+  const steps = ["Loading", "Building stage", "Warming tyres", "Ready"];
+  let step = 0;
+  const tick = setInterval(() => {
+    if (step >= steps.length - 1) return;
+    step += 1;
+    line.textContent = steps[step];
+    bar.style.width = `${12 + step * 26}%`;
+  }, 900);
+
+  function died(message) {
+    clearInterval(tick);
+    line.textContent = "Could not start";
+    bar.style.width = "100%";
+    bar.style.background = "#b4432a";
+    fail.hidden = false;
+    fail.textContent = message;
+  }
+
+  try {
+    const { startGame } = await import("./game.js");
+    const game = await startGame({
+      canvas: document.getElementById("stage-canvas"),
+      hudRoot: document.getElementById("hud-root"),
+      uiRoot: document.getElementById("ui-root"),
+      touchRoot: document.getElementById("touch-root"),
+      onProgress(text, fraction) {
+        line.textContent = text;
+        bar.style.width = `${Math.round(Math.max(0.12, fraction) * 100)}%`;
+      },
+    });
+    clearInterval(tick);
+    line.textContent = "Ready";
+    bar.style.width = "100%";
+    boot.hidden = true;
+    window.OPUS_RALLY = game;
+  } catch (err) {
+    died(
+      `${err?.message ?? err}\n\n` +
+      "OpusRally needs WebGL2 and a browser from the last few years. If you opened this " +
+      "file directly from disk, serve the folder over HTTP instead — modules will not " +
+      "load from a file:// URL.",
+    );
+    throw err;
+  }
+</script>
+
+<script defer src="/almanac-back.js"></script>

@@ -191,11 +191,12 @@
     // magnitude from here) and the upside is not.
     //
     // For scale: the distance from GPT-3 to the 2026 frontier is roughly
-    // six effective orders of magnitude, raw compute and algorithmic
-    // efficiency combined, and it bought the step from "writes a
-    // plausible paragraph" to "finishes a twelve-hour software task half
-    // the time". A median of 7.5 more says the remaining distance is a
-    // little further than the distance already travelled. The spread
+    // five effective orders of magnitude — about three of raw training
+    // compute, 3e23 to the 1e26-1e27 band, plus about two of algorithmic
+    // efficiency — and it bought the step from "writes a plausible
+    // paragraph" to "finishes a twelve-hour software task half the
+    // time". A median of 7.5 more says the remaining distance is about
+    // half again as far as the distance already travelled. The spread
     // spans the range of serious opinion: compute-centric models and
     // prediction markets put transformative capability in the 2030s,
     // the most recent large expert survey puts high-level machine
@@ -270,9 +271,13 @@
     NUKE_HAZARD: 0.0025,
     NUKE_GSD: 2.7,
     // Multiplier while a direct great-power war is being fought. This is
-    // the single most consequential judgement in the peace module: it
-    // implies roughly a one-in-four chance that a sustained great-power
-    // war goes nuclear at some point.
+    // the single most consequential judgement in the peace module.
+    // Integrated over the hazard prior and the duration distribution, it
+    // implies about a 13% chance that a sustained great-power war goes
+    // nuclear at some point — which is at the LOW end of published
+    // strategic opinion, and deliberately so. Raising it is the single
+    // fastest way to make this model more alarming, which is exactly why
+    // it is stated here rather than buried.
     NUKE_WAR_MULT: 8,
 
     // Per-year hazard of a direct great-power war: two of the United
@@ -418,17 +423,17 @@
     // non-CO2 budget. Conditioning on the observation this way is what
     // stops the cone containing worlds that are already falsified.
     //
-    // It is not a free lunch, and the direction of the effect should be
-    // stated rather than buried. About a third of draws are rejected,
-    // and the survivors are NARROWER than the AR6 prior and slightly
-    // HOTTER: a central 66% range of roughly 0.38-0.59 against AR6's
-    // likely 0.27-0.63, with the median moving from 0.45 to about 0.48.
-    // That is a real posterior update rather than an artefact — a
-    // low-sensitivity world has to explain today's warming with an
-    // implausibly large non-CO2 contribution, and a high-sensitivity one
-    // with implausibly large aerosol cooling — but it does mean this
-    // model runs a little warm relative to an unconditioned AR6 prior,
-    // and a reader comparing it with published ranges should know that.
+    // What it does quantitatively: about a third of draws are rejected,
+    // and the surviving likely range narrows from 0.30-0.63 to
+    // 0.38-0.59. The cut falls almost entirely on the LOW side, and the
+    // reason is worth stating — a low-sensitivity world has to explain
+    // the 1.44 degC already on the thermometer with something other
+    // than CO2, and there is not enough non-CO2 forcing available to do
+    // it. This is why the lower edge of the climate cone is tighter
+    // here than a naive draw from the AR6 prior would give.
+    //
+    // No claim is made that the model rediscovers AR6's range: the
+    // prior is parameterised from AR6, so that would be circular.
     var tcre, cum, nonCo2;
     for (var attempt = 0; attempt < 40; attempt++) {
       tcre = truncNormal(rand, K.TCRE, K.TCRE_SD, 0.15, 0.95);
@@ -543,33 +548,27 @@
       if (feasible > automated) automated += (feasible - automated) / tau;
       automated = clamp(automated, 0, 1);
 
-      // Severe AI-enabled incident: at least 1,000 deaths or $100bn of
-      // damage, by misuse, accident, or a system doing exactly what it
-      // was asked.
+      // Severe AI-enabled incident. Two channels, and they run on
+      // different clocks — an earlier version of this model used only
+      // the second and badly understated the near term.
       //
-      // Two channels, because they scale with different things. An
-      // ACCIDENT — a system embedded in infrastructure that fails, or a
-      // dependency discovered only when it breaks — scales with
-      // deployment: it takes a lot of installed base to hurt a lot of
-      // people. MISUSE does not. It needs capability and access, and a
-      // biological or cyber uplift is dangerous in the hands of one
-      // actor long before it is economically diffused. An earlier
-      // version of this model drove the whole hazard off deployment
-      // alone, which put the 2030 probability an order of magnitude
-      // below anything defensible, because deployed automation in 2030
-      // is still only a few per cent.
+      //   MISUSE tracks the FRONTIER. Biological or cyber uplift for an
+      //   actor who previously lacked it needs a capable model to exist
+      //   and be reachable; it does not need that model to be wired into
+      //   the economy. Deployment friction does not help here, because
+      //   the adversary is not waiting for a procurement cycle.
       //
-      // Friction cuts both ways on the accident channel — the same
-      // driver that slows the benefits slows the harms — and barely at
-      // all on the misuse channel, which is one of the more
-      // uncomfortable asymmetries in the whole picture.
+      //   ACCIDENT AND SYSTEMIC FAILURE track DEPLOYMENT. These need the
+      //   system to be load-bearing in something before its failure
+      //   matters, so they arrive with the diffusion curve and are
+      //   genuinely damped by the friction that slows it.
+      //
+      // Weighted equally, which is a judgement rather than a finding.
       if (!incident) {
-        var deployed = automated / Math.max(0.05, ceiling);
-        var frontier = clamp(oomCum / Math.max(1, oom50), 0, 1.4);
-        var hz = K.AI_INCIDENT * (
-          0.45 * deployed * lerp(1.7, 0.55, d.diffusion) +
-          0.55 * frontier * lerp(1.2, 0.85, d.diffusion)
-        );
+        var cap01 = Math.max(0.05, ceiling);
+        var misuse = feasible / cap01;
+        var accident = (automated / cap01) * lerp(1.7, 0.55, d.diffusion);
+        var hz = K.AI_INCIDENT * 0.5 * (misuse + accident);
         if (rand() < hz) { incident = true; incidentYear = y; }
       }
 
@@ -819,21 +818,31 @@
     // linear axis on a heavy-tailed quantity shows you one spike and
     // nothing else. World population is held at a UN-median-ish 9.5bn
     // mid-century plateau rather than modelled.
-    var pop = years.map(function (y) {
-      return 8.2e9 + 1.5e9 / (1 + Math.exp(-(y - 2050) / 12)) - 0.7e9 * clamp((y - 2075) / 50, 0, 1);
-    });
+    // Interpolated between the UN World Population Prospects median
+    // anchors rather than fitted to a curve. A logistic was tried and
+    // ran up to 8% low at the end of the century, which quietly inflated
+    // every per-capita rate on the peace chart — population is a
+    // divisor, so an error here is an error in the headline quantity.
+    var pop = years.map(function (y) { return popAt(y); });
+
+    // Reduce each series exactly once. The obvious way to write this
+    // block calls bands() again inside `exceed` and again for per100k,
+    // which triples the cost of the most expensive step in the model —
+    // and this whole function reruns on every slider drag.
+    var tempBands = bands(temp, N, runs);
+    var deathBands = bands(deaths, N, runs);
 
     var result = {
       years: years,
       drivers: d,
       runs: runs,
       climate: {
-        temp: bands(temp, N, runs),
+        temp: tempBands,
         emissions: bands(emissions, N, runs),
         peakYear: median(peakYears),
         exceed: {
-          "1.5": exceedYear(bands(temp, N, runs).p50, years, 1.5),
-          "2.0": exceedYear(bands(temp, N, runs).p50, years, 2.0),
+          "1.5": exceedYear(tempBands.p50, years, 1.5),
+          "2.0": exceedYear(tempBands.p50, years, 2.0),
         },
         pTip: cumulative(tip, N, runs),
       },
@@ -845,7 +854,7 @@
         oom50: median(oom50s),
       },
       peace: {
-        rate: bands(deaths, N, runs, null),
+        rate: deathBands,
         per100k: null,
         pNuke: cumulative(nuke, N, runs),
         pGp: cumulative(gp, N, runs),
@@ -856,20 +865,41 @@
       pop: pop,
     };
 
-    // per-100k bands, computed from the raw counts so the percentile is
-    // taken on the quantity that is actually plotted.
-    result.peace.per100k = bands(deaths, N, runs, null);
+    // Per-100k bands, derived from the absolute-count bands rather than
+    // recomputed. Population is monotone and smooth, so dividing a
+    // percentile by it gives the same answer as taking the percentile of
+    // the divided series — and this must build a FRESH object: writing
+    // the scaled arrays back into deathBands would silently rescale
+    // `rate`, which shares it.
+    var per = { mean: scaleByPop(deathBands.mean, pop) };
     for (var pi = 0; pi < PCT.length; pi++) {
       var key = pkey(PCT[pi]);
-      result.peace.per100k[key] = result.peace.per100k[key].map(function (v, ix) {
-        return v / pop[ix] * 1e5;
-      });
+      per[key] = scaleByPop(deathBands[key], pop);
     }
-    result.peace.per100k.mean = result.peace.per100k.mean.map(function (v, ix) {
-      return v / pop[ix] * 1e5;
-    });
+    result.peace.per100k = per;
 
     return result;
+  }
+
+  // UN World Population Prospects (2024 revision) median, in billions,
+  // at twenty-five-year anchors, linearly interpolated between them.
+  var POP_ANCHORS = [[2026, 8.25], [2050, 9.66], [2075, 10.30], [2100, 10.18]];
+
+  function popAt(y) {
+    for (var i = 1; i < POP_ANCHORS.length; i++) {
+      if (y <= POP_ANCHORS[i][0]) {
+        var a = POP_ANCHORS[i - 1], b = POP_ANCHORS[i];
+        var t = (y - a[0]) / (b[0] - a[0]);
+        return (a[1] + (b[1] - a[1]) * t) * 1e9;
+      }
+    }
+    return POP_ANCHORS[POP_ANCHORS.length - 1][1] * 1e9;
+  }
+
+  function scaleByPop(series, pop) {
+    var out = new Array(series.length);
+    for (var i = 0; i < series.length; i++) out[i] = series[i] / pop[i] * 1e5;
+    return out;
   }
 
   function median(arr) {

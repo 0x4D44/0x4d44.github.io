@@ -30093,3 +30093,695 @@ window.NEWS_ARTICLES.push(
     ]
   }
 );
+
+// ============================================================
+//  The Almanac review season — August 2026
+//
+//  Nineteen documents joined the 0x4D44 Almanac between 18 July and 1 August,
+//  and the paper has reviewed every one of them. Most sit on the new Reviews
+//  desk under Life; the rest were sent to whichever desk had the strongest
+//  opinion, which is why the tooth guide went to Health and the pothole guide
+//  went to Engineering. Each carries a `review` scorecard, which news.js
+//  renders as stars, a verdict and a link to the thing itself.
+//
+//  These are the paper's only columns about documents that genuinely exist.
+//  The `notice` on each one says so; the reviewers, however, do not.
+// ============================================================
+
+window.NEWS_ARTICLES.push(
+  // ---------- Reviews desk ----------
+  {
+    id: "rev-african-star-expedition",
+    image: "images/rev-african-star.webp",
+    imageAlt: "The African Star's hand-drawn map of Africa, with the network of roads, sea lanes and air links between cities, and the expeditions panel listing each player's cash and position.",
+    imageCaption: "A real screenshot of The African Star, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "The African Star: thirty hidden disks and one deeply unlucky reviewer",
+    standfirst: "Kari Mannerla's 1951 route-and-reveal classic arrives in the browser hand-drawn and intact, and it has taken everything this desk owns.",
+    byline: "By Marguerite Odell-Vane, Chief Games Critic",
+    location: "HELSINKI",
+    published: "2026-08-01T09:00:00",
+    review: {
+      subject: "The African Star — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "A generous, beautiful restoration of a seventy-five-year-old idea that still works: you may cross a continent by road, ship or aeroplane, and you will still lose to a horseshoe.",
+      href: "../african-star/",
+      linkText: "Play The African Star"
+    },
+    body: [
+      "There is a particular sound a games critic makes on turning the twenty-ninth of thirty hidden disks and finding, beneath it, a blank. It is not a word. The Daily Flange has been asked not to reproduce it in a family newspaper, and on reflection the paper agrees.",
+      "The African Star is Kari Mannerla's 1951 Finnish design — a route-and-reveal race across a hand-drawn Africa, in which each player crosses the map by road, ship and aeroplane, turning concealed disks in the hope of finding the Star. The browser adaptation now in the 0x4D44 Almanac keeps all of that, adds original illustration, and runs offline in plain JavaScript with no build step, which is more than can be said for this desk on a Monday.",
+      "What survives the translation is the cruelty, and this is meant as praise. The disks are hidden; the rival expeditions are not stupid; and the game reserves the right to end when somebody else's horseshoe comes home. A player may spend forty minutes assembling an unimpeachable route and be beaten by a person who took a boat.",
+      "The map is the star, if the reader will forgive the desk. It is drawn rather than rendered, and it rewards the sort of looking that a screen usually discourages. Our reviewer spent an unbudgeted quarter of an hour simply following the shipping lanes with a finger, and was late to a meeting about punctuality.",
+      "Two small complaints, offered in the spirit of a critic who has already lost. The opening minutes assume a familiarity with the original that not every reader will have, and the game is quite content to let a newcomer wander toward a coastline for no reason. And victory by horseshoe, while entirely faithful to Mannerla, will strike some players as the design shrugging at them.",
+      "But it is faithful, and it is generous, and it does not want anything from you — no account, no download, no build step, no server. It is a seventy-five-year-old idea running in a tab.",
+      "Our reviewer has since found the Star. It was under the disk she had decided, on the strength of a hunch, to leave until last. She would like the record to show that the hunch was correct and merely early."
+    ],
+    pullQuote: "A player may spend forty minutes assembling an unimpeachable route and be beaten by a person who took a boat.",
+    tags: ["reviews", "games", "board-games", "almanac", "africa"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The African Star is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-lost-valley-dinosaurs-eruption",
+    image: "images/rev-lost-valley-dinosaurs.webp",
+    imageAlt: 'The Lost Valley hex board part-way through an expedition, with explorers, dinosaurs and treasure on the map and an adventure-card panel to the right.',
+    imageCaption: "A real screenshot of Lost Valley of the Dinosaurs, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "Lost Valley of the Dinosaurs: thirty lava counters and no sympathy",
+    standfirst: "Waddingtons' erupting 1985 adventure is restored in the browser with six tyrannosaurs under player control, which is six more than anyone needs.",
+    byline: "By Marguerite Odell-Vane, Chief Games Critic",
+    location: "LEEDS",
+    published: "2026-08-01T11:20:00",
+    review: {
+      subject: "Lost Valley of the Dinosaurs — 0x4D44 Almanac",
+      stars: 4,
+      verdict: "A deterministic, offline restoration of a game built entirely around a countdown, and the countdown is still the best thing in it.",
+      href: "../lost-valley-dinosaurs/",
+      linkText: "Escape the Lost Valley"
+    },
+    body: [
+      "The valley erupts. That is not a spoiler; it is the premise, the clock and the entire personality of the design. Waddingtons put thirty lava counters on the table in 1985 and told four explorers to get out, and the browser restoration in the 0x4D44 Almanac does not soften this by so much as a counter.",
+      "The route runs through caves and rivers to a temple that is, frankly, asking to be robbed, and the treasure is the point. What the 1985 box understood — and what the restoration preserves with some care — is that a player who leaves early keeps their nerve and loses on points, while a player who stays for one more artefact usually gets to explain themselves to a tyrannosaur.",
+      "There are six tyrannosaurs, and you direct them. This is the mechanism that separates the game from its contemporaries: the predators are not weather, they are a resource, and they can be aimed. Our reviewer spent an entire session aiming one at a colleague and finished last, which she describes as a moral victory and the desk describes as a result.",
+      "The pteranodon and the swamp monster are the two hazards that most players will remember, chiefly because both arrive at the exact moment a plan is working. The table art is original SVG rather than a scan, and it holds up when enlarged in a way that scanned board games rarely do.",
+      "The implementation is deterministic and runs offline in plain JavaScript, which matters more than it sounds: a countdown game is only fair if the countdown is fair, and this one can be replayed and argued about afterwards. Several arguments have already been had at this desk. One is ongoing.",
+      "It is not a subtle game and it does not pretend to be. Thirty counters go down; the valley fills; somebody is still in the temple. The restoration's achievement is to make that as tense in a browser tab as it was on a carpet in 1985."
+    ],
+    pullQuote: "The predators are not weather. They are a resource, and they can be aimed.",
+    tags: ["reviews", "games", "board-games", "almanac", "dinosaurs"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Lost Valley of the Dinosaurs is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-game-of-dracula-castle",
+    image: "images/rev-game-of-dracula.webp",
+    imageAlt: "Game of Dracula's title screen, showing two cartoon vampires above the castle board alongside the guest and player setup controls.",
+    imageCaption: "A real screenshot of Game of Dracula, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "Game of Dracula: the yellow stones are lying to you",
+    standfirst: "Waddingtons' 1977 castle chase returns in vivid SVG, complete with two vampires, a blood-red trail and a mask that will not stay put.",
+    byline: "By Ptolemy Vance-Ashworth, Deputy Games Critic",
+    location: "WHITBY",
+    published: "2026-08-01T14:40:00",
+    review: {
+      subject: "Game of Dracula — 0x4D44 Almanac",
+      stars: 4,
+      verdict: "A restoration that takes a 1977 children's chase entirely seriously, and is far more frightening for it.",
+      href: "../game-of-dracula/",
+      linkText: "Enter the castle"
+    },
+    body: [
+      "Dracula spins. He spins around a blood-red trail through his own castle, and the two vampires patrolling it do not spin so much as arrive. The 0x4D44 Almanac's restoration of Waddingtons' 1977 chase understands that this is a horror game aimed at children, and that children's horror is the most efficient kind.",
+      "The players race the yellow stones. The Green Vampire mask passes from victim to victim, which is the design's cleverest stroke: the disadvantage is mobile, so no player is safe in the ordinary sense and no player is doomed in the ordinary sense either. A game that hands its curse around the table has solved a problem that a great many modern designs are still working on.",
+      "It plays hot-seat, and it plays against automata that do not cheat. The desk tested the second claim by losing repeatedly and inspecting the logs afterwards, which is the only respectable way to accuse a computer of anything. The accusation did not survive the inspection.",
+      "The table art is original SVG, not a photograph of a board, and the difference shows in the castle corridors, which have the flat, confident, slightly wrong perspective of a 1970s box lid. Somebody has looked at the original very hard and then drawn it again rather than tracing it.",
+      "Where the restoration is weakest is in explaining itself. The rules arrive in the order the board needs them rather than the order a newcomer needs them, and a first game is largely conducted by inference. Our reviewer's first three turns consisted of moving confidently and being told why that was wrong.",
+      "But the fourth turn worked, and by the seventh he had begun hiding, which is the point at which the game admits what it is. It is deterministic, offline, and it runs in a tab with no build step, and it is quietly one of the more atmospheric things in the Almanac."
+    ],
+    pullQuote: "A game that hands its curse around the table has solved a problem a great many modern designs are still working on.",
+    tags: ["reviews", "games", "board-games", "almanac", "horror"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Game of Dracula is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-stratego-field-edition",
+    image: "images/rev-stratego.webp",
+    imageAlt: 'A Stratego battlefield at deployment, with the blue and red headquarters panels and the intelligence ledger flanking the board.',
+    imageCaption: "A real screenshot of Stratego — Field Edition, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "Stratego, Field Edition: forty pieces, and the computer genuinely cannot see yours",
+    standfirst: "A full-size browser adaptation of the hidden-rank classic, with automata that are limited to the information a player would actually have.",
+    byline: "By Ptolemy Vance-Ashworth, Deputy Games Critic",
+    location: "BREDA",
+    published: "2026-08-02T10:15:00",
+    review: {
+      subject: "Stratego — Field Edition — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "The rare digital Stratego whose opponent is playing the same game you are, rather than a version of it with the lights on.",
+      href: "../stratego/",
+      linkText: "Deploy your forty"
+    },
+    body: [
+      "Every computer Stratego carries the same suspicion, and it is not usually unfounded: that somewhere behind the board, the opponent knows. This adaptation's central claim is that its automata are information-limited — that they see what a player sees and no more — and it is the reason the desk has spent four days on it instead of one.",
+      "The setup is full-size. Forty pieces per side, deployed in secret, with the lakes doing what the lakes have always done: turning a wide board into three corridors and a set of arguments about which one you are actually committed to. The Spy sits in the tray being useless until the single moment it is the most valuable piece in the game.",
+      "Bombs are the design's great teacher. A new player treats them as walls; an experienced player treats them as claims. A bomb says something is worth protecting, and a good opponent reads the claim rather than the piece. Our reviewer spent one game defending an empty corner with such conviction that his opponent spent eleven turns besieging nothing, and he intends to describe this as strategy for the rest of his life.",
+      "The scouting is where the adaptation feels most complete. Running a Scout down a rank to buy information is a real cost paid for a real return, and the interface does not do the arithmetic for you. It shows what has been revealed and leaves the inference where it belongs.",
+      "It is hot-seat as well as solo, deterministic, offline, with original table art and no build step. The one reservation is the opening: deployment is the most important decision in Stratego and the least supported here, and a newcomer is handed forty pieces and a rectangle with very little guidance about why the classics look the way they do.",
+      "Then again, learning that the hard way is how everyone else learned it. The Marshal falls to the Spy in the end. It always does, and it is always somehow a surprise."
+    ],
+    pullQuote: "A bomb says something is worth protecting. A good opponent reads the claim rather than the piece.",
+    tags: ["reviews", "games", "board-games", "almanac", "strategy"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Stratego — Field Edition is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-iron-vertex-self-designing-coaster",
+    image: "images/rev-iron-vertex.webp",
+    imageAlt: "A generated Iron Vertex circuit laid out across a wooded park, seen from above, with the ride's design controls in the corner.",
+    imageCaption: "A real screenshot of Iron Vertex, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "Iron Vertex: we sent a critic on a rollercoaster that had not been designed yet",
+    standfirst: "One button draws a fresh circuit and hands it to gravity. Our reviewer pressed it forty-one times, then discovered the sliders, and has been advised to stop.",
+    byline: "By Delphine Marchetti-Rowe, Rides and Attractions",
+    location: "THE PARK",
+    published: "2026-08-04T13:05:00",
+    review: {
+      subject: "Iron Vertex — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "A rollercoaster that designs itself, or that you design — and which tells you the truth about the difference between the two.",
+      href: "../iron-vertex/",
+      linkText: "Ride Iron Vertex"
+    },
+    body: [
+      "The button says it will make a new rollercoaster. It is not being poetic. Press it and the software lays out a fresh circuit — lift hill or magnetic launch, its own decisions about where the track should go — and then hands the whole thing to gravity and invites you into the front seat of it.",
+      "The desk's first reaction was scepticism, because a generated ride is usually a generated shape with a car on it. What distinguishes Iron Vertex is that the geometry is answerable. The splayed loop is constructed so that the track provably never runs through itself, which sounds like a footnote until you have seen what generated coasters usually do to their own supports.",
+      "It is the tunnel that converted this desk. Somewhere in the fourth or fifth circuit our reviewer was carried, at speed, into a hillside that the software had decided to bore through, and the sound changed, and she made a noise into a shared office that she has been asked to account for in writing.",
+      "There are passengers. There is a park around the ride, with the low, continuous, slightly desperate noise of a park. Riding from the front seat rather than a floating camera turns out to matter enormously: the horizon behaves, the drop arrives when the track says it will, and the launch does the thing to your stomach that launches do.",
+      "Forty-one circuits in, a pattern emerges. The generator has preferences — it likes a second lift, it likes to run low before it runs high — and learning to read a fresh layout from the first ten seconds of the lift becomes its own small pleasure. Our reviewer now claims she can call a launch before it fires. The desk has not verified this and does not intend to.",
+      "Then there are the dials, which arrived while this review was being written and required most of it to be reconsidered. Length, lift height and top speed are now yours to set, and the speed one is the interesting admission: on a gravity coaster the speed at the bottom of the first drop simply is the height of the drop, so a speed slider is either a lie or a promise the machine has to keep some other way. This one keeps it. Ask for more than the lift can deliver and the circuit comes back with a magnetic launch out of the station and a low top hat, because that is what a low-and-fast coaster is.",
+      "Better still is what happens when you ask for something impossible. Set a tall lift and a modest top speed, which cannot both be true, and the readout does not flatter you: it reports what was actually built rather than what was requested. Drag the slider to 140 and it settles at 132 and says so. Software almost never does this. Software normally accepts the number, ignores it, and lets the user believe.",
+      "The city is the other addition, and it changes the ride rather than merely the backdrop. Running a circuit through a street grid puts hard vertical edges close to the track, and close vertical edges are what a body reads as speed — the same trick a real park plays with scaffolding. The park is prettier. The city is faster, and it is not.",
+      "It also does night and weather now, which sounds like set dressing and is not. A lit city at night removes the horizon, and a coaster without a horizon is a substantially more alarming machine: the drop arrives out of nothing rather than out of a landscape you have been reading. Our reviewer, who had by this point ridden the thing in daylight some sixty times, made the noise again.",
+      "It is the most straightforwardly enjoyable thing to arrive in the Almanac this summer, and the only entry in this review season that had to be taken away from a member of staff."
+    ],
+    pullQuote: "Drag the slider to 140 and it settles at 132 and says so. Software normally accepts the number, ignores it, and lets the user believe.",
+    tags: ["reviews", "simulation", "engineering", "almanac", "rollercoasters"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Iron Vertex is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-instruments-well-tempered-machine",
+    image: "images/rev-instruments.webp",
+    imageAlt: "The Well-Tempered Machine's playable piano keyboard beneath the guide's opening text about the instrument's mechanism.",
+    imageCaption: "A real screenshot of The Well-Tempered Machine, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "The Well-Tempered Machine: twenty tons of frame, and you can hear all of it",
+    standfirst: "A field guide to how the piano actually works, with a playable keyboard and acoustics that answer back.",
+    byline: "By Cornelius Aldous-Fitch, Music Desk",
+    location: "SALZBURG",
+    published: "2026-08-02T16:30:00",
+    review: {
+      subject: "The Well-Tempered Machine — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "The clearest account of the piano this desk has read, and the only one where the escapement can be heard doing its job.",
+      href: "../instruments/",
+      linkText: "Open the piano"
+    },
+    body: [
+      "The escapement is the moment where the piano stops being a machine you press and becomes a machine you throw. The hammer is released before it strikes; it flies the last fraction of its journey with nothing attached to it; and everything a pianist believes about touch lives in that gap. This guide gets there in chapter two and then, remarkably, lets you hear it.",
+      "The Well-Tempered Machine is the first instalment of a field guide to how instruments work, and it begins where it should: with a string that is vibrating and a set of reasons why. The physics is not decorative. The chapters build — string, action, soundboard, tuning, frame — and each one is the reason the next one is a problem.",
+      "The tuning chapter is the difficult one and the guide does not flinch. Two thousand years of arithmetic that does not close, a compromise nobody is happy with, and an instrument that is very slightly wrong in every key so that it can be played in all of them. Our reviewer has explained this to dinner guests three times this week with a confidence he did not previously possess.",
+      "The keyboard is playable and the acoustics are live, which is the guide's real trick: the audio is not a recording of a piano, it is the model in the chapter you are reading. Change what the chapter is about and the sound changes with it. It is Web Audio and canvas, running in a tab, with no build step and nothing to install.",
+      "The twenty-ton frame arrives late and lands hard. It is the number that reframes the whole instrument — a piece of furniture in a domestic sitting room holding back a load that would flatten the room — and the guide has the good sense to simply state it and let the reader sit down.",
+      "If there is a criticism, it is that the guide is so good on the piano that its promise of other instruments now reads as a debt. This desk intends to collect."
+    ],
+    pullQuote: "The hammer flies the last fraction of its journey with nothing attached to it. Everything a pianist believes about touch lives in that gap.",
+    tags: ["reviews", "music", "engineering", "almanac", "piano"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Well-Tempered Machine is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-arran-deep-time-atlas",
+    image: "images/rev-arran-deep-time.webp",
+    imageAlt: "The Arran atlas, showing a map of the island coloured by rock type beside the guide's opening account of its geology.",
+    imageCaption: "A real screenshot of Arran: Island of Deep Time, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "Arran: a whole island, and the rock that told Hutton how old the world is",
+    standfirst: "A living geological atlas of one Scottish island, in which you build the place, read it, and then walk six routes across it.",
+    byline: "By Rosalind Fernsby-Kerr, Travel and Landscape",
+    location: "BRODICK",
+    published: "2026-08-03T09:40:00",
+    review: {
+      subject: "Arran: Island of Deep Time — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "A travel guide that happens to cover four hundred million years, and the best argument this desk has seen for going to Arran with a hammer and a sandwich.",
+      href: "../arran-deep-time/",
+      linkText: "Read the island"
+    },
+    body: [
+      "Every geologist has a favourite unconformity and most of them are lying. Arran's is the honest one: a shoreline outcrop where rocks of wildly different ages meet at an angle, which is the sort of thing James Hutton looked at in the 1780s and from which he concluded, correctly and appallingly, that the Earth is unimaginably old.",
+      "This atlas builds the island in front of you. Ocean-floor mud, continents arriving, red desert, a volcano that is now underneath things, and then the Ice Age going over the whole arrangement with a chisel. It is assembled rather than described, which is the difference between being told a sequence and watching one accumulate.",
+      "Six field routes come with it, and they are the part this desk would actually pack. Each is a walk with reasons — what you are standing on, what it was, and why the thing over there is a different colour. Our reviewer followed one of them on a screen, on a Tuesday, in an office, and finished it wanting a waterproof and a train ticket.",
+      "The illustration is original SVG and canvas rather than photography, which turns out to be the right call. A photograph of a rock face is a photograph of some grey; a drawing of a rock face can point. The atlas points constantly and rarely rudely.",
+      "The one difficulty is scale, and it is a difficulty the subject imposes rather than the author. Deep time is not a quantity a reader can hold, and the atlas's honest solution — show it, repeatedly, at different magnifications — asks something of a person who has come for a nice island.",
+      "But it is a nice island, and this is a serious and rather beautiful account of why. Hutton went to look at a coastline and came back with the age of the world. Arran has been quietly holding the evidence ever since, and somebody has finally drawn it properly."
+    ],
+    pullQuote: "A photograph of a rock face is a photograph of some grey. A drawing of a rock face can point.",
+    tags: ["reviews", "geology", "travel", "almanac", "scotland"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Arran: Island of Deep Time is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "rev-master-flanger-serial",
+    image: "images/rev-master-flanger.webp",
+    imageAlt: 'The Master Flanger page announcing that the fifty-part course has moved to print and now runs as a serial in The Daily Flange.',
+    imageCaption: "A real screenshot of How to Become a Master Flanger, captured from the live document in the 0x4D44 Almanac.",
+    category: "Reviews",
+    headline: "How to Become a Master Flanger: this newspaper reviews its own serial",
+    standfirst: "A fifty-part course, published in these pages, assessed by a critic who works in this building and would like that noted.",
+    byline: "By Hubert Standish-Meare, Acting Reviews Editor",
+    location: "THIS OFFICE",
+    published: "2026-08-03T12:00:00",
+    review: {
+      subject: "How to Become a Master Flanger — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "Five stars, awarded under conditions the reader should probably know about before accepting them.",
+      href: "../master-flanger/",
+      linkText: "Begin at Part 01"
+    },
+    body: [
+      "The Daily Flange is aware that a newspaper reviewing its own fifty-part serial is not, in the technical sense, a review. It is an advertisement with a byline. This desk has raised the objection, been heard, and been given the assignment anyway, and readers may weigh the following accordingly.",
+      "The serial runs to fifty parts across five books. It begins with the Call of the Washer, proceeds through the reasons one might flange, and arrives eventually at a medal, a goose, and a certificate that no institution accepts. In between there is the complete Flanging for Absolute Beginners course, a substantial quantity of line art, and testimonials from people whose lives were changed by a washer.",
+      "As criticism, the honest observation is that the middle books sag. Books two and three contain a great deal of preparation and comparatively little flanging, and the reader who arrives expecting sprockets will spend eleven installments on posture. This desk raised that with the author and was told that posture is the flange.",
+      "The testimonials are the strongest material and the most legally interesting. Every one of them is invented; every one of them reads as though somebody has been interviewed at length in a car park; and the cumulative effect is a portrait of a hobby that does not exist being taken extremely seriously by people who do not either.",
+      "The former Life page has been retired and now simply points here, which is the correct decision. A syllabus was never the right shape for this. A serial, with installments and navigation and the institutional confidence of a newspaper, is.",
+      "It is satire, it is line art, and it is not medical advice in any respect whatsoever. The washer is not a treatment. The desk has been asked to repeat that, and has, and would like its five stars entered into the record with all appropriate reservations attached."
+    ],
+    pullQuote: "This desk raised that with the author and was told that posture is the flange.",
+    tags: ["reviews", "flanging", "satire", "almanac", "conflict-of-interest"],
+    noticeLabel: "Review notice",
+    notice: "The series reviewed here is real in the sense that it genuinely runs in this newspaper and the link above opens its front page. The flanging is not real, the reviewer is not real, and the washer is not a treatment."
+  }
+);
+
+window.NEWS_ARTICLES.push(
+  // ---------- Technology desk ----------
+  {
+    id: "tec-review-win2k-boot-to-desktop",
+    image: "images/rev-win2k.webp",
+    imageAlt: 'The from-scratch emulator part-way through a boot, showing the Microsoft Windows 2000 Professional startup screen.',
+    imageCaption: "A real screenshot of Boot to Desktop, captured from the live document in the 0x4D44 Almanac.",
+    category: "Technology",
+    headline: "Fifty-three days to reach a desktop, and the culprit was a dialog box nobody could see",
+    standfirst: "Reviewed: a from-scratch PC emulator learns to boot Windows 2000, told from the ledgers of the hunt rather than the press release.",
+    byline: "By Ambrose Cornish, Systems Correspondent",
+    location: "THE LEDGERS",
+    published: "2026-08-01T08:30:00",
+    review: {
+      subject: "Boot to Desktop — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "A debugging story told with its working shown, and the rarest thing in the genre: the failures are kept in.",
+      href: "../win2k/",
+      linkText: "Watch it boot"
+    },
+    body: [
+      "Most accounts of a hard bug are written after the bug is dead, by somebody who now knows the answer, and they are consequently useless. Boot to Desktop is written from the ledgers, journals and preserved runs of the hunt itself, which means the reader spends most of it wrong in the same order the author was.",
+      "The task: get a PC emulator written from nothing to boot Windows 2000 and arrive at a desktop. The elapsed time: fifty-three days. The territory in between includes latched interrupt edges behaving as the hardware really behaves rather than as the documentation implies, and a 128 MiB RAM dump that has to be interrogated rather than read.",
+      "The centrepiece is a whole-system deadlock, and this desk will not spoil the shape of it beyond the standfirst, except to say that the resolution is the single most demoralising category of software fault: everything was working, and the thing that had stopped was waiting for an acknowledgement from a window that had no pixels.",
+      "Seven chapters, each with animated internals. The animations are load-bearing rather than ornamental — an interrupt latch is a thing that happens at an edge, and an edge is very difficult to describe in a paragraph and very easy to show in twenty frames. This desk has read four textbook treatments of the same material and understood this one first.",
+      "The methodological point is worth stating plainly, because it is the reason the piece works. The author kept records while lost. Almost nobody does. The result is a document that can say how long a wrong theory survived, which is the only honest measure of how good a wrong theory was.",
+      "Recommended without qualification to anyone who has ever spent a fortnight on something invisible. Recommended with a warning to anyone currently doing so."
+    ],
+    pullQuote: "Everything was working, and the thing that had stopped was waiting for an acknowledgement from a window that had no pixels.",
+    tags: ["technology", "reviews", "emulation", "debugging", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Boot to Desktop is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "tec-review-world-in-640k",
+    image: "images/rev-world-in-640k.webp",
+    imageAlt: "A World in 640K's opening page, with a DOS terminal reproducing Civilization's 1991 boot and its graphics-mode menu.",
+    imageCaption: "A real screenshot of A World in 640K, captured from the live document in the 0x4D44 Almanac.",
+    category: "Technology",
+    headline: "A world in 640K: the map is 25,311 bytes and the heartbeat is 608.8 Hz",
+    standfirst: "Reviewed: how Civilization and Colonization ran a planet on a PC with less memory than a modern stylesheet, measured off the shipped binaries.",
+    byline: "By Ambrose Cornish, Systems Correspondent",
+    location: "THE BINARIES",
+    published: "2026-08-01T16:10:00",
+    review: {
+      subject: "A World in 640K — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "Not nostalgia. Measurement. Seven chapters of internals taken off the actual binaries, with a Civ map that grows in the browser to prove the point.",
+      href: "../world-in-640k/",
+      linkText: "Count the bytes"
+    },
+    body: [
+      "There is a genre of writing about old software that consists of being amazed at it, and this is not that. A World in 640K opens the shipped binaries, runs them under an emulator the author also built, and reports numbers. The world is 25,311 bytes. The heartbeat is 608.8 Hz. These are measurements, not anecdotes, and the difference is the whole review.",
+      "The memory story is the spine. Six hundred and forty kilobytes is not a constraint you optimise your way around; it is a constraint you architect around, and the piece walks through the linker-level virtual memory scheme that let a game be larger than the machine it ran on. Overlays are an old idea. Overlays applied at this granularity, with this discipline, are an argument.",
+      "The private allocator gets a chapter and deserves it. This desk has never before seen a division instruction described as a dance, has never wanted to, and now cannot stop. It is the sort of detail that only surfaces when somebody has read the disassembly rather than the retrospective.",
+      "Art is streamed, in FAB and LZW, because there is nowhere to put it otherwise. The piece is good on the consequence rather than merely the mechanism: streaming is not a compression story, it is a story about what a designer is allowed to want. Every tile that exists is a tile that had to be justified against every other tile.",
+      "And then, at the end, it grows a real Civ map in your browser, which is the correct closing argument. The numbers have been asserted for seven chapters; here is the world they add up to, appearing.",
+      "The only readers who will struggle are those who arrive without a feel for what a kilobyte is. The piece assumes the reader can be startled by 25,311, and a reader who cannot will miss the joke, the point and the achievement in one go. Everyone else should clear an evening."
+    ],
+    pullQuote: "Streaming is not a compression story. It is a story about what a designer is allowed to want.",
+    tags: ["technology", "reviews", "retrocomputing", "games", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: A World in 640K is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+
+  // ---------- Science desk ----------
+  {
+    id: "sci-review-black-holes-event-horizon",
+    image: "images/rev-black-holes.webp",
+    imageAlt: "Event Horizon's black hole rendering: a dark disc ringed by the bright, lensed glow of its accretion disc.",
+    imageCaption: "A real screenshot of Event Horizon, captured from the live document in the 0x4D44 Almanac.",
+    category: "Science",
+    headline: "Event Horizon reviewed: a dozen instruments, and a cartoon guide who falls in on your behalf",
+    standfirst: "An eight-chapter field guide to black holes that will let you cross the horizon yourself, which this desk did, repeatedly, on purpose.",
+    byline: "By Dr Lucian Farthingale, Astrophysics Correspondent",
+    location: "PASADENA",
+    published: "2026-08-02T08:20:00",
+    review: {
+      subject: "Event Horizon — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "The best popular treatment of the horizon this desk knows, chiefly because it lets the reader go through it rather than describing the going.",
+      href: "../black-holes/",
+      linkText: "Fall in"
+    },
+    body: [
+      "The hardest thing to explain about a black hole is that nothing happens at the horizon. There is no wall. An infalling observer crosses it without noticing, and the entire drama is that the crossing is one-way and cannot be reported. Every popular account says this. Event Horizon is the first this desk has read that makes the reader feel the absence of the wall by letting them cross it.",
+      "The eight chapters run from escape velocity and stellar collapse through curved spacetime and light-bending, then into the anatomy: photon ring, shadow, singularity, and the several kilometres of geometry between them that most accounts skip. Spaghettification gets a proper treatment, including the point that a large black hole is gentler at the horizon than a small one, which reliably surprises audiences and is reliably left out.",
+      "There are a dozen live instruments. The lensing one is the standout: drag a light source behind a mass and watch the image split, bend and ring, at which point the phrase 'gravitational lensing' stops being two words and becomes a thing you have done with a finger.",
+      "Hawking radiation is the chapter where popular treatments usually collapse into virtual particles and hand-waving. This one does better, and is honest about where the analogy stops being an explanation and starts being a picture, which is a courtesy readers are rarely paid.",
+      "The cartoon guides will divide people. This desk arrived prepared to be irritated by them and left grateful: they carry the tonal weight of the frightening material so the prose does not have to, and one of them is dispatched past the horizon on the reader's behalf in a sequence that is both funny and quietly upsetting.",
+      "It closes with the photograph — how an image of a shadow was actually assembled — and the chapter earns its place by being about the instrument rather than the awe. This is the correct ordering. The awe survives it."
+    ],
+    pullQuote: "There is no wall. The entire drama is that the crossing is one-way and cannot be reported.",
+    tags: ["science", "reviews", "physics", "astronomy", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Event Horizon is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "sci-review-quantum-theory-quanta",
+    image: "images/rev-quantum-theory.webp",
+    imageAlt: "Quanta's Quantum Dots chapter, explaining how a semiconductor crystal's colour is set by nothing but its size.",
+    imageCaption: "A real screenshot of Quanta, captured from the live document in the 0x4D44 Almanac.",
+    category: "Science",
+    headline: "Quanta reviewed: fourteen instruments, one Bell test, and the television in the corner",
+    standfirst: "An eight-chapter almanac of quantum theory that ends where the reader lives — in a screen full of quantum dots dialled to colour by size.",
+    byline: "By Dr Lucian Farthingale, Physics Correspondent",
+    location: "COPENHAGEN",
+    published: "2026-08-02T11:50:00",
+    review: {
+      subject: "Quanta — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "Deep, patient and genuinely technical, with the rare good manners to finish in the reader's own sitting room.",
+      href: "../quantum-theory/",
+      linkText: "Run a Bell test"
+    },
+    body: [
+      "Popular quantum writing has a standard shape: the weirdness first, the machinery never. Quanta inverts it. It opens with the crisis — the specific, unignorable experimental failures that forced the theory into existence — and only then hands the reader states, operators and the arithmetic that makes the weirdness inevitable rather than decorative.",
+      "This is a harder read than the genre norm and it is the better for it. Wavefunctions are treated as objects with rules; spin is introduced as the thing it is rather than the thing it is like; and the entanglement chapter refuses the usual telepathy framing with visible impatience.",
+      "The Bell test is the centrepiece and it is playable. The reader sets the angles, runs the trials, and watches a correlation appear that no arrangement of hidden instructions can produce. Doing this yourself, with your own choices, is a different experience from being told the result, and it is the strongest argument in the piece.",
+      "Tunnelling gets an instrument too, and the instrument is honest about the exponential: the barrier gets slightly thicker and the probability falls off a cliff, which is why the phenomenon matters in a transistor and does not matter to a person walking at a wall.",
+      "The closing chapter is the one this desk keeps recommending. Quantum dots — the particle-in-a-box, the first problem in every course, sitting in a television. The reader dials a nanocrystal's colour purely by changing how big it is, and a piece of textbook furniture becomes a manufacturing decision somebody made about the screen they are reading on.",
+      "Fourteen live instruments across eight chapters, in canvas and SVG with no build step. The half-star withheld is for the quantum fields chapter, which is doing something ambitious at a pace the rest of the work has trained the reader not to expect. It wants a second pass. Everything around it is exemplary."
+    ],
+    pullQuote: "A piece of textbook furniture becomes a manufacturing decision somebody made about the screen you are reading on.",
+    tags: ["science", "reviews", "physics", "quantum", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Quanta is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "sci-review-great-dying",
+    image: "images/rev-great-dying.webp",
+    imageAlt: "The Great Dying's title page over a field of glowing eruption embers, with figures for 96% of marine species lost and a 10°C rise.",
+    imageCaption: "A real screenshot of The Great Dying, captured from the live document in the 0x4D44 Almanac.",
+    category: "Science",
+    headline: "The Great Dying reviewed: a simulator that lets you suffocate an ocean, slowly",
+    standfirst: "The end-Permian extinction, run as a calibrated carbon–climate model, with the boundary rock at Meishan as the thing that has to be explained.",
+    byline: "By Dr Persephone Vance, Palaeoclimate Correspondent",
+    location: "MEISHAN",
+    published: "2026-08-03T08:00:00",
+    review: {
+      subject: "The Great Dying — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "A model you can drive, anchored to a real rock, about the worst thing that has ever happened to this planet.",
+      href: "../great-dying/",
+      linkText: "Scrub the crisis"
+    },
+    body: [
+      "Ninety-six per cent of marine species. It is the number every account of the end-Permian leads with, and it is the number that means least, because a percentage is not a mechanism. What The Great Dying does — and what makes it the most useful thing published on the subject this year outside the literature — is put the mechanism under the reader's hand.",
+      "The Siberian Traps are the input: an eruptive province operating on a scale with no modern analogue, putting carbon into a system that has no way to refuse it. The simulator is calibrated rather than illustrative, and the distinction matters. Turn the forcing up and the ocean does not simply get worse; it gets worse in a particular order, and the order is the argument.",
+      "Scrubbing across deep time is the interaction that will stay with readers. The instinct is to move fast, because the timescale is enormous and the pointer is right there. Move fast and the collapse looks like a switch. Move slowly and it looks like what it was: a long, entirely legible sequence of things stopping being possible.",
+      "The Meishan section is the piece's anchor and its best editorial decision. The boundary is a real rock in a real quarry, and the guide reads it as evidence rather than illustration — this band, this shift, this absence, and here is what the model has to reproduce to be allowed to claim anything.",
+      "This desk's one reservation is tonal. The guide is scrupulous about not drawing the modern parallel for the reader, on the entirely defensible grounds that the rates are different and the geography is different and cheap analogies discredit good work. Some readers will find that restraint admirable. Others will find it conspicuous.",
+      "It runs on canvas in plain JavaScript with nothing to install, which for a calibrated carbon–climate model is faintly absurd and entirely welcome."
+    ],
+    pullQuote: "Move fast and the collapse looks like a switch. Move slowly and it looks like a long, legible sequence of things stopping being possible.",
+    tags: ["science", "reviews", "extinction", "geology", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Great Dying is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  },
+
+  // ---------- Engineering desk ----------
+  {
+    id: "eng-review-road-to-ruin",
+    image: "images/rev-road-wear.webp",
+    imageAlt: "The Road to Ruin's anatomy chapter, headed 'A load-spreading sandwich', on the engineered layers beneath a road surface.",
+    imageCaption: "A real screenshot of The Road to Ruin, captured from the live document in the 0x4D44 Almanac.",
+    category: "Engineering",
+    headline: "The Road to Ruin reviewed: your car is not the problem and never was",
+    standfirst: "A field guide to why roads fail, built around the fourth-power law and the pothole outside your house.",
+    byline: "By Leonard Chalfont, Utilities Correspondent",
+    location: "TEESSIDE",
+    published: "2026-08-03T14:20:00",
+    review: {
+      subject: "The Road to Ruin — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "Eight chapters that will permanently change how the reader looks at a lorry, a kerb and a cold night.",
+      href: "../road-wear/",
+      linkText: "Blame the axle"
+    },
+    body: [
+      "The fourth-power law is the single most redistributive fact in transport engineering, and almost nobody outside the profession knows it. Damage to a pavement rises roughly with the fourth power of axle load. Double the load and the damage goes up sixteenfold. One heavy lorry can do the work of tens of thousands of cars, and this guide states the consequence plainly: the private motorist is, in road-wear terms, a rounding error with strong opinions.",
+      "Getting there takes some building, and the guide builds properly. The layer sandwich comes first — surface, base, sub-base, subgrade — each one spreading a wheel load over a wider footprint than the layer above, so that what arrives at the soil is a pressure the soil can survive. Once the reader has the spreading, the fourth power stops being a formula and becomes a picture.",
+      "Then frost. This is the chapter that will send readers to a window. Water gets into a crack, freezes, expands, widens the crack, and lets in more water. The pothole is not an event; it is the visible end of a process that has been running since about November, and the guide's animation of the cycle is the clearest this desk has seen.",
+      "There is a cartoon cast, which on a road-wear guide sounds like a mistake and is not. Pavement engineering is a field of unglamorous cumulative processes, and a character who is visibly cross about drainage does more for reader retention than another cross-section.",
+      "The half-star this desk withholds is for maintenance economics, which the guide gestures at rather than enters. Why a road is resurfaced when it is, rather than when it should be, is the question every reader will arrive with after the frost chapter, and the answer is budgetary rather than physical.",
+      "Still, this is the reference now. Anybody who has to explain to a public meeting why the buses are being blamed should read it first, and then read the fourth-power chapter again."
+    ],
+    pullQuote: "The pothole is not an event. It is the visible end of a process that has been running since about November.",
+    tags: ["engineering", "reviews", "roads", "transport", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Road to Ruin is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect."
+  }
+);
+
+window.NEWS_ARTICLES.push(
+  // ---------- Health desk ----------
+  {
+    id: "hea-review-root-and-crown",
+    image: "images/rev-root-and-crown.webp",
+    imageAlt: "Root and Crown's cross-section of a tooth beside a panel reporting its enamel, dentine and pulp condition at age 18.",
+    imageCaption: "A real screenshot of Root and Crown, captured from the live document in the 0x4D44 Almanac.",
+    category: "Health",
+    headline: "Root and Crown reviewed: the one organ your body has decided not to fix",
+    standfirst: "Nine chapters on the tooth, twenty-seven live figures and a real annotated radiograph, read in a single sitting by a correspondent who then booked an appointment.",
+    byline: "By Dr Imogen Aldous, Health Correspondent",
+    location: "EDINBURGH",
+    published: "2026-08-02T09:15:00",
+    review: {
+      subject: "Root and Crown — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "Clear, unsentimental and mildly terrifying. The best thing this desk has read about teeth, and the only one that made a correspondent floss.",
+      href: "../root-and-crown/",
+      linkText: "Open wide"
+    },
+    body: [
+      "Enamel does not grow back. Bone remodels, skin closes, liver regenerates, and enamel — the hardest tissue the body makes — is laid down once by cells that then die, and after that you are managing a finite resource. Root and Crown puts this in the first chapter and spends the next eight explaining what follows from it, which is most of dentistry.",
+      "The acid clock is the mechanism the guide most wants readers to carry away, and it deserves to be carried. Demineralisation begins within minutes of a sugar arriving and remineralisation takes considerably longer, so the damaging variable is not how much you eat but how often the clock is restarted. This desk has been eating in a completely rational way for years and has now stopped.",
+      "Toothache gets a chapter to itself, and the chapter's claim — that it constitutes its own category of pain — is defended anatomically rather than rhetorically. A nerve inside a rigid chamber with no room to swell is a pain-delivery arrangement of unusual efficiency, and the guide is admirably calm while explaining why nothing about that is going to improve on its own.",
+      "The repairs section is the practical heart. Filling, crown, root treatment, extraction, implant — each assessed for what it actually buys, in years and in function, rather than what it costs. The honest framing throughout is that every intervention is a trade, and that the tooth is never restored to what it was, only to something that works.",
+      "Twenty-seven live figures do the heavy lifting, and there is a real annotated radiograph, which is the moment the guide stops being a diagram and starts being a patient. Reading an actual film with the labels on is worth more than any illustration of the same structures.",
+      "Our correspondent read it on a Tuesday evening and rang her dentist on Wednesday morning about a sensitivity she had been describing to herself as nothing. It turned out to be nothing. She reports that finding out was worth the night she spent not sleeping."
+    ],
+    pullQuote: "The damaging variable is not how much you eat. It is how often the clock is restarted.",
+    tags: ["health", "reviews", "dentistry", "biology", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Root and Crown is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect. This column is not dental advice."
+  },
+  {
+    id: "hea-review-thermal-mind",
+    image: "images/rev-thermal-mind.webp",
+    imageAlt: "The Thermal Mind's title page above a temperature scale reading 31.5°C, 88% humidity and a 2.5% per degree slope.",
+    imageCaption: "A real screenshot of The Thermal Mind, captured from the live document in the 0x4D44 Almanac.",
+    category: "Health",
+    headline: "The Thermal Mind reviewed: the office is too warm, and now we have the curve",
+    standfirst: "Does thinking really fall two per cent per degree above 25°C? A guide that takes the claim seriously enough to check it, using ten million exam scores.",
+    byline: "By Dr Imogen Aldous, Health Correspondent",
+    location: "BOSTON",
+    published: "2026-08-03T16:45:00",
+    review: {
+      subject: "The Thermal Mind — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "A guide that begins with a viral statistic and ends with a defensible one, without ever pretending the two are the same thing.",
+      href: "../thermal-mind/",
+      linkText: "Take your temperature"
+    },
+    body: [
+      "Two per cent per degree above twenty-five. It is the sort of number that travels — clean, memorable, immediately useful in an argument about air conditioning — and it is repeated far more often than it is checked. The Thermal Mind's first act is to treat it as a claim rather than a fact, which is already more respect than most of the internet has shown it.",
+      "The answer, developed patiently across the guide, is that there is a real performance–temperature curve, that it is not a straight line, and that the slope steepens as you go up. Which means the popular figure is both an underestimate and an overestimate depending entirely on where you are standing on the curve, and that a single per-degree number was never going to survive contact with the physiology.",
+      "The physiology is the guide's strongest section. The body defends a 37°C core with considerable determination, and the four mechanisms by which heat taxes cognition are separated out properly rather than blended into general discomfort: what the defence costs, where the blood goes, what sleep does, and what the discomfort itself occupies.",
+      "The cold mirror is the chapter this desk did not expect and now considers essential. Performance falls at the other end too, by different mechanisms and on a different slope, and looking at both ends at once dismantles the intuition that there is a single temperature at which humans are simply correct.",
+      "The field evidence is ten million exam scores, and the guide handles the scale honestly. A large dataset does not settle a mechanism; it establishes that something is happening at population scale and leaves the why to the physiology. Saying so out loud, rather than letting the number do rhetorical work it cannot support, is what earns the guide its rating.",
+      "The half-star withheld is for the practical end. Readers will finish this wanting to know what to do about the meeting room, and the guide, having been careful for eight sections, declines to be prescriptive in the ninth. Defensible. Also, on a warm Tuesday, faintly maddening."
+    ],
+    pullQuote: "A single per-degree number was never going to survive contact with the physiology.",
+    tags: ["health", "reviews", "physiology", "heat", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Thermal Mind is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect. This column is not medical advice."
+  },
+
+  // ---------- Lifestyle desk ----------
+  {
+    id: "life-review-teenage-brain",
+    image: "images/rev-teenage-brain.webp",
+    imageAlt: "The Teenage Brain's title page above a diagram of the overlapping regions being rebuilt during adolescence.",
+    imageCaption: "A real screenshot of The Teenage Brain, captured from the live document in the 0x4D44 Almanac.",
+    category: "Lifestyle",
+    headline: "The Teenage Brain reviewed: two clocks, badly synchronised, and it is not defiance",
+    standfirst: "A field guide to adolescence built on the primary neuroscience, reviewed by a correspondent who has two of them at home.",
+    byline: "By Verity Standish-Meare, Family Correspondent",
+    location: "AT HOME",
+    published: "2026-08-03T18:30:00",
+    review: {
+      subject: "The Teenage Brain — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "The rare parenting-adjacent read that explains rather than reassures, and is far more reassuring for it.",
+      href: "../teenage-brain/",
+      linkText: "Meet the rewiring"
+    },
+    body: [
+      "The two-clock model is the thing this desk wishes it had been handed four years ago. The reward system matures early. The system that governs restraint matures late. For several years a person is running with the accelerator fully commissioned and the brakes still in fitting-out, and almost everything that looks like defiance is that gap doing exactly what the timetable says it will.",
+      "This is not an excuse and the guide is careful not to offer it as one. It is a mechanism, and mechanisms are useful in a way that excuses are not: a parent who knows the shape of the gap can put the risk somewhere survivable instead of arguing with the timetable.",
+      "The rewiring chapters — pruning and myelination — are the technical core, and they earn their place. Adolescence is not a brain waiting to become an adult brain; it is a brain being actively rebuilt, with connections removed on the basis of what gets used and the surviving ones insulated to run faster. The guide's animation of the pruning is worth the visit on its own.",
+      "The social brain chapter will be the one that lands hardest at kitchen tables. The evidence that peer presence measurably changes risk-taking in adolescents, and does not do the same to adults, reframes a great many arguments about lifts home. Our correspondent has stopped having one of those arguments and started having a better one.",
+      "The second window is the guide's most generous idea and its best-supported optimism: a period of heightened plasticity, a genuine second chance at learning, arriving precisely when the household has decided the shutters are coming down. Ten live instruments and a cast of cartoon guides carry all this without ever tipping into whimsy.",
+      "What can go wrong gets its own chapter, handled soberly, and this desk was grateful for both the sobriety and its placement at the end. The half-star withheld is simply for length: this is a great deal of material for the reader most likely to need it, who is by definition extremely tired."
+    ],
+    pullQuote: "The accelerator is fully commissioned and the brakes are still in fitting-out.",
+    tags: ["lifestyle", "reviews", "neuroscience", "family", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Teenage Brain is in the 0x4D44 Almanac and the link above opens it. The reviewer, the byline, the quotations and every incident described around the review are invented for comic effect. This column is not medical advice."
+  },
+
+  // ---------- Opinion / Voices ----------
+  {
+    id: "voices-review-animal-defenses",
+    image: "images/rev-animal-defenses.webp",
+    imageAlt: "The Defensive's title page, with counters reading 43 creatures, 7 species simulated, 9 playable defences and a hottest spray of 100°C.",
+    imageCaption: "A real screenshot of The Defensive, captured from the live document in the 0x4D44 Almanac.",
+    category: "Voices",
+    headline: "I set off a bombardier beetle nine times and I would like to apologise to nobody",
+    standfirst: "The Defensive is an interactive bestiary of nature's least reasonable ideas, and this column has spent three days pressing all of them.",
+    byline: "By Fenella Osei-Baker, Natural History",
+    location: "THE BESTIARY",
+    published: "2026-08-04T09:00:00",
+    review: {
+      subject: "The Defensive — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "Thirty-eight creatures, nine of them armed and clickable. The most fun anyone will have being disgusted this year.",
+      href: "../animal-defenses/",
+      linkText: "Poke it and see"
+    },
+    body: [
+      "The bombardier beetle mixes two chemicals in a reinforced chamber in its own body and fires the result at roughly the boiling point of water, in pulses, aimed. Every element of that sentence is a design decision that evolution made and a committee would have rejected. In The Defensive you can set it off yourself, and I have, nine times, and I would do it again.",
+      "This is an interactive bestiary of thirty-eight creatures whose approach to being eaten is to make the experience unrewarding. Nine of them are yours to trigger, and the choice of which nine is the curatorial judgement that makes the piece work: they are the ones where the mechanism is visible, and watching a mechanism is a different thing from reading about one.",
+      "The horned lizard squirts blood from its eyes. This is not a metaphor and it is not rare behaviour reported once by a colonial naturalist with a fever; it is a defence, it is aimed, and it is foul to canids in a way it is not to us. The bestiary is good on this distinction — that many defences are not general-purpose but specific insults directed at a particular predator's specific senses.",
+      "The hairy frog is the one that has genuinely upset this column. It breaks its own toe bones and pushes the ends through its skin to make claws. There is no reversal mechanism described because none is needed; the animal simply heals afterwards. I have thought about this every day since Thursday.",
+      "The hagfish is the crowd-pleaser and the piece knows it. A small quantity of secretion meets seawater and becomes a volume of slime that fills a predator's gills, and the predator now has a much more pressing problem than lunch. The interactive version is the single most satisfying thing in the bestiary and I have shown it to eleven people, several of whom had asked me not to.",
+      "If I have a complaint it is that thirty-eight is greedy. The nine interactive creatures are so much stronger than the twenty-nine described ones that the described ones start to read as a queue. I would happily have taken fifteen creatures and six more things to press.",
+      "But this is a small complaint about a genuinely delightful piece of work, running on canvas in plain JavaScript with nothing to install. Go and set off the beetle. Then go and set it off again."
+    ],
+    pullQuote: "Every element of that sentence is a design decision evolution made and a committee would have rejected.",
+    tags: ["voices", "reviews", "biology", "animals", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: The Defensive is in the 0x4D44 Almanac and the link above opens it. The columnist, the byline and every incident described around the review are invented for comic effect."
+  },
+  {
+    id: "voices-review-influence-click-whirr",
+    image: "images/rev-influence.webp",
+    imageAlt: "Click, Whirr's opening chapter beside a diagram of the seven levers of persuasion.",
+    imageCaption: "A real screenshot of Click, Whirr, captured from the live document in the 0x4D44 Almanac.",
+    category: "Voices",
+    headline: "Click, Whirr: I predicted all 33 results, got 19 right, and learned more from the 14",
+    standfirst: "A field guide to Cialdini's seven levers that makes you commit to an answer before it shows you one — and then audits its own best stories.",
+    byline: "By Gideon Marchbanks, Behavioural Science",
+    location: "TEMPE",
+    published: "2026-08-04T11:30:00",
+    review: {
+      subject: "Click, Whirr — 0x4D44 Almanac",
+      stars: 5,
+      verdict: "The replication ledger alone justifies the whole thing. A persuasion guide honest enough to mark its own homework in public.",
+      href: "../influence/",
+      linkText: "Pull a lever"
+    },
+    body: [
+      "The trick this guide plays on you is small and completely disarming. Before it shows you the result of a field experiment, it asks you to say what you think it was. You commit. Then it tells you. And because you have committed, the fourteen you got wrong are no longer facts you read; they are things you were wrong about, which is a different and far stickier category.",
+      "Click, Whirr is a field guide to Robert Cialdini's seven levers — reciprocity, commitment, social proof, liking, authority, scarcity and unity — with thirty-three experiments arranged so that the levers are demonstrated rather than asserted. This matters because persuasion writing is the most self-demonstrating genre there is: a book about influence that persuades you it is right has not necessarily told you anything.",
+      "Which brings me to the replication ledger, and to the reason this column is handing out five stars. Cialdini's canon includes several famous anecdotes that have not held up, or have held up only under conditions considerably narrower than the retelling implies. The guide carries an audit of its own material and marks it. Not in a footnote. In the ledger, on the record, next to the story.",
+      "I cannot overstate how rare this is. The commercial incentive in this field runs entirely the other way: the anecdotes are what sell, the caveats are what bore, and every popular treatment I have read in twenty years has quietly resolved that tension in favour of the anecdote. This one resolves it in favour of the reader.",
+      "The 2025–26 material on language models is the section I expected to be a bolt-on and was not. The finding that these systems yield to all seven levers is presented as what it is — an empirical result about a new kind of subject — rather than as a punchline about machines being gullible. The implications are left where they belong, which is with the reader who has just spent an hour discovering how reliably the same levers work on them.",
+      "Unity, the seventh and newest lever, remains the one I find hardest to separate from liking, and the guide does not entirely resolve that for me. It does, however, show me thirty-three times that my intuitions about my own susceptibility are worse than I would like. Click. Whirr."
+    ],
+    pullQuote: "A book about influence that persuades you it is right has not necessarily told you anything.",
+    tags: ["voices", "reviews", "psychology", "persuasion", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Click, Whirr is in the 0x4D44 Almanac and the link above opens it. The columnist, the byline, the quoted scores and every incident described around the review are invented for comic effect."
+  },
+
+  // ---------- Letters ----------
+  {
+    id: "let-almanac-review-postbag",
+    category: "Letters",
+    headline: "Letters: on horseshoes, tyrannosaurs, and one reader's ruined Tuesday",
+    standfirst: "Our review season has produced a postbag. Sir, we publish a selection, lightly cut, entirely uncorrected.",
+    byline: "Edited by the Letters Editor",
+    location: "THE POSTBAG",
+    published: "2026-08-04T13:00:00",
+    body: [
+      "SIR — Your critic complains that The African Star permits victory by horseshoe. The horseshoe has been in the game since 1951. It was in the game when I was eleven. It was in the game when my brother won with it in 1963 and has mentioned it at every family gathering since. Your critic is not describing a design flaw. She is describing my life. — H. LINDQVIST, Gothenburg",
+      "SIR — Regarding Lost Valley of the Dinosaurs, I write to confirm that directing a tyrannosaur at a family member is not merely permitted but is, in this household, the entire reason the box comes down off the shelf. Your reviewer's account of finishing last while doing so was read aloud at dinner to considerable sympathy. — MRS D. OKONKWO-BRAY, Leeds",
+      "SIR — Your Systems Correspondent describes fifty-three days spent chasing a fault that turned out to be an invisible dialog box. I once spent nine weeks on a fault that turned out to be a cable. The cable was, in fairness, also invisible, in the sense that it was behind a filing cabinet. I found the article consoling in a way I resent. — A. FEATHERSTONHAUGH, Slough",
+      "SIR — I read your review of The Road to Ruin, followed its advice to look out of a window, and have now been standing at that window for some time. There is a crack outside my house that I had considered a feature of the road. I understand now that it is a stage. — P. GALLOWAY, Motherwell",
+      "SIR — Your Health Correspondent's review of Root and Crown caused me to floss on a Tuesday, an activity I had previously reserved for the hours immediately before a dental appointment. I do not thank her. I have, however, continued. — MISS E. TREMAYNE, Bath",
+      "SIR — Your critic reviewed this newspaper's own fifty-part flanging serial and awarded it five stars while noting that he works in the building. I would like to congratulate the Daily Flange on inventing a form of criticism that is simultaneously worthless and completely honest about it. Enclosed, my subscription renewal. — DR M. SANCHEZ-HOLLOWAY, Aberdeen",
+      "SIR — I have now ridden the self-designing rollercoaster in Iron Vertex eighty-two times. My employer has asked me to reply to an email from July. The email concerns a rollercoaster. — NAME AND ADDRESS SUPPLIED",
+      "The Letters Editor writes: the postbag on this review season remains open, and correspondents are reminded that the Almanac documents under discussion are real and can be visited, whereas the reviewers cannot."
+    ],
+    pullQuote: "Your critic is not describing a design flaw. She is describing my life.",
+    tags: ["letters", "reviews", "almanac", "postbag"],
+    noticeLabel: "Letters notice",
+    notice: "The documents discussed in these letters are real and live in the 0x4D44 Almanac. The correspondents, their names, their addresses and their Tuesdays are invented for comic effect."
+  }
+);
+
+// A twentieth review: Three Clocks joined the Almanac on 4 August, after the season's
+// first nineteen had gone to press. It goes to Voices, alongside the paper's other
+// reviews of forecasting work.
+window.NEWS_ARTICLES.push(
+  {
+    id: "voices-review-three-clocks",
+    image: "images/rev-three-clocks.webp",
+    imageAlt: "Three Clocks' opening page, showing a fanned cone of possible futures beside headline figures of 2.5°C median warming in 2100, 28% of work hours automated by 2050 and a 43% chance a nuclear weapon is used this century.",
+    imageCaption: "A real screenshot of Three Clocks, captured from the live document in the 0x4D44 Almanac.",
+    category: "Voices",
+    headline: "Three Clocks: a forecast that writes its number down where you can score it",
+    standfirst: "Most predictions about this century are unfalsifiable by construction. This one hands you the model, the cone and a date.",
+    byline: "By Gideon Marchbanks, Behavioural Science",
+    location: "THE WATCHLIST",
+    published: "2026-08-04T16:20:00",
+    review: {
+      subject: "Three Clocks — 0x4D44 Almanac",
+      stars: 4.5,
+      verdict: "Three problems that are usually blended into one general dread, separated by lag, by consent and by the shape of their failure — with the arithmetic left where you can argue with it.",
+      href: "../three-clocks/",
+      linkText: "Open the model"
+    },
+    body: [
+      "The central claim of Three Clocks is structural rather than predictive, and it is the reason the piece is worth an hour. Artificial intelligence, the climate and the peace are routinely discussed as three faces of one crisis. They are not. They run on different lags, they require different numbers of people to agree before anything changes, and — the part almost always missed — the shape of what going wrong looks like is different in each case.",
+      "Lag is the easiest of the three to feel. Carbon already emitted has consequences arriving for decades regardless of what anyone decides tomorrow; a decision about a model can take effect the same afternoon. A reader who has internalised only that difference has already been repaid for the visit.",
+      "Consent is the one this desk found genuinely reorganising. Some of these problems can be improved by a small number of people acting; others cannot be moved without something close to universal agreement. That is not a moral ranking, it is a mechanical one, and it predicts which interventions are worth arguing for far better than the usual sorting by how frightening a thing sounds.",
+      "The cone is computed live from several hundred simulated futures rather than drawn to look reassuring, and it is a properly uncomfortable object. It is wide. It stays wide. A reader who came for a number will find a distribution and a set of drivers they can change, and will discover — as this columnist did, repeatedly — that their intuitions about which driver matters are worth less than they assumed.",
+      "Then the part that earns the rating: the estimate is written down. A dated, specific forecast, stated plainly, in a form that can be checked later and found wrong. This is the opposite of how public argument about the century is normally conducted, and it is the single hardest thing to do in the genre, because it converts an opinion into something that can embarrass you.",
+      "The half-star withheld is not for the model but for its confidence in itself. A cone computed from simulated futures inherits every assumption in the simulator, and while the piece is candid that its defaults are arguable and lets you move them, the visual authority of a rendered distribution does work that the underlying uncertainty has not quite paid for. Sceptical readers should start with the drivers and only then look at the picture.",
+      "Still: three clocks, three different mechanisms, and a number left out where it can be scored. That is a better standard than almost anything else published on this subject, including — this column notes with some discomfort — several things published by this column."
+    ],
+    pullQuote: "It converts an opinion into something that can embarrass you.",
+    tags: ["voices", "reviews", "forecasting", "climate", "almanac"],
+    noticeLabel: "Review notice",
+    notice: "The document reviewed here is real: Three Clocks is in the 0x4D44 Almanac and the link above opens it. The columnist, the byline and every incident described around the review are invented for comic effect."
+  }
+);

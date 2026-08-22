@@ -250,14 +250,14 @@ try {
   });
 
   // scrub the year
-  const beforeScrub = await evaluate(`document.querySelector(".readout h3").textContent`);
+  const beforeScrub = await evaluate(`document.querySelector(".readout h2").textContent`);
   await evaluate(`(() => {
     const s = document.getElementById("scrubYear");
     s.value = "2075";
     s.dispatchEvent(new Event("input", { bubbles: true }));
   })()`);
   await delay(600);
-  const afterScrub = await evaluate(`document.querySelector(".readout h3").textContent`);
+  const afterScrub = await evaluate(`document.querySelector(".readout h2").textContent`);
   check("the year scrubber moves the readout", () => {
     assert.notEqual(afterScrub, beforeScrub);
     assert.match(afterScrub, /2075/);

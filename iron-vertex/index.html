@@ -61,11 +61,18 @@
     left: 14px;
     width: 268px;
     max-width: calc(100vw - 28px);
+    /* The dials make this panel taller than a phone. Anything below the
+       fold in a fixed panel is not merely ugly, it is unreachable, so
+       the panel scrolls inside itself rather than growing off-screen. */
+    max-height: calc(100vh - 76px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 14px;
     z-index: 6;
   }
 
   #controls h1 {
+    display: inline;
     margin: 0;
     font-size: 15px;
     font-weight: 700;
@@ -74,11 +81,32 @@
   }
 
   #controls .sub {
-    margin: 2px 0 12px;
+    display: block;
+    margin: 2px 0 10px;
     font-size: 11.5px;
     color: var(--muted);
     letter-spacing: 0.02em;
   }
+
+  /* The whole panel folds into its own title. On a phone the controls
+     are most of the screen and the screen is the point, so it starts
+     folded there — and stays wherever you last left it. */
+  #panel-toggle {
+    cursor: pointer;
+    list-style: none;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 0 2px;
+  }
+  #panel-toggle::-webkit-details-marker { display: none; }
+  #panel-toggle::before { content: "\25B8 "; }
+  #panel-body[open] > #panel-toggle::before { content: "\25BE "; }
+  #panel-body[open] > #panel-toggle { padding-bottom: 8px; }
+  #panel-toggle:hover { color: var(--ink); }
+  #panel-toggle:focus-visible { outline: 2px solid #8fc0ff; outline-offset: 2px; }
 
   button.act {
     display: block;
@@ -107,6 +135,101 @@
     border-color: rgba(255, 170, 140, 0.42);
   }
   button.act.primary:hover { filter: brightness(1.1); }
+
+  /* ---- the design dials ---- */
+  .design {
+    margin-top: 4px;
+    border-top: 1px solid var(--panel-line);
+    padding-top: 9px;
+  }
+
+  .design > summary {
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 3px 0 6px;
+    list-style: none;
+  }
+  .design > summary::-webkit-details-marker { display: none; }
+  .design > summary::before { content: "\25B8 "; }
+  .design[open] > summary::before { content: "\25BE "; }
+  .design > summary:hover { color: var(--ink); }
+  .design > summary:focus-visible { outline: 2px solid #8fc0ff; outline-offset: 2px; }
+
+  .dial { margin-bottom: 7px; }
+
+  .dial label {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .dial output {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .dial input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .dial input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(150, 180, 225, 0.3);
+  }
+  .dial input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(150, 180, 225, 0.3);
+  }
+  .dial input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: var(--accent-hi);
+    border: 1px solid rgba(255, 200, 175, 0.6);
+  }
+  .dial input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border: 1px solid rgba(255, 200, 175, 0.6);
+    border-radius: 50%;
+    background: var(--accent-hi);
+  }
+  .dial input[type="range"]:focus-visible { outline: 2px solid #8fc0ff; outline-offset: 2px; }
+
+  button.act.small {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+
+  .design .note {
+    margin: 6px 0 0;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
 
   #controls .hint {
     margin: 10px 0 0;
@@ -299,12 +422,49 @@
 
 <div class="panel" id="controls">
   <h1>Iron Vertex</h1>
-  <p class="sub">procedural coaster lab</p>
+  <span class="sub">procedural coaster lab</span>
+  <!-- Ride stays OUT of the fold. Folding it away made the one thing
+       the page is for unreachable on a phone without a tap first, which
+       the browser test caught as "btn-ride is not clickable". -->
   <button class="act primary" id="btn-ride" type="button" aria-label="Ride the coaster">&#9654; Ride (R)</button>
+ <details id="panel-body" open>
+  <summary id="panel-toggle">Controls</summary>
   <button class="act" id="btn-new" type="button" aria-label="Generate a new track">&#9711; New track (N)</button>
   <button class="act" id="btn-cam" type="button" aria-label="Change camera">&#9678; Cam: orbit (C)</button>
   <button class="act" id="btn-seat" type="button" aria-label="Change which seat you ride in">&#9679; Seat: front (S)</button>
   <button class="act" id="btn-sound" type="button" aria-label="Turn the sound on or off">&#9834; Sound: off (M)</button>
+  <button class="act" id="btn-setting" type="button" aria-label="Change where the coaster is built">&#9636; Site: park (P)</button>
+
+  <details id="design" class="design">
+    <summary>Design it yourself</summary>
+    <div class="dial">
+      <label for="dial-length">Length <output id="out-length">auto</output></label>
+      <input type="range" id="dial-length" min="420" max="2400" step="20" value="900">
+    </div>
+    <div class="dial">
+      <label for="dial-height">Lift height <output id="out-height">auto</output></label>
+      <input type="range" id="dial-height" min="22" max="78" step="1" value="45">
+    </div>
+    <div class="dial">
+      <label for="dial-speed">Top speed <output id="out-speed">auto</output></label>
+      <input type="range" id="dial-speed" min="60" max="145" step="1" value="100">
+    </div>
+    <div class="dial">
+      <label for="dial-density">Buildings <output id="out-density">100%</output></label>
+      <input type="range" id="dial-density" min="0" max="100" step="5" value="100">
+    </div>
+    <div class="dial">
+      <label for="dial-hour">Time of day <output id="out-hour">13:00</output></label>
+      <input type="range" id="dial-hour" min="0" max="47" step="1" value="26">
+    </div>
+    <button class="act small" id="btn-weather" type="button" aria-label="Change the weather">&#9788; Weather: clear (W)</button>
+    <button class="act small" id="btn-auto" type="button">Back to auto</button>
+    <p class="note">
+      Top speed on a gravity coaster is the height of the drop, so asking
+      for more than the lift can give builds a magnetic launch, and asking
+      for less trims the drop. Both are what a real designer would do.
+    </p>
+  </details>
   <p class="hint">
     Drag to swing the camera, scroll to zoom &middot; H recentres it<br>
     Gravity energy model. Some circuits are dragged up a chain, some get a
@@ -312,6 +472,7 @@
     magnetic launch. Loops are splayed and clearance-checked, so no two
     stretches of track ever occupy the same steel.
   </p>
+ </details>
 </div>
 
 <div class="panel" id="nameplate">
@@ -361,9 +522,10 @@
 <script type="module">
 import * as THREE from "./three.module.min.js";
 import { AIRTIME_G, CoasterSim, RideLog, buildTrack, tuckIn } from "./track.js";
-import { buildWorld, groundHeight } from "./scenery.js";
+import { buildWorld, groundHeight, setTerrain } from "./scenery.js";
 import { EYES, buildTrackMesh, buildTrain, liveryFor } from "./coaster.js";
 import { RideAudio, rideMix } from "./audio.js";
+import { WEATHER_MODES, buildWeather } from "./weather.js";
 
 // ============================================================
 // Renderer, scene, camera
@@ -382,10 +544,40 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(new THREE.Color("#c3d9ea"), 340, 1300);
 
 const BASE_FOV = 62;
-const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.1, 3000);
+// Near plane at 0.25 rather than 0.1.
+//
+// Depth precision is spent on the ratio far/near, and 3000/0.1 throws
+// almost all of it away within a few metres of the lens — which is
+// exactly where nothing is, and leaves nothing for a city three hundred
+// metres off. Nothing gets closer to the POV camera than the seat back
+// in front of you, which is 0.42m away, so 0.25 is free and buys two and
+// a half times the precision everywhere else.
+const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.25, 3000);
 
-const world = buildWorld();
-scene.add(world.group);
+// The world is rebuilt when the setting changes, so it is a `let`. The
+// terrain has to be told FIRST: the city stands on a flat lake plain and
+// the park on rolling ground, and the track, the supports, the tunnel
+// and three cameras all read groundHeight().
+let world = null;
+
+// The weather belongs to the CAMERA, not to the world: it is a box of
+// particles that follows the lens around. So it is built once and lives
+// through every rebuild of the park or the city underneath it.
+const weather = buildWeather();
+scene.add(weather.group);
+
+function setWorld(setting, density) {
+  if (world) {
+    scene.remove(world.group);
+    disposeGroup(world.group);
+  }
+  setTerrain(setting);
+  world = buildWorld({ setting, density });
+  scene.add(world.group);
+  applyHour();
+  applyQuality();
+}
+
 let trackLivery = liveryFor(0);
 
 // ============================================================
@@ -399,9 +591,9 @@ let trackLivery = liveryFor(0);
 // down; hunting between two levels would be worse than either.
 // ============================================================
 const QUALITY = [
-  { shadows: false, shadowMap: 512, scale: 0.6 },
-  { shadows: true, shadowMap: 1024, scale: 0.85 },
-  { shadows: true, shadowMap: 2048, scale: 1 },
+  { shadows: false, shadowMap: 512, scale: 0.6, weather: 0.3 },
+  { shadows: true, shadowMap: 1024, scale: 0.85, weather: 0.6 },
+  { shadows: true, shadowMap: 2048, scale: 1, weather: 1 },
 ];
 let qualityLevel = QUALITY.length - 1;
 let qualityHold = 2.5;   // seconds before the next judgement
@@ -410,6 +602,10 @@ let frameCost = 1 / 60;  // smoothed seconds per frame
 function applyQuality() {
   const level = QUALITY[qualityLevel];
   renderer.shadowMap.enabled = level.shadows;
+  // Weather thins first and hardest. A third of the raindrops is much
+  // harder to notice than the loss of every shadow in the park, and it
+  // buys about as much.
+  weather.setDensity(level.weather);
   if (world.sun.shadow.map && world.sun.shadow.mapSize.x !== level.shadowMap) {
     world.sun.shadow.map.dispose();
     world.sun.shadow.map = null;
@@ -494,6 +690,18 @@ const state = {
   // How enclosed the track is at each sample: 0 in the open, 1 inside
   // the bore or under the station roof.
   enclosure: null,
+  // Where it is built, and how much of it there is.
+  setting: "park",
+  density: 1,
+  // The hour of the day, in halves. Everything about the light follows
+  // from it — see setHour in scenery.js.
+  hour: 13,
+  weather: "clear",
+  // The design dials. `null` means "let the generator decide", which is
+  // NOT the same as any particular value — it is what every circuit in
+  // the catalogue was drawn with, so an undialled seed has to stay
+  // undialled or the coaster somebody sent you is not the one they saw.
+  dials: { length: null, height: null, speed: null },
 };
 
 function disposeGroup(group) {
@@ -511,8 +719,31 @@ function disposeGroup(group) {
   scene.remove(group);
 }
 
+// Everything that describes the ride goes in the address bar: the seed
+// alone stopped being enough the moment there were dials.
+function writeUrl() {
+  if (!state.track) return;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", String(state.track.seed >>> 0));
+    for (const key of ["length", "height", "speed"]) {
+      if (state.dials[key] == null) url.searchParams.delete(key);
+      else url.searchParams.set(key, String(Math.round(state.dials[key])));
+    }
+    if (state.setting === "park") url.searchParams.delete("site");
+    else url.searchParams.set("site", state.setting);
+    if (state.density === 1) url.searchParams.delete("density");
+    else url.searchParams.set("density", String(Math.round(state.density * 100)));
+    if (state.hour === 13) url.searchParams.delete("hour");
+    else url.searchParams.set("hour", String(state.hour));
+    if (state.weather === "clear") url.searchParams.delete("weather");
+    else url.searchParams.set("weather", state.weather);
+    window.history.replaceState(null, "", url);
+  } catch { /* file:// and the like: the ride still works */ }
+}
+
 function loadTrack(seed) {
-  const track = buildTrack(seed >>> 0);
+  const track = buildTrack(seed >>> 0, state.dials);
   disposeGroup(state.trackGroup);
   disposeGroup(state.train ? state.train.group : null);
 
@@ -525,6 +756,7 @@ function loadTrack(seed) {
   state.trackGroup = built.group;
   state.trackUpdaters = built.updaters;
   state.enclosure = built.enclosure;
+  state.keepOuts = built.keepOuts;
   state.train = buildTrain(CARS, track.seed, groundHeight);
   scene.add(built.group);
   scene.add(state.train.group);
@@ -540,17 +772,12 @@ function loadTrack(seed) {
   document.getElementById("track-name").textContent = track.name;
   setText("stat-length", Math.round(track.length));
   drawPlan(track);
+  reportAchieved(track);
 
-  // Keep the seed in the address bar. Every circuit is reproducible from
-  // its seed, so this is the difference between "that was a good one" and
-  // "that was a good one and I can send it to somebody".
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set("seed", String(track.seed >>> 0));
-    window.history.replaceState(null, "", url);
-  } catch { /* file:// and the like: the ride still works */ }
+  writeUrl();
 
   // What the generator actually built, in the language a park would use.
+
   let top = 0;
   for (const v of track.speeds) top = Math.max(top, v);
   const facts = [
@@ -967,6 +1194,121 @@ function newTrack() {
 }
 
 // ============================================================
+// The design dials
+// ============================================================
+const DIAL_IDS = ["length", "height", "speed"];
+const DIAL_UNITS = { length: " m", height: " m", speed: " km/h" };
+
+function dialInput(key) {
+  return document.getElementById(`dial-${key}`);
+}
+
+function syncDials() {
+  for (const key of DIAL_IDS) {
+    const value = state.dials[key];
+    const input = dialInput(key);
+    if (value != null) input.value = String(Math.round(value));
+    // "auto" is a real state, not a slider position: it means the seed
+    // decides. The slider still shows where it would land if you touched
+    // it, but the readout says who is in charge.
+    document.getElementById(`out-${key}`).textContent =
+      value == null ? "auto" : Math.round(value) + DIAL_UNITS[key];
+  }
+  document.getElementById("dial-density").value = String(Math.round(state.density * 100));
+  document.getElementById("out-density").textContent = Math.round(state.density * 100) + "%";
+  const settingBtn = document.getElementById("btn-setting");
+  settingBtn.innerHTML = "&#9636; Site: " + state.setting + " (P)";
+  settingBtn.setAttribute("aria-label",
+    "Build the coaster in " + (state.setting === "park" ? "a city" : "a park") + " instead");
+}
+
+// What the generator actually managed, as opposed to what was asked
+// for. The two differ whenever the dials are pushed somewhere physics
+// will not go — a 420m circuit cannot be shrunk past its own tightest
+// turn — and quietly showing the request back would be a lie.
+function reportAchieved(track) {
+  let top = 0;
+  for (const v of track.speeds) top = Math.max(top, v);
+  const achieved = {
+    length: track.length,
+    height: track.apex - track.stationY,
+    speed: top * 3.6,
+  };
+  for (const key of DIAL_IDS) {
+    if (state.dials[key] == null) continue;
+    document.getElementById(`out-${key}`).textContent =
+      Math.round(achieved[key]) + DIAL_UNITS[key];
+  }
+}
+
+function setDial(key, value) {
+  state.dials[key] = value;
+  syncDials();
+  loadTrack(state.track ? state.track.seed : (Math.random() * 0xffffffff) >>> 0);
+}
+
+function setSetting(setting) {
+  if (setting === state.setting) return;
+  state.setting = setting;
+  syncDials();
+  setWorld(state.setting, state.density);
+  // The terrain has changed under it, so the track has to be rebuilt on
+  // the new ground rather than left hanging over the old.
+  loadTrack(state.track ? state.track.seed : (Math.random() * 0xffffffff) >>> 0);
+}
+
+// ---- time of day and weather ----
+//
+// The hour drives the sun, the sky, the fog and how far up the city's
+// lights have come. Fog is the one thing the world does not own, so it
+// is applied here.
+function applyHour() {
+  if (!world) return;
+  const light = world.setHour(state.hour);
+  scene.fog.color.copy(light.fog);
+  // Weather closes the world in: rain and snow both cut the distance you
+  // can see, which is most of what makes them feel like weather.
+  const close = weather.wetness;
+  scene.fog.near = 340 * (1 - close * 0.62);
+  scene.fog.far = 1300 * (1 - close * 0.55);
+  renderer.setClearColor(light.fog);
+  return light;
+}
+
+function hourLabel(hour) {
+  const h = Math.floor(hour) % 24;
+  const m = hour % 1 >= 0.5 ? "30" : "00";
+  return `${String(h).padStart(2, "0")}:${m}`;
+}
+
+function setHour(hour) {
+  state.hour = hour;
+  document.getElementById("out-hour").textContent = hourLabel(hour);
+  applyHour();
+  writeUrl();
+}
+
+function setWeather(mode) {
+  state.weather = WEATHER_MODES.includes(mode) ? mode : "clear";
+  weather.setMode(state.weather);
+  const btn = document.getElementById("btn-weather");
+  btn.innerHTML = (state.weather === "rain" ? "&#9730;" : state.weather === "snow" ? "&#10052;" : "&#9788;")
+    + " Weather: " + state.weather + " (W)";
+  btn.setAttribute("aria-label", "Change the weather, currently " + state.weather);
+  // Wet ground is darker and the sky loses its blue. Both are cheap and
+  // both matter more than the falling particles do.
+  applyHour();
+  writeUrl();
+}
+
+function setDensity(value) {
+  state.density = value;
+  syncDials();
+  setWorld(state.setting, state.density);
+  if (state.track) world.carve(state.track, state.keepOuts ?? []);
+}
+
+// ============================================================
 // Input
 // ============================================================
 document.getElementById("btn-ride").addEventListener("click", () => { armAudio(); setRiding(!state.riding); });
@@ -974,6 +1316,48 @@ document.getElementById("btn-new").addEventListener("click", () => { armAudio();
 document.getElementById("btn-cam").addEventListener("click", () => { armAudio(); cycleCamera(); });
 document.getElementById("btn-seat").addEventListener("click", () => { armAudio(); cycleSeat(); });
 document.getElementById("btn-sound").addEventListener("click", () => setSound(!soundOn));
+document.getElementById("btn-setting").addEventListener("click", () => {
+  armAudio();
+  setSetting(state.setting === "park" ? "city" : "park");
+});
+document.getElementById("btn-auto").addEventListener("click", () => {
+  for (const key of DIAL_IDS) state.dials[key] = null;
+  syncDials();
+  loadTrack(state.track ? state.track.seed : (Math.random() * 0xffffffff) >>> 0);
+});
+
+for (const key of DIAL_IDS) {
+  const input = dialInput(key);
+  // `input` while dragging updates the READOUT only; the coaster is
+  // rebuilt on `change`, when the thumb is let go. Regenerating a
+  // circuit is a hundred milliseconds of work — doing it on every pixel
+  // of a drag would make the slider feel broken and the ride flicker.
+  input.addEventListener("input", () => {
+    document.getElementById(`out-${key}`).textContent =
+      input.value + DIAL_UNITS[key];
+  });
+  input.addEventListener("change", () => setDial(key, Number(input.value)));
+}
+document.getElementById("btn-weather").addEventListener("click", () => {
+  armAudio();
+  setWeather(WEATHER_MODES[(WEATHER_MODES.indexOf(state.weather) + 1) % WEATHER_MODES.length]);
+});
+{
+  // The hour slider steps in halves, so its raw value is 0..47.
+  const input = document.getElementById("dial-hour");
+  input.addEventListener("input", () => {
+    // Unlike the design dials this is live: nothing is rebuilt, it is a
+    // dozen colour lerps, so dragging it sweeps a real sunset.
+    setHour(Number(input.value) / 2);
+  });
+}
+{
+  const input = document.getElementById("dial-density");
+  input.addEventListener("input", () => {
+    document.getElementById("out-density").textContent = input.value + "%";
+  });
+  input.addEventListener("change", () => setDensity(Number(input.value) / 100));
+}
 
 window.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -985,6 +1369,11 @@ window.addEventListener("keydown", (e) => {
   else if (key === "s") { cycleSeat(); e.preventDefault(); }
   else if (key === "m") { setSound(!soundOn); e.preventDefault(); }
   else if (key === "h") { homeTrail(); e.preventDefault(); }
+  else if (key === "p") { setSetting(state.setting === "park" ? "city" : "park"); e.preventDefault(); }
+  else if (key === "w") {
+    setWeather(WEATHER_MODES[(WEATHER_MODES.indexOf(state.weather) + 1) % WEATHER_MODES.length]);
+    e.preventDefault();
+  }
 });
 
 const drag = { active: false, x: 0, y: 0, id: null };
@@ -1078,6 +1467,47 @@ window.addEventListener("resize", resize);
 // ============================================================
 const params = new URLSearchParams(window.location.search);
 const seedParam = Number.parseInt(params.get("seed") || "", 10);
+
+// A shared link carries the whole design, not just the seed.
+for (const key of DIAL_IDS) {
+  const value = Number.parseFloat(params.get(key) || "");
+  if (Number.isFinite(value)) state.dials[key] = value;
+}
+if (params.get("site") === "city") state.setting = "city";
+{
+  const hour = Number.parseFloat(params.get("hour") || "");
+  if (Number.isFinite(hour)) state.hour = Math.min(23.5, Math.max(0, hour));
+  const mode = params.get("weather");
+  if (WEATHER_MODES.includes(mode)) state.weather = mode;
+}
+{
+  const value = Number.parseFloat(params.get("density") || "");
+  if (Number.isFinite(value)) state.density = Math.min(1, Math.max(0, value / 100));
+}
+if (state.dials.length != null || state.dials.height != null || state.dials.speed != null) {
+  document.getElementById("design").open = true;
+}
+
+// The panel folds. It starts folded on a phone, because there it covers
+// most of the screen and the screen is the ride — but the choice is
+// remembered either way, so somebody who wants it open on their phone
+// only has to say so once.
+{
+  const panel = document.getElementById("panel-body");
+  const KEY = "0x4d44.iron-vertex.panel";
+  const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+  const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+  panel.open = saved === null ? !narrow : saved === "open";
+  panel.addEventListener("toggle", () => {
+    try { localStorage.setItem(KEY, panel.open ? "open" : "shut"); } catch { /* private mode */ }
+  });
+}
+
+setWorld(state.setting, state.density);
+document.getElementById("dial-hour").value = String(Math.round(state.hour * 2));
+setWeather(state.weather);
+setHour(state.hour);
+syncDials();
 loadTrack(Number.isFinite(seedParam) ? seedParam : (Math.random() * 0xffffffff) >>> 0);
 syncButtons();
 resize();
@@ -1112,6 +1542,7 @@ function frame(now) {
     if (lapHideAt <= 0) lapReport.style.opacity = "0";
   }
   world.update(elapsed, dt);
+  weather.update(elapsed, camera);
   for (const fn of state.trackUpdaters) fn(elapsed, dt);
 
   if (soundOn) {

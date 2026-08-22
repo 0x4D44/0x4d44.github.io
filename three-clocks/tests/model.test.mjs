@@ -198,42 +198,48 @@ test("ANCHOR: present-day warming matches the thermometer", () => {
   assert.ok(Math.abs(t - 1.44) < 0.12, `2026 median was ${t.toFixed(2)} degC`);
 });
 
-test("ANCHOR: conditioning narrows TCRE, and runs slightly warm, by the stated amount", () => {
-  // The model.js comment and the method page both make a specific,
-  // checkable claim about what the conditioning step does to the
-  // sensitivity prior. An earlier version of this test asserted that it
-  // REPRODUCED AR6's likely range of 0.27-0.63; it does not, and the
-  // test catching that is why the prose no longer says so. What it
-  // actually does is narrow the range and shift it up, because both
-  // tails require an implausible non-CO2 budget to match the observed
-  // 1.44 degC. Both halves are asserted here: if a future edit widens
-  // NONCO2_LO/HI enough that the conditioning stops biting, or narrows
-  // them enough that it bites much harder, the documented behaviour is
-  // no longer the real behaviour.
+test("ANCHOR: conditioning narrows TCRE, and cuts the low side", () => {
+  // The prose states a specific quantitative claim about this step:
+  // roughly a third of draws are rejected, and the likely range narrows
+  // from 0.30-0.63 to 0.38-0.59, with the cut falling almost entirely on
+  // the low-sensitivity side. That last part is the interesting bit — a
+  // low-TCRE world cannot account for the warming already measured — and
+  // it is what makes the lower edge of the climate cone tighter than the
+  // AR6 prior alone would give. If an edit to the constants breaks any
+  // of it, the method section is now lying.
   const rand = makeRng(4242);
-  const kept = [];
-  const N = 60000;
-  for (let i = 0; i < N; i++) {
+  const prior = [], kept = [];
+  for (let i = 0; i < 60000; i++) {
     const tcre = truncNormal(rand, M.K.TCRE, M.K.TCRE_SD, 0.15, 0.95);
     const cum = normal(rand, M.K.CUM_CO2, M.K.CUM_CO2_SD);
     const resid = normal(rand, M.K.OBS_2025, M.K.OBS_SD) - tcre * cum / 1000;
+    prior.push(tcre);
     if (resid >= M.K.NONCO2_LO && resid <= M.K.NONCO2_HI) kept.push(tcre);
   }
+  prior.sort((a, b) => a - b);
   kept.sort((a, b) => a - b);
-  const survival = kept.length / N;
-  const lo = quantile(kept, 0.17), hi = quantile(kept, 0.83), mid = quantile(kept, 0.5);
 
-  assert.ok(Math.abs(survival - 0.67) < 0.08,
+  const survival = kept.length / prior.length;
+  assert.ok(survival > 0.55 && survival < 0.8,
     `${(survival * 100).toFixed(0)}% of draws survived; the prose says about two thirds`);
-  // Narrower than AR6's likely range at both ends.
-  assert.ok(lo > 0.27 && hi < 0.63,
-    `surviving range ${lo.toFixed(3)}-${hi.toFixed(3)} is not inside AR6's likely 0.27-0.63`);
-  assert.ok(Math.abs(lo - 0.38) < 0.05, `range floor came out at ${lo.toFixed(3)}, documented as ~0.38`);
-  assert.ok(Math.abs(hi - 0.59) < 0.05, `range ceiling came out at ${hi.toFixed(3)}, documented as ~0.59`);
-  // And warmer than the prior it started from, by the amount claimed.
-  assert.ok(mid > M.K.TCRE, `conditioning did not shift the median up: ${mid.toFixed(3)}`);
-  assert.ok(Math.abs((mid - M.K.TCRE) - 0.03) < 0.02,
-    `the shift was ${(mid - M.K.TCRE).toFixed(3)}, documented as about 0.03`);
+
+  const pLo = quantile(prior, 0.17), pHi = quantile(prior, 0.83);
+  const kLo = quantile(kept, 0.17), kHi = quantile(kept, 0.83);
+
+  // The prior is the AR6 likely range, because it was parameterised to be.
+  assert.ok(Math.abs(pLo - 0.30) < 0.04, `prior floor ${pLo.toFixed(3)}, expected ~0.30`);
+  assert.ok(Math.abs(pHi - 0.63) < 0.04, `prior ceiling ${pHi.toFixed(3)}, expected ~0.63`);
+
+  // Conditioning narrows it.
+  assert.ok(kHi - kLo < (pHi - pLo) * 0.85,
+    `conditioning barely narrowed the range: ${(pHi - pLo).toFixed(3)} -> ${(kHi - kLo).toFixed(3)}`);
+  assert.ok(Math.abs(kLo - 0.38) < 0.04, `conditioned floor ${kLo.toFixed(3)}, prose says ~0.38`);
+  assert.ok(Math.abs(kHi - 0.59) < 0.04, `conditioned ceiling ${kHi.toFixed(3)}, prose says ~0.59`);
+
+  // And the cut falls mostly on the low side.
+  assert.ok((kLo - pLo) > (pHi - kHi) * 1.5,
+    `the low side moved ${(kLo - pLo).toFixed(3)} and the high side ${(pHi - kHi).toFixed(3)}; ` +
+    "the prose claims the cut is asymmetric");
 });
 
 test("ANCHOR: conflict deaths reproduce the observed present-day rate", () => {
@@ -382,4 +388,29 @@ test("nuclear deaths stay out of the conflict cone", () => {
     const jump = p95[i] / Math.max(p95[i - 1], 1e-6);
     assert.ok(jump < 3.2, `the 95th percentile jumped ${jump.toFixed(1)}x at index ${i}`);
   }
+});
+
+test("ANCHOR: the wartime escalation probability is the one the prose states", () => {
+  // Both the model's own comment on NUKE_WAR_MULT and the objections page
+  // tell the reader that a sustained great-power war goes nuclear about
+  // one time in eight at the default settings. That figure is not a model
+  // output anyone can read off a chart — it is implied by the hazard
+  // prior, the multiplier and the duration distribution together — so it
+  // is pinned here, because it is the single most consequential judgement
+  // on the site and the easiest to invalidate by accident.
+  const rand = makeRng(31337);
+  const armsMult = 1.60 + (0.50 - 1.60) * M.DEFAULTS.armsControl;
+  const rivMult = 0.70 + (1.50 - 0.70) * M.DEFAULTS.rivalry;
+  let hit = 0;
+  const N = 200000;
+  for (let i = 0; i < N; i++) {
+    const h = Math.min(1,
+      logNormal(rand, M.K.NUKE_HAZARD, M.K.NUKE_GSD) * armsMult * rivMult * M.K.NUKE_WAR_MULT);
+    const years = 1 + Math.floor(rand() * 5);
+    if (1 - Math.pow(1 - h, years) > rand()) hit++;
+  }
+  const p = hit / N;
+  assert.ok(p > 0.09 && p < 0.17,
+    `a sustained great-power war goes nuclear ${(p * 100).toFixed(1)}% of the time; ` +
+    "the prose and the NUKE_WAR_MULT comment both say about one in eight");
 });

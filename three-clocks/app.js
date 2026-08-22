@@ -156,7 +156,7 @@
 
   function tileGrid(items) {
     return '<div class="tiles">' + items.map(function (t) {
-      return '<div class="tile"><h4>' + md(t.h) + "</h4><p>" + md(t.p) + "</p></div>";
+      return '<div class="tile"><h3>' + md(t.h) + "</h3><p>" + md(t.p) + "</p></div>";
     }).join("") + "</div>";
   }
 
@@ -383,7 +383,11 @@
       lo: 0.05, hi: 300, log: true,
       ticks: [{ v: 0.1, l: "0.1" }, { v: 1, l: "1" }, { v: 10, l: "10" },
               { v: 100, l: "100" }],
-      refs: [{ v: 2.98, l: "2025 observed" }, { v: 100, l: "Second World War" }],
+      // 2025 battle deaths, ~150,000, over ~8.2bn people. NOT the widely
+      // quoted 244,600, which is all organised violence — a broader
+      // category than this cone plots, and drawing that line here would
+      // put the observed marker about 60% too high.
+      refs: [{ v: 1.83, l: "2025 observed" }, { v: 100, l: "Second World War" }],
       pick: function (r) { return r.peace.per100k; },
       fmt: function (v) { return n2(v) + " /100k"; },
       alt: "Cone of projected battle deaths per hundred thousand people per year to 2100, on a logarithmic scale.",
@@ -465,7 +469,7 @@
         "Median further effective orders of magnitude needed to reach half the automatable task base: <b>" +
         n1(r.ai.oom50) + "</b>.</p>";
     }
-    return '<div class="readout"><h3>Distribution in ' + coneState.scrub + "</h3>" +
+    return '<div class="readout"><h2>Distribution in ' + coneState.scrub + "</h2>" +
       '<div class="ro-grid">' + cells.map(function (c) {
         return '<div class="ro ' + c.cls + '"><span class="ro-v">' + esc(c.v) + "</span>" +
           '<span class="ro-k">' + esc(c.k) + "</span></div>";
@@ -508,7 +512,7 @@
         "number, and the difference between them is the part policy can still act on.</div>";
     }
 
-    return '<div class="hz-block"><h3>Cumulative hazards by ' + coneState.scrub + "</h3>" +
+    return '<div class="hz-block"><h2>Cumulative hazards by ' + coneState.scrub + "</h2>" +
       '<div class="hz-grid">' + body + "</div>" + sev + "</div>";
   }
 
@@ -530,7 +534,7 @@
         }).join("") + "</div>";
     }).join("");
 
-    return '<div class="drivers"><h3>The assumptions</h3>' +
+    return '<div class="drivers"><h2>The assumptions</h2>' +
       "<p>Six knobs, each mapping to a shift in a distribution rather than to a fixed value. " +
       "They are claims about the world, not predictions of it — the model has nothing to say " +
       "about which setting is right, which is precisely why they are exposed.</p>" +
@@ -544,9 +548,9 @@
   }
 
   function readingNotes(C) {
-    return '<div class="notes"><h3>How to read it</h3><div class="tiles">' +
+    return '<div class="notes"><h2>How to read it</h2><div class="tiles">' +
       C.reading.map(function (n) {
-        return '<div class="tile"><h4>' + md(n.h) + "</h4><p>" + md(n.p) + "</p></div>";
+        return '<div class="tile"><h3>' + md(n.h) + "</h3><p>" + md(n.p) + "</p></div>";
       }).join("") + "</div></div>";
   }
 
