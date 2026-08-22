@@ -1,25 +1,25 @@
 # ALM-BUG-FLU-00008 — Cairn Run arrow keys steer in the opposite direction
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** cairn-run-rally
 - **Raised:** 2026-08-22T12:55:58Z
 - **Discovery source:** Human
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260822T125621Z-6144594b
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-FLU-00008-run-fix-20260822T125621Z-6144594b
-- **Owner base:** 771511134094cbaa159f6780dc51be18ef814750
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-08-22T12:56:21Z
-- **Owner until:** 2026-08-22T14:56:21Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-08-22T12:55:58Z, raised via `deltic bugs new`)
+- **State history:** Open (2026-08-22T12:55:58Z, raised via `deltic bugs new`) -> Fixed (2026-08-22T13:28:05Z, deltic:auto role=fix run=fix-20260822T125621Z-6144594b branch=task/bug-ALM-BUG-FLU-00008-run-fix-20260822T125621Z-6144594b code=c868581dbc679d04e3354ccf140ce2e2180e3bc3 gate=manual)
 
 ## Observation
 
