@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "triangle-engine",
+    title: "The Triangle Engine",
+    tagline: "How 3D graphics actually work, from Sketchpad to ray tracing: fill a triangle with three edge functions, watch perspective happen as a division, break the floor by skipping it, and see a warp diverge. Every diagram is drawn live by a software rasterizer written for the page.",
+    url: "https://0x4d44.github.io/triangle-engine/",
+    illustration: "ill-triangle",
+    date: "2026-08-19T15:00:00",
+    year: 1963,
+    readingMin: 43,
+    words: 9700,
+    tags: ["software", "engineering", "history", "science"],
+    real: true,
+  },
+  {
     slug: "opus-rally",
     title: "OpusRally",
     tagline: "A point-to-point rally simulator in a browser tab: procedurally generated stages you have never seen, a co-driver calling the road ahead, and a four-wheel tyre-and-suspension car model that rewards the flick, the handbrake and a boot of throttle. Three.js and synthesised WebAudio, no build step.",
@@ -463,7 +476,7 @@ window.ESSAYS = [
   {
     slug: "news",
     title: "The Daily Flange",
-    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, worn copper saucepan bottoms, and the urgent need to flange the nation's sprockets. 1,125 deadpan articles across two dozen desks — including a Reviews desk that rates the rest of this Almanac — a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
+    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, worn copper saucepan bottoms, and the urgent need to flange the nation's sprockets. 1,133 deadpan articles across two dozen desks — including a Reviews desk that rates the rest of this Almanac — a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
     url: "https://0x4d44.github.io/news/",
     illustration: "ill-flange",
     date: "2026-07-18T23:44:00",
@@ -1696,7 +1709,7 @@ window.COLLECTIONS = [
     slugs: ["instruments"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
@@ -1718,7 +1731,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
