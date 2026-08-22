@@ -1,0 +1,19 @@
+{
+  "name": "cairn-run-rally",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A self-contained original WebGL2 point-to-point rally game.",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "simulate": "node scripts/simulate-stage.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "review": "node scripts/review-capture.mjs",
+    "qa": "npm test && npm run simulate && npm run smoke",
+    "generate-audio": "node scripts/generate-audio.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

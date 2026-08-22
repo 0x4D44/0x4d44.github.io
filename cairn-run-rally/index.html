@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#15241e" />
+  <meta name="description" content="Cairn Run Rally — a self-contained original browser rally game." />
+  <title>Cairn Run Rally</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game-canvas" aria-label="Cairn Run Rally game view"></canvas>
+    <div id="grain" aria-hidden="true"></div>
+
+    <div id="hud" class="hidden" aria-live="polite">
+      <section class="hud-time">
+        <span class="eyebrow">STAGE</span><strong id="stage-time">00:00.000</strong>
+        <span id="split-delta">KESTREL RIDGE</span>
+      </section>
+      <section class="hud-speed">
+        <strong id="speed">000</strong><span>km/h</span>
+        <div><b id="gear">1</b><small>GEAR</small></div>
+      </section>
+      <section class="hud-progress">
+        <div class="progress-track"><i id="progress-bar"></i></div><span id="distance-left">5.4 KM</span>
+      </section>
+      <section id="damage-panel" class="damage-panel">
+        <span class="eyebrow">CAR</span>
+        <div><i id="damage-engine"></i><b>ENGINE</b></div>
+        <div><i id="damage-steering"></i><b>STEERING</b></div>
+        <div><i id="damage-suspension"></i><b>SUSPENSION</b></div>
+        <div><i id="damage-brakes"></i><b>BRAKES</b></div>
+        <div><i id="damage-body"></i><b>BODY</b></div>
+      </section>
+    </div>
+
+    <div id="pace-note" class="pace-note hidden">
+      <div id="pace-icon" class="pace-icon">R4</div>
+      <div><strong id="pace-main">RIGHT FOUR</strong><span id="pace-detail">OVER CREST</span></div>
+      <i id="pace-distance">120</i>
+    </div>
+    <div id="countdown" class="countdown hidden">3</div>
+    <div id="toast" class="toast hidden">RESET TO ROAD</div>
+
+    <section id="title-screen" class="screen title-screen">
+      <div class="brand">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <p>ORIGINAL BROWSER RALLY</p>
+        <h1>CAIRN<br /><em>RUN</em></h1>
+        <p class="rally-word">RALLY</p>
+      </div>
+      <div class="title-actions panel">
+        <span class="eyebrow">SINGLE STAGE</span><h2>Kestrel Ridge</h2>
+        <div class="stage-facts"><span>5.4 KM</span><span>GRAVEL</span><span>DUSK</span></div>
+        <p>A narrow ridge road: fast crests, tightening forest bends and two committed hairpins.</p>
+        <button id="start-button" class="primary">START STAGE <kbd>ENTER</kbd></button>
+        <button id="settings-button" class="secondary">SETTINGS</button>
+        <div class="controls-summary">
+          <span><kbd>WASD</kbd> / <kbd>ARROWS</kbd> DRIVE</span>
+          <span><kbd>SPACE</kbd> HANDBRAKE</span>
+          <span><kbd>R</kbd> RESTART</span>
+          <span><kbd>A</kbd> / <kbd>START</kbd> GAMEPAD</span>
+        </div>
+      </div>
+      <footer>CAIRN R4 · 4WD · 310 BHP <span>v1.1</span></footer>
+    </section>
+
+    <section id="settings-screen" class="screen settings-screen hidden">
+      <div class="panel settings-panel">
+        <span class="eyebrow">OPTIONS</span><h2>SETTINGS</h2>
+        <label>ENGINE & EFFECTS <input id="effects-volume" type="range" min="0" max="1" step="0.05" value="0.75" /></label>
+        <label>CO-DRIVER <input id="voice-volume" type="range" min="0" max="1" step="0.05" value="0.9" /></label>
+        <label>GRAPHICS<select id="quality-setting"><option value="high">HIGH</option><option value="low">LOW</option></select></label>
+        <label class="toggle"><input id="notes-toggle" type="checkbox" checked /> ON-SCREEN PACE NOTES</label>
+        <button id="settings-back" class="primary">BACK</button>
+      </div>
+    </section>
+
+    <section id="pause-screen" class="screen pause-screen hidden">
+      <div class="panel compact-panel">
+        <span class="eyebrow">STAGE PAUSED</span><h2>Kestrel Ridge</h2>
+        <button id="resume-button" class="primary">RESUME <kbd>ESC</kbd></button>
+        <button id="pause-restart" class="secondary">RESTART STAGE <kbd>R</kbd></button>
+        <button id="quit-button" class="secondary">RETURN TO TITLE</button>
+      </div>
+    </section>
+
+    <section id="result-screen" class="screen result-screen hidden">
+      <div class="result-card panel">
+        <span class="eyebrow">STAGE COMPLETE</span><h2>KESTREL RIDGE</h2>
+        <div class="result-time"><small>FINAL TIME</small><strong id="final-time">04:12.840</strong></div>
+        <div class="result-grid">
+          <div><small>PERSONAL BEST</small><b id="best-time">—</b></div>
+          <div><small>DIFFERENCE</small><b id="result-delta">NEW BEST</b></div>
+          <div><small>DAMAGE</small><b id="result-damage">LIGHT</b></div>
+        </div>
+        <button id="retry-button" class="primary">RETRY <kbd>ENTER</kbd></button>
+        <button id="result-quit" class="secondary">RETURN TO TITLE</button>
+      </div>
+    </section>
+
+    <div id="qa-status" hidden>{"booted":false}</div>
+    <div id="fatal-error" class="fatal-error hidden"></div>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

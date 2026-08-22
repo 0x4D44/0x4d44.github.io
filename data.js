@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "cairn-run-rally",
+    title: "Cairn Run Rally",
+    tagline: "A five-minute point-to-point rally game through Kestrel Ridge: fast crests, forest bends, two hairpins and a co-driver calling the road ahead. A 120 Hz loose-surface car model, lightweight damage, local spoken pace notes and a procedural WebGL2 renderer; no dependencies or build step.",
+    url: "https://0x4d44.github.io/cairn-run-rally/",
+    illustration: "ill-rally",
+    date: "2026-08-22T13:44:15",
+    year: 2026,
+    tags: ["games", "simulation", "transport"],
+    real: true,
+  },
+  {
     slug: "triangle-engine",
     title: "The Triangle Engine",
     tagline: "How 3D graphics actually work, from Sketchpad to ray tracing: fill a triangle with three edge functions, watch perspective happen as a division, break the floor by skipping it, and see a warp diverge. Every diagram is drawn live by a software rasterizer written for the page.",
@@ -1691,7 +1702,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
