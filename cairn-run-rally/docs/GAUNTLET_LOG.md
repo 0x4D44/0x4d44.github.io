@@ -2,6 +2,35 @@
 
 Each pass below was judged against running behaviour, deterministic reproduction, screenshots, or measurement—not code style alone. The governing critic question was: **what is the single largest weakness currently preventing commercial credibility?**
 
+## World-rally expansion — 2026-08-22
+
+**Benchmark:** the former release deliberately stopped at one car and one stage. The new
+benchmark now names measurable six-region, six-car, mode, championship, save, rival,
+control, audio, responsive, offline, and hardware targets while retaining human judgement
+for fun, handling character, art direction, and listening quality.
+
+**Critic:** the current source has no safe expansion seam. Vehicle constants, Kestrel
+landmark distances, the car mesh, title text, audio note paths, and the single best-time
+key are hard-coded in their consumers. Adding content directly would create identity
+switches and false-green QA.
+
+**Reproduction:** the clean baseline passed 31 deterministic tests, completed Kestrel in
+290.47 seconds with the reference driver, and passed browser smoke. Source inspection then
+confirmed the hard-coded boundaries in `src/vehicle.js`, `src/world.js`, `src/game.js`, and
+`src/audio.js`.
+
+**Change:** added executable versioned contracts for cars, stages, regions, weather,
+championship events, rivals, tuning, results, and saves. Added the ownership and transition
+design in `docs/ARCHITECTURE.md` before new content consumes those contracts.
+
+**Regression:** the contract test was observed failing first when the module was absent,
+then again when invalid one-segment routes escaped field validation. The validator now
+reports both structural and field errors, and the focused contract suite passes.
+
+**Remaining boundary:** the contracts are not yet wired into the current Kestrel/car path.
+The next vertical slice must data-drive the existing car and region, then add one materially
+different car and Aurora Forest through quick-rally and championship flow before scaling.
+
 ## 1. Benchmark
 
 **Critic finding:** the initial language was too easy to declare satisfied.
