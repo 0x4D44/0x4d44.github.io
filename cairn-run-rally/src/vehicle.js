@@ -1,11 +1,15 @@
-import { angleLerp, clamp, expSmoothing, wrapAngle } from './math.js';
-import { CAIRN_R4 } from './content.js';
+import { clamp, expSmoothing, wrapAngle } from './math.js';
+import { CAIRN_R4, SURFACES } from './content.js';
+import { axleLoads, combinedTyreForces, drivenAxleShares, stepPowertrain } from './dynamics.js';
 import { nearestStagePoint, sampleStage } from './stage.js';
 
 const GRAVITY = 9.81;
 const TYRE_FRONT = 72000;
 const TYRE_REAR = 68000;
 const LANDING_DAMAGE_CAP_SCALE = { suspension: 0.72 / 0.78, body: 0.82 / 0.9 };
+const SURFACE_BY_ID = new Map(SURFACES.map(surface => [surface.id, surface]));
+const DEFAULT_ASSISTS = Object.freeze({ automatic: true, stability: true, braking: true, paceNotes: true });
+const DEFAULT_TUNING = Object.freeze({ brakeBias: 0, steeringRatio: 0, rideHeight: 0, damping: 0, tyreId: 'standard' });
 const cloneProfile = value => {
   if (value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(cloneProfile);
@@ -22,9 +26,12 @@ const freezeProfile = value => {
 };
 
 export class RallyCar {
-  constructor(stage, profile = CAIRN_R4) {
+  constructor(stage, profile = CAIRN_R4, options = {}) {
     this.stage = stage;
     this.profile = isDeepFrozen(profile) ? profile : freezeProfile(cloneProfile(profile));
+    this.assists = { ...DEFAULT_ASSISTS, ...(options.assists || {}) };
+    this.tuning = { ...DEFAULT_TUNING, ...(options.tuning || {}) };
+    this.weather = { gripScale: 1, roadWetness: 0, ...(options.weather || {}) };
     this.suspensionResponse = {
       travel: this.profile.suspension.travelM / CAIRN_R4.suspension.travelM,
       spring: this.profile.suspension.springHz / CAIRN_R4.suspension.springHz,
@@ -58,6 +65,7 @@ export class RallyCar {
     this.longitudinalSpeed = 0;
     this.lateralSpeed = 0;
     this.acceleration = 0;
+    this.longitudinalAcceleration = 0;
     this.lateralAcceleration = 0;
     this.collisionImpulse = 0;
     this.collisionCooldown = 0;
@@ -68,6 +76,7 @@ export class RallyCar {
     this.gear = 1;
     this.rpm = 1500;
     this.shiftPulse = 0;
+    this.shiftRemaining = 0;
     if (repair) this.damage = { engine: 0, steering: 0, suspension: 0, brakes: 0, body: 0 };
   }
 
@@ -87,7 +96,9 @@ export class RallyCar {
       steer: clamp(rawInput.steer || 0, -1, 1),
       throttle: clamp(rawInput.throttle || 0, 0, 1),
       brake: clamp(rawInput.brake || 0, 0, 1),
-      handbrake: clamp(rawInput.handbrake || 0, 0, 1)
+      handbrake: clamp(rawInput.handbrake || 0, 0, 1),
+      shiftUp: Boolean(rawInput.shiftUp),
+      shiftDown: Boolean(rawInput.shiftDown)
     };
     this.collisionImpulse *= Math.exp(-9 * dt);
     this.collisionCooldown = Math.max(0, this.collisionCooldown - dt);
@@ -109,62 +120,105 @@ export class RallyCar {
     const roadHalfWidth = road.width * 0.5;
     const onRoad = Math.abs(road.lateral) <= roadHalfWidth + 0.7;
     this.surface = onRoad ? road.surface : 'grass';
-    const baseMu = this.surface === 'compact' ? 0.91 : this.surface === 'loose' ? 0.69 : 0.43;
-    const looseRearBias = this.surface === 'loose' ? 0.90 : 0.96;
+    const surfaceData = SURFACE_BY_ID.get(this.surface) || SURFACE_BY_ID.get('grass');
+    const wetLoss = this.surface === 'tarmac' ? this.weather.roadWetness * 0.16 : this.weather.roadWetness * 0.045;
+    const baseMu = surfaceData.grip * this.weather.gripScale * (1 - wetLoss);
     const gripDamage = 1 - this.damage.suspension * 0.26;
-    const muFront = baseMu * this.profile.tyreGrip.front * gripDamage;
-    let muRear = baseMu * (this.surface === 'loose' ? looseRearBias : this.profile.tyreGrip.rear) * gripDamage * (1 - input.handbrake * 0.70);
+    const tyreSurfaceScale = this.tyreSurfaceScale(this.tuning.tyreId, this.surface);
+    const muFront = baseMu * this.profile.tyreGrip.front * gripDamage * tyreSurfaceScale;
+    const muRear = baseMu * this.profile.tyreGrip.rear * gripDamage * tyreSurfaceScale;
 
     const steerRate = 10.5 * (1 - this.damage.steering * 0.18);
     const steeringBias = this.damage.steering * 0.10 * Math.sin(2.47 + this.damage.body * 5.2);
     const steerTarget = clamp(input.steer + steeringBias, -1, 1);
     this.steer += (steerTarget - this.steer) * expSmoothing(steerRate, dt);
-    const maxSteer = this.profile.steeringLockRad / (1 + speed * 0.014);
+    const maxSteer = this.profile.steeringLockRad * (1 + this.tuning.steeringRatio * 0.18) / (1 + speed * 0.014);
     const steerAngle = this.steer * maxSteer;
 
-    const brakeTransfer = input.brake * clamp(Math.abs(u) / 12, 0, 1) * 0.16;
     const frontAxle = this.profile.wheelbaseM * (1 - this.profile.frontWeightFraction);
     const rearAxle = this.profile.wheelbaseM * this.profile.frontWeightFraction;
     const mass = this.profile.massKg;
-    const frontLoad = mass * GRAVITY * (rearAxle / (frontAxle + rearAxle) + brakeTransfer);
-    const rearLoad = mass * GRAVITY - frontLoad;
+    const loads = axleLoads(this.profile, this.longitudinalAcceleration);
+    const staticLoads = axleLoads(this.profile, 0);
+    const frontLoad = loads.front;
+    const rearLoad = loads.rear;
     const denominator = Math.max(2.2, Math.abs(u));
     const steeringDirection = u < -0.5 ? -1 : 1;
     const alphaFront = Math.atan2(v + frontAxle * this.yawRate, denominator) - steerAngle * steeringDirection;
     const alphaRear = Math.atan2(v - rearAxle * this.yawRate, denominator);
     const groundGrip = this.grounded ? 1 : 0.015;
-    let forceFront = clamp(-TYRE_FRONT * alphaFront, -muFront * frontLoad, muFront * frontLoad) * groundGrip;
-    let forceRear = clamp(-TYRE_REAR * alphaRear, -muRear * rearLoad, muRear * rearLoad) * groundGrip;
+    let lateralDemandFront = -TYRE_FRONT * alphaFront;
+    let lateralDemandRear = -TYRE_REAR * alphaRear;
 
     if (Math.abs(u) < 2.2) {
       const lowSpeed = clamp(Math.abs(u) / 2.2, 0, 1);
-      forceFront *= lowSpeed;
-      forceRear *= lowSpeed;
+      lateralDemandFront *= lowSpeed;
+      lateralDemandRear *= lowSpeed;
     }
 
     const engineHealth = 1 - this.damage.engine * 0.46;
     const brakeHealth = 1 - this.damage.brakes * 0.38;
-    let driveForce = 0;
-    let brakeForce = 0;
+    const powertrain = stepPowertrain(
+      { gear: this.gear, rpm: this.rpm, shiftRemaining: this.shiftRemaining },
+      { speedMps: u, throttle: input.throttle, shiftUp: input.shiftUp, shiftDown: input.shiftDown },
+      this.profile,
+      dt,
+      { automatic: this.assists.automatic }
+    );
+    this.gear = powertrain.gear;
+    this.rpm = powertrain.rpm;
+    this.shiftRemaining = powertrain.shiftRemaining;
+    if (powertrain.shifted) this.shiftPulse = 1;
+    let driveDemand = 0;
+    let serviceBrake = 0;
     if (u >= -0.5) {
-      driveForce = input.throttle * 8200 * engineHealth * (1 - clamp(Math.max(0, u) / 57, 0, 0.78));
-      if (u > 0.4) brakeForce = -input.brake * this.profile.brakeForceN * brakeHealth;
-      else if (input.brake > 0.15 && input.throttle < 0.1) driveForce = -input.brake * 3700 * engineHealth;
+      driveDemand = powertrain.driveForceN * engineHealth - Math.sign(u) * powertrain.engineBrakeForceN * engineHealth;
+      if (u > 0.4) serviceBrake = -input.brake * this.profile.brakeForceN * brakeHealth;
+      else if (input.brake > 0.15 && input.throttle < 0.1) driveDemand = -input.brake * 3700 * engineHealth;
     } else {
-      driveForce = -input.brake * 3700 * engineHealth;
-      brakeForce = input.throttle * 8500 * brakeHealth;
+      driveDemand = -input.brake * 3700 * engineHealth;
+      serviceBrake = input.throttle * this.profile.brakeForceN * brakeHealth;
     }
-    const handbrakeDirection = Math.sign(u);
-    brakeForce += -handbrakeDirection * input.handbrake * 2600 * clamp(Math.abs(u) / 1.5, 0, 1);
-    const traction = this.grounded ? 1 : 0.015;
-    driveForce *= traction;
-    brakeForce *= traction;
+    if (this.assists.stability && this.slipAmount > 0.12 && driveDemand > 0) driveDemand *= clamp(1 - this.slipAmount * 0.72, 0.32, 1);
+    if (this.assists.braking && this.slipAmount > 0.55) serviceBrake *= 1 - (this.slipAmount - 0.55) * 0.35;
+    const driveShare = drivenAxleShares(this.profile.drive, this.profile.torqueSplitFront ?? this.profile.frontWeightFraction);
+    const brakeBias = clamp(this.profile.brakeBiasFront + this.tuning.brakeBias * 0.08, 0.45, 0.78);
+    const handbrakeForce = -Math.sign(u) * input.handbrake * 5200 * clamp(Math.abs(u) / 1.5, 0, 1);
+    const longitudinalDemand = {
+      front: driveDemand * driveShare.front + serviceBrake * brakeBias,
+      rear: driveDemand * driveShare.rear + serviceBrake * (1 - brakeBias) + handbrakeForce
+    };
+    const capacity = {
+      front: muFront * frontLoad * (staticLoads.front / frontLoad) ** 0.08 * groundGrip,
+      rear: muRear * rearLoad * (staticLoads.rear / rearLoad) ** 0.08 * groundGrip
+    };
+    const tyreForces = combinedTyreForces(
+      { front: lateralDemandFront, rear: lateralDemandRear },
+      longitudinalDemand,
+      capacity
+    );
+    this.axleLoads = { ...loads };
+    this.tyreForces = {
+      frontLongitudinal: tyreForces.longitudinal.front,
+      rearLongitudinal: tyreForces.longitudinal.rear,
+      frontLateral: tyreForces.lateral.front,
+      rearLateral: tyreForces.lateral.rear
+    };
+    const forceFront = tyreForces.lateral.front;
+    const forceRear = tyreForces.lateral.rear;
+    const tyreLongitudinal = tyreForces.longitudinal.front + tyreForces.longitudinal.rear;
     const drag = -this.profile.dragCoefficient * u * Math.abs(u);
-    const rolling = -Math.sign(u) * (onRoad ? 145 : 510) * clamp(Math.abs(u) / 1.5, 0, 1) * traction;
+    const traction = this.grounded ? 1 : 0.015;
+    const rolling = -Math.sign(u) * surfaceData.rollingResistance * clamp(Math.abs(u) / 1.5, 0, 1) * traction;
     const gradeForce = this.grounded ? -mass * GRAVITY * road.grade : 0;
-    const longitudinalForce = driveForce + brakeForce + drag + rolling + gradeForce;
+    const longitudinalForce = tyreLongitudinal + drag + rolling + gradeForce;
     const lateralForce = forceFront * Math.cos(steerAngle) + forceRear;
-    const yawTorque = frontAxle * forceFront * Math.cos(steerAngle) - rearAxle * forceRear;
+    let yawTorque = frontAxle * forceFront * Math.cos(steerAngle) - rearAxle * forceRear;
+    yawTorque -= this.yawRate * this.profile.yawInertiaKgM2 * 0.38;
+    if (this.assists.stability && Math.abs(this.slipAngle) > 0.12) {
+      const desiredYawRate = clamp(u / this.profile.wheelbaseM * Math.tan(steerAngle), -2.2, 2.2);
+      yawTorque -= (this.yawRate - desiredYawRate) * this.profile.yawInertiaKgM2 * 1.35;
+    }
 
     const localAx = longitudinalForce / mass + v * this.yawRate;
     const localAy = lateralForce / mass - u * this.yawRate;
@@ -195,7 +249,8 @@ export class RallyCar {
     this.progressIndex = road.index;
     this.progress = road.s;
     this.lateral = road.lateral;
-    const groundY = road.y + road.camber * road.lateral + this.profile.rideHeightM;
+    const roadTexture = (Math.sin(road.s * 0.79) + Math.sin(road.s * 2.17) * 0.35) * surfaceData.roughness * 0.018;
+    const groundY = road.y + road.camber * road.lateral + this.profile.rideHeightM * (1 + this.tuning.rideHeight * 0.12) + roadTexture;
     this.vy -= GRAVITY * dt;
     this.y += this.vy * dt;
     const landingVelocity = this.vy;
@@ -227,6 +282,7 @@ export class RallyCar {
     this.slipAngle = Math.atan2(v, Math.max(2, Math.abs(u)));
     this.slipAmount = clamp((Math.abs(this.slipAngle) - 0.035) / 0.33, 0, 1);
     this.acceleration = localAx;
+    this.longitudinalAcceleration = longitudinalForce / mass;
     this.lateralAcceleration = localAy;
 
     const suspensionSoftness = 1 + this.damage.suspension * 1.5 * this.suspensionResponse.travel;
@@ -235,7 +291,6 @@ export class RallyCar {
     this.roll = this.springAngle(this.roll, targetRoll, 'rollVelocity', 9 * this.suspensionResponse.spring / suspensionSoftness, 6.5 * this.suspensionResponse.damping, dt);
     this.pitch = this.springAngle(this.pitch, targetPitch, 'pitchVelocity', 10 * this.suspensionResponse.spring / suspensionSoftness, 7 * this.suspensionResponse.damping, dt);
 
-    this.updatePowertrain(speed, dt);
     this.updateRecovery(road, onRoad, previousProgress, dt);
     return { road, onRoad, collisionImpulse: this.collisionImpulse };
   }
@@ -245,19 +300,11 @@ export class RallyCar {
     return value + this[velocityKey] * dt;
   }
 
-  updatePowertrain(speed, dt) {
-    const kph = speed * 3.6;
-    const thresholds = [0, 25, 50, 78, 110, 145];
-    let gear = 1;
-    for (let i = 1; i < thresholds.length; i += 1) if (kph >= thresholds[i]) gear = i + 1;
-    gear = Math.min(6, gear);
-    if (gear !== this.gear) this.shiftPulse = 1;
-    this.gear = gear;
-    const low = thresholds[gear - 1] || 0;
-    const high = thresholds[gear] || 180;
-    const ratio = clamp((kph - low) / Math.max(1, high - low), 0, 1);
-    this.rpm = 1900 + ratio * 5200 + Math.abs(this.slipAngle) * 1000;
-    this.rpm += this.shiftPulse * -900;
+  tyreSurfaceScale(tyreId, surfaceId) {
+    if (tyreId === 'tarmac') return surfaceId === 'tarmac' ? 1.08 : 0.86;
+    if (tyreId === 'wet') return this.weather.roadWetness > 0.25 ? 1.07 : 0.94;
+    if (tyreId === 'gravel') return surfaceId === 'compact' || surfaceId === 'loose' ? 1.06 : 0.92;
+    return 1;
   }
 
   checkHazardCollisions(dt) {
@@ -300,7 +347,7 @@ export class RallyCar {
       if (this.lastSafeTimer > 0.6) { this.lastSafeDistance = this.progress; this.lastSafeTimer = 0; }
     } else this.lastSafeTimer = 0;
 
-    const stranded = road.distance > 65 || (Math.abs(road.lateral) > 34 && this.speed < 2.2) || (Math.abs(road.lateral) > 18 && this.speed < 0.45);
+    const stranded = road.distance > 65 || (Math.abs(road.lateral) > road.width * 0.5 + 9 && this.speed < 2.2) || (Math.abs(road.lateral) > road.width * 0.5 + 5 && this.speed < 0.45);
     this.recoveryTimer = stranded ? this.recoveryTimer + dt : Math.max(0, this.recoveryTimer - dt * 2);
     this.needsRecovery = this.recoveryTimer > 2.2;
   }

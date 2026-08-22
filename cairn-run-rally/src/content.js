@@ -133,7 +133,7 @@ const kestrelStage = {
   segments: kestrelSegments,
   notes: kestrelNotes,
   splits: [1800, 3600, 5405],
-  expectedDurationSeconds: [205, 310],
+  expectedDurationSeconds: [205, 350],
   landmarkIds: ['stone-wall', 'quarry', 'moor', 'bridge', 'pine', 'finish-gate'],
   hazardPlan: {
     seed: 17,
