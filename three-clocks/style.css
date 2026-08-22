@@ -20,12 +20,12 @@
   --line:      #24334c;
   --ink:       #e8edf7;
   --ink-dim:   #9fb0cc;
-  /* #7f90ad, not the #6f819e this started as: the darker value measured
-     4.42:1 against --panel, which is under the 4.5:1 WCAG AA threshold for
-     normal-size text, and it is used at 13-14px on panels throughout. The
-     lighter value clears 4.5:1 against every background here, --panel-2
-     included. */
-  --ink-faint: #7f90ad;
+  /* Lightened from #6f819e, which measured 4.42:1 on --panel and 4.05:1
+     on --panel-2 — under the 4.5:1 AA floor, and this colour is used for
+     normal-size text (resolution criteria, watchlist triggers, scenario
+     labels), not just decoration. #7a8ca9 clears AA on every surface it
+     is used on. */
+  --ink-faint: #7a8ca9;
 
   --ai:      #38bdf8;
   --climate: #f59e0b;
@@ -160,8 +160,22 @@ p:last-child { margin-bottom: 0; }
 }
 .eyebrow::before { content: ""; width: 22px; height: 3px; border-radius: 2px; background: var(--accent); }
 
-.prose { max-width: 46rem; }
-.prose h2 { max-width: none; }
+/* The reading measure is set on the TEXT, not on the container.
+   Constraining the whole .prose column to 46rem squeezed the wide
+   components into it — the coupling matrix in particular came out with
+   four cramped columns of two-word lines while 340px of the page sat
+   empty beside it. So: prose keeps its measure, and anything that is
+   really a figure (tables, stat rows, tile grids, the axis strip, the
+   forecast cards) gets the full column width. */
+.prose { max-width: none; }
+.prose > p,
+.prose > .lede,
+.prose > h2,
+.prose > h3,
+.prose > .pull,
+.prose > .note-box,
+.prose > .blist,
+.prose > .deflist { max-width: 46rem; }
 .prose strong, .prose b { color: #fff; }
 
 .blist { margin: 0 0 1.2em; padding-left: 1.15em; }
@@ -252,7 +266,7 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 
 .tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); margin: 22px 0; }
 .tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 18px; }
-.tile h4 { color: var(--accent); margin-bottom: 7px; }
+.tile h3 { color: var(--accent); margin-bottom: 7px; margin-top: 0; font-size: 16.5px; }
 .tile p { font-size: 15px; color: var(--ink-dim); margin: 0; }
 
 .deflist { display: grid; gap: 10px; margin: 22px 0; }
@@ -265,16 +279,6 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 /* The scroll box is the wrapper, so a wide matrix scrolls in its own
    container rather than widening the document. */
 .twrap { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: var(--r-md); }
-/* The matrix is a table, not prose: it wants the page's full column width
-   rather than the 46rem measure that keeps body text readable, and squeezed
-   into 46rem its nine cells wrap to a column of single words. 1080px is
-   exactly .wrap's content box (1120 max-width less 40 of padding), so at
-   viewports wide enough for that box to be fully realised the table fills it
-   and cannot overflow. Below that the media query does not apply and it stays
-   inside the prose column, scrolling in its own box. */
-@media (min-width: 1140px) {
-  .prose .twrap { width: 1080px; max-width: none; }
-}
 .matrix { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
 .matrix th, .matrix td { padding: 14px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
 .matrix thead th { background: var(--panel-2); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
@@ -308,8 +312,12 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 @media (max-width: 760px) {
   .ax-head { display: none; }
   .ax-row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  /* The column header row is hidden here, so each cell carries its own
+     label. nth-of-type counts div siblings, and .ax-row's children are
+     [.ax-name, .ax-cell x3] — so 2, 3 and 4 are the three cells, in
+     order. Keep that in step with axisStrip() in app.js. */
   .ax-cell::before {
-    content: attr(data-l); display: block;
+    content: ""; display: block;
     font: 700 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
     color: var(--ink-faint); margin-bottom: 6px;
   }
@@ -397,8 +405,15 @@ input[type=range]::-moz-range-thumb {
 
 /* ---------------- readout ---------------- */
 
+/* The cone page's panel headings are <h2> so the heading order runs
+   h1 -> h2 -> h3 without a skip, but they are panel furniture rather
+   than page sections, so they take h3's size. Semantics and visual
+   weight are different jobs. */
+.readout > h2, .hz-block > h2, .drivers > h2, .notes > h2 {
+  font-size: clamp(18px, 2.1vw, 22px); margin: 0 0 14px;
+}
+
 .readout { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 20px; margin-bottom: 24px; }
-.readout h3 { margin: 0 0 14px; font-size: 19px; }
 .ro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 10px; }
 .ro { background: rgba(255,255,255,.04); border-radius: var(--r-sm); padding: 13px 14px; text-align: center; }
 .ro-v { display: block; font: 800 21px/1.1 var(--mono); color: var(--ink); margin-bottom: 5px; }

@@ -273,7 +273,73 @@ assert.match(managementNav, />Business <span class="chev"/);
 assert.match(managementNav, /search\.html\?cat=Business[^>]*>All Business<\/a>/);
 assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
 
-assert.equal(articles.length, 1104, "catalog copy and article corpus count should stay in lockstep");
+// The August review season: every Almanac document added since the previous advert sweep
+// (18 July) carries both a hand-written cross-promo and exactly one review. The reviews are
+// deliberately spread across desks rather than pooled on the Reviews desk, so this checks the
+// spread as well as the coverage.
+{
+  const reviewed = articles.filter((article) => article.review);
+  assert.equal(reviewed.length, 20, "every new Almanac document should carry exactly one review");
+  assert.equal(
+    new Set(reviewed.map((article) => article.review.href)).size,
+    reviewed.length,
+    "no Almanac document should be reviewed twice",
+  );
+
+  const deskSpread = {};
+  for (const article of reviewed) deskSpread[article.category] = (deskSpread[article.category] || 0) + 1;
+  assert.deepEqual(deskSpread, {
+    Reviews: 8, Technology: 2, Science: 3, Engineering: 1, Health: 2, Lifestyle: 1, Voices: 3,
+  }, "reviews should stay sprinkled across the desks, not collapse onto one");
+
+  for (const article of reviewed) {
+    const { subject, stars, verdict, href } = article.review;
+    assert.ok(subject && verdict, `${article.id} needs a review subject and verdict`);
+    assert.equal(stars * 2, Math.round(stars * 2), `${article.id} should score in whole or half stars`);
+    assert.ok(stars > 0 && stars <= 5, `${article.id} should score between half a star and five`);
+    assert.match(href, /^\.\.\/[a-z0-9-]+\/$/, `${article.id} should link to an Almanac document`);
+    assert.ok(
+      fs.existsSync(path.join(newsDir, "..", href.slice(3))),
+      `${article.id} reviews ${href}, which should be a real document directory`,
+    );
+    // A review discusses something that genuinely exists, so it must not carry the blanket
+    // "this never happened" disclaimer.
+    assert.equal(article.noticeLabel, "Review notice", `${article.id} should label its review notice`);
+    assert.match(article.notice, /is real/, `${article.id} should say the reviewed document is real`);
+
+    // The hero is a genuine screenshot of the document under review, not generated art —
+    // so it must be named for the slug it shows, and the caption must claim only that.
+    const slug = article.review.href.slice(3, -1);
+    assert.equal(article.image, `images/rev-${slug}.webp`, `${article.id} should show ${slug} itself`);
+    assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+    assert.ok(article.imageAlt && article.imageAlt.length > 40, `${article.id} needs descriptive alt text`);
+    assert.match(article.imageCaption, /real screenshot/, `${article.id} should disclose a real screenshot`);
+    assert.doesNotMatch(article.imageCaption, /AI-generated|invented|impression/,
+      `${article.id} hero is photographed, not invented — the caption must not say otherwise`);
+  }
+  assert.equal(
+    new Set(reviewed.map((article) => article.image)).size,
+    reviewed.length,
+    "each review needs its own screenshot",
+  );
+
+  // Reviews is a leaf desk under Life, with its own art, and the scorecard renders from the
+  // field rather than the category (so a Science or Voices review is scored too).
+  assert.match(rendererSource, /children: \["Lifestyle", "Reviews"/, "Reviews should sit under the Life desk");
+  assert.match(rendererSource, /Reviews:\s+\{ c1:/, "the Reviews desk needs its own category art");
+  assert.match(stylesheetSource, /\.review-stars \.half/, "the half-star needs a style");
+
+  // Every new document also gets a hand-written advert — not merely the generated fallback.
+  const adsWithoutFallback = adsSource.slice(0, adsSource.indexOf("Keep the cross-promotion inventory complete"));
+  for (const article of reviewed) {
+    assert.ok(
+      adsWithoutFallback.includes('href: "' + article.review.href + '"'),
+      `${article.review.href} should have a hand-written advert, not just the generated fallback`,
+    );
+  }
+}
+
+assert.equal(articles.length, 1125, "catalog copy and article corpus count should stay in lockstep");
 
 // ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
 // the graceful path, not throw URIError and blank the page.
@@ -430,6 +496,41 @@ for (const a of articles) {
   const plainHtml = renderArticleHtml(plain.id);
   assert.match(plainHtml, /never happened/, `${plain.id} (pure satire) should keep the satire notice`);
   assert.match(plainHtml, /Nothing here is true/, `${plain.id} footer should keep the fiction disclaimer`);
+}
+
+// A review must render its scorecard — subject, star glyphs with an accessible label, verdict
+// and a working link out — and must swap the blanket satire footer for the review disclaimer,
+// which acknowledges that the document under discussion genuinely exists.
+{
+  for (const article of articles.filter((item) => item.review)) {
+    const mount = { innerHTML: "" };
+    context.location = { search: `?id=${encodeURIComponent(article.id)}` };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    assert.doesNotThrow(() => context.window.NEWS.renderArticle("app"), `${article.id} should render`);
+
+    const html = mount.innerHTML;
+    assert.match(html, /class="review-box"/, `${article.id} should render its scorecard`);
+    assert.match(html, /class="review-stars" role="img" aria-label="[^"]+ out of five"/,
+      `${article.id} stars need an accessible label`);
+    assert.equal((html.match(/<span class="(?:on|half|off)">/g) || []).length, 5,
+      `${article.id} should render five star glyphs`);
+    assert.ok(html.includes('href="' + article.review.href + '"'), `${article.id} should link out to the document`);
+    assert.doesNotMatch(html, /never happened/, `${article.id} reviews a real document — it did happen`);
+    assert.doesNotMatch(html, /Nothing here is true/, `${article.id} footer must not assert total fiction`);
+    assert.match(html, /the document under discussion is real/, `${article.id} needs the review footer`);
+  }
+
+  // Half stars must be genuinely partial, and a five-star review must fill every glyph.
+  const halfStar = articles.find((item) => item.review && item.review.stars % 1 === 0.5);
+  const fullStar = articles.find((item) => item.review && item.review.stars === 5);
+  for (const [article, expected] of [[halfStar, 1], [fullStar, 0]]) {
+    const mount = { innerHTML: "" };
+    context.location = { search: `?id=${encodeURIComponent(article.id)}` };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    context.window.NEWS.renderArticle("app");
+    assert.equal((mount.innerHTML.match(/<span class="half">/g) || []).length, expected,
+      `${article.id} scored ${article.review.stars} should render ${expected} half star(s)`);
+  }
 }
 
 // ALM-BUG-KILN-00022: article bodies must not carry model-guardrail phrasing that reads as

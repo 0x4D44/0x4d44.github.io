@@ -23,7 +23,8 @@
 // ============================================================
 
 import * as THREE from "./three.module.min.js";
-import { canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
+import { NIGHT, NIGHT_TIME, canvasTexture, instance, mergeParts, part, vertexLit } from "./mesh.js";
+import { buildCity } from "./city.js";
 
 export const PARK_RADIUS = 470;
 export const WATER_LEVEL = -6.5;
@@ -53,7 +54,23 @@ function ramp(edge0, edge1, x) {
   return t * t * (3 - 2 * t);
 }
 
+// Which terrain groundHeight() is describing.
+//
+// Module state, which is not free, but the alternative is threading a
+// terrain function through the track builder, the coaster mesh, the
+// train and three cameras. Chicago is built on a lake plain and is flat
+// to within a few metres across the whole downtown; a city on the
+// park's rolling ground would put a kink in every street. Set it before
+// buildWorld and before the track is generated, and everything
+// downstream agrees.
+let flatGround = false;
+export function setTerrain(setting) {
+  flatGround = setting === "city";
+}
+
 export function groundHeight(x, z) {
+  // A lake plain: flat, because that is what the grid was drawn on.
+  if (flatGround) return 0;
   // Flat where the coaster stands, gently rolling further out, so the
   // horizon has shape without the track ever burying itself.
   const d = Math.hypot(x, z);
@@ -105,7 +122,8 @@ function stripeTexture(a, b, count = 10) {
 // The world
 // ------------------------------------------------------------
 
-export function buildWorld() {
+export function buildWorld({ setting = "park", density = 1 } = {}) {
+  const park = setting !== "city";
   const group = new THREE.Group();
   const updaters = [];
   const props = [];
@@ -117,6 +135,12 @@ export function buildWorld() {
   };
 
   // ---- sun and sky ----------------------------------------------------
+  //
+  // The sun's position is a function of one number, the hour, and so is
+  // everything that follows from it: its colour, the three bands of the
+  // sky, the fog, the strength of the fill, and how far up the city's
+  // windows have come. Sunrise at 6, noon at 12, sunset at 18 — near
+  // enough for a place that does not have a latitude.
   const sunDirection = new THREE.Vector3(-0.44, 0.55, 0.36).normalize();
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.5);
   sun.position.copy(sunDirection).multiplyScalar(320);
@@ -132,7 +156,8 @@ export function buildWorld() {
   sun.shadow.normalBias = 0.6;
   group.add(sun);
   group.add(sun.target);
-  group.add(new THREE.HemisphereLight(0xcfe6ff, 0x51703d, 1.0));
+  const hemi = new THREE.HemisphereLight(0xcfe6ff, 0x51703d, 1.0);
+  group.add(hemi);
   // A cool counter-light from the shadow side, so nothing goes flat black.
   const fill = new THREE.DirectionalLight(0x9fc4ff, 0.38);
   fill.position.set(150, 95, -180);
@@ -183,6 +208,90 @@ export function buildWorld() {
   sky.renderOrder = -1;
   group.add(sky);
 
+  // The palette at each end of the day. Everything between is a mix.
+  const PALETTE_DAY = {
+    top: new THREE.Color("#1c5aa8"),
+    middle: new THREE.Color("#8dbfe8"),
+    horizon: new THREE.Color("#e6dcc4"),
+    sunColor: new THREE.Color("#fff4d2"),
+    fog: new THREE.Color("#c3d9ea"),
+    sun: new THREE.Color("#fff1d6"),
+    hemiSky: new THREE.Color("#cfe6ff"),
+    hemiGround: new THREE.Color("#51703d"),
+  };
+  const PALETTE_DUSK = {
+    top: new THREE.Color("#2b3f78"),
+    middle: new THREE.Color("#7c6a9c"),
+    horizon: new THREE.Color("#e8a05c"),
+    sunColor: new THREE.Color("#ffb265"),
+    fog: new THREE.Color("#9a7f92"),
+    sun: new THREE.Color("#ffb473"),
+    hemiSky: new THREE.Color("#8f9ad0"),
+    hemiGround: new THREE.Color("#463f38"),
+  };
+  const PALETTE_NIGHT = {
+    top: new THREE.Color("#050b1c"),
+    middle: new THREE.Color("#0a1430"),
+    horizon: new THREE.Color("#1b2647"),
+    sunColor: new THREE.Color("#2a3a63"),
+    fog: new THREE.Color("#0d1730"),
+    sun: new THREE.Color("#38507f"),
+    hemiSky: new THREE.Color("#22304f"),
+    hemiGround: new THREE.Color("#0d1119"),
+  };
+
+  const skyUniforms = sky.material.uniforms;
+  const mixed = {
+    top: new THREE.Color(), middle: new THREE.Color(), horizon: new THREE.Color(),
+    sunColor: new THREE.Color(), fog: new THREE.Color(), sun: new THREE.Color(),
+    hemiSky: new THREE.Color(), hemiGround: new THREE.Color(),
+  };
+
+  // Sets everything the hour controls. Called whenever the hour changes,
+  // not every frame: it is a dozen colour lerps, and the hour only moves
+  // when somebody drags it.
+  function setHour(hour) {
+    // Elevation: -1 at midnight, +1 at noon, zero at 6 and 18.
+    const t = ((hour % 24) + 24) % 24;
+    const elevation = Math.sin(((t - 6) / 12) * Math.PI);
+    const azimuth = ((t - 12) / 24) * Math.PI * 2;
+
+    sunDirection.set(
+      Math.sin(azimuth) * 0.86,
+      Math.max(-0.35, elevation),
+      Math.cos(azimuth) * 0.5,
+    ).normalize();
+    sun.position.copy(sunDirection).multiplyScalar(320);
+    skyUniforms.sunDir.value.copy(sunDirection);
+
+    // Two blends, not one: day to dusk as the sun drops to the horizon,
+    // dusk to night as it goes under. Interpolating straight from noon
+    // to midnight skips the only interesting part of a sunset.
+    const dusk = 1 - Math.min(1, Math.max(0, elevation / 0.34));
+    const night = 1 - Math.min(1, Math.max(0, (elevation + 0.12) / 0.16));
+    for (const key of Object.keys(mixed)) {
+      mixed[key].copy(PALETTE_DAY[key]).lerp(PALETTE_DUSK[key], dusk).lerp(PALETTE_NIGHT[key], night);
+    }
+    skyUniforms.top.value.copy(mixed.top);
+    skyUniforms.middle.value.copy(mixed.middle);
+    skyUniforms.horizon.value.copy(mixed.horizon);
+    skyUniforms.sunColor.value.copy(mixed.sunColor);
+
+    sun.color.copy(mixed.sun);
+    sun.intensity = 2.5 * Math.pow(Math.max(0, elevation), 0.55) * (1 - night) + 0.05;
+    // Shadows go with the light. A sun below the horizon casting a hard
+    // shadow map is both wrong and a whole render pass wasted.
+    sun.castShadow = elevation > 0.06;
+    hemi.color.copy(mixed.hemiSky);
+    hemi.groundColor.copy(mixed.hemiGround);
+    hemi.intensity = 1.0 * (1 - night * 0.72);
+    fill.color.copy(mixed.hemiSky);
+    fill.intensity = 0.38 * (1 - night * 0.55);
+
+    NIGHT.value = night;
+    return { elevation, night, fog: mixed.fog };
+  }
+
   // ---- ground ---------------------------------------------------------
   const shades = {
     grass: new THREE.Color("#79a94a"),
@@ -192,7 +301,7 @@ export function buildWorld() {
     sand: new THREE.Color("#d9cba3"),
     rock: new THREE.Color("#8d998a"),
   };
-  {
+  if (park) {
     const size = PARK_RADIUS * 2.9;
     const segments = 150;
     const geo = new THREE.PlaneGeometry(size, size, segments, segments);
@@ -231,7 +340,7 @@ export function buildWorld() {
   }
 
   // ---- the lake -------------------------------------------------------
-  {
+  if (park) {
     const geo = new THREE.PlaneGeometry(LAKE.radius * 2.2, LAKE.radius * 2.2, 26, 26);
     geo.rotateX(-Math.PI / 2);
     const water = new THREE.Mesh(geo, new THREE.ShaderMaterial({
@@ -286,7 +395,7 @@ export function buildWorld() {
   }
 
   // ---- the midway path ------------------------------------------------
-  {
+  if (park) {
     const segments = 220;
     const positions = new Float32Array((segments + 1) * 2 * 3);
     const indices = [];
@@ -346,7 +455,7 @@ export function buildWorld() {
     ]),
   };
 
-  {
+  if (park) {
     const rng = scatterRng(0x5eed17);
     const near = { conifer: [], broadleaf: [], poplar: [], shrub: [] };
     const far = { conifer: [], broadleaf: [], poplar: [], shrub: [] };
@@ -386,7 +495,7 @@ export function buildWorld() {
   //
   // One merged figure, instanced along the midway and across the infield,
   // each with its own shirt colour and its own idle sway.
-  {
+  if (park) {
     const figure = mergeParts([
       part(new THREE.CylinderGeometry(0.19, 0.26, 0.9, 6), 0xffffff, [0, 0.75, 0]),
       part(new THREE.SphereGeometry(0.17, 7, 6), 0xe8b48c, [0, 1.36, 0]),
@@ -434,7 +543,7 @@ export function buildWorld() {
   }
 
   // ---- midway: stalls, tents, lamps, flags ----------------------------
-  {
+  if (park) {
     const rng = scatterRng(0x57a115);
     const awning = [
       stripeTexture("#f4f2ec", "#c0392b"),
@@ -544,7 +653,7 @@ export function buildWorld() {
   }
 
   // ---- the big rides --------------------------------------------------
-  {
+  if (park) {
     // A Ferris wheel, turning. The gondolas hang from the rim, so they
     // counter-rotate: parented to the wheel they would tip their riders
     // out at the top.
@@ -704,7 +813,7 @@ export function buildWorld() {
   }
 
   // ---- the infield: a bandstand on the lawn ---------------------------
-  {
+  if (park) {
     const stand = new THREE.Group();
     const deck = new THREE.Mesh(
       new THREE.CylinderGeometry(7, 7.4, 1.1, 12),
@@ -757,7 +866,7 @@ export function buildWorld() {
   // Three silhouettes, banded so the floors read at distance, instanced
   // and tinted. Nothing out here casts a shadow — it is all well beyond
   // the shadow camera and would only cost fill rate.
-  {
+  if (park) {
     const banded = (width, height, depth, floors, base, band) => {
       const parts = [];
       for (let i = 0; i < floors; i++) {
@@ -838,6 +947,21 @@ export function buildWorld() {
       });
     }
     group.add(instance(hillGeo, new THREE.MeshLambertMaterial({ fog: false }), hills, { shadows: false }));
+  }
+
+  // ---- the city -------------------------------------------------------
+  //
+  // Everything the park put on the ground is skipped above when the
+  // setting is a city, so this is not an overlay: it is the other half
+  // of the same switch. It brings its own paving, so it also brings its
+  // own ground.
+  const cityKeepOuts = [];
+  if (!park) {
+    const city = buildCity({ groundHeight, density, rng: scatterRng(0x0c111ca6) });
+    group.add(city.group);
+    for (const item of city.carveable) carveable.push(item);
+    for (const fn of city.updaters) updaters.push(fn);
+    for (const zone of city.keepOuts) cityKeepOuts.push(zone);
   }
 
   // ---- weather and wildlife -------------------------------------------
@@ -935,6 +1059,7 @@ export function buildWorld() {
   const carveScale = new THREE.Vector3();
 
   function carve(track, extraKeepOuts = []) {
+    extraKeepOuts = [...extraKeepOuts, ...cityKeepOuts];
     let outerLimit = 0;
     for (const p of track.points) outerLimit = Math.max(outerLimit, Math.hypot(p.x, p.z));
 
@@ -956,13 +1081,29 @@ export function buildWorld() {
       return false;
     };
 
-    for (const { mesh, placements } of carveable) {
+    for (const item of carveable) {
+      const { mesh, placements } = item;
+      // Where each instance was last put, kept PER MESH rather than on
+      // the placement itself.
+      //
+      // Two meshes can legitimately share one placements array — a
+      // building's mass and the parapet on top of it are drawn
+      // separately but stand in the same places. With the bookkeeping
+      // stored on the placement, the first mesh to be carved claimed the
+      // flag and the second skipped every instance: the building sank
+      // and its roof stayed floating in mid-air, exactly where the
+      // coaster was about to pass through it.
+      if (!item.placed) item.placed = new Array(placements.length).fill(NaN);
       let dirty = false;
       for (let i = 0; i < placements.length; i++) {
         const p = placements[i];
-        const wanted = foulsTrack(p.x, p.z, 9) ? -80 : p.y;
-        if (p.placedY === wanted) continue;
-        p.placedY = wanted;
+        // A conifer is nine metres across; a city block is a hundred and
+        // twelve. Anything that carries its own footprint says so, and
+        // the corridor the coaster cuts is sized to what it would
+        // actually pass through rather than to the width of a tree.
+        const wanted = foulsTrack(p.x, p.z, p.keepOut ?? 9) ? -400 : p.y;
+        if (item.placed[i] === wanted) continue;
+        item.placed[i] = wanted;
         carveEuler.set(p.rx ?? 0, p.ry ?? 0, p.rz ?? 0);
         carveQuat.setFromEuler(carveEuler);
         carvePos.set(p.x, wanted, p.z);
@@ -984,7 +1125,9 @@ export function buildWorld() {
     sun,
     sky,
     carve,
+    setHour,
     update(elapsed, dt) {
+      NIGHT_TIME.value = elapsed;
       for (const fn of updaters) fn(elapsed, dt);
     },
   };

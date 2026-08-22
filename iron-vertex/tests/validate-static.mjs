@@ -17,7 +17,7 @@ const trackPath = join(appDir, "track.js");
 const audioPath = join(appDir, "audio.js");
 const vendorPath = join(appDir, "three.module.min.js");
 const licensePath = join(appDir, "THREE-LICENSE.txt");
-const MODULES = ["track.js", "audio.js", "mesh.js", "scenery.js", "coaster.js"];
+const MODULES = ["track.js", "audio.js", "mesh.js", "scenery.js", "coaster.js", "city.js", "weather.js"];
 const dataPath = join(root, "data.js");
 const indexPath = join(root, "index.html");
 
@@ -65,7 +65,7 @@ check(
 );
 // mesh.js is shared plumbing pulled in by scenery.js and coaster.js rather
 // than by the page itself.
-for (const module of MODULES.filter((name) => name !== "mesh.js")) {
+for (const module of MODULES.filter((name) => !["mesh.js", "city.js"].includes(name))) {
   check(
     new RegExp(`from\\s+["']\\./${module.replace(".", "\\.")}["']`).test(html),
     `the page imports ./${module} as a module`,
@@ -92,6 +92,42 @@ check(
   browserGlobals.length === 0,
   `track.js touches no browser globals — it must stay testable under node (found: ${browserGlobals.join(", ")})`,
 );
+// The city is reached through scenery.js rather than from index.html,
+// so it is checked here rather than by the import sweep above.
+{
+  const city = readFileSync(join(appDir, "city.js"), "utf8");
+  for (const name of ["buildCity", "cityGrid", "downtown"]) {
+    check(
+      new RegExp(`export\\s+function\\s+${name}\\b`).test(city),
+      `city.js exports ${name}`,
+    );
+  }
+  check(/import \* as THREE from "\.\/three\.module\.min\.js"/.test(city),
+    "city.js uses the vendored three");
+  check(!/https?:\/\//.test(city.replace(/^\s*\/\/.*$/gm, "")),
+    "city.js fetches nothing off the network");
+  const scenery = readFileSync(join(appDir, "scenery.js"), "utf8");
+  check(/from "\.\/city\.js"/.test(scenery), "scenery.js imports the city");
+  check(/export function setTerrain\b/.test(scenery), "scenery.js exports setTerrain");
+  check(/export function setHour\b|setHour,/.test(scenery), "scenery.js exposes setHour");
+
+  const weather = readFileSync(join(appDir, "weather.js"), "utf8");
+  for (const name of ["buildWeather"]) {
+    check(new RegExp(`export\\s+function\\s+${name}\\b`).test(weather),
+      `weather.js exports ${name}`);
+  }
+  check(/export const WEATHER_MODES/.test(weather), "weather.js exports WEATHER_MODES");
+  check(!/https?:\/\//.test(weather.replace(/^\s*\/\/.*$/gm, "")),
+    "weather.js fetches nothing off the network");
+
+  const mesh = readFileSync(join(appDir, "mesh.js"), "utf8");
+  check(/export function glowLit\b/.test(mesh), "mesh.js exports glowLit");
+  check(/export const NIGHT\b/.test(mesh), "mesh.js exports the NIGHT uniform");
+  // The glow attribute has to be written by mergeParts or every material
+  // that reads it renders undefined.
+  check(/setAttribute\("glow"/.test(mesh), "mergeParts writes the glow attribute");
+}
+
 for (const name of ["buildTrack", "CoasterSim", "RideLog", "supportColumns", "selfClearance", "tunnelSite"]) {
   check(
     new RegExp(`export\\s+(?:function|class)\\s+${name}\\b`).test(track),

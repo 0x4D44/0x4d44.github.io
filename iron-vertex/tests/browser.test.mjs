@@ -269,6 +269,37 @@ try {
       `${width}x${height}: track passes within ${clearance[1]}m of itself`);
 
     // ---- every control is where it looks, and hittable ----
+    //
+    // Ride is always on show. The rest live behind a disclosure that
+    // starts folded on a phone, because open it covers most of the
+    // screen — so unfold it before checking, or this asserts that a
+    // deliberately hidden control is visible.
+    //
+    // Ride is checked BEFORE unfolding, deliberately: it is the one
+    // control that must never need a tap to reach, and an earlier
+    // version of the fold buried it. This test is why that was caught.
+    const rideReach = await evaluate(`(() => {
+      const el = document.getElementById("btn-ride");
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return "zero-sized";
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return el.contains(hit) || el === hit ? true : "covered by " + (hit && hit.id ? "#" + hit.id : hit && hit.tagName);
+    })()`);
+    assert.equal(rideReach, true,
+      `${width}x${height}: btn-ride is not clickable while the panel is folded (${rideReach})`);
+
+    const foldedAtBoot = await evaluate(`(() => {
+      const p = document.getElementById("panel-body");
+      const was = p.open;
+      p.open = true;
+      return !was;
+    })()`);
+    if (width <= 640) {
+      assert.equal(foldedAtBoot, true,
+        `${width}x${height}: the control panel did not start folded on a phone`);
+    }
+    await delay(120);
+
     for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-sound"]) {
       const reachable = await evaluate(`(() => {
         const el = document.getElementById(${JSON.stringify(id)});
@@ -433,6 +464,142 @@ try {
     await delay(1500);
     assert.deepEqual(pageErrors, [], `${width}x${height}: page reported errors`);
   }
+
+  // ---- the city, and the design dials ----
+  //
+  // The city is a second world with its own terrain, its own ground and
+  // seven hundred buildings, reached only by a URL parameter or a button
+  // — so nothing above touches it, and a module error in it would show
+  // up as a boot notice nobody had tested for.
+  trace("booting the city");
+  pageErrors = [];
+  await S("Emulation.setDeviceMetricsOverride", {
+    width: 1280, height: 800, deviceScaleFactor: 1, mobile: false,
+  });
+  await S("Page.navigate", {
+    url: `http://127.0.0.1:${port}/iron-vertex/?seed=20260726&site=city&length=1600&height=64`,
+  });
+  await poll("the city to boot", () => evaluate("window.__ironVertexReady === true"), 60_000);
+  await delay(1500);
+
+  const city = await evaluate(`({
+    site: document.getElementById("btn-setting").textContent.trim(),
+    length: Number(document.getElementById("stat-length").textContent),
+    outLength: document.getElementById("out-length").textContent,
+    outHeight: document.getElementById("out-height").textContent,
+    noticeHidden: document.getElementById("notice").hidden,
+    designOpen: document.getElementById("design").open,
+  })`);
+  assert.ok(city.noticeHidden, "city: the boot notice is still covering the page");
+  assert.match(city.site, /city/i, `city: the site button does not say city (${city.site})`);
+  assert.ok(city.designOpen, "city: a dialled link did not open the design panel");
+  // The dials in the link were honoured, and the readouts show what was
+  // actually built rather than what was asked for.
+  assert.ok(Math.abs(city.length - 1600) < 260,
+    `city: asked for 1600m of track, built ${city.length}m`);
+  assert.match(city.outLength, /^\d+ m$/, `city: length readout is "${city.outLength}"`);
+  assert.match(city.outHeight, /^\d+ m$/, `city: height readout is "${city.outHeight}"`);
+
+  // The ground is flat under a city: a lake plain, not the park's hills.
+  const flat = await evaluate(`(async () => {
+    const mod = await import("/iron-vertex/scenery.js");
+    return [mod.groundHeight(0, 0), mod.groundHeight(400, -300), mod.groundHeight(-620, 500)];
+  })()`);
+  assert.deepEqual(flat, [0, 0, 0], `city: the ground is not flat (${flat.join(", ")})`);
+
+  // Switching back to the park rebuilds the world without throwing, and
+  // brings the terrain back with it.
+  await evaluate(`document.getElementById("btn-setting").click()`);
+  await delay(2500);
+  const back = await evaluate(`(async () => {
+    const mod = await import("/iron-vertex/scenery.js");
+    return {
+      site: document.getElementById("btn-setting").textContent.trim(),
+      rolling: mod.groundHeight(-620, 500),
+      length: Number(document.getElementById("stat-length").textContent),
+    };
+  })()`);
+  assert.match(back.site, /park/i, `city: the site did not switch back (${back.site})`);
+  assert.notEqual(back.rolling, 0, "city: the park terrain did not come back");
+  assert.ok(back.length > 400, `city: the track did not rebuild (${back.length}m)`);
+
+  // And the dials still drive it.
+  await evaluate(`(() => {
+    const el = document.getElementById("dial-speed");
+    el.value = "140";
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  })()`);
+  await delay(2000);
+  const fast = await evaluate(`document.querySelector("#nameplate .facts").textContent`);
+  assert.match(fast, /km\/h/, `city: the nameplate lost its facts (${fast})`);
+  await delay(1200);
+  assert.deepEqual(pageErrors, [], "city: page reported errors");
+
+  // ---- night, and weather ----
+  //
+  // Both are shader work, and a shader that fails to compile does not
+  // throw where you can see it — three logs and carries on drawing
+  // nothing. So this checks the PICTURE: at midnight the frame must be
+  // dark, and it must not be uniformly dark, because a city with its
+  // lights on is dark with bright bits in it.
+  trace("night and weather");
+  pageErrors = [];
+  await S("Page.navigate", {
+    url: `http://127.0.0.1:${port}/iron-vertex/?seed=20260726&site=city&hour=22`,
+  });
+  await poll("the night city to boot", () => evaluate("window.__ironVertexReady === true"), 60_000);
+  await delay(3000);
+
+  const luminance = async () => evaluate(`(async () => {
+    await new Promise((r) => requestAnimationFrame(r));
+    const c = document.querySelector("canvas");
+    const off = new OffscreenCanvas(c.width, c.height);
+    const g = off.getContext("2d");
+    g.drawImage(c, 0, 0);
+    const { data } = g.getImageData(0, 0, c.width, c.height);
+    let sum = 0, bright = 0, n = 0;
+    for (let i = 0; i < data.length; i += 16) {
+      const l = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      sum += l; n++;
+      if (l > 110) bright++;
+    }
+    return { mean: +(sum / n).toFixed(1), brightPct: +(100 * bright / n).toFixed(2) };
+  })()`);
+
+  const night = await luminance();
+  assert.ok(night.mean < 70, `night: the frame is not dark (mean ${night.mean})`);
+  assert.ok(night.brightPct > 0.4,
+    `night: nothing is lit — the city's windows never came on (${night.brightPct}% bright)`);
+
+  // And by day the same view is bright. If the hour dial did nothing,
+  // these two would match.
+  await evaluate(`(() => {
+    const el = document.getElementById("dial-hour");
+    el.value = "26";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  })()`);
+  await delay(1200);
+  const day = await luminance();
+  assert.ok(day.mean > night.mean * 1.8,
+    `night: the hour dial did not change the light (night ${night.mean}, day ${day.mean})`);
+
+  // Weather cycles and survives a few seconds of animation.
+  for (const expected of ["rain", "snow", "clear"]) {
+    await evaluate(`document.getElementById("btn-weather").click()`);
+    await delay(900);
+    const label = await evaluate(`document.getElementById("btn-weather").textContent.trim()`);
+    assert.match(label, new RegExp(expected, "i"),
+      `weather: expected ${expected}, button says "${label}"`);
+    assert.match(
+      await evaluate(`new URL(location.href).searchParams.get("weather") || "clear"`),
+      new RegExp(expected, "i"),
+      `weather: ${expected} did not reach the URL`,
+    );
+  }
+  await delay(1500);
+  assert.deepEqual(pageErrors, [], "night/weather: page reported errors");
 
   trace("done");
   cleanup();

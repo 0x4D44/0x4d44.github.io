@@ -132,7 +132,88 @@ window.AD_ICONS = {
     '<line x1="26" y1="46" x2="26" y2="56"/><line x1="38" y1="46" x2="38" y2="56"/></g>',
   paintroller: '<rect x="14" y="12" width="30" height="14" rx="3" fill="currentColor"/>' +
     '<rect x="26" y="26" width="6" height="18" fill="currentColor"/>' +
-    '<path d="M22 44 h14 a2 2 0 0 1 2 2 v8 a2 2 0 0 1 -2 2 H22 a2 2 0 0 1 -2 -2 v-8 a2 2 0 0 1 2 -2 Z" fill="currentColor"/>'
+    '<path d="M22 44 h14 a2 2 0 0 1 2 2 v8 a2 2 0 0 1 -2 2 H22 a2 2 0 0 1 -2 -2 v-8 a2 2 0 0 1 2 -2 Z" fill="currentColor"/>',
+
+  // ---- badges for the July/August Almanac intake ----
+  volcano: '<path d="M26 26 h12 l18 32 H8 Z" fill="currentColor"/>' +
+    '<path d="M32 4 c5 7 -3 9 0 15 M20 10 c4 6 -2 8 0 12 M44 10 c-4 6 2 8 0 12" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  floppy: '<path d="M8 8 h38 l10 10 v38 H8 Z" fill="currentColor"/>' +
+    '<rect x="20" y="8" width="22" height="17" fill="#000" fill-opacity=".42"/>' +
+    '<rect x="34" y="10" width="6" height="13" fill="currentColor"/>' +
+    '<rect x="17" y="36" width="30" height="20" fill="#000" fill-opacity=".28"/>',
+  beetle: '<ellipse cx="30" cy="38" rx="15" ry="19" fill="currentColor"/>' +
+    '<circle cx="30" cy="15" r="7" fill="currentColor"/>' +
+    '<line x1="30" y1="20" x2="30" y2="56" stroke="#000" stroke-opacity=".4" stroke-width="3"/>' +
+    '<g stroke="currentColor" stroke-width="4" stroke-linecap="round">' +
+    '<line x1="16" y1="26" x2="6" y2="20"/><line x1="15" y1="38" x2="4" y2="38"/><line x1="16" y1="50" x2="6" y2="56"/></g>' +
+    '<path d="M45 48 q9 3 15 10 M47 40 q9 1 14 5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  monitor: '<rect x="4" y="8" width="56" height="38" rx="4" fill="currentColor"/>' +
+    '<rect x="10" y="14" width="44" height="26" fill="#000" fill-opacity=".45"/>' +
+    '<rect x="16" y="30" width="32" height="6" rx="3" fill="#000" fill-opacity=".3"/>' +
+    '<rect x="16" y="30" width="14" height="6" rx="3" fill="currentColor"/>' +
+    '<rect x="25" y="46" width="14" height="8" fill="currentColor"/>' +
+    '<rect x="14" y="54" width="36" height="6" rx="3" fill="currentColor"/>',
+  atom: '<circle cx="32" cy="32" r="6" fill="currentColor"/>' +
+    '<g fill="none" stroke="currentColor" stroke-width="3.5">' +
+    '<ellipse cx="32" cy="32" rx="27" ry="11"/>' +
+    '<ellipse cx="32" cy="32" rx="27" ry="11" transform="rotate(60 32 32)"/>' +
+    '<ellipse cx="32" cy="32" rx="27" ry="11" transform="rotate(120 32 32)"/></g>',
+  thermometer: '<rect x="24" y="4" width="14" height="40" rx="7" fill="none" stroke="currentColor" stroke-width="4"/>' +
+    '<circle cx="31" cy="50" r="11" fill="currentColor"/>' +
+    '<rect x="28" y="20" width="6" height="26" rx="3" fill="currentColor"/>' +
+    '<g stroke="currentColor" stroke-width="3" stroke-linecap="round">' +
+    '<line x1="44" y1="14" x2="54" y2="14"/><line x1="44" y1="22" x2="50" y2="22"/><line x1="44" y1="30" x2="54" y2="30"/></g>',
+  blackhole: '<circle cx="32" cy="30" r="12" fill="currentColor"/>' +
+    '<ellipse cx="32" cy="34" rx="28" ry="9" fill="none" stroke="currentColor" stroke-width="4"/>' +
+    '<path d="M10 22 a22 22 0 0 1 44 0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>',
+  brain: '<path d="M32 6 a14 14 0 0 0 -14 14 a12 12 0 0 0 -4 20 a13 13 0 0 0 18 14 Z" fill="currentColor"/>' +
+    '<path d="M32 6 a14 14 0 0 1 14 14 a12 12 0 0 1 4 20 a13 13 0 0 1 -18 14 Z" fill="currentColor"/>' +
+    '<g stroke="#000" stroke-opacity=".42" stroke-width="3" fill="none" stroke-linecap="round">' +
+    '<path d="M32 10 v44"/>' +
+    '<path d="M25 16 q-8 3 -6 10 q2 6 -4 9"/>' +
+    '<path d="M39 16 q8 3 6 10 q-2 6 4 9"/>' +
+    '<path d="M22 40 q7 1 8 8"/><path d="M42 40 q-7 1 -8 8"/></g>',
+  pothole: '<rect x="4" y="18" width="56" height="32" rx="3" fill="currentColor"/>' +
+    '<path d="M22 26 l10 -3 l11 5 l4 9 l-7 8 l-13 2 l-8 -7 l3 -9 Z" fill="#000" fill-opacity=".45"/>' +
+    '<g stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round">' +
+    '<line x1="4" y1="14" x2="60" y2="14"/><line x1="4" y1="54" x2="60" y2="54"/></g>',
+  tooth: '<path d="M32 8 c11 -4 22 0 22 13 c0 10 -5 15 -7 25 c-1 6 -2 12 -6 12 c-5 0 -4 -13 -9 -13 s-4 13 -9 13 c-4 0 -5 -6 -6 -12 c-2 -10 -7 -15 -7 -25 c0 -13 11 -17 22 -13 Z" fill="currentColor"/>',
+  compass: '<circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="4"/>' +
+    '<path d="M32 10 L38 30 L54 32 L38 34 L32 54 L26 34 L10 32 L26 30 Z" fill="currentColor"/>' +
+    '<circle cx="32" cy="32" r="4" fill="#fff" fill-opacity=".7"/>',
+  coaster: '<path d="M4 44 C14 44 14 12 26 12 C38 12 38 44 50 44 C56 44 58 40 60 36" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>' +
+    '<g stroke="currentColor" stroke-width="3">' +
+    '<line x1="14" y1="30" x2="14" y2="56"/><line x1="26" y1="14" x2="26" y2="56"/>' +
+    '<line x1="38" y1="30" x2="38" y2="56"/><line x1="50" y1="44" x2="50" y2="56"/></g>' +
+    '<rect x="4" y="56" width="56" height="4" fill="currentColor"/>' +
+    '<rect x="19" y="4" width="15" height="9" rx="3" fill="currentColor"/>',
+  dinotrack: '<path d="M32 58 c-9 0 -13 -6 -13 -13 c0 -6 4 -9 4 -15 h18 c0 6 4 9 4 15 c0 7 -4 13 -13 13 Z" fill="currentColor"/>' +
+    '<path d="M17 30 q-7 -14 -1 -22 q7 -5 9 6 l2 16 Z" fill="currentColor"/>' +
+    '<path d="M32 28 q-5 -18 0 -25 q5 -6 9 2 q2 9 -3 23 Z" fill="currentColor"/>' +
+    '<path d="M47 30 q7 -14 1 -22 q-7 -5 -9 6 l-2 16 Z" fill="currentColor"/>',
+  bat: '<path d="M32 20 l6 -9 l4 11 c8 -8 16 -11 22 -9 c-6 4 -8 10 -8 17 c0 8 -6 14 -14 14 l-10 -9 l-10 9 c-8 0 -14 -6 -14 -14 c0 -7 -2 -13 -8 -17 c6 -2 14 1 22 9 l4 -11 Z" fill="currentColor"/>',
+  piano: '<rect x="4" y="16" width="56" height="32" rx="3" fill="currentColor"/>' +
+    '<g fill="#000" fill-opacity=".55">' +
+    '<rect x="15" y="22" width="6" height="14"/><rect x="25" y="22" width="6" height="14"/>' +
+    '<rect x="38" y="22" width="6" height="14"/><rect x="47" y="22" width="6" height="14"/></g>' +
+    '<g stroke="#000" stroke-opacity=".55" stroke-width="2.5">' +
+    '<line x1="13" y1="36" x2="13" y2="48"/><line x1="23" y1="36" x2="23" y2="48"/>' +
+    '<line x1="33" y1="22" x2="33" y2="48"/><line x1="43" y1="36" x2="43" y2="48"/>' +
+    '<line x1="52" y1="36" x2="52" y2="48"/></g>' +
+    '<rect x="4" y="12" width="56" height="6" rx="3" fill="currentColor"/>',
+  strata: '<path d="M6 46 h52 v12 H6 Z" fill="currentColor"/>' +
+    '<path d="M7 34 q14 -6 26 -2 q14 4 24 -2 v14 H7 Z" fill="currentColor"/>' +
+    '<path d="M9 22 q13 -8 25 -3 q12 5 21 -3 v13 q-9 6 -21 1 q-12 -5 -25 2 Z" fill="currentColor"/>' +
+    '<path d="M11 12 q13 -8 23 -3 q10 5 19 -3 v10 q-9 6 -19 1 q-10 -5 -23 3 Z" fill="currentColor"/>' +
+    '<g fill="none" stroke="#000" stroke-opacity=".45" stroke-width="3">' +
+    '<path d="M7 34 q14 -6 26 -2 q14 4 24 -2"/>' +
+    '<path d="M9 22 q13 -8 25 -3 q12 5 21 -3"/>' +
+    '<path d="M11 12 q13 -8 23 -3 q10 5 19 -3"/></g>',
+  dominoes: '<g fill="currentColor">' +
+    '<rect x="7" y="18" width="11" height="36" rx="2"/>' +
+    '<rect x="23" y="18" width="11" height="36" rx="2" transform="rotate(13 28 54)"/>' +
+    '<rect x="40" y="18" width="11" height="36" rx="2" transform="rotate(28 45 54)"/></g>' +
+    '<rect x="3" y="54" width="58" height="5" rx="2" fill="currentColor"/>'
 };
 
 window.NEWS_ADS = [
@@ -653,6 +734,168 @@ window.NEWS_ADS = [
     fg: "#fff8ed",
     emoji: "🕯️", icon: "candle",
     fx: ["slide"]
+  },
+
+  // ---- Almanac cross-promos: the July/August intake ----
+  {
+    headline: "THE GREAT DYING — 96% OFF, ONE TIME ONLY",
+    body: "The worst extinction in Earth's history, run as a calibrated carbon–climate simulator. Scrub the crisis across deep time and watch an ocean stop breathing.",
+    cta: "Suffocate an ocean",
+    href: "../great-dying/",
+    bg: "linear-gradient(135deg,#7c2d12,#dc2626)", fg: "#fff",
+    icon: "volcano", bob: true, fx: ["flicker", "slide"]
+  },
+  {
+    headline: "A WHOLE PLANET. 640 KILOBYTES. NO EXCUSES.",
+    body: "How Civilization ran a world in less memory than this advert's stylesheet: linker-level paging, streamed art and a 608.8 Hz heartbeat, measured off the shipped binaries.",
+    cta: "Count the bytes",
+    href: "../world-in-640k/",
+    bg: "linear-gradient(135deg,#1e293b,#0891b2)", fg: "#fff",
+    icon: "floppy", fx: ["slide", "jitter"]
+  },
+  {
+    headline: "THE BEETLE THAT FIRES BOILING CHEMICALS AT YOU",
+    body: "An interactive bestiary of nature's least reasonable defences — squirting blood, home-grown claws, industrial slime. 38 creatures. Nine you can set off yourself.",
+    cta: "Poke it and see",
+    href: "../animal-defenses/",
+    bg: "linear-gradient(135deg,#14532d,#65a30d)", fg: "#fff",
+    icon: "beetle", bob: true, fx: ["jitter", "slide"]
+  },
+  {
+    headline: "FIFTY-THREE DAYS TO REACH A DESKTOP",
+    body: "A from-scratch PC emulator learns to boot Windows 2000, via latched interrupt edges, a 128 MiB RAM dump and a deadlock caused by a dialog box nobody could see.",
+    cta: "Watch it boot",
+    href: "../win2k/",
+    bg: "linear-gradient(135deg,#0f172a,#2563eb)", fg: "#fff",
+    icon: "monitor", fx: ["slide"]
+  },
+  {
+    headline: "QUANTA — THE UNIVERSE, ITEMISED",
+    body: "Eight chapters and fourteen live instruments on quantum theory. Run a Bell test, tunnel a barrier, and dial a nanocrystal's colour purely by making it smaller.",
+    cta: "Collapse something",
+    href: "../quantum-theory/",
+    bg: "linear-gradient(135deg,#312e81,#7c3aed)", fg: "#fff",
+    icon: "atom", bob: true, fx: ["rainbow", "slide"]
+  },
+  {
+    headline: "IS YOUR BRAIN SIMPLY TOO WARM?",
+    body: "Does thinking really fall 2% per degree above 25°C? The honest answer, made interactive — the curve, the 37°C defence, the cold mirror and ten million exam scores.",
+    cta: "Take your temperature",
+    href: "../thermal-mind/",
+    bg: "linear-gradient(135deg,#9a3412,#f59e0b)", fg: "#fff",
+    icon: "thermometer", fx: ["flicker", "slide"]
+  },
+  {
+    headline: "EVENT HORIZON — POINT OF NO REFUNDS",
+    body: "A deep field guide to black holes: collapse, lensing, the photon ring, spaghettification, Hawking radiation, and how a shadow got photographed. A dozen live instruments.",
+    cta: "Fall in",
+    href: "../black-holes/",
+    bg: "linear-gradient(135deg,#020617,#4338ca)", fg: "#fff",
+    icon: "blackhole", bob: true, fx: ["slide", "rainbow"]
+  },
+  {
+    headline: "THE TEENAGE BRAIN: A REWIRING IN PROGRESS",
+    body: "Pruning, myelination, two badly synchronised clocks and a dopamine peak. Seven chapters and ten live instruments, built on the primary neuroscience, not the tabloids.",
+    cta: "Meet the rewiring",
+    href: "../teenage-brain/",
+    bg: "linear-gradient(135deg,#701a75,#db2777)", fg: "#fff",
+    icon: "brain", fx: ["slide"]
+  },
+  {
+    headline: "ONE LORRY = TENS OF THOUSANDS OF CARS",
+    body: "The fourth-power law, the layer sandwich under every wheel, and the exact business by which frost prises a hairline crack into the pothole outside your house.",
+    cta: "Blame the axle",
+    href: "../road-wear/",
+    bg: "linear-gradient(135deg,#292524,#78716c)", fg: "#fff",
+    icon: "pothole", fx: ["jitter", "slide"]
+  },
+  {
+    headline: "YOUR ENAMEL IS NEVER COMING BACK",
+    body: "A field guide to the one organ your body cannot repair: the acid clock, why toothache is its own category of pain, and what each repair actually buys you. 27 live figures.",
+    cta: "Open wide",
+    href: "../root-and-crown/",
+    bg: "linear-gradient(135deg,#155e75,#0ea5e9)", fg: "#fff",
+    icon: "tooth", bob: true, fx: ["slide"]
+  },
+  {
+    headline: "CROSS AFRICA. TURN THIRTY DISKS. FIND THE STAR.",
+    body: "Kari Mannerla's 1951 route-and-reveal classic, hand-drawn and playable: road, ship and aeroplane, rival expeditions, and one lucky horseshoe that will also do.",
+    cta: "Book passage",
+    href: "../african-star/",
+    bg: "linear-gradient(135deg,#78350f,#f59e0b)", fg: "#fff",
+    icon: "compass", fx: ["slide", "rainbow"]
+  },
+  {
+    headline: "A ROLLERCOASTER THAT DESIGNS ITSELF (OR LETS YOU)",
+    body: "Dial in length, lift height and top speed and it builds one that works. Ask for more speed than the drop can give and it fits a magnetic launch. Ride it through a park, or through Chicago.",
+    cta: "Ride the front seat",
+    href: "../iron-vertex/",
+    bg: "linear-gradient(135deg,#0c4a6e,#f97316)", fg: "#fff",
+    icon: "coaster", bob: true, fx: ["jitter", "slide"]
+  },
+  {
+    headline: "SIX TYRANNOSAURS AND THIRTY LAVA COUNTERS",
+    body: "Waddingtons' erupting 1985 adventure, restored in the browser: caves, rivers, a temple worth robbing, a swamp monster, and a valley on a countdown.",
+    cta: "Escape the valley",
+    href: "../lost-valley-dinosaurs/",
+    bg: "linear-gradient(135deg,#166534,#ca8a04)", fg: "#fff",
+    icon: "dinotrack", fx: ["flicker", "slide"]
+  },
+  {
+    headline: "SPIN DRACULA. RACE THE YELLOW STONES.",
+    body: "Waddingtons' 1977 castle chase, vividly restored: two vampires to hide from, a blood-red trail to survive, and a Green Vampire mask that keeps changing hands.",
+    cta: "Enter the castle",
+    href: "../game-of-dracula/",
+    bg: "linear-gradient(135deg,#450a0a,#b91c1c)", fg: "#fff",
+    icon: "bat", bob: true, fx: ["flicker", "jitter"]
+  },
+  {
+    headline: "TWENTY TONS OF FRAME, AND YOU CAN PLAY IT",
+    body: "How the piano actually works: the vibrating string, the escapement that throws a free-flying hammer, the soundboard, and a two-thousand-year tuning compromise.",
+    cta: "Strike a note",
+    href: "../instruments/",
+    bg: "linear-gradient(135deg,#1c1917,#a16207)", fg: "#fff",
+    icon: "piano", fx: ["slide"]
+  },
+  {
+    headline: "ARRAN: WHERE TIME GOT ITS FIRST HONEST MEASUREMENT",
+    body: "Ocean-floor mud, colliding continents, red deserts, a buried volcano and the shoreline outcrop that showed James Hutton the age of the Earth. Six field routes.",
+    cta: "Read the rocks",
+    href: "../arran-deep-time/",
+    bg: "linear-gradient(135deg,#134e4a,#0d9488)", fg: "#fff",
+    icon: "strata", fx: ["slide"]
+  },
+  {
+    headline: "FORTY PIECES. NOBODY CAN SEE YOURS.",
+    body: "Full-size Stratego in the browser: deploy in secret, scout the lakes, defuse the bombs, and spring the Spy on the Marshal. Hot-seat, or an opponent that cannot peek.",
+    cta: "Deploy in secret",
+    href: "../stratego/",
+    bg: "linear-gradient(135deg,#1e3a8a,#991b1b)", fg: "#fff",
+    icon: "flag", bob: true, fx: ["slide", "jitter"]
+  },
+  {
+    headline: "SEVEN LEVERS. YOU ARE ALREADY LEANING ON ONE.",
+    body: "Cialdini's persuasion levers with 33 field experiments, a lab where you predict each result first, and a replication ledger that audits its own best anecdotes.",
+    cta: "Click, whirr",
+    href: "../influence/",
+    bg: "linear-gradient(135deg,#581c87,#c026d3)", fg: "#fff",
+    icon: "dominoes", fx: ["rainbow", "slide"]
+  },
+  {
+    headline: "FIFTY PARTS. ONE WASHER. NO MEDICAL ADVICE.",
+    body: "The complete Flanging for Absolute Beginners course, serialised properly in this newspaper. Part 01 begins with the Call of the Washer. Part 50 involves a goose.",
+    cta: "Begin at Part 01",
+    href: "../master-flanger/",
+    bg: "linear-gradient(135deg,#7a3b2e,#f59e0b)", fg: "#fff",
+    icon: "flange", bob: true, blink: true, fx: ["flicker", "slide", "jitter"]
+  },
+  {
+    headline: "THREE PROBLEMS. THREE CLOCKS. ONE HONEST CONE.",
+    body: "AI, the climate and the peace run on different lags and need different numbers of people to agree. A live cone of possibilities from several hundred simulated futures — and an estimate written down where it can be scored.",
+    cta: "Open the model",
+    href: "../three-clocks/",
+    bg: "linear-gradient(135deg,#0f172a,#0891b2)", fg: "#fff",
+    icon: "clock", bob: true, fx: ["slide", "rainbow"]
   }
 ];
 
