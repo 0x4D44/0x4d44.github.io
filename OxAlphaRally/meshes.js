@@ -2652,6 +2652,11 @@ export function applyCarDamage(car, visual) {
     m.opacity = glass.windscreenCracked ? 0.62 : 0.34;
     m.roughness = glass.windscreenCracked ? 0.45 : 0.06;
   }
+  if (glass && car.parts.glassLeft) {
+    const out = !!glass.sideShattered;
+    car.parts.glassLeft.visible = !out;
+    car.parts.glassRight.visible = !out;
+  }
   const lights = visual.lights;
   if (lights && car.lamps) {
     for (let i = 0; i < car.lamps.length; i += 1) {
@@ -2901,27 +2906,32 @@ function pillarGeometry(b, d, col) {
   return c;
 }
 
-function buildGlass(b, d) {
+// One quad per pane, wound outward. The glass material is DoubleSide, so from
+// the driver's seat each pane is seen from behind and shaded flipped — which is
+// what glass is: one surface that reads both ways. Each pane is its own mesh so
+// damage can take them individually; every mesh carries the name "glass",
+// because the camera rigs treat all panes alike: see-through, not cover.
+function glassPanes(d) {
   const c = cabinFrame(d);
-  const col = [0.05, 0.07, 0.09];
-  const q = (p0, p1, p2, p3) => pushQuad3(b, p0, p1, p2, p3, col);
-  // One quad per pane, wound outward. glassMat is already DoubleSide, so the
-  // second winding these carried was a coplanar duplicate: it doubled the tint
-  // and z-fought with itself over the whole screen.
+  const q = (p0, p1, p2, p3) => [p0, p1, p2, p3];
   const wsB = [[-c.beltW * 0.93, c.beltY, c.zWs], [c.beltW * 0.93, c.beltY, c.zWs]];
   const wsT = [[-c.roofW * 0.97, c.roofY - 0.03, c.zRoofF + 0.02], [c.roofW * 0.97, c.roofY - 0.03, c.zRoofF + 0.02]];
-  q(wsB[0], wsB[1], wsT[1], wsT[0]);
   const rsB = [[-c.beltW * 0.90, c.beltY, c.zRs], [c.beltW * 0.90, c.beltY, c.zRs]];
   const rsT = [[-c.roofW * 0.95, c.roofY - 0.03, c.zRoofR - 0.02], [c.roofW * 0.95, c.roofY - 0.03, c.zRoofR - 0.02]];
-  q(rsT[0], rsT[1], rsB[1], rsB[0]);
   const zMid = (c.zWs + c.zRs) * 0.48;
-  for (const side of [-1, 1]) {
-    const xB = side * c.beltW * 0.99, xT = side * c.roofW * 1.0;
+  const side = (s) => {
+    const xB = s * c.beltW * 0.99, xT = s * c.roofW * 1.0;
     const front = [[xB, c.beltY, c.zWs - 0.05], [xB, c.beltY, zMid + 0.03], [xT, c.roofY - 0.05, zMid + 0.03], [xT, c.roofY - 0.05, c.zRoofF + 0.10]];
     const rear = [[xB, c.beltY, zMid - 0.03], [xB, c.beltY, c.zRs + 0.05], [xT, c.roofY - 0.05, c.zRoofR - 0.10], [xT, c.roofY - 0.05, zMid - 0.03]];
-    if (side > 0) { q(front[0], front[1], front[2], front[3]); q(rear[0], rear[1], rear[2], rear[3]); }
-    else { q(front[3], front[2], front[1], front[0]); q(rear[3], rear[2], rear[1], rear[0]); }
-  }
+    return s > 0 ? [q(front[0], front[1], front[2], front[3]), q(rear[0], rear[1], rear[2], rear[3])]
+      : [q(front[3], front[2], front[1], front[0]), q(rear[3], rear[2], rear[1], rear[0])];
+  };
+  return {
+    windscreen: [q(wsB[0], wsB[1], wsT[1], wsT[0])],
+    rearScreen: [q(rsT[0], rsT[1], rsB[1], rsB[0])],
+    left: side(-1),
+    right: side(1),
+  };
 }
 
 function buildBonnet(b, d, col) {
@@ -3295,26 +3305,26 @@ function buildHarness(b, L, x, col) {
   }
 }
 
-// A three-spoke wheel in its own tilted plane. The rim is a tube swept round a
-// circle rotated about X, so the spokes and the boss can share the same frame
-// instead of being placed by eye.
-function buildSteeringWheel(b, L, col, boss) {
-  const ca = Math.cos(L.wheelTilt), sa = Math.sin(L.wheelTilt);
-  const at = (ang, r) => [
-    L.wheelX + Math.cos(ang) * r,
-    L.wheelY + Math.sin(ang) * r * ca,
-    L.wheelZ - Math.sin(ang) * r * sa,
-  ];
+// The rim in its own frame — circle in XY, column along +Z toward the dash —
+// because the wheel is the one part of the cabin that turns. The mesh carries
+// the whole pose (hub position, rake about X), so game.js steers it by adding
+// to rotation.z: with Euler XYZ the spin applies in the rim plane first and the
+// rake tips it after, which is exactly what a steering column does.
+function steeringWheelGeometry(b, L, col, bossCol) {
   const rim = [];
-  for (let k = 0; k <= 16; k += 1) rim.push(at((k / 16) * TAU, L.wheelR));
+  for (let k = 0; k <= 16; k += 1) {
+    const a = (k / 16) * TAU;
+    rim.push([Math.cos(a) * L.wheelR, Math.sin(a) * L.wheelR, 0]);
+  }
   pushTube(b, rim, 0.019, 5, col, false);
   for (const ang of [Math.PI * 0.15, Math.PI * 0.85, Math.PI * 1.5]) {
-    pushTube(b, [at(ang, L.wheelR * 0.96), at(ang, 0.035)], 0.014, 4, col);
+    const ca = Math.cos(ang), sa = Math.sin(ang);
+    pushTube(b, [
+      [ca * L.wheelR * 0.96, sa * L.wheelR * 0.96, 0],
+      [ca * 0.035, sa * 0.035, 0],
+    ], 0.014, 4, col);
   }
-  const hub = at(0, 0);
-  pushCylinder(b, hub[0], hub[1], hub[2] + 0.03, 0.055, 0.050, 0.07, 10, "z", boss);
-  // The column, so the wheel is held by something and not floating in the frame.
-  pushTube(b, [[hub[0], hub[1], hub[2] + 0.02], [hub[0], hub[1] - 0.14, L.zDashR + 0.02]], 0.028, 6, boss);
+  pushCylinder(b, 0, 0, 0.03, 0.055, 0.050, 0.07, 10, "z", bossCol);
 }
 
 // The one place the player's eye rests for a whole stage, so it gets real
@@ -3377,7 +3387,10 @@ function buildInterior(b, d, col) {
   pushTaper(b, 0, floor, (c.zWs + L.zBulk) * 0.5, 0.36, tunnelLen, 0.27, tunnelLen, 0, 0.155, dark);
 
   buildDash(b, L, dark, grey, dial);
-  buildSteeringWheel(b, L, dark, grey);
+  // The column stays with the car; only the wheel turns on it. It is built here
+  // rather than on the wheel so steering cannot carry the column round with it.
+  pushTube(b, [[L.wheelX, L.wheelY, L.wheelZ + 0.02], [L.wheelX, L.wheelY - 0.14, L.zDashR + 0.02]],
+    0.028, 6, grey);
   for (const side of [-1, 1]) {
     buildSeat(b, L, side * L.seatX, cloth);
     buildHarness(b, L, side * L.seatX, webbing);
@@ -3606,6 +3619,9 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     roughness: 0.06, metalness: 0.0,
     transparent: true, opacity: 0.34, side: THREE.DoubleSide, vertexColors: true,
   }));
+  // The windscreen gets its own instance so a cracked screen goes milky on its
+  // own; the side panes and the backlight share glassMat and stay clear.
+  const screenGlassMat = vertexAlbedo(glassMat.clone());
   const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.55, vertexColors: true }));
   const metalMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.85, vertexColors: true }));
   const trimMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
@@ -3627,7 +3643,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     emissive: 0xd8200c, emissiveIntensity: 0.85, vertexColors: true,
   }));
 
-  const materials = [paint, plastic, glassMat, cageMat, metalMat, trimMat, podMat, lampMat, tailLampMat];
+  const materials = [paint, plastic, glassMat, screenGlassMat, cageMat, metalMat, trimMat, podMat, lampMat, tailLampMat];
   const paintMaterials = [paint, plastic];
   const geometries = [];
   const parts = Object.create(null);
@@ -3642,7 +3658,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     const geometry = finish(THREE, b, { colors: true });
     geometries.push(geometry);
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = name;
+    mesh.name = opt.meshName || name;
     mesh.castShadow = true;
     mesh.receiveShadow = opt.receive !== false;
     parts[name] = mesh;
@@ -3689,6 +3705,18 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   addPart("spare", (b) => buildSpare(b, d, black), trimMat, 6);
   addPart("rollCage", (b) => buildRollCage(b, d, cageCol), cageMat, 4);
   addPart("interior", (b) => buildInterior(b, d, trimCol), trimMat, 4, { receive: false });
+  // The wheel turns and the cabin does not, so it is its own mesh with its own
+  // transform: game.js steers it by adding to rotation.z. It carries the
+  // cabin's name rather than its own because what is in front of the driver is
+  // interior by any measure that counts pixels.
+  const wheelLayout = cabinLayout(d);
+  const bossGrey = [0.070, 0.072, 0.078];
+  const steer = addPart("steeringWheel", (b) => steeringWheelGeometry(b, wheelLayout, black, bossGrey),
+    trimMat, 4, { receive: false, meshName: "interior" });
+  if (steer) {
+    steer.position.set(wheelLayout.wheelX, wheelLayout.wheelY, wheelLayout.wheelZ);
+    steer.rotation.x = -wheelLayout.wheelTilt;
+  }
   addPart("cabinTrim", (b) => buildCabinTrim(b, d), trimMat, 4, { receive: false });
   addPart("tailDetail", (b) => buildTailDetail(b, d, [0.038, 0.038, 0.042]), trimMat, 1);
 
@@ -3698,12 +3726,32 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     }, tailLampMat, 1, { receive: false });
   }
 
-  // Glass last so its transparency sorts after the opaque shell.
-  const glassMesh = addPart("glass", (b) => buildGlass(b, d), glassMat, 4, { receive: false });
-  if (glassMesh) {
-    glassMesh.renderOrder = 2;
-    parts.windscreen = glassMesh;
-  }
+  // Glass last so its transparency sorts after the opaque shell. The windscreen
+  // mesh answers to both "windscreen" (damage) and "glass" (the see-through
+  // alias the material bands and camera rigs read); the other panes hang off
+  // their own keys so a shatter can take one side without the rest.
+  const GLASS_TINT = [0.05, 0.07, 0.09];
+  const panes = glassPanes(d);
+  const addPane = (key, quads, material) => {
+    const b = mkBuilder();
+    for (const p of quads) pushQuad3(b, p[0], p[1], p[2], p[3], GLASS_TINT);
+    fillPanelChannel(b, d, 4);
+    const geometry = finish(THREE, b, { colors: true });
+    geometries.push(geometry);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = "glass";
+    mesh.userData.isGlass = true;
+    mesh.castShadow = true;
+    mesh.receiveShadow = false;
+    mesh.renderOrder = 2;
+    parts[key] = mesh;
+    group.add(mesh);
+    return mesh;
+  };
+  addPane("rearScreen", panes.rearScreen, glassMat);
+  addPane("glassLeft", panes.left, glassMat);
+  addPane("glassRight", panes.right, glassMat);
+  parts.glass = addPane("windscreen", panes.windscreen, screenGlassMat);
 
   let triangles = 0;
   for (const g of geometries) triangles += triangleCount(g);

@@ -1026,6 +1026,158 @@ test("car: damage helpers move dents, hide detached parts and drive mud without 
   clearLiveryCache();
 });
 
+// ---- the cabin is a cabin -------------------------------------------------
+// Written the way the critic's verdict was phrased — what the eye sees, not
+// what the code does. The deck and ray-fan assertions are red against a loft
+// that seals the cabin at belt-line; the pane and wheel assertions are red
+// against any car whose steering wheel lives inside an anonymous interior part.
+
+function cockpitEyeLocal(spec) {
+  // The same arithmetic render.js's mountPosition() runs for the cockpit rig:
+  // localXFrac -0.46 of half width, mountY 1.16 above the road so comHeight
+  // comes back out, localZAxle -1.24 behind the front axle.
+  const hw = Math.max(spec.trackFront, spec.trackRear) * 0.5 - 0.085;
+  return new THREE.Vector3(
+    -0.46 * hw,
+    1.16 - spec.comHeight,
+    spec.wheelbase * (1 - spec.weightDistFront) - 1.24,
+  );
+}
+
+test("car: no horizontal deck plane crosses the cabin at belt-line height", () => {
+  const record = newRecord();
+  const rc = new THREE.Raycaster();
+  rc.near = 0.01;
+  const down = new THREE.Vector3(0, -1, 0);
+  for (const id of ["vireo-r2", "brackmoor-t8", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    car.group.updateMatrixWorld(true);
+    const d = car.dimensions;
+    // Drop a column of sight from above onto every point of the cockpit floor
+    // plan. A sealed hull answers every column with body paint at belt-line
+    // height; an open cabin lets the middle columns through to the tub.
+    let columns = 0;
+    let sealed = 0;
+    const z0 = d.rearAxle - 0.10;
+    const z1 = d.frontAxle - 0.40;
+    for (let x = -0.32; x <= 0.32; x += 0.08) {
+      for (let z = z0; z <= z1; z += 0.15) {
+        columns += 1;
+        rc.set(new THREE.Vector3(x, d.beltY + 0.60, z), down);
+        rc.far = 1.4;
+        const hit = rc.intersectObject(car.parts.body, false)[0];
+        if (hit && hit.point.y > d.beltY - 0.02 && hit.point.y < d.beltY + 0.14) sealed += 1;
+      }
+    }
+    assert.ok(sealed / columns < 0.5,
+      `${id}: ${sealed} of ${columns} cockpit floor-plan columns land on body paint at `
+      + `belt-line height — the hull is a sealed slab through the cabin`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("car: from the cockpit eye the frame is trim and glass, never hull underside", () => {
+  const record = newRecord();
+  const TRIM = new Set(["interior", "cabinTrim", "rollCage"]);
+  for (const id of ["vireo-r2", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    car.group.updateMatrixWorld(true);
+    const d = car.dimensions;
+    const eye = cockpitEyeLocal(spec);
+    const rc = new THREE.Raycaster();
+    rc.near = 0.01;
+    rc.far = 4;
+    const nm = new THREE.Matrix3();
+    const nd = new THREE.Vector3();
+    const fan = [[0, 0], [0, -0.16], [-0.22, -0.34], [0.22, -0.34], [-0.10, -0.55]];
+    let trimHits = 0;
+    for (const [dx, dy] of fan) {
+      const dir = new THREE.Vector3(dx, dy, 1).normalize();
+      rc.set(eye, dir);
+      const hit = rc.intersectObject(car.group, true)
+        .find((h) => h.object.isMesh && h.object.visible);
+      if (!hit) continue;
+      // Glass is one surface seen from behind inside the car; its DoubleSide
+      // material flips the normal when it shades, so it is exempt here.
+      if (hit.object.name === "glass") continue;
+      // A back-facing first hit means the driver is seeing the inside of the
+      // skin — the hull from underneath, which is what the slab verdict was.
+      nm.getNormalMatrix(hit.object.matrixWorld);
+      nd.copy(dir).applyMatrix3(nm).normalize();
+      const facing = hit.face.normal.dot(nd);
+      assert.ok(facing < 0.08,
+        `${id}: ray (${dx},${dy}) first lands on ${hit.object.name} back-facing `
+        + `(n·d ${facing.toFixed(2)}) — the driver sees hull underside`);
+      if (TRIM.has(hit.object.name)) { trimHits += 1; continue; }
+      const p = hit.point;
+      const overCabin = p.z > d.rearAxle - 0.15 && p.z < d.frontAxle - 0.35
+        && p.y > d.beltY + 0.05;
+      assert.ok(!overCabin,
+        `${id}: ray (${dx},${dy}) hits exterior ${hit.object.name} over the cabin aperture`);
+    }
+    assert.ok(trimHits >= 2,
+      `${id}: only ${trimHits} of ${fan.length} cockpit rays land on trim — there is no cabin around the driver`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("car: every window is its own surface flagged as glass, reading both ways", () => {
+  const record = newRecord();
+  for (const id of ["vireo-r2", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    for (const key of ["windscreen", "rearScreen", "glassLeft", "glassRight"]) {
+      const pane = car.parts[key];
+      assert.ok(pane && pane.isMesh, `${id}: window "${key}" is not its own registered mesh`);
+      assert.equal(pane.userData.isGlass, true, `${id}: "${key}" carries no isGlass flag`);
+      const m = pane.material;
+      assert.ok(m.transparent, `${id}: "${key}" is not transparent`);
+      assert.ok(m.opacity > 0.15 && m.opacity < 0.5,
+        `${id}: "${key}" opacity ${m.opacity} neither tints nor clears`);
+      assert.equal(m.side, THREE.DoubleSide, `${id}: "${key}" reads one way only`);
+      assert.ok(__primitives.triangleCount(pane.geometry) >= 2,
+        `${id}: "${key}" has no surface of its own`);
+    }
+    assert.ok(car.parts.glass, `${id}: the "glass" grouping vanished`);
+
+    applyCarDamage(car, {
+      panels: null, detached: null, lights: null,
+      glass: { windscreenCracked: false, windscreenShattered: false, sideShattered: true },
+    });
+    assert.equal(car.parts.glassLeft.visible, false, `${id}: side shatter left the left pane up`);
+    assert.equal(car.parts.glassRight.visible, false, `${id}: side shatter left the right pane up`);
+    assert.equal(car.parts.windscreen.visible, true, `${id}: side shatter took the windscreen with it`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("car: the steering wheel is a registered transform with its hub above the deck", () => {
+  const record = newRecord();
+  for (const id of ["vireo-r2", "brackmoor-t8", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const d = car.dimensions;
+    const w = car.parts.steeringWheel;
+    assert.ok(w && w.isMesh, `${id}: no steeringWheel part registered for game.js to rotate`);
+    assert.ok(w.position.y > d.beltY + 0.01,
+      `${id}: the wheel hub sits at ${w.position.y.toFixed(3)}, at or below the belt-line `
+      + `deck ${d.beltY.toFixed(3)} — it can never be seen from the cockpit`);
+    assert.ok(w.position.x < 0 && Math.abs(w.position.x) < d.bodyHalfWidth,
+      `${id}: the wheel is not in front of the left seat (x ${w.position.x.toFixed(3)})`);
+    assert.ok(Math.abs(w.rotation.x) > 0.15 && Math.abs(w.rotation.x) < 0.7,
+      `${id}: the wheel is not raked for the driver (rotation.x ${w.rotation.x.toFixed(2)})`);
+    const r = w.geometry.boundingSphere.radius;
+    assert.ok(r > 0.14 && r < 0.20, `${id}: rim radius ${r.toFixed(3)} is not a wheel`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
 // ---- wheels --------------------------------------------------------------
 
 test("wheel: tread class follows the tyre, geometry is sound, and it is cheap enough to instance", () => {
@@ -1880,6 +2032,7 @@ test("materials: the effective linear albedo of every part lands in its real ban
     ["diffuser", { is: "a black diffuser", lo: 0.02, hi: 0.20 }],
     ["mudflaps", { is: "black mudflaps", lo: 0.02, hi: 0.20 }],
     ["interior", { is: "a stripped interior: dash, seats, wheel rim", lo: 0.02, hi: 0.20 }],
+    ["steeringWheel", { is: "the wheel itself: rim, spokes, boss", lo: 0.02, hi: 0.20 }],
     ["spare", { is: "a spare wheel on a pale rim", lo: 0.02, hi: 0.50 }],
   ];
   const wheelBands = [
