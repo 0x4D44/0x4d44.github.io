@@ -918,6 +918,79 @@ test("terrain: the burial assertion still fails against the skin that had no con
   }
 });
 
+// The corridor conform's acceptance measure, from the defect report: the lattice
+// step comes from the triangle budget, so a cell spanning the road in a cutting
+// is a flat chord strung between vertices standing on the cut banks, and where
+// that chord clears the road the skin pokes straight through the ribbon. Sampled
+// across the whole road span, no point of the drawn skin inside halfWidth + 1 m
+// may stand above the road surface heightAt reports there. The epsilon is
+// 0.02 m — an order of magnitude under the reported interpenetration and wide
+// enough to ignore float dust in the field lookup.
+const SKIN_POKE_EPSILON = 0.02;
+
+function worstSkinPoke(st, terrain) {
+  const skin = terrainSkinAt(terrain);
+  let worst = -Infinity, at = null, checked = 0;
+  const latStep = 0.5;
+  for (let i = 0; i < st.count; i += 1) {
+    const hw = st.halfWidth[i];
+    let rx = st.tz[i], rz = -st.tx[i];
+    const rl = Math.hypot(rx, rz) || 1;
+    rx /= rl; rz /= rl;
+    const steps = Math.max(1, Math.ceil((hw + 1) / latStep));
+    for (let k = -steps; k <= steps; k += 1) {
+      const lat = (k / steps) * (hw + 1);
+      const px = st.x[i] + rx * lat;
+      const pz = st.z[i] + rz * lat;
+      const y = skin(px, pz);
+      if (y === null) continue;
+      checked += 1;
+      const excess = y - st.world.heightAt(px, pz);
+      if (excess > worst) { worst = excess; at = [px, pz]; }
+    }
+  }
+  return { worst, at, checked };
+}
+
+test("terrain: no point of the skin inside halfWidth+1m stands above the road surface", () => {
+  // alvenda-calderas is the book's hairpin stage (hairpin after hairpin through
+  // rock cuttings, the shape the chord defect lives in), skarvedal holds two
+  // shaded hairpins, rioseca carried the deepest historical burial and havnvik
+  // the reported 0.81 m case. The burial tests above measure the skin at the
+  // ribbon's own vertices; this measures the skin everywhere the road can be
+  // seen, which is where a between-vertices chord goes wrong.
+  for (const id of ["alvenda-calderas", "kloft-skarvedal", "tamarosa-rioseca", "vardhal-havnvik"]) {
+    const st = stageFromBook(id);
+    const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+    const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120 });
+    const r = worstSkinPoke(st, terrain);
+    assert.ok(r.checked > 50000, `${id}: only ${r.checked} span samples were reachable`);
+    assert.ok(r.worst <= SKIN_POKE_EPSILON,
+      `${id}: the skin stands ${r.worst.toFixed(3)} m above the road surface at `
+      + `${JSON.stringify(r.at)}, epsilon ${SKIN_POKE_EPSILON}`);
+    road.dispose();
+    terrain.dispose();
+  }
+
+  // The assertion has to be able to fail. With the conform switched off the same
+  // measurement must come back over the limit on the two worst stages, by the
+  // margin the defect was reported at; if it ever stops failing, the green run
+  // above is measuring nothing.
+  for (const id of ["tamarosa-rioseca", "vardhal-havnvik"]) {
+    const st = stageFromBook(id);
+    const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+    const terrain = buildTerrainMesh(THREE, st,
+      { textureSize: 16, margin: 120, conform: false });
+    assert.equal(terrain.conformedPoints, 0, "conform: false still conformed something");
+    const r = worstSkinPoke(st, terrain);
+    assert.ok(r.worst > 0.5,
+      `${id}: unconformed skin only pokes ${r.worst.toFixed(3)} m above the road, `
+      + "so the assertion above is not measuring the defect it was written for");
+    road.dispose();
+    terrain.dispose();
+  }
+});
+
 // ---- car -----------------------------------------------------------------
 
 test("car: bounding box matches the spec-derived dimensions and every named part exists", () => {
@@ -1462,6 +1535,54 @@ test("scenery: a stage that brings more roadside than the budget is thinned, not
     `trees thin at ${(near.lost / near.had).toFixed(2)} beside the road and `
     + `${(far.lost / far.had).toFixed(2)} out beyond 60 m; the bias is not doing any work`);
   lib.dispose();
+});
+
+test("scenery: the declared budget holds by the renderer's own counting, on the heaviest stages", () => {
+  // The book-budget test above trusts the library's own `triangles` field. This
+  // one recounts from what actually ships: render.js adopts whole InstancedMeshes
+  // (adoptInstanced), so what can reach a frame is prototype triangles x placed
+  // instances, plus the merged wire geometry as-is.
+  function countSceneryTriangles(lib) {
+    let tris = 0;
+    for (const child of lib.group.children) {
+      const g = child.geometry;
+      const per = g.getIndex() ? g.getIndex().count / 3 : g.getAttribute("position").count / 3;
+      tris += child.isInstancedMesh ? child.count * per : per;
+    }
+    return tris;
+  }
+
+  // The two stages that ask for the most roadside: kestrel brings the most items
+  // and bjornhalt lands closest to the ceiling after thinning.
+  for (const id of ["kloft-bjornhalt", "northmarch-kestrel"]) {
+    const st = stageFromBook(id);
+    const lib = buildSceneryLibrary(THREE, st, { textureSize: 16 });
+    const counted = countSceneryTriangles(lib);
+    assert.equal(counted, lib.triangles,
+      `${id}: an independent recount got ${counted}, the library claims ${lib.triangles}`);
+    assert.ok(counted <= TRIANGLE_BUDGET.scenery,
+      `${id}: scenery draws ${counted} triangles, budget ${TRIANGLE_BUDGET.scenery}`);
+    assert.equal(lib.overBudget, false, `${id}: could not be thinned into its budget`);
+
+    // Landmarks survive enforcement: every pole keeps the wires hanging on it.
+    const dropped = new Set(lib.thinned);
+    for (const it of st.scenery) {
+      if (it.kind === "pole") {
+        assert.ok(!dropped.has(it), `${id}: a pole was thinned; its wires hang off nothing`);
+      }
+    }
+
+    // And the enforcement is load-bearing here: handed an unlimited ceiling, the
+    // same counting blows straight through the declared one. If this ever stops
+    // failing, the budget assert above is passing on placement luck alone.
+    const raw = buildSceneryLibrary(THREE, st, { textureSize: 16, sceneryBudget: 1e9 });
+    const unthinned = countSceneryTriangles(raw);
+    assert.ok(unthinned > TRIANGLE_BUDGET.scenery,
+      `${id}: unthinned placement is only ${unthinned} triangles, `
+      + `under the ${TRIANGLE_BUDGET.scenery} budget — nothing is being enforced`);
+    raw.dispose();
+    lib.dispose();
+  }
 });
 
 // ---- road surfaces -------------------------------------------------------
