@@ -55,6 +55,15 @@ const PHYSICS_DT = 1 / 200;
 // Narrowing the pod moves its rim past 8 m so the near ground is left to the
 // dipped pair, and the pair is toed far enough apart to read as two pools with
 // the crown darker between them rather than as one merged blob.
+//
+// The critic's second pass still called the result "one round blob centred on
+// the car", and the measured crown profile agreed: everything peaked by 11 m
+// and the bumper flood ran at 85% of the peak. The reshaping keeps the dipped
+// pair (it already reads as two pools) and gives the lamp bar its real job —
+// its cone now *starts* ~10 m out, so its energy lands as a second maximum 15-30
+// m down the road and the illumination leads the car instead of sitting on it —
+// while the flood tightens to a flat wash hugging the nose. The pod's distance
+// window closes at 32 m so the far hotspot still fades the way a beam does.
 export const HEADLIGHT = Object.freeze({
   decay: 1,
   distance: 80,
@@ -62,12 +71,13 @@ export const HEADLIGHT = Object.freeze({
   mainReach: 24,
   mainIntensity: 150,
   mainToe: 2.6,
-  podAngle: 0.085,
-  podReach: 55,
-  podIntensity: 620,
-  spillAngle: 0.50,
-  spillReach: 10,
-  spillIntensity: 24,
+  podAngle: 0.06,
+  podReach: 50,
+  podIntensity: 1250,
+  podDistance: 32,
+  spillAngle: 0.34,
+  spillReach: 7,
+  spillIntensity: 22,
 });
 
 // The visible light cone in the air. Baked into the geometry rather than applied
@@ -154,6 +164,7 @@ const QUALITY = Object.freeze({
     pixelRatioCap: 1.35,
     anisotropy: 4,
     msaa: 2,
+    aa: 0.85,
     beams: true,
     headlightShadows: false,
     terrainSkip: 2,
@@ -180,6 +191,7 @@ const QUALITY = Object.freeze({
     pixelRatioCap: 1.75,
     anisotropy: 8,
     msaa: 4,
+    aa: 1.0,
     beams: true,
     headlightShadows: false,
     terrainSkip: 1,
@@ -206,6 +218,7 @@ const QUALITY = Object.freeze({
     pixelRatioCap: 2.0,
     anisotropy: 16,
     msaa: 4,
+    aa: 1.0,
     beams: true,
     headlightShadows: true,
     terrainSkip: 1,
@@ -1468,6 +1481,7 @@ uniform float uVignette;
 uniform float uRadial;
 uniform float uDither;
 uniform float uTime;
+uniform float uAa;
 uniform vec3 uLift;
 uniform vec3 uGamma;
 uniform vec3 uGain;
@@ -1487,6 +1501,36 @@ vec3 sampleScene(vec2 uv, vec2 dir, float amount) {
   );
 }
 
+// Edge-aware anti-aliasing, in the pass that already owns every pixel. The luma
+// range across five taps decides whether this fragment sits on a geometry edge;
+// a strong range blends the fragment toward the two sides of the detected
+// gradient, which turns a hard raster staircase into the two-stop ramp the
+// scene actually contains. Flat interiors and gentle shading gradients fall
+// through untouched, so the pass cannot soften the road's own texture. It is
+// five extra taps inside an existing fullscreen pass rather than a doubled
+// scene-target sample count — the autoscaler owns the frame budget either way.
+const float AA_EDGE_MIN = 0.04;
+const float AA_EDGE_FULL = 0.20;
+const float AA_REACH = 1.25;
+
+vec3 aaSample(vec3 cM, vec2 uv, vec2 texel) {
+  float lM = luma(cM);
+  float lN = luma(texture2D(tScene, uv + vec2(0.0, texel.y)).rgb);
+  float lS = luma(texture2D(tScene, uv - vec2(0.0, texel.y)).rgb);
+  float lE = luma(texture2D(tScene, uv + vec2(texel.x, 0.0)).rgb);
+  float lW = luma(texture2D(tScene, uv - vec2(texel.x, 0.0)).rgb);
+  float range = max(lM, max(max(lN, lS), max(lE, lW)))
+    - min(lM, min(min(lN, lS), min(lE, lW)));
+  if (range < AA_EDGE_MIN) return cM;
+  vec2 grad = vec2(lE - lW, lN - lS);
+  float gl = length(grad);
+  vec2 dir = gl > 1e-6 ? grad / gl : vec2(0.0);
+  float strength = uAa * smoothstep(AA_EDGE_MIN, AA_EDGE_FULL, range);
+  vec3 side = texture2D(tScene, uv + dir * texel * AA_REACH).rgb
+    + texture2D(tScene, uv - dir * texel * AA_REACH).rgb;
+  return mix(cM, side * 0.5, strength);
+}
+
 void main() {
   vec2 uv = vUv;
   vec2 centred = uv - 0.5;
@@ -1497,6 +1541,7 @@ void main() {
   // dispersion is a pixel or two. This multiplier is in TEXELS, so a value
   // sized as though it were a UV offset smears the whole frame into rainbows.
   vec3 col = sampleScene(uv, dir * uTexel * 6.0, uChroma * rad * rad);
+  if (uAa > 0.001) col = aaSample(col, uv, uTexel);
 
   if (uRadial > 0.001) {
     // Streaks towards the edges only; the middle of the screen, where the road
@@ -2031,9 +2076,10 @@ export function createRenderer(canvas, opts = {}) {
     right.name = "opus.headlight.r";
     left.castShadow = false;
     right.castShadow = false;
-    // The lamp bar: narrower and far brighter than the dipped beams, thrown most
-    // of a stage ahead.
-    const pod = new three.SpotLight(0xfffaf0, 0, h.distance, h.podAngle, 1, h.decay);
+    // The lamp bar: narrower and far brighter than the dipped beams, thrown
+    // most of a stage ahead — and windowed at podDistance so its hotspot fades
+    // like a beam rather than washing the hillside.
+    const pod = new three.SpotLight(0xfffaf0, 0, h.podDistance || h.distance, h.podAngle, 1, h.decay);
     pod.name = "opus.lightpod";
     pod.castShadow = false;
     // A wide, weak flood over the few metres in front of the bumper that a beam
@@ -2145,6 +2191,7 @@ export function createRenderer(canvas, opts = {}) {
         uRadial: { value: 0 },
         uDither: { value: 1 / 255 },
         uTime: { value: 0 },
+        uAa: { value: 0 },
         uLift: { value: new three.Vector3(0, 0, 0) },
         uGamma: { value: new three.Vector3(1, 1, 1) },
         uGain: { value: new three.Vector3(1, 1, 1) },
@@ -2327,6 +2374,7 @@ export function createRenderer(canvas, opts = {}) {
     // highlights and then dither an already-quantised image, which is worse than
     // no post at all. Such a device gets the renderer's own ACES path instead.
     post.enabled = q.post && (opts.post !== false) && supportsHdrTargets();
+    post.composite.uniforms.uAa.value = q.aa || 0;
     state.resolutionScale = state.autoEnabled ? autoScalerScale(state.auto) : 1;
     if (changed) applyQuality();
     applyToneMapping();
@@ -3893,12 +3941,20 @@ export function createRenderer(canvas, opts = {}) {
     // lift is a night look; it belongs to the night.
     u.uLift.value.set(0.001 + 0.034 * night, 0.0015 + 0.036 * night, 0.003 + 0.058 * night);
     u.uGamma.value.set(1.0, 0.995 - 0.02 * night, 0.985 - 0.035 * night);
+    // Warm/cool split on the sun's own elevation. ACES spends chroma faster
+    // than luminance — a low sun's sky arrives at the shoulder pale — so the
+    // grade re-warms what the curve flattens: gain and saturation rise on a
+    // low sun and fall blue on a wet one. The sun's elevation is the physical
+    // quantity, the same one nightFraction reads.
+    const elev = Number.isFinite(cur.sunElevation) ? cur.sunElevation : 0.6;
+    const day = smoothstep(-0.10, 0.10, elev);
+    const warm = (1 - smoothstep(0.08, 0.50, elev)) * day;
     u.uGain.value.set(
-      1.02 + 0.04 * saturate(cur.turbidity / 12),
+      1.02 + 0.04 * saturate(cur.turbidity / 12) + 0.05 * warm,
       1.0,
-      0.98 + 0.10 * night + 0.06 * saturate(wetFilm(w)),
+      0.98 + 0.10 * night + 0.06 * saturate(wetFilm(w)) - 0.06 * warm,
     );
-    u.uSaturation.value = 1.06 - 0.24 * night - 0.12 * saturate(wetFilm(w));
+    u.uSaturation.value = 1.06 - 0.24 * night - 0.12 * saturate(wetFilm(w)) + 0.10 * warm;
   }
 
 // How much of the night grade to apply. This used to read weather.metrics
@@ -3999,6 +4055,7 @@ export function createRenderer(canvas, opts = {}) {
     u.uRadial.value = q.radialBlur ? saturate((state.speedCue || 0) - 0.42) * 1.7 : 0;
     u.uDither.value = q.dither ? 1.6 / 255 : 0;
     u.uTime.value = state.time;
+    u.uAa.value = q.aa || 0;
     post.quad.material = post.composite;
     gl.setRenderTarget(null);
     gl.render(post.scene, post.camera);
@@ -4255,6 +4312,7 @@ export function createRenderer(canvas, opts = {}) {
         post: post.enabled,
         hdr: !!post.hdr,
         samples: post.samples | 0,
+        aa: post.composite.uniforms.uAa.value,
         anisotropy: anisoTextures.length
           ? anisoTextures[0].anisotropy : 0,
       };

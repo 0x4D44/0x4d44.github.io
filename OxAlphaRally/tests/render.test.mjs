@@ -2168,6 +2168,130 @@ test("the dipped pair reads as two pools, not one merged blob", async () => {
   rig.api.dispose();
 });
 
+test("the beam leads the car: hotspot ahead, gentle nose, twin pools at mid range", async () => {
+  const rig = await nightLampRig();
+  const lampZ = rig.lamps[0].position.z;
+  const at = (x, d) => litRoad(rig.lamps, rig.roadY, x, lampZ + d);
+
+  let peak = 0;
+  let peakD = 0;
+  for (let d = 2; d <= 40; d += 0.25) {
+    const e = at(0, d);
+    if (e > peak) { peak = e; peakD = d; }
+  }
+  assert.ok(peak > 0, "the lamps put nothing on the road");
+  // The shipped pool's crown peak sat 10.7 m out with the flood at the bumper
+  // at 85% of it: one blob centred on the car. A rally beam leads — the
+  // brightest crown light lands well down the road and the nose is a wash.
+  assert.ok(peakD >= 13,
+    `the crown peak is ${peakD.toFixed(1)} m ahead — it should lead the car, not sit on it`);
+  assert.ok(at(0, 3) <= peak * 0.55,
+    `the road 3 m ahead runs at ${(at(0, 3) / peak * 100).toFixed(0)}% of the peak — the beam is a blob on the bumper`);
+
+  // Twin pools survive past the near flood: at 12 and 16 m the brightest light
+  // is off the crown, where a toed pair puts it, not dead centre. The shipped
+  // rig measured exactly 1.00x at both — one merged pool.
+  //
+  // And the pool is shaped, not one blob: a real beam has a trough between the
+  // dipped pair's near ground and the lamp bar's far reach. The shipped profile
+  // ran monotonically down from its 4 m peak with no second maximum at all.
+  let trough = Infinity;
+  for (let d = 6; d <= 10; d += 0.5) trough = Math.min(trough, at(0, d));
+  assert.ok(trough <= peak * 0.6,
+    `the crown never dips below ${(trough / peak * 100).toFixed(0)}% of its peak on the way out — `
+    + "the beam is one blob with no structure in it");
+
+  // And the far hotspot is a real second maximum, not a tail: past the twin
+  // pools the beam is still at three quarters of its peak. The shipped rig
+  // reached 65% and fell away from there.
+  let far = 0;
+  for (let d = 16; d <= 32; d += 0.5) far = Math.max(far, at(0, d));
+  assert.ok(far >= peak * 0.75,
+    `the beam at 16-32 m only reaches ${(far / peak * 100).toFixed(0)}% of its peak — the light dies at the bonnet`);
+  rig.api.dispose();
+});
+
+// ---- edge anti-aliasing ---------------------------------------------------
+//
+// The composite owns the image, so it is also the one place an edge-aware
+// smoothing pass can live: five extra taps inside a fullscreen pass that
+// already touches every pixel, instead of doubling the scene target's sample
+// count. The mirror below is anchored on the literal source, like every other
+// shader mirror in this suite.
+
+const AA_ANCHORS = [
+  "vec3 aaSample(vec3 cM, vec2 uv, vec2 texel) {",
+  "if (range < AA_EDGE_MIN) return cM;",
+  "vec3 side = texture2D(tScene, uv + dir * texel * AA_REACH).rgb",
+  "return mix(cM, side * 0.5, strength);",
+  "u.uAa.value = q.aa || 0;",
+];
+
+test("the composite carries an edge-AA pass and the quality dial drives it", () => {
+  for (const line of AA_ANCHORS) {
+    assert.ok(RENDER_SRC.includes(line),
+      `render.js no longer contains "${line}" — the AA mirror below is measuring maths nobody runs`);
+  }
+  const { api } = makeRenderer({ webgl2: true, quality: "medium" });
+  assert.ok(api.stats.aa > 0, `medium renders with aa=${api.stats.aa} — the AA pass is wired to nothing`);
+  api.setQuality("low");
+  assert.equal(api.stats.aa, 0, "low must not pay for an AA pass it cannot run");
+  api.dispose();
+});
+
+test("the AA blend softens a hard edge and leaves flat areas alone (mirror)", () => {
+  // JS mirror of aaSample's arithmetic, anchored above. An edge pixel must
+  // move most of the way to the two sides' average; a flat patch must come
+  // back untouched; a weak gradient must barely move.
+  const EDGE_MIN = 0.04;
+  const EDGE_FULL = 0.20;
+  const AMOUNT = 0.85;
+  const hermite = (e0, e1, x) => {
+    const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  };
+  const lumaOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  function aaSample(cM, cN, cS, cE, cW, sideA, sideB) {
+    const lM = lumaOf(cM);
+    const lN = lumaOf(cN);
+    const lS = lumaOf(cS);
+    const lE = lumaOf(cE);
+    const lW = lumaOf(cW);
+    const range = Math.max(lM, lN, lS, lE, lW) - Math.min(lM, lN, lS, lE, lW);
+    if (range < EDGE_MIN) return cM;
+    // The shader derives the across-edge direction from the same luma deltas
+    // and taps sideA/sideB at +-dir * texel * AA_REACH; the caller supplies
+    // those two taps so the mirror tests the blend, not the sampling.
+    const strength = AMOUNT * hermite(EDGE_MIN, EDGE_FULL, range);
+    const mix = (a, b, t) => a + (b - a) * t;
+    return [mix(cM[0], (sideA[0] + sideB[0]) * 0.5, strength),
+      mix(cM[1], (sideA[1] + sideB[1]) * 0.5, strength),
+      mix(cM[2], (sideA[2] + sideB[2]) * 0.5, strength)];
+  }
+
+  const dark = [0.08, 0.085, 0.09];
+  const bright = [0.75, 0.75, 0.75];
+  // Edge pixel on the dark side of a hard vertical edge: the bright side is
+  // east, the dark side continues west, north and south are the same dark.
+  const out = aaSample(dark, dark, dark, bright, dark, bright, dark);
+  const before = Math.abs(lumaOf(dark) - lumaOf(bright));
+  const after = Math.abs(lumaOf(out) - lumaOf(bright));
+  assert.ok(after <= before * 0.65,
+    `a hard edge only softened from ${before.toFixed(2)} to ${after.toFixed(2)} contrast`);
+
+  // Flat patch: identical everywhere, so the early-out must return it exactly.
+  const flat = [0.31, 0.30, 0.29];
+  assert.equal(aaSample(flat, flat, flat, flat, flat, flat, flat), flat,
+    "a flat patch was altered by the AA pass");
+
+  // Weak gradient: range just over the floor, so the blend is nearly nothing.
+  const weak = [0.30, 0.30, 0.30];
+  const weakUp = [0.36, 0.36, 0.36];
+  const weakOut = aaSample(weak, weakUp, weakUp, weakUp, weak, weakUp, weak);
+  assert.ok(Math.abs(lumaOf(weakOut) - lumaOf(weak)) < 0.01,
+    `a gentle gradient moved ${Math.abs(lumaOf(weakOut) - lumaOf(weak)).toFixed(3)} — the pass is blurring, not alias-fixing`);
+});
+
 // ---- contact shadow ------------------------------------------------------
 
 test("the contact pool tightens under compression and spreads as the car rises", () => {

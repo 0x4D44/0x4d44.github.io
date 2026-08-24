@@ -189,13 +189,16 @@ export const WEATHER_PRESETS = Object.freeze([
     // already reddens this beam to 2.9:1 red over blue, and stacking an orange
     // filter on top of that took it to 14:1 and threw away half the light for
     // the privilege.
-    sunIntensity: 7.0, sunAngularSize: 0.0125, haloStrength: 0.55,
+    sunIntensity: 7.0, sunAngularSize: 0.0125, haloStrength: 0.65,
     sunColour: [1.0, 0.82, 0.58], moonColour: [0.42, 0.48, 0.62],
     hemiSky: [0.30, 0.36, 0.58], hemiGround: [0.16, 0.13, 0.11],
     hemiIntensity: 0.72, ambientIntensity: 0.12,
     bounceColour: [0.36, 0.28, 0.20], bounceIntensity: 0.18,
     shadowStrength: 0.85, exposure: 1.42, turbidity: 2.6,
-    skyBrightness: 0.85, skyTintWeight: 0.42,
+    // Same argument as golden hour: the warm authored stops were being halved
+    // by the cool physical base and then flattened by the tone curve. First
+    // light now keeps its ember.
+    skyBrightness: 0.72, skyTintWeight: 0.75,
     skyZenith: [0.055, 0.115, 0.320], skyHorizon: [0.92, 0.46, 0.24], skyGround: [0.10, 0.08, 0.07],
     fogColour: [0.52, 0.40, 0.36], fogNear: 90, fogFar: 2200, fogDensity: 0.0012,
     visibility: 9000,
@@ -238,9 +241,9 @@ export const WEATHER_PRESETS = Object.freeze([
     // the sky comes out with no cloud in it at all — which is what White Anvil
     // photographed as: a clean gradient and nothing else in twenty thousand
     // pixels of sky.
-    cloudCover: 0.34, cloudOpacity: 0.9, cloudType: "cumulus",
-    cloudAltitude: 2100, cloudScale: 0.00040, cloudSharpness: 3.4, cloudSpeed: 0.5,
-    cloudLit: [1.0, 0.99, 0.97], cloudDark: [0.42, 0.46, 0.56],
+    cloudCover: 0.37, cloudOpacity: 0.9, cloudType: "cumulus",
+    cloudAltitude: 2100, cloudScale: 0.00040, cloudSharpness: 4.4, cloudSpeed: 0.5,
+    cloudLit: [1.0, 0.99, 0.97], cloudDark: [0.28, 0.33, 0.45],
     precipType: "none", precipRate: 0, precipRainMix: 0, precipSnowMix: 0,
     precipColour: [0.72, 0.76, 0.82], dropSize: 1.0, fallSpeed: 7.0,
     windSpeed: 3.2, windDirection: 210 * DEG, gustiness: 0.22,
@@ -266,11 +269,18 @@ export const WEATHER_PRESETS = Object.freeze([
     hemiIntensity: 0.83, ambientIntensity: 0.10,
     bounceColour: [0.52, 0.36, 0.22], bounceIntensity: 0.3,
     shadowStrength: 0.92, exposure: 1.35, turbidity: 3.4,
-    skyBrightness: 1.0, skyTintWeight: 0.5,
+    // The authored stops only reach the screen through a 50/50 mix with the
+    // physical Rayleigh base, and the physical base is cool; at a weight of 0.5
+    // the horizon's red-over-blue ratio arrived at the tone curve at 1.6 and
+    // ACES did the rest — the whole low sky photographed within eleven levels
+    // of pale pink-grey. The authored stops now carry the horizon (0.8), and
+    // the dome comes down off the tone curve's shoulder (0.72) so the warmth it
+    // does carry survives as colour instead of as brightness.
+    skyBrightness: 0.72, skyTintWeight: 0.8,
     skyZenith: [0.075, 0.130, 0.330], skyHorizon: [1.0, 0.60, 0.28], skyGround: [0.16, 0.11, 0.08],
     fogColour: [0.68, 0.48, 0.33], fogNear: 160, fogFar: 3600, fogDensity: 0.0009,
     visibility: 13000,
-    cloudCover: 0.38, cloudOpacity: 0.85, cloudType: "cumulus",
+    cloudCover: 0.44, cloudOpacity: 0.85, cloudType: "cumulus",
     cloudAltitude: 2600, cloudScale: 0.00034, cloudSharpness: 2.8, cloudSpeed: 0.45,
     cloudLit: [1.0, 0.70, 0.42], cloudDark: [0.30, 0.24, 0.28],
     precipType: "none", precipRate: 0, precipRainMix: 0, precipSnowMix: 0,
@@ -882,7 +892,23 @@ void main() {
   float disc = smoothstep(sunR - uSunSize * 0.35, sunR + uSunSize * 0.05, sd);
   float bloom = pow(max(sd, 0.0), 1400.0);
   float mie = pow(max(sd, 0.0), 6.0) * 0.09 + pow(max(sd, 0.0), 60.0) * 0.35;
-  col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + mie * uHalo);
+  // The tight lobes put the sun in the frame and nothing anywhere else, which
+  // is why a low sun photographed pale in every direction but one. The wide
+  // lobe carries the glow tens of degrees out; the wash is a super-saturated
+  // low-sky scatter keyed to the sun's side and killed above about twenty
+  // degrees of altitude — its colour is the sun gel squared, because the tone
+  // curve spends chroma faster than luminance and a merely warm input arrives
+  // at the screen merely pale; and the key is the azimuthal brightness ramp
+  // that makes the far side of a low sun's sky duskier than the near side,
+  // which is most of what "sunset" means to the eye. All three ride the sun's
+  // own gated beam, so an overcast lid and a night sky keep their even light.
+  float glowWide = pow(max(sd, 0.0), 2.2) * 0.09;
+  float sunSide = 0.5 + 0.5 * sd;
+  float keyAmp = 0.76 * smoothstep(0.15, 0.9, uSunIntensity)
+    * (1.0 - 0.45 * smoothstep(0.15, 0.7, uSunDir.y));
+  float wash = pow(max(sd, 0.0), 1.5) * 0.55 * (1.0 - smoothstep(0.02, 0.40, h));
+  col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + (mie + glowWide) * uHalo);
+  col += uSunColour * uSunColour * uSunIntensity * uHalo * wash;
 
   // Cloud deck: the view ray hit against a flat layer at uCloudAlt, so the deck
   // converges at the horizon and opens out overhead — the parallax that makes a
@@ -914,7 +940,7 @@ void main() {
     // the shading range is unreachable and the lid comes out one value whatever
     // it is made of, so the ramp reads an expanded copy instead.
     float swell = dot(n3, uCloudMix) / wsum;
-    float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 2.7, 0.0, 1.0);
+    float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 3.6, 0.0, 1.0);
     float thin = 1.0 - smoothstep(0.16, 0.86, body);
 
     // Light through the deck rather than past it. A lid does not hide the sun,
@@ -935,6 +961,11 @@ void main() {
     cloud += uSunColour * uCloudGlow * through;
     col = mix(col, cloud, clamp(density, 0.0, 1.0));
   }
+
+  // The azimuthal key rides the whole line of sight — deck included — so a
+  // cloud deck away from the sun sits in its own shadow the way a real deck
+  // does, instead of glowing evenly over a dusky far sky.
+  col *= mix(1.0 - 0.72 * keyAmp, 1.0 + 0.16 * keyAmp, pow(sunSide, 1.5));
 
   // Aerial perspective. The dome has to arrive at exactly the fog colour on the
   // horizon line, because that is the value the terrain fades to; anything else
@@ -1903,7 +1934,12 @@ function applyState(w, dt) {
   su.uCloudScale.value = c.cloudScale;
   su.uFlash.value = w.lightning.flash;
   su.uFogColour.value.setRGB(w._hazeCol[0], w._hazeCol[1], w._hazeCol[2]);
-  su.uHaze.value = saturate(0.12 + 0.6 * (1 - smoothstep(300, 12000, vis)));
+  // Floored well above zero even in the driest clear air: a clear horizon has a
+  // bright band along it (every sight-line down there is a long one), and it is
+  // the band that stops the terrain silhouette reading as a cut-out. At 0.12 it
+  // reached barely six degrees up and every clear sky photographed with a hard
+  // unbroken line where the world ended.
+  su.uHaze.value = saturate(0.19 + 0.55 * (1 - smoothstep(300, 12000, vis)));
 
   // Light level for the headlight decision. Deliberately sun and sky only: no
   // moon is ever bright enough to drive a stage by, and folding a setting moon

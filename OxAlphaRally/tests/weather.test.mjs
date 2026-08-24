@@ -781,13 +781,19 @@ const SKY_ANCHORS = [
   "vec3 col = mix(uHorizon, uZenith, pow(above, 0.72));",
   "col = mix(col, uGround, smoothstep(0.0, -0.22, h));",
   "float mie = pow(max(sd, 0.0), 6.0) * 0.09 + pow(max(sd, 0.0), 60.0) * 0.35;",
-  "col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + mie * uHalo);",
+  "float glowWide = pow(max(sd, 0.0), 2.2) * 0.09;",
+  "float keyAmp = 0.76 * smoothstep(0.15, 0.9, uSunIntensity)",
+  "* (1.0 - 0.45 * smoothstep(0.15, 0.7, uSunDir.y));",
+  "float wash = pow(max(sd, 0.0), 1.5) * 0.55 * (1.0 - smoothstep(0.02, 0.40, h));",
+  "col += uSunColour * uSunIntensity * (disc * 26.0 + bloom * 8.0 + (mie + glowWide) * uHalo);",
+  "col *= mix(1.0 - 0.72 * keyAmp, 1.0 + 0.16 * keyAmp, pow(sunSide, 1.5));",
+  "col += uSunColour * uSunColour * uSunIntensity * uHalo * wash;",
   "vec4 n3 = texture2D(uCloudTex, uv * 0.23 + uCloudScroll * 0.31);",
   "float density = smoothstep(1.0 - uCloudCover, 1.0 - uCloudCover + 0.42 / uCloudSharp, field);",
   "density *= uCloudOpacity;",
   "density *= smoothstep(0.006, 0.09, h);",
   "float swell = dot(n3, uCloudMix) / wsum;",
-  "float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 2.7, 0.0, 1.0);",
+  "float body = clamp(0.5 + (mix(field, swell, 0.42) - 0.5) * 3.6, 0.0, 1.0);",
   "float thin = 1.0 - smoothstep(0.16, 0.86, body);",
   "float through = (0.35 + 0.65 * thin)",
   "* (pow(toward, 1.3) * 0.30 + pow(toward, 5.0) * 0.42 + pow(toward, 24.0) * 0.52);",
@@ -854,10 +860,18 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
   const disc = ss(sunR - size * 0.35, sunR + size * 0.05, sd);
   const bloom = Math.pow(Math.max(sd, 0), 1400);
   const mie = Math.pow(Math.max(sd, 0), 6) * 0.09 + Math.pow(Math.max(sd, 0), 60) * 0.35;
+  const glowWide = Math.pow(Math.max(sd, 0), 2.2) * 0.09;
+  const sunSide = 0.5 + 0.5 * sd;
+  const keyAmp = 0.76 * ss(0.15, 0.9, num("uSunIntensity")) * (1 - 0.45 * ss(0.15, 0.7, sun.y));
+  const wash = Math.pow(Math.max(sd, 0), 1.5) * 0.55 * (1 - ss(0.02, 0.4, h));
+  const key = lerp(1 - 0.72 * keyAmp, 1 + 0.16 * keyAmp, Math.pow(sunSide, 1.5));
   const sunCol = rgb("uSunColour");
   const sunI = num("uSunIntensity");
   for (let i = 0; i < 3; i += 1) {
-    out[i] += sunCol[i] * sunI * (disc * 26 + bloom * 8 + mie * num("uHalo"));
+    out[i] += sunCol[i] * sunI * (disc * 26 + bloom * 8 + (mie + glowWide) * num("uHalo"));
+  }
+  for (let i = 0; i < 3; i += 1) {
+    out[i] += sunCol[i] * sunCol[i] * sunI * num("uHalo") * wash;
   }
 
   if (h > 0.006 && num("uCloudOpacity") > 0.001) {
@@ -878,7 +892,7 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
     density *= num("uCloudOpacity");
     density *= ss(0.006, 0.09, h);
     const swell = dot4(TEXC);
-    const body = clamp01(0.5 + (lerp(field, swell, 0.42) - 0.5) * 2.7);
+    const body = clamp01(0.5 + (lerp(field, swell, 0.42) - 0.5) * 3.6);
     const thin = 1 - ss(0.16, 0.86, body);
     const toward = Math.max(sd, 0);
     const through = (0.35 + 0.65 * thin)
@@ -894,6 +908,9 @@ function domeRadiance(w, dx, dy, dz, camX, camZ, out) {
       out[i] = lerp(out[i], cloud, clamp01(density));
     }
   }
+
+  // The azimuthal key, applied to the whole line of sight — deck included.
+  for (let i = 0; i < 3; i += 1) out[i] *= key;
 
   const fog = rgb("uFogColour");
   const band = 1 - ss(0, lerp(0.05, 0.55, num("uHaze")), h);
@@ -1826,4 +1843,69 @@ test("a night stage is dark on the ground and still a sky overhead", () => {
   // the sun rather than by any of the above.
   assert.equal(w.metrics.headlights, true, "a clear night must call for headlights");
   disposeWeather(w);
+});
+
+// ---- critic pass 2: the sky must not photograph as a pale wash ------------
+//
+// Output-pixel assertions for the defects the second critic pass cited: a low
+// sun that read pale instead of warm, a glow that hugged the disc so tightly
+// the rest of the sky carried no direction, and cloud decks with no shape in
+// them at the altitudes the camera actually sees. Measured through the same
+// exposure/ACES/sRGB mirror as everything above.
+
+test("a low sun paints a wide warm sector, not a pale wash", () => {
+  for (const id of ["golden-hour", "clear-dawn"]) {
+    const { w, camera } = rig(id);
+    stepWeather(w, camera, 1 / 60);
+    w.lightning.flash = 0;
+    w.sky.uniforms.uFlash.value = 0;
+    const sun = w.sky.uniforms.uSunDir.value;
+    const sunAz = Math.atan2(sun.x, sun.z);
+    const sunEl = Math.asin(Math.max(-1, Math.min(1, sun.y)));
+
+    // The warmest horizon pixel clear of the disc's own few degrees. The flat
+    // version peaked at 15 red-over-blue levels on a ring where every channel
+    // sat within eleven levels of 227 — pink-grey in every direction.
+    let maxGap = -Infinity;
+    for (let a = 0; a < 360; a += 3) {
+      if (Math.abs(wrapAngle(a * DEG - sunAz)) < 8 * DEG) continue;
+      const p = skyPixel(w, 6 * DEG, a * DEG);
+      if (p[0] - p[2] > maxGap) maxGap = p[0] - p[2];
+    }
+    assert.ok(maxGap >= 30,
+      `${id}: the warmest horizon pixel clear of the disc is only ${maxGap.toFixed(0)} `
+      + "red-over-blue levels — a pale wash, not a low sun");
+
+    // And the warmth must reach: 28 degrees off the sun the sky is still
+    // measurably brighter than the anti-sun side at the same altitude, or the
+    // glow is a laser and the frame carries no direction. The flat version
+    // measured 1.04x.
+    const ce = Math.cos(sunEl);
+    const band = (az) => {
+      domeRadiance(w, ce * Math.sin(az), Math.sin(sunEl), ce * Math.cos(az), 0, 0, DOME);
+      const ex = w.current.exposure;
+      return lum3([encodeSrgb8(aces(DOME[0] * ex)), encodeSrgb8(aces(DOME[1] * ex)),
+        encodeSrgb8(aces(DOME[2] * ex))]);
+    };
+    const off = band(sunAz + 28 * DEG);
+    const anti = band(sunAz + Math.PI);
+    assert.ok(off >= anti * 1.15,
+      `${id}: 28 degrees off the sun the sky is ${off.toFixed(0)} against `
+      + `${anti.toFixed(0)} anti-sun — the glow does not leave the disc`);
+    disposeWeather(w);
+  }
+});
+
+test("daylight cloud decks carry visible structure at the altitudes they are seen at", () => {
+  // The body expansion that turns the deck's noise field into shapes was too
+  // gentle: golden hour measured 0.270 of span at 20 degrees and hard noon
+  // 0.267 — a mottle with no edge to it, which photographs as haze.
+  for (const id of ["golden-hour", "midday-hard"]) {
+    const { w, camera } = rig(id);
+    stepWeather(w, camera, 1 / 60);
+    const s = domeStats(w, 20 * DEG);
+    assert.ok(s.hi - s.lo > 0.30,
+      `${id}: the deck at 20 deg spans only ${(s.hi - s.lo).toFixed(3)} — cloud with no shape in it`);
+    disposeWeather(w);
+  }
 });
