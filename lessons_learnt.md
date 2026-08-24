@@ -11,6 +11,7 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+<<<<<<< HEAD
 - 2026-08-25 - Bloom invents clipping the scene never had; test with bloom off before hunting geometry (render.js:BRIGHT_FRAG)
   OpusRally showed white discs that came and went on distant hillsides. With the
   bloom weight set to 0 the scene produced ZERO near-white pixels there over 180
@@ -33,6 +34,16 @@ and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
   and erased the artefact on its own, making every group look guilty. Wrap
   renderer.update to capture its exact argument object and reuse it, then verify the
   control redraw reproduces the artefact before believing any difference.
+=======
+- Audit a defect list against the code BEFORE fixing it: 10 of opus-rally's 13 OUTSTANDING
+  items were already fixed in the OxAlphaRally seed; only live verification (a probe script
+  plus test-name greps) told which 3 needed work. Reading a symbol is not verifying it —
+  stage.js:1753's `a` looked like the lateral-only bug and was already the fix.
+- Sub-agent Task results here return empty ~50% of the time while the work is real (or
+  sometimes absent): verify via git status + running the suites, never via the report; and
+  demand "never end without a report" in every brief.
+
+>>>>>>> 2078926 (docs(oxalpha-rally): critic pass 1 verdict + defect-audit lessons)
 
 - 2026-07-31 — innerWidth hides page overflow; measure scrollWidth-clientWidth and bisect subtrees (tests/responsive.test.mjs)
   Horizontal overflow is invisible to both `innerWidth` and a DOM scan; measure
