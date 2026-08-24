@@ -28,6 +28,7 @@ function fail(message, extra) {
 
 try {
   page = await openHarness({ root: ROOT, width: 1280, height: 800 });
+  let coldTitleText = "";
 
   for (const [width, height] of VIEWPORTS) {
     process.stderr.write(`[opus-rally] booting at ${width}x${height}\n`);
@@ -47,6 +48,13 @@ try {
     await page.waitFor("the boot card to clear", async () => (
       await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
     ), 10_000);
+
+    // The FIRST screen, before any drive() has run and before toMenu() has had a
+    // chance to repaint it. This is what a player sees on opening the page, and
+    // it is the one that used to render ui.js's demoData() fixtures — an invented
+    // "Opus Trophy" over five events that do not exist in the stage book.
+    coldTitleText = await page.evaluate(
+      `document.getElementById("ui-root").textContent`);
 
     const canvas = await page.evaluate(`(() => {
       const c = document.getElementById("stage-canvas");
@@ -248,6 +256,80 @@ try {
       `${id}: starting it raised:\n  ${page.errors.join("\n  ")}`);
     process.stderr.write(`  ${id.padEnd(22)} started clean\n`);
   }
+
+  // Reach a stage the way a PLAYER does. Everything above this line — and every
+  // other check in the suite — starts a stage through window.__opusRally.drive(),
+  // the harness door. That is how the entire main menu came to be dead while 435
+  // assertions stayed green: ui.js emits an action per button, emit() drops an
+  // action with no host hook SILENTLY, and game.js supplied none of the menu's
+  // hooks. Only "How to drive" worked, because ui.js resolves that one itself.
+  //
+  // validate-static.mjs now checks that every action has a hook. This checks the
+  // other half: that pressing the buttons in order actually arrives on a stage.
+  process.stderr.write("[opus-rally] starting a stage by clicking, as a player would\n");
+  await page.evaluate("window.OPUS_RALLY.toMenu()");
+  await page.delay(700);
+
+  // Read buttons out of the live shell rather than hard-coding coordinates: a
+  // test that clicks a remembered pixel stops testing the menu the moment the
+  // menu moves. String.raw because a template literal eats the backslash in \s
+  // and the regex would arrive as /s+/ and delete every letter s.
+  const readButtons = () => page.evaluate(String.raw`(() => {
+    const out = [];
+    document.querySelectorAll("#ui-root button").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2 || el.disabled) return;
+      out.push({ text: (el.textContent || "").trim().replace(/\s+/g, " "),
+        x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) });
+    });
+    return out;
+  })()`);
+
+  async function press(label, matcher) {
+    const buttons = await readButtons();
+    const hit = buttons.find((b) => matcher.test(b.text));
+    assert.ok(hit, `${label}: no button matching ${matcher} — saw `
+      + buttons.map((b) => JSON.stringify(b.text)).join(", "));
+    await page.click(hit.x, hit.y);
+    await page.delay(900);
+    return hit;
+  }
+
+  const titleButtons = await readButtons();
+  assert.ok(titleButtons.length >= 4,
+    `the title screen offers only ${titleButtons.length} buttons`);
+
+  // The menu must be showing THIS game. It used to render ui.js's demoData()
+  // fixtures — an invented "Opus Trophy" over five events that do not exist —
+  // because game.js passed the stage book as an option and the shell reads
+  // content from `data`.
+  const realNames = book.map((id) => id.split("-").slice(1).join("-"));
+  assert.ok(!/Kalder Hills|Opus Trophy/.test(coldTitleText),
+    "the first screen a player sees is still ui.js's demo fixtures, not the stage book");
+  assert.ok(book.some((id) => {
+    const name = id.split("-").slice(1).join("-").replace(/-/g, " ");
+    return coldTitleText.toLowerCase().includes(name.toLowerCase());
+  }), "the first screen names no stage from the book");
+
+  page.clearErrors();
+  await press("title", /quick stage/i);
+  const stageText = await page.evaluate(
+    `document.getElementById("ui-root").textContent`);
+  assert.ok(book.some((id) => {
+    const name = id.split("-").slice(1).join("-").replace(/-/g, " ");
+    return stageText.toLowerCase().includes(name.toLowerCase());
+  }), `the stage screen names no stage from the book — realNames ${realNames.join(", ")}`);
+
+  await press("stage screen", /start stage/i);
+  const reached = await page.waitFor("the stage to start from a click", async () => {
+    const st = await page.evaluate("window.__opusRally.state");
+    return (st === "countdown" || st === "racing") ? st : null;
+  }, 120_000);
+  assert.ok(reached === "countdown" || reached === "racing",
+    `clicking Start stage left the game in "${reached}"`);
+  assert.deepEqual(page.errors, [],
+    `clicking through the menu raised:\n  ${page.errors.join("\n  ")}`);
+  process.stderr.write(`  title -> quick stage -> start  reached ${reached}\n`);
 
   console.log("opus-rally browser test: all checks passed");
 } catch (err) {

@@ -126,6 +126,64 @@ for (const file of [...MODULES, "index.html"]) {
   check(!hit, `${file} carries no real-world marque, driver or event name (found "${hit?.[0]}")`);
 }
 
+// Every button in the menu is an action string that ui.js hands to emit(), and
+// emit() drops an action with no host hook SILENTLY — no error, no state change.
+// That is how the entire main menu came to be dead except "How to drive": the
+// shell offered quickStage, newSeason, timeTrial, garage and settings, game.js
+// supplied none of them, and 435 assertions stayed green over a game no human
+// could start. Every automated check reaches a stage through
+// window.__opusRally.drive(), so nothing ever pressed a button.
+//
+// This is the general form of that bug, checked here rather than left to a
+// browser test that can only cover the paths someone thought to click.
+{
+  const uiSrc = readFileSync(join(appDir, "ui.js"), "utf8");
+  const gameSrc = readFileSync(join(appDir, "game.js"), "utf8");
+
+  // Actions the shell resolves itself, straight out of its own LOCAL_ACTIONS set.
+  const localBlock = uiSrc.match(/const LOCAL_ACTIONS = new Set\(\[([\s\S]*?)\]\)/);
+  check(!!localBlock, "ui.js still declares LOCAL_ACTIONS as a literal set");
+  const local = new Set(
+    (localBlock ? localBlock[1].match(/"([a-zA-Z]+)"/g) || [] : []).map((q) => q.slice(1, -1)));
+
+  // …and the alias table that maps an action onto a differently-named hook.
+  const aliasBlock = uiSrc.match(/const ACTION_ALIAS = Object\.freeze\(\{([\s\S]*?)\}\)/);
+  check(!!aliasBlock, "ui.js still declares ACTION_ALIAS as a literal object");
+  const alias = new Map();
+  for (const m of (aliasBlock ? aliasBlock[1].matchAll(/([a-zA-Z]+):\s*"(on[A-Za-z]+)"/g) : [])) {
+    alias.set(m[1], m[2]);
+  }
+
+  const hookFor = (action) =>
+    alias.get(action) || ("on" + action.charAt(0).toUpperCase() + action.slice(1));
+
+  // Actions the screens actually emit: btn(id, label, "action") and the
+  // `action: "…"` fields on list, tab and grid items.
+  const emitted = new Set();
+  for (const m of uiSrc.matchAll(/\bbtn\(\s*"[^"]*"\s*,\s*(?:"[^"]*"|[^,]+?)\s*,\s*"([a-zA-Z]+)"/g)) {
+    emitted.add(m[1]);
+  }
+  for (const m of uiSrc.matchAll(/\baction:\s*"([a-zA-Z]+)"/g)) emitted.add(m[1]);
+  // The ternary form the title screen uses for its primary button.
+  for (const m of uiSrc.matchAll(/\?\s*"([a-zA-Z]+)"\s*:\s*"([a-zA-Z]+)"\s*,\s*\{\s*primary/g)) {
+    emitted.add(m[1]); emitted.add(m[2]);
+  }
+  check(emitted.size > 8, `found ${emitted.size} menu actions in ui.js — the scan has stopped matching`);
+
+  // Hooks game.js hands to createUi. Anything it does not supply and the shell
+  // does not resolve itself is a button that does nothing when pressed.
+  const hooks = new Set();
+  for (const m of gameSrc.matchAll(/\b(on[A-Z][A-Za-z]*)\s*:/g)) hooks.add(m[1]);
+
+  const dead = [...emitted]
+    .filter((a) => !local.has(a))
+    .filter((a) => !hooks.has(hookFor(a)))
+    .sort();
+  check(dead.length === 0,
+    "every menu action is either resolved by ui.js or hooked by game.js "
+    + `(dead: ${dead.map((a) => `${a} -> ${hookFor(a)}`).join(", ")})`);
+}
+
 if (failures.length) {
   console.error(`opus-rally: ${failures.length} of ${checks} checks failed`);
   for (const failure of failures) console.error(`  - ${failure}`);
