@@ -535,17 +535,34 @@ const SPONSOR_WHITE = clampPaint("#f4f4f0", DECAL_CEILING);
 
 // mode drives the height field; everything else (colour, roughness, normal) is
 // derived from that one field so a lit surface never disagrees with itself.
+//
+// `grain` is the albedo's relative standard deviation across the tile and `warm`
+// a per-channel hue tilt at the same scale, both applied as a fraction OF the
+// albedo rather than as an offset added to it. The offset form — an additive
+// `tint` on top of a `lift`..1.6 multiplier — is what made the ground read as
+// dither: grass ran from 0.004 to 0.39 luminance over one tile and its red
+// channel clipped to zero in every hollow, so the field arrived at the eye as
+// two tones and a saturated cast rather than as ground. A fraction of the albedo
+// cannot clip either end, and the low-frequency structure that a real surface
+// has at ten and a hundred metres is put in by the terrain and road shaders, at
+// those scales, where mipping cannot take it away.
+//
+// Ground grains sit near 0.16 because the near-field grain a player actually
+// reads is relief, not colour: it is the normal map's job, and a low-contrast
+// albedo is what lets that relief show.
 const TEXTURE_DEFS = Object.freeze({
-  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], tint: [0.05, 0.03, 0.02], rough: [0.78, 0.98], relief: 2.6, lift: 0.55 },
-  tarmac: { mode: "asphalt", albedo: [0.118, 0.120, 0.128], tint: [0.02, 0.02, 0.02], rough: [0.52, 0.86], relief: 1.0, lift: 0.35 },
-  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], tint: [0.05, 0.035, 0.02], rough: [0.82, 0.98], relief: 2.0, lift: 0.45 },
-  snow: { mode: "drift", albedo: [0.800, 0.845, 0.905], tint: [0.02, 0.02, 0.04], rough: [0.38, 0.72], relief: 1.5, lift: 0.30 },
-  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], tint: [0.075, 0.085, 0.030], rough: [0.72, 0.95], relief: 2.2, lift: 0.44 },
-  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], tint: [0.05, 0.045, 0.04], rough: [0.62, 0.92], relief: 3.0, lift: 0.44 },
-  bark: { mode: "bark", albedo: [0.150, 0.118, 0.085], tint: [0.05, 0.04, 0.025], rough: [0.80, 0.98], relief: 2.4, lift: 0.5 },
-  foliage: { mode: "leaf", albedo: [0.115, 0.185, 0.075], tint: [0.05, 0.07, 0.03], rough: [0.66, 0.90], relief: 1.4, lift: 0.45, alpha: true },
-  concrete: { mode: "concrete", albedo: [0.330, 0.325, 0.310], tint: [0.02, 0.02, 0.02], rough: [0.66, 0.90], relief: 1.1, lift: 0.4 },
-  dirtOverlay: { mode: "splatter", albedo: [0.180, 0.140, 0.095], tint: [0.03, 0.02, 0.015], rough: [0.88, 0.99], relief: 1.0, lift: 0.5, alpha: true },
+  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], warm: [0.10, 0.04, -0.04], rough: [0.78, 0.98], relief: 2.6, grain: 0.11 },
+  tarmac: { mode: "asphalt", albedo: [0.118, 0.120, 0.128], warm: [0.04, 0.01, -0.03], rough: [0.52, 0.86], relief: 1.0, grain: 0.13 },
+  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], warm: [0.10, 0.04, -0.05], rough: [0.82, 0.98], relief: 2.0, grain: 0.12 },
+  snow: { mode: "drift", albedo: [0.800, 0.845, 0.905], warm: [-0.03, -0.01, 0.02], rough: [0.38, 0.72], relief: 1.5, grain: 0.09 },
+  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], warm: [0.13, 0.03, -0.06], rough: [0.72, 0.95], relief: 2.2, grain: 0.13 },
+  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], warm: [0.05, 0.02, -0.03], rough: [0.62, 0.92], relief: 3.0, grain: 0.12 },
+  // Bark, foliage and the mud splatter are looked at from a few metres and read
+  // against a silhouette, not across a field, so they keep their contrast.
+  bark: { mode: "bark", albedo: [0.150, 0.118, 0.085], warm: [0.30, 0.16, -0.02], rough: [0.80, 0.98], relief: 2.4, grain: 0.42 },
+  foliage: { mode: "leaf", albedo: [0.115, 0.185, 0.075], warm: [0.26, 0.14, 0.02], rough: [0.66, 0.90], relief: 1.4, grain: 0.44, alpha: true },
+  concrete: { mode: "concrete", albedo: [0.330, 0.325, 0.310], warm: [0.03, 0.01, -0.02], rough: [0.66, 0.90], relief: 1.1, grain: 0.14 },
+  dirtOverlay: { mode: "splatter", albedo: [0.180, 0.140, 0.095], warm: [0.14, 0.06, -0.04], rough: [0.88, 0.99], relief: 1.0, grain: 0.30, alpha: true },
 });
 
 export const TEXTURE_NAMES = Object.freeze(Object.keys(TEXTURE_DEFS));
@@ -662,6 +679,18 @@ function heightField(def, size, seed) {
 // metres out. The renderer clamps this to whatever the hardware supports.
 const SURFACE_ANISOTROPY = 8;
 
+// The Sobel below used to be scaled by `size`, which made a surface's apparent
+// slope a function of how many texels it happened to be built with. heightField
+// pins every feature's size in TEXELS, so the gradient across one texel does not
+// depend on `size` and neither may this — and at the game's 256 the old factor
+// put the median gravel normal 60 degrees off the surface with adjacent texels
+// pointing opposite ways. A dielectric highlight on a field of tiny mirrors
+// picks a different mix of warm sun and blue sky on each one, which is exactly
+// the magenta and cyan speckle reported on the near-field road: measured at
+// 19.7% of road pixels over 0.35 chroma, scattered across all six hue orderings,
+// on a surface whose authored albedo is neutral grey.
+const RELIEF_SLOPE = 0.55;
+
 function buildTextureSet(THREE, name, size, seed) {
   const def = TEXTURE_DEFS[name] || TEXTURE_DEFS.gravel;
   const h = heightField(def, size, seed);
@@ -671,17 +700,34 @@ function buildTextureSet(THREE, name, size, seed) {
   const normal = new Uint8Array(px * 4);
   const mean = [0, 0, 0];
   const at = (x, y) => h[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
+
+  // Every mode's field has its own spread, so `grain` could not mean the same
+  // thing twice until the field was normalised to it. The floor stops a nearly
+  // flat field being amplified back into noise.
+  let hMean = 0;
+  for (let i = 0; i < px; i += 1) hMean += h[i];
+  hMean /= px;
+  let hVar = 0;
+  for (let i = 0; i < px; i += 1) { const d = h[i] - hMean; hVar += d * d; }
+  const invSd = 1 / Math.max(0.06, Math.sqrt(hVar / px));
+  // A clipped channel has stopped carrying the field. Snow's albedo is already
+  // 0.9, so the bright half of every drift used to flatten to white; capping the
+  // multiplier per channel leaves the drift readable and costs nothing anywhere
+  // the albedo is dark.
+  const cap = def.albedo.map((a) => Math.min(1.5, 0.95 / Math.max(1e-3, a)));
+
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const i = y * size + x;
       const v = h[i];
-      const shade = def.lift + v * (1.6 - def.lift);
+      const t = clamp((v - hMean) * invSd, -2.2, 2.2);
+      const shade = 1 + t * def.grain;
       // Per-texel white noise is gone by mip 1, so it buys near-field grain and
       // nothing else; at the old strength it was mostly a shimmer generator.
-      const jitter = (hash2(x, y, seed + 991) - 0.5) * 0.05;
+      const jitter = (hash2(x, y, seed + 991) - 0.5) * 0.03;
       const o = i * 4;
       for (let c = 0; c < 3; c += 1) {
-        const base = def.albedo[c] * shade + def.tint[c] * (v - 0.5) * 2 + jitter * def.albedo[c];
+        const base = def.albedo[c] * (Math.min(cap[c], shade + def.warm[c] * t) + jitter);
         mean[c] += saturate(base);
         colour[o + c] = linearToSrgbByte(base);
       }
@@ -691,8 +737,8 @@ function buildTextureSet(THREE, name, size, seed) {
       rough[o] = rg; rough[o + 1] = rg; rough[o + 2] = rg; rough[o + 3] = 255;
 
       // Sobel on the same field, so a bump you can see is a bump that lights.
-      const dx = (at(x + 1, y) - at(x - 1, y)) * def.relief * size * 0.012;
-      const dy = (at(x, y + 1) - at(x, y - 1)) * def.relief * size * 0.012;
+      const dx = (at(x + 1, y) - at(x - 1, y)) * def.relief * RELIEF_SLOPE;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * def.relief * RELIEF_SLOPE;
       const l = Math.hypot(-dx, -dy, 1);
       normal[o] = Math.round(((-dx / l) * 0.5 + 0.5) * 255);
       normal[o + 1] = Math.round(((-dy / l) * 0.5 + 0.5) * 255);
@@ -1451,26 +1497,51 @@ const ROAD_VERTEX_HEAD = `
 attribute vec4 detail;
 varying vec4 vDetail;
 varying vec2 vRoadUv;
+varying float vRoadDist;
 `;
 
 const ROAD_VERTEX_BODY = `
 vDetail = detail;
 vRoadUv = uv;
+vRoadDist = -( modelViewMatrix * vec4( transformed, 1.0 ) ).z;
 `;
 
 const ROAD_FRAGMENT_HEAD = `
 uniform sampler2D uVergeMap;
 uniform vec3 uVergeNorm;
+uniform vec3 uRoadMean;
+uniform float uRoadMeanG;
+uniform float uSnow;
 varying vec4 vDetail;
 varying vec2 vRoadUv;
+varying float vRoadDist;
 `;
 
+// The same distance argument the terrain makes: one tile is four metres, so the
+// grain in it is gone by sixty and leaving it there only aliases. What replaces
+// it is a tap two hundred metres long — a stage's running surface is washed in
+// one place, bedded in the next and swept clean in a third, and without that the
+// road is one flat tone to the horizon while the ground beside it has structure.
+// The tap runs along the road only; across it the drawn section already varies.
 const ROAD_MAP_FRAGMENT = `
 vec4 sampledDiffuseColor = texture2D( map, vRoadUv );
 vec3 vergeTex = texture2D( uVergeMap, vRoadUv * 0.63 ).rgb * uVergeNorm;
-sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vergeTex, vDetail.w );
-sampledDiffuseColor.rgb *= 1.0 - 0.22 * vDetail.x + 0.12 * vDetail.y;
-diffuseColor *= sampledDiffuseColor;
+vec3 surf = mix( sampledDiffuseColor.rgb, vergeTex, vDetail.w );
+float vNear = 1.0 - smoothstep( 20.0, 95.0, vRoadDist );
+surf = mix( uRoadMean, surf, 0.30 + 0.70 * vNear );
+float wear = texture2D( map, vec2( vRoadUv.x * 0.5, vRoadUv.y * 0.021 ) ).g / uRoadMeanG;
+surf *= mix( 1.0, wear, 0.24 );
+surf *= 1.0 - 0.22 * vDetail.x + 0.12 * vDetail.y;
+diffuseColor.rgb *= surf;
+`;
+
+// Lying snow. A rally snow stage is not a white sheet: it is two black lines
+// where the cars have run, so the ruts shed almost all of it while the crown,
+// the windrow and the verge keep it.
+const ROAD_SNOW_FRAGMENT = `
+#include <color_fragment>
+float lie = uSnow * ( 1.0 - 0.85 * vDetail.x );
+diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.80, 0.83, 0.88 ) * ( 0.82 + 0.18 * wear ), lie );
 `;
 
 function injectRoadShader(material, roadSet, vergeSet) {
@@ -1479,22 +1550,29 @@ function injectRoadShader(material, roadSet, vergeSet) {
     roadSet.albedoMean[1] / vergeSet.albedoMean[1],
     roadSet.albedoMean[2] / vergeSet.albedoMean[2],
   ];
+  const roadMean = [roadSet.albedoMean[0], roadSet.albedoMean[1], roadSet.albedoMean[2]];
+  material.userData.groundSnow = { value: 0 };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uVergeMap = { value: vergeSet.map };
     shader.uniforms.uVergeNorm = { value: norm };
+    shader.uniforms.uRoadMean = { value: roadMean };
+    shader.uniforms.uRoadMeanG = { value: roadSet.albedoMean[1] };
+    shader.uniforms.uSnow = material.userData.groundSnow;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>${ROAD_VERTEX_HEAD}`)
       .replace("#include <begin_vertex>", `#include <begin_vertex>${ROAD_VERTEX_BODY}`);
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>${ROAD_FRAGMENT_HEAD}`)
       .replace("#include <map_fragment>", ROAD_MAP_FRAGMENT)
+      .replace("#include <color_fragment>", ROAD_SNOW_FRAGMENT)
       // A rut is burnished by tyres and a windrow is loose stone standing on
-      // edge: the same albedo, opposite gloss.
+      // edge: the same albedo, opposite gloss. Snow over either is matt.
       .replace("#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
-roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );`)
+roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );
+roughnessFactor = mix( roughnessFactor, 0.90, lie );`)
       .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 );");
+        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 ) * ( 1.0 - 0.75 * lie );");
   };
   material.customProgramCacheKey = () => "opusrally-road-detail";
   return material;
@@ -1966,11 +2044,16 @@ const TERRAIN_VERTEX_HEAD = `
 attribute vec4 splat;
 varying vec4 vSplat;
 varying vec2 vGroundUv;
+varying float vGroundDist;
 `;
 
+// Ground detail has to know how far away it is being read, and three declares
+// vViewPosition only when the material happens to be lit and non-flat-shaded, so
+// borrowing it would fail to compile on some builds. This carries its own.
 const TERRAIN_VERTEX_BODY = `
 vSplat = splat;
 vGroundUv = uv;
+vGroundDist = -( modelViewMatrix * vec4( transformed, 1.0 ) ).z;
 `;
 
 const TERRAIN_FRAGMENT_HEAD = `
@@ -1978,23 +2061,45 @@ uniform sampler2D uRockMap;
 uniform sampler2D uDirtMap;
 uniform vec3 uRockNorm;
 uniform vec3 uDirtNorm;
+uniform vec3 uGrassMean;
 uniform float uGrassMeanG;
+uniform float uSnow;
 varying vec4 vSplat;
 varying vec2 vGroundUv;
+varying float vGroundDist;
 `;
 
+// The whole ground argument, in the one place it can be won. One tile is about
+// sixteen metres, so the map by itself has nothing to say at ten metres or at
+// eighty and the repeat reads as a grid; and its grain is a two-metre feature,
+// so past sixty metres it is under a pixel and survives only as noise. So the
+// grain is faded back into the map's own mean with distance, and two further
+// taps at ten and eighty metres carry what the far field sees. Every tap is
+// divided by the grass mean, which keeps the mean of the product at 1.0 and so
+// leaves the one-albedo rule above still describing what is shaded.
 const TERRAIN_MAP_FRAGMENT = `
 vec4 sampledDiffuseColor = texture2D( map, vGroundUv );
 vec3 rockTex = texture2D( uRockMap, vGroundUv ).rgb * uRockNorm;
 vec3 dirtTex = texture2D( uDirtMap, vGroundUv * 1.37 ).rgb * uDirtNorm;
-sampledDiffuseColor.rgb = sampledDiffuseColor.rgb * vSplat.y
+vec3 ground = sampledDiffuseColor.rgb * vSplat.y
   + rockTex * (vSplat.x + vSplat.z)
   + dirtTex * vSplat.w;
-// One tile is about sixteen metres. Without a second, far coarser tap the repeat
-// reads as a grid the moment the ground stops being close.
-float macro = texture2D( map, vGroundUv * 0.113 ).g / uGrassMeanG;
-sampledDiffuseColor.rgb *= mix( 1.0, macro, 0.45 );
-diffuseColor *= sampledDiffuseColor;
+float vNear = 1.0 - smoothstep( 20.0, 95.0, vGroundDist );
+ground = mix( uGrassMean, ground, 0.30 + 0.70 * vNear );
+float patchTap = texture2D( map, vGroundUv * 0.104 ).g / uGrassMeanG;
+float driftTap = texture2D( map, vGroundUv * 0.0145 ).g / uGrassMeanG;
+ground *= mix( 1.0, patchTap, 0.26 ) * mix( 1.0, driftTap, 0.34 );
+diffuseColor.rgb *= ground;
+`;
+
+// Lying snow is applied after <color_fragment>, because that is the first point
+// at which diffuseColor holds the finished albedo — before it, the vertex colour
+// that carries the ground's albedo has not been multiplied in yet, so there is
+// nothing to mix away from.
+const TERRAIN_SNOW_FRAGMENT = `
+#include <color_fragment>
+float lie = uSnow * ( 1.0 - 0.62 * vSplat.x );
+diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.80, 0.83, 0.88 ) * ( 0.80 + 0.20 * driftTap ), lie );
 `;
 
 function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
@@ -2005,21 +2110,31 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
   ];
   const rockNorm = ratio(rockSet);
   const dirtNorm = ratio(dirtSet);
+  const grassMean = [grassSet.albedoMean[0], grassSet.albedoMean[1], grassSet.albedoMean[2]];
+  material.userData.groundSnow = { value: 0 };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uRockMap = { value: rockSet.map };
     shader.uniforms.uDirtMap = { value: dirtSet.map };
     shader.uniforms.uRockNorm = { value: rockNorm };
     shader.uniforms.uDirtNorm = { value: dirtNorm };
+    shader.uniforms.uGrassMean = { value: grassMean };
     shader.uniforms.uGrassMeanG = { value: grassSet.albedoMean[1] };
+    shader.uniforms.uSnow = material.userData.groundSnow;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>${TERRAIN_VERTEX_HEAD}`)
       .replace("#include <begin_vertex>", `#include <begin_vertex>${TERRAIN_VERTEX_BODY}`);
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>${TERRAIN_FRAGMENT_HEAD}`)
       .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT)
+      .replace("#include <color_fragment>", TERRAIN_SNOW_FRAGMENT)
+      .replace("#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+roughnessFactor = mix( roughnessFactor, 0.90, lie );`)
       // Bare rock and scree are the relief on a hillside; grass is nearly flat.
+      // Snow fills that relief in, which is most of why a covered hillside reads
+      // as one soft form rather than as the same ground painted white.
       .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z));");
+        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z)) * (1.0 - 0.75 * lie);");
   };
   material.customProgramCacheKey = () => "opusrally-terrain-splat";
   material.userData.opusSplatMaps = { rock: rockSet, dirt: dirtSet };
@@ -2616,6 +2731,45 @@ export function setMudLevel(target, value) {
     target.userData.mud.value = v;
   }
   if (target.state) target.state.mud = v;
+}
+
+// Lying snow on the ground, as a runtime dial rather than a rebuild.
+//
+// `cover` is 0..1: 0 is bare ground and 1 is a stage under snow. It drives the
+// `uSnow` uniform that injectRoadShader() and injectTerrainShader() both
+// declare, held as a shared `{ value }` on `material.userData.groundSnow` so a
+// write is one number into an object the compiled program already points at —
+// no allocation, no recompile, safe every frame. Each shader spends it the same
+// way: the albedo lifts toward fresh snow, the roughness goes to 0.90 and the
+// surface relief is damped to a quarter, because what makes a covered hillside
+// read as snow is that its own texture has been filled in. What the snow does
+// NOT cover is the racing line: the road shader takes it off in proportion to
+// the rut, so a stage at full cover still has the two black lines the cars have
+// run down it. `cover` of 0 leaves every mix() and every scale at its identity,
+// so the material is restored exactly.
+//
+// The visitor is module-scope on purpose: a closure per call would allocate on
+// the per-frame path.
+let snowCover = 0;
+
+function applySnow(object) {
+  const m = object.material;
+  if (!m) return;
+  if (Array.isArray(m)) {
+    for (let i = 0; i < m.length; i += 1) {
+      const u = m[i] && m[i].userData && m[i].userData.groundSnow;
+      if (u) u.value = snowCover;
+    }
+  } else if (m.userData && m.userData.groundSnow) {
+    m.userData.groundSnow.value = snowCover;
+  }
+}
+
+export function setGroundSnow(root, cover) {
+  if (!root) return;
+  snowCover = cover < 0 ? 0 : cover > 1 ? 1 : cover;
+  if (typeof root.traverse === "function") root.traverse(applySnow);
+  else if (root.userData && root.userData.groundSnow) root.userData.groundSnow.value = snowCover;
 }
 
 // Allocation-free: every write below is a number into a preallocated array or a
