@@ -1204,19 +1204,31 @@ function paintLivery(canvas, livery, mode, seed) {
   return true;
 }
 
-// Panel seams and orange peel, computed rather than drawn: a canvas cannot be
-// read back to a normal map without getImageData, which the headless path lacks.
-function liveryNormalTexture(THREE, size, seed) {
+// Panel seams, the swage line and the roof-plate lip, computed rather than
+// drawn: a canvas cannot be read back to a normal map without getImageData,
+// which the headless path lacks. `seams` are vertical breaks in atlas u — the
+// shut lines and bumper joints a real shell is welded from — and `ridges` are
+// horizontal character lines over an optional u span. Callers who know nothing
+// of a specific car's geometry get generic seams; buildCarMesh passes the real
+// ones in via carUvX(), so a break lands where the panels actually part.
+function liveryNormalTexture(THREE, size, seed, seams = DEFAULT_PANEL_SEAMS, ridges = []) {
   const data = new Uint8Array(size * size * 4);
-  const seams = [0.30, 0.34, 0.64, 0.68];
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const u = x / size, v = y / size;
       let dx = (periodicFbm(u * 24, v * 24, 24, seed, 2)) * 0.05;
       let dy = (periodicFbm(u * 24 + 5, v * 24 + 5, 24, seed + 7, 2)) * 0.05;
+      // One sigma serves both directions: narrow enough that two breaks half a
+      // metre apart stay two breaks, which is what separates a shut line from a
+      // smear across the whole flank.
       for (const s of seams) {
-        const d = (u - s) * size / 4;
+        const d = (u - s) * size / 16;
         if (Math.abs(d) < 3) dx += -d * Math.exp(-d * d * 0.5) * 0.9;
+      }
+      for (const r of ridges) {
+        if (u < r.u0 || u > r.u1) continue;
+        const d = (v - r.v) * size / 16;
+        if (Math.abs(d) < 3) dy += -d * Math.exp(-d * d * 0.5) * 0.9;
       }
       const l = Math.hypot(-dx, -dy, 1);
       const o = (y * size + x) * 4;
@@ -1233,12 +1245,33 @@ function liveryNormalTexture(THREE, size, seed) {
   return t;
 }
 
+// The four legacy seam positions, kept for callers with no dimensions to place
+// real ones from.
+const DEFAULT_PANEL_SEAMS = Object.freeze([0.30, 0.34, 0.64, 0.68]);
+
+// The character line each flank carries — one swage at belt height running the
+// whole length — plus the lip around the roof number plate, which gives the
+// plate its own shading instead of leaving it a sticker on the crown.
+const flankSwageV = (band) => (band.y0 + band.y1) * 0.5;
+const DEFAULT_NORMAL_RIDGES = Object.freeze([
+  Object.freeze({ v: flankSwageV(LIVERY_BANDS.flankFar), u0: LIVERY_RESERVE, u1: 1 }),
+  Object.freeze({ v: flankSwageV(LIVERY_BANDS.flankNear), u0: LIVERY_RESERVE, u1: 1 }),
+  Object.freeze({ v: LIVERY_ROOF_NUMBER.v0 + 0.008, u0: LIVERY_ROOF_NUMBER.u0, u1: LIVERY_ROOF_NUMBER.u1 }),
+  Object.freeze({ v: LIVERY_ROOF_NUMBER.v1 - 0.008, u0: LIVERY_ROOF_NUMBER.u0, u1: LIVERY_ROOF_NUMBER.u1 }),
+]);
+
 const liveryCache = new Map();
 
 export function liveryTexture(THREE, livery, opts = {}) {
   const spec = livery || {};
   const size = opts.size ?? 1024;
-  const key = `${spec.team || ""}|${spec.base}|${spec.stripe}|${spec.accent}|${spec.pattern}|${spec.number}|${size}|${opts.canvasFactory ? "fake" : "real"}`;
+  // Panel breaks are atlas geometry, so they change what the normal map says
+  // and belong in the cache key next to everything else that moves a pixel.
+  const seams = Array.isArray(opts.panelSeams) ? opts.panelSeams : DEFAULT_PANEL_SEAMS;
+  const ridges = Array.isArray(opts.normalRidges) ? opts.normalRidges : DEFAULT_NORMAL_RIDGES;
+  const seamKey = `${seams.map((v) => v.toFixed(4)).join(",")}|`
+    + `${ridges.map((r) => `${r.v.toFixed(3)}:${r.u0.toFixed(3)}-${r.u1.toFixed(3)}`).join(";")}`;
+  const key = `${spec.team || ""}|${spec.base}|${spec.stripe}|${spec.accent}|${spec.pattern}|${spec.number}|${size}|${opts.canvasFactory ? "fake" : "real"}|${seamKey}`;
   const hit = liveryCache.get(key);
   if (hit) { hit.refs += 1; return hit; }
 
@@ -1258,7 +1291,7 @@ export function liveryTexture(THREE, livery, opts = {}) {
   if (mudCanvas && paintLivery(mudCanvas, spec, "mud", seed + 99)) {
     mudMap = canvasTexture(THREE, mudCanvas, false);
   }
-  const normalMap = liveryNormalTexture(THREE, Math.max(16, Math.min(256, size >> 2)), seed);
+  const normalMap = liveryNormalTexture(THREE, Math.max(16, Math.min(256, size >> 2)), seed, seams, ridges);
 
   const result = {
     livery: spec,
@@ -3172,12 +3205,58 @@ function buildDoor(b, d, side, col) {
       // into the cabin, where a FrontSide paint drops them and the shell shows.
       if (side > 0) pushQuad3(b, p3, p2, p1, p0, col); else pushQuad3(b, p0, p1, p2, p3, col);
     }
-    // A shallow swage line: at chase distance this is one of the only cues that
-    // says "door" rather than "flank".
-    pushBox(b, x + side * 0.006, d.beltY - 0.10, (z0 + z1) * 0.5, 0.012, 0.030, (z1 - z0) * 0.85, col);
+    // A swage line the sun can actually draw: two chamfer faces meeting on a
+    // crest that stands proud of the skin. One axis-aligned box carried exactly
+    // the skin's own normals and shaded as nothing at all. Winding flips with
+    // the flank so both crests shade outboard.
+    const yC = d.beltY - 0.10;
+    const zc0 = z0 + (z1 - z0) * 0.08, zc1 = z1 - (z1 - z0) * 0.08;
+    const xLow = x + side * 0.002, xPeak = x + side * 0.016;
+    const crest = (za, zb) => {
+      const a = [xLow, yC - 0.020, za], bq = [xLow, yC - 0.020, zb];
+      const c = [xPeak, yC, (za + zb) * 0.5];
+      const e = [xLow, yC + 0.018, za], f = [xLow, yC + 0.018, zb];
+      if (side > 0) {
+        pushTri3(b, a, c, bq, col);
+        pushTri3(b, f, e, c, col);
+      } else {
+        pushTri3(b, a, bq, c, col);
+        pushTri3(b, f, c, e, col);
+      }
+    };
+    for (let j = 0; j < nz; j += 1) {
+      crest(lerp(zc0, zc1, j / nz), lerp(zc0, zc1, (j + 1) / nz));
+    }
+    // A second, steeper crest down at the sill — and it climbs toward the rear,
+    // so its faces carry an along-the-car slope as well as the flank one. Every
+    // feature extruded dead square is what made the skin read as decals on a slab.
+    const yS = d.sillY + 0.32;
+    const xSPeak = x + side * 0.012;
+    const sillCrest = (za, zb) => {
+      const tA = saturate((za - zc0) / Math.max(0.001, zc1 - zc0));
+      const tB = saturate((zb - zc0) / Math.max(0.001, zc1 - zc0));
+      const ya = yS + 0.05 * tA, yb = yS + 0.05 * tB;
+      const a2 = [xLow, ya - 0.008, za], b2 = [xLow, yb - 0.008, zb];
+      const c2 = [xSPeak, (ya + yb) * 0.5, (za + zb) * 0.5];
+      const e2 = [xLow, ya + 0.008, za], f2 = [xLow, yb + 0.008, zb];
+      if (side > 0) {
+        pushTri3(b, a2, c2, b2, col);
+        pushTri3(b, f2, e2, c2, col);
+      } else {
+        pushTri3(b, a2, b2, c2, col);
+        pushTri3(b, f2, c2, e2, col);
+      }
+    };
+    for (let j = 0; j < nz; j += 1) {
+      sillCrest(lerp(zc0, zc1, j / nz), lerp(zc0, zc1, (j + 1) / nz));
+    }
   });
   withUv(b, LIVERY_TRIM_UV, () => {
-    pushBox(b, x + side * 0.014, d.beltY - 0.045, (z0 + z1) * 0.5 + 0.16, 0.022, 0.035, 0.13, [0.05, 0.05, 0.055]);
+    // The handle recess is raked, not extruded: a taper leans its flanks in z,
+    // which reads as a pull-cup under the sun and gives the skin normals that
+    // are not all coplanar with the crests.
+    pushTaper(b, x + side * 0.014, d.beltY - 0.045, (z0 + z1) * 0.5 + 0.16,
+      0.022, 0.13, 0.022, 0.13, -0.0175, 0.0175, [0.05, 0.05, 0.055], 0.018);
   });
 }
 
@@ -3309,7 +3388,10 @@ function buildHarness(b, L, x, col) {
 // because the wheel is the one part of the cabin that turns. The mesh carries
 // the whole pose (hub position, rake about X), so game.js steers it by adding
 // to rotation.z: with Euler XYZ the spin applies in the rim plane first and the
-// rake tips it after, which is exactly what a steering column does.
+// rake tips it after, which is exactly what a steering column does. The rim wears
+// suede, not moulded plastic: a lit material of its own, because the wheel is in
+// every cockpit frame and trim-black read as a hole punched in the dash.
+const SUEDE = [0.150, 0.130, 0.108];
 function steeringWheelGeometry(b, L, col, bossCol) {
   const rim = [];
   for (let k = 0; k <= 16; k += 1) {
@@ -3330,6 +3412,18 @@ function steeringWheelGeometry(b, L, col, bossCol) {
 // The one place the player's eye rests for a whole stage, so it gets real
 // instruments: a tach on the driver's side, two smaller gauges beside it, and a
 // switch panel where the co-driver can reach it.
+// The gauge circles are laid out once here because two meshes share them: this
+// fascia cuts the bezels, and buildBinnacle hangs the lit faces just proud.
+function binnacleGauges(L) {
+  // High in the fascia face: the eye reads them over the wheel's upper half, and
+  // any lower the sightline drops onto the rim's own back.
+  return [
+    { x: L.wheelX, y: L.yDashTop - 0.085, r: 0.088 },
+    { x: L.wheelX - 0.140, y: L.yDashTop - 0.105, r: 0.048 },
+    { x: L.wheelX + 0.140, y: L.yDashTop - 0.105, r: 0.048 },
+  ];
+}
+
 function buildDash(b, L, dark, grey, dial) {
   const w = L.hw * 0.94;
   const zF = L.zDashF, zR = L.zDashR;
@@ -3352,30 +3446,86 @@ function buildDash(b, L, dark, grey, dial) {
   }
   pushLoft(b, rings, dark, true, true);
 
-  // The cabin is at lower z than the fascia, so every instrument stands proud of
-  // it in -z: a bezel ring on the face and a paler dial in front of that.
+  // The cabin is at lower z than the fascia, so every bezel stands proud of
+  // it in -z; the dials themselves are emissive and live on their own mesh.
   const zi = L.zDashR + 0.012;
   pushTaper(b, L.wheelX, L.yDashTop - 0.030, zi + 0.06, 0.46, 0.20, 0.44, 0.16, 0, 0.030, dark, -0.05);
-  const gauge = (x, y, r) => {
-    pushCylinder(b, x, y, zi - 0.018, r, r, 0.036, 12, "z", grey);
-    pushCylinder(b, x, y, zi - 0.042, r * 0.78, r * 0.78, 0.010, 12, "z", dial);
-  };
-  gauge(L.wheelX, L.yDashTop - 0.130, 0.088);
-  gauge(L.wheelX - 0.140, L.yDashTop - 0.148, 0.048);
-  gauge(L.wheelX + 0.140, L.yDashTop - 0.148, 0.048);
+  for (const g of binnacleGauges(L)) {
+    pushCylinder(b, g.x, g.y, zi - 0.018, g.r, g.r, 0.036, 12, "z", grey);
+  }
   for (let k = 0; k < 6; k += 1) {
     pushBox(b, 0.055 * (k % 3) - 0.055, L.yDashTop - 0.110 - 0.055 * Math.floor(k / 3),
       zi - 0.032, 0.042, 0.038, 0.020, k === 1 ? dial : grey);
   }
 }
 
+// The instrument faces glow — amber backlight, red needles — because a rally
+// binnacle is read at night as much as by day, and dash-grey plastic cannot say
+// "rev counter" from the driver's eye. Emissive is not modulated by vertex
+// colour, so each colour needs its own material, exactly like the tail lamps;
+// faces and needles are therefore two meshes over the one gauge layout.
+// Each dial is tilted up to meet the eye: vertical faces under the fascia hood
+// are occluded from the driving position, which is how the last set vanished
+// entirely from the cockpit camera. Nothing here is named like a lamp: render.js
+// binds the headlight level to the first part whose name reads as one, and the
+// dials must not take that write.
+const DIAL_TILT = 0.55;
+
+function binnacleFrame(L) {
+  // The disc plane sits clear in front of the bezel mouth: tilted up by
+  // DIAL_TILT, its top edge swings back by r·sin(tilt), and any closer and the
+  // upper dial is buried inside the bezel cylinder again — which is exactly the
+  // occlusion that made the instruments vanish from the driving position.
+  return { cz: L.zDashR + 0.012 - 0.085, ca: Math.cos(DIAL_TILT), sa: Math.sin(DIAL_TILT) };
+}
+
+function buildBinnacleFaces(b, L) {
+  const { cz, ca, sa } = binnacleFrame(L);
+  const faceCol = [0.42, 0.40, 0.36];
+  for (const g of binnacleGauges(L)) {
+    // Local frame per dial: disc in XY, +Z out of the face; P() tilts that up
+    // toward the eye and moves it onto the fascia. Doubled over like the harness
+    // webbing so the face reads from both sides of its plane.
+    const P = (lx, ly, lz) => [g.x + lx, g.y + ly * ca - lz * sa, cz + ly * sa + lz * ca];
+    const c0 = P(0, 0, 0.006);
+    for (let k = 0; k < 14; k += 1) {
+      const a0 = (k / 14) * TAU, a1 = ((k + 1) / 14) * TAU;
+      const p0 = P(Math.cos(a0) * g.r * 0.80, Math.sin(a0) * g.r * 0.80, 0);
+      const p1 = P(Math.cos(a1) * g.r * 0.80, Math.sin(a1) * g.r * 0.80, 0);
+      pushTri3(b, c0, p1, p0, faceCol);
+      pushTri3(b, c0, p0, p1, faceCol);
+    }
+  }
+}
+
+function buildBinnacleNeedles(b, L) {
+  const { cz, ca, sa } = binnacleFrame(L);
+  for (const [gi, g] of binnacleGauges(L).entries()) {
+    const P = (lx, ly, lz) => [g.x + lx, g.y + ly * ca - lz * sa, cz + ly * sa + lz * ca];
+    // One needle per dial, pivoted at the dial centre and laid just proud of
+    // its face.
+    const ang = gi === 0 ? -2.25 : gi === 1 ? -2.6 : 2.5;
+    const len = g.r * 0.62, w = 0.007;
+    const tip = [Math.cos(ang) * len, Math.sin(ang) * len];
+    const side = [-Math.sin(ang) * w, Math.cos(ang) * w];
+    const p0 = P(tip[0] - side[0], tip[1] - side[1], 0.010);
+    const p1 = P(tip[0] + side[0], tip[1] + side[1], 0.010);
+    const p2 = P(-side[0] * 0.6, -side[1] * 0.6, 0.010);
+    const p3 = P(side[0] * 0.6, side[1] * 0.6, 0.010);
+    pushQuad3(b, p3, p2, p1, p0, [0.55, 0.10, 0.06]);
+    pushQuad3(b, p0, p1, p2, p3, [0.55, 0.10, 0.06]);
+  }
+}
+
 function buildInterior(b, d, col) {
   const L = cabinLayout(d);
   const c = L.c, hw = L.hw, floor = L.floor;
-  const dark = [0.035, 0.036, 0.040];
-  const grey = [0.070, 0.072, 0.078];
+  // Cabin plastics sit just above soot: anything darker and the hemisphere fill
+  // reads the seats and the footwell as holes punched in the car.
+  const dark = [0.048, 0.049, 0.054];
+  const grey = [0.085, 0.087, 0.094];
   const dial = [0.165, 0.175, 0.190];
-  const cloth = [0.045, 0.046, 0.052];
+  const cloth = [0.054, 0.056, 0.062];
   const webbing = [0.340, 0.045, 0.040];
   const alloy = [0.150, 0.155, 0.165];
 
@@ -3592,7 +3742,21 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   const paintSpec = livery || spec.livery || { base: "#cccccc", pattern: "stripe", number: 0 };
   const d = carDimensions(spec);
   const hubs = carHubPositions(spec);
-  const paintTex = liveryTexture(THREE, paintSpec, opts);
+  // The normal map's panel breaks land where this shell actually parts: both
+  // door shut lines, the bonnet cut at the screen base, the boot-lid cut, and
+  // each bumper joint. Atlas u runs tail-to-nose through carUvX().
+  const cabSeams = cabinFrame(d);
+  const paintTex = liveryTexture(THREE, paintSpec, {
+    ...opts,
+    panelSeams: [
+      d.tailZ + 0.30,
+      cabSeams.zRs,
+      cabSeams.zRs + 0.10,
+      cabSeams.zWs - 0.06,
+      cabSeams.zWs,
+      d.noseZ - 0.30,
+    ].map((z) => carUvX(z, d)),
+  });
 
   const white = [1, 1, 1];
   const black = [0.045, 0.045, 0.05];
@@ -3608,7 +3772,10 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     map: paintTex.map || null,
     roughnessMap: paintTex.roughnessMap || null,
     normalMap: paintTex.normalMap,
-    roughness: 0.34,
+    // Roughness is where a low sun gets drawn: tight enough that each panel
+    // carries its own highlight gradient, loose enough that it is paint and not
+    // chrome. At 0.34 the specular lobe was so wide it read as part of the sky.
+    roughness: 0.26,
     metalness: 0.10,
     vertexColors: false,
   }), paintTex.mudMap));
@@ -3625,6 +3792,17 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.55, vertexColors: true }));
   const metalMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.85, vertexColors: true }));
   const trimMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
+  // The wheel is in every cockpit frame and needs its own response to the lights
+  // (a suede sheen, not trim's dead matte), so it cannot share trimMat.
+  const wheelMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05, vertexColors: true }));
+  const dialMat = vertexAlbedo(new THREE.MeshStandardMaterial({
+    roughness: 0.5, metalness: 0.0,
+    emissive: 0xffc06a, emissiveIntensity: 0.85, vertexColors: true,
+  }));
+  const needleMat = vertexAlbedo(new THREE.MeshStandardMaterial({
+    roughness: 0.5, metalness: 0.0,
+    emissive: 0xff3010, emissiveIntensity: 1.1, vertexColors: true,
+  }));
   // The lamp-pod bar is moulded plastic like the rest of the trim, but it must
   // not SHARE the trim material: render.js binds the headlight level to the first
   // part whose name reads as a lamp and writes an emissive into it every frame.
@@ -3643,7 +3821,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     emissive: 0xd8200c, emissiveIntensity: 0.85, vertexColors: true,
   }));
 
-  const materials = [paint, plastic, glassMat, screenGlassMat, cageMat, metalMat, trimMat, podMat, lampMat, tailLampMat];
+  const materials = [paint, plastic, glassMat, screenGlassMat, cageMat, metalMat, trimMat, wheelMat, dialMat, needleMat, podMat, lampMat, tailLampMat];
   const paintMaterials = [paint, plastic];
   const geometries = [];
   const parts = Object.create(null);
@@ -3705,14 +3883,19 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   addPart("spare", (b) => buildSpare(b, d, black), trimMat, 6);
   addPart("rollCage", (b) => buildRollCage(b, d, cageCol), cageMat, 4);
   addPart("interior", (b) => buildInterior(b, d, trimCol), trimMat, 4, { receive: false });
+  // The binnacle is its own mesh on emissive materials: the dials must glow at
+  // night without the whole fascia taking an emissive write meant for a lamp.
+  const wheelLayout = cabinLayout(d);
+  addPart("binnacle", (b) => buildBinnacleFaces(b, wheelLayout), dialMat, 4, { receive: false });
+  addPart("binnacleNeedles", (b) => buildBinnacleNeedles(b, wheelLayout), needleMat, 4, { receive: false });
   // The wheel turns and the cabin does not, so it is its own mesh with its own
   // transform: game.js steers it by adding to rotation.z. It carries the
   // cabin's name rather than its own because what is in front of the driver is
-  // interior by any measure that counts pixels.
-  const wheelLayout = cabinLayout(d);
-  const bossGrey = [0.070, 0.072, 0.078];
-  const steer = addPart("steeringWheel", (b) => steeringWheelGeometry(b, wheelLayout, black, bossGrey),
-    trimMat, 4, { receive: false, meshName: "interior" });
+  // interior by any measure that counts pixels — but it wears suede on a
+  // material of its own, because trim-black read as a void in every frame.
+  const bossGrey = [0.105, 0.108, 0.116];
+  const steer = addPart("steeringWheel", (b) => steeringWheelGeometry(b, wheelLayout, SUEDE, bossGrey),
+    wheelMat, 4, { receive: false, meshName: "interior" });
   if (steer) {
     steer.position.set(wheelLayout.wheelX, wheelLayout.wheelY, wheelLayout.wheelZ);
     steer.rotation.x = -wheelLayout.wheelTilt;
@@ -3730,7 +3913,11 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   // mesh answers to both "windscreen" (damage) and "glass" (the see-through
   // alias the material bands and camera rigs read); the other panes hang off
   // their own keys so a shatter can take one side without the rest.
-  const GLASS_TINT = [0.05, 0.07, 0.09];
+  // Glass needs presence or the glasshouse is just an opening: a blue-green tint
+  // deep enough to silhouette against the sky, still far under the band where it
+  // would hide the road. The gloss does the rest — a low roughness pulls one long
+  // specular streak from the sun across every pane.
+  const GLASS_TINT = [0.075, 0.105, 0.135];
   const panes = glassPanes(d);
   const addPane = (key, quads, material) => {
     const b = mkBuilder();
