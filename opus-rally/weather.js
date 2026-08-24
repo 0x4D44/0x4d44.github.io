@@ -196,7 +196,7 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.36, 0.28, 0.20], bounceIntensity: 0.18,
     shadowStrength: 0.85, exposure: 1.42, turbidity: 2.6,
     skyBrightness: 0.85, skyTintWeight: 0.42,
-    skyZenith: [0.055, 0.115, 0.320], skyHorizon: [0.92, 0.46, 0.24], skyGround: [0.10, 0.08, 0.07],
+    skyZenith: [0.055, 0.115, 0.320], skyHorizon: [0.42, 0.22, 0.13], skyGround: [0.10, 0.08, 0.07],
     fogColour: [0.52, 0.40, 0.36], fogNear: 90, fogFar: 2200, fogDensity: 0.0012,
     visibility: 9000,
     // Cirrus reads off the streak channel, whose values cluster hard around a
@@ -227,11 +227,11 @@ export const WEATHER_PRESETS = Object.freeze([
     hemiIntensity: 0.80, ambientIntensity: 0.10,
     bounceColour: [0.48, 0.44, 0.36], bounceIntensity: 0.34,
     shadowStrength: 1.0, exposure: 0.82, turbidity: 2.1,
-    skyBrightness: 1.35, skyTintWeight: 0.30,
+    skyBrightness: 1.35, skyTintWeight: 0.55,
     // The hard-noon axis: a near-ultramarine zenith over a horizon bleached warm
     // by twenty-six kilometres of dusty air. Both ends matter — a blue that runs
     // all the way down is a painted dome, not a sky.
-    skyZenith: [0.030, 0.105, 0.470], skyHorizon: [0.62, 0.56, 0.50], skyGround: [0.24, 0.22, 0.19],
+    skyZenith: [0.030, 0.105, 0.470], skyHorizon: [0.34, 0.31, 0.29], skyGround: [0.24, 0.22, 0.19],
     fogColour: [0.61, 0.575, 0.545], fogNear: 400, fogFar: 9000, fogDensity: 0.00028,
     visibility: 26000,
     // Below about a quarter, the coverage ramp never clears the noise field and
@@ -267,7 +267,7 @@ export const WEATHER_PRESETS = Object.freeze([
     bounceColour: [0.52, 0.36, 0.22], bounceIntensity: 0.3,
     shadowStrength: 0.92, exposure: 1.35, turbidity: 3.4,
     skyBrightness: 1.0, skyTintWeight: 0.5,
-    skyZenith: [0.075, 0.130, 0.330], skyHorizon: [1.0, 0.60, 0.28], skyGround: [0.16, 0.11, 0.08],
+    skyZenith: [0.075, 0.130, 0.330], skyHorizon: [0.46, 0.29, 0.15], skyGround: [0.16, 0.11, 0.08],
     fogColour: [0.68, 0.48, 0.33], fogNear: 160, fogFar: 3600, fogDensity: 0.0009,
     visibility: 13000,
     cloudCover: 0.38, cloudOpacity: 0.85, cloudType: "cumulus",
@@ -1771,11 +1771,38 @@ function applyState(w, dt) {
   // the preset's authored stops. The tints carry no brightness of their own, so
   // the dome's luminance stays a monotonic function of elevation whatever the
   // preset asks for.
+  //
+  // ZENITH_TINT and HORIZON_TINT are unit-LUMINANCE, so zk and hk are not
+  // weights — they ARE the dome's luminance in linear radiance, and at 0.55 and
+  // 1.25 they were three to five times what the exposure they are shown at can
+  // take. Hard noon came out at zk 0.72 and hk 1.63, which through exposure 0.82
+  // and ACES is 200-235 out of 255 across the whole visible band: a white
+  // ceiling with fifteen levels of variation in it, in every daylight preset.
+  // Bisecting it through the preset — the only way that works, see below —
+  // zeroing skyBrightness moved the zenith 120 levels while killing the cloud
+  // deck, the cloud cover and the sun disc together moved it four. The dome was
+  // the entire cause; nothing else in the frame was washing it out.
+  //
+  // The horizon constant matters most, and it is not obvious why: the chase
+  // camera's vertical field of view is 40 degrees, so the top of the frame is
+  // about 18 degrees up and NOTHING the player ever sees is more than 61% of the
+  // way to the zenith stop. A near-neutral horizon tint at 2.3x the zenith's
+  // weight is therefore most of the sky in shot, which is why it read not just
+  // bright but colourless.
+  //
+  // skyBrightness scales the Rayleigh base ONLY, and deliberately: the two night
+  // presets author their stops as absolute radiance against a brightness of 0.02,
+  // so folding it through them leaves the night horizon at 3/255 with nothing to
+  // see a treeline against, and m.skyLuminance below feeds the headlight Schmitt
+  // trigger, which then fires on light rain. Both were caught by the suite when
+  // this was tried the other way. A preset whose sky is too hot therefore has its
+  // STOPS cooled, not its brightness cut — which is the honest fix anyway, since
+  // what was wrong with golden hour was a horizon authored at 1.0 linear.
   const bright = c.skyBrightness;
   const wt = c.skyTintWeight;
-  const zk = scatter * bright * 0.55;
-  const hk = scatter * bright * 1.25;
-  const gk = scatter * bright * 0.22;
+  const zk = scatter * bright * 0.20;
+  const hk = scatter * bright * 0.42;
+  const gk = scatter * bright * 0.09;
   for (let i = 0; i < 3; i += 1) {
     const zBase = ZENITH_TINT[i] * zk;
     const hBase = HORIZON_TINT[i] * hk;
