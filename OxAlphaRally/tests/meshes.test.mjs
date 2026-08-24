@@ -1251,6 +1251,213 @@ test("car: the steering wheel is a registered transform with its hub above the d
   clearLiveryCache();
 });
 
+// ---- lit cockpit (critic pass-1 fix #1) ------------------------------------
+// The cockpit is the one view the player never leaves, and the critic's verdict
+// on it was "the steering wheel is a black void with no binnacle read; glass has
+// zero presence". These tests hold the three surfaces the eye actually rests on
+// to what a lit cabin needs: an albedo the scene lights can drive, instruments
+// that emit their own, and a screen that tints without hiding the road.
+
+test("cockpit: the wheel rim wears a lit material of its own, not the trim's black", () => {
+  for (const id of ["vireo-r2", "brackmoor-t8", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+    const w = car.parts.steeringWheel;
+    assert.ok(w && w.isMesh, `${id}: no steeringWheel part`);
+    // Sharing the trim material is how tuning one darkened the other; suede and
+    // moulded plastic want different roughness, so they cannot be one material.
+    assert.notEqual(w.material, car.parts.interior.material,
+      `${id}: the wheel shares the interior material — it can never be tuned on its own`);
+    const col = w.geometry.getAttribute("color").array;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < col.length; i += 3) {
+      const v = luminance(col[i], col[i + 1], col[i + 2]);
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    // Suede over a moulded rim: dark, but far enough above carbon black that the
+    // sun and the hemisphere fill give it a sheen. The band test above caps 0.20.
+    assert.ok(lo >= 0.09,
+      `${id}: wheel albedo bottoms out at ${lo.toFixed(4)} linear — that is a void, not leather`);
+    assert.ok(hi <= 0.20, `${id}: wheel albedo peaks at ${hi.toFixed(4)} linear — brighter than the paint`);
+    assert.ok(w.material.roughness <= 0.72,
+      `${id}: wheel roughness ${w.material.roughness.toFixed(2)} kills every specular cue the lights offer`);
+    assert.ok(w.material.metalness <= 0.25,
+      `${id}: wheel metalness ${w.material.metalness.toFixed(2)} turns suede into chrome`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("cockpit: the binnacle carries emissive dials readable from the driver eye", () => {
+  const record = newRecord();
+  const rc = new THREE.Raycaster();
+  rc.near = 0.02;
+  for (const id of ["vireo-r2", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const bin = car.parts.binnacle;
+    assert.ok(bin && bin.isMesh, `${id}: no binnacle part — the gauges are anonymous dash geometry`);
+    const m = bin.material;
+    assert.ok(m.emissiveIntensity > 0.35,
+      `${id}: dial emissive intensity ${m.emissiveIntensity?.toFixed?.(2) ?? m.emissiveIntensity} is below cockpit read threshold`);
+    assert.ok(m.emissive.r + m.emissive.g + m.emissive.b > 0.3,
+      `${id}: the dials' emissive colour is black — nothing to read after dusk`);
+    // The dials must sit in front of the driver, within reach of the eyeline.
+    car.group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromBufferAttribute(bin.geometry.getAttribute("position"));
+    const centre = new THREE.Vector3();
+    box.getCenter(centre);
+    const w = car.parts.steeringWheel;
+    assert.ok(Math.abs(centre.x - w.position.x) < 0.30 && Math.abs(centre.y - w.position.y) < 0.30,
+      `${id}: the binnacle sits at (${centre.x.toFixed(2)}, ${centre.y.toFixed(2)}) — not behind the wheel`);
+    // From the eye, the main gauge line of sight lands on the lit dial itself —
+    // not the fascia hood, and not the wheel's own rim shading it out of
+    // existence. The wheel part deliberately carries the cabin's mesh name, so
+    // it is excluded by identity, not by name.
+    for (const mtl of Object.values(car.parts)) if (mtl.material) mtl.material.side = THREE.DoubleSide;
+    const eye = cockpitEyeLocal(spec);
+    const target = new THREE.Vector3(centre.x, centre.y, centre.z);
+    rc.set(eye, target.sub(eye).normalize());
+    const hits = rc.intersectObject(car.group, true)
+      .filter((h) => h.object.name !== "glass" && h.object !== car.parts.steeringWheel);
+    assert.ok(hits.length > 0, `${id}: nothing between the eye and the binnacle at all`);
+    const first = hits[0].object.name;
+    assert.ok(first === "binnacle",
+      `${id}: from the eye the first thing down the instrument sightline is "${first}" — the hood eats the dials`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("cockpit: the windscreen reads as glass — tinted, glossy, but the road stays visible", () => {
+  for (const id of ["corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+    const pane = car.parts.windscreen;
+    const col = pane.geometry.getAttribute("color").array;
+    const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < col.length; i += 3) {
+      for (let c = 0; c < 3; c += 1) {
+        if (col[i + c] < mn[c]) mn[c] = col[i + c];
+        if (col[i + c] > mx[c]) mx[c] = col[i + c];
+      }
+    }
+    // Presence: a tint deep enough that the glass is *there* against the sky.
+    // The old [0.05,0.07,0.09] vanished entirely; the band test caps ~0.15.
+    for (const c of [0, 1, 2]) {
+      assert.ok(mn[c] >= 0.065,
+        `${id}: screen tint channel ${c} bottoms at ${mn[c].toFixed(3)} — invisible glass`);
+      assert.ok(mx[c] <= 0.15, `${id}: screen tint channel ${c} peaks at ${mx[c].toFixed(3)} — sunglasses, not glass`);
+    }
+    assert.ok(mx[2] >= mn[0] + 0.04,
+      `${id}: tint is not blue-green (${mn.map((v) => v.toFixed(3))}..${mx.map((v) => v.toFixed(3))}) — it will not read as glass`);
+    // The road stays visible: transmission stays high and the surface stays gloss.
+    assert.ok(pane.material.opacity <= 0.45, `${id}: opacity ${pane.material.opacity} hides the road`);
+    assert.ok(pane.material.transparent, `${id}: the screen is not transparent at all`);
+    assert.ok(pane.material.roughness <= 0.12,
+      `${id}: roughness ${pane.material.roughness} scatters every highlight off the glass`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("cockpit: no cabin surface is a black hole — trim holds a floor the lights can lift", () => {
+  for (const id of ["corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+    for (const key of ["interior", "cabinTrim", "rollCage"]) {
+      const mesh = car.parts[key];
+      const col = mesh.geometry.getAttribute("color").array;
+      let lo = Infinity;
+      for (let i = 0; i < col.length; i += 3) {
+        const v = luminance(col[i], col[i + 1], col[i + 2]);
+        if (v < lo) lo = v;
+      }
+      assert.ok(lo >= 0.048,
+        `${id}: ${key} carries vertices at ${lo.toFixed(4)} linear — under the sun those are holes, not trim`);
+    }
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+// ---- body material response -------------------------------------------------
+// The contact shadow puts the sun low on the left, yet the panels answer with
+// nothing: no crease ever breaks a flank, and the paint's specular term is so
+// soft the key light might not exist.
+
+test("body: the paint has a specular term a low sun can draw with", () => {
+  const record = newRecord();
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+  const paint = car.paintMaterials.find((m) => !m.vertexColors);
+  assert.ok(paint, "no painted body material found");
+  assert.ok(paint.roughness <= 0.28,
+    `body paint roughness ${paint.roughness.toFixed(2)} — a highlight this wide never reads as one`);
+  assert.ok(paint.metalness >= 0.05 && paint.metalness <= 0.35,
+    `body metalness ${paint.metalness.toFixed(2)} is neither dielectric paint nor bare metal`);
+  car.dispose();
+  clearLiveryCache();
+});
+
+test("body: the normal map carries real panel breaks, not just orange peel", () => {
+  const spec = carSpec("corvine-rs2000");
+  // Full livery size so the normal map is its production 256px and a break is
+  // not smeared into its neighbours by a coarse atlas.
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 1024 });
+  const nm = car.livery.normalMap;
+  const sz = nm.image.width;
+  const data = nm.image.data;
+  // Column-integrated dx strength finds vertical seams wherever they sit; the
+  // old texture's four fixed swatch seams cluster into two groups at this bar.
+  const THRESH = 0.02;
+  const groups = [];
+  let runStart = -1;
+  for (let x = 0; x < sz; x += 1) {
+    let s = 0;
+    for (let y = 0; y < sz; y += 1) s += Math.abs(data[(y * sz + x) * 4] / 255 - 0.5);
+    const strong = s / sz > THRESH;
+    if (strong && runStart < 0) runStart = x;
+    if (!strong && runStart >= 0) { groups.push([runStart, x - 1]); runStart = -1; }
+  }
+  if (runStart >= 0) groups.push([runStart, sz - 1]);
+  assert.ok(groups.length >= 6,
+    `the livery normal map shows ${groups.length} seam clusters across the atlas — `
+    + "a monocoque has more panel breaks than that (doors, bonnet cut, both bumper joints)");
+  // And a character line: horizontal ridge energy inside the flank bands, which
+  // is what makes a door skin catch the sun along its length.
+  const rowStrength = new Float32Array(sz);
+  for (let y = 0; y < sz; y += 1) {
+    let s = 0;
+    for (let x = 0; x < sz; x += 1) s += Math.abs(data[(y * sz + x) * 4 + 1] / 255 - 0.5);
+    rowStrength[y] = s / sz;
+  }
+  const rows = rowStrength.filter((v) => v > THRESH).length;
+  assert.ok(rows >= 2,
+    `only ${rows} atlas rows carry horizontal ridges — there is no swage or character line anywhere on the flanks`);
+  car.dispose();
+  clearLiveryCache();
+});
+
+test("body: a door skin is modelled relief, not six normals in a plane", () => {
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+  const na = car.parts.doorLeft.geometry.getAttribute("normal").array;
+  const keys = new Set();
+  let offPlane = 0;
+  for (let i = 0; i < na.length; i += 3) {
+    keys.add(`${Math.round(na[i] * 8)}|${Math.round(na[i + 1] * 8)}|${Math.round(na[i + 2] * 8)}`);
+    if (Math.abs(na[i]) < 0.95) offPlane += 1;      // not the bare flank direction
+  }
+  assert.ok(keys.size >= 10,
+    `doorLeft collapses to ${keys.size} distinct normals — there is no modelling to catch light`);
+  assert.ok(offPlane >= 20,
+    `${offPlane} vertices shade off the flank plane — a decal has more relief than this`);
+  car.dispose();
+  clearLiveryCache();
+});
+
 // ---- wheels --------------------------------------------------------------
 
 test("wheel: tread class follows the tyre, geometry is sound, and it is cheap enough to instance", () => {
