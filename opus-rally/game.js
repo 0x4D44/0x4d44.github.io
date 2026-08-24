@@ -98,13 +98,152 @@ export async function startGame(opts) {
     paused: false,
   };
 
+  // ---- the menu's content and its wiring
+  //
+  // ui.js seeds its own state from demoData(): an invented "Opus Trophy", five
+  // fictional events and an S-shaped recce map. game.js passed the real career,
+  // car list and stage book as OPTIONS, and the shell reads none of those — its
+  // screens read `data`. So the menu has always been a mockup of a different
+  // game. Worse, every button emitted an action with no host hook behind it, and
+  // emit() drops an unhooked action silently: no error, no state change. Only
+  // "How to drive" did anything, because `tutorial` is one of the few actions
+  // ui.js resolves locally without asking the host.
+  //
+  // No gate caught it because every automated check — the browser test, the
+  // drivability oracle, the screenshot tool — starts a stage through
+  // window.__opusRally.drive(), and never presses a button.
+
+  const STAGE_CARDS = stageMod.STAGE_BOOK.map((d) => ({
+    id: d.id,
+    name: d.name,
+    country: d.country,
+    rally: d.rally,
+    surface: d.params && d.params.surface !== undefined ? [d.params.surface] : [],
+    label: d.surfaceLabel,
+  }));
+
+  let menuStageId = stageMod.STAGE_BOOK[0].id;
+  let menuStage = null;
+  let menuCarId = physics.CARS[0].id;
+
+  // The recce map on the menu is the generated stage, not a sketch of one: the
+  // same stageFromBook() call beginStage makes, so the shape you study is the
+  // road you drive. Cached, because generating a 12 km stage is not free and the
+  // menu re-renders on every keypress.
+  function menuStageFor(id) {
+    if (!menuStage || menuStage.id !== id) menuStage = stageMod.stageFromBook(id);
+    return menuStage;
+  }
+
+  // presetById throws on an unknown id, which is right for a programming error
+  // and wrong on a menu: one mistyped datum in the stage book should cost that
+  // stage its weather line, not take the menu down.
+  function weatherCard(def) {
+    let preset = null;
+    try {
+      preset = weatherMod.presetById(def.weather);
+    } catch {
+      preset = null;
+    }
+    return {
+      name: preset ? preset.name : "Clear",
+      temperature: preset ? preset.temperature : 12,
+      wetness: preset ? preset.roadWetness : 0,
+      wind: preset ? preset.windSpeed : 0,
+      timeOfDay: def.timeOfDay ?? "—",
+    };
+  }
+
+  function menuData(over) {
+    const def = stageMod.STAGE_BOOK.find((d) => d.id === menuStageId) ?? stageMod.STAGE_BOOK[0];
+    return {
+      // Null on purpose: a season the game cannot build is not a season. See the
+      // note on the title screen's primary button in ui.js.
+      championship: null,
+      stage: menuStageFor(def.id),
+      stages: STAGE_CARDS,
+      cars: physics.CARS,
+      classes: physics.CAR_CLASSES,
+      selectedCarId: menuCarId,
+      weather: weatherCard(def),
+      personalBest: null,
+      rivals: [],
+      ...(over || {}),
+    };
+  }
+
+  // Menu actions carry either a bare id or an object holding one.
+  const idOf = (value) => (typeof value === "string" ? value : (value && value.id) || null);
+
+  function showStageScreen(stageId) {
+    const id = idOf(stageId);
+    if (id && stageMod.STAGE_BOOK.some((d) => d.id === id)) menuStageId = id;
+    screen("stage", menuData());
+  }
+
+  function showCarScreen() {
+    screen("car", menuData());
+  }
+
+  // The shell's Start button sends the stage id as a bare string; the pause and
+  // results screens send nothing at all. beginStage wants { stageId, carId }, so
+  // the difference is flattened here rather than inside it.
+  function menuChoice(value) {
+    const id = idOf(value);
+    return {
+      stageId: (id && stageMod.STAGE_BOOK.some((d) => d.id === id)) ? id : menuStageId,
+      carId: menuCarId,
+    };
+  }
+
   const ui = uiMod.createUi(opts.uiRoot, {
     career,
     cars: physics.CARS,
     carClasses: physics.CAR_CLASSES,
     stageBook: stageMod.STAGE_BOOK,
     settings,
-    onStart: (choice) => beginStage(choice),
+    data: menuData(),
+    onStart: (choice) => beginStage(menuChoice(choice)),
+    onQuickStage: () => showStageScreen(),
+    onTimeTrial: () => showStageScreen(),
+    onSelectStage: (value) => showStageScreen(value),
+    onGarage: () => showCarScreen(),
+    onOpenCar: () => showCarScreen(),
+    onBack: () => toMenu(),
+    onTitle: () => toMenu(),
+    onRestartStage: () => beginStage(menuChoice(game.lastChoice)),
+    onRepeatNote: () => game.noteRunner?.repeat?.(),
+    onNextStage: () => {
+      const book = stageMod.STAGE_BOOK;
+      const at = book.findIndex((d) => d.id === menuStageId);
+      menuStageId = book[(at < 0 ? 0 : at + 1) % book.length].id;
+      showStageScreen();
+    },
+    onConfirmRepairs: (plan) => { career.applyService?.(plan); toMenu(); },
+    // Replay PLAYBACK does not exist yet: game.js records a run and builds a
+    // ghost from it, but nothing plays one back through the renderer. The
+    // results screen keeps the button disabled via hasReplay:false, so this hook
+    // is only here so the wiring check can see the action is accounted for — if
+    // it ever fires, returning to the menu beats doing nothing silently.
+    onReplay: () => toMenu(),
+    // The championship is not connected, and this is the honest reason rather
+    // than a missing hook: career.js schedules its own rallies (kal-hovden,
+    // van-costiera, and thirty more) and stage.js can only build the twelve in
+    // STAGE_BOOK. Nothing maps one universe onto the other, so a season would
+    // schedule stages the renderer cannot make. The title hides these buttons
+    // while `championship` is null; the hooks exist so a stray press lands
+    // somewhere sane instead of nowhere.
+    onContinue: () => toMenu(),
+    onNewSeason: () => toMenu(),
+    onChampionship: () => toMenu(),
+    onSelectEvent: () => toMenu(),
+    onSelectCar: (value, action) => {
+      const id = idOf(value);
+      if (id && physics.CARS.some((c) => c.id === id)) menuCarId = id;
+      // selectCar moves the highlight and stays; confirmCar is the way out.
+      if (action === "confirmCar") showStageScreen();
+      else showCarScreen();
+    },
     onSettingsChange: (patch) => applySettings(patch),
     onRepair: (plan) => career.applyService?.(plan),
     onQuit: () => toMenu(),
@@ -306,9 +445,9 @@ export async function startGame(opts) {
   function toMenu() {
     game.state = GameState.MENU;
     renderer.clearStage?.();
-    screen("title", {
+    screen("title", menuData({
       rallyCount: new Set(stageMod.STAGE_BOOK.map((s) => s.rally ?? s.id.split("-")[0])).size,
-    });
+    }));
   }
 
   function togglePause() {
@@ -504,12 +643,12 @@ export async function startGame(opts) {
     game.lastResult = result;
     hud.finish?.(result);
     audio.setMuted?.(false);
-    screen("results", result);
+    screen("results", { ...result, hasNextStage: true, hasReplay: false });
   }
 
   function retire(reason) {
     game.state = GameState.RETIRED;
-    screen("results", { retired: true, reason, timeMs: game.stageTimeMs });
+    screen("results", { retired: true, reason, timeMs: game.stageTimeMs, hasNextStage: true, hasReplay: false });
   }
 
   function buildFrame() {

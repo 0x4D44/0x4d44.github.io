@@ -1381,12 +1381,19 @@ export function buildTitleModel(data = {}) {
       {
         id: "t-menu", kind: "menu", region: "main", heading: "Main menu",
         items: [
-          btn("t-continue", has ? "Continue championship" : "New championship", has ? "continue" : "newSeason", { primary: true }),
+          // With no season in progress the primary action is the one that can
+          // actually put you on a stage. It used to offer "New championship",
+          // which is a promise the game cannot yet keep: career.js schedules its
+          // own rallies (kal-hovden, van-costiera) and stage.js can only build
+          // the twelve in STAGE_BOOK, and nothing maps one onto the other. A
+          // button that cannot lead anywhere is worse than no button.
+          btn("t-continue", has ? "Continue championship" : "Quick stage",
+            has ? "continue" : "quickStage", { primary: true }),
           btn("t-new", "New championship", "newSeason", { hidden: !has }),
-          btn("t-quick", "Quick stage", "quickStage"),
+          btn("t-quick", "Quick stage", "quickStage", { hidden: !has }),
           btn("t-trial", "Time trial", "timeTrial"),
           btn("t-garage", "Garage", "garage"),
-          btn("t-settings", "Settings", "settings"),
+          btn("t-settings", "Settings", "openSettings"),
           btn("t-howto", "How to drive", "tutorial"),
         ].filter((i) => !i.hidden),
       },
