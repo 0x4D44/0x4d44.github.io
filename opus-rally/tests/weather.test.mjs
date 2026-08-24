@@ -1827,3 +1827,47 @@ test("a night stage is dark on the ground and still a sky overhead", () => {
   assert.equal(w.metrics.headlights, true, "a clear night must call for headlights");
   disposeWeather(w);
 });
+
+// The gap that let a threefold change in the dome's radiance pass all
+// forty-two of the assertions above. Every one of them measured a ratio, a
+// monotonicity or a relationship, and the sky can be a flat white ceiling while
+// satisfying all three — which is exactly what it was: hard noon rendered
+// (210,216,229) at the top of the frame and (233,233,238) near the horizon,
+// fifteen levels of variation across the whole band, in every daylight preset.
+//
+// Two things this test does that the others did not. It measures the OUTPUT
+// pixel, through the same exposure, ACES and sRGB the composite applies. And it
+// samples the band the player can actually see: the chase camera's vertical
+// field of view is 40 degrees and it looks slightly down, so nothing above about
+// twenty degrees of elevation is ever drawn. A sky assertion that samples the
+// zenith is measuring a direction the game never puts on screen — which is how
+// a near-neutral horizon tint carrying 2.3x the zenith's weight went unnoticed.
+test("the sky the player can actually see is not a white ceiling", () => {
+  // Fog and a blizzard ARE a white-out; that is the weather, not a fault.
+  const WHITEOUT = new Set(["hill-fog", "blizzard"]);
+  const VISIBLE_BAND = [0, 4, 8, 12, 16, 20];
+
+  for (const preset of WEATHER_PRESETS) {
+    const { w } = rig(preset);
+    // Away from the sun, so this measures the dome and not the disc or its Mie
+    // lobe — those are a separate question with a separate answer.
+    const away = wrapAngle(preset.sunAzimuth + Math.PI);
+    let peak = -1;
+    let peakAt = 0;
+    for (const deg of VISIBLE_BAND) {
+      const l = skyPixelLum(w, (deg * Math.PI) / 180, away);
+      if (l > peak) { peak = l; peakAt = deg; }
+    }
+
+    if (!WHITEOUT.has(preset.id)) {
+      assert.ok(peak <= 214,
+        `${preset.id}: the sky peaks at ${peak.toFixed(0)}/255 at ${peakAt} degrees `
+        + "— that is a white ceiling, not a sky");
+    }
+    // The floor matters as much: a sky the treeline cannot be seen against is
+    // the failure the night presets were caught by when this was first tried.
+    assert.ok(peak >= 12,
+      `${preset.id}: the sky peaks at only ${peak.toFixed(0)}/255 — nothing to see against`);
+    disposeWeather(w);
+  }
+});
