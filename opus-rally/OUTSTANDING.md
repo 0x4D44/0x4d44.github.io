@@ -74,6 +74,41 @@ with its shadows and post switched off.
     layout, but there is no on-screen wheel, so a phone can reach the game and not
     drive it.
 
+## Open on the sky and the ground, after the material and dome passes
+
+- **Golden hour's sky is still blown to 209/255 and the dome is not why.** Its
+  horizon stop was cut 2.2x (1.0 to 0.46 linear) and the rendered pixel moved
+  nine levels; killing the cloud deck, the cloud cover and the sun disc together
+  move it about twenty. So roughly ninety per cent of what lights that sky comes
+  from downstream of `weather.js`. The remaining suspect is the bloom prefilter
+  in `render.js` — `col += tBloom * 0.62` runs BEFORE exposure, and at golden
+  hour's exposure of 1.35 a hot sunlit landscape has most of the frame over any
+  reasonable bright threshold. Measure the threshold and the prefilter, not the
+  dome.
+- **The pixel mirror in `tests/weather.test.mjs` is faithful in luminance and
+  NOT in chroma.** Its `skyPixel()` put hard noon at 1.41 blue-over-red in the
+  bug state and 1.47 after the fix; the real frame measured 1.09 and 1.17 for
+  the same two states. Any assertion about the sky's hue written against the
+  mirror is measuring something the screen does not do. Luminance tracks: the
+  mirror said 220 where the screen said 210-233, which is why the white-ceiling
+  test works. Find the divergence before writing a hue assertion.
+- **Nothing pins any other output level.** A threefold change in the dome's
+  radiance passed all forty-two weather assertions, because every one of them
+  measured a ratio, a monotonicity or a relationship. There is now one test that
+  pins the sky's output band. The ground, the car and the fog have no equivalent.
+- **The car still casts no shadow.** Trees cast; the car does not. Unchanged and
+  unexplained — `buildCar` sets `castShadow` on every mesh and `updateShadow`
+  adds the car's own bounds to the fitted box, so it is neither of the obvious
+  two. Measure the fitted frustum and the shadow bias against the texel size the
+  26 m pad now produces.
+- **A blizzard still puts no snow on the ground.** `meshes.js` now exports
+  `setGroundSnow(root, cover)` and both ground shaders carry the uniform;
+  `render.js` never calls it, and never reads `weather.metrics.snowCover`.
+- **The car never gets dirty.** `setMudLevel` is exported and the car carries a
+  `setMud` hook; nothing calls either.
+- **The trees are still alpha-card cross-planes** with visible seams and one
+  silhouette repeated across a stage.
+
 ## Things that turned out to be lies, and are worth remembering
 
 - **A test measuring the right quantity can still miss what the eye sees.** The sky was
