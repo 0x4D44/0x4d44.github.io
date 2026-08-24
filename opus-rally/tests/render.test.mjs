@@ -2913,3 +2913,50 @@ test("the module-scope scratch is shared, not re-created per call", () => {
   const pool = createParticlePool(4);
   assert.equal(packParticles(pool, 0, 1, 0), 0);
 });
+
+// weather.js has computed and damped snowCover since the day it was written and
+// nothing ever read it, so a blizzard fell through green ground and the ice
+// stage photographed as summer gravel with weather over it. The wiring is one
+// call, which is exactly the kind of thing that gets removed by accident, so it
+// is pinned here: the value has to reach the mesh library, it has to reach it
+// with the stage's own root, and a rebuilt stage has to be repainted rather than
+// suppressed by the change gate that keeps this off the per-frame path.
+test("lying snow reaches the ground materials, and survives a stage rebuild", () => {
+  const calls = [];
+  const lib = { setGroundSnow: (root, cover) => calls.push({ name: root && root.name, cover }) };
+  const { api } = makeRenderer({ meshes: lib });
+  const stage = sceneryStage(1200);
+  const car = fakeCar(stage);
+  // Only metrics.snowCover matters to the renderer; the rest is what syncWeather
+  // needs to get that far without throwing.
+  const weather = {
+    current: { exposure: 1, roadWetness: 0, sunElevation: 0.5, turbidity: 3 },
+    wet: { film: 0, standing: 0, snowCover: 0 },
+    metrics: { snowCover: 0 },
+  };
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+
+  api.update(frame, 1 / 60);
+  assert.equal(calls.length, 0, "bare ground must not cost a material walk every frame");
+
+  weather.metrics.snowCover = 0.82;
+  api.update(frame, 1 / 60);
+  assert.equal(calls.length, 1, "a blizzard never reached the ground");
+  assert.equal(calls[0].cover, 0.82, `the ground was told ${calls[0].cover}, not 0.82`);
+  assert.equal(calls[0].name, "opus.stage",
+    `snow was applied to ${calls[0].name}, which is not the stage root`);
+
+  // Unchanged weather must not walk the scene graph again.
+  api.update(frame, 1 / 60);
+  assert.equal(calls.length, 1, "an unchanged cover walked the materials a second time");
+
+  // A rebuilt stage comes back with bare materials. If the cached level survives
+  // the rebuild the gate suppresses the first write and the new stage stays green
+  // under the same blizzard.
+  api.buildStage(stage, { car, weather });
+  api.update(frame, 1 / 60);
+  assert.equal(calls.length, 2, "a rebuilt stage was never repainted");
+  assert.equal(calls[1].cover, 0.82);
+  api.dispose();
+});
