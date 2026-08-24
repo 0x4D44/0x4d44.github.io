@@ -1742,6 +1742,11 @@ export function createRenderer(canvas, opts = {}) {
   const factory = opts.rendererFactory || defaultRendererFactory;
   const gl = factory(three, canvas, opts);
   const meshLib = opts.meshes || null;
+  // Optional on purpose: render.js runs against a fallback mesh library in the
+  // tests, and a stage with no snow uniform simply never gets one written.
+  const setGroundSnowFn = meshLib && typeof meshLib.setGroundSnow === "function"
+    ? meshLib.setGroundSnow
+    : null;
   const updateWheelFn = meshLib && typeof meshLib.updateWheel === "function"
     ? meshLib.updateWheel
     : null;
@@ -1797,6 +1802,7 @@ export function createRenderer(canvas, opts = {}) {
     finishTimer: 0,
     sunX: 0, sunY: 1, sunZ: 0,
     wetness: 0,
+    groundSnow: 0,
     exposure: 1,
     drawsIssued: 0,
     lastS: 0,
@@ -3181,6 +3187,9 @@ export function createRenderer(canvas, opts = {}) {
       return;
     }
     while (stageGroup.children.length) stageGroup.remove(stageGroup.children[0]);
+    // The new stage's materials come back bare, so the cached level has to go
+    // with the old ones or the gate above suppresses the first write.
+    state.groundSnow = 0;
     if (state.ghostMesh) { scene.remove(state.ghostMesh); state.ghostMesh = null; }
     if (state.carMesh) { scene.remove(state.carMesh); state.carMesh = null; }
     for (let i = 0; i < state.wheelMeshes.length; i += 1) scene.remove(state.wheelMeshes[i].outer);
@@ -3873,6 +3882,18 @@ export function createRenderer(canvas, opts = {}) {
     if (!cur) return;
     state.wetness = (w.wet && w.wet.film) || cur.roadWetness || 0;
     state.exposure = damp(state.exposure, cur.exposure || 1, 1.5, dt);
+
+    // Lying snow. weather.js has computed and damped snowCover since the day it
+    // was written and NOTHING has ever read it, so a blizzard fell through green
+    // ground and the ice stage photographed as summer gravel with weather over
+    // it. It is already damped there, so it is passed straight through — but
+    // setGroundSnow walks the stage's materials, so it is gated on a change
+    // worth seeing rather than run on every one of sixty frames a second.
+    const cover = (w.metrics && w.metrics.snowCover) || (w.wet && w.wet.snowCover) || 0;
+    if (setGroundSnowFn && Math.abs(cover - state.groundSnow) > 0.004) {
+      state.groundSnow = cover;
+      setGroundSnowFn(stageGroup, cover);
+    }
     if (scene.fog) {
       dustMat.uniforms.uFogNear.value = scene.fog.near;
       dustMat.uniforms.uFogFar.value = scene.fog.far;
