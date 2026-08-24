@@ -1351,3 +1351,24 @@ test("an unknown weather id costs a stage its sky, not the whole game", async ()
     console.warn = realWarn;
   }
 });
+
+test("surfaceAt: the road ends where the stage ends", () => {
+  const stage = stageFromBook("kloft-bjornhalt");
+  const world = stage.world;
+  const n = stage.count - 1;
+  const yaw = Math.atan2(stage.tx[n], stage.tz[n]);
+  const hx = stage.x[n];
+  const hz = stage.z[n];
+  const out = {};
+  world.surfaceAt(hx + Math.sin(yaw) * 50, hz + Math.cos(yaw) * 50, out);
+  assert.equal(
+    out.onRoad, false,
+    "50 m past the finish must not report road grip",
+  );
+  assert.ok(out.edgeBlend > 0.99, "and must read as open terrain, not verge");
+  world.surfaceAt(hx - Math.sin(yaw) * 5, hz - Math.cos(yaw) * 5, out);
+  assert.equal(out.onRoad, true, "5 m before the finish is still road");
+  const i = Math.floor(n / 2);
+  world.surfaceAt(stage.x[i], stage.z[i], out);
+  assert.equal(out.onRoad, true, "mid-stage centreline is road");
+});
