@@ -813,8 +813,9 @@ export async function startGame(opts) {
       const patch = {};
       if (keys.includes("throttle")) patch.throttle = 1;
       if (keys.includes("brake")) patch.brake = 1;
-      if (keys.includes("left")) patch.steer = 1;
-      if (keys.includes("right")) patch.steer = -1;
+      // POSITIVE steer is RIGHT; this door had the keyboard's old inverted sign.
+      if (keys.includes("left")) patch.steer = -1;
+      if (keys.includes("right")) patch.steer = 1;
       if (keys.includes("handbrake")) patch.handbrake = 1;
       input.setTouch({ steer: 0, throttle: 0, brake: 0, handbrake: 0, ...patch });
       return new Promise((r) => setTimeout(() => { input.clearTouch(); r(true); }, ms));

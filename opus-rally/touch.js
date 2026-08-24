@@ -142,13 +142,15 @@ export function hitTest(layout, x, y, slop = 0) {
   return null;
 }
 
-// input.js takes POSITIVE steer as left (its keyboard path is `left - right`),
-// so the thumb at the left end of the track has to come out positive.
+// POSITIVE steer is RIGHT, so the thumb at the right end of the track comes out
+// positive and the slider moves the way the car does. This used to negate `u` on
+// the strength of a comment asserting positive was left — true of the keyboard
+// path and of nothing else, because that path was itself inverted.
 export function steerFromSlider(clientX, track, opts = EMPTY) {
   const knob = knobWidth(track);
   const travel = Math.max(1, track.w - knob);
   const u = clamp((clientX - (track.x + knob * 0.5)) / travel, 0, 1) * 2 - 1;
-  return steerCurve(-u, opts);
+  return steerCurve(u, opts);
 }
 
 // The inverse, so the knob can be drawn from a steer value the player did not
@@ -156,7 +158,7 @@ export function steerFromSlider(clientX, track, opts = EMPTY) {
 export function sliderXFromSteer(steer, track, opts = EMPTY) {
   const knob = knobWidth(track);
   const travel = Math.max(1, track.w - knob);
-  const u = -steerCurveInverse(steer, opts);
+  const u = steerCurveInverse(steer, opts);
   return track.x + knob * 0.5 + (u + 1) * 0.5 * travel;
 }
 
@@ -196,8 +198,8 @@ export function steerFromTilt(rollDeg, opts = EMPTY) {
   const range = Math.max(1, opts.range ?? TILT_DEFAULTS.range);
   const centre = opts.centre ?? TILT_DEFAULTS.centre;
   const u = clamp(((Number.isFinite(rollDeg) ? rollDeg : 0) - centre) / range, -1, 1);
-  // Rolling the device to the right steers right, which is a negative steer.
-  return steerCurve(-u, {
+  // Rolling the device to the right steers right, which is a POSITIVE steer.
+  return steerCurve(u, {
     deadzone: opts.deadzone ?? TILT_DEFAULTS.deadzone,
     gamma: opts.gamma ?? TILT_DEFAULTS.gamma,
   });

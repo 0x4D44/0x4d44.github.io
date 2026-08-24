@@ -103,16 +103,20 @@ test("hitTest lands a touch on the control it is over, and on nothing elsewhere"
   assert.equal(hitTest(layout, gapX, throttle.y + 10, 12), "throttle", "slop reaches the nearer pedal");
 });
 
-test("the slider is signed the way input.js reads steer: left of centre is positive", () => {
+test("the slider is signed the way input.js reads steer: right of centre is positive", () => {
   const track = controlById(controlLayout({ width: 390, height: 844 }), "steer");
   const left = steerFromSlider(track.x, track);
   const right = steerFromSlider(track.x + track.w, track);
   const middle = steerFromSlider(track.x + track.w / 2, track);
-  assert.equal(left, 1, "the far left of the track is full left lock (+1)");
-  assert.equal(right, -1, "the far right of the track is full right lock (-1)");
+  // POSITIVE steer is RIGHT — the gamepad convention, and the one physics and
+  // the autopilot use. The slider used to be built the other way round to match
+  // a keyboard path that was itself inverted, so a thumb pushed right steered
+  // the car left.
+  assert.equal(left, -1, "the far left of the track is full left lock (-1)");
+  assert.equal(right, 1, "the far right of the track is full right lock (+1)");
   assert.equal(middle, 0, "the centre of the track is straight ahead");
-  assert.ok(steerFromSlider(track.x + track.w * 0.25, track) > 0.2, "left half steers left");
-  assert.ok(steerFromSlider(track.x + track.w * 0.75, track) < -0.2, "right half steers right");
+  assert.ok(steerFromSlider(track.x + track.w * 0.25, track) < -0.2, "left half steers left");
+  assert.ok(steerFromSlider(track.x + track.w * 0.75, track) > 0.2, "right half steers right");
 });
 
 test("the steer curve is continuous, monotone and has a deadzone that is not a step", () => {
@@ -123,7 +127,7 @@ test("the steer curve is continuous, monotone and has a deadzone that is not a s
   for (let x = track.x - 30; x <= track.x + track.w + 30; x += 1) {
     const v = steerFromSlider(x, track);
     assert.ok(Number.isFinite(v) && v >= -1 && v <= 1, `bounded at ${x}: ${v}`);
-    assert.ok(v <= previous + 1e-12, `monotone right-going at ${x}: ${previous} -> ${v}`);
+    assert.ok(v >= previous - 1e-12, `monotone right-going at ${x}: ${previous} -> ${v}`);
     biggestStep = Math.max(biggestStep, Math.abs(v - previous));
     if (v === 0) zeroSpan += 1;
     previous = v;
@@ -161,15 +165,15 @@ test("tilt steering reads the right axis for each screen orientation", () => {
 
 test("tilt maps to the same signed, bounded, deadzoned steer the slider does", () => {
   assert.equal(steerFromTilt(0), 0);
-  assert.ok(steerFromTilt(-15) > 0, "rolling the device left steers left (positive)");
-  assert.ok(steerFromTilt(15) < 0, "rolling the device right steers right (negative)");
-  assert.equal(steerFromTilt(-90), 1, "past the range is full lock, not overflow");
-  assert.equal(steerFromTilt(90), -1);
+  assert.ok(steerFromTilt(-15) < 0, "rolling the device left steers left (negative)");
+  assert.ok(steerFromTilt(15) > 0, "rolling the device right steers right (positive)");
+  assert.equal(steerFromTilt(-90), -1, "past the range is full lock, not overflow");
+  assert.equal(steerFromTilt(90), 1);
   assert.equal(steerFromTilt(6, { centre: 6 }), 0, "calibration moves straight-ahead");
   let previous = steerFromTilt(-40);
   for (let d = -40; d <= 40; d += 0.5) {
     const v = steerFromTilt(d);
-    assert.ok(v <= previous + 1e-12, `monotone at ${d}`);
+    assert.ok(v >= previous - 1e-12, `monotone at ${d}`);
     assert.ok(Math.abs(v - previous) < 0.06, `continuous at ${d}`);
     previous = v;
   }
@@ -483,7 +487,7 @@ test("the slider steers the car analogue-ly and holds where the thumb is", () =>
 
   steer.fire("pointerdown", { pointerId: 1, clientX: track.x + track.w * 0.25, clientY: track.y + 10 });
   const left = input.update(1 / 60, 40).steer;
-  assert.ok(left > 0.2 && left < 1, `a quarter of the way along is part lock, got ${left}`);
+  assert.ok(left < -0.2 && left > -1, `a quarter of the way along is part lock, got ${left}`);
 
   // Holding it there must not decay, and the touch path must bypass the
   // keyboard rate limiter — a slider is already analogue.
@@ -493,9 +497,9 @@ test("the slider steers the car analogue-ly and holds where the thumb is", () =>
   // Sliding vertically off the track keeps steering: the finger is captured, and
   // a driver's thumb wanders off a thin strip constantly.
   steer.fire("pointermove", { pointerId: 1, clientX: track.x + 1, clientY: track.y - 200 });
-  assert.equal(input.update(1 / 60, 40).steer, 1, "full left lock is reachable");
+  assert.equal(input.update(1 / 60, 40).steer, -1, "full left lock is reachable");
   steer.fire("pointermove", { pointerId: 1, clientX: track.x + track.w - 1, clientY: track.y + 5 });
-  assert.equal(input.update(1 / 60, 40).steer, -1, "and so is full right lock");
+  assert.equal(input.update(1 / 60, 40).steer, 1, "and so is full right lock");
   controls.destroy();
   input.destroy();
 });
@@ -507,7 +511,7 @@ test("with no animation frame available the slider centres itself on release", (
   const steer = control(dom.root, "steer");
   const track = controlById(controls.layout, "steer");
   steer.fire("pointerdown", { pointerId: 1, clientX: track.x + 4, clientY: track.y + 4 });
-  assert.equal(input.update(1 / 60, 40).steer, 1);
+  assert.equal(input.update(1 / 60, 40).steer, -1);
   steer.fire("pointerup", { pointerId: 1 });
   assert.equal(input.update(1 / 60, 40).steer, 0, "letting go straightens the wheel");
   controls.destroy();

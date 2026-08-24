@@ -57,7 +57,7 @@ test("deadzone removes rest drift and stays continuous above it", () => {
 test("a held key builds steering over time rather than snapping to lock", () => {
   const target = fakeTarget();
   const input = createInput({ target });
-  press(target, "ArrowLeft");
+  press(target, "ArrowRight");
   const after1 = input.update(1 / 60, 0).steer;
   assert.ok(after1 > 0 && after1 < 0.3, `one frame gives a slice of lock, got ${after1}`);
   let steer = after1;
@@ -69,11 +69,11 @@ test("a held key builds steering over time rather than snapping to lock", () => 
 test("releasing returns to centre more slowly than applying", () => {
   const target = fakeTarget();
   const input = createInput({ target });
-  press(target, "ArrowLeft");
+  press(target, "ArrowRight");
   let frames = 0;
   while (input.update(1 / 240, 0).steer < 0.99 && frames < 5000) frames += 1;
   const applyFrames = frames;
-  release(target, "ArrowLeft");
+  release(target, "ArrowRight");
   frames = 0;
   while (input.update(1 / 240, 0).steer > 0.01 && frames < 5000) frames += 1;
   assert.ok(frames > applyFrames, `return (${frames}) is slower than apply (${applyFrames})`);
@@ -84,11 +84,11 @@ test("opposite lock is applied at the fast rate, not the speed-scaled one", () =
   const target = fakeTarget();
   const fast = createInput({ target: fakeTarget() });
   const input = createInput({ target });
-  press(target, "ArrowLeft");
+  press(target, "ArrowRight");
   for (let i = 0; i < 200; i += 1) input.update(1 / 240, 0);
   const held = input.input.steer;
-  release(target, "ArrowLeft");
-  press(target, "ArrowRight");
+  release(target, "ArrowRight");
+  press(target, "ArrowLeft");
   const oneStep = input.update(1 / 240, 45).steer;
   assert.ok(held - oneStep > 0.015, "reversing lock moves quickly even at speed");
   input.destroy();
@@ -102,8 +102,8 @@ test("steering authority falls away with speed", () => {
   const fastTarget = fakeTarget();
   const a = createInput({ target: slowTarget });
   const b = createInput({ target: fastTarget });
-  press(slowTarget, "ArrowLeft");
-  press(fastTarget, "ArrowLeft");
+  press(slowTarget, "ArrowRight");
+  press(fastTarget, "ArrowRight");
   let steerSlow = 0;
   let steerFast = 0;
   for (let i = 0; i < 600; i += 1) {
@@ -203,4 +203,53 @@ test("makeInput returns a fresh neutral record", () => {
   a.steer = 1;
   assert.equal(b.steer, 0);
   assert.equal(b.gear, null);
+});
+
+// The sign itself, which nothing pinned and which was wrong in every hand-driven
+// path in the game: keyboard, touch slider and tilt all steered the car the
+// opposite way to the key or thumb that asked.
+//
+// POSITIVE steer is RIGHT. That is not an arbitrary choice — it is the gamepad X
+// axis convention, it is what physics applies, and it is what the autopilot
+// produces. Measured rather than argued: sampling the autopilot down a stage,
+// the sign of its steer opposed the sign of the road's curvature (documented
+// POSITIVE = turns LEFT) in 156 of 156 samples, with not one agreeing. The four
+// tests above exercise how steering BUILDS; this one is about which way it goes.
+test("the steering keys steer the way they are named", () => {
+  const target = fakeTarget();
+  const input = createInput({ target });
+
+  press(target, "ArrowRight");
+  let right = 0;
+  for (let i = 0; i < 60; i += 1) right = input.update(1 / 60, 0).steer;
+  assert.ok(right > 0.5,
+    `holding right must give POSITIVE steer, got ${right.toFixed(3)}`);
+  release(target, "ArrowRight");
+  for (let i = 0; i < 120; i += 1) input.update(1 / 60, 0);
+
+  press(target, "ArrowLeft");
+  let left = 0;
+  for (let i = 0; i < 60; i += 1) left = input.update(1 / 60, 0).steer;
+  assert.ok(left < -0.5,
+    `holding left must give NEGATIVE steer, got ${left.toFixed(3)}`);
+  input.destroy();
+});
+
+// The bindings Arthur asked for, and the conflict they create: A cannot be both
+// the throttle and the left-hand steering key, so A and D leave the steering.
+test("the classic A/Z and comma/period layout is bound, and A is not steering", () => {
+  const has = (action, code) => DEFAULT_BINDINGS[action].includes(code);
+  assert.ok(has("throttle", "KeyA"), "A accelerates");
+  assert.ok(has("brake", "KeyZ"), "Z brakes");
+  assert.ok(has("steerLeft", "Comma"), "comma steers left");
+  assert.ok(has("steerRight", "Period"), "period steers right");
+  assert.ok(has("handbrake", "Space"), "space is the handbrake");
+  assert.ok(!has("steerLeft", "KeyA"),
+    "A cannot steer and accelerate at once");
+  assert.ok(!has("steerRight", "KeyD"),
+    "D left the steering with A, or the layout is half WASD and half not");
+  // The arrows stay, because they are what most people try first.
+  assert.ok(has("steerLeft", "ArrowLeft") && has("steerRight", "ArrowRight")
+    && has("throttle", "ArrowUp") && has("brake", "ArrowDown"),
+    "the arrow keys still drive the car");
 });
