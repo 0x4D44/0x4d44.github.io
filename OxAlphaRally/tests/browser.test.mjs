@@ -7,10 +7,11 @@
 // browser's own dispatch and would prove nothing about a player pressing a key.
 
 import assert from "node:assert/strict";
-import { resolve } from "node:path";
+import { resolve, basename } from "node:path";
 import { openHarness } from "./drive.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
+const APP_PATH = "/" + basename(resolve(import.meta.dirname, "..")) + "/";
 const VIEWPORTS = [[1280, 800], [520, 900]];
 const BOOT_TIMEOUT = 180_000;
 
@@ -32,7 +33,7 @@ try {
   for (const [width, height] of VIEWPORTS) {
     process.stderr.write(`[opus-rally] booting at ${width}x${height}\n`);
     await page.setViewport(width, height);
-    await page.navigate("/opus-rally/");
+    await page.navigate(APP_PATH);
 
     try {
       await page.waitFor("the game to boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
@@ -182,13 +183,13 @@ try {
   // ---- every stage in the book generates and is drivable ----
   process.stderr.write("[opus-rally] generating every stage in the book\n");
   const book = await page.evaluate(`(async () => {
-    const mod = await import("/opus-rally/stage.js");
+    const mod = await import("${APP_PATH}stage.js");
     return mod.STAGE_BOOK.map((s) => s.id);
   })()`);
   assert.ok(book.length >= 8, `the stage book holds only ${book.length} stages`);
   for (const id of book) {
     const info = await page.evaluate(`(async () => {
-      const mod = await import("/opus-rally/stage.js");
+      const mod = await import("${APP_PATH}stage.js");
       const pn = await import("/opus-rally/pacenotes.js");
       // stageFromBook, not generateStage(def.seed, def): a book entry keeps its
       // generator parameters under .params, so spreading the entry itself builds

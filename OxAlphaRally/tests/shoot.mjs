@@ -9,7 +9,7 @@
 // holding the throttle and hoping.
 
 import { mkdir, writeFile } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { resolve, join, basename } from "node:path";
 import { openHarness } from "./drive.mjs";
 
 const argv = process.argv.slice(2);
@@ -23,6 +23,7 @@ const WIDTH = Number(arg("width", 1600));
 const HEIGHT = Number(arg("height", 900));
 const ONLY = arg("only", null)?.split(",").map((s) => s.trim()).filter(Boolean) ?? null;
 const ROOT = resolve(import.meta.dirname, "../..");
+const APP_PATH = "/" + basename(resolve(import.meta.dirname, "..")) + "/";
 const SETTLE = Number(arg("settle", 2200));
 const QUALITY = arg("quality", "high");
 
@@ -109,7 +110,7 @@ async function main() {
   const page = await openHarness({ root: ROOT, width: WIDTH, height: HEIGHT, quiet: false });
   const manifest = [];
   try {
-    await page.navigate("/opus-rally/");
+    await page.navigate(APP_PATH);
     await page.waitFor("the game to boot", () => page.evaluate("!!window.__opusRally"), 120_000);
 
     const book = await page.evaluate(
@@ -128,7 +129,7 @@ async function main() {
       if (shot.drive) {
         const ok = await page.evaluate(`(async () => {
           const h = window.__opusRally;
-          const mod = await import("/opus-rally/stage.js");
+          const mod = await import("${APP_PATH}stage.js");
           const wanted = ${JSON.stringify(shot.drive.stage)};
           const def = mod.STAGE_BOOK.find((s) => s.id === wanted);
           if (!def) throw new Error("shoot: no stage with id " + wanted);
