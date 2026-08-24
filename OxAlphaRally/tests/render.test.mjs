@@ -60,6 +60,10 @@ import {
   createResourceBin,
   createRenderer,
   HEADLIGHT,
+  HEADLIGHT_BEAM,
+  HEADLIGHT_RIM,
+  headlightRimTerm,
+  speedPostFx,
   CONTACT_SHADOW,
   makeContactShadowFit,
   contactShadowFit,
@@ -3036,4 +3040,234 @@ test("the module-scope scratch is shared, not re-created per call", () => {
   assert.equal(fitShadowFrustum(fit, pts, 2, 0, 1, 0, 1024, 1), fit);
   const pool = createParticlePool(4);
   assert.equal(packParticles(pool, 0, 1, 0), 0);
+});
+
+// ---- night polish: the beam pattern and the scenery it should light -------
+
+// The visible cone's fragment shader, with its constants baked from
+// HEADLIGHT_BEAM. Every number the mirror below needs is declared as a GLSL
+// const float OXR_* line, so a silent retune of either side goes red here.
+function beamFragSource() {
+  const start = RENDER_SRC.indexOf("const BEAM_FRAG");
+  assert.ok(start > 0, "BEAM_FRAG not found in render.js");
+  return RENDER_SRC.slice(start, RENDER_SRC.indexOf("`;", start));
+}
+
+// JS mirror of BEAM_FRAG's alpha, fed HEADLIGHT_BEAM itself — the shader bakes
+// these exact fields, so the mirror measures what runs. Measures what the
+// player sees: luminance along the shell.
+function shellAlpha(k, along, ny, r, face) {
+  if (r > 1) return 0;
+  const body = Math.pow(Math.max(1 - r * r, 0), k.shoulderPow);
+  const vert = (1 - smoothstepLike(k.cutLo, k.cutHi, ny))
+    * (1 - smoothstepLike(k.topLo, k.topHi, ny));
+  const fwd = smoothstepLike(k.nearLo, k.nearHi, along) * Math.pow(1 - along, 1.8);
+  const a = (0.22 + 0.78 * Math.pow(face, 0.9)) * fwd * body * vert;
+  return a <= 0.002 ? 0 : a;
+}
+
+function smoothstepLike(lo, hi, x) {
+  const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
+  return t * t * (3 - 2 * t);
+}
+
+test("the beam fan has a real cut-off: soft line, dark above, contrast below", () => {
+  const src = beamFragSource();
+  // Each pattern constant must be baked straight from the exported object — the
+  // shader cannot drift from the numbers these mirrors measure.
+  const baked = [
+    ["OXR_SPREAD", "spread.toFixed(6)"],
+    ["OXR_CUT_LO", "cutLo.toFixed(4)"],
+    ["OXR_CUT_HI", "cutHi.toFixed(4)"],
+    ["OXR_TOP_LO", "topLo.toFixed(4)"],
+    ["OXR_TOP_HI", "topHi.toFixed(4)"],
+    ["OXR_SHOULDER_POW", "shoulderPow.toFixed(4)"],
+    ["OXR_NEAR_LO", "nearLo.toFixed(4)"],
+    ["OXR_NEAR_HI", "nearHi.toFixed(4)"],
+  ];
+  for (const [name, expr] of baked) {
+    assert.ok(src.includes(`const float ${name} = \${HEADLIGHT_BEAM.${expr}};`),
+      `BEAM_FRAG no longer bakes ${name} from HEADLIGHT_BEAM.${expr} — `
+      + "the shader and its measured mirror have come apart");
+  }
+
+  const k = HEADLIGHT_BEAM;
+  // Luminance straight up the middle of the fan, road to sky. A synthetic fan
+  // is either flat or steps; a beam has a bright sheet under a soft line.
+  let peak = 0;
+  let step = 0;
+  let prev = -1;
+  for (let ny = -0.95; ny <= 0.95; ny += 0.02) {
+    const a = shellAlpha(k, 0.3, ny, 0.3, 0.6);
+    peak = Math.max(peak, a);
+    if (prev >= 0) step = Math.max(step, Math.abs(a - prev));
+    prev = a;
+  }
+  assert.ok(peak > 0.05, `the fan never lights at all (peak ${peak.toFixed(4)})`);
+  assert.ok(step <= 0.05,
+    `the cut-off is a hard step (${step.toFixed(3)} between adjacent samples) — `
+    + "that straight edge is what reads synthetic");
+
+  // The point of the cut-off: ground below the line, near-darkness above it.
+  const below = shellAlpha(k, 0.3, -0.5, 0.3, 0.6);
+  const above = shellAlpha(k, 0.3, 0.75, 0.3, 0.6);
+  assert.ok(below / Math.max(peak, 1e-6) > 0.5,
+    `the sheet under the cut-off runs at ${(below / peak * 100).toFixed(0)}% of peak — no fan`);
+  assert.ok(below > above * 6,
+    `above/below contrast is only ${(below / Math.max(above, 1e-6)).toFixed(1)}x — `
+    + "the fan throws as much light at the sky as at the road");
+
+  // And it dies entirely before the shell's top edge, whatever the geometry does.
+  assert.equal(shellAlpha(k, 0.3, 0.99, 0.3, 0.6), 0, "the fan still glows at its top rim");
+});
+
+test("the fan's spill shoulders are rounded and fade inside the wall", () => {
+  const k = HEADLIGHT_BEAM;
+  const centre = shellAlpha(k, 0.35, -0.4, 0.0, 0.6);
+  assert.ok(centre > 0.05, "the beam core puts nothing out");
+  const shoulder = shellAlpha(k, 0.35, -0.4, 0.85, 0.6);
+  assert.ok(shoulder < centre * 0.35 && shoulder > 0,
+    `shoulder runs at ${(shoulder / centre * 100).toFixed(0)}% of the core — `
+    + "either a hard wall again or nothing outside the axis");
+  // Zero slope at the wall: the silhouette cannot draw a straight diagonal edge.
+  const nearWall = shellAlpha(k, 0.35, -0.4, 0.98, 0.6);
+  assert.ok(nearWall < shoulder * 0.12,
+    "the fade does not steepen towards the wall — the diagonal edge is back");
+  // The lamp itself stays dimmer than the throw, so the bonnet is not a bulb.
+  const apex = shellAlpha(k, 0.001, -0.4, 0.3, 0.6);
+  const thrown = shellAlpha(k, 0.35, -0.4, 0.3, 0.6);
+  assert.ok(apex < thrown * 0.25,
+    "the cone burns at the lamp — the fan starts on the bumper, not down the road");
+});
+
+test("a tree inside the beam cone catches headlight, a treetop does not", () => {
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  stage.scenery = [{ kind: "tree", x: -7, y: 0, z: 40, yaw: 0.3, scale: 1 }];
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0;
+  api.buildStage(stage, { car, weather: fakeWeather() });
+  const frame = { car, stage, weather: fakeWeather(), alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+
+  // The rig publishes its analytic spill uniforms where the tests can read them.
+  const spill = api.scene.getObjectByName("opus.headlight.spill");
+  const rig = spill && spill.userData ? spill.userData.opusRim : null;
+  assert.ok(rig && rig.uniforms, "no analytic rim rig published on the lamp pod");
+  assert.ok(rig.uniforms.uOxrLevel.value > 0.05,
+    `rim level stayed at ${rig.uniforms.uOxrLevel.value} with the lamps on`);
+
+  // Mirror lamps built from the live scene state, then measure the term the way
+  // the injected shader computes it.
+  const lampOf = (light) => {
+    const d = new THREE.Vector3().subVectors(light.target.position, light.position).normalize();
+    return {
+      x: light.position.x, y: light.position.y, z: light.position.z,
+      dx: d.x, dy: d.y, dz: d.z,
+      level: rig.uniforms.uOxrLevel.value * HEADLIGHT_RIM.intensity,
+    };
+  };
+  const left = api.scene.getObjectByName("opus.headlight.l");
+  const right = api.scene.getObjectByName("opus.headlight.r");
+  const lamps = [lampOf(left), lampOf(right)];
+  const trunkY = 1.6;
+  const trunk = Math.max(
+    headlightRimTerm(lamps[0], -7, trunkY, car.pos.z + 14),
+    headlightRimTerm(lamps[1], -7, trunkY, car.pos.z + 14),
+  );
+  assert.ok(trunk > 0.02,
+    `trunk-side sample gets ${trunk.toFixed(4)} — passing trees catch nothing`);
+
+  // Above the cut-off the fan is dark, wherever the cone geometrically reaches.
+  const canopy = Math.max(
+    headlightRimTerm(lamps[0], -7, 24, car.pos.z + 14),
+    headlightRimTerm(lamps[1], -7, 24, car.pos.z + 14),
+  );
+  assert.ok(canopy < trunk * 0.08,
+    `canopy sample gets ${canopy.toFixed(4)} against trunk ${trunk.toFixed(4)} — no cut-off`);
+  assert.equal(headlightRimTerm(lamps[0], 0, trunkY, car.pos.z - 9), 0,
+    "the lamp spills backwards");
+  assert.equal(headlightRimTerm(lamps[0], -38, trunkY, car.pos.z + 14), 0,
+    "the spill has no range limit");
+
+  // Day: the whole rig follows the lamp level to zero (toggleHeadlights is the
+  // established way to force the lamps — updateHeadlights reads the weather
+  // object captured at buildStage, not the one on the frame).
+  api.toggleHeadlights();
+  for (let i = 0; i < 120; i += 1) api.update(frame, 1 / 60);
+  assert.ok(rig.uniforms.uOxrLevel.value < 0.01,
+    `rim level stuck at ${rig.uniforms.uOxrLevel.value} after the lamps went out`);
+  api.dispose();
+});
+
+test("scenery materials are wired for the analytic headlight term", () => {
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  stage.scenery = [{ kind: "tree", x: -7, y: 0, z: 40 }, { kind: "pole", x: 6, y: 0, z: 55 }];
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  api.buildStage(stage, { car, weather: fakeWeather() });
+
+  const tagged = [];
+  api.scene.traverse((o) => {
+    if (o.isMesh && o.material && o.material.userData && o.material.userData.opusHeadlightRim) {
+      if (!tagged.includes(o.material)) tagged.push(o.material);
+    }
+  });
+  assert.ok(tagged.length >= 2,
+    `only ${tagged.length} scenery materials carry the headlight term — `
+    + "the trees will stay black as the car passes");
+
+  // The injection must survive a real program build: run the hook over a minimal
+  // three-style shader skeleton and check every anchor it needs landed.
+  const mat = tagged[0];
+  const shader = {
+    uniforms: {},
+    vertexShader: "#include <common>\n#include <beginnormal_vertex>\n#include <begin_vertex>\nvoid main(){}",
+    fragmentShader: "#include <common>\n#include <emissivemap_fragment>\nvoid main(){}",
+  };
+  mat.onBeforeCompile(shader);
+  assert.ok(shader.uniforms.uOxrPosA, "lamp uniform A missing after injection");
+  assert.ok(shader.uniforms.uOxrDirB, "lamp uniform B missing after injection");
+  assert.ok(shader.vertexShader.indexOf("vOpusW") < shader.vertexShader.indexOf("#include <begin_vertex>"),
+    "world-position varying not declared before use");
+  assert.ok(/vOpusW\s*=/.test(shader.vertexShader), "vertex shader never writes vOpusW");
+  assert.ok(/instanceMatrix/.test(shader.vertexShader),
+    "instanced scenery would lose the term — USE_INSTANCING not handled");
+  assert.ok(/opusRimLamp\(/.test(shader.fragmentShader), "fragment shader never calls the lamp term");
+  assert.ok(shader.fragmentShader.includes("totalEmissiveRadiance += "),
+    "the term never reaches the outgoing light");
+  api.dispose();
+});
+
+// ---- speed you can feel ---------------------------------------------------
+
+test("the speed effects ramp monotonically and bite hard by 140 km/h", () => {
+  let prevC = -Infinity; let prevV = -Infinity; let prevR = -Infinity;
+  for (let s = 0; s <= 70; s += 0.5) {
+    const fx = speedPostFx(s);
+    assert.ok(fx.speedCue >= 0 && fx.speedCue <= 1, `speedCue out of range at ${s}`);
+    assert.ok(fx.chroma >= prevC - 1e-9, `chroma fell at ${s} m/s`);
+    assert.ok(fx.vignette >= prevV - 1e-9, `vignette fell at ${s} m/s`);
+    assert.ok(fx.radial >= prevR - 1e-9, `radial fell at ${s} m/s`);
+    prevC = fx.chroma; prevV = fx.vignette; prevR = fx.radial;
+  }
+  // Below ~90 km/h the picture stays clean: streak there reads as dirt on the lens.
+  assert.equal(speedPostFx(24).radial, 0, "streaking at 86 km/h — too soon");
+  // 140 km/h on a wide stage must already compress: the critic's exact ask.
+  assert.ok(speedPostFx(140 / 3.6).radial >= 0.9,
+    `at 140 km/h radial is only ${speedPostFx(140 / 3.6).radial.toFixed(2)} — speed still unreadable`);
+  // Flat out spends the effect without runaway.
+  assert.ok(speedPostFx(56).radial <= 2.6, "the streak saturates into mush");
+});
+
+test("every quality level that runs post also runs the speed streak", () => {
+  for (const name of QUALITY_LEVELS) {
+    const q = qualitySettings(name);
+    if (!q.post) continue;
+    assert.ok(q.radialBlur,
+      `${name} runs the composite but ships radialBlur: false — the one speed cue `
+      + "left past fovRefSpeed is invisible at that quality");
+  }
 });

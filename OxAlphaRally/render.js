@@ -87,6 +87,70 @@ const BEAM_LENGTH = 26;
 const BEAM_RADIUS = BEAM_LENGTH * Math.tan(HEADLIGHT.mainAngle * 0.62);
 const BEAM_FOG_FLOOR = 0.18;
 
+// The fan's pattern, in cone cross-section units where ±1 is the geometric wall
+// and ny is height relative to the beam axis. The critic's second pass called
+// the shipped shell synthetic: two straight diagonal edges meeting at the lamp.
+// A real dipped beam reads through its cut-off line — bright sheet below, quick
+// soft fall above — so the pattern here is that shape rather than the cone's own
+// geometry: rounded shoulders fade well before the wall, a smoothstep band puts
+// a soft horizontal cut-off just above the axis with a gentle falloff above it,
+// and the top of the shell dies entirely instead of drawing an arc against the
+// fog. Exported because tests measure the shader through these numbers.
+export const HEADLIGHT_BEAM = Object.freeze({
+  spread: Math.tan(HEADLIGHT.mainAngle * 0.62),
+  cutLo: -0.04,
+  cutHi: 0.30,
+  topLo: 0.55,
+  topHi: 0.92,
+  shoulderPow: 1.35,
+  nearLo: 0.03,
+  nearHi: 0.16,
+});
+
+// The lamps' broad spill field, evaluated analytically inside the materials of
+// lit scenery. A three.js spot is one cone; a real lamp is a hot core plus a
+// wide, weak shoulder that brushes the verge as the car goes past — which is why
+// every passing tree stayed black while the road glowed. This term is that
+// shoulder: wider cone than either dipped beam, the same soft cut-off against
+// the horizontal so canopies stay dark, three's inverse-decay-and-window
+// falloff, and a view-dependent rim weight so trunks catch the light edge-on as
+// the car passes. It lives only where it has been injected (scenery and props —
+// never the car or the road ribbon) and costs ALU, not another light.
+export const HEADLIGHT_RIM = Object.freeze({
+  intensity: 130,
+  range: 34,
+  decay: 1,
+  coneCos: Math.cos(0.55),
+  cutSin: 0.02,
+  fadeSin: 0.17,
+  baseGain: 0.38,
+  rimGain: 1.45,
+  rimPower: 2.2,
+});
+
+// JS mirror of opusRimLamp(), the chunk injected into scenery materials. Tests
+// feed it lamps built from the live scene lights, so what a test measures is
+// what the shader runs. `lamp` is { x,y,z, dx,dy,dz (unit aim), level } where
+// level already carries the lamp's smoothed on/off level times intensity.
+export function headlightRimTerm(lamp, px, py, pz) {
+  const dx = lamp.x - px;
+  const dy = lamp.y - py;
+  const dz = lamp.z - pz;
+  const dist = Math.max(Math.sqrt(dx * dx + dy * dy + dz * dz), 0.4);
+  const win = Math.max(0, 1 - Math.pow(dist / HEADLIGHT_RIM.range, 4));
+  if (win <= 0) return 0;
+  const cosA = (-dx * lamp.dx - dy * lamp.dy - dz * lamp.dz) / dist;
+  const t = clamp((cosA - HEADLIGHT_RIM.coneCos) / (1 - HEADLIGHT_RIM.coneCos), 0, 1);
+  if (t <= 0) return 0;
+  const hAbove = (py - lamp.y) / dist;
+  if (hAbove >= HEADLIGHT_RIM.fadeSin) return 0;
+  const s = saturate((hAbove - HEADLIGHT_RIM.cutSin)
+    / (HEADLIGHT_RIM.fadeSin - HEADLIGHT_RIM.cutSin));
+  const spot = t * t * (3 - 2 * t);
+  const vert = 1 - s * s * (3 - 2 * s);
+  return lamp.level / Math.pow(dist, HEADLIGHT_RIM.decay) * win * win * spot * vert;
+}
+
 // The texture slots worth filtering anisotropically: the ones sampled across a
 // surface the camera sees edge-on.
 const ANISO_MAPS = Object.freeze(["map", "normalMap", "roughnessMap", "aoMap"]);
@@ -154,7 +218,10 @@ const QUALITY = Object.freeze({
     bloomIterations: 1,
     chroma: 0.4,
     vignette: 0.3,
-    radialBlur: false,
+    // The streak is four extra taps inside the composite pass medium already
+    // runs, and it is the one speed cue left once the FOV widening is spent —
+    // at the quality most frames are judged at, pace had to be unreadable.
+    radialBlur: true,
     grade: true,
     dither: true,
     post: true,
@@ -601,6 +668,37 @@ export function lookTarget(out, s, p, cornerYaw) {
 export function chaseFov(speed, p) {
   const t = smoothstep(p.fovStart, Math.max(p.fovStart + 1e-3, p.fovRefSpeed), speed);
   return p.fovBase + (p.fovMax - p.fovBase) * t;
+}
+
+// How hard the post chain sells speed at a given pace. The FOV widening is
+// spent by fovRefSpeed (~115 km/h); past there the feeling of pace has to come
+// from the lens, not the frustum. The shipped curve spent its whole budget on a
+// linear ramp that only saturated at 208 km/h — at the 140 km/h a wide stage
+// actually carries, radial was at 43% of maximum, which reads as nothing. Now
+// the ramp starts from the same floor but is fully spent by ~180 km/h and peaks
+// harder, while the shader's own centre-weighting keeps the road ahead readable.
+// Pure so the post uniforms are measurable headlessly.
+export const POST_SPEED = Object.freeze({
+  cueRef: 58,
+  radialFrom: 0.42,
+  radialTo: 0.86,
+  radialGain: 2.2,
+});
+
+export function speedPostFx(speed) {
+  return speedPostFxInto({ speedCue: 0, chroma: 1, vignette: 1, radial: 0 }, speed);
+}
+
+// The allocation-free form the per-frame path uses: same maths, written into a
+// caller-owned scratch. speedPostFx() above is the measurable pure form.
+export function speedPostFxInto(out, speed) {
+  const cue = saturate(speed / POST_SPEED.cueRef);
+  out.speedCue = cue;
+  out.chroma = 0.4 + 0.6 * cue;
+  out.vignette = 0.75 + 0.45 * cue;
+  out.radial = saturate((cue - POST_SPEED.radialFrom)
+    / (POST_SPEED.radialTo - POST_SPEED.radialFrom)) * POST_SPEED.radialGain;
+  return out;
 }
 
 // Deterministic, allocation-free camera shake. Three incommensurable sines per
@@ -1667,12 +1765,14 @@ void main() {
 
 const BEAM_VERT = `
 varying float vAlong;
+varying vec3 vLocal;
 varying vec3 vNormalW;
 varying vec3 vViewDir;
 void main() {
   // The cone is baked apex-first, and a cone's v runs 1 at the apex: flip it so
   // vAlong is 0 at the lamp and 1 at the far end of the throw.
   vAlong = 1.0 - clamp(uv.y, 0.0, 1.0);
+  vLocal = position;
   vec4 world = modelMatrix * vec4(position, 1.0);
   vNormalW = normalize(mat3(modelMatrix) * normal);
   vViewDir = normalize(cameraPosition - world.xyz);
@@ -1680,21 +1780,47 @@ void main() {
 }
 `;
 
+// Constants are baked from HEADLIGHT_BEAM so the tests can measure this shader
+// through the exported numbers rather than through a transcription of them.
 const BEAM_FRAG = `
 uniform vec3 uColour;
 uniform float uStrength;
 varying float vAlong;
+varying vec3 vLocal;
 varying vec3 vNormalW;
 varying vec3 vViewDir;
+const float OXR_SPREAD = ${HEADLIGHT_BEAM.spread.toFixed(6)};
+const float OXR_CUT_LO = ${HEADLIGHT_BEAM.cutLo.toFixed(4)};
+const float OXR_CUT_HI = ${HEADLIGHT_BEAM.cutHi.toFixed(4)};
+const float OXR_TOP_LO = ${HEADLIGHT_BEAM.topLo.toFixed(4)};
+const float OXR_TOP_HI = ${HEADLIGHT_BEAM.topHi.toFixed(4)};
+const float OXR_SHOULDER_POW = ${HEADLIGHT_BEAM.shoulderPow.toFixed(4)};
+const float OXR_NEAR_LO = ${HEADLIGHT_BEAM.nearLo.toFixed(4)};
+const float OXR_NEAR_HI = ${HEADLIGHT_BEAM.nearHi.toFixed(4)};
 void main() {
+  // Cross-section in beam space, normalised so the geometric wall is r = 1:
+  // everything below is pattern, not geometry, which is what kills the straight
+  // diagonal silhouette edges the critic read as synthetic.
+  float fwd = max(vLocal.z, 0.001);
+  vec2 nc = vLocal.xy / max(fwd * OXR_SPREAD, 0.001);
+  float r2 = dot(nc, nc);
+  if (r2 > 1.0) discard;
+  // Rounded spill shoulders: a circular profile whose slope reaches zero at the
+  // wall, so alpha arrives tangent instead of cutting off on a chord.
+  float body = pow(max(1.0 - r2, 0.0), OXR_SHOULDER_POW);
+  // Soft horizontal cut-off just above the axis, gentle vertical falloff above
+  // it, and gone entirely before the top of the shell.
+  float vert = (1.0 - smoothstep(OXR_CUT_LO, OXR_CUT_HI, nc.y))
+    * (1.0 - smoothstep(OXR_TOP_LO, OXR_TOP_HI, nc.y));
+  // The throw leads the car: dim at the lamp itself, brightest just ahead,
+  // closing out like a beam rather than ending at a wall.
+  float along = smoothstep(OXR_NEAR_LO, OXR_NEAR_HI, vAlong) * pow(1.0 - vAlong, 1.8);
   // A cone stands in for the lit volume, so the shell is brightest where a ray
-  // crosses the most of that volume: side-on to the wall. The old rim term did
-  // the opposite and lit the silhouette, which from directly behind the car —
-  // where the whole cone is silhouette — drew a white balloon over the bonnet.
-  // The small constant is the rest of the volume, so looking straight down the
-  // beam in fog still shows a haze rather than nothing at all.
+  // crosses the most of that volume: side-on to the wall. The small constant is
+  // the rest of the volume, so looking straight down the beam in fog still
+  // shows a haze rather than nothing at all.
   float face = abs(dot(normalize(vNormalW), normalize(vViewDir)));
-  float a = (0.22 + 0.78 * pow(face, 0.9)) * (1.0 - vAlong) * (1.0 - vAlong) * uStrength;
+  float a = (0.22 + 0.78 * pow(face, 0.9)) * along * body * vert * uStrength;
   if (a <= 0.002) discard;
   gl_FragColor = vec4(uColour, a);
 }
@@ -1845,7 +1971,9 @@ export function createRenderer(canvas, opts = {}) {
     exposure: 1,
     drawsIssued: 0,
     lastS: 0,
-    speedCue: 0,
+    // Scratch for the per-frame speed-effect strengths, filled by
+    // speedPostFxInto() in update() and read by renderFrame().
+    speedFx: { speedCue: 0, chroma: 1, vignette: 1, radial: 0 },
   };
 
   const rigs = {};
@@ -2066,6 +2194,110 @@ export function createRenderer(canvas, opts = {}) {
     }
   }
 
+  // ---- the analytic headlight spill on lit scenery -------------------------
+  //
+  // Injected into scenery and prop materials at stage build; the uniforms are
+  // shared, so updateHeadlights() feeds every injected program at once.
+
+  const RIM_VERTEX_HEAD = `
+varying vec3 vOpusW;
+varying vec3 vOpusN;
+`;
+
+  const RIM_VERTEX_NORMAL = `
+#ifdef USE_INSTANCING
+  vOpusN = mat3(modelMatrix) * (mat3(instanceMatrix) * objectNormal);
+#else
+  vOpusN = mat3(modelMatrix) * objectNormal;
+#endif
+`;
+
+  const RIM_VERTEX_POSITION = `
+#ifdef USE_INSTANCING
+  vOpusW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+#else
+  vOpusW = (modelMatrix * vec4(transformed, 1.0)).xyz;
+#endif
+`;
+
+  // Constants baked from HEADLIGHT_RIM, exactly as BEAM_FRAG bakes
+  // HEADLIGHT_BEAM: one source of truth, measured by the tests through the
+  // export rather than through a copy.
+  const RIM_FRAGMENT_HEAD = `
+uniform float uOxrLevel;
+uniform vec3 uOxrColour;
+uniform vec3 uOxrPosA;
+uniform vec3 uOxrDirA;
+uniform vec3 uOxrPosB;
+uniform vec3 uOxrDirB;
+varying vec3 vOpusW;
+varying vec3 vOpusN;
+const float OXR_INTENSITY = ${HEADLIGHT_RIM.intensity.toFixed(2)};
+const float OXR_RANGE = ${HEADLIGHT_RIM.range.toFixed(2)};
+const float OXR_DECAY = ${HEADLIGHT_RIM.decay.toFixed(2)};
+const float OXR_CONE_COS = ${HEADLIGHT_RIM.coneCos.toFixed(6)};
+const float OXR_CUT_SIN = ${HEADLIGHT_RIM.cutSin.toFixed(4)};
+const float OXR_FADE_SIN = ${HEADLIGHT_RIM.fadeSin.toFixed(4)};
+const float OXR_BASE_GAIN = ${HEADLIGHT_RIM.baseGain.toFixed(4)};
+const float OXR_RIM_GAIN = ${HEADLIGHT_RIM.rimGain.toFixed(4)};
+const float OXR_RIM_POWER = ${HEADLIGHT_RIM.rimPower.toFixed(4)};
+float opusRimLamp(vec3 lp, vec3 ld, vec3 p) {
+  vec3 d = lp - p;
+  float dist = max(length(d), 0.4);
+  float fall = uOxrLevel * OXR_INTENSITY / pow(dist, OXR_DECAY);
+  float win = max(0.0, 1.0 - pow(dist / OXR_RANGE, 4.0));
+  float cosA = dot(ld, -d / dist);
+  float t = clamp((cosA - OXR_CONE_COS) / (1.0 - OXR_CONE_COS), 0.0, 1.0);
+  float vert = 1.0 - smoothstep(OXR_CUT_SIN, OXR_FADE_SIN, (p.y - lp.y) / dist);
+  return fall * win * win * t * t * (3.0 - 2.0 * t) * vert;
+}
+`;
+
+  // Added radiance scaled by the surface's own albedo: foliage and bark are
+  // roughness-1 diffuse, so a Lambert-shaped term is honest, and skipping NdotL
+  // keeps double-sided foliage cards lit from both faces. The rim weight lifts
+  // surfaces seen edge-on, which is what turns a lit trunk into a rim light.
+  const RIM_FRAGMENT_BODY = `
+if (uOxrLevel > 0.001) {
+  vec3 opN = normalize(vOpusN);
+  vec3 opV = normalize(cameraPosition - vOpusW);
+  float opRim = pow(1.0 - saturate(dot(opN, opV)), OXR_RIM_POWER);
+  float opTerm = (OXR_BASE_GAIN + OXR_RIM_GAIN * opRim)
+    * (opusRimLamp(uOxrPosA, uOxrDirA, vOpusW) + opusRimLamp(uOxrPosB, uOxrDirB, vOpusW));
+  totalEmissiveRadiance += uOxrColour * (diffuseColor.rgb * opTerm);
+}
+`;
+
+  function applyHeadlightRim(mat) {
+    if (!mat || !mat.isMeshStandardMaterial || mat.userData.opusHeadlightRim) return;
+    mat.userData.opusHeadlightRim = true;
+    const prevKey = typeof mat.customProgramCacheKey === "function"
+      ? mat.customProgramCacheKey.bind(mat) : null;
+    mat.customProgramCacheKey = () => `opus-rim|${prevKey ? prevKey() : ""}`;
+    const prevHook = typeof mat.onBeforeCompile === "function" ? mat.onBeforeCompile : null;
+    mat.onBeforeCompile = (shader) => {
+      if (prevHook) prevHook(shader);
+      Object.assign(shader.uniforms, headlights.rim.uniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace("#include <common>", `#include <common>${RIM_VERTEX_HEAD}`)
+        .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>${RIM_VERTEX_NORMAL}`)
+        .replace("#include <begin_vertex>", `#include <begin_vertex>${RIM_VERTEX_POSITION}`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <common>", `#include <common>${RIM_FRAGMENT_HEAD}`)
+        .replace("#include <emissivemap_fragment>",
+          `#include <emissivemap_fragment>${RIM_FRAGMENT_BODY}`);
+    };
+  }
+
+  function tagHeadlightReceivers(root) {
+    if (!root || typeof root.traverse !== "function") return;
+    root.traverse((o) => {
+      if (!o.material) return;
+      const list = Array.isArray(o.material) ? o.material : [o.material];
+      for (let i = 0; i < list.length; i += 1) applyHeadlightRim(list[i]);
+    });
+  }
+
   function buildHeadlights() {
     // Full penumbra on every lamp: the smoothstep from the axis to the rim is
     // the only beam pattern a three.js spot light has.
@@ -2092,6 +2324,20 @@ export function createRenderer(canvas, opts = {}) {
     headlights.right = right;
     headlights.pod = pod;
     headlights.spill = spill;
+    // Shared uniforms for the analytic spill injected into scenery materials.
+    // One object per renderer, mutated in place every frame — no allocation on
+    // the update path, and every injected program reads the same values.
+    headlights.rim = {
+      uniforms: {
+        uOxrLevel: { value: 0 },
+        uOxrColour: { value: new three.Color(0xfff2dc) },
+        uOxrPosA: { value: new three.Vector3() },
+        uOxrDirA: { value: new three.Vector3(0, -0.03, 1) },
+        uOxrPosB: { value: new three.Vector3() },
+        uOxrDirB: { value: new three.Vector3(0, -0.03, 1) },
+      },
+    };
+    spill.userData.opusRim = headlights.rim;
     scene.add(left, left.target, right, right.target,
       pod, pod.target, spill, spill.target);
 
@@ -3248,6 +3494,14 @@ export function createRenderer(canvas, opts = {}) {
     if (headlights.pod) headlights.pod.intensity = 0;
     if (headlights.spill) headlights.spill.intensity = 0;
     if (headlights.beams) headlights.beams.visible = false;
+    // The analytic spill rides the same switch, or lit scenery glows on with no
+    // lamps in the scene at all.
+    if (headlights.rim) headlights.rim.uniforms.uOxrLevel.value = 0;
+    // And the speed effects idle out with the car that drove them.
+    state.speedFx.speedCue = 0;
+    state.speedFx.chroma = 1;
+    state.speedFx.vignette = 1;
+    state.speedFx.radial = 0;
     // Same reason: a pool of darkening parked on the menu backdrop.
     contactMesh.visible = false;
     tvAnchors.length = 0;
@@ -3314,6 +3568,9 @@ export function createRenderer(canvas, opts = {}) {
 
     const sceneryRoot = buildScenery(stage, stageBin);
     collectAnisotropy(sceneryRoot);
+    // Trees and verge props carry the analytic headlight spill; the road ribbon
+    // and terrain keep their real spot lighting.
+    tagHeadlightReceivers(sceneryRoot);
     stageGroup.add(sceneryRoot);
 
     if (meshLib && typeof meshLib.buildPropLibrary === "function") {
@@ -3331,6 +3588,7 @@ export function createRenderer(canvas, opts = {}) {
       if (props) {
         props.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
         collectAnisotropy(props);
+        tagHeadlightReceivers(props);
         stageGroup.add(props);
       }
     }
@@ -3604,6 +3862,20 @@ export function createRenderer(canvas, opts = {}) {
     headlights.right.intensity = h.mainIntensity * gain;
     headlights.pod.intensity = h.podIntensity * gain;
     headlights.spill.intensity = h.spillIntensity * gain;
+
+    // Feed the analytic spill the dipped pair's pose. The aim vectors are the
+    // lamps' own, so a steered or pitched car sweeps the verge light with it.
+    if (headlights.rim) {
+      const ru = headlights.rim.uniforms;
+      ru.uOxrLevel.value = gain;
+      const feed = (light, posU, dirU) => {
+        posU.value.copy(light.position);
+        vTmp.subVectors(light.target.position, light.position).normalize();
+        dirU.value.copy(vTmp);
+      };
+      feed(headlights.left, ru.uOxrPosA, ru.uOxrDirA);
+      feed(headlights.right, ru.uOxrPosB, ru.uOxrDirB);
+    }
 
     if (headlights.beams) {
       // A beam is only visible where there is something in the air to scatter
@@ -4050,9 +4322,10 @@ export function createRenderer(canvas, opts = {}) {
 
     u.tScene.value = post.sceneRT.texture;
     u.uExposure.value = state.exposure;
-    u.uChroma.value = q.chroma * (0.4 + 0.6 * saturate(state.speedCue || 0));
-    u.uVignette.value = q.vignette * (0.75 + 0.45 * saturate(state.speedCue || 0));
-    u.uRadial.value = q.radialBlur ? saturate((state.speedCue || 0) - 0.42) * 1.7 : 0;
+    const fx = state.speedFx;
+    u.uChroma.value = q.chroma * fx.chroma;
+    u.uVignette.value = q.vignette * fx.vignette;
+    u.uRadial.value = q.radialBlur ? fx.radial : 0;
     u.uDither.value = q.dither ? 1.6 / 255 : 0;
     u.uTime.value = state.time;
     u.uAa.value = q.aa || 0;
@@ -4102,7 +4375,7 @@ export function createRenderer(canvas, opts = {}) {
     syncWeather(step);
 
     sampleCar(_sample, car, surface);
-    state.speedCue = saturate(car.speed / 58);
+    speedPostFxInto(state.speedFx, car.speed);
 
     if (state.world && typeof state.world.project === "function") {
       state.lastS = state.world.project(car.pos.x, car.pos.z, state.lastS, proj).s;
