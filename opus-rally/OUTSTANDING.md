@@ -96,11 +96,19 @@ with its shadows and post switched off.
   radiance passed all forty-two weather assertions, because every one of them
   measured a ratio, a monotonicity or a relationship. There is now one test that
   pins the sky's output band. The ground, the car and the fog have no equivalent.
-- **The car still casts no shadow.** Trees cast; the car does not. Unchanged and
-  unexplained — `buildCar` sets `castShadow` on every mesh and `updateShadow`
-  adds the car's own bounds to the fitted box, so it is neither of the obvious
-  two. Measure the fitted frustum and the shadow bias against the texel size the
-  26 m pad now produces.
+- **"The car casts no shadow" is now FALSE, and was a casualty of the unlit
+  scene rather than a fault in the shadow rig.** Measured by turning the car's
+  43 `castShadow` flags off and diffing the frame: the ground to the lower right
+  brightens by up to 52.5 levels per block in a coherent car-shaped region,
+  against a control noise floor of 4.1. The rig checks out too — the car is 43
+  of the scene's 67 casters, it sits inside the fitted box, and the box resolves
+  a 0.111 m texel, so a 4.3 m car is 39 texels long. Do not "fix" this.
+  Two things that make this measurement harder than it looks. The composite
+  reseeds its ordered dither from `uTime` every frame, so a three-level per-pixel
+  threshold reports 40% of the frame as changed when nothing has changed at all;
+  compare region means, where zero-mean dither cancels. And `placeAt` leaves the
+  car rolling, which swamps everything — place it at zero and let it settle, then
+  take a control pair before the real one.
 - **A blizzard still puts no snow on the ground.** `meshes.js` now exports
   `setGroundSnow(root, cover)` and both ground shaders carry the uniform;
   `render.js` never calls it, and never reads `weather.metrics.snowCover`.
