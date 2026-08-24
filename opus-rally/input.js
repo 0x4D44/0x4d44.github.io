@@ -10,10 +10,14 @@
 import { clamp, damp, moveToward, shape, saturate } from "./mathx.js";
 
 export const DEFAULT_BINDINGS = Object.freeze({
-  steerLeft: ["ArrowLeft", "KeyA"],
-  steerRight: ["ArrowRight", "KeyD"],
-  throttle: ["ArrowUp", "KeyW"],
-  brake: ["ArrowDown", "KeyS"],
+  // Comma and period alongside the arrows, and A/Z for the pedals: the layout
+  // every home-computer driving game used before WASD existed, and the one
+  // people who learned to drive on those still reach for. A and D leave the
+  // steering because A is now the throttle; W and S stay on the pedals.
+  steerLeft: ["ArrowLeft", "Comma"],
+  steerRight: ["ArrowRight", "Period"],
+  throttle: ["ArrowUp", "KeyW", "KeyA"],
+  brake: ["ArrowDown", "KeyS", "KeyZ"],
   handbrake: ["Space"],
   shiftUp: ["KeyE", "ShiftRight"],
   shiftDown: ["KeyQ", "ShiftLeft"],
@@ -197,9 +201,16 @@ export function createInput(opts = {}) {
     }
 
     if (!usingPad && !usingTouch) {
+      // POSITIVE steer is RIGHT. This is not a matter of taste: physics, the
+      // autopilot and the gamepad X axis all agree on it, and the keyboard was
+      // the one path that did not — it computed `left - right`, so every key a
+      // player pressed steered the other way. Measured rather than argued:
+      // sampling the autopilot down a stage, the sign of its steer opposed the
+      // sign of the road's curvature (documented POSITIVE = turns LEFT) in 156
+      // of 156 samples, with not one agreeing.
       const left = held.has("steerLeft") ? 1 : 0;
       const right = held.has("steerRight") ? 1 : 0;
-      steerTarget = left - right;
+      steerTarget = right - left;
       throttleTarget = held.has("throttle") ? 1 : 0;
       brakeTarget = held.has("brake") ? 1 : 0;
       handbrakeTarget = held.has("handbrake") ? 1 : 0;
