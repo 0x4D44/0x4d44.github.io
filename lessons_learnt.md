@@ -11,6 +11,29 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-08-25 - Bloom invents clipping the scene never had; test with bloom off before hunting geometry (render.js:BRIGHT_FRAG)
+  OpusRally showed white discs that came and went on distant hillsides. With the
+  bloom weight set to 0 the scene produced ZERO near-white pixels there over 180
+  frames; with it on, a 251x9 px sliver of road 1113 m away smeared into a 56 px
+  disc whose every pixel clipped to 255. The scene was never blown - the blur
+  manufactured the white. A single-tap bright pass passes an outlier through
+  unbounded, so the fix is a Karis average (weight each tap 1/(1+luma)) in the
+  prefilter: extent, not magnitude, separates an aliased fragment from a real light
+  source. A flat brightness ceiling cannot do it - the sun's bloom source is orders
+  of magnitude hotter than the artefact, so every ceiling between 6 and 30 gave
+  byte-identical output.
+
+- 2026-08-25 - Bisect a transient render artefact by redrawing the SAME frame with dt=0 and the game's own args (render.js:update)
+  An artefact firing on 3 frames in 130 cannot be bisected by hiding a group and
+  comparing the next screenshot - every result is inside the noise, and successive
+  runs "proved" dust, debris, marks and scenery guilty in turn. Wait until it is on
+  screen, then hide one group and re-render that same frame with dt = 0. The control
+  is the whole test: the first version passed alpha = 1 instead of the physics
+  interpolation factor the game had just used, which moved the camera by centimetres
+  and erased the artefact on its own, making every group look guilty. Wrap
+  renderer.update to capture its exact argument object and reuse it, then verify the
+  control redraw reproduces the artefact before believing any difference.
+
 - 2026-07-31 — innerWidth hides page overflow; measure scrollWidth-clientWidth and bisect subtrees (tests/responsive.test.mjs)
   Horizontal overflow is invisible to both `innerWidth` and a DOM scan; measure
   `documentElement.scrollWidth - clientWidth` and bisect
