@@ -1429,12 +1429,62 @@ float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
 
 const BRIGHT_FRAG = `
 uniform sampler2D tScene;
+uniform vec2 uTexel;
 uniform float uThreshold;
 uniform float uKnee;
 varying vec2 vUv;
 ${COMMON_FRAG}
+
+// Karis average over a WIDE footprint, and the width is the whole point.
+//
+// The blur cannot tell a real light source from a sampling accident: it spread
+// one 251x9 px sliver of road, a kilometre away and edge-on to the sun, into a
+// 56 px disc whose every pixel clipped white. That disc is the "white flash"
+// the player sees. So does a lone aliased fragment, at 46 px.
+//
+// Weighting each tap by 1/(1+luma) bounds what an outlier contributes: dark
+// neighbours and one arbitrarily bright tap converge on a bounded average
+// however bright that tap is, while a uniformly bright neighbourhood keeps its
+// weights equal and comes through untouched. That is the discriminator — extent,
+// not magnitude. A flat ceiling on brightness cannot make the distinction: the
+// sun's bloom source is orders of magnitude hotter than the road sliver, so
+// every ceiling low enough to kill the sliver also erased the low sun's glare
+// (clear-dawn's near ring fell 129 -> 76 at every value tried between 6 and 30).
+//
+// Hence KARIS_SPREAD. The taps have to straddle the artefact to see that it is
+// thin, so at 3 texels the ring spans 6 px against that 9 px sliver — narrow
+// features get pulled down, and the sun, a hundred pixels across, does not
+// notice. Sampling on the diagonal ring rather than a full 3x3 buys that for
+// eight taps instead of nine.
+const float KARIS_SPREAD = 3.0;
+
+vec3 brightSample(vec2 uv) {
+  vec2 o = uTexel * KARIS_SPREAD;
+  vec3 c0 = texture2D(tScene, uv).rgb;
+  vec3 c1 = texture2D(tScene, uv + vec2(-o.x, -o.y)).rgb;
+  vec3 c2 = texture2D(tScene, uv + vec2( o.x, -o.y)).rgb;
+  vec3 c3 = texture2D(tScene, uv + vec2(-o.x,  o.y)).rgb;
+  vec3 c4 = texture2D(tScene, uv + vec2( o.x,  o.y)).rgb;
+  vec3 c5 = texture2D(tScene, uv + vec2(-o.x,  0.0)).rgb;
+  vec3 c6 = texture2D(tScene, uv + vec2( o.x,  0.0)).rgb;
+  vec3 c7 = texture2D(tScene, uv + vec2( 0.0, -o.y)).rgb;
+  vec3 c8 = texture2D(tScene, uv + vec2( 0.0,  o.y)).rgb;
+  float w0 = 1.0 / (1.0 + luma(c0));
+  float w1 = 1.0 / (1.0 + luma(c1));
+  float w2 = 1.0 / (1.0 + luma(c2));
+  float w3 = 1.0 / (1.0 + luma(c3));
+  float w4 = 1.0 / (1.0 + luma(c4));
+  float w5 = 1.0 / (1.0 + luma(c5));
+  float w6 = 1.0 / (1.0 + luma(c6));
+  float w7 = 1.0 / (1.0 + luma(c7));
+  float w8 = 1.0 / (1.0 + luma(c8));
+  return (c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4
+        + c5 * w5 + c6 * w6 + c7 * w7 + c8 * w8)
+    / max(1e-4, w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8);
+}
+
 void main() {
-  vec3 c = texture2D(tScene, vUv).rgb;
+  vec3 c = brightSample(vUv);
   float l = luma(c);
   // Soft knee, so a headlight does not pop into bloom the instant it crosses.
   float s = max(0.0, l - uThreshold + uKnee);
@@ -2127,6 +2177,7 @@ export function createRenderer(canvas, opts = {}) {
     post.bright = new three.ShaderMaterial({
       uniforms: {
         tScene: { value: null },
+        uTexel: { value: new three.Vector2(1 / 1280, 1 / 720) },
         uThreshold: { value: 1.0 },
         uKnee: { value: 0.55 },
       },
@@ -2284,6 +2335,9 @@ export function createRenderer(canvas, opts = {}) {
     post.blurB = new three.WebGLRenderTarget(bw, bh, { ...half, depthBuffer: false });
     post.composite.uniforms.uTexel.value.set(1 / width, 1 / height);
     post.blur.uniforms.uTexel.value.set(1 / bw, 1 / bh);
+    // The bright pass reads the full-resolution scene while drawing into the
+    // half-resolution bloom target, so its taps are spaced in SCENE texels.
+    post.bright.uniforms.uTexel.value.set(1 / width, 1 / height);
   }
 
   function disposeTargets() {

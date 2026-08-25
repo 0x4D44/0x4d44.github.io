@@ -1573,7 +1573,7 @@ roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDe
 roughnessFactor = mix( roughnessFactor, 0.90, lie );
 // The same sub-pixel specular problem as the terrain, and the far end of a
 // straight is where a road ribbon is most nearly edge-on to the sun.
-roughnessFactor = max( roughnessFactor, mix( 0.0, 0.90, smoothstep( 70.0, 320.0, vRoadDist ) ) );`)
+roughnessFactor = max( roughnessFactor, mix( 0.0, 1.00, smoothstep( 70.0, 320.0, vRoadDist ) ) );`)
       .replace("mapN.xy *= normalScale;",
         "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 ) * ( 1.0 - 0.75 * lie )"
         + " * ( 1.0 - 0.88 * smoothstep( 70.0, 320.0, vRoadDist ) );");
@@ -2145,7 +2145,7 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
       .replace("#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
 roughnessFactor = mix( roughnessFactor, 0.90, lie );
-roughnessFactor = max( roughnessFactor, mix( 0.0, 0.94, smoothstep( 70.0, 320.0, vGroundDist ) ) );`)
+roughnessFactor = max( roughnessFactor, mix( 0.0, 1.00, smoothstep( 70.0, 320.0, vGroundDist ) ) );`)
       // Bare rock and scree are the relief on a hillside; grass is nearly flat.
       // Snow fills that relief in, which is most of why a covered hillside reads
       // as one soft form rather than as the same ground painted white.
