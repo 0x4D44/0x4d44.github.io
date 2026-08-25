@@ -991,6 +991,50 @@ test("terrain: no point of the skin inside halfWidth+1m stands above the road su
   }
 });
 
+// Macro zones are the answer to "the ground is one repeating yellow-green
+// speckle": hue fields hundreds of metres across — moorland, damp hollows,
+// worn bleached ground — laid over the base grain. Measured on grass-dominant
+// vertices bucketed into 120 m cells, because that is the scale the eye reads
+// from the chase camera; per-vertex jitter averages away inside a cell, so a
+// threshold met by noise alone is impossible.
+test("terrain: ground colour varies across the wide span in large-scale zones, not one olive", () => {
+  const st = stageFromBook("northmarch-harrowfen");
+  const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120 });
+  const CELL = 120;
+  const cells = new Map();
+  for (const c of terrain.chunks) {
+    const col = c.geometry.getAttribute("color");
+    const pos = c.geometry.getAttribute("position");
+    const splat = c.geometry.getAttribute("splat");
+    for (let v = 0; v < col.count; v += 1) {
+      if (splat.getY(v) < 0.7) continue;
+      const kx = Math.floor(pos.getX(v) / CELL), kz = Math.floor(pos.getZ(v) / CELL);
+      const k = kx * 100003 + kz;
+      let e = cells.get(k);
+      if (!e) { e = [0, 0, 0, 0]; cells.set(k, e); }
+      e[0] += col.getX(v); e[1] += col.getY(v); e[2] += col.getZ(v); e[3] += 1;
+    }
+  }
+  const means = [...cells.values()].filter((e) => e[3] >= 100)
+    .map((e) => [e[0] / e[3], e[1] / e[3], e[2] / e[3]]);
+  assert.ok(means.length >= 8, `only ${means.length} grass cells sampled the span`);
+  const sd = (pick) => {
+    const vs = means.map(pick);
+    const mu = vs.reduce((a, b) => a + b, 0) / vs.length;
+    return Math.sqrt(vs.reduce((a, b) => a + (b - mu) ** 2, 0) / vs.length);
+  };
+  // Red run measured sd(R-G) = 0.0065 and sd(G) = 0.0122: one hue, one brightness.
+  const rgSd = sd((m) => m[0] - m[1]);
+  const gSd = sd((m) => m[1]);
+  assert.ok(rgSd >= 0.02,
+    `grass hue spread across the stage is sd(R-G)=${rgSd.toFixed(4)} — the ground `
+    + "reads as one repeating tint with no moorland/damp/worn zones");
+  assert.ok(gSd >= 0.018,
+    `grass brightness spread across the stage is sd(G)=${gSd.toFixed(4)} — no `
+    + "large-scale light-and-shade between zones");
+  terrain.dispose();
+});
+
 // ---- car -----------------------------------------------------------------
 
 test("car: bounding box matches the spec-derived dimensions and every named part exists", () => {
@@ -1489,7 +1533,9 @@ test("wheel: tread class follows the tyre, geometry is sound, and it is cheap en
 test("scenery: instance counts match the stage list, matrices are sane, nothing sits on the road", () => {
   const st = theStage();
   const lib = buildSceneryLibrary(THREE, st, TEX);
-  const placed = lib.totalInstances;
+  // totalInstances includes the verge dressing the library grew itself; the
+  // accounting here is of the stage's own list, so the scatter comes back out.
+  const placed = lib.totalInstances - (lib.scatter ? lib.scatter.placed : 0);
   assert.equal(placed + lib.rejected.length + lib.unknown.length, st.scenery.length,
     "instances plus rejects do not account for the stage's scenery");
   assert.equal(lib.unknown.length, 0, "the fixture used only known kinds");
@@ -1707,13 +1753,16 @@ test("scenery: a stage that brings more roadside than the budget is thinned, not
 
   const kindOf = (it) => (it.kind === "conifer" || it.kind === "birch" || it.kind === "forest"
     || it.kind === "pine" || it.kind === "spruce" || it.kind === "deciduous" ? "tree" : it.kind);
+  // Verge dressing shares kinds with the planting; the rate comparison is of
+  // what the stage itself brought, so the library-grown scatter stays out.
+  const stageLost = lib.thinned.filter((it) => !it.__verge);
   const tally = (items) => {
     const m = new Map();
     for (const it of items) m.set(kindOf(it), (m.get(kindOf(it)) || 0) + 1);
     return m;
   };
   const had = tally(st.scenery);
-  const lost = tally(lib.thinned);
+  const lost = tally(stageLost);
   const rate = (k) => (had.get(k) ? (lost.get(k) || 0) / had.get(k) : 0);
 
   assert.equal(lost.get("pole") || 0, 0, "a pole was thinned; its wires now hang off nothing");
@@ -1741,6 +1790,50 @@ test("scenery: a stage that brings more roadside than the budget is thinned, not
   assert.ok(far.lost / far.had > near.lost / near.had * 1.2,
     `trees thin at ${(near.lost / near.had).toFixed(2)} beside the road and `
     + `${(far.lost / far.had).toFixed(2)} out beyond 60 m; the bias is not doing any work`);
+  lib.dispose();
+});
+
+// The verge dressing is generated inside the library from the centreline — the
+// stage hands over trees and walls, but the churned edge, the stones and the
+// tufts belong to the road itself. They join the placement pool at the lowest
+// priority, so an over-budget stage thins them before it thins a single planted
+// tree, and every budget guard above keeps meaning what it meant.
+test("scenery: the verge is dressed — stones, tufts and churn beside the road, inside the budget", () => {
+  const st = theStage();
+  const lib = buildSceneryLibrary(THREE, st, TEX);
+  assert.ok(lib.scatter, "the library generates no verge scatter at all");
+  assert.ok(lib.scatter.placed >= 30,
+    `only ${lib.scatter.placed} verge items dressed a 1.2 km road`);
+  assert.ok(lib.scatter.kinds.has("tussock:0"), "no grass tufts on the verge");
+  assert.ok([...lib.scatter.kinds].some((k) => k.startsWith("rock:")), "no stones on the verge");
+  assert.ok(lib.scatter.kinds.has("churn:0") || lib.scatter.kinds.has("gravel:0"),
+    "no tyre-churned dirt or gravel scatter at the road edge");
+  // Dressing hugs the road edge: nothing it places may stand far out in the field.
+  const m = new THREE.Matrix4();
+  const pos = new THREE.Vector3();
+  for (const entry of lib.meshes) {
+    if (!entry.verge) continue;
+    for (let i = 0; i < entry.count; i += 1) {
+      entry.mesh.getMatrixAt(i, m);
+      m.decompose(pos, new THREE.Quaternion(), new THREE.Vector3());
+      const near = st.world.project(pos.x, pos.z);
+      const hw = st.halfWidth[near.index];
+      assert.ok(near.lateral >= hw && near.lateral <= hw + 8,
+        `verge instance ${entry.key}:${i} stands ${near.lateral.toFixed(1)} m from `
+        + `the centreline (half-width ${hw.toFixed(1)})`);
+    }
+  }
+  // And on the stage that cannot fit its own planting, the dressing is the first
+  // thing to go: the forest keeps its priority over the decoration.
+  const heavy = stageFromBook("northmarch-kestrel");
+  const heavyLib = buildSceneryLibrary(THREE, heavy, { textureSize: 16 });
+  assert.ok(heavyLib.scatter.placed > 0, "kestrel generated no verge scatter to sacrifice");
+  const scatterLost = heavyLib.scatter.thinned / heavyLib.scatter.placed;
+  assert.ok(scatterLost >= 0.85,
+    `kestrel kept ${(100 - scatterLost * 100).toFixed(0)}% of the verge dressing `
+    + "while it was thinning planted trees");
+  assert.ok(heavyLib.triangles <= TRIANGLE_BUDGET.scenery, "scatter broke the scenery budget");
+  heavyLib.dispose();
   lib.dispose();
 });
 
@@ -1847,6 +1940,142 @@ test("road: each running surface is drawn with its own texture set, not gravel e
     "no chunk in the fixture actually changed surface, so this proved nothing");
   road.dispose();
   disposeTextures();
+});
+
+// Snow stages used to be weather-only: flakes in the air over a green world.
+// The dressing has to come from the stage's own data — its surface mix, its
+// verge band, the weather it was authored with — so the same code serves a
+// stage the book has never seen. Every assertion runs the stage twice, dry and
+// snowy, because "the snow stage looks white" is nothing without the dry twin
+// to prove the whitening came from the snow state and not from the seed.
+test("snow: a snowy stage dresses the world; a dry stage stays untouched", () => {
+  const dry = theStage();
+  const snowy = { ...theStage(), weather: "light-snow" };
+
+  // Terrain: the ground beside the road whitens, the far hillside does not move.
+  const bandMean = (terrain, st, lo, hi) => {
+    let acc = 0, n = 0;
+    for (const c of terrain.chunks) {
+      const col = c.geometry.getAttribute("color");
+      const pos = c.geometry.getAttribute("position");
+      for (let v = 0; v < col.count; v += 5) {
+        const pr = st.world.project(pos.getX(v), pos.getZ(v));
+        const edge = pr.lateral - st.halfWidth[pr.index];
+        if (edge < lo || edge >= hi) continue;
+        acc += 0.2126 * col.getX(v) + 0.7152 * col.getY(v) + 0.0722 * col.getZ(v);
+        n += 1;
+      }
+    }
+    return { mean: acc / n, n };
+  };
+  const dryTerrain = buildTerrainMesh(THREE, dry, { textureSize: 16 });
+  const snowTerrain = buildTerrainMesh(THREE, snowy, { textureSize: 16 });
+  const dryNear = bandMean(dryTerrain, dry, -2, 9);
+  const snowNear = bandMean(snowTerrain, dry, -2, 9);
+  const dryFar = bandMean(dryTerrain, dry, 40, 1e9);
+  const snowFar = bandMean(snowTerrain, dry, 40, 1e9);
+  assert.ok(dryNear.n > 300 && dryFar.n > 300, "not enough terrain vertices sampled");
+  assert.ok(snowNear.mean > dryNear.mean * 1.18,
+    `snowy verge terrain reads ${(snowNear.mean / dryNear.mean).toFixed(3)}x the dry `
+    + "verge — the ground beside a snow road is not whitening");
+  assert.ok(Math.abs(snowFar.mean - dryFar.mean) < 1e-6,
+    "the far hillside moved with the snow state; only the corridor should whiten");
+
+  // Canopy: snow settles on the tops, not on the trunks.
+  const treeLum = (lib, yLo, yHi) => {
+    let acc = 0, n = 0;
+    for (const [, proto] of lib.prototypes) {
+      if (!proto.key.startsWith("tree:")) continue;
+      const col = proto.geometry.getAttribute("color");
+      const pos = proto.geometry.getAttribute("position");
+      const h = proto.geometry.boundingBox.max.y;
+      for (let v = 0; v < col.count; v += 1) {
+        const t = pos.getY(v) / h;
+        if (t < yLo || t >= yHi) continue;
+        acc += 0.2126 * col.getX(v) + 0.7152 * col.getY(v) + 0.0722 * col.getZ(v);
+        n += 1;
+      }
+    }
+    return acc / n;
+  };
+  const dryLib = buildSceneryLibrary(THREE, dry, TEX);
+  const snowLib = buildSceneryLibrary(THREE, snowy, TEX);
+  const dryTop = treeLum(dryLib, 0.55, 1.01);
+  const snowTop = treeLum(snowLib, 0.55, 1.01);
+  const dryTrunk = treeLum(dryLib, 0.0, 0.22);
+  const snowTrunk = treeLum(snowLib, 0.0, 0.22);
+  assert.ok(snowTop > dryTop * 1.25,
+    `snowy canopy tops read ${(snowTop / dryTop).toFixed(3)}x dry — no snow is `
+    + "settling on the trees");
+  assert.ok(Math.abs(snowTrunk - dryTrunk) < 0.02,
+    "the trunks whitened with the tops; snow sits on the canopy, not the bark");
+
+  // Plough banks: a ridge of pushed snow along each road edge, and nothing on
+  // a dry stage.
+  const dryRoad = buildRoadMesh(THREE, dry, TEX);
+  const snowRoad = buildRoadMesh(THREE, snowy, TEX);
+  assert.equal(dryRoad.ploughBanks.triangles, 0, "a dry stage grew plough banks");
+  assert.ok(snowRoad.ploughBanks.triangles > 200,
+    `snow stage plough banks carry only ${snowRoad.ploughBanks.triangles} triangles`);
+  assert.ok(snowRoad.triangles <= TRIANGLE_BUDGET.road,
+    `snowy road used ${snowRoad.triangles} triangles, budget ${TRIANGLE_BUDGET.road}`);
+  {
+    let acc = 0, n = 0, near = 0;
+    for (const c of snowRoad.ploughBanks.chunks) {
+      const col = c.geometry.getAttribute("color");
+      const pos = c.geometry.getAttribute("position");
+      for (let v = 0; v < col.count; v += 1) {
+        acc += 0.2126 * col.getX(v) + 0.7152 * col.getY(v) + 0.0722 * col.getZ(v);
+        n += 1;
+        const pr = dry.world.project(pos.getX(v), pos.getZ(v));
+        const edge = pr.lateral - dry.halfWidth[pr.index];
+        if (edge >= 0.6 && edge <= 5.5) near += 1;
+      }
+    }
+    assert.ok(n > 100, "plough bank geometry is empty");
+    assert.ok(acc / n > 0.55, `plough banks read dark (${(acc / n).toFixed(2)}) — not snow`);
+    assert.ok(near / n > 0.85,
+      `only ${(100 * near / n).toFixed(0)}% of plough-bank vertices hug the road edge`);
+  }
+
+  // Dull ice: patches on the sealed running surface of an ice stage, blue-grey
+  // and polished, that the dry twin does not have.
+  const icy = { ...theStage(), params: { icePatches: true } };
+  const iceRoad = buildRoadMesh(THREE, icy, TEX);
+  const icyBlue = (road) => {
+    let count = 0;
+    const perRow = ROAD_SECTION.length;
+    for (const chunk of road.chunks) {
+      const col = chunk.geometry.getAttribute("color");
+      for (const stn of chunk.stations) {
+        if (stn.surfaceId !== SURFACE.TARMAC) continue;
+        for (let v = stn.vertexBase; v < stn.vertexBase + perRow; v += 1) {
+          if (col.getZ(v) > col.getX(v) + 0.035 && col.getZ(v) > 0.20) count += 1;
+        }
+      }
+    }
+    return count;
+  };
+  assert.ok(icyBlue(iceRoad) > 80,
+    `an ice stage carries ${icyBlue(iceRoad)} icy road vertices — no patches`);
+  assert.ok(icyBlue(dryRoad) < 5,
+    `a dry stage carries ${icyBlue(dryRoad)} icy road vertices`);
+  dryRoad.dispose();
+  snowRoad.dispose();
+  iceRoad.dispose();
+  dryTerrain.dispose();
+  snowTerrain.dispose();
+  dryLib.dispose();
+  snowLib.dispose();
+
+  // And the book's own snow stage dresses for real, inside the road budget.
+  const skarvedal = stageFromBook("kloft-skarvedal");
+  const skarvRoad = buildRoadMesh(THREE, skarvedal, { textureSize: 16 });
+  assert.ok(skarvRoad.ploughBanks.triangles > 500,
+    `skarvedal plough banks: ${skarvRoad.ploughBanks.triangles} triangles`);
+  assert.ok(skarvRoad.triangles <= TRIANGLE_BUDGET.road,
+    `skarvedal snowy road used ${skarvRoad.triangles}, budget ${TRIANGLE_BUDGET.road}`);
+  skarvRoad.dispose();
 });
 
 // ---- determinism ---------------------------------------------------------
