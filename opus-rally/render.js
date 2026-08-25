@@ -1153,6 +1153,12 @@ export const SHADOW_CASTER_HEIGHT = 30;
 // its width over the map size, so every metre of padding costs sharpness. At 26 m
 // a 1024 map still resolves about 12 cm, which is finer than the shadow of a
 // tree trunk needs to be.
+// Airborne dust scatters the sun forward, so a plume between the car and a chase
+// camera is brighter than the ground it was lifted off. 1.6 is that boost; it
+// multiplies a lit quantity, so it cannot on its own drive the plume to white
+// the way a bare tint could.
+export const DUST_FORWARD_SCATTER = 1.6;
+
 export const SHADOW_SIDE_PAD = 26;
 
 export function makeShadowFit() {
@@ -1803,6 +1809,7 @@ export function createRenderer(canvas, opts = {}) {
     sunX: 0, sunY: 1, sunZ: 0,
     wetness: 0,
     groundSnow: 0,
+    dustLit: 0.5,
     exposure: 1,
     drawsIssued: 0,
     lastS: 0,
@@ -3421,11 +3428,19 @@ export function createRenderer(canvas, opts = {}) {
         const s0 = water ? 0.28 : 0.42 + rng.next() * 0.34;
         const s1 = s0 * (water ? 2.8 : snow ? 4.4 : 4.6);
         const c = props.dustColour;
-        // Airborne dust is lit from every side and scatters forward, so it comes
-        // out brighter than the surface it was lifted off. At the old 0.82-1.12
-        // it was the same value as the road under it, and a tan plume over a tan
-        // road is a plume nobody can see.
-        const tint = 1.05 + rng.next() * 0.45;
+        // Dust is a LIT SURFACE, not a light. The numbers in surfaces.js are
+        // albedos, and this wrote them into the frame as though they were
+        // radiance and then multiplied by up to 1.5 on top — so a gravel plume
+        // left the shader at 0.95 linear, went through exposure and ACES, and
+        // landed at (222,216,207) against a road at about 130. That is the white
+        // blob a player sees, and being untethered from the light it was exactly
+        // as bright at midnight and in fog.
+        //
+        // dustLit is what is actually falling on it, so the plume is bright in
+        // sun, dull under cloud, and keeps the surface's own hue either way. The
+        // small random spread stays: a plume of identical particles reads as a
+        // decal rather than as airborne material.
+        const tint = state.dustLit * (0.88 + rng.next() * 0.24);
         spawnParticle(dustPool,
           px + jx, py, pz + jz,
           vx, vy, vz,
@@ -3882,6 +3897,16 @@ export function createRenderer(canvas, opts = {}) {
     if (!cur) return;
     state.wetness = (w.wet && w.wet.film) || cur.roadWetness || 0;
     state.exposure = damp(state.exposure, cur.exposure || 1, 1.5, dt);
+
+    // What a dust particle is lit by, as a plain Lambert sum: the beam it
+    // actually receives plus the sky and the flat ambient, divided by pi the way
+    // three does for every other surface in the scene. The forward-scatter boost
+    // is the one liberty — airborne dust really is brighter than the ground it
+    // came off, because it scatters the sun towards a camera behind it — but it
+    // multiplies a lit quantity now, not a number standing in for one.
+    const keyLit = (w.metrics ? w.metrics.keyIntensity : 0) * Math.max(state.sunY, 0);
+    const skyLit = (cur.hemiIntensity || 0) + (cur.ambientIntensity || 0);
+    state.dustLit = clamp((keyLit + skyLit) * (DUST_FORWARD_SCATTER / Math.PI), 0.06, 1.0);
 
     // Lying snow. weather.js has computed and damped snowCover since the day it
     // was written and NOTHING has ever read it, so a blizzard fell through green
