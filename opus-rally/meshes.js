@@ -1570,9 +1570,13 @@ function injectRoadShader(material, roadSet, vergeSet) {
       .replace("#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
 roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );
-roughnessFactor = mix( roughnessFactor, 0.90, lie );`)
+roughnessFactor = mix( roughnessFactor, 0.90, lie );
+// The same sub-pixel specular problem as the terrain, and the far end of a
+// straight is where a road ribbon is most nearly edge-on to the sun.
+roughnessFactor = max( roughnessFactor, mix( 0.0, 0.90, smoothstep( 70.0, 320.0, vRoadDist ) ) );`)
       .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 ) * ( 1.0 - 0.75 * lie );");
+        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 ) * ( 1.0 - 0.75 * lie )"
+        + " * ( 1.0 - 0.88 * smoothstep( 70.0, 320.0, vRoadDist ) );");
   };
   material.customProgramCacheKey = () => "opusrally-road-detail";
   return material;
@@ -2127,14 +2131,27 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
       .replace("#include <common>", `#include <common>${TERRAIN_FRAGMENT_HEAD}`)
       .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT)
       .replace("#include <color_fragment>", TERRAIN_SNOW_FRAGMENT)
+      // Specular anti-aliasing, and it is not cosmetic: at 250-500 m a single
+      // normal-map texel covers a whole pixel, and where its normal happens to
+      // bisect the eye and the sun that pixel mirrors the sun outright. Measured
+      // at (255,255,253) — blown white — in isolated blobs that pop in and out
+      // as the car moves, which is exactly the white flashes and dots a player
+      // reports. Mipping flattens the normal's MEAN but not its variance, so the
+      // highlight survives all the way to the horizon. The fix is the standard
+      // one: as a surface recedes and its normals go sub-pixel, roll the normal
+      // map off and drive the roughness up, so the specular lobe widens to cover
+      // detail that can no longer be resolved. Distant ground ends up nearly
+      // Lambertian, which is what a hillside a quarter of a mile away looks like.
       .replace("#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
-roughnessFactor = mix( roughnessFactor, 0.90, lie );`)
+roughnessFactor = mix( roughnessFactor, 0.90, lie );
+roughnessFactor = max( roughnessFactor, mix( 0.0, 0.94, smoothstep( 70.0, 320.0, vGroundDist ) ) );`)
       // Bare rock and scree are the relief on a hillside; grass is nearly flat.
       // Snow fills that relief in, which is most of why a covered hillside reads
       // as one soft form rather than as the same ground painted white.
       .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z)) * (1.0 - 0.75 * lie);");
+        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z)) * (1.0 - 0.75 * lie)"
+        + " * (1.0 - 0.88 * smoothstep( 70.0, 320.0, vGroundDist ));");
   };
   material.customProgramCacheKey = () => "opusrally-terrain-splat";
   material.userData.opusSplatMaps = { rock: rockSet, dirt: dirtSet };
