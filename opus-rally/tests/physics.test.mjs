@@ -279,6 +279,139 @@ test("a manual gearbox holds its gear and shift inputs are edge-triggered", () =
   assert.ok(car.forwardSpeed < -1, `in reverse the car went forwards at ${car.forwardSpeed.toFixed(2)} m/s`);
 });
 
+// What physics.js calls stopped. Mirrored here so the loop below asks about the
+// gear only while the car is genuinely still going forwards.
+const STOPPED = 0.6;
+
+// The report this covers: "braking should turn into reverse after the car has come
+// to a stop". Reverse existed but had to be selected by hand, which no rally game
+// asks of a player trying to back out of a ditch.
+test("the brake becomes reverse once the car has stopped, and the throttle brings it back", () => {
+  for (const spec of CARS) {
+    const world = flatWorld(SURFACE.TARMAC);
+    const car = driven(spec.id);
+    const input = makeInput();
+    input.throttle = 1;
+    hold(car, input, world, 3);
+    assert.ok(car.speed > 3, `${spec.id} never got rolling`);
+
+    input.throttle = 0;
+    input.brake = 1;
+    let t = 0;
+    while (car.forwardSpeed > STOPPED && t < 20) {
+      stepCar(car, input, world, DT);
+      t += DT;
+      assert.ok(car.gear > 0, `${spec.id} took reverse while still doing ${(car.forwardSpeed * KPH).toFixed(1)} km/h forwards`);
+    }
+    // The pedal stays down through the stop, which is the whole gesture.
+    hold(car, input, world, 0.6);
+    assert.equal(car.gear, -1, `${spec.id} sat on the brake at a standstill and stayed in gear ${car.gear}`);
+    hold(car, input, world, 2);
+    assert.ok(
+      car.forwardSpeed < -1,
+      `${spec.id} selected reverse but the brake pedal did not drive it: ${car.forwardSpeed.toFixed(2)} m/s`,
+    );
+
+    // The mirror, so nobody is stranded facing the way he came: the throttle stops
+    // it and hands back a forward gear.
+    input.brake = 0;
+    input.throttle = 1;
+    let t2 = 0;
+    while (car.gear < 0 && t2 < 6) { stepCar(car, input, world, DT); t2 += DT; }
+    assert.equal(car.gear, 1, `${spec.id} would not leave reverse on the throttle (gear ${car.gear} after ${t2.toFixed(1)} s)`);
+    hold(car, input, world, 2);
+    assert.ok(
+      car.forwardSpeed > 1,
+      `${spec.id} came out of reverse but would not drive forward (${car.forwardSpeed.toFixed(2)} m/s)`,
+    );
+  }
+});
+
+test("a hard stop does not slam into reverse, and neither the handbrake nor the start-line hold does", () => {
+  const world = flatWorld(SURFACE.TARMAC);
+  const car = driven("corvine-rs2000");
+  const input = makeInput();
+  input.throttle = 1;
+  hold(car, input, world, 3);
+
+  // Crossing zero is not the moment to select reverse: a driver who is only
+  // stopping still has the pedal down for a moment afterwards.
+  input.throttle = 0;
+  input.brake = 1;
+  let stopped = null;
+  let engaged = null;
+  let t = 0;
+  while (engaged === null && t < 20) {
+    stepCar(car, input, world, DT);
+    t += DT;
+    if (stopped === null && car.speed < 0.2) stopped = t;
+    if (car.gear < 0) engaged = t;
+  }
+  assert.ok(stopped !== null, "the car never came to a stop under full braking");
+  assert.ok(engaged !== null, "the brake never became reverse");
+  assert.ok(
+    engaged - stopped > 0.2,
+    `reverse arrived ${(engaged - stopped).toFixed(3)} s after the car stopped — that is a hard stop slamming into it`,
+  );
+
+  // The handbrake is a driver holding the car still, not a request for reverse.
+  const hb = driven("corvine-rs2000");
+  const hbIn = makeInput();
+  hbIn.throttle = 1;
+  hold(hb, hbIn, world, 3);
+  hbIn.throttle = 0;
+  hbIn.brake = 1;
+  hbIn.handbrake = 1;
+  let ht = 0;
+  while (hb.speed > 0.2 && ht < 20) { stepCar(hb, hbIn, world, DT); ht += DT; }
+  hold(hb, hbIn, world, 3);
+  assert.ok(hb.gear > 0, `three seconds stopped on the handbrake put the car in gear ${hb.gear}`);
+
+  // Let it go and the same brake pedal does engage — the guard is the handbrake
+  // itself, not some state it left behind.
+  hbIn.handbrake = 0;
+  hold(hb, hbIn, world, 0.6);
+  assert.equal(hb.gear, -1, "reverse would not engage once the handbrake was released");
+
+  // game.js holds the car on the start line with the brake AND the clutch down for
+  // a five-second countdown. A clutch pedal is not a request for reverse, and if it
+  // were the field would reverse off the line before the lights went green.
+  // The pedal that has to carry it is the clutch: a driver who waits for the lights
+  // without revving is otherwise stopped, on the brake and off the throttle, which
+  // is the transition exactly.
+  const line = driven("corvine-rs2000");
+  const lineIn = makeInput();
+  lineIn.brake = 1;
+  lineIn.clutch = 1;
+  hold(line, lineIn, world, 5);
+  assert.equal(line.gear, 1, `the start-line hold left the car in gear ${line.gear}`);
+  assert.ok(line.speed < 0.5, `the car crept off the start line at ${(line.speed * KPH).toFixed(1)} km/h`);
+});
+
+test("reverse is speed-limited however long it is held", () => {
+  for (const spec of CARS) {
+    const world = flatWorld(SURFACE.TARMAC);
+    const car = driven(spec.id);
+    const input = makeInput();
+    input.gear = -1;                 // by hand, the way a manual box does it
+    hold(car, input, world, 0.5);
+    assert.equal(car.gear, -1, `${spec.id} would not take reverse at a standstill`);
+
+    // Selected by hand, the pedals stay where they are: throttle drives it.
+    input.gear = null;
+    input.throttle = 1;
+    let worst = 0;
+    const n = steps(25);
+    for (let i = 0; i < n; i += 1) {
+      stepCar(car, input, world, DT);
+      worst = Math.min(worst, car.forwardSpeed);
+    }
+    const kph = -worst * KPH;
+    assert.ok(kph > 20, `${spec.id} reverse is unusable at ${kph.toFixed(1)} km/h`);
+    assert.ok(kph < 55, `${spec.id} reached ${kph.toFixed(1)} km/h backwards — reverse is geared, not unlimited`);
+  }
+});
+
 test("no car can be pinned in first gear with the shift servo on", () => {
   // The regression this file exists for: a player held the throttle down and the
   // gearbox never shifted, so the car stopped at first gear's limiter speed.
@@ -1157,6 +1290,11 @@ function snapshot(car) {
     verticalG: car.verticalG, engineOmega: car.engineOmega, engineRpm: car.engineRpm,
     turboBoost: car.turboBoost, turboSpool: car.turboSpool, gear: car.gear,
     gearShiftTimer: car.gearShiftTimer, clutchEngage: car.clutchEngage,
+    // Both halves of brake-to-reverse. Without them here, resetCar could stop
+    // clearing autoReverse and every test would still pass: the R-key recovery
+    // would leave the mode armed with the gear back at 1, so the next manual
+    // reverse would silently swap the pedals under the driver.
+    autoReverse: car.autoReverse, reverseDwell: car.reverseDwell,
     airTime: car.airTime, onGround: car.onGround,
     odometer: car.odometer, distanceTravelled: car.distanceTravelled, time: car.time,
   };
@@ -1289,12 +1427,29 @@ test("resetCar clears the dynamic state and keeps the counters", () => {
   input.steer = 0.3;
   hold(car, input, world, 4);
 
-  const driven8s = snapshot(car);
+  const moving = snapshot(car);
   assert.ok(
-    driven8s.speed > 5 && Math.abs(driven8s.yaw) > 0.5 && driven8s.odometer > 100,
-    `the car barely moved (${driven8s.speed.toFixed(1)} m/s, ${driven8s.yaw.toFixed(2)} rad,`
-    + ` ${driven8s.odometer.toFixed(0)} m), so the reset proves little`,
+    moving.speed > 5 && Math.abs(moving.yaw) > 0.5 && moving.odometer > 100,
+    `the car barely moved (${moving.speed.toFixed(1)} m/s, ${moving.yaw.toFixed(2)} rad,`
+    + ` ${moving.odometer.toFixed(0)} m), so the reset proves little`,
   );
+
+  // Arm brake-to-reverse before resetting. Without this the mode's two fields
+  // are false on both sides of the comparison, so resetCar could stop clearing
+  // them and nothing here would notice — and the failure that lets through is
+  // real: R-key recovery mid-reverse would leave the mode armed with the gear
+  // back at 1, and the driver's next manual reverse would swap his pedals.
+  input.steer = 0;
+  input.throttle = 0;
+  input.brake = 1;
+  hold(car, input, world, 8);
+  assert.ok(
+    car.autoReverse && car.gear < 0,
+    `the car never entered auto-reverse (gear ${car.gear}, autoReverse ${car.autoReverse}),`
+    + " so this test proves nothing about clearing it",
+  );
+
+  const driven8s = snapshot(car);
 
   resetCar(car, 0, 0, 0, 0);
   const after = snapshot(car);

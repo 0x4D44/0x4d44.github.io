@@ -15,7 +15,7 @@
 //   speed forwardSpeed lateralSpeed slipAngle
 //   lateralG longitudinalG verticalG
 //   engineRpm engineLoad engineTorque engineStalled turboBoost turboSpool
-//   gear gearShiftTimer clutchEngage clutchSlip driveshaftRpm
+//   gear gearShiftTimer clutchEngage clutchSlip driveshaftRpm autoReverse
 //   wheels[4]  onGround airTime rolledOver rolloverTimer
 //   damage input odometer distanceTravelled time
 // Each wheel:
@@ -33,6 +33,17 @@ const RPM_PER_RAD = 60 / (Math.PI * 2);
 const RAD_PER_RPM = 1 / RPM_PER_RAD;
 const RHO = 1.225;
 const G0 = 9.81;
+
+// Brake-to-reverse. 0.6 m/s (2 km/h) is "stopped": under walking pace, and well
+// inside the 2 m/s guard requestGear already puts on reverse. The 0.35 s dwell is
+// what keeps a hard stop under braking from slamming into reverse the moment
+// forward speed crosses zero — a driver who is only stopping is off the pedal
+// within a quarter-second of the car settling, so 0.35 s clears him without
+// reading as a wait. The cap is there because reverse is geared like first and
+// nobody drives it to first's limiter speed.
+const REVERSE_STOP = 0.6;
+const REVERSE_DWELL = 0.35;
+const REVERSE_CAP = 12;         // m/s, ~43 km/h
 
 function v3(x = 0, y = 0, z = 0) {
   return { x, y, z };
@@ -753,7 +764,7 @@ export function createCar(specId, opts = {}) {
     engineLoad: 0, engineTorque: 0, engineStalled: false, restartTimer: 0,
     turboBoost: 0, turboSpool: 0, limiterTimer: 0,
     gear: 1, pendingGear: 1, gearShiftTimer: 0, clutchEngage: 1, clutchSlip: 0,
-    driveshaftRpm: 0,
+    driveshaftRpm: 0, autoReverse: false, reverseDwell: 0,
     wheels: [],
     onGround: 4, airTime: 0, rolledOver: false, rolloverTimer: 0,
     damage: opts.damage || null,
@@ -810,6 +821,7 @@ export function resetCar(car, x, y, z, yaw) {
   car.engineStalled = false; car.restartTimer = 0; car.limiterTimer = 0;
   car.turboBoost = 0; car.turboSpool = 0;
   car.gear = 1; car.pendingGear = 1; car.gearShiftTimer = 0;
+  car.autoReverse = false; car.reverseDwell = 0;
   car.clutchEngage = 1; car.clutchSlip = 0; car.driveshaftRpm = 0;
   car.onGround = 4; car.airTime = 0; car.rolledOver = false; car.rolloverTimer = 0;
   car.tcCut = 0; car.escCut = 0;
@@ -866,13 +878,16 @@ function gearRatio(car) {
   return gb.ratios[car.gear - 1] || 0;
 }
 
+// Reports whether the shift was taken, because brake-to-reverse may only arm its
+// pedal swap once the box has actually accepted reverse.
 function requestGear(car, g) {
   const gb = car.setup.gearbox;
   const want = clamp(g | 0, -1, gb.ratios.length);
-  if (want === car.gear || car.gearShiftTimer > 0) return;
-  if (want < 0 && car.forwardSpeed > 2) return;   // no reverse at speed
+  if (want === car.gear || car.gearShiftTimer > 0) return false;
+  if (want < 0 && car.forwardSpeed > 2) return false;   // no reverse at speed
   car.pendingGear = want;
   car.gearShiftTimer = gb.shiftTime;
+  return true;
 }
 
 // A differential's locking torque may only ever pull the two shafts together,
@@ -940,8 +955,8 @@ export function stepCar(car, input, world, dt) {
 
   const raw = input || car.input;
   const steerIn = clamp(finite(raw.steer, 0), -1, 1);
-  const throttleIn = saturate(finite(raw.throttle, 0));
-  const brakeIn = saturate(finite(raw.brake, 0));
+  const throttlePedal = saturate(finite(raw.throttle, 0));
+  const brakePedal = saturate(finite(raw.brake, 0));
   const handbrakeIn = saturate(finite(raw.handbrake, 0));
   const clutchIn = saturate(finite(raw.clutch, 0));
 
@@ -989,7 +1004,35 @@ export function stepCar(car, input, world, dt) {
         requestGear(car, car.gear - 1);
       }
     }
+    // A gear the driver picks himself ends the mode below: the pedal swap belongs
+    // to brake-to-reverse, not to whatever gear it happened to leave the box in.
+    if (car.autoReverse && car.pendingGear >= 0) { car.autoReverse = false; car.reverseDwell = 0; }
   }
+
+  // --- brake-to-reverse ---
+  // No rally driver reaches for a reverse gear: he stops, keeps the brake down,
+  // and the car backs out of the ditch. The same hold then drives it, because the
+  // swap below hands the brake pedal to the engine. Throttle does the mirror of
+  // it, so the player can never be stranded facing backwards.
+  //
+  // The handbrake is a driver holding the car still and the clutch pedal is the
+  // start-line hold — neither may be read as asking for reverse.
+  const settled = handbrakeIn <= 0.05 && clutchIn <= 0.5 && speed < REVERSE_STOP;
+  const wantReverse = settled && car.gear > 0 && brakePedal > 0.5 && throttlePedal < 0.05;
+  const wantForward = settled && car.autoReverse && car.gear < 0
+    && throttlePedal > 0.5 && brakePedal < 0.05;
+  if (wantReverse || wantForward) {
+    car.reverseDwell += h;
+    if (car.reverseDwell >= REVERSE_DWELL && requestGear(car, wantReverse ? -1 : 1)) {
+      car.autoReverse = wantReverse;
+      car.reverseDwell = 0;
+    }
+  } else {
+    car.reverseDwell = 0;
+  }
+  const swapPedals = car.autoReverse && car.gear < 0;
+  const throttleIn = swapPedals ? brakePedal : throttlePedal;
+  const brakeIn = swapPedals ? throttlePedal : brakePedal;
 
   // --- steering (assists fold into the angle, never into a second code path) ---
   let maxSteer = s.steer.maxAngle;
@@ -1075,6 +1118,11 @@ export function stepCar(car, input, world, dt) {
   if (rpm > eng.limiterRpm) car.limiterTimer = eng.limiterCut;
 
   let throttle = throttleIn * (1 - car.tcCut);
+  // Reverse is geared like first, so left alone it is worth 60-plus km/h backwards.
+  // The throttle fades out across the 2 m/s below the cap, so the car settles on it
+  // instead of surging against a hard cut; the idle line below still holds the
+  // engine up.
+  if (car.gear < 0) throttle *= 1 - saturate((-car.forwardSpeed - REVERSE_CAP + 2) / 2);
   if (rpm < eng.idleRpm && !car.engineStalled) {
     throttle = Math.max(throttle, saturate((eng.idleRpm - rpm) / (eng.idleRpm * 0.5)) * 0.42);
   }
