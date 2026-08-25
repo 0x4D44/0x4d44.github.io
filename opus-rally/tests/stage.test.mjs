@@ -15,6 +15,7 @@ import {
   SEP_NEAR,
 } from "../stage.js";
 import { surfaceProps, SURFACE } from "../surfaces.js";
+import { clamp, wrapAngle } from "../mathx.js";
 
 const G = 9.81;
 
@@ -1350,4 +1351,89 @@ test("an unknown weather id costs a stage its sky, not the whole game", async ()
   } finally {
     console.warn = realWarn;
   }
+});
+
+// ---- corner boards -------------------------------------------------------
+
+// Which way the road turns ahead of `s0`, read off the centreline alone: walk
+// the heading forward and take the first extremum, so a board on a corner's
+// approach reads that corner and not whatever follows it. Built from
+// stage.tx/tz on purpose — `corner.dir` is the field buildProps places from,
+// and an assertion checked against it could only ever agree with itself.
+// Positive is a left-hander; the test below anchors that sign on the screen.
+function bendAhead(stage, s0, span = 70) {
+  const at = (v) => clamp(Math.round(v / stage.step), 0, stage.count - 1);
+  const a = at(s0);
+  const b = at(s0 + span);
+  let acc = 0;
+  let peak = 0;
+  for (let i = a; i < b; i += 1) {
+    acc += wrapAngle(Math.atan2(stage.tx[i + 1], stage.tz[i + 1]) - Math.atan2(stage.tx[i], stage.tz[i]));
+    if (Math.abs(acc) > Math.abs(peak)) peak = acc;
+    else if (Math.abs(acc) < Math.abs(peak) - 0.12) break;
+  }
+  return peak;
+}
+
+test("a rising heading is the road bending to the driver's left on the screen", async () => {
+  const THREE = await import("../three.module.min.js");
+  const { boomTarget, lookTarget } = await import("../render.js");
+  // Left and right are facts about the screen, and every left/right *name* in
+  // this codebase hangs off one axis convention, so no name can settle them:
+  // rightVec(), physics' isLeft and CONTRACTS' "+X right" all agree with each
+  // other and all land on the left of the picture. So put render.js's own chase
+  // boom behind the car at a corner entry and project the apex through it.
+  const stage = stageFromBook("alvenda-calderas");
+  const p = {
+    distance: 7.4, height: 2.6, riseWithSpeed: 0,
+    lookAhead: 12, lookHeight: 1.0, lookVertGain: 0, velRefSpeed: 30,
+  };
+  const camera = new THREE.PerspectiveCamera(65, 16 / 9, 0.1, 4000);
+  const eye = { x: 0, y: 0, z: 0 };
+  const aim = { x: 0, y: 0, z: 0 };
+  const apex = new THREE.Vector3();
+  let left = 0;
+  let right = 0;
+  for (const c of stage.corners) {
+    const i = clamp(Math.round(c.s / stage.step), 0, stage.count - 1);
+    const yaw = Math.atan2(stage.tx[i], stage.tz[i]);
+    const pose = { x: stage.x[i], y: stage.y[i], z: stage.z[i], vx: 0, vy: 0, vz: 0, speed: 0, forwardSpeed: 0, yaw };
+    boomTarget(eye, pose, p, yaw, 0);
+    lookTarget(aim, pose, p, 0);
+    camera.position.set(eye.x, eye.y, eye.z);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(aim.x, aim.y, aim.z);
+    camera.updateMatrixWorld(true);
+    const j = clamp(Math.round(((c.s + c.sEnd) * 0.5) / stage.step), 0, stage.count - 1);
+    apex.set(stage.x[j], stage.y[j] + 1, stage.z[j]).project(camera);
+    const bend = bendAhead(stage, c.s);
+    // Only corners that are unambiguous on both counts can anchor anything.
+    if (apex.z > 1 || Math.abs(apex.x) < 0.05 || Math.abs(bend) < 0.2) continue;
+    assert.equal(apex.x < 0, bend > 0,
+      `the corner at s=${Math.round(c.s)} turns ${bend > 0 ? "+" : "-"}${Math.abs(bend).toFixed(2)} rad `
+      + `but its apex projects to the ${apex.x < 0 ? "left" : "right"} of the screen`);
+    if (bend > 0) left += 1; else right += 1;
+  }
+  assert.ok(left > 5 && right > 5, `only ${left} left and ${right} right corners were decisive enough to anchor the sign`);
+});
+
+test("every corner board points the way its corner turns", () => {
+  forEachStage((stage, entry) => {
+    let left = 0;
+    let right = 0;
+    for (const item of stage.props) {
+      // The two boards buildProps puts on a corner's outside. "chevron" is the
+      // right-hand art; meshes.js gives it and arrowRight one spec.
+      if (item.kind !== "arrowLeft" && item.kind !== "chevron") continue;
+      const bend = bendAhead(stage, item.s);
+      if (Math.abs(bend) < 0.2) continue;
+      assert.equal(item.kind, bend > 0 ? "arrowLeft" : "chevron",
+        `${entry.id}: the board at s=${Math.round(item.s)} points `
+        + `${item.kind === "arrowLeft" ? "left" : "right"} into a corner that turns `
+        + `${bend > 0 ? "left" : "right"} (${bend.toFixed(2)} rad)`);
+      if (bend > 0) left += 1; else right += 1;
+    }
+    assert.ok(left > 3 && right > 3,
+      `${entry.id}: only ${left} left-hand and ${right} right-hand boards were decisive enough to check`);
+  });
 });

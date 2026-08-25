@@ -1873,7 +1873,12 @@ function reverseGeometry(stage, corners) {
   const out = [];
   for (let i = corners.length - 1; i >= 0; i -= 1) {
     const c = corners[i];
-    out.push({ ...c, s: L - c.sEnd, sEnd: L - c.s, dir: -c.dir });
+    // A chicane is the one corner whose limbs disagree. Driven the other way
+    // you meet the far limb first, and that swap has already flipped the
+    // handedness, so negating on top of it hands back the corner that is not
+    // there — and pointed every reversed chicane's boards into the ditch.
+    const dir = c.kind === "chicane" ? c.dir : -c.dir;
+    out.push({ ...c, s: L - c.sEnd, sEnd: L - c.s, dir });
   }
   return out;
 }
@@ -2065,11 +2070,16 @@ function buildProps(stage, world, rng, corners, features, phrases) {
     const outside = -c.dir;
     const n = clamp(7 - c.severity, 1, 5);
     const mid = (c.s + c.sEnd) * 0.5;
+    // Every one of these was the right-hand art, which points the driver into
+    // the ditch on a left-hander. `dir` is the handedness the pacenotes call
+    // from: positive bends the road to the driver's left. "chevron" is the
+    // right-hand board — meshes.js gives it and arrowRight one spec.
+    const board = c.dir > 0 ? "arrowLeft" : "chevron";
     // Boards sit on the outside of the corner, square to the approach.
     for (let b = 0; b < (c.severity <= 2 ? 3 : 2); b += 1) {
       const s = lerp(c.s - 6, mid, b / 2);
       const j = clamp(Math.round(s / stage.step), 0, stage.count - 2);
-      pushProp(props, stage, world, s, outside * (stage.halfWidth[j] + 1.6), "chevron", n, Math.PI, 1);
+      pushProp(props, stage, world, s, outside * (stage.halfWidth[j] + 1.6), board, n, Math.PI, 1);
     }
     void i;
     if (c.kind === "square" || c.kind === "hairpin") {
