@@ -1634,12 +1634,35 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   }
   const wobble = [smoothed(wobRaw[0], 6, n), smoothed(wobRaw[1], 6, n)];
 
+  // Snow and ice read the stage's own data. A dry stage gets zero for both and
+  // every branch below stays out of its way.
+  const snow = snowAmount(stage);
+  const ice = iceAmount(stage);
+  // Standing ice varies slowly along the road: smoothed hashes give thirty-metre
+  // glaze runs where the shade holds, not per-station confetti.
+  const iceRaw = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) iceRaw[i] = hash2(i, 9, 4721);
+  const iceField = smoothed(iceRaw, 4, n);
+
+  // Plough banks: a continuous ridge of pushed snow just outside each ditch.
+  // Four triangles per banked row; the stride buys whatever headroom the road
+  // budget has left, so a nearly-full road gets a longer stride rather than an
+  // over-budget one, and a dry stage gets no banks at all.
+  const pairs = stations.length - 1;
+  const bankHeadroom = budget - pairs * perSpan - 16;
+  const bankStride = snow >= 0.5 && bankHeadroom > 48
+    ? Math.max(2, Math.ceil((pairs * 4) / bankHeadroom)) : Infinity;
+
   const chunks = [];
+  const bankChunks = [];
   const stationInfo = [];
   let builderChunk = -1;
   let b = null;
   let prevRow = null;
   let chunkStations = null;
+  let bankB = null;
+  let bankPrevRow = null;
+  let stationOrdinal = 0;
 
   const surfaceIdAt = (i) => (stage.surface ? stage.surface[i] : SURFACE.GRAVEL);
 
@@ -1654,6 +1677,9 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
   const startChunk = (index) => {
     b = mkBuilder();
     b.extra = { detail: { data: [], size: 4 } };
+    bankB = mkBuilder();
+    bankB.extra = { detail: { data: [], size: 4 } };
+    bankPrevRow = null;
     chunkStations = [];
     builderChunk = index;
     prevRow = null;
@@ -1672,7 +1698,11 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     closeGroup();
     const geometry = finish(THREE, b, { explicitNormals: true });
     chunks.push({ index: builderChunk, geometry, stations: chunkStations, groups, mesh: null });
+    if (bankB.n > 0) {
+      bankChunks.push({ index: builderChunk, geometry: finish(THREE, bankB, {}), mesh: null });
+    }
     b = null;
+    bankB = null;
   };
 
   for (let si = 0; si < stations.length; si += 1) {
@@ -1725,6 +1755,10 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     const loose = props.looseDepth;
     const isTarmac = sid === SURFACE.TARMAC;
     const isWater = sid === SURFACE.WATER;
+    // Ice only glazes the sealed and hard surfaces; a windrowed gravel trap or
+    // a mud stretch is where the ice does NOT hold.
+    const iceW = ice > 0 && (sid === SURFACE.TARMAC || sid === SURFACE.GRAVEL)
+      ? ice * smoothstep(0.47, 0.59, iceField[i]) : 0;
     const crown = clamp((isTarmac ? 0.075 : 0.05) * (hw / 4), 0.018, 0.095);
     const rutDepth = (isTarmac ? 0.012 : 0.030 + 0.035 * loose) * (0.7 + 0.6 * hash2(i, 3, 17));
     const bermK = saturate((kSmooth[i] - 0.004) / 0.030) * loose;
@@ -1758,7 +1792,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       const bump = (hash2(i * 7 + k, k * 13, 91) - 0.5) * 0.012 * (1 + props.roughness);
       switch (slot.kind) {
         case "verge":
-          h = null; col = vergeColour(stage, i, props); detail = [0, 0, 0, 1];
+          h = null; col = vergeColour(stage, i, props, snow); detail = [0, 0, 0, 1];
           lat += wander * 0.7;
           break;
         case "ditch":
@@ -1810,6 +1844,13 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
           h = -crown * u * u; col = scaleCol(props.albedo, 0.98); detail = [0.2, 0.35, wet, 0];
           break;
       }
+      // The glaze sits on the running surface only: the verge, the ditch, the
+      // shoulder and the windrow keep whatever they were.
+      if (iceW > 0 && slot.kind !== "verge" && slot.kind !== "ditch"
+        && slot.kind !== "shoulder" && slot.kind !== "edge") {
+        col = mixCol(col, ICE_PATCH, 0.66 * iceW);
+        detail[0] = Math.max(detail[0], 0.30 + 0.30 * iceW);
+      }
       let px = cx + tiltRx * lat;
       let py = cy + tiltRy * lat;
       let pz = cz + tiltRz * lat;
@@ -1845,6 +1886,45 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     }
     prevRow = rowIdx;
     prevSample = i;
+    // Plough banks ride on their own builders, so the road's own index buffer —
+    // and the group accounting that is verified against it — never sees them.
+    if (!isSeamCopy) {
+      if (snow > 0 && stationOrdinal % bankStride === 0) {
+        // Heaped by a blade: tallest just outside the ditch, thinning back to
+        // the verge. The outer edge sits on the ground wherever the ground is
+        // higher than the road plane would put it.
+        const H = snow * (0.40 + 0.22 * hash2(i, 31, 99));
+        const put = (side, off, hFrac, dirt) => {
+          const lat = side * (hw + off + wob(side) * 0.5);
+          const lift = hFrac * H - 0.03;
+          let px = cx + tiltRx * lat + tiltUx * lift;
+          let py = cy + tiltRy * lat + tiltUy * lift;
+          let pz = cz + tiltRz * lat + tiltUz * lift;
+          const ground = world.heightAt(px, pz);
+          if (Number.isFinite(ground) && ground + 0.02 > py) {
+            px = cx + tiltRx * lat;
+            py = ground + 0.02;
+            pz = cz + tiltRz * lat;
+          }
+          const shade = (hash2(i * 3 + (side + 2), off * 10, 411) - 0.5) * 0.08;
+          const col = mixCol([0.78, 0.82, 0.88], SHOULDER_COL, dirt);
+          const id = vert(bankB, px, py, pz, lat * uvScale, s * uvScale,
+            saturate(col[0] + shade), saturate(col[1] + shade), saturate(col[2] + shade));
+          bankB.extra.detail.data.push(0, 0.65, 0, 0);
+          return id;
+        };
+        // Left to right, matching the slot order the road rows use, so the
+        // same quad winding keeps the faces looking at the sky.
+        const row = [put(-1, 3.30, -0.12, 0.08), put(-1, 1.55, 1.0, 0.28),
+          put(1, 1.55, 1.0, 0.28), put(1, 3.30, -0.12, 0.08)];
+        if (bankPrevRow) {
+          quad(bankB, bankPrevRow[1], bankPrevRow[0], row[0], row[1]);
+          quad(bankB, bankPrevRow[3], bankPrevRow[2], row[2], row[3]);
+        }
+        bankPrevRow = row;
+      }
+      stationOrdinal += 1;
+    }
     const info = {
       s, sampleIndex: i, halfWidth: hw, chunk: builderChunk, vertexBase: base,
       centre: [cx, cy, cz],
@@ -1920,22 +2000,77 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
     c.mesh = mesh;
     group.add(mesh);
   }
+  // Plough banks draw with the snow set — they are pushed snow, not road — and
+  // only exist on a snowy stage, so a dry road builds exactly what it built
+  // before.
+  let bankTriangles = 0;
+  if (bankChunks.length) {
+    const snowMat = slotFor(SURFACE.SNOW);
+    for (const c of bankChunks) {
+      const mesh = new THREE.Mesh(c.geometry, snowMat);
+      mesh.name = `road-banks-${c.index}`;
+      mesh.castShadow = false;
+      mesh.receiveShadow = true;
+      c.mesh = mesh;
+      group.add(mesh);
+      bankTriangles += triangleCount(c.geometry);
+    }
+  }
 
   const road = {
     group,
     chunks,
+    bankChunks,
     material: materials[0],
     materials,
     surfaceMaterials,
     stations: stationInfo,
     slots: ROAD_SECTION,
     slotCount: ROAD_SLOTS.length,
-    triangles,
+    triangles: triangles + bankTriangles,
+    ploughBanks: { triangles: bankTriangles, chunks: bankChunks },
     chunkLength,
     dispose() { disposeRoad(road); },
   };
   return road;
 }
+
+// How snowy the world should read, from the stage's own data alone: the road's
+// surface mix, how much of the verge band actually holds snow, and the weather
+// the stage was authored with. No stage ids — a consumer keyed to an id cannot
+// be handed a stage the book has never seen. A shaded icy bend (a percent or
+// two of samples) is an ice stage, not a snow stage; a quarter of the stage
+// holding snow reads as one.
+function snowAmount(stage) {
+  let snow = 0;
+  const mix = Array.isArray(stage.surfaceMix) ? stage.surfaceMix : [];
+  if (mix.includes(SURFACE.SNOW)) snow = 1;
+  const n = stage.count || 0;
+  if (n > 0 && (stage.verge || stage.surface)) {
+    let wintry = 0;
+    for (let i = 0; i < n; i += 1) {
+      if ((stage.verge && stage.verge[i] === SURFACE.SNOW)
+        || (stage.surface && stage.surface[i] === SURFACE.SNOW)) wintry += 1;
+    }
+    snow = Math.max(snow, Math.min(1, (wintry / n) * 4));
+  }
+  const w = String(stage.weather || "");
+  if (/blizzard/i.test(w)) snow = Math.max(snow, 1);
+  else if (/(^|[-\s])(light[-\s])?snow|sleet/i.test(w)) snow = Math.max(snow, 0.75);
+  return snow;
+}
+
+// Standing ice on the sealed surface is a property of the stage (an ice-patches
+// stage keeps its shade hairpins glazed all day), not of the weather.
+function iceAmount(stage) {
+  if (stage.params && stage.params.icePatches) return 1;
+  const mix = Array.isArray(stage.surfaceMix) ? stage.surfaceMix : [];
+  return mix.includes(SURFACE.ICE) ? 1 : 0;
+}
+
+const SNOW_VERGE = [0.74, 0.78, 0.84];
+// Dull ice: lighter and bluer than wet asphalt, short of fresh snow's white.
+const ICE_PATCH = [0.46, 0.52, 0.60];
 
 const GRASS_COL = [0.16, 0.23, 0.10];
 // Damp, churned earth. The shoulder is neither the road nor the field, and
@@ -1950,9 +2085,8 @@ function scaleCol(a, k) {
   return [a[0] * k, a[1] * k, a[2] * k];
 }
 
-function vergeColour(stage, i, props) {
-  const snowy = Array.isArray(stage.surfaceMix) && stage.surfaceMix.includes(SURFACE.SNOW);
-  const base = snowy ? [0.74, 0.78, 0.84] : GRASS_COL;
+function vergeColour(stage, i, props, snow = 0) {
+  const base = snow > 0 ? mixCol(GRASS_COL, SNOW_VERGE, Math.min(1, snow * 1.15)) : GRASS_COL;
   const n = hash2(i, 5, 31) * 0.2 - 0.1;
   return [saturate(base[0] + n), saturate(base[1] + n), saturate(base[2] + n * 0.5)]
     .map((v, k) => saturate(v * 0.85 + props.albedo[k] * 0.15));
@@ -1963,6 +2097,13 @@ export function disposeRoad(road) {
   for (const c of road.chunks) {
     c.geometry.dispose();
     if (c.mesh && c.mesh.parent) c.mesh.parent.remove(c.mesh);
+  }
+  if (road.bankChunks) {
+    for (const c of road.bankChunks) {
+      c.geometry.dispose();
+      if (c.mesh && c.mesh.parent) c.mesh.parent.remove(c.mesh);
+    }
+    road.bankChunks.length = 0;
   }
   for (const m of road.materials) m.dispose?.();
   road.chunks.length = 0;
@@ -2311,6 +2452,7 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
   const conformed = opts.conform === false ? 0
     : conformCorridor(stage, world, plan, field, L0, sag);
   const snowy = Array.isArray(stage.surfaceMix) && stage.surfaceMix.includes(SURFACE.SNOW);
+  const snow = snowAmount(stage);
 
   let minY = Infinity, maxY = -Infinity;
   for (let i = 0; i < stage.count; i += 1) {
@@ -2363,12 +2505,40 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
           saturate(TERRAIN_PALETTE.grass[1] + pasture * 0.07 + patchy * 0.06),
           saturate(TERRAIN_PALETTE.grass[2] + pasture * 0.02 - patchy * 0.02),
         ];
+        // Macro zones sit over all of that at a scale the texture can never
+        // repeat at: moorland shifts the hue toward heather brown, damp hollows
+        // darken and cool it, worn ground bleaches it pale. Without these the
+        // tile repeat is what defines the ground, however good the grain is;
+        // with them no two hundred-metre stretch of hillside shares a tint.
+        const moorW = smoothstep(0.54, 0.74, latticeNoise(li, lj, 360 / L0, 9103));
+        let dampW = smoothstep(0.58, 0.78, latticeNoise(li, lj, 220 / L0, 6337));
+        dampW *= 1 - moorW;
+        const wornW = smoothstep(0.62, 0.80, latticeNoise(li, lj, 150 / L0, 2711)) * (1 - moorW);
+        grassCol[0] += moorW * 0.075 + wornW * 0.048 - dampW * 0.028;
+        grassCol[1] += -moorW * 0.058 + wornW * 0.034 - dampW * 0.020;
+        grassCol[2] += moorW * 0.012 - wornW * 0.010 + dampW * 0.006;
+        if (dampW > 0) {
+          for (let k = 0; k < 3; k += 1) grassCol[k] *= 1 - dampW * 0.22;
+        }
         const col = [0, 0, 0];
         for (let k = 0; k < 3; k += 1) {
           col[k] = saturate(
             TERRAIN_PALETTE.rock[k] * wr + high[k] * wh
             + TERRAIN_PALETTE.dirt[k] * wd + grassCol[k] * wg
             + jitter * 0.25);
+        }
+        // The ploughed-out strip beside a snow road carries what the blade
+        // threw onto it: whitest at the edge, thinning out over ten metres or
+        // so, gone before the field beyond can notice. A dry stage never
+        // enters this branch, so its colours stay bit-for-bit what they were.
+        if (snow > 0) {
+          const edge = roadDist - halfWidthOf(stage, near.index);
+          const snowW = snow * (1 - smoothstep(1.5, 11, edge)) * 0.9;
+          if (snowW > 0) {
+            for (let k = 0; k < 3; k += 1) {
+              col[k] = saturate(col[k] + (TERRAIN_PALETTE.snow[k] - col[k]) * snowW);
+            }
+          }
         }
         const id = vert(b, x, y, z, x * 0.06, z * 0.06, col[0], col[1], col[2]);
         b.nor.push(nrm[0], nrm[1], nrm[2]);
@@ -4436,6 +4606,30 @@ function bridgeGeometry(b) {
   pushBox(b, 0, 1.16, 0, 0.56, 0.14, 6.1, [0.34, 0.33, 0.31]);
 }
 
+// Verge dressing prototypes. These are never handed over by stage.js — the
+// library generates them along the road edge itself — so nothing in
+// SCENERY_ALIASES reaches them.
+function churnGeometry(b) {
+  // Tyre-churned mud: a flat irregular smear of wet earth, darker than the
+  // shoulder because it stays damp and is polished by tyres.
+  const col = [0.155, 0.112, 0.068];
+  pushBlob(b, 0, 0.02, 0, 0.85, 0.035, 0.62, col, 0, 2103, 0.5);
+  pushBlob(b, 0.42, 0.015, 0.30, 0.44, 0.028, 0.36, [0.185, 0.135, 0.082], 0, 2104, 0.6);
+}
+
+function gravelScatterGeometry(b) {
+  // Gravel thrown off the running surface: a spray of small stones thinning
+  // out from the road edge.
+  const grey = [0.40, 0.385, 0.355];
+  for (let k = 0; k < 6; k += 1) {
+    const a = hash2(k, 3, 771) * TAU;
+    const r = 0.10 + hash2(k, 7, 772) * 0.42;
+    const s = 0.055 + hash2(k, 11, 773) * 0.085;
+    pushBlob(b, Math.cos(a) * r, s * 0.8, Math.sin(a) * r,
+      s, s * 0.72, s, grey, 0, 2200 + k, 0.55);
+  }
+}
+
 function sceneryPrototypes(THREE, stage, opts) {
   const rng = makeRng(`${stage.seed ?? "scn"}|scenery`);
   const size = opts.textureSize ?? 256;
@@ -4461,10 +4655,27 @@ function sceneryPrototypes(THREE, stage, opts) {
   };
 
   const protos = new Map();
+  // Snow settles on the canopy and stays off the bark: a height-weighted blend
+  // toward blue-white over the foliage material's prototypes. A dry stage never
+  // enters the branch, so its prototypes keep today's colours exactly.
+  const snow = snowAmount(stage);
   const add = (key, matKey, build) => {
     const b = mkBuilder();
     build(b);
     const geometry = finish(THREE, b, { colors: true });
+    if (snow > 0 && matKey === "tree") {
+      const col = geometry.getAttribute("color");
+      const pos = geometry.getAttribute("position");
+      const h = Math.max(0.001, geometry.boundingBox.max.y);
+      for (let v = 0; v < col.count; v += 1) {
+        const w = snow * 0.85 * smoothstep(0.30, 0.85, pos.getY(v) / h);
+        if (w <= 0) continue;
+        col.setXYZ(v,
+          saturate(col.getX(v) + (0.88 - col.getX(v)) * w),
+          saturate(col.getY(v) + (0.92 - col.getY(v)) * w),
+          saturate(col.getZ(v) + (1.02 - col.getZ(v)) * w));
+      }
+    }
     protos.set(key, { key, geometry, material: materials[matKey], triangles: triangleCount(geometry) });
   };
 
@@ -4484,6 +4695,8 @@ function sceneryPrototypes(THREE, stage, opts) {
   add("wall:0", "stone", wallGeometry);
   add("fence:0", "wood", fenceGeometry);
   add("bridge:0", "stone", bridgeGeometry);
+  add("churn:0", "stone", churnGeometry);
+  add("gravel:0", "stone", gravelScatterGeometry);
   return { protos, materials };
 }
 
@@ -4518,6 +4731,9 @@ function chainRuns(items, maxGap) {
 const SCENERY_PRIORITY = Object.freeze({
   building: 10, wall: 10, fence: 10,
   rock: 1.6, log: 1.5, stump: 1.5, tree: 1.2, bush: 0.6, fern: 0.25, tussock: 0,
+  // Verge dressing is below every plant: it is the first thing an over-budget
+  // stage gives up, and the forest never thins one tree further to keep it.
+  gravel: -0.4, churn: -0.5,
 });
 
 const SCENERY_KEPT_WHOLE = Object.freeze(["pole", "bridge"]);
@@ -4533,6 +4749,64 @@ function sceneryKeepScore(p) {
   const near = 1 - saturate(p.dist / 260);
   const dither = hash2(Math.round(p.item.x), Math.round(p.item.z), 4243) - 0.5;
   return priority * 0.35 + near * 0.55 + dither;
+}
+
+// What dresses the road edge, and how often. Tufts and churn dominate; stones
+// and a stray bush break the band up. Everything is chosen so a placement costs
+// tens of triangles, not hundreds.
+const VERGE_MIX = Object.freeze([
+  ["tussock", 0.38], ["gravel", 0.20], ["churn", 0.16], ["rock", 0.12], ["fern", 0.08], ["bush", 0.06],
+]);
+const VERGE_MAX_ITEMS = 1600;
+const VERGE_MAX_TRIANGLES = 90000;
+
+function vergeScatterItems(stage, index, protos, clearance, opts = {}) {
+  const rng = makeRng(`${stage.seed ?? "scn"}|verge`);
+  const world = worldOf(stage);
+  const stride = Math.max(1, Math.round((opts.vergeSpacing ?? 6) / (stage.step || 2)));
+  const items = [];
+  let triangles = 0;
+  for (let i = 2; i < stage.count - 2 && items.length < VERGE_MAX_ITEMS; i += stride) {
+    const hw = halfWidthOf(stage, i);
+    const t = tangentOf(stage, i);
+    for (const side of [-1, 1]) {
+      if (items.length >= VERGE_MAX_ITEMS) break;
+      if (rng.next() > 0.62) continue;
+      let pick = rng.next();
+      let kind = VERGE_MIX[VERGE_MIX.length - 1][0];
+      for (const [k, w] of VERGE_MIX) {
+        if (pick < w) { kind = k; break; }
+        pick -= w;
+      }
+      const variant = kind === "rock" ? 2 : 0;
+      const key = `${kind}:${variant}`;
+      const proto = protos.get(key);
+      if (!proto) continue;
+      const lat = hw + clearance + 0.30 + Math.pow(rng.next(), 1.35) * 4.6;
+      let rx = t[2], rz = -t[0];
+      const rl = Math.hypot(rx, rz) || 1;
+      const px = stage.x[i] + (rx / rl) * lat * side;
+      const pz = stage.z[i] + (rz / rl) * lat * side;
+      // The hairpin rule the stage's own generator obeys: measured against the
+      // true nearest sample, not the sample that produced the point.
+      const near = index.nearest(px, pz);
+      if (near.dist < halfWidthOf(stage, near.index) + clearance) continue;
+      const y = world.heightAt(px, pz);
+      if (!Number.isFinite(y)) continue;
+      const scale = kind === "churn" ? 0.8 + rng.next() * 0.8
+        : kind === "rock" ? 0.5 + rng.next() * 0.5
+          : 0.65 + rng.next() * 0.65;
+      items.push({
+        item: {
+          kind, x: px, y, z: pz, yaw: rng.range(0, TAU), scale, variant, __verge: true,
+        },
+        kind, key, dist: near.dist, cost: proto.triangles, dropped: false, verge: true,
+      });
+      triangles += proto.triangles;
+      if (triangles >= VERGE_MAX_TRIANGLES) return { items, triangles };
+    }
+  }
+  return { items, triangles };
 }
 
 export function buildSceneryLibrary(THREE, stage, opts = {}) {
@@ -4563,6 +4837,14 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
     placements.push({ item, kind, key, dist: near.dist, cost: proto.triangles, dropped: false });
   }
 
+  // Verge dressing. The stage hands over the planting, but the churned edge,
+  // the spilled gravel, the stones and the tufts belong to the road, so the
+  // library grows them along the centreline itself. They join the placement
+  // pool below every plant: on a stage that cannot fit its own trees the
+  // dressing thins away first and the budget guards above keep their meaning.
+  const scatter = vergeScatterItems(stage, index, protos, clearance, opts);
+  for (const s of scatter.items) placements.push(s);
+
   // Wires are merged geometry rather than instances, and they hang off poles,
   // which is why poles are never thinned. Their cost is known before anything is
   // placed, so it comes off the budget the instances get to spend.
@@ -4591,11 +4873,16 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
   }
   const overBudget = triangles > budget;
 
+  // Verge dressing keeps its own buckets so a scatter tussock never shares an
+  // InstancedMesh with a planted one: the two can stand metres apart in kind
+  // but the tests — and the snow tint below — need to tell them apart.
   const buckets = new Map();
+  const vergeBuckets = new Map();
   for (const p of placements) {
     if (p.dropped) continue;
-    let bucket = buckets.get(p.key);
-    if (!bucket) { bucket = []; buckets.set(p.key, bucket); }
+    const map = p.verge ? vergeBuckets : buckets;
+    let bucket = map.get(p.key);
+    if (!bucket) { bucket = []; map.set(p.key, bucket); }
     bucket.push(p.item);
   }
 
@@ -4611,33 +4898,40 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
   const scl = new THREE.Vector3();
   const colour = new THREE.Color();
 
-  for (const [key, items] of buckets) {
-    const proto = protos.get(key);
-    if (!proto) { for (const it of items) unknown.push(it); continue; }
-    const mesh = new THREE.InstancedMesh(proto.geometry, proto.material, items.length);
-    mesh.name = `scenery-${key}`;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    for (let i = 0; i < items.length; i += 1) {
-      const it = items[i];
-      const s = Number.isFinite(it.scale) && it.scale > 0.05 ? it.scale : 1;
-      const jitter = 0.82 + hash3(Math.round(it.x * 4), Math.round(it.z * 4), i, 61) * 0.42;
-      const sx = s * jitter * (0.94 + hash2(i, 7, 12) * 0.14);
-      pos.set(it.x, Number.isFinite(it.y) ? it.y : 0, it.z);
-      q.setFromAxisAngle(axis, Number.isFinite(it.yaw) ? it.yaw : rng.range(0, TAU));
-      scl.set(sx, s * jitter, sx);
-      m4.compose(pos, q, scl);
-      mesh.setMatrixAt(i, m4);
-      const tint = 0.80 + hash2(Math.round(it.x), Math.round(it.z), 77) * 0.40;
-      colour.setRGB(tint, tint * (0.94 + hash2(i, 3, 5) * 0.12), tint * 0.96);
-      mesh.setColorAt(i, colour);
+  const buildInstances = (map, verge) => {
+    for (const [key, items] of map) {
+      const proto = protos.get(key);
+      if (!proto) {
+        for (const it of items) if (!verge) unknown.push(it);
+        continue;
+      }
+      const mesh = new THREE.InstancedMesh(proto.geometry, proto.material, items.length);
+      mesh.name = `scenery-${key}`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      for (let i = 0; i < items.length; i += 1) {
+        const it = items[i];
+        const s = Number.isFinite(it.scale) && it.scale > 0.05 ? it.scale : 1;
+        const jitter = 0.82 + hash3(Math.round(it.x * 4), Math.round(it.z * 4), i, 61) * 0.42;
+        const sx = s * jitter * (0.94 + hash2(i, 7, 12) * 0.14);
+        pos.set(it.x, Number.isFinite(it.y) ? it.y : 0, it.z);
+        q.setFromAxisAngle(axis, Number.isFinite(it.yaw) ? it.yaw : rng.range(0, TAU));
+        scl.set(sx, s * jitter, sx);
+        m4.compose(pos, q, scl);
+        mesh.setMatrixAt(i, m4);
+        const tint = 0.80 + hash2(Math.round(it.x), Math.round(it.z), 77) * 0.40;
+        colour.setRGB(tint, tint * (0.94 + hash2(i, 3, 5) * 0.12), tint * 0.96);
+        mesh.setColorAt(i, colour);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      totalInstances += items.length;
+      meshes.push({ key, mesh, count: items.length, verge, triangles: proto.triangles * items.length });
+      group.add(mesh);
     }
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    totalInstances += items.length;
-    meshes.push({ key, mesh, count: items.length, triangles: proto.triangles * items.length });
-    group.add(mesh);
-  }
+  };
+  buildInstances(buckets, false);
+  buildInstances(vergeBuckets, true);
 
   let wireMesh = null;
   if (wireB.n > 0) {
@@ -4645,6 +4939,15 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
     wireMesh = new THREE.Mesh(g, materials.wood);
     wireMesh.name = "scenery-wires";
     group.add(wireMesh);
+  }
+
+  let scatterPlaced = 0;
+  let scatterThinned = 0;
+  const scatterKinds = new Set();
+  for (const p of placements) {
+    if (!p.verge) continue;
+    if (p.dropped) scatterThinned += 1;
+    else { scatterPlaced += 1; scatterKinds.add(p.key); }
   }
 
   const library = {
@@ -4662,6 +4965,9 @@ export function buildSceneryLibrary(THREE, stage, opts = {}) {
     budget,
     overBudget,
     triangles,
+    // The verge dressing the library grew itself, and what the thinning did
+    // to it: `placed` instances drawn, `thinned` given up to the budget.
+    scatter: { placed: scatterPlaced, thinned: scatterThinned, kinds: scatterKinds },
     dispose() { disposeScenery(library); },
   };
   return library;
