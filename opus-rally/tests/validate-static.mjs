@@ -184,6 +184,25 @@ for (const file of [...MODULES, "index.html"]) {
     + `(dead: ${dead.map((a) => `${a} -> ${hookFor(a)}`).join(", ")})`);
 }
 
+// The bloom prefilter. Bloom manufactures the white flashes the player used to
+// see: with the blur switched off the scene never produces a near-white pixel at
+// the spot they appear (measured max 0 over 180 frames), and with it on, a
+// 251x9 px sliver of road a kilometre away blooms into a 56 px disc that clips
+// flat. The Karis weighting is what tells a thin bright feature from a broad one,
+// so losing it silently would bring the flashes straight back.
+{
+  const renderSrc = readFileSync(join(appDir, "render.js"), "utf8");
+  const bright = renderSrc.match(/const BRIGHT_FRAG = `([\s\S]*?)`;/);
+  check(!!bright, "render.js still defines BRIGHT_FRAG — this check has lost its target");
+  const frag = bright ? bright[1] : "";
+  const taps = (frag.match(/texture2D\(\s*tScene/g) || []).length;
+  check(taps >= 4,
+    `the bloom prefilter samples the scene ${taps} time(s); a single tap cannot tell a`
+    + " lone aliased fragment from a real light source, which is the white-flash bug");
+  check(/1\.0\s*\/\s*\(\s*1\.0\s*\+\s*luma\(/.test(frag),
+    "the bloom prefilter still weights its taps by 1/(1+luma) (the Karis average)");
+}
+
 if (failures.length) {
   console.error(`opus-rally: ${failures.length} of ${checks} checks failed`);
   for (const failure of failures) console.error(`  - ${failure}`);
