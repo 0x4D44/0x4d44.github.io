@@ -85,6 +85,16 @@ with its shadows and post switched off.
   hour's exposure of 1.35 a hot sunlit landscape has most of the frame over any
   reasonable bright threshold. Measure the threshold and the prefilter, not the
   dome.
+  **Update 2026-08-25: the prefilter is largely ruled out.** It is now a
+  nine-tap Karis average (see the white-flash fix), which cuts hard what small
+  bright features contribute — and golden hour barely moved: the ring means
+  around the brightest sky point went 199/177/177/151 to 199/165/179/151, and
+  the frame mean was 107 before and 106 after. Whatever is lighting that sky
+  survives a large change to the bright pass, so the remaining suspects are the
+  threshold and knee themselves (`uThreshold` 1.0, `uKnee` 0.55), the 0.62
+  bloom weight, or the exposure. Sample with `u.uBloom.value` forced to 0 first:
+  that one measurement separates "the scene is blown" from "bloom blew it", and
+  it is the measurement the white-flash hunt should have started with.
 - **The pixel mirror in `tests/weather.test.mjs` is faithful in luminance and
   NOT in chroma.** Its `skyPixel()` put hard noon at 1.41 blue-over-red in the
   bug state and 1.47 after the fix; the real frame measured 1.09 and 1.17 for
