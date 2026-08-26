@@ -118,7 +118,7 @@ const SHOTS = [
 
 async function main() {
   await mkdir(OUT, { recursive: true });
-  const page = await openHarness({ root: ROOT, width: WIDTH, height: HEIGHT, quiet: false });
+  let page = await openHarness({ root: ROOT, width: WIDTH, height: HEIGHT, quiet: false });
   const manifest = [];
   let touchEmulated = false;
   try {
@@ -134,6 +134,23 @@ async function main() {
       if (ONLY && !ONLY.includes(shot.key)) continue;
       process.stderr.write(`[shoot] ${shot.key}: ${shot.title}\n`);
       page.clearErrors();
+
+      // A start-line frame deliberately leaves the game inside its live
+      // countdown. Rebuilding another stage in that same page can leave the
+      // software renderer servicing the old WebGL context while the next
+      // drive's distance probe waits forever. A navigation is not enough: that
+      // reuses Chrome's renderer process and reproduces the stall. Close the
+      // harness and start the following independent drive in a clean browser.
+      // Stateful evidence such as jump -> landing has no `drive` on the second
+      // frame and therefore keeps its exact physics state.
+      const prior = manifest.at(-1);
+      if (shot.drive && prior?.state?.state === "countdown") {
+        await page.close();
+        page = await openHarness({ root: ROOT, width: WIDTH, height: HEIGHT, quiet: false });
+        await page.navigate(APP_PATH);
+        await page.waitFor(`${shot.key} post-countdown build to boot`,
+          () => page.evaluate("!!window.__opusRally"), 120_000);
+      }
 
       const [vw, vh] = shot.viewport ?? [WIDTH, HEIGHT];
       await page.setViewport(vw, vh);
