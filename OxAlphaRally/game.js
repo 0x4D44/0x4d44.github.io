@@ -550,6 +550,7 @@ export async function startGame(opts) {
   let accumulator = 0;
   let last = performance.now();
   let rafId = 0;
+  let captureHold = false;
 
   function loop(now) {
     rafId = requestAnimationFrame(loop);
@@ -557,9 +558,9 @@ export async function startGame(opts) {
     last = now;
     const dt = clamp(raw, 0, MAX_FRAME_DT);
 
-    const running = game.state === GameState.RACING
+    const running = !captureHold && (game.state === GameState.RACING
       || game.state === GameState.COUNTDOWN
-      || game.state === GameState.FINISHED;
+      || game.state === GameState.FINISHED);
 
     if (running) {
       accumulator += dt;
@@ -618,6 +619,7 @@ export async function startGame(opts) {
     get state() { return game.state; },
     get frame() { return buildFrame(); },
     async drive(choice) {
+      captureHold = false;
       await beginStage({
         stageId: choice.stageId ?? stageMod.STAGE_BOOK[0].id,
         carId: choice.carId ?? physics.CARS[0].id,
@@ -652,6 +654,14 @@ export async function startGame(opts) {
       return true;
     },
     setCamera(mode) { renderer.setCamera?.(mode); },
+    // Chrome can take longer than a jump's airtime to encode a screenshot.
+    // Hold physics without opening the pause overlay so the captured pixels and
+    // the manifest describe the same exact racing frame.
+    holdForCapture(on) {
+      captureHold = !!on;
+      accumulator = 0;
+      return captureHold;
+    },
     // Hand the car to the pure-pursuit driver. The screenshot tool uses this so
     // it photographs a car that is driving the stage rather than one abandoned
     // mid-field, and it is the same code path an attract mode would use.
