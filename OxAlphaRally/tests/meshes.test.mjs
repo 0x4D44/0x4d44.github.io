@@ -491,6 +491,25 @@ test("textures: ground maps still carry contrast at the mip the ground is read a
   disposeTextures();
 });
 
+test("textures: ground grain has no near-black tail that turns into tiger stripes", () => {
+  const luma = (data) => {
+    const out = [];
+    for (let i = 0; i < data.length; i += 4) {
+      out.push(0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
+    }
+    return out.sort((a, b) => a - b);
+  };
+  for (const name of ["grass", "gravel", "rock", "dirt"]) {
+    const values = luma(surfaceTexture(THREE, name, { size: 256, seed: 13 }).map.image.data);
+    const p01 = values[Math.floor(values.length * 0.01)];
+    const p99 = values[Math.floor(values.length * 0.99)];
+    assert.ok(p99 / p01 <= 2.15,
+      `${name}: the bright/dark grain tail is ${(p99 / p01).toFixed(2)}x (${p01.toFixed(1)}..${p99.toFixed(1)}); `
+      + "isolated dark texels read as black stipple at a grazing angle");
+  }
+  disposeTextures();
+});
+
 // ---- livery --------------------------------------------------------------
 
 test("livery: paints base, pattern, number and invented wordmarks with canvas text", () => {
@@ -506,7 +525,7 @@ test("livery: paints base, pattern, number and invented wordmarks with canvas te
   assert.equal(tex.map.image.height, 128);
   const joined = record.text.join("|");
   assert.ok(joined.includes(String(spec.livery.number)), "competition number was never drawn");
-  assert.ok(joined.includes("OPUS RALLY"), "rally plate wordmark was never drawn");
+  assert.ok(joined.includes("OXALPHA RALLY"), "rally plate wordmark was never drawn");
   assert.ok(record.fonts.some((f) => /Arial Black|Impact/.test(f)), "no stencil face used for the number");
   // The normal companion is computed, not drawn, so it exists headless too.
   assert.equal(tex.normalMap.image.data.length, 64 * 64 * 4);
@@ -1419,6 +1438,31 @@ test("cockpit: the wheel rim wears a lit material of its own, not the trim's bla
   clearLiveryCache();
 });
 
+test("cockpit: the wheel is compact in the driver's sightline and neutral, not a tan hoop", () => {
+  for (const id of ["vireo-r2", "brackmoor-t8", "corvine-rs2000"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+    const wheel = car.parts.steeringWheel;
+    wheel.geometry.computeBoundingBox();
+    const box = wheel.geometry.boundingBox;
+    const radius = (box.max.x - box.min.x) * 0.5;
+    const eye = cockpitEyeLocal(spec);
+    const angularRatio = radius / Math.abs(wheel.position.z - eye.z);
+    assert.ok(angularRatio <= 0.29,
+      `${id}: wheel sightline ratio ${angularRatio.toFixed(3)} fills the cockpit like a bus wheel`);
+
+    const colours = wheel.geometry.getAttribute("color");
+    let warmest = 0;
+    for (let i = 0; i < colours.count; i += 1) {
+      warmest = Math.max(warmest, colours.getX(i) - colours.getZ(i));
+    }
+    assert.ok(warmest <= 0.022,
+      `${id}: wheel red-blue spread ${warmest.toFixed(3)} reads tan under the warm cabin light`);
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
 test("cockpit: the binnacle carries emissive dials readable from the driver eye", () => {
   const record = newRecord();
   const rc = new THREE.Raycaster();
@@ -1429,8 +1473,8 @@ test("cockpit: the binnacle carries emissive dials readable from the driver eye"
     const bin = car.parts.binnacle;
     assert.ok(bin && bin.isMesh, `${id}: no binnacle part — the gauges are anonymous dash geometry`);
     const m = bin.material;
-    assert.ok(m.emissiveIntensity > 0.35,
-      `${id}: dial emissive intensity ${m.emissiveIntensity?.toFixed?.(2) ?? m.emissiveIntensity} is below cockpit read threshold`);
+    assert.ok(m.emissiveIntensity >= 0.08 && m.emissiveIntensity <= 0.25,
+      `${id}: dial emissive intensity ${m.emissiveIntensity?.toFixed?.(2) ?? m.emissiveIntensity} is outside the dark backlight band`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b > 0.3,
       `${id}: the dials' emissive colour is black — nothing to read after dusk`);
     // The dials must sit in front of the driver, within reach of the eyeline.
@@ -1457,6 +1501,27 @@ test("cockpit: the binnacle carries emissive dials readable from the driver eye"
       `${id}: from the eye the first thing down the instrument sightline is "${first}" — the hood eats the dials`);
     car.dispose();
   }
+  clearLiveryCache();
+});
+
+test("cockpit: dial faces stay dark and their glow is bounded", () => {
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+  const faces = car.parts.binnacle;
+  const needles = car.parts.binnacleNeedles;
+  const colours = faces.geometry.getAttribute("color");
+  let brightest = 0;
+  for (let i = 0; i < colours.count; i += 1) {
+    brightest = Math.max(brightest,
+      luminance(colours.getX(i), colours.getY(i), colours.getZ(i)));
+  }
+  assert.ok(brightest <= 0.12,
+    `dial face albedo ${brightest.toFixed(3)} clips into a bright blob instead of reading as a dark gauge`);
+  assert.ok(faces.material.emissiveIntensity >= 0.08 && faces.material.emissiveIntensity <= 0.25,
+    `dial-face emissive ${faces.material.emissiveIntensity} is outside the calm readable band`);
+  assert.ok(needles.material.emissiveIntensity <= 0.65,
+    `needle emissive ${needles.material.emissiveIntensity} blooms over the dial`);
+  car.dispose();
   clearLiveryCache();
 });
 
@@ -1651,6 +1716,20 @@ test("wheel: the tyre fills its arch — clearance pinned per class, width above
   }
 });
 
+test("car: the body shoulders fill the track without slab-sided fender shelves", async () => {
+  const { CARS } = await import("../physics.js");
+  for (const spec of CARS) {
+    const d = carDimensions(spec);
+    const shelf = d.halfWidth - d.bodyHalfWidth;
+    assert.ok(shelf >= 0.07 && shelf <= 0.15,
+      `${spec.id}: ${(shelf * 1000).toFixed(0)} mm fender shelf reads as a protruding block`);
+    const visualBodyWidth = d.bodyHalfWidth * 2;
+    const visualHeight = d.roofY - d.ground;
+    assert.ok(visualHeight / visualBodyWidth <= 0.95,
+      `${spec.id}: height/shoulder ratio ${(visualHeight / visualBodyWidth).toFixed(3)} is high and narrow`);
+  }
+});
+
 test("car: an arch liner closes the tub behind each wheel", async () => {
   const record = newRecord();
   const spec = carSpec("corvine-rs2000");
@@ -1737,6 +1816,35 @@ test("car: a driver silhouette sits in the left seat, helmet visible through the
   clearLiveryCache();
 });
 
+test("car: the helmet has a broad contrasting visor that reads as a driver through glass", () => {
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(newRecord()) });
+  const driver = car.parts.driver;
+  const pos = driver.geometry.getAttribute("position");
+  const col = driver.geometry.getAttribute("color");
+  let helmetMinX = Infinity, helmetMaxX = -Infinity;
+  let visorMinX = Infinity, visorMaxX = -Infinity;
+  for (let i = 0; i < pos.count; i += 1) {
+    if (pos.getY(i) < car.dimensions.beltY + 0.06) continue;
+    const lum = luminance(col.getX(i), col.getY(i), col.getZ(i));
+    if (lum > 0.45) {
+      helmetMinX = Math.min(helmetMinX, pos.getX(i));
+      helmetMaxX = Math.max(helmetMaxX, pos.getX(i));
+    }
+    if (lum < 0.05) {
+      visorMinX = Math.min(visorMinX, pos.getX(i));
+      visorMaxX = Math.max(visorMaxX, pos.getX(i));
+    }
+  }
+  const helmetWidth = helmetMaxX - helmetMinX;
+  const visorWidth = visorMaxX - visorMinX;
+  assert.ok(helmetWidth >= 0.24, `helmet is only ${helmetWidth.toFixed(3)} m wide in silhouette`);
+  assert.ok(visorWidth / helmetWidth >= 0.75,
+    `visor spans only ${(visorWidth / helmetWidth * 100).toFixed(0)}% of the helmet — the head reads as a blob`);
+  car.dispose();
+  clearLiveryCache();
+});
+
 // ---- scenery and props ---------------------------------------------------
 
 test("scenery: instance counts match the stage list, matrices are sane, nothing sits on the road", () => {
@@ -1814,7 +1922,7 @@ test("props: the rally furniture builds, instances and carries invented branding
   const record = newRecord();
   const lib = buildPropLibrary(THREE, { ...TEX, canvasFactory: fakeCanvasFactory(record) });
   const joined = record.text.join("|");
-  assert.ok(joined.includes("OPUS RALLY"), "the event wordmark was never drawn");
+  assert.ok(joined.includes("OXALPHA RALLY"), "the event wordmark was never drawn");
   assert.ok(joined.includes("FINISH"), "no finish board text");
   assert.ok(joined.includes("SERVICE PARK"), "no service-park banner text");
   assert.ok(!/subaru|citro|ford|toyota|wrc/i.test(joined), "a real marque or series leaked into the signage");
@@ -2161,7 +2269,8 @@ test("snow: a snowy stage dresses the world; a dry stage stays untouched", () =>
   const dry = theStage();
   const snowy = { ...theStage(), weather: "light-snow" };
 
-  // Terrain: the ground beside the road whitens, the far hillside does not move.
+  // Terrain: the ground beside the road whitens most, while settled snow also
+  // dresses the wider landscape so the snowfall does not sit over a green world.
   const bandMean = (terrain, st, lo, hi) => {
     let acc = 0, n = 0;
     for (const c of terrain.chunks) {
@@ -2187,8 +2296,9 @@ test("snow: a snowy stage dresses the world; a dry stage stays untouched", () =>
   assert.ok(snowNear.mean > dryNear.mean * 1.18,
     `snowy verge terrain reads ${(snowNear.mean / dryNear.mean).toFixed(3)}x the dry `
     + "verge — the ground beside a snow road is not whitening");
-  assert.ok(Math.abs(snowFar.mean - dryFar.mean) < 1e-6,
-    "the far hillside moved with the snow state; only the corridor should whiten");
+  assert.ok(snowFar.mean > dryFar.mean * 1.10,
+    `snowy far terrain reads ${(snowFar.mean / dryFar.mean).toFixed(3)}x the dry `
+    + "hillside — the wider winter world is not whitening");
 
   // Canopy: snow settles on the tops, not on the trunks.
   const treeLum = (lib, yLo, yHi) => {
@@ -2925,14 +3035,16 @@ test("ground shaders: the splat and detail injections actually land in three's s
 test("terrain: the despeckle range is declared and sane", async () => {
   const meshes = await import("../meshes.js");
   assert.ok(meshes.TERRAIN_DESPECKLE, "meshes.js exports no TERRAIN_DESPECKLE range");
-  const { near, far, normalDamp } = meshes.TERRAIN_DESPECKLE;
+  const { near, far, normalDamp, detailGain } = meshes.TERRAIN_DESPECKLE;
   assert.ok(near >= 15 && near <= 45,
     `despeckle starts at ${near} m — the near road must keep its detail`);
   assert.ok(far >= 100 && far <= 280,
     `despeckle completes at ${far} m — hillsides at rally viewing distance must hold still`);
   assert.ok(far > near + 40, `the fade band (${near}..${far}) is too abrupt to be invisible`);
-  assert.ok(normalDamp >= 0.3 && normalDamp <= 0.95,
+  assert.ok(normalDamp >= 0.7 && normalDamp <= 0.98,
     `normal damp ${normalDamp} is outside any useful range`);
+  assert.ok(detailGain >= 0.15 && detailGain <= 0.25,
+    `near terrain detail gain ${detailGain} leaves either no surface or too much stipple`);
 });
 
 test("terrain: the distance fade mixes each splat tap toward its own mean in the shader", async () => {
@@ -2962,10 +3074,51 @@ test("terrain: the distance fade mixes each splat tap toward its own mean in the
   }
   assert.ok((frag.match(/mix\([^)]*MeanRGB/g) || []).length >= 3,
     "the taps are not all mixed toward their own means");
+  assert.ok(/macro\s*=\s*mix\(\s*macro\s*,\s*1\.0\s*,\s*calm/.test(frag),
+    "the coarse macro tap keeps full contrast after the fine taps have calmed");
   // Normal shimmer dies with the same factor.
   assert.ok(frag.includes("normalScale * (1.0 -") || frag.includes("normalScale * ( 1.0 -"),
     "the normal-map strength is not damped with distance");
+  assert.ok(/roughnessFactor\s*=\s*mix\(\s*roughness\s*,\s*roughnessFactor\s*,[^;]*calm/.test(frag),
+    "terrain roughness texture detail is not calmed with distance");
   terrain.dispose();
+  disposeTextures();
+});
+
+test("road: distance calming preserves near grain and settles far albedo and relief", async () => {
+  const { ROAD_DESPECKLE } = await import("../meshes.js");
+  assert.ok(ROAD_DESPECKLE, "meshes.js exports no ROAD_DESPECKLE range");
+  const { near, far, normalDamp, detailGain } = ROAD_DESPECKLE;
+  assert.ok(near >= 8 && near <= 35, `road calming starts at ${near} m`);
+  assert.ok(far >= 70 && far <= 220, `road calming completes at ${far} m`);
+  assert.ok(far > near + 40, `the road fade band (${near}..${far}) is too abrupt`);
+  assert.ok(normalDamp >= 0.7 && normalDamp <= 0.98,
+    `road normal damp ${normalDamp} is outside any useful range`);
+  assert.ok(detailGain >= 0.15 && detailGain <= 0.25,
+    `near road detail gain ${detailGain} either erases the surface or leaves it noisy`);
+
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  const material = bundle.road.surfaceMaterials.get(SURFACE.GRAVEL);
+  const src = THREE.ShaderLib.physical;
+  const shader = { uniforms: {}, vertexShader: src.vertexShader, fragmentShader: src.fragmentShader };
+  material.onBeforeCompile(shader, null);
+  const frag = shader.fragmentShader;
+  assert.ok(frag.includes(`smoothstep( ${near.toFixed(1)}, ${far.toFixed(1)}`),
+    "the road shader does not use the declared calming range");
+  for (const u of ["uRoadMeanRGB", "uVergeMeanRGB"]) {
+    assert.ok(frag.includes(u), `${u} never reached the road fragment shader`);
+    assert.ok(shader.uniforms[u] && shader.uniforms[u].value, `${u} is not bound`);
+  }
+  assert.ok(/mix\(\s*sampledDiffuseColor\.rgb\s*,\s*uRoadMeanRGB\s*,\s*roadCalm\s*\)/.test(frag),
+    "far road albedo is not mixed toward its mean");
+  assert.ok(/mix\(\s*vergeTex\s*,\s*uVergeMeanRGB\s*,\s*roadCalm\s*\)/.test(frag),
+    "far verge albedo is not mixed toward its mean");
+  assert.ok(frag.includes(`1.0 - ${normalDamp.toFixed(2)} * roadCalm`),
+    "road normal relief is not damped with the same distance factor");
+  assert.ok(/roughnessFactor\s*=\s*mix\(\s*roughness\s*,[^;]*roadCalm/.test(frag),
+    "road roughness texture detail is not calmed with distance");
+  bundle.dispose();
   disposeTextures();
 });
 

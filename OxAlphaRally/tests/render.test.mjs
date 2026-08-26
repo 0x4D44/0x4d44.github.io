@@ -703,6 +703,7 @@ async function cabinProbe() {
   const car = meshes.buildCarMesh(THREE, spec);
   car.group.updateMatrixWorld(true);
   const binnacle = car.group.getObjectByName("binnacle");
+  const needles = car.group.getObjectByName("binnacleNeedles");
   const interior = car.group.getObjectByName("interior");
   binnacle.geometry.computeBoundingBox();
   const dial = new THREE.Vector3();
@@ -718,7 +719,7 @@ async function cabinProbe() {
     cameraParams("cockpit").mountY + car.dimensions.ground,
     mountLocalZ({ frontAxle: car.dimensions.frontAxle }, cameraParams("cockpit")),
   );
-  return { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, eye };
+  return { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, needleMat: needles.material, eye };
 }
 
 // Step a weather rig until its headlight Schmitt trigger has settled, so the
@@ -738,18 +739,17 @@ test("the cabin is lit to read, in day and at night", async () => {
   // The mirror of the outcome the critic demanded: dials that stand off the
   // dash, a dash that is not a hole, a fill that follows the world outside —
   // and a wheel rim that catches a specular edge from somewhere directional.
-  const { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, eye } = await cabinProbe();
+  const { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, needleMat, eye } = await cabinProbe();
   // The rim as meshes.js builds it: a tube of radius ~0.165 in a plane raked
   // 0.38 rad back about X, centred on the wheel layout. A specular band lands
   // somewhere along the tube where the surface normal can bisect eye and lamp,
   // so the mirror walks the ring and takes the best catch — a single sample
   // with an up normal proves nothing about a tube.
-  const wheel = {
-    x: -car.dimensions.bodyHalfWidth * 0.44,
-    y: car.dimensions.beltY + 0.05 + 0.075,
-    z: car.dimensions.frontAxle - 0.30 - 0.44,
-  };
-  const TILT = 0.38, R = 0.165;
+  const wheelMesh = car.parts.steeringWheel;
+  wheelMesh.geometry.computeBoundingBox();
+  const wheel = wheelMesh.position;
+  const TILT = -wheelMesh.rotation.x;
+  const R = (wheelMesh.geometry.boundingBox.max.x - wheelMesh.geometry.boundingBox.min.x) * 0.5;
   const ux = new THREE.Vector3(1, 0, 0);
   const uy = new THREE.Vector3(0, Math.cos(-TILT), Math.sin(-TILT));
   const ring = [];
@@ -783,14 +783,20 @@ test("the cabin is lit to read, in day and at night", async () => {
     assert.ok(dashLum > (label === "day" ? 0.010 : 0.0035),
       `${label}: the dash surround mirrors at luminance ${dashLum.toFixed(4)} — the cabin fill does not reach it`);
 
-    // The dials must stand off the surround: emissive plus lit face against a
-    // lit fascia, at a glance, in both states.
+    // Smoked dial glass should stay darker than its surround; the thin needle is
+    // the bright glance cue. Lighting the whole face until it beats the dash is
+    // what produced the critic's two blown-out cream blobs.
     const em = dialMat.emissive;
     const emissiveLum = (0.2126 * em.r + 0.7152 * em.g + 0.0722 * em.b)
       * dialMat.emissiveIntensity;
     const dialLum = luminanceOf(dialAlbedo) * irrDial + emissiveLum;
-    assert.ok(dialLum > 1.8 * dashLum + 0.02,
-      `${label}: the dials mirror at ${dialLum.toFixed(4)} against a dash at ${dashLum.toFixed(4)} — no contrast`);
+    assert.ok(dialLum <= dashLum * 1.25 + 0.025,
+      `${label}: the dial face mirrors at ${dialLum.toFixed(4)} against a dash at ${dashLum.toFixed(4)} — the smoked face blooms`);
+    const ne = needleMat.emissive;
+    const needleLum = (0.2126 * ne.r + 0.7152 * ne.g + 0.0722 * ne.b)
+      * needleMat.emissiveIntensity;
+    assert.ok(needleLum > dashLum * 1.05 + 0.018,
+      `${label}: the needle mirrors at ${needleLum.toFixed(4)} against a dash at ${dashLum.toFixed(4)} — no glance cue`);
 
     // The rim's specular band: a broad Blinn lobe off the tube toward the
     // driving eye. The tube's curvature lets the effective normal sweep off the
