@@ -26,6 +26,7 @@ function check(condition, message) {
 
 const htmlPath = join(appDir, "index.html");
 const html = existsSync(htmlPath) ? readFileSync(htmlPath, "utf8") : "";
+const uiSource = readFileSync(join(appDir, "ui.js"), "utf8");
 const data = readFileSync(join(root, "data.js"), "utf8");
 const catalogue = readFileSync(join(root, "index.html"), "utf8");
 
@@ -38,6 +39,10 @@ check(existsSync(join(appDir, "THREE-LICENSE.txt")), "the vendored three.js keep
 
 check(/<meta\b[^>]*name=["']viewport["']/i.test(html), "a viewport meta is present");
 check(/<title>[^<]*OxAlphaRally[^<]*<\/title>/i.test(html), "the title names OxAlphaRally");
+check(/<text\b[^>]*>OxAlphaRally<\/text>/.test(html), "the visible boot mark spells OxAlphaRally consistently");
+check(!/>OXALPHA<\/text>[\s\S]{0,300}>RALLY<\/text>/.test(html), "the boot mark does not split the product into an all-caps alias");
+check(/opts\.text\s*\?\?\s*["']OXALPHA["']/.test(uiSource), "the menu wordmark uses the OxAlphaRally identity");
+check(!/opts\.text\s*\?\?\s*["']OPUS["']/.test(uiSource), "the menu has no legacy OPUS product wordmark");
 check(/<meta\b[^>]*name=["']description["']/i.test(html), "a description meta is present");
 check(/<noscript>/i.test(html), "there is a noscript fallback");
 

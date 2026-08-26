@@ -204,6 +204,15 @@ const GLYPHS = Object.freeze({
   C: [
     [[92, 26], [72, 6], [30, 6], [8, 28], [8, 112], [30, 134], [72, 134], [92, 114]],
   ],
+  H: [
+    [[12, 0], [12, 140]],
+    [[88, 0], [88, 140]],
+    [[24, 70], [76, 70]],
+  ],
+  X: [
+    [[8, 0], [92, 140]],
+    [[92, 0], [8, 140]],
+  ],
   G: [
     [[92, 26], [72, 6], [30, 6], [8, 28], [8, 112], [30, 134], [72, 134], [92, 114], [92, 76], [62, 76]],
   ],
@@ -237,7 +246,7 @@ function layoutWord(text, scale, ox, oy, role, strokes) {
 // Pure geometry for the mark; wordmarkSvgString() and the DOM builder both read
 // this, so a change to the identity is a change in exactly one place.
 export function wordmarkSpec(opts = {}) {
-  const main = String(opts.text ?? "OPUS").toUpperCase();
+  const main = String(opts.text ?? "OXALPHA").toUpperCase();
   const sub = String(opts.sub ?? "RALLY").toUpperCase();
   const subScale = opts.subScale ?? 0.46;
   const pad = 14;
@@ -281,7 +290,7 @@ export function wordmarkSpec(opts = {}) {
 
 export function wordmarkSvgString(spec = wordmarkSpec(), opts = {}) {
   const vb = spec.viewBox.join(" ");
-  const title = opts.title ?? `${spec.text} ${spec.sub}`;
+  const title = opts.title ?? BRAND.name;
   let out = `<svg xmlns="${SVG_NS}" viewBox="${vb}" role="img" aria-label="${title}" class="or-wordmark-svg">`;
   for (const s of spec.shapes) {
     out += `<polygon points="${s.points.map((p) => p.join(",")).join(" ")}" class="or-mark-${s.role}"/>`;
@@ -1155,9 +1164,9 @@ export function compareSpecs(cars, opts = {}) {
 export function demoData() {
   const stage = synthStage("Kalder Pass", 6420);
   return {
-    profile: { name: "Privateer", team: "Opus Works", number: 7, livery: "flare" },
+    profile: { name: "Privateer", team: "Alpha Works", number: 7, livery: "flare" },
     championship: {
-      name: "Opus Trophy",
+      name: "Alpha Trophy",
       round: 3,
       events: [
         { id: "ev-fenn", name: "Fennmark Rally", country: "Fennmark", surface: [SURFACE.GRAVEL], status: "done", position: 2, x: 0.18, y: 0.28 },
@@ -1168,7 +1177,7 @@ export function demoData() {
       ],
       standings: [
         { name: "V. Estergaard", team: "Nordwerk", points: 58 },
-        { name: "You", team: "Opus Works", points: 51, isPlayer: true },
+        { name: "You", team: "Alpha Works", points: 51, isPlayer: true },
         { name: "M. Ravel", team: "Cassin Sport", points: 47 },
         { name: "T. Okonkwo", team: "Hallmark Rally", points: 39 },
         { name: "P. Brandt", team: "Nordwerk", points: 30 },
@@ -1228,9 +1237,9 @@ export function demoData() {
       cleanRun: true,
     },
     season: {
-      title: "Opus Trophy — Final",
+      title: "Alpha Trophy — Final",
       podium: [
-        { position: 2, name: "You", team: "Opus Works", points: 118, isPlayer: true },
+        { position: 2, name: "You", team: "Alpha Works", points: 118, isPlayer: true },
         { position: 1, name: "V. Estergaard", team: "Nordwerk", points: 131 },
         { position: 3, name: "M. Ravel", team: "Cassin Sport", points: 109 },
       ],
@@ -1972,7 +1981,7 @@ const BASE_CSS = `
  display:flex;align-items:center;gap:var(--or-s-md);border-bottom:1px solid var(--or-line);
  background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);}
 .or-brandline{display:flex;align-items:baseline;gap:var(--or-s-sm);min-width:0;}
-.or-brandline h1{margin:0;font-size:var(--or-t-lead);letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+.or-brandline h1{margin:0;font-size:var(--or-t-lead);letter-spacing:.06em;text-transform:none;font-weight:700;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .or-kicker{color:var(--or-mute);font-size:var(--or-t-small);letter-spacing:.10em;text-transform:uppercase;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
