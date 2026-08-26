@@ -400,13 +400,23 @@ const CAMERA_PARAMS = Object.freeze({
   // old COM-relative −0.02 the eye sat *forward* of that leading edge, in the
   // windscreen aperture — 84 mm under the glass, with the whole length of the
   // bonnet below it and nothing of the cabin in frame.
+  //
+  // lookHeight pitches the mount, and it is pitched DOWN: level, the binnacle
+  // sat 19° below the horizon and every dial projected below the bottom edge —
+  // a wheel floating over a black sill. −2.6 over the 20 m aim is −7.4°, which
+  // puts the gauges in the lower third and keeps the road past 45% of the
+  // frame. A cockpit camera that hides the road is no cockpit camera either.
   cockpit: Object.freeze({
     mode: "cockpit", kind: "mount",
     localXFrac: -0.46, mountY: 1.16, localZAxle: -1.24,
-    lookAhead: 20, lookHeight: 0.30, lookVertGain: 0,
+    lookAhead: 20, lookHeight: -2.6, lookVertGain: 0,
     posRate: 26, posRateSpeed: 0, aimRate: 9.5, dirRate: 8,
     velocityBlend: 0, velRefSpeed: 14,
-    fovBase: 48, fovMax: 48, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
+    // 54, not the mount-typical 48: the binnacle sits 19° below the horizon
+    // from this eye, and at 48 the bottom of the frame cut the gauge faces in
+    // half even pitched down. The wider field fits the dials, the wheel AND
+    // the road, which is the whole balancing act of a cockpit camera.
+    fovBase: 54, fovMax: 54, fovStart: 8, fovRefSpeed: 32, fovRate: 3,
     rollGain: 0.10, pitchGain: 0.10, attRate: 7.5,
     shake: 0.038, shakeSpeed: 42, clearance: 0.05,
     airLift: 0, airRate: 2,
@@ -518,9 +528,12 @@ export function adaptCameraParams(out, p, aspect) {
     out.height = p.height;
     out.distance = p.distance;
     // A mount cannot move — it is bolted to the car — so all it can do is stop
-    // the extra vertical field being spent on sky.
+    // the extra vertical field being spent on sky. The aim drops half a step
+    // further, which for a down-pitched cockpit mount (negative lookHeight)
+    // means more negative, not less: the sign of the authored aim is the sign
+    // of the correction.
     out.lookAhead = p.lookAhead;
-    out.lookHeight = p.lookHeight * (1 - 0.5 * t);
+    out.lookHeight = p.lookHeight * (1 - 0.5 * t * Math.sign(p.lookHeight || 1));
   }
   return out;
 }
@@ -698,6 +711,82 @@ export function speedPostFxInto(out, speed) {
   out.vignette = 0.75 + 0.45 * cue;
   out.radial = saturate((cue - POST_SPEED.radialFrom)
     / (POST_SPEED.radialTo - POST_SPEED.radialFrom)) * POST_SPEED.radialGain;
+  return out;
+}
+
+// ---- cabin light ----------------------------------------------------------
+//
+// The cockpit is the one view the lighting rig was never tuned for: the shell
+// shadows the cabin out of the sun term and the trim albedo is just above soot,
+// so from the driver's seat the dash read as a hole punched in the picture. A
+// soft point light in the cabin centre gives the trim, the wheel and the
+// binnacle a term of their own, and its level is a function of the world
+// outside — a cabin lit to one level while the stage runs from golden hour into
+// night would be its own kind of wrong.
+//
+// Pure and exported so the tests can mirror what the eye receives without a
+// rasteriser.
+export const CABIN_LIGHT = Object.freeze({
+  // Fraction of the exterior rig (sun, sky, bounce, moon) the cabin fill
+  // carries in daylight, plus the floor that keeps it off black in a tunnel.
+  // Tuned so the trim sits roughly two stops under a sunlit road: bright
+  // enough to read, dark enough that the cabin is still the inside of a car.
+  dayGain: 0.10,
+  dayFloor: 0.05,
+  // The dash-lamp term: what the headlights' level adds, weighted to night.
+  lampGain: 0.10,
+  // Instrument emissive. Day values are the meshes' authored ones; the night
+  // add is what a lit binnacle does to a driver's dark-adapted eye.
+  dialDay: 0.85,
+  dialNight: 0.75,
+  needleDay: 1.1,
+  needleNight: 0.45,
+});
+
+// How much of the night grade to apply. This used to read weather.metrics
+// lightLevel, which is not a daylight fraction at all: it is the input to the
+// headlight Schmitt trigger, scaled for thresholds at 0.18 and 0.30. Measured on
+// the shipped presets it reads 0.478 for OVERCAST NOON and 0.669 for golden
+// hour, so the renderer was running a half-strength night grade — lifted blacks,
+// blue gain, desaturation — over broad daylight. That was a large part of why
+// the daylight scenes looked murky. The sun's elevation is the physical quantity
+// that actually decides this, so ask it instead.
+export function nightFraction(preset) {
+  const elevation = preset && Number.isFinite(preset.sunElevation)
+    ? preset.sunElevation
+    : 0.6;
+  // Full grade once the sun is a little below the horizon; none of it once the
+  // sun is properly up. -12 degrees is nautical twilight, +3 is sunrise proper.
+  return 1 - smoothstep(-0.21, 0.05, elevation);
+}
+
+// The cabin light levels for a moment of weather. `o` carries the live rig
+// intensities off the weather system, the night fraction and the headlight
+// level; `out` receives { fill, dial, needle }.
+export function cabinLightLevels(out, o) {
+  const exterior = 0.40 * (o.keyI || 0)
+    + 0.30 * (o.hemiI || 0)
+    + 0.18 * (o.bounceI || 0)
+    + 0.12 * (o.ambientI || 0)
+    + 0.20 * (o.moonI || 0);
+  const night = saturate(o.night || 0);
+  const headl = saturate(o.headlightLevel || 0);
+  out.fill = CABIN_LIGHT.dayFloor + exterior * CABIN_LIGHT.dayGain
+    + headl * CABIN_LIGHT.lampGain * (0.3 + 0.7 * night);
+  out.dial = CABIN_LIGHT.dialDay + CABIN_LIGHT.dialNight * Math.max(night, headl * 0.6);
+  out.needle = CABIN_LIGHT.needleDay + CABIN_LIGHT.needleNight * night;
+  return out;
+}
+
+// Where the cabin light sits, in the car mesh's own frame (the mesh group is
+// the centre of mass, and meshes.js measures body heights from the ground plane
+// it stores in `beltY` and friends). Back at the mirror, up near the headliner:
+// close enough to shape the binnacle, far enough that neither the wheel nor the
+// dial faces sit in the hot core of the falloff.
+export function cabinLightPosition(out, d) {
+  out.x = 0.08;
+  out.y = (d.beltY || 0.4) + 0.30;
+  out.z = (d.frontAxle || 1.05) - 0.98;
   return out;
 }
 
@@ -1969,6 +2058,13 @@ export function createRenderer(canvas, opts = {}) {
     sunX: 0, sunY: 1, sunZ: 0,
     wetness: 0,
     exposure: 1,
+    // Cabin light level, damped toward the weather-driven target so a tunnel
+    // or a sunset fades the dash rather than snapping it.
+    cabinLevel: 0,
+    cabinTarget: { fill: 0, dial: CABIN_LIGHT.dialDay, needle: CABIN_LIGHT.needleDay },
+    dialMaterial: null,
+    needleMaterial: null,
+    cabinLight: null,
     drawsIssued: 0,
     lastS: 0,
     // Scratch for the per-frame speed-effect strengths, filled by
@@ -3219,15 +3315,68 @@ if (uOxrLevel > 0.001) {
       mesh = adopt(safeCall(() => meshLib.buildCarMesh(three, spec, livery)), bin);
     }
     if (!mesh) mesh = bin.trackTree(buildFallbackCar(spec, bin));
+    // The blanket shadow flags below must not undo the model's own choices:
+    // meshes.js marks the cabin parts receive:false because a cabin that
+    // receives the car's own shadow map loses the sun term entirely and reads
+    // as a black hole from the driver's seat. Capture the intent first, then
+    // restore it.
+    const keepReceive = [];
     mesh.traverse((o) => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+      if (o.isMesh) {
+        if (o.receiveShadow === false) keepReceive.push(o);
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
     });
+    for (const o of keepReceive) o.receiveShadow = false;
     state.brakeMaterial = (mesh.userData && mesh.userData.brakeMaterial)
       || findEmissive(mesh, /brake|tail-?light|taillight|rear-?light/i);
     state.lampMaterial = (mesh.userData && mesh.userData.lampMaterial)
       || findEmissive(mesh, /lamp|headlight|pod|spot/i);
+    // The lit instruments are the model's own emissive materials; the level is
+    // ours, driven by the weather in applyCabinLight().
+    state.dialMaterial = null;
+    state.needleMaterial = null;
+    const binnacle = mesh.getObjectByName("binnacle");
+    if (binnacle && binnacle.material && binnacle.material.emissive) {
+      state.dialMaterial = binnacle.material;
+    }
+    const needles = mesh.getObjectByName("binnacleNeedles");
+    if (needles && needles.material && needles.material.emissive) {
+      state.needleMaterial = needles.material;
+    }
+    attachCabinLight(mesh, spec, bin);
     if (!state.brakeMaterial) ensureBrakeLights(mesh, spec, bin);
     return mesh;
+  }
+
+  // The cabin fill. A child of the car mesh, so it inherits the chassis
+  // transform and dies with the stage. No shadow of its own — it is a fill, not
+  // a lamp, and a second shadow pass per car is not a price the frame budget
+  // pays for ambience.
+  function attachCabinLight(carGroup, spec, bin) {
+    const light = new three.PointLight(0xffe8d2, 0, 2.4, 2);
+    light.name = "opus.cabinLight";
+    light.castShadow = false;
+    let d = null;
+    if (meshLib && typeof meshLib.carDimensions === "function" && spec) {
+      d = safeCall(() => meshLib.carDimensions(spec));
+    }
+    cabinLightPosition(light.position, d || {});
+    carGroup.add(light);
+    state.cabinLight = light;
+  }
+
+  function applyCabinLight(dt) {
+    state.cabinLevel = damp(state.cabinLevel, state.cabinTarget.fill, 2.2, dt);
+    const light = state.cabinLight;
+    if (light) light.intensity = state.cabinLevel;
+    if (state.dialMaterial) {
+      state.dialMaterial.emissiveIntensity = state.cabinTarget.dial;
+    }
+    if (state.needleMaterial) {
+      state.needleMaterial.emissiveIntensity = state.cabinTarget.needle;
+    }
   }
 
   // Not every car model carries a brake light as a named part, and a rally car
@@ -3481,6 +3630,10 @@ if (uOxrLevel > 0.001) {
     state.wheelMeshes.length = 0;
     state.brakeMaterial = null;
     state.lampMaterial = null;
+    state.dialMaterial = null;
+    state.needleMaterial = null;
+    state.cabinLight = null;
+    state.cabinLevel = 0;
     scenery.entries.length = 0;
     anisoTextures.length = 0;
     state.drawsIssued = 0;
@@ -3757,7 +3910,9 @@ if (uOxrLevel > 0.001) {
     eTmp.set(0, ang, 0);
     qTmp.setFromEuler(eTmp);
     vTmp.set(x, y + 0.02, z);
-    vTmp2.set(width, 1, 0.55);
+    // Overlap the 0.32 m stamping stride so the decals read as one rubber line,
+    // even when a frame arrives just after the stride threshold.
+    vTmp2.set(width, 1, 0.72);
     mTmp.compose(vTmp, qTmp, vTmp2);
     markMesh.setMatrixAt(i, mTmp);
     markMesh.instanceMatrix.needsUpdate = true;
@@ -3779,7 +3934,10 @@ if (uOxrLevel > 0.001) {
       markStride[i] += car.speed * dt;
       if (markStride[i] < 0.32) continue;
       markStride[i] = 0;
-      const alpha = saturate(rut) * (props && props.looseDepth > 0.3 ? 0.35 : 0.7);
+      // Gravel has to move enough material to survive the road texture and
+      // tone curve. Scale with the rut itself; a faint slide stays faint, while
+      // a sustained four-wheel drift leaves a readable dark racing line.
+      const alpha = saturate(rut) * (props && props.looseDepth > 0.3 ? 1.15 : 0.85);
       stampMark(w.contactPoint.x, w.contactPoint.y, w.contactPoint.z,
         car.vel.x, car.vel.z, 0.26, alpha, 26 + rut * 30);
     }
@@ -4193,6 +4351,21 @@ if (uOxrLevel > 0.001) {
     if (!cur) return;
     state.wetness = (w.wet && w.wet.film) || cur.roadWetness || 0;
     state.exposure = damp(state.exposure, cur.exposure || 1, 1.5, dt);
+    // The cabin fill mirrors the rig outside: the same intensities the sky is
+    // lighting the stage with, the night fraction, and whether the lamps are on
+    // to justify dash lighting at all.
+    const L = w.lights;
+    if (L) {
+      cabinLightLevels(state.cabinTarget, {
+        keyI: L.key ? L.key.intensity : 0,
+        hemiI: L.fill ? L.fill.intensity : 0,
+        bounceI: L.bounce ? L.bounce.intensity : 0,
+        ambientI: L.ambient ? L.ambient.intensity : 0,
+        moonI: L.moon ? L.moon.intensity : 0,
+        night: nightFraction(cur),
+        headlightLevel: w.metrics && w.metrics.headlights ? headlights.level : 0,
+      });
+    }
     if (scene.fog) {
       dustMat.uniforms.uFogNear.value = scene.fog.near;
       dustMat.uniforms.uFogFar.value = scene.fog.far;
@@ -4227,23 +4400,6 @@ if (uOxrLevel > 0.001) {
       0.98 + 0.10 * night + 0.06 * saturate(wetFilm(w)) - 0.06 * warm,
     );
     u.uSaturation.value = 1.06 - 0.24 * night - 0.12 * saturate(wetFilm(w)) + 0.10 * warm;
-  }
-
-// How much of the night grade to apply. This used to read weather.metrics
-  // lightLevel, which is not a daylight fraction at all: it is the input to the
-  // headlight Schmitt trigger, scaled for thresholds at 0.18 and 0.30. Measured on
-  // the shipped presets it reads 0.478 for OVERCAST NOON and 0.669 for golden
-  // hour, so the renderer was running a half-strength night grade — lifted blacks,
-  // blue gain, desaturation — over broad daylight. That was a large part of why
-  // the daylight scenes looked murky. The sun's elevation is the physical quantity
-  // that actually decides this, so ask it instead.
-  function nightFraction(preset) {
-    const elevation = preset && Number.isFinite(preset.sunElevation)
-      ? preset.sunElevation
-      : 0.6;
-    // Full grade once the sun is a little below the horizon; none of it once the
-    // sun is properly up. -12 degrees is nautical twilight, +3 is sunrise proper.
-    return 1 - smoothstep(-0.21, 0.05, elevation);
   }
 
   function updateGhost(ghost, dt) {
@@ -4399,6 +4555,7 @@ if (uOxrLevel > 0.001) {
     updateCarMesh(car, frame.alpha || 0);
     updateContactShadow(car);
     updateHeadlights(car, step);
+    applyCabinLight(step);
     spawnWheelParticles(car, surface, step);
     updateMarks(car, surface, step);
     ageMarks(step);
