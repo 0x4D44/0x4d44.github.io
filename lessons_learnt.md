@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-08-26 - After countdown evidence, restart the browser; reload can retain stalled GL (tests/shoot.mjs:main)
+  OxAlphaRally's isolated gravel capture passed, but the full corpus stalled twice after
+  photographing the start-line countdown. Reloading the app still stalled. Closing the
+  capture harness and opening a fresh browser made the exact two-shot sequence pass while
+  leaving the deliberately stateful jump-to-landing pair in one process.
+
 - 2026-08-25 - Bloom invents clipping the scene never had; test with bloom off before hunting geometry (render.js:BRIGHT_FRAG)
   OpusRally showed white discs that came and went on distant hillsides. With the
   bloom weight set to 0 the scene produced ZERO near-white pixels there over 180
