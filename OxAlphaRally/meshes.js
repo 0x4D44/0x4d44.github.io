@@ -27,7 +27,7 @@ export const TRIANGLE_BUDGET = Object.freeze({
 });
 
 export const EVENT_BRANDING = Object.freeze({
-  event: "OPUS RALLY",
+  event: "OXALPHA RALLY",
   subtitle: "CRESTFALL STAGES",
   service: "SERVICE PARK",
   sponsors: Object.freeze([
@@ -536,12 +536,12 @@ const SPONSOR_WHITE = clampPaint("#f4f4f0", DECAL_CEILING);
 // mode drives the height field; everything else (colour, roughness, normal) is
 // derived from that one field so a lit surface never disagrees with itself.
 const TEXTURE_DEFS = Object.freeze({
-  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], tint: [0.05, 0.03, 0.02], rough: [0.78, 0.98], relief: 2.6, lift: 0.55 },
+  gravel: { mode: "pebble", albedo: [0.355, 0.315, 0.255], tint: [0.05, 0.03, 0.02], rough: [0.78, 0.98], relief: 1.35, lift: 0.55 },
   tarmac: { mode: "asphalt", albedo: [0.118, 0.120, 0.128], tint: [0.02, 0.02, 0.02], rough: [0.52, 0.86], relief: 1.0, lift: 0.35 },
-  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], tint: [0.05, 0.035, 0.02], rough: [0.82, 0.98], relief: 2.0, lift: 0.45 },
+  dirt: { mode: "soil", albedo: [0.255, 0.200, 0.140], tint: [0.05, 0.035, 0.02], rough: [0.82, 0.98], relief: 1.20, lift: 0.45 },
   snow: { mode: "drift", albedo: [0.800, 0.845, 0.905], tint: [0.02, 0.02, 0.04], rough: [0.38, 0.72], relief: 1.5, lift: 0.30 },
-  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], tint: [0.075, 0.085, 0.030], rough: [0.72, 0.95], relief: 2.2, lift: 0.44 },
-  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], tint: [0.05, 0.045, 0.04], rough: [0.62, 0.92], relief: 3.0, lift: 0.44 },
+  grass: { mode: "blades", albedo: [0.150, 0.215, 0.095], tint: [0.035, 0.040, 0.018], rough: [0.72, 0.95], relief: 1.15, lift: 0.68 },
+  rock: { mode: "strata", albedo: [0.250, 0.242, 0.228], tint: [0.05, 0.045, 0.04], rough: [0.62, 0.92], relief: 1.50, lift: 0.44 },
   bark: { mode: "bark", albedo: [0.150, 0.118, 0.085], tint: [0.05, 0.04, 0.025], rough: [0.80, 0.98], relief: 2.4, lift: 0.5 },
   foliage: { mode: "leaf", albedo: [0.115, 0.185, 0.075], tint: [0.05, 0.07, 0.03], rough: [0.66, 0.90], relief: 1.4, lift: 0.45, alpha: true },
   concrete: { mode: "concrete", albedo: [0.330, 0.325, 0.310], tint: [0.02, 0.02, 0.02], rough: [0.66, 0.90], relief: 1.1, lift: 0.4 },
@@ -1519,19 +1519,33 @@ vRoadUv = uv;
 const ROAD_FRAGMENT_HEAD = `
 uniform sampler2D uVergeMap;
 uniform vec3 uVergeNorm;
+uniform vec3 uRoadMeanRGB;
+uniform vec3 uVergeMeanRGB;
 varying vec4 vDetail;
 varying vec2 vRoadUv;
 `;
 
+// Road grain needs to survive around the car, but not beat against itself at
+// chase-camera and landscape distances. `detailGain` also reins in the source
+// maps' unusually hard black flecks before the distance fade begins.
+export const ROAD_DESPECKLE = Object.freeze({
+  near: 16.0, far: 125.0, normalDamp: 0.90, detailGain: 0.22,
+});
+
 const ROAD_MAP_FRAGMENT = `
 vec4 sampledDiffuseColor = texture2D( map, vRoadUv );
 vec3 vergeTex = texture2D( uVergeMap, vRoadUv * 0.63 ).rgb * uVergeNorm;
+sampledDiffuseColor.rgb = mix( uRoadMeanRGB, sampledDiffuseColor.rgb, ${ROAD_DESPECKLE.detailGain.toFixed(2)} );
+vergeTex = mix( uVergeMeanRGB, vergeTex, ${ROAD_DESPECKLE.detailGain.toFixed(2)} );
+float roadCalm = smoothstep( ${ROAD_DESPECKLE.near.toFixed(1)}, ${ROAD_DESPECKLE.far.toFixed(1)}, length( vViewPosition ) );
+sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, uRoadMeanRGB, roadCalm );
+vergeTex = mix( vergeTex, uVergeMeanRGB, roadCalm );
 sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vergeTex, vDetail.w );
 sampledDiffuseColor.rgb *= 1.0 - 0.22 * vDetail.x + 0.12 * vDetail.y;
 diffuseColor *= sampledDiffuseColor;
 `;
 
-function injectRoadShader(material, roadSet, vergeSet) {
+function injectRoadShader(material, roadSet, vergeSet, THREE) {
   const norm = [
     roadSet.albedoMean[0] / vergeSet.albedoMean[0],
     roadSet.albedoMean[1] / vergeSet.albedoMean[1],
@@ -1540,6 +1554,10 @@ function injectRoadShader(material, roadSet, vergeSet) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uVergeMap = { value: vergeSet.map };
     shader.uniforms.uVergeNorm = { value: norm };
+    shader.uniforms.uRoadMeanRGB = { value: roadSet.albedoMean };
+    // `vergeTex` is normalised to the road map, so its post-normalisation mean
+    // is the road mean too.
+    shader.uniforms.uVergeMeanRGB = { value: roadSet.albedoMean };
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>${ROAD_VERTEX_HEAD}`)
       .replace("#include <begin_vertex>", `#include <begin_vertex>${ROAD_VERTEX_BODY}`);
@@ -1550,9 +1568,21 @@ function injectRoadShader(material, roadSet, vergeSet) {
       // edge: the same albedo, opposite gloss.
       .replace("#include <roughnessmap_fragment>",
         `#include <roughnessmap_fragment>
-roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );`)
-      .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 );");
+roughnessFactor = clamp( roughnessFactor * ( 1.0 - 0.30 * vDetail.x + 0.14 * vDetail.y ) - 0.50 * vDetail.z, 0.05, 1.0 );`);
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "roughnessFactor = clamp(",
+      `roughnessFactor = mix( roughness, roughnessFactor, ${ROAD_DESPECKLE.detailGain.toFixed(2)} * (1.0 - roadCalm) );
+roughnessFactor = clamp(`,
+    );
+    const dampLine = `mapN.xy *= normalScale * (1.0 - ${ROAD_DESPECKLE.normalDamp.toFixed(2)} * roadCalm) * ${ROAD_DESPECKLE.detailGain.toFixed(2)} * clamp( 1.0 - 0.60 * vDetail.x + 0.75 * vDetail.y + 0.40 * vDetail.w, 0.1, 3.0 );`;
+    const patched = terrainNormalFragment(THREE, dampLine);
+    if (patched.include) {
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <normal_fragment_maps>", patched.text);
+    } else {
+      shader.fragmentShader = shader.fragmentShader
+        .replace("mapN.xy *= normalScale;", dampLine);
+    }
   };
   material.customProgramCacheKey = () => "opusrally-road-detail";
   return material;
@@ -1995,7 +2025,7 @@ export function buildRoadMesh(THREE, stage, opts = {}) {
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
-    }), tex), tex, vergeTex);
+    }), tex), tex, vergeTex, THREE);
     m.name = `road-${props.name.toLowerCase()}`;
     const slot = materials.length;
     materials.push(m);
@@ -2165,7 +2195,9 @@ function latticeNoise(i, j, cell, seed) {
 // Where the distance de-speckle starts and finishes, in metres, and how much of
 // the normal detail dies with it. Baked into the terrain shader as literals;
 // exported so a test can hold the shader to the declared numbers.
-export const TERRAIN_DESPECKLE = Object.freeze({ near: 26.0, far: 170.0, normalDamp: 0.65 });
+export const TERRAIN_DESPECKLE = Object.freeze({
+  near: 26.0, far: 170.0, normalDamp: 0.90, detailGain: 0.20,
+});
 
 const TERRAIN_VERTEX_HEAD = `
 attribute vec4 splat;
@@ -2202,6 +2234,9 @@ vec4 sampledDiffuseColor = texture2D( map, vGroundUv );
 vec3 rockTex = texture2D( uRockMap, vGroundUv ).rgb;
 vec3 dirtTex = texture2D( uDirtMap, vGroundUv * 1.37 ).rgb;
 float calm = smoothstep( ${TERRAIN_DESPECKLE.near.toFixed(1)}, ${TERRAIN_DESPECKLE.far.toFixed(1)}, length( vViewPosition ) );
+sampledDiffuseColor.rgb = mix( uGrassMeanRGB, sampledDiffuseColor.rgb, ${TERRAIN_DESPECKLE.detailGain.toFixed(2)} );
+rockTex = mix( uRockMeanRGB, rockTex, ${TERRAIN_DESPECKLE.detailGain.toFixed(2)} );
+dirtTex = mix( uDirtMeanRGB, dirtTex, ${TERRAIN_DESPECKLE.detailGain.toFixed(2)} );
 sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, uGrassMeanRGB, calm );
 rockTex = mix( rockTex, uRockMeanRGB, calm );
 dirtTex = mix( dirtTex, uDirtMeanRGB, calm );
@@ -2211,7 +2246,8 @@ sampledDiffuseColor.rgb = sampledDiffuseColor.rgb * vSplat.y
 // One tile is about sixteen metres. Without a second, far coarser tap the repeat
 // reads as a grid the moment the ground stops being close.
 float macro = texture2D( map, vGroundUv * 0.113 ).g / uGrassMeanG;
-sampledDiffuseColor.rgb *= mix( 1.0, macro, 0.45 );
+macro = mix( macro, 1.0, calm * 0.82 );
+sampledDiffuseColor.rgb *= mix( 1.0, macro, 0.26 );
 diffuseColor *= sampledDiffuseColor;
 `;
 
@@ -2253,10 +2289,12 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet, THREE) {
       .replace("#include <begin_vertex>", `#include <begin_vertex>${TERRAIN_VERTEX_BODY}`);
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>${TERRAIN_FRAGMENT_HEAD}`)
-      .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT);
+      .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT)
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+roughnessFactor = mix( roughness, roughnessFactor, ${TERRAIN_DESPECKLE.detailGain.toFixed(2)} * (1.0 - calm) );`);
     // Bare rock and scree are the relief on a hillside; grass is nearly flat.
     // Out where the albedo has calmed, the relief calms with it.
-    const dampLine = `mapN.xy *= normalScale * (1.0 - ${TERRAIN_DESPECKLE.normalDamp.toFixed(2)} * calm)`
+    const dampLine = `mapN.xy *= normalScale * (1.0 - ${TERRAIN_DESPECKLE.normalDamp.toFixed(2)} * calm) * ${TERRAIN_DESPECKLE.detailGain.toFixed(2)}`
       + " * (1.0 + 1.1 * (vSplat.x + vSplat.z));";
     const patched = terrainNormalFragment(THREE, dampLine);
     if (patched.include) {
@@ -2599,13 +2637,15 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
             + TERRAIN_PALETTE.dirt[k] * wd + grassCol[k] * wg
             + jitter * 0.25);
         }
-        // The ploughed-out strip beside a snow road carries what the blade
-        // threw onto it: whitest at the edge, thinning out over ten metres or
-        // so, gone before the field beyond can notice. A dry stage never
-        // enters this branch, so its colours stay bit-for-bit what they were.
+        // Falling snow settles across the landscape, with deeper plough cast
+        // beside the road. Without the broad cover a blizzard drew white flakes
+        // and fog over a green summer hillside. A dry stage never enters this
+        // branch, so its colours stay bit-for-bit what they were.
         if (snow > 0) {
           const edge = roadDist - halfWidthOf(stage, near.index);
-          const snowW = snow * (1 - smoothstep(1.5, 11, edge)) * 0.9;
+          const settledW = snow * (0.18 + (1 - rockW) * 0.12);
+          const bankW = snow * (1 - smoothstep(1.5, 11, edge)) * 0.88;
+          const snowW = settledW + (1 - settledW) * bankW;
           if (snowW > 0) {
             for (let k = 0; k < 3; k += 1) {
               col[k] = saturate(col[k] + (TERRAIN_PALETTE.snow[k] - col[k]) * snowW);
@@ -2806,7 +2846,11 @@ export function carDimensions(spec) {
     noseZ: frontAxle + frontOverhang,
     tailZ: rearAxle - rearOverhang,
     halfWidth,
-    bodyHalfWidth: track * 0.5 - 0.085,
+    // Carry the shoulder almost to the tyre face. The former 85 mm inset made
+    // the flare a 210–225 mm horizontal shelf, so every corner read as a box
+    // bolted onto an otherwise narrow, tall shell. This widens only the visible
+    // shoulder; the quoted outer width and the physics track stay unchanged.
+    bodyHalfWidth: track * 0.5 + 0.020,
     flare, mirrorOut,
     beltY: g + 0.895,
     sillY: g + 0.155,
@@ -3101,7 +3145,12 @@ function archFlareGeometry(b, d, hubZ, col) {
       const z = hubZ + Math.sin(a) * r;
       const y = d.hubY + Math.cos(a) * rY;
       rails[0].push([side * inner, y, z]);
-      rails[1].push([side * outer, y - 0.030, z]);
+      // Full tyre coverage at the crown, feathering back into the shoulder at
+      // the arch ends. A constant outer rail drew a rectangular shelf in every
+      // three-quarter view even though the opening itself was curved.
+      const crown = Math.pow(Math.max(0, Math.cos(a)), 0.6);
+      const flareX = inner + (outer - inner) * (0.18 + crown * 0.82);
+      rails[1].push([side * flareX, y - 0.020 - crown * 0.010, z]);
     }
     for (let k = 0; k + 1 < rails[0].length; k += 1) {
       const p0 = rails[0][k], p1 = rails[0][k + 1], p2 = rails[1][k + 1], p3 = rails[1][k];
@@ -3482,14 +3531,17 @@ function buildArchLiners(b, d, hubs, col) {
 // low, torso raked forward, hands at quarter past three.
 function buildDriver(b, L) {
   const x = -L.seatX, f = L.floor, zS = L.zSeat;
-  const suit = [0.075, 0.085, 0.105];
+  const suit = [0.090, 0.115, 0.165];
   const helmetCol = [0.700, 0.695, 0.670];
   const visorCol = [0.030, 0.032, 0.038];
   pushTaper(b, x, f, zS + 0.04, 0.34, 0.38, 0.31, 0.33, 0.04, 0.30, suit);
   pushTaper(b, x, f, zS - 0.06, 0.32, 0.30, 0.38, 0.22, 0.26, 0.64, suit, -0.09);
-  pushBlob(b, x, f + 0.60, zS - 0.14, 0.19, 0.075, 0.09, suit);
-  pushBlob(b, x, f + 0.76, zS - 0.26, 0.105, 0.115, 0.11, helmetCol, 2);
-  pushBox(b, x, f + 0.74, zS - 0.165, 0.13, 0.045, 0.05, visorCol);
+  pushBlob(b, x, f + 0.60, zS - 0.14, 0.23, 0.085, 0.10, suit);
+  // Oversize the low-poly helmet slightly, then let the broad black visor name
+  // the form. At exterior-camera distance the old 170 mm pale blob had no human
+  // read through two layers of tinted glass.
+  pushBlob(b, x, f + 0.76, zS - 0.26, 0.150, 0.140, 0.135, helmetCol, 2);
+  pushBox(b, x, f + 0.820, zS - 0.135, 0.230, 0.060, 0.045, visorCol);
   for (const grip of [-0.15, 0.15]) {
     const sx = x + Math.sign(grip) * 0.16, sy = f + 0.56, sz = zS - 0.12;
     const gx = L.wheelX + grip, gy = L.wheelY - 0.01, gz = L.wheelZ + 0.10;
@@ -3684,8 +3736,8 @@ function cabinLayout(d) {
     seatX: hw * 0.46,
     wheelX: -hw * 0.44,
     wheelY: d.beltY + 0.075,
-    wheelZ: c.zWs - 0.44,
-    wheelR: 0.165,
+    wheelZ: c.zWs - 0.37,
+    wheelR: 0.135,
     wheelTilt: 0.38,                         // radians back from vertical
   };
 }
@@ -3729,14 +3781,14 @@ function buildHarness(b, L, x, col) {
 // rake tips it after, which is exactly what a steering column does. The rim wears
 // suede, not moulded plastic: a lit material of its own, because the wheel is in
 // every cockpit frame and trim-black read as a hole punched in the dash.
-const SUEDE = [0.150, 0.130, 0.108];
+const SUEDE = [0.094, 0.091, 0.089];
 function steeringWheelGeometry(b, L, col, bossCol) {
   const rim = [];
   for (let k = 0; k <= 16; k += 1) {
     const a = (k / 16) * TAU;
     rim.push([Math.cos(a) * L.wheelR, Math.sin(a) * L.wheelR, 0]);
   }
-  pushTube(b, rim, 0.019, 5, col, false);
+  pushTube(b, rim, 0.017, 5, col, false);
   for (const ang of [Math.PI * 0.15, Math.PI * 0.85, Math.PI * 1.5]) {
     const ca = Math.cos(ang), sa = Math.sin(ang);
     pushTube(b, [
@@ -3819,7 +3871,10 @@ function binnacleFrame(L) {
 
 function buildBinnacleFaces(b, L) {
   const { cz, ca, sa } = binnacleFrame(L);
-  const faceCol = [0.42, 0.40, 0.36];
+  // A gauge face is smoked glass, not a lamp. The material adds the small
+  // backlight needed at night; a pale albedo plus that emissive term clipped the
+  // three discs into featureless cream blobs in daylight.
+  const faceCol = [0.055, 0.060, 0.066];
   for (const g of binnacleGauges(L)) {
     // Local frame per dial: disc in XY, +Z out of the face; P() tilts that up
     // toward the eye and moves it onto the fascia. Doubled over like the harness
@@ -4135,11 +4190,11 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   const wheelMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05, vertexColors: true }));
   const dialMat = vertexAlbedo(new THREE.MeshStandardMaterial({
     roughness: 0.5, metalness: 0.0,
-    emissive: 0xffc06a, emissiveIntensity: 0.85, vertexColors: true,
+    emissive: 0x7aa8b0, emissiveIntensity: 0.16, vertexColors: true,
   }));
   const needleMat = vertexAlbedo(new THREE.MeshStandardMaterial({
     roughness: 0.5, metalness: 0.0,
-    emissive: 0xff3010, emissiveIntensity: 1.1, vertexColors: true,
+    emissive: 0xff3010, emissiveIntensity: 0.55, vertexColors: true,
   }));
   // The lamp-pod bar is moulded plastic like the rest of the trim, but it must
   // not SHARE the trim material: render.js binds the headlight level to the first
@@ -5623,4 +5678,3 @@ export function disposeAll() {
   clearLiveryCache();
   clearSignCache();
 }
-
