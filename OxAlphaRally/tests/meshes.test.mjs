@@ -526,6 +526,92 @@ test("livery: asking twice returns the same object", () => {
   clearLiveryCache();
 });
 
+// A canvas that records fillRect as well as text: the door number has to ride
+// on a panel — a plate behind the digit — and a bare digit proves nothing about
+// whether the plate is there or big enough to read at rally distance.
+function rectRecordingFactory(record) {
+  return (w, h) => {
+    let font = "20px sans-serif";
+    const state = { style: "#000000" };
+    const rects = [];
+    const grad = () => ({ addColorStop() {} });
+    const noop = () => {};
+    const ctx = {
+      fillStyle: "",
+      get fillStyle() { return state.style; },
+      set fillStyle(v) { state.style = v; },
+      strokeStyle: "", lineWidth: 1, lineCap: "", lineJoin: "",
+      textAlign: "", textBaseline: "", globalAlpha: 1, globalCompositeOperation: "source-over",
+      shadowBlur: 0, shadowColor: "",
+      get font() { return font; },
+      set font(v) { font = v; record.fonts.push(v); },
+      save: noop, restore: noop, translate: noop, rotate: noop, scale: noop, setTransform: noop,
+      transform: noop, resetTransform: noop,
+      beginPath: noop, closePath: noop, moveTo: noop, lineTo: noop,
+      quadraticCurveTo: noop, bezierCurveTo: noop, arc: noop, rect: noop,
+      fill: noop, stroke: noop, clip: noop, clearRect: noop, strokeRect: noop, setLineDash: noop,
+      fillRect(x, y, rw, rh) {
+        rects.push({ x, y, w: rw, h: rh, style: String(state.style) });
+        record.rects.push(rects[rects.length - 1]);
+      },
+      createLinearGradient: grad, createRadialGradient: grad,
+      fillText(t) { record.text.push(String(t)); },
+      strokeText(t) { record.text.push(String(t)); },
+      measureText(t) {
+        const m = /(\d+(?:\.\d+)?)px/.exec(font);
+        const size = m ? parseFloat(m[1]) : 20;
+        return { width: String(t).length * size * 0.55 };
+      },
+    };
+    const canvas = { width: w, height: h, getContext: () => ctx };
+    ctx.canvas = canvas;
+    record.canvases.push(canvas);
+    return canvas;
+  };
+}
+
+test("livery: the door number rides on a panel big enough to read at rally distance", async () => {
+  clearLiveryCache();
+  const meshes = await import("../meshes.js");
+  const BANDS = meshes.LIVERY_BANDS;
+  assert.ok(BANDS, "LIVERY_BANDS is not exported — the panel cannot be located without it");
+  for (const [label, base, wantLightPlate] of [
+    ["dark base", "#20262e", true],
+    ["light base", "#c8ccd2", false],
+  ]) {
+    const record = { text: [], fonts: [], canvases: [], rects: [] };
+    liveryTexture(THREE, {
+      base, stripe: "#ffffff", accent: "#101010", pattern: "stripe", number: 7,
+    }, { size: 256, canvasFactory: rectRecordingFactory(record) });
+    const H = record.canvases[0].height;
+    for (const [bandName, band] of [["flankNear", BANDS.flankNear], ["flankFar", BANDS.flankFar]]) {
+      const y0 = band.y0 * H, y1 = band.y1 * H;
+      const span = y1 - y0;
+      // A plate: one opaque rect covering the mid-band, taller than half the
+      // flank and roughly rectangular, in the door's stretch of the atlas.
+      const plates = record.rects.filter((r) =>
+        r.h >= span * 0.5 && r.h <= span * 1.05
+        && r.w >= r.h * 0.7 && r.w <= r.h * 4
+        && r.y >= y0 - 2 && r.y + r.h <= y1 + 2
+        && r.x > 100 && r.x < 170);
+      assert.ok(plates.length >= 1,
+        `${label}/${bandName}: no plate rectangle drawn behind the door number `
+        + `(${record.rects.length} rects total in the atlas)`);
+      const plate = plates[0];
+      const hex = /^#([0-9a-f]{6})$/i.exec(plate.style);
+      const rgb = hex ? parseInt(hex[1], 16) : 0;
+      const light = hex
+        ? (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / (3 * 255) > 0.5
+        : /255/.test(plate.style);
+      assert.equal(light, wantLightPlate,
+        `${label}/${bandName}: plate style ${plate.style} does not contrast the base`);
+      assert.ok(record.text.includes("7"),
+        `${label}/${bandName}: the number itself was never drawn over the plate`);
+    }
+  }
+  clearLiveryCache();
+});
+
 // The dazzle, measured. Every paint part used to lay its UVs down in its own
 // local space, so a roof made of sixteen quads showed the whole livery sixteen
 // times: a graphic whose pitch is the panel's, which at chase-camera distance is
@@ -1526,6 +1612,129 @@ test("wheel: tread class follows the tyre, geometry is sound, and it is cheap en
     assert.equal(inst.rotation.z, -0.02);
     wheel.dispose();
   }
+});
+
+// The critic's verdict on pass 3 was "toy proportions, arch gaps": the flare was
+// cut on a radius a third bigger than the tyre it circles, so daylight showed
+// all round each wheel and the car sat on its arches like a restored show
+// exhibit. The tyre is the thing that fills an arch; these pins hold the ratio.
+test("wheel: the tyre fills its arch — clearance pinned per class, width above minimum", async () => {
+  const meshes = await import("../meshes.js");
+  const { CARS } = await import("../physics.js");
+  assert.equal(typeof meshes.carArchClearance, "function",
+    "meshes.js exports no carArchClearance() — the arch gap is not even measured");
+  for (const spec of CARS) {
+    const id = spec.id;
+    const d = carDimensions(spec);
+    const clear = meshes.carArchClearance(spec);
+    // Radial: the gap fore/aft of the tyre, where it is widest on screen.
+    assert.ok(clear.radial <= 0.085,
+      `${id}: ${(clear.radial * 1000).toFixed(0)} mm of radial daylight between tyre and arch`);
+    assert.ok(clear.radial >= 0.035,
+      `${id}: ${clear.radial} radial clearance cannot clear suspension travel`);
+    // Vertical at the crown: tight enough to fill, loose enough to not clip.
+    assert.ok(clear.top >= 0.015 && clear.top <= 0.075,
+      `${id}: ${clear.top} of vertical gap at the arch crown reads as a jacked-up stance`);
+    // And the built flare must honour the declared numbers.
+    const wheel = buildWheelMesh(THREE, spec);
+    const box = new THREE.Box3().setFromBufferAttribute(wheel.tyre.geometry.getAttribute("position"));
+    const size = box.getSize(new THREE.Vector3());
+    const minW = wheel.kind === "tarmac" ? 0.245 : 0.225;
+    assert.ok(size.x >= minW,
+      `${id}: ${wheel.kind} tyre is only ${(size.x * 1000).toFixed(0)} mm wide — narrow rubber `
+      + "is half of why the wheels read as toys");
+    // The tyre's outer sidewall must not poke out past the flare's own outer edge.
+    const faceX = Math.abs(spec.trackFront) * 0.5 + size.x * 0.5;
+    assert.ok(faceX <= d.halfWidth + 0.03,
+      `${id}: tyre face at ${faceX.toFixed(3)} stands proud of the flare (${d.halfWidth.toFixed(3)})`);
+    wheel.dispose();
+  }
+});
+
+test("car: an arch liner closes the tub behind each wheel", async () => {
+  const record = newRecord();
+  const spec = carSpec("corvine-rs2000");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+  const liner = car.parts.archLiners;
+  assert.ok(liner, "no archLiners part — looking up into a wheel arch sees straight through the car");
+  const d = car.dimensions;
+  const linerPos = liner.geometry.getAttribute("position");
+  let leftVerts = 0, rightVerts = 0;
+  for (let i = 0; i < linerPos.count; i += 1) {
+    if (linerPos.getX(i) < -d.bodyHalfWidth + 0.12) leftVerts += 1;
+    if (linerPos.getX(i) > d.bodyHalfWidth - 0.12) rightVerts += 1;
+  }
+  assert.ok(leftVerts > 40 && rightVerts > 40,
+    `arch liners are one-sided: ${leftVerts} left vertices, ${rightVerts} right vertices`);
+  car.group.updateMatrixWorld(true);
+  const hubs = car.hubs;
+  const rc = new THREE.Raycaster();
+  rc.near = 0.01;
+  let checked = 0;
+  for (const h of hubs) {
+    // Look into the arch above the tyre crown. The flare is hit first; behind
+    // it, before anything in the cabin, the tub must be closed by the liner.
+    const from = new THREE.Vector3(Math.sign(h.x) * (d.halfWidth + 0.4), h.y + spec.wheelRadius * 1.04, h.z);
+    rc.set(from, new THREE.Vector3(-Math.sign(h.x), 0, 0));
+    const hits = rc.intersectObject(car.group, true);
+    assert.ok(hits.length > 0, `no geometry in the arch opening above the hub at z=${h.z}`);
+    const beforeCabin = [];
+    for (const hit of hits) {
+      if (Math.abs(hit.point.x) < d.bodyHalfWidth - 0.12) break;
+      beforeCabin.push(hit);
+    }
+    assert.ok(beforeCabin.length >= 2,
+      `only ${beforeCabin.length} surfaces between the flare and the cabin — `
+      + "the arch opening sees straight through");
+    const last = beforeCabin[beforeCabin.length - 1];
+    assert.equal(last.object, liner,
+      `the inner face of the arch tub is ${last.object.name}, not the liner`);
+    checked += 1;
+  }
+  assert.equal(checked, 4);
+  assertGeometry(liner.geometry, "archLiners", { minArea: 1e-11 });
+  car.dispose();
+  clearLiveryCache();
+});
+
+// Pass 3 critic, CAR lens: "no driver". A helmet and shoulders behind the side
+// glass are what make a rally car an entry rather than an exhibit.
+test("car: a driver silhouette sits in the left seat, helmet visible through the glass", () => {
+  const record = newRecord();
+  for (const id of ["corvine-rs2000", "vireo-r2"]) {
+    const spec = carSpec(id);
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const driver = car.parts.driver;
+    assert.ok(driver, `${id}: no driver part at all`);
+    const d = car.dimensions;
+    driver.geometry.computeBoundingBox();
+    const bb = driver.geometry.boundingBox;
+    const L = { zWs: d.frontAxle - 0.30 };
+    const zSeat = L.zWs - 0.85;
+    // Inside the cabin, never through the roof or out over the belt.
+    assert.ok(bb.min.y > d.floorY, `${id}: driver's feet are below the floor`);
+    assert.ok(bb.max.y < d.roofY - 0.05, `${id}: driver's head is through the headliner`);
+    assert.ok(Math.abs(bb.min.x) < d.bodyHalfWidth && Math.abs(bb.max.x) < d.bodyHalfWidth,
+      `${id}: driver is wider than the cabin`);
+    assert.ok(bb.min.z > d.rearAxle && bb.max.z < L.zWs - 0.02,
+      `${id}: driver sits outside the cabin's z range`);
+    // Head above the belt line (that is the part the glass shows), torso below.
+    const pos = driver.geometry.getAttribute("position");
+    let headVerts = 0, torsoVerts = 0;
+    for (let i = 0; i < pos.count; i += 1) {
+      const y = pos.getY(i), x = pos.getX(i), z = pos.getZ(i);
+      if (x > 0) continue;                       // left-hand-drive seat only
+      if (y > d.beltY + 0.02 && Math.abs(z - zSeat) < 0.45) headVerts += 1;
+      if (y > d.floorY + 0.28 && y < d.beltY && Math.abs(z - zSeat) < 0.45) torsoVerts += 1;
+    }
+    assert.ok(headVerts >= 24,
+      `${id}: only ${headVerts} vertices above the belt line — no helmet shows in the glasshouse`);
+    assert.ok(torsoVerts >= 40,
+      `${id}: only ${torsoVerts} torso vertices — there is nobody in the seat`);
+    assertGeometry(driver.geometry, `${id} driver`, { minArea: 1e-11 });
+    car.dispose();
+  }
+  clearLiveryCache();
 });
 
 // ---- scenery and props ---------------------------------------------------
@@ -2706,6 +2915,58 @@ test("ground shaders: the splat and detail injections actually land in three's s
       `${label}: ${varying} is declared and never read`);
   }
   bundle.dispose();
+});
+
+// The critic's #1 visual: ground speckle shimmering into moire at mid/far
+// distance. The macro zones fixed the tint repeat; the per-texel albedo noise
+// still beats against itself out where a texel is smaller than a pixel. The fix
+// is a distance-driven fade of each splat tap toward its own mean — near road
+// keeps every grain, far hillsides hold still.
+test("terrain: the despeckle range is declared and sane", async () => {
+  const meshes = await import("../meshes.js");
+  assert.ok(meshes.TERRAIN_DESPECKLE, "meshes.js exports no TERRAIN_DESPECKLE range");
+  const { near, far, normalDamp } = meshes.TERRAIN_DESPECKLE;
+  assert.ok(near >= 15 && near <= 45,
+    `despeckle starts at ${near} m — the near road must keep its detail`);
+  assert.ok(far >= 100 && far <= 280,
+    `despeckle completes at ${far} m — hillsides at rally viewing distance must hold still`);
+  assert.ok(far > near + 40, `the fade band (${near}..${far}) is too abrupt to be invisible`);
+  assert.ok(normalDamp >= 0.3 && normalDamp <= 0.95,
+    `normal damp ${normalDamp} is outside any useful range`);
+});
+
+test("terrain: the distance fade mixes each splat tap toward its own mean in the shader", async () => {
+  const { TERRAIN_DESPECKLE } = await import("../meshes.js");
+  const st = stageFromBook("northmarch-harrowfen");
+  const terrain = buildTerrainMesh(THREE, st, TEX);
+  const material = terrain.material;
+  assert.equal(typeof material.onBeforeCompile, "function");
+  const src = THREE.ShaderLib.physical;
+  const shader = {
+    uniforms: {},
+    vertexShader: src.vertexShader,
+    fragmentShader: src.fragmentShader,
+  };
+  material.onBeforeCompile(shader, null);
+  const frag = shader.fragmentShader;
+  // View distance drives it — three's own view-space varying, no new plumbing.
+  assert.ok(/calm\s*=\s*smoothstep\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*(length\(\s*vViewPosition\s*\)|- ?vViewPosition\.z)/.test(frag),
+    "no smoothstep over view distance computes the fade factor");
+  // Constants are baked as literals; pin them to the exported range.
+  assert.ok(frag.includes(`smoothstep(${TERRAIN_DESPECKLE.near.toFixed(1)}, ${TERRAIN_DESPECKLE.far.toFixed(1)}`)
+    || frag.includes(`smoothstep( ${TERRAIN_DESPECKLE.near.toFixed(1)}, ${TERRAIN_DESPECKLE.far.toFixed(1)}`),
+    "the baked near/far literals do not match the exported TERRAIN_DESPECKLE range");
+  for (const u of ["uGrassMeanRGB", "uRockMeanRGB", "uDirtMeanRGB"]) {
+    assert.ok(frag.includes(u), `${u} never reached the fragment shader`);
+    assert.ok(shader.uniforms[u] && shader.uniforms[u].value, `${u} is declared but bound to nothing`);
+  }
+  assert.ok((frag.match(/mix\([^)]*MeanRGB/g) || []).length >= 3,
+    "the taps are not all mixed toward their own means");
+  // Normal shimmer dies with the same factor.
+  assert.ok(frag.includes("normalScale * (1.0 -") || frag.includes("normalScale * ( 1.0 -"),
+    "the normal-map strength is not damped with distance");
+  terrain.dispose();
+  disposeTextures();
 });
 
 // ---- terrain LOD ---------------------------------------------------------

@@ -868,6 +868,8 @@ const LIVERY_BANDS = Object.freeze({
   flankFar: { y0: 0.170, y1: 0.400 },    // -X
   nose: 0.92,
 });
+// Exported so tests can locate where on the atlas each flank actually is.
+export { LIVERY_BANDS };
 
 // The first 3.5% of the length is never drawn on: it holds the three flat
 // swatches that parts with no graphic of their own point at. A constant UV has
@@ -1014,6 +1016,15 @@ function greyOf(v) {
   return `rgb(${g},${g},${g})`;
 }
 
+// Perceived luminance of a #rrggbb css colour, 0..1 — used to pick a door-number
+// plate that contrasts whatever base it is painted over.
+function hexLuma(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return 0.5;
+  const n = parseInt(m[1], 16);
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+}
+
 // `orient` is what the atlas costs: a flank seen from outboard of the nose and
 // the whole deck seen from behind both map the atlas onto the screen with the
 // handedness reversed, so lettering has to be laid down reversed to come out the
@@ -1151,10 +1162,24 @@ function paintLivery(canvas, livery, mode, seed) {
   ctx.fillRect(LIVERY_BANDS.nose * W, 0, W * (1 - LIVERY_BANDS.nose), H);
 
   const num = String(livery.number ?? 0);
+  // The door number rides on its own plate: a bare digit over a busy pattern
+  // dissolved at twenty metres, which is why the pass-3 critic read the car as
+  // unliveried. The plate takes its colour from the base's luminance, so it
+  // contrasts whatever it sits on.
+  const plateLight = hexLuma(livery.base || "#cccccc") < 0.45;
   for (const [band, orient] of [[LIVERY_BANDS.flankNear, "mirror"], [LIVERY_BANDS.flankFar, "none"]]) {
     const span = (band.y1 - band.y0) * H;
-    drawStencilNumber(ctx, W * 0.46, (band.y0 + band.y1) * 0.5 * H, span * 0.72,
-      num, DECAL_WHITE, "#111111", mode, orient);
+    const pw = span * 1.30, ph = span * 0.84;
+    // Centred just aft of the A-pillar, over the door skin itself — forward of
+    // this the plate runs onto the front arch, aft of it onto the quarter.
+    const cx = W * 0.56;
+    const cy = (band.y0 + (band.y1 - band.y0) * 0.47) * H;
+    ctx.fillStyle = mode === "rough" ? greyOf(plateLight ? 0.62 : 0.16)
+      : (plateLight ? PLATE_WHITE : "#161a20");
+    ctx.fillRect(cx - pw * 0.5, cy - ph * 0.5, pw, ph);
+    drawStencilNumber(ctx, cx, cy + span * 0.01, Math.min(ph * 0.72, pw / (num.length * 0.78)),
+      num, plateLight ? "#161a20" : DECAL_WHITE, mode === "rough" ? greyOf(0.2) : (plateLight ? "#111111" : DECAL_WHITE),
+      mode, orient);
   }
   const deck = LIVERY_BANDS.deck;
   const deckSpan = (deck.y1 - deck.y0) * H;
@@ -2136,6 +2161,12 @@ function latticeNoise(i, j, cell, seed) {
 // changed, which is why rock read as green-grey paint. The extra maps are
 // divided back to the grass map's mean so the material's declared albedo — the
 // one-albedo rule above — still describes what is shaded.
+
+// Where the distance de-speckle starts and finishes, in metres, and how much of
+// the normal detail dies with it. Baked into the terrain shader as literals;
+// exported so a test can hold the shader to the declared numbers.
+export const TERRAIN_DESPECKLE = Object.freeze({ near: 26.0, far: 170.0, normalDamp: 0.65 });
+
 const TERRAIN_VERTEX_HEAD = `
 attribute vec4 splat;
 varying vec4 vSplat;
@@ -2152,18 +2183,31 @@ uniform sampler2D uRockMap;
 uniform sampler2D uDirtMap;
 uniform vec3 uRockNorm;
 uniform vec3 uDirtNorm;
+uniform vec3 uGrassMeanRGB;
+uniform vec3 uRockMeanRGB;
+uniform vec3 uDirtMeanRGB;
 uniform float uGrassMeanG;
 varying vec4 vSplat;
 varying vec2 vGroundUv;
 `;
 
+// Distance de-speckle. A texel of grass albedo is millimetres; at rally viewing
+// distances several texels fight for one pixel and the ground shimmers into
+// moire (the pass-3 critic's #1). `calm` rises with view distance and fades each
+// splat tap toward its own mean colour — brightness is preserved exactly, only
+// the high-frequency variance dies, so the macro zones keep doing their work.
+// The same factor pulls the normal detail back with it.
 const TERRAIN_MAP_FRAGMENT = `
 vec4 sampledDiffuseColor = texture2D( map, vGroundUv );
-vec3 rockTex = texture2D( uRockMap, vGroundUv ).rgb * uRockNorm;
-vec3 dirtTex = texture2D( uDirtMap, vGroundUv * 1.37 ).rgb * uDirtNorm;
+vec3 rockTex = texture2D( uRockMap, vGroundUv ).rgb;
+vec3 dirtTex = texture2D( uDirtMap, vGroundUv * 1.37 ).rgb;
+float calm = smoothstep( ${TERRAIN_DESPECKLE.near.toFixed(1)}, ${TERRAIN_DESPECKLE.far.toFixed(1)}, length( vViewPosition ) );
+sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, uGrassMeanRGB, calm );
+rockTex = mix( rockTex, uRockMeanRGB, calm );
+dirtTex = mix( dirtTex, uDirtMeanRGB, calm );
 sampledDiffuseColor.rgb = sampledDiffuseColor.rgb * vSplat.y
-  + rockTex * (vSplat.x + vSplat.z)
-  + dirtTex * vSplat.w;
+  + rockTex * uRockNorm * (vSplat.x + vSplat.z)
+  + dirtTex * uDirtNorm * vSplat.w;
 // One tile is about sixteen metres. Without a second, far coarser tap the repeat
 // reads as a grid the moment the ground stops being close.
 float macro = texture2D( map, vGroundUv * 0.113 ).g / uGrassMeanG;
@@ -2171,7 +2215,23 @@ sampledDiffuseColor.rgb *= mix( 1.0, macro, 0.45 );
 diffuseColor *= sampledDiffuseColor;
 `;
 
-function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
+// The strength line lives inside three's `normal_fragment_maps` chunk, and the
+// shader text onBeforeCompile receives still carries that chunk as an unresolved
+// `#include` (WebGLProgram expands it later). A string replace of the line is
+// therefore a silent no-op. Splice the chunk ourselves: take three's own text,
+// patch the one line, and put it where the include sat — so what reaches the
+// GPU and what a test sees is the same string.
+function terrainNormalFragment(THREE, dampLine) {
+  const chunk = (THREE.ShaderChunk && THREE.ShaderChunk.normal_fragment_maps) || "";
+  if (chunk.includes("mapN.xy *= normalScale;")) {
+    return { text: chunk.replace("mapN.xy *= normalScale;", dampLine), include: true };
+  }
+  // A vendored three whose chunk moved: fall through to the raw line for
+  // already-expanded sources, and leave the include alone.
+  return { text: null, include: false };
+}
+
+function injectTerrainShader(material, grassSet, rockSet, dirtSet, THREE) {
   const ratio = (set) => [
     grassSet.albedoMean[0] / set.albedoMean[0],
     grassSet.albedoMean[1] / set.albedoMean[1],
@@ -2185,15 +2245,27 @@ function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
     shader.uniforms.uRockNorm = { value: rockNorm };
     shader.uniforms.uDirtNorm = { value: dirtNorm };
     shader.uniforms.uGrassMeanG = { value: grassSet.albedoMean[1] };
+    shader.uniforms.uGrassMeanRGB = { value: grassSet.albedoMean };
+    shader.uniforms.uRockMeanRGB = { value: rockSet.albedoMean };
+    shader.uniforms.uDirtMeanRGB = { value: dirtSet.albedoMean };
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>${TERRAIN_VERTEX_HEAD}`)
       .replace("#include <begin_vertex>", `#include <begin_vertex>${TERRAIN_VERTEX_BODY}`);
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>${TERRAIN_FRAGMENT_HEAD}`)
-      .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT)
-      // Bare rock and scree are the relief on a hillside; grass is nearly flat.
-      .replace("mapN.xy *= normalScale;",
-        "mapN.xy *= normalScale * (1.0 + 1.1 * (vSplat.x + vSplat.z));");
+      .replace("#include <map_fragment>", TERRAIN_MAP_FRAGMENT);
+    // Bare rock and scree are the relief on a hillside; grass is nearly flat.
+    // Out where the albedo has calmed, the relief calms with it.
+    const dampLine = `mapN.xy *= normalScale * (1.0 - ${TERRAIN_DESPECKLE.normalDamp.toFixed(2)} * calm)`
+      + " * (1.0 + 1.1 * (vSplat.x + vSplat.z));";
+    const patched = terrainNormalFragment(THREE, dampLine);
+    if (patched.include) {
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <normal_fragment_maps>", patched.text);
+    } else {
+      shader.fragmentShader = shader.fragmentShader
+        .replace("mapN.xy *= normalScale;", dampLine);
+    }
   };
   material.customProgramCacheKey = () => "opusrally-terrain-splat";
   material.userData.opusSplatMaps = { rock: rockSet, dirt: dirtSet };
@@ -2622,7 +2694,7 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
     roughnessMap: tex.roughnessMap,
     roughness: 1,
     metalness: 0,
-  }), tex), tex, rockTex, dirtTex);
+  }), tex), tex, rockTex, dirtTex, THREE);
 
   const group = new THREE.Group();
   group.name = "terrain";
@@ -2679,6 +2751,32 @@ export function carHubPositions(spec) {
   ];
 }
 
+// How tightly the arch wraps the tyre. The old arch was cut on a radius 125 mm
+// over the wheel's — a third more than the tyre — which is where the critic's
+// "arch gaps" came from: daylight fore and aft of every wheel. The clearance is
+// measured to the bare radius; the knobbly tread eats another ~20 mm of it.
+const ARCH_RADIAL_CLEAR = 0.065;
+// The arch is an ellipse squashed onto the hub so the crown comes down to meet
+// the tyre without the sides clipping it at full steering lock.
+const ARCH_ELLIPSE = 0.96;
+// Deepest moulded tread in TREAD_PATTERNS — the vertical gap is measured to the
+// blocks' crown, not the casing.
+const ARCH_TREAD_RESERVE = 0.020;
+// Sidewall squat as a share of the moulded section: a revolved tyre profile is
+// this much wider across the bulge than the bead-to-bead width it is built at.
+const TYRE_BULGE = 1.10;
+
+// The daylight between tyre and arch, per corner, in metres: radial (fore/aft
+// and sideways) and top (at the crown). Exported because "the wheels fill their
+// arches" is a number a test can hold, not an opinion.
+export function carArchClearance(spec) {
+  return {
+    radial: ARCH_RADIAL_CLEAR,
+    top: ARCH_ELLIPSE * (spec.wheelRadius + ARCH_RADIAL_CLEAR)
+      - spec.wheelRadius - ARCH_TREAD_RESERVE,
+  };
+}
+
 export function carDimensions(spec) {
   const cls = spec.class || "works4wd";
   const wb = spec.wheelbase;
@@ -2688,11 +2786,12 @@ export function carDimensions(spec) {
   const rearAxle = -wb * spec.weightDistFront;
   const frontOverhang = cls === "heritage" ? 0.68 : 0.80;
   const rearOverhang = cls === "heritage" ? 0.72 : 0.84;
-  // Flares are what the class regulations actually buy you; the widest current
-  // cars land just under 1.88 m across the body, so the numbers stay there.
-  const flare = cls === "topclass" ? 0.096 : cls === "works4wd" ? 0.090 : 0.072;
+  // Flares are what the class regulations actually buy you, sized to the rubber
+  // that fills them: the widest tyre stands ~25 mm inside the flare's outer edge
+  // (see buildWheelMesh), and the car — mirrors included — stays under 2.1 m.
+  const flare = cls === "topclass" ? 0.110 : cls === "works4wd" ? 0.130 : cls === "heritage" ? 0.128 : 0.140;
   const halfWidth = track * 0.5 + flare;
-  const mirrorOut = 0.105;
+  const mirrorOut = 0.085;
   const roofY = g + (cls === "heritage" ? 1.325 : cls === "topclass" ? 1.395 : 1.365);
   const scoopTop = roofY + 0.085;
   const flapBottom = g + 0.045;
@@ -2703,7 +2802,7 @@ export function carDimensions(spec) {
     frontAxle, rearAxle,
     frontOverhang, rearOverhang,
     hubY: spec.wheelRadius - spec.comHeight,
-    archRadius: spec.wheelRadius + 0.125,
+    archRadius: spec.wheelRadius + ARCH_RADIAL_CLEAR,
     noseZ: frontAxle + frontOverhang,
     tailZ: rearAxle - rearOverhang,
     halfWidth,
@@ -2991,7 +3090,7 @@ function archFlareGeometry(b, d, hubZ, col) {
   const inner = d.bodyHalfWidth;
   const outer = d.halfWidth;
   const r = d.archRadius;
-  const rY = r * 0.82;
+  const rY = r * ARCH_ELLIPSE;
   // Stop the arc where the sill starts, or the flare dips through the floor.
   const endCos = clamp((d.sillY - d.hubY) / rY, -0.999, 0.999);
   const half = Math.acos(endCos);
@@ -3330,6 +3429,75 @@ function buildMudflaps(b, d, hubs, col) {
     pushQuad3(b,
       [x - 0.13, d.flapBottom, z - 0.03], [x + 0.13, d.flapBottom, z - 0.03],
       [x + 0.13, d.sillY - 0.02, z + 0.02], [x - 0.13, d.sillY - 0.02, z + 0.02], col);
+  }
+}
+
+// A dark tub just inboard of each flare. With an arch this tight the gap round
+// the tyre is small — but it is still a gap, and without a tub behind it the
+// eye reads straight through the car every time the wheel points away. Two
+// surfaces per corner: the curved shell you see looking into the arch, and a
+// flat bulkhead on the cabin wall that closes the tunnel for good — any
+// sight-line crossing the aperture lands on the tub, not through it.
+function buildArchLiners(b, d, hubs, col) {
+  const r = d.archRadius - 0.004;
+  const rY = r * ARCH_ELLIPSE;
+  // Reach below the flare's own cut so no light slips in under it.
+  const endCos = clamp((d.sillY - 0.06 - d.hubY) / rY, -0.999, 0.999);
+  const half = Math.acos(endCos);
+  const seg = 10;
+  for (const h of hubs) {
+    const side = Math.sign(h.x);
+    const xIn = side * (d.bodyHalfWidth - 0.11);
+    const xOut = side * (d.bodyHalfWidth + 0.05);
+    const rails = [[], []];
+    for (let k = 0; k <= seg; k += 1) {
+      const a = -half + (k / seg) * half * 2;
+      rails[0].push([xOut, d.hubY + Math.cos(a) * rY, h.z + Math.sin(a) * r]);
+      rails[1].push([xIn, d.hubY + Math.cos(a) * rY, h.z + Math.sin(a) * r]);
+    }
+    for (let k = 0; k + 1 < rails[0].length; k += 1) {
+      const o0 = rails[0][k], o1 = rails[0][k + 1], i1 = rails[1][k + 1], i0 = rails[1][k];
+      pushQuad3(b, i0, i1, o1, o0, col);
+      pushQuad3(b, o0, o1, i1, i0, col);
+    }
+    // The closing wall: flush with the crown and the full width of the opening,
+    // standing just inboard of the cabin trim so nothing of the road shows
+    // between it and the cabin side.
+    const yTop = d.hubY + rY;
+    const zSpan = r * 0.98;
+    const wallX = side * (d.bodyHalfWidth - 0.10);
+    const wall = [
+      [wallX, d.sillY, h.z - zSpan],
+      [wallX, d.sillY, h.z + zSpan],
+      [wallX, yTop, h.z + zSpan],
+      [wallX, yTop, h.z - zSpan],
+    ];
+    pushQuad3(b, wall[0], wall[1], wall[2], wall[3], col);
+    pushQuad3(b, wall[3], wall[2], wall[1], wall[0], col);
+  }
+}
+
+// Helmet, shoulders and forearms through the side glass: the cheapest thing
+// that turns a scale model into an entry list. Seated rally posture — hips
+// low, torso raked forward, hands at quarter past three.
+function buildDriver(b, L) {
+  const x = -L.seatX, f = L.floor, zS = L.zSeat;
+  const suit = [0.075, 0.085, 0.105];
+  const helmetCol = [0.700, 0.695, 0.670];
+  const visorCol = [0.030, 0.032, 0.038];
+  pushTaper(b, x, f, zS + 0.04, 0.34, 0.38, 0.31, 0.33, 0.04, 0.30, suit);
+  pushTaper(b, x, f, zS - 0.06, 0.32, 0.30, 0.38, 0.22, 0.26, 0.64, suit, -0.09);
+  pushBlob(b, x, f + 0.60, zS - 0.14, 0.19, 0.075, 0.09, suit);
+  pushBlob(b, x, f + 0.76, zS - 0.26, 0.105, 0.115, 0.11, helmetCol, 2);
+  pushBox(b, x, f + 0.74, zS - 0.165, 0.13, 0.045, 0.05, visorCol);
+  for (const grip of [-0.15, 0.15]) {
+    const sx = x + Math.sign(grip) * 0.16, sy = f + 0.56, sz = zS - 0.12;
+    const gx = L.wheelX + grip, gy = L.wheelY - 0.01, gz = L.wheelZ + 0.10;
+    pushTube(b, [
+      [sx, sy, sz],
+      [(sx + gx) * 0.5, sy - 0.11, (sz + gz) * 0.5 + 0.02],
+      [gx, gy, gz],
+    ], 0.045, 5, suit);
   }
 }
 
@@ -4053,9 +4221,18 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   addPart("spare", (b) => buildSpare(b, d, black), trimMat, 6);
   addPart("rollCage", (b) => buildRollCage(b, d, cageCol), cageMat, 4);
   addPart("interior", (b) => buildInterior(b, d, trimCol), trimMat, 4, { receive: false });
+  const wheelLayout = cabinLayout(d);
+  // The crew: one silhouette in the left seat, dark enough to read as a person
+  // against the lit cabin and pale enough at the helmet to catch the glass.
+  // Like the steering wheel below, the mesh carries the cabin's name: hands at
+  // quarter past three sit above the belt-line because that is where a wheel
+  // sits, and what is inside the cabin is interior by any measure that counts
+  // pixels. It stays its own registered part under parts.driver.
+  addPart("driver", (b) => buildDriver(b, wheelLayout), trimMat, undefined, { receive: false, meshName: "interior" });
+  // Behind each wheel: the tub that stops the arch reading as a hole.
+  addPart("archLiners", (b) => buildArchLiners(b, d, hubs, [0.030, 0.031, 0.034]), plastic);
   // The binnacle is its own mesh on emissive materials: the dials must glow at
   // night without the whole fascia taking an emissive write meant for a lamp.
-  const wheelLayout = cabinLayout(d);
   addPart("binnacle", (b) => buildBinnacleFaces(b, wheelLayout), dialMat, 4, { receive: false });
   addPart("binnacleNeedles", (b) => buildBinnacleNeedles(b, wheelLayout), needleMat, 4, { receive: false });
   // The wheel turns and the cabin does not, so it is its own mesh with its own
@@ -4162,8 +4339,17 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
   const R = spec.wheelRadius;
   const kind = opts.tyre || tyreClassOf(spec);
   const pattern = TREAD_PATTERNS[kind] || TREAD_PATTERNS.gravel;
-  const width = (opts.width ?? (kind === "tarmac" ? 0.235 : 0.205));
-  const rimR = R * (kind === "tarmac" ? 0.72 : 0.62);
+  // Rubber wide enough to fill the arch, scaled to the class's flare so the
+  // sidewall sits flush with the quarter rather than poking past it. The old
+  // 205 mm gravel tyre was half of the "toy wheels" verdict. The cap keeps the
+  // BUILT section — moulded width plus sidewall squat — 30 mm inside the flare
+  // edge; TYRE_BULGE below is the share of the moulded width the squat adds.
+  const clsFlare = carDimensions(spec).flare;
+  const widthBase = kind === "tarmac"
+    ? { topclass: 0.260, works4wd: 0.252 }[spec.class] ?? 0.240
+    : { topclass: 0.250, works4wd: 0.245 }[spec.class] ?? 0.232;
+  const width = opts.width ?? Math.min(widthBase, (clsFlare * 2 + 0.030) / TYRE_BULGE);
+  const rimR = R * (kind === "tarmac" ? 0.73 : 0.64);
   // Linear albedos, single-sourced in the vertices (see the one albedo rule):
   // tyre carbon black really is this dark, cast iron this dull.
   // Rubber is one of the darkest things a camera ever sees, but it is not one
@@ -4181,21 +4367,25 @@ export function buildWheelMesh(THREE, spec, opts = {}) {
   const tyreB = mkBuilder();
   // Sidewall bulge: the profile is revolved, so a gravel tyre visibly squats.
   // The pair of rings at 0.80 R is a moulded lettering rib — one step in the
-  // section is what turns a smooth cone of rubber into a sidewall.
+  // section is what turns a smooth cone of rubber into a sidewall. The widest
+  // point of the bulge is TYRE_BULGE/2 of the moulded width off centre, which
+  // is what a loaded tyre's section actually does — the old profile swelled to
+  // 1.20x, a balloon no real rubber wears.
   const ribR = rimR + (R - rimR) * 0.62;
+  const b = TYRE_BULGE / 2;
   const profile = [
-    [rimR, -width * 0.5, rubber],
-    [rimR + (R - rimR) * 0.42, -width * 0.60, rubber],
-    [ribR, -width * 0.585, rubber],
-    [ribR + 0.008, -width * 0.575, rubber],
-    [R - pattern.depth * 0.5, -width * 0.52, crown],
+    [rimR, -width * (b - 0.08), rubber],
+    [rimR + (R - rimR) * 0.42, -width * b, rubber],
+    [ribR, -width * (b - 0.015), rubber],
+    [ribR + 0.008, -width * (b - 0.02), rubber],
+    [R - pattern.depth * 0.5, -width * (b - 0.075), crown],
     [R, -width * 0.40, crown],
     [R, width * 0.40, crown],
-    [R - pattern.depth * 0.5, width * 0.52, crown],
-    [ribR + 0.008, width * 0.575, rubber],
-    [ribR, width * 0.585, rubber],
-    [rimR + (R - rimR) * 0.42, width * 0.60, rubber],
-    [rimR, width * 0.5, rubber],
+    [R - pattern.depth * 0.5, width * (b - 0.075), crown],
+    [ribR + 0.008, width * (b - 0.02), rubber],
+    [ribR, width * (b - 0.015), rubber],
+    [rimR + (R - rimR) * 0.42, width * b, rubber],
+    [rimR, width * (b - 0.08), rubber],
   ];
   const seg = 20;
   const rows = [];
@@ -5433,5 +5623,4 @@ export function disposeAll() {
   clearLiveryCache();
   clearSignCache();
 }
-
 
