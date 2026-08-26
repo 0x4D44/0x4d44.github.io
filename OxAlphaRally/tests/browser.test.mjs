@@ -66,6 +66,18 @@ try {
     assert.ok(stage.props > 20, `${width}x${height}: no roadside furniture (${stage.props} props)`);
     assert.match(stage.name, /\S/, `${width}x${height}: the stage has no name`);
 
+    // Evidence capture must be able to hold one exact physics frame while
+    // Chrome encodes it. Without this, the car can land between the airborne
+    // probe and Page.captureScreenshot, producing a labelled-but-grounded shot.
+    assert.equal(await page.evaluate("typeof window.__opusRally.holdForCapture"), "function",
+      `${width}x${height}: the evidence harness cannot hold an exact frame`);
+    await page.evaluate("window.__opusRally.holdForCapture(true)");
+    const heldAt = await page.evaluate("window.__opusRally.frame.timeMs");
+    await page.delay(300);
+    assert.equal(await page.evaluate("window.__opusRally.frame.timeMs"), heldAt,
+      `${width}x${height}: simulation advanced while an evidence frame was held`);
+    await page.evaluate("window.__opusRally.holdForCapture(false)");
+
     // ---- the car drives when a key is held ----
     await page.evaluate("window.__opusRally.placeAt(200, 0)");
     await page.delay(400);

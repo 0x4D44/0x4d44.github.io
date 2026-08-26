@@ -64,7 +64,9 @@ const SHOTS = [
   },
   {
     key: "jump", title: "Airborne off a jump",
-    drive: { stage: "kloft-bjornhalt" }, feature: "jump", speed: 135, camera: "chase",
+    drive: { stage: "kloft-bjornhalt" }, feature: "jump", speed: 135, camera: "finish",
+    captureWhen: "airborne", minAirTime: 0.25, settle: 1800, freeze: true,
+    require: { airborne: true },
   },
   {
     key: "hairpin", title: "Hairpin",
@@ -101,7 +103,8 @@ const SHOTS = [
   {
     key: "phone", title: "Portrait phone, 390x844",
     drive: { stage: "kloft-bjornhalt" }, atFrac: 0.2, speed: 110, camera: "chase",
-    viewport: [390, 844],
+    viewport: [390, 844], autoDrive: false, settle: 1200, freeze: true,
+    require: { surface: "Gravel" },
   },
 ];
 
@@ -168,6 +171,9 @@ async function main() {
         // the game with its shadows and post switched off. Pin the quality: we
         // are photographing what a real GPU renders, not what SwiftShader can.
         await page.evaluate(`(window.OPUS_RALLY.game.renderer.setQuality(${JSON.stringify(QUALITY)}), true)`);
+        if (shot.freeze && shot.autoDrive === false) {
+          await page.evaluate("window.__opusRally.holdForCapture(true)");
+        }
         await page.delay(400);
         // Drive the stage rather than free-running with no input. placeAt drops
         // the car on the centreline pointing down the tangent; a couple of
@@ -179,14 +185,30 @@ async function main() {
           // for a fixed time — under a software rasteriser a fixed wait covers a
           // wildly variable distance.
           const target = await page.evaluate(String(where));
-          await page.waitFor(`${shot.key} to reach ${Math.round(target)} m`, async () => {
-            const d = await page.evaluate("window.__opusRally.frame.distance");
-            return d >= target ? d : null;
-          }, 40_000).catch(() => null);
+          if (shot.captureWhen === "airborne") {
+            // A jump feature marks its approach, not the single video frame at
+            // the apex. Waiting for the feature and then applying the normal
+            // settle delay photographs the landing while labelling it airborne.
+            // Poll the actual physics state, then hold that frame while the
+            // camera settles and Chrome encodes it.
+            await page.waitFor(`${shot.key} to become airborne`, async () => {
+              const f = await page.evaluate("window.__opusRally.frame");
+              return f.airborne && f.telemetry?.airTime >= (shot.minAirTime ?? 0)
+                && f.distance >= target - 30 ? f : null;
+            }, 40_000);
+          } else {
+            await page.waitFor(`${shot.key} to reach ${Math.round(target)} m`, async () => {
+              const d = await page.evaluate("window.__opusRally.frame.distance");
+              return d >= target ? d : null;
+            }, 40_000);
+          }
+          if (shot.freeze) {
+            await page.evaluate("window.__opusRally.holdForCapture(true)");
+          }
         }
       }
 
-      await page.delay(SETTLE);
+      await page.delay(shot.settle ?? SETTLE);
       const file = join(OUT, `${shot.key}.png`);
       // Record where the car actually was, so a reviewer can tell a real frame
       // from one taken in a field.
@@ -198,7 +220,8 @@ async function main() {
           const st = window.OPUS_RALLY.game.stage;
           return { speedKph: Math.round(f.speedKph), gear: f.gear, rpm: Math.round(f.rpm),
                    distance: Math.round(f.distance), surface: f.surfaceName,
-                   airborne: f.airborne, state: window.__opusRally.state,
+                   airborne: f.airborne, airTime: Number((f.telemetry?.airTime ?? 0).toFixed(3)),
+                   state: window.__opusRally.state,
                    // What stage this really is, so a reviewer never has to take
                    // the shot's name on trust.
                    stageId: st ? st.id : null,
@@ -207,6 +230,11 @@ async function main() {
         } catch (e) { return { error: String(e) }; }
       })()`);
       manifest.push({ ...shot, file, state, errors: page.errors });
+      for (const [field, wanted] of Object.entries(shot.require ?? {})) {
+        if (state[field] !== wanted) {
+          throw new Error(`${shot.key}: required ${field}=${JSON.stringify(wanted)}, got ${JSON.stringify(state[field])}`);
+        }
+      }
       if (page.errors.length) {
         process.stderr.write(`[shoot]   page errors: ${page.errors.join(" | ")}\n`);
       }
