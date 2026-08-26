@@ -67,6 +67,9 @@ import {
   CONTACT_SHADOW,
   makeContactShadowFit,
   contactShadowFit,
+  cabinLightLevels,
+  cabinLightPosition,
+  nightFraction,
 } from "../render.js";
 
 // Normalised to LF. Git hands this file out with CRLF endings on Windows, and
@@ -623,6 +626,262 @@ test("the cockpit eye is under the roof, not in the windscreen aperture", async 
   }
 });
 
+test("the cockpit camera frames the instruments", async () => {
+  // The binnacle was built to be read from this seat and then framed out
+  // entirely: the mount aimed level, the dials sat 19 degrees below the
+  // horizon, and every gauge projected below the bottom edge of the picture —
+  // the critic saw a wheel floating over a black sill. The dials must be in
+  // the frame, in the lower half where a dash lives, on every car.
+  const physics = await import("../physics.js");
+  for (const spec of physics.CARS) {
+    const { car, census } = await mountProbe(spec, "cockpit");
+    const share = census();
+    assert.ok(share("binnacle", "binnacleNeedles") >= 0.012,
+      `${spec.id}: the instruments cover ${(share("binnacle", "binnacleNeedles") * 100).toFixed(2)}% of the cockpit frame — they are framed out`);
+    car.dispose();
+  }
+});
+
+// ---- cockpit light mirror ------------------------------------------------
+//
+// The node tests cannot rasterise, so the cockpit's legibility is judged the
+// way the renderer itself computes it: real weather rig intensities, the real
+// car mesh's binnacle and dash, the same point-light falloff three uses, and
+// the same emissive terms. What the mirror says the eye receives is what the
+// frame shows.
+
+// Average of the up-facing triangle normals in a geometry — the binnacle fan
+// is doubled over both sides, so the up-facing half carries the face's tilt.
+function upNormal(geo) {
+  const pos = geo.attributes.position;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const n = new THREE.Vector3(), sum = new THREE.Vector3();
+  let count = 0;
+  for (let i = 0; i + 2 < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+    n.subVectors(c, b).cross(a.clone().sub(b));
+    if (n.y > 1e-6) { sum.add(n); count += 1; }
+  }
+  return count ? sum.normalize() : new THREE.Vector3(0, 1, 0);
+}
+
+// Mean vertex colour of the vertices near a point — the albedo the mirror
+// lights the surround with, read from the real fascia rather than guessed.
+function albedoNear(geo, p, radius) {
+  const pos = geo.attributes.position, col = geo.attributes.color;
+  const v = new THREE.Vector3();
+  let r = 0, g = 0, b = 0, count = 0;
+  for (let i = 0; i < pos.count; i += 1) {
+    v.fromBufferAttribute(pos, i);
+    if (v.distanceToSquared(p) > radius * radius) continue;
+    r += col.getX(i); g += col.getY(i); b += col.getZ(i);
+    count += 1;
+  }
+  return count ? [r / count, g / count, b / count] : [0.05, 0.05, 0.05];
+}
+
+function luminanceOf(rgb) {
+  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+}
+
+// three r158's point-light falloff for a ShaderMaterial-free standard material:
+// inverse square in the decay term, windowed by the cutoff.
+function pointIrradiance(intensity, cutoff, lightPos, p, n) {
+  const d = Math.hypot(lightPos.x - p.x, lightPos.y - p.y, lightPos.z - p.z);
+  const l = { x: (lightPos.x - p.x) / d, y: (lightPos.y - p.y) / d, z: (lightPos.z - p.z) / d };
+  const window = Math.pow(Math.max(0, Math.min(1, 1 - Math.pow(d / cutoff, 4))), 2);
+  const ndl = Math.max(0, l.x * n.x + l.y * n.y + l.z * n.z);
+  return intensity * window * ndl / Math.max(d * d, 1e-4);
+}
+
+async function cabinProbe() {
+  const meshes = await import("../meshes.js");
+  const physics = await import("../physics.js");
+  const spec = physics.CARS[0];
+  const car = meshes.buildCarMesh(THREE, spec);
+  car.group.updateMatrixWorld(true);
+  const binnacle = car.group.getObjectByName("binnacle");
+  const interior = car.group.getObjectByName("interior");
+  binnacle.geometry.computeBoundingBox();
+  const dial = new THREE.Vector3();
+  binnacle.geometry.boundingBox.getCenter(dial);
+  binnacle.localToWorld(dial);
+  const dash = dial.clone().add(new THREE.Vector3(0.30, 0, 0));
+  const nFace = upNormal(binnacle.geometry);
+  const dialAlbedo = albedoNear(binnacle.geometry, binnacle.worldToLocal(dial.clone()), 0.3);
+  const dashAlbedo = albedoNear(interior.geometry, interior.worldToLocal(dash.clone()), 0.3);
+  const dialMat = binnacle.material;
+  const eye = new THREE.Vector3(
+    mountLocalX({ halfWidth: car.dimensions.bodyHalfWidth, frontAxle: car.dimensions.frontAxle }, cameraParams("cockpit")),
+    cameraParams("cockpit").mountY + car.dimensions.ground,
+    mountLocalZ({ frontAxle: car.dimensions.frontAxle }, cameraParams("cockpit")),
+  );
+  return { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, eye };
+}
+
+// Step a weather rig until its headlight Schmitt trigger has settled, so the
+// night mirror sees the lamps the game actually drives with.
+async function settledRig(presetId) {
+  const weatherMod = await import("../weather.js");
+  const scene = new THREE.Scene();
+  const w = weatherMod.createWeather(THREE, scene, presetId, {
+    cloudTextureSize: 48, rainPool: 400, snowPool: 300, seed: "cabin-mirror",
+  });
+  const camera = new THREE.PerspectiveCamera(60, 1.6, 0.1, 5000);
+  for (let i = 0; i < 40; i += 1) weatherMod.stepWeather(w, camera, 1);
+  return w;
+}
+
+test("the cabin is lit to read, in day and at night", async () => {
+  // The mirror of the outcome the critic demanded: dials that stand off the
+  // dash, a dash that is not a hole, a fill that follows the world outside —
+  // and a wheel rim that catches a specular edge from somewhere directional.
+  const { car, dial, dash, nFace, dialAlbedo, dashAlbedo, dialMat, eye } = await cabinProbe();
+  // The rim as meshes.js builds it: a tube of radius ~0.165 in a plane raked
+  // 0.38 rad back about X, centred on the wheel layout. A specular band lands
+  // somewhere along the tube where the surface normal can bisect eye and lamp,
+  // so the mirror walks the ring and takes the best catch — a single sample
+  // with an up normal proves nothing about a tube.
+  const wheel = {
+    x: -car.dimensions.bodyHalfWidth * 0.44,
+    y: car.dimensions.beltY + 0.05 + 0.075,
+    z: car.dimensions.frontAxle - 0.30 - 0.44,
+  };
+  const TILT = 0.38, R = 0.165;
+  const ux = new THREE.Vector3(1, 0, 0);
+  const uy = new THREE.Vector3(0, Math.cos(-TILT), Math.sin(-TILT));
+  const ring = [];
+  for (let k = 0; k < 24; k += 1) {
+    const a = k / 24 * Math.PI * 2;
+    const radial = ux.clone().multiplyScalar(Math.cos(a)).addScaledVector(uy, Math.sin(a));
+    ring.push({
+      p: new THREE.Vector3(wheel.x, wheel.y, wheel.z).addScaledVector(radial, R),
+      n: radial,
+      t: ux.clone().multiplyScalar(-Math.sin(a)).addScaledVector(uy, Math.cos(a)),
+    });
+  }
+  for (const [label, presetId] of [["day", "golden-hour"], ["night", "night-clear"]]) {
+    const w = await settledRig(presetId);
+    const levels = cabinLightLevels({}, {
+      keyI: w.lights.key.intensity,
+      hemiI: w.lights.fill.intensity,
+      bounceI: w.lights.bounce.intensity,
+      ambientI: w.lights.ambient.intensity,
+      moonI: w.lights.moon.intensity,
+      night: nightFraction(w.current),
+      headlightLevel: w.metrics.headlights ? 1 : 0,
+    });
+    const light = cabinLightPosition({}, car.dimensions);
+
+    const irrDial = pointIrradiance(levels.fill, 2.4, light, dial, nFace);
+    const irrDash = pointIrradiance(levels.fill, 2.4, light, dash, nFace);
+    // The trim itself must receive light — a cabin the fill never reaches is
+    // the black hole the critic photographed, whatever the dials do.
+    const dashLum = luminanceOf(dashAlbedo) * irrDash;
+    assert.ok(dashLum > (label === "day" ? 0.010 : 0.0035),
+      `${label}: the dash surround mirrors at luminance ${dashLum.toFixed(4)} — the cabin fill does not reach it`);
+
+    // The dials must stand off the surround: emissive plus lit face against a
+    // lit fascia, at a glance, in both states.
+    const em = dialMat.emissive;
+    const emissiveLum = (0.2126 * em.r + 0.7152 * em.g + 0.0722 * em.b)
+      * dialMat.emissiveIntensity;
+    const dialLum = luminanceOf(dialAlbedo) * irrDial + emissiveLum;
+    assert.ok(dialLum > 1.8 * dashLum + 0.02,
+      `${label}: the dials mirror at ${dialLum.toFixed(4)} against a dash at ${dashLum.toFixed(4)} — no contrast`);
+
+    // The rim's specular band: a broad Blinn lobe off the tube toward the
+    // driving eye. The tube's curvature lets the effective normal sweep off the
+    // radial, so the catchable alignment is the half vector minus its tangent
+    // component. With no directional cabin light the term is zero everywhere.
+    let spec = 0;
+    for (const seg of ring) {
+      const v = eye.clone().sub(seg.p).normalize();
+      const lv = new THREE.Vector3(
+        light.x - seg.p.x, light.y - seg.p.y, light.z - seg.p.z);
+      const h = v.clone().add(lv.normalize()).normalize();
+      const ht = h.dot(seg.t);
+      const nhMax = Math.sqrt(Math.max(0, 1 - ht * ht));
+      const irr = pointIrradiance(levels.fill, 2.4, light, seg.p, seg.n);
+      spec = Math.max(spec, Math.pow(nhMax, 3) * irr);
+    }
+    assert.ok(spec > (label === "day" ? 0.05 : 0.015),
+      `${label}: the wheel rim mirrors a specular band of ${spec.toFixed(4)} — the rim has no light to catch`);
+  }
+
+  // The fill tracks the world outside, it is not a constant: the day level
+  // must exceed the night level even with the dash lamps on.
+  const day = await settledRig("golden-hour");
+  const night = await settledRig("night-clear");
+  const read = (w) => cabinLightLevels({}, {
+    keyI: w.lights.key.intensity, hemiI: w.lights.fill.intensity,
+    bounceI: w.lights.bounce.intensity, ambientI: w.lights.ambient.intensity,
+    moonI: w.lights.moon.intensity, night: nightFraction(w.current),
+    headlightLevel: w.metrics.headlights ? 1 : 0,
+  }).fill;
+  assert.ok(read(day) > read(night) * 1.5,
+    `the cabin fill does not track the exterior: day ${read(day).toFixed(3)} vs night ${read(night).toFixed(3)}`);
+  car.dispose();
+});
+
+test("tyre marks read on the road they were laid on", async () => {
+  // The sim has always recorded marks; the frames never showed one. The mirror
+  // here is the instance buffer itself: enough live stamps to draw a streak,
+  // fresh alpha dark enough to survive gravel and exposure, stamps long enough
+  // to read as one line, and a fade as they age.
+  const stageMod = await import("../stage.js");
+  const meshes = await import("../meshes.js");
+  const physics = await import("../physics.js");
+  const def = stageMod.STAGE_BOOK[0];
+  const stage = stageMod.generateStage(def.seed, { ...def, length: 800 });
+  const { api } = makeRenderer({ webgl2: true, quality: "medium", meshes });
+  const car = makeDustyCar();
+  car.spec = physics.CARS[0];
+  api.buildStage(stage, { car });
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+  const dt = 1 / 60;
+  for (let i = 0; i < 240; i += 1) {
+    car.pos.z += car.vel.z * dt;
+    for (const w of car.wheels) {
+      w.contactPoint.x = w.isLeft ? -0.75 : 0.75;
+      w.contactPoint.z = car.pos.z;
+      w.contactPoint.y = 0;
+      w.worldPos.x = w.contactPoint.x;
+      w.worldPos.z = car.pos.z;
+    }
+    api.update(frame, dt);
+  }
+  const marks = api.scene.getObjectByName("opus.marks");
+  assert.ok(marks, "the mark mesh is not in the scene");
+  const arr = marks.instanceMatrix.array;
+  const alpha = marks.geometry.attributes.aAlpha.array;
+  let live = 0, freshAlpha = 0, maxLen = 0;
+  for (let i = 0; i < alpha.length; i += 1) {
+    if (alpha[i] <= 0.01) continue;
+    live += 1;
+    const z = arr[i * 16 + 14];
+    const len = arr[i * 16 + 10]; // scale z of the stamp
+    maxLen = Math.max(maxLen, len);
+    if (car.pos.z - z < 12) freshAlpha = Math.max(freshAlpha, alpha[i]);
+  }
+  assert.ok(live >= 60, `only ${live} live marks after four seconds of sliding`);
+  assert.ok(maxLen >= 0.6, `the longest stamp is ${maxLen.toFixed(2)} m — a row of dots, not a streak`);
+  assert.ok(freshAlpha >= 0.45,
+    `fresh marks mirror at alpha ${freshAlpha.toFixed(2)} — too faint to survive gravel and exposure`);
+  // Stop laying rubber and advance into the declared final-quarter fade. A
+  // mark is meant to persist for most of a stage, so distance after four
+  // seconds is not an age oracle.
+  for (const w of car.wheels) w.contact = false;
+  for (let i = 0; i < 800; i += 1) api.update(frame, 0.05);
+  let agedAlpha = 0;
+  for (const a of alpha) agedAlpha = Math.max(agedAlpha, a);
+  assert.ok(agedAlpha < freshAlpha,
+    `marks do not fade as they age: fresh ${freshAlpha.toFixed(2)}, aged ${agedAlpha.toFixed(2)}`);
+  api.dispose();
+});
+
 test("the bonnet camera is out on the bonnet, with the bonnet in frame", async () => {
   // It shipped 1.20 m ahead of the centre of mass, which on half the cars is
   // past the nose: a free-floating viewpoint with no car in it at all, and the
@@ -936,10 +1195,12 @@ test("the wake carries the plume up, and only once the car is moving", () => {
 async function plumeAfter(seconds, dt, quality = "medium") {
   const stageMod = await import("../stage.js");
   const meshes = await import("../meshes.js");
+  const physics = await import("../physics.js");
   const def = stageMod.STAGE_BOOK[0];
   const stage = stageMod.generateStage(def.seed, { ...def, length: 800 });
   const { api } = makeRenderer({ webgl2: true, quality, meshes });
   const car = makeDustyCar();
+  car.spec = physics.CARS[0];
   api.buildStage(stage, { car });
   const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
   const steps = Math.round(seconds / dt);
