@@ -1972,7 +1972,7 @@ const _sample = makeCarSample();
 
 function defaultRendererFactory(three, canvas, opts) {
   if (!canvas || typeof canvas.getContext !== "function") {
-    throw new Error("OpusRally: createRenderer needs a canvas with getContext()");
+    throw new Error("OxAlphaRally: createRenderer needs a canvas with getContext()");
   }
   const attrs = {
     alpha: false,
@@ -1990,7 +1990,7 @@ function defaultRendererFactory(three, canvas, opts) {
     context = canvas.getContext("webgl", attrs) || canvas.getContext("experimental-webgl", attrs);
   }
   if (!context) {
-    throw new Error("OpusRally: this browser has no WebGL — the game cannot start");
+    throw new Error("OxAlphaRally: this browser has no WebGL — the game cannot start");
   }
   const renderer = new three.WebGLRenderer({ canvas, context, ...attrs });
   renderer.opusWebGL2 = webgl2;
@@ -3303,7 +3303,7 @@ if (uOxrLevel > 0.001) {
       return fn();
     } catch (err) {
       if (typeof console !== "undefined" && console.warn) {
-        console.warn("OpusRally render: optional mesh builder failed", err && err.message);
+        console.warn("OxAlphaRally render: optional mesh builder failed", err && err.message);
       }
       return null;
     }
