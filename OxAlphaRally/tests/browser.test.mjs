@@ -192,6 +192,42 @@ try {
       `${width}x${height}: the page reported errors:\n  ${errors.join("\n  ")}`);
   }
 
+  // Evidence captured at phone size must boot as a real touch device. Merely
+  // narrowing a desktop viewport leaves navigator.maxTouchPoints at zero and
+  // produces a misleading phone frame with no usable driving controls.
+  await page.setTouchEmulation(true, 5);
+  await page.setViewport(390, 844);
+  await page.navigate(APP_PATH);
+  await page.waitFor("the touch build to boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  await page.evaluate("window.__opusRally.drive({})");
+  await page.waitFor("the touch stage to build", () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+  const touchControls = await page.waitFor("visible touch controls", () => page.evaluate(`(() => {
+    const layer = document.querySelector("#touch-root .ort");
+    if (!layer) return null;
+    const controls = layer.querySelectorAll(".ort-c");
+    const visibleControls = Array.from(controls).filter((control) => {
+      const style = getComputedStyle(control);
+      const rect = control.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden"
+        && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
+    });
+    const visible = layer.getAttribute("data-hidden") !== "1"
+      && getComputedStyle(layer).display !== "none"
+      && layer.getBoundingClientRect().width > 0
+      && visibleControls.length >= 5;
+    return visible && controls.length >= 5
+      ? { visible, count: controls.length, visibleCount: visibleControls.length,
+          maxTouchPoints: navigator.maxTouchPoints }
+      : null;
+  })()`), 20_000);
+  assert.equal(touchControls.visible, true, "390x844: touch-control layer is hidden");
+  assert.ok(touchControls.count >= 5, `390x844: only ${touchControls.count} touch controls rendered`);
+  assert.ok(touchControls.visibleCount >= 5,
+    `390x844: only ${touchControls.visibleCount} touch controls are visible`);
+  assert.ok(touchControls.maxTouchPoints > 0,
+    "390x844: Chrome did not expose touch capability to the game");
+  await page.setTouchEmulation(false);
+
   // ---- every stage in the book generates and is drivable ----
   process.stderr.write("[opus-rally] generating every stage in the book\n");
   const book = await page.evaluate(`(async () => {

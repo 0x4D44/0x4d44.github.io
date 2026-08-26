@@ -231,6 +231,13 @@ export async function openHarness({ root, quiet = false, width = 1280, height = 
     });
   }
 
+  async function setTouchEmulation(enabled, maxTouchPoints = 5) {
+    await S("Emulation.setTouchEmulationEnabled", {
+      enabled: !!enabled,
+      maxTouchPoints: enabled ? Math.max(1, Math.round(maxTouchPoints)) : 1,
+    });
+  }
+
   async function navigate(url) {
     errors = [];
     consoleLines = [];
@@ -261,7 +268,7 @@ export async function openHarness({ root, quiet = false, width = 1280, height = 
   await setViewport(width, height);
 
   return {
-    port, evaluate, key, tap, click, screenshot, setViewport, navigate, waitFor, delay,
+    port, evaluate, key, tap, click, screenshot, setViewport, setTouchEmulation, navigate, waitFor, delay,
     send: S,
     get errors() { return errors.slice(); },
     get console() { return consoleLines.slice(); },

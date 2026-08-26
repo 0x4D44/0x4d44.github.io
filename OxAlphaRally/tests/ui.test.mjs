@@ -206,10 +206,12 @@ function countNodes(root) {
 group("wordmark", () => {
   const a = UI.wordmarkSpec();
   const b = UI.wordmarkSpec();
+  eq(a.text, "OXALPHA", "wordmark: the primary lockup names OxAlphaRally");
+  eq(a.sub, "RALLY", "wordmark: the secondary lockup completes OxAlphaRally");
   eq(a.missing, 0, "wordmark: every letter has a glyph");
   ok(a.width > 0 && a.height > 0, "wordmark: positive extent");
   eq(a.viewBox.length, 4, "wordmark: viewBox has four numbers");
-  ok(a.strokes.length >= 12, "wordmark: OPUS+RALLY emits many stroke subpaths", a.strokes.length);
+  ok(a.strokes.length >= 20, "wordmark: OXALPHA+RALLY emits many stroke subpaths", a.strokes.length);
   eq(a.shapes.length, 1, "wordmark: one chicane motif");
   eq(JSON.stringify(a), JSON.stringify(b), "wordmark: deterministic");
   for (const s of a.strokes) {
@@ -221,6 +223,7 @@ group("wordmark", () => {
   const svg = UI.wordmarkSvgString(a);
   ok(svg.startsWith("<svg") && svg.endsWith("</svg>"), "wordmark: svg string is a single element");
   ok(svg.includes(`viewBox="${a.viewBox.join(" ")}"`), "wordmark: svg carries the spec viewBox");
+  ok(svg.includes('aria-label="OxAlphaRally"'), "wordmark: accessibility name uses the product spelling");
   const custom = UI.wordmarkSpec({ text: "STAGE", sub: "NOTE" });
   eq(custom.missing, 0, "wordmark: alternate lockup also fully drawn");
 });
@@ -329,6 +332,8 @@ group("region lanes", () => {
 
 group("stylesheet covers what the builder emits", () => {
   const css = UI.styleText();
+  ok(/\.or-brandline h1\{[^}]*text-transform:none/.test(css),
+    "styleText preserves the OxAlphaRally product casing in the menu title");
   const emitted = new Set();
   for (const screen of UI.SCREENS) {
     const { ui } = renderedRoot(screen, DATA);

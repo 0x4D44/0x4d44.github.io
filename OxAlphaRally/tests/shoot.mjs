@@ -70,6 +70,12 @@ const SHOTS = [
     require: { airborne: true },
   },
   {
+    key: "landing", title: "Landing after the same jump",
+    follows: "jump", captureWhen: "landedAfterAirborne", freeze: true,
+    minCompression: 0.55,
+    require: { airborne: false },
+  },
+  {
     key: "hairpin", title: "Hairpin",
     drive: { stage: "kloft-bjornhalt" }, feature: "hairpin", speed: 60, camera: "chase",
   },
@@ -105,7 +111,8 @@ const SHOTS = [
     key: "phone", title: "Portrait phone, 390x844",
     drive: { stage: "kloft-bjornhalt" }, atFrac: 0.2, speed: 110, camera: "chase",
     viewport: [390, 844], autoDrive: false, settle: 1200, freeze: true,
-    require: { surface: "Gravel" },
+    touch: true,
+    require: { surface: "Gravel", touchControlsPresent: true, touchControlsVisible: true },
   },
 ];
 
@@ -113,6 +120,7 @@ async function main() {
   await mkdir(OUT, { recursive: true });
   const page = await openHarness({ root: ROOT, width: WIDTH, height: HEIGHT, quiet: false });
   const manifest = [];
+  let touchEmulated = false;
   try {
     await page.navigate(APP_PATH);
     await page.waitFor("the game to boot", () => page.evaluate("!!window.__opusRally"), 120_000);
@@ -129,6 +137,42 @@ async function main() {
 
       const [vw, vh] = shot.viewport ?? [WIDTH, HEIGHT];
       await page.setViewport(vw, vh);
+      if (!!shot.touch !== touchEmulated) {
+        touchEmulated = !!shot.touch;
+        await page.setTouchEmulation(touchEmulated, 5);
+        // Touch capability is sampled while the game boots. Re-navigate after
+        // changing emulation so the phone frame exercises the real product
+        // path instead of merely squeezing a desktop session to 390 pixels.
+        await page.navigate(APP_PATH);
+        await page.waitFor(`${shot.key} touch build to boot`,
+          () => page.evaluate("!!window.__opusRally"), 120_000);
+      }
+
+      let transition = null;
+      if (shot.follows) {
+        const prior = manifest.at(-1);
+        if (!prior || prior.key !== shot.follows || prior.state?.airborne !== true) {
+          throw new Error(`${shot.key}: requires an immediately preceding airborne ${shot.follows} frame`);
+        }
+        const startsAirborne = await page.evaluate("window.__opusRally.frame.airborne");
+        if (!startsAirborne) throw new Error(`${shot.key}: the held ${shot.follows} frame is no longer airborne`);
+        await page.evaluate("window.__opusRally.holdForCapture(false)");
+        transition = await page.waitFor(`${shot.key} suspension to compress after touchdown`,
+          () => page.evaluate(`(() => {
+            const h = window.__opusRally;
+            const f = h.frame;
+            const compression = Array.from(f.telemetry?.compression ?? []);
+            const maxCompression = compression.length ? Math.max(...compression) : 0;
+            if (f.airborne || (f.telemetry?.onGround ?? 0) < 1
+                || maxCompression < ${shot.minCompression ?? 0.55}) return null;
+            h.holdForCapture(true);
+            return {
+              from: ${JSON.stringify(shot.follows)}, airborneObserved: true,
+              landedObserved: true, onGround: f.telemetry.onGround,
+              compression, maxCompression: Number(maxCompression.toFixed(3)),
+            };
+          })()`), DRIVE_TIMEOUT);
+      }
 
       if (shot.drive) {
         const ok = await page.evaluate(`(async () => {
@@ -219,9 +263,30 @@ async function main() {
         try {
           const f = window.__opusRally.frame;
           const st = window.OPUS_RALLY.game.stage;
+          const touchLayer = document.querySelector("#touch-root .ort");
+          const touchControls = touchLayer?.querySelectorAll(".ort-c") ?? [];
+          const visibleTouchControlCount = Array.from(touchControls).filter((control) => {
+            const style = getComputedStyle(control);
+            const rect = control.getBoundingClientRect();
+            return style.display !== "none" && style.visibility !== "hidden"
+              && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
+          }).length;
+          const touchControlsVisible = !!touchLayer
+            && touchLayer.getAttribute("data-hidden") !== "1"
+            && getComputedStyle(touchLayer).display !== "none"
+            && touchLayer.getBoundingClientRect().width > 0
+            && visibleTouchControlCount >= 5;
+          const compression = Array.from(f.telemetry?.compression ?? []);
           return { speedKph: Math.round(f.speedKph), gear: f.gear, rpm: Math.round(f.rpm),
                    distance: Math.round(f.distance), surface: f.surfaceName,
                    airborne: f.airborne, airTime: Number((f.telemetry?.airTime ?? 0).toFixed(3)),
+                   onGround: f.telemetry?.onGround ?? 0,
+                   compression,
+                   maxCompression: compression.length ? Number(Math.max(...compression).toFixed(3)) : 0,
+                   touchControlsPresent: !!touchLayer && touchControls.length >= 5,
+                   touchControlsVisible,
+                   touchControlCount: touchControls.length,
+                   visibleTouchControlCount,
                    state: window.__opusRally.state,
                    // What stage this really is, so a reviewer never has to take
                    // the shot's name on trust.
@@ -230,11 +295,21 @@ async function main() {
                    weather: window.OPUS_RALLY.game.weather?.current?.name ?? null };
         } catch (e) { return { error: String(e) }; }
       })()`);
+      if (transition) state.transition = transition;
       manifest.push({ ...shot, file, state, errors: page.errors });
       for (const [field, wanted] of Object.entries(shot.require ?? {})) {
         if (state[field] !== wanted) {
           throw new Error(`${shot.key}: required ${field}=${JSON.stringify(wanted)}, got ${JSON.stringify(state[field])}`);
         }
+      }
+      if (shot.captureWhen === "landedAfterAirborne") {
+        if (!state.transition?.airborneObserved || !state.transition?.landedObserved
+            || state.maxCompression < (shot.minCompression ?? 0.55)) {
+          throw new Error(`${shot.key}: no proven airborne-to-compressed-landing transition`);
+        }
+      }
+      if (shot.touch && state.visibleTouchControlCount < 5) {
+        throw new Error(`${shot.key}: expected at least five visible touch controls, got ${state.visibleTouchControlCount}`);
       }
       if (page.errors.length) {
         process.stderr.write(`[shoot]   page errors: ${page.errors.join(" | ")}\n`);
