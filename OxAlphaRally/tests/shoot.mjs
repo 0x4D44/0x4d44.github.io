@@ -26,6 +26,7 @@ const ROOT = resolve(import.meta.dirname, "../..");
 const APP_PATH = "/" + basename(resolve(import.meta.dirname, "..")) + "/";
 const SETTLE = Number(arg("settle", 2200));
 const QUALITY = arg("quality", "high");
+const DRIVE_TIMEOUT = Number(arg("drive-timeout", 120_000));
 
 // Each shot names the moment it is meant to capture, so a reviewer can say
 // "shot 7, the crest, looks flat" rather than "one of the screenshots".
@@ -195,12 +196,12 @@ async function main() {
               const f = await page.evaluate("window.__opusRally.frame");
               return f.airborne && f.telemetry?.airTime >= (shot.minAirTime ?? 0)
                 && f.distance >= target - 30 ? f : null;
-            }, 40_000);
+            }, DRIVE_TIMEOUT);
           } else {
             await page.waitFor(`${shot.key} to reach ${Math.round(target)} m`, async () => {
               const d = await page.evaluate("window.__opusRally.frame.distance");
               return d >= target ? d : null;
-            }, 40_000);
+            }, DRIVE_TIMEOUT);
           }
           if (shot.freeze) {
             await page.evaluate("window.__opusRally.holdForCapture(true)");
