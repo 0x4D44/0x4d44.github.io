@@ -11,7 +11,7 @@ import { clamp, saturate, lerp, invLerp, sign } from "./mathx.js";
 import { SURFACE, surfaceProps } from "./surfaces.js";
 
 export const BRAND = Object.freeze({
-  name: "OpusRally",
+  name: "OxAlphaRally",
   tagline: "Twelve stages. One clock.",
   // A restrained palette: two neutrals deep enough to sit under a 3D scene, one
   // hot accent, and three status hues that never appear as decoration.

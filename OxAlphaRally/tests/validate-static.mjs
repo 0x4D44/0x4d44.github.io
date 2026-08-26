@@ -29,15 +29,15 @@ const html = existsSync(htmlPath) ? readFileSync(htmlPath, "utf8") : "";
 const data = readFileSync(join(root, "data.js"), "utf8");
 const catalogue = readFileSync(join(root, "index.html"), "utf8");
 
-check(existsSync(htmlPath), "opus-rally/index.html exists");
+check(existsSync(htmlPath), "OxAlphaRally/index.html exists");
 for (const module of MODULES) {
-  check(existsSync(join(appDir, module)), `opus-rally/${module} exists`);
+  check(existsSync(join(appDir, module)), `OxAlphaRally/${module} exists`);
 }
 check(existsSync(join(appDir, "three.module.min.js")), "three.js is vendored beside the document");
 check(existsSync(join(appDir, "THREE-LICENSE.txt")), "the vendored three.js keeps its MIT licence");
 
 check(/<meta\b[^>]*name=["']viewport["']/i.test(html), "a viewport meta is present");
-check(/<title>[^<]*OpusRally[^<]*<\/title>/i.test(html), "the title names OpusRally");
+check(/<title>[^<]*OxAlphaRally[^<]*<\/title>/i.test(html), "the title names OxAlphaRally");
 check(/<meta\b[^>]*name=["']description["']/i.test(html), "a description meta is present");
 check(/<noscript>/i.test(html), "there is a noscript fallback");
 
@@ -79,13 +79,19 @@ for (const file of MODULES) {
   );
 }
 
-// The catalogue has to know about it, or nobody finds it.
-check(/slug:\s*["']opus-rally["']/.test(data), "data.js carries an opus-rally entry");
+// The catalogue has to know about this game specifically. The existing
+// opus-rally entry is not evidence that its successor is published.
+const entry = data.match(/slug:\s*["']OxAlphaRally["'][\s\S]{0,900}?\n\s*},/);
+check(!!entry, "data.js carries an OxAlphaRally entry");
+const entryText = entry ? entry[0] : "";
 check(
-  /url:\s*["']https:\/\/0x4d44\.github\.io\/opus-rally\/["']/.test(data),
-  "the catalogue entry points at the published URL",
+  /url:\s*["']https:\/\/0x4d44\.github\.io\/OxAlphaRally\/["']/.test(entryText),
+  "the OxAlphaRally entry points at the case-sensitive published URL",
 );
-const illustration = data.match(/slug:\s*["']opus-rally["'][\s\S]{0,600}?illustration:\s*["']([^"']+)["']/);
+for (const tag of ["games", "simulation", "transport"]) {
+  check(new RegExp(`["']${tag}["']`).test(entryText), `the OxAlphaRally entry carries the ${tag} tag`);
+}
+const illustration = entryText.match(/illustration:\s*["']([^"']+)["']/);
 check(!!illustration, "the catalogue entry names an illustration");
 if (illustration) {
   check(
@@ -94,8 +100,8 @@ if (illustration) {
   );
 }
 check(
-  /"opus-rally"/.test(data.slice(data.indexOf("window.COLLECTIONS"))),
-  "opus-rally sits on a shelf in COLLECTIONS",
+  /["']OxAlphaRally["']/.test(data.slice(data.indexOf("window.COLLECTIONS"))),
+  "OxAlphaRally sits on a shelf in COLLECTIONS",
 );
 
 // A stray zip or build artefact in the directory means something was copied in
@@ -127,8 +133,8 @@ for (const file of [...MODULES, "index.html"]) {
 }
 
 if (failures.length) {
-  console.error(`opus-rally: ${failures.length} of ${checks} checks failed`);
+  console.error(`OxAlphaRally: ${failures.length} of ${checks} checks failed`);
   for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log(`opus-rally: ${checks} static checks passed`);
+console.log(`OxAlphaRally: ${checks} static checks passed`);
