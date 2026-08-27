@@ -487,9 +487,16 @@ export const WEATHER_PRESETS = Object.freeze([
     // stood at 52 against a sky of 71, bright enough to read every bank in the
     // frame without the lamps. The whole rig comes down again, and the flat terms
     // further than the moon — a directional keeps the shape of a bank, a flat
-    // fill only greys it — so the verge now sits near 22 under the same sky and
-    // the beam is the only thing on the stage worth having. The exposure stays
-    // where it is: it is what the sky, the horizon and the snow read through.
+    // fill only greys it. The exposure stays where it is: it is what the sky, the
+    // horizon and the snow read through.
+    //
+    // The rig below is NOT what was making this stage read as dusk, and cutting
+    // it further will not fix that. Forcing every light in the scene to zero
+    // inside the render call left the ground at a flat 58 everywhere, because
+    // render.js's night grade lift put the black point there; the whole moonlit
+    // verge only reached 60-77 on top of it. With that lift corrected the same
+    // preset puts the verge at 32-48 under a sky of 52/67/116 and the beam is
+    // the only thing on the stage worth having.
     hemiIntensity: 0.085, ambientIntensity: 0.007,
     bounceColour: [0.05, 0.06, 0.09], bounceIntensity: 0.008,
     shadowStrength: 0.55, exposure: 1.5, turbidity: 1.8,
@@ -2063,12 +2070,34 @@ function updatePrecipitation(w, dt) {
     nu.uOpacity.value = 0.52 + 0.26 * snowRate;
     const wl = Math.hypot(wx, wz) || 1;
     nu.uWindDir.value.set(wx / wl, 0, wz / wl);
-    const flakeLit = clamp(0.06 + 1.9 * skyLevel, 0.05, 1.0);
+    // Ice scatters; it does not emit. A flake carries the light of the air it is
+    // falling through and no more, so the division is a definition rather than a
+    // taste: it puts uColour's luminance ON the haze, whatever precipColour's
+    // own hue costs. The lit figure it replaces was 1.9x the haze, which is also
+    // above the sky — read off the live uniforms, a blizzard's flakes carried
+    // 0.98-1.18 against a haze of 0.700, and light snow's 0.63-0.68 against
+    // 0.339, while inverting the composite on the rendered sky pixel puts the
+    // blizzard's dome at 0.78 and light snow's at about 0.52.
+    //
+    // The tone curve is what turns that into an artefact. At the peak alpha the
+    // field runs at, a flake above its own sky composites to 231 over a sky of
+    // 224 and to 227 over a dark bank of 137, so the whole upper half of its
+    // Gaussian lands past the top of the ACES shoulder: seven codes of it
+    // against the cloud, where a snowfall should read most, and a flat white
+    // chip with a one-pixel edge against everything else. On the haze the same
+    // profile lands where the curve still has slope, so the near flakes soften
+    // and the far field reads as the veil it is — it now dims the whole frame
+    // two to three codes rather than dotting it. The 0.05 floor is for a night
+    // stage, where the haze is nearly black and the lamps do the lighting.
+    const flakeLit = Math.max(0.05, skyLevel / Math.max(1e-3, luminance(c.precipColour)));
     nu.uColour.value.setRGB(
       c.precipColour[0] * flakeLit, c.precipColour[1] * flakeLit, c.precipColour[2] * flakeLit,
     );
+    // The bright end of the per-flake spread, which the shader mixes towards as
+    // vShade falls: a flake catching more of the sky than its neighbours sits at
+    // the haze, not half again above it.
     nu.uSkyColour.value.setRGB(
-      w._hazeCol[0] * 1.6, w._hazeCol[1] * 1.6, w._hazeCol[2] * 1.6,
+      w._hazeCol[0] * 1.25, w._hazeCol[1] * 1.25, w._hazeCol[2] * 1.25,
     );
     nu.uCamPos.value.copy(w._camPos);
   }

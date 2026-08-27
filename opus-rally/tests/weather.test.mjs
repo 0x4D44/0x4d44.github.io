@@ -1752,6 +1752,49 @@ test("a flake stays sampleable at the distance it is drawn at, without gaining l
   }
 });
 
+test("a flake carries no more light than the air it is falling through", () => {
+  // Ice scatters; it does not emit. A flake's radiance is bounded by what is
+  // lighting it, and the shipped figure was not: read off the live uniforms, a
+  // blizzard's flakes carried 0.98-1.18 against a haze of 0.700 and a dome of
+  // 0.78, and light snow's 0.63-0.68 against 0.339 and about 0.52.
+  //
+  // The tone curve is what turns that into an artefact. A flake above its own
+  // sky composites onto the top of the ACES shoulder, so the upper half of its
+  // Gaussian is one byte: seven levels of it against the cloud, where a snowfall
+  // should read most, and a flat white chip with a one-pixel edge against
+  // anything darker. Both ends are checked, because either one alone can be
+  // satisfied by a flake that has simply gone out.
+  for (const id of ["light-snow", "blizzard"]) {
+    const w = precipRig(id, 20);
+    const u = w.snow.uniforms;
+    const haze = lum3(w._hazeCol);
+    const dim = lum3([u.uColour.value.r, u.uColour.value.g, u.uColour.value.b]);
+    // SNOW_FRAG mixes towards uSkyColour as vShade falls, and vShade bottoms out
+    // at 0.55, so this is the brightest flake the field can actually contain.
+    const end = lum3([u.uSkyColour.value.r, u.uSkyColour.value.g, u.uSkyColour.value.b]);
+    const brightest = 0.45 * end + 0.55 * dim;
+
+    // The base colour is the air's own level, to within the rounding of the
+    // division that puts it there. Nothing here is a taste threshold: at 1.9x it
+    // read 1.99 for light snow and 1.40 for a blizzard.
+    assert.ok(dim <= haze * 1.001,
+      `${id}: a flake carries ${dim.toFixed(3)} against a haze of ${haze.toFixed(3)} `
+      + `— ${(dim / haze).toFixed(2)}x the air lighting it`);
+    // And the per-flake spread may lift a flake off that level, not off the sky.
+    // uSkyColour is the end the shader mixes towards as vShade falls, so this
+    // bounds the whole field; it read 1.82x before.
+    assert.ok(brightest <= haze * 1.15,
+      `${id}: the brightest flake in the field carries ${brightest.toFixed(3)} against a `
+      + `haze of ${haze.toFixed(3)} — ${(brightest / haze).toFixed(2)}x`);
+    // Not switched off either: a flake dimmed well under the air it hangs in is
+    // a grey smear, and clear weather with a particle count in it.
+    assert.ok(dim >= haze * 0.85,
+      `${id}: a flake carries only ${dim.toFixed(3)} against a haze of `
+      + `${haze.toFixed(3)} — the fall has gone grey`);
+    disposeWeather(w);
+  }
+});
+
 test("how hard it is falling is carried by the count, not by the per-particle alpha", () => {
   // Both scaled with the rate, so the two multiplied: a light shower came out a
   // quarter as visible as it should be while a downpour came out a wall. The

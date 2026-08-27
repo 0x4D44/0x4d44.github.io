@@ -2116,14 +2116,29 @@ test("the brightest part of the headlight pool still shows the road surface", as
 
   const radiance = (a) => (a / Math.PI) * peak;
   const hot = toneByte(radiance(albedo), rig.exposure);
-  const gap = toneByte(radiance(light), rig.exposure) - toneByte(radiance(dark), rig.exposure);
+  const gapAt = (e) => toneByte((light / Math.PI) * e, rig.exposure)
+    - toneByte((dark / Math.PI) * e, rig.exposure);
+  const gap = gapAt(peak);
 
-  assert.ok(gap >= 12,
+  // The bar is the curve's own best, not a round number. ACES gives this grain
+  // its widest separation somewhere in the mid-tones and squeezes it away up the
+  // shoulder, so scanning for the best says how much of the surface the pool's
+  // brightness is costing — a quantity with a meaning, unlike "12 codes".
+  let bestGap = 0;
+  for (let e = 0.05; e <= 8; e += 0.01) bestGap = Math.max(bestGap, gapAt(e));
+
+  // At the 620 cd pod and 150 cd dips that shipped, the peak was 3.9 lx: gravel's
+  // mean tone-mapped to 218 and this grain to 21 codes, 57% of the best the curve
+  // can give, while the bright end of the road texture photographed at 233-247
+  // across the whole 6-20 m core. A quarter of the surface contrast is as much as
+  // the shoulder may take.
+  assert.ok(gap >= bestGap * 0.75,
     `a light and a dark gravel grain come out ${gap} codes apart in the hot spot `
-    + `(${peak.toFixed(2)} lx at ${peakZ.toFixed(1)} m) — the surface is gone`);
-  assert.ok(hot <= 242,
+    + `(${peak.toFixed(2)} lx at ${peakZ.toFixed(1)} m), against ${bestGap} where the curve `
+    + "is steepest — the shoulder has eaten the surface");
+  assert.ok(hot <= 208,
     `the brightest road under the lamps tone-maps to ${hot}/255 at ${peakZ.toFixed(1)} m — `
-    + "no headroom left for bloom or a wet specular");
+    + "no headroom left for the bright end of the texture, bloom or a wet specular");
 
   // And the pool has to still be a pool: far brighter than the night sky it is
   // competing with, out to where the driver needs to see.
@@ -2306,7 +2321,121 @@ test("the composite still tone-maps after exposure, so the lamp numbers mean wha
     + "were sized against that curve and have to be re-sized");
 });
 
-test("the beam cone only exists where there is something in the air to scatter off", () => {
+// The rest of the composite, transcribed from COMPOSITE_FRAG: the lift, gamma,
+// gain and saturation that run between ACES and the sRGB encode. toneByte()
+// above stops at the curve, which is enough to size a lamp against and useless
+// for a black point, because a black point is made of nothing but grade.
+const GRADE_ANCHORS = [
+  "vec3 graded = uGain * (col + uLift * (1.0 - col));",
+  "graded = pow(max(graded, vec3(0.0)), uGamma);",
+  "graded = mix(vec3(l), graded, uSaturation);",
+];
+
+function gradedLuma(u, sceneLinear) {
+  for (const line of GRADE_ANCHORS) {
+    assert.ok(RENDER_SRC.includes(line),
+      `render.js no longer contains "${line}" — this mirror grades a picture nobody draws`);
+  }
+  const vec = (v) => [v.x, v.y, v.z];
+  const lift = vec(u.uLift.value);
+  const gamma = vec(u.uGamma.value);
+  const gain = vec(u.uGain.value);
+  const graded = [0, 1, 2].map((i) => {
+    const col = acesFilmic(sceneLinear[i] * u.uExposure.value);
+    return Math.pow(Math.max(0, gain[i] * (col + lift[i] * (1 - col))), gamma[i]);
+  });
+  const l = 0.2126 * graded[0] + 0.7152 * graded[1] + 0.0722 * graded[2];
+  const sat = u.uSaturation.value;
+  const bytes = graded.map((v) => {
+    const c = Math.min(1, Math.max(0, l + (v - l) * sat));
+    const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+    return s * 255;
+  });
+  return 0.2126 * bytes[0] + 0.7152 * bytes[1] + 0.0722 * bytes[2];
+}
+
+// The composite's material, fished out of the post scene the stub is handed.
+// The quad's material is swapped per pass and the composite is the last one
+// rendered, so after a frame it is the one still attached.
+function compositeUniforms(gl) {
+  let found = null;
+  for (const scene of gl.rendered) {
+    scene.traverse((o) => {
+      if (o.material && o.material.uniforms && o.material.uniforms.uLift) found = o.material;
+    });
+  }
+  return found ? found.uniforms : null;
+}
+
+test("the night grade lifts the black point without becoming the picture", async () => {
+  const weatherMod = await import("../weather.js");
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api, gl } = makeRenderer({ webgl2: true });
+  gl.rendered = [];
+  const inner = gl.render.bind(gl);
+  gl.render = (scene, camera) => { if (scene) gl.rendered.push(scene); inner(scene, camera); };
+
+  const car = fakeCar(stage);
+  const weather = weatherMod.createWeather(THREE, api.scene, "night-clear");
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+  for (let i = 0; i < 10; i += 1) {
+    weatherMod.stepWeather(weather, api.camera, 1 / 60);
+    api.update(frame, 1 / 60);
+  }
+  const u = compositeUniforms(gl);
+  assert.ok(u, "the composite pass never ran, so there is no grade to measure");
+
+  const night = gradedLuma(u, [0, 0, 0]);
+  // The night term ran at 0.034/0.036/0.058, which puts a scene value of zero at
+  // (54,57,74) — luminance 58. Zeroing every light in the scene inside the render
+  // call left the ground at exactly that, flat, at every distance in the frame,
+  // and the moonlit verge only reached 60-77 on top of it: the grade was the
+  // picture, and night-clear photographed as dusk. weather.js's own bar for
+  // unlit gravel on this preset is 34 levels, so a black point at or above it
+  // means nothing the weather does can be seen.
+  assert.ok(night <= 30,
+    `the night grade puts the black point at ${night.toFixed(1)}/255 before a single `
+    + "photon reaches the frame — that is the grade, not the stage");
+  // And it is still a film black. A digital zero is the other failure: the night
+  // look is a lift, it is just a small one.
+  assert.ok(night >= 8,
+    `the night black point is ${night.toFixed(1)}/255 — a hole rather than a night`);
+
+  // Daylight keeps almost none of it, or a shadow cannot be a shadow.
+  const day = weatherMod.createWeather(THREE, api.scene, "midday-hard");
+  api.buildStage(stage, { car, weather: day });
+  const dayFrame = { car, stage, weather: day, alpha: 0, state: "racing", surface: fakeSurface() };
+  gl.rendered.length = 0;
+  for (let i = 0; i < 10; i += 1) {
+    weatherMod.stepWeather(day, api.camera, 1 / 60);
+    api.update(dayFrame, 1 / 60);
+  }
+  const noon = gradedLuma(compositeUniforms(gl), [0, 0, 0]);
+  // 0.012 of film lift was measured at roughly 30 levels here and cost the
+  // daylight scenes every shadow they had; the daylight term is a fortieth of
+  // that and comes out at 5. Anything approaching the night figure means
+  // nightFraction has stopped telling night from day, which it has done before.
+  assert.ok(noon <= 12,
+    `hard noon lifts its blacks to ${noon.toFixed(1)}/255 — the night grade is leaking into the day`);
+  api.dispose();
+});
+
+// What the visible cone is worth on the screen, rather than what its uniform
+// reads. A view ray crosses both walls of both cones — the shells are DoubleSide
+// and the blending is additive — so four layers land on the same pixel, each at
+// the shell's own peak. That sum, over a road returning nothing, is the number
+// that decides whether the beam is haze or a white tent.
+function beamPeakByte(beams, exposure) {
+  const u = beams.children[0].material.uniforms;
+  const c = u.uColour.value;
+  const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  return toneByte(4 * u.uStrength.value * lum, exposure);
+}
+
+test("the beam cone only exists where there is something in the air to scatter off", async () => {
+  const weatherMod = await import("../weather.js");
   const stage = makeStraightStage(80);
   stage.world = fakeWorld(stage);
   const { api } = makeRenderer({ webgl2: true });
@@ -2334,8 +2463,19 @@ test("the beam cone only exists where there is something in the air to scatter o
   weather.current.fogDensity = 0.019;
   for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
   assert.equal(beams.visible, true, "no beam in fog");
-  assert.ok(beams.children[0].material.uniforms.uStrength.value > 0.1,
-    "the beam in fog is too faint to see");
+
+  // Judged through the exposure of the preset the cone is actually drawn in,
+  // because the fixture above carries a figure no preset uses any more. At the
+  // 0.5 coefficient this shipped with, the four layers came to 242/255 here and
+  // 245 on a wet night: a solid white tent from the bonnet to the horizon with
+  // the road erased under it, measured at 208-224 mean out to 55 m.
+  const fogExposure = weatherMod.WEATHER_PRESETS.find((p) => p.id === "hill-fog").exposure;
+  const cone = beamPeakByte(beams, fogExposure);
+  assert.ok(cone >= 120,
+    `the beam in fog is worth ${cone}/255 over a dark road — too faint to be the point of it`);
+  assert.ok(cone <= 215,
+    `the beam in fog reaches ${cone}/255 with nothing underneath it — that is a white tent, `
+    + "not scattered light");
 
   // Whatever the weather, the cone lies along the beam rather than level: its
   // far end has to be lower than its apex.
