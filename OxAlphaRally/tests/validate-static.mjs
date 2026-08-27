@@ -137,6 +137,50 @@ for (const file of [...MODULES, "index.html"]) {
   check(!hit, `${file} carries no real-world marque, driver or event name (found "${hit?.[0]}")`);
 }
 
+// Every menu control emits an action string, and ui.js silently drops actions
+// with no local implementation or host hook. Cross-check both sides so a menu
+// cannot look interactive while doing nothing again.
+{
+  const uiSrc = readFileSync(join(appDir, "ui.js"), "utf8");
+  const gameSrc = readFileSync(join(appDir, "game.js"), "utf8");
+
+  const localBlock = uiSrc.match(/const LOCAL_ACTIONS = new Set\(\[([\s\S]*?)\]\)/);
+  check(!!localBlock, "ui.js still declares LOCAL_ACTIONS as a literal set");
+  const local = new Set(
+    (localBlock ? localBlock[1].match(/"([a-zA-Z]+)"/g) || [] : []).map((q) => q.slice(1, -1)));
+
+  const aliasBlock = uiSrc.match(/const ACTION_ALIAS = Object\.freeze\(\{([\s\S]*?)\}\)/);
+  check(!!aliasBlock, "ui.js still declares ACTION_ALIAS as a literal object");
+  const alias = new Map();
+  for (const m of (aliasBlock ? aliasBlock[1].matchAll(/([a-zA-Z]+):\s*"(on[A-Za-z]+)"/g) : [])) {
+    alias.set(m[1], m[2]);
+  }
+  const hookFor = (action) =>
+    alias.get(action) || ("on" + action.charAt(0).toUpperCase() + action.slice(1));
+
+  const emitted = new Set();
+  for (const m of uiSrc.matchAll(/\bbtn\(\s*"[^"]*"\s*,\s*(?:"[^"]*"|[^,]+?)\s*,\s*"([a-zA-Z]+)"/g)) {
+    emitted.add(m[1]);
+  }
+  for (const m of uiSrc.matchAll(/\baction:\s*"([a-zA-Z]+)"/g)) emitted.add(m[1]);
+  for (const m of uiSrc.matchAll(/\?\s*"([a-zA-Z]+)"\s*:\s*"([a-zA-Z]+)"\s*,\s*\{\s*primary/g)) {
+    emitted.add(m[1]);
+    emitted.add(m[2]);
+  }
+  check(emitted.size > 8, `found ${emitted.size} menu actions in ui.js — the scan has stopped matching`);
+
+  const hooks = new Set();
+  for (const m of gameSrc.matchAll(/\b(on[A-Z][A-Za-z]*)\s*:/g)) hooks.add(m[1]);
+
+  const dead = [...emitted]
+    .filter((action) => !local.has(action))
+    .filter((action) => !hooks.has(hookFor(action)))
+    .sort();
+  check(dead.length === 0,
+    "every menu action is either resolved by ui.js or hooked by game.js "
+    + `(dead: ${dead.map((action) => `${action} -> ${hookFor(action)}`).join(", ")})`);
+}
+
 if (failures.length) {
   console.error(`OxAlphaRally: ${failures.length} of ${checks} checks failed`);
   for (const failure of failures) console.error(`  - ${failure}`);
