@@ -45,29 +45,47 @@ const PHYSICS_DT = 1 / 200;
 // `distance` closes the beam off rather than letting it wash the hillside.
 //
 // Every number here is sized against the tone curve, not against how it looks in
-// linear. The composite multiplies by the preset's exposure — 2.3 on the night
-// stages — and then runs ACES, so a road radiance much over 0.3 lands within a
-// couple of 8-bit codes of white. The first version aimed a 0.15 rad pod at 60 m,
-// which put the cone's own rim on the road 4.5 m out: a 4–13 m plateau where a
-// light gravel grain and a dark one came out 251 and 254, one white hole with no
-// surface in it. At these numbers the same two grains are 221 and 236.
+// linear. The composite multiplies by the preset's exposure — 1.5 on night-clear
+// — and then runs ACES, so a road radiance much over 0.45 lands within a couple
+// of 8-bit codes of white. The first version aimed a 0.15 rad pod at 60 m, which
+// put the cone's own rim on the road 4.5 m out: a 4–13 m plateau where a light
+// gravel grain and a dark one came out 251 and 254, one white hole with no
+// surface in it.
 //
 // Narrowing the pod moves its rim past 8 m so the near ground is left to the
 // dipped pair, and the pair is toed far enough apart to read as two pools with
-// the crown darker between them rather than as one merged blob.
+// the crown darker between them rather than as one merged blob. `mainToe` is a
+// distance at `mainReach`, so the two only stay apart if it moves with it: at
+// the 3.0 first tried against a reach of 36 the splay fell from 0.108 rad to
+// 0.083 and the pair merged into one blob by 6.5 m. Do not widen the
+// pod to soften its edge: because a spot's attenuation is 1 on the axis whatever
+// the angle, widening only lets the near ground into the beam, where 1/d^2 is
+// largest. At 0.14 rad the peak walked from 12.5 m in to 9 m and the hot spot
+// went 184 to 219.
+//
+// What moved after that was the level, not the shape. The pod at 620 put 3.9 lx
+// of peak on the road, gravel's own albedo tone mapped that to 218/255, and the
+// bright end of the road texture — around 0.6 against the surface's 0.35 mean —
+// photographed at 233–247 across the whole 6–20 m core: white, with the grain
+// gone. It is not the bloom; forcing u.uBloom.value to 0 moved the same road
+// strips by under two levels (183.7 to 185.4 at 20 m) and the frame mean not at
+// all. The rig runs at about seven tenths of that now, which costs nothing in
+// contrast because the night grade's black point came down with it, and the
+// reach it loses is bought back by aiming the pod at 70 m and opening `distance`
+// — the 80 m cutoff was squaring away four fifths of what reached 70 m.
 export const HEADLIGHT = Object.freeze({
   decay: 1,
-  distance: 80,
-  mainAngle: 0.20,
-  mainReach: 24,
-  mainIntensity: 150,
-  mainToe: 2.6,
+  distance: 110,
+  mainAngle: 0.24,
+  mainReach: 30,
+  mainIntensity: 75,
+  mainToe: 4.2,
   podAngle: 0.085,
-  podReach: 55,
-  podIntensity: 620,
+  podReach: 70,
+  podIntensity: 420,
   spillAngle: 0.50,
   spillReach: 10,
-  spillIntensity: 24,
+  spillIntensity: 14,
 });
 
 // The visible light cone in the air. Baked into the geometry rather than applied
@@ -3654,7 +3672,15 @@ export function createRenderer(canvas, opts = {}) {
         headlights.beams.quaternion.setFromEuler(eTmp);
         const beamMat = headlights.beams.children[0].material;
         if (beamMat && beamMat.uniforms) {
-          beamMat.uniforms.uStrength.value = level * 0.5 * (fogK - BEAM_FOG_FLOOR);
+          // The coefficient is small because the cone is drawn four times over:
+          // each shell is DoubleSide so a ray crosses both its walls, and there
+          // are two cones. At the 0.5 this ran at, a wet night put 4 x 0.41 of
+          // the cone colour — about 1.45 of linear radiance — on the same pixel,
+          // which through night-rain's exposure and ACES is 245/255 with nothing
+          // underneath it. The road under the beam measured 208 to 224 mean out
+          // to 55 m, a solid white tent from the bonnet to the horizon; at 0.12
+          // the same frame runs 163 to 177 with the surface still in it.
+          beamMat.uniforms.uStrength.value = level * 0.12 * (fogK - BEAM_FOG_FLOOR);
         }
       }
     }
@@ -3991,7 +4017,16 @@ export function createRenderer(canvas, opts = {}) {
     // measured across fifteen frames, not one pixel fell below luminance 26, and
     // a shadow that should have been a hole in the picture was a 14% dip. The
     // lift is a night look; it belongs to the night.
-    u.uLift.value.set(0.001 + 0.034 * night, 0.0015 + 0.036 * night, 0.003 + 0.058 * night);
+    //
+    // It is also worth a fifth of what it shipped at. The night term ran at
+    // 0.034/0.036/0.058, which puts the black point at (54,57,74) — luminance
+    // 58 — and on a night stage almost nothing else is that bright: with every
+    // light in the scene forced to zero inside the render call the ground still
+    // measured a flat 58 at every distance across the frame, and with the rig
+    // back on the verge only reached 60-77. The lift WAS the picture. That is
+    // why night-clear photographed as dusk, and why the lamps had to be run hot
+    // enough to blow out before they read as a beam against it.
+    u.uLift.value.set(0.001 + 0.007 * night, 0.0015 + 0.0075 * night, 0.003 + 0.013 * night);
     u.uGamma.value.set(1.0, 0.995 - 0.02 * night, 0.985 - 0.035 * night);
     u.uGain.value.set(
       1.02 + 0.04 * saturate(cur.turbidity / 12),
