@@ -3416,21 +3416,29 @@ function buildRollCage(b, d, col) {
 function cabinLayout(d) {
   const c = cabinFrame(d);
   const hw = d.bodyHalfWidth;
+  const wheelX = -hw * 0.44;
+  const wheelR = 0.165;
+  const zDashR = c.zWs - 0.32;
   return {
     c, hw,
     floor: d.floorY + 0.02,
     zBulk: (c.zWs + c.zRs) * 0.48,          // the main hoop plane
     zSeat: c.zWs - 0.85,
     zDashF: c.zWs - 0.02,
-    zDashR: c.zWs - 0.32,
+    zDashR,
     yDashTop: c.beltY,                       // the fascia meets the screen base
     yDashBot: d.beltY - 0.22,
     seatX: hw * 0.46,
-    wheelX: -hw * 0.44,
+    wheelX,
     wheelY: d.beltY + 0.075,
     wheelZ: c.zWs - 0.44,
-    wheelR: 0.165,
+    wheelR,
     wheelTilt: 0.38,                         // radians back from vertical
+    // The instrument pod. This is the one part of the layout the cockpit
+    // camera fixes rather than the ergonomics — see buildBinnacle.
+    podX: wheelX + wheelR + 0.095,
+    podY: c.beltY + 0.010,
+    podZ: zDashR,
   };
 }
 
@@ -3488,9 +3496,40 @@ function buildSteeringWheel(b, L, col, boss) {
   pushTube(b, [[hub[0], hub[1], hub[2] + 0.02], [hub[0], hub[1] - 0.14, L.zDashR + 0.02]], 0.028, 6, boss);
 }
 
-// The one place the player's eye rests for a whole stage, so it gets real
-// instruments: a tach on the driver's side, two smaller gauges beside it, and a
-// switch panel where the co-driver can reach it.
+// The instrument pod, standing on the fascia TOP and inboard of the wheel rim.
+// That is the only place in this cabin a driver can see one. The cockpit eye is
+// 0.215 m above the fascia and aims 0.9 degrees UP, so a dial on the fascia FACE
+// projects to -1.33 in clip space — a third of a half-frame below the bottom of
+// the picture. Three gauges were modelled down there and not one of them ever
+// reached a pixel. Over the column is no better: the wheel boss covers that
+// sightline, whatever height the dial is given.
+function buildBinnacle(b, L, dark, grey, dial) {
+  const x = L.podX, y = L.podY, z = L.podZ;
+  // The housing grows out of the fascia crown, so only its top third is ever
+  // above the dash and the rest costs nothing inside the loft. Its depth is what
+  // keeps the hood clear of the screen: the heritage cars rake theirs 0.45 m of
+  // rise per metre of z, which is the tightest ceiling any of the eight has.
+  pushTaper(b, x, y, z + 0.062, 0.40, 0.095, 0.37, 0.078, -0.150, 0.070, dark, 0.004);
+  pushTaper(b, x, y, z + 0.035, 0.37, 0.085, 0.35, 0.070, 0.070, 0.090, dark, -0.018);
+  // Each gauge stands proud of the housing in -z, so the bezel reads as a bezel
+  // and the paler face inside it as a dial.
+  const gauge = (gx, gy, r) => {
+    pushCylinder(b, gx, gy, z + 0.024, r, r, 0.048, 12, "z", grey);
+    pushCylinder(b, gx, gy, z - 0.004, r * 0.78, r * 0.78, 0.010, 12, "z", dial);
+  };
+  gauge(x, y, 0.065);
+  gauge(x - 0.108, y - 0.012, 0.038);
+  gauge(x + 0.108, y - 0.012, 0.038);
+  // Shift lights across the top of the hood, which is the face an eye 0.2 m
+  // above the fascia is looking down onto. On the hood's lip they were inside it.
+  for (let k = 0; k < 6; k += 1) {
+    pushBox(b, x + (k - 2.5) * 0.030, y + 0.096, z + 0.012, 0.020, 0.012, 0.016,
+      k > 3 ? dial : grey);
+  }
+}
+
+// The one place the player's eye rests for a whole stage: the fascia itself, a
+// crown lip over the column, and the instrument pod that carries the gauges.
 function buildDash(b, L, dark, grey, dial) {
   const w = L.hw * 0.94;
   const zF = L.zDashF, zR = L.zDashR;
@@ -3513,21 +3552,16 @@ function buildDash(b, L, dark, grey, dial) {
   }
   pushLoft(b, rings, dark, true, true);
 
-  // The cabin is at lower z than the fascia, so every instrument stands proud of
-  // it in -z: a bezel ring on the face and a paler dial in front of that.
-  const zi = L.zDashR + 0.012;
-  pushTaper(b, L.wheelX, L.yDashTop - 0.030, zi + 0.06, 0.46, 0.20, 0.44, 0.16, 0, 0.030, dark, -0.05);
-  const gauge = (x, y, r) => {
-    pushCylinder(b, x, y, zi - 0.018, r, r, 0.036, 12, "z", grey);
-    pushCylinder(b, x, y, zi - 0.042, r * 0.78, r * 0.78, 0.010, 12, "z", dial);
-  };
-  gauge(L.wheelX, L.yDashTop - 0.130, 0.088);
-  gauge(L.wheelX - 0.140, L.yDashTop - 0.148, 0.048);
-  gauge(L.wheelX + 0.140, L.yDashTop - 0.148, 0.048);
+  // The crown lip over the column, which is what the fascia top wants once the
+  // instruments are no longer sunk into its face.
+  pushTaper(b, L.wheelX, L.yDashTop - 0.030, L.zDashR + 0.072, 0.46, 0.20, 0.44, 0.16, 0, 0.030, dark, -0.05);
+  // The switch panel stays on the fascia face, in the centre stack, because a
+  // driver reaches for a switch and only ever reads a dial.
   for (let k = 0; k < 6; k += 1) {
     pushBox(b, 0.055 * (k % 3) - 0.055, L.yDashTop - 0.110 - 0.055 * Math.floor(k / 3),
-      zi - 0.032, 0.042, 0.038, 0.020, k === 1 ? dial : grey);
+      L.zDashR - 0.020, 0.042, 0.038, 0.020, k === 1 ? dial : grey);
   }
+  buildBinnacle(b, L, dark, grey, dial);
 }
 
 function buildInterior(b, d, col) {
