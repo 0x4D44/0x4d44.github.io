@@ -257,6 +257,48 @@ try {
     process.stderr.write(`  ${id.padEnd(22)} started clean\n`);
   }
 
+  // A reverse stage must be a different road from its forward twin. It shares the
+  // twin's seed on purpose — a reverse stage is the same road driven the other way —
+  // so the only thing that makes it a different drive is `params.reverse: true` on
+  // the book entry. beginStage used to spread an unconditional `reverse:
+  // !!choice.reverse` over that, writing `false` straight across it, and two of the
+  // twelve stages silently became roads the player had already driven: every sampled
+  // elevation of kloft-bjornhalt-rev was bit-identical to kloft-bjornhalt.
+  //
+  // Nothing caught it. stage.js was innocent, so its own tests passed, and this gate
+  // only ever asked whether a stage STARTED. So this samples through the RUNNING
+  // GAME rather than through stageFromBook, because the bug was in the call and not
+  // in the callee.
+  process.stderr.write("[opus-rally] a reverse stage differs from its forward twin\n");
+  for (const [fwd, rev] of [["kloft-bjornhalt", "kloft-bjornhalt-rev"],
+    ["alvenda-calderas", "alvenda-calderas-rev"]]) {
+    if (!book.includes(fwd) || !book.includes(rev)) continue;
+    const profile = async (id) => {
+      await page.evaluate(`window.__opusRally.drive({ stageId: ${JSON.stringify(id)} })`);
+      await page.waitFor(`${id} to build`,
+        () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+      return page.evaluate(`(() => {
+        const st = window.OPUS_RALLY.game.stage;
+        const step = Math.max(1, Math.floor(st.count / 60));
+        const out = [];
+        for (let i = 0; i < st.count; i += step) out.push(+st.y[i].toFixed(4));
+        return out;
+      })()`);
+    };
+    const a = await profile(fwd);
+    const b = await profile(rev);
+    const n = Math.min(a.length, b.length);
+    let same = 0;
+    for (let i = 0; i < n; i += 1) if (Math.abs(a[i] - b[i]) < 1e-9) same += 1;
+    assert.ok(n > 20, `${rev}: only ${n} elevations to compare`);
+    // A few may coincide where the road is flat; all of them cannot.
+    assert.ok(same < n * 0.5,
+      `${rev} is the same road as ${fwd}: ${same} of ${n} sampled elevations are`
+      + " bit-identical, so the reverse stage is its forward twin and the player"
+      + " drives the same road twice");
+    process.stderr.write(`  ${rev.padEnd(22)} differs from its twin (${same}/${n} shared)\n`);
+  }
+
   // Reach a stage the way a PLAYER does. Everything above this line — and every
   // other check in the suite — starts a stage through window.__opusRally.drive(),
   // the harness door. That is how the entire main menu came to be dead while 435
