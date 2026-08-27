@@ -203,6 +203,16 @@ try {
     await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
   ), 10_000);
 
+  // Begin from a known first-run career so this proves both New Championship
+  // and the saved Continue path rather than inheriting a state from an earlier
+  // browser check.
+  await page.evaluate('localStorage.removeItem("opusrally.career")');
+  await page.navigate(APP_PATH);
+  await page.waitFor("the fresh touch build to boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  await page.waitFor("the fresh touch boot card to clear", async () => (
+    await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
+  ), 10_000);
+
   // A phone player has no keyboard or test-only drive hook: dispatch a genuine
   // touch at each menu button and let Chrome synthesize the button activation.
   async function touchTap(selector, label) {
@@ -234,7 +244,99 @@ try {
   await page.waitFor("the touch title screen", () => page.evaluate(
     "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'title'",
   ), 20_000);
-  await touchTap('#ui-root [data-or-focus="t-continue"]', "Quick stage");
+  assert.match(await page.evaluate(
+    "document.querySelector('[data-or-focus=\"t-continue\"]')?.textContent ?? ''",
+  ), /New championship/i, "390x844: a first-time player cannot start a championship");
+  await touchTap('#ui-root [data-or-focus="t-continue"]', "New championship");
+  await page.waitFor("the championship calendar", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'championship'",
+  ), 20_000);
+  const championshipBeforeReload = await page.evaluate("window.__opusRally.championshipInfo()");
+  assert.equal(championshipBeforeReload.hasSeason, true, "390x844: New championship did not create a season");
+  assert.match(championshipBeforeReload.careerStageId, /\S/,
+    "390x844: the championship has no current scheduled stage");
+
+  await page.navigate(APP_PATH);
+  await page.waitFor("the saved championship to boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  await page.waitFor("the saved championship title", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'title'",
+  ), 20_000);
+  await page.waitFor("the saved championship boot card to clear", async () => (
+    await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
+  ), 10_000);
+  assert.match(await page.evaluate(
+    "document.querySelector('[data-or-focus=\"t-continue\"]')?.textContent ?? ''",
+  ), /Continue championship/i, "390x844: the saved season has no Continue action");
+  const championshipAfterReload = await page.evaluate("window.__opusRally.championshipInfo()");
+  assert.equal(championshipAfterReload.seed, championshipBeforeReload.seed,
+    "390x844: reload replaced the championship seed");
+  assert.deepEqual(championshipAfterReload.cursor, championshipBeforeReload.cursor,
+    "390x844: reload moved the championship cursor");
+
+  await touchTap('#ui-root [data-or-focus="t-continue"]', "Continue championship");
+  await page.waitFor("the saved championship calendar", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'championship'",
+  ), 20_000);
+  await touchTap('#ui-root [data-or-focus="c-go"]', "Go to stage");
+  await page.waitFor("the championship stage card", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'stage'",
+  ), 120_000);
+  await touchTap('#ui-root [data-or-focus="s-start"]', "Start championship stage");
+  await page.waitFor("the championship rally to start", () => page.evaluate(
+    "['countdown', 'racing'].includes(window.__opusRally.state)",
+  ), 120_000);
+  await page.evaluate("window.__opusRally.submitStage({timeMs:123456,splits:[40000,82000]})");
+  await page.waitFor("the championship result", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'results'",
+  ), 20_000);
+  const championshipResult = await page.evaluate("window.__opusRally.championshipInfo()");
+  assert.equal(championshipResult.playerResult?.status, "ok",
+    "390x844: a finished stage was not recorded as a result");
+  assert.equal(championshipResult.playerResult?.timeMs, 123456,
+    "390x844: the championship changed the player's stage time");
+  assert.equal(championshipResult.submittedStageId, championshipBeforeReload.careerStageId,
+    "390x844: the playable road was recorded against the wrong career stage");
+
+  // Reach the first leg boundary through the same game-level commit path. The
+  // career unit suite owns the arithmetic; this browser check owns the screen
+  // transition and the repair-confirmation hook.
+  for (let i = 0; i < 4; i += 1) {
+    if ((await page.evaluate("window.__opusRally.championshipInfo().serviceDue"))) break;
+    await page.evaluate(`window.__opusRally.submitStage({timeMs:${124000 + 1000} + ${i} * 1000})`);
+  }
+  assert.equal(await page.evaluate("window.__opusRally.championshipInfo().serviceDue"), true,
+    "390x844: completing a leg did not offer service");
+  await touchTap('#ui-root [data-or-focus="r-next"]', "Next stage");
+  await page.waitFor("the service park", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'service'",
+  ), 20_000);
+  await touchTap('#ui-root [data-or-focus="v-confirm"]', "Send it out");
+  await page.waitFor("the post-service stage", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'stage'",
+  ), 120_000);
+  await touchTap('#ui-root [data-or-focus="s-start"]', "Start post-service stage");
+  await page.waitFor("the post-service rally to start", () => page.evaluate(
+    "['countdown', 'racing'].includes(window.__opusRally.state)",
+  ), 120_000);
+  await page.evaluate(`window.__opusRally.submitStage({retired:true,reason:"acceptance retirement",timeMs:30000})`);
+  await page.waitFor("the retirement result", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'results'",
+  ), 20_000);
+  const retirementResult = await page.evaluate("window.__opusRally.championshipInfo().playerResult");
+  assert.equal(retirementResult?.status, "retired", "390x844: retirement was not recorded");
+  assert.equal(retirementResult?.note, "acceptance retirement", "390x844: retirement reason was lost");
+
+  // Return to the title and prove championship saves do not take away the
+  // original one-tap Quick Stage path or its six phone controls.
+  await page.navigate(APP_PATH);
+  await page.waitFor("the post-championship title", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  await page.waitFor("the post-championship title screen", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'title'",
+  ), 20_000);
+  await page.waitFor("the post-championship boot card to clear", async () => (
+    await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
+  ), 10_000);
+  await touchTap('#ui-root [data-or-focus="t-quick"]', "Quick stage");
   await page.waitFor("the touch stage screen", () => page.evaluate(
     "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'stage'",
   ), 20_000);
