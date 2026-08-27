@@ -13,7 +13,7 @@ import {
   materialAlbedoScale, roadTextureName,
   clampPaint, PAINT_CEILING, DECAL_CEILING,
 } from "../meshes.js";
-import { carSpec } from "../physics.js";
+import { CARS, carSpec, createCar } from "../physics.js";
 import { SURFACE, surfaceProps } from "../surfaces.js";
 // Which way a sign faces is an invariant across two modules: meshes.js decides
 // which face carries the lettering, stage.js decides how the prop is turned. The
@@ -2446,4 +2446,208 @@ test("scenery: the conifer silhouette is broken, not a solid cone", () => {
   assert.equal(lib.materials.tree.side, THREE.DoubleSide, "foliage cards are single-sided");
   assert.ok(proto.triangles < 80, `a conifer costs ${proto.triangles} triangles; the forest is instanced`);
   lib.dispose();
+});
+
+// ---- the cabin -----------------------------------------------------------
+
+test("car: the cabin is open, trimmed, and the driver can see an instrument", async () => {
+  // buildBodyShell used to loft a CLOSED hull whose deck ran through the cabin at
+  // belt height. That single fact is why the cockpit camera photographed
+  // bodywork, why the dash and the wheel were modelled and never rendered, and
+  // why the inside of the roof carried the exterior livery. Every number below is
+  // measured off the car's own geometry and render.js's own cockpit mount, so it
+  // restates neither module's constants.
+  const {
+    cameraParams, makeCarSample, sampleCar, mountLocalX, mountLocalZ, CAMERA_DESIGN_ASPECT,
+  } = await import("../render.js");
+  const p = cameraParams("cockpit");
+  const sample = makeCarSample();
+
+  for (const spec of CARS) {
+    const id = spec.id;
+    const record = newRecord();
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const d = car.dimensions;
+    // parts.windscreen is an alias for parts.glass, so the same mesh is in there
+    // twice; the Set is what stops every ray reporting the screen as two hits.
+    const parts = [...new Set(Object.values(car.parts))];
+    const paint = car.parts.body.material;
+    const nameOf = new Map();
+    for (const [name, mesh] of Object.entries(car.parts)) if (!nameOf.has(mesh)) nameOf.set(mesh, name);
+
+    // The eye is placed by render.js from a real physics car, so this is the seat
+    // the player gets rather than a copy of its numbers.
+    sampleCar(sample, createCar(id), null);
+    assert.equal(sample.halfWidth, d.bodyHalfWidth, `${id}: render.js and meshes.js disagree about the body half width`);
+    assert.equal(sample.frontAxle, d.frontAxle, `${id}: render.js and meshes.js disagree about the front axle`);
+    assert.equal(-sample.comHeight, d.ground, `${id}: render.js and meshes.js disagree about the ground plane`);
+    const eye = new THREE.Vector3(mountLocalX(sample, p), p.mountY - sample.comHeight, mountLocalZ(sample, p));
+    const cam = new THREE.PerspectiveCamera(p.fovBase, CAMERA_DESIGN_ASPECT, p.near, 100);
+    cam.position.copy(eye);
+    cam.lookAt(eye.x, eye.y + p.lookHeight, eye.z + p.lookAhead);
+    cam.updateMatrixWorld(true);
+    cam.updateProjectionMatrix();
+    const shoot = (dir, far) => new THREE.Raycaster(eye.clone(), dir.clone().normalize(), 0.02, far)
+      .intersectObjects(parts, false)
+      .filter((h) => h.object !== car.parts.glass);
+
+    // The cabin volume, taken off the glass rather than off cabinFrame(): the two
+    // panes that straddle the centreline are the screen and the backlight, and
+    // the driver sits between them.
+    const gp = car.parts.glass.geometry.getAttribute("position");
+    const panes = [];
+    for (let i = 0; i + 3 < gp.count; i += 4) {
+      const v = [];
+      for (let k = 0; k < 4; k += 1) v.push(new THREE.Vector3().fromBufferAttribute(gp, i + k));
+      const xs = v.map((q) => q.x);
+      if (Math.min(...xs) < -1e-6 && Math.max(...xs) > 1e-6) {
+        panes.push({ v, meanZ: (v[0].z + v[1].z + v[2].z + v[3].z) / 4 });
+      }
+    }
+    assert.equal(panes.length, 2, `${id}: expected a windscreen and a backlight across the centreline`);
+    panes.sort((a, b) => b.meanZ - a.meanZ);
+    const planeOf = (q) => {
+      const pl = new THREE.Plane().setFromCoplanarPoints(q.v[0], q.v[1], q.v[2]);
+      if (pl.distanceToPoint(eye) < 0) pl.negate();          // + is the cabin side
+      return pl;
+    };
+    const screenPlane = planeOf(panes[0]);
+    const backPlane = planeOf(panes[1]);
+    let glassTop = -Infinity, glassBelt = Infinity;
+    for (let i = 0; i < gp.count; i += 1) {
+      const y = gp.getY(i);
+      if (y > glassTop) glassTop = y;
+      if (y < glassBelt) glassBelt = y;
+    }
+    const inCabin = (q) => screenPlane.distanceToPoint(q) > 0.01 && backPlane.distanceToPoint(q) > 0.01
+      && q.y < glassTop + 0.05 && q.y > glassBelt - 0.40;
+
+    // 1. The roof is trimmed: straight up from the driver's head the first
+    // surface is the headliner, not the painted skin the outside of the car wears.
+    const above = shoot(new THREE.Vector3(0, 1, 0), 3);
+    assert.ok(above.length, `${id}: nothing at all above the driver's head`);
+    assert.notEqual(above[0].object.material, paint,
+      `${id}: the first surface above the driver is ${nameOf.get(above[0].object)} on the paint `
+      + `material, ${above[0].distance.toFixed(3)} m up — the hull is closed over the cabin`);
+
+    // 2. Cast the cockpit frustum and look at what the eye lands on. The pillars
+    // are painted body colour, which is ONE flat swatch of the livery atlas;
+    // anything else on the paint material inside the cabin is the exterior seen
+    // from within, which is what a deck or an untrimmed roof looks like.
+    const N = 25;
+    const inv = cam.projectionMatrixInverse, world = cam.matrixWorld;
+    const scratch = new THREE.Vector3();
+    const swatches = new Set();
+    let cabinPaint = 0, lowerCabin = 0, lowerRays = 0, upperBlocked = 0, upperRays = 0;
+    for (let i = 0; i < N; i += 1) {
+      for (let j = 0; j < N; j += 1) {
+        const u = (i / (N - 1)) * 1.9 - 0.95, v = (j / (N - 1)) * 1.9 - 0.95;
+        scratch.set(u, v, 0.5).applyMatrix4(inv).applyMatrix4(world);
+        const hits = shoot(scratch.sub(eye), 40);
+        if (v < 0) lowerRays += 1; else upperRays += 1;
+        if (!hits.length) continue;
+        const hit = hits[0];
+        const name = nameOf.get(hit.object);
+        if (v < 0 && (name === "interior" || name === "cabinTrim")) lowerCabin += 1;
+        if (v >= 0) upperBlocked += 1;
+        if (hit.object.material === paint && inCabin(hit.point)) {
+          cabinPaint += 1;
+          const uv = hit.object.geometry.getAttribute("uv"), f = hit.face;
+          const cu = (uv.getX(f.a) + uv.getX(f.b) + uv.getX(f.c)) / 3;
+          const cv = (uv.getY(f.a) + uv.getY(f.b) + uv.getY(f.c)) / 3;
+          swatches.add(`${cu.toFixed(4)},${cv.toFixed(4)}`);
+        }
+      }
+    }
+    assert.ok(swatches.size <= 1,
+      `${id}: the driver's eye lands on the livery at ${cabinPaint} points across ${swatches.size} `
+      + `different places in the atlas (${[...swatches].slice(0, 4).join(" ")}); the inside of a `
+      + "cabin is trim, and one flat swatch on the painted pillars");
+    // The dash and the wheel are IN the picture. Under the closed hull's deck
+    // this halved, because the lower frame was filled with the deck instead.
+    assert.ok(lowerCabin >= 110,
+      `${id}: only ${lowerCabin} of ${lowerRays} rays across the lower half of the cockpit frame `
+      + "land on the cabin; the dash and the wheel are not in shot");
+    // And there is a glasshouse to look out of.
+    assert.ok(upperBlocked <= 170,
+      `${id}: ${upperBlocked} of ${upperRays} rays across the upper half of the frame are stopped `
+      + "by the car; the driver cannot see out");
+
+    // 3. An instrument face is in the frame with nothing in front of it. The
+    // brightest colour in the cabin is the dial face; on the old fascia-mounted
+    // cluster every one of them projected to clip y -1.33 — modelled, never drawn.
+    const geo = car.parts.interior.geometry;
+    const col = geo.getAttribute("color"), pos = geo.getAttribute("position"), idx = geo.getIndex();
+    const lum = (k) => 0.2126 * col.getX(k) + 0.7152 * col.getY(k) + 0.0722 * col.getZ(k);
+    let brightest = 0;
+    for (let k = 0; k < col.count; k += 1) brightest = Math.max(brightest, lum(k));
+    let dialFaces = 0, inFrame = 0, visible = 0, highest = -Infinity;
+    const centre = new THREE.Vector3(), corner = new THREE.Vector3();
+    for (let k = 0; k < idx.count; k += 3) {
+      const a = idx.getX(k), b = idx.getX(k + 1), c = idx.getX(k + 2);
+      if (lum(a) < brightest - 1e-6 || lum(b) < brightest - 1e-6 || lum(c) < brightest - 1e-6) continue;
+      dialFaces += 1;
+      centre.set(0, 0, 0);
+      for (const t of [a, b, c]) centre.add(corner.fromBufferAttribute(pos, t));
+      centre.multiplyScalar(1 / 3);
+      const ndc = centre.clone().project(cam);
+      if (Math.abs(ndc.x) > 1 || Math.abs(ndc.y) > 1 || ndc.z > 1) continue;
+      inFrame += 1;
+      if (shoot(centre.clone().sub(eye), centre.distanceTo(eye) - 0.004).length) continue;
+      visible += 1;
+      if (ndc.y > highest) highest = ndc.y;
+    }
+    assert.ok(dialFaces > 0, `${id}: the cabin has no instrument faces at all`);
+    assert.ok(visible >= 40,
+      `${id}: ${inFrame} of the ${dialFaces} instrument faces reach the cockpit frame and ${visible} `
+      + "of those are unobstructed; the driver has no dial he can read");
+    assert.ok(highest > -0.95,
+      `${id}: the highest visible instrument sits at clip y ${highest.toFixed(3)}, on the very `
+      + "bottom edge of the frame");
+
+    // 4. The glasshouse has depth: the side glass is set in from the shoulder and
+    // every pane sits below the roof skin rather than flush with it.
+    const bp = car.parts.body.geometry.getAttribute("position");
+    let shoulder = 0, roofSkin = -Infinity;
+    const bv = new THREE.Vector3();
+    for (let i = 0; i < bp.count; i += 1) {
+      bv.fromBufferAttribute(bp, i);
+      if (bv.y > roofSkin) roofSkin = bv.y;
+      if (!inCabin(bv)) continue;
+      if (Math.abs(bv.y - glassBelt) <= 0.02 && Math.abs(bv.x) > shoulder) shoulder = Math.abs(bv.x);
+    }
+    let sideReach = 0;
+    for (let i = 0; i < gp.count; i += 1) {
+      if (Math.abs(gp.getY(i) - glassBelt) > 0.02) continue;
+      sideReach = Math.max(sideReach, Math.abs(gp.getX(i)));
+    }
+    assert.ok(shoulder - sideReach > 0.020,
+      `${id}: the side glass reaches x=${sideReach.toFixed(3)} against a shoulder at `
+      + `${shoulder.toFixed(3)}; it is flush with the flank rather than set into it`);
+    assert.ok(roofSkin - glassTop > 0.020,
+      `${id}: the glass tops out at y=${glassTop.toFixed(3)} under a roof skin at `
+      + `${roofSkin.toFixed(3)}; the glasshouse has no depth at the header`);
+
+    // 5. The instrument pod stands proud of the fascia, and the heritage cars
+    // rake their screen hardest, so its clearance to the glass is what decides
+    // how tall a pod may be. cabinTrim is excluded: its header rail is built on
+    // the screen's own top edge and touches the glass by design.
+    let clear = Infinity, worst = null;
+    for (const key of ["interior"]) {
+      const q = car.parts[key].geometry.getAttribute("position");
+      for (let i = 0; i < q.count; i += 1) {
+        bv.fromBufferAttribute(q, i);
+        if (bv.y <= glassBelt + 1e-4) continue;             // only what stands above the fascia
+        if (backPlane.distanceToPoint(bv) < 0) continue;    // and only forward of the backlight
+        const gap = screenPlane.distanceToPoint(bv);
+        if (gap < clear) { clear = gap; worst = key; }
+      }
+    }
+    assert.ok(clear > 0.005,
+      `${id}: ${worst} comes within ${clear.toFixed(4)} m of the windscreen plane; the cabin is `
+      + "poking out through the glass");
+
+    car.dispose();
+  }
+  clearLiveryCache();
 });
