@@ -98,13 +98,121 @@ export async function startGame(opts) {
     paused: false,
   };
 
+  // ui.js renders from its `data` record. Keep that record tied to the stage and
+  // car catalogues the simulator can actually build, and cache the generated
+  // recce stage because menu refreshes should not regenerate twelve kilometres
+  // of road.
+  const STAGE_CARDS = stageMod.STAGE_BOOK.map((def) => ({
+    id: def.id,
+    name: def.name,
+    country: def.country,
+    rally: def.rally,
+    surface: def.params && def.params.surface !== undefined ? [def.params.surface] : [],
+    label: def.surfaceLabel,
+  }));
+
+  let menuStageId = stageMod.STAGE_BOOK[0].id;
+  let menuStage = null;
+  let menuCarId = physics.CARS[0].id;
+
+  function menuStageFor(id) {
+    if (!menuStage || menuStage.id !== id) menuStage = stageMod.stageFromBook(id);
+    return menuStage;
+  }
+
+  function weatherCard(def) {
+    let preset = null;
+    try {
+      preset = weatherMod.presetById(def.weather);
+    } catch {
+      preset = null;
+    }
+    return {
+      name: preset ? preset.name : "Clear",
+      temperature: preset ? preset.temperature : 12,
+      wetness: preset ? preset.roadWetness : 0,
+      wind: preset ? preset.windSpeed : 0,
+      timeOfDay: def.timeOfDay ?? "—",
+    };
+  }
+
+  function menuData(overrides) {
+    const def = stageMod.STAGE_BOOK.find((entry) => entry.id === menuStageId)
+      ?? stageMod.STAGE_BOOK[0];
+    return {
+      // career.js and stage.js currently name different stage catalogues. Do not
+      // offer a championship whose scheduled road the renderer cannot build.
+      championship: null,
+      stage: menuStageFor(def.id),
+      stages: STAGE_CARDS,
+      cars: physics.CARS,
+      classes: physics.CAR_CLASSES,
+      selectedCarId: menuCarId,
+      weather: weatherCard(def),
+      personalBest: null,
+      rivals: [],
+      ...(overrides || {}),
+    };
+  }
+
+  const idOf = (value) => (typeof value === "string" ? value : (value && value.id) || null);
+
+  function showStageScreen(stageId) {
+    const id = idOf(stageId);
+    if (id && stageMod.STAGE_BOOK.some((def) => def.id === id)) menuStageId = id;
+    screen("stage", menuData());
+  }
+
+  function showCarScreen() {
+    screen("car", menuData());
+  }
+
+  // Menu buttons emit a bare id, while beginStage consumes a complete choice.
+  function menuChoice(value) {
+    const id = idOf(value);
+    return {
+      stageId: (id && stageMod.STAGE_BOOK.some((def) => def.id === id)) ? id : menuStageId,
+      carId: menuCarId,
+    };
+  }
+
   const ui = uiMod.createUi(opts.uiRoot, {
     career,
     cars: physics.CARS,
     carClasses: physics.CAR_CLASSES,
     stageBook: stageMod.STAGE_BOOK,
     settings,
-    onStart: (choice) => beginStage(choice),
+    data: menuData(),
+    onStart: (choice) => beginStage(menuChoice(choice)),
+    onQuickStage: () => showStageScreen(),
+    onTimeTrial: () => showStageScreen(),
+    onSelectStage: (value) => showStageScreen(value),
+    onGarage: () => showCarScreen(),
+    onOpenCar: () => showCarScreen(),
+    onBack: () => toMenu(),
+    onTitle: () => toMenu(),
+    onRestartStage: () => beginStage(menuChoice(game.lastChoice)),
+    onRepeatNote: () => game.noteRunner?.repeat?.(),
+    onNextStage: () => {
+      const book = stageMod.STAGE_BOOK;
+      const at = book.findIndex((def) => def.id === menuStageId);
+      menuStageId = book[(at < 0 ? 0 : at + 1) % book.length].id;
+      showStageScreen();
+    },
+    onConfirmRepairs: (plan) => { career.applyService?.(plan); toMenu(); },
+    onReplay: () => toMenu(),
+    // Kept as safe fallbacks for saved UI state. The title hides championship
+    // entry points until career.js and stage.js share one stage catalogue.
+    onContinue: () => toMenu(),
+    onNewSeason: () => toMenu(),
+    onChampionship: () => toMenu(),
+    onSelectEvent: () => toMenu(),
+    onSelectCar: (value, action) => {
+      const id = idOf(value);
+      if (id && physics.CARS.some((car) => car.id === id)) menuCarId = id;
+      if (action === "confirmCar") showStageScreen();
+      else showCarScreen();
+    },
     onSettingsChange: (patch) => applySettings(patch),
     onRepair: (plan) => career.applyService?.(plan),
     onQuit: () => toMenu(),
@@ -306,9 +414,9 @@ export async function startGame(opts) {
   function toMenu() {
     game.state = GameState.MENU;
     renderer.clearStage?.();
-    screen("title", {
+    screen("title", menuData({
       rallyCount: new Set(stageMod.STAGE_BOOK.map((s) => s.rally ?? s.id.split("-")[0])).size,
-    });
+    }));
   }
 
   function togglePause() {
@@ -504,12 +612,14 @@ export async function startGame(opts) {
     game.lastResult = result;
     hud.finish?.(result);
     audio.setMuted?.(false);
-    screen("results", result);
+    screen("results", { ...result, hasNextStage: true, hasReplay: false });
   }
 
   function retire(reason) {
     game.state = GameState.RETIRED;
-    screen("results", { retired: true, reason, timeMs: game.stageTimeMs });
+    screen("results", {
+      retired: true, reason, timeMs: game.stageTimeMs, hasNextStage: true, hasReplay: false,
+    });
   }
 
   function buildFrame() {

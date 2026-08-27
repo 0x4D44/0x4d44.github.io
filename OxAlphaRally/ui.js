@@ -1390,12 +1390,16 @@ export function buildTitleModel(data = {}) {
       {
         id: "t-menu", kind: "menu", region: "main", heading: "Main menu",
         items: [
-          btn("t-continue", has ? "Continue championship" : "New championship", has ? "continue" : "newSeason", { primary: true }),
+          // career.js currently schedules a different stage catalogue from the
+          // renderer. Until those catalogues are unified, make the primary path
+          // one the game can honour instead of promising a dead championship.
+          btn("t-continue", has ? "Continue championship" : "Quick stage",
+            has ? "continue" : "quickStage", { primary: true }),
           btn("t-new", "New championship", "newSeason", { hidden: !has }),
-          btn("t-quick", "Quick stage", "quickStage"),
+          btn("t-quick", "Quick stage", "quickStage", { hidden: !has }),
           btn("t-trial", "Time trial", "timeTrial"),
           btn("t-garage", "Garage", "garage"),
-          btn("t-settings", "Settings", "settings"),
+          btn("t-settings", "Settings", "openSettings"),
           btn("t-howto", "How to drive", "tutorial"),
         ].filter((i) => !i.hidden),
       },

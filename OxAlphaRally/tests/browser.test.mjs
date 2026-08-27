@@ -199,8 +199,49 @@ try {
   await page.setViewport(390, 844);
   await page.navigate(APP_PATH);
   await page.waitFor("the touch build to boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
-  await page.evaluate("window.__opusRally.drive({})");
-  await page.waitFor("the touch stage to build", () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+  await page.waitFor("the touch boot card to clear", async () => (
+    await page.evaluate("getComputedStyle(document.getElementById('boot')).visibility") === "hidden"
+  ), 10_000);
+
+  // A phone player has no keyboard or test-only drive hook: dispatch a genuine
+  // touch at each menu button and let Chrome synthesize the button activation.
+  async function touchTap(selector, label) {
+    const point = await page.evaluate(`(() => {
+      const node = document.querySelector(${JSON.stringify(selector)});
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      return {
+        x, y,
+        target: hit?.closest("[data-or-focus]")?.getAttribute("data-or-focus") ?? null,
+      };
+    })()`);
+    assert.ok(point, `390x844: ${label} button is missing (${selector})`);
+    const expected = selector.match(/data-or-focus="([^"]+)"/)?.[1] ?? null;
+    assert.equal(point.target, expected,
+      `390x844: touch point for ${label} hit ${point.target ?? "nothing"}, not ${expected}`);
+    await page.send("Input.dispatchTouchEvent", {
+      type: "touchStart", touchPoints: [{ id: 1, x: point.x, y: point.y }], modifiers: 0,
+    });
+    await page.delay(60);
+    await page.send("Input.dispatchTouchEvent", {
+      type: "touchEnd", touchPoints: [], modifiers: 0,
+    });
+  }
+
+  await page.waitFor("the touch title screen", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'title'",
+  ), 20_000);
+  await touchTap('#ui-root [data-or-focus="t-continue"]', "Quick stage");
+  await page.waitFor("the touch stage screen", () => page.evaluate(
+    "document.querySelector('#ui-root .or-screen')?.dataset.orScreen === 'stage'",
+  ), 20_000);
+  await touchTap('#ui-root [data-or-focus="s-start"]', "Start stage");
+  await page.waitFor("the touch rally to start", () => page.evaluate(
+    "['countdown', 'racing'].includes(window.__opusRally.state)",
+  ), 120_000);
   const touchControls = await page.waitFor("visible touch controls", () => page.evaluate(`(() => {
     const layer = document.querySelector("#touch-root .ort");
     if (!layer) return null;
@@ -214,16 +255,19 @@ try {
     const visible = layer.getAttribute("data-hidden") !== "1"
       && getComputedStyle(layer).display !== "none"
       && layer.getBoundingClientRect().width > 0
-      && visibleControls.length >= 5;
-    return visible && controls.length >= 5
+      && visibleControls.length === 6;
+    return visible && controls.length === 6
       ? { visible, count: controls.length, visibleCount: visibleControls.length,
+          ids: Array.from(controls, (control) => control.getAttribute("data-control")),
           maxTouchPoints: navigator.maxTouchPoints }
       : null;
   })()`), 20_000);
   assert.equal(touchControls.visible, true, "390x844: touch-control layer is hidden");
-  assert.ok(touchControls.count >= 5, `390x844: only ${touchControls.count} touch controls rendered`);
-  assert.ok(touchControls.visibleCount >= 5,
-    `390x844: only ${touchControls.visibleCount} touch controls are visible`);
+  assert.equal(touchControls.count, 6, `390x844: expected six touch controls, got ${touchControls.count}`);
+  assert.equal(touchControls.visibleCount, 6,
+    `390x844: expected six visible touch controls, got ${touchControls.visibleCount}`);
+  assert.deepEqual(touchControls.ids.sort(), ["brake", "camera", "handbrake", "reset", "steer", "throttle"],
+    `390x844: unexpected touch controls ${touchControls.ids.join(", ")}`);
   assert.ok(touchControls.maxTouchPoints > 0,
     "390x844: Chrome did not expose touch capability to the game");
   await page.setTouchEmulation(false);
