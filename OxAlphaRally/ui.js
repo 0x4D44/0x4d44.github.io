@@ -1333,6 +1333,7 @@ export function titleDossier(data = {}) {
 
 export function buildTitleModel(data = {}) {
   const has = !!data.championship;
+  const canStartChampionship = !!data.championshipAvailable;
   const units = data.settings?.units ?? "metric";
   const dossier = titleDossier(data);
   const stage = dossier.stage;
@@ -1390,13 +1391,11 @@ export function buildTitleModel(data = {}) {
       {
         id: "t-menu", kind: "menu", region: "main", heading: "Main menu",
         items: [
-          // career.js currently schedules a different stage catalogue from the
-          // renderer. Until those catalogues are unified, make the primary path
-          // one the game can honour instead of promising a dead championship.
-          btn("t-continue", has ? "Continue championship" : "Quick stage",
-            has ? "continue" : "quickStage", { primary: true }),
+          btn("t-continue", has ? "Continue championship"
+            : canStartChampionship ? "New championship" : "Quick stage",
+          has ? "continue" : canStartChampionship ? "newSeason" : "quickStage", { primary: true }),
           btn("t-new", "New championship", "newSeason", { hidden: !has }),
-          btn("t-quick", "Quick stage", "quickStage", { hidden: !has }),
+          btn("t-quick", "Quick stage", "quickStage", { hidden: !has && !canStartChampionship }),
           btn("t-trial", "Time trial", "timeTrial"),
           btn("t-garage", "Garage", "garage"),
           btn("t-settings", "Settings", "openSettings"),
@@ -1819,9 +1818,9 @@ export function buildResultsModel(data = {}) {
         id: "r-actions", kind: "panel", region: "footer",
         items: [
           btn("r-next", data.hasNextStage ? "Next stage" : "Championship", data.hasNextStage ? "nextStage" : "championship", { primary: true }),
-          btn("r-retry", "Retry stage", "restartStage"),
+          btn("r-retry", "Retry stage", "restartStage", { hidden: data.canRetry === false }),
           btn("r-replay", "Watch replay", "replay", { disabled: !data.hasReplay }),
-        ],
+        ].filter((item) => !item.hidden),
       },
     ],
   };

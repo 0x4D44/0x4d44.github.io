@@ -38,7 +38,7 @@ export async function startGame(opts) {
   progress("Loading modules", 0.15);
   const [
     physics, stageMod, pacenotes, damageMod, weatherMod,
-    meshes, renderMod, hudMod, uiMod, careerMod, replayMod,
+    meshes, renderMod, hudMod, uiMod, careerMod, replayMod, championshipMod,
   ] = await Promise.all([
     import("./physics.js"),
     import("./stage.js"),
@@ -51,6 +51,7 @@ export async function startGame(opts) {
     import("./ui.js"),
     import("./career.js"),
     import("./replay.js"),
+    import("./championship.js"),
   ]);
 
   progress("Building the world", 0.35);
@@ -95,6 +96,9 @@ export async function startGame(opts) {
     splitIndex: 0,
     splitTimes: [],
     lastResult: null,
+    mode: "quick",
+    pendingChoice: null,
+    championshipSubmission: null,
     paused: false,
   };
 
@@ -140,9 +144,9 @@ export async function startGame(opts) {
     const def = stageMod.STAGE_BOOK.find((entry) => entry.id === menuStageId)
       ?? stageMod.STAGE_BOOK[0];
     return {
-      // career.js and stage.js currently name different stage catalogues. Do not
-      // offer a championship whose scheduled road the renderer cannot build.
-      championship: null,
+      championship: championshipMod.championshipData(career, careerMod.RALLIES),
+      championshipAvailable: true,
+      profile: career.summary?.(),
       stage: menuStageFor(def.id),
       stages: STAGE_CARDS,
       cars: physics.CARS,
@@ -160,7 +164,64 @@ export async function startGame(opts) {
   function showStageScreen(stageId) {
     const id = idOf(stageId);
     if (id && stageMod.STAGE_BOOK.some((def) => def.id === id)) menuStageId = id;
+    game.pendingChoice = null;
     screen("stage", menuData());
+  }
+
+  function showChampionship() {
+    const season = career.state.season;
+    if (!season) career.newSeason();
+    else if (season.finished) {
+      showSeason();
+      return;
+    }
+    game.pendingChoice = null;
+    screen("championship", menuData());
+  }
+
+  function showChampionshipStage() {
+    const ctx = career.currentStage?.();
+    const choice = championshipMod.championshipChoice(
+      ctx, career.state.season, stageMod.STAGE_BOOK, physics.CARS,
+    );
+    if (!ctx || !choice) {
+      showChampionship();
+      return;
+    }
+    const playable = stageMod.stageFromBook(choice.stageId, {
+      seed: choice.seed,
+      reverse: choice.reverse,
+    });
+    const preset = weatherMod.presetById(choice.weather);
+    game.pendingChoice = choice;
+    screen("stage", menuData({
+      stage: {
+        ...playable,
+        name: ctx.stage.name,
+        country: ctx.event.country,
+        notes: `${ctx.event.name} · ${ctx.leg.name}. Playable route: ${playable.name}.`,
+      },
+      weather: {
+        name: preset.name,
+        temperature: preset.temperature,
+        wetness: preset.roadWetness,
+        wind: preset.windSpeed,
+        timeOfDay: ctx.stage.night ? "night" : "day",
+      },
+      personalBest: ctx.recordMs,
+      rivals: [],
+    }));
+  }
+
+  function showSeason() {
+    screen("season", championshipMod.seasonData({ standings: career.standings?.() ?? [] }));
+  }
+
+  let championshipRepairChoices = [];
+  function showService() {
+    const data = championshipMod.serviceData(game.championshipSubmission?.service);
+    championshipRepairChoices = data.repairChoices.slice();
+    screen("service", data);
   }
 
   function showCarScreen() {
@@ -169,6 +230,7 @@ export async function startGame(opts) {
 
   // Menu buttons emit a bare id, while beginStage consumes a complete choice.
   function menuChoice(value) {
+    if (game.pendingChoice?.mode === "championship") return { ...game.pendingChoice };
     const id = idOf(value);
     return {
       stageId: (id && stageMod.STAGE_BOOK.some((def) => def.id === id)) ? id : menuStageId,
@@ -186,7 +248,10 @@ export async function startGame(opts) {
     onStart: (choice) => beginStage(menuChoice(choice)),
     onQuickStage: () => showStageScreen(),
     onTimeTrial: () => showStageScreen(),
-    onSelectStage: (value) => showStageScreen(value),
+    onSelectStage: (value, action) => {
+      if (action === "openStage") showChampionshipStage();
+      else showStageScreen(value);
+    },
     onGarage: () => showCarScreen(),
     onOpenCar: () => showCarScreen(),
     onBack: () => toMenu(),
@@ -194,19 +259,29 @@ export async function startGame(opts) {
     onRestartStage: () => beginStage(menuChoice(game.lastChoice)),
     onRepeatNote: () => game.noteRunner?.repeat?.(),
     onNextStage: () => {
+      if (game.mode === "championship") {
+        if (game.championshipSubmission?.service) showService();
+        else if (game.championshipSubmission?.seasonFinished) showSeason();
+        else showChampionshipStage();
+        return;
+      }
       const book = stageMod.STAGE_BOOK;
       const at = book.findIndex((def) => def.id === menuStageId);
       menuStageId = book[(at < 0 ? 0 : at + 1) % book.length].id;
       showStageScreen();
     },
-    onConfirmRepairs: (plan) => { career.applyService?.(plan); toMenu(); },
+    onConfirmRepairs: () => {
+      career.applyService?.(championshipRepairChoices);
+      showChampionshipStage();
+    },
     onReplay: () => toMenu(),
-    // Kept as safe fallbacks for saved UI state. The title hides championship
-    // entry points until career.js and stage.js share one stage catalogue.
-    onContinue: () => toMenu(),
-    onNewSeason: () => toMenu(),
-    onChampionship: () => toMenu(),
-    onSelectEvent: () => toMenu(),
+    onContinue: () => showChampionship(),
+    onNewSeason: () => { career.newSeason(); showChampionship(); },
+    onChampionship: () => showChampionship(),
+    onSelectEvent: (eventId) => {
+      const season = career.state.season;
+      if (season?.calendar?.[season.cursor.event] === eventId) showChampionshipStage();
+    },
     onSelectCar: (value, action) => {
       const id = idOf(value);
       if (id && physics.CARS.some((car) => car.id === id)) menuCarId = id;
@@ -214,8 +289,11 @@ export async function startGame(opts) {
       else showCarScreen();
     },
     onSettingsChange: (patch) => applySettings(patch),
-    onRepair: (plan) => career.applyService?.(plan),
-    onQuit: () => toMenu(),
+    onRepair: (change) => {
+      if (Array.isArray(change)) championshipRepairChoices = change.slice();
+      else if (change?.chosen) championshipRepairChoices = change.chosen.slice();
+    },
+    onQuit: () => retire("Retired by crew"),
     onResume: () => setPaused(false),
     onRestart: () => beginStage(game.lastChoice),
   });
@@ -347,6 +425,8 @@ export async function startGame(opts) {
 
   async function beginStage(choice) {
     game.lastChoice = choice;
+    game.mode = choice.mode === "championship" ? "championship" : "quick";
+    game.championshipSubmission = null;
     game.state = GameState.LOADING;
     screen("loading", { stage: choice.stageId });
     await nextFrame();
@@ -360,7 +440,17 @@ export async function startGame(opts) {
     const world = stageMod.stageWorld(stage);
 
     const weather = weatherMod.createWeather(THREE, renderer.scene, choice.weather ?? def.weather);
-    const damage = damageMod.createDamage();
+    const carSpec = physics.CARS.find((entry) => entry.id === choice.carId) ?? physics.CARS[0];
+    const damage = damageMod.createDamage({
+      drive: carSpec.drive === "4WD" ? "awd" : carSpec.drive.toLowerCase(),
+    });
+    if (game.mode === "championship") {
+      championshipMod.applyCareerCondition(
+        damage,
+        career.state.season?.condition,
+        damageMod.setComponentHealth,
+      );
+    }
     const car = physics.createCar(choice.carId, {
       preset: settings.assistPreset,
       assists: settings.assists,
@@ -390,15 +480,18 @@ export async function startGame(opts) {
     game.noteRunner = runner;
     game.speedProfile = stageMod.speedProfile(stage);
     game.recorder = replayMod.createRecorder({
-      meta: { stageId: stage.id, carId: car.spec.id, weatherKey: weather.presetId ?? "" },
+      meta: { stageId: stage.id, carId: car.spec.id, weatherKey: weather.current?.id ?? "" },
       capacityMetres: stage.length + 500,
     });
     // The reference to beat is whatever this car has already done here in these
     // conditions — a ghost from a different car on a different surface would be
     // a number, not information.
-    game.best = career.bestFor?.(stage.id, car.spec.id, weather.presetId ?? "clear") ?? null;
-    const ghostRun = choice.ghost ?? career.ghostFor?.(stage.id, {
-      carId: car.spec.id, weatherKey: weather.presetId ?? "clear",
+    const recordStageId = choice.careerStageId ?? stage.id;
+    const recordCarId = choice.careerCarId ?? car.spec.id;
+    const recordWeatherKey = choice.careerWeatherKey ?? weather.current?.id ?? "clear";
+    game.best = career.bestFor?.(recordStageId, recordCarId, recordWeatherKey) ?? null;
+    const ghostRun = choice.ghost ?? career.ghostFor?.(recordStageId, {
+      carId: recordCarId, weatherKey: recordWeatherKey,
     });
     game.ghost = ghostRun ? replayMod.createGhost(ghostRun) : null;
     game.stageTimeMs = 0;
@@ -600,25 +693,87 @@ export async function startGame(opts) {
 
   function finishStage() {
     game.state = GameState.FINISHED;
+    const report = damageMod.damageReport(game.damage);
+    const run = {
+      timeMs: game.stageTimeMs,
+      splits: game.splitTimes.slice(),
+      cleanRun: !report.some((row) => row.damaged),
+      run: game.recorder?.finish?.(),
+    };
+    if (game.mode === "championship") {
+      const submission = career.submitStage?.({
+        ...run,
+        damage: championshipMod.careerDamage(report),
+      });
+      game.championshipSubmission = submission;
+      game.lastResult = submission;
+      hud.finish?.({ timeMs: game.stageTimeMs });
+      audio.setMuted?.(false);
+      screen("results", championshipMod.resultData(submission, run));
+      return;
+    }
     const result = career.recordStage?.({
       stageId: game.stage.id,
       carId: game.car.spec.id,
-      weatherKey: game.weather?.presetId ?? "clear",
-      timeMs: game.stageTimeMs,
-      splits: game.splitTimes.slice(),
-      damage: damageMod.damageReport(game.damage),
-      run: game.recorder?.finish?.(),
+      weatherKey: game.weather?.current?.id ?? "clear",
+      ...run,
+      damage: report,
     }) ?? { timeMs: game.stageTimeMs };
     game.lastResult = result;
     hud.finish?.(result);
     audio.setMuted?.(false);
-    screen("results", { ...result, hasNextStage: true, hasReplay: false });
+    screen("results", {
+      results: {
+        stageName: game.stage.name,
+        totalMs: game.stageTimeMs,
+        position: 1,
+        splits: game.splitTimes.map((timeMs, index) => ({
+          label: `Split ${index + 1}`, timeMs, deltaMs: null,
+        })),
+        penaltiesMs: 0,
+        cleanRun: run.cleanRun,
+      },
+      hasNextStage: true,
+      hasReplay: false,
+      canRetry: true,
+    });
   }
 
   function retire(reason) {
+    if (game.state !== GameState.RACING && game.state !== GameState.PAUSED
+      && game.state !== GameState.COUNTDOWN) return;
     game.state = GameState.RETIRED;
+    audio.setMuted?.(false);
+    if (game.mode === "championship") {
+      const run = {
+        retired: true,
+        reason,
+        timeMs: game.stageTimeMs,
+        splits: game.splitTimes.slice(),
+      };
+      const submission = career.submitStage?.({
+        ...run,
+        damage: championshipMod.careerDamage(damageMod.damageReport(game.damage)),
+      });
+      game.championshipSubmission = submission;
+      game.lastResult = submission;
+      screen("results", championshipMod.resultData(submission, run));
+      return;
+    }
     screen("results", {
-      retired: true, reason, timeMs: game.stageTimeMs, hasNextStage: true, hasReplay: false,
+      results: {
+        stageName: game.stage?.name,
+        totalMs: game.stageTimeMs,
+        position: null,
+        splits: [],
+        penaltiesMs: 0,
+        cleanRun: false,
+        retired: true,
+        reason,
+      },
+      hasNextStage: true,
+      hasReplay: false,
+      canRetry: true,
     });
   }
 
@@ -731,6 +886,7 @@ export async function startGame(opts) {
     async drive(choice) {
       captureHold = false;
       await beginStage({
+        mode: choice.mode,
         stageId: choice.stageId ?? stageMod.STAGE_BOOK[0].id,
         carId: choice.carId ?? physics.CARS[0].id,
         weather: choice.weather,
@@ -808,6 +964,36 @@ export async function startGame(opts) {
         length: st.length, count: st.count,
         scenery: st.scenery?.length ?? 0, props: st.props?.length ?? 0,
       };
+    },
+    championshipInfo() {
+      const season = career.state.season;
+      const ctx = career.currentStage?.();
+      const currentEvent = season?.events?.[season.cursor.event];
+      const submitted = game.championshipSubmission;
+      const submittedState = submitted
+        ? season?.events?.find((event) => event.id === submitted.event.id)?.results?.[submitted.stage.id]
+        : null;
+      return {
+        hasSeason: !!season,
+        seed: season?.seed ?? null,
+        cursor: season ? { ...season.cursor } : null,
+        finished: !!season?.finished,
+        careerStageId: ctx?.stage?.id ?? null,
+        playableStageId: game.stage?.id ?? game.pendingChoice?.stageId ?? null,
+        submittedStageId: submitted?.stage?.id ?? null,
+        playerResult: submittedState?.entries?.find((entry) => entry.driverId === "player") ?? null,
+        serviceDue: !!submitted?.service,
+        currentEventDone: !!currentEvent?.done,
+      };
+    },
+    submitStage(result = {}) {
+      if (!game.stage || game.mode !== "championship") return false;
+      game.stageTimeMs = Number(result.timeMs) || game.stageTimeMs || 1;
+      game.splitTimes = Array.isArray(result.splits) ? result.splits.slice() : [];
+      game.state = GameState.RACING;
+      if (result.retired) retire(result.reason ?? "Retired");
+      else finishStage();
+      return true;
     },
   };
   window.__opusRally = harness;

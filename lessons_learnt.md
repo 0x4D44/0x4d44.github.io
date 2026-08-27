@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-08-27 - Keep career and physical stage IDs separate across the simulator adapter (championship.js:championshipChoice)
+  OxAlphaRally's career schedules 51 stages while the renderer owns 12 playable roads.
+  A stable surface-aware mapping lets career.js remain authoritative for results, saves,
+  service and standings while game.js builds a deterministic physical road for the drive.
+
 - 2026-08-26 - After countdown evidence, restart the browser; reload can retain stalled GL (tests/shoot.mjs:main)
   OxAlphaRally's isolated gravel capture passed, but the full corpus stalled twice after
   photographing the start-line countdown. Reloading the app still stalled. Closing the
