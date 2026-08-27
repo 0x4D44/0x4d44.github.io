@@ -384,8 +384,17 @@ export async function startGame(opts) {
 
     const def = stageMod.STAGE_BOOK.find((s) => s.id === choice.stageId)
       ?? stageMod.STAGE_BOOK[0];
+    // `reverse` belongs to the BOOK ENTRY, not to the caller. The reverse stages
+    // carry `params.reverse: true` and deliberately share their forward twin's seed,
+    // because a reverse stage is the same road driven the other way. stageFromBook
+    // spreads a caller's overrides AFTER entry.params, so passing an unconditional
+    // `reverse: !!choice.reverse` wrote `false` straight over the book and turned
+    // both reverse stages back into their forward twins: every sampled point of
+    // kloft-bjornhalt-rev was bit-identical to kloft-bjornhalt (167/167), and the
+    // same for alvenda-calderas-rev (154/154). Two of the twelve stages were roads
+    // the player had already driven. Only override when a caller actually asked.
     const stage = stageMod.stageFromBook(def.id, {
-      reverse: !!choice.reverse,
+      ...(choice.reverse === undefined ? {} : { reverse: !!choice.reverse }),
       ...(choice.seed ? { seed: choice.seed } : {}),
     });
     const world = stageMod.stageWorld(stage);
@@ -762,7 +771,7 @@ export async function startGame(opts) {
         carId: choice.carId ?? physics.CARS[0].id,
         weather: choice.weather,
         seed: choice.seed,
-        reverse: !!choice.reverse,
+        ...(choice.reverse === undefined ? {} : { reverse: !!choice.reverse }),
       });
       if (choice.skipCountdown !== false) {
         game.countdown = 0;
