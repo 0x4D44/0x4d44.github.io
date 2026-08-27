@@ -23,11 +23,12 @@ const KPH = 3.6;
 // The `world` contract from CONTRACTS.md, uniform, climbing at `grade` (dy/dz) in
 // the +Z direction a fresh car faces. `surfaceAt` fills the caller's object because
 // physics.js hands it the same scratch every wheel.
-function slopedWorld(surfaceId = SURFACE.TARMAC, groundY = 0, grade = 0) {
+function slopedWorld(surfaceId = SURFACE.TARMAC, groundY = 0, grade = 0, gripScale = 1) {
   const props = surfaceProps(surfaceId);
   const inv = 1 / Math.sqrt(1 + grade * grade);
   return {
     gravity: G,
+    gripScale,
     heightAt: (x, z) => groundY + z * grade,
     normalAt: (x, z, out) => { out.x = 0; out.y = inv; out.z = -grade * inv; return out; },
     surfaceAt: (x, z, out) => {
@@ -96,7 +97,13 @@ function peakPowerW(spec) {
 const SPRINT = {
   "vireo-r2": { t100: [7.8, 10.4], topKph: [165, 191] },
   "sprint-j2": { t100: [7.4, 9.9], topKph: [198, 228] },
-  "brackmoor-t8": { t100: [8.7, 11.6], topKph: [169, 195] },
+  // Re-measured for the same reason as the 640 below, one layer down: this band
+  // was recorded while the launch ran the rear tyres out to a slip ratio of 5.9,
+  // where tarmac returns 55% of its peak. With the auto-clutch refusing to hand
+  // the tyres more than they give back, the Type 8 reaches 100 in 8.4 s. Its top
+  // speed is untouched, which is the check that this is a launch and not a power
+  // change.
+  "brackmoor-t8": { t100: [7.2, 9.6], topKph: [169, 195] },
   // Re-measured: this band was recorded while the auto-clutch pinned the engine
   // at ~2100 rpm off the line, below the 3200 rpm its turbo lights at, so it read
   // the bog rather than the car. With the launch fixed the 640 sprints in 4.9 s.
@@ -453,8 +460,9 @@ test("no car can be pinned in first gear with the shift servo on", () => {
 // The arcade preset is the one a player gets: shift servo, traction control and
 // the auto-clutch. Flat out from rest up a climb is the move that strands a car.
 function hillStart(specId, surfaceId, grade, over = {}) {
-  const world = slopedWorld(surfaceId, 0, grade);
-  const car = createCar(specId, { preset: "arcade", ...over });
+  const { gripScale = 1, ...carOpts } = over;
+  const world = slopedWorld(surfaceId, 0, grade, gripScale);
+  const car = createCar(specId, { preset: "arcade", ...carOpts });
   const input = makeInput();
   // Sit still in gear off the throttle first, the way a car that has just stopped
   // part-way up the climb sits before the driver gets back on it.
@@ -463,14 +471,18 @@ function hillStart(specId, surfaceId, grade, over = {}) {
 
   let minRpm = Infinity;
   let stalledSteps = 0;
+  let maxSlip = 0;
   const settle = steps(0.25);
   const n = steps(6);
   for (let i = 0; i < n; i += 1) {
     stepCar(car, input, world, DT);
     if (i >= settle) minRpm = Math.min(minRpm, car.engineRpm);
     if (car.engineStalled) stalledSteps += 1;
+    for (const w of car.wheels) {
+      if (Math.abs(w.driveTorque) > 1) maxSlip = Math.max(maxSlip, w.slipRatio);
+    }
   }
-  return { kph: car.forwardSpeed * KPH, minRpm, stalledSteps, gear: car.gear };
+  return { kph: car.forwardSpeed * KPH, minRpm, stalledSteps, maxSlip, gear: car.gear };
 }
 
 const LOOSE_CLIMBS = [SURFACE.GRAVEL, SURFACE.DIRT, SURFACE.SNOW, SURFACE.MUD];
@@ -519,25 +531,152 @@ test("a car pulls away up a low-grip climb instead of bogging the engine", () =>
   }
 });
 
+test("the idle governor holds each engine at the idle speed it declares", () => {
+  // A proportional governor can only make torque by sitting BELOW its setpoint, so
+  // every car idled 18-33% under its own figure, and the 640 — whose curve is worth
+  // its 30% naFraction off boost — never made more than its own friction and stopped
+  // dead at 0 rpm without ever setting engineStalled. That is not a cosmetic rpm
+  // error: the auto-clutch's stall guard is referenced to idle, so an engine that
+  // cannot reach idle is one the clutch never takes drive up from, which is the
+  // whole of "the car cannot restart on a climb".
+  const world = flatWorld(SURFACE.TARMAC);
+  for (const spec of CARS) {
+    const car = createCar(spec.id, { preset: "arcade" });
+    hold(car, makeInput(), world, 8);
+    const eng = spec.engine;
+    assert.equal(car.engineStalled, false, `${spec.id} stalled sitting at idle`);
+    assert.ok(
+      car.engineRpm > eng.idleRpm * 0.95 && car.engineRpm < eng.idleRpm * 1.12,
+      `${spec.id} idles at ${car.engineRpm.toFixed(0)} rpm against the ${eng.idleRpm} rpm`
+      + ` it declares (${(car.engineRpm / eng.idleRpm * 100).toFixed(1)}%)`,
+    );
+    assert.ok(car.speed * KPH < 0.5, `${spec.id} crept off at idle`);
+  }
+});
+
+test("a held part throttle on a climb drives the car instead of freewheeling", () => {
+  // Against a control that is the same car with the clutch pedal on the floor. With
+  // the engine unable to reach idle, the auto-clutch's stall guard held the clutch
+  // fully open, and four of the eight rolled back down a 6% gravel climb at exactly
+  // the freewheeling speed — the drivetrain was disconnected and more throttle did
+  // nothing at all. The control is what makes this measure the clutch rather than
+  // the hill: both runs face the same grade, mass and drag.
+  const world = slopedWorld(SURFACE.GRAVEL, 0, 0.06);
+  for (const spec of CARS) {
+    const run = (clutchPedal) => {
+      const car = createCar(spec.id, { preset: "arcade" });
+      const input = makeInput();
+      input.clutch = clutchPedal;
+      hold(car, input, world, 0.5);
+      input.throttle = 0.25;
+      hold(car, input, world, 6);
+      return car;
+    };
+    const driven = run(0);
+    const free = run(1);
+    const gain = (driven.forwardSpeed - free.forwardSpeed) * KPH;
+    assert.ok(
+      gain > 0.6,
+      `${spec.id} at a quarter throttle ended on ${(driven.forwardSpeed * KPH).toFixed(2)} km/h`
+      + ` against ${(free.forwardSpeed * KPH).toFixed(2)} km/h with the clutch in — a gain of`
+      + ` ${gain.toFixed(2)} km/h, so the drivetrain was barely connected`,
+    );
+    assert.ok(
+      driven.engineRpm > spec.engine.stallRpm,
+      `${spec.id} was dragged to ${driven.engineRpm.toFixed(0)} rpm, under its`
+      + ` ${spec.engine.stallRpm} rpm stall line`,
+    );
+  }
+});
+
+test("the steepest climb the stage book has is restartable in the worst weather", () => {
+  // The bands come from the shipping stages rather than from a round number: the
+  // steepest gravel in STAGE_BOOK is 10.4% and the steepest dirt 11.2%, and
+  // weatherSurfaceModifier's gripScale floors at 0.22, with 0.35 about what heavy
+  // rain over standing water gives. No stage carries ice or snow as a road surface,
+  // so this — not sheet ice — is the case a player is actually stranded on.
+  for (const [surfaceId, grade] of [[SURFACE.GRAVEL, 0.105], [SURFACE.DIRT, 0.115]]) {
+    for (const spec of CARS) {
+      const name = `${spec.id} on ${surfaceProps(surfaceId).name} at ${(grade * 100).toFixed(1)}%`;
+      const r = hillStart(spec.id, surfaceId, grade, { gripScale: 0.35 });
+      assert.equal(r.stalledSteps, 0, `${name} in poor grip stalled pulling away`);
+      assert.ok(
+        r.kph > 1,
+        `${name} at 0.35 grip was still doing ${r.kph.toFixed(2)} km/h after 6 s flat out`,
+      );
+    }
+  }
+});
+
+test("the auto-clutch feeds the tyres what they hold, and reads the surface to know it", () => {
+  // The clutch is a damper on the speed difference across it, so a launch held at
+  // 3900 rpm against a stationary driveline asked an ice-bound front axle for 2150 N
+  // of a possible 1320 and put the wheels straight out to the +/-6 slip clamp. What
+  // it may hand over is now bounded by what the tyres returned last step.
+  //
+  // The pair is the point. A flat cap would hold the same slip on both surfaces, and
+  // that is wrong: a hard surface is down to 55% of its peak by the clamp while deep
+  // mud still holds 83% and wants to be dug into. Mud must therefore be allowed MORE
+  // slip than ice, on the same car, from the same standing start.
+  for (const spec of CARS) {
+    const ice = hillStart(spec.id, SURFACE.ICE, 0.044);
+    const mud = hillStart(spec.id, SURFACE.MUD, 0.044);
+    assert.ok(
+      ice.maxSlip < 2,
+      `${spec.id} ran the driven wheels to a slip ratio of ${ice.maxSlip.toFixed(2)} launching`
+      + " on ice, where the tyre is past half its peak",
+    );
+    assert.ok(
+      mud.maxSlip > ice.maxSlip * 1.3,
+      `${spec.id} was allowed ${mud.maxSlip.toFixed(2)} slip in mud against ${ice.maxSlip.toFixed(2)}`
+      + " on ice — the guard is not reading the surface",
+    );
+  }
+});
+
 // Drives a climb the car cannot get traction on and reports what the gearbox did.
+// The auto-clutch is off as well as the traction control, because with both aids
+// managing the drivetrain there is no longer any wheelspin to test the servo
+// against — the clutch refuses to feed the tyres more than they return and holds
+// the slip near one. This fixture is the bare drivetrain, which is the case the
+// servo has to survive.
 function wheelspinClimb(specId, surfaceId, grade, seconds) {
   const world = slopedWorld(surfaceId, 0, grade);
-  const car = createCar(specId, { preset: "arcade", assists: { tractionControl: 0 } });
+  const car = createCar(specId, {
+    preset: "arcade",
+    assists: { tractionControl: 0, autoClutch: false },
+  });
   const input = makeInput();
   input.throttle = 1;
+  const gb = car.setup.gearbox;
   let maxGear = car.gear;
   let maxSlip = 0;
   let maxKph = 0;
+  // The lowest engine speed any gear above first was ever asked to turn at, from
+  // the ROAD speed alone. A gear the wheels cannot turn over at idle is a gear the
+  // servo had no business selecting.
+  let worstGearRpm = Infinity;
+  let worstGear = 0;
+  let worstKph = 0;
   const n = steps(seconds);
   for (let i = 0; i < n; i += 1) {
     stepCar(car, input, world, DT);
     maxGear = Math.max(maxGear, car.gear);
     maxKph = Math.max(maxKph, Math.abs(car.forwardSpeed) * KPH);
+    if (car.gear > 1) {
+      const roadRpm = (Math.abs(car.forwardSpeed) / car.setup.wheelRadius)
+        * gb.final * gb.ratios[car.gear - 1] * 60 / (Math.PI * 2);
+      if (roadRpm < worstGearRpm) {
+        worstGearRpm = roadRpm;
+        worstGear = car.gear;
+        worstKph = Math.abs(car.forwardSpeed) * KPH;
+      }
+    }
     for (const w of car.wheels) {
       if (Math.abs(w.driveTorque) > 1) maxSlip = Math.max(maxSlip, w.slipRatio);
     }
   }
-  return { maxGear, maxSlip, maxKph, gear: car.gear };
+  return { maxGear, maxSlip, maxKph, gear: car.gear, worstGearRpm, worstGear, worstKph };
 }
 
 test("the shift servo does not walk up the box on a spinning wheel", () => {
@@ -552,9 +691,15 @@ test("the shift servo does not walk up the box on a spinning wheel", () => {
       `${spec.id} only reached ${r.maxSlip.toFixed(2)} slip ratio on an 8.8% ice climb`
       + " — without real wheelspin this test proves nothing",
     );
-    assert.equal(
-      r.maxGear, 1,
-      `${spec.id} shifted up to gear ${r.maxGear} while spinning its wheels at ${r.maxKph.toFixed(1)} km/h`,
+    // Not "never leaves first": a car that genuinely reaches 44 km/h on its snow
+    // tyres is entitled to second. What is forbidden is a gear the road speed
+    // cannot turn the engine over in — fifth at 15 km/h asks a 1200 rpm engine for
+    // 660, which is under every stall line in the catalogue.
+    assert.ok(
+      r.worstGearRpm === Infinity || r.worstGearRpm > spec.engine.idleRpm,
+      `${spec.id} sat in gear ${r.worstGear} at ${r.worstKph.toFixed(1)} km/h, where the road`
+      + ` turns the engine at only ${r.worstGearRpm.toFixed(0)} rpm against its`
+      + ` ${spec.engine.idleRpm} rpm idle`,
     );
   }
 });
