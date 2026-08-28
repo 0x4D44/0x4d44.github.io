@@ -1541,7 +1541,13 @@ diffuseColor.rgb *= surf;
 const ROAD_SNOW_FRAGMENT = `
 #include <color_fragment>
 float lie = uSnow * ( 1.0 - 0.85 * vDetail.x );
-diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.80, 0.83, 0.88 ) * ( 0.82 + 0.18 * wear ), lie );
+// Snow a rally car has run over is compacted and gritted; snow on the verge
+// beside it is not. Painted with one white, the ribbon and the ground beside it
+// came out within 8 pixel levels of each other at 20, 40, 60 and 80 m in a
+// blizzard, with the sign flipping from one distance to the next, so the only
+// thing marking a snow road was the pair of ruts, and they are gone by forty.
+vec3 lying = mix( vec3( 0.50, 0.53, 0.60 ), vec3( 0.86, 0.89, 0.95 ), vDetail.w );
+diffuseColor.rgb = mix( diffuseColor.rgb, lying * ( 0.82 + 0.18 * wear ), lie );
 `;
 
 function injectRoadShader(material, roadSet, vergeSet) {
@@ -2001,7 +2007,12 @@ function scaleCol(a, k) {
 
 function vergeColour(stage, i, props) {
   const snowy = Array.isArray(stage.surfaceMix) && stage.surfaceMix.includes(SURFACE.SNOW);
-  const base = snowy ? [0.74, 0.78, 0.84] : GRASS_COL;
+  // Not clean pasture: the outer 1.8 m of the ribbon is the churned strip the
+  // cars have been cutting all season. At grass it shaded 0.72 of the running
+  // surface where the ditch just inside it shades 0.56 and the shoulder 0.45 —
+  // the section climbed back OUT of its own dark band, so what marked the edge
+  // was 0.8 m of cross-section rather than the 2.6 m it now holds.
+  const base = snowy ? [0.74, 0.78, 0.84] : mixCol(GRASS_COL, SHOULDER_COL, 0.45);
   const n = hash2(i, 5, 31) * 0.2 - 0.1;
   return [saturate(base[0] + n), saturate(base[1] + n), saturate(base[2] + n * 0.5)]
     .map((v, k) => saturate(v * 0.85 + props.albedo[k] * 0.15));
@@ -2024,7 +2035,13 @@ const TERRAIN_PALETTE = Object.freeze({
   grass: [0.150, 0.215, 0.095],
   scree: [0.430, 0.415, 0.395],
   snow: [0.820, 0.860, 0.920],
-  dirt: [0.250, 0.195, 0.135],
+  // Damp, churned earth, not a second running surface. The old value shaded
+  // 0.2024, which is 5% ABOVE the grass around it, and it carried the gravel's
+  // own warm hue — so the ground 4 to 14 m past the edge, the band a driver
+  // reads the road against at 20 to 80 m, measured within 2.4% of the running
+  // surface's own R/G on every stage sampled. Nothing out there said where the
+  // road ended.
+  dirt: [0.140, 0.108, 0.074],
 });
 
 // Value noise over the terrain lattice, so a hillside is not one flat olive.
@@ -2103,7 +2120,9 @@ diffuseColor.rgb *= ground;
 const TERRAIN_SNOW_FRAGMENT = `
 #include <color_fragment>
 float lie = uSnow * ( 1.0 - 0.62 * vSplat.x );
-diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.80, 0.83, 0.88 ) * ( 0.80 + 0.20 * driftTap ), lie );
+// The clean end of the ribbon's own snow mix, so the ground and the verge it
+// runs into lie the same white and the two do not meet at a seam.
+diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.86, 0.89, 0.95 ) * ( 0.80 + 0.20 * driftTap ), lie );
 `;
 
 function injectTerrainShader(material, grassSet, rockSet, dirtSet) {
@@ -2446,7 +2465,13 @@ export function buildTerrainMesh(THREE, stage, opts = {}) {
         const alt = saturate((y - minY) / altSpan);
         const rockW = smoothstep(0.16, 0.46, slope);
         const highW = smoothstep(0.62, 0.95, alt) * (1 - rockW * 0.4);
-        const dirtW = smoothstep(26, 8, roadDist) * (1 - rockW * 0.6);
+        // Measured out from the road EDGE, not the centreline, and over metres
+        // rather than tens of them. Keyed to the centreline at 26 m the apron
+        // reached 22 m past the edge of a 4 m half-width road and 19 m past a
+        // 6.6 m one, and every metre of it carried the running surface's own
+        // brown. That is the whole band the driver reads the edge against.
+        const dirtW = smoothstep(9.0, 2.5, roadDist - halfWidthOf(stage, near.index))
+          * (1 - rockW * 0.6);
         const grassW = Math.max(0.02, 1 - rockW - highW - dirtW);
         const sum = rockW + highW + dirtW + grassW;
         const wr = rockW / sum, wh = highW / sum, wd = dirtW / sum, wg = grassW / sum;

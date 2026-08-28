@@ -729,6 +729,141 @@ test("road: the shoulder, the windrow and the racing line each read against the 
   road.dispose();
 });
 
+// The complaint this one holds is a playability failure rather than a matter of
+// taste: a critic's frame put the road at luminance 151.6, the ground just off
+// it at 139.1 and the ground beyond that at 163.4 — one lower, one HIGHER — with
+// the same hue ratios to within 5%, so nothing in the picture said where the
+// road ended. It is measured here in linear albedo rather than in pixels because
+// a hillside tilted into the sun is what turned the value cue the wrong way
+// round in that frame; albedo is the part of the cue the ground keeps whatever
+// the sun is doing.
+//
+// Two faults, in two different places. The terrain painted its apron of churned
+// earth out to 26 m from the CENTRELINE, so twenty metres of ground either side
+// carried the running surface's own brown — and that is the band a driver reads
+// the edge against at 20 to 80 m. And the ribbon's own outer verge climbed back
+// to clean pasture a metre past the ditch, which left the dark band one ditch
+// wide. Book stages, not the fixture: the fixture's terrain is one flat olive
+// and would agree with anything.
+test("road: the ground the edge is read against keeps neither the running surface's value nor its hue", () => {
+  for (const id of ["kloft-bjornhalt", "northmarch-kestrel"]) {
+    const st = stageFromBook(id);
+    const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+    const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120 });
+
+    // Loose-surface stations only. This is a claim about a gravel road; a tarmac
+    // one is darker than its own verge and reads the other way round by design.
+    const slotAlbedo = (slot) => {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const chunk of road.chunks) {
+        const col = chunk.geometry.getAttribute("color").array;
+        for (const station of chunk.stations) {
+          if (station.surfaceId !== SURFACE.GRAVEL && station.surfaceId !== SURFACE.DIRT) continue;
+          const scale = materialAlbedoScale(road.surfaceMaterials.get(station.surfaceId));
+          const o = (station.vertexBase + slot) * 3;
+          r += col[o] * scale[0]; g += col[o + 1] * scale[1]; b += col[o + 2] * scale[2];
+          n += 1;
+        }
+      }
+      assert.ok(n > 200, `${id}: only ${n} loose-surface stations to average`);
+      return { r: r / n, g: g / n, b: b / n, L: luminance(r / n, g / n, b / n) };
+    };
+    const surface = slotAlbedo(ROAD_CENTRE_SLOT);
+    const verge = slotAlbedo(ROAD_SECTION.findIndex((s) => s.kind === "verge"));
+    assert.ok(verge.L <= surface.L * 0.65,
+      `${id}: the ribbon's outer verge shades ${(verge.L / surface.L).toFixed(3)} of the running `
+      + "surface, so the dark band that marks the edge is one ditch wide");
+
+    // Terrain vertices binned by how far past the road EDGE they sit, brute
+    // force against the whole centreline. A bucketed index here would have to
+    // agree with the one meshes.js builds, and then this would be measuring that
+    // agreement rather than the ground.
+    const scale = materialAlbedoScale(terrain.material);
+    const bin = (lo, hi) => ({ lo, hi, n: 0, L: 0, r: 0, g: 0 });
+    const dies = bin(0, 4);      // where the ribbon dies into the ground
+    const reads = bin(4, 14);    // what fills the frame beside the road at 20-80 m
+    for (const c of terrain.chunks) {
+      const pos = c.geometry.getAttribute("position").array;
+      const col = c.geometry.getAttribute("color").array;
+      for (let v = 0; v < c.surfaceVertexCount; v += 9) {
+        const x = pos[v * 3], z = pos[v * 3 + 2];
+        let best = Infinity, bi = -1;
+        for (let i = 0; i < st.count; i += 1) {
+          const dx = st.x[i] - x, dz = st.z[i] - z;
+          const d = dx * dx + dz * dz;
+          if (d < best) { best = d; bi = i; }
+        }
+        const off = Math.sqrt(best) - st.halfWidth[bi];
+        const into = off >= dies.lo && off < dies.hi ? dies
+          : off >= reads.lo && off < reads.hi ? reads : null;
+        if (!into) continue;
+        const r = col[v * 3] * scale[0], g = col[v * 3 + 1] * scale[1], b = col[v * 3 + 2] * scale[2];
+        into.n += 1; into.L += luminance(r, g, b); into.r += r; into.g += g;
+      }
+    }
+    assert.ok(dies.n > 40 && reads.n > 100,
+      `${id}: only ${dies.n}/${reads.n} roadside terrain vertices were found`);
+    assert.ok(dies.L / dies.n <= surface.L * 0.50,
+      `${id}: the ground the ribbon dies into shades ${((dies.L / dies.n) / surface.L).toFixed(3)} of `
+      + "the running surface, which makes the verge a second road");
+    const hue = (reads.r / reads.g) / (surface.r / surface.g);
+    assert.ok(Math.abs(hue - 1) >= 0.15,
+      `${id}: the ground 4-14 m past the edge is within ${(Math.abs(hue - 1) * 100).toFixed(1)}% of the `
+      + "road's own hue, and hue is the cue that survives a slope lit from the side");
+
+    road.dispose();
+    terrain.dispose();
+  }
+});
+
+// A snow stage was one white sheet. The ribbon and the ground beside it were
+// painted with the same white, so the only thing marking the road was the pair
+// of ruts, and the ruts are gone by forty metres. Snow a rally car has run over
+// is compacted and gritted; snow on the verge beside it is not. Read off the
+// compiled shader, because the two colours only meet there — it is a string
+// check, but what it asserts is the relationship between them, which is the part
+// that was missing.
+test("road: lying snow is compacted on the running surface and clean on the verge", () => {
+  const st = theStage();
+  const bundle = buildStageMeshes(THREE, st, TEX);
+  const compile = (material) => {
+    const shader = {
+      uniforms: {},
+      vertexShader: THREE.ShaderLib.physical.vertexShader,
+      fragmentShader: THREE.ShaderLib.physical.fragmentShader,
+    };
+    material.onBeforeCompile(shader, null);
+    return shader.fragmentShader;
+  };
+  const colours = (line) => [...line.matchAll(/vec3\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/g)]
+    .map((m) => [Number(m[1]), Number(m[2]), Number(m[3])]);
+  const lineWith = (src, needle) => src.split("\n").find((l) => l.includes(needle));
+
+  const roadLine = lineWith(compile(bundle.road.surfaceMaterials.get(SURFACE.GRAVEL)), "vec3 lying");
+  assert.ok(roadLine,
+    "the ribbon has no lying-snow mix, so the road and the verge take the same white and a snow stage has no edge");
+  const ends = colours(roadLine);
+  assert.equal(ends.length, 2,
+    `the lying-snow mix has ${ends.length} endpoints; it wants one for the running surface and one for the verge`);
+  const packed = luminance(ends[0][0], ends[0][1], ends[0][2]);
+  const clean = luminance(ends[1][0], ends[1][1], ends[1][2]);
+  assert.ok(packed <= clean * 0.72,
+    `snow on the running surface shades ${packed.toFixed(3)} against ${clean.toFixed(3)} on the verge: `
+    + "a driven road is duller than the field beside it, and without that a blizzard has no road in it");
+
+  // The ground has to lie the same white the ribbon's verge does, or the two
+  // meet at a seam brighter or duller than either of them.
+  const groundLine = lineWith(compile(bundle.terrain.material), "diffuseColor.rgb = mix( diffuseColor.rgb, vec3(");
+  assert.ok(groundLine, "the ground has no lying-snow mix");
+  const ground = colours(groundLine);
+  assert.equal(ground.length, 1);
+  for (let k = 0; k < 3; k += 1) {
+    assert.ok(Math.abs(ground[0][k] - ends[1][k]) < 0.02,
+      `the ground lies [${ground[0]}] of snow where the ribbon's verge lies [${ends[1]}]`);
+  }
+  bundle.dispose();
+});
+
 // ---- terrain -------------------------------------------------------------
 
 test("terrain: chunk seams agree in position and normal", () => {
