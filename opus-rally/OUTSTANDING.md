@@ -60,9 +60,19 @@ anyone re-measured them.
 
 ## Open, in rough order of what it costs the player
 
-1. **No touch controls.** The menus are responsive and the HUD has a real portrait
-   layout, but there is no on-screen wheel, so a phone can reach the game and not
-   drive it. This is the largest single population that cannot play at all.
+1. **Touch, the residue.** The old entry here said there was no on-screen wheel.
+   That was wrong — `touch.js` has shipped a full control set since 5225be9 and
+   `game.js` mounted it all along. What was broken was that the controls buried the
+   HUD (81% of the speed cluster in portrait, 63% in landscape) and ran the slider
+   out of thumb reach; both are fixed. Left: the HUD's own landscape rail overflows
+   a 360 px screen by 19 px, so at 740x360 the slider covers 2.0% of the speed
+   cluster and at 667x375 1.2% — cosmetic, and fixing it means restructuring that
+   rail. `tests/touch.test.mjs` models the HUD panel as 120x90 where the real
+   element is 152x220, so that unit test is weaker than its numbers look. And none
+   of it has run on a real device: contact size, palm rejection, iOS
+   `requestPermission`, safe-area insets and browser chrome are all untested, and
+   tilt is never exercised in a browser at all because headless Chrome emits no
+   `deviceorientation`.
 2. **You cannot see where the road ends.** Chase view, gravel, golden hour, ~35 m out:
    road (178,149,103) Y=151.6; ground immediately right of the edge Y=139.1; ground
    further right Y=163.4 — *brighter than the road*, with the same hue ratios to within
