@@ -8,10 +8,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  CONTROL_IDS, MIN_TARGET, RESERVED_RECT, STEER_DEFAULTS,
-  clearsReserved, controlById, controlLayout, createTouchControls, hitTest,
-  patchFromTouches, rectsIntersect, shouldShowTouch, sliderXFromSteer,
-  steerFromSlider, steerFromTilt, steerReturn, tiltFromOrientation,
+  CONTROL_IDS, MIN_TARGET, NO_RESERVE, RESERVED_RECT, STEER_DEFAULTS,
+  clearsReserved, controlById, controlColumn, controlLayout, createTouchControls,
+  hitTest, hudReserve, patchFromTouches, rectsIntersect, shouldShowTouch,
+  sliderXFromSteer, steerFromSlider, steerFromTilt, steerReturn, tiltFromOrientation,
 } from "../touch.js";
 import { createInput } from "../input.js";
 
@@ -640,6 +640,196 @@ test("a backgrounded page drops every held control", () => {
   dom.doc.fire("visibilitychange", {});
   assert.equal(input.update(1 / 60, 30).throttle, 0);
   assert.equal(controls.pointerCount, 0);
+  controls.destroy();
+  input.destroy();
+});
+
+// The two blocks the HUD's bottom rail actually carries, measured in Chrome with
+// the game running: the speed/gear cluster on the right, the damage panel on the
+// left. They are fixtures rather than imports because hud.js sizes them from a
+// stylesheet no Node test can lay out — if the HUD grows past these, this test
+// stops proving anything and should be re-measured.
+const HUD_CLUSTER = { portrait: { w: 199, h: 80 }, landscape: { w: 290, h: 170 } };
+const HUD_PANEL = { w: 120, h: 90 };
+const HUD_PAD = 12;
+
+function hudBlocks(layout, viewport) {
+  const r = hudReserve(layout);
+  const ins = viewport.insets ?? {};
+  const padL = Math.max(HUD_PAD, ins.left ?? 0);
+  const padR = Math.max(HUD_PAD, ins.right ?? 0);
+  const padB = Math.max(HUD_PAD, ins.bottom ?? 0);
+  const size = layout.portrait ? HUD_CLUSTER.portrait : HUD_CLUSTER.landscape;
+  return {
+    cluster: {
+      x: layout.width - padR - r.rightSide - size.w,
+      y: layout.height - padB - r.rightBottom - size.h,
+      w: size.w, h: size.h,
+    },
+    panel: {
+      x: padL,
+      y: layout.height - padB - r.leftBottom - HUD_PANEL.h,
+      w: HUD_PANEL.w, h: HUD_PANEL.h,
+    },
+  };
+}
+
+// The pill rule one level up: a speed readout under a throttle pedal is exactly
+// as useful as a button under the almanac pill. Measured before the reserve
+// existed, the slider covered 81% of the portrait cluster and the pedals and
+// handbrake covered 63% of the landscape one.
+test("the reserve the HUD is handed really clears every control", () => {
+  for (const viewport of VIEWPORTS) {
+    const layout = controlLayout(viewport);
+    const at = `${viewport.width}x${viewport.height}`;
+    const { cluster, panel } = hudBlocks(layout, viewport);
+    for (const [name, block] of [["speed cluster", cluster], ["damage panel", panel]]) {
+      for (const c of layout.controls) {
+        assert.ok(!rectsIntersect(block, c),
+          `${at}: the ${name} at ${JSON.stringify(block)} lands under ${c.id} ${JSON.stringify(c)}`);
+      }
+      assert.ok(block.x >= 0 && block.y >= 0,
+        `${at}: the reserve pushed the ${name} off the screen: ${JSON.stringify(block)}`);
+      assert.ok(!rectsIntersect(block, RESERVED_RECT),
+        `${at}: the reserve pushed the ${name} under the back pill`);
+    }
+  }
+});
+
+test("no reserve is asked for when the controls are not on screen", () => {
+  assert.deepEqual({ ...NO_RESERVE }, { leftBottom: 0, rightBottom: 0, rightSide: 0 });
+  const dom = makeStubDom();
+  const seen = [];
+  const controls = createTouchControls(dom.root, {
+    document: dom.doc, window: dom.view, force: true,
+    onLayout: (_l, reserve) => seen.push(reserve),
+  });
+  assert.ok(seen.length > 0, "the layout is announced as soon as it exists");
+  assert.deepEqual(seen[seen.length - 1], NO_RESERVE, "and it is nothing while they are hidden");
+
+  controls.setVisible(true);
+  const up = seen[seen.length - 1];
+  assert.ok(up.leftBottom > 0 && up.rightBottom > 0, `showing them claims space: ${JSON.stringify(up)}`);
+
+  controls.setVisible(false);
+  assert.deepEqual(seen[seen.length - 1], NO_RESERVE, "hiding them hands it straight back");
+
+  controls.setVisible(true);
+  controls.destroy();
+  assert.deepEqual(seen[seen.length - 1], NO_RESERVE,
+    "and so does destroying them, or a pad player's speedo stays halfway up the screen");
+});
+
+// A control the thumb cannot reach while holding the phone is not a control. The
+// slider used to run the full width in portrait, which put full right lock at
+// x=347 on a 390 px phone — past the left thumb's arc, and under the right thumb
+// that is holding a pedal.
+test("each control sits in a thumb's corner, not across the screen", () => {
+  for (const viewport of VIEWPORTS) {
+    const layout = controlLayout(viewport);
+    const at = `${viewport.width}x${viewport.height}`;
+    const ins = viewport.insets ?? {};
+    const track = controlById(layout, "steer");
+    const throttle = controlById(layout, "throttle");
+
+    assert.ok(track.x <= (ins.left ?? 0) + 16, `${at}: the track has left the left edge (${track.x})`);
+    assert.ok(layout.width - (throttle.x + throttle.w) <= (ins.right ?? 0) + 16,
+      `${at}: the throttle has left the right edge`);
+    assert.equal(Math.round(track.y + track.h), Math.round(throttle.y + throttle.h),
+      `${at}: the two thumbs should rest on the same line`);
+    assert.ok(track.x + track.w <= layout.width * 0.62,
+      `${at}: full lock is at x=${(track.x + track.w).toFixed(0)}, outside a thumb's arc`);
+    assert.ok(track.w - track.knob >= 88,
+      `${at}: only ${(track.w - track.knob).toFixed(0)}px of travel, which cannot resolve a correction`);
+
+    // Everything that is not the slider stands in one column against the right
+    // edge, so the middle of the screen — where the car and the road are — is
+    // never covered.
+    const column = controlColumn(layout);
+    assert.ok(column.x > layout.width * 0.45,
+      `${at}: the control column reaches ${column.x.toFixed(0)}, over the middle of the screen`);
+    for (const c of layout.controls) {
+      if (c.id === "steer") continue;
+      assert.ok(c.x >= column.x - 0.01 && c.y >= column.y - 0.01, `${at}: ${c.id} is outside the column`);
+    }
+  }
+});
+
+test("camera and reset take the smallest target on the screen, because a stray reset costs a stage", () => {
+  for (const viewport of VIEWPORTS) {
+    const layout = controlLayout(viewport);
+    const at = `${viewport.width}x${viewport.height}`;
+    const area = (c) => c.w * c.h;
+    for (const id of ["camera", "reset"]) {
+      const aux = controlById(layout, id);
+      assert.ok(aux.w >= MIN_TARGET && aux.h >= MIN_TARGET, `${at}: ${id} is under a thumb`);
+      for (const driving of ["steer", "throttle", "brake", "handbrake"]) {
+        assert.ok(area(aux) < area(controlById(layout, driving)),
+          `${at}: ${id} is not smaller than the ${driving}`);
+      }
+    }
+  }
+});
+
+// The whole argument for a curve rather than a straight line: the first fifth of
+// lock is where a correction at speed lives, so it gets the pixels.
+test("the track spends its pixels near centre, where a correction at speed lives", () => {
+  const track = controlById(controlLayout({ width: 390, height: 844 }), "steer");
+  const span = (a, b) => Math.abs(sliderXFromSteer(b, track) - sliderXFromSteer(a, track));
+  const nearCentre = span(0, 0.2);
+  const atLock = span(0.8, 1);
+  assert.ok(nearCentre > atLock * 1.6,
+    `the first fifth of lock gets ${nearCentre.toFixed(1)}px and the last ${atLock.toFixed(1)}px`);
+  // Symmetry both ways, or the car pulls to one side under the same thumb travel.
+  assert.ok(Math.abs(span(0, 0.2) - span(0, -0.2)) < 1e-9, "the curve is symmetric about centre");
+
+  // A softer curve widens that band further; that is the whole point of the setting.
+  const soft = { deadzone: STEER_DEFAULTS.deadzone, gamma: 2.2 };
+  const softSpan = Math.abs(
+    sliderXFromSteer(0.2, track, soft) - sliderXFromSteer(0, track, soft),
+  );
+  assert.ok(softSpan > nearCentre,
+    `raising the curve should widen the fine band (${softSpan.toFixed(1)} vs ${nearCentre.toFixed(1)})`);
+});
+
+test("the settings screen can reshape the steering the player is holding", () => {
+  const dom = makeStubDom();
+  const controls = mount(dom);
+  const track = controlById(controls.layout, "steer");
+  const node = control(dom.root, "steer");
+  const quarter = track.x + track.w * 0.62;
+
+  node.fire("pointerdown", { pointerId: 1, clientX: quarter, clientY: track.y + 10 });
+  const sharp = controls.patch.steer;
+
+  controls.configure({ steerGamma: 2.4 });
+  node.fire("pointermove", { pointerId: 1, clientX: quarter, clientY: track.y + 10 });
+  const soft = controls.patch.steer;
+  assert.ok(soft < sharp && soft > 0,
+    `the same thumb position should ask for less lock on a softer curve (${sharp} -> ${soft})`);
+  assert.equal(controls.settings.gamma, 2.4);
+
+  controls.configure({ tiltRange: 40 });
+  assert.equal(controls.settings.tiltRange, 40);
+  controls.configure({ steerGamma: 99, tiltRange: -5 });
+  assert.ok(controls.settings.gamma <= 3 && controls.settings.tiltRange >= 8,
+    "a nonsense value from storage is clamped, not obeyed");
+  controls.destroy();
+});
+
+// iOS never asks a player to lay the phone flat, and no settings screen can
+// either: whatever they are holding when they choose tilt becomes straight ahead.
+test("switching to tilt takes the angle the phone is already at as straight ahead", () => {
+  const dom = makeStubDom();
+  const input = createInput({ target: { addEventListener() {}, removeEventListener() {} } });
+  const controls = mount(dom, { input });
+  controls.setSteerMode("tilt");
+  dom.view.fire("deviceorientation", { beta: 4, gamma: 18 });
+  assert.equal(controls.patch.steer, 0, "the first reading after the switch is centre");
+  dom.view.fire("deviceorientation", { beta: 4, gamma: 30 });
+  assert.ok(controls.patch.steer > 0, "and rolling further right from there steers right");
+  dom.view.fire("deviceorientation", { beta: 4, gamma: 6 });
+  assert.ok(controls.patch.steer < 0, "rolling back past it steers left");
   controls.destroy();
   input.destroy();
 });

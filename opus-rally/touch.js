@@ -15,6 +15,14 @@
 // input state beyond which finger is on what. Releasing the last control calls
 // `clearTouch`, so a hybrid laptop that got one stray tap goes back to being a
 // keyboard.
+//
+// Two things follow from a phone being held at its bottom edge. The controls sit
+// in the two bottom corners and nowhere else, so the middle of the screen — the
+// road, and the car — stays the game. And the space they take is announced to
+// the HUD through `hudReserve`, because the HUD is a different root under a
+// different stylesheet and cannot see them: before that existed the slider
+// covered 81% of the portrait speed and gear cluster, and the pedals covered 63%
+// of the landscape one. A speed you cannot read is a pacenote you cannot use.
 
 import { clamp } from "./mathx.js";
 
@@ -36,6 +44,12 @@ export const MIN_TARGET = 44;
 const MIN_VIEW = 320;
 const PAD = 12;
 const GAP = 10;
+// Between two controls the same thumb works as a pair — a pedal and its
+// neighbour — where a wide channel is wasted screen rather than safety.
+const TIGHT = 8;
+// The brake as a fraction of the throttle. The throttle is the one a thumb rests
+// on for minutes at a time; the brake is stabbed.
+const BRAKE_SHARE = 0.9;
 // A thumb wanders a few pixels on a rough road; releasing a pedal on the first
 // one would make the throttle stutter.
 const RELEASE_SLOP = 10;
@@ -58,8 +72,11 @@ export const TILT_DEFAULTS = Object.freeze({
   centre: 0,
 });
 
+// The knob is what the thumb holds, but every pixel of it is a pixel the thumb
+// cannot travel: the track is only ever a couple of hundred pixels long, so a
+// knob sized like a pedal would eat half the steering range.
 function knobWidth(track) {
-  return track.knob ?? clamp(track.h * 0.92, MIN_TARGET, 96);
+  return track.knob ?? clamp(track.h * 0.78, MIN_TARGET, 84);
 }
 
 function rect(id, kind, x, y, w, h, label, extra) {
@@ -68,8 +85,16 @@ function rect(id, kind, x, y, w, h, label, extra) {
   return r;
 }
 
-// The whole set is bottom-anchored: it is where the thumbs already are, and it
-// is the one band of the screen that cannot collide with the reserved pill.
+// Two thumb corners, and nothing anywhere else. A phone is held at its bottom
+// edge whichever way up it is, so the left thumb gets the slider in the
+// bottom-left corner and the right thumb gets the pedals in the bottom-right,
+// and the band between and above them stays the game.
+//
+// The slider used to run the full width in portrait — 366 px of track on a
+// 390 px phone. That is more travel than a thumb has: full right lock sat at
+// x=347, which the left thumb cannot reach and the right thumb is holding a
+// pedal over. Capping it to a thumb's arc costs resolution the curve gives back
+// near centre, where a rally car actually needs it.
 export function controlLayout(viewport = EMPTY) {
   const w = Math.max(MIN_VIEW, Math.round(viewport.width ?? 390));
   const h = Math.max(MIN_VIEW, Math.round(viewport.height ?? 844));
@@ -80,44 +105,81 @@ export function controlLayout(viewport = EMPTY) {
   const padT = PAD + Math.max(0, ins.top ?? 0);
   const portrait = h >= w;
   const usableH = Math.max(MIN_TARGET * 4, h - padT - padB);
+  const inner = Math.max(MIN_TARGET * 5, w - padL - padR);
 
-  const pedalW = clamp(Math.min(w, h) * 0.26, 62, 128);
-  const brakeW = Math.max(MIN_TARGET + 12, pedalW * 0.92);
-  const pedalH = clamp(usableH * (portrait ? 0.20 : 0.34), 76, 190);
-  const smallH = clamp(pedalH * 0.42, MIN_TARGET, 72);
-  const trackH = clamp(Math.min(w, h) * (portrait ? 0.17 : 0.22), 64, 108);
+  // The slider is served first. A pedal only has to be big enough to hit, but a
+  // track too short to resolve a correction cannot be driven with at all.
+  const pedalCap = clamp(Math.min(w, h) * 0.24, 56, 116);
+  const pairCap = pedalCap * (1 + BRAKE_SHARE) + TIGHT;
+  const pairMin = MIN_TARGET * 2 + TIGHT;
+  const trackW = clamp(inner - GAP - pairMin, MIN_TARGET * 3, clamp(w * 0.42, 150, 300));
+  const pairW = clamp(inner - GAP - trackW, pairMin, pairCap);
+  const pedalW = (pairW - TIGHT) / (1 + BRAKE_SHARE);
+  const brakeW = pedalW * BRAKE_SHARE;
 
-  // Portrait puts the slider across the full width under everything else, which
-  // buys the travel that makes it analogue; landscape has the width to sit it
-  // beside the pedals instead.
-  const trackY = h - padB - trackH;
-  const pedalBottom = portrait ? trackY - GAP : h - padB;
+  const trackH = clamp(Math.min(w, h) * 0.17, 60, 96);
+  const pedalH = clamp(usableH * (portrait ? 0.19 : 0.36), 84, 170);
+  const smallH = clamp(pedalH * 0.34, MIN_TARGET, 62);
+  // Camera and reset are not driving controls, and reset costs a stage if it is
+  // caught by a stray thumb. They get the smallest legal target in the set, and
+  // they get it at the top of the column where a deliberate reach lands.
+  const auxS = clamp((pairW - TIGHT) / 2, MIN_TARGET, 52);
 
+  const bottom = h - padB;
+  const trackY = bottom - trackH;
+  const pedalY = bottom - pedalH;
   const throttleX = w - padR - pedalW;
-  const brakeX = throttleX - GAP - brakeW;
-  const pedalY = pedalBottom - pedalH;
+  const brakeX = throttleX - TIGHT - brakeW;
   const handbrakeY = pedalY - GAP - smallH;
-  const auxY = handbrakeY - GAP - smallH;
-  const clusterW = brakeW + GAP + pedalW;
-  const auxW = (clusterW - GAP) / 2;
-
-  const trackW = portrait
-    ? w - padL - padR
-    : Math.max(MIN_TARGET * 3, brakeX - GAP - padL);
+  const auxY = handbrakeY - GAP - auxS;
+  const resetX = w - padR - auxS;
 
   const controls = [
     rect("steer", "slider", padL, trackY, trackW, trackH, "STEER", {
-      knob: clamp(trackH * 0.92, MIN_TARGET, 96),
+      knob: clamp(trackH * 0.78, MIN_TARGET, 84),
     }),
     rect("brake", "pedal", brakeX, pedalY, brakeW, pedalH, "BRAKE"),
     rect("throttle", "pedal", throttleX, pedalY, pedalW, pedalH, "THROTTLE"),
-    rect("handbrake", "pedal", brakeX, handbrakeY, clusterW, smallH, "HANDBRAKE"),
-    rect("camera", "button", brakeX, auxY, auxW, smallH, "CAMERA"),
-    rect("reset", "button", brakeX + auxW + GAP, auxY, auxW, smallH, "RESET"),
+    rect("handbrake", "pedal", brakeX, handbrakeY, pairW, smallH, "HANDBRAKE"),
+    rect("camera", "button", resetX - TIGHT - auxS, auxY, auxS, auxS, "CAMERA"),
+    rect("reset", "button", resetX, auxY, auxS, auxS, "RESET"),
   ];
 
   return { width: w, height: h, portrait, gap: GAP, controls };
 }
+
+// The union of everything on the right — the column the pedals, the handbrake
+// and the two buttons stand in. Nothing else may be drawn inside it.
+export function controlColumn(layout) {
+  let x = Infinity; let y = Infinity;
+  for (const c of layout.controls) {
+    if (c.id === "steer") continue;
+    x = Math.min(x, c.x);
+    y = Math.min(y, c.y);
+  }
+  return { x, y, w: layout.width - x, h: layout.height - y };
+}
+
+// How far the HUD's bottom rail has to get out of the way, in pixels beyond its
+// own edge padding. hud.js was written knowing only about the almanac pill, and
+// a speed readout under a throttle pedal is exactly as unreadable as one under
+// the pill: measured on a 390x844 phone the slider covered 81% of the speed and
+// gear cluster, and in landscape the pedals and handbrake covered 63% of it.
+//
+// Portrait lifts the cluster over the whole column, because the full width above
+// the band is free. Landscape cannot — the cluster is 170 px tall on a 390 px
+// screen — so there it slides left of the column instead, into the channel the
+// capped slider leaves in the middle.
+export function hudReserve(layout) {
+  const track = controlById(layout, "steer");
+  const column = controlColumn(layout);
+  const leftBottom = Math.max(0, layout.height - track.y);
+  return layout.portrait
+    ? { leftBottom, rightBottom: Math.max(0, layout.height - column.y), rightSide: 0 }
+    : { leftBottom, rightBottom: leftBottom, rightSide: Math.max(0, layout.width - column.x) };
+}
+
+export const NO_RESERVE = Object.freeze({ leftBottom: 0, rightBottom: 0, rightSide: 0 });
 
 export function controlById(layout, id) {
   for (const c of layout.controls) if (c.id === id) return c;
@@ -398,6 +460,7 @@ export function createTouchControls(root, opts = EMPTY) {
   let visible = false;
   let steerRest = 0;
   let feeding = false;
+  let pendingCentre = false;
   let rafId = 0;
   let lastTick = 0;
   let destroyed = false;
@@ -483,6 +546,16 @@ export function createTouchControls(root, opts = EMPTY) {
       insets,
     });
     place();
+    publish();
+  }
+
+  // Nothing else on screen can measure these controls — they live in their own
+  // root under their own stylesheet — so the layout is announced rather than
+  // discovered. The HUD is the one that needs it; it gets a zero reserve back
+  // the moment the controls go away, so a pad player's speedo does not sit
+  // halfway up the screen for the rest of the session.
+  function publish() {
+    opts.onLayout?.(layout, visible ? hudReserve(layout) : NO_RESERVE);
   }
 
   function press(node) { node.classList.add(PRESSED); }
@@ -613,6 +686,10 @@ export function createTouchControls(root, opts = EMPTY) {
     if (!visible || settings.steerMode !== "tilt") return;
     const angle = view?.screen?.orientation?.angle ?? view?.orientation ?? 0;
     const roll = tiltFromOrientation(e.beta, e.gamma, angle);
+    // Nobody holds a phone flat, and a settings screen cannot ask them to: the
+    // first reading after the mode is chosen becomes straight ahead, so however
+    // the player was already holding it is the neutral they steer from.
+    if (pendingCentre) { settings.tiltCentre = roll; pendingCentre = false; }
     steerRest = steerFromTilt(roll, {
       range: settings.tiltRange, centre: settings.tiltCentre, gamma: settings.gamma,
     });
@@ -636,7 +713,7 @@ export function createTouchControls(root, opts = EMPTY) {
     if (next === visible) return visible;
     visible = next;
     layer.setAttribute("data-hidden", visible ? "0" : "1");
-    if (!visible) releaseAll();
+    if (!visible) { releaseAll(); publish(); }
     else refresh();
     return visible;
   }
@@ -655,10 +732,21 @@ export function createTouchControls(root, opts = EMPTY) {
       if (!shouldShowTouch(env)) setVisible(false);
       return shouldShowTouch(env);
     },
+    get reserve() { return visible ? hudReserve(layout) : NO_RESERVE; },
+    // The response curve and the tilt range are the two the player can feel, so
+    // they are the two the settings screen offers. Everything else stays fixed.
+    configure(patch = EMPTY) {
+      if (Number.isFinite(patch.steerGamma)) settings.gamma = clamp(patch.steerGamma, 1, 3);
+      if (Number.isFinite(patch.deadzone)) settings.deadzone = clamp(patch.deadzone, 0, 0.4);
+      if (Number.isFinite(patch.tiltRange)) settings.tiltRange = clamp(patch.tiltRange, 8, 60);
+      drawKnob();
+      return settings;
+    },
     setSteerMode(mode) {
       const next = mode === "tilt" ? "tilt" : "slider";
       if (next === settings.steerMode) return settings.steerMode;
       settings.steerMode = next;
+      pendingCentre = next === "tilt";
       releaseAll();
       // iOS hands out motion events only after an explicit grant, and only from
       // a user gesture — which is exactly where a mode switch comes from.
@@ -687,6 +775,7 @@ export function createTouchControls(root, opts = EMPTY) {
       nodes.clear();
       layer.remove();
       style.remove();
+      opts.onLayout?.(layout, NO_RESERVE);
       if (feeding) { input?.clearTouch?.(); feeding = false; }
     },
   };

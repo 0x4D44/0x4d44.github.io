@@ -146,6 +146,22 @@ test("touch input bypasses the keyboard rate limiter", () => {
   assert.equal(out.steer, -0.8, "an on-screen analogue control is already analogue");
   assert.equal(out.throttle, 1);
   assert.equal(input.scheme, "touch");
+
+  // Handing the record back has to hand the scheme back with it. A key already
+  // held when the controls went away was ignored until it was released and
+  // pressed again, because only a fresh keydown cleared the touch flag.
+  const target = fakeTarget();
+  const hybrid = createInput({ target });
+  press(target, "ArrowUp");
+  hybrid.setTouch({ steer: 0, throttle: 0, brake: 0, handbrake: 0 });
+  hybrid.update(1 / 60, 0);
+  hybrid.clearTouch();
+  assert.equal(hybrid.scheme, "keyboard", "clearing the touch record goes back to the keyboard");
+  for (let i = 0; i < 60; i += 1) hybrid.update(1 / 60, 0);
+  assert.ok(hybrid.input.throttle > 0.9,
+    `a key still held when the controls went away should drive the car (${hybrid.input.throttle})`);
+  hybrid.destroy();
+
   input.clearTouch();
   input.destroy();
 });

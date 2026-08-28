@@ -710,6 +710,11 @@ function stylesheet() {
   --orh-gap: 10px;
   --orh-ease: cubic-bezier(0.22, 0.61, 0.24, 1);
   --orh-pill: 118px;
+  /* How much of the bottom rail the on-screen driving controls have taken, set
+     by the game from touch.js's own layout. Zero on a machine with a keyboard. */
+  --orh-ctrl-left: 0px;
+  --orh-ctrl-right: 0px;
+  --orh-ctrl-side: 0px;
   font-family: ui-sans-serif, "Segoe UI Variable Display", "Segoe UI", Inter, Roboto, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-size: calc(16px * var(--orh-scale));
   font-variant-numeric: tabular-nums;
@@ -827,7 +832,13 @@ function stylesheet() {
 .orh-dist { font-size: 0.62rem; font-weight: 700; color: var(--orh-dim); letter-spacing: 0.1em; }
 
 /* cluster ---------------------------------------------------------------- */
-.orh-cluster { display: flex; align-items: flex-end; gap: 0.5rem; margin-left: auto; }
+/* The two reserves are what keeps the speed readable when a thumb is driving:
+   portrait lifts the cluster over the pedal column, landscape slides it left of
+   one, because on a 390 px-tall screen there is no room to lift it. */
+.orh-cluster {
+  display: flex; align-items: flex-end; gap: 0.5rem; margin-left: auto;
+  margin-bottom: var(--orh-ctrl-right); margin-right: var(--orh-ctrl-side);
+}
 /* The dial used to float on the raw scene, the only instrument with no glass behind
    it, which read as a different product bolted on beside the rest. */
 .orh-dialwrap {
@@ -885,7 +896,10 @@ function stylesheet() {
 .orh-grip-val { font-size: 0.46rem; font-weight: 800; text-anchor: middle; fill: var(--orh-dim); }
 
 /* left cluster: damage + telemetry --------------------------------------- */
-.orh-left { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
+.orh-left {
+  display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start;
+  margin-bottom: var(--orh-ctrl-left);
+}
 .orh-warn {
   display: flex; align-items: center; gap: 0.36rem; padding: 0.3rem 0.6rem;
   background: rgba(255,74,92,0.14); border: 1px solid rgba(255,74,92,0.5);
@@ -1366,6 +1380,7 @@ export function createHud(root, opts = EMPTY) {
     ribbon: routeRibbonLayout(null, EMPTY),
     dialDirty: true,
     dialRpmLimit: 0,
+    reserve: { leftBottom: 0, rightBottom: 0, rightSide: 0 },
     toastList: [],
     destroyed: false,
   };
@@ -1950,6 +1965,20 @@ export function createHud(root, opts = EMPTY) {
     return state.reduced;
   }
 
+  // The on-screen driving controls own the two bottom corners while they are up.
+  // The HUD cannot see them — different module, different root — so the game
+  // hands over the rectangle they took and the bottom rail steps out of it.
+  // Without this the throttle pedal sits on the speedometer.
+  function setControlReserve(reserve) {
+    const px = (v) => `${Math.max(0, Math.round(Number.isFinite(v) ? v : 0))}px`;
+    const r = reserve ?? EMPTY;
+    state.reserve = { leftBottom: r.leftBottom ?? 0, rightBottom: r.rightBottom ?? 0, rightSide: r.rightSide ?? 0 };
+    el.style.setProperty("--orh-ctrl-left", px(state.reserve.leftBottom));
+    el.style.setProperty("--orh-ctrl-right", px(state.reserve.rightBottom));
+    el.style.setProperty("--orh-ctrl-side", px(state.reserve.rightSide));
+    return state.reserve;
+  }
+
   function setTelemetry(on) {
     state.telemetryOn = !!on;
     if (state.telemetryOn) telemetry.classList.add("on");
@@ -1993,9 +2022,11 @@ export function createHud(root, opts = EMPTY) {
     setContrast,
     setReducedMotion,
     setTelemetry,
+    setControlReserve,
     destroy,
     get units() { return state.units; },
     get scale() { return state.scale; },
+    get controlReserve() { return state.reserve; },
   };
 }
 

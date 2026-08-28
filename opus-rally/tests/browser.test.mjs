@@ -417,6 +417,146 @@ try {
     `clicking through the menu raised:\n  ${page.errors.join("\n  ")}`);
   process.stderr.write(`  title -> quick stage -> start  reached ${reached}\n`);
 
+  // ---- the on-screen controls: only on a touchscreen, and they really drive ----
+  //
+  // The unit tests measure the geometry against a stub. Only a real browser can
+  // answer the two questions that decide whether a phone can play this at all:
+  // whether the controls are there, and whether a finger on them moves the car.
+  // Every input below is a synthesised touch — no key is pressed after this line.
+  const controlRects = `(() => {
+    const out = {};
+    for (const n of document.querySelectorAll("#touch-root [data-control]")) {
+      const r = n.getBoundingClientRect();
+      out[n.dataset.control] = { x: r.x, y: r.y, w: r.width, h: r.height };
+    }
+    return out;
+  })()`;
+
+  page.clearErrors();
+  await page.touchEmulation(false);
+  await page.setViewport(1280, 800);
+  await page.navigate("/opus-rally/");
+  await page.waitFor("the desktop boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  await page.evaluate("window.__opusRally.drive({})");
+  await page.waitFor("a desktop stage", () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+  const onDesktop = await page.evaluate(controlRects);
+  assert.deepEqual(onDesktop, {},
+    `a mouse-and-keyboard machine was given driving controls: ${JSON.stringify(onDesktop)}`);
+  process.stderr.write("  desktop 1280x800: no on-screen controls\n");
+
+  await page.touchEmulation(true, 5);
+  await page.setViewport(390, 844);
+  await page.navigate("/opus-rally/");
+  await page.waitFor("the phone boot", () => page.evaluate("!!window.__opusRally"), BOOT_TIMEOUT);
+  assert.equal(await page.evaluate("navigator.maxTouchPoints > 0"), true,
+    "the harness is not emulating a touchscreen, so this proves nothing");
+  await page.evaluate("window.__opusRally.drive({})");
+  await page.waitFor("a phone stage", () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+
+  const rects = await page.evaluate(controlRects);
+  for (const id of ["steer", "throttle", "brake", "handbrake"]) {
+    assert.ok(rects[id], `a touchscreen got no ${id} control: ${JSON.stringify(Object.keys(rects))}`);
+  }
+
+  // The pill is measured, not assumed: it is a separate site-wide script, and a
+  // tap that lands on it navigates away to the catalog mid-stage.
+  const pill = await page.evaluate(`(() => {
+    const host = document.getElementById("almanac-back-host");
+    if (!host) return null;
+    const r = (host.shadowRoot?.querySelector("a") ?? host).getBoundingClientRect();
+    return { x: 0, y: 0, w: r.x + r.width, h: r.y + r.height };
+  })()`);
+  assert.ok(pill, "the shared back pill did not load, so its rectangle cannot be checked");
+  const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  if (pill) {
+    for (const [id, r] of Object.entries(rects)) {
+      assert.ok(!overlaps(r, pill),
+        `${id} at ${JSON.stringify(r)} sits under the almanac pill ${JSON.stringify(pill)} — a tap there leaves the game`);
+    }
+  }
+
+  // The reserve is the whole point of the hud.js/touch.js contract: a speed
+  // readout under a throttle pedal is exactly as useful as one under the pill.
+  const cluster = await page.evaluate(`(() => {
+    const n = document.querySelector("#hud-root .orh-cluster");
+    if (!n) return null;
+    const r = n.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height };
+  })()`);
+  assert.ok(cluster && cluster.w > 40, "the HUD has no speed cluster to protect");
+  for (const [id, r] of Object.entries(rects)) {
+    assert.ok(!overlaps(r, cluster),
+      `${id} ${JSON.stringify(r)} covers the speed and gear cluster ${JSON.stringify(cluster)}`);
+  }
+  process.stderr.write(
+    `  phone 390x844: ${Object.keys(rects).length} controls, speed cluster clear at `
+    + `${cluster.x.toFixed(0)},${cluster.y.toFixed(0)}\n`);
+
+  const centreOf = (r) => [r.x + r.w / 2, r.y + r.h / 2];
+  const [throttleX, throttleY] = centreOf(rects.throttle);
+  const steerY = rects.steer.y + rects.steer.h / 2;
+  const readCar = `(() => {
+    const g = window.OPUS_RALLY.game, f = window.__opusRally.frame;
+    return { steer: g.car.input.steer, throttle: g.car.input.throttle,
+             speed: f.speedKph, distance: f.distance, timeMs: f.timeMs, yaw: g.car.yaw };
+  })()`;
+  // Wall time is not the clock here: under a software rasteriser one frame can
+  // take a second, so a 250 ms sleep after a touch can land before the game has
+  // stepped at all and read an input the simulation has not seen yet.
+  const stageSeconds = async (seconds) => {
+    const t0 = (await page.evaluate(readCar)).timeMs;
+    await page.waitFor(`${seconds}s of stage time`, async () => (
+      (await page.evaluate(readCar)).timeMs - t0 >= seconds * 1000 || null
+    ), 120_000);
+  };
+
+  await page.evaluate("window.__opusRally.placeAt(200, 0)");
+  await page.delay(400);
+  const standing = await page.evaluate(readCar);
+  await page.touchDown(1, throttleX, throttleY);
+  await stageSeconds(4);
+  const pulling = await page.evaluate(readCar);
+  assert.ok(pulling.throttle > 0.9,
+    `a finger on the throttle pedal gave ${pulling.throttle.toFixed(2)} throttle`);
+  assert.ok(pulling.speed > 25,
+    `four seconds of stage time on a touched throttle only reached ${pulling.speed.toFixed(1)} km/h`);
+  assert.ok(pulling.distance > standing.distance + 5,
+    `the car did not move down the road on touch alone (${standing.distance} -> ${pulling.distance})`);
+
+  // Two fingers at once, which is the whole reason for separate controls: a
+  // handler that tracks a single touch drops the throttle the moment you steer.
+  await page.touchDown(2, rects.steer.x + rects.steer.w * 0.12, steerY);
+  await stageSeconds(0.3);
+  const both = await page.evaluate(readCar);
+  assert.ok(both.throttle > 0.9,
+    `putting a finger on the slider killed the throttle (${both.throttle.toFixed(2)})`);
+  assert.ok(both.steer < -0.2,
+    `the slider held left gave ${both.steer.toFixed(2)} steer while the throttle was down`);
+
+  const yaw0 = both.yaw;
+  await stageSeconds(2.5);
+  const turnedLeft = await page.evaluate(readCar);
+  await page.touchMove(2, rects.steer.x + rects.steer.w * 0.88, steerY);
+  await stageSeconds(0.3);
+  const rightLock = await page.evaluate(readCar);
+  assert.ok(rightLock.steer > 0.2,
+    `sliding the thumb to the other end gave ${rightLock.steer.toFixed(2)}, not right lock`);
+  const swung = Math.abs(Math.atan2(
+    Math.sin(turnedLeft.yaw - yaw0), Math.cos(turnedLeft.yaw - yaw0)));
+  assert.ok(swung > 0.08,
+    `two and a half seconds of touched lock turned the car ${(swung * 57.3).toFixed(1)} degrees`);
+
+  await page.touchRelease();
+  await stageSeconds(1);
+  const released = await page.evaluate(readCar);
+  assert.ok(released.throttle < 0.05 && Math.abs(released.steer) < 0.35,
+    `lifting every finger left throttle ${released.throttle.toFixed(2)} steer ${released.steer.toFixed(2)} applied`);
+  assert.deepEqual(page.errors, [],
+    `driving on touch alone raised:\n  ${page.errors.join("\n  ")}`);
+  process.stderr.write(
+    `  touch drive: ${pulling.speed.toFixed(1)} km/h on the pedal, `
+    + `${(swung * 57.3).toFixed(1)} degrees of steering, nothing stuck on release\n`);
+
   console.log("opus-rally browser test: all checks passed");
 } catch (err) {
   console.error(`opus-rally browser test failed: ${err.message}`);
