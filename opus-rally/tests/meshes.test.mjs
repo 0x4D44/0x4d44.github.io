@@ -946,7 +946,7 @@ test("car: bounding box matches the spec-derived dimensions and every named part
     for (const key of CAR_DETACHABLE) {
       assert.ok(car.parts[key], `${id}: damage part "${key}" is missing from the mesh`);
     }
-    for (const key of ["body", "glass", "rollCage", "interior", "lightPod", "diffuser", "roofScoop", "mudflaps"]) {
+    for (const key of ["body", "glass", "rollCage", "interior", "lightPod", "diffuser", "roofScoop", "mudflaps", "scuttle"]) {
       assert.ok(car.parts[key], `${id}: expected child "${key}"`);
     }
     assert.equal(car.lamps.length, 4, `${id}: expected four light-pod lamps`);
@@ -1871,7 +1871,10 @@ test("materials: the effective linear albedo of every part lands in its real ban
   const carBands = [
     ["bumperFront", { is: "moulded bumper plastic", lo: 0.015, hi: 0.10 }],
     ["bumperRear", { is: "moulded bumper plastic", lo: 0.015, hi: 0.10 }],
-    ["rollCage", { is: "a cage painted white", lo: 0.60, hi: 0.90 }],
+    // A cage painted near-white at metalness 0.55 was the brightest thing in the
+    // frame after the sky, and it is three fat tubes across the cockpit view.
+    // Painted steel in a mid grey, under gravel's 0.314 and clear of the trim.
+    ["rollCage", { is: "a cage in painted grey", lo: 0.16, hi: 0.34 }],
     ["exhaustTail", { is: "a stainless tailpipe", lo: 0.25, hi: 0.75 }],
     ["sumpGuard", { is: "an alloy sump guard", lo: 0.25, hi: 0.75 }],
     ["glass", { is: "tinted glass", lo: 0.02, hi: 0.15 }],
@@ -1880,6 +1883,7 @@ test("materials: the effective linear albedo of every part lands in its real ban
     ["diffuser", { is: "a black diffuser", lo: 0.02, hi: 0.20 }],
     ["mudflaps", { is: "black mudflaps", lo: 0.02, hi: 0.20 }],
     ["interior", { is: "a stripped interior: dash, seats, wheel rim", lo: 0.02, hi: 0.20 }],
+    ["scuttle", { is: "a matte anti-glare cowl", lo: 0.015, hi: 0.09 }],
     ["spare", { is: "a spare wheel on a pale rim", lo: 0.02, hi: 0.50 }],
   ];
   const wheelBands = [
@@ -2649,5 +2653,172 @@ test("car: the cabin is open, trimmed, and the driver can see an instrument", as
 
     car.dispose();
   }
+  clearLiveryCache();
+});
+
+test("car: no livery graphic reaches the driver's eye, and the bonnet skins the deck", async () => {
+  // The cockpit camera photographed a horizontal band of the car's own livery —
+  // white, blue and orange stripes with a specular sheen — running across the
+  // forward view between the wheel and the road, day and night. It was the
+  // SHELL'S DECK. buildBodyShell lofted a crown that stood 19 to 79 mm proud of
+  // the bonnet that is supposed to skin it, so the deck was the visible surface
+  // over the whole engine bay; and it ran along the driver's sight line carrying
+  // the atlas's deck-stripe band. Measured on ardent-r1 before the fix, the eye
+  // reached the deck at z=0.96 and z=1.57, the bonnet's vents between 1.12 and
+  // 1.27, and the light pod at the nose — all inside one 70 px strip.
+  //
+  // Neither assertion below restates a constant of meshes.js. The atlas is
+  // sampled from single FLAT swatches for the parts that are painted but carry
+  // no graphic — the pillars, the mirrors, the wing — so those faces map all
+  // three corners to one texel, while anything carrying a graphic maps an area.
+  // So: every painted face the cockpit eye reaches has to be one texel. And
+  // whatever panel skins the car has to stand above the deck under it.
+  const {
+    cameraParams, makeCarSample, sampleCar, mountLocalX, mountLocalZ, CAMERA_DESIGN_ASPECT,
+  } = await import("../render.js");
+  const p = cameraParams("cockpit");
+  const sample = makeCarSample();
+
+  for (const spec of CARS) {
+    const id = spec.id;
+    const record = newRecord();
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const d = car.dimensions;
+    const parts = [...new Set(Object.values(car.parts))];
+    const paint = car.parts.body.material;
+    const nameOf = new Map();
+    for (const [name, mesh] of Object.entries(car.parts)) if (!nameOf.has(mesh)) nameOf.set(mesh, name);
+
+    sampleCar(sample, createCar(id), null);
+    const eye = new THREE.Vector3(mountLocalX(sample, p), p.mountY - sample.comHeight, mountLocalZ(sample, p));
+    const cam = new THREE.PerspectiveCamera(p.fovBase, CAMERA_DESIGN_ASPECT, p.near, 100);
+    cam.position.copy(eye);
+    cam.lookAt(eye.x, eye.y + p.lookHeight, eye.z + p.lookAhead);
+    cam.updateMatrixWorld(true);
+    cam.updateProjectionMatrix();
+
+    const inv = cam.projectionMatrixInverse, world = cam.matrixWorld;
+    const scratch = new THREE.Vector3();
+    const N = 45;
+    const graphic = [];
+    for (let i = 0; i < N; i += 1) {
+      for (let j = 0; j < N; j += 1) {
+        const u = (i / (N - 1)) * 1.98 - 0.99, v = (j / (N - 1)) * 1.98 - 0.99;
+        scratch.set(u, v, 0.5).applyMatrix4(inv).applyMatrix4(world);
+        const hits = new THREE.Raycaster(eye.clone(), scratch.clone().sub(eye).normalize(), 0.02, 60)
+          .intersectObjects(parts, false)
+          .filter((h) => h.object !== car.parts.glass);
+        if (!hits.length || hits[0].object.material !== paint) continue;
+        const hit = hits[0];
+        const uv = hit.object.geometry.getAttribute("uv"), f = hit.face;
+        const du = Math.max(Math.abs(uv.getX(f.a) - uv.getX(f.b)), Math.abs(uv.getX(f.a) - uv.getX(f.c)));
+        const dv = Math.max(Math.abs(uv.getY(f.a) - uv.getY(f.b)), Math.abs(uv.getY(f.a) - uv.getY(f.c)));
+        if (du > 1e-6 || dv > 1e-6) {
+          graphic.push(`${nameOf.get(hit.object)} at (${hit.point.x.toFixed(2)}, `
+            + `${hit.point.y.toFixed(3)}, ${hit.point.z.toFixed(3)}) frame (${u.toFixed(2)}, ${v.toFixed(2)}) `
+            + `spans ${du.toFixed(3)}x${dv.toFixed(3)} of the atlas`);
+        }
+      }
+    }
+    assert.deepEqual(graphic.slice(0, 4), [],
+      `${id}: the driver's eye lands on ${graphic.length} points of the car's own livery graphic; `
+      + "the first few are above. Everything painted forward of the screen belongs under the cowl");
+
+    // The bonnet and the cowl are the skin; the deck is what they cover. A down
+    // ray registers only upward-facing surfaces, so the first hit on each part is
+    // the outermost one it presents — which is exactly what decides whether a
+    // viewer above the car sees the panel or the structure under it.
+    const boxOf = (mesh) => new THREE.Box3().setFromBufferAttribute(mesh.geometry.getAttribute("position"));
+    const bonnetBox = boxOf(car.parts.bonnet), cowlBox = boxOf(car.parts.scuttle);
+    assert.ok(Math.abs(cowlBox.max.z - bonnetBox.min.z) < 1e-3,
+      `${id}: the cowl ends at z=${cowlBox.max.z.toFixed(3)} and the bonnet starts at `
+      + `${bonnetBox.min.z.toFixed(3)}; the deck between them is open to the sky`);
+    const down = new THREE.Vector3(0, -1, 0);
+    const cast = (mesh, x, z) => {
+      const h = new THREE.Raycaster(new THREE.Vector3(x, 6, z), down, 0.01, 12).intersectObject(mesh, false);
+      return h.length ? h[0].point.y : null;
+    };
+    let proud = -Infinity, at = null;
+    for (let k = 0; k <= 48; k += 1) {
+      const z = cowlBox.min.z + 0.01 + (bonnetBox.max.z - cowlBox.min.z - 0.02) * (k / 48);
+      // Inside the deck's own crown. Outboard of that the shoulder takes over,
+      // and the shoulder is the belt line — the top of the wing, which is
+      // supposed to be visible and is not what carried the stripe.
+      for (const frac of [-0.4, -0.25, -0.12, 0, 0.12, 0.25, 0.4]) {
+        const x = frac * d.bodyHalfWidth;
+        const deck = cast(car.parts.body, x, z);
+        const skin = Math.max(cast(car.parts.bonnet, x, z) ?? -Infinity,
+          cast(car.parts.scuttle, x, z) ?? -Infinity);
+        if (deck === null || skin === -Infinity) continue;
+        if (deck - skin > proud) { proud = deck - skin; at = `x=${x.toFixed(2)} z=${z.toFixed(3)}`; }
+      }
+    }
+    assert.ok(proud < -0.004,
+      `${id}: the shell's deck stands ${(proud * 1000).toFixed(0)} mm proud of the panel that skins `
+      + `it at ${at}; the deck is inner structure and it is what the driver was looking at`);
+
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
+test("car: an instrument face is a disc, not a dodecagon", () => {
+  // The dials were twelve-sided, which at the 135 px a gauge covers on a 1600
+  // wide cockpit frame is a visible polygon. Measured off the silhouette rather
+  // than off a segment count: take every flat disc in the cabin — a group of
+  // same-coloured vertices in one thin z slab, all at one radius from their own
+  // centre — and check the angular step round its rim.
+  const record = newRecord();
+  const spec = carSpec("ardent-r1");
+  const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+  const geo = car.parts.interior.geometry;
+  const pos = geo.getAttribute("position");
+
+  // Connected components of the index buffer, so the grouping is the mesh's own
+  // topology and cannot drift with how far apart the vertices happen to sit —
+  // a distance threshold tuned on a 30-sided dial stops linking a 12-sided one,
+  // which would hide the very fault this is looking for.
+  const idx = geo.getIndex();
+  const parent = new Int32Array(pos.count).map((_, i) => i);
+  const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+  for (let k = 0; k < idx.count; k += 3) {
+    union(idx.getX(k), idx.getX(k + 1));
+    union(idx.getX(k), idx.getX(k + 2));
+  }
+  const comps = new Map();
+  for (let i = 0; i < pos.count; i += 1) {
+    const root = find(i);
+    if (!comps.has(root)) comps.set(root, []);
+    comps.get(root).push([pos.getX(i), pos.getY(i), pos.getZ(i)]);
+  }
+  const discs = [];
+  for (const pts of comps.values()) {
+    if (pts.length < 20) continue;
+    const zs = pts.map((q) => q[2]);
+    if (Math.max(...zs) - Math.min(...zs) > 0.020) continue;        // a flat face, not a tube
+    let cx = 0, cy = 0;
+    for (const q of pts) { cx += q[0]; cy += q[1]; }
+    cx /= pts.length; cy /= pts.length;
+    const r = pts.map((q) => Math.hypot(q[0] - cx, q[1] - cy));
+    const rMax = Math.max(...r);
+    if (rMax < 0.025) continue;
+    const rim = pts.filter((q, k) => r[k] > rMax * 0.99);           // a true rim, not box corners
+    if (rim.length < 20) continue;
+    const ang = [...new Set(rim.map((q) => Math.round(Math.atan2(q[1] - cy, q[0] - cx) * 1e4)))]
+      .map((a) => a / 1e4).sort((a, b) => a - b);
+    let gap = ang[0] + Math.PI * 2 - ang[ang.length - 1];
+    for (let k = 1; k < ang.length; k += 1) gap = Math.max(gap, ang[k] - ang[k - 1]);
+    discs.push({ rMax, sides: ang.length, gap });
+  }
+  assert.ok(discs.length >= 3,
+    `the cabin has ${discs.length} flat discs in it; three gauge faces were expected`);
+  for (const disc of discs) {
+    assert.ok(disc.gap <= (Math.PI * 2) / 24 + 1e-6,
+      `a ${(disc.rMax * 2000).toFixed(0)} mm instrument face turns through `
+      + `${(disc.gap * 180 / Math.PI).toFixed(1)} degrees between rim points (${disc.sides} sides); `
+      + "at cockpit range that reads as a polygon, not a dial");
+  }
+  car.dispose();
   clearLiveryCache();
 });

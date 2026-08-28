@@ -2843,6 +2843,9 @@ function lerpParams(a, b2, t) {
 // keeps the silhouette curved — hand-placed boxes read as boxes.
 function bodyRing(par) {
   const w = par.w, wt = par.wt, yb = par.yb, ybe = par.ybe;
+  // How high the deck crowns over the shoulders. Forward of the screen base the
+  // deck is inner structure under the cowl and the bonnet, so it goes negative.
+  const deck = par.deck === undefined ? BODY_DECK_RISE : par.deck;
   const right = [
     [0, yb, par.z],
     [w * 0.55, yb + 0.004, par.z],
@@ -2850,8 +2853,8 @@ function bodyRing(par) {
     [w, yb + 0.30, par.z],
     [w * 0.985, ybe - 0.20, par.z],
     [wt, ybe, par.z],
-    [wt * 0.62, ybe + 0.042, par.z],
-    [0, ybe + 0.058, par.z],
+    [wt * 0.62, ybe + deck * 0.724, par.z],
+    [0, ybe + deck, par.z],
   ];
   const ring = right.slice();
   for (let i = right.length - 2; i >= 1; i -= 1) {
@@ -2881,10 +2884,14 @@ function insertStation(key, z) {
   return null;
 }
 
-function buildBodyShell(b, d, col) {
+// The shell's stations and the rings lofted from them, shared with the cowl so
+// the panel that closes the scuttle bay lands on the shell's own shoulders
+// rather than on a second interpolation of them.
+function bodyLoft(d) {
   const hw = d.bodyHalfWidth;
   const g = d.ground;
   const cab = cabinFrame(d);
+  const sc = scuttleFrame(d);
   const key = [
     { z: d.tailZ, w: hw * 0.80, wt: hw * 0.72, yb: g + 0.34, ybe: d.beltY + 0.005 },
     { z: d.tailZ + 0.16, w: hw * 0.94, wt: hw * 0.87, yb: g + 0.25, ybe: d.beltY + 0.030 },
@@ -2903,20 +2910,47 @@ function buildBodyShell(b, d, col) {
   // whole cabin for that glass to stand on.
   insertStation(key, cab.zRs);
   insertStation(key, cab.zWs);
+  insertStation(key, sc.zLip);
   const inCabin = (z) => z > cab.zRs - 1e-3 && z < cab.zWs + 1e-3;
+  for (const k of key) k.deck = BODY_DECK_RISE;
   for (const k of key) if (inCabin(k.z)) k.ybe = Math.max(k.ybe, cab.beltY);
+  // Forward of the screen base the cowl and then the bonnet are the skin, so the
+  // deck ducks under whichever one is over it. Without this the deck stood proud
+  // of the bonnet along the whole engine bay and WAS the visible surface.
+  for (const k of key) {
+    if (k.z <= cab.zWs + 1e-4) continue;
+    k.deck = Math.min(BODY_DECK_RISE, sc.deckY(k.z) - k.ybe);
+  }
 
+  // The deck is clamped again at every subdivided ring, not only at the key
+  // stations: `deck` interpolates linearly and the bonnet over it does not, so a
+  // station-only clamp let the deck climb back through the bonnet mid-span.
+  const duck = (par) => {
+    if (par.z > cab.zWs + 1e-4) {
+      par.deck = Math.min(BODY_DECK_RISE, sc.deckY(par.z) - par.ybe);
+    }
+    return par;
+  };
   const rings = [];
   for (let i = 0; i + 1 < key.length; i += 1) {
     const a = key[i], c = key[i + 1];
     const sub = 2;
     for (let k = 0; k < sub; k += 1) {
       const t = smootherstep(0, 1, k / sub);
-      rings.push(bodyRing(lerpParams(a, c, t)));
+      rings.push(bodyRing(duck(lerpParams(a, c, t))));
     }
   }
   rings.push(bodyRing(key[key.length - 1]));
   const zOf = (i) => rings[i][0][2];
+  // The scuttle bay: the deck between the screen base and the cowl's lip comes
+  // out of the shell, and buildScuttle closes it with a matte panel.
+  const inScuttle = (z) => z > cab.zWs - 1e-3 && z < sc.zLip + 1e-3;
+  return { cab, sc, rings, zOf, inCabin, inScuttle };
+}
+
+function buildBodyShell(b, d, col) {
+  const hw = d.bodyHalfWidth;
+  const { rings, zOf, inCabin, inScuttle } = bodyLoft(d);
   // Atlas x follows the ring's own z rather than its index, so the shell agrees
   // with the roof, bonnet and doors, which only know where they are in metres.
   pushLoft(b, rings, col, true, true,
@@ -2924,8 +2958,11 @@ function buildBodyShell(b, d, col) {
       if (k < 0) return i === 0 ? LIVERY_PANEL_UV : LIVERY_TRIM_UV;
       return [carUvX(rings[i][0][2], d), k / K];
     },
-    (i, k) => k >= BODY_DECK_FIRST && k < BODY_DECK_LAST
-      && inCabin(zOf(i)) && inCabin(zOf(i + 1)));
+    (i, k) => {
+      if (k < BODY_DECK_FIRST || k >= BODY_DECK_LAST) return false;
+      const za = zOf(i), zb = zOf(i + 1);
+      return (inCabin(za) && inCabin(zb)) || (inScuttle(za) && inScuttle(zb));
+    });
 
   // The shoulder is inboard of the door skin, so the aperture would otherwise
   // leave a slot straight through the flank at sill height. This ledge closes it
@@ -2944,6 +2981,54 @@ function buildBodyShell(b, d, col) {
       }
     }
   });
+}
+
+// The cowl that closes the scuttle bay the shell no longer decks over: matte,
+// level with the screen base, and long enough that the bonnet behind it never
+// reaches the cockpit eye. It reaches back to the fascia's own front edge,
+// because the 20 mm the dash stops short of the screen base is a slot the eye
+// looks straight through into the engine bay once the deck is gone.
+function buildScuttle(b, d, col) {
+  const { sc, rings, zOf, inScuttle } = bodyLoft(d);
+  const yTop = sc.yTop;
+  // Level right out to the shoulder, with a short wall down to the wing rather
+  // than a slope onto it: the eye sits barely 0.2 m over this panel, so a sloped
+  // flank is a ramp it looks straight under and out at the deck beyond.
+  const ringAt = (i, z, y) => {
+    const wt = rings[i][BODY_DECK_FIRST][0];
+    const yW = Math.min(rings[i][BODY_DECK_FIRST][1], y - 0.004);
+    return [[wt, yW, z], [wt, y, z], [wt * 0.72, y, z], [0, y, z],
+      [-wt * 0.72, y, z], [-wt, y, z], [-wt, yW, z]];
+  };
+  const panels = [];
+  for (let i = 0; i < rings.length; i += 1) {
+    if (!inScuttle(zOf(i))) continue;
+    // The rear edge tucks 5 mm under the fascia's leading edge and rises to meet
+    // the screen base, so a ray that clears the fascia has to land on the ramp
+    // instead of threading the seam and running on under the panel.
+    if (!panels.length) panels.push(ringAt(i, cabinLayout(d).zDashF, yTop - 0.005));
+    panels.push(ringAt(i, zOf(i), yTop));
+  }
+  for (let n = 0; n + 1 < panels.length; n += 1) {
+    const p = panels[n], q = panels[n + 1];
+    for (let k = 0; k + 1 < p.length; k += 1) pushQuad3(b, p[k], p[k + 1], q[k + 1], q[k], col);
+  }
+  // The shut line the bonnet's trailing edge drops through. Only across the top:
+  // the outermost segment of a ring is the wall down to the wing, and stepping
+  // that one down gives a quad with no area at all.
+  const lip = panels[panels.length - 1];
+  for (let k = 1; k + 2 < lip.length; k += 1) {
+    const a = lip[k], c = lip[k + 1];
+    pushQuad3(b, a, c, [c[0], c[1] - COWL_STEP, c[2]], [a[0], a[1] - COWL_STEP, a[2]], col);
+  }
+  // Two wiper arms lying in the trough. They cost eight triangles each and are
+  // the one thing in the forward view that says "windscreen" rather than "band".
+  const arm = [0.030, 0.030, 0.034];
+  for (const side of [-1, 1]) {
+    const x = side * d.bodyHalfWidth * 0.34;
+    pushTube(b, [[x - side * 0.20, yTop + 0.012, sc.zBase + 0.030],
+      [x + side * 0.16, yTop + 0.014, sc.zBase + 0.052]], 0.011, 4, arm);
+  }
 }
 
 function buildArchFlare(b, d, hubZ, col) {
@@ -2987,6 +3072,76 @@ function cabinFrame(d) {
     beltY: d.beltY + 0.05,
     roofY: d.roofY,
   };
+}
+
+// How proud the shell's deck crown stands above the shoulders, and how far it
+// has to duck under whatever panel skins it.
+const BODY_DECK_RISE = 0.058;
+// The clearance carries the bonnet's own 30 mm lateral crown: the deck's crown
+// is quoted on the centreline and the bonnet's falls away from it, so a 14 mm
+// gap at x=0 was 1 mm short two thirds of the way out to the wing.
+const BODY_SKIN_CLEAR = 0.040;
+// The bonnet drops through a shut line at the cowl's lip, and from here forward
+// carries a vent stack and a scoop that stand this proud of its own surface and
+// reach this far back of the station they are placed at.
+const COWL_STEP = 0.020;
+const COWL_CLEAR = 0.010;
+const BONNET_ROWS = 6;
+const BONNET_FURNITURE_T = 0.58;
+const BONNET_FURNITURE_RISE = 0.045;
+const BONNET_FURNITURE_BACK = 0.19;
+
+// A rally car wears a matte panel across the base of its screen for exactly the
+// reason this one needs one. The driver's eye grazes the deck, and what it found
+// there was the car's own livery — stripes, sheen and all — smeared into a band
+// between the wheel and the road, because the shell's deck stood 19 to 79 mm
+// PROUD of the bonnet that is supposed to skin it and ran straight up the sight
+// line. The cowl is the anti-glare panel, and it is walked forward until nothing
+// painted forward of the screen reaches the cockpit eye: render.js mounts that
+// eye 1.16 m over the road and 1.24 m behind the front axle, and
+// tests/meshes.test.mjs pins those two numbers to this comment.
+function scuttleFrame(d) {
+  const c = cabinFrame(d);
+  const eyeY = d.ground + 1.16, eyeZ = d.frontAxle - 1.24;
+  const yTop = c.beltY;
+  const zBase = c.zWs;
+  const z1 = d.noseZ - 0.14;
+  const y0 = yTop - COWL_STEP;
+  const y1 = d.beltY - 0.125;
+  // A smoothstep crown leaves the lip horizontally while the sight line is
+  // already falling, so the shut line is what buys the first millimetre of
+  // cover; everything after it is the lip's reach.
+  const clears = (zLip) => {
+    const m = (yTop - eyeY) / (zLip - eyeZ);
+    const len = z1 - zLip;
+    for (let k = 1; k <= 24; k += 1) {
+      const t = k / 24;
+      let top = y0 - (y0 - y1) * smoothstep(0, 1, t);
+      let z = zLip + len * t;
+      if (t >= BONNET_FURNITURE_T) { top += BONNET_FURNITURE_RISE; z -= BONNET_FURNITURE_BACK; }
+      if (top > yTop + m * (z - zLip) - COWL_CLEAR) return false;
+    }
+    return true;
+  };
+  let zLip = zBase + 0.09;
+  for (let n = 0; n < 90 && !clears(zLip); n += 1) zLip += 0.005;
+  // What skins the car at a given z, so the deck under it knows where to duck to.
+  // Behind the lip that is the cowl, but the deck there is cut out of the shell
+  // anyway, so the bonnet's own trailing edge is the safe answer either way.
+  // The bonnet is BONNET_ROWS chords rather than the smooth curve, and a chord
+  // hangs below the curve it spans — read the chord, or the deck rises through
+  // the bonnet in the middle of every row.
+  const crown = (t) => y0 - (y0 - y1) * smoothstep(0, 1, t);
+  const skinY = (z) => {
+    const t = clamp((z - zLip) / (z1 - zLip), 0, 1);
+    const j = Math.min(BONNET_ROWS - 1, Math.floor(t * BONNET_ROWS));
+    return lerp(crown(j / BONNET_ROWS), crown((j + 1) / BONNET_ROWS), t * BONNET_ROWS - j);
+  };
+  // Where the deck has to sit. Forward of the bonnet's leading edge the deck IS
+  // the skin — the light pod needs that last 0.14 m — so there it takes a shut
+  // line under the bonnet's edge rather than the full under-panel clearance.
+  const deckY = (z) => (z > z1 ? y1 - 0.008 : skinY(z) - BODY_SKIN_CLEAR);
+  return { c, zBase, zLip, yTop, y0, y1, z1, skinY, deckY };
 }
 
 function buildRoofPanel(b, d, col) {
@@ -3045,30 +3200,42 @@ function buildPillars(b, d, col) {
   return withUv(b, LIVERY_FLAT_UV, () => pillarGeometry(b, d, col));
 }
 
-function pillarGeometry(b, d, col) {
+// The pillars, laid out once: buildCabinTrim sleeves the same paths on the cabin
+// side, because a driver looks at pillar trim and not at his own paintwork.
+function pillarPaths(d) {
   const c = cabinFrame(d);
   const r = 0.042;
+  const out = [];
   for (const side of [-1, 1]) {
-    pushTube(b, [
+    out.push({ side, r, path: [
       [side * c.beltW, c.beltY, c.zWs],
       [side * (c.beltW * 0.94), c.beltY + 0.20, c.zWs - 0.26],
       [side * c.roofW, c.roofY - 0.02, c.zRoofF + 0.02],
-    ], r, 4, col);
-    pushTube(b, [
+    ] });
+    out.push({ side, r: r * 0.85, path: [
       [side * c.beltW, c.beltY, (c.zWs + c.zRs) * 0.48],
       [side * (c.beltW * 0.96), c.beltY + 0.22, (c.zWs + c.zRs) * 0.48],
       [side * c.roofW, c.roofY - 0.02, (c.zRoofF + c.zRoofR) * 0.5],
-    ], r * 0.85, 4, col);
-    pushTube(b, [
+    ] });
+    out.push({ side, r, path: [
       [side * c.beltW, c.beltY, c.zRs],
       [side * (c.beltW * 0.95), c.beltY + 0.20, c.zRs + 0.22],
       [side * c.roofW, c.roofY - 0.02, c.zRoofR - 0.02],
-    ], r, 4, col);
-    pushTube(b, [
+    ] });
+    // The roof rail is not a pillar the driver looks past, and it sits at the
+    // roof's own edge: a trim sleeve moved inboard of it comes up THROUGH the
+    // roof panel, so it is flagged out of the sleeving in buildCabinTrim.
+    out.push({ side, r: r * 0.6, rail: true, path: [
       [side * c.roofW, c.roofY - 0.025, c.zRoofF],
       [side * c.roofW, c.roofY - 0.025, c.zRoofR],
-    ], r * 0.6, 4, col);
+    ] });
   }
+  return { c, pillars: out };
+}
+
+function pillarGeometry(b, d, col) {
+  const { c, pillars } = pillarPaths(d);
+  for (const q of pillars) pushTube(b, q.path, q.r, 4, col);
   return c;
 }
 
@@ -3096,15 +3263,20 @@ function buildGlass(b, d) {
 }
 
 function buildBonnet(b, d, col) {
-  const c = cabinFrame(d);
-  const z0 = c.zWs, z1 = d.noseZ - 0.14;
-  const nz = 3, nx = 4;
+  // The bonnet starts at the cowl's lip and a shut line below it, not at the
+  // screen base: everything between is the cowl, and that is what keeps the
+  // livery out of the driver's eye. Six rows rather than three, because the
+  // sight line the cowl is solved against is the smooth profile, and a chord
+  // across a third of the bonnet can stand above it.
+  const sc = scuttleFrame(d);
+  const z0 = sc.zLip, z1 = sc.z1;
+  const nz = BONNET_ROWS, nx = 4;
   const grid = [];
   for (let j = 0; j <= nz; j += 1) {
     const t = j / nz;
     const z = lerp(z0, z1, t);
     const w = lerp(d.bodyHalfWidth * 0.92, d.bodyHalfWidth * 0.70, t);
-    const y = lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, t));
+    const y = lerp(sc.y0, sc.y1, smoothstep(0, 1, t));
     const row = [];
     for (let i = 0; i <= nx; i += 1) {
       const u = (i / nx) * 2 - 1;
@@ -3124,19 +3296,22 @@ function buildBonnet(b, d, col) {
   });
   // Two raised louvre vents — the giveaway that this is a competition car. The
   // paint material has no vertex colours, so their dark comes from the atlas.
+  // They and the scoop live forward of BONNET_FURNITURE_T and stand no more than
+  // BONNET_FURNITURE_RISE proud, which is the envelope the cowl is solved for.
+  const surfaceAt = (t) => lerp(sc.y0, sc.y1, smoothstep(0, 1, t));
   const ventCol = [0.05, 0.05, 0.055];
   withUv(b, LIVERY_TRIM_UV, () => {
     for (const side of [-1, 1]) {
-      const vz = lerp(z0, z1, 0.42);
+      const vz = lerp(z0, z1, 0.60);
       const vx = side * d.bodyHalfWidth * 0.44;
-      const vy = lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.42));
+      const vy = surfaceAt(0.60);
       for (let k = 0; k < 3; k += 1) {
         pushTaper(b, vx, vy + 0.012, vz - k * 0.075, 0.28, 0.05, 0.26, 0.035, 0, 0.028, ventCol, -0.012);
       }
     }
     const scoopCol = [0.06, 0.06, 0.065];
-    pushTaper(b, 0, lerp(d.beltY + 0.062, d.beltY - 0.125, smoothstep(0, 1, 0.62)) + 0.02,
-      lerp(z0, z1, 0.62), 0.44, 0.34, 0.34, 0.24, 0, 0.05, scoopCol, 0.02);
+    pushTaper(b, 0, surfaceAt(0.74) + 0.012, lerp(z0, z1, 0.74),
+      0.44, 0.34, 0.34, 0.24, 0, 0.033, scoopCol, 0.02);
   });
 }
 
@@ -3350,6 +3525,10 @@ function buildDoor(b, d, side, col) {
 // over the roof and down the rear quarters with the wing apparently bolted to
 // them — an exoskeleton, which is not a thing rally cars have.
 const CAGE_TUBE = 0.022;
+// A 45 mm tube 0.4 m from the driver's eye is 130 px across at 1600 wide, and
+// three of them cross the cockpit view. Six sides is a visible hexagon at that
+// size; the car has 25k triangles of budget spare.
+const CAGE_SIDES = 8;
 
 function cageFrame(d) {
   const c = cabinFrame(d);
@@ -3381,7 +3560,7 @@ function buildRollCage(b, d, col) {
   pushTube(b, [
     [-g.wBelt, g.floor, zB], [-g.wBelt, d.beltY, zB], [-g.wTop, g.top, zB],
     [0, g.top + 0.010, zB], [g.wTop, g.top, zB], [g.wBelt, d.beltY, zB], [g.wBelt, g.floor, zB],
-  ], r, 6, col);
+  ], r, CAGE_SIDES, col);
   for (const side of [-1, 1]) {
     // Roof rail forward to the screen header, then down the A-pillar into the
     // footwell — the bar the driver's helmet is actually protected by.
@@ -3390,7 +3569,7 @@ function buildRollCage(b, d, col) {
       [side * g.wTop, g.top, c.zRoofF + 0.14],
       [side * (c.roofW * 0.84), d.beltY + 0.24, c.zWs + 0.02],
       [side * (c.beltW * 0.86), d.beltY - 0.18, c.zWs + 0.12],
-    ], r, 6, col);
+    ], r, CAGE_SIDES, col);
     // Rear stays: down behind the backlight, through the parcel shelf, back to
     // the turret. Every point is below the boot lid and inboard of the quarter.
     pushTube(b, [
@@ -3398,17 +3577,17 @@ function buildRollCage(b, d, col) {
       [side * (g.wTop * 0.98), c.beltY - 0.04, c.zRs + 0.06],
       [side * g.wBoot, g.bootY, d.rearAxle + 0.04],
       [side * g.wBoot, g.floor + 0.05, d.rearAxle - 0.28],
-    ], r * 0.9, 6, col);
+    ], r * 0.9, CAGE_SIDES, col);
     // Door bars in the aperture, an X inboard of the skin.
     pushTube(b, [
       [side * g.wBelt, d.beltY - 0.06, zB - 0.02], [side * g.wBelt, d.beltY - 0.30, c.zWs + 0.06],
-    ], r * 0.85, 6, col);
+    ], r * 0.85, CAGE_SIDES, col);
     pushTube(b, [
       [side * g.wBelt, d.beltY - 0.30, zB - 0.02], [side * g.wBelt, d.beltY - 0.08, c.zWs + 0.06],
-    ], r * 0.85, 6, col);
+    ], r * 0.85, CAGE_SIDES, col);
   }
   // Roof diagonal, corner to corner between the hoop and the header.
-  pushTube(b, [[-g.wTop, g.top, zB], [g.wTop * 0.96, g.top - 0.008, c.zRoofF + 0.16]], r * 0.8, 6, col);
+  pushTube(b, [[-g.wTop, g.top, zB], [g.wTop * 0.96, g.top - 0.008, c.zRoofF + 0.16]], r * 0.8, CAGE_SIDES, col);
 }
 
 // Where everything inside the cabin hangs off. The driver sits on the left, so
@@ -3503,34 +3682,54 @@ function buildSteeringWheel(b, L, col, boss) {
 // the picture. Three gauges were modelled down there and not one of them ever
 // reached a pixel. Over the column is no better: the wheel boss covers that
 // sightline, whatever height the dial is given.
-function buildBinnacle(b, L, dark, grey, dial) {
-  const x = L.podX, y = L.podY, z = L.podZ;
+// A dial is a disc a driver looks at for a whole stage. At twelve sides a 135 px
+// face is a visible dodecagon, so the wall count comes off the geometry budget
+// rather than the eye.
+const DIAL_SEGMENTS = 30;
+
+function buildBinnacle(b, L, dark, grey, face, mark) {
   // The housing grows out of the fascia crown, so only its top third is ever
   // above the dash and the rest costs nothing inside the loft. Its depth is what
   // keeps the hood clear of the screen: the heritage cars rake theirs 0.45 m of
   // rise per metre of z, which is the tightest ceiling any of the eight has.
+  const x = L.podX, y = L.podY, z = L.podZ;
   pushTaper(b, x, y, z + 0.062, 0.40, 0.095, 0.37, 0.078, -0.150, 0.070, dark, 0.004);
   pushTaper(b, x, y, z + 0.035, 0.37, 0.085, 0.35, 0.070, 0.070, 0.090, dark, -0.018);
   // Each gauge stands proud of the housing in -z, so the bezel reads as a bezel
-  // and the paler face inside it as a dial.
-  const gauge = (gx, gy, r) => {
-    pushCylinder(b, gx, gy, z + 0.024, r, r, 0.048, 12, "z", grey);
-    pushCylinder(b, gx, gy, z - 0.004, r * 0.78, r * 0.78, 0.010, 12, "z", dial);
+  // and the paler face inside it as a dial. The cabin's albedo band is capped at
+  // 0.20 linear, which is nowhere near enough tonal range for a face to separate
+  // from its housing under the light this cabin actually gets — a measured 13.7
+  // against 12.6. So the reading is carried by SHAPE: proud ticks round the rim
+  // and a needle standing off the face, both at the top of the band.
+  const gauge = (gx, gy, r, sweep) => {
+    pushCylinder(b, gx, gy, z + 0.024, r, r, 0.048, DIAL_SEGMENTS, "z", grey);
+    pushCylinder(b, gx, gy, z - 0.004, r * 0.80, r * 0.80, 0.012, DIAL_SEGMENTS, "z", face);
+    const ticks = 9;
+    for (let k = 0; k < ticks; k += 1) {
+      const a = Math.PI * 1.25 - (k / (ticks - 1)) * Math.PI * 1.5;
+      pushBox(b, gx + Math.cos(a) * r * 0.62, gy + Math.sin(a) * r * 0.62, z - 0.012,
+        r * 0.17, r * 0.17, 0.008, mark);
+    }
+    const na = Math.PI * 1.25 - sweep * Math.PI * 1.5;
+    const ca = Math.cos(na), sa = Math.sin(na), hwd = r * 0.085, tip = r * 0.70;
+    const at = (rad, off) => [gx + ca * rad - sa * off, gy + sa * rad + ca * off, z - 0.016];
+    pushQuad3(b, at(0, hwd), at(tip, hwd * 0.3), at(tip, -hwd * 0.3), at(0, -hwd), mark);
   };
-  gauge(x, y, 0.065);
-  gauge(x - 0.108, y - 0.012, 0.038);
-  gauge(x + 0.108, y - 0.012, 0.038);
+  // A parked needle, not a live one: animating it is render.js's to do.
+  gauge(x, y, 0.065, 0.34);
+  gauge(x - 0.108, y - 0.012, 0.038, 0.55);
+  gauge(x + 0.108, y - 0.012, 0.038, 0.42);
   // Shift lights across the top of the hood, which is the face an eye 0.2 m
   // above the fascia is looking down onto. On the hood's lip they were inside it.
   for (let k = 0; k < 6; k += 1) {
     pushBox(b, x + (k - 2.5) * 0.030, y + 0.096, z + 0.012, 0.020, 0.012, 0.016,
-      k > 3 ? dial : grey);
+      k > 3 ? mark : grey);
   }
 }
 
 // The one place the player's eye rests for a whole stage: the fascia itself, a
 // crown lip over the column, and the instrument pod that carries the gauges.
-function buildDash(b, L, dark, grey, dial) {
+function buildDash(b, L, dark, grey, face, mark) {
   const w = L.hw * 0.94;
   const zF = L.zDashF, zR = L.zDashR;
   const rings = [];
@@ -3542,8 +3741,11 @@ function buildDash(b, L, dark, grey, dial) {
     // Clockwise in the section plane: rings that advance along +X take the
     // opposite hand from the ones that advance along +Z, and the body shell sets
     // the sign for the whole module.
+    // The leading edge is LEVEL, because the screen base it meets is level: the
+    // crown dip used to run right to the front, and the 12 mm it opened at the
+    // outer corners was a slot the eye threaded to see the deck beyond the cowl.
     rings.push([
-      [x, yt, zF],
+      [x, L.yDashTop, zF],
       [x, L.yDashBot, zF],
       [x, L.yDashBot, zr + 0.03],
       [x, yt - 0.115, zr],
@@ -3559,19 +3761,25 @@ function buildDash(b, L, dark, grey, dial) {
   // driver reaches for a switch and only ever reads a dial.
   for (let k = 0; k < 6; k += 1) {
     pushBox(b, 0.055 * (k % 3) - 0.055, L.yDashTop - 0.110 - 0.055 * Math.floor(k / 3),
-      L.zDashR - 0.020, 0.042, 0.038, 0.020, k === 1 ? dial : grey);
+      L.zDashR - 0.020, 0.042, 0.038, 0.020, k === 1 ? mark : grey);
   }
-  buildBinnacle(b, L, dark, grey, dial);
+  buildBinnacle(b, L, dark, grey, face, mark);
 }
 
 function buildInterior(b, d, col) {
   const L = cabinLayout(d);
   const c = L.c, hw = L.hw, floor = L.floor;
-  const dark = [0.035, 0.036, 0.040];
-  const grey = [0.070, 0.072, 0.078];
-  const dial = [0.165, 0.175, 0.190];
-  const cloth = [0.045, 0.046, 0.052];
-  const webbing = [0.340, 0.045, 0.040];
+  // A ladder, not two rungs. The cabin was 0.035 trim under a 0.72 cage: near
+  // black beside polished near-white, with nothing between, which is why it read
+  // as unfinished. Everything here is luminance-ordered inside the 0.20 linear
+  // ceiling the material band holds interiors to, and the cage above it is now
+  // 0.24 rather than 0.72.
+  const dark = [0.052, 0.053, 0.058];
+  const grey = [0.100, 0.102, 0.110];
+  const face = [0.105, 0.108, 0.118];
+  const mark = [0.190, 0.192, 0.196];
+  const cloth = [0.066, 0.066, 0.074];
+  const webbing = [0.320, 0.050, 0.045];
   const alloy = [0.150, 0.155, 0.165];
 
   // Floor pan, facing the driver rather than the road: this quad was wound down
@@ -3581,7 +3789,7 @@ function buildInterior(b, d, col) {
   const tunnelLen = c.zWs - L.zBulk;
   pushTaper(b, 0, floor, (c.zWs + L.zBulk) * 0.5, 0.36, tunnelLen, 0.27, tunnelLen, 0, 0.155, dark);
 
-  buildDash(b, L, dark, grey, dial);
+  buildDash(b, L, dark, grey, face, mark);
   buildSteeringWheel(b, L, dark, grey);
   for (const side of [-1, 1]) {
     buildSeat(b, L, side * L.seatX, cloth);
@@ -3605,8 +3813,9 @@ function buildCabinTrim(b, d) {
   const L = cabinLayout(d);
   const c = L.c, hw = L.hw, floor = L.floor;
   const liner = [0.300, 0.300, 0.310];
-  const card = [0.055, 0.056, 0.062];
-  const bulk = [0.075, 0.077, 0.083];
+  const card = [0.078, 0.079, 0.086];
+  const bulk = [0.100, 0.102, 0.110];
+  const trim = [0.130, 0.132, 0.142];
   const paper = [0.580, 0.580, 0.560];
 
   // Headliner, built off the roof's own surface so no sliver of sky survives
@@ -3624,6 +3833,21 @@ function buildCabinTrim(b, d) {
     [c.roofW * 0.97, c.roofY - 0.030, c.zRoofF + 0.02],
     [c.roofW * 0.97, c.roofY - 0.070, c.zRoofF + 0.10],
     [-c.roofW * 0.97, c.roofY - 0.070, c.zRoofF + 0.10], card);
+
+  // Pillar trim. Measured in a real frame, the painted A-pillar read 172/154/153
+  // against a road of 118/90/59 and a sky of 173 — three near-white bars across
+  // the cockpit view, and the brightest thing in it after the sky. A driver
+  // looks at pillar trim, not at the outside of his own car: this is a smaller
+  // tube inside each pillar, pushed toward the cabin so it stands proud on the
+  // inboard face and stays buried from outside. Both are four-sided, so the
+  // trim's CORNERS have to clear the pillar's flats — 0.707 r — or a magenta
+  // line of cabin trim runs down the outside of the A-pillar. 0.62 leaves the
+  // margin for the two tubes' frames not lining up along a curved path.
+  for (const q of pillarPaths(d).pillars) {
+    if (q.rail) continue;
+    const inboard = q.path.map((v) => [v[0] - q.side * q.r * 0.48, v[1], v[2]]);
+    pushTube(b, inboard, q.r * 0.62, 4, trim);
+  }
 
   // Door cards, inboard of the shell flank, from the sill up to the cant rail.
   for (const side of [-1, 1]) {
@@ -3788,8 +4012,14 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
 
   const white = [1, 1, 1];
   const black = [0.045, 0.045, 0.05];
-  const cageCol = [0.72, 0.72, 0.74];
+  // A cage painted near-white at metalness 0.55 was the brightest thing in the
+  // scene bar the sky, and three of its tubes cross the cockpit view: measured,
+  // the centre tube shaded 105/84/61 against a road of 75/61/40. Rally cages are
+  // painted steel, so this is a dielectric in a mid grey that sits under gravel
+  // (0.314 luminance) and about three times the trim beside it.
+  const cageCol = [0.235, 0.240, 0.250];
   const trimCol = [0.10, 0.10, 0.115];
+  const cowlCol = [0.030, 0.031, 0.034];
   // Every colour below is a linear albedo, because under the one albedo rule the
   // vertex colour is the only thing carrying one on these parts. Moulded bumper
   // plastic is dark but not black: it was 0x14161a on the material AND white in
@@ -3811,7 +4041,7 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
     roughness: 0.06, metalness: 0.0,
     transparent: true, opacity: 0.34, side: THREE.DoubleSide, vertexColors: true,
   }));
-  const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.55, vertexColors: true }));
+  const cageMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.06, vertexColors: true }));
   const metalMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.85, vertexColors: true }));
   const trimMat = vertexAlbedo(new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05, vertexColors: true }));
   // The lamp-pod bar is moulded plastic like the rest of the trim, but it must
@@ -3864,6 +4094,9 @@ export function buildCarMesh(THREE, spec, livery, opts = {}) {
   }, paint);
 
   addPart("bonnet", (b) => buildBonnet(b, d, white), paint, 5);
+  // Panel 5 is the bonnet's, and the cowl is the panel the bonnet shuts against:
+  // a dent that creases one has to crease the other or they part company.
+  addPart("scuttle", (b) => buildScuttle(b, d, cowlCol), trimMat, 5);
   addPart("bumperFront", (b) => buildBumper(b, d, true, bumperCol), plastic, 0);
   addPart("bumperRear", (b) => buildBumper(b, d, false, bumperCol), plastic, 1);
   addPart("doorLeft", (b) => buildDoor(b, d, -1, white), paint, 2);
