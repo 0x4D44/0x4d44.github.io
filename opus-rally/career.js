@@ -1203,11 +1203,12 @@ export function createCareer(storage, opts = {}) {
       //
       // ui.js sizes the plate from these fractions now rather than from a fixed
       // ratio (see plateMinHeight and CALENDAR_PIN there): each pin is given a
-      // label box plus a clearance. Measured after that, the tightest pair over
-      // 23,760 layouts — every four- and five-round shuffle, at every point in a
-      // season, at eighteen viewport widths from 320 to 1600 — clears by 12.0 px,
-      // and no label hangs off the plate. Change the y spread here and that
-      // number moves; the plate follows it, but re-measure.
+      // label box plus a clearance. Measured after that, and after the width fix
+      // on .or-node that followed it, the tightest pair clears by 21.5 px and no
+      // label hangs off the plate — over every four- and five-round shuffle, at
+      // every point in a season, from 320 to 1600 px. (It was 12.0 px before that
+      // width fix, which is the figure this comment first carried.) Change the y
+      // spread here and the number moves; the plate follows it, but re-measure.
       const t = s.calendar.length > 1 ? i / (s.calendar.length - 1) : 0.5;
       return {
         id,

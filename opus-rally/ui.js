@@ -2148,9 +2148,21 @@ const BASE_CSS = `
 .or-node{position:absolute;transform:translate(-50%,-50%);display:grid;gap:2px;justify-items:center;
  padding:6px 10px;background:rgba(12,15,19,.86);border:1px solid var(--or-line);cursor:pointer;
  font-size:var(--or-t-small);border-radius:2px;text-align:center;
- /* Wraps, and never wider than half the map: five pins on a 366 px phone plate
-    have to share it, and a nowrap label is as wide as the rally is named. */
- max-width:min(50%,190px);}
+ /* width:max-content is what makes the two sides of the ladder the same size,
+    and without it the right-hand pins are half the width of the left-hand ones.
+    An absolutely positioned box with a left offset and right:auto shrinks to fit
+    the space between its left edge and the containing block's RIGHT edge — the
+    translate that re-centres it happens afterwards and cannot give the width
+    back. career.js puts pins at x 0.28 and 0.70, so on a 296 px plate the left
+    ones got 147 px and the right ones 88 px: "Isle of Vardhal Rally" wrapped to
+    three lines against a two-line clamp and lost its tail, and the detail line
+    below it wrapped to four and lost the badge. max-content ignores the
+    available space, so both sides size from the text and then meet the cap.
+    Wraps, and never wider than half the map: five pins on a 366 px phone plate
+    have to share it, and a nowrap label is as wide as the rally is named. The
+    cap is also what keeps a centred pin on the plate — see the anchoring note
+    in renderMap, which was written for a pin this wide. */
+ width:max-content;max-width:min(50%,190px);}
 /* The .or-ui button rule above is a class and a type, so it outranked a bare
    .or-node: every pin that was a button — the next round, and every round
    already driven — drew at 16 px while the locked ones drew at 13. That made a
@@ -2160,7 +2172,14 @@ const BASE_CSS = `
 /* CALENDAR_PIN.box is the height this pair of clamps buys: two lines of title
    over two of detail, and no more, whatever the rally is called. Without a
    ceiling the pin is as tall as the longest name wraps on the narrowest plate,
-   and the plate cannot reserve room for something unbounded. */
+   and the plate cannot reserve room for something unbounded.
+   A ceiling is all this is. No label in the shipped book reaches it at any
+   supported width — the tallest pin is 85.6 px against the 88 px box, on the
+   296 px plate a 320 px window gives — and it must stay that way: a clamp that
+   fires is a label the player cannot read, and it hides itself, because the
+   truncated pin is a smaller box that clears its neighbours BETTER. If a longer
+   name ever starts hitting these, the fix is the box budget or the words, never
+   a tighter clamp. career.test.mjs asserts both halves. */
 .or-node>span,.or-node>small{display:-webkit-box;-webkit-box-orient:vertical;
  -webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
 .or-node[data-status="next"]{border-color:var(--or-flare);box-shadow:0 0 0 1px rgba(255,90,20,.35);}
@@ -2781,8 +2800,14 @@ function renderTable(ctx, section) {
 // The label budget a map pin is drawn to, in CSS pixels. `box` is what the
 // stylesheet's two line-clamps buy — two lines of title over two of detail, plus
 // padding and border — and `clear` is the gap that has to survive between two of
-// them. Declared here because the plate is sized from it and the tests assert
-// against it; changing either clamp changes `box`.
+// them. Declared here because the plate is sized from it; changing either clamp
+// changes `box`.
+//
+// The tests do NOT read these. They cannot: plateMinHeight multiplies the plate
+// by (box + clear), so a test that then divides the result by them is only
+// checking arithmetic against itself — set `clear` to 0 and a `gap >= clear`
+// assertion passes on a plate reserving nothing. career.test.mjs writes 88 and
+// 10 out as literals and measures the anchors the plate actually produced.
 export const CALENDAR_PIN = Object.freeze({ box: 88, clear: 10 });
 
 // How tall the plate has to be for the pins it was handed, in CSS pixels.
