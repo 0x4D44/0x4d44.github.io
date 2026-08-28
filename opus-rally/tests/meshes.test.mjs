@@ -2762,9 +2762,181 @@ test("car: no livery graphic reaches the driver's eye, and the bonnet skins the 
   clearLiveryCache();
 });
 
+test("car: the cowl's lip hides the whole bonnet from the driver's eye", async () => {
+  // The cowl is walked forward by scuttleFrame until the bonnet drops out of the
+  // cockpit sight line. The walk tests a SAMPLED envelope, and it once sampled
+  // the one end of a raised block that never binds: the bonnet's scoop stood 10
+  // to 11 mm over the line on all eight cars, top face and side walls in the
+  // driver's forward view. Nothing caught it. The neighbouring "no livery
+  // graphic" test cannot: the scoop is painted from the flat LIVERY_TRIM_UV
+  // swatch, and that test only flags faces whose UVs span an AREA.
+  //
+  // The oracle here is exact rather than sampled, because the thing it guards is
+  // a 0.6 mm margin. Take the cowl's lip ring off the BUILT panel, back-project
+  // every bonnet vertex down the sight line onto the lip's plane, and compare it
+  // with the lip's own upper outline there. Exact for whole triangles, not only
+  // for vertices: the outline is concave, so the region under it is convex, and
+  // a perspective projection takes a triangle to a triangle — a face can only
+  // break the line if one of its corners does.
+  //
+  // Measured with this: pre-fix 6 bonnet vertices per car sit over the lip,
+  // worst 10.39 mm on six cars and 11.40 mm on brackmoor-t8 and delta-b640;
+  // post-fix none, with 1.64 mm and 0.64 mm of clearance left. Everything below
+  // comes off the built meshes and render.js's own cockpit mount, so it restates
+  // no constant of meshes.js bar the eye the solver is hard-coded to.
+  const {
+    cameraParams, makeCarSample, sampleCar, mountLocalX, mountLocalZ, CAMERA_DESIGN_ASPECT,
+  } = await import("../render.js");
+  const p = cameraParams("cockpit");
+  const sample = makeCarSample();
+
+  for (const spec of CARS) {
+    const id = spec.id;
+    const record = newRecord();
+    const car = buildCarMesh(THREE, spec, spec.livery, { size: 64, canvasFactory: fakeCanvasFactory(record) });
+    const d = car.dimensions;
+    const parts = [...new Set(Object.values(car.parts))];
+    const nameOf = new Map();
+    for (const [name, mesh] of Object.entries(car.parts)) if (!nameOf.has(mesh)) nameOf.set(mesh, name);
+
+    sampleCar(sample, createCar(id), null);
+    const eye = new THREE.Vector3(mountLocalX(sample, p), p.mountY - sample.comHeight, mountLocalZ(sample, p));
+    // scuttleFrame solves the walk against its own copy of the eye — 1.16 m over
+    // the road, 1.24 m behind the front axle. If render.js moves the camera and
+    // that copy does not follow, the cowl is solved for a seat nobody sits in
+    // and every margin below is measured against the wrong line. This is the
+    // pinning the scuttleFrame comment says lives here.
+    assert.ok(Math.abs(eye.y - (d.ground + 1.16)) < 1e-9,
+      `${id}: render.js seats the driver ${(eye.y - d.ground).toFixed(4)} m over the road; `
+      + "scuttleFrame solves the cowl for 1.16 m");
+    assert.ok(Math.abs(eye.z - (d.frontAxle - 1.24)) < 1e-9,
+      `${id}: render.js seats the driver ${(d.frontAxle - eye.z).toFixed(4)} m behind the front `
+      + "axle; scuttleFrame solves the cowl for 1.24 m");
+
+    // The lip: the cowl's forwardmost ring, read off the built panel. An
+    // existing test already pins the bonnet's trailing edge to this same z, so
+    // this is the shut line the two panels meet on.
+    const sp = car.parts.scuttle.geometry.getAttribute("position");
+    let zLip = -Infinity;
+    for (let i = 0; i < sp.count; i += 1) zLip = Math.max(zLip, sp.getZ(i));
+    assert.ok(zLip > eye.z + 0.05,
+      `${id}: the cowl's lip is at z=${zLip.toFixed(3)}, not forward of the eye at ${eye.z.toFixed(3)}`);
+
+    // Its upper outline: the highest cowl vertex at each x in that plane. The
+    // shut-line step and the wall down to the wing put lower vertices at the same
+    // x, and it is the highest one that decides what the eye can see past.
+    const tops = new Map();
+    for (let i = 0; i < sp.count; i += 1) {
+      if (Math.abs(sp.getZ(i) - zLip) > 1e-6) continue;
+      const x = sp.getX(i), key = x.toFixed(6), prev = tops.get(key);
+      if (!prev || sp.getY(i) > prev[1]) tops.set(key, [x, sp.getY(i)]);
+    }
+    const env = [...tops.values()].sort((a, b) => a[0] - b[0]);
+    assert.ok(env.length >= 3,
+      `${id}: the cowl's lip is ${env.length} points wide; there is no outline to hide behind`);
+    for (let k = 1; k + 1 < env.length; k += 1) {
+      const span = env[k + 1][0] - env[k - 1][0];
+      if (span < 1e-9) continue;
+      const t = (env[k][0] - env[k - 1][0]) / span;
+      const chord = env[k - 1][1] + t * (env[k + 1][1] - env[k - 1][1]);
+      assert.ok(env[k][1] >= chord - 1e-9,
+        `${id}: the cowl's lip dips ${((chord - env[k][1]) * 1000).toFixed(2)} mm below its own `
+        + `chord at x=${env[k][0].toFixed(3)}; the outline is not concave, so testing corners is `
+        + "no longer enough to clear a whole triangle");
+    }
+    const envAt = (x) => {
+      if (x <= env[0][0]) return env[0][1];
+      const last = env[env.length - 1];
+      if (x >= last[0]) return last[1];
+      let k = 0;
+      while (k + 1 < env.length && env[k + 1][0] < x) k += 1;
+      const t = (x - env[k][0]) / (env[k + 1][0] - env[k][0]);
+      return env[k][1] + t * (env[k + 1][1] - env[k][1]);
+    };
+
+    // Nothing on the bonnet may reach the eye over that outline. The bonnet's own
+    // trailing edge sits IN the lip plane and is wider than the lip there, which
+    // is why the lateral check is taken forward of the plane: the outline has to
+    // span everything the eye could look over, or a corner could escape past its
+    // end unseen by the test.
+    const bp = car.parts.bonnet.geometry.getAttribute("position");
+    let outboard = 0, widest = 0, over = 0, worstRise = -Infinity, worstAt = null;
+    const v = new THREE.Vector3();
+    for (let i = 0; i < bp.count; i += 1) {
+      v.fromBufferAttribute(bp, i);
+      if (v.z > zLip + 1e-6) {
+        widest = Math.max(widest, Math.abs(v.x));
+        if (v.x < env[0][0] - 1e-9 || v.x > env[env.length - 1][0] + 1e-9) outboard += 1;
+      }
+      const s = (zLip - eye.z) / (v.z - eye.z);           // down the sight line to the lip plane
+      const rise = (eye.y + s * (v.y - eye.y)) - envAt(eye.x + s * (v.x - eye.x));
+      if (rise > 0) over += 1;
+      if (rise > worstRise) { worstRise = rise; worstAt = v.clone(); }
+    }
+    assert.equal(outboard, 0,
+      `${id}: ${outboard} bonnet vertices forward of the lip reach x=${widest.toFixed(3)}, outside `
+      + `the lip's own ${env[0][0].toFixed(3)}..${env[env.length - 1][0].toFixed(3)}; the outline no `
+      + "longer spans the panel it is supposed to hide");
+    assert.equal(over, 0,
+      `${id}: ${over} bonnet vertices stand over the cowl's lip in the driver's sight line, the `
+      + `worst by ${(worstRise * 1000).toFixed(2)} mm — it is at (${worstAt.x.toFixed(3)}, `
+      + `${worstAt.y.toFixed(3)}, ${worstAt.z.toFixed(3)}), and the cowl's lip is y=`
+      + `${envAt(worstAt.x).toFixed(3)} at z=${zLip.toFixed(3)}. The cowl is the anti-glare panel; `
+      + "everything on the bonnet belongs under it");
+
+    // And the same thing said end to end, by casting the real cockpit frustum:
+    // no ray may find the bonnet first. This is the coarse check — at 45x45 it
+    // saw the fault above on only brackmoor-t8 (2 rays) and delta-b640 (1), and
+    // it takes 32k rays a car to see it on the rest, so it is confirmation and
+    // not the guard. What it adds is the part the outline cannot see: a bonnet
+    // that became visible round the ends of the lip, or through the cowl.
+    const cam = new THREE.PerspectiveCamera(p.fovBase, CAMERA_DESIGN_ASPECT, p.near, 100);
+    cam.position.copy(eye);
+    cam.lookAt(eye.x, eye.y + p.lookHeight, eye.z + p.lookAhead);
+    cam.updateMatrixWorld(true);
+    cam.updateProjectionMatrix();
+    const inv = cam.projectionMatrixInverse, world = cam.matrixWorld;
+    const scratch = new THREE.Vector3();
+    const N = 45;
+    const seen = [];
+    for (let i = 0; i < N; i += 1) {
+      for (let j = 0; j < N; j += 1) {
+        const u = (i / (N - 1)) * 1.98 - 0.99, w = (j / (N - 1)) * 1.98 - 0.99;
+        scratch.set(u, w, 0.5).applyMatrix4(inv).applyMatrix4(world);
+        const hits = new THREE.Raycaster(eye.clone(), scratch.clone().sub(eye).normalize(), 0.02, 60)
+          .intersectObjects(parts, false)
+          .filter((h) => h.object !== car.parts.glass);
+        if (!hits.length || hits[0].object !== car.parts.bonnet) continue;
+        seen.push(`frame (${u.toFixed(2)}, ${w.toFixed(2)}) at (${hits[0].point.x.toFixed(3)}, `
+          + `${hits[0].point.y.toFixed(3)}, ${hits[0].point.z.toFixed(3)})`);
+      }
+    }
+    assert.deepEqual(seen.slice(0, 4), [],
+      `${id}: ${seen.length} of ${N * N} cockpit rays land on the bonnet before anything else; `
+      + "the first few are above");
+
+    // The light pod is the one thing forward of the screen that IS still in the
+    // driver's view, and it is furniture rather than paintwork: its own matte
+    // material, vertex-coloured, with no livery map on it. The scuttleFrame
+    // comment says so, and this is what makes that true.
+    const pod = car.parts.lightPod;
+    assert.ok(pod, `${id}: the car has no light pod`);
+    assert.notEqual(pod.material, car.parts.body.material,
+      `${id}: the light pod is on the paint material; it stands in the sight line over the cowl`);
+    assert.equal(pod.material.map, null,
+      `${id}: the light pod's material carries a texture; over the cowl that is livery in the eye`);
+    assert.equal(nameOf.get(pod), "lightPod", `${id}: the light pod is not its own part`);
+
+    car.dispose();
+  }
+  clearLiveryCache();
+});
+
 test("car: an instrument face is a disc, not a dodecagon", () => {
-  // The dials were twelve-sided, which at the 135 px a gauge covers on a 1600
-  // wide cockpit frame is a visible polygon. Measured off the silhouette rather
+  // The dials were twelve-sided, which at the 173 px the main gauge's face covers
+  // on a 1600 wide cockpit frame is a visible polygon — 0.104 m of face seen from
+  // 0.61 m of depth through a 48 degree vertical fov at 16:9; the two flanking it
+  // are 101 px. Measured off the silhouette rather
   // than off a segment count: take every flat disc in the cabin — a group of
   // same-coloured vertices in one thin z slab, all at one radius from their own
   // centre — and check the angular step round its rim.

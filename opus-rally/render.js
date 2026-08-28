@@ -1739,13 +1739,24 @@ void main() {
   // slope left to render it with. That is why no single level worked. Measured
   // on a night-rain frame with the car stopped: at the 0.5 this shipped with,
   // the road at 12 m read 217/255 while the air three metres above it reached
-  // only 74.9 against 68.8 for the air beside the beam; at 0.12 the road came
-  // back but the same air read 58 against 70 — the lit fog DARKER than the haze
-  // around it, which is backwards. Ramping the throat in over the first quarter
-  // of the cone and easing the far taper moves the light to where the chord is
-  // long: on the same frame the air three metres up now reads 88 against 70,
-  // the road peaks at 195, and one pixel in a thousand of the road half passes
-  // 240 with the brightest at 241.
+  // 74.9, against 68.8 for air beside the beam; at 0.12 the road came back and
+  // that same air read 58 against the same 68.8-to-70. Read once as the lit fog
+  // being DARKER than the haze, which it cannot be: the shell is additively
+  // blended, so at any one pixel beam-on is never below beam-off, and those two
+  // samples are two different places in the frame. What 0.12 really cost is how
+  // little the cone was worth over the SAME air — modelled two thirds down the
+  // cone on night-rain it is 42 levels, against 82 at the coefficient that now
+  // ships. The fix is a throat ramped in over the first quarter of the cone and
+  // a slower far taper, which moves the light to where the chord is long: on the
+  // same frame the air three metres up reads 88, the road peaks at 195, and one
+  // pixel in a thousand of the road half passes 240 with the brightest at 241.
+  //
+  // And "a slower far taper" undersells what that costs per pixel. The
+  // along-axis term was (1.0 - vAlong) * (1.0 - vAlong), two multiplies. It is
+  // now a smoothstep throat times pow(max(1.0 - vAlong, 0.0), BEAM_FALL) — a
+  // SECOND pow per fragment, on shells that cover a large part of a night frame.
+  // The shader already carried pow(face, 0.9), so this is not its first
+  // transcendental, but it is one more than the taper used to cost.
   float face = abs(dot(normalize(vNormalW), normalize(vViewDir)));
   float t = clamp(vAlong / BEAM_THROAT, 0.0, 1.0);
   float body = t * t * (3.0 - 2.0 * t) * pow(max(1.0 - vAlong, 0.0), BEAM_FALL);
@@ -3704,9 +3715,13 @@ export function createRenderer(canvas, opts = {}) {
           // one stopped night-rain frame with the throat profile above, the air
           // three metres over the road ran 83, 88 and 92 at 0.26, 0.30 and 0.34
           // against 70 for the air beside the beam, with the road under it
-          // peaking at 188, 192 and 196. Below about 0.2 there is no beam: at
-          // 0.12 the lit air comes out at 68 against that same 70, which is the
-          // wrong way round for scattered light. Past about 0.34 the cone's own
+          // peaking at 188, 192 and 196. Below about 0.2 there is barely a
+          // beam: 0.12 puts the lit air at 68 against 70 for air elsewhere in
+          // the frame — two places, not one place lit and unlit, because an
+          // additive shell cannot subtract light. Over the SAME air it models
+          // 42 levels at two thirds down the cone against 82 here, where
+          // tests/render.test.mjs asks a night beam for 55.
+          // Past about 0.34 the cone's own
           // wall starts to draw as a straight edge across the road pool —
           // plainly visible at 0.45 — because a shell only stands in for a
           // volume while it is faint. 0.30 puts the shaft a fifth above the air

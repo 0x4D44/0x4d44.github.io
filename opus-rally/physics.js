@@ -111,7 +111,7 @@ const CLUTCH_OVERFEED = 1.6;
 
 // How much of the clutch a pedal takes up on its own when the engine has no torque
 // left to rev with. Without it a car whose engine cannot reach the launch rpm at the
-// pedal it is given never takes up drive at all: the 640 needs 29% of throttle to
+// pedal it is given never takes up drive at all: the 640 needs 31.5% of throttle to
 // hold its own idle, so a quarter throttle on a 6% gravel climb left it freewheeling
 // backwards with the clutch open and the driver's foot down.
 const CLUTCH_CREEP = 0.40;
@@ -1256,9 +1256,10 @@ export function stepCar(car, input, world, dt) {
   // It is an air bypass around the throttle plate, so it ADDS to what the driver is
   // asking for and fades out as the engine comes up on its own. Taking the GREATER
   // of the two gave every car a dead band at the bottom of its pedal — the 640 needs
-  // 29% just to hold its own idle, so anything under 29% did nothing at all — and it
-  // also put the governor's own 14-29% on the HUD's throttle trace at the start line,
-  // where the driver is not touching the pedal.
+  // 31.5% just to hold its own idle, so anything under 31.5% did nothing at all — and
+  // it also put the governor's own 13.8-31.5% on the HUD's throttle trace at the start
+  // line, where the driver is not touching the pedal. Measured on a settled idle, the
+  // eight run 13.8, 16.1, 17.5, 19.0, 22.5, 22.6, 23.3 and 31.5%.
   const idleErr = (eng.idleRpm - rpm) / eng.idleRpm;
   if (!car.engineStalled) {
     car.idleTrim = clamp(car.idleTrim + idleErr * IDLE_TRIM_RATE * h, 0, IDLE_TRIM_MAX);
@@ -1374,9 +1375,12 @@ export function stepCar(car, input, world, dt) {
   // everything. THAT is what the traction control was fighting. Measured on a 9.1%
   // ice climb, the pair settled into a two-state cycle at 3.6 Hz with the clutch
   // alternating 0.09 and 0.22 and the front tyres 780 N and 1176 N — a mean under
-  // what the grade needs — and the engine surging 100 rpm with it. With a ceiling
-  // that is continuous in the slip there is no loop left to close: the cut is a
-  // static function of the tyre state, so it cannot oscillate.
+  // what the grade needs — and the engine surging 100 rpm with it. The loop is still
+  // closed and it still carries a delay: drivenFx, drivenCap and driveSlip are all
+  // left by the PREVIOUS step's wheel solve, so the cut always answers the tyre state
+  // of one step ago. What changed is the gain, not the topology — the cut is now
+  // continuous in the slip, so a step in slip no longer buys a step in the cut, and
+  // the cycle has nothing to sustain it. It damps; it is not oscillation-proof.
   const slipGuard = bestSlip * CLUTCH_SLIP_GUARD;
   const dumping = saturate((car.driveSlip - slipGuard) / slipGuard);
   if (a.autoClutch && Tc > 0 && drivenRatio !== 0) {
@@ -1555,8 +1559,10 @@ export function stepCar(car, input, world, dt) {
     // The wheel is integrated semi-implicitly in the tyre's own stiffness, because
     // explicitly it is unstable here by about a factor of six. The slope of fx
     // against slip velocity near zero slip is mu*N*B*C/vRef, and with a 1/120 s step,
-    // a 1 kg.m^2 wheel and the 2 m/s floor the slip ratio is taken against, h*k*r^2/I
-    // comes out near twelve — where anything over two rings. The guard that held it
+    // the 1.00-1.34 kg.m^2 wheels these cars carry and the 2 m/s floor the slip ratio
+    // is taken against, h*k*r^2/I runs from 4.1 (brackmoor-t8's front wheels on ice) to 48
+    // (astra-corsa on tarmac) at static load — where anything over two rings, so
+    // every car on every surface is well past it. The guard that held it
     // together did so by DELETING force, bounding it at |slipVel| * I / (r^2 * h):
     // that wanted a slip ratio near 0.5 before a tyre could make its peak from rest,
     // which is why holding the driven wheels on the Pacejka peak at a standstill
@@ -1736,8 +1742,8 @@ export function stepCar(car, input, world, dt) {
   ci.steer = steerIn;
   // What the DRIVER is asking for, after the aid he can feel, and not the engine's
   // commanded throttle: the HUD draws this, and the idle governor's air bypass is
-  // not a pedal position. Reporting the engine's number put a permanent 14-29% step
-  // on the throttle trace of a car sitting on the start line with nothing pressed.
+  // not a pedal position. Reporting the engine's number put a permanent 13.8-31.5%
+  // step on the throttle trace of a car sitting on the start line with nothing pressed.
   ci.throttle = throttleIn * (1 - car.tcCut);
   ci.brake = brakeIn;
   ci.handbrake = handbrakeIn;

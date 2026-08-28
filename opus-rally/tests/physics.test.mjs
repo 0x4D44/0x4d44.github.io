@@ -126,11 +126,15 @@ function bookClimb(surfaceId) {
   return w;
 }
 
-// The lowest grip weatherSurfaceModifier can actually deliver. Its clamp names 0.22
-// and the last pass took that at face value, but the product cannot reach it: the
-// three wetness terms bottom out at 0.80 * 0.72 * 0.66 and the cold bonus can only
-// lift the result. Mirrored from weather.js because a test that runs a car at a grip
-// no weather can make is measuring a hypothetical.
+// A low grip taken from weatherSurfaceModifier's own algebra rather than from its
+// clamp. The clamp names 0.22 and the last pass took that at face value, but the
+// product cannot reach it: the three wetness terms bottom out at 0.80 * 0.72 * 0.66,
+// which is 0.3802, and that is the real floor — the 1.03 below is the cold bonus at
+// its maximum, so this constant is 0.3916 and is NOT the lowest the function can
+// return. Nor is either figure reachable in practice: no shipped preset puts full
+// film, standing water and snow cover on the road at once, and the lowest gripScale
+// any of the twelve settles at is 0.626 (thunderstorm), with blizzard at 0.630. This
+// is a deliberately pessimistic surface, not a weather the game can produce.
 const GRIP_FLOOR = 0.80 * 0.72 * 0.66 * 1.03;
 
 // ---- straight line -------------------------------------------------------
@@ -672,7 +676,7 @@ test("a held part throttle on a climb drives the car instead of freewheeling", (
     // itself sliding backwards at 8.3 km/h, so the real one is this: a quarter
     // throttle has to stop the car being carried away. Four of the eight failed it
     // with the idle governor taking the GREATER of the pedal and its own demand —
-    // the 640 needs 29% to hold its own idle, so a 25% pedal is off the throttle as
+    // the 640 needs 31.5% to hold its own idle, so a 25% pedal is off the throttle as
     // far as its engine is concerned; the engine never leaves idle, every term in the
     // launch servo is referenced to an engine speed it will never reach, and the car
     // rolls back down the hill with the driver's foot down. Measured backwards, the
@@ -689,8 +693,8 @@ test("the bottom of the throttle pedal is not dead", () => {
   // The idle governor used to take the GREATER of the driver's pedal and its own
   // demand, so every pedal position under that demand produced exactly the throttle
   // the governor was already asking for. Measured out of gear at idle, the first
-  // 16% of pedal moved no car's engine load at all and the 640 — which needs 29% to
-  // turn itself over — was flat to 32% and beyond. An air bypass ADDS to the pedal;
+  // 16% of pedal moved no car's engine load at all and the 640 — which needs 31.5%
+  // to turn itself over — was flat to 32% and beyond. An air bypass ADDS to the pedal;
   // it does not stand in for it.
   //
   // engineLoad is the engine's own indicated torque over its peak, so this reads the
@@ -730,8 +734,8 @@ test("the pedal the HUD draws is the driver's, not the idle governor's", () => {
   // The governor is an air bypass, so its throttle is not a pedal position — and
   // game.js feeds car.input.throttle straight to the HUD trace. Reporting the
   // engine's commanded throttle put a permanent step on that trace for a car sitting
-  // on the start line with nothing pressed: 14% on the smallest engine here and 29%
-  // on the 640, which needs that much to turn itself over.
+  // on the start line with nothing pressed: 13.8% on the smallest engine here and
+  // 31.5% on the 640, which needs that much to turn itself over.
   //
   // The car must also still be at its idle speed and still stationary, because the
   // cheap way to make the reported number zero is to stop the governor working.
@@ -1096,14 +1100,17 @@ function brakeFrom100(specId, surfaceId, tune) {
 test("braking from 100 km/h stops in a distance the friction allows", () => {
   for (const spec of CARS) {
     const tarmac = brakeFrom100(spec.id, SURFACE.TARMAC);
-    // The floor is the same statement as the 1.4 g ceiling below, in metres: a
-    // 100 km/h stop at 1.4 g takes 27.4 m. It used to read 30, which is 1.31 g, so
-    // the two bounds disagreed — and once the wheel stopped being damped down to a
-    // fifth of a g while locked at walking pace, the 1.474 mu tarmac compound landed
-    // in the gap at 29.6 m and 1.33 g. Both figures are the tyre table's, not a
-    // tuning choice, so the pair are made to agree on the ceiling that has a reason.
+    // The floor is the same statement as the 1.4 g ceiling below, in metres:
+    // (100/3.6)^2 / (2 * 1.4 * 9.81) is 28.09 m, not the 27.4 written here before —
+    // and a floor of 27 left a metre of window in which the distance passed and the
+    // g ceiling failed, which is the gap it was added to close. It used to read 30,
+    // which is 1.31 g, and once the wheel stopped being damped down to a fifth of a
+    // g while locked at walking pace, the 1.474 mu tarmac compound landed in that gap
+    // at 29.6 m and 1.33 g. Both figures are the tyre table's, not a tuning choice,
+    // so the pair are made to agree on the ceiling that has a reason. The closest car
+    // to the floor is still astra-corsa, at 29.64 m — 1.55 m of margin.
     assert.ok(
-      tarmac.distance > 27 && tarmac.distance < 58,
+      tarmac.distance > 28.09 && tarmac.distance < 58,
       `${spec.id} stopped from 100 km/h in ${tarmac.distance.toFixed(1)} m on tarmac`,
     );
     assert.ok(

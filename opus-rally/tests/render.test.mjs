@@ -2465,10 +2465,11 @@ function beamProfilePeak() {
 // the middle crosses four of them — both walls of both cones. `layers` names how
 // many are being charged at the profile's own peak, because that is the part the
 // geometry decides rather than the shader. Four is the arithmetic worst case and
-// is no longer reachable: with the throat term the peak sits at 0.29 of the
-// cone's length, where the four walls are metres apart, so no one ray collects
-// it. Two — one cone's near and far wall — is the ray that can happen, and that
-// is the one held to the tent bound.
+// is no longer reachable: with the throat term beamProfilePeak() puts the peak at
+// 0.256 of the cone's length — the value the function returns, not the 0.29 that
+// used to be written here — where the four walls are metres apart, so no one ray
+// collects it. Two — one cone's near and far wall — is the ray that can happen,
+// and that is the one held to the tent bound.
 function beamLayerByte(beams, exposure, layers) {
   const u = beams.children[0].material.uniforms;
   const c = u.uColour.value;
@@ -2572,10 +2573,15 @@ test("the cone spends its light down the beam rather than on the bonnet", () => 
 test("lit fog is brighter than the fog beside it", async () => {
   // The physical point of a volumetric, and the thing the last pass lost. Driven
   // on a real night-rain frame with the car stopped, the air three metres above
-  // the road inside the cone measured 58 against 70 for the air beside it: the
-  // beam DARKER than the haze it hangs in. At the 0.5 the coefficient came down
-  // from, the same air only reached 74.9 against 68.8, because the light was
-  // going on the road instead — 217/255 at 12 m. It reads 88 against 70 now.
+  // the road inside the cone measured 58, and air elsewhere in that frame 70.
+  // That pair was written up as the beam being DARKER than the haze it hangs in.
+  // It cannot be: the cone is additively blended, so at one pixel beam-on is
+  // never below beam-off, and a lit-against-unlit reading has to come from ONE
+  // place. The samples were two places. What 0.12 did cost is how little the cone
+  // was worth over the same air — modelled below at two thirds down the cone it
+  // gives 105/255 against 63 unlit, where the 0.30 that ships gives 145. At the
+  // 0.5 the coefficient came down from, the light was going on the road instead:
+  // 217/255 at 12 m.
   //
   // Neither number below is the other module's: the haze is the scene fog colour
   // weather.js computes for the preset, and the cone is render.js's own uniform
@@ -2614,7 +2620,8 @@ test("lit fog is brighter than the fog beside it", async () => {
     const air = { fog: real.fog, current: { exposure: p.exposure } };
     const { lit, unlit } = beamOverHaze(beams, air, 2, 0.65);
     // Only where a lamp can compete with the air. Hill fog is daylight fog: its
-    // haze already reads 220/255, so the same cone is worth twelve levels there
+    // haze already reads 220/255, so at the 0.65 sampled here the same cone is
+    // worth about five levels (twelve is its value at the 0.256 peak)
     // and the frame agrees — the air over the road measured 221 unlit and 222
     // lit. That is what a headlight in daylight fog looks like, and asking for
     // more of it is asking for a lamp brighter than the sky.
