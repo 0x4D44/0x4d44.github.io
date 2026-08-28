@@ -1347,7 +1347,7 @@ export function buildTitleModel(data = {}) {
     {
       id: "t-hero-round", kind: "eyebrow",
       label: dossier.title,
-      value: dossier.rounds ? `Round ${dossier.round} of ${dossier.rounds}` : "",
+      value: dossier.rounds ? `Round ${dossier.round} of ${dossier.rounds}` : "Nothing entered yet",
     },
     {
       id: "t-hero-name", kind: "headline",
@@ -1393,16 +1393,20 @@ export function buildTitleModel(data = {}) {
       {
         id: "t-menu", kind: "menu", region: "main", heading: "Main menu",
         items: [
-          // With no season in progress the primary action is the one that can
-          // actually put you on a stage. It used to offer "New championship",
-          // which is a promise the game cannot yet keep: career.js schedules its
-          // own rallies (kal-hovden, van-costiera) and stage.js can only build
-          // the twelve in STAGE_BOOK, and nothing maps one onto the other. A
-          // button that cannot lead anywhere is worse than no button.
-          btn("t-continue", has ? "Continue championship" : "Quick stage",
-            has ? "continue" : "quickStage", { primary: true }),
+          // The primary action is the championship, and it is reachable from a
+          // cold start now that career.js draws its calendar from STAGE_BOOK.
+          // It used to be hidden behind `hidden: !has`, which meant a player
+          // with no season had no way to start one — career.js scheduled its own
+          // rallies (kal-hovden, van-costiera) and stage.js could only build the
+          // twelve in the book, so the button was suppressed rather than fixed.
+          //
+          // "Quick stage" is unconditional. It was hidden whenever a season was
+          // running, which is one press away from a player who wants a single
+          // stage having to abandon a championship to get one.
+          btn("t-continue", has ? "Continue championship" : "New championship",
+            has ? "continue" : "newSeason", { primary: true }),
           btn("t-new", "New championship", "newSeason", { hidden: !has }),
-          btn("t-quick", "Quick stage", "quickStage", { hidden: !has }),
+          btn("t-quick", "Quick stage", "quickStage"),
           btn("t-trial", "Time trial", "timeTrial"),
           btn("t-garage", "Garage", "garage"),
           btn("t-settings", "Settings", "openSettings"),
@@ -1428,6 +1432,7 @@ export function buildChampionshipModel(data = {}) {
   const champ = data.championship ?? {};
   const events = champ.events ?? [];
   const next = events.find((e) => e.status === "next") ?? events[0] ?? null;
+  const nextStage = data.nextStage ?? null;
   return {
     screen: "championship",
     title: champ.name ?? "Championship",
@@ -1460,9 +1465,13 @@ export function buildChampionshipModel(data = {}) {
       },
       {
         id: "c-next", kind: "panel", region: "footer", heading: "Next stage",
+        // `nextStage` is the season cursor's own stage. Without it this panel
+        // could only name the event, which told a player nothing about the road
+        // the button was about to put them on.
         items: [
-          { id: "c-next-name", kind: "stat", label: "Next", value: next?.name ?? "—" },
-          { id: "c-next-surface", kind: "stat", label: "Surface", value: next ? surfaceMixText(next.surface) : "—" },
+          { id: "c-next-name", kind: "stat", label: "Next", value: nextStage?.name ?? next?.name ?? "—" },
+          { id: "c-next-surface", kind: "stat", label: "Surface", value: surfaceMixText(nextStage?.surface ?? next?.surface) },
+          { id: "c-next-wx", kind: "stat", label: "Conditions", value: nextStage?.conditions ?? "—" },
           btn("c-go", "Go to stage", "openStage", { primary: true, disabled: !next, value: next?.id }),
           btn("c-quit", "Back to title", "title"),
         ],
@@ -1825,7 +1834,9 @@ export function buildResultsModel(data = {}) {
         id: "r-actions", kind: "panel", region: "footer",
         items: [
           btn("r-next", data.hasNextStage ? "Next stage" : "Championship", data.hasNextStage ? "nextStage" : "championship", { primary: true }),
-          btn("r-retry", "Retry stage", "restartStage"),
+          // A championship stage is on the timing sheet the moment it is
+          // finished, so re-driving it would put a second time against it.
+          btn("r-retry", "Retry stage", "restartStage", { disabled: !!data.noRetry }),
           btn("r-replay", "Watch replay", "replay", { disabled: !data.hasReplay }),
         ],
       },
@@ -1860,8 +1871,10 @@ export function buildSeasonModel(data = {}) {
       },
       {
         id: "n-table", kind: "table", region: "aside", heading: "Final standings",
+        // The podium is three steps by definition; the table is everyone. Reading
+        // both off `podium` meant a season ended with a three-driver championship.
         columns: ["", "Driver", "Pts"],
-        items: ordered.map((p, i) => ({
+        items: (season.standings ?? ordered).map((p, i) => ({
           id: "n-row-" + i,
           kind: "row",
           cells: [String(p.position ?? i + 1), p.name, String(p.points ?? 0)],
@@ -2124,7 +2137,10 @@ const BASE_CSS = `
  background:repeating-linear-gradient(var(--or-skew),rgba(255,255,255,.02) 0 2px,transparent 2px 12px),var(--or-graphite);}
 .or-node{position:absolute;transform:translate(-50%,-50%);display:grid;gap:2px;justify-items:center;
  padding:6px 10px;background:rgba(12,15,19,.86);border:1px solid var(--or-line);cursor:pointer;
- font-size:var(--or-t-small);white-space:nowrap;border-radius:2px;}
+ font-size:var(--or-t-small);border-radius:2px;text-align:center;
+ /* Wraps, and never wider than half the map: five pins on a 366 px phone plate
+    have to share it, and a nowrap label is as wide as the rally is named. */
+ max-width:min(50%,190px);}
 .or-node[data-status="next"]{border-color:var(--or-flare);box-shadow:0 0 0 1px rgba(255,90,20,.35);}
 .or-node[data-status="locked"]{opacity:.5;cursor:default;}
 .or-node small{color:var(--or-mute);font-size:var(--or-t-micro);}
@@ -2235,6 +2251,30 @@ const BASE_CSS = `
  [data-or-screen="title"] .or-headline h3{font-size:var(--or-t-h1);}
 }
 
+/* The title screen is the only one the game runs BEHIND: game.js leaves a stage
+   in the renderer and hands it to the same pure-pursuit autopilot the
+   screenshot tool uses, so this shell sits over a moving road. The scrim is
+   heaviest where the type is and thinnest where the picture is, and every
+   element that carries text already paints its own background, so nothing here
+   is relying on the scrim alone for contrast. */
+.or-ui[data-or-active="title"]{background:
+ linear-gradient(186deg,rgba(6,8,11,.92) 0%,rgba(6,8,11,.72) 34%,rgba(6,8,11,.52) 68%,rgba(6,8,11,.88) 100%);}
+.or-ui[data-or-active="title"] .or-topbar{background:linear-gradient(180deg,rgba(6,8,11,.88),rgba(6,8,11,.10));}
+.or-ui[data-or-active="title"] .or-footer{background:rgba(6,8,11,.82);}
+.or-ui[data-or-active="title"] .or-hero{
+ background:linear-gradient(157deg,rgba(26,33,42,.90),rgba(17,22,28,.84) 46%,rgba(8,10,13,.80));}
+.or-ui[data-or-active="title"] .or-hero .or-figure{background:rgba(6,8,11,.72);}
+.or-ui[data-or-active="title"] .or-btn{background:rgba(19,24,31,.90);}
+.or-ui[data-or-active="title"] .or-btn:hover{background:rgba(31,38,48,.94);}
+.or-ui[data-or-active="title"] .or-btn.or-primary{
+ background:linear-gradient(90deg,rgba(255,90,20,.30),rgba(19,24,31,.92) 62%);}
+@media (min-width:900px){
+ /* Two columns: the shell is on the left, so the picture is uncovered on the
+    right and the scrim rakes across rather than down. */
+ .or-ui[data-or-active="title"]{background:
+  linear-gradient(101deg,rgba(6,8,11,.94) 0%,rgba(6,8,11,.86) 34%,rgba(6,8,11,.46) 70%,rgba(6,8,11,.22) 100%);}
+}
+
 .or-podium{display:flex;align-items:flex-end;justify-content:center;gap:var(--or-s-sm);min-height:220px;}
 .or-step{flex:1 1 0;max-width:180px;display:grid;gap:6px;justify-items:center;align-content:end;
  padding:10px;background:var(--or-panel);border:1px solid var(--or-line);border-top:3px solid var(--or-flare);
@@ -2267,6 +2307,10 @@ const BASE_CSS = `
  .or-footer .or-stat .or-stat-v,.or-lane-nav .or-stat .or-stat-v{font-size:var(--or-t-body);}
  .or-btn{padding:14px;}
  .or-hero{padding:var(--or-s-sm);}
+ /* Five rounds of a calendar on a 366 px plate: at 16/9 the plate is 206 px tall
+    and consecutive pins land 39 px apart, less than one wrapped label. Taller,
+    and the ladder has room; the body scrolls anyway. */
+ .or-map{aspect-ratio:5/6;min-height:300px;}
  .or-headline h3{font-size:var(--or-t-h3);}
  .or-grid{grid-template-columns:minmax(0,1fr);}
  .or-keys{grid-template-columns:minmax(0,1fr);}
@@ -2718,8 +2762,14 @@ function renderMap(ctx, section) {
     const node = el(doc, item.disabled ? "div" : "button", "or-node");
     if (!item.disabled) attr(node, "type", "button");
     attr(node, "data-status", item.status ?? "");
-    node.style.left = ((item.point?.x ?? 0.5) * 100).toFixed(2) + "%";
-    node.style.top = ((item.point?.y ?? 0.5) * 100).toFixed(2) + "%";
+    const px = saturate(item.point?.x ?? 0.5);
+    node.style.left = (px * 100).toFixed(2) + "%";
+    node.style.top = (saturate(item.point?.y ?? 0.5) * 100).toFixed(2) + "%";
+    // A pin near an edge is anchored by that edge rather than by its middle.
+    // Centring every pin cut the outer ones in half: a 150 px label at x=0.12
+    // of a 366 px map starts 31 px outside the box, and the map has no room to
+    // scroll. Any caller may place a pin anywhere, so the guard lives here.
+    node.style.transform = `translate(${px < 0.25 ? "0%" : px > 0.75 ? "-100%" : "-50%"},-50%)`;
     node.appendChild(el(doc, "span", null, item.label ?? ""));
     node.appendChild(el(doc, "small", null, `${item.sub ?? ""} · ${item.badge ?? ""}`));
     if (!item.disabled) {

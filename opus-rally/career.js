@@ -11,6 +11,7 @@ import { clamp, lerp } from "./mathx.js";
 import { makeRng, stringSeed } from "./rng.js";
 import { SURFACE, surfaceProps } from "./surfaces.js";
 import { encodeRun, decodeRun, runByteSize } from "./replay.js";
+import { STAGE_BOOK } from "./stage.js";
 
 export const STORAGE_KEY = "opusrally.career";
 export const SCHEMA_VERSION = 3;
@@ -33,15 +34,19 @@ export const PENALTIES = Object.freeze({
   lateToTimeControl: { id: "lateToTimeControl", name: "Late to time control", ms: 10000 },
 });
 
+// `presets` are weather.js preset ids: the condition is what the championship
+// models and the preset is what the renderer draws, and naming both here is what
+// stops a season promising weather the game cannot show. A condition with no
+// `nightPreset` cannot be drawn on a night stage.
 export const CONDITIONS = Object.freeze({
-  clear: { id: "clear", name: "Clear", wetness: 0.00, visibility: 1.00, grip: 1.00 },
-  overcast: { id: "overcast", name: "Overcast", wetness: 0.06, visibility: 0.92, grip: 0.99 },
-  damp: { id: "damp", name: "Damp", wetness: 0.38, visibility: 0.84, grip: 0.94 },
-  rain: { id: "rain", name: "Rain", wetness: 0.72, visibility: 0.64, grip: 0.88 },
-  downpour: { id: "downpour", name: "Downpour", wetness: 1.00, visibility: 0.40, grip: 0.80 },
-  fog: { id: "fog", name: "Fog", wetness: 0.44, visibility: 0.26, grip: 0.92 },
-  snowfall: { id: "snowfall", name: "Snowfall", wetness: 0.54, visibility: 0.54, grip: 0.86 },
-  blizzard: { id: "blizzard", name: "Blizzard", wetness: 0.80, visibility: 0.20, grip: 0.74 },
+  clear: { id: "clear", name: "Clear", wetness: 0.00, visibility: 1.00, grip: 1.00, presets: ["clear-dawn", "midday-hard", "golden-hour"], nightPreset: "night-clear" },
+  overcast: { id: "overcast", name: "Overcast", wetness: 0.06, visibility: 0.92, grip: 0.99, presets: ["overcast"], nightPreset: "night-clear" },
+  damp: { id: "damp", name: "Damp", wetness: 0.38, visibility: 0.84, grip: 0.94, presets: ["light-rain"], nightPreset: "night-rain" },
+  rain: { id: "rain", name: "Rain", wetness: 0.72, visibility: 0.64, grip: 0.88, presets: ["heavy-rain"], nightPreset: "night-rain" },
+  downpour: { id: "downpour", name: "Downpour", wetness: 1.00, visibility: 0.40, grip: 0.80, presets: ["thunderstorm"], nightPreset: "night-rain" },
+  fog: { id: "fog", name: "Fog", wetness: 0.44, visibility: 0.26, grip: 0.92, presets: ["hill-fog"], nightPreset: null },
+  snowfall: { id: "snowfall", name: "Snowfall", wetness: 0.54, visibility: 0.54, grip: 0.86, presets: ["light-snow"], nightPreset: null },
+  blizzard: { id: "blizzard", name: "Blizzard", wetness: 0.80, visibility: 0.20, grip: 0.74, presets: ["blizzard"], nightPreset: null },
 });
 
 export const TIERS = Object.freeze([
@@ -171,174 +176,99 @@ function leg(name, serviceMinutes, stages) {
   return Object.freeze({ name, serviceMinutes, stages: Object.freeze(stages) });
 }
 
-// Eight events, six of which make a season. Countries, towns and stage names are
-// invented; the shapes are not — each event has one signature stage the season
-// tends to turn on.
-export const RALLIES = Object.freeze([
-  Object.freeze({
-    id: "kaldvik", name: "Rally Kaldvik", country: "Norvale", hq: "Kaldvik",
-    weather: ["snowfall", "overcast", "blizzard", "clear", "snowfall", "fog"],
-    surfaces: [SURFACE.SNOW, SURFACE.ICE],
-    blurb: "Snow banks you can lean on until the one that is a rock.",
-    legs: [
-      leg("Leg 1", 20, [
-        st("kal-hovden", "Hovden Ridge", 14.2, SURFACE.SNOW, 0.96, 0.1),
-        st("kal-svartfoss", "Svartfoss", 11.8, SURFACE.SNOW, 1.04, 0.0),
-      ]),
-      leg("Leg 2", 30, [
-        st("kal-lomsjo", "Lomsjø Lake", 18.6, SURFACE.ICE, 1.10, 0.2),
-        st("kal-fjellrand", "Fjellrand", 21.4, SURFACE.SNOW, 0.92, 0.1),
-      ]),
-      leg("Leg 3", 20, [
-        st("kal-hovden-2", "Hovden Ridge (reverse)", 14.2, SURFACE.SNOW, 0.94, 0.2),
-        st("kal-nattlys", "Nattlys", 9.6, SURFACE.ICE, 1.00, 0.3, { night: true, powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "vantore", name: "Vantore Rally", country: "Ferravia", hq: "Porto Vantore",
-    weather: ["clear", "clear", "overcast", "damp", "rain", "clear"],
-    surfaces: [SURFACE.TARMAC],
-    blurb: "Sea-level hairpins to a mountain pass, on tarmac that gets greasy in the shade.",
-    legs: [
-      leg("Leg 1", 20, [
-        st("van-costiera", "Costiera", 16.8, SURFACE.TARMAC, 1.02, 0),
-        st("van-caldera", "Caldera Alta", 22.1, SURFACE.TARMAC, 0.88, 0.1),
-        st("van-olivetto", "Olivetto", 9.4, SURFACE.TARMAC, 1.08, 0),
-      ]),
-      leg("Leg 2", 30, [
-        st("van-passo", "Passo Verrina", 25.6, SURFACE.TARMAC, 0.84, 0.2),
-        st("van-marina", "Marina Nuova", 7.2, SURFACE.TARMAC, 1.12, 0.1),
-      ]),
-      leg("Leg 3", 20, [
-        st("van-caldera-2", "Caldera Alta (reverse)", 22.1, SURFACE.TARMAC, 0.90, 0.1),
-        st("van-faro", "Faro", 11.5, SURFACE.TARMAC, 1.00, 0.1, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "terraocra", name: "Rally Terra Ocra", country: "Serrania", hq: "Cerro Ocra",
-    weather: ["clear", "clear", "overcast", "clear", "damp", "clear"],
-    surfaces: [SURFACE.GRAVEL, SURFACE.DIRT],
-    blurb: "Ochre gravel that berms up beautifully on the first pass and disappears on the second.",
-    legs: [
-      leg("Leg 1", 20, [
-        st("ocr-montanha", "Montanha Seca", 19.3, SURFACE.GRAVEL, 0.94, 0),
-        st("ocr-vale", "Vale Fundo", 12.7, SURFACE.DIRT, 1.06, 0),
-      ]),
-      leg("Leg 2", 30, [
-        st("ocr-serra", "Serra Longa", 28.4, SURFACE.GRAVEL, 0.98, 0.1),
-        st("ocr-pedreira", "Pedreira", 8.9, SURFACE.ROCK, 0.86, 0),
-        st("ocr-vale-2", "Vale Fundo (second pass)", 12.7, SURFACE.DIRT, 1.02, 0),
-      ]),
-      leg("Leg 3", 20, [
-        st("ocr-montanha-2", "Montanha Seca (second pass)", 19.3, SURFACE.GRAVEL, 0.92, 0.1),
-        st("ocr-mirante", "Mirante", 10.2, SURFACE.GRAVEL, 1.04, 0, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "zerrag", name: "Dunes du Zerrag", country: "Marhoun", hq: "Zerrag",
-    weather: ["clear", "clear", "clear", "fog", "clear", "overcast"],
-    surfaces: [SURFACE.SAND, SURFACE.ROCK],
-    blurb: "Sand that hides the ruts by mid-morning and the rocks by mid-afternoon.",
-    legs: [
-      leg("Leg 1", 25, [
-        st("zer-oued", "Oued Sahri", 21.8, SURFACE.SAND, 1.00, 0),
-        st("zer-hamada", "Hamada", 17.4, SURFACE.ROCK, 0.96, 0),
-      ]),
-      leg("Leg 2", 35, [
-        st("zer-erg", "Grand Erg", 31.2, SURFACE.SAND, 1.06, 0),
-        st("zer-jbel", "Jbel Tafnout", 15.9, SURFACE.ROCK, 0.88, 0.1),
-      ]),
-      leg("Leg 3", 25, [
-        st("zer-oued-2", "Oued Sahri (second pass)", 21.8, SURFACE.SAND, 0.98, 0),
-        st("zer-ksar", "Ksar Zerrag", 8.4, SURFACE.SAND, 0.92, 0, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "braeloch", name: "Braeloch Rally", country: "Cairnmoor", hq: "Braeloch",
-    weather: ["rain", "damp", "overcast", "downpour", "damp", "fog"],
-    surfaces: [SURFACE.GRAVEL, SURFACE.MUD],
-    blurb: "Forestry gravel under standing water, and a co-driver call you cannot hear over the roof.",
-    legs: [
-      leg("Leg 1", 20, [
-        st("bra-glenmore", "Glenmore", 15.6, SURFACE.GRAVEL, 0.98, 0.3),
-        st("bra-carrick", "Carrick Burn", 13.1, SURFACE.MUD, 0.92, 0.4),
-      ]),
-      leg("Leg 2", 30, [
-        st("bra-dunrig", "Dunrig Forest", 24.7, SURFACE.GRAVEL, 1.02, 0.3),
-        st("bra-blackford", "Blackford", 18.2, SURFACE.MUD, 0.90, 0.4),
-      ]),
-      leg("Leg 3", 20, [
-        st("bra-glenmore-2", "Glenmore (second pass)", 15.6, SURFACE.GRAVEL, 0.96, 0.3),
-        st("bra-cairnhead", "Cairnhead", 10.8, SURFACE.GRAVEL, 1.00, 0.3, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "verdant", name: "Rally Verdant Coast", country: "Tessalia", hq: "Vrolia",
-    weather: ["clear", "overcast", "damp", "clear", "rain", "clear"],
-    surfaces: [SURFACE.TARMAC, SURFACE.GRAVEL],
-    blurb: "The mixed-surface round: one tyre choice, two grip levels, no second chance.",
-    legs: [
-      leg("Leg 1", 25, [
-        st("ver-akra", "Akra Point", 14.9, SURFACE.TARMAC, 1.04, 0),
-        st("ver-elaion", "Elaion Grove", 16.3, SURFACE.GRAVEL, 0.96, 0.1),
-      ]),
-      leg("Leg 2", 35, [
-        st("ver-thermi", "Thermi Pass", 26.8, SURFACE.TARMAC, 0.86, 0.2),
-        st("ver-kalyva", "Kalyva Track", 19.5, SURFACE.GRAVEL, 1.00, 0.1),
-        st("ver-limani", "Limani", 6.8, SURFACE.TARMAC, 1.10, 0),
-      ]),
-      leg("Leg 3", 25, [
-        st("ver-elaion-2", "Elaion Grove (reverse)", 16.3, SURFACE.GRAVEL, 0.94, 0.1),
-        st("ver-akropoli", "Akropoli", 12.4, SURFACE.TARMAC, 0.98, 0.1, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "ironwood", name: "Ironwood Rally", country: "Amberlea", hq: "Ironwood",
-    weather: ["overcast", "clear", "fog", "damp", "clear", "overcast"],
-    surfaces: [SURFACE.DIRT, SURFACE.GRAVEL],
-    blurb: "Tree-lined dirt with crests that arrive a gear earlier than the note suggests.",
-    legs: [
-      leg("Leg 1", 20, [
-        st("iro-sawmill", "Sawmill Road", 17.2, SURFACE.DIRT, 1.04, 0.1),
-        st("iro-pinecrest", "Pinecrest", 13.8, SURFACE.DIRT, 0.94, 0.2),
-      ]),
-      leg("Leg 2", 30, [
-        st("iro-longlake", "Long Lake", 27.9, SURFACE.GRAVEL, 1.06, 0.1),
-        st("iro-mill-2", "Sawmill Road (reverse)", 17.2, SURFACE.DIRT, 1.00, 0.1),
-      ]),
-      leg("Leg 3", 20, [
-        st("iro-quarry", "Quarry Cut", 11.4, SURFACE.ROCK, 0.88, 0.1),
-        st("iro-ridgeback", "Ridgeback", 9.9, SURFACE.DIRT, 1.02, 0.1, { powerStage: true }),
-      ]),
-    ],
-  }),
-  Object.freeze({
-    id: "altapiedra", name: "Rally Alta Piedra", country: "Cordilla", hq: "Alta Piedra",
-    weather: ["clear", "clear", "overcast", "snowfall", "clear", "fog"],
-    surfaces: [SURFACE.GRAVEL, SURFACE.ROCK],
-    blurb: "Three thousand metres of altitude, where the turbo and the co-driver both run short of air.",
-    legs: [
-      leg("Leg 1", 25, [
-        st("alt-cumbre", "Cumbre Blanca", 23.6, SURFACE.GRAVEL, 0.90, 0.2),
-        st("alt-quebrada", "Quebrada", 15.1, SURFACE.ROCK, 0.94, 0.1),
-      ]),
-      leg("Leg 2", 35, [
-        st("alt-altiplano", "Altiplano", 33.4, SURFACE.GRAVEL, 1.08, 0.1),
-        st("alt-mina", "Mina Vieja", 12.6, SURFACE.ROCK, 0.86, 0.1),
-      ]),
-      leg("Leg 3", 25, [
-        st("alt-cumbre-2", "Cumbre Blanca (second pass)", 23.6, SURFACE.GRAVEL, 0.88, 0.3),
-        st("alt-condor", "Paso del Cóndor", 10.7, SURFACE.GRAVEL, 0.96, 0.2, { powerStage: true }),
-      ]),
-    ],
-  }),
-]);
+// A road's character is one word in the stage book and a speed multiplier here,
+// and this table is the whole of the translation between them.
+const FLOW_BY_PERSONALITY = Object.freeze({
+  fast: 1.12, open: 1.08, flowing: 1.00, mixed: 0.94, twisty: 0.88, technical: 0.84,
+});
+
+// Which career condition each weather.js preset counts as, so an event's climate
+// can be read off the roads it is run on rather than invented beside them.
+const CONDITION_OF_PRESET = Object.freeze({
+  "clear-dawn": "clear", "midday-hard": "clear", "golden-hour": "clear",
+  overcast: "overcast", "light-rain": "damp", "heavy-rain": "rain",
+  thunderstorm: "downpour", "hill-fog": "fog", "light-snow": "snowfall",
+  blizzard: "blizzard", "night-clear": "clear", "night-rain": "rain",
+});
+
+const NIGHT_TIME_OF_DAY = /dusk|evening|sunset|night/i;
+
+// The calendar is derived from STAGE_BOOK, and that is the point of it. It used
+// to be fifty-one hand-written stage names — kal-hovden, van-costiera — none of
+// which stage.js can build, so a season scheduled roads the renderer had never
+// heard of and the championship could not be entered at all. A career stage is
+// now a book road plus which pass of it this is; `stage.book` is the id
+// stageFromBook() wants, and there is one stage universe instead of two.
+//
+// The choice was between deriving the calendar from the book and generating a
+// road per invented stage. The book wins on evidence: its twelve roads are the
+// only ones tests/drivable.test.mjs has autopiloted to a finish, and a
+// championship over fifty unproven roads is fifty chances to strand a player.
+function bookStage(entry, pass, powerStage) {
+  return st(
+    pass === 1 ? entry.id : `${entry.id}-${pass}`,
+    pass === 1 ? entry.name : `${entry.name} (second pass)`,
+    entry.params.length / 1000,
+    entry.params.surface,
+    FLOW_BY_PERSONALITY[entry.personality] ?? 1,
+    // A second pass runs later in the day, and later in the day is wetter.
+    pass === 1 ? 0 : 0.2,
+    {
+      book: entry.id,
+      night: NIGHT_TIME_OF_DAY.test(String(entry.timeOfDay ?? "")),
+      label: entry.surfaceLabel,
+      notes: entry.notes,
+      powerStage: !!powerStage,
+    },
+  );
+}
+
+// A rally runs each of its roads twice, which is where the leg structure comes
+// from: two roads make a four-stage event over two legs, three make six over
+// three. Pass one of everything, then pass two of everything, cut into legs.
+function eventFromBook(roads) {
+  const runs = [];
+  for (const r of roads) runs.push([r, 1]);
+  for (const r of roads) runs.push([r, 2]);
+  const legCount = clamp(Math.round(runs.length / 2), 2, 3);
+  const legs = [];
+  let taken = 0;
+  for (let i = 0; i < legCount; i += 1) {
+    const size = Math.ceil((runs.length - taken) / (legCount - i));
+    const slice = runs.slice(taken, taken + size);
+    taken += size;
+    const last = i === legCount - 1;
+    legs.push(leg(`Leg ${i + 1}`, i === 0 ? 20 : 30, slice.map(([entry, pass], j) => (
+      bookStage(entry, pass, last && j === slice.length - 1)
+    ))));
+  }
+  const first = roads[0];
+  // Every rally can be overcast, and a climate table with one entry in it is not
+  // weather — Tamarosa's two roads are both authored clear.
+  const weather = roads.map((r) => CONDITION_OF_PRESET[r.weather] || "clear").concat("overcast");
+  return Object.freeze({
+    id: String(first.country).toLowerCase().replace(/[^a-z0-9]+/g, ""),
+    name: first.rally,
+    country: first.country,
+    hq: first.region,
+    weather: Object.freeze(weather),
+    surfaces: Object.freeze([...new Set(roads.map((r) => r.params.surface))]),
+    blurb: `${roads.length} roads in the ${first.region}, each run twice: ${roads.map((r) => r.surfaceLabel.toLowerCase()).join(", ")}.`,
+    legs: Object.freeze(legs),
+  });
+}
+
+export const RALLIES = Object.freeze((() => {
+  const byRally = new Map();
+  for (const entry of STAGE_BOOK) {
+    if (!byRally.has(entry.rally)) byRally.set(entry.rally, []);
+    byRally.get(entry.rally).push(entry);
+  }
+  const out = [];
+  // A one-road rally cannot make a leg structure, so it is not an event.
+  for (const roads of byRally.values()) if (roads.length >= 2) out.push(eventFromBook(roads));
+  return out;
+})());
 
 const RALLY_BY_ID = new Map(RALLIES.map((r) => [r.id, r]));
 const CAR_BY_ID = new Map(CARS.map((c) => [c.id, c]));
@@ -378,29 +308,39 @@ function surfaceKey(id) {
 export function conditionsFor(seed, eventId, stageId) {
   const ev = RALLY_BY_ID.get(eventId);
   const ctx = STAGE_INDEX.get(stageId);
-  if (!ev || !ctx) return Object.assign({ night: false }, CONDITIONS.clear);
+  if (!ev || !ctx) return Object.assign({ night: false, preset: "clear-dawn", key: "clear-dawn" }, CONDITIONS.clear);
   const rng = makeRng(stringSeed(`${seed}|wx|${eventId}|${stageId}`));
-  const table = ev.weather;
-  let pick = table[rng.int(0, table.length - 1)];
+  const night = !!ctx.stage.night;
+  // A night stage may only draw a condition weather.js can actually light at
+  // night. Without the filter a night fog draw resolves to a preset with no fog
+  // in it, and the stage card promises a sky the renderer never shows.
+  const table = night ? ev.weather.filter((k) => (CONDITIONS[k] || {}).nightPreset) : ev.weather;
+  const draw = table.length ? table : ["clear"];
+  let pick = draw[rng.int(0, draw.length - 1)];
   // The stage's own bias pulls a dry draw towards a wet one without ever
   // overriding the event's climate.
   if (ctx.stage.weatherBias > 0 && rng.chance(ctx.stage.weatherBias)) {
-    const wetter = table.filter((k) => (CONDITIONS[k] || CONDITIONS.clear).wetness > (CONDITIONS[pick] || CONDITIONS.clear).wetness);
+    const wetter = draw.filter((k) => (CONDITIONS[k] || CONDITIONS.clear).wetness > (CONDITIONS[pick] || CONDITIONS.clear).wetness);
     if (wetter.length) pick = wetter[rng.int(0, wetter.length - 1)];
   }
   const base = CONDITIONS[pick] || CONDITIONS.clear;
-  const night = !!ctx.stage.night;
-  const cold = ev.surfaces.includes(SURFACE.SNOW) || ev.surfaces.includes(SURFACE.ICE);
+  const preset = night ? base.nightPreset : base.presets[rng.int(0, base.presets.length - 1)];
+  // Cold comes from the climate, not from the road: no entry in the stage book
+  // declares a SNOW or ICE surface, so reading it off ev.surfaces reported a
+  // summer afternoon for a rally that draws snowfall two stages in three.
+  const cold = ev.weather.includes("snowfall") || ev.weather.includes("blizzard");
   return {
     id: base.id,
     name: night ? `${base.name}, night` : base.name,
-    preset: base.id,
+    preset,
     night,
     wetness: base.wetness,
     visibility: night ? base.visibility * 0.55 : base.visibility,
     grip: base.grip,
     tempC: Math.round(cold ? lerp(-16, 3, rng.next()) : lerp(4, 34, rng.next())) - (night ? 5 : 0),
-    key: night ? `${base.id}-night` : base.id,
+    // The record key IS the preset the renderer will use, so a personal best set
+    // in these conditions is the one the stage card reads back.
+    key: preset,
   };
 }
 
@@ -1213,6 +1153,51 @@ export function createCareer(storage, opts = {}) {
       || (b.stageWins - a.stageWins) || (a.name < b.name ? -1 : 1));
     list.forEach((r, i) => { r.position = i + 1; });
     return list;
+  };
+
+  // The whole season on one card, in the shape the championship screen reads.
+  // It lives here rather than in game.js because everything on it — which round
+  // is next, what each finished round cost you, who leads — is season state, and
+  // a copy of that logic in the shell is a copy that goes stale.
+  career.championship = function championship() {
+    const s = season();
+    if (!s) return null;
+    const tier = tierById(s.tierId);
+    const table = career.standings();
+    const events = s.calendar.map((id, i) => {
+      const ev = RALLY_BY_ID.get(id);
+      const evState = s.events[i] || {};
+      const row = (evState.classification || []).find((c) => c.driverId === "player");
+      // The stage book carries no coordinates, so the calendar pin is a ladder
+      // rather than a geography the game does not have: alternating sides,
+      // stepping down the plate in calendar order. An arc put rounds 1 and 5 on
+      // the same row and their labels overlapped on a 366 px phone plate.
+      const t = s.calendar.length > 1 ? i / (s.calendar.length - 1) : 0.5;
+      return {
+        id,
+        name: ev ? ev.name : id,
+        country: ev ? ev.country : "",
+        surface: ev ? ev.surfaces.slice() : [],
+        stages: ev ? eventStageCount(ev) : 0,
+        status: evState.done ? "done" : (i === s.cursor.event && !s.finished) ? "next" : "locked",
+        position: row ? row.position : null,
+        x: i % 2 === 0 ? 0.28 : 0.70,
+        y: 0.12 + 0.76 * t,
+      };
+    });
+    return {
+      name: tier.name,
+      tierId: tier.id,
+      seed: s.seed,
+      round: Math.min(s.cursor.event + 1, s.calendar.length),
+      rounds: s.calendar.length,
+      finished: !!s.finished,
+      events,
+      standings: table.map((r) => ({
+        driverId: r.driverId, name: r.name, team: r.team,
+        points: r.points, position: r.position, isPlayer: r.isPlayer,
+      })),
+    };
   };
 
   function finishSeason() {

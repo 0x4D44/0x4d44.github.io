@@ -9,8 +9,12 @@ import {
 import {
   createCareer, rivalStageTime, estimateStageTime, conditionsFor, selectField,
   stageById, rallyById, tierById, RALLIES, TIERS, RIVALS, CARS, POINTS,
-  POWER_STAGE_POINTS, PENALTIES, SCHEMA_VERSION, STORAGE_KEY,
+  POWER_STAGE_POINTS, PENALTIES, SCHEMA_VERSION, STORAGE_KEY, CONDITIONS,
 } from "../career.js";
+
+import { SURFACE } from "../surfaces.js";
+import { STAGE_BOOK, stageBookEntry, stageFromBook } from "../stage.js";
+import { presetById } from "../weather.js";
 
 // A two-line car: enough state to have a trajectory, no physics to depend on.
 function stubCar() {
@@ -429,10 +433,10 @@ test("career: records keep personal bests, split bests and a ghost", () => {
 });
 
 test("career: rival times are deterministic in the season seed", () => {
-  const stage = stageById("ocr-serra");
+  const stage = stageById("kloft-bjornhalt");
   const tier = tierById("continental");
-  const cond = conditionsFor("alpha", "terraocra", "ocr-serra");
-  const ctx = { seed: "alpha", eventId: "terraocra", stage, tier, conditions: cond };
+  const cond = conditionsFor("alpha", "vasterkloft", "kloft-bjornhalt");
+  const ctx = { seed: "alpha", eventId: "vasterkloft", stage, tier, conditions: cond };
 
   for (const r of RIVALS.slice(0, 8)) {
     const a = rivalStageTime(r.id, ctx);
@@ -441,7 +445,7 @@ test("career: rival times are deterministic in the season seed", () => {
   }
 
   // A different seed moves the field; the same seed never does.
-  const other = { seed: "beta", eventId: "terraocra", stage, tier, conditions: cond };
+  const other = { seed: "beta", eventId: "vasterkloft", stage, tier, conditions: cond };
   let differences = 0;
   for (const r of RIVALS) {
     if (rivalStageTime(r.id, ctx).timeMs !== rivalStageTime(r.id, other).timeMs) differences += 1;
@@ -449,7 +453,7 @@ test("career: rival times are deterministic in the season seed", () => {
   assert.ok(differences > RIVALS.length * 0.8, `only ${differences} rivals changed with the seed`);
 
   // Conditions are deterministic too, and a field selection is stable.
-  assert.deepEqual(conditionsFor("alpha", "terraocra", "ocr-serra"), cond);
+  assert.deepEqual(conditionsFor("alpha", "vasterkloft", "kloft-bjornhalt"), cond);
   assert.deepEqual(selectField("alpha", "continental"), selectField("alpha", "continental"));
 });
 
@@ -486,7 +490,8 @@ test("career: rival times are plausible, ordered by skill, and tightly spread", 
     }
   }
 
-  assert.ok(stages > 40, `expected a full book of stages, got ${stages}`);
+  assert.equal(stages, RALLIES.reduce((n, ev) => n + ev.legs.reduce((m, l) => m + l.stages.length, 0), 0),
+    "the sweep must cover every stage on the calendar");
   // The field, mistakes excluded, is covered by a few percent — not tens.
   assert.ok(worstCleanSpread < 0.09, `worst clean spread ${(worstCleanSpread * 100).toFixed(2)}%`);
   assert.ok(worstCleanSpread > 0.005, `spread ${(worstCleanSpread * 100).toFixed(2)}% is implausibly tight`);
@@ -500,15 +505,22 @@ test("career: rival times are plausible, ordered by skill, and tightly spread", 
 test("career: pace tracks skill across the whole rival pool", () => {
   const tier = tierById("continental");
   const deficits = new Map(RIVALS.map((r) => [r.id, []]));
-  for (const ev of RALLIES) {
-    for (const lg of ev.legs) {
-      for (const stage of lg.stages) {
-        const cond = conditionsFor("pace", ev.id, stage.id);
-        const base = estimateStageTime(stage, { pace: tier.pace, conditions: cond });
-        for (const r of RIVALS) {
-          const res = rivalStageTime(r.id, { seed: "pace", eventId: ev.id, stage, tier, conditions: cond });
-          if (res.status !== "ok") continue;
-          deficits.get(r.id).push(res.timeMs / base - 1);
+  // Three seasons, not one. The calendar is now the stage book's twenty-four
+  // runs where it used to be fifty-one invented stages, and one season of that is
+  // too thin a sample for a median: at one seed each rival has 24 clean times and
+  // the pair concordance below reads 89.2%, at three seeds 70 times and 93.3%,
+  // for a field whose pace model did not change between the two.
+  for (const seed of ["pace-a", "pace-b", "pace-c"]) {
+    for (const ev of RALLIES) {
+      for (const lg of ev.legs) {
+        for (const stage of lg.stages) {
+          const cond = conditionsFor(seed, ev.id, stage.id);
+          const base = estimateStageTime(stage, { pace: tier.pace, conditions: cond });
+          for (const r of RIVALS) {
+            const res = rivalStageTime(r.id, { seed, eventId: ev.id, stage, tier, conditions: cond });
+            if (res.status !== "ok") continue;
+            deficits.get(r.id).push(res.timeMs / base - 1);
+          }
         }
       }
     }
@@ -536,18 +548,39 @@ test("career: pace tracks skill across the whole rival pool", () => {
   assert.ok(concordant / pairs > 0.9, `only ${(concordant / pairs * 100).toFixed(0)}% of pairs ordered by skill`);
 
   // Surface preference is worth about a percent, and shows up where it should.
-  const snowStage = stageById("kal-fjellrand");
-  const tarmacStage = stageById("van-costiera");
+  // No road in the stage book declares a SNOW or ICE surface, so the pairing that
+  // still discriminates is gravel against tarmac: kirvala is +0.4 gravel / -0.3
+  // tarmac, bellucco -0.1 / +0.9.
+  //
+  // One seed cannot answer this and the old single-seed form only looked like it
+  // could: on seed "pace" bellucco retires on the gravel stage, which scores him
+  // a swing of -1.01 and inverts the comparison. Both stages are driven in the
+  // same fixed dry conditions so wet skill cannot leak in, and mistakes and
+  // retirements are dropped because they are a driver's luck, not their pace.
+  // Measured over eight seeds: kirvala -0.00865, bellucco +0.00764.
+  const gravelStage = stageById("kloft-bjornhalt");
+  const tarmacStage = stageById("alvenda-calderas");
+  assert.equal(gravelStage.surface, SURFACE.GRAVEL, "the gravel half of the swing must be gravel");
+  assert.equal(tarmacStage.surface, SURFACE.TARMAC, "the tarmac half of the swing must be tarmac");
+  const dry = Object.assign({ night: false, preset: "midday-hard", key: "midday-hard", tempC: 18 }, CONDITIONS.clear);
   const swing = (id) => {
-    const snowCond = conditionsFor("pace", "kaldvik", snowStage.id);
-    const tarCond = conditionsFor("pace", "vantore", tarmacStage.id);
-    const a = rivalStageTime(id, { seed: "pace", eventId: "kaldvik", stage: snowStage, tier, conditions: snowCond });
-    const b = rivalStageTime(id, { seed: "pace", eventId: "vantore", stage: tarmacStage, tier, conditions: tarCond });
-    return (a.timeMs / estimateStageTime(snowStage, { pace: tier.pace, conditions: snowCond }))
-      - (b.timeMs / estimateStageTime(tarmacStage, { pace: tier.pace, conditions: tarCond }));
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < 8; i += 1) {
+      const seed = `swing-${i}`;
+      const a = rivalStageTime(id, { seed, eventId: "vasterkloft", stage: gravelStage, tier, conditions: dry });
+      const b = rivalStageTime(id, { seed, eventId: "alvenda", stage: tarmacStage, tier, conditions: dry });
+      if (a.status !== "ok" || b.status !== "ok" || a.note || b.note) continue;
+      sum += a.timeMs / estimateStageTime(gravelStage, { pace: tier.pace, conditions: dry })
+        - b.timeMs / estimateStageTime(tarmacStage, { pace: tier.pace, conditions: dry });
+      n += 1;
+    }
+    assert.ok(n >= 5, `${id} had only ${n} clean pairs to average`);
+    return sum / n;
   };
-  assert.ok(swing("kirvala") < swing("bellucco"),
-    "the snow specialist should gain on snow relative to the tarmac specialist");
+  assert.ok(swing("kirvala") < swing("bellucco") - 0.005,
+    `the gravel specialist should gain on gravel: kirvala ${swing("kirvala").toFixed(5)}`
+    + ` vs bellucco ${swing("bellucco").toFixed(5)}`);
 });
 
 test("career: penalties are added to the stage time", () => {
@@ -658,9 +691,9 @@ test("career: a full season's standings arithmetic adds up", () => {
   const storage = fakeStorage();
   const career = createCareer(storage);
   career.setDriver("Ash Vellory", "Opus Rally Team");
-  career.newSeason({ seed: "season-arith", tierId: "continental", rounds: 6 });
+  career.newSeason({ seed: "season-arith", tierId: "continental", rounds: RALLIES.length });
   const season = career.state.season;
-  assert.equal(season.calendar.length, 6);
+  assert.equal(season.calendar.length, RALLIES.length);
 
   const tier = tierById("continental");
   const driverIds = new Set(career.drivers().map((d) => d.id));
@@ -726,7 +759,7 @@ test("career: a full season's standings arithmetic adds up", () => {
 
   const me = table.find((r) => r.isPlayer);
   assert.ok(me.points > 0, "the player scored");
-  assert.equal(me.starts, 6);
+  assert.equal(me.starts, RALLIES.length);
   assert.equal(final.season.position, me.position);
   assert.equal(career.state.profile.seasonsCompleted, 1);
   assert.ok(career.state.profile.credits > 30000, "a season pays");
@@ -774,7 +807,7 @@ test("career: progression is earned — upgrades and cars cost credits", () => {
 });
 
 test("career: the calendar and the field are well-formed", () => {
-  assert.ok(RALLIES.length >= 6, "a season needs a calendar to draw from");
+  assert.ok(RALLIES.length >= 4, "newSeason clamps rounds to [4, RALLIES.length], so four is the floor");
   const seen = new Set();
   for (const ev of RALLIES) {
     assert.ok(ev.legs.length >= 2 && ev.legs.length <= 3, `${ev.id} legs`);
@@ -844,4 +877,141 @@ test("career: the stage leaderboard previews the field before it is driven", () 
   const real = career.leaderboard(ctx.stage.id);
   assert.equal(real[0].driverId, "player", "a one-millisecond stage wins it");
   assert.equal(real[0].gapLeaderMs, 0);
+});
+
+
+test("career: every stage on the calendar is a road stage.js can actually build", () => {
+  // The bridge test. career.js used to schedule kal-hovden and van-costiera and
+  // thirty more names stage.js has never heard of, so a season could be created
+  // and never started. `stage.book` is what closes that, and this is what stops
+  // it opening again — the oracle is stage.js's own generator, not career's
+  // arithmetic about it.
+  const onCalendar = new Set();
+  let stages = 0;
+  for (const ev of RALLIES) {
+    for (const lg of ev.legs) {
+      for (const stage of lg.stages) {
+        assert.ok(stage.book, `${stage.id} names no book road`);
+        const entry = stageBookEntry(stage.book);
+        assert.ok(entry, `${stage.id} points at ${stage.book}, which is not in STAGE_BOOK`);
+        onCalendar.add(stage.book);
+        stages += 1;
+      }
+    }
+  }
+  assert.equal(onCalendar.size, STAGE_BOOK.length,
+    "every road in the book should be on the calendar and nothing else");
+  assert.equal(stages, STAGE_BOOK.length * 2, "each road is run twice");
+
+  // Generating all twenty-four costs about seven seconds, so three roads carry
+  // the proof that `book` really is a stageFromBook() id and that the km the
+  // championship prices its stage times with is the road the player drives. The
+  // generator overshoots its declared length by 168 to 272 m on these three
+  // (1.4% to 3.7%), which is why the bound is a fraction and not a metre count.
+  const sampled = ["kloft-bjornhalt", "vardhal-havnvik", "alvenda-ondas"];
+  for (const bookId of sampled) {
+    const stage = RALLIES.flatMap((ev) => ev.legs.flatMap((l) => l.stages)).find((s) => s.book === bookId);
+    assert.ok(stage, `${bookId} is not on the calendar`);
+    const road = stageFromBook(stage.book);
+    assert.equal(road.id, stage.book);
+    const declared = stage.km * 1000;
+    assert.ok(Math.abs(road.length - declared) / declared < 0.05,
+      `${stage.id}: the calendar prices ${declared} m, the generator built ${road.length.toFixed(0)} m`);
+  }
+});
+
+test("career: every condition a season can draw is a preset the renderer has", () => {
+  // The other half of the same bridge, and the one that has broken before: the
+  // stage book named its weather in prose while weather.js keys presets by id,
+  // and eleven of twelve stages could not start. presetById throws on an unknown
+  // id, so this test is that throw.
+  const drawn = new Set();
+  for (const ev of RALLIES) {
+    for (const lg of ev.legs) {
+      for (const stage of lg.stages) {
+        for (let i = 0; i < 8; i += 1) {
+          const cond = conditionsFor(`wx-${i}`, ev.id, stage.id);
+          const preset = presetById(cond.preset);
+          assert.equal(preset.id, cond.preset, `${stage.id} drew ${cond.preset}`);
+          assert.equal(cond.key, cond.preset, `${stage.id}: the record key must be the preset`);
+          drawn.add(cond.preset);
+          // A night stage may only draw weather the renderer can light at night.
+          if (stage.night) {
+            assert.match(cond.preset, /^night-/, `${stage.id} is a night stage but drew ${cond.preset}`);
+          } else {
+            assert.doesNotMatch(cond.preset, /^night-/, `${stage.id} is a day stage but drew ${cond.preset}`);
+          }
+        }
+      }
+    }
+  }
+  // Not a token draw: eleven of weather.js's twelve presets appear across the
+  // calendar. Only "blizzard" does not, because no road in the book is authored
+  // for one.
+  assert.ok(drawn.size >= 10, `a whole season drew only ${drawn.size} distinct skies`);
+});
+
+test("career: a championship can be entered, driven in order, and finished", () => {
+  const storage = fakeStorage();
+  const career = createCareer(storage);
+  assert.equal(career.championship(), null, "there is no championship until one is started");
+
+  career.newSeason({ seed: "playthrough", tierId: "clubman" });
+  const opening = career.championship();
+  assert.equal(opening.rounds, RALLIES.length);
+  assert.equal(opening.round, 1);
+  assert.equal(opening.events.filter((e) => e.status === "next").length, 1);
+  assert.equal(opening.events.filter((e) => e.status === "locked").length, RALLIES.length - 1);
+
+  // The order the player is actually sent round, read off the calendar rather
+  // than off the thing under test.
+  const expected = [];
+  for (const id of career.state.season.calendar) {
+    for (const lg of rallyById(id).legs) for (const s of lg.stages) expected.push(s.id);
+  }
+
+  const driven = [];
+  let services = 0;
+  let finalSummary = null;
+  let guard = 0;
+  for (let ctx = career.currentStage(); ctx; ctx = career.currentStage()) {
+    assert.ok(guard += 1, "loop guard");
+    assert.ok(guard < 200, "the championship must terminate");
+    // Every stage the player is offered is a road that exists.
+    assert.ok(stageBookEntry(ctx.stage.book), `${ctx.stage.id} offered an unbuildable road`);
+    assert.equal(career.championship().round, ctx.round);
+    driven.push(ctx.stage.id);
+    const res = career.submitStage({ timeMs: Math.round(ctx.referenceMs * 0.97) });
+    assert.ok(res.entries.length > 1);
+    if (res.service) {
+      services += 1;
+      assert.ok(res.service.budgetMinutes > 0);
+      career.applyService(res.service.items.filter((i) => i.health < 1).map((i) => i.id));
+    }
+    if (res.seasonFinished) finalSummary = res.summary;
+  }
+
+  assert.deepEqual(driven, expected, "the season was not driven in calendar order");
+  // A service between every pair of legs, and none after the last one.
+  const legs = career.state.season.calendar.reduce((n, id) => n + rallyById(id).legs.length, 0);
+  assert.equal(services, legs - career.state.season.calendar.length);
+
+  const closed = career.championship();
+  assert.equal(closed.finished, true);
+  assert.equal(closed.events.filter((e) => e.status === "done").length, RALLIES.length);
+  for (const e of closed.events) assert.ok(e.position >= 1, e.id + " has no result");
+  assert.ok(finalSummary && finalSummary.season, "the season closed out");
+
+  // A result carried between events: the player's points are the sum of what
+  // each round awarded, and they came from more than one round.
+  const me = closed.standings.find((r) => r.isPlayer);
+  const awarded = career.state.season.events.map((e) => e.awards.player || 0);
+  assert.equal(me.points, awarded.reduce((a, b) => a + b, 0));
+  assert.ok(awarded.filter((p) => p > 0).length > 1, "only one round scored");
+
+  // And it is still there after a reload, which is what makes it a championship
+  // rather than a session.
+  const reloaded = createCareer(storage);
+  assert.equal(reloaded.championship().finished, true);
+  assert.equal(reloaded.championship().standings.find((r) => r.isPlayer).points, me.points);
 });
