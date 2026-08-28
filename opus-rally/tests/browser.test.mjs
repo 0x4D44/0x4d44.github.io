@@ -299,6 +299,50 @@ try {
     process.stderr.write(`  ${rev.padEnd(22)} differs from its twin (${same}/${n} shared)\n`);
   }
 
+  // The autopilot is per-stage, not per-session. drive() never cleared it, so any
+  // stage started after an auto-driven one began with the throttle already pinned
+  // at the start line. That is a test-hook path rather than a player one, but it
+  // silently corrupted a launch measurement — the car was being driven by the
+  // autopilot rather than by the thing under test — and a harness that lies to its
+  // own measurements is worse than one that is merely missing a feature.
+  //
+  // Differential against a stage started clean, NOT against an absolute bar: the
+  // idle governor holds a real non-zero throttle at the line, so "throttle < 0.05"
+  // would fail on a perfectly good stage and prove nothing about the autopilot.
+  process.stderr.write("[opus-rally] a new stage does not inherit the autopilot\n");
+  const startFresh = async () => {
+    await page.evaluate(
+      `window.__opusRally.drive({ stageId: ${JSON.stringify(book[0])}, skipCountdown: false })`);
+    await page.waitFor("a stage to build",
+      () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
+    await page.delay(500);
+    return page.evaluate(`(() => {
+      const f = window.__opusRally.frame;
+      return { throttle: f.throttle, steer: f.steer, auto: !!window.OPUS_RALLY.game.autoDrive };
+    })()`);
+  };
+
+  const clean = await startFresh();
+  assert.equal(clean.auto, false, "a stage started clean already has the autopilot armed");
+
+  await page.evaluate("window.__opusRally.setAutoDrive(true, 0.8)");
+  await page.delay(700);
+  const armed = await page.evaluate("window.__opusRally.frame.throttle");
+  assert.ok(armed > clean.throttle + 0.3,
+    `arming the autopilot moved the throttle only ${clean.throttle.toFixed(2)} ->`
+    + ` ${armed.toFixed(2)}, so this check cannot tell an armed autopilot from a`
+    + " cleared one and proves nothing");
+
+  const after = await startFresh();
+  assert.equal(after.auto, false,
+    "a fresh stage inherited the previous stage's autopilot: it is driving before the"
+    + " lights go green, and any measurement taken on it is of the autopilot, not the car");
+  assert.ok(after.throttle <= clean.throttle + 0.05,
+    `a fresh stage started with ${after.throttle.toFixed(2)} throttle against`
+    + ` ${clean.throttle.toFixed(2)} on a stage started clean — the autopilot carried over`);
+  process.stderr.write(`  clean ${clean.throttle.toFixed(2)}  armed ${armed.toFixed(2)}`
+    + `  fresh-after-armed ${after.throttle.toFixed(2)}\n`);
+
   // Reach a stage the way a PLAYER does. Everything above this line — and every
   // other check in the suite — starts a stage through window.__opusRally.drive(),
   // the harness door. That is how the entire main menu came to be dead while 435

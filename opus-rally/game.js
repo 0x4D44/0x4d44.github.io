@@ -445,6 +445,15 @@ export async function startGame(opts) {
     game.splitIndex = 0;
     game.splitTimes = [];
     game.countdown = 5;
+    // The autopilot is per-stage, not per-session. Nothing cleared it, so a stage
+    // started after an auto-driven one began with the throttle already pinned at
+    // the line — which silently corrupted a launch measurement before anyone
+    // noticed the car was not being driven by the thing under test.
+    game.autoDrive = false;
+    autoState.stuck = 0;
+    autoState.bestS = 0;
+    autoState.recovering = 0;
+    input.clearTouch();
 
     screen(null);
     hud.countdown?.(5);
