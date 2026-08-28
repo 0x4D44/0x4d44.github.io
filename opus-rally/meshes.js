@@ -1542,10 +1542,23 @@ const ROAD_SNOW_FRAGMENT = `
 #include <color_fragment>
 float lie = uSnow * ( 1.0 - 0.85 * vDetail.x );
 // Snow a rally car has run over is compacted and gritted; snow on the verge
-// beside it is not. Painted with one white, the ribbon and the ground beside it
-// came out within 8 pixel levels of each other at 20, 40, 60 and 80 m in a
-// blizzard, with the sign flipping from one distance to the next, so the only
-// thing marking a snow road was the pair of ruts, and they are gone by forty.
+// beside it is not. Before this the two took one white - literally one, the same
+// vec3( 0.80, 0.83, 0.88 ) here and in the terrain overlay - and each side is
+// then scaled by a texture tap normalised to a mean of 1.000, so at the mean the
+// road and the ground came out at exactly the SAME level. All that moved them
+// apart was the two taps disagreeing, which is noise with no fixed sign: the
+// ground ran from 14.1 levels BELOW the road to 13.9 above it. That is why the
+// gap read as a few levels either way wherever anyone sampled it - distance
+// never came into it, and the only thing marking a snow road was the pair of
+// ruts, which are gone by forty metres. Packed against clean, the road now sits
+// 36.5 to 62.7 levels UNDER the ground, so the sign cannot flip.
+//
+// Both figures are the same measurement, which the pair they replace were not:
+// each tap taken over its full min-to-max - this one over the gravel map the
+// running surface carries, the ground's over the grass map - and the two albedos
+// read as 8-bit sRGB levels of Rec.709 luminance. Steady to two tenths of a
+// level over nine texture seeds. Albedo before light and fog; the fog is why a
+// blizzard past about fifty metres is still weather.js's to fix.
 vec3 lying = mix( vec3( 0.50, 0.53, 0.60 ), vec3( 0.86, 0.89, 0.95 ), vDetail.w );
 diffuseColor.rgb = mix( diffuseColor.rgb, lying * ( 0.82 + 0.18 * wear ), lie );
 `;

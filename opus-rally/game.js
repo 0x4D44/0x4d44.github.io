@@ -690,9 +690,16 @@ export async function startGame(opts) {
     showHud(false);
     audio.setMuted?.(true);
     hud.countdown?.(null);
-    // Chase, not "tv". The trackside rig is a fixed roadside anchor that never
-    // re-cut here: measured 394.9 m from the car after 80 m of driving, which is
-    // a photograph of an empty hillside. Chase held 8.7 m.
+    // Chase, not "tv". The trackside rig does re-cut — render.js's pickTvAnchor
+    // runs every frame and takes the NEAREST anchor more than 25 m ahead — but
+    // at the start of a stage there is nothing near enough to cut to. The
+    // anchors are spaced stage.length / 14 apart, which is 880 m on this road,
+    // and the loop mints thirteen of them, at 880 m through to 11440 m. The
+    // attract run starts at s = 60, so every one of the thirteen is ahead of the
+    // car and the nearest is already 880 m up the road. Measured on the real
+    // renderer: the tv camera sat 786 m from the car at the start and was still
+    // 703 m away after 80 m of driving, which is a photograph of an empty
+    // hillside. Chase held 8.6 to 8.9 m over the same stretch.
     renderer.setCamera?.("chase");
     placeCarAt(60, 65);
   }

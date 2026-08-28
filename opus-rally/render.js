@@ -113,11 +113,17 @@ const DEFAULT_HALF_WIDTH = 0.70;
 // ---- the cabin -----------------------------------------------------------
 //
 // The interior sits inside the car's own shadow with its albedos held under the
-// 0.20 linear cap the material band puts on trim, so in daylight nothing in the
-// cockpit reaches luminance 25/255: the instrument face, its ticks and its needle
-// all land inside one three-level band. That is a lighting fault rather than an
-// albedo one — a real cabin is lit by sky through the glasshouse, and at night by
-// its own instruments.
+// 0.20 linear cap the material band puts on trim, so in daylight the instrument
+// pod is a smudge rather than an instrument. Switch the two cabin lights below
+// off and measure what is left of it — over the 260x160 px the pod covers in the
+// cockpit view at 1280x720, on the stopped car the fillSky note describes — and
+// face, ticks, surround and needle come out at a mean of 14 and a median of 15,
+// with nothing anywhere in the pod above 46. The 9-to-26 recorded under fillSky
+// is that measurement's 5th-to-95th and not its whole extent: 3% of the pod is
+// over 26, and a twentieth of it clears 25. Either way there is no tonal range
+// left for a dial face to separate from its housing. That is a lighting fault
+// rather than an albedo one — a real cabin is lit by sky through the glasshouse,
+// and at night by its own instruments.
 //
 // `fillDecay: 0` is the whole of the trick. Three's point falloff is
 // `1/pow(d, decay)` windowed by `(1 - (d/distance)^4)^2`, so at decay 0 the light
@@ -128,10 +134,15 @@ const DEFAULT_HALF_WIDTH = 0.70;
 // is what keeps it off the road under the car and off the wheels, and every
 // exterior panel is turned away from it and takes nothing from it anyway.
 export const CABIN = Object.freeze({
-  // Under the headliner, which is what puts the road just outside the cutoff on
-  // every car in the book: the shortest roof is the heritage class at 1.325 m,
-  // so the light hangs 1.105 m over the surface and the fill's own window has
-  // already taken 94% out of it by the time it gets there.
+  // Under the headliner, which is what puts the road outside the cutoff on every
+  // car in the book: the shortest roof is the heritage class at 1.325 m, so the
+  // light hangs 1.105 m over the surface against a 1.10 m cutoff. Three's window
+  // is saturate( 1 - (d/D)^4 )^2, so past D it is not merely small, it is
+  // exactly zero — 100% out, on all eight cars. The heritage pair sit closest at
+  // 1.0045 of the cutoff and the top class furthest at 1.068. The test holds the
+  // ratio at 0.93 rather than at 1.0, which still leaves 6.3% of the fill on the
+  // road, so a car would have to lose most of a headliner before this stopped
+  // holding.
   fillDrop: 0.22,          // metres below the roof line
   fillAxle: -1.02,         // metres from the front axle, the datum meshes.js hangs
                            // the whole cabin off — see CAMERA_PARAMS

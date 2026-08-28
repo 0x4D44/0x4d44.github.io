@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
 
 import {
   createRecorder, createPlayback, createGhost, inputAt, keyframeAt,
@@ -905,9 +906,19 @@ test("career: every stage on the calendar is a road stage.js can actually build"
 
   // Generating all twenty-four costs about seven seconds, so three roads carry
   // the proof that `book` really is a stageFromBook() id and that the km the
-  // championship prices its stage times with is the road the player drives. The
-  // generator overshoots its declared length by 168 to 272 m on these three
-  // (1.4% to 3.7%), which is why the bound is a fraction and not a metre count.
+  // championship prices its stage times with is the road the player drives.
+  //
+  // On these three the generator overshoots by 168 to 272 m, and by 1.87% to
+  // 3.68% — and each range has a different road at its floor, which is the trap
+  // this comment has now fallen into twice. The smallest overshoot in METRES is
+  // havnvik's 168 over its own 6600 m, and that is 2.55%; the smallest FRACTION
+  // is bjornhalt's 226 over 12100 m. (An earlier "1.4%" here was havnvik's
+  // metres over bjornhalt's length, which is neither road.) Across the whole
+  // book it runs from 118 m SHORT on northmarch-kestrel to 382 m long on
+  // vardhal-stormgate, i.e. -1.26% to +3.86%, which is why the bound is a
+  // fraction rather than a metre count and why it is taken on the absolute
+  // value. The 5% is headroom rather than a measurement: 4% would pass on
+  // today's book, but by 0.14 of a point, which is not enough to call margin.
   const sampled = ["kloft-bjornhalt", "vardhal-havnvik", "alvenda-ondas"];
   for (const bookId of sampled) {
     const stage = RALLIES.flatMap((ev) => ev.legs.flatMap((l) => l.stages)).find((s) => s.book === bookId);
@@ -1014,4 +1025,149 @@ test("career: a championship can be entered, driven in order, and finished", () 
   const reloaded = createCareer(storage);
   assert.equal(reloaded.championship().finished, true);
   assert.equal(reloaded.championship().standings.find((r) => r.isPlayer).points, me.points);
+});
+
+// The calendar ladder, measured rather than eyeballed.
+//
+// career.championship() hands ui.js FRACTIONS of a plate, so which pair of
+// labels is closest is settled by the plate's pixel height and by how tall a
+// label wraps — never by the shuffle, which only moves names between pins. The
+// note that shipped with this ladder measured season-1 at one viewport, found
+// 16 px of vertical clearance and stopped. season-2 is 6.9 px on the same
+// viewport; over every shuffle of the book, 390 px got the closest pair
+// overlapping 3.2 px vertically, and a 320 px window overlapped outright.
+//
+// So this walks real labels in a real browser, in the real font, over every
+// distinct calendar the seeds below draw, at the three plate shapes the
+// stylesheet can produce and at two points in a season (a pin that is a button
+// used to draw larger than a locked one). Pinning it to one seed is exactly how
+// the bug shipped, so the sweep asserts it saw more than one calendar.
+test("championship: no two calendar labels touch, whatever the season drew", async () => {
+  const { openHarness } = await import("./drive.mjs");
+  const { CALENDAR_PIN } = await import("../ui.js");
+  const root = resolve(import.meta.dirname, "../..");
+
+  // Every seed the game itself draws, plus enough others that the sweep reaches
+  // every shuffle of the book — all 120 of them for a five-rally season — keyed
+  // by the calendar so a repeated draw costs nothing.
+  const calendars = new Map();
+  for (let i = 1; i <= 800; i += 1) {
+    const seed = i <= 8 ? `season-${i}` : `sweep-${i}`;
+    const c = createCareer(null);
+    c.newSeason({ seed, tierId: "clubman" });
+    const key = c.state.season.calendar.join(",");
+    if (!calendars.has(key)) calendars.set(key, seed);
+  }
+  assert.ok(calendars.size >= 100,
+    `${calendars.size} distinct calendars over 800 seeds: this sweep would prove little`);
+
+  // A season part-way through matters: a driven round becomes a <button>, and a
+  // button pin is a different box from a locked one.
+  const models = [];
+  for (const [key, seed] of calendars) {
+    for (const done of [0, 3]) {
+      const c = createCareer(null);
+      c.newSeason({ seed, tierId: "clubman" });
+      const s = c.state.season;
+      for (let i = 0; i < done; i += 1) {
+        s.events[i].done = true;
+        s.events[i].classification = [{ driverId: "player", position: 1 + i }];
+      }
+      s.cursor = { event: done, leg: 0, stage: 0 };
+      models.push({ seed, key, done, championship: c.championship() });
+    }
+  }
+
+  const page = await openHarness({ root, width: 390, height: 844, quiet: true });
+  try {
+    // A licence file, because this is a layout question and not a boot question:
+    // it gives the shell a same-origin document to be built in without starting
+    // a game, a WebGL context or a stage behind the measurement.
+    await page.navigate("/opus-rally/THREE-LICENSE.txt");
+    await page.waitFor("the page to load", () => page.evaluate(
+      "document.readyState === 'complete' || null"), 60_000);
+
+    // index.html gives the shell a full-viewport fixed root over a zero-margin
+    // page; that is the whole of the host it needs, so the host is stated here
+    // rather than scraped, and ui.js is asked for its stylesheet by name.
+    //
+    // The viewport meta is not decoration. Without one, a page under Chrome's
+    // mobile emulation lays out at the 980 px fallback and scales the result
+    // down, so a 320 px phone drew a 528 px plate, missed the max-width:520px
+    // rules entirely and reported clearances that belong to no real device.
+    const ready = await page.evaluate(`(async () => {
+      document.head.innerHTML = "<meta charset=utf-8>"
+        + "<meta name=viewport content='width=device-width, initial-scale=1'>";
+      document.body.innerHTML = "";
+      document.documentElement.setAttribute("style", "margin:0;padding:0;height:100%");
+      document.body.setAttribute("style", "margin:0;padding:0;height:100%;overflow:hidden");
+      const host = document.createElement("div");
+      host.setAttribute("style", "position:fixed;inset:0");
+      document.body.appendChild(host);
+      const UI = await import("/opus-rally/ui.js");
+      const sheet = document.createElement("style");
+      sheet.textContent = UI.styleText();
+      document.head.appendChild(sheet);
+      window.__ui = UI.createUi(host, {});
+      window.__pins = (championship) => {
+        window.__ui.show("championship", { championship });
+        const map = document.querySelector(".or-map");
+        const plate = map.getBoundingClientRect();
+        const pins = [...map.querySelectorAll(".or-node")].map((n) => {
+          const r = n.getBoundingClientRect();
+          return {
+            label: n.querySelector("span").textContent,
+            x: r.left, y: r.top, right: r.right, bottom: r.bottom,
+          };
+        });
+        return { plate: { x: plate.left, y: plate.top, right: plate.right, bottom: plate.bottom }, pins };
+      };
+      return "ok";
+    })()`);
+    assert.equal(ready, "ok", ready);
+
+    let tightest = { gap: Infinity };
+    let worstSpill = { over: -Infinity };
+    let measured = 0;
+    for (const [width, height] of [[320, 844], [390, 844], [900, 800]]) {
+      await page.setViewport(width, height);
+      for (const model of models) {
+        const { plate, pins } = await page.evaluate(
+          `window.__pins(${JSON.stringify(model.championship)})`);
+        assert.equal(pins.length, model.championship.events.length,
+          `${width}px ${model.seed}: the plate drew ${pins.length} pins for `
+          + `${model.championship.events.length} rounds`);
+        measured += 1;
+        for (let a = 0; a < pins.length; a += 1) {
+          // A label that hangs off the plate is the same bug seen from the
+          // other side: the plate was too short for the ladder standing on it.
+          const over = Math.max(plate.x - pins[a].x, pins[a].right - plate.right,
+            plate.y - pins[a].y, pins[a].bottom - plate.bottom);
+          if (over > worstSpill.over) worstSpill = { over, width, ...model, label: pins[a].label };
+          for (let b = a + 1; b < pins.length; b += 1) {
+            // Two boxes are apart if they are apart on EITHER axis, so the gap
+            // that matters is the larger of the two.
+            const gap = Math.max(
+              Math.max(pins[a].y, pins[b].y) - Math.min(pins[a].bottom, pins[b].bottom),
+              Math.max(pins[a].x, pins[b].x) - Math.min(pins[a].right, pins[b].right));
+            if (gap < tightest.gap) {
+              tightest = { gap, width, ...model, pair: [pins[a].label, pins[b].label] };
+            }
+          }
+        }
+      }
+    }
+
+    assert.equal(measured, models.length * 3,
+      `${measured} layouts were measured, not the ${models.length * 3} asked for`);
+    assert.ok(tightest.gap >= CALENDAR_PIN.clear,
+      `at ${tightest.width}px, seed ${tightest.seed} (${tightest.done} rounds driven) puts `
+      + `"${tightest.pair?.[0]}" and "${tightest.pair?.[1]}" ${tightest.gap.toFixed(2)} px apart, `
+      + `under the ${CALENDAR_PIN.clear} px the plate reserves — calendar ${tightest.key}`);
+    assert.ok(worstSpill.over <= 0.5,
+      `at ${worstSpill.width}px, seed ${worstSpill.seed} hangs "${worstSpill.label}" `
+      + `${worstSpill.over.toFixed(2)} px outside the plate`);
+  } finally {
+    page.close();
+  }
 });

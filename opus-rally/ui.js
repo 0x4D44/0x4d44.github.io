@@ -2133,7 +2133,17 @@ const BASE_CSS = `
 .or-number input{width:88px;padding:6px 8px;background:#0a0d11;border:1px solid var(--or-line);
  font-family:var(--or-font-num);text-align:center;border-radius:2px;}
 
-.or-map{position:relative;aspect-ratio:16/9;min-height:180px;border:1px solid var(--or-line);
+/* --or-map-min is written by renderMap from the pins it was actually handed, so
+   the plate is never shorter than the ladder standing on it needs; see
+   plateMinHeight. The floor here is for a plate with nothing on it. */
+/* width:100% is load-bearing, not tidiness. An aspect-ratio box with an AUTO
+   inline size resolves the ratio in whichever direction it can, so the moment
+   min-height binds Chrome grows the plate SIDEWAYS to keep 16/9 — at a 320 px
+   window a 516 px plate came out 430 px wide inside a 296 px column, and the
+   right-hand pins were clipped rather than drawn. A definite width leaves the
+   ratio only the block axis to work in. */
+.or-map{position:relative;width:100%;aspect-ratio:16/9;min-height:max(180px,var(--or-map-min,0px));
+ border:1px solid var(--or-line);
  background:repeating-linear-gradient(var(--or-skew),rgba(255,255,255,.02) 0 2px,transparent 2px 12px),var(--or-graphite);}
 .or-node{position:absolute;transform:translate(-50%,-50%);display:grid;gap:2px;justify-items:center;
  padding:6px 10px;background:rgba(12,15,19,.86);border:1px solid var(--or-line);cursor:pointer;
@@ -2141,6 +2151,18 @@ const BASE_CSS = `
  /* Wraps, and never wider than half the map: five pins on a 366 px phone plate
     have to share it, and a nowrap label is as wide as the rally is named. */
  max-width:min(50%,190px);}
+/* The .or-ui button rule above is a class and a type, so it outranked a bare
+   .or-node: every pin that was a button — the next round, and every round
+   already driven — drew at 16 px while the locked ones drew at 13. That made a
+   pin grow as the season was played, which is not a size a layout budget can be
+   written against. Two classes takes the size back. */
+.or-ui .or-node{font-size:var(--or-t-small);}
+/* CALENDAR_PIN.box is the height this pair of clamps buys: two lines of title
+   over two of detail, and no more, whatever the rally is called. Without a
+   ceiling the pin is as tall as the longest name wraps on the narrowest plate,
+   and the plate cannot reserve room for something unbounded. */
+.or-node>span,.or-node>small{display:-webkit-box;-webkit-box-orient:vertical;
+ -webkit-line-clamp:2;line-clamp:2;overflow:hidden;}
 .or-node[data-status="next"]{border-color:var(--or-flare);box-shadow:0 0 0 1px rgba(255,90,20,.35);}
 .or-node[data-status="locked"]{opacity:.5;cursor:default;}
 .or-node small{color:var(--or-mute);font-size:var(--or-t-micro);}
@@ -2309,8 +2331,11 @@ const BASE_CSS = `
  .or-hero{padding:var(--or-s-sm);}
  /* Five rounds of a calendar on a 366 px plate: at 16/9 the plate is 206 px tall
     and consecutive pins land 39 px apart, less than one wrapped label. Taller,
-    and the ladder has room; the body scrolls anyway. */
- .or-map{aspect-ratio:5/6;min-height:300px;}
+    and the ladder has room; the body scrolls anyway. The floor is raised here
+    only because a portrait plate should not look squat when it is nearly empty —
+    what actually keeps the labels apart is --or-map-min, and it is the same
+    number at every width. */
+ .or-map{aspect-ratio:5/6;min-height:max(300px,var(--or-map-min,0px));}
  .or-headline h3{font-size:var(--or-t-h3);}
  .or-grid{grid-template-columns:minmax(0,1fr);}
  .or-keys{grid-template-columns:minmax(0,1fr);}
@@ -2753,11 +2778,54 @@ function renderTable(ctx, section) {
   return box;
 }
 
+// The label budget a map pin is drawn to, in CSS pixels. `box` is what the
+// stylesheet's two line-clamps buy — two lines of title over two of detail, plus
+// padding and border — and `clear` is the gap that has to survive between two of
+// them. Declared here because the plate is sized from it and the tests assert
+// against it; changing either clamp changes `box`.
+export const CALENDAR_PIN = Object.freeze({ box: 88, clear: 10 });
+
+// How tall the plate has to be for the pins it was handed, in CSS pixels.
+//
+// A pin arrives as a FRACTION of the plate, so where two labels land is decided
+// by the plate's pixel height and nothing else. Five rounds on a 366x439 phone
+// plate put consecutive pins 83 px apart, which is one label plus a little; the
+// same five on the 481x271 plate a 521 px window produces put them 51 px apart,
+// which is not. Neither number is a function of the shuffle: what the shuffle
+// changes is only which name is where, and a label pair that clears on one
+// permutation and not on the next was never a seed problem. So the plate reserves
+// a box plus a clearance for the CLOSEST pair of pins it holds, and half a box
+// above the first and below the last so neither hangs off the plate.
+//
+// It reads the y's rather than assuming the alternating ladder career.js builds,
+// because a caller with a different set of pins is exactly who this is for.
+function plateMinHeight(points) {
+  const ys = points.map((p) => saturate(p?.y ?? 0.5)).sort((a, b) => a - b);
+  if (ys.length < 2) return 0;
+  const { box, clear } = CALENDAR_PIN;
+  // A caller can stack two pins on one y, and no plate height separates those.
+  // A thirty-second of the plate is the tightest spacing this will honour — a
+  // ladder of 25 rounds over the 0.76 career.js spreads them across — which caps
+  // the plate at 3136 px; past that the caller owns the result.
+  const FLOOR = 1 / 32;
+  let need = 0;
+  for (let i = 1; i < ys.length; i += 1) {
+    need = Math.max(need, (box + clear) / Math.max(FLOOR, ys[i] - ys[i - 1]));
+  }
+  const edge = Math.min(ys[0], 1 - ys[ys.length - 1]);
+  return Math.max(need, box / (2 * Math.max(FLOOR, edge)));
+}
+
 function renderMap(ctx, section) {
   const doc = ctx.doc;
   const map = el(doc, "div", "or-map");
   attr(map, "role", "group");
   attr(map, "aria-label", section.heading ?? "Calendar");
+  // Written as the style attribute rather than through the style object: the
+  // plate carries no other inline declaration, and this is the one number the
+  // stylesheet cannot work out for itself.
+  const need = plateMinHeight((section.items ?? []).map((i) => i.point));
+  if (need > 0) attr(map, "style", `--or-map-min:${Math.ceil(need)}px`);
   for (const item of section.items ?? []) {
     const node = el(doc, item.disabled ? "div" : "button", "or-node");
     if (!item.disabled) attr(node, "type", "button");
@@ -2766,9 +2834,15 @@ function renderMap(ctx, section) {
     node.style.left = (px * 100).toFixed(2) + "%";
     node.style.top = (saturate(item.point?.y ?? 0.5) * 100).toFixed(2) + "%";
     // A pin near an edge is anchored by that edge rather than by its middle.
-    // Centring every pin cut the outer ones in half: a 150 px label at x=0.12
-    // of a 366 px map starts 31 px outside the box, and the map has no room to
-    // scroll. Any caller may place a pin anywhere, so the guard lives here.
+    // The two thresholds are not a taste: .or-node caps a label at
+    // min(50%, 190px), so on any plate up to 380 px wide a label can be half the
+    // plate, its half-width is a quarter of the plate, and a centred pin inside
+    // x=0.25 or past x=0.75 hangs outside a box that has no room to scroll.
+    // Measured, the shipped calendar reaches neither threshold: career.js places
+    // its pins at x 0.28 and 0.70, so all five render centred, and at a 390 px
+    // viewport the widest label (182 px against a 183 px cap, on a 366 px plate)
+    // still starts 12 px inside the left edge. This is here for the next caller
+    // rather than for that one.
     node.style.transform = `translate(${px < 0.25 ? "0%" : px > 0.75 ? "-100%" : "-50%"},-50%)`;
     node.appendChild(el(doc, "span", null, item.label ?? ""));
     node.appendChild(el(doc, "small", null, `${item.sub ?? ""} · ${item.badge ?? ""}`));

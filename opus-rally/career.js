@@ -126,8 +126,25 @@ function rival(id, name, team, nat, skill, consistency, wetSkill, aggression, re
   return Object.freeze({ id, name, team, nat, skill, consistency, wetSkill, aggression, reliability, pref: Object.freeze(pref) });
 }
 
-// Surface preference is a -1..+1 tilt, worth about a percent either way. It is
-// what makes the snow specialist beat the champion at Kaldvik and nowhere else.
+// Surface preference is a -1..+1 tilt on a rival's deficit, worth 1.2% of stage
+// time at the extremes. The calendar reaches three of the eight keys below:
+// fourteen gravel stages, eight tarmac and two dirt. Nothing the book ships is
+// snow or ice, so five of the eight keys in every row are currently unread —
+// kept because the book is what changes, not this table.
+//
+// What it buys is a field that reorders rather than one that only spreads. A
+// field is 12 to 16 cars picked by nearness to the tier's target skill, so the
+// question is what the tilt does to THAT dozen and not to this table of thirty
+// — and the two ends of the ladder answer it differently. In Clubman the spread
+// in raw pace still carries the order, and going from gravel to tarmac moves 6
+// of the 12 places. In Legends the tier's +0.16 skill bias clamps nine of the
+// twelve entries to skill 1, so raw pace separates nobody at the front and the
+// tilt is the whole of the ordering: the quickest car is Bellucco on the eight
+// tarmac stages (worth +1.08% to him), Beltrán-Cea and Yrjönen dead level on
+// the fourteen gravel ones (+0.72% each, split by the per-stage roll and by
+// nothing else), and Halloway on the two dirt ones (+0.96%) — and 10 to 12 of
+// the 12 places move between one surface and another. Deterministic part only:
+// the weather terms, the per-stage roll and the mistakes all land on top.
 export const RIVALS = Object.freeze([
   rival("kirvala", "Teo Kirvala", "Norlys Motorsport", "Norvale", 0.94, 0.88, 0.72, 0.55, 0.90, { snow: 0.9, ice: 0.8, gravel: 0.4, tarmac: -0.3, sand: -0.4, mud: 0.2, rock: 0.0, dirt: 0.3 }),
   rival("sallin", "Maret Sallin", "Norlys Motorsport", "Norvale", 0.81, 0.83, 0.66, 0.42, 0.92, { snow: 0.7, ice: 0.6, gravel: 0.3, tarmac: -0.2, sand: -0.3, mud: 0.1, rock: 0.0, dirt: 0.2 }),
@@ -1170,8 +1187,27 @@ export function createCareer(storage, opts = {}) {
       const row = (evState.classification || []).find((c) => c.driverId === "player");
       // The stage book carries no coordinates, so the calendar pin is a ladder
       // rather than a geography the game does not have: alternating sides,
-      // stepping down the plate in calendar order. An arc put rounds 1 and 5 on
-      // the same row and their labels overlapped on a 366 px phone plate.
+      // stepping down the plate in calendar order.
+      //
+      // These are FRACTIONS of the plate. Nothing here decides how far apart two
+      // labels land — the plate's pixel height does — and the shuffle above
+      // decides only which name sits at which pin. An earlier note measured
+      // season-1 at a 390 px viewport (366x439 plate, tightest pair clearing
+      // 16.3 px vertically and 7.3 px horizontally, both of which still
+      // reproduce) and concluded the risk was a sixth round or a longer name.
+      // It was neither. Over all 120 shuffles of the five-rally book, at five
+      // points in a season, that same 390 px viewport got down to 7.3 px of
+      // separation with the closest pair already overlapping 3.2 px vertically,
+      // and a 320 px window overlapped outright by 3.7 px — on the calendar that
+      // ships, with no extra round and no longer name.
+      //
+      // ui.js sizes the plate from these fractions now rather than from a fixed
+      // ratio (see plateMinHeight and CALENDAR_PIN there): each pin is given a
+      // label box plus a clearance. Measured after that, the tightest pair over
+      // 23,760 layouts — every four- and five-round shuffle, at every point in a
+      // season, at eighteen viewport widths from 320 to 1600 — clears by 12.0 px,
+      // and no label hangs off the plate. Change the y spread here and that
+      // number moves; the plate follows it, but re-measure.
       const t = s.calendar.length > 1 ? i / (s.calendar.length - 1) : 0.5;
       return {
         id,
