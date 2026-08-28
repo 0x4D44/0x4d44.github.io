@@ -52,23 +52,69 @@ const REVERSE_CAP = 12;         // m/s, ~43 km/h
 const IDLE_TRIM_MAX = 0.45;
 const IDLE_TRIM_RATE = 4.0;
 
-// Where the tyre makes its best longitudinal force, and how far that moves as the
-// surface goes loose. Swept against the tyre model rather than picked: fx peaks at
-// kappa 0.11 on tarmac and on ice, and at 0.43 to 0.50 on gravel, snow and mud,
-// where the dig bonus and the loose tail carry it. By the +/-6 slip clamp a hard
-// surface is down to 55% of its peak and a loose one still holds 83%, which is why
-// wheelspin strands a car on ice and merely costs time in mud. Both aids below hang
-// off this because both are asking the same question.
-const PEAK_SLIP = 0.16;
-const PEAK_SLIP_LOOSE = 3.0;
+// Where the loose layer's dig and tail terms saturate, in multiples of the Pacejka
+// peak, and where the force they build actually maxes out — measured at 3.11 to 3.39
+// across the catalogue, so 3.3. Both aids below hang off peakSlip() because both are
+// asking the same question.
+const LOOSE_SAT = 3.5;
+const PEAK_FAR = 3.3;
 
-// The auto-clutch's anti-dump guard: this far past the best slip, the clutch is fed
-// no more than the tyres are actually returning. Short of it the tyre is still on
-// the rising side of its curve, where more torque is more force and a cap only
-// slows the car down. The headroom is under one on purpose: fed exactly what it is
-// returning, a spinning wheel has no reason to come back down.
-const CLUTCH_SLIP_GUARD = 1.56;
+// The slip a tyre makes its best longitudinal force at. There are two candidates and
+// the tyre decides between them: Pacejka's own peak at 1.74/B, and a second one out
+// in the wheelspin where the dig bonus and the loose tail have filled the falloff
+// back in. Which wins is a property of the COMPOUND as well as the surface — the 4S
+// carries a 0.34 dig and a 0.82 tail, and that is enough to put its DIRT peak out at
+// 3.11x while the default tyre's dirt peak is the near one at 1.00x, and the tarmac
+// compound's 0.16 and 0.52 keep even gravel and snow on the near peak where every
+// other car is out at 3.2x. So the two are compared rather than a loose-depth
+// threshold being fitted to one of them, at the cost of one shape evaluation.
+//
+// The constant it replaced was a flat 0.16 with a linear loose term, which on a hard
+// surface named a slip half again past the real peak — and the traction control then
+// multiplied THAT by its authority, so the aid held the driven wheels at 0.22 against
+// a peak of 0.11, where an ice tyre returns four fifths of the force it has.
+function peakSlip(t, loose) {
+  const bLong = t.bLong * (1 - 0.30 * loose);
+  const kappaPeak = 1.74 / bLong;
+  const sFar = magic(kappaPeak * LOOSE_SAT, bLong, t.cLong, t.eLong);
+  const far = (1 + loose * t.digGain) * (sFar + (1 - sFar) * loose * t.looseTail * 0.7);
+  return kappaPeak * lerp(1, PEAK_FAR, smoothstep(0.995, 1.005, far));
+}
+
+// A clutch that is capping torque cannot also hold the crank, so on a surface where
+// the cap bites the engine has nothing to push against and runs to the limiter — flat
+// out at two km/h on an ice climb, with its whole output going into the clutch as
+// heat. The pedal holds it on the launch rpm instead, which is what launch control
+// is. Only while the car is still crawling: past three times LAUNCH_CRAWL the car is
+// away and the crank belongs to the driver again, and a governor still acting there
+// takes the throttle out of a power-on slide.
+const LAUNCH_TRIM = 0.85;
+const LAUNCH_CRAWL = 3.0;
+
+// The auto-clutch's anti-dump guard: from this much slip the clutch is fed no more
+// than the tyres are actually returning, and short of it no more than they can hold
+// times the overfeed. The headroom is under one on purpose — fed exactly what it is
+// returning, a spinning wheel has no reason to come back down. Full clamp lands at
+// twice the guard, which on a hard surface is where the tyre has given up a tenth of
+// its peak; at the 1.56 the guard used to sit at, full clamp fell at three times the
+// peak, where it has given up a fifth, and a 9% ice climb needs more than that.
+//
+// The overfeed is what the clutch may hand over ABOVE the tyres' capacity while the
+// wheels are still short of the guard, and it is over one on purpose: a rally car
+// lights its wheels up off the line, and a clutch that can only ever feed what the
+// tyres hold is a launch-control system rather than a clutch. Measured either side —
+// under about 1.4 the rear-drive car stops swinging on power, over about 2.6 the ice
+// climb starts to cost.
+const CLUTCH_SLIP_GUARD = 0.7;
 const CLUTCH_GRIP_HEADROOM = 0.92;
+const CLUTCH_OVERFEED = 1.6;
+
+// How much of the clutch a pedal takes up on its own when the engine has no torque
+// left to rev with. Without it a car whose engine cannot reach the launch rpm at the
+// pedal it is given never takes up drive at all: the 640 needs 29% of throttle to
+// hold its own idle, so a quarter throttle on a 6% gravel climb left it freewheeling
+// backwards with the clutch open and the driver's foot down.
+const CLUTCH_CREEP = 0.40;
 
 function v3(x = 0, y = 0, z = 0) {
   return { x, y, z };
@@ -795,7 +841,7 @@ export function createCar(specId, opts = {}) {
     damage: opts.damage || null,
     input: makeInput(),
     odometer: 0, distanceTravelled: 0, time: 0,
-    tcCut: 0, escCut: 0, idleTrim: 0, driveSlip: 0,
+    tcCut: 0, escCut: 0, idleTrim: 0, driveSlip: 0, clutchCapped: 0,
     prevShiftUp: false, prevShiftDown: false,
     _right: v3(), _up: v3(), _fwd: v3(),
     _force: v3(), _torque: v3(), _tb: v3(), _acc: v3(),
@@ -850,6 +896,7 @@ export function resetCar(car, x, y, z, yaw) {
   car.clutchEngage = 1; car.clutchSlip = 0; car.driveshaftRpm = 0;
   car.onGround = 4; car.airTime = 0; car.rolledOver = false; car.rolloverTimer = 0;
   car.tcCut = 0; car.escCut = 0; car.idleTrim = 0; car.driveSlip = 0;
+  car.clutchCapped = 0;
   car.prevShiftUp = false; car.prevShiftDown = false;
   for (let i = 0; i < 4; i += 1) {
     const w = car.wheels[i];
@@ -1143,9 +1190,17 @@ export function stepCar(car, input, world, dt) {
   // is solved before the tyres are. muLong is the friction the surface, compound
   // and wheel load allow; fx is what the wheel is really pushing with at the slip
   // it is at, and past the peak those two part company badly.
+  //
+  // mu and loose depth are share-weighted, because they are averages over the axles
+  // the drive reaches. The two forces are not: they are TOTALS the whole driveline
+  // has to balance, so every driven wheel counts once. Share-weighting the returned
+  // force halved it on a four-wheel-drive car — four shares sum to two — and left it
+  // right on a two-wheel-drive one, where the two driven wheels each carry a share
+  // of one, so the guard below was twice as tight on the 4WD cars as intended.
   let muSum = 0;
   let muWeight = 0;
   let drivenFx = 0;
+  let drivenCap = 0;
   let looseSum = 0;
   for (let i = 0; i < 4; i += 1) {
     const w = car.wheels[i];
@@ -1153,18 +1208,35 @@ export function stepCar(car, input, world, dt) {
     if (share > 0.01 && w.contact) {
       muSum += w.muLong * share;
       muWeight += share;
-      drivenFx += Math.max(w.fx, 0) * share;
+      drivenCap += w.muLong * w.load;
+      drivenFx += Math.max(w.fx, 0);
       looseSum += surfaceProps(w.surfaceId).looseDepth * share;
     }
   }
   const drivenMu = muWeight > 0 ? muSum / muWeight : 1;
-  const bestSlip = PEAK_SLIP * (1 + PEAK_SLIP_LOOSE * (muWeight > 0 ? looseSum / muWeight : 0));
+  // The speed the auto-clutch launches from, worked out here rather than with the
+  // rest of the clutch because the pedal governor below needs it too. It answers to
+  // the grip as well as to the pedal: stored crank energy let into a surface worth
+  // 0.2 mu goes straight past the slip clamp, and 0.9 is about what a rally tyre
+  // reports on gravel, so anything from gravel up launches from the same rpm it did.
+  const launchRpm = lerp(eng.idleRpm * 1.25, eng.shiftUpRpm * 0.52,
+    throttleIn * saturate(drivenMu / 0.9));
+  const bestSlip = peakSlip(s.tyre, muWeight > 0 ? looseSum / muWeight : 0);
 
   let rpm = car.engineOmega * RPM_PER_RAD;
   if (car.limiterTimer > 0) car.limiterTimer -= h;
   if (rpm > eng.limiterRpm) car.limiterTimer = eng.limiterCut;
 
   let throttle = throttleIn * (1 - car.tcCut);
+  // Hold the crank on the launch rpm while the clutch is throwing torque away, and
+  // only then: clutchCapped is how much of last step's clutch torque the anti-dump
+  // ceiling took off it, so this acts exactly where the engine has been unloaded and
+  // nowhere else.
+  if (a.autoClutch && car.clutchCapped > 0 && rpm > launchRpm) {
+    throttle *= 1 - LAUNCH_TRIM * car.clutchCapped
+      * (1 - smoothstep(LAUNCH_CRAWL, LAUNCH_CRAWL * 3, speed))
+      * saturate((rpm - launchRpm) / (launchRpm * 0.30));
+  }
   // Reverse is geared like first, so left alone it is worth 60-plus km/h backwards.
   // The throttle fades out across the 2 m/s below the cap, so the car settles on it
   // instead of surging against a hard cut; the idle line below still holds the
@@ -1180,12 +1252,19 @@ export function stepCar(car, input, world, dt) {
   // freewheels back down the hill with the pedal down. The trim winds on until the
   // throttle it asks for balances friction and pumping AT idle, and unwinds again
   // the moment the engine is over it.
+  //
+  // It is an air bypass around the throttle plate, so it ADDS to what the driver is
+  // asking for and fades out as the engine comes up on its own. Taking the GREATER
+  // of the two gave every car a dead band at the bottom of its pedal — the 640 needs
+  // 29% just to hold its own idle, so anything under 29% did nothing at all — and it
+  // also put the governor's own 14-29% on the HUD's throttle trace at the start line,
+  // where the driver is not touching the pedal.
   const idleErr = (eng.idleRpm - rpm) / eng.idleRpm;
   if (!car.engineStalled) {
     car.idleTrim = clamp(car.idleTrim + idleErr * IDLE_TRIM_RATE * h, 0, IDLE_TRIM_MAX);
-    if (rpm < eng.idleRpm * 1.1) {
-      throttle = Math.max(throttle, saturate(idleErr / 0.5) * 0.42 + car.idleTrim);
-    }
+    const bypass = (saturate(idleErr / 0.5) * 0.42 + car.idleTrim)
+      * (1 - smoothstep(1, 1.1, rpm / eng.idleRpm));
+    throttle = saturate(throttle + bypass * (1 - throttle));
   }
   const fuelCut = car.limiterTimer > 0 ? 0 : 1;
 
@@ -1229,16 +1308,10 @@ export function stepCar(car, input, world, dt) {
     // its torque. That is what made the 640 the slowest car off the line and what
     // left every car unable to pull away up a loose climb.
     //
-    // The launch rpm answers to the grip as well as to the pedal. Flat out on ice
-    // the servo held the engine at 3900 rpm and then let the clutch into a surface
-    // worth 0.2 mu: the stored crank energy put the driven wheels straight past the
-    // slip clamp, where a hard surface makes 55% of its peak, and the car slid back
-    // down the hill with the traction control at full cut. 0.9 is about what a
-    // rally tyre reports on gravel, so anything from gravel up launches as before.
+    // The launch rpm itself is worked out above, because the pedal governor holds
+    // the engine on the same number.
     const dlRpm = Math.abs(wIn) * RPM_PER_RAD;
-    const launch = lerp(eng.idleRpm * 1.25, eng.shiftUpRpm * 0.52,
-      throttleIn * saturate(drivenMu / 0.9));
-    const servo = saturate((rpm - launch) / (launch * 0.30));
+    const servo = saturate((rpm - launchRpm) / (launchRpm * 0.30));
     const matched = 1 - smoothstep(0.10, 0.55, Math.abs(rpm - dlRpm) / Math.max(rpm, 800));
     // Full drive once the engine is at its idle speed, tapering off below it, gone
     // before it dies. The closed end of this band used to sit at 1.40x idle, which
@@ -1248,7 +1321,20 @@ export function stepCar(car, input, world, dt) {
     // the traction control and this servo take turns at 2 Hz. A driver slipping a
     // clutch on a climb holds idle and feeds it, which is what this band now says.
     const stallGuard = smoothstep(eng.stallRpm, eng.idleRpm, rpm);
-    const auto = Math.min(Math.max(matched, servo * Math.max(throttleIn, 0.12)), stallGuard);
+    // Every term above is referenced to an engine speed, so every one of them is
+    // zero when the engine is sitting AT idle and cannot leave — and a car whose
+    // pedal buys less throttle than its own idle needs is exactly there. Waiting for
+    // a launch rpm the engine will never reach is what left the 640 freewheeling
+    // backwards down a 6% gravel climb at a quarter throttle. The discriminator is
+    // the engine's own spare torque: with Te over a few per cent of peak it is
+    // accelerating and the servo should wait for it, and with Te at nothing there is
+    // nothing to wait for. The stall guard is what then bounds the engagement, which
+    // is precisely a driver feeling for the bite point.
+    const stuck = 1 - saturate(Te / (eng.peakTorque * 0.06));
+    const creep = CLUTCH_CREEP * saturate(throttleIn / 0.35) * stuck;
+    const auto = Math.min(
+      Math.max(matched, servo * Math.max(throttleIn, 0.12), creep),
+      stallGuard);
     engage = Math.min(engage, auto);
   }
   // The hydraulic handbrake trips the clutch, which is the only reason a locked
@@ -1279,12 +1365,27 @@ export function stepCar(car, input, world, dt) {
   // stationary driveline and asked the front axle for 2150 N of a possible 1320.
   // Only while the clutch is driving; on the overrun it is the engine braking and
   // the tyres are welcome to all of it.
+  //
+  // The ceiling is a real force at both ends of its band — the tyres' capacity below
+  // the guard, what they are actually returning above it — and never a blend with the
+  // uncapped clutch torque. Blended against that, which off the line is several times
+  // either figure, any partial blend still left a ceiling of thousands of newtons, so
+  // the guard behaved as a relay: it did nothing until the slip crossed, then took
+  // everything. THAT is what the traction control was fighting. Measured on a 9.1%
+  // ice climb, the pair settled into a two-state cycle at 3.6 Hz with the clutch
+  // alternating 0.09 and 0.22 and the front tyres 780 N and 1176 N — a mean under
+  // what the grade needs — and the engine surging 100 rpm with it. With a ceiling
+  // that is continuous in the slip there is no loop left to close: the cut is a
+  // static function of the tyre state, so it cannot oscillate.
   const slipGuard = bestSlip * CLUTCH_SLIP_GUARD;
   const dumping = saturate((car.driveSlip - slipGuard) / slipGuard);
-  if (a.autoClutch && Tc > 0 && dumping > 0 && drivenRatio !== 0) {
-    const hold = drivenFx * s.wheelRadius * CLUTCH_GRIP_HEADROOM
-      / Math.abs(drivenRatio * gb.efficiency);
-    if (Tc > hold) Tc = lerp(Tc, hold, dumping);
+  if (a.autoClutch && Tc > 0 && drivenRatio !== 0) {
+    const ceiling = lerp(drivenCap * CLUTCH_OVERFEED, drivenFx * CLUTCH_GRIP_HEADROOM, dumping)
+      * s.wheelRadius / Math.abs(drivenRatio * gb.efficiency);
+    car.clutchCapped = Tc > ceiling ? saturate(1 - ceiling / Tc) : 0;
+    if (Tc > ceiling) Tc = ceiling;
+  } else {
+    car.clutchCapped = 0;
   }
   car.clutchSlip = Math.abs(slipRate);
 
@@ -1451,11 +1552,36 @@ export function stepCar(car, input, world, dt) {
     let fxT = r.fx;
     const fyT = r.fy;
 
-    // The tyre may remove the slip it is fed, never reverse it inside one step.
-    const tyreDelta = (-fxT * radius * radius / s.wheelInertia) * h;
-    if (slipVel !== 0 && tyreDelta * slipVel < 0 && Math.abs(tyreDelta) > Math.abs(slipVel)) {
-      fxT *= Math.abs(slipVel) / Math.abs(tyreDelta);
-    }
+    // The wheel is integrated semi-implicitly in the tyre's own stiffness, because
+    // explicitly it is unstable here by about a factor of six. The slope of fx
+    // against slip velocity near zero slip is mu*N*B*C/vRef, and with a 1/120 s step,
+    // a 1 kg.m^2 wheel and the 2 m/s floor the slip ratio is taken against, h*k*r^2/I
+    // comes out near twelve — where anything over two rings. The guard that held it
+    // together did so by DELETING force, bounding it at |slipVel| * I / (r^2 * h):
+    // that wanted a slip ratio near 0.5 before a tyre could make its peak from rest,
+    // which is why holding the driven wheels on the Pacejka peak at a standstill
+    // returned 44% of the force the surface had, and why a two-wheel-drive car could
+    // not climb ice it had the grip for.
+    //
+    // The chord fx/slipVel is that same stiffness, so this reduces to exactly the old
+    // bound when the hub is free — and to nothing at a launch, where the hub torque
+    // and the tyre are equal and opposite by definition and the old guard was still
+    // clamping. Only ever a damping: applied when it shrinks the force toward zero,
+    // never when it would extrapolate past the tyre and out of the friction ellipse.
+    // The invariant the old guard existed for is preserved by construction, since the
+    // corrected force is fx * I / (I + h*k*r^2), which cannot carry the slip through
+    // zero inside a step.
+    const kSlip = Math.abs(slipVel) > 1e-6 ? fxT / slipVel : 0;
+    // The brake resists the wheel's rotation; with the wheel already stopped it
+    // resists whatever the tyre is trying to spin it up with, and reading sign(0) as
+    // no brake at all left a locked wheel damped down to a fifth of a g at walking
+    // pace, which added a quarter-second to the end of every stop.
+    const hubBrake = (w.spinRate !== 0 ? sign(w.spinRate) : -sign(fxT)) * w.brakeTorque;
+    const hubTorque = w.driveTorque - hubBrake;
+    const dOmega = (hubTorque - fxT * radius) * h
+      / (s.wheelInertia + h * kSlip * radius * radius);
+    const fxImp = fxT + kSlip * radius * dOmega;
+    if (Math.abs(fxImp) < Math.abs(fxT)) fxT = fxImp;
 
     let spin = w.spinRate + ((w.driveTorque - fxT * radius) / s.wheelInertia) * h;
     const dwB = (w.brakeTorque / s.wheelInertia) * h;
@@ -1608,7 +1734,11 @@ export function stepCar(car, input, world, dt) {
 
   const ci = car.input;
   ci.steer = steerIn;
-  ci.throttle = throttle;
+  // What the DRIVER is asking for, after the aid he can feel, and not the engine's
+  // commanded throttle: the HUD draws this, and the idle governor's air bypass is
+  // not a pedal position. Reporting the engine's number put a permanent 14-29% step
+  // on the throttle trace of a car sitting on the start line with nothing pressed.
+  ci.throttle = throttleIn * (1 - car.tcCut);
   ci.brake = brakeIn;
   ci.handbrake = handbrakeIn;
   ci.clutch = clutchIn;
