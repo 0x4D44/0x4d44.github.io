@@ -1038,13 +1038,23 @@ test("career: a championship can be entered, driven in order, and finished", () 
 // overlapping 3.2 px vertically, and a 320 px window overlapped outright.
 //
 // So this walks real labels in a real browser, in the real font, over every
-// distinct calendar the seeds below draw, at the three plate shapes the
-// stylesheet can produce and at two points in a season (a pin that is a button
-// used to draw larger than a locked one). Pinning it to one seed is exactly how
-// the bug shipped, so the sweep asserts it saw more than one calendar.
+// distinct calendar the seeds below draw, at six plate shapes and at every point
+// in a season (a pin that is a button used to draw larger than a locked one).
+// Pinning it to one seed is exactly how the bug shipped, so the sweep asserts it
+// saw more than one calendar.
+//
+// It asks four separate questions of every layout, because the first fix for
+// the overlap passed three of them while making the fourth worse: no two label
+// BOXES touch, no label hangs off the plate, no pin is taller than the box the
+// plate reserves for it, and — the one the overlap fix broke — NOTHING IS
+// CLIPPED. Bounding a label box with -webkit-line-clamp buys clearance by
+// hiding text, so a clearance-only test rewards exactly the wrong repair.
 test("championship: no two calendar labels touch, whatever the season drew", async () => {
   const { openHarness } = await import("./drive.mjs");
-  const { CALENDAR_PIN } = await import("../ui.js");
+  // ui.js is deliberately NOT imported for its constants. CALENDAR_PIN is what
+  // plateMinHeight sizes the plate from, so a bar read out of it moves with the
+  // thing it is meant to judge; every number this test compares against is
+  // written out below.
   const root = resolve(import.meta.dirname, "../..");
 
   // Every seed the game itself draws, plus enough others that the sweep reaches
@@ -1061,11 +1071,14 @@ test("championship: no two calendar labels touch, whatever the season drew", asy
   assert.ok(calendars.size >= 100,
     `${calendars.size} distinct calendars over 800 seeds: this sweep would prove little`);
 
-  // A season part-way through matters: a driven round becomes a <button>, and a
-  // button pin is a different box from a locked one.
+  // Every point in a season, not two of them: a driven round becomes a
+  // <button>, and the round that is NEXT walks down the ladder as the season is
+  // played. Which pin carries the "Next" badge decides whether that badge is on
+  // the wide side of the plate or the narrow one, so a sweep that fixes the
+  // cursor at nought and three cannot see a badge that is only cut at round two.
   const models = [];
   for (const [key, seed] of calendars) {
-    for (const done of [0, 3]) {
+    for (const done of [0, 1, 2, 3, 4]) {
       const c = createCareer(null);
       c.newSeason({ seed, tierId: "clubman" });
       const s = c.state.season;
@@ -1115,9 +1128,25 @@ test("championship: no two calendar labels touch, whatever the season drew", asy
         const plate = map.getBoundingClientRect();
         const pins = [...map.querySelectorAll(".or-node")].map((n) => {
           const r = n.getBoundingClientRect();
+          // A -webkit-line-clamp'd box keeps its FULL content height in
+          // scrollHeight and its clamped height in clientHeight, so the
+          // difference is exactly the text the reader was never shown. Both
+          // halves are read: the title clamp and the detail clamp fail
+          // independently, and it is the detail line that carries the badge.
+          //
+          // Width as well as height. The clamp is what clips today, so height is
+          // where the live regression showed; but a single unbreakable token wider
+          // than the cap would be cut horizontally with scrollHeight unmoved, and
+          // this assertion's own comment promises no letter is hidden. Reading one
+          // axis and claiming both is how the last three of these went wrong.
+          const clip = (e) => ({
+            text: e.textContent,
+            lost: Math.max(e.scrollHeight - e.clientHeight, e.scrollWidth - e.clientWidth),
+          });
           return {
             label: n.querySelector("span").textContent,
-            x: r.left, y: r.top, right: r.right, bottom: r.bottom,
+            x: r.left, y: r.top, right: r.right, bottom: r.bottom, height: r.height,
+            parts: [clip(n.querySelector("span")), clip(n.querySelector("small"))],
           };
         });
         return { plate: { x: plate.left, y: plate.top, right: plate.right, bottom: plate.bottom }, pins };
@@ -1126,10 +1155,19 @@ test("championship: no two calendar labels touch, whatever the season drew", asy
     })()`);
     assert.equal(ready, "ok", ready);
 
+    // 320 px is the narrowest phone this game supports, 521 px is one pixel
+    // clear of the max-width:520px block, and 900 px is where the desktop
+    // columns arrive. 360 px is here because it is the commonest small-Android
+    // width and because it was the second viewport the clamps truncated at.
+    const VIEWPORTS = [[320, 844], [360, 844], [390, 844], [521, 844], [900, 800], [1280, 800]];
+
     let tightest = { gap: Infinity };
+    let closest = { apart: Infinity };
     let worstSpill = { over: -Infinity };
+    let worstClip = { lost: -Infinity };
+    let tallest = { height: -Infinity };
     let measured = 0;
-    for (const [width, height] of [[320, 844], [390, 844], [900, 800]]) {
+    for (const [width, height] of VIEWPORTS) {
       await page.setViewport(width, height);
       for (const model of models) {
         const { plate, pins } = await page.evaluate(
@@ -1139,6 +1177,24 @@ test("championship: no two calendar labels touch, whatever the season drew", asy
           + `${model.championship.events.length} rounds`);
         measured += 1;
         for (let a = 0; a < pins.length; a += 1) {
+          // Bounding the label box and READING the label are different jobs,
+          // and the clamps that do the first can quietly stop the second: the
+          // detail line ends in the badge, so "Northmarch · Gravel · Next"
+          // loses the one word telling the player which round is theirs. The
+          // clearance and spill checks below cannot see this at all — a
+          // truncated pin is a SMALLER box, so it clears its neighbours better.
+          for (const part of pins[a].parts) {
+            if (part.lost > worstClip.lost) {
+              worstClip = { ...part, width, ...model, label: pins[a].label };
+            }
+          }
+          // What a pin actually costs in height, against the budget the plate
+          // reserves for it. Nothing sizes the pin from CALENDAR_PIN.box, so
+          // this is the one measurement that can tell whether the clamps still
+          // buy what the box claims.
+          if (pins[a].height > tallest.height) {
+            tallest = { height: pins[a].height, width, ...model, label: pins[a].label };
+          }
           // A label that hangs off the plate is the same bug seen from the
           // other side: the plate was too short for the ladder standing on it.
           const over = Math.max(plate.x - pins[a].x, pins[a].right - plate.right,
@@ -1153,17 +1209,70 @@ test("championship: no two calendar labels touch, whatever the season drew", asy
             if (gap < tightest.gap) {
               tightest = { gap, width, ...model, pair: [pins[a].label, pins[b].label] };
             }
+            // How far apart the plate put the two pins' ANCHORS, which is the
+            // only thing plateMinHeight actually controls: it multiplies the
+            // plate's height by the closest pair of y fractions and reserves a
+            // label box plus a clearance there. Measuring the drawn label boxes
+            // cannot check that — five short rally names clear each other on a
+            // plate reserving nothing, and the whole ladder is then one longer
+            // name away from touching.
+            const apart = Math.abs((pins[a].y + pins[a].bottom) / 2
+              - (pins[b].y + pins[b].bottom) / 2);
+            if (apart < closest.apart) {
+              closest = { apart, width, ...model, pair: [pins[a].label, pins[b].label] };
+            }
           }
         }
       }
     }
 
-    assert.equal(measured, models.length * 3,
-      `${measured} layouts were measured, not the ${models.length * 3} asked for`);
-    assert.ok(tightest.gap >= CALENDAR_PIN.clear,
+    assert.equal(measured, models.length * VIEWPORTS.length,
+      `${measured} layouts were measured, not the ${models.length * VIEWPORTS.length} asked for`);
+
+    // Not one letter of a pin may be hidden. This is asserted BEFORE the
+    // clearance bar because truncation is how a layout passes a clearance bar
+    // it should have failed: over exactly this sweep, the first version of the
+    // clamps that bounded the label box hid text on 768 of the 3000 pins at
+    // 320 px and cut the "Next" badge off 96 of the 600 next-round pins, taking
+    // 32 px off "Vardhal · Tarmac / Gravel · Locked" at worst — while the
+    // clearance and spill numbers stayed green throughout.
+    assert.ok(worstClip.lost <= 0,
+      `at ${worstClip.width}px, seed ${worstClip.seed} (${worstClip.done} rounds driven) hides `
+      + `${worstClip.lost.toFixed(0)} px of "${worstClip.text}" on the "${worstClip.label}" pin `
+      + `— calendar ${worstClip.key}`);
+
+    // 10 px and 88 px are written out rather than read from CALENDAR_PIN,
+    // because plateMinHeight sizes the plate from BOTH of them: a test that
+    // divides by the same constants the layout multiplied by can only agree
+    // with itself, and this one did — `>= CALENDAR_PIN.clear` passes for every
+    // value of clear, including zero.
+    // 10 px is a gap a reader can see between two labels; 88 px is what two
+    // lines of title over two of detail, plus padding and border, come to.
+    const CLEAR = 10;
+    const BOX = 88;
+
+    // The reservation itself, and the assertion that actually holds
+    // plateMinHeight honest. Measuring only the drawn label boxes cannot: the
+    // five rally names in the book are short enough that they still clear each
+    // other by 11.63 px on a plate reserving nothing at all. Anchors 98 px
+    // apart is the promise — a full label box for each pin plus the gap between
+    // them — and it holds whatever the pins are called. Half a pixel of slack
+    // because the plate height is rounded up to a whole pixel and the pin tops
+    // are percentages written to two decimals.
+    assert.ok(closest.apart >= BOX + CLEAR - 0.5,
+      `at ${closest.width}px, seed ${closest.seed} (${closest.done} rounds driven) anchors `
+      + `"${closest.pair?.[0]}" and "${closest.pair?.[1]}" ${closest.apart.toFixed(2)} px apart, `
+      + `under the ${BOX + CLEAR} px the plate is meant to reserve — a ${BOX} px label box `
+      + `for each and ${CLEAR} px between them — calendar ${closest.key}`);
+
+    assert.ok(tightest.gap >= CLEAR,
       `at ${tightest.width}px, seed ${tightest.seed} (${tightest.done} rounds driven) puts `
       + `"${tightest.pair?.[0]}" and "${tightest.pair?.[1]}" ${tightest.gap.toFixed(2)} px apart, `
-      + `under the ${CALENDAR_PIN.clear} px the plate reserves — calendar ${tightest.key}`);
+      + `under the ${CLEAR} px two labels need — calendar ${tightest.key}`);
+    assert.ok(tallest.height <= BOX,
+      `at ${tallest.width}px, seed ${tallest.seed} draws "${tallest.label}" `
+      + `${tallest.height.toFixed(2)} px tall, over the ${BOX} px label box the clamps are `
+      + "meant to buy — the plate reserves that box and no more");
     assert.ok(worstSpill.over <= 0.5,
       `at ${worstSpill.width}px, seed ${worstSpill.seed} hangs "${worstSpill.label}" `
       + `${worstSpill.over.toFixed(2)} px outside the plate`);

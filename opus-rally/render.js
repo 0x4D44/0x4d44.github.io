@@ -115,15 +115,33 @@ const DEFAULT_HALF_WIDTH = 0.70;
 // The interior sits inside the car's own shadow with its albedos held under the
 // 0.20 linear cap the material band puts on trim, so in daylight the instrument
 // pod is a smudge rather than an instrument. Switch the two cabin lights below
-// off and measure what is left of it — over the 260x160 px the pod covers in the
-// cockpit view at 1280x720, on the stopped car the fillSky note describes — and
-// face, ticks, surround and needle come out at a mean of 14 and a median of 15,
-// with nothing anywhere in the pod above 46. The 9-to-26 recorded under fillSky
-// is that measurement's 5th-to-95th and not its whole extent: 3% of the pod is
-// over 26, and a twentieth of it clears 25. Either way there is no tonal range
-// left for a dial face to separate from its housing. That is a lighting fault
-// rather than an albedo one — a real cabin is lit by sky through the glasshouse,
-// and at night by its own instruments.
+// off and measure what is left of it, and face, ticks, surround and needle come
+// out at a mean of 14.2 and a median of 14.6, with a 5th-to-95th of 8 to 26 and
+// the brightest pixel anywhere in the box at 46.2, and a low single-digit percentage
+// of it over 26. (Those tail percentages are the part that does not reproduce
+// exactly between sessions — a second measurement of the same recipe got 4.6% and
+// 7.4% where this one got 2.9% and 5.6%, differing only in a 52 px column over the
+// dial and wheel rim. Mean, median and max hold to a rounding.) There is no tonal
+// range left for a dial face to separate from
+// its housing. That is a lighting fault rather than an albedo one — a real cabin
+// is lit by sky through the glasshouse, and at night by its own instruments.
+//
+// WHERE THE SAMPLE BOX IS, because a luminance with no box under it cannot be
+// checked, and these two notes have already carried two different means for one
+// measurement for exactly that reason. Every figure here and under fillSky is
+// Rec.709 luma on the sRGB bytes, 0-255, over a 260x160 px box CENTRED ON THE
+// PROJECTED POD ORIGIN — cabinLayout's podX/podY/podZ in meshes.js, which is
+// the main dial's own centre — in this frame:
+//
+//   kloft-bjornhalt at 0 m, golden hour, quality medium, resolution scale 1,
+//   1280x720, cockpit camera, HUD and shell hidden, and the default car (the
+//   Kestrel Vireo R2) standing on the brake and the handbrake.
+//
+// That lands the box at x 152..412, y 560..720, with the dial's 65 mm radius
+// spanning 85 px of it, and two captures within one session come back identical to
+// run. The 16.5 -> 36.6 this note used to contradict is the SAME pair of frames
+// read over a tighter 200x120 crop at (120, 560): both numbers were right, and
+// the pair was still wrong, because neither said which crop it meant.
 //
 // `fillDecay: 0` is the whole of the trick. Three's point falloff is
 // `1/pow(d, decay)` windowed by `(1 - (d/distance)^4)^2`, so at decay 0 the light
@@ -155,10 +173,11 @@ export const CABIN = Object.freeze({
   // more sky than the outside of the car does. At 0.90 of (hemisphere + ambient),
   // times the 0.86 the dial faces get out of N.L and the 0.93 the window leaves,
   // a dial takes about three quarters of the sky the roof takes — which is about
-  // what a glasshouse this size is worth. Measured on the instrument pod at the
-  // start of kloft-bjornhalt in golden hour, 1280x720, quality medium, the car
-  // stopped on the brake: mean luminance 16.5 -> 36.6, and the 5th-to-95th
-  // spread 9-26 -> 20-60.
+  // what a glasshouse this size is worth. Measured over the sample box the cabin
+  // note above defines, and in the frame it defines: lighting the pod takes it
+  // from a mean luminance of 14.2 to 30.2, and its 5th-to-95th from 8-26 to
+  // 10-57. Quote no luminance for this cabin without saying which box it is
+  // over — that is how this note and the one above came to disagree.
   fillSky: 0.90,
   fillKey: 0.055,
   // The instrument backlight: warm, and short enough that it reaches the dials,

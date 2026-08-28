@@ -3768,8 +3768,8 @@ function buildBinnacle(b, L, dark, grey, face, mark) {
   // Each gauge stands proud of the housing in -z, so the bezel reads as a bezel
   // and the paler face inside it as a dial. The cabin's albedo band is capped at
   // 0.20 linear, which is nowhere near enough tonal range for a face to separate
-  // from its housing under the light this cabin actually gets — a measured 13.7
-  // against 12.6. So the reading is carried by SHAPE: proud ticks round the rim
+  // from its housing under the light this cabin actually gets. So the reading is
+  // carried by SHAPE: proud ticks round the rim
   // and a needle standing off the face, both at the top of the band.
   const gauge = (gx, gy, r, sweep) => {
     pushCylinder(b, gx, gy, z + 0.024, r, r, 0.048, DIAL_SEGMENTS, "z", grey);
