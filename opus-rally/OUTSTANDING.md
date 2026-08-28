@@ -58,79 +58,88 @@ anyone re-measured them.
   and nothing sets `choice.reverse`. All 61 sampled elevations of `kloft-bjornhalt-rev`
   were bit-identical to `kloft-bjornhalt`.
 
+- **The ground beside the road was painted the road's own colour.** The churned-earth
+  apron measured its width from the CENTRELINE, so it reached 19-22 m past the edge —
+  the whole of what fills the frame beside the road at driving distances — and its
+  palette shaded 5% brighter than the grass it displaced. Value was the only cue left,
+  and a hillside tilted into the sun reverses value. Hue does the work now: at 60 m on
+  kloft-bjornhalt the ground was within 2 pixel levels of the road with no hue
+  difference at all, and is now 11 levels and -3.9%.
+- **The cabin is lit and the instruments read the car.** The pod goes from luminance
+  16.0 to 35.3 at golden hour; at night from 25.0 to 61.2 with the spread across it
+  rising from 1.7 to 22.4, which is the number that matters — a dial you cannot tell
+  from its bezel is not an instrument. The needles and shift lights now follow the car
+  rather than sitting at fixed sweeps. Done by LIGHTING it: the albedos were already
+  honest and capped at 0.20 linear by the material band test.
+- **There is a championship.** `career.js` and `stage.js` had disjoint stage universes,
+  so nothing could run over the roads the game ships. The calendar is built from
+  STAGE_BOOK now — five rallies, 24 runs, a power stage each — and a player can start
+  one, drive its events in order, carry a result between them and finish it. The title
+  screen shows an attract camera on a real stage instead of a dialog.
+- **"Shadows delete the surface they fall on" was never true.** The entry claimed a
+  fivefold texture collapse inside shadow — detail-sd 41.5 lit against 8.6 shadowed.
+  Measured paired, with the shadow gate on and off and the mask taken from the pixels
+  themselves, the detail ratios are 0.50, 0.70 and 0.95 across three distance bands.
+  It does not reproduce. Do not "fix" it.
 ## Open, in rough order of what it costs the player
 
-1. **Touch, the residue.** The old entry here said there was no on-screen wheel.
-   That was wrong — `touch.js` has shipped a full control set since 5225be9 and
-   `game.js` mounted it all along. What was broken was that the controls buried the
-   HUD (81% of the speed cluster in portrait, 63% in landscape) and ran the slider
-   out of thumb reach; both are fixed. Left: the HUD's own landscape rail overflows
-   a 360 px screen by 19 px, so at 740x360 the slider covers 2.0% of the speed
-   cluster and at 667x375 1.2% — cosmetic, and fixing it means restructuring that
-   rail. `tests/touch.test.mjs` models the HUD panel as 120x90 where the real
-   element is 152x220, so that unit test is weaker than its numbers look. And none
-   of it has run on a real device: contact size, palm rejection, iOS
-   `requestPermission`, safe-area insets and browser chrome are all untested, and
-   tilt is never exercised in a browser at all because headless Chrome emits no
-   `deviceorientation`.
-2. **You cannot see where the road ends.** Chase view, gravel, golden hour, ~35 m out:
-   road (178,149,103) Y=151.6; ground immediately right of the edge Y=139.1; ground
-   further right Y=163.4 — *brighter than the road*, with the same hue ratios to within
-   5%. On that side there is no value or colour cue at all, only a one-pixel dark cut
-   line. A rally game must let you see where the road goes; this is a playability
-   failure rather than a matter of taste.
-3. **The car reads as a toy at chase distance.** No shut lines, no boot, no bumper; the
+1. **The car reads as a toy at chase distance.** No shut lines, no boot, no bumper; the
    tail lights are four solid-red ellipses painted on a black panel with no housing or
    lens; the plate is a blank grey rounded rectangle; the wing posts interpenetrate the
    body; two C-pillar fins float clear of the roof; the roof livery is a stretched
-   smear.
-4. **The cabin is unlit and the instruments are dead.** Nothing in the cockpit exceeds
-   luminance 25/255 in daylight, which compresses the whole instrument — face, ticks,
-   surround — into 8.7 to 24.4. The albedos are honest and must not be inflated to fake
-   light; the fix is a cabin fill term and a night instrument backlight in `render.js`.
-   The needles are parked at fixed sweeps and nothing animates them, and the shift
-   lights never light: also `render.js`.
-5. **Weather has almost no signature beyond fog.** No snow accumulates on the car, no
+   smear. The cockpit and the glasshouse have had two passes now; the outside has had
+   none.
+2. **Weather has almost no signature beyond fog.** No snow accumulates on the car, no
    plume behind it at speed on snow, no wet-road specular streak, no spray, no wet
    bodywork. Rain streaks are identical in length, angle and opacity at every depth and
    draw over the car. And `setMudLevel` is exported, the car carries a `setMud` hook,
    and **nothing calls either** — the car finishes 12 km of gravel spotless.
-6. **Shadows delete the surface they fall on.** Golden hour gravel: lit road Y=104.4
-   with detail-sd 41.5; shadowed road Y=55.6 with detail-sd 8.6. A fivefold texture
-   collapse, so every cast shadow reads as a flat painted smear, and the hue goes
-   neutral (128,101,68 → 64,54,52). Worst at the start line, where tree shadows bar the
-   road.
-7. **Scenery reads as placeholder.** The trees are alpha cross-planes with visible seams
+3. **In a blizzard you still cannot see the road past about 50 m, and the lever is the
+   fog.** The road-edge pass fixed daylight by hue and gave snow a value cue, but a
+   0.596 albedo ratio between compacted road and clean verge is worth at most 6.5 pixel
+   levels at 20 m where the same ratio unfogged is worth 61. The fog in `weather.js`
+   keeps about a tenth of the contrast, and under two levels by 60 m. At some stations
+   the snow change even costs contrast (18.7 → 11.0 levels at one). Fixing this means
+   the fog curve, not the materials.
+4. **Scenery reads as placeholder.** The trees are alpha cross-planes with visible seams
    and one silhouette repeated across a stage; spectators are armless grey cylinders
    standing dead still; the barrier tape is a 1 px red line; telegraph wires are 1 px
    aliased black curves; distant terrain shows horizontal lattice banding at the LOD
    steps.
-8. **The front end is a settings dialog.** No car, no imagery, no motion, ~70% dead
-   black space, and the recce map is a white polyline in a small box. There is also no
-   career or championship entry point in this build, though `career.js` exists — it and
-   `stage.js` have disjoint stage universes.
-9. **`speedProfile` has no vertical-curvature term**, while `buildAirfield` derives
+5. **Touch, the residue.** The controls work and no longer bury the HUD, but the HUD's
+   own landscape rail overflows a 360 px screen by 19 px, so at 740x360 the slider
+   covers 2.0% of the speed cluster and at 667x375 1.2% — cosmetic, and fixing it means
+   restructuring that rail. `tests/touch.test.mjs` models the HUD panel as 120x90 where
+   the real element is 152x220, so that unit test is weaker than its numbers look. And
+   none of it has run on a real device: contact size, palm rejection, iOS
+   `requestPermission`, safe-area insets and browser chrome are all untested, and tilt is
+   never exercised in a browser at all because headless Chrome emits no
+   `deviceorientation`.
+6. **`speedProfile` has no vertical-curvature term**, while `buildAirfield` derives
    crest and jump strength *from* its output. The profile authorises a speed the crest
    then launches the car at.
-10. **`speedProfile`'s power pass models the engine as P/(m·v)** — no torque curve, no
-    gearing — so it claims 11.9 m/s is sustainable on a mud climb where the real
-    drivetrain stops.
-11. **The terrain skin interpenetrates the road ribbon by up to 0.81 m.** The lattice
-    step is chosen from the triangle budget alone, and a patch spanning the road is a
-    flat plane between vertices sitting on the verge. The fix is to conform lattice
-    vertices near the centreline down to the road surface, in `meshes.js`.
-12. **Scenery blows its own triangle budget** on the shipping stages — 272k on
-    `kloft-bjornhalt` and 314k on `northmarch-kestrel` against a declared 240k. Terrain
-    auto-coarsens to fit; nothing thins scenery.
-13. **`surfaceAt` decides `onRoad` from `|lateral|` alone**, so 50 m past the finish
+7. **`speedProfile`'s power pass models the engine as P/(m·v)** — no torque curve, no
+   gearing — so it claims 11.9 m/s is sustainable on a mud climb where the real
+   drivetrain stops.
+8. **The terrain skin interpenetrates the road ribbon by up to 0.81 m.** The lattice
+   step is chosen from the triangle budget alone, and a patch spanning the road is a
+   flat plane between vertices sitting on the verge. The fix is to conform lattice
+   vertices near the centreline down to the road surface, in `meshes.js`. **This got
+   more visible, not less:** the road-edge pass took the verge/terrain junction step
+   from 1.09x to 1.49x, so a poke-through now reads about five times more contrasty
+   where it happens.
+9. **Scenery blows its own triangle budget** on the shipping stages — 272k on
+   `kloft-bjornhalt` and 314k on `northmarch-kestrel` against a declared 240k. Terrain
+   auto-coarsens to fit; nothing thins scenery.
+10. **`surfaceAt` decides `onRoad` from `|lateral|` alone**, so 50 m past the finish
     line it still reports road grip on open terrain. One line, but `lateral` and
     `signedLateral` are contract fields that scenery placement, pacenotes and physics
     all read.
-14. **A 1.7 cm step survives at the road edge**, from the projection tie-breaking
+11. **A 1.7 cm step survives at the road edge**, from the projection tie-breaking
     between two adjacent segments whose tangent planes disagree through a tight corner
     on a steep grade. A wheel does not notice it. The proper fix interpolates the road
     frame along arc length, which changes the surface everywhere and wants its own pass.
-15. **Exterior residue from the cockpit pass.** The shell's shoulder stands up to 29 mm
+12. **Exterior residue from the cockpit pass.** The shell's shoulder stands up to 29 mm
     above the bonnet's outer edge near the nose — the wing rail sits proud of the bonnet
     — and the roof scoop's inner face reaches the extreme top corner of the cockpit
     frame through a headliner gap. Both are small and both are exterior work.
