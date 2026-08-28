@@ -3405,8 +3405,21 @@ test("the live instruments are driven from the car, off the handle meshes.js pub
     + `${(6200 / (8000 * 1.06)).toFixed(4)} and off game.js's limitRpm it would `
     + "be clamped at 1.0000");
   assert.ok(tacho < 1, "the tachometer has no headroom over the limiter");
-  assert.ok(Math.abs(speedo - 34.7 / CABIN.speedoFullScale) < 1e-6,
-    `the speedometer read ${speedo.toFixed(4)} at 34.7 m/s`);
+  // Against literals, not against CABIN.speedoFullScale. An assertion that
+  // divides by the same constant render.js divides by can only agree with
+  // itself, and this one did: set the full scale to 200 m/s — a 720 km/h dial,
+  // so every car reads a third of its real speed — and the test stayed green.
+  // 34.7 m/s is 124.9 km/h, half of the 250 km/h the speedometer is scaled to,
+  // so the needle belongs at exactly half sweep.
+  assert.ok(Math.abs(speedo - 0.5) < 1e-6,
+    `the speedometer read ${speedo.toFixed(4)} at 34.7 m/s, which is half of full scale`);
+  // And the scale itself, in the unit it was chosen in. Nothing in the model is
+  // drawn to 250: buildBinnacle gives the gauge a plain face and nine unlabelled
+  // ticks, so the full scale lives in CABIN and nowhere else, and a pin on the
+  // km/h is what stops it drifting to a rounder number in m/s.
+  assert.ok(Math.abs(CABIN.speedoFullScale * 3.6 - 250) < 0.25,
+    `full scale is ${(CABIN.speedoFullScale * 3.6).toFixed(1)} km/h, not the 250 km/h `
+    + "the speedometer is scaled to");
   assert.ok(Math.abs(boost - 0.42) < 1e-6, `the boost gauge read ${boost.toFixed(4)}`);
 
   // The shift bar, over the same rpm band hud.js lights its own twelve LEDs.
@@ -3446,6 +3459,16 @@ test("a car with no instrument handle costs nothing, and a stale one is dropped"
   // publish one — a different class, or the placeholder body the renderer falls
   // back to when the mesh library throws. Kept, it would be written into a group
   // that has already been disposed.
+  //
+  // Two sites in render.js release it and either one alone still delivers the
+  // property, so this goes red only when BOTH are gone. Measured: make the
+  // assignment in buildCar() conditional and the test stays green; drop
+  // `state.instruments = null` from clearStage() and it stays green; do both and
+  // it fails. That is redundancy in render.js rather than slack here, and there
+  // is no single-site kill to be had — buildStage() clears before it rebuilds,
+  // and update() returns through idleFrame() while no stage is built, so with
+  // either site present the other is unreachable. A test that failed on one of
+  // them would be asserting which line does the clearing, not that it happens.
   const { lib, calls } = instrumentedCarLib([true, false]);
   const { api: api2 } = makeRenderer({ webgl2: true, meshes: lib });
   api2.buildStage(stage, { car, weather });
