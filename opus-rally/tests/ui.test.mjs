@@ -573,6 +573,104 @@ group("gamepad maths", () => {
 });
 
 
+group("the title screen is a door, not a dialog", () => {
+  // The championship entry point used to be hidden behind `hidden: !has`, so a
+  // player with no season had no button that could start one — and "Quick stage"
+  // was hidden the other way round the moment a season existed. Between them a
+  // first-run player could not reach a championship and a championship player
+  // could not reach a single stage.
+  const menuOf = (model) => (model.sections ?? []).find((s) => s.id === "t-menu")?.items ?? [];
+  // By ITEM, not by action: with "Quick stage" hidden the primary button used to
+  // borrow the quickStage action, so a scan of actions alone reported a menu that
+  // offered both when it offered one.
+  const idsOf = (model) => menuOf(model).map((i) => i.id);
+  const actionsOf = (model) => menuOf(model).map((i) => i.action);
+
+  const first = actionsOf(UI.buildTitleModel({}));
+  ok(first.includes("newSeason"), "first run: a championship can be started", first.join(","));
+  ok(first.includes("quickStage"), "first run: a single stage can be started", first.join(","));
+
+  const running = actionsOf(UI.buildTitleModel(DATA));
+  ok(running.includes("continue"), "with a season: it can be resumed", running.join(","));
+  ok(running.includes("newSeason"), "with a season: a new one can be started", running.join(","));
+  ok(running.includes("quickStage"), "with a season: a single stage is still reachable", running.join(","));
+  for (const [label, model] of [["first run", UI.buildTitleModel({})], ["with a season", UI.buildTitleModel(DATA)]]) {
+    const quick = menuOf(model).find((i) => i.id === "t-quick");
+    ok(quick && !quick.disabled, label + ": Quick stage is its own menu item", idsOf(model).join(","));
+    const champ = menuOf(model).find((i) => i.action === "newSeason" || i.action === "continue");
+    ok(champ && !champ.disabled, label + ": the championship is its own menu item", idsOf(model).join(","));
+  }
+
+  // Every menu item is still a button with an action, and the focus ring still
+  // walks them all — a hidden item that leaves a gap in focusOrder is the same
+  // bug wearing a different hat.
+  for (const model of [UI.buildTitleModel({}), UI.buildTitleModel(DATA)]) {
+    const menu = (model.sections ?? []).find((s) => s.id === "t-menu");
+    eq(UI.focusOrder(model).length, menu.items.length, "title: every menu item is focusable");
+    eq(UI.validateModel(model).length, 0, "title: model validates");
+  }
+});
+
+group("the title screen lets the road through", () => {
+  // game.js keeps a stage in the renderer behind the title and hands it to the
+  // autopilot. That only reads as a rally game if the shell is not painting an
+  // opaque plate over it, which is what .or-ui's own background does on every
+  // other screen.
+  const css = UI.styleText();
+  const rules = [...css.matchAll(/\.or-ui\[data-or-active="title"\]\{([^}]*)\}/g)].map((m) => m[1]);
+  ok(rules.length > 0, "there is a title-screen background rule at all");
+  const alphas = [];
+  for (const body of rules) {
+    for (const m of body.matchAll(/rgba\([^)]*?,\s*([0-9.]+)\s*\)/g)) alphas.push(Number(m[1]));
+  }
+  ok(alphas.length >= 3, "the title scrim is a gradient, not a flat fill", alphas.length);
+  ok(alphas.every((a) => a < 1), "no stop in the title scrim is opaque", alphas.join(","));
+  // …and it must be dark enough somewhere that the topbar type has a ground.
+  ok(Math.max(...alphas) > 0.8, "the scrim is heavy where the text is", Math.max(...alphas));
+  ok(Math.min(...alphas) < 0.6, "the scrim is light where the picture is", Math.min(...alphas));
+  // The rule has to out-specify .or-ui's own background or it never applies.
+  ok(css.indexOf('.or-ui[data-or-active="title"]{background:') > css.indexOf(".or-ui{position:absolute"),
+    "the title rule comes after the base rule as well as out-specifying it");
+});
+
+group("results and championship screens carry the championship's own state", () => {
+  // A stage that has been submitted to a championship is on the timing sheet.
+  const plain = UI.buildResultsModel({ results: { stageName: "A", totalMs: 1000, position: 3, splits: [] } });
+  const career = UI.buildResultsModel({ results: { stageName: "A", totalMs: 1000, position: 3, splits: [] }, noRetry: true });
+  const retryOf = (m) => m.sections.flatMap((s) => s.items ?? []).find((i) => i.action === "restartStage");
+  ok(retryOf(plain) && !retryOf(plain).disabled, "a quick stage can be retried");
+  ok(retryOf(career) && retryOf(career).disabled === true, "a championship stage cannot");
+
+  // The championship footer used to name the EVENT, which told a player nothing
+  // about the road the button was about to put them on.
+  const champ = UI.buildChampionshipModel({
+    championship: {
+      name: "Clubman Cup", round: 2,
+      events: [
+        { id: "e1", name: "Rally One", country: "Aa", surface: [1], status: "done", position: 2 },
+        { id: "e2", name: "Rally Two", country: "Bb", surface: [0], status: "next" },
+      ],
+      standings: [{ name: "You", team: "T", points: 18, isPlayer: true }],
+    },
+    nextStage: { name: "Havnvik Point", surface: [0], conditions: "Fog" },
+  });
+  const footer = champ.sections.find((s) => s.id === "c-next");
+  const cell = (id) => footer.items.find((i) => i.id === id);
+  eq(cell("c-next-name").value, "Havnvik Point", "the footer names the stage, not the event");
+  eq(cell("c-next-wx").value, "Fog", "the footer names the conditions it will be driven in");
+  const go = footer.items.find((i) => i.action === "openStage");
+  ok(go && !go.disabled && go.value === "e2", "the go button targets the next event");
+  eq(UI.validateModel(champ).length, 0, "championship: model validates");
+
+  // A season result is three steps on the podium and the whole field in the table.
+  const field = Array.from({ length: 8 }, (_, i) => ({ position: i + 1, name: "D" + i, team: "T", points: 40 - i * 3, isPlayer: i === 1 }));
+  const season = UI.buildSeasonModel({ season: { title: "Final", podium: field.slice(0, 3), standings: field } });
+  const steps = season.sections.find((s) => s.id === "n-podium").items;
+  const table = season.sections.find((s) => s.id === "n-table").items;
+  eq(steps.length, 3, "three steps on the podium");
+  eq(table.length, 8, "the whole field in the final standings");
+});
+
 if (failures.length) {
   console.error(`FAIL  ${failures.length} of ${checks} checks failed`);
   for (const f of failures) console.error("  - " + f);

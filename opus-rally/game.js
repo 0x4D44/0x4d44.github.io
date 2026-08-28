@@ -23,6 +23,9 @@ const MAX_STEPS_PER_FRAME = Math.ceil(MAX_FRAME_DT / PHYSICS_DT);
 export const GameState = Object.freeze({
   BOOT: "boot",
   MENU: "menu",
+  // The title screen runs the game behind itself: a stage in the renderer with
+  // the pure-pursuit driver at the wheel. It is a racing state with no clock.
+  ATTRACT: "attract",
   LOADING: "loading",
   COUNTDOWN: "countdown",
   RACING: "racing",
@@ -101,17 +104,14 @@ export async function startGame(opts) {
   // ---- the menu's content and its wiring
   //
   // ui.js seeds its own state from demoData(): an invented "Opus Trophy", five
-  // fictional events and an S-shaped recce map. game.js passed the real career,
-  // car list and stage book as OPTIONS, and the shell reads none of those — its
-  // screens read `data`. So the menu has always been a mockup of a different
-  // game. Worse, every button emitted an action with no host hook behind it, and
-  // emit() drops an unhooked action silently: no error, no state change. Only
-  // "How to drive" did anything, because `tutorial` is one of the few actions
-  // ui.js resolves locally without asking the host.
+  // fictional events and an S-shaped recce map. The shell reads its screens out
+  // of `data` and reads none of the options it is handed, so everything below
+  // exists to replace those fixtures with what the game actually holds.
   //
-  // No gate caught it because every automated check — the browser test, the
-  // drivability oracle, the screenshot tool — starts a stage through
-  // window.__opusRally.drive(), and never presses a button.
+  // Every button is an action string and emit() drops an action with no host
+  // hook SILENTLY — no error, no state change. That is how the entire main menu
+  // came to be dead except "How to drive". validate-static.mjs now checks that
+  // every action has a hook and browser.test.mjs clicks its way to a stage.
 
   const STAGE_CARDS = stageMod.STAGE_BOOK.map((d) => ({
     id: d.id,
@@ -122,9 +122,47 @@ export async function startGame(opts) {
     label: d.surfaceLabel,
   }));
 
+  // ui.js's car screen wants classId, drivetrain, powerKw, gearCount, topSpeedKph
+  // and a torque curve. physics.js calls those class, drive, engine.torque and
+  // gearbox.ratios, and carries neither power nor top speed at all. Handing over
+  // the raw specs left `c.classId === activeClass` false for every car, so the
+  // Garage filtered its own list away: buildCarModel() over physics.CARS returns
+  // k-cars with 0 items and an empty spec table, over these cards it returns 2
+  // for the junior class and seven populated spec rows.
+  const CAR_CARDS = physics.CARS.map((spec) => {
+    const curve = spec.engine?.torque ?? [];
+    let peakKw = 0;
+    for (const [rpm, nm] of curve) peakKw = Math.max(peakKw, uiMod.powerKw(nm, rpm));
+    const ratios = spec.gearbox?.ratios ?? [];
+    const topGear = ratios[ratios.length - 1] ?? 1;
+    // Geared top speed at the limiter, which is the only top speed the spec
+    // actually implies — there is no drag solve here and none is claimed.
+    const topSpeedKph = (spec.engine.limiterRpm * Math.PI * 2 / 60)
+      / (topGear * spec.gearbox.final) * spec.wheelRadius * 3.6;
+    return {
+      id: spec.id,
+      classId: spec.class,
+      name: spec.name,
+      maker: spec.team,
+      drivetrain: String(spec.drive ?? "").toLowerCase(),
+      mass: spec.mass,
+      powerKw: peakKw,
+      gearCount: ratios.length,
+      topSpeedKph,
+      torqueCurve: curve.map(([rpm, nm]) => [rpm, nm]),
+      blurb: spec.blurb ?? "",
+    };
+  });
+
+  // "quick" drives whatever the stage list has selected; "career" drives whatever
+  // the championship's cursor is on. The mode is what makes one Start button, one
+  // stage screen and one results screen serve both.
+  let menuMode = "quick";
   let menuStageId = stageMod.STAGE_BOOK[0].id;
   let menuStage = null;
   let menuCarId = physics.CARS[0].id;
+  let careerPendingService = false;
+  let careerPendingSeason = null;
 
   // The recce map on the menu is the generated stage, not a sketch of one: the
   // same stageFromBook() call beginStage makes, so the shape you study is the
@@ -135,13 +173,20 @@ export async function startGame(opts) {
     return menuStage;
   }
 
+  // Null unless a championship is running AND the menu is in career mode, so the
+  // quick-stage screens never accidentally read the season's cursor.
+  function careerStage() {
+    if (menuMode !== "career") return null;
+    return career.currentStage?.() ?? null;
+  }
+
   // presetById throws on an unknown id, which is right for a programming error
   // and wrong on a menu: one mistyped datum in the stage book should cost that
   // stage its weather line, not take the menu down.
-  function weatherCard(def) {
+  function weatherCard(presetId, timeOfDay) {
     let preset = null;
     try {
-      preset = weatherMod.presetById(def.weather);
+      preset = weatherMod.presetById(presetId);
     } catch {
       preset = null;
     }
@@ -150,26 +195,42 @@ export async function startGame(opts) {
       temperature: preset ? preset.temperature : 12,
       wetness: preset ? preset.roadWetness : 0,
       wind: preset ? preset.windSpeed : 0,
-      timeOfDay: def.timeOfDay ?? "—",
+      timeOfDay: timeOfDay ?? "—",
     };
   }
 
   function menuData(over) {
-    const def = stageMod.STAGE_BOOK.find((d) => d.id === menuStageId) ?? stageMod.STAGE_BOOK[0];
+    const ctx = careerStage();
+    const bookId = ctx?.stage?.book ?? menuStageId;
+    const def = stageMod.STAGE_BOOK.find((d) => d.id === bookId) ?? stageMod.STAGE_BOOK[0];
+    const champ = career.championship?.() ?? null;
     return {
-      // Null on purpose: a season the game cannot build is not a season. See the
-      // note on the title screen's primary button in ui.js.
-      championship: null,
+      championship: champ,
       stage: menuStageFor(def.id),
       stages: STAGE_CARDS,
-      cars: physics.CARS,
+      cars: CAR_CARDS,
       classes: physics.CAR_CLASSES,
       selectedCarId: menuCarId,
-      weather: weatherCard(def),
-      personalBest: null,
-      rivals: [],
+      profile: { name: career.state?.profile?.name, team: career.state?.profile?.team },
+      weather: ctx
+        ? { ...weatherCard(ctx.conditions.preset, ctx.stage.night ? "Night" : def.timeOfDay), name: ctx.conditions.name }
+        : weatherCard(def.weather, def.timeOfDay),
+      // In career mode the stage card is the championship's: its own name, the
+      // field you are about to be measured against, and your record on it.
+      careerStage: ctx ? { ...ctx, book: ctx.stage.book } : null,
+      nextStage: ctx ? { name: ctx.stage.name, surface: [ctx.stage.surface], conditions: ctx.conditions.name, round: ctx.round, rounds: ctx.rounds } : null,
+      personalBest: ctx ? (ctx.recordMs ?? null) : (career.bestAnyFor?.(def.id)?.timeMs ?? null),
+      rivals: ctx ? careerRivals(ctx) : [],
       ...(over || {}),
     };
+  }
+
+  // The five names the stage screen puts a time against. Preview times before the
+  // stage is driven, real ones after.
+  function careerRivals(ctx) {
+    const rows = career.leaderboard?.(ctx.stage.id) ?? [];
+    return rows.filter((r) => r.status === "ok" && !r.isPlayer).slice(0, 5)
+      .map((r) => ({ name: r.name, timeMs: r.totalMs }));
   }
 
   // Menu actions carry either a bare id or an object holding one.
@@ -177,7 +238,17 @@ export async function startGame(opts) {
 
   function showStageScreen(stageId) {
     const id = idOf(stageId);
-    if (id && stageMod.STAGE_BOOK.some((d) => d.id === id)) menuStageId = id;
+    // A book id means the player picked a road off the stage list, which is a
+    // quick stage by definition. An event id (or nothing) leaves the mode alone,
+    // so the championship's "Go to stage" lands on the championship's stage.
+    if (id && stageMod.STAGE_BOOK.some((d) => d.id === id)) {
+      menuStageId = id;
+      menuMode = "quick";
+    }
+    // The service park is not optional. Escape from the results screen goes to
+    // the title, so without this a player could walk round the one moment in a
+    // championship where the damage they carry gets fixed.
+    if (menuMode === "career" && careerPendingService) { careerAdvance(); return; }
     screen("stage", menuData());
   }
 
@@ -185,10 +256,83 @@ export async function startGame(opts) {
     screen("car", menuData());
   }
 
+  function showChampionship() {
+    menuMode = "career";
+    if (!career.hasSeason?.()) career.newSeason?.();
+    screen("championship", menuData());
+  }
+
+  function startSeason() {
+    menuMode = "career";
+    career.newSeason?.();
+    careerPendingService = false;
+    careerPendingSeason = null;
+    screen("championship", menuData());
+  }
+
+  // career.serviceOptions() speaks in component health and minutes; the service
+  // screen speaks in damage rows and a repair budget.
+  function serviceData() {
+    const opt = career.serviceOptions?.();
+    if (!opt) return { damage: [], repairBudgetMin: 0, repairChoices: [] };
+    return {
+      damage: opt.items.filter((i) => i.health < 1).map((i) => ({
+        id: i.id,
+        part: i.name,
+        severity: 1 - i.health,
+        repairMin: Math.max(1, Math.round(i.minutes)),
+        effect: i.critical ? "Critical — it will not see the end of the leg." : "Worn. It will run, and it will cost you time.",
+      })),
+      repairBudgetMin: opt.budgetMinutes,
+      repairChoices: opt.items.filter((i) => i.critical).map((i) => i.id),
+    };
+  }
+
+  // What "Next stage" means depends on where the championship now is: the service
+  // park between legs, the podium at the end of a season, the next stage card
+  // otherwise.
+  function careerAdvance() {
+    if (careerPendingService) {
+      careerPendingService = false;
+      screen("service", serviceData());
+      return;
+    }
+    if (careerPendingSeason) {
+      const summary = careerPendingSeason;
+      careerPendingSeason = null;
+      const table = summary.standings ?? [];
+      screen("season", {
+        season: {
+          title: `${career.championship?.()?.name ?? "Championship"} — final`,
+          podium: table.slice(0, 3).map((r) => ({
+            position: r.position, name: r.name, team: r.team, points: r.points, isPlayer: r.isPlayer,
+          })),
+          standings: table.map((r) => ({
+            position: r.position, name: r.name, team: r.team, points: r.points, isPlayer: r.isPlayer,
+          })),
+        },
+      });
+      return;
+    }
+    menuMode = "career";
+    if (career.currentStage?.()) screen("stage", menuData());
+    else screen("championship", menuData());
+  }
+
   // The shell's Start button sends the stage id as a bare string; the pause and
   // results screens send nothing at all. beginStage wants { stageId, carId }, so
   // the difference is flattened here rather than inside it.
   function menuChoice(value) {
+    const ctx = careerStage();
+    if (ctx) {
+      return {
+        stageId: ctx.stage.book,
+        carId: menuCarId,
+        weather: ctx.conditions.preset,
+        career: true,
+        careerStageId: ctx.stage.id,
+      };
+    }
     const id = idOf(value);
     return {
       stageId: (id && stageMod.STAGE_BOOK.some((d) => d.id === id)) ? id : menuStageId,
@@ -198,14 +342,14 @@ export async function startGame(opts) {
 
   const ui = uiMod.createUi(opts.uiRoot, {
     career,
-    cars: physics.CARS,
+    cars: CAR_CARDS,
     carClasses: physics.CAR_CLASSES,
     stageBook: stageMod.STAGE_BOOK,
     settings,
     data: menuData(),
     onStart: (choice) => beginStage(menuChoice(choice)),
-    onQuickStage: () => showStageScreen(),
-    onTimeTrial: () => showStageScreen(),
+    onQuickStage: () => { menuMode = "quick"; showStageScreen(); },
+    onTimeTrial: () => { menuMode = "quick"; showStageScreen(); },
     onSelectStage: (value) => showStageScreen(value),
     onGarage: () => showCarScreen(),
     onOpenCar: () => showCarScreen(),
@@ -214,29 +358,32 @@ export async function startGame(opts) {
     onRestartStage: () => beginStage(menuChoice(game.lastChoice)),
     onRepeatNote: () => game.noteRunner?.repeat?.(),
     onNextStage: () => {
+      if (menuMode === "career") { careerAdvance(); return; }
       const book = stageMod.STAGE_BOOK;
       const at = book.findIndex((d) => d.id === menuStageId);
       menuStageId = book[(at < 0 ? 0 : at + 1) % book.length].id;
       showStageScreen();
     },
-    onConfirmRepairs: (plan) => { career.applyService?.(plan); toMenu(); },
+    // The chosen repairs live in the shell's own state — the button carries no
+    // value — so the third argument, the ui api, is the only way to read them.
+    // Without it applyService got an empty list and the service park was theatre.
+    onConfirmRepairs: (_value, _action, api) => {
+      career.applyService?.(api?.getData?.().repairChoices ?? []);
+      careerAdvance();
+    },
+    onRepair: () => {},
     // Replay PLAYBACK does not exist yet: game.js records a run and builds a
     // ghost from it, but nothing plays one back through the renderer. The
     // results screen keeps the button disabled via hasReplay:false, so this hook
     // is only here so the wiring check can see the action is accounted for — if
     // it ever fires, returning to the menu beats doing nothing silently.
     onReplay: () => toMenu(),
-    // The championship is not connected, and this is the honest reason rather
-    // than a missing hook: career.js schedules its own rallies (kal-hovden,
-    // van-costiera, and thirty more) and stage.js can only build the twelve in
-    // STAGE_BOOK. Nothing maps one universe onto the other, so a season would
-    // schedule stages the renderer cannot make. The title hides these buttons
-    // while `championship` is null; the hooks exist so a stray press lands
-    // somewhere sane instead of nowhere.
-    onContinue: () => toMenu(),
-    onNewSeason: () => toMenu(),
-    onChampionship: () => toMenu(),
-    onSelectEvent: () => toMenu(),
+    onContinue: () => showChampionship(),
+    onNewSeason: () => startSeason(),
+    onChampionship: () => showChampionship(),
+    // The season is driven in order, so an event chip is a way to look at the
+    // calendar rather than a way to jump about in it.
+    onSelectEvent: () => showChampionship(),
     onSelectCar: (value, action) => {
       const id = idOf(value);
       if (id && physics.CARS.some((c) => c.id === id)) menuCarId = id;
@@ -245,7 +392,6 @@ export async function startGame(opts) {
       else showCarScreen();
     },
     onSettingsChange: (patch) => applySettings(patch),
-    onRepair: (plan) => career.applyService?.(plan),
     onQuit: () => toMenu(),
     onResume: () => setPaused(false),
     onRestart: () => beginStage(game.lastChoice),
@@ -254,8 +400,15 @@ export async function startGame(opts) {
   // ui.js draws a full-screen menu surface and knows nothing about racing, so
   // "show the road" is not one of its screens — it is the absence of one. This
   // adapter is the only place that translates the game's states into its.
+  // Which shell screen is up, or null for the road. The attract build lands a
+  // second or so after boot and used to repaint the title unconditionally, which
+  // threw a player who had already pressed "New championship" straight back out
+  // of it.
+  let menuScreen = null;
+
   function screen(name, data) {
     const el = ui.element;
+    menuScreen = name;
     // The driving controls belong to the road, not to the menus: leaving them up
     // over a pause screen puts a throttle pedal under the Resume button.
     touch?.setVisible?.(name === null);
@@ -399,11 +552,31 @@ export async function startGame(opts) {
     });
   }
 
-  async function beginStage(choice) {
+  // Stage builds are serialised through one promise chain. The attract stage and
+  // a harness drive() arriving in the same frame would otherwise call
+  // renderer.buildStage twice over on the same renderer; the token is what lets a
+  // real stage cancel an attract build that has not started yet.
+  let stageChain = Promise.resolve();
+  let stageToken = 0;
+
+  function queueStage(fn) {
+    const run = () => fn();
+    stageChain = stageChain.then(run, run);
+    return stageChain;
+  }
+
+  function beginStage(choice) {
+    stageToken += 1;
+    return queueStage(() => buildStage(choice));
+  }
+
+  async function buildStage(choice) {
     game.lastChoice = choice;
-    game.state = GameState.LOADING;
-    screen("loading", { stage: choice.stageId });
-    await nextFrame();
+    if (!choice.attract) {
+      game.state = GameState.LOADING;
+      screen("loading", { stage: choice.stageId });
+      await nextFrame();
+    }
 
     const def = stageMod.STAGE_BOOK.find((s) => s.id === choice.stageId)
       ?? stageMod.STAGE_BOOK[0];
@@ -473,22 +646,98 @@ export async function startGame(opts) {
     // the line — which silently corrupted a launch measurement before anyone
     // noticed the car was not being driven by the thing under test.
     game.autoDrive = false;
+    game.careerRun = !!choice.career;
+    game.careerStageId = choice.careerStageId ?? null;
     autoState.stuck = 0;
     autoState.bestS = 0;
     autoState.recovering = 0;
     input.clearTouch();
 
+    if (choice.attract) {
+      enterAttract();
+      // Only repaint the screen the backdrop is FOR. A player who pressed a menu
+      // button while the road was building is on another screen by now.
+      if (menuScreen === "title") screen("title", titleData());
+      return;
+    }
+
+    showHud(true);
+    audio.setMuted?.(false);
     screen(null);
     hud.countdown?.(5);
     game.state = GameState.COUNTDOWN;
   }
 
+  // The title screen's backdrop. It is not a separate rendering path: it is the
+  // stage that is already in the renderer, driven by the same pure-pursuit
+  // autopilot the screenshot tool uses, with the clock and the HUD switched off.
+  //
+  // The book's first stage, because that is also the one the menu opens on: the
+  // road behind the title is then the road the recce map on it is drawing.
+  const ATTRACT_STAGE = stageMod.STAGE_BOOK[0].id;
+  const ATTRACT_PACE = 0.60;
+  const attractTimers = new Set();
+
+  function enterAttract() {
+    if (!game.stage) return;
+    game.state = GameState.ATTRACT;
+    game.stageTimeMs = 0;
+    game.careerRun = false;
+    game.autoDrive = true;
+    game.autoPace = ATTRACT_PACE;
+    autoState.stuck = 0;
+    autoState.recovering = 0;
+    showHud(false);
+    audio.setMuted?.(true);
+    hud.countdown?.(null);
+    // Chase, not "tv". The trackside rig is a fixed roadside anchor that never
+    // re-cut here: measured 394.9 m from the car after 80 m of driving, which is
+    // a photograph of an empty hillside. Chase held 8.7 m.
+    renderer.setCamera?.("chase");
+    placeCarAt(60, 65);
+  }
+
+  // Deliberately late. A harness that boots the page and immediately calls
+  // drive() should not have to wait behind a stage build it never asked for, and
+  // a player reading the title for a second before the road arrives is fine.
+  function startAttract() {
+    const token = ++stageToken;
+    const t = setTimeout(() => {
+      if (token !== stageToken || game.state !== GameState.MENU) return;
+      queueStage(async () => {
+        if (token !== stageToken || game.state !== GameState.MENU) return;
+        try {
+          await buildStage({ stageId: ATTRACT_STAGE, carId: menuCarId, attract: true });
+        } catch (err) {
+          // A title screen with no road behind it is a worse title screen, not a
+          // broken game.
+          console.warn("attract stage unavailable:", err?.message ?? err);
+        }
+      });
+    }, 1200);
+    attractTimers.add(t);
+  }
+
+  function showHud(on) {
+    if (opts.hudRoot) opts.hudRoot.style.display = on ? "" : "none";
+  }
+
   function toMenu() {
     game.state = GameState.MENU;
-    renderer.clearStage?.();
-    screen("title", menuData({
+    showHud(false);
+    audio.setMuted?.(true);
+    screen("title", titleData());
+    // The stage in the renderer is not cleared: it becomes the title screen's
+    // backdrop. Rebuilding a 12 km road every time someone presses Back would
+    // cost seconds for a picture the renderer is already holding.
+    if (game.stage) enterAttract();
+    else startAttract();
+  }
+
+  function titleData() {
+    return menuData({
       rallyCount: new Set(stageMod.STAGE_BOOK.map((s) => s.rally ?? s.id.split("-")[0])).size,
-    }));
+    });
   }
 
   function togglePause() {
@@ -631,6 +880,10 @@ export async function startGame(opts) {
       stepPhysics(car, inp, world, dt);
       game.recorder?.sample(game.stageTimeMs / 1000, inp, car);
       damageMod.stepDamage(game.damage, car, dt);
+    } else if (game.state === GameState.ATTRACT) {
+      // No clock, no splits, no finish line, and no damage either: the title
+      // screen must not be able to retire its own car.
+      stepPhysics(car, inp, world, dt);
     }
 
     const proj = world.project(car.pos.x, car.pos.z, game.lastS ?? 0, projScratch);
@@ -642,6 +895,14 @@ export async function startGame(opts) {
       checkSplits(proj.s, stage);
       if (proj.s >= stage.finish.s) finishStage();
       if (game.damage.retired) retire(game.damage.retiredReason);
+    } else if (game.state === GameState.ATTRACT) {
+      // Send it round again rather than off the end of the road, and rescue it
+      // if the autopilot beaches the car where nobody is watching.
+      if (proj.s >= stage.length - 90 || autoState.stuck > 8) {
+        autoState.stuck = 0;
+        autoState.bestS = 0;
+        placeCarAt(60, 65);
+      }
     }
   }
 
@@ -672,24 +933,137 @@ export async function startGame(opts) {
 
   function finishStage() {
     game.state = GameState.FINISHED;
+    showHud(true);
+    audio.setMuted?.(false);
+    if (game.careerRun) { finishCareerStage(false, ""); return; }
+    const report = damageMod.damageReport(game.damage);
     const result = career.recordStage?.({
       stageId: game.stage.id,
       carId: game.car.spec.id,
       weatherKey: game.weather?.presetId ?? "clear",
       timeMs: game.stageTimeMs,
       splits: game.splitTimes.slice(),
-      damage: damageMod.damageReport(game.damage),
+      damage: report,
       run: game.recorder?.finish?.(),
     }) ?? { timeMs: game.stageTimeMs };
     game.lastResult = result;
     hud.finish?.(result);
-    audio.setMuted?.(false);
-    screen("results", { ...result, hasNextStage: true, hasReplay: false });
+    // ui.js reads the results screen out of `data.results`. Spreading the record
+    // in at the top level left that key holding demoData()'s fixture, so every
+    // finish showed a second place on "Kalder Pass" whatever had just happened.
+    screen("results", {
+      results: {
+        stageName: game.stage.name,
+        totalMs: game.stageTimeMs,
+        position: null,
+        penaltiesMs: 0,
+        // damageReport() rows carry `health` and a `damaged` flag; they have no
+        // `severity`, so a threshold on one would have been a condition that can
+        // never fire and a run that is always clean.
+        cleanRun: !report.some((r) => r.damaged),
+        splits: splitRows(),
+      },
+      hasNextStage: true,
+      hasReplay: false,
+      noRetry: false,
+    });
+  }
+
+  // career.js models damage as seven serviceable components; damage.js models it
+  // as twenty-five parts. A component is as healthy as its worst part.
+  const CAREER_COMPONENTS = Object.freeze({
+    engine: ["engine", "turbo", "exhaust"],
+    gearbox: ["gearbox", "clutch", "driveshaft"],
+    suspension: ["suspFL", "suspFR", "suspRL", "suspRR"],
+    steering: ["steering"],
+    cooling: ["radiator"],
+    electrics: ["headlights"],
+    bodywork: ["bodyFront", "bodyRear", "bodyLeft", "bodyRight", "bodyRoof", "windscreen"],
+  });
+
+  function componentHealth() {
+    const out = {};
+    for (const id of Object.keys(CAREER_COMPONENTS)) {
+      let worst = 1;
+      for (const key of CAREER_COMPONENTS[id]) {
+        const h = damageMod.componentHealth?.(game.damage, key);
+        if (Number.isFinite(h)) worst = Math.min(worst, h);
+      }
+      out[id] = worst;
+    }
+    return out;
+  }
+
+  // The intermediate splits plus the finish, each against this car's best here
+  // in these conditions where there is one.
+  function splitRows() {
+    const rows = game.splitTimes.map((t, i) => ({
+      label: `Split ${i + 1}`,
+      timeMs: t,
+      deltaMs: game.best?.bestSplits?.[i] == null ? null : t - game.best.bestSplits[i],
+    }));
+    rows.push({
+      label: "Finish",
+      timeMs: game.stageTimeMs,
+      deltaMs: game.best?.timeMs == null ? null : game.stageTimeMs - game.best.timeMs,
+    });
+    return rows;
+  }
+
+  function finishCareerStage(retired, reason) {
+    const res = career.submitStage?.({
+      timeMs: game.stageTimeMs,
+      splits: game.splitTimes.slice(),
+      retired,
+      reason,
+      damage: componentHealth(),
+      run: game.recorder?.finish?.(),
+    });
+    game.lastResult = res;
+    if (!res) { toMenu(); return; }
+    hud.finish?.({ timeMs: game.stageTimeMs });
+    careerPendingService = !!res.service;
+    careerPendingSeason = res.summary?.season ?? null;
+    const me = res.entries.find((e) => e.isPlayer);
+    screen("results", {
+      results: {
+        stageName: `${res.stage.name} — ${res.event.name}`,
+        totalMs: me ? me.totalMs : game.stageTimeMs,
+        position: res.stagePosition,
+        penaltiesMs: me ? me.penaltyMs : 0,
+        cleanRun: !retired && !(me && me.penaltyMs > 0),
+        splits: splitRows(),
+      },
+      // Always true in a championship: there is always somewhere to go next,
+      // even if that somewhere is the service park or the podium.
+      hasNextStage: true,
+      hasReplay: false,
+      // The stage is on the timing sheet now. Driving it again would be a
+      // second time for a stage that already has one.
+      noRetry: true,
+    });
   }
 
   function retire(reason) {
     game.state = GameState.RETIRED;
-    screen("results", { retired: true, reason, timeMs: game.stageTimeMs, hasNextStage: true, hasReplay: false });
+    showHud(true);
+    audio.setMuted?.(false);
+    if (game.careerRun) { finishCareerStage(true, reason); return; }
+    screen("results", {
+      results: {
+        stageName: game.stage?.name ?? "Stage",
+        totalMs: game.stageTimeMs,
+        position: null,
+        penaltiesMs: 0,
+        cleanRun: false,
+        splits: splitRows(),
+      },
+      retired: true,
+      reason,
+      hasNextStage: true,
+      hasReplay: false,
+      noRetry: false,
+    });
   }
 
   function buildFrame() {
@@ -727,6 +1101,24 @@ export async function startGame(opts) {
     return frame;
   }
 
+  // Teleports to an arc length and sets a speed along the road: how the
+  // screenshot tool reaches a jump without a lucky lap, and how the attract
+  // backdrop sends its car round again at the end of the stage.
+  function placeCarAt(distance, speedKph = 0) {
+    if (!game.stage || !game.car) return false;
+    const st = game.stage;
+    const i = clamp(st.world?.sampleAt?.(distance) ?? game.world.sampleAt(distance), 0, st.count - 1);
+    const yaw = Math.atan2(st.tx[i], st.tz[i]);
+    physics.resetCar(game.car, st.x[i], st.y[i] + 0.35, st.z[i], yaw);
+    const v = speedKph / 3.6;
+    game.car.vel.x = st.tx[i] * v;
+    game.car.vel.y = 0;
+    game.car.vel.z = st.tz[i] * v;
+    game.lastS = distance;
+    game.stageTimeMs = 0;
+    return true;
+  }
+
   let accumulator = 0;
   let last = performance.now();
   let rafId = 0;
@@ -739,6 +1131,7 @@ export async function startGame(opts) {
 
     const running = game.state === GameState.RACING
       || game.state === GameState.COUNTDOWN
+      || game.state === GameState.ATTRACT
       || game.state === GameState.FINISHED;
 
     if (running) {
@@ -766,7 +1159,9 @@ export async function startGame(opts) {
         surface: surfScratch,
       }, dt);
       audio.update?.(game.car, dt, { surface: surfScratch, camera: renderer.cameraMode });
-      hud.update(buildFrame());
+      // The HUD belongs to the road. Behind a menu it is a speedometer over a
+      // main menu, which is how the attract backdrop would read as a bug.
+      if (game.state !== GameState.MENU && game.state !== GameState.ATTRACT) hud.update(buildFrame());
     } else {
       renderer.updateIdle?.(dt);
     }
@@ -817,20 +1212,7 @@ export async function startGame(opts) {
     },
     // Teleports to an arc length and sets a speed along the road, which is how
     // the screenshot tool reaches a jump or a hairpin without a lucky lap.
-    placeAt(distance, speedKph = 0) {
-      if (!game.stage) return false;
-      const st = game.stage;
-      const i = clamp(st.world?.sampleAt?.(distance) ?? game.world.sampleAt(distance), 0, st.count - 1);
-      const yaw = Math.atan2(st.tx[i], st.tz[i]);
-      physics.resetCar(game.car, st.x[i], st.y[i] + 0.35, st.z[i], yaw);
-      const v = speedKph / 3.6;
-      game.car.vel.x = st.tx[i] * v;
-      game.car.vel.y = 0;
-      game.car.vel.z = st.tz[i] * v;
-      game.lastS = distance;
-      game.stageTimeMs = 0;
-      return true;
-    },
+    placeAt(distance, speedKph = 0) { return placeCarAt(distance, speedKph); },
     setCamera(mode) { renderer.setCamera?.(mode); },
     // Hand the car to the pure-pursuit driver. The screenshot tool uses this so
     // it photographs a car that is driving the stage rather than one abandoned
@@ -882,6 +1264,8 @@ export async function startGame(opts) {
     get state() { return game.state; },
     destroy() {
       cancelAnimationFrame(rafId);
+      for (const t of attractTimers) clearTimeout(t);
+      attractTimers.clear();
       clearTimeout(goTimer);
       input.destroy();
       audio.dispose?.();
