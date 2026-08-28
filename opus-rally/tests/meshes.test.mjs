@@ -745,10 +745,60 @@ test("road: the shoulder, the windrow and the racing line each read against the 
 // to clean pasture a metre past the ditch, which left the dark band one ditch
 // wide. Book stages, not the fixture: the fixture's terrain is one flat olive
 // and would agree with anything.
-test("road: the ground the edge is read against keeps neither the running surface's value nor its hue", () => {
-  for (const id of ["kloft-bjornhalt", "northmarch-kestrel"]) {
+//
+// TWO claims, not one, and the scope of each is measured rather than assumed.
+// The first cut of this test asserted the value ratios over two gravel-dominant
+// roads and called the result general; run over the whole book it fails on
+// tamarosa-rioseca, the one dirt-dominant road, at a verge of 0.784 against a
+// bar of 0.65. The picture there is not broken — the fix moved that verge from
+// 1.016 of the running surface, i.e. BRIGHTER than the road, which is the
+// critic's "one lower, one HIGHER" exactly, down to 0.784, and the hue cue is
+// the strongest in the book at 43.4%. The ratio is small because a dirt road is
+// itself dark: gravel runs 0.303 linear against a verge of 0.173, while dirt
+// runs 0.204 against much the same verge. A value RATIO cannot be a book-wide
+// claim, so:
+//
+//   - hue everywhere. 32.8% to 43.4% off the running surface's own red-to-green
+//     across the eight loose roads, where before the fix it was 0.5% to 1.9% on
+//     the seven gravel ones and 16.2% on the dirt one. This is the cue that
+//     survives a hillside lit from the side, which is what turned the value cue
+//     the wrong way round in the critic's frame.
+//   - value everywhere, but only as far as "the roadside is never a second
+//     running surface": the tighter gravel bars below would not hold on dirt.
+//   - the gravel bars on the gravel-dominant roads, which is seven of the eight.
+//
+// The four tarmac roads — both Alvenda Calderas, Alvenda Ondas and Vardhal
+// Havnvik — carry no loose station at all and are skipped; a tarmac ribbon is
+// darker than its own verge and reads the other way round by design. The counts
+// at the end are what stop "skipped" quietly becoming "skipped them all".
+test("road: every loose road in the book sheds the running surface's hue and value beside it, gravel to a tighter bar", () => {
+  let loose = 0;
+  let gravelly = 0;
+  for (const entry of STAGE_BOOK) {
+    const id = entry.id;
     const st = stageFromBook(id);
     const road = buildRoadMesh(THREE, st, { textureSize: 16 });
+
+    // The road classifies itself by counting its own stations, so a road added
+    // to the book lands in the right bucket without being named here.
+    let gravelStations = 0;
+    let dirtStations = 0;
+    for (const chunk of road.chunks) {
+      for (const station of chunk.stations) {
+        if (station.surfaceId === SURFACE.GRAVEL) gravelStations += 1;
+        else if (station.surfaceId === SURFACE.DIRT) dirtStations += 1;
+      }
+    }
+    if (gravelStations + dirtStations < 200) {
+      // Before the terrain: the vertex-by-centreline search below is the
+      // expensive half, and there is nothing here to measure.
+      road.dispose();
+      continue;
+    }
+    loose += 1;
+    const onGravel = gravelStations > dirtStations;
+    if (onGravel) gravelly += 1;
+
     const terrain = buildTerrainMesh(THREE, st, { textureSize: 16, margin: 120 });
 
     // Loose-surface stations only. This is a claim about a gravel road; a tarmac
@@ -770,9 +820,17 @@ test("road: the ground the edge is read against keeps neither the running surfac
     };
     const surface = slotAlbedo(ROAD_CENTRE_SLOT);
     const verge = slotAlbedo(ROAD_SECTION.findIndex((s) => s.kind === "verge"));
-    assert.ok(verge.L <= surface.L * 0.65,
+    // Everywhere: the verge is not a second running surface. Measured 0.568 to
+    // 0.578 on gravel and 0.784 on dirt, against 0.724 to 1.016 before the fix,
+    // so this is the bar the dirt road's regression trips.
+    assert.ok(verge.L <= surface.L * 0.90,
       `${id}: the ribbon's outer verge shades ${(verge.L / surface.L).toFixed(3)} of the running `
-      + "surface, so the dark band that marks the edge is one ditch wide");
+      + "surface, which is no edge at all");
+    if (onGravel) {
+      assert.ok(verge.L <= surface.L * 0.65,
+        `${id}: the ribbon's outer verge shades ${(verge.L / surface.L).toFixed(3)} of the running `
+        + "surface, so the dark band that marks the edge is one ditch wide");
+    }
 
     // Terrain vertices binned by how far past the road EDGE they sit, brute
     // force against the whole centreline. A bucketed index here would have to
@@ -803,17 +861,32 @@ test("road: the ground the edge is read against keeps neither the running surfac
     }
     assert.ok(dies.n > 40 && reads.n > 100,
       `${id}: only ${dies.n}/${reads.n} roadside terrain vertices were found`);
-    assert.ok(dies.L / dies.n <= surface.L * 0.50,
+    // Everywhere: 0.373 to 0.380 on gravel, 0.559 on dirt, against 0.661 to
+    // 0.985 before the fix.
+    assert.ok(dies.L / dies.n <= surface.L * 0.75,
       `${id}: the ground the ribbon dies into shades ${((dies.L / dies.n) / surface.L).toFixed(3)} of `
       + "the running surface, which makes the verge a second road");
+    if (onGravel) {
+      assert.ok(dies.L / dies.n <= surface.L * 0.50,
+        `${id}: the ground the ribbon dies into shades ${((dies.L / dies.n) / surface.L).toFixed(3)} of `
+        + "the running surface, which makes the verge a second road");
+    }
+    // And the cue that does the work on every one of them. 32.8% to 43.4%
+    // measured; 0.5% to 16.2% before the fix, so 25% separates the two states
+    // on every road in the book rather than only on the gravel ones.
     const hue = (reads.r / reads.g) / (surface.r / surface.g);
-    assert.ok(Math.abs(hue - 1) >= 0.15,
+    assert.ok(Math.abs(hue - 1) >= 0.25,
       `${id}: the ground 4-14 m past the edge is within ${(Math.abs(hue - 1) * 100).toFixed(1)}% of the `
       + "road's own hue, and hue is the cue that survives a slope lit from the side");
 
     road.dispose();
     terrain.dispose();
   }
+  // Eight of the book's twelve roads carry a loose surface, seven of those are
+  // gravel-dominant and one (tamarosa-rioseca) is dirt. If a book change moved
+  // those counts this test would quietly stop covering what it claims to.
+  assert.equal(loose, 8, `${loose} of the book's roads carry a loose running surface, not 8`);
+  assert.equal(gravelly, 7, `${gravelly} loose roads are gravel-dominant, not 7`);
 });
 
 // A snow stage was one white sheet. The ribbon and the ground beside it were
@@ -850,6 +923,30 @@ test("road: lying snow is compacted on the running surface and clean on the verg
   assert.ok(packed <= clean * 0.72,
     `snow on the running surface shades ${packed.toFixed(3)} against ${clean.toFixed(3)} on the verge: `
     + "a driven road is duller than the field beside it, and without that a blizzard has no road in it");
+
+  // Which end each vertex takes is vDetail.w, and the two constants above mean
+  // "running surface" and "verge" only because that channel does. Invert the
+  // attribute and the shader paints the road clean and the field packed while
+  // every string assertion here stays green, so the channel is checked against
+  // the geometry that carries it.
+  const vergeSlot = ROAD_SECTION.findIndex((s) => s.kind === "verge");
+  let onChannel = 0;
+  for (const chunk of bundle.road.chunks) {
+    const detailAttr = chunk.geometry.getAttribute("detail");
+    const dw = detailAttr.itemSize;
+    const detail = detailAttr.array;
+    for (const station of chunk.stations) {
+      if (station.surfaceId !== SURFACE.GRAVEL) continue;
+      const w = (k) => detail[(station.vertexBase + k) * dw + 3];
+      assert.ok(w(ROAD_CENTRE_SLOT) < 0.02,
+        `the running surface carries detail.w ${w(ROAD_CENTRE_SLOT).toFixed(3)}, so it takes the `
+        + "clean end of the mix and the driven road is the brighter of the two");
+      assert.ok(w(vergeSlot) > 0.9,
+        `the verge carries detail.w ${w(vergeSlot).toFixed(3)}, so it never reaches the clean end`);
+      onChannel += 1;
+    }
+  }
+  assert.ok(onChannel > 100, `only ${onChannel} gravel stations carried a detail.w to check`);
 
   // The ground has to lie the same white the ribbon's verge does, or the two
   // meet at a seam brighter or duller than either of them.
