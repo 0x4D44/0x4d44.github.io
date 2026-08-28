@@ -110,6 +110,68 @@ const DEFAULT_COM_HEIGHT = 0.49;
 const DEFAULT_FRONT_AXLE = 1.05;
 const DEFAULT_HALF_WIDTH = 0.70;
 
+// ---- the cabin -----------------------------------------------------------
+//
+// The interior sits inside the car's own shadow with its albedos held under the
+// 0.20 linear cap the material band puts on trim, so in daylight nothing in the
+// cockpit reaches luminance 25/255: the instrument face, its ticks and its needle
+// all land inside one three-level band. That is a lighting fault rather than an
+// albedo one — a real cabin is lit by sky through the glasshouse, and at night by
+// its own instruments.
+//
+// `fillDecay: 0` is the whole of the trick. Three's point falloff is
+// `1/pow(d, decay)` windowed by `(1 - (d/distance)^4)^2`, so at decay 0 the light
+// is a CONSTANT irradiance inside its cutoff that goes smoothly to nothing at the
+// rim: an ambient term that still has a direction, which is what a cabin fill is.
+// An inverse-square lamp inside a 1.5 m box burns whatever sits 0.2 m from it and
+// leaves the far end of the fascia at a twentieth of the same number. The cutoff
+// is what keeps it off the road under the car and off the wheels, and every
+// exterior panel is turned away from it and takes nothing from it anyway.
+export const CABIN = Object.freeze({
+  // Under the headliner, which is what puts the road just outside the cutoff on
+  // every car in the book: the shortest roof is the heritage class at 1.325 m,
+  // so the light hangs 1.105 m over the surface and the fill's own window has
+  // already taken 94% out of it by the time it gets there.
+  fillDrop: 0.22,          // metres below the roof line
+  fillAxle: -1.02,         // metres from the front axle, the datum meshes.js hangs
+                           // the whole cabin off — see CAMERA_PARAMS
+  fillDistance: 1.10,
+  fillDecay: 0,
+  // Per unit of what the sky and the beam are actually giving the scene, so the
+  // cabin darkens under cloud and goes out at dusk with no curve of its own.
+  //
+  // fillSky is a FORM FACTOR and so must stay under one: the cabin cannot see
+  // more sky than the outside of the car does. At 0.90 of (hemisphere + ambient),
+  // times the 0.86 the dial faces get out of N.L and the 0.93 the window leaves,
+  // a dial takes about three quarters of the sky the roof takes — which is about
+  // what a glasshouse this size is worth. Measured on the instrument pod at the
+  // start of kloft-bjornhalt in golden hour, 1280x720, quality medium, the car
+  // stopped on the brake: mean luminance 16.5 -> 36.6, and the 5th-to-95th
+  // spread 9-26 -> 20-60.
+  fillSky: 0.90,
+  fillKey: 0.055,
+  // The instrument backlight: warm, and short enough that it reaches the dials,
+  // the wheel rim and the driver's hands and nothing else. It comes up with the
+  // headlights, because that is the switch a driver actually turns.
+  glowRise: 0.06,          // metres above the belt line, where the fascia top is
+  glowAxle: -0.74,
+  glowDistance: 0.62,
+  glowDecay: 2,
+  glowIntensity: 0.030,
+  glowColour: 0xffb45a,
+  // Full scale on the two dials that are not the tachometer.
+  speedoFullScale: 69.4,   // m/s, i.e. 250 km/h
+  // Fallbacks for a car with no modelled body, in metres above the centre of
+  // mass. fitCabinRig replaces both from carDimensions when there is one.
+  fallbackFillY: 0.66,
+  fallbackGlowY: 0.47,
+});
+
+// The in-cabin shift bar lights over the same rpm band hud.js lights its twelve
+// LEDs over, so the two can never disagree about when to change gear.
+const SHIFT_BEGIN = 0.62;
+const SHIFT_FULL = 0.985;
+
 // How far outside the view a scenery cell is still worth drawing: enough that a
 // caster at the edge of the picture keeps the shadow it throws into it.
 const SCENERY_CULL_PAD = 28;
@@ -1906,6 +1968,7 @@ export function createRenderer(canvas, opts = {}) {
     brakeMaterial: null,
     lampMaterial: null,
     ghostMesh: null,
+    instruments: null,
     built: false,
     time: 0,
     tvTimer: 0,
@@ -2200,6 +2263,52 @@ export function createRenderer(canvas, opts = {}) {
     scene.add(beams);
   }
   buildHeadlights();
+
+  // ---- cabin lighting
+
+  const cabin = {
+    fill: null,
+    glow: null,
+    fillY: CABIN.fallbackFillY,
+    fillZ: DEFAULT_FRONT_AXLE + CABIN.fillAxle,
+    glowY: CABIN.fallbackGlowY,
+    glowZ: DEFAULT_FRONT_AXLE + CABIN.glowAxle,
+  };
+
+  function buildCabinLights() {
+    const fill = new three.PointLight(0xffffff, 0, CABIN.fillDistance, CABIN.fillDecay);
+    fill.name = "opus.cabin.fill";
+    fill.castShadow = false;
+    const glow = new three.PointLight(CABIN.glowColour, 0, CABIN.glowDistance, CABIN.glowDecay);
+    glow.name = "opus.cabin.glow";
+    glow.castShadow = false;
+    cabin.fill = fill;
+    cabin.glow = glow;
+    // Permanent and dark until a stage is built, exactly like the headlights: a
+    // light added and removed with the stage changes the scene's light count and
+    // costs every material in it a recompile.
+    scene.add(fill, glow);
+  }
+  buildCabinLights();
+
+  // Where the two lights hang in the chassis frame, taken off the modelled body
+  // the way fitLampRig takes the lamps: from carDimensions, by eye, rather than by
+  // copying the builder's own layout arithmetic.
+  function fitCabinRig(spec) {
+    cabin.fillY = CABIN.fallbackFillY;
+    cabin.glowY = CABIN.fallbackGlowY;
+    cabin.fillZ = DEFAULT_FRONT_AXLE + CABIN.fillAxle;
+    cabin.glowZ = DEFAULT_FRONT_AXLE + CABIN.glowAxle;
+    if (!meshLib || typeof meshLib.carDimensions !== "function" || !spec) return;
+    const d = safeCall(() => meshLib.carDimensions(spec));
+    if (!d) return;
+    if (Number.isFinite(d.roofY)) cabin.fillY = d.roofY - CABIN.fillDrop;
+    if (Number.isFinite(d.beltY)) cabin.glowY = d.beltY + CABIN.glowRise;
+    if (Number.isFinite(d.frontAxle)) {
+      cabin.fillZ = d.frontAxle + CABIN.fillAxle;
+      cabin.glowZ = d.frontAxle + CABIN.glowAxle;
+    }
+  }
 
   // ---- post chain
 
@@ -3055,6 +3164,7 @@ export function createRenderer(canvas, opts = {}) {
     state.lampMaterial = (mesh.userData && mesh.userData.lampMaterial)
       || findEmissive(mesh, /lamp|headlight|pod|spot/i);
     if (!state.brakeMaterial) ensureBrakeLights(mesh, spec, bin);
+    state.instruments = (mesh.userData && mesh.userData.instruments) || null;
     return mesh;
   }
 
@@ -3325,6 +3435,11 @@ export function createRenderer(canvas, opts = {}) {
     if (headlights.pod) headlights.pod.intensity = 0;
     if (headlights.spill) headlights.spill.intensity = 0;
     if (headlights.beams) headlights.beams.visible = false;
+    // Same reason as the headlights above: a cabin fill left burning where the
+    // car was would light whatever the menu backdrop puts in that metre.
+    if (cabin.fill) cabin.fill.intensity = 0;
+    if (cabin.glow) cabin.glow.intensity = 0;
+    state.instruments = null;
     // Same reason: a pool of darkening parked on the menu backdrop.
     contactMesh.visible = false;
     tvAnchors.length = 0;
@@ -3415,6 +3530,7 @@ export function createRenderer(canvas, opts = {}) {
     const spec = state.car ? state.car.spec : (ctx.spec || null);
     fitLampRig(spec);
     fitContactRig(spec);
+    fitCabinRig(spec);
     state.carMesh = buildCar(spec, ctx.livery, stageBin);
     scene.add(state.carMesh);
     state.wheelMeshes = buildWheels(spec, stageBin);
@@ -3743,6 +3859,68 @@ export function createRenderer(canvas, opts = {}) {
     const lampMat = state.lampMaterial;
     if (lampMat && lampMat.emissive) {
       lampMat.emissive.setRGB(level * 1.6, level * 1.45, level * 1.15);
+    }
+  }
+
+  // Called every frame, so nothing here may allocate.
+  function updateCabinLights(car) {
+    const fill = cabin.fill;
+    const glow = cabin.glow;
+    if (!fill || !glow) return;
+    if (!state.carMesh) { fill.intensity = 0; glow.intensity = 0; return; }
+    qTmp.set(car.quat.x, car.quat.y, car.quat.z, car.quat.w);
+    vTmp.set(0, cabin.fillY, cabin.fillZ).applyQuaternion(qTmp);
+    fill.position.set(car.pos.x + vTmp.x, car.pos.y + vTmp.y, car.pos.z + vTmp.z);
+    vTmp.set(0, cabin.glowY, cabin.glowZ).applyQuaternion(qTmp);
+    glow.position.set(car.pos.x + vTmp.x, car.pos.y + vTmp.y, car.pos.z + vTmp.z);
+
+    // The same two quantities syncWeather lights the dust by — what the sky is
+    // giving and what the beam is giving — so the cabin follows the weather
+    // rather than carrying a curve of its own.
+    const w = state.weather;
+    const cur = w ? w.current : null;
+    const sky = cur ? (cur.hemiIntensity || 0) + (cur.ambientIntensity || 0) : 0.9;
+    const key = w && w.metrics
+      ? (w.metrics.keyIntensity || 0) * Math.max(state.sunY, 0) : 0;
+    fill.intensity = CABIN.fillSky * sky + CABIN.fillKey * key;
+    // Tinted by the same sky stop weather.js gives its hemisphere light, because
+    // it is standing in for the same sky.
+    if (cur && cur.hemiSky) fill.color.setRGB(cur.hemiSky[0], cur.hemiSky[1], cur.hemiSky[2]);
+    glow.intensity = CABIN.glowIntensity * headlights.level;
+  }
+
+  // ---- live instruments
+  //
+  // meshes.js bakes the three needles at a fixed sweep and the six shift lights at
+  // one colour, and it is the only module that can move them: they are triangles
+  // inside the single merged interior geometry, which publishes no vertex ranges.
+  // So this drives a handle IF the car group carries one — hung off userData the
+  // way `brakeMaterial` and `lampMaterial` already are — and does nothing at all
+  // if it does not:
+  //
+  //   group.userData.instruments = {
+  //     setNeedles(tacho, speedo, boost),  // each 0..1 along its own dial sweep
+  //     setShiftLights(t),                 // 0..1 of the bar; 1 is every light lit
+  //   }
+  //
+  // Both are called once a frame with plain numbers, and neither may allocate.
+  function updateInstruments(car) {
+    const inst = state.instruments;
+    if (!inst) return;
+    const eng = car.spec && car.spec.engine;
+    // physics.js spells this `limiterRpm`. game.js's HUD frame reads `limitRpm`,
+    // which is on no spec in the book, so every car's HUD dial falls back to a
+    // flat 8000 — not this module's to fix, and not this module's to copy either.
+    const limit = eng && eng.limiterRpm > 0 ? eng.limiterRpm : 8000;
+    const frac = saturate(car.engineRpm / limit);
+    if (typeof inst.setNeedles === "function") {
+      // The tachometer keeps hud.js's 6% of headroom past the limiter, so the
+      // needle has somewhere to go when the limiter is cutting.
+      inst.setNeedles(saturate(car.engineRpm / (limit * 1.06)),
+        saturate(car.speed / CABIN.speedoFullScale), saturate(car.turboSpool));
+    }
+    if (typeof inst.setShiftLights === "function") {
+      inst.setShiftLights(saturate((frac - SHIFT_BEGIN) / (SHIFT_FULL - SHIFT_BEGIN)));
     }
   }
 
@@ -4250,6 +4428,8 @@ export function createRenderer(canvas, opts = {}) {
     updateCarMesh(car, frame.alpha || 0);
     updateContactShadow(car);
     updateHeadlights(car, step);
+    updateCabinLights(car);
+    updateInstruments(car);
     spawnWheelParticles(car, surface, step);
     updateMarks(car, surface, step);
     ageMarks(step);

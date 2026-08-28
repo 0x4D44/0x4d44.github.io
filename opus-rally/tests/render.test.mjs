@@ -61,6 +61,7 @@ import {
   createRenderer,
   HEADLIGHT,
   CONTACT_SHADOW,
+  CABIN,
   makeContactShadowFit,
   contactShadowFit,
 } from "../render.js";
@@ -3149,6 +3150,314 @@ test("a stage built from the real stage.js, meshes.js and physics.js is adopted 
   api.dispose();
 });
 
+// ---- the cabin -----------------------------------------------------------
+//
+// Measured before any of this existed, on the instrument pod at the start of
+// kloft-bjornhalt in golden hour — 1280x720, quality medium, the car stopped on
+// the brake so that two frames of the same thing really are the same frame:
+// mean luminance 16.5, 5th to 95th percentile 9 to 26. The whole instrument —
+// face, ticks, surround and needle — inside seventeen levels. Afterwards: mean
+// 36.6, 20 to 60. At night the pod went from a flat 25.4 with a standard
+// deviation of 2.4 to 66.9 with 22.3.
+//
+// None of that can be measured against a stub GL, so what is pinned here is the
+// geometry and the law the two lights obey, which is what a later change breaks.
+
+test("the cabin fill hangs inside the glasshouse of every car in the book", async () => {
+  const physics = await import("../physics.js");
+  const meshes = await import("../meshes.js");
+  const stageMod = await import("../stage.js");
+  const def = stageMod.STAGE_BOOK[0];
+  const stage = stageMod.generateStage(def.seed, { ...def, length: 400 });
+  const weather = fakeWeather({
+    metrics: { headlights: false, keyIntensity: 7, lightLevel: 0.8 },
+  });
+
+  // Every car, because the classes carry three different roof heights and eight
+  // different centres of mass: a placement that only clears the road on the car
+  // it was tuned against is a coincidence rather than a rig.
+  let seen = 0;
+  for (const spec of physics.CARS) {
+    const { api } = makeRenderer({ webgl2: true, quality: "medium", meshes });
+    const car = physics.createCar(spec.id, {});
+    // Nose down +Z, level: the light's world position minus the centre of mass
+    // is then its position in the chassis frame, with no rotation to undo.
+    physics.resetCar(car, 0, 0, 0, 0);
+    car.quat.x = 0; car.quat.y = 0; car.quat.z = 0; car.quat.w = 1;
+    api.buildStage(stage, { car, weather });
+    api.update({ car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() }, 1 / 60);
+
+    const fill = api.scene.getObjectByName("opus.cabin.fill");
+    assert.ok(fill && fill.isPointLight, `${spec.id}: no cabin fill light`);
+    const d = meshes.carDimensions(spec);
+    const ly = fill.position.y - car.pos.y;
+    const lz = fill.position.z - car.pos.z;
+    assert.ok(ly < d.roofY && ly > d.beltY,
+      `${spec.id}: the fill sits at y ${ly.toFixed(3)}, outside the glasshouse `
+      + `(belt ${d.beltY.toFixed(3)} .. roof ${d.roofY.toFixed(3)})`);
+    // Behind the screen base and ahead of the rear axle: in the cabin, not in
+    // the engine bay and not in the boot.
+    assert.ok(lz < d.frontAxle - 0.30 && lz > d.rearAxle,
+      `${spec.id}: the fill sits at z ${lz.toFixed(3)}, outside the cabin`);
+
+    // And the road is past the cutoff. Three's window is `(1 - (d/D)^4)^2`, so
+    // at a ratio of 1.0 the road takes nothing at all and even at 0.93 it takes
+    // 6% — which is what keeps a pool of light from appearing under a car whose
+    // interior is being lit.
+    const roadDrop = fill.position.y - (car.pos.y + d.ground);
+    assert.ok(roadDrop / CABIN.fillDistance >= 0.93,
+      `${spec.id}: the road is ${roadDrop.toFixed(3)} m under a fill that reaches `
+      + `${CABIN.fillDistance} m — the cutoff no longer excludes it`);
+    seen += 1;
+    api.dispose();
+  }
+  assert.ok(seen >= 6, `only ${seen} cars were checked`);
+});
+
+test("the cabin fill is a bounded ambient term, not an inverse-square lamp", () => {
+  const { api } = makeRenderer({ webgl2: true });
+  const fill = api.scene.getObjectByName("opus.cabin.fill");
+  const glow = api.scene.getObjectByName("opus.cabin.glow");
+  assert.ok(fill && glow, "the cabin lights are not in the scene");
+  // decay 0 is the whole point: inside a 1.5 m box a physical inverse-square
+  // lamp burns the headliner 0.2 m away and leaves the far end of the fascia at
+  // a twentieth of the same number.
+  assert.equal(fill.decay, 0, "the cabin fill is falling off with distance");
+  assert.ok(fill.distance > 0 && fill.distance <= 1.4,
+    `a fill reaching ${fill.distance} m is no longer bounded to the cabin`);
+  assert.ok(glow.distance > 0 && glow.distance < fill.distance,
+    "the instrument glow outreaches the cabin fill");
+  assert.equal(fill.castShadow, false);
+  assert.equal(glow.castShadow, false);
+  // Permanent and dark, like the headlights. Parenting them to the car instead
+  // would change the scene's light count on every build and cost every material
+  // in it a recompile, twice a stage.
+  assert.equal(fill.intensity, 0, "the cabin fill is burning with no car built");
+  assert.equal(glow.intensity, 0, "the instrument glow is burning with no car built");
+  api.dispose();
+});
+
+test("the cabin follows the sky, and never sees more of it than the roof does", () => {
+  const stage = sceneryStage(60);
+  const car = fakeCar(stage);
+  const frame = { car, stage, alpha: 0, state: "racing", surface: fakeSurface() };
+
+  const read = (over) => {
+    const { api } = makeRenderer({ webgl2: true });
+    const weather = fakeWeather(over);
+    api.buildStage(stage, { car, weather });
+    // The headlight level is damped, so the glow needs a moment to come up.
+    for (let i = 0; i < 90; i += 1) api.update(frame, 1 / 60);
+    const fill = api.scene.getObjectByName("opus.cabin.fill");
+    const glow = api.scene.getObjectByName("opus.cabin.glow");
+    const out = {
+      fill: fill.intensity, glow: glow.intensity,
+      colour: glow.color.clone(), sky: fill.color.clone(),
+    };
+    api.clearStage();
+    out.parked = fill.intensity;
+    out.parkedGlow = glow.intensity;
+    api.dispose();
+    return out;
+  };
+  const base = fakeWeather().current;
+
+  // golden-hour's own stops, hill-fog's — the brightest hemisphere in the book —
+  // and night-clear's.
+  const amber = read({
+    current: { ...base, hemiIntensity: 0.83, ambientIntensity: 0.10, hemiSky: [0.52, 0.48, 0.56] },
+    metrics: { headlights: false, keyIntensity: 7, lightLevel: 0.8 },
+  });
+  const fog = read({
+    current: { ...base, hemiIntensity: 1.70, ambientIntensity: 0.50, hemiSky: [0.68, 0.70, 0.73] },
+    metrics: { headlights: false, keyIntensity: 0.42, lightLevel: 0.4 },
+  });
+  const night = read({
+    current: { ...base, hemiIntensity: 0.085, ambientIntensity: 0.007, hemiSky: [0.05, 0.07, 0.14] },
+    metrics: { headlights: true, keyIntensity: 0, lightLevel: 0.02 },
+  });
+
+  assert.ok(fog.fill > amber.fill * 1.5,
+    `a sky more than twice as strong only moved the cabin from ${amber.fill.toFixed(3)} `
+    + `to ${fog.fill.toFixed(3)}`);
+  assert.ok(night.fill < amber.fill * 0.2,
+    `the cabin is still lit at midnight: ${night.fill.toFixed(3)} against `
+    + `${amber.fill.toFixed(3)} at golden hour`);
+
+  // The form-factor bound, measured with the beam taken away so it is the SKY
+  // term under test. A cabin cannot be given more sky than the roof over it, and
+  // a fill that is reads as a lamp in the ceiling rather than as daylight.
+  const sunless = read({
+    current: { ...base, hemiIntensity: 0.83, ambientIntensity: 0.10, hemiSky: [0.52, 0.48, 0.56] },
+    metrics: { headlights: false, keyIntensity: 0, lightLevel: 0.6 },
+  });
+  assert.ok(sunless.fill < 0.83 + 0.10,
+    `the cabin fill is ${sunless.fill.toFixed(3)} against ${(0.83 + 0.10).toFixed(3)} of `
+    + "sky outside it, with no sun in the scene at all");
+  assert.ok(fog.fill < 1.70 + 0.50,
+    `under the brightest sky in the book the fill is ${fog.fill.toFixed(3)} against `
+    + `${(1.70 + 0.50).toFixed(3)} outside`);
+  // The beam is worth something — sun does get into a cabin — but a cabin is a
+  // sky-lit place, not a sun-lit one.
+  assert.ok(amber.fill > sunless.fill,
+    "the beam contributes nothing to the cabin at all");
+  assert.ok(amber.fill < sunless.fill * 1.30,
+    `the beam is carrying the cabin: ${sunless.fill.toFixed(3)} without it, `
+    + `${amber.fill.toFixed(3)} with`);
+
+  // The fill carries the sky's own colour, not a white bulb. Golden hour's
+  // hemisphere is a cool violet (0.52, 0.48, 0.56) and fog's is a bright neutral,
+  // so a fill that has stopped tracking the stop reads r == g == b and fails the
+  // first of these outright.
+  assert.ok(amber.sky.b > amber.sky.g,
+    `the cabin fill is ${amber.sky.getHexString()} under a violet golden-hour sky`);
+  assert.ok(fog.sky.r > amber.sky.r,
+    `fog's near-neutral sky came through cooler than golden hour's: `
+    + `${fog.sky.getHexString()} against ${amber.sky.getHexString()}`);
+
+  // The instrument backlight is on the headlight switch, and it is warm.
+  assert.equal(amber.glow, 0, "the dash lights are on in daylight");
+  assert.equal(fog.glow, 0, "the dash lights are on with the headlights off");
+  assert.ok(night.glow > 0, "the instruments have no backlight at night");
+  assert.ok(night.colour.r > night.colour.g && night.colour.g > night.colour.b,
+    `an instrument backlight of ${night.colour.getHexString()} is not warm`);
+
+  // And a cleared stage parks both, or the menu backdrop is lit by a cabin that
+  // is no longer there.
+  for (const w of [amber, fog, night]) {
+    assert.equal(w.parked, 0, "clearStage left the cabin fill burning");
+    assert.equal(w.parkedGlow, 0, "clearStage left the instrument glow burning");
+  }
+});
+
+// ---- live instruments ----------------------------------------------------
+//
+// meshes.js bakes the needles at a fixed sweep and publishes no vertex ranges
+// for them, so render.js can only move them through a handle the car group
+// carries. This is the consumer half: it has to be driven with the car's own
+// numbers, and its absence has to cost nothing.
+
+// The plan is read one entry per buildCarMesh call, so a renderer can be handed a
+// car that publishes instruments and then one that does not.
+function instrumentedCarLib(plan) {
+  const calls = { needles: [], shift: [] };
+  const want = Array.isArray(plan) ? plan.slice() : [plan];
+  let built = 0;
+  const lib = {
+    buildCarMesh() {
+      const withHandle = want[Math.min(built, want.length - 1)];
+      built += 1;
+      const group = new THREE.Group();
+      group.name = "fake-car";
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 3),
+        new THREE.MeshStandardMaterial());
+      body.name = "body";
+      group.add(body);
+      if (withHandle) {
+        group.userData.instruments = {
+          setNeedles(a, b, c) { calls.needles.push([a, b, c]); },
+          setShiftLights(t) { calls.shift.push(t); },
+        };
+      }
+      return group;
+    },
+  };
+  return { lib, calls };
+}
+
+// Four different numbers, deliberately: a fixture where the rpm fraction, the
+// speed fraction and the boost all read alike cannot tell a correct wiring from
+// one with two of its arguments swapped.
+function instrumentedCar(stage) {
+  const car = fakeCar(stage);
+  car.spec = {
+    id: "instrument-test",
+    name: "Test",
+    // BOTH spellings, and they disagree. game.js's HUD frame reads `limitRpm`,
+    // which is on no spec physics.js ships, so every HUD dial silently falls
+    // back to a flat 8000. A needle scaled by 3000 here is that same mistake.
+    engine: { limiterRpm: 8000, limitRpm: 3000 },
+  };
+  car.engineRpm = 6200;
+  car.speed = 34.7;
+  car.turboSpool = 0.42;
+  return car;
+}
+
+test("the live instruments are driven from the car, off the handle meshes.js publishes", () => {
+  const stage = sceneryStage(60);
+  const { lib, calls } = instrumentedCarLib(true);
+  const { api } = makeRenderer({ webgl2: true, meshes: lib });
+  const car = instrumentedCar(stage);
+  const weather = fakeWeather();
+  api.buildStage(stage, { car, weather });
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+
+  api.update(frame, 1 / 60);
+  assert.equal(calls.needles.length, 1, "the needles were not written this frame");
+  assert.equal(calls.shift.length, 1, "the shift bar was not written this frame");
+  const [tacho, speedo, boost] = calls.needles[0];
+
+  // 6200 of 8000, with hud.js's 6% of headroom past the limiter so the needle
+  // still has somewhere to go while the limiter is cutting.
+  assert.ok(Math.abs(tacho - 6200 / (8000 * 1.06)) < 1e-6,
+    `the tachometer read ${tacho.toFixed(4)}; off limiterRpm it is `
+    + `${(6200 / (8000 * 1.06)).toFixed(4)} and off game.js's limitRpm it would `
+    + "be clamped at 1.0000");
+  assert.ok(tacho < 1, "the tachometer has no headroom over the limiter");
+  assert.ok(Math.abs(speedo - 34.7 / CABIN.speedoFullScale) < 1e-6,
+    `the speedometer read ${speedo.toFixed(4)} at 34.7 m/s`);
+  assert.ok(Math.abs(boost - 0.42) < 1e-6, `the boost gauge read ${boost.toFixed(4)}`);
+
+  // The shift bar, over the same rpm band hud.js lights its own twelve LEDs.
+  const bar = (rpm) => {
+    car.engineRpm = rpm;
+    calls.shift.length = 0;
+    api.update(frame, 1 / 60);
+    return calls.shift[0];
+  };
+  assert.equal(bar(0), 0, "the shift lights are lit at idle");
+  assert.equal(bar(8000 * 0.61), 0, "the shift lights come on before the band does");
+  assert.equal(bar(8000 * 0.99), 1, "the shift lights are not full at the limiter");
+  assert.equal(bar(9500), 1, "the shift bar ran past full");
+  let last = -1;
+  for (const f of [0.63, 0.70, 0.80, 0.90, 0.985]) {
+    const v = bar(8000 * f);
+    assert.ok(v > last,
+      `the shift bar went backwards at ${(f * 100).toFixed(1)}% of the limiter`);
+    last = v;
+  }
+  api.dispose();
+});
+
+test("a car with no instrument handle costs nothing, and a stale one is dropped", () => {
+  const stage = sceneryStage(60);
+  const car = instrumentedCar(stage);
+  const weather = fakeWeather();
+  const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+
+  const { lib: bare } = instrumentedCarLib(false);
+  const { api } = makeRenderer({ webgl2: true, meshes: bare });
+  api.buildStage(stage, { car, weather });
+  for (let i = 0; i < 5; i += 1) api.update(frame, 1 / 60);
+  api.dispose();
+
+  // A handle belongs to the car it was built with, and the next car may not
+  // publish one — a different class, or the placeholder body the renderer falls
+  // back to when the mesh library throws. Kept, it would be written into a group
+  // that has already been disposed.
+  const { lib, calls } = instrumentedCarLib([true, false]);
+  const { api: api2 } = makeRenderer({ webgl2: true, meshes: lib });
+  api2.buildStage(stage, { car, weather });
+  api2.update(frame, 1 / 60);
+  assert.equal(calls.needles.length, 1, "the first car's instruments were never written");
+  api2.buildStage(stage, { car, weather });
+  for (let i = 0; i < 5; i += 1) api2.update(frame, 1 / 60);
+  assert.equal(calls.needles.length, 1,
+    "a car with no instruments was driven through the last car's handle");
+  api2.dispose();
+});
+
 // ---- discipline ----------------------------------------------------------
 
 test("render.js never reaches for Math.random", () => {
@@ -3201,6 +3510,31 @@ test("the contact shadow update allocates nothing either", () => {
     assert.ok(RENDER_SRC.includes(scratch), `${scratch} is not a shared scratch`);
   }
   assert.ok(CONTACT_SHADOW.lift > 0, "the pool would z-fight the ground it sits on");
+});
+
+test("the cabin and instrument updates allocate nothing either", () => {
+  // Same construction as the contact shadow above: both run once a frame from
+  // inside createRenderer(), so their closing brace is at two spaces.
+  for (const marker of ["  function updateCabinLights", "  function updateInstruments"]) {
+    const start = RENDER_SRC.indexOf(marker);
+    assert.ok(start > 0, `${marker} not found`);
+    const end = RENDER_SRC.indexOf("\n  }\n", start);
+    const body = RENDER_SRC.slice(start, end);
+    assert.ok(body.length > 200 && body.length < 3000,
+      `${marker}: body scan took ${body.length} chars`);
+    // `new \w`, not the `new [A-Z]` the two scans above use: inside
+    // createRenderer() the library is bound as lowercase `three`, so a
+    // `new three.Vector3()` on the frame path walks straight past an
+    // uppercase-only pattern.
+    assert.equal(/\bnew\s+\w/.test(body), false, `${marker} allocates with new`);
+    assert.equal(/=\s*\{\s*[a-zA-Z"']/.test(body), false,
+      `${marker} allocates an object literal`);
+    assert.equal(/=\s*\[/.test(body), false, `${marker} allocates an array literal`);
+  }
+  // Both lights are placed through the shared scratch, not a fresh vector each
+  // frame.
+  assert.ok(RENDER_SRC.includes("vTmp.set(0, cabin.fillY, cabin.fillZ).applyQuaternion(qTmp)"),
+    "the cabin fill is no longer placed through the shared scratch vector");
 });
 
 test("the module-scope scratch is shared, not re-created per call", () => {
