@@ -1244,8 +1244,12 @@ const GROUND_LIGHT = Object.freeze({
   "hill-fog": { ratio: [0, 0.35], lit: [90, 185], gap: 0 },
   "light-snow": { ratio: [0, 0.35], lit: [80, 175], gap: 0 },
   // Judged on snow, because by the time a blizzard stage is drivable
-  // `weatherSurfaceModifier` reports 0.92 of snow cover and gravel is not the
-  // surface in the frame: its level says nothing about whether the picture has
+  // `weatherSurfaceModifier` reports FULL snow cover and gravel is not the
+  // surface in the frame. Stepped from the preset, the cover rises monotonically
+  // and does not stop: 0.24 at 1 s, 0.92 at 9 s, 0.9963 at 20 s and 1.0000 from
+  // about 45 s on, with gripScale settling at 0.630. The 0.92 that used to be
+  // quoted here is a moment on the way up, not where it lands. Its level says
+  // nothing about whether the picture has
   // a midtone in it. The band is where the snow the car is actually on has to
   // land, and the frame agrees — driven to a stop on the ice stage the verge
   // beside the road measures 151 and the road itself 207.

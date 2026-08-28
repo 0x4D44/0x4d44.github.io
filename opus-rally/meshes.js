@@ -3021,8 +3021,10 @@ function buildScuttle(b, d, col) {
     const a = lip[k], c = lip[k + 1];
     pushQuad3(b, a, c, [c[0], c[1] - COWL_STEP, c[2]], [a[0], a[1] - COWL_STEP, a[2]], col);
   }
-  // Two wiper arms lying in the trough. They cost eight triangles each and are
-  // the one thing in the forward view that says "windscreen" rather than "band".
+  // Two wiper arms lying in the trough. A 2-point 4-sided pushTube is 4 quads of
+  // wall plus a 4-triangle fan on each end — pushTube caps by default — so they
+  // cost 16 triangles each, and are the one thing in the forward view that says
+  // "windscreen" rather than "band".
   const arm = [0.030, 0.030, 0.034];
   for (const side of [-1, 1]) {
     const x = side * d.bodyHalfWidth * 0.34;
@@ -3083,7 +3085,12 @@ const BODY_DECK_RISE = 0.058;
 const BODY_SKIN_CLEAR = 0.040;
 // The bonnet drops through a shut line at the cowl's lip, and from here forward
 // carries a vent stack and a scoop that stand this proud of its own surface and
-// reach this far back of the station they are placed at.
+// reach this far back of the station they are placed at. FORWARD they reach
+// further than BACK admits: the scoop's top face overhangs its own station by
+// 0.14 m. No sample dominates that corner: the binding one is the FIRST
+// furniture station, behind the scoop, and it binds only because the solver
+// now tests each raised block at both ends. The corner clears incidentally,
+// by the margin recorded on scuttleFrame — do not read this as a guarantee.
 const COWL_STEP = 0.020;
 const COWL_CLEAR = 0.010;
 const BONNET_ROWS = 6;
@@ -3096,10 +3103,25 @@ const BONNET_FURNITURE_BACK = 0.19;
 // there was the car's own livery — stripes, sheen and all — smeared into a band
 // between the wheel and the road, because the shell's deck stood 19 to 79 mm
 // PROUD of the bonnet that is supposed to skin it and ran straight up the sight
-// line. The cowl is the anti-glare panel, and it is walked forward until nothing
-// painted forward of the screen reaches the cockpit eye: render.js mounts that
-// eye 1.16 m over the road and 1.24 m behind the front axle, and
-// tests/meshes.test.mjs pins those two numbers to this comment.
+// line. The cowl is the anti-glare panel, and it is walked forward until no part
+// of the BONNET reaches the cockpit eye: render.js mounts that eye 1.16 m over
+// the road and 1.24 m behind the front axle, and tests/meshes.test.mjs pins
+// those two numbers to this comment.
+// It does NOT clear everything forward of the screen, and does not have to. The
+// light pod sits ahead of the bonnet's leading edge and 16 of its vertices stand
+// over that sight line — 12.5 mm at the lip plane, 13.2 on brackmoor-t8 and
+// delta-b640 — so it is genuinely in the driver's view. What keeps it harmless
+// is that it is furniture rather than paintwork: its own matte vertex-coloured
+// material with no livery map, so there is no graphic on it to smear.
+// It gets there, but not with the COWL_CLEAR margin the walk thinks it has. The
+// walk tests a sampled envelope, and the sample carries each station's own crown
+// while the scoop's top face is FLAT over a crown still falling away under it.
+// So the scoop's forward corner is the tightest point on the car: measured at
+// the lip plane it clears by 0.6 mm on brackmoor-t8 and delta-b640 and 1.6 mm on
+// the other six. Casting the real cockpit frustum is the only check worth
+// trusting here. On brackmoor-t8 and delta-b640 a single 5 mm step of the lip
+// is worth about 0.75 mm of clearance — wider than the 0.6 mm they have — so
+// on those two the solver's own step size is the whole margin.
 function scuttleFrame(d) {
   const c = cabinFrame(d);
   const eyeY = d.ground + 1.16, eyeZ = d.frontAxle - 1.24;
@@ -3114,12 +3136,19 @@ function scuttleFrame(d) {
   const clears = (zLip) => {
     const m = (yTop - eyeY) / (zLip - eyeZ);
     const len = z1 - zLip;
+    const over = (y, z) => y > yTop + m * (z - zLip) - COWL_CLEAR;
     for (let k = 1; k <= 24; k += 1) {
       const t = k / 24;
-      let top = y0 - (y0 - y1) * smoothstep(0, 1, t);
-      let z = zLip + len * t;
-      if (t >= BONNET_FURNITURE_T) { top += BONNET_FURNITURE_RISE; z -= BONNET_FURNITURE_BACK; }
-      if (top > yTop + m * (z - zLip) - COWL_CLEAR) return false;
+      const top = y0 - (y0 - y1) * smoothstep(0, 1, t);
+      const z = zLip + len * t;
+      if (over(top, z)) return false;
+      // The sight line FALLS as z grows, so a raised block binds at its FORWARD
+      // edge and clears most easily at its rear one. Testing only z - BACK, as
+      // this did, sampled the one end that never binds: the scoop's top face
+      // stood 16 to 18 mm over the line on every one of the eight cars.
+      if (t >= BONNET_FURNITURE_T
+        && (over(top + BONNET_FURNITURE_RISE, z)
+          || over(top + BONNET_FURNITURE_RISE, z - BONNET_FURNITURE_BACK))) return false;
     }
     return true;
   };
@@ -3525,9 +3554,11 @@ function buildDoor(b, d, side, col) {
 // over the roof and down the rear quarters with the wing apparently bolted to
 // them — an exoskeleton, which is not a thing rally cars have.
 const CAGE_TUBE = 0.022;
-// A 45 mm tube 0.4 m from the driver's eye is 130 px across at 1600 wide, and
-// three of them cross the cockpit view. Six sides is a visible hexagon at that
-// size; the car has 25k triangles of budget spare.
+// A 45 mm tube 0.4 m from the driver's eye is 114 px across at 1600 wide — the
+// cockpit fov is 48 degrees vertical on a 16:9 frame, so 0.045 / (0.4 * (16/9) *
+// tan 24) of half the frame — and three of them cross the cockpit view. Six
+// sides is a visible hexagon at that size; the car has 25k triangles of budget
+// spare.
 const CAGE_SIDES = 8;
 
 function cageFrame(d) {
@@ -3682,9 +3713,10 @@ function buildSteeringWheel(b, L, col, boss) {
 // the picture. Three gauges were modelled down there and not one of them ever
 // reached a pixel. Over the column is no better: the wheel boss covers that
 // sightline, whatever height the dial is given.
-// A dial is a disc a driver looks at for a whole stage. At twelve sides a 135 px
-// face is a visible dodecagon, so the wall count comes off the geometry budget
-// rather than the eye.
+// A dial is a disc a driver looks at for a whole stage. The main gauge's face is
+// 0.104 m across at 0.61 m of depth, which is 173 px on a 1600 wide frame (the
+// two flanking it, 101 px), and at twelve sides that is a visible dodecagon —
+// so the wall count comes off the geometry budget rather than the eye.
 const DIAL_SEGMENTS = 30;
 
 function buildBinnacle(b, L, dark, grey, face, mark) {
