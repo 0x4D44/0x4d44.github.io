@@ -1715,6 +1715,14 @@ uniform float uStrength;
 varying float vAlong;
 varying vec3 vNormalW;
 varying vec3 vViewDir;
+
+// How much of the cone's length the throat ramp spends, and how fast the shaft
+// runs out past it. tests/render.test.mjs reads both out of this source rather
+// than carrying its own copy, so slack given here shows up there as the pixels
+// it costs.
+const float BEAM_THROAT = 0.28;
+const float BEAM_FALL = 1.3;
+
 void main() {
   // A cone stands in for the lit volume, so the shell is brightest where a ray
   // crosses the most of that volume: side-on to the wall. The old rim term did
@@ -1722,8 +1730,26 @@ void main() {
   // where the whole cone is silhouette — drew a white balloon over the bonnet.
   // The small constant is the rest of the volume, so looking straight down the
   // beam in fog still shows a haze rather than nothing at all.
+  //
+  // The throat is the other half of that argument and it was missing. One shell
+  // crossing carries a whole chord of lit air in a single fragment, and near
+  // the apex the cone is thin — a metre out the chord is centimetres — so
+  // giving that fragment the profile's peak paints the brightest thing in the
+  // shader straight onto the near road, where the tone curve has the least
+  // slope left to render it with. That is why no single level worked. Measured
+  // on a night-rain frame with the car stopped: at the 0.5 this shipped with,
+  // the road at 12 m read 217/255 while the air three metres above it reached
+  // only 74.9 against 68.8 for the air beside the beam; at 0.12 the road came
+  // back but the same air read 58 against 70 — the lit fog DARKER than the haze
+  // around it, which is backwards. Ramping the throat in over the first quarter
+  // of the cone and easing the far taper moves the light to where the chord is
+  // long: on the same frame the air three metres up now reads 88 against 70,
+  // the road peaks at 195, and one pixel in a thousand of the road half passes
+  // 240 with the brightest at 241.
   float face = abs(dot(normalize(vNormalW), normalize(vViewDir)));
-  float a = (0.22 + 0.78 * pow(face, 0.9)) * (1.0 - vAlong) * (1.0 - vAlong) * uStrength;
+  float t = clamp(vAlong / BEAM_THROAT, 0.0, 1.0);
+  float body = t * t * (3.0 - 2.0 * t) * pow(max(1.0 - vAlong, 0.0), BEAM_FALL);
+  float a = (0.22 + 0.78 * pow(face, 0.9)) * body * uStrength;
   if (a <= 0.002) discard;
   gl_FragColor = vec4(uColour, a);
 }
@@ -3674,13 +3700,18 @@ export function createRenderer(canvas, opts = {}) {
         if (beamMat && beamMat.uniforms) {
           // The coefficient is small because the cone is drawn four times over:
           // each shell is DoubleSide so a ray crosses both its walls, and there
-          // are two cones. At the 0.5 this ran at, a wet night put 4 x 0.41 of
-          // the cone colour — about 1.45 of linear radiance — on the same pixel,
-          // which through night-rain's exposure and ACES is 245/255 with nothing
-          // underneath it. The road under the beam measured 208 to 224 mean out
-          // to 55 m, a solid white tent from the bonnet to the horizon; at 0.12
-          // the same frame runs 163 to 177 with the surface still in it.
-          beamMat.uniforms.uStrength.value = level * 0.12 * (fogK - BEAM_FOG_FLOOR);
+          // are two cones. It is chosen against the air, not the road. Swept on
+          // one stopped night-rain frame with the throat profile above, the air
+          // three metres over the road ran 83, 88 and 92 at 0.26, 0.30 and 0.34
+          // against 70 for the air beside the beam, with the road under it
+          // peaking at 188, 192 and 196. Below about 0.2 there is no beam: at
+          // 0.12 the lit air comes out at 68 against that same 70, which is the
+          // wrong way round for scattered light. Past about 0.34 the cone's own
+          // wall starts to draw as a straight edge across the road pool —
+          // plainly visible at 0.45 — because a shell only stands in for a
+          // volume while it is faint. 0.30 puts the shaft a fifth above the air
+          // beside it with the road short of 200 and its grain still in it.
+          beamMat.uniforms.uStrength.value = level * 0.30 * (fogK - BEAM_FOG_FLOOR);
         }
       }
     }

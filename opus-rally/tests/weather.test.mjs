@@ -1007,6 +1007,20 @@ function groundPixel(E, albedo, exposure) {
   return lum3(GROUND);
 }
 
+// The same patch before the composite: linear radiance, which is what a particle
+// drawn in front of it composites against.
+function groundRadiance(E, albedo) {
+  return lum3([E[0] * albedo[0], E[1] * albedo[1], E[2] * albedo[2]]) / Math.PI;
+}
+
+// The whole rig on an up-facing patch, shadow or no shadow, in one array.
+const IRRADIANCE = [0, 0, 0];
+function totalIrradiance(w) {
+  const { direct, diffuse } = groundIrradiance(w);
+  for (let i = 0; i < 3; i += 1) IRRADIANCE[i] = direct[i] + diffuse[i];
+  return IRRADIANCE;
+}
+
 // Lowest, highest and mean pixel luma in the band a driver can see: the horizon
 // up to about fifty degrees, all the way round. The sun's own disc and bloom are
 // skipped — they are a light source, and a sky that only spans a range because
@@ -1214,6 +1228,11 @@ test("every daylight sky has a warm end and a cool end", () => {
 //
 // `gap` is lit minus shadowed, in the same levels — how much of a shadow you can
 // actually see. Golden hour shipped at 13.
+//
+// `albedo` overrides the surface the band is judged on, for the one preset whose
+// stage is not gravel by the time you drive it.
+const SNOW_ALBEDO = surfaceProps(SURFACE.SNOW).albedo;
+
 const GROUND_LIGHT = Object.freeze({
   "clear-dawn": { ratio: [1.15, 3.0], lit: [58, 120], gap: 25 },
   "midday-hard": { ratio: [4.0, 9.0], lit: [150, 215], gap: 90 },
@@ -1224,7 +1243,13 @@ const GROUND_LIGHT = Object.freeze({
   thunderstorm: { ratio: [0, 0.35], lit: [55, 150], gap: 0 },
   "hill-fog": { ratio: [0, 0.35], lit: [90, 185], gap: 0 },
   "light-snow": { ratio: [0, 0.35], lit: [80, 175], gap: 0 },
-  blizzard: { ratio: [0, 0.35], lit: [90, 190], gap: 0 },
+  // Judged on snow, because by the time a blizzard stage is drivable
+  // `weatherSurfaceModifier` reports 0.92 of snow cover and gravel is not the
+  // surface in the frame: its level says nothing about whether the picture has
+  // a midtone in it. The band is where the snow the car is actually on has to
+  // land, and the frame agrees — driven to a stop on the ice stage the verge
+  // beside the road measures 151 and the road itself 207.
+  blizzard: { ratio: [0, 0.35], lit: [130, 220], gap: 0, albedo: SNOW_ALBEDO },
 });
 
 const ROAD_ALBEDO = surfaceProps(SURFACE.GRAVEL).albedo;
@@ -1253,10 +1278,11 @@ test("every daylight preset lights its ground to a defensible key-to-fill ratio"
       + `${ratio.toFixed(2)}:1 on flat ground, outside ${band.ratio[0]}..${band.ratio[1]}`);
 
     const total = [direct[0] + diffuse[0], direct[1] + diffuse[1], direct[2] + diffuse[2]];
-    const lit = groundPixel(total, ROAD_ALBEDO, w.current.exposure);
-    const shadowed = groundPixel(diffuse, ROAD_ALBEDO, w.current.exposure);
+    const albedo = band.albedo || ROAD_ALBEDO;
+    const lit = groundPixel(total, albedo, w.current.exposure);
+    const shadowed = groundPixel(diffuse, albedo, w.current.exposure);
     assert.ok(lit >= band.lit[0] && lit <= band.lit[1],
-      `${p.id}: sunlit gravel comes out at ${lit.toFixed(0)}, outside ${band.lit[0]}..${band.lit[1]} `
+      `${p.id}: sunlit ground comes out at ${lit.toFixed(0)}, outside ${band.lit[0]}..${band.lit[1]} `
       + "— the frame has no midtone for the eye to rest on");
     assert.ok(lit - shadowed >= band.gap,
       `${p.id}: lit ${lit.toFixed(0)} against shadowed ${shadowed.toFixed(0)} is only `
@@ -1752,45 +1778,73 @@ test("a flake stays sampleable at the distance it is drawn at, without gaining l
   }
 });
 
-test("a flake carries no more light than the air it is falling through", () => {
-  // Ice scatters; it does not emit. A flake's radiance is bounded by what is
-  // lighting it, and the shipped figure was not: read off the live uniforms, a
-  // blizzard's flakes carried 0.98-1.18 against a haze of 0.700 and a dome of
-  // 0.78, and light snow's 0.63-0.68 against 0.339 and about 0.52.
+test("a flake reads against both of the things it is seen against", () => {
+  // What this replaces measured nothing. Its `dim` was luminance(uColour), and
+  // updatePrecipitation sets uColour to precipColour scaled so that its
+  // luminance IS luminance(_hazeCol) — so `dim <= haze` and `dim >= haze * 0.85`
+  // were the line under test written down twice, and the third assertion was the
+  // same identity applied to uSkyColour. All three passed on a blizzard in which
+  // a fixed 420x220 patch of sky held ONE resolvable flake, counted on a real
+  // frame by hiding the field and diffing, three capture pairs against a dither
+  // floor of zero. The same patch holds twenty-two now.
   //
-  // The tone curve is what turns that into an artefact. A flake above its own
-  // sky composites onto the top of the ACES shoulder, so the upper half of its
-  // Gaussian is one byte: seven levels of it against the cloud, where a snowfall
-  // should read most, and a flat white chip with a one-pixel edge against
-  // anything darker. Both ends are checked, because either one alone can be
-  // satisfied by a flake that has simply gone out.
+  // Measured here instead: one flake, at the peak alpha the field actually runs
+  // at, composited over each of the two backgrounds a driver sees it against, in
+  // 8-bit levels of difference. Neither background is the flake's own number.
+  // The sky comes from the dome mirror at the elevation a chase camera looks at;
+  // the snow comes from the light rig on the surface these two stages are made
+  // of. A flake that goes out fails against both; one that clips fails the
+  // ceiling.
   for (const id of ["light-snow", "blizzard"]) {
     const w = precipRig(id, 20);
     const u = w.snow.uniforms;
-    const haze = lum3(w._hazeCol);
-    const dim = lum3([u.uColour.value.r, u.uColour.value.g, u.uColour.value.b]);
-    // SNOW_FRAG mixes towards uSkyColour as vShade falls, and vShade bottoms out
-    // at 0.55, so this is the brightest flake the field can actually contain.
-    const end = lum3([u.uSkyColour.value.r, u.uSkyColour.value.g, u.uSkyColour.value.b]);
-    const brightest = 0.45 * end + 0.55 * dim;
+    const away = wrapAngle(presetById(id).sunAzimuth + Math.PI);
+    const sky = domeLum(w, 8 * DEG, away);
+    const snow = groundRadiance(totalIrradiance(w), SNOW_ALBEDO);
+    // The median flake — grade is iRand.y cubed on a uniform, so half the field
+    // is finer than this — in the near field where a snowfall is read.
+    const { alpha } = snowPeakAlpha(w, 8, 0.125);
+    const overSky = precipDelta(u.uColour.value, alpha, sky, w.current.exposure);
+    const overSnow = precipDelta(u.uColour.value, alpha, snow, w.current.exposure);
 
-    // The base colour is the air's own level, to within the rounding of the
-    // division that puts it there. Nothing here is a taste threshold: at 1.9x it
-    // read 1.99 for light snow and 1.40 for a blizzard.
-    assert.ok(dim <= haze * 1.001,
-      `${id}: a flake carries ${dim.toFixed(3)} against a haze of ${haze.toFixed(3)} `
-      + `— ${(dim / haze).toFixed(2)}x the air lighting it`);
-    // And the per-flake spread may lift a flake off that level, not off the sky.
-    // uSkyColour is the end the shader mixes towards as vShade falls, so this
-    // bounds the whole field; it read 1.82x before.
-    assert.ok(brightest <= haze * 1.15,
-      `${id}: the brightest flake in the field carries ${brightest.toFixed(3)} against a `
-      + `haze of ${haze.toFixed(3)} — ${(brightest / haze).toFixed(2)}x`);
-    // Not switched off either: a flake dimmed well under the air it hangs in is
-    // a grey smear, and clear weather with a particle count in it.
-    assert.ok(dim >= haze * 0.85,
-      `${id}: a flake carries only ${dim.toFixed(3)} against a haze of `
-      + `${haze.toFixed(3)} — the fall has gone grey`);
+    // The floor is where the eye stops finding it. Swept through the shipped
+    // code with nothing else touched, a flake at 1.0x the horizon airlight — the
+    // figure the hollow assertions above locked in — is worth -1.5 levels
+    // against a blizzard sky and -0.1 against light snow's: darker than its own
+    // background, which is why the frame had none. 1.15x gives 3.6 and 4.9 and
+    // is still nothing; 1.3x gives 7.7 and 9.4.
+    assert.ok(overSky >= 6,
+      `${id}: a flake against the sky it falls through is worth ${overSky.toFixed(1)} levels `
+      + "— that is a snowfall you cannot see");
+    // And the ceiling is where it stops being a veil. The 1.9x this replaced
+    // measures 19.1 and 23.0 here and shipped as a field of hard white chips
+    // with a one-pixel edge, because at that level the top of a flake's Gaussian
+    // lands past the end of the ACES shoulder and flattens.
+    assert.ok(overSky <= 18,
+      `${id}: a flake against the sky is worth ${overSky.toFixed(1)} levels — that is a chip, `
+      + "not a flake");
+    // Against the ground it falls over, which on both of these stages is snow.
+    assert.ok(overSnow >= 12,
+      `${id}: a flake against lit snow is worth only ${overSnow.toFixed(1)} levels`);
+
+    // SNOW_FRAG mixes towards uSkyColour as vShade falls and vShade bottoms out
+    // at 0.55, so this is the brightest flake the field can contain. It has to
+    // be a spread upwards: set below uColour it would darken the brightest
+    // flakes in the field, which is what a bright end riding on the raw haze
+    // would have done once uColour came off it.
+    const end = u.uSkyColour.value;
+    const c = u.uColour.value;
+    const brightest = {
+      r: 0.45 * end.r + 0.55 * c.r,
+      g: 0.45 * end.g + 0.55 * c.g,
+      b: 0.45 * end.b + 0.55 * c.b,
+    };
+    const highOverSky = precipDelta(brightest, alpha, sky, w.current.exposure);
+    assert.ok(highOverSky > overSky,
+      `${id}: the field's bright end is worth ${highOverSky.toFixed(1)} levels against the sky `
+      + `and its base ${overSky.toFixed(1)} — the spread runs the wrong way`);
+    assert.ok(highOverSky <= 28,
+      `${id}: the brightest flake in the field is worth ${highOverSky.toFixed(1)} levels`);
     disposeWeather(w);
   }
 });
@@ -1885,6 +1939,49 @@ test("a night stage is dark on the ground and still a sky overhead", () => {
 // twenty degrees of elevation is ever drawn. A sky assertion that samples the
 // zenith is measuring a direction the game never puts on screen — which is how
 // a near-neutral horizon tint carrying 2.3x the zenith's weight went unnoticed.
+test("a blizzard is a white-out with the road still in it", () => {
+  // "White in every direction, including down" is the preset's brief and it was
+  // being taken too literally: driven to a stop on the ice stage and
+  // photographed with the snowfall hidden, the sky eight to forty-four rows
+  // above the horizon measured 208.9 and the ground the same distance below it
+  // 205.4 — three and a half levels, no horizon — while the verge beside the
+  // road at 20 m stood at 194.0 against a road of 221.6. The same frame now
+  // reads 189.8 against 184.3, and 162.8 against 203.6.
+  //
+  // The cause was where the picture sat on the curve, not what colour it was.
+  // Snow returns 0.84 of what falls on it, so lit snow is a sixth below the sky
+  // lighting it whatever the exposure — but at an exposure of 1.0 the sky landed
+  // at 220/255, on the last stretch of the ACES shoulder, and a sixth was worth
+  // almost nothing there. The two are measured here at the two ends the mirror
+  // can reach honestly: the dome just above the horizon, and unfogged lit snow
+  // under the whole rig.
+  const { w, camera } = rig("blizzard");
+  stepWeather(w, camera, 1 / 60);
+  w.lightning.flash = 0;
+  const away = wrapAngle(presetById("blizzard").sunAzimuth + Math.PI);
+  const sky = skyPixelLum(w, 2 * DEG, away);
+  const ground = groundPixel(totalIrradiance(w), SNOW_ALBEDO, w.current.exposure);
+
+  // 37.3 levels before, 60.9 after. Both ends move, but not together: the sky is
+  // so far up the shoulder that dropping the exposure barely touches it (220.2
+  // to 206.3) while the ground it has to be told apart from falls 182.9 to
+  // 145.3. That asymmetry is the whole of the fix.
+  assert.ok(sky - ground >= 50,
+    `a blizzard's lit snow reads ${ground.toFixed(0)} under a sky of ${sky.toFixed(0)} `
+    + `— ${(sky - ground).toFixed(0)} levels apart, and the road goes with it`);
+  // And it is still a white-out. Buying the separation by darkening the sky
+  // would satisfy the line above and lose the weather.
+  assert.ok(sky >= 185,
+    `a blizzard's sky reads ${sky.toFixed(0)} — that is an overcast, not a white-out`);
+  assert.ok(sky <= 235,
+    `a blizzard's sky reads ${sky.toFixed(0)} — it is clipping`);
+  // The snow itself has to stay snow: a white-out floor the car reads as grey is
+  // the other way of passing the first line.
+  assert.ok(ground >= 120,
+    `a blizzard's lit snow reads ${ground.toFixed(0)} — that is not snow`);
+  disposeWeather(w);
+});
+
 test("the sky the player can actually see is not a white ceiling", () => {
   // Fog and a blizzard ARE a white-out; that is the weather, not a fault.
   const WHITEOUT = new Set(["hill-fog", "blizzard"]);

@@ -451,9 +451,29 @@ export const WEATHER_PRESETS = Object.freeze([
     sunIntensity: 0.22, sunAngularSize: 0.04, haloStrength: 0.1,
     sunColour: [0.84, 0.88, 0.96], moonColour: [0.40, 0.46, 0.60],
     hemiSky: [0.70, 0.74, 0.82], hemiGround: [0.72, 0.75, 0.80],
-    hemiIntensity: 1.85, ambientIntensity: 0.6,
-    bounceColour: [0.74, 0.77, 0.83], bounceIntensity: 0.62,
-    shadowStrength: 0.03, exposure: 1.0, turbidity: 15.0,
+    // The exposure is what was making this unplayable, not the whiteness. At 1.0
+    // the entire white-out sat between 200 and 220 of 255 — the last fifth of
+    // the ACES shoulder, where the curve returns about a quarter of the contrast
+    // it does in the mid-tones. Snow's own albedo is 0.84, so lit snow is a sixth
+    // below the sky lighting it and ought to read as such; up there that sixth
+    // was worth four levels. Everything in the picture was being spent on the
+    // same crush. Driven to a stop on the ice stage, photographed with the
+    // snowfall hidden, and compared against the same frame with these three
+    // numbers put back through the live uniforms: the road at 20 m stood at
+    // 221.6 over a verge of 194.0, the sky and ground bands either side of the
+    // horizon at 208.9 and 205.4, and a fixed 420x220 patch of sky held one
+    // resolvable flake over three capture pairs.
+    //
+    // At 0.72 the same white lands near 190 — still white, against a treeline at
+    // 30 and a car at 60 — and the same frame reads road 203.6 over verge 162.8,
+    // 189.8 against 184.3 across the horizon, and twenty-two flakes in that
+    // patch. The rig comes down a fifth with it: not because the ground was wrong
+    // against the sky, which it was not, but because a hemisphere plus a flat
+    // ambient plus a bounce, all at full sky colour, is an unobstructed sky, and
+    // a stage cut into a hillside is not one.
+    hemiIntensity: 1.48, ambientIntensity: 0.48,
+    bounceColour: [0.74, 0.77, 0.83], bounceIntensity: 0.50,
+    shadowStrength: 0.03, exposure: 0.72, turbidity: 15.0,
     skyBrightness: 0.42, skyTintWeight: 0.98,
     skyZenith: [0.56, 0.59, 0.64], skyHorizon: [0.68, 0.70, 0.74], skyGround: [0.64, 0.66, 0.70],
     fogColour: [0.76, 0.78, 0.82], fogNear: 8, fogFar: 130, fogDensity: 0.028,
@@ -677,6 +697,13 @@ function skyScatter(sinElev) {
 // visibility says: a white-out you cannot drive at all is a stage nobody
 // finishes, not a hard one.
 const FOG_FLOOR = 140;
+
+// What a falling flake carries, as a multiple of the horizon airlight it is seen
+// against. A flake is lit by the whole sphere — cloud base, the airlight all the
+// way round, and the snow below it — while the haze the player compares it to is
+// one band of that sphere, so the ratio is above one by construction. Sized by
+// counting flakes on a fixed patch of blizzard sky; see updatePrecipitation.
+const FLAKE_HEMISPHERE = 1.3;
 
 const ZENITH_TINT = unitTint(0.16, 0.34, 1.00);
 const HORIZON_TINT = unitTint(0.68, 0.74, 0.92);
@@ -2070,34 +2097,35 @@ function updatePrecipitation(w, dt) {
     nu.uOpacity.value = 0.52 + 0.26 * snowRate;
     const wl = Math.hypot(wx, wz) || 1;
     nu.uWindDir.value.set(wx / wl, 0, wz / wl);
-    // Ice scatters; it does not emit. A flake carries the light of the air it is
-    // falling through and no more, so the division is a definition rather than a
-    // taste: it puts uColour's luminance ON the haze, whatever precipColour's
-    // own hue costs. The lit figure it replaces was 1.9x the haze, which is also
-    // above the sky — read off the live uniforms, a blizzard's flakes carried
-    // 0.98-1.18 against a haze of 0.700, and light snow's 0.63-0.68 against
-    // 0.339, while inverting the composite on the rendered sky pixel puts the
-    // blizzard's dome at 0.78 and light snow's at about 0.52.
-    //
-    // The tone curve is what turns that into an artefact. At the peak alpha the
-    // field runs at, a flake above its own sky composites to 231 over a sky of
-    // 224 and to 227 over a dark bank of 137, so the whole upper half of its
-    // Gaussian lands past the top of the ACES shoulder: seven codes of it
-    // against the cloud, where a snowfall should read most, and a flat white
-    // chip with a one-pixel edge against everything else. On the haze the same
-    // profile lands where the curve still has slope, so the near flakes soften
-    // and the far field reads as the veil it is — it now dims the whole frame
-    // two to three codes rather than dotting it. The 0.05 floor is for a night
-    // stage, where the haze is nearly black and the lamps do the lighting.
-    const flakeLit = Math.max(0.05, skyLevel / Math.max(1e-3, luminance(c.precipColour)));
+    // Ice scatters; it does not emit, so a flake is bounded by what is lighting
+    // it — and `skyLevel` is not that bound. It is the luminance of `_hazeCol`,
+    // the airlight along the horizon: one narrow band of the sphere a flake sits
+    // in. The flake's own irradiance is the whole of it — the cloud base
+    // overhead, that horizon band all the way round, and the snow underneath
+    // returning about four fifths of what it catches. Putting the flake exactly
+    // ON the horizon band, which is what the last pass did, makes it the same
+    // radiance as the haze the player sees it against, and a snowfall with zero
+    // contrast against its own background is not a snowfall. Counted on a fixed
+    // 420x220 patch of blizzard sky by hiding the field and diffing, three
+    // capture pairs each against a dither floor of zero: one flake with the
+    // whole of this pass undone, five with the exposure and the rig fixed but
+    // the flake left on the band, twenty-two at 1.3x. A separate sweep put 1.15x
+    // at twelve and the 1.9x this replaces at fifty — and that one cost a white
+    // chip with a one-pixel edge, because at that level the top of a flake's
+    // Gaussian lands past the end of the ACES shoulder.
+    const flakeLit = Math.max(0.05,
+      FLAKE_HEMISPHERE * skyLevel / Math.max(1e-3, luminance(c.precipColour)));
     nu.uColour.value.setRGB(
       c.precipColour[0] * flakeLit, c.precipColour[1] * flakeLit, c.precipColour[2] * flakeLit,
     );
     // The bright end of the per-flake spread, which the shader mixes towards as
-    // vShade falls: a flake catching more of the sky than its neighbours sits at
-    // the haze, not half again above it.
+    // vShade falls. It rides on the same hemisphere figure rather than on the
+    // haze, so the spread stays a spread — set against the raw haze it would sit
+    // BELOW the flake's own level and the shader would darken its brightest
+    // flakes.
+    const flakeHigh = FLAKE_HEMISPHERE * 1.25;
     nu.uSkyColour.value.setRGB(
-      w._hazeCol[0] * 1.25, w._hazeCol[1] * 1.25, w._hazeCol[2] * 1.25,
+      w._hazeCol[0] * flakeHigh, w._hazeCol[1] * flakeHigh, w._hazeCol[2] * flakeHigh,
     );
     nu.uCamPos.value.copy(w._camPos);
   }
