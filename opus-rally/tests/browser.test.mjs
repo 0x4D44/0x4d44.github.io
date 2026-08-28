@@ -306,19 +306,31 @@ try {
   // autopilot rather than by the thing under test — and a harness that lies to its
   // own measurements is worse than one that is merely missing a feature.
   //
-  // Differential against a stage started clean, NOT against an absolute bar: the
-  // idle governor holds a real non-zero throttle at the line, so "throttle < 0.05"
+  // Waits on the SIMULATION, never on wall time. Under SwiftShader this renders at
+  // about three frames a second, and by this point in the suite seventeen stages
+  // have been built, so a fixed 700 ms sleep can buy a single frame — which is how
+  // the first version of this check started reporting that arming the autopilot
+  // did nothing. The countdown clock is the honest signal that frames have run.
+  //
+  // Differential against a stage started clean, NOT an absolute bar: the idle
+  // governor can hold a real non-zero throttle at the line, so "throttle < 0.05"
   // would fail on a perfectly good stage and prove nothing about the autopilot.
   process.stderr.write("[opus-rally] a new stage does not inherit the autopilot\n");
+  const countdownNow = () => page.evaluate("window.OPUS_RALLY.game.countdown");
+  const advance = async (seconds, why) => {
+    const from = await countdownNow();
+    await page.waitFor(why, async () => ((await countdownNow()) <= from - seconds) || null,
+      180_000);
+  };
   const startFresh = async () => {
     await page.evaluate(
       `window.__opusRally.drive({ stageId: ${JSON.stringify(book[0])}, skipCountdown: false })`);
     await page.waitFor("a stage to build",
       () => page.evaluate("window.__opusRally.stageInfo()"), 120_000);
-    await page.delay(500);
+    await advance(0.5, "half a second of countdown on the fresh stage");
     return page.evaluate(`(() => {
       const f = window.__opusRally.frame;
-      return { throttle: f.throttle, steer: f.steer, auto: !!window.OPUS_RALLY.game.autoDrive };
+      return { throttle: f.throttle, auto: !!window.OPUS_RALLY.game.autoDrive };
     })()`);
   };
 
@@ -326,12 +338,13 @@ try {
   assert.equal(clean.auto, false, "a stage started clean already has the autopilot armed");
 
   await page.evaluate("window.__opusRally.setAutoDrive(true, 0.8)");
-  await page.delay(700);
-  const armed = await page.evaluate("window.__opusRally.frame.throttle");
-  assert.ok(armed > clean.throttle + 0.3,
-    `arming the autopilot moved the throttle only ${clean.throttle.toFixed(2)} ->`
-    + ` ${armed.toFixed(2)}, so this check cannot tell an armed autopilot from a`
-    + " cleared one and proves nothing");
+  const armed = await page.waitFor("the armed autopilot to open the throttle", async () => {
+    const t = await page.evaluate("window.__opusRally.frame.throttle");
+    return t > clean.throttle + 0.3 ? t : null;
+  }, 60_000).catch(() => null);
+  assert.ok(armed !== null,
+    `arming the autopilot never moved the throttle above ${(clean.throttle + 0.3).toFixed(2)},`
+    + " so this check cannot tell an armed autopilot from a cleared one and proves nothing");
 
   const after = await startFresh();
   assert.equal(after.auto, false,
