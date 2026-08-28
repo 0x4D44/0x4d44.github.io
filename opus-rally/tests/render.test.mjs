@@ -2422,16 +2422,76 @@ test("the night grade lifts the black point without becoming the picture", async
   api.dispose();
 });
 
+// The cone's along-axis profile, read out of the shader rather than copied here:
+// the two constants are the whole of the shape, and a duplicate of them could
+// only ever agree with itself. `vAlong` is 0 at the lamp and 1 at the far end.
+function beamShaderConst(name) {
+  const m = new RegExp(`const float ${name} = ([0-9.eE+-]+);`).exec(RENDER_SRC);
+  assert.ok(m, `BEAM_FRAG no longer declares ${name}`);
+  return Number(m[1]);
+}
+const BEAM_THROAT = beamShaderConst("BEAM_THROAT");
+const BEAM_FALL = beamShaderConst("BEAM_FALL");
+
+test("the beam profile mirrored below is still the one the shader runs", () => {
+  for (const line of [
+    "float t = clamp(vAlong / BEAM_THROAT, 0.0, 1.0);",
+    "float body = t * t * (3.0 - 2.0 * t) * pow(max(1.0 - vAlong, 0.0), BEAM_FALL);",
+    "float a = (0.22 + 0.78 * pow(face, 0.9)) * body * uStrength;",
+  ]) {
+    assert.ok(RENDER_SRC.includes(line),
+      `BEAM_FRAG no longer contains "${line}" — the mirror below measures a cone nobody draws`);
+  }
+});
+
+function beamProfile(along) {
+  const t = Math.min(1, Math.max(0, along / BEAM_THROAT));
+  return t * t * (3 - 2 * t) * Math.pow(Math.max(1 - along, 0), BEAM_FALL);
+}
+
+// Where along the cone the profile peaks, and how much it is worth there.
+function beamProfilePeak() {
+  let at = 0;
+  let peak = 0;
+  for (let i = 0; i <= 1000; i += 1) {
+    const v = beamProfile(i / 1000);
+    if (v > peak) { peak = v; at = i / 1000; }
+  }
+  return { at, peak };
+}
+
 // What the visible cone is worth on the screen, rather than what its uniform
-// reads. A view ray crosses both walls of both cones — the shells are DoubleSide
-// and the blending is additive — so four layers land on the same pixel, each at
-// the shell's own peak. That sum, over a road returning nothing, is the number
-// that decides whether the beam is haze or a white tent.
-function beamPeakByte(beams, exposure) {
+// reads. The shells are DoubleSide and the blending is additive, so a ray down
+// the middle crosses four of them — both walls of both cones. `layers` names how
+// many are being charged at the profile's own peak, because that is the part the
+// geometry decides rather than the shader. Four is the arithmetic worst case and
+// is no longer reachable: with the throat term the peak sits at 0.29 of the
+// cone's length, where the four walls are metres apart, so no one ray collects
+// it. Two — one cone's near and far wall — is the ray that can happen, and that
+// is the one held to the tent bound.
+function beamLayerByte(beams, exposure, layers) {
   const u = beams.children[0].material.uniforms;
   const c = u.uColour.value;
   const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-  return toneByte(4 * u.uStrength.value * lum, exposure);
+  return toneByte(layers * beamProfilePeak().peak * u.uStrength.value * lum, exposure);
+}
+
+// The same cone laid over the air weather.js says is there, against that air on
+// its own. This is the whole physical point of a volumetric: lit fog is brighter
+// than the fog beside it. Neither term comes from the other module — the haze is
+// the scene fog colour weather.js computes, the cone is render.js's own.
+//
+// `along` picks which slice of the cone is being asked about, because that is
+// where the last pass went wrong rather than in the level. Judged at the peak
+// alone, a cone that dumps everything on the bonnet passes.
+function beamOverHaze(beams, w, layers, along) {
+  const u = beams.children[0].material.uniforms;
+  const c = u.uColour.value;
+  const lum = (x) => 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b;
+  const cone = layers * beamProfile(along) * u.uStrength.value * lum(c);
+  const haze = lum(w.fog.color);
+  const ex = w.current.exposure;
+  return { lit: toneByte(haze + cone, ex), unlit: toneByte(haze, ex) };
 }
 
 test("the beam cone only exists where there is something in the air to scatter off", async () => {
@@ -2466,21 +2526,116 @@ test("the beam cone only exists where there is something in the air to scatter o
 
   // Judged through the exposure of the preset the cone is actually drawn in,
   // because the fixture above carries a figure no preset uses any more. At the
-  // 0.5 coefficient this shipped with, the four layers came to 242/255 here and
-  // 245 on a wet night: a solid white tent from the bonnet to the horizon with
-  // the road erased under it, measured at 208-224 mean out to 55 m.
+  // 0.5 coefficient this shipped with, the four-layer sum came to 242/255 here
+  // and 245 on a wet night: a solid white tent from the bonnet to the horizon
+  // with the road erased under it, measured at 208-224 mean out to 55 m. The
+  // pair bound below is the newer of the two and the one that binds.
   const fogExposure = weatherMod.WEATHER_PRESETS.find((p) => p.id === "hill-fog").exposure;
-  const cone = beamPeakByte(beams, fogExposure);
-  assert.ok(cone >= 120,
-    `the beam in fog is worth ${cone}/255 over a dark road — too faint to be the point of it`);
-  assert.ok(cone <= 215,
-    `the beam in fog reaches ${cone}/255 with nothing underneath it — that is a white tent, `
+  const pair = beamLayerByte(beams, fogExposure, 2);
+  const four = beamLayerByte(beams, fogExposure, 4);
+  assert.ok(pair >= 120,
+    `the beam in fog is worth ${pair}/255 over a dark road — too faint to be the point of it`);
+  assert.ok(pair <= 205,
+    `the beam in fog reaches ${pair}/255 with nothing underneath it — that is a white tent, `
     + "not scattered light");
+  assert.ok(four < 250,
+    `even the unreachable four-layer sum clips at ${four}/255`);
 
   // Whatever the weather, the cone lies along the beam rather than level: its
   // far end has to be lower than its apex.
   const tip = new THREE.Vector3(0, 0, 20).applyQuaternion(beams.quaternion);
   assert.ok(tip.y < -0.2, `the cone is level, not dipped onto the road (${tip.y.toFixed(3)})`);
+  api.dispose();
+});
+
+test("the cone spends its light down the beam rather than on the bonnet", () => {
+  // The shape, not the level. A shell crossing carries a whole chord of lit air
+  // in one fragment and the chord is proportional to the cone's local radius, so
+  // the fragment at the apex stands for centimetres of air and the one halfway
+  // down stands for metres. Without the throat term the profile did the reverse:
+  // it peaked at the apex, which on a chase camera sits on the near road, and
+  // every level that made the shaft visible arrived on the tarmac first.
+  const { at, peak } = beamProfilePeak();
+  assert.ok(at >= 0.12 && at <= 0.55,
+    `the cone is brightest at ${at.toFixed(2)} of its length — that is the apex, `
+    + "which is the near road");
+  assert.ok(beamProfile(0.02) <= peak * 0.12,
+    `the first fiftieth of the cone carries ${(beamProfile(0.02) / peak).toFixed(2)} of the peak`);
+  // And it still has to be a shaft: a profile that only exists in one slice is a
+  // ring hanging in the air rather than a beam going somewhere.
+  assert.ok(beamProfile(0.6) >= peak * 0.3,
+    `three fifths down the cone the profile is ${(beamProfile(0.6) / peak).toFixed(2)} of its peak `
+    + "— the beam stops before it starts");
+  assert.equal(beamProfile(1), 0, "the cone does not close at its far end");
+});
+
+test("lit fog is brighter than the fog beside it", async () => {
+  // The physical point of a volumetric, and the thing the last pass lost. Driven
+  // on a real night-rain frame with the car stopped, the air three metres above
+  // the road inside the cone measured 58 against 70 for the air beside it: the
+  // beam DARKER than the haze it hangs in. At the 0.5 the coefficient came down
+  // from, the same air only reached 74.9 against 68.8, because the light was
+  // going on the road instead — 217/255 at 12 m. It reads 88 against 70 now.
+  //
+  // Neither number below is the other module's: the haze is the scene fog colour
+  // weather.js computes for the preset, and the cone is render.js's own uniform
+  // through the profile above.
+  const weatherMod = await import("../weather.js");
+  const stage = makeStraightStage(80);
+  stage.world = fakeWorld(stage);
+  const { api } = makeRenderer({ webgl2: true });
+  const car = fakeCar(stage);
+  car.yaw = 0;
+
+  for (const id of ["night-rain", "hill-fog"]) {
+    const p = weatherMod.WEATHER_PRESETS.find((x) => x.id === id);
+    // The real rig, for the air: its fog colour is what a view ray arrives at.
+    const real = weatherMod.createWeather(THREE, new THREE.Scene(), id, { cloudTextureSize: 32 });
+    for (let i = 0; i < 4; i += 1) weatherMod.stepWeather(real, api.camera, 1 / 60);
+    // The stub, for the lamps: it is the only way to hold the headlights on
+    // regardless of what the preset thinks the light level is.
+    const weather = fakeWeather({
+      current: {
+        exposure: p.exposure, windSpeed: p.windSpeed, windDirection: p.windDirection,
+        fogDensity: p.fogDensity, precipRate: p.precipRate, turbidity: p.turbidity,
+        roadWetness: p.roadWetness, visibility: p.visibility,
+      },
+      wet: { film: real.wet.film, standing: real.wet.standing, snowCover: real.wet.snowCover },
+    });
+    api.buildStage(stage, { car, weather });
+    const frame = { car, stage, weather, alpha: 0, state: "racing", surface: fakeSurface() };
+    for (let i = 0; i < 60; i += 1) api.update(frame, 1 / 60);
+    const beams = api.scene.getObjectByName("opus.beams");
+    assert.equal(beams.visible, true, `${id}: no beam to measure`);
+
+    // Two thirds of the way down the cone: on a chase camera that is where the
+    // air a few metres over the road ahead is seen through, and it is the place
+    // the critic measured. The peak would be the flattering slice.
+    const air = { fog: real.fog, current: { exposure: p.exposure } };
+    const { lit, unlit } = beamOverHaze(beams, air, 2, 0.65);
+    // Only where a lamp can compete with the air. Hill fog is daylight fog: its
+    // haze already reads 220/255, so the same cone is worth twelve levels there
+    // and the frame agrees — the air over the road measured 221 unlit and 222
+    // lit. That is what a headlight in daylight fog looks like, and asking for
+    // more of it is asking for a lamp brighter than the sky.
+    //
+    // The bound is on the modelled figure and the measured one is quoted beside
+    // it, because the model charges two whole shell crossings at 0.65 while a
+    // real ray averages the profile over its chord — it over-reads the frame by
+    // about two and a half times. Night rain, as shipped: 63 to 145 modelled,
+    // 53 to 88 measured on the frame. With the coefficient back at 0.12: 105
+    // modelled. With the throat term out as well, which is what shipped: 85
+    // modelled and 58 measured, against 70 for the air beside the beam.
+    if (p.sunElevation < 0) {
+      assert.ok(lit - unlit >= 55,
+        `${id}: the cone is worth ${(lit - unlit).toFixed(0)} levels over the haze it hangs in `
+        + `(${unlit.toFixed(0)} to ${lit.toFixed(0)}) — that is not a beam`);
+    }
+    assert.ok(lit <= 235,
+      `${id}: lit fog reaches ${lit.toFixed(0)}/255 — the tent is back`);
+    weatherMod.disposeWeather?.(real);
+    api.clearStage?.();
+  }
   api.dispose();
 });
 
