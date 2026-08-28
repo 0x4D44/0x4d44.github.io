@@ -210,6 +210,61 @@ export async function openHarness({ root, quiet = false, width = 1280, height = 
     await key(name, "up");
   }
 
+  // Real touches, and more than one at a time — steering while the throttle is
+  // held is the whole point of an on-screen control set, and a harness that can
+  // only put one finger down cannot tell a working one from a broken one.
+  //
+  // Chrome applies the event type to the points you LIST, not to the difference
+  // from the last call. Releasing one of two fingers therefore means sending
+  // touchEnd carrying only the finger that left: send it carrying the survivors
+  // instead and Chrome lifts those, which reads exactly like a control that
+  // sticks.
+  const fingers = new Map();
+  const asPoint = (p) => ({ x: p.x, y: p.y, id: p.id, radiusX: 12, radiusY: 12, force: 1 });
+
+  // Chrome rejects maxTouchPoints outside 1..16, including on the call that
+  // turns emulation off, so the count only travels with an enable.
+  async function touchEmulation(on = true, maxTouchPoints = 5) {
+    fingers.clear();
+    await S("Emulation.setTouchEmulationEnabled", on
+      ? { enabled: true, maxTouchPoints: Math.max(1, Math.min(16, maxTouchPoints)) }
+      : { enabled: false });
+  }
+
+  async function touchDown(id, x, y) {
+    fingers.set(id, { id, x, y });
+    await S("Input.dispatchTouchEvent", {
+      type: "touchStart", touchPoints: [...fingers.values()].map(asPoint),
+    });
+  }
+
+  async function touchMove(id, x, y) {
+    if (!fingers.has(id)) return false;
+    fingers.set(id, { id, x, y });
+    await S("Input.dispatchTouchEvent", {
+      type: "touchMove", touchPoints: [...fingers.values()].map(asPoint),
+    });
+    return true;
+  }
+
+  async function touchUp(id) {
+    const going = fingers.get(id);
+    if (!going) return false;
+    fingers.delete(id);
+    await S("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [asPoint(going)] });
+    return true;
+  }
+
+  async function touchRelease() {
+    for (const id of [...fingers.keys()]) await touchUp(id);
+  }
+
+  async function touchTap(x, y, ms = 60) {
+    await touchDown(9, x, y);
+    await delay(ms);
+    await touchUp(9);
+  }
+
   async function click(x, y) {
     for (const type of ["mousePressed", "mouseReleased"]) {
       await S("Input.dispatchMouseEvent", {
@@ -262,6 +317,8 @@ export async function openHarness({ root, quiet = false, width = 1280, height = 
 
   return {
     port, evaluate, key, tap, click, screenshot, setViewport, navigate, waitFor, delay,
+    touchEmulation, touchDown, touchMove, touchUp, touchTap, touchRelease,
+    get fingersDown() { return fingers.size; },
     send: S,
     get errors() { return errors.slice(); },
     get console() { return consoleLines.slice(); },

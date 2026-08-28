@@ -299,7 +299,12 @@ export async function startGame(opts) {
           if (action === "reset") requestRecovery();
           if (action === "repeatNote") game.noteRunner?.repeat?.();
         },
+        // The controls and the HUD are separate roots with separate stylesheets,
+        // so neither can measure the other. This is the only channel between
+        // them, and without it the pedals sit on the speedometer.
+        onLayout: (_layout, reserve) => hud.setControlReserve?.(reserve),
       });
+      applyTouchSettings();
     } catch (err) {
       // Not fatal, and not silent either.
       console.warn("touch controls unavailable:", err?.message ?? err);
@@ -355,6 +360,10 @@ export async function startGame(opts) {
       pacenoteOffset: 0,
       audio: {},
       difficulty: "clubman",
+      touchControls: true,
+      touchSteerMode: "Slider",
+      touchSteerCurve: 1.4,
+      touchTiltRange: 26,
     };
     try {
       const raw = window.localStorage.getItem("0x4d44.opusrally.settings.v1");
@@ -374,6 +383,20 @@ export async function startGame(opts) {
     renderer.setQuality?.(settings.quality);
     audio.setSettings?.(settings.audio);
     if (game.noteRunner) game.noteRunner.offset = settings.pacenoteOffset;
+    applyTouchSettings();
+  }
+
+  // touch.js owns its own defaults; this only ever hands it what the player
+  // changed. Split out because it has to run once at boot as well — a mode
+  // chosen last session is no use if it is only read on the next edit.
+  function applyTouchSettings() {
+    if (!touch) return;
+    touch.setEnabled?.(settings.touchControls !== false);
+    touch.setSteerMode?.(/tilt/i.test(String(settings.touchSteerMode ?? "")) ? "tilt" : "slider");
+    touch.configure?.({
+      steerGamma: Number(settings.touchSteerCurve),
+      tiltRange: Number(settings.touchTiltRange),
+    });
   }
 
   async function beginStage(choice) {

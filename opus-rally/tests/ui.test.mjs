@@ -432,6 +432,29 @@ group("settings schema", () => {
   eq(UI.applyQualityPreset(defs, "Bogus"), defs, "unknown preset is a no-op");
 });
 
+// The tilt path and the off switch existed in touch.js from the day it was
+// written and nothing could reach either of them: the settings screen had six
+// controls rows, all of them about a gamepad or a keyboard.
+group("touch controls are reachable from the settings screen", () => {
+  const defs = UI.defaultSettings();
+  const controls = UI.SETTINGS_SCHEMA.find((g) => g.id === "controls");
+  const keys = controls.fields.map((f) => f.key);
+  for (const key of ["touchControls", "touchSteerMode", "touchSteerCurve", "touchTiltRange"]) {
+    ok(keys.includes(key), "the controls group offers " + key);
+    ok(defs[key] !== undefined, key + " has a default");
+  }
+  const mode = UI.settingsField("touchSteerMode");
+  eq(mode.kind, "enum", "steering mode is a choice, not a slider");
+  ok(mode.options.includes("Tilt") && mode.options.includes("Slider"), "both steering paths are offered");
+  eq(UI.coerceSetting(mode, "Wheel"), mode.default, "an unknown mode falls back rather than sticking");
+  eq(UI.coerceSetting(UI.settingsField("touchControls"), 0), false, "the off switch coerces to a boolean");
+  const curve = UI.settingsField("touchSteerCurve");
+  ok(curve.min >= 1, "the curve never inverts the near-centre response");
+  eq(UI.coerceSetting(curve, 99), curve.max, "a stored nonsense curve is clamped");
+  const tilt = UI.settingsField("touchTiltRange");
+  ok(tilt.min >= 8 && tilt.max <= 60, "the tilt range stays inside what a wrist can do");
+});
+
 group("keybindings", () => {
   const base = UI.cloneBinds(UI.DEFAULT_KEYBINDS);
   eq(UI.bindConflicts(base).length, 0, "shipped defaults have no conflict");

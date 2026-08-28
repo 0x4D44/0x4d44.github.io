@@ -848,6 +848,51 @@ function mediaBlock(css, condition) {
 // A phone in portrait needs a different instrument set, not the landscape one at a
 // smaller size. The breakpoint used to carry nothing but a smaller `.orh-digit`, and
 // the panels ate a third of the screen with the tacho painting across the readout.
+// The HUD and the driving controls are separate roots with separate
+// stylesheets, so neither can measure the other and the collision is invisible
+// to both. Measured in Chrome before this existed: the portrait slider covered
+// 81% of the speed and gear cluster, and in landscape the pedals and handbrake
+// covered 63% of it. A speed you cannot read is a pacenote you cannot use.
+test("the bottom rail steps out of whatever the driving controls took", () => {
+  const doc = makeStubDocument();
+  const root = makeRoot(doc);
+  const hud = createHud(root, { document: doc, now: () => 0 });
+  const el = root.querySelector(".orh");
+  const css = root.childNodes.find((n) => n.tagName === "STYLE").textContent;
+
+  // Declared on the root and consumed by the two blocks that live in the rail,
+  // so a HUD nobody tells anything to is exactly where it always was.
+  assert.match(css, /--orh-ctrl-left:\s*0px/);
+  assert.match(css, /--orh-ctrl-right:\s*0px/);
+  assert.match(css, /--orh-ctrl-side:\s*0px/);
+  assert.match(css, /\.orh-cluster\s*\{[^}]*margin-bottom:\s*var\(--orh-ctrl-right\)/);
+  assert.match(css, /\.orh-cluster\s*\{[^}]*margin-right:\s*var\(--orh-ctrl-side\)/);
+  assert.match(css, /\.orh-left\s*\{[^}]*margin-bottom:\s*var\(--orh-ctrl-left\)/);
+  assert.deepEqual(hud.controlReserve, { leftBottom: 0, rightBottom: 0, rightSide: 0 });
+
+  hud.setControlReserve({ leftBottom: 78, rightBottom: 293, rightSide: 0 });
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-left"), "78px", "portrait lifts the damage panel");
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-right"), "293px", "and lifts the cluster over the pedals");
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-side"), "0px", "with nothing taken off the side");
+
+  hud.setControlReserve({ leftBottom: 78, rightBottom: 78, rightSide: 198 });
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-side"), "198px",
+    "landscape slides the cluster left of the column instead, because there is no room above it");
+
+  // Handing it back matters as much as setting it: a player who plugs in a pad
+  // mid-session must not be left with a speedo halfway up the screen.
+  hud.setControlReserve(null);
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-right"), "0px");
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-side"), "0px");
+  assert.deepEqual(hud.controlReserve, { leftBottom: 0, rightBottom: 0, rightSide: 0 });
+
+  hud.setControlReserve({ leftBottom: NaN, rightBottom: -40, rightSide: "wide" });
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-left"), "0px", "a bad number is nothing, never NaNpx");
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-right"), "0px", "a negative reserve is nothing");
+  assert.equal(el.style.getPropertyValue("--orh-ctrl-side"), "0px");
+  hud.destroy();
+});
+
 test("the portrait breakpoint restructures the HUD rather than shrinking a digit", () => {
   const doc = makeStubDocument();
   const root = makeRoot(doc);

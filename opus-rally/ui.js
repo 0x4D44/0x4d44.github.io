@@ -483,6 +483,18 @@ export const SETTINGS_SCHEMA = Object.freeze([
       rangeField("keySteerSpeed", "Keyboard steer rate", 1, 8, 0.25, 3.4, "How fast a key press reaches full lock.", "num"),
       toggleField("padVibration", "Vibration", true, "Rumble on slip, kerbs and impacts."),
       toggleField("padInvertLook", "Invert look axis", false, "Flips the free-look stick."),
+      // The on-screen controls appear on their own on a touchscreen, so the
+      // toggle is for the tablet with a pad plugged into it rather than for
+      // finding them. Tilt is offered because a thumb on a slider is a thumb
+      // that is not on a pedal.
+      toggleField("touchControls", "On-screen controls", true,
+        "Shows the driving controls on a touchscreen. Off if you drive this on a tablet with a pad."),
+      enumField("touchSteerMode", "Touch steering", ["Slider", "Tilt"], "Slider",
+        "Slider is a thumb track in the bottom corner; tilt steers by rolling the device and frees the thumb."),
+      rangeField("touchSteerCurve", "Touch steering curve", 1, 2.5, 0.05, 1.4,
+        "Above 1 softens the first part of the track, which is where a correction at speed lives.", "num"),
+      rangeField("touchTiltRange", "Tilt to full lock", 12, 40, 1, 26,
+        "How far the device has to roll for full lock. However you are holding it when you switch to tilt is straight ahead.", "deg"),
     ]),
   },
 ]);

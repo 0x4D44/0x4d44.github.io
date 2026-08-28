@@ -267,6 +267,11 @@ export function createInput(opts = {}) {
       touch.throttle = 0;
       touch.brake = 0;
       touch.handbrake = 0;
+      // The scheme has to go back with the record. It was only ever cleared by a
+      // keydown, so a hybrid laptop that handed the controls back still reported
+      // itself as a touchscreen and ignored a key already being held until the
+      // player let go of it and pressed it again.
+      usingTouch = false;
     },
     setBinding(action, codes) {
       bindings[action] = codes.slice();
