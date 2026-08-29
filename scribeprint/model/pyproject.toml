@@ -19,6 +19,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+benchmark = [
+  "datasets>=3,<5",
+  "huggingface-hub>=0.28,<2",
+]
 dev = ["pytest>=8,<10"]
 
 [project.scripts]
@@ -26,6 +30,8 @@ scribeprint-import-m4 = "scribeprint_model.import_m4:main"
 scribeprint-baseline = "scribeprint_model.baseline:main"
 scribeprint-evaluate = "scribeprint_model.evaluate:main"
 scribeprint-audit = "scribeprint_model.audit:main"
+scribeprint-human-benchmark = "scribeprint_model.human_benchmark:main"
+scribeprint-human-evaluate = "scribeprint_model.human_evaluate:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
