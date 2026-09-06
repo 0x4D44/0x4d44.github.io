@@ -16,6 +16,18 @@
 
 window.ESSAYS = [
   {
+    slug: "tellylist-setup",
+    title: "Tellylist — Getting Started",
+    tagline: "A simple guide to putting your TV library on an iPhone or iPad: add the app to your Home Screen, sign in with an emailed code and keep your programmes together. App setup is still in progress.",
+    url: "https://0x4d44.github.io/tellylist-setup/",
+    illustration: "ill-pc",
+    date: "2026-09-06T09:32:52+01:00",
+    year: 2026,
+    readingMin: 3,
+    tags: ["software"],
+    real: true,
+  },
+  {
     slug: "OxAlphaRally",
     title: "OxAlphaRally",
     tagline: "A full-season rally simulator in a browser tab: twelve generated stages, changing weather, damage, service parks and a co-driver calling the road ahead. Four-wheel tyre and suspension physics, procedural Three.js graphics and synthesised WebAudio; original cars and events, with no build step.",
@@ -1709,7 +1721,7 @@ window.COLLECTIONS = [
     slugs: ["recipes"] },
   { id: "tools", name: "Tools", icon: "ill-caliper",
     blurb: "Small practical instruments that run in the browser.",
-    slugs: ["wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
+    slugs: ["tellylist-setup", "wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",

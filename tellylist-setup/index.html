@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3ea">
+  <meta name="description" content="A simple guide for getting ready to use Tellylist.">
+  <title>Tellylist · Getting ready</title>
+  <style>
+    :root {
+      --cream: #f7f3ea;
+      --paper: #fffdf8;
+      --ink: #17383a;
+      --muted: #5d7070;
+      --teal: #126b68;
+      --teal-dark: #0c514f;
+      --teal-pale: #e1f0ec;
+      --gold: #d89b3d;
+      --line: #d7e2dc;
+      --shadow: 0 18px 45px rgba(24, 67, 65, 0.11);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 88% 5%, rgba(216, 155, 61, 0.13), transparent 17rem),
+        var(--cream);
+    }
+
+    a {
+      color: var(--teal-dark);
+      text-decoration-thickness: 0.11em;
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover {
+      color: var(--teal);
+    }
+
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 2;
+      top: 84px;
+      left: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.6rem;
+      background: var(--ink);
+      color: #fff;
+      transform: translateY(calc(-100% - 90px));
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .page-shell {
+      /* Keep the masthead clear of the shared Almanac pill. */
+      padding: 80px 18px 52px;
+    }
+
+    .page-header,
+    main,
+    .page-footer {
+      width: min(100%, 760px);
+      margin: 0 auto;
+    }
+
+    .page-header {
+      position: relative;
+      padding: 1.6rem 0 2.2rem;
+    }
+
+    .page-header::after {
+      position: absolute;
+      right: 0.2rem;
+      bottom: 1.15rem;
+      width: 4.5rem;
+      height: 0.3rem;
+      border-radius: 99px;
+      background: var(--gold);
+      content: "";
+      opacity: 0.75;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.65rem;
+      color: var(--teal);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.55rem, 11vw, 4.3rem);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 0.98;
+    }
+
+    .logo-mark {
+      display: inline-grid;
+      flex: 0 0 auto;
+      width: 1.05em;
+      height: 1.05em;
+      place-items: center;
+      border-radius: 30% 30% 44% 44%;
+      background: var(--teal);
+      color: #fff;
+      box-shadow: 0 0.18em 0 var(--teal-dark);
+    }
+
+    .logo-mark svg {
+      width: 60%;
+      height: 60%;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.4;
+    }
+
+    .intro {
+      max-width: 35rem;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 2.7vw, 1.24rem);
+    }
+
+    .status-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.75rem 0.9rem;
+      align-items: start;
+      margin-bottom: 1.8rem;
+      padding: clamp(1.2rem, 4vw, 1.75rem);
+      border: 1px solid #bdddd5;
+      border-radius: 1.25rem;
+      background: var(--teal-pale);
+      box-shadow: var(--shadow);
+    }
+
+    .status-light {
+      display: block;
+      width: 0.8rem;
+      height: 0.8rem;
+      margin-top: 0.38rem;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 0 0.32rem rgba(216, 155, 61, 0.2);
+    }
+
+    .status-card h2 {
+      margin-bottom: 0.25rem;
+      font-size: 1.18rem;
+      letter-spacing: -0.01em;
+    }
+
+    .status-card p {
+      grid-column: 2;
+      margin-bottom: 0;
+      color: #315b5a;
+    }
+
+    .section-card {
+      margin-bottom: 1.8rem;
+      padding: clamp(1.2rem, 4vw, 1.75rem);
+      border: 1px solid var(--line);
+      border-radius: 1.25rem;
+      background: var(--paper);
+      box-shadow: 0 8px 25px rgba(24, 67, 65, 0.055);
+    }
+
+    .section-heading {
+      margin-bottom: 1.15rem;
+    }
+
+    .section-heading h2 {
+      margin-bottom: 0.3rem;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.65rem, 5vw, 2.15rem);
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+
+    .section-heading p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .steps {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 2.7rem minmax(0, 1fr);
+      gap: 0.9rem;
+      position: relative;
+      padding: 0 0 1.35rem;
+    }
+
+    .step:last-child {
+      padding-bottom: 0;
+    }
+
+    .step:not(:last-child)::before {
+      position: absolute;
+      top: 2.7rem;
+      bottom: 0.55rem;
+      left: 1.29rem;
+      width: 2px;
+      background: var(--line);
+      content: "";
+    }
+
+    .step-number {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 2.7rem;
+      height: 2.7rem;
+      place-items: center;
+      border: 2px solid #a9d2c9;
+      border-radius: 50%;
+      background: var(--paper);
+      color: var(--teal-dark);
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .step h3 {
+      margin: 0.18rem 0 0.25rem;
+      font-size: 1.04rem;
+      line-height: 1.25;
+    }
+
+    .step p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .app-link {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      margin: 0.15rem 0;
+      padding: 0.45rem 0.8rem;
+      border-radius: 0.65rem;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 750;
+      text-decoration: none;
+      vertical-align: middle;
+    }
+
+    .app-link:hover {
+      background: var(--teal-dark);
+      color: #fff;
+    }
+
+    .tip-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tip {
+      min-width: 0;
+      padding: 1rem;
+      border-radius: 0.95rem;
+      background: #f1f7f3;
+    }
+
+    .tip-icon {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      margin-bottom: 0.7rem;
+      border-radius: 0.65rem;
+      background: #cce6df;
+      color: var(--teal-dark);
+      font-weight: 800;
+    }
+
+    .tip h3 {
+      margin-bottom: 0.3rem;
+      font-size: 0.98rem;
+    }
+
+    .tip p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .help {
+      border-color: #ecdcbf;
+      background: #fffaf0;
+    }
+
+    .help p:last-child {
+      margin-bottom: 0;
+    }
+
+    .help strong {
+      color: var(--ink);
+    }
+
+    .page-footer {
+      padding-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+
+    .page-footer p {
+      margin-bottom: 0.65rem;
+    }
+
+    .reference-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem 1.15rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reference-links a {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+    }
+
+    @media (max-width: 620px) {
+      .tip-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tip {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 0.8rem;
+        align-items: start;
+      }
+
+      .tip-icon {
+        grid-row: span 2;
+        margin-bottom: 0;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .page-shell {
+        padding-right: 14px;
+        padding-left: 14px;
+      }
+
+      .status-card,
+      .section-card {
+        border-radius: 1rem;
+      }
+
+      .step {
+        grid-template-columns: 2.35rem minmax(0, 1fr);
+        gap: 0.7rem;
+      }
+
+      .step-number {
+        width: 2.35rem;
+        height: 2.35rem;
+      }
+
+      .step:not(:last-child)::before {
+        left: 1.12rem;
+        top: 2.35rem;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="page-shell">
+    <header class="page-header">
+      <p class="eyebrow">For our telly nights</p>
+      <h1>
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img" aria-label="">
+            <path d="M5 8.5h14v8.25A2.25 2.25 0 0 1 16.75 19h-9.5A2.25 2.25 0 0 1 5 16.75Z"></path>
+            <path d="m8 5 3 3m5-3-3 3m-5.25 8h.01m3.75 0h.01m3.75 0h.01"></path>
+          </svg>
+        </span>
+        Tellylist
+      </h1>
+      <p class="intro">A calm little place to remember what we are watching, what we have finished, and what to try next.</p>
+    </header>
+
+    <main id="main">
+      <section class="status-card" aria-labelledby="status-title" aria-live="polite">
+        <span class="status-light" aria-hidden="true"></span>
+        <div>
+          <h2 id="status-title">Getting ready</h2>
+          <p>Tellylist is still being set up. Arthur will let you know when it is ready to open.</p>
+        </div>
+      </section>
+
+      <section class="section-card" aria-labelledby="ready-title">
+        <div class="section-heading">
+          <h2 id="ready-title">Once Arthur says it is ready</h2>
+          <p>These are the steps for adding the real Tellylist app to your iPhone or iPad.</p>
+        </div>
+
+        <ol class="steps">
+          <li class="step">
+            <span class="step-number" aria-hidden="true">1</span>
+            <div>
+              <h3>Open the app link</h3>
+              <p>Open this guide in Safari first. When Arthur says it is ready, tap <a class="app-link" href="/tellylist/">Open Tellylist</a>. That link will open the app itself.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-number" aria-hidden="true">2</span>
+            <div>
+              <h3>Add the real app to your Home Screen</h3>
+              <p>Make sure you are on the Tellylist app page, not this guide. In Safari, tap the Share button (the square with an upward arrow). If needed, tap <strong>More</strong>, then choose <strong>Add to Home Screen</strong>. If <strong>Open as Web App</strong> appears, leave it on, then tap <strong>Add</strong>.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-number" aria-hidden="true">3</span>
+            <div>
+              <h3>Open the new icon</h3>
+              <p>Find the Tellylist icon on your Home Screen and tap it. The app is added separately on each device, so repeat these steps on your iPad if you use one.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="step-number" aria-hidden="true">4</span>
+            <div>
+              <h3>Sign in with your Tellylist email</h3>
+              <p>Use your email address — the one Arthur set up for Tellylist — and enter the code sent to that email. Use the same email on your iPhone and iPad so they show the same list.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section-card" aria-labelledby="first-use-title">
+        <div class="section-heading">
+          <h2 id="first-use-title">A gentle first start</h2>
+          <p>You can build the list bit by bit. There is no need to add everything at once.</p>
+        </div>
+        <ul class="tip-grid">
+          <li class="tip">
+            <span class="tip-icon" aria-hidden="true">+</span>
+            <h3>Add a programme</h3>
+            <p>Start with a programme we are watching or want to remember for later.</p>
+          </li>
+          <li class="tip">
+            <span class="tip-icon" aria-hidden="true">≡</span>
+            <h3>Name some groups</h3>
+            <p>Groups contain programmes. Try names such as <em>Comedy</em> or <em>To watch together</em>.</p>
+          </li>
+          <li class="tip">
+            <span class="tip-icon" aria-hidden="true">✓</span>
+            <h3>Mark episodes watched</h3>
+            <p>Open a programme and a season, then tick episodes as watched when that helps.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section-card help" aria-labelledby="help-title">
+        <div class="section-heading">
+          <h2 id="help-title">If something seems stuck</h2>
+          <p>Arthur can sort out anything unusual. A few useful checks:</p>
+        </div>
+        <p><strong>No email code?</strong> Check that you are looking at your email account — the one Arthur set up for Tellylist — including its junk folder, then tell Arthur.</p>
+        <p><strong>No app icon?</strong> Make sure you added the app from Safari and chose <strong>Add to Home Screen</strong>. If it is still missing, tell Arthur.</p>
+        <p><strong>Waiting for a change?</strong> Keep the app open with an internet connection for a moment. If it is still waiting, tell Arthur. Please do not clear Safari website data, as that can remove information saved for the app.</p>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <p>Apple's own guides show the same Home Screen steps:</p>
+      <ul class="reference-links">
+        <li><a href="https://support.apple.com/en-gb/guide/iphone/iphea86e5236/ios">iPhone guide</a></li>
+        <li><a href="https://support.apple.com/en-gb/guide/ipad/ipad8f1f7a29/ipados">iPad guide</a></li>
+      </ul>
+    </footer>
+  </div>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
