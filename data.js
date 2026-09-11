@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "southern-cross-rally",
+    title: "Southern Cross Rally",
+    tagline: "An original rally game across six New Zealand-inspired gravel roads: choose a turbo AWD car or a lively rear-drive coupé, listen to the notes and chase the clock. A six-stage event, damage and service, ghosts and replays; procedural WebGL2 and Web Audio, no external assets or build step.",
+    url: "https://0x4d44.github.io/southern-cross-rally/",
+    illustration: "ill-rally",
+    date: "2026-09-11T20:00:00+00:00",
+    year: 2026,
+    tags: ["games", "simulation", "transport"],
+    real: true,
+  },
+  {
     slug: "tellylist-setup",
     title: "Tellylist — Getting Started",
     tagline: "A simple guide to putting your TV library on an iPhone or iPad: add the app to your Home Screen, sign in with an emailed code and keep your programmes together. App setup is still in progress.",
@@ -1725,7 +1736,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
