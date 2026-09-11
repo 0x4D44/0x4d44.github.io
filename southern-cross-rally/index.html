@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#132522"><meta name="description" content="Southern Cross Rally. Two original cars. Six New Zealand-inspired gravel stages. A complete, offline-capable WebGL2 rally game.">
+<title>Southern Cross Rally</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23132522'/%3E%3Cpath d='M12 46L32 12h12L24 46zm20 0 15-25h10L42 46z' fill='%23f2ad55'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="world" aria-label="Three-dimensional rally stage"></canvas><div class="film" aria-hidden="true"></div>
+<div id="loading" class="loading"><span class="eyebrow">SOUTHERN CROSS / RALLY</span><h2>Finding the road.</h2><p id="loading-text">Building the landscape…</p><div class="loading-line"></div></div>
+<div id="error" class="loading" hidden><h2>The engine could not start.</h2><p id="error-message"></p><p>Use a browser with WebGL 2 and hardware acceleration enabled. Serve this directory over HTTP, not file://.</p><button onclick="location.reload()">Try again</button></div>
+<main id="menu" hidden>
+  <header class="masthead"><div class="wordmark"><span class="mark">///</span> SOUTHERN CROSS <span class="thin">RALLY</span></div><button id="settings-button" class="quiet">Controls & setup <span>↗</span></button></header>
+  <section class="menu-content">
+    <div class="intro"><p class="eyebrow"><span class="live-dot"></span> NEW ZEALAND · THE GRAVEL COLLECTION</p><h1>CHASE THE<br><em>HORIZON.</em></h1><p class="deck">Six roads. Two machines. Just you,<br>your co-driver, and the clock.</p></div>
+    <div class="selection"><div class="section-label"><span>01 / YOUR MACHINE</span><span id="drive-badge">AWD</span></div><div id="cars" class="car-grid"></div><p id="car-description" class="small"></p>
+      <div class="section-label"><span>02 / CHOOSE YOUR ROAD</span><span>06 STAGES</span></div><div id="stages" class="stage-grid"></div>
+    </div>
+  </section>
+  <aside class="location-card"><span class="eyebrow" id="region"></span><h2 id="stage-name"></h2><p id="stage-description"></p><div class="location-stats"><span><b id="stage-length"></b>DISTANCE</span><span><b id="weather"></b>CONDITIONS</span><span><b id="best-time">—</b>PERSONAL BEST</span></div></aside>
+  <footer class="start-bar"><label class="mode-select">EVENT<select id="mode"><option value="practice">Single stage / time trial</option><option value="cup">Southern Cross / 6-stage rally</option></select></label><p class="start-hint">Headphones on. Eyes up.<br><span>Original routes, inspired by New Zealand.</span></p><button id="start" class="primary">TAKE THE START <span>↗</span></button></footer>
+</main>
+<section id="hud" aria-label="Driving instruments" hidden>
+  <div class="hud-stage"><span id="hud-stage-number" class="eyebrow"></span><b id="hud-stage-name"></b><small id="hud-surface">GRAVEL</small></div>
+  <div class="timing"><span class="eyebrow">STAGE TIME</span><strong id="time">0:00.000</strong><span id="penalty" class="penalty"></span></div>
+  <div id="pace" class="pace"><span id="pace-arrow">↑</span><div><strong id="pace-grade">6</strong><small id="pace-distance">100 M</small></div><span id="pace-extra"></span></div>
+  <div class="hud-buttons"><button id="camera" title="Change camera (C)" aria-label="Change camera">CAM</button><button id="pause" title="Pause (Esc)" aria-label="Pause game">Ⅱ</button></div>
+  <div class="map-wrap"><canvas id="map" width="240" height="190" aria-label="Stage map"></canvas><span id="remaining">0.0 KM TO FINISH</span></div>
+  <div class="telemetry"><div class="car-health"><span>CAR CONDITION</span><b id="health-text">100%</b><i><i id="health-bar"></i></i></div><div class="dash"><div class="gear"><small>GEAR</small><b id="gear">1</b></div><strong id="speed">0</strong><small class="kmh">KM/H</small></div><div class="rpm"><i id="rpm-bar"></i></div><span id="rpm-text">1000 RPM</span><span id="camera-label">CHASE CAM</span></div>
+  <div class="progress"><i id="progress-bar"></i><span></span><span></span><span></span></div>
+  <div id="touch" class="touch-controls"><div><button data-control="left" aria-label="Steer left">◀</button><button data-control="right" aria-label="Steer right">▶</button></div><div><button data-control="handbrake" aria-label="Handbrake" class="handbrake">HB</button><button data-control="brake" aria-label="Brake or reverse">BRAKE</button><button data-control="throttle" aria-label="Accelerate" class="accelerate">GO</button></div></div>
+  <div class="key-hint">WASD / ARROWS · SPACE HANDBRAKE · C CAMERA · R RECOVER +5S · ESC PAUSE</div>
+</section>
+<div id="countdown" hidden aria-live="polite">3</div><div id="toast" role="status" hidden></div>
+<div id="paused" class="modal" hidden><section class="dialog"><span class="eyebrow">TAKE A BREATH</span><h2>On the brakes.</h2><p>The clock is stopped. Your stage is waiting.</p><button id="resume" class="primary">BACK TO THE ROAD →</button><div class="button-row"><button id="restart">Restart stage</button><button id="quit">Return to menu</button></div><button id="pause-settings" class="quiet">Controls & setup</button></section></div>
+<div id="settings" class="modal" hidden><section class="dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="setup-heading"><span class="eyebrow">SERVICE MANUAL</span><h2 id="setup-heading">Make it yours.</h2><div class="settings-grid"><label>Graphics<select id="quality"><option value="high">High · full resolution + shadows</option><option value="medium">Balanced · lower resolution</option><option value="low">Performance · no shadows</option></select></label><label>Transmission<select id="transmission"><option value="auto">Automatic</option><option value="manual">Manual · Q / E to shift</option></select></label><label class="check"><input id="assists" type="checkbox" checked> Stability assistance <small>Separate personal-best records</small></label><label class="check"><input id="ghost" type="checkbox" checked> Show personal-best ghost</label><label class="check"><input id="voice" type="checkbox" checked> Spoken co-driver <small>Browser voice, where available</small></label><label class="check"><input id="sound" type="checkbox" checked> Engine and road audio</label><label>Volume<input id="volume" type="range" min="0" max="1" step="0.05" value="0.55"></label></div><div class="controls-guide"><p><b>Keyboard</b> W / ↑ accelerate. S / ↓ brake, hold at rest to reverse. A/D or ←/→ steer. Space handbrake. Q/E gears. C camera. R recover (+5 seconds). Esc pause. M mute.</p><p><b>Gamepad</b> Left stick steer, RT throttle, LT brake/reverse, A handbrake, B recover, Y camera, bumpers shift, Start pause. Standard-mapped controllers only.</p><p><b>Touch</b> Use the on-screen pedals and steering buttons. Landscape gives the best view. Corner notes run from 1 (tightest) to 5 (fast).</p></div><button id="settings-close" class="primary">READY →</button></section></div>
+<div id="results" class="modal" hidden><section class="dialog results-dialog"><span class="eyebrow" id="result-eyebrow">STAGE COMPLETE</span><h2 id="result-heading">Across the line.</h2><div class="result-time" id="result-time"></div><span id="result-medal" class="medal"></span><p id="result-detail"></p><div id="split-results"></div><p id="cup-summary"></p><div class="button-row"><button id="replay">Watch replay</button><button id="retry">Run it again</button></div><button id="next" class="primary">CONTINUE →</button><button id="result-menu" class="quiet">Return to menu</button></section></div>
+<div id="service" class="modal" hidden><section class="dialog"><span class="eyebrow">BETWEEN STAGES / SERVICE PARK</span><h2>A little attention.</h2><p id="service-detail"></p><p>A full repair restores the car but adds 20 seconds to the rally total. Or carry the damage into the next stage.</p><button id="repair" class="primary">FULL REPAIR · +20S</button><button id="no-repair">CARRY ON WITHOUT REPAIR</button></section></div>
+<div id="replay-bar" hidden><span>STAGE REPLAY <b id="replay-time"></b></span><button id="end-replay">Back to results</button></div>
+<noscript><div class="loading"><h2>JavaScript is required.</h2><p>Enable JavaScript to run Southern Cross Rally.</p></div></noscript>
+<script type="module">import('./game.mjs').catch(error=>{console.error(error);document.getElementById('loading').hidden=true;document.getElementById('error').hidden=false;document.getElementById('error-message').textContent=error.message;});</script>
+<script defer src="/almanac-back.js"></script>
+</body></html>

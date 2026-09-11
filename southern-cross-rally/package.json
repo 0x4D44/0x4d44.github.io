@@ -1,0 +1,9 @@
+{
+  "name": "southern-cross-rally",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Original standalone New Zealand-inspired WebGL2 rally game",
+  "scripts": {"test": "node --test tests/core.test.mjs"},
+  "engines": {"node": ">=20"}
+}
