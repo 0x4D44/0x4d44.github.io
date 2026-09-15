@@ -38,7 +38,7 @@ python3 -m unittest discover -s polymyalgia/tests -v
 
 To use an existing browser, set `CHROMIUM_EXECUTABLE`. For the optional automated accessibility audit, install `axe-core@4.10.3` outside the runtime tree and set `AXE_SCRIPT` to its `axe.min.js`. Set `PMR_TEST_OUTPUT` to retain screenshots and the audit JSON; otherwise a temporary directory is used.
 
-The read-only `polymyalgia-checks.yml` workflow runs these checks for relevant pull requests. Coverage includes interactive outputs and selected states; trial values and scales; duplicate IDs and internal citation targets; responsive layouts at 320, 390, 768, 1440 and 1920 pixels; back-control clearance; keyboard activation; reduced motion; no-JavaScript content; both print modes; and catalogue/shelf integration. It also runs axe-core against WCAG A/AA rules and exports screenshots. Automated checks do **not** establish complete accessibility conformance or clinical validity.
+Coverage includes interactive outputs and selected states; trial values and scales; duplicate IDs and internal citation targets; responsive layouts at 320, 390, 768, 1440 and 1920 pixels; back-control clearance; keyboard activation; reduced motion; no-JavaScript content; both print modes; and catalogue/shelf integration. An optional axe-core audit can check WCAG A/AA rules and export screenshots. Automated checks do **not** establish complete accessibility conformance or clinical validity.
 
 ## Evidence and editorial boundaries
 
