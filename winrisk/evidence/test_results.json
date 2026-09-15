@@ -1,0 +1,510 @@
+{
+  "combat_exhaustive": {
+    "original": {
+      "cases": 10836,
+      "mismatches": 2317,
+      "examples": [
+        {
+          "attacker": [
+            2,
+            2
+          ],
+          "defender": [
+            1,
+            2
+          ],
+          "expected": [
+            2,
+            1
+          ],
+          "actual": [
+            1,
+            2
+          ]
+        },
+        {
+          "attacker": [
+            2,
+            2
+          ],
+          "defender": [
+            1,
+            3
+          ],
+          "expected": [
+            2,
+            1
+          ],
+          "actual": [
+            1,
+            2
+          ]
+        },
+        {
+          "attacker": [
+            2,
+            2
+          ],
+          "defender": [
+            1,
+            4
+          ],
+          "expected": [
+            2,
+            1
+          ],
+          "actual": [
+            1,
+            2
+          ]
+        }
+      ],
+      "instructions": 2530088
+    },
+    "patched": {
+      "cases": 10836,
+      "mismatches": 0,
+      "examples": [],
+      "instructions": 2537655
+    }
+  },
+  "deck_boundary": {
+    "original": {
+      "first44_card_types": [
+        15,
+        14,
+        14,
+        1
+      ],
+      "reshuffles_after44": 1,
+      "reshuffles_after45": 1
+    },
+    "patched": {
+      "first44_card_types": [
+        14,
+        14,
+        14,
+        2
+      ],
+      "reshuffles_after44": 0,
+      "reshuffles_after45": 1
+    }
+  },
+  "shuffle_integrity": {
+    "permutations_tested": 2,
+    "cards_per_deck": 44
+  },
+  "territory_bounds": {
+    "original_minus_one_corrupts_previous_record": [
+      0,
+      6
+    ],
+    "patched_invalid_cases": 399,
+    "valid_claim_differential_cases": 42
+  },
+  "mouse_dispatch": {
+    "result_click_posts_original": 2,
+    "result_click_posts_patched": 1,
+    "other_cases": 6
+  },
+  "elimination_transfer": {
+    "original": [
+      {
+        "starting_troops": 2,
+        "winner_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "pending": 1
+      },
+      {
+        "starting_troops": 3,
+        "winner_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "pending": 1
+      },
+      {
+        "starting_troops": 4,
+        "winner_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "pending": 1
+      },
+      {
+        "starting_troops": 5,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 6,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 7,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 8,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 9,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      }
+    ],
+    "patched": [
+      {
+        "starting_troops": 2,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 3,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 4,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 5,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 6,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 7,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 8,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      },
+      {
+        "starting_troops": 9,
+        "winner_cards": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "eliminated_cards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pending": 0
+      }
+    ]
+  },
+  "setup_transaction": {
+    "original": [
+      {
+        "dialog_result": 0,
+        "wrapper_result": 0,
+        "configuration_changed": true,
+        "unrelated_live_fields_preserved": true
+      },
+      {
+        "dialog_result": 1,
+        "wrapper_result": 1,
+        "configuration_changed": true,
+        "unrelated_live_fields_preserved": true
+      },
+      {
+        "dialog_result": 65535,
+        "wrapper_result": 1,
+        "configuration_changed": false,
+        "unrelated_live_fields_preserved": true
+      }
+    ],
+    "patched": [
+      {
+        "dialog_result": 0,
+        "wrapper_result": 0,
+        "configuration_changed": false,
+        "unrelated_live_fields_preserved": true
+      },
+      {
+        "dialog_result": 1,
+        "wrapper_result": 1,
+        "configuration_changed": true,
+        "unrelated_live_fields_preserved": true
+      },
+      {
+        "dialog_result": 65535,
+        "wrapper_result": 0,
+        "configuration_changed": false,
+        "unrelated_live_fields_preserved": true
+      }
+    ]
+  },
+  "polygon_resources": {
+    "original_includes_sentinel_in_all_42": true,
+    "patched_vertex_counts_correct": 84,
+    "callers_tested": [
+      "point hit test",
+      "bounding-region setup"
+    ],
+    "changed_regions": [
+      {
+        "resource": 27,
+        "changed_vertices": 1,
+        "witness": [
+          298.5,
+          242.5
+        ],
+        "old_hit": true,
+        "patched_hit": false
+      },
+      {
+        "resource": 30,
+        "changed_vertices": 1,
+        "witness": [
+          166.5,
+          62.5
+        ],
+        "old_hit": true,
+        "patched_hit": false
+      },
+      {
+        "resource": 33,
+        "changed_vertices": 1,
+        "witness": [
+          16.5,
+          0.5
+        ],
+        "old_hit": true,
+        "patched_hit": false
+      },
+      {
+        "resource": 36,
+        "changed_vertices": 1,
+        "witness": [
+          494.5,
+          171.5
+        ],
+        "old_hit": false,
+        "patched_hit": true
+      },
+      {
+        "resource": 37,
+        "changed_vertices": 2,
+        "witness": [
+          437.5,
+          201.5
+        ],
+        "old_hit": false,
+        "patched_hit": true
+      },
+      {
+        "resource": 39,
+        "changed_vertices": 1,
+        "witness": [
+          479.5,
+          277.5
+        ],
+        "old_hit": false,
+        "patched_hit": true
+      },
+      {
+        "resource": 42,
+        "changed_vertices": 1,
+        "witness": [
+          522.5,
+          304.5
+        ],
+        "old_hit": true,
+        "patched_hit": false
+      }
+    ]
+  },
+  "ne_integrity": {
+    "file_size": 220672,
+    "segment_count": 10,
+    "relocation_records": 530,
+    "expanded_relocation_sites": 530,
+    "resources": 59,
+    "entrypoints_unchanged": true,
+    "all_nonpolygon_resources_unchanged": true,
+    "original_sha256": "b829f76340d6848a697b7a4b499c60c27bb109921a00b96fd771eb5bff894ae3",
+    "patched_sha256": "9fcdf5e021d089c135eb6b39f609f495b955e71a4d7798fbe41844c1284fcc76"
+  },
+  "test_environment": {
+    "method": "Custom x86 instruction harness with explicit Win16/runtime test doubles; not a full Windows GUI launch",
+    "elapsed_seconds": 12.763,
+    "status": "PASS"
+  }
+}
