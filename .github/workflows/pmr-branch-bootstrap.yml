@@ -1,0 +1,66 @@
+name: PMR branch preparation
+on:
+  push:
+    branches: ['feat/polymyalgia-visual-guide']
+    paths: ['.github/workflows/pmr-branch-bootstrap.yml']
+permissions:
+  contents: write
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/feat/polymyalgia-visual-guide'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/polymyalgia-visual-guide
+          sparse-checkout: |
+            polymyalgia
+            .github/workflows
+      - name: Integrate new document without rewriting the existing catalogue
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          p = Path('data.js')
+          text = p.read_text()
+          assert 'slug: "polymyalgia"' not in text and '"slug": "polymyalgia"' not in text
+          entry = {
+            'slug': 'polymyalgia',
+            'title': 'Polymyalgia, Explained',
+            'tagline': 'A visual field guide to polymyalgia rheumatica: the tissues that hurt, the immune signals behind the stiffness, and the balance between controlling inflammation and protecting the body. Interactive anatomy, trial evidence and treatment explanations, with dated primary sources. Static HTML, SVG and JavaScript; no build step.',
+            'url': 'https://0x4d44.github.io/polymyalgia/',
+            'illustration': 'ill-dna',
+            'date': '2026-09-15T16:00:00+01:00',
+            'year': 2026,
+            'tags': ['science', 'software'],
+            'real': True
+          }
+          anchor = 'window.ESSAYS = [\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, anchor + '  ' + json.dumps(entry, ensure_ascii=False, indent=2).replace('\n', '\n  ') + ',\n', 1)
+          for old, new in [
+            ('slugs: ["morning-run", "shipshape"]', 'slugs: ["polymyalgia", "morning-run", "shipshape"]'),
+            ('slugs: ["triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown"', 'slugs: ["polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown"')
+          ]:
+            assert text.count(old) == 1, old
+            text = text.replace(old, new, 1)
+          p.write_text(text)
+      - name: Check catalogue and commit to this feature branch only
+        run: |
+          node -e 'global.window={};require("./data.js");const e=window.ESSAYS.filter(e=>e.slug==="polymyalgia");if(e.length!==1||window.COLLECTIONS.filter(c=>c.slugs.includes("polymyalgia")).length!==2)process.exit(1);'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data.js
+          git commit -m 'feat(almanac): shelve Polymyalgia Explained in Health and Science'
+          git push origin HEAD:refs/heads/feat/polymyalgia-visual-guide
+      - name: Export existing page shell for isolated preview tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmr-almanac-fixtures
+          path: |
+            data.js
+            index.html
+            style.css
+            app.js
+            almanac-back.js
+          retention-days: 3
