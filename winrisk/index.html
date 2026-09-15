@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a30">
+<meta name="description" content="Inside a 1992 Windows game: explore WINRISK's executable, reproduce a one-byte combat bug, inspect broken hit regions and follow nine binary repairs. An interactive, evidence-led software archaeology case study.">
+<meta property="og:title" content="WINRISK — A tiny byte. A different war.">
+<meta property="og:description" content="An interactive autopsy of a 220,672-byte Windows game. Roll the dice, inspect the executable and see exactly what changed.">
+<meta property="og:type" content="article">
+<link rel="canonical" href="https://0x4d44.github.io/winrisk/">
+<title>Inside WINRISK — A tiny byte. A different war. | 0x4D44 Almanac</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='9' fill='%23172a30'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-size='45' fill='%23f5f1e7' font-family='Georgia'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.mjs"></script>
+</head>
+<body>
+<a class="skip" href="#case-file">Skip to the case study</a>
+<div class="progress" aria-hidden="true"></div>
+<header class="masthead"><span>0x4D44 / Software archaeology</span><span>Case file · WINRISK.EXE · 1992</span><a href="#evidence">The evidence ↗</a></header>
+<main class="shell">
+<div class="hero">
+  <div>
+    <p class="eyebrow">Inside WINRISK / An interactive binary autopsy</p>
+    <h1>A tiny byte.<br>A <em>different war.</em></h1>
+    <p class="intro">An old Windows game. No source code. A defender who quietly borrows the attacker’s best die. This is how we took WINRISK apart, proved what was wrong, and repaired it without making the executable a single byte larger.</p>
+    <div class="actions"><a class="primary" href="#dice-lab">Reproduce the dice bug ↓</a><a href="#anatomy">Explore the executable</a></div>
+    <p class="stamp">DECEMBER 1992 SOFTWARE · SEPTEMBER 2026 INVESTIGATION</p>
+  </div>
+  <div>
+    <div class="window" aria-label="Illustration of the documented combat bug, not a game screenshot">
+      <div class="titlebar"><span>WINRISK.EXE — the wrong die</span><span aria-hidden="true">□</span></div>
+      <div class="window-body">
+        <p class="eyebrow">Evidence 01 / segment 5 : 0D5F</p>
+        <h3>The defender rolled 2, then 3.</h3>
+        <p>But the original compares against:</p>
+        <div class="hero-dice" aria-label="Defender dice used: 3 and an incorrect 6"><span class="pip-die">3</span><span class="pip-die wrong">6</span></div>
+        <p>That 6 belongs to the attacker.<br>One wrong memory operand. Real casualties.</p>
+        <div class="byte-line" aria-label="Original A1 F0 0B. Repaired A1 F6 0B."><div>A1 <span>F0</span> 0B</div><div aria-hidden="true">→</div><div>A1 <b>F6</b> 0B</div></div>
+      </div>
+    </div>
+    <p class="hero-caption">An explanatory reconstruction, not a screenshot. The changed byte is at file offset 0x6360. The rest of the repair involves other bytes too.</p>
+  </div>
+</div>
+<div class="stats" aria-label="Case study at a glance">
+  <div class="stat"><b>220,672</b><span>bytes, before and after</span></div>
+  <div class="stat"><b>10</b><span>executable segments</span></div>
+  <div class="stat"><b>10,836</b><span>combat cases per build</span></div>
+  <div class="stat"><b>2,317 → 0</b><span>combat disagreements</span></div>
+</div>
+<p class="confidence"><strong>What was actually verified:</strong> selected routines ran in a custom 16-bit x86 instruction harness, with Windows APIs replaced by test doubles. No native Windows GUI session or complete played game was validated. The browser experiments below explain the findings; they are not the binary harness.</p>
+<noscript><p class="noscript">The complete written case study and downloadable evidence remain available without JavaScript. Enable JavaScript to operate the dice, map and state experiments.</p></noscript>
+<p id="runtime-error" class="runtime-error" hidden role="alert"></p>
+<div class="body-grid">
+<nav class="chapter-nav" aria-label="Chapters">
+<p>In this investigation</p>
+<a href="#case-file"><span>01</span> The specimen</a>
+<a href="#anatomy"><span>02</span> Inside the machine</a>
+<a href="#dice-lab"><span>03</span> A borrowed die</a>
+<a href="#state-lab"><span>04</span> Between the turns</a>
+<a href="#map-lab"><span>05</span> Invisible borders</a>
+<a href="#surgery"><span>06</span> Binary surgery</a>
+<a href="#ledger"><span>07</span> Repair ledger</a>
+<a href="#evidence"><span>08</span> Proof &amp; limits</a>
+</nav>
+<div>
+<section class="chapter" id="case-file">
+<p class="eyebrow">01 / The specimen</p>
+<h2>A whole world in 215½ KiB.</h2>
+<p class="deck">WINRISK is a three-player territory-conquest game for 16-bit Windows. Its executable contains the rules, computer opponents, dialogs, map artwork and the invisible geometry that decides where you clicked.</p>
+<p>The About dialog identifies <strong>Freeware Version 2.11, Steve Stancliff, December 1992</strong>. A second label in the executable says <strong>Windows Risk 2.01</strong>. Both are original evidence, not a discrepancy to conceal: the repair leaves both untouched. We describe the exact supplied file by its SHA-256 fingerprint, rather than assume that every download bearing the same title contains these bugs. <a href="evidence/AUDIT.md">[Audit: identification]</a></p>
+<p>The brief was unusually constrained: find real bugs, fix the executable and preserve the game. There was no original C project to rebuild. The investigation therefore worked in three layers: map the file’s structures, follow the machine instructions, and construct small experiments that force a suspected error to become observable.</p>
+<div class="two">
+<div><h3>The game you see</h3><p>Claim territories, place armies, choose an attack or movement, roll up to three attacker dice against up to two defender dice, occupy conquered territory, and receive cards after a turn with a conquest. Eliminate the other players to win.</p></div>
+<div><h3>The machine underneath</h3><p>Windows delivers messages. A window procedure forwards actions to game-state code. That code consults fixed-size records and updates the board; drawing routines turn the resulting state back into pixels. Several defects live at these boundaries, not in the main rules.</p></div>
+</div>
+<p>Not every surprising behaviour warranted a patch. The 42-node adjacency graph had valid reciprocal edges and no self-neighbours. The AI was examined but not rewritten: a weak strategic choice is not automatically a correctness defect. Unexplained pre-existing NOP runs were preserved rather than “cleaned up” on intuition.</p>
+</section>
+<section class="chapter" id="anatomy">
+<p class="eyebrow">02 / Inside the machine</p>
+<h2>An executable is a small city.</h2>
+<p class="deck">The file is a Windows <em>New Executable</em> (NE), not a modern PE image. Code, shared data, imported services and resources have distinct addresses and jobs.</p>
+<p>The DOS header points to the NE header at <code>0x0250</code>. Its segment table describes nine code segments and one data segment. Calls into <code>USER</code>, <code>GDI</code>, <code>KERNEL</code> and <code>WIN87EM</code> are resolved through imports and relocations. The audit counted <strong>530 relocation records and 59 resources</strong>. Those are part of the loader’s contract, so a repair cannot treat apparently unused bytes as free space without checking what follows them.</p>
+<div class="lab" id="segment-explorer">
+<div class="lab-head"><div><p class="eyebrow">Instrument 01</p><h3>Choose a segment</h3></div><span class="badge">EXTRACTED FILE STRUCTURE</span></div>
+<div class="segment-grid" id="segments"><p class="small">Segment details load with the interactive exhibit.</p></div>
+<div class="segment-detail" id="segment-detail" aria-live="polite"></div>
+<div class="file-strip" aria-label="Approximate proportions of the original file: code 10.0%, data 1.8%, bitmap resource 69.8%, territory polygons 9.7%, other structures 8.7%"><span style="width:10.03%" title="Code: 22,126 bytes"></span><span style="width:1.75%" title="Data: 3,864 bytes"></span><span class="bitmap" style="width:69.84%" title="Bitmap resource: 154,112 allocated bytes"></span><span class="polygons" style="width:9.74%" title="42 polygon resources: 21,504 allocated bytes"></span><span style="width:8.64%;opacity:.4" title="Headers, relocations, other resources and padding"></span></div>
+<p class="small">A composition chart, <strong>not file order</strong>. The bitmap resource occupies about 70% of the file; all nine original code segments together occupy 22,126 bytes. Resource lengths include their allocated padding.</p>
+</div>
+<h3>The shared data is the real board</h3>
+<p>Most game operations do not act on pictures. They index small records in the data segment. The following names describe roles recovered during the audit; they are not recovered source-code identifiers.</p>
+<div class="memory-row"><code>DS:0784</code><span><strong>Deck.</strong> 44 two-byte entries; a cursor tracks the next draw.</span><span>88 bytes</span></div>
+<div class="memory-row"><code>DS:07EC</code><span><strong>Players.</strong> Three 24-byte records, including names, controller flags and card counts.</span><span>72 bytes</span></div>
+<div class="memory-row"><code>DS:0834</code><span><strong>Territories.</strong> 42 records of 22 bytes. Ownership and army count are the first two words.</span><span>924 bytes</span></div>
+<div class="memory-row"><code>DS:0BD2</code><span><strong>Turn state.</strong> State, active player, selections and flags coordinate the input paths.</span><span>shared</span></div>
+<div class="memory-row"><code>DS:0BF0</code><span><strong>Attacker dice.</strong> Three word-sized slots, ranked high to low.</span><span>6 bytes</span></div>
+<div class="memory-row"><code>DS:0BF6</code><span><strong>Defender dice.</strong> Two word-sized slots immediately after the attacker’s array.</span><span>4 bytes</span></div>
+<p class="note">These are <strong>data-segment offsets</strong>, not positions in the EXE. For example, code segment 5 starts at file offset <code>0x5600</code>; instruction offset <code>0x0D5F</code> therefore maps to file offset <code>0x635F</code>. Its operand begins one byte later.</p>
+<div class="flow" aria-label="Simplified event flow"><span>Windows message</span><b>→</b><span>window procedure</span><b>→</b><span>hit test</span><b>→</b><span>state transition</span><b>→</b><span>record update</span><b>→</b><span>redraw</span></div>
+<p>The same click has different meanings in different states. Clicking the sea during territory selection should not select an imaginary country. Clicking the sea after a battle may legitimately dismiss the result. A blanket “reject every background click” patch would stop the corruption but break the interface.</p>
+</section>
+<section class="chapter" id="dice-lab">
+<p class="eyebrow">03 / A borrowed die</p>
+<h2>The dice were fair.<br>The comparison wasn’t.</h2>
+<p class="deck">The defender’s insertion-sort code reads from the wrong array. When a higher defender roll arrives, it preserves the attacker’s maximum instead of the defender’s previous maximum.</p>
+<p>With attacker rolls <strong>6, 5, 1</strong> and defender rolls <strong>2, then 3</strong>, the correct comparisons are 6 against 3 and 5 against 2. Both go to the attacker. The original instead stores 3 and <em>6</em> for the defender, so its second comparison costs the attacker an army. Roll order matters: reverse the defender’s rolls and that particular error disappears.</p>
+<div class="lab">
+<div class="lab-head"><div><p class="eyebrow">Instrument 02</p><h3>Put the two builds on the same rolls</h3></div><span class="badge">BROWSER MODEL</span></div>
+<div class="controls"><label>Attacker dice<select id="attack-count"><option value="1">1 die</option><option value="2">2 dice</option><option value="3" selected>3 dice</option></select></label><label>Defender dice<select id="defend-count"><option value="1">1 die</option><option value="2" selected>2 dice</option></select></label><button id="roll-dice">Roll both</button><button id="example-dice">Load 6,5,1 vs 2,3</button><button id="reverse-dice">Reverse defender order</button></div>
+<div class="two"><fieldset><legend>Attacker · click a die to change it</legend><div id="attacker-dice" class="dice-buttons"></div></fieldset><fieldset><legend>Defender · preserve roll order</legend><div id="defender-dice" class="dice-buttons"></div></fieldset></div>
+<div class="two" id="combat-output" aria-live="polite" style="margin-top:1.3rem"><div class="result"><h4>Original</h4><p>Attacker loses 1; defender loses 1.</p></div><div class="result fixed"><h4>Repaired</h4><p>Attacker loses 0; defender loses 2.</p></div></div>
+<p class="note">Equal dice cost the attacker an army. Only the top <code>min(attacker dice, defender dice)</code> comparisons count. The model reproduces the documented sorting operation; it does not execute x86 instructions or reproduce the original random generator.</p>
+</div>
+<div class="patch-line"><pre class="before">; segment 5 : 0D5F
+A1 F0 0B   mov ax, [0BF0h]
+; highest ATTACKER die</pre><span aria-hidden="true">→</span><pre class="after">; segment 5 : 0D5F
+A1 F6 0B   mov ax, [0BF6h]
+; previous DEFENDER maximum</pre></div>
+<p>This is a one-byte repair: <code>F0 → F6</code> at <code>0x6360</code>. The following instruction still writes AX to the defender’s second slot at <code>0x0BF8</code>. We change the source, not the rules, number of dice or random generator. <a href="evidence/patch_manifest.json">[Patch manifest]</a></p>
+<div class="lab">
+<div class="lab-head"><div><p class="eyebrow">Instrument 03</p><h3>Don’t trust a single example</h3></div><span class="badge">EXHAUSTIVE BROWSER CHECK</span></div>
+<p>Enumerate all ordered face combinations for each legal dice configuration and compare both explanatory models with a separate, straightforward sort-and-compare reference.</p>
+<button class="primary" id="run-sweep">Check all 10,836 cases</button>
+<div id="sweep-status" class="status" role="status">Not run in this browser yet.</div>
+<div class="table-scroll"><table id="sweep-table" hidden><caption class="small">Browser-model casualties versus independent reference</caption><thead><tr><th>Dice</th><th>Cases</th><th>Original wrong</th><th>Repaired wrong</th></tr></thead><tbody id="sweep-rows"></tbody></table></div>
+</div>
+<p>The binary audit goes further than this browser demonstration: it executes the decoded combat instructions, supplies deterministic random results, and checks <strong>army counts and return-state codes</strong>. It finds 2,317 disagreements in the original and none in the repair across the same 10,836 configurations. That fraction is <strong>not an estimate of the percentage of real battles affected</strong>: different dice configurations do not occur equally often in a played game. <a href="evidence/test_results.json">[Recorded regressions]</a></p>
+</section>
+<section class="chapter" id="state-lab">
+<p class="eyebrow">04 / Between the turns</p>
+<h2>The bugs in the gaps.</h2>
+<p class="deck">A battle can be calculated correctly and still lead to the wrong game. Messages, cancelled dialogs, card cursors and continuation paths all have their own contracts.</p>
+<h3>One physical click, two queued actions</h3>
+<p>After a combat result, the old mouse handler posts a dismissal message but carries on through normal hit testing. It posts another action from the same click. By the time that second action is handled, the first may already have advanced the state. The repair returns after the first post; ordinary input continues through the normal path.</p>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 04</p><h3>Watch the message queue</h3></div><span class="badge">EXPLANATORY TRACE</span></div><div class="controls"><label>Click context<select id="click-context"><option value="result">Combat result awaiting dismissal</option><option value="normal">Ordinary human turn</option><option value="ai">Computer-controlled turn</option></select></label><button id="queue-click">Send one click</button><button id="queue-reset">Clear queue</button></div><div class="two" id="queue-output" aria-live="polite"><div class="result"><h4>Original queue</h4><p>Empty</p></div><div class="result fixed"><h4>Repaired queue</h4><p>Empty</p></div></div><p class="note">Each press shows one click in the selected context, not a full emulated message loop. The audit tested actual PostMessage boundaries: 2 → 1 posts for result dismissal, one for normal human clicks, none for a computer turn.</p></div>
+<h3>Off-map is a sentinel, not a country</h3>
+<p>A failed hit test returns <code>-1</code>. Without a range check, the dispatcher calculates <code>territories + (-1 × 22)</code>, which lands in the preceding player storage. In a crafted test state, two preceding words change from <code>(3, 5)</code> to <code>(0, 6)</code>. This proves an out-of-range write; it does not say that every sea click corrupts an ordinary game.</p>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 05</p><h3>Follow the index into memory</h3></div><span class="badge">ADDRESS CALCULATION</span></div><div class="controls"><label>Territory index<input id="territory-index" type="number" min="-32768" max="32767" step="1" value="-1"></label></div><p id="index-output" class="status" role="status"></p><p class="note">The guard accepts only 0–41 for territory-dependent actions. It separately preserves background dismiss, cancel, movement-end and middle-button pass behaviour. The actual regression covered 399 invalid index/state/button combinations and all 42 valid initial-claim targets.</p></div>
+<h3>An elimination that misses its handover</h3>
+<p>Conquering a player’s final territory sets a pending-elimination flag. The optional troop-movement continuation processes it and transfers the defeated player’s cards. But when compulsory movement leaves only one army behind, execution follows the ordinary result-dismissal path instead. That path used to return directly to attack selection, bypassing the transfer.</p>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 06</p><h3>Inspect a recorded conquest sequence</h3></div><span class="badge">BINARY TEST FIXTURE</span></div><label>Starting attacker armies: <output id="stack-label">2</output><br><input id="stack" type="range" min="2" max="9" step="1" value="2"></label><div id="elimination-output" class="two" aria-live="polite"></div><p class="note">This reads the supplied instruction-harness results, not a new conquest simulation. Each case used a one-army final defending territory and a third player still alive. The fixture gives the defeated player two cards. Starting stacks 2, 3 and 4 expose the original skip; 5–9 take the working path.</p></div>
+<p>The fix checks the pending flag during result dismissal, routes through elimination processing when necessary, then clears the flag. A second continuation must not award the same cards twice; the audit checked that too.</p>
+<h3>The missing forty-fourth card</h3>
+<p>The shuffle creates 44 entries, numbered 0–43. The old draw routine reshuffles when the cursor is greater than <strong>42</strong>, before slot 43 can be used. Changing the comparison constant from <code>0x2A</code> to <code>0x2B</code> makes the check agree with the deck’s actual length.</p>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 07</p><h3>Walk across the deck boundary</h3></div><span class="badge">CONTROLLED DECK MODEL</span></div><label>Draw number: <output id="draw-label">44</output><br><input id="draw" type="range" min="1" max="45" step="1" value="44"></label><div class="two" id="deck-output" aria-live="polite"></div><p class="note">For visibility, this deck holds 42 ordinary cards then two wildcards, and a reshuffle restarts that same ordering. In a genuinely shuffled game, the skipped final card need not be a wildcard. The patch makes no claim of a stronger shuffle algorithm.</p></div>
+<h3>Cancel must mean cancel</h3>
+<p>The Setup dialog originally edited live player records. Cancel closed the window but did not undo a changed name or human/computer flag. The wrapper also accepted any nonzero return value, inadvertently treating dialog-creation failure (<code>-1</code>) as success.</p>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 08</p><h3>Edit a name, then choose the outcome</h3></div><span class="badge">TRANSACTION MODEL</span></div><div class="controls"><label>Proposed name<br><input id="setup-name" type="text" value="Ada" maxlength="10" autocomplete="off"></label><button data-dialog-result="0">Cancel (0)</button><button data-dialog-result="1">OK (1)</button><button data-dialog-result="-1">Creation fails (−1)</button></div><div class="two" id="setup-output" aria-live="polite"></div><p class="note">Each experiment begins with “Player1”. A creation failure occurs before edits can happen. The repaired wrapper stages three records in a 72-byte stack buffer and commits only names and controller flags on an explicit OK. It does not copy stale army/card fields over live gameplay data.</p></div>
+</section>
+<section class="chapter" id="map-lab">
+<p class="eyebrow">05 / Invisible borders</p>
+<h2>The map you click is not the map you see.</h2>
+<p class="deck">The artwork and the hit regions are separate resources. Eight malformed coordinates distort seven countries’ clickable outlines while the printed borders look perfectly normal.</p>
+<p>Eastern Australia contains an x-coordinate of <strong>346 instead of 546</strong>. Indonesia contains a y-coordinate of <strong>476 instead of 276</strong>. Other slips affect Middle East, Taymyr, Buryat, China and India. These corrections were inferred from neighbouring vertices, shared borders and the original map bitmap; no artwork was altered. <a href="evidence/AUDIT.md">[Audit: polygon repairs]</a></p>
+<div class="lab">
+<div class="lab-head"><div><p class="eyebrow">Instrument 09</p><h3>Inspect the actual polygon data</h3></div><span class="badge">EXTRACTED VERTICES</span></div>
+<div class="controls"><label>Affected territory<select id="map-territory"></select></label><label class="inline"><input id="show-sentinel" type="checkbox" checked>Include original sentinel</label><label class="inline"><input id="map-zoom" type="checkbox">Zoom to repaired region</label><button id="map-witness">Use recorded witness point</button></div>
+<div class="map-legend"><span class="old">Original: dashed red</span><span class="new">Repaired: solid green</span></div>
+<div class="map-stage"><svg id="territory-map" viewBox="-110 -110 760 550" role="img" aria-labelledby="map-title map-description"><title id="map-title">Original and repaired territory polygons</title><desc id="map-description">Choose a territory to compare its outlines. Use the coordinate fields below for keyboard-controlled hit testing. These are region shapes, not the game’s original bitmap.</desc><g id="map-land"></g><path id="map-old" class="selected-old"></path><path id="map-new" class="selected-new"></path><g id="map-markers"></g><circle id="map-point" r="4" fill="#202a30" stroke="#fffcf4" stroke-width="2" vector-effect="non-scaling-stroke"></circle></svg></div>
+<p id="map-changes" class="small"></p>
+<div class="controls"><label>Point x<input id="point-x" type="number" min="-110" max="650" step="0.5" value="522.5"></label><label>Point y<input id="point-y" type="number" min="-110" max="490" step="0.5" value="304.5"></label></div>
+<div id="map-hit" class="status" role="status"></div>
+<p class="note">Move the pointer or tap the diagram to test a point, or edit x/y above. The dots mark corrected vertices. The witness comes from the binary audit’s geometry tests. Browser classifications use nonzero winding fill; native GDI’s precise pixel-edge behaviour has not been validated. The grey base outlines are the repaired resource geometry, not the unchanged bitmap artwork.</p>
+</div>
+<h3>A marker mistaken for a vertex</h3>
+<p>Each point list ends with <code>(−100, −100)</code>. That is a terminator, not a distant corner of the world. Both polygon consumers passed it to <code>CreatePolygonRgn</code>: the hit-test path in segment 4 and the bounds path in segment 3. Both loops needed repair.</p>
+<p>Switch off “Include original sentinel” above to separate that error from the malformed coordinates. With a correctly closed polygon, the extra trip out to the sentinel and back can enclose zero area. So it would be wrong to claim that this bug visibly corrupts every territory. Buryat’s malformed closing point is a particularly revealing combination: the bad endpoint and the sentinel can create an unintended filled wedge.</p>
+<p>The audit exercised all 42 resources through both actual polygon-construction routines: <strong>84 repaired API-boundary counts</strong>, with no terminator included. The geometric witness points demonstrate changed classifications; they are not screenshots of a native Windows session.</p>
+</section>
+<section class="chapter" id="surgery">
+<p class="eyebrow">06 / Binary surgery</p>
+<h2>Make room without moving the world.</h2>
+<p class="deck">Some repairs fit in one operand. Others need new control flow. The challenge is to add that logic without invalidating the executable’s layout.</p>
+<p>The card threshold and combat operand are in-place changes. The input guard, elimination continuation and transactional Setup wrapper need more instructions. The repair adds <strong>94 bytes to segment 5</strong> and <strong>58 bytes to segment 9</strong>, using existing file padding. Near jumps divert the old paths into these helpers, which then return to the existing code.</p>
+<div class="flow" aria-label="Patch helper flow"><span>existing routine</span><b>→</b><span>near-jump hook</span><b>→</b><span>helper in padding</span><b>→</b><span>existing continuation</span></div>
+<p>Padding is not automatically safe to overwrite. Each affected segment’s relocation table originally followed its code. The patch moves that <em>unchanged table</em> forward within available padding and updates the segment’s length and minimum allocation. Other code and resource offsets remain fixed. The whole file still occupies 220,672 bytes.</p>
+<div class="two"><div><h3>Changed deliberately</h3><p>Selected operands and branches; segment 5 and 9 lengths; their helper bodies and relocation-table positions; eight coordinates in seven polygon resources.</p></div><div><h3>Preserved deliberately</h3><p>Exported entry points, imported modules, all relocation targets and sites, the bitmap, menus, dialogs, strings, icons and original credits. There are no new runtime dependencies.</p></div></div>
+<div class="lab"><div class="lab-head"><div><p class="eyebrow">Instrument 10</p><h3>Read the patch ledger</h3></div><span class="badge">EXACT MANIFEST</span></div><label>Patch operation<select id="patch-select"></select></label><div id="patch-detail" aria-live="polite"></div><p class="note">This displays the supplied patcher’s operation manifest. Helper entries describe relocation-table moves rather than listing every moved byte as an independent operation. The manifest should not be treated as a flat “write these offsets” patch format.</p></div>
+<p>A hash-locked patcher accepts only the exact original fingerprint and reproduces the repaired fingerprint. That prevents a plausible-looking patch from being applied to a different revision where the same file offsets could mean something else. The original was kept for rollback.</p>
+</section>
+<section class="chapter" id="ledger">
+<p class="eyebrow">07 / The repair ledger</p>
+<h2>Nine defects.<br>One bounded repair set.</h2>
+<p>The source audit groups these findings into eight sections, with the two Setup defects together. They are separated here so each contract failure can be inspected on its own. Open an entry for the location, witness and repair.</p>
+<details class="finding" id="fix-combat"><summary><span class="num">01</span><strong>The defender borrows an attacker die</strong></summary><div class="finding-body"><p class="where">SEG 5:0D5F · FILE 0x6360 · F0 → F6</p><p><strong>Witness:</strong> attacker 6,5,1; defender 2,3. Original: one loss each. Repaired: defender loses two.</p><p><strong>Repair:</strong> read the defender’s previous maximum at DS:0BF6 rather than attacker maximum DS:0BF0 when inserting a new defender maximum.</p><p><strong>Validation:</strong> 10,836 ordered dice cases per build; casualties and result states checked by the instruction harness. Original 2,317 disagreements; repaired zero. <a href="#dice-lab">Operate the dice lab →</a></p></div></details>
+<details class="finding" id="fix-bounds"><summary><span class="num">02</span><strong>An invalid index reaches player memory</strong></summary><div class="finding-body"><p class="where">SEG 5:02E1 · FILE 0x58E1 · GUARD HELPER</p><p><strong>Witness:</strong> “no territory” is −1, but the original can still multiply it by the 22-byte record size. A crafted case changes preceding words from (3,5) to (0,6).</p><p><strong>Repair:</strong> accept 0–41 before territory-dependent actions. Preserve the states in which background clicks intentionally dismiss, cancel or pass.</p><p><strong>Validation:</strong> 399 invalid-index/state/button combinations preserve the protected records; 42 valid initial-claim cases match the original. This does not establish every possible re-entrant message sequence.</p></div></details>
+<details class="finding" id="fix-click"><summary><span class="num">03</span><strong>A dismissal click falls through</strong></summary><div class="finding-body"><p class="where">SEG 4:03BC–03D1 · FILE 0x53BD / 0x53CE</p><p><strong>Witness:</strong> one click on a combat result produces two posts: dismissal, then normal action.</p><p><strong>Repair:</strong> return after the dismissal post. Ordinary input goes directly to its normal hit-test path, also bypassing an obsolete instruction-count delay loop.</p><p><strong>Validation:</strong> one result-dismissal message after repair. Normal left, right and middle clicks still post once; computer-controlled turns do not post a human action.</p></div></details>
+<details class="finding" id="fix-elimination"><summary><span class="num">04</span><strong>An eliminated player keeps their cards</strong></summary><div class="finding-body"><p class="where">SEG 5:0996 · FILE 0x5F96 · CONTINUATION HELPER</p><p><strong>Witness:</strong> final conquest with starting attacker stacks of 2, 3 or 4 bypasses card transfer on the tested continuation path; a later attack can clear the still-pending flag.</p><p><strong>Repair:</strong> result dismissal honours pending elimination, processes the transfer and clears the flag.</p><p><strong>Validation:</strong> complete routine-level conquest/continuation sequences for stacks 2–9; cards transfer in all repaired cases and do not transfer twice on later processing.</p></div></details>
+<details class="finding" id="fix-deck"><summary><span class="num">05</span><strong>The final deck entry is never drawn</strong></summary><div class="finding-body"><p class="where">SEG 5:0E4A · FILE 0x644E · 2A → 2B</p><p><strong>Witness:</strong> the old cursor limit skips slot 43 in a 44-entry deck. An ordered fixture yields card-type totals [15,14,14,1] in its first 44 awards rather than [14,14,14,2].</p><p><strong>Repair:</strong> reshuffle only when the cursor is greater than 43. Slot 43 is draw 44; the next draw triggers the shuffle.</p><p><strong>Validation:</strong> the 44th/45th boundary, no-conquest/no-card behaviour and deterministic complete shuffles. An arbitrary shuffled deck may lose an ordinary card, not a wildcard.</p></div></details>
+<details class="finding" id="fix-cancel"><summary><span class="num">06</span><strong>Setup edits survive Cancel</strong></summary><div class="finding-body"><p class="where">SEG 9:02C2 WRAPPER · HOOKS AT 02D1 / 0331</p><p><strong>Witness:</strong> changing a name or controller flag modifies live player records before the dialog returns. Cancel has no rollback.</p><p><strong>Repair:</strong> pass a staged 72-byte copy to the dialog. On OK, copy only configuration fields back. Army and card fields must not be overwritten by that temporary snapshot.</p><p><strong>Validation:</strong> the actual wrapper and temporary pointers are exercised at a simulated DialogBoxParam boundary. Cancel leaves configuration unchanged; OK commits; unrelated live changes survive.</p></div></details>
+<details class="finding" id="fix-dialog"><summary><span class="num">07</span><strong>Dialog failure is treated as acceptance</strong></summary><div class="finding-body"><p class="where">SEG 9:0331 · FILE 0x8931 · EXPLICIT OK TEST</p><p><strong>Witness:</strong> creation failure returns −1 (0xFFFF as a 16-bit word). It is nonzero, so the old wrapper treats it as success.</p><p><strong>Repair:</strong> commit only when the return value equals 1, not when it merely differs from zero.</p><p><strong>Validation:</strong> simulated return values 0, 1 and −1. A failed dialog leaves configuration unchanged and the repaired wrapper returns failure. A native resource-exhaustion scenario was not run.</p></div></details>
+<details class="finding" id="fix-coordinates"><summary><span class="num">08</span><strong>Eight coordinates pull seven borders apart</strong></summary><div class="finding-body"><p class="where">CUSTOM RESOURCE TYPE 28685 · IDS 27, 30, 33, 36, 37, 39, 42</p><p><strong>Witness:</strong> local polygon outlines contain large coordinate outliers. Each repaired region has a point whose old and new hit classifications differ.</p><p><strong>Repair:</strong> correct Middle East, Taymyr, Buryat, China, India (two vertices), Indonesia and Eastern Australia. Inference is grounded in adjacent vertices, shared borders and the embedded bitmap, not a redesign of the map.</p><p><strong>Validation:</strong> eight changed vertices across seven resources; geometric witness tests. The visible artwork remains byte-identical. <a href="#map-lab">Explore the outlines →</a></p></div></details>
+<details class="finding" id="fix-sentinel"><summary><span class="num">09</span><strong>Two callers draw the end-of-list marker</strong></summary><div class="finding-body"><p class="where">SEG 3:04A4 / 04AB · SEG 4:0243 / 024A</p><p><strong>Witness:</strong> both callers pass the terminating (−100,−100) to CreatePolygonRgn as another vertex.</p><p><strong>Repair:</strong> count only real vertices in both the bounding-region and point-hit-test consumers.</p><p><strong>Validation:</strong> all 42 polygons through both routines, for 84 correct boundary counts. The sentinel may add zero area to a correctly closed outline; not every affected call implies a visible bug.</p></div></details>
+<p class="note">Exact byte operations are in the <a href="evidence/patch_manifest.json">patch manifest</a>; the <a href="evidence/AUDIT.md">full audit</a> retains the original finding groups and qualifications.</p>
+</section>
+<section class="chapter" id="evidence">
+<p class="eyebrow">08 / Proof &amp; limits</p>
+<h2>Evidence, not a victory lap.</h2>
+<p class="deck">The strongest part of a repair is not how convincing the explanation sounds. It is whether the bad case fails before the patch, passes after it, and leaves the surrounding contracts intact.</p>
+<div class="table-scroll"><table><caption class="small">What each layer does—and does not—establish</caption><thead><tr><th>Layer</th><th>Established</th><th>Not established</th></tr></thead><tbody><tr><td>File inspection</td><td>Segments, resources, imports, relocations, byte changes, fingerprints</td><td>A successfully launched Windows program</td></tr><tr><td>Instruction harness</td><td>Exercised routine behaviour with deterministic inputs and explicit API/runtime doubles</td><td>All GDI, dialog, timing and operating-system behaviour</td></tr><tr><td>This browser exhibit</td><td>Interactive explanations, extracted geometry, independently tested JavaScript models</td><td>Execution of the original EXE or a replacement game</td></tr><tr><td>Native integration</td><td>Still required: a complete graphical game in the intended Win16 environment</td><td>Not claimed by this audit</td></tr></tbody></table></div>
+<p>The Python harness deliberately fails on unsupported instructions rather than pretending to execute them. Linear disassembly can mistake embedded jump-table data for instructions, so decoding is restarted at function boundaries. Imported API and calling-convention identification was cross-checked against Wine’s Win16 specification files. These precautions reduce specific sources of error; they do not turn a purpose-built harness into a complete Windows machine. <a href="evidence/AUDIT.md">[Audit: method and confidence]</a></p>
+<div class="evidence-list"><a href="evidence/AUDIT.md">Full original audit<span>Findings, method, caveats and byte-level references · Markdown</span></a><a href="evidence/test_results.json">Recorded binary regression results<span>Every suite’s machine-readable results · JSON</span></a><a href="evidence/patch_manifest.json">Exact patch operation manifest<span>Offsets, old/new bytes, helpers and hashes · JSON</span></a><a href="evidence/exhibit.json">Extracted exhibit data<span>Segment roles, resource vertices and provenance · JSON</span></a></div>
+<h3>Which executable does this describe?</h3>
+<p class="small">Original SHA-256</p><p class="hash">b829f76340d6848a697b7a4b499c60c27bb109921a00b96fd771eb5bff894ae3</p><p class="small">Repaired SHA-256</p><p class="hash">9fcdf5e021d089c135eb6b39f609f495b955e71a4d7798fbe41844c1284fcc76</p>
+<div class="lab" id="file-check"><div class="lab-head"><div><p class="eyebrow">Instrument 11</p><h3>Identify your own copy</h3></div><span class="badge">LOCAL-ONLY HASH CHECK</span></div><p>Select an EXE to compare its size and SHA-256. The file stays in this tab: no upload, no execution, no modification. A recognised hash is identity evidence, not a safety certificate.</p><label>Choose WINRISK.EXE<br><input id="exe-file" type="file" accept=".exe,application/octet-stream"></label><p class="status" id="file-result" role="status">No file selected. The site does not distribute either executable.</p></div>
+<h3>What remains to be tested</h3>
+<p>Play a complete graphical game in the intended Windows or emulator environment. Exercise Setup Cancel and OK; click the corrected territories and the sea; dismiss multiple combat results; eliminate a player and check the card handover. Observe actual GDI regions, resource loading and message behaviour. General low-resource failures, every possible re-entrant message sequence and exhaustive AI validation remain outside the repair set.</p>
+<p>The absence of another justified patch is not proof that no other bug exists. Likewise, preserving the binary’s structure is necessary but not sufficient for compatibility. This is a bounded, tested repair with a remaining integration check—not a certification that WINRISK is bug-free.</p>
+<div class="end-note"><h3>Continue through the Machine Room.</h3><p>See how <a href="/mddosem-win16/">Win16 high-level emulation</a> rebuilds a Windows API environment, explore <a href="/x86-evolution/">the evolution of x86</a>, or follow the earlier machines in <a href="/world-in-640k/">A World in 640K</a>.</p><p>Original game credited to Steve Stancliff. This is an unofficial analysis and repair exhibit. The displayed polygon drawings are generated from resource coordinates; they do not reproduce the original bitmap. The original audit is dated 14 September 2026; this exhibit was prepared on 15 September 2026.</p></div>
+</section>
+<footer>0x4D44 / WINRISK binary autopsy<br>Plain HTML, CSS and JavaScript. No framework, build step, tracking or external runtime assets.</footer>
+</div>
+</div>
+</main>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

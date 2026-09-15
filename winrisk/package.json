@@ -1,0 +1,9 @@
+{
+  "name": "winrisk-binary-autopsy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/model.test.mjs && node --check app.mjs",
+    "test:browser": "python tests/browser_test.py"
+  }
+}

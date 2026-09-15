@@ -1,0 +1,210 @@
+{
+  "input_sha256": "b829f76340d6848a697b7a4b499c60c27bb109921a00b96fd771eb5bff894ae3",
+  "output_sha256": "9fcdf5e021d089c135eb6b39f609f495b955e71a4d7798fbe41844c1284fcc76",
+  "file_size": 220672,
+  "changes": [
+    {
+      "offset": 25440,
+      "offset_hex": "0x6360",
+      "before": "f0",
+      "after": "f6",
+      "reason": "Combat: preserve the old highest DEFENDER die when inserting a higher defender die"
+    },
+    {
+      "offset": 25678,
+      "offset_hex": "0x644e",
+      "before": "2a",
+      "after": "2b",
+      "reason": "Cards: draw all 44 cards before reshuffling (cursor 0..43)"
+    },
+    {
+      "offset": 21437,
+      "offset_hex": "0x53bd",
+      "before": "10",
+      "after": "1b",
+      "reason": "Mouse: ordinary clicks go directly to normal hit testing"
+    },
+    {
+      "offset": 21454,
+      "offset_hex": "0x53ce",
+      "before": "33f6eb01",
+      "after": "e9820090",
+      "reason": "Mouse: return after posting exactly one combat-result dismissal"
+    },
+    {
+      "offset": 18597,
+      "offset_hex": "0x48a5",
+      "before": "0100",
+      "after": "0000",
+      "reason": "Polygon bounds: count real vertices from zero"
+    },
+    {
+      "offset": 18603,
+      "offset_hex": "0x48ab",
+      "before": "48",
+      "after": "90",
+      "reason": "Polygon bounds: do not include the sentinel vertex"
+    },
+    {
+      "offset": 21060,
+      "offset_hex": "0x5244",
+      "before": "0100",
+      "after": "0000",
+      "reason": "Polygon hit test: count real vertices from zero"
+    },
+    {
+      "offset": 21066,
+      "offset_hex": "0x524a",
+      "before": "48",
+      "after": "90",
+      "reason": "Polygon hit test: do not include the sentinel vertex"
+    },
+    {
+      "offset": 690,
+      "offset_hex": "0x2b2",
+      "before": "f310",
+      "after": "5111",
+      "reason": "Segment 5: extend code/minimum allocation by 94 bytes"
+    },
+    {
+      "offset": 694,
+      "offset_hex": "0x2b6",
+      "before": "f310",
+      "after": "5111",
+      "reason": "Segment 5: extend code/minimum allocation by 94 bytes"
+    },
+    {
+      "segment": 5,
+      "code_offset": "0x10f3",
+      "appended_bytes": 94,
+      "helper_hex": "bf0100c45e0a268b471083f82a722d268b0783f807742583f80e742083f812741b83f813741683f805741483f806740f83f804750d817e0807027506e9b2f1e98ff6e93ff9b80400833ee40b017509b81100c706e40b0000268907e94af8",
+      "symbols": {
+        "input_cancel": "0x1132",
+        "input_guard": "0x10f3",
+        "input_ignore": "0x1135",
+        "input_ok": "0x112f",
+        "result_continue": "0x1138",
+        "result_store": "0x114b"
+      },
+      "reason": "Append repair helpers, relocate unchanged NE fixup table within existing padding"
+    },
+    {
+      "offset": 22753,
+      "offset_hex": "0x58e1",
+      "before": "bf0100",
+      "after": "e90f0e",
+      "reason": "Input: validate the territory index before state-dependent table lookups"
+    },
+    {
+      "offset": 24470,
+      "offset_hex": "0x5f96",
+      "before": "26c7070400",
+      "after": "e99f079090",
+      "reason": "Elimination: process pending card transfer after combat-result dismissal"
+    },
+    {
+      "offset": 722,
+      "offset_hex": "0x2d2",
+      "before": "c503",
+      "after": "ff03",
+      "reason": "Segment 9: extend code/minimum allocation by 58 bytes"
+    },
+    {
+      "offset": 726,
+      "offset_hex": "0x2d6",
+      "before": "c503",
+      "after": "ff03",
+      "reason": "Segment 9: extend code/minimum allocation by 58 bytes"
+    },
+    {
+      "segment": 9,
+      "code_offset": "0x3c5",
+      "appended_bytes": 58,
+      "helper_hex": "1e078b76088d7ea4b92400fcf3a58d7ea4e9fbfe83f801751e1e078d76a48b7e08ba0300b90600fcf3a583c60a83c70aa54a75f0e948ffe936ff",
+      "symbols": {
+        "setup_commit": "0x3d9",
+        "setup_copy_player": "0x3e9",
+        "setup_failed": "0x3fc",
+        "setup_stage": "0x3c5"
+      },
+      "reason": "Append repair helpers, relocate unchanged NE fixup table within existing padding"
+    },
+    {
+      "offset": 35022,
+      "offset_hex": "0x88ce",
+      "before": "12",
+      "after": "5a",
+      "reason": "Setup: reserve 72 bytes for staged player configuration"
+    },
+    {
+      "offset": 35025,
+      "offset_hex": "0x88d1",
+      "before": "8b7e08",
+      "after": "e9f100",
+      "reason": "Setup: edit a temporary copy instead of live player records"
+    },
+    {
+      "offset": 35121,
+      "offset_hex": "0x8931",
+      "before": "0bc0750f",
+      "after": "e9a50090",
+      "reason": "Setup: commit only names/controller flags on OK; cancel/failure leave them unchanged"
+    },
+    {
+      "offset": 212572,
+      "offset_hex": "0x33e5c",
+      "before": "1201",
+      "after": "7601",
+      "reason": "Map: Middle East vertex 23 x coordinate 274->374"
+    },
+    {
+      "offset": 214128,
+      "offset_hex": "0x34470",
+      "before": "2a00",
+      "after": "c401",
+      "reason": "Map: Taymyr vertex 28 x coordinate 42->452"
+    },
+    {
+      "offset": 215684,
+      "offset_hex": "0x34a84",
+      "before": "ac00",
+      "after": "d801",
+      "reason": "Map: Buryat vertex 33 x coordinate 172->472"
+    },
+    {
+      "offset": 217280,
+      "offset_hex": "0x350c0",
+      "before": "9901",
+      "after": "fd01",
+      "reason": "Map: China vertex 48 x coordinate 409->509"
+    },
+    {
+      "offset": 217634,
+      "offset_hex": "0x35222",
+      "before": "1c01",
+      "after": "cc00",
+      "reason": "Map: India vertex 8 y coordinate 284->204"
+    },
+    {
+      "offset": 217638,
+      "offset_hex": "0x35226",
+      "before": "1c01",
+      "after": "cc00",
+      "reason": "Map: India vertex 9 y coordinate 284->204"
+    },
+    {
+      "offset": 218730,
+      "offset_hex": "0x3566a",
+      "before": "dc01",
+      "after": "1401",
+      "reason": "Map: Indonesia vertex 26 y coordinate 476->276"
+    },
+    {
+      "offset": 220176,
+      "offset_hex": "0x35c10",
+      "before": "5a01",
+      "after": "2202",
+      "reason": "Map: Eastern Australia vertex 4 x coordinate 346->546"
+    }
+  ]
+}
