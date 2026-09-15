@@ -26,8 +26,8 @@ The urgent GCA warning, weekly-methotrexate warning, and instruction not to abru
 
 An early regression test incorrectly flagged ordinary in-flow citations after they scrolled behind the opaque sticky masthead. That is normal scrolling, not a permanently inaccessible control. The revised test checks **all controls at the top of the page**, checks **fixed/sticky controls at multiple scroll positions**, and independently uses browser hit-testing to confirm the visible masthead links and buttons receive pointer events. Horizontal-overflow checks remain in place at 320, 390, 768, 1440 and 1920 pixels.
 
-The committed suite also covers every interactive figure, trial values, internal anchors, no-JavaScript reading, keyboard activation, reduced motion, print-state restoration and Almanac integration. The read-only Actions workflow reports the authoritative complete-suite result. Its artifact contains screenshots and the axe-core report. Automated accessibility checks do not establish full accessibility conformance; software tests do not validate medical advice.
+The committed suite also covers every interactive figure, trial values, internal anchors, no-JavaScript reading, keyboard activation, reduced motion, print-state restoration and Almanac integration. An optional axe-core audit can report WCAG A/AA findings and retain screenshots. Automated accessibility checks do not establish full accessibility conformance; software tests do not validate medical advice.
 
 ## Publication boundary
 
-The site and PR are a researched educational draft for maintainer review. They have **not been independently clinically reviewed**. Clinical review remains important before representing the material as clinically endorsed patient information. No merge or deployment is performed by the feature's workflow.
+The site and PR are a researched educational draft for maintainer review. They have **not been independently clinically reviewed**. Clinical review remains important before representing the material as clinically endorsed patient information. Merge and deployment are maintainer operations, not part of this guide.
