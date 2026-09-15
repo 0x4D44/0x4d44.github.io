@@ -114,7 +114,7 @@
     if (!Object.hasOwn(cohortRates, year)) return;
     const value = cohortRates[year];
     $('cohort-number').textContent = `${value}%`;
-    $('cohort-text').textContent = `Pooled estimate still receiving glucocorticoids at ${year} ${Number(year) === 1 ? 'year' : 'years'}. This is not an individual forecast or a single cohort followed through time.`;
+    $('cohort-text').textContent = `Pooled estimate: ${value}% still receiving glucocorticoids at ${year} ${Number(year) === 1 ? 'year' : 'years'}. This is not an individual forecast or a single cohort followed through time.`;
     Array.from($('cohort-dots').children).forEach((dot, i) => dot.classList.toggle('on', i < value));
   }
   choose('data-cohort', setCohort);
