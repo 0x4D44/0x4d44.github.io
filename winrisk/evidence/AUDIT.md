@@ -157,7 +157,7 @@ Original SHA-256:
 Repaired SHA-256:
 `9fcdf5e021d089c135eb6b39f609f495b955e71a4d7798fbe41844c1284fcc76`
 
-The full machine-readable results are in `audit/test_results.json`. Exact offsets, old/new bytes and helper code are in `audit/patch_manifest.json`. The scripts required to reproduce the patch and regressions are in `tools/`.
+The full machine-readable results are in `evidence/test_results.json`. Exact offsets, old/new bytes and helper code are in `evidence/patch_manifest.json`. The scripts used to reproduce the patch and regressions are not distributed with this exhibit.
 
 ## Remaining integration check
 
