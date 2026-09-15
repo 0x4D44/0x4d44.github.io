@@ -129,14 +129,28 @@ class PMRTests(unittest.TestCase):
     def test_responsive_and_back_pill_clearance(self):
         for width, height in [(320, 720), (390, 844), (768, 1024), (1440, 1000), (1920, 1080)]:
             self.page.set_viewport_size({'width': width, 'height': height})
-            for target in ['#title', '#anatomy-lab', '#trial-lab', '#sources']:
-                self.page.locator(target).scroll_into_view_if_needed()
+            for target in [None, '#anatomy-lab', '#trial-lab', '#sources']:
+                if target is None:
+                    self.page.evaluate('window.scrollTo(0,0)')
+                else:
+                    self.page.locator(target).scroll_into_view_if_needed()
                 self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth-document.documentElement.clientWidth'), 1, (width, target))
-                covered = self.page.evaluate('''() => [...document.querySelectorAll('a,button,input,select,summary')].filter(e => {
+                # Ordinary prose can scroll beneath the opaque masthead.
+                # Test every control initially, then all pinned controls.
+                covered = self.page.evaluate("""atTop => [...document.querySelectorAll('a,button,input,select,summary')].filter(e => {
                   const s=getComputedStyle(e), r=e.getBoundingClientRect();
-                  return s.visibility!=='hidden' && s.display!=='none' && r.width>0 && r.height>0 && r.left<112 && r.right>0 && r.top<41 && r.bottom>0;
-                }).map(e=>e.outerHTML.slice(0,180))''')
+                  let pinned=false;
+                  for(let n=e;n;n=n.parentElement) {
+                    if(['fixed','sticky'].includes(getComputedStyle(n).position)) { pinned=true; break; }
+                  }
+                  return (atTop||pinned) && s.visibility!=='hidden' && s.display!=='none' && r.width>0 && r.height>0 && r.left<112 && r.right>0 && r.top<41 && r.bottom>0;
+                }).map(e=>e.outerHTML.slice(0,180))""", target is None)
                 self.assertEqual(covered, [], (width, target, covered))
+                for control in self.page.locator('.mast-actions a:visible, .mast-actions button:visible').all():
+                    self.assertTrue(control.evaluate("""e => {
+                      const r=e.getBoundingClientRect();
+                      return e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+                    }"""))
     def test_keyboard_and_reduced_motion(self):
         button = self.page.locator('[data-anatomy="muscle"]')
         button.focus()
