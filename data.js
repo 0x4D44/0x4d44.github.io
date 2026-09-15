@@ -16,6 +16,20 @@
 
 window.ESSAYS = [
   {
+    "slug": "polymyalgia",
+    "title": "Polymyalgia, Explained",
+    "tagline": "A visual field guide to polymyalgia rheumatica: the tissues that hurt, the immune signals behind the stiffness, and the balance between controlling inflammation and protecting the body. Interactive anatomy, trial evidence and treatment explanations, with dated primary sources. Static HTML, SVG and JavaScript; no build step.",
+    "url": "https://0x4d44.github.io/polymyalgia/",
+    "illustration": "ill-dna",
+    "date": "2026-09-15T16:00:00+01:00",
+    "year": 2026,
+    "tags": [
+      "science",
+      "software"
+    ],
+    "real": true
+  },
+  {
     slug: "southern-cross-rally",
     title: "Southern Cross Rally",
     tagline: "An original rally game across six New Zealand-inspired gravel roads: choose a turbo AWD car or a lively rear-drive coupé, listen to the notes and chase the clock. A six-stage event, damage and service, ghosts and replays; procedural WebGL2 and Web Audio, no external assets or build step.",
@@ -1726,7 +1740,7 @@ window.COLLECTIONS = [
     slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
   { id: "health", name: "Health & Fitness", icon: "ill-run",
     blurb: "Keeping moving — on the road, at sea and in the hotel gym.",
-    slugs: ["morning-run", "shipshape"] },
+    slugs: ["polymyalgia", "morning-run", "shipshape"] },
   { id: "kitchen", name: "The Kitchen", icon: "ill-cookbook",
     blurb: "Family recipes, kept properly.",
     slugs: ["recipes"] },
@@ -1754,7 +1768,7 @@ window.COLLECTIONS = [
     slugs: ["instruments"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
