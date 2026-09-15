@@ -1,5 +1,6 @@
 name: Polymyalgia guide checks
 on:
+  workflow_dispatch:
   push:
     branches: ['feat/polymyalgia-visual-guide']
     paths: ['polymyalgia/**', 'data.js', 'almanac-back.js', '.github/workflows/polymyalgia-checks.yml']
