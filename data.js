@@ -17,6 +17,8 @@
 window.ESSAYS = [
   {
     "slug": "polymyalgia",
+    "words": 5102,
+    "readingMin": 26,
     "title": "Polymyalgia, Explained",
     "tagline": "A visual field guide to polymyalgia rheumatica: the tissues that hurt, the immune signals behind the stiffness, and the balance between controlling inflammation and protecting the body. Interactive anatomy, trial evidence and treatment explanations, with dated primary sources. Static HTML, SVG and JavaScript; no build step.",
     "url": "https://0x4d44.github.io/polymyalgia/",
