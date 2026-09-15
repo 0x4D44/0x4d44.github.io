@@ -1,0 +1,62 @@
+name: PMR catalogue reconciliation
+on:
+  push:
+    branches: ['feat/polymyalgia-visual-guide']
+    paths: ['.github/workflows/pmr-catalogue-sync.yml']
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/feat/polymyalgia-visual-guide'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/polymyalgia-visual-guide
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            polymyalgia
+            .github/workflows
+      - name: Merge current main into the feature branch, preserving both catalogue entries
+        shell: python
+        run: |
+          import subprocess, re
+          from pathlib import Path
+          def git(*args, check=True):
+              return subprocess.run(['git', *args], text=True, capture_output=True, check=check)
+          git('config', 'user.name', 'github-actions[bot]')
+          git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
+          git('fetch', 'origin', 'main')
+          ours = git('show', 'HEAD:data.js').stdout
+          entry = re.search(r'(?ms)^  \{\n    "slug": "polymyalgia",.*?^  \},\n', ours)
+          assert entry, 'Expected exactly the existing PMR catalogue entry'
+          result = git('merge', '--no-commit', '--no-ff', 'origin/main', check=False)
+          conflicts = git('diff', '--name-only', '--diff-filter=U').stdout.splitlines()
+          assert conflicts in ([], ['data.js']), (result.stderr, conflicts)
+          assert result.returncode == 0 or conflicts == ['data.js'], result.stderr
+          # Resolve only the shared catalogue: retain all current main entries,
+          # then reapply this feature's single entry and two shelf memberships.
+          text = git('show', 'origin/main:data.js').stdout
+          assert '"slug": "polymyalgia"' not in text and 'slug: "polymyalgia"' not in text
+          anchor = 'window.ESSAYS = [\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, anchor + entry.group(0), 1)
+          for old, new in [
+              ('slugs: ["morning-run", "shipshape"]', 'slugs: ["polymyalgia", "morning-run", "shipshape"]'),
+              ('slugs: ["triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown"', 'slugs: ["polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown"')
+          ]:
+              assert text.count(old) == 1, old
+              text = text.replace(old, new, 1)
+          assert 'slug: "winrisk"' in text
+          Path('data.js').write_text(text)
+          git('add', '--', 'data.js')
+          git('rm', '--', '.github/workflows/pmr-catalogue-sync.yml')
+          assert not git('diff', '--name-only', '--diff-filter=U').stdout.strip()
+      - name: Validate and commit the resolved merge to the feature branch only
+        run: |
+          node --check data.js
+          node -e 'global.window={};require("./data.js");for(const slug of ["polymyalgia","winrisk"])if(window.ESSAYS.filter(e=>e.slug===slug).length!==1)process.exit(1);if(window.COLLECTIONS.filter(c=>c.slugs.includes("polymyalgia")).length!==2)process.exit(1);'
+          git commit -m 'Merge current main into PMR guide; preserve WINRISK and PMR catalogue entries'
+          git push origin HEAD:refs/heads/feat/polymyalgia-visual-guide
