@@ -117,16 +117,16 @@
 
     <div class="eq left">
       <i>x̂</i><sup>(0)</sup><span class="op">=</span><span class="num">0</span>
-      <span class="op">;</span>
+      <span class="op">;</span><br>
       <i>x̂</i><sup>(1)</sup><span class="op">=</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
-      <span class="op">;</span>
+      <span class="op">;</span><br>
       <i>x̂</i><sup>(2)</sup><span class="op">=</span><span class="num">2</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
       <span class="op">−</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
-      <span class="op">;</span>
+      <span class="op">;</span><br>
       <i>x̂</i><sup>(3)</sup><span class="op">=</span><span class="num">3</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
       <span class="op">−</span><span class="num">3</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
       <span class="op">+</span><i>x</i>[<i>n</i>−<span class="num">3</span>]
-      <span class="op">;</span>
+      <span class="op">;</span><br>
       <i>x̂</i><sup>(4)</sup><span class="op">=</span><span class="num">4</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
       <span class="op">−</span><span class="num">6</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
       <span class="op">+</span><span class="num">4</span><i>x</i>[<i>n</i>−<span class="num">3</span>]
@@ -380,7 +380,11 @@
     </div>
 
     <p>The entire decoder is: count zeros until a one, shift, read <i>k</i> bits,
-      unfold. There is no table, no tree and no state. And the price it charges
+      unfold. There is no table, no tree and no state — a working residual
+      decoder is a dozen lines, which is one reason the format ended up in
+      hardware. (If reading a decoder appeals more than reading about one,
+      <a href="/ropus/">ropus</a> elsewhere in this almanac is the Opus decoder
+      in safe Rust, checked bit-exact against the reference C.) And the price it charges
       is close to the information-theoretic one, because a Laplacian residual
       with mean absolute value <i>b</i> has a differential entropy that is
       itself a logarithm of <i>b</i>.</p>
@@ -431,7 +435,7 @@
           <div class="ro ghost"><span class="k">Entropy floor</span><span class="v" id="f3-ent">—</span></div>
           <div class="ro bad"><span class="k">Partitioning saves</span><span class="v" id="f3-gap">—</span></div>
         </div>
-        <div class="bits" id="f3-code" style="margin-top:14px"></div>
+        <div class="bits" id="f3-code" style="margin-top:14px;overflow-x:auto"></div>
       </div>
       <div class="deck">
         <div class="field grow" style="min-width:190px">
@@ -468,9 +472,9 @@
         the actual codewords for the first residuals in the block at your
         current <i>k</i> — blue is the unary quotient and its stop bit. Switch
         the <b>partitions</b> up and the readout shows what per-partition
-        parameters buy: about two-tenths of a bit on the steady string phrase,
-        and close to two whole bits on <b>Applause</b>, where the block is a
-        sequence of isolated claps separated by near-silence.</figcaption>
+        parameters buy: 0.20 bits a sample on the steady string phrase at 16
+        partitions, and 1.96 bits on <b>Applause</b> at 64, where the block is
+        a sequence of isolated claps separated by near-silence.</figcaption>
     </figure>
 
     <div class="scroller"><table>
@@ -634,16 +638,37 @@
       <span class="note2">every 6.02 dB of prediction gain is exactly one bit per sample saved — the same constant as the quantiser of Chapter 01, arriving from the other direction</span>
     </div>
 
-    <p>Sixteen-bit audio gives you sixteen bits to save. Halving the file means
-      finding eight bits, which means 48 dB of prediction gain. Music does not
-      contain 48 dB of prediction gain, because underneath it sits a noise floor
-      — the microphone's self-noise, the room, the preamplifier, the dither
-      applied at the final mastering stage — and a noise floor is by construction
-      unpredictable. Whatever the predictor achieves above that floor, the floor
-      itself must be coded at its own entropy, sample for sample, for ever. A
-      recording with a −90 dBFS noise floor has, very roughly, about a bit and a
-      half of genuinely random content per sample that no model can touch. A
-      recording with a −60 dBFS floor has six.</p>
+    <p>That constant, 6.02 dB per bit, is the one derived in
+      <a href="1-sound.html">Chapter 01</a> for a uniform quantiser; here it
+      arrives from the other direction, and it prices prediction rather than
+      rounding. Sixteen-bit audio gives you sixteen bits to save, so halving the
+      file means finding eight of them, which means 48 dB of prediction gain.
+      Music does not as a rule contain 48 dB of prediction gain — the string
+      phrase in Fig 10.4 manages 37 dB at its cleanest — because underneath it
+      sits a noise floor: the microphone's self-noise, the room, the
+      preamplifier, the dither applied at the final mastering stage. A noise
+      floor is by construction unpredictable. Whatever the predictor achieves
+      above it, the floor itself must be coded at its own entropy, sample for
+      sample, for ever.</p>
+    <p>That entropy is easy to put a number on. A Gaussian residual of standard
+      deviation <i>σ</i>, discretised to integers, costs about</p>
+
+    <div class="eq">
+      <i>H</i><span class="op">≈</span>
+      <span class="fn">log</span><sub>2</sub>(<i>σ</i>
+      <span>√</span><span class="rad"><span class="num">2</span><i>πe</i></span>)
+      <span class="op">=</span>
+      <span class="fn">log</span><sub>2</sub><i>σ</i>
+      <span class="op">+</span><span class="num">2.05</span>&nbsp;bits
+      <span class="note2">the discretised Gaussian entropy — the price of coding pure noise, whatever model you put in front of it</span>
+    </div>
+
+    <p>A white floor at −90 dBFS is about one least-significant bit of a 16-bit
+      sample, so roughly two bits each; at −60 dBFS it is about thirty-three
+      LSBs, so roughly seven. And that is before the predictor's own high-pass
+      tilt, which amplifies a white floor rather than removing it: a second
+      difference multiplies noise power by six, another 3.9 dB of cost the
+      predictor has no way to avoid.</p>
 
     <figure class="figure" id="fig-wall">
       <div class="figure-bar">
@@ -818,7 +843,7 @@
           <div class="ro sig"><span class="k">Selected law</span><span class="v" id="f5-snr">—</span></div>
           <div class="ro bad"><span class="k">Uniform 8-bit</span><span class="v" id="f5-snru">—</span></div>
           <div class="ro ok"><span class="k">Advantage</span><span class="v" id="f5-adv">—</span></div>
-          <div class="ro ghost"><span class="k">At 8 kHz that is</span><span class="v" id="f5-rate">64.0 kbit/s</span></div>
+          <div class="ro ghost"><span class="k">Same SNR would need</span><span class="v" id="f5-rate">—</span></div>
         </div>
       </div>
       <div class="deck">
@@ -846,12 +871,16 @@
         measured by actually encoding and decoding a speech excerpt at each
         level, not read off a curve. The red line is uniform eight-bit coding
         and falls at one decibel per decibel, as any uniform quantiser must; the
-        blue line is the companding law you selected and is nearly flat from
-        −45 dBFS upwards. The three listening buttons play the same excerpt at
-        the level you set, renormalised for playback so that what you hear is the
-        <em>noise</em> rather than the volume. At −6 dBFS the two eight-bit
-        versions are hard to tell apart. At −45 the uniform one is a wreck and
-        the companded one is still a telephone call.</figcaption>
+        blue line is the companding law you selected and stays within 8 dB of
+        its 38 dB ceiling all the way down to −42 dBFS, where the uniform line
+        has collapsed to about 5. The three listening buttons play the same
+        excerpt at the level you set, renormalised for playback so that what you
+        hear is the <em>noise</em> rather than the volume. At −42 dBFS the
+        uniform version is a wreck and the companded one is still a telephone
+        call, and the last readout says how deep a uniform quantiser would have
+        to be to match it. Take the level up to −3 dBFS and the advantage goes
+        negative: at the very top of the range, where a logarithmic curve
+        spreads its steps widest, plain eight-bit coding wins.</figcaption>
     </figure>
 
     <p>After companding, the next surrender is sending sample values at all.
@@ -1004,7 +1033,10 @@
       sound. Each has a name, a characteristic programme that provokes it, and a
       bitrate below which it becomes unmistakable. The next chapter provokes each
       one on demand from a clean source, and then asks you to prove, under proper
-      statistics, that you can actually hear it.</p>
+      statistics, that you can actually hear it. Anything here that needs its
+      definition pinned down — <em>residual</em>, <em>prediction gain</em>,
+      <em>Golomb code</em>, <em>companding</em> — is in the
+      <a href="lexicon.html">Lexicon</a>.</p>
   </section>
 
   </div>
@@ -1512,7 +1544,7 @@
       out.push("<b>" + un + "</b>" + rb);
     }
     return "e = " + Array.prototype.slice.call(st.res.subarray(0, 5)).join(", ") +
-      " &nbsp;→&nbsp; " + out.join(" &nbsp; ");
+      " → " + out.join(" · ");
   }
 
   function show() {
@@ -1521,7 +1553,7 @@
     document.getElementById("f3-bps").textContent = at.toFixed(2) + " bits";
     document.getElementById("f3-bestk").textContent = "k = " + st.bestK;
     document.getElementById("f3-ent").textContent = st.ent.toFixed(2) + " bits";
-    var pb = partitionedBits();
+    var pb = st.parts > 1 ? partitionedBits() : null;
     var flat = st.curve[st.bestK][1];
     document.getElementById("f3-gap").textContent =
       pb == null ? "—" : (flat - pb).toFixed(3) + " b/sample";
@@ -1864,10 +1896,21 @@
     st.ready = true;
   }
 
+  // How many bits a uniform quantiser would need to match the companded SNR
+  // at this level — measured by trying depths, not assumed.
+  function equivBits(target, db) {
+    var b;
+    for (b = 4; b <= 16; b++) {
+      if (snr(function (v) { return uniform(v, b); }, db) >= target) return b;
+    }
+    return 16;
+  }
+
   function show() {
     if (!st.ready) return;
     var sc = snr(CODERS[st.law], st.lvl);
     var su = snr(CODERS.u8, st.lvl);
+    document.getElementById("f5-rate").textContent = equivBits(sc, st.lvl) + " uniform bits";
     document.getElementById("f5-snr").textContent = sc.toFixed(1) + " dB";
     document.getElementById("f5-snru").textContent = su.toFixed(1) + " dB";
     document.getElementById("f5-adv").textContent = (sc - su >= 0 ? "+" : "") + (sc - su).toFixed(1) + " dB";
