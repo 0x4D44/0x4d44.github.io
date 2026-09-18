@@ -94,8 +94,9 @@
     </div>
 
     <p>If that were the end of it there would be no chapter. It is not, because the
-      resulting bit rate is whatever it happens to be — it varies by a factor of five
-      between a drum fill and a sustained cello note — and almost nobody gets to transmit
+      resulting bit rate is whatever it happens to be — Fig 5.4 measures a factor of seven
+      between the cheapest and dearest of four programmes at one fixed quality — and almost
+      nobody gets to transmit
       whatever bit rate the music asks for. The rest of this page is what an encoder does
       when the answer <i>Δ</i><sub><i>k</i></sub> = √(12<i>T</i><sub><i>k</i></sub>) costs
       more bits than it has.</p>
@@ -118,8 +119,9 @@
   <section id="powerlaw" class="section">
     <div class="kicker k-heat">The three-quarter law</div>
     <h3>MP3 and AAC do not round the coefficient. They round its three-quarter power.</h3>
-    <p style="margin-top:18px">A scalefactor band is not one number; it is between four and
-      about forty spectral lines, and within a single band the lines can differ by 40 dB.
+    <p style="margin-top:18px">A scalefactor band is not one number; it runs from four spectral
+      lines at the bottom of the spectrum to several dozen at the top, and within a single
+      band the lines can easily differ by 40 dB.
       A uniform quantiser serves the loudest line in the band well and the quietest line
       badly: the error is the same size everywhere, so the signal-to-noise ratio inside the
       band falls one decibel for every decibel a line sits below its neighbours. Both MP3
@@ -133,7 +135,8 @@
       <span class="op">)</span><sup>3/4</sup>
       <span class="op">−</span><span class="num">0.0946</span><span class="op">)</span>
       <span class="note2">MPEG-1 Layer III, the quantiser given in the standard's
-        informative encoder annex</span>
+        informative encoder annex; the band's own scalefactor is folded into the same
+        exponent, as the requantiser below makes explicit</span>
     </div>
 
     <div class="eq left">
@@ -173,9 +176,11 @@
       zero is the cheapest symbol the entropy coder has, so the rate saved by making more
       of them buys precision somewhere it matters more.</p>
 
-    <p>The folk explanation of the exponent — that 3/4 mirrors Stevens's power law for
-      loudness — is at best a coincidence of numbers. Its operational effect is precise and
-      testable, and it is not what most summaries claim. Write the quantiser as
+    <p>The folk explanation of the exponent — that 3/4 echoes Stevens's power law for
+      loudness — is not something either standard says, and the exponents do not even
+      match: Stevens's for loudness against sound pressure is nearer 0.6. The operational
+      effect of the exponent is precise and testable, and it is not what most summaries
+      claim. Write the quantiser as
       <i>y</i> = (|<i>x</i>|/<i>s</i>)<sup><i>p</i></sup> and the reconstruction as
       <i>x̂</i> = <i>s</i>·<i>y</i><sup>1/<i>p</i></sup>. A rounding error of about
       1/√12 in <i>y</i> maps to an error in <i>x</i> that grows as
@@ -193,10 +198,12 @@
 
     <p>So the three-quarter law does <strong>not</strong> give constant relative error, and
       any text that says it does is quoting the intent rather than the arithmetic. What it
-      gives is a quarter of a decibel back for every decibel of level: over the 60 dB that
-      separates the loudest and quietest lines in a busy band, that is 15 dB of
-      signal-to-noise ratio recovered for nothing. Fig 5.1 measures the slope rather than
-      asserting it.</p>
+      gives is a quarter of a decibel back for every decibel of level, and Fig 5.1 measures
+      what that is worth rather than asserting it. Sixty decibels below full scale — about
+      the span that separates the loudest and quietest lines in a busy band — the power law
+      comes out 13.6 dB ahead of a uniform quantiser matched to it at the top: 28.2 dB of
+      signal-to-noise ratio against 14.6. The measured slope is 0.77 dB per dB, against a
+      prediction of 0.75.</p>
 
     <figure class="figure" id="fig-law">
       <div class="figure-bar">
@@ -214,7 +221,7 @@
         <div class="readout" style="margin-top:14px">
           <div class="ro sig"><span class="k">Measured slope</span><span class="v" id="q1-slope">0.75 dB/dB</span></div>
           <div class="ro heat"><span class="k">Power law at −60 dBFS</span><span class="v" id="q1-p60">28.2 dB</span></div>
-          <div class="ro bad"><span class="k">Uniform at −60 dBFS</span><span class="v" id="q1-u60">15.0 dB</span></div>
+          <div class="ro bad"><span class="k">Uniform at −60 dBFS</span><span class="v" id="q1-u60">14.6 dB</span></div>
           <div class="ro ok"><span class="k">MP3 vs AAC rounding</span><span class="v" id="q1-ident">0 / 4096 differ</span></div>
         </div>
       </div>
@@ -253,7 +260,7 @@
         <i>p</i> is doing all the work. Push it to 0.35 and the curve flattens towards the
         logarithmic ideal, which is what µ-law telephony does. The dashed line is the
         predicted <i>p</i> dB per dB; the measured slope in the readout tracks it to about
-        a twentieth of a decibel. The three listen buttons quantise a plucked string with
+        a few hundredths of a decibel. The three listen buttons quantise a plucked string with
         each rule, matched at the attack: under the uniform quantiser the decay tail hits a
         fixed noise floor and granulates, while under the power law the noise decays with
         the note. Headphones, and listen to the last half-second.</figcaption>
@@ -352,9 +359,9 @@
       same entropy coder and the same number of bits, and allocate them two ways: once so
       that the noise floor follows the masking threshold up and down the spectrum, and once
       so that the noise floor is flat, which is what minimising mean squared error tells
-      you to do. At 48 kbit/s the flat allocation measures about 8 dB better in
-      signal-to-noise ratio and is the only one of the two with bands whose noise is above
-      the threshold at all.</p>
+      you to do. At 56 kbit/s the flat allocation measures 3.7 dB better in
+      signal-to-noise ratio — 12.1 dB against 8.4 — and it is the only one of the two with
+      any band whose noise rises above the threshold at all.</p>
 
     <blockquote class="pullquote">A codec does not decide what to keep. It decides how
       coarsely to round, and then finds out what survived.
@@ -364,7 +371,7 @@
       <div class="figure-bar">
         <span class="fno">FIG. 5.2</span>
         <span class="ftitle">Two allocations of the same bits</span>
-        <span class="fstate" id="q2-state">48 kbit/s</span>
+        <span class="fstate" id="q2-state">56 kbit/s</span>
       </div>
       <div class="figure-body">
         <div class="canvas-wrap"><canvas id="q2-cv"></canvas></div>
@@ -392,8 +399,8 @@
           </div>
         </div>
         <div class="field grow" style="min-width:190px">
-          <div class="flab"><span>Budget, both allocations</span><span class="val" id="q2-rlab">48 kbit/s</span></div>
-          <input type="range" id="q2-rate" min="24" max="160" step="4" value="48" data-out="q2-rlab" aria-label="Bit budget in kilobits per second">
+          <div class="flab"><span>Budget, both allocations</span><span class="val" id="q2-rlab">56 kbit/s</span></div>
+          <input type="range" id="q2-rate" min="24" max="160" step="4" value="56" data-out="q2-rlab" aria-label="Bit budget in kilobits per second">
         </div>
         <div class="field">
           <div class="flab"><span>Listen</span></div>
@@ -409,12 +416,17 @@
         comparison is honest: identical bits, identical everything else, two different
         shapes for the noise. The gold floor sits a constant distance under the dashed
         threshold; the red one is level, which puts it far below the threshold where the
-        music is loud and above it where the music is quiet — at 48 kbit/s on the default
-        programme, four bands over. Read the two SNR figures and notice which one is
-        higher. Then listen: the flat version is the one with the audible hiss and the
-        rough top end, and it is also the one that would win a null test. This inversion is
-        the reason <a href="11-artifacts.html">Chapter 11</a> throws SNR away entirely and
-        measures codecs with listeners and with PEAQ.</figcaption>
+        music is loud and above it where the music is quiet — at the default 56 kbit/s,
+        three bands over against none for the gold one. Read the two SNR figures and notice
+        which one is higher. Then listen: the flat version is the one with the audible hiss
+        and the rough top end, and it is also the one that would win a null test. Drag the
+        budget below about 44 kbit/s and be honest about what happens next: the shaped
+        allocation runs out of margin and pushes <em>every</em> band a decibel or two over
+        at once, which is not obviously better than the flat one putting seven well over. A
+        coder that far past its budget should stop shaping and start band-limiting, which is
+        what <a href="8-aac.html">Chapter 08</a>'s parametric tools are for. The inversion
+        above is the reason <a href="11-artifacts.html">Chapter 11</a> throws SNR away
+        entirely and measures codecs with listeners and with PEAQ.</figcaption>
     </figure>
 
     <p>This is why every serious quality measure in audio is either a listening test or a
@@ -423,7 +435,11 @@
       measures precisely the quantity the encoder was deliberately not minimising. The
       residual of a good 128 kbit/s encode is loud, broadband and recognisably the music,
       as the figure on the <a href="index.html">contents page</a> demonstrates by playing it
-      to you. That tells you nothing except that the encoder did its job.</p>
+      to you. That tells you nothing except that the encoder did its job. What a residual is
+      genuinely good for is locating where an encoder went wrong, and that wants a
+      spectrogram rather than a loudspeaker — <a href="/spectrum-analyzer/">the 1996
+      spectrum-analyser codebase</a> elsewhere in this almanac is about building exactly
+      that tool.</p>
 
     <div class="note sig">
       <span class="tag tag-sig">How many bits is a second of music, really?</span>
@@ -431,9 +447,10 @@
         masking threshold, work out how many bits are needed to quantise the spectrum so
         that no band's noise exceeds it, and call the answer the <em>perceptual entropy</em>.
         For a range of CD-quality material the figure came out around 2.1 bits per sample —
-        against the 16 the disc carries. That is roughly 92 kbit/s for stereo at 44.1 kHz,
-        and it is a remarkably good prediction of where transparency actually sits, made
-        four years before MPEG-1 was published.</p>
+        against the 16 the disc carries. At 44.1 kHz that is about 93 kbit/s per channel,
+        or 185 for a stereo pair coded independently, which sits squarely in the
+        192–256 kbit/s range where MP3 transparency is usually placed. It was computed four
+        years before MPEG-1 was published.</p>
     </div>
   </section>
 
@@ -458,9 +475,9 @@
       <i>λ</i>, so a bisection of twenty iterations lands on any achievable budget to
       better than a tenth of a kilobit, and the value it lands on is directly interpretable:
       it is the noise-to-mask ratio the encoder was able to afford. On the default
-      programme at 80 kbit/s, <i>λ</i> comes out near −9.7 dB; at 48 kbit/s it is about
-      −0.8 dB, which is to say the encoder has run out of margin and is coding right at the
-      audibility line.</p>
+      programme at 80 kbit/s, <i>λ</i> comes out at −8.5 dB; at 56 kbit/s it is −2.4 dB; and
+      at 48 kbit/s it is −0.2 dB, which is to say the encoder has run out of margin
+      altogether and is coding right on the audibility line.</p>
 
     <p>A real encoder has more freedom than one number, because it can also move individual
       bands relative to the threshold. That is what the scalefactors of the previous section
@@ -473,7 +490,7 @@
       <div class="figure-bar">
         <span class="fno">FIG. 5.3</span>
         <span class="ftitle">The allocation game — drag the noise floor</span>
-        <span class="fstate" id="q3-state">48.0 kbit/s used</span>
+        <span class="fstate" id="q3-state">56.0 kbit/s used</span>
       </div>
       <div class="figure-body">
         <div class="canvas-wrap"><canvas id="q3-cv" style="touch-action:none"></canvas></div>
@@ -484,15 +501,15 @@
         </div>
         <div class="readout" style="margin-top:14px">
           <div class="ro sig"><span class="k">Used</span><span class="v" id="q3-used">— kbit/s</span></div>
-          <div class="ro"><span class="k">Budget</span><span class="v" id="q3-budget">48 kbit/s</span></div>
+          <div class="ro"><span class="k">Budget</span><span class="v" id="q3-budget">56 kbit/s</span></div>
           <div class="ro bad"><span class="k">Audible bands</span><span class="v" id="q3-over">—</span></div>
           <div class="ro ok"><span class="k">Worst NMR</span><span class="v" id="q3-worst">— dB</span></div>
         </div>
       </div>
       <div class="deck">
         <div class="field grow" style="min-width:180px">
-          <div class="flab"><span>Budget</span><span class="val" id="q3-rlab">48 kbit/s</span></div>
-          <input type="range" id="q3-rate" min="24" max="128" step="4" value="48" data-out="q3-rlab" aria-label="Bit budget in kilobits per second">
+          <div class="flab"><span>Budget</span><span class="val" id="q3-rlab">56 kbit/s</span></div>
+          <input type="range" id="q3-rate" min="24" max="128" step="4" value="56" data-out="q3-rlab" aria-label="Bit budget in kilobits per second">
         </div>
         <div class="field">
           <div class="flab"><span>Start from</span></div>
@@ -617,17 +634,20 @@
         </div>
       </div>
       <figcaption class="figure-cap"><b>Fig 5.4</b> — every point on both curves is a
-        complete encode of a real 1.4-second excerpt: the page sweeps <i>λ</i>, quantises
-        all 130-odd blocks at each value, counts the entropy of the resulting integers and
-        measures the error power. The dashed guide is the theoretical 6.02 dB per bit per
-        spectral line, anchored at the high-rate end. The blue curve tracks it closely above
-        about 150 kbit/s and then steepens sharply as the rate falls, because down there
-        most of the saving comes from lines being zeroed rather than from steps being
-        widened, and a zero is almost free. Switch to <b>applause</b> and watch the whole
-        curve slide right by roughly 100 kbit/s: dense uncorrelated transients have almost
-        no spectral structure to exploit, which is why applause is the standard killer for
-        codec listening tests. Switch to <b>castanets</b> and it slides the other way,
-        because most of that signal is silence.</figcaption>
+        complete encode of a real 1.2-second excerpt: the page sweeps <i>λ</i> over 29
+        values, quantises all 114 blocks at each one, counts the entropy of the resulting
+        integers and measures the error power. The dashed guide is the theoretical 6.02 dB
+        per bit per spectral line, anchored at the top of the curve. Above about
+        250 kbit/s the blue curve runs alongside it at a measured 5.1 dB per bit — the
+        shortfall is the per-band overhead and an entropy estimate that is not an ideal
+        coder. Below that it steepens badly, reaching 11 dB per bit at the default
+        operating point, because down there bits are saved by zeroing whole coefficients
+        and a zeroed coefficient contributes its <em>entire</em> energy to the error rather
+        than a step's worth. At <i>λ</i> = −40 dB the four programmes need 32, 109, 193
+        and 228 kbit/s — castanets, speech, music and applause in that order. Applause is
+        the expensive one because dense uncorrelated transients have almost no spectral
+        structure to exploit, which is why it is the standard killer in codec listening
+        tests; castanets is cheap because most of that signal is silence.</figcaption>
     </figure>
 
     <div class="note ghost">
@@ -695,15 +715,15 @@
         </div>
         <div class="readout" style="margin-top:14px">
           <div class="ro sig"><span class="k">global_gain step</span><span class="v" id="q5-gg">0</span></div>
-          <div class="ro"><span class="k">Bits / budget</span><span class="v" id="q5-bits">— / 380</span></div>
+          <div class="ro"><span class="k">Bits / budget</span><span class="v" id="q5-bits">— / 600</span></div>
           <div class="ro bad"><span class="k">Bands over</span><span class="v" id="q5-over">—</span></div>
           <div class="ro ok"><span class="k">Outcome</span><span class="v" id="q5-status">running</span></div>
         </div>
       </div>
       <div class="deck">
         <div class="field grow" style="min-width:190px">
-          <div class="flab"><span>Bits for this block</span><span class="val" id="q5-blab">380 bits</span></div>
-          <input type="range" id="q5-budget" min="120" max="1200" step="20" value="380" data-out="q5-blab" aria-label="Bit budget for one block">
+          <div class="flab"><span>Bits for this block</span><span class="val" id="q5-blab">600 bits</span></div>
+          <input type="range" id="q5-budget" min="120" max="1200" step="20" value="600" data-out="q5-blab" aria-label="Bit budget for one block">
         </div>
         <div class="field">
           <div class="flab"><span>Run</span></div>
@@ -715,18 +735,20 @@
         </div>
       </div>
       <figcaption class="figure-cap"><b>Fig 5.5</b> — the real two-loop structure, running
-        on the loudest block of a real analysis, with MP3's own step sizes: 1.505 dB for the
-        global gain, 3.01 dB for a scalefactor, and a scalefactor ceiling of 15. At the
-        default 380 bits — roughly what a 64 kbit/s stereo stream affords one channel for
-        512 lines — it converges after about seven outer iterations, and you can watch the
-        red bands get amplified, go green, and drag their neighbours back over the line as
-        the rate loop pays for them. Drag the budget down to 260 bits and it never
-        converges: the global gain climbs by exactly two steps for every one step of
-        scalefactor, the red bars stop moving at about +7.6 dB, and the encoder runs until
-        a scalefactor hits its limit and gives up. That failure is not a bug in the
-        reference code; it is the honest report that the requested rate cannot hold the
-        noise under the threshold, and what a good encoder does next is the subject of the
-        next section.</figcaption>
+        on the loudest block of a real analysis, with MP3's own step sizes: 1.505 dB for
+        the global gain, 3.01 dB for a scalefactor, and a scalefactor ceiling of 15. The
+        default is 600 bits for 512 lines, which is 56 kbit/s for one channel or roughly
+        what a 112 kbit/s stereo stream affords; it converges after two outer iterations,
+        thirteen bands over the line falling to ten and then to none. Now walk the budget
+        down. At 580 bits the two loops genuinely fight: the count of audible bands
+        oscillates between ten and thirteen for twenty-seven iterations before a
+        scalefactor hits its ceiling and the encoder gives up. At 380 it does not even
+        oscillate. The global gain climbs by exactly two steps for every single step of
+        scalefactor — 1.505 × 2 against 3.01, an exact cancellation — so the worst
+        noise-to-mask ratio sits frozen at +8.0 dB while both fields march upwards until
+        the ceiling stops them. That is not a bug in the reference code. It is an honest
+        report that the requested rate cannot hold the noise under the threshold, and what
+        a good encoder does next is the subject of the next section.</figcaption>
     </figure>
 
     <div class="note danger">
@@ -765,9 +787,9 @@
     </div>
 
     <p>At 44.1 kHz the division almost never comes out whole — 128 kbit/s gives 417.96
-      bytes — so roughly every other frame carries a padding byte. At 48 kHz and 128 kbit/s
+      bytes — so the padding bit is set on about 96 frames in every 100. At 48 kHz and 128 kbit/s
       it is exactly 384 and the padding bit is never set. Either way the frame is a fixed
-      size, and the demand for bits is not: a cymbal crash wants three times what the decay
+      size, and the demand for bits is not: a cymbal crash wants several times what the decay
       after it wants. Layer III's answer is the <strong>bit reservoir</strong>, and it works
       by decoupling the frame boundary from the audio-data boundary entirely.</p>
 
@@ -852,16 +874,16 @@
         <dt>"The 3/4 law keeps the relative error constant"</dt>
         <dd>It does not, and Fig 5.1 measures the shortfall. Constant relative error
           requires a logarithmic characteristic, which is what µ-law and A-law telephony
-          use. The 3/4 power recovers three-quarters of the way there in slope terms —
-          0.75 dB of signal-to-noise ratio lost per dB of level rather than a full dB —
+          use. The 3/4 power gets a quarter of the way there — 0.75 dB of signal-to-noise
+          ratio lost per dB of level rather than a full dB —
           and its second job, keeping the integers small enough for a 16-entry Huffman
           table with an escape, matters just as much.</dd>
       </div>
       <div class="def">
         <dt>"Signal-to-noise ratio tells you how good a codec is"</dt>
         <dd>At a fixed rate it is very nearly an inverted quality metric, and Fig 5.2 shows
-          the inversion happening: the allocation that measures 8 dB better is the one with
-          audible noise. The same objection sinks null tests, waveform difference plots and
+          the inversion happening: at the default budget the allocation that measures 3.7 dB
+          better is the only one of the two with audible noise. The same objection sinks null tests, waveform difference plots and
           every "I subtracted the files" argument. Use listeners, or use a model of a
           listener — <a href="11-artifacts.html">Chapter 11</a> covers both.</dd>
       </div>
@@ -891,10 +913,10 @@
     <p style="margin-top:30px">What comes out of this stage is no longer audio. It is an
       array of small signed integers, one per spectral line, together with a handful of
       exponents; and the integers have a distribution that is nothing like uniform. At
-      64 kbit/s on the default programme, the great majority of the 512 lines in a block
-      quantise to zero, most of the survivors are ±1, and values beyond ±15 are rare enough
-      that MP3 does not put them in its tables at all — it codes an escape and appends the
-      magnitude in a variable number of <code>linbits</code>. A distribution that skewed has
+      64 kbit/s on the default programme, about 73 per cent of the 512 lines in a block
+      quantise to zero, most of the survivors are ±1, and magnitudes of 15 or more are rare
+      enough that MP3's big-value tables do not carry them: 15 is an escape, and the
+      excess follows in a fixed number of <code>linbits</code>. A distribution that skewed has
       an entropy far below the word length any fixed-width code would need, and the gap
       between those two numbers is the last large saving in the chain.</p>
 
@@ -1230,7 +1252,7 @@ var Q5 = (function () {
     pad: { l: 54, r: 16, t: 16, b: 34 },
   });
 
-  var st = { src: "music", rate: 48, an: null, A: null, B: null, dA: null, dB: null, ref: 1 };
+  var st = { src: "music", rate: 56, an: null, A: null, B: null, dA: null, dB: null, ref: 1 };
 
   function recompute() {
     st.an = Q5.analysis(st.src);
@@ -1332,7 +1354,7 @@ var Q5 = (function () {
     pad: { l: 50, r: 16, t: 16, b: 34 },
   });
 
-  var st = { an: null, delta: null, m: null, budget: 48, ready: false };
+  var st = { an: null, delta: null, m: null, budget: 56, ready: false };
 
   function preset(kind) {
     var an = st.an, shape = new Float64Array(an.bands), k;
@@ -1528,7 +1550,7 @@ var Q5 = (function () {
     pad: { l: 50, r: 16, t: 16, b: 34 },
   });
 
-  var st = { an: null, X: null, T: null, sf: null, gg: 0, iter: 0, budget: 380,
+  var st = { an: null, X: null, T: null, sf: null, gg: 0, iter: 0, budget: 600,
     status: "running", res: null, ready: false, acc: 0 };
 
   var ESC = 255, HIST = new Int32Array(2 * ESC + 3), TOUCH = new Int32Array(2 * ESC + 3);

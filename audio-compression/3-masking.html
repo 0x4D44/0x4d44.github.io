@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Masking — Throwing Sound Away</title>
+<meta name="description" content="A 1 kHz tone at 70 dB SPL lifts the threshold 200 Hz above it from 2.7 to 35.5 dB SPL. Spreading functions, the tone-against-noise asymmetry worth twenty decibels, the power sum, perceptual entropy, and the temporal asymmetry that forces block switching — all computed live.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="03">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 03</div>
+  <div class="num">03</div>
+  <h2>Every bit a codec saves is bought from a threshold the music itself pushed up.</h2>
+  <p class="lead"><a href="2-ear.html">Chapter 02</a> ended with a floor: the quietest
+    sound you can detect in an empty room. Music is not an empty room. Play a 1 kHz tone at
+    70 dB SPL and the floor 200 Hz above it rises from 2.7 to 35.5 dB SPL — thirty-three
+    decibels of new deafness, arriving free with the note. Lossy audio coding is the
+    exploitation of that one fact, and very nearly nothing else.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">The threshold is a function of the
+      signal, and it is computable in about forty lines</div></div>
+    <div><div class="k">Named after</div><div class="v">Wegel &amp; Lane, Fletcher,
+      Zwicker, Schroeder, Johnston</div></div>
+    <div><div class="k">Numbers</div><div class="v">27 dB/Bark · 24 dB against 4 ·
+      6.02 dB a bit · 5 ms against 200</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#floor">The floor that moves</a>
+    <a href="#shape">Why it leans upward</a>
+    <a href="#spreading">Four curves, one phenomenon</a>
+    <a href="#tonality">The twenty-decibel question</a>
+    <a href="#assemble">Assembling the threshold</a>
+    <a href="#currency">What a decibel buys</a>
+    <a href="#time">Masking in time</a>
+    <a href="#binaural">Two ears spoil it</a>
+    <a href="#wrong">What people get wrong</a>
+  </nav>
+  <div>
+
+  <!-- ===================================================== 1 -->
+  <section id="floor" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The floor that moves</div>
+    <h3>The absolute threshold is a special case: it is what the masked threshold becomes when the masker is silence.</h3>
+    <p style="margin-top:18px">Robert Wegel and Charles Lane published the first systematic
+      measurement in 1924: play one pure tone, then find how loud a second tone must be
+      before the listener can hear it at all. The curve that comes out — detection threshold
+      against probe frequency, for one fixed masker — is a <b>masking pattern</b>, and it
+      dominates the loud tone's neighbourhood by tens of decibels while leaving the far ends
+      of the spectrum untouched. Harvey Fletcher read those patterns as evidence of a bank
+      of overlapping filters and, in 1940, named the width of one of them the
+      <b>critical band</b>. The whole of perceptual audio coding is downstream of those two
+      papers.</p>
+    <p>Four words, used precisely throughout this chapter. The <b>masker</b> is the loud
+      thing that is already playing. The <b>probe</b> (or maskee) is the quiet thing whose
+      audibility is in question — in a codec it is never music, it is always quantisation
+      noise. The <b>masked threshold</b> is the level the probe must reach to be detected in
+      the masker's presence. And the <b>signal-to-mask ratio</b> is the gap between a
+      component's own level and the threshold at its frequency:</p>
+
+    <div class="eq">
+      <i>SMR</i><span class="op">=</span><i>L</i><sub>signal</sub>
+      <span class="op">−</span><i>LT</i><sub>g</sub>
+      <span class="note2">both in dB SPL. Positive means the component sticks out of its own
+        shadow; negative means the signal is inaudible where it stands, and a coder may
+        spend nothing on it at all</span>
+    </div>
+
+    <p>SMR is the only number a bit allocator really wants, and the rest of this chapter is
+      about computing it. Start by looking at one. In figure 3.1 the gold curve is the
+      masked threshold produced by a single masker, evaluated live from the spreading
+      function of §3 and power-summed with the threshold in quiet from
+      <a href="2-ear.html">chapter 02</a>. The probe sits at 1.2 kHz and 30 dB SPL: twenty-seven
+      decibels clear of the absolute threshold, and inaudible anyway.</p>
+
+    <figure class="figure" id="fig-floor">
+      <div class="figure-bar">
+        <span class="fno">FIG. 3.1</span>
+        <span class="ftitle">One masker, and the hole it digs in your hearing</span>
+        <span class="fstate" id="a-state">1 kHz tone at 70 dB SPL</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="a-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>masked threshold</span>
+          <span class="l-sig"><i></i>the masker</span>
+          <span class="l-ghost"><i class="dash"></i>threshold in quiet</span>
+          <span class="l-faint"><i></i>the probe — drag it</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro heat"><span class="k">Threshold at the probe</span><span class="v" id="a-th">35.5 dB SPL</span></div>
+          <div class="ro ghost"><span class="k">Raised by</span><span class="v" id="a-rise">+32.8 dB</span></div>
+          <div class="ro sig"><span class="k">Signal-to-mask</span><span class="v" id="a-smr">−5.5 dB</span></div>
+          <div class="ro ok"><span class="k">Verdict</span><span class="v" id="a-verdict">masked</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Masker</span></div>
+          <div class="chips" id="a-mf">
+            <button data-v="250">250 Hz</button>
+            <button data-v="1000" class="on">1 kHz</button>
+            <button data-v="4000">4 kHz</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Masker type</span></div>
+          <div class="chips" id="a-type">
+            <button data-v="tone" class="on">Tone</button>
+            <button data-v="noise">Band noise</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Masker level</span><span class="val" id="a-mllab">70 dB SPL</span></div>
+          <input type="range" id="a-ml" min="20" max="96" value="70" data-out="a-mllab" aria-label="Masker level in dB SPL">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Probe frequency</span><span class="val" id="a-pflab">1.2 kHz</span></div>
+          <input type="range" id="a-pf" min="0" max="1000" value="490" data-out="a-pflab" aria-label="Probe frequency">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Probe level</span><span class="val" id="a-pllab">30 dB SPL</span></div>
+          <input type="range" id="a-pl" min="0" max="96" value="30" data-out="a-pllab" aria-label="Probe level in dB SPL">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="a-play-p">Probe alone</button>
+            <button class="btn play" id="a-play-m">Masker alone</button>
+            <button class="btn play" id="a-play-b">Both</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 3.1</b> — the gold curve is evaluated point by
+        point as you move the controls; nothing here is drawn from a table. Press
+        <b>probe alone</b> first, at a volume where the short burst is plainly audible, then
+        press <b>both</b>: the burst is still there, at exactly the same level, and it has
+        gone. Drag the probe upward in frequency and the shadow follows it a long way; drag
+        it down 200 Hz below the masker and the threshold has already collapsed back to
+        within nine decibels of the quiet curve. Raise the masker to 96 dB and watch the
+        shadow lengthen <em>upward only</em>. The dB SPL labels are nominal — a browser
+        cannot know your volume setting — but the masker and probe are scaled together, so
+        the ratio between them is exact.</figcaption>
+    </figure>
+
+    <p>The table below is the same arithmetic, frozen, for the default configuration: a
+      1 kHz tonal masker at 70 dB SPL. The last two columns are two different models of the
+      same ear — the level-dependent two-slope pattern used by this page and the four-segment
+      function that shipped inside MPEG-1's psychoacoustic model 1. They agree about the
+      shape and disagree about the amount by up to eighteen decibels, which is a preview of
+      §3.</p>
+
+    <div class="scroller"><table>
+      <caption>Masked threshold against probe frequency, for one tonal masker at 1 kHz and 70 dB SPL (dB SPL)</caption>
+      <thead><tr><th class="num">Probe</th><th class="num">Δz (Bark)</th><th class="num">In quiet</th><th class="num">Two-slope</th><th class="num">MPEG-1 model 1</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td class="num">200 Hz</td><td class="num">−6.57</td><td class="num">13.2</td><td class="num">13.2</td><td class="num">13.2</td><td>out of reach: the masker contributes nothing</td></tr>
+        <tr><td class="num">600 Hz</td><td class="num">−2.77</td><td class="num">5.4</td><td class="num">5.4</td><td class="num">5.8</td><td>still essentially the quiet threshold</td></tr>
+        <tr><td class="num">800 Hz</td><td class="num">−1.29</td><td class="num">4.2</td><td class="num">12.9</td><td class="num">21.4</td><td>200 Hz <em>below</em>: 8.7 dB of masking</td></tr>
+        <tr><td class="num">900 Hz</td><td class="num">−0.62</td><td class="num">3.8</td><td class="num">30.2</td><td class="num">39.2</td><td>the lower skirt is steep — 27 dB per Bark</td></tr>
+        <tr><td class="num">1 000 Hz</td><td class="num">0.00</td><td class="num">3.4</td><td class="num">47.0</td><td class="num">61.6</td><td>at the masker: the two models are 14.6 dB apart</td></tr>
+        <tr><td class="num">1 100 Hz</td><td class="num">+0.58</td><td class="num">3.0</td><td class="num">41.0</td><td class="num">51.1</td><td>—</td></tr>
+        <tr><td class="num">1 200 Hz</td><td class="num">+1.12</td><td class="num">2.7</td><td class="num">35.5</td><td class="num">43.4</td><td>200 Hz <em>above</em>: 32.8 dB of masking</td></tr>
+        <tr><td class="num">1 600 Hz</td><td class="num">+2.99</td><td class="num">1.4</td><td class="num">16.5</td><td class="num">30.8</td><td>three Bark up and still 15 dB of cover</td></tr>
+        <tr><td class="num">2 000 Hz</td><td class="num">+4.48</td><td class="num">−0.3</td><td class="num">3.5</td><td class="num">21.3</td><td>the two-slope model has given up; MPEG-1 has not</td></tr>
+        <tr><td class="num">3 000 Hz</td><td class="num">+7.16</td><td class="num">−4.6</td><td class="num">−4.5</td><td class="num">5.5</td><td>MPEG-1's segment ends at Δz = 8</td></tr>
+        <tr><td class="num">4 000 Hz</td><td class="num">+8.94</td><td class="num">−3.4</td><td class="num">−3.4</td><td class="num">−3.4</td><td>both back on the quiet curve</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note sig">
+      <span class="tag tag-sig">What "masked" means, operationally</span>
+      <p>Not "less noticeable". Every number in this chapter comes from a detection
+        experiment — typically a forced choice between intervals, one of which contains the
+        probe — and the threshold is the level at which the listener is right some fixed
+        fraction of the time. A probe below its masked threshold is not quiet or
+        unobtrusive; it is <em>undetectable under test</em>, which is a much stronger claim
+        and the only one strong enough to build a codec on. It is also why every honest
+        statement about codec quality ends in a listening test rather than a spectrum plot:
+        see <a href="11-artifacts.html">chapter 11</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 2 -->
+  <section id="shape" class="section">
+    <div class="kicker k-heat">Why it leans upward</div>
+    <h3>The shape of the shadow is the shape of the travelling wave, turned into decibels.</h3>
+    <p style="margin-top:18px">Masking is not a quirk of attention or a failure of
+      concentration. It is mechanical. A 1 kHz tone does not excite a point on the basilar
+      membrane; it excites a patch. Take Zwicker and Terhardt's critical bandwidth</p>
+
+    <div class="eq">
+      <i>CB</i>(<i>f</i>)<span class="op">=</span><span class="num">25</span>
+      <span class="op">+</span><span class="num">75</span>(<span class="num">1</span>
+      <span class="op">+</span><span class="num">1.4</span><i>f</i><sub>k</sub><sup>2</sup>)<sup>0.69</sup>
+      <span class="note2">Hz, with f<sub>k</sub> the frequency in kHz: 104 Hz at 250 Hz,
+        162 Hz at 1 kHz, 685 Hz at 4 kHz</span>
+    </div>
+
+    <p>— and run its edges through Greenwood's place map from
+      <a href="2-ear.html">chapter 02</a>, and 162 Hz at 1 kHz comes out as
+      <strong>1.03 mm</strong> of membrane out of 35. Anything whose own patch overlaps
+      that millimetre is competing for a structure that is already moving, and it loses.</p>
+    <p>The patch is not symmetrical. The travelling wave builds gradually from the base,
+      peaks, and then dies within a fraction of a millimetre — a gentle basal skirt and an
+      abrupt apical cutoff. Since the base is the high-frequency end, a masker's excitation
+      reaches a long way <em>up</em> in frequency and hardly at all down. That is the
+      <b>upward spread of masking</b>, and it is the single most consequential asymmetry in
+      audio coding: a bass note buys you cover across the midrange, and a cymbal buys you
+      nothing below it.</p>
+    <p>Worse — better, for a codec — the upward spread <em>grows with level</em> while the
+      downward spread does not. Zwicker's two-slope description makes the asymmetry
+      explicit. Below the masker the pattern falls at a fixed 27 dB per Bark. Above it, the
+      slope depends on both the masker's frequency and its level:</p>
+
+    <div class="eq left">
+      <i>S</i><sub>lower</sub><span class="op">=</span><span class="num">+27</span>&nbsp;dB/Bark<br>
+      <i>S</i><sub>upper</sub><span class="op">=</span><span class="num">−24</span>
+      <span class="op">−</span>
+      <span class="frac"><span><span class="num">230</span></span><span><i>f</i><sub>m</sub></span></span>
+      <span class="op">+</span><span class="num">0.2</span><i>L</i><sub>m</sub>&nbsp;dB/Bark
+      <span class="note2">f<sub>m</sub> in Hz, L<sub>m</sub> in dB SPL. At a 1 kHz masker
+        the frequency term is 0.23 dB/Bark and at 4 kHz it is 0.06 — negligible. The level
+        term is not: −20.2 dB/Bark at 20 dB SPL, −12.2 at 60, −4.2 at 100</span>
+    </div>
+
+    <p>Read that last line again, because it is what makes loud music cheap to encode. A
+      quiet masker casts a shadow that falls away at twenty decibels per Bark; a very loud
+      one casts a shadow that is nearly flat for several Bark. Double the level of the
+      orchestra and you have not merely raised the threshold under the instruments, you have
+      widened it. The usual mechanical account is cochlear compression: the response to a
+      quiet probe grows compressively with level — measured exponents cluster around 0.2 to
+      0.3 dB per dB — while the masker's upward-spreading tail grows linearly, so the probe
+      loses ground steadily as the masker gets louder.</p>
+    <p>One distinction worth keeping straight, because the two curves are drawn on the same
+      axes and mean opposite things. A <b>masking pattern</b> fixes the masker and sweeps the
+      probe: it is what figure 3.1 plots, and it is what a codec needs. A <b>psychophysical
+      tuning curve</b> fixes the probe at a few decibels above its own threshold and asks how
+      loud a masker at each frequency must be to just cover it: that one is a picture of an
+      auditory filter, and it leans the other way. Mistaking one for the other flips the
+      asymmetry, and the mistake is common enough in secondary sources to be worth naming.</p>
+
+    <blockquote class="pullquote">The masking threshold is not a property of the music. It
+      is a property of a model of you, evaluated on the music — and the models in shipping
+      encoders disagree with each other by more than fifteen decibels at the masker's own
+      frequency.
+      <span class="who">Why two encoders at the same bitrate do not sound the same</span></blockquote>
+  </section>
+
+  <!-- ===================================================== 3 -->
+  <section id="spreading" class="section">
+    <div class="kicker">Four curves, one phenomenon</div>
+    <h3>Every codec draws the spreading function differently, and all of them draw it too narrow.</h3>
+    <p style="margin-top:18px">A <b>spreading function</b> is the masking pattern reduced to
+      its shape: how many decibels below the masker the threshold sits, as a function of
+      distance along the Bark axis, with the masker's own level factored out. Four of them
+      are in circulation, and figure 3.2 draws all four at once.</p>
+    <p>The most-cited is Schroeder's, from Schroeder, Atal and Hall's 1979 paper on hiding
+      quantisation noise in speech coders — the paper that arguably started perceptual
+      coding, eleven years before there was an MPEG audio committee to start:</p>
+
+    <div class="eq">
+      <i>SF</i>(Δ<i>z</i>)<span class="op">=</span><span class="num">15.81</span>
+      <span class="op">+</span><span class="num">7.5</span>(Δ<i>z</i><span class="op">+</span><span class="num">0.474</span>)
+      <span class="op">−</span><span class="num">17.5</span><span>√</span><span class="rad"><span class="num">1</span><span class="op">+</span>(Δ<i>z</i><span class="op">+</span><span class="num">0.474</span>)<sup>2</sup></span>&nbsp;dB
+      <span class="note2">one line, no level dependence. Its maximum is −0.0016 dB at
+        Δz = 0.0003 — the 0.474 offset exists precisely to put the peak on the masker — and
+        it is 3 dB down at −0.62 and +0.80 Bark, 10 dB down at −1.13 and +1.73.
+        Asymptotically it rises at 25 dB/Bark below and falls at 10 dB/Bark above</span>
+    </div>
+
+    <p>Its virtue is that it is one line of arithmetic and its derivative is continuous, so
+      convolving a whole spectrum with it is cheap and well behaved. Its vice is the missing
+      level dependence: it draws the same curve for a 20 dB masker and a 100 dB one, when the
+      measurements say the upper slope should flatten by sixteen decibels per Bark across
+      that range. Encoders that use it compensate by being pessimistic elsewhere.</p>
+    <p>MPEG-1's psychoacoustic model 1 takes the opposite approach: four straight segments,
+      a kink at every join, and the masker's sound pressure level <i>X</i> written into two
+      of the four slopes. It is defined only for −3 ≤ Δz &lt; 8 and contributes nothing
+      outside that span.</p>
+
+    <div class="eq left">
+      <i>SF</i>(Δ<i>z</i>)<span class="op">=</span><span class="num">17</span>Δ<i>z</i>
+      <span class="op">−</span><span class="num">0.4</span><i>X</i><span class="op">+</span><span class="num">11</span>
+      <span class="op">,</span>&nbsp;&nbsp;<span class="num">−3</span><span class="op">≤</span>Δ<i>z</i><span class="op">&lt;</span><span class="num">−1</span><br>
+      <i>SF</i>(Δ<i>z</i>)<span class="op">=</span>(<span class="num">0.4</span><i>X</i><span class="op">+</span><span class="num">6</span>)Δ<i>z</i>
+      <span class="op">,</span>&nbsp;&nbsp;<span class="num">−1</span><span class="op">≤</span>Δ<i>z</i><span class="op">&lt;</span><span class="num">0</span><br>
+      <i>SF</i>(Δ<i>z</i>)<span class="op">=</span><span class="num">−17</span>Δ<i>z</i>
+      <span class="op">,</span>&nbsp;&nbsp;<span class="num">0</span><span class="op">≤</span>Δ<i>z</i><span class="op">&lt;</span><span class="num">1</span><br>
+      <i>SF</i>(Δ<i>z</i>)<span class="op">=</span>(<span class="num">0.15</span><i>X</i><span class="op">−</span><span class="num">17</span>)Δ<i>z</i>
+      <span class="op">−</span><span class="num">0.15</span><i>X</i>
+      <span class="op">,</span>&nbsp;&nbsp;<span class="num">1</span><span class="op">≤</span>Δ<i>z</i><span class="op">&lt;</span><span class="num">8</span>
+      <span class="note2">continuous at every knot: both branches give −0.4X − 6 at Δz = −1,
+        zero at Δz = 0 and −17 at Δz = +1. The far-upper slope 0.15X − 17 runs from
+        −14 dB/Bark at X = 20 dB to −2 dB/Bark at X = 100 — the level dependence of §2,
+        built straight into the constants</span>
+    </div>
+
+    <p>The fourth curve is what an encoder people actually use does. LAME pre-warps the Bark
+      distance before applying Schroeder's formula — by a factor of three above the masker
+      and one and a half below — and then subtracts a notch of up to 8 dB just above it:</p>
+
+    <div class="eq left">
+      <i>t</i><span class="op">=</span><span class="num">3</span>Δ<i>z</i>&nbsp;(Δ<i>z</i><span class="op">≥</span><span class="num">0</span>)
+      <span class="op">,</span>&nbsp;&nbsp;<i>t</i><span class="op">=</span><span class="num">1.5</span>Δ<i>z</i>&nbsp;(Δ<i>z</i><span class="op">&lt;</span><span class="num">0</span>)<br>
+      <i>SF</i><span class="op">=</span><span class="fn">notch</span>(<i>t</i>)
+      <span class="op">+</span><span class="fn">Schroeder</span>(<i>t</i>)
+      <span class="op">,</span>&nbsp;&nbsp;
+      <span class="fn">notch</span><span class="op">=</span><span class="num">8</span>((<i>t</i><span class="op">−</span><span class="num">0.5</span>)<sup>2</sup>
+      <span class="op">−</span><span class="num">2</span>(<i>t</i><span class="op">−</span><span class="num">0.5</span>))&nbsp;for&nbsp;<span class="num">0.5</span><span class="op">≤</span><i>t</i><span class="op">≤</span><span class="num">2.5</span>
+      <span class="note2">the warp turns Schroeder's 25 and 10 dB/Bark asymptotes into
+        37.5 and 30 — roughly three times narrower than the psychoacoustic literature
+        supports. The reference code for MPEG's model 2 warps by 1.05 instead, which leaves
+        the textbook curve nearly intact</span>
+    </div>
+
+    <figure class="figure" id="fig-spread">
+      <div class="figure-bar">
+        <span class="fno">FIG. 3.2</span>
+        <span class="ftitle">Four spreading functions, at a level you choose</span>
+        <span class="fstate" id="b-state">70 dB masker at 1 kHz</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="b-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-ghost"><i></i>Schroeder 1979</span>
+          <span class="l-sig"><i></i>Zwicker two-slope</span>
+          <span class="l-heat"><i></i>MPEG-1 model 1</span>
+          <span class="l-ok"><i></i>LAME</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Selected curve</span><span class="v" id="b-name">two-slope</span></div>
+          <div class="ro"><span class="k">Rise below the masker</span><span class="v" id="b-lo">+27.0 dB/Bark</span></div>
+          <div class="ro bad"><span class="k">Fall above it</span><span class="v" id="b-hi">−10.2 dB/Bark</span></div>
+          <div class="ro ok"><span class="k">Width 10 dB down</span><span class="v" id="b-w">1.35 Bark</span></div>
+          <div class="ro ghost"><span class="k">Same width in hertz</span><span class="v" id="b-whz">232 Hz</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Read out</span></div>
+          <div class="chips" id="b-sel">
+            <button data-v="two" class="on">Two-slope</button>
+            <button data-v="sch">Schroeder</button>
+            <button data-v="mp1">MPEG-1</button>
+            <button data-v="lame">LAME</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Masker level</span><span class="val" id="b-llab">70 dB SPL</span></div>
+          <input type="range" id="b-l" min="20" max="100" value="70" data-out="b-llab" aria-label="Masker level in dB SPL">
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Masker frequency</span><span class="val" id="b-flab">1 kHz</span></div>
+          <input type="range" id="b-f" min="0" max="1000" value="611" data-out="b-flab" aria-label="Masker frequency">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 3.2</b> — all four functions evaluated across
+        Δz on every frame; the masker sits at Δz = 0 by construction. Drag the level from
+        20 dB to 100 dB and watch which curves move: the two level-dependent ones open out
+        upward by sixteen and twelve decibels per Bark respectively, while Schroeder's and
+        LAME's do not budge. At 70 dB the four disagree about the threshold two Bark above
+        the masker by <b>38 decibels</b> — Schroeder says 12 down, MPEG-1 says 24, LAME says
+        50. That spread is not a rounding error between implementations; it is the
+        difference between an encoder that hisses and one that wastes half its bitrate. The
+        frequency slider barely moves anything, which is the point: above about 1 kHz the
+        spreading function is a shape on the Bark axis and nothing else.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>The four spreading functions in decibels, for a 70 dB SPL masker at 1 kHz</caption>
+      <thead><tr><th class="num">Δz</th><th class="num">Schroeder</th><th class="num">Two-slope</th><th class="num">MPEG-1 m1</th><th class="num">LAME</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td class="num">−3.0</td><td class="num">−50.7</td><td class="num">−81.0</td><td class="num">−68.0</td><td class="num">−87.0</td><td>MPEG-1's definition stops here</td></tr>
+        <tr><td class="num">−2.0</td><td class="num">−27.6</td><td class="num">−54.0</td><td class="num">−51.0</td><td class="num">−50.7</td><td>—</td></tr>
+        <tr><td class="num">−1.0</td><td class="num">−7.9</td><td class="num">−27.0</td><td class="num">−34.0</td><td class="num">−17.0</td><td>Schroeder is 19 dB more generous than the two-slope</td></tr>
+        <tr><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td>all normalised to the masker</td></tr>
+        <tr><td class="num">+0.5</td><td class="num">−1.3</td><td class="num">−5.1</td><td class="num">−8.5</td><td class="num">−16.1</td><td>LAME's notch is doing the work here</td></tr>
+        <tr><td class="num">+1.0</td><td class="num">−4.3</td><td class="num">−10.2</td><td class="num">−17.0</td><td class="num">−21.4</td><td>—</td></tr>
+        <tr><td class="num">+2.0</td><td class="num">−12.3</td><td class="num">−20.5</td><td class="num">−23.5</td><td class="num">−50.3</td><td>a 38 dB disagreement about the same ear</td></tr>
+        <tr><td class="num">+4.0</td><td class="num">−30.9</td><td class="num">−40.9</td><td class="num">−36.5</td><td class="num">−109.6</td><td>LAME has long since discarded this masker</td></tr>
+        <tr><td class="num">+8.0</td><td class="num">−70.0</td><td class="num">−81.8</td><td class="num">—</td><td class="num">−229.3</td><td>out of MPEG-1's defined range</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Narrow is safe, wide is cheap</span>
+      <p>The two failure modes are not symmetrical, which is why the published curves and the
+        shipped ones differ so much. A spreading function that is too <em>wide</em> claims
+        masking that is not there, and the encoder puts audible noise into a band it believed
+        was covered — a defect the listener hears immediately and blames on the format. One
+        that is too <em>narrow</em> simply spends bits it did not have to spend, and the
+        listener hears a slightly larger file. Faced with that asymmetry every encoder author
+        has narrowed the curve, LAME most of all. Its effective slopes, three times steeper
+        than Schroeder's, are not a claim about hearing. They are a safety margin with a
+        formula wrapped round it.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 4 -->
+  <section id="tonality" class="section">
+    <div class="kicker k-ghost">The twenty-decibel question</div>
+    <h3>Noise hides a tone almost perfectly; a tone hides noise badly.</h3>
+    <p style="margin-top:18px">Everything so far has treated a masker as a level at a
+      frequency. It is not enough, and the gap is worth about twenty decibels — more than the
+      difference between any two of the spreading functions in §3.</p>
+    <p>The textbook pair of measurements: a band of noise one critical band wide at 80 dB SPL
+      will just mask a 410 Hz tone at about 76 dB, a signal-to-mask ratio of roughly
+      <b>4 dB</b>. A 1 kHz tone at 80 dB SPL will just mask critical-band noise at about
+      56 dB — an SMR of roughly <b>24 dB</b>. Same bandwidth, same level, same ear, and
+      twenty decibels of difference depending on which of the two is doing the masking. The
+      usual account is that a tone produces a steady, phase-locked excitation against which
+      the probe's own fluctuation stands out, while noise produces exactly the sort of
+      fluctuating envelope that the probe is trying to hide in.</p>
+    <p>The coding literature names the two cases <b>TMN</b> (tone masking noise) and
+      <b>NMT</b> (noise masking tone), and every psychoacoustic model carries a table of
+      offsets that interpolates between them. MPEG-1's model 1 folds the offset into a
+      per-masker <b>masking index</b> <i>av</i>, negative and slowly frequency-dependent;
+      model 2 computes a tonality index <i>t<sub>b</sub></i> per partition and interpolates
+      directly:</p>
+
+    <div class="eq left">
+      <i>av</i><sub>tonal</sub><span class="op">=</span><span class="num">−1.525</span>
+      <span class="op">−</span><span class="num">0.275</span><i>z</i>
+      <span class="op">−</span><span class="num">4.5</span>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>av</i><sub>noise</sub><span class="op">=</span><span class="num">−1.525</span>
+      <span class="op">−</span><span class="num">0.175</span><i>z</i>
+      <span class="op">−</span><span class="num">0.5</span><br>
+      <i>O</i>(<i>z</i>)<span class="op">=</span><i>t</i><sub>b</sub><span class="op">·</span><i>TMN</i>(<i>z</i>)
+      <span class="op">+</span>(<span class="num">1</span><span class="op">−</span><i>t</i><sub>b</sub>)<span class="op">·</span><i>NMT</i>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>TMN</i><span class="op">=</span><span class="fn">max</span>(<span class="num">15.5</span><span class="op">+</span><i>z</i><span class="op">,</span><span class="num">24.5</span>)
+      <span class="op">,</span>&nbsp;&nbsp;<i>NMT</i><span class="op">=</span><span class="num">5.5</span>
+      <span class="note2">the textbooks give the tonal branch as 14.5 + z instead, with no
+        floor; at 1 kHz that is 23.0 dB against the reference code's 24.5, and the measured
+        value is about 24. Both are in print, both are defensible, and the difference is
+        1.5 dB of bitrate</span>
+    </div>
+
+    <p>Which leaves the real question: how does an encoder decide, thirty-eight times a
+      second and without a human in the loop, whether what it is looking at is a tone? Two
+      answers ship. Johnston's is the <b>spectral flatness measure</b>, the ratio of the
+      geometric to the arithmetic mean of the power spectrum, in decibels:</p>
+
+    <div class="eq">
+      <i>SFM</i><span class="op">=</span><span class="num">10</span>
+      <span class="fn">log</span><sub>10</sub>
+      <span class="frac"><span>(<span class="bigop">∏</span><i>P</i><sub>i</sub>)<sup>1/<i>N</i></sup></span><span><span class="frac"><span><span class="num">1</span></span><span><i>N</i></span></span><span class="bigop">∑</span><i>P</i><sub>i</sub></span></span>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>α</i><span class="op">=</span><span class="fn">min</span>(<i>SFM</i><span class="op">/</span><span class="num">−60</span><span class="op">,</span><span class="num">1</span>)
+      <span class="note2">0 dB means perfectly flat, so α = 0 and the model treats the band
+        as noise; −60 dB or below gives α = 1 and full tonal treatment. Everything in
+        between is a linear blend, which is a convenience rather than a measurement</span>
+    </div>
+
+    <p>The second is MPEG model 2's <b>unpredictability measure</b>, and it is the more
+      elegant of the two. Take the complex spectrum of the two previous blocks, extrapolate
+      each bin linearly in polar coordinates, and measure how far the actual value lands from
+      the prediction, normalised by the magnitudes involved:</p>
+
+    <div class="eq left">
+      <i>r̂</i><span class="op">=</span><span class="num">2</span><i>r</i><sub>−1</sub>
+      <span class="op">−</span><i>r</i><sub>−2</sub>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>φ̂</i><span class="op">=</span><span class="num">2</span><i>φ</i><sub>−1</sub>
+      <span class="op">−</span><i>φ</i><sub>−2</sub>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>c</i><span class="op">=</span>
+      <span class="frac"><span>|<i>X</i><span class="op">−</span><i>r̂</i><i>e</i><sup><i>jφ̂</i></sup>|</span><span><i>r</i><span class="op">+</span>|<i>r̂</i>|</span></span><br>
+      <i>t</i><sub>b</sub><span class="op">=</span><span class="op">−</span>
+      <span class="fn">log</span><sub>10</sub><i>c</i><span class="op">−</span>
+      <span class="fn">log</span><sub>10</sub><span class="num">2</span>
+      <span class="op">,</span>&nbsp;&nbsp;<i>c</i>&nbsp;clamped&nbsp;to&nbsp;[<span class="num">0.05</span><span class="op">,</span><span class="num">0.5</span>]
+      <span class="note2">a steady sinusoid is perfectly predictable, so c → 0 and
+        t<sub>b</sub> → 1; noise gives c near 0.5 and t<sub>b</sub> near 0. The clamp is not
+        a safety check, it is the calibration: it maps the index exactly onto [0, 1]. The
+        reference code writes the constants as −0.434294482·ln(c) − 0.301029996, which is
+        the same thing in natural logs</span>
+    </div>
+
+    <figure class="figure" id="fig-asym">
+      <div class="figure-bar">
+        <span class="fno">FIG. 3.3</span>
+        <span class="ftitle">The same level, the same band, twenty decibels apart</span>
+        <span class="fstate" id="c-state">listening to: tone masks noise</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="c-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>masker, measured</span>
+          <span class="l-heat"><i class="dash"></i>masked threshold, modelled</span>
+          <span class="l-danger"><i></i>probe — audible</span>
+          <span class="l-faint"><i></i>probe — masked</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Your probe sits</span><span class="v" id="c-smr">12 dB down</span></div>
+          <div class="ro heat"><span class="k">A tone masker demands</span><span class="v" id="c-needa">23.0 dB</span></div>
+          <div class="ro ok"><span class="k">A noise masker demands</span><span class="v" id="c-needb">5.5 dB</span></div>
+          <div class="ro bad"><span class="k">Verdict</span><span class="v" id="c-verdict">noise audible, tone masked</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Probe below masker</span><span class="val" id="c-slab">12 dB</span></div>
+          <input type="range" id="c-s" min="0" max="40" value="12" data-out="c-slab" aria-label="Probe level below the masker, in decibels">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen to</span></div>
+          <div class="chips" id="c-cfg">
+            <button data-v="tmn" class="on">Tone masks noise</button>
+            <button data-v="nmt">Noise masks tone</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="c-p">Probe alone</button>
+            <button class="btn play" id="c-m">Masker alone</button>
+            <button class="btn play" id="c-mix">Both</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 3.3</b> — both configurations at once. The
+        masker is fixed at 80 dB SPL and centred on 1 kHz; the probe is the other kind of
+        signal, in the same critical band, at the level you set. The bar heights are measured
+        from the very arrays the buttons play, by root-mean-square; the dashed thresholds
+        come from the offsets above. Between 5.5 and 23 dB down there is a window where the
+        model says one probe is audible and the other is not — the default, 12 dB, sits in
+        it. Listen to both configurations there: the hiss over the tone is obvious, the tone
+        under the hiss is gone. Push the slider past 23 dB and both vanish; pull it back to
+        4 dB and both return.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>The tone-against-noise offsets, band by band (dB)</caption>
+      <thead><tr><th class="num">Centre</th><th class="num">z (Bark)</th><th class="num">TMN, reference code</th><th class="num">TMN, textbook</th><th class="num">NMT</th><th class="num">av tonal</th><th class="num">av noise</th></tr></thead>
+      <tbody>
+        <tr><td class="num">100 Hz</td><td class="num">0.99</td><td class="num">24.5</td><td class="num">15.5</td><td class="num">5.5</td><td class="num">−6.30</td><td class="num">−2.20</td></tr>
+        <tr><td class="num">500 Hz</td><td class="num">4.74</td><td class="num">24.5</td><td class="num">19.2</td><td class="num">5.5</td><td class="num">−7.33</td><td class="num">−2.85</td></tr>
+        <tr><td class="num">1 kHz</td><td class="num">8.51</td><td class="num">24.5</td><td class="num">23.0</td><td class="num">5.5</td><td class="num">−8.37</td><td class="num">−3.51</td></tr>
+        <tr><td class="num">2 kHz</td><td class="num">13.10</td><td class="num">28.6</td><td class="num">27.6</td><td class="num">5.5</td><td class="num">−9.63</td><td class="num">−4.32</td></tr>
+        <tr><td class="num">4 kHz</td><td class="num">17.26</td><td class="num">32.8</td><td class="num">31.8</td><td class="num">5.5</td><td class="num">−10.77</td><td class="num">−5.05</td></tr>
+        <tr><td class="num">8 kHz</td><td class="num">21.28</td><td class="num">36.8</td><td class="num">35.8</td><td class="num">5.5</td><td class="num">−11.88</td><td class="num">−5.75</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Note what the NMT column does not do: it does not vary. A noise masker's offset is a
+      flat 5.5 dB everywhere, while a tonal masker's grows by a decibel per Bark. The
+      practical consequence is that the tonal parts of a signal — a sustained violin, an
+      organ pedal, a synthesiser pad — are expensive at high frequencies and the noisy parts
+      are cheap everywhere. Cymbals and applause are, band for band, the easiest material in
+      music to code, and they are also the material everyone points at when a codec fails.
+      Those two facts are not in tension: the failure is temporal, and §7 is about that.</p>
+  </section>
+
+  <!-- ===================================================== 5 -->
+  <section id="assemble" class="section">
+    <div class="kicker">Assembling the threshold</div>
+    <h3>Between a spectrum and a bit allocation there are seven steps and no magic.</h3>
+    <p style="margin-top:18px">The complete psychoacoustic model, of the kind that shipped
+      inside every MP3 encoder, is a short pipeline. Nothing in it is deeper than the
+      preceding four sections; the work is in the bookkeeping.</p>
+
+    <dl class="defs" style="margin-top:20px">
+      <div class="def"><dt>1 · transform</dt><dd>A windowed FFT of the current block — 1 024
+        points in MPEG's model 2 — giving magnitude and phase per bin. The codec's own
+        transform is a different one, for reasons <a href="4-transform.html">chapter 04</a>
+        goes into.</dd></div>
+      <div class="def"><dt>2 · group</dt><dd>Sum the bin powers into partitions on the Bark
+        axis. Below about 500 Hz a critical band is narrower than the FFT's resolution, so
+        the partitions there are single bins and the grouping is nominal.</dd></div>
+      <div class="def"><dt>3 · classify</dt><dd>Per partition, a tonality index from spectral
+        flatness or from unpredictability, and from it the offset <i>O</i>(<i>z</i>) of §4.</dd></div>
+      <div class="def"><dt>4 · spread</dt><dd>Convolve the partition energies along the Bark
+        axis with the spreading function of §3. This is the step that takes a spectrum and
+        turns it into an excitation.</dd></div>
+      <div class="def"><dt>5 · offset</dt><dd>Subtract the tonality-dependent offset. Five
+        and a half decibels if the band is noise, two dozen if it is a tone.</dd></div>
+      <div class="def"><dt>6 · floor</dt><dd>Power-sum with the threshold in quiet, so that
+        no band is ever asked to code below what the ear cannot hear anyway.</dd></div>
+      <div class="def"><dt>7 · remember</dt><dd>Clamp against the previous block's threshold,
+        which is forward masking implemented as a memory. §7.</dd></div>
+    </dl>
+
+    <p>Step 6 is the one that gets written down wrongly most often. Thresholds add as
+      <em>powers</em>, not as decibels:</p>
+
+    <div class="eq">
+      <i>LT</i><sub>g</sub><span class="op">=</span><span class="num">10</span>
+      <span class="fn">log</span><sub>10</sub>
+      (<span class="num">10</span><sup><i>T</i><sub>q</sub>/10</sup>
+      <span class="op">+</span><span class="bigop">∑</span><span class="limits"><span></span><span><i>j</i></span></span>
+      <span class="num">10</span><sup><i>LT</i><sub><i>j</i></sub>/10</sup>)&nbsp;dB&nbsp;SPL
+      <span class="note2">two equally strong maskers therefore raise the threshold by exactly
+        10 log<sub>10</sub>2 = 3.01 dB, and a hundred of them by 20 dB</span>
+    </div>
+
+    <p>That linear power sum is the model's most conservative assumption and it is known to
+      be wrong in the safe direction. Combine two maskers in a real experiment and the
+      measured threshold usually rises by more than 3 dB — "excess masking", large for
+      non-simultaneous maskers, and read as evidence of the same cochlear compression that
+      produced the level-dependent upper slope in §2, with exponents typically estimated
+      between 0.2 and 0.35. The models ignore it. An encoder that assumed the extra masking
+      was there would be claiming cover it might not get.</p>
+    <p>There is one trap in step 4 that every implementer meets. Having convolved the
+      spectrum with the spreading function, it is tempting to deconvolve afterwards — the
+      spreading has raised the whole curve, and undoing it would recover a per-band threshold
+      that was not inflated by its neighbours. Do not. The convolution is ill-conditioned:
+      inverting it amplifies small errors without limit and routinely returns negative
+      thresholds, which are meaningless. Shipping implementations renormalise instead,
+      dividing out the spreading function's own gain, and accept that the result is
+      approximate.</p>
+
+    <div class="note ghost">
+      <span class="tag">A unit sleight of hand that every model performs</span>
+      <p>Look closely at step 6 and it mixes two quantities that are not the same kind of
+        thing: the total energy summed across a critical band, and the threshold in quiet
+        for a <em>pure tone</em> at that band's centre. A band's energy depends on its
+        width; a tone's threshold does not. Every shipping psychoacoustic model does this
+        anyway, and absorbs the discrepancy into the offsets of §4 — which is part of why
+        those offsets were tuned by listening rather than derived. It is worth knowing that
+        the bookkeeping is approximate before you spend a week trying to make two
+        implementations agree to a decibel.</p>
+    </div>
+
+    <p>Figure 3.4 runs all seven steps on a signal synthesised in your browser and shows
+      what falls out: the band levels, the threshold, and the number the next section is
+      about.</p>
+
+    <figure class="figure" id="fig-global">
+      <div class="figure-bar">
+        <span class="fno">FIG. 3.4</span>
+        <span class="ftitle">A whole spectrum, a whole threshold, and the bill</span>
+        <span class="fstate" id="d-state">music · measured tonality</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="d-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>band level</span>
+          <span class="l-heat"><i></i>masked threshold</span>
+          <span class="l-ghost"><i class="dash"></i>threshold in quiet</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Perceptual entropy</span><span class="v" id="d-pe">2.52 bits/sample</span></div>
+          <div class="ro"><span class="k">Per channel at 44.1 kHz</span><span class="v" id="d-kbps">111 kbit/s</span></div>
+          <div class="ro ghost"><span class="k">With the quiet floor alone</span><span class="v" id="d-pe0">8.64 bits/sample</span></div>
+          <div class="ro ok"><span class="k">Bands already below threshold</span><span class="v" id="d-free">7 of 27</span></div>
+          <div class="ro bad"><span class="k">Mean tonality α</span><span class="v" id="d-alpha">0.41</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="d-src">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+            <button data-v="tone">1 kHz tone</button>
+            <button data-v="noise">White noise</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Tonality</span></div>
+          <div class="chips" id="d-ton">
+            <button data-v="meas" class="on">Measured</button>
+            <button data-v="tonal">Force tonal</button>
+            <button data-v="noisy">Force noise</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <button class="btn play" id="d-play">The programme</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 3.4</b> — the loudest 2 048-sample frame of the
+        chosen programme, transformed here and now, grouped into 27 bands and put through
+        steps 2 to 6. The two entropy readouts are the whole argument of this study in two
+        numbers: with nothing but the threshold in quiet, this music needs
+        <b>8.64 bits a sample</b>; with the masking model switched in it needs
+        <b>2.52</b> — a factor of 3.4 before a single entropy code has been written. Force
+        every band tonal and the bill doubles to about 5 bits; force every band noise and it
+        falls below 2. That is the twenty-decibel question of §4, priced.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================== 6 -->
+  <section id="currency" class="section">
+    <div class="kicker k-heat">What a decibel buys</div>
+    <h3>Masking is money, and the exchange rate is 6.02 decibels to the bit.</h3>
+    <p style="margin-top:18px">Three ratios, constantly confused, all measured in decibels
+      and all defined against the same global threshold <i>LT</i><sub>g</sub>:</p>
+
+    <div class="eq left">
+      <i>SMR</i><span class="op">=</span><i>L</i><sub>signal</sub><span class="op">−</span><i>LT</i><sub>g</sub>
+      <span class="note2">signal-to-mask: how far the programme sticks out of its own shadow. It sets the demand for bits.</span>
+      <i>NMR</i><span class="op">=</span><i>L</i><sub>noise</sub><span class="op">−</span><i>LT</i><sub>g</sub>
+      <span class="note2">noise-to-mask: the one that decides audibility. Negative is inaudible; positive is a defect.</span>
+      <i>MNR</i><span class="op">=</span><span class="op">−</span><i>NMR</i><span class="op">=</span><i>SMR</i><span class="op">−</span><i>SNR</i>
+      <span class="note2">mask-to-noise: the headroom left over. A rate loop's job is to keep it just barely positive in every band.</span>
+    </div>
+
+    <p>The conversion into bits is the uniform quantiser's signal-to-noise ratio, derived in
+      <a href="1-sound.html">chapter 01</a>: each extra bit halves the quantisation step and
+      so buys 6.02 dB.</p>
+
+    <div class="eq">
+      <i>SNR</i><span class="op">≈</span><span class="num">6.02</span><i>b</i>
+      <span class="op">+</span><span class="num">1.76</span>&nbsp;dB
+      <span class="op">⇒</span>
+      <i>b</i><span class="op">≈</span>⌈<span class="frac"><span><i>SMR</i></span><span><span class="num">6.02</span></span></span>⌉
+      <span class="note2">a band with 24 dB of SMR needs four bits per line; a band whose
+        signal sits below its own masked threshold needs none at all, and gets a run of
+        zeros that <a href="6-entropy.html">chapter 06</a> codes for almost nothing</span>
+    </div>
+
+    <p>Integrate that demand over the whole spectrum and you get James Johnston's
+      <b>perceptual entropy</b>, proposed in 1988: the number of bits per sample needed to
+      keep the quantisation noise in every band exactly at its masked threshold, and
+      therefore a floor under what any transparent coder can achieve <em>under that model</em>.</p>
+
+    <div class="eq">
+      <i>b</i><sub>i</sub><span class="op">=</span>
+      <span class="fn">log</span><sub>2</sub>(<span class="num">2</span>⌊<span>√</span><span class="rad"><span class="num">6</span><i>e</i><sub>i</sub><span class="op">/</span><i>T</i><sub>i</sub></span>⌋<span class="op">+</span><span class="num">1</span>)
+      <span class="op">,</span>&nbsp;&nbsp;
+      <i>PE</i><span class="op">=</span>
+      <span class="frac"><span><span class="bigop">∑</span><i>n</i><sub>i</sub><i>b</i><sub>i</sub></span><span><i>N</i></span></span>
+      <span class="note2">e<sub>i</sub> is the energy in band i, T<sub>i</sub> its threshold
+        and n<sub>i</sub> the number of spectral lines in it. The √(6e/T) is simply the
+        quantiser step that places the error power Δ²/12 exactly on the threshold</span>
+    </div>
+
+    <p>Johnston's measurements put a wide range of CD-quality material at about
+      <strong>2.1 bits per sample</strong>. Multiply by 44 100 and that is
+      <strong>92.6 kbit/s</strong> for one channel, against 705.6 kbit/s of linear PCM: a
+      factor of 7.6, before entropy coding has removed anything and before a stereo pair has
+      been exploited. The figure above, running a cruder model on a synthetic phrase, lands
+      at 2.5 bits a sample — the same neighbourhood by a different route. The familiar claim
+      that 128 kbit/s stereo is transparent is not marketing. It is this integral, plus
+      Huffman coding, plus the fact that two channels of music are not two independent
+      signals.</p>
+    <p>Three honest qualifications. Perceptual entropy is a lower bound under one particular
+      masking model, not a theorem about hearing: change the spreading function to LAME's and
+      the number moves. It is an average over programme, and the spread is enormous — the
+      speech phrase in figure 3.4 costs a third of what the music costs, and a solo
+      instrument a fraction again. And it says nothing about the bits a real bitstream spends
+      on side information: scalefactors, window switches, Huffman table selectors and a frame
+      header, which at low rates can be a fifth of the budget.
+      <a href="5-quantize.html">Chapter 05</a> spends those bits properly.</p>
+    <p>The ratio that matters at the other end of the pipeline is NMR. A coder is doing its
+      job when NMR ≤ 0 dB in every band of every block, and the objective quality measures
+      standardised as ITU-R BS.1387 — the PEAQ family — are built on exactly that comparison,
+      computed in an ear model rather than on the encoder's own assumptions.
+      <a href="11-artifacts.html">Chapter 11</a> takes them apart, along with the reasons a
+      good NMR and a good listening-test score are not the same thing.</p>
+  </section>
+
+  <!-- ===================================================== 7 -->
+  <section id="time" class="section">
+    <div class="kicker k-danger">Masking in time</div>
+    <h3>The model is generous in frequency and simply wrong in time, in one direction.</h3>
+    <p style="margin-top:18px">Masking does not stop when the masker does.
+      <a href="2-ear.html">Chapter 02</a> measured the ear's two clocks; here is what they
+      cost. After a loud sound ends, the threshold stays raised and decays over something
+      like 100 to 200 ms — <b>forward</b> or post-masking, and it is substantial, worth tens
+      of decibels in the first few milliseconds. The parametric form used in the coding
+      literature, after Jesteadt, Bacon and Lehman, is linear in the logarithm of the
+      delay:</p>
+
+    <div class="eq">
+      <i>M</i>(Δ<i>t</i>)<span class="op">=</span><span class="num">0.2</span>
+      (<span class="num">2.3</span><span class="op">−</span>
+      <span class="fn">log</span><sub>10</sub>Δ<i>t</i>)
+      (<i>L</i><sub>m</sub><span class="op">−</span><span class="num">20</span>)&nbsp;dB
+      <span class="note2">Δt in milliseconds, L<sub>m</sub> the masker's level in dB SPL.
+        Since log<sub>10</sub>200 = 2.301 the fit decays to exactly zero at 200 ms, which is
+        where the psychophysics puts the end of post-masking. It is a fit over a range that
+        starts a few milliseconds out, so it understates the masking immediately after
+        offset — an error in the direction a codec wants</span>
+    </div>
+
+    <p>Before a loud sound, the ear is also briefly deaf, which is stranger. <b>Backward</b>
+      or pre-masking exists, but it is small and short: the coding literature has
+      traditionally quoted up to 20 ms, careful psychophysics gives something nearer 2 to
+      5 ms, and the amount depends heavily on how practised the listener is — well-trained
+      listeners show little or none, which suggests that much of what is measured in naive
+      listeners is confusion rather than masking. For an encoder the safe number is small.
+      Call it five milliseconds and do not plan around more.</p>
+
+    <div class="scroller"><table>
+      <caption>Forward masking in decibels above the threshold in quiet, from the fit above</caption>
+      <thead><tr><th class="num">Delay</th><th class="num">70 dB masker</th><th class="num">90 dB masker</th><th>What spans this long</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1 ms</td><td class="num">23.0</td><td class="num">32.2</td><td>—</td></tr>
+        <tr><td class="num">2 ms</td><td class="num">20.0</td><td class="num">28.0</td><td>a gap you can just detect (chapter 02)</td></tr>
+        <tr><td class="num">5 ms</td><td class="num">16.0</td><td class="num">22.4</td><td>all the backward masking you are likely to get</td></tr>
+        <tr><td class="num">10 ms</td><td class="num">13.0</td><td class="num">18.2</td><td>MP3's short block is 8.7 ms</td></tr>
+        <tr><td class="num">20 ms</td><td class="num">10.0</td><td class="num">14.0</td><td>MP3's long block is 26.1 ms</td></tr>
+        <tr><td class="num">50 ms</td><td class="num">6.0</td><td class="num">8.4</td><td>—</td></tr>
+        <tr><td class="num">100 ms</td><td class="num">3.0</td><td class="num">4.2</td><td>a fast tremolo cycle</td></tr>
+        <tr><td class="num">200 ms</td><td class="num">0.0</td><td class="num">0.0</td><td>the ear has forgotten</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Now put the two numbers next to the arithmetic of a transform codec, and the problem
+      appears immediately. An MP3 long block covers 1 152 input samples, which at 44.1 kHz is
+      <strong>26.12 ms</strong>. Quantisation error introduced in that block is spread across
+      all of it, more or less evenly, because a coefficient is a statement about the entire
+      window. Put a castanet strike three-quarters of the way through, and twenty milliseconds
+      of the noise needed to code that strike lands <em>before</em> it, in silence, where the
+      ear will forgive perhaps five. The result is <b>pre-echo</b>: a short burst of hiss
+      that audibly precedes the attack.</p>
+
+    <blockquote class="pullquote">Pre-echo is not a defect of the transform. It is the ear
+      declining to extend backwards the generosity it extends forwards — and every block
+      switch, every temporal noise shaping filter, every transient detector in every codec
+      ever shipped is a response to that one asymmetry.
+      <span class="who">Two hundred milliseconds one way, five the other</span></blockquote>
+
+    <figure class="figure" id="fig-time">
+      <div class="figure-bar">
+        <span class="fno">FIG. 3.5</span>
+        <span class="ftitle">What the ear allows in time, against what a block delivers</span>
+        <span class="fstate" id="t-state">N = 512 · 21.3 ms window</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="t-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>the strike</span>
+          <span class="l-danger"><i></i>the coder's error</span>
+          <span class="l-heat"><i></i>what masking allows</span>
+          <span class="l-ok"><i></i>the 5 ms of backward masking</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Window span</span><span class="v" id="t-span">21.3 ms</span></div>
+          <div class="ro bad"><span class="k">Noise arrives early by</span><span class="v" id="t-lead">16 ms</span></div>
+          <div class="ro bad"><span class="k">Worst excess</span><span class="v" id="t-over">+16.3 dB</span></div>
+          <div class="ro"><span class="k">Budget</span><span class="v" id="t-kbps">48 kbit/s</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Transform size</span></div>
+          <div class="chips" id="t-n">
+            <button data-v="128">128</button>
+            <button data-v="256">256</button>
+            <button data-v="512" class="on">512</button>
+            <button data-v="1024">1024</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Strike level</span><span class="val" id="t-llab">85 dB SPL</span></div>
+          <input type="range" id="t-l" min="60" max="100" value="85" data-out="t-llab" aria-label="Nominal strike level in dB SPL">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="t-orig">Original</button>
+            <button class="btn play" id="t-code">Coded</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 3.5</b> — a castanet strike is encoded and
+        decoded by the study's own codec at a fixed 48 kbit/s, and the red curve is the real
+        error, measured in one-millisecond frames. The gold curve is what temporal masking
+        allows: the threshold in quiet before the strike, the strike's own level less the
+        5.5 dB a noise-like masker earns during it, and the forward-masking decay above after
+        it. At <b>N = 512</b> — a 21.3 ms window, the closest thing here to MP3's long block
+        — the error breaks the budget <b>16 ms before the strike happens</b>, by up to 16 dB.
+        At N = 1024 it is 29 ms and 30 dB. Click down to N = 128, a 5.3 ms window, and the
+        violation disappears entirely: the noise has nowhere to go but inside the attack.
+        That is block switching, discovered by measurement.</figcaption>
+    </figure>
+
+    <p>Note what the figure does <em>not</em> show: a coder that has broken its own rules.
+      The rate loop kept the quantisation noise under the threshold its model computed, in
+      every band of every block, exactly as instructed. The model was simply answering a
+      question about a 21-millisecond average when the ear was asking a question about the
+      previous two milliseconds. A threshold computed per block cannot see inside a block.</p>
+
+    <div class="note danger">
+      <span class="tag tag-danger">Forward masking, implemented as a memory</span>
+      <p>There is one cheap trick every MPEG-style model carries, and it is the only place
+        temporal masking appears in the model at all. Before using this block's threshold,
+        clamp it against the previous block's, with a floor 25 dB below:</p>
+      <div class="eq" style="margin:14px 0 4px">
+        <i>T</i><span class="op">=</span><span class="fn">max</span>(
+        <span class="fn">min</span>(<i>T</i><sub>now</sub><span class="op">,</span><i>T</i><sub>prev</sub>)
+        <span class="op">,</span><span class="num">0.00316</span><i>T</i><sub>now</sub>)
+        <span class="note2">0.00316 = 10<sup>−2.5</sup>, i.e. −25 dB</span>
+      </div>
+      <p>Read it as a one-pole memory. A block that suddenly becomes loud does not get to
+        claim its full new threshold immediately — it inherits the quiet block's caution,
+        which is precisely the pre-echo case — while a block that goes quiet keeps some of
+        the previous block's generosity, which is forward masking. Two comparisons, and it
+        buys most of what a proper temporal model would.
+        <a href="4-transform.html">Chapter 04</a> shows the smear appearing as the window
+        lengthens, <a href="7-mp3.html">chapter 07</a> the window-switching state machine
+        that MP3 answers it with, <a href="8-aac.html">chapter 08</a> the temporal noise
+        shaping that AAC added, and <a href="11-artifacts.html">chapter 11</a> what the
+        artefact sounds like when the machinery fails.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 8 -->
+  <section id="binaural" class="section">
+    <div class="kicker k-ghost">Two ears spoil it</div>
+    <h3>A monaural model cannot see the fifteen decibels your second ear gives you.</h3>
+    <p style="margin-top:18px">Everything above assumes one ear. Present the same masker to
+      both ears and the same probe to both, then invert the probe's waveform at one ear, and
+      the probe becomes <strong>12 to 15 dB</strong> more detectable — the
+      <b>binaural masking level difference</b>. The release is largest at low frequencies,
+      around 15 dB near 250 to 500 Hz, and collapses to two or three decibels above about
+      1.5 kHz, where the wavelength is short enough that interaural phase stops being a
+      usable cue at all. It is the same machinery that lets you follow one voice in a room
+      full of them.</p>
+    <p>For a codec this is bad news, and it is the reason joint stereo used to have such a
+      poor reputation. Mid/side and intensity coding both change the relationship between
+      the noise in the left channel and the noise in the right. Quantisation noise that is
+      identical in both channels images at the centre of the stereo picture and is fairly
+      easy to hide; noise that is uncorrelated between channels, or inverted, is not. Each
+      channel's monaural NMR can be comfortably negative and the artefact audible anyway.
+      Encoders answer with a frequency-dependent penalty. LAME's is a raised cosine, fitted
+      to the shape of the BMLD curve rather than derived from it:</p>
+
+    <div class="eq">
+      <i>mld</i>(<i>f</i>)<span class="op">=</span><span class="num">12.5</span>
+      (<span class="num">1</span><span class="op">−</span>
+      <span class="fn">cos</span>
+      <span class="frac"><span><i>π</i><span class="fn">min</span>(<i>z</i><span class="op">,</span><span class="num">15.5</span>)</span><span><span class="num">15.5</span></span></span>)
+      <span class="op">−</span><span class="num">25</span>&nbsp;dB
+      <span class="note2">−24.8 dB at 100 Hz, −19.7 at 500 Hz, −10.6 at 1 kHz, −1.4 at
+        2 kHz and exactly 0 from 15.5 Bark — about 3.2 kHz — upward. Below that the stereo
+        threshold is dragged down towards the monaural one by up to 25 dB</span>
+    </div>
+
+    <p>The practical upshot is that the bass is where stereo coding has to be careful and the
+      treble is where it can be reckless, which is exactly the opposite of the intuition most
+      people start with and exactly what intensity stereo does — it discards the phase
+      relationship only above a frequency where the ear has stopped using it.
+      <a href="7-mp3.html">Chapter 07</a> and <a href="8-aac.html">chapter 08</a> take the
+      joint-stereo tools apart; <a href="9-opus.html">chapter 09</a> shows what a codec
+      designed after the argument was settled does instead.</p>
+  </section>
+
+  <!-- ===================================================== 9 -->
+  <section id="wrong" class="section">
+    <div class="kicker">What people get wrong</div>
+    <h3>Six corrections, in rough order of how much damage they do.</h3>
+    <p style="margin-top:18px"><b>A codec does not delete the masked sounds.</b> This is the
+      commonest account and it is not what happens. Nothing is removed for being masked. The
+      spectrum is quantised — every line of it — with a step size chosen per band so that the
+      resulting <em>rounding error</em> sits just under the masked threshold. Masked
+      components do survive, coarsely; lines whose entire magnitude is below the step round
+      to zero, which is a consequence of the arithmetic rather than a deletion rule. The
+      masking threshold is a noise budget, not a delete list. Figure 3.4's gold curve is a
+      ceiling on error, not an outline of what is kept.</p>
+    <p><b>Masking is not a matter of attention.</b> What has been measured throughout this
+      chapter is <em>energetic</em> masking: physical overlap of excitation on the basilar
+      membrane, present in an anaesthetised animal and in a listener attending as hard as
+      they can. It has a cousin — <em>informational</em> masking, where the target is
+      perfectly audible in the peripheral sense but lost among a competing sound it resembles
+      — which is central rather than cochlear, varies with training and expectation, and is
+      not modelled by any shipping codec. Confusing the two produces the belief that you can
+      train yourself past masking. You can train yourself past the informational kind; the
+      energetic kind is plumbing.</p>
+    <p><b>MP3 does not "cut everything above 16 kHz" because of masking.</b> Encoders do
+      often low-pass, sometimes at 16 kHz and lower at low bitrates, and Karlheinz
+      Brandenburg has recommended the practice — but as a rate strategy, not a psychoacoustic
+      finding. The top octave is expensive, contributes little to most programme and is where
+      most listeners' hearing is worst, so at a tight budget it is the first thing to trade.
+      That is an economic decision made by the encoder's author, it is adjustable, and it has
+      nothing to do with the threshold curves above.</p>
+    <p><b>Two maskers do not add in decibels.</b> They add in power: 70 dB and 70 dB give
+      73.01 dB, not 140 and not 70. An encoder that summed thresholds in the log domain would
+      overestimate its budget by tens of decibels and sound like a broken radio. Real ears, as
+      §5 notes, add slightly <em>more</em> than the power sum, which is why the models'
+      arithmetic is safe rather than exact.</p>
+    <p><b>The masking curve is not a property of the recording.</b> It is the output of a
+      model of a listener. Figure 3.2 shows four such models disagreeing by 38 dB two Bark
+      above a masker, and figure 3.1's table shows two of them disagreeing by 14.6 dB at the
+      masker itself. When two encoders at the same bitrate sound different, this is usually
+      where the difference started — long before the quantiser, in a judgement about how far
+      a shadow reaches.</p>
+    <p><b>And "transparent at 128 kbit/s" is a claim about a population, not about you.</b>
+      The perceptual entropy calculation gives a lower bound under one model and an average
+      over programme; it says nothing about the hardest two seconds of the hardest track in
+      your collection, played on equipment good enough to expose it. The only instrument that
+      settles that question is a properly conducted listening test, which is what
+      <a href="11-artifacts.html">chapter 11</a> hands you.</p>
+  </section>
+
+  <!-- ===================================================== 10 -->
+  <section id="handoff" class="section">
+    <div class="kicker k-ok">Where this goes next</div>
+    <h3>The model is finished. It now needs somewhere to apply itself.</h3>
+    <p style="margin-top:18px">What §5 assembled is a curve: for this instant of music, in
+      each band, the loudest noise that will not be heard. It is the target that the rest of
+      the encoder exists to hit, and on its own it can do nothing at all. A threshold defined
+      per critical band is a statement about the spectrum, and a codec is handed a waveform —
+      so before any of this arithmetic can be spent, the signal has to be taken apart into
+      frequency components that can be quantised independently, cheaply, in overlapping
+      blocks, and put back together without a seam. That turns out to be a harder problem
+      than it sounds: the obvious transforms either cost fifty per cent more coefficients
+      than samples, or leak so badly that a tone smears across half the bands it was supposed
+      to be isolated in, and figure 3.5 has already shown what happens when the block is the
+      wrong length. <a href="4-transform.html">Chapter 04</a> builds the answer — windows,
+      leakage, the polyphase bank and the modified discrete cosine transform, whose aliasing
+      cancels exactly, demonstrated numerically rather than asserted. After that, in
+      <a href="5-quantize.html">chapter 05</a>, the two curves finally meet and the bits get
+      spent.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ===============================================================
+   Shared helpers for this chapter's five figures. Everything that
+   more than one figure needs lives here; each figure below is its
+   own IIFE so a thrown error cannot take the others with it.
+   =============================================================== */
+var M3 = (function () {
+  "use strict";
+  var D = window.DSP;
+  var SR = 48000;              // fixed, so nothing touches the AudioContext before a click
+
+  // MPEG-1 psychoacoustic model 1's four-segment spreading function, dB.
+  // X is the masker's SPL. Defined only on -3 <= dz < 8.
+  function sfMpeg1(dz, X) {
+    if (dz < -3 || dz >= 8) return -140;
+    if (dz < -1) return 17 * dz - 0.4 * X + 11;
+    if (dz < 0) return (0.4 * X + 6) * dz;
+    if (dz < 1) return -17 * dz;
+    return (0.15 * X - 17) * dz - 0.15 * X;
+  }
+  // LAME's: warp the Bark distance, notch, then Schroeder.
+  function sfLame(dz) {
+    var t = dz >= 0 ? dz * 3 : dz * 1.5, notch = 0, a;
+    if (t >= 0.5 && t <= 2.5) { a = t - 0.5; notch = 8 * (a * a - 2 * a); }
+    t += 0.474;
+    return notch + 15.811389 + 7.5 * t - 17.5 * Math.sqrt(1 + t * t);
+  }
+  // The tone/noise offset, in the form the study's own codec uses.
+  function offset(z, tonal) { return tonal ? 14.5 + z : 5.5; }
+
+  // Global masked threshold in dB SPL at one frequency, power-summed with the
+  // threshold in quiet. maskers: [{f, level, tonal}].
+  function threshold(probeHz, maskers, noAth) {
+    var zp = D.hzToBarkT(Math.max(probeHz, 20));
+    var p = noAth ? 0 : D.undbp(D.ath(probeHz)), j, m, zm, dz;
+    for (j = 0; j < maskers.length; j++) {
+      m = maskers[j];
+      zm = D.hzToBarkT(Math.max(m.f, 20));
+      dz = zp - zm;
+      if (dz < -4 || dz > 10) continue;
+      p += D.undbp(m.level + D.spreadTwoSlope(dz, m.level, m.f / 1000) - offset(zm, m.tonal));
+    }
+    return D.dbp(p);
+  }
+
+  function critBw(f) { return 25 + 75 * Math.pow(1 + 1.4 * Math.pow(f / 1000, 2), 0.69); }
+
+  // Level bookkeeping: a full-scale sine is taken as 96 dB SPL, the studio
+  // convention the rest of this study uses.
+  function splOf(x) { return 96 + 20 * Math.log10(Math.max(D.rms(x), 1e-12) * Math.SQRT2); }
+  function setSpl(x, L) {
+    var g = Math.pow(10, (L - splOf(x)) / 20), i;
+    for (i = 0; i < x.length; i++) x[i] *= g;
+    return x;
+  }
+  // log-frequency slider mapping
+  function freqAt(v, lo, hi) { return lo * Math.pow(hi / lo, v / 1000); }
+  function idxOf(f, lo, hi) { return 1000 * Math.log(f / lo) / Math.log(hi / lo); }
+  function hzTick(f) {
+    if (f >= 1000) return (f / 1000) + "k";
+    return String(Math.round(f));
+  }
+  // Bark-band edges expressed as bin indices of a half-spectrum, with the
+  // region above Zwicker's table split into three rather than left as one.
+  function bandEdges(nBins, sr) {
+    var out = [0], z, i, tail, e;
+    for (z = 1; z <= 24; z++) {
+      i = Math.min(nBins, Math.round(D.BARK_EDGES[z] / (sr / 2) * nBins));
+      if (i > out[out.length - 1]) out.push(i);
+    }
+    tail = out[out.length - 1];
+    if (tail < nBins) {
+      for (z = 1; z <= 3; z++) {
+        e = Math.round(tail + (nBins - tail) * z / 3);
+        if (e > out[out.length - 1]) out.push(e);
+      }
+      if (out[out.length - 1] < nBins) out.push(nBins);
+    }
+    return out;
+  }
+  return {
+    SR: SR, sfMpeg1: sfMpeg1, sfLame: sfLame, offset: offset, threshold: threshold,
+    critBw: critBw, splOf: splOf, setSpl: setSpl, freqAt: freqAt, idxOf: idxOf,
+    hzTick: hzTick, bandEdges: bandEdges,
+  };
+})();
+
+/* ===============================================================
+   FIG 3.1 — one masker, and the hole it digs
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("a-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var FLO = 100, FHI = 16000;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xlog: true, xmin: FLO, xmax: FHI, ymin: -10, ymax: 100,
+    xlabel: "frequency", ylabel: "dB SPL", pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var st = { mf: 1000, ml: 70, type: "tone", pf: 1200, pl: 30 };
+  var setPf = null, setPl = null;
+
+  function maskers() { return [{ f: st.mf, level: st.ml, tonal: st.type === "tone" }]; }
+
+  function draw() {
+    p.clear();
+    p.ylabel = p.w < 420 ? "" : "dB SPL";
+    p.axes({ xfmt: M3.hzTick, y: [0, 25, 50, 75, 100] });
+
+    var ms = maskers(), pts = [], quiet = [], i, f;
+    for (i = 0; i <= 240; i++) {
+      f = FLO * Math.pow(FHI / FLO, i / 240);
+      quiet.push([f, D.ath(f)]);
+      pts.push([f, M3.threshold(f, ms)]);
+    }
+    p.line(quiet, { color: AC.C.purple, width: 1.5, dash: [5, 4], alpha: .9 });
+    p.line(pts, { color: AC.C.gold, width: 2, fill: true, fillAlpha: .10, fillTo: -10 });
+
+    // the masker itself, and the critical band it occupies when it is noise
+    if (st.type === "noise") {
+      var bw = M3.critBw(st.mf);
+      p.band(st.mf - bw / 2, st.mf + bw / 2, { color: AC.C.blue, alpha: .16 });
+    }
+    p.stems([[st.mf, st.ml]], { color: AC.C.blue, base: -10, width: 2, r: 3.4 });
+
+    var th = M3.threshold(st.pf, ms), audible = st.pl > th;
+    p.line([[st.pf, Math.min(th, st.pl)], [st.pf, Math.max(th, st.pl)]],
+      { color: audible ? AC.C.red : AC.C.ghost, width: 1.2, dash: [2, 3] });
+    p.dot(st.pf, st.pl, { color: audible ? AC.C.red : AC.C.faint, r: 4.6, ring: true });
+    p.label(st.pf, st.pl, audible ? "heard" : "gone",
+      { color: audible ? AC.C.red : AC.C.faint, dy: -12,
+        align: st.pf > 5000 ? "right" : "left", dx: st.pf > 5000 ? -8 : 8 });
+    p.note(p.pad.l + 8, p.pad.t + 5, "drag the probe anywhere", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  function readouts() {
+    var ms = maskers(), th = M3.threshold(st.pf, ms), quiet = D.ath(st.pf);
+    var smr = st.pl - th;
+    document.getElementById("a-th").textContent = th.toFixed(1) + " dB SPL";
+    document.getElementById("a-rise").textContent = AC.fmt.db(th - quiet);
+    document.getElementById("a-smr").textContent = AC.fmt.db(smr);
+    var v = document.getElementById("a-verdict");
+    v.textContent = smr > 0 ? "audible" : "masked";
+    v.parentNode.className = smr > 0 ? "ro bad" : "ro ok";
+    document.getElementById("a-state").textContent =
+      AC.fmt.hz(st.mf) + " " + (st.type === "tone" ? "tone" : "band noise") +
+      " at " + Math.round(st.ml) + " dB SPL";
+  }
+
+  AC.chips(document.getElementById("a-mf"), function (v) {
+    st.mf = +v; readouts(); draw();
+  });
+  AC.chips(document.getElementById("a-type"), function (v) {
+    st.type = v; readouts(); draw();
+  });
+  AC.slider(document.getElementById("a-ml"), function (v) {
+    st.ml = v; readouts(); draw();
+  }, function (v) { return Math.round(v) + " dB SPL"; });
+  setPf = AC.slider(document.getElementById("a-pf"), function (v) {
+    st.pf = M3.freqAt(v, FLO, FHI); readouts(); draw();
+  }, function (v) { return AC.fmt.hz(M3.freqAt(v, FLO, FHI)); });
+  setPl = AC.slider(document.getElementById("a-pl"), function (v) {
+    st.pl = v; readouts(); draw();
+  }, function (v) { return Math.round(v) + " dB SPL"; });
+
+  // dragging the probe straight on the plot
+  var dragging = false;
+  function place(ev) {
+    var r = cv.getBoundingClientRect();
+    var f = AC.clamp(p.invX(ev.clientX - r.left), FLO, FHI);
+    var L = AC.clamp(p.invY(ev.clientY - r.top), 0, 96);
+    setPf(Math.round(M3.idxOf(f, FLO, FHI)));
+    setPl(Math.round(L));
+  }
+  cv.addEventListener("pointerdown", function (ev) {
+    dragging = true;
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* unsupported */ }
+    place(ev); ev.preventDefault();
+  });
+  cv.addEventListener("pointermove", function (ev) { if (dragging) place(ev); });
+  cv.addEventListener("pointerup", function () { dragging = false; });
+  cv.addEventListener("pointercancel", function () { dragging = false; });
+
+  // --- sound. The masker is normalised to a comfortable peak and the probe is
+  // scaled by the same factor, so the ratio between them is exactly the ratio
+  // the model was given even though the absolute SPL is unknowable here.
+  function voice(which) {
+    var sr = M3.SR, dur = 1.9, i, bw;
+    var mk;
+    if (st.type === "tone") {
+      mk = A.src.tone(dur, { sr: sr, f: st.mf, amp: 0.5, fade: 30 });
+    } else {
+      bw = M3.critBw(st.mf);
+      mk = A.src.noise(dur, { sr: sr, band: [Math.max(30, st.mf - bw / 2), st.mf + bw / 2],
+        amp: 0.5, seed: 4, fade: 30 });
+    }
+    M3.setSpl(mk, st.ml);
+    var pb = A.src.tone(0.30, { sr: sr, f: st.pf, amp: 0.5, fade: 14 });
+    M3.setSpl(pb, st.pl);
+    var g = 0.34 / Math.max(D.peak(mk), 1e-9);
+    var out = new Float64Array(mk.length), at = Math.round(sr * 0.78);
+    if (which !== "probe") for (i = 0; i < out.length; i++) out[i] = mk[i] * g;
+    if (which !== "masker") for (i = 0; i < pb.length && at + i < out.length; i++) out[at + i] += pb[i] * g;
+    return out;
+  }
+  A.wire(document.getElementById("a-play-m"), function () { return voice("masker"); }, { sr: M3.SR, gain: 1 });
+  A.wire(document.getElementById("a-play-p"), function () { return voice("probe"); }, { sr: M3.SR, gain: 1 });
+  A.wire(document.getElementById("a-play-b"), function () { return voice("both"); }, { sr: M3.SR, gain: 1 });
+})();
+
+/* ===============================================================
+   FIG 3.2 — four spreading functions on one axis
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("b-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP;
+  var FLO = 200, FHI = 8000;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xmin: -4, xmax: 9, ymin: -70, ymax: 4,
+    xlabel: "Bark distance from the masker", ylabel: "dB below the masker",
+    pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var st = { L: 70, f: 1000, sel: "two" };
+  var NAMES = { two: "two-slope", sch: "Schroeder", mp1: "MPEG-1 model 1", lame: "LAME" };
+
+  function fnFor(kind) {
+    if (kind === "sch") return D.spreadSchroeder;
+    if (kind === "mp1") return function (dz) { return M3.sfMpeg1(dz, st.L); };
+    if (kind === "lame") return M3.sfLame;
+    return function (dz) { return D.spreadTwoSlope(dz, st.L, st.f / 1000); };
+  }
+
+  function draw() {
+    p.clear();
+    p.ylabel = p.w < 420 ? "" : "dB below the masker";
+    p.axes({ x: [-4, -2, 0, 2, 4, 6, 8], y: [-60, -45, -30, -15, 0] });
+    p.hline(-10, { color: AC.C.faint, dash: [3, 5], label: "10 dB down" });
+    p.vline(0, { color: AC.C.line, dash: [3, 4], width: 1 });
+    var order = ["sch", "two", "mp1", "lame"];
+    var col = { sch: AC.C.purple, two: AC.C.blue, mp1: AC.C.gold, lame: AC.C.green };
+    order.forEach(function (k) {
+      p.fn(fnFor(k), { color: col[k], width: k === st.sel ? 2.6 : 1.4,
+        alpha: k === st.sel ? 1 : 0.62 });
+    });
+    p.label(0, 3, "masker", { color: AC.C.faint, align: "center", dy: 12, dx: 2 });
+  }
+  AC.autoDraw(p, draw);
+
+  // Where the selected curve passes a given level, found by scanning: the
+  // piecewise functions have no closed-form inverse.
+  function crossings(f, target) {
+    var lo = null, hi = null, dz;
+    for (dz = -6; dz < 0; dz += 0.002) if (f(dz) <= target) lo = dz;
+    for (dz = 9; dz > 0; dz -= 0.002) if (f(dz) <= target) hi = dz;
+    return { lo: lo == null ? -6 : lo, hi: hi == null ? 9 : hi };
+  }
+
+  function readouts() {
+    var f = fnFor(st.sel);
+    var lower = f(-1) - f(-2);              // dB gained per Bark approaching the masker
+    var upper = f(2) - f(1);                // dB lost per Bark leaving it
+    var c = crossings(f, -10), w = c.hi - c.lo;
+    var z0 = D.hzToBarkT(st.f);
+    var hz = Math.max(0, D.barkToHz(Math.min(z0 + c.hi, 24)) - D.barkToHz(Math.max(z0 + c.lo, 0)));
+    document.getElementById("b-name").textContent = NAMES[st.sel];
+    document.getElementById("b-lo").textContent = AC.fmt.db(lower) + "/Bark";
+    document.getElementById("b-hi").textContent = AC.fmt.db(upper) + "/Bark";
+    document.getElementById("b-w").textContent = w.toFixed(2) + " Bark";
+    document.getElementById("b-whz").textContent = AC.fmt.hz(hz);
+    document.getElementById("b-state").textContent =
+      Math.round(st.L) + " dB masker at " + AC.fmt.hz(st.f);
+  }
+
+  AC.chips(document.getElementById("b-sel"), function (v) { st.sel = v; readouts(); draw(); });
+  AC.slider(document.getElementById("b-l"), function (v) {
+    st.L = v; readouts(); draw();
+  }, function (v) { return Math.round(v) + " dB SPL"; });
+  AC.slider(document.getElementById("b-f"), function (v) {
+    st.f = M3.freqAt(v, FLO, FHI); readouts(); draw();
+  }, function (v) { return AC.fmt.hz(M3.freqAt(v, FLO, FHI)); });
+})();
+
+/* ===============================================================
+   FIG 3.3 — tone masks noise against noise masks tone
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("c-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var FC = 1000, LM = 80;
+  var BW = M3.critBw(FC), LO = FC - BW / 2, HI = FC + BW / 2;
+  var Z = D.hzToBarkT(FC);
+  var NEED = { tmn: M3.offset(Z, true), nmt: M3.offset(Z, false) };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xmin: 0, xmax: 4, ymin: 0, ymax: 100,
+    ylabel: "dB SPL", pad: { l: 46, r: 14, t: 16, b: 36 },
+  });
+
+  var st = { smr: 12, cfg: "tmn" };
+
+  // Both signals are built here, at the analysis scale, and measured from the
+  // arrays themselves; the Listen buttons play the very same samples.
+  function build(cfg, smr) {
+    var sr = M3.SR, mk, pb;
+    if (cfg === "tmn") {
+      mk = A.src.tone(1.9, { sr: sr, f: FC, amp: 0.5, fade: 30 });
+      pb = A.src.noise(0.30, { sr: sr, band: [LO, HI], amp: 0.5, seed: 12, fade: 14 });
+    } else {
+      mk = A.src.noise(1.9, { sr: sr, band: [LO, HI], amp: 0.5, seed: 5, fade: 30 });
+      pb = A.src.tone(0.30, { sr: sr, f: FC, amp: 0.5, fade: 14 });
+    }
+    M3.setSpl(mk, LM);
+    M3.setSpl(pb, LM - smr);
+    return { mk: mk, pb: pb };
+  }
+  // measured level of the steady middle of an array
+  function levelOf(x) {
+    var a = Math.round(x.length * 0.25), b = Math.round(x.length * 0.75);
+    return M3.splOf(x.subarray(a, b));
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ x: [], y: [0, 20, 40, 60, 80, 100] });
+    var mt = build("tmn", st.smr), nm = build("nmt", st.smr);
+    var groups = [
+      { x: 0.35, cfg: "tmn", lab: "tone masks noise", mk: levelOf(mt.mk), pb: levelOf(mt.pb) },
+      { x: 2.25, cfg: "nmt", lab: "noise masks tone", mk: levelOf(nm.mk), pb: levelOf(nm.pb) },
+    ];
+    groups.forEach(function (g) {
+      var th = g.mk - NEED[g.cfg], audible = g.pb > th;
+      p.bars([{ x0: g.x, x1: g.x + 0.45, y: g.mk, color: AC.C.blue }], { base: 0, alpha: .8 });
+      p.bars([{ x0: g.x + 0.85, x1: g.x + 1.3, y: g.pb,
+        color: audible ? AC.C.red : AC.C.faint }], { base: 0, alpha: .8 });
+      p.line([[g.x - 0.12, th], [g.x + 1.45, th]], { color: AC.C.gold, width: 2, dash: [6, 4] });
+      p.label(g.x + 1.45, th, th.toFixed(1) + " dB", { color: AC.C.gold, align: "right", dy: -5 });
+      p.label(g.x + 0.22, g.mk, "masker", { color: AC.C.blue, align: "center", dy: -6 });
+      p.label(g.x + 1.07, g.pb, audible ? "audible" : "masked",
+        { color: audible ? AC.C.red : AC.C.faint, align: "center", dy: -6 });
+      p.label(g.x + 0.7, 0, g.lab, { color: AC.C.soft, align: "center", dy: 16 });
+    });
+    p.note(p.pad.l + 6, p.pad.t + 4, "masker fixed at " + LM + " dB SPL, band " +
+      Math.round(LO) + "-" + Math.round(HI) + " Hz", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  function readouts() {
+    document.getElementById("c-smr").textContent = Math.round(st.smr) + " dB down";
+    document.getElementById("c-needa").textContent = NEED.tmn.toFixed(1) + " dB";
+    document.getElementById("c-needb").textContent = NEED.nmt.toFixed(1) + " dB";
+    var aAud = st.smr < NEED.tmn, bAud = st.smr < NEED.nmt;
+    var v = document.getElementById("c-verdict");
+    v.textContent = aAud
+      ? (bAud ? "both audible" : "noise audible, tone masked")
+      : (bAud ? "tone audible, noise masked" : "both masked");
+    v.parentNode.className = aAud !== bAud ? "ro bad" : "ro";
+    document.getElementById("c-state").textContent =
+      "listening to: " + (st.cfg === "tmn" ? "tone masks noise" : "noise masks tone");
+  }
+
+  AC.slider(document.getElementById("c-s"), function (v) {
+    st.smr = v; readouts(); draw();
+  }, function (v) { return Math.round(v) + " dB"; });
+  AC.chips(document.getElementById("c-cfg"), function (v) { st.cfg = v; readouts(); });
+
+  function voice(which) {
+    var b = build(st.cfg, st.smr), i;
+    var g = 0.34 / Math.max(D.peak(b.mk), 1e-9);
+    var out = new Float64Array(b.mk.length), at = Math.round(M3.SR * 0.78);
+    if (which !== "probe") for (i = 0; i < out.length; i++) out[i] = b.mk[i] * g;
+    if (which !== "masker") for (i = 0; i < b.pb.length && at + i < out.length; i++) out[at + i] += b.pb[i] * g;
+    return out;
+  }
+  A.wire(document.getElementById("c-m"), function () { return voice("masker"); }, { sr: M3.SR, gain: 1 });
+  A.wire(document.getElementById("c-p"), function () { return voice("probe"); }, { sr: M3.SR, gain: 1 });
+  A.wire(document.getElementById("c-mix"), function () { return voice("both"); }, { sr: M3.SR, gain: 1 });
+})();
+
+/* ===============================================================
+   FIG 3.4 — the whole pipeline, and the perceptual entropy that
+   falls out of it
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("d-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+  var NFFT = 2048, SR = M3.SR;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.4, xlog: true, xmin: 50, xmax: 20000, ymin: -10, ymax: 100,
+    xlabel: "frequency", ylabel: "dB SPL", pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var SOURCES = {
+    music: function () { return A.src.music(2.2, { sr: SR }); },
+    speech: function () { return A.src.speech(2.2, { sr: SR }); },
+    applause: function () { return A.src.applause(2.2, { sr: SR }); },
+    tone: function () { return A.src.tone(2.0, { sr: SR, f: 1000, amp: 0.6 }); },
+    noise: function () { return A.src.noise(2.0, { sr: SR, amp: 0.5, seed: 17 }); },
+  };
+  var st = { src: "music", ton: "meas", sig: null, spec: null, model: null };
+
+  // --- steps 1 and 2: transform the loudest frame and group it into bands
+  function spectrum() {
+    if (st.spec) return st.spec;
+    if (!st.sig) st.sig = SOURCES[st.src]();
+    var x = st.sig, best = 0, bestE = -1, off, i, e;
+    for (off = 0; off + NFFT <= x.length; off += NFFT / 2) {
+      e = 0;
+      for (i = 0; i < NFFT; i++) e += x[off + i] * x[off + i];
+      if (e > bestE) { bestE = e; best = off; }
+    }
+    var db = D.spectrumDb(x.subarray(best, best + NFFT), { n: NFFT, window: "hann", zeroPad: 1 });
+    var pw = new Float64Array(db.length);
+    for (i = 0; i < db.length; i++) pw[i] = D.undbp(db[i]);
+    st.spec = { pw: pw, bins: db.length, edges: M3.bandEdges(db.length, SR) };
+    return st.spec;
+  }
+
+  // --- steps 3 to 6, plus the bill
+  function model() {
+    if (st.model) return st.model;
+    var s = spectrum(), ed = s.edges, nb = s.bins, K = ed.length - 1;
+    var P = new Float64Array(K), L = new Float64Array(K), Z = new Float64Array(K);
+    var OFF = new Float64Array(K), F0 = new Float64Array(K), F1 = new Float64Array(K);
+    var N = new Int32Array(K), ALPHA = new Float64Array(K);
+    var k, j, i, sum, fc, sub, athDb, pp;
+    for (k = 0; k < K; k++) {
+      sum = 0;
+      for (i = ed[k]; i < ed[k + 1]; i++) sum += s.pw[i];
+      P[k] = sum;
+      N[k] = ed[k + 1] - ed[k];
+      L[k] = D.dbp(sum) + 96;
+      F0[k] = Math.max(ed[k] / nb * (SR / 2), 20);
+      F1[k] = Math.max(ed[k + 1] / nb * (SR / 2), 20);
+      fc = (F0[k] + F1[k]) / 2;
+      Z[k] = D.hzToBarkT(fc);
+      if (st.ton === "tonal") ALPHA[k] = 1;
+      else if (st.ton === "noisy") ALPHA[k] = 0;
+      else {
+        sub = s.pw.subarray(Math.max(0, ed[k] - 2), Math.min(nb, ed[k + 1] + 2));
+        ALPHA[k] = AC.clamp(D.tonalityFromSfm(D.sfm(sub)), 0, 1);
+      }
+      OFF[k] = ALPHA[k] * (14.5 + Z[k]) + (1 - ALPHA[k]) * 5.5;
+    }
+    var T = new Float64Array(K), TQ = new Float64Array(K);
+    var free = 0, aSum = 0, pe = 0, pe0 = 0;
+    for (k = 0; k < K; k++) {
+      athDb = Math.min(80, Math.min(D.ath(F0[k]), D.ath(F1[k])));
+      TQ[k] = athDb;
+      pp = D.undbp(athDb);
+      for (j = 0; j < K; j++) {
+        if (P[j] <= 0) continue;
+        var dz = Z[k] - Z[j];
+        if (dz < -4 || dz > 10) continue;
+        pp += D.undbp(L[j] + D.spreadSchroeder(dz) - OFF[j]);
+      }
+      T[k] = D.dbp(pp);
+      if (L[k] - T[k] <= 0) free++;
+      aSum += ALPHA[k];
+      pe += N[k] * bitsFor(L[k], T[k]);
+      pe0 += N[k] * bitsFor(L[k], TQ[k]);
+    }
+    st.model = { K: K, L: L, T: T, TQ: TQ, F0: F0, F1: F1, free: free,
+      alpha: aSum / K, pe: pe / nb, pe0: pe0 / nb };
+    return st.model;
+  }
+  // Johnston's per-band bit demand: the quantiser that puts the error exactly
+  // on the threshold, counted in bits.
+  function bitsFor(levelDb, threshDb) {
+    var e = D.undbp(levelDb - 96), t = D.undbp(threshDb - 96);
+    var levels = 2 * Math.floor(Math.sqrt(6 * e / Math.max(t, 1e-30))) + 1;
+    return Math.log2(Math.max(levels, 1));
+  }
+
+  function stair(vals, m) {
+    var out = [], k;
+    for (k = 0; k < m.K; k++) {
+      if (m.F1[k] < p.xmin || m.F0[k] > p.xmax) continue;
+      out.push([Math.max(m.F0[k], p.xmin), vals[k]]);
+      out.push([Math.min(m.F1[k], p.xmax), vals[k]]);
+    }
+    return out;
+  }
+
+  function draw() {
+    p.clear();
+    p.ylabel = p.w < 420 ? "" : "dB SPL";
+    p.axes({ xfmt: M3.hzTick, y: [0, 25, 50, 75, 100] });
+    if (!st.model) { p.note(p.pad.l + 10, p.pad.t + 10, "computing…", { color: AC.C.faint }); return; }
+    var m = st.model;
+    p.line(stair(m.TQ, m), { color: AC.C.purple, width: 1.4, dash: [5, 4], alpha: .85 });
+    p.line(stair(m.T, m), { color: AC.C.gold, width: 2, fill: true, fillAlpha: .10, fillTo: -10 });
+    p.line(stair(m.L, m), { color: AC.C.blue, width: 2 });
+    p.note(p.pad.l + 8, p.pad.t + 5, m.K + " bands · 2048-point frame · full scale = 96 dB SPL",
+      { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  function run() {
+    st.model = null;
+    var m = model();
+    document.getElementById("d-pe").textContent = m.pe.toFixed(2) + " bits/sample";
+    document.getElementById("d-kbps").textContent = Math.round(m.pe * 44100 / 1000) + " kbit/s";
+    document.getElementById("d-pe0").textContent = m.pe0.toFixed(2) + " bits/sample";
+    document.getElementById("d-free").textContent = m.free + " of " + m.K;
+    document.getElementById("d-alpha").textContent = m.alpha.toFixed(2);
+    document.getElementById("d-state").textContent = st.src + " · " +
+      (st.ton === "meas" ? "measured tonality" : st.ton === "tonal" ? "forced tonal" : "forced noise");
+    draw();
+  }
+
+  AC.chips(document.getElementById("d-src"), function (v) {
+    st.src = v; st.sig = null; st.spec = null;
+    A.stopAll();
+    AC.$$("#fig-global .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    run();
+  });
+  AC.chips(document.getElementById("d-ton"), function (v) { st.ton = v; run(); });
+  A.wire(document.getElementById("d-play"), function () {
+    if (!st.sig) st.sig = SOURCES[st.src]();
+    return st.sig;
+  }, { sr: SR });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); run();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { run(); }
+})();
+
+/* ===============================================================
+   FIG 3.5 — the temporal budget, against what a block delivers
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("t-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+  var SR = M3.SR, KBPS = 48, PRE_MS = 5;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: -60, xmax: 200, ymin: -100, ymax: 2,
+    xlabel: "milliseconds, relative to the strike", ylabel: "dB below the strike",
+    pad: { l: 50, r: 14, t: 16, b: 34 },
+  });
+
+  var st = { N: 512, L: 85, sig: null, at: 0, ref: 1, res: null, err: null, cache: {} };
+
+  function signal() {
+    if (!st.sig) {
+      st.sig = A.src.castanets(1.0, { sr: SR, hits: [0.20, 0.55, 0.80] });
+      var i, best = 0, lim = Math.round(SR * 0.4);
+      for (i = 0; i < lim; i++) if (Math.abs(st.sig[i]) > Math.abs(st.sig[best])) best = i;
+      st.at = best;
+      st.ref = Math.max(D.peak(st.sig), 1e-9);
+    }
+    return st.sig;
+  }
+
+  function encode() {
+    var x = signal(), i;
+    if (!st.cache[st.N]) st.cache[st.N] = A.analyze(x, { sr: SR, N: st.N, masking: true });
+    st.res = A.codec(x, { analysis: st.cache[st.N], bitrate: KBPS });
+    st.err = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) st.err[i] = st.res.out[i] - x[i];
+    refresh();
+  }
+
+  // short-time level in 1 ms frames, dB relative to the strike's own peak
+  function levelAt(x, ms) {
+    var hop = Math.round(SR * 0.001), i0 = st.at + Math.round(SR * ms / 1000);
+    var e = 0, n = 0, i;
+    for (i = i0; i < i0 + hop; i++) {
+      if (i < 0 || i >= x.length) continue;
+      e += x[i] * x[i]; n++;
+    }
+    return Math.max(D.dbp(e / Math.max(n, 1) / (st.ref * st.ref)), -100);
+  }
+  // Jesteadt/Bacon/Lehman forward masking, in dB above the threshold in quiet
+  function forwardMask(dtMs, L) {
+    return Math.max(0, 0.2 * (2.3 - Math.log10(Math.max(dtMs, 0.2))) * (L - 20));
+  }
+  // What temporal masking allows, in dB relative to the strike's peak: the
+  // quiet threshold, the strike's own simultaneous masking at the noise
+  // offset, and the forward-masking decay, whichever is largest.
+  function budget(ms) {
+    var tq = D.ath(3000), L = st.L, quiet = tq - L;
+    if (ms < 0) {
+      return ms > -PRE_MS
+        ? Math.max(quiet, tq + forwardMask(0.2, L) * (1 + ms / PRE_MS) - L)
+        : quiet;
+    }
+    var sim = levelAt(signal(), ms) - 5.5;
+    var fwd = tq + forwardMask(ms, L) - L;
+    return Math.max(quiet, sim, fwd);
+  }
+
+  function trace(fn, from, to) {
+    var out = [], ms;
+    for (ms = from; ms <= to; ms += 1) out.push([ms, fn(ms)]);
+    return out;
+  }
+
+  function draw() {
+    p.clear();
+    p.ylabel = p.w < 420 ? "" : "dB below the strike";
+    p.axes({ x: [-60, -20, 0, 40, 80, 120, 160, 200], y: [-100, -80, -60, -40, -20, 0] });
+    p.band(-PRE_MS, 0, { color: AC.C.green, alpha: .2 });
+    p.vline(0, { color: AC.C.line, dash: [3, 4], width: 1 });
+    if (!st.res) { p.note(p.pad.l + 10, p.pad.t + 10, "encoding…", { color: AC.C.faint }); return; }
+    var x = signal();
+    p.line(trace(function (ms) { return levelAt(x, ms); }, -60, 200),
+      { color: AC.C.faint, width: 1.5 });
+    p.line(trace(budget, -60, 200), { color: AC.C.gold, width: 2, dash: [6, 4] });
+    p.line(trace(function (ms) { return levelAt(st.err, ms); }, -60, 200),
+      { color: AC.C.red, width: 2, fill: true, fillAlpha: .10, fillTo: -100 });
+    p.label(-30, -4, "silence before the strike", { color: AC.C.ghost, align: "center" });
+    p.note(p.pad.l + 8, p.h - p.pad.b - 14,
+      "window " + (2 * st.N / SR * 1000).toFixed(1) + " ms", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  function refresh() {
+    var ms, lead = 0, worst = -999, d;
+    for (ms = -60; ms < 0; ms++) {
+      d = levelAt(st.err, ms) - budget(ms);
+      if (d > 0) {
+        if (!lead) lead = -ms;
+        if (d > worst) worst = d;
+      }
+    }
+    document.getElementById("t-span").textContent = (2 * st.N / SR * 1000).toFixed(1) + " ms";
+    var el = document.getElementById("t-lead");
+    el.textContent = lead ? lead + " ms" : "never";
+    el.parentNode.className = lead ? "ro bad" : "ro ok";
+    var ov = document.getElementById("t-over");
+    ov.textContent = worst > -999 ? AC.fmt.db(worst) : "under budget";
+    ov.parentNode.className = worst > -999 ? "ro bad" : "ro ok";
+    document.getElementById("t-kbps").textContent = st.res ? st.res.kbps.toFixed(0) + " kbit/s" : KBPS + " kbit/s";
+    document.getElementById("t-state").textContent =
+      "N = " + st.N + " · " + (2 * st.N / SR * 1000).toFixed(1) + " ms window";
+    draw();
+  }
+
+  AC.chips(document.getElementById("t-n"), function (v) {
+    st.N = +v;
+    A.stopAll();
+    AC.$$("#fig-time .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    encode();
+  });
+  AC.slider(document.getElementById("t-l"), function (v) {
+    st.L = v;
+    if (st.res) refresh();
+  }, function (v) { return Math.round(v) + " dB SPL"; });
+
+  A.wire(document.getElementById("t-orig"), function () { return signal(); }, { sr: SR });
+  A.wire(document.getElementById("t-code"), function () {
+    if (!st.res) encode();
+    return st.res.out;
+  }, { sr: SR });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); encode();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { encode(); }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
