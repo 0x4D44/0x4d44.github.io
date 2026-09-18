@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 · Choosing, and what comes next — Throwing Sound Away</title>
+<meta name="description" content="Codec against container, bitrate against use case, loudness normalisation and true peak, generation loss when you transcode, the Bluetooth codecs nobody chooses on purpose, and whether learned codecs change the picture.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="12">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 12</div>
+  <div class="num">12</div>
+  <h2>Almost every real decision is already made for you.</h2>
+  <p class="lead">Eleven chapters of theory converge on a small number of
+    practical questions, and most of them have dull answers. The interesting
+    part is which constraint is actually binding: not "which codec is best",
+    but whether you are bounded by the decoder your listener owns, the latency
+    your application can tolerate, or the fact that you will have to encode
+    this file again in five years.</p>
+  <div class="meta">
+    <div><div class="k">Binding constraint</div><div class="v">Compatibility, latency, or the next encode</div></div>
+    <div><div class="k">Usual answer</div><div class="v">Opus, unless something forbids it</div></div>
+    <div><div class="k">Most-ignored step</div><div class="v">Leave true-peak headroom</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#container">Codec is not container</a>
+    <a href="#chooser">A decision, made out loud</a>
+    <a href="#ladder">What each rate actually costs</a>
+    <a href="#services">What is actually shipped</a>
+    <a href="#bluetooth">The codecs nobody chooses</a>
+    <a href="#loudness">Loudness, and the peak you cannot see</a>
+    <a href="#transcode">Generation loss</a>
+    <a href="#next">What comes next</a>
+    <a href="#answer">What to actually do</a>
+  </nav>
+  <div>
+
+  <section id="container" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">First, a category error</div>
+    <h3>A file extension tells you the box, not what is in it.</h3>
+    <p style="margin-top:18px">"Convert it to Ogg" is not a statement about
+      quality, because Ogg is a container and can hold Vorbis, Opus, FLAC or
+      Speex. "Send me an MP4" does not say whether the audio is AAC-LC at 96
+      kbit/s or ALAC lossless. The <strong>codec</strong> decides what the bits
+      mean; the <strong>container</strong> decides how they are framed, timed,
+      interleaved with video and labelled with metadata. Almost every
+      compatibility problem in practice is a container problem wearing a codec's
+      clothes.</p>
+
+    <div class="scroller"><table>
+      <caption>Which codec goes in which box</caption>
+      <thead><tr>
+        <th>Container</th><th>Usually carries</th><th>Also legal</th><th>The trap</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="mono">.mp3</td><td>MP3 only</td><td>—</td><td>Not a container in any real sense: a bare stream of frames with ID3 tags bolted to the ends.</td></tr>
+        <tr><td class="mono">.m4a / .mp4</td><td>AAC-LC</td><td>HE-AAC, xHE-AAC, ALAC, FLAC, AC-3, Opus</td><td>Opus-in-MP4 is standardised but patchily supported; ALAC and AAC share the extension, so <code>.m4a</code> says nothing about whether it is lossless.</td></tr>
+        <tr><td class="mono">.ogg</td><td>Vorbis</td><td>FLAC, Speex, Theora</td><td>Opus in Ogg should be <code>.opus</code> by convention (RFC 7845), and some players only recognise it under that name.</td></tr>
+        <tr><td class="mono">.opus</td><td>Opus in Ogg</td><td>—</td><td>Older hardware players will not know it at all.</td></tr>
+        <tr><td class="mono">.webm</td><td>Opus or Vorbis</td><td>—</td><td>A Matroska subset; deliberately restricted to royalty-free codecs.</td></tr>
+        <tr><td class="mono">.mkv</td><td>Anything</td><td>Anything</td><td>Maximum flexibility, minimum guarantee that the other end can play it.</td></tr>
+        <tr><td class="mono">.flac</td><td>FLAC in its own stream</td><td>—</td><td>Fine, but FLAC-in-Ogg exists too and is a different byte layout.</td></tr>
+        <tr><td class="mono">.wav</td><td>PCM</td><td>Legally almost anything, including MP3</td><td>The 4 GB limit of the 32-bit RIFF size field, and the fact that a "WAV" holding MP3 data is a real and horrible thing.</td></tr>
+        <tr><td class="mono">.caf</td><td>Anything (Apple)</td><td>—</td><td>No 4 GB limit, which is why long-form production uses it.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note sig">
+      <span class="tag tag-sig">The rule that resolves most of it</span>
+      <p>Name the codec and the bitrate, never the extension. "AAC-LC 256 kbit/s
+        in MP4" is a specification. "An M4A" is a guess.</p>
+    </div>
+  </section>
+
+  <section id="chooser" class="section">
+    <div class="kicker k-heat">Interactive · Fig. 12.1</div>
+    <h3>Answer four questions and the decision makes itself.</h3>
+    <p style="margin-top:18px">This is not a quiz with a hidden answer key —
+      the reasoning is printed alongside the recommendation, so you can see which
+      of your answers was the binding constraint and what would change if it
+      were relaxed.</p>
+
+    <figure class="figure" id="fig-chooser">
+      <div class="figure-bar">
+        <span class="fno">FIG. 12.1</span>
+        <span class="ftitle">The chooser</span>
+        <span class="fstate" id="c-state">—</span>
+      </div>
+      <div class="deck top">
+        <div class="field">
+          <div class="flab"><span>What is it</span></div>
+          <div class="chips" id="c-kind">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="voice">Speech</button>
+            <button data-v="game">Game audio</button>
+            <button data-v="archive">An archive master</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Who decodes it</span></div>
+          <div class="chips" id="c-dec">
+            <button data-v="modern" class="on">A current browser or phone</button>
+            <button data-v="legacy">Anything, including 2006</button>
+            <button data-v="mine">Software I control</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Latency budget</span></div>
+          <div class="chips" id="c-lat">
+            <button data-v="none" class="on">Doesn't matter</button>
+            <button data-v="interactive">Conversational (&lt; 50 ms)</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Will it be encoded again?</span></div>
+          <div class="chips" id="c-again">
+            <button data-v="no" class="on">No, this is the end of the line</button>
+            <button data-v="yes">Yes, it is a source</button>
+          </div>
+        </div>
+      </div>
+      <div class="figure-body">
+        <div class="readout" style="margin-bottom:16px">
+          <div class="ro sig"><span class="k">Codec</span><span class="v" id="c-codec">—</span></div>
+          <div class="ro"><span class="k">Bitrate</span><span class="v" id="c-rate">—</span></div>
+          <div class="ro ok"><span class="k">Container</span><span class="v" id="c-cont">—</span></div>
+        </div>
+        <div id="c-why"></div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 12.1</b> — note how few of the
+        sixteen combinations produce a different answer. Opus wins almost
+        everywhere it is allowed to compete; the interesting branches are the
+        ones where it is not allowed, and the one where the file is a source
+        rather than a delivery.</figcaption>
+    </figure>
+  </section>
+
+  <section id="ladder" class="section">
+    <div class="kicker k-danger">Interactive · Fig. 12.2</div>
+    <h3>What a bit budget buys, measured rather than asserted.</h3>
+    <p style="margin-top:18px">Published listening tests are the only honest
+      source for "is this transparent", and they appear as a table further down.
+      But a coder's own books can be opened here, and they tell you something a
+      MOS score cannot: <em>where</em> the damage lands. The figure runs this
+      study's encoder over a ladder of bitrates and, for each one, counts the
+      fraction of critical bands in which the quantisation noise has been pushed
+      <strong>above</strong> the masking threshold — the bands the model itself
+      says you can hear.</p>
+
+    <figure class="figure" id="fig-ladder">
+      <div class="figure-bar">
+        <span class="fno">FIG. 12.2</span>
+        <span class="ftitle">Measured damage against bit budget</span>
+        <span class="fstate" id="r-state">idle</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="r-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-danger"><i></i>bands with audible noise (model's own verdict)</span>
+          <span class="l-sig"><i></i>signal-to-noise ratio, right axis</span>
+          <span class="l-ok"><i class="dash"></i>spectral lines quantised to zero</span>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="r-src">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Run</span></div>
+          <button class="btn primary" id="r-go">Encode the ladder</button>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen at</span><span class="val" id="r-brl">96 kbit/s</span></div>
+          <input type="range" id="r-br" min="24" max="256" step="8" value="96" data-out="r-brl" aria-label="Bitrate to audition">
+        </div>
+        <div class="field">
+          <div class="flab"><span>&nbsp;</span></div>
+          <div class="chips">
+            <button class="btn play" id="r-play">Coded</button>
+            <button class="btn play" id="r-ref">Original</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 12.2</b> — the red curve is the
+        interesting one, and it is not a straight line: it falls off a cliff
+        rather than sloping. Above the knee the model reports almost nothing
+        audible and more bits buy nothing it can measure; below it, the curve
+        climbs steeply, and that is where a codec has to stop coding the signal
+        and start describing it instead — which is what
+        <a href="8-aac.html">SBR</a> and <a href="9-opus.html">parametric
+        stereo</a> are for. Two honest caveats. The knee sits lower here than a
+        real listening test would put it, because this encoder is grading its
+        own homework against its own threshold, and that threshold is more
+        generous than a trained listener. And the blue signal-to-noise curve
+        keeps climbing long after the red one has flattened — which is precisely
+        why <a href="11-artifacts.html">SNR is not a quality measure</a>.
+        Switch to applause and watch the knee move right: it is dense, transient
+        and noise-like, and defeats every assumption in
+        <a href="4-transform.html">chapter 04</a> at once.</figcaption>
+    </figure>
+  </section>
+
+  <section id="services" class="section">
+    <div class="kicker">The state of play</div>
+    <h3>What is actually shipped, with the usual caveat.</h3>
+    <p style="margin-top:18px">This table dates faster than anything else in the
+      study. Services change ladders quietly, differ between platforms, and
+      often serve you something other than the tier you pay for when the network
+      is poor. Treat it as the shape of the landscape as of 2026 rather than a
+      specification, and check for yourself before making an engineering
+      decision on it.</p>
+
+    <div class="scroller"><table>
+      <caption>Delivery, as of 2026 — verify before relying on any row</caption>
+      <thead><tr><th>Where</th><th>Codec</th><th>Typical rate</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Music streaming, lossy tiers</td><td>AAC-LC, Ogg Vorbis, Opus</td><td class="num">96–320 kbit/s</td><td>Ladders are adaptive; the top tier is typically 256 kbit/s AAC or 320 kbit/s Vorbis, and services differ on which they serve to which client.</td></tr>
+        <tr><td>Music streaming, lossless tiers</td><td>FLAC, ALAC</td><td class="num">≈ 700–1100 kbit/s</td><td>Bit-exact 16/44.1 at least; some offer higher rates and depths, whose audibility is a separate and much-argued question.</td></tr>
+        <tr><td>Video platforms</td><td>Opus (WebM), AAC (MP4)</td><td class="num">64–160 kbit/s</td><td>Two parallel ladders, chosen by what the client says it can decode.</td></tr>
+        <tr><td>WebRTC and voice chat</td><td>Opus</td><td class="num">16–64 kbit/s</td><td>Mandatory to implement in WebRTC alongside G.711; in-band FEC and DTX do most of the work on a poor link.</td></tr>
+        <tr><td>Telephony</td><td>G.711, AMR-NB/WB, EVS</td><td class="num">8–64 kbit/s</td><td>G.711 at 64 kbit/s remains the interoperability floor almost everywhere.</td></tr>
+        <tr><td>Podcasts</td><td>MP3, AAC</td><td class="num">64–128 kbit/s</td><td>MP3 persists purely for compatibility with old players and podcatchers; mono at 64 kbit/s is usually ample for speech.</td></tr>
+        <tr><td>DAB+ radio</td><td>HE-AAC v2</td><td class="num">32–80 kbit/s</td><td>Original DAB used MPEG-1 Layer II at much higher rates; DAB+ traded the codec for more stations per multiplex.</td></tr>
+        <tr><td>Broadcast television</td><td>AC-3, E-AC-3, AAC</td><td class="num">96–640 kbit/s</td><td>Chosen by the broadcast standard, not by the programme maker.</td></tr>
+        <tr><td>Games</td><td>Vorbis, Opus, ADPCM</td><td class="num">32–160 kbit/s</td><td>ADPCM survives for sounds that must decode on a fixed CPU budget with no allocation; music streams as Vorbis or Opus.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="scroller"><table>
+      <caption>Roughly where each codec stops being embarrassing, from published listening tests</caption>
+      <thead><tr><th>Codec</th><th>Usable from</th><th>Good stereo</th><th>Hard to fault</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Opus</strong></td><td class="num">≈ 32 kbit/s</td><td class="num">≈ 64–96 kbit/s</td><td class="num">≈ 128–160 kbit/s</td></tr>
+        <tr><td><strong>HE-AAC v2</strong></td><td class="num">≈ 24 kbit/s</td><td class="num">≈ 48 kbit/s</td><td>never quite — the parametric tools leave a signature</td></tr>
+        <tr><td><strong>AAC-LC</strong></td><td class="num">≈ 64 kbit/s</td><td class="num">≈ 96–128 kbit/s</td><td class="num">≈ 160–192 kbit/s</td></tr>
+        <tr><td><strong>Vorbis</strong></td><td class="num">≈ 64 kbit/s</td><td class="num">≈ 128 kbit/s</td><td class="num">≈ 192 kbit/s</td></tr>
+        <tr><td><strong>MP3 (LAME)</strong></td><td class="num">≈ 96 kbit/s</td><td class="num">≈ 160 kbit/s</td><td class="num">≈ 192–256 kbit/s (V2–V0)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="dim mono" style="font-size:.78rem;margin-top:-8px">These bands are
+      composites of public multi-format listening tests and are deliberately
+      given as ranges. "Hard to fault" is not "transparent": transparency is a
+      property of a listener, a track and a playback chain, and
+      <a href="11-artifacts.html">chapter 11</a> is about finding out where yours
+      actually sits.</p>
+  </section>
+
+  <section id="bluetooth" class="section">
+    <div class="kicker">Interactive · Fig. 12.3</div>
+    <h3>The codec you are actually listening through is one you never chose.</h3>
+    <p style="margin-top:18px">If the sound leaves your device over Bluetooth,
+      everything upstream is re-encoded. A 256 kbit/s AAC stream from a music
+      service is decoded to PCM and then re-encoded by the phone into whatever
+      codec the headphones negotiated — which is the single largest quality
+      decision in most listening chains, and it is made by a handshake nobody
+      sees. It is also a transcode, with everything
+      <a href="#transcode">the next section</a> says about that.</p>
+
+    <figure class="figure" id="fig-lat">
+      <div class="figure-bar">
+        <span class="fno">FIG. 12.3</span>
+        <span class="ftitle">Latency against bitrate — where each codec lives</span>
+        <span class="fstate" id="t-state">all</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="t-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>transform codecs</span>
+          <span class="l-teal"><i></i>speech codecs</span>
+          <span class="l-ghost"><i></i>Bluetooth links</span>
+          <span class="l-ok"><i></i>lossless</span>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Show</span></div>
+          <div class="chips" id="t-filter">
+            <button data-v="all" class="on">Everything</button>
+            <button data-v="bt">Bluetooth only</button>
+            <button data-v="live">Usable for conversation</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 12.3</b> — the vertical axis is
+        algorithmic delay: the latency the codec adds by construction, before
+        any network. It is the reason you cannot hold a conversation over a
+        codec designed for broadcast, and the reason Opus's low-delay mode
+        exists. The Bluetooth points are the codec's own delay only: the link
+        adds its buffering on top, typically tens of milliseconds more and
+        varying widely by implementation, so treat those four as optimistic.
+        Note where MP3 sits — perfectly good for a podcast, hopeless for a
+        conversation.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Bluetooth audio codecs</caption>
+      <thead><tr><th>Codec</th><th>Typical rate</th><th>Where</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SBC</strong></td><td class="num">≈ 200–345 kbit/s</td><td>Mandatory in A2DP — every device has it</td><td>A simple subband coder. Its reputation is worse than it deserves: at the higher bitpool settings it is respectable, and much of the criticism is really of conservative defaults.</td></tr>
+        <tr><td><strong>AAC</strong></td><td class="num">≈ 128–256 kbit/s</td><td>Apple devices, many others</td><td>Quality depends heavily on the encoder in the transmitting phone, which is why the same headphones sound different on different handsets.</td></tr>
+        <tr><td><strong>aptX / aptX HD</strong></td><td class="num">352 / 576 kbit/s</td><td>Qualcomm-equipped Android</td><td>ADPCM-derived, fixed rate, low delay by design. aptX Adaptive varies the rate with the link.</td></tr>
+        <tr><td><strong>LDAC</strong></td><td class="num">330 / 660 / 990 kbit/s</td><td>Sony, and most of Android</td><td>The highest rate is only reachable on a clean link; it drops silently otherwise, so "LDAC" alone does not tell you what you are getting.</td></tr>
+        <tr><td><strong>LC3</strong></td><td class="num">≈ 160–320 kbit/s</td><td>Bluetooth LE Audio</td><td>The designed replacement for SBC: better at equal rate, much better at low rate, and low enough delay to be used for hearing aids and broadcast audio.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="loudness" class="section">
+    <div class="kicker k-heat">Interactive · Fig. 12.4</div>
+    <h3>The peak you cannot see is the one that breaks the encode.</h3>
+    <p style="margin-top:18px">A PCM file's samples can all sit below full scale
+      while the waveform they describe does not.
+      <a href="1-sound.html">Chapter 01</a> made the point that samples are not
+      the signal — the signal is the band-limited curve that passes through
+      them — and that curve can overshoot between samples. A file peaking at
+      −0.1 dBFS by sample can reconstruct to well over 0 dBFS in the converter,
+      and a lossy encoder, which does not reproduce the samples exactly, can push
+      it further still.</p>
+
+    <div class="eq">
+      <i>x</i>(<i>t</i>)<span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>n</i></span></span>
+      <i>x</i>[<i>n</i>]<span class="op">·</span>
+      <span class="fn">sinc</span>(<i>f</i><sub>s</sub><i>t</i><span class="op">−</span><i>n</i>)
+      <span class="note2">the true peak is the maximum of this, not of the samples —
+        it is measured by oversampling, typically by four</span>
+    </div>
+
+    <figure class="figure" id="fig-tp">
+      <div class="figure-bar">
+        <span class="fno">FIG. 12.4</span>
+        <span class="ftitle">Sample peak against true peak</span>
+        <span class="fstate" id="p-state">—</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="p-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>samples</span>
+          <span class="l-sig"><i></i>the reconstructed waveform</span>
+          <span class="l-danger"><i class="dash"></i>full scale</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Sample peak</span><span class="v" id="p-samp">—</span></div>
+          <div class="ro bad"><span class="k">True peak</span><span class="v" id="p-true">—</span></div>
+          <div class="ro sig"><span class="k">Overshoot</span><span class="v" id="p-over">—</span></div>
+          <div class="ro ok"><span class="k">After a 96 kbit/s encode</span><span class="v" id="p-enc">—</span></div>
+          <div class="ro ghost"><span class="k">Samples pinned at the ceiling</span><span class="v" id="p-pin">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Sample peak</span><span class="val" id="p-lvl">−0.3 dBFS</span></div>
+          <input type="range" id="p-level" min="-60" max="0" step="1" value="-3" data-out="p-lvl" aria-label="Sample peak level in tenths of a decibel">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Material</span></div>
+          <div class="chips" id="p-kind">
+            <button data-v="limited" class="on">Brickwalled master</button>
+            <button data-v="music">Music</button>
+            <button data-v="castanets">Transients</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="p-play">Play, hard-clipped at full scale</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 12.4</b> — the default material is
+        a brickwalled master: driven hard into a limiter, so a measurable share
+        of its samples sit pinned at the ceiling. Push the sample peak up to
+        0 dBFS and watch the blue reconstruction climb past the dashed line
+        <em>between</em> the grey samples, in the gaps where no sample exists to
+        warn you. Every red dot is a moment at which a converter is being asked
+        for a level it cannot produce. Switch to plain music and the overshoot
+        nearly disappears — it is the limiting, not the loudness, that creates
+        it. The fourth readout is why headroom is not optional: a lossy encode
+        moves the true peak again, up or down by a few tenths of a decibel, and
+        which way is not something you control. Hence the decibel of true-peak
+        headroom that delivery specifications ask for, and hence the fact that a
+        master flattened to 0 dBFS will distort on a service that normalises it
+        and on a phone that re-encodes it. One caveat on the size of the number:
+        the synthesised programme here is unusually percussive — its hi-hat is a
+        burst of noise a few samples long — so its overshoot sits at the top of
+        the range. Real brickwalled masters typically measure between half a
+        decibel and three over, which is still more than the zero a sample-peak
+        meter reports.</figcaption>
+    </figure>
+
+    <p>Loudness normalisation is the other half of this. Since
+      <strong>ITU-R BS.1770</strong> gave the industry a measure of programme
+      loudness that actually correlates with perception — a K-weighted, gated
+      mean expressed in <strong>LUFS</strong> — and <strong>EBU R 128</strong>
+      turned it into a broadcast requirement, every major streaming service has
+      adopted a target in the region of −14 LUFS and turns everything down to
+      meet it. The practical consequence is that mastering a track louder no
+      longer makes it louder to the listener; it only makes it more distorted
+      once the service has turned it back down. The loudness war did not end by
+      agreement. It ended because the scoreboard was replaced.</p>
+
+    <blockquote class="pullquote">Compressing a master to win the loudness war
+      now costs you twice: once in dynamic range, and again in the encoder,
+      which must spend bits describing the distortion you added.
+      <span class="who">Why normalisation changed mastering</span></blockquote>
+  </section>
+
+  <section id="transcode" class="section">
+    <div class="kicker k-danger">Interactive · Fig. 12.5</div>
+    <h3>Every re-encode is a fresh set of decisions, made on damaged evidence.</h3>
+    <p style="margin-top:18px">Lossy coding is not idempotent. Decode a coded
+      file and you get a waveform that is close to the original but carries
+      shaped quantisation noise; encode <em>that</em>, and the new encoder's
+      psychoacoustic model sees the noise as signal, spends bits on it, and adds
+      its own noise on top. The two codecs' band edges and block boundaries do
+      not line up either, so the second coder cannot even find the first one's
+      damage to leave it alone.</p>
+
+    <figure class="figure" id="fig-gen">
+      <div class="figure-bar">
+        <span class="fno">FIG. 12.5</span>
+        <span class="ftitle">Generation loss — encode, decode, repeat</span>
+        <span class="fstate" id="g-state">idle</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="g-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>signal-to-noise against the original</span>
+          <span class="l-ok"><i class="dash"></i>lines quantised to zero</span>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Each generation at</span><span class="val" id="g-brl">96 kbit/s</span></div>
+          <input type="range" id="g-br" min="48" max="256" step="16" value="96" data-out="g-brl" aria-label="Bitrate per generation">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Run</span></div>
+          <button class="btn primary" id="g-go">Run 8 generations</button>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen to generation</span><span class="val" id="g-nl">1</span></div>
+          <input type="range" id="g-n" min="1" max="8" step="1" value="1" data-out="g-nl" aria-label="Which generation to audition">
+        </div>
+        <div class="field">
+          <div class="flab"><span>&nbsp;</span></div>
+          <div class="chips">
+            <button class="btn play" id="g-play">Play it</button>
+            <button class="btn play" id="g-orig">Original</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 12.5</b> — the damage compounds, but
+        not linearly: the first generation costs the most, and later ones cost
+        less because there is progressively less left that the model considers
+        worth keeping. By generation eight the encoder has largely converged on
+        a fixed point — a signal it can code cheaply because it is already
+        mostly the kind of thing it would have produced. It sounds like it, too.
+        Raise the bitrate and the whole curve lifts, which is the practical
+        lesson: if a file will be encoded again, keep the intermediate lossless
+        or keep it generous.</figcaption>
+    </figure>
+
+    <div class="note danger">
+      <span class="tag tag-danger">The rule</span>
+      <p>Encode from the highest-quality source you have, once, at the moment of
+        delivery. Never archive a lossy file as a working master; never
+        "upgrade" a 128 kbit/s MP3 by re-encoding it at 320, which adds a
+        generation of loss and a great deal of file size in exchange for
+        precisely nothing. If you must transcode — and a Bluetooth link means
+        you always are — give the intermediate as much headroom as the pipeline
+        can afford.</p>
+    </div>
+  </section>
+
+  <section id="next" class="section">
+    <div class="kicker k-ghost">What comes next</div>
+    <h3>Two directions, only one of which is really new.</h3>
+    <p style="margin-top:18px">The first is the continuation of the story this
+      study has told: more parametric description, less coding. <strong>xHE-AAC
+      (USAC)</strong> switches between a transform path and an ACELP speech path
+      inside one bitstream and stays useful well below where AAC-LC gives up;
+      <strong>MPEG-H 3D Audio</strong> and the object-based systems code sound
+      <em>sources</em> plus positions rather than channels, so that the renderer
+      makes the final mix for whatever the listener is wearing. Both are the same
+      move MP3 made — shift work from the bitstream to a model at the decoder —
+      applied one level higher.</p>
+    <p>The second is genuinely different. <strong>Learned codecs</strong> —
+      Google's Lyra, SoundStream, Meta's EnCodec, the Descript Audio Codec —
+      replace the hand-designed analysis chain with an encoder network, a
+      residual vector quantiser and a decoder network trained end to end, often
+      with an adversarial loss so the output is judged on whether it
+      <em>sounds</em> like speech rather than on whether it matches
+      sample-for-sample. At a few kilobits per second, where every classical
+      codec produces something unbearable, they produce speech that is clear and
+      natural.</p>
+    <p>What they do not yet do is beat a well-tuned classical codec on music at
+      the rates anybody actually uses. There are structural reasons to expect
+      that to be hard: a learned decoder is free to synthesise something
+      plausible rather than something faithful, which is exactly what you want
+      at 3 kbit/s and exactly what you do not want at 128. And the honest
+      accounting has to include the cost — a neural decoder is orders of
+      magnitude more computation than a CELT decode, which is why the shipped
+      applications so far are ones where bandwidth is scarcer than silicon.</p>
+
+    <div class="note ghost">
+      <span class="tag">The interesting middle</span>
+      <p>The likelier near future is not replacement but grafting: a classical
+        codec doing the faithful work, with a learned post-filter repairing the
+        artefacts it knows it left behind. That keeps the bitstream cheap, the
+        decoder optional, and the failure mode graceful — and it is already
+        happening at the low end of speech coding.</p>
+    </div>
+  </section>
+
+  <section id="answer" class="section">
+    <div class="kicker k-ok">What to actually do</div>
+    <h3>Six recommendations, and the reason for each.</h3>
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>Archive lossless</dt>
+        <dd>FLAC, at the original rate and depth. It is free, open, checksummed,
+          decodes on everything and costs about half the space of PCM. Whatever
+          delivery format is fashionable in ten years, you will be able to make
+          it from this without a generation of loss.</dd>
+      </div>
+      <div class="def">
+        <dt>Deliver Opus where you can</dt>
+        <dd>It is better than AAC at every rate it competes at, royalty-free,
+          handles speech and music without being told which, and is in every
+          current browser. The only real objection is old hardware.</dd>
+      </div>
+      <div class="def">
+        <dt>Deliver AAC-LC where you cannot</dt>
+        <dd>At 128–192 kbit/s stereo it is comfortably good, and it decodes on
+          essentially everything made since about 2005. This is the compatibility
+          answer, not the quality answer.</dd>
+      </div>
+      <div class="def">
+        <dt>Use MP3 only for compatibility, and then use LAME</dt>
+        <dd>If it must be MP3, <code>-V2</code> or better from a current LAME is
+          a different animal from the encoders that gave the format its
+          reputation. Do not use a 1998 encoder to make a 2026 file.</dd>
+      </div>
+      <div class="def">
+        <dt>Leave a decibel of true-peak headroom</dt>
+        <dd>Master to about −1 dBTP. It costs nothing audible, and it is the
+          difference between a clean encode and one that clips in the decoder on
+          somebody else's phone.</dd>
+      </div>
+      <div class="def">
+        <dt>Stop worrying about the rest</dt>
+        <dd>Above about 160 kbit/s in a modern codec, the playback chain, the
+          room and the listener dominate the codec by a wide margin. The bits
+          you would spend going from 192 to 320 are better spent on a better
+          master — or on nothing at all.</dd>
+      </div>
+    </dl>
+
+    <p style="margin-top:30px">That is the study. It began with a number —
+      1 411 200 bits a second — and an observation that almost all of it is
+      spent on detail you are not equipped to hear. Everything since has been
+      the machinery for finding out which detail, and the discipline for
+      throwing away exactly that much and no more. The
+      <a href="lexicon.html">lexicon</a> has every term in one place; the
+      <a href="index.html">contents</a> will take you back to any of it.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* --------------------------------------------------------------- FIG 12.1 */
+(function () {
+  "use strict";
+  var out = document.getElementById("c-why");
+  if (!out) return;
+  var s = { kind: "music", dec: "modern", lat: "none", again: "no" };
+
+  function decide() {
+    var codec, rate, cont, why = [];
+
+    if (s.again === "yes") {
+      why.push(["This file is a source", "Everything else is subordinate to that. A source that will be encoded again must not carry a previous encoder's noise into the next model's input — see <a href=\"#transcode\">generation loss</a>."]);
+      codec = "FLAC"; rate = "≈ 55% of PCM"; cont = ".flac";
+      if (s.kind === "archive") why.push(["It is also an archive", "Keep the original sample rate and depth. Do not resample to be tidy: every conversion is a chance to lose something and none of them gain anything."]);
+      if (s.lat === "interactive") why.push(["Latency is moot", "A lossless master is not the thing in the conversational path; encode a delivery copy for that separately."]);
+    } else if (s.kind === "archive") {
+      codec = "FLAC"; rate = "≈ 55% of PCM"; cont = ".flac";
+      why.push(["Archive means lossless", "There is no defensible reason to archive lossy. Storage is the cheapest thing in the chain, and a bit-exact copy makes every future decision reversible."]);
+    } else if (s.lat === "interactive") {
+      codec = "Opus"; cont = "RTP, or .opus for storage";
+      rate = s.kind === "voice" ? "24–32 kbit/s mono" : "64–96 kbit/s";
+      why.push(["Conversation fixes the codec", "Below about 50 ms of round trip, almost nothing else qualifies: Opus reaches 5 ms of algorithmic delay in its low-delay mode, against roughly 130 ms for AAC-LC and 25–50 ms for MP3."]);
+      why.push(["Turn on what the network needs", "In-band FEC and DTX are the difference between a usable and an unusable link, and cost far less than raising the bitrate would."]);
+      if (s.dec === "legacy") why.push(["Legacy is a problem here", "The universal fallback for voice is G.711 at 64 kbit/s — worse and more expensive, but present everywhere. Negotiate Opus and fall back."]);
+    } else if (s.dec === "legacy") {
+      if (s.kind === "voice") {
+        codec = "MP3 (LAME −V5, mono)"; rate = "≈ 64–80 kbit/s"; cont = ".mp3";
+        why.push(["Speech to anything", "A mono MP3 is the lowest common denominator that every podcatcher, car stereo and 2006 handset will play. Mono halves the rate for no loss on a single voice."]);
+      } else {
+        codec = "AAC-LC, or MP3 if it must play on anything"; rate = "160–192 kbit/s"; cont = ".m4a / .mp3";
+        why.push(["Compatibility is the binding constraint", "This is the branch where you accept a worse codec to reach more decoders. Do not also economise on the rate — the whole point of an old codec is that it needs more bits."]);
+      }
+      why.push(["Use a current encoder", "The gap between LAME 3.100 and a 1990s MP3 encoder at the same bitrate is larger than the gap between MP3 and AAC."]);
+    } else if (s.kind === "game") {
+      codec = "Opus, with ADPCM for short effects"; rate = "96–128 kbit/s music, 4:1 for effects"; cont = ".opus / raw";
+      why.push(["Two budgets, not one", "Streamed music is bandwidth-bound and wants a real codec. Short effects are CPU- and allocation-bound and are often better as ADPCM or even raw, because the decode must be trivial and predictable."]);
+      why.push(["You control the decoder", "That removes the compatibility constraint entirely — ship libopus with the game and choose on merit."]);
+    } else {
+      codec = "Opus"; cont = s.dec === "mine" ? ".opus" : ".opus (WebM where a browser must play it)";
+      rate = s.kind === "voice" ? "32–48 kbit/s" : "96–128 kbit/s stereo";
+      why.push(["Nothing is binding", "When no constraint forces your hand, take the best codec. Opus is better than AAC at every rate the two compete at, is royalty-free, and handles speech and music without being told which it is given."]);
+      if (s.kind === "voice") why.push(["Speech is cheap", "A single voice at 32 kbit/s in Opus is comfortable; going higher buys very little, and mono halves it again."]);
+      if (s.dec === "modern") why.push(["Browsers are fine", "Opus has been decodable in every current browser for years; the residual risk is old hardware players, not software."]);
+    }
+
+    document.getElementById("c-codec").textContent = codec;
+    document.getElementById("c-rate").textContent = rate;
+    document.getElementById("c-cont").textContent = cont;
+    document.getElementById("c-state").textContent = why.length + " reasons";
+    out.innerHTML = why.map(function (w) {
+      return '<div class="note"><span class="tag">' + w[0] + "</span><p>" + w[1] + "</p></div>";
+    }).join("");
+  }
+
+  AC.chips(document.getElementById("c-kind"), function (v) { s.kind = v; decide(); });
+  AC.chips(document.getElementById("c-dec"), function (v) { s.dec = v; decide(); });
+  AC.chips(document.getElementById("c-lat"), function (v) { s.lat = v; decide(); });
+  AC.chips(document.getElementById("c-again"), function (v) { s.again = v; decide(); });
+  decide();
+})();
+
+/* --------------------------------------------------------------- FIG 12.2 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("r-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+
+  var RATES = [24, 32, 48, 64, 96, 128, 160, 192, 256];
+  var state = { src: "music", sig: null, an: null, rows: [], busy: false };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xlog: true, xmin: 20, xmax: 300, ymin: 0, ymax: 100,
+    xlabel: "kbit/s", ylabel: "% of bands / % of lines",
+    pad: { l: 48, r: 46, t: 16, b: 34 },
+  });
+
+  function source() {
+    if (state.sig) return state.sig;
+    var sr = A.rate();
+    state.sig = state.src === "music" ? A.src.music(1.6, { sr })
+      : state.src === "speech" ? A.src.speech(1.6, { sr })
+      : A.src.applause(1.6, { sr });
+    state.an = A.analyze(state.sig, { sr, N: 512, masking: true });
+    return state.sig;
+  }
+
+  // How many band-blocks end up with quantisation noise above the model's own
+  // masking threshold — the coder grading its own homework.
+  function audibleFraction(res) {
+    var a = res.analysis, edges = a.edges, nb = a.bands;
+    var gain = Math.pow(10, res.lambda / 10), over = 0, total = 0, b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var X = a.coeffs[b], T = a.thresh[b];
+      var live = false;
+      for (k = 0; k < nb; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        var noise = 0, sig = 0, n = 0;
+        for (i = edges[k]; i < edges[k + 1]; i++) {
+          var e = Math.round(X[i] / step) * step - X[i];
+          noise += e * e; sig += X[i] * X[i]; n++;
+        }
+        if (!n || sig / n < T[k] * 1e-3) continue;      // silent band: not a verdict
+        live = true;
+        total++;
+        if (noise / n > T[k]) over++;
+      }
+      if (!live) { /* silent block */ }
+    }
+    return total ? over / total : 0;
+  }
+
+  function run() {
+    if (state.busy) return;
+    state.busy = true;
+    document.getElementById("r-state").textContent = "encoding…";
+    source();
+    // Yield to the browser between rates so the figure fills in visibly.
+    state.rows = [];
+    var i = 0;
+    (function step() {
+      if (i >= RATES.length) {
+        state.busy = false;
+        document.getElementById("r-state").textContent = state.src;
+        return;
+      }
+      var res = A.codec(state.sig, { analysis: state.an, bitrate: RATES[i] });
+      state.rows.push({ kbps: RATES[i], snr: res.snrDb, zero: res.zeroFraction, aud: audibleFraction(res) });
+      draw();
+      i++;
+      setTimeout(step, 0);
+    })();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ x: [24, 32, 48, 64, 96, 128, 192, 256], xfmt: function (v) { return String(v); } });
+    // right-hand axis for SNR, 0..70 dB
+    var c = p.ctx, i;
+    c.save(); c.font = "11px ui-monospace, monospace"; c.fillStyle = AC.C.ghost;
+    c.textAlign = "left"; c.textBaseline = "middle";
+    for (i = 0; i <= 70; i += 20) c.fillText(i + " dB", p.w - p.pad.r + 5, p.Y(i / 70 * 100));
+    c.restore();
+
+    if (!state.rows.length) {
+      p.note(p.pad.l + 10, p.pad.t + 10, "press “Encode the ladder”", { color: AC.C.faint });
+      return;
+    }
+    var aud = state.rows.map(function (r) { return [r.kbps, r.aud * 100]; });
+    var zero = state.rows.map(function (r) { return [r.kbps, r.zero * 100]; });
+    var snr = state.rows.map(function (r) { return [r.kbps, Math.min(r.snr, 70) / 70 * 100]; });
+    p.line(zero, { color: AC.C.green, width: 1.6, dash: [5, 4] });
+    p.line(snr, { color: AC.C.blue, width: 1.8 });
+    p.line(aud, { color: AC.C.red, width: 2.4, fill: true, fillAlpha: .10 });
+    state.rows.forEach(function (r) { p.dot(r.kbps, r.aud * 100, { color: AC.C.red, r: 3 }); });
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("r-src"), function (v) {
+    state.src = v; state.sig = null; state.an = null; state.rows = [];
+    A.stopAll();
+    draw();
+  });
+  document.getElementById("r-go").addEventListener("click", run);
+
+  var auditionRate = 96;
+  AC.slider(document.getElementById("r-br"), function (v) { auditionRate = v; },
+    function (v) { return v + " kbit/s"; });
+  A.wire(document.getElementById("r-play"), function () {
+    source();
+    return A.codec(state.sig, { analysis: state.an, bitrate: auditionRate }).out;
+  });
+  A.wire(document.getElementById("r-ref"), function () { return source(); });
+})();
+
+/* --------------------------------------------------------------- FIG 12.3 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("t-cv");
+  if (!cv) return;
+
+  // [bitrate kbit/s, algorithmic delay ms, label, kind, live?]
+  var ITEMS = [
+    [8, 25, "G.729", "speech", true],
+    [64, 0.125, "G.711", "speech", true],
+    [64, 1.5, "G.722", "speech", true],
+    [23.85, 25, "AMR-WB", "speech", true],
+    [32, 5, "Opus LD", "transform", true],
+    [64, 26.5, "Opus 64 (20 ms)", "transform", true],
+    [96, 26.5, "Opus 96 (20 ms)", "transform", true],
+    [64, 60, "AAC-ELD", "transform", true],
+    [128, 130, "AAC-LC", "transform", false],
+    [48, 190, "HE-AAC", "transform", false],
+    [128, 40, "MP3", "transform", false],
+    [320, 40, "MP3 320", "transform", false],
+    [345, 8, "SBC", "bt", true],
+    [576, 4, "aptX HD", "bt", true],
+    [990, 30, "LDAC", "bt", false],
+    [256, 10, "LC3", "bt", true],
+    [800, 15, "FLAC", "lossless", false],
+  ];
+  var COL = { speech: AC.C.teal, transform: AC.C.blue, bt: AC.C.purple, lossless: AC.C.green };
+  var filter = "all";
+
+  var p = new AC.Plot(cv, {
+    aspect: 1.9, xlog: true, xmin: 5, xmax: 1400, ylog: true, ymin: 0.1, ymax: 400,
+    xlabel: "kbit/s", ylabel: "algorithmic delay (ms)",
+    pad: { l: 56, r: 18, t: 16, b: 36 },
+  });
+
+  function draw() {
+    p.clear();
+    p.axes({
+      xfmt: function (v) { return AC.shortNum(v); },
+      y: [0.1, 1, 10, 100],
+      yfmt: function (v) { return v < 1 ? v.toFixed(1) : String(v); },
+    });
+    // the conversational band
+    var c = p.ctx;
+    c.save();
+    c.fillStyle = AC.C.green; c.globalAlpha = .06;
+    c.fillRect(p.pad.l, p.Y(50), p.w - p.pad.l - p.pad.r, p.Y(0.1) - p.Y(50));
+    c.restore();
+    p.hline(50, { color: AC.C.green, label: "50 ms — the conversational ceiling" });
+
+    ITEMS.forEach(function (it, i) {
+      if (filter === "bt" && it[3] !== "bt") return;
+      if (filter === "live" && !it[4]) return;
+      p.dot(it[0], it[1], { color: COL[it[3]], r: 4, ring: true });
+      var right = p.X(it[0]) > p.w * 0.66;
+      p.label(it[0], it[1], it[2], {
+        color: AC.C.text, align: right ? "right" : "left",
+        dx: right ? -9 : 9, dy: (i % 2 ? 12 : 3),
+        font: (p.w < 520 ? "10px " : "11px ") + "ui-monospace, monospace",
+      });
+    });
+  }
+  AC.autoDraw(p, draw);
+  AC.chips(document.getElementById("t-filter"), function (v) {
+    filter = v;
+    document.getElementById("t-state").textContent =
+      v === "all" ? "all" : v === "bt" ? "bluetooth" : "conversational";
+    draw();
+  });
+})();
+
+/* --------------------------------------------------------------- FIG 12.4 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("p-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var state = { kind: "limited", level: -0.3, sig: null, view: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 1, ymin: -1.35, ymax: 1.35,
+    xlabel: "time (one 256-sample window)", ylabel: "amplitude",
+    pad: { l: 48, r: 14, t: 14, b: 32 },
+  });
+
+  // Band-limited interpolation by zero-padding the spectrum: this is exactly
+  // what a reconstruction filter does, and it is where the true peak lives.
+  function upsample(x, factor) {
+    var N = D.nextPow2(x.length), i;
+    var re = new Float64Array(N), im = new Float64Array(N);
+    for (i = 0; i < x.length; i++) re[i] = x[i];
+    D.fft(re, im, false);
+    var M = N * factor;
+    var re2 = new Float64Array(M), im2 = new Float64Array(M);
+    for (i = 0; i < N / 2; i++) {
+      re2[i] = re[i]; im2[i] = im[i];
+      re2[M - 1 - i] = re[N - 1 - i]; im2[M - 1 - i] = im[N - 1 - i];
+    }
+    D.fft(re2, im2, true);
+    var out = new Float64Array(x.length * factor);
+    for (i = 0; i < out.length; i++) out[i] = re2[i] * factor;
+    return out;
+  }
+  // Zero-padding the spectrum treats the block as circular, so the join between
+  // its last and first sample rings. That ringing is an artefact of the
+  // measurement, not of the signal, so the ends are never counted.
+  function peakInside(y, factor) {
+    var guard = 64 * factor, m = 0, i;
+    for (i = guard; i < y.length - guard; i++) m = Math.max(m, Math.abs(y[i]));
+    return m;
+  }
+
+  function build() {
+    var sr = A.rate();
+    var raw = state.kind === "castanets" ? A.src.castanets(1.4, { sr }) : A.src.music(1.4, { sr });
+    if (state.kind === "limited") {
+      // What the loudness war actually produced: driven hard into a brickwall,
+      // so a large share of samples sit pinned at the ceiling. That is exactly
+      // the condition under which the reconstruction overshoots between them.
+      var lim = new Float64Array(raw.length), j;
+      for (j = 0; j < raw.length; j++) lim[j] = Math.max(-1, Math.min(1, raw[j] * 2));
+      raw = lim;
+    }
+    // Normalise so the SAMPLE peak is exactly what the slider asks for.
+    var g = D.undb(state.level) / Math.max(D.peak(raw), 1e-9), i;
+    var x = new Float64Array(raw.length);
+    for (i = 0; i < raw.length; i++) x[i] = raw[i] * g;
+    state.sig = x;
+
+    // window around the loudest sample, for the picture
+    var pk = 0, at = 0;
+    for (i = 0; i < x.length; i++) if (Math.abs(x[i]) > Math.abs(x[at])) at = i;
+    var start = Math.max(0, at - 128), win = x.subarray(start, start + 256);
+    state.view = { samples: Array.from(win), up: upsample(win, 8) };
+
+    var sampPeak = D.peak(x);
+    // Measure the true peak over several independent blocks and take the worst:
+    // one 16k block would miss the loudest moment of a 1.4-second excerpt.
+    function measureTP(sig) {
+      var B = 16384, m = 0, off;
+      for (off = 0; off + B <= sig.length; off += B / 2) {
+        m = Math.max(m, peakInside(upsample(sig.subarray(off, off + B), 4), 4));
+      }
+      return m || D.peak(sig);
+    }
+    var truePeak = measureTP(x);
+    var enc = A.codec(x, { sr, N: 512, bitrate: 96, masking: true });
+    var encTrue = measureTP(enc.out);
+
+    document.getElementById("p-samp").textContent = D.db(sampPeak).toFixed(2) + " dBFS";
+    document.getElementById("p-true").textContent = D.db(truePeak).toFixed(2) + " dBTP";
+    document.getElementById("p-over").textContent = (D.db(truePeak) - D.db(sampPeak)).toFixed(2) + " dB";
+    document.getElementById("p-enc").textContent = D.db(encTrue).toFixed(2) + " dBTP";
+    var pinned = 0;
+    for (i = 0; i < x.length; i++) if (Math.abs(x[i]) >= sampPeak * 0.999) pinned++;
+    document.getElementById("p-pin").textContent = (pinned / x.length * 100).toFixed(2) + "%";
+    document.getElementById("p-state").textContent =
+      D.db(truePeak) > 0 ? "over full scale" : "within full scale";
+    draw();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ x: [], y: [-1, -0.5, 0, 0.5, 1] });
+    if (!state.view) return;
+    var v = state.view, i, pts = [];
+    // trim the circular-wrap ringing at the block edges from the picture too
+    var trim = 8 * 8;
+    for (i = trim; i < v.up.length - trim; i++) {
+      pts.push([(i - trim) / (v.up.length - 2 * trim), v.up[i]]);
+    }
+    p.hline(1, { color: AC.C.red, dash: [5, 4] });
+    p.hline(-1, { color: AC.C.red, dash: [5, 4] });
+    p.line(pts, { color: AC.C.blue, width: 1.7 });
+    var stems = [];
+    for (i = 8; i < v.samples.length - 8; i++) {
+      stems.push([(i - 8) / (v.samples.length - 16), v.samples[i]]);
+    }
+    p.stems(stems, { color: AC.C.faint, width: 0.8, r: 1.4, base: 0 });
+    // mark every point of the reconstruction that exceeds full scale
+    for (i = trim; i < v.up.length - trim; i++) {
+      if (Math.abs(v.up[i]) > 1) {
+        p.dot((i - trim) / (v.up.length - 2 * trim), v.up[i], { color: AC.C.red, r: 2.2 });
+      }
+    }
+  }
+  AC.autoDraw(p, draw);
+
+  var pending = 0;
+  AC.slider(document.getElementById("p-level"), function (v) {
+    state.level = v / 10;
+    clearTimeout(pending);
+    pending = setTimeout(build, 140);
+  }, function (v) { return (v / 10).toFixed(1) + " dBFS"; });
+
+  AC.chips(document.getElementById("p-kind"), function (v) { state.kind = v; build(); });
+
+  A.wire(document.getElementById("p-play"), function () {
+    if (!state.sig) build();
+    var up = state.sig, out = new Float64Array(up.length), i;
+    for (i = 0; i < up.length; i++) out[i] = Math.max(-1, Math.min(1, up[i]));
+    return out;
+  });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); build();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { build(); }
+})();
+
+/* --------------------------------------------------------------- FIG 12.5 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("g-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var GENS = 8;
+  var state = { rate: 96, rows: [], gens: [], orig: null, busy: false };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xmin: 0, xmax: GENS, ymin: 0, ymax: 100,
+    xlabel: "generation", ylabel: "dB  /  % of lines zeroed",
+    pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  function original() {
+    if (!state.orig) state.orig = A.src.music(1.4, { sr: A.rate() });
+    return state.orig;
+  }
+
+  function run() {
+    if (state.busy) return;
+    state.busy = true;
+    document.getElementById("g-state").textContent = "generation 1…";
+    var sr = A.rate();
+    var ref = original();
+    state.rows = []; state.gens = [];
+    var current = ref, n = 0;
+    (function step() {
+      if (n >= GENS) {
+        state.busy = false;
+        document.getElementById("g-state").textContent = GENS + " generations at " + state.rate + " kbit/s";
+        return;
+      }
+      var res = A.codec(current, { sr, N: 512, bitrate: state.rate, masking: true });
+      current = Float64Array.from(res.out);
+      state.gens.push(current);
+      // SNR is always measured against the ORIGINAL, not the previous generation
+      var noise = 0, sig = 0, i;
+      for (i = 0; i < ref.length; i++) {
+        var e = current[i] - ref[i];
+        noise += e * e; sig += ref[i] * ref[i];
+      }
+      state.rows.push({ n: n + 1, snr: D.dbp(sig / Math.max(noise, 1e-30)), zero: res.zeroFraction });
+      draw();
+      n++;
+      document.getElementById("g-state").textContent = "generation " + (n + 1) + "…";
+      setTimeout(step, 0);
+    })();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ x: [1, 2, 3, 4, 5, 6, 7, 8], xfmt: function (v) { return String(v); } });
+    var c = p.ctx, i;
+    c.save(); c.font = "11px ui-monospace, monospace"; c.fillStyle = AC.C.ghost;
+    c.textAlign = "right"; c.textBaseline = "middle";
+    c.restore();
+    if (!state.rows.length) {
+      p.note(p.pad.l + 10, p.pad.t + 10, "press “Run 8 generations”", { color: AC.C.faint });
+      return;
+    }
+    var snr = state.rows.map(function (r) { return [r.n, Math.min(r.snr, 60) / 60 * 100]; });
+    var zero = state.rows.map(function (r) { return [r.n, r.zero * 100]; });
+    p.line(zero, { color: AC.C.green, width: 1.6, dash: [5, 4] });
+    p.line(snr, { color: AC.C.blue, width: 2.4, fill: true, fillAlpha: .10 });
+    state.rows.forEach(function (r) {
+      p.dot(r.n, Math.min(r.snr, 60) / 60 * 100, { color: AC.C.blue, r: 3 });
+      p.label(r.n, Math.min(r.snr, 60) / 60 * 100, r.snr.toFixed(0), {
+        color: AC.C.soft, align: "center", dy: -8, font: "10px ui-monospace, monospace",
+      });
+    });
+  }
+  AC.autoDraw(p, draw);
+
+  AC.slider(document.getElementById("g-br"), function (v) {
+    state.rate = v; state.rows = []; state.gens = []; draw();
+  }, function (v) { return v + " kbit/s"; });
+
+  var which = 1;
+  AC.slider(document.getElementById("g-n"), function (v) { which = v; }, function (v) { return String(v); });
+  document.getElementById("g-go").addEventListener("click", run);
+
+  A.wire(document.getElementById("g-play"), function () {
+    if (!state.gens.length) run();
+    return state.gens[Math.min(which, state.gens.length) - 1] || original();
+  });
+  A.wire(document.getElementById("g-orig"), function () { return original(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

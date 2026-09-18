@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · The ear as a codec — Throwing Sound Away</title>
+<meta name="description" content="The cochlea is a 35 mm filter bank with about two dozen usable channels, a compressive amplifier and two clocks that disagree by two orders of magnitude. Greenwood's place map, the Bark and ERB scales, the absolute threshold, the equal-loudness contours and temporal masking — all computed live.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="02">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 02</div>
+  <div class="num">02</div>
+  <h2>Before an encoder throws anything away, your ear has already thrown away more.</h2>
+  <p class="lead">The cochlea is not a microphone. It is a 35-millimetre filter bank with
+    roughly two dozen usable channels, a compressive amplifier, a hard floor that varies by
+    eighty decibels across the audio range, and two clocks that disagree by two orders of
+    magnitude. Every one of those is a block in an audio encoder, and the encoder's whole
+    job is to lose the same information the ear was going to lose anyway — in the same
+    order, and no faster.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">The bit rate that matters is the
+      receiver's, not the signal's</div></div>
+    <div><div class="k">Named after</div><div class="v">Békésy, Fletcher, Zwicker,
+      Greenwood, Moore &amp; Glasberg</div></div>
+    <div><div class="k">Numbers</div><div class="v">35 mm · 24 bands · 120 dB ·
+      3 ms against 200 ms</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#cost">What a second costs</a>
+    <a href="#plumbing">The pressure amplifier</a>
+    <a href="#wave">Frequency is a distance</a>
+    <a href="#bands">The filter bank</a>
+    <a href="#floor">The floor</a>
+    <a href="#loud">Loudness is not level</a>
+    <a href="#time">Two clocks</a>
+    <a href="#space">Two ears, and phase</a>
+    <a href="#whose">Whose ear?</a>
+  </nav>
+  <div>
+
+  <!-- ===================================================== 1 -->
+  <section id="cost" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">What a second costs</div>
+    <h3>1 411 200 bits a second is a statement about the format, not about the music.</h3>
+    <p style="margin-top:18px">A compact disc spends 44 100 × 16 × 2 bits on every second
+      of programme. <a href="1-sound.html">Chapter 01</a> derives that number and shows why
+      each of the three factors is what it is; here it is only the denominator.</p>
+
+    <div class="eq">
+      <i>R</i><span class="op">=</span><i>f</i><sub>s</sub><span class="op">×</span>
+      <i>N</i><span class="op">×</span><i>C</i><span class="op">=</span>
+      <span class="num">44 100</span><span class="op">×</span><span class="num">16</span>
+      <span class="op">×</span><span class="num">2</span><span class="op">=</span>
+      <span class="num">1 411 200</span>&nbsp;bit/s
+      <span class="note2">176 400 bytes a second; 10.6 megabytes a minute</span>
+    </div>
+
+    <p>Opus at 96 kbit/s is 6.80 per cent of that. AAC at 128 kbit/s is 9.07 per cent. Even
+      a 320 kbit/s MP3 — the setting people choose when they have decided not to take any
+      chances — is 22.7 per cent. The remaining three-quarters to nineteen-twentieths is
+      not removed by cleverness in the way a ZIP file removes repetition. It is removed
+      because it never reached you.</p>
+    <p>That is the claim this chapter has to make good, and it is a claim about a physical
+      system with measurable properties. Between the loudspeaker and anything you could
+      call a percept sits an organ about the size of a pea, containing roughly 3 500 inner
+      hair cells — the entire transducer array for one ear — feeding on the order of
+      30 000 nerve fibres. Before those fibres fire, the signal has been through a
+      resonant tube, an impedance-matching transformer, a bank of overlapping bandpass
+      filters, a compressive level detector with a hard floor, and two quite different
+      temporal integrators. Each stage discards something. By the time there is a neural
+      code at all, the 1.41 megabits are long gone.</p>
+    <blockquote class="pullquote">A codec does not compress music. It measures a listener,
+      and then declines to transmit whatever that measurement says will not arrive.
+      <span class="who">The perceptual coding bargain, restated</span></blockquote>
+    <p>What follows is that measurement, stage by stage, with the arithmetic running in
+      front of you. Nothing here is specific to MP3 or Opus; every number in this chapter
+      predates every codec in this study, and most of them predate digital audio.</p>
+  </section>
+
+  <!-- ===================================================== 2 -->
+  <section id="plumbing" class="section">
+    <div class="kicker k-heat">The pressure amplifier</div>
+    <h3>The ear's best frequency is a plumbing artefact, not a neural preference.</h3>
+    <p style="margin-top:18px">Sound in air has to drive fluid in the cochlea, and air is a
+      terrible impedance match for water: most of the incident power would simply reflect
+      off a bare oval window. The outer and middle ear exist to recover that loss, and they
+      do it with two entirely mechanical tricks.</p>
+    <p>The first is resonance. The ear canal is a tube about 25 mm long, closed at the
+      eardrum and open at the world — a quarter-wave resonator.</p>
+
+    <div class="eq">
+      <i>f</i><sub>r</sub><span class="op">=</span>
+      <span class="frac"><span><i>c</i></span><span><span class="num">4</span><i>L</i></span></span>
+      <span class="op">=</span>
+      <span class="frac"><span><span class="num">343</span>&nbsp;m/s</span><span><span class="num">4</span><span class="op">×</span><span class="num">0.025</span>&nbsp;m</span></span>
+      <span class="op">=</span><span class="num">3 430</span>&nbsp;Hz
+      <span class="note2">c = 343 m/s in dry air at 20 °C; canal length varies between
+        people, and so therefore does this peak</span>
+    </div>
+
+    <p>That resonance adds something in the region of 10 to 20 dB around 2–4 kHz, with
+      large individual variation, and the concha adds a second, broader peak somewhere near
+      4.5–5.5 kHz. The second trick is the middle ear, which is a transformer: a large
+      membrane pushing on a small one, with a lever in between. The effective vibrating
+      area of the eardrum is about 55 mm² — not its full ~85 mm², because the membrane does
+      not move as a rigid piston — and the stapes footplate is about 3.2 mm².</p>
+
+    <div class="eq">
+      <i>G</i><span class="op">=</span>
+      <span class="frac"><span><i>A</i><sub>drum</sub></span><span><i>A</i><sub>stapes</sub></span></span>
+      <span class="op">×</span>
+      <span class="frac"><span><i>l</i><sub>malleus</sub></span><span><i>l</i><sub>incus</sub></span></span>
+      <span class="op">≈</span><span class="num">17</span><span class="op">×</span>
+      <span class="num">1.3</span><span class="op">=</span><span class="num">22</span>
+      <span class="op">,</span>
+      <i>G</i><sub>dB</sub><span class="op">=</span><span class="num">20</span>
+      <span class="fn">log</span><sub>10</sub><i>G</i><span class="op">=</span>
+      <span class="num">26.9</span>&nbsp;dB
+      <span class="note2">textbooks quote the area ratio as 17, 18 or 20; at 20 the
+        product is 28.3 dB. Call it 25–30 dB and do not pretend to more precision.</span>
+    </div>
+
+    <p>Add the canal resonance to the transformer gain and the system's most sensitive
+      region lands where it does for reasons a plumber would recognise. The dip in the
+      threshold curve at 3–4 kHz that you will meet twice more in this chapter is a
+      25-millimetre tube, not a decision the auditory system made about speech.</p>
+
+    <div class="scroller"><table>
+      <caption>Gross constants of the human auditory periphery</caption>
+      <thead><tr><th>Quantity</th><th class="num">Value</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Reference pressure <i>p</i><sub>0</sub></td><td class="num">20 µPa</td><td>defines 0 dB SPL; about 5×10⁻¹⁰ of atmospheric pressure</td></tr>
+        <tr><td>Ear canal length</td><td class="num">≈ 25 mm</td><td>approximate, and individual; quarter-wave peak ≈ 3.4 kHz</td></tr>
+        <tr><td>Concha resonance</td><td class="num">4.5–5.5 kHz</td><td>the second outer-ear peak</td></tr>
+        <tr><td>Effective eardrum area</td><td class="num">≈ 55 mm²</td><td>vibrating area, not the ~85 mm² total</td></tr>
+        <tr><td>Stapes footplate area</td><td class="num">≈ 3.2 mm²</td><td>area ratio 17–20, disputed</td></tr>
+        <tr><td>Ossicular lever ratio</td><td class="num">≈ 1.3</td><td>malleus to incus</td></tr>
+        <tr><td>Middle-ear pressure gain</td><td class="num">25–30 dB</td><td>recovers most of the air-to-fluid mismatch</td></tr>
+        <tr><td>Basilar membrane length</td><td class="num">35 mm</td><td>organ of Corti; the outer-wall duct is longer, 36–40 mm</td></tr>
+        <tr><td>Membrane width, base → apex</td><td class="num">100 → 500 µm</td><td>stiffness falls about a hundredfold over the same span</td></tr>
+        <tr><td>Inner hair cells</td><td class="num">≈ 3 500</td><td>one row; carry 90–95% of the afferent fibres</td></tr>
+        <tr><td>Outer hair cells</td><td class="num">≈ 12 000</td><td>three rows; the amplifier, not the sensor</td></tr>
+        <tr><td>Cochlear amplifier gain</td><td class="num">40–60 dB</td><td>the range lost when outer hair cells die</td></tr>
+        <tr><td>Compression near best frequency</td><td class="num">≈ 0.2 dB/dB</td><td>approximately 5:1 at moderate levels</td></tr>
+        <tr><td>Dynamic range</td><td class="num">≈ 120 dB</td><td>threshold to pain; pain is quoted at 120–140 dB SPL</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Your inner ear makes sound</span>
+      <p>The outer hair cells are not receptors; they are motors. Thomas Gold argued in
+        1948 that the cochlea had to contain an active, energy-supplying element, and was
+        ignored for thirty years — until David Kemp recorded otoacoustic emissions leaking
+        back out of the ear canal in 1978. A standard newborn hearing screen works by
+        playing a click and listening for the ear's reply, which is why it can be done on a
+        sleeping baby who cannot be asked anything.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 3 -->
+  <section id="wave" class="section">
+    <div class="kicker">Frequency is a distance</div>
+    <h3>On the basilar membrane, an octave is about five millimetres.</h3>
+    <p style="margin-top:18px">Georg von Békésy won the 1961 Nobel Prize in Physiology or
+      Medicine for working out what the membrane actually does, largely by looking at it.
+      A pressure wave entering at the base sets up a travelling wave that grows as it moves
+      towards the apex, peaks at a place determined by its frequency, and then dies almost
+      immediately past that place. The gradient responsible is mechanical: the membrane is
+      narrow and stiff at the base and wide and floppy at the apex, with stiffness falling
+      about a hundredfold over 35 mm.</p>
+    <p>Donald Greenwood put a formula to it in 1961 and re-fitted it across species in
+      1990. With <i>x</i> the fraction of membrane length measured from the apex, the
+      characteristic frequency of a place is</p>
+
+    <div class="eq">
+      <i>F</i>(<i>x</i>)<span class="op">=</span><i>A</i>(<span class="num">10</span><sup><i>ax</i></sup><span class="op">−</span><i>k</i>)<span class="op">,</span>
+      <i>x</i>(<i>F</i>)<span class="op">=</span>
+      <span class="frac"><span><span class="num">1</span></span><span><i>a</i></span></span>
+      <span class="fn">log</span><sub>10</sub><span class="op">(</span>
+      <span class="frac"><span><i>F</i></span><span><i>A</i></span></span>
+      <span class="op">+</span><i>k</i><span class="op">)</span>
+      <span class="note2">human constants A = 165.4 Hz, a = 2.1, k = 0.88. They were chosen
+        so that F(0) = 19.85 Hz at the apex and F(1) = 20 677 Hz at the base — which is
+        where "20 Hz to 20 kHz" comes from.</span>
+    </div>
+
+    <p>Take the derivative and something useful falls out. Well above the <i>Ak</i> term the
+      map is exactly logarithmic, so the distance occupied by one octave becomes a
+      constant:</p>
+
+    <div class="eq">
+      Δ<i>d</i><sub>oct</sub><span class="op">→</span>
+      <span class="frac"><span><i>L</i>&nbsp;<span class="fn">log</span><sub>10</sub><span class="num">2</span></span><span><i>a</i></span></span>
+      <span class="op">=</span>
+      <span class="frac"><span><span class="num">35</span><span class="op">×</span><span class="num">0.30103</span></span><span><span class="num">2.1</span></span></span>
+      <span class="op">=</span><span class="num">5.02</span>&nbsp;mm
+      <span class="note2">measured directly: 3.31 mm from 200 to 400 Hz, 4.54 mm from 1 to
+        2 kHz, 4.89 mm from 4 to 8 kHz</span>
+    </div>
+
+    <p>Your entire musical range fits inside 35 millimetres of tissue, a distance you could
+      cover with a thumbnail, and it fits at about five millimetres per octave. Drag the
+      slider below from 1 kHz to 2 kHz and watch the peak move less than half a
+      centimetre; drag it from 20 Hz to 200 Hz and watch it move eleven.</p>
+
+    <figure class="figure" id="fig-wave">
+      <div class="figure-bar">
+        <span class="fno">FIG. 2.1</span>
+        <span class="ftitle">The travelling wave, and where a tone lands</span>
+        <span class="fstate" id="e1-state">1 kHz → 14.01 mm from the apex</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e1-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>instantaneous displacement</span>
+          <span class="l-ghost"><i class="dash"></i>envelope — the stationary shape the wave slides inside</span>
+          <span class="l-heat"><i></i>characteristic place</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">From the apex</span><span class="v" id="e1-apex">14.01 mm</span></div>
+          <div class="ro"><span class="k">From the base</span><span class="v" id="e1-base">20.99 mm</span></div>
+          <div class="ro ghost"><span class="k">Critical band rate</span><span class="v" id="e1-bark">8.51 Bark</span></div>
+          <div class="ro ok"><span class="k">ERB number</span><span class="v" id="e1-erb">15.62</span></div>
+          <div class="ro bad"><span class="k">Next octave costs</span><span class="v" id="e1-oct">4.54 mm</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>Tone frequency</span><span class="val" id="e1-flab">1000 Hz</span></div>
+          <input type="range" id="e1-f" min="0" max="1000" value="566" data-out="e1-flab" aria-label="Tone frequency">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <button class="btn play" id="e1-play">Play this tone</button>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Motion</span></div>
+          <button class="btn" id="e1-anim">Animate</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 2.1</b> — the cochlea unrolled, <b>base on the
+        left, apex on the right</b>, so frequency runs high to low from left to right; that
+        is the anatomical convention and the opposite of every spectrum plot in this study.
+        The envelope is computed from Greenwood's map: the peak sits at
+        <i>x</i>(<i>F</i>) and the two skirts are deliberately asymmetric — a gentle basal
+        rise and an abrupt apical cut-off, which is what Békésy observed. The wave itself
+        is drawn at about 1.4 Hz rather than the real frequency, so the animation is slowed
+        by roughly a thousand times. Two things to notice. The wave always enters at the
+        base and dies just past its own place, so a tone never excites the whole membrane.
+        And the skirt that survives is the one on the <em>basal</em> — higher-frequency —
+        side, which is the mechanical reason a low tone masks a high one far better than
+        the reverse. That asymmetry becomes the spreading function of
+        <a href="3-masking.html">Chapter 03</a>. The envelope here is a schematic with the
+        right shape and the right position; it is not a cochlear model.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Greenwood's place map — where each frequency lands on a 35 mm membrane</caption>
+      <thead><tr><th class="num">Frequency</th><th class="num">x (fraction from apex)</th><th class="num">mm from apex</th><th class="num">mm from base</th><th>What sits here</th></tr></thead>
+      <tbody>
+        <tr><td class="num">20 Hz</td><td class="num">0.000</td><td class="num">0.00</td><td class="num">35.00</td><td>the helicotrema; nothing below this has a place</td></tr>
+        <tr><td class="num">50 Hz</td><td class="num">0.035</td><td class="num">1.21</td><td class="num">33.79</td><td>mains hum in half the world</td></tr>
+        <tr><td class="num">100 Hz</td><td class="num">0.082</td><td class="num">2.86</td><td class="num">32.14</td><td>a bass guitar's open G, roughly</td></tr>
+        <tr><td class="num">250 Hz</td><td class="num">0.180</td><td class="num">6.31</td><td class="num">28.69</td><td>middle of a male speaking voice</td></tr>
+        <tr><td class="num">500 Hz</td><td class="num">0.282</td><td class="num">9.86</td><td class="num">25.14</td><td>—</td></tr>
+        <tr><td class="num">1 000 Hz</td><td class="num">0.400</td><td class="num">14.01</td><td class="num">20.99</td><td>the reference frequency for everything in this chapter</td></tr>
+        <tr><td class="num">2 000 Hz</td><td class="num">0.530</td><td class="num">18.55</td><td class="num">16.45</td><td>one octave up costs 4.54 mm</td></tr>
+        <tr><td class="num">4 000 Hz</td><td class="num">0.666</td><td class="num">23.32</td><td class="num">11.68</td><td>the sensitive region; also the first to go with age</td></tr>
+        <tr><td class="num">8 000 Hz</td><td class="num">0.806</td><td class="num">28.21</td><td class="num">6.79</td><td>cymbals, sibilants, and where codecs start economising</td></tr>
+        <tr><td class="num">16 000 Hz</td><td class="num">0.947</td><td class="num">33.16</td><td class="num">1.84</td><td>the usual lowpass of a 128 kbit/s stream</td></tr>
+        <tr><td class="num">20 000 Hz</td><td class="num">0.993</td><td class="num">34.76</td><td class="num">0.24</td><td>the round window; almost no adult hears this</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Read the same table backwards and it is more striking still. Five millimetres from
+      the apex the characteristic frequency is 184 Hz; at 10 mm it is 513 Hz; at 15 mm,
+      1 168 Hz; at 20 mm, 2 476 Hz; at 25 mm, 5 085 Hz; at 30 mm, 10 290 Hz. The last five
+      millimetres carry the octave from 10 kHz to 20 kHz — the octave that a lossy codec
+      will discard first, and that most adults over about forty have already lost.</p>
+  </section>
+
+  <!-- ===================================================== 4 -->
+  <section id="bands" class="section">
+    <div class="kicker k-ghost">The filter bank</div>
+    <h3>Two dozen numbers is the entire frequency resolution of hearing.</h3>
+    <p style="margin-top:18px">Harvey Fletcher's 1940 experiment is the origin of everything
+      in this section. Put a tone in a band of noise and measure the level at which the
+      tone becomes audible. Widen the noise band, keeping its spectral density constant,
+      and the tone's threshold rises — because more noise is getting into the same
+      channel. Then, at a certain width, the threshold stops rising. Widening the noise
+      further adds noise that the listener's channel cannot see. That width is the
+      <strong>critical band</strong>, and it is a direct measurement of the bandwidth of
+      one filter in the ear's filter bank.</p>
+    <p>Eberhard Zwicker tabulated 24 of them in 1961 and named the scale the <b>Bark</b>,
+      after Heinrich Barkhausen. Zwicker and Terhardt gave a closed form in 1980, which is
+      the version the MPEG psychoacoustic models use:</p>
+
+    <div class="eq">
+      <i>z</i>(<i>f</i>)<span class="op">=</span><span class="num">13</span>
+      <span class="fn">arctan</span>(<span class="num">0.00076</span><i>f</i>)
+      <span class="op">+</span><span class="num">3.5</span>
+      <span class="fn">arctan</span>((<i>f</i><span class="op">/</span><span class="num">7500</span>)<sup>2</sup>)&nbsp;Bark
+      <span class="note2">arctangents in radians, f in hertz; accurate to better than about
+        0.2 Bark across the audio range, and not analytically invertible — Traunmüller's
+        1990 form is the one to use when you need to go back the other way</span>
+    </div>
+
+    <p>with an accompanying expression for the width of a band centred anywhere:</p>
+
+    <div class="eq">
+      Δ<i>f</i><sub>G</sub>(<i>f</i>)<span class="op">=</span><span class="num">25</span>
+      <span class="op">+</span><span class="num">75</span>
+      [<span class="num">1</span><span class="op">+</span><span class="num">1.4</span>
+      (<i>f</i><span class="op">/</span><span class="num">1000</span>)<sup>2</sup>]<sup>0.69</sup>&nbsp;Hz
+      <span class="note2">100.7 Hz at 100 Hz · 162.2 Hz at 1 kHz · 685.4 Hz at 4 kHz ·
+        3 468 Hz at 13.5 kHz</span>
+    </div>
+
+    <p>Brian Moore and Brian Glasberg arrived at a different ruler in 1990, from
+      notched-noise masking rather than from Zwicker's methods, and fitted a simpler
+      formula. Their <b>equivalent rectangular bandwidth</b> and its integral, the ERB
+      number, are continuous rather than tabulated:</p>
+
+    <div class="eq">
+      <span class="fn">ERB</span>(<i>F</i>)<span class="op">=</span><span class="num">24.7</span>(<span class="num">4.37</span><i>F</i><span class="op">+</span><span class="num">1</span>)&nbsp;Hz<span class="op">,</span>
+      <span class="fn">ERBS</span>(<i>F</i>)<span class="op">=</span><span class="num">21.4</span>
+      <span class="fn">log</span><sub>10</sub>(<span class="num">4.37</span><i>F</i><span class="op">+</span><span class="num">1</span>)
+      <span class="note2">F in kilohertz. The ERB number runs from 0.78 at 20 Hz to 15.62
+        at 1 kHz to 41.65 at 20 kHz — about forty filters, against Zwicker's twenty-four,
+        because they are counting differently.</span>
+    </div>
+
+    <p>The two scales agree closely above about 500 Hz and part company sharply below it:
+      at 50 Hz the Bark bandwidth is 100 Hz and the ERB is 30 Hz. That is not a units
+      problem, and it is not a rounding difference. It is an unresolved empirical
+      disagreement about how selective the ear is at low frequencies, and any codec that
+      allocates by band inherits whichever answer its designers picked.</p>
+
+    <figure class="figure" id="fig-ruler">
+      <div class="figure-bar">
+        <span class="fno">FIG. 2.2</span>
+        <span class="ftitle">The same 24 bands, under four rulers</span>
+        <span class="fstate" id="e2-state">Bark · probe 1 kHz</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e2-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>Zwicker's 24 critical bands</span>
+          <span class="l-heat"><i></i>one critical band at the probe</span>
+          <span class="l-sig"><i class="dash"></i>probe frequency</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro ghost"><span class="k">Bark, Zwicker–Terhardt</span><span class="v" id="e2-bz">8.51</span></div>
+          <div class="ro ghost"><span class="k">Bark, Traunmüller</span><span class="v" id="e2-bt">8.53</span></div>
+          <div class="ro ok"><span class="k">ERB number</span><span class="v" id="e2-er">15.62</span></div>
+          <div class="ro sig"><span class="k">Critical bandwidth</span><span class="v" id="e2-cb">162 Hz</span></div>
+          <div class="ro bad"><span class="k">ERB width</span><span class="v" id="e2-ew">133 Hz</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Horizontal axis</span></div>
+          <div class="chips" id="e2-axis">
+            <button data-v="hz">Hz, linear</button>
+            <button data-v="log">Hz, log</button>
+            <button data-v="bark" class="on">Bark</button>
+            <button data-v="erb">ERB-rate</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Probe</span><span class="val" id="e2-flab">1000 Hz</span></div>
+          <input type="range" id="e2-f" min="0" max="1000" value="588" data-out="e2-flab" aria-label="Probe frequency">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e2-tone">Tone</button>
+            <button class="btn play" id="e2-band">One critical band of noise</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 2.2</b> — the twenty-four bands are always the
+        same bands; only the ruler changes, and the bars slide between rulers so you can
+        see where they go. On a <b>linear hertz</b> axis the first nine bands collapse into
+        an invisible smear at the left and band 24 alone eats a fifth of the width — which
+        is exactly why an FFT bin is the wrong unit for a psychoacoustic model. Switch to
+        <b>Bark</b> and every band becomes the same width, because that is what the scale
+        is <em>for</em>: equal distance on the basilar membrane. Switch to
+        <b>ERB-rate</b> and the low bands stay wide — the disagreement described above,
+        made visible. Press <b>one critical band of noise</b> at the default probe and you
+        are hearing a 162 Hz-wide band, which is the narrowest patch of noise your ear
+        cannot break into parts; it sounds like one rough object rather than a spread of
+        hiss. The noise band is synthesised by zeroing everything outside the band in the
+        frequency domain, so its edges really are at the band edges.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Zwicker's 24 critical bands, with both analytic scales evaluated at the band centre</caption>
+      <thead><tr><th class="num">Band</th><th class="num">Lower</th><th class="num">Centre</th><th class="num">Upper</th><th class="num">Width</th><th class="num">z (Z&amp;T)</th><th class="num">Δf<sub>G</sub></th><th class="num">ERB</th><th class="num">ERB no.</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td class="num">0</td><td class="num">50</td><td class="num">100</td><td class="num">100</td><td class="num">0.49</td><td class="num">100</td><td class="num">30</td><td class="num">1.84</td></tr>
+        <tr><td class="num">2</td><td class="num">100</td><td class="num">150</td><td class="num">200</td><td class="num">100</td><td class="num">1.48</td><td class="num">102</td><td class="num">41</td><td class="num">4.69</td></tr>
+        <tr><td class="num">3</td><td class="num">200</td><td class="num">250</td><td class="num">300</td><td class="num">100</td><td class="num">2.44</td><td class="num">104</td><td class="num">52</td><td class="num">6.86</td></tr>
+        <tr><td class="num">4</td><td class="num">300</td><td class="num">350</td><td class="num">400</td><td class="num">100</td><td class="num">3.39</td><td class="num">109</td><td class="num">62</td><td class="num">8.62</td></tr>
+        <tr><td class="num">5</td><td class="num">400</td><td class="num">450</td><td class="num">510</td><td class="num">110</td><td class="num">4.30</td><td class="num">114</td><td class="num">73</td><td class="num">10.11</td></tr>
+        <tr><td class="num">6</td><td class="num">510</td><td class="num">570</td><td class="num">630</td><td class="num">120</td><td class="num">5.33</td><td class="num">122</td><td class="num">86</td><td class="num">11.62</td></tr>
+        <tr><td class="num">7</td><td class="num">630</td><td class="num">700</td><td class="num">770</td><td class="num">140</td><td class="num">6.39</td><td class="num">133</td><td class="num">100</td><td class="num">13.02</td></tr>
+        <tr><td class="num">8</td><td class="num">770</td><td class="num">840</td><td class="num">920</td><td class="num">150</td><td class="num">7.43</td><td class="num">145</td><td class="num">115</td><td class="num">14.32</td></tr>
+        <tr><td class="num">9</td><td class="num">920</td><td class="num">1000</td><td class="num">1080</td><td class="num">160</td><td class="num">8.51</td><td class="num">162</td><td class="num">133</td><td class="num">15.62</td></tr>
+        <tr><td class="num">10</td><td class="num">1080</td><td class="num">1170</td><td class="num">1270</td><td class="num">190</td><td class="num">9.53</td><td class="num">182</td><td class="num">151</td><td class="num">16.83</td></tr>
+        <tr><td class="num">11</td><td class="num">1270</td><td class="num">1370</td><td class="num">1480</td><td class="num">210</td><td class="num">10.59</td><td class="num">207</td><td class="num">173</td><td class="num">18.07</td></tr>
+        <tr><td class="num">12</td><td class="num">1480</td><td class="num">1600</td><td class="num">1720</td><td class="num">240</td><td class="num">11.63</td><td class="num">239</td><td class="num">197</td><td class="num">19.32</td></tr>
+        <tr><td class="num">13</td><td class="num">1720</td><td class="num">1850</td><td class="num">2000</td><td class="num">280</td><td class="num">12.60</td><td class="num">277</td><td class="num">224</td><td class="num">20.51</td></tr>
+        <tr><td class="num">14</td><td class="num">2000</td><td class="num">2150</td><td class="num">2320</td><td class="num">320</td><td class="num">13.57</td><td class="num">325</td><td class="num">257</td><td class="num">21.76</td></tr>
+        <tr><td class="num">15</td><td class="num">2320</td><td class="num">2500</td><td class="num">2700</td><td class="num">380</td><td class="num">14.51</td><td class="num">386</td><td class="num">295</td><td class="num">23.04</td></tr>
+        <tr><td class="num">16</td><td class="num">2700</td><td class="num">2900</td><td class="num">3150</td><td class="num">450</td><td class="num">15.40</td><td class="num">460</td><td class="num">338</td><td class="num">24.31</td></tr>
+        <tr><td class="num">17</td><td class="num">3150</td><td class="num">3400</td><td class="num">3700</td><td class="num">550</td><td class="num">16.33</td><td class="num">559</td><td class="num">392</td><td class="num">25.69</td></tr>
+        <tr><td class="num">18</td><td class="num">3700</td><td class="num">4000</td><td class="num">4400</td><td class="num">700</td><td class="num">17.26</td><td class="num">685</td><td class="num">456</td><td class="num">27.11</td></tr>
+        <tr><td class="num">19</td><td class="num">4400</td><td class="num">4800</td><td class="num">5300</td><td class="num">900</td><td class="num">18.30</td><td class="num">867</td><td class="num">543</td><td class="num">28.72</td></tr>
+        <tr><td class="num">20</td><td class="num">5300</td><td class="num">5800</td><td class="num">6400</td><td class="num">1100</td><td class="num">19.41</td><td class="num">1111</td><td class="num">651</td><td class="num">30.40</td></tr>
+        <tr><td class="num">21</td><td class="num">6400</td><td class="num">7000</td><td class="num">7700</td><td class="num">1300</td><td class="num">20.51</td><td class="num">1426</td><td class="num">780</td><td class="num">32.09</td></tr>
+        <tr><td class="num">22</td><td class="num">7700</td><td class="num">8500</td><td class="num">9500</td><td class="num">1800</td><td class="num">21.61</td><td class="num">1851</td><td class="num">942</td><td class="num">33.84</td></tr>
+        <tr><td class="num">23</td><td class="num">9500</td><td class="num">10500</td><td class="num">12000</td><td class="num">2500</td><td class="num">22.65</td><td class="num">2463</td><td class="num">1158</td><td class="num">35.76</td></tr>
+        <tr><td class="num">24</td><td class="num">12000</td><td class="num">13500</td><td class="num">15500</td><td class="num">3500</td><td class="num">23.61</td><td class="num">3468</td><td class="num">1482</td><td class="num">38.05</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The table stops at 15 500 Hz because Zwicker's measurements did; implementations
+      that need to cover the rest usually bolt on a 25th band and hope. What matters for
+      what follows is the shape, not the last row. Twenty-four bands over three decades,
+      the lowest nine of them 100 Hz wide and the highest one 3 500 Hz wide, is the entire
+      frequency resolution the receiver has. A 4 096-point FFT at 44.1 kHz resolves 10.8 Hz
+      everywhere. The ear resolves about 100 Hz at 100 Hz and about 3 500 Hz at 13.5 kHz.
+      That mismatch is the reason every codec in this study groups its spectral lines into
+      bands before deciding anything, and the reason those groups are called
+      <em>scalefactor bands</em> rather than bins.</p>
+
+    <blockquote class="pullquote">The Bark scale is not a psychological unit. It is a
+      ruler. One Bark is between one and one and a half millimetres of basilar membrane,
+      and "critical band" means nothing more mystical than <em>the same patch of tissue is
+      already moving</em>. <span class="who">Why masking is plumbing</span></blockquote>
+
+    <p>Divide 35 mm by 24 bands and you get 1.46 mm. Measure it properly through Greenwood's
+      map and it varies: about 1.0 mm per Bark around 1–2 kHz, 1.2 mm at 500 Hz and 4 kHz,
+      and 2 mm or more at the extremes where both scales are least certain. The scale was
+      never meant to be exactly uniform in millimetres; it was meant to be uniform in
+      masking behaviour, and it is close enough to a constant distance that the physical
+      reading is the right intuition.</p>
+  </section>
+
+  <!-- ===================================================== 5 -->
+  <section id="floor" class="section">
+    <div class="kicker k-ok">The floor</div>
+    <h3>The threshold of hearing is an eighty-decibel bowl, and encoders carry a copy of it.</h3>
+    <p style="margin-top:18px">Below some level, at each frequency, nothing gets through at
+      all. That is the <b>absolute threshold of hearing</b>, and its practical importance to
+      a codec is blunt: when no other sound is playing, the absolute threshold <em>is</em>
+      the masking threshold. Bits spent describing a −60 dBFS 30 Hz rumble are bits spent on
+      nothing, and an encoder that knows the curve simply refuses to spend them.</p>
+    <p>Two different curves travel under this name and they are regularly conflated. The
+      first is Terhardt's closed-form approximation, popularised for codec engineers by
+      Painter and Spanias in 2000, and reproduced in essentially every textbook since:</p>
+
+    <div class="eq left">
+      <i>T</i><sub>q</sub>(<i>f</i>)<span class="op">=</span><span class="num">3.64</span>
+      (<i>f</i><span class="op">/</span><span class="num">1000</span>)<sup>−0.8</sup>
+      <span class="op">−</span><span class="num">6.5</span>&nbsp;<i>e</i><sup>−0.6(<i>f</i>/1000&nbsp;−&nbsp;3.3)<sup>2</sup></sup>
+      <span class="op">+</span><span class="num">10</span><sup>−3</sup>
+      (<i>f</i><span class="op">/</span><span class="num">1000</span>)<sup>4</sup>&nbsp;dB&nbsp;SPL
+      <span class="note2">three terms: a low-frequency roll-off, a Gaussian dip near
+        3.3 kHz, and a quartic that is meant to close the curve at the top. Minimum
+        −4.98 dB SPL at 3 324 Hz.</span>
+    </div>
+
+    <p>It is one line of code, which is why it won. It is also wrong at both ends, and
+      spectacularly wrong at the top: that quartic term predicts +51 dB SPL at 15 kHz,
+      +105 dB at 18 kHz and +160 dB at 20 kHz, the last two of which are not thresholds but
+      arithmetic running away. Every honest implementation clips it. The toy encoder used
+      throughout this study caps its own threshold at 80 dB SPL for exactly this reason:
+      believe the formula and you throw away the top octave of a loud recording.</p>
+    <p>The second curve is the one in the standard. ISO 226:2003 tabulates a threshold row
+      — conventionally written <i>T</i><sub>f</sub> — at 29 frequencies from 20 Hz to
+      12.5 kHz, and it reaches −6.0 dB SPL at 3 150 Hz. The two disagree by up to about
+      8 dB. Where they disagree, the standard is the measurement and the formula is the
+      convenience.</p>
+
+    <figure class="figure" id="fig-ath">
+      <div class="figure-bar">
+        <span class="fno">FIG. 2.3</span>
+        <span class="ftitle">How far above the floor is this tone?</span>
+        <span class="fstate" id="e3-state">1 kHz at 40 dB SPL</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e3-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-ok"><i></i>Terhardt approximation, T<sub>q</sub>(f)</span>
+          <span class="l-ghost"><i class="dash"></i>ISO 226:2003 threshold row, T<sub>f</sub></span>
+          <span class="l-heat"><i></i>your tone — drag it</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro ok"><span class="k">Threshold here</span><span class="v" id="e3-th">3.4 dB SPL</span></div>
+          <div class="ro sig"><span class="k">Margin</span><span class="v" id="e3-margin">+36.6 dB</span></div>
+          <div class="ro"><span class="k">Verdict</span><span class="v" id="e3-verdict">audible</span></div>
+          <div class="ro ghost"><span class="k">ISO 226 says</span><span class="v" id="e3-iso">2.4 dB SPL</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Frequency</span><span class="val" id="e3-flab">1000 Hz</span></div>
+          <input type="range" id="e3-f" min="0" max="1000" value="588" data-out="e3-flab" aria-label="Tone frequency">
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Level</span><span class="val" id="e3-llab">40 dB SPL</span></div>
+          <input type="range" id="e3-l" min="0" max="100" value="40" data-out="e3-llab" aria-label="Tone level">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <button class="btn play" id="e3-play">Play at this level</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 2.3</b> — drag the marker anywhere on the plot,
+        or use the sliders. The solid curve is <i>T</i><sub>q</sub>(<i>f</i>) evaluated
+        live; the dashed one is the ISO 226:2003 <i>T</i><sub>f</sub> row. Take the marker
+        to 20 Hz: the floor there is 83 dB SPL by the formula and 78.5 by the standard, so
+        a 20 Hz tone at 60 dB is simply not there. Take it to 3.3 kHz and the floor is
+        <em>below</em> zero — the ear is more sensitive than the pressure that defines
+        0 dB SPL. That is an eighty-decibel swing in what counts as silence, and it is the
+        first thing a psychoacoustic model computes.
+        <b>A calibration warning:</b> a browser cannot know how loud your playback chain
+        is, so the dB SPL labels here are nominal. The button maps 70 dB SPL to a linear
+        amplitude of 0.2 and scales from there; the <em>relative</em> change of 6 dB per
+        halving is real, the absolute number is not.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Where the two threshold curves disagree (dB SPL)</caption>
+      <thead><tr><th class="num">Frequency</th><th class="num">T<sub>q</sub> formula</th><th class="num">ISO 226 T<sub>f</sub></th><th class="num">Difference</th><th>Comment</th></tr></thead>
+      <tbody>
+        <tr><td class="num">20 Hz</td><td class="num">83.22</td><td class="num">78.5</td><td class="num">+4.7</td><td>both say: inaudible unless it is very loud indeed</td></tr>
+        <tr><td class="num">50 Hz</td><td class="num">39.98</td><td class="num">44.0</td><td class="num">−4.0</td><td>the formula is optimistic here</td></tr>
+        <tr><td class="num">100 Hz</td><td class="num">22.95</td><td class="num">26.5</td><td class="num">−3.6</td><td>—</td></tr>
+        <tr><td class="num">500 Hz</td><td class="num">6.28</td><td class="num">4.4</td><td class="num">+1.9</td><td>—</td></tr>
+        <tr><td class="num">1 000 Hz</td><td class="num">3.37</td><td class="num">2.4</td><td class="num">+1.0</td><td>the reference point of the phon scale</td></tr>
+        <tr><td class="num">3 150 Hz</td><td class="num">−4.86</td><td class="num">−6.0</td><td class="num">+1.1</td><td>the bottom of the bowl, both agree</td></tr>
+        <tr><td class="num">4 000 Hz</td><td class="num">−3.39</td><td class="num">−5.4</td><td class="num">+2.0</td><td>—</td></tr>
+        <tr><td class="num">8 000 Hz</td><td class="num">4.79</td><td class="num">12.6</td><td class="num">−7.8</td><td>the worst disagreement in the audible range</td></tr>
+        <tr><td class="num">12 500 Hz</td><td class="num">≈ 21 (at 12 kHz)</td><td class="num">12.3</td><td class="num">≈ +9</td><td>the quartic term has begun to take over</td></tr>
+        <tr><td class="num">15 000 Hz</td><td class="num">51.04</td><td class="num">—</td><td class="num">—</td><td>outside the standard's range; the formula is still plausible</td></tr>
+        <tr><td class="num">20 000 Hz</td><td class="num">160.33</td><td class="num">—</td><td class="num">—</td><td><strong>meaningless</strong> — do not plot this, and do not let a codec believe it</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ===================================================== 6 -->
+  <section id="loud" class="section">
+    <div class="kicker k-heat">Loudness is not level</div>
+    <h3>Turn it down and the bass leaves the room.</h3>
+    <p style="margin-top:18px">Fletcher and Munson measured, in 1933, how much sound
+      pressure each frequency needs in order to seem as loud as a 1 kHz tone. The family of
+      curves they produced was re-determined by Robinson and Dadson in 1956 under
+      free-field conditions, standardised as ISO 226, replaced in 2003 after a pooled
+      international re-measurement, and revised again in 2023 by amounts no larger than
+      about half a decibel over most of the range. The 2003 coefficients are what this page
+      uses.</p>
+    <p>The unit on those curves is the <b>phon</b>: a tone has a loudness level of
+      <i>N</i> phon if it is as loud as an <i>N</i> dB SPL tone at 1 kHz. By construction
+      every contour passes through its own number at 1 kHz. The ISO equation builds each
+      contour from three tabulated per-frequency constants — an exponent
+      <i>α</i><sub>f</sub>, a transfer magnitude <i>L</i><sub>U</sub>, and the threshold row
+      <i>T</i><sub>f</sub>:</p>
+
+    <div class="eq left">
+      <i>A</i><sub>f</sub><span class="op">=</span><span class="num">4.47</span><span class="op">×</span><span class="num">10</span><sup>−3</sup>(<span class="num">10</span><sup>0.025<i>L</i><sub>N</sub></sup><span class="op">−</span><span class="num">1.15</span>)
+      <span class="op">+</span>[<span class="num">0.4</span><span class="op">×</span><span class="num">10</span><sup>(<i>T</i><sub>f</sub>&nbsp;+&nbsp;<i>L</i><sub>U</sub>)/10&nbsp;−&nbsp;9</sup>]<sup><i>α</i><sub>f</sub></sup><br>
+      <i>L</i><sub>p</sub><span class="op">=</span>
+      <span class="frac"><span><span class="num">10</span></span><span><i>α</i><sub>f</sub></span></span>
+      <span class="fn">log</span><sub>10</sub>(<i>A</i><sub>f</sub>)<span class="op">−</span><i>L</i><sub>U</sub><span class="op">+</span><span class="num">94</span>&nbsp;dB&nbsp;SPL
+      <span class="note2">valid 20 Hz–12.5 kHz and 0–90 phon (0–80 above 4 kHz). Evaluated
+        at 1 kHz it returns the input to within 0.01 dB, which is the check worth running
+        on any implementation.</span>
+    </div>
+
+    <p>A trap sits in that equation. The standard's <em>threshold</em> contour is the
+      tabulated <i>T</i><sub>f</sub> row, not the result of evaluating the formula at
+      <i>L</i><sub>N</sub> = 0. The two differ by up to about 2 dB — 78.5 against 76.6 at
+      20 Hz. Plot <i>T</i><sub>f</sub>.</p>
+    <p>Phons measure loudness on a scale where equal steps are equal <em>levels</em>, which
+      is not how loudness behaves. The <b>sone</b>, proposed by S. S. Stevens in 1936, fixes
+      that: one sone is 40 phon, and every further ten phon doubles it.</p>
+
+    <div class="eq">
+      <i>S</i><span class="op">=</span><span class="num">2</span><sup>(<i>L</i><sub>N</sub>&nbsp;−&nbsp;40)/10</sup>
+      <span class="op">for</span><i>L</i><sub>N</sub><span class="op">≥</span><span class="num">40</span><span class="op">,</span>
+      <i>S</i><span class="op">=</span>(<i>L</i><sub>N</sub><span class="op">/</span><span class="num">40</span>)<sup>2.642</sup>
+      <span class="op">below</span>
+      <span class="note2">so 20 phon is 0.160 sone, not the 0.250 the doubling rule would
+        predict — loudness grows faster than a doubling per ten phon near threshold</span>
+    </div>
+
+    <p>The consequence that matters for everything downstream is in the shape of the
+      family, not in any one curve. <strong>The contours flatten as the level rises.</strong>
+      At 20 phon, 20 Hz needs to be 69.6 dB louder than 1 kHz to match it. At 100 phon it
+      needs only 28.4 dB. The mix does not change when you turn the volume down; your
+      frequency response does, by forty decibels at the bottom end. That single fact
+      explains the "loudness" button on a 1970s amplifier, the habit of checking a master
+      quietly, and a good deal of the loudness war.</p>
+
+    <figure class="figure" id="fig-loud">
+      <div class="figure-bar">
+        <span class="fno">FIG. 2.4</span>
+        <span class="ftitle">The equal-loudness family, and its industrial caricature</span>
+        <span class="fstate" id="e4-state">40 phon = 1.00 sone</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e4-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>selected contour</span>
+          <span class="l-faint"><i></i>the rest of the family, 0 to 90 phon</span>
+          <span class="l-ghost"><i class="dash"></i>inverted weighting curve, aligned at 1 kHz</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Loudness</span><span class="v" id="e4-sone">1.00 sone</span></div>
+          <div class="ro heat"><span class="k">This contour at 20 Hz</span><span class="v" id="e4-lo">99.9 dB SPL</span></div>
+          <div class="ro bad"><span class="k">20 Hz penalty</span><span class="v" id="e4-gap">+59.8 dB</span></div>
+          <div class="ro ok"><span class="k">This contour at 8 kHz</span><span class="v" id="e4-hi">51.8 dB SPL</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Loudness level</span><span class="val" id="e4-plab">40 phon</span></div>
+          <input type="range" id="e4-phon" min="0" max="90" step="10" value="40" data-out="e4-plab" aria-label="Loudness level in phon">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Weighting overlay</span></div>
+          <div class="chips" id="e4-w">
+            <button data-v="off" class="on">None</button>
+            <button data-v="A">A</button>
+            <button data-v="B">B</button>
+            <button data-v="C">C</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e4-flat">Programme, flat</button>
+            <button class="btn play" id="e4-tilt">As your ear weights it here</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 2.4</b> — the ten contours are computed from the
+        ISO 226:2003 coefficients on every redraw; the 0-phon curve is the tabulated
+        <i>T</i><sub>f</sub> row rather than the formula evaluated at zero. Sweep the phon
+        slider and watch the family flatten: the 20 Hz penalty falls from 69.6 dB at
+        20 phon to 39.0 dB at 80 phon. Then switch on the <b>A</b> overlay. A-weighting is
+        a fixed approximation of the 40-phon contour, so at 40 phon it lies close to the
+        selected curve and at 90 phon it is nowhere near it — which is why A-weighted
+        measurements systematically understate loud low-frequency noise, and why B and C
+        exist at all. The two buttons apply the selected contour's own shape to a
+        synthesised phrase as a frequency-domain filter, normalised to the same peak
+        afterwards so that you are comparing tilt and not level. At 20 phon the bass
+        vanishes; at 90 phon it barely moves. The treble, notice, hardly changes either
+        way.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>A, B and C weighting (IEC 61672-1), evaluated from the standard transfer functions</caption>
+      <thead><tr><th class="num">Frequency</th><th class="num">A (dB)</th><th class="num">B (dB)</th><th class="num">C (dB)</th><th>Approximates</th></tr></thead>
+      <tbody>
+        <tr><td class="num">10 Hz</td><td class="num">−70.4</td><td class="num">−38.2</td><td class="num">−14.3</td><td rowspan="3">A ≈ the 40-phon contour, B ≈ 70 phon, C ≈ 100 phon — all three inverted</td></tr>
+        <tr><td class="num">20 Hz</td><td class="num">−50.4</td><td class="num">−24.2</td><td class="num">−6.2</td></tr>
+        <tr><td class="num">31.5 Hz</td><td class="num">−39.5</td><td class="num">−17.1</td><td class="num">−3.0</td></tr>
+        <tr><td class="num">63 Hz</td><td class="num">−26.2</td><td class="num">−9.4</td><td class="num">−0.8</td><td>a 26 dB discount on a bass note</td></tr>
+        <tr><td class="num">100 Hz</td><td class="num">−19.1</td><td class="num">−5.6</td><td class="num">−0.3</td><td>—</td></tr>
+        <tr><td class="num">500 Hz</td><td class="num">−3.2</td><td class="num">−0.3</td><td class="num">0.0</td><td>—</td></tr>
+        <tr><td class="num">1 000 Hz</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">0.0</td><td>all three are defined to pass through zero here</td></tr>
+        <tr><td class="num">2 000 Hz</td><td class="num">+1.2</td><td class="num">−0.1</td><td class="num">−0.2</td><td>A is the only one with gain above unity</td></tr>
+        <tr><td class="num">4 000 Hz</td><td class="num">+1.0</td><td class="num">−0.7</td><td class="num">−0.8</td><td>the ear-canal resonance, cheaply imitated</td></tr>
+        <tr><td class="num">8 000 Hz</td><td class="num">−1.1</td><td class="num">−2.9</td><td class="num">−3.0</td><td>—</td></tr>
+        <tr><td class="num">16 000 Hz</td><td class="num">−6.7</td><td class="num">−8.5</td><td class="num">−8.6</td><td>—</td></tr>
+        <tr><td class="num">20 000 Hz</td><td class="num">−9.3</td><td class="num">−11.2</td><td class="num">−11.3</td><td>all three converge once the shared high-pass dominates</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note sig">
+      <span class="tag tag-sig">Where this reappears</span>
+      <p>The K-weighting filter at the heart of loudness normalisation — ITU-R BS.1770, and
+        therefore EBU R 128, and therefore the target every streaming service normalises to
+        — is a direct descendant of these curves, with a head-shadow shelf bolted on the
+        front. <a href="12-choosing.html">Chapter 12</a> takes it apart. The reason
+        level-matching is not pedantry but a precondition for any comparison at all is in
+        the flattening described above: a louder version of the same file is a version with
+        more apparent bass and treble, and it will win a casual A/B on that alone.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 7 -->
+  <section id="time" class="section">
+    <div class="kicker k-danger">Two clocks</div>
+    <h3>You hear a three-millisecond hole, but you need two hundred milliseconds to decide how loud something is.</h3>
+    <p style="margin-top:18px">The ear's temporal behaviour is not one number, and the gap
+      between the two numbers it actually has is where lossy codecs live.</p>
+    <p>Ask a listener to detect a silent gap in a band of noise and the threshold comes out
+      at roughly 2–3 ms for broadband noise at a moderate level — worse at low frequencies,
+      worse near threshold, but of that order. Ask the same listener how loud a burst is and
+      the answer keeps changing until the burst is about 200 ms long: detection threshold
+      falls by roughly 3 dB for every doubling of duration from about 10 ms up to about
+      200 ms, and then stops. Two clocks, two orders of magnitude apart, in one organ.</p>
+    <p>Masking inherits the same asymmetry, and this is the part that matters for
+      encoding. A loud sound raises the threshold for a *later* quiet sound for something
+      like 100–200 ms — <b>forward masking</b>, and it decays smoothly. It raises the
+      threshold for an *earlier* quiet sound too, which is stranger, but only briefly:
+      <b>backward masking</b> is weak and short. The codec literature conventionally quotes
+      about 20 ms; careful psychophysics on trained listeners gives 5 ms or less. Both
+      numbers are in circulation and the difference between them is an argument about
+      listener training, not about physiology.</p>
+
+    <figure class="figure" id="fig-time">
+      <div class="figure-bar">
+        <span class="fno">FIG. 2.5</span>
+        <span class="ftitle">Three experiments on the ear's two clocks</span>
+        <span class="fstate" id="e5-state">gap · 3 ms</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e5-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>the loud signal</span>
+          <span class="l-sig"><i></i>the quiet probe, drawn eight times taller than it is</span>
+          <span class="l-ghost"><i></i>approximately masked in time</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Setting</span><span class="v" id="e5-v1">3.0 ms</span></div>
+          <div class="ro"><span class="k">Reference</span><span class="v" id="e5-v2">gap threshold ≈ 2–3 ms</span></div>
+          <div class="ro bad"><span class="k">MP3 long window</span><span class="v" id="e5-v3">26.12 ms</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Experiment</span></div>
+          <div class="chips" id="e5-mode">
+            <button data-v="gap" class="on">Gap in noise</button>
+            <button data-v="burst">Burst duration</button>
+            <button data-v="probe">Probe near a burst</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span id="e5-slab">Gap</span><span class="val" id="e5-vlab">3 ms</span></div>
+          <input type="range" id="e5-s" min="0" max="30" step="1" value="3" data-out="e5-vlab" aria-label="Experiment parameter">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e5-a">Play</button>
+            <button class="btn play" id="e5-b">Reference</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 2.5</b> — the plot is the envelope of the
+        signal that the button will actually play, measured from the synthesised samples
+        rather than drawn. <b>Gap in noise:</b> a 500–4 000 Hz band with a hole cut in it,
+        with half-millisecond ramps so the gate does not splatter. At 3 ms most listeners
+        hear a click or a catch; at 1 ms it disappears; at 15 ms it is a hole you could
+        drive through. <b>Burst duration:</b> a 1 kHz tone at a fixed amplitude, played
+        after a 200 ms reference at the same amplitude. From about 200 ms down the
+        <em>level</em> is unchanged and the <em>loudness</em> falls, which is what
+        "integration" means. <b>Probe near a burst:</b> a 10 ms tone at 4 kHz, 26 dB below a
+        200 ms noise burst, placed anywhere from 60 ms before the burst starts to 100 ms
+        after it ends. Drag it from −5 ms (just before: still audible, backward masking is
+        weak) to +210 ms (just after: gone, and it stays gone for a long time). The shaded
+        regions are the literature's approximate extents, drawn as a guide; your own
+        thresholds are what the buttons are testing. The gate in the first experiment
+        splatters some energy across the spectrum, which is an audible cue in its own right
+        — laboratory gap detection filters <em>after</em> gating for exactly that
+        reason.</figcaption>
+    </figure>
+
+    <p>Now put the two clocks together with a transform. An encoder cuts the signal into
+      overlapping blocks and quantises each block's spectrum; the quantisation error it
+      introduces is spread more or less evenly across the whole block in time. MP3's long
+      window spans 1 152 samples — <b>26.12 ms</b> at 44.1 kHz. Put a castanet strike near
+      the end of such a block and the noise added to code it is smeared backwards across the
+      preceding 26 milliseconds, into a stretch of near-silence where backward masking
+      covers at most the last 5 to 20.</p>
+
+    <div class="note danger">
+      <span class="tag tag-danger">This is pre-echo, and this is why block switching exists</span>
+      <p>The result is a short burst of hiss audibly <em>preceding</em> the attack —
+        the most recognisable of all lossy artefacts and the one people describe as
+        "smearing" or "swishing" on applause and castanets. The fix, in every transform
+        codec since, is to notice the transient and switch to short windows: MP3's short
+        blocks are a third of the long window, about 8.7 ms, which brings the smear inside
+        what temporal masking can hide.
+        <a href="4-transform.html">Chapter 04</a> shows the smear appearing as you lengthen
+        the window; <a href="7-mp3.html">Chapter 07</a> shows the window-switching state
+        machine; <a href="11-artifacts.html">Chapter 11</a> provokes the artefact on demand
+        so you can learn the sound of it.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 8 -->
+  <section id="space" class="section">
+    <div class="kicker k-ghost">Two ears, and phase</div>
+    <h3>If location is carried by a handful of cues, it does not need two channels to transmit.</h3>
+    <p style="margin-top:18px">Lord Rayleigh's duplex theory of 1907 divides the job between
+      two mechanisms. Below about 1.5 kHz, where a wavelength (23 cm at 1.5 kHz) is
+      comparable to or larger than a head, the difference in arrival time between the ears
+      is unambiguous and the auditory system uses it. Above about 2 kHz the head casts an
+      acoustic shadow and the level difference takes over. In between, both are poor, which
+      is why localisation is worst around 2–3 kHz.</p>
+    <p>The maximum interaural time difference follows from the geometry. Woodworth's
+      spherical-head model gives the extra path length round a sphere of radius <i>r</i>:</p>
+
+    <div class="eq">
+      <span class="fn">ITD</span>(<i>θ</i>)<span class="op">=</span>
+      <span class="frac"><span><i>r</i></span><span><i>c</i></span></span>
+      (<i>θ</i><span class="op">+</span><span class="fn">sin</span><i>θ</i>)
+      <span class="op">=</span>
+      <span class="frac"><span><span class="num">0.0875</span></span><span><span class="num">343</span></span></span>
+      (<span class="frac"><span><i>π</i></span><span><span class="num">2</span></span></span><span class="op">+</span><span class="num">1</span>)
+      <span class="op">=</span><span class="num">656</span>&nbsp;µs
+      <span class="note2">at 90° azimuth; 261 µs at 30°. Measured values scatter over
+        0.6–0.7 ms, so the model is the right size rather than the right answer.</span>
+    </div>
+
+    <p>Add the precedence effect — Wallach, Newman and Rosenzweig described it in 1949, two
+      years before the paper it is usually named after, by Haas — and the picture is of a
+      system that resolves location from the first arrival and then ignores a great deal of
+      what follows, over lags of a few milliseconds for clicks and up to tens of
+      milliseconds for speech and music. Six hundred microseconds and a few decibels of
+      level difference, per band, is close to the whole of it.</p>
+    <p>That is an enormous invitation to a codec, and every codec accepts it. Mid/side
+      coding transmits sum and difference instead of left and right because the difference
+      channel is usually small and quiet. Intensity stereo goes further and transmits one
+      spectrum with a per-band panning coefficient above some crossover. Parametric stereo
+      goes further still, sending a mono downmix plus a handful of interaural parameters
+      per band per frame. Each of those is a bet that the listener's spatial percept is
+      lower-bandwidth than the two waveforms carrying it — and the bet is usually good,
+      which is why the failures are so recognisable when they come.</p>
+    <p>Phase is the same story told monaurally. Ohm's acoustic law — stated by Georg Simon
+      Ohm in 1843 and endorsed by Helmholtz in 1863, over August Seebeck's objections —
+      holds that perception depends on the amplitude spectrum and not on the phases.
+      Manfred Schroeder showed in 1959 that this is not exactly true: a harmonic complex
+      given quadratic phase has a flattened temporal envelope and audibly does not sound
+      like the same complex in cosine phase. The correct statement is narrower and more
+      useful. The ear is largely deaf to slowly varying phase <em>within</em> a critical
+      band; it is not deaf to phase changes that alter the <em>envelope</em> within a band;
+      and it is acutely sensitive to <em>interaural</em> phase below about 1.5 kHz. Codecs
+      take precisely that licence. MDCT coefficients carry phase only as a sign and a
+      quantised magnitude, noise filling invents phase outright, and spectral band
+      replication synthesises the top octaves from the ones below with no phase relation to
+      the original at all. It works — until it changes an envelope, and then it is
+      audible.</p>
+  </section>
+
+  <!-- ===================================================== 9 -->
+  <section id="whose" class="section">
+    <div class="kicker">Whose ear?</div>
+    <h3>Six things that are repeated about hearing, and are not true.</h3>
+    <p style="margin-top:18px">The claims below are all common, all nearly right, and all
+      wrong in ways that change what an encoder should do.</p>
+
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>"The ear does a Fourier transform"</dt>
+        <dd>It does something weaker and much more useful: a bank of two to four dozen
+          broad, overlapping, <em>asymmetric</em>, level-dependent bandpass filters, with
+          compressive gain and no phase output. A 4 096-point FFT at 44.1 kHz has 10.8 Hz
+          of resolution at every frequency. The ear has about 100 Hz at 100 Hz and about
+          3 500 Hz at 13.5 kHz, and its filters get wider as the input gets louder.</dd>
+      </div>
+      <div class="def">
+        <dt>"Humans hear 20 Hz to 20 kHz"</dt>
+        <dd>That is a nominal range for a young, undamaged ear at a sufficient level. A
+          20 Hz tone needs about 78 dB SPL before it is audible at all, so the bottom of
+          that range is not a frequency limit but a level limit. At the top, audibility of
+          20 kHz in adults is rare at any level.</dd>
+      </div>
+      <div class="def">
+        <dt>"Bark and ERB are two names for the same scale"</dt>
+        <dd>They agree above about 500 Hz and diverge below it — 100 Hz against 30 Hz of
+          bandwidth at 50 Hz. Fig 2.2 shows the divergence directly. It is an open
+          empirical question about low-frequency selectivity, not a choice of units, and it
+          is the reason different codecs draw their lowest band edges in different
+          places.</dd>
+      </div>
+      <div class="def">
+        <dt>"A-weighting models human hearing"</dt>
+        <dd>A-weighting is a fixed approximation of the <em>40-phon</em> contour and
+          nothing else. At 100 dB the real contour is far flatter, which is why an
+          A-weighted reading understates the annoyance of loud low-frequency noise by
+          tens of decibels. B and C exist because one curve cannot do the job; K-weighting
+          exists because none of the three does it well enough for programme
+          material.</dd>
+      </div>
+      <div class="def">
+        <dt>"Phase is inaudible"</dt>
+        <dd>Within a band and slowly varying, yes. Change the phase enough to change the
+          envelope within a band and it is plainly audible; change the interaural phase
+          below 1.5 kHz and the image moves across your head. The useful version of the
+          rule is a licence with conditions attached, and codecs violate the conditions
+          only where they can afford to.</dd>
+      </div>
+      <div class="def">
+        <dt>"Hearing loss just makes everything quieter"</dt>
+        <dd>Lose the outer hair cells and you lose the compressive amplifier with them.
+          Soft sounds disappear while loud sounds stay exactly as loud as they were, so
+          loudness grows abnormally fast above threshold — <em>recruitment</em> — and the
+          usable dynamic range collapses from something like 120 dB towards something like
+          40 dB. This is why turning the volume up does not repair a sensorineural loss,
+          and why a hearing aid has to compress rather than amplify.</dd>
+      </div>
+    </dl>
+
+    <p style="margin-top:30px">Which brings up the awkward question that the rest of this
+      study has to live with. Every curve on this page is a median. The 0-phon contour
+      describes otologically normal listeners aged 18 to 25 — a demographic that includes
+      almost none of the people arguing about bitrates. ISO 7029 tabulates how the
+      threshold drifts with age, and the drift is not uniform: presbycusis takes the high
+      frequencies first, and takes them by a lot. By 60, the median male's threshold at
+      8 kHz has risen on the order of twenty-odd decibels relative to a young reference.</p>
+
+    <div class="note ghost">
+      <span class="tag">What that does to a listening test</span>
+      <p>The top octave is exactly the region where lossy codecs are most aggressive: it is
+        where band-limiting happens, where noise substitution and spectral band replication
+        operate, and where the birdies live. So "can you hear the difference between 128k
+        and 320k?" is not one question. It is one question per listener, and for a large
+        fraction of the population the honest answer is <em>no</em> — not because the
+        encoder is good, but because the receiver has already stopped reporting that part
+        of the signal. This is why formal tests (ITU-R BS.1116, BS.1534) screen their
+        listeners, level-match their stimuli and hide their references, and why
+        <a href="11-artifacts.html">Chapter 11</a> makes you run an ABX with the statistics
+        done properly rather than asking you what you think you heard.</p>
+    </div>
+
+    <blockquote class="pullquote">At the threshold of hearing near 3 kHz, the eardrum is
+      moving by less than the diameter of a hydrogen atom, and 20 µPa is about five parts
+      in ten thousand million of atmospheric pressure. The organ that does this is also the
+      one whose limitations make a 96 kbit/s stream sound like a compact disc.
+      <span class="who">Both facts are the same fact</span></blockquote>
+
+    <p>Everything needed for a psychoacoustic model is now on the table: a place map, a
+      filter bank with measured widths, a threshold in quiet, a loudness scale, and the two
+      temporal constants. What is missing is the one mechanism that does the actual work of
+      compression — what happens to the threshold in a band when something loud is already
+      playing in the band next door. That is masking, it is worth tens of decibels rather
+      than the single-digit savings everything in this chapter would buy on its own, and
+      <a href="3-masking.html">Chapter 03</a> spends its whole length on it. The spreading
+      function it derives is the asymmetric travelling-wave envelope of Fig 2.1, turned
+      into arithmetic; the band edges it uses are the twenty-four rows of the table above;
+      and the floor it starts from is the curve in Fig 2.3. The ear has been measured.
+      Next it gets modelled.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ===============================================================
+   Chapter 02 figures. One IIFE per figure so a throw in one cannot
+   blank the others. Everything is computed from DSP/AUD; nothing on
+   this page is a drawn result.
+   =============================================================== */
+
+/* ---- shared helpers, deliberately tiny --------------------- */
+var E2 = (function () {
+  "use strict";
+  var D = window.DSP;
+  var SR = 48000;                         // fixed so nothing touches the
+                                          // AudioContext before a click
+
+  // Zwicker & Terhardt's critical bandwidth; DSP has the Bark maps but not
+  // this one, so it lives here.
+  function critBw(f) {
+    return 25 + 75 * Math.pow(1 + 1.4 * Math.pow(f / 1000, 2), 0.69);
+  }
+
+  // ISO 226:2003 coefficients. Tf is the standard's threshold row and is the
+  // 0-phon contour; evaluating the equation at LN = 0 is NOT the same curve.
+  var ISO_F = [20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400,
+    500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000,
+    10000, 12500];
+  var ISO_AF = [0.532, 0.506, 0.480, 0.455, 0.432, 0.409, 0.387, 0.367, 0.349,
+    0.330, 0.315, 0.301, 0.288, 0.276, 0.267, 0.259, 0.253, 0.250, 0.246, 0.244,
+    0.243, 0.243, 0.243, 0.242, 0.242, 0.245, 0.254, 0.271, 0.301];
+  var ISO_LU = [-31.6, -27.2, -23.0, -19.1, -15.9, -13.0, -10.3, -8.1, -6.2,
+    -4.5, -3.1, -2.0, -1.1, -0.4, 0.0, 0.3, 0.5, 0.0, -2.7, -4.1, -1.0, 1.7,
+    2.5, 1.2, -2.1, -7.1, -11.2, -10.7, -3.1];
+  var ISO_TF = [78.5, 68.7, 59.5, 51.1, 44.0, 37.5, 31.5, 26.5, 22.1, 17.9,
+    14.4, 11.4, 8.6, 6.2, 4.4, 3.0, 2.2, 2.4, 3.5, 1.7, -1.3, -4.2, -6.0, -5.4,
+    -1.5, 6.0, 12.6, 13.9, 12.3];
+
+  function iso226(LN) {
+    if (LN <= 0) return ISO_TF.slice();
+    var out = [], i;
+    for (i = 0; i < ISO_F.length; i++) {
+      var Af = 4.47e-3 * (Math.pow(10, 0.025 * LN) - 1.15)
+        + Math.pow(0.4 * Math.pow(10, (ISO_TF[i] + ISO_LU[i]) / 10 - 9), ISO_AF[i]);
+      out.push((10 / ISO_AF[i]) * Math.log10(Af) - ISO_LU[i] + 94);
+    }
+    return out;
+  }
+  // linear interpolation of a tabulated curve in log-frequency, held flat
+  // outside the standard's range
+  function atF(curve, f) {
+    if (f <= ISO_F[0]) return curve[0];
+    if (f >= ISO_F[ISO_F.length - 1]) return curve[curve.length - 1];
+    var i = 0;
+    while (i < ISO_F.length - 2 && ISO_F[i + 1] < f) i++;
+    var t = Math.log(f / ISO_F[i]) / Math.log(ISO_F[i + 1] / ISO_F[i]);
+    return curve[i] + (curve[i + 1] - curve[i]) * t;
+  }
+
+  var sq = function (x) { return x * x; };
+  function wA(f) {
+    return 20 * Math.log10(sq(12194) * Math.pow(f, 4) /
+      ((sq(f) + sq(20.6)) * (sq(f) + sq(12194)) *
+        Math.sqrt((sq(f) + sq(107.7)) * (sq(f) + sq(737.9))))) + 2.00;
+  }
+  function wB(f) {
+    return 20 * Math.log10(sq(12194) * Math.pow(f, 3) /
+      ((sq(f) + sq(20.6)) * (sq(f) + sq(12194)) * Math.sqrt(sq(f) + sq(158.5)))) + 0.17;
+  }
+  function wC(f) {
+    return 20 * Math.log10(sq(12194) * sq(f) /
+      ((sq(f) + sq(20.6)) * (sq(f) + sq(12194)))) + 0.06;
+  }
+  function phonToSone(L) {
+    return L >= 40 ? Math.pow(2, (L - 40) / 10) : Math.pow(Math.max(L, 0) / 40, 2.642);
+  }
+
+  // Apply an arbitrary dB gain curve in the frequency domain. Real in, real
+  // out: the mirrored bin gets the same gain.
+  function shape(x, sr, gainDb) {
+    var N = D.nextPow2(x.length), re = new Float64Array(N), im = new Float64Array(N), i;
+    for (i = 0; i < x.length; i++) re[i] = x[i];
+    D.fft(re, im, false);
+    for (i = 0; i <= N / 2; i++) {
+      var g = Math.pow(10, gainDb(i * sr / N) / 20);
+      re[i] *= g; im[i] *= g;
+      if (i > 0 && i < N / 2) { re[N - i] *= g; im[N - i] *= g; }
+    }
+    D.fft(re, im, true);
+    var out = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) out[i] = re[i];
+    return out;
+  }
+  // A brickwall band of noise: white noise with everything outside [lo,hi]
+  // zeroed in the frequency domain, so the band edges really are the edges.
+  function noiseBand(dur, lo, hi, seed) {
+    var n = Math.round(SR * dur), r = window.AUD.prng(seed || 17);
+    var x = new Float64Array(n), i;
+    for (i = 0; i < n; i++) x[i] = r();
+    var y = shape(x, SR, function (f) { return (f >= lo && f <= hi) ? 0 : -200; });
+    D.normalize(y, 0.55);
+    return window.AUD.fadeEdges(y, SR, 12);
+  }
+  // Envelope of a signal, for the timeline plots: rectify, then one-pole.
+  function envelope(x) {
+    var a = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) a[i] = Math.abs(x[i]);
+    return window.AUD.onePole(a, SR, 1400, false);
+  }
+  // a log-mapped slider: index 0..1000 -> frequency
+  function fromIdx(v, lo, hi) { return lo * Math.pow(hi / lo, v / 1000); }
+  function toIdx(f, lo, hi) { return 1000 * Math.log(f / lo) / Math.log(hi / lo); }
+
+  return {
+    SR: SR, critBw: critBw, ISO_F: ISO_F, ISO_TF: ISO_TF, iso226: iso226,
+    atF: atF, wA: wA, wB: wB, wC: wC, phonToSone: phonToSone, shape: shape,
+    noiseBand: noiseBand, envelope: envelope, fromIdx: fromIdx, toIdx: toIdx,
+    reduced: (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || false,
+  };
+})();
+
+/* ===============================================================
+   FIG 2.1 — the travelling wave on Greenwood's map
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e1-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD, fig = document.getElementById("fig-wave");
+  var LEN = D.GREENWOOD.lengthMm;                 // 35 mm
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: LEN, ymin: -1.28, ymax: 1.28,
+    xlabel: "millimetres from the base (stapes) →  apex", pad: { l: 26, r: 14, t: 34, b: 34 },
+  });
+
+  var state = { f: 1000, phase: 0, prof: null };
+
+  // The schematic envelope: a gentle basal skirt and an abrupt apical cut-off,
+  // with the phase accumulated from base to apex so the wave travels.
+  function profile(f) {
+    var N = 340, xf = D.greenwoodInv(f), i;
+    var x = new Float64Array(N), E = new Float64Array(N), Phi = new Float64Array(N);
+    for (i = 0; i < N; i++) {
+      x[i] = i / (N - 1);
+      var w = x[i] >= xf ? 0.16 : 0.05;
+      E[i] = Math.exp(-Math.pow((x[i] - xf) / w, 2));
+    }
+    var dx = 1 / (N - 1);
+    for (i = N - 2; i >= 0; i--) {
+      var k = 12 + 260 * Math.exp(-Math.pow((x[i] - xf + 0.04) / 0.10, 2));
+      Phi[i] = Phi[i + 1] + k * dx;
+    }
+    return { x: x, E: E, Phi: Phi, xf: xf, N: N };
+  }
+  var mmFromBase = function (xFrac) { return (1 - xFrac) * LEN; };
+
+  var TICKS_WIDE = [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  var TICKS_NARROW = [100, 500, 2000, 8000, 20000];
+
+  function draw() {
+    p.clear();
+    var pr = state.prof, i;
+    if (!pr) return;
+
+    // millimetre ruler along the bottom
+    p.axes({ y: [-1, 0, 1], yfmt: function () { return ""; },
+      x: [0, 5, 10, 15, 20, 25, 30, 35], xfmt: function (v) { return v + ""; }, grid: false });
+
+    // the frequency ruler along the top — Greenwood-spaced, so it is visibly
+    // non-uniform, and reversed relative to every other plot in this study
+    var ticks = p.w < 470 ? TICKS_NARROW : TICKS_WIDE;
+    var c = p.ctx;
+    c.save();
+    c.strokeStyle = AC.C.line; c.lineWidth = 1;
+    c.beginPath();
+    for (i = 0; i < ticks.length; i++) {
+      var px = Math.round(p.X(mmFromBase(D.greenwoodInv(ticks[i])))) + 0.5;
+      c.moveTo(px, p.pad.t - 8); c.lineTo(px, p.pad.t - 3);
+    }
+    c.stroke();
+    c.restore();
+    for (i = 0; i < ticks.length; i++) {
+      p.note(p.X(mmFromBase(D.greenwoodInv(ticks[i]))), p.pad.t - 22,
+        ticks[i] >= 1000 ? (ticks[i] / 1000) + "k" : ticks[i] + "",
+        { color: AC.C.faint, align: "center" });
+    }
+
+    // envelope, both signs
+    var up = [], dn = [], wv = [];
+    for (i = pr.N - 1; i >= 0; i--) {
+      var mm = mmFromBase(pr.x[i]);
+      up.push([mm, pr.E[i]]);
+      dn.push([mm, -pr.E[i]]);
+      wv.push([mm, pr.E[i] * Math.cos(state.phase - pr.Phi[i])]);
+    }
+    p.line(up, { color: AC.C.purple, width: 1.1, dash: [3, 3], alpha: 0.65 });
+    p.line(dn, { color: AC.C.purple, width: 1.1, dash: [3, 3], alpha: 0.65 });
+    p.hline(0, { color: AC.C.ghost, dash: [2, 5] });
+    p.line(wv, { color: AC.C.blue, width: 1.9 });
+
+    var place = mmFromBase(pr.xf);
+    p.vline(place, { color: AC.C.gold, label: AC.fmt.hz(state.f), labelY: 2 });
+    p.note(p.pad.l + 6, p.h - p.pad.b - 15, "base ←", { color: AC.C.ghost });
+    p.note(p.w - p.pad.r - 6, p.h - p.pad.b - 15, "→ apex",
+      { color: AC.C.ghost, align: "right" });
+    p.note(p.pad.l + 6, p.pad.t + 4,
+      "peak at " + (pr.xf * LEN).toFixed(2) + " mm from the apex", { color: AC.C.faint });
+  }
+  AC.autoDraw(p, draw);
+
+  function recompute() {
+    state.prof = profile(state.f);
+    var xf = state.prof.xf;
+    var f2 = Math.min(state.f * 2, 20600);
+    var oct = LEN * (D.greenwoodInv(f2) - D.greenwoodInv(state.f));
+    document.getElementById("e1-apex").textContent = (xf * LEN).toFixed(2) + " mm";
+    document.getElementById("e1-base").textContent = ((1 - xf) * LEN).toFixed(2) + " mm";
+    document.getElementById("e1-bark").textContent = D.hzToBark(state.f).toFixed(2) + " Bark";
+    document.getElementById("e1-erb").textContent = D.erbRate(state.f).toFixed(2);
+    document.getElementById("e1-oct").textContent = oct.toFixed(2) + " mm";
+    document.getElementById("e1-state").textContent =
+      AC.fmt.hz(state.f) + " → " + (xf * LEN).toFixed(2) + " mm from the apex";
+    draw();
+  }
+
+  var wantAnim = !E2.reduced;
+  var loop = AC.raf(fig, function (dt) {
+    state.phase = 2 * Math.PI * 1.4 * dt;
+    draw();
+  });
+  var animBtn = document.getElementById("e1-anim");
+  function syncBtn() { animBtn.textContent = wantAnim ? "Freeze" : "Animate"; }
+  animBtn.addEventListener("click", function () {
+    wantAnim = !wantAnim;
+    if (wantAnim) loop.start(); else loop.stop();
+    syncBtn();
+  });
+  syncBtn();
+  if (wantAnim) loop.start();
+
+  AC.slider(document.getElementById("e1-f"), function (v) {
+    state.f = Math.round(E2.fromIdx(v, 20, 20000));
+    recompute();
+  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, 20, 20000))); });
+
+  A.wire(document.getElementById("e1-play"), function () {
+    return A.src.tone(1.1, { sr: E2.SR, f: state.f, amp: 0.5, fade: 25 });
+  }, { sr: E2.SR, gain: 0.8 });
+})();
+
+/* ===============================================================
+   FIG 2.2 — the same 24 bands under four rulers
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e2-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD, fig = document.getElementById("fig-ruler");
+  var FLO = 20, FHI = 15500;
+  var EDGES = D.BARK_EDGES.map(function (f) { return Math.max(f, FLO); });
+
+  var TR = {
+    hz: function (f) { return f; },
+    log: function (f) { return Math.log10(Math.max(f, FLO)); },
+    bark: function (f) { return D.hzToBark(f); },
+    erb: function (f) { return D.erbRate(f); },
+  };
+  function norm(kind, f) {
+    var t = TR[kind], lo = t(FLO), hi = t(FHI);
+    return AC.clamp((t(AC.clamp(f, FLO, FHI)) - lo) / (hi - lo), 0, 1);
+  }
+  function positions(kind) {
+    return EDGES.map(function (f) { return norm(kind, f); });
+  }
+
+  var PAL = [AC.C.blue, AC.C.teal, AC.C.green, AC.C.yellow, AC.C.gold,
+    AC.C.orange, AC.C.maroon, AC.C.pink, AC.C.purple, AC.C.red];
+  var LABELS = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 15500];
+
+  var p = new AC.Plot(cv, {
+    aspect: 3.0, xmin: 0, xmax: 1, ymin: 0, ymax: 1,
+    pad: { l: 12, r: 12, t: 26, b: 30 },
+  });
+
+  var state = { kind: "bark", f: 1000, cur: positions("bark") };
+  var tween = { from: null, to: null };
+
+  function draw() {
+    p.clear();
+    var u = state.cur, k, bars = [];
+    for (k = 0; k < 24; k++) {
+      bars.push({ x0: u[k], x1: u[k + 1], y: 0.80, color: PAL[k % PAL.length], alpha: 0.72 });
+    }
+    p.bars(bars, { base: 0.18, gap: 0.0 });
+
+    // band numbers, wherever the bar is wide enough to carry one
+    var wpx = p.w - p.pad.l - p.pad.r;
+    for (k = 0; k < 24; k++) {
+      if ((u[k + 1] - u[k]) * wpx < 17) continue;
+      p.label((u[k] + u[k + 1]) / 2, 0.49, String(k + 1),
+        { color: AC.C.plate, align: "center", baseline: "middle" });
+    }
+
+    // one critical band, drawn as a bracket above the ribbon
+    var bw = E2.critBw(state.f);
+    var lo = norm(state.kind, state.f - bw / 2), hi = norm(state.kind, state.f + bw / 2);
+    p.bars([{ x0: lo, x1: hi, y: 0.99, color: AC.C.gold, alpha: 0.95 }], { base: 0.87, gap: 0 });
+    p.vline(norm(state.kind, state.f), { color: AC.C.blue, dash: [4, 3] });
+
+    // frequency labels along the bottom, at their transformed positions
+    for (k = 0; k < LABELS.length; k++) {
+      var x = norm(state.kind, LABELS[k]);
+      if (p.w < 470 && (k % 2) === 1) continue;
+      p.note(p.X(x), p.h - p.pad.b + 7,
+        LABELS[k] >= 1000 ? (LABELS[k] / 1000) + "k" : String(LABELS[k]),
+        { color: AC.C.ghost, align: "center" });
+    }
+    p.note(p.pad.l, 6, "24 critical bands · " + ({
+      hz: "linear hertz", log: "logarithmic hertz", bark: "Bark (equal distance on the membrane)",
+      erb: "ERB-rate",
+    })[state.kind], { color: AC.C.faint });
+    p.note(p.w - p.pad.r, p.h - p.pad.b + 7, "Hz", { color: AC.C.faint, align: "right" });
+  }
+  AC.autoDraw(p, draw);
+
+  function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  var loop = AC.raf(fig, function (dt) {
+    var t = Math.min(1, dt * 1000 / 600), e = ease(t), i;
+    var out = [];
+    for (i = 0; i < tween.from.length; i++) {
+      out.push(AC.lerp(tween.from[i], tween.to[i], e));
+    }
+    state.cur = out;
+    draw();
+    if (t >= 1) loop.stop();
+  });
+
+  function readouts() {
+    var f = state.f;
+    document.getElementById("e2-bz").textContent = D.hzToBark(f).toFixed(2);
+    document.getElementById("e2-bt").textContent = D.hzToBarkT(f).toFixed(2);
+    document.getElementById("e2-er").textContent = D.erbRate(f).toFixed(2);
+    document.getElementById("e2-cb").textContent = Math.round(E2.critBw(f)) + " Hz";
+    document.getElementById("e2-ew").textContent = Math.round(D.erb(f)) + " Hz";
+    document.getElementById("e2-state").textContent = ({
+      hz: "linear Hz", log: "log Hz", bark: "Bark", erb: "ERB-rate",
+    })[state.kind] + " · probe " + AC.fmt.hz(f);
+  }
+
+  AC.chips(document.getElementById("e2-axis"), function (v) {
+    if (!TR[v] || v === state.kind) return;
+    state.kind = v;
+    tween.from = state.cur.slice();
+    tween.to = positions(v);
+    if (E2.reduced) { state.cur = tween.to.slice(); draw(); readouts(); return; }
+    loop.start();
+    if (!loop.running()) { state.cur = tween.to.slice(); draw(); }
+    readouts();
+  });
+
+  AC.slider(document.getElementById("e2-f"), function (v) {
+    state.f = Math.round(E2.fromIdx(v, FLO, FHI));
+    readouts();
+    draw();
+  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, FLO, FHI))); });
+
+  A.wire(document.getElementById("e2-tone"), function () {
+    return A.src.tone(1.4, { sr: E2.SR, f: state.f, amp: 0.45, fade: 30 });
+  }, { sr: E2.SR, gain: 0.75 });
+
+  A.wire(document.getElementById("e2-band"), function () {
+    var bw = E2.critBw(state.f);
+    var lo = Math.max(15, state.f - bw / 2);
+    var hi = Math.min(E2.SR * 0.45, state.f + bw / 2);
+    return E2.noiseBand(1.4, lo, hi, 23);
+  }, { sr: E2.SR, gain: 0.75 });
+})();
+
+/* ===============================================================
+   FIG 2.3 — the absolute threshold, with a draggable tone on it
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e3-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var FLO = 20, FHI = 15000;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.25, xlog: true, xmin: FLO, xmax: FHI, ymin: -12, ymax: 100,
+    xlabel: "frequency", ylabel: "dB SPL", pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var state = { f: 1000, L: 40 };
+  var setF = null, setL = null;
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: AC.fmt.hz });
+
+    // Terhardt's approximation, evaluated live and filled underneath: the
+    // region below the curve is the region nothing escapes from.
+    var pts = [], i, f;
+    for (i = 0; i <= 260; i++) {
+      f = FLO * Math.pow(FHI / FLO, i / 260);
+      pts.push([f, D.ath(f)]);
+    }
+    p.line(pts, { color: AC.C.green, width: 2, fill: true, fillAlpha: 0.10, fillTo: -12 });
+
+    // the standard's own threshold row, for comparison
+    var iso = [];
+    for (i = 0; i < E2.ISO_F.length; i++) iso.push([E2.ISO_F[i], E2.ISO_TF[i]]);
+    p.line(iso, { color: AC.C.purple, width: 1.7, dash: [5, 4], alpha: 0.95 });
+
+    var th = D.ath(state.f), margin = state.L - th;
+    var audible = margin >= 0;
+    p.line([[state.f, th], [state.f, state.L]],
+      { color: audible ? AC.C.gold : AC.C.ghost, width: 1.2, dash: [2, 3] });
+    p.dot(state.f, state.L, { color: audible ? AC.C.gold : AC.C.ghost, r: 4.6, ring: true });
+    p.label(state.f, state.L,
+      (margin >= 0 ? "+" : "") + margin.toFixed(1) + " dB",
+      { color: audible ? AC.C.gold : AC.C.ghost, dy: -12,
+        align: state.f > 4000 ? "right" : "left", dx: state.f > 4000 ? -8 : 8 });
+    p.note(p.pad.l + 8, p.pad.t + 6, "drag the marker", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  function readouts() {
+    var th = D.ath(state.f), margin = state.L - th;
+    document.getElementById("e3-th").textContent = th.toFixed(1) + " dB SPL";
+    document.getElementById("e3-margin").textContent =
+      (margin >= 0 ? "+" : "") + margin.toFixed(1) + " dB";
+    var v = document.getElementById("e3-verdict");
+    v.textContent = margin >= 0 ? "audible" : "below threshold";
+    v.parentNode.className = margin >= 0 ? "ro ok" : "ro bad";
+    document.getElementById("e3-iso").textContent =
+      state.f <= 12500 ? E2.atF(E2.ISO_TF, state.f).toFixed(1) + " dB SPL" : "out of range";
+    document.getElementById("e3-state").textContent =
+      AC.fmt.hz(state.f) + " at " + Math.round(state.L) + " dB SPL";
+  }
+
+  setF = AC.slider(document.getElementById("e3-f"), function (v) {
+    state.f = Math.round(E2.fromIdx(v, FLO, FHI));
+    readouts(); draw();
+  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, FLO, FHI))); });
+
+  setL = AC.slider(document.getElementById("e3-l"), function (v) {
+    state.L = v;
+    readouts(); draw();
+  }, function (v) { return Math.round(v) + " dB SPL"; });
+
+  // dragging the marker straight on the plot
+  var dragging = false;
+  function place(ev) {
+    var r = cv.getBoundingClientRect();
+    var f = AC.clamp(p.invX(ev.clientX - r.left), FLO, FHI);
+    var L = AC.clamp(p.invY(ev.clientY - r.top), 0, 100);
+    setF(Math.round(E2.toIdx(f, FLO, FHI)));
+    setL(Math.round(L));
+  }
+  cv.addEventListener("pointerdown", function (ev) {
+    dragging = true;
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* not supported */ }
+    place(ev);
+    ev.preventDefault();
+  });
+  cv.addEventListener("pointermove", function (ev) { if (dragging) place(ev); });
+  cv.addEventListener("pointerup", function () { dragging = false; });
+  cv.addEventListener("pointercancel", function () { dragging = false; });
+
+  // 70 dB SPL is mapped to 0.2 linear; everything else follows from that, which
+  // makes the 6 dB steps real and the absolute numbers nominal.
+  A.wire(document.getElementById("e3-play"), function () {
+    var amp = AC.clamp(0.2 * Math.pow(10, (state.L - 70) / 20), 0, 0.5);
+    return A.src.tone(1.2, { sr: E2.SR, f: state.f, amp: amp, fade: 25 });
+  }, { sr: E2.SR, gain: 1.0 });
+})();
+
+/* ===============================================================
+   FIG 2.4 — the equal-loudness family, and weighting as its caricature
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e4-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var LEVELS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+  var CURVES = {};
+  LEVELS.forEach(function (L) { CURVES[L] = E2.iso226(L); });
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.15, xlog: true, xmin: 20, xmax: 12500, ymin: -10, ymax: 132,
+    xlabel: "frequency", ylabel: "dB SPL", pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var state = { phon: 40, w: "off", sig: null };
+
+  function asPoints(curve) {
+    var out = [], i;
+    for (i = 0; i < E2.ISO_F.length; i++) out.push([E2.ISO_F[i], curve[i]]);
+    return out;
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: AC.fmt.hz });
+    LEVELS.forEach(function (L) {
+      if (L === state.phon) return;
+      p.line(asPoints(CURVES[L]), { color: AC.C.faint, width: 1.1, alpha: 0.42 });
+    });
+    p.line(asPoints(CURVES[state.phon]), { color: AC.C.gold, width: 2.4 });
+
+    // the selected contour's own label, parked at its left-hand end
+    p.label(21, CURVES[state.phon][0], state.phon + " phon",
+      { color: AC.C.gold, dy: -7, dx: 2 });
+    p.label(21, CURVES[0][0], "T_f", { color: AC.C.faint, dy: -7, dx: 2 });
+
+    if (state.w !== "off") {
+      var fn = { A: E2.wA, B: E2.wB, C: E2.wC }[state.w];
+      var ref = CURVES[state.phon][17];              // the 1 kHz point
+      var pts = [], i, f;
+      for (i = 0; i <= 220; i++) {
+        f = 20 * Math.pow(12500 / 20, i / 220);
+        pts.push([f, ref - fn(f)]);
+      }
+      p.line(pts, { color: AC.C.purple, width: 1.8, dash: [6, 4] });
+      p.label(12400, ref - fn(12500), state.w + "-weighting, inverted",
+        { color: AC.C.purple, align: "right", dy: -8 });
+    }
+    p.vline(1000, { color: AC.C.ghost, dash: [2, 5] });
+  }
+  AC.autoDraw(p, draw);
+
+  function readouts() {
+    var c = CURVES[state.phon];
+    document.getElementById("e4-sone").textContent =
+      E2.phonToSone(state.phon).toFixed(2) + " sone";
+    document.getElementById("e4-lo").textContent = c[0].toFixed(1) + " dB SPL";
+    document.getElementById("e4-gap").textContent = "+" + (c[0] - c[17]).toFixed(1) + " dB";
+    document.getElementById("e4-hi").textContent = c[26].toFixed(1) + " dB SPL";
+    document.getElementById("e4-state").textContent =
+      state.phon + " phon = " + E2.phonToSone(state.phon).toFixed(2) + " sone";
+  }
+
+  AC.slider(document.getElementById("e4-phon"), function (v) {
+    state.phon = Math.round(v / 10) * 10;
+    readouts(); draw();
+  }, function (v) { return Math.round(v) + " phon"; });
+
+  AC.chips(document.getElementById("e4-w"), function (v) {
+    state.w = v; draw();
+  });
+
+  function programme() {
+    if (!state.sig) state.sig = A.src.music(2.4, { sr: E2.SR });
+    return state.sig;
+  }
+  A.wire(document.getElementById("e4-flat"), function () {
+    return programme();
+  }, { sr: E2.SR, gain: 0.8 });
+
+  // The contour, applied as a filter: gain(f) = -(Lp(f) - Lp(1 kHz)). Peak
+  // normalised afterwards, so what changes is the tilt and not the level.
+  A.wire(document.getElementById("e4-tilt"), function () {
+    var c = CURVES[state.phon], ref = c[17];
+    var y = E2.shape(programme(), E2.SR, function (f) {
+      if (f < 20) return -80;
+      return AC.clamp(-(E2.atF(c, f) - ref), -80, 12);
+    });
+    D.normalize(y, 0.8);
+    return y;
+  }, { sr: E2.SR, gain: 0.8 });
+})();
+
+/* ===============================================================
+   FIG 2.5 — gap detection, temporal integration, temporal masking
+   =============================================================== */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e5-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD, SR = E2.SR;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.4, xmin: 0, xmax: 60, ymin: 0, ymax: 1.05,
+    xlabel: "milliseconds", ylabel: "envelope", pad: { l: 46, r: 14, t: 16, b: 34 },
+  });
+
+  var MODES = {
+    gap:   { min: 0, max: 30, step: 1, def: 3, label: "Gap", unit: " ms" },
+    burst: { min: 0, max: 100, step: 1, def: 74, label: "Burst length", unit: "" },
+    probe: { min: -60, max: 300, step: 5, def: -5, label: "Probe offset", unit: " ms" },
+  };
+  var state = { mode: "gap", v: 3, noise: null, built: null };
+
+  function burstMs(idx) { return 2 * Math.pow(500, idx / 100); }
+
+  // ---- signal builders. Each returns {x, probe, t0, t1} where probe is an
+  // optional second trace and t0/t1 are the plot window in milliseconds.
+  function baseNoise() {
+    if (!state.noise) state.noise = E2.noiseBand(0.75, 500, 4000, 5);
+    return state.noise;
+  }
+  function buildGap(gapMs) {
+    var src = baseNoise(), n = src.length, x = new Float64Array(n), i;
+    var centre = Math.round(0.36 * SR);
+    var half = Math.round(gapMs / 1000 * SR / 2);
+    var ramp = Math.max(1, Math.round(0.0005 * SR));
+    for (i = 0; i < n; i++) {
+      var d = i - centre, g = 1;
+      if (half > 0) {
+        if (Math.abs(d) <= half) g = 0;
+        else if (Math.abs(d) < half + ramp) g = (Math.abs(d) - half) / ramp;
+      }
+      x[i] = src[i] * g;
+    }
+    return { x: x, t0: 360 - 30, t1: 360 + 30, mark: 360 };
+  }
+  function buildBurst(ms) {
+    var pad = Math.round(0.12 * SR), gapN = Math.round(0.30 * SR);
+    var refN = Math.round(0.200 * SR), tstN = Math.round(ms / 1000 * SR);
+    var n = pad + refN + gapN + tstN + pad, x = new Float64Array(n), i;
+    var ramp = Math.round(0.002 * SR);
+    function put(at, len) {
+      for (i = 0; i < len; i++) {
+        var e = Math.min(1, Math.min(i, len - 1 - i) / Math.max(1, ramp));
+        x[at + i] = 0.45 * e * Math.sin(2 * Math.PI * 1000 * i / SR);
+      }
+    }
+    put(pad, refN);
+    put(pad + refN + gapN, tstN);
+    return { x: x, t0: 0, t1: n / SR * 1000, mark: null };
+  }
+  function buildProbe(offMs) {
+    var n = Math.round(0.72 * SR), x = new Float64Array(n), pb = new Float64Array(n), i;
+    var src = baseNoise();
+    var mStart = Math.round(0.150 * SR), mLen = Math.round(0.200 * SR);
+    var ramp = Math.round(0.003 * SR);
+    for (i = 0; i < mLen; i++) {
+      var e = Math.min(1, Math.min(i, mLen - 1 - i) / Math.max(1, ramp));
+      x[mStart + i] = 0.62 * e * src[i % src.length];
+    }
+    var pStart = mStart + Math.round(offMs / 1000 * SR);
+    var pLen = Math.round(0.010 * SR), pRamp = Math.round(0.002 * SR);
+    for (i = 0; i < pLen; i++) {
+      var pe = Math.min(1, Math.min(i, pLen - 1 - i) / Math.max(1, pRamp));
+      var at = pStart + i;
+      if (at >= 0 && at < n) pb[at] = 0.031 * pe * Math.sin(2 * Math.PI * 4000 * i / SR);
+    }
+    var mix = new Float64Array(n);
+    for (i = 0; i < n; i++) mix[i] = x[i] + pb[i];
+    return { x: mix, masker: x, probe: pb, t0: 60, t1: 560, mark: null };
+  }
+
+  function build() {
+    if (state.mode === "gap") state.built = buildGap(state.v);
+    else if (state.mode === "burst") state.built = buildBurst(burstMs(state.v));
+    else state.built = buildProbe(state.v);
+    return state.built;
+  }
+
+  function trace(sig, t0, t1, step) {
+    var out = [], i;
+    var a = Math.max(0, Math.round(t0 / 1000 * SR));
+    var b = Math.min(sig.length, Math.round(t1 / 1000 * SR));
+    for (i = a; i < b; i += step) out.push([i / SR * 1000, sig[i]]);
+    return out;
+  }
+
+  function draw() {
+    p.clear();
+    var b = state.built || build();
+    p.range(b.t0, b.t1, 0, 1.05);
+    p.axes({ yfmt: function (v) { return v.toFixed(1); } });
+
+    var span = b.t1 - b.t0;
+    var step = Math.max(1, Math.round(span / 1000 * SR / 700));
+
+    if (state.mode === "probe") {
+      // shade the regions the literature says are masked in time
+      p.band(145, 150, { color: AC.C.purple, alpha: 0.22 });
+      var k;
+      for (k = 0; k < 6; k++) {
+        p.band(350 + k * 25, 350 + (k + 1) * 25, { color: AC.C.purple, alpha: 0.19 - k * 0.028 });
+      }
+      p.line(trace(E2.envelope(b.masker), b.t0, b.t1, step),
+        { color: AC.C.gold, width: 1.5, fill: true, fillAlpha: 0.12, fillTo: 0 });
+      var pe = E2.envelope(b.probe), i, amp = new Float64Array(pe.length);
+      for (i = 0; i < pe.length; i++) amp[i] = pe[i] * 8;      // 8x, or it is a pixel
+      p.line(trace(amp, b.t0, b.t1, step), { color: AC.C.blue, width: 1.8 });
+      p.vline(150, { color: AC.C.ghost, label: "masker on", labelY: 2 });
+      p.vline(350, { color: AC.C.ghost, label: "off", labelY: 2 });
+      p.label(147.5, 1.0, "backward", { color: AC.C.purple, align: "right", dx: -4 });
+      p.label(360, 1.0, "forward masking", { color: AC.C.purple, dx: 4 });
+    } else {
+      p.line(trace(E2.envelope(b.x), b.t0, b.t1, step),
+        { color: AC.C.gold, width: 1.6, fill: true, fillAlpha: 0.14, fillTo: 0 });
+      if (state.mode === "gap") {
+        p.vline(b.mark, { color: AC.C.blue, label: state.v.toFixed(0) + " ms hole", labelY: 2 });
+      } else {
+        p.label(220, 1.0, "200 ms reference", { color: AC.C.faint, align: "center" });
+        p.label(620 + burstMs(state.v) / 2, 1.0,
+          burstMs(state.v).toFixed(0) + " ms", { color: AC.C.blue, align: "center" });
+      }
+    }
+  }
+  AC.autoDraw(p, draw);
+
+  function readouts() {
+    var one = document.getElementById("e5-v1"), two = document.getElementById("e5-v2");
+    if (state.mode === "gap") {
+      one.textContent = state.v.toFixed(1) + " ms";
+      two.textContent = "gap threshold ≈ 2–3 ms";
+      document.getElementById("e5-state").textContent = "gap · " + state.v.toFixed(0) + " ms";
+    } else if (state.mode === "burst") {
+      one.textContent = burstMs(state.v).toFixed(0) + " ms";
+      two.textContent = "loudness saturates ≈ 200 ms";
+      document.getElementById("e5-state").textContent =
+        "burst · " + burstMs(state.v).toFixed(0) + " ms";
+    } else {
+      one.textContent = (state.v > 0 ? "+" : "") + state.v.toFixed(0) + " ms";
+      two.textContent = state.v < 0 ? "before onset — backward masking"
+        : state.v > 200 ? "after offset — forward masking" : "during the masker";
+      document.getElementById("e5-state").textContent =
+        "probe · " + (state.v > 0 ? "+" : "") + state.v.toFixed(0) + " ms";
+    }
+  }
+
+  var slider = document.getElementById("e5-s");
+  var setV = AC.slider(slider, function (v) {
+    state.v = v;
+    build(); readouts(); draw();
+  }, function (v) {
+    if (state.mode === "burst") return burstMs(v).toFixed(0) + " ms";
+    return (state.mode === "probe" && v > 0 ? "+" : "") + v + " ms";
+  });
+
+  AC.chips(document.getElementById("e5-mode"), function (v) {
+    if (!MODES[v]) return;
+    state.mode = v;
+    var m = MODES[v];
+    slider.min = m.min; slider.max = m.max; slider.step = m.step;
+    document.getElementById("e5-slab").textContent = m.label;
+    A.stopAll();
+    AC.$$(".btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    setV(m.def);
+    document.getElementById("e5-a").textContent =
+      v === "gap" ? "Play with the gap" : v === "burst" ? "Reference, then burst" : "Masker + probe";
+    document.getElementById("e5-b").textContent =
+      v === "gap" ? "No gap" : v === "burst" ? "Reference alone" : "Probe alone";
+  });
+
+  A.wire(document.getElementById("e5-a"), function () {
+    return build().x;
+  }, { sr: SR, gain: 0.85 });
+
+  A.wire(document.getElementById("e5-b"), function () {
+    if (state.mode === "gap") return buildGap(0).x;
+    if (state.mode === "burst") return buildBurst(200).x;
+    return buildProbe(state.v).probe;
+  }, { sr: SR, gain: 0.85 });
+
+  document.getElementById("e5-a").textContent = "Play with the gap";
+  document.getElementById("e5-b").textContent = "No gap";
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
