@@ -99,7 +99,7 @@
         <div class="readout" style="margin-top:14px">
           <div class="ro heat"><span class="k">Threshold at the probe</span><span class="v" id="a-th">35.5 dB SPL</span></div>
           <div class="ro ghost"><span class="k">Raised by</span><span class="v" id="a-rise">+32.8 dB</span></div>
-          <div class="ro sig"><span class="k">Signal-to-mask</span><span class="v" id="a-smr">−5.5 dB</span></div>
+          <div class="ro sig"><span class="k">Signal-to-mask</span><span class="v" id="a-smr">-5.5 dB</span></div>
           <div class="ro ok"><span class="k">Verdict</span><span class="v" id="a-verdict">masked</span></div>
         </div>
       </div>
@@ -125,7 +125,7 @@
         </div>
         <div class="field grow" style="min-width:160px">
           <div class="flab"><span>Probe frequency</span><span class="val" id="a-pflab">1.2 kHz</span></div>
-          <input type="range" id="a-pf" min="0" max="1000" value="490" data-out="a-pflab" aria-label="Probe frequency">
+          <input type="range" id="a-pf" min="0" max="1000" step="any" value="489.6" data-out="a-pflab" aria-label="Probe frequency">
         </div>
         <div class="field grow" style="min-width:160px">
           <div class="flab"><span>Probe level</span><span class="val" id="a-pllab">30 dB SPL</span></div>
@@ -179,7 +179,7 @@
 
     <div class="note sig">
       <span class="tag tag-sig">What "masked" means, operationally</span>
-      <p>Not "less noticeable". Every number in this chapter comes from a detection
+      <p>Not "less noticeable". Every masking number in this chapter traces back to a detection
         experiment — typically a forced choice between intervals, one of which contains the
         probe — and the threshold is the level at which the listener is right some fixed
         fraction of the time. A probe below its masked threshold is not quiet or
@@ -266,7 +266,7 @@
       are in circulation, and figure 3.2 draws all four at once.</p>
     <p>The most-cited is Schroeder's, from Schroeder, Atal and Hall's 1979 paper on hiding
       quantisation noise in speech coders — the paper that arguably started perceptual
-      coding, eleven years before there was an MPEG audio committee to start:</p>
+      coding, nine years before MPEG was founded:</p>
 
     <div class="eq">
       <i>SF</i>(Δ<i>z</i>)<span class="op">=</span><span class="num">15.81</span>
@@ -340,9 +340,9 @@
         <div class="readout" style="margin-top:14px">
           <div class="ro sig"><span class="k">Selected curve</span><span class="v" id="b-name">two-slope</span></div>
           <div class="ro"><span class="k">Rise below the masker</span><span class="v" id="b-lo">+27.0 dB/Bark</span></div>
-          <div class="ro bad"><span class="k">Fall above it</span><span class="v" id="b-hi">−10.2 dB/Bark</span></div>
+          <div class="ro bad"><span class="k">Fall above it</span><span class="v" id="b-hi">-10.2 dB/Bark</span></div>
           <div class="ro ok"><span class="k">Width 10 dB down</span><span class="v" id="b-w">1.35 Bark</span></div>
-          <div class="ro ghost"><span class="k">Same width in hertz</span><span class="v" id="b-whz">232 Hz</span></div>
+          <div class="ro ghost"><span class="k">Same width in hertz</span><span class="v" id="b-whz">233 Hz</span></div>
         </div>
       </div>
       <div class="deck">
@@ -361,7 +361,7 @@
         </div>
         <div class="field grow" style="min-width:170px">
           <div class="flab"><span>Masker frequency</span><span class="val" id="b-flab">1 kHz</span></div>
-          <input type="range" id="b-f" min="0" max="1000" value="611" data-out="b-flab" aria-label="Masker frequency">
+          <input type="range" id="b-f" min="0" max="1000" step="any" value="436.3" data-out="b-flab" aria-label="Masker frequency">
         </div>
       </div>
       <figcaption class="figure-cap"><b>Fig 3.2</b> — all four functions evaluated across
@@ -577,8 +577,9 @@
         transform is a different one, for reasons <a href="4-transform.html">chapter 04</a>
         goes into.</dd></div>
       <div class="def"><dt>2 · group</dt><dd>Sum the bin powers into partitions on the Bark
-        axis. Below about 500 Hz a critical band is narrower than the FFT's resolution, so
-        the partitions there are single bins and the grouping is nominal.</dd></div>
+        axis. At 44.1 kHz a 1 024-point FFT has 43 Hz bins and a critical band down at 250 Hz
+        is 104 Hz wide, so the partitions there are single lines and the grouping barely
+        groups anything.</dd></div>
       <div class="def"><dt>3 · classify</dt><dd>Per partition, a tonality index from spectral
         flatness or from unpredictability, and from it the offset <i>O</i>(<i>z</i>) of §4.</dd></div>
       <div class="def"><dt>4 · spread</dt><dd>Convolve the partition energies along the Bark
@@ -655,7 +656,7 @@
           <div class="ro"><span class="k">Per channel at 44.1 kHz</span><span class="v" id="d-kbps">111 kbit/s</span></div>
           <div class="ro ghost"><span class="k">With the quiet floor alone</span><span class="v" id="d-pe0">8.64 bits/sample</span></div>
           <div class="ro ok"><span class="k">Bands already below threshold</span><span class="v" id="d-free">7 of 27</span></div>
-          <div class="ro bad"><span class="k">Mean tonality α</span><span class="v" id="d-alpha">0.41</span></div>
+          <div class="ro bad"><span class="k">Mean tonality α</span><span class="v" id="d-alpha">0.16</span></div>
         </div>
       </div>
       <div class="deck">
@@ -876,8 +877,9 @@
         5.5 dB a noise-like masker earns during it, and the forward-masking decay above after
         it. At <b>N = 512</b> — a 21.3 ms window, the closest thing here to MP3's long block
         — the error breaks the budget <b>16 ms before the strike happens</b>, by up to 16 dB.
-        At N = 1024 it is 29 ms and 30 dB. Click down to N = 128, a 5.3 ms window, and the
-        violation disappears entirely: the noise has nowhere to go but inside the attack.
+        At N = 1024 it is 29 ms and 30 dB. Click down to N = 128 — a 5.3 ms window — and the
+        violation is gone, as it already is at 256: the noise has nowhere to go but inside
+        the attack.
         That is block switching, discovered by measurement.</figcaption>
     </figure>
 
@@ -921,8 +923,8 @@
       <b>binaural masking level difference</b>. The release is largest at low frequencies,
       around 15 dB near 250 to 500 Hz, and collapses to two or three decibels above about
       1.5 kHz, where the wavelength is short enough that interaural phase stops being a
-      usable cue at all. It is the same machinery that lets you follow one voice in a room
-      full of them.</p>
+      usable cue at all. It is part of the same machinery that lets you follow one voice in
+      a room full of them.</p>
     <p>For a codec this is bad news, and it is the reason joint stereo used to have such a
       poor reputation. Mid/side and intensity coding both change the relationship between
       the noise in the left channel and the noise in the right. Quantisation noise that is
@@ -966,8 +968,8 @@
       ceiling on error, not an outline of what is kept.</p>
     <p><b>Masking is not a matter of attention.</b> What has been measured throughout this
       chapter is <em>energetic</em> masking: physical overlap of excitation on the basilar
-      membrane, present in an anaesthetised animal and in a listener attending as hard as
-      they can. It has a cousin — <em>informational</em> masking, where the target is
+      membrane, measurable in an anaesthetised animal’s auditory nerve and present in a
+      listener attending as hard as they can. It has a cousin — <em>informational</em> masking, where the target is
       perfectly audible in the peripheral sense but lost among a competing sound it resembles
       — which is central rather than cochlear, varies with training and expectation, and is
       not modelled by any shipping codec. Confusing the two produces the belief that you can
@@ -983,7 +985,7 @@
     <p><b>Two maskers do not add in decibels.</b> They add in power: 70 dB and 70 dB give
       73.01 dB, not 140 and not 70. An encoder that summed thresholds in the log domain would
       overestimate its budget by tens of decibels and sound like a broken radio. Real ears, as
-      §5 notes, add slightly <em>more</em> than the power sum, which is why the models'
+      §5 notes, add <em>more</em> than the power sum, which is why the models'
       arithmetic is safe rather than exact.</p>
     <p><b>The masking curve is not a property of the recording.</b> It is the output of a
       model of a listener. Figure 3.2 shows four such models disagreeing by 38 dB two Bark
@@ -1010,8 +1012,8 @@
       so before any of this arithmetic can be spent, the signal has to be taken apart into
       frequency components that can be quantised independently, cheaply, in overlapping
       blocks, and put back together without a seam. That turns out to be a harder problem
-      than it sounds: the obvious transforms either cost fifty per cent more coefficients
-      than samples, or leak so badly that a tone smears across half the bands it was supposed
+      than it sounds: the obvious transforms either hand back more coefficients than they were
+      given samples, or leak so badly that a tone smears across half the bands it was supposed
       to be isolated in, and figure 3.5 has already shown what happens when the block is the
       wrong length. <a href="4-transform.html">Chapter 04</a> builds the answer — windows,
       leakage, the polyphase bank and the modified discrete cosine transform, whose aliasing

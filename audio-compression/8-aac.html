@@ -65,7 +65,7 @@
       twice MP3's resolution. When a transient arrives, the encoder switches to
       a sequence of eight short windows of 256 samples, producing eight sets of
       128 lines — still 1024 numbers, but sampled eight times as often in time
-      and eight times as coarsely in frequency. Two transition window shapes,
+      and eight times as coarsely in frequency. Two transition sequences,
       <span class="mono">LONG_START</span> and <span class="mono">LONG_STOP</span>,
       carry the overlap across the change so that the aliasing still cancels.</p>
 
@@ -179,6 +179,20 @@
       inherits the shape of the block before it — so the encoder can change its
       mind every 1024 samples without a discontinuity.</p>
 
+    <div class="note ok">
+      <span class="tag tag-ok">The grid the model actually works on</span>
+      <p>Neither the 1024 lines nor the 128 are what the psychoacoustic model
+        talks to. Both are grouped into <strong>scalefactor bands</strong> whose
+        widths approximate the critical bands of
+        <a href="2-ear.html">chapter 02</a>: 49 of them on a long block at 44.1
+        and 48 kHz, 14 on a short one, against MP3's 21 and 12. Each band gets
+        one scalefactor, one Huffman codebook selection and one stereo decision,
+        so the band grid is the resolution at which every perceptual judgement
+        in the encoder is actually made — and having more than twice as many of
+        them is, quietly, one of the larger reasons AAC codes better than MP3 at
+        the same rate.</p>
+    </div>
+
     <figure class="figure" id="fig-win">
       <div class="figure-bar">
         <span class="fno">FIG. 8.1</span>
@@ -282,13 +296,26 @@
     <blockquote class="pullquote">Block switching moves the noise by making the
       window shorter. Temporal noise shaping leaves the window alone and moves
       the noise inside it.
-      <span class="who">Herre and Johnston, 1996</span></blockquote>
+      <span class="who">The temporal noise shaping bargain</span></blockquote>
 
     <p>The prediction gain is the second dividend. A residual with 8 to 20 dB
       less energy than the coefficients it came from needs fewer bits to reach
       the same accuracy, so TNS pays for itself on exactly the material that
       needs it. The figure measures both effects on one block and then on a whole
       excerpt you can listen to.</p>
+
+    <div class="note danger">
+      <span class="tag tag-danger">What the next three figures are</span>
+      <p>They are honest miniatures, not AAC. Figures 8.2, 8.3 and 8.4
+        implement temporal noise shaping, spectral band replication and noise
+        substitution as the standard describes them — a real LPC fit along
+        frequency, a real transposition with a real transmitted envelope, a real
+        flatness-gated substitution — but they run on a simplified transform
+        with a uniform quantiser and no entropy coder, and SBR proper works in a
+        64-band complex filterbank rather than on MDCT lines. The mechanisms and
+        their artefacts are genuine. The absolute bitrates are not comparable
+        with a real encoder's.</p>
+    </div>
 
     <figure class="figure" id="fig-tns">
       <div class="figure-bar">
@@ -403,6 +430,12 @@
       envelope data comes out at about three kilobits a second for eight bands,
       which is in the range published for real HE-AAC encoders. For that you get
       the top octave and a half of a stereo programme.</p>
+    <blockquote class="pullquote">At 24 kbit/s the decoder is not reproducing
+      the recording. It is building something intended to be mistaken for it —
+      and the instructions for the top two octaves fit in three kilobits a
+      second.
+      <span class="who">What spectral band replication actually claims</span></blockquote>
+
     <p>The standard's machinery is heavier than the arithmetic suggests, and
       for a good reason. SBR does not work on MDCT coefficients: it works in a
       64-band complex-exponential quadrature mirror filterbank, which is
@@ -893,3 +926,742 @@
 <script src="assets/dsp.js"></script>
 <script src="assets/audio.js"></script>
 <script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 8.1 — sine against Kaiser-Bessel-derived.
+   Both windows are built by DSP.WIN, zero-padded sixteen-fold and
+   transformed here; every number in the readout is measured from that
+   response, and the Princen-Bradley check is evaluated on the window
+   itself.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("w-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP;
+  var Z = 16;                                  // zero-padding factor
+  var st = { alpha: 4, len: 2048, view: "resp" };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 12, ymin: -100, ymax: 4,
+    xlabel: "bins from the spectral peak", ylabel: "dB",
+    pad: { l: 50, r: 14, t: 14, b: 34 },
+  });
+
+  function response(w) {
+    var M = w.length * Z, re = new Float64Array(M), im = new Float64Array(M), i;
+    for (i = 0; i < w.length; i++) re[i] = w[i];
+    D.fft(re, im, false);
+    var half = M >> 1, mag = new Float64Array(half);
+    for (i = 0; i < half; i++) mag[i] = Math.hypot(re[i], im[i]);
+    return { mag: mag, m0: Math.max(mag[0], 1e-30) };
+  }
+  function dbAt(r, bin) {
+    var i = Math.min(Math.round(bin * Z), r.mag.length - 1);
+    return 20 * Math.log10(Math.max(r.mag[i], 1e-30) / r.m0);
+  }
+  function worstBeyond(r, bin) {
+    var m = 0, i;
+    for (i = Math.round(bin * Z); i < r.mag.length; i++) if (r.mag[i] > m) m = r.mag[i];
+    return 20 * Math.log10(Math.max(m, 1e-30) / r.m0);
+  }
+  function pbError(w) {
+    var N = w.length >> 1, worst = 0, n, v;
+    for (n = 0; n < N; n++) {
+      v = w[n] * w[n] + w[n + N] * w[n + N];
+      if (Math.abs(v - 1) > worst) worst = Math.abs(v - 1);
+    }
+    return worst;
+  }
+  function curve(r, hi) {
+    var pts = [], i, n = hi * Z;
+    for (i = 0; i <= n; i++) pts.push([i / Z, 20 * Math.log10(Math.max(r.mag[i], 1e-30) / r.m0)]);
+    return pts;
+  }
+  function shapeCurve(w) {
+    var pts = [], i, step = Math.max(1, Math.round(w.length / 400));
+    for (i = 0; i < w.length; i += step) pts.push([i / (w.length - 1), w[i]]);
+    pts.push([1, w[w.length - 1]]);
+    return pts;
+  }
+
+  function draw() {
+    var L = st.len;
+    var ws = D.WIN.sine(L), wk = D.WIN.kbd(L, st.alpha), wh = D.WIN.hann(L);
+    p.clear();
+    if (st.view === "shape") {
+      p.xlabel = "position in the window"; p.ylabel = "w[n]";
+      p.range(0, 1, 0, 1.08);
+      p.axes({ yfmt: function (v) { return v.toFixed(1); } });
+      p.line(shapeCurve(wh), { color: AC.C.purple, width: 1.4, dash: [5, 4], alpha: .8 });
+      p.line(shapeCurve(ws), { color: AC.C.blue, width: 2 });
+      p.line(shapeCurve(wk), { color: AC.C.gold, width: 2 });
+      p.note(p.pad.l + 8, p.pad.t + 6, "KBD is flatter in the middle and steeper at the edges", { color: AC.C.ghost });
+    } else {
+      p.xlabel = "bins from the spectral peak"; p.ylabel = "dB";
+      p.range(0, 12, -100, 4);
+      p.axes({ x: [0, 2, 4, 6, 8, 10, 12], yfmt: function (v) { return v.toFixed(0); } });
+      p.line(curve(response(wh), 12), { color: AC.C.purple, width: 1.3, dash: [5, 4], alpha: .75 });
+      p.line(curve(response(ws), 12), { color: AC.C.blue, width: 1.9 });
+      p.line(curve(response(wk), 12), { color: AC.C.gold, width: 1.9 });
+      p.vline(8, { color: AC.C.faint, label: "8 bins" });
+    }
+    var rs = response(ws), rk = response(wk);
+    document.getElementById("w-s1").textContent = dbAt(rs, 1).toFixed(1) + " dB";
+    document.getElementById("w-k1").textContent = dbAt(rk, 1).toFixed(1) + " dB";
+    document.getElementById("w-s8").textContent = worstBeyond(rs, 8).toFixed(1) + " dB";
+    document.getElementById("w-k8").textContent = worstBeyond(rk, 8).toFixed(1) + " dB";
+    var e = Math.max(pbError(ws), pbError(wk));
+    document.getElementById("w-pb").textContent =
+      (e < 1e-12 ? "< 1e-12" : e.toExponential(1)) + " · Hann " + pbError(wh).toFixed(2);
+    document.getElementById("w-state").textContent =
+      "α = " + st.alpha.toFixed(2).replace(/0+$/, "").replace(/\.$/, "") +
+      " · " + L + "-sample window";
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  AC.slider(document.getElementById("w-alpha"), function (v) {
+    st.alpha = v; redraw();
+  }, function (v) { return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); });
+
+  AC.chips(document.getElementById("w-len"), function (v) { st.len = +v; redraw(); });
+  AC.chips(document.getElementById("w-view"), function (v) { st.view = v; redraw(); });
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.2 — temporal noise shaping.
+   One MDCT block containing a single transient. Fit an LPC filter along
+   the frequency axis, quantise the residual, run the inverse filter, and
+   inverse-transform the ERROR itself so its temporal envelope can be
+   measured rather than asserted. The audible version encodes a whole
+   castanet excerpt both ways.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("t-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var st = { order: 8, snr: 14, N: 1024 };
+  var cache = {};
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 43, ymin: -95, ymax: 4,
+    xlabel: "time within the block (ms)", ylabel: "dB relative to the block peak",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  function startLine(N, sr) { return Math.max(2, Math.round(1500 / (sr / 2) * N)); }
+  function rmsFrom(a, from) {
+    var s = 0, n = 0, i;
+    for (i = from; i < a.length; i++) { s += a[i] * a[i]; n++; }
+    return Math.sqrt(s / Math.max(n, 1));
+  }
+  function fit(X, order, start) {
+    var seg = X.subarray(start);
+    var L = D.lpc(seg, order), r0 = D.autocorr(seg, 0)[0];
+    var g = (r0 > 1e-20 && L.err > 1e-24) ? 10 * Math.log10(r0 / L.err) : 0;
+    return { a: L.a, gainDb: g };
+  }
+  function forward(X, a, start) {                   // FIR along frequency
+    var R = Float64Array.from(X), k, j, s, kk;
+    for (k = X.length - 1; k >= start; k--) {
+      s = 0;
+      for (j = 0; j < a.length; j++) { kk = k - j; s += a[j] * (kk >= start ? X[kk] : 0); }
+      R[k] = s;
+    }
+    return R;
+  }
+  function backward(R, a, start) {                  // all-pole synthesis
+    var Y = Float64Array.from(R), k, j, s, kk;
+    for (k = start; k < R.length; k++) {
+      s = R[k];
+      for (j = 1; j < a.length; j++) { kk = k - j; s -= a[j] * (kk >= start ? Y[kk] : 0); }
+      Y[k] = s;
+    }
+    return Y;
+  }
+  function stepFor(rms, snr) {
+    return Math.max(rms, 1e-12) * Math.pow(10, -snr / 20) * Math.sqrt(12);
+  }
+  function envelope(y, segs) {
+    var out = [], len = Math.ceil(y.length / segs), i, j, s, n;
+    for (i = 0; i < segs; i++) {
+      s = 0; n = 0;
+      for (j = i * len; j < (i + 1) * len && j < y.length; j++) { s += y[j] * y[j]; n++; }
+      out.push({ i: (i + 0.5) * len, v: s / Math.max(n, 1) });
+    }
+    return out;
+  }
+
+  // ---- the single-block experiment: instant, and the source of every readout
+  function analyse() {
+    var sr = A.rate(), N = st.N, i;
+    var probe = A.src.castanets(2 * N / sr, { sr: sr, hits: [0.58], len: 0.02, amp: 0.95 });
+    var w = D.WIN.sine(2 * N), buf = new Float64Array(2 * N);
+    for (i = 0; i < 2 * N; i++) buf[i] = (probe[i] || 0) * w[i];
+    var X = D.mdct(buf), start = startLine(N, sr);
+
+    var T = fit(X, st.order, start);
+    var R = forward(X, T.a, start);
+    var dR = stepFor(rmsFrom(R, start), st.snr);
+    var Rq = Float64Array.from(R);
+    for (i = start; i < N; i++) Rq[i] = Math.round(R[i] / dR) * dR;
+    var Y = backward(Rq, T.a, start);
+
+    var dX = stepFor(rmsFrom(X, start), st.snr);
+    var eOn = new Float64Array(N), eOff = new Float64Array(N), pOn = 0, pOff = 0;
+    for (i = start; i < N; i++) {
+      eOn[i] = Y[i] - X[i];
+      eOff[i] = Math.round(X[i] / dX) * dX - X[i];
+      pOn += eOn[i] * eOn[i]; pOff += eOff[i] * eOff[i];
+    }
+    var yOn = D.imdct(eOn), yOff = D.imdct(eOff);
+    for (i = 0; i < 2 * N; i++) { yOn[i] *= w[i]; yOff[i] *= w[i]; }
+
+    var segs = N >= 512 ? 40 : 24;
+    var eS = envelope(buf, segs), eN0 = envelope(yOff, segs), eN1 = envelope(yOn, segs);
+    var ref = 1e-30, k;
+    for (k = 0; k < eS.length; k++) if (eS[k].v > ref) ref = eS[k].v;
+
+    // the attack: the loudest segment. Everything at least 1 ms earlier is "before".
+    var hit = 0;
+    for (k = 0; k < eS.length; k++) if (eS[k].v >= ref) hit = eS[k].i;
+    var cut = hit - sr * 0.001;
+    var b0 = 0, n0 = 0, b1 = 0, n1 = 0;
+    for (k = 0; k < eS.length; k++) {
+      if (eN0[k].i >= cut) continue;
+      b0 += eN0[k].v; n0++; b1 += eN1[k].v; n1++;
+    }
+    return {
+      sr: sr, N: N, ms: 2 * N / sr * 1000, ref: ref, gain: T.gainDb,
+      sig: eS, off: eN0, on: eN1,
+      preOff: 10 * Math.log10(Math.max(b0 / Math.max(n0, 1), 1e-30) / ref),
+      preOn: 10 * Math.log10(Math.max(b1 / Math.max(n1, 1), 1e-30) / ref),
+      totOff: 10 * Math.log10(Math.max(pOff / N, 1e-30) / ref),
+      totOn: 10 * Math.log10(Math.max(pOn / N, 1e-30) / ref),
+      hitMs: hit / sr * 1000,
+    };
+  }
+
+  var cur = null;
+  function toPts(e, r) {
+    return e.map(function (s) {
+      return [s.i / r.sr * 1000, 10 * Math.log10(Math.max(s.v, 1e-30) / r.ref)];
+    });
+  }
+  function draw() {
+    p.clear();
+    if (!cur) { p.axes(); return; }
+    p.range(0, cur.ms, -95, 4);
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    p.line(toPts(cur.sig, cur), { color: AC.C.blue, width: 1.8, fill: true, fillAlpha: .10, fillTo: -95 });
+    p.line(toPts(cur.off, cur), { color: AC.C.red, width: 1.8 });
+    p.line(toPts(cur.on, cur), { color: AC.C.gold, width: 1.8 });
+    p.vline(cur.hitMs, { color: AC.C.faint, label: "attack" });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      cur.N + " lines · " + cur.ms.toFixed(1) + " ms window · filter from 1.5 kHz up",
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() {
+    cur = analyse();
+    document.getElementById("t-gain").textContent = cur.gain.toFixed(1) + " dB";
+    document.getElementById("t-off").textContent = cur.preOff.toFixed(1) + " dB";
+    document.getElementById("t-on").textContent = cur.preOn.toFixed(1) + " dB";
+    document.getElementById("t-tot").textContent =
+      cur.totOff.toFixed(1) + " / " + cur.totOn.toFixed(1) + " dB";
+    document.getElementById("t-state").textContent = "order " + st.order + " · " + st.N + " lines";
+    cache = {};
+    redraw();
+  }
+
+  // ---- the audible version: a whole excerpt, coded both ways, on demand
+  function excerpt(mode) {
+    var key = mode + ":" + st.N + ":" + st.order + ":" + st.snr;
+    if (cache[key]) return cache[key];
+    var sr = A.rate(), N = st.N, start = startLine(N, sr);
+    var x = A.src.castanets(1.2, { sr: sr });
+    if (mode === "src") { cache[key] = x; return x; }
+    var useTns = mode === "on";
+    var out = D.mdctRoundTrip(x, N, function (X) {
+      var i, p2 = 0;
+      for (i = 0; i < N; i++) p2 += X[i] * X[i];
+      var rms = Math.sqrt(p2 / N);
+      if (rms < 1e-9) { for (i = 0; i < N; i++) X[i] = 0; return; }
+      if (!useTns) {
+        var d0 = stepFor(rms, st.snr);
+        for (i = 0; i < N; i++) X[i] = Math.round(X[i] / d0) * d0;
+        return;
+      }
+      var T = fit(X, st.order, start);
+      var R = forward(X, T.a, start);
+      var d1 = stepFor(rmsFrom(R, start), st.snr);
+      var d2 = stepFor(rms, st.snr);
+      var Rq = Float64Array.from(R);
+      for (i = 0; i < start; i++) Rq[i] = Math.round(X[i] / d2) * d2;
+      for (i = start; i < N; i++) Rq[i] = Math.round(R[i] / d1) * d1;
+      var Y = backward(Rq, T.a, start);
+      for (i = start; i < N; i++) Rq[i] = Y[i];
+      for (i = 0; i < N; i++) X[i] = Rq[i];
+    }, "sine");
+    cache[key] = out;
+    return out;
+  }
+
+  AC.slider(document.getElementById("t-order"), function (v) { st.order = v | 0; refresh(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("t-snr"), function (v) { st.snr = v; refresh(); },
+    function (v) { return v + " dB"; });
+  AC.chips(document.getElementById("t-n"), function (v) { st.N = +v; refresh(); });
+
+  A.wire(document.getElementById("t-orig"), function () { return excerpt("src"); });
+  A.wire(document.getElementById("t-poff"), function () { return excerpt("off"); });
+  A.wire(document.getElementById("t-pon"), function () { return excerpt("on"); });
+
+  refresh();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.3 — spectral band replication, in miniature.
+   The signal is transformed block by block; everything above the
+   crossover is discarded; a patch from below it is copied upwards and
+   repeated; each band is then scaled so its energy over a 1024-sample
+   frame matches the original's. The plotted spectra are the mean power
+   of the coefficient arrays themselves, so nothing is drawn that was
+   not computed.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("s-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var N = 256, DUR = 1.8;
+  var st = { src: "music", fc: 8000, bands: 8, an: null, res: null, audio: {}, timer: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 250, xmax: 20000, ymin: -78, ymax: 4,
+    xlabel: "frequency", ylabel: "dB relative to the loudest line",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  var SRC = {
+    music: function (sr) { return A.src.music(DUR, { sr: sr }); },
+    applause: function (sr) { return A.src.applause(DUR, { sr: sr }); },
+    speech: function (sr) { return A.src.speech(DUR, { sr: sr }); },
+    castanets: function (sr) { return A.src.castanets(DUR, { sr: sr }); },
+  };
+
+  function ensure() {
+    if (st.an) return st.an;
+    var sr = A.rate(), x = SRC[st.src](sr), w = D.WIN.sine(2 * N);
+    var nB = Math.ceil(x.length / N) + 1, C = [], buf = new Float64Array(2 * N), b, i, si;
+    for (b = 0; b < nB; b++) {
+      for (i = 0; i < 2 * N; i++) { si = b * N - N + i; buf[i] = (si >= 0 && si < x.length ? x[si] : 0) * w[i]; }
+      C.push(D.mdct(buf));
+    }
+    st.an = { sr: sr, x: x, w: w, C: C };
+    return st.an;
+  }
+
+  function meanPower(arr) {
+    var m = new Float64Array(N), b, i;
+    for (b = 0; b < arr.length; b++) for (i = 0; i < N; i++) m[i] += arr[b][i] * arr[b][i];
+    for (i = 0; i < N; i++) m[i] /= Math.max(arr.length, 1);
+    return m;
+  }
+  function smooth(a, r) {
+    var o = new Float64Array(a.length), i, j, s, n;
+    for (i = 0; i < a.length; i++) {
+      s = 0; n = 0;
+      for (j = Math.max(0, i - r); j <= Math.min(a.length - 1, i + r); j++) { s += a[j]; n++; }
+      o[i] = s / n;
+    }
+    return o;
+  }
+
+  function build() {
+    var an = ensure(), sr = an.sr, C = an.C, nb = st.bands, e, b, i, k;
+    var kc = Math.max(4, Math.min(N - 6, Math.round(st.fc / (sr / 2) * N)));
+    var k0 = Math.max(1, Math.round(kc * 0.45)), width = Math.max(1, kc - k0);
+    var G = Math.max(1, Math.round(1024 / N));
+    var ed = [];
+    for (e = 0; e <= nb; e++) ed.push(Math.round(kc * Math.pow(N / kc, e / nb)));
+    for (e = 1; e <= nb; e++) if (ed[e] <= ed[e - 1]) ed[e] = Math.min(N, ed[e - 1] + 1);
+    ed[nb] = N;
+
+    var rnd = A.prng(11), core = [], full = [];
+    for (var g = 0; g < C.length; g += G) {
+      var last = Math.min(g + G, C.length);
+      var tgt = new Float64Array(nb), flat = new Float64Array(nb);
+      for (e = 0; e < nb; e++) {
+        var s = 0, n = 0, ls = 0;
+        for (b = g; b < last; b++) for (k = ed[e]; k < ed[e + 1]; k++) {
+          var pw = C[b][k] * C[b][k];
+          s += pw; ls += Math.log(Math.max(pw, 1e-26)); n++;
+        }
+        tgt[e] = n ? s / n : 0;
+        flat[e] = n ? Math.min(1, Math.max(0, Math.exp(ls / n) / Math.max(s / n, 1e-26))) : 1;
+      }
+      for (b = g; b < last; b++) {
+        var co = Float64Array.from(C[b]);
+        for (k = kc; k < N; k++) co[k] = 0;
+        core.push(co);
+        var rp = Float64Array.from(co);
+        for (k = kc; k < N; k++) rp[k] = C[b][k0 + ((k - kc) % width)];
+        for (e = 0; e < nb; e++) {
+          var ps = 0, pn = 0;
+          for (k = ed[e]; k < ed[e + 1]; k++) { ps += rp[k] * rp[k]; pn++; }
+          var gn = Math.sqrt(tgt[e] / Math.max(pn ? ps / pn : 0, 1e-26));
+          if (!isFinite(gn)) gn = 0;
+          var mix = Math.min(0.9, flat[e] * 0.9);
+          var ta = Math.sqrt(1 - mix), na = Math.sqrt(mix) * Math.sqrt(tgt[e]) * 1.732;
+          for (k = ed[e]; k < ed[e + 1]; k++) rp[k] = ta * rp[k] * gn + na * rnd();
+        }
+        full.push(rp);
+      }
+    }
+
+    var mo = smooth(meanPower(C), 2), mc = smooth(meanPower(core), 2), mf = smooth(meanPower(full), 2);
+    var ref = 1e-30;
+    for (i = 0; i < N; i++) if (mo[i] > ref) ref = mo[i];
+    var err = 0, en = 0;
+    for (i = kc; i < N; i++) {
+      var a = 10 * Math.log10(Math.max(mo[i], 1e-30) / ref);
+      if (a < -70) continue;
+      err += Math.abs(10 * Math.log10(Math.max(mf[i], 1e-30) / ref) - a); en++;
+    }
+    var fps = sr / 1024;
+    var kbps = (nb * fps * 4.5 + Math.ceil(nb / 2) * fps * 5 + fps * 10) / 1000;
+    st.res = { kc: kc, ed: ed, core: core, full: full, mo: mo, mc: mc, mf: mf, ref: ref,
+      sr: sr, kbps: kbps, err: en ? err / en : 0, frac: (N - kc) / N };
+    st.audio = {};
+
+    document.getElementById("s-fc").textContent = (kc / N * (sr / 2) / 1000).toFixed(1) + " kHz";
+    document.getElementById("s-frac").textContent = Math.round(st.res.frac * 100) + "% of the lines";
+    document.getElementById("s-kbps").textContent = kbps.toFixed(2) + " kbit/s";
+    document.getElementById("s-err").textContent = st.res.err.toFixed(1) + " dB mean";
+    document.getElementById("s-state").textContent =
+      "crossover " + (kc / N * (sr / 2) / 1000).toFixed(1) + " kHz · " + nb + " bands";
+    redraw();
+  }
+
+  function toPts(m, r) {
+    var pts = [], i, f;
+    for (i = 1; i < N; i++) {
+      f = (i + 0.5) / N * (r.sr / 2);
+      if (f < p.xmin || f > p.xmax) continue;
+      pts.push([f, Math.max(10 * Math.log10(Math.max(m[i], 1e-30) / r.ref), -78)]);
+    }
+    return pts;
+  }
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); },
+      yfmt: function (v) { return v.toFixed(0); } });
+    var r = st.res;
+    if (!r) return;
+    var fcHz = r.kc / N * (r.sr / 2);
+    p.band(fcHz, p.xmax, { color: AC.C.purple, alpha: .05 });
+    p.line(toPts(r.mo, r), { color: AC.C.blue, width: 1.8 });
+    p.line(toPts(r.mc, r), { color: AC.C.faint, width: 1.4 });
+    p.line(toPts(r.mf, r), { color: AC.C.gold, width: 1.8 });
+    p.vline(fcHz, { color: AC.C.purple, label: "crossover" });
+    p.note(p.pad.l + 8, p.pad.t + 6, "mean of " + r.full.length + " transform blocks", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function synth(coeffs) {
+    var an = st.an, out = new Float64Array((coeffs.length + 1) * N), b, i, oi;
+    for (b = 0; b < coeffs.length; b++) {
+      var y = D.imdct(coeffs[b]);
+      for (i = 0; i < 2 * N; i++) { oi = b * N - N + i; if (oi >= 0 && oi < out.length) out[oi] += y[i] * an.w[i]; }
+    }
+    return out.subarray(0, an.x.length);
+  }
+  function voice(which) {
+    if (!st.res) build();
+    if (which === "src") return st.an.x;
+    if (!st.audio[which]) st.audio[which] = synth(which === "core" ? st.res.core : st.res.full);
+    return st.audio[which];
+  }
+
+  function later() { if (!st.res) return; clearTimeout(st.timer); st.timer = setTimeout(build, 150); }
+
+  AC.chips(document.getElementById("s-src"), function (v) {
+    st.src = v; st.an = null; st.res = null; st.audio = {};
+    A.stopAll();
+    AC.$$("#fig-sbr .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    build();
+  });
+  AC.slider(document.getElementById("s-cross"), function (v) { st.fc = v; later(); },
+    function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+  AC.slider(document.getElementById("s-bands"), function (v) { st.bands = v | 0; later(); },
+    function (v) { return String(v | 0); });
+
+  A.wire(document.getElementById("s-orig"), function () { return voice("src"); });
+  A.wire(document.getElementById("s-core"), function () { return voice("core"); });
+  A.wire(document.getElementById("s-full"), function () { return voice("full"); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect();
+      build();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { build(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.4 — perceptual noise substitution.
+   Per-band tonality is measured live from the spectral flatness of the
+   MDCT coefficients; the bands that pass the gate are replaced by a
+   single energy per 1024-sample frame, exactly as codebook 13 does.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("p-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var N = 256, DUR = 1.6, SNR = 12;
+  var st = { src: "applause", from: 6000, thr: 0.16, an: null, cur: null, audio: null, timer: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 250, xmax: 20000, ymin: 0, ymax: 1,
+    xlabel: "frequency", ylabel: "tonality  (0 = noise, 1 = pure tone)",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  var SRC = {
+    applause: function (sr) { return A.src.applause(DUR, { sr: sr }); },
+    harmonics: function (sr) { return A.src.harmonics(DUR, { f: 440, n: 40, tilt: 0.7, sr: sr }); },
+    music: function (sr) { return A.src.music(DUR, { sr: sr }); },
+    noise: function (sr) { return A.src.noise(DUR, { sr: sr, seed: 9 }); },
+  };
+
+  function bandEdges(sr) {
+    var ed = [0], z, idx;
+    for (z = 1; z <= 24; z++) {
+      idx = Math.min(N, Math.round(D.BARK_EDGES[z] / (sr / 2) * N));
+      if (idx > ed[ed.length - 1]) ed.push(idx);
+    }
+    var tail = ed[ed.length - 1];
+    if (tail < N) {
+      for (z = 1; z <= 3; z++) {
+        var e = Math.round(tail + (N - tail) * z / 3);
+        if (e > ed[ed.length - 1]) ed.push(e);
+      }
+      if (ed[ed.length - 1] < N) ed.push(N);
+    }
+    return ed;
+  }
+  function widened(X, lo, hi) {
+    while (hi - lo < 12 && (lo > 0 || hi < N)) { if (lo > 0) lo--; if (hi < N) hi++; }
+    var pw = new Float64Array(hi - lo), k;
+    for (k = lo; k < hi; k++) pw[k - lo] = X[k] * X[k];
+    return pw;
+  }
+
+  function ensure() {
+    if (st.an) return st.an;
+    var sr = A.rate(), x = SRC[st.src](sr), w = D.WIN.sine(2 * N), ed = bandEdges(sr);
+    var nb = ed.length - 1, nB = Math.ceil(x.length / N) + 1;
+    var C = [], buf = new Float64Array(2 * N), b, i, si, e;
+    var ton = new Float64Array(nb), cnt = new Float64Array(nb), bits = new Float64Array(nb);
+    for (b = 0; b < nB; b++) {
+      for (i = 0; i < 2 * N; i++) { si = b * N - N + i; buf[i] = (si >= 0 && si < x.length ? x[si] : 0) * w[i]; }
+      var X = D.mdct(buf);
+      C.push(X);
+      var pwr = 0;
+      for (i = 0; i < N; i++) pwr += X[i] * X[i];
+      var rms = Math.sqrt(pwr / N);
+      if (rms < 1e-9) continue;
+      var d = rms * Math.pow(10, -SNR / 20) * Math.sqrt(12);
+      for (e = 0; e < nb; e++) {
+        var lo = ed[e], hi = ed[e + 1];
+        if (hi - lo < 1) continue;
+        ton[e] += D.tonalityFromSfm(D.sfm(widened(X, lo, hi)));
+        cnt[e]++;
+        for (i = lo; i < hi; i++) bits[e] += Math.log2(2 * Math.abs(Math.round(X[i] / d)) + 1) + 1;
+      }
+    }
+    var secs = x.length / sr, band = [];
+    for (e = 0; e < nb; e++) {
+      band.push({
+        lo: ed[e], hi: ed[e + 1],
+        f0: ed[e] / N * (sr / 2), f1: ed[e + 1] / N * (sr / 2),
+        lines: ed[e + 1] - ed[e],
+        ton: cnt[e] ? ton[e] / cnt[e] : 0,
+        kbps: bits[e] / secs / 1000,
+        blocks: cnt[e],
+      });
+    }
+    st.an = { sr: sr, x: x, w: w, C: C, ed: ed, band: band, secs: secs, blocks: nB };
+    return st.an;
+  }
+
+  function build() {
+    var an = ensure(), sub = [], lines = 0, coded = 0, e;
+    var fps = an.sr / 1024;
+    for (e = 0; e < an.band.length; e++) {
+      var bd = an.band[e];
+      bd.sub = bd.f0 >= st.from && bd.ton <= st.thr && bd.lines >= 2;
+      if (bd.sub) { sub.push(e); lines += bd.lines; coded += bd.kbps; }
+    }
+    st.cur = { sub: sub, lines: lines, coded: coded, subKbps: sub.length * 9 * fps / 1000 };
+    st.audio = null;
+    document.getElementById("p-bands").textContent = sub.length + " of " + an.band.length;
+    document.getElementById("p-lines").textContent =
+      AC.fmt.int(lines) + " of " + N + " per block";
+    document.getElementById("p-coded").textContent = coded.toFixed(1) + " kbit/s";
+    document.getElementById("p-sub").textContent = st.cur.subKbps.toFixed(2) + " kbit/s";
+    document.getElementById("p-state").textContent =
+      sub.length + " bands substituted · threshold " + st.thr.toFixed(2);
+    redraw();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); },
+      yfmt: function (v) { return v.toFixed(1); } });
+    if (!st.an || !st.cur) return;
+    var items = [], e;
+    for (e = 0; e < st.an.band.length; e++) {
+      var bd = st.an.band[e];
+      if (bd.f1 < p.xmin || bd.lines < 1) continue;
+      items.push({
+        x0: Math.max(bd.f0, p.xmin), x1: Math.min(bd.f1, p.xmax),
+        y: Math.min(bd.ton, 1),
+        color: bd.sub ? AC.C.green : (bd.f0 >= st.from ? AC.C.blue : AC.C.faint),
+        alpha: bd.f0 >= st.from ? .85 : .35,
+      });
+    }
+    p.bars(items, { base: 0, gap: 1 });
+    p.hline(st.thr, { color: AC.C.gold, label: "threshold" });
+    p.vline(st.from, { color: AC.C.purple, label: "floor" });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function substituted() {
+    if (st.audio) return st.audio;
+    var an = ensure(), G = Math.max(1, Math.round(1024 / N));
+    var rnd = A.prng(23), out = new Float64Array((an.C.length + 1) * N);
+    var keep = {}, i;
+    for (i = 0; i < st.cur.sub.length; i++) keep[st.cur.sub[i]] = true;
+    for (var g = 0; g < an.C.length; g += G) {
+      var last = Math.min(g + G, an.C.length), b, k, e;
+      var out2 = [];
+      for (b = g; b < last; b++) out2.push(Float64Array.from(an.C[b]));
+      for (e = 0; e < an.band.length; e++) {
+        if (!keep[e]) continue;
+        var lo = an.band[e].lo, hi = an.band[e].hi, s = 0, n = 0;
+        for (b = 0; b < out2.length; b++) for (k = lo; k < hi; k++) { s += out2[b][k] * out2[b][k]; n++; }
+        var rms = Math.sqrt(s / Math.max(n, 1));
+        for (b = 0; b < out2.length; b++) for (k = lo; k < hi; k++) out2[b][k] = rnd() * rms * 1.732;
+      }
+      for (b = 0; b < out2.length; b++) {
+        var y = D.imdct(out2[b]), oi;
+        for (k = 0; k < 2 * N; k++) { oi = (g + b) * N - N + k; if (oi >= 0 && oi < out.length) out[oi] += y[k] * an.w[k]; }
+      }
+    }
+    st.audio = out.subarray(0, an.x.length);
+    return st.audio;
+  }
+
+  function later() { if (!st.cur) return; clearTimeout(st.timer); st.timer = setTimeout(build, 130); }
+
+  AC.chips(document.getElementById("p-src"), function (v) {
+    st.src = v; st.an = null; st.audio = null;
+    A.stopAll();
+    AC.$$("#fig-pns .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    build();
+  });
+  AC.slider(document.getElementById("p-from"), function (v) { st.from = v; later(); },
+    function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+  AC.slider(document.getElementById("p-thr"), function (v) { st.thr = v; later(); },
+    function (v) { return v.toFixed(2); });
+
+  A.wire(document.getElementById("p-orig"), function () { return ensure().x; });
+  A.wire(document.getElementById("p-done"), function () { if (!st.cur) build(); return substituted(); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect();
+      build();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { build(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.5 — an ADTS frame header, assembled from the controls.
+   Every number in the readout is derived from the header's own fields.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var map = document.getElementById("a-map");
+  if (!map || !window.AC) return;
+  var RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+  var st = { sr: 44100, ch: 2, crc: false, br: 128 };
+
+  function bits(v, n) {
+    var s = (v >>> 0).toString(2);
+    while (s.length < n) s = "0" + s;
+    return s.slice(-n);
+  }
+  function build() {
+    var idx = RATES.indexOf(st.sr);
+    if (idx < 0) idx = 4;
+    var hdr = st.crc ? 9 : 7;
+    var fps = st.sr / 1024;
+    var frame = Math.min(8191, Math.max(hdr + 1, Math.round(st.br * 1000 / 8 / fps) + hdr));
+    var F = [
+      { n: "syncword", b: 12, v: 0xFFF },
+      { n: "ID", b: 1, v: 0 },
+      { n: "layer", b: 2, v: 0 },
+      { n: "protection_absent", b: 1, v: st.crc ? 0 : 1, hot: true },
+      { n: "profile", b: 2, v: 1 },
+      { n: "sf_index", b: 4, v: idx, hot: true },
+      { n: "private", b: 1, v: 0 },
+      { n: "channel_config", b: 3, v: st.ch, hot: true },
+      { n: "original", b: 1, v: 0 },
+      { n: "home", b: 1, v: 0 },
+      { n: "copyright_id", b: 1, v: 0 },
+      { n: "copyright_start", b: 1, v: 0 },
+      { n: "frame_length", b: 13, v: frame, hot: true },
+      { n: "buffer_fullness", b: 11, v: 0x7FF },
+      { n: "raw_blocks − 1", b: 2, v: 0 },
+    ];
+    var stream = "", i;
+    for (i = 0; i < F.length; i++) stream += bits(F[i].v, F[i].b);
+    var hex = [];
+    for (i = 0; i < stream.length; i += 8) hex.push(("0" + parseInt(stream.slice(i, i + 8), 2).toString(16)).slice(-2).toUpperCase());
+
+    map.innerHTML = F.map(function (f) {
+      return '<span class="bitf' + (f.hot ? " on" : "") + '"><span class="bv">' +
+        bits(f.v, f.b) + '</span><span class="bn">' + f.n + "</span></span>";
+    }).join("");
+    document.getElementById("a-hex").innerHTML =
+      "<b>" + hex.slice(0, 2).join(" ") + "</b> " + hex.slice(2).join(" ") +
+      (st.crc ? "  + 2 CRC bytes" : "");
+    document.getElementById("a-fps").textContent = fps.toFixed(2) + " /s";
+    document.getElementById("a-len").textContent = frame + " bytes";
+    document.getElementById("a-ovh").textContent = (hdr * 8 * fps / 1000).toFixed(2) + " kbit/s";
+    document.getElementById("a-pct").textContent = (hdr * 8 * fps / (st.br * 1000) * 100).toFixed(1) + "%";
+    document.getElementById("a-state").textContent = hdr + " bytes · index " + idx;
+  }
+
+  AC.chips(document.getElementById("a-sr"), function (v) { st.sr = +v; build(); });
+  AC.chips(document.getElementById("a-ch"), function (v) { st.ch = +v; build(); });
+  AC.chips(document.getElementById("a-opt"), function (v) { st.crc = v === "crc"; build(); });
+  AC.slider(document.getElementById("a-br"), function (v) { st.br = v; build(); },
+    function (v) { return v + " kbit/s"; });
+
+  build();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

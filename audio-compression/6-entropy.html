@@ -800,8 +800,9 @@
         4.1, implemented in this page and exercised on a synthetic symbol stream with the
         skew you set. The blue staircase is <code>ec_tell</code>, read out after every
         symbol; it climbs in fractions of a bit, which is the entire point — a symbol of
-        probability 0.72 moves it by 0.474 of a bit, not by one. The dashed teal line is the
-        information-theoretic ideal, and the two are nearly indistinguishable. The strip
+        probability 0.72 moves it by 0.474 of a bit, not by one. The dashed gold line is the
+        information-theoretic ideal; it rides on top of the blue one, a constant bit
+        adrift, which is the whole of the range coder's overhead. The strip
         below is the packet: range-coder bytes fill from the left, raw bits from the right,
         and the gap between them is what is left to spend. Every configuration is decoded
         back and checked symbol by symbol before the readouts are drawn.</figcaption>
