@@ -557,11 +557,17 @@
         bits each granule wants measured by the same entropy estimate a rate loop would
         use. The blue bars are demand; the dashed gold line is what constant bitrate
         allows; the teal line is the reservoir's contents, in bits, which is exactly
-        <code>main_data_begin</code> × 8. Switch the reservoir <b>off</b> and the red
-        marks appear: those are the frames where the encoder must abandon its quality
-        target and quantise harder. Try <b>castanets</b>, where demand is spiky, then
-        <b>applause</b>, where it is uniformly high — the reservoir rescues the first and
-        cannot help the second.</figcaption>
+        <code>main_data_begin</code> × 8. The quality target is set so the average
+        granule asks for nine-tenths of its share, which is what a constant-bitrate
+        encoder aims at so that the reservoir has a surplus to accumulate. Switch it
+        <b>off</b> and the red marks appear: frames where the encoder must abandon its
+        quality target and quantise harder. On <b>music</b> that is the difference
+        between one degraded frame and nineteen. Then try the other three and watch the
+        mechanism find its limits. <b>Castanets</b> ask for more than eight times the
+        mean in a single frame, and 511 bytes cannot cover that however full they are —
+        the reservoir smooths ripples, not cliffs. <b>Applause</b> is the opposite:
+        relentlessly demanding but almost perfectly flat, so there is nothing to smooth
+        and the reservoir barely earns its place.</figcaption>
     </figure>
 
     <p>The reservoir is also the reason Layer III can run in variable-bitrate mode at all
@@ -616,7 +622,7 @@
       <div class="figure-bar">
         <span class="fno">FIG. 7.4</span>
         <span class="ftitle">Pre-echo, measured and audible</span>
-        <span class="fstate" id="f4-state">96 kbit/s</span>
+        <span class="fstate" id="f4-state">20 kbit/s</span>
       </div>
       <div class="figure-body">
         <div class="canvas-wrap"><canvas id="f4-cv"></canvas></div>
@@ -628,14 +634,14 @@
         <div class="readout" style="margin-top:14px">
           <div class="ro bad"><span class="k">Pre-echo, long</span><span class="v" id="f4-ll">—</span></div>
           <div class="ro ok"><span class="k">Pre-echo, short</span><span class="v" id="f4-ls">—</span></div>
-          <div class="ro sig"><span class="k">SNR, long</span><span class="v" id="f4-nl">—</span></div>
-          <div class="ro"><span class="k">SNR, short</span><span class="v" id="f4-ns">—</span></div>
+          <div class="ro sig"><span class="k">Pre-echo level, long</span><span class="v" id="f4-nl">—</span></div>
+          <div class="ro"><span class="k">Pre-echo level, short</span><span class="v" id="f4-ns">—</span></div>
         </div>
       </div>
       <div class="deck">
         <div class="field grow" style="min-width:190px">
-          <div class="flab"><span>Bit budget</span><span class="val" id="f4-brlab">96 kbit/s</span></div>
-          <input type="range" id="f4-br" min="40" max="192" step="8" value="96" data-out="f4-brlab" aria-label="Bit budget">
+          <div class="flab"><span>Bit budget</span><span class="val" id="f4-brlab">20 kbit/s</span></div>
+          <input type="range" id="f4-br" min="12" max="80" step="4" value="20" data-out="f4-brlab" aria-label="Bit budget">
         </div>
         <div class="field">
           <div class="flab"><span>Listen</span></div>
@@ -656,8 +662,13 @@
         then <b>short blocks</b> with headphones on: the difference is a soft
         pre-attack "tsss" that the short-block version does not have. Then press <b>the
         long-block error alone</b> — that ghost is what block switching exists to move.
-        Drag the budget up: above about 160 kbit/s the error falls below audibility and
-        the argument goes quiet.</figcaption>
+        The lead times barely shift as you drag the budget, because they are set by the
+        window length and by nothing else: about 16 ms for 576 lines and about 5 ms for
+        192, at every bitrate on the slider. What the budget changes is how
+        <em>loud</em> the smear is, and above roughly 48 kbit/s on an excerpt this
+        sparse it falls below −85 dB and the argument goes quiet. The budgets are low
+        because the toy codec is weaker than LAME and because two clicks in near-silence
+        are cheap to code; the mechanism, not the number, is the point.</figcaption>
     </figure>
   </section>
 
@@ -743,8 +754,8 @@
         same waveform and falls towards 0 as they decorrelate; the blue curve shows the
         source losing coherence above a few hundred hertz, which is the sound of a room.
         The gold curve is the same measurement after intensity coding, and above the
-        cut-off it is pinned at exactly 1: both ears are now receiving scaled copies of
-        one signal. The readouts settle the other half of the argument — mid/side's
+        cut-off it sits at 0.99 or better in every band: both ears are now receiving
+        scaled copies of one signal, differing only in level. The readouts settle the other half of the argument — mid/side's
         round-trip error is double-precision rounding and nothing else, while intensity's
         is a real, large error that no bitrate will reduce. <b>Headphones required.</b>
         Drag the cut-off down to 1 kHz to hear what 1997 sounded like.</figcaption>
@@ -1308,9 +1319,11 @@
     ensure();
     var a = st.an, sr = a.sr, b;
     var allow = Math.floor(1152 / 8 * st.rate * 1000 / sr) * 8 - 32 - SIDE;
-    // Hold perceptual quality constant: bisect the global offset so the mean
-    // granule demand equals half a frame's allowance.
-    var target = a.blocks * allow / 2;
+    // Hold perceptual quality constant, at the target a constant-bitrate encoder
+    // actually aims for: the average granule asks for nine-tenths of its share, so
+    // the reservoir has a surplus to accumulate between the difficult frames.
+    var HEADROOM = 0.9;
+    var target = a.blocks * allow / 2 * HEADROOM;
     var lo = -140, hi = 120, lam = hi, it;
     for (it = 0; it < 18; it++) {
       lam = (lo + hi) / 2;
@@ -1415,7 +1428,7 @@
   if (!cv || !window.AUD || !window.DSP) return;
   var D = window.DSP, A = window.AUD;
 
-  var st = { rate: 96, sig: null, anL: null, anS: null, rL: null, rS: null, attack: 0, ready: false };
+  var st = { rate: 20, sig: null, anL: null, anS: null, rL: null, rS: null, attack: 0, ready: false };
 
   function ensure() {
     if (st.sig) return;
@@ -1448,6 +1461,14 @@
     var e = new Float64Array(st.sig.length), i;
     for (i = 0; i < e.length; i++) e[i] = st.sig[i] - res.out[i];
     return e;
+  }
+  // Peak coding error in the 30 ms before the attack, against the signal's own
+  // envelope peak: how loud the pre-echo is, which is what decides audibility.
+  // A whole-excerpt SNR would be meaningless here — the excerpt is mostly silence.
+  function preDb(env, sr, ref) {
+    var w0 = Math.max(0, st.attack - Math.round(sr * 0.030)), i, pk = 0;
+    for (i = w0; i < st.attack; i++) pk = Math.max(pk, env[i]);
+    return D.db(pk / ref, 1e-9);
   }
   function leadMs(env, sr) {
     var a = st.attack, w = Math.round(sr * 0.006), i, pk = 0;
@@ -1488,8 +1509,8 @@
 
     document.getElementById("f4-ll").textContent = leadMs(eL, sr).toFixed(1) + " ms";
     document.getElementById("f4-ls").textContent = leadMs(eS, sr).toFixed(1) + " ms";
-    document.getElementById("f4-nl").textContent = st.rL.snrDb.toFixed(1) + " dB";
-    document.getElementById("f4-ns").textContent = st.rS.snrDb.toFixed(1) + " dB";
+    document.getElementById("f4-nl").textContent = preDb(eL, sr, ref).toFixed(0) + " dB";
+    document.getElementById("f4-ns").textContent = preDb(eS, sr, ref).toFixed(0) + " dB";
     document.getElementById("f4-state").textContent = st.rate + " kbit/s";
   }
   AC.autoDraw(p, redraw);
