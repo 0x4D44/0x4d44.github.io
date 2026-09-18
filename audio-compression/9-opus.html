@@ -112,13 +112,13 @@
     <div class="note ok">
       <span class="tag tag-ok">Royalty-free, and it stuck</span>
       <p>Opus was published with a BSD-licensed reference implementation, and
-        <a href="https://www.rfc-editor.org/rfc/rfc7874.html">RFC 7874</a>
+        <strong>RFC 7874</strong>
         (May 2016) makes it <strong>mandatory to implement</strong> in every
         WebRTC endpoint, alongside G.711. That is why it is underneath Discord,
         WhatsApp, Signal, Google Meet and essentially every browser-based call,
-        and why YouTube serves Opus inside WebM. <a href="https://www.rfc-editor.org/rfc/rfc8251.html">RFC 8251</a>
+        and why YouTube serves Opus inside WebM. RFC 8251
         (October 2017) folded a set of corrections into the normative decoder;
-        <a href="https://www.rfc-editor.org/rfc/rfc7845.html">RFC 7845</a>
+        RFC 7845
         (April 2016) defines Ogg Opus, which is what a <code>.opus</code> file
         is. Elsewhere in this almanac, <a href="/ropus/">ropus</a> is that
         decoder ported to safe Rust and checked bit-exact against the C.</p>
@@ -355,11 +355,13 @@
         you set for everything else. <b>Gain + shape</b> sends the band energy
         and then fits the most pulses it can afford with PVQ; <b>Scalar step</b>
         bisects a quantiser step until the band's zero-order entropy fits the
-        same budget, which is what MP3's rate loop does. Drop the budget to
-        0.4 bits per line and read the two numbers on the right: gain-shape
-        holds the band-energy error near the 1.5 dB energy quantiser step with
-        no bands emptied, while the scalar coder empties a third of them and
-        the error runs past 20 dB. Then press <b>Coded</b> on each. The
+        same budget, which is what MP3's rate loop does. Read the two numbers
+        on the right at the default 0.8 bits per line: gain-shape holds the
+        band-energy error at 0.4 dB — the root-mean-square of a 1.5 dB
+        rounding step, and nothing else — with not one band emptied, while the
+        scalar coder empties a third of them and averages 35 dB out. Drop the
+        budget to 0.4 and the scalar coder empties two thirds. Press
+        <b>Coded</b> on each. The
         gain-shape version is noisy; the scalar version has holes in it.
         <b>No folding</b> is gain-shape with CELT's fallback switched off — the
         band energy is still right, but a band that can afford zero pulses is
@@ -481,11 +483,11 @@
         curve does: doubling the pulses adds roughly <i>N</i>/2 bits at small
         <i>K</i> and much less later, so the useful operating region is a
         handful of pulses in a wide band — at <i>N</i>&nbsp;=&nbsp;32,
-        <i>K</i>&nbsp;=&nbsp;4 the codeword costs about 24 bits, three
-        quarters of a bit per coefficient, and still pins the band's energy
-        exactly. Push <i>K</i> to 1 and the shape SNR collapses towards 0 dB:
-        one pulse says only "the biggest coefficient is here, and this is its
-        sign".</figcaption>
+        <i>K</i>&nbsp;=&nbsp;4 the codeword costs 19.4 bits, three
+        fifths of a bit per coefficient, and still pins the band's energy
+        exactly. Push <i>K</i> to 1 and the shape SNR falls to a fraction of a
+        decibel: one pulse says only "the biggest coefficient is here, and
+        this is its sign".</figcaption>
     </figure>
 
     <div class="scroller"><table>
@@ -494,13 +496,17 @@
       <tbody id="pv-tab"></tbody>
     </table></div>
 
-    <p>The two ends of that table are the argument. A band of 32 coefficients
-      with one pulse costs six bits — you are told which coefficient is largest
-      and nothing else, and the decoder fills the rest with the folded content
-      described above. The same band with 32 pulses costs about 100 bits, three
-      per coefficient, which is transparent for a normalised shape. Everything
-      Opus does between 6 and 510 kbit/s lives on that curve, band by band,
-      frame by frame.</p>
+    <p>Work one out by hand and the size is startling: eight coefficients
+      with four pulses between them gives
+      <i>V</i>(8,4)&nbsp;=&nbsp;<strong>2 816</strong> distinct shapes, an
+      11.5-bit codeword, for a band you could not begin to describe with eleven
+      bits of scalar quantisation. The two ends of the table are the argument.
+      A band of 32 coefficients with one pulse costs exactly six bits — you are
+      told which coefficient is largest and its sign, nothing more, and the
+      decoder fills the rest by folding. The same band with 32 pulses costs
+      77 bits, about two and a half per coefficient. Everything Opus does
+      between 6 and 510 kbit/s lives on that curve, band by band, frame by
+      frame.</p>
   </section>
 
   <section id="hybrid" class="section">
@@ -587,10 +593,10 @@
         <div class="field">
           <div class="flab"><span>Presets</span></div>
           <div class="chips" id="tc-pre">
-            <button data-v="120">Narrowband voice</button>
+            <button data-v="8">Narrowband voice</button>
             <button data-v="72">Wideband voice</button>
             <button data-v="124" class="on">Hybrid FB stereo</button>
-            <button data-v="227">Low-delay CELT</button>
+            <button data-v="224">Low-delay CELT</button>
           </div>
         </div>
         <div class="field grow" style="min-width:180px">
@@ -614,11 +620,11 @@
         and that there is no such thing as a 2.5 ms SILK frame.</figcaption>
     </figure>
 
-    <div class="scroller" style="max-height:340px;overflow-y:auto"><table>
+    <div style="max-height:340px;overflow-y:auto"><div class="scroller"><table>
       <caption>All 32 configurations (RFC 6716 Table 2) — the active one is marked</caption>
       <thead><tr><th class="num">Config</th><th>Mode</th><th>Bandwidth</th><th class="num">Frame size</th><th class="num">Frames in 120 ms</th></tr></thead>
       <tbody id="tc-tab"></tbody>
-    </table></div>
+    </table></div></div>
 
     <p>The stereo flag is one bit and means exactly what it says. Everything
       else about the channel layout — how many streams, which is which, how
@@ -902,3 +908,798 @@
 <script src="assets/dsp.js"></script>
 <script src="assets/audio.js"></script>
 <script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 9.1 — the source-filter model.
+   A vowel is synthesised from formant resonators, a frame is taken from
+   the middle of it, pre-emphasised and fitted with Levinson-Durbin. The
+   all-pole envelope, the measured spectrum and the residual spectrum are
+   all computed here; "Filter only" drives 1/A(z) from a bare impulse
+   train, which is what SILK's sixteen numbers actually buy.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("lp-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var VOWELS = {
+    a: [[730, 90], [1090, 110], [2440, 140], [3400, 200]],
+    e: [[530, 80], [1840, 110], [2480, 140], [3400, 200]],
+    i: [[270, 60], [2290, 110], [3010, 140], [3600, 200]],
+    u: [[300, 70], [870, 100], [2240, 130], [3300, 200]]
+  };
+  var FRAME = 2048;
+  var st = { v: "a", order: 16, f0: 118, sr: 48000, sig: null, a: null,
+             err: 0, r0: 1, spec: null, res: null, env: null, gain: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 90, xmax: 9000, xlog: true, ymin: -76, ymax: 8,
+    xlabel: "frequency", ylabel: "dB (pre-emphasised)",
+    pad: { l: 52, r: 14, t: 14, b: 34 }
+  });
+
+  function preemph(x) {
+    var y = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) y[i] = x[i] - 0.97 * (i ? x[i - 1] : 0);
+    return y;
+  }
+  function deemph(x) {
+    var y = new Float64Array(x.length), i, pr = 0;
+    for (i = 0; i < x.length; i++) { pr = x[i] + 0.97 * pr; y[i] = pr; }
+    return y;
+  }
+  function powerOf(dbArr, lo, hi) {
+    var pw = new Float64Array(hi - lo), i;
+    for (i = lo; i < hi; i++) pw[i - lo] = Math.pow(10, dbArr[i] / 10);
+    return pw;
+  }
+
+  function fit() {
+    var sr = A.rate(); st.sr = sr;
+    st.sig = A.src.vowel(1.15, { sr: sr, f0: st.f0, formants: VOWELS[st.v], amp: 0.7 });
+
+    var start = Math.max(0, Math.floor(st.sig.length / 2) - FRAME / 2);
+    var raw = new Float64Array(FRAME), i;
+    for (i = 0; i < FRAME; i++) raw[i] = st.sig[start + i] || 0;
+    var pe = preemph(raw);
+    var w = D.WIN.hann(FRAME), fw = new Float64Array(FRAME), r0 = 0;
+    for (i = 0; i < FRAME; i++) { fw[i] = pe[i] * w[i]; r0 += fw[i] * fw[i]; }
+
+    var L = D.lpc(fw, st.order);
+    st.a = L.a; st.err = Math.max(L.err, 1e-18); st.r0 = Math.max(r0, 1e-18);
+
+    st.spec = D.spectrumDb(fw, { n: FRAME, window: "rect", zeroPad: 2 });
+    var resid = D.lpcResidual(fw, st.a);
+    st.res = D.spectrumDb(resid, { n: FRAME, window: "rect", zeroPad: 2 });
+    st.env = D.lpcSpectrum(st.a, 1, 420);
+
+    // Level-match the all-pole envelope to the measured spectrum over the
+    // band where both are meaningful. Nothing here is a fitted constant:
+    // it is the mean difference, in dB, of the two curves.
+    var nBin = st.spec.length, b0 = Math.round(200 / sr * nBin * 2), b1 = Math.round(7000 / sr * nBin * 2);
+    b0 = Math.max(1, Math.min(b0, nBin - 2)); b1 = Math.max(b0 + 4, Math.min(b1, nBin - 1));
+    var ms = 0, me = 0, n = 0;
+    for (i = b0; i < b1; i++) {
+      var f = i / (nBin * 2) * sr;
+      var ei = Math.round(f / (sr / 2) * (st.env.length - 1));
+      if (ei < 0 || ei >= st.env.length) continue;
+      ms += st.spec[i]; me += st.env[ei]; n++;
+    }
+    st.gain = n ? (ms - me) / n : 0;
+
+    var sf1 = D.sfm(powerOf(st.spec, b0, b1));
+    var sf2 = D.sfm(powerOf(st.res, b0, b1));
+    document.getElementById("lp-gain").textContent = (10 * Math.log10(st.r0 / st.err)).toFixed(1) + " dB";
+    document.getElementById("lp-sf1").textContent = sf1.toFixed(1) + " dB";
+    document.getElementById("lp-sf2").textContent = sf2.toFixed(1) + " dB";
+    document.getElementById("lp-nums").textContent = (st.order + 1);
+    document.getElementById("lp-state").textContent = "order " + st.order;
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.spec) return;
+    var sr = st.sr, nBin = st.spec.length, i, f;
+
+    var pts = [], rp = [];
+    for (i = 1; i < nBin; i++) {
+      f = i / (nBin * 2) * sr;
+      if (f < p.xmin || f > p.xmax) continue;
+      pts.push([f, Math.max(st.spec[i], -95)]);
+      rp.push([f, Math.max(st.res[i] + 6, -95)]);
+    }
+    // the true formants of the synthesiser, for comparison
+    VOWELS[st.v].forEach(function (fb, k) {
+      p.vline(fb[0], { color: AC.C.ghost, dash: [3, 5], label: "F" + (k + 1), labelY: 3 + k * 13 });
+    });
+    p.line(rp, { color: AC.C.purple, width: 1.2, alpha: .7, dash: [4, 3] });
+    p.line(pts, { color: AC.C.blue, width: 1.2, alpha: .85 });
+
+    var ep = [];
+    for (i = 0; i < st.env.length; i++) {
+      f = i / (st.env.length - 1) * (sr / 2);
+      if (f < p.xmin || f > p.xmax) continue;
+      ep.push([f, st.env[i] + st.gain]);
+    }
+    p.line(ep, { color: AC.C.gold, width: 2.4 });
+    p.note(p.pad.l + 8, p.pad.t + 6, st.order + " poles · " + FRAME + "-sample frame", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  // ---- the vocoder: impulse train through 1/A(z), no residual at all
+  function vocode() {
+    if (!st.a) fit();
+    var sr = st.sr, n = Math.round(sr * 1.15), y = new Float64Array(n);
+    var a = st.a, per = sr / st.f0, next = 0, g = Math.sqrt(st.err / FRAME) * 14;
+    var i, j, s;
+    for (i = 0; i < n; i++) {
+      s = 0;
+      if (i >= next) { s = g; next += per; }
+      for (j = 1; j < a.length; j++) if (i - j >= 0) s -= a[j] * y[i - j];
+      if (!isFinite(s)) s = 0;
+      y[i] = Math.max(-40, Math.min(40, s));
+    }
+    y = deemph(y);
+    if (!isFinite(D.peak(y)) || D.peak(y) < 1e-12) return null;
+    D.normalize(y, 0.7);
+    return A.fadeEdges(y, sr, 25);
+  }
+  function residual() {
+    if (!st.a) fit();
+    var r = D.lpcResidual(preemph(st.sig), st.a);
+    D.normalize(r, 0.6);
+    return A.fadeEdges(r, st.sr, 20);
+  }
+
+  AC.chips(document.getElementById("lp-vowel"), function (v) { st.v = v; A.stopAll(); fit(); });
+  AC.slider(document.getElementById("lp-order"), function (v) { st.order = v | 0; if (st.sig) fit(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("lp-f0"), function (v) { st.f0 = v; if (st.sig) fit(); },
+    function (v) { return Math.round(v) + " Hz"; });
+
+  A.wire(document.getElementById("lp-orig"), function () { if (!st.sig) fit(); return st.sig; });
+  A.wire(document.getElementById("lp-syn"), vocode);
+  A.wire(document.getElementById("lp-res"), residual);
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); fit();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { fit(); }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.2 — gain-shape against a scalar quantiser, same bit budget.
+   A real 256-line MDCT of synthesised music, split into Bark-spaced
+   bands. Each band is coded either CELT-style (energy, then a PVQ
+   shape, then folding when nothing is affordable) or MP3-style (bisect
+   a step size until the band's zero-order entropy fits). Both are given
+   identical budgets, and both are resynthesised and playable.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("gs-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var N = 256, DUR = 1.4, EBITS = 6, ESTEP = 1.5;
+  var st = { budget: 0.8, mode: "gs", sr: 48000, sig: null, edges: null,
+             out: null, kbps: 0, err: 0, empty: 0, kmid: 0, show: null, busy: false };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 80, xmax: 22000, xlog: true, ymin: -84, ymax: 4,
+    xlabel: "frequency", ylabel: "band energy, dB",
+    pad: { l: 54, r: 14, t: 14, b: 34 }
+  });
+
+  function bandEdges(sr) {
+    var e = [0], last = 0, z, idx;
+    for (z = 1; z <= 24; z++) {
+      idx = Math.min(N, Math.round(D.BARK_EDGES[z] / (sr / 2) * N));
+      if (idx - last >= 4) { e.push(idx); last = idx; }
+    }
+    while (last < N) { var nx = Math.min(N, last + 24); if (nx - last < 4) { e[e.length - 1] = N; break; } e.push(nx); last = nx; }
+    return e;
+  }
+
+  // Zero-order entropy of round(x/step) over one band, in bits.
+  var ESC = 400, HIST = new Int32Array(2 * ESC + 3), TOUCH = new Int32Array(2 * ESC + 3);
+  function bandEntropyBits(X, lo, hi, step) {
+    var n = hi - lo, i, nt = 0, q, h, esc = 0;
+    for (i = lo; i < hi; i++) {
+      q = Math.round(X[i] / step);
+      if (q < -ESC || q > ESC) { h = 2 * ESC + 1; esc += 2 + Math.log2(Math.abs(q)); }
+      else h = q + ESC;
+      if (HIST[h] === 0) TOUCH[nt++] = h;
+      HIST[h]++;
+    }
+    var ent = 0, t, pr;
+    for (t = 0; t < nt; t++) { pr = HIST[TOUCH[t]] / n; ent -= pr * Math.log2(pr); HIST[TOUCH[t]] = 0; }
+    return n * ent + esc;
+  }
+
+  function encode() {
+    if (st.busy) return;
+    st.busy = true;
+    var sr = A.rate(); st.sr = sr;
+    if (!st.sig) st.sig = A.src.music(DUR, { sr: sr });
+    if (!st.edges) st.edges = bandEdges(sr);
+
+    var edges = st.edges, nb = edges.length - 1, mode = st.mode, perLine = st.budget;
+    var bits = 0, errSum = 0, errN = 0, emptied = 0, counted = 0, kmid = 0, kmidN = 0;
+    var bestE = -1, showOrig = null, showRec = null;
+    var origE = new Float64Array(nb), recE = new Float64Array(nb);
+    var tmp = new Float64Array(N);
+
+    var out = D.mdctRoundTrip(st.sig, N, function (X, blk) {
+      var k, i, lo, hi, n, g, gdb, gq, ghat, budget, K, s, blockMax = -400;
+      for (k = 0; k < nb; k++) {
+        lo = edges[k]; hi = edges[k + 1]; n = hi - lo;
+        g = 0;
+        for (i = lo; i < hi; i++) g += X[i] * X[i];
+        g = Math.sqrt(g);
+        origE[k] = g;
+        gdb = g > 1e-14 ? 20 * Math.log10(g) : -280;
+        if (gdb > blockMax) blockMax = gdb;
+        budget = perLine * n;
+        bits += EBITS;
+
+        if (g <= 1e-14) { for (i = lo; i < hi; i++) X[i] = 0; recE[k] = 0; continue; }
+        gq = Math.round(gdb / ESTEP) * ESTEP;
+        ghat = Math.pow(10, gq / 20);
+
+        if (mode === "scalar") {
+          // bisect a step size until the band's entropy fits the same budget
+          var slo = g / (n * 4096), shi = g * 4 + 1e-12, step = shi, it;
+          for (it = 0; it < 18; it++) {
+            step = Math.sqrt(slo * shi);
+            if (bandEntropyBits(X, lo, hi, step) > budget) slo = step; else shi = step;
+          }
+          step = shi;
+          bits += bandEntropyBits(X, lo, hi, step);
+          for (i = lo; i < hi; i++) X[i] = Math.round(X[i] / step) * step;
+        } else {
+          for (i = 0; i < n; i++) tmp[i] = X[lo + i] / g;
+          K = 0;
+          while (K < 96 && D.pvqBits(n, K + 1) <= budget) K++;
+          if (K > 0) {
+            bits += D.pvqBits(n, K);
+            var y = D.pvqSearch(tmp.subarray(0, n), K), yy = 0;
+            for (i = 0; i < n; i++) yy += y[i] * y[i];
+            yy = Math.sqrt(yy) || 1;
+            for (i = 0; i < n; i++) X[lo + i] = ghat * y[i] / yy;
+          } else if (mode === "gs") {
+            // CELT's fallback: fold the already-decoded content immediately
+            // below the band into it, and scale to the energy that was
+            // transmitted a moment ago. The band is never left empty.
+            var e2 = 0, si;
+            for (i = 0; i < n; i++) {
+              si = lo - n + i;
+              tmp[i] = si >= 0 ? X[si] : 0;
+              e2 += tmp[i] * tmp[i];
+            }
+            if (e2 < 1e-24) {                 // nothing below to fold: use noise
+              e2 = 0;
+              for (i = 0; i < n; i++) {
+                tmp[i] = ((((i + lo + blk) * 1103515245 + 12345) >>> 16) % 2048) / 1024 - 1;
+                e2 += tmp[i] * tmp[i];
+              }
+            }
+            e2 = Math.sqrt(e2) || 1;
+            for (i = 0; i < n; i++) X[lo + i] = ghat * tmp[i] / e2;
+          } else {
+            for (i = lo; i < hi; i++) X[i] = 0;
+          }
+        }
+        s = 0;
+        for (i = lo; i < hi; i++) s += X[i] * X[i];
+        recE[k] = Math.sqrt(s);
+        if (k === 12) { kmid += (mode === "scalar" ? 0 : (K || 0)); kmidN++; }
+      }
+      // accounting, restricted to bands that were audible in this block
+      for (k = 0; k < nb; k++) {
+        var od = origE[k] > 1e-14 ? 20 * Math.log10(origE[k]) : -280;
+        if (od < blockMax - 60) continue;
+        var rd = recE[k] > 1e-14 ? 20 * Math.log10(recE[k]) : -280;
+        var d = Math.max(-60, Math.min(60, rd - od));
+        errSum += d * d; errN++;
+        counted++;
+        if (d < -25) emptied++;
+      }
+      var tot = 0;
+      for (k = 0; k < nb; k++) tot += origE[k] * origE[k];
+      if (tot > bestE) {
+        bestE = tot;
+        showOrig = Float64Array.from(origE);
+        showRec = Float64Array.from(recE);
+      }
+    }, "sine");
+
+    var pk = D.peak(out);
+    if (pk > 0.95) for (var q = 0; q < out.length; q++) out[q] *= 0.95 / pk;
+    st.out = out;
+    st.kbps = bits / DUR / 1000;
+    st.err = errN ? Math.sqrt(errSum / errN) : 0;
+    st.empty = counted ? emptied / counted : 0;
+    st.kmid = kmidN ? kmid / kmidN : 0;
+    st.show = { o: showOrig, r: showRec };
+
+    document.getElementById("gs-kbps").textContent = st.kbps.toFixed(1) + " kbit/s";
+    document.getElementById("gs-err").textContent = st.err.toFixed(1) + " dB";
+    document.getElementById("gs-empty").textContent = AC.fmt.pct(st.empty);
+    document.getElementById("gs-k").textContent = st.mode === "scalar" ? "n/a" : st.kmid.toFixed(1);
+    document.getElementById("gs-state").textContent = st.budget.toFixed(2) + " bits/line";
+    st.busy = false;
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.show || !st.show.o) return;
+    var sr = st.sr, edges = st.edges, nb = edges.length - 1, k;
+    var ref = 0;
+    for (k = 0; k < nb; k++) ref = Math.max(ref, st.show.o[k]);
+    ref = Math.max(ref, 1e-12);
+
+    var bars = [], step = [];
+    for (k = 0; k < nb; k++) {
+      var f0 = Math.max(edges[k] / N * (sr / 2), p.xmin);
+      var f1 = Math.min(Math.max(edges[k + 1] / N * (sr / 2), f0 * 1.02), p.xmax);
+      var od = Math.max(20 * Math.log10(Math.max(st.show.o[k], 1e-12) / ref), p.ymin + 1);
+      var rd = Math.max(20 * Math.log10(Math.max(st.show.r[k], 1e-12) / ref), p.ymin + 1);
+      bars.push({ x0: f0, x1: f1, y: od, color: AC.C.blue, alpha: .32 });
+      step.push([f0, rd]); step.push([f1, rd]);
+    }
+    p.bars(bars, { base: p.ymin });
+    p.line(step, { color: AC.C.gold, width: 2 });
+    p.note(p.pad.l + 8, p.pad.t + 6, nb + " bands · loudest of " + Math.round(st.sig.length / N) + " blocks", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  var pending = 0;
+  AC.slider(document.getElementById("gs-budget"), function (v) {
+    st.budget = v;
+    document.getElementById("gs-state").textContent = v.toFixed(2) + " bits/line";
+    if (!st.sig) return;
+    clearTimeout(pending); pending = setTimeout(encode, 170);
+  }, function (v) { return v.toFixed(2) + " bits/line"; });
+
+  AC.chips(document.getElementById("gs-mode"), function (v) {
+    st.mode = v; A.stopAll();
+    document.querySelectorAll("#fig-gs .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) encode();
+  });
+
+  A.wire(document.getElementById("gs-orig"), function () { if (!st.sig) encode(); return st.sig; });
+  A.wire(document.getElementById("gs-code"), function () { if (!st.out) encode(); return st.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); setTimeout(encode, 30);
+    }, { rootMargin: "260px" });
+    once.observe(cv);
+  } else { encode(); }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.3 — the pyramid codebook.
+   Left: log2 V(N,K) evaluated from the three-term recursion. Right: a
+   real run of MDCT coefficients from synthesised music, normalised, and
+   the actual output of a greedy PVQ search over it. The table below the
+   figure is filled from the same recursion.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var c1 = document.getElementById("pv-cv1"), c2 = document.getElementById("pv-cv2");
+  if (!c1 || !c2 || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var st = { n: 16, k: 6, band: null, armed: false };
+
+  var p1 = new AC.Plot(c1, {
+    aspect: 1.65, xmin: 0, xmax: 48, ymin: 0, ymax: 220,
+    xlabel: "pulses K", ylabel: "bits per codeword", pad: { l: 46, r: 12, t: 12, b: 32 }
+  });
+  var p2 = new AC.Plot(c2, {
+    aspect: 1.65, xmin: -0.5, xmax: 63.5, ymin: -0.62, ymax: 0.62,
+    xlabel: "coefficient", ylabel: "normalised value", pad: { l: 46, r: 12, t: 12, b: 32 }
+  });
+
+  // One real band of MDCT coefficients, transformed here from real audio.
+  function sourceBand() {
+    if (st.band) return st.band;
+    if (!st.armed) return null;
+    var sr = A.rate(), x = A.src.music(0.9, { sr: sr }), NB = 256;
+    var w = D.WIN.sine(2 * NB), buf = new Float64Array(2 * NB), i, b;
+    var best = null, bestE = -1;
+    for (b = 2; b < Math.floor(x.length / NB) - 1; b++) {
+      for (i = 0; i < 2 * NB; i++) buf[i] = (x[b * NB - NB + i] || 0) * w[i];
+      var X = D.mdct(buf), e = 0;
+      for (i = 24; i < 88; i++) e += X[i] * X[i];
+      if (e > bestE) { bestE = e; best = X.slice(24, 88); }
+    }
+    st.band = best || new Float64Array(64);
+    return st.band;
+  }
+
+  function fmtV(v) {
+    if (!isFinite(v)) return "overflow";
+    if (v < 1e9) return Math.round(v).toLocaleString("en-GB");
+    return v.toExponential(2).replace("e+", " × 10^");
+  }
+
+  function draw1() {
+    p1.clear();
+    var maxB = Math.max(40, Math.ceil(D.pvqBits(64, 48) / 40) * 40);
+    p1.range(0, 48, 0, maxB);
+    p1.axes({});
+    [8, 16, 32, 64].forEach(function (n) {
+      var pts = [], K;
+      for (K = 0; K <= 48; K++) pts.push([K, D.pvqBits(n, K)]);
+      p1.line(pts, { color: AC.C.faint, width: 1, alpha: .55 });
+      p1.label(48, D.pvqBits(n, 48), "N=" + n, { align: "right", dy: -4, color: AC.C.ghost });
+    });
+    var cur = [], K2;
+    for (K2 = 0; K2 <= 48; K2++) cur.push([K2, D.pvqBits(st.n, K2)]);
+    p1.line(cur, { color: AC.C.gold, width: 2.2 });
+    p1.dot(st.k, D.pvqBits(st.n, st.k), { color: AC.C.red, ring: true });
+  }
+
+  function draw2() {
+    p2.clear();
+    var band = sourceBand(), n = st.n, i, e = 0;
+    if (!band) { p2.axes({}); return; }
+    var xs = new Float64Array(n);
+    for (i = 0; i < n; i++) { xs[i] = band[i] || 0; e += xs[i] * xs[i]; }
+    e = Math.sqrt(e) || 1;
+    for (i = 0; i < n; i++) xs[i] /= e;
+
+    var y = D.pvqSearch(xs, st.k), yy = 0;
+    for (i = 0; i < n; i++) yy += y[i] * y[i];
+    yy = Math.sqrt(yy) || 1;
+
+    var lim = 0, err = 0;
+    for (i = 0; i < n; i++) { lim = Math.max(lim, Math.abs(xs[i]), Math.abs(y[i] / yy)); }
+    lim = Math.max(lim * 1.18, 0.12);
+    p2.range(-0.6, n - 0.4, -lim, lim);
+    p2.axes({ y: [-lim, -lim / 2, 0, lim / 2, lim], yfmt: function (v) { return v.toFixed(2); } });
+    p2.hline(0, { color: AC.C.line, dash: false });
+
+    var op = [], qp = [];
+    for (i = 0; i < n; i++) {
+      op.push([i - 0.16, xs[i]]);
+      qp.push([i + 0.16, y[i] / yy]);
+      err += (xs[i] - y[i] / yy) * (xs[i] - y[i] / yy);
+    }
+    p2.stems(op, { color: AC.C.blue, r: 2.2 });
+    p2.stems(qp, { color: AC.C.gold, r: 2.2 });
+
+    var snr = -10 * Math.log10(Math.max(err, 1e-9));
+    document.getElementById("pv-snr").textContent = snr.toFixed(1) + " dB";
+  }
+
+  function update() {
+    var v = D.pvqV(st.n, st.k), b = D.pvqBits(st.n, st.k);
+    document.getElementById("pv-v").textContent = fmtV(v);
+    document.getElementById("pv-bits").textContent = b.toFixed(1) + " bits";
+    document.getElementById("pv-per").textContent = (b / st.n).toFixed(2) + " bits";
+    document.getElementById("pv-state").textContent = "N " + st.n + " · K " + st.k;
+    draw1(); draw2();
+  }
+  AC.autoDraw(p1, draw1);
+  AC.autoDraw(p2, draw2);
+
+  AC.slider(document.getElementById("pv-n"), function (v) { st.n = v | 0; update(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("pv-k"), function (v) { st.k = v | 0; update(); },
+    function (v) { return String(v | 0); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); st.armed = true; update();
+    }, { rootMargin: "260px" });
+    once.observe(c2);
+  } else { st.armed = true; update(); }
+
+  // the table, from the same recursion
+  var tb = document.getElementById("pv-tab");
+  if (tb) {
+    var rows = "";
+    [4, 8, 16, 32, 64].forEach(function (n) {
+      [1, 2, 4, 8, 16, 32].forEach(function (k) {
+        var v = D.pvqV(n, k), b = D.pvqBits(n, k);
+        rows += "<tr><td class=\"num\">" + n + "</td><td class=\"num\">" + k +
+          "</td><td class=\"num\">" + fmtV(v) + "</td><td class=\"num\">" + b.toFixed(1) +
+          "</td><td class=\"num\">" + (b / n).toFixed(2) + "</td></tr>";
+      });
+    });
+    tb.innerHTML = rows;
+  }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.4 — the TOC byte, decoded.
+   Eight clickable bits; the configuration table is generated from the
+   rule that produces RFC 6716's Table 2, and the packet map below is
+   drawn to scale from the payload size and framing code.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var host = document.getElementById("tc-bits"), cvT = document.getElementById("tc-cv");
+  if (!host || !cvT || !window.AC) return;
+
+  var BWNAME = { NB: "NB · 4 kHz", MB: "MB · 6 kHz", WB: "WB · 8 kHz",
+                 SWB: "SWB · 12 kHz", FB: "FB · 20 kHz" };
+  var CONF = [];
+  (function () {
+    var i, j, s4 = [10, 20, 40, 60], sc = [2.5, 5, 10, 20];
+    ["NB", "MB", "WB"].forEach(function (bw) {
+      for (j = 0; j < 4; j++) CONF.push({ mode: "SILK-only", bw: bw, ms: s4[j] });
+    });
+    ["SWB", "FB"].forEach(function (bw) {
+      CONF.push({ mode: "Hybrid", bw: bw, ms: 10 });
+      CONF.push({ mode: "Hybrid", bw: bw, ms: 20 });
+    });
+    ["NB", "WB", "SWB", "FB"].forEach(function (bw) {
+      for (i = 0; i < 4; i++) CONF.push({ mode: "CELT-only", bw: bw, ms: sc[i] });
+    });
+  })();
+
+  var LABELS = ["cfg4", "cfg3", "cfg2", "cfg1", "cfg0", "s", "c1", "c0"];
+  var st = { byte: 124, bytes: 80, m: 3 };
+
+  var p = new AC.Plot(cvT, {
+    aspect: 5.4, xmin: 0, xmax: 80, ymin: 0, ymax: 1,
+    xlabel: "byte offset", pad: { l: 30, r: 12, t: 10, b: 30 }
+  });
+
+  host.innerHTML = LABELS.map(function (l, i) {
+    return '<button class="bitf" data-b="' + i + '" style="font:inherit;cursor:pointer" ' +
+      'aria-label="toggle bit ' + l + '"><span class="bv">0</span><span class="bn">' + l + "</span></button>";
+  }).join("");
+  var cells = Array.prototype.slice.call(host.querySelectorAll(".bitf"));
+
+  host.addEventListener("click", function (e) {
+    var b = e.target.closest(".bitf");
+    if (!b) return;
+    var i = +b.dataset.b;
+    st.byte ^= (1 << (7 - i));
+    update();
+  });
+
+  function decode() {
+    var cfg = st.byte >> 3, s = (st.byte >> 2) & 1, c = st.byte & 3;
+    var d = CONF[cfg];
+    var frames = c === 0 ? 1 : c === 1 ? 2 : c === 2 ? 2 : st.m;
+    var overhead = 1 + (c === 3 ? 1 : 0) + (c === 2 ? 1 : 0);
+    return { cfg: cfg, s: s, c: c, d: d, frames: frames, overhead: overhead,
+             dur: frames * d.ms, max: Math.floor(120 / d.ms) };
+  }
+
+  function update() {
+    var r = decode(), i;
+    for (i = 0; i < 8; i++) {
+      var on = !!(st.byte & (1 << (7 - i)));
+      cells[i].classList.toggle("on", on);
+      cells[i].firstChild.textContent = on ? "1" : "0";
+    }
+    document.getElementById("tc-state").textContent =
+      "0x" + st.byte.toString(16).toUpperCase().padStart(2, "0");
+    document.getElementById("tc-cfg").textContent = String(r.cfg);
+    document.getElementById("tc-mode").textContent = r.d.mode;
+    document.getElementById("tc-bw").textContent = BWNAME[r.d.bw];
+    document.getElementById("tc-fs").textContent = r.d.ms + " ms";
+    document.getElementById("tc-ch").textContent = r.s ? "stereo" : "mono";
+
+    var durEl = document.getElementById("tc-dur").parentNode;
+    var bad = r.dur > 120 + 1e-9;
+    durEl.classList.toggle("bad", bad);
+    durEl.classList.toggle("ok", !bad);
+    document.getElementById("tc-dur").textContent =
+      bad ? (r.frames + " · " + r.dur + " ms — over 120")
+          : (r.frames + " · " + r.dur + " ms");
+    document.getElementById("tc-rate").textContent =
+      (st.bytes * 8 / (r.dur / 1000) / 1000).toFixed(1) + " kbit/s";
+
+    var tb = document.getElementById("tc-tab");
+    if (tb) {
+      tb.innerHTML = CONF.map(function (d, n) {
+        var cell = function (v, cls) {
+          var t = n === r.cfg ? "<b>" + v + "</b>" : v;
+          return '<td class="' + (cls || "") + '">' + t + "</td>";
+        };
+        return "<tr>" + cell((n === r.cfg ? "▶ " : "") + n, "num") + cell(d.mode) +
+          cell(d.bw) + cell(d.ms + " ms", "num") + cell(String(Math.floor(120 / d.ms)), "num") + "</tr>";
+      }).join("");
+    }
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    var r = decode(), total = Math.max(st.bytes, r.overhead + r.frames);
+    p.range(0, total, 0, 1);
+    p.axes({ y: [], grid: false });
+    var bars = [], at = 0, i;
+    bars.push({ x0: 0, x1: 1, y: 1, color: AC.C.gold, alpha: .9 }); at = 1;
+    if (r.c === 3) { bars.push({ x0: at, x1: at + 1, y: 1, color: AC.C.purple, alpha: .9 }); at += 1; }
+    if (r.c === 2) { bars.push({ x0: at, x1: at + 1, y: 1, color: AC.C.teal, alpha: .9 }); at += 1; }
+    var payload = Math.max(total - at, 0), each = payload / r.frames;
+    for (i = 0; i < r.frames; i++) {
+      bars.push({ x0: at + i * each, x1: at + (i + 1) * each, y: 1, color: AC.C.blue, alpha: .72 });
+    }
+    p.bars(bars, { base: 0, gap: .5 });
+    p.note(p.pad.l + 6, p.pad.t + 4, r.frames + (r.frames === 1 ? " frame · " : " frames · ") +
+      total + " bytes · code " + r.c, { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  AC.slider(document.getElementById("tc-bytes"), function (v) { st.bytes = v | 0; update(); },
+    function (v) { return (v | 0) + " bytes"; });
+  AC.slider(document.getElementById("tc-m"), function (v) { st.m = v | 0; update(); },
+    function (v) { return String(v | 0); });
+  AC.chips(document.getElementById("tc-pre"), function (v) { st.byte = +v; update(); });
+
+  update();
+})();
+/* ---------------------------------------------------------------
+   FIG 9.5 — packet loss, and three ways of surviving it.
+   A synthesised utterance is cut into frames, a seeded generator drops
+   them, and the missing audio is either left out, extrapolated from the
+   last good frame, or recovered from the coarse redundant copy that the
+   following packet would have carried.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("ls-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var DUR = 2.6;
+  var st = { loss: 10, frameMs: 20, mode: "plc", sr: 48000,
+             sig: null, deg: null, out: null, lost: [], stats: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 3.0, xmin: 0, xmax: DUR, ymin: -60, ymax: 0,
+    xlabel: "time, s", ylabel: "RMS, dB", pad: { l: 50, r: 14, t: 14, b: 32 }
+  });
+
+  function ensure() {
+    if (st.sig) return;
+    var sr = A.rate(); st.sr = sr;
+    st.sig = A.src.speech(DUR, { sr: sr });
+    // The redundant copy an LBRR frame stands for: band-limited and coarse.
+    var lp = A.lowpassFFT(st.sig, sr, 4000);
+    st.deg = A.quantize(lp, 5, { dither: true });
+    var i;
+    for (i = 0; i < st.deg.length; i++) st.deg[i] *= 0.95;
+  }
+
+  function run() {
+    ensure();
+    var sr = st.sr, x = st.sig, fl = Math.max(32, Math.round(sr * st.frameMs / 1000));
+    var nF = Math.floor(x.length / fl), xf = Math.min(Math.round(sr * 0.003), fl >> 2);
+    var rnd = A.prng(20120911), lost = new Uint8Array(nF), i, f;
+    for (f = 0; f < nF; f++) lost[f] = ((rnd() * 0.5 + 0.5) * 100 < st.loss) ? 1 : 0;
+
+    var out = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) out[i] = x[i];
+
+    var stats = { lost: 0, fec: 0, plc: 0, gap: 0 }, run0 = 0;
+    var c = new Float64Array(fl + 2 * xf);
+
+    for (f = 0; f < nF; f++) {
+      var s0 = f * fl;
+      if (!lost[f]) { run0 = 0; continue; }
+      stats.lost++;
+      run0++;
+      var kind = "silence";
+      if (st.mode === "fec" && f + 1 < nF && !lost[f + 1]) kind = "fec";
+      else if (st.mode !== "silence") kind = "plc";
+
+      if (kind === "fec") {
+        stats.fec++;
+        for (i = 0; i < c.length; i++) c[i] = st.deg[s0 - xf + i] || 0;
+      } else if (kind === "plc") {
+        stats.plc++;
+        // repeat the previous reconstructed frame, decaying across the gap
+        var g0 = Math.pow(0.6, run0 - 1);
+        for (i = 0; i < c.length; i++) {
+          var src = s0 - fl + ((i + fl - xf) % fl);
+          c[i] = (src >= 0 ? out[src] : 0) * g0 * Math.max(0, 1 - 0.55 * i / c.length);
+        }
+      } else {
+        stats.gap += st.frameMs;
+        for (i = 0; i < c.length; i++) c[i] = 0;
+      }
+
+      // overlap-add the concealed content over the frame, cross-fading
+      // xf samples into the audio on each side so nothing clicks.
+      for (i = 0; i < xf; i++) {
+        var t = 0.5 - 0.5 * Math.cos(Math.PI * i / xf);
+        if (s0 - xf + i >= 0) out[s0 - xf + i] = out[s0 - xf + i] * (1 - t) + c[i] * t;
+      }
+      for (i = 0; i < fl - xf; i++) out[s0 + i] = c[xf + i];
+      for (i = 0; i < xf; i++) {
+        var t2 = 0.5 - 0.5 * Math.cos(Math.PI * i / xf);
+        var oi = s0 + fl - xf + i;
+        if (oi < out.length) out[oi] = c[fl + i] * (1 - t2) + (lost[f + 1] ? c[fl + i] : (x[oi] || 0)) * t2;
+      }
+    }
+
+    st.out = out; st.lost = lost; st.stats = stats;
+    st.nF = nF; st.fl = fl;
+
+    document.getElementById("ls-lost").textContent = stats.lost + " of " + nF;
+    document.getElementById("ls-fec").textContent = st.mode === "fec"
+      ? (stats.fec + " (" + AC.fmt.pct(stats.lost ? stats.fec / stats.lost : 0) + ")") : "off";
+    document.getElementById("ls-plc").textContent = st.mode === "silence" ? "off" : String(stats.plc);
+    document.getElementById("ls-gap").textContent = Math.round(stats.gap) + " ms";
+    document.getElementById("ls-state").textContent = st.loss + "% · " + st.frameMs + " ms";
+    redraw();
+  }
+
+  function envelope(x, sr, hop) {
+    var n = Math.floor(x.length / hop), e = [], i, k, s;
+    for (k = 0; k < n; k++) {
+      s = 0;
+      for (i = k * hop; i < (k + 1) * hop && i < x.length; i++) s += x[i] * x[i];
+      e.push([k * hop / sr, D.dbp(s / hop + 1e-12)]);
+    }
+    return e;
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (v) { return v.toFixed(1); } });
+    if (!st.out) return;
+    var sr = st.sr, hop = Math.round(sr * 0.006), f;
+    for (f = 0; f < st.nF; f++) {
+      if (!st.lost[f]) continue;
+      p.band(f * st.fl / sr, (f + 1) * st.fl / sr, { color: AC.C.red, alpha: .17 });
+    }
+    p.line(envelope(st.sig, sr, hop), { color: AC.C.blue, width: 1.2, alpha: .6 });
+    p.line(envelope(st.out, sr, hop), { color: AC.C.gold, width: 1.6 });
+    p.note(p.pad.l + 8, p.pad.t + 4, st.nF + " frames of " + st.frameMs + " ms", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  var pend = 0;
+  AC.slider(document.getElementById("ls-loss"), function (v) {
+    st.loss = v | 0;
+    document.getElementById("ls-state").textContent = (v | 0) + "% · " + st.frameMs + " ms";
+    if (!st.sig) return;
+    clearTimeout(pend); pend = setTimeout(run, 110);
+  }, function (v) { return (v | 0) + "%"; });
+
+  AC.chips(document.getElementById("ls-fs"), function (v) {
+    st.frameMs = +v; A.stopAll();
+    document.querySelectorAll("#fig-loss .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) run();
+  });
+  AC.chips(document.getElementById("ls-mode"), function (v) {
+    st.mode = v; A.stopAll();
+    document.querySelectorAll("#fig-loss .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) run();
+  });
+
+  A.wire(document.getElementById("ls-orig"), function () { ensure(); return st.sig; });
+  A.wire(document.getElementById("ls-out"), function () { if (!st.out) run(); return st.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); run();
+    }, { rootMargin: "260px" });
+    once.observe(cv);
+  } else { run(); }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
