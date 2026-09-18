@@ -1,6 +1,33 @@
 import { clamp, wrapAngle } from './math.js';
 import { sampleStage } from './stage.js';
 
+// Reference-driver calibration. It leaves a margin against the theoretical
+// corner speed because bumps, camber changes and surface joins all spend grip
+// it cannot see: it is a steady driver rather than a fast one.
+export const AUTOPILOT_TUNING = Object.freeze({
+  topSpeed: 41,
+  reactiveCap: 37,
+  cornerMargin: .333,
+  looseSpeed: 30,
+  brakingMargin: .62,
+  driveMargin: .5,
+  headingGain: 2.4,
+  lineGain: .17,
+  lineAuthority: .55,
+  yawDamping: .65,
+  slideGain: 1,
+  throttleGain: .3,
+  brakeGain: .23,
+  recoverySpeed: 14,
+  edgeCaution: .45,
+  slipCut: 2.2,
+  slideCut: 3.2
+});
+const AUTOPILOT_HORIZON=[25,50,80,115,150];
+// Friction the reference driver assumes per surface. It mirrors the catalog
+// rather than importing it: the driver is allowed to be a little pessimistic.
+const SURFACE_GRIP={compact:.88,loose:.66,grass:.4,tarmac:1,'wet-tarmac':.78,snow:.34,ice:.2,mud:.5,'desert-gravel':.72};
+
 export const DEFAULT_BINDINGS = Object.freeze({
   accelerate: 'KeyA',
   brake: 'KeyZ',
@@ -250,17 +277,157 @@ export class InputManager {
   readAutopilot(car) { return autopilotControls(this.stage,car); }
 }
 
-export function autopilotControls(stage,car) {
-  const lookDistance=clamp(18+car.speed*.55,20,45), target=sampleStage(stage,car.progress+lookDistance);
-  let maxCurve=0;
-  for(const ahead of [25,50,80,115,150]) maxCurve=Math.max(maxCurve,Math.abs(sampleStage(stage,car.progress+ahead).curvature));
-  const curveSpeed=maxCurve<.0007?40:clamp(Math.sqrt(.72*9.81/Math.max(.0006,maxCurve))*.68,10,37);
-  const targetSpeed=Math.min(curveSpeed,car.surface==='loose'?30:41);
-  const headingError=wrapAngle(target.heading-car.yaw);
-  const steer=clamp(headingError*2.4-car.lateral*.17-car.yawRate*.65-car.slipAngle*1.0,-1,1);
-  const error=targetSpeed-car.speed;
-  const throttle=clamp(error*.14,0,1);
-  const brake=clamp(-error*.23,0,1);
-  const handbrake=maxCurve>.015&&car.speed>targetSpeed+5&&Math.abs(headingError)>.35?.25:0;
-  return {steer,throttle,brake,handbrake};
+/**
+ * Deterministic reference driver. It is the QA harness's hands, so it has to
+ * drive the physics the game actually ships: brake for the grip it has, aim at
+ * a pursuit point rather than at a heading, and catch its own slides.
+ */
+/**
+ * Speed profile for a route: corner speeds from curvature, then a backward pass
+ * for braking and a forward pass for acceleration. Planning the whole stage
+ * once beats reacting to a lookahead window, which is why real pace notes exist.
+ */
+export function planReferenceSpeeds(stage, lateralGripMps2, tuning = AUTOPILOT_TUNING) {
+  const samples = stage.samples;
+  const speeds = new Float64Array(samples.length);
+  const corner = Math.max(1, lateralGripMps2 * tuning.cornerMargin);
+  const braking = Math.max(1, lateralGripMps2 * tuning.brakingMargin);
+  const driving = Math.max(1, lateralGripMps2 * tuning.driveMargin);
+  for (let i = 0; i < samples.length; i += 1) {
+    const curvature = Math.abs(samples[i].curvature);
+    speeds[i] = curvature > 1e-5 ? Math.min(tuning.topSpeed, Math.sqrt(corner / curvature)) : tuning.topSpeed;
+  }
+  for (let i = samples.length - 2; i >= 0; i -= 1) {
+    const ds = Math.max(0.5, samples[i + 1].s - samples[i].s);
+    speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i + 1] * speeds[i + 1] + 2 * braking * ds));
+  }
+  for (let i = 1; i < samples.length; i += 1) {
+    const ds = Math.max(0.5, samples[i].s - samples[i - 1].s);
+    speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i - 1] * speeds[i - 1] + 2 * driving * ds));
+  }
+  return speeds;
+}
+
+const referencePlans = new WeakMap();
+function referenceSpeedAt(stage, progress, lateralGrip, tuning) {
+  let plans = referencePlans.get(stage);
+  if (!plans) { plans = new Map(); referencePlans.set(stage, plans); }
+  // Bucket the grip so a surface change reuses one plan instead of replanning
+  // the whole stage every frame.
+  const key = Math.round(lateralGrip * 4);
+  let speeds = plans.get(key);
+  if (!speeds) { speeds = planReferenceSpeeds(stage, key / 4, tuning); plans.set(key, speeds); }
+  // Sample spacing is near-uniform but not exactly uniform, and the error
+  // compounds: assuming it would put the braking points tens of metres out by
+  // the end of a stage. Seed from the estimate, then walk onto the real index.
+  const samples = stage.samples;
+  const spacing = Math.max(0.5, samples[1].s - samples[0].s);
+  let index = clamp(Math.round(progress / spacing), 0, speeds.length - 1);
+  while (index > 0 && samples[index].s > progress) index -= 1;
+  while (index < speeds.length - 1 && samples[index + 1].s <= progress) index += 1;
+  return speeds[index];
+}
+
+/** Lateral grip, in m/s^2, a named surface offers this car in this weather. */
+export function surfaceGripFor(surfaceId, car) {
+  const weather = car.weather || {};
+  const wetness = clamp(Number(weather.roadWetness) || 0, 0, 1);
+  const gripScale = Number.isFinite(Number(weather.gripScale)) ? Number(weather.gripScale) : 1;
+  const wetLoss = surfaceId === 'tarmac' ? wetness * .16 : wetness * .045;
+  const surfaceGrip = SURFACE_GRIP[surfaceId] ?? .8;
+  return Math.max(2.2, surfaceGrip * gripScale * (1 - wetLoss) * 9.81 * (1 - (car.damage?.suspension || 0) * .25));
+}
+
+/** Lateral grip, in m/s^2, that this car has under it right now. */
+export function autopilotGrip(car) {
+  return surfaceGripFor(car.surface, car);
+}
+
+/**
+ * Deterministic reference driver. It is the QA harness's hands, so it drives
+ * the physics the game actually ships: a planned speed profile for the whole
+ * stage, Stanley path tracking on the centreline, and a traction budget that
+ * gives cornering first call on the grip.
+ */
+export function autopilotControls(stage, car, options = null) {
+  const tuning = options ? { ...AUTOPILOT_TUNING, ...options } : AUTOPILOT_TUNING;
+  const speed = Math.max(car.speed, .01);
+  const profile = car.profile || {};
+  const lateralGrip = autopilotGrip(car);
+  const front = sampleStage(stage, Math.min(stage.length, car.progress + 2));
+  // Pace comes from the tightest curvature inside a window ahead, held until
+  // the window clears: the planned-profile version of this drove the stages
+  // faster than the authored duration bands, and those bands are also the
+  // rivals' pace, so the conservative window is the one that belongs here.
+  let tightest = 0;
+  let horizonGrip = lateralGrip;
+  for (const ahead of AUTOPILOT_HORIZON) {
+    const sample = sampleStage(stage, Math.min(stage.length, car.progress + ahead));
+    tightest = Math.max(tightest, Math.abs(sample.curvature));
+    // Plan for the worst surface in the window, not the one under the car:
+    // arriving at a loose section carrying compact-gravel speed is a departure.
+    horizonGrip = Math.min(horizonGrip, surfaceGripFor(sample.surface, car));
+  }
+  const cornerSpeed = tightest < 7e-4
+    ? tuning.topSpeed
+    : clamp(Math.sqrt(horizonGrip * tuning.cornerMargin / Math.max(6e-4, tightest)), 10, tuning.reactiveCap);
+  // Running out of road is the one mistake that compounds: it costs the line,
+  // then the surface, then the car. Give up speed early when the car is drifting
+  // towards the edge rather than waiting until it is over it.
+  const halfWidth = Math.max(2, front.width * .5);
+  const edgeUse = clamp((Math.abs(car.lateral) / halfWidth - .55) / .45, 0, 1);
+  const outward = Math.sign(car.lateral || 1) * (car.lateralSpeed || 0) > 0 ? 1 : .45;
+  const edgeScale = 1 - edgeUse * outward * tuning.edgeCaution;
+  const targetSpeed = Math.min(cornerSpeed, car.surface === 'loose' ? tuning.looseSpeed : tuning.topSpeed) * edgeScale;
+
+  // Steering keeps the proven law: a proportional pull towards the road heading
+  // with line, yaw-rate and slide-catching damping. The slip term is what
+  // countersteers, and its sign was checked against a measured slide recovery.
+  // Look closer while catching a slide: a distant aim point asks for lock the
+  // car cannot use yet.
+  const look = clamp(18 + speed * .55, 20, 45) * (Math.abs(car.slipAngle) > .42 ? .6 : 1);
+  const aim = sampleStage(stage, Math.min(stage.length, car.progress + look));
+  // On the road, follow the road's heading. Off it, aim at the road itself:
+  // holding a parallel heading out in a field never brings the car back.
+  const rejoin = clamp((Math.abs(car.lateral) - halfWidth) / 7, 0, 1);
+  const bearingToRoute = Math.atan2(aim.x - car.x, aim.z - car.z);
+  const desiredHeading = rejoin > 0 ? aim.heading + wrapAngle(bearingToRoute - aim.heading) * rejoin : aim.heading;
+  const headingError = wrapAngle(desiredHeading - car.yaw);
+  // The line term has to be bounded. Unclamped, a car twenty metres off the
+  // road pins the steering at full lock on that term alone, and then nothing
+  // the heading or slide terms say can reach the wheels.
+  const steer = headingError * tuning.headingGain
+    - clamp(car.lateral * tuning.lineGain, -tuning.lineAuthority, tuning.lineAuthority)
+    - car.yawRate * tuning.yawDamping
+    - car.slipAngle * tuning.slideGain;
+
+  // Recovery mode. A big slide or a trip onto the verge is where a reactive
+  // driver compounds its mistake: it keeps chasing the line and spins again.
+  // Straighten first, slow down, and only then rejoin.
+  const slideAngle = Math.abs(car.slipAngle);
+  const offRoad = Math.abs(car.lateral) > front.width * .5 + 1;
+  const recovering = slideAngle > .42 || (offRoad && speed > 6) || car.recoveryCooldown > 0;
+  const error = (recovering ? Math.min(targetSpeed, tuning.recoverySpeed) : targetSpeed) - speed;
+  let throttle = clamp(error * tuning.throttleGain, 0, 1);
+  const brake = clamp(-error * tuning.brakeGain, 0, 1);
+  // Traction budget: cornering has first call on the grip, and only what is
+  // left may be spent on drive. This is the difference between a driver and a
+  // throttle switch.
+  // Cornering demand, not cornering force: at walking pace a couple of degrees
+  // of slip already produces most of the tyre's force, and reading that as a
+  // spent grip budget left a car stranded on a verge unable to power out.
+  const pathDemand = speed * speed * Math.abs(front.curvature) / lateralGrip;
+  const measured = Math.abs(car.lateralAcceleration || 0) / lateralGrip * clamp(speed / 10, 0, 1);
+  const lateralUse = clamp(Math.max(pathDemand, measured), 0, 1);
+  // On a front-driven car the same axle is steering, cornering and pulling, so
+  // its share of the budget is smaller; a rear-driven one can spend more.
+  const layout = String(profile.drive || 'awd').toLowerCase();
+  const driveShare = layout === 'fwd' ? .72 : layout === 'rwd' ? 1.08 : 1;
+  throttle = Math.min(throttle, Math.sqrt(Math.max(0, 1 - lateralUse * lateralUse)) * driveShare + .12);
+  const drivenSlip = Math.max(car.slipRatio?.front || 0, car.slipRatio?.rear || 0);
+  throttle *= clamp(1 - (drivenSlip - .14) * tuning.slipCut, .1, 1);
+  throttle *= clamp(1 - (Math.abs(car.slipAngle) - .12) * tuning.slideCut, .05, 1);
+  // Only ever a deliberate rotation aid, never a panic button.
+  const handbrake = Math.abs(headingError) > .45 && speed > targetSpeed + 6 ? .25 : 0;
+  return { steer: clamp(steer, -1, 1), throttle: clamp(throttle, 0, 1), brake, handbrake };
 }

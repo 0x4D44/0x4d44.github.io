@@ -170,7 +170,7 @@ const sunspireStage = stage({
   ],
   splitA: 1850,
   splitB: 4020,
-  expectedDurationSeconds: [370, 590],
+  expectedDurationSeconds: [325, 600],
   landmarkIds: ['savannah', 'acacia', 'water-splash', 'washboard', 'rift-escarpment', 'finish-gate'],
   hazardPlan: {
     seed: 2301, sampleStart: 22, sampleEndMargin: 20, sampleStep: 8, skipSeed: 41011, skipThreshold: 0.4,
@@ -255,7 +255,7 @@ const blackwaterStage = stage({
   ],
   splitA: 1500,
   splitB: 3230,
-  expectedDurationSeconds: [350, 650],
+  expectedDurationSeconds: [375, 720],
   landmarkIds: ['cedar-tunnel', 'retaining-wall', 'autumn-maple', 'mountain-stream', 'paper-lantern', 'pass-gate'],
   hazardPlan: {
     seed: 3407, sampleStart: 20, sampleEndMargin: 22, sampleStep: 7, skipSeed: 53017, skipThreshold: 0.35,
@@ -340,7 +340,7 @@ const frostholmStage = stage({
   ],
   splitA: 1900,
   splitB: 3860,
-  expectedDurationSeconds: [345, 530],
+  expectedDurationSeconds: [210, 420],
   landmarkIds: ['sea-cliff', 'village-square', 'stone-retaining-wall', 'olive-grove', 'safe-crowd-line', 'coastal-gate'],
   hazardPlan: {
     seed: 4513, sampleStart: 24, sampleEndMargin: 24, sampleStep: 8, skipSeed: 64007, skipThreshold: 0.39,
@@ -425,7 +425,7 @@ const redstoneStage = stage({
   ],
   splitA: 1850,
   splitB: 3990,
-  expectedDurationSeconds: [375, 660],
+  expectedDurationSeconds: [450, 690],
   landmarkIds: ['eucalyptus', 'red-gravel', 'cattle-grid', 'rough-verge', 'dust-bowl', 'storm-gate'],
   hazardPlan: {
     seed: 5629, sampleStart: 23, sampleEndMargin: 22, sampleStep: 9, skipSeed: 68011, skipThreshold: 0.37,

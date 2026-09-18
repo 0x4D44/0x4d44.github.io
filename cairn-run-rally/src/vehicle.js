@@ -1,11 +1,17 @@
 import { clamp, expSmoothing, wrapAngle } from './math.js';
 import { CAIRN_R4, SURFACES } from './content.js';
-import { axleLoads, combinedTyreForces, drivenAxleShares, stepPowertrain } from './dynamics.js';
+import {
+  aeroDownforceN, axleGripCapacity, axleInertiaKg, axleLoads, drivenAxleShares,
+  lateralLoadTransfer, relaxTyreState, stepPowertrain, stepWheelSpeed
+} from './dynamics.js';
 import { nearestStagePoint, sampleStage } from './stage.js';
 
 const GRAVITY = 9.81;
-const TYRE_FRONT = 72000;
-const TYRE_REAR = 68000;
+// Slip angle at which an axle reaches peak lateral force. The front axle
+// already carries more load, so the rear needs a slightly earlier peak to keep
+// the front/rear cornering stiffness ratio the chassis was balanced around —
+// give the rear a later peak and the car is an unrecoverable spin machine.
+const PEAK_SLIP_ANGLE_REAR_SCALE = 0.91;
 const LANDING_DAMAGE_CAP_SCALE = { suspension: 0.72 / 0.78, body: 0.82 / 0.9 };
 const SURFACE_BY_ID = new Map(SURFACES.map(surface => [surface.id, surface]));
 const DEFAULT_ASSISTS = Object.freeze({ automatic: true, stability: true, braking: true, paceNotes: true });
@@ -70,9 +76,22 @@ export class RallyCar {
     this.collisionImpulse = 0;
     this.collisionCooldown = 0;
     this.recoveryTimer = 0;
+    this.boggedTimer = 0;
+    this.lastLateralDistance = 0;
+    this.recoveryCooldown = 0;
     this.needsRecovery = false;
     this.lastSafeDistance = Math.max(12, road.s);
     this.lastSafeTimer = 0;
+    this.wheelSpeed = { front: 0, rear: 0 };
+    this.chassisSpeedAtLastStep = 0;
+    this.slipRatio = { front: 0, rear: 0 };
+    this.slipAngleState = { front: 0, rear: 0 };
+    this.tyreSigma = { front: 0, rear: 0 };
+    this.axleCapacity = { front: 0, rear: 0 };
+    this.tyreForces = null;
+    this.wheelSpin = 0;
+    this.wheelLock = 0;
+    this.downforceN = 0;
     this.gear = 1;
     this.rpm = 1500;
     this.shiftPulse = 0;
@@ -81,10 +100,31 @@ export class RallyCar {
   }
 
   recover() {
-    this.reset(Math.max(14, this.lastSafeDistance - 6), false);
+    this.reset(Math.max(14, this.lastSafeDistance - 10), false);
     this.vx = 0;
     this.vz = 0;
+    // Rejoining at racing pace is how one recovery becomes a loop of them: the
+    // car is dropped into the corner it just failed, and fails it again.
+    this.recoveryCooldown = 4;
     this.damage.body = clamp(this.damage.body + 0.025, 0, this.profile.durability.body);
+  }
+
+  /**
+   * Wheel speed is simulation state, but the chassis velocity can also be set
+   * from outside the simulation — a spawn, a recovery, a test harness placing
+   * a car at speed. Rolling wheels are the right answer there; treating the
+   * jump as a locked-wheel skid is not.
+   */
+  syncWheels(longitudinalSpeed = null) {
+    const speed = longitudinalSpeed === null
+      ? this.vx * Math.sin(this.yaw) + this.vz * Math.cos(this.yaw)
+      : longitudinalSpeed;
+    this.wheelSpeed.front = speed;
+    this.wheelSpeed.rear = speed;
+    this.slipRatio.front = 0;
+    this.slipRatio.rear = 0;
+    this.chassisSpeedAtLastStep = speed;
+    return speed;
   }
 
   get speed() { return Math.hypot(this.vx, this.vz); }
@@ -100,6 +140,7 @@ export class RallyCar {
       shiftUp: Boolean(rawInput.shiftUp),
       shiftDown: Boolean(rawInput.shiftDown)
     };
+    this.recoveryCooldown = Math.max(0, (this.recoveryCooldown || 0) - dt);
     this.collisionImpulse *= Math.exp(-9 * dt);
     this.collisionCooldown = Math.max(0, this.collisionCooldown - dt);
     this.shiftPulse = Math.max(0, this.shiftPulse - dt * 4);
@@ -116,6 +157,9 @@ export class RallyCar {
     let u = this.vx * forwardX + this.vz * forwardZ;
     let v = this.vx * rightX + this.vz * rightZ;
     const speed = Math.hypot(u, v);
+    // No force in the model can move the chassis this far in one step, so a
+    // jump this large came from outside it: roll the wheels with it.
+    if (Math.abs(u - this.chassisSpeedAtLastStep) > 2.5) this.syncWheels(u);
 
     const roadHalfWidth = road.width * 0.5;
     const onRoad = Math.abs(road.lateral) <= roadHalfWidth + 0.7;
@@ -132,7 +176,16 @@ export class RallyCar {
     const steeringBias = this.damage.steering * 0.10 * Math.sin(2.47 + this.damage.body * 5.2);
     const steerTarget = clamp(input.steer + steeringBias, -1, 1);
     this.steer += (steerTarget - this.steer) * expSmoothing(steerRate, dt);
-    const maxSteer = this.profile.steeringLockRad * (1 + this.tuning.steeringRatio * 0.18) / (1 + speed * 0.014);
+    // Speed-sensitive steering. Full lock at 140 km/h is not a control, it is a
+    // crash: a fifth of the travel was worth about 0.9 g, so nothing between
+    // straight and sideways was reachable. The limit is tied to the grip the
+    // surface actually has, so a wet stage gives up lock as well as speed.
+    const authoredLock = this.profile.steeringLockRad * (1 + this.tuning.steeringRatio * 0.18);
+    const gripLimit = Math.max(2.5, baseMu * GRAVITY * 1.15);
+    const lockForSpeed = Math.atan(this.profile.wheelbaseM * gripLimit / Math.max(16, speed * speed)) * 2.6 + 0.03;
+    const maxSteer = Math.min(authoredLock, Math.max(0.07, lockForSpeed));
+    this.steerAuthority = maxSteer / authoredLock;
+    this.maxSteerRad = maxSteer;
     const steerAngle = this.steer * maxSteer;
 
     const frontAxle = this.profile.wheelbaseM * (1 - this.profile.frontWeightFraction);
@@ -147,20 +200,23 @@ export class RallyCar {
     const alphaFront = Math.atan2(v + frontAxle * this.yawRate, denominator) - steerAngle * steeringDirection;
     const alphaRear = Math.atan2(v - rearAxle * this.yawRate, denominator);
     const groundGrip = this.grounded ? 1 : 0.015;
-    let lateralDemandFront = -TYRE_FRONT * alphaFront;
-    let lateralDemandRear = -TYRE_REAR * alphaRear;
-
-    if (Math.abs(u) < 2.2) {
-      const lowSpeed = clamp(Math.abs(u) / 2.2, 0, 1);
-      lateralDemandFront *= lowSpeed;
-      lateralDemandRear *= lowSpeed;
-    }
+    const lowSpeed = clamp(Math.abs(u) / 2.2, 0, 1);
 
     const engineHealth = 1 - this.damage.engine * 0.46;
     const brakeHealth = 1 - this.damage.brakes * 0.38;
+    const driveShare = drivenAxleShares(this.profile.drive, this.profile.torqueSplitFront ?? this.profile.frontWeightFraction);
+    // The engine is geared to the driven wheels, not to the ground: spin the
+    // wheels up on gravel and the revs flare even though the car is not.
+    const drivenWheelSpeed = driveShare.front * this.wheelSpeed.front + driveShare.rear * this.wheelSpeed.rear;
     const powertrain = stepPowertrain(
       { gear: this.gear, rpm: this.rpm, shiftRemaining: this.shiftRemaining },
-      { speedMps: u, throttle: input.throttle, shiftUp: input.shiftUp, shiftDown: input.shiftDown },
+      {
+        speedMps: drivenWheelSpeed,
+        shiftSpeedMps: Math.sign(u || 1) * Math.min(Math.abs(drivenWheelSpeed), Math.abs(u) + 2.5),
+        throttle: input.throttle,
+        shiftUp: input.shiftUp,
+        shiftDown: input.shiftDown
+      },
       this.profile,
       dt,
       { automatic: this.assists.automatic }
@@ -169,34 +225,92 @@ export class RallyCar {
     this.rpm = powertrain.rpm;
     this.shiftRemaining = powertrain.shiftRemaining;
     if (powertrain.shifted) this.shiftPulse = 1;
-    let driveDemand = 0;
-    let serviceBrake = 0;
+    let driveForce = 0;
+    let brakeCommand = 0;
     if (u >= -0.5) {
-      driveDemand = powertrain.driveForceN * engineHealth - Math.sign(u) * powertrain.engineBrakeForceN * engineHealth;
-      if (u > 0.4) serviceBrake = -input.brake * this.profile.brakeForceN * brakeHealth;
-      else if (input.brake > 0.15 && input.throttle < 0.1) driveDemand = -input.brake * 3700 * engineHealth;
+      driveForce = powertrain.driveForceN * engineHealth - Math.sign(u) * powertrain.engineBrakeForceN * engineHealth;
+      if (u > 0.4) brakeCommand = input.brake * this.profile.brakeForceN * brakeHealth;
+      else if (input.brake > 0.15 && input.throttle < 0.1) driveForce = -input.brake * 3700 * engineHealth;
     } else {
-      driveDemand = -input.brake * 3700 * engineHealth;
-      serviceBrake = input.throttle * this.profile.brakeForceN * brakeHealth;
+      driveForce = -input.brake * 3700 * engineHealth;
+      brakeCommand = input.throttle * this.profile.brakeForceN * brakeHealth;
     }
-    if (this.assists.stability && this.slipAmount > 0.12 && driveDemand > 0) driveDemand *= clamp(1 - this.slipAmount * 0.72, 0.32, 1);
-    if (this.assists.braking && this.slipAmount > 0.55) serviceBrake *= 1 - (this.slipAmount - 0.55) * 0.35;
-    const driveShare = drivenAxleShares(this.profile.drive, this.profile.torqueSplitFront ?? this.profile.frontWeightFraction);
+    const tractionSlip = Math.max(this.slipRatio.front * driveShare.front, this.slipRatio.rear * driveShare.rear);
+    if (this.assists.stability && driveForce > 0) {
+      const slide = Math.max(this.slipAmount * 0.72, clamp((tractionSlip - 0.16) * 1.6, 0, 1));
+      if (slide > 0.09) driveForce *= clamp(1 - slide, 0.32, 1);
+    }
+    if (this.assists.braking && this.slipAmount > 0.55) brakeCommand *= 1 - (this.slipAmount - 0.55) * 0.35;
     const brakeBias = clamp(this.profile.brakeBiasFront + this.tuning.brakeBias * 0.08, 0.45, 0.78);
-    const handbrakeForce = -Math.sign(u) * input.handbrake * 5200 * clamp(Math.abs(u) / 1.5, 0, 1);
-    const longitudinalDemand = {
-      front: driveDemand * driveShare.front + serviceBrake * brakeBias,
-      rear: driveDemand * driveShare.rear + serviceBrake * (1 - brakeBias) + handbrakeForce
+    const brakeForce = { front: brakeCommand * brakeBias, rear: brakeCommand * (1 - brakeBias) };
+    // The handbrake is a rear brake, not a shove: it locks the rear wheels and
+    // the friction circle does the rest of the work.
+    brakeForce.rear += input.handbrake * 7200;
+    // Downforce and road bank both press the car into the surface.
+    const downforce = aeroDownforceN(u, this.profile);
+    this.downforceN = downforce;
+    const bankAngle = Math.atan(road.camber);
+    const normalScale = 1 / Math.max(0.55, Math.cos(bankAngle));
+    const axleNormal = {
+      front: (frontLoad + downforce * this.profile.frontWeightFraction) * normalScale,
+      rear: (rearLoad + downforce * (1 - this.profile.frontWeightFraction)) * normalScale
     };
+    const centreHeight = clamp(this.profile.rideHeightM * 0.92 * (1 + this.tuning.rideHeight * 0.1), 0.3, 0.75);
+    const frontRollShare = clamp(this.profile.frontWeightFraction * 0.9 + 0.07 + this.tuning.damping * 0.12, 0.3, 0.75);
+    const transfer = lateralLoadTransfer(mass, this.lateralAcceleration, this.profile.trackM, centreHeight, frontRollShare);
     const capacity = {
-      front: muFront * frontLoad * (staticLoads.front / frontLoad) ** 0.08 * groundGrip,
-      rear: muRear * rearLoad * (staticLoads.rear / rearLoad) ** 0.08 * groundGrip
+      front: axleGripCapacity(axleNormal.front, transfer.front, muFront, staticLoads.front) * groundGrip,
+      rear: axleGripCapacity(axleNormal.rear, transfer.rear, muRear, staticLoads.rear) * groundGrip
     };
-    const tyreForces = combinedTyreForces(
-      { front: lateralDemandFront, rear: lateralDemandRear },
-      longitudinalDemand,
-      capacity
-    );
+    // Loose surfaces reach peak grip much later in the slip ratio than tarmac.
+    const peakSlip = clamp(0.09 + surfaceData.roughness * 0.28 + (surfaceData.sink || 0) * 0.3, 0.08, 0.34);
+    // A loose surface deforms before the tyre bites, so its force needs a longer
+    // roll to build than tarmac does.
+    const relaxation = 0.38 + (surfaceData.sink || 0) * 1.4;
+    // A loose surface also reaches peak cornering force at a much larger slip
+    // angle than tarmac, which is why gravel rewards a sideways line.
+    const peakSlipAngle = clamp(0.058 + surfaceData.roughness * 0.22 + (surfaceData.sink || 0) * 0.34, 0.05, 0.24);
+    const geometricAlpha = { front: alphaFront, rear: alphaRear };
+    const axlePeakAngle = { front: peakSlipAngle, rear: peakSlipAngle * PEAK_SLIP_ANGLE_REAR_SCALE };
+    const longitudinal = { front: 0, rear: 0 };
+    const lateral = { front: 0, rear: 0 };
+    const axleInertia = { front: 0, rear: 0 };
+    for (const axle of ['front', 'rear']) {
+      const share = driveShare[axle];
+      axleInertia[axle] = axleInertiaKg(this.profile, this.gear, share);
+      // Relaxation acts on the tyre's own slip angle, not on the force it
+      // produces, which is where the lag physically lives.
+      this.slipAngleState[axle] = relaxTyreState(this.slipAngleState[axle], geometricAlpha[axle], u, dt, relaxation);
+      let axleBrake = brakeForce[axle];
+      // Braking help is anti-lock: it modulates the axle whose slip ratio has
+      // run past the peak of the curve, which is exactly where a wheel locks.
+      if (this.assists.braking && axleBrake > 0) {
+        const excess = (-this.slipRatio[axle] - peakSlip) / peakSlip;
+        axleBrake *= clamp(1 - excess * 0.85, 0.15, 1);
+      }
+      const wheel = stepWheelSpeed({
+        wheelSpeed: this.wheelSpeed[axle],
+        roadSpeed: u,
+        slipAngle: this.slipAngleState[axle],
+        driveForceN: driveForce * share,
+        brakeForceN: axleBrake,
+        capacityN: capacity[axle],
+        inertiaKg: axleInertia[axle],
+        peakSlip,
+        peakSlipAngle: axlePeakAngle[axle],
+        grounded: this.grounded,
+        dt
+      });
+      this.wheelSpeed[axle] = wheel.wheelSpeed;
+      this.slipRatio[axle] = wheel.slipRatio;
+      this.tyreSigma[axle] = wheel.sigma;
+      this.axleCapacity[axle] = capacity[axle];
+      longitudinal[axle] = wheel.force;
+      lateral[axle] = wheel.lateral * lowSpeed;
+    }
+    this.wheelSpin = clamp((drivenWheelSpeed - u) / 6, -1, 1);
+    this.wheelLock = clamp((Math.abs(u) - Math.min(Math.abs(this.wheelSpeed.front), Math.abs(this.wheelSpeed.rear))) / 8, 0, 1);
+    const tyreForces = { longitudinal, lateral };
     this.axleLoads = { ...loads };
     this.tyreForces = {
       frontLongitudinal: tyreForces.longitudinal.front,
@@ -216,8 +330,12 @@ export class RallyCar {
     let yawTorque = frontAxle * forceFront * Math.cos(steerAngle) - rearAxle * forceRear;
     yawTorque -= this.yawRate * this.profile.yawInertiaKgM2 * 0.38;
     if (this.assists.stability && Math.abs(this.slipAngle) > 0.12) {
+      // Stability control only ever takes rotation away. The old form also
+      // added it when the car was rotating less than the steering asked for,
+      // which spun the car by torquing it away from its own velocity.
       const desiredYawRate = clamp(u / this.profile.wheelbaseM * Math.tan(steerAngle), -2.2, 2.2);
-      yawTorque -= (this.yawRate - desiredYawRate) * this.profile.yawInertiaKgM2 * 1.35;
+      const excess = this.yawRate - desiredYawRate;
+      if (excess * this.yawRate > 0) yawTorque -= excess * this.profile.yawInertiaKgM2 * 1.35;
     }
 
     const localAx = longitudinalForce / mass + v * this.yawRate;
@@ -228,8 +346,18 @@ export class RallyCar {
     this.vz += worldAz * dt;
     this.yawRate += yawTorque / this.profile.yawInertiaKgM2 * dt;
 
+    if (this.grounded && Math.abs(road.camber) > 1e-4) {
+      // Below walking pace the tyres simply hold the car on the camber.
+      const bankAccel = -GRAVITY * Math.sin(bankAngle) * clamp((speed - 0.4) / 1.6, 0, 1) * dt;
+      const roadRightX = Math.cos(road.heading), roadRightZ = -Math.sin(road.heading);
+      this.vx += roadRightX * bankAccel;
+      this.vz += roadRightZ * bankAccel;
+    }
     if (!onRoad) {
-      const scrub = Math.exp(-(1.5 + Math.min(2.0, Math.abs(road.lateral) * 0.025)) * dt);
+      // Verge drag used to be a flat velocity sink that stood in for a surface
+      // model. The surface now carries its own friction and rolling resistance,
+      // so this only adds the scrub of ploughing further from the road.
+      const scrub = Math.exp(-(0.32 + Math.min(1.1, Math.abs(road.lateral) * 0.02)) * dt);
       this.vx *= scrub;
       this.vz *= scrub;
       this.yawRate *= Math.exp(-0.7 * dt);
@@ -278,6 +406,7 @@ export class RallyCar {
     u = this.vx * newForwardX + this.vz * newForwardZ;
     v = this.vx * newRightX + this.vz * newRightZ;
     this.longitudinalSpeed = u;
+    this.chassisSpeedAtLastStep = u;
     this.lateralSpeed = v;
     this.slipAngle = Math.atan2(v, Math.max(2, Math.abs(u)));
     this.slipAmount = clamp((Math.abs(this.slipAngle) - 0.035) / 0.33, 0, 1);
@@ -347,7 +476,24 @@ export class RallyCar {
       if (this.lastSafeTimer > 0.6) { this.lastSafeDistance = this.progress; this.lastSafeTimer = 0; }
     } else this.lastSafeTimer = 0;
 
-    const stranded = road.distance > 65 || (Math.abs(road.lateral) > road.width * 0.5 + 9 && this.speed < 2.2) || (Math.abs(road.lateral) > road.width * 0.5 + 5 && this.speed < 0.45);
+    // A car that is off the road and no longer making ground is bogged, however
+    // close to the edge it stopped. Distance alone used to miss that, and left
+    // a car ploughing the verge at walking pace with no way out.
+    const offRoad = Math.abs(road.lateral) > road.width * 0.5 + 1.5;
+    // Driving back towards the road makes almost no progress along it, so
+    // route distance alone would call a car that is rescuing itself bogged.
+    const closing = Math.abs(road.lateral) < this.lastLateralDistance - dt * 0.8;
+    this.lastLateralDistance = Math.abs(road.lateral);
+    this.boggedTimer = offRoad && !closing && this.progress - previousProgress < dt * 2.5
+      ? this.boggedTimer + dt
+      : Math.max(0, this.boggedTimer - dt * 3);
+    // Being off the road is not itself a reason to be teleported back: a car
+    // that can still drive should drive itself back. The bogged timer above is
+    // what catches the one that cannot.
+    const stranded = road.distance > 65
+      || (Math.abs(road.lateral) > road.width * 0.5 + 15 && this.speed < 2.2)
+      || (Math.abs(road.lateral) > road.width * 0.5 + 7 && this.speed < 0.45)
+      || this.boggedTimer > 4;
     this.recoveryTimer = stranded ? this.recoveryTimer + dt : Math.max(0, this.recoveryTimer - dt * 2);
     this.needsRecovery = this.recoveryTimer > 2.2;
   }

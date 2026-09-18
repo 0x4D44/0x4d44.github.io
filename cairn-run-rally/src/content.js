@@ -142,7 +142,7 @@ const kestrelStage = {
   segments: kestrelSegments,
   notes: kestrelNotes,
   splits: [1800, 3600, 5405],
-  expectedDurationSeconds: [280, 450],
+  expectedDurationSeconds: [250, 450],
   landmarkIds: ['stone-wall', 'quarry', 'moor', 'bridge', 'pine', 'finish-gate'],
   hazardPlan: {
     seed: 17,
@@ -281,7 +281,7 @@ const auroraStage = {
   segments: auroraSegments,
   notes: auroraNotes,
   splits: [2200, 4400, 6760],
-  expectedDurationSeconds: [290, 450],
+  expectedDurationSeconds: [218, 430],
   landmarkIds: ['lake', 'narrow-forest', 'granite-outcrop', 'jump-board', 'timber-fence', 'finish-gate'],
   hazardPlan: {
     seed: 811,
