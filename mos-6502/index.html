@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07080e">
+  <meta name="description" content="How the MOS 6502 actually works, cycle by cycle: the bus trace of every instruction, all thirteen addressing modes, the overflow flag drawn as a circle, the 256-opcode matrix and its hidden structure, nine famous quirks demonstrated live, and a full assembler and simulator — all driven by a 6502 core running in the page.">
+  <title>The 6502 — cycle by cycle</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the instruments</a>
+
+  <div class="page-field" aria-hidden="true">
+    <span class="field-grid"></span>
+    <span class="field-glow glow-a"></span>
+    <span class="field-glow glow-b"></span>
+  </div>
+
+  <header class="hero" id="top">
+    <div class="hero-copy">
+      <p class="eyebrow"><span>1975</span><i aria-hidden="true"></i><span>3,510 transistors</span></p>
+      <h1>The 6502,<br><em>cycle by cycle</em></h1>
+      <p class="hero-deck">A processor small enough to hold in your head: three registers, 56 instructions, and a rule so strict it explains almost everything else about the chip — <strong>on every clock cycle it reads one byte or writes one byte. Never none. Never two.</strong></p>
+      <p class="hero-note">Everything below is produced by a 6502 running in this page. The timing diagrams are its actual bus traces; the quirks are demonstrated by executing them. It passes Klaus Dormann's functional test suite — 30,646,177 instructions — so when it tells you what the chip does, it is not reciting a table.</p>
+      <div class="hero-actions">
+        <button class="primary-button" type="button" data-open-tab="cycles">Watch one instruction<span aria-hidden="true"> →</span></button>
+        <button class="text-button" type="button" data-open-tab="machine">Or write some code</button>
+      </div>
+      <dl class="hero-facts" aria-label="The chip in three numbers">
+        <div><dt>Clock</dt><dd>1 MHz</dd></div>
+        <div><dt>Registers</dt><dd>A, X, Y</dd></div>
+        <div><dt>Price, 1975</dt><dd>$25</dd></div>
+      </dl>
+    </div>
+
+    <figure class="hero-machine">
+      <div class="scope" id="hero-scope">
+        <div class="scope-head">
+          <span class="scope-label">bus activity</span>
+          <span class="scope-readout" id="hero-readout">warming up</span>
+        </div>
+        <canvas id="hero-canvas" width="620" height="360" role="img"
+          aria-label="A live trace of the address and data bus as a program runs, one column per clock cycle, reads and writes in different colours."></canvas>
+        <div class="scope-legend">
+          <span data-legend="read">read</span>
+          <span data-legend="write">write</span>
+          <span data-legend="fetch">opcode fetch</span>
+        </div>
+      </div>
+      <p class="machine-note" id="hero-stats">&nbsp;</p>
+    </figure>
+  </header>
+
+  <nav class="instrument-nav" aria-label="The instruments">
+    <div class="instrument-nav-inner" role="tablist" aria-label="Explore the 6502">
+      <button role="tab" id="tab-origins" aria-controls="panel-origins" aria-selected="true" tabindex="0" data-tab="origins"><span>01</span>Origins</button>
+      <button role="tab" id="tab-model" aria-controls="panel-model" aria-selected="false" tabindex="-1" data-tab="model"><span>02</span>The model</button>
+      <button role="tab" id="tab-cycles" aria-controls="panel-cycles" aria-selected="false" tabindex="-1" data-tab="cycles"><span>03</span>Cycles</button>
+      <button role="tab" id="tab-addressing" aria-controls="panel-addressing" aria-selected="false" tabindex="-1" data-tab="addressing"><span>04</span>Addressing</button>
+      <button role="tab" id="tab-alu" aria-controls="panel-alu" aria-selected="false" tabindex="-1" data-tab="alu"><span>05</span>The ALU</button>
+      <button role="tab" id="tab-matrix" aria-controls="panel-matrix" aria-selected="false" tabindex="-1" data-tab="matrix"><span>06</span>The matrix</button>
+      <button role="tab" id="tab-machine" aria-controls="panel-machine" aria-selected="false" tabindex="-1" data-tab="machine"><span>07</span>The machine</button>
+      <button role="tab" id="tab-interrupts" aria-controls="panel-interrupts" aria-selected="false" tabindex="-1" data-tab="interrupts"><span>08</span>Interrupts</button>
+      <button role="tab" id="tab-quirks" aria-controls="panel-quirks" aria-selected="false" tabindex="-1" data-tab="quirks"><span>09</span>Quirks</button>
+      <button role="tab" id="tab-sources" aria-controls="panel-sources" aria-selected="false" tabindex="-1" data-tab="sources"><span>10</span>Sources</button>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ======================= 01 ORIGINS ======================= -->
+    <section class="instrument-panel is-active" role="tabpanel" id="panel-origins" aria-labelledby="tab-origins" data-panel="origins">
+      <div class="section-heading">
+        <p class="section-number">01 · Origins</p>
+        <h2>The design decision was<br><em>a price.</em></h2>
+        <p>In 1975 a microprocessor cost about $179 and a small team at Motorola had been told to stop arguing about it. They left, went to a calculator-chip company in Pennsylvania, and worked backwards from $25 — which meant a small die, which meant almost no registers, which is why 6502 assembly language looks the way it does. Everything peculiar about this chip is downstream of that number.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Step the timeline to 1975 and read what was in the jars.</li>
+            <li>Then to 1976, and note which of the two chips survived the lawsuit.</li>
+            <li>Sort the machines by clock speed and watch a decade go by.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-instrument panel-card">
+        <div class="timeline-topline">
+          <div>
+            <span class="control-label">Stop</span>
+            <strong id="timeline-selection">1974</strong>
+          </div>
+          <p id="timeline-headline"></p>
+        </div>
+        <div class="timeline-track-wrap">
+          <div class="timeline-track" id="timeline-track" role="group" aria-label="Choose a moment in the history"></div>
+        </div>
+        <div class="timeline-nav">
+          <button type="button" class="ghost-button" id="timeline-prev">← Earlier</button>
+          <button type="button" class="ghost-button" id="timeline-next">Later →</button>
+        </div>
+      </div>
+
+      <div class="lineage-grid">
+        <article class="era-card panel-card" aria-live="polite">
+          <header class="era-head">
+            <div>
+              <p class="era-where" id="era-where"></p>
+              <h3 id="era-title"></h3>
+            </div>
+            <div class="era-year" id="era-year"></div>
+          </header>
+          <p class="era-summary" id="era-summary"></p>
+          <ul class="era-detail" id="era-detail"></ul>
+          <div class="era-numbers" id="era-numbers"></div>
+        </article>
+
+        <aside class="era-side">
+          <div class="panel-card machines-card">
+            <h4>Where it ended up</h4>
+            <p class="card-note">Every one of these is the same instruction set. What changes is the clock and what the machine's designer wired around it.</p>
+            <div class="machine-sort">
+              <span class="control-label">Order by</span>
+              <button type="button" class="chip is-active" data-sort="year">year</button>
+              <button type="button" class="chip" data-sort="mhz">clock</button>
+            </div>
+            <ul class="machine-list" id="machine-list"></ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ======================= 02 THE MODEL ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-model" aria-labelledby="tab-model" data-panel="model" hidden>
+      <div class="section-heading">
+        <p class="section-number">02 · The model</p>
+        <h2>Three registers,<br><em>and one page of memory that pretends to be more.</em></h2>
+        <p>A modern processor has dozens of general registers. The 6502 has one accumulator and two indexes, and the reason is the die budget. What replaced the missing registers is <strong>page zero</strong> — the first 256 bytes of memory, addressable in a single byte, one cycle faster than anywhere else, and the only place a pointer is allowed to live. On a 6502 machine, page zero <em>is</em> the register file.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Click each register to see what it can and cannot do.</li>
+            <li>Click the B bit, which is not a flag and does not exist.</li>
+            <li>Notice how much of the 64K map the chip itself has an opinion about: six bytes.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="model-grid">
+        <div class="panel-card register-card">
+          <h4>The programmer's model</h4>
+          <div class="register-rack" id="register-rack" role="group" aria-label="The 6502's registers"></div>
+          <div class="register-detail" id="register-detail" aria-live="polite"></div>
+        </div>
+
+        <div class="panel-card flag-card">
+          <h4>The status register</h4>
+          <p class="card-note">Eight bits. Six are flags, one is always 1, and one is a message written only on the way to the stack.</p>
+          <div class="flag-rack" id="flag-rack" role="group" aria-label="The status register bits"></div>
+          <div class="flag-detail" id="flag-detail" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="panel-card map-card">
+        <h4>All 64 kilobytes</h4>
+        <p class="card-note">The 6502 has opinions about exactly two regions and six individual bytes. Everything else is whatever the machine's designer decided to wire there — and the processor cannot tell the difference between RAM, ROM and a hardware register.</p>
+        <div class="memory-map" id="memory-map"></div>
+        <div class="map-detail" id="map-detail" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ======================= 03 CYCLES ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-cycles" aria-labelledby="tab-cycles" data-panel="cycles" hidden>
+      <div class="section-heading">
+        <p class="section-number">03 · Cycles</p>
+        <h2>One bus access<br><em>per clock cycle. Always.</em></h2>
+        <p>This is the rule the whole chip is built around. There is no cycle in which the 6502 is thinking quietly to itself, and no cycle in which it does two things. So an instruction's cycle count is not a lookup in a table — it is the number of bytes it has to move, and you can derive it from first principles. Below is the real bus trace, generated by executing the instruction.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Step <code>LDA $2000,X</code> and find the cycle that reads an address nobody asked for.</li>
+            <li>Then <code>INC $2000</code>, and watch it write the <em>old</em> value before the new one.</li>
+            <li>Then <code>JSR $0700</code>, and count what it pushes.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel-card cycle-instrument">
+        <div class="cycle-picker" id="cycle-picker" role="group" aria-label="Choose an instruction to trace"></div>
+        <div class="cycle-topline">
+          <div class="cycle-source">
+            <span class="control-label">Executing</span>
+            <strong id="cycle-instruction">LDA $2000,X</strong>
+            <span class="cycle-encoding" id="cycle-encoding"></span>
+          </div>
+          <div class="cycle-count">
+            <span class="control-label">Cycles</span>
+            <strong id="cycle-total">0</strong>
+          </div>
+        </div>
+
+        <div class="timing-diagram" id="timing-diagram" role="group" aria-label="The bus trace, one column per clock cycle"></div>
+
+        <div class="cycle-explain">
+          <div class="bus-readout">
+            <div class="bus-line">
+              <span class="bus-name">address bus</span>
+              <strong class="bus-value" id="bus-address">$----</strong>
+            </div>
+            <div class="bus-line">
+              <span class="bus-name">data bus</span>
+              <strong class="bus-value" id="bus-data">$--</strong>
+            </div>
+            <div class="bus-line">
+              <span class="bus-name">R/W̅</span>
+              <strong class="bus-value" id="bus-rw">—</strong>
+            </div>
+          </div>
+          <p class="cycle-note" id="cycle-note" aria-live="polite"></p>
+        </div>
+
+        <div class="cycle-controls">
+          <button type="button" class="ghost-button" id="cycle-prev">← Cycle</button>
+          <button type="button" class="primary-button" id="cycle-play">Play</button>
+          <button type="button" class="ghost-button" id="cycle-next">Cycle →</button>
+          <label class="check"><input type="checkbox" id="cycle-dummies" checked> highlight the wasted cycles</label>
+        </div>
+      </div>
+
+      <div class="dual-grid">
+        <div class="panel-card">
+          <h4>Why an instruction costs what it costs</h4>
+          <p>Count the bytes it must move and you have the cycle count, almost always. One for the opcode. One for each operand byte. One for each read or write of data. Then add the cycles the chip spends being wrong:</p>
+          <ul class="reason-list">
+            <li><strong>The indexed guess.</strong> The 6502 adds the index to the low byte and reads there straight away, before the carry into the high byte is known. If there was a carry, that read was 256 bytes off and has to be done again. Hence "+1 if the index crosses a page".</li>
+            <li><strong>The read-modify-write parking space.</strong> There is nowhere to hold a value while the ALU changes it, so the chip writes the old byte back to the bus and then writes the new one. Three accesses to one address, every time.</li>
+            <li><strong>The branch that has to look twice.</strong> A taken branch costs one more cycle to add the displacement, and a second if the result left the page — the same missing carry, in the program counter this time.</li>
+          </ul>
+        </div>
+        <div class="panel-card">
+          <h4>What 1 MHz bought you</h4>
+          <p>One cycle is one microsecond. The average instruction is around three of them, so a 6502 ran roughly <strong>300,000 instructions a second</strong> — and every one of those instructions moved at most one byte.</p>
+          <div class="budget-instrument">
+            <label class="control-label" for="budget-mhz">Clock</label>
+            <input type="range" id="budget-mhz" min="1" max="20" step="1" value="10">
+            <output id="budget-readout"></output>
+          </div>
+          <p class="card-note" id="budget-note"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 04 ADDRESSING ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-addressing" aria-labelledby="tab-addressing" data-panel="addressing" hidden>
+      <div class="section-heading">
+        <p class="section-number">04 · Addressing</p>
+        <h2>Thirteen ways<br><em>to say where.</em></h2>
+        <p>An instruction is a verb crossed with an address. The 6502 has 56 verbs and 13 ways of naming an address, and not every pairing exists — the gaps in that table are where the die budget ran out. Pick a mode and watch the chip work out where it is going, one cycle at a time, on a real machine set up for the example.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li><code>absolute,X</code> — and find the read of $2010, an address the program never mentions.</li>
+            <li><code>zero page,X</code> — and see $F0 + $20 land on $0010.</li>
+            <li><code>indirect</code> — the one mode with a bug so famous it has its own name.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel-card mode-instrument">
+        <div class="mode-picker" id="mode-picker" role="group" aria-label="Choose an addressing mode"></div>
+        <div class="mode-body">
+          <div class="mode-head">
+            <div>
+              <p class="control-label">Mode</p>
+              <h3 id="mode-name"></h3>
+              <code class="mode-sample" id="mode-sample"></code>
+            </div>
+            <div class="mode-cost">
+              <p class="control-label">Cost</p>
+              <strong id="mode-cost"></strong>
+            </div>
+          </div>
+          <p class="mode-why" id="mode-why"></p>
+          <div class="chase" id="mode-chase" role="img" aria-label="How the effective address is computed"></div>
+          <table class="trace-table">
+            <caption id="mode-trace-caption">The bus, cycle by cycle</caption>
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">address</th><th scope="col">R/W̅</th><th scope="col">data</th><th scope="col">what the chip is doing</th></tr>
+            </thead>
+            <tbody id="mode-trace"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 05 THE ALU ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-alu" aria-labelledby="tab-alu" data-panel="alu" hidden>
+      <div class="section-heading">
+        <p class="section-number">05 · The ALU</p>
+        <h2>Two seams<br><em>on the same circle.</em></h2>
+        <p>The carry flag and the overflow flag confuse people because they are usually explained separately. They are the same idea twice. A byte is a circle of 256 positions, and an addition is a walk around it — but <em>how far you walk depends on how you read the operand</em>. Read $90 as unsigned and it is 144 steps clockwise; read it as signed and it is 112 steps the other way. You land on the same square either way, because it is the same byte.</p>
+        <p><strong>Carry</strong> is set when the unsigned walk crosses the seam between $FF and $00. <strong>Overflow</strong> is set when the signed walk crosses the seam between $7F and $80. Same circle, same destination, two routes, two seams — and each flag is simply a report on one of the routes.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>$50 + $50. The operand's top bit is clear, so there is only one walk. It passes the signed seam and not the unsigned one: V set, C clear.</li>
+            <li>$D0 + $90. Now the routes part company — 144 steps one way, 112 the other — and each crosses its own seam. Both flags come up.</li>
+            <li>$50 + $90, where the two walks cross the <em>same</em> seam and yet neither flag is set.</li>
+            <li>Turn on decimal mode and watch three of the four flags start lying.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="alu-grid">
+        <div class="panel-card alu-circle-card">
+          <h4>The byte as a circle</h4>
+          <figure class="alu-figure">
+            <div id="alu-circle" role="img" aria-label="A circle of 256 byte values showing where an addition starts, where it lands, and which of the two seams it crossed."></div>
+            <div class="alu-circle-key" id="alu-circle-key"></div>
+            <figcaption id="alu-circle-caption"></figcaption>
+          </figure>
+        </div>
+
+        <div class="panel-card alu-controls-card">
+          <h4>Run the adder</h4>
+          <div class="alu-controls">
+            <label class="alu-field">
+              <span class="control-label">A</span>
+              <input type="range" id="alu-a" min="0" max="255" value="80">
+              <output id="alu-a-out"></output>
+            </label>
+            <label class="alu-field">
+              <span class="control-label">operand</span>
+              <input type="range" id="alu-m" min="0" max="255" value="80">
+              <output id="alu-m-out"></output>
+            </label>
+            <div class="alu-toggles">
+              <label class="check"><input type="checkbox" id="alu-carry-in"> carry in</label>
+              <label class="check"><input type="checkbox" id="alu-decimal"> decimal mode (SED)</label>
+              <label class="check"><input type="checkbox" id="alu-subtract"> subtract (SBC)</label>
+            </div>
+          </div>
+
+          <div class="alu-sum" id="alu-sum"></div>
+          <div class="alu-flags" id="alu-flags" aria-live="polite"></div>
+          <p class="card-note" id="alu-verdict"></p>
+        </div>
+      </div>
+
+      <div class="dual-grid">
+        <div class="panel-card">
+          <h4>The formula, and why it is that formula</h4>
+          <p>Every 6502 reference prints the overflow test as a piece of bit arithmetic:</p>
+          <pre class="code-block"><code>V = (~(A ^ M) &amp; (A ^ result)) &amp; $80</code></pre>
+          <p>Read it as two questions. <code>~(A ^ M) &amp; $80</code> asks: <em>did the two inputs have the same sign?</em> If they did not, no signed addition can overflow — adding a positive to a negative always lands between them, which on the circle is the walk that can never reach the far seam. <code>(A ^ result) &amp; $80</code> asks: <em>does the answer disagree in sign with what we put in?</em> Both true at once, and the only explanation is that the signed walk went past $7F/$80.</p>
+          <p class="card-note">This is not a formula somebody chose. It is roughly four gates, and you can see them in the die photographs.</p>
+        </div>
+        <div class="panel-card">
+          <h4>Decimal mode, and what it costs you</h4>
+          <p><code>SED</code> changes exactly two instructions. ADC and SBC start treating each byte as two decimal digits, so $58 + $46 gives $04 with the carry set — 58 + 46 = 104. Nothing else on the chip notices.</p>
+          <p>The bill arrives in the flags. On the NMOS part, the decimal correction happens after N, V and Z have already been set from the binary arithmetic underneath, so <strong>only the carry can be trusted</strong> after a decimal add. Turn on decimal mode above and add $99 + $01: the answer is $00 with carry, correctly, and the Z flag says the result was not zero.</p>
+          <p class="card-note">The CMOS 65C02 fixed this and charged a cycle for it. Nintendo removed the whole circuit from the NES's processor, which is why no NES program ever executes SED.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 06 THE MATRIX ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-matrix" aria-labelledby="tab-matrix" data-panel="matrix" hidden>
+      <div class="section-heading">
+        <p class="section-number">06 · The matrix</p>
+        <h2>256 opcodes,<br><em>and only 151 of them were meant.</em></h2>
+        <p>An opcode is a byte, so there are 256 of them, and MOS Technology documented 151. The other 105 are not errors and not a secret feature — they are what happens when a decode matrix built from sparse transistors meets a bit pattern nobody planned for. Several control lines match at once and two instructions execute simultaneously, in the cycles of one.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Switch to the <em>bit fields</em> view. The instruction set stops looking like a list.</li>
+            <li>Column $x1 and column $x5: the same eight verbs, two different addressing modes.</li>
+            <li>Click any cell to trace it in section 3.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel-card matrix-instrument">
+        <div class="matrix-controls">
+          <div class="matrix-views" role="group" aria-label="How to colour the matrix">
+            <button type="button" class="chip is-active" data-view="group">by instruction group</button>
+            <button type="button" class="chip" data-view="fields">by bit fields</button>
+            <button type="button" class="chip" data-view="cycles">by cycle count</button>
+            <button type="button" class="chip" data-view="legal">documented or not</button>
+          </div>
+        </div>
+        <div class="matrix-wrap">
+          <div class="opcode-matrix" id="opcode-matrix" role="group" aria-label="All 256 opcodes, arranged by high and low nibble"></div>
+        </div>
+        <div class="matrix-legend" id="matrix-legend"></div>
+        <div class="matrix-detail panel-inset" id="matrix-detail" aria-live="polite"></div>
+        <p class="matrix-explainer" id="matrix-explainer"></p>
+      </div>
+    </section>
+
+    <!-- ======================= 07 THE MACHINE ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-machine" aria-labelledby="tab-machine" data-panel="machine" hidden>
+      <div class="section-heading">
+        <p class="section-number">07 · The machine</p>
+        <h2>A whole computer,<br><em>in about a thousand lines.</em></h2>
+        <p>A 6502, 64 kilobytes of memory, a 32 × 32 screen at $0200, a random byte at $FE and a keyboard byte at $FF. That is the entire machine, and it is enough — it is roughly what an Apple I was. Write something, assemble it, and step it one instruction at a time while you watch the registers move.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Load <em>Multiply</em> and single-step it. The 6502 has no multiply instruction; this is how you get one.</li>
+            <li>Load <em>Sort</em> and press Run. Each pass leaves one more bar in place.</li>
+            <li>Break something on purpose — the assembler will tell you what it thinks you meant.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="machine-shell">
+        <div class="machine-left">
+          <div class="panel-card editor-card">
+            <div class="editor-head">
+              <h4>Source</h4>
+              <div class="program-picker" id="program-picker" role="group" aria-label="Load a sample program"></div>
+            </div>
+            <p class="card-note" id="program-blurb"></p>
+            <div class="editor-wrap">
+              <textarea id="editor" spellcheck="false" aria-label="6502 assembly source" rows="20"></textarea>
+            </div>
+            <div class="editor-status" id="editor-status" aria-live="polite"></div>
+            <div class="editor-controls">
+              <button type="button" class="primary-button" id="btn-assemble">Assemble</button>
+              <button type="button" class="ghost-button" id="btn-run">Run</button>
+              <button type="button" class="ghost-button" id="btn-step">Step</button>
+              <button type="button" class="ghost-button" id="btn-reset">Reset</button>
+              <label class="check speed-check">
+                <span class="control-label">speed</span>
+                <input type="range" id="run-speed" min="1" max="7" step="1" value="4" aria-label="Execution speed">
+                <output id="run-speed-out"></output>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="machine-right">
+          <div class="panel-card screen-card">
+            <h4>Display <span class="card-tag">$0200 – $05FF</span></h4>
+            <canvas id="screen" width="320" height="320" role="img" aria-label="The simulated 32 by 32 pixel display"></canvas>
+            <p class="card-note">One byte per pixel, 32 across. The low nibble picks a colour; the high nibble is ignored, exactly as it is on the machines this convention came from.</p>
+          </div>
+
+          <div class="panel-card state-card">
+            <h4>State</h4>
+            <div class="reg-readout" id="reg-readout"></div>
+            <div class="flag-readout" id="flag-readout" aria-label="Status flags"></div>
+            <dl class="machine-stats">
+              <div><dt>cycles</dt><dd id="stat-cycles">0</dd></div>
+              <div><dt>instructions</dt><dd id="stat-instructions">0</dd></div>
+              <div><dt>at 1 MHz</dt><dd id="stat-seconds">0 s</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="machine-lower">
+        <div class="panel-card disasm-card">
+          <h4>Disassembly <span class="card-tag">live, from memory</span></h4>
+          <p class="card-note">Disassembled from what is actually in memory, not from your source — so self-modifying code shows up here honestly.</p>
+          <ol class="disasm" id="disasm"></ol>
+        </div>
+        <div class="panel-card memory-card">
+          <h4>Memory</h4>
+          <div class="memory-controls">
+            <div class="memory-jumps" id="memory-jumps" role="group" aria-label="Jump to a region of memory"></div>
+            <label class="memory-goto">
+              <span class="control-label">go to</span>
+              <input type="text" id="memory-address" value="0000" maxlength="4" spellcheck="false" aria-label="Memory address in hexadecimal">
+            </label>
+          </div>
+          <pre class="hexdump" id="hexdump" aria-label="A hexadecimal dump of memory"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 08 INTERRUPTS ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-interrupts" aria-labelledby="tab-interrupts" data-panel="interrupts" hidden>
+      <div class="section-heading">
+        <p class="section-number">08 · Interrupts</p>
+        <h2>Six bytes<br><em>the chip knows about before it has run anything.</em></h2>
+        <p>At power-on the 6502 knows three addresses and nothing else, and it reads them from the last six bytes of memory. Everything a 6502 machine does — booting, servicing a keyboard, drawing a raster split — starts by putting an address in one of those six bytes. The sequence that follows is identical for all three, down to the cycle.</p>
+        <div class="section-tries">
+          <p class="tries-label">Try</p>
+          <ul>
+            <li>Fire an IRQ and step through the seven cycles; find the two that read nothing useful.</li>
+            <li>Compare the pushed status byte from BRK and from IRQ. One bit differs, and it is the only reason a handler can tell them apart.</li>
+            <li>Set the I flag first, then fire each one.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel-card vector-card">
+        <h4>The vectors</h4>
+        <div class="vector-row" id="vector-row"></div>
+      </div>
+
+      <div class="panel-card interrupt-instrument">
+        <div class="interrupt-controls">
+          <span class="control-label">Fire</span>
+          <button type="button" class="chip is-active" data-interrupt="irq">IRQ</button>
+          <button type="button" class="chip" data-interrupt="nmi">NMI</button>
+          <button type="button" class="chip" data-interrupt="brk">BRK</button>
+          <button type="button" class="chip" data-interrupt="reset">RESET</button>
+          <label class="check"><input type="checkbox" id="interrupt-i-flag"> I flag set beforehand</label>
+        </div>
+        <p class="interrupt-summary" id="interrupt-summary" aria-live="polite"></p>
+        <div class="interrupt-body">
+          <table class="trace-table">
+            <caption>The entry sequence, cycle by cycle</caption>
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">address</th><th scope="col">R/W̅</th><th scope="col">data</th><th scope="col">what the chip is doing</th></tr>
+            </thead>
+            <tbody id="interrupt-trace"></tbody>
+          </table>
+          <div class="stack-view">
+            <h5>The stack afterwards</h5>
+            <div class="stack-frame" id="stack-frame"></div>
+            <p class="card-note" id="stack-note"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 09 QUIRKS ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-quirks" aria-labelledby="tab-quirks" data-panel="quirks" hidden>
+      <div class="section-heading">
+        <p class="section-number">09 · Quirks</p>
+        <h2>Nine things it does<br><em>that nobody designed.</em></h2>
+        <p>Every one of these is a consequence of a decision that made sense on its own: a carry that was not worth the transistors, a value with nowhere to park, a byte count chosen to save a cycle. None of them is a mystery once you know what the chip was trying to avoid spending. Each demonstration below is assembled and executed when you press the button, and the result is whatever actually happened.</p>
+      </div>
+      <div class="quirk-list" id="quirk-list"></div>
+    </section>
+
+    <!-- ======================= 10 SOURCES ======================= -->
+    <section class="instrument-panel" role="tabpanel" id="panel-sources" aria-labelledby="tab-sources" data-panel="sources" hidden>
+      <div class="section-heading">
+        <p class="section-number">10 · Sources</p>
+        <h2>Where this comes from,<br><em>and where it stops.</em></h2>
+        <p>The emulator in this page is checked two ways: against the published opcode matrix, instruction by instruction, and against Klaus Dormann's functional test suite, which it runs to completion — 30,646,177 instructions to the success trap at $3469. Where it still departs from real silicon, that is listed first, before the sources.</p>
+      </div>
+
+      <div class="panel-card limits-card">
+        <h4>What this page does not model</h4>
+        <ul class="limits-list" id="limits-list"></ul>
+      </div>
+
+      <div class="panel-card sources-card">
+        <h4>Sources</h4>
+        <ul class="source-list" id="source-list"></ul>
+      </div>
+
+      <div class="panel-card colophon">
+        <h4>Colophon</h4>
+        <p>No frameworks, no build step, no network. Five files: a 6502 core, a two-pass assembler, the text, a bench that runs the examples, and the page. The core and the assembler are covered by 71 tests, including a round-trip between the assembler and the disassembler over all 256 opcodes, and a check that every instruction's bus trace is exactly as long as its documented cycle count.</p>
+        <p class="card-note">The one thing the page asks you to take on trust is that the 6502 in it is a 6502. That is what the functional test suite is for.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="page-foot">
+    <p>An instrument, not a museum piece. Everything here runs.</p>
+  </footer>
+
+  <script src="cpu.js"></script>
+  <script src="asm.js"></script>
+  <script src="content.js"></script>
+  <script src="lab.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
