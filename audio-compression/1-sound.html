@@ -414,11 +414,8 @@
       44,055.94 — call it 44,056 — and sample-rate converters between 44,056 and
       44,100 were a real product with a real market. The audio bandwidth of
       roughly 20 kHz is a <em>consequence</em> of that raster, not the cause of
-      it.</p>
-
-    <blockquote class="pullquote">Twenty kilohertz of audio bandwidth is an
-      accident of the American and European television rasters.
-      <span class="who">The provenance of 44.1 kHz</span></blockquote>
+      it: <strong>twenty kilohertz is an accident of the American and European
+      television standards.</strong></p>
 
     <p>Everything else in the rate zoo has a similarly concrete parent: a
       telephone channel, a broadcast standard, a doubling of something older.</p>
@@ -665,8 +662,8 @@
       distribution two LSBs wide, and with it neither the first nor the second
       moment of the error depends on what the signal is doing. The price is
       10·log<sub>10</sub>3 = 4.77 dB of extra noise, taking a 16-bit stream's
-      unweighted floor from −98.1 dBFS to −93.3 dBFS. In exchange the quantiser
-      becomes, statistically, perfectly linear.</p>
+      full-scale-sine signal-to-noise ratio from 98.1 dB down to 93.3 dB. In
+      exchange the quantiser becomes, statistically, perfectly linear.</p>
 
     <p>Then comes the move that prefigures the whole study. The noise has to go
       somewhere, but it does not have to be spread evenly across the band. Feed
@@ -715,7 +712,7 @@
           <div class="ro sig"><span class="k">Tone recovered at</span><span class="v" id="d-tone">−40.1 dBFS</span></div>
           <div class="ro"><span class="k">Signal peak, in LSBs</span><span class="v" id="d-lsb">1.28</span></div>
           <div class="ro bad"><span class="k">Total error power</span><span class="v" id="d-noise">−54.1 dBFS</span></div>
-          <div class="ro ghost"><span class="k">Worst harmonic</span><span class="v" id="d-harm">−59.2 dBFS</span></div>
+          <div class="ro ghost"><span class="k">Worst harmonic</span><span class="v" id="d-harm">−58.1 dBFS</span></div>
         </div>
       </div>
       <div class="deck">
@@ -753,8 +750,8 @@
         shaping and watch the floor tilt: quieter below 5 kHz, louder above
         15 kHz, more noise in total. Then drag the tone level down past −70 dBFS,
         which at 8 bits is thirty decibels <em>below</em> one least significant
-        bit: undithered the signal is gone entirely, dithered it is still sitting
-        at its correct level in the noise. Press <b>a fade to silence</b> with
+        bit: undithered the signal is gone entirely, dithered it is still
+        there and still measurable within a decibel or two of where it should be. Press <b>a fade to silence</b> with
         dither off and then on; the undithered fade disintegrates into a buzz and
         stops, the dithered one keeps going down. Use headphones — and note that
         8 bits is a microscope here, not a claim about CDs.</figcaption>
@@ -763,9 +760,9 @@
     <p>That last demonstration disposes of another piece of folklore. A signal
       smaller than one quantisation step is <em>not</em> lost. With correct
       dither a −110 dBFS sine in a 16-bit stream is still there, statistically
-      exact in the mean, buried under noise that is only 17 dB louder — which is
-      a modest amount of averaging away from being recovered, and audible outright
-      once your own listening floor is low enough. This is the point at which
+      exact in the mean, under a total noise power some fifteen decibels louder —
+      which is a modest amount of averaging away from being recovered, and
+      audible outright once your own listening floor is low enough. This is the point at which
       quantisation stops being an accounting problem and becomes a perceptual
       one, and it is where <a href="2-ear.html">Chapter 02</a> takes over.</p>
   </section>
@@ -1000,7 +997,7 @@
           <div class="ro sig"><span class="k">At this level, this law</span><span class="v" id="g-snr">34.5 dB</span></div>
           <div class="ro"><span class="k">Linear 8-bit, same level</span><span class="v" id="g-lin">20.6 dB</span></div>
           <div class="ro ok"><span class="k">Advantage</span><span class="v" id="g-adv">+13.9 dB</span></div>
-          <div class="ro ghost"><span class="k">Held within 3 dB over</span><span class="v" id="g-flat">32.5 dB</span></div>
+          <div class="ro ghost"><span class="k">Held within 3 dB over</span><span class="v" id="g-flat">31.5 dB</span></div>
         </div>
       </div>
       <div class="deck">
@@ -1030,11 +1027,11 @@
         of a real sine at that level and computes the resulting
         signal-to-noise ratio. Linear 8-bit is a 45° line — one decibel of
         quality lost per decibel of level, because its step size does not care
-        what the signal is doing. Both companded laws are a <em>plateau</em>: about
-        38 dB, held from full scale down to roughly −33 dBFS, at the cost of
-        10 dB at the top. The lower panel shows why — the 128 magnitude codes are
+        what the signal is doing. Both companded laws are a <em>plateau</em>: just under
+        39 dB, held to within 3 dB from full scale down to −31.5 dBFS, at a cost
+        of 10 dB at the top. The lower panel shows why — the 128 magnitude codes are
         not evenly spaced but doubled every sixteen codes, so the step is
-        proportional to the signal. Below about −50 dBFS μ-law pulls ahead of
+        proportional to the signal. Below about −40 dBFS μ-law pulls ahead of
         A-law, because its innermost step is half the size. All three listen
         buttons play the same band-limited speech at the level you set, with the
         same playback gain: at −30 dBFS the linear version is audibly grainy and
@@ -1181,7 +1178,7 @@
 
   function compute() {
     var f0 = st.f0, fs = st.fs, T = 1 / fs, n, i;
-    var dur = Math.max(4 / fs, Math.min(16 / fs, 28 / f0));
+    var dur = Math.min(60 / fs, Math.max(16 / fs, 2.5 / f0));
     st.dur = dur;
     var al = aliasOf(f0, fs);
     st.fa = al.f; st.conj = al.conj;
@@ -1194,7 +1191,8 @@
     for (n = 0; n <= Math.floor(dur * fs); n++) samp.push([n * T, all[n - n0]]);
     st.samp = samp;
 
-    var M = 300, cont = [], rec = [], gh = [], sgn = al.conj ? -1 : 1;
+    var M = Math.max(300, Math.min(1600, Math.round(f0 * dur * 10)));
+    var cont = [], rec = [], gh = [], sgn = al.conj ? -1 : 1;
     for (i = 0; i <= M; i++) {
       var t = dur * i / M, u = t / T, s = 0;
       var lo = Math.max(n0, Math.round(u) - TAPS), hi = Math.min(n1, Math.round(u) + TAPS);
@@ -1460,6 +1458,20 @@
     for (i = 1; i < NFFT / 2; i++) out.push([i * SR / NFFT, D.dbp(acc[i] / SEGS, 1e-16)]);
     return out;
   }
+  // The floor beside a given frequency: the median of the bins around it, with
+  // the tone and its harmonics excluded. Local, because a shaped floor is not
+  // one number — it climbs 6 dB an octave.
+  function localFloor(spec, f) {
+    var v = [], i, x;
+    for (i = 0; i < spec.length; i++) {
+      x = spec[i][0];
+      if (x < f * 0.5 || x > f * 2) continue;
+      if (Math.abs(x - F0 * Math.round(x / F0)) < 60) continue;
+      v.push(spec[i][1]);
+    }
+    v.sort(function (a, b) { return a - b; });
+    return v.length ? v[v.length >> 1] : -400;
+  }
   function peakNear(spec, f, half) {
     var best = -400, i;
     for (i = 0; i < spec.length; i++) {
@@ -1479,22 +1491,31 @@
 
     var q = Math.pow(2, 1 - st.bits);
     st.lsb = amp / q;
-    st.tone = peakNear(st.cur, F0, 40);
-    var h = -400, k;
-    for (k = 2; k <= 9; k++) if (k * F0 < SR / 2) h = Math.max(h, peakNear(st.cur, k * F0, 40));
-    st.harm = h;
+    st.tone = peakNear(st.cur, F0, 25);
+    st.floor = localFloor(st.cur, F0);
+    var h = -400, over = 0, k, pk;
+    for (k = 2; k <= 9; k++) {
+      if (k * F0 >= SR / 2) break;
+      pk = peakNear(st.cur, k * F0, 25);
+      if (pk - localFloor(st.cur, k * F0) > over) { over = pk - localFloor(st.cur, k * F0); h = pk; }
+    }
+    st.harm = h; st.harmOver = over;
     var pn = 0, i;
     for (i = 0; i < x.length; i++) pn += (y[i] - x[i]) * (y[i] - x[i]);
     st.noise = 10 * Math.log10(Math.max(pn / x.length, 1e-30));
 
     var el = document.getElementById("d-tone");
-    if (el) el.textContent = st.tone < -150 ? "nothing" : st.tone.toFixed(1) + " dBFS";
+    if (el) {
+      el.textContent = st.tone < -150 ? "nothing"
+        : st.tone - st.floor < 6 ? "lost in noise"
+        : st.tone.toFixed(1) + " dBFS";
+    }
     el = document.getElementById("d-lsb");
     if (el) el.textContent = st.lsb < 10 ? st.lsb.toFixed(2) : AC.fmt.int(st.lsb);
     el = document.getElementById("d-noise");
     if (el) el.textContent = st.noise.toFixed(1) + " dBFS";
     el = document.getElementById("d-harm");
-    if (el) el.textContent = st.harm < -150 ? "none" : st.harm.toFixed(1) + " dBFS";
+    if (el) el.textContent = st.harmOver < 6 ? "none" : st.harm.toFixed(1) + " dBFS";
     el = document.getElementById("d-state");
     if (el) {
       el.textContent = st.bits + " bits · " +
@@ -1513,8 +1534,8 @@
     if (st.cur.length) p.line(st.cur, { color: AC.C.gold, width: 1.1, alpha: .95 });
     p.hline(st.level, { color: AC.C.blue, dash: [5, 4], label: "the tone that went in" });
     p.vline(F0, { color: AC.C.blue, dash: [2, 4] });
-    if (st.harm > -150 && st.mode === "off") {
-      p.note(p.pad.l + 6, p.pad.t + 4, "worst harmonic " + (st.harm - st.tone).toFixed(0) + " dB below the tone",
+    if (st.harmOver >= 6 && st.tone > -150) {
+      p.note(p.pad.l + 6, p.pad.t + 4, "worst harmonic " + (st.tone - st.harm).toFixed(0) + " dB below the tone",
         { color: AC.C.red });
     }
   }
@@ -1611,7 +1632,10 @@
     el = document.getElementById("b-bytes");
     if (el) el.textContent = fmtBytes(B);
     el = document.getElementById("b-mib");
-    if (el) el.textContent = (B / 1048576).toFixed(1) + " MiB";
+    if (el) {
+      el.textContent = B >= 1073741824 ? (B / 1073741824).toFixed(2) + " GiB"
+                                       : (B / 1048576).toFixed(1) + " MiB";
+    }
     el = document.getElementById("b-coded");
     if (el) el.textContent = fmtBytes(coded);
     el = document.getElementById("b-ratio");

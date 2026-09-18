@@ -66,7 +66,7 @@
 
     <p>Opus at 96 kbit/s is 6.80 per cent of that. AAC at 128 kbit/s is 9.07 per cent. Even
       a 320 kbit/s MP3 — the setting people choose when they have decided not to take any
-      chances — is 22.7 per cent. The remaining three-quarters to nineteen-twentieths is
+      chances — is 22.7 per cent. The remaining three-quarters to nine-tenths is
       not removed by cleverness in the way a ZIP file removes repetition. It is removed
       because it never reached you.</p>
     <p>That is the claim this chapter has to make good, and it is a claim about a physical
@@ -137,7 +137,7 @@
       <caption>Gross constants of the human auditory periphery</caption>
       <thead><tr><th>Quantity</th><th class="num">Value</th><th>Note</th></tr></thead>
       <tbody>
-        <tr><td>Reference pressure <i>p</i><sub>0</sub></td><td class="num">20 µPa</td><td>defines 0 dB SPL; about 5×10⁻¹⁰ of atmospheric pressure</td></tr>
+        <tr><td>Reference pressure <i>p</i><sub>0</sub></td><td class="num">20 µPa</td><td>defines 0 dB SPL; about 2×10⁻¹⁰ of atmospheric pressure</td></tr>
         <tr><td>Ear canal length</td><td class="num">≈ 25 mm</td><td>approximate, and individual; quarter-wave peak ≈ 3.4 kHz</td></tr>
         <tr><td>Concha resonance</td><td class="num">4.5–5.5 kHz</td><td>the second outer-ear peak</td></tr>
         <tr><td>Effective eardrum area</td><td class="num">≈ 55 mm²</td><td>vibrating area, not the ~85 mm² total</td></tr>
@@ -207,9 +207,12 @@
     </div>
 
     <p>Your entire musical range fits inside 35 millimetres of tissue, a distance you could
-      cover with a thumbnail, and it fits at about five millimetres per octave. Drag the
-      slider below from 1 kHz to 2 kHz and watch the peak move less than half a
-      centimetre; drag it from 20 Hz to 200 Hz and watch it move eleven.</p>
+      cover with a thumbnail, and above a few hundred hertz it fits at about five
+      millimetres per octave. Below that the packing is tighter still: the whole decade
+      from 20 Hz to 200 Hz occupies 5.33 mm, no more than a single octave costs at the top
+      of the range, while the decade from 2 kHz to 20 kHz takes 16.21 mm. Drag the slider
+      below from 1 kHz to 2 kHz and watch the peak move 4.54 mm; then drag it from 100 Hz
+      to 1 kHz — the same ratio, ten times over — and watch it move 11.15.</p>
 
     <figure class="figure" id="fig-wave">
       <div class="figure-bar">
@@ -517,7 +520,7 @@
       <div class="deck">
         <div class="field grow" style="min-width:170px">
           <div class="flab"><span>Frequency</span><span class="val" id="e3-flab">1000 Hz</span></div>
-          <input type="range" id="e3-f" min="0" max="1000" value="588" data-out="e3-flab" aria-label="Tone frequency">
+          <input type="range" id="e3-f" min="0" max="1000" value="591" data-out="e3-flab" aria-label="Tone frequency">
         </div>
         <div class="field grow" style="min-width:170px">
           <div class="flab"><span>Level</span><span class="val" id="e3-llab">40 dB SPL</span></div>
@@ -612,7 +615,7 @@
       At 20 phon, 20 Hz needs to be 69.6 dB louder than 1 kHz to match it. At 90 phon — the
       top of the standard's validity — it needs only 33.7 dB. The mix does not change when
       you turn the volume down; your
-      frequency response does, by forty decibels at the bottom end. That single fact
+      frequency response does, by thirty-six decibels at the bottom end. That single fact
       explains the "loudness" button on a 1970s amplifier, the habit of checking a master
       quietly, and a good deal of the loudness war.</p>
 
@@ -717,13 +720,13 @@
       falls by roughly 3 dB for every doubling of duration from about 10 ms up to about
       200 ms, and then stops. Two clocks, two orders of magnitude apart, in one organ.</p>
     <p>Masking inherits the same asymmetry, and this is the part that matters for
-      encoding. A loud sound raises the threshold for a *later* quiet sound for something
+      encoding. A loud sound raises the threshold for a <em>later</em> quiet sound for something
       like 100–200 ms — <b>forward masking</b>, and it decays smoothly. It raises the
-      threshold for an *earlier* quiet sound too, which is stranger, but only briefly:
+      threshold for an <em>earlier</em> quiet sound too, which is stranger, but only briefly:
       <b>backward masking</b> is weak and short. The codec literature conventionally quotes
       about 20 ms; careful psychophysics on trained listeners gives 5 ms or less. Both
-      numbers are in circulation and the difference between them is an argument about
-      listener training, not about physiology.</p>
+      numbers are in circulation, and the difference between them is largely a difference
+      in how practised the listeners were.</p>
 
     <figure class="figure" id="fig-time">
       <div class="figure-bar">
@@ -898,7 +901,7 @@
       <div class="def">
         <dt>"A-weighting models human hearing"</dt>
         <dd>A-weighting is a fixed approximation of the <em>40-phon</em> contour and
-          nothing else. At 100 dB the real contour is far flatter, which is why an
+          nothing else. At 90 phon the real contour is far flatter, which is why an
           A-weighted reading understates the annoyance of loud low-frequency noise by
           tens of decibels: the 20 Hz penalty is 59.8 dB on the 40-phon contour and
           33.7 dB on the 90-phon one, and A-weighting only knows about the first.
@@ -947,11 +950,11 @@
         done properly rather than asking you what you think you heard.</p>
     </div>
 
-    <blockquote class="pullquote">At the threshold of hearing near 3 kHz, the eardrum is
-      moving by less than the diameter of a hydrogen atom, and 20 µPa is about five parts
-      in ten thousand million of atmospheric pressure. The organ that does this is also the
-      one whose limitations make a 96 kbit/s stream sound like a compact disc.
-      <span class="who">Both facts are the same fact</span></blockquote>
+    <blockquote class="pullquote">At the threshold of hearing near 3 kHz the eardrum
+      moves less than a hydrogen atom is wide — the comparison every textbook reaches for —
+      and 20 µPa is two parts in ten thousand million of atmospheric pressure. The organ
+      that does that is also the one whose limitations let a 96 kbit/s stream pass for a
+      compact disc. <span class="who">Both facts are the same fact</span></blockquote>
 
     <p>Everything needed for a psychoacoustic model is now on the table: a place map, a
       filter bank with measured widths, a threshold in quiet, a loudness scale, and the two
@@ -1082,20 +1085,60 @@ var E2 = (function () {
     D.normalize(y, 0.55);
     return window.AUD.fadeEdges(y, SR, 12);
   }
-  // Envelope of a signal, for the timeline plots: rectify, then one-pole.
-  function envelope(x) {
+  // Envelope of a signal, for the timeline plots: rectify, then one-pole. The
+  // corner has to follow the material — 1.4 kHz keeps a 1 ms edge sharp on a
+  // noise band, but leaves visible ripple on a 1 kHz tone, which wants 120 Hz.
+  function envelope(x, fc) {
     var a = new Float64Array(x.length), i;
     for (i = 0; i < x.length; i++) a[i] = Math.abs(x[i]);
-    return window.AUD.onePole(a, SR, 1400, false);
+    return window.AUD.onePole(a, SR, fc == null ? 1400 : fc, false);
   }
-  // a log-mapped slider: index 0..1000 -> frequency
+  // a log-mapped slider: index 0..1000 -> frequency. A thousand steps over three
+  // decades lands within about 0.35% of any target, so the mapped value is
+  // snapped to the nearest preferred frequency when it is that close — which is
+  // what makes the readouts here agree with the tables in the prose.
+  var ANCHORS = [20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400,
+    500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 3300, 4000, 5000, 6300,
+    8000, 10000, 12500, 15500, 16000, 20000];
   function fromIdx(v, lo, hi) { return lo * Math.pow(hi / lo, v / 1000); }
   function toIdx(f, lo, hi) { return 1000 * Math.log(f / lo) / Math.log(hi / lo); }
+  function freqAt(v, lo, hi) {
+    var f = Math.round(fromIdx(v, lo, hi)), i;
+    for (i = 0; i < ANCHORS.length; i++) {
+      if (Math.abs(Math.log(f / ANCHORS[i])) < 0.012) return ANCHORS[i];
+    }
+    return f;
+  }
+  // Draw as many tick labels as will fit without touching: the two ends first,
+  // then the rest from the top down.
+  function thinned(values, xOf, minGap) {
+    var kept = [values[0], values[values.length - 1]], i, j, ok;
+    for (i = values.length - 2; i >= 1; i--) {
+      ok = true;
+      for (j = 0; j < kept.length; j++) {
+        if (Math.abs(xOf(values[i]) - xOf(kept[j])) < minGap) { ok = false; break; }
+      }
+      if (ok) kept.push(values[i]);
+    }
+    return kept;
+  }
+
+  // Frequency ticks the width can actually carry. AC.fmt.hz spells out "1 kHz",
+  // which is 40 px a label and collides below about 420 px.
+  function hzTick(f) {
+    if (f >= 1000) return (f / 1000).toFixed(f % 1000 ? 1 : 0) + "k";
+    return String(Math.round(f));
+  }
+  function hzTicks(p) {
+    return p.w < 470 ? [20, 100, 1000, 10000] : [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+  }
 
   return {
     SR: SR, critBw: critBw, ISO_F: ISO_F, ISO_TF: ISO_TF, iso226: iso226,
+    hzTick: hzTick, hzTicks: hzTicks,
     atF: atF, wA: wA, wB: wB, wC: wC, phonToSone: phonToSone, shape: shape,
     noiseBand: noiseBand, envelope: envelope, fromIdx: fromIdx, toIdx: toIdx,
+    freqAt: freqAt, thinned: thinned,
     reduced: (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || false,
   };
 })();
@@ -1145,12 +1188,14 @@ var E2 = (function () {
     if (!pr) return;
 
     // millimetre ruler along the bottom
+    var narrow = p.w < 470;
     p.axes({ y: [-1, 0, 1], yfmt: function () { return ""; },
-      x: [0, 5, 10, 15, 20, 25, 30, 35], xfmt: function (v) { return v + ""; }, grid: false });
+      x: narrow ? [0, 10, 20, 30] : [0, 5, 10, 15, 20, 25, 30, 35],
+      xfmt: function (v) { return v + ""; }, grid: false });
 
     // the frequency ruler along the top — Greenwood-spaced, so it is visibly
     // non-uniform, and reversed relative to every other plot in this study
-    var ticks = p.w < 470 ? TICKS_NARROW : TICKS_WIDE;
+    var ticks = narrow ? TICKS_NARROW : TICKS_WIDE;
     var c = p.ctx;
     c.save();
     c.strokeStyle = AC.C.line; c.lineWidth = 1;
@@ -1185,8 +1230,10 @@ var E2 = (function () {
     p.note(p.pad.l + 6, p.h - p.pad.b - 15, "base ←", { color: AC.C.ghost });
     p.note(p.w - p.pad.r - 6, p.h - p.pad.b - 15, "→ apex",
       { color: AC.C.ghost, align: "right" });
-    p.note(p.pad.l + 6, p.pad.t + 4,
-      "peak at " + (pr.xf * LEN).toFixed(2) + " mm from the apex", { color: AC.C.faint });
+    if (!narrow) {
+      p.note(p.pad.l + 6, p.pad.t + 4,
+        "peak at " + (pr.xf * LEN).toFixed(2) + " mm from the apex", { color: AC.C.faint });
+    }
   }
   AC.autoDraw(p, draw);
 
@@ -1221,9 +1268,9 @@ var E2 = (function () {
   if (wantAnim) loop.start();
 
   AC.slider(document.getElementById("e1-f"), function (v) {
-    state.f = Math.round(E2.fromIdx(v, 20, 20000));
+    state.f = E2.freqAt(v, 20, 20000);
     recompute();
-  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, 20, 20000))); });
+  }, function (v) { return AC.fmt.hz(E2.freqAt(v, 20, 20000)); });
 
   A.wire(document.getElementById("e1-play"), function () {
     return A.src.tone(1.1, { sr: E2.SR, f: state.f, amp: 0.5, fade: 25 });
@@ -1289,19 +1336,23 @@ var E2 = (function () {
     p.bars([{ x0: lo, x1: hi, y: 0.99, color: AC.C.gold, alpha: 0.95 }], { base: 0.87, gap: 0 });
     p.vline(norm(state.kind, state.f), { color: AC.C.blue, dash: [4, 3] });
 
-    // frequency labels along the bottom, at their transformed positions
-    for (k = 0; k < LABELS.length; k++) {
-      var x = norm(state.kind, LABELS[k]);
-      if (p.w < 470 && (k % 2) === 1) continue;
-      p.note(p.X(x), p.h - p.pad.b + 7,
-        LABELS[k] >= 1000 ? (LABELS[k] / 1000) + "k" : String(LABELS[k]),
-        { color: AC.C.ghost, align: "center" });
+    // frequency labels along the bottom, at their transformed positions, with
+    // any that would collide under the current ruler dropped
+    var xOf = function (f) { return p.X(norm(state.kind, f)); };
+    var show = E2.thinned(LABELS, xOf, p.w < 470 ? 46 : 32);
+    for (k = 0; k < show.length; k++) {
+      var lx = xOf(show[k]);
+      p.note(lx, p.h - p.pad.b + 7,
+        show[k] >= 1000 ? (show[k] / 1000) + "k" : String(show[k]),
+        { color: AC.C.ghost,
+          align: lx > p.w - p.pad.r - 14 ? "right" : lx < p.pad.l + 14 ? "left" : "center" });
     }
-    p.note(p.pad.l, 6, "24 critical bands · " + ({
-      hz: "linear hertz", log: "logarithmic hertz", bark: "Bark (equal distance on the membrane)",
-      erb: "ERB-rate",
-    })[state.kind], { color: AC.C.faint });
-    p.note(p.w - p.pad.r, p.h - p.pad.b + 7, "Hz", { color: AC.C.faint, align: "right" });
+    var name = ({ hz: "linear hertz", log: "logarithmic hertz",
+      bark: "Bark (equal distance on the membrane)", erb: "ERB-rate" })[state.kind];
+    p.note(p.pad.l, 6, p.w < 470 ? name.replace(/ \(.*\)$/, "") : "24 critical bands · " + name,
+      { color: AC.C.faint });
+    p.note(p.w - p.pad.r, p.h - 3, "hertz",
+      { color: AC.C.faint, align: "right", baseline: "bottom" });
   }
   AC.autoDraw(p, draw);
 
@@ -1341,10 +1392,10 @@ var E2 = (function () {
   });
 
   AC.slider(document.getElementById("e2-f"), function (v) {
-    state.f = Math.round(E2.fromIdx(v, FLO, FHI));
+    state.f = E2.freqAt(v, FLO, FHI);
     readouts();
     draw();
-  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, FLO, FHI))); });
+  }, function (v) { return AC.fmt.hz(E2.freqAt(v, FLO, FHI)); });
 
   A.wire(document.getElementById("e2-tone"), function () {
     return A.src.tone(1.4, { sr: E2.SR, f: state.f, amp: 0.45, fade: 30 });
@@ -1378,7 +1429,8 @@ var E2 = (function () {
 
   function draw() {
     p.clear();
-    p.axes({ xfmt: AC.fmt.hz });
+    p.ylabel = p.w < 420 ? "" : "dB SPL";
+    p.axes({ x: E2.hzTicks(p), xfmt: E2.hzTick, y: [0, 25, 50, 75, 100] });
 
     // Terhardt's approximation, evaluated live and filled underneath: the
     // region below the curve is the region nothing escapes from.
@@ -1422,9 +1474,9 @@ var E2 = (function () {
   }
 
   setF = AC.slider(document.getElementById("e3-f"), function (v) {
-    state.f = Math.round(E2.fromIdx(v, FLO, FHI));
+    state.f = E2.freqAt(v, FLO, FHI);
     readouts(); draw();
-  }, function (v) { return AC.fmt.hz(Math.round(E2.fromIdx(v, FLO, FHI))); });
+  }, function (v) { return AC.fmt.hz(E2.freqAt(v, FLO, FHI)); });
 
   setL = AC.slider(document.getElementById("e3-l"), function (v) {
     state.L = v;
@@ -1486,7 +1538,8 @@ var E2 = (function () {
 
   function draw() {
     p.clear();
-    p.axes({ xfmt: AC.fmt.hz });
+    p.ylabel = p.w < 420 ? "" : "dB SPL";
+    p.axes({ x: E2.hzTicks(p), xfmt: E2.hzTick, y: [0, 30, 60, 90, 120] });
     LEVELS.forEach(function (L) {
       if (L === state.phon) return;
       p.line(asPoints(CURVES[L]), { color: AC.C.faint, width: 1.1, alpha: 0.42 });
@@ -1496,7 +1549,7 @@ var E2 = (function () {
     // the selected contour's own label, parked at its left-hand end
     p.label(21, CURVES[state.phon][0], state.phon + " phon",
       { color: AC.C.gold, dy: -7, dx: 2 });
-    p.label(21, CURVES[0][0], "T_f", { color: AC.C.faint, dy: -7, dx: 2 });
+    p.label(21, CURVES[0][0], "0 phon (Tf)", { color: AC.C.faint, dy: -7, dx: 2 });
 
     if (state.w !== "off") {
       var fn = { A: E2.wA, B: E2.wB, C: E2.wC }[state.w];
@@ -1507,8 +1560,8 @@ var E2 = (function () {
         pts.push([f, ref - fn(f)]);
       }
       p.line(pts, { color: AC.C.purple, width: 1.8, dash: [6, 4] });
-      p.label(12400, ref - fn(12500), state.w + "-weighting, inverted",
-        { color: AC.C.purple, align: "right", dy: -8 });
+      p.note(p.w - p.pad.r - 6, p.pad.t + 6, state.w + "-weighting, inverted",
+        { color: AC.C.purple, align: "right" });
     }
     p.vline(1000, { color: AC.C.ghost, dash: [2, 5] });
   }
@@ -1566,17 +1619,24 @@ var E2 = (function () {
 
   var p = new AC.Plot(cv, {
     aspect: 2.4, xmin: 0, xmax: 60, ymin: 0, ymax: 1.05,
-    xlabel: "milliseconds", ylabel: "envelope", pad: { l: 46, r: 14, t: 16, b: 34 },
+    xlabel: "milliseconds", ylabel: "envelope", pad: { l: 54, r: 14, t: 16, b: 34 },
   });
 
   var MODES = {
     gap:   { min: 0, max: 30, step: 1, def: 3, label: "Gap", unit: " ms" },
-    burst: { min: 0, max: 100, step: 1, def: 74, label: "Burst length", unit: "" },
+    burst: { min: 0, max: 1000, step: 1, def: 741, label: "Burst length", unit: "" },
     probe: { min: -60, max: 300, step: 5, def: -5, label: "Probe offset", unit: " ms" },
   };
   var state = { mode: "gap", v: 3, noise: null, built: null };
 
-  function burstMs(idx) { return 2 * Math.pow(500, idx / 100); }
+  var DURS = [2, 3, 5, 8, 10, 15, 20, 30, 50, 80, 100, 150, 200, 300, 500, 700, 1000];
+  function burstMs(idx) {
+    var d = 2 * Math.pow(500, idx / 1000), i;
+    for (i = 0; i < DURS.length; i++) {
+      if (Math.abs(Math.log(d / DURS[i])) < 0.015) return DURS[i];
+    }
+    return Math.round(d);
+  }
 
   // ---- signal builders. Each returns {x, probe, t0, t1} where probe is an
   // optional second trace and t0/t1 are the plot window in milliseconds.
@@ -1650,39 +1710,52 @@ var E2 = (function () {
     return out;
   }
 
+  function topOf(pts) {
+    var m = 0, i;
+    for (i = 0; i < pts.length; i++) m = Math.max(m, pts[i][1]);
+    return Math.max(m * 1.28, 0.02);
+  }
+
   function draw() {
     p.clear();
     var b = state.built || build();
-    p.range(b.t0, b.t1, 0, 1.05);
-    p.axes({ yfmt: function (v) { return v.toFixed(1); } });
-
     var span = b.t1 - b.t0;
     var step = Math.max(1, Math.round(span / 1000 * SR / 700));
 
     if (state.mode === "probe") {
-      // shade the regions the literature says are masked in time
+      var mask = trace(E2.envelope(b.masker), b.t0, b.t1, step);
+      var pe = E2.envelope(b.probe), i, amp = new Float64Array(pe.length);
+      for (i = 0; i < pe.length; i++) amp[i] = pe[i] * 8;      // 8x, or it is a pixel
+      var pro = trace(amp, b.t0, b.t1, step);
+      var top = Math.max(topOf(mask), topOf(pro));
+      p.range(b.t0, b.t1, 0, top);
+      p.ylabel = p.w < 420 ? "" : "envelope";
+      p.axes({ yfmt: function (v) { return v.toFixed(2); } });
+      // the extents the literature gives for masking in time, as a guide only
       p.band(145, 150, { color: AC.C.purple, alpha: 0.22 });
       var k;
       for (k = 0; k < 6; k++) {
         p.band(350 + k * 25, 350 + (k + 1) * 25, { color: AC.C.purple, alpha: 0.19 - k * 0.028 });
       }
-      p.line(trace(E2.envelope(b.masker), b.t0, b.t1, step),
-        { color: AC.C.gold, width: 1.5, fill: true, fillAlpha: 0.12, fillTo: 0 });
-      var pe = E2.envelope(b.probe), i, amp = new Float64Array(pe.length);
-      for (i = 0; i < pe.length; i++) amp[i] = pe[i] * 8;      // 8x, or it is a pixel
-      p.line(trace(amp, b.t0, b.t1, step), { color: AC.C.blue, width: 1.8 });
-      p.vline(150, { color: AC.C.ghost, label: "masker on", labelY: 2 });
-      p.vline(350, { color: AC.C.ghost, label: "off", labelY: 2 });
-      p.label(147.5, 1.0, "backward", { color: AC.C.purple, align: "right", dx: -4 });
-      p.label(360, 1.0, "forward masking", { color: AC.C.purple, dx: 4 });
+      p.line(mask, { color: AC.C.gold, width: 1.5, fill: true, fillAlpha: 0.12, fillTo: 0 });
+      p.line(pro, { color: AC.C.blue, width: 1.8 });
+      p.vline(150, { color: AC.C.ghost });
+      p.vline(350, { color: AC.C.ghost });
+      p.label(250, top * 0.95, "200 ms masker", { color: AC.C.faint, align: "center" });
+      p.label(143, top * 0.62, "backward ≈5 ms", { color: AC.C.purple, align: "right" });
+      p.label(360, top * 0.80, "forward masking, ≈150 ms", { color: AC.C.purple });
     } else {
-      p.line(trace(E2.envelope(b.x), b.t0, b.t1, step),
-        { color: AC.C.gold, width: 1.6, fill: true, fillAlpha: 0.14, fillTo: 0 });
+      var env = trace(E2.envelope(b.x, state.mode === "burst" ? 120 : 1400), b.t0, b.t1, step);
+      var t2 = topOf(env);
+      p.range(b.t0, b.t1, 0, t2);
+      p.ylabel = p.w < 420 ? "" : "envelope";
+      p.axes({ yfmt: function (v) { return v.toFixed(2); } });
+      p.line(env, { color: AC.C.gold, width: 1.6, fill: true, fillAlpha: 0.14, fillTo: 0 });
       if (state.mode === "gap") {
         p.vline(b.mark, { color: AC.C.blue, label: state.v.toFixed(0) + " ms hole", labelY: 2 });
       } else {
-        p.label(220, 1.0, "200 ms reference", { color: AC.C.faint, align: "center" });
-        p.label(620 + burstMs(state.v) / 2, 1.0,
+        p.label(220, t2 * 0.95, "200 ms reference", { color: AC.C.faint, align: "center" });
+        p.label(620 + burstMs(state.v) / 2, t2 * 0.95,
           burstMs(state.v).toFixed(0) + " ms", { color: AC.C.blue, align: "center" });
       }
     }

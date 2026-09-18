@@ -86,6 +86,21 @@
   }
   function stopAll() { playing.slice().forEach(function (h) { h.stop(); }); }
 
+  // Two channels, for the stereo-image demonstrations. Same handle contract.
+  function playStereo(l, r, o) {
+    o = o || {};
+    var c = audioCtx();
+    if (!c) return { stop: function () {} };
+    var n = Math.min(l.length, r.length);
+    var buf = c.createBuffer(2, n, o.sr || c.sampleRate);
+    var L = buf.getChannelData(0), R = buf.getChannelData(1), i;
+    for (i = 0; i < n; i++) {
+      L[i] = Math.max(-1, Math.min(1, l[i]));
+      R[i] = Math.max(-1, Math.min(1, r[i]));
+    }
+    return play(buf, o);
+  }
+
   // A play/stop button that owns exactly one voice and keeps its own label.
   // wire(btn, makeSignal, opts) — makeSignal() returns a Float array.
   function wire(btn, makeSignal, o) {
@@ -309,6 +324,34 @@
       out.forEach(function (a) { x.set(a, at); at += a.length; });
       D.normalize(x, o.amp == null ? 0.75 : o.amp);
       return fadeEdges(x, sr, 12);
+    },
+
+    // A deliberately wide stereo pair: the same phrase in both channels, plus a
+    // decorrelated diffuse component made from two different comb-filtered noise
+    // seeds. Collapsing the side channel is then plainly audible.
+    stereoPair: function (dur, o) {
+      o = o || {}; var sr = o.sr || rate();
+      var mono = src.music(dur || 2.2, { sr: sr, amp: 0.62 });
+      var n = mono.length, L = new Float64Array(n), R = new Float64Array(n), i, k;
+      var ra = prng(31), rb = prng(97);
+      var da = new Float64Array(n), db = new Float64Array(n);
+      for (i = 0; i < n; i++) { da[i] = ra(); db[i] = rb(); }
+      // two different short comb delays give each ear a different room
+      var taps = [[Math.round(sr * 0.011), 0.5], [Math.round(sr * 0.019), 0.36], [Math.round(sr * 0.029), 0.24]];
+      var tapsB = [[Math.round(sr * 0.013), 0.5], [Math.round(sr * 0.023), 0.36], [Math.round(sr * 0.037), 0.24]];
+      for (i = 0; i < n; i++) {
+        var a = 0, b = 0;
+        for (k = 0; k < taps.length; k++) {
+          var ia = i - taps[k][0], ib = i - tapsB[k][0];
+          if (ia >= 0) a += mono[ia] * taps[k][1] * da[i] * 0.9;
+          if (ib >= 0) b += mono[ib] * tapsB[k][1] * db[i] * 0.9;
+        }
+        L[i] = mono[i] * 0.72 + a * 1.35;
+        R[i] = mono[i] * 0.72 + b * 1.35;
+      }
+      var g = 0.8 / Math.max(D.peak(L), D.peak(R), 1e-9);
+      for (i = 0; i < n; i++) { L[i] *= g; R[i] *= g; }
+      return { l: fadeEdges(L, sr, 15), r: fadeEdges(R, sr, 15) };
     },
 
     // Dense, uncorrelated transients — the material that breaks codecs.
@@ -669,7 +712,7 @@
   }
 
   window.AUD = {
-    ctx: audioCtx, rate: rate, play: play, stopAll: stopAll, wire: wire, toBuffer: toBuffer,
+    ctx: audioCtx, rate: rate, play: play, playStereo: playStereo, stopAll: stopAll, wire: wire, toBuffer: toBuffer,
     src: src, adsr: adsr, fadeEdges: fadeEdges, prng: prng,
     resonator: resonator, onePole: onePole, bandpass: bandpass, lowpassFFT: lowpassFFT,
     quantize: quantize, resample: resample, downUp: downUp,
