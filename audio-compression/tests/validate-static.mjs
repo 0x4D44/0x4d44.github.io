@@ -315,6 +315,39 @@ test("the power-law quantiser and its dequantiser are inverses", () => {
     `one step of global_gain should be about 1.5 dB, got ${20 * Math.log10(ratio)}`);
 });
 
+test("chapter 10's hand-written Rice codeword table is arithmetically right", () => {
+  // This table shipped with four wrong cells and was caught only by rechecking
+  // the arithmetic. A Rice codeword for folded value u with parameter k is
+  // (u >> k) ones-or-zeros of unary, one terminator, and k raw bits, so it is
+  // always (u >> k) + 1 + k bits long. Every cell is checked against that,
+  // whether it is spelled as a literal codeword or as a bit count.
+  const table = html["10-lossless.html"].match(/<caption>[^<]*Rice codewords[\s\S]*?<\/table>/);
+  assert.ok(table, "chapter 10 must still carry the Rice codeword table");
+  const ks = [...table[0].matchAll(/<th[^>]*>\s*<i>k<\/i>\s*=\s*(\d+)/g)].map((m) => Number(m[1]));
+  assert.deepEqual(ks, [0, 1, 2, 4], `unexpected k columns: ${ks}`);
+
+  const rows = [...table[0].matchAll(/<tr>(?:(?!<\/tr>)[\s\S])*<\/tr>/g)]
+    .map((m) => [...m[0].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]*>/g, "").trim()))
+    .filter((cells) => cells.length === 2 + ks.length);
+  assert.ok(rows.length >= 6, `only parsed ${rows.length} rows of the Rice table`);
+
+  for (const cells of rows) {
+    const u = Number(cells[1]);
+    assert.ok(Number.isFinite(u), `unreadable folded value: ${cells[1]}`);
+    // the fold itself: e >= 0 -> 2e, e < 0 -> -2e - 1
+    const e = Number(cells[0].replace("\u2212", "-"));
+    assert.equal(u, e >= 0 ? 2 * e : -2 * e - 1, `zig-zag fold wrong for e = ${e}`);
+    ks.forEach((k, i) => {
+      const cell = cells[2 + i];
+      const want = (u >> k) + 1 + k;
+      const asCount = /^(\d+)\s*bits?$/.exec(cell);
+      const got = asCount ? Number(asCount[1]) : cell.replace(/[^01]/g, "").length;
+      assert.equal(got, want,
+        `Rice(u = ${u}, k = ${k}) should be ${want} bits, table says ${cell}`);
+    });
+  }
+});
+
 test("the toy codec is a real rate-controlled coder", () => {
   const sr = 48000;
   const sig = A.src.music(1.2, { sr });
