@@ -1528,10 +1528,13 @@
   }
 
   function codeString() {
-    var out = [], i, k = st.k;
-    var step = Math.pow(2, k);
-    for (i = 0; i < 5 && i < st.res.length; i++) {
-      var e = st.res[i];
+    var out = [], i, k = st.k, vals = [];
+    var step = Math.pow(2, k), n = st.res.length;
+    // five samples spread across the block, so a silent opening does not make
+    // the strip look like five identical zeros
+    for (i = 0; i < 5; i++) vals.push(st.res[Math.floor(n * (0.1 + 0.2 * i))]);
+    for (i = 0; i < 5; i++) {
+      var e = vals[i];
       var u = e >= 0 ? 2 * e : -2 * e - 1;
       var q = Math.floor(u / step), rem = u - q * step;
       var un = "";
@@ -1543,8 +1546,7 @@
       while (rb.length < k) rb = "0" + rb;
       out.push("<b>" + un + "</b>" + rb);
     }
-    return "e = " + Array.prototype.slice.call(st.res.subarray(0, 5)).join(", ") +
-      " → " + out.join(" · ");
+    return "e = " + vals.join(", ") + " → " + out.join(" · ");
   }
 
   function show() {
