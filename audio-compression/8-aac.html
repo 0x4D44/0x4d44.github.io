@@ -174,7 +174,9 @@
       band wide below about 500 Hz. Leakage that lands that far away lands in a
       band whose masking threshold has nothing to do with the tone that
       produced it, so the encoder must either code the leak or accept audible
-      noise. The window shape is signalled per block by a single bit, and
+      noise. (<a href="/spectrum-analyzer/">a 1996 spectrum-analyser
+      codebase</a> elsewhere in this almanac takes the leakage arithmetic apart
+      in C.) The window shape is signalled per block by a single bit, and
       because only the overlapping halves must match, the left half of a block
       inherits the shape of the block before it — so the encoder can change its
       mind every 1024 samples without a discontinuity.</p>
@@ -298,10 +300,11 @@
       the noise inside it.
       <span class="who">The temporal noise shaping bargain</span></blockquote>
 
-    <p>The prediction gain is the second dividend. A residual with 8 to 20 dB
-      less energy than the coefficients it came from needs fewer bits to reach
-      the same accuracy, so TNS pays for itself on exactly the material that
-      needs it. The figure measures both effects on one block and then on a whole
+    <p>The prediction gain is the second dividend. The figure's fit to a single
+      castanet block reaches 2 dB at order 1 and about 25 dB by order 8; a
+      residual carrying 25 dB less energy than the coefficients it came from
+      needs fewer bits to reach the same accuracy, so TNS pays for itself on
+      exactly the material that needs it. The figure measures both effects on one block and then on a whole
       excerpt you can listen to.</p>
 
     <div class="note danger">
@@ -367,12 +370,14 @@
         against time within the block; the red and gold curves are the
         <em>measured</em> quantisation-noise envelopes, obtained by quantising,
         reconstructing and inverse-transforming the error itself. Both
-        quantisers are given the same fidelity and end up depositing almost the
-        same total noise energy — read the last box — but TNS puts 15 to 25 dB
-        less of it into the silence before the attack. Drag the order down to 1
-        and the shaping disappears; push the transform to 1024 lines and the
-        prediction gain rises, because a longer block gives the
-        frequency-axis predictor more to work with. That is the point worth
+        quantisers are given the same fidelity, and the total noise they deposit
+        stays within about 3 dB either way — read the last box — but at the
+        defaults TNS puts <b>13 dB</b> less of it into the silence before the
+        attack, and at 256 lines with a longer filter more than 30 dB less. Drag
+        the order down to 1 and the shaping collapses to nothing; push the
+        transform to 1024 lines and the prediction gain rises from about 20 dB
+        to about 25, because a longer block gives the frequency-axis predictor
+        more to work with. That is the point worth
         keeping: TNS works best exactly where the block is longest, which is
         exactly where pre-echo is worst. Then listen, on headphones: the noise
         before each strike is the thing to attend to, not the strike.</figcaption>
@@ -397,10 +402,12 @@
     <h3>Below about 64 kbit/s the top octaves stop being coded and start being described.</h3>
     <p style="margin-top:18px">Run the arithmetic of
       <a href="5-quantize.html">chapter 05</a> at 48 kbit/s for a stereo pair and
-      the problem is plain. Half the spectral lines of a 44.1 kHz signal live
-      above 11 kHz. Coding them even crudely — one bit a line, which is barely
-      a sign — would cost more than 20 kbit/s, and they are the lines the ear
-      cares least about individually. Every low-rate codec before 2003 dealt
+      the problem is plain. A critically sampled transform produces
+      exactly as many coefficients per second as there are samples, so a 44.1 kHz
+      stereo pair yields 88 200 spectral lines a second and half of them lie
+      above 11 kHz. Coding those at one bit each — barely enough for a sign —
+      would cost 44 kbit/s, nearly the whole budget, and they are the lines the
+      ear cares least about individually. Every low-rate codec before 2003 dealt
       with this by lowpass filtering: it simply threw the top away, which is why
       a 64 kbit/s MP3 sounds as though a blanket has been thrown over it.</p>
     <p>Spectral band replication, contributed by Coding Technologies and
@@ -612,14 +619,14 @@
         band; its height is that band's tonality, averaged over the excerpt and
         computed live from the spectral flatness of its MDCT coefficients. Gold
         bands are replaced by a single energy value; blue ones are too tonal and
-        survive. With the defaults — applause, threshold 0.16 — every eligible
-        band is substituted and the result is very hard to tell from the
-        original, while the bit accounting in the last two boxes differs by
-        roughly an order of magnitude. Now switch to <b>harmonic tone</b>: its
-        bands read 0.17 to 0.27 and the gate protects them. Drag the threshold
-        up past 0.3 to defeat the gate and press <b>substituted</b> — the
-        harmonics become hiss, which is what PNS applied carelessly sounds
-        like.</figcaption>
+        survive. With the defaults — applause, threshold 0.16 — all seven eligible bands
+        are substituted and the result is very hard to tell from the original,
+        while the bit accounting in the last two boxes comes out at nearly
+        twenty to one. Now switch to <b>harmonic
+        tone</b>: its bands read well above the threshold and the gate protects
+        all but one of them. Drag the threshold up past 0.3 to defeat the gate
+        and press <b>substituted</b> — the harmonics become hiss, which is what
+        PNS applied carelessly sounds like.</figcaption>
     </figure>
 
     <p>The bit figures in that readout deserve a caveat. They compare the cost
@@ -702,8 +709,8 @@
       by accident — it is index 7 or it is not legal. And
       <span class="mono">aac_frame_length</span> is thirteen bits counted in
       bytes including the header, which caps a frame at 8 191 bytes: at 44.1 kHz
-      and 1024 lines per frame that is a ceiling of about 2.75 Mbit/s, which no
-      one has ever met.</p>
+      and 1024 lines per frame that is a ceiling of 2.82 Mbit/s, which no one
+      has ever met.</p>
 
     <div class="eq">
       <i>R</i><sub>header</sub><span class="op">=</span>
@@ -770,8 +777,9 @@
         readouts is derived from the header, not tabulated: the frame count from
         <i>f</i><sub>s</sub>/1024, the frame length from the bitrate, the
         overhead from both. Drag the bitrate to 16 kbit/s and watch the
-        percentage: at broadcast rates ADTS framing costs more than parametric
-        stereo does. Note also that the first two bytes never change with the
+        percentage climb past 15: at broadcast rates the framing alone costs
+        more than spectral band replication's entire payload, which is why
+        low-rate AAC travels in LATM or in MP4 and not in ADTS. Note also that the first two bytes never change with the
         bitrate — that is the fixed header, which is what a decoder scans for
         when it joins a stream in progress.</figcaption>
     </figure>
@@ -835,8 +843,9 @@
         <dt>"AAC is MP3 with a better psychoacoustic model"</dt>
         <dd>Neither standard contains a psychoacoustic model. Both standardise
           only the bitstream and the decoder; the model lives entirely in the
-          encoder and is where every vendor's differentiation sits, which is why
-          LAME at 192 kbit/s beats a 1996 MP3 encoder at 256. What AAC changed
+          encoder and is where every vendor's differentiation sits, which is why a
+          current LAME build beats a 1996 encoder by a wide margin at the same
+          bitrate. What AAC changed
           is the machinery the model gets to drive: one transform instead of
           two, 49 scalefactor bands instead of 21 on a long block, per-band
           stereo decisions, and the four description tools above — none of which
@@ -896,7 +905,8 @@
       remains so up through the range where AAC-LC lives, and it ships with
       MPEG-D dynamic range control metadata, which is how a streaming service
       delivers one encode that plays sensibly both in a quiet room and on a bus.
-      Netflix and several other services use it at the bottom of their ladders.</p>
+      Netflix, Facebook and Audible are among the services reported to have
+      deployed it.</p>
     <p>That is also, precisely, the design Opus arrived at by a different road
       and two years earlier — a linear-predictive speech coder and a transform
       music coder in one packet format, with the switch made by the encoder.
@@ -906,8 +916,11 @@
       byte at the front of every packet that tells the decoder which of
       thirty-two configurations it is about to run. The difference is not really
       technical. AAC arrived at unification after fifteen years of adding tools
-      to a 1997 standard; Opus was designed as two codecs from the first
-      commit, and gave the result away.</p>
+      to a 1997 standard; Opus was designed as two codecs from the first commit,
+      and gave the result away — openly enough that
+      <a href="/ropus/">a port of its decoder to safe Rust</a> can be checked
+      bit-exact against the reference, which is not a sentence anyone will ever
+      write about AAC.</p>
   </section>
 
   </div>
@@ -1109,14 +1122,16 @@
     var Y = backward(Rq, T.a, start);
 
     var dX = stepFor(rmsFrom(X, start), st.snr);
-    var eOn = new Float64Array(N), eOff = new Float64Array(N), pOn = 0, pOff = 0;
+    var eOn = new Float64Array(N), eOff = new Float64Array(N);
     for (i = start; i < N; i++) {
       eOn[i] = Y[i] - X[i];
       eOff[i] = Math.round(X[i] / dX) * dX - X[i];
-      pOn += eOn[i] * eOn[i]; pOff += eOff[i] * eOff[i];
     }
-    var yOn = D.imdct(eOn), yOff = D.imdct(eOff);
-    for (i = 0; i < 2 * N; i++) { yOn[i] *= w[i]; yOff[i] *= w[i]; }
+    var yOn = D.imdct(eOn), yOff = D.imdct(eOff), pOn = 0, pOff = 0;
+    for (i = 0; i < 2 * N; i++) {
+      yOn[i] *= w[i]; yOff[i] *= w[i];
+      pOn += yOn[i] * yOn[i]; pOff += yOff[i] * yOff[i];
+    }
 
     var segs = N >= 512 ? 40 : 24;
     var eS = envelope(buf, segs), eN0 = envelope(yOff, segs), eN1 = envelope(yOn, segs);
@@ -1137,8 +1152,8 @@
       sig: eS, off: eN0, on: eN1,
       preOff: 10 * Math.log10(Math.max(b0 / Math.max(n0, 1), 1e-30) / ref),
       preOn: 10 * Math.log10(Math.max(b1 / Math.max(n1, 1), 1e-30) / ref),
-      totOff: 10 * Math.log10(Math.max(pOff / N, 1e-30) / ref),
-      totOn: 10 * Math.log10(Math.max(pOn / N, 1e-30) / ref),
+      totOff: 10 * Math.log10(Math.max(pOff / (2 * N), 1e-30) / ref),
+      totOn: 10 * Math.log10(Math.max(pOn / (2 * N), 1e-30) / ref),
       hitMs: hit / sr * 1000,
     };
   }
@@ -1502,16 +1517,18 @@
   }
 
   function build() {
-    var an = ensure(), sub = [], lines = 0, coded = 0, e;
+    var an = ensure(), sub = [], lines = 0, coded = 0, elig = 0, e;
     var fps = an.sr / 1024;
     for (e = 0; e < an.band.length; e++) {
       var bd = an.band[e];
-      bd.sub = bd.f0 >= st.from && bd.ton <= st.thr && bd.lines >= 2;
+      var ok = bd.f0 >= st.from && bd.lines >= 2;
+      if (ok) elig++;
+      bd.sub = ok && bd.ton <= st.thr;
       if (bd.sub) { sub.push(e); lines += bd.lines; coded += bd.kbps; }
     }
     st.cur = { sub: sub, lines: lines, coded: coded, subKbps: sub.length * 9 * fps / 1000 };
     st.audio = null;
-    document.getElementById("p-bands").textContent = sub.length + " of " + an.band.length;
+    document.getElementById("p-bands").textContent = sub.length + " of " + elig + " eligible";
     document.getElementById("p-lines").textContent =
       AC.fmt.int(lines) + " of " + N + " per block";
     document.getElementById("p-coded").textContent = coded.toFixed(1) + " kbit/s";
