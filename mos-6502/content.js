@@ -768,6 +768,44 @@
     },
   ];
 
+  // ---------------------------------------------------------------
+  // Instructions worth watching cycle by cycle. Each is executed on a
+  // machine set up as described, and what the page draws is the bus
+  // trace that came back.
+  // ---------------------------------------------------------------
+  const CYCLE_TRACES = [
+    { label: "LDA #$41", sample: "LDA #$41", setup: {},
+      note: "The floor: fetch the opcode, fetch the value. Two bytes, two cycles, and no memory access beyond the instruction itself." },
+    { label: "LDA $30", sample: "LDA $30", setup: { mem: { 0x0030: 0x7f } },
+      note: "Zero page. One address byte, so three cycles — a byte and a cycle cheaper than naming the same location in full." },
+    { label: "LDA $2000", sample: "LDA $2000", setup: { mem: { 0x2000: 0x5c } },
+      note: "Absolute. The address arrives low byte first, which is what lets the chip start indexing before the high byte has even been fetched." },
+    { label: "LDA $20F0,X", sample: "LDA $20F0,X", setup: { x: 0x20, mem: { 0x2110: 0x3d, 0x2010: 0xba } },
+      note: "Cycle 4 reads $2010: the index was added to the low byte and the carry into the high byte is not known yet. Cycle 5 does it again, correctly. This is the page-crossing penalty." },
+    { label: "LDA $2000,X", sample: "LDA $2000,X", setup: { x: 0x04, mem: { 0x2004: 0x71 } },
+      note: "The same instruction with an index that does not cross a page. No wasted read, no fifth cycle: the penalty is not a property of the instruction, it is a property of the data." },
+    { label: "STA $2000,X", sample: "STA $2000,X", setup: { a: 0x42, x: 0x04 },
+      note: "A write pays the extra cycle whether or not it crossed a page. It cannot afford to guess: a write to the wrong address cannot be taken back." },
+    { label: "INC $2000", sample: "INC $2000", setup: { mem: { 0x2000: 0x41 } },
+      note: "Read-modify-write. Three accesses to one address: read it, write the OLD value back while the ALU works, then write the new one. The chip has nowhere else to park the byte." },
+    { label: "ASL $20F0,X", sample: "ASL $20F0,X", setup: { x: 0x20, mem: { 0x2110: 0x81 } },
+      note: "The most expensive documented instruction on the chip at seven cycles: an indexed address that always pays its dummy read, plus a read-modify-write that always writes twice." },
+    { label: "LDA ($20),Y", sample: "LDA ($20),Y", setup: { y: 0x10, mem: { 0x0020: 0xf0, 0x0021: 0x21, 0x2200: 0x5a } },
+      note: "The workhorse: fetch a pointer out of page zero, add Y, read. Six cycles here because $21F0 + $10 crossed into the next page." },
+    { label: "JSR $0700", sample: "JSR $0700", setup: {},
+      note: "Six cycles: fetch the low byte, look at the stack without using it, push the two halves of the return address, and only then fetch the high byte of where it is going." },
+    { label: "RTS", sample: "RTS", setup: { s: 0xfb, mem: { 0x01fc: 0x02, 0x01fd: 0x06 } },
+      note: "Six cycles to undo JSR, of which three read nothing useful. The last one exists purely to add one to the address, because JSR pushed one short." },
+    { label: "JMP ($30FF)", sample: "JMP ($30FF)", setup: { mem: { 0x30ff: 0x00, 0x3000: 0x80, 0x3100: 0x40 } },
+      note: "Watch cycles 4 and 5: the pointer's high byte comes from $3000, not $3100. The address adder cannot carry on this path, and never could." },
+    { label: "PHA", sample: "PHA", setup: { a: 0xaa },
+      note: "Three cycles, one of which fetches the byte after the opcode and throws it away. The 6502 always fetches it; there is no decode path that knows not to." },
+    { label: "PLA", sample: "PLA", setup: { s: 0xfc, mem: { 0x01fd: 0xaa } },
+      note: "Four cycles: the throwaway fetch, a read of the stack at the pointer's current value — also thrown away — and then the real read, one slot up." },
+    { label: "BRK", sample: "BRK", vectors: { irq: 0x9000 }, setup: {},
+      note: "Seven cycles, and the same seven an IRQ or an NMI takes. The only difference between them is which two bytes the last pair of cycles reads, and whether bit 4 of the pushed status byte is set." },
+  ];
+
   // The C64 palette, which is what every 6502 tutorial since has used.
   const PALETTE = [
     "#000000", "#ffffff", "#880000", "#aaffee", "#cc44cc", "#00cc55", "#0000aa", "#eeee77",
@@ -836,7 +874,7 @@
   function hex2(n) { return (n & 0xff).toString(16).toUpperCase().padStart(2, "0"); }
   function hex4(n) { return (n & 0xffff).toString(16).toUpperCase().padStart(4, "0"); }
 
-  const api = { HISTORY, MACHINES, REGISTERS, FLAGS, MEMORY_MAP, ADDRESSING, INSTRUCTIONS, QUIRKS, PROGRAMS, PALETTE, LIMITS, SOURCES };
+  const api = { HISTORY, MACHINES, REGISTERS, FLAGS, MEMORY_MAP, ADDRESSING, CYCLE_TRACES, INSTRUCTIONS, QUIRKS, PROGRAMS, PALETTE, LIMITS, SOURCES };
   if (typeof module === "object" && module.exports) module.exports = api;
   global.SIX502 = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
