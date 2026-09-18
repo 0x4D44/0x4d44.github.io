@@ -217,15 +217,15 @@
         512-tap polyphase analysis and an 18-point MDCT and reading one coefficient
         back. At the default setting — subband 8, line 1 — drag <b>butterflies
         applied</b> from 8 down to 1 and a second lobe springs up in the subband below,
-        mirrored about the band boundary: the alias image, some 14 dB louder than
-        the butterflies leave it. Note <em>where</em> it springs up. Line 1 is paired by
-        butterfly number 1, so nothing happens until you cross that index; line 0 needs
-        butterfly 0, line 5 needs butterfly 5, and any line more than eight from a
-        boundary is never touched at all. Drag the <b>MDCT line</b> to 9 and the image
-        disappears entirely — the middle of a subband has no neighbour to alias with.
-        The prototype filter is designed here rather than copied from the standard's
-        table, so read the stopband depth as representative rather than
-        normative.</figcaption>
+        mirrored about the band boundary. That is the alias image, and the butterflies
+        were holding it about 12 dB lower. Note <em>when</em> it springs up: line 1 is
+        paired by butterfly number 1, so nothing at all changes until you cross that
+        index, and line 5 waits for butterfly 5. Then drag the <b>MDCT line</b> to 8 or
+        9 and the two curves lie exactly on top of each other at every setting — the
+        two lines in the middle of a subband are the only ones no butterfly touches,
+        because they are the furthest from a boundary to alias across. The prototype
+        filter is designed here rather than copied from the standard's table, so read
+        the stopband depth as representative rather than normative.</figcaption>
     </figure>
 
     <p>Notice the width of that main lobe. The nominal line spacing is 38.28 Hz, but the
