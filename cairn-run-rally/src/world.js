@@ -1,6 +1,6 @@
 import { angleLerp, clamp, expSmoothing, hash01, mat4Compose, mat4Identity, mat4Multiply } from './math.js';
 import { roadEdgePoint, sampleStage } from './stage.js';
-import { color, MeshBuilder } from './renderer.js';
+import { MATERIALS, color, MeshBuilder } from './renderer.js';
 
 const C = {
   road: color('#817563'), roadAlt: color('#796f5f'), roadPatch: color('#8a7d69'),
@@ -88,6 +88,24 @@ function inferRegion(stage, region) {
 }
 
 function inferWeather(weather) { return isObject(weather) ? { ...DEFAULT_WEATHER, ...weather } : { ...DEFAULT_WEATHER }; }
+
+/**
+ * Surface shading response for one weather state. A wet road is not a darker
+ * road: it is a specular one, so the sun and the sky read back off it.
+ */
+export function surfaceMaterials(weather = {}) {
+  const wet = clamp01(isObject(weather) ? weather.roadWetness : 0);
+  const precipitation = String(isObject(weather) ? weather.precipitation || 'none' : 'none').toLowerCase();
+  const sheen = clamp(wet + (precipitation === 'storm' ? .12 : precipitation === 'rain' ? .08 : 0), 0, 1);
+  return {
+    ground: { specular: .03 + sheen * .42, shininess: 18 + sheen * 64, fresnel: .05 + sheen * .3 },
+    backdrop: { specular: 0, shininess: 12, fresnel: .03 },
+    body: { ...MATERIALS.bodywork, specular: MATERIALS.bodywork.specular + sheen * .2 },
+    glass: MATERIALS.glass,
+    wheel: MATERIALS.rubber,
+    shadowStrength: .62 - sheen * .18
+  };
+}
 
 /**
  * Pick a bounded particle recipe from authored precipitation and surface data.
@@ -515,7 +533,9 @@ export class RallyWorld {
     this.landmarks=this.visualPlan.landmarks;
     this.barrierVisuals=planBarrierVisuals(stage);
     this.colors=this.visualPlan.palette;
-    this.renderer.setEnvironment?.({ palette: this.colors, weather: this.weather, weatherId: this.weather.id, visibilityM: this.visualPlan.visibilityM });
+    this.groundLevelM=Math.min(...stage.samples.map(sample=>sample.y));
+    this.renderer.setEnvironment?.({ palette: this.colors, weather: this.weather, weatherId: this.weather.id, visibilityM: this.visualPlan.visibilityM, fogHeightM: this.groundLevelM });
+    this.materials=surfaceMaterials(this.weather);
     this.carVisual=planCarVisual(this.carSpec);
     this.regionSpec=this.region;this.weatherSpec=this.weather;this.car=this.carSpec;this.carProfile=this.carVisual;
     this.hazardVisuals=planHazardVisuals(stage);
@@ -527,10 +547,10 @@ export class RallyWorld {
   dispose(){
     if(this.disposed)return 0;
     this.disposed=true;
-    const meshes=[this.backdrop,...this.chunks.map(chunk=>chunk.mesh),this.carBody,this.wheel,this.bumper,this.shadow].filter(Boolean);
+    const meshes=[this.backdrop,...this.chunks.map(chunk=>chunk.mesh),this.carBody,this.carGlass,this.wheel,this.bumper].filter(Boolean);
     for(const mesh of new Set(meshes))this.renderer.deleteMesh(mesh);
     this.chunks.length=0;this.particles.length=0;
-    this.backdrop=this.carBody=this.wheel=this.bumper=this.shadow=null;
+    this.backdrop=this.carBody=this.carGlass=this.wheel=this.bumper=null;
     return new Set(meshes).size;
   }
 
@@ -926,14 +946,15 @@ export class RallyWorld {
     builder.box({x:0,y:p.bumperY,z:halfLength+.035},{x:p.width*1.02,y:.26,z:.19},p.accent);
     builder.box({x:0,y:p.bumperY+.13,z:-halfLength-.035},{x:p.width*.96,y:.22,z:.18},this.colors.metal);
     builder.box({x:0,y:bodyY+p.bodyHeight*.46,z:cabinEnd+.04},{x:p.width*.82,y:.025,z:.7},p.body);
-    builder.box({x:0,y:p.roofHeight-.22,z:cabinEnd-.03},{x:p.width*.67,y:p.windowHeight,z:.035},p.window);
-    builder.box({x:0,y:p.roofHeight-.2,z:cabinStart+.05},{x:p.width*.67,y:p.windowHeight*.94,z:.035},p.window);
+    const glass=new MeshBuilder();
+    glass.box({x:0,y:p.roofHeight-.22,z:cabinEnd-.03},{x:p.width*.67,y:p.windowHeight,z:.035},p.window);
+    glass.box({x:0,y:p.roofHeight-.2,z:cabinStart+.05},{x:p.width*.67,y:p.windowHeight*.94,z:.035},p.window);
     const lampX=p.width*.38;
     builder.box({x:-lampX,y:bodyY+p.bodyHeight*.74,z:halfLength-.16},{x:p.width*.2,y:.18,z:.05},this.colors.lamp);
     builder.box({x:lampX,y:bodyY+p.bodyHeight*.74,z:halfLength-.16},{x:p.width*.2,y:.18,z:.05},this.colors.lamp);
     builder.box({x:0,y:p.roofHeight+.08,z:(cabinStart+cabinEnd)/2},{x:p.width*.42,y:.1,z:.55},p.accent);
-    builder.box({x:-halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
-    builder.box({x:halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
+    glass.box({x:-halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
+    glass.box({x:halfWidth*.96,y:p.roofHeight-.22,z:(cabinStart+cabinEnd)/2},{x:.035,y:p.windowHeight,z:cabinEnd-cabinStart},p.window);
     builder.box({x:-lampX,y:bodyY+p.bodyHeight*.53,z:-halfLength+.07},{x:p.width*.18,y:.19,z:.045},this.colors.red);
     builder.box({x:lampX,y:bodyY+p.bodyHeight*.53,z:-halfLength+.07},{x:p.width*.18,y:.19,z:.045},this.colors.red);
     builder.box({x:0,y:p.roofHeight-.2,z:-halfLength+.28},{x:p.width*.78,y:.09,z:.34},p.dark);
@@ -945,6 +966,7 @@ export class RallyWorld {
       builder.box({x:p.width*.3,y:bodyY+.5,z:-halfLength+.03},{x:.08,y:.34,z:.08},p.dark);
     }
     builder.cylinderX({x:p.width*.3,y:bodyY-.1,z:-halfLength-.05},.055,.34,7,this.colors.metal);this.carBody=this.renderer.createMesh(builder);
+    this.carGlass=this.renderer.createMesh(glass);
 
     builder=new MeshBuilder();
     builder.cylinderX({x:0,y:0,z:0},p.wheelRadius,.34,10,this.colors.tyre);
@@ -952,7 +974,6 @@ export class RallyWorld {
     builder.box({x:0,y:0,z:0},{x:p.wheelRadius*.95,y:.075,z:p.wheelRadius*.88},p.dark);
     builder.box({x:0,y:0,z:0},{x:p.wheelRadius*.95,y:p.wheelRadius*.88,z:.075},p.dark);this.wheel=this.renderer.createMesh(builder);
     builder=new MeshBuilder();builder.box({x:0,y:0,z:0},{x:p.width*1.05,y:.22,z:.2},p.accent);this.bumper=this.renderer.createMesh(builder);
-    builder=new MeshBuilder();builder.quad({x:-halfWidth*.66,y:0,z:-halfLength},{x:halfWidth*.66,y:0,z:-halfLength},{x:halfWidth*.66,y:0,z:halfLength},{x:-halfWidth*.66,y:0,z:halfLength},this.colors.shadow,{x:0,y:1,z:0});this.shadow=this.renderer.createMesh(builder);
   }
 
   update(dt,car,input){
@@ -988,13 +1009,19 @@ export class RallyWorld {
 
   draw(camera,car){
     const maxDistance=Math.min(this.quality==='high'?this.visualPlan.maxDistance:620,this.visualPlan.visibilityM*1.08),maxSq=maxDistance*maxDistance,routeBehind=this.quality==='high'?this.visualPlan.routeBehind:330,baseRouteAhead=this.quality==='high'?this.visualPlan.routeAhead:510,routeAhead=routeAheadForView(this.stage,car.progress,baseRouteAhead);
-    camera.far=Math.max(320,maxDistance);this.renderer.draw(this.backdrop,IDENTITY);
-    for(const chunk of this.chunks)if(isRouteChunkVisible(chunk,camera,car.progress,{maxSq,routeBehind,routeAhead}))this.renderer.draw(chunk.mesh,IDENTITY);
-    const shadowRoad=sampleStage(this.stage,car.progress),shadowModel=mat4Compose({x:car.x,y:shadowRoad.y+.055,z:car.z},car.yaw,0,0);this.renderer.draw(this.shadow,shadowModel,.48);
-    const carModel=mat4Compose({x:car.x,y:car.y,z:car.z},car.yaw,car.pitch,car.roll);this.renderer.draw(this.carBody,carModel);
+    camera.far=Math.max(320,maxDistance);const materials=this.materials||surfaceMaterials(this.weather);
+    this.renderer.draw(this.backdrop,IDENTITY,1,materials.backdrop);
+    for(const chunk of this.chunks)if(isRouteChunkVisible(chunk,camera,car.progress,{maxSq,routeBehind,routeAhead}))this.renderer.draw(chunk.mesh,IDENTITY,1,materials.ground);
+    // Contact shadow: it widens and fades with airtime, so a jump reads as a
+    // jump rather than as a car sliding along an invisible floor.
+    const shadowRoad=sampleStage(this.stage,car.progress),lift=clamp(car.y-(shadowRoad.y+this.carVisual.wheelRadius*.5),0,6);
+    const spread=1+lift*.16,shadowModel=mat4Compose({x:car.x,y:shadowRoad.y+.05,z:car.z},car.yaw,0,0,{x:this.carVisual.width*.78*spread,y:1,z:this.carVisual.length*.62*spread});
+    this.renderer.drawShadow?.(shadowModel,clamp(materials.shadowStrength*(1-lift*.13),.08,1),this.colors.shadow);
+    const carModel=mat4Compose({x:car.x,y:car.y,z:car.z},car.yaw,car.pitch,car.roll);this.renderer.draw(this.carBody,carModel,1,materials.body);
+    this.renderer.draw(this.carGlass,carModel,1,materials.glass);
     const wheelY=this.carVisual.wheelCenterY,frontZ=this.carVisual.frontAxle,rearZ=this.carVisual.rearAxle,track=this.carVisual.track;
-    for(const z of [frontZ,rearZ])for(const x of [-track/2,track/2]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*.38:0,this.wheelRotation,0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local));}
-    const damage=car.damage.body,bumperLocal=mat4Compose({x:damage>.58?.18:0,y:this.carVisual.bumperY-damage*.12,z:this.carVisual.frontZ+damage*.1},damage>.58?damage*.24:0,0,damage>.58?-.12:0);this.renderer.draw(this.bumper,mat4Multiply(carModel,bumperLocal));
+    for(const z of [frontZ,rearZ])for(const x of [-track/2,track/2]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*.38:0,this.wheelRotation,0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local),1,materials.wheel);}
+    const damage=car.damage.body,bumperLocal=mat4Compose({x:damage>.58?.18:0,y:this.carVisual.bumperY-damage*.12,z:this.carVisual.frontZ+damage*.1},damage>.58?damage*.24:0,0,damage>.58?-.12:0);this.renderer.draw(this.bumper,mat4Multiply(carModel,bumperLocal),1,materials.body);
     this.renderer.drawParticles(this.particles);
   }
 }
