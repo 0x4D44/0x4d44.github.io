@@ -350,7 +350,7 @@
     ["Filterbank", "04", "A set of band-pass filters splitting a signal into frequency channels. MP3's is a 32-band polyphase quadrature filterbank followed by an MDCT; AAC's is a single MDCT; the cochlea's has about 24 usable channels."],
     ["FLAC", "10", "Free Lossless Audio Codec (Xiph, 2001; RFC 9639, 2024). Blocking, inter-channel decorrelation, linear prediction and Rice coding of the residual. Typically 50–60% of the original size."],
     ["Formant", "09", "A resonance of the vocal tract, visible as a peak in the speech spectrum. The first two formants largely determine which vowel you hear, which is why LPC-based coders can describe speech so cheaply."],
-    ["Frame", "07", "Ambiguous by itself — see the glossary note in the confusions section. Ask which frame: the codec's transmission unit, the transform's block, or the container's packet."],
+    ["Frame", "07", "Ambiguous by itself: four different things in this study are called a frame — the codec's transmission unit, the transform's overlapping block, an Opus frame inside a packet, and a FLAC block. See \"Six confusions worth fixing\" below. Always ask which one is meant."],
     ["Gapless playback", "07", "Playing consecutive tracks with no silence between them. Hard for MP3 because the encoder adds delay and pads the last frame; the LAME/Info tag records the exact number of samples to discard at each end."],
     ["global_gain", "05", "The per-granule quantiser step size in MP3 and AAC, in steps of 1.5 dB. The inner rate loop's single lever: raise it and the frame gets smaller and noisier."],
     ["Granule", "07", "Half an MP3 frame: 576 spectral lines derived from 576 samples. An MPEG-1 Layer III frame carries two granules per channel."],
