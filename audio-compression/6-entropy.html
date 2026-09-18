@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Entropy coding — Throwing Sound Away</title>
+<meta name="description" content="Shannon's bound, Kraft's inequality, Huffman's algorithm and its one-bit ceiling, MP3's thirty-two code tables and linbits escapes, AAC's twelve codebooks, and the arithmetic and range coders that spend fractions of a bit — every number measured live in the browser.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="06">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 06</div>
+  <div class="num">06</div>
+  <h2>The last stage of an encoder is the only one that gives back exactly what it was given.</h2>
+  <p class="lead">Everything up to this point has been a decision about what to destroy.
+    Entropy coding destroys nothing. It takes the integers the rate loop has already
+    settled on and writes them down in fewer bits than a fixed-width field would need,
+    and it is exactly reversible. On real programme material that is worth between
+    a third and a half of the file — which, handed back to the quantiser, is ten
+    decibels of signal-to-noise you did not have to pay for.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">A symbol should cost what it
+      surprises you by</div></div>
+    <div><div class="k">Named after</div><div class="v">Shannon, Kraft, Huffman,
+      Rissanen, Martin</div></div>
+    <div><div class="k">Numbers</div><div class="v">3.7 bits against 8 · a 1-bit floor ·
+      32 tables · 2 bits for a whole message</div></div>
+    <div><div class="k">Figures</div><div class="v">6 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#floor">The floor</a>
+    <a href="#kraft">Kraft's budget</a>
+    <a href="#huffman">Huffman, and his ceiling</a>
+    <a href="#canonical">Lengths are the table</a>
+    <a href="#mp3">MP3's thirty-two tables</a>
+    <a href="#aac">AAC's twelve codebooks</a>
+    <a href="#arith">Fractions of a bit</a>
+    <a href="#range">Opus's range coder</a>
+    <a href="#worth">What it is worth</a>
+  </nav>
+  <div>
+
+  <!-- ===================================================== 1 -->
+  <section id="floor" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The floor</div>
+    <h3>What the rate loop hands over is a very lopsided stream of very small integers.</h3>
+    <p style="margin-top:18px">By the end of <a href="5-quantize.html">Chapter 05</a> the
+      encoder has produced, for every block and every band, a list of integers: the
+      quantised MDCT coefficients. That list is the entire payload. Everything else in the
+      bitstream — scalefactors, window flags, table selects, the frame header — is
+      bookkeeping around it. The question this chapter answers is how many bits those
+      integers cost, and the answer has a hard lower bound that Claude Shannon fixed in
+      1948, in the same paper that gave the word <em>bit</em> its technical meaning.</p>
+    <p>Treat the quantised values as symbols drawn from a source with probabilities
+      <i>p</i><sub>1</sub> … <i>p</i><sub><i>K</i></sub>. The entropy of that source is</p>
+
+    <div class="eq">
+      <i>H</i><span class="op">=</span><span class="op">−</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>K</i></span><span><i>i</i>=1</span></span>
+      <i>p</i><sub><i>i</i></sub>
+      <span class="fn">log</span><sub>2</sub>&nbsp;<i>p</i><sub><i>i</i></sub>
+      <span class="note2">bits per symbol — the average surprise of a draw from the source</span>
+    </div>
+
+    <p>Shannon's source-coding theorem says two things about that number, and both matter
+      here. No uniquely decodable code can average fewer than <i>H</i> bits per symbol; and
+      codes exist whose average approaches <i>H</i> as closely as you like, if you are
+      willing to code long enough blocks at once. The first half is a wall. The second half
+      is a promise, and the rest of this chapter is about how expensive the promise turns
+      out to be to keep.</p>
+    <p>The individual quantity behind the sum is the one worth carrying around. A symbol of
+      probability <i>p</i> ought to cost</p>
+
+    <div class="eq">
+      <i>ℓ</i><span class="op">=</span><span class="op">−</span>
+      <span class="fn">log</span><sub>2</sub>&nbsp;<i>p</i>
+      <span class="note2">so p = ½ costs 1 bit, p = 0.8 costs 0.322, and p = 0.001 costs 9.97</span>
+    </div>
+
+    <p>Note what that licenses. If a symbol turns up four times in five, its honest price is
+      about a third of a bit. No code that writes whole bits one symbol at a time can charge
+      a third of a bit, which is the crack that arithmetic coding later prises open. And
+      note what it forbids: if the alphabet is flat, entropy coding has nothing to sell.
+      Sixteen equiprobable symbols cost four bits each however you write them.</p>
+    <p>That is the whole reason a lossless general-purpose compressor barely dents a PCM
+      file, and the figure below measures it rather than asserting it. Pick the
+      <b>16-bit PCM samples</b> stream: the sample values of a real synthesised passage,
+      histogrammed, come out at something in the region of fourteen bits of entropy out of
+      sixteen. About 1.15 to one. Then pick <b>quantised MDCT lines</b> and watch the same
+      audio, after the transform and the rate loop, drop to well under four bits per line
+      with two-fifths of the lines exactly zero. The transform and the quantiser did that.
+      The entropy coder is merely about to collect.</p>
+
+    <figure class="figure" id="fig-hist">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.1</span>
+        <span class="ftitle">What the entropy coder is handed</span>
+        <span class="fstate" id="e1-state">quantised MDCT lines</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e1-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-teal"><i></i>ideal length −log₂p of the <i>r</i>-th commonest symbol</span>
+          <span class="l-heat"><i class="dash"></i>entropy <i>H</i>, the average</span>
+          <span class="l-danger"><i class="dash"></i>a fixed-width field</span>
+          <span class="l-ghost"><i></i>the symbols carrying half the stream</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Entropy</span><span class="v" id="e1-h">—</span></div>
+          <div class="ro bad"><span class="k">Fixed width</span><span class="v" id="e1-fw">—</span></div>
+          <div class="ro ok"><span class="k">Ratio</span><span class="v" id="e1-ratio">—</span></div>
+          <div class="ro"><span class="k">Exact zeros</span><span class="v" id="e1-zero">—</span></div>
+          <div class="ro ghost"><span class="k">Distinct values</span><span class="v" id="e1-nsym">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Symbol stream</span></div>
+          <div class="chips" id="e1-src">
+            <button data-v="mdct" class="on">Quantised MDCT lines</button>
+            <button data-v="pcm">16-bit PCM samples</button>
+            <button data-v="diff">PCM, first difference</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="e1-prog">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Rate loop budget</span><span class="val" id="e1-ratelab">128 kbit/s</span></div>
+          <input type="range" id="e1-rate" min="32" max="256" step="8" value="128" data-out="e1-ratelab" aria-label="Bit budget in kilobits per second">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e1-orig">Original</button>
+            <button class="btn play" id="e1-coded">Coded</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.1</b> — the symbols of each stream, sorted
+        commonest first, with the price Shannon says each should fetch. The gold line is the
+        average, the red line is what a fixed-width field would charge every symbol
+        regardless, and the shaded strip covers the handful of symbols that between them
+        make up half the stream. For 16-bit PCM the curve is nearly flat at about fourteen
+        bits and the two horizontal lines almost touch: there is nothing to win. For
+        quantised MDCT lines the commonest symbol — zero — costs around one and a half
+        bits against a fixed field of eight, and the shaded strip is three or four values
+        wide. Drag the budget down and the curve steepens further: starving the quantiser
+        makes the entropy coder's job easier, not harder.</figcaption>
+    </figure>
+
+    <div class="note sig">
+      <span class="tag tag-sig">What the encoder on these pages actually counts</span>
+      <p>The rate loop in <code>assets/audio.js</code> prices a band as its zero-order
+        entropy times the number of lines, plus eight bits of scalefactor overhead, plus a
+        real escape cost for any value outside ±255. That is the same accounting a
+        production encoder's inner loop does, minus the table lookup — which is why the
+        bitrate readouts across this study land within a couple of per cent of what you
+        asked for. It is an estimate of the code, not the code itself.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 2 -->
+  <section id="kraft" class="section">
+    <div class="kicker k-heat">Kraft's budget</div>
+    <h3>Any set of code lengths is realisable if, and only if, it fits inside one.</h3>
+    <p style="margin-top:18px">Before choosing lengths you need to know which sets of
+      lengths are legal. A code is <strong>prefix-free</strong> if no codeword is the
+      beginning of another; that property is what lets a decoder read a bitstream with no
+      separators and no lookahead, stopping the instant it has seen a complete codeword.
+      Prefix-free codes are exactly the codes you can draw as a binary tree with the symbols
+      at the leaves, and the constraint on their lengths is a single inequality, stated by
+      Leon Kraft in 1949 and extended by Brockway McMillan in 1956 to every uniquely
+      decodable code, prefix-free or not.</p>
+
+    <div class="eq">
+      <span class="bigop">∑</span><span class="limits"><span><i>K</i></span><span><i>i</i>=1</span></span>
+      <span class="num">2</span><sup><span class="op">−</span><i>ℓ</i><sub><i>i</i></sub></sup>
+      <span class="op">≤</span><span class="num">1</span>
+      <span class="note2">Kraft–McMillan: a prefix code with lengths ℓᵢ exists precisely when this holds</span>
+    </div>
+
+    <p>The picture behind it is a budget. Think of the unit interval as the whole of code
+      space. A codeword of length <i>ℓ</i> claims a slice of width 2<sup>−<i>ℓ</i></sup> and,
+      being a prefix, forbids anything inside that slice. One bit costs you half of
+      everything. Two bits cost a quarter. Ten bits cost a thousandth, which is why long
+      codewords are nearly free to hand out and short ones are ruinous. You may spend the
+      budget however you like; you may not overspend it.</p>
+    <p>Two consequences run through the rest of the chapter. First, the reason the ideal
+      length is −log<sub>2</sub><i>p</i> is that spending your budget in proportion to
+      probability is what minimises the expected length subject to Kraft — the optimum of
+      the continuous relaxation sits exactly there. Second, because Kraft's inequality
+      constrains only the lengths, a decoder never needs the tree. It needs the list of
+      lengths, from which the tree is reconstructible. That observation is worth several
+      kilobytes in every codec that transmits its tables, and it is the subject of
+      <a href="#canonical">the section after next</a>.</p>
+
+    <blockquote class="pullquote">Entropy coding is the one stage of an audio codec that is
+      not an opinion about your hearing. It is arithmetic, and it runs backwards.
+      <span class="who">Why this chapter has no listening test</span></blockquote>
+  </section>
+
+  <!-- ===================================================== 3 -->
+  <section id="huffman" class="section">
+    <div class="kicker">Huffman, and his ceiling</div>
+    <h3>Huffman's algorithm is provably optimal, and that is precisely its limitation.</h3>
+    <p style="margin-top:18px">In 1951 David Huffman was a graduate student in Robert Fano's
+      information theory class at MIT, offered the usual choice between a final examination
+      and a term paper. The paper's topic was to find the optimal prefix code. What Fano did
+      not mention was that he and Shannon had already attacked the problem and produced only
+      a good heuristic — the top-down Shannon–Fano split — and that the optimal construction
+      was open. Huffman worked at it, was about to give up and revise for the examination
+      instead, and then saw that the tree had to be built from the bottom.</p>
+    <p>The algorithm is four lines. Put every symbol in a pool with its weight. Repeatedly
+      remove the two lightest entries, join them under a new node whose weight is their sum,
+      and return that node to the pool. When one node remains, label every left branch 0 and
+      every right branch 1; each symbol's codeword is the path to its leaf. The proof of
+      optimality is an exchange argument: in any optimal code the two least likely symbols
+      can be taken to be siblings at maximum depth, so merging them reduces the problem to
+      one symbol smaller without loss.</p>
+    <p>Optimal, though, means optimal <em>among codes that assign a whole number of bits to
+      each symbol</em>. That qualification is the whole story of its limits. Every codeword
+      is at least one bit long, so</p>
+
+    <div class="eq">
+      <i>H</i><span class="op">≤</span><i>L</i><span class="op">&lt;</span>
+      <i>H</i><span class="op">+</span><span class="num">1</span>
+      <span class="note2">and more tightly, the redundancy L − H is at most p₁ + 0.086,
+        with p₁ the probability of the commonest symbol</span>
+    </div>
+
+    <p>When the alphabet is well conditioned — a dozen symbols, none of them dominant — that
+      gap is small change. The textbook six-symbol example built into this study's DSP kit
+      has an entropy of 2.2195 bits and a Huffman average of 2.24: nine-tenths of one per
+      cent of waste. But a quantised MDCT band at a low bitrate is not well conditioned. It
+      is mostly zeros. When <i>p</i>(0) reaches 0.9 the entropy of a binary
+      zero/non-zero decision is 0.469 bits and Huffman must still spend a full bit, so
+      more than half of what you pay buys nothing. Drag the figure's decay control to the
+      right and watch the two numbers separate.</p>
+
+    <figure class="figure" id="fig-huff">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.2</span>
+        <span class="ftitle">The tree, built live — and the gap it cannot close</span>
+        <span class="fstate" id="e2-state">12 symbols</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e2-cv"></canvas></div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Entropy <i>H</i></span><span class="v" id="e2-H">—</span></div>
+          <div class="ro"><span class="k">Huffman <i>L</i></span><span class="v" id="e2-L">—</span></div>
+          <div class="ro bad"><span class="k">Wasted</span><span class="v" id="e2-R">—</span></div>
+          <div class="ro ok"><span class="k">Efficiency</span><span class="v" id="e2-eff">—</span></div>
+          <div class="ro ghost"><span class="k">Longest codeword</span><span class="v" id="e2-max">—</span></div>
+          <div class="ro"><span class="k">Kraft sum</span><span class="v" id="e2-kraft">—</span></div>
+        </div>
+        <p class="bits" id="e2-codes" style="margin:14px 0 0;color:var(--text-faint);line-height:2"></p>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Distribution</span></div>
+          <div class="chips" id="e2-dist">
+            <button data-v="geom" class="on">Geometric</button>
+            <button data-v="uniform">Uniform</button>
+            <button data-v="zipf">Zipf</button>
+            <button data-v="binary">One dominant symbol</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Alphabet</span><span class="val" id="e2-klab">12 symbols</span></div>
+          <input type="range" id="e2-k" min="2" max="16" step="1" value="12" data-out="e2-klab" aria-label="Number of symbols">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Decay</span><span class="val" id="e2-qlab">0.45</span></div>
+          <input type="range" id="e2-q" min="5" max="95" step="1" value="45" data-out="e2-qlab" aria-label="Geometric decay factor">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.2</b> — the tree is built by
+        <code>DSP.huffman</code> from the weights you set, and the codes under it are the
+        canonical form of the lengths it produced. Start at the default geometric
+        distribution with decay 0.45, which is roughly the shape of a mid-frequency MDCT
+        band at 128 kbit/s: <i>L</i> beats a 4-bit fixed field comfortably and sits within a
+        few hundredths of <i>H</i>. Now push the decay to 0.9. The entropy collapses towards
+        half a bit; the Huffman average will not go below 1.000, because it cannot. That
+        floor is not a flaw in the algorithm — the algorithm is optimal — it is the price of
+        writing one whole number of bits per symbol, and it is the gap arithmetic coding
+        exists to close.</figcaption>
+    </figure>
+
+    <div class="note danger">
+      <span class="tag tag-danger">The one-bit floor is not a rounding error</span>
+      <p>The moment any single symbol takes more than half the probability mass, a
+        symbol-by-symbol code is guaranteed to waste bits, and the waste grows without limit
+        as the distribution sharpens. At <i>p</i> = 0.99 the entropy of the binary decision
+        is 0.081 bits and Huffman spends 1.000: a factor of twelve. Codecs dodge this in
+        three ways, all of which show up later — code several coefficients as one symbol so
+        the combined alphabet is flatter (MP3's pairs and quadruples, AAC's 2- and
+        4-tuples), run-length the zeros so they stop being symbols at all, or give up on
+        whole bits and use an arithmetic coder.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 4 -->
+  <section id="canonical" class="section">
+    <div class="kicker k-ghost">Lengths are the table</div>
+    <h3>No decoder stores a tree. It stores a sorted list of lengths.</h3>
+    <p style="margin-top:18px">A Huffman tree is not unique. Swapping any node's children
+      relabels codewords without changing a single length, and the lengths are all that
+      affect the compressed size. That freedom is worth exploiting: fix a convention, and
+      the codes become derivable from the lengths alone.</p>
+    <p>The convention is the <strong>canonical</strong> code. Sort the symbols by code
+      length, breaking ties by symbol order. Give the first symbol of the shortest length
+      the all-zeros codeword. Thereafter, add one to the previous codeword; whenever the
+      length increases by <i>d</i>, shift left by <i>d</i> first. That is the whole
+      algorithm, and it is what <code>DSP.canonical</code> in this study's kit does — the
+      code list printed under Fig 6.2 is its output, regenerated every time you move a
+      control.</p>
+    <p>Two properties fall out and both are exploited by real decoders. Codewords of the
+      same length are numerically consecutive, and every codeword of length <i>ℓ</i> is
+      numerically smaller than every codeword of length <i>ℓ</i>+1 taken over the same
+      number of bits. So a decoder can hold two small arrays — the first code of each
+      length, and the index of the first symbol of each length — and decode by reading bits
+      one at a time while comparing against a single integer per length. No pointers, no
+      tree nodes, no cache misses walking a structure. Deflate, JPEG and Vorbis all
+      transmit their tables this way; Vorbis packs its codebooks into the third header
+      packet of every stream, so the codebook lengths themselves are what travel.</p>
+
+    <div class="note ghost">
+      <span class="tag">Fixed tables age; transmitted tables do not</span>
+      <p>MP3 and AAC hard-code their tables in the standard, so a decoder written in 1994
+        decodes a file made in 2026. The cost is that the tables were fitted to whatever
+        material the committee had, and no later encoder may improve them. Vorbis chose the
+        other side of the trade and ships its codebooks in the stream: encoders were free to
+        retune, and did, which is why late Vorbis encoders sound considerably better than
+        early ones at the same bitrate while the format never changed. Opus, as
+        <a href="#range">the last section</a> explains, sidesteps the question by not having
+        tables at all.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 5 -->
+  <section id="mp3" class="section">
+    <div class="kicker k-heat">MP3's thirty-two tables</div>
+    <h3>576 lines, three regions, and a table select for each of them.</h3>
+    <p style="margin-top:18px">A Layer III granule is 576 spectral lines. Coding all 576 with
+      one table would be a poor fit, because the statistics of the bottom of the spectrum and
+      the top of it have nothing in common: low lines are large and dense, high lines are
+      small and mostly zero. So the standard cuts the granule into three regions, from the
+      top down, by what is in them.</p>
+    <p>Work backwards from line 575. Everything from the last non-zero line to the end is
+      <strong>rzero</strong> and costs nothing at all; its extent is implied by what comes
+      before it, and not transmitted. Below that, as long as the values are confined to
+      −1, 0 and +1, they are coded four at a time in the <strong>count1</strong> region.
+      Everything below <em>that</em> is <strong>big_values</strong>, coded in pairs, and it
+      is the only region whose size is transmitted: a 9-bit field giving the number of
+      pairs, so at most 288, so at most 576 lines. The three sizes therefore partition the
+      granule exactly.</p>
+    <p>The big-values region is then split again into three sub-regions with independent
+      table selects, at boundaries that must land on scalefactor-band edges — a 4-bit
+      <code>region0_count</code> and a 3-bit <code>region1_count</code> naming how many
+      bands each of the first two covers. Each sub-region carries its own 5-bit
+      <code>table_select</code>. Those are the thirty-two tables of the title, indexed 0 to
+      31, of which 4 and 14 are unused and 0 means "this region is empty"; a separate 1-bit
+      <code>count1table_select</code> chooses between the two quadruple tables, A and B.</p>
+
+    <div class="scroller"><table>
+      <caption>The big-value table families of ISO/IEC 11172-3</caption>
+      <thead><tr>
+        <th class="num">Tables</th><th>Coded as</th><th class="num">Largest Huffman value</th>
+        <th class="num">linbits</th><th class="num">Largest representable</th><th>Notes</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td>—</td><td class="num">—</td><td class="num">0</td><td class="num">—</td><td>The empty region: no codewords, nothing transmitted</td></tr>
+        <tr><td class="num">1–2</td><td>pairs</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td>2×2 tables for near-dead regions</td></tr>
+        <tr><td class="num">3, 5–6</td><td>pairs</td><td class="num">2–3</td><td class="num">0</td><td class="num">3</td><td>Table 4 is defined but unused</td></tr>
+        <tr><td class="num">7–12</td><td>pairs</td><td class="num">5–7</td><td class="num">0</td><td class="num">7</td><td>The everyday mid-spectrum tables</td></tr>
+        <tr><td class="num">13, 15</td><td>pairs</td><td class="num">15</td><td class="num">0</td><td class="num">15</td><td>16×16, no escape; table 14 is unused</td></tr>
+        <tr><td class="num">16–23</td><td>pairs</td><td class="num">15 + escape</td><td class="num">1, 2, 3, 4, 6, 8, 10, 13</td><td class="num">up to 8 206</td><td>One shared 16×16 codebook, eight different escape widths</td></tr>
+        <tr><td class="num">24–31</td><td>pairs</td><td class="num">15 + escape</td><td class="num">4, 5, 6, 7, 8, 9, 11, 13</td><td class="num">up to 8 206</td><td>A second shared codebook, again with eight escape widths</td></tr>
+        <tr><td class="num">A, B</td><td>quadruples</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td>The count1 region; B is the flat alternative to A</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The escape mechanism in the last two families is worth dwelling on, because it is the
+      standard answer to a distribution with a long tail. A Huffman table with a codeword
+      for every possible magnitude would be enormous and almost entirely dead weight. So
+      the table tops out at 15, and the value 15 is not a value but a flag: read
+      <code>linbits</code> further bits and add them. With linbits at its maximum of 13 the
+      representable magnitude reaches 15 + 8191 = 8 206. The escape is not free — you are
+      paying a fixed-width field for exactly the values whose probability you have the least
+      information about — but it bounds the table size at 256 entries and it never fails.</p>
+    <p>Note also what the tables code. A big-values codeword names a <em>pair</em> of
+      magnitudes; the signs follow as one raw bit per non-zero value, outside the Huffman
+      code entirely. A count1 codeword names four magnitudes at once, each of which is 0 or
+      1, so the codeword is really a 4-bit occupancy pattern, again with raw sign bits
+      appended. Coding in pairs and quadruples is the trick from the previous note: it
+      flattens the effective alphabet and buys back some of the one-bit floor. Four
+      independent binary decisions at <i>p</i>(0) = 0.9 have a joint entropy of 1.88 bits, and
+      a quadruple code can spend 1.88 where four separate codes would be forced to spend
+      4.00.</p>
+
+    <figure class="figure" id="fig-mp3">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.3</span>
+        <span class="ftitle">One real granule, partitioned and priced</span>
+        <span class="fstate" id="e3-state">576 lines</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e3-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>region 0</span>
+          <span class="l-teal"><i></i>region 1</span>
+          <span class="l-heat"><i></i>region 2</span>
+          <span class="l-ok"><i></i>count1 quadruples</span>
+          <span class="l-faint"><i></i>rzero</span>
+          <span class="l-danger"><i></i>escapes (|value| ≥ 15)</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">big_values</span><span class="v" id="e3-bv">—</span></div>
+          <div class="ro ok"><span class="k">count1</span><span class="v" id="e3-c1">—</span></div>
+          <div class="ro ghost"><span class="k">rzero lines</span><span class="v" id="e3-rz">—</span></div>
+          <div class="ro bad"><span class="k">One table</span><span class="v" id="e3-one">—</span></div>
+          <div class="ro"><span class="k">Three tables</span><span class="v" id="e3-three">—</span></div>
+          <div class="ro ok"><span class="k">Saving</span><span class="v" id="e3-save">—</span></div>
+          <div class="ro"><span class="k">Granule total</span><span class="v" id="e3-tot">—</span></div>
+          <div class="ro sig"><span class="k">Implied mono rate</span><span class="v" id="e3-kbps">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>global_gain</span><span class="val" id="e3-gainlab">218</span></div>
+          <input type="range" id="e3-gain" min="202" max="230" step="1" value="218" data-out="e3-gainlab" aria-label="Quantiser global gain">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>region0_count</span><span class="val" id="e3-r0lab">7</span></div>
+          <input type="range" id="e3-r0" min="0" max="15" step="1" value="7" data-out="e3-r0lab" aria-label="Scalefactor bands in region 0">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>region1_count</span><span class="val" id="e3-r1lab">7</span></div>
+          <input type="range" id="e3-r1" min="0" max="7" step="1" value="7" data-out="e3-r1lab" aria-label="Scalefactor bands in region 1">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="e3-prog">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="castanets">Castanets</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Best split found</span><span class="val" id="e3-bestlab">—</span></div>
+          <button class="btn" id="e3-best">Use it</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.3</b> — a real 1 152-sample window of
+        synthesised programme, windowed, run through the MDCT to 576 lines, and quantised
+        with MP3's own three-quarter power law at the <code>global_gain</code> you choose.
+        The regions are then derived exactly as the standard derives them, and the cost is
+        measured twice: once with a single Huffman code fitted to the whole big-values
+        region, once with three codes fitted to the three sub-regions you set. Splitting
+        typically saves five to eleven per cent of the big-values bits for nothing but two
+        small side-information fields. Push <code>global_gain</code> down to 204 and the
+        escapes light up red; push it to 226 and almost the whole granule falls into rzero
+        and costs nothing. The codes here are fitted to this granule, whereas a real encoder
+        must choose among thirty-two fixed tables — so treat these bit counts as the
+        best case the region split could achieve, not as LAME's output.</figcaption>
+    </figure>
+
+    <p>The region boundaries are constrained to scalefactor-band edges because the
+      scalefactors are applied band by band, and a table select that straddled a band would
+      be pricing two different noise floors with one distribution. For a long block at
+      44.1 kHz those edges are fixed by the standard:</p>
+
+    <div class="scroller"><table>
+      <caption>Long-block scalefactor-band boundaries at 44.1 kHz, as used by Fig 6.3</caption>
+      <thead><tr><th class="num">Band</th><th class="num">First line</th><th class="num">Width</th><th class="num">Upper edge</th>
+        <th class="num">Band</th><th class="num">First line</th><th class="num">Width</th><th class="num">Upper edge</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">0</td><td class="num">4</td><td class="num">153 Hz</td><td class="num">11</td><td class="num">62</td><td class="num">12</td><td class="num">2 833 Hz</td></tr>
+        <tr><td class="num">1</td><td class="num">4</td><td class="num">4</td><td class="num">306 Hz</td><td class="num">12</td><td class="num">74</td><td class="num">16</td><td class="num">3 445 Hz</td></tr>
+        <tr><td class="num">2</td><td class="num">8</td><td class="num">4</td><td class="num">459 Hz</td><td class="num">13</td><td class="num">90</td><td class="num">20</td><td class="num">4 211 Hz</td></tr>
+        <tr><td class="num">3</td><td class="num">12</td><td class="num">4</td><td class="num">613 Hz</td><td class="num">14</td><td class="num">110</td><td class="num">24</td><td class="num">5 130 Hz</td></tr>
+        <tr><td class="num">4</td><td class="num">16</td><td class="num">4</td><td class="num">766 Hz</td><td class="num">15</td><td class="num">134</td><td class="num">28</td><td class="num">6 202 Hz</td></tr>
+        <tr><td class="num">5</td><td class="num">20</td><td class="num">4</td><td class="num">919 Hz</td><td class="num">16</td><td class="num">162</td><td class="num">34</td><td class="num">7 504 Hz</td></tr>
+        <tr><td class="num">6</td><td class="num">24</td><td class="num">6</td><td class="num">1 148 Hz</td><td class="num">17</td><td class="num">196</td><td class="num">42</td><td class="num">9 111 Hz</td></tr>
+        <tr><td class="num">7</td><td class="num">30</td><td class="num">6</td><td class="num">1 378 Hz</td><td class="num">18</td><td class="num">238</td><td class="num">50</td><td class="num">11 025 Hz</td></tr>
+        <tr><td class="num">8</td><td class="num">36</td><td class="num">8</td><td class="num">1 685 Hz</td><td class="num">19</td><td class="num">288</td><td class="num">54</td><td class="num">13 093 Hz</td></tr>
+        <tr><td class="num">9</td><td class="num">44</td><td class="num">8</td><td class="num">1 991 Hz</td><td class="num">20</td><td class="num">342</td><td class="num">76</td><td class="num">16 002 Hz</td></tr>
+        <tr><td class="num">10</td><td class="num">52</td><td class="num">10</td><td class="num">2 374 Hz</td><td class="num">21</td><td class="num">418</td><td class="num">158</td><td class="num">22 050 Hz</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The frequencies are the line index times 22 050 ÷ 576 = 38.28 Hz. Only the first
+      twenty-one bands carry a transmitted scalefactor; the remainder to line 576 is a
+      final unscaled region. <a href="7-mp3.html">Chapter 07</a> takes the rest of the
+      side-information block apart field by field, including the bit reservoir that lets one
+      frame's Huffman data begin inside the frame before it.</p>
+  </section>
+
+  <!-- ===================================================== 6 -->
+  <section id="aac" class="section">
+    <div class="kicker">AAC's twelve codebooks</div>
+    <h3>Five years later the same problem was solved with sections instead of regions.</h3>
+    <p style="margin-top:18px">AAC keeps Huffman coding and keeps fixed tables, but rebuilds
+      everything around them. Instead of three regions with hard-coded semantics there are
+      <strong>sections</strong>: runs of consecutive scalefactor bands that share one
+      codebook. The section data is an alternating sequence of a 4-bit codebook index and a
+      run length, the run length being built from increments five bits wide for a long
+      window and three bits wide for a short one. An encoder is free to use one section for
+      the whole spectrum or a new one every band, and it decides by measuring — the cost of
+      a section header against the saving from a better-matched table.</p>
+    <p>There are eleven codebooks for spectral data, plus codebook 0, <code>ZERO</code>,
+      which says a section contains nothing and so costs only its section header. The eleven
+      differ along three axes: how many coefficients a codeword covers, the largest absolute
+      value it can express, and whether the signs are inside the code or appended as raw
+      bits.</p>
+
+    <div class="scroller"><table>
+      <caption>The AAC spectral codebooks (MPEG-2/4 Part 7 and Part 3)</caption>
+      <thead><tr>
+        <th class="num">Codebook</th><th class="num">Coefficients per codeword</th>
+        <th class="num">Largest absolute value</th><th>Signs</th>
+        <th class="num">Entries</th><th>Use</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">—</td><td class="num">0</td><td>—</td><td class="num">—</td><td><code>ZERO</code>: the band is empty</td></tr>
+        <tr><td class="num">1</td><td class="num">4</td><td class="num">1</td><td>in the codeword</td><td class="num">81</td><td>3⁴ = 81 patterns of −1, 0, +1</td></tr>
+        <tr><td class="num">2</td><td class="num">4</td><td class="num">1</td><td>in the codeword</td><td class="num">81</td><td>Same alphabet, different statistics</td></tr>
+        <tr><td class="num">3</td><td class="num">4</td><td class="num">2</td><td>appended</td><td class="num">81</td><td>3⁴ magnitudes, one raw bit per non-zero</td></tr>
+        <tr><td class="num">4</td><td class="num">4</td><td class="num">2</td><td>appended</td><td class="num">81</td><td>Same, retuned</td></tr>
+        <tr><td class="num">5</td><td class="num">2</td><td class="num">4</td><td>in the codeword</td><td class="num">81</td><td>9² = 81 signed pairs</td></tr>
+        <tr><td class="num">6</td><td class="num">2</td><td class="num">4</td><td>in the codeword</td><td class="num">81</td><td>Same, retuned</td></tr>
+        <tr><td class="num">7</td><td class="num">2</td><td class="num">7</td><td>appended</td><td class="num">64</td><td>8² magnitude pairs</td></tr>
+        <tr><td class="num">8</td><td class="num">2</td><td class="num">7</td><td>appended</td><td class="num">64</td><td>Same, retuned</td></tr>
+        <tr><td class="num">9</td><td class="num">2</td><td class="num">12</td><td>appended</td><td class="num">169</td><td>13² magnitude pairs</td></tr>
+        <tr><td class="num">10</td><td class="num">2</td><td class="num">12</td><td>appended</td><td class="num">169</td><td>Same, retuned</td></tr>
+        <tr><td class="num">11</td><td class="num">2</td><td class="num">16 + escape</td><td>appended</td><td class="num">289</td><td>17²; the value 16 is an escape flag</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Codebook 11 is the escape book and carries the whole tail on its own. The value 16 in
+      a decoded pair is not a magnitude but a signal that an escape sequence follows: a
+      unary prefix giving the word length, then that many bits of magnitude. It is a
+      Golomb-like construction rather than MP3's fixed <code>linbits</code> field, which
+      means the cost grows gracefully with the value instead of being set once per region —
+      an encoder no longer has to choose an escape width in advance and live with it.</p>
+    <p>Two further pieces of the AAC bitstream are entropy coded and often forgotten.
+      Scalefactors are not sent as absolute values: each is coded as a difference from the
+      previous active scalefactor, with the first taken relative to the frame's
+      <code>global_gain</code>, and the differences go through a dedicated 121-entry
+      codebook spanning −60 to +60. That is delta coding feeding entropy coding, and on
+      smooth spectra it is worth a great deal, because the difference sequence is far more
+      concentrated than the scalefactors themselves. And mid/side stereo, decided per
+      scalefactor band, is in effect an entropy-coding trick too: when the channels are
+      correlated the side signal's coefficients quantise to zero far more often than either
+      channel's would, so the alphabet sharpens and the code shortens. <a href="8-aac.html">Chapter
+      08</a> covers both, and the parametric tools that replace coefficients with
+      descriptions.</p>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Run-length and zero-run coding, quietly everywhere</span>
+      <p>Of the three regions in an MP3 granule, only two carry codewords. <code>rzero</code>
+        is a run length, and a run length that is not even transmitted — it is whatever is
+        left. AAC's <code>ZERO</code> codebook does the same job per section. This is the
+        cheapest entropy coding there is: a symbol that never appears in the stream costs
+        nothing, and at 64 kbit/s the majority of an MP3 granule's lines are handled this
+        way. When Fig 6.1 reports a zero fraction of forty per cent it is understating the
+        case, because it counts zeros the real bitstream would never spell out.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 7 -->
+  <section id="arith" class="section">
+    <div class="kicker k-ghost">Fractions of a bit</div>
+    <h3>Arithmetic coding gives up on codewords and encodes the whole message as one number.</h3>
+    <p style="margin-top:18px">Huffman's ceiling comes from insisting that each symbol have
+      its own codeword. Remove that insistence and the ceiling goes. The idea, developed
+      independently by Richard Pasco at Stanford and Jorma Rissanen at IBM and published by
+      both in May 1976, is to represent the entire message as a single number in the unit
+      interval.</p>
+    <p>Begin with the interval [0, 1). Divide it into sub-intervals in proportion to the
+      symbol probabilities, and keep the one belonging to the first symbol. Divide
+      <em>that</em> in the same proportions, and keep the one belonging to the second
+      symbol. Repeat. After <i>n</i> symbols you hold an interval whose width is the product
+      of the probabilities of the symbols you saw, and any number inside it identifies the
+      message uniquely.</p>
+
+    <div class="eq">
+      <i>w</i><span class="op">=</span>
+      <span class="bigop">∏</span><span class="limits"><span><i>n</i></span><span><i>i</i>=1</span></span>
+      <i>p</i>(<i>s</i><sub><i>i</i></sub>)
+      <span class="op">⟹</span>
+      <i>B</i><span class="op">=</span>
+      <span class="fn">⌈</span><span class="op">−</span><span class="fn">log</span><sub>2</sub>&nbsp;<i>w</i><span class="fn">⌉</span>
+      <span class="op">+</span><span class="num">1</span>
+      <span class="note2">bits to name a point inside an interval of width w</span>
+    </div>
+
+    <p>Take the logarithm of the product and the sum of −log<sub>2</sub><i>p</i> reappears:
+      the ideal length of the message, in one piece, with no per-symbol rounding anywhere.
+      The only rounding left is at the very end, where the final interval has to be named
+      by a finite binary fraction, and that costs at most two bits <em>for the entire
+      message</em> rather than up to one bit for every symbol in it. Code a thousand symbols
+      and the overhead is two bits, not a thousand.</p>
+    <p>The practical difficulty is that the interval shrinks exponentially and no machine
+      has unbounded precision. The fix is incremental output with renormalisation: as soon
+      as the top bit — or, in a byte-oriented implementation, the top byte — of the interval
+      is determined, emit it and rescale by two (or 256). The awkward case is an interval
+      that straddles the midpoint so narrowly that the leading bits are still undecided,
+      which is <em>underflow</em>; implementations either count pending bits and flush them
+      when the ambiguity resolves, or, as the range coder in the next section does, buffer
+      the outstanding byte and propagate a carry into it later.</p>
+    <p>None of that is difficult, and it was all understood by 1979. What kept arithmetic
+      coding out of mainstream standards for two decades was patents. IBM held a thicket of
+      them around efficient binary implementations — the Q-coder of Arps, Pennebaker,
+      Mitchell, Langdon and colleagues, filed from 1986 — and although JPEG standardised an
+      arithmetic-coded mode from the start, effectively no encoder shipped it, so
+      essentially every JPEG in the world is Huffman-coded. The same caution is the usual
+      explanation for MPEG audio's layers staying with Huffman tables, and bzip2 famously
+      dropped arithmetic coding for Huffman over the same worry. By the time the patents had
+      lapsed the tables were in a hundred million decoders.</p>
+
+    <figure class="figure" id="fig-arith">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.4</span>
+        <span class="ftitle">The interval, subdividing</span>
+        <span class="fstate" id="e4-state">step 0 of 14</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e4-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>0 — the commonest symbol</span>
+          <span class="l-heat"><i></i>+1</span>
+          <span class="l-danger"><i></i>−1</span>
+          <span class="l-ghost"><i></i>the interval that survives</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro ghost"><span class="k">Interval width</span><span class="v" id="e4-w">—</span></div>
+          <div class="ro sig"><span class="k">Arithmetic bits</span><span class="v" id="e4-bits">—</span></div>
+          <div class="ro"><span class="k">Ideal (−Σ log₂p)</span><span class="v" id="e4-ideal">—</span></div>
+          <div class="ro bad"><span class="k">Huffman would spend</span><span class="v" id="e4-huff">—</span></div>
+          <div class="ro ok"><span class="k">Decoded back</span><span class="v" id="e4-ok">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Probability of zero</span><span class="val" id="e4-p0lab">0.80</span></div>
+          <input type="range" id="e4-p0" min="35" max="96" step="1" value="80" data-out="e4-p0lab" aria-label="Probability of the zero symbol">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Message</span></div>
+          <div class="chips" id="e4-msg">
+            <button data-v="sparse" class="on">Sparse band</button>
+            <button data-v="busy">Busy band</button>
+            <button data-v="silent">Almost silent</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Animation</span></div>
+          <button class="btn play on" id="e4-play">Running</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.4</b> — each row is one symbol. The full width
+        of a row is the interval that survived the row above it, subdivided in proportion to
+        the three symbol probabilities; the shaded slice is the one the next symbol selects,
+        and it becomes the next row's full width. The arithmetic is real — the coder encodes
+        the message, the numbers are its actual interval, and a decoder is run over the
+        result and its output compared with the input. At the default <i>p</i>(0) = 0.80 a
+        fourteen-symbol message costs about thirteen bits against Huffman's fourteen. Push
+        <i>p</i>(0) to 0.96 and the message costs five and a half bits; Huffman still cannot
+        go below fourteen, because it must spend at least one bit per symbol and there are
+        fourteen of them.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================== 8 -->
+  <section id="range" class="section">
+    <div class="kicker k-ok">Opus's range coder</div>
+    <h3>A range coder is arithmetic coding in integers — and in Opus it is also the bit budget.</h3>
+    <p style="margin-top:18px">A <strong>range coder</strong> is the same algorithm with the
+      unit interval replaced by a large integer range and the renormalisation done a byte at
+      a time rather than a bit at a time. G. Nigel N. Martin described it at the Video and
+      Data Recording Conference in Southampton in July 1979, apparently unaware of Pasco's
+      work three years earlier; the two are the same coder in different clothes, and the
+      byte-oriented form is faster at a compression cost usually quoted in hundredths of a
+      per cent.</p>
+    <p>Opus uses one for everything. RFC 6716 section 4.1 specifies a coder with a 32-bit
+      range register <span class="mono">rng</span>, renormalisation in 8-bit steps, and the
+      update</p>
+
+    <div class="eq left">
+      <i>r</i><span class="op">=</span>
+      <span class="fn">⌊</span><span class="frac"><span><span class="mono">rng</span></span><span><i>f</i><sub>t</sub></span></span><span class="fn">⌋</span>
+      <span class="op">,</span>&nbsp;&nbsp;
+      <span class="mono">low</span><span class="op">+=</span>
+      <span class="mono">rng</span><span class="op">−</span><i>r</i>(<i>f</i><sub>t</sub><span class="op">−</span><i>f</i><sub>l</sub>)
+      <span class="op">,</span>&nbsp;&nbsp;
+      <span class="mono">rng</span><span class="op">=</span><i>r</i>(<i>f</i><sub>h</sub><span class="op">−</span><i>f</i><sub>l</sub>)
+      <span class="note2">for a symbol occupying [f_l, f_h) out of a total frequency f_t;
+        renormalise while rng ≤ 2²³</span>
+    </div>
+
+    <p>Two details of the Opus design are unusual enough to be worth the space. The first is
+      that not everything goes through the coder. Uniformly distributed values — sign bits,
+      some PVQ indices — are written as <strong>raw bits</strong>, packed backwards from the
+      end of the frame while the range coder's bytes accumulate forwards from the start. The
+      two streams grow towards each other and the packet is full when they meet. This costs
+      nothing in efficiency, saves the coder's multiply and divide on values it could not
+      compress anyway, and has a robustness benefit the RFC calls out: a bit error in the
+      raw region corrupts a value but does not desynchronise the range decoder.</p>
+    <p>The second is subtler and more important. The decoder, at any point, can compute
+      exactly how many bits the coder has consumed so far — Opus's
+      <code>ec_tell</code>, which is the running total of bytes emitted less the
+      log of the current range, and its <code>ec_tell_frac</code> sibling, which reports the
+      same quantity to an eighth of a bit.</p>
+
+    <div class="eq">
+      <span class="mono">tell</span><span class="op">=</span>
+      <i>n</i><sub>bits</sub><span class="op">−</span>
+      <span class="fn">log</span><sub>2</sub>&nbsp;<span class="mono">rng</span>
+      <span class="note2">bits consumed, computable identically by encoder and decoder,
+        without transmitting anything</span>
+    </div>
+
+    <p>Because both ends can compute it, CELT does not transmit a bit allocation at all. It
+      codes the band energies first, then both encoder and decoder run the same bit-exact
+      allocation function over the number of bits still unspent, and arrive at the same
+      answer. Where MP3 sends scalefactors and AAC sends section data, Opus sends nothing
+      and infers — the entropy coder's own state is the side information. That is only
+      possible because the coder's consumption is a deterministic function of what has
+      already been decoded, and it is why Opus's overhead at 20 ms frames is small enough to
+      make very short frames practical at all.</p>
+
+    <figure class="figure" id="fig-range">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.5</span>
+        <span class="ftitle">RFC 6716 §4.1, running</span>
+        <span class="fstate" id="e5-state">96 symbols</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e5-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>ec_tell — bits the coder has actually consumed</span>
+          <span class="l-teal"><i class="dash"></i>ideal, −Σ log₂p</span>
+          <span class="l-danger"><i class="dash"></i>the packet budget</span>
+          <span class="l-ghost"><i></i>raw bits, packed from the far end</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Bytes produced</span><span class="v" id="e5-bytes">—</span></div>
+          <div class="ro"><span class="k">ec_tell</span><span class="v" id="e5-tell">—</span></div>
+          <div class="ro ghost"><span class="k">Ideal</span><span class="v" id="e5-ideal">—</span></div>
+          <div class="ro bad"><span class="k">Overhead</span><span class="v" id="e5-over">—</span></div>
+          <div class="ro ok"><span class="k">Decoder agrees</span><span class="v" id="e5-ok">—</span></div>
+        </div>
+        <div class="bitmap" id="e5-map" style="margin-top:14px"></div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Probability of zero</span><span class="val" id="e5-skewlab">0.72</span></div>
+          <input type="range" id="e5-skew" min="34" max="97" step="1" value="72" data-out="e5-skewlab" aria-label="Probability of the zero symbol">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Symbols</span><span class="val" id="e5-nlab">96</span></div>
+          <input type="range" id="e5-n" min="8" max="240" step="8" value="96" data-out="e5-nlab" aria-label="Number of symbols to encode">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Raw bits</span><span class="val" id="e5-rawlab">24</span></div>
+          <input type="range" id="e5-raw" min="0" max="64" step="4" value="24" data-out="e5-rawlab" aria-label="Number of raw bits packed from the end">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Packet budget</span></div>
+          <div class="chips" id="e5-bud">
+            <button data-v="20">20 bytes</button>
+            <button data-v="32" class="on">32 bytes</button>
+            <button data-v="60">60 bytes</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.5</b> — the range coder of RFC 6716 section
+        4.1, implemented in this page and exercised on a synthetic symbol stream with the
+        skew you set. The blue staircase is <code>ec_tell</code>, read out after every
+        symbol; it climbs in fractions of a bit, which is the entire point — a symbol of
+        probability 0.72 moves it by 0.474 of a bit, not by one. The dashed teal line is the
+        information-theoretic ideal, and the two are nearly indistinguishable. The strip
+        below is the packet: range-coder bytes fill from the left, raw bits from the right,
+        and the gap between them is what is left to spend. Every configuration is decoded
+        back and checked symbol by symbol before the readouts are drawn.</figcaption>
+    </figure>
+
+    <p>Opus's own bitstream is taken apart in <a href="9-opus.html">Chapter 09</a>, and if
+      you would like to read a decoder rather than a description, <a href="/ropus/">ropus</a>
+      elsewhere in this almanac is the reference decoder ported to safe Rust and checked
+      bit-exact against the C.</p>
+  </section>
+
+  <!-- ===================================================== 9 -->
+  <section id="worth" class="section">
+    <div class="kicker k-danger">What it is worth</div>
+    <h3>Between a third and a half of the file — which is ten decibels.</h3>
+    <p style="margin-top:18px">The honest way to price a lossless stage is to hold the file
+      size fixed and ask what the audio does. Give the same encoder the same number of bytes
+      and let it spend them two ways: once with the entropy coder, once with a per-band
+      fixed-width field of exactly the width the largest value in that band needs. The
+      quantiser, the masking model, the transform and the noise shaping are identical. Only
+      the accounting changes, and the accounting changes what the rate loop can afford.</p>
+
+    <figure class="figure" id="fig-worth">
+      <div class="figure-bar">
+        <span class="fno">FIG. 6.6</span>
+        <span class="ftitle">The same bytes, spent two ways</span>
+        <span class="fstate" id="e6-state">128 kbit/s</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e6-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>entropy-coded</span>
+          <span class="l-danger"><i></i>fixed-width fields</span>
+          <span class="l-ghost"><i class="dash"></i>the rate you have selected</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Entropy-coded</span><span class="v" id="e6-snrE">—</span></div>
+          <div class="ro bad"><span class="k">Fixed width</span><span class="v" id="e6-snrF">—</span></div>
+          <div class="ro ok"><span class="k">Difference</span><span class="v" id="e6-gap">—</span></div>
+          <div class="ro ghost"><span class="k">Fixed fields cost</span><span class="v" id="e6-over">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Byte budget</span><span class="val" id="e6-ratelab">128 kbit/s</span></div>
+          <input type="range" id="e6-rate" min="40" max="224" step="8" value="128" data-out="e6-ratelab" aria-label="Bit budget in kilobits per second">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="e6-prog">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e6-orig">Original</button>
+            <button class="btn play" id="e6-ent">Entropy-coded</button>
+            <button class="btn play" id="e6-fix">Fixed width</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 6.6</b> — two rate–distortion curves measured
+        from the same analysis. For every budget on the axis the rate loop is run twice,
+        once pricing each band by its entropy and once by a fixed field wide enough for its
+        largest value, and the resulting quantisation noise is measured in the transform
+        domain. The fixed-width coder needs roughly half again to twice as many bits for the
+        same quantiser, so at equal bytes it must quantise very much more coarsely — five to
+        twenty decibels worse, depending on programme and rate. Press the two playback
+        buttons against each other at 64 kbit/s. The signal-to-noise figures are comparable
+        here in a way they usually are not, because both coders are shaping their noise with
+        the same masking model; only the bookkeeping differs.</figcaption>
+    </figure>
+
+    <p>Notice what the comparison does <em>not</em> say. It does not say entropy coding is
+      where audio compression happens. The move from 1 411 kbit/s to 128 is overwhelmingly
+      the work of the transform and the quantiser, and had already happened before this
+      chapter began. What the entropy coder does is recover the difference between a
+      description and an efficient description of the same thing — a factor of roughly 1.5
+      to 2 on what remains, every time, for no perceptual cost whatever.</p>
+
+    <blockquote class="pullquote">Every codec in this study spends its life lowering the
+      entropy rather than beating the bound. The bound does not move.
+      <span class="who">Why the transform comes first</span></blockquote>
+
+    <h4 style="margin-top:34px">Five things people get wrong about this stage</h4>
+    <p style="margin-top:14px"><strong>That Huffman coding damages the audio.</strong> It
+      does not, and cannot. Entropy coding is a bijection between integer sequences and bit
+      strings; the decoder recovers the encoder's integers exactly, on every sample of every
+      frame. Everything audible that a codec does to your music happened in
+      <a href="4-transform.html">Chapter 04</a> and <a href="5-quantize.html">Chapter 05</a>.
+      If a file sounds wrong, the entropy coder is the one stage that can be ruled out.</p>
+    <p><strong>That arithmetic coding is dramatically better than Huffman.</strong> On a
+      well-conditioned alphabet it is worth a few per cent, not a factor. Its advantage
+      becomes large in exactly two circumstances: when a single symbol takes more than half
+      the probability mass, where Huffman's one-bit floor bites; and when the model is
+      adaptive or context-conditioned, where an arithmetic coder can follow a probability
+      that changes every symbol and a static table cannot. xHE-AAC's context-adaptive
+      arithmetic coder, which conditions each 4-tuple of coefficients on neighbours in both
+      frequency and the previous frame, is a good example of the second — the win comes from
+      the context model at least as much as from the fractional bits.</p>
+    <p><strong>That MP3 files carry their Huffman tables.</strong> They do not. All
+      thirty-two big-value tables and both count1 tables are printed in ISO/IEC 11172-3, and
+      a frame transmits only the 5-bit index of which one to use. Vorbis is the format that
+      ships its codebooks, in the setup header, which is why a Vorbis file has a larger fixed
+      overhead and why Vorbis encoders were able to keep improving without a format change.</p>
+    <p><strong>That you can shrink an MP3 losslessly by recompressing it.</strong> Barely.
+      Running a finished MP3 through <code>zip</code> gains almost nothing, because the
+      payload is already close to incompressible — that is what the entropy coder achieved.
+      Tools that repack the bitstream can recover a small percentage by re-optimising table
+      selects and the bit reservoir, but they cannot change a single quantised value, and
+      the ceiling is low.</p>
+    <p><strong>That a zero costs nothing.</strong> A zero inside a coded region costs its
+      codeword, which at a zero fraction of 0.4 is about 1.3 bits. Only a zero in a
+      run-length region is free. This is why the ordering of the spectrum matters so much:
+      MP3 and AAC both arrange their coefficients so that the zeros collect at the top,
+      where a run length can dispose of them wholesale rather than one codeword at a time.
+      For short blocks MP3 goes to the trouble of interleaving the three sub-block spectra
+      back into frequency order precisely so that the run is contiguous.</p>
+
+    <p style="margin-top:30px">That is the machinery complete. <a href="1-sound.html">Chapter
+      01</a> turned pressure into numbers, <a href="2-ear.html">02</a> and
+      <a href="3-masking.html">03</a> measured the listener, <a href="4-transform.html">04</a>
+      moved the signal somewhere the measurement applies, <a href="5-quantize.html">05</a>
+      spent the bits, and this chapter wrote them down. Every lossy audio codec that has ever
+      shipped is those five things in some order, under some constraint. The next four
+      chapters take the important ones apart and show what each committee actually built,
+      beginning with the one that took the whole apparatus out of the laboratory:
+      <a href="7-mp3.html">MP3</a>, where 576 lines, a 4-byte header, seventeen bytes of
+      side information and a bit reservoir that points backwards past the frame boundary all
+      have to be made to fit.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
