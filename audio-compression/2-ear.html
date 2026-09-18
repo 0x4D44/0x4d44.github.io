@@ -78,12 +78,11 @@
       filters, a compressive level detector with a hard floor, and two quite different
       temporal integrators. Each stage discards something. By the time there is a neural
       code at all, the 1.41 megabits are long gone.</p>
-    <blockquote class="pullquote">A codec does not compress music. It measures a listener,
-      and then declines to transmit whatever that measurement says will not arrive.
-      <span class="who">The perceptual coding bargain, restated</span></blockquote>
-    <p>What follows is that measurement, stage by stage, with the arithmetic running in
-      front of you. Nothing here is specific to MP3 or Opus; every number in this chapter
-      predates every codec in this study, and most of them predate digital audio.</p>
+    <p>A codec, put plainly, does not compress music. It measures a listener, and then
+      declines to transmit whatever that measurement says will not arrive. What follows is
+      that measurement, stage by stage, with the arithmetic running in front of you.
+      Nothing here is specific to MP3 or Opus: every number in this chapter predates every
+      codec in this study, and most of them predate digital audio by decades.</p>
   </section>
 
   <!-- ===================================================== 2 -->
@@ -439,15 +438,17 @@
       what follows is the shape, not the last row. Twenty-four bands over three decades,
       the lowest nine of them 100 Hz wide and the highest one 3 500 Hz wide, is the entire
       frequency resolution the receiver has. A 4 096-point FFT at 44.1 kHz resolves 10.8 Hz
-      everywhere. The ear resolves about 100 Hz at 100 Hz and about 3 500 Hz at 13.5 kHz.
+      everywhere — <a href="/spectrum-analyzer/">a 1996 spectrum analyser elsewhere in this
+      almanac</a> takes that machinery apart in C. The ear resolves about 100 Hz at 100 Hz
+      and about 3 500 Hz at 13.5 kHz.
       That mismatch is the reason every codec in this study groups its spectral lines into
       bands before deciding anything, and the reason those groups are called
       <em>scalefactor bands</em> rather than bins.</p>
 
     <blockquote class="pullquote">The Bark scale is not a psychological unit. It is a
-      ruler. One Bark is between one and one and a half millimetres of basilar membrane,
-      and "critical band" means nothing more mystical than <em>the same patch of tissue is
-      already moving</em>. <span class="who">Why masking is plumbing</span></blockquote>
+      ruler. One Bark is on the order of a millimetre of basilar membrane, and "critical
+      band" means nothing more mystical than <em>the same patch of tissue is already
+      moving</em>. <span class="who">Why masking is plumbing</span></blockquote>
 
     <p>Divide 35 mm by 24 bands and you get 1.46 mm. Measure it properly through Greenwood's
       map and it varies: about 1.0 mm per Bark around 1–2 kHz, 1.2 mm at 500 Hz and 4 kHz,
@@ -608,8 +609,9 @@
 
     <p>The consequence that matters for everything downstream is in the shape of the
       family, not in any one curve. <strong>The contours flatten as the level rises.</strong>
-      At 20 phon, 20 Hz needs to be 69.6 dB louder than 1 kHz to match it. At 100 phon it
-      needs only 28.4 dB. The mix does not change when you turn the volume down; your
+      At 20 phon, 20 Hz needs to be 69.6 dB louder than 1 kHz to match it. At 90 phon — the
+      top of the standard's validity — it needs only 33.7 dB. The mix does not change when
+      you turn the volume down; your
       frequency response does, by forty decibels at the bottom end. That single fact
       explains the "loudness" button on a 1970s amplifier, the habit of checking a master
       quietly, and a good deal of the loudness war.</p>
@@ -849,7 +851,9 @@
       holds that perception depends on the amplitude spectrum and not on the phases.
       Manfred Schroeder showed in 1959 that this is not exactly true: a harmonic complex
       given quadratic phase has a flattened temporal envelope and audibly does not sound
-      like the same complex in cosine phase. The correct statement is narrower and more
+      like the same complex in cosine phase. (<a href="/instruments/">Instruments</a>, also
+      in this almanac, covers how real sources come to have the envelopes and partial
+      structures that are being argued over here.) The correct statement is narrower and more
       useful. The ear is largely deaf to slowly varying phase <em>within</em> a critical
       band; it is not deaf to phase changes that alter the <em>envelope</em> within a band;
       and it is acutely sensitive to <em>interaural</em> phase below about 1.5 kHz. Codecs
@@ -896,7 +900,9 @@
         <dd>A-weighting is a fixed approximation of the <em>40-phon</em> contour and
           nothing else. At 100 dB the real contour is far flatter, which is why an
           A-weighted reading understates the annoyance of loud low-frequency noise by
-          tens of decibels. B and C exist because one curve cannot do the job; K-weighting
+          tens of decibels: the 20 Hz penalty is 59.8 dB on the 40-phon contour and
+          33.7 dB on the 90-phon one, and A-weighting only knows about the first.
+          B and C exist because one curve cannot do the job; K-weighting
           exists because none of the three does it well enough for programme
           material.</dd>
       </div>
