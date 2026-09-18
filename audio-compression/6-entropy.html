@@ -761,7 +761,7 @@
         <div class="canvas-wrap"><canvas id="e5-cv"></canvas></div>
         <div class="legend">
           <span class="l-sig"><i></i>ec_tell — bits the coder has actually consumed</span>
-          <span class="l-teal"><i class="dash"></i>ideal, −Σ log₂p</span>
+          <span class="l-heat"><i class="dash"></i>ideal, −Σ log₂p — riding on top of it</span>
           <span class="l-danger"><i class="dash"></i>the packet budget</span>
           <span class="l-ghost"><i></i>raw bits, packed from the far end</span>
         </div>
@@ -1772,7 +1772,7 @@
     var a = [], b = [], i;
     for (i = 0; i <= st.n; i++) { a.push([i, m.tell[i]]); b.push([i, m.ideal[i] + m.tell[0]]); }
     p.line(a, { color: AC.C.blue, width: 2.6 });
-    p.line(b, { color: AC.C.teal, width: 1.4, dash: [4, 5] });
+    p.line(b, { color: AC.C.gold, width: 1.4, dash: [4, 5] });
     p.hline(budgetBits, { color: AC.C.red, label: st.budget + " bytes" });
     p.hline(budgetBits - st.raw, { color: AC.C.purple, label: "raw bits claim " + st.raw });
     // where the budget runs out, if it does
