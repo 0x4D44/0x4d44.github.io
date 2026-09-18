@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Into the frequency domain — Throwing Sound Away</title>
+<meta name="description" content="Windows, spectral leakage and Gabor's floor; the MPEG polyphase bank; and the MDCT — 2N samples into N numbers, with its time-domain aliasing cancelled numerically in front of you, and the pre-echo that follows when the blocks are too long.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="04">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 04</div>
+  <div class="num">04</div>
+  <h2>The transform is where a codec decides what it means by "now".</h2>
+  <p class="lead">A masking threshold is a statement about frequency, and a
+    microphone hands you time. Everything between those two facts — the block, the
+    window, the leakage, the overlap and the peculiar non-invertible transform that
+    every modern codec uses anyway — is this chapter. The central trick is that the
+    MDCT deliberately manufactures a large error, because it knows the next block
+    will manufacture its exact negative.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">A transform that cannot be inverted, inverted by cancellation</div></div>
+    <div><div class="k">Named after</div><div class="v">Gabor, Harris, Princen &amp; Bradley, Edler, Malvar</div></div>
+    <div><div class="k">Numbers</div><div class="v">1/4π = 0.0795775 · 2<i>N</i> → <i>N</i> · 46.44 ms against 2 ms</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#block">The cut</a>
+    <a href="#windows">The window zoo</a>
+    <a href="#gabor">Gabor's floor</a>
+    <a href="#overlap">Two reconstruction conditions</a>
+    <a href="#polyphase">The 32-band bank</a>
+    <a href="#mdct">2N in, N out</a>
+    <a href="#tdac">Cancellation</a>
+    <a href="#shape">Sine or KBD</a>
+    <a href="#switch">Switching the blocks</a>
+    <a href="#wrong">What people get wrong</a>
+  </nav>
+  <div>
+
+  <!-- ============================================================ -->
+  <section id="block" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The cut</div>
+    <h3>A block is a multiplication, and multiplication in time is convolution in frequency.</h3>
+    <p style="margin-top:18px"><a href="3-masking.html">Chapter 03</a> ended with a
+      curve: the loudest noise, band by band, that a given instant of music can
+      hide. That curve is indexed by frequency, and the samples arriving from the
+      converter are indexed by time. Before a single bit can be saved, the encoder
+      has to move from one index to the other — and it has to do so on a signal
+      that never stops, using a transform that only works on finite pieces. So it
+      chops.</p>
+    <p>Chopping is not a neutral act. Taking <i>L</i> consecutive samples and
+      calling them a block is multiplying the infinite signal by a rectangular
+      box, and the Fourier transform turns that multiplication into a
+      convolution:</p>
+
+    <div class="eq">
+      <i>y</i>[<i>n</i>]<span class="op">=</span><i>w</i>[<i>n</i>]<span class="op">·</span><i>x</i>[<i>n</i>]
+      <span class="op">⟺</span>
+      <i>Y</i>(<i>f</i>)<span class="op">=</span>(<i>X</i><span class="op">∗</span><i>W</i>)(<i>f</i>)
+      <span class="note2">every spectral peak in the signal is replaced by a scaled, shifted copy of the
+        window's own transform — leakage <em>is</em> the window's sidelobes</span>
+    </div>
+
+    <p>There is therefore no such thing as an unwindowed analysis. There is only
+      an analysis with a rectangular window, and the rectangular window's transform
+      is the Dirichlet kernel: a narrow main lobe, a first sidelobe just
+      <strong>13.26 dB</strong> down, and a far field that decays at a miserable
+      6 dB per octave. Convolve a pure tone with that and the tone stops being at
+      one place.</p>
+    <p>How badly depends entirely on where the tone falls relative to the
+      analysis grid. A tone sitting exactly on a bin centre completes a whole
+      number of cycles in the block; its periodic extension is seamless, and the
+      rectangular window leaks <em>nothing at all</em>. Move it half a bin and the
+      block no longer joins up with itself, and the discontinuity has to be paid
+      for in spectrum. At length 64, with the tone half a bin off centre,
+      <strong>9.81 %</strong> of its energy lands outside the three bins nearest
+      its true frequency. The same tone through a Hann window leaks
+      <strong>0.09 %</strong> — a factor of a hundred, bought by doubling the width
+      of the peak.</p>
+    <p>For a codec the consequence is not cosmetic. The psychoacoustic model reads
+      this spectrum and decides, from it, how loud each band is and how tonal. A
+      tone that appears to be everywhere looks like a masker that masks everything,
+      the model raises the threshold across the spectrum, and the rate loop in
+      <a href="5-quantize.html">Chapter 05</a> spends its bits protecting an
+      artefact of the analysis. If the FFT machinery itself is unfamiliar, the
+      <a href="/spectrum-analyzer/">spectrum-analyser write-up</a> elsewhere in this
+      almanac takes it apart in C; what follows here is the quantitative side.</p>
+
+    <figure class="figure" id="fig-leak">
+      <div class="figure-bar">
+        <span class="fno">FIG. 4.1</span>
+        <span class="ftitle">A tone that slides off the grid</span>
+        <span class="fstate" id="k-state">+0.50 bins · rectangular</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="k-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the block's spectrum</span>
+          <span class="l-faint"><i></i>the same tone moved onto the nearest bin centre</span>
+          <span class="l-heat"><i class="dash"></i>the tone's true frequency</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro bad"><span class="k">Energy outside ±1.5 bins</span><span class="v" id="k-leak">9.81 %</span></div>
+          <div class="ro"><span class="k">Worst bin beyond ±3</span><span class="v" id="k-side">-16.7 dB</span></div>
+          <div class="ro ghost"><span class="k">Bins above −40 dB</span><span class="v" id="k-count">33 of 33</span></div>
+          <div class="ro sig"><span class="k">Tone</span><span class="v" id="k-hz">2063 Hz</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Tone offset from a bin centre</span><span class="val" id="k-f0lab">+0.50 bins</span></div>
+          <input type="range" id="k-f0" min="-1" max="1" step="0.01" value="0.5" data-out="k-f0lab" aria-label="Tone offset from a bin centre, in bins">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Window</span></div>
+          <div class="chips" id="k-win">
+            <button data-v="rect" class="on">Rectangular</button>
+            <button data-v="hann">Hann</button>
+            <button data-v="bh">Blackman–Harris</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Block length</span></div>
+          <div class="chips" id="k-n">
+            <button data-v="64" class="on">64</button>
+            <button data-v="128">128</button>
+            <button data-v="256">256</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="k-loop">The block, repeated</button>
+            <button class="btn play" id="k-tone">The tone itself</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 4.1</b> — a real cosine, really
+        windowed, really transformed: the stems are the block's own DFT, in decibels
+        relative to its tallest bin. At an offset of <b>0.00</b> the rectangular
+        window is perfect — one stem, and everything else at the numerical floor.
+        Drag to <b>+0.01</b> and the floor lifts across the entire spectrum. At
+        <b>+0.50</b> every one of the thirty-three bins is within 40 dB of the
+        peak, for a signal that contains exactly one frequency. Switch to Hann and
+        the same tone collapses to two stems and a fast decay. Then the caveat that
+        makes this a trade rather than a free lunch: return the offset to
+        <b>0.00</b> and switch to Blackman–Harris, which leaks 3.9 % where the
+        rectangular window leaked none. The audible half is the point of the whole
+        section — the DFT does not analyse your block, it analyses your block
+        <em>repeated forever</em>, and <b>the block, repeated</b> plays you exactly
+        that. On a bin centre it is a clean tone. Half a bin off, the rectangular
+        version acquires a harsh buzz at the block rate, which is the leakage you
+        are looking at, arriving in your ear.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Leakage, measured — energy falling outside the three bins nearest the tone, length 64</caption>
+      <thead><tr><th>Tone position</th><th class="num">Rectangular</th><th class="num">Hann</th><th class="num">Blackman–Harris</th></tr></thead>
+      <tbody>
+        <tr><td>Exactly on a bin centre</td><td class="num">0.0000 %</td><td class="num">0.0000 %</td><td class="num"><strong>3.8952 %</strong></td></tr>
+        <tr><td>Half a bin off centre</td><td class="num"><strong>9.8064 %</strong></td><td class="num">0.0897 %</td><td class="num">0.4854 %</td></tr>
+        <tr><td>Peak sidelobe of the window</td><td class="num">−13.26 dB</td><td class="num">−31.47 dB</td><td class="num">−92.01 dB</td></tr>
+        <tr><td>Asymptotic far-field rolloff</td><td class="num">−6 dB/oct</td><td class="num">−18 dB/oct</td><td class="num">−6 dB/oct</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Windows are insurance, and insurance has a premium</span>
+      <p>The row that spoils the usual story is the first one. For a tone that
+        lands exactly on a bin centre the rectangular window is <em>optimal</em> and
+        the elaborate four-term Blackman–Harris window is nearly four per cent
+        wrong. Windowing does not reduce leakage; it reduces the leakage caused by
+        signals that are off the grid. Real music is never on the grid, so the
+        premium is worth paying — but it is a premium, and the figure above will
+        show it to you in one drag.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="windows" class="section">
+    <div class="kicker k-heat">The window zoo</div>
+    <h3>Every window offers the same bribe: sidelobe suppression, paid for in main-lobe width.</h3>
+    <p style="margin-top:18px">Most of the windows in use are generalised cosine
+      sums — a constant plus a few cosine harmonics of the block period, with
+      coefficients chosen to cancel sidelobes against one another:</p>
+
+    <div class="eq">
+      <i>w</i>[<i>n</i>]<span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>M</i></span><span><i>m</i>=0</span></span>
+      (<span class="op">−</span><span class="num">1</span>)<sup><i>m</i></sup><i>a</i><sub><i>m</i></sub>
+      <span class="fn">cos</span><span class="op">(</span>
+      <span class="frac"><span><span class="num">2</span>π<i>mn</i></span><span><i>N</i></span></span>
+      <span class="op">)</span>
+      <span class="note2">Hann: a = 0.5, 0.5 · Hamming: 0.54, 0.46 · Blackman: 0.42, 0.5, 0.08 ·
+        Blackman–Harris: 0.35875, 0.48829, 0.14128, 0.01168</span>
+    </div>
+
+    <p>Four numbers decide whether a window is any good, and they pull against
+      each other. The <strong>peak sidelobe level</strong> says how much a strong
+      tone contaminates its immediate neighbourhood. The <strong>main-lobe
+      width</strong>, quoted either null-to-null or at −3 dB, says how close two
+      tones can be before they merge. The <strong>asymptotic rolloff</strong> says
+      what happens far away. And the <strong>equivalent noise bandwidth</strong>
+      says how much wider than one bin the window really is when it is measuring
+      noise rather than tones.</p>
+    <p>The rolloff column is where the intuitive ranking breaks. Hamming has a
+      first sidelobe at −42.66 dB against Hann's −31.47, which looks like a rout;
+      but Hamming's coefficients do not sum to zero at the endpoints, so the
+      window has a step discontinuity where it starts and stops, and a step decays
+      at only 6 dB per octave. Hann reaches zero smoothly and decays at 18. Cross
+      them somewhere around eight bins out and the ranking reverses permanently:
+      at 32 bins Hamming is still leaking tens of decibels above Hann. A window
+      whose endpoints are non-zero is a window with a hidden rectangular
+      component.</p>
+
+    <figure class="figure" id="fig-win">
+      <div class="figure-bar">
+        <span class="fno">FIG. 4.2</span>
+        <span class="ftitle">The window zoo, measured at length 256</span>
+        <span class="fstate" id="w-state">Hann</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="w-cv"></canvas></div>
+        <div class="canvas-wrap" style="margin-top:14px"><canvas id="w-cv2"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>magnitude response, 32× zero-padded</span>
+          <span class="l-heat"><i class="dash"></i>peak sidelobe</span>
+          <span class="l-ghost"><i></i>main lobe, null to null</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro bad"><span class="k">Peak sidelobe</span><span class="v" id="w-side">−31.47 dB</span></div>
+          <div class="ro sig"><span class="k">Null-to-null</span><span class="v" id="w-null">4.00 bins</span></div>
+          <div class="ro"><span class="k">−3 dB width</span><span class="v" id="w-bw3">1.438 bins</span></div>
+          <div class="ro"><span class="k">ENBW</span><span class="v" id="w-enbw">1.500 bins</span></div>
+          <div class="ro ghost"><span class="k">Princen–Bradley</span><span class="v" id="w-pb">fails: 0.500</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Window</span></div>
+          <div class="chips" id="w-pick">
+            <button data-v="rect">Rect</button>
+            <button data-v="sine">Sine</button>
+            <button data-v="hann" class="on">Hann</button>
+            <button data-v="hamming">Hamming</button>
+            <button data-v="blackman">Blackman</button>
+            <button data-v="bh">B–Harris</button>
+            <button data-v="kaiser">Kaiser</button>
+            <button data-v="vorbis">Vorbis</button>
+            <button data-v="kbd">KBD</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Kaiser β · KBD α</span><span class="val" id="w-shplab">β = 8.0</span></div>
+          <input type="range" id="w-shp" min="0" max="20" step="0.1" value="8" data-out="w-shplab" aria-label="Kaiser beta or KBD alpha">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Response span</span></div>
+          <div class="chips" id="w-zoom">
+            <button data-v="8" class="on">±8 bins</button>
+            <button data-v="32">±32</button>
+            <button data-v="128">±128</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 4.2</b> — the upper panel is the
+        window itself, 256 points; the lower panel is its magnitude response,
+        computed here by zero-padding the window by 32× and running the transform,
+        which is how every number in the table below was produced. Pick
+        <b>Kaiser</b> and drag β from 0 to 20: the main lobe widens continuously as
+        the sidelobes sink, and at β = 0 the window <em>is</em> rectangular. That
+        continuous drag is the whole trade-off, with no discrete choices to hide
+        behind. Then set the span to <b>±128</b> and compare <b>Hamming</b> with
+        <b>Hann</b>: Hamming starts eleven decibels lower and ends forty decibels
+        higher, because its endpoints do not reach zero. Watch the last readout as
+        you go: only three of these nine windows satisfy Princen–Bradley, and until
+        the section below that will look like an arbitrary test.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Window figures at length 256, periodic — all values computed, not copied</caption>
+      <thead><tr>
+        <th>Window</th><th class="num">Peak sidelobe</th><th class="num">Null-to-null</th>
+        <th class="num">−3 dB width</th><th class="num">ENBW</th><th class="num">Coherent gain</th>
+        <th class="num">Scalloping</th><th class="num">Rolloff</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Rectangular</td><td class="num">−13.26 dB</td><td class="num">2.00</td><td class="num">0.884</td><td class="num">1.000</td><td class="num">1.0000</td><td class="num">−3.92 dB</td><td class="num">−6 dB/oct</td></tr>
+        <tr><td>Sine</td><td class="num">−23.00 dB</td><td class="num">3.00</td><td class="num">1.187</td><td class="num">1.234</td><td class="num">0.6366</td><td class="num">−2.10 dB</td><td class="num">−12 dB/oct</td></tr>
+        <tr><td>Bartlett</td><td class="num">−26.52 dB</td><td class="num">4.00</td><td class="num">1.274</td><td class="num">1.333</td><td class="num">0.5000</td><td class="num">−1.82 dB</td><td class="num">−12 dB/oct</td></tr>
+        <tr><td>Hann</td><td class="num">−31.47 dB</td><td class="num">4.00</td><td class="num">1.438</td><td class="num">1.500</td><td class="num">0.5000</td><td class="num">−1.42 dB</td><td class="num">−18 dB/oct</td></tr>
+        <tr><td>Hamming</td><td class="num">−42.66 dB</td><td class="num">4.00</td><td class="num">1.301</td><td class="num">1.363</td><td class="num">0.5400</td><td class="num">−1.75 dB</td><td class="num">−6 dB/oct</td></tr>
+        <tr><td>Blackman</td><td class="num">−58.11 dB</td><td class="num">6.00</td><td class="num">1.641</td><td class="num">1.727</td><td class="num">0.4200</td><td class="num">−1.10 dB</td><td class="num">−18 dB/oct</td></tr>
+        <tr><td>Blackman–Harris</td><td class="num">−92.01 dB</td><td class="num">8.00</td><td class="num">1.896</td><td class="num">2.004</td><td class="num">0.3587</td><td class="num">−0.83 dB</td><td class="num">−6 dB/oct</td></tr>
+        <tr><td>Kaiser β = 2π</td><td class="num">−45.87 dB</td><td class="num">4.49</td><td class="num">1.432</td><td class="num">1.502</td><td class="num">0.4873</td><td class="num">−1.44 dB</td><td class="num">−6 dB/oct</td></tr>
+        <tr><td>Vorbis</td><td class="num">−20.59 dB</td><td class="num">3.31</td><td class="num">1.323</td><td class="num">1.379</td><td class="num">0.6022</td><td class="num">−1.68 dB</td><td class="num">−18 dB/oct</td></tr>
+        <tr><td>KBD α = 4</td><td class="num">−19.64 dB</td><td class="num">3.38</td><td class="num">1.364</td><td class="num">1.424</td><td class="num">0.5925</td><td class="num">−1.58 dB</td><td class="num">see below</td></tr>
+        <tr><td>KBD α = 6</td><td class="num">−18.03 dB</td><td class="num">3.44</td><td class="num">1.430</td><td class="num">1.499</td><td class="num">0.5775</td><td class="num">−1.43 dB</td><td class="num">see below</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The first six rows reproduce Fredric Harris's 1978 table in the
+      <em>Proceedings of the IEEE</em> to within a hundredth of a decibel, which is
+      the check that the method is right rather than merely consistent. Harris's
+      paper is still the citation for this comparison forty-eight years later, and
+      its central observation is the one the figure animates: you may have a narrow
+      main lobe or low sidelobes, and the only real freedom is where on that curve
+      you sit.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="gabor" class="section">
+    <div class="kicker k-ghost">Gabor's floor</div>
+    <h3>You cannot buy your way out, because it is Heisenberg's theorem with different units.</h3>
+    <p style="margin-top:18px">Dennis Gabor's 1946 paper <em>Theory of
+      Communication</em> introduced the "logon" — an elementary quantum of
+      information occupying a fixed area in the time–frequency plane — and with it
+      the inequality that every codec designer has been arguing about ever since:</p>
+
+    <div class="eq">
+      Δ<i>t</i><span class="op">·</span>Δ<i>f</i><span class="op">≥</span>
+      <span class="frac"><span><span class="num">1</span></span><span><span class="num">4</span>π</span></span>
+      <span class="op">=</span><span class="num">0.0795775…</span>
+      <span class="note2">Δ<i>t</i> and Δ<i>f</i> the standard deviations of |<i>x</i>(<i>t</i>)|² and |<i>X</i>(<i>f</i>)|²;
+        equality only for a Gaussian. Written in angular frequency it becomes Δω·Δ<i>t</i> ≥ ½ — the same
+        statement, different units, and a common source of factor-of-2π confusion</span>
+    </div>
+
+    <p>The proof is the same proof as Heisenberg's, which is worth saying plainly
+      because engineers sometimes treat this as a limitation of current analysis
+      technique. It is not. No window, no basis, no clever adaptive scheme moves
+      the floor; they only move you along it. Gabor, incidentally, got his Nobel
+      Prize in 1971 for holography, not for this.</p>
+    <p>The practical form is almost insultingly simple. A block of <i>L</i>
+      samples at rate <i>f</i><sub>s</sub> lasts <i>L</i>/<i>f</i><sub>s</sub>
+      seconds and produces bins spaced <i>f</i><sub>s</sub>/<i>L</i> hertz apart,
+      so their product is 1 for every <i>L</i> and every rate — the hyperbola in
+      person:</p>
+
+    <div class="eq">
+      <i>T</i><span class="op">·</span>Δ<i>f</i><span class="op">=</span>
+      <span class="frac"><span><i>L</i></span><span><i>f</i><sub>s</sub></span></span>
+      <span class="op">·</span>
+      <span class="frac"><span><i>f</i><sub>s</sub></span><span><i>L</i></span></span>
+      <span class="op">=</span><span class="num">1</span>
+      <span class="note2">1024 samples at 44 100 Hz = 23.220 ms and 43.066 Hz, exactly</span>
+    </div>
+
+    <div class="scroller"><table>
+      <caption>Time against frequency: the product never moves</caption>
+      <thead><tr><th class="num">Block <i>L</i></th><th class="num"><i>f</i><sub>s</sub></th><th class="num">Duration</th><th class="num">Bin spacing</th><th class="num">Product</th></tr></thead>
+      <tbody>
+        <tr><td class="num">512</td><td class="num">44 100</td><td class="num">11.610 ms</td><td class="num">86.133 Hz</td><td class="num">1.000</td></tr>
+        <tr><td class="num"><strong>1024</strong></td><td class="num">44 100</td><td class="num"><strong>23.220 ms</strong></td><td class="num"><strong>43.066 Hz</strong></td><td class="num">1.000</td></tr>
+        <tr><td class="num">2048</td><td class="num">44 100</td><td class="num">46.440 ms</td><td class="num">21.533 Hz</td><td class="num">1.000</td></tr>
+        <tr><td class="num">4096</td><td class="num">44 100</td><td class="num">92.880 ms</td><td class="num">10.767 Hz</td><td class="num">1.000</td></tr>
+        <tr><td class="num">1024</td><td class="num">48 000</td><td class="num">21.333 ms</td><td class="num">46.875 Hz</td><td class="num">1.000</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>And the window makes it worse than the table says. Bin spacing is not
+      resolution: two tones one bin apart are not separated, they are merely
+      sampled one bin apart. What separates them is the main lobe, and Hann's is
+      1.438 bins wide at −3 dB — so at 1024 points and 44.1 kHz the real
+      resolution is about 61.9 Hz, not 43.1, and the null-to-null width is
+      172.3 Hz.</p>
+
+    <figure class="figure" id="fig-res">
+      <div class="figure-bar">
+        <span class="fno">FIG. 4.3</span>
+        <span class="ftitle">One signal, six block lengths, no setting that works</span>
+        <span class="fstate" id="r-state">L = 1024</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="r-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>quiet</span>
+          <span class="l-heat"><i></i>loud</span>
+          <span class="l-faint"><i class="dash"></i>the two tones, and the two clicks</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Window duration</span><span class="v" id="r-dur">23.2 ms</span></div>
+          <div class="ro"><span class="k">Bin spacing</span><span class="v" id="r-bin">43.1 Hz</span></div>
+          <div class="ro sig"><span class="k">To split the tones</span><span class="v" id="r-lo">L ≥ 1,586</span></div>
+          <div class="ro bad"><span class="k">To split the clicks</span><span class="v" id="r-hi">L ≤ 176</span></div>
+          <div class="ro ghost"><span class="k">Verdict</span><span class="v" id="r-ver">impossible</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Block length <i>L</i></span></div>
+          <div class="chips" id="r-n">
+            <button data-v="128">128</button>
+            <button data-v="256">256</button>
+            <button data-v="512">512</button>
+            <button data-v="1024" class="on">1024</button>
+            <button data-v="2048">2048</button>
+            <button data-v="4096">4096</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Tone separation</span><span class="val" id="r-seplab">40 Hz</span></div>
+          <input type="range" id="r-sep" min="10" max="400" step="5" value="40" data-out="r-seplab" aria-label="Separation of the two tones in hertz">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Click gap</span><span class="val" id="r-gaplab">4.0 ms</span></div>
+          <input type="range" id="r-gap" min="1" max="60" step="0.5" value="4" data-out="r-gaplab" aria-label="Gap between the two clicks in milliseconds">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <button class="btn play" id="r-play">The signal</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 4.3</b> — a spectrogram computed live
+        from a synthesised signal that asks for both kinds of resolution at once:
+        two steady tones 40 Hz apart, and two clicks 4 ms apart in the middle. At
+        <b>L = 4096</b> the tones separate into two clean lines and the clicks
+        merge into a single smear as wide as the window itself. At <b>L = 128</b> the clicks become two
+        distinct strokes and the tones fuse into a single thick band. The two
+        readouts say why no setting works. The first is the shortest window that
+        could resolve the tones — a Hann main lobe 1.438 bins wide must fit inside
+        40 Hz — and the second is the longest that could resolve the clicks, being
+        a window shorter than the gap between them. The first is <em>nearly nine
+        times</em> the second, at any sample rate, and there is no integer in
+        between. That is not a limitation of this page's arithmetic; it is Gabor's
+        inequality, evaluated. Now widen the tone separation to 200 Hz, or the gap
+        to 20 ms, and watch the verdict flip to <b>possible</b>: the floor never
+        moved, you just asked it for less.</figcaption>
+    </figure>
+
+    <blockquote class="pullquote">1/4π = 0.0795775. Every codec design meeting
+      since 1987 has been an argument about where to sit on that hyperbola.
+      <span class="who">The one number in this chapter with no adjustable parameters</span></blockquote>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="overlap" class="section">
+    <div class="kicker">Two reconstruction conditions</div>
+    <h3>There are two ways to reconstruct from overlapping blocks, and the window everyone reaches for passes only one.</h3>
+    <p style="margin-top:18px">Windowing fixes leakage but destroys the ends of
+      every block, so blocks have to overlap and be added back together. The
+      short-time Fourier transform advances by a hop <i>R</i> and analyses each
+      position:</p>
+
+    <div class="eq">
+      <i>X</i><sub><i>m</i></sub>[<i>k</i>]<span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>L</i>−1</span><span><i>n</i>=0</span></span>
+      <i>w</i>[<i>n</i>]<span class="op">·</span><i>x</i>[<i>n</i><span class="op">+</span><i>mR</i>]
+      <span class="op">·</span><i>e</i><sup>−2π<i>ikn</i>/<i>L</i></sup>
+    </div>
+
+    <p>If the window is applied only on analysis and the blocks are simply added
+      on synthesis, the requirement is <strong>constant overlap-add</strong>: the
+      shifted copies of the window must sum to a constant. Hann at 50 % overlap
+      satisfies it trivially, because 0.5 + 0.5 = 1 at every sample. But an
+      MDCT-based codec applies the window <em>twice</em> — once going in, once
+      coming out, so that quantisation noise is tapered at the block edges too —
+      and then the condition changes to the power-complementary one that Princen
+      and Bradley wrote down:</p>
+
+    <div class="eq">
+      <span class="fn">COLA:</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>m</i></span><span></span></span>
+      <i>w</i>[<i>n</i><span class="op">−</span><i>mR</i>]<span class="op">=</span><span class="num">1</span>
+      <span class="op">&nbsp;&nbsp;</span>
+      <span class="fn">PB:</span>
+      <i>w</i><sup>2</sup>[<i>n</i>]<span class="op">+</span><i>w</i><sup>2</sup>[<i>n</i><span class="op">+</span><i>N</i>]<span class="op">=</span><span class="num">1</span>
+      <span class="note2">left, for a window applied once; right, for a window applied twice, with <i>w</i> of length 2<i>N</i></span>
+    </div>
+
+    <p>Evaluate the right-hand condition on a Hann window and the error is not
+      small: it is <strong>exactly 0.5</strong>, which Fig 4.2's last readout will
+      confirm for you. Hann is not a near miss for MDCT use, it is a different
+      kind of window. Its square root, however, passes to within 4×10⁻¹⁶ — and the
+      square root of Hann is, by one line of trigonometry, the window every codec
+      actually uses:</p>
+
+    <div class="eq">
+      <i>w</i>[<i>n</i>]<span class="op">=</span>
+      <span class="fn">sin</span><span class="op">(</span>
+      <span class="frac"><span>π</span><span><span class="num">2</span><i>N</i></span></span>
+      <span class="op">(</span><i>n</i><span class="op">+</span>½<span class="op">))</span>
+      <span class="op">,</span>
+      <span class="fn">sin</span><sup>2</sup>θ<span class="op">=</span>
+      <span class="frac"><span><span class="num">1</span><span class="op">−</span><span class="fn">cos</span><span class="num">2</span>θ</span><span><span class="num">2</span></span></span>
+      <span class="op">⇒</span>
+      <i>w</i><sup>2</sup><span class="op">=</span><span class="fn">Hann</span>
+      <span class="note2">the sine window is the square root of the Hann window, evaluated at half-shifted points —
+        a COLA window's square root is a power-complementary one</span>
+    </div>
+
+    <div class="note sig">
+      <span class="tag tag-sig">Why the half-sample offset</span>
+      <p>MDCT windows are indexed at <i>n</i> + ½ rather than <i>n</i>. That makes
+        them symmetric about the centre of the window rather than about a sample,
+        which is what the cancellation in the next two sections needs: it requires
+        <i>w</i>[2<i>N</i>−1−<i>n</i>] = <i>w</i>[<i>n</i>] exactly, and a window
+        defined on integer points is symmetric about a point that does not exist.
+        It is a half-sample of bookkeeping that the entire proof rests on.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="polyphase" class="section">
+    <div class="kicker">The 32-band bank</div>
+    <h3>MPEG's polyphase bank was a good filter bank and a poor model of the ear.</h3>
+    <p style="margin-top:18px">Before the MDCT won, the standard front end was a
+      bank of band-pass filters: MPEG-1 Audio's 32-band pseudo-QMF, used unchanged
+      by Layers I, II and III. A single 512-tap prototype low-pass is modulated to
+      32 positions across the spectrum,</p>
+
+    <div class="eq">
+      <i>h</i><sub><i>k</i></sub>[<i>n</i>]<span class="op">=</span><i>h</i>[<i>n</i>]
+      <span class="op">·</span><span class="fn">cos</span><span class="op">(</span>
+      <span class="frac"><span>π</span><span><span class="num">32</span></span></span>
+      (<i>k</i><span class="op">+</span>½)(<i>n</i><span class="op">−</span><span class="num">16</span>)
+      <span class="op">)</span>
+      <span class="note2">0 ≤ <i>k</i> ≤ 31, 0 ≤ <i>n</i> ≤ 511; each subband output is then decimated by 32,
+        so the bank is critically sampled and each filter is lapped by 512/32 = 16</span>
+    </div>
+
+    <p>The bands are of uniform width, <i>f</i><sub>s</sub>/64 — at 44.1 kHz that
+      is <strong>689.0625 Hz</strong> each. The composite response of analysis
+      followed by synthesis is flat to better than 0.07 dB, which is excellent;
+      the stopband rejection is commonly quoted as around 96 dB, though that
+      figure is harder to pin to a primary source than the ripple one.</p>
+
+    <div class="scroller"><table>
+      <caption>MPEG-1 polyphase subbands — 512-tap prototype, 32 bands, decimation 32</caption>
+      <thead><tr><th class="num">Sample rate</th><th class="num">Subband width <i>f</i><sub>s</sub>/64</th><th class="num">Band 0 spans</th><th class="num">Frame (1152 samples)</th></tr></thead>
+      <tbody>
+        <tr><td class="num">32 000 Hz</td><td class="num">500.00 Hz</td><td class="num">0 – 500 Hz</td><td class="num">36.000 ms</td></tr>
+        <tr><td class="num">44 100 Hz</td><td class="num"><strong>689.06 Hz</strong></td><td class="num">0 – 689 Hz</td><td class="num">26.122 ms</td></tr>
+        <tr><td class="num">48 000 Hz</td><td class="num">750.00 Hz</td><td class="num">0 – 750 Hz</td><td class="num">24.000 ms</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Two problems follow, and both are structural. The first is the word
+      "pseudo": the aliasing produced by decimating each band is cancelled only
+      between <em>adjacent</em> bands, only approximately, and only if the
+      synthesis bank is exactly matched to the analysis bank. Put a quantiser
+      between them — which is, after all, the entire purpose of the exercise — and
+      the cancellation is no longer exact, leaving residual aliasing that MP3 has
+      to attack afterwards with eight butterflies at each subband boundary:</p>
+
+    <div class="scroller"><table>
+      <caption>MP3 alias-reduction butterflies — cs[<i>i</i>] = 1/√(1+c²), ca[<i>i</i>] = c/√(1+c²)</caption>
+      <thead><tr><th class="num"><i>i</i></th><th class="num">c[<i>i</i>]</th><th class="num">cs[<i>i</i>]</th><th class="num">ca[<i>i</i>]</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">−0.6</td><td class="num">0.8574929257</td><td class="num">−0.5144957554</td></tr>
+        <tr><td class="num">1</td><td class="num">−0.535</td><td class="num">0.8817419973</td><td class="num">−0.4717319686</td></tr>
+        <tr><td class="num">2</td><td class="num">−0.33</td><td class="num">0.9496286491</td><td class="num">−0.3133774542</td></tr>
+        <tr><td class="num">3</td><td class="num">−0.185</td><td class="num">0.9833145925</td><td class="num">−0.1819131996</td></tr>
+        <tr><td class="num">4</td><td class="num">−0.095</td><td class="num">0.9955178161</td><td class="num">−0.0945741925</td></tr>
+        <tr><td class="num">5</td><td class="num">−0.041</td><td class="num">0.9991605582</td><td class="num">−0.0409655829</td></tr>
+        <tr><td class="num">6</td><td class="num">−0.0142</td><td class="num">0.9998991952</td><td class="num">−0.0141985686</td></tr>
+        <tr><td class="num">7</td><td class="num">−0.0037</td><td class="num">0.9999931551</td><td class="num">−0.0036999747</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The cs and ca columns are derived here and are exact; the c values are the
+      widely reproduced ISO list, which this study could not check against the
+      standard's own text. The second problem is the one that decided the
+      argument. Uniform bands are a poor match to the ear.
+      <a href="2-ear.html">Chapter 02</a>'s critical bands are roughly 100 Hz wide
+      at the bottom of the spectrum and several kilohertz wide at the top, so
+      MPEG's band 0 — a single number covering 0 to 689 Hz — swallows something
+      like six critical bands, and the encoder must set one noise floor for all of
+      them and therefore obey the strictest. Band 31, meanwhile, covers 21.4 to
+      22.05 kHz, where nobody is listening at all. Layer III bolted an 18-line
+      MDCT onto each subband to claw back resolution, which is why MP3's filter
+      bank is called hybrid and why it needs those butterflies;
+      <a href="7-mp3.html">Chapter 07</a> takes that apart. AAC threw the whole
+      stage away.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="mdct" class="section">
+    <div class="kicker k-heat">2N in, N out</div>
+    <h3>The matrix cannot be inverted, and it is inverted anyway.</h3>
+    <p style="margin-top:18px">The modified discrete cosine transform takes
+      2<i>N</i> windowed samples and returns <i>N</i> coefficients. Written out, it
+      is an ordinary-looking cosine sum with one unusual phase term:</p>
+
+    <div class="eq">
+      <i>X</i>[<i>k</i>]<span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span><span class="num">2</span><i>N</i>−1</span><span><i>n</i>=0</span></span>
+      <i>w</i>[<i>n</i>]<i>x</i>[<i>n</i>]
+      <span class="fn">cos</span><span class="op">[</span>
+      <span class="frac"><span>π</span><span><i>N</i></span></span>
+      <span class="op">(</span><i>n</i><span class="op">+</span>½<span class="op">+</span>
+      <span class="frac"><span><i>N</i></span><span><span class="num">2</span></span></span>
+      <span class="op">)(</span><i>k</i><span class="op">+</span>½<span class="op">)]</span>
+      <span class="note2"><i>k</i> = 0 … <i>N</i>−1</span>
+    </div>
+
+    <div class="eq">
+      <i>y</i>[<i>n</i>]<span class="op">=</span>
+      <span class="frac"><span><span class="num">2</span></span><span><i>N</i></span></span>
+      <span class="bigop">∑</span><span class="limits"><span><i>N</i>−1</span><span><i>k</i>=0</span></span>
+      <i>X</i>[<i>k</i>]
+      <span class="fn">cos</span><span class="op">[</span>
+      <span class="frac"><span>π</span><span><i>N</i></span></span>
+      <span class="op">(</span><i>n</i><span class="op">+</span>½<span class="op">+</span>
+      <span class="frac"><span><i>N</i></span><span><span class="num">2</span></span></span>
+      <span class="op">)(</span><i>k</i><span class="op">+</span>½<span class="op">)]</span>
+      <span class="note2"><i>n</i> = 0 … 2<i>N</i>−1. The 2/<i>N</i> scaling is the convention that makes windowed
+        overlap-add come out at exactly 1×; texts that put √(2/<i>N</i>) on both transforms will give you
+        different numbers for the same signal</span>
+    </div>
+
+    <p>Count the dimensions. Two thousand and forty-eight numbers go in; one
+      thousand and twenty-four come out. As a matrix it is 2<i>N</i> × <i>N</i>,
+      its null space has dimension <i>N</i>, and it therefore cannot have an
+      inverse. Applying the formula above to a single block's coefficients does not
+      return the block. It returns this, with the 2<i>N</i> input split into four
+      quarters <i>a b c d</i> of length <i>N</i>/2 and <em>rev</em> meaning
+      time-reversed:</p>
+
+    <div class="eq">
+      <span class="fn">IMDCT</span>(<span class="fn">MDCT</span>([<i>a b c d</i>]))
+      <span class="op">=</span>
+      [<i>a</i><span class="op">−</span><span class="fn">rev</span>(<i>b</i>)
+      <span class="op">|</span><i>b</i><span class="op">−</span><span class="fn">rev</span>(<i>a</i>)
+      <span class="op">|</span><i>c</i><span class="op">+</span><span class="fn">rev</span>(<i>d</i>)
+      <span class="op">|</span><i>d</i><span class="op">+</span><span class="fn">rev</span>(<i>c</i>)]
+      <span class="note2">with <i>x</i> = [1 2 3 4 5 6 7 8] and <i>N</i> = 4, this is
+        [−3 −1 1 3 13 13 13 13] — check it against the transform running in Fig 4.4</span>
+    </div>
+
+    <p>Each half of the output is the true signal plus a time-reversed copy of
+      itself, mirrored about the quarter point — minus in the first half, plus in
+      the second. This is <strong>time-domain aliasing</strong>, and the name is
+      exact rather than metaphorical. <a href="1-sound.html">Chapter 01</a>
+      established that undersampling in time folds frequencies back on themselves;
+      undersampling the transform, by keeping <i>N</i> outputs for 2<i>N</i>
+      inputs, folds time back on itself in precisely the same way. The two
+      phenomena are the same theorem seen from the two ends.</p>
+
+    <blockquote class="pullquote">The MDCT takes 2<i>N</i> samples and returns
+      <i>N</i> numbers. As a matrix it cannot be inverted. It is inverted anyway.
+      <span class="who">Princen and Bradley, 1986, in effect</span></blockquote>
+
+    <p>The idea arrived twice. John Princen and Alan Bradley published
+      <em>Analysis/synthesis filter bank design based on time domain aliasing
+      cancellation</em> in <em>IEEE Transactions on ASSP</em> in 1986, and with
+      A. W. Johnson turned it into the oddly-stacked, critically-sampled system
+      everyone now calls the MDCT at ICASSP in 1987. Separately, around 1990,
+      Henrique Malvar arrived at the same equations from the lapped-transform side
+      and called the result the Modulated Lapped Transform. Two communities
+      invented the same object and named it twice; the papers are not variations
+      on a theme, they are the same transform.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="tdac" class="section">
+    <div class="kicker k-ok">Cancellation</div>
+    <h3>The garbage cancels to fifteen decimal places.</h3>
+    <p style="margin-top:18px">Take a signal, cut block A from samples
+      [0, 2<i>N</i>) and block B from [<i>N</i>, 3<i>N</i>), so they overlap by
+      half. Transform each, invert each, window each again, and add them in the
+      region they share. In that region, block A contributes its own second half —
+      true signal plus its alias — and block B contributes its first half, which
+      carries the same alias with the opposite sign. Write the two contributions
+      at offset <i>i</i> into the overlap:</p>
+
+    <div class="eq left">
+      A<span class="op">:</span><i>w</i>[<i>N</i>+<i>i</i>](<i>w</i>[<i>N</i>+<i>i</i>]<i>x</i>[<i>N</i>+<i>i</i>]
+      <span class="op">+</span><i>w</i>[2<i>N</i>−1−<i>i</i>]<i>x</i>[2<i>N</i>−1−<i>i</i>])<br>
+      B<span class="op">:</span><i>w</i>[<i>i</i>](<i>w</i>[<i>i</i>]<i>x</i>[<i>N</i>+<i>i</i>]
+      <span class="op">−</span><i>w</i>[<i>N</i>−1−<i>i</i>]<i>x</i>[2<i>N</i>−1−<i>i</i>])
+      <span class="note2">the first term in each bracket is signal; the second is the time-domain alias</span>
+    </div>
+
+    <p>Add them and look at the alias terms alone. Their coefficient is
+      <i>w</i>[<i>N</i>+<i>i</i>]<i>w</i>[2<i>N</i>−1−<i>i</i>] −
+      <i>w</i>[<i>i</i>]<i>w</i>[<i>N</i>−1−<i>i</i>], and if the window is
+      symmetric that is <i>w</i>[<i>N</i>+<i>i</i>]<i>w</i>[<i>i</i>] −
+      <i>w</i>[<i>i</i>]<i>w</i>[<i>N</i>+<i>i</i>] = 0. The alias is not
+      attenuated or smoothed away; it is subtracted from itself. What remains is
+      the signal, weighted by <i>w</i>²[<i>N</i>+<i>i</i>] + <i>w</i>²[<i>i</i>],
+      which is 1 by Princen–Bradley. Two conditions, two lines, exact
+      reconstruction:</p>
+
+    <div class="eq">
+      <i>w</i>[2<i>N</i>−1−<i>n</i>]<span class="op">=</span><i>w</i>[<i>n</i>]
+      <span class="op">&nbsp;and&nbsp;</span>
+      <i>w</i><sup>2</sup>[<i>n</i>]<span class="op">+</span><i>w</i><sup>2</sup>[<i>n</i>+<i>N</i>]<span class="op">=</span><span class="num">1</span>
+      <span class="note2">symmetry kills the alias; power-complementarity restores unit gain. Neither alone is enough</span>
+    </div>
+
+    <figure class="figure" id="fig-tdac">
+      <div class="figure-bar">
+        <span class="fno">FIG. 4.4</span>
+        <span class="ftitle">TDAC, cancelled in front of you</span>
+        <span class="fstate" id="t-state">N = 4 · sine</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="t-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>the true signal</span>
+          <span class="l-sig"><i></i>block A, windowed IMDCT</span>
+          <span class="l-heat"><i></i>block B, windowed IMDCT</span>
+          <span class="l-ok"><i></i>their sum in the overlap</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro ok"><span class="k">Princen–Bradley error</span><span class="v" id="t-pb">4.4e−16</span></div>
+          <div class="ro"><span class="k">Symmetry error</span><span class="v" id="t-sym">3.6e−16</span></div>
+          <div class="ro sig"><span class="k">Reconstruction error</span><span class="v" id="t-err">4.4e−15</span></div>
+          <div class="ro ghost"><span class="k">Gain in the overlap</span><span class="v" id="t-gain">1.000000</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Coefficients <i>N</i></span></div>
+          <div class="chips" id="t-n">
+            <button data-v="4" class="on">4</button>
+            <button data-v="8">8</button>
+            <button data-v="16">16</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Signal</span></div>
+          <div class="chips" id="t-sig">
+            <button data-v="ramp" class="on">Ramp</button>
+            <button data-v="sine">Sine</button>
+            <button data-v="click">Click</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Window</span></div>
+          <div class="chips" id="t-win">
+            <button data-v="sine" class="on">Sine</button>
+            <button data-v="vorbis">Vorbis</button>
+            <button data-v="kbd">KBD α=4</button>
+            <button data-v="half">1/√2 flat</button>
+            <button data-v="rect">Rectangular</button>
+            <button data-v="hann">Hann</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Reveal</span></div>
+          <div class="chips" id="t-step">
+            <button data-v="1">Signal</button>
+            <button data-v="2">+ block A</button>
+            <button data-v="3">+ block B</button>
+            <button data-v="4" class="on">+ the sum</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 4.4</b> — the real transform, run
+        live on a twelve-sample signal, with every number shown. Step through the
+        reveal. Block A's tail is nothing like the signal: at <i>i</i> = 0 it reads
+        <b>+6.34</b> where the answer is 5. Block B's head is <b>−1.34</b>, a
+        negative number produced from a signal that is entirely positive. Neither
+        is small, neither is noise, and the green sum lies on the grey truth to
+        within 10⁻¹⁵. Now change the window. <b>Rectangular</b> keeps perfect
+        symmetry, so the alias still cancels — but 1² + 1² = 2, and the
+        reconstruction comes out at exactly twice the signal, a beautifully
+        specific failure. <b>1/√2 flat</b> fixes that and is a perfectly legal MDCT
+        window; it is also the worst-leaking window there is, which is why nobody
+        uses it. <b>Hann</b> is symmetric and fails power-complementarity by 0.5,
+        so it breaks in the third way: not doubled, not aliased, just wrong by a
+        varying amount.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>The ledger, recomputed live — contributions to the overlap region</caption>
+      <thead><tr>
+        <th class="num"><i>i</i></th><th class="num">true <i>x</i>[<i>N</i>+<i>i</i>]</th>
+        <th class="num"><i>w</i>[<i>N</i>+<i>i</i>]</th><th class="num"><i>w</i>[<i>i</i>]</th>
+        <th class="num">tail of A</th><th class="num">head of B</th><th class="num">sum</th>
+      </tr></thead>
+      <tbody id="t-rows"><tr><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr></tbody>
+    </table></div>
+
+    <p>One more thing falls out of the same algebra, and it is the reason any of
+      this ships. The 2<i>N</i>-point sum in the definition costs 2<i>N</i>²
+      multiply-accumulates per block — about 2.1 million at <i>N</i> = 1024. But the
+      folding identity above can be run forwards: fold the 2<i>N</i> windowed
+      samples down to <i>N</i> first, then take a DCT-IV of length <i>N</i>, and
+      that DCT-IV can itself be computed with an <i>N</i>/2-point <em>complex</em>
+      FFT and a pair of twiddle passes offset by an eighth of a bin. The whole
+      transform becomes O(<i>N</i> log <i>N</i>).</p>
+
+    <div class="scroller"><table>
+      <caption>Direct against fast, per block</caption>
+      <thead><tr><th class="num"><i>N</i></th><th class="num">Direct, 2<i>N</i>²</th><th class="num">Fast, ≈ <i>N</i> log₂<i>N</i></th><th class="num">Speed-up</th><th class="num">Complex FFT size</th></tr></thead>
+      <tbody>
+        <tr><td class="num">128 <span class="dim">(AAC short)</span></td><td class="num">32 768</td><td class="num">896</td><td class="num">≈ 37×</td><td class="num">64</td></tr>
+        <tr><td class="num">1024 <span class="dim">(AAC long)</span></td><td class="num">2 097 152</td><td class="num">10 240</td><td class="num"><strong>≈ 205×</strong></td><td class="num">512</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>At 44.1 kHz a codec runs 44 100/1024 = 43.07 long transforms per second per
+      channel. Direct, that is about 90 million multiply-accumulates a second for
+      the analysis alone, and as much again in every decoder; by the fast route it
+      is under half a million each way. The library behind these pages does use the
+      fold — its MDCT is fold-then-DCT-IV and nothing else — but takes the DCT-IV
+      by direct summation, which is why Fig 4.5 pauses for a moment when you change
+      its block length. On a portable player of the late 1990s, running off a
+      battery and a processor clocked in the tens of megahertz, that difference
+      was the whole product.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="shape" class="section">
+    <div class="kicker k-ghost">Sine or KBD</div>
+    <h3>Choosing a window shape is a question about whom you are trying to mask.</h3>
+    <p style="margin-top:18px">Once the window must be symmetric and
+      power-complementary, the family of legal choices is small but not trivial.
+      AAC ships two of them and signals the choice with a single bit per frame.
+      The sine window has the narrower main lobe and the better first sidelobe,
+      −23.0 dB. The Kaiser–Bessel-derived window at α = 4 is <em>worse</em> near
+      in — a first sidelobe of only −19.6 dB — and has a wider main lobe as well.
+      On the table above, sine wins outright. The table above is the wrong
+      table.</p>
+
+    <div class="scroller"><table>
+      <caption>Far-field sidelobe envelope, dB relative to the main-lobe peak, length 256</caption>
+      <thead><tr><th>Offset (bins)</th><th class="num">1.5</th><th class="num">3</th><th class="num">4</th><th class="num">6</th><th class="num">8</th><th class="num">16</th><th class="num">32</th><th class="num">100</th></tr></thead>
+      <tbody>
+        <tr><td>Rectangular</td><td class="num">−13.5</td><td class="num">−20.8</td><td class="num">−23.0</td><td class="num">−26.2</td><td class="num">−28.5</td><td class="num">−34.2</td><td class="num">−39.9</td><td class="num">−47.7</td></tr>
+        <tr><td><strong>Sine</strong></td><td class="num">−23.0</td><td class="num">−30.9</td><td class="num">−36.0</td><td class="num">−43.1</td><td class="num">−48.1</td><td class="num">−60.3</td><td class="num">−72.5</td><td class="num">−96.9</td></tr>
+        <tr><td><strong>KBD α = 4</strong></td><td class="num">−19.6</td><td class="num">−30.4</td><td class="num">−40.2</td><td class="num"><strong>−71.0</strong></td><td class="num">−75.8</td><td class="num">−87.4</td><td class="num">−98.0</td><td class="num">−109.3</td></tr>
+        <tr><td><strong>KBD α = 6</strong></td><td class="num">−18.0</td><td class="num">−24.7</td><td class="num">−32.9</td><td class="num">−58.7</td><td class="num"><strong>−88.1</strong></td><td class="num">−110.1</td><td class="num">−122.0</td><td class="num">−138.9</td></tr>
+        <tr><td>Vorbis</td><td class="num">−20.6</td><td class="num">−38.9</td><td class="num">−47.5</td><td class="num">−56.2</td><td class="num">−63.2</td><td class="num">−80.6</td><td class="num">−98.3</td><td class="num">−125.9</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>KBD α = 4 crosses below the sine window at about three to four bins and is
+      <strong>28 dB better by six</strong>; α = 6 crosses at about five bins and is
+      <strong>40 dB better by eight</strong>. The question an encoder is really
+      asking is therefore not "which window is better" but "where does the noise I
+      am about to inject need to stay?" If the spectrum is dense and the
+      neighbouring bands are close in level, leakage into the bin next door is
+      what matters and the sine window's narrow lobe wins. If there is a loud
+      tonal component and a quiet band twenty bins away that the masking model has
+      declared nearly silent, the far field is what matters and KBD wins by tens
+      of decibels. Neither dominates, so the standard ships both.</p>
+
+    <div class="eq left">
+      <i>W</i>′(<i>j</i>)<span class="op">=</span>
+      <span class="frac"><span><i>I</i><sub>0</sub>[π<i>α</i>√(1−((<i>j</i>−<i>N</i>/4)/(<i>N</i>/4))<sup>2</sup>)]</span><span><i>I</i><sub>0</sub>[π<i>α</i>]</span></span>
+      <span class="op">,</span>
+      <i>w</i>[<i>n</i>]<span class="op">=</span>
+      <span>√</span><span class="rad">
+      <span class="frac"><span><span class="bigop">∑</span><span class="limits"><span><i>n</i></span><span><i>j</i>=0</span></span><i>W</i>′(<i>j</i>)</span><span><span class="bigop">∑</span><span class="limits"><span><i>N</i>/2</span><span><i>j</i>=0</span></span><i>W</i>′(<i>j</i>)</span></span></span>
+      <span class="note2">the Kaiser–Bessel-derived window: a Kaiser kernel, cumulatively summed, normalised and
+        square-rooted. The cumulative sum is not decoration — a running sum and its reverse complement add to the
+        total by construction, which is exactly why the result is power-complementary</span>
+    </div>
+
+    <p>The one-bit field that carries this choice sits in AAC's per-frame
+      information alongside the two bits that choose the window sequence:</p>
+
+    <div class="bitmap" style="margin:18px 0 22px">
+      <div class="bitf on"><div class="bv">1</div><div class="bn">shape</div></div>
+      <div class="bitf"><div class="bv">0</div><div class="bn">seq hi</div></div>
+      <div class="bitf"><div class="bv">0</div><div class="bn">seq lo</div></div>
+      <div class="bitf"><div class="bv">…</div><div class="bn">max_sfb</div></div>
+      <div class="bitf"><div class="bv">…</div><div class="bn">scale_factor_grouping</div></div>
+    </div>
+
+    <p>Because TDAC only constrains the two halves that actually overlap, a frame
+      may legally use a KBD left half against the previous frame's KBD right half
+      while its own right half is a sine — and encoders exploit exactly that,
+      switching shape at a transient boundary. Opus makes the opposite kind of
+      choice. Its CELT layer fixes the MDCT overlap at <strong>2.5 ms whatever the
+      frame size</strong>, using low-overlap "flat-top" windows with the Vorbis
+      power-complementary shape on the overlapping part only, because overlap is
+      algorithmic delay and delay is what a telephone call cannot afford. That
+      fixed 2.5 ms is the irreducible look-ahead of CELT mode;
+      <a href="9-opus.html">Chapter 09</a> and the
+      <a href="/ropus/">Rust Opus decoder</a> elsewhere in this almanac follow it
+      through.</p>
+
+    <div class="scroller"><table>
+      <caption>Transform parameters of the codecs in this study</caption>
+      <thead><tr><th>Codec</th><th class="num">Window 2<i>N</i></th><th class="num">Coefficients <i>N</i></th><th class="num">Hop</th><th class="num">Window span</th><th class="num">Bin spacing</th></tr></thead>
+      <tbody>
+        <tr><td>AAC-LC long @ 44.1 k</td><td class="num">2048</td><td class="num">1024</td><td class="num">23.220 ms</td><td class="num">46.440 ms</td><td class="num">21.533 Hz</td></tr>
+        <tr><td>AAC-LC short @ 44.1 k</td><td class="num">256</td><td class="num">128</td><td class="num">2.903 ms</td><td class="num">5.805 ms</td><td class="num">172.266 Hz</td></tr>
+        <tr><td>MP3 granule @ 44.1 k</td><td class="num">1152</td><td class="num">576</td><td class="num">13.061 ms</td><td class="num">26.122 ms</td><td class="num">38.281 Hz</td></tr>
+        <tr><td>MP3 per subband, long</td><td class="num">36</td><td class="num">18</td><td class="num">0.408 ms</td><td class="num">0.816 ms</td><td class="num">—</td></tr>
+        <tr><td>MP3 per subband, short</td><td class="num">12</td><td class="num">6</td><td class="num">0.136 ms</td><td class="num">0.272 ms</td><td class="num">—</td></tr>
+        <tr><td>Vorbis long @ 44.1 k</td><td class="num">2048</td><td class="num">1024</td><td class="num">23.220 ms</td><td class="num">46.440 ms</td><td class="num">21.533 Hz</td></tr>
+        <tr><td>AC-3 @ 48 k</td><td class="num">512</td><td class="num">256</td><td class="num">5.333 ms</td><td class="num">10.667 ms</td><td class="num">93.750 Hz</td></tr>
+        <tr><td>Opus/CELT 20 ms @ 48 k</td><td class="num">1920</td><td class="num">960</td><td class="num">20.000 ms</td><td class="num">40.000 ms</td><td class="num">25.000 Hz</td></tr>
+        <tr><td>Opus/CELT 2.5 ms @ 48 k</td><td class="num">240</td><td class="num">120</td><td class="num">2.500 ms</td><td class="num">5.000 ms</td><td class="num">200.000 Hz</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="switch" class="section">
+    <div class="kicker k-danger">Switching the blocks</div>
+    <h3>Eight short blocks cost exactly zero extra coefficients.</h3>
+    <p style="margin-top:18px">A transform coefficient describes its whole
+      window. Quantise it coarsely and the error you introduce is spread evenly
+      across all 2<i>N</i> samples, with the envelope of the <em>window</em> rather
+      than of the signal. For 46 ms of sustained violin that is exactly what you
+      want. For a castanet strike at the end of the window it is a catastrophe: the
+      noise added to code the attack appears across the whole span, including the
+      near-silence that preceded it.</p>
+    <p><a href="3-masking.html">Chapter 03</a> priced that. Backward masking — a
+      sound concealing noise that arrived <em>before</em> it — covers about 2 ms;
+      Painter and Spanias put it at "no significant coding noise longer than
+      approximately 2.0 ms before onset", other sources give figures between 0.5
+      and 5 ms, and it is the least robust and most training-dependent of all the
+      masking phenomena. Forward masking, by contrast, runs for 10 to 50 ms and by
+      some accounts far longer, which is why nobody has ever complained about
+      post-echo.</p>
+
+    <div class="scroller"><table>
+      <caption>How much noise-before-attack each configuration can produce</caption>
+      <thead><tr><th>Configuration</th><th class="num">Window span</th><th class="num">Worst-case noise before the attack</th></tr></thead>
+      <tbody>
+        <tr><td>AAC long, 2048 @ 44.1 k</td><td class="num">46.440 ms</td><td class="num">46.440 ms</td></tr>
+        <tr><td>MP3 long granule, 1152 @ 44.1 k</td><td class="num">26.122 ms</td><td class="num">26.122 ms</td></tr>
+        <tr><td>MP3 short, 384 @ 44.1 k</td><td class="num">8.707 ms</td><td class="num">8.707 ms</td></tr>
+        <tr><td>AAC short, 256 @ 44.1 k</td><td class="num">5.805 ms</td><td class="num">5.805 ms</td></tr>
+        <tr><td>Opus/CELT 2.5 ms @ 48 k</td><td class="num">5.000 ms</td><td class="num">5.000 ms</td></tr>
+        <tr><td><strong>Backward masking budget</strong></td><td class="num">—</td><td class="num"><strong>≈ 2 ms</strong></td></tr>
+      </tbody>
+    </table></div>
+
+    <p>A factor of roughly twenty-three, then, between what a long AAC window
+      spreads and what the ear will forgive. Bernd Edler's 1989 <em>Frequenz</em>
+      paper settled the remedy and every codec since has used a version of it:
+      change the transform length on the fly. That breaks TDAC unless the
+      overlapping halves still match, so AAC defines four window sequences, two of
+      which exist purely as transitions.</p>
+
+    <div class="scroller"><table>
+      <caption>AAC-LC window sequences within the 2048-sample frame — the standard layout</caption>
+      <thead><tr><th>Sequence</th><th>Layout, 2048 samples</th><th class="num">Coefficients</th></tr></thead>
+      <tbody>
+        <tr><td>ONLY_LONG</td><td>long rising 0…1023, long falling 1024…2047</td><td class="num">1024</td></tr>
+        <tr><td>LONG_START</td><td>long rising ×1024, then 1.0 ×448, short falling ×128, 0.0 ×448</td><td class="num">1024</td></tr>
+        <tr><td>EIGHT_SHORT</td><td>0.0 ×448, eight 256-sample windows at hop 128, 0.0 ×448</td><td class="num">8 × 128 = 1024</td></tr>
+        <tr><td>LONG_STOP</td><td>0.0 ×448, short rising ×128, 1.0 ×448, long falling ×1024</td><td class="num">1024</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note danger">
+      <span class="tag tag-danger">Every frame is hostage to its neighbour</span>
+      <p>Because each output sample is the sum of contributions from two
+        overlapping blocks, no frame can be decoded on its own. Lose one packet and
+        you lose not just its own 1024 samples but half a window on either side of
+        them, which is why every transform codec ships some form of loss
+        concealment and why the decoder must be told the window sequence
+        <em>before</em> it can invert anything. The same coupling that makes the
+        transform critically sampled makes it unforgiving of gaps.</p>
+    </div>
+
+    <p>The arithmetic checks: 1024 + 448 + 128 + 448 = 2048, and
+      448 + 8×128 + 128 + 448 = 2048. These offsets are the layout given in every
+      secondary account of the standard and are self-consistent, though this study
+      could not verify them against the ISO text directly. What matters is the last
+      column. An eight-short frame emits <strong>1024 coefficients</strong>, exactly
+      as a long frame does, and advances the stream by the same 1024 samples. Eight
+      times the time resolution, bought with eight times worse frequency
+      resolution, at zero cost in coefficients. What it does cost is coding
+      efficiency — a tonal signal analysed at 128-line resolution spreads its
+      energy over more lines, and the side information is repeated per group, which
+      is usually put at something like ten to thirty per cent more bits on the
+      affected frames, varying with content.</p>
+
+    <figure class="figure" id="fig-pre">
+      <div class="figure-bar">
+        <span class="fno">FIG. 4.5</span>
+        <span class="ftitle">Pre-echo, manufactured to order</span>
+        <span class="fstate" id="p-state">N = 1024 · 3 bits</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="p-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>the signal's level</span>
+          <span class="l-danger"><i></i>the coding error's level</span>
+          <span class="l-ghost"><i class="dash"></i>block boundaries</span>
+          <span class="l-ok"><i></i>the ~2 ms of backward masking you actually have</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Window span</span><span class="v" id="p-span">46.4 ms</span></div>
+          <div class="ro bad"><span class="k">Noise starts before</span><span class="v" id="p-onset">42.7 ms</span></div>
+          <div class="ro bad"><span class="k">Level 10 ms early</span><span class="v" id="p-pre">-31 dB</span></div>
+          <div class="ro ok"><span class="k">Level after the attack</span><span class="v" id="p-post">-23 dB</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Coefficients <i>N</i></span></div>
+          <div class="chips" id="p-n">
+            <button data-v="128">128</button>
+            <button data-v="256">256</button>
+            <button data-v="512">512</button>
+            <button data-v="1024" class="on">1024</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Quantiser</span><span class="val" id="p-bitslab">3 bits</span></div>
+          <input type="range" id="p-bits" min="2" max="9" step="1" value="3" data-out="p-bitslab" aria-label="Quantiser resolution in bits">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="p-orig">Original</button>
+            <button class="btn play" id="p-code">Coded</button>
+            <button class="btn play" id="p-err">The error alone</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 4.5</b> — a single synthesised
+        castanet strike, MDCT'd at the length you choose, quantised with a uniform
+        quantiser scaled to each block's own peak, inverse-transformed and
+        overlap-added: a complete round trip, run here. The curves are short-time
+        levels, because the error is thirty decibels down and would otherwise be a
+        flat line. Grey leaps out of digital silence at time zero. Red does not
+        move — it is already there, and it began at a <em>block boundary</em>, the
+        dotted line, not gradually. That step is why pre-echo sounds like a
+        mechanical "pfft" rather than a reverb tail. At <i>N</i> = 1024 the noise
+        arrives some forty milliseconds early — very nearly the whole window — and
+        runs straight through the green strip, which is all the backward masking
+        there is. Step <i>N</i> down to 128 and watch the smear collapse onto the
+        attack and the early level fall by about sixteen decibels while the level
+        <em>after</em> it barely moves. Then listen: <b>coded</b> at 1024 has a distinct hiss
+        ahead of its own crack, and <b>the error alone</b> — raised to a listenable
+        level — makes it unmistakable.</figcaption>
+    </figure>
+
+    <p>Block switching is the first of four countermeasures, and the only one
+      that changes the transform. The second is <strong>temporal noise
+      shaping</strong>, introduced by Jürgen Herre and James Johnston at the 101st
+      AES Convention in Los Angeles in November 1996: run an open-loop linear
+      predictor <em>across frequency</em> rather than across time, and the
+      prediction residual shapes the quantisation noise's envelope <em>in
+      time</em>, hiding it under the attack without shortening the window. The
+      third is the <strong>bit reservoir</strong>, which lets the frame containing
+      the transient borrow bits from its quieter neighbours. The fourth, gain
+      control, appeared in MPEG-4 AAC's scalable sample rate profile and is rarely
+      seen. <a href="8-aac.html">Chapter 08</a> takes all four apart.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="wrong" class="section">
+    <div class="kicker">What people get wrong</div>
+    <h3>Seven things that are said about transforms and are not true.</h3>
+
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>"The MDCT is a DCT with a window."</dt>
+        <dd>A DCT of 2<i>N</i> samples returns 2<i>N</i> coefficients. The MDCT
+          returns <i>N</i>. It is a non-square transform, and the window is not an
+          accessory to it: without a power-complementary window there is no inverse
+          at all, as Fig 4.4's Hann setting will demonstrate.</dd>
+      </div>
+      <div class="def">
+        <dt>"Overlapping by 50 % doubles the data."</dt>
+        <dd>For an STFT, yes. For the MDCT, no — it is critically sampled.
+          44 100 samples a second go in and 44 100 coefficients a second come out,
+          with every sample appearing in two blocks. This is the thing to be
+          astonished by, and it is what "lapped transform" means.</dd>
+      </div>
+      <div class="def">
+        <dt>"Time-domain aliasing is a bug that TDAC cleans up."</dt>
+        <dd>It is load-bearing. The transform discards half its outputs and uses
+          the aliasing to carry what it discarded. Compute a "clean" inverse that
+          suppresses the alias and you cannot reconstruct anything.</dd>
+      </div>
+      <div class="def">
+        <dt>"Use a Hann window; it's the standard one."</dt>
+        <dd>Hann fails the Princen–Bradley condition by exactly 0.5. Its square
+          root — the sine window — passes to within 4×10⁻¹⁶. Hann is a COLA window,
+          for analysis only; the MDCT needs a window that survives being applied
+          twice.</dd>
+      </div>
+      <div class="def">
+        <dt>"KBD is simply better than sine, which is why AAC uses it."</dt>
+        <dd>KBD α = 4 has a <em>worse</em> first sidelobe than sine, −19.6 dB
+          against −23.0, and a wider main lobe. It wins only beyond three or four
+          bins. AAC ships both and spends a bit per frame on the choice precisely
+          because neither dominates.</dd>
+      </div>
+      <div class="def">
+        <dt>"Short blocks cost bitrate."</dt>
+        <dd>Eight AAC short blocks produce 1024 coefficients and advance the frame
+          by 1024 samples, identically to one long block. What they cost is coding
+          <em>efficiency</em> on tonal material, not coefficients.</dd>
+      </div>
+      <div class="def">
+        <dt>"The MDCT gives you the spectrum."</dt>
+        <dd>It gives you a real-valued, phase-entangled projection. There is no
+          magnitude-and-phase split and a coefficient's sign is not a phase. That
+          is why MP3 and AAC encoders run a <em>separate</em> FFT purely to feed the
+          psychoacoustic model, and why MDCT coefficients are so awkward to
+          plot.</dd>
+      </div>
+    </dl>
+
+    <p style="margin-top:30px">Notice what has not happened. Nothing in this
+      chapter has saved a single bit. The polyphase bank is critically sampled; the
+      MDCT is critically sampled; 44 100 numbers a second went in and 44 100 came
+      out, in a different basis, at higher precision than they started. The
+      transform is pure overhead until something downstream exploits it. What it
+      has done is arrange the signal so that the masking curve from
+      <a href="3-masking.html">Chapter 03</a> can finally be spent: a threshold
+      defined per critical band can now be applied to the lines that fall in that
+      band, and the coefficients that sit below it can be rounded into oblivion.
+      <a href="5-quantize.html">Chapter 05</a> does the rounding — the power-law
+      quantiser, the two nested loops that fight each other over the same bit
+      budget, and the bit reservoir that lets a frame spend what its neighbours
+      saved.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   Shared helpers for this chapter's figures. Windows the DSP kit
+   does not ship (Kaiser, Vorbis) are built here from DSP.bessel0.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var D = window.DSP;
+  if (!D) return;
+
+  function vorbis(L) {
+    var w = new Float64Array(L), i, s;
+    for (i = 0; i < L; i++) { s = Math.sin(Math.PI / L * (i + 0.5)); w[i] = Math.sin(Math.PI / 2 * s * s); }
+    return w;
+  }
+  function kaiser(L, beta) {
+    var w = new Float64Array(L), den = D.bessel0(beta), i, r;
+    for (i = 0; i < L; i++) {
+      r = 2 * i / (L - 1) - 1;
+      w[i] = D.bessel0(beta * Math.sqrt(Math.max(0, 1 - r * r))) / den;
+    }
+    return w;
+  }
+  function flat(L, v) { var w = new Float64Array(L); w.fill(v); return w; }
+
+  // max |w[n]^2 + w[n+N]^2 - 1| over the first half: the Princen-Bradley test
+  function pbError(w) {
+    var N = w.length >> 1, e = 0, i;
+    for (i = 0; i < N; i++) e = Math.max(e, Math.abs(w[i] * w[i] + w[i + N] * w[i + N] - 1));
+    return e;
+  }
+  function symError(w) {
+    var L = w.length, e = 0, i;
+    for (i = 0; i < L; i++) e = Math.max(e, Math.abs(w[L - 1 - i] - w[i]));
+    return e;
+  }
+  // magnitude response in dB relative to the peak, zero-padded by Z
+  function responseDb(w, Z) {
+    var L = w.length, M = L * Z, re = new Float64Array(M), im = new Float64Array(M), i;
+    for (i = 0; i < L; i++) re[i] = w[i];
+    D.fft(re, im, false);
+    var half = M >> 1, db = new Float64Array(half), m0 = Math.hypot(re[0], im[0]);
+    for (i = 0; i < half; i++) db[i] = 20 * Math.log10(Math.max(Math.hypot(re[i], im[i]), 1e-30) / Math.max(m0, 1e-30));
+    return db;
+  }
+  function expo(v) {
+    if (v === 0) return "0.0e+0";
+    var s = v.toExponential(1);
+    return s.replace("e-", "e−").replace("+", "+");
+  }
+
+  window.CH4 = {
+    vorbis: vorbis, kaiser: kaiser, flat: flat,
+    pbError: pbError, symError: symError, responseDb: responseDb, expo: expo,
+  };
+})();
+
+/* ---------------------------------------------------------------
+   FIG 4.1 — leakage. A real cosine, really windowed, really
+   transformed; and the same block, repeated, played back so the
+   reader hears what the DFT believes it was given.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("k-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var PLAY_SR = 8000;
+
+  var st = { N: 64, win: "rect", off: 0.5 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 32, ymin: -96, ymax: 4,
+    xlabel: "DFT bin", ylabel: "dB below the peak bin", pad: { l: 52, r: 14, t: 16, b: 34 },
+  });
+
+  function window4(name, N) {
+    if (name === "hann") return D.WIN.hann(N);
+    if (name === "bh") return D.WIN.blackmanHarris(N);
+    return D.WIN.rect(N);
+  }
+  function centreBin() { return Math.round(st.N / 4); }
+  function f0() { return centreBin() + st.off; }
+
+  function analyse(freq) {
+    var N = st.N, w = window4(st.win, N), n, k;
+    var re = new Float64Array(N), im = new Float64Array(N);
+    for (n = 0; n < N; n++) re[n] = Math.cos(2 * Math.PI * freq * n / N) * w[n];
+    D.fft(re, im, false);
+    var pw = new Float64Array(N / 2 + 1), tot = 0, inb = 0, pk = 0;
+    for (k = 0; k < N; k++) {
+      var e = re[k] * re[k] + im[k] * im[k];
+      tot += e;
+      if (Math.min(Math.abs(k - freq), Math.abs(N - k - freq)) <= 1.5) inb += e;
+      if (k <= N / 2) { pw[k] = e; if (e > pk) pk = e; }
+    }
+    return { pw: pw, peak: Math.max(pk, 1e-30), leak: tot > 0 ? (tot - inb) / tot : 0 };
+  }
+
+  function block(freq) {
+    var N = st.N, w = window4(st.win, N), x = new Float64Array(N), n;
+    for (n = 0; n < N; n++) x[n] = Math.cos(2 * Math.PI * freq * n / N) * w[n];
+    return x;
+  }
+
+  function stemsOf(r) {
+    var out = [], k;
+    for (k = 0; k <= st.N / 2; k++) out.push([k, Math.max(10 * Math.log10(r.pw[k] / r.peak), -96)]);
+    return out;
+  }
+
+  function draw() {
+    var r = analyse(f0()), g = analyse(centreBin());
+    p.range(0, st.N / 2, -96, 4);
+    p.clear();
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    p.stems(stemsOf(g), { color: AC.C.faint, base: -96, r: 1.8, width: 1 });
+    p.stems(stemsOf(r), { color: AC.C.blue, base: -96, r: 2.4, width: 1.4 });
+    p.vline(f0(), { color: AC.C.gold, label: "tone" });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      st.N + "-point DFT · " + (st.win === "bh" ? "Blackman–Harris" : st.win === "hann" ? "Hann" : "rectangular"),
+      { color: AC.C.ghost });
+
+    // readouts
+    var side = -96, count = 0, k;
+    for (k = 0; k <= st.N / 2; k++) {
+      var db = 10 * Math.log10(r.pw[k] / r.peak);
+      if (Math.abs(k - f0()) > 3 && db > side) side = db;
+      if (db > -40) count++;
+    }
+    document.getElementById("k-leak").textContent = (100 * r.leak).toFixed(2) + " %";
+    document.getElementById("k-side").textContent = side.toFixed(1) + " dB";
+    document.getElementById("k-count").textContent = count + " of " + (st.N / 2 + 1);
+    document.getElementById("k-hz").textContent = Math.round(f0() * PLAY_SR / st.N) + " Hz";
+    document.getElementById("k-state").textContent =
+      (st.off >= 0 ? "+" : "−") + Math.abs(st.off).toFixed(2) + " bins · " +
+      (st.win === "bh" ? "Blackman–Harris" : st.win === "hann" ? "Hann" : "rectangular");
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("k-win"), function (v) { st.win = v; draw(); });
+  AC.chips(document.getElementById("k-n"), function (v) { st.N = parseInt(v, 10); draw(); });
+  AC.slider(document.getElementById("k-f0"), function (v) { st.off = v; draw(); },
+    function (v) { return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + " bins"; });
+
+  if (A) {
+    A.wire(document.getElementById("k-loop"), function () {
+      var b = block(f0()), reps = Math.ceil(PLAY_SR * 0.9 / st.N);
+      var out = new Float64Array(reps * st.N), i;
+      for (i = 0; i < out.length; i++) out[i] = b[i % st.N];
+      D.normalize(out, 0.5);
+      return out;
+    }, { sr: PLAY_SR });
+    A.wire(document.getElementById("k-tone"), function () {
+      return A.src.tone(0.9, { f: f0() * PLAY_SR / st.N, sr: PLAY_SR, amp: 0.5 });
+    }, { sr: PLAY_SR });
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 4.2 — the window zoo. Shape on top, measured response below,
+   with the four numbers that decide whether a window is any good.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("w-cv"), cv2 = document.getElementById("w-cv2");
+  if (!cv || !cv2 || !window.DSP || !window.CH4) return;
+  var D = window.DSP, K = window.CH4, L = 256, Z = 32;
+
+  var st = { pick: "hann", shp: 8, zoom: 8 };
+  var NAMES = {
+    rect: "Rectangular", sine: "Sine", hann: "Hann", hamming: "Hamming",
+    blackman: "Blackman", bh: "Blackman–Harris", kaiser: "Kaiser", vorbis: "Vorbis", kbd: "KBD",
+  };
+
+  var pw = new AC.Plot(cv, {
+    aspect: 5.2, xmin: 0, xmax: L - 1, ymin: 0, ymax: 1.08,
+    xlabel: "sample", pad: { l: 52, r: 14, t: 10, b: 26 },
+  });
+  var pr = new AC.Plot(cv2, {
+    aspect: 2.3, xmin: 0, xmax: 8, ymin: -150, ymax: 6,
+    xlabel: "offset from the centre, in bins", ylabel: "dB", pad: { l: 52, r: 14, t: 14, b: 34 },
+  });
+
+  function build() {
+    switch (st.pick) {
+      case "rect": return D.WIN.rect(L);
+      case "sine": return D.WIN.sine(L);
+      case "hamming": return D.WIN.hamming(L);
+      case "blackman": return D.WIN.blackman(L);
+      case "bh": return D.WIN.blackmanHarris(L);
+      case "kaiser": return K.kaiser(L, st.shp);
+      case "vorbis": return K.vorbis(L);
+      case "kbd": return D.WIN.kbd(L, Math.max(st.shp, 0.01));
+      default: return D.WIN.hann(L);
+    }
+  }
+  // -3 dB full width in bins, linearly interpolated across the padded grid
+  function bw3(db) {
+    var i = 0;
+    while (i < db.length && db[i] > -3) i++;
+    if (i === 0) return 0;
+    var t = (db[i - 1] + 3) / (db[i - 1] - db[i]);
+    return 2 * (i - 1 + t) / Z;
+  }
+
+  function draw() {
+    var w = build(), db = K.responseDb(w, Z), s = D.windowStats(w);
+
+    // --- shape
+    pw.clear();
+    pw.axes({ y: [0, 0.5, 1], yfmt: function (v) { return v.toFixed(1); } });
+    var pts = [], i;
+    for (i = 0; i < L; i++) pts.push([i, w[i]]);
+    pw.line(pts, { color: AC.C.blue, width: 1.8, fill: true, fillAlpha: 0.12, fillTo: 0 });
+
+    // --- response
+    pr.range(0, st.zoom, -150, 6);
+    pr.clear();
+    pr.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    var rp = [], n = Math.min(db.length - 1, Math.round(st.zoom * Z));
+    for (i = 0; i <= n; i++) rp.push([i / Z, Math.max(db[i], -150)]);
+    pr.band(0, s.firstNullBin, { color: AC.C.purple, alpha: 0.10 });
+    pr.line(rp, { color: AC.C.blue, width: 1.6 });
+    pr.hline(s.sidelobeDb, { color: AC.C.gold, label: s.sidelobeDb.toFixed(1) + " dB" });
+    pr.note(pr.pad.l + 8, pr.pad.t + 6, NAMES[st.pick] +
+      (st.pick === "kaiser" ? " β = " + st.shp.toFixed(1) : st.pick === "kbd" ? " α = " + st.shp.toFixed(1) : "") +
+      " · length 256, padded 32×", { color: AC.C.ghost });
+
+    // --- readouts
+    var pb = K.pbError(w);
+    document.getElementById("w-side").textContent = s.sidelobeDb.toFixed(2) + " dB";
+    document.getElementById("w-null").textContent = (2 * s.firstNullBin).toFixed(2) + " bins";
+    document.getElementById("w-bw3").textContent = bw3(db).toFixed(3) + " bins";
+    document.getElementById("w-enbw").textContent = s.enbw.toFixed(3) + " bins";
+    var pbEl = document.getElementById("w-pb");
+    pbEl.textContent = (pb < 1e-9 ? "passes: " : "fails: ") + (pb < 1e-9 ? K.expo(pb) : pb.toFixed(3));
+    pbEl.parentNode.className = "ro " + (pb < 1e-9 ? "ok" : "bad");
+    document.getElementById("w-state").textContent = NAMES[st.pick] +
+      (st.pick === "kaiser" ? " β = " + st.shp.toFixed(1) : st.pick === "kbd" ? " α = " + st.shp.toFixed(1) : "");
+  }
+  AC.autoDraw(pw, draw);
+  AC.autoDraw(pr, draw);
+
+  AC.chips(document.getElementById("w-pick"), function (v) { st.pick = v; draw(); });
+  AC.chips(document.getElementById("w-zoom"), function (v) { st.zoom = parseFloat(v); draw(); });
+  AC.slider(document.getElementById("w-shp"), function (v) { st.shp = v; draw(); },
+    function (v) { return (st.pick === "kbd" ? "α = " : "β = ") + v.toFixed(1); });
+})();
+
+/* ---------------------------------------------------------------
+   FIG 4.3 — Gabor's floor, as a spectrogram. Two tones a settable
+   distance apart and two clicks a settable gap apart, analysed at
+   whatever block length the reader picks. No length works.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("r-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var sr = A ? A.rate() : 48000;
+  var DUR = 0.5, FMAX = 3000, F0 = 1000;
+  var st = { N: 1024, sep: 40, gap: 4, sig: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.2, xmin: 0, xmax: DUR * 1000, ymin: 0, ymax: FMAX,
+    xlabel: "milliseconds", ylabel: "Hz", pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  function signal() {
+    var n = Math.round(sr * DUR), x = new Float64Array(n), i, t;
+    for (i = 0; i < n; i++) {
+      t = i / sr;
+      x[i] = 0.34 * Math.sin(2 * Math.PI * F0 * t) + 0.34 * Math.sin(2 * Math.PI * (F0 + st.sep) * t);
+    }
+    var c0 = Math.round(sr * (DUR / 2 - st.gap / 2000));
+    var c1 = Math.round(sr * (DUR / 2 + st.gap / 2000));
+    [c0, c1].forEach(function (c) {
+      var len = Math.round(sr * 0.0016), j;
+      for (j = 0; j < len && c + j < n; j++) {
+        x[c + j] += 0.75 * Math.exp(-j / (sr * 0.0004)) * Math.sin(2 * Math.PI * 2200 * j / sr);
+      }
+    });
+    D.normalize(x, 0.8);
+    return x;
+  }
+
+  // a plate -> blue -> gold -> red ramp built from the site palette
+  function rgb(hex) {
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec((hex || "").trim());
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [128, 128, 128];
+  }
+  var RAMP = [rgb("#0A1220"), rgb(AC.C.blue), rgb(AC.C.yellow), rgb(AC.C.red)];
+  function heat(t) {
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    var f = t * (RAMP.length - 1), i = Math.min(RAMP.length - 2, Math.floor(f)), u = f - i;
+    var a = RAMP[i], b = RAMP[i + 1];
+    return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * u) + "," +
+      Math.round(a[1] + (b[1] - a[1]) * u) + "," + Math.round(a[2] + (b[2] - a[2]) * u) + ")";
+  }
+
+  function draw() {
+    if (!st.sig) st.sig = signal();
+    var N = st.N, hop = Math.max(8, N >> 2), x = st.sig;
+    p.clear();
+
+    var c = p.ctx, kMax = Math.min(N / 2 - 1, Math.ceil(FMAX / (sr / N)));
+    var dy = Math.abs(p.Y(sr / N) - p.Y(0));
+    var s, frames = [];
+    for (s = 0; s + N <= x.length; s += hop) {
+      frames.push(D.spectrumDb(x.subarray(s, s + N), { n: N, window: "hann", zeroPad: 1 }));
+    }
+    var dx = (p.X(hop / sr * 1000) - p.X(0));
+    c.save();
+    c.beginPath();
+    c.rect(p.pad.l, p.pad.t, p.w - p.pad.l - p.pad.r, p.h - p.pad.t - p.pad.b);
+    c.clip();
+    frames.forEach(function (F, fi) {
+      var t0 = (fi * hop + N / 2) / sr * 1000;
+      var px = p.X(t0) - dx / 2, k;
+      for (k = 0; k <= kMax; k++) {
+        var v = (F[k] + 74) / 74;             // -74 dBFS .. 0 dBFS
+        if (v <= 0.02) continue;
+        var py = p.Y((k + 0.5) * sr / N);
+        c.fillStyle = heat(v);
+        c.fillRect(px, py - dy / 2 - 0.5, Math.max(dx, 1) + 0.6, Math.max(dy, 1) + 1);
+      }
+    });
+    c.restore();
+    p.axes({ grid: false });
+    p.hline(F0, { color: AC.C.faint, dash: [3, 5], width: 1 });
+    p.hline(F0 + st.sep, { color: AC.C.faint, dash: [3, 5], width: 1 });
+    p.vline(DUR * 500 - st.gap / 2, { color: AC.C.faint, dash: [3, 5], width: 1 });
+    p.vline(DUR * 500 + st.gap / 2, { color: AC.C.faint, dash: [3, 5], width: 1 });
+    p.note(p.pad.l + 8, p.pad.t + 6, "L = " + N + " · hop " + hop + " · Hann", { color: AC.C.text });
+
+    // --- the two requirements, in samples
+    var needLo = Math.ceil(1.438 * sr / st.sep);          // Hann -3 dB width must fit inside the gap
+    var needHi = Math.floor(st.gap / 1000 * sr);          // window must be shorter than the click gap
+    document.getElementById("r-dur").textContent = (N / sr * 1000).toFixed(1) + " ms";
+    document.getElementById("r-bin").textContent = (sr / N).toFixed(1) + " Hz";
+    document.getElementById("r-lo").textContent = "L ≥ " + AC.fmt.int(needLo);
+    document.getElementById("r-hi").textContent = "L ≤ " + AC.fmt.int(needHi);
+    var ok = needLo <= needHi;
+    var vEl = document.getElementById("r-ver");
+    vEl.textContent = ok ? "possible" : "impossible";
+    vEl.parentNode.className = "ro " + (ok ? "ok" : "bad");
+    document.getElementById("r-state").textContent = "L = " + N;
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("r-n"), function (v) { st.N = parseInt(v, 10); draw(); });
+  var pend = 0;
+  function rebuild() { st.sig = null; clearTimeout(pend); pend = setTimeout(draw, 90); }
+  AC.slider(document.getElementById("r-sep"), function (v) { st.sep = v; rebuild(); },
+    function (v) { return v + " Hz"; });
+  AC.slider(document.getElementById("r-gap"), function (v) { st.gap = v; rebuild(); },
+    function (v) { return v.toFixed(1) + " ms"; });
+
+  if (A) {
+    A.wire(document.getElementById("r-play"), function () {
+      if (!st.sig) st.sig = signal();
+      var one = st.sig, out = new Float64Array(one.length * 3), i;
+      for (i = 0; i < out.length; i++) out[i] = one[i % one.length];
+      return out;
+    }, { sr: sr, gain: 0.6 });
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 4.4 — TDAC. Two overlapping MDCT blocks, inverted, windowed
+   and added, with every number in the ledger computed live.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("t-cv");
+  if (!cv || !window.DSP || !window.CH4) return;
+  var D = window.DSP, K = window.CH4;
+
+  var st = { N: 4, sig: "ramp", win: "sine", step: 4 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 1.7, xmin: 0, xmax: 12, ymin: 0, ymax: 4,
+    xlabel: "sample", pad: { l: 78, r: 14, t: 14, b: 34 },
+  });
+
+  function makeWindow(N) {
+    var L = 2 * N;
+    switch (st.win) {
+      case "vorbis": return K.vorbis(L);
+      case "kbd": return D.WIN.kbd(L, 4);
+      case "half": return K.flat(L, Math.SQRT1_2);
+      case "rect": return D.WIN.rect(L);
+      case "hann": return D.WIN.hann(L);
+      default: return D.WIN.sine(L);
+    }
+  }
+  function makeSignal(N) {
+    var n = 3 * N, x = new Float64Array(n), i;
+    for (i = 0; i < n; i++) {
+      if (st.sig === "sine") x[i] = 6 * Math.sin(2 * Math.PI * 1.5 * i / n) + 7;
+      else if (st.sig === "click") x[i] = (i === Math.floor(1.45 * N) ? 10 : 1);
+      else x[i] = i + 1;
+    }
+    return x;
+  }
+
+  function compute() {
+    var N = st.N, w = makeWindow(N), x = makeSignal(N), i;
+    var bufA = new Float64Array(2 * N), bufB = new Float64Array(2 * N);
+    for (i = 0; i < 2 * N; i++) { bufA[i] = x[i] * w[i]; bufB[i] = x[N + i] * w[i]; }
+    var XA = D.mdct(bufA), XB = D.mdct(bufB);
+    var yA = D.imdct(XA), yB = D.imdct(XB);
+    var wa = new Float64Array(2 * N), wb = new Float64Array(2 * N);
+    for (i = 0; i < 2 * N; i++) { wa[i] = yA[i] * w[i]; wb[i] = yB[i] * w[i]; }
+    var sum = new Float64Array(N), err = 0, gain = 0, gn = 0;
+    for (i = 0; i < N; i++) {
+      sum[i] = wa[N + i] + wb[i];
+      err = Math.max(err, Math.abs(sum[i] - x[N + i]));
+      if (Math.abs(x[N + i]) > 1e-9) { gain += sum[i] / x[N + i]; gn++; }
+    }
+    return { N: N, w: w, x: x, wa: wa, wb: wb, sum: sum, err: err,
+      gain: gn ? gain / gn : 0, XA: XA, XB: XB };
+  }
+
+  var LANES = ["signal", "block A", "block B", "A + B"];
+  function draw() {
+    var r = compute(), N = r.N, i;
+    var span = 3 * N;
+    p.range(0, span, 0, 4);
+    p.clear();
+
+    // lane scale: everything shares one vertical unit so the alias reads as big
+    var m = 0;
+    for (i = 0; i < 2 * N; i++) m = Math.max(m, Math.abs(r.wa[i]), Math.abs(r.wb[i]));
+    for (i = 0; i < span; i++) m = Math.max(m, Math.abs(r.x[i]));
+    m = Math.max(m, 1e-9);
+    function lane(k, v) { return (3 - k) + 0.5 + 0.42 * v / m; }
+    function series(arr, k, off) {
+      var out = [], j;
+      for (j = 0; j < arr.length; j++) out.push([j + off + 0.5, lane(k, arr[j])]);
+      return out;
+    }
+
+    p.axes({ grid: false, y: [0.5, 1.5, 2.5, 3.5], yfmt: function (v) { return LANES[3 - Math.floor(v)] || ""; } });
+    for (i = 0; i < 4; i++) p.hline(lane(i, 0), { color: AC.C.line, dash: [2, 4], width: 1 });
+    p.band(N, 2 * N, { color: AC.C.green, alpha: 0.07 });
+
+    // lane 0 — the truth, repeated faintly in every lane below
+    var truth = series(r.x, 0, 0);
+    p.line(truth, { color: AC.C.soft, width: 1.8 });
+    p.stems(truth, { color: AC.C.soft, base: lane(0, 0), width: 1, r: 2.2 });
+
+    if (st.step >= 2) {
+      p.line(series(r.x.subarray(0, 2 * N), 1, 0), { color: AC.C.ghost, width: 1, dash: [3, 3] });
+      p.line(series(r.wa, 1, 0), { color: AC.C.blue, width: 1.8 });
+      p.stems(series(r.wa, 1, 0), { color: AC.C.blue, base: lane(1, 0), width: 1, r: 2.2 });
+      p.vline(N, { color: AC.C.ghost, width: 1, dash: [2, 3] });
+      p.vline(2 * N, { color: AC.C.ghost, width: 1, dash: [2, 3] });
+    }
+    if (st.step >= 3) {
+      p.line(series(r.x.subarray(N, 3 * N), 2, N), { color: AC.C.ghost, width: 1, dash: [3, 3] });
+      p.line(series(r.wb, 2, N), { color: AC.C.gold, width: 1.8 });
+      p.stems(series(r.wb, 2, N), { color: AC.C.gold, base: lane(2, 0), width: 1, r: 2.2 });
+    }
+    if (st.step >= 4) {
+      p.line(series(r.x.subarray(N, 2 * N), 3, N), { color: AC.C.soft, width: 3, alpha: 0.5 });
+      p.line(series(r.sum, 3, N), { color: AC.C.green, width: 1.8 });
+      p.stems(series(r.sum, 3, N), { color: AC.C.green, base: lane(3, 0), width: 1, r: 2.2 });
+    }
+    p.note(p.pad.l + 8, p.pad.t + 4, "overlap region shaded · " + (2 * N) + " samples → " + N + " coefficients",
+      { color: AC.C.ghost });
+
+    // --- readouts
+    var pb = K.pbError(r.w), sym = K.symError(r.w);
+    var pbEl = document.getElementById("t-pb");
+    pbEl.textContent = pb < 1e-9 ? K.expo(pb) : pb.toFixed(3);
+    pbEl.parentNode.className = "ro " + (pb < 1e-9 ? "ok" : "bad");
+    document.getElementById("t-sym").textContent = sym < 1e-9 ? K.expo(sym) : sym.toFixed(3);
+    var eEl = document.getElementById("t-err");
+    eEl.textContent = r.err < 1e-9 ? K.expo(r.err) : r.err.toFixed(4);
+    eEl.parentNode.className = "ro " + (r.err < 1e-9 ? "ok" : "bad");
+    document.getElementById("t-gain").textContent = r.gain.toFixed(6);
+    document.getElementById("t-state").textContent = "N = " + N + " · " +
+      (st.win === "half" ? "1/√2 flat" : st.win === "kbd" ? "KBD α=4" : st.win);
+
+    // --- the ledger
+    var rows = "", j;
+    for (j = 0; j < N; j++) {
+      rows += "<tr><td class=\"num\">" + j + "</td><td class=\"num\">" + r.x[N + j].toFixed(3) +
+        "</td><td class=\"num\">" + r.w[N + j].toFixed(6) + "</td><td class=\"num\">" + r.w[j].toFixed(6) +
+        "</td><td class=\"num\">" + r.wa[N + j].toFixed(6) + "</td><td class=\"num\">" + r.wb[j].toFixed(6) +
+        "</td><td class=\"num\"><strong>" + r.sum[j].toFixed(6) + "</strong></td></tr>";
+    }
+    var body = document.getElementById("t-rows");
+    if (body) body.innerHTML = rows;
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("t-n"), function (v) { st.N = parseInt(v, 10); draw(); });
+  AC.chips(document.getElementById("t-sig"), function (v) { st.sig = v; draw(); });
+  AC.chips(document.getElementById("t-win"), function (v) { st.win = v; draw(); });
+  AC.chips(document.getElementById("t-step"), function (v) { st.step = parseInt(v, 10); draw(); });
+})();
+
+/* ---------------------------------------------------------------
+   FIG 4.5 — pre-echo. A full MDCT round trip at a chosen block
+   length with a uniform quantiser in the middle, and the resulting
+   error plotted and played.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("p-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+
+  var sr = A.rate();
+  var T0 = 19 * 1024 - 160;                 // attack, placed near the end of a 1024-block
+  var LEN = Math.max(Math.round(sr * 0.62), T0 + Math.round(sr * 0.16));
+  var st = { N: 1024, bits: 3, src: null, out: null, err: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.3, xmin: -60, xmax: 30, ymin: -96, ymax: 2,
+    xlabel: "milliseconds relative to the attack", ylabel: "dB below full scale",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  function source() {
+    if (st.src) return st.src;
+    st.src = A.src.castanets(LEN / sr, { sr: sr, hits: [T0 / LEN], len: 0.02, amp: 0.85 });
+    return st.src;
+  }
+
+  function encode() {
+    var x = source(), bits = st.bits;
+    st.out = D.mdctRoundTrip(x, st.N, function (X) {
+      var m = 0, i;
+      for (i = 0; i < X.length; i++) if (Math.abs(X[i]) > m) m = Math.abs(X[i]);
+      if (m <= 0) return;
+      var step = m / Math.pow(2, bits - 1);
+      for (i = 0; i < X.length; i++) X[i] = Math.round(X[i] / step) * step;
+    }, "sine");
+    st.err = new Float64Array(x.length);
+    for (var i = 0; i < x.length; i++) st.err[i] = x[i] - st.out[i];
+  }
+
+  // short-time level in dB, one point per `win` samples
+  function envelope(x, win) {
+    var out = [], i, j, s;
+    for (i = 0; i + win <= x.length; i += win) {
+      s = 0;
+      for (j = 0; j < win; j++) s += x[i + j] * x[i + j];
+      out.push([(i + win / 2 - T0) / sr * 1000, 10 * Math.log10(Math.max(s / win, 1e-11))]);
+    }
+    return out;
+  }
+
+  function draw() {
+    if (!st.out) encode();
+    var win = Math.max(8, Math.round(sr * 0.0008));
+    var es = envelope(st.src, win), ee = envelope(st.err, win);
+    p.clear();
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    p.band(-2, 0, { color: AC.C.green, alpha: 0.16 });
+
+    // block boundaries, in the same coordinates
+    var b, bx;
+    for (b = -20; b <= 20; b++) {
+      bx = (b * st.N - T0 % st.N) / sr * 1000;
+      if (bx > p.xmin && bx < p.xmax) p.vline(bx, { color: AC.C.purple, dash: [2, 5], width: 1 });
+    }
+    p.line(es, { color: AC.C.soft, width: 1.7 });
+    p.line(ee, { color: AC.C.red, width: 1.7 });
+    p.vline(0, { color: AC.C.gold, label: "attack", width: 1.4, dash: false });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      "window " + (2 * st.N) + " samples = " + (2 * st.N / sr * 1000).toFixed(1) + " ms", { color: AC.C.ghost });
+
+    // --- readouts, measured from the curves rather than asserted
+    function lvl(a, t1, t2) {
+      var i0 = Math.max(0, Math.round(T0 + t1 / 1000 * sr)), i1 = Math.min(a.length, Math.round(T0 + t2 / 1000 * sr));
+      var s = 0, i;
+      for (i = i0; i < i1; i++) s += a[i] * a[i];
+      return 10 * Math.log10(Math.max(s / Math.max(1, i1 - i0), 1e-11));
+    }
+    var floorDb = lvl(st.err, -300, -250);
+    var onset = 0, k;
+    for (k = 0; k < ee.length; k++) {
+      if (ee[k][0] >= 0) break;
+      if (ee[k][1] > floorDb + 25 && ee[k][1] > -92) { onset = -ee[k][0]; break; }
+    }
+    document.getElementById("p-span").textContent = (2 * st.N / sr * 1000).toFixed(1) + " ms";
+    document.getElementById("p-onset").textContent = onset > 0 ? onset.toFixed(1) + " ms" : "< 1 ms";
+    document.getElementById("p-pre").textContent = lvl(st.err, -12, -2).toFixed(0) + " dB";
+    document.getElementById("p-post").textContent = lvl(st.err, 0, 15).toFixed(0) + " dB";
+    document.getElementById("p-state").textContent = "N = " + st.N + " · " + st.bits + " bits";
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("p-n"), function (v) {
+    st.N = parseInt(v, 10); st.out = null; draw();
+  });
+  var pend = 0;
+  AC.slider(document.getElementById("p-bits"), function (v) {
+    st.bits = v; st.out = null;
+    clearTimeout(pend);
+    pend = setTimeout(draw, 160);
+  }, function (v) { return v + " bits"; });
+
+  A.wire(document.getElementById("p-orig"), function () { return source(); }, { sr: sr });
+  A.wire(document.getElementById("p-code"), function () { if (!st.out) encode(); return st.out; }, { sr: sr });
+  A.wire(document.getElementById("p-err"), function () {
+    if (!st.out) encode();
+    var d = Float64Array.from(st.err);
+    D.normalize(d, 0.7);
+    return d;
+  }, { sr: sr });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

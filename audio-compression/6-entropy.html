@@ -18,9 +18,10 @@
   <p class="lead">Everything up to this point has been a decision about what to destroy.
     Entropy coding destroys nothing. It takes the integers the rate loop has already
     settled on and writes them down in fewer bits than a fixed-width field would need,
-    and it is exactly reversible. On real programme material that is worth between
-    a third and a half of the file — which, handed back to the quantiser, is ten
-    decibels of signal-to-noise you did not have to pay for.</p>
+    and it is exactly reversible. On real programme material it saves roughly forty
+    to sixty per cent of what a fixed-width field would have spent — which, handed
+    back to the quantiser, is ten decibels of signal-to-noise you did not have to
+    pay for.</p>
   <div class="meta">
     <div><div class="k">Key idea</div><div class="v">A symbol should cost what it
       surprises you by</div></div>
@@ -91,11 +92,12 @@
       Sixteen equiprobable symbols cost four bits each however you write them.</p>
     <p>That is the whole reason a lossless general-purpose compressor barely dents a PCM
       file, and the figure below measures it rather than asserting it. Pick the
-      <b>16-bit PCM samples</b> stream: the sample values of a real synthesised passage,
-      histogrammed, come out at something in the region of fourteen bits of entropy out of
-      sixteen. About 1.15 to one. Then pick <b>quantised MDCT lines</b> and watch the same
-      audio, after the transform and the rate loop, drop to well under four bits per line
-      with two-fifths of the lines exactly zero. The transform and the quantiser did that.
+      <b>16-bit PCM samples</b> stream: for the plucked-string programme the sample values,
+      histogrammed, come out at a shade under fourteen bits of entropy out of
+      sixteen. A ratio of about 1.15 to one, which is roughly what a general-purpose
+      compressor manages on a WAV file. Then pick <b>quantised MDCT lines</b> and watch the same
+      audio, after the transform and the rate loop, drop to about four bits per line,
+      with well over a third of the lines exactly zero. The transform and the quantiser did that.
       The entropy coder is merely about to collect.</p>
 
     <figure class="figure" id="fig-hist">
@@ -153,11 +155,12 @@
         commonest first, with the price Shannon says each should fetch. The gold line is the
         average, the red line is what a fixed-width field would charge every symbol
         regardless, and the shaded strip covers the handful of symbols that between them
-        make up half the stream. For 16-bit PCM the curve is nearly flat at about fourteen
-        bits and the two horizontal lines almost touch: there is nothing to win. For
-        quantised MDCT lines the commonest symbol — zero — costs around one and a half
-        bits against a fixed field of eight, and the shaded strip is three or four values
-        wide. Drag the budget down and the curve steepens further: starving the quantiser
+        make up half the stream. For 16-bit PCM the curve barely leaves the fixed-width
+        line until it is deep into values that hardly ever occur, and the two horizontal
+        lines nearly touch: there is nothing to win. For quantised MDCT lines at 128 kbit/s
+        the commonest symbol is zero, something under half the stream, and it costs under a
+        bit and a half against a fixed field of eight or more; two or three values between
+        them carry half of everything. Drag the budget down and the curve steepens further: starving the quantiser
         makes the entropy coder's job easier, not harder.</figcaption>
     </figure>
 
@@ -283,17 +286,19 @@
           <input type="range" id="e2-k" min="2" max="16" step="1" value="12" data-out="e2-klab" aria-label="Number of symbols">
         </div>
         <div class="field grow" style="min-width:150px">
-          <div class="flab"><span>Decay</span><span class="val" id="e2-qlab">0.45</span></div>
-          <input type="range" id="e2-q" min="5" max="95" step="1" value="45" data-out="e2-qlab" aria-label="Geometric decay factor">
+          <div class="flab"><span>Shape <i>q</i></span><span class="val" id="e2-qlab">0.70</span></div>
+          <input type="range" id="e2-q" min="5" max="95" step="1" value="70" data-out="e2-qlab" aria-label="Geometric decay factor">
         </div>
       </div>
       <figcaption class="figure-cap"><b>Fig 6.2</b> — the tree is built by
         <code>DSP.huffman</code> from the weights you set, and the codes under it are the
         canonical form of the lengths it produced. Start at the default geometric
-        distribution with decay 0.45, which is roughly the shape of a mid-frequency MDCT
-        band at 128 kbit/s: <i>L</i> beats a 4-bit fixed field comfortably and sits within a
-        few hundredths of <i>H</i>. Now push the decay to 0.9. The entropy collapses towards
-        half a bit; the Huffman average will not go below 1.000, because it cannot. That
+        distribution with <i>q</i> = 0.70, roughly the shape of a quantised MDCT band at a
+        middling bitrate: twelve symbols, entropy 2.83 bits, Huffman average 2.86, against
+        the 4 bits a fixed field would charge. Three hundredths of a bit wasted. Now pull
+        <i>q</i> towards 0.95, or choose <b>one dominant symbol</b> and push it the same
+        way. The entropy collapses towards a fraction of a bit; the Huffman average will
+        not go below 1.000, because it cannot. That
         floor is not a flaw in the algorithm — the algorithm is optimal — it is the price of
         writing one whole number of bits per symbol, and it is the gap arithmetic coding
         exists to close.</figcaption>
@@ -441,7 +446,7 @@
       <div class="deck">
         <div class="field grow" style="min-width:170px">
           <div class="flab"><span>global_gain</span><span class="val" id="e3-gainlab">218</span></div>
-          <input type="range" id="e3-gain" min="202" max="230" step="1" value="218" data-out="e3-gainlab" aria-label="Quantiser global gain">
+          <input type="range" id="e3-gain" min="190" max="230" step="1" value="218" data-out="e3-gainlab" aria-label="Quantiser global gain">
         </div>
         <div class="field grow" style="min-width:150px">
           <div class="flab"><span>region0_count</span><span class="val" id="e3-r0lab">7</span></div>
@@ -470,10 +475,12 @@
         The regions are then derived exactly as the standard derives them, and the cost is
         measured twice: once with a single Huffman code fitted to the whole big-values
         region, once with three codes fitted to the three sub-regions you set. Splitting
-        typically saves five to eleven per cent of the big-values bits for nothing but two
-        small side-information fields. Push <code>global_gain</code> down to 204 and the
-        escapes light up red; push it to 226 and almost the whole granule falls into rzero
-        and costs nothing. The codes here are fitted to this granule, whereas a real encoder
+        commonly saves five to eight per cent of the big-values bits for nothing but two
+        small side-information fields, and more where the spectrum is steep. The default
+        <code>global_gain</code> of 218 is deliberately coarse so that all three regions
+        exist at once; pull it to 210 and the whole granule becomes big values at about
+        115 kbit/s for a mono channel, pull it to 192 and the escapes light up red, push
+        it to 226 and almost everything falls into rzero and costs nothing. The codes here are fitted to this granule, whereas a real encoder
         must choose among thirty-two fixed tables — so treat these bit counts as the
         best case the region split could achieve, not as LAME's output.</figcaption>
     </figure>
@@ -669,7 +676,7 @@
         </div>
         <div class="field">
           <div class="flab"><span>Animation</span></div>
-          <button class="btn play on" id="e4-play">Running</button>
+          <button class="btn primary" id="e4-play">Pause</button>
         </div>
       </div>
       <figcaption class="figure-cap"><b>Fig 6.4</b> — each row is one symbol. The full width
@@ -677,11 +684,12 @@
         the three symbol probabilities; the shaded slice is the one the next symbol selects,
         and it becomes the next row's full width. The arithmetic is real — the coder encodes
         the message, the numbers are its actual interval, and a decoder is run over the
-        result and its output compared with the input. At the default <i>p</i>(0) = 0.80 a
-        fourteen-symbol message costs about thirteen bits against Huffman's fourteen. Push
-        <i>p</i>(0) to 0.96 and the message costs five and a half bits; Huffman still cannot
-        go below fourteen, because it must spend at least one bit per symbol and there are
-        fourteen of them.</figcaption>
+        result and its output compared with the input. At the default <i>p</i>(0) = 0.80 the
+        sparse message costs about 15 bits where Huffman spends 17. Switch to
+        <b>almost silent</b> — thirteen zeros and one non-zero — and push <i>p</i>(0) to
+        0.96: the arithmetic coder settles at around 8 bits, while Huffman cannot go below
+        15, because it must spend at least one bit on each of the fourteen symbols. The
+        further the distribution is from a power of two, the wider that gap.</figcaption>
     </figure>
   </section>
 
@@ -862,8 +870,8 @@
         from the same analysis. For every budget on the axis the rate loop is run twice,
         once pricing each band by its entropy and once by a fixed field wide enough for its
         largest value, and the resulting quantisation noise is measured in the transform
-        domain. The fixed-width coder needs roughly half again to twice as many bits for the
-        same quantiser, so at equal bytes it must quantise very much more coarsely — five to
+        domain. The fixed-width coder needs between about 1.6 and 2.4 times as many bits for the
+        same quantiser, so at equal bytes it must quantise very much more coarsely — four to
         twenty decibels worse, depending on programme and rate. Press the two playback
         buttons against each other at 64 kbit/s. The signal-to-noise figures are comparable
         here in a way they usually are not, because both coders are shaping their noise with
@@ -874,8 +882,8 @@
       where audio compression happens. The move from 1 411 kbit/s to 128 is overwhelmingly
       the work of the transform and the quantiser, and had already happened before this
       chapter began. What the entropy coder does is recover the difference between a
-      description and an efficient description of the same thing — a factor of roughly 1.5
-      to 2 on what remains, every time, for no perceptual cost whatever.</p>
+      description and an efficient description of the same thing — a factor of between about
+      1.6 and 2.4 on what remains, every time, for no perceptual cost whatever.</p>
 
     <blockquote class="pullquote">Every codec in this study spends its life lowering the
       entropy rather than beating the bound. The bound does not move.
@@ -945,3 +953,1023 @@
 <script src="assets/dsp.js"></script>
 <script src="assets/audio.js"></script>
 <script src="assets/site.js"></script>
+<script>
+/* ===============================================================
+   Chapter 06 — entropy coding. One IIFE per figure: a throw in one
+   cannot blank the rest of the page.
+   =============================================================== */
+
+/* ---------------------------------------------------------------
+   FIG 6.1 — what the entropy coder is handed.
+   Histogram three real symbol streams drawn from the same audio and
+   plot the ideal code length of the r-th commonest symbol.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e1-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 1, xmax: 300, ymin: 0, ymax: 20,
+    xlabel: "symbol rank, commonest first", ylabel: "ideal code length, bits",
+    pad: { l: 50, r: 16, t: 16, b: 34 },
+  });
+
+  var st = { src: "mdct", prog: "music", rate: 128, sig: null, an: null, res: null, view: null, ready: false };
+  var cache = {};
+
+  function source() {
+    if (st.sig) return;
+    var sr = A.rate();
+    st.sig = A.src[st.prog](1.4, { sr: sr });
+    st.an = A.analyze(st.sig, { sr: sr, N: 512, masking: true });
+    st.res = null;
+  }
+  function coded() {
+    source();
+    if (!st.res || st.res.askedFor !== st.rate) {
+      st.res = A.codec(st.sig, { analysis: st.an, bitrate: st.rate });
+      st.res.askedFor = st.rate;
+    }
+    return st.res;
+  }
+
+  // the quantised integers the rate loop settles on, for every block
+  function mdctSymbols() {
+    var r = coded(), a = st.an, e = a.edges;
+    var gain = Math.pow(10, r.lambda / 10);
+    var out = [], b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var X = a.coeffs[b], T = a.thresh[b];
+      for (k = 0; k < e.length - 1; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        for (i = e[k]; i < e[k + 1]; i++) out.push(Math.round(X[i] / step));
+      }
+    }
+    return out;
+  }
+  function pcmSymbols(diff) {
+    source();
+    var x = st.sig, out = [], i, prev = 0, v;
+    for (i = 0; i < x.length; i++) {
+      v = Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767)));
+      out.push(diff ? v - prev : v);
+      prev = v;
+    }
+    return out;
+  }
+
+  function measure(vals, fixedOverride) {
+    var m = new Map(), i, v;
+    for (i = 0; i < vals.length; i++) { v = vals[i]; m.set(v, (m.get(v) || 0) + 1); }
+    var n = vals.length, arr = [];
+    m.forEach(function (c, key) { arr.push([key, c]); });
+    arr.sort(function (a, b) { return b[1] - a[1]; });
+    var H = 0, maxAbs = 0, cum = 0, r50 = arr.length, r95 = arr.length;
+    var len = new Float64Array(arr.length);
+    for (i = 0; i < arr.length; i++) {
+      var pr = arr[i][1] / n;
+      len[i] = -Math.log2(pr);
+      H += pr * len[i];
+      if (Math.abs(arr[i][0]) > maxAbs) maxAbs = Math.abs(arr[i][0]);
+      cum += pr;
+      if (cum >= 0.5 && r50 === arr.length) r50 = i + 1;
+      if (cum >= 0.95 && r95 === arr.length) r95 = i + 1;
+    }
+    var fixed = fixedOverride != null ? fixedOverride
+      : Math.max(1, Math.ceil(Math.log2(2 * maxAbs + 1)));
+    return { H: H, len: len, K: arr.length, fixed: fixed, r50: r50, r95: r95,
+      n: n, zero: (m.get(0) || 0) / n, top: arr.length ? arr[0][0] : 0 };
+  }
+
+  function rebuild() {
+    var key = st.src + "|" + st.prog + "|" + (st.src === "mdct" ? st.rate : 0);
+    if (cache[key]) { st.view = cache[key]; return; }
+    var v;
+    if (st.src === "pcm") v = measure(pcmSymbols(false), 16);
+    else if (st.src === "diff") v = measure(pcmSymbols(true), null);
+    else v = measure(mdctSymbols(), null);
+    cache[key] = v;
+    st.view = v;
+  }
+
+  function fill() {
+    var v = st.view;
+    document.getElementById("e1-h").textContent = v.H.toFixed(2) + " bits";
+    document.getElementById("e1-fw").textContent = v.fixed + " bits";
+    document.getElementById("e1-ratio").textContent = (v.fixed / Math.max(v.H, 0.01)).toFixed(2) + " : 1";
+    document.getElementById("e1-zero").textContent = (v.zero * 100).toFixed(1) + "%";
+    document.getElementById("e1-nsym").textContent = AC.fmt.int(v.K);
+    document.getElementById("e1-state").textContent =
+      st.src === "pcm" ? "16-bit PCM samples" : st.src === "diff" ? "PCM differences" : "quantised MDCT lines";
+  }
+
+  function draw() {
+    p.clear();
+    var v = st.view;
+    if (!v) {
+      p.axes({});
+      p.note(p.pad.l + 8, p.pad.t + 8, "measuring…", { color: AC.C.ghost });
+      return;
+    }
+    p.xmax = Math.max(4, v.K);
+    p.ymax = Math.min(28, Math.max(v.fixed, v.len[v.K - 1] || 1, v.H) * 1.10 + 0.6);
+    p.axes({ xfmt: function (n) { return AC.shortNum(n); } });
+    p.band(1, Math.max(v.r50, 1.02), { color: AC.C.purple, alpha: 0.12 });
+    var pts = [], i;
+    for (i = 0; i < v.K; i++) pts.push([i + 1, v.len[i]]);
+    p.line(pts, { color: AC.C.teal, width: 2 });
+    p.hline(v.fixed, { color: AC.C.red, label: "fixed field, " + v.fixed + " bits" });
+    p.hline(v.H, { color: AC.C.gold, label: "H = " + v.H.toFixed(2) + " bits" });
+    p.dot(1, v.len[0], { color: AC.C.teal, ring: true });
+    p.label(1, v.len[0], " value " + v.top, { color: AC.C.soft, dy: -8 });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      AC.fmt.int(v.n) + " symbols · " + AC.fmt.int(v.K) + " distinct · " +
+      v.r50 + " of them carry half the stream", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() { rebuild(); fill(); redraw(); }
+
+  AC.chips(document.getElementById("e1-src"), function (v) {
+    st.src = v;
+    if (st.ready) refresh();
+  });
+  AC.chips(document.getElementById("e1-prog"), function (v) {
+    st.prog = v; st.sig = null; st.an = null; st.res = null;
+    A.stopAll();
+    AC.$$("#fig-hist .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.ready) refresh();
+  });
+  var pend = 0;
+  AC.slider(document.getElementById("e1-rate"), function (v) {
+    st.rate = v;
+    if (!st.ready) return;
+    clearTimeout(pend);
+    pend = setTimeout(refresh, 160);
+  }, function (v) { return v + " kbit/s"; });
+
+  A.wire(document.getElementById("e1-orig"), function () { source(); return st.sig; });
+  A.wire(document.getElementById("e1-coded"), function () { return coded().out; });
+
+  function go() { st.ready = true; refresh(); }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      go();
+    }, { rootMargin: "260px" });
+    io.observe(cv);
+  } else { go(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 6.2 — Huffman's tree, built live by DSP.huffman, with the
+   canonical codes DSP.canonical derives from its lengths.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e2-cv");
+  if (!cv || !window.DSP) return;
+  var D = window.DSP;
+
+  var p = new AC.Plot(cv, { aspect: 1.75, xmin: 0, xmax: 8, ymin: -0.7, ymax: 11.7,
+    pad: { l: 14, r: 14, t: 14, b: 14 } });
+
+  var st = { dist: "geom", K: 12, q: 0.70, model: null };
+
+  function weights() {
+    var w = [], i, K = st.K, q = st.q;
+    for (i = 0; i < K; i++) {
+      if (st.dist === "uniform") w.push(1);
+      else if (st.dist === "zipf") w.push(1 / (i + 1));
+      else if (st.dist === "binary") w.push(i === 0 ? q : (1 - q) / (K - 1));
+      else w.push(Math.pow(q, i));
+    }
+    var s = w.reduce(function (a, b) { return a + b; }, 0);
+    return w.map(function (v) { return v / s; });
+  }
+
+  function build() {
+    var pr = weights();
+    var items = pr.map(function (v, i) { return { sym: String(i), w: Math.max(v, 1e-9) }; });
+    var h = D.huffman(items);
+    var can = D.canonical(h.lengths);
+    var leaves = [], maxD = 0;
+    (function walk(n, d) {
+      n._d = d;
+      if (d > maxD) maxD = d;
+      if (n.leaf !== undefined) { n._y = leaves.length; leaves.push(n); return; }
+      walk(n.l, d + 1); walk(n.r, d + 1);
+      n._y = (n.l._y + n.r._y) / 2;
+    })(h.tree, 0);
+    var kraft = 0, longest = 0, i;
+    for (i = 0; i < items.length; i++) {
+      var L = h.lengths[items[i].sym];
+      kraft += Math.pow(2, -L);
+      if (L > longest) longest = L;
+    }
+    st.model = { pr: pr, h: h, can: can, leaves: leaves, maxD: maxD, kraft: kraft, longest: longest };
+  }
+
+  function fill() {
+    var m = st.model, h = m.h;
+    document.getElementById("e2-H").textContent = h.entropy.toFixed(3) + " bits";
+    document.getElementById("e2-L").textContent = h.avg.toFixed(3) + " bits";
+    document.getElementById("e2-R").textContent = (h.avg - h.entropy).toFixed(3) + " bits";
+    document.getElementById("e2-eff").textContent = (100 * h.entropy / Math.max(h.avg, 1e-9)).toFixed(1) + "%";
+    document.getElementById("e2-max").textContent = m.longest + " bits";
+    document.getElementById("e2-kraft").textContent = m.kraft.toFixed(4);
+    document.getElementById("e2-state").textContent = st.K + " symbols";
+    var parts = [], i;
+    for (i = 0; i < st.K; i++) {
+      parts.push("<b>" + i + "</b> → <span class=\"mono\">" + m.can[String(i)] + "</span>");
+    }
+    document.getElementById("e2-codes").innerHTML =
+      "Canonical codes: " + parts.join(" ");
+  }
+
+  function draw() {
+    p.clear();
+    var m = st.model;
+    if (!m) return;
+    var c = p.ctx;
+    p.xmax = m.maxD + 4.4;
+    p.ymin = -0.8; p.ymax = m.leaves.length - 0.2;
+    // edges
+    c.save();
+    c.lineWidth = 1.5;
+    (function edges(n) {
+      if (n.leaf !== undefined) return;
+      [n.l, n.r].forEach(function (ch, side) {
+        c.strokeStyle = side ? AC.C.gold : AC.C.blue;
+        c.globalAlpha = 0.85;
+        c.beginPath();
+        c.moveTo(p.X(n._d), p.Y(n._y));
+        c.lineTo(p.X(ch._d), p.Y(ch._y));
+        c.stroke();
+        if (m.maxD <= 7) {
+          c.globalAlpha = 1;
+          c.font = p.mono;
+          c.fillStyle = side ? AC.C.gold : AC.C.blue;
+          c.textAlign = "center"; c.textBaseline = "middle";
+          c.fillText(side ? "1" : "0",
+            (p.X(n._d) + p.X(ch._d)) / 2, (p.Y(n._y) + p.Y(ch._y)) / 2 - 7);
+        }
+        edges(ch);
+      });
+    })(m.h.tree);
+    c.restore();
+    // leaves
+    var maxP = Math.max.apply(null, m.pr);
+    m.leaves.forEach(function (lf) {
+      var sym = lf.leaf, pr = m.pr[+sym];
+      p.dot(lf._d, lf._y, { color: AC.C.teal, r: 3, ring: pr === maxP });
+      p.label(m.maxD + 0.35, lf._y,
+        sym + "  " + m.can[sym] + "   " + (pr * 100).toFixed(pr < 0.01 ? 2 : 1) + "%",
+        { color: pr === maxP ? AC.C.text : AC.C.soft, baseline: "middle" });
+    });
+    p.note(p.pad.l + 4, p.pad.t + 2,
+      "H = " + m.h.entropy.toFixed(3) + "   L = " + m.h.avg.toFixed(3) +
+      "   waste = " + (m.h.avg - m.h.entropy).toFixed(3) + " bits/symbol",
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+  function refresh() { build(); fill(); redraw(); }
+
+  AC.chips(document.getElementById("e2-dist"), function (v) { st.dist = v; refresh(); });
+  AC.slider(document.getElementById("e2-k"), function (v) { st.K = v; refresh(); },
+    function (v) { return v + " symbols"; });
+  AC.slider(document.getElementById("e2-q"), function (v) { st.q = v / 100; refresh(); },
+    function (v) { return (v / 100).toFixed(2); });
+  refresh();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 6.3 — one real 576-line granule, partitioned the way Layer III
+   partitions it, and priced with codes fitted to the data.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e3-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+  var SR = 44100, LINES = 576, HZ = (SR / 2) / LINES;
+  var SFB = [0, 4, 8, 12, 16, 20, 24, 30, 36, 44, 52, 62, 74, 90, 110, 134,
+    162, 196, 238, 288, 342, 418, 576];
+  var LINBITS = [1, 2, 3, 4, 6, 8, 10, 13];
+
+  var p = new AC.Plot(cv, { aspect: 2.5, xmin: 0, xmax: LINES, ymin: -8, ymax: 8,
+    xlabel: "MDCT line", ylabel: "quantised value", pad: { l: 48, r: 14, t: 16, b: 34 } });
+
+  var st = { prog: "music", gain: 218, r0: 7, r1: 7, X: null, q: null, part: null, cost: null, best: null };
+
+  function granule() {
+    if (st.X) return st.X;
+    var sig = A.src[st.prog](1.4, { sr: SR });
+    var at = 0, bestE = -1, s, i, e;
+    for (s = 0; s + 1152 < sig.length; s += 576) {
+      e = 0;
+      for (i = 0; i < 1152; i++) e += sig[s + i] * sig[s + i];
+      if (e > bestE) { bestE = e; at = s; }
+    }
+    var w = D.WIN.sine(1152), buf = new Float64Array(1152);
+    for (i = 0; i < 1152; i++) buf[i] = sig[at + i] * w[i];
+    st.X = D.mdct(buf);
+    return st.X;
+  }
+
+  function quantise() {
+    var X = granule(), q = new Int32Array(LINES), i;
+    for (i = 0; i < LINES; i++) q[i] = D.quantPow(X[i], st.gain);
+    st.q = q;
+    // rzero, count1, big_values — derived exactly as the standard derives them
+    var hi = LINES;
+    while (hi > 0 && q[hi - 1] === 0) hi--;
+    var end = Math.min(LINES, Math.ceil(hi / 4) * 4), c1 = end;
+    while (c1 >= 4) {
+      var ok = true;
+      for (i = c1 - 4; i < c1; i++) if (Math.abs(q[i]) > 1) { ok = false; break; }
+      if (!ok) break;
+      c1 -= 4;
+    }
+    var bvLines = Math.min(Math.ceil(c1 / 2) * 2, LINES);
+    st.part = { bvLines: bvLines, bigValues: bvLines / 2, c1Start: bvLines,
+      c1End: end, count1: (end - bvLines) / 4, rzero: LINES - end };
+  }
+
+  function histOf(a) {
+    var m = new Map(), i;
+    for (i = 0; i < a.length; i++) m.set(a[i], (m.get(a[i]) || 0) + 1);
+    return m;
+  }
+  function entropyBits(a) {
+    if (!a.length) return 0;
+    var m = histOf(a), h = 0, n = a.length;
+    m.forEach(function (c) { var pr = c / n; h -= pr * Math.log2(pr); });
+    return h * n;
+  }
+  function huffBits(a) {
+    if (!a.length) return 0;
+    var m = histOf(a), items = [];
+    m.forEach(function (c, k) { items.push({ sym: String(k), w: c }); });
+    if (items.length === 1) return a.length;           // one symbol still needs a bit
+    var h = D.huffman(items), bits = 0, i;
+    for (i = 0; i < a.length; i++) bits += h.lengths[String(a[i])];
+    return bits;
+  }
+  // extras a region pays outside its Huffman code: one sign bit per non-zero
+  // value, plus a linbits field for every escape.
+  function extras(lo, hiL) {
+    var q = st.q, signs = 0, esc = 0, maxEsc = 0, i, v;
+    for (i = lo; i < hiL; i++) {
+      v = Math.abs(q[i]);
+      if (v) signs++;
+      if (v >= 15) { esc++; if (v - 15 > maxEsc) maxEsc = v - 15; }
+    }
+    var lb = 0, j;
+    if (esc) { lb = 13; for (j = 0; j < LINBITS.length; j++) if (Math.pow(2, LINBITS[j]) - 1 >= maxEsc) { lb = LINBITS[j]; break; } }
+    return { signs: signs, esc: esc, linbits: lb, extraBits: signs + esc * lb };
+  }
+  function pairsOf(lo, hiL) {
+    var q = st.q, out = [], i;
+    for (i = lo; i < hiL; i += 2) {
+      out.push(Math.min(Math.abs(q[i]), 15) * 16 + Math.min(Math.abs(q[i + 1] || 0), 15));
+    }
+    return out;
+  }
+  function regionCost(lo, hiL, useHuffman) {
+    if (hiL <= lo) return 0;
+    var syms = pairsOf(lo, hiL);
+    var body = useHuffman ? huffBits(syms) : entropyBits(syms);
+    return body + extras(lo, hiL).extraBits;
+  }
+  function bounds(r0, r1) {
+    var bv = st.part.bvLines;
+    var b0 = Math.min(SFB[Math.min(r0 + 1, SFB.length - 1)], bv);
+    var b1 = Math.min(SFB[Math.min(r0 + r1 + 2, SFB.length - 1)], bv);
+    b0 = Math.floor(b0 / 2) * 2; b1 = Math.floor(b1 / 2) * 2;
+    if (b1 < b0) b1 = b0;
+    return [0, b0, b1, bv];
+  }
+  function splitCost(r0, r1, useHuffman) {
+    var b = bounds(r0, r1);
+    return regionCost(b[0], b[1], useHuffman) + regionCost(b[1], b[2], useHuffman) +
+      regionCost(b[2], b[3], useHuffman);
+  }
+
+  function price() {
+    quantise();
+    var pt = st.part;
+    var one = regionCost(0, pt.bvLines, true);
+    var three = splitCost(st.r0, st.r1, true);
+    // count1: table A fitted to the granule, against the flat 4-bit table B
+    var quads = [], i, j, v, s;
+    for (i = pt.c1Start; i < pt.c1End; i += 4) {
+      s = 0;
+      for (j = 0; j < 4; j++) { v = Math.abs(st.q[i + j] || 0); s = s * 2 + (v ? 1 : 0); }
+      quads.push(s);
+    }
+    var cx = extras(pt.c1Start, pt.c1End);
+    var cA = huffBits(quads) + cx.signs, cB = quads.length * 4 + cx.signs;
+    var total = three + Math.min(cA, cB);
+    // the best split the estimator can find, over every legal pair of counts
+    var best = { r0: 0, r1: 0, bits: Infinity }, a, b;
+    for (a = 0; a <= 15; a++) {
+      for (b = 0; b <= 7; b++) {
+        var c = splitCost(a, b, false);
+        if (c < best.bits - 1e-9) { best = { r0: a, r1: b, bits: c }; }
+      }
+    }
+    st.best = best;
+    st.cost = { one: one, three: three, cA: cA, cB: cB, total: total,
+      esc: extras(0, pt.bvLines).esc, linbits: extras(0, pt.bvLines).linbits };
+  }
+
+  function fill() {
+    var pt = st.part, c = st.cost;
+    document.getElementById("e3-bv").textContent = pt.bigValues + " pairs";
+    document.getElementById("e3-c1").textContent = pt.count1 + " quads";
+    document.getElementById("e3-rz").textContent = pt.rzero;
+    document.getElementById("e3-one").textContent = Math.round(c.one) + " b";
+    document.getElementById("e3-three").textContent = Math.round(c.three) + " b";
+    document.getElementById("e3-save").textContent =
+      c.one > 0 ? (100 * (1 - c.three / c.one)).toFixed(1) + "%" : "—";
+    document.getElementById("e3-tot").textContent = Math.round(c.total) + " b";
+    document.getElementById("e3-kbps").textContent =
+      (c.total * 2 * (SR / 1152) / 1000).toFixed(1) + " kbit/s";
+    document.getElementById("e3-state").textContent =
+      c.esc ? c.esc + " escapes, linbits " + c.linbits : "no escapes";
+    document.getElementById("e3-bestlab").textContent =
+      st.best.bits === Infinity ? "—" : st.best.r0 + " / " + st.best.r1;
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.q) { p.axes({}); return; }
+    var q = st.q, pt = st.part, b = bounds(st.r0, st.r1), i, mq = 1;
+    for (i = 0; i < LINES; i++) if (Math.abs(q[i]) > mq) mq = Math.abs(q[i]);
+    p.ymin = -mq - 1; p.ymax = mq + 1;
+    p.axes({ xfmt: function (n) { return String(Math.round(n)); } });
+    p.band(b[0], b[1], { color: AC.C.blue, alpha: 0.08 });
+    p.band(b[1], b[2], { color: AC.C.teal, alpha: 0.08 });
+    p.band(b[2], b[3], { color: AC.C.gold, alpha: 0.08 });
+    p.band(pt.c1Start, pt.c1End, { color: AC.C.green, alpha: 0.08 });
+    p.band(pt.c1End, LINES, { color: AC.C.faint, alpha: 0.06 });
+    var groups = [
+      { lo: b[0], hi: b[1], color: AC.C.blue },
+      { lo: b[1], hi: b[2], color: AC.C.teal },
+      { lo: b[2], hi: b[3], color: AC.C.gold },
+      { lo: pt.c1Start, hi: pt.c1End, color: AC.C.green },
+    ];
+    groups.forEach(function (g) {
+      var pts = [], esc = [];
+      for (i = g.lo; i < g.hi; i++) {
+        if (!q[i]) continue;
+        if (Math.abs(q[i]) >= 15) esc.push([i + 0.5, q[i]]);
+        else pts.push([i + 0.5, q[i]]);
+      }
+      if (pts.length) p.stems(pts, { color: g.color, width: 1, dots: false });
+      if (esc.length) p.stems(esc, { color: AC.C.red, width: 1.4, dots: false });
+    });
+    p.hline(0, { color: AC.C.line, dash: false });
+    [b[1], b[2], b[3], pt.c1End].forEach(function (x, k) {
+      if (x <= 0 || x >= LINES) return;
+      p.vline(x, { color: AC.C.ghost, label: ["r1", "r2", "count1", "rzero"][k], labelY: 3 + 13 * (k % 2) });
+    });
+    p.note(p.pad.l + 6, p.h - p.pad.b - 14,
+      "line 1 = " + Math.round(HZ) + " Hz · line 575 = " + (22050 / 1000).toFixed(2) + " kHz",
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+  function refresh() { price(); fill(); redraw(); }
+
+  var pend = 0;
+  function debounced() { clearTimeout(pend); pend = setTimeout(refresh, 110); }
+
+  AC.chips(document.getElementById("e3-prog"), function (v) { st.prog = v; st.X = null; debounced(); });
+  AC.slider(document.getElementById("e3-gain"), function (v) { st.gain = v; debounced(); },
+    function (v) { return String(v); });
+  var setR0 = AC.slider(document.getElementById("e3-r0"), function (v) { st.r0 = v; debounced(); },
+    function (v) { return String(v); });
+  var setR1 = AC.slider(document.getElementById("e3-r1"), function (v) { st.r1 = v; debounced(); },
+    function (v) { return String(v); });
+  var bb = document.getElementById("e3-best");
+  if (bb) bb.addEventListener("click", function () {
+    if (!st.best || st.best.bits === Infinity) return;
+    st.r0 = st.best.r0; st.r1 = st.best.r1;
+    setR0(st.best.r0); setR1(st.best.r1);
+  });
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect(); refresh();
+    }, { rootMargin: "260px" });
+    io.observe(cv);
+  } else { refresh(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 6.4 — arithmetic coding: the interval, subdividing. Real
+   interval arithmetic, encoded and then decoded back.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e4-cv");
+  if (!cv || !window.DSP) return;
+  var D = window.DSP;
+
+  var MSGS = {
+    sparse: [0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0],
+    busy:   [0, 1, 2, 0, 1, 0, 2, 1, 0, 1, 2, 0, 1, 0],
+    silent: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+  };
+  var COLS = [AC.C.blue, AC.C.gold, AC.C.red];
+  var st = { p0: 0.80, msg: "sparse", step: 1, run: true, model: null };
+
+  var p = new AC.Plot(cv, { aspect: 1.9, xmin: 0, xmax: 1, ymin: 0, ymax: 14,
+    pad: { l: 40, r: 14, t: 14, b: 22 } });
+
+  function probs() {
+    var p0 = st.p0, rest = 1 - p0;
+    return [p0, rest * 0.6, rest * 0.4];
+  }
+  function compute() {
+    var pr = probs(), msg = MSGS[st.msg], n = msg.length;
+    var cum = [0, pr[0], pr[0] + pr[1], 1];
+    var lo = 0, hi = 1, rows = [], i, s, w;
+    var ideal = 0, idealAt = [];
+    for (i = 0; i < n; i++) {
+      s = msg[i];
+      w = hi - lo;
+      rows.push({ lo: lo, hi: hi, s: s });
+      hi = lo + w * cum[s + 1];
+      lo = lo + w * cum[s];
+      ideal += -Math.log2(pr[s]);
+      idealAt.push(ideal);
+    }
+    rows.push({ lo: lo, hi: hi, s: -1 });
+    // decode the midpoint back, to prove the interval identifies the message
+    var v = (lo + hi) / 2, dlo = 0, dhi = 1, out = [];
+    for (i = 0; i < n; i++) {
+      var dw = dhi - dlo, k = 0;
+      while (k < 2 && v >= dlo + dw * cum[k + 1]) k++;
+      out.push(k);
+      dhi = dlo + dw * cum[k + 1];
+      dlo = dlo + dw * cum[k];
+    }
+    var h = D.huffman([{ sym: "0", w: pr[0] }, { sym: "1", w: pr[1] }, { sym: "2", w: pr[2] }]);
+    var huffAt = [], hb = 0;
+    for (i = 0; i < n; i++) { hb += h.lengths[String(msg[i])]; huffAt.push(hb); }
+    st.model = { pr: pr, cum: cum, msg: msg, rows: rows, ideal: ideal, idealAt: idealAt,
+      huffAt: huffAt, ok: out.join() === msg.join(), n: n };
+  }
+
+  function fill() {
+    var m = st.model, k = Math.max(1, Math.min(st.step, m.n));
+    var r = m.rows[k], w = r.hi - r.lo;
+    document.getElementById("e4-w").textContent = w.toExponential(2);
+    var ab = Math.ceil(-Math.log2(Math.max(w, 1e-300))) + 1;
+    document.getElementById("e4-bits").textContent = ab + (ab === 1 ? " bit" : " bits");
+    document.getElementById("e4-ideal").textContent = m.idealAt[k - 1].toFixed(2) + " bits";
+    var hb = m.huffAt[k - 1];
+    document.getElementById("e4-huff").textContent = hb + (hb === 1 ? " bit" : " bits");
+    document.getElementById("e4-ok").textContent = m.ok ? "exactly" : "MISMATCH";
+    document.getElementById("e4-state").textContent = "symbol " + k + " of " + m.n;
+  }
+
+  function draw() {
+    p.clear();
+    var m = st.model;
+    if (!m) return;
+    var c = p.ctx, n = m.n, k = Math.max(1, Math.min(st.step, n)), i, s;
+    p.ymax = n;
+    c.save();
+    c.font = p.mono;
+    for (i = 0; i < n; i++) {
+      var yTop = p.Y(n - i), yBot = p.Y(n - i - 1);
+      var hRow = yBot - yTop, inset = Math.min(3, hRow * 0.22);
+      var shown = i < k;
+      for (s = 0; s < 3; s++) {
+        var x0 = p.X(m.cum[s]), x1 = p.X(m.cum[s + 1]);
+        c.globalAlpha = shown ? (m.rows[i].s === s ? 0.9 : 0.24) : 0.07;
+        c.fillStyle = COLS[s];
+        c.fillRect(x0, yTop + inset, Math.max(x1 - x0 - 1, 1), hRow - 2 * inset);
+      }
+      if (shown) {
+        // the funnel: the chosen slice becomes the next row's full width
+        var cs = m.rows[i].s;
+        c.globalAlpha = 0.5;
+        c.strokeStyle = AC.C.purple;
+        c.lineWidth = 1.2;
+        c.beginPath();
+        c.moveTo(p.X(m.cum[cs]), yBot - inset);
+        c.lineTo(p.X(0), yBot + inset);
+        c.moveTo(p.X(m.cum[cs + 1]), yBot - inset);
+        c.lineTo(p.X(1), yBot + inset);
+        c.stroke();
+      }
+      c.globalAlpha = 1;
+      c.fillStyle = shown ? AC.C.soft : AC.C.ghost;
+      c.textAlign = "right"; c.textBaseline = "middle";
+      c.fillText(["0", "+1", "−1"][m.rows[i].s], p.pad.l - 7, (yTop + yBot) / 2);
+    }
+    c.restore();
+    var r = m.rows[k];
+    p.note(p.pad.l + 6, p.pad.t + 3,
+      "interval width after " + k + " symbols: " + (r.hi - r.lo).toExponential(2),
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+  function refresh() { compute(); st.step = Math.min(st.step, st.model.n); fill(); redraw(); }
+
+  AC.slider(document.getElementById("e4-p0"), function (v) { st.p0 = v / 100; refresh(); },
+    function (v) { return (v / 100).toFixed(2); });
+  AC.chips(document.getElementById("e4-msg"), function (v) { st.msg = v; st.step = 1; refresh(); });
+
+  var loop = AC.raf(cv, function (t) {
+    var n = st.model ? st.model.n : 14;
+    var k = Math.min(n, Math.floor(t / 0.42) % (n + 6));
+    if (k === 0) k = 1;
+    if (k !== st.step) { st.step = k; fill(); redraw(); }
+  });
+  var btn = document.getElementById("e4-play");
+  if (btn) btn.addEventListener("click", function () {
+    st.run = loop.toggle();
+    btn.textContent = st.run ? "Pause" : "Play";
+  });
+  refresh();
+  loop.start();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 6.5 — the RFC 6716 section 4.1 range coder, written out and
+   run: encoder, decoder, and ec_tell read out after every symbol.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e5-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD;
+
+  var TOP = 0x80000000, BOT = 0x800000, SYM_MAX = 255, EXTRA = 7;
+  function ilog(v) { var n = 0; while (v > 0) { v = Math.floor(v / 2); n++; } return n; }
+
+  function Enc() { this.buf = []; this.low = 0; this.rng = TOP; this.rem = -1; this.ext = 0; this.nbits = 33; }
+  Enc.prototype.carry = function (c) {
+    if (c !== SYM_MAX) {
+      var carry = c >= 256 ? 1 : 0;
+      if (this.rem >= 0) this.buf.push((this.rem + carry) & 255);
+      if (this.ext > 0) { do { this.buf.push((SYM_MAX + carry) & SYM_MAX); } while (--this.ext); }
+      this.rem = c & SYM_MAX;
+    } else this.ext++;
+  };
+  Enc.prototype.norm = function () {
+    while (this.rng <= BOT) {
+      this.carry(Math.floor(this.low / BOT));
+      this.low = (this.low * 256) % TOP;
+      this.rng *= 256;
+      this.nbits += 8;
+    }
+  };
+  Enc.prototype.encode = function (fl, fh, ft) {
+    var r = Math.floor(this.rng / ft);
+    if (fl > 0) { this.low += this.rng - r * (ft - fl); this.rng = r * (fh - fl); }
+    else this.rng -= r * (ft - fh);
+    this.norm();
+  };
+  Enc.prototype.tell = function () { return this.nbits - 1 - Math.log2(this.rng); };
+  Enc.prototype.done = function () {
+    var l = 32 - ilog(this.rng);
+    var msk = Math.floor((TOP - 1) / Math.pow(2, l));
+    var end = (this.low + msk) - ((this.low + msk) % (msk + 1));
+    if (end + msk >= this.low + this.rng) {
+      l++;
+      msk = Math.floor(msk / 2);
+      end = (this.low + msk) - ((this.low + msk) % (msk + 1));
+    }
+    while (l > 0) {
+      this.carry(Math.floor(end / BOT));
+      end = (end * 256) % TOP;
+      l -= 8;
+    }
+    if (this.rem >= 0 || this.ext > 0) this.carry(0);
+    return this.buf;
+  };
+
+  function Dec(buf) {
+    this.buf = buf; this.p = 0; this.rng = 1 << EXTRA;
+    this.rem = this.byte();
+    this.val = this.rng - 1 - (this.rem >> (8 - EXTRA));
+    this.nbits = 9;
+    this.norm();
+  }
+  Dec.prototype.byte = function () { return this.p < this.buf.length ? this.buf[this.p++] : 0; };
+  Dec.prototype.norm = function () {
+    while (this.rng <= BOT) {
+      this.nbits += 8;
+      this.rng *= 256;
+      var sym = this.rem;
+      this.rem = this.byte();
+      sym = ((sym * 256) | this.rem) >> (8 - EXTRA);
+      this.val = ((this.val * 256) + (SYM_MAX & ~sym)) % TOP;
+    }
+  };
+  Dec.prototype.decode = function (ft) {
+    this.ext = Math.floor(this.rng / ft);
+    var s = Math.floor(this.val / this.ext);
+    return ft - Math.min(s + 1, ft);
+  };
+  Dec.prototype.update = function (fl, fh, ft) {
+    var s = this.ext * (ft - fh);
+    this.val -= s;
+    this.rng = fl > 0 ? this.ext * (fh - fl) : this.rng - s;
+    this.norm();
+  };
+
+  var p = new AC.Plot(cv, { aspect: 2.5, xmin: 0, xmax: 96, ymin: 0, ymax: 300,
+    xlabel: "symbols encoded", ylabel: "bits consumed", pad: { l: 50, r: 14, t: 16, b: 34 } });
+
+  var st = { p0: 0.72, n: 96, raw: 24, budget: 32, model: null };
+
+  function run() {
+    var ft = 1024;
+    var f0 = Math.max(1, Math.min(ft - 2, Math.round(st.p0 * ft)));
+    var f1 = Math.max(1, Math.round((ft - f0) * 0.6));
+    var f2 = Math.max(1, ft - f0 - f1);
+    var freq = [f0, f1, f2];
+    var cum = [0, f0, f0 + f1, f0 + f1 + f2];
+    var ftot = cum[3];
+    var rnd = A.prng(4242), msg = [], i, s, r;
+    for (i = 0; i < st.n; i++) {
+      r = (rnd() + 1) / 2 * ftot;
+      s = r < cum[1] ? 0 : r < cum[2] ? 1 : 2;
+      msg.push(s);
+    }
+    var e = new Enc(), tell = [e.tell()], ideal = [0], acc = 0;
+    for (i = 0; i < st.n; i++) {
+      s = msg[i];
+      e.encode(cum[s], cum[s + 1], ftot);
+      acc += -Math.log2(freq[s] / ftot);
+      tell.push(e.tell());
+      ideal.push(acc);
+    }
+    var finalTell = e.tell();
+    var bytes = e.done();
+    var d = new Dec(bytes), out = [];
+    for (i = 0; i < st.n; i++) {
+      var f = d.decode(ftot), k = 0;
+      while (k < 2 && cum[k + 1] <= f) k++;
+      d.update(cum[k], cum[k + 1], ftot);
+      out.push(k);
+    }
+    st.model = { tell: tell, ideal: ideal, bytes: bytes, finalTell: finalTell,
+      idealTotal: acc, ok: out.join() === msg.join(), freq: freq, ftot: ftot };
+  }
+
+  function fill() {
+    var m = st.model;
+    var rawBytes = Math.ceil(st.raw / 8);
+    document.getElementById("e5-bytes").textContent = m.bytes.length + " B";
+    document.getElementById("e5-tell").textContent = m.finalTell.toFixed(2) + " bits";
+    document.getElementById("e5-ideal").textContent = m.idealTotal.toFixed(2) + " bits";
+    document.getElementById("e5-over").textContent =
+      "+" + (m.bytes.length * 8 - m.idealTotal).toFixed(1) + " bits";
+    document.getElementById("e5-ok").textContent = m.ok ? "every symbol" : "MISMATCH";
+    document.getElementById("e5-state").textContent = st.n + " symbols";
+    var used = m.bytes.length, free = st.budget - used - rawBytes;
+    var map = document.getElementById("e5-map");
+    if (map) {
+      map.innerHTML =
+        '<div class="bitf on" style="flex:' + Math.max(used, 1) + ' 1 0"><span class="bv">' +
+        used + ' B</span><span class="bn">range coder</span></div>' +
+        '<div class="bitf" style="flex:' + Math.max(free, 1) + ' 1 0"><span class="bv">' +
+        (free >= 0 ? free + " B" : "over") + '</span><span class="bn">' +
+        (free >= 0 ? "unspent" : "budget blown") + '</span></div>' +
+        '<div class="bitf" style="flex:' + Math.max(rawBytes, 1) + ' 1 0"><span class="bv">' +
+        st.raw + ' b</span><span class="bn">raw, from the end</span></div>';
+    }
+  }
+
+  function draw() {
+    p.clear();
+    var m = st.model;
+    if (!m) { p.axes({}); return; }
+    var budgetBits = st.budget * 8;
+    p.xmax = Math.max(4, st.n);
+    p.ymax = Math.max(budgetBits, m.bytes.length * 8 + st.raw) * 1.14;
+    p.axes({});
+    // the raw bits live at the far end of the packet: shade what they claim
+    var c = p.ctx;
+    c.save();
+    c.fillStyle = AC.C.purple;
+    c.globalAlpha = 0.14;
+    c.fillRect(p.pad.l, p.Y(budgetBits), p.w - p.pad.l - p.pad.r,
+      Math.max(p.Y(budgetBits - st.raw) - p.Y(budgetBits), 1));
+    c.restore();
+    var a = [], b = [], i;
+    for (i = 0; i <= st.n; i++) { a.push([i, m.tell[i]]); b.push([i, m.ideal[i] + m.tell[0]]); }
+    p.line(b, { color: AC.C.teal, width: 1.6, dash: [5, 4] });
+    p.line(a, { color: AC.C.blue, width: 2 });
+    p.hline(budgetBits, { color: AC.C.red, label: st.budget + " bytes" });
+    p.hline(budgetBits - st.raw, { color: AC.C.purple, label: "raw bits claim " + st.raw });
+    // where the budget runs out, if it does
+    for (i = 0; i <= st.n; i++) {
+      if (m.tell[i] + st.raw > budgetBits) { p.vline(i, { color: AC.C.red, label: "full" }); break; }
+    }
+    p.note(p.pad.l + 6, p.pad.t + 5,
+      "p(0) = " + st.p0.toFixed(2) + "  →  " + Math.log2(st.model.ftot / st.model.freq[0]).toFixed(3) +
+      " bits per zero", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+  function refresh() { run(); fill(); redraw(); }
+
+  var pend = 0;
+  function soon() { clearTimeout(pend); pend = setTimeout(refresh, 90); }
+  AC.slider(document.getElementById("e5-skew"), function (v) { st.p0 = v / 100; soon(); },
+    function (v) { return (v / 100).toFixed(2); });
+  AC.slider(document.getElementById("e5-n"), function (v) { st.n = v; soon(); },
+    function (v) { return String(v); });
+  AC.slider(document.getElementById("e5-raw"), function (v) { st.raw = v; soon(); },
+    function (v) { return v + " bits"; });
+  AC.chips(document.getElementById("e5-bud"), function (v) { st.budget = +v; refresh(); });
+  refresh();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 6.6 — the same byte budget spent two ways. The rate loop is
+   run twice against the same analysis: once pricing a band by its
+   entropy, once by a fixed field wide enough for its largest value.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e6-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+
+  var p = new AC.Plot(cv, { aspect: 2.5, xmin: 40, xmax: 224, ymin: 0, ymax: 40,
+    xlabel: "kbit/s", ylabel: "signal-to-noise, dB", pad: { l: 50, r: 14, t: 16, b: 34 } });
+
+  var RATES = [40, 64, 88, 112, 144, 176, 200, 224];
+  var st = { prog: "music", rate: 128, sig: null, an: null, curve: null, now: null, ready: false };
+
+  function source() {
+    if (st.sig) return;
+    var sr = A.rate();
+    st.sig = A.src[st.prog](1.1, { sr: sr });
+    st.an = A.analyze(st.sig, { sr: sr, N: 512, masking: true });
+  }
+
+  function entropyCost(lambda) {
+    var a = st.an;
+    return A.estimateBits(a.coeffs, a.thresh, a.edges, lambda, {});
+  }
+  // A per-band fixed field, wide enough for the largest value in the band,
+  // plus five bits to say how wide it is and the same scalefactor overhead.
+  function fixedCost(lambda) {
+    var a = st.an, e = a.edges, gain = Math.pow(10, lambda / 10), total = 0, b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var X = a.coeffs[b], T = a.thresh[b];
+      for (k = 0; k < e.length - 1; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        var m = 0, n = 0;
+        for (i = e[k]; i < e[k + 1]; i++) {
+          var q = Math.abs(Math.round(X[i] / step));
+          if (q > m) m = q;
+          n++;
+        }
+        if (!n) continue;
+        total += n * (m === 0 ? 0 : Math.ceil(Math.log2(2 * m + 1))) + (m ? 8 : 1) + 5;
+      }
+    }
+    return total;
+  }
+  function snrOf(lambda) {
+    var a = st.an, e = a.edges, gain = Math.pow(10, lambda / 10), sig = 0, noise = 0, b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var X = a.coeffs[b], T = a.thresh[b];
+      for (k = 0; k < e.length - 1; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        for (i = e[k]; i < e[k + 1]; i++) {
+          var d = Math.round(X[i] / step) * step - X[i];
+          noise += d * d; sig += X[i] * X[i];
+        }
+      }
+    }
+    return D.dbp(sig / Math.max(noise, 1e-30));
+  }
+  function bisect(cost, target) {
+    var lo = -140, hi = 120, lam = hi, i;
+    for (i = 0; i < 20; i++) {
+      lam = (lo + hi) / 2;
+      if (cost(lam) > target) lo = lam; else hi = lam;
+    }
+    return hi;
+  }
+  function pointAt(kbps) {
+    var secs = st.an.length / st.an.sr, target = kbps * 1000 * secs;
+    var le = bisect(entropyCost, target), lf = bisect(fixedCost, target);
+    return { kbps: kbps, le: le, lf: lf, se: snrOf(le), sf: snrOf(lf),
+      over: fixedCost(le) / Math.max(entropyCost(le), 1) };
+  }
+  function synth(lambda) {
+    var a = st.an, e = a.edges, N = a.N, gain = Math.pow(10, lambda / 10);
+    var out = new Float64Array((a.blocks + 1) * N), Xq = new Float64Array(N), b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var X = a.coeffs[b], T = a.thresh[b];
+      for (k = 0; k < e.length - 1; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        for (i = e[k]; i < e[k + 1]; i++) Xq[i] = Math.round(X[i] / step) * step;
+      }
+      var y = D.imdct(Xq);
+      for (i = 0; i < 2 * N; i++) {
+        var oi = b * N - N + i;
+        if (oi >= 0 && oi < out.length) out[oi] += y[i] * a.win[i];
+      }
+    }
+    return out.subarray(0, a.length);
+  }
+
+  function build() {
+    source();
+    st.curve = RATES.map(pointAt);
+  }
+  function mark() { st.now = pointAt(st.rate); }
+
+  function fill() {
+    var n = st.now;
+    document.getElementById("e6-snrE").textContent = n.se.toFixed(1) + " dB";
+    document.getElementById("e6-snrF").textContent = n.sf.toFixed(1) + " dB";
+    document.getElementById("e6-gap").textContent = (n.se - n.sf).toFixed(1) + " dB";
+    document.getElementById("e6-over").textContent = "+" + Math.round((n.over - 1) * 100) + "%";
+    document.getElementById("e6-state").textContent = st.rate + " kbit/s";
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.curve) {
+      p.axes({});
+      p.note(p.pad.l + 8, p.pad.t + 8, "running both rate loops…", { color: AC.C.ghost });
+      return;
+    }
+    var hi = 0;
+    st.curve.forEach(function (c) { if (c.se > hi) hi = c.se; });
+    p.ymin = Math.min(0, st.curve[0].sf - 2);
+    p.ymax = hi * 1.12 + 2;
+    p.axes({});
+    p.line(st.curve.map(function (c) { return [c.kbps, c.se]; }), { color: AC.C.blue, width: 2 });
+    p.line(st.curve.map(function (c) { return [c.kbps, c.sf]; }), { color: AC.C.red, width: 2 });
+    st.curve.forEach(function (c) {
+      p.dot(c.kbps, c.se, { color: AC.C.blue, r: 2.6 });
+      p.dot(c.kbps, c.sf, { color: AC.C.red, r: 2.6 });
+    });
+    if (st.now) {
+      p.vline(st.now.kbps, { color: AC.C.purple });
+      p.dot(st.now.kbps, st.now.se, { color: AC.C.blue, ring: true });
+      p.dot(st.now.kbps, st.now.sf, { color: AC.C.red, ring: true });
+      p.label(st.now.kbps, (st.now.se + st.now.sf) / 2,
+        "  " + (st.now.se - st.now.sf).toFixed(1) + " dB", { color: AC.C.purple });
+    }
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("e6-prog"), function (v) {
+    st.prog = v; st.sig = null; st.an = null; st.curve = null;
+    A.stopAll();
+    AC.$$("#fig-worth .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.ready) { build(); mark(); fill(); redraw(); }
+  });
+  var pend = 0;
+  AC.slider(document.getElementById("e6-rate"), function (v) {
+    st.rate = v;
+    if (!st.ready) return;
+    clearTimeout(pend);
+    pend = setTimeout(function () { mark(); fill(); redraw(); }, 150);
+  }, function (v) { return v + " kbit/s"; });
+
+  A.wire(document.getElementById("e6-orig"), function () { source(); return st.sig; });
+  A.wire(document.getElementById("e6-ent"), function () {
+    if (!st.now) { build(); mark(); fill(); redraw(); }
+    return synth(st.now.le);
+  });
+  A.wire(document.getElementById("e6-fix"), function () {
+    if (!st.now) { build(); mark(); fill(); redraw(); }
+    return synth(st.now.lf);
+  });
+
+  function go() { st.ready = true; build(); mark(); fill(); redraw(); }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      setTimeout(go, 30);
+    }, { rootMargin: "240px" });
+    io.observe(cv);
+  } else { go(); }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
