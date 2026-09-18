@@ -109,8 +109,8 @@
       <div class="figure-body">
         <div class="canvas-wrap"><canvas id="e1-cv"></canvas></div>
         <div class="legend">
-          <span class="l-teal"><i></i>ideal length −log₂p of the <i>r</i>-th commonest symbol</span>
-          <span class="l-heat"><i class="dash"></i>entropy <i>H</i>, the average</span>
+          <span class="l-teal"><i></i>ideal length −log₂p of the <span class="mono">r</span>-th commonest symbol</span>
+          <span class="l-heat"><i class="dash"></i>entropy <span class="mono">H</span>, the average</span>
           <span class="l-danger"><i class="dash"></i>a fixed-width field</span>
           <span class="l-ghost"><i></i>the symbols carrying half the stream</span>
         </div>
@@ -1554,16 +1554,16 @@
       var shown = i < k;
       for (s = 0; s < 3; s++) {
         var x0 = p.X(m.cum[s]), x1 = p.X(m.cum[s + 1]);
-        c.globalAlpha = shown ? (m.rows[i].s === s ? 0.9 : 0.24) : 0.07;
+        c.globalAlpha = shown ? (m.rows[i].s === s ? 0.92 : 0.26) : 0.12;
         c.fillStyle = COLS[s];
         c.fillRect(x0, yTop + inset, Math.max(x1 - x0 - 1, 1), hRow - 2 * inset);
       }
       if (shown) {
         // the funnel: the chosen slice becomes the next row's full width
         var cs = m.rows[i].s;
-        c.globalAlpha = 0.5;
+        c.globalAlpha = 0.7;
         c.strokeStyle = AC.C.purple;
-        c.lineWidth = 1.2;
+        c.lineWidth = 1.4;
         c.beginPath();
         c.moveTo(p.X(m.cum[cs]), yBot - inset);
         c.lineTo(p.X(0), yBot + inset);
@@ -1578,9 +1578,9 @@
     }
     c.restore();
     var r = m.rows[k];
-    p.note(p.pad.l + 6, p.pad.t + 3,
-      "interval width after " + k + " symbols: " + (r.hi - r.lo).toExponential(2),
-      { color: AC.C.ghost });
+    p.note(p.pad.l + 6, p.h - 13,
+      "after " + k + " symbol" + (k === 1 ? "" : "s") + " the interval is " +
+      (r.hi - r.lo).toExponential(2) + " wide", { color: AC.C.ghost });
   }
   var redraw = AC.autoDraw(p, draw);
   function refresh() { compute(); st.step = Math.min(st.step, st.model.n); fill(); redraw(); }
@@ -1771,8 +1771,8 @@
     c.restore();
     var a = [], b = [], i;
     for (i = 0; i <= st.n; i++) { a.push([i, m.tell[i]]); b.push([i, m.ideal[i] + m.tell[0]]); }
-    p.line(b, { color: AC.C.teal, width: 1.6, dash: [5, 4] });
-    p.line(a, { color: AC.C.blue, width: 2 });
+    p.line(a, { color: AC.C.blue, width: 2.6 });
+    p.line(b, { color: AC.C.teal, width: 1.4, dash: [4, 5] });
     p.hline(budgetBits, { color: AC.C.red, label: st.budget + " bytes" });
     p.hline(budgetBits - st.raw, { color: AC.C.purple, label: "raw bits claim " + st.raw });
     // where the budget runs out, if it does

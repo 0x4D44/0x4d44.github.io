@@ -527,12 +527,19 @@
   }
 
   // ---------------------------------------------------------- quantisers
-  // The MP3/AAC power-law quantiser: is = round(|x|^(3/4) / 2^((gain-210)/4) - 0.0946)
-  // (the standard's 0.0946 offset for MP3; AAC uses 0.4054). Both codecs
-  // dequantise with is^(4/3), so the relative error stays roughly constant.
+  // The MP3/AAC power-law quantiser, in the standard's own form:
+  //
+  //     is = nint( (|xr| / 2^((global_gain - 210)/4))^(3/4) - 0.0946 )
+  //
+  // The step division happens BEFORE the 3/4 power, not after. Getting that
+  // order wrong still looks plausible — it is only wrong by a constant factor
+  // 2^((210-gain)/12), which is exactly 1 at gain = 210 — but it makes the pair
+  // below stop being inverses everywhere else. (MP3's rounding offset is
+  // 0.0946; AAC's is 0.4054.)
   function quantPow(x, gain, offset) {
     var s = x < 0 ? -1 : 1;
-    var q = Math.pow(Math.abs(x), 0.75) / Math.pow(2, (gain - 210) / 4);
+    var step = Math.pow(2, (gain - 210) / 4);
+    var q = Math.pow(Math.abs(x) / step, 0.75);
     return s * Math.max(0, Math.round(q - (offset == null ? 0.0946 : offset)));
   }
   function dequantPow(q, gain) {

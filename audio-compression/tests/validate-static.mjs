@@ -275,6 +275,35 @@ test("the coding primitives are right", () => {
   assert.ok(best.bits < D.riceBits(res, 0), "the optimal Rice parameter must beat k = 0");
 });
 
+test("the power-law quantiser and its dequantiser are inverses", () => {
+  // The standard divides by the step BEFORE raising to 3/4. Getting that order
+  // wrong is only wrong by a factor of 2^((210-gain)/12) — exactly 1 at
+  // gain = 210, which is why it survived a spot check and had to be caught by
+  // sweeping the gain. See the note on quantPow in assets/dsp.js.
+  for (const gain of [120, 150, 180, 210, 240, 255]) {
+    for (const x of [0.5, 5, 50, 500]) {
+      const q = D.quantPow(x, gain, 0);
+      if (Math.abs(q) < 8) continue;                // too coarse to say anything
+      const back = D.dequantPow(q, gain);
+      const rel = Math.abs(back - x) / x;
+      assert.ok(rel < 0.05,
+        `quantPow/dequantPow are not inverses at gain ${gain}, x = ${x}: got ${back}`);
+    }
+    assert.equal(D.quantPow(-4, gain, 0) <= 0, true, "the quantiser must keep the sign");
+  }
+  // A 3/4 power law does NOT hold relative error constant — that is the common
+  // misconception chapter 05 corrects. The error must SHRINK as the level rises.
+  const err = (x) => {
+    const q = D.quantPow(x, 180, 0);
+    return Math.abs(D.dequantPow(q, 180) - x) / x;
+  };
+  assert.ok(err(1) > err(100), "relative error must fall as the level rises");
+  // and the step itself is 1.5 dB per unit of global_gain
+  const ratio = D.dequantPow(100, 181) / D.dequantPow(100, 180);
+  assert.ok(Math.abs(20 * Math.log10(ratio) - 1.505) < 0.01,
+    `one step of global_gain should be about 1.5 dB, got ${20 * Math.log10(ratio)}`);
+});
+
 test("the toy codec is a real rate-controlled coder", () => {
   const sr = 48000;
   const sig = A.src.music(1.2, { sr });
