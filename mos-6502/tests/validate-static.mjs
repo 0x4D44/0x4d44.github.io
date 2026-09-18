@@ -132,3 +132,14 @@ test("the illustration the entry names exists in the sprite", async () => {
   const entry = essays.find((item) => item.slug === "mos-6502");
   assert.match(index, new RegExp(`<symbol id="${entry.illustration}"`), `${entry.illustration} is in the sprite`);
 });
+
+test("the colophon's file count is the number of files there actually are", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const names = await readdir(PROJECT);
+  const shipped = names.filter((name) => /\.(js|css|html)$/.test(name));
+  const stated = /No frameworks, no build step, no network\. (\w+) files:/.exec(html);
+  assert.ok(stated, "the colophon states a file count");
+  const WORDS = { Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10 };
+  assert.equal(WORDS[stated[1]], shipped.length,
+    `the colophon says ${stated[1]} but ${shipped.length} files ship: ${shipped.sort().join(", ")}`);
+});
