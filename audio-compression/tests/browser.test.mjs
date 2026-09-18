@@ -153,6 +153,39 @@ const UNDER_PILL = `(() => {
   return out;
 })()`;
 
+// Scroll the whole page once, so every figure that defers its first draw to an
+// IntersectionObserver has actually mounted before we look at it.
+const SCROLL_THROUGH = `(() => {
+  const de = document.documentElement;
+  const step = Math.max(200, window.innerHeight * 0.8);
+  for (let y = 0; y < de.scrollHeight; y += step) window.scrollTo(0, y);
+  window.scrollTo(0, 0);
+  return de.scrollHeight;
+})()`;
+
+// A canvas that was sized but never drawn on is a figure that silently failed.
+// It passes every other check here — no console error, no overflow, the right
+// number of elements — and it is exactly how a broken figure reaches a reader.
+// A single uniform colour across the whole bitmap means nothing was drawn;
+// figures that wait for a button still paint their axes and a prompt.
+const BLANK_CANVASES = `(() => {
+  const out = [];
+  for (const c of document.querySelectorAll("canvas")) {
+    const id = c.id || "(unnamed)";
+    if (!c.width || !c.height) { out.push(id + ": zero-sized"); continue; }
+    let d;
+    try { d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; }
+    catch (e) { continue; }                      // WebGL or tainted: not our business
+    const r0 = d[0], g0 = d[1], b0 = d[2], a0 = d[3];
+    let varied = false;
+    for (let i = 4; i < d.length; i += 4 * 101) {
+      if (d[i] !== r0 || d[i+1] !== g0 || d[i+2] !== b0 || d[i+3] !== a0) { varied = true; break; }
+    }
+    if (!varied) out.push(id + ": nothing was ever drawn on it");
+  }
+  return out;
+})()`;
+
 const STRUCTURE = `(() => {
   const nav = document.querySelector(".chapnav a");
   const rail = [...document.querySelectorAll('.rail a[href^="#"]')];
@@ -207,6 +240,11 @@ for (const page of PAGES) {
     if (covered.length) failures.push(`${page} [${vp.label}]: under the Almanac pill — ${covered.join(", ")}`);
 
     if (vp.label === "phone") {
+      await evaluate(SCROLL_THROUGH);
+      await delay(1800);                 // let deferred figures mount and paint
+      const blanks = await evaluate(BLANK_CANVASES);
+      for (const b of blanks) failures.push(`${page}: canvas ${b}`);
+
       const s = await evaluate(STRUCTURE);
       if (!s.nav) failures.push(`${page}: the chapter nav did not render (is assets/site.js included?)`);
       if (!s.pill) failures.push(`${page}: missing <script defer src="/almanac-back.js">`);
