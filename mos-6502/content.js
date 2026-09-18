@@ -25,7 +25,7 @@
       detail: [
         "Peddle, a Motorola applications engineer, kept meeting customers who wanted the chip and could not justify the price.",
         "His answer was not a better processor. It was a processor stripped of everything a customer was not going to pay for.",
-        "Motorola's management asked him to stop. He had the letter framed.",
+        "Motorola's management told him, in writing, to stop working on it. He kept the letter.",
       ],
       numbers: [["MC6800", "$179"], ["Intel 8080", "$179"], ["Target", "under $30"]],
     },
@@ -57,11 +57,11 @@
       year: "1975-76",
       title: "Motorola sues, and MOS gives up the wrong chip",
       where: "The courts",
-      summary: "Motorola sued in November 1975 over the 6501's pin compatibility and over trade secrets carried out of Phoenix. The settlement cost MOS Technology $200,000 and the 6501, which was withdrawn. The 6502 — the one that needed no external clock, and the one nobody could call a copy — survived.",
+      summary: "Motorola sued in November 1975 over the 6501's pin compatibility and over trade secrets carried out of Arizona. The settlement cost MOS Technology $200,000 and the 6501, which was withdrawn. The 6502 — the one that needed no external clock, and the one nobody could call a copy — survived.",
       detail: [
         "Losing the drop-in replacement forced customers to design around the 6502 rather than substitute it, which turned out to make the 6502 the platform.",
         "The earliest chips also had a genuine defect: ROR did not work. MOS documented the omission, and the first 6502 data sheets simply do not list the instruction.",
-        "It was fixed in 1976. Programs written for an early Apple I avoid ROR for that reason.",
+        "It was fixed during 1976. Software written for the earliest machines avoids ROR for that reason.",
       ],
       numbers: [["Settlement", "$200,000"], ["Chips withdrawn", "6501"], ["Missing instruction", "ROR"]],
     },
@@ -115,8 +115,8 @@
     { name: "BBC Micro", year: 1981, chip: "6502A", mhz: 2.0, note: "A 2 MHz part, and a generation of British programmers who learned assembler on it." },
     { name: "Commodore 64", year: 1982, chip: "6510", mhz: 0.985, note: "A 6502 with a six-bit I/O port used to bank ROM in and out from software." },
     { name: "NES / Famicom", year: 1983, chip: "Ricoh 2A03", mhz: 1.79, note: "A 6502 with decimal mode removed and an audio unit in its place." },
-    { name: "Apple IIe / IIc", year: 1983, chip: "65C02", mhz: 1.023, note: "The CMOS revision: new instructions, fixed indirect JMP, lower power." },
-    { name: "Tamagotchi", year: 1996, chip: "6502-derived", mhz: 0.032, note: "The architecture outlived the desktop and went into things with no screen worth the name." },
+    { name: "Apple IIc", year: 1984, chip: "65C02", mhz: 1.023, note: "The CMOS revision: new instructions, a fixed indirect JMP, and much less power." },
+    { name: "Atari Lynx", year: 1989, chip: "65SC02", mhz: 4, note: "A colour handheld whose custom Mikey chip has a 6502 core inside it, fourteen years after WESCON." },
     { name: "W65C02S", year: "current", chip: "W65C02S", mhz: 14, note: "Still made, still sold, still the same programmer's model." },
   ];
 
@@ -134,7 +134,7 @@
 
   const FLAGS = [
     { bit: 7, letter: "N", name: "Negative", blurb: "A copy of bit 7 of the last result. Not a judgement about the number: bit 7 of $F0 is set whether you meant -16 or 240." },
-    { bit: 6, letter: "V", name: "Overflow", blurb: "Set when a signed add or subtract produced an answer of the wrong sign. Also loadable straight from bit 6 of memory by BIT, and clearable by a pin on the chip." },
+    { bit: 6, letter: "V", name: "Overflow", blurb: "Set when a signed add or subtract produced an answer of the wrong sign. Also loadable straight from bit 6 of memory by BIT, and settable directly by a pin on the chip — the only flag with its own wire." },
     { bit: 5, letter: "-", name: "unused", blurb: "Always reads as 1. There is nothing behind it." },
     { bit: 4, letter: "B", name: "Break", blurb: "Not a flag at all. It exists only in the byte that BRK and PHP push, where it says \"software put me here\". A hardware interrupt pushes it clear." },
     { bit: 3, letter: "D", name: "Decimal", blurb: "Switches ADC and SBC from binary to packed BCD. Nothing else on the chip is affected, and the NES's 6502 has this circuit disabled entirely." },

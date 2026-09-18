@@ -1157,8 +1157,10 @@
     if (button) button.textContent = "Run";
     if (reason) {
       const status = byId("editor-status");
-      const note = el("p", "run-note", reason);
-      status.appendChild(note);
+      // One note at a time: a second Run should replace the first reason,
+      // not stack up underneath it.
+      for (const old of status.querySelectorAll(".run-note")) old.remove();
+      status.appendChild(el("p", "run-note", reason));
     }
   }
 
