@@ -170,9 +170,9 @@
           <span class="l-faint"><i class="dash"></i>the tract's true resonances</span>
         </div>
         <div class="readout" style="margin-top:14px">
-          <div class="ro sig"><span class="k">Envelope fit error</span><span class="v" id="lp-fit">— dB</span></div>
-          <div class="ro"><span class="k">Prediction gain</span><span class="v" id="lp-gain">— dB</span></div>
-          <div class="ro ok"><span class="k">Residual flatness</span><span class="v" id="lp-sf2">— dB</span></div>
+          <div class="ro sig"><span class="k">Formants resolved</span><span class="v" id="lp-fmt">— of 4</span></div>
+          <div class="ro"><span class="k">Envelope fit error</span><span class="v" id="lp-fit">— dB</span></div>
+          <div class="ro ok"><span class="k">Prediction gain</span><span class="v" id="lp-gain">— dB</span></div>
           <div class="ro ghost"><span class="k">Numbers sent per frame</span><span class="v" id="lp-nums">17</span></div>
         </div>
       </div>
@@ -218,17 +218,22 @@
         <b>Filter only</b> discards the residual entirely and drives
         1/<i>A</i>(<i>z</i>) with a bare impulse train at the pitch you set: that
         buzzing thing is what sixteen numbers and one gain per frame buy you.
-        The teal trace is the same spectrum averaged over 260 Hz of power, which
-        is the envelope the all-pole model is trying to be, and the readout is
-        the root-mean-square distance between them from 150 Hz to 6 kHz. Drag
-        the order: it falls from around 9 dB at p&nbsp;=&nbsp;2 — two poles, one
-        resonance, no hope — to under 3 dB by p&nbsp;=&nbsp;24, and the gain
-        per extra pole flattens off once there are enough of them to cover the
-        tract's resonances. Press <b>Filter only</b> at 4 and again at 16 and
-        the vowel's colour changes audibly. Note also what the prediction gain
-        does, which is almost nothing: on voiced speech most of the
-        predictability is the pitch period, not the envelope, and a short filter
-        cannot reach it. That is the gap the long-term predictor below is for.</figcaption>
+        The teal trace is the same spectrum averaged over 260 Hz of power — the
+        envelope the all-pole model is trying to be — and the fit readout is the
+        root-mean-square distance between the two, measured only where there is
+        signal to measure. Now drag the order. At
+        p&nbsp;=&nbsp;2 the envelope is a single resonance: it finds none of the
+        four formants and sits 4 to 12 dB off, depending on the vowel. Raise it
+        and the peaks appear a pole-pair at a time — sooner on /i/, whose
+        formants are far apart, later on /a/, whose first two are not — until at
+        16, SILK's wideband order, every vowel here resolves all four and the
+        error has settled between 2 and 3 dB. Further poles buy almost nothing.
+        Press <b>Filter only</b> at 4 and again at 16: the vowel's identity
+        arrives with its
+        formants, from nothing but sixteen numbers and a gain. The pitch slider
+        moves the buzz without touching the filter, which is the whole point of
+        separating source from filter — and the reason the residual, purple, is
+        still a comb of harmonics rather than white noise.</figcaption>
     </figure>
 
     <p>Two things stop that being the whole story. The first is that
@@ -969,11 +974,6 @@
     for (i = 0; i < x.length; i++) { pr = x[i] + 0.97 * pr; y[i] = pr; }
     return y;
   }
-  function powerOf(dbArr, lo, hi) {
-    var pw = new Float64Array(hi - lo), i;
-    for (i = lo; i < hi; i++) pw[i - lo] = Math.pow(10, dbArr[i] / 10);
-    return pw;
-  }
   // Average the spectrum in the power domain over a fixed bandwidth: the
   // harmonic comb disappears and what is left is the envelope the all-pole
   // model is trying to match.
@@ -1008,7 +1008,12 @@
     var w = D.WIN.hann(FRAME), fw = new Float64Array(FRAME), r0 = 0;
     for (i = 0; i < FRAME; i++) { fw[i] = pe[i] * w[i]; r0 += fw[i] * fw[i]; }
 
-    var L = D.lpc(fw, st.order);
+    // A white-noise correction of one part in a million, which is what every
+    // real LPC analyser applies: this signal is so predictable that without it
+    // the recursion hits a non-positive residual around order 20 and stops.
+    var acf = D.autocorr(fw, st.order);
+    acf[0] *= 1.000001;
+    var L = D.levinson(acf, st.order);
     st.a = L.a; st.err = Math.max(L.err, 1e-18); st.r0 = Math.max(r0, 1e-18);
 
     st.spec = D.spectrumDb(fw, { n: FRAME, window: "rect", zeroPad: 2 });
@@ -1017,32 +1022,47 @@
     st.res = D.spectrumDb(resid, { n: FRAME, window: "rect", zeroPad: 2 });
     st.env = D.lpcSpectrum(st.a, 1, ENVN);
 
-    // Level-match the all-pole envelope to the measured spectrum over the
-    // band where both are meaningful. Nothing here is a fitted constant:
-    // it is the mean difference, in dB, of the two curves.
-    var nBin = st.spec.length, b0 = Math.round(200 / sr * nBin * 2), b1 = Math.round(7000 / sr * nBin * 2);
-    b0 = Math.max(1, Math.min(b0, nBin - 2)); b1 = Math.max(b0 + 4, Math.min(b1, nBin - 1));
-    var ms = 0, me = 0, n = 0, ei;
-    for (i = b0; i < b1; i++) {
-      ei = envIndex(i, nBin, sr);
-      if (ei < 0) continue;
-      ms += st.smooth[i]; me += st.env[ei]; n++;
-    }
-    st.gain = n ? (ms - me) / n : 0;
+    // Compare envelope with smoothed spectrum only where there is signal to
+    // compare: 150 Hz to 7 kHz, and only bins within 55 dB of the loudest, so
+    // the empty top of the band does not dominate the average.
+    var nBin = st.spec.length, ei;
+    var b0 = Math.max(1, Math.round(150 / sr * nBin * 2));
+    var b1 = Math.min(nBin - 1, Math.round(7000 / sr * nBin * 2));
+    var top = -999;
+    for (i = b0; i < b1; i++) top = Math.max(top, st.smooth[i]);
+    var band = [];
+    for (i = b0; i < b1; i++) if (st.smooth[i] > top - 55 && envIndex(i, nBin, sr) >= 0) band.push(i);
+    if (!band.length) band.push(b0);
 
-    // How far the order-p all-pole envelope sits from the smoothed spectrum it
-    // is trying to be: the number that actually measures the model's quality.
-    var e2 = 0, m = 0;
-    for (i = b0; i < b1; i++) {
-      ei = envIndex(i, nBin, sr);
-      if (ei < 0) continue;
-      var d = st.smooth[i] - (st.env[ei] + st.gain);
-      e2 += d * d; m++;
+    var ms = 0, me = 0, k;
+    for (k = 0; k < band.length; k++) {
+      ei = envIndex(band[k], nBin, sr);
+      ms += st.smooth[band[k]]; me += st.env[ei];
     }
-    var sf2 = D.sfm(powerOf(st.res, b0, b1));
-    document.getElementById("lp-fit").textContent = (m ? Math.sqrt(e2 / m) : 0).toFixed(1) + " dB";
+    st.gain = (ms - me) / band.length;
+
+    var e2 = 0;
+    for (k = 0; k < band.length; k++) {
+      ei = envIndex(band[k], nBin, sr);
+      var d = st.smooth[band[k]] - (st.env[ei] + st.gain);
+      e2 += d * d;
+    }
+
+    // How many of the tract's four resonances the envelope actually has a
+    // peak at: found by looking for local maxima in the curve just computed.
+    var peaks = [];
+    for (i = 1; i < ENVN - 1; i++) {
+      if (st.env[i] > st.env[i - 1] && st.env[i] >= st.env[i + 1]) peaks.push(i / (ENVN - 1) * (sr / 2));
+    }
+    var found = 0;
+    VOWELS[st.v].forEach(function (fb) {
+      if (fb[0] > sr / 2) return;
+      if (peaks.some(function (q) { return Math.abs(q - fb[0]) < 0.12 * fb[0]; })) found++;
+    });
+
+    document.getElementById("lp-fmt").textContent = found + " of 4";
+    document.getElementById("lp-fit").textContent = Math.sqrt(e2 / band.length).toFixed(1) + " dB";
     document.getElementById("lp-gain").textContent = (10 * Math.log10(st.r0 / st.err)).toFixed(1) + " dB";
-    document.getElementById("lp-sf2").textContent = sf2.toFixed(1) + " dB";
     document.getElementById("lp-nums").textContent = (st.order + 1);
     document.getElementById("lp-state").textContent = "order " + st.order;
     redraw();
