@@ -8,3 +8,4 @@
 # local tooling (never commit)
 node_modules/
 package-lock.json
+mos-6502/tests/vendor/
