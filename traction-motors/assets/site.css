@@ -180,6 +180,14 @@ em{ font-style:italic; }
 .cols2{ display:grid; grid-template-columns:1fr 1fr; gap:38px; }
 .cols-rail{ display:grid; grid-template-columns:var(--rail) 1fr; gap:48px; align-items:start; }
 @media(max-width:860px){ .cols2,.cols-rail{ grid-template-columns:1fr; gap:30px; } }
+/* On a phone the h1's clamp bottoms out at 2.6rem, at which "The machines that"
+   is wider than the 326px of content a 390px viewport leaves after .wrap's
+   padding -- so the page scrolled sideways by 8px (tests/responsive.test.mjs).
+   Let the display sizes keep shrinking below 520px instead of stopping. */
+@media(max-width:520px){
+  h1{ font-size:clamp(1.9rem,8.6vw,2.6rem); }
+  h2{ font-size:clamp(1.5rem,6.4vw,1.9rem); }
+}
 
 /* sticky section rail */
 .rail{ position:sticky; top:78px; font-family:var(--font-mono); font-size:.76rem; }
