@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11 · What lossy actually sounds like — Throwing Sound Away</title>
+<meta name="description" content="A field guide to coding artefacts — pre-echo, birdies, band-limiting, stereo collapse — each one provoked live from a clean source, plus a working ABX test and how the industry really measures quality.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="11">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 11</div>
+  <div class="num">11</div>
+  <h2>Every failure of a codec has a name and a mechanism.</h2>
+  <p class="lead">Ten chapters have argued about how encoders decide what to
+    discard. This one is about what it sounds like when they decide wrongly —
+    and the artefacts are not vague impressions of "digital harshness". Each has
+    a specific cause in the machinery, a characteristic frequency range, a
+    characteristic programme that provokes it, and a name that practitioners
+    have used for thirty years. Once you can hear one on demand, you cannot
+    stop hearing it.</p>
+  <div class="meta">
+    <div><div class="k">Method</div><div class="v">Provoke it, then listen for it</div></div>
+    <div><div class="k">Bring</div><div class="v">Headphones, and a quiet room</div></div>
+    <div><div class="k">The honest test</div><div class="v">ABX, sixteen trials</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#named">Why they have names</a>
+    <a href="#preecho">Pre-echo</a>
+    <a href="#birdies">Birdies</a>
+    <a href="#bandwidth">The ceiling</a>
+    <a href="#stereo">Stereo collapse</a>
+    <a href="#guide">The field guide</a>
+    <a href="#abx">Testing your own ears</a>
+    <a href="#measure">How the industry measures</a>
+    <a href="#bias">What listening tests are guarding against</a>
+  </nav>
+  <div>
+
+  <section id="named" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">Why they have names</div>
+    <h3>A codec does not degrade gracefully. It fails in specific ways.</h3>
+    <p style="margin-top:18px">Analogue media degrade along one axis. Tape adds
+      hiss, wow and flutter; vinyl adds surface noise and tracking distortion;
+      both get worse in proportion to how badly you treat them. A perceptual
+      codec is not like that. It is a machine that is right almost all the time
+      and then, under a specific and identifiable circumstance, catastrophically
+      wrong for a few milliseconds — because a model of your hearing was
+      consulted and returned the wrong answer.</p>
+    <p>That is why artefacts are enumerable. Each corresponds to an assumption
+      in <a href="3-masking.html">chapter 03</a> or
+      <a href="4-transform.html">chapter 04</a> being violated: the masking
+      model assumes a steady signal within the analysis window, so a transient
+      breaks it; it assumes the spectrum is smooth enough to be described band
+      by band, so an isolated tone in an otherwise empty band breaks it; it
+      assumes the two channels can be described by one signal plus a balance,
+      so a decorrelated stereo image breaks it.</p>
+    <p>Everything below is produced here, live, by the small perceptual coder
+      described on the <a href="index.html">contents page</a>: an MDCT,
+      Bark-band masking, a rate loop and an entropy estimate. It is cruder than
+      LAME or libopus, so it produces these artefacts at higher bitrates than a
+      real codec would — which is exactly what makes it a good teaching
+      instrument. The mechanisms are identical; only the threshold at which they
+      become audible differs.</p>
+    <div class="note sig">
+      <span class="tag tag-sig">How to listen</span>
+      <p>Use headphones. Every one of these artefacts lives 20 to 60 dB below
+        the music, and a laptop speaker in a normal room will mask them exactly
+        as a codec would — you will hear nothing and conclude, wrongly, that
+        there is nothing to hear. Play the clean version first and fix it in
+        your memory; auditory memory for timbre is short, on the order of a few
+        seconds, which is the entire reason the ABX design below exists.</p>
+    </div>
+  </section>
+
+  <section id="preecho" class="section">
+    <div class="kicker k-danger">Interactive · Fig. 11.1</div>
+    <h3>Pre-echo: noise that arrives before the sound that caused it.</h3>
+    <p style="margin-top:18px">This is the defining artefact of transform
+      coding and the one with the most elegant explanation. The transform sees a
+      block of <i>2N</i> samples at once. If that block contains a castanet
+      strike, the quantisation noise the encoder adds is spread — by
+      construction, because a transform coefficient describes the whole block —
+      evenly across the entire window. The signal is not spread evenly: it is
+      silence, then a crack. So for the tens of milliseconds <em>before</em> the
+      attack, there is noise and nothing to hide it.</p>
+    <p><a href="3-masking.html">Chapter 03</a> gave the number that turns this
+      into an audible fault. Backward masking — a sound hiding a noise that
+      preceded it — extends only about 2 to 5 milliseconds, and even that much
+      is disputed and trainable. Forward masking runs for 100 to 200 ms, which is
+      why you never hear the noise <em>after</em> the crack. A 1024-line MDCT at
+      44.1 kHz covers about 46 ms. The mismatch is roughly a factor of ten.</p>
+
+    <div class="eq">
+      <i>T</i><sub>window</sub><span class="op">=</span>
+      <span class="frac"><span><span class="num">2</span><i>N</i></span><span><i>f</i><sub>s</sub></span></span>
+      <span class="op">=</span>
+      <span class="frac"><span><span class="num">2048</span></span><span><span class="num">44 100</span></span></span>
+      <span class="op">≈</span><span class="num">46</span>&nbsp;ms
+      <span class="op">≫</span>
+      <i>T</i><sub>pre-mask</sub><span class="op">≈</span><span class="num">2–5</span>&nbsp;ms
+      <span class="note2">the whole of block switching, temporal noise shaping and gain control
+        exists to close this gap</span>
+    </div>
+
+    <figure class="figure" id="fig-pre">
+      <div class="figure-bar">
+        <span class="fno">FIG. 11.1</span>
+        <span class="ftitle">Pre-echo, on demand</span>
+        <span class="fstate" id="e-state">—</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="e-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>the level of the transient</span>
+          <span class="l-danger"><i></i>the level of the coding error</span>
+          <span class="l-ghost"><i class="dash"></i>block boundaries</span>
+          <span class="l-ok"><i></i>the 5 ms in which backward masking works</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Window length</span><span class="v" id="e-win">—</span></div>
+          <div class="ro bad"><span class="k">Noise before the attack</span><span class="v" id="e-pre">—</span></div>
+          <div class="ro ok"><span class="k">Noise after it — masked</span><span class="v" id="e-post">—</span></div>
+          <div class="ro sig"><span class="k">Bitrate</span><span class="v" id="e-br">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Transform size <i>N</i></span></div>
+          <div class="chips" id="e-n">
+            <button data-v="128">128</button>
+            <button data-v="256">256</button>
+            <button data-v="512">512</button>
+            <button data-v="1024" class="on">1024</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Bit budget</span><span class="val" id="e-brl">48 kbit/s</span></div>
+          <input type="range" id="e-rate" min="16" max="128" step="8" value="48" data-out="e-brl" aria-label="Bit budget">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="e-orig">Original</button>
+            <button class="btn play" id="e-code">Coded</button>
+            <button class="btn play" id="e-err">The error alone</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 11.1</b> — one castanet strike out
+        of three, plotted as level against time rather than as a waveform,
+        because the error is sixty decibels down and would otherwise be a flat
+        line. Grey is the signal; red is the coder's error. Watch what each does
+        at time zero: the grey leaps out of silence, and the red does not move.
+        At <i>N</i> = 1024 the red plateau begins about 36 ms early — at a block
+        boundary, the dotted lines — and runs flat through the green strip,
+        which is all the backward masking you actually have. For those thirty-six
+        milliseconds there is noise and no signal whatever to hide it under. The two noise readouts are the argument in two numbers:
+        they are nearly equal, because a transform coefficient describes the
+        whole block and so spreads its error evenly — but only the second of
+        them is hidden, by forward masking that runs for 100 ms or more. Now
+        step <i>N</i> down and watch the smear collapse around the transient and
+        the before-figure fall by thirty decibels or so. That is block
+        switching, in one control. Then listen: with long blocks the castanet
+        acquires a distinct "shhk" ahead of its own crack, and <b>the error
+        alone</b> makes it unmistakable. The cost of short blocks is the other
+        half of the same trade — four times worse frequency resolution, so the
+        coder spends more bits on anything steady. Which is why real codecs
+        switch rather than choose.</figcaption>
+    </figure>
+  </section>
+
+  <section id="birdies" class="section">
+    <div class="kicker k-heat">Interactive · Fig. 11.2</div>
+    <h3>Birdies: the sound of a spectral line that cannot make up its mind.</h3>
+    <p style="margin-top:18px">At low bitrates the rate loop has to zero whole
+      bands. A band that sits close to the threshold of being worth coding will
+      be kept in one block and dropped in the next, as the music moves by a
+      decibel. The result is a component that switches on and off at the block
+      rate — 43 times a second for a 1024-line transform at 44.1 kHz — and the
+      ear, which is very good at detecting amplitude modulation in that range,
+      hears a warbling, watery, chirping quality.</p>
+    <p>It is worst between roughly 8 and 14 kHz, for two reasons that compound.
+      The bands are wide up there, so dropping one removes a lot at once; and it
+      is the region where cymbals, sibilance and room noise put a thin,
+      noise-like, low-level spectrum — exactly the material that hovers around
+      the decision boundary. The name is old and exactly right: a flock of
+      small birds.</p>
+
+    <figure class="figure" id="fig-birds">
+      <div class="figure-bar">
+        <span class="fno">FIG. 11.2</span>
+        <span class="ftitle">Which bands survive, block by block</span>
+        <span class="fstate" id="b-state">—</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="b-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>band coded in this block</span>
+          <span class="l-faint"><i></i>band entirely zeroed</span>
+          <span class="l-danger"><i></i>band that flipped since the block before — a birdie</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro bad"><span class="k">Flips per second</span><span class="v" id="b-flip">—</span></div>
+          <div class="ro"><span class="k">Block rate</span><span class="v" id="b-rate">—</span></div>
+          <div class="ro ok"><span class="k">Bands never coded</span><span class="v" id="b-dead">—</span></div>
+          <div class="ro sig"><span class="k">Bitrate</span><span class="v" id="b-br">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Bit budget</span><span class="val" id="b-brl">48 kbit/s</span></div>
+          <input type="range" id="b-rate-in" min="16" max="192" step="8" value="48" data-out="b-brl" aria-label="Bit budget">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="b-src">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="applause">Applause</button>
+            <button data-v="speech">Speech</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="b-orig">Original</button>
+            <button class="btn play" id="b-code">Coded</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 11.2</b> — time runs left to right,
+        one column per transform block; frequency runs bottom to top, one row per
+        critical band. Blue means the encoder spent bits on that band in that
+        block; grey means it wrote a zero. Red marks every place the answer
+        changed from the previous block, and red is what you hear. Drag the
+        budget down and watch the red speckle spread downwards out of the top
+        bands. Note the shape of the failure: it is not that the top of the
+        spectrum goes quiet — a clean brick-wall lowpass is almost inaudible
+        by comparison — it is that it flickers. A codec that simply gave up
+        above 11 kHz would sound better than one that dithers about it, which
+        is precisely the reasoning behind
+        <a href="8-aac.html">spectral band replication</a>.</figcaption>
+    </figure>
+  </section>
+
+  <section id="bandwidth" class="section">
+    <div class="kicker">Interactive · Fig. 11.3</div>
+    <h3>The ceiling: what a lowpass costs, and why it is the cheap way out.</h3>
+    <p style="margin-top:18px">Every lossy encoder has a frequency above which
+      it simply stops. Early MP3 encoders put that wall at about 16 kHz and were
+      mocked for it; the mockery was misplaced, because a clean lowpass is one of
+      the most benign things you can do to music. Nothing flickers, nothing
+      warbles, the phase relationships below the cut are untouched — you have
+      simply removed the top part of the top octave, where there is very little
+      musical energy and where the
+      <a href="2-ear.html">absolute threshold</a> is climbing steeply.</p>
+    <p>The alternative uses of those bits are worth far more. That is the whole
+      economics of the decision: an encoder at 128 kbit/s that spends nothing
+      above 16 kHz has bought itself perhaps 8 per cent more bits for everything
+      below, where you can actually hear the difference.</p>
+
+    <figure class="figure" id="fig-bw">
+      <div class="figure-bar">
+        <span class="fno">FIG. 11.3</span>
+        <span class="ftitle">The lowpass, and what it removes</span>
+        <span class="fstate" id="w-state">16.0 kHz</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="w-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the full spectrum</span>
+          <span class="l-heat"><i></i>what survives the cut</span>
+          <span class="l-ghost"><i class="dash"></i>absolute threshold of hearing, arbitrarily placed</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Energy removed</span><span class="v" id="w-energy">—</span></div>
+          <div class="ro sig"><span class="k">Spectral lines removed</span><span class="v" id="w-lines">—</span></div>
+          <div class="ro ok"><span class="k">Noise below the cut, vs full band</span><span class="v" id="w-bits">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>Cut-off</span><span class="val" id="w-fcl">16.0 kHz</span></div>
+          <input type="range" id="w-fc" min="4000" max="21000" step="250" value="16000" data-out="w-fcl" aria-label="Lowpass cut-off frequency">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="w-full">Full band</button>
+            <button class="btn play" id="w-cut">Cut</button>
+            <button class="btn play" id="w-diff">Only what was removed</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 11.3</b> — drag the cut-off down
+        and A/B it honestly. Most listeners find 16 kHz indistinguishable and
+        many find 14 kHz very hard; below about 11 kHz it becomes obvious, and
+        by 8 kHz it is a telephone. Then press <b>only what was removed</b>: at
+        a 16 kHz cut the discarded signal is audible in isolation but contains
+        almost nothing you would recognise as the music. That is the difference
+        between "there is signal there" and "you would miss it" — the
+        distinction this entire study turns on.</figcaption>
+    </figure>
+  </section>
+
+  <section id="stereo" class="section">
+    <div class="kicker k-ghost">Interactive · Fig. 11.4</div>
+    <h3>Stereo collapse: the image falls into the middle of your head.</h3>
+    <p style="margin-top:18px">Coding two channels separately wastes bits,
+      because most recordings are highly correlated between left and right.
+      <strong>Mid/side</strong> exploits that losslessly — send
+      (L+R) and (L−R) instead — and costs nothing.
+      <strong>Intensity stereo</strong> goes much further: above some crossover
+      frequency it sends one signal plus a per-band left/right balance, and
+      discards the phase relationship between the channels entirely.</p>
+    <p>The saving is large and the price is specific. Interaural time
+      differences — the dominant localisation cue below about 1.5 kHz, and a
+      strong contributor to the sense of space above it — are carried in exactly
+      the phase relationship intensity stereo throws away. What the ear hears is
+      not a loss of loudness but a loss of <em>width</em>: reverberation that
+      used to surround you shrinks to a line between the speakers, and on
+      headphones the whole mix moves to a point in the middle of your skull.</p>
+
+    <figure class="figure" id="fig-st">
+      <div class="figure-bar">
+        <span class="fno">FIG. 11.4</span>
+        <span class="ftitle">Collapsing the side channel above a crossover</span>
+        <span class="fstate" id="s-state">—</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="s-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>side-channel energy, original</span>
+          <span class="l-danger"><i></i>side-channel energy, after collapse</span>
+          <span class="l-ghost"><i class="dash"></i>crossover</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Side energy kept</span><span class="v" id="s-keep">—</span></div>
+          <div class="ro sig"><span class="k">Channel correlation</span><span class="v" id="s-corr">—</span></div>
+          <div class="ro ok"><span class="k">Bits saved, roughly</span><span class="v" id="s-save">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>Crossover</span><span class="val" id="s-fcl">4.0 kHz</span></div>
+          <input type="range" id="s-fc" min="500" max="20000" step="250" value="4000" data-out="s-fcl" aria-label="Intensity-stereo crossover frequency">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen — headphones</span></div>
+          <div class="chips">
+            <button class="btn play" id="s-orig">Original stereo</button>
+            <button class="btn play" id="s-coll">Collapsed</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 11.4</b> — the curve is how much
+        energy is in the difference between your ears, band by band. Drag the
+        crossover down from 20 kHz — where nothing is collapsed — towards 1 kHz,
+        and A/B on headphones. Above about 8 kHz the collapse is subtle. Below
+        2 kHz the image visibly, audibly closes up. Low-bitrate MP3 typically put
+        the crossover far lower than was wise, which is the origin of that
+        format's reputation for sounding "flat" and "in your head" — it was not
+        the frequency response, it was the stereo field.</figcaption>
+    </figure>
+  </section>
+
+  <section id="guide" class="section">
+    <div class="kicker">The field guide</div>
+    <h3>Eleven artefacts, their mechanisms and their tells.</h3>
+    <div class="scroller"><table>
+      <caption>What it sounds like, why it happens, what provokes it</caption>
+      <thead><tr>
+        <th>Artefact</th><th>Sounds like</th><th>Mechanism</th><th>Provoke it with</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><strong>Pre-echo</strong></td><td>A short "shhk" of noise just before a sharp attack</td><td>Quantisation noise spread across a transform block that is longer than backward masking</td><td>Castanets, harpsichord, triangle, a single hand clap</td></tr>
+        <tr><td><strong>Birdies</strong></td><td>Warbling, watery chirping in the top octaves</td><td>Bands switching between coded and zeroed at the block rate</td><td>Cymbals and hi-hats at 48–96 kbit/s</td></tr>
+        <tr><td><strong>Band-limiting</strong></td><td>Dull, closed, "a blanket over the tweeters"</td><td>A deliberate lowpass to free bits for the rest</td><td>Any encoder below about 128 kbit/s</td></tr>
+        <tr><td><strong>SBR shimmer</strong></td><td>A metallic, slightly detached sheen on cymbals</td><td>The top band is transposed from the bottom, so its fine structure is wrong even when its envelope is right</td><td>HE-AAC at 32–48 kbit/s; listen to a ride cymbal</td></tr>
+        <tr><td><strong>Stereo collapse</strong></td><td>The image narrows; on headphones it moves inside your head</td><td>Intensity stereo or parametric stereo discarding the inter-channel phase</td><td>Wide reverb, decorrelated room mics, live recordings</td></tr>
+        <tr><td><strong>Image instability</strong></td><td>A sound that wanders left and right between frames</td><td>Per-band stereo parameters changing block to block</td><td>Parametric stereo at very low rates</td></tr>
+        <tr><td><strong>Roughness / graininess</strong></td><td>A sandy texture riding on sustained tones</td><td>Quantisation noise sitting just at the masking threshold rather than below it</td><td>Solo piano, sustained strings, a held vocal note</td></tr>
+        <tr><td><strong>Noise-substitution hiss</strong></td><td>A band of the music replaced by a plausible but wrong hiss</td><td>Perceptual noise substitution sending an energy, not a signal</td><td>Applause, rain, cymbal wash in AAC</td></tr>
+        <tr><td><strong>Metallic / robotic voice</strong></td><td>A buzzy, mechanical vocal quality</td><td>A linear-predictive coder's excitation codebook being too coarse for the residual</td><td>Any CELP codec at its lowest rate; music through a speech codec</td></tr>
+        <tr><td><strong>Ringing</strong></td><td>A brief tonal "ping" around a click</td><td>The transform's own impulse response — a click is spread over the window</td><td>Clicks, rimshots, close-mic'd percussion</td></tr>
+        <tr><td><strong>Generation loss</strong></td><td>Progressive dulling and a build-up of all of the above</td><td>Each re-encode treats the previous encoder's noise as signal</td><td>Transcoding; any Bluetooth link — see <a href="12-choosing.html">chapter 12</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="abx" class="section">
+    <div class="kicker k-ok">Interactive · Fig. 11.5</div>
+    <h3>You cannot trust yourself, so do not. Run the test.</h3>
+    <p style="margin-top:18px">Everything in the preceding sections was
+      presented with labels on it, and a labelled comparison is worthless.
+      Knowing which button you pressed is enough to make you hear a difference
+      that is not there, reliably, in yourself, no matter how well you
+      understand the effect. The only remedy is to take the label away.</p>
+    <p>ABX is the minimal honest design. You may hear A as often as you like,
+      and B as often as you like, and then X, which is one of them chosen at
+      random. You say which. Do that <i>n</i> times and count. Under the null
+      hypothesis — that you are guessing — the number correct is binomial with
+      <i>p</i> = ½, so the probability of doing at least as well as you did by
+      luck alone is exact and easy:</p>
+
+    <div class="eq">
+      <i>p</i><span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>n</i></span><span><i>i</i>=<i>c</i></span></span>
+      <span class="frac"><span><i>n</i>!</span><span><i>i</i>!(<i>n</i>−<i>i</i>)!</span></span>
+      <span class="op">·</span><span class="num">2</span><sup>−<i>n</i></sup>
+      <span class="note2">12 of 16 gives p = 0.038; 8 of 8 gives p = 0.0039;
+        11 of 16 gives p = 0.105, which is not evidence of anything</span>
+    </div>
+
+    <figure class="figure" id="fig-abx">
+      <div class="figure-bar">
+        <span class="fno">FIG. 11.5</span>
+        <span class="ftitle">ABX — your ears, your verdict</span>
+        <span class="fstate" id="x-state">0 trials</span>
+      </div>
+      <div class="figure-body">
+        <div class="readout" style="margin-bottom:16px">
+          <div class="ro sig"><span class="k">Trials</span><span class="v" id="x-n">0</span></div>
+          <div class="ro ok"><span class="k">Correct</span><span class="v" id="x-c">0</span></div>
+          <div class="ro"><span class="k">p-value</span><span class="v" id="x-p">1.000</span></div>
+          <div class="ro bad"><span class="k">Verdict</span><span class="v" id="x-v">guessing</span></div>
+        </div>
+        <div class="chips" style="gap:8px">
+          <button class="btn" id="x-a">Play A (the original)</button>
+          <button class="btn" id="x-b">Play B (coded)</button>
+          <button class="btn primary" id="x-x">Play X</button>
+        </div>
+        <div class="chips" style="gap:8px;margin-top:12px">
+          <button class="btn" id="x-ga">X was A</button>
+          <button class="btn" id="x-gb">X was B</button>
+          <button class="btn warn" id="x-reset">Reset</button>
+        </div>
+        <p class="dim mono" id="x-last" style="font-size:.78rem;margin-top:14px">
+          Press A, then B, then X. Guess. The answer is revealed each time.</p>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>B is coded at</span><span class="val" id="x-brl">64 kbit/s</span></div>
+          <input type="range" id="x-br" min="24" max="256" step="8" value="64" data-out="x-brl" aria-label="Bitrate of the coded version">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="x-src">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="castanets">Castanets</button>
+            <button data-v="speech">Speech</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 11.5</b> — changing the bitrate
+        resets the count, because a run of trials only means anything about one
+        condition. Start at 32 kbit/s, where you should score near-perfectly,
+        and work up until you fall back to chance: that bitrate, on this
+        programme, through your headphones, is where <em>this</em> coder becomes
+        transparent <em>to you</em>. All four qualifications are load-bearing.
+        And note what a null result means: not "there is no difference", only
+        "this test did not detect one". Sixteen trials cannot distinguish
+        "identical" from "slightly different"; it takes hundreds to do
+        that.</figcaption>
+    </figure>
+  </section>
+
+  <section id="measure" class="section">
+    <div class="kicker">How the industry measures</div>
+    <h3>Three methods, each for a different size of impairment.</h3>
+    <p style="margin-top:18px">ABX answers one question — can you tell? — and
+      says nothing about how much you mind. Standards bodies need a number, and
+      have three of them, chosen by how badly damaged the signal is expected
+      to be.</p>
+
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>ITU-R BS.1116</dt>
+        <dd>For <strong>small impairments</strong> — codecs expected to be near
+          transparent. A double-blind triple-stimulus test with a hidden
+          reference: the listener gets a labelled reference and two others, one
+          of which is the reference again, and grades the impairment of each on a
+          continuous five-point scale. The reported figure is the
+          <em>diffgrade</em>: the grade given to the system minus the grade given
+          to the hidden reference, so a listener who cannot tell scores zero by
+          construction. It demands expert listeners and a controlled room, and it
+          is slow.</dd>
+      </div>
+      <div class="def">
+        <dt>ITU-R BS.1534 (MUSHRA)</dt>
+        <dd>For <strong>intermediate quality</strong> — the 32 to 96 kbit/s
+          range where impairments are plainly audible and you want to rank
+          systems. Several systems are presented at once on a 0–100 scale against
+          a labelled reference, with a hidden reference and low-pass anchors,
+          conventionally at 3.5 kHz and 7 kHz, mixed in among them. The anchors
+          are the clever part: a listener who rates the hidden reference below
+          90, or the 3.5 kHz anchor above the systems, is not listening
+          carefully, and their data can be excluded on a stated rule rather than
+          on the experimenter's judgement.</dd>
+      </div>
+      <div class="def">
+        <dt>ITU-R BS.1387 (PEAQ)</dt>
+        <dd>For <strong>when you cannot convene a panel</strong>. An objective
+          model: run reference and test through an ear model, extract a set of
+          output variables — modulation difference, noise-to-mask ratio, bandwidth,
+          harmonic structure of the error — and map them, through a small trained
+          neural network, to an <strong>Objective Difference Grade</strong> from
+          0 (imperceptible) to −4 (very annoying). Extremely useful as a
+          regression test on an encoder you are developing. Not a substitute for
+          listeners, and it can be gamed by any artefact its ear model does not
+          represent.</dd>
+      </div>
+    </dl>
+
+    <div class="note danger">
+      <span class="tag tag-danger">What does not work, and why it keeps being tried</span>
+      <p>Subtracting the decoded file from the original and looking at the
+        residual — the "null test" — is intuitive and almost entirely
+        uninformative for a perceptual codec, because the codec's whole job is to
+        put energy where you cannot hear it. A <em>large</em> residual that is
+        correctly shaped is inaudible; a <em>small</em> residual in the wrong
+        band is not. Signal-to-noise ratio fails for the same reason, and fails
+        in a specific direction: switch this study's own encoder from a masking
+        threshold to a flat one and its measured SNR <strong>improves by about
+        eleven decibels</strong> while the result plainly sounds worse. That is
+        not a quirk of a toy — it is why perceptual coding needed a new
+        measurement discipline before it could have an engineering discipline.</p>
+    </div>
+  </section>
+
+  <section id="bias" class="section">
+    <div class="kicker">What listening tests are guarding against</div>
+    <h3>Mostly, they are guarding against the listener.</h3>
+    <p style="margin-top:18px">The reason all of this machinery exists —
+      hidden references, anchors, randomised presentation, statistical exclusion
+      rules — is that sighted listening produces confident, consistent, strongly
+      held results that do not survive blinding. This is not a statement about
+      other people's credulity. It is a measured property of human perception:
+      expectation changes what is heard, not merely what is reported, and it does
+      so in trained listeners with equipment they know well.</p>
+    <p>The best-known example in this field is the high-resolution audio
+      question. Meyer and Moran's 2007 experiment inserted a 16-bit/44.1 kHz
+      analogue-to-digital-to-analogue loop into the playback path of SACD and
+      DVD-Audio systems, in real listening rooms, with listeners including
+      audio professionals — and found that under blind conditions the loop could
+      not be detected. Later meta-analyses have argued for a small effect under
+      some conditions, and the debate is not closed; but the direction of the
+      correction is always the same, and it is always downward from what sighted
+      listening reported.</p>
+    <blockquote class="pullquote">Every claim in this study that could be
+      tested by ear has been tested by ear, by somebody, under blinding — and a
+      good many claims that were once made confidently did not survive it.
+      <span class="who">The reason chapter 11 exists at all</span></blockquote>
+    <p>Which is the practical advice this chapter ends on. When you want to know
+      whether a bitrate is good enough, do not reason about it and do not read
+      about it. Run the test in figure 11.5 on your own ears, with your own
+      headphones, on the hardest programme you own. You will get a number, it
+      will be specific to you, and it will almost certainly be lower than you
+      expect. <a href="12-choosing.html">Chapter 12</a> is about what to do with
+      that number.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* --------------------------------------------------------------- FIG 11.1 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("e-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var st = { N: 1024, rate: 48, sig: null, res: null, an: null };
+
+  // A level-versus-time plot rather than a waveform: the error is 60 dB below
+  // the signal, so on a linear axis it is a flat line. In decibels the whole
+  // argument is visible at once — the signal steps up at the attack while the
+  // error does not step at all.
+  var p = new AC.Plot(cv, {
+    aspect: 2.6, xmin: -60, xmax: 40, ymin: -100, ymax: 2,
+    xlabel: "milliseconds, relative to the attack", ylabel: "level (dB)",
+    pad: { l: 50, r: 14, t: 14, b: 34 },
+  });
+
+  function signal() {
+    // Three strikes in a second: dense enough that the bit budget actually
+    // binds, so the rate loop has to make the compromise this figure is about.
+    if (!st.sig) st.sig = A.src.castanets(1.0, { sr: A.rate(), hits: [0.22, 0.5, 0.78] });
+    return st.sig;
+  }
+  function encode() {
+    var sr = A.rate(), x = signal();
+    st.an = A.analyze(x, { sr: sr, N: st.N, masking: true });
+    st.res = A.codec(x, { analysis: st.an, bitrate: st.rate });
+    // where the attack actually is
+    var at = 0, i;
+    for (i = 0; i < x.length; i++) if (Math.abs(x[i]) > Math.abs(x[at])) at = i;
+    st.attack = at;
+    var err = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) err[i] = st.res.out[i] - x[i];
+    st.err = err;
+    // energy in the 40 ms before and the 40 ms after
+    var w = Math.round(sr * 0.04), pre = 0, post = 0, n = 0;
+    for (i = Math.max(0, at - w); i < at; i++) { pre += err[i] * err[i]; n++; }
+    for (i = at; i < Math.min(err.length, at + w); i++) post += err[i] * err[i];
+    document.getElementById("e-win").textContent = (2 * st.N / sr * 1000).toFixed(1) + " ms";
+    document.getElementById("e-pre").textContent = D.dbp(pre / Math.max(n, 1)).toFixed(1) + " dB";
+    document.getElementById("e-post").textContent = D.dbp(post / Math.max(n, 1)).toFixed(1) + " dB";
+    document.getElementById("e-br").textContent = st.res.kbps.toFixed(0) + " kbit/s";
+    document.getElementById("e-state").textContent = "N = " + st.N + " · " + (2 * st.N / sr * 1000).toFixed(0) + " ms window";
+    draw();
+  }
+
+  // Short-time level in 1 ms hops, in dB relative to the signal's own peak.
+  function envelope(sig, at, sr, ref) {
+    var hop = Math.max(1, Math.round(sr * 0.001)), out = [], i, j, ms;
+    for (i = Math.max(0, at - Math.round(sr * 0.06)); i < Math.min(sig.length - hop, at + Math.round(sr * 0.04)); i += hop) {
+      var e = 0;
+      for (j = 0; j < hop; j++) e += sig[i + j] * sig[i + j];
+      ms = (i + hop / 2 - at) / sr * 1000;
+      out.push([ms, Math.max(D.dbp(e / hop / (ref * ref)), -100)]);
+    }
+    return out;
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ y: [-100, -80, -60, -40, -20, 0] });
+    if (!st.res) { p.note(p.pad.l + 10, p.pad.t + 10, "loading…", { color: AC.C.faint }); return; }
+    var sr = A.rate(), x = signal(), at = st.attack;
+    var ref = Math.max(D.peak(x), 1e-9);
+    // the 5 ms in which backward masking actually operates
+    p.band(-5, 0, { color: AC.C.green, alpha: .16 });
+    // block boundaries
+    var b0 = Math.floor((at - sr * 0.06) / st.N), b;
+    for (b = b0; b * st.N < at + sr * 0.04; b++) {
+      var ms = (b * st.N - at) / sr * 1000;
+      if (ms > -60 && ms < 40) p.vline(ms, { color: AC.C.purple, dash: [3, 5], width: 1 });
+    }
+    p.line(envelope(x, at, sr, ref), { color: AC.C.faint, width: 1.6 });
+    p.line(envelope(st.err, at, sr, ref), { color: AC.C.red, width: 2, fill: true, fillAlpha: .10, fillTo: -100 });
+    p.note(p.pad.l + 8, p.pad.t + 4, "levels relative to the strike's own peak", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("e-n"), function (v) { st.N = +v; encode(); });
+  var pend = 0;
+  AC.slider(document.getElementById("e-rate"), function (v) {
+    st.rate = v;
+    clearTimeout(pend); pend = setTimeout(encode, 150);
+  }, function (v) { return v + " kbit/s"; });
+
+  A.wire(document.getElementById("e-orig"), function () { return signal(); });
+  A.wire(document.getElementById("e-code"), function () { if (!st.res) encode(); return st.res.out; });
+  A.wire(document.getElementById("e-err"), function () {
+    if (!st.res) encode();
+    var e = Float64Array.from(st.err);
+    D.normalize(e, 0.8);
+    return e;
+  });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); encode();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { encode(); }
+})();
+
+/* --------------------------------------------------------------- FIG 11.2 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("b-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var st = { src: "music", rate: 48, sig: null, an: null, res: null, grid: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 1, ymin: 0, ymax: 1,
+    xlabel: "time →", ylabel: "critical band →",
+    pad: { l: 46, r: 14, t: 12, b: 32 },
+  });
+
+  function signal() {
+    if (st.sig) return st.sig;
+    var sr = A.rate();
+    st.sig = st.src === "music" ? A.src.music(2.0, { sr: sr })
+      : st.src === "applause" ? A.src.applause(2.0, { sr: sr })
+      : A.src.speech(2.0, { sr: sr });
+    st.an = A.analyze(st.sig, { sr: sr, N: 512, masking: true });
+    return st.sig;
+  }
+
+  // For each block and band, did the quantiser write anything at all?
+  function buildGrid() {
+    signal();
+    st.res = A.codec(st.sig, { analysis: st.an, bitrate: st.rate });
+    var a = st.an, nb = a.bands, edges = a.edges;
+    var gain = Math.pow(10, st.res.lambda / 10);
+    var grid = [], b, k, i;
+    for (b = 0; b < a.blocks; b++) {
+      var row = new Uint8Array(nb), X = a.coeffs[b], T = a.thresh[b];
+      for (k = 0; k < nb; k++) {
+        var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+        var live = 0;
+        for (i = edges[k]; i < edges[k + 1]; i++) {
+          if (Math.round(X[i] / step) !== 0) { live = 1; break; }
+        }
+        row[k] = live;
+      }
+      grid.push(row);
+    }
+    st.grid = grid;
+
+    var flips = 0, everLive = new Uint8Array(nb);
+    for (b = 1; b < grid.length; b++) {
+      for (k = 0; k < nb; k++) {
+        if (grid[b][k] !== grid[b - 1][k]) flips++;
+        if (grid[b][k]) everLive[k] = 1;
+      }
+    }
+    var dead = 0;
+    for (k = 0; k < nb; k++) if (!everLive[k]) dead++;
+    var seconds = st.sig.length / a.sr;
+    document.getElementById("b-flip").textContent = Math.round(flips / seconds).toLocaleString("en-GB");
+    document.getElementById("b-rate").textContent = Math.round(a.sr / a.N) + " blocks/s";
+    document.getElementById("b-dead").textContent = dead + " of " + nb;
+    document.getElementById("b-br").textContent = st.res.kbps.toFixed(0) + " kbit/s";
+    document.getElementById("b-state").textContent = st.src;
+    draw();
+  }
+
+  function draw() {
+    p.clear();
+    var c = p.ctx;
+    if (!st.grid) { p.axes({ x: [], y: [] }); p.note(p.pad.l + 10, p.pad.t + 10, "loading…", { color: AC.C.faint }); return; }
+    var nb = st.an.bands, nB = st.grid.length;
+    var x0 = p.pad.l, y0 = p.pad.t;
+    var w = (p.w - p.pad.l - p.pad.r) / nB;
+    var h = (p.h - p.pad.t - p.pad.b) / nb;
+    var b, k;
+    for (b = 0; b < nB; b++) {
+      for (k = 0; k < nb; k++) {
+        var live = st.grid[b][k];
+        var flipped = b > 0 && st.grid[b][k] !== st.grid[b - 1][k];
+        c.fillStyle = flipped ? AC.C.red : live ? AC.C.blue : "#1A2230";
+        c.globalAlpha = flipped ? 0.95 : live ? 0.55 : 1;
+        c.fillRect(x0 + b * w, y0 + (nb - 1 - k) * h, Math.max(w, 1), Math.max(h - 0.5, 1));
+      }
+    }
+    c.globalAlpha = 1;
+    // band-edge frequency labels down the left
+    c.font = "10px ui-monospace, monospace"; c.fillStyle = AC.C.ghost;
+    c.textAlign = "right"; c.textBaseline = "middle";
+    var sr = st.an.sr, lines = st.an.N;
+    for (k = 0; k < nb; k += Math.ceil(nb / 7)) {
+      var f = st.an.edges[k] / lines * (sr / 2);
+      c.fillText(f >= 1000 ? (f / 1000).toFixed(0) + "k" : Math.round(f), x0 - 6, y0 + (nb - 1 - k + 0.5) * h);
+    }
+    c.textAlign = "right"; c.textBaseline = "bottom";
+    c.fillStyle = AC.C.faint;
+    c.fillText("time →", p.w - p.pad.r, p.h - 2);
+    c.save();
+    c.translate(11, p.pad.t + 2); c.rotate(-Math.PI / 2);
+    c.textAlign = "right"; c.textBaseline = "top";
+    c.fillText("frequency (Hz) →", 0, 0);
+    c.restore();
+  }
+  AC.autoDraw(p, draw);
+
+  var pend = 0;
+  AC.slider(document.getElementById("b-rate-in"), function (v) {
+    st.rate = v;
+    clearTimeout(pend); pend = setTimeout(buildGrid, 150);
+  }, function (v) { return v + " kbit/s"; });
+  AC.chips(document.getElementById("b-src"), function (v) {
+    st.src = v; st.sig = null; st.an = null; A.stopAll(); buildGrid();
+  });
+  A.wire(document.getElementById("b-orig"), function () { return signal(); });
+  A.wire(document.getElementById("b-code"), function () { if (!st.res) buildGrid(); return st.res.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); buildGrid();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { buildGrid(); }
+})();
+
+/* --------------------------------------------------------------- FIG 11.3 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("w-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var st = { fc: 16000, sig: null, cut: null, lamFull: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 50, xmax: 22000, ymin: -95, ymax: 0,
+    xlabel: "frequency", ylabel: "dB",
+    pad: { l: 48, r: 14, t: 14, b: 34 },
+  });
+
+  function signal() {
+    if (!st.sig) st.sig = A.src.music(1.8, { sr: A.rate() });
+    return st.sig;
+  }
+  function apply() {
+    var sr = A.rate(), x = signal();
+    st.cut = A.lowpassFFT(x, sr, st.fc);
+    var i, removed = 0, total = 0;
+    for (i = 0; i < x.length; i++) {
+      var d = x[i] - st.cut[i];
+      removed += d * d; total += x[i] * x[i];
+    }
+    var frac = st.fc >= sr / 2 ? 0 : 1 - st.fc / (sr / 2);
+    document.getElementById("w-energy").textContent = (removed / Math.max(total, 1e-20) * 100).toFixed(2) + "%";
+    document.getElementById("w-lines").textContent = (frac * 100).toFixed(0) + "%";
+    // What the lowpass actually buys, measured: give the coder a fixed
+    // 128 kbit/s and see how much further below the masking threshold it can
+    // push its noise once it no longer has to code the top of the spectrum.
+    if (st.lamFull === null) {
+      st.lamFull = A.codec(x, { sr: sr, N: 512, masking: true, bitrate: 128 }).lambda;
+    }
+    var lamCut = A.codec(x, { sr: sr, N: 512, masking: true, bitrate: 128, bandLimit: st.fc }).lambda;
+    var gainDb = st.lamFull - lamCut;
+    document.getElementById("w-bits").textContent =
+      gainDb <= 0.05 ? "no change" : gainDb.toFixed(1) + " dB quieter";
+    document.getElementById("w-state").textContent = (st.fc / 1000).toFixed(1) + " kHz";
+    draw();
+  }
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.cut) return;
+    var sr = A.rate(), x = signal();
+    var n = 4096, off = Math.floor(x.length / 2);
+    var sa = D.spectrumDb(x.subarray(off, off + n), { n: n, window: "hann" });
+    var sb = D.spectrumDb(st.cut.subarray(off, off + n), { n: n, window: "hann" });
+    var pa = [], pb = [], i, f, k = 12;
+    // smooth for legibility
+    function sm(arr, i) {
+      var s = 0, c = 0, j;
+      for (j = Math.max(0, i - k); j <= Math.min(arr.length - 1, i + k); j++) { s += arr[j]; c++; }
+      return s / c;
+    }
+    for (i = 2; i < sa.length; i += 2) {
+      f = i / n * sr;
+      if (f < p.xmin || f > p.xmax) continue;
+      pa.push([f, Math.max(sm(sa, i), -95)]);
+      pb.push([f, Math.max(sm(sb, i), -95)]);
+    }
+    // the absolute threshold, shifted to sit sensibly on this axis
+    p.fn(function (f) { return AC.clamp(D.ath(f) - 78, -95, 0); },
+      { color: AC.C.purple, width: 1.3, dash: [5, 4], alpha: .8 });
+    p.line(pa, { color: AC.C.blue, width: 1.6 });
+    p.line(pb, { color: AC.C.gold, width: 1.6 });
+    p.vline(st.fc, { color: AC.C.gold, label: (st.fc / 1000).toFixed(1) + " kHz" });
+  }
+  AC.autoDraw(p, draw);
+
+  var pend = 0;
+  AC.slider(document.getElementById("w-fc"), function (v) {
+    st.fc = v;
+    clearTimeout(pend); pend = setTimeout(apply, 130);
+  }, function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+
+  A.wire(document.getElementById("w-full"), function () { return signal(); });
+  A.wire(document.getElementById("w-cut"), function () { if (!st.cut) apply(); return st.cut; });
+  A.wire(document.getElementById("w-diff"), function () {
+    if (!st.cut) apply();
+    var x = signal(), d = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) d[i] = x[i] - st.cut[i];
+    D.normalize(d, 0.7);
+    return d;
+  });
+})();
+
+/* --------------------------------------------------------------- FIG 11.4 */
+(function () {
+  "use strict";
+  var cv = document.getElementById("s-cv");
+  if (!cv || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var st = { fc: 4000, pair: null, out: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 100, xmax: 20000, ymin: -95, ymax: -10,
+    xlabel: "frequency", ylabel: "side-channel energy (dB)",
+    pad: { l: 52, r: 14, t: 14, b: 34 },
+  });
+
+  function pair() {
+    if (!st.pair) st.pair = A.src.stereoPair(2.2, { sr: A.rate() });
+    return st.pair;
+  }
+
+  // Intensity stereo, in its crudest honest form: above the crossover both
+  // channels are replaced by the mid signal, so the phase difference between
+  // the ears — and with it the width — is gone.
+  function collapse(fc) {
+    var sr = A.rate(), sp = pair(), n = sp.l.length, i;
+    var mid = new Float64Array(n), side = new Float64Array(n);
+    for (i = 0; i < n; i++) { mid[i] = (sp.l[i] + sp.r[i]) / 2; side[i] = (sp.l[i] - sp.r[i]) / 2; }
+    var sideLow = A.lowpassFFT(side, sr, fc);          // keep the side only below fc
+    var L = new Float64Array(n), R = new Float64Array(n);
+    for (i = 0; i < n; i++) { L[i] = mid[i] + sideLow[i]; R[i] = mid[i] - sideLow[i]; }
+    return { l: L, r: R, side: side, sideLow: sideLow, mid: mid };
+  }
+
+  function apply() {
+    var sr = A.rate();
+    st.out = collapse(st.fc);
+    var kept = 0, all = 0, i;
+    for (i = 0; i < st.out.side.length; i++) {
+      kept += st.out.sideLow[i] * st.out.sideLow[i];
+      all += st.out.side[i] * st.out.side[i];
+    }
+    var c = 0, el = 0, er = 0;
+    for (i = 0; i < st.out.l.length; i++) {
+      c += st.out.l[i] * st.out.r[i]; el += st.out.l[i] * st.out.l[i]; er += st.out.r[i] * st.out.r[i];
+    }
+    document.getElementById("s-keep").textContent = (kept / Math.max(all, 1e-20) * 100).toFixed(1) + "%";
+    document.getElementById("s-corr").textContent = (c / Math.sqrt(Math.max(el * er, 1e-20))).toFixed(3);
+    document.getElementById("s-save").textContent =
+      "≈ " + Math.round((1 - kept / Math.max(all, 1e-20)) * 22) + "% of the frame";
+    document.getElementById("s-state").textContent = (st.fc / 1000).toFixed(1) + " kHz crossover";
+    draw();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.out) return;
+    var sr = A.rate(), n = 4096, off = Math.floor(st.out.side.length / 2);
+    var sa = D.spectrumDb(st.out.side.subarray(off, off + n), { n: n, window: "hann" });
+    var sb = D.spectrumDb(st.out.sideLow.subarray(off, off + n), { n: n, window: "hann" });
+    var pa = [], pb = [], i, f, k = 14;
+    function sm(arr, i) {
+      var s = 0, c = 0, j;
+      for (j = Math.max(0, i - k); j <= Math.min(arr.length - 1, i + k); j++) { s += arr[j]; c++; }
+      return s / c;
+    }
+    for (i = 2; i < sa.length; i += 2) {
+      f = i / n * sr;
+      if (f < p.xmin || f > p.xmax) continue;
+      pa.push([f, Math.max(sm(sa, i), -95)]);
+      pb.push([f, Math.max(sm(sb, i), -95)]);
+    }
+    p.line(pa, { color: AC.C.blue, width: 1.6, fill: true, fillAlpha: .07 });
+    p.line(pb, { color: AC.C.red, width: 1.6 });
+    p.vline(st.fc, { color: AC.C.purple, label: (st.fc / 1000).toFixed(1) + " kHz" });
+  }
+  AC.autoDraw(p, draw);
+
+  var pend = 0;
+  AC.slider(document.getElementById("s-fc"), function (v) {
+    st.fc = v;
+    clearTimeout(pend); pend = setTimeout(apply, 140);
+  }, function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+
+  function wireStereo(btn, get) {
+    var h = null;
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (h) { h.stop(); h = null; btn.classList.remove("on"); return; }
+      A.stopAll();
+      document.querySelectorAll(".btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+      var s = get();
+      btn.classList.add("on");
+      h = A.playStereo(s.l, s.r, { onended: function () { h = null; btn.classList.remove("on"); } });
+    });
+  }
+  wireStereo(document.getElementById("s-orig"), function () { return pair(); });
+  wireStereo(document.getElementById("s-coll"), function () { if (!st.out) apply(); return st.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); apply();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { apply(); }
+})();
+
+/* --------------------------------------------------------------- FIG 11.5 */
+(function () {
+  "use strict";
+  var btnA = document.getElementById("x-a");
+  if (!btnA || !window.AUD) return;
+  var A = window.AUD, D = window.DSP;
+  var st = { src: "music", rate: 64, sig: null, an: null, coded: null };
+
+  function reference() {
+    if (st.sig) return st.sig;
+    var sr = A.rate();
+    st.sig = st.src === "music" ? A.src.music(1.8, { sr: sr })
+      : st.src === "castanets" ? A.src.castanets(1.8, { sr: sr })
+      : A.src.speech(1.8, { sr: sr });
+    st.an = A.analyze(st.sig, { sr: sr, N: 512, masking: true });
+    st.coded = null;
+    return st.sig;
+  }
+  function coded() {
+    reference();
+    if (!st.coded) st.coded = A.codec(st.sig, { analysis: st.an, bitrate: st.rate }).out;
+    return st.coded;
+  }
+
+  var abx = A.abx(reference, coded);
+
+  function refresh(last) {
+    var n = abx.state.trial, c = abx.state.correct, pv = abx.pValue();
+    document.getElementById("x-n").textContent = n;
+    document.getElementById("x-c").textContent = c;
+    document.getElementById("x-p").textContent = n ? pv.toFixed(4) : "1.000";
+    document.getElementById("x-state").textContent = n + (n === 1 ? " trial" : " trials");
+    var v = document.getElementById("x-v");
+    var ro = v.parentNode;
+    if (n < 8) { v.textContent = "not yet"; ro.className = "ro"; }
+    else if (pv < 0.01) { v.textContent = "you can hear it"; ro.className = "ro ok"; }
+    else if (pv < 0.05) { v.textContent = "probably"; ro.className = "ro sig"; }
+    else { v.textContent = "indistinguishable"; ro.className = "ro bad"; }
+    if (last) {
+      document.getElementById("x-last").textContent =
+        (last.right ? "Correct — " : "Wrong — ") + "X was " + last.was +
+        ". New trial ready; press X when you are.";
+    }
+  }
+
+  document.getElementById("x-a").addEventListener("click", function () { abx.playA(); });
+  document.getElementById("x-b").addEventListener("click", function () { abx.playB(); });
+  document.getElementById("x-x").addEventListener("click", function () { abx.playX(); });
+  document.getElementById("x-ga").addEventListener("click", function () { refresh(abx.guess(false)); });
+  document.getElementById("x-gb").addEventListener("click", function () { refresh(abx.guess(true)); });
+  document.getElementById("x-reset").addEventListener("click", function () {
+    abx.reset(); A.stopAll();
+    document.getElementById("x-last").textContent = "Reset. Press A, then B, then X.";
+    refresh();
+  });
+
+  AC.slider(document.getElementById("x-br"), function (v) {
+    if (v === st.rate) return;
+    st.rate = v; st.coded = null; abx.reset(); A.stopAll();
+    document.getElementById("x-last").textContent =
+      "Bitrate changed to " + v + " kbit/s, so the count starts again.";
+    refresh();
+  }, function (v) { return v + " kbit/s"; });
+
+  AC.chips(document.getElementById("x-src"), function (v) {
+    st.src = v; st.sig = null; st.an = null; st.coded = null;
+    abx.reset(); A.stopAll();
+    document.getElementById("x-last").textContent = "Programme changed, so the count starts again.";
+    refresh();
+  });
+
+  refresh();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

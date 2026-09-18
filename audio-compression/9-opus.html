@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Opus — Throwing Sound Away</title>
+<meta name="description" content="Opus carries a linear-predictive speech coder and an MDCT music coder in one packet format, and picks between them with five bits at the head of every packet.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="09">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 09</div>
+  <div class="num">09</div>
+  <h2>Two coders in one bitstream, and five bits that choose between them.</h2>
+  <p class="lead">Every codec before it had to decide whether it was modelling
+    the talker or modelling the listener. Opus refuses: it ships a
+    linear-predictive speech coder and a transform music coder in a single
+    packet format, hands both of them the same range coder, and re-decides which
+    one is running at the head of every packet — in under a millisecond of
+    signalling, without renegotiating anything.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">Two coders, one bitstream, chosen per packet</div></div>
+    <div><div class="k">Named after</div><div class="v">SILK, from Skype; CELT = Constrained Energy Lapped Transform</div></div>
+    <div><div class="k">Numbers</div><div class="v">6–510 kbit/s · 2.5–60 ms frames · 32 configurations · 1 TOC byte</div></div>
+    <div><div class="k">Standardised</div><div class="v">RFC 6716, September 2012</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#split">The thirty-year split</a>
+    <a href="#silk">SILK: model the talker</a>
+    <a href="#celt">CELT: energy first, shape second</a>
+    <a href="#pvq">The pyramid</a>
+    <a href="#hybrid">Hybrid, and the seam</a>
+    <a href="#packet">One byte, decoded</a>
+    <a href="#loss">When packets do not arrive</a>
+    <a href="#wrong">What people get wrong</a>
+    <a href="#next">Where this leaves us</a>
+  </nav>
+  <div>
+
+  <section id="split" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The thirty-year split</div>
+    <h3>Speech coding and music coding had been separate trades since the 1970s.</h3>
+    <p style="margin-top:18px">Two traditions, two literatures, two sets of
+      conferences. One of them models the <em>source</em>: speech comes out of a
+      tube of known length driven by a buzzing or hissing excitation, so send the
+      tube and the buzz and let the decoder rebuild the sound. That line runs
+      from the channel vocoder through LPC-10, CELP, G.729, AMR, Speex and
+      Skype's SILK, and it is astonishingly efficient — intelligible speech at
+      2.4 kbit/s, comfortable speech at 16 — precisely because it is not coding
+      a waveform at all. Play a cello into it and you get a noise that is not a
+      cello.</p>
+    <p>The other tradition models the <em>listener</em>: transform the signal,
+      compute what the ear cannot hear, and quantise down to that line. That is
+      the machinery of <a href="4-transform.html">Chapter 04</a> through
+      <a href="6-entropy.html">Chapter 06</a>, and of
+      <a href="7-mp3.html">MP3</a> and <a href="8-aac.html">AAC</a>. It will code
+      anything — cello, applause, a door slamming — and it degrades gracefully
+      with bitrate. Ask it for 8 kbit/s and it produces a gargling wreck, because
+      at eight thousand bits a second there is no honest way to describe a
+      waveform and no source model to fall back on.</p>
+    <p>Real applications need both. A voice call that occasionally carries
+      hold music, a conference where someone shares a video, a game where a
+      teammate's microphone picks up their stereo: each one either switches codec
+      mid-session — a renegotiation, a gap, a new payload type — or picks one
+      codec and is bad at half its job. In 2010 the IETF chartered a working
+      group to produce a single royalty-free codec that would not have to
+      choose. Skype contributed SILK, its own deployed speech coder;
+      Xiph.Org contributed CELT, Jean-Marc Valin's very-low-delay transform
+      coder. The two were not blended. They were bolted together behind one
+      packet format, and the result was published as
+      <strong>RFC 6716 in September 2012</strong>.</p>
+
+    <blockquote class="pullquote">The argument over whether to model the source
+      or model the ear was settled by shipping both, and letting five bits at
+      the head of each packet say which one is running.
+      <span class="who">The Opus settlement</span></blockquote>
+
+    <p>The operating envelope is deliberately absurd. Bitrates from
+      <strong>6 to 510 kbit/s</strong>. Frame sizes of 2.5, 5, 10, 20, 40 and
+      60 ms, with up to 120 ms of audio in one packet. Five audio bandwidths,
+      from a 4 kHz narrowband telephone channel to 20 kHz fullband. Mono,
+      stereo, or arbitrary multistream for surround and ambisonics. Any of those
+      can change from one packet to the next, and the decoder needs no warning
+      beyond the packet itself.</p>
+
+    <div class="scroller"><table>
+      <caption>The five bandwidths, and who codes them</caption>
+      <thead><tr><th>Abbrev.</th><th>Name</th><th class="num">Audio bandwidth</th><th class="num">Internal rate</th><th>Coded by</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">NB</td><td>narrowband</td><td class="num">4 kHz</td><td class="num">8 kHz</td><td>SILK, or CELT with its top bands switched off</td></tr>
+        <tr><td class="mono">MB</td><td>medium-band</td><td class="num">6 kHz</td><td class="num">12 kHz</td><td>SILK only — CELT has no MB configuration</td></tr>
+        <tr><td class="mono">WB</td><td>wideband</td><td class="num">8 kHz</td><td class="num">16 kHz</td><td>SILK, or CELT</td></tr>
+        <tr><td class="mono">SWB</td><td>super-wideband</td><td class="num">12 kHz</td><td class="num">24 kHz</td><td>Hybrid (SILK + CELT), or CELT alone</td></tr>
+        <tr><td class="mono">FB</td><td>fullband</td><td class="num">20 kHz</td><td class="num">48 kHz</td><td>Hybrid, or CELT alone</td></tr>
+      </tbody>
+    </table></div>
+    <p>The internal rate column is where SILK actually runs its arithmetic; the
+      encoder resamples down to it and the decoder resamples back. CELT is
+      different — it always runs at 48 kHz internally and produces a narrower
+      bandwidth by simply not coding the upper bands. Either way the
+      application hands Opus 48 kHz audio (or 8, 12, 16 or 24 kHz, which the
+      library resamples) and gets it back at whatever rate it asks for.</p>
+
+    <div class="note ok">
+      <span class="tag tag-ok">Royalty-free, and it stuck</span>
+      <p>Opus was published with a BSD-licensed reference implementation, and
+        <strong>RFC 7874</strong>
+        (May 2016) makes it <strong>mandatory to implement</strong> in every
+        WebRTC endpoint, alongside G.711. That is why it is underneath Discord,
+        WhatsApp, Signal, Google Meet and essentially every browser-based call,
+        and why YouTube serves Opus inside WebM. RFC 8251
+        (October 2017) folded a set of corrections into the normative decoder;
+        RFC 7845
+        (April 2016) defines Ogg Opus, which is what a <code>.opus</code> file
+        is. Elsewhere in this almanac, <a href="/ropus/">ropus</a> is that
+        decoder ported to safe Rust and checked bit-exact against the C.</p>
+    </div>
+  </section>
+
+  <section id="silk" class="section">
+    <div class="kicker k-heat">SILK: model the talker</div>
+    <h3>A speech coder sends the shape of your throat, not the sound of it.</h3>
+    <p style="margin-top:18px">Strip a vowel down and it is a periodic
+      excitation — the vocal folds slapping shut a hundred-odd times a second —
+      poured through a resonant tube. The tube has no zeros worth speaking of,
+      only resonances, so its transfer function is well modelled by an all-pole
+      filter of modest order. That is the source–filter model, and it is the
+      whole of linear predictive coding.</p>
+
+    <div class="eq">
+      <i>H</i>(<i>z</i>)<span class="op">=</span><span class="frac"><span><i>g</i></span><span><i>A</i>(<i>z</i>)</span></span>
+      <span class="op">,</span>
+      <i>A</i>(<i>z</i>)<span class="op">=</span><span class="num">1</span><span class="op">+</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>p</i></span><span><i>i</i>=1</span></span>
+      <i>a</i><sub><i>i</i></sub><i>z</i><sup>−<i>i</i></sup>
+      <span class="note2">p coefficients and one gain describe the vocal tract; whatever is left over is the excitation</span>
+    </div>
+
+    <p>Run the inverse filter <i>A</i>(<i>z</i>) over the speech and what comes
+      out is the <em>residual</em>: the part the tube could not explain. If the
+      model is good the residual is nearly white, which is the point — a white
+      signal has no structure left to exploit, so its only remaining cost is its
+      amplitude. The coefficients come from the Levinson–Durbin recursion on the
+      signal's autocorrelation, the same recursion that
+      <a href="10-lossless.html">Chapter 10</a> uses to compress audio without
+      losing a bit. SILK uses a short filter: ten coefficients at the narrow
+      bandwidths, sixteen at wideband.</p>
+
+    <figure class="figure" id="fig-lpc">
+      <div class="figure-bar">
+        <span class="fno">FIG. 9.1</span>
+        <span class="ftitle">The source–filter model, fitted live</span>
+        <span class="fstate" id="lp-state">order 16</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="lp-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>measured spectrum of the vowel</span>
+          <span class="l-heat"><i></i>all-pole envelope, order p</span>
+          <span class="l-teal"><i></i>the same spectrum, smoothed to its envelope</span>
+          <span class="l-ghost"><i class="dash"></i>residual after inverse filtering</span>
+          <span class="l-faint"><i class="dash"></i>the tract's true resonances</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Formants resolved</span><span class="v" id="lp-fmt">— of 4</span></div>
+          <div class="ro"><span class="k">Envelope fit error</span><span class="v" id="lp-fit">— dB</span></div>
+          <div class="ro ok"><span class="k">Prediction gain</span><span class="v" id="lp-gain">— dB</span></div>
+          <div class="ro ghost"><span class="k">Numbers sent per frame</span><span class="v" id="lp-nums">17</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Vowel</span></div>
+          <div class="chips" id="lp-vowel">
+            <button data-v="a" class="on">/a/</button>
+            <button data-v="e">/e/</button>
+            <button data-v="i">/i/</button>
+            <button data-v="u">/u/</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Filter order p</span><span class="val" id="lp-olab">16</span></div>
+          <input type="range" id="lp-order" min="2" max="30" step="2" value="16" data-out="lp-olab" aria-label="LPC filter order">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Pitch f₀</span><span class="val" id="lp-flab">118 Hz</span></div>
+          <input type="range" id="lp-f0" min="70" max="260" step="2" value="118" data-out="lp-flab" aria-label="Fundamental frequency">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="lp-orig">Vowel</button>
+            <button class="btn play" id="lp-syn">Filter only</button>
+            <button class="btn play" id="lp-res">Residual</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 9.1</b> — a vowel is synthesised from
+        four formant resonances, band-limited and resampled to 16 kHz exactly as
+        SILK resamples before it fits anything, and then a 1 024-sample frame is
+        taken from the middle of it, pre-emphasised by
+        1&nbsp;−&nbsp;0.97<i>z</i><sup>−1</sup> and fitted with a real
+        Levinson–Durbin recursion. The analysis rate is not a detail: sixteen
+        coefficients are eight pole pairs, which over 8 kHz is about one per
+        kilohertz and enough to place each formant, and over 24 kHz would be one
+        per three kilohertz and not enough to tell F1 from F2 at all. The gold envelope is
+        |1/<i>A</i>(<i>e</i><sup><i>jω</i></sup>)| from the coefficients that
+        recursion returned; the purple trace is the measured spectrum of the
+        residual, and it is flat because the filter has taken the structure out.
+        <b>Filter only</b> discards the residual entirely and drives
+        1/<i>A</i>(<i>z</i>) with a bare impulse train at the pitch you set: that
+        buzzing thing is what sixteen numbers and one gain per frame buy you.
+        The teal trace is the same spectrum averaged over 260 Hz of power — the
+        envelope the all-pole model is trying to be — and the fit readout is the
+        root-mean-square distance between the two, measured only where there is
+        signal to measure. Now drag the order. At
+        p&nbsp;=&nbsp;2 the envelope is a single resonance: it finds none of the
+        four formants and sits 4 to 12 dB off, depending on the vowel. Raise it
+        and the peaks appear a pole-pair at a time — sooner on /i/, whose
+        formants are far apart, later on /a/, whose first two are not — until at
+        16, SILK's wideband order, every vowel here resolves all four and the
+        error has settled between 2 and 3 dB. Further poles buy almost nothing.
+        Press <b>Filter only</b> at 4 and again at 16: the vowel's identity
+        arrives with its
+        formants, from nothing but sixteen numbers and a gain. The pitch slider
+        moves the buzz without touching the filter, which is the whole point of
+        separating source from filter — and the reason the residual, purple, is
+        still a comb of harmonics rather than white noise.</figcaption>
+    </figure>
+
+    <p>Two things stop that being the whole story. The first is that
+      <strong>the coefficients cannot be transmitted</strong>. The
+      <i>a</i><sub><i>i</i></sub> are ferociously ill-conditioned: perturb one of
+      them in the third decimal place and a pole can wander outside the unit
+      circle, at which point the decoder's filter howls instead of resonating.
+      So SILK converts them to <strong>line spectral frequencies</strong> — the
+      roots of the two auxiliary polynomials formed by adding and subtracting a
+      reversed copy of <i>A</i>(<i>z</i>).</p>
+
+    <div class="eq left">
+      <i>P</i>(<i>z</i>)<span class="op">=</span><i>A</i>(<i>z</i>)<span class="op">+</span><i>z</i><sup>−(<i>p</i>+1)</sup><i>A</i>(<i>z</i><sup>−1</sup>)<span class="op">,</span>
+      &nbsp;<i>Q</i>(<i>z</i>)<span class="op">=</span><i>A</i>(<i>z</i>)<span class="op">−</span><i>z</i><sup>−(<i>p</i>+1)</sup><i>A</i>(<i>z</i><sup>−1</sup>)
+      <span class="note2">the roots of P and Q lie on the unit circle and interlace; keep them in order and the filter cannot be unstable</span>
+    </div>
+
+    <p>Those roots are angles, so they are just frequencies between 0 and the
+      Nyquist rate, and they have two properties a quantiser dreams of: keeping
+      them sorted and distinct <em>guarantees</em> a stable synthesis filter,
+      and an error in one of them perturbs the spectrum only near that
+      frequency, rather than everywhere at once. SILK normalises them (hence
+      NLSFs), predicts them across the frame, and quantises what is left with a
+      two-stage vector quantiser — a coarse stage that picks an entry from a
+      trained codebook, then a residual stage that corrects it. Vector
+      quantisation rather than scalar because the NLSFs of real speech occupy a
+      small, oddly shaped region of the p-dimensional space, and a scalar
+      quantiser would spend most of its codewords on throats that do not exist.</p>
+
+    <p>The second is <strong>pitch</strong>. A short all-pole filter models the
+      envelope, not the harmonic comb underneath it, so the residual of voiced
+      speech is not white at all: it is a train of pulses one pitch period
+      apart. SILK therefore runs a long-term predictor over the residual, with
+      one lag estimated per 5 ms subframe and a five-tap filter at that lag.</p>
+
+    <div class="eq">
+      <i>e</i>(<i>n</i>)<span class="op">=</span><i>r</i>(<i>n</i>)<span class="op">−</span>
+      <span class="bigop">∑</span><span class="limits"><span>2</span><span><i>k</i>=−2</span></span>
+      <i>b</i><sub><i>k</i></sub>&nbsp;<i>r</i>(<i>n</i><span class="op">−</span><i>T</i><span class="op">+</span><i>k</i>)
+      <span class="note2">five taps, not one: a fractional and slowly drifting period, and the shape of the glottal pulse, in the same filter</span>
+    </div>
+
+    <p>One tap would only work if the period were an exact integer number of
+      samples and perfectly stable. Five taps interpolate between samples,
+      absorb a drifting period, and incidentally apply a little spectral shaping
+      to the pulse. Finally the residual is quantised inside a
+      <strong>noise-shaping loop</strong>: the quantiser's own error is filtered
+      and fed back so that the coding noise takes the shape of a smoothed
+      version of the signal spectrum, rather than lying flat. That is the
+      speech-coder's version of the masking threshold from
+      <a href="3-masking.html">Chapter 03</a> — arrived at independently, doing
+      the same job, hiding the noise under the formants.</p>
+  </section>
+
+  <section id="celt" class="section">
+    <div class="kicker k-ghost">CELT: energy first, shape second</div>
+    <h3>Constrained energy is not a feature of CELT. It is the name of the idea.</h3>
+    <p style="margin-top:18px">CELT is an MDCT coder, so
+      <a href="4-transform.html">Chapter 04</a>'s machinery applies unchanged:
+      overlapping blocks, a lapped transform, time-domain alias cancellation.
+      What is unusual is the geometry of the window. CELT uses a flat-topped
+      window with a fixed <strong>2.5 ms overlap regardless of frame size</strong>,
+      where AAC's window overlap is half the block. A 20 ms AAC-LC frame carries
+      about 21 ms of look-ahead in its window alone; a 20 ms CELT frame carries
+      2.5 ms. That single decision is most of why Opus can hold a conversation.</p>
+    <p>The second decision is the one the name commemorates. Group the MDCT
+      lines into bands that approximate the critical bands of
+      <a href="2-ear.html">Chapter 02</a> — twenty-one of them at 48 kHz, laid
+      out so that the boundaries fall on whole bins at every frame size. Then,
+      before coding anything else, <strong>transmit each band's energy</strong>:
+      coarsely first, predicted from the previous frame and from the band below,
+      then refined with fine bits if the budget allows. Divide the band by that
+      energy, which leaves a unit-norm vector, and spend every remaining bit on
+      <em>direction only</em>.</p>
+
+    <div class="eq">
+      <i>X</i><sub><i>b</i></sub><span class="op">=</span><i>g</i><sub><i>b</i></sub>
+      <span class="op">·</span><span class="frac"><span><i>y</i><sub><i>b</i></sub></span><span>‖<i>y</i><sub><i>b</i></sub>‖</span></span>
+      <span class="op">,</span>&nbsp;<i>g</i><sub><i>b</i></sub><span class="op">=</span>‖<i>X</i><sub><i>b</i></sub>‖
+      <span class="note2">gain and shape are coded separately, and the shape is forced to unit norm — so the decoded band has exactly the energy that was sent</span>
+    </div>
+
+    <p>The consequence is worth stating carefully, because it is the single
+      largest behavioural difference between Opus and its predecessors. In
+      MP3 and AAC, running out of bits means the quantiser step grows until
+      coefficients round to zero, and a band that rounds entirely to zero
+      <em>disappears</em>. That is where birdies come from — a band flickering
+      in and out between frames, which the ear hears as a tinkling above the
+      music (<a href="11-artifacts.html">Chapter 11</a>). In CELT, running out
+      of bits means the shape gets cruder. The energy was already sent. A band
+      cannot go silent by accident, because its loudness was never in the
+      quantiser's gift.</p>
+
+    <figure class="figure" id="fig-gs">
+      <div class="figure-bar">
+        <span class="fno">FIG. 9.2</span>
+        <span class="ftitle">Gain-shape against a scalar quantiser, same bits</span>
+        <span class="fstate" id="gs-state">0.80 bits/line</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="gs-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>band energy of the original</span>
+          <span class="l-heat"><i></i>band energy after coding</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Measured rate</span><span class="v" id="gs-kbps">— kbit/s</span></div>
+          <div class="ro bad"><span class="k">Band-energy error</span><span class="v" id="gs-err">— dB</span></div>
+          <div class="ro ok"><span class="k">Bands emptied</span><span class="v" id="gs-empty">—</span></div>
+          <div class="ro ghost"><span class="k">Pulses in band 12</span><span class="v" id="gs-k">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Coder</span></div>
+          <div class="chips" id="gs-mode">
+            <button data-v="gs" class="on">Gain + shape</button>
+            <button data-v="nofold">No folding</button>
+            <button data-v="scalar">Scalar step</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Shape budget</span><span class="val" id="gs-blab">0.80 bits/line</span></div>
+          <input type="range" id="gs-budget" min="0.15" max="3" step="0.05" value="0.8" data-out="gs-blab" aria-label="Shape bits per MDCT line">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="gs-orig">Original</button>
+            <button class="btn play" id="gs-code">Coded</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 9.2</b> — 1.4 s of synthesised
+        music is put through a real 256-line MDCT and split into twenty
+        Bark-spaced bands. Every coder here gets exactly the same budget: six
+        bits per band for the gain or the scalefactor, plus the bits-per-line
+        you set for everything else. <b>Gain + shape</b> sends the band energy
+        and then fits the most pulses it can afford with PVQ; <b>Scalar step</b>
+        bisects a quantiser step until the band's zero-order entropy fits the
+        same budget, which is what MP3's rate loop does. Read the two numbers
+        on the right at the default 0.8 bits per line: gain-shape holds the
+        band-energy error at 0.4 dB — the root-mean-square of a 1.5 dB
+        rounding step, and nothing else — with not one band emptied, while the
+        scalar coder empties about a third of them and averages some 34 dB out.
+        Drop the
+        budget to 0.4 and the scalar coder empties two thirds. Press
+        <b>Coded</b> on each. The
+        gain-shape version is noisy; the scalar version has holes in it.
+        <b>No folding</b> is gain-shape with CELT's fallback switched off — the
+        band energy is still right, but a band that can afford zero pulses is
+        left empty instead of being filled from below.</figcaption>
+    </figure>
+
+    <p>Three refinements keep that promise honest at low rates. When a band can
+      afford no pulses at all, CELT does not leave it empty — it
+      <strong>folds</strong> content from lower in the spectrum into it and
+      scales the result to the transmitted energy, so the band is filled with
+      something spectrally plausible rather than with silence. When a frame is
+      transient and has been split into several short MDCTs, a band whose pulses
+      all land in one sub-block leaves the others at zero; the
+      <strong>anti-collapse</strong> step injects pseudo-random energy to stop
+      that. And a <strong>spreading</strong> parameter rotates the pulse vector
+      to smear a small number of pulses across the band, because a handful of
+      isolated spikes sounds tonal when the original was noise.</p>
+
+    <div class="note heat">
+      <span class="tag tag-heat">The two things a 2.5 ms window cannot see</span>
+      <p>A 2.5 ms MDCT at 48 kHz has 120 bins, which is 200 Hz apart — far too
+        coarse to resolve the harmonics of a voice or a violin. CELT therefore
+        runs a <strong>pitch prefilter</strong> at the encoder, a comb filter
+        that removes the periodicity before the transform, and the matching
+        <strong>postfilter</strong> at the decoder to put it back. It also
+        varies the transform: on a detected transient the frame is coded as
+        several short MDCTs with their coefficients interleaved, and the
+        time-frequency resolution can be traded per band, so a band carrying a
+        cymbal can buy time resolution while the band carrying the bass keeps
+        frequency resolution in the same frame.</p>
+    </div>
+  </section>
+
+  <section id="pvq" class="section">
+    <div class="kicker">The pyramid</div>
+    <h3>A codebook of ten billion entries that occupies no memory at all.</h3>
+    <p style="margin-top:18px">Having normalised a band to unit norm, CELT has
+      to describe a point on the surface of an <i>N</i>-dimensional sphere using
+      a known, exact number of bits. Pyramid vector quantisation, published by
+      Thomas Fischer in 1986, does it by replacing the sphere with a
+      diamond — the set of integer vectors whose absolute values sum to a
+      constant <i>K</i>.</p>
+
+    <div class="eq">
+      <i>S</i>(<i>N</i>,<i>K</i>)<span class="op">=</span>{&nbsp;<i>y</i><span class="op">∈</span><span class="mvar">ℤ</span><sup><i>N</i></sup>
+      <span class="op">:</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>N</i></span><span><i>i</i>=1</span></span>
+      |<i>y</i><sub><i>i</i></sub>|<span class="op">=</span><i>K</i>&nbsp;}
+      <span class="note2">K "pulses" distributed over N positions with signs; the codeword is the whole vector, normalised at the decoder</span>
+    </div>
+
+    <p>Count them and you get <i>V</i>(<i>N</i>,<i>K</i>), which satisfies a
+      three-term recursion — either the last coordinate is zero, or it is
+      non-zero and you either did or did not use a pulse on it:</p>
+
+    <div class="eq">
+      <i>V</i>(<i>N</i>,<i>K</i>)<span class="op">=</span><i>V</i>(<i>N</i>−1,<i>K</i>)
+      <span class="op">+</span><i>V</i>(<i>N</i>,<i>K</i>−1)
+      <span class="op">+</span><i>V</i>(<i>N</i>−1,<i>K</i>−1)
+      <span class="op">,</span>&nbsp;
+      <i>b</i><span class="op">=</span><span class="fn">log</span><sub>2</sub><i>V</i>(<i>N</i>,<i>K</i>)
+      <span class="note2">V(N,0) = 1 and V(0,K) = 0 for K &gt; 0; b is the exact cost of one codeword, in bits</span>
+    </div>
+
+    <p>Three properties follow, and all three matter. First, the rate is known
+      <em>before</em> anything is coded: pick <i>K</i> such that
+      log<sub>2</sub><i>V</i> fits the bits you have, and the band costs
+      precisely that. There is no rate loop of the kind
+      <a href="5-quantize.html">Chapter 05</a> describes, no iterating a global
+      gain until the frame fits — CELT computes the allocation and then hits it.
+      Second, the codeword can be <em>enumerated</em> rather than stored: the
+      index of a given <i>y</i> is computed arithmetically from the same
+      recursion, so a 40-bit codebook with a trillion entries costs a few
+      hundred bytes of table and some integer arithmetic. Third, and most
+      usefully, every codeword has the same norm once normalised, so the
+      decoded band's energy is exactly what the gain said it was — however few
+      pulses were affordable.</p>
+
+    <figure class="figure" id="fig-pvq">
+      <div class="figure-bar">
+        <span class="fno">FIG. 9.3</span>
+        <span class="ftitle">Pyramid size, and what it buys</span>
+        <span class="fstate" id="pv-state">N 16 · K 6</span>
+      </div>
+      <div class="figure-body">
+        <div class="cols-2">
+          <div>
+            <div class="canvas-wrap"><canvas id="pv-cv1"></canvas></div>
+            <div class="legend"><span class="l-heat"><i></i>current N</span><span class="l-faint"><i></i>N = 8, 16, 32, 64</span></div>
+          </div>
+          <div>
+            <div class="canvas-wrap"><canvas id="pv-cv2"></canvas></div>
+            <div class="legend"><span class="l-sig"><i></i>real normalised band</span><span class="l-heat"><i></i>PVQ codeword</span></div>
+          </div>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">V(N,K)</span><span class="v" id="pv-v">—</span></div>
+          <div class="ro sig"><span class="k">Cost of one codeword</span><span class="v" id="pv-bits">— bits</span></div>
+          <div class="ro ghost"><span class="k">Per coefficient</span><span class="v" id="pv-per">— bits</span></div>
+          <div class="ro ok"><span class="k">Shape SNR</span><span class="v" id="pv-snr">— dB</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Dimension N</span><span class="val" id="pv-nlab">16</span></div>
+          <input type="range" id="pv-n" min="2" max="64" step="1" value="16" data-out="pv-nlab" aria-label="Band dimension N">
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Pulses K</span><span class="val" id="pv-klab">6</span></div>
+          <input type="range" id="pv-k" min="1" max="48" step="1" value="6" data-out="pv-klab" aria-label="Number of pulses K">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 9.3</b> — left: log<sub>2</sub><i>V</i>(<i>N</i>,<i>K</i>)
+        evaluated from the recursion above, for the <i>N</i> you set and for
+        four fixed dimensions behind it. Right: <i>N</i> consecutive MDCT
+        coefficients taken from a real transform of synthesised music,
+        normalised to unit norm (blue), and the actual output of a greedy PVQ
+        search with <i>K</i> pulses (gold), renormalised. Note what the rate
+        curve does: doubling the pulses adds roughly <i>N</i>/2 bits at small
+        <i>K</i> and much less later, so the useful operating region is a
+        handful of pulses in a wide band — at <i>N</i>&nbsp;=&nbsp;32,
+        <i>K</i>&nbsp;=&nbsp;4 the codeword costs 19.4 bits, three
+        fifths of a bit per coefficient, and still pins the band's energy
+        exactly. Push <i>K</i> to 1 and the shape SNR falls to a decibel or two:
+        one pulse says only "the biggest coefficient is here, and this is its
+        sign", and at <i>N</i>&nbsp;=&nbsp;32 it says it in exactly six bits.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Codebook size, computed here from the recursion</caption>
+      <thead><tr><th class="num">N</th><th class="num">K</th><th class="num">V(N,K)</th><th class="num">Bits</th><th class="num">Bits per coefficient</th></tr></thead>
+      <tbody id="pv-tab"></tbody>
+    </table></div>
+
+    <p>Work one out by hand and the size is startling: eight coefficients
+      with four pulses between them gives
+      <i>V</i>(8,4)&nbsp;=&nbsp;<strong>2 816</strong> distinct shapes, an
+      11.5-bit codeword, for a band you could not begin to describe with eleven
+      bits of scalar quantisation. The two ends of the table are the argument.
+      A band of 32 coefficients with one pulse costs exactly six bits — you are
+      told which coefficient is largest and its sign, nothing more, and the
+      decoder fills the rest by folding. The same band with 32 pulses costs
+      77 bits, about two and a half per coefficient. Everything Opus does
+      between 6 and 510 kbit/s lives on that curve, band by band, frame by
+      frame.</p>
+  </section>
+
+  <section id="hybrid" class="section">
+    <div class="kicker k-heat">Hybrid, and the seam</div>
+    <h3>Above 8 kHz there is nothing for a vocal-tract model to say.</h3>
+    <p style="margin-top:18px">Hybrid mode stacks the two coders on top of each
+      other with the crossover at <strong>8 kHz</strong>. SILK runs at its
+      wideband setting, 16 kHz internally, and codes everything below the
+      crossover; CELT codes the same frame but discards every band below 8 kHz
+      and codes only what is above. The division is not a compromise, it is a
+      reading of the material: speech intelligibility, and almost all of
+      speech's <em>structure</em>, lives below 8 kHz, where a source model buys
+      an enormous amount. Above it there is sibilance, breath, cymbals and
+      room — texture, with no periodicity for an LPC filter to predict, and
+      exactly the sort of thing a transform coder describes for very few bits.</p>
+    <p>Hybrid exists only in four configurations: super-wideband or fullband,
+      at 10 or 20 ms. That is deliberate. Below about 20 kbit/s there are not
+      enough bits to run two coders at once and SILK alone wins; above about
+      40 kbit/s the source model stops paying for itself on general audio and
+      CELT alone wins. Hybrid owns the middle, which happens to be where most
+      voice calls actually run.</p>
+
+    <div class="note sig">
+      <span class="tag tag-sig">The two coders write into the same range coder</span>
+      <p>There is no delimiter between SILK's bits and CELT's, no padding, no
+        byte alignment. Both layers drive one range coder of the kind
+        <a href="6-entropy.html">Chapter 06</a> describes — 32-bit range and
+        value registers, renormalised eight bits at a time. CELT's
+        uniformly-distributed symbols, which a range coder would only make
+        larger, are written as <strong>raw bits packed backwards from the end
+        of the buffer</strong>: least significant bit of the first value into
+        the least significant bit of the last byte, and onwards towards the
+        front. The range coder grows forwards, the raw bits grow backwards, and
+        the encoder knows it is out of room at the instant they meet. It is a
+        strikingly tidy way to make a fixed-size packet and waste nothing.</p>
+    </div>
+
+    <p>Because the mode is re-declared every packet, an encoder can walk across
+      the whole envelope mid-stream without telling anyone. A call that starts
+      as SILK narrowband at 12 kbit/s because the network is poor can become
+      hybrid fullband at 48 kbit/s two hundred milliseconds later, and then
+      CELT-only at 2.5 ms frames because the application asked for the lowest
+      possible latency. No renegotiation, no new payload type, no gap. What
+      makes that safe is that the decoder is stateless about mode: everything it
+      needs to interpret a packet is in the packet's first byte.</p>
+  </section>
+
+  <section id="packet" class="section">
+    <div class="kicker">One byte, decoded</div>
+    <h3>The table of contents byte carries every decision the encoder made.</h3>
+    <p style="margin-top:18px">Every Opus packet begins with a
+      <strong>TOC byte</strong>: five bits of configuration, one stereo flag,
+      two bits of frame count code. The five configuration bits select one of
+      thirty-two combinations of mode, bandwidth and frame size — and thirty-two
+      is not a round number chosen for convenience, it is exactly the number of
+      combinations that are legal.</p>
+
+    <figure class="figure" id="fig-toc">
+      <div class="figure-bar">
+        <span class="fno">FIG. 9.4</span>
+        <span class="ftitle">TOC byte decoder — click a bit to flip it</span>
+        <span class="fstate" id="tc-state">0x78</span>
+      </div>
+      <div class="figure-body">
+        <div class="bitmap" id="tc-bits" style="margin-bottom:14px"></div>
+        <div class="readout">
+          <div class="ro sig"><span class="k">Config</span><span class="v" id="tc-cfg">15</span></div>
+          <div class="ro"><span class="k">Mode</span><span class="v" id="tc-mode">Hybrid</span></div>
+          <div class="ro"><span class="k">Bandwidth</span><span class="v" id="tc-bw">FB</span></div>
+          <div class="ro ghost"><span class="k">Frame size</span><span class="v" id="tc-fs">20 ms</span></div>
+          <div class="ro"><span class="k">Channels</span><span class="v" id="tc-ch">mono</span></div>
+          <div class="ro ok"><span class="k">Frames / duration</span><span class="v" id="tc-dur">1 · 20 ms</span></div>
+          <div class="ro bad"><span class="k">Implied rate</span><span class="v" id="tc-rate">— kbit/s</span></div>
+        </div>
+        <div class="canvas-wrap" style="margin-top:14px"><canvas id="tc-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>TOC byte</span>
+          <span class="l-ghost"><i></i>frame-count byte</span>
+          <span class="l-teal"><i></i>length fields</span>
+          <span class="l-sig"><i></i>compressed frames</span>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Presets</span></div>
+          <div class="chips" id="tc-pre">
+            <button data-v="8">Narrowband voice</button>
+            <button data-v="72">Wideband voice</button>
+            <button data-v="124" class="on">Hybrid FB stereo</button>
+            <button data-v="224">Low-delay CELT</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Packet payload</span><span class="val" id="tc-blab">80 bytes</span></div>
+          <input type="range" id="tc-bytes" min="3" max="600" step="1" value="80" data-out="tc-blab" aria-label="Packet size in bytes">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Frames M (code 3)</span><span class="val" id="tc-mlab">3</span></div>
+          <input type="range" id="tc-m" min="1" max="48" step="1" value="3" data-out="tc-mlab" aria-label="Frame count for code 3">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 9.4</b> — the eight bits of a real
+        TOC byte, most significant first: five for the configuration, one stereo
+        flag, two for the framing code. Flip any of them. The panel below is the
+        resulting packet layout in bytes, drawn to scale for the payload size
+        you set, and the implied bitrate is 8 × payload ÷ duration — the
+        arithmetic every jitter buffer does. Set the framing code to 3 and push
+        <i>M</i> up: the duration readout goes red the moment the packet would
+        exceed the 120 ms ceiling, which is 48 frames at 2.5 ms and only two at
+        60 ms. Note that configs 12 to 15 — hybrid — offer only 10 and 20 ms,
+        and that there is no such thing as a 2.5 ms SILK frame.</figcaption>
+    </figure>
+
+    <div style="max-height:340px;overflow-y:auto"><div class="scroller"><table>
+      <caption>All 32 configurations (RFC 6716 Table 2) — the active one is marked</caption>
+      <thead><tr><th class="num">Config</th><th>Mode</th><th>Bandwidth</th><th class="num">Frame size</th><th class="num">Frames in 120 ms</th></tr></thead>
+      <tbody id="tc-tab"></tbody>
+    </table></div></div>
+
+    <p>The stereo flag is one bit and means exactly what it says. Everything
+      else about the channel layout — how many streams, which is which, how
+      they map to loudspeakers — lives outside the packet, in the container's
+      head: Ogg Opus's identification header for a file, or the SDP for a call.
+      A raw Opus packet does not even carry its own sample rate. It carries a
+      duration and a bandwidth, and the decoder outputs at whatever rate the
+      application asked for.</p>
+
+    <p>The last two bits, the framing code, decide how many frames the packet
+      carries and how their lengths are found.</p>
+
+    <div class="scroller"><table>
+      <caption>Frame packing, codes 0 to 3</caption>
+      <thead><tr><th class="num">Code</th><th>Frames</th><th>How the lengths are known</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td>1</td><td>Implicit — the frame is the rest of the packet</td><td>The overwhelmingly common case: one frame per packet</td></tr>
+        <tr><td class="num">1</td><td>2</td><td>Equal halves; the remaining byte count must be even</td><td>Two frames of a CBR stream in one packet</td></tr>
+        <tr><td class="num">2</td><td>2</td><td>One or two bytes give the first frame's length; the second takes the rest</td><td>Two frames of a VBR stream</td></tr>
+        <tr><td class="num">3</td><td>1–48</td><td>A frame-count byte: <span class="mono">v</span> (VBR), <span class="mono">p</span> (padding present), then <i>M</i> in the top six bits. If VBR, <i>M</i>−1 explicit lengths follow</td><td>Batching, and the only way to send more than two frames</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>A length field is one byte for 0 to 251, and two bytes for 252 to 1275 —
+      the first in 252…255, the second multiplied by four and added. Which
+      gives a maximum frame size of 1 275 bytes, and that number is not
+      arbitrary either:</p>
+
+    <div class="eq">
+      <span class="num">510</span>&nbsp;kbit/s<span class="op">×</span>
+      <span class="num">20</span>&nbsp;ms<span class="op">÷</span><span class="num">8</span>
+      <span class="op">=</span><span class="hl"><span class="num">1275</span></span>&nbsp;bytes
+      <span class="note2">the two-byte length code and the codec's stated ceiling are the same fact, seen from two directions</span>
+    </div>
+
+    <p>A frame of length zero is legal and means <em>discontinuous
+      transmission</em>: nothing was sent for that frame because nothing was
+      happening. Padding is signalled separately and can be arbitrarily long,
+      which exists so that a constant-bitrate channel can be filled without
+      lying about the audio. And for multistream — surround, ambisonics — each
+      stream's packet after the first uses the self-delimiting framing of
+      RFC 6716's Appendix B, which prefixes the length rather than inferring
+      it, so several independent Opus packets can be concatenated and taken
+      apart again.</p>
+  </section>
+
+  <section id="loss" class="section">
+    <div class="kicker k-danger">When packets do not arrive</div>
+    <h3>A codec judged only on a clean channel is being judged on the wrong axis.</h3>
+    <p style="margin-top:18px">Everything in the first eight chapters of this
+      study assumes the bits get there. On a network they frequently do not:
+      two, five, sometimes twenty per cent of packets are dropped or arrive too
+      late for a jitter buffer that has already played past them. A codec that
+      is a decibel better in a laboratory and falls apart at 5 % loss is the
+      worse codec. Opus therefore carries three separate answers to loss, and
+      they are worth distinguishing because they cost quite different amounts.</p>
+
+    <figure class="figure" id="fig-loss">
+      <div class="figure-bar">
+        <span class="fno">FIG. 9.5</span>
+        <span class="ftitle">Ten per cent loss, three ways of surviving it</span>
+        <span class="fstate" id="ls-state">10% · 20 ms</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="ls-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>original envelope</span>
+          <span class="l-heat"><i></i>what the listener hears</span>
+          <span class="l-danger"><i></i>lost packets</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro bad"><span class="k">Frames lost</span><span class="v" id="ls-lost">—</span></div>
+          <div class="ro ok"><span class="k">Recovered by FEC</span><span class="v" id="ls-fec">—</span></div>
+          <div class="ro ghost"><span class="k">Concealed</span><span class="v" id="ls-plc">—</span></div>
+          <div class="ro sig"><span class="k">Audio left silent</span><span class="v" id="ls-gap">— ms</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Strategy</span></div>
+          <div class="chips" id="ls-mode">
+            <button data-v="silence">Drop it</button>
+            <button data-v="plc" class="on">Conceal (PLC)</button>
+            <button data-v="fec">Redundancy (LBRR)</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Packet loss</span><span class="val" id="ls-llab">10%</span></div>
+          <input type="range" id="ls-loss" min="0" max="40" step="1" value="10" data-out="ls-llab" aria-label="Packet loss percentage">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Frame size</span></div>
+          <div class="chips" id="ls-fs">
+            <button data-v="10">10 ms</button>
+            <button data-v="20" class="on">20 ms</button>
+            <button data-v="40">40 ms</button>
+            <button data-v="60">60 ms</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="ls-orig">Original</button>
+            <button class="btn play" id="ls-out">Received</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 9.5</b> — a synthesised utterance is
+        cut into frames of the size you choose, and a seeded generator drops the
+        percentage you set. Red bands mark the losses; the gold trace is the
+        RMS envelope of what actually reaches the listener. <b>Drop it</b> leaves
+        holes and sounds like a bad mobile call. <b>Conceal</b> repeats the last
+        good frame with a decay and a 3 ms cross-fade, which removes the holes
+        and adds a stutter. <b>Redundancy</b> recovers any frame whose
+        <em>successor</em> survives, because that packet carried a coarse copy
+        of it — here caricatured as a 4 kHz-limited 5-bit version, where a real
+        LBRR frame is a proper SILK frame at a lower rate. Watch the FEC readout
+        as you raise the loss: at 10 % nearly nine in ten losses are recovered,
+        but by 35 % consecutive losses are common and the recovery rate falls
+        away, because redundancy one packet deep cannot survive a burst. Longer
+        frames are cheaper per second and worse under loss: each drop takes
+        three times as much audio at 60 ms as at 20.</figcaption>
+    </figure>
+
+    <p>The first answer is <strong>packet loss concealment</strong>, which costs
+      nothing on the wire: the decoder extrapolates the missing frame from what
+      it has. SILK continues the LPC filter with its last coefficients and a
+      pitch-synchronous excitation; CELT repeats the last frame's band energies
+      with a decay and randomises the shapes. In libopus 1.5, released in March
+      2024, this became a neural network — "Deep PLC" — trained to continue
+      speech rather than to fade it out.</p>
+
+    <p>The second is <strong>in-band forward error correction</strong>, which
+      Opus calls LBRR: low-bitrate redundancy. When the encoder has been told to
+      expect loss, it re-encodes the frame it has just sent at a much lower rate
+      and tucks that copy inside the <em>next</em> packet. Packet <i>n</i> then
+      carries a good copy of frame <i>n</i> and a rough copy of frame
+      <i>n</i>−1, and losing one packet costs you nothing but a moment of
+      reduced quality. The cost is that the redundancy comes out of the same
+      bitrate budget rather than being added to it: switching FEC on makes the
+      clean channel slightly worse in exchange for making the lossy one much
+      better. The encoder only produces it above a configured expected-loss
+      threshold, for exactly that reason.</p>
+
+    <p>The third is <strong>discontinuous transmission</strong>: during silence
+      the encoder stops sending frames altogether and the decoder generates
+      comfort noise from the last parameters it saw. On a two-way call with
+      normal turn-taking that halves the traffic, and unlike G.711, Opus's
+      comfort noise is part of the codec rather than a separate payload
+      type. Opus 1.5 added a fourth, <strong>DRED</strong> — deep redundancy —
+      which packs up to about a second of heavily compressed speech history into
+      each packet, enough to ride out a burst that would defeat LBRR entirely.
+      Opus 1.6 followed in December 2025 with a machine-learning bandwidth
+      extension that reconstructs the top octave of a wideband signal.</p>
+
+    <div class="scroller"><table>
+      <caption>Algorithmic delay by configuration — frame plus look-ahead</caption>
+      <thead><tr><th>Mode</th><th class="num">Frame</th><th class="num">Look-ahead</th><th class="num">Algorithmic delay</th><th>Typical use</th></tr></thead>
+      <tbody>
+        <tr><td>CELT, restricted low delay</td><td class="num">2.5 ms</td><td class="num">2.5 ms</td><td class="num"><strong>5.0 ms</strong></td><td>Networked music performance, in-ear monitoring</td></tr>
+        <tr><td>CELT, restricted low delay</td><td class="num">5 ms</td><td class="num">2.5 ms</td><td class="num">7.5 ms</td><td>Live production links</td></tr>
+        <tr><td>CELT, restricted low delay</td><td class="num">10 ms</td><td class="num">2.5 ms</td><td class="num">12.5 ms</td><td>Low-latency game voice</td></tr>
+        <tr><td>Hybrid or SILK</td><td class="num">10 ms</td><td class="num">6.5 ms</td><td class="num">16.5 ms</td><td>Latency-sensitive calls</td></tr>
+        <tr><td>Hybrid or SILK</td><td class="num">20 ms</td><td class="num">6.5 ms</td><td class="num"><strong>26.5 ms</strong></td><td>The default, and most WebRTC traffic</td></tr>
+        <tr><td>SILK</td><td class="num">40 ms</td><td class="num">6.5 ms</td><td class="num">46.5 ms</td><td>Low-rate speech where delay does not matter</td></tr>
+        <tr><td>SILK</td><td class="num">60 ms</td><td class="num">6.5 ms</td><td class="num">66.5 ms</td><td>Push-to-talk, voice messages</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Those are algorithmic delays only — the unavoidable arithmetic of the
+      codec, not the jitter buffer, the sound card or the network, any one of
+      which usually dominates. Even so the top row is the reason Opus exists in
+      the form it does: five milliseconds is roughly the delay of standing two
+      metres from the person you are talking to, and no other general-purpose
+      codec of comparable quality comes close.
+      <a href="12-choosing.html">Chapter 12</a> puts the numbers side by side.</p>
+  </section>
+
+  <section id="wrong" class="section">
+    <div class="kicker k-danger">What people get wrong</div>
+    <h3>Six corrections, in rough order of how often they are needed.</h3>
+
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>"Opus is a speech codec"</dt>
+        <dd>It contains one. On music it is a transform coder, and a good one:
+          in the public multi-format listening test run at 64 kbit/s in 2011,
+          Opus placed first with a statistically significant margin over Apple's
+          HE-AAC, with Vorbis and Nero's HE-AAC behind. The confusion comes from
+          the WebRTC association — most Opus streams in the world really are
+          speech, because most of them are phone calls.</dd>
+      </div>
+      <div class="def">
+        <dt>"It resamples my 44.1 kHz files to 48, which is damage"</dt>
+        <dd>It does resample, and the resampler is good. Set that loss against
+          what the encoder does next, which is to discard most of the signal on
+          purpose. Ogg Opus's identification header carries the original input
+          rate and an output gain precisely so that a decoder can return you to
+          where you started; the decoder will output 8, 12, 16, 24 or 48 kHz on
+          request. If bit-exactness matters, you wanted
+          <a href="10-lossless.html">Chapter 10</a>.</dd>
+      </div>
+      <div class="def">
+        <dt>"Two codecs in one packet"</dt>
+        <dd>Never two in one <em>frame</em>, and in hybrid mode they are
+          stacked in frequency rather than mixed. The mode is fixed for the
+          duration of a packet and declared in its first byte; a packet
+          containing several frames uses the same configuration for all of
+          them. Switching happens between packets, which is why it is free.</dd>
+      </div>
+      <div class="def">
+        <dt>"The bitrate I asked for is the bitrate I get"</dt>
+        <dd>Opus is variable-rate by default and the setting is a target its
+          rate controller tracks over time, not a per-packet guarantee. Quiet
+          passages cost far less; DTX costs nothing at all. Constrained VBR and
+          hard CBR both exist, and both are worse at the same average rate,
+          which is the usual trade.</dd>
+      </div>
+      <div class="def">
+        <dt>"510 kbit/s must be nearly lossless"</dt>
+        <dd>It is not, and nothing in the design is aiming at that. Above
+          roughly 128–160 kbit/s for stereo the returns are already negligible;
+          the ceiling exists because the frame length field goes that high, not
+          because anyone expects it to be used. If you want the file back
+          unchanged the answer is FLAC, at about half size and no further.</dd>
+      </div>
+      <div class="def">
+        <dt>"CELT is just AAC with different letters"</dt>
+        <dd>Both are MDCT coders and there the resemblance stops. CELT has no
+          scalefactors, no rate loop, no Huffman tables and no psychoacoustic
+          model of the classical kind. It sends band energies first, codes only
+          direction afterwards, and knows the exact cost of every decision
+          before it makes it. The 2.5 ms fixed overlap alone puts it in a
+          different application space from anything in
+          <a href="8-aac.html">Chapter 08</a>.</dd>
+      </div>
+    </dl>
+
+    <blockquote class="pullquote">A CELT band cannot fall silent by accident.
+      Its energy was transmitted before its shape, and no shortage of bits can
+      take that back.
+      <span class="who">Why Opus does not produce birdies</span></blockquote>
+  </section>
+
+  <section id="next" class="section">
+    <div class="kicker">Where this leaves us</div>
+    <h3>The lossy argument is finished. The other end of the dial is not.</h3>
+    <p style="margin-top:18px">Three chapters have now taken the same four
+      moves and settled them three ways.
+      <a href="7-mp3.html">MP3</a> settled them in 1993 under the constraint of
+      a filterbank it had inherited. <a href="8-aac.html">AAC</a> settled them
+      again with a clean transform and a box of tools for the cases the model
+      gets wrong. Opus settled them by observing that the model is not always
+      the right instrument at all — that below 8 kHz, on speech, a description
+      of the <em>source</em> beats any description of the ear, and that the two
+      can share a packet format if you are willing to spend five bits saying
+      which is which.</p>
+    <p>What all three have in common is that they throw information away and
+      cannot get it back. That is a choice, not a law, and it is worth knowing
+      exactly what the alternative costs. <a href="10-lossless.html">Chapter
+      10</a> takes the same signal and forbids any loss whatever: prediction,
+      then Rice coding of the residual, and a compression ratio that stalls at
+      about two to one no matter how clever the predictor gets — for reasons
+      that are about information rather than engineering. Then it goes to the
+      opposite extreme, and asks what is left at seven hundred bits a second.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 9.1 — the source-filter model.
+   A vowel is synthesised from formant resonators, a frame is taken from
+   the middle of it, pre-emphasised and fitted with Levinson-Durbin. The
+   all-pole envelope, the measured spectrum and the residual spectrum are
+   all computed here; "Filter only" drives 1/A(z) from a bare impulse
+   train, which is what SILK's sixteen numbers actually buy.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("lp-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var VOWELS = {
+    a: [[730, 90], [1090, 110], [2440, 140], [3400, 200]],
+    e: [[530, 80], [1840, 110], [2480, 140], [3400, 200]],
+    i: [[270, 60], [2290, 110], [3010, 140], [3600, 200]],
+    u: [[300, 70], [870, 100], [2240, 130], [3300, 200]]
+  };
+  // SILK does not fit its predictor at the playback rate: it resamples to
+  // 8, 12 or 16 kHz first. That is not an economy, it is what makes the order
+  // work — sixteen coefficients are eight pole pairs, and spread over 24 kHz
+  // that is one pair per 3 kHz, too coarse to separate F1 from F2. Over 8 kHz
+  // it is one per kilohertz, which is the textbook figure.
+  var ASR = 16000, FRAME = 1024, ENVN = 420;
+  var st = { v: "a", order: 16, f0: 118, sr: 48000, asr: ASR, sig: null, ana: null,
+             a: null, err: 0, r0: 1, spec: null, res: null, env: null, gain: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 90, xmax: 8000, xlog: true, ymin: -76, ymax: 8,
+    xlabel: "frequency", ylabel: "dB (pre-emphasised)",
+    pad: { l: 52, r: 14, t: 14, b: 34 }
+  });
+
+  function preemph(x) {
+    var y = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) y[i] = x[i] - 0.97 * (i ? x[i - 1] : 0);
+    return y;
+  }
+  function deemph(x) {
+    var y = new Float64Array(x.length), i, pr = 0;
+    for (i = 0; i < x.length; i++) { pr = x[i] + 0.97 * pr; y[i] = pr; }
+    return y;
+  }
+  // Average the spectrum in the power domain over a fixed bandwidth: the
+  // harmonic comb disappears and what is left is the envelope the all-pole
+  // model is trying to match.
+  function smoothPower(dbArr, half) {
+    var n = dbArr.length, out = new Float64Array(n), i, j, s, c;
+    for (i = 0; i < n; i++) {
+      s = 0; c = 0;
+      for (j = Math.max(0, i - half); j <= Math.min(n - 1, i + half); j++) {
+        s += Math.pow(10, dbArr[j] / 10); c++;
+      }
+      out[i] = 10 * Math.log10(s / c);
+    }
+    return out;
+  }
+  function envIndex(bin, nBin, sr) {
+    var f = bin / (nBin * 2) * sr;
+    var ei = Math.round(f / (sr / 2) * (ENVN - 1));
+    return (ei < 0 || ei >= ENVN) ? -1 : ei;
+  }
+
+  function fit() {
+    var sr = A.rate(); st.sr = sr;
+    st.sig = A.src.vowel(1.15, { sr: sr, f0: st.f0, formants: VOWELS[st.v], amp: 0.7 });
+    // band-limit, then decimate to the analysis rate, exactly as SILK does
+    st.ana = A.resample(A.lowpassFFT(st.sig, sr, ASR / 2 * 0.95), sr, ASR);
+    sr = st.asr = ASR;
+
+    var start = Math.max(0, Math.floor(st.ana.length / 2) - FRAME / 2);
+    var raw = new Float64Array(FRAME), i;
+    for (i = 0; i < FRAME; i++) raw[i] = st.ana[start + i] || 0;
+    var pe = preemph(raw);
+    var w = D.WIN.hann(FRAME), fw = new Float64Array(FRAME), r0 = 0;
+    for (i = 0; i < FRAME; i++) { fw[i] = pe[i] * w[i]; r0 += fw[i] * fw[i]; }
+
+    // A white-noise correction of one part in a million, which is what every
+    // real LPC analyser applies: this signal is so predictable that without it
+    // the recursion hits a non-positive residual around order 20 and stops.
+    var acf = D.autocorr(fw, st.order);
+    acf[0] *= 1.000001;
+    var L = D.levinson(acf, st.order);
+    st.a = L.a; st.err = Math.max(L.err, 1e-18); st.r0 = Math.max(r0, 1e-18);
+
+    st.spec = D.spectrumDb(fw, { n: FRAME, window: "rect", zeroPad: 2 });
+    st.smooth = smoothPower(st.spec, Math.max(2, Math.round(260 / sr * 2 * st.spec.length)));
+    var resid = D.lpcResidual(fw, st.a);
+    st.res = D.spectrumDb(resid, { n: FRAME, window: "rect", zeroPad: 2 });
+    st.env = D.lpcSpectrum(st.a, 1, ENVN);
+
+    // Compare envelope with smoothed spectrum only where there is signal to
+    // compare: 150 Hz to 7 kHz, and only bins within 55 dB of the loudest, so
+    // the empty top of the band does not dominate the average.
+    var nBin = st.spec.length, ei;
+    var b0 = Math.max(1, Math.round(150 / sr * nBin * 2));
+    var b1 = Math.min(nBin - 1, Math.round(7000 / sr * nBin * 2));
+    var top = -999;
+    for (i = b0; i < b1; i++) top = Math.max(top, st.smooth[i]);
+    var band = [];
+    for (i = b0; i < b1; i++) if (st.smooth[i] > top - 55 && envIndex(i, nBin, sr) >= 0) band.push(i);
+    if (!band.length) band.push(b0);
+
+    var ms = 0, me = 0, k;
+    for (k = 0; k < band.length; k++) {
+      ei = envIndex(band[k], nBin, sr);
+      ms += st.smooth[band[k]]; me += st.env[ei];
+    }
+    st.gain = (ms - me) / band.length;
+
+    var e2 = 0;
+    for (k = 0; k < band.length; k++) {
+      ei = envIndex(band[k], nBin, sr);
+      var d = st.smooth[band[k]] - (st.env[ei] + st.gain);
+      e2 += d * d;
+    }
+
+    // How many of the tract's four resonances the envelope actually has a
+    // peak at: found by looking for local maxima in the curve just computed.
+    var peaks = [];
+    for (i = 1; i < ENVN - 1; i++) {
+      if (st.env[i] > st.env[i - 1] && st.env[i] >= st.env[i + 1]) peaks.push(i / (ENVN - 1) * (sr / 2));
+    }
+    var found = 0;
+    VOWELS[st.v].forEach(function (fb) {
+      if (fb[0] > sr / 2) return;
+      if (peaks.some(function (q) { return Math.abs(q - fb[0]) < 0.12 * fb[0]; })) found++;
+    });
+
+    document.getElementById("lp-fmt").textContent = found + " of 4";
+    document.getElementById("lp-fit").textContent = Math.sqrt(e2 / band.length).toFixed(1) + " dB";
+    document.getElementById("lp-gain").textContent = (10 * Math.log10(st.r0 / st.err)).toFixed(1) + " dB";
+    document.getElementById("lp-nums").textContent = (st.order + 1);
+    document.getElementById("lp-state").textContent = "order " + st.order;
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.spec) return;
+    var sr = st.asr, nBin = st.spec.length, i, f;
+
+    var pts = [], rp = [], sp = [];
+    for (i = 1; i < nBin; i++) {
+      f = i / (nBin * 2) * sr;
+      if (f < p.xmin || f > p.xmax) continue;
+      pts.push([f, Math.max(st.spec[i], -95)]);
+      rp.push([f, Math.max(st.res[i] + 6, -95)]);
+      sp.push([f, Math.max(st.smooth[i], -95)]);
+    }
+    // the true formants of the synthesiser, for comparison
+    VOWELS[st.v].forEach(function (fb, k) {
+      p.vline(fb[0], { color: AC.C.ghost, dash: [3, 5], label: "F" + (k + 1), labelY: 3 + k * 13 });
+    });
+    p.line(rp, { color: AC.C.purple, width: 1.2, alpha: .7, dash: [4, 3] });
+    p.line(pts, { color: AC.C.blue, width: 1.1, alpha: .62 });
+    p.line(sp, { color: AC.C.teal, width: 1.6, alpha: .9 });
+
+    var ep = [];
+    for (i = 0; i < st.env.length; i++) {
+      f = i / (st.env.length - 1) * (sr / 2);
+      if (f < p.xmin || f > p.xmax) continue;
+      ep.push([f, st.env[i] + st.gain]);
+    }
+    p.line(ep, { color: AC.C.gold, width: 2.4 });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      st.order + " poles · " + FRAME + " samples at " + (ASR / 1000) + " kHz", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  // ---- the vocoder: impulse train through 1/A(z), no residual at all
+  function vocode() {
+    if (!st.a) fit();
+    var sr = st.asr, n = Math.round(sr * 1.15), y = new Float64Array(n);
+    var a = st.a, per = sr / st.f0, next = 0, g = Math.sqrt(st.err / FRAME) * 14;
+    var i, j, s;
+    for (i = 0; i < n; i++) {
+      s = 0;
+      if (i >= next) { s = g; next += per; }
+      for (j = 1; j < a.length; j++) if (i - j >= 0) s -= a[j] * y[i - j];
+      if (!isFinite(s)) s = 0;
+      y[i] = Math.max(-40, Math.min(40, s));
+    }
+    y = deemph(y);
+    if (!isFinite(D.peak(y)) || D.peak(y) < 1e-12) return null;
+    y = A.resample(y, sr, st.sr);            // back up to the playback rate
+    D.normalize(y, 0.7);
+    return A.fadeEdges(y, st.sr, 25);
+  }
+  function residual() {
+    if (!st.a) fit();
+    var r = A.resample(D.lpcResidual(preemph(st.ana), st.a), st.asr, st.sr);
+    D.normalize(r, 0.6);
+    return A.fadeEdges(r, st.sr, 20);
+  }
+
+  AC.chips(document.getElementById("lp-vowel"), function (v) { st.v = v; A.stopAll(); fit(); });
+  AC.slider(document.getElementById("lp-order"), function (v) { st.order = v | 0; if (st.sig) fit(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("lp-f0"), function (v) { st.f0 = v; if (st.sig) fit(); },
+    function (v) { return Math.round(v) + " Hz"; });
+
+  A.wire(document.getElementById("lp-orig"), function () { if (!st.sig) fit(); return st.sig; });
+  A.wire(document.getElementById("lp-syn"), vocode);
+  A.wire(document.getElementById("lp-res"), residual);
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); fit();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { fit(); }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.2 — gain-shape against a scalar quantiser, same bit budget.
+   A real 256-line MDCT of synthesised music, split into Bark-spaced
+   bands. Each band is coded either CELT-style (energy, then a PVQ
+   shape, then folding when nothing is affordable) or MP3-style (bisect
+   a step size until the band's zero-order entropy fits). Both are given
+   identical budgets, and both are resynthesised and playable.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("gs-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var N = 256, DUR = 1.4, EBITS = 6, ESTEP = 1.5;
+  var st = { budget: 0.8, mode: "gs", sr: 48000, sig: null, edges: null,
+             out: null, kbps: 0, err: 0, empty: 0, kmid: 0, show: null, busy: false };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 80, xmax: 22000, xlog: true, ymin: -84, ymax: 4,
+    xlabel: "frequency", ylabel: "band energy, dB",
+    pad: { l: 54, r: 14, t: 14, b: 34 }
+  });
+
+  function bandEdges(sr) {
+    var e = [0], last = 0, z, idx;
+    for (z = 1; z <= 24; z++) {
+      idx = Math.min(N, Math.round(D.BARK_EDGES[z] / (sr / 2) * N));
+      if (idx - last >= 4) { e.push(idx); last = idx; }
+    }
+    while (last < N) { var nx = Math.min(N, last + 24); if (nx - last < 4) { e[e.length - 1] = N; break; } e.push(nx); last = nx; }
+    return e;
+  }
+
+  // Zero-order entropy of round(x/step) over one band, in bits.
+  var ESC = 400, HIST = new Int32Array(2 * ESC + 3), TOUCH = new Int32Array(2 * ESC + 3);
+  function bandEntropyBits(X, lo, hi, step) {
+    var n = hi - lo, i, nt = 0, q, h, esc = 0;
+    for (i = lo; i < hi; i++) {
+      q = Math.round(X[i] / step);
+      if (q < -ESC || q > ESC) { h = 2 * ESC + 1; esc += 2 + Math.log2(Math.abs(q)); }
+      else h = q + ESC;
+      if (HIST[h] === 0) TOUCH[nt++] = h;
+      HIST[h]++;
+    }
+    var ent = 0, t, pr;
+    for (t = 0; t < nt; t++) { pr = HIST[TOUCH[t]] / n; ent -= pr * Math.log2(pr); HIST[TOUCH[t]] = 0; }
+    return n * ent + esc;
+  }
+
+  function encode() {
+    if (st.busy) return;
+    st.busy = true;
+    var sr = A.rate(); st.sr = sr;
+    if (!st.sig) st.sig = A.src.music(DUR, { sr: sr });
+    if (!st.edges) st.edges = bandEdges(sr);
+
+    var edges = st.edges, nb = edges.length - 1, mode = st.mode, perLine = st.budget;
+    var bits = 0, errSum = 0, errN = 0, emptied = 0, counted = 0, kmid = 0, kmidN = 0;
+    var bestE = -1, showOrig = null, showRec = null;
+    var origE = new Float64Array(nb), recE = new Float64Array(nb);
+    var tmp = new Float64Array(N);
+
+    var out = D.mdctRoundTrip(st.sig, N, function (X, blk) {
+      var k, i, lo, hi, n, g, gdb, gq, ghat, budget, K, s, blockMax = -400;
+      for (k = 0; k < nb; k++) {
+        lo = edges[k]; hi = edges[k + 1]; n = hi - lo;
+        g = 0;
+        for (i = lo; i < hi; i++) g += X[i] * X[i];
+        g = Math.sqrt(g);
+        origE[k] = g;
+        gdb = g > 1e-14 ? 20 * Math.log10(g) : -280;
+        if (gdb > blockMax) blockMax = gdb;
+        budget = perLine * n;
+        bits += EBITS;
+
+        if (g <= 1e-14) { for (i = lo; i < hi; i++) X[i] = 0; recE[k] = 0; continue; }
+        gq = Math.round(gdb / ESTEP) * ESTEP;
+        ghat = Math.pow(10, gq / 20);
+
+        if (mode === "scalar") {
+          // bisect a step size until the band's entropy fits the same budget
+          var slo = g / (n * 4096), shi = g * 4 + 1e-12, step = shi, it;
+          for (it = 0; it < 18; it++) {
+            step = Math.sqrt(slo * shi);
+            if (bandEntropyBits(X, lo, hi, step) > budget) slo = step; else shi = step;
+          }
+          step = shi;
+          bits += bandEntropyBits(X, lo, hi, step);
+          for (i = lo; i < hi; i++) X[i] = Math.round(X[i] / step) * step;
+        } else {
+          for (i = 0; i < n; i++) tmp[i] = X[lo + i] / g;
+          K = 0;
+          while (K < 96 && D.pvqBits(n, K + 1) <= budget) K++;
+          if (K > 0) {
+            bits += D.pvqBits(n, K);
+            var y = D.pvqSearch(tmp.subarray(0, n), K), yy = 0;
+            for (i = 0; i < n; i++) yy += y[i] * y[i];
+            yy = Math.sqrt(yy) || 1;
+            for (i = 0; i < n; i++) X[lo + i] = ghat * y[i] / yy;
+          } else if (mode === "gs") {
+            // CELT's fallback: fold the already-decoded content immediately
+            // below the band into it, and scale to the energy that was
+            // transmitted a moment ago. The band is never left empty.
+            var e2 = 0, si;
+            for (i = 0; i < n; i++) {
+              si = lo - n + i;
+              tmp[i] = si >= 0 ? X[si] : 0;
+              e2 += tmp[i] * tmp[i];
+            }
+            if (e2 < 1e-24) {                 // nothing below to fold: use noise
+              e2 = 0;
+              for (i = 0; i < n; i++) {
+                tmp[i] = ((((i + lo + blk) * 1103515245 + 12345) >>> 16) % 2048) / 1024 - 1;
+                e2 += tmp[i] * tmp[i];
+              }
+            }
+            e2 = Math.sqrt(e2) || 1;
+            for (i = 0; i < n; i++) X[lo + i] = ghat * tmp[i] / e2;
+          } else {
+            for (i = lo; i < hi; i++) X[i] = 0;
+          }
+        }
+        s = 0;
+        for (i = lo; i < hi; i++) s += X[i] * X[i];
+        recE[k] = Math.sqrt(s);
+        if (k === 12) { kmid += (mode === "scalar" ? 0 : (K || 0)); kmidN++; }
+      }
+      // accounting, restricted to bands that were audible in this block
+      for (k = 0; k < nb; k++) {
+        var od = origE[k] > 1e-14 ? 20 * Math.log10(origE[k]) : -280;
+        if (od < blockMax - 60) continue;
+        var rd = recE[k] > 1e-14 ? 20 * Math.log10(recE[k]) : -280;
+        var d = Math.max(-60, Math.min(60, rd - od));
+        errSum += d * d; errN++;
+        counted++;
+        if (d < -25) emptied++;
+      }
+      var tot = 0;
+      for (k = 0; k < nb; k++) tot += origE[k] * origE[k];
+      if (tot > bestE) {
+        bestE = tot;
+        showOrig = Float64Array.from(origE);
+        showRec = Float64Array.from(recE);
+      }
+    }, "sine");
+
+    var pk = D.peak(out);
+    if (pk > 0.95) for (var q = 0; q < out.length; q++) out[q] *= 0.95 / pk;
+    st.out = out;
+    st.kbps = bits / DUR / 1000;
+    st.err = errN ? Math.sqrt(errSum / errN) : 0;
+    st.empty = counted ? emptied / counted : 0;
+    st.kmid = kmidN ? kmid / kmidN : 0;
+    st.show = { o: showOrig, r: showRec };
+
+    document.getElementById("gs-kbps").textContent = st.kbps.toFixed(1) + " kbit/s";
+    document.getElementById("gs-err").textContent = st.err.toFixed(1) + " dB";
+    document.getElementById("gs-empty").textContent = AC.fmt.pct(st.empty);
+    document.getElementById("gs-k").textContent = st.mode === "scalar" ? "n/a" : st.kmid.toFixed(1);
+    document.getElementById("gs-state").textContent = st.budget.toFixed(2) + " bits/line";
+    st.busy = false;
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!st.show || !st.show.o) return;
+    var sr = st.sr, edges = st.edges, nb = edges.length - 1, k;
+    var ref = 0;
+    for (k = 0; k < nb; k++) ref = Math.max(ref, st.show.o[k]);
+    ref = Math.max(ref, 1e-12);
+
+    var bars = [], step = [];
+    for (k = 0; k < nb; k++) {
+      var f0 = Math.max(edges[k] / N * (sr / 2), p.xmin);
+      var f1 = Math.min(Math.max(edges[k + 1] / N * (sr / 2), f0 * 1.02), p.xmax);
+      var od = Math.max(20 * Math.log10(Math.max(st.show.o[k], 1e-12) / ref), p.ymin + 1);
+      var rd = Math.max(20 * Math.log10(Math.max(st.show.r[k], 1e-12) / ref), p.ymin + 1);
+      bars.push({ x0: f0, x1: f1, y: od, color: AC.C.blue, alpha: .32 });
+      step.push([f0, rd]); step.push([f1, rd]);
+    }
+    p.bars(bars, { base: p.ymin });
+    p.line(step, { color: AC.C.gold, width: 2 });
+    p.note(p.pad.l + 8, p.pad.t + 6, nb + " bands · loudest of " + Math.round(st.sig.length / N) + " blocks", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  var pending = 0;
+  AC.slider(document.getElementById("gs-budget"), function (v) {
+    st.budget = v;
+    document.getElementById("gs-state").textContent = v.toFixed(2) + " bits/line";
+    if (!st.sig) return;
+    clearTimeout(pending); pending = setTimeout(encode, 170);
+  }, function (v) { return v.toFixed(2) + " bits/line"; });
+
+  AC.chips(document.getElementById("gs-mode"), function (v) {
+    st.mode = v; A.stopAll();
+    document.querySelectorAll("#fig-gs .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) encode();
+  });
+
+  A.wire(document.getElementById("gs-orig"), function () { if (!st.sig) encode(); return st.sig; });
+  A.wire(document.getElementById("gs-code"), function () { if (!st.out) encode(); return st.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); setTimeout(encode, 30);
+    }, { rootMargin: "260px" });
+    once.observe(cv);
+  } else { encode(); }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.3 — the pyramid codebook.
+   Left: log2 V(N,K) evaluated from the three-term recursion. Right: a
+   real run of MDCT coefficients from synthesised music, normalised, and
+   the actual output of a greedy PVQ search over it. The table below the
+   figure is filled from the same recursion.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var c1 = document.getElementById("pv-cv1"), c2 = document.getElementById("pv-cv2");
+  if (!c1 || !c2 || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var st = { n: 16, k: 6, band: null, armed: false };
+
+  var p1 = new AC.Plot(c1, {
+    aspect: 1.65, xmin: 0, xmax: 48, ymin: 0, ymax: 220,
+    xlabel: "pulses K", ylabel: "bits per codeword", pad: { l: 46, r: 12, t: 12, b: 32 }
+  });
+  var p2 = new AC.Plot(c2, {
+    aspect: 1.65, xmin: -0.5, xmax: 63.5, ymin: -0.62, ymax: 0.62,
+    xlabel: "coefficient", ylabel: "normalised value", pad: { l: 46, r: 12, t: 12, b: 32 }
+  });
+
+  // One real band of MDCT coefficients, transformed here from real audio.
+  function sourceBand() {
+    if (st.band) return st.band;
+    if (!st.armed) return null;
+    var sr = A.rate(), x = A.src.music(0.9, { sr: sr }), NB = 256;
+    var w = D.WIN.sine(2 * NB), buf = new Float64Array(2 * NB), i, b;
+    var best = null, bestE = -1;
+    for (b = 2; b < Math.floor(x.length / NB) - 1; b++) {
+      for (i = 0; i < 2 * NB; i++) buf[i] = (x[b * NB - NB + i] || 0) * w[i];
+      var X = D.mdct(buf), e = 0;
+      for (i = 24; i < 88; i++) e += X[i] * X[i];
+      if (e > bestE) { bestE = e; best = X.slice(24, 88); }
+    }
+    st.band = best || new Float64Array(64);
+    return st.band;
+  }
+
+  function fmtV(v) {
+    if (!isFinite(v)) return "overflow";
+    if (v < 1e9) return Math.round(v).toLocaleString("en-GB");
+    return v.toExponential(2).replace("e+", " × 10^");
+  }
+
+  function draw1() {
+    p1.clear();
+    var maxB = Math.max(40, Math.ceil(D.pvqBits(64, 48) / 40) * 40);
+    p1.range(0, 48, 0, maxB);
+    p1.axes({});
+    [8, 16, 32, 64].forEach(function (n) {
+      var pts = [], K;
+      for (K = 0; K <= 48; K++) pts.push([K, D.pvqBits(n, K)]);
+      p1.line(pts, { color: AC.C.faint, width: 1, alpha: .55 });
+      p1.label(48, D.pvqBits(n, 48), "N=" + n, { align: "right", dy: -4, color: AC.C.ghost });
+    });
+    var cur = [], K2;
+    for (K2 = 0; K2 <= 48; K2++) cur.push([K2, D.pvqBits(st.n, K2)]);
+    p1.line(cur, { color: AC.C.gold, width: 2.2 });
+    p1.dot(st.k, D.pvqBits(st.n, st.k), { color: AC.C.red, ring: true });
+  }
+
+  function draw2() {
+    p2.clear();
+    var band = sourceBand(), n = st.n, i, e = 0;
+    if (!band) { p2.axes({}); return; }
+    var xs = new Float64Array(n);
+    for (i = 0; i < n; i++) { xs[i] = band[i] || 0; e += xs[i] * xs[i]; }
+    e = Math.sqrt(e) || 1;
+    for (i = 0; i < n; i++) xs[i] /= e;
+
+    var y = D.pvqSearch(xs, st.k), yy = 0;
+    for (i = 0; i < n; i++) yy += y[i] * y[i];
+    yy = Math.sqrt(yy) || 1;
+
+    var lim = 0, err = 0;
+    for (i = 0; i < n; i++) { lim = Math.max(lim, Math.abs(xs[i]), Math.abs(y[i] / yy)); }
+    lim = Math.max(lim * 1.18, 0.12);
+    p2.range(-0.6, n - 0.4, -lim, lim);
+    p2.axes({ y: [-lim, -lim / 2, 0, lim / 2, lim], yfmt: function (v) { return v.toFixed(2); } });
+    p2.hline(0, { color: AC.C.line, dash: false });
+
+    var op = [], qp = [];
+    for (i = 0; i < n; i++) {
+      op.push([i - 0.16, xs[i]]);
+      qp.push([i + 0.16, y[i] / yy]);
+      err += (xs[i] - y[i] / yy) * (xs[i] - y[i] / yy);
+    }
+    p2.stems(op, { color: AC.C.blue, r: 2.2 });
+    p2.stems(qp, { color: AC.C.gold, r: 2.2 });
+
+    var snr = -10 * Math.log10(Math.max(err, 1e-9));
+    document.getElementById("pv-snr").textContent = snr.toFixed(1) + " dB";
+  }
+
+  function update() {
+    var v = D.pvqV(st.n, st.k), b = D.pvqBits(st.n, st.k);
+    document.getElementById("pv-v").textContent = fmtV(v);
+    document.getElementById("pv-bits").textContent = b.toFixed(1) + " bits";
+    document.getElementById("pv-per").textContent = (b / st.n).toFixed(2) + " bits";
+    document.getElementById("pv-state").textContent = "N " + st.n + " · K " + st.k;
+    draw1(); draw2();
+  }
+  AC.autoDraw(p1, draw1);
+  AC.autoDraw(p2, draw2);
+
+  AC.slider(document.getElementById("pv-n"), function (v) { st.n = v | 0; update(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("pv-k"), function (v) { st.k = v | 0; update(); },
+    function (v) { return String(v | 0); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); st.armed = true; update();
+    }, { rootMargin: "260px" });
+    once.observe(c2);
+  } else { st.armed = true; update(); }
+
+  // the table, from the same recursion
+  var tb = document.getElementById("pv-tab");
+  if (tb) {
+    var rows = "";
+    [4, 8, 16, 32, 64].forEach(function (n) {
+      [1, 2, 4, 8, 16, 32].forEach(function (k) {
+        var v = D.pvqV(n, k), b = D.pvqBits(n, k);
+        rows += "<tr><td class=\"num\">" + n + "</td><td class=\"num\">" + k +
+          "</td><td class=\"num\">" + fmtV(v) + "</td><td class=\"num\">" + b.toFixed(1) +
+          "</td><td class=\"num\">" + (b / n).toFixed(2) + "</td></tr>";
+      });
+    });
+    tb.innerHTML = rows;
+  }
+})();
+/* ---------------------------------------------------------------
+   FIG 9.4 — the TOC byte, decoded.
+   Eight clickable bits; the configuration table is generated from the
+   rule that produces RFC 6716's Table 2, and the packet map below is
+   drawn to scale from the payload size and framing code.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var host = document.getElementById("tc-bits"), cvT = document.getElementById("tc-cv");
+  if (!host || !cvT || !window.AC) return;
+
+  var BWNAME = { NB: "NB · 4 kHz", MB: "MB · 6 kHz", WB: "WB · 8 kHz",
+                 SWB: "SWB · 12 kHz", FB: "FB · 20 kHz" };
+  var CONF = [];
+  (function () {
+    var i, j, s4 = [10, 20, 40, 60], sc = [2.5, 5, 10, 20];
+    ["NB", "MB", "WB"].forEach(function (bw) {
+      for (j = 0; j < 4; j++) CONF.push({ mode: "SILK-only", bw: bw, ms: s4[j] });
+    });
+    ["SWB", "FB"].forEach(function (bw) {
+      CONF.push({ mode: "Hybrid", bw: bw, ms: 10 });
+      CONF.push({ mode: "Hybrid", bw: bw, ms: 20 });
+    });
+    ["NB", "WB", "SWB", "FB"].forEach(function (bw) {
+      for (i = 0; i < 4; i++) CONF.push({ mode: "CELT-only", bw: bw, ms: sc[i] });
+    });
+  })();
+
+  var LABELS = ["cfg4", "cfg3", "cfg2", "cfg1", "cfg0", "s", "c1", "c0"];
+  var st = { byte: 124, bytes: 80, m: 3 };
+
+  var p = new AC.Plot(cvT, {
+    aspect: 5.4, xmin: 0, xmax: 80, ymin: 0, ymax: 1,
+    xlabel: "byte offset", pad: { l: 30, r: 12, t: 10, b: 30 }
+  });
+
+  host.innerHTML = LABELS.map(function (l, i) {
+    return '<button class="bitf" data-b="' + i + '" style="font:inherit;cursor:pointer" ' +
+      'aria-label="toggle bit ' + l + '"><span class="bv">0</span><span class="bn">' + l + "</span></button>";
+  }).join("");
+  var cells = Array.prototype.slice.call(host.querySelectorAll(".bitf"));
+
+  host.addEventListener("click", function (e) {
+    var b = e.target.closest(".bitf");
+    if (!b) return;
+    var i = +b.dataset.b;
+    st.byte ^= (1 << (7 - i));
+    update();
+  });
+
+  function decode() {
+    var cfg = st.byte >> 3, s = (st.byte >> 2) & 1, c = st.byte & 3;
+    var d = CONF[cfg];
+    var frames = c === 0 ? 1 : c === 1 ? 2 : c === 2 ? 2 : st.m;
+    var overhead = 1 + (c === 3 ? 1 : 0) + (c === 2 ? 1 : 0);
+    return { cfg: cfg, s: s, c: c, d: d, frames: frames, overhead: overhead,
+             dur: frames * d.ms, max: Math.floor(120 / d.ms) };
+  }
+
+  function update() {
+    var r = decode(), i;
+    for (i = 0; i < 8; i++) {
+      var on = !!(st.byte & (1 << (7 - i)));
+      cells[i].classList.toggle("on", on);
+      cells[i].firstChild.textContent = on ? "1" : "0";
+    }
+    document.getElementById("tc-state").textContent =
+      "0x" + st.byte.toString(16).toUpperCase().padStart(2, "0");
+    document.getElementById("tc-cfg").textContent = String(r.cfg);
+    document.getElementById("tc-mode").textContent = r.d.mode;
+    document.getElementById("tc-bw").textContent = BWNAME[r.d.bw];
+    document.getElementById("tc-fs").textContent = r.d.ms + " ms";
+    document.getElementById("tc-ch").textContent = r.s ? "stereo" : "mono";
+
+    var durEl = document.getElementById("tc-dur").parentNode;
+    var bad = r.dur > 120 + 1e-9;
+    durEl.classList.toggle("bad", bad);
+    durEl.classList.toggle("ok", !bad);
+    document.getElementById("tc-dur").textContent =
+      bad ? (r.frames + " · " + r.dur + " ms — over 120")
+          : (r.frames + " · " + r.dur + " ms");
+    document.getElementById("tc-rate").textContent =
+      (st.bytes * 8 / (r.dur / 1000) / 1000).toFixed(1) + " kbit/s";
+
+    var tb = document.getElementById("tc-tab");
+    if (tb) {
+      tb.innerHTML = CONF.map(function (d, n) {
+        var cell = function (v, cls) {
+          var t = n === r.cfg ? "<b>" + v + "</b>" : v;
+          return '<td class="' + (cls || "") + '">' + t + "</td>";
+        };
+        return "<tr>" + cell((n === r.cfg ? "▶ " : "") + n, "num") + cell(d.mode) +
+          cell(d.bw) + cell(d.ms + " ms", "num") + cell(String(Math.floor(120 / d.ms)), "num") + "</tr>";
+      }).join("");
+    }
+    redraw();
+  }
+
+  function redraw() {
+    p.clear();
+    var r = decode(), total = Math.max(st.bytes, r.overhead + r.frames);
+    p.range(0, total, 0, 1);
+    p.axes({ y: [], grid: false });
+    var bars = [], at = 0, i;
+    bars.push({ x0: 0, x1: 1, y: 1, color: AC.C.gold, alpha: .9 }); at = 1;
+    if (r.c === 3) { bars.push({ x0: at, x1: at + 1, y: 1, color: AC.C.purple, alpha: .9 }); at += 1; }
+    if (r.c === 2) { bars.push({ x0: at, x1: at + 1, y: 1, color: AC.C.teal, alpha: .9 }); at += 1; }
+    var payload = Math.max(total - at, 0), each = payload / r.frames;
+    for (i = 0; i < r.frames; i++) {
+      bars.push({ x0: at + i * each, x1: at + (i + 1) * each, y: 1, color: AC.C.blue, alpha: .72 });
+    }
+    p.bars(bars, { base: 0, gap: .5 });
+    p.note(p.pad.l + 6, p.pad.t + 4, r.frames + (r.frames === 1 ? " frame · " : " frames · ") +
+      total + " bytes · code " + r.c, { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  AC.slider(document.getElementById("tc-bytes"), function (v) { st.bytes = v | 0; update(); },
+    function (v) { return (v | 0) + " bytes"; });
+  AC.slider(document.getElementById("tc-m"), function (v) { st.m = v | 0; update(); },
+    function (v) { return String(v | 0); });
+  AC.chips(document.getElementById("tc-pre"), function (v) { st.byte = +v; update(); });
+
+  update();
+})();
+/* ---------------------------------------------------------------
+   FIG 9.5 — packet loss, and three ways of surviving it.
+   A synthesised utterance is cut into frames, a seeded generator drops
+   them, and the missing audio is either left out, extrapolated from the
+   last good frame, or recovered from the coarse redundant copy that the
+   following packet would have carried.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("ls-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var DUR = 2.6;
+  var st = { loss: 10, frameMs: 20, mode: "plc", sr: 48000,
+             sig: null, deg: null, out: null, lost: [], stats: null };
+
+  var p = new AC.Plot(cv, {
+    aspect: 3.0, xmin: 0, xmax: DUR, ymin: -60, ymax: 0,
+    xlabel: "time, s", ylabel: "RMS, dB", pad: { l: 50, r: 14, t: 14, b: 32 }
+  });
+
+  function ensure() {
+    if (st.sig) return;
+    var sr = A.rate(); st.sr = sr;
+    st.sig = A.src.speech(DUR, { sr: sr });
+    // The redundant copy an LBRR frame stands for: band-limited and coarse.
+    var lp = A.lowpassFFT(st.sig, sr, 4000);
+    st.deg = A.quantize(lp, 5, { dither: true });
+    var i;
+    for (i = 0; i < st.deg.length; i++) st.deg[i] *= 0.95;
+  }
+
+  function run() {
+    ensure();
+    var sr = st.sr, x = st.sig, fl = Math.max(32, Math.round(sr * st.frameMs / 1000));
+    var nF = Math.floor(x.length / fl), xf = Math.min(Math.round(sr * 0.003), fl >> 2);
+    var rnd = A.prng(20120911), lost = new Uint8Array(nF), i, f;
+    for (f = 0; f < nF; f++) lost[f] = ((rnd() * 0.5 + 0.5) * 100 < st.loss) ? 1 : 0;
+
+    var out = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) out[i] = x[i];
+
+    var stats = { lost: 0, fec: 0, plc: 0, gap: 0 }, run0 = 0;
+    var c = new Float64Array(fl + 2 * xf);
+
+    for (f = 0; f < nF; f++) {
+      var s0 = f * fl;
+      if (!lost[f]) { run0 = 0; continue; }
+      stats.lost++;
+      run0++;
+      var kind = "silence";
+      if (st.mode === "fec" && f + 1 < nF && !lost[f + 1]) kind = "fec";
+      else if (st.mode !== "silence") kind = "plc";
+
+      if (kind === "fec") {
+        stats.fec++;
+        for (i = 0; i < c.length; i++) c[i] = st.deg[s0 - xf + i] || 0;
+      } else if (kind === "plc") {
+        stats.plc++;
+        // repeat the previous reconstructed frame, decaying across the gap
+        var g0 = Math.pow(0.6, run0 - 1);
+        for (i = 0; i < c.length; i++) {
+          var src = s0 - fl + ((i + fl - xf) % fl);
+          c[i] = (src >= 0 ? out[src] : 0) * g0 * Math.max(0, 1 - 0.55 * i / c.length);
+        }
+      } else {
+        stats.gap += st.frameMs;
+        for (i = 0; i < c.length; i++) c[i] = 0;
+      }
+
+      // overlap-add the concealed content over the frame, cross-fading
+      // xf samples into the audio on each side so nothing clicks.
+      for (i = 0; i < xf; i++) {
+        var t = 0.5 - 0.5 * Math.cos(Math.PI * i / xf);
+        if (s0 - xf + i >= 0) out[s0 - xf + i] = out[s0 - xf + i] * (1 - t) + c[i] * t;
+      }
+      for (i = 0; i < fl - xf; i++) out[s0 + i] = c[xf + i];
+      for (i = 0; i < xf; i++) {
+        var t2 = 0.5 - 0.5 * Math.cos(Math.PI * i / xf);
+        var oi = s0 + fl - xf + i;
+        if (oi < out.length) out[oi] = c[fl + i] * (1 - t2) + (lost[f + 1] ? c[fl + i] : (x[oi] || 0)) * t2;
+      }
+    }
+
+    st.out = out; st.lost = lost; st.stats = stats;
+    st.nF = nF; st.fl = fl;
+
+    document.getElementById("ls-lost").textContent = stats.lost + " of " + nF;
+    document.getElementById("ls-fec").textContent = st.mode === "fec"
+      ? (stats.fec + " (" + AC.fmt.pct(stats.lost ? stats.fec / stats.lost : 0) + ")") : "off";
+    document.getElementById("ls-plc").textContent = st.mode === "silence" ? "off" : String(stats.plc);
+    document.getElementById("ls-gap").textContent = Math.round(stats.gap) + " ms";
+    document.getElementById("ls-state").textContent = st.loss + "% · " + st.frameMs + " ms";
+    redraw();
+  }
+
+  function envelope(x, sr, hop) {
+    var n = Math.floor(x.length / hop), e = [], i, k, s;
+    for (k = 0; k < n; k++) {
+      s = 0;
+      for (i = k * hop; i < (k + 1) * hop && i < x.length; i++) s += x[i] * x[i];
+      e.push([k * hop / sr, D.dbp(s / hop + 1e-12)]);
+    }
+    return e;
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (v) { return v.toFixed(1); } });
+    if (!st.out) return;
+    var sr = st.sr, hop = Math.round(sr * 0.006), f;
+    for (f = 0; f < st.nF; f++) {
+      if (!st.lost[f]) continue;
+      p.band(f * st.fl / sr, (f + 1) * st.fl / sr, { color: AC.C.red, alpha: .17 });
+    }
+    p.line(envelope(st.sig, sr, hop), { color: AC.C.blue, width: 1.2, alpha: .6 });
+    p.line(envelope(st.out, sr, hop), { color: AC.C.gold, width: 1.6 });
+    p.note(p.pad.l + 8, p.pad.t + 4, st.nF + " frames of " + st.frameMs + " ms", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  var pend = 0;
+  AC.slider(document.getElementById("ls-loss"), function (v) {
+    st.loss = v | 0;
+    document.getElementById("ls-state").textContent = (v | 0) + "% · " + st.frameMs + " ms";
+    if (!st.sig) return;
+    clearTimeout(pend); pend = setTimeout(run, 110);
+  }, function (v) { return (v | 0) + "%"; });
+
+  AC.chips(document.getElementById("ls-fs"), function (v) {
+    st.frameMs = +v; A.stopAll();
+    document.querySelectorAll("#fig-loss .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) run();
+  });
+  AC.chips(document.getElementById("ls-mode"), function (v) {
+    st.mode = v; A.stopAll();
+    document.querySelectorAll("#fig-loss .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    if (st.sig) run();
+  });
+
+  A.wire(document.getElementById("ls-orig"), function () { ensure(); return st.sig; });
+  A.wire(document.getElementById("ls-out"), function () { if (!st.out) run(); return st.out; });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect(); run();
+    }, { rootMargin: "260px" });
+    once.observe(cv);
+  } else { run(); }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

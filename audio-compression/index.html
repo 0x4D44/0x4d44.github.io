@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Throwing Sound Away — An Interactive Study of Audio Compression</title>
+<meta name="description" content="How MP3, AAC, Opus and FLAC work: sampling, psychoacoustics, masking, the MDCT, quantisation, entropy coding and the codecs themselves — in fourteen chapters of live, in-browser figures.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="00">
+<div id="topbar"></div>
+
+<!-- ===================== HERO ===================== -->
+<section class="wrap" style="padding:66px 32px 26px">
+  <div class="kicker">An interactive study · 14 chapters</div>
+  <div class="cols-sidebar" style="align-items:end">
+    <div>
+      <h1>Throwing<br>sound away.</h1>
+      <p class="lead" style="margin-top:24px;max-width:40ch">A compact disc spends
+        1&nbsp;411&nbsp;200 bits every second describing music. An Opus stream can
+        describe the same music, to most ears indistinguishably, in 96&nbsp;000.
+        This is the study of what happens to the other ninety-three per cent.</p>
+    </div>
+    <div>
+      <p class="dim" style="font-family:var(--font-mono);font-size:.81rem;line-height:1.75">
+        Audio compression is not a trick of packing. It is a theory of your
+        hearing, encoded as arithmetic and run thirty-eight times a second. A
+        codec's real job is to work out, for every fraction of a second and
+        every band of frequency, exactly how much damage it can do before you
+        would notice — and then to do precisely that much, and no less.
+      </p>
+      <p class="dim" style="font-family:var(--font-mono);font-size:.81rem;line-height:1.75">
+        Everything on these pages is computed live in your browser. There is
+        not one audio file in this repository: every sound you hear is
+        synthesised, encoded and decoded as you click.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HERO FIGURE ===================== -->
+<section class="wrap" style="padding:14px 32px 34px">
+  <figure class="figure" id="fig-hero">
+    <div class="figure-bar">
+      <span class="fno">FIG. 00</span>
+      <span class="ftitle">A real encoder, running here — drag the budget</span>
+      <span class="fstate" id="h-state">128 kbit/s</span>
+    </div>
+    <div class="figure-body">
+      <div class="canvas-wrap"><canvas id="h-cv"></canvas></div>
+      <div class="legend">
+        <span class="l-sig"><i></i>the music, as sampled</span>
+        <span class="l-heat"><i></i>what the decoder gets back</span>
+        <span class="l-ghost"><i class="dash"></i>the masking threshold — noise below this line is inaudible</span>
+      </div>
+      <div class="readout" style="margin-top:14px">
+        <div class="ro sig"><span class="k">Bitrate</span><span class="v" id="h-br">128.0 kbit/s</span></div>
+        <div class="ro"><span class="k">Against CD PCM</span><span class="v" id="h-ratio">11.0 : 1</span></div>
+        <div class="ro ok"><span class="k">Spectral lines kept</span><span class="v" id="h-kept">57%</span></div>
+        <div class="ro bad"><span class="k">Signal-to-noise</span><span class="v" id="h-snr">18.9 dB</span></div>
+      </div>
+    </div>
+    <div class="deck">
+      <div class="field">
+        <div class="flab"><span>Programme</span></div>
+        <div class="chips" id="h-src">
+          <button data-v="music" class="on">Music</button>
+          <button data-v="castanets">Castanets</button>
+          <button data-v="speech">Speech</button>
+          <button data-v="applause">Applause</button>
+        </div>
+      </div>
+      <div class="field grow" style="min-width:210px">
+        <div class="flab"><span>Bit budget</span><span class="val" id="h-brlab">128 kbit/s</span></div>
+        <input type="range" id="h-rate" min="16" max="320" step="8" value="128" data-out="h-brlab" aria-label="Bit budget in kilobits per second">
+      </div>
+      <div class="field">
+        <div class="flab"><span>Listen</span></div>
+        <div class="chips">
+          <button class="btn play" id="h-orig">Original</button>
+          <button class="btn play" id="h-code">Coded</button>
+          <button class="btn play" id="h-diff">What was thrown away</button>
+        </div>
+      </div>
+    </div>
+    <figcaption class="figure-cap">
+      <b>Fig 00</b> — the blue curve is the music's own spectrum in one 512-line
+      transform block; the gold curve is what survives being quantised to the
+      budget you set; the dashed purple line is a psychoacoustic model's estimate
+      of the loudest noise that would still be inaudible in each band. Drag the
+      budget down and watch the gold curve go ragged — and notice that it goes
+      ragged <b>under the dashed line first</b>. That is not an accident: it is
+      the whole design. Then press <b>what was thrown away</b>. At 128 kbit/s
+      the discarded signal is a recognisable ghost of the music, and you still
+      cannot hear it in the coded version.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ===================== THE ARGUMENT ===================== -->
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#problem">The problem</a>
+    <a href="#idea">The one idea</a>
+    <a href="#chapters">The chapters</a>
+    <a href="#how">How to read this</a>
+    <a href="#colophon">Colophon</a>
+  </nav>
+  <div>
+
+  <section id="problem" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The problem</div>
+    <h3>Raw audio is enormous, and almost all of it is wasted on you.</h3>
+    <p style="margin-top:18px">A compact disc carries two channels, sampled
+      44&nbsp;100 times a second, each sample a 16-bit integer. Multiply it
+      out — 44&nbsp;100 × 16 × 2 — and you get <strong>1&nbsp;411&nbsp;200 bits
+      per second</strong>: 176.4 kilobytes every second, 10.6 megabytes a minute,
+      about 740 megabytes for a full 74-minute disc. That number is why the CD
+      needed to be the size it was, and why in 1993 a three-minute song was an
+      overnight download.</p>
+    <p>The obvious response — general-purpose compression — barely helps. Run
+      a PCM file through <code>zip</code> and you will claw back perhaps ten per
+      cent, because the waveform of a cymbal is, statistically, very close to
+      noise. There is no redundancy left to exploit at the level of bit
+      patterns. If you want an order of magnitude, you have to stop asking
+      "what in this file is repeated?" and start asking a different question
+      entirely.</p>
+    <blockquote class="pullquote">The winning question was never <em>how do I
+      store this signal?</em> It was <em>which parts of this signal is the
+      listener physically incapable of hearing?</em>
+      <span class="who">The perceptual coding bargain</span></blockquote>
+    <p>That question has an answer, and the answer is measurable. Psychoacoustics
+      had spent most of the twentieth century measuring it: the quietest tone
+      you can detect at each frequency, how a loud sound at one frequency raises
+      the detection threshold at its neighbours, how long that shadow lasts
+      after the sound stops. By the late 1980s those curves were good enough to
+      drive an encoder. The result was a machine that deliberately adds noise to
+      your music — a great deal of noise, tens of decibels of it — and hides
+      every decibel underneath something louder.</p>
+  </section>
+
+  <section id="idea" class="section">
+    <div class="kicker k-heat">The one idea</div>
+    <h3>Put the error where the ear is already busy.</h3>
+    <p style="margin-top:18px">Every lossy audio codec ever shipped is a
+      variation on four moves, and the chapters that follow take them one at a
+      time.</p>
+
+    <div class="cols-2" style="margin-top:26px">
+      <div class="note sig">
+        <span class="tag tag-sig">Move 1 · split time from frequency</span>
+        <p>Cut the signal into short overlapping blocks and transform each one
+          into frequency components — in practice a <strong>modified discrete
+          cosine transform</strong>, which packs 2<i>N</i> samples into <i>N</i>
+          numbers and still reconstructs exactly, because the aliasing it
+          introduces cancels against the next block. <a href="4-transform.html">Chapter 04</a>.</p>
+      </div>
+      <div class="note heat">
+        <span class="tag tag-heat">Move 2 · ask how deaf you are, here, now</span>
+        <p>Run a model of the ear over that block and produce a
+          <strong>masking threshold</strong>: a curve of the loudest noise, in
+          each critical band, that this particular instant of music can hide.
+          <a href="2-ear.html">Chapter 02</a> and <a href="3-masking.html">Chapter 03</a>.</p>
+      </div>
+      <div class="note ok">
+        <span class="tag tag-ok">Move 3 · quantise down to that line</span>
+        <p>Round each frequency component coarsely enough that its rounding
+          error sits just below the threshold — and no more coarsely, because
+          every extra decibel of margin is bits you have paid for and cannot
+          hear. <a href="5-quantize.html">Chapter 05</a>.</p>
+      </div>
+      <div class="note ghost">
+        <span class="tag">Move 4 · code the survivors without waste</span>
+        <p>Most of what is left is zero, and the non-zeros are wildly unequal in
+          probability. Huffman codes, arithmetic codes and range coders spend
+          fractions of a bit on the common cases.
+          <a href="6-entropy.html">Chapter 06</a>.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:28px">Everything else — and there is a great deal
+      else — is refinement of those four moves under pressure. Block switching
+      exists because move 1 smears a transient's noise backwards in time past
+      the point where move 2's model still holds. Temporal noise shaping exists
+      because you can apply move 1's logic along the frequency axis instead.
+      Spectral band replication exists because at 48 kbit/s you cannot afford to
+      code the top octave at all, so you describe it instead. The bit reservoir
+      exists because move 3's answer varies wildly from block to block while the
+      transmission channel does not.</p>
+    <p>The individual codecs, then, are not competing theories. They are
+      successive settlements of the same argument, each one made under different
+      constraints of computing power, patent exposure, latency and taste.
+      <a href="7-mp3.html">MP3</a> settled it in 1993 with 576 spectral lines
+      and a hybrid filterbank inherited from its own Layer II ancestry.
+      <a href="8-aac.html">AAC</a> settled it again in 1997 with a clean 1024-line
+      transform and a box of new tools. <a href="9-opus.html">Opus</a> settled it
+      once more in 2012 by refusing to choose between speech and music, and
+      shipping both codecs in one bitstream.</p>
+  </section>
+
+  <section id="chapters" class="section">
+    <div class="kicker">The chapters</div>
+    <h3>Fourteen pages, in the order the argument needs them.</h3>
+    <p style="margin-top:18px;max-width:62ch">The first six build the machinery
+      from first principles; the next four take apart the codecs that use it;
+      the last four are about listening, judging and choosing. Each page stands
+      alone, but the arrows point forwards for a reason.</p>
+
+    <div class="cards" style="margin-top:30px">
+      <a class="card" href="1-sound.html">
+        <span class="cnum">01</span>
+        <h4>Sound, sampled</h4>
+        <p>Pressure to numbers: the sampling theorem, aliasing you can hear, why
+          44.1 kHz is such a peculiar number, and the exact arithmetic of
+          quantisation noise — 6.02<i>N</i> + 1.76 dB, derived and then measured.</p>
+        <span class="cmeta"><span>Nyquist · dither</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="2-ear.html">
+        <span class="cnum">02</span>
+        <h4>The ear as a codec</h4>
+        <p>The cochlea is a filterbank with about 24 usable channels and a
+          130-decibel range that it spends unevenly. Critical bands, the Bark
+          and ERB scales, the Greenwood map, and the threshold curve every
+          encoder carries a copy of.</p>
+        <span class="cmeta"><span>Psychoacoustics</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="3-masking.html">
+        <span class="cnum">03</span>
+        <h4>Masking</h4>
+        <p>The load-bearing phenomenon. Spreading functions, the tone-versus-noise
+          asymmetry, forward and backward masking in time, and the number that
+          falls out of it: how many bits a second of music actually contains.</p>
+        <span class="cmeta"><span>The whole basis</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="4-transform.html">
+        <span class="cnum">04</span>
+        <h4>Into the frequency domain</h4>
+        <p>Windows, leakage and the uncertainty you cannot escape; the polyphase
+          filterbank; and the MDCT — including a numerical demonstration that
+          its aliasing really does cancel, and of the pre-echo that follows when
+          the blocks are too long.</p>
+        <span class="cmeta"><span>MDCT · TDAC</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="5-quantize.html">
+        <span class="cnum">05</span>
+        <h4>Quantisation and the rate loop</h4>
+        <p>Where the bits are actually spent. Scalefactors, the three-quarter
+          power law, the two nested loops that fight each other, and a bit-budget
+          game in which you allocate the bits yourself and hear the result.</p>
+        <span class="cmeta"><span>Rate–distortion</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="6-entropy.html">
+        <span class="cnum">06</span>
+        <h4>Entropy coding</h4>
+        <p>Shannon's bound, Huffman's algorithm and its one-bit ceiling, MP3's
+          thirty-two code tables, and the arithmetic and range coders that beat
+          Huffman by spending fractional bits.</p>
+        <span class="cmeta"><span>Huffman · range coding</span><span>6 figures</span></span>
+      </a>
+      <a class="card" href="7-mp3.html">
+        <span class="cnum">07</span>
+        <h4>MP3, dissected</h4>
+        <p>The frame header field by field, the hybrid filterbank, 576 lines per
+          granule, the bit reservoir that points backwards past the frame
+          boundary, and why joint stereo used to sound the way it did.</p>
+        <span class="cmeta"><span>ISO 11172-3</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="8-aac.html">
+        <span class="cnum">08</span>
+        <h4>AAC and the second generation</h4>
+        <p>Everything MP3 could not change without breaking compatibility:
+          a clean transform, switchable window shapes, temporal noise shaping,
+          noise substitution, and the parametric tools that make 48 kbit/s
+          stereo listenable.</p>
+        <span class="cmeta"><span>TNS · SBR · PS</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="9-opus.html">
+        <span class="cnum">09</span>
+        <h4>Opus — two codecs in one</h4>
+        <p>A linear-predictive speech coder and a transform music coder in a
+          single packet format, with a range coder underneath and latency low
+          enough to hold a conversation. The TOC byte, decoded.</p>
+        <span class="cmeta"><span>SILK · CELT · PVQ</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="10-lossless.html">
+        <span class="cnum">10</span>
+        <h4>Lossless, and the other end</h4>
+        <p>Prediction plus Rice coding gets you to about half size and not much
+          further — and the reason why is information, not cleverness. Then the
+          opposite extreme: speech at 8 kbit/s, and vocoders at 700 bit/s.</p>
+        <span class="cmeta"><span>FLAC · ALAC · Codec2</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="11-artifacts.html">
+        <span class="cnum">11</span>
+        <h4>What lossy actually sounds like</h4>
+        <p>A field guide to pre-echo, birdies, band-limiting and stereo collapse
+          — each one provoked here, on demand, from a clean source. Plus an ABX
+          test against your own ears, with the statistics done properly.</p>
+        <span class="cmeta"><span>ABX · MUSHRA · PEAQ</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="12-choosing.html">
+        <span class="cnum">12</span>
+        <h4>Choosing, and what comes next</h4>
+        <p>Codec against container, bitrate against use case, loudness
+          normalisation, the Bluetooth codecs nobody chooses on purpose, and
+          whether a learned codec is going to make all of this obsolete.</p>
+        <span class="cmeta"><span>Practical</span><span>5 figures</span></span>
+      </a>
+      <a class="card" href="lexicon.html">
+        <span class="cnum">13</span>
+        <h4>Lexicon</h4>
+        <p>Every term in the study, defined precisely and in one place — from
+          <em>aliasing</em> to <em>zero run</em> — with a dated timeline of the
+          people who worked it out.</p>
+        <span class="cmeta"><span>Reference</span><span>Searchable</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section id="how" class="section">
+    <div class="kicker">How to read this</div>
+    <h3>The figures are the argument. Use them.</h3>
+    <p style="margin-top:18px">Nothing here is an illustration of a result
+      obtained elsewhere. When a page shows you a masking curve, it is
+      evaluating the spreading function as you drag the masker. When it shows
+      that the MDCT's aliasing cancels, it is transforming a real block, keeping
+      the alias, transforming it back and printing the residual. When it plays
+      you a pre-echo, it has just encoded a castanet at a bitrate you chose,
+      with a block length you chose, and decoded it again.</p>
+    <p>Three practical notes:</p>
+    <dl class="defs" style="margin-top:20px">
+      <div class="def">
+        <dt>Use headphones</dt>
+        <dd>Most of the audible demonstrations are about low-level detail
+          twenty to sixty decibels below the music. Laptop speakers will hide
+          the very artefacts the page is trying to show you, and room noise will
+          mask them exactly as a codec would.</dd>
+      </div>
+      <div class="def">
+        <dt>Nothing plays by itself</dt>
+        <dd>Every sound requires a click, and starting one stops the last. If a
+          button says <span class="mono">■</span>, it is playing; press it again
+          to stop.</dd>
+      </div>
+      <div class="def">
+        <dt>The numbers are live</dt>
+        <dd>Bitrates, signal-to-noise figures and bit counts shown in the
+          readouts are measured from the encoder actually running, not typed in.
+          They will differ a little between browsers, because your
+          <code>AudioContext</code> may be running at 44 100 or 48 000 Hz.</dd>
+      </div>
+    </dl>
+    <div class="note">
+      <span class="tag">A warning about the encoder in these pages</span>
+      <p>The codec used for the live demonstrations is real but small: an MDCT,
+        Bark-band masking, a global rate loop and an entropy estimate, in about
+        two hundred lines. It is enough to produce genuine pre-echo, genuine
+        birdies and a genuine rate–quality curve, which is what the figures need.
+        It is <strong>not</strong> LAME or libopus, and its output at a given
+        bitrate is worse than either. Where a page quotes what a real codec
+        sounds like at a real bitrate, that comes from published listening tests,
+        and says so.</p>
+    </div>
+  </section>
+
+  <section id="colophon" class="section">
+    <div class="kicker">Colophon</div>
+    <h3>Built from nothing but arithmetic.</h3>
+    <p style="margin-top:18px">Plain HTML, CSS and JavaScript. No framework, no
+      build step, no bundler, no external font, no CDN, no analytics, and — the
+      point of pride — <strong>no audio files</strong>. The music is a
+      Karplus–Strong string with a synthesised bell and hi-hat; the speech is a
+      glottal pulse train through four formant resonators; the castanets are two
+      decaying sinusoids and a burst of seeded noise. The fast Fourier transform,
+      the MDCT, the Levinson–Durbin recursion, the Huffman builder and the
+      psychoacoustic model are all in
+      <code>assets/dsp.js</code> and <code>assets/audio.js</code> and are perhaps
+      forty kilobytes together.</p>
+    <p>Elsewhere in this almanac: <a href="/spectrum-analyzer/">a 1996
+      spectrum-analyser codebase</a> takes the FFT apart in C;
+      <a href="/ropus/">ropus</a> is the Opus decoder ported to safe Rust and
+      checked bit-exact against the reference;
+      <a href="/instruments/">Instruments</a> covers the physics on the other
+      side of the microphone; and <a href="/midi-observatory/">the MIDI
+      Observatory</a> is where the synthesis techniques used here get to show
+      off properly.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 00 — the whole thesis in one figure.
+   Encode a synthesised programme at a chosen bit budget with the real
+   toy codec, then plot the loudest block's spectrum before and after
+   against the masking threshold the encoder actually used.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("h-cv");
+  if (!cv || !window.DSP || !window.AUD) return;
+  var D = window.DSP, A = window.AUD;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 40, xmax: 20000, ymin: -85, ymax: 3,
+    xlabel: "frequency", ylabel: "dB relative to full scale", pad: { l: 54, r: 16, t: 16, b: 34 },
+  });
+
+  var SOURCES = {
+    music:     function (sr) { return A.src.music(2.2, { sr: sr }); },
+    castanets: function (sr) { return A.src.castanets(2.2, { sr: sr }); },
+    speech:    function (sr) { return A.src.speech(2.2, { sr: sr }); },
+    applause:  function (sr) { return A.src.applause(2.2, { sr: sr }); },
+  };
+
+  var state = { src: "music", rate: 128, sig: null, analysis: null, res: null, block: 0, busy: false };
+
+  function ensureSource() {
+    if (state.sig) return;
+    var sr = A.rate();
+    state.sig = SOURCES[state.src](sr);
+    state.analysis = A.analyze(state.sig, { sr: sr, N: 512, masking: true });
+    // Show the block with the most energy: the one where the argument is loudest.
+    var best = 0, bestE = -1;
+    state.analysis.energies.forEach(function (E, i) {
+      var s = 0;
+      for (var k = 0; k < E.length; k++) s += E[k];
+      if (s > bestE) { bestE = s; best = i; }
+    });
+    state.block = best;
+  }
+
+  function encode() {
+    ensureSource();
+    state.res = A.codec(state.sig, { analysis: state.analysis, bitrate: state.rate });
+    var r = state.res;
+    document.getElementById("h-br").textContent = r.kbps.toFixed(1) + " kbit/s";
+    document.getElementById("h-ratio").textContent = (1411.2 / Math.max(r.kbps, 1)).toFixed(1) + " : 1";
+    document.getElementById("h-kept").textContent = Math.round((1 - r.zeroFraction) * 100) + "%";
+    document.getElementById("h-snr").textContent = r.snrDb.toFixed(1) + " dB";
+    document.getElementById("h-state").textContent = r.kbps.toFixed(0) + " kbit/s";
+    redraw();
+  }
+
+  // The decoded spectrum of one block, recomputed by quantising that block's
+  // coefficients with the step the rate loop settled on.
+  function codedBlock() {
+    var a = state.analysis, r = state.res, b = state.block;
+    var X = a.coeffs[b], T = a.thresh[b], edges = a.edges;
+    var out = new Float64Array(X.length), k, i;
+    var gain = Math.pow(10, r.lambda / 10);
+    for (k = 0; k < edges.length - 1; k++) {
+      var step = Math.sqrt(12 * Math.max(T[k] * gain, 1e-20));
+      for (i = edges[k]; i < edges[k + 1]; i++) out[i] = Math.round(X[i] / step) * step;
+    }
+    return out;
+  }
+
+  function smooth(arr, w) {
+    var out = new Float64Array(arr.length), i, j, s, n;
+    for (i = 0; i < arr.length; i++) {
+      s = 0; n = 0;
+      for (j = Math.max(0, i - w); j <= Math.min(arr.length - 1, i + w); j++) { s += arr[j]; n++; }
+      out[i] = s / n;
+    }
+    return out;
+  }
+
+  function redraw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); } });
+    if (!state.res) return;
+
+    var a = state.analysis, b = state.block, sr = a.sr, N = a.N;
+    var orig = a.coeffs[b], cod = codedBlock();
+    var fOf = function (i) { return (i + 0.5) / N * (sr / 2); };
+
+    // Reference level: the loudest line in the block is 0 dB on this axis.
+    var ref = 0, i;
+    for (i = 0; i < N; i++) ref = Math.max(ref, Math.abs(orig[i]));
+    ref = Math.max(ref, 1e-9);
+
+    var origDb = new Float64Array(N), codDb = new Float64Array(N);
+    for (i = 0; i < N; i++) {
+      origDb[i] = D.db(orig[i] / ref, 1e-6);
+      codDb[i] = D.db(cod[i] / ref, 1e-6);
+    }
+    var so = smooth(origDb, 2), sc = smooth(codDb, 2);
+
+    var po = [], pc = [];
+    for (i = 1; i < N; i++) {
+      var f = fOf(i);
+      if (f < p.xmin || f > p.xmax) continue;
+      po.push([f, Math.max(so[i], -95)]);
+      pc.push([f, Math.max(sc[i], -95)]);
+    }
+
+    // the masking threshold the encoder used, in the same reference frame
+    var thr = [], edges = a.edges, k;
+    for (k = 0; k < edges.length - 1; k++) {
+      var f0 = fOf(edges[k]), f1 = fOf(Math.max(edges[k + 1] - 1, edges[k]));
+      var lvl = D.dbp(a.thresh[b][k] / (ref * ref));
+      if (f1 >= p.xmin) { thr.push([Math.max(f0, p.xmin), lvl]); thr.push([Math.min(f1, p.xmax), lvl]); }
+    }
+
+    p.line(po, { color: AC.C.blue, width: 1.6, alpha: .95 });
+    p.line(pc, { color: AC.C.gold, width: 1.6, alpha: .95 });
+    p.line(thr, { color: AC.C.purple, width: 1.5, dash: [5, 4], alpha: .9 });
+    p.note(p.pad.l + 8, p.pad.t + 6, "block " + b + " of " + a.blocks + " · " + N + " MDCT lines", { color: AC.C.ghost });
+  }
+  AC.autoDraw(p, redraw);
+
+  // ---- controls
+  AC.chips(document.getElementById("h-src"), function (v) {
+    state.src = v; state.sig = null; state.analysis = null;
+    A.stopAll();
+    document.querySelectorAll("#fig-hero .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    encode();
+  });
+
+  var pending = 0;
+  AC.slider(document.getElementById("h-rate"), function (v) {
+    state.rate = v;
+    document.getElementById("h-state").textContent = v + " kbit/s";
+    clearTimeout(pending);
+    pending = setTimeout(encode, 140);
+  }, function (v) { return v + " kbit/s"; });
+
+  A.wire(document.getElementById("h-orig"), function () { ensureSource(); return state.sig; });
+  A.wire(document.getElementById("h-code"), function () { if (!state.res) encode(); return state.res.out; });
+  A.wire(document.getElementById("h-diff"), function () {
+    if (!state.res) encode();
+    var d = new Float64Array(state.sig.length), i;
+    for (i = 0; i < d.length; i++) d[i] = state.sig[i] - state.res.out[i];
+    D.normalize(d, 0.75);          // the residual is quiet; bring it up to hear it
+    return d;
+  });
+
+  // First encode is deferred until the figure is near the viewport, so the
+  // page paints immediately.
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect();
+      encode();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else {
+    encode();
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

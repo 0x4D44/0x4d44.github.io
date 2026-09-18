@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Social Situations as Learnable Systems</title>
+  <meta name="description" content="A practical XYZ framework for turning ambiguous social situations into predictable, learnable protocols: liking, interaction depth and predictability.">
+  <link rel="canonical" href="https://0x4d44.github.io/social-situations/">
+  <meta property="og:title" content="Social Situations as Learnable Systems">
+  <meta property="og:description" content="Map people and situations on three axes, then turn uncertainty into small, reusable protocols.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://0x4d44.github.io/social-situations/">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <p class="kicker">A practical framework · not a personality test</p>
+      <h1>Social situations<br><span>as learnable systems</span></h1>
+      <p class="dek">A way to separate <strong>how you feel about a person</strong>, <strong>how much interaction the situation requires</strong>, and <strong>how predictable the situation is</strong> — then replace an amorphous social threat with a finite set of recognizable states and responses.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#xyz">Start with the three axes</a>
+        <a class="button" href="#maps">Open the situation maps</a>
+      </div>
+      <div class="principle"><span>Core idea</span><strong>The goal is not “be more social.” It is “know what this situation asks of me, and make it as predictable as possible.”</strong></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section intro" id="why">
+      <div class="section-head">
+        <p class="eyebrow">01 · Why a map helps</p>
+        <h2>“People” is too large a problem.</h2>
+      </div>
+      <div class="two-col prose">
+        <div>
+          <p>A lecture hall, a hotel reception desk, a laboratory and a party can all contain dozens of people. Yet they can feel completely different. Headcount alone is a poor predictor of social demand.</p>
+          <p>The useful question is not simply <em>how many people are there?</em> It is: <strong>what interaction is expected, how well defined are the rules, and what happens if something unexpected occurs?</strong></p>
+        </div>
+        <aside class="note">
+          <h3>This is a working model</h3>
+          <p>It is deliberately simple. It is not a diagnostic instrument, a clinical scale, or a claim that every social relationship fits neatly into coordinates. Its job is to make planning easier.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section dark-panel" id="xyz">
+      <div class="section-head">
+        <p class="eyebrow">02 · The XYZ model</p>
+        <h2>Three separate questions.</h2>
+        <p class="lead">People occupy positions on X and Y. Situations add Z.</p>
+      </div>
+      <div class="axis-grid">
+        <article class="axis-card x-axis">
+          <div class="axis-letter">X</div>
+          <h3>Liking / valence</h3>
+          <p>How positively or negatively do I feel about this person?</p>
+          <div class="scale"><span>strong dislike</span><i></i><b>0</b><i></i><span>strong liking</span></div>
+          <p class="small">Relationship category is separate. A family member can be loved, neutral or disliked. A colleague can be liked intensely or not at all.</p>
+        </article>
+        <article class="axis-card y-axis">
+          <div class="axis-letter">Y</div>
+          <h3>Interaction depth</h3>
+          <p>How much interpersonal engagement does this situation require?</p>
+          <ol class="ladder compact">
+            <li><b>0</b><span>co-presence only</span></li>
+            <li><b>1</b><span>recognition</span></li>
+            <li><b>2</b><span>functional / professional</span></li>
+            <li><b>3</b><span>casual social</span></li>
+            <li><b>4</b><span>personal</span></li>
+            <li><b>5</b><span>intimate / vulnerable</span></li>
+          </ol>
+        </article>
+        <article class="axis-card z-axis">
+          <div class="axis-letter">Z</div>
+          <h3>Predictability / structure</h3>
+          <p>How much do I know in advance about what will happen and what I can do?</p>
+          <ol class="ladder compact reverse">
+            <li><b>5</b><span>rehearsed, bounded, familiar</span></li>
+            <li><b>4</b><span>highly scripted public</span></li>
+            <li><b>3</b><span>structured group</span></li>
+            <li><b>2</b><span>semi-structured interaction</span></li>
+            <li><b>1</b><span>open social interaction</span></li>
+            <li><b>0</b><span>ambiguous / rapidly changing</span></li>
+          </ol>
+        </article>
+      </div>
+      <div class="origin-card">
+        <div class="origin-visual" aria-hidden="true"><div class="cloud" id="cloud"></div><div class="origin-dot">0,0</div></div>
+        <div>
+          <h3>The origin is crowded.</h3>
+          <p>Most of the world is approximately <strong>neutral + no interaction</strong>. That is normal. A lecture can contain hundreds of people without requiring a relationship with any of them.</p>
+          <p>People move. A lab partner might go from <code>(0,0)</code> to <code>(+0.5,2)</code> during a term, then drift back toward the origin after the course ends. Coordinates are states, not identities.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="explorer">
+      <div class="section-head">
+        <p class="eyebrow">03 · Explore the model</p>
+        <h2>Move the three controls.</h2>
+        <p class="lead">Notice that “hard” and “social” are not the same thing. A difficult task can be easy socially if the rules are explicit.</p>
+      </div>
+      <div class="explorer-grid">
+        <div class="controls-panel">
+          <label>Liking <output id="x-out">0 · neutral</output><input id="x" type="range" min="-3" max="3" step="1" value="0"></label>
+          <label>Interaction depth <output id="y-out">0 · co-presence</output><input id="y" type="range" min="0" max="5" step="1" value="0"></label>
+          <label>Predictability <output id="z-out">4 · highly scripted</output><input id="z" type="range" min="0" max="5" step="1" value="4"></label>
+          <div class="preset-row" role="group" aria-label="Example situations">
+            <button data-preset="lecture">Lecture</button><button data-preset="bus">Bus</button><button data-preset="lab">Lab</button><button data-preset="group">Group work</button><button data-preset="social">Open social</button>
+          </div>
+        </div>
+        <div class="readout-card" aria-live="polite">
+          <div class="coordinate" id="coordinate">X 0 · Y 0 · Z 4</div>
+          <h3 id="readout-title">Low social demand, high structure</h3>
+          <p id="readout-copy">You can mostly coexist. The useful preparation is logistical rather than interpersonal: where to go, what to bring, when it ends.</p>
+          <div class="minimum"><span>Minimum viable interaction</span><strong id="minimum">Turn up, occupy a place, complete the task, leave.</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section maps" id="maps">
+      <div class="section-head">
+        <p class="eyebrow">04 · Situation maps</p>
+        <h2>Turn a setting into a protocol.</h2>
+        <p class="lead">Pick a map. Each one separates what is <em>required</em> from what is merely optional, then lists the handful of states most likely to occur.</p>
+      </div>
+      <div class="map-tabs" id="map-tabs" role="tablist" aria-label="Situation maps"></div>
+      <article class="map-card" id="map-card" role="tabpanel" tabindex="0" aria-live="polite"></article>
+    </section>
+
+    <section class="section dark-panel" id="state-machine">
+      <div class="section-head"><p class="eyebrow">05 · The predictability trick</p><h2>Convert ambiguity into a state machine.</h2></div>
+      <div class="state-machine">
+        <div class="state"><span>1</span><b>Observe</b><p>What state am I in?</p></div><div class="arrow">→</div>
+        <div class="state"><span>2</span><b>Classify</b><p>Which known case is this?</p></div><div class="arrow">→</div>
+        <div class="state"><span>3</span><b>Respond</b><p>Use the prepared move.</p></div><div class="arrow">→</div>
+        <div class="state"><span>4</span><b>Return</b><p>Go back to the task.</p></div>
+      </div>
+      <div class="prose wide">
+        <p>A laboratory feels open-ended because the brain has to generate possibilities continuously: <em>Who starts? What if I am wrong? What if they disagree? What if nobody speaks? What if I need to leave?</em></p>
+        <p>But the number of states that actually occur is usually small. If ten common states cover ninety percent of a session, the situation is no longer “anything could happen.” It is “one of these things will probably happen, and I already know my default move.”</p>
+      </div>
+    </section>
+
+    <section class="section" id="cheatsheet">
+      <div class="section-head"><p class="eyebrow">06 · The cheat sheet</p><h2>A small repertoire beats improvising everything.</h2></div>
+      <div class="phrase-grid" id="phrase-grid"></div>
+      <p class="quiet">These are not magic words and they do not need to be delivered perfectly. They are simply reliable bridges back to the task.</p>
+    </section>
+
+    <section class="section worksheet" id="build">
+      <div class="section-head"><p class="eyebrow">07 · Build a new map</p><h2>Five questions are enough to start.</h2></div>
+      <ol class="builder">
+        <li><span>01</span><div><b>What is the setting?</b><p>Where, when, how long, roughly how many people?</p></div></li>
+        <li><span>02</span><div><b>What interaction level is actually required?</b><p>Separate requirements from optional sociability.</p></div></li>
+        <li><span>03</span><div><b>What are the most likely states?</b><p>Arrival, beginning, being asked something, being unsure, disagreement, needing a break, finishing.</p></div></li>
+        <li><span>04</span><div><b>What is the default move for each?</b><p>One sentence or action. Add a Plan B only where needed.</p></div></li>
+        <li><span>05</span><div><b>What changed after trying it?</b><p>Update the map from evidence. Delete states that never occur; add the one surprise that did.</p></div></li>
+      </ol>
+      <div class="callout"><strong>The map belongs to the person using it.</strong><p>It should increase autonomy, not create another performance standard. A protocol is useful only if it makes the situation easier to navigate.</p></div>
+    </section>
+
+    <section class="section evidence" id="evidence">
+      <div class="section-head"><p class="eyebrow">08 · Evidence & limits</p><h2>What this borrows from — and what it does not claim.</h2></div>
+      <div class="prose wide">
+        <p>This framework is an original practical synthesis, not a validated psychological model. Its emphasis on explicit structure, predictable routines, advance information and concrete coping strategies is consistent with established autism-support guidance. It also reflects research linking intolerance of uncertainty with anxiety in autistic people.</p>
+        <p>That does <strong>not</strong> mean every difficult interaction should be scripted, every unexpected event can be removed, or anxiety should be treated as a failure. Some contexts are genuinely difficult, sensory load matters, and formal accommodations can be more appropriate than asking an individual to compensate harder.</p>
+      </div>
+      <div class="sources">
+        <a href="https://www.nice.org.uk/guidance/cg142" rel="noreferrer">NICE CG142 · Autism spectrum disorder in adults</a>
+        <a href="https://www.nice.org.uk/guidance/cg170" rel="noreferrer">NICE CG170 · Autism in under 19s: support and management</a>
+        <a href="https://www.autism.org.uk/advice-and-guidance/topics/mental-health/anxiety" rel="noreferrer">National Autistic Society · Anxiety</a>
+      </div>
+    </section>
+  </main>
+  <footer><p><strong>Social Situations as Learnable Systems</strong> · a practical mapping framework.</p><p class="quiet">Educational and planning aid only. It is not a diagnosis, treatment plan or substitute for individualized professional support.</p></footer>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
