@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "mos-6502",
+    title: "The 6502, Cycle by Cycle",
+    tagline: "An interactive 6502: watch any instruction's real bus trace cycle by cycle, walk all thirteen addressing modes, see the overflow flag as a walk around a circle, and run nine famous quirks live. With a full assembler, debugger and 32x32 display. Vanilla JavaScript, no build step; the core passes Klaus Dormann's functional test suite.",
+    url: "https://0x4d44.github.io/mos-6502/",
+    illustration: "ill-6502",
+    date: "2026-09-18T18:00:00+01:00",
+    year: 1975,
+    readingMin: 33,
+    words: 6611,
+    tags: ["software", "engineering", "history"],
+    real: true,
+  },
+  {
     "slug": "polymyalgia",
     "words": 5102,
     "readingMin": 26,
@@ -1805,11 +1818,11 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
-    slugs: ["winrisk", "mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
+    slugs: ["mos-6502", "winrisk", "mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
       "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier",
       "constellation"] },
   { id: "cabinet", name: "The Cabinet", icon: "ill-sleeve",

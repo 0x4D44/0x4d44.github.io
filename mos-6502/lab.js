@@ -60,7 +60,7 @@
   // Run one addressing-mode example: set the machine up as described,
   // then execute exactly one instruction and hand back its bus trace.
   function runAddressing(entry) {
-    const { cpu, assembled } = load(entry.sample);
+    const { cpu, assembled } = load(entry.sample, { vectors: entry.vectors });
     if (!assembled.ok) return { ok: false, error: assembled.errors[0] };
     const setup = entry.setup || {};
     for (const key of ["a", "x", "y", "s", "c", "z", "i", "d", "v", "n"]) {
@@ -87,7 +87,9 @@
     return { ...loaded, ok: true };
   }
 
-  const api = { load, runQuirk, runAddressing, runProgram, DEFAULT_ORG };
+  // runSnippet and runAddressing are the same thing: set a machine up,
+  // execute exactly one instruction, hand back the trace.
+  const api = { load, runQuirk, runAddressing, runSnippet: runAddressing, runProgram, DEFAULT_ORG };
   if (typeof module === "object" && module.exports) module.exports = api;
   global.MOS6502LAB = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
