@@ -274,26 +274,84 @@
       return fadeEdges(x, sr, 15);
     },
 
-    // Source-filter speech: a glottal pulse train through formant resonators.
+    // Source-filter speech, built additively so the formant structure is exact
+    // and checkable rather than whatever a cascade of biquads happens to do.
+    // Each harmonic of f0 is given the glottal source's -6 dB/octave slope (the
+    // -12 dB/oct of the source plus the +6 dB/oct of lip radiation) and then
+    // the magnitude of the vocal tract's poles evaluated at that frequency, so
+    // a spectrum plot really does show the formants where they were asked for
+    // and linear prediction really does recover them.
     // formants: [[f, bw], ...]. Defaults are a neutral /a/.
     vowel: function (dur, o) {
       o = o || {}; var sr = o.sr || rate(), n = Math.round(sr * dur);
       var f0 = o.f0 || 120, F = o.formants || [[730, 90], [1090, 110], [2440, 140], [3400, 200]];
-      var ex = new Float64Array(n), i, ph = 0;
-      var vib = o.vibrato || 0;
-      for (i = 0; i < n; i++) {
-        var f = f0 * (1 + vib * Math.sin(2 * Math.PI * 5 * i / sr)) * (1 + (o.glide || 0) * i / n);
-        ph += f / sr;
-        if (ph >= 1) ph -= 1;
-        // a rounded glottal pulse rather than an impulse: far less buzzy
-        ex[i] = Math.max(0, Math.sin(Math.PI * ph)) - 0.32;
+      var i, k, j;
+
+      // |1/A_j(e^jw)| for one pole pair, UNnormalised. Normalising each
+      // resonance to its own peak would be wrong: in a cascade the skirts
+      // multiply, and per-resonance normalisation buries F3 and F4 eighty
+      // decibels down instead of the twenty or thirty a real tract gives. The
+      // whole product is normalised once, at the end.
+      function poleMag(f, fc, bw) {
+        var r = Math.exp(-Math.PI * bw / sr), th = 2 * Math.PI * fc / sr;
+        var a1 = -2 * r * Math.cos(th), a2 = r * r;
+        var wq = 2 * Math.PI * f / sr;
+        var re = 1 + a1 * Math.cos(wq) + a2 * Math.cos(2 * wq);
+        var im = -(a1 * Math.sin(wq) + a2 * Math.sin(2 * wq));
+        return 1 / Math.max(Math.hypot(re, im), 1e-12);
       }
-      if (o.whisper) { var r = prng(5); for (i = 0; i < n; i++) ex[i] = r() * 0.5; }
-      var out = new Float64Array(n);
-      F.forEach(function (fb, k) {
-        var y = resonator(ex, sr, fb[0], fb[1]);
-        for (i = 0; i < n; i++) out[i] += y[i] * Math.pow(0.72, k);
+
+      if (o.whisper) {
+        var r2 = prng(5), noise = new Float64Array(n), wout = new Float64Array(n);
+        for (i = 0; i < n; i++) noise[i] = r2();
+        F.forEach(function (fb, kk) {
+          var y = resonator(noise, sr, fb[0], fb[1]);
+          for (i = 0; i < n; i++) wout[i] += y[i] * Math.pow(0.72, kk);
+        });
+        D.normalize(wout, o.amp == null ? 0.7 : o.amp);
+        return fadeEdges(wout, sr, 15);
+      }
+
+      var nH = Math.max(1, Math.floor(sr / 2 * 0.92 / f0));
+      var amp = new Float64Array(nH + 1), ph = new Float64Array(nH + 1), amax = 0;
+      for (k = 1; k <= nH; k++) {
+        var f = k * f0, a = 1 / k;                      // net -6 dB/octave source
+        for (j = 0; j < F.length; j++) a *= poleMag(f, F[j][0], F[j][1]);
+        amp[k] = a;
+        if (a > amax) amax = a;
+        // Schroeder phases: periodic, but without the crest factor of an
+        // all-cosine pulse train, which would normalise down to nothing.
+        ph[k] = -Math.PI * k * k / nH;
+      }
+      for (k = 1; k <= nH; k++) amp[k] /= (amax || 1);
+      var out = new Float64Array(n), vib = o.vibrato || 0, glide = o.glide || 0;
+      var acc = 0;
+      for (i = 0; i < n; i++) {
+        var fi = f0 * (1 + vib * Math.sin(2 * Math.PI * 5 * i / sr)) * (1 + glide * i / n);
+        acc += 2 * Math.PI * fi / sr;
+        var sVal = 0;
+        for (k = 1; k <= nH; k++) {
+          if (amp[k] < 1e-5) continue;                  // inaudible harmonic
+          sVal += amp[k] * Math.sin(k * acc + ph[k]);
+        }
+        out[i] = sVal;
+      }
+      // A little aspiration, shaped by the same tract. Real voicing is never
+      // noiseless, and without it an order-16 predictor fits a sum of a dozen
+      // sinusoids exactly and reports an infinite prediction gain.
+      var rn = prng(o.seed || 17), nz = new Float64Array(n), shaped = new Float64Array(n);
+      for (i = 0; i < n; i++) nz[i] = rn();
+      F.forEach(function (fb, kk) {
+        var y = resonator(nz, sr, fb[0], fb[1]);
+        for (i = 0; i < n; i++) shaped[i] += y[i] * Math.pow(0.8, kk);
       });
+      // Keep the aspiration below about 6 kHz. Left broadband it dominates the
+      // top of the spectrum, where the harmonics have died away, and an
+      // order-16 predictor then spends its poles on the noise instead of on the
+      // formants — visibly, in the Opus chapter's figure.
+      shaped = lowpassFFT(shaped, sr, 6000).subarray(0, n);
+      var gs = D.rms(out) * (o.aspiration == null ? 0.005 : o.aspiration) / Math.max(D.rms(shaped), 1e-12);
+      for (i = 0; i < n; i++) out[i] += shaped[i] * gs;
       D.normalize(out, o.amp == null ? 0.7 : o.amp);
       return fadeEdges(out, sr, 15);
     },

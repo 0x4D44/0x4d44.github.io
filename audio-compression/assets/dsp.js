@@ -380,7 +380,17 @@
     }
     return { a: a, err: e, k: refl };
   }
-  function lpc(x, order) { return levinson(autocorr(x, order), order); }
+  // The white-noise correction every speech coder applies before Levinson:
+  // nudge r[0] up by a few parts in a hundred thousand. Without it a signal
+  // that is very nearly a sum of a few sinusoids — a synthesised vowel, say —
+  // makes the Toeplitz system singular, the recursion drives its error to zero
+  // and the reported prediction gain comes out as infinity.
+  function lpc(x, order, opts) {
+    var r = autocorr(x, order);
+    var ridge = opts && opts.ridge != null ? opts.ridge : 1e-5;
+    r[0] = r[0] * (1 + ridge) + 1e-30;
+    return levinson(r, order);
+  }
   // |1/A(e^jw)|, the all-pole envelope, at n points from 0 to fs/2.
   function lpcSpectrum(a, gain, n) {
     var out = new Float64Array(n), i, j;
