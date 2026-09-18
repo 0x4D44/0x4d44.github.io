@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Sound, sampled — Throwing Sound Away</title>
+<meta name="description" content="Pressure into numbers: the sampling theorem, aliasing you can hear, why 44,100 is a videotape number, and the exact arithmetic of quantisation noise — 6.02N + 1.76 dB, derived and then measured.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="01">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 01</div>
+  <div class="num">01</div>
+  <h2>A sound is one number that changes, and there are far too many of them.</h2>
+  <p class="lead">Sampling in time is free: below half the sample rate, the numbers
+    are not an approximation of the waveform, they <em>are</em> the waveform, and it
+    can be recovered exactly. Rounding those numbers to a finite grid is not free,
+    and the way engineers bought their way out of that — by adding noise on
+    purpose, and then by making the step size depend on the signal — is the first
+    move of every codec in this study.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">Time can be sampled for nothing. Amplitude cannot.</div></div>
+    <div><div class="k">Named after</div><div class="v">Whittaker, Nyquist, Kotelnikov, Shannon — and a videotape recorder</div></div>
+    <div><div class="k">Numbers</div><div class="v">1 411 200 bit/s · 6.02<i>N</i> + 1.76 dB · 44 100 = 3 × 245 × 60</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#pressure">A pressure, and a number</a>
+    <a href="#fourier">Fourier's promise</a>
+    <a href="#sampling">The sampling theorem</a>
+    <a href="#folding">Folding</a>
+    <a href="#rates">Why 44,100</a>
+    <a href="#quantise">Quantisation</a>
+    <a href="#dither">Dither</a>
+    <a href="#bill">The bill</a>
+    <a href="#companding">The first escape</a>
+    <a href="#wrong">What people get wrong</a>
+  </nav>
+  <div>
+
+  <!-- ============================================================ -->
+  <section id="pressure" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">A pressure, and a number</div>
+    <h3>Sound is a very small wobble in a very large pressure.</h3>
+    <p style="margin-top:18px">Atmospheric pressure at sea level is about
+      101 325 pascals. A conversation at one metre modulates that steady
+      weight of air by roughly 0.02 Pa — two parts in ten million. The
+      quietest sound a healthy young ear can detect at 1 kHz is smaller
+      again: <strong>20 micropascals</strong>, which the acoustics community
+      fixed as the zero of its scale, and which is about one five-billionth of
+      the pressure it sits on top of. Everything in this study is a way of
+      writing that wobble down.</p>
+    <p>Because the wobble is a single number that varies with time, a
+      microphone can be honest about it: one channel, one value of pressure
+      per instant. Write the simplest possible case and every term in it has a
+      name you will meet again.</p>
+
+    <div class="eq">
+      <i>p</i>(<i>t</i>)<span class="op">=</span><i>A</i>
+      <span class="fn">sin</span>(<span class="num">2</span>π<i>f&#8202;t</i>
+      <span class="op">+</span>φ)
+      <span class="note2">amplitude A in pascals · frequency f in hertz · phase φ in radians</span>
+    </div>
+
+    <p>Levels are quoted logarithmically because the usable range is enormous
+      and the ear's response to it is closer to multiplicative than additive.
+      Sound pressure level is referenced to that same 20 µPa:</p>
+
+    <div class="eq">
+      <i>L</i><sub>p</sub><span class="op">=</span><span class="num">20</span>
+      <span class="fn">log</span><sub>10</sub>
+      <span class="frac"><span><i>p</i><sub>rms</sub></span><span><i>p</i><sub>0</sub></span></span>
+      <span class="op">,</span><i>p</i><sub>0</sub><span class="op">=</span>
+      <span class="num">20</span>&nbsp;µPa
+      <span class="note2">so 1 Pa rms is 93.98 dB SPL — the tone every microphone calibrator emits</span>
+    </div>
+
+    <div class="scroller"><table>
+      <caption>Sound pressure level, as a pressure</caption>
+      <thead><tr><th class="num">dB SPL</th><th class="num">RMS pressure</th><th>Where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">20 µPa</td><td>Nominal threshold of hearing at 1 kHz. Measured free-field thresholds sit a few decibels above it, and dip below zero near 3–4 kHz</td></tr>
+        <tr><td class="num">20</td><td class="num">200 µPa</td><td>A very quiet studio, with the ventilation off</td></tr>
+        <tr><td class="num">60</td><td class="num">20 mPa</td><td>Conversation at one metre</td></tr>
+        <tr><td class="num">94</td><td class="num">1.0024 Pa</td><td>The calibrator tone. A round number of pascals, an awkward number of decibels</td></tr>
+        <tr><td class="num">120</td><td class="num">20 Pa</td><td>Threshold of discomfort</td></tr>
+        <tr><td class="num">130–140</td><td class="num">63–200 Pa</td><td>Threshold of pain; sources differ by about 10 dB</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>That is a span of about <strong>120 dB</strong>, a factor of a million in
+      pressure, and it is the number every argument about bit depth eventually
+      appeals to. It is also — as <a href="2-ear.html">Chapter 02</a> shows — not
+      a range you have available all at once.</p>
+
+    <p>Frequency has a geometric consequence worth carrying. A wave travels at
+      about 343 metres per second in dry air at 20 °C, so its wavelength is</p>
+
+    <div class="eq">
+      λ<span class="op">=</span>
+      <span class="frac"><span><i>c</i></span><span><i>f</i></span></span>
+      <span class="op">=</span>
+      <span class="num">17.16</span>&nbsp;m<span class="op">…</span>
+      <span class="num">17.16</span>&nbsp;mm
+      <span class="note2">for 20 Hz and 20 kHz, with c = 343.2 m/s</span>
+    </div>
+
+    <p>A factor of a thousand across the audible band. That is why the bottom
+      octave of a mix fills a room indiscriminately while the top octave behaves
+      like light, and it is the reason the physical side of this story —
+      instruments, rooms, microphones — is a different subject, handled
+      <a href="/instruments/">elsewhere in this almanac</a>. Here the signal has
+      already arrived at the microphone, and the only question is how to write it
+      down.</p>
+
+    <div class="note ghost">
+      <span class="tag">Zero on the scale</span>
+      <p>0 dB SPL is 20 micropascals. The corresponding eardrum displacement is
+        usually quoted, after von Békésy, as around 10<sup>−11</sup> m — smaller
+        than a hydrogen atom. That figure is repeated everywhere and is worth
+        treating as an order of magnitude rather than a measurement, but the
+        order of magnitude is the point: the mechanism at the top of your neck
+        resolves motions comparable with the size of an atom.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="fourier" class="section">
+    <div class="kicker">Fourier's promise</div>
+    <h3>If you know what a system does to one sine, you know what it does to everything.</h3>
+    <p style="margin-top:18px">On 21 December 1807 Joseph Fourier presented a
+      memoir on the conduction of heat to the Institut de France, containing the
+      claim that an arbitrary function could be written as a sum of sines and
+      cosines. Lagrange did not believe it and blocked publication. Fourier won
+      the Academy's prize for the work in 1811 anyway, and the book —
+      <em>Théorie analytique de la chaleur</em> — appeared in 1822, after
+      Lagrange's death. The claim was not quite true as stated, and repairing it
+      occupied a century of analysis. It is true enough for audio.</p>
+
+    <div class="eq">
+      <i>x</i>(<i>t</i>)<span class="op">=</span>
+      <span class="frac"><span><i>a</i><sub>0</sub></span><span>2</span></span>
+      <span class="op">+</span>
+      <span class="bigop">∑</span><span class="limits"><span>∞</span><span><i>n</i>=1</span></span>
+      <span class="op">[</span><i>a</i><sub><i>n</i></sub>
+      <span class="fn">cos</span>(<span class="num">2</span>π<i>n&#8202;f</i><sub>0</sub><i>t</i>)
+      <span class="op">+</span><i>b</i><sub><i>n</i></sub>
+      <span class="fn">sin</span>(<span class="num">2</span>π<i>n&#8202;f</i><sub>0</sub><i>t</i>)<span class="op">]</span>
+      <span class="note2">a periodic signal of period T = 1/f₀ is a sum of harmonics of f₀</span>
+    </div>
+
+    <div class="eq">
+      <i>X</i>(<i>f</i>)<span class="op">=</span>
+      <span class="bigop">∫</span><i>x</i>(<i>t</i>)<i>e</i><sup>−<i>j</i>2π<i>ft</i></sup>&nbsp;d<i>t</i>
+      <span class="op">,</span>
+      <i>x</i>(<i>t</i>)<span class="op">=</span>
+      <span class="bigop">∫</span><i>X</i>(<i>f</i>)<i>e</i><sup>+<i>j</i>2π<i>ft</i></sup>&nbsp;d<i>f</i>
+      <span class="note2">and a signal that is not periodic is an integral of them, over all f</span>
+    </div>
+
+    <p>The reason this licenses everything downstream is narrower and more
+      useful than "sines are a nice basis". A system that is linear and does not
+      change with time cannot move energy from one frequency to another: feed it
+      a sine and you get back the same sine, scaled and delayed. Sines are the
+      eigenfunctions of every such system. A filter, a loudspeaker, a room, a
+      length of cable — each is fully described by one complex number per
+      frequency. Measure that and you have measured the whole device.</p>
+    <p>The catch, which <a href="4-transform.html">Chapter 04</a> is largely
+      about, is that this decomposition is exact only over infinite time. Music
+      is not infinite and its spectrum will not hold still, so real coders chop
+      it into blocks of a few tens of milliseconds and pay a well-defined price
+      in frequency resolution for the privilege. The arithmetic of the fast
+      Fourier transform that makes this affordable is taken apart, in C, in
+      <a href="/spectrum-analyzer/">a separate write-up</a>. For now, take the
+      promise: <em>every</em> signal in this chapter is a sum of sinusoids, so
+      arguing about one sinusoid is arguing about all of them.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="sampling" class="section">
+    <div class="kicker">The sampling theorem</div>
+    <h3>The samples are not an approximation of the wave. Below half the rate, they are the wave.</h3>
+    <p style="margin-top:18px">Take the pressure at instants spaced
+      <i>T</i> = 1/<i>f</i><sub>s</sub> apart and keep nothing in between. The
+      theorem says that if the signal has no energy at or above
+      <i>B</i> hertz, and if</p>
+
+    <div class="eq">
+      <i>f</i><sub>s</sub><span class="op">&gt;</span><span class="num">2</span><i>B</i>
+      <span class="note2">strictly greater, not greater than or equal — the difference matters, see below</span>
+    </div>
+
+    <p>then those samples determine the original continuous signal
+      <em>completely</em>. Not approximately, not to within some error term that
+      shrinks as you add samples: exactly, with a closed-form reconstruction.</p>
+
+    <div class="eq">
+      <i>x</i>(<i>t</i>)<span class="op">=</span>
+      <span class="bigop">∑</span><span class="limits"><span>∞</span><span><i>n</i>=−∞</span></span>
+      <i>x</i>[<i>n</i>]<span class="op">·</span>
+      <span class="fn">sinc</span><span class="op">(</span>
+      <span class="frac"><span><i>t</i> − <i>nT</i></span><span><i>T</i></span></span>
+      <span class="op">)</span><span class="op">,</span>
+      <span class="fn">sinc</span>(<i>u</i>)<span class="op">=</span>
+      <span class="frac"><span><span class="fn">sin</span>(π<i>u</i>)</span><span>π<i>u</i></span></span>
+      <span class="note2">Whittaker–Shannon interpolation: each sample contributes one sinc, and the sum is the unique band-limited function through all of them</span>
+    </div>
+
+    <p>The result has an unusually crowded set of parents. E. T. Whittaker gave
+      the cardinal series in 1915; Nyquist derived the 2<i>B</i> figure for
+      telegraph signalling at Bell Labs in 1928; Vladimir Kotelnikov stated and
+      proved the theorem in the USSR in 1933, where it stayed unknown in the West
+      for a decade; Herbert Raabe re-derived it independently in 1939; Shannon
+      gave the modern statement with the interpolation formula in
+      <em>Communication in the Presence of Noise</em> in 1949, the same year
+      Someya published the equivalent in Japan. The literature calls it the WKS
+      theorem when it wants to be fair and the Nyquist theorem when it wants to
+      be brief.</p>
+
+    <p>Two vocabulary traps follow immediately. The <strong>Nyquist
+      frequency</strong> is <i>f</i><sub>s</sub>/2, a property of the sampler.
+      The <strong>Nyquist rate</strong> is 2<i>B</i>, a property of the signal.
+      They are different quantities that share a surname, and a great deal of
+      confused writing comes from treating them as one. As for the strictness:
+      sample sin(2π<i>Bt</i>) at exactly 2<i>B</i> and every sample lands on a
+      zero crossing. The reconstruction is silence. One line, and the case for
+      the strict inequality is closed.</p>
+
+    <figure class="figure" id="fig-sample">
+      <div class="figure-bar">
+        <span class="fno">FIG. 1.1</span>
+        <span class="ftitle">The sampling lab — reconstruction, and the fold</span>
+        <span class="fstate" id="s-state">5 kHz at 8 kHz</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="s-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-faint"><i></i>the tone that was played</span>
+          <span class="l-sig"><i></i>the samples</span>
+          <span class="l-heat"><i></i>sinc reconstruction from the samples alone</span>
+          <span class="l-ghost"><i class="dash"></i>the alias, in closed form</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:14px"><canvas id="s-cv2"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the band a DAC can output</span>
+          <span class="l-faint"><i></i>images at |k·fs ± f₀|</span>
+          <span class="l-heat"><i></i>what survives reconstruction</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Nyquist frequency</span><span class="v" id="s-nyq">4 kHz</span></div>
+          <div class="ro"><span class="k">Samples per cycle</span><span class="v" id="s-spc">1.60</span></div>
+          <div class="ro bad"><span class="k">What comes back</span><span class="v" id="s-alias">3 kHz</span></div>
+          <div class="ro ghost"><span class="k">Phase</span><span class="v" id="s-phase">inverted</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Tone</span><span class="val" id="s-f0lab">5 000 Hz</span></div>
+          <input type="range" id="s-f0" min="100" max="20000" step="20" value="5000" data-out="s-f0lab" aria-label="Tone frequency in hertz">
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Sample rate</span><span class="val" id="s-fslab">8 000 Hz</span></div>
+          <input type="range" id="s-fs" min="3000" max="48000" step="500" value="8000" data-out="s-fslab" aria-label="Sample rate in hertz">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="s-p1">Played</button>
+            <button class="btn play" id="s-p2">Sampled, no filter</button>
+            <button class="btn play" id="s-p3">Filtered first</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 1.1</b> — the upper panel samples a real
+        sine at your chosen rate and reconstructs it by summing one sinc per sample:
+        the gold curve is computed from the blue stems alone, with no knowledge of the
+        grey one. Below half the sample rate it lies on the grey curve and the
+        dashed alias lies there too — nothing has been lost. Push the tone above
+        4 kHz with the rate at 8 000 and the gold curve leaves the original and
+        settles exactly on the dashed one, because the samples of a 5 kHz tone
+        and the samples of a 3 kHz tone are <em>the same numbers</em>. The lower
+        panel shows why: sampling replicates the spectrum at every multiple of
+        <i>f</i><sub>s</sub>, and one of the images has slid into the shaded band
+        that a reconstruction filter keeps. Press <b>played</b> and then
+        <b>sampled, no filter</b>: the pitch drops. Sweep the tone slowly upwards
+        and the recorded pitch rises to 4 kHz, turns round and comes back down.
+        <b>Filtered first</b> removes the tone before sampling, which is the only
+        honest remedy — the filter does not save the tone, it deletes it.</figcaption>
+    </figure>
+
+    <blockquote class="pullquote">The staircase is a lie you have been shown a
+      thousand times. It is a picture of a converter with its reconstruction
+      filter deleted.
+      <span class="who">On the standard illustration of digital audio</span></blockquote>
+
+    <p>The figure is also the refutation of the most widespread image in the
+      subject. Digital audio is not a staircase. The output of a reconstruction
+      filter is the unique band-limited function passing through the samples, and
+      it is smooth: there are no steps in it anywhere. The familiar blocky
+      drawing is a picture of a zero-order-hold converter with its output filter
+      removed — a real object, but a broken one, and not what any player does.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="folding" class="section">
+    <div class="kicker">Folding</div>
+    <h3>Energy above half the rate does not disappear. It comes back wearing a different frequency.</h3>
+    <p style="margin-top:18px">Sampling multiplies the signal by a train of
+      impulses, and in the frequency domain that convolves the spectrum with a
+      train of impulses spaced <i>f</i><sub>s</sub> apart. The whole of aliasing
+      is one line:</p>
+
+    <div class="eq">
+      <i>X</i><sub>s</sub>(<i>f</i>)<span class="op">=</span><i>f</i><sub>s</sub>
+      <span class="bigop">∑</span><span class="limits"><span>∞</span><span><i>k</i>=−∞</span></span>
+      <i>X</i>(<i>f</i> − <i>k&#8202;f</i><sub>s</sub>)
+      <span class="note2">the spectrum, copied at every multiple of the sample rate</span>
+    </div>
+
+    <p>A real tone at <i>f</i><sub>0</sub> therefore appears at every
+      |<i>k&#8202;f</i><sub>s</sub> ± <i>f</i><sub>0</sub>|. The reconstruction
+      filter keeps only the copy inside the baseband, and which copy that is
+      falls out of simple arithmetic:</p>
+
+    <div class="eq">
+      <i>f</i><sub>a</sub><span class="op">=</span>
+      <span class="op">|</span><i>f</i> − <i>f</i><sub>s</sub>
+      <span class="fn">round</span>(<i>f</i><span class="op">/</span><i>f</i><sub>s</sub>)
+      <span class="op">|</span>
+      <span class="note2">a triangle wave in f, period fs, reflecting off 0 and fs/2</span>
+    </div>
+
+    <p>The fold carries a detail that is usually left out. Write
+      <i>f</i> = <i>m·f</i><sub>s</sub> + <i>r</i>. If <i>r</i> ≤
+      <i>f</i><sub>s</sub>/2 the samples are those of a tone at <i>r</i> with the
+      phase intact. If <i>r</i> &gt; <i>f</i><sub>s</sub>/2 they are those of a
+      tone at <i>f</i><sub>s</sub> − <i>r</i> <strong>with the sign of the phase
+      flipped</strong>. A folded component is not merely mistuned, it is
+      mirror-imaged; the readout in Fig 1.1 says which of the two you are
+      listening to. This is also why a rising sweep appears to descend once it
+      crosses the Nyquist frequency, and why aliased harmonics of a bright
+      instrument sound so wrong: they do not land on a musical interval and they
+      move the wrong way when the note moves.</p>
+
+    <p>The cure is a filter before the sampler, and the cost of that filter is
+      the reason sample rates are the numbers they are. Keep audio to 20 kHz and
+      demand about 100 dB of rejection by the Nyquist frequency, and the
+      transition band at each rate is:</p>
+
+    <div class="scroller"><table>
+      <caption>Anti-alias transition band, 20 kHz passband to ~100 dB of stopband</caption>
+      <thead><tr><th class="num">f<sub>s</sub></th><th class="num">f<sub>s</sub>/2</th><th class="num">Transition</th><th class="num">In octaves</th><th class="num">Slope needed</th></tr></thead>
+      <tbody>
+        <tr><td class="num">44 100</td><td class="num">22 050</td><td class="num">2 050 Hz</td><td class="num">0.141</td><td class="num">≈ 710 dB/oct</td></tr>
+        <tr><td class="num">48 000</td><td class="num">24 000</td><td class="num">4 000 Hz</td><td class="num">0.263</td><td class="num">≈ 380 dB/oct</td></tr>
+        <tr><td class="num">88 200</td><td class="num">44 100</td><td class="num">24 100 Hz</td><td class="num">1.141</td><td class="num">≈ 88 dB/oct</td></tr>
+        <tr><td class="num">96 000</td><td class="num">48 000</td><td class="num">28 000 Hz</td><td class="num">1.263</td><td class="num">≈ 79 dB/oct</td></tr>
+        <tr><td class="num">192 000</td><td class="num">96 000</td><td class="num">76 000 Hz</td><td class="num">2.263</td><td class="num">≈ 44 dB/oct</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Seven hundred decibels per octave is not a filter anyone wants to build
+      in analogue. The industry's answer, from the first players onwards, was to
+      sample far faster than necessary, do the brick wall in arithmetic where a
+      few hundred taps cost nothing, and leave the analogue part gentle. Philips'
+      CD100 ran a four-times oversampling digital filter with noise shaping so
+      that a 14-bit converter could deliver 16-bit performance; Sony's first
+      player used two-times. The same trick, pushed much further, is what a
+      modern delta-sigma converter does — and the noise shaping in it is the same
+      idea that appears two sections below.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="rates" class="section">
+    <div class="kicker">Why 44,100</div>
+    <h3>44,100 is a videotape number, and 20 kHz of audio bandwidth is an accident of television.</h3>
+    <p style="margin-top:18px">The usual story — twice twenty kilohertz, plus a
+      little margin for the filter — is backwards. In the 1970s no affordable
+      machine could store a megabit per second of anything, with one exception:
+      the video recorder, built to lay down five megahertz of luminance on tape
+      every second of the day. So the first digital audio recorders were
+      <strong>PCM adaptors</strong>, boxes that turned samples into a fake
+      television picture — black and white pulses ranged along the active lines
+      — and handed it to an ordinary video machine.</p>
+
+    <p>A given adaptor packs a fixed number of samples into each active line.
+      Three per channel per line was what the format could carry reliably, and
+      then the sample rate is arithmetic on the television raster:</p>
+
+    <div class="eq left">
+      <span class="num">3</span><span class="op">×</span><span class="num">245</span>
+      <span class="op">×</span><span class="num">60</span><span class="op">=</span>
+      <span class="num">44&#8202;100</span>
+      <span class="note2">NTSC: 3 samples per line, 245 active lines per field, 60 fields per second</span>
+    </div>
+    <div class="eq left">
+      <span class="num">3</span><span class="op">×</span><span class="num">294</span>
+      <span class="op">×</span><span class="num">50</span><span class="op">=</span>
+      <span class="num">44&#8202;100</span>
+      <span class="note2">PAL: 294 active lines per field, 50 fields per second — the same answer</span>
+    </div>
+
+    <p>44,100 was the highest rate that both television systems could carry at
+      three samples per line, which made a tape recorded in Tokyo playable in
+      Hilversum. Colour NTSC runs its fields at 60000/1001 Hz rather than 60, so
+      American machines locked to colour produced 3 × 245 × 59.94 =
+      44,055.94 — call it 44,056 — and sample-rate converters between 44,056 and
+      44,100 were a real product with a real market. The audio bandwidth of
+      roughly 20 kHz is a <em>consequence</em> of that raster, not the cause of
+      it.</p>
+
+    <blockquote class="pullquote">Twenty kilohertz of audio bandwidth is an
+      accident of the American and European television rasters.
+      <span class="who">The provenance of 44.1 kHz</span></blockquote>
+
+    <p>Everything else in the rate zoo has a similarly concrete parent: a
+      telephone channel, a broadcast standard, a doubling of something older.</p>
+
+    <div class="scroller"><table>
+      <caption>Sample rates and where they live</caption>
+      <thead><tr><th class="num">f<sub>s</sub> (Hz)</th><th class="num">f<sub>s</sub>/2</th><th>Home</th></tr></thead>
+      <tbody>
+        <tr><td class="num">8 000</td><td class="num">4 000</td><td>ITU-T G.711 telephony, 1972; a 300–3 400 Hz passband, 64 kbit/s per direction</td></tr>
+        <tr><td class="num">16 000</td><td class="num">8 000</td><td>Wideband voice: G.722, AMR-WB, Opus's wideband mode</td></tr>
+        <tr><td class="num">32 000</td><td class="num">16 000</td><td>NICAM 728 television sound (14-bit samples companded to 10), DAB, DAT long-play</td></tr>
+        <tr><td class="num">44 056</td><td class="num">22 028</td><td>PCM adaptors locked to colour NTSC; many early American digital masters</td></tr>
+        <tr><td class="num"><strong>44 100</strong></td><td class="num">22 050</td><td><strong>CD-DA</strong> (Red Book, 1980; later IEC 60908) and PAL-locked adaptors</td></tr>
+        <tr><td class="num">48 000</td><td class="num">24 000</td><td>AES5 professional, broadcast, film, DVD — and the rate <a href="9-opus.html">Opus</a> works at internally whatever you feed it</td></tr>
+        <tr><td class="num">88 200 / 96 000</td><td class="num">44 100 / 48 000</td><td>Two-times mastering rates; DVD-Audio and Blu-ray</td></tr>
+        <tr><td class="num">176 400 / 192 000</td><td class="num">88 200 / 96 000</td><td>Four-times; "high-resolution" downloads</td></tr>
+        <tr><td class="num">2 822 400</td><td class="num">—</td><td>DSD64 on SACD: one bit per sample, 64 × 44 100, the whole argument moved into noise shaping</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The 74-minute playing time has two accounts and they do not agree. Sony's
+      Norio Ohga is usually said to have insisted the disc hold Beethoven's
+      Ninth, often named as Furtwängler's 1951 Bayreuth performance, which forced
+      the diameter from 115 mm to 120 mm. Kees Immink, who led the Philips side,
+      has denied it: the increase was competitive and technical, and that
+      recording would not have fitted on the earliest discs in any case. What is
+      not in dispute is that Philips already had a plant tooled for 115 mm and
+      lost its manufacturing head start by agreeing to 120. Both accounts are
+      reported here; neither is settled.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="quantise" class="section">
+    <div class="kicker">Quantisation</div>
+    <h3>Time was free. Amplitude is where the loss actually starts.</h3>
+    <p style="margin-top:18px">A sample is a real number and a file holds
+      integers, so every sample is rounded to the nearest of a finite set of
+      levels. With <i>N</i> bits spanning a normalised range of −1 to +1, the
+      step and the bound on the error are immediate:</p>
+
+    <div class="eq">
+      <i>q</i><span class="op">=</span>
+      <span class="num">2</span><sup><span class="num">1</span>−<i>N</i></sup>
+      <span class="op">,</span>
+      <i>Q</i>(<i>x</i>)<span class="op">=</span><i>q</i>
+      <span class="fn">round</span>(<i>x</i><span class="op">/</span><i>q</i>)
+      <span class="op">,</span>
+      <span class="op">|</span><i>e</i><span class="op">|</span>
+      <span class="op">≤</span>
+      <span class="frac"><span><i>q</i></span><span>2</span></span>
+      <span class="note2">for 16 bits, q = 1/32 768 = 30.5 µV on a ±1 V converter</span>
+    </div>
+
+    <p>Assume for a moment that the error is equally likely to be anywhere in
+      that band and uncorrelated with the signal — an assumption this section
+      will then attack. Its mean power is the variance of a uniform
+      distribution:</p>
+
+    <div class="eq">
+      σ<sub>e</sub><sup>2</sup><span class="op">=</span>
+      <span class="frac"><span><span class="num">1</span></span><span><i>q</i></span></span>
+      <span class="bigop">∫</span><i>e</i><sup>2</sup>&nbsp;d<i>e</i>
+      <span class="op">=</span>
+      <span class="frac"><span><i>q</i><sup>2</sup></span><span>12</span></span>
+      <span class="op">,</span>
+      <i>e</i><sub>rms</sub><span class="op">=</span>
+      <span class="num">0.2887</span><i>q</i>
+      <span class="note2">integrated over −q/2 … +q/2</span>
+    </div>
+
+    <p>A full-scale sine has amplitude 2<sup><i>N</i>−1</sup><i>q</i> and
+      therefore power 2<sup>2<i>N</i></sup><i>q</i><sup>2</sup>/8. Divide, take
+      ten times the logarithm, and the most quoted equation in digital audio
+      falls out in one line:</p>
+
+    <div class="eq">
+      <span class="fn">SNR</span><span class="op">=</span>
+      <span class="num">10</span><span class="fn">log</span><sub>10</sub>
+      <span class="op">(</span><span class="num">3</span><span class="op">/</span><span class="num">2</span><span class="op">)</span>
+      <span class="op">+</span><span class="num">20</span><i>N</i>
+      <span class="fn">log</span><sub>10</sub><span class="num">2</span>
+      <span class="op">=</span><span class="num">6.02</span><i>N</i>
+      <span class="op">+</span><span class="num">1.76</span>&nbsp;dB
+      <span class="note2">6.0205999 dB is one bit; the mysterious 1.7609 dB is 10·log₁₀(3/2), the crest factor of a sine and nothing else</span>
+    </div>
+
+    <p>Both constants deserve to be demystified. The 6.02 is
+      20·log<sub>10</sub>2: one more bit halves the step, which is 6.02 dB less
+      error, and that is the entire content of "one bit is six decibels". The
+      1.76 is not a fudge — it is the 3/2 that appears when you divide the sine's
+      mean power by the uniform error's, and it would be a different number for a
+      different waveform. Which is exactly what the second panel of the next
+      figure measures.</p>
+
+    <figure class="figure" id="fig-quant">
+      <div class="figure-bar">
+        <span class="fno">FIG. 1.2</span>
+        <span class="ftitle">The staircase, and whether the formula is telling the truth</span>
+        <span class="fstate" id="q-state">4 bits · 0 dBFS</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="q-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the signal</span>
+          <span class="l-heat"><i></i>held at the nearest level</span>
+          <span class="l-faint"><i></i>the quantiser's grid, one LSB apart</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:14px"><canvas id="q-cv2"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>measured, by quantising this signal</span>
+          <span class="l-sig"><i class="dash"></i>6.02N + 1.76 + level</span>
+          <span class="l-ghost"><i class="dash"></i>the same model, corrected for this signal's own RMS</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Measured SNR</span><span class="v" id="q-meas">23.3 dB</span></div>
+          <div class="ro sig"><span class="k">6.02N + 1.76 + level</span><span class="v" id="q-pred">25.8 dB</span></div>
+          <div class="ro bad"><span class="k">Error</span><span class="v" id="q-err">−2.6 dB</span></div>
+          <div class="ro ghost"><span class="k">Peak, in LSBs</span><span class="v" id="q-lsb">8.0</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Bit depth</span><span class="val" id="q-bitslab">4 bits</span></div>
+          <input type="range" id="q-bits" min="2" max="16" step="1" value="4" data-out="q-bitslab" aria-label="Bit depth">
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Signal level</span><span class="val" id="q-levlab">0 dBFS</span></div>
+          <input type="range" id="q-level" min="-60" max="0" step="1" value="0" data-out="q-levlab" aria-label="Signal level in dBFS">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Signal</span></div>
+          <div class="chips" id="q-src">
+            <button data-v="sine" class="on">997 Hz sine</button>
+            <button data-v="music">Music</button>
+            <button data-v="speech">Speech</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <button class="btn play" id="q-play">At this depth</button>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 1.2</b> — the upper panel is drawn in
+        units of one least significant bit, so the quantiser's grid is the integer
+        lines and the error is bounded by ±0.5 by construction. The lower panel
+        quantises the signal at every depth from 2 to 16 bits and measures the
+        result: the gold dots are what came out, the blue dashed line is
+        6.02<i>N</i> + 1.76 + level, and the purple line is the same model
+        corrected for this signal's actual RMS level. At 16 bits and full scale
+        the textbook formula is right to a tenth of a decibel. Drag the level to
+        −40 dBFS and both the prediction and the measurement fall by exactly
+        40 dB — quantisation noise does not get quieter when the music does.
+        Then set the depth to 3 or 4 bits and watch the measurement fall
+        <em>below</em> the line: at coarse steps the error is no longer
+        independent of the signal, the uniform model stops applying, and what
+        you hear on the listen button is not hiss but distortion. Switch to
+        music and the gold dots sit about 12 dB below the blue line, which is
+        the difference between a sine's crest factor and a percussive mix's.</figcaption>
+    </figure>
+
+    <div class="note sig">
+      <span class="tag tag-sig">997, not 1000</span>
+      <p>Audio measurements are made at 997 Hz rather than 1 kHz because 997 is
+        prime, so it refuses to line up with any common sample rate or FFT bin
+        spacing. A 1 kHz tone at 48 kHz repeats every 48 samples and visits the
+        same few quantiser levels forever, which makes the error look tidier and
+        the distortion look smaller than they are. The figure above uses 997 Hz
+        for exactly that reason.</p>
+    </div>
+
+    <div class="scroller"><table>
+      <caption>Bit depth, and what it buys</caption>
+      <thead><tr><th class="num">N</th><th class="num">Levels</th><th class="num">Peak/LSB</th><th class="num">FS-sine SNR</th><th class="num">With TPDF dither</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td class="num">8</td><td class="num">256</td><td class="num">48.2 dB</td><td class="num">49.9 dB</td><td class="num">45.2 dB</td><td>Early samplers; the container G.711 codes into</td></tr>
+        <tr><td class="num">12</td><td class="num">4 096</td><td class="num">72.2</td><td class="num">74.0</td><td class="num">69.2</td><td>NHK's 1967 recorder, with a compander in front</td></tr>
+        <tr><td class="num">13</td><td class="num">8 192</td><td class="num">78.3</td><td class="num">80.0</td><td class="num">75.3</td><td>Denon DN-023R, 1972; also A-law's linear equivalent</td></tr>
+        <tr><td class="num">14</td><td class="num">16 384</td><td class="num">84.3</td><td class="num">86.1</td><td class="num">81.3</td><td>The EIAJ PCM adaptor standard; μ-law's linear equivalent</td></tr>
+        <tr><td class="num"><strong>16</strong></td><td class="num">65 536</td><td class="num"><strong>96.3</strong></td><td class="num"><strong>98.1</strong></td><td class="num"><strong>93.3</strong></td><td><strong>CD, DAT, DVD, and most delivery ever since</strong></td></tr>
+        <tr><td class="num">20</td><td class="num">1 048 576</td><td class="num">120.4</td><td class="num">122.2</td><td class="num">117.4</td><td>HDCD and 20-bit masters</td></tr>
+        <tr><td class="num">24</td><td class="num">16 777 216</td><td class="num">144.5</td><td class="num">146.3</td><td class="num">141.5</td><td>The studio standard — on paper</td></tr>
+        <tr><td class="num">32f</td><td class="num">—</td><td class="num">~1 529 dB range</td><td class="num">146.3 at any level</td><td class="num">—</td><td>DAW internals and field recorders</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>The last two rows need a caveat that the arithmetic does not supply. No
+      converter reaches 144 dB. A good 24-bit audio ADC delivers something like
+      20 to 21 effective bits — around 120 to 126 dB — and the limit is thermal
+      noise in the analogue front end, not the number of bits in the register.
+      About 130 dB is the practical ceiling for any analogue chain. Twenty-four
+      bits is a <em>production</em> format: room to make a gain mistake and
+      still have a master.</p>
+
+    <p>At the other end, 0 dBFS is not the loudest signal a file can imply. The
+      reconstructed waveform passes through the samples but is free to overshoot
+      between them, so a stream whose samples all sit at −0.2 dBFS can produce an
+      analogue peak above full scale and clip a downstream converter or encoder.
+      That is what ITU-R BS.1770's true-peak meter measures by oversampling the
+      signal four times before looking for the maximum, and why delivery
+      specifications quote a ceiling in dBTP — EBU R 128 uses −1 dBTP. Floating
+      point sidesteps the issue differently: IEEE-754 binary32 carries 24
+      significand bits at <em>every</em> exponent, so its signal-to-noise ratio is
+      146 dB whether the sample is at full scale or 300 dB below it, over a range
+      of roughly 1 529 dB. That is why mixing happens in float and delivery does
+      not.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="dither" class="section">
+    <div class="kicker">Dither</div>
+    <h3>The cure for rounding is to add noise on purpose, before you round.</h3>
+    <p style="margin-top:18px">The uniform-error model has a condition attached
+      that textbooks state once and then forget: the error behaves like noise
+      only when the signal is busy and uncorrelated with the step grid. For a
+      steady tone, a slow fade, a reverb tail or anything approaching silence,
+      the error is a <em>deterministic function of the signal</em>. That is not
+      noise, it is distortion — harmonics that move as the level moves, which is
+      precisely the kind of artefact hearing evolved to notice. Fig 1.2's error
+      trace at four bits is a repeating sawtooth locked to the waveform, not a
+      random scatter.</p>
+
+    <p>The repair is counter-intuitive and completely standard: add a small
+      random signal <em>before</em> rounding, so that whether a given sample
+      rounds up or down becomes a coin toss whose bias carries the information.
+      The rounding error is then decorrelated from the signal, and the average of
+      many samples is exactly right even when every individual sample is wrong.
+      What it costs is noise power.</p>
+
+    <div class="eq left">
+      <span class="fn">RPDF</span><span class="op">:</span>
+      <i>d</i><span class="op">=</span>(<i>U</i><sub>1</sub>−<span class="num">0.5</span>)<i>q</i>
+      <span class="op">→</span><span class="num">+3.01</span>&nbsp;dB
+      <span class="note2">one LSB peak-to-peak; kills the mean of the error, but the error's variance still tracks the signal — audible as "noise modulation"</span>
+    </div>
+    <div class="eq left">
+      <span class="fn">TPDF</span><span class="op">:</span>
+      <i>d</i><span class="op">=</span>(<i>U</i><sub>1</sub>−<i>U</i><sub>2</sub>)<i>q</i>
+      <span class="op">→</span><span class="num">+4.77</span>&nbsp;dB
+      <span class="note2">two LSB peak-to-peak; 10·log₁₀3. Makes both the mean and the variance of the error independent of the signal — the standard choice</span>
+    </div>
+
+    <p>Triangular dither is the industry default because of that second line:
+      two independent rectangular sources subtracted give a triangular
+      distribution two LSBs wide, and with it neither the first nor the second
+      moment of the error depends on what the signal is doing. The price is
+      10·log<sub>10</sub>3 = 4.77 dB of extra noise, taking a 16-bit stream's
+      unweighted floor from −98.1 dBFS to −93.3 dBFS. In exchange the quantiser
+      becomes, statistically, perfectly linear.</p>
+
+    <p>Then comes the move that prefigures the whole study. The noise has to go
+      somewhere, but it does not have to be spread evenly across the band. Feed
+      the rounding error back into the input with a sign and a delay and the
+      noise acquires a shape:</p>
+
+    <div class="eq">
+      <i>v</i>[<i>n</i>]<span class="op">=</span><i>x</i>[<i>n</i>]
+      <span class="op">+</span><i>e</i>[<i>n</i>−<span class="num">1</span>]
+      <span class="op">,</span>
+      <span class="fn">NTF</span>(<i>z</i>)<span class="op">=</span>
+      <span class="num">1</span><span class="op">−</span><i>z</i><sup>−1</sup>
+      <span class="note2">first-order error feedback: total noise power doubles (+3.01 dB) and tilts upward at 6 dB per octave</span>
+    </div>
+
+    <p>Every decibel the shaper removes from the bottom of the band it puts back,
+      with interest, at the top. A first-order shaper makes twice the total noise
+      power; the second-order version used in production, with
+      NTF = (1 − <i>z</i><sup>−1</sup>)<sup>2</sup>, makes <strong>six
+      times</strong> the noise power — 7.78 dB more — and still sounds quieter,
+      because it moves the noise above 15 kHz where the ear has largely stopped
+      paying attention. How much quieter depends entirely on which weighting
+      curve you believe; the commercial shapers (Sony's Super Bit Mapping, Apogee
+      UV22, the POW-R family) all differ, and improvements of 12 to 20 dB in
+      perceived floor are claimed for them.</p>
+
+    <blockquote class="pullquote">Noise-shaped dither makes several times as much
+      noise power and sounds quieter. That sentence, generalised, is the whole of
+      the rest of this study.
+      <span class="who">Why Chapter 02 is about the ear</span></blockquote>
+
+    <figure class="figure" id="fig-dither">
+      <div class="figure-bar">
+        <span class="fno">FIG. 1.3</span>
+        <span class="ftitle">Distortion, or noise — you choose which</span>
+        <span class="fstate" id="d-state">8 bits · no dither</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="d-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>the quantised signal, as it is now</span>
+          <span class="l-faint"><i class="dash"></i>the same signal with no dither, for comparison</span>
+          <span class="l-sig"><i class="dash"></i>the tone that went in</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Tone recovered at</span><span class="v" id="d-tone">−40.1 dBFS</span></div>
+          <div class="ro"><span class="k">Signal peak, in LSBs</span><span class="v" id="d-lsb">1.28</span></div>
+          <div class="ro bad"><span class="k">Total error power</span><span class="v" id="d-noise">−54.1 dBFS</span></div>
+          <div class="ro ghost"><span class="k">Worst harmonic</span><span class="v" id="d-harm">−59.2 dBFS</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Bit depth</span><span class="val" id="d-bitslab">8 bits</span></div>
+          <input type="range" id="d-bits" min="4" max="16" step="1" value="8" data-out="d-bitslab" aria-label="Bit depth">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Tone level</span><span class="val" id="d-levlab">−40 dBFS</span></div>
+          <input type="range" id="d-level" min="-78" max="-6" step="1" value="-40" data-out="d-levlab" aria-label="Tone level in dBFS">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Dither</span></div>
+          <div class="chips" id="d-mode">
+            <button data-v="off" class="on">None</button>
+            <button data-v="tpdf">TPDF</button>
+            <button data-v="shaped">TPDF + shaping</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="d-steady">The tone</button>
+            <button class="btn play" id="d-fade">A fade to silence</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 1.3</b> — an averaged spectrum of a
+        997 Hz tone quantised to the depth you choose. Undithered at 8 bits and
+        −40 dBFS the tone is surrounded by a picket fence of harmonics, the worst
+        of them under 20 dB below the tone itself; the broadband floor is very
+        low, because the error is not spread out — it is concentrated in
+        distortion. Switch to TPDF and every harmonic disappears into a flat
+        floor that is higher in total power and unquestionably better. Switch to
+        shaping and watch the floor tilt: quieter below 5 kHz, louder above
+        15 kHz, more noise in total. Then drag the tone level down past −70 dBFS,
+        which at 8 bits is thirty decibels <em>below</em> one least significant
+        bit: undithered the signal is gone entirely, dithered it is still sitting
+        at its correct level in the noise. Press <b>a fade to silence</b> with
+        dither off and then on; the undithered fade disintegrates into a buzz and
+        stops, the dithered one keeps going down. Use headphones — and note that
+        8 bits is a microscope here, not a claim about CDs.</figcaption>
+    </figure>
+
+    <p>That last demonstration disposes of another piece of folklore. A signal
+      smaller than one quantisation step is <em>not</em> lost. With correct
+      dither a −110 dBFS sine in a 16-bit stream is still there, statistically
+      exact in the mean, buried under noise that is only 17 dB louder — which is
+      a modest amount of averaging away from being recovered, and audible outright
+      once your own listening floor is low enough. This is the point at which
+      quantisation stops being an accounting problem and becomes a perceptual
+      one, and it is where <a href="2-ear.html">Chapter 02</a> takes over.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="bill" class="section">
+    <div class="kicker">The bill</div>
+    <h3>Raw audio is not slightly too big. It is an order of magnitude too big, and always has been.</h3>
+    <p style="margin-top:18px">With the representation settled, the cost is a
+      multiplication:</p>
+
+    <div class="eq">
+      <i>R</i><span class="op">=</span>channels<span class="op">×</span>
+      <i>f</i><sub>s</sub><span class="op">×</span>bits
+      <span class="op">=</span><span class="num">2</span><span class="op">×</span>
+      <span class="num">44&#8202;100</span><span class="op">×</span><span class="num">16</span>
+      <span class="op">=</span><span class="num">1&#8202;411&#8202;200</span>&nbsp;bit/s
+      <span class="note2">176 400 bytes every second; 10.584 MB a minute; 635.04 MB an hour</span>
+    </div>
+
+    <p>A 74-minute disc is therefore 783,216,000 bytes of audio — 746.93 MiB,
+      not the "749.9 MB" that careless sources produce by mixing decimal and
+      binary prefixes. The same disc, formatted for computer data, holds only
+      681,984,000 bytes, because a data sector spends 304 of its 2 352 bytes on
+      error detection and correction that music can do without. A wrong bit in a
+      program is fatal; a wrong bit in a cymbal is inaudible.</p>
+
+    <div class="scroller"><table>
+      <caption>From the music to the pit: the CD chain, exactly</caption>
+      <thead><tr><th>Stage</th><th class="num">Number</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Format</td><td class="num">44 100 / 16 / 2</td><td>Hz, bits, channels</td></tr>
+        <tr><td>Audio bitrate</td><td class="num">1 411 200 bit/s</td><td>176 400 bytes per second</td></tr>
+        <tr><td>Stereo frames per sector</td><td class="num">588</td><td>588 × 75 = 44 100, so a sector is exactly 1/75 s</td></tr>
+        <tr><td>Sector</td><td class="num">2 352 bytes</td><td>588 frames × 4 bytes; 2 352 × 75 = 176 400 ✓</td></tr>
+        <tr><td>F1 frames per sector</td><td class="num">98</td><td>24 audio bytes each; 7 350 frames per second</td></tr>
+        <tr><td>After CIRC</td><td class="num">33 bytes/frame</td><td>24 audio + 4 + 4 parity + 1 subcode</td></tr>
+        <tr><td>After EFM</td><td class="num">588 channel bits</td><td>33 × (14 + 3) merging bits, + 24 sync + 3</td></tr>
+        <tr><td>Channel bitrate</td><td class="num">4 321 800 bit/s</td><td>588 × 7 350</td></tr>
+        <tr><td><strong>Channel bits per audio bit</strong></td><td class="num"><strong>3.0625</strong></td><td>Exactly 49/16</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Every audio bit costs 3.0625 bits of pit and land</span>
+      <p>The 1,411,200 bit/s of music leaving the DAC's input is 4,321,800 bit/s
+        of physical modulation on the disc, after Cross-Interleaved Reed–Solomon
+        coding and eight-to-fourteen modulation. Compression, in other words, is
+        not the only tax on an audio bitstream — it is just the only one with a
+        choice attached.</p>
+    </div>
+
+    <figure class="figure" id="fig-bill">
+      <div class="figure-bar">
+        <span class="fno">FIG. 1.4</span>
+        <span class="ftitle">The bit budget, and the ceiling it runs into</span>
+        <span class="fstate" id="b-state">1 411.2 kbit/s → 783.2 MB</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="b-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>your configuration</span>
+          <span class="l-sig"><i></i>your coded target</span>
+          <span class="l-faint"><i></i>fixed reference points</span>
+          <span class="l-danger"><i class="dash"></i>DVD-Video's LPCM ceiling, 6 144 kbit/s</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Raw</span><span class="v" id="b-raw">1 411.2 kbit/s</span></div>
+          <div class="ro"><span class="k">For that duration</span><span class="v" id="b-bytes">783.2 MB</span></div>
+          <div class="ro ghost"><span class="k">In binary units</span><span class="v" id="b-mib">746.9 MiB</span></div>
+          <div class="ro ok"><span class="k">Coded</span><span class="v" id="b-coded">71.0 MB</span></div>
+          <div class="ro bad"><span class="k">Ratio</span><span class="v" id="b-ratio">11.03 : 1</span></div>
+          <div class="ro"><span class="k">Down a 56k modem</span><span class="v" id="b-modem">31.1 h</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Preset</span></div>
+          <div class="chips" id="b-preset">
+            <button data-v="cd" class="on">CD</button>
+            <button data-v="film">5.1 film</button>
+            <button data-v="hires">96/24</button>
+            <button data-v="phone">Telephone</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Sample rate</span></div>
+          <div class="chips" id="b-fs">
+            <button data-v="8000">8 k</button>
+            <button data-v="32000">32 k</button>
+            <button data-v="44100" class="on">44.1 k</button>
+            <button data-v="48000">48 k</button>
+            <button data-v="96000">96 k</button>
+            <button data-v="192000">192 k</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Depth</span></div>
+          <div class="chips" id="b-bits">
+            <button data-v="8">8</button>
+            <button data-v="16" class="on">16</button>
+            <button data-v="24">24</button>
+            <button data-v="32">32f</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Channels</span><span class="val" id="b-chlab">2</span></div>
+          <input type="range" id="b-ch" min="1" max="24" step="1" value="2" data-out="b-chlab" aria-label="Channel count">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Duration</span><span class="val" id="b-minlab">74:00</span></div>
+          <input type="range" id="b-min" min="1" max="180" step="1" value="74" data-out="b-minlab" aria-label="Duration in minutes">
+        </div>
+        <div class="field grow" style="min-width:150px">
+          <div class="flab"><span>Coded target</span><span class="val" id="b-kbpslab">128 kbit/s</span></div>
+          <input type="range" id="b-kbps" min="16" max="512" step="8" value="128" data-out="b-kbpslab" aria-label="Coded bitrate in kilobits per second">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 1.4</b> — every number here is the
+        product of the three controls to its left; the bars are logarithmic,
+        because the alternative is a chart on which telephony is invisible. The
+        default is a CD. Press <b>5.1 film</b> and the raw stream becomes
+        6 912 kbit/s, which lands above the red line: DVD-Video caps linear PCM
+        at 6 144 kbit/s, so the format physically cannot carry its own flagship
+        configuration uncompressed. That inequality is the reason this study
+        exists. Note also how stable the required ratio is — whatever the era, the
+        channel is about an order of magnitude too narrow, and 128 kbit/s against
+        CD is 11.025 : 1 exactly.</figcaption>
+    </figure>
+
+    <div class="note danger">
+      <span class="tag tag-danger">The inequality that started it</span>
+      <p>Six channels at 48 kHz and 24 bits is 6,912,000 bit/s. DVD-Video's
+        linear-PCM ceiling is 6,144,000 bit/s. The specification could not carry
+        its own reference format, which is why the disc in your hand shipped
+        Dolby Digital and DTS instead — and why <a href="8-aac.html">Chapter
+        08</a> opens where it does.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="companding" class="section">
+    <div class="kicker">The first escape</div>
+    <h3>G.711 halved the problem in 1972 by making the step size depend on the signal.</h3>
+    <p style="margin-top:18px">Long before anyone modelled masking, the
+      telephone network had already found the first crack in uniform
+      quantisation. A linear 8-bit quantiser has a fixed step, so its
+      signal-to-noise ratio is 49.9 dB for a full-scale sine and falls one
+      decibel for every decibel the talker backs away from the microphone: at
+      −40 dBFS it is about 10 dB, which is unusable. But the ear does not judge
+      error against full scale. It judges error against <em>the signal that is
+      present</em>. A quiet passage needs small steps; a loud one does not.</p>
+
+    <p>Recommendation G.711, approved by the CCITT in 1972, is that observation
+      turned into eight bits: 8 000 samples a second, a 300–3 400 Hz passband,
+      64 kbit/s, and a logarithmic transfer curve in one of two flavours.</p>
+
+    <div class="eq">
+      <i>F</i>(<i>x</i>)<span class="op">=</span>
+      <span class="fn">sgn</span>(<i>x</i>)
+      <span class="frac"><span><span class="fn">ln</span>(<span class="num">1</span> + µ<span class="op">|</span><i>x</i><span class="op">|</span>)</span><span><span class="fn">ln</span>(<span class="num">1</span> + µ)</span></span>
+      <span class="op">,</span>µ<span class="op">=</span><span class="num">255</span>
+      <span class="note2">μ-law, used in North America and Japan</span>
+    </div>
+    <div class="eq">
+      <i>F</i>(<i>x</i>)<span class="op">=</span>
+      <span class="fn">sgn</span>(<i>x</i>)
+      <span class="frac"><span><span class="num">1</span> + <span class="fn">ln</span>(<i>A</i><span class="op">|</span><i>x</i><span class="op">|</span>)</span><span><span class="num">1</span> + <span class="fn">ln</span><i>A</i></span></span>
+      <span class="op">,</span><i>A</i><span class="op">=</span><span class="num">87.6</span>
+      <span class="note2">A-law, used in Europe; linear below |x| = 1/A, logarithmic above it</span>
+    </div>
+
+    <p>No implementation evaluates a logarithm per sample. Both laws are
+      approximated by a piecewise-linear curve — fifteen distinct slopes for
+      μ-law, thirteen for A-law — and the code that comes out is not really an
+      integer at all:</p>
+
+    <div class="bitmap" style="margin:18px 0">
+      <div class="bitf on"><span class="bv">S</span><span class="bn">sign</span></div>
+      <div class="bitf"><span class="bv">E E E</span><span class="bn">segment · exponent</span></div>
+      <div class="bitf"><span class="bv">M M M M</span><span class="bn">step within segment · mantissa</span></div>
+    </div>
+
+    <p>One sign bit, three exponent bits, four mantissa bits. G.711 is an 8-bit
+      floating-point format, shipped in 1972, and it has been carrying telephone
+      calls ever since. Each exponent doubles the step size, so the segments
+      decode like this:</p>
+
+    <div class="scroller"><table>
+      <caption>The G.711 segments — μ-law magnitudes in 14-bit units, A-law in 13-bit</caption>
+      <thead><tr><th class="num">Segment</th><th class="num">μ step</th><th class="num">μ decoded range</th><th class="num">A step</th><th class="num">A decoded range</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">2</td><td class="num">0 … 30</td><td class="num">2</td><td class="num">1 … 31</td></tr>
+        <tr><td class="num">1</td><td class="num">4</td><td class="num">33 … 93</td><td class="num">2</td><td class="num">33 … 63</td></tr>
+        <tr><td class="num">2</td><td class="num">8</td><td class="num">99 … 219</td><td class="num">4</td><td class="num">66 … 126</td></tr>
+        <tr><td class="num">3</td><td class="num">16</td><td class="num">231 … 471</td><td class="num">8</td><td class="num">132 … 252</td></tr>
+        <tr><td class="num">4</td><td class="num">32</td><td class="num">495 … 975</td><td class="num">16</td><td class="num">264 … 504</td></tr>
+        <tr><td class="num">5</td><td class="num">64</td><td class="num">1 023 … 1 983</td><td class="num">32</td><td class="num">528 … 1 008</td></tr>
+        <tr><td class="num">6</td><td class="num">128</td><td class="num">2 079 … 3 999</td><td class="num">64</td><td class="num">1 056 … 2 016</td></tr>
+        <tr><td class="num">7</td><td class="num">256</td><td class="num">4 191 … 8 031</td><td class="num">128</td><td class="num">2 112 … 4 032</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Sixteen codes per segment, eight segments per sign, 256 codes in all.
+      μ-law's decoder is ((2<i>m</i> + 33) ≪ <i>s</i>) − 33, which is where the
+      encoder's bias of 33 and its clip at 8 159 come from; A-law's innermost two
+      segments share a slope, which is why it has thirteen and not fifteen. One
+      last flourish: the byte is inverted before it goes on the line — all eight
+      bits for μ-law, the even bits for A-law — so that a silent channel
+      transmits a dense pattern of ones rather than a long run of zeros, and the
+      receiver keeps clock recovery.</p>
+
+    <figure class="figure" id="fig-g711">
+      <div class="figure-bar">
+        <span class="fno">FIG. 1.5</span>
+        <span class="ftitle">The plateau is the compression</span>
+        <span class="fstate" id="g-state">μ-law · −30 dBFS</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="g-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-heat"><i></i>μ-law, 8 bits</span>
+          <span class="l-teal"><i></i>A-law, 8 bits</span>
+          <span class="l-faint"><i></i>linear, 8 bits</span>
+        </div>
+        <div class="canvas-wrap" style="margin-top:14px"><canvas id="g-cv2"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>decoded level of each of the 128 magnitude codes</span>
+          <span class="l-faint"><i class="dash"></i>a linear 8-bit quantiser's levels</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">At this level, this law</span><span class="v" id="g-snr">34.5 dB</span></div>
+          <div class="ro"><span class="k">Linear 8-bit, same level</span><span class="v" id="g-lin">20.6 dB</span></div>
+          <div class="ro ok"><span class="k">Advantage</span><span class="v" id="g-adv">+13.9 dB</span></div>
+          <div class="ro ghost"><span class="k">Held within 3 dB over</span><span class="v" id="g-flat">32.5 dB</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Law</span></div>
+          <div class="chips" id="g-law">
+            <button data-v="mu" class="on">μ-law</button>
+            <button data-v="a">A-law</button>
+            <button data-v="lin">Linear 8-bit</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Input level</span><span class="val" id="g-lvllab">−30 dBFS</span></div>
+          <input type="range" id="g-lvl" min="-60" max="0" step="1" value="-30" data-out="g-lvllab" aria-label="Input level in dBFS">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen — speech at this level</span></div>
+          <div class="chips">
+            <button class="btn play" id="g-p0">16-bit</button>
+            <button class="btn play" id="g-p1">Linear 8-bit</button>
+            <button class="btn play" id="g-p2">μ-law</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 1.5</b> — the upper curves are
+        measured, not drawn: each point encodes and decodes four thousand samples
+        of a real sine at that level and computes the resulting
+        signal-to-noise ratio. Linear 8-bit is a 45° line — one decibel of
+        quality lost per decibel of level, because its step size does not care
+        what the signal is doing. Both companded laws are a <em>plateau</em>: about
+        38 dB, held from full scale down to roughly −33 dBFS, at the cost of
+        10 dB at the top. The lower panel shows why — the 128 magnitude codes are
+        not evenly spaced but doubled every sixteen codes, so the step is
+        proportional to the signal. Below about −50 dBFS μ-law pulls ahead of
+        A-law, because its innermost step is half the size. All three listen
+        buttons play the same band-limited speech at the level you set, with the
+        same playback gain: at −30 dBFS the linear version is audibly grainy and
+        the companded one is not, and the only difference between them is where
+        the quantiser put its levels.</figcaption>
+    </figure>
+
+    <p>The gain is real but modest — the usual figures are about 24 dB of
+      effective companding advantage for A-law and around 33 dB, five and a half
+      bits, for μ-law — and it costs a 2 : 1 compression against linear 16-bit.
+      What matters is not the ratio but the sentence underneath it:
+      <strong>quantise in proportion to the signal, because the ear measures
+      error relative to the signal.</strong> Every codec in the rest of this
+      study is a more sophisticated version of that sentence. MP3 and AAC scale
+      each band of each block by a scalefactor and then quantise with a
+      three-quarter power law, which is the same idea applied per frequency band
+      rather than per sample (<a href="5-quantize.html">Chapter 05</a>). What
+      G.711 lacks is any notion of <em>which</em> error the listener will
+      actually hear — it treats all frequencies alike, and spends bits on a
+      3 kHz hiss that a 300 Hz vowel would have hidden completely.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="wrong" class="section">
+    <div class="kicker">What people get wrong</div>
+    <h3>Six things that are said constantly and are not true.</h3>
+    <p style="margin-top:18px">Most of the confusion in this subject comes from
+      a small number of claims that are repeated until they sound like
+      background knowledge. Each one below is corrected by something already on
+      this page.</p>
+
+    <dl class="defs" style="margin-top:24px">
+      <div class="def">
+        <dt>"Digital audio is a staircase"</dt>
+        <dd>The reconstruction filter's output is the unique band-limited
+          function through the samples, and it is smooth. Fig 1.1 computes it,
+          sample by sample, from the sinc sum. The staircase is a picture of a
+          zero-order-hold converter with its filter removed.</dd>
+      </div>
+      <div class="def">
+        <dt>"44.1 kHz limits timing to ±11.3 µs"</dt>
+        <dd>Timing resolution is set by the signal-to-noise ratio, not by the
+          sample spacing. A delay of a fraction of a sample is encoded in the
+          <em>amplitudes</em> of neighbouring samples and survives exactly; the
+          binaural threshold of around 10 µs is nowhere near a constraint on
+          44.1 kHz. More bits do not buy finer timing either — bit depth sets
+          the noise floor and nothing else.</dd>
+      </div>
+      <div class="def">
+        <dt>"Quantisation error is white noise"</dt>
+        <dd>Only when the signal is busy and uncorrelated with the step grid.
+          For tones, fades and reverb tails it is a deterministic function of
+          the signal, with harmonics that move as the level changes. Dither is
+          what makes the textbook assumption true, and Fig 1.3 shows the
+          harmonics appearing and vanishing as you switch it.</dd>
+      </div>
+      <div class="def">
+        <dt>"Signals below one LSB are lost"</dt>
+        <dd>Not with dither. Set Fig 1.3 to 8 bits and −70 dBFS — thirty
+          decibels below the least significant bit — and the tone is still
+          measured at its correct level. Undithered, it is gone.</dd>
+      </div>
+      <div class="def">
+        <dt>"16 bits gives 96 dB, so 24 are needed for the ear's 120 dB"</dt>
+        <dd>Three different quantities are being mixed. 96.33 dB is
+          peak-to-LSB; the dithered signal-to-noise ratio is 93.3 dB; the ear's
+          120 dB is a lifetime range, not one available in a single instant in
+          a room with a noise floor. Real 24-bit converters reach 120–126 dB
+          anyway. In 2007 Meyer and Moran reported that inserting a
+          16-bit/44.1 kHz analogue-to-digital-to-analogue loop into
+          high-resolution playback was undetectable to their listeners at normal
+          levels; the loop's noise became audible only at grossly elevated gain.</dd>
+      </div>
+      <div class="def">
+        <dt>"Higher sample rates are always better"</dt>
+        <dd>It is a trade, not a verdict. Faster sampling allows a gentler
+          anti-alias filter and shorter pre-ringing, which are genuine
+          advantages of 88.2 and 96 kHz. Against that, the same converter
+          measures worse for distortion and noise at 192 kHz than at 96 kHz, and
+          ultrasonic content can intermodulate down into the audible band in
+          amplifiers and tweeters. Dan Lavry has argued the optimum sits nearer
+          60 kHz.</dd>
+      </div>
+    </dl>
+
+    <p style="margin-top:30px">What survives all this is a representation with
+      known, exact costs. Two channels, 44 100 samples a second, sixteen bits:
+      1 411 200 bits every second, of which the ear will notice a small and
+      highly structured fraction. Nothing so far has removed a single bit on
+      perceptual grounds — the only thing that has come close is G.711, which
+      chose its step sizes to suit a listener rather than a meter, and got a
+      factor of two for it.</p>
+
+    <p>To do better you have to answer a question this chapter never asks: given
+      this particular instant of this particular music, how much error can be
+      added at each frequency before anyone can tell? That question has a
+      measurable answer, worked out over a century of psychoacoustics, and it is
+      the subject of <a href="2-ear.html">Chapter 02</a> — where the 120 dB
+      range quoted above turns out to be nothing like available all at once, the
+      ear turns out to be a filterbank with about two dozen usable channels, and
+      the absolute threshold of hearing becomes the first curve a real encoder
+      carries a copy of.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ===============================================================
+   FIG 1.1 — the sampling lab.
+   A real sine is sampled at the chosen rate; the reconstruction is a
+   windowed Whittaker-Shannon sinc sum over the samples alone, and the
+   alias is evaluated in closed form so the two can be seen to coincide.
+   =============================================================== */
+(function () {
+  "use strict";
+  var D = window.DSP, A = window.AUD, AC = window.AC;
+  if (!D || !A || !AC) return;
+  var cv = document.getElementById("s-cv"), cv2 = document.getElementById("s-cv2");
+  if (!cv || !cv2) return;
+
+  var SR = 48000, TAPS = 48;
+  var st = { f0: 5000, fs: 8000, dur: 0.002, fa: 0, conj: false,
+             cont: [], rec: [], ghost: [], samp: [] };
+
+  function aliasOf(f, fs) {
+    var r = ((f % fs) + fs) % fs;
+    return r <= fs / 2 ? { f: r, conj: false } : { f: fs - r, conj: true };
+  }
+  function sinc(u) { return Math.abs(u) < 1e-9 ? 1 : Math.sin(Math.PI * u) / (Math.PI * u); }
+
+  function compute() {
+    var f0 = st.f0, fs = st.fs, T = 1 / fs, n, i;
+    var dur = Math.max(4 / fs, Math.min(16 / fs, 28 / f0));
+    st.dur = dur;
+    var al = aliasOf(f0, fs);
+    st.fa = al.f; st.conj = al.conj;
+
+    var n0 = -TAPS, n1 = Math.ceil(dur * fs) + TAPS;
+    var all = [];
+    for (n = n0; n <= n1; n++) all.push(Math.sin(2 * Math.PI * f0 * n * T));
+
+    var samp = [];
+    for (n = 0; n <= Math.floor(dur * fs); n++) samp.push([n * T, all[n - n0]]);
+    st.samp = samp;
+
+    var M = 300, cont = [], rec = [], gh = [], sgn = al.conj ? -1 : 1;
+    for (i = 0; i <= M; i++) {
+      var t = dur * i / M, u = t / T, s = 0;
+      var lo = Math.max(n0, Math.round(u) - TAPS), hi = Math.min(n1, Math.round(u) + TAPS);
+      for (n = lo; n <= hi; n++) s += all[n - n0] * sinc(u - n);
+      cont.push([t * 1000, Math.sin(2 * Math.PI * f0 * t)]);
+      rec.push([t * 1000, s]);
+      gh.push([t * 1000, sgn * Math.sin(2 * Math.PI * al.f * t)]);
+    }
+    st.cont = cont; st.rec = rec; st.ghost = gh;
+
+    var out = document.getElementById("s-nyq");
+    if (out) out.textContent = AC.fmt.hz(fs / 2);
+    out = document.getElementById("s-spc");
+    if (out) out.textContent = (fs / f0).toFixed(2);
+    out = document.getElementById("s-alias");
+    if (out) out.textContent = AC.fmt.hz(st.fa);
+    out = document.getElementById("s-phase");
+    if (out) out.textContent = st.conj ? "inverted" : "preserved";
+    out = document.getElementById("s-state");
+    if (out) out.textContent = AC.fmt.hz(f0) + " at " + AC.fmt.hz(fs);
+    out = document.getElementById("s-p1");
+    if (out) out.textContent = "Played (" + AC.fmt.hz(f0) + ")";
+    out = document.getElementById("s-p2");
+    if (out) out.textContent = "Sampled, no filter";
+    out = document.getElementById("s-p3");
+    if (out) out.textContent = "Filtered first";
+  }
+
+  var p1 = new AC.Plot(cv, { aspect: 2.6, xmin: 0, xmax: 2, ymin: -1.32, ymax: 1.32,
+    xlabel: "milliseconds", ylabel: "amplitude", pad: { l: 44, r: 14, t: 12, b: 32 } });
+  var p2 = new AC.Plot(cv2, { aspect: 3.6, xmin: 0, xmax: 20000, ymin: 0, ymax: 1.2,
+    xlabel: "frequency, as the sampler leaves it", pad: { l: 44, r: 14, t: 12, b: 32 } });
+
+  function drawTime() {
+    p1.range(0, st.dur * 1000, -1.32, 1.32);
+    p1.clear();
+    p1.axes({ y: [-1, 0, 1], xfmt: function (v) { return v.toFixed(2); } });
+    p1.line(st.cont, { color: AC.C.faint, width: 1.1, alpha: .75 });
+    p1.line(st.ghost, { color: AC.C.purple, width: 2.6, dash: [7, 5], alpha: .9 });
+    p1.line(st.rec, { color: AC.C.gold, width: 1.7 });
+    p1.stems(st.samp.map(function (s) { return [s[0] * 1000, s[1]]; }),
+      { color: AC.C.blue, base: 0, width: 1.3, r: 2.4 });
+    p1.note(p1.pad.l + 6, p1.pad.t + 4,
+      st.f0 > st.fs / 2 ? "aliased: the gold curve has left the grey one"
+                        : "below fs/2: gold, grey and dashed coincide",
+      { color: st.f0 > st.fs / 2 ? AC.C.red : AC.C.green });
+  }
+
+  function drawSpec() {
+    var fs = st.fs, xmax = Math.max(2.35 * fs, 1.25 * st.f0);
+    p2.range(0, xmax, 0, 1.2);
+    p2.clear();
+    p2.axes({ y: [], xfmt: function (f) { return f >= 1000 ? (f / 1000).toFixed(0) + "k" : String(Math.round(f)); } });
+    p2.band(0, fs / 2, { color: AC.C.blue, alpha: .08 });
+    var im = [], k, f;
+    for (k = 1; k <= 5; k++) {
+      f = k * fs - st.f0; if (f > 0 && f <= xmax) im.push([f, .72]);
+      f = k * fs + st.f0; if (f > 0 && f <= xmax) im.push([f, .72]);
+    }
+    p2.stems(im, { color: AC.C.faint, base: 0, width: 1.2, r: 2 });
+    p2.stems([[st.fa, 1]], { color: AC.C.gold, base: 0, width: 2.6, r: 3.4 });
+    p2.dot(st.fa, 1, { color: AC.C.gold, ring: true, r: 3 });
+    p2.vline(st.f0, { color: AC.C.purple, label: "played", dash: [3, 3] });
+    p2.vline(fs / 2, { color: AC.C.blue, label: "fs/2", labelY: 16 });
+    p2.label(st.fa, 1, AC.fmt.hz(st.fa), { color: AC.C.gold, dy: -9, align: st.fa > xmax * .8 ? "right" : "left", dx: 5 });
+  }
+
+  var go1 = AC.autoDraw(p1, drawTime), go2 = AC.autoDraw(p2, drawSpec);
+  function update() { compute(); go1(); go2(); }
+  compute();
+
+  AC.slider(document.getElementById("s-f0"), function (v) { st.f0 = v; update(); },
+    function (v) { return AC.fmt.hz(v); });
+  AC.slider(document.getElementById("s-fs"), function (v) { st.fs = v; update(); },
+    function (v) { return AC.fmt.hz(v); });
+
+  function tone() { return A.src.tone(1.1, { sr: SR, f: st.f0, amp: 0.45 }); }
+  A.wire(document.getElementById("s-p1"), tone, { sr: SR, gain: .8 });
+  A.wire(document.getElementById("s-p2"), function () {
+    // sampled with no anti-alias filter, then band-limited on the way out,
+    // which is what a DAC's reconstruction filter does
+    return A.lowpassFFT(A.downUp(tone(), SR, st.fs, false), SR, st.fs * 0.47);
+  }, { sr: SR, gain: .8 });
+  A.wire(document.getElementById("s-p3"), function () {
+    return A.downUp(tone(), SR, st.fs, true);
+  }, { sr: SR, gain: .8 });
+
+  update();
+})();
+
+/* ===============================================================
+   FIG 1.2 — the quantiser staircase, and 6.02N + 1.76 under test.
+   =============================================================== */
+(function () {
+  "use strict";
+  var D = window.DSP, A = window.AUD, AC = window.AC;
+  if (!D || !A || !AC) return;
+  var cv = document.getElementById("q-cv"), cv2 = document.getElementById("q-cv2");
+  if (!cv || !cv2) return;
+
+  var SR = 48000, ONE_BIT = 6.0205999132, SINE_TERM = 1.7609125906;
+  var st = { bits: 4, level: 0, src: "sine", base: null, sweep: [], win: [], grid: [],
+             lsbPeak: 0, rmsDb: -3, meas: 0, pred: 0 };
+  var CACHE = {};
+
+  function source(name) {
+    if (CACHE[name]) return CACHE[name];
+    var x;
+    if (name === "sine") x = A.src.tone(0.28, { sr: SR, f: 997, amp: 1, fade: 0 });
+    else if (name === "music") x = A.src.music(1.0, { sr: SR });
+    else x = A.src.speech(1.0, { sr: SR });
+    D.normalize(x, 0.999);
+    CACHE[name] = x;
+    return x;
+  }
+  function measure(x, y) {
+    var ps = 0, pn = 0, i, e;
+    for (i = 0; i < x.length; i++) { e = y[i] - x[i]; ps += x[i] * x[i]; pn += e * e; }
+    if (ps <= 0) return 0;
+    return 10 * Math.log10(ps / Math.max(pn, 1e-300));
+  }
+
+  function compute() {
+    var amp = Math.pow(10, st.level / 20);
+    var base = source(st.src), i, N;
+    var x = new Float64Array(base.length);
+    for (i = 0; i < base.length; i++) x[i] = base[i] * amp;
+    st.rmsDb = 20 * Math.log10(Math.max(D.rms(x), 1e-12));
+
+    var q = Math.pow(2, 1 - st.bits);
+    st.lsbPeak = D.peak(x) / q;
+
+    // the SNR sweep: quantise this very signal at every depth
+    var sweep = [];
+    for (N = 2; N <= 16; N++) sweep.push([N, measure(x, A.quantize(x, N, {}))]);
+    st.sweep = sweep;
+    st.meas = sweep[st.bits - 2][1];
+    st.pred = ONE_BIT * st.bits + SINE_TERM + st.level;
+    st.predOwn = ONE_BIT * st.bits + SINE_TERM + (st.rmsDb + 3.0103);
+
+    // the display window: centred on the loudest part of the signal
+    var pk = 0, at = 0;
+    for (i = 0; i < x.length; i++) if (Math.abs(x[i]) > pk) { pk = Math.abs(x[i]); at = i; }
+    var span = Math.round(SR * 0.0032);
+    var s0 = Math.max(0, Math.min(x.length - span - 1, at - (st.src === "sine" ? 0 : span >> 1)));
+    var y = A.quantize(x.subarray(s0, s0 + span), st.bits, {});
+    var sig = [], stair = [];
+    for (i = 0; i < span; i++) {
+      var t = i / SR * 1000;
+      sig.push([t, x[s0 + i] / q]);
+      stair.push([t, y[i] / q]);
+      stair.push([(i + 1) / SR * 1000, y[i] / q]);
+    }
+    st.win = sig; st.stair = stair; st.winMs = span / SR * 1000;
+
+    var levels = Math.min(33, Math.pow(2, st.bits));
+    var g = [], k, top = Math.max(1.35, st.lsbPeak * 1.2);
+    if (levels <= 33) for (k = -Math.ceil(top); k <= Math.ceil(top); k++) g.push(k);
+    st.grid = g;
+    st.top = top;
+
+    var el = document.getElementById("q-meas");
+    if (el) el.textContent = st.meas.toFixed(1) + " dB";
+    el = document.getElementById("q-pred");
+    if (el) el.textContent = st.pred.toFixed(1) + " dB";
+    el = document.getElementById("q-err");
+    if (el) el.textContent = (st.meas - st.pred >= 0 ? "+" : "") + (st.meas - st.pred).toFixed(1) + " dB";
+    el = document.getElementById("q-lsb");
+    if (el) el.textContent = st.lsbPeak < 10 ? st.lsbPeak.toFixed(2) : AC.fmt.int(st.lsbPeak);
+    el = document.getElementById("q-state");
+    if (el) el.textContent = st.bits + " bits · " + st.level + " dBFS";
+  }
+
+  var p1 = new AC.Plot(cv, { aspect: 2.7, xmin: 0, xmax: 3.2, ymin: -9, ymax: 9,
+    xlabel: "milliseconds", ylabel: "amplitude, in LSBs", pad: { l: 46, r: 14, t: 12, b: 32 } });
+  var p2 = new AC.Plot(cv2, { aspect: 2.7, xmin: 2, xmax: 16, ymin: -12, ymax: 104,
+    xlabel: "bit depth", ylabel: "signal-to-noise, dB", pad: { l: 46, r: 14, t: 12, b: 32 } });
+
+  function drawWave() {
+    p1.range(0, st.winMs, -st.top, st.top);
+    p1.clear();
+    p1.axes({ y: st.grid.length && st.grid.length <= 12 ? st.grid : null,
+      xfmt: function (v) { return v.toFixed(1); } });
+    if (st.grid.length && st.grid.length <= 35) {
+      st.grid.forEach(function (k) {
+        if (Math.abs(k) <= st.top) p1.hline(k, { color: AC.C.line, dash: [2, 4], width: 1 });
+      });
+    }
+    p1.line(st.stair, { color: AC.C.gold, width: 1.5 });
+    p1.line(st.win, { color: AC.C.blue, width: 1.6 });
+    if (st.lsbPeak < 0.5) {
+      p1.note(p1.pad.l + 6, p1.pad.t + 4, "peak is " + st.lsbPeak.toFixed(2) + " LSB: every sample rounds to zero",
+        { color: AC.C.red });
+    }
+  }
+  function drawSweep() {
+    p2.clear();
+    p2.axes({ x: [2, 4, 6, 8, 10, 12, 14, 16], xfmt: function (v) { return String(Math.round(v)); } });
+    var line = [], own = [], N;
+    for (N = 2; N <= 16; N++) {
+      line.push([N, ONE_BIT * N + SINE_TERM + st.level]);
+      own.push([N, ONE_BIT * N + SINE_TERM + (st.rmsDb + 3.0103)]);
+    }
+    p2.line(own, { color: AC.C.purple, width: 1.6, dash: [6, 4] });
+    p2.line(line, { color: AC.C.blue, width: 1.6, dash: [4, 4] });
+    p2.vline(st.bits, { color: AC.C.line, dash: [3, 4] });
+    st.sweep.forEach(function (pt) {
+      p2.dot(pt[0], pt[1], { color: AC.C.gold, r: pt[0] === st.bits ? 4.2 : 2.6, ring: pt[0] === st.bits });
+    });
+    p2.hline(0, { color: AC.C.ghost, dash: [2, 5], label: "error as big as the signal" });
+  }
+
+  var go1 = AC.autoDraw(p1, drawWave), go2 = AC.autoDraw(p2, drawSweep);
+  function update() { compute(); go1(); go2(); }
+  compute();
+
+  AC.slider(document.getElementById("q-bits"), function (v) { st.bits = v; update(); },
+    function (v) { return v + " bits"; });
+  AC.slider(document.getElementById("q-level"), function (v) { st.level = v; update(); },
+    function (v) { return v + " dBFS"; });
+  AC.chips(document.getElementById("q-src"), function (v) { st.src = v; update(); });
+
+  A.wire(document.getElementById("q-play"), function () {
+    var amp = Math.pow(10, st.level / 20), base = source(st.src), i;
+    var x = new Float64Array(base.length);
+    for (i = 0; i < base.length; i++) x[i] = base[i] * amp;
+    var y = A.quantize(x, st.bits, {});
+    // played back with the level restored, so what you judge is the error
+    return D.normalize(y, 0.7);
+  }, { sr: SR, gain: .85 });
+
+  update();
+})();
+
+/* ===============================================================
+   FIG 1.3 — dither. An averaged spectrum of a quantised tone, with
+   the undithered case kept as a ghost for comparison.
+   =============================================================== */
+(function () {
+  "use strict";
+  var D = window.DSP, A = window.AUD, AC = window.AC;
+  if (!D || !A || !AC) return;
+  var cv = document.getElementById("d-cv");
+  if (!cv) return;
+
+  var SR = 48000, NFFT = 4096, SEGS = 8, F0 = 997;
+  var st = { bits: 8, level: -40, mode: "off", cur: [], ref: [], tone: -99, harm: -99, noise: -99 };
+  var pending = 0;
+
+  function modeOpts(m) {
+    if (m === "tpdf") return { dither: true };
+    if (m === "shaped") return { dither: true, shape: true };
+    return {};
+  }
+  function avgSpectrum(y) {
+    var acc = new Float64Array(NFFT / 2), s, i;
+    for (s = 0; s < SEGS; s++) {
+      var seg = y.subarray(s * NFFT, s * NFFT + NFFT);
+      var dbs = D.spectrumDb(seg, { n: NFFT, window: "blackmanHarris", zeroPad: 1, floor: 1e-8 });
+      for (i = 0; i < NFFT / 2; i++) acc[i] += D.undbp(dbs[i]);
+    }
+    var out = [];
+    for (i = 1; i < NFFT / 2; i++) out.push([i * SR / NFFT, D.dbp(acc[i] / SEGS, 1e-16)]);
+    return out;
+  }
+  function peakNear(spec, f, half) {
+    var best = -400, i;
+    for (i = 0; i < spec.length; i++) {
+      if (Math.abs(spec[i][0] - f) <= half && spec[i][1] > best) best = spec[i][1];
+    }
+    return best;
+  }
+
+  function compute() {
+    var amp = Math.pow(10, st.level / 20);
+    var n = NFFT * SEGS;
+    var x = A.src.tone(n / SR, { sr: SR, f: F0, amp: amp, fade: 0 });
+    var y = A.quantize(x, st.bits, modeOpts(st.mode));
+    var ref = st.mode === "off" ? y : A.quantize(x, st.bits, {});
+    st.cur = avgSpectrum(y);
+    st.ref = st.mode === "off" ? null : avgSpectrum(ref);
+
+    var q = Math.pow(2, 1 - st.bits);
+    st.lsb = amp / q;
+    st.tone = peakNear(st.cur, F0, 40);
+    var h = -400, k;
+    for (k = 2; k <= 9; k++) if (k * F0 < SR / 2) h = Math.max(h, peakNear(st.cur, k * F0, 40));
+    st.harm = h;
+    var pn = 0, i;
+    for (i = 0; i < x.length; i++) pn += (y[i] - x[i]) * (y[i] - x[i]);
+    st.noise = 10 * Math.log10(Math.max(pn / x.length, 1e-30));
+
+    var el = document.getElementById("d-tone");
+    if (el) el.textContent = st.tone < -150 ? "nothing" : st.tone.toFixed(1) + " dBFS";
+    el = document.getElementById("d-lsb");
+    if (el) el.textContent = st.lsb < 10 ? st.lsb.toFixed(2) : AC.fmt.int(st.lsb);
+    el = document.getElementById("d-noise");
+    if (el) el.textContent = st.noise.toFixed(1) + " dBFS";
+    el = document.getElementById("d-harm");
+    if (el) el.textContent = st.harm < -150 ? "none" : st.harm.toFixed(1) + " dBFS";
+    el = document.getElementById("d-state");
+    if (el) {
+      el.textContent = st.bits + " bits · " +
+        (st.mode === "off" ? "no dither" : st.mode === "tpdf" ? "TPDF" : "TPDF + shaping");
+    }
+  }
+
+  var p = new AC.Plot(cv, { aspect: 2.5, xmin: 0, xmax: 20000, ymin: -132, ymax: 0,
+    xlabel: "frequency", ylabel: "dBFS per FFT bin", pad: { l: 48, r: 14, t: 12, b: 32 } });
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000).toFixed(0) + "k" : String(Math.round(f)); },
+      y: [0, -30, -60, -90, -120] });
+    if (st.ref) p.line(st.ref, { color: AC.C.faint, width: 1, dash: [3, 3], alpha: .55 });
+    if (st.cur.length) p.line(st.cur, { color: AC.C.gold, width: 1.1, alpha: .95 });
+    p.hline(st.level, { color: AC.C.blue, dash: [5, 4], label: "the tone that went in" });
+    p.vline(F0, { color: AC.C.blue, dash: [2, 4] });
+    if (st.harm > -150 && st.mode === "off") {
+      p.note(p.pad.l + 6, p.pad.t + 4, "worst harmonic " + (st.harm - st.tone).toFixed(0) + " dB below the tone",
+        { color: AC.C.red });
+    }
+  }
+
+  var go = AC.autoDraw(p, draw);
+  function update() { compute(); go(); }
+  function schedule() { clearTimeout(pending); pending = setTimeout(update, 120); }
+  compute();
+
+  AC.slider(document.getElementById("d-bits"), function (v) { st.bits = v; schedule(); },
+    function (v) { return v + " bits"; });
+  AC.slider(document.getElementById("d-level"), function (v) { st.level = v; schedule(); },
+    function (v) { return v + " dBFS"; });
+  AC.chips(document.getElementById("d-mode"), function (v) { st.mode = v; update(); });
+
+  A.wire(document.getElementById("d-steady"), function () {
+    var amp = Math.pow(10, st.level / 20);
+    var x = A.src.tone(2.0, { sr: SR, f: F0, amp: amp, fade: 8 });
+    var y = A.quantize(x, st.bits, modeOpts(st.mode));
+    return D.normalize(y, 0.6);      // brought up so the error is audible at all
+  }, { sr: SR, gain: .9 });
+
+  A.wire(document.getElementById("d-fade"), function () {
+    var sec = 6, n = Math.round(SR * sec), x = new Float64Array(n), i;
+    for (i = 0; i < n; i++) {
+      var u = i / n;
+      x[i] = Math.pow(10, (-30 + (-96 + 30) * u) / 20) * Math.sin(2 * Math.PI * 500 * i / SR);
+    }
+    var y = A.quantize(x, st.bits, modeOpts(st.mode));
+    var g = Math.pow(10, 30 / 20) * 0.5;     // restore the starting level
+    for (i = 0; i < n; i++) y[i] *= g;
+    return A.fadeEdges(y, SR, 20);
+  }, { sr: SR, gain: .9 });
+
+  update();
+})();
+
+/* ===============================================================
+   FIG 1.4 — the bit budget.
+   =============================================================== */
+(function () {
+  "use strict";
+  var AC = window.AC;
+  if (!AC) return;
+  var cv = document.getElementById("b-cv");
+  if (!cv) return;
+
+  var st = { fs: 44100, bits: 16, ch: 2, min: 74, kbps: 128 };
+  var FIXED = [
+    { k: "CD", v: 1411.2, c: null },
+    { k: "5.1/24", v: 6912, c: null },
+    { k: "DSD64", v: 5644.8, c: null },
+    { k: "G.711", v: 64, c: null },
+  ];
+
+  function raw() { return st.ch * st.fs * st.bits; }
+  function fmtBytes(B) {
+    if (B >= 1e9) return (B / 1e9).toFixed(2) + " GB";
+    if (B >= 1e6) return (B / 1e6).toFixed(1) + " MB";
+    return (B / 1e3).toFixed(0) + " kB";
+  }
+
+  var p = new AC.Plot(cv, { aspect: 2.5, xmin: -0.7, xmax: 5.7, ymin: 32, ymax: 20000,
+    ylog: true, ylabel: "kbit/s (log)", pad: { l: 52, r: 14, t: 14, b: 40 } });
+
+  function bars() {
+    var out = [{ k: "YOURS", v: raw() / 1000, c: AC.C.gold },
+               { k: "CODED", v: st.kbps, c: AC.C.blue }];
+    FIXED.forEach(function (f) { out.push({ k: f.k, v: f.v, c: AC.C.faint }); });
+    return out;
+  }
+
+  function draw() {
+    var b = bars(), hi = 20000, i;
+    for (i = 0; i < b.length; i++) hi = Math.max(hi, b[i].v * 1.6);
+    p.range(-0.7, b.length - 0.3, 32, hi);
+    p.clear();
+    p.axes({ x: [], yfmt: function (v) { return v >= 1000 ? (v / 1000) + "M" : String(v); } });
+    p.bars(b.map(function (x, k) { return { x0: k - 0.34, x1: k + 0.34, y: x.v, color: x.c, alpha: .8 }; }),
+      { base: 32 });
+    b.forEach(function (x, k) {
+      p.label(k, 32, x.k, { color: AC.C.soft, align: "center", dy: 15 });
+      p.label(k, x.v, x.v >= 1000 ? (x.v / 1000).toFixed(2) + "M" : Math.round(x.v) + "k",
+        { color: x.c, align: "center", dy: -6 });
+    });
+    p.hline(6144, { color: AC.C.red, dash: [6, 4], label: "DVD-Video LPCM ceiling" });
+  }
+
+  function compute() {
+    var R = raw(), sec = st.min * 60, B = R / 8 * sec;
+    var coded = st.kbps * 1000 / 8 * sec;
+    var el = document.getElementById("b-raw");
+    if (el) el.textContent = (R / 1000).toFixed(1) + " kbit/s";
+    el = document.getElementById("b-bytes");
+    if (el) el.textContent = fmtBytes(B);
+    el = document.getElementById("b-mib");
+    if (el) el.textContent = (B / 1048576).toFixed(1) + " MiB";
+    el = document.getElementById("b-coded");
+    if (el) el.textContent = fmtBytes(coded);
+    el = document.getElementById("b-ratio");
+    if (el) el.textContent = (R / (st.kbps * 1000)).toFixed(2) + " : 1";
+    el = document.getElementById("b-modem");
+    if (el) el.textContent = (B * 8 / 56000 / 3600).toFixed(1) + " h";
+    el = document.getElementById("b-state");
+    if (el) el.textContent = (R / 1000).toFixed(1) + " kbit/s → " + fmtBytes(B);
+  }
+
+  var go = AC.autoDraw(p, draw);
+  function update() { compute(); go(); }
+  compute();
+
+  var setFs = AC.chips(document.getElementById("b-fs"), function (v) { st.fs = +v; update(); });
+  var setBits = AC.chips(document.getElementById("b-bits"), function (v) { st.bits = +v; update(); });
+  var setCh = AC.slider(document.getElementById("b-ch"), function (v) { st.ch = v; update(); },
+    function (v) { return String(v); });
+  var setMin = AC.slider(document.getElementById("b-min"), function (v) { st.min = v; update(); },
+    function (v) { return v + ":00"; });
+  AC.slider(document.getElementById("b-kbps"), function (v) { st.kbps = v; update(); },
+    function (v) { return v + " kbit/s"; });
+
+  AC.chips(document.getElementById("b-preset"), function (v) {
+    var P = { cd: [44100, 16, 2, 74], film: [48000, 24, 6, 110], hires: [96000, 24, 2, 45], phone: [8000, 8, 1, 30] };
+    var c = P[v] || P.cd;
+    st.fs = c[0]; st.bits = c[1];
+    setFs(String(c[0])); setBits(String(c[1]));
+    setCh(c[2]); setMin(c[3]);
+    update();
+  });
+
+  update();
+})();
+
+/* ===============================================================
+   FIG 1.5 — G.711 companding. The segment tables are the ones a real
+   decoder uses; the SNR curves are measured by encoding and decoding.
+   =============================================================== */
+(function () {
+  "use strict";
+  var D = window.DSP, A = window.AUD, AC = window.AC;
+  if (!D || !A || !AC) return;
+  var cv = document.getElementById("g-cv"), cv2 = document.getElementById("g-cv2");
+  if (!cv || !cv2) return;
+
+  var SR = 48000;
+  var MU_END = [0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF];
+  var A_END = [0x1F, 0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF];
+  function segOf(v, tab) { for (var i = 0; i < 8; i++) if (v <= tab[i]) return i; return 7; }
+
+  function muEncode(x) {
+    var s = x < 0 ? 1 : 0;
+    var mag = Math.min(Math.round(Math.abs(x) * 8159), 8158);
+    var t = mag + 33, seg = segOf(t, MU_END);
+    return (s << 7) | (seg << 4) | ((t >> (seg + 1)) & 0x0F);
+  }
+  function muDecode(c) {
+    var seg = (c >> 4) & 7, m = c & 0x0F;
+    var mag = ((2 * m + 33) << seg) - 33;
+    return ((c >> 7) & 1 ? -mag : mag) / 8159;
+  }
+  function aEncode(x) {
+    var s = x < 0 ? 1 : 0;
+    var mag = Math.min(Math.round(Math.abs(x) * 4096), 4095);
+    var seg = segOf(mag, A_END);
+    var m = seg === 0 ? (mag >> 1) & 0x0F : (mag >> seg) & 0x0F;
+    return (s << 7) | (seg << 4) | m;
+  }
+  function aDecode(c) {
+    var seg = (c >> 4) & 7, m = c & 0x0F;
+    var mag = seg === 0 ? (2 * m + 1) : ((2 * m + 33) << (seg - 1));
+    return ((c >> 7) & 1 ? -mag : mag) / 4096;
+  }
+  var LAW = {
+    mu: function (x) { return muDecode(muEncode(x)); },
+    a: function (x) { return aDecode(aEncode(x)); },
+    lin: function (x) { var y = Math.round(x * 128) / 128; return Math.max(-1, Math.min(1 - 1 / 128, y)); },
+  };
+  var NAME = { mu: "μ-law", a: "A-law", lin: "Linear 8-bit" };
+
+  function snrAt(fn, L) {
+    var amp = Math.pow(10, L / 20), ps = 0, pn = 0, i, x, e;
+    for (i = 0; i < 4096; i++) {
+      x = amp * Math.sin(2 * Math.PI * i / 97.3);
+      e = fn(x) - x;
+      ps += x * x; pn += e * e;
+    }
+    if (pn <= 0) return 120;
+    return 10 * Math.log10(ps / pn);
+  }
+
+  var CURVES = {}, LEVELS = [];
+  (function () {
+    var L;
+    for (L = -66; L <= 0; L += 1.5) LEVELS.push(L);
+    ["mu", "a", "lin"].forEach(function (k) {
+      CURVES[k] = LEVELS.map(function (L) { return [L, snrAt(LAW[k], L)]; });
+    });
+  })();
+  function flatSpan(k) {
+    var best = -999, i, first = null, last = null;
+    CURVES[k].forEach(function (p) { best = Math.max(best, p[1]); });
+    for (i = 0; i < CURVES[k].length; i++) {
+      if (CURVES[k][i][1] >= best - 3) { if (first === null) first = CURVES[k][i][0]; last = CURVES[k][i][0]; }
+    }
+    return first === null ? 0 : last - first;
+  }
+
+  var st = { law: "mu", level: -30 };
+
+  var p1 = new AC.Plot(cv, { aspect: 2.5, xmin: -66, xmax: 0, ymin: -4, ymax: 54,
+    xlabel: "input level, dBFS", ylabel: "signal-to-noise, dB", pad: { l: 46, r: 14, t: 12, b: 32 } });
+  var p2 = new AC.Plot(cv2, { aspect: 3.4, xmin: 0, xmax: 127, ymin: 1, ymax: 9000,
+    ylog: true, xlabel: "magnitude code, 0 … 127", ylabel: "decoded level", pad: { l: 52, r: 14, t: 12, b: 32 } });
+
+  function drawCurves() {
+    p1.clear();
+    p1.axes({ x: [-60, -50, -40, -30, -20, -10, 0], xfmt: function (v) { return String(Math.round(v)); } });
+    p1.line(CURVES.lin, { color: AC.C.faint, width: 1.6 });
+    p1.line(CURVES.a, { color: AC.C.teal, width: 1.6 });
+    p1.line(CURVES.mu, { color: AC.C.gold, width: 2 });
+    var y = snrAt(LAW[st.law], st.level);
+    p1.dot(st.level, y, { color: AC.C.red, ring: true });
+    p1.vline(st.level, { color: AC.C.line, dash: [3, 4] });
+    p1.label(-63, 47, NAME[st.law] + " at " + st.level + " dBFS: " + y.toFixed(1) + " dB", { color: AC.C.soft });
+  }
+  function drawLevels() {
+    p2.clear();
+    p2.axes({ x: [0, 16, 32, 48, 64, 80, 96, 112, 127],
+      xfmt: function (v) { return String(Math.round(v)); },
+      yfmt: function (v) { return v >= 1000 ? (v / 1000) + "k" : String(v); } });
+    var lin = [], law = [], k, dec;
+    for (k = 0; k < 128; k++) {
+      lin.push([k, Math.max(k * 8159 / 128, 1)]);
+      if (st.law === "mu") dec = muDecode(k) * 8159;
+      else if (st.law === "a") dec = aDecode(k) * 4096 * (8159 / 4096);
+      else dec = Math.max(k * 8159 / 128, 1);
+      law.push([k, Math.max(dec, 1)]);
+    }
+    p2.line(lin, { color: AC.C.faint, width: 1.2, dash: [4, 4] });
+    p2.line(law, { color: AC.C.blue, width: 1.8 });
+    for (k = 16; k < 128; k += 16) p2.vline(k, { color: AC.C.line, dash: [2, 5] });
+    p2.note(p2.pad.l + 6, p2.pad.t + 4,
+      st.law === "lin" ? "one step, 128 times" : "eight segments, each step twice the last",
+      { color: AC.C.ghost });
+  }
+
+  var go1 = AC.autoDraw(p1, drawCurves), go2 = AC.autoDraw(p2, drawLevels);
+
+  function compute() {
+    var y = snrAt(LAW[st.law], st.level), lin = snrAt(LAW.lin, st.level);
+    var el = document.getElementById("g-snr");
+    if (el) el.textContent = y.toFixed(1) + " dB";
+    el = document.getElementById("g-lin");
+    if (el) el.textContent = lin.toFixed(1) + " dB";
+    el = document.getElementById("g-adv");
+    if (el) el.textContent = (y - lin >= 0 ? "+" : "") + (y - lin).toFixed(1) + " dB";
+    el = document.getElementById("g-flat");
+    if (el) el.textContent = flatSpan(st.law).toFixed(1) + " dB";
+    el = document.getElementById("g-state");
+    if (el) el.textContent = NAME[st.law] + " · " + st.level + " dBFS";
+  }
+  function update() { compute(); go1(); go2(); }
+  compute();
+
+  AC.chips(document.getElementById("g-law"), function (v) { st.law = v; update(); });
+  AC.slider(document.getElementById("g-lvl"), function (v) { st.level = v; update(); },
+    function (v) { return v + " dBFS"; });
+
+  var VOICE = null;
+  function voice() {
+    if (!VOICE) {
+      var s = A.src.speech(2.2, { sr: SR });
+      VOICE = A.lowpassFFT(s, SR, 3400);
+      D.normalize(VOICE, 1);
+    }
+    return VOICE;
+  }
+  function through(fn) {
+    var v = voice(), amp = Math.pow(10, st.level / 20), i;
+    var out = new Float64Array(v.length);
+    for (i = 0; i < v.length; i++) out[i] = fn(v[i] * amp) / amp;   // same playback gain for all three
+    return A.fadeEdges(out, SR, 15);
+  }
+  A.wire(document.getElementById("g-p0"), function () { return through(function (x) { return x; }); }, { sr: SR, gain: .8 });
+  A.wire(document.getElementById("g-p1"), function () { return through(LAW.lin); }, { sr: SR, gain: .8 });
+  A.wire(document.getElementById("g-p2"), function () { return through(LAW.mu); }, { sr: SR, gain: .8 });
+
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
