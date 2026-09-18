@@ -77,22 +77,33 @@ test("catalogue links stay in the same tab", () => {
   }
 });
 
+// The scripts a page actually loads, in document order. Matching on the raw
+// text would also match a page that merely *mentions* assets/audio.js inside a
+// <code> element, which several of them do.
+const scriptsOf = (f) =>
+  [...html[f].matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
+
 test("every page declares its chapter and mounts the shared chrome", () => {
   for (const [n, f] of PAGES) {
     assert.match(html[f], new RegExp(`<body data-chapter="${n}"`), `${f} must set data-chapter="${n}"`);
     assert.match(html[f], /<div id="topbar"><\/div>/, `${f} must mount the top bar`);
     assert.match(html[f], /<div class="pager" data-pager><\/div>/, `${f} must have the prev/next pager`);
-    for (const asset of ["assets/site.css", "assets/dsp.js", "assets/audio.js", "assets/site.js"]) {
-      assert.ok(html[f].includes(asset), `${f} must include ${asset}`);
+    assert.match(html[f], /<link rel="stylesheet" href="assets\/site\.css">/, `${f} must link assets/site.css`);
+    const loaded = scriptsOf(f);
+    for (const asset of ["assets/dsp.js", "assets/audio.js", "assets/site.js"]) {
+      assert.ok(loaded.includes(asset), `${f} must load ${asset}`);
     }
   }
 });
 
 test("the scripts load in an order where the helpers exist before the figures", () => {
   for (const [, f] of PAGES) {
-    const order = ["assets/dsp.js", "assets/audio.js", "assets/site.js"].map((a) => html[f].indexOf(a));
+    const loaded = scriptsOf(f);
+    const order = ["assets/dsp.js", "assets/audio.js", "assets/site.js"].map((a) => loaded.indexOf(a));
     assert.ok(order[0] < order[1] && order[1] < order[2],
-      `${f}: dsp.js, audio.js and site.js must load in that order`);
+      `${f}: dsp.js, audio.js and site.js must load in that order, got ${loaded.join(", ")}`);
+    assert.equal(loaded[loaded.length - 1], "/almanac-back.js",
+      `${f}: the back pill must be the last script on the page`);
   }
 });
 

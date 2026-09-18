@@ -117,9 +117,10 @@
         38.28 Hz apart at 44.1 kHz, against 689.06 Hz for the polyphase stage alone</span>
     </div>
 
-    <p>An eighteen-fold improvement in frequency resolution, bought with about a
-      thousand extra multiplications per granule, and without touching the filterbank
-      the other layers used. It also bought a problem. A polyphase filterbank of this
+    <p>An eighteen-fold improvement in frequency resolution, bought with a second
+      transform roughly an order of magnitude cheaper than the filterbank in front of
+      it, and without touching that filterbank at all — so the other two layers were
+      undisturbed. It also bought a problem. A polyphase filterbank of this
       kind is only <em>nearly</em> perfectly reconstructing: adjacent bands overlap
       heavily, so a tone sitting near a band boundary appears in two subbands at once,
       and the copy in the wrong subband is a mirror image, folded about the boundary by
@@ -163,15 +164,19 @@
     </table></div>
 
     <p>The coefficients collapse fast: the first butterfly turns through 31 degrees and
-      the last through a fifth of one. Nearly all the work is done by the first three,
-      which is worth knowing because it tells you how localised the aliasing is — it
-      lives within about three lines of each boundary, roughly 115 Hz at 44.1 kHz.</p>
+      the eighth through a fifth of one. That tells you how localised the aliasing is,
+      because each butterfly touches exactly one pair of lines — the correction is
+      confined to three or four lines either side of each boundary — 115 to 150 Hz at
+      44.1 kHz — and that it reaches no further into the spectrum than that.</p>
     <p>The figure below builds the whole chain and measures it. It designs a 512-tap
-      prototype, modulates it into subband filters, runs a sinusoid through the
+      prototype whose squared magnitude falls as a raised cosine across the band edge —
+      the power-complementary condition that makes a cosine-modulated filterbank cancel
+      its own aliasing — modulates it into subband filters, runs a sinusoid through the
       polyphase stage at 170 frequencies, takes the 18-point MDCT of the result, and
       reads off the magnitude at one line you choose. What comes back is the
-      <em>composite</em> frequency response of a single MP3 spectral line — the thing
-      the quantiser is actually operating on.</p>
+      <em>composite</em> frequency response of a single MP3 spectral line: the thing
+      the quantiser is actually operating on, main lobe, skirts, alias image and
+      all.</p>
 
     <figure class="figure" id="fig-fb">
       <div class="figure-bar">
@@ -209,15 +214,18 @@
       </div>
       <figcaption class="figure-cap"><b>Fig 7.1</b> — the measured magnitude response of
         one of MP3's 576 spectral lines, computed by pushing a sinusoid through a
-        512-tap polyphase analysis and an 18-point MDCT and reading one coefficient.
-        Drag <b>butterflies applied</b> down to zero: a second lobe appears in the
-        neighbouring subband, mirrored about the band boundary. That is the polyphase
-        stage's aliasing, and at full quantiser resolution it would cancel on synthesis —
-        but it will not survive being quantised, so Layer III removes most of it first.
-        Watch the readouts: eight butterflies buy most of the suppression, and the
-        first three buy most of that. The prototype filter here is a Blackman–Harris
-        windowed sinc of the standard's length and cutoff rather than the standard's own
-        table, so treat the absolute numbers as representative, not normative.</figcaption>
+        512-tap polyphase analysis and an 18-point MDCT and reading one coefficient
+        back. At the default setting — subband 8, line 1 — drag <b>butterflies
+        applied</b> from 8 down to 1 and a second lobe springs up in the subband below,
+        mirrored about the band boundary: the alias image, some 14 dB louder than
+        the butterflies leave it. Note <em>where</em> it springs up. Line 1 is paired by
+        butterfly number 1, so nothing happens until you cross that index; line 0 needs
+        butterfly 0, line 5 needs butterfly 5, and any line more than eight from a
+        boundary is never touched at all. Drag the <b>MDCT line</b> to 9 and the image
+        disappears entirely — the middle of a subband has no neighbour to alias with.
+        The prototype filter is designed here rather than copied from the standard's
+        table, so read the stopband depth as representative rather than
+        normative.</figcaption>
     </figure>
 
     <p>Notice the width of that main lobe. The nominal line spacing is 38.28 Hz, but the
@@ -320,8 +328,8 @@
       information are a fixed 36 bytes for a stereo MPEG-1 frame whatever the bitrate,
       so at 32 kbit/s more than a third of the file is bookkeeping before a single
       spectral coefficient is written. MPEG-2's low-sampling-frequency extension exists
-      largely to fix exactly that: it halves the frame to 576 samples and halves the
-      side information too.</p>
+      aimed squarely at that: it halves the frame to 576 samples and cuts the side
+      information from 32 bytes to 17 for a stereo stream.</p>
 
     <figure class="figure" id="fig-hdr">
       <div class="figure-bar">
@@ -369,8 +377,8 @@
         <div class="field">
           <div class="flab"><span>Channel mode</span></div>
           <div class="chips" id="h2-mode">
-            <button data-v="0">Stereo</button>
-            <button data-v="1" class="on">Joint</button>
+            <button data-v="0" class="on">Stereo</button>
+            <button data-v="1">Joint</button>
             <button data-v="3">Mono</button>
           </div>
         </div>
@@ -496,10 +504,10 @@
       through the gaps between them. An MP3 file is two interleaved streams, not a
       sequence of packets. Cut one at a frame boundary and the first frames of the
       result will refer to bytes that are no longer there; a well-behaved decoder emits
-      silence until the pointer chain becomes consistent again. This is also why
-      RTP needed <a href="12-choosing.html">its own loss-tolerant payload format</a> for
-      MP3, and why frame-accurate seeking in a VBR file requires either an index or a
-      scan.</p>
+      silence until the pointer chain becomes consistent again. It is also why
+      the IETF had to define a loss-tolerant RTP payload format specifically for MP3,
+      and why frame-accurate seeking in a variable-bitrate file needs either an index
+      or a scan of the whole thing.</p>
 
     <figure class="figure" id="fig-res">
       <div class="figure-bar">
@@ -726,7 +734,7 @@
           <div class="chips">
             <button class="btn play" id="f5-orig">Original</button>
             <button class="btn play" id="f5-msb">Mid/side</button>
-            <button class="btn play" id="f5-int">Intensity</button>
+            <button class="btn play" id="f5-play-int">Intensity</button>
           </div>
         </div>
       </div>
@@ -762,7 +770,7 @@
       <div class="def">
         <dt>"MP3 cuts everything above 16 kHz"</dt>
         <dd>The format does not. A Layer III bitstream can carry non-zero coefficients up
-          to line 575, which is 22.02 kHz at 44.1 kHz sampling. The lowpass is an
+          right up to the Nyquist limit — 22.05 kHz at 44.1 kHz. The lowpass is an
           <em>encoder</em> policy: spending bits above 16 kHz at 128 kbit/s is usually a
           bad trade, so encoders zero those lines and let the zero-run coding make them
           nearly free. It appears in the file as a run of zeros, not as a field. Raise
@@ -837,7 +845,9 @@
       place for them. The first is the <strong>Xing/Info frame</strong>: a complete but
       silent first frame carrying the total frame count, the byte count, a 100-entry
       seek table and a quality figure, written as <span class="mono">Xing</span> for
-      variable-rate files and <span class="mono">Info</span> for constant-rate ones.
+      variable-rate files and <span class="mono">Info</span> for constant-rate ones
+      (containers, tags and the rest of that apparatus are
+      <a href="12-choosing.html">Chapter 12</a>'s subject).
       Without it a player cannot report the duration of a VBR file without scanning it;
       Fraunhofer's equivalent is called VBRI. The second lives in the same frame: LAME's
       extension fields recording the <strong>encoder delay and padding</strong>. An MP3
@@ -902,14 +912,30 @@
     }
   })();
 
-  // A 512-tap prototype lowpass with its cutoff half a subband wide, which is
-  // the geometry the standard's own table has. Blackman-Harris rather than the
-  // standard's coefficients, so the stopband is representative, not normative.
+  // A 512-tap prototype of the kind a cosine-modulated filterbank needs: its
+  // POWER response falls as a raised cosine across the band edge, so adjacent
+  // bands cross at -3 dB and their squared magnitudes sum to one. That is the
+  // property that makes the aliasing cancel on synthesis — and the property the
+  // standard's butterfly coefficients assume. Designed here rather than copied
+  // from the standard's table, so the stopband depth is representative, not
+  // normative; the crossover geometry is the same.
   var proto = (function () {
-    var w = D.WIN.blackmanHarris(TAPS), h = new Float64Array(TAPS), i;
+    var M = 4096, re = new Float64Array(M), im = new Float64Array(M), i;
+    var wc = Math.PI / 64, dd = wc * 0.8;              // cutoff, transition half-width
+    for (i = 0; i <= M / 2; i++) {
+      var om = Math.PI * i / (M / 2);
+      var mag = om <= wc - dd ? 1
+        : om >= wc + dd ? 0
+        : Math.cos(Math.PI / 4 * (1 + (om - wc) / dd));
+      re[i] = mag;
+      if (i > 0 && i < M / 2) re[M - i] = mag;
+    }
+    D.fft(re, im, true);                               // -> a real, even impulse response
+    var w = D.WIN.blackman(TAPS), h = new Float64Array(TAPS);
     for (i = 0; i < TAPS; i++) {
-      var t = i - (TAPS - 1) / 2;
-      h[i] = (Math.abs(t) < 1e-9 ? 1 / 64 : Math.sin(Math.PI * t / 64) / (Math.PI * t)) * w[i];
+      var t = i - (TAPS - 1) / 2;                      // half-integer: split the difference
+      var i0 = ((Math.floor(t) % M) + M) % M, i1 = ((Math.ceil(t) % M) + M) % M;
+      h[i] = (re[i0] + re[i1]) / 2 * w[i];
     }
     return h;
   })();
@@ -1094,7 +1120,7 @@
   var VNAME = { 3: "MPEG-1", 2: "MPEG-2", 0: "MPEG-2.5" };
   var MNAME = ["stereo", "joint stereo", "dual channel", "mono"];
 
-  var st = { ver: 3, br: 9, sr: 0, mode: 1, pad: 0, crc: 0 };
+  var st = { ver: 3, br: 9, sr: 0, mode: 0, pad: 0, crc: 0 };
 
   function samplesPerFrame() { return st.ver === 3 ? 1152 : 576; }
   function bitrate() { return (st.ver === 3 ? BR1 : BR2)[st.br] * 1000; }
@@ -1186,8 +1212,10 @@
     document.getElementById("h2-main").textContent = main + " bytes";
     document.getElementById("h2-over").textContent =
       L > 0 ? ((4 + crc + si) / L * 100).toFixed(1) + "%" : "—";
-    document.getElementById("h2-state").textContent =
-      hex().replace(/(..)/g, "$1 ").trim();
+    var cap = document.getElementById("h2-state");
+    cap.textContent = hex().replace(/(..)/g, "$1 ").trim();
+    cap.title = VNAME[st.ver] + " Layer III, " + MNAME[st.mode] +
+      ", " + rate() + " Hz, " + (st.crc ? "CRC" : "no CRC");
     renderFields();
     var el = document.getElementById("h2-hex");
     if (el && document.activeElement !== el) el.value = hex();
@@ -1249,9 +1277,6 @@
     redraw();
   });
 
-  // Keep the readouts honest about what the header actually says.
-  var cap = document.getElementById("h2-state");
-  if (cap) cap.title = VNAME[st.ver] + " Layer III, " + MNAME[st.mode];
   redraw();
 })();
 
@@ -1415,7 +1440,7 @@
     for (i = 0; i < x.length; i++) {
       acc += x[i] * x[i];
       if (i >= w) acc -= x[i - w] * x[i - w];
-      out[i] = Math.sqrt(acc / Math.min(i + 1, w));
+      out[i] = Math.sqrt(Math.max(acc, 0) / Math.min(i + 1, w));
     }
     return out;
   }
@@ -1647,6 +1672,7 @@
     function fOf(bin) { return Math.max(p.xmin, bin / half * ny); }
     var pb = [], pa = [];
     for (i = 0; i < r.nb; i++) {
+      if (r.edges[i + 1] <= r.edges[i]) continue;      // degenerate band, nothing to plot
       var f0 = fOf(r.edges[i]), f1 = fOf(r.edges[i + 1]);
       pb.push([f0, r.before[i]]); pb.push([f1, r.before[i]]);
       pa.push([f0, r.after[i]]); pa.push([f1, r.after[i]]);
@@ -1704,7 +1730,7 @@
     }
     return { l: l, r: r };
   });
-  wireStereo(document.getElementById("f5-int"), function () {
+  wireStereo(document.getElementById("f5-play-int"), function () {
     if (!st.out) run(st.cut);
     return st.out;
   });
