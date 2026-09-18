@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · AAC and the second generation — Throwing Sound Away</title>
+<meta name="description" content="What MP3 could not change without breaking itself: a clean 1024-line MDCT, switchable window shapes, temporal noise shaping, noise substitution, spectral band replication and parametric stereo — each one built and run here.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="08">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 08</div>
+  <div class="num">08</div>
+  <h2>MP3 had to stay compatible with 1990. AAC did not.</h2>
+  <p class="lead">Every awkwardness in the previous chapter — the hybrid
+    filterbank, the 576 lines, the granule, the side-information layout — exists
+    because Layer III had to be a modification of Layer II. Advanced Audio
+    Coding began from a blank page in 1994 and shipped in 1997, and almost every
+    difference between it and MP3 is a decision that MP3 was not allowed to
+    make. The interesting part is not the clean transform. It is the four tools
+    that come after it, each of which stops coding the signal and starts
+    describing it.</p>
+  <div class="meta">
+    <div><div class="k">Standardised</div><div class="v">ISO/IEC 13818-7, April 1997</div></div>
+    <div><div class="k">Transform</div><div class="v">1024 lines, 2048-sample window</div></div>
+    <div><div class="k">Tools</div><div class="v">TNS · PNS · SBR · PS</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#clean">Starting again</a>
+    <a href="#window">Two window shapes</a>
+    <a href="#tns">Temporal noise shaping</a>
+    <a href="#describe">Description, not coding</a>
+    <a href="#noise">Bands not worth coding</a>
+    <a href="#stereo">Two channels from one</a>
+    <a href="#frame">The frame, byte by byte</a>
+    <a href="#wrong">What people get wrong</a>
+    <a href="#after">What AAC became</a>
+  </nav>
+  <div>
+
+  <section id="clean" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">Starting again</div>
+    <h3>The first thing AAC threw away was the polyphase filterbank.</h3>
+    <p style="margin-top:18px">MP3's analysis chain is two transforms stacked:
+      a 32-band polyphase quadrature filterbank inherited wholesale from Layer
+      I, then an MDCT of 18 (or 6) points inside each of those 32 bands. The
+      arrangement works, and <a href="7-mp3.html">chapter 07</a> takes it apart,
+      but it costs three things. The PQF's bands overlap, so a pure tone leaks
+      into its neighbour and must be coded twice. The two stages together are
+      more arithmetic than one big transform. And the resolution is fixed at
+      576 lines per granule — about 38 Hz per line at 44.1 kHz, which is coarse
+      where the ear is finest.</p>
+    <p>AAC deletes the first stage. There is one transform: a modified discrete
+      cosine transform over a 2048-sample window, hopping 1024 samples, giving
+      1024 spectral lines per frame. The window spans 46.4 ms at 44.1 kHz and
+      42.7 ms at 48 kHz; each line is about 21.5 Hz wide at 44.1 kHz, nearly
+      twice MP3's resolution. When a transient arrives, the encoder switches to
+      a sequence of eight short windows of 256 samples, producing eight sets of
+      128 lines — still 1024 numbers, but sampled eight times as often in time
+      and eight times as coarsely in frequency. Two transition sequences,
+      <span class="mono">LONG_START</span> and <span class="mono">LONG_STOP</span>,
+      carry the overlap across the change so that the aliasing still cancels.</p>
+
+    <div class="eq">
+      <i>N</i><sub>long</sub><span class="op">=</span><span class="num">1024</span>
+      <span class="op">·</span>
+      <i>T</i><sub>window</sub><span class="op">=</span>
+      <span class="frac"><span><span class="num">2048</span></span><span><span class="num">44 100</span></span></span>
+      <span class="op">=</span><span class="num">46.4</span>&nbsp;ms
+      <span class="op">·</span>
+      <span class="frac"><span>Δ<i>f</i></span><span></span></span><span class="op">=</span>
+      <span class="frac"><span><i>f</i><sub>s</sub></span><span><span class="num">2</span><i>N</i></span></span>
+      <span class="op">=</span><span class="num">21.5</span>&nbsp;Hz
+      <span class="note2">against MP3's 576 lines and 38.3 Hz; the eight-short sequence trades
+        that back for 172 Hz lines every 5.8 ms</span>
+    </div>
+
+    <p>The rest of the 1997 standard is a box of tools, and this is where the
+      chapter's argument lives. MPEG-2 AAC defined three profiles — Main, Low
+      Complexity and Scalable Sampling Rate — differing in which tools a decoder
+      must implement. MPEG-4 recast them as numbered <em>object types</em> and
+      kept adding. Sample rates run from 8 to 96 kHz and channel counts to 48,
+      neither of which MP3 could reach. The contributors were Fraunhofer IIS,
+      AT&amp;T, Dolby, Sony and Nokia; the format was declared an international
+      standard in April 1997, and MPEG's own verification testing reported
+      quality described as <em>indistinguishable</em> under the ITU-R scale for
+      five full-bandwidth channels at 320 kbit/s.</p>
+
+    <div class="scroller"><table>
+      <caption>The AAC family, as MPEG-4 Audio Object Types</caption>
+      <thead><tr><th class="num">AOT</th><th>Name</th><th class="num">From</th><th>What it adds</th><th>Where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td><strong>AAC Main</strong></td><td class="num">1997</td><td>Backward-adaptive prediction: a bank of second-order LMS lattice predictors, one per spectral line, tracking each line from frame to frame</td><td>Almost nowhere. The predictors cost memory and desynchronise after a packet loss.</td></tr>
+        <tr><td class="num">2</td><td><strong>AAC LC</strong></td><td class="num">1997</td><td>Everything except prediction and the gain-control tool. The default.</td><td>Effectively all AAC in the world: <code>.m4a</code>, broadcast, streaming ladders.</td></tr>
+        <tr><td class="num">3</td><td>AAC SSR</td><td class="num">1997</td><td>A four-band polyphase front end with a gain-control tool, so a decoder can take a quarter of the bandwidth cheaply</td><td>Essentially unused.</td></tr>
+        <tr><td class="num">4</td><td>AAC LTP</td><td class="num">1999</td><td>Long-term prediction: predict this frame from a pitch-period-delayed copy of the last reconstruction. Cheaper than Main, same target.</td><td>Rare.</td></tr>
+        <tr><td class="num">5</td><td><strong>SBR</strong></td><td class="num">2003</td><td>Spectral band replication over an LC core — <em>HE-AAC</em>, once marketed as aacPlus</td><td>DAB+, satellite radio, low-rate streaming.</td></tr>
+        <tr><td class="num">23</td><td>ER AAC LD</td><td class="num">2000</td><td>A 512- or 480-line transform for conversation; about 20 ms of algorithmic delay</td><td>Video conferencing, telepresence.</td></tr>
+        <tr><td class="num">29</td><td><strong>PS</strong></td><td class="num">2004</td><td>Parametric stereo on top of SBR — <em>HE-AAC v2</em></td><td>DAB+ stereo below about 48 kbit/s.</td></tr>
+        <tr><td class="num">39</td><td>ER AAC ELD</td><td class="num">2008</td><td>Low-delay SBR filterbanks folded into LD; about 15 ms</td><td>Apple's FaceTime audio, conferencing hardware.</td></tr>
+        <tr><td class="num">42</td><td><strong>USAC</strong></td><td class="num">2012</td><td>An ACELP speech path beside the transform path, switched per frame — shipped as <em>xHE-AAC</em></td><td>Adaptive streaming at 12–32 kbit/s.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note sig">
+      <span class="tag tag-sig">A numbering trap</span>
+      <p>The two-bit <span class="mono">profile</span> field in an ADTS frame
+        header is the object type <strong>minus one</strong>: <span class="mono">01</span>
+        means AOT 2, Low Complexity. Two bits can only name four object types,
+        so ADTS has no way to say <em>SBR</em>. An HE-AAC stream in ADTS is
+        therefore labelled as plain Low Complexity, and the SBR payload rides
+        inside the raw data block as an extension element that an LC-only
+        decoder is required to skip. That is not a bug — it is precisely the
+        mechanism that makes HE-AAC backward compatible, and it is also why an
+        old decoder plays an HE-AAC stream as a dull, band-limited version of
+        itself rather than refusing it.</p>
+    </div>
+  </section>
+
+  <section id="window" class="section">
+    <div class="kicker k-heat">Interactive · Fig. 8.1</div>
+    <h3>One transform, two window shapes, chosen block by block.</h3>
+    <p style="margin-top:18px">A lapped transform cannot use any window it
+      likes. For the time-domain aliasing to cancel on overlap-add — the
+      property <a href="4-transform.html">chapter 04</a> demonstrates
+      numerically — the window must satisfy the Princen–Bradley condition: the
+      squares of the two halves that overlap must sum to one, everywhere.</p>
+
+    <div class="eq">
+      <i>w</i>[<i>n</i>]<sup>2</sup><span class="op">+</span>
+      <i>w</i>[<i>n</i><span class="op">+</span><i>N</i>]<sup>2</sup>
+      <span class="op">=</span><span class="num">1</span>
+      <span class="op">,</span>&nbsp;<span class="num">0</span>
+      <span class="op">≤</span><i>n</i><span class="op">&lt;</span><i>N</i>
+      <span class="note2">the Princen–Bradley condition. The sine window satisfies it by a
+        trigonometric identity; the Hann window, which is what an FFT usually wants, does not</span>
+    </div>
+
+    <p>That leaves a family, not a single answer, and AAC ships two members of
+      it. The sine window is MP3's, defined directly as
+      <span class="mono">sin(π(n+½)/2N)</span>. The Kaiser–Bessel-derived
+      window is built by cumulatively summing a Kaiser window of parameter
+      <i>α</i> and taking the square root, which forces the condition to hold by
+      construction; AAC uses <i>α</i>&nbsp;=&nbsp;4 for the long window and
+      <i>α</i>&nbsp;=&nbsp;6 for the short ones.</p>
+
+    <div class="eq">
+      <i>w</i><sub>KBD</sub>[<i>n</i>]<span class="op">=</span>
+      <span>√</span><span class="rad">
+        <span class="frac"><span><span class="bigop">∑</span><span class="limits"><span><i>n</i></span><span><i>i</i>=0</span></span><i>W</i>[<i>i</i>]</span><span><span class="bigop">∑</span><span class="limits"><span><i>M</i></span><span><i>i</i>=0</span></span><i>W</i>[<i>i</i>]</span></span></span>
+      <span class="op">,</span>&nbsp;
+      <i>W</i>[<i>i</i>]<span class="op">=</span><i>I</i><sub>0</sub>
+      <span class="op">(</span><span class="fn">π</span><i>α</i>
+      <span>√</span><span class="rad"><span class="num">1</span><span class="op">−</span>(<span class="num">2</span><i>i</i><span class="op">/</span><i>M</i><span class="op">−</span><span class="num">1</span>)<sup>2</sup></span><span class="op">)</span>
+      <span class="note2">with <i>M</i> = <i>N</i>, mirrored into the second half;
+        <i>I</i><sub>0</sub> is the modified Bessel function of the first kind</span>
+    </div>
+
+    <p>The choice is a real trade and the figure measures it rather than
+      asserting it. Close to a spectral peak the sine window is sharper: one bin
+      away it is about 2.6 dB further down than KBD at <i>α</i>&nbsp;=&nbsp;4.
+      Far from the peak the ordering reverses, and not slightly — eight bins out
+      and beyond, KBD at <i>α</i>&nbsp;=&nbsp;4 rejects about 28 dB more than the
+      sine window does, and at <i>α</i>&nbsp;=&nbsp;6 about 40 dB more. Eight
+      bins is 188 Hz on a long block at 48 kHz, which is more than a critical
+      band wide below about 500 Hz. Leakage that lands that far away lands in a
+      band whose masking threshold has nothing to do with the tone that
+      produced it, so the encoder must either code the leak or accept audible
+      noise. (<a href="/spectrum-analyzer/">a 1996 spectrum-analyser
+      codebase</a> elsewhere in this almanac takes the leakage arithmetic apart
+      in C.) The window shape is signalled per block by a single bit, and
+      because only the overlapping halves must match, the left half of a block
+      inherits the shape of the block before it — so the encoder can change its
+      mind every 1024 samples without a discontinuity.</p>
+
+    <div class="note ok">
+      <span class="tag tag-ok">The grid the model actually works on</span>
+      <p>Neither the 1024 lines nor the 128 are what the psychoacoustic model
+        talks to. Both are grouped into <strong>scalefactor bands</strong> whose
+        widths approximate the critical bands of
+        <a href="2-ear.html">chapter 02</a>: 49 of them on a long block at 44.1
+        and 48 kHz, 14 on a short one, against MP3's 21 and 12. Each band gets
+        one scalefactor, one Huffman codebook selection and one stereo decision,
+        so the band grid is the resolution at which every perceptual judgement
+        in the encoder is actually made — and having more than twice as many of
+        them is, quietly, one of the larger reasons AAC codes better than MP3 at
+        the same rate.</p>
+    </div>
+
+    <figure class="figure" id="fig-win">
+      <div class="figure-bar">
+        <span class="fno">FIG. 8.1</span>
+        <span class="ftitle">Sine against Kaiser–Bessel-derived</span>
+        <span class="fstate" id="w-state">α = 4 · 2048-sample window</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="w-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>sine window</span>
+          <span class="l-heat"><i></i>KBD window, parameter α</span>
+          <span class="l-ghost"><i class="dash"></i>Hann — better sidelobes, fails Princen–Bradley</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Sine · 1 bin</span><span class="v" id="w-s1">—</span></div>
+          <div class="ro"><span class="k">KBD · 1 bin</span><span class="v" id="w-k1">—</span></div>
+          <div class="ro sig"><span class="k">Sine · beyond 8 bins</span><span class="v" id="w-s8">—</span></div>
+          <div class="ro ok"><span class="k">KBD · beyond 8 bins</span><span class="v" id="w-k8">—</span></div>
+          <div class="ro ghost"><span class="k">Princen–Bradley error</span><span class="v" id="w-pb">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>KBD parameter α</span><span class="val" id="w-alab">4.0</span></div>
+          <input type="range" id="w-alpha" min="0" max="12" step="0.25" value="4" data-out="w-alab" aria-label="KBD window parameter alpha">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Window length</span></div>
+          <div class="chips" id="w-len">
+            <button data-v="2048" class="on">2048 (long)</button>
+            <button data-v="256">256 (short)</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Show</span></div>
+          <div class="chips" id="w-view">
+            <button data-v="resp" class="on">Response</button>
+            <button data-v="shape">Window shape</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 8.1</b> — the magnitude response of
+        each window, computed here by zero-padding it sixteen-fold and
+        transforming it; the x axis is distance from the spectral peak in bins.
+        Drag <b>α</b>. Near the peak the sine window always wins; past about
+        four bins KBD pulls ahead, with a clear optimum around α = 5–6 and a
+        collapse either side of it — at α = 0 KBD degenerates and at α = 12 the
+        main lobe has fattened so much that the near sidelobes are worse than
+        sine's. The <b>Princen–Bradley error</b> readout evaluates
+        max |<i>w</i>[n]² + <i>w</i>[n+N]² − 1| for whichever window you are
+        looking at: it stays at the 10<sup>−15</sup> level for sine and for every
+        α, and jumps to 0.5 for Hann, which is why no lapped transform may use
+        a Hann window however good its sidelobes look.</figcaption>
+    </figure>
+  </section>
+
+  <section id="tns" class="section">
+    <div class="kicker k-danger">Interactive · Fig. 8.2</div>
+    <h3>Linear prediction along the frequency axis is noise shaping along the time axis.</h3>
+    <p style="margin-top:18px">Temporal noise shaping is the cleverest thing in
+      the standard and its name reads backwards until you see the duality. A
+      transform coefficient describes a whole 46 ms window, so quantisation
+      error added to a coefficient is spread evenly over those 46 ms. If the
+      window contains a castanet strike there is nothing to mask that error
+      during the silence before the attack, and you hear pre-echo — the artefact
+      <a href="11-artifacts.html">chapter 11</a> provokes on demand. Block
+      switching answers this by shortening the window. TNS answers it without
+      shortening anything.</p>
+    <p>Take the 1024 coefficients of one frame and treat them as a
+      <em>signal indexed by frequency</em>. Fit a linear predictor to that
+      sequence exactly as <a href="10-lossless.html">chapter 10</a> fits one to
+      a waveform, and filter the coefficients with it. Quantise the residual
+      instead of the coefficients. The decoder runs the inverse, all-pole filter
+      to recover them.</p>
+
+    <div class="eq left">
+      <i>r</i>[<i>k</i>]<span class="op">=</span><i>X</i>[<i>k</i>]<span class="op">+</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>p</i></span><span><i>i</i>=1</span></span>
+      <i>a<sub>i</sub></i>&thinsp;<i>X</i>[<i>k</i><span class="op">−</span><i>i</i>]
+      <span class="op">⟶</span>
+      <span class="fn">Q</span>(·)
+      <span class="op">⟶</span>
+      <i>X̂</i>[<i>k</i>]<span class="op">=</span><i>r̂</i>[<i>k</i>]<span class="op">−</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>p</i></span><span><i>i</i>=1</span></span>
+      <i>a<sub>i</sub></i>&thinsp;<i>X̂</i>[<i>k</i><span class="op">−</span><i>i</i>]
+      <span class="note2">analysis and synthesis run along <i>k</i>, the frequency index,
+        not along time. The coefficients <i>a<sub>i</sub></i> come from Levinson–Durbin
+        on the autocorrelation of the coefficient sequence</span>
+    </div>
+
+    <p>Quantisation error is roughly white in whatever domain you quantise, so
+      the error added to <i>r</i> is flat across frequency. The decoder then
+      pushes it through 1/<i>A</i>(<i>z</i>), which multiplies it by a
+      frequency-dependent gain. And because the axis is frequency, a gain that
+      varies along frequency is a gain that varies along <em>time within the
+      block</em> — the two are Fourier duals. The all-pole filter fitted to the
+      spectrum is the temporal envelope of the block. Filter the noise with it
+      and the noise acquires the block's own temporal envelope: loud where the
+      castanet is, and tens of decibels quieter in the silence before it.</p>
+
+    <blockquote class="pullquote">Block switching moves the noise by making the
+      window shorter. Temporal noise shaping leaves the window alone and moves
+      the noise inside it.
+      <span class="who">The temporal noise shaping bargain</span></blockquote>
+
+    <p>The prediction gain is the second dividend. The figure's fit to a single
+      castanet block reaches 2 dB at order 1 and about 25 dB by order 8; a
+      residual carrying 25 dB less energy than the coefficients it came from
+      needs fewer bits to reach the same accuracy, so TNS pays for itself on
+      exactly the material that needs it. The figure measures both effects on one block and then on a whole
+      excerpt you can listen to.</p>
+
+    <div class="note danger">
+      <span class="tag tag-danger">What the next three figures are</span>
+      <p>They are honest miniatures, not AAC. Figures 8.2, 8.3 and 8.4
+        implement temporal noise shaping, spectral band replication and noise
+        substitution as the standard describes them — a real LPC fit along
+        frequency, a real transposition with a real transmitted envelope, a real
+        flatness-gated substitution — but they run on a simplified transform
+        with a uniform quantiser and no entropy coder, and SBR proper works in a
+        64-band complex filterbank rather than on MDCT lines. The mechanisms and
+        their artefacts are genuine. The absolute bitrates are not comparable
+        with a real encoder's.</p>
+    </div>
+
+    <figure class="figure" id="fig-tns">
+      <div class="figure-bar">
+        <span class="fno">FIG. 8.2</span>
+        <span class="ftitle">Where the quantisation noise lands inside one block</span>
+        <span class="fstate" id="t-state">order 8 · 1024 lines</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="t-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the signal in the block</span>
+          <span class="l-danger"><i></i>quantisation noise, TNS off</span>
+          <span class="l-heat"><i></i>quantisation noise, TNS on</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Prediction gain</span><span class="v" id="t-gain">—</span></div>
+          <div class="ro bad"><span class="k">Noise before the attack · off</span><span class="v" id="t-off">—</span></div>
+          <div class="ro ok"><span class="k">… with TNS on</span><span class="v" id="t-on">—</span></div>
+          <div class="ro ghost"><span class="k">Total noise, off vs on</span><span class="v" id="t-tot">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Filter order <i>p</i></span><span class="val" id="t-olab">8</span></div>
+          <input type="range" id="t-order" min="1" max="20" step="1" value="8" data-out="t-olab" aria-label="TNS filter order">
+        </div>
+        <div class="field grow" style="min-width:170px">
+          <div class="flab"><span>Quantiser fidelity</span><span class="val" id="t-slab">14 dB</span></div>
+          <input type="range" id="t-snr" min="4" max="30" step="1" value="14" data-out="t-slab" aria-label="Quantiser signal to noise ratio in decibels">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Transform size</span></div>
+          <div class="chips" id="t-n">
+            <button data-v="256">256 lines</button>
+            <button data-v="1024" class="on">1024 lines</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen · castanets</span></div>
+          <div class="chips">
+            <button class="btn play" id="t-orig">Original</button>
+            <button class="btn play" id="t-poff">TNS off</button>
+            <button class="btn play" id="t-pon">TNS on</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 8.2</b> — one MDCT block containing a
+        single castanet strike. The blue curve is the windowed signal's energy
+        against time within the block; the red and gold curves are the
+        <em>measured</em> quantisation-noise envelopes, obtained by quantising,
+        reconstructing and inverse-transforming the error itself. Both
+        quantisers are given the same fidelity, and the total noise they deposit
+        stays within about 3 dB either way — read the last box — but at the
+        defaults TNS puts <b>13 dB</b> less of it into the silence before the
+        attack, and at 256 lines with a longer filter more than 30 dB less. Drag
+        the order down to 1 and the shaping collapses to nothing; push the
+        transform to 1024 lines and the prediction gain rises from about 20 dB
+        to about 25, because a longer block gives the frequency-axis predictor
+        more to work with. That is the point worth
+        keeping: TNS works best exactly where the block is longest, which is
+        exactly where pre-echo is worst. Then listen, on headphones: the noise
+        before each strike is the thing to attend to, not the strike.</figcaption>
+    </figure>
+
+    <p>The bitstream syntax is modest. A long window may carry up to three TNS
+      filters covering different regions of the spectrum; a short window carries
+      at most one. The order is capped at 12 for Low Complexity and 20 for Main
+      and LTP, and at 7 inside a short window. Each filter carries a
+      <span class="mono">direction</span> bit, because the filter may be run up
+      or down the spectrum and the choice decides which end of the block the
+      noise is pushed towards. Coefficients are sent as quantised reflection
+      coefficients — three or four bits each — so a complete TNS filter is
+      perhaps fifty bits, against the thousands that a short-block sequence
+      costs in extra side information. TNS is particularly effective on speech,
+      where the glottal pulse train produces a sharp temporal structure inside
+      every block and block switching would fire constantly.</p>
+  </section>
+
+  <section id="describe" class="section">
+    <div class="kicker k-ok">Interactive · Fig. 8.3</div>
+    <h3>Below about 64 kbit/s the top octaves stop being coded and start being described.</h3>
+    <p style="margin-top:18px">Run the arithmetic of
+      <a href="5-quantize.html">chapter 05</a> at 48 kbit/s for a stereo pair and
+      the problem is plain. A critically sampled transform produces
+      exactly as many coefficients per second as there are samples, so a 44.1 kHz
+      stereo pair yields 88 200 spectral lines a second and half of them lie
+      above 11 kHz. Coding those at one bit each — barely enough for a sign —
+      would cost 44 kbit/s, nearly the whole budget, and they are the lines the
+      ear cares least about individually. Every low-rate codec before 2003 dealt
+      with this by lowpass filtering: it simply threw the top away, which is why
+      a 64 kbit/s MP3 sounds as though a blanket has been thrown over it.</p>
+    <p>Spectral band replication, contributed by Coding Technologies and
+      standardised into MPEG-4 in 2003, takes a different view. The high band is
+      not independent of the low band: a cymbal's 12 kHz content and its 6 kHz
+      content are the same physical event, and their <em>fine structure</em> is
+      similar even though their levels are not. So do not code the high band.
+      Copy it up from the low band — which the core decoder has already
+      reconstructed, for free — and then send just enough side information to
+      make its envelope right.</p>
+
+    <div class="eq left">
+      <i>X</i><sub>hi</sub>[<i>k</i>]<span class="op">=</span>
+      <i>g<sub>b</sub></i><span class="op">·</span>
+      <i>X</i><sub>lo</sub>[<i>k</i><sub>0</sub><span class="op">+</span>((<i>k</i><span class="op">−</span><i>k<sub>c</sub></i>)&thinsp;<span class="fn">mod</span>&thinsp;<i>W</i>)]
+      <span class="op">,</span>&nbsp;
+      <i>g<sub>b</sub></i><span class="op">=</span>
+      <span>√</span><span class="rad"><span class="frac"><span><i>E</i><sub>target,<i>b</i></sub></span><span><i>E</i><sub>patch,<i>b</i></sub></span></span></span>
+      <span class="note2">a patch of width <i>W</i> taken from below the crossover
+        <i>k<sub>c</sub></i> and repeated upwards, then scaled band by band so its
+        energy matches the envelope the encoder transmitted</span>
+    </div>
+
+    <p>That is the whole idea, and the payload is startlingly small: an energy
+      per band per frame, delta-coded in frequency or in time, plus a noise
+      floor and a handful of flags for added sinusoids. In the figure below the
+      envelope data comes out at about three kilobits a second for eight bands,
+      which is in the range published for real HE-AAC encoders. For that you get
+      the top octave and a half of a stereo programme.</p>
+    <blockquote class="pullquote">At 24 kbit/s the decoder is not reproducing
+      the recording. It is building something intended to be mistaken for it —
+      and the instructions for the top two octaves fit in three kilobits a
+      second.
+      <span class="who">What spectral band replication actually claims</span></blockquote>
+
+    <p>The standard's machinery is heavier than the arithmetic suggests, and
+      for a good reason. SBR does not work on MDCT coefficients: it works in a
+      64-band complex-exponential quadrature mirror filterbank, which is
+      oversampled rather than critically sampled, so transposing a patch upwards
+      does not drag an aliasing image with it. The system is <em>dual-rate</em>:
+      the AAC core runs at half the output sample rate and produces, say, a
+      24 kHz signal, and the SBR stage runs at the full 48 kHz and fills in the
+      top. That is why an HE-AAC decoder has roughly twice the arithmetic of an
+      LC one, and why a core-only decoder that ignores the SBR extension plays
+      the stream at half rate and sounds dull rather than broken.</p>
+
+    <figure class="figure" id="fig-sbr">
+      <div class="figure-bar">
+        <span class="fno">FIG. 8.3</span>
+        <span class="ftitle">Coding the bottom, describing the top</span>
+        <span class="fstate" id="s-state">crossover 8 kHz</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="s-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the original spectrum</span>
+          <span class="l-faint"><i></i>the core alone, above the crossover</span>
+          <span class="l-heat"><i></i>core + transposed patch + envelope</span>
+          <span class="l-ghost"><i class="dash"></i>crossover</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Crossover</span><span class="v" id="s-fc">8.0 kHz</span></div>
+          <div class="ro"><span class="k">Spectrum described, not coded</span><span class="v" id="s-frac">—</span></div>
+          <div class="ro ok"><span class="k">Side information</span><span class="v" id="s-kbps">—</span></div>
+          <div class="ro bad"><span class="k">Envelope error above crossover</span><span class="v" id="s-err">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="s-src">
+            <button data-v="music" class="on">Music</button>
+            <button data-v="applause">Applause</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="castanets">Castanets</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Crossover</span><span class="val" id="s-fclab">8.0 kHz</span></div>
+          <input type="range" id="s-cross" min="3000" max="14000" step="250" value="8000" data-out="s-fclab" aria-label="SBR crossover frequency">
+        </div>
+        <div class="field grow" style="min-width:160px">
+          <div class="flab"><span>Envelope bands</span><span class="val" id="s-blab">8</span></div>
+          <input type="range" id="s-bands" min="1" max="16" step="1" value="8" data-out="s-blab" aria-label="Number of SBR envelope bands">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="s-orig">Original</button>
+            <button class="btn play" id="s-core">Core only</button>
+            <button class="btn play" id="s-full">Core + SBR</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 8.3</b> — a real miniature of the
+        idea, running on synthesised audio: the signal is transformed block by
+        block, everything above the crossover is discarded, a patch from just
+        below the crossover is copied upwards and repeated, and each band is
+        then scaled so its energy over a 1024-sample frame matches the original's
+        — which is exactly the information SBR transmits. Press <b>core only</b>
+        and then <b>core + SBR</b>: two or three kilobits a second of envelope
+        restores most of what the lowpass removed. Now drag <b>envelope
+        bands</b> down to 2 and listen again. The energy is still right on
+        average and the sound is unmistakably wrong; that coarse, roughly
+        correct, texturally false top end is the classic HE-AAC shimmer, and it
+        is what you are trading for those bits.</figcaption>
+    </figure>
+
+    <div class="note heat">
+      <span class="tag tag-heat">Where the honest boundary is</span>
+      <p>SBR is not free and it is not always a gain. The side information
+        costs bits, the transposition invents fine structure that is wrong, and
+        the dual-rate structure adds delay. Below about 48 kbit/s stereo the
+        trade is overwhelming: HE-AAC at 32 kbit/s is listenable where AAC-LC at
+        32 kbit/s is not. Above roughly 80 to 96 kbit/s it inverts, because at
+        that budget the encoder can afford to code the top octaves properly and
+        a real one sounds better than a described one. Good encoders switch
+        automatically on the target rate, which is why the same encoder
+        configured at 64 and at 128 kbit/s may produce streams a decoder must
+        treat quite differently.</p>
+    </div>
+  </section>
+
+  <section id="noise" class="section">
+    <div class="kicker k-ghost">Interactive · Fig. 8.4</div>
+    <h3>If a band is noise, sending its noise is a waste of bits.</h3>
+    <p style="margin-top:18px">Perceptual noise substitution is the smallest of
+      AAC's description tools and the easiest to state. Consider a scalefactor
+      band whose content is noise — the wash of a cymbal, rain, applause, the
+      turbulent part of a fricative. The ear reads such a band by its energy and
+      its bandwidth. It does not, and cannot, track the individual coefficients:
+      the auditory filter at 10 kHz is well over a kilohertz wide, so a hundred
+      MDCT lines arrive inside one channel and are perceived as one rough
+      texture. Sending those hundred numbers is spending bits on a detail no
+      listener can hold.</p>
+    <p>So do not send them. Signal the band with Huffman codebook 13 — the
+      reserved <span class="mono">NOISE_HCB</span> — transmit one value for its
+      energy in place of a scalefactor, and let the decoder fill the band with
+      its own pseudo-random numbers scaled to that energy. The cost falls from
+      dozens or hundreds of coefficients to a single differentially coded number
+      per band per frame.</p>
+
+    <div class="eq">
+      <i>X̂</i>[<i>k</i>]<span class="op">=</span>
+      <span>√</span><span class="rad"><span class="frac"><span><i>E<sub>b</sub></i></span><span><i>n<sub>b</sub></i></span></span></span>
+      <span class="op">·</span><i>u</i>[<i>k</i>]
+      <span class="op">,</span>&nbsp;<i>k</i><span class="op">∈</span><i>b</i>
+      <span class="note2">with <i>u</i> a zero-mean unit-variance pseudo-random sequence
+        generated in the decoder. Everything transmitted about the band is the single
+        number <i>E<sub>b</sub></i></span>
+    </div>
+
+    <p>The danger is obvious and the standard's answer is a gate. Substitute a
+      band that contains a tone and you replace a pitch with a hiss, which is
+      audible instantly and sounds like a fault rather than a compromise. An
+      encoder therefore measures each band's tonality before deciding — the
+      spectral flatness measure of <a href="3-masking.html">chapter 03</a> is the
+      usual instrument — and substitutes only where the band is already
+      noise-like. The figure lets you set that threshold and get it wrong.</p>
+
+    <figure class="figure" id="fig-pns">
+      <div class="figure-bar">
+        <span class="fno">FIG. 8.4</span>
+        <span class="ftitle">Which bands can be replaced by a number</span>
+        <span class="fstate" id="p-state">—</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="p-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-ok"><i></i>substituted — one energy sent</span>
+          <span class="l-sig"><i></i>too tonal, coefficients coded</span>
+          <span class="l-faint"><i></i>below the substitution floor</span>
+          <span class="l-heat"><i class="dash"></i>tonality threshold</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro ok"><span class="k">Bands substituted</span><span class="v" id="p-bands">—</span></div>
+          <div class="ro sig"><span class="k">Coefficients replaced</span><span class="v" id="p-lines">—</span></div>
+          <div class="ro"><span class="k">Those bands, coded</span><span class="v" id="p-coded">—</span></div>
+          <div class="ro bad"><span class="k">Those bands, substituted</span><span class="v" id="p-sub">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="p-src">
+            <button data-v="applause" class="on">Applause</button>
+            <button data-v="harmonics">Harmonic tone</button>
+            <button data-v="music">Music</button>
+            <button data-v="noise">Hiss</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Substitute above</span><span class="val" id="p-flab">6.0 kHz</span></div>
+          <input type="range" id="p-from" min="2000" max="16000" step="250" value="6000" data-out="p-flab" aria-label="Lowest frequency eligible for noise substitution">
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Tonality threshold</span><span class="val" id="p-tlab">0.16</span></div>
+          <input type="range" id="p-thr" min="0" max="0.5" step="0.01" value="0.16" data-out="p-tlab" aria-label="Tonality threshold above which a band is not substituted">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="p-orig">Original</button>
+            <button class="btn play" id="p-done">Substituted</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 8.4</b> — each bar is one Bark-width
+        band; its height is that band's tonality, averaged over the excerpt and
+        computed live from the spectral flatness of its MDCT coefficients. Gold
+        bands are replaced by a single energy value; blue ones are too tonal and
+        survive. With the defaults — applause, threshold 0.16 — all seven eligible bands
+        are substituted and the result is very hard to tell from the original,
+        while the bit accounting in the last two boxes comes out at nearly
+        twenty to one. Now switch to <b>harmonic
+        tone</b>: its bands read well above the threshold and the gate protects
+        all but one of them. Drag the threshold up past 0.3 to defeat the gate
+        and press <b>substituted</b> — the harmonics become hiss, which is what
+        PNS applied carelessly sounds like.</figcaption>
+    </figure>
+
+    <p>The bit figures in that readout deserve a caveat. They compare the cost
+      of coding those bands at the fidelity the demonstration uses against the
+      nine bits a substituted band costs per frame, and the ratio is large. A
+      real encoder working to a tight budget would already have quantised most
+      of those high lines to zero, so PNS's true saving is smaller than the
+      comparison suggests. Its value is as much about what it prevents: without
+      it, a rate loop starved of bits produces a high band that flickers on and
+      off from frame to frame, which is the mechanism behind birdies. A band
+      that is declared noise is at least stable.</p>
+  </section>
+
+  <section id="stereo" class="section">
+    <div class="kicker">Two channels from one</div>
+    <h3>Stereo is the last thing a low-rate codec codes and the first thing it describes.</h3>
+    <p style="margin-top:18px">Two channels of music are rarely two independent
+      signals. Most of the time they are one signal plus a difference, and the
+      difference is small. AAC exploits that at three escalating levels of
+      violence, and — this is the real advance over MP3 — it chooses between
+      them <em>per scalefactor band</em> rather than once per granule.</p>
+    <p><strong>Mid/side coding</strong> is lossless: send
+      <i>M</i>&nbsp;=&nbsp;(<i>L</i>&nbsp;+&nbsp;<i>R</i>)/√2 and
+      <i>S</i>&nbsp;=&nbsp;(<i>L</i>&nbsp;−&nbsp;<i>R</i>)/√2 instead of the two
+      channels. When the channels are similar, <i>S</i> is near zero and costs
+      almost nothing, so the pair is cheaper; when they are not, it is more
+      expensive and the encoder sends L/R instead. One bit per band decides.
+      <strong>Intensity stereo</strong> is not lossless: above some frequency
+      the encoder sends only the summed channel plus a per-band direction, on
+      the grounds that above about 2 kHz the ear localises by envelope rather
+      than by waveform. It is signalled by using codebooks 14 and 15 on a band,
+      and it is where the image narrowing and instability of low-rate stereo
+      comes from. <strong>Parametric stereo</strong>, added in 2004, goes the
+      whole way: transmit one mono downmix and describe the stereo image with
+      four kinds of parameter — inter-channel intensity difference, coherence,
+      phase difference and an overall phase difference that says how to divide
+      the phase correction between the two ears. The decoder synthesises a
+      decorrelated companion signal and mixes it in.</p>
+
+    <div class="scroller"><table>
+      <caption>What each tool transmits instead of coefficients</caption>
+      <thead><tr><th>Tool</th><th>Sent in place of the spectrum</th><th>Granularity</th><th>Rough cost</th><th>Failure mode</th></tr></thead>
+      <tbody>
+        <tr><td><strong>TNS</strong></td><td>An LPC filter along frequency; the coefficients are still coded, but flattened first</td><td>Up to 3 filters per long window, 1 per short</td><td class="num">≈ 50 bits/filter</td><td>Almost none; it is a lossless rearrangement of where noise sits</td></tr>
+        <tr><td><strong>PNS</strong></td><td>One energy per band; the decoder generates the noise</td><td>Per scalefactor band, per frame</td><td class="num">≈ 9 bits/band</td><td>Tonal content turns to hiss; texture changes on sustained noise</td></tr>
+        <tr><td><strong>Intensity stereo</strong></td><td>A single summed channel plus a per-band position</td><td>Per scalefactor band, above a start band</td><td class="num">≈ 5 bits/band</td><td>Image narrows and wanders; phase relationships are discarded</td></tr>
+        <tr><td><strong>SBR</strong></td><td>An energy envelope, a noise floor and sinusoid flags for the band above the crossover</td><td>Per frequency band, 1–2 envelopes per frame</td><td class="num">≈ 2–3 kbit/s</td><td>Metallic shimmer on cymbals; the fine structure is transposed, so it is wrong</td></tr>
+        <tr><td><strong>Parametric stereo</strong></td><td>A mono downmix plus IID, ICC, IPD and OPD parameter sets</td><td>Per parameter band, per frame</td><td class="num">a few kbit/s</td><td>The image becomes plausible rather than accurate; wide or phasey recordings suffer most</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Stack all of it and the accounting for HE-AAC v2 at 24 kbit/s comes out
+      roughly like this: a mono core coded to about 10 kHz takes most of the
+      budget, SBR takes two or three kilobits to describe everything above it,
+      and parametric stereo takes a few more to describe the image. The music
+      the decoder produces is, in a strict sense, largely not the music that was
+      encoded. It is a reconstruction that is intended to be perceptually close,
+      and at 24 kbit/s it is astonishingly close — but it will not survive an
+      analysis that compares waveforms, which is one of several reasons why
+      <a href="11-artifacts.html">chapter 11</a> insists that signal-to-noise
+      ratio is a worthless measure of a perceptual codec.</p>
+  </section>
+
+  <section id="frame" class="section">
+    <div class="kicker k-heat">Interactive · Fig. 8.5</div>
+    <h3>Seven bytes of header, and an argument about how much that costs.</h3>
+    <p style="margin-top:18px">AAC's raw output is a sequence of
+      <span class="mono">raw_data_block</span>s with no framing of their own,
+      which is the right decision for a format that expects to live inside MP4.
+      When it has to be streamed on its own — into a decoder that may join
+      mid-stream and must resynchronise — it is wrapped in the Audio Data
+      Transport Stream: a seven-byte header per frame, nine if a CRC is carried,
+      beginning with a twelve-bit syncword of all ones exactly as MP3's does.
+      The alternative wrapper, LATM/LOAS, separates the configuration from the
+      payload so the configuration need not be repeated in every frame, and is
+      what broadcast transport streams generally use.</p>
+    <p>The header is worth decoding field by field, because two of its
+      decisions have consequences. The sample rate is a four-bit index into a
+      fixed table of thirteen values, so an AAC stream cannot be at 22.05 kHz
+      by accident — it is index 7 or it is not legal. And
+      <span class="mono">aac_frame_length</span> is thirteen bits counted in
+      bytes including the header, which caps a frame at 8 191 bytes: at 44.1 kHz
+      and 1024 lines per frame that is a ceiling of 2.82 Mbit/s, which no one
+      has ever met.</p>
+
+    <div class="eq">
+      <i>R</i><sub>header</sub><span class="op">=</span>
+      <span class="num">56</span><span class="op">×</span>
+      <span class="frac"><span><i>f</i><sub>s</sub></span><span><span class="num">1024</span></span></span>
+      <span class="op">=</span><span class="num">56</span><span class="op">×</span>
+      <span class="num">43.07</span><span class="op">=</span>
+      <span class="num">2 412</span>&nbsp;bit/s
+      <span class="note2">at 44.1 kHz — 1.9% of a 128 kbit/s stream, but 7.5% of a
+        32 kbit/s one, which is why low-rate AAC is not carried in ADTS if anything
+        else is available</span>
+    </div>
+
+    <figure class="figure" id="fig-adts">
+      <div class="figure-bar">
+        <span class="fno">FIG. 8.5</span>
+        <span class="ftitle">An ADTS frame header, assembled live</span>
+        <span class="fstate" id="a-state">7 bytes</span>
+      </div>
+      <div class="figure-body">
+        <div class="bits" id="a-hex" style="margin-bottom:12px">—</div>
+        <div class="bitmap" id="a-map"></div>
+        <div class="readout" style="margin-top:16px">
+          <div class="ro sig"><span class="k">Frames per second</span><span class="v" id="a-fps">—</span></div>
+          <div class="ro"><span class="k">Frame length</span><span class="v" id="a-len">—</span></div>
+          <div class="ro ok"><span class="k">Header payload</span><span class="v" id="a-ovh">—</span></div>
+          <div class="ro bad"><span class="k">Of the bitrate</span><span class="v" id="a-pct">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Sample rate</span></div>
+          <div class="chips" id="a-sr">
+            <button data-v="48000">48 k</button>
+            <button data-v="44100" class="on">44.1 k</button>
+            <button data-v="32000">32 k</button>
+            <button data-v="24000">24 k</button>
+            <button data-v="16000">16 k</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Channels</span></div>
+          <div class="chips" id="a-ch">
+            <button data-v="1">Mono</button>
+            <button data-v="2" class="on">Stereo</button>
+            <button data-v="6">5.1</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Options</span></div>
+          <div class="chips" id="a-opt">
+            <button data-v="plain" class="on">No CRC</button>
+            <button data-v="crc">With CRC</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:180px">
+          <div class="flab"><span>Bitrate</span><span class="val" id="a-brlab">128 kbit/s</span></div>
+          <input type="range" id="a-br" min="16" max="320" step="8" value="128" data-out="a-brlab" aria-label="Bitrate in kilobits per second">
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 8.5</b> — the header is built from
+        your settings, field by field, and printed as hexadecimal and as the
+        fifteen bit-fields that make up its 56 bits. Every number in the
+        readouts is derived from the header, not tabulated: the frame count from
+        <i>f</i><sub>s</sub>/1024, the frame length from the bitrate, the
+        overhead from both. Drag the bitrate to 16 kbit/s and watch the
+        percentage climb past 15: at broadcast rates the framing alone costs
+        more than spectral band replication's entire payload, which is why
+        low-rate AAC travels in LATM or in MP4 and not in ADTS. Note also that the first two bytes never change with the
+        bitrate — that is the fixed header, which is what a decoder scans for
+        when it joins a stream in progress.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>The ADTS header, field by field — 56 bits, or 72 with a CRC</caption>
+      <thead><tr><th>Field</th><th class="num">Bits</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">syncword</td><td class="num">12</td><td>All ones, <code>0xFFF</code>. A decoder joining mid-stream scans for it and then checks that the next frame's syncword lands where this header said it would.</td></tr>
+        <tr><td class="mono">ID</td><td class="num">1</td><td>0 = MPEG-4, 1 = MPEG-2. The one bit that says which standard's object-type numbering the profile field uses.</td></tr>
+        <tr><td class="mono">layer</td><td class="num">2</td><td>Always <code>00</code>. A vestige of the MPEG-1 header this one is modelled on.</td></tr>
+        <tr><td class="mono">protection_absent</td><td class="num">1</td><td>1 = no CRC, header is 7 bytes. 0 = a 16-bit CRC follows, making it 9.</td></tr>
+        <tr><td class="mono">profile</td><td class="num">2</td><td>Object type minus one: <code>00</code> Main, <code>01</code> LC, <code>10</code> SSR, <code>11</code> LTP. There is no encoding for SBR.</td></tr>
+        <tr><td class="mono">sampling_frequency_index</td><td class="num">4</td><td>0–12 index a fixed table from 96 kHz down to 7 350 Hz; 15 means an explicit rate follows elsewhere.</td></tr>
+        <tr><td class="mono">private_bit</td><td class="num">1</td><td>Ignored by decoders, free for the application.</td></tr>
+        <tr><td class="mono">channel_configuration</td><td class="num">3</td><td>1 = mono, 2 = stereo, 6 = 5.1, 7 = 7.1; 0 means the layout is described in the payload instead.</td></tr>
+        <tr><td class="mono">original_copy, home</td><td class="num">2</td><td>Inherited from MPEG-1 and universally ignored.</td></tr>
+        <tr><td class="mono">copyright_id_bit, _start</td><td class="num">2</td><td>One bit of a 72-bit copyright identifier spread across 72 consecutive frames, plus a marker for where it begins.</td></tr>
+        <tr><td class="mono">aac_frame_length</td><td class="num">13</td><td>The whole frame in bytes, header included. Caps a frame at 8 191 bytes.</td></tr>
+        <tr><td class="mono">adts_buffer_fullness</td><td class="num">11</td><td>The bit reservoir's state, in units of 32 bits. <code>0x7FF</code> declares variable bitrate and no reservoir constraint.</td></tr>
+        <tr><td class="mono">number_of_raw_data_blocks</td><td class="num">2</td><td>Blocks in this frame, minus one. Almost always <code>00</code>.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="scroller"><table>
+      <caption>sampling_frequency_index — the complete table</caption>
+      <thead><tr><th class="num">0</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th><th class="num">7</th><th class="num">8</th><th class="num">9</th><th class="num">10</th><th class="num">11</th><th class="num">12</th></tr></thead>
+      <tbody><tr>
+        <td class="num">96 000</td><td class="num">88 200</td><td class="num">64 000</td><td class="num">48 000</td>
+        <td class="num">44 100</td><td class="num">32 000</td><td class="num">24 000</td><td class="num">22 050</td>
+        <td class="num">16 000</td><td class="num">12 000</td><td class="num">11 025</td><td class="num">8 000</td><td class="num">7 350</td>
+      </tr></tbody>
+    </table></div>
+
+    <p>One detail of the header is a direct inheritance from
+      <a href="7-mp3.html">chapter 07</a>:
+      <span class="mono">adts_buffer_fullness</span> is the bit reservoir,
+      alive and well. AAC keeps MP3's trick of letting a frame that needs more
+      bits than its share borrow from the unspent budget of the frames before
+      it, and the field tells the decoder how full the encoder's notional buffer
+      was — which is what lets a decoder with a fixed input buffer know it will
+      not underrun. Set it to <code>0x7FF</code> and you have declared the
+      stream variable-rate and the question moot.</p>
+  </section>
+
+  <section id="wrong" class="section">
+    <div class="kicker k-danger">Corrections</div>
+    <h3>Five things that are repeated about AAC and are not true.</h3>
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>"AAC is Apple's format"</dt>
+        <dd>AAC was an ISO/IEC standard in April 1997, developed by Fraunhofer
+          IIS, AT&amp;T, Dolby, Sony and Nokia. Apple adopted it for the iTunes
+          Music Store in 2003, six years later, and its visibility on iPods did
+          more for the format's reputation than the standard ever did. The
+          related confusion is that <code>.m4a</code> names AAC: it does not. It
+          names an MP4 container, which may hold AAC-LC, HE-AAC, xHE-AAC or
+          Apple Lossless, and the extension tells you nothing about which.</dd>
+      </div>
+      <div class="def">
+        <dt>"AAC is MP3 with a better psychoacoustic model"</dt>
+        <dd>Neither standard contains a psychoacoustic model. Both standardise
+          only the bitstream and the decoder; the model lives entirely in the
+          encoder and is where every vendor's differentiation sits, which is why a
+          current LAME build beats a 1996 encoder by a wide margin at the same
+          bitrate. What AAC changed
+          is the machinery the model gets to drive: one transform instead of
+          two, 49 scalefactor bands instead of 21 on a long block, per-band
+          stereo decisions, and the four description tools above — none of which
+          MP3 can express at any bitrate.</dd>
+      </div>
+      <div class="def">
+        <dt>"Temporal noise shaping shapes the noise across frequency"</dt>
+        <dd>It applies a filter <em>along</em> frequency in order to shape the
+          noise <em>in time</em>. The confusion is understandable, because the
+          filtering happens to a frequency-indexed array. The point is the
+          duality: a gain that varies along the frequency index is, after the
+          inverse transform, a gain that varies along time inside the block.
+          Figure 8.2 measures the resulting temporal envelope rather than
+          asserting it.</dd>
+      </div>
+      <div class="def">
+        <dt>"HE-AAC is better than AAC-LC"</dt>
+        <dd>Only below roughly 80 kbit/s for stereo. SBR buys bandwidth by
+          spending accuracy, so above the rate at which the core could have
+          coded the top octaves honestly, adding SBR makes the result worse as
+          well as more complex. A 256 kbit/s HE-AAC file is a contradiction in
+          engineering terms. Encoders that pick the profile from the target rate
+          are doing the right thing.</dd>
+      </div>
+      <div class="def">
+        <dt>"SBR is just upsampling, or interpolation"</dt>
+        <dd>Upsampling invents nothing and adds no information; it produces a
+          band-limited signal with a mathematically empty top end. SBR copies
+          <em>real coded content</em> from the low band into the high band and
+          then corrects its energy, its noise floor and its tonality with
+          transmitted parameters. What it gets wrong is the fine structure —
+          harmonic relationships that were true at 5 kHz are not true at
+          12 kHz — which is a different and more interesting kind of wrong, and
+          is audible as shimmer rather than as dullness.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section id="after" class="section">
+    <div class="kicker">What AAC became</div>
+    <h3>The second generation ended by admitting that speech and music needed the same decoder.</h3>
+    <p style="margin-top:18px">By 2008 the AAC family had a member for every
+      constraint. AAC-LC for anything with bits to spare; HE-AAC and HE-AAC v2
+      for broadcast and for the bottom of a streaming ladder; AAC-LD and AAC-ELD
+      for conversation, at about 20 and 15 milliseconds of algorithmic delay
+      against AAC-LC's roughly 130. What none of them did well was speech at very
+      low rates, because a transform coder is the wrong instrument for a
+      glottal pulse train and a vocal tract — the right instrument is linear
+      prediction with an excitation codebook, which is what the telephony world
+      had been using since G.729.</p>
+    <p>Unified Speech and Audio Coding, ISO/IEC 23003-3, standardised in 2012
+      and shipped as xHE-AAC, resolves this by carrying both. A frame is coded
+      either by a transform path descended from AAC or by an ACELP speech path,
+      and the encoder switches between them according to what the signal is,
+      inside one bitstream that one decoder handles. Enhanced SBR and an MPEG
+      Surround stage sit in front of both. It is useful from about 12 kbit/s and
+      remains so up through the range where AAC-LC lives, and it ships with
+      MPEG-D dynamic range control metadata, which is how a streaming service
+      delivers one encode that plays sensibly both in a quiet room and on a bus.
+      Netflix, Facebook and Audible are among the services reported to have
+      deployed it.</p>
+    <p>That is also, precisely, the design Opus arrived at by a different road
+      and two years earlier — a linear-predictive speech coder and a transform
+      music coder in one packet format, with the switch made by the encoder.
+      <a href="9-opus.html">Chapter 09</a> takes that apart: the SILK half and
+      its line spectral frequencies, the CELT half and its pyramid vector
+      quantiser, the range coder underneath both, and the single table-driven
+      byte at the front of every packet that tells the decoder which of
+      thirty-two configurations it is about to run. The difference is not really
+      technical. AAC arrived at unification after fifteen years of adding tools
+      to a 1997 standard; Opus was designed as two codecs from the first commit,
+      and gave the result away — openly enough that
+      <a href="/ropus/">a port of its decoder to safe Rust</a> can be checked
+      bit-exact against the reference, which is not a sentence anyone will ever
+      write about AAC.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 8.1 — sine against Kaiser-Bessel-derived.
+   Both windows are built by DSP.WIN, zero-padded sixteen-fold and
+   transformed here; every number in the readout is measured from that
+   response, and the Princen-Bradley check is evaluated on the window
+   itself.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("w-cv");
+  if (!cv || !window.DSP || !window.AC) return;
+  var D = window.DSP;
+  var Z = 16;                                  // zero-padding factor
+  var st = { alpha: 4, len: 2048, view: "resp" };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 12, ymin: -100, ymax: 4,
+    xlabel: "bins from the spectral peak", ylabel: "dB",
+    pad: { l: 50, r: 14, t: 14, b: 34 },
+  });
+
+  function response(w) {
+    var M = w.length * Z, re = new Float64Array(M), im = new Float64Array(M), i;
+    for (i = 0; i < w.length; i++) re[i] = w[i];
+    D.fft(re, im, false);
+    var half = M >> 1, mag = new Float64Array(half);
+    for (i = 0; i < half; i++) mag[i] = Math.hypot(re[i], im[i]);
+    return { mag: mag, m0: Math.max(mag[0], 1e-30) };
+  }
+  function dbAt(r, bin) {
+    var i = Math.min(Math.round(bin * Z), r.mag.length - 1);
+    return 20 * Math.log10(Math.max(r.mag[i], 1e-30) / r.m0);
+  }
+  function worstBeyond(r, bin) {
+    var m = 0, i;
+    for (i = Math.round(bin * Z); i < r.mag.length; i++) if (r.mag[i] > m) m = r.mag[i];
+    return 20 * Math.log10(Math.max(m, 1e-30) / r.m0);
+  }
+  function pbError(w) {
+    var N = w.length >> 1, worst = 0, n, v;
+    for (n = 0; n < N; n++) {
+      v = w[n] * w[n] + w[n + N] * w[n + N];
+      if (Math.abs(v - 1) > worst) worst = Math.abs(v - 1);
+    }
+    return worst;
+  }
+  function curve(r, hi) {
+    var pts = [], i, n = hi * Z;
+    for (i = 0; i <= n; i++) pts.push([i / Z, 20 * Math.log10(Math.max(r.mag[i], 1e-30) / r.m0)]);
+    return pts;
+  }
+  function shapeCurve(w) {
+    var pts = [], i, step = Math.max(1, Math.round(w.length / 400));
+    for (i = 0; i < w.length; i += step) pts.push([i / (w.length - 1), w[i]]);
+    pts.push([1, w[w.length - 1]]);
+    return pts;
+  }
+
+  function draw() {
+    var L = st.len;
+    var ws = D.WIN.sine(L), wk = D.WIN.kbd(L, st.alpha), wh = D.WIN.hann(L);
+    p.clear();
+    if (st.view === "shape") {
+      p.xlabel = "position in the window"; p.ylabel = "w[n]";
+      p.range(0, 1, 0, 1.08);
+      p.axes({ yfmt: function (v) { return v.toFixed(1); } });
+      p.line(shapeCurve(wh), { color: AC.C.purple, width: 1.4, dash: [5, 4], alpha: .8 });
+      p.line(shapeCurve(ws), { color: AC.C.blue, width: 2 });
+      p.line(shapeCurve(wk), { color: AC.C.gold, width: 2 });
+      p.note(p.pad.l + 8, p.pad.t + 6, "KBD is flatter in the middle and steeper at the edges", { color: AC.C.ghost });
+    } else {
+      p.xlabel = "bins from the spectral peak"; p.ylabel = "dB";
+      p.range(0, 12, -100, 4);
+      p.axes({ x: [0, 2, 4, 6, 8, 10, 12], yfmt: function (v) { return v.toFixed(0); } });
+      p.line(curve(response(wh), 12), { color: AC.C.purple, width: 1.3, dash: [5, 4], alpha: .75 });
+      p.line(curve(response(ws), 12), { color: AC.C.blue, width: 1.9 });
+      p.line(curve(response(wk), 12), { color: AC.C.gold, width: 1.9 });
+      p.vline(8, { color: AC.C.faint, label: "8 bins" });
+    }
+    var rs = response(ws), rk = response(wk);
+    document.getElementById("w-s1").textContent = dbAt(rs, 1).toFixed(1) + " dB";
+    document.getElementById("w-k1").textContent = dbAt(rk, 1).toFixed(1) + " dB";
+    document.getElementById("w-s8").textContent = worstBeyond(rs, 8).toFixed(1) + " dB";
+    document.getElementById("w-k8").textContent = worstBeyond(rk, 8).toFixed(1) + " dB";
+    var e = Math.max(pbError(ws), pbError(wk));
+    document.getElementById("w-pb").textContent =
+      (e < 1e-12 ? "< 1e-12" : e.toExponential(1)) + " · Hann " + pbError(wh).toFixed(2);
+    document.getElementById("w-state").textContent =
+      "α = " + st.alpha.toFixed(2).replace(/0+$/, "").replace(/\.$/, "") +
+      " · " + L + "-sample window";
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  AC.slider(document.getElementById("w-alpha"), function (v) {
+    st.alpha = v; redraw();
+  }, function (v) { return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""); });
+
+  AC.chips(document.getElementById("w-len"), function (v) { st.len = +v; redraw(); });
+  AC.chips(document.getElementById("w-view"), function (v) { st.view = v; redraw(); });
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.2 — temporal noise shaping.
+   One MDCT block containing a single transient. Fit an LPC filter along
+   the frequency axis, quantise the residual, run the inverse filter, and
+   inverse-transform the ERROR itself so its temporal envelope can be
+   measured rather than asserted. The audible version encodes a whole
+   castanet excerpt both ways.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("t-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var st = { order: 8, snr: 14, N: 1024 };
+  var cache = {};
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: 43, ymin: -95, ymax: 4,
+    xlabel: "time within the block (ms)", ylabel: "dB relative to the block peak",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  function startLine(N, sr) { return Math.max(2, Math.round(1500 / (sr / 2) * N)); }
+  function rmsFrom(a, from) {
+    var s = 0, n = 0, i;
+    for (i = from; i < a.length; i++) { s += a[i] * a[i]; n++; }
+    return Math.sqrt(s / Math.max(n, 1));
+  }
+  function fit(X, order, start) {
+    var seg = X.subarray(start);
+    var L = D.lpc(seg, order), r0 = D.autocorr(seg, 0)[0];
+    var g = (r0 > 1e-20 && L.err > 1e-24) ? 10 * Math.log10(r0 / L.err) : 0;
+    return { a: L.a, gainDb: g };
+  }
+  function forward(X, a, start) {                   // FIR along frequency
+    var R = Float64Array.from(X), k, j, s, kk;
+    for (k = X.length - 1; k >= start; k--) {
+      s = 0;
+      for (j = 0; j < a.length; j++) { kk = k - j; s += a[j] * (kk >= start ? X[kk] : 0); }
+      R[k] = s;
+    }
+    return R;
+  }
+  function backward(R, a, start) {                  // all-pole synthesis
+    var Y = Float64Array.from(R), k, j, s, kk;
+    for (k = start; k < R.length; k++) {
+      s = R[k];
+      for (j = 1; j < a.length; j++) { kk = k - j; s -= a[j] * (kk >= start ? Y[kk] : 0); }
+      Y[k] = s;
+    }
+    return Y;
+  }
+  function stepFor(rms, snr) {
+    return Math.max(rms, 1e-12) * Math.pow(10, -snr / 20) * Math.sqrt(12);
+  }
+  function envelope(y, segs) {
+    var out = [], len = Math.ceil(y.length / segs), i, j, s, n;
+    for (i = 0; i < segs; i++) {
+      s = 0; n = 0;
+      for (j = i * len; j < (i + 1) * len && j < y.length; j++) { s += y[j] * y[j]; n++; }
+      out.push({ i: (i + 0.5) * len, v: s / Math.max(n, 1) });
+    }
+    return out;
+  }
+
+  // ---- the single-block experiment: instant, and the source of every readout
+  function analyse() {
+    var sr = A.rate(), N = st.N, i;
+    var probe = A.src.castanets(2 * N / sr, { sr: sr, hits: [0.58], len: 0.02, amp: 0.95 });
+    var w = D.WIN.sine(2 * N), buf = new Float64Array(2 * N);
+    for (i = 0; i < 2 * N; i++) buf[i] = (probe[i] || 0) * w[i];
+    var X = D.mdct(buf), start = startLine(N, sr);
+
+    var T = fit(X, st.order, start);
+    var R = forward(X, T.a, start);
+    var dR = stepFor(rmsFrom(R, start), st.snr);
+    var Rq = Float64Array.from(R);
+    for (i = start; i < N; i++) Rq[i] = Math.round(R[i] / dR) * dR;
+    var Y = backward(Rq, T.a, start);
+
+    var dX = stepFor(rmsFrom(X, start), st.snr);
+    var eOn = new Float64Array(N), eOff = new Float64Array(N);
+    for (i = start; i < N; i++) {
+      eOn[i] = Y[i] - X[i];
+      eOff[i] = Math.round(X[i] / dX) * dX - X[i];
+    }
+    var yOn = D.imdct(eOn), yOff = D.imdct(eOff), pOn = 0, pOff = 0;
+    for (i = 0; i < 2 * N; i++) {
+      yOn[i] *= w[i]; yOff[i] *= w[i];
+      pOn += yOn[i] * yOn[i]; pOff += yOff[i] * yOff[i];
+    }
+
+    var segs = N >= 512 ? 40 : 24;
+    var eS = envelope(buf, segs), eN0 = envelope(yOff, segs), eN1 = envelope(yOn, segs);
+    var ref = 1e-30, k;
+    for (k = 0; k < eS.length; k++) if (eS[k].v > ref) ref = eS[k].v;
+
+    // the attack: the loudest segment. Everything at least 1 ms earlier is "before".
+    var hit = 0;
+    for (k = 0; k < eS.length; k++) if (eS[k].v >= ref) hit = eS[k].i;
+    var cut = hit - sr * 0.001;
+    var b0 = 0, n0 = 0, b1 = 0, n1 = 0;
+    for (k = 0; k < eS.length; k++) {
+      if (eN0[k].i >= cut) continue;
+      b0 += eN0[k].v; n0++; b1 += eN1[k].v; n1++;
+    }
+    return {
+      sr: sr, N: N, ms: 2 * N / sr * 1000, ref: ref, gain: T.gainDb,
+      sig: eS, off: eN0, on: eN1,
+      preOff: 10 * Math.log10(Math.max(b0 / Math.max(n0, 1), 1e-30) / ref),
+      preOn: 10 * Math.log10(Math.max(b1 / Math.max(n1, 1), 1e-30) / ref),
+      totOff: 10 * Math.log10(Math.max(pOff / (2 * N), 1e-30) / ref),
+      totOn: 10 * Math.log10(Math.max(pOn / (2 * N), 1e-30) / ref),
+      hitMs: hit / sr * 1000,
+    };
+  }
+
+  var cur = null;
+  function toPts(e, r) {
+    return e.map(function (s) {
+      return [s.i / r.sr * 1000, 10 * Math.log10(Math.max(s.v, 1e-30) / r.ref)];
+    });
+  }
+  function draw() {
+    p.clear();
+    if (!cur) { p.axes(); return; }
+    p.range(0, cur.ms, -95, 4);
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    p.line(toPts(cur.sig, cur), { color: AC.C.blue, width: 1.8, fill: true, fillAlpha: .10, fillTo: -95 });
+    p.line(toPts(cur.off, cur), { color: AC.C.red, width: 1.8 });
+    p.line(toPts(cur.on, cur), { color: AC.C.gold, width: 1.8 });
+    p.vline(cur.hitMs, { color: AC.C.faint, label: "attack" });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      cur.N + " lines · " + cur.ms.toFixed(1) + " ms window · filter from 1.5 kHz up",
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() {
+    cur = analyse();
+    document.getElementById("t-gain").textContent = cur.gain.toFixed(1) + " dB";
+    document.getElementById("t-off").textContent = cur.preOff.toFixed(1) + " dB";
+    document.getElementById("t-on").textContent = cur.preOn.toFixed(1) + " dB";
+    document.getElementById("t-tot").textContent =
+      cur.totOff.toFixed(1) + " / " + cur.totOn.toFixed(1) + " dB";
+    document.getElementById("t-state").textContent = "order " + st.order + " · " + st.N + " lines";
+    cache = {};
+    redraw();
+  }
+
+  // ---- the audible version: a whole excerpt, coded both ways, on demand
+  function excerpt(mode) {
+    var key = mode + ":" + st.N + ":" + st.order + ":" + st.snr;
+    if (cache[key]) return cache[key];
+    var sr = A.rate(), N = st.N, start = startLine(N, sr);
+    var x = A.src.castanets(1.2, { sr: sr });
+    if (mode === "src") { cache[key] = x; return x; }
+    var useTns = mode === "on";
+    var out = D.mdctRoundTrip(x, N, function (X) {
+      var i, p2 = 0;
+      for (i = 0; i < N; i++) p2 += X[i] * X[i];
+      var rms = Math.sqrt(p2 / N);
+      if (rms < 1e-9) { for (i = 0; i < N; i++) X[i] = 0; return; }
+      if (!useTns) {
+        var d0 = stepFor(rms, st.snr);
+        for (i = 0; i < N; i++) X[i] = Math.round(X[i] / d0) * d0;
+        return;
+      }
+      var T = fit(X, st.order, start);
+      var R = forward(X, T.a, start);
+      var d1 = stepFor(rmsFrom(R, start), st.snr);
+      var d2 = stepFor(rms, st.snr);
+      var Rq = Float64Array.from(R);
+      for (i = 0; i < start; i++) Rq[i] = Math.round(X[i] / d2) * d2;
+      for (i = start; i < N; i++) Rq[i] = Math.round(R[i] / d1) * d1;
+      var Y = backward(Rq, T.a, start);
+      for (i = start; i < N; i++) Rq[i] = Y[i];
+      for (i = 0; i < N; i++) X[i] = Rq[i];
+    }, "sine");
+    cache[key] = out;
+    return out;
+  }
+
+  AC.slider(document.getElementById("t-order"), function (v) { st.order = v | 0; refresh(); },
+    function (v) { return String(v | 0); });
+  AC.slider(document.getElementById("t-snr"), function (v) { st.snr = v; refresh(); },
+    function (v) { return v + " dB"; });
+  AC.chips(document.getElementById("t-n"), function (v) { st.N = +v; refresh(); });
+
+  A.wire(document.getElementById("t-orig"), function () { return excerpt("src"); });
+  A.wire(document.getElementById("t-poff"), function () { return excerpt("off"); });
+  A.wire(document.getElementById("t-pon"), function () { return excerpt("on"); });
+
+  refresh();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.3 — spectral band replication, in miniature.
+   The signal is transformed block by block; everything above the
+   crossover is discarded; a patch from below it is copied upwards and
+   repeated; each band is then scaled so its energy over a 1024-sample
+   frame matches the original's. The plotted spectra are the mean power
+   of the coefficient arrays themselves, so nothing is drawn that was
+   not computed.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("s-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var N = 256, DUR = 1.8;
+  var st = { src: "music", fc: 8000, bands: 8, an: null, res: null, audio: {}, timer: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 250, xmax: 20000, ymin: -78, ymax: 4,
+    xlabel: "frequency", ylabel: "dB relative to the loudest line",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  var SRC = {
+    music: function (sr) { return A.src.music(DUR, { sr: sr }); },
+    applause: function (sr) { return A.src.applause(DUR, { sr: sr }); },
+    speech: function (sr) { return A.src.speech(DUR, { sr: sr }); },
+    castanets: function (sr) { return A.src.castanets(DUR, { sr: sr }); },
+  };
+
+  function ensure() {
+    if (st.an) return st.an;
+    var sr = A.rate(), x = SRC[st.src](sr), w = D.WIN.sine(2 * N);
+    var nB = Math.ceil(x.length / N) + 1, C = [], buf = new Float64Array(2 * N), b, i, si;
+    for (b = 0; b < nB; b++) {
+      for (i = 0; i < 2 * N; i++) { si = b * N - N + i; buf[i] = (si >= 0 && si < x.length ? x[si] : 0) * w[i]; }
+      C.push(D.mdct(buf));
+    }
+    st.an = { sr: sr, x: x, w: w, C: C };
+    return st.an;
+  }
+
+  function meanPower(arr) {
+    var m = new Float64Array(N), b, i;
+    for (b = 0; b < arr.length; b++) for (i = 0; i < N; i++) m[i] += arr[b][i] * arr[b][i];
+    for (i = 0; i < N; i++) m[i] /= Math.max(arr.length, 1);
+    return m;
+  }
+  function smooth(a, r) {
+    var o = new Float64Array(a.length), i, j, s, n;
+    for (i = 0; i < a.length; i++) {
+      s = 0; n = 0;
+      for (j = Math.max(0, i - r); j <= Math.min(a.length - 1, i + r); j++) { s += a[j]; n++; }
+      o[i] = s / n;
+    }
+    return o;
+  }
+
+  function build() {
+    var an = ensure(), sr = an.sr, C = an.C, nb = st.bands, e, b, i, k;
+    var kc = Math.max(4, Math.min(N - 6, Math.round(st.fc / (sr / 2) * N)));
+    var k0 = Math.max(1, Math.round(kc * 0.45)), width = Math.max(1, kc - k0);
+    var G = Math.max(1, Math.round(1024 / N));
+    var ed = [];
+    for (e = 0; e <= nb; e++) ed.push(Math.round(kc * Math.pow(N / kc, e / nb)));
+    for (e = 1; e <= nb; e++) if (ed[e] <= ed[e - 1]) ed[e] = Math.min(N, ed[e - 1] + 1);
+    ed[nb] = N;
+
+    var rnd = A.prng(11), core = [], full = [];
+    for (var g = 0; g < C.length; g += G) {
+      var last = Math.min(g + G, C.length);
+      var tgt = new Float64Array(nb), flat = new Float64Array(nb);
+      for (e = 0; e < nb; e++) {
+        var s = 0, n = 0, ls = 0;
+        for (b = g; b < last; b++) for (k = ed[e]; k < ed[e + 1]; k++) {
+          var pw = C[b][k] * C[b][k];
+          s += pw; ls += Math.log(Math.max(pw, 1e-26)); n++;
+        }
+        tgt[e] = n ? s / n : 0;
+        flat[e] = n ? Math.min(1, Math.max(0, Math.exp(ls / n) / Math.max(s / n, 1e-26))) : 1;
+      }
+      for (b = g; b < last; b++) {
+        var co = Float64Array.from(C[b]);
+        for (k = kc; k < N; k++) co[k] = 0;
+        core.push(co);
+        var rp = Float64Array.from(co);
+        for (k = kc; k < N; k++) rp[k] = C[b][k0 + ((k - kc) % width)];
+        for (e = 0; e < nb; e++) {
+          var ps = 0, pn = 0;
+          for (k = ed[e]; k < ed[e + 1]; k++) { ps += rp[k] * rp[k]; pn++; }
+          var gn = Math.sqrt(tgt[e] / Math.max(pn ? ps / pn : 0, 1e-26));
+          if (!isFinite(gn)) gn = 0;
+          var mix = Math.min(0.9, flat[e] * 0.9);
+          var ta = Math.sqrt(1 - mix), na = Math.sqrt(mix) * Math.sqrt(tgt[e]) * 1.732;
+          for (k = ed[e]; k < ed[e + 1]; k++) rp[k] = ta * rp[k] * gn + na * rnd();
+        }
+        full.push(rp);
+      }
+    }
+
+    var mo = smooth(meanPower(C), 2), mc = smooth(meanPower(core), 2), mf = smooth(meanPower(full), 2);
+    var ref = 1e-30;
+    for (i = 0; i < N; i++) if (mo[i] > ref) ref = mo[i];
+    var err = 0, en = 0;
+    for (i = kc; i < N; i++) {
+      var a = 10 * Math.log10(Math.max(mo[i], 1e-30) / ref);
+      if (a < -70) continue;
+      err += Math.abs(10 * Math.log10(Math.max(mf[i], 1e-30) / ref) - a); en++;
+    }
+    var fps = sr / 1024;
+    var kbps = (nb * fps * 4.5 + Math.ceil(nb / 2) * fps * 5 + fps * 10) / 1000;
+    st.res = { kc: kc, ed: ed, core: core, full: full, mo: mo, mc: mc, mf: mf, ref: ref,
+      sr: sr, kbps: kbps, err: en ? err / en : 0, frac: (N - kc) / N };
+    st.audio = {};
+
+    document.getElementById("s-fc").textContent = (kc / N * (sr / 2) / 1000).toFixed(1) + " kHz";
+    document.getElementById("s-frac").textContent = Math.round(st.res.frac * 100) + "% of the lines";
+    document.getElementById("s-kbps").textContent = kbps.toFixed(2) + " kbit/s";
+    document.getElementById("s-err").textContent = st.res.err.toFixed(1) + " dB mean";
+    document.getElementById("s-state").textContent =
+      "crossover " + (kc / N * (sr / 2) / 1000).toFixed(1) + " kHz · " + nb + " bands";
+    redraw();
+  }
+
+  function toPts(m, r) {
+    var pts = [], i, f;
+    for (i = 1; i < N; i++) {
+      f = (i + 0.5) / N * (r.sr / 2);
+      if (f < p.xmin || f > p.xmax) continue;
+      pts.push([f, Math.max(10 * Math.log10(Math.max(m[i], 1e-30) / r.ref), -78)]);
+    }
+    return pts;
+  }
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); },
+      yfmt: function (v) { return v.toFixed(0); } });
+    var r = st.res;
+    if (!r) return;
+    var fcHz = r.kc / N * (r.sr / 2);
+    p.band(fcHz, p.xmax, { color: AC.C.purple, alpha: .05 });
+    p.line(toPts(r.mo, r), { color: AC.C.blue, width: 1.8 });
+    p.line(toPts(r.mc, r), { color: AC.C.faint, width: 1.4 });
+    p.line(toPts(r.mf, r), { color: AC.C.gold, width: 1.8 });
+    p.vline(fcHz, { color: AC.C.purple, label: "crossover" });
+    p.note(p.pad.l + 8, p.pad.t + 6, "mean of " + r.full.length + " transform blocks", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function synth(coeffs) {
+    var an = st.an, out = new Float64Array((coeffs.length + 1) * N), b, i, oi;
+    for (b = 0; b < coeffs.length; b++) {
+      var y = D.imdct(coeffs[b]);
+      for (i = 0; i < 2 * N; i++) { oi = b * N - N + i; if (oi >= 0 && oi < out.length) out[oi] += y[i] * an.w[i]; }
+    }
+    return out.subarray(0, an.x.length);
+  }
+  function voice(which) {
+    if (!st.res) build();
+    if (which === "src") return st.an.x;
+    if (!st.audio[which]) st.audio[which] = synth(which === "core" ? st.res.core : st.res.full);
+    return st.audio[which];
+  }
+
+  function later() { if (!st.res) return; clearTimeout(st.timer); st.timer = setTimeout(build, 150); }
+
+  AC.chips(document.getElementById("s-src"), function (v) {
+    st.src = v; st.an = null; st.res = null; st.audio = {};
+    A.stopAll();
+    AC.$$("#fig-sbr .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    build();
+  });
+  AC.slider(document.getElementById("s-cross"), function (v) { st.fc = v; later(); },
+    function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+  AC.slider(document.getElementById("s-bands"), function (v) { st.bands = v | 0; later(); },
+    function (v) { return String(v | 0); });
+
+  A.wire(document.getElementById("s-orig"), function () { return voice("src"); });
+  A.wire(document.getElementById("s-core"), function () { return voice("core"); });
+  A.wire(document.getElementById("s-full"), function () { return voice("full"); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect();
+      build();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { build(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.4 — perceptual noise substitution.
+   Per-band tonality is measured live from the spectral flatness of the
+   MDCT coefficients; the bands that pass the gate are replaced by a
+   single energy per 1024-sample frame, exactly as codebook 13 does.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("p-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+  var N = 256, DUR = 1.6, SNR = 12;
+  var st = { src: "applause", from: 6000, thr: 0.16, an: null, cur: null, audio: null, timer: 0 };
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xlog: true, xmin: 250, xmax: 20000, ymin: 0, ymax: 1,
+    xlabel: "frequency", ylabel: "tonality  (0 = noise, 1 = pure tone)",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  var SRC = {
+    applause: function (sr) { return A.src.applause(DUR, { sr: sr }); },
+    harmonics: function (sr) { return A.src.harmonics(DUR, { f: 440, n: 40, tilt: 0.7, sr: sr }); },
+    music: function (sr) { return A.src.music(DUR, { sr: sr }); },
+    noise: function (sr) { return A.src.noise(DUR, { sr: sr, seed: 9 }); },
+  };
+
+  function bandEdges(sr) {
+    var ed = [0], z, idx;
+    for (z = 1; z <= 24; z++) {
+      idx = Math.min(N, Math.round(D.BARK_EDGES[z] / (sr / 2) * N));
+      if (idx > ed[ed.length - 1]) ed.push(idx);
+    }
+    var tail = ed[ed.length - 1];
+    if (tail < N) {
+      for (z = 1; z <= 3; z++) {
+        var e = Math.round(tail + (N - tail) * z / 3);
+        if (e > ed[ed.length - 1]) ed.push(e);
+      }
+      if (ed[ed.length - 1] < N) ed.push(N);
+    }
+    return ed;
+  }
+  function widened(X, lo, hi) {
+    while (hi - lo < 12 && (lo > 0 || hi < N)) { if (lo > 0) lo--; if (hi < N) hi++; }
+    var pw = new Float64Array(hi - lo), k;
+    for (k = lo; k < hi; k++) pw[k - lo] = X[k] * X[k];
+    return pw;
+  }
+
+  function ensure() {
+    if (st.an) return st.an;
+    var sr = A.rate(), x = SRC[st.src](sr), w = D.WIN.sine(2 * N), ed = bandEdges(sr);
+    var nb = ed.length - 1, nB = Math.ceil(x.length / N) + 1;
+    var C = [], buf = new Float64Array(2 * N), b, i, si, e;
+    var ton = new Float64Array(nb), cnt = new Float64Array(nb), bits = new Float64Array(nb);
+    for (b = 0; b < nB; b++) {
+      for (i = 0; i < 2 * N; i++) { si = b * N - N + i; buf[i] = (si >= 0 && si < x.length ? x[si] : 0) * w[i]; }
+      var X = D.mdct(buf);
+      C.push(X);
+      var pwr = 0;
+      for (i = 0; i < N; i++) pwr += X[i] * X[i];
+      var rms = Math.sqrt(pwr / N);
+      if (rms < 1e-9) continue;
+      var d = rms * Math.pow(10, -SNR / 20) * Math.sqrt(12);
+      for (e = 0; e < nb; e++) {
+        var lo = ed[e], hi = ed[e + 1];
+        if (hi - lo < 1) continue;
+        ton[e] += D.tonalityFromSfm(D.sfm(widened(X, lo, hi)));
+        cnt[e]++;
+        for (i = lo; i < hi; i++) bits[e] += Math.log2(2 * Math.abs(Math.round(X[i] / d)) + 1) + 1;
+      }
+    }
+    var secs = x.length / sr, band = [];
+    for (e = 0; e < nb; e++) {
+      band.push({
+        lo: ed[e], hi: ed[e + 1],
+        f0: ed[e] / N * (sr / 2), f1: ed[e + 1] / N * (sr / 2),
+        lines: ed[e + 1] - ed[e],
+        ton: cnt[e] ? ton[e] / cnt[e] : 0,
+        kbps: bits[e] / secs / 1000,
+        blocks: cnt[e],
+      });
+    }
+    st.an = { sr: sr, x: x, w: w, C: C, ed: ed, band: band, secs: secs, blocks: nB };
+    return st.an;
+  }
+
+  function build() {
+    var an = ensure(), sub = [], lines = 0, coded = 0, elig = 0, e;
+    var fps = an.sr / 1024;
+    for (e = 0; e < an.band.length; e++) {
+      var bd = an.band[e];
+      var ok = bd.f0 >= st.from && bd.lines >= 2;
+      if (ok) elig++;
+      bd.sub = ok && bd.ton <= st.thr;
+      if (bd.sub) { sub.push(e); lines += bd.lines; coded += bd.kbps; }
+    }
+    st.cur = { sub: sub, lines: lines, coded: coded, subKbps: sub.length * 9 * fps / 1000 };
+    st.audio = null;
+    document.getElementById("p-bands").textContent = sub.length + " of " + elig + " eligible";
+    document.getElementById("p-lines").textContent =
+      AC.fmt.int(lines) + " of " + N + " per block";
+    document.getElementById("p-coded").textContent = coded.toFixed(1) + " kbit/s";
+    document.getElementById("p-sub").textContent = st.cur.subKbps.toFixed(2) + " kbit/s";
+    document.getElementById("p-state").textContent =
+      sub.length + " bands substituted · threshold " + st.thr.toFixed(2);
+    redraw();
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ xfmt: function (f) { return f >= 1000 ? (f / 1000) + "k" : String(f); },
+      yfmt: function (v) { return v.toFixed(1); } });
+    if (!st.an || !st.cur) return;
+    var items = [], e;
+    for (e = 0; e < st.an.band.length; e++) {
+      var bd = st.an.band[e];
+      if (bd.f1 < p.xmin || bd.lines < 1) continue;
+      items.push({
+        x0: Math.max(bd.f0, p.xmin), x1: Math.min(bd.f1, p.xmax),
+        y: Math.min(bd.ton, 1),
+        color: bd.sub ? AC.C.green : (bd.f0 >= st.from ? AC.C.blue : AC.C.faint),
+        alpha: bd.f0 >= st.from ? .85 : .35,
+      });
+    }
+    p.bars(items, { base: 0, gap: 1 });
+    p.hline(st.thr, { color: AC.C.gold, label: "threshold" });
+    p.vline(st.from, { color: AC.C.purple, label: "floor" });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function substituted() {
+    if (st.audio) return st.audio;
+    var an = ensure(), G = Math.max(1, Math.round(1024 / N));
+    var rnd = A.prng(23), out = new Float64Array((an.C.length + 1) * N);
+    var keep = {}, i;
+    for (i = 0; i < st.cur.sub.length; i++) keep[st.cur.sub[i]] = true;
+    for (var g = 0; g < an.C.length; g += G) {
+      var last = Math.min(g + G, an.C.length), b, k, e;
+      var out2 = [];
+      for (b = g; b < last; b++) out2.push(Float64Array.from(an.C[b]));
+      for (e = 0; e < an.band.length; e++) {
+        if (!keep[e]) continue;
+        var lo = an.band[e].lo, hi = an.band[e].hi, s = 0, n = 0;
+        for (b = 0; b < out2.length; b++) for (k = lo; k < hi; k++) { s += out2[b][k] * out2[b][k]; n++; }
+        var rms = Math.sqrt(s / Math.max(n, 1));
+        for (b = 0; b < out2.length; b++) for (k = lo; k < hi; k++) out2[b][k] = rnd() * rms * 1.732;
+      }
+      for (b = 0; b < out2.length; b++) {
+        var y = D.imdct(out2[b]), oi;
+        for (k = 0; k < 2 * N; k++) { oi = (g + b) * N - N + k; if (oi >= 0 && oi < out.length) out[oi] += y[k] * an.w[k]; }
+      }
+    }
+    st.audio = out.subarray(0, an.x.length);
+    return st.audio;
+  }
+
+  function later() { if (!st.cur) return; clearTimeout(st.timer); st.timer = setTimeout(build, 130); }
+
+  AC.chips(document.getElementById("p-src"), function (v) {
+    st.src = v; st.an = null; st.audio = null;
+    A.stopAll();
+    AC.$$("#fig-pns .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    build();
+  });
+  AC.slider(document.getElementById("p-from"), function (v) { st.from = v; later(); },
+    function (v) { return (v / 1000).toFixed(1) + " kHz"; });
+  AC.slider(document.getElementById("p-thr"), function (v) { st.thr = v; later(); },
+    function (v) { return v.toFixed(2); });
+
+  A.wire(document.getElementById("p-orig"), function () { return ensure().x; });
+  A.wire(document.getElementById("p-done"), function () { if (!st.cur) build(); return substituted(); });
+
+  if ("IntersectionObserver" in window) {
+    var once = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      once.disconnect();
+      build();
+    }, { rootMargin: "300px" });
+    once.observe(cv);
+  } else { build(); }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 8.5 — an ADTS frame header, assembled from the controls.
+   Every number in the readout is derived from the header's own fields.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var map = document.getElementById("a-map");
+  if (!map || !window.AC) return;
+  var RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+  var st = { sr: 44100, ch: 2, crc: false, br: 128 };
+
+  function bits(v, n) {
+    var s = (v >>> 0).toString(2);
+    while (s.length < n) s = "0" + s;
+    return s.slice(-n);
+  }
+  function build() {
+    var idx = RATES.indexOf(st.sr);
+    if (idx < 0) idx = 4;
+    var hdr = st.crc ? 9 : 7;
+    var fps = st.sr / 1024;
+    var frame = Math.min(8191, Math.max(hdr + 1, Math.round(st.br * 1000 / 8 / fps) + hdr));
+    var F = [
+      { n: "syncword", b: 12, v: 0xFFF },
+      { n: "ID", b: 1, v: 0 },
+      { n: "layer", b: 2, v: 0 },
+      { n: "protection_absent", b: 1, v: st.crc ? 0 : 1, hot: true },
+      { n: "profile", b: 2, v: 1 },
+      { n: "sf_index", b: 4, v: idx, hot: true },
+      { n: "private", b: 1, v: 0 },
+      { n: "channel_config", b: 3, v: st.ch, hot: true },
+      { n: "original", b: 1, v: 0 },
+      { n: "home", b: 1, v: 0 },
+      { n: "copyright_id", b: 1, v: 0 },
+      { n: "copyright_start", b: 1, v: 0 },
+      { n: "frame_length", b: 13, v: frame, hot: true },
+      { n: "buffer_fullness", b: 11, v: 0x7FF },
+      { n: "raw_blocks − 1", b: 2, v: 0 },
+    ];
+    var stream = "", i;
+    for (i = 0; i < F.length; i++) stream += bits(F[i].v, F[i].b);
+    var hex = [];
+    for (i = 0; i < stream.length; i += 8) hex.push(("0" + parseInt(stream.slice(i, i + 8), 2).toString(16)).slice(-2).toUpperCase());
+
+    map.innerHTML = F.map(function (f) {
+      return '<span class="bitf' + (f.hot ? " on" : "") + '"><span class="bv">' +
+        bits(f.v, f.b) + '</span><span class="bn">' + f.n + "</span></span>";
+    }).join("");
+    document.getElementById("a-hex").innerHTML =
+      "<b>" + hex.slice(0, 2).join(" ") + "</b> " + hex.slice(2).join(" ") +
+      (st.crc ? "  + 2 CRC bytes" : "");
+    document.getElementById("a-fps").textContent = fps.toFixed(2) + " /s";
+    document.getElementById("a-len").textContent = frame + " bytes";
+    document.getElementById("a-ovh").textContent = (hdr * 8 * fps / 1000).toFixed(2) + " kbit/s";
+    document.getElementById("a-pct").textContent = (hdr * 8 * fps / (st.br * 1000) * 100).toFixed(1) + "%";
+    document.getElementById("a-state").textContent = hdr + " bytes · index " + idx;
+  }
+
+  AC.chips(document.getElementById("a-sr"), function (v) { st.sr = +v; build(); });
+  AC.chips(document.getElementById("a-ch"), function (v) { st.ch = +v; build(); });
+  AC.chips(document.getElementById("a-opt"), function (v) { st.crc = v === "crc"; build(); });
+  AC.slider(document.getElementById("a-br"), function (v) { st.br = v; build(); },
+    function (v) { return v + " kbit/s"; });
+
+  build();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

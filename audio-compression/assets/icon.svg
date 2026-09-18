@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="12" fill="#05070C"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- the full-rate waveform, left of the cut -->
+    <path d="M6 32 L9 32 L11 18 L13 46 L15 24 L17 40 L19 28 L21 36 L23 32"
+          stroke="#58C4DD" stroke-width="2.4"/>
+    <!-- the cut -->
+    <path d="M27 12 L27 52" stroke="#EFA847" stroke-width="1.6" stroke-dasharray="3 3"/>
+    <!-- what survives it: fewer, coarser steps -->
+    <path d="M31 32 L33 32 L33 22 L37 22 L37 42 L41 42 L41 27 L45 27 L45 36 L49 36 L49 32 L58 32"
+          stroke="#83C167" stroke-width="2.4"/>
+  </g>
+</svg>

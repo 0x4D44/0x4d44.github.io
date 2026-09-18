@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Lossless — Throwing Sound Away</title>
+<meta name="description" content="Lossless audio coding is prediction plus Rice coding of what is left over, and it halves a file because that is roughly the entropy of the residual — then the other end of the dial, where a codec stops sending a waveform at all.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="10">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 10</div>
+  <div class="num">10</div>
+  <h2>Refuse to lose anything and the file still halves — but it will not halve twice.</h2>
+  <p class="lead">A lossless coder has no psychoacoustic model, no masking
+    threshold and nothing to throw away. It has one move: guess the next sample
+    from the ones before it, and pay only for the difference. That move is worth
+    about a factor of two on music and almost nothing on a bad recording, and
+    the reason is arithmetic rather than engineering. At the opposite end of the
+    same dial sits the other refusal — coders that give up on the waveform
+    entirely and transmit a description of a mouth.</p>
+  <div class="meta">
+    <div><div class="k">Key idea</div><div class="v">Predict, subtract, then pay only for the surprise</div></div>
+    <div><div class="k">Named after</div><div class="v">Golomb and Rice, whose codes price the residual</div></div>
+    <div><div class="k">Numbers</div><div class="v">4 096 samples · orders 0–32 · ≈2 : 1 · 700 bit/s at the far end</div></div>
+    <div><div class="k">Standardised</div><div class="v">FLAC bitstream frozen 2001; RFC 9639, December 2024</div></div>
+    <div><div class="k">Figures</div><div class="v">5 live</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#shape">The shape of the problem</a>
+    <a href="#fixed">Four subtractions</a>
+    <a href="#lpc">A filter per block</a>
+    <a href="#rice">Pricing the residual</a>
+    <a href="#flac">FLAC, field by field</a>
+    <a href="#wall">Why it stops at half</a>
+    <a href="#family">The rest of the family</a>
+    <a href="#bottom">The other end of the dial</a>
+    <a href="#wrong">What people get wrong</a>
+    <a href="#next">Where this leaves us</a>
+  </nav>
+  <div>
+
+  <!-- ===================================================== 1 -->
+  <section id="shape" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The shape of the problem</div>
+    <h3>Every lossless audio coder ever shipped is the same four stages.</h3>
+    <p style="margin-top:18px">Cut the stream into blocks of a few thousand
+      samples. Decorrelate the channels, because the left and right of a stereo
+      mix are usually near-copies of each other. Run a predictor over each
+      channel and keep only the error. Entropy-code that error. Decoding is the
+      same four stages run backwards, and because every step is exact integer
+      arithmetic the samples that come out are the samples that went in — not
+      approximately, not perceptually, but bit for bit.</p>
+    <p>That constraint is what makes the design so different from the nine
+      chapters before it. A lossy encoder spends its intelligence deciding
+      <em>what to discard</em>; the quantiser is where the bits are won and the
+      entropy coder merely tidies up afterwards. A lossless encoder discards
+      nothing, so it has no quantiser at all. Its only weapon is the predictor,
+      and the predictor's only job is to make the numbers it hands the entropy
+      coder smaller — not fewer, <em>smaller</em>. A sixteen-bit sample costs
+      sixteen bits. The difference between two adjacent sixteen-bit samples of a
+      cello note costs about nine.</p>
+    <p>There is one further asymmetry worth stating up front, because it governs
+      the whole family. <strong>The specification is a decoder specification.</strong>
+      RFC 9639 defines exactly how a FLAC frame is to be unpacked; it says
+      almost nothing about how an encoder should choose its predictor, its block
+      length or its partitioning. Two encoders can produce completely different
+      files from the same input and both be correct, and both files decode to
+      the identical PCM. Every compression-level knob you have ever turned on a
+      lossless encoder is a search-effort knob. It changes the file size and the
+      encoding time. It cannot change the audio.</p>
+
+    <div class="note sig">
+      <span class="tag tag-sig">Why <code>zip</code> does not work</span>
+      <p><a href="6-entropy.html">Chapter 06</a> made the point in passing and
+        it is worth making again here: a general-purpose compressor looks for
+        repeated byte patterns, and a waveform has almost none. The redundancy
+        in audio is <em>numerical</em> — sample <i>n</i> is close to sample
+        <i>n</i>−1 — and a dictionary coder cannot see that at all, because
+        "close to" is not "equal to". Modelling first, then coding, is the
+        entire trick. Run a PCM file through <code>gzip</code> and you will
+        claw back a few per cent; run it through FLAC and you will halve it,
+        using an entropy coder that is <em>weaker</em> than gzip's.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 2 -->
+  <section id="fixed" class="section">
+    <div class="kicker k-heat">Four subtractions</div>
+    <h3>Most of the compression is available from five predictors that have no parameters at all.</h3>
+    <p style="margin-top:18px">Tony Robinson's <strong>Shorten</strong>, written
+      at Cambridge in 1993 and described in a 1994 report on simple lossless and
+      near-lossless waveform compression, established the template the whole
+      field still uses. Its cheapest predictors are polynomial: fit a polynomial
+      of degree <i>p</i>−1 through the last <i>p</i> samples, extrapolate it one
+      step, and take the difference. For <i>p</i> = 1 that is "the next sample
+      will be the same as this one". For <i>p</i> = 2 it is "the signal will
+      carry on at its current slope". The arithmetic is a handful of adds, there
+      are no coefficients to transmit, and the predictors are identical in every
+      encoder and every decoder ever written.</p>
+
+    <div class="eq">
+      <i>e</i><sup>(<i>p</i>)</sup>[<i>n</i>]<span class="op">=</span>
+      <i>x</i>[<i>n</i>]<span class="op">−</span><i>x̂</i><sup>(<i>p</i>)</sup>[<i>n</i>]
+      <span class="op">,</span>
+      <i>A</i>(<i>z</i>)<span class="op">=</span>(<span class="num">1</span>
+      <span class="op">−</span><i>z</i><sup>−1</sup>)<sup><i>p</i></sup>
+      <span class="note2">the order-p residual is the p-th finite difference: the coefficients are the binomial coefficients, with alternating signs</span>
+    </div>
+
+    <div class="eq left">
+      <i>x̂</i><sup>(0)</sup><span class="op">=</span><span class="num">0</span>
+      <span class="op">;</span><br>
+      <i>x̂</i><sup>(1)</sup><span class="op">=</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
+      <span class="op">;</span><br>
+      <i>x̂</i><sup>(2)</sup><span class="op">=</span><span class="num">2</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
+      <span class="op">−</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
+      <span class="op">;</span><br>
+      <i>x̂</i><sup>(3)</sup><span class="op">=</span><span class="num">3</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
+      <span class="op">−</span><span class="num">3</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
+      <span class="op">+</span><i>x</i>[<i>n</i>−<span class="num">3</span>]
+      <span class="op">;</span><br>
+      <i>x̂</i><sup>(4)</sup><span class="op">=</span><span class="num">4</span><i>x</i>[<i>n</i>−<span class="num">1</span>]
+      <span class="op">−</span><span class="num">6</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
+      <span class="op">+</span><span class="num">4</span><i>x</i>[<i>n</i>−<span class="num">3</span>]
+      <span class="op">−</span><i>x</i>[<i>n</i>−<span class="num">4</span>]
+      <span class="note2">Shorten defined orders 0 to 3; FLAC added the fourth. A FIXED subframe spends three bits saying which of the five it used</span>
+    </div>
+
+    <p>Read <i>A</i>(<i>z</i>) = (1 − <i>z</i><sup>−1</sup>)<sup><i>p</i></sup>
+      as a filter and you can see immediately what it does to the spectrum and
+      therefore what it costs. Each factor of (1 − <i>z</i><sup>−1</sup>) is a
+      first difference: a high-pass with a zero at DC and a response rising at
+      6 dB per octave. Order 2 rises at 12 dB per octave, order 4 at 24. On a
+      signal whose energy is concentrated at the bottom — which is nearly all
+      music — that tilt removes a great deal of amplitude. On a signal that is
+      already bright, or noisy, it <em>adds</em> amplitude at the top faster
+      than it removes it at the bottom, and the residual comes out larger than
+      the input. That is why the order is chosen per block and why order 0,
+      which is no prediction at all, has to remain on the menu.</p>
+
+    <figure class="figure" id="fig-fixed">
+      <div class="figure-bar">
+        <span class="fno">FIG. 10.1</span>
+        <span class="ftitle">Five predictors, run over real samples</span>
+        <span class="fstate" id="f1-state">order 2</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="f1-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the 16-bit samples</span>
+          <span class="l-heat"><i></i>what is left after the predictor</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro"><span class="k">Mean |residual|</span><span class="v" id="f1-mean">—</span></div>
+          <div class="ro sig"><span class="k">Bits per sample</span><span class="v" id="f1-bps">—</span></div>
+          <div class="ro ok"><span class="k">Compressed to</span><span class="v" id="f1-ratio">—</span></div>
+          <div class="ro ghost"><span class="k">Commonest Rice k</span><span class="v" id="f1-k">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Predictor order</span></div>
+          <div class="chips" id="f1-order">
+            <button data-v="0">0</button>
+            <button data-v="1">1</button>
+            <button data-v="2" class="on">2</button>
+            <button data-v="3">3</button>
+            <button data-v="4">4</button>
+            <button data-v="best">Best per block</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="f1-src">
+            <button data-v="strings" class="on">Strings</button>
+            <button data-v="bell">Bell</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="music">Percussive</button>
+            <button data-v="applause">Applause</button>
+            <button data-v="noise">Noise</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="f1-orig">The samples</button>
+            <button class="btn play" id="f1-res">The residual</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 10.1</b> — the blue trace is 1 024
+        real samples of the chosen programme, scaled to 16-bit integers; the
+        gold trace is the residual after the fixed predictor you selected,
+        drawn on the same axis. The bit count underneath is measured, not
+        quoted: the signal is cut into 4 096-sample blocks, each block's
+        residual is Rice-coded with the best parameter found by exhaustive
+        search, and the warm-up samples and subframe headers are paid for.
+        Step through the orders on <b>Strings</b> and the file falls from 92%
+        of PCM to about 60%. Do the same on <b>Noise</b> and every order above
+        zero makes it <em>bigger</em>, passing 100% at order 1 — which is
+        exactly why a real encoder tries all five and why
+        <b>Best per block</b>, which picks per 4 096 samples, is never worse
+        than the best single order. Press <b>the residual</b>: after
+        normalisation it is the programme with 12 dB per octave of tilt applied,
+        which is what "the unpredictable part" sounds like.</figcaption>
+    </figure>
+
+    <p>The audible half of that figure is the part worth sitting with. The
+      residual is not noise and it is not silence: it is the programme with its
+      low end differentiated away, thin and hissy and perfectly recognisable.
+      Nothing has been lost — add the prediction back, sample by sample, and the
+      original returns exactly. All that has happened is that the information
+      has been moved into numbers that are, on average, five or six binary
+      orders of magnitude smaller than the ones it arrived in.</p>
+  </section>
+
+  <!-- ===================================================== 3 -->
+  <section id="lpc" class="section">
+    <div class="kicker">A filter per block</div>
+    <h3>Fitting the predictor to the block buys another bit, and then charges you for it.</h3>
+    <p style="margin-top:18px">The fixed predictors assume the signal is locally
+      a low-order polynomial. Real audio is locally a handful of resonances, so
+      a filter matched to <em>this</em> block will beat any fixed one. That
+      filter is found exactly as it is in speech coding: form the
+      autocorrelation of the block, solve the normal equations with the
+      Levinson–Durbin recursion, and take the resulting all-pole predictor. It
+      is the same machinery <a href="9-opus.html">Opus</a> uses inside SILK and
+      the same recursion described in <a href="9-opus.html">Chapter 09</a>; the
+      only difference is what happens to the residual afterwards, which here is
+      kept rather than modelled. One refinement matters enough to be visible in
+      the figure below: the autocorrelation is taken over an
+      <em>apodised</em> copy of the block — FLAC's default is a Tukey window
+      with a half-cosine taper — so that the fit is not distorted by the
+      discontinuity at the block edges. Without it, a decaying note can fit so
+      badly that a parameterless fixed predictor beats the fitted one
+      outright.</p>
+
+    <div class="eq">
+      <i>e</i>[<i>n</i>]<span class="op">=</span><i>x</i>[<i>n</i>]
+      <span class="op">+</span>
+      <span class="bigop">∑</span><span class="limits"><span><i>p</i></span><span><i>i</i>=1</span></span>
+      <i>a</i><sub><i>i</i></sub><i>x</i>[<i>n</i>−<i>i</i>]
+      <span class="op">,</span>
+      <i>G</i><span class="op">=</span>
+      <span class="frac"><span><i>σ</i><sub><i>x</i></sub><sup>2</sup></span><span><i>σ</i><sub><i>e</i></sub><sup>2</sup></span></span>
+      <span class="note2">prediction gain: the factor by which the predictor shrinks the variance of what has to be coded</span>
+    </div>
+
+    <p>The coefficients cannot be sent as the real numbers Levinson–Durbin
+      produces, because the decoder must reproduce the prediction <em>exactly</em>
+      in integer arithmetic or the reconstruction drifts. FLAC therefore
+      quantises them: four bits in the subframe carry the coefficient precision
+      (one less than the real value, so up to 15 bits each), five bits carry a
+      right-shift, and the prediction is formed as an integer dot product shifted
+      down. The encoder is free to choose that precision block by block, which is
+      one of the places Shorten's fixed-for-the-whole-file approach left value on
+      the table.</p>
+    <p>The bill arrives immediately. An order-<i>p</i> predictor at 15-bit
+      precision costs 15<i>p</i> bits of coefficients, plus <i>p</i> warm-up
+      samples stored raw at the full sample depth, per block per channel. At
+      order 32 and 16-bit audio that is 480 + 512 = 992 bits before a single
+      residual has been coded. Spread over a 4 096-sample block it is a quarter
+      of a bit per sample — cheap. Spread over a 256-sample block it is nearly
+      four bits per sample, which is more than the prediction can possibly save.
+      The optimum order is therefore not a property of the music; it is a
+      property of the music <em>and</em> the block length, and it moves.</p>
+
+    <figure class="figure" id="fig-lpc">
+      <div class="figure-bar">
+        <span class="fno">FIG. 10.2</span>
+        <span class="ftitle">Prediction gain against the coefficient bill</span>
+        <span class="fstate" id="f2-state">order 8</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="f2-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>residual only</span>
+          <span class="l-heat"><i></i>residual + coefficients + warm-up</span>
+          <span class="l-ghost"><i class="dash"></i>best fixed predictor</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Best order</span><span class="v" id="f2-best">—</span></div>
+          <div class="ro"><span class="k">Bits per sample there</span><span class="v" id="f2-bps">—</span></div>
+          <div class="ro ok"><span class="k">Prediction gain</span><span class="v" id="f2-gain">—</span></div>
+          <div class="ro bad"><span class="k">Side information</span><span class="v" id="f2-coef">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Block size</span></div>
+          <div class="chips" id="f2-blk">
+            <button data-v="256">256</button>
+            <button data-v="1024">1024</button>
+            <button data-v="4096" class="on">4096</button>
+            <button data-v="16384">16384</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Coefficient precision</span><span class="val" id="f2-preclab">15 bits</span></div>
+          <input type="range" id="f2-prec" min="4" max="15" step="1" value="15" data-out="f2-preclab" aria-label="Quantised coefficient precision in bits">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="f2-src">
+            <button data-v="strings" class="on">Strings</button>
+            <button data-v="bell">Bell</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 10.2</b> — one block of the chosen
+        programme, at the block size you select, run through every LPC order
+        from 1 to 32. The blue curve is the cost of the Rice-coded residual
+        alone; the gold curve adds what the decoder actually has to be told —
+        quantised coefficients, warm-up samples, headers — and has a minimum,
+        marked. On <b>Strings</b> at 4 096 samples the nominal minimum lands in
+        the teens, but everything from about order 7 upwards is within a tenth
+        of a bit of it, which is why FLAC's <span class="mono">-8</span> preset
+        buying order 12 over the default's 8 is worth about one per cent. Now
+        click <b>256</b>: the side information swamps the gain, the two curves
+        pull apart and the optimum collapses to three or four. Pull the
+        precision down to 4 bits and the blue curve rises as well — a
+        coefficient you cannot represent is a coefficient that does not
+        predict.</figcaption>
+    </figure>
+
+    <p>Two details in that figure repay attention. The first is how flat the
+      gold curve is past its minimum: between order 8 and order 32 there is
+      usually less than a tenth of a bit per sample in it — on the string phrase
+      at a 4 096 block, order 8 costs 10.03 bits a sample and the nominal
+      optimum at order 17 costs 9.93. Lossless encoders
+      compete over that tenth of a bit, and pay for it with encoding time that
+      scales with the number of candidate models they try. The second is that
+      the blue curve — residual cost alone — keeps falling right to order 32 on
+      tonal material and flattens almost at once on noisy material. The
+      predictor can only exploit structure that exists. Where the signal is
+      already white, no order helps, and the honest answer is a
+      <span class="mono">VERBATIM</span> subframe that stores the samples
+      unchanged. Try <b>Applause</b>: thirty-two fitted coefficients buy about a
+      decibel of prediction gain, and the gold curve is flat from end to
+      end.</p>
+  </section>
+
+  <!-- ===================================================== 4 -->
+  <section id="rice" class="section">
+    <div class="kicker">Pricing the residual</div>
+    <h3>Rice coding is a Huffman code you never have to transmit.</h3>
+    <p style="margin-top:18px">A prediction residual is not distributed like the
+      symbol alphabets of <a href="6-entropy.html">Chapter 06</a>. It is a
+      two-sided, sharply peaked, roughly Laplacian distribution centred on zero,
+      and its shape barely changes between one piece of music and the next — only
+      its width does. That is an enormous simplification: instead of measuring a
+      histogram, building a Huffman tree and sending the code lengths, you can
+      pick a code from a one-parameter family that is near-optimal for that
+      shape, and send the parameter.</p>
+    <p>Golomb's construction, specialised by Robert Rice to powers of two, does
+      exactly that. Fold the signed residual to a non-negative integer, split it
+      into a quotient and a remainder by 2<sup><i>k</i></sup>, write the quotient
+      in unary and the remainder in <i>k</i> raw bits.</p>
+
+    <div class="eq">
+      <i>u</i><span class="op">=</span>
+      <span class="num">2</span><i>e</i>&nbsp;(<i>e</i>&nbsp;≥&nbsp;<span class="num">0</span>)
+      <span class="op">,</span>
+      <span class="op">−</span><span class="num">2</span><i>e</i><span class="op">−</span><span class="num">1</span>&nbsp;(<i>e</i>&nbsp;&lt;&nbsp;<span class="num">0</span>)
+      <span class="op">;</span>
+      <span class="fn">len</span>(<i>u</i>)<span class="op">=</span>
+      ⌊<i>u</i><span class="op">/</span><span class="num">2</span><sup><i>k</i></sup>⌋
+      <span class="op">+</span><span class="num">1</span><span class="op">+</span><i>k</i>
+      <span class="note2">zig-zag folding, then a unary quotient, a stop bit and k raw bits — the whole codec, in one line</span>
+    </div>
+
+    <p>The entire decoder is: count zeros until a one, shift, read <i>k</i> bits,
+      unfold. There is no table, no tree and no state — a working residual
+      decoder is a dozen lines, which is one reason the format ended up in
+      hardware. (If reading a decoder appeals more than reading about one,
+      <a href="/ropus/">ropus</a> elsewhere in this almanac is the Opus decoder
+      in safe Rust, checked bit-exact against the reference C.) And the price it charges
+      is close to the information-theoretic one, because a Laplacian residual
+      with mean absolute value <i>b</i> has a differential entropy that is
+      itself a logarithm of <i>b</i>.</p>
+
+    <div class="eq">
+      <i>H</i><span class="op">≈</span>
+      <span class="fn">log</span><sub>2</sub>(<span class="num">2</span><i>e</i><i>b</i>)
+      <span class="op">=</span>
+      <span class="fn">log</span><sub>2</sub><i>b</i><span class="op">+</span><span class="num">2.44</span>&nbsp;bits
+      <span class="op">,</span>
+      <i>b</i><span class="op">=</span><i>E</i>|<i>e</i>|
+      <span class="note2">the Laplacian entropy, in bits per sample, when the residual is discretised to integers — the floor that Fig 10.3 measures the Rice code against</span>
+    </div>
+
+    <p>Halve the residual's mean magnitude and you save exactly one bit a
+      sample. That is the governing relation of this entire chapter, and it is
+      worth holding on to when the compression ratios start arriving: a lossless
+      coder's whole achievement is measured in <em>binary orders of magnitude of
+      residual</em>, and each one is one bit out of sixteen — six and a quarter
+      per cent of the file.</p>
+    <p>The optimum <i>k</i> is close to the base-two logarithm of the mean
+      folded magnitude, but no encoder bothers with the approximation: evaluating
+      the exact cost for every candidate <i>k</i> is a handful of shifts per
+      sample and is done by brute force. The parameter is then sent in four bits
+      (or five, in the alternate residual-coding method), and because the best
+      <i>k</i> drifts across a block as the music changes, FLAC splits the
+      residual into 2<sup><i>order</i></sup> equal partitions and sends a
+      parameter for each. A partition whose residual is so wild that Rice coding
+      would lose is escaped: the parameter field goes to all ones and the
+      partition is stored as fixed-width raw values instead.</p>
+
+    <figure class="figure" id="fig-rice">
+      <div class="figure-bar">
+        <span class="fno">FIG. 10.3</span>
+        <span class="ftitle">Choosing k, and what it costs to choose it badly</span>
+        <span class="fstate" id="f3-state">k = 8</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="f3-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>Rice cost at each k</span>
+          <span class="l-ghost"><i class="dash"></i>measured entropy of this block</span>
+          <span class="l-ok"><i class="dash"></i>Laplacian estimate, log₂b + 2.44</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">At your k</span><span class="v" id="f3-bps">—</span></div>
+          <div class="ro ok"><span class="k">Best k</span><span class="v" id="f3-bestk">—</span></div>
+          <div class="ro ghost"><span class="k">Entropy floor</span><span class="v" id="f3-ent">—</span></div>
+          <div class="ro bad"><span class="k">Partitioning saves</span><span class="v" id="f3-gap">—</span></div>
+        </div>
+        <div class="bits" id="f3-code" style="margin-top:14px;overflow-x:auto"></div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Rice parameter k</span><span class="val" id="f3-klab">8</span></div>
+          <input type="range" id="f3-k" min="0" max="14" step="1" value="8" data-out="f3-klab" aria-label="Rice parameter k">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Partitions</span></div>
+          <div class="chips" id="f3-part">
+            <button data-v="1" class="on">1</button>
+            <button data-v="4">4</button>
+            <button data-v="16">16</button>
+            <button data-v="64">64</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Programme</span></div>
+          <div class="chips" id="f3-src">
+            <button data-v="strings" class="on">Strings</button>
+            <button data-v="bell">Bell</button>
+            <button data-v="speech">Speech</button>
+            <button data-v="applause">Applause</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 10.3</b> — the blue curve is the
+        real cost, in bits per sample, of Rice-coding one 4 096-sample block's
+        order-2 residual at every parameter from 0 to 14; the dashed purple line
+        is that block's measured zero-order entropy and the dashed green line is
+        the Laplacian estimate above. The curve is steep on the left and gentle
+        on the right, which is the practical point: being one below the optimum
+        costs far more than being one above, because a <i>k</i> that is too
+        small makes the unary quotient explode. The bit strings underneath are
+        the actual codewords for the first residuals in the block at your
+        current <i>k</i> — blue is the unary quotient and its stop bit. Switch
+        the <b>partitions</b> up and the readout shows what per-partition
+        parameters buy: 0.20 bits a sample on the steady string phrase at 16
+        partitions, and 1.96 bits on <b>Applause</b> at 64, where the block is
+        a sequence of isolated claps separated by near-silence.</figcaption>
+    </figure>
+
+    <div class="scroller"><table>
+      <caption>Rice codewords for the first eight folded values</caption>
+      <thead><tr><th class="num">e</th><th class="num">u</th><th><i>k</i> = 0</th><th><i>k</i> = 1</th><th><i>k</i> = 2</th><th><i>k</i> = 4</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">0</td><td class="mono">1</td><td class="mono">1 0</td><td class="mono">1 00</td><td class="mono">1 0000</td></tr>
+        <tr><td class="num">−1</td><td class="num">1</td><td class="mono">01</td><td class="mono">1 1</td><td class="mono">1 01</td><td class="mono">1 0001</td></tr>
+        <tr><td class="num">1</td><td class="num">2</td><td class="mono">001</td><td class="mono">01 0</td><td class="mono">1 10</td><td class="mono">1 0010</td></tr>
+        <tr><td class="num">−2</td><td class="num">3</td><td class="mono">0001</td><td class="mono">01 1</td><td class="mono">1 11</td><td class="mono">1 0011</td></tr>
+        <tr><td class="num">2</td><td class="num">4</td><td class="mono">00001</td><td class="mono">001 0</td><td class="mono">01 00</td><td class="mono">1 0100</td></tr>
+        <tr><td class="num">4</td><td class="num">8</td><td class="mono">000000001</td><td class="mono">00001 0</td><td class="mono">001 00</td><td class="mono">1 1000</td></tr>
+        <tr><td class="num">8</td><td class="num">16</td><td class="mono">17 bits</td><td class="mono">9 bits</td><td class="mono">5 bits</td><td class="mono">01 0000</td></tr>
+        <tr><td class="num">64</td><td class="num">128</td><td class="mono">129 bits</td><td class="mono">65 bits</td><td class="mono">33 bits</td><td class="mono">9 bits</td></tr>
+      </tbody>
+    </table></div>
+
+    <blockquote class="pullquote">A lossless coder cannot compress the music.
+      It compresses only the part of the recording that was predictable — and a
+      microphone's noise floor never is.
+      <span class="who">The reason the ratio is what it is</span></blockquote>
+  </section>
+
+  <!-- ===================================================== 5 -->
+  <section id="flac" class="section">
+    <div class="kicker k-ok">FLAC, field by field</div>
+    <h3>The format is small enough to hold in your head, which is why it won.</h3>
+    <p style="margin-top:18px">Josh Coalson began FLAC in 2000. The bitstream
+      format was frozen with version 0.9 of the reference implementation on
+      31 March 2001, and version 1.0 followed on 20 July that year; the project
+      joined the <strong>Xiph.Org Foundation</strong> in 2003, alongside Vorbis
+      and later Opus. Files written by that 2001 encoder still decode correctly
+      today, which over a quarter of a century is an unusually strong record for
+      a media format. The IETF's CELLAR working group turned the existing
+      documentation into a formal specification, published as
+      <strong>RFC 9639 in December 2024</strong> — a description of what had
+      been deployed for two decades rather than a revision of it.</p>
+    <p>A file is a four-byte magic number, <span class="mono">fLaC</span>, then a
+      chain of metadata blocks, then frames until the stream ends. The first
+      metadata block is always <span class="mono">STREAMINFO</span>, and it is
+      34 bytes of bit-packed fields.</p>
+
+    <div class="scroller"><table>
+      <caption>STREAMINFO — the 34 bytes every decoder reads first</caption>
+      <thead><tr><th>Field</th><th class="num">Bits</th><th>What it is for</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">min blocksize</td><td class="num">16</td><td>Smallest block in the stream, in samples. If it equals the maximum the stream is fixed-blocksize.</td></tr>
+        <tr><td class="mono">max blocksize</td><td class="num">16</td><td>Largest block. A decoder sizes its buffers from this and nothing else.</td></tr>
+        <tr><td class="mono">min framesize</td><td class="num">24</td><td>Smallest coded frame in bytes; zero means unknown, which is what a streaming encoder writes.</td></tr>
+        <tr><td class="mono">max framesize</td><td class="num">24</td><td>Largest coded frame in bytes. With the sample rate this bounds the peak bitrate.</td></tr>
+        <tr><td class="mono">sample rate</td><td class="num">20</td><td>In hertz, directly — so up to 1 048 575 Hz. A value of 0 is invalid, which is how the format says "this is not a FLAC stream".</td></tr>
+        <tr><td class="mono">channels</td><td class="num">3</td><td>Stored minus one, so 1 to 8 channels.</td></tr>
+        <tr><td class="mono">bits per sample</td><td class="num">5</td><td>Stored minus one, so 4 to 32 bits.</td></tr>
+        <tr><td class="mono">total samples</td><td class="num">36</td><td>Interchannel samples; zero means unknown. At 44.1 kHz this counts to about fifty centuries.</td></tr>
+        <tr><td class="mono">MD5 signature</td><td class="num">128</td><td>Of the <em>unencoded</em> PCM. This is what <span class="mono">flac -t</span> checks, and it is the whole warranty.</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Six further metadata block types are defined —
+      <span class="mono">PADDING</span> (so a tag can be rewritten without
+      moving the audio), <span class="mono">APPLICATION</span>,
+      <span class="mono">SEEKTABLE</span>,
+      <span class="mono">VORBIS_COMMENT</span> (the tags),
+      <span class="mono">CUESHEET</span> and <span class="mono">PICTURE</span>
+      (cover art). Then the frames begin. Each opens with a 14-bit sync pattern
+      <span class="mono">0b11111111111110</span>, which is chosen so that it
+      cannot occur anywhere else in a frame header, and closes with a CRC-16 over
+      the whole frame. The header itself is protected by its own CRC-8, computed
+      over everything from the sync code onwards.</p>
+
+    <div class="scroller"><table>
+      <caption>The frame header, in order</caption>
+      <thead><tr><th>Field</th><th class="num">Bits</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">sync code</td><td class="num">14</td><td><span class="mono">0b11111111111110</span> — resynchronisation after a damaged block is a scan for this pattern plus a CRC-8 check.</td></tr>
+        <tr><td class="mono">reserved</td><td class="num">1</td><td>Must be zero.</td></tr>
+        <tr><td class="mono">blocking strategy</td><td class="num">1</td><td>0 = fixed block size, and the number that follows is a frame number; 1 = variable, and it is a sample number.</td></tr>
+        <tr><td class="mono">block size</td><td class="num">4</td><td>A code into a small table; two of the codes mean "read 8 or 16 more bits at the end of the header".</td></tr>
+        <tr><td class="mono">sample rate</td><td class="num">4</td><td>Likewise, with an escape to an explicit value. A frame may thus be decoded without STREAMINFO.</td></tr>
+        <tr><td class="mono">channel assignment</td><td class="num">4</td><td>Independent channels, or one of three stereo decorrelations — see below.</td></tr>
+        <tr><td class="mono">sample size</td><td class="num">3</td><td>A code for the bit depth, or 0 meaning "as STREAMINFO says".</td></tr>
+        <tr><td class="mono">reserved</td><td class="num">1</td><td>Must be zero.</td></tr>
+        <tr><td class="mono">frame/sample number</td><td class="num">8–56</td><td>UTF-8-style variable-length coding of a 31-bit frame number or a 36-bit sample number. The same escape mechanism as text, used on an integer.</td></tr>
+        <tr><td class="mono">CRC-8</td><td class="num">8</td><td>Polynomial <i>x</i><sup>8</sup>+<i>x</i><sup>2</sup>+<i>x</i>+1, over the header including the sync code.</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>Inside the frame, one subframe per channel, and each subframe declares
+      itself with six bits followed by a "wasted bits" flag. The four subframe
+      kinds are the four honest answers to "how compressible is this block?".</p>
+
+    <div class="bitmap" style="margin-top:20px">
+      <div class="bitf"><div class="bv">000000</div><div class="bn">CONSTANT</div></div>
+      <div class="bitf"><div class="bv">000001</div><div class="bn">VERBATIM</div></div>
+      <div class="bitf on"><div class="bv">001ppp</div><div class="bn">FIXED, order ppp = 0–4</div></div>
+      <div class="bitf on"><div class="bv">1qqqqq</div><div class="bn">LPC, order qqqqq+1 = 1–32</div></div>
+    </div>
+
+    <p style="margin-top:20px"><span class="mono">CONSTANT</span> stores one
+      sample value and nothing else, which is what digital silence costs: a
+      minute of it is a few hundred bytes.
+      <span class="mono">VERBATIM</span> stores the block unchanged and is the
+      guaranteed worst case — it is the reason a FLAC file can never be more than
+      a fraction of a per cent larger than the PCM it came from, whatever you
+      feed it. <span class="mono">FIXED</span> and <span class="mono">LPC</span>
+      are the two predictors of the last two sections. A real encoder tries
+      several and keeps whichever produced the smallest subframe, which is why
+      the compression presets are search-breadth settings: the default
+      <span class="mono">-5</span> tries a modest set of predictors at a 4 096
+      block size, <span class="mono">-8</span> tries more of them with more
+      windowing functions, and <span class="mono">-0</span> restricts itself to
+      the fixed predictors at a 1 152 block, running several times faster for
+      files roughly five percentage points larger.</p>
+
+    <p>The stereo decorrelation happens before any of this, per frame, and the
+      encoder may change its mind every frame. Four assignments are available:
+      independent left and right; <strong>left/side</strong>, sending L and
+      L−R; <strong>right/side</strong>, sending R and L−R; and
+      <strong>mid/side</strong>, sending (L+R)&gt;&gt;1 and L−R. The side channel
+      needs one extra bit of depth, because a difference of two <i>n</i>-bit
+      numbers is an (<i>n</i>+1)-bit number — and the encoder takes that deal
+      whenever the side channel is quiet enough to pay for it, which on most
+      commercial mixes is nearly always.</p>
+
+    <div class="note heat">
+      <span class="tag tag-heat">The MD5 is the point</span>
+      <p>The 128 bits at the end of <span class="mono">STREAMINFO</span> are an
+        MD5 of the raw interleaved PCM, written by the encoder. Running
+        <span class="mono">flac -t</span> decodes the entire file and compares.
+        That is a verifiable claim of bit-exactness, which is precisely the
+        thing no lossy format can offer and precisely the reason archives use
+        this one. MD5 is long broken as a <em>cryptographic</em> hash; as an
+        accidental-corruption check over a file you already possess, it is
+        entirely adequate, and RFC 9639 documents it as such.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 6 -->
+  <section id="wall" class="section">
+    <div class="kicker k-danger">Why it stops at half</div>
+    <h3>The compressed size tracks the noise floor, not the music.</h3>
+    <p style="margin-top:18px">Published figures for FLAC on ordinary
+      commercial music cluster between roughly 50 and 70 per cent of the source
+      PCM, with the mid-50s to low-60s typical; one public benchmark puts FLAC
+      at about 61 per cent and WavPack at about 61 per cent on the same
+      material. Solo piano and chamber recordings do better, sometimes
+      dramatically; loud, limited, heavily saturated modern masters do worse and
+      can approach 80 per cent. The spread is large, but the <em>ceiling</em> is
+      remarkably consistent, and no amount of encoder cleverness has moved it in
+      twenty-five years.</p>
+    <p>The reason follows directly from the Laplacian entropy above. Combine it
+      with the definition of prediction gain and the relation collapses to
+      something you can do in your head.</p>
+
+    <div class="eq">
+      Δ<i>bits</i><span class="op">=</span>
+      <span class="fn">log</span><sub>2</sub>
+      <span class="frac"><span><i>σ</i><sub><i>x</i></sub></span><span><i>σ</i><sub><i>e</i></sub></span></span>
+      <span class="op">=</span>
+      <span class="frac"><span><i>G</i><sub>dB</sub></span><span><span class="num">6.02</span></span></span>
+      <span class="note2">every 6.02 dB of prediction gain is exactly one bit per sample saved — the same constant as the quantiser of Chapter 01, arriving from the other direction</span>
+    </div>
+
+    <p>That constant, 6.02 dB per bit, is the one derived in
+      <a href="1-sound.html">Chapter 01</a> for a uniform quantiser; here it
+      arrives from the other direction, and it prices prediction rather than
+      rounding. Sixteen-bit audio gives you sixteen bits to save, so halving the
+      file means finding eight of them, which means 48 dB of prediction gain.
+      Music does not as a rule contain 48 dB of prediction gain — the string
+      phrase in Fig 10.4 manages 37 dB at its cleanest — because underneath it
+      sits a noise floor: the microphone's self-noise, the room, the
+      preamplifier, the dither applied at the final mastering stage. A noise
+      floor is by construction unpredictable. Whatever the predictor achieves
+      above it, the floor itself must be coded at its own entropy, sample for
+      sample, for ever.</p>
+    <p>That entropy is easy to put a number on. A Gaussian residual of standard
+      deviation <i>σ</i>, discretised to integers, costs about</p>
+
+    <div class="eq">
+      <i>H</i><span class="op">≈</span>
+      <span class="fn">log</span><sub>2</sub>(<i>σ</i>
+      <span>√</span><span class="rad"><span class="num">2</span><i>πe</i></span>)
+      <span class="op">=</span>
+      <span class="fn">log</span><sub>2</sub><i>σ</i>
+      <span class="op">+</span><span class="num">2.05</span>&nbsp;bits
+      <span class="note2">the discretised Gaussian entropy — the price of coding pure noise, whatever model you put in front of it</span>
+    </div>
+
+    <p>A white floor at −90 dBFS is about one least-significant bit of a 16-bit
+      sample, so roughly two bits each; at −60 dBFS it is about thirty-three
+      LSBs, so roughly seven. And that is before the predictor's own high-pass
+      tilt, which amplifies a white floor rather than removing it: a second
+      difference multiplies noise power by six, another 3.9 dB of cost the
+      predictor has no way to avoid.</p>
+
+    <figure class="figure" id="fig-wall">
+      <div class="figure-bar">
+        <span class="fno">FIG. 10.4</span>
+        <span class="ftitle">Compression against the noise floor</span>
+        <span class="fstate" id="f4-state">−90 dBFS</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="f4-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>measured compressed size</span>
+          <span class="l-heat"><i></i>the floor you have selected</span>
+          <span class="l-ghost"><i class="dash"></i>no compression at all</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Compressed to</span><span class="v" id="f4-ratio">—</span></div>
+          <div class="ro"><span class="k">Bits per sample</span><span class="v" id="f4-bps">—</span></div>
+          <div class="ro ok"><span class="k">Prediction gain</span><span class="v" id="f4-gain">—</span></div>
+          <div class="ro bad"><span class="k">Cost of the noise</span><span class="v" id="f4-cost">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Added noise floor</span><span class="val" id="f4-noiselab">−90 dBFS</span></div>
+          <input type="range" id="f4-noise" min="-102" max="-18" step="3" value="-90" data-out="f4-noiselab" aria-label="Added noise floor in dBFS">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Predictor</span></div>
+          <div class="chips" id="f4-pred">
+            <button data-v="f2">Fixed 2</button>
+            <button data-v="f4">Fixed 4</button>
+            <button data-v="l8" class="on">LPC 8</button>
+            <button data-v="l16">LPC 16</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen</span></div>
+          <div class="chips">
+            <button class="btn play" id="f4-clean">Clean</button>
+            <button class="btn play" id="f4-noisy">With the floor</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 10.4</b> — the same string phrase
+        is dithered with white noise at a chosen level, quantised to 16 bits and
+        put through the full chain: predictor, Rice coding, per-block parameter
+        search. The blue curve is the measured result at eleven noise floors and
+        the gold marker is the one you have selected. Two regimes are visible.
+        Below about −80 dBFS the added noise is quieter than what the predictor
+        already fails to explain, and the curve is flat: those bits were being
+        spent anyway. Above it the noise dominates and the curve steepens
+        towards the limit the formula sets, one bit for every 6 dB — watch the
+        prediction-gain readout fall by roughly six decibels for every bit the
+        file gains. Press <b>with the floor</b> at −42 dBFS: the hiss is
+        obvious but hardly ruinous, and the file has grown from 58% of PCM to
+        70%.</figcaption>
+    </figure>
+
+    <p>Two consequences fall out of that slope, and both are counter-intuitive
+      enough to be worth stating plainly. The first is that <strong>a 24-bit
+      master usually compresses <em>worse</em> in percentage terms than the
+      16-bit version of the same recording</strong>. The extra eight bits are
+      almost entirely noise — that is what the extra headroom is for — so they
+      arrive at the entropy coder incompressible, and the ratio moves towards
+      1 : 1 as the depth grows. A 24/96 album is not merely three times the size
+      of its CD counterpart before compression; it is rather more than three
+      times afterwards.</p>
+    <p>The second is that the practical ceiling is set by the recording, not the
+      codec. Monkey's Audio at its slowest settings will beat FLAC by around five
+      per cent on typical material, and OptimFROG is in the same territory; both
+      pay for it with decode complexity that rules them out of battery-powered
+      playback. Five per cent is a real number and a real engineering
+      achievement. It is also, against the 40-odd per cent that prediction
+      already bought, a rounding error — and it is what is left after the
+      entropy of the residual has taken its cut.</p>
+  </section>
+
+  <!-- ===================================================== 7 -->
+  <section id="family" class="section">
+    <div class="kicker">The rest of the family</div>
+    <h3>Everyone arrived at the same architecture; they differ in what they will spend.</h3>
+    <p style="margin-top:18px">Apple's ALAC is structurally so close to FLAC
+      that a description of one nearly describes the other: blocking, stereo
+      decorrelation with a weight and a shift, an adaptive FIR predictor, Rice
+      coding of the residual. It was reverse-engineered by David Hammerton and
+      Cody Brocious in 2005 and then open-sourced by Apple under the Apache
+      licence in October 2011, after which the argument between the two formats
+      became entirely one of ecosystem. WavPack takes a different view of the
+      same problem and adds a genuinely distinct mode: a <em>hybrid</em>, where
+      a small lossy <span class="mono">.wv</span> file is playable on its own and
+      an optional <span class="mono">.wvc</span> correction file restores exact
+      losslessness, with an overhead typically under one per cent against a pure
+      lossless encode. MPEG-4 SLS, OptimFROG DualStream and DTS-HD Master Audio
+      all use the same layered idea from different directions.</p>
+
+    <div class="scroller"><table>
+      <caption>The lossless family, by what it optimises</caption>
+      <thead><tr><th>Format</th><th>Origin</th><th>Design</th><th>Position</th></tr></thead>
+      <tbody>
+        <tr><td><strong>FLAC</strong></td><td>Josh Coalson, 2000–01; Xiph.Org from 2003; RFC 9639, 2024</td><td>Fixed + LPC to order 32, partitioned Rice</td><td>The default. Fast symmetric coding, hardware decoders everywhere, a formal specification and a per-file MD5.</td></tr>
+        <tr><td><strong>ALAC</strong></td><td>Apple; open-sourced October 2011</td><td>Adaptive FIR prediction, Rice-style residual coding</td><td>Comparable ratios to FLAC; the reason to choose it is that it plays in Apple's ecosystem without conversion.</td></tr>
+        <tr><td><strong>WavPack</strong></td><td>David Bryant, from 1998</td><td>Prediction plus a correction layer</td><td>Ratios within a whisker of FLAC, plus the hybrid lossy/correction split nothing else in common use offers.</td></tr>
+        <tr><td><strong>Monkey's Audio</strong></td><td>Matthew Ashland, from 2000</td><td>Cascaded adaptive filters, range coding</td><td>Around five per cent smaller than FLAC at its heavier settings, at a large and asymmetric cost in decode time.</td></tr>
+        <tr><td><strong>OptimFROG</strong></td><td>Florin Ghido</td><td>Heavy adaptive prediction</td><td>Among the strongest ratios measured; slow enough that it is a benchmark rather than a delivery format.</td></tr>
+        <tr><td><strong>TAK, TTA, LA</strong></td><td>Independent, 2000s</td><td>Predictive, various</td><td>TAK sits near Monkey's Audio ratios at much better speed; TTA is deliberately simple and fast.</td></tr>
+        <tr><td><strong>MPEG-4 ALS</strong></td><td>ISO/IEC 14496-3, 2006</td><td>Long-term + short-term prediction, up to 256 channels</td><td>The standards-track answer. Technically capable, barely deployed for consumer audio.</td></tr>
+        <tr><td><strong>MLP / Dolby TrueHD</strong></td><td>Meridian; DVD-Audio then Blu-ray</td><td>Lossless matrixing and prediction, with a lossy-compatible substream</td><td>Disc formats. Typically several megabits per second for multichannel 24-bit material.</td></tr>
+        <tr><td><strong>DTS-HD Master Audio</strong></td><td>DTS; Blu-ray</td><td>Lossy DTS core plus a lossless extension</td><td>The layered idea again, so that a legacy decoder gets the core and a modern one gets the whole thing.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note ghost">
+      <span class="tag">What lossless is actually for</span>
+      <p>Three jobs, and only three. <strong>Archiving</strong>, because you
+        cannot know what codec you will want in 2050 and re-encoding from a lossy
+        source compounds the damage. <strong>Mastering and editing</strong>,
+        because every generation of a lossy round trip moves the spectrum and
+        every cut lands on a different block boundary.
+        <strong>Transcoding</strong>, because a lossless master can be turned
+        into any lossy format at any rate without the generation loss described
+        in <a href="11-artifacts.html">Chapter 11</a>. Listening is not on the
+        list, and the listening tests in
+        <a href="12-choosing.html">Chapter 12</a> explain why.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== 8 -->
+  <section id="bottom" class="section">
+    <div class="kicker k-heat">The other end of the dial</div>
+    <h3>Below about four kilobits a second, nobody is sending a waveform any more.</h3>
+    <p style="margin-top:18px">Turn the dial the other way and the sequence of
+      surrenders is instructive. The first thing to go is uniform quantisation.
+      G.711, standardised in 1972 and still the interoperability floor of the
+      world's telephone network, samples at 8 kHz and spends eight bits a
+      sample — 64 kbit/s — but spends them logarithmically. Two curves are
+      defined: μ-law in North America and Japan, A-law almost everywhere else.</p>
+
+    <div class="eq">
+      <i>F</i>(<i>x</i>)<span class="op">=</span>
+      <span class="fn">sgn</span>(<i>x</i>)
+      <span class="frac"><span><span class="fn">ln</span>(<span class="num">1</span><span class="op">+</span><i>μ</i>|<i>x</i>|)</span><span><span class="fn">ln</span>(<span class="num">1</span><span class="op">+</span><i>μ</i>)</span></span>
+      <span class="op">,</span>
+      <i>μ</i><span class="op">=</span><span class="num">255</span>
+      <span class="note2">μ-law companding; A-law uses a linear segment below |x| = 1/A and a logarithm above it, with A = 87.6</span>
+    </div>
+
+    <p>The point of a logarithmic curve is that the quantisation step grows in
+      proportion to the signal, so the signal-to-noise ratio stays roughly
+      constant instead of collapsing as the talker gets quieter. Uniform
+      eight-bit coding manages a theoretical 49.9 dB on a full-scale sine and
+      loses a decibel for every decibel the input drops; μ-law tops out near
+      38 dB and is still delivering about 30 dB forty decibels below full scale,
+      where the uniform coder has collapsed to about five. That is roughly four
+      extra bits of usable dynamic range for nothing, which in 1972 was the
+      difference between a workable trunk line and an unworkable one.</p>
+
+    <figure class="figure" id="fig-mu">
+      <div class="figure-bar">
+        <span class="fno">FIG. 10.5</span>
+        <span class="ftitle">Eight bits, spent two ways</span>
+        <span class="fstate" id="f5-state">μ-law</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="f5-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-sig"><i></i>the law you selected</span>
+          <span class="l-danger"><i></i>uniform 8-bit</span>
+          <span class="l-ghost"><i class="dash"></i>uniform 12-bit</span>
+          <span class="l-heat"><i></i>your input level</span>
+        </div>
+        <div class="readout" style="margin-top:14px">
+          <div class="ro sig"><span class="k">Selected law</span><span class="v" id="f5-snr">—</span></div>
+          <div class="ro bad"><span class="k">Uniform 8-bit</span><span class="v" id="f5-snru">—</span></div>
+          <div class="ro ok"><span class="k">Advantage</span><span class="v" id="f5-adv">—</span></div>
+          <div class="ro ghost"><span class="k">Same SNR would need</span><span class="v" id="f5-rate">—</span></div>
+        </div>
+      </div>
+      <div class="deck">
+        <div class="field">
+          <div class="flab"><span>Companding law</span></div>
+          <div class="chips" id="f5-law">
+            <button data-v="mu" class="on">μ-law</button>
+            <button data-v="a">A-law</button>
+          </div>
+        </div>
+        <div class="field grow" style="min-width:190px">
+          <div class="flab"><span>Input level</span><span class="val" id="f5-lvllab">−30 dBFS</span></div>
+          <input type="range" id="f5-lvl" min="-66" max="-3" step="3" value="-30" data-out="f5-lvllab" aria-label="Input level in dBFS">
+        </div>
+        <div class="field">
+          <div class="flab"><span>Listen at this level</span></div>
+          <div class="chips">
+            <button class="btn play" id="f5-orig">Original</button>
+            <button class="btn play" id="f5-uni">Uniform 8-bit</button>
+            <button class="btn play" id="f5-comp">Companded 8-bit</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 10.5</b> — signal-to-noise ratio
+        measured by actually encoding and decoding a speech excerpt at each
+        level, not read off a curve. The red line is uniform eight-bit coding
+        and falls at one decibel per decibel, as any uniform quantiser must; the
+        blue line is the companding law you selected and stays within 8 dB of
+        its 38 dB ceiling all the way down to −42 dBFS, where the uniform line
+        has collapsed to about 5. The three listening buttons play the same
+        excerpt at the level you set, renormalised for playback so that what you
+        hear is the <em>noise</em> rather than the volume. At −42 dBFS the
+        uniform version is a wreck and the companded one is still a telephone
+        call, and the last readout says how deep a uniform quantiser would have
+        to be to match it. Take the level up to −3 dBFS and the advantage goes
+        negative: at the very top of the range, where a logarithmic curve
+        spreads its steps widest, plain eight-bit coding wins.</figcaption>
+    </figure>
+
+    <p>After companding, the next surrender is sending sample values at all.
+      <strong>ADPCM</strong> sends the difference between the sample and a
+      prediction, with a step size that adapts to recent history — the same
+      predict-and-code architecture as the first half of this chapter, but with
+      the residual quantised rather than kept. IMA/DVI ADPCM spends four bits a
+      sample, a straight 4 : 1 on 16-bit input, using an 89-entry step-size table
+      and an index adjustment of {−1, −1, −1, −1, 2, 4, 6, 8} that backs off
+      gently and attacks quickly. ITU-T G.726 does the same job at 40, 32, 24 and
+      16 kbit/s, and G.722 splits the band into two halves with a quadrature
+      mirror filter pair and runs an ADPCM coder in each, delivering 7 kHz audio
+      within the same 64 kbit/s a plain telephone channel already occupied.</p>
+    <p>Below that, the waveform itself goes. <strong>G.729</strong> codes
+      8 kbit/s with conjugate-structure algebraic code-excited linear prediction:
+      10 ms frames of 80 bits each, a 5 ms look-ahead, and therefore 15 ms of
+      algorithmic delay. What it transmits is a short-term LPC filter, a pitch
+      lag, and an index into an algebraic codebook of sparse excitation
+      vectors — not the signal, but the settings of a machine that will make a
+      signal like it. <strong>AMR</strong> generalised this into the mode sets
+      that GSM and 3G actually used: eight narrowband rates from 4.75 to
+      12.2 kbit/s, and nine wideband rates from 6.6 to 23.85 kbit/s in AMR-WB,
+      switchable frame by frame as the radio channel deteriorates.</p>
+
+    <div class="scroller"><table>
+      <caption>The whole dial, from bit-exact to barely a waveform</caption>
+      <thead><tr><th>Scheme</th><th class="num">Rate</th><th>What is transmitted</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td><strong>CD PCM</strong></td><td class="num">1 411 kbit/s</td><td>Every sample, 16 bits, twice over</td><td>The reference. 44 100 × 16 × 2.</td></tr>
+        <tr><td><strong>FLAC</strong></td><td class="num">≈700–950 kbit/s</td><td>Prediction residual, Rice-coded</td><td>Archives, Bandcamp downloads, lossless streaming tiers.</td></tr>
+        <tr><td><strong>MP3 / AAC / Opus</strong></td><td class="num">64–320 kbit/s</td><td>Quantised spectral lines below a masking threshold</td><td><a href="7-mp3.html">Chapters 07</a>–<a href="9-opus.html">09</a>.</td></tr>
+        <tr><td><strong>G.711 μ-law</strong></td><td class="num">64 kbit/s</td><td>8 logarithmic bits per 8 kHz sample</td><td>The PSTN, and the fallback in every WebRTC negotiation.</td></tr>
+        <tr><td><strong>G.722</strong></td><td class="num">64 kbit/s</td><td>Two sub-bands of ADPCM</td><td>7 kHz "HD voice" over a 64 kbit/s channel; 1988.</td></tr>
+        <tr><td><strong>IMA ADPCM</strong></td><td class="num">4 bits/sample</td><td>Quantised difference, adaptive step</td><td>Game audio, WAV files, anything cheap and old.</td></tr>
+        <tr><td><strong>G.726</strong></td><td class="num">16–40 kbit/s</td><td>Adaptive differential PCM</td><td>DECT cordless phones at 32 kbit/s.</td></tr>
+        <tr><td><strong>AMR-WB</strong></td><td class="num">6.6–23.85 kbit/s</td><td>ACELP: filter, pitch, codebook index</td><td>3G and VoLTE wideband calls.</td></tr>
+        <tr><td><strong>G.729</strong></td><td class="num">8 kbit/s</td><td>CS-ACELP, 80 bits per 10 ms</td><td>Enterprise VoIP trunks; heavily patented in its day.</td></tr>
+        <tr><td><strong>Lyra v2</strong></td><td class="num">3.2 / 6 / 9.2 kbit/s</td><td>Indices into a learned residual vector quantiser</td><td>Google's SoundStream-derived neural coder, 2022.</td></tr>
+        <tr><td><strong>MELPe</strong></td><td class="num">2.4 / 1.2 / 0.6 kbit/s</td><td>Mixed excitation, LPC parameters</td><td>MIL-STD-3005 and NATO STANAG 4591 secure voice.</td></tr>
+        <tr><td><strong>Codec 2</strong></td><td class="num">3.2 kbit/s → 450 bit/s</td><td>Harmonic amplitudes, pitch, voicing</td><td>Amateur digital radio over HF. David Rowe, from 2009.</td></tr>
+      </tbody>
+    </table></div>
+
+    <p>At the bottom of that table the ratios stop being interesting and the
+      change of kind becomes the point. Codec 2 at 700 bit/s is compressing CD
+      stereo by a factor of about two thousand, but it is not compressing it —
+      it is discarding the recording entirely and transmitting a parametric
+      description of a vocal tract, from which the decoder synthesises something
+      new. The speaker is recognisable, the words are intelligible, and no
+      sample in the output was ever in the input. MELPe at 600 bit/s does the
+      same job under a military specification. Google's Lyra v2 does it with a
+      learned encoder and a residual vector quantiser at 3.2 kbit/s, and reports
+      quality comparable to Opus at around 10 — which is the honest measure of
+      what a learned model buys at the very bottom of the dial, and is picked up
+      again in <a href="12-choosing.html">Chapter 12</a>.</p>
+
+    <blockquote class="pullquote">A lossless coder sends everything and saves
+      half. A vocoder sends nothing that was in the recording and saves
+      ninety-nine point nine five per cent. They are not points on one scale;
+      they are answers to different questions.
+      <span class="who">The two ends of the dial</span></blockquote>
+  </section>
+
+  <!-- ===================================================== 9 -->
+  <section id="wrong" class="section">
+    <div class="kicker k-danger">What people get wrong</div>
+    <h3>Six corrections, in rough order of how often they are needed.</h3>
+
+    <dl class="defs" style="margin-top:22px">
+      <div class="def">
+        <dt>"FLAC sounds better than WAV"</dt>
+        <dd>It decodes to the same integers. That is not a claim of taste, it is
+          a checkable property: the MD5 in <span class="mono">STREAMINFO</span>
+          is computed over the unencoded PCM, and
+          <span class="mono">flac -t</span> will tell you whether the file you
+          have reproduces it. If a FLAC and a WAV of the same master sound
+          different on your system, something downstream of the decoder differs —
+          a resampler, a volume setting, a DSP chain — and that is worth
+          finding.</dd>
+      </div>
+      <div class="def">
+        <dt>"Compression level 8 is higher quality than level 0"</dt>
+        <dd>Every level produces a file that decodes to the identical samples.
+          The levels are search-effort settings, controlling the maximum LPC
+          order, the block size, the windowing functions tried and whether the
+          encoder exhaustively evaluates candidate models. Level 8 is smaller and
+          slower to <em>encode</em>; decode speed barely differs. The spread
+          between <span class="mono">-0</span> and <span class="mono">-8</span>
+          on typical material is a few per cent of file size.</dd>
+      </div>
+      <div class="def">
+        <dt>"Lossless means two files of the same album are identical"</dt>
+        <dd>It means the <em>audio</em> is identical. Two FLACs of the same CD
+          rip will differ in bytes if they were made by different encoder
+          versions, at different presets, with different tags or different
+          padding. Comparing them requires decoding both and comparing the PCM —
+          which is exactly what the stored MD5 lets you do without keeping the
+          WAV.</dd>
+      </div>
+      <div class="def">
+        <dt>"24-bit/192 kHz files compress better because there is more redundancy"</dt>
+        <dd>The opposite, and Fig 10.4 shows why. The extra depth is mostly noise
+          and the extra bandwidth is mostly empty, but the noise is
+          incompressible and must be coded at its own entropy. A 24-bit master
+          typically compresses to a <em>larger</em> fraction of its source than
+          the 16-bit version of the same recording does — the ratio falls
+          towards 1 : 1 as you add bits of dither.</dd>
+      </div>
+      <div class="def">
+        <dt>"You can losslessly shrink an MP3 by re-encoding it to FLAC"</dt>
+        <dd>You will usually make it three to five times larger. Decoding an MP3
+          produces a full-rate PCM stream whose residual entropy is no lower than
+          real music's — the quantisation noise the encoder added is itself
+          unpredictable, and the sharp band-limit does not help a time-domain
+          predictor. FLAC of a decoded MP3 is bit-exact with respect to
+          <em>that decode</em>, and carries none of the information the MP3
+          encoder discarded. The original is gone.</dd>
+      </div>
+      <div class="def">
+        <dt>"Someone will invent a lossless codec twice as good"</dt>
+        <dd>Not without changing what is being compressed. The floor is the
+          entropy of the prediction residual, and the residual is dominated by
+          the recording's own noise. Twenty-five years of increasingly heavy
+          adaptive filtering — Monkey's Audio, OptimFROG, TAK, and lately
+          learned predictors — has bought something in the region of five to ten
+          per cent over FLAC, at large multiples of the decode cost. That is the
+          shape of a problem near its bound, not one awaiting a breakthrough.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ===================================================== 10 -->
+  <section id="next" class="section">
+    <div class="kicker">Where this leaves us</div>
+    <h3>Both ends are now measured. What remains is the middle, where the damage is audible.</h3>
+    <p style="margin-top:18px">The dial has been walked from one stop to the
+      other. At the top, exactness costs a factor of two and cannot be made to
+      cost much less, because the residual's entropy is a property of the
+      recording rather than of the coder. At the bottom, a vocoder discards the
+      recording completely and rebuilds something plausible from a few dozen
+      parameters per frame. The nine chapters before this one live in between,
+      and everything they do is a negotiation between those two refusals: keep
+      the waveform and pay for it, or model it and accept what the model gets
+      wrong.</p>
+    <p>What the model gets wrong is the subject of
+      <a href="11-artifacts.html">Chapter 11</a>. Every mechanism argued about so
+      far — the block length that smears a transient backwards, the band that is
+      zeroed and then reappears a frame later, the ceiling above which nothing is
+      coded at all, the side channel that has been collapsed to save bits — has a
+      sound. Each has a name, a characteristic programme that provokes it, and a
+      bitrate below which it becomes unmistakable. The next chapter provokes each
+      one on demand from a clean source, and then asks you to prove, under proper
+      statistics, that you can actually hear it. Anything here that needs its
+      definition pinned down — <em>residual</em>, <em>prediction gain</em>,
+      <em>Golomb code</em>, <em>companding</em> — is in the
+      <a href="lexicon.html">Lexicon</a>.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   FIG 10.1 — the fixed predictors, run over real samples.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("f1-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var BLOCK = 4096, VIEW = 1024;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.6, xmin: 0, xmax: VIEW, ymin: -34000, ymax: 34000,
+    xlabel: "sample", ylabel: "16-bit value",
+    pad: { l: 58, r: 14, t: 14, b: 34 },
+  });
+
+  // A plucked phrase with a gentle spectral tilt: the closest this page gets
+  // to the statistics of a real acoustic recording.
+  function strings(dur, sr) {
+    var n = Math.round(sr * dur), x = new Float64Array(n), i;
+    var notes = [220, 277.18, 329.63, 440, 329.63, 277.18, 440, 554.37];
+    var step = n / notes.length;
+    notes.forEach(function (f, idx) {
+      var pl = A.src.pluck(Math.min(1.0, dur / notes.length * 2.4), { f: f, sr: sr, seed: 3 + idx });
+      var s0 = Math.round(idx * step), j;
+      for (j = 0; j < pl.length && s0 + j < n; j++) x[s0 + j] += pl[j] * 0.6;
+    });
+    var b = A.src.bell(Math.min(1.6, dur), { f: 880, sr: sr, decay: 1.0 });
+    for (i = 0; i < b.length && i < n; i++) x[i] += b[i] * 0.2;
+    x = A.onePole(x, sr, 1600, false);
+    D.normalize(x, 0.8);
+    return A.fadeEdges(x, sr, 15);
+  }
+
+  var SOURCES = {
+    strings:   function (sr) { return strings(1.6, sr); },
+    bell:      function (sr) { return A.src.bell(1.6, { sr: sr, f: 420, decay: 1.1 }); },
+    speech:    function (sr) { return A.src.speech(1.6, { sr: sr }); },
+    music:     function (sr) { return A.src.music(1.6, { sr: sr }); },
+    applause:  function (sr) { return A.src.applause(1.6, { sr: sr }); },
+    noise:     function (sr) { return A.src.noise(1.6, { sr: sr, amp: 0.7, seed: 4 }); },
+  };
+
+  var st = { src: "strings", order: 2, ints: null, res: null, view: 0, stats: null };
+
+  function toInt16(x) {
+    var o = new Int32Array(x.length), i;
+    for (i = 0; i < x.length; i++) {
+      o[i] = Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767)));
+    }
+    return o;
+  }
+
+  function ensure() {
+    if (st.ints) return;
+    var sr = A.rate();
+    st.sig = SOURCES[st.src](sr);
+    st.ints = toInt16(st.sig);
+    // Put the viewport on the loudest stretch, so the trace is not silence.
+    var best = 0, bestE = -1, off, i, e;
+    for (off = 0; off + VIEW <= st.ints.length; off += VIEW) {
+      e = 0;
+      for (i = off; i < off + VIEW; i++) e += st.ints[i] * st.ints[i];
+      if (e > bestE) { bestE = e; best = off; }
+    }
+    st.view = best;
+  }
+
+  // Code the whole signal with the chosen fixed order, block by block, and
+  // count every bit a decoder would need: warm-up samples raw, a subframe
+  // header, a Rice parameter, then the residual itself.
+  function measure() {
+    ensure();
+    var n = st.ints.length, off, bits = 0, kCount = {}, absSum = 0, absN = 0, i;
+    var orders = st.order === "best" ? [0, 1, 2, 3, 4] : [st.order];
+    var full = new Int32Array(n);
+    for (off = 0; off < n; off += BLOCK) {
+      var len = Math.min(BLOCK, n - off);
+      var sub = st.ints.subarray(off, off + len);
+      var bb = Infinity, br = null, bk = 0, bo = 0, j;
+      for (j = 0; j < orders.length; j++) {
+        var o = orders[j];
+        if (len <= o + 4) continue;
+        var r = D.fixedResidual(sub, o);
+        var kk = D.bestRiceK(r.subarray(o), 20);
+        var t = kk.bits + o * 16 + 6 + 1 + 2 + 4;
+        if (t < bb) { bb = t; br = r; bk = kk.k; bo = o; }
+      }
+      if (!br) { bits += len * 16 + 8; full.set(sub, off); continue; }
+      bits += bb;
+      full.set(br, off);
+      kCount[bk] = (kCount[bk] || 0) + 1;
+      for (i = bo; i < len; i++) { absSum += Math.abs(br[i]); absN++; }
+    }
+    var bestK = 0, bestC = -1;
+    Object.keys(kCount).forEach(function (k) {
+      if (kCount[k] > bestC) { bestC = kCount[k]; bestK = +k; }
+    });
+    st.res = full;
+    st.stats = {
+      bps: bits / n,
+      ratio: bits / (n * 16),
+      mean: absN ? absSum / absN : 0,
+      k: bestK,
+    };
+  }
+
+  function show() {
+    var s = st.stats;
+    document.getElementById("f1-mean").textContent = AC.fmt.int(s.mean);
+    document.getElementById("f1-bps").textContent = s.bps.toFixed(2) + " / 16";
+    document.getElementById("f1-ratio").textContent = (s.ratio * 100).toFixed(1) + "%";
+    document.getElementById("f1-k").textContent = "k = " + s.k;
+    document.getElementById("f1-state").textContent =
+      st.order === "best" ? "best per block" : "order " + st.order;
+  }
+
+  function draw() {
+    p.clear();
+    p.axes({ yfmt: function (v) { return AC.shortNum(v); } });
+    if (!st.res) return;
+    var a = [], b = [], i, v0 = st.view;
+    for (i = 0; i < VIEW; i++) {
+      a.push([i, st.ints[v0 + i]]);
+      b.push([i, st.res[v0 + i]]);
+    }
+    p.line(a, { color: AC.C.blue, width: 1.1, alpha: .85 });
+    p.line(b, { color: AC.C.gold, width: 1.2, alpha: .95 });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      (st.order === "best" ? "best of orders 0–4, per block" : "order " + st.order) +
+      " · 1 024 of " + AC.fmt.int(st.ints.length) + " samples",
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() { measure(); show(); redraw(); }
+
+  AC.chips(document.getElementById("f1-order"), function (v) {
+    st.order = v === "best" ? "best" : +v;
+    refresh();
+  });
+  AC.chips(document.getElementById("f1-src"), function (v) {
+    st.src = v; st.ints = null; st.sig = null;
+    A.stopAll();
+    AC.$$("#fig-fixed .btn.play.on").forEach(function (b) { b.classList.remove("on"); });
+    refresh();
+  });
+
+  A.wire(document.getElementById("f1-orig"), function () { ensure(); return st.sig; });
+  A.wire(document.getElementById("f1-res"), function () {
+    if (!st.res) refresh();
+    var d = new Float64Array(st.res.length), i;
+    for (i = 0; i < d.length; i++) d[i] = st.res[i] / 32768;
+    D.normalize(d, 0.7);
+    return d;
+  });
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      refresh();
+    }, { rootMargin: "300px" });
+    io.observe(cv);
+  } else {
+    refresh();
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 10.2 — LPC order against the coefficient bill.
+   One block, every order from 1 to 32, coefficients quantised exactly
+   the way FLAC quantises them.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("f2-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var MAXORD = 32, DEPTH = 16;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: MAXORD, ymin: 0, ymax: 12,
+    xlabel: "predictor order", ylabel: "bits per sample",
+    pad: { l: 52, r: 14, t: 14, b: 34 },
+  });
+
+  // A plucked phrase with a gentle spectral tilt: the closest this page gets
+  // to the statistics of a real acoustic recording.
+  function strings(dur, sr) {
+    var n = Math.round(sr * dur), x = new Float64Array(n), i;
+    var notes = [220, 277.18, 329.63, 440, 329.63, 277.18, 440, 554.37];
+    var step = n / notes.length;
+    notes.forEach(function (f, idx) {
+      var pl = A.src.pluck(Math.min(1.0, dur / notes.length * 2.4), { f: f, sr: sr, seed: 3 + idx });
+      var s0 = Math.round(idx * step), j;
+      for (j = 0; j < pl.length && s0 + j < n; j++) x[s0 + j] += pl[j] * 0.6;
+    });
+    var b = A.src.bell(Math.min(1.6, dur), { f: 880, sr: sr, decay: 1.0 });
+    for (i = 0; i < b.length && i < n; i++) x[i] += b[i] * 0.2;
+    x = A.onePole(x, sr, 1600, false);
+    D.normalize(x, 0.8);
+    return A.fadeEdges(x, sr, 15);
+  }
+
+  // FLAC apodises the block before taking its autocorrelation; without it a
+  // decaying note fits so badly that a fixed predictor wins.
+  function tukey(N, a) {
+    var w = new Float64Array(N), t = Math.max(1, Math.floor(a * (N - 1) / 2)), i;
+    for (i = 0; i < N; i++) {
+      if (i < t) w[i] = 0.5 * (1 + Math.cos(Math.PI * (i / t - 1)));
+      else if (i > N - 1 - t) w[i] = 0.5 * (1 + Math.cos(Math.PI * ((N - 1 - i) / t - 1)));
+      else w[i] = 1;
+    }
+    return w;
+  }
+
+  var SOURCES = {
+    strings:  function (sr) { return strings(1.8, sr); },
+    bell:     function (sr) { return A.src.bell(1.8, { sr: sr, f: 420, decay: 1.2 }); },
+    speech:   function (sr) { return A.src.speech(1.8, { sr: sr }); },
+    applause: function (sr) { return A.src.applause(1.8, { sr: sr }); },
+  };
+
+  var st = { src: "strings", blk: 4096, prec: 15, block: null, curve: null, fixedBest: 0, gain: 0, ready: false };
+
+  function toInt16(x) {
+    var o = new Int32Array(x.length), i;
+    for (i = 0; i < x.length; i++) {
+      o[i] = Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767)));
+    }
+    return o;
+  }
+
+  // The loudest block of the requested length.
+  function pickBlock() {
+    var sr = A.rate();
+    var ints = toInt16(SOURCES[st.src](sr));
+    var B = Math.min(st.blk, ints.length);
+    var best = 0, bestE = -1, off, i, e;
+    for (off = 0; off + B <= ints.length; off += Math.max(1, B >> 2)) {
+      e = 0;
+      for (i = off; i < off + B; i++) e += ints[i] * ints[i];
+      if (e > bestE) { bestE = e; best = off; }
+    }
+    st.block = ints.subarray(best, best + B);
+  }
+
+  // Quantise the predictor the way a FLAC subframe carries it: `prec` bits
+  // per coefficient and a common right shift, then predict in integers.
+  function lpcCost(x, order, prec) {
+    var xf = new Float64Array(x.length), i, n, j;
+    var w = tukey(x.length, 0.5);
+    for (i = 0; i < x.length; i++) xf[i] = x[i] * w[i];
+    var r = D.autocorr(xf, order);
+    var lev = D.levinson(r, order);
+    var maxA = 0;
+    for (i = 1; i <= order; i++) maxA = Math.max(maxA, Math.abs(lev.a[i]));
+    if (!(maxA > 0)) return null;
+    var cap = Math.pow(2, prec - 1) - 1;
+    var shift = Math.floor(Math.log2(cap / maxA));
+    shift = Math.max(0, Math.min(15, shift));
+    var scale = Math.pow(2, shift);
+    var q = new Float64Array(order + 1);
+    for (i = 1; i <= order; i++) {
+      q[i] = Math.max(-cap - 1, Math.min(cap, Math.round(-lev.a[i] * scale)));
+    }
+    var res = new Int32Array(x.length - order);
+    for (n = order; n < x.length; n++) {
+      var acc = 0;
+      for (j = 1; j <= order; j++) acc += q[j] * x[n - j];
+      res[n - order] = x[n] - Math.floor(acc / scale);
+    }
+    var bk = D.bestRiceK(res, 18);
+    var side = order * prec + 4 + 5 + order * DEPTH + 6 + 4;
+    return {
+      resBits: bk.bits / x.length,
+      total: (bk.bits + side) / x.length,
+      side: side / x.length,
+      gain: lev.err > 0 ? 10 * Math.log10(r[0] / lev.err) : 0,
+    };
+  }
+
+  function fixedCost(x, order) {
+    var r = D.fixedResidual(x, order);
+    var bk = D.bestRiceK(r.subarray(order), 18);
+    return (bk.bits + order * DEPTH + 6 + 4) / x.length;
+  }
+
+  function compute() {
+    pickBlock();
+    var x = st.block, o, c;
+    var curve = [];
+    for (o = 1; o <= MAXORD; o++) {
+      if (o >= x.length - 8) break;
+      c = lpcCost(x, o, st.prec);
+      if (!c) break;
+      curve.push({ o: o, res: c.resBits, tot: c.total, side: c.side, gain: c.gain });
+    }
+    st.curve = curve;
+    var bf = Infinity;
+    for (o = 0; o <= 4; o++) bf = Math.min(bf, fixedCost(x, o));
+    st.fixedBest = bf;
+    st.ready = true;
+  }
+
+  function bestPoint() {
+    var b = null, i;
+    for (i = 0; i < st.curve.length; i++) {
+      if (!b || st.curve[i].tot < b.tot) b = st.curve[i];
+    }
+    return b;
+  }
+
+  function show() {
+    if (!st.ready || !st.curve.length) return;
+    var b = bestPoint();
+    document.getElementById("f2-best").textContent = String(b.o);
+    document.getElementById("f2-bps").textContent = b.tot.toFixed(2) + " bits";
+    document.getElementById("f2-gain").textContent = b.gain.toFixed(1) + " dB";
+    document.getElementById("f2-coef").textContent = b.side.toFixed(2) + " b/sample";
+    document.getElementById("f2-state").textContent = "order " + b.o;
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.ready || !st.curve.length) {
+      p.axes();
+      p.note(p.pad.l + 10, p.pad.t + 10, "measuring…", { color: AC.C.faint });
+      return;
+    }
+    var i, hi = 0;
+    for (i = 0; i < st.curve.length; i++) hi = Math.max(hi, st.curve[i].tot, st.curve[i].res);
+    hi = Math.max(hi, st.fixedBest);
+    p.range(0, MAXORD, Math.max(0, Math.floor(Math.min.apply(null, st.curve.map(function (c) { return c.res; })) - 1)), Math.ceil(hi + 0.6));
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+
+    var res = st.curve.map(function (c) { return [c.o, c.res]; });
+    var tot = st.curve.map(function (c) { return [c.o, c.tot]; });
+    p.hline(st.fixedBest, { color: AC.C.purple, label: "best fixed predictor" });
+    p.line(res, { color: AC.C.blue, width: 1.8 });
+    p.line(tot, { color: AC.C.gold, width: 2 });
+    var b = bestPoint();
+    p.dot(b.o, b.tot, { color: AC.C.gold, ring: true });
+    p.vline(b.o, { color: AC.C.gold, label: "order " + b.o });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      st.blk + "-sample block · " + st.prec + "-bit coefficients", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() { compute(); show(); redraw(); }
+
+  var pend = 0;
+  function later() { clearTimeout(pend); pend = setTimeout(refresh, 140); }
+
+  AC.chips(document.getElementById("f2-blk"), function (v) { st.blk = +v; later(); });
+  AC.chips(document.getElementById("f2-src"), function (v) { st.src = v; later(); });
+  AC.slider(document.getElementById("f2-prec"), function (v) {
+    st.prec = v;
+    if (st.ready) later();
+  }, function (v) { return v + " bits"; });
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      refresh();
+    }, { rootMargin: "300px" });
+    io.observe(cv);
+  } else {
+    refresh();
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 10.3 — the Rice parameter, its cost curve and its floor.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("f3-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var B = 4096, KMAX = 14;
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: 0, xmax: KMAX, ymin: 0, ymax: 20,
+    xlabel: "Rice parameter k", ylabel: "bits per sample",
+    pad: { l: 52, r: 14, t: 14, b: 34 },
+  });
+
+  // A plucked phrase with a gentle spectral tilt: the closest this page gets
+  // to the statistics of a real acoustic recording.
+  function strings(dur, sr) {
+    var n = Math.round(sr * dur), x = new Float64Array(n), i;
+    var notes = [220, 277.18, 329.63, 440, 329.63, 277.18, 440, 554.37];
+    var step = n / notes.length;
+    notes.forEach(function (f, idx) {
+      var pl = A.src.pluck(Math.min(1.0, dur / notes.length * 2.4), { f: f, sr: sr, seed: 3 + idx });
+      var s0 = Math.round(idx * step), j;
+      for (j = 0; j < pl.length && s0 + j < n; j++) x[s0 + j] += pl[j] * 0.6;
+    });
+    var b = A.src.bell(Math.min(1.6, dur), { f: 880, sr: sr, decay: 1.0 });
+    for (i = 0; i < b.length && i < n; i++) x[i] += b[i] * 0.2;
+    x = A.onePole(x, sr, 1600, false);
+    D.normalize(x, 0.8);
+    return A.fadeEdges(x, sr, 15);
+  }
+
+  var SOURCES = {
+    strings:  function (sr) { return strings(1.8, sr); },
+    bell:     function (sr) { return A.src.bell(1.8, { sr: sr, f: 420, decay: 1.2 }); },
+    speech:   function (sr) { return A.src.speech(1.8, { sr: sr }); },
+    applause: function (sr) { return A.src.applause(1.8, { sr: sr }); },
+  };
+
+  var st = { src: "strings", k: 8, parts: 1, res: null, curve: null, ent: 0, lap: 0, bestK: 0, ready: false };
+
+  function toInt16(x) {
+    var o = new Int32Array(x.length), i;
+    for (i = 0; i < x.length; i++) {
+      o[i] = Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767)));
+    }
+    return o;
+  }
+
+  function compute() {
+    var sr = A.rate();
+    var ints = toInt16(SOURCES[st.src](sr));
+    var best = 0, bestE = -1, off, i, e;
+    for (off = 0; off + B <= ints.length; off += B >> 2) {
+      e = 0;
+      for (i = off; i < off + B; i++) e += ints[i] * ints[i];
+      if (e > bestE) { bestE = e; best = off; }
+    }
+    var blk = ints.subarray(best, best + B);
+    var r = D.fixedResidual(blk, 2).subarray(2);
+    st.res = r;
+    var n = r.length;
+
+    var curve = [], k;
+    for (k = 0; k <= KMAX; k++) curve.push([k, D.riceBits(r, k) / n]);
+    st.curve = curve;
+    st.bestK = D.bestRiceK(r, KMAX).k;
+
+    // Measured zero-order entropy of this block's residual values.
+    var map = {}, v;
+    for (i = 0; i < n; i++) { v = r[i]; map[v] = (map[v] || 0) + 1; }
+    var counts = Object.keys(map).map(function (s) { return map[s]; });
+    st.ent = D.entropy(counts);
+
+    // The Laplacian estimate: log2(2 e b) with b the mean absolute residual.
+    var s = 0;
+    for (i = 0; i < n; i++) s += Math.abs(r[i]);
+    var b = Math.max(s / n, 1e-6);
+    st.lap = Math.log2(2 * Math.E * b);
+    st.ready = true;
+  }
+
+  function partitionedBits() {
+    var n = st.res.length, P = st.parts, per = Math.floor(n / P), i, bits = 0;
+    if (per < 8) return null;
+    for (i = 0; i < P; i++) {
+      var sub = st.res.subarray(i * per, i === P - 1 ? n : (i + 1) * per);
+      bits += D.bestRiceK(sub, KMAX).bits + 4;
+    }
+    return bits / n;
+  }
+
+  function codeString() {
+    var out = [], i, k = st.k;
+    var step = Math.pow(2, k);
+    for (i = 0; i < 5 && i < st.res.length; i++) {
+      var e = st.res[i];
+      var u = e >= 0 ? 2 * e : -2 * e - 1;
+      var q = Math.floor(u / step), rem = u - q * step;
+      var un = "";
+      var j;
+      for (j = 0; j < Math.min(q, 24); j++) un += "0";
+      if (q > 24) un = "…" + q + "×0…";
+      un += "1";
+      var rb = k ? rem.toString(2) : "";
+      while (rb.length < k) rb = "0" + rb;
+      out.push("<b>" + un + "</b>" + rb);
+    }
+    return "e = " + Array.prototype.slice.call(st.res.subarray(0, 5)).join(", ") +
+      " → " + out.join(" · ");
+  }
+
+  function show() {
+    if (!st.ready) return;
+    var at = st.curve[st.k][1];
+    document.getElementById("f3-bps").textContent = at.toFixed(2) + " bits";
+    document.getElementById("f3-bestk").textContent = "k = " + st.bestK;
+    document.getElementById("f3-ent").textContent = st.ent.toFixed(2) + " bits";
+    var pb = st.parts > 1 ? partitionedBits() : null;
+    var flat = st.curve[st.bestK][1];
+    document.getElementById("f3-gap").textContent =
+      pb == null ? "—" : (flat - pb).toFixed(3) + " b/sample";
+    document.getElementById("f3-state").textContent = "k = " + st.k;
+    document.getElementById("f3-code").innerHTML = codeString();
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.ready) {
+      p.axes();
+      p.note(p.pad.l + 10, p.pad.t + 10, "measuring…", { color: AC.C.faint });
+      return;
+    }
+    // The left of the curve is astronomically expensive — a k of 0 on a
+    // 12-bit residual costs thousands of bits — so the window is hung on the
+    // minimum and the steep flank simply runs off the top, which is the point.
+    var lo = st.curve[st.bestK][1];
+    p.range(0, KMAX, Math.max(0, Math.floor(lo - 1)), Math.ceil(lo + 12));
+    p.axes({ x: [0, 2, 4, 6, 8, 10, 12, 14], yfmt: function (v) { return v.toFixed(0); } });
+    p.hline(st.ent, { color: AC.C.purple, label: "measured entropy" });
+    p.hline(st.lap, { color: AC.C.green, label: "log₂ 2eb" });
+    p.line(st.curve, { color: AC.C.blue, width: 2 });
+    p.dot(st.k, st.curve[st.k][1], { color: AC.C.gold, ring: true });
+    p.vline(st.bestK, { color: AC.C.teal, label: "best k = " + st.bestK });
+    p.note(p.pad.l + 8, p.pad.t + 6, "order-2 residual, 4 096 samples", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function refresh() {
+    if (!st.ready) compute();
+    show(); redraw();
+  }
+
+  AC.chips(document.getElementById("f3-src"), function (v) {
+    st.src = v; st.ready = false;
+    compute(); show(); redraw();
+  });
+  AC.chips(document.getElementById("f3-part"), function (v) {
+    st.parts = +v;
+    if (st.ready) { show(); redraw(); }
+  });
+  AC.slider(document.getElementById("f3-k"), function (v) {
+    st.k = Math.round(v);
+    if (st.ready) { show(); redraw(); }
+  }, function (v) { return String(Math.round(v)); });
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      refresh();
+    }, { rootMargin: "300px" });
+    io.observe(cv);
+  } else {
+    refresh();
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 10.4 — the wall: compressed size against the recording's noise floor.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("f4-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var BLOCK = 4096;
+  var LEVELS = [-102, -93, -84, -75, -69, -63, -57, -48, -39, -30, -24, -18];
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: -102, xmax: -18, ymin: 0, ymax: 100,
+    xlabel: "added noise floor, dBFS", ylabel: "compressed size, % of PCM",
+    pad: { l: 54, r: 14, t: 14, b: 34 },
+  });
+
+  var st = { pred: "l8", noise: -90, base: null, curve: null, ready: false, point: null };
+
+  // A plucked phrase with a gentle spectral tilt: the closest this page gets
+  // to the statistics of a real acoustic recording.
+  function strings(dur, sr) {
+    var n = Math.round(sr * dur), x = new Float64Array(n), i;
+    var notes = [220, 277.18, 329.63, 440, 329.63, 277.18, 440, 554.37];
+    var step = n / notes.length;
+    notes.forEach(function (f, idx) {
+      var pl = A.src.pluck(Math.min(1.0, dur / notes.length * 2.4), { f: f, sr: sr, seed: 3 + idx });
+      var s0 = Math.round(idx * step), j;
+      for (j = 0; j < pl.length && s0 + j < n; j++) x[s0 + j] += pl[j] * 0.6;
+    });
+    var b = A.src.bell(Math.min(1.6, dur), { f: 880, sr: sr, decay: 1.0 });
+    for (i = 0; i < b.length && i < n; i++) x[i] += b[i] * 0.2;
+    x = A.onePole(x, sr, 1600, false);
+    D.normalize(x, 0.8);
+    return A.fadeEdges(x, sr, 15);
+  }
+
+  // FLAC apodises the block before taking its autocorrelation; without it a
+  // decaying note fits so badly that a fixed predictor wins.
+  function tukey(N, a) {
+    var w = new Float64Array(N), t = Math.max(1, Math.floor(a * (N - 1) / 2)), i;
+    for (i = 0; i < N; i++) {
+      if (i < t) w[i] = 0.5 * (1 + Math.cos(Math.PI * (i / t - 1)));
+      else if (i > N - 1 - t) w[i] = 0.5 * (1 + Math.cos(Math.PI * ((N - 1 - i) / t - 1)));
+      else w[i] = 1;
+    }
+    return w;
+  }
+
+  function base() {
+    if (st.base) return st.base;
+    var sr = A.rate();
+    st.base = strings(1.3, sr);
+    st.rng = A.prng(1234);
+    st.nz = new Float64Array(st.base.length);
+    var i;
+    for (i = 0; i < st.nz.length; i++) st.nz[i] = st.rng();
+    return st.base;
+  }
+
+  function noisy(db) {
+    var x = base(), g = Math.pow(10, db / 20), i;
+    var o = new Float64Array(x.length);
+    for (i = 0; i < x.length; i++) o[i] = x[i] + g * st.nz[i];
+    return o;
+  }
+
+  function toInt16(x) {
+    var o = new Int32Array(x.length), i;
+    for (i = 0; i < x.length; i++) {
+      o[i] = Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767)));
+    }
+    return o;
+  }
+
+  function lpcResidualInt(x, order) {
+    var xf = new Float64Array(x.length), i, n, j;
+    var w = tukey(x.length, 0.5);
+    for (i = 0; i < x.length; i++) xf[i] = x[i] * w[i];
+    var r = D.autocorr(xf, order);
+    var lev = D.levinson(r, order);
+    var maxA = 0;
+    for (i = 1; i <= order; i++) maxA = Math.max(maxA, Math.abs(lev.a[i]));
+    var gain = lev.err > 0 && r[0] > 0 ? 10 * Math.log10(r[0] / lev.err) : 0;
+    if (!(maxA > 0)) return { res: D.fixedResidual(x, 0), side: 0, gain: 0 };
+    var cap = 16383;
+    var shift = Math.max(0, Math.min(15, Math.floor(Math.log2(cap / maxA))));
+    var scale = Math.pow(2, shift);
+    var q = new Float64Array(order + 1);
+    for (i = 1; i <= order; i++) q[i] = Math.round(-lev.a[i] * scale);
+    var res = new Int32Array(x.length - order);
+    for (n = order; n < x.length; n++) {
+      var acc = 0;
+      for (j = 1; j <= order; j++) acc += q[j] * x[n - j];
+      res[n - order] = x[n] - Math.floor(acc / scale);
+    }
+    return { res: res, side: order * 15 + 9 + order * 16, gain: gain };
+  }
+
+  // Full chain at one noise floor: dither, quantise, predict, Rice-code.
+  function measure(db) {
+    var ints = toInt16(noisy(db));
+    var n = ints.length, off, bits = 0, gains = 0, nb = 0;
+    for (off = 0; off < n; off += BLOCK) {
+      var len = Math.min(BLOCK, n - off);
+      if (len < 64) { bits += len * 16 + 8; continue; }
+      var sub = ints.subarray(off, off + len), r, side, g = 0;
+      if (st.pred === "f2" || st.pred === "f4") {
+        var ord = st.pred === "f2" ? 2 : 4;
+        r = D.fixedResidual(sub, ord).subarray(ord);
+        side = ord * 16 + 10;
+      } else {
+        var ord2 = st.pred === "l8" ? 8 : 16;
+        var lr = lpcResidualInt(sub, ord2);
+        r = lr.res; side = lr.side; g = lr.gain;
+      }
+      bits += D.bestRiceK(r, 18).bits + side + 6;
+      gains += g; nb++;
+    }
+    return { bps: bits / n, pct: bits / (n * 16) * 100, gain: nb ? gains / nb : 0 };
+  }
+
+  function sweep() {
+    st.curve = LEVELS.map(function (L) {
+      var m = measure(L);
+      return { x: L, y: m.pct, bps: m.bps, gain: m.gain };
+    });
+    st.ready = true;
+  }
+
+  function show() {
+    var m = st.point;
+    if (!m) return;
+    document.getElementById("f4-ratio").textContent = m.pct.toFixed(1) + "%";
+    document.getElementById("f4-bps").textContent = m.bps.toFixed(2) + " / 16";
+    document.getElementById("f4-gain").textContent = m.gain.toFixed(1) + " dB";
+    var q = st.curve && st.curve.length ? st.curve[0] : null;
+    document.getElementById("f4-cost").textContent =
+      q ? "+" + (m.bps - q.bps).toFixed(2) + " b/sample" : "—";
+    document.getElementById("f4-state").textContent = st.noise + " dBFS";
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.ready) {
+      p.axes();
+      p.note(p.pad.l + 10, p.pad.t + 10, "measuring…", { color: AC.C.faint });
+      return;
+    }
+    p.axes({ yfmt: function (v) { return v.toFixed(0) + "%"; } });
+    p.hline(100, { color: AC.C.purple, label: "uncompressed PCM" });
+    p.line(st.curve.map(function (c) { return [c.x, c.y]; }),
+      { color: AC.C.blue, width: 2, fill: true, fillAlpha: .10 });
+    if (st.point) {
+      p.dot(st.noise, st.point.pct, { color: AC.C.gold, ring: true });
+      p.vline(st.noise, { color: AC.C.gold, label: st.point.pct.toFixed(0) + "%" });
+    }
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      "1.3 s of strings · 4 096-sample blocks · " +
+      ({ f2: "fixed order 2", f4: "fixed order 4", l8: "LPC order 8", l16: "LPC order 16" })[st.pred],
+      { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  function point() { st.point = measure(st.noise); }
+
+  function refreshAll() { sweep(); point(); show(); redraw(); }
+
+  var pend = 0;
+  AC.chips(document.getElementById("f4-pred"), function (v) {
+    st.pred = v;
+    clearTimeout(pend);
+    pend = setTimeout(refreshAll, 120);
+  });
+  AC.slider(document.getElementById("f4-noise"), function (v) {
+    st.noise = Math.round(v);
+    if (!st.ready) return;
+    point(); show(); redraw();
+  }, function (v) { return Math.round(v) + " dBFS"; });
+
+  A.wire(document.getElementById("f4-clean"), function () { return base(); });
+  A.wire(document.getElementById("f4-noisy"), function () { return noisy(st.noise); });
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      refreshAll();
+    }, { rootMargin: "300px" });
+    io.observe(cv);
+  } else {
+    refreshAll();
+  }
+})();
+
+/* ---------------------------------------------------------------
+   FIG 10.5 — companding: eight bits spent uniformly and logarithmically.
+   The analytic mu-law and A-law curves, which the piecewise-linear
+   segments of the real G.711 approximate.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("f5-cv");
+  if (!cv || !window.DSP || !window.AUD || !window.AC) return;
+  var D = window.DSP, A = window.AUD;
+
+  var MU = 255, AA = 87.6, LNA = Math.log(AA), KA = 1 + LNA;
+  var LEVELS = [-66, -60, -54, -48, -42, -36, -30, -24, -18, -12, -6, -3];
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.5, xmin: -66, xmax: -3, ymin: -6, ymax: 78,
+    xlabel: "input level, dBFS", ylabel: "measured SNR, dB",
+    pad: { l: 52, r: 14, t: 14, b: 34 },
+  });
+
+  function sgn(v) { return v < 0 ? -1 : 1; }
+  function muEnc(x) { var a = Math.min(Math.abs(x), 1); return sgn(x) * Math.log(1 + MU * a) / Math.log(1 + MU); }
+  function muDec(y) { var a = Math.min(Math.abs(y), 1); return sgn(y) * (Math.pow(1 + MU, a) - 1) / MU; }
+  function aEnc(x) {
+    var a = Math.min(Math.abs(x), 1);
+    return sgn(x) * (a < 1 / AA ? AA * a / KA : (1 + Math.log(AA * a)) / KA);
+  }
+  function aDec(y) {
+    var a = Math.min(Math.abs(y), 1);
+    return sgn(y) * (a < 1 / KA ? a * KA / AA : Math.exp(a * KA - 1) / AA);
+  }
+  function q8(v) { return Math.max(-1, Math.min(1, Math.round(v * 127) / 127)); }
+  function uniform(x, bits) {
+    var lev = Math.pow(2, bits - 1);
+    return Math.max(-1, Math.min(1, Math.round(x * lev) / lev));
+  }
+
+  var CODERS = {
+    mu:   function (v) { return muDec(q8(muEnc(v))); },
+    a:    function (v) { return aDec(q8(aEnc(v))); },
+    u8:   function (v) { return uniform(v, 8); },
+    u12:  function (v) { return uniform(v, 12); },
+  };
+
+  var st = { law: "mu", lvl: -30, sig: null, curves: null, ready: false };
+
+  function source() {
+    if (!st.sig) {
+      var sr = A.rate();
+      st.sig = A.src.speech(1.7, { sr: sr, amp: 1.0 });
+    }
+    return st.sig;
+  }
+
+  function scaled(db) {
+    var x = source(), g = Math.pow(10, db / 20), o = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) o[i] = x[i] * g;
+    return o;
+  }
+
+  // The SNR sweep only needs a representative excerpt; playback uses the lot.
+  function probe() {
+    if (!st.probe) {
+      var x = source();
+      st.probe = x.subarray(0, Math.min(x.length, Math.round(A.rate() * 0.6)));
+    }
+    return st.probe;
+  }
+
+  function snr(coder, db) {
+    var x = probe(), g = Math.pow(10, db / 20), i, s = 0, e = 0, v, y, d;
+    for (i = 0; i < x.length; i++) {
+      v = x[i] * g;
+      y = coder(v); d = y - v;
+      s += v * v; e += d * d;
+    }
+    return 10 * Math.log10(s / Math.max(e, 1e-30));
+  }
+
+  function compute() {
+    st.curves = {};
+    ["mu", "a", "u8", "u12"].forEach(function (name) {
+      st.curves[name] = LEVELS.map(function (L) { return [L, snr(CODERS[name], L)]; });
+    });
+    st.ready = true;
+  }
+
+  // How many bits a uniform quantiser would need to match the companded SNR
+  // at this level — measured by trying depths, not assumed.
+  function equivBits(target, db) {
+    var b;
+    for (b = 4; b <= 16; b++) {
+      if (snr(function (v) { return uniform(v, b); }, db) >= target) return b;
+    }
+    return 16;
+  }
+
+  function show() {
+    if (!st.ready) return;
+    var sc = snr(CODERS[st.law], st.lvl);
+    var su = snr(CODERS.u8, st.lvl);
+    document.getElementById("f5-rate").textContent = equivBits(sc, st.lvl) + " uniform bits";
+    document.getElementById("f5-snr").textContent = sc.toFixed(1) + " dB";
+    document.getElementById("f5-snru").textContent = su.toFixed(1) + " dB";
+    document.getElementById("f5-adv").textContent = (sc - su >= 0 ? "+" : "") + (sc - su).toFixed(1) + " dB";
+    document.getElementById("f5-state").textContent = (st.law === "mu" ? "μ-law" : "A-law") + " · " + st.lvl + " dBFS";
+    st.lastSnr = sc;
+  }
+
+  function draw() {
+    p.clear();
+    if (!st.ready) {
+      p.axes();
+      p.note(p.pad.l + 10, p.pad.t + 10, "measuring…", { color: AC.C.faint });
+      return;
+    }
+    p.axes({ yfmt: function (v) { return v.toFixed(0); } });
+    p.line(st.curves.u12, { color: AC.C.purple, width: 1.5, dash: [5, 4] });
+    p.line(st.curves.u8, { color: AC.C.red, width: 1.8 });
+    p.line(st.curves[st.law], { color: AC.C.blue, width: 2.2 });
+    p.vline(st.lvl, { color: AC.C.gold, label: (st.lastSnr == null ? "" : st.lastSnr.toFixed(0) + " dB") });
+    p.note(p.pad.l + 8, p.pad.t + 6,
+      "speech, encoded and decoded at each level", { color: AC.C.ghost });
+  }
+  var redraw = AC.autoDraw(p, draw);
+
+  AC.chips(document.getElementById("f5-law"), function (v) {
+    st.law = v;
+    if (st.ready) { show(); redraw(); }
+  });
+  AC.slider(document.getElementById("f5-lvl"), function (v) {
+    st.lvl = Math.round(v);
+    if (st.ready) { show(); redraw(); }
+  }, function (v) { return Math.round(v) + " dBFS"; });
+
+  // Playback is renormalised so that the level slider changes the noise you
+  // hear, not the loudness.
+  function through(coder) {
+    var x = scaled(st.lvl), o = new Float64Array(x.length), i;
+    for (i = 0; i < x.length; i++) o[i] = coder(x[i]);
+    D.normalize(o, 0.8);
+    return o;
+  }
+  A.wire(document.getElementById("f5-orig"), function () { return through(function (v) { return v; }); });
+  A.wire(document.getElementById("f5-uni"), function () { return through(CODERS.u8); });
+  A.wire(document.getElementById("f5-comp"), function () { return through(CODERS[st.law]); });
+
+  function boot() { compute(); show(); redraw(); }
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      io.disconnect();
+      boot();
+    }, { rootMargin: "300px" });
+    io.observe(cv);
+  } else {
+    boot();
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

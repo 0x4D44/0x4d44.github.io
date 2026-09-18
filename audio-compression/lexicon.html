@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 · Lexicon — Throwing Sound Away</title>
+<meta name="description" content="Every term used in this study of audio compression, defined precisely: psychoacoustics, transforms, coding theory, codec jargon and the standards — with a dated timeline of the people who worked it out.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="13">
+<div id="topbar"></div>
+
+<section class="wrap chero">
+  <div class="kicker">Chapter 13</div>
+  <div class="num">13</div>
+  <h2>Every word in the study, pinned down.</h2>
+  <p class="lead">Audio coding has an unusually treacherous vocabulary: three
+    scales that all measure roughly the same thing, four meanings of "frame",
+    and a dozen acronyms that differ by one letter. This is the reference —
+    every term the other thirteen chapters use, defined once and precisely.</p>
+  <div class="meta">
+    <div><div class="k">Entries</div><div class="v" id="x-count">—</div></div>
+    <div><div class="k">Filter</div><div class="v">By word or by chapter</div></div>
+    <div><div class="k">Also here</div><div class="v">A dated timeline, the units, the acronyms</div></div>
+    <div><div class="k">Use</div><div class="v">Keep it open in a second tab</div></div>
+  </div>
+</section>
+
+<div class="wrap cols-rail">
+  <nav class="rail" aria-label="On this page">
+    <div class="rt">On this page</div>
+    <a href="#glossary">The glossary</a>
+    <a href="#ladder">The bitrate ladder</a>
+    <a href="#confusions">Six confusions worth fixing</a>
+    <a href="#units">Units and symbols</a>
+    <a href="#acronyms">Acronyms in full</a>
+    <a href="#timeline">Who worked it out, and when</a>
+  </nav>
+  <div>
+
+  <section id="glossary" class="section" style="padding-top:0;border-top:0">
+    <div class="kicker">The glossary</div>
+    <h3>Type a word, or pick the chapter it belongs to.</h3>
+    <p style="margin-top:18px">Definitions are written to be read cold: each one
+      says what the thing <em>is</em>, gives its units where it has any, and
+      names the chapter that does the work. Where a term is routinely used
+      loosely, the entry says so.</p>
+
+    <figure class="figure" id="fig-lex" style="margin-top:26px">
+      <div class="figure-bar">
+        <span class="fno">REF. 13.1</span>
+        <span class="ftitle">Glossary</span>
+        <span class="fstate" id="x-state">—</span>
+      </div>
+      <div class="deck top">
+        <div class="field grow" style="min-width:200px">
+          <div class="flab"><span>Search</span></div>
+          <input type="text" id="x-q" placeholder="masking, MDCT, Rice, TOC…" aria-label="Search the glossary" autocomplete="off">
+        </div>
+        <div class="field grow">
+          <div class="flab"><span>Chapter</span></div>
+          <div class="chips" id="x-ch">
+            <button data-v="all" class="on">All</button>
+            <button data-v="01">01</button><button data-v="02">02</button>
+            <button data-v="03">03</button><button data-v="04">04</button>
+            <button data-v="05">05</button><button data-v="06">06</button>
+            <button data-v="07">07</button><button data-v="08">08</button>
+            <button data-v="09">09</button><button data-v="10">10</button>
+            <button data-v="11">11</button><button data-v="12">12</button>
+          </div>
+        </div>
+      </div>
+      <div class="figure-body">
+        <dl class="defs" id="x-list"></dl>
+        <p class="dim mono hidden" id="x-none" style="font-size:.8rem;padding:18px 0">
+          Nothing matches. Try a shorter word — the search looks in the term and in the definition.</p>
+      </div>
+      <figcaption class="figure-cap"><b>Ref 13.1</b> — the whole vocabulary of the
+        study. The chapter number on each entry is where that idea is actually
+        developed; the glossary only fixes the meaning.</figcaption>
+    </figure>
+  </section>
+
+  <section id="ladder" class="section">
+    <div class="kicker k-heat">Orders of magnitude</div>
+    <h3>Three and a half decades of bitrate, on one axis.</h3>
+    <p style="margin-top:18px">The span from a military vocoder to an
+      uncompressed studio master is a factor of about three thousand. Almost
+      every argument in this study is really an argument about where on this
+      axis a given trick stops working.</p>
+
+    <figure class="figure" id="fig-ladder">
+      <div class="figure-bar">
+        <span class="fno">FIG. 13.2</span>
+        <span class="ftitle">What each bitrate buys, per channel-pair unless noted</span>
+        <span class="fstate">log scale</span>
+      </div>
+      <div class="figure-body">
+        <div class="canvas-wrap"><canvas id="l-cv"></canvas></div>
+        <div class="legend">
+          <span class="l-ghost"><i></i>parametric / vocoder</span>
+          <span class="l-sig"><i></i>transform codec</span>
+          <span class="l-teal"><i></i>speech codec</span>
+          <span class="l-ok"><i></i>lossless</span>
+          <span class="l-faint"><i></i>uncompressed</span>
+        </div>
+      </div>
+      <figcaption class="figure-cap"><b>Fig 13.2</b> — the ladder is logarithmic
+        because hearing is: each doubling of bitrate buys a roughly constant
+        improvement, until it does not. Note how narrow the interesting band is.
+        Everything argued over in twenty years of listening tests happens between
+        64 and 256 kbit/s — a single factor of four.</figcaption>
+    </figure>
+  </section>
+
+  <section id="confusions" class="section">
+    <div class="kicker k-danger">Six confusions worth fixing</div>
+    <h3>The words that regularly get used for the wrong thing.</h3>
+
+    <div class="note danger" style="margin-top:22px">
+      <span class="tag tag-danger">1 · "MP3" is not a synonym for "lossy"</span>
+      <p>MP3 is one 1993 codec — MPEG-1/2 Audio Layer III. AAC, Vorbis, Opus and
+        the rest are not "MP3 variants"; two of them do not share a single
+        coding tool with it. The word survives as a generic because of what
+        happened to the file extension, not because of the technology.</p>
+    </div>
+
+    <div class="note">
+      <span class="tag">2 · Bark, ERB and the critical band</span>
+      <p>All three describe the ear's frequency resolution and none is
+        interchangeable with the others. The <strong>critical band</strong> is
+        the phenomenon. The <strong>Bark scale</strong> is Zwicker's 24-band
+        quantisation of it, from the 1960s, with fixed edges. The
+        <strong>ERB scale</strong> is Glasberg and Moore's later, continuous
+        and narrower estimate from notched-noise experiments. An ERB at 1 kHz is
+        about 133 Hz; the Bark band containing 1 kHz is 160 Hz wide. See
+        <a href="2-ear.html">chapter 02</a>.</p>
+    </div>
+
+    <div class="note">
+      <span class="tag">3 · Four different "frames"</span>
+      <p>An <strong>MP3 frame</strong> is 1152 samples and a byte-aligned header;
+        an <strong>MDCT frame</strong> (block) is the window the transform sees,
+        which overlaps its neighbours; an <strong>Opus frame</strong> is 2.5 to
+        60 ms of audio, and a <strong>packet</strong> may contain several; a
+        <strong>FLAC frame</strong> is an independently decodable block of
+        typically 4096 samples. Only the last of those is what most people
+        picture.</p>
+    </div>
+
+    <div class="note heat">
+      <span class="tag tag-heat">4 · Codec is not container</span>
+      <p><code>.m4a</code>, <code>.ogg</code>, <code>.mkv</code> and
+        <code>.wav</code> are containers; AAC, Vorbis, Opus and PCM are codecs.
+        A <code>.ogg</code> file may hold Vorbis, Opus, FLAC or Speex, and
+        "converting to Ogg" is therefore not a statement about quality at all.
+        See <a href="12-choosing.html">chapter 12</a>.</p>
+    </div>
+
+    <div class="note ghost">
+      <span class="tag">5 · "Lossless" and "transparent" are different claims</span>
+      <p><strong>Lossless</strong> is arithmetic: the decoder returns the exact
+        input samples, and you can prove it with a checksum.
+        <strong>Transparent</strong> is perceptual: a listener cannot reliably
+        tell the coded version from the original under blind conditions. A
+        transparent file is usually nowhere near lossless — its waveform may
+        differ by tens of decibels — and transparency depends on the listener,
+        the programme and the playback chain.</p>
+    </div>
+
+    <div class="note ok">
+      <span class="tag tag-ok">6 · Sample rate is not "resolution"</span>
+      <p>Sample rate sets the <em>bandwidth</em> — the highest frequency that can
+        be represented, at <span class="mono">f<sub>s</sub>/2</span>. Bit depth
+        sets the <em>noise floor</em>. A 44.1 kHz recording is not a "low
+        resolution" version of a 96 kHz one in the way a small image is of a
+        large one: below 22 kHz, the sampling theorem says the two describe the
+        same waveform exactly. See <a href="1-sound.html">chapter 01</a>.</p>
+    </div>
+  </section>
+
+  <section id="units" class="section">
+    <div class="kicker">Units and symbols</div>
+    <h3>Which decibel is meant, and what the letters stand for.</h3>
+    <p style="margin-top:18px">The decibel is a ratio, so it means nothing
+      without its reference. Four of them appear in this study and mixing them
+      up is the commonest arithmetic error in the field.</p>
+
+    <div class="scroller"><table>
+      <caption>Units used throughout</caption>
+      <thead><tr><th>Unit</th><th>Reference</th><th>Used for</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">dB SPL</td><td>20 µPa</td><td>Sound in air; thresholds; equal-loudness contours</td><td>0 dB SPL is roughly the quietest 1 kHz tone a young ear detects. Hearing spans about 0 to 120 dB SPL.</td></tr>
+        <tr><td class="mono">dBFS</td><td>Full-scale digital</td><td>Levels inside a file or a codec</td><td>Always ≤ 0 for undistorted PCM. A common studio convention maps 0 dBFS to about 96 dB SPL, which is the anchor this study's live encoder uses.</td></tr>
+        <tr><td class="mono">dBTP</td><td>Full scale, true peak</td><td>Inter-sample peaks after reconstruction</td><td>A signal at −0.1 dBFS by sample can exceed 0 dBTP once the DAC reconstructs between the samples. Streaming platforms ask for −1 dBTP of headroom.</td></tr>
+        <tr><td class="mono">LUFS</td><td>Full scale, K-weighted</td><td>Perceived programme loudness</td><td>ITU-R BS.1770 / EBU R 128. Numerically like dBFS but gated and frequency-weighted; streaming targets cluster near −14 LUFS.</td></tr>
+        <tr><td class="mono">Bark</td><td>—</td><td>Critical-band rate</td><td>0 to about 24 over the audible range. One Bark is one critical band wide.</td></tr>
+        <tr><td class="mono">Cam (ERB-rate)</td><td>—</td><td>Auditory filter rate</td><td>0 to about 39 over the audible range: the ERB scale has more, narrower steps than the Bark scale.</td></tr>
+        <tr><td class="mono">phon</td><td>dB SPL at 1 kHz</td><td>Loudness level</td><td>A sound of <i>L</i> phon is as loud as an <i>L</i> dB SPL tone at 1 kHz.</td></tr>
+        <tr><td class="mono">sone</td><td>40 phon = 1 sone</td><td>Loudness ratio</td><td>Doubling the sones means "twice as loud"; above 40 phon that is roughly every 10 phon.</td></tr>
+        <tr><td class="mono">bit/s</td><td>—</td><td>Bitrate</td><td>In this study, <span class="mono">kbit/s</span> means 1000 bit/s, never 1024.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="scroller"><table>
+      <caption>Symbols, as used in the formulas here</caption>
+      <thead><tr><th>Symbol</th><th>Meaning</th><th>Chapter</th></tr></thead>
+      <tbody>
+        <tr><td class="mono"><i>f</i><sub>s</sub></td><td>Sampling rate, Hz</td><td class="num">01</td></tr>
+        <tr><td class="mono"><i>N</i></td><td>Bit depth, or transform size — context decides; the study says which</td><td class="num">01, 04</td></tr>
+        <tr><td class="mono"><i>z</i></td><td>Critical-band rate, Bark</td><td class="num">02</td></tr>
+        <tr><td class="mono">Δ<i>z</i></td><td>Bark distance between masker and probe</td><td class="num">03</td></tr>
+        <tr><td class="mono"><i>T</i>(<i>f</i>)</td><td>Masked threshold at frequency <i>f</i></td><td class="num">03</td></tr>
+        <tr><td class="mono"><i>X</i>[<i>k</i>]</td><td>The <i>k</i>-th transform coefficient (spectral line)</td><td class="num">04</td></tr>
+        <tr><td class="mono"><i>w</i>[<i>n</i>]</td><td>Window function</td><td class="num">04</td></tr>
+        <tr><td class="mono"><i>H</i></td><td>Entropy, bits per symbol</td><td class="num">06</td></tr>
+        <tr><td class="mono"><i>k</i></td><td>Rice parameter (chapter 10); also a transform index elsewhere</td><td class="num">10</td></tr>
+        <tr><td class="mono"><i>K</i></td><td>PVQ pulse count</td><td class="num">09</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="acronyms" class="section">
+    <div class="kicker">Acronyms in full</div>
+    <h3>The alphabet soup, expanded.</h3>
+    <div class="scroller"><table>
+      <caption>Every acronym this study uses</caption>
+      <thead><tr><th>Short</th><th>In full</th><th>One line</th></tr></thead>
+      <tbody id="x-acro"></tbody>
+    </table></div>
+  </section>
+
+  <section id="timeline" class="section">
+    <div class="kicker">Who worked it out, and when</div>
+    <h3>Two centuries, condensed.</h3>
+    <p style="margin-top:18px">Perceptual audio coding is unusual in how
+      directly it depends on nineteenth- and twentieth-century laboratory
+      psychology. The transform mathematics and the hearing measurements arrive
+      from completely different traditions and meet, for commercial purposes, in
+      about 1988.</p>
+
+    <div class="scroller"><table>
+      <caption>A dated timeline</caption>
+      <thead><tr><th class="num">Year</th><th>Who</th><th>What</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1822</td><td>Joseph Fourier</td><td><em>Théorie analytique de la chaleur</em> publishes the decomposition first submitted, and rejected, in 1807: any reasonable function is a sum of sinusoids.</td></tr>
+        <tr><td class="num">1843</td><td>Georg Ohm</td><td>The acoustic law: the ear analyses a complex tone into its component frequencies. Later heavily qualified, but the starting point for treating hearing as a filterbank.</td></tr>
+        <tr><td class="num">1863</td><td>Hermann von Helmholtz</td><td><em>On the Sensations of Tone</em> proposes resonance in the cochlea as the mechanism of that analysis.</td></tr>
+        <tr><td class="num">1928</td><td>Harry Nyquist</td><td>Establishes the sampling rate needed to carry a band-limited signal over a telegraph channel.</td></tr>
+        <tr><td class="num">1933</td><td>Fletcher &amp; Munson</td><td>The first equal-loudness contours, at Bell Labs — the ancestor of ISO 226.</td></tr>
+        <tr><td class="num">1940</td><td>Harvey Fletcher</td><td>Names the <em>critical band</em>, from masking experiments with band-limited noise.</td></tr>
+        <tr><td class="num">1948</td><td>Claude Shannon</td><td><em>A Mathematical Theory of Communication</em>: entropy, the source coding theorem, and the reconstruction formula that makes sampling exact.</td></tr>
+        <tr><td class="num">1952</td><td>David Huffman</td><td>As a graduate student, derives the optimal prefix code — reportedly while trying to avoid sitting the exam.</td></tr>
+        <tr><td class="num">1960</td><td>Georg von Békésy</td><td><em>Experiments in Hearing</em> collects three decades of travelling-wave measurements on the basilar membrane; Nobel Prize in 1961.</td></tr>
+        <tr><td class="num">1961</td><td>Eberhard Zwicker</td><td>The Bark scale: 24 critical bands with published edges, still embedded in MPEG's psychoacoustic models.</td></tr>
+        <tr><td class="num">1972</td><td>ITU-T (CCITT)</td><td>G.711 standardises µ-law and A-law companding: 8-bit samples with the dynamic range of about 13 bits.</td></tr>
+        <tr><td class="num">1974</td><td>Ahmed, Natarajan &amp; Rao</td><td>The discrete cosine transform — the ancestor of every transform codec in this study.</td></tr>
+        <tr><td class="num">1979</td><td>Manfred Schroeder</td><td>Publishes a spreading function and an early perceptual coder at Bell Labs.</td></tr>
+        <tr><td class="num">1980</td><td>Sony &amp; Philips</td><td>The Red Book fixes 44.1 kHz and 16 bits, numbers the world is still living with.</td></tr>
+        <tr><td class="num">1986–87</td><td>Princen &amp; Bradley</td><td>Time-domain alias cancellation and the lapped transform that becomes the MDCT: critically sampled, overlapping, and perfectly reconstructing.</td></tr>
+        <tr><td class="num">1988</td><td>James D. Johnston</td><td>Perceptual entropy: an estimate, in bits per sample, of how much of a signal is actually audible. The number that made the business case.</td></tr>
+        <tr><td class="num">1988</td><td>ISO/IEC</td><td>MPEG is founded; the audio subgroup calls for proposals.</td></tr>
+        <tr><td class="num">1990</td><td>Glasberg &amp; Moore</td><td>The ERB formulation that supersedes the Bark scale in most of the hearing-science literature.</td></tr>
+        <tr><td class="num">1992–93</td><td>ISO/IEC 11172-3</td><td>MPEG-1 Audio, with Layers I, II and III. Layer III merges the ASPEC and MUSICAM proposals; Karlheinz Brandenburg and the Fraunhofer IIS group at Erlangen are the names most attached to it.</td></tr>
+        <tr><td class="num">1995</td><td>Fraunhofer IIS</td><td>The <code>.mp3</code> extension is chosen for Layer III files, reportedly on 14 July.</td></tr>
+        <tr><td class="num">1997</td><td>ISO/IEC 13818-7</td><td>MPEG-2 AAC: a clean 1024-line MDCT, temporal noise shaping and switchable window shapes.</td></tr>
+        <tr><td class="num">1999–2000</td><td>Xiph.Org</td><td>Vorbis, an unencumbered transform codec, in reaction to MP3 licensing.</td></tr>
+        <tr><td class="num">2001</td><td>Josh Coalson</td><td>FLAC: linear prediction plus Rice coding, with a format frozen in 2007 and finally written up as RFC 9639 in 2024.</td></tr>
+        <tr><td class="num">2003</td><td>Coding Technologies</td><td>Spectral band replication is standardised into HE-AAC: describe the top octaves instead of coding them.</td></tr>
+        <tr><td class="num">2012</td><td>IETF</td><td>RFC 6716 defines Opus — Skype's SILK and Xiph's CELT in one royalty-free bitstream, 6 to 510 kbit/s, and mandatory to implement in WebRTC.</td></tr>
+        <tr><td class="num">2012</td><td>ISO/IEC</td><td>MPEG-D USAC (xHE-AAC): speech and music coding unified in one decoder, switching between ACELP and MDCT paths.</td></tr>
+        <tr><td class="num">2020s</td><td>Google, Meta and others</td><td>Learned codecs — Lyra, SoundStream, EnCodec, DAC — reach intelligible speech at a few kilobits per second using residual vector quantisation and adversarial training.</td></tr>
+      </tbody>
+    </table></div>
+
+    <p style="margin-top:26px">The pattern is worth noticing. Every major advance
+      came from taking something that had been measured about hearing and
+      finding the arithmetic that exploits it — and each time, the arithmetic
+      had been sitting in the literature for a decade or more, waiting for the
+      computing power to make it cheap. That is still the shape of the field:
+      <a href="12-choosing.html">chapter 12</a> argues that the learned codecs
+      are the same story again, with the measurement replaced by a training
+      set.</p>
+  </section>
+
+  </div>
+</div>
+
+<div class="wrap"><div class="pager" data-pager></div></div>
+
+<footer class="foot"><div class="wrap">
+  <p>Throwing Sound Away — an interactive study of audio compression.
+     Every sound on these pages is synthesised in your browser; there is not one
+     audio file in the repository. No external scripts, fonts or trackers.</p>
+  <p><a href="index.html">Contents</a> · <a href="lexicon.html">Lexicon</a> ·
+     <a href="/">0x4D44 almanac</a></p>
+</div></footer>
+
+<script src="assets/dsp.js"></script>
+<script src="assets/audio.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---------------------------------------------------------------
+   REF 13.1 — the glossary, rendered and filtered from one table.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var list = document.getElementById("x-list");
+  if (!list) return;
+
+  // [term, chapter, definition]
+  var TERMS = [
+    ["ABX", "11", "A blind listening test in which you hear A, hear B, then hear X — which is one of them — and say which. The only self-administered test that is worth anything, because you cannot see what you are listening to. Sixteen trials at twelve correct is significant at p = 0.038."],
+    ["ACELP", "10", "Algebraic code-excited linear prediction. A speech coder that transmits the parameters of a vocal-tract filter plus an index into an algebraically structured codebook of excitation pulses. The basis of G.729, AMR and the speech path of xHE-AAC."],
+    ["ADPCM", "10", "Adaptive differential PCM. Codes the difference between each sample and a prediction of it, with a step size that adapts to the signal. Typically 4:1, cheap, and still found in games and telephony."],
+    ["ADTS", "08", "Audio Data Transport Stream. The self-synchronising frame format for AAC — a 7-byte header, or 9 with a CRC — used when AAC has to be streamed without a container."],
+    ["Aliasing", "01", "A frequency above f_s/2 reappearing, after sampling, as a lower frequency that was never present. It folds about f_s/2: a component at f is seen at |f − n·f_s| for the n that brings it into range. Not removable after the fact, which is why anti-alias filters sit before the converter."],
+    ["A-law", "10", "The European companding law of G.711: a piecewise-logarithmic 8-bit code carrying about the dynamic range of 13-bit linear PCM, at 64 kbit/s. µ-law is the North American and Japanese counterpart."],
+    ["AAC", "08", "Advanced Audio Coding, ISO/IEC 13818-7 (1997) and 14496-3. The successor to MP3: a pure MDCT of 1024 lines, switchable window shapes, temporal noise shaping and noise substitution."],
+    ["Artefact", "11", "An audible feature of a decoded signal that was not in the original. In this field the word is specific, not pejorative: pre-echo, birdies and stereo collapse are named, understood failure modes with known causes."],
+    ["ATH", "02", "Absolute threshold of hearing: the level, as a function of frequency, of the quietest tone an undisturbed listener can detect. Lowest around 3–4 kHz, where it dips slightly below 0 dB SPL, and rising steeply below 100 Hz and above 15 kHz. Every encoder carries an approximation of it as its noise floor."],
+    ["Bark", "02", "The unit of the critical-band rate scale, after Barkhausen. The audible range spans about 24 Bark; one Bark is one critical band wide, roughly 100 Hz below 500 Hz and about a fifth of the centre frequency above it."],
+    ["Basilar membrane", "02", "The tapering structure inside the cochlea whose stiffness varies along its length, so that each frequency peaks at its own place. The physical origin of the critical band and of tonotopic organisation."],
+    ["big_values", "07", "The MP3 side-information field giving how many spectral value pairs at the low end of the granule are coded with the large Huffman tables, as opposed to the count1 quadruple region above them."],
+    ["Birdies", "11", "Short, tonal, warbling artefacts, usually between about 8 and 14 kHz at low bitrates, caused by individual spectral lines being quantised to zero in one block and not the next. Once heard, impossible to un-hear."],
+    ["Bit reservoir", "07", "MP3's device for spending more bits on a hard frame than the constant bitrate allows: a frame may begin its main data up to 511 bytes earlier in the stream, pointed to by main_data_begin. It makes a constant-bitrate stream behave locally like a variable one."],
+    ["Bitrate", "01", "Bits per second of coded audio. In this study, kbit/s always means 1000 bit/s. Uncompressed CD stereo is 1411.2 kbit/s."],
+    ["Block switching", "04", "Replacing one long transform block with a run of short ones when a transient arrives, so that quantisation noise is confined to a few milliseconds around the attack rather than spread over the whole window. The standard defence against pre-echo."],
+    ["CBR", "05", "Constant bitrate. Every frame is the same size, whatever the music is doing. Simple to stream and to seek; wasteful on easy passages and short on hard ones, which is what the bit reservoir partly repairs."],
+    ["CELP", "10", "Code-excited linear prediction. The family of speech coders that search a codebook of excitation signals for the one which, passed through the LPC filter, best matches the input — 'analysis by synthesis'."],
+    ["CELT", "09", "Constrained Energy Lapped Transform. The music half of Opus: very short MDCT blocks, explicitly coded band energies, and PVQ for the shape within each band. Designed for low latency."],
+    ["Cochlea", "02", "The coiled, fluid-filled structure of the inner ear, about 35 mm long uncoiled, which performs the mechanical frequency analysis that everything in this study exploits."],
+    ["Companding", "10", "Compressing the dynamic range before quantisation and expanding it after, so that quantisation steps are proportional to signal level rather than fixed. µ-law, A-law, and in a different guise the power-law quantisers of MP3 and AAC."],
+    ["Container", "12", "A file format that carries coded streams plus timing and metadata — MP4, Ogg, Matroska, WAV. Not the same thing as the codec inside it, and the commonest source of confusion about audio formats."],
+    ["count1", "07", "In MP3, the region of the spectrum above big_values where the remaining non-zero values are all −1, 0 or +1, coded four at a time by one of two small Huffman tables."],
+    ["Critical band", "02", "The bandwidth within which the ear integrates energy when deciding whether it can hear something. Masking is strong within a critical band and falls away outside it; the whole apparatus of frequency-domain coding is built on this."],
+    ["Critically sampled", "04", "A transform producing exactly as many coefficients as it consumes samples, so nothing is added to be coded. The MDCT is critically sampled despite its 50% overlap, which is precisely what makes it useful."],
+    ["dBFS", "01", "Decibels relative to digital full scale. Always zero or negative for undistorted PCM."],
+    ["dB SPL", "02", "Decibels of sound pressure level, referred to 20 µPa. The scale on which the absolute threshold and equal-loudness contours are drawn."],
+    ["DCT", "04", "Discrete cosine transform. A real-valued relative of the DFT with better energy compaction for typical signals; the MDCT is built on its type-IV variant."],
+    ["DFT", "04", "Discrete Fourier transform: the decomposition of N samples into N complex frequency components. The FFT is a fast algorithm for computing it, not a different transform."],
+    ["Dither", "01", "Noise deliberately added before quantisation so that the quantisation error becomes independent of the signal. It raises the noise floor by a few decibels and buys exact linearity below the least significant bit — a fade-out stays a fade-out instead of becoming a staircase of distortion."],
+    ["DTX", "09", "Discontinuous transmission: stopping sending during silence and letting the decoder generate comfort noise. Saves most of the bitrate of a normal conversation."],
+    ["Entropy", "06", "The average information per symbol of a source, in bits: H = −Σ p log₂ p. No lossless code can do better on average, and Huffman comes within one bit of it."],
+    ["Equal-loudness contour", "02", "A curve of the sound pressure level, against frequency, needed for a tone to sound as loud as a 1 kHz reference. Standardised as ISO 226. The contours flatten as level rises, which is why quiet music sounds bass-light."],
+    ["ERB", "02", "Equivalent rectangular bandwidth: the width of the ideal rectangular filter that would pass the same noise power as the ear's actual auditory filter at that frequency. About 133 Hz at 1 kHz."],
+    ["FEC", "09", "Forward error correction. Opus can embed a coarser copy of the previous frame in the current packet (LBRR), so a single lost packet can be partly recovered rather than concealed."],
+    ["FFT", "04", "Fast Fourier transform: an O(N log N) algorithm for the DFT. This study's own FFT is thirty lines in assets/dsp.js; a longer account is in the almanac's spectrum-analyser write-up."],
+    ["Filterbank", "04", "A set of band-pass filters splitting a signal into frequency channels. MP3's is a 32-band polyphase quadrature filterbank followed by an MDCT; AAC's is a single MDCT; the cochlea's has about 24 usable channels."],
+    ["FLAC", "10", "Free Lossless Audio Codec (Xiph, 2001; RFC 9639, 2024). Blocking, inter-channel decorrelation, linear prediction and Rice coding of the residual. Typically 50–60% of the original size."],
+    ["Formant", "09", "A resonance of the vocal tract, visible as a peak in the speech spectrum. The first two formants largely determine which vowel you hear, which is why LPC-based coders can describe speech so cheaply."],
+    ["Frame", "07", "Ambiguous by itself: four different things in this study are called a frame — the codec's transmission unit, the transform's overlapping block, an Opus frame inside a packet, and a FLAC block. See \"Six confusions worth fixing\" below. Always ask which one is meant."],
+    ["Gapless playback", "07", "Playing consecutive tracks with no silence between them. Hard for MP3 because the encoder adds delay and pads the last frame; the LAME/Info tag records the exact number of samples to discard at each end."],
+    ["global_gain", "05", "The per-granule quantiser step size in MP3 and AAC, in steps of 1.5 dB. The inner rate loop's single lever: raise it and the frame gets smaller and noisier."],
+    ["Granule", "07", "Half an MP3 frame: 576 spectral lines derived from 576 samples. An MPEG-1 Layer III frame carries two granules per channel."],
+    ["Greenwood function", "02", "The map from position along the cochlea to characteristic frequency, f = A(10^(ax) − k), with A ≈ 165.4, a ≈ 2.1 and k ≈ 0.88 for humans. Nearly logarithmic in the middle, and the reason musical pitch feels logarithmic too."],
+    ["Hann window", "04", "A raised-cosine window, w[n] = ½ − ½cos(2πn/N). First sidelobe −31.5 dB, equivalent noise bandwidth 1.5 bins; the default choice for spectrum analysis, though not for the MDCT, which needs the Princen–Bradley condition."],
+    ["HE-AAC", "08", "High-Efficiency AAC: AAC-LC plus spectral band replication, and in version 2 also parametric stereo. Aimed at 32–64 kbit/s, where plain AAC-LC would have to give up the top octaves."],
+    ["Huffman coding", "06", "The optimal prefix code for known symbol probabilities, built by repeatedly merging the two least probable symbols. Cannot beat the entropy, and cannot exceed it by more than one bit per symbol — which is its weakness on very skewed alphabets."],
+    ["Intensity stereo", "07", "Coding the high band of a stereo pair as one signal plus a per-band left/right balance, discarding the phase relationship. Cheap, and responsible for a good deal of the reputation of low-bitrate MP3."],
+    ["ITD / ILD", "02", "Interaural time and level difference: the two cues by which you localise a sound. ITD dominates below about 1.5 kHz and ILD above it — the duplex theory, and the reason a codec cannot treat the two channels as independent."],
+    ["Joint stereo", "07", "Any coding of a stereo pair that exploits the redundancy between the channels rather than coding them separately. In MP3 that means mid/side, intensity stereo, or both."],
+    ["KBD window", "04", "The Kaiser–Bessel-derived window used by AAC, built by taking the square root of the cumulative sum of a Kaiser window so that it satisfies the Princen–Bradley condition. Better stopband rejection than the sine window, at the cost of a wider main lobe; AAC can switch between them per block."],
+    ["Kraft inequality", "06", "Σ 2^(−ℓᵢ) ≤ 1: the condition a set of codeword lengths must satisfy for a prefix-free code to exist. The bridge between entropy and any actual code."],
+    ["LATM / LOAS", "08", "Low-overhead audio transport multiplex and its stream format: the alternative to ADTS for carrying AAC, used in broadcast."],
+    ["Leakage", "04", "Energy from a sinusoid appearing in transform bins other than its own, because the analysis window cut it mid-cycle. Windowing trades a wider main lobe for lower sidelobes to control it."],
+    ["linbits", "07", "The escape mechanism in MP3's large Huffman tables: values of 15 or more are coded as the escape symbol plus a fixed number of extra bits given by the table."],
+    ["LPC", "09", "Linear predictive coding: modelling each sample as a weighted sum of its predecessors. For speech it separates the excitation from the vocal-tract filter; for lossless coding it makes the residual small enough to code cheaply."],
+    ["LSF / LSP", "09", "Line spectral frequencies (or pairs): a reparameterisation of LPC coefficients that is stable under quantisation and interpolates gracefully. What SILK actually transmits instead of raw filter coefficients."],
+    ["LTP", "08", "Long-term prediction: predicting the current frame from a pitch-period-delayed copy of an earlier one. Cheap on periodic material, in both AAC and SILK."],
+    ["LUFS", "12", "Loudness units relative to full scale, defined by ITU-R BS.1770: a gated, K-weighted mean that correlates with perceived programme loudness far better than peak or RMS. The basis of EBU R 128 and of streaming loudness normalisation."],
+    ["Masking", "03", "A loud sound raising the threshold of audibility for a quieter one, in frequency (simultaneous masking) or in time (forward and backward masking). The single phenomenon on which lossy audio coding rests."],
+    ["MDCT", "04", "Modified discrete cosine transform: a lapped transform taking 2N windowed samples to N coefficients. Individually it is not invertible — the inverse carries a time-reversed alias — but consecutive overlapped blocks cancel each other's aliases exactly."],
+    ["Mid/side", "07", "Coding (L+R) and (L−R) instead of L and R. Lossless in itself, and usually far cheaper, because the side signal of most recordings is small."],
+    ["MUSHRA", "11", "ITU-R BS.1534: a listening-test method for intermediate quality, in which listeners rate several systems on a 0–100 scale against a labelled reference, with a hidden reference and low-pass anchors at 3.5 and 7 kHz mixed in to catch inattentive scoring."],
+    ["NMR", "05", "Noise-to-mask ratio: the amount by which quantisation noise exceeds the masking threshold in a band, in decibels. Negative is inaudible; the encoder's outer loop exists to drive it negative everywhere."],
+    ["Nyquist frequency", "01", "Half the sampling rate: the highest frequency a sampled signal can represent. Content above it does not vanish; it folds."],
+    ["ODG", "11", "Objective difference grade: the output of PEAQ, on a scale from 0 (imperceptible impairment) to −4 (very annoying), designed to predict the subjective difference grade without a listening panel."],
+    ["Opus", "09", "RFC 6716 (2012). A royalty-free codec containing both SILK (linear-predictive, for speech) and CELT (transform, for music), switchable and combinable, 6 to 510 kbit/s, 2.5 to 60 ms frames. Mandatory to implement in WebRTC."],
+    ["Overlap-add", "04", "Reconstructing a signal from overlapping processed blocks by summing them. With the right window it is exact, which is the mechanism behind the MDCT's alias cancellation."],
+    ["PCM", "01", "Pulse-code modulation: the plain representation of audio as a stream of uniformly sampled, uniformly quantised numbers. The thing every codec in this study is trying not to store."],
+    ["PEAQ", "11", "ITU-R BS.1387: a standardised objective measure of perceived audio quality that runs a model of the ear over reference and test signals and outputs an ODG. Useful for regression testing; not a substitute for listeners."],
+    ["Perceptual entropy", "03", "Johnston's 1988 estimate of how many bits per sample a signal actually needs once inaudible detail is discarded. For typical CD material it lands at a small number of bits per sample rather than sixteen — the calculation that made perceptual coding a commercial proposition."],
+    ["Phon", "02", "The unit of loudness level: a sound of L phon is as loud as an L dB SPL tone at 1 kHz."],
+    ["PLC", "09", "Packet loss concealment: synthesising plausible audio for a packet that never arrived, usually by extrapolating pitch and spectral envelope. What stops a dropped packet being a click."],
+    ["PNS", "08", "Perceptual noise substitution. Instead of coding a band that is noise anyway, AAC sends its energy and lets the decoder generate noise of that energy. Very cheap, and occasionally audible as a change of texture."],
+    ["Polyphase filterbank", "07", "An efficient implementation of a bank of uniformly spaced band-pass filters sharing one prototype low-pass design. MPEG audio's front end is a 32-band polyphase quadrature filterbank with a 512-tap prototype."],
+    ["Pre-echo", "04", "Quantisation noise from a transform block being spread across the whole block, so that it is audible before the transient that caused it. Audible because backward masking lasts only a few milliseconds while a long block is tens. The reason block switching exists."],
+    ["PVQ", "09", "Pyramid vector quantisation: choosing the closest integer vector with a fixed sum of absolute values, K, and transmitting its index among the V(N,K) possibilities. CELT's way of coding the shape of a band once its energy has been sent separately, which guarantees the decoded band has the right energy."],
+    ["QMF", "04", "Quadrature mirror filter: a filter pair whose aliasing from splitting a band in two cancels when the bands are recombined. The building block of MPEG's polyphase filterbank and of SBR's analysis stage."],
+    ["Quantisation", "05", "Rounding a continuous value to one of a finite set. The only irreversible step in a lossy codec — everything else is bookkeeping."],
+    ["Range coder", "06", "An integer arithmetic coder. Opus's is specified exactly in RFC 6716, carries a 32-bit range with 8-bit renormalisation, and packs raw bits from the end of the buffer backwards so that both coders can share one byte stream."],
+    ["Rate loop", "05", "The iteration by which an encoder finds a quantiser step size whose coded output fits the bit budget. In the classic ISO MP3 encoder it is nested inside a distortion loop that raises scalefactors until the noise is below the threshold, and the two fight each other."],
+    ["Rice coding", "10", "Golomb coding with a power-of-two divisor: a value is sent as its top bits in unary and its bottom k bits raw. Optimal for geometrically distributed residuals, which is what linear prediction leaves behind, and the reason FLAC decodes so fast."],
+    ["Sample rate", "01", "How many samples per second. 44.1 kHz for CD, 48 kHz for video and most computer audio, 8 kHz for narrowband telephony, 96 kHz for some production work."],
+    ["Scalefactor", "05", "A per-band gain applied before quantisation and undone after it, so that the quantisation noise in that band is scaled to sit just under its masking threshold. How the noise is shaped to follow the ear."],
+    ["SBR", "08", "Spectral band replication. Rather than coding the top octaves, transpose the coded low band upwards and correct its envelope, noise floor and tonality with a few kilobits of parameters. What makes 48 kbit/s stereo listenable — and what gives HE-AAC its characteristic shimmer."],
+    ["SFM", "03", "Spectral flatness measure: the ratio of the geometric to the arithmetic mean of the power spectrum, in decibels. Near 0 dB for noise, strongly negative for tones. MPEG's model 2 turns it into a tonality index and uses that to choose the masking offset."],
+    ["SILK", "09", "The linear-predictive half of Opus, inherited from Skype. Narrowband to wideband, with pitch prediction, noise-shaping quantisation and vector-quantised line spectral frequencies."],
+    ["Sinc", "01", "sin(πx)/(πx): the interpolation kernel of the sampling theorem, and the impulse response of an ideal brickwall filter. Infinitely long, which is why real reconstruction filters are approximations."],
+    ["SMR", "03", "Signal-to-mask ratio: how far a band's signal level sits above its masking threshold, in decibels. It is the encoder's demand signal — the number of decibels of accuracy that band actually needs, and therefore roughly SMR/6.02 bits per line."],
+    ["Sone", "02", "The unit of loudness ratio, anchored at 1 sone = 40 phon. Two sones is twice as loud."],
+    ["Spreading function", "03", "The shape of the masking pattern a masker casts along the Bark axis: steep below it, about 27 dB per Bark, and shallower above, with an upward slope that flattens as the masker gets louder."],
+    ["STFT", "04", "Short-time Fourier transform: a DFT of each of a sequence of windowed, overlapping blocks. The basis of spectrograms, and the conceptual ancestor of transform coding."],
+    ["TDAC", "04", "Time-domain alias cancellation. The property of the MDCT that each block's inverse carries a time-reversed copy of the signal folded into it, and that overlapping consecutive blocks with a window satisfying w[n]² + w[n+N]² = 1 makes those copies cancel exactly."],
+    ["TNS", "08", "Temporal noise shaping: applying linear prediction along the frequency axis rather than the time axis, which shapes the quantisation noise in time within the block. A more surgical answer to pre-echo than block switching, and particularly good on speech."],
+    ["TOC byte", "09", "The first byte of every Opus packet: five bits of configuration (mode, bandwidth and frame size), one stereo flag, and two bits for how many frames the packet contains. The whole packet structure hangs off it."],
+    ["Tonality", "03", "How tone-like rather than noise-like a part of the spectrum is. It matters because the asymmetry of masking is large: a noise masker hides a tone easily, while a tone hides noise only if the noise is very much quieter."],
+    ["Transparency", "11", "The point at which listeners can no longer reliably distinguish the coded signal from the original in a blind test. A property of the whole situation — codec, bitrate, programme, listener, playback — not of the codec alone."],
+    ["True peak", "12", "The maximum of the reconstructed continuous waveform, which can exceed the maximum sample value. Measured by oversampling; the reason mastering for lossy delivery leaves a decibel of headroom."],
+    ["USAC", "08", "Unified Speech and Audio Coding, MPEG-D; shipped as xHE-AAC. Switches between a transform path and an ACELP speech path within one bitstream, and works usefully from about 12 kbit/s upwards."],
+    ["VBR", "05", "Variable bitrate: spending whatever each passage needs and letting the file size fall where it may. Better quality per byte than CBR, at the cost of unpredictable size and, historically, of confusing older players."],
+    ["Vector quantisation", "06", "Quantising several values jointly, to a point in a codebook, rather than one at a time. Always at least as good as scalar quantisation and usually better, at the cost of search and storage — which is why CELT uses the algebraically enumerable PVQ instead of a stored codebook."],
+    ["Vorbis", "12", "Xiph's transform codec (2000), MDCT-based with a floor/residue split and fully codebook-driven. Unencumbered by patents, widely used in games, and the reason .ogg became a familiar extension."],
+    ["Window function", "04", "The taper applied to a block before transforming it, to control spectral leakage. In an MDCT the window is applied twice — once in analysis and once in synthesis — and must satisfy the Princen–Bradley condition for the reconstruction to be exact."],
+    ["Zero run", "06", "A stretch of spectral lines quantised to zero, usually at the top of the spectrum. Coding the run rather than the zeros is most of where the bits are saved at low rates — at 32 kbit/s, over ninety per cent of lines are zero."],
+  ];
+
+  var ACRO = [
+    ["AAC", "Advanced Audio Coding", "The MPEG-2/4 transform codec that succeeded MP3."],
+    ["ABX", "A/B/X test", "Blind identification test: is X the same as A or as B?"],
+    ["ACELP", "Algebraic Code-Excited Linear Prediction", "The speech-coding family behind G.729, AMR and xHE-AAC's speech path."],
+    ["ADPCM", "Adaptive Differential Pulse-Code Modulation", "Predictive PCM with an adaptive step size."],
+    ["ADTS", "Audio Data Transport Stream", "AAC's self-synchronising frame format."],
+    ["AMR", "Adaptive Multi-Rate", "The GSM/3G speech codec family; AMR-WB is its wideband successor."],
+    ["ATH", "Absolute Threshold of Hearing", "The quiet-sound floor, as a function of frequency."],
+    ["CBR", "Constant Bit Rate", "Every frame the same size."],
+    ["CELP", "Code-Excited Linear Prediction", "Analysis-by-synthesis speech coding."],
+    ["CELT", "Constrained Energy Lapped Transform", "The transform half of Opus."],
+    ["DAB", "Digital Audio Broadcasting", "European digital radio; DAB used MP2, DAB+ uses HE-AAC v2."],
+    ["DCT", "Discrete Cosine Transform", "Real-valued transform; type IV underpins the MDCT."],
+    ["DFT", "Discrete Fourier Transform", "The finite Fourier transform the FFT computes."],
+    ["DTX", "Discontinuous Transmission", "Stop sending during silence."],
+    ["ERB", "Equivalent Rectangular Bandwidth", "The modern measure of auditory filter width."],
+    ["FEC", "Forward Error Correction", "Redundancy that survives a lost packet."],
+    ["FFT", "Fast Fourier Transform", "An O(N log N) algorithm for the DFT."],
+    ["FLAC", "Free Lossless Audio Codec", "Xiph's lossless format; RFC 9639."],
+    ["HE-AAC", "High-Efficiency AAC", "AAC-LC plus SBR, and in v2 parametric stereo."],
+    ["ILD", "Interaural Level Difference", "The loudness cue for localisation."],
+    ["ITD", "Interaural Time Difference", "The timing cue for localisation."],
+    ["LATM", "Low-overhead Audio Transport Multiplex", "An alternative AAC transport to ADTS."],
+    ["LC", "Low Complexity", "The AAC profile almost everything actually uses."],
+    ["LPC", "Linear Predictive Coding", "Predict each sample from its predecessors."],
+    ["LSF", "Line Spectral Frequencies", "A quantisation-friendly form of LPC coefficients."],
+    ["LTP", "Long-Term Prediction", "Pitch-period prediction across frames."],
+    ["LUFS", "Loudness Units relative to Full Scale", "The BS.1770 loudness measure."],
+    ["MDCT", "Modified Discrete Cosine Transform", "The critically sampled lapped transform."],
+    ["MP3", "MPEG-1/2 Audio Layer III", "The 1993 codec, not a generic term."],
+    ["MUSHRA", "MUltiple Stimuli with Hidden Reference and Anchor", "ITU-R BS.1534 listening test."],
+    ["NMR", "Noise-to-Mask Ratio", "How far the noise exceeds the threshold."],
+    ["ODG", "Objective Difference Grade", "PEAQ's 0 to −4 output scale."],
+    ["PCM", "Pulse-Code Modulation", "Plain sampled, quantised audio."],
+    ["PEAQ", "Perceptual Evaluation of Audio Quality", "ITU-R BS.1387."],
+    ["PLC", "Packet Loss Concealment", "Synthesising a missing packet."],
+    ["PNS", "Perceptual Noise Substitution", "Send the energy, generate the noise."],
+    ["PS", "Parametric Stereo", "A stereo image described in a few kilobits."],
+    ["PVQ", "Pyramid Vector Quantisation", "CELT's gain–shape codebook."],
+    ["QMF", "Quadrature Mirror Filter", "A filter pair whose aliasing cancels."],
+    ["SBR", "Spectral Band Replication", "Describe the top octaves instead of coding them."],
+    ["SFM", "Spectral Flatness Measure", "Geometric over arithmetic mean power."],
+    ["SILK", "—", "Not an acronym: Skype's linear-predictive codec, now Opus's speech half."],
+    ["SMR", "Signal-to-Mask Ratio", "How many decibels of accuracy a band needs."],
+    ["SPL", "Sound Pressure Level", "Referred to 20 µPa."],
+    ["STFT", "Short-Time Fourier Transform", "A DFT per overlapping block."],
+    ["TDAC", "Time-Domain Alias Cancellation", "Why the MDCT works."],
+    ["TNS", "Temporal Noise Shaping", "Prediction along frequency to shape noise in time."],
+    ["TOC", "Table Of Contents (byte)", "The first byte of an Opus packet."],
+    ["USAC", "Unified Speech and Audio Coding", "MPEG-D; shipped as xHE-AAC."],
+    ["VBR", "Variable Bit Rate", "Spend what each passage needs."],
+  ];
+
+  var state = { q: "", ch: "all" };
+
+  function render() {
+    var q = state.q.toLowerCase().trim();
+    var rows = TERMS.filter(function (t) {
+      if (state.ch !== "all" && t[1] !== state.ch) return false;
+      if (!q) return true;
+      return t[0].toLowerCase().indexOf(q) >= 0 || t[2].toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) {
+      return a[0].toLowerCase().localeCompare(b[0].toLowerCase());
+    });
+    var html = rows.map(function (t) {
+      return '<div class="def"><dt>' + esc(t[0]) +
+        ' <span class="dim" style="font-size:.72rem">ch ' + t[1] + "</span></dt><dd>" +
+        esc(t[2]) + "</dd></div>";
+    }).join("");
+    list.innerHTML = html;
+    document.getElementById("x-none").classList.toggle("hidden", rows.length > 0);
+    document.getElementById("x-state").textContent =
+      rows.length + " of " + TERMS.length + (state.ch === "all" ? "" : " · ch " + state.ch);
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  var q = document.getElementById("x-q");
+  if (q) q.addEventListener("input", function () { state.q = q.value; render(); });
+  AC.chips(document.getElementById("x-ch"), function (v) { state.ch = v; render(); });
+
+  var acro = document.getElementById("x-acro");
+  if (acro) {
+    acro.innerHTML = ACRO.map(function (a) {
+      return "<tr><td class=\"mono\"><strong>" + esc(a[0]) + "</strong></td><td>" +
+        esc(a[1]) + "</td><td>" + esc(a[2]) + "</td></tr>";
+    }).join("");
+  }
+
+  document.getElementById("x-count").textContent = TERMS.length + " terms";
+  render();
+})();
+
+/* ---------------------------------------------------------------
+   FIG 13.2 — the bitrate ladder.
+   --------------------------------------------------------------- */
+(function () {
+  "use strict";
+  var cv = document.getElementById("l-cv");
+  if (!cv) return;
+
+  // [bitrate kbit/s, label, class]
+  var KINDS = { param: AC.C.purple, transform: AC.C.blue, speech: AC.C.teal,
+    lossless: AC.C.green, raw: AC.C.faint };
+  var ITEMS = [
+    [0.7, "Codec2 700C", "param", "intelligible speech, radio amateurs"],
+    [2.4, "MELPe 2400", "param", "military narrowband"],
+    [6, "Opus, lowest", "speech", "the floor of RFC 6716"],
+    [8, "G.729", "speech", "toll telephony over IP"],
+    [12.2, "AMR-NB 12.2", "speech", "GSM full rate"],
+    [23.85, "AMR-WB", "speech", "3G wideband voice"],
+    [24, "Opus voice", "speech", "comfortable wideband speech"],
+    [32, "HE-AAC v2", "param", "stereo, by description not coding"],
+    [48, "HE-AAC", "param", "broadcast radio, DAB+"],
+    [64, "Opus music", "transform", "where music starts to hold together"],
+    [96, "AAC-LC / Opus", "transform", "the usual streaming compromise"],
+    [128, "MP3 / AAC", "transform", "the historical default"],
+    [160, "Vorbis q5", "transform", "Spotify's middle tier"],
+    [256, "AAC", "transform", "Apple Music's lossy tier"],
+    [320, "MP3, highest", "transform", "the top of the MP3 table"],
+    [510, "Opus, highest", "transform", "the ceiling of RFC 6716"],
+    [800, "FLAC (typical)", "lossless", "about 55% of PCM, bit-exact"],
+    [1411.2, "CD PCM", "raw", "44.1 kHz, 16 bit, stereo"],
+    [4608, "24-bit 96 kHz stereo", "raw", "production masters"],
+  ];
+
+  var p = new AC.Plot(cv, {
+    aspect: 2.0, xlog: true, xmin: 0.5, xmax: 6000, ymin: 0, ymax: 1,
+    xlabel: "kbit/s", pad: { l: 16, r: 16, t: 20, b: 36 },
+  });
+
+  function draw() {
+    p.clear();
+    p.axes({
+      grid: true, y: [],
+      xfmt: function (v) { return v < 1 ? String(v) : AC.shortNum(v); },
+    });
+    var i, rows = 7;
+    for (i = 0; i < ITEMS.length; i++) {
+      var it = ITEMS[i];
+      var y = 0.92 - (i % rows) * (0.84 / rows);
+      var col = KINDS[it[2]];
+      p.dot(it[0], y, { color: col, r: 3.6, ring: true });
+      var right = p.X(it[0]) > p.w * 0.62;
+      p.label(it[0], y, it[1], {
+        color: AC.C.text, align: right ? "right" : "left",
+        dx: right ? -9 : 9, dy: 4,
+        font: (p.w < 520 ? "10px " : "11.5px ") + "ui-monospace, monospace",
+      });
+      if (p.w >= 660) {
+        p.label(it[0], y, it[3], {
+          color: AC.C.ghost, align: right ? "right" : "left",
+          dx: right ? -9 : 9, dy: 16, font: "10px ui-monospace, monospace",
+        });
+      }
+    }
+    p.band(64, 256, { color: AC.C.gold, alpha: .07 });
+    p.note(p.pad.l + 6, p.h - p.pad.b - 14, "64–256 kbit/s: where every listening-test argument happens",
+      { color: AC.C.gold, font: "10.5px ui-monospace, monospace" });
+  }
+  AC.autoDraw(p, draw);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
