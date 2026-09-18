@@ -24,7 +24,7 @@ window.ESSAYS = [
     date: "2026-09-18T21:30:00+01:00",
     year: 2026,
     readingMin: 358,
-    words: 78653,
+    words: 78684,
     tags: ["software", "science", "music"],
     real: true,
   },

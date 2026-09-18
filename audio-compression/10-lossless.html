@@ -66,7 +66,8 @@
       and the predictor's only job is to make the numbers it hands the entropy
       coder smaller — not fewer, <em>smaller</em>. A sixteen-bit sample costs
       sixteen bits. The difference between two adjacent sixteen-bit samples of a
-      cello note costs about nine.</p>
+      sustained cello note costs about eleven, and the difference of the
+      differences costs about eight.</p>
     <p>There is one further asymmetry worth stating up front, because it governs
       the whole family. <strong>The specification is a decoder specification.</strong>
       RFC 9639 defines exactly how a FLAC frame is to be unpacked; it says
@@ -131,7 +132,7 @@
       <span class="op">−</span><span class="num">6</span><i>x</i>[<i>n</i>−<span class="num">2</span>]
       <span class="op">+</span><span class="num">4</span><i>x</i>[<i>n</i>−<span class="num">3</span>]
       <span class="op">−</span><i>x</i>[<i>n</i>−<span class="num">4</span>]
-      <span class="note2">Shorten defined orders 0 to 3; FLAC added the fourth. A FIXED subframe spends three bits saying which of the five it used</span>
+      <span class="note2">Shorten defined orders 0 to 3; FLAC added order 4. A FIXED subframe spends three bits saying which of the five it used</span>
     </div>
 
     <p>Read <i>A</i>(<i>z</i>) = (1 − <i>z</i><sup>−1</sup>)<sup><i>p</i></sup>
@@ -382,12 +383,12 @@
     <p>The entire decoder is: count zeros until a one, shift, read <i>k</i> bits,
       unfold. There is no table, no tree and no state — a working residual
       decoder is a dozen lines, which is one reason the format ended up in
-      hardware. (If reading a decoder appeals more than reading about one,
+      hardware so quickly. And the price it charges is close to the
+      information-theoretic one, because a Laplacian residual with mean absolute
+      value <i>b</i> has a differential entropy that is itself a logarithm of
+      <i>b</i>. (If reading a decoder appeals more than reading about one,
       <a href="/ropus/">ropus</a> elsewhere in this almanac is the Opus decoder
-      in safe Rust, checked bit-exact against the reference C.) And the price it charges
-      is close to the information-theoretic one, because a Laplacian residual
-      with mean absolute value <i>b</i> has a differential entropy that is
-      itself a logarithm of <i>b</i>.</p>
+      ported to safe Rust and checked bit-exact against the reference C.)</p>
 
     <div class="eq">
       <i>H</i><span class="op">≈</span>
@@ -487,8 +488,8 @@
         <tr><td class="num">−2</td><td class="num">3</td><td class="mono">0001</td><td class="mono">01 1</td><td class="mono">1 11</td><td class="mono">1 0011</td></tr>
         <tr><td class="num">2</td><td class="num">4</td><td class="mono">00001</td><td class="mono">001 0</td><td class="mono">01 00</td><td class="mono">1 0100</td></tr>
         <tr><td class="num">4</td><td class="num">8</td><td class="mono">000000001</td><td class="mono">00001 0</td><td class="mono">001 00</td><td class="mono">1 1000</td></tr>
-        <tr><td class="num">8</td><td class="num">16</td><td class="mono">17 bits</td><td class="mono">9 bits</td><td class="mono">5 bits</td><td class="mono">01 0000</td></tr>
-        <tr><td class="num">64</td><td class="num">128</td><td class="mono">129 bits</td><td class="mono">65 bits</td><td class="mono">33 bits</td><td class="mono">9 bits</td></tr>
+        <tr><td class="num">8</td><td class="num">16</td><td class="mono">17 bits</td><td class="mono">10 bits</td><td class="mono">7 bits</td><td class="mono">01 0000</td></tr>
+        <tr><td class="num">64</td><td class="num">128</td><td class="mono">129 bits</td><td class="mono">66 bits</td><td class="mono">35 bits</td><td class="mono">13 bits</td></tr>
       </tbody>
     </table></div>
 
@@ -563,7 +564,7 @@
     </table></div>
 
     <p>Inside the frame, one subframe per channel, and each subframe declares
-      itself with six bits followed by a "wasted bits" flag. The four subframe
+      itself with a zero bit, six bits of type and a "wasted bits" flag. The four subframe
       kinds are the four honest answers to "how compressible is this block?".</p>
 
     <div class="bitmap" style="margin-top:20px">
@@ -597,7 +598,7 @@
       needs one extra bit of depth, because a difference of two <i>n</i>-bit
       numbers is an (<i>n</i>+1)-bit number — and the encoder takes that deal
       whenever the side channel is quiet enough to pay for it, which on most
-      commercial mixes is nearly always.</p>
+      commercial mixes is most of the time.</p>
 
     <div class="note heat">
       <span class="tag tag-heat">The MD5 is the point</span>
@@ -608,7 +609,8 @@
         thing no lossy format can offer and precisely the reason archives use
         this one. MD5 is long broken as a <em>cryptographic</em> hash; as an
         accidental-corruption check over a file you already possess, it is
-        entirely adequate, and RFC 9639 documents it as such.</p>
+        entirely adequate — and detecting accidental corruption is the only job
+        the format gives it.</p>
     </div>
   </section>
 
@@ -618,8 +620,8 @@
     <h3>The compressed size tracks the noise floor, not the music.</h3>
     <p style="margin-top:18px">Published figures for FLAC on ordinary
       commercial music cluster between roughly 50 and 70 per cent of the source
-      PCM, with the mid-50s to low-60s typical; one public benchmark puts FLAC
-      at about 61 per cent and WavPack at about 61 per cent on the same
+      PCM, with the mid-50s to low-60s typical; one public comparison puts
+      WavPack at 60.8 per cent and FLAC at 61.1 per cent on the same
       material. Solo piano and chamber recordings do better, sometimes
       dramatically; loud, limited, heavily saturated modern masters do worse and
       can approach 80 per cent. The spread is large, but the <em>ceiling</em> is
@@ -753,10 +755,11 @@
     <p style="margin-top:18px">Apple's ALAC is structurally so close to FLAC
       that a description of one nearly describes the other: blocking, stereo
       decorrelation with a weight and a shift, an adaptive FIR predictor, Rice
-      coding of the residual. It was reverse-engineered by David Hammerton and
-      Cody Brocious in 2005 and then open-sourced by Apple under the Apache
-      licence in October 2011, after which the argument between the two formats
-      became entirely one of ecosystem. WavPack takes a different view of the
+      coding of the residual. David Hammerton and Cody Brocious reverse-engineered
+      it without documentation and Hammerton published a C decoder in March 2005;
+      Apple then open-sourced the codec under the Apache licence in October 2011,
+      after which the argument between the two formats became entirely one of
+      ecosystem. WavPack takes a different view of the
       same problem and adds a genuinely distinct mode: a <em>hybrid</em>, where
       a small lossy <span class="mono">.wv</span> file is playable on its own and
       an optional <span class="mono">.wvc</span> correction file restores exact
