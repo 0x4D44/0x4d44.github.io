@@ -1,0 +1,59 @@
+name: Meiosis branch authoring and verification
+
+on:
+  push:
+    branches: [feat/meiosis-s6-explainer-20260922]
+    paths: ['.meiosis-upload/**']
+
+permissions:
+  contents: write
+
+jobs:
+  assemble-and-verify:
+    if: github.ref == 'refs/heads/feat/meiosis-s6-explainer-20260922'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/meiosis-s6-explainer-20260922
+          fetch-depth: 1
+      - name: Verify and unpack the authored static site
+        shell: python
+        run: |
+          import base64, hashlib, io, pathlib, tarfile
+          parts = sorted(pathlib.Path('.meiosis-upload').glob('part-*.b64'))
+          assert len(parts) == 9, 'Expected exactly nine transfer parts'
+          data = base64.b64decode(''.join(p.read_text().strip() for p in parts), validate=True)
+          assert hashlib.sha256(data).hexdigest() == 'fd8496545d0f37950e9413baa850b863b9807dc44ba12941320cfa985933d5e0'
+          assert not pathlib.Path('meiosis').exists(), 'Never overwrite an existing document'
+          with tarfile.open(fileobj=io.BytesIO(data), mode='r:xz') as archive:
+              for member in archive.getmembers():
+                  path = pathlib.PurePosixPath(member.name)
+                  assert member.isfile() and path.parts[0] == 'meiosis'
+                  assert not path.is_absolute() and '..' not in path.parts
+                  assert member.size < 300000
+                  destination = pathlib.Path(member.name)
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  destination.write_bytes(archive.extractfile(member).read())
+          print('Verified 16 authored files; extracted only the new meiosis directory.')
+      - name: Register without changing existing catalogue data
+        run: node meiosis/tools/register-catalog.mjs
+      - name: Check source, model, static content and catalogue
+        run: |
+          node --version
+          node --test meiosis/tests/model.test.mjs meiosis/tests/static.test.mjs meiosis/tests/catalog.test.mjs
+      - name: Install test-only browser harness
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Exercise actual HTTP navigation, all labs and responsive layouts
+        run: python meiosis/tests/browser.py
+      - name: Record verified source on the feature branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .meiosis-upload/part-*.b64
+          git add meiosis data.js
+          git commit -m 'Add tested S6 meiosis explainer and science catalogue entry'
+          git push origin HEAD:refs/heads/feat/meiosis-s6-explainer-20260922
