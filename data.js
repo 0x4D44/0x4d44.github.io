@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "meiosis",
+    title: "Meiosis \u2014 One of Each",
+    tagline: "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
+    url: "https://0x4d44.github.io/meiosis/",
+    illustration: "ill-dna",
+    date: "2026-09-23T00:01:00+01:00",
+    year: 2026,
+    readingMin: 37,
+    words: 7994,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
     slug: "audio-compression",
     title: "Throwing Sound Away",
     tagline: "A fourteen-chapter interactive study of audio compression: sampling and dither, the ear as a filterbank, masking, the MDCT, rate loops and entropy coding, then MP3, AAC, Opus and FLAC taken apart. Every figure computes live and every sound is synthesised in the browser \u2014 no audio files, no build step.",
@@ -1822,7 +1835,7 @@ window.COLLECTIONS = [
     slugs: ["instruments", "audio-compression"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
