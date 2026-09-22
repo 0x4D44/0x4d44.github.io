@@ -1,0 +1,14 @@
+{
+  "slug": "meiosis",
+  "title": "Meiosis — One of Each",
+  "tagline": "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript — no build step.",
+  "url": "https://0x4d44.github.io/meiosis/",
+  "illustration": "ill-dna",
+  "date": "2026-09-22T14:00:00+01:00",
+  "year": 2026,
+  "tags": [
+    "science",
+    "software"
+  ],
+  "real": true
+}
