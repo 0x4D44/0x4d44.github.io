@@ -120,7 +120,7 @@
           <tr><td><code>15F2:X</code> (graphics listing)</td><td><code>0x10000 + X</code></td></tr>
         </tbody>
       </table></div>
-      <p>A bare hex number such as <code>E0B1</code> might be a file offset rather than a segment offset. The track expander overlay, cited as <code>19ED:X</code>, is not even consistent across the tree: three files use three different mappings, and the guide says to verify the bytes before relying on any of them.</p>
+      <p>A bare hex number such as <code>E0B1</code> might be a file offset rather than a segment offset. Even one segment name can mean two things: <code>19ED:X</code> is image-relative resident code (running as <code>213F</code>) in renderer citations, but a listing offset into the track expander (file base <code>0x8B4D0</code>, running as <code>95FC</code>) in loader citations. Chapter 01 shows how the bytes told them apart.</p>
 
       <figure class="diagram">
         <svg viewBox="0 0 700 250" role="img" aria-label="One graphics routine named three ways: listing address 15F2:46C0, runtime address 1699:3C50, and file offset 0x146C0; mdpc breakpoints must use the runtime cs:ip form">
