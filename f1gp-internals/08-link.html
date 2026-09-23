@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How the original game links two PCs over a serial cable or modem, and how Big Race carries that same protocol between virtual modems that exchange modem audio over TCP.">
+  <title>Two machines, one race — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 08</p>
+      <h1>Two machines, one race</h1>
+      <p class="lede">Formula One Grand Prix can link two PCs so that two people race each other, each on their own screen. This chapter follows that link from the game's packets and state machines down to the serial port, then shows how Big Race carries the same bytes between two virtual modems that talk to each other in audio over the network.</p>
+
+      <div class="stats">
+        <div class="stat"><b>0..C</b><span>thirteen event opcodes the game exchanges</span></div>
+        <div class="stat"><b>64</b><span>bytes, the largest packet including framing</span></div>
+        <div class="stat"><b>16 kHz</b><span>modem audio sent between Big Race machines</span></div>
+        <div class="stat"><b>47771</b><span>the UDP port for finding a waiting machine</span></div>
+      </div>
+
+      <h2 id="what-linking-is">What linking is</h2>
+      <p>In 1991 there was no internet play for a PC game. Two machines could talk only through their serial ports: directly, with a null-modem cable, or through a pair of telephone modems. Formula One Grand Prix supports both. The <strong>Linkup Options</strong> page chooses the port, the speed, the link type and the role of each machine. After a successful connection, both players pick the same race and start it, and each machine runs its own copy of the simulation.</p>
+      <p>Running two copies of the simulation only works if they stay in step. The game achieves that by making both machines start from the same state and by sending each other, every frame, a short list of <em>events</em>: the things one machine did that the other must also apply. Nothing like a video stream or a full car state crosses the wire. The events are small, and the serial line is slow.</p>
+      <p>The work splits cleanly into three layers, and this chapter takes them in turn:</p>
+      <ol>
+        <li><strong>Game layer.</strong> Code in the main executable builds and applies events, handles pause, and runs a session state machine that knows about the other machine.</li>
+        <li><strong>Transport layer.</strong> A separate resident block frames events into packets with a checksum, sends them a byte at a time through the UART, receives into a ring buffer, and retries until acknowledged.</li>
+        <li><strong>Line layer.</strong> A cable, or two modems and a telephone line. In Big Race this becomes two virtual modems and a TCP socket.</li>
+      </ol>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 660 400" role="img" aria-label="End-to-end path: game events on machine A go to the resident packet transport, the UART, a virtual modem that produces 16 kHz audio, TCP, the peer's modem, UART, transport and game events on machine B.">
+          <g font-size="12" fill="currentColor">
+            <text x="20" y="22" font-weight="600" font-size="13">Machine A</text>
+            <text x="500" y="22" font-weight="600" font-size="13">Machine B</text>
+            <rect x="20" y="36" width="170" height="44" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="30" y="56" font-weight="600" style="fill:var(--blue)">Game events</text>
+            <text x="30" y="72">213F:4293 / 42A4</text>
+            <rect x="20" y="100" width="170" height="44" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="30" y="120" font-weight="600" style="fill:var(--blue)">Packets, AX=8 / AX=9</text>
+            <text x="30" y="136">92C0 resident, CRC</text>
+            <rect x="20" y="164" width="170" height="44" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="30" y="184" font-weight="600">8250 UART (host model)</text>
+            <text x="30" y="200">bytes at the baud rate</text>
+            <rect x="20" y="228" width="170" height="44" rx="5" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="30" y="248" font-weight="600" style="fill:var(--amber)">Virtual modem</text>
+            <text x="30" y="264">Hayes, training, DSP</text>
+            <rect x="470" y="36" width="170" height="44" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="480" y="56" font-weight="600" style="fill:var(--blue)">Game events</text>
+            <text x="480" y="72">213F:4293 / 42A4</text>
+            <rect x="470" y="100" width="170" height="44" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="480" y="120" font-weight="600" style="fill:var(--blue)">Packets, AX=8 / AX=9</text>
+            <text x="480" y="136">92C0 resident, CRC</text>
+            <rect x="470" y="164" width="170" height="44" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="480" y="184" font-weight="600">8250 UART (host model)</text>
+            <text x="480" y="200">bytes at the baud rate</text>
+            <rect x="470" y="228" width="170" height="44" rx="5" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="480" y="248" font-weight="600" style="fill:var(--amber)">Virtual modem</text>
+            <text x="480" y="264">Hayes, training, DSP</text>
+            <g stroke="currentColor">
+              <line x1="105" y1="80" x2="105" y2="100"/><line x1="105" y1="144" x2="105" y2="164"/><line x1="105" y1="208" x2="105" y2="228"/>
+              <line x1="555" y1="80" x2="555" y2="100"/><line x1="555" y1="144" x2="555" y2="164"/><line x1="555" y1="208" x2="555" y2="228"/>
+            </g>
+            <path d="M105 272 L105 320 L555 320 L555 272" fill="none" style="stroke:var(--red)" stroke-width="2"/>
+            <rect x="220" y="300" width="220" height="40" rx="5" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="232" y="318" font-weight="600" style="fill:var(--red)">TCP: 16 kHz PCM only</text>
+            <text x="232" y="333">10 ms chunks of modem audio</text>
+            <rect x="230" y="60" width="200" height="150" rx="6" style="fill:none;stroke:var(--ink-3)" stroke-dasharray="4 3"/>
+            <text x="242" y="82" style="fill:var(--blue)">Blue: the original game's</text>
+            <text x="242" y="98" style="fill:var(--blue)">code, ported, running in</text>
+            <text x="242" y="114" style="fill:var(--blue)">the canonical memory image.</text>
+            <text x="242" y="140" style="fill:var(--ink-3)">Grey, amber and red:</text>
+            <text x="242" y="156" style="fill:var(--ink-3)">Big Race host code, kept</text>
+            <text x="242" y="172" style="fill:var(--ink-3)">outside that image.</text>
+            <text x="20" y="372" style="fill:var(--ink-3)">Game packets never cross the socket as packets; they cross as modulated sound.</text>
+          </g>
+        </svg>
+        <figcaption>The whole path. Everything in blue is the original game's own code; Big Race supplies the serial hardware and replaces the telephone line.</figcaption>
+      </figure>
+
+      <h2 id="link-options">The Linkup Options page</h2>
+      <p>The page is a resource inside <code>GP.EXE</code>, built from 21 control records. Its choices are:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Control</th><th>Choices</th><th>Original default</th></tr></thead>
+        <tbody>
+          <tr><td>Port</td><td>COM1, COM2 (COM3 and COM4 are shown disabled)</td><td>COM2</td></tr>
+          <tr><td>Speed</td><td>2400, 4800, 9600, 19200 baud</td><td>2400</td></tr>
+          <tr><td>Link type</td><td>Direct, Modem</td><td>Direct</td></tr>
+          <tr><td>Role</td><td>Lead, Follow</td><td>Lead</td></tr>
+          <tr><td>Modem action</td><td>Dial, Wait For Call</td><td>Wait For Call</td></tr>
+          <tr><td>Dialling</td><td>Pulse, Tone</td><td>Pulse</td></tr>
+          <tr><td>Number</td><td>Text, up to 17 characters</td><td>—</td></tr>
+          <tr><td>Modem Initialisation</td><td>Text, up to 32 characters</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <p>Direct disables the modem rows. Modem enables both text fields. The text editor has its own small contract: the first key typed replaces the old value, Backspace edits, Enter commits and Escape restores. <strong>Connect</strong> opens a status dialog, such as <em>FINDING OTHER MACHINE</em>, or <em>CANNOT DIAL</em> if Dial was chosen with an empty number.</p>
+
+      <h3 id="connecting">What Connect does</h3>
+      <p>Connect runs the menu-overlay routine at <code>6BE7:2A6D..2C6E</code> (an image-relative citation, like the other menu addresses in this chapter). In order, it reads the timer as a seed, selects the chosen port's row from a four-row serial table of base address, IRQ and interrupt-controller mask, records the old interrupt vector, resets the link state, waits on the timer, prepares the transmit slots and the mailbox, and sends a packet announcing this machine's role. It then waits for the partner's packet and checks its sequence, length and role at <code>2B98</code>/<code>2C1D</code>. Two machines that both chose Lead, for example, do not pass.</p>
+      <p>In modem mode, <code>2AF0</code> first branches to <code>6BE7:A073..A19F</code> when <code>SS:0DAE</code> selects the modem. That routine drives the Hayes command conversation described below. Only once a <code>CONNECT</code> arrives does the role exchange begin.</p>
+      <p>After the role packets match, a success tail stores the role at <code>SS:0A2B</code> and shows the success dialog. A common continuation then runs three larger routines:</p>
+      <ul>
+        <li><strong><code>A709</code>, the state exchange.</strong> The two machines swap, in a fixed order, the random-number state, the game settings, an identity record and the 1,480-byte table of driver names. Two loops resolve identity conflicts. After this, both machines hold the same inputs.</li>
+        <li><strong><code>9E5E</code>, the linked lobby,</strong> with role-swapped record pointers, so each machine sees itself and its partner correctly.</li>
+        <li><strong><code>68BA</code>, menu-field updates</strong> for the new shared settings.</li>
+      </ul>
+      <p>Bulk data travels through a block-transfer routine at <code>6BE7:A594</code>. Each packet carries at most <code>0x39</code> (57) bytes and names its source selector and absolute offset, so a chunk cannot land in the wrong place. Only after all three routines return does the game copy <code>SS:0A26</code> to <code>SS:0A27</code>. From then on, a non-zero <code>SS:0A27</code> is the flag that means "this is a linked session" everywhere in the race code.</p>
+      <div class="callout how"><span class="label">How it works</span><p>Sharing the random-number state is the key step. Chapter 01 explains that the game's generator is deterministic but global: every draw depends on all earlier ones. If both machines start with the same register and make the same draws in the same order, they produce the same "random" results without ever sending them.</p></div>
+
+      <h2 id="packets">Packets on the wire</h2>
+      <p>The transport lives in the resident block that runs at <code>92C0</code> (cited in the sources as <code>8B6E</code>). Chapter 01 describes its dispatcher: the caller sets <code>AX</code> and makes a far call. Three methods belong to the link:</p>
+      <ul>
+        <li><strong>AX=8</strong> (<code>01D1</code>) sends a packet.</li>
+        <li><strong>AX=9</strong> (<code>01D7</code>) receives a packet and handles acknowledgements and retries.</li>
+        <li><strong>AX=10</strong> (<code>0F0B</code>) waits for the transmitter and queues one raw byte.</li>
+      </ul>
+      <p>The caller prepares a <em>mailbox</em> at <code>SS:0B60</code>: a reserved byte, a length, then the payload. The length counts four framing bytes as well as the payload, and must be between 4 and <code>0x40</code>. AX=8 copies the mailbox into one of eight 64-byte channel slots starting at <code>SS:0BA0</code>, then builds the wire packet at <code>SS:0A66</code>.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 210" role="img" aria-label="Packet layout: byte 0 is E0 OR channel number with an optional header bit 8; byte 1 is total length 4 to 64; then length minus 4 payload bytes; then a two-byte CRC-16, polynomial 1021, low byte first.">
+          <g font-size="12" fill="currentColor">
+            <rect x="20" y="40" width="110" height="56" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="30" y="62" font-weight="600" style="fill:var(--blue)">header</text>
+            <text x="30" y="82">E0 | ch (0..7)</text>
+            <rect x="130" y="40" width="90" height="56" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="140" y="62" font-weight="600" style="fill:var(--blue)">length</text>
+            <text x="140" y="82">4..0x40</text>
+            <rect x="220" y="40" width="270" height="56" rx="4" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="232" y="62" font-weight="600">payload</text>
+            <text x="232" y="82">length − 4 bytes of events</text>
+            <rect x="490" y="40" width="130" height="56" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="500" y="62" font-weight="600" style="fill:var(--green)">CRC-16</text>
+            <text x="500" y="82">low, then high</text>
+            <text x="20" y="28" style="fill:var(--ink-3)">byte 0</text>
+            <text x="130" y="28" style="fill:var(--ink-3)">byte 1</text>
+            <text x="220" y="28" style="fill:var(--ink-3)">byte 2 …</text>
+            <text x="490" y="28" style="fill:var(--ink-3)">last two bytes</text>
+            <path d="M20 112 L20 122 L490 122 L490 112" fill="none" style="stroke:var(--green)"/>
+            <text x="180" y="140" style="fill:var(--green)">CRC covers header, length and payload</text>
+            <text x="20" y="170">Header bit 3 (0x08) is an optional flag set by the caller in AH.</text>
+            <text x="20" y="190">CRC: polynomial 0x1021, initial value 0, one byte at a time (8B6E:0F24).</text>
+          </g>
+        </svg>
+        <figcaption>A link packet. The high nibble <code>E</code> marks the start of a frame; the low three bits carry the channel.</figcaption>
+      </figure>
+
+      <h3 id="sending">Sending, one byte at a time</h3>
+      <p>The resident does not send a whole packet at once. It installs the packet as a queue, writes the first byte to the UART, and returns. Each later byte leaves from the UART interrupt handler (<code>8B6E:1428</code>) when the transmitter reports its holding register empty (THRE). The raw-byte method AX=10 uses the same queue: it waits for any previous transfer, puts the byte in a one-byte mailbox and starts it the same way.</p>
+      <p>Waiting for "any previous transfer" has a timeout. The wait measures time in units of 65,536 PIT cycles, about 55 ms each, and gives up after 16 of them. That detail caused one of Big Race's hardest bugs, told below.</p>
+
+      <h3 id="receiving">Receiving into a ring</h3>
+      <p>Incoming bytes arrive by interrupt too. The handler stores each byte in a 144-byte (<code>0x90</code>) ring at <code>SS:0AA6..0B35</code>, advancing a producer pointer at <code>SS:0A42</code>. It also applies flow control. When only four bytes of space remain, it turns off the UART's receive interrupt. Later, when AX=9 finds at least twelve bytes free, it turns the interrupt back on.</p>
+      <p>AX=9 scans from the consumer pointer at <code>SS:0A44</code> towards the producer. It skips bytes until it sees a high nibble of <code>E</code>, then checks that at least four bytes are available, that the length is in range, that the whole frame has arrived, and that the CRC matches. A good frame is copied, CRC included, to the mailbox at <code>SS:0B60</code>, and marked consumed.</p>
+      <p>AX=9 is also where reliability lives. It starts with a budget of forty sends. If no frame arrives in time, it sends an acknowledgement naming the current channel. If it sees a gap in the channel numbers, it sends a marked acknowledgement sequence so the partner resends. The channel number, kept at <code>SS:0DA0</code>, advances as exchanges complete; our reading is that it acts as a three-bit sequence number. An exchange that fails returns with the carry flag set, and the game's link code treats that as a failed exchange.</p>
+
+      <h2 id="events">Events</h2>
+      <p>The payload of a packet is a run of events. The sender appends events to a buffer at <code>DS:8775</code>, with a write cursor at <code>DS:8777</code>. The resident wrapper at <span class="addr">213F:440E</span> copies that span into the mailbox, and <span class="addr">213F:445F</span> calls AX=9 and copies a received payload into <code>DS:8735</code>, setting the read cursors at <code>DS:877B</code> and <code>DS:877D</code>.</p>
+      <p>The dispatcher at <span class="addr">213F:42A4</span> then walks the received events. The low nibble of each event's first byte is its opcode, and each opcode has a fixed size. The dispatcher checks that the whole body is present before applying it.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Opcode</th><th>Bytes</th><th>Where the sources place it</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>9</td><td>—</td></tr>
+          <tr><td><code>1</code></td><td>8</td><td>Linked session start (<code>0752:ECB3</code>)</td></tr>
+          <tr><td><code>2</code></td><td>3</td><td>Pause and control flags, ORed into <code>DS:877F</code> and <code>SS:124E</code></td></tr>
+          <tr><td><code>3</code></td><td>8</td><td>—</td></tr>
+          <tr><td><code>4</code></td><td>8</td><td>Session transition: a player car released (built at <code>3F15</code>)</td></tr>
+          <tr><td><code>5</code></td><td>8</td><td>Session transition: a new car activated</td></tr>
+          <tr><td><code>6</code></td><td>5</td><td>—</td></tr>
+          <tr><td><code>7</code></td><td>2</td><td>Link failure (<span class="addr">213F:4355</span>)</td></tr>
+          <tr><td><code>8</code></td><td>10</td><td>—</td></tr>
+          <tr><td><code>9</code></td><td>5</td><td>—</td></tr>
+          <tr><td><code>A</code></td><td>2</td><td>Candidate car retired or missing</td></tr>
+          <tr><td><code>B</code></td><td>1</td><td>Player car released (<span class="addr">213F:40D6</span>)</td></tr>
+          <tr><td><code>C</code></td><td>4</td><td>Race setup control request</td></tr>
+        </tbody>
+      </table></div>
+      <p>The port's sources describe the thirteen handlers collectively as covering entrant state, control flags, deadlines, sound latches, score noise and an activation callback. The table names a purpose only where a source ties an opcode to a specific producer; the dashes are opcodes the sources leave unlabelled. Opcodes <code>D</code> to <code>F</code> are sentinels, not events. A later bad opcode, or a truncated body, rolls back the whole exchange.</p>
+
+      <h3 id="event-3f15">Anatomy of one event</h3>
+      <p>The eight-byte session-transition event built by the routine at <code>3F15</code> shows how compact these messages are. It describes the current player car at the moment control passes away from it:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Byte</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Opcode (4)</td></tr>
+          <tr><td>1</td><td>The car's entrant byte at record <code>+AC</code>, with bit <code>0x40</code> set</td></tr>
+          <tr><td>2</td><td>Record byte <code>+89</code></td></tr>
+          <tr><td>3</td><td>Record byte <code>+3D</code></td></tr>
+          <tr><td>4</td><td>Flags: low nibble from <code>DS:297D</code>, plus four bits copied from record bits at <code>+23</code>, <code>+B3</code> and <code>+97</code></td></tr>
+          <tr><td>5–6</td><td>The pace word at record <code>+A8</code></td></tr>
+          <tr><td>7</td><td>A trailer byte from <code>DS:232C</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>Record offsets are into the 192-byte (<code>0xC0</code>) car records of the 26-car table. The pace word at <code>+A8</code> is a circuit-dependent scale minus twice a byte drawn from the shared random-number generator. That is exactly why both machines must share the generator's history.</p>
+
+      <h2 id="session-machine">The session state machine</h2>
+      <p>Every frame, among the pre-physics services, the game runs a small state machine at <span class="addr">0752:D25E</span>. Its state is the word at <code>DS:2963</code>, and it uses a deadline at <code>DS:292F</code> compared against the race clock at <code>DS:294F</code>. The clock counts milliseconds: one branch's comment calls <code>0x3A98</code> fifteen seconds, and its "long timeout" is <code>0x05265C00</code>, which is 86,400,000, one day.</p>
+      <p>The machine's job is to move player control from one car to another. The player's car is the pointer at <code>DS:28FD</code>. When that car is out of the race (its record byte <code>+96</code> has bits <code>0xC0</code> set), the machine releases it, looks for the next candidate car and, after a timed sequence of displays and a fade, activates it. The sources call this a <em>session hand-off</em>. We read it as the way the game passes a keyboard between several human-driven cars; the sources describe the mechanism, not the menu feature behind it.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 470" role="img" aria-label="Session states: state 0 normal racing; D331 scan may go to state 1 with a 15 s deadline; state 1 goes to state 3 after 5 s; states 2 and 3 release the player and go to state 4; state 4 starts the black fade and goes to 5; state 5 goes to 6; state 6 goes to 7; state 7 activates the next car and returns to 0.">
+          <g font-size="12" fill="currentColor">
+            <rect x="230" y="14" width="180" height="50" rx="8" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="242" y="36" font-weight="600" style="fill:var(--green)">State 0 · D25E</text>
+            <text x="242" y="54">racing; watch player car</text>
+            <rect x="20" y="110" width="180" height="50" rx="8" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="132" font-weight="600">State 1 · D369</text>
+            <text x="32" y="150">icon progress, 15 s</text>
+            <rect x="20" y="200" width="180" height="50" rx="8" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="222" font-weight="600">States 2–3 · D3BB</text>
+            <text x="32" y="240">display; release (D824)</text>
+            <rect x="230" y="200" width="180" height="50" rx="8" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="242" y="222" font-weight="600">State 4 · D41F</text>
+            <text x="242" y="240">start black fade (AX=6)</text>
+            <rect x="440" y="200" width="180" height="50" rx="8" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="452" y="222" font-weight="600">State 5 · D47F</text>
+            <text x="452" y="240">point display at candidate</text>
+            <rect x="440" y="300" width="180" height="50" rx="8" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="452" y="322" font-weight="600">State 6 · D4C2</text>
+            <text x="452" y="340">format countdown words</text>
+            <rect x="230" y="300" width="180" height="50" rx="8" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="242" y="322" font-weight="600" style="fill:var(--amber)">State 7 · D50A</text>
+            <text x="242" y="340">countdown; activate car</text>
+            <g stroke="currentColor" fill="none">
+              <path d="M230 50 L110 50 L110 110"/><polygon points="110,110 105,102 115,102" fill="currentColor"/>
+              <path d="M110 160 L110 200"/><polygon points="110,200 105,192 115,192" fill="currentColor"/>
+              <path d="M200 225 L230 225"/><polygon points="230,225 222,220 222,230" fill="currentColor"/>
+              <path d="M410 225 L440 225"/><polygon points="440,225 432,220 432,230" fill="currentColor"/>
+              <path d="M530 250 L530 300"/><polygon points="530,300 525,292 535,292" fill="currentColor"/>
+              <path d="M440 325 L410 325"/><polygon points="410,325 418,320 418,330" fill="currentColor"/>
+              <path d="M320 64 L320 200"/><polygon points="320,200 315,192 325,192" fill="currentColor"/>
+              <path d="M410 325 L410 325"/>
+              <path d="M320 350 L320 390 L600 390 L600 40 L410 40"/><polygon points="410,40 418,35 418,45" fill="currentColor"/>
+            </g>
+            <text x="116" y="84">D331: new identity</text>
+            <text x="116" y="184">after 5 s</text>
+            <text x="326" y="120">player retired;</text>
+            <text x="326" y="136">new candidate, 2 s</text>
+            <text x="332" y="408">next car active (event 5) → state 0</text>
+            <text x="20" y="440" style="fill:var(--red)">In a linked race, states 3 and 7 also wait on the linked gate,</text>
+            <text x="20" y="458" style="fill:var(--red)">and releases and activations append events for the partner.</text>
+          </g>
+        </svg>
+        <figcaption>The hand-off states. Unless marked, each arrow fires when the current deadline passes; most later states use 5,000 ms deadlines.</figcaption>
+      </figure>
+
+      <p>In detail, with every service at <code>0752</code>:</p>
+      <ul>
+        <li><strong>State 0 (<code>D25E</code>).</strong> Normal racing. If a hand-off deadline has expired, <code>D331</code> rescans for a candidate: none finishes the selection; the current identity keeps state 0 with the one-day timeout; a different identity enters state 1 with a 15-second deadline. Otherwise, if the player's car has dropped out, the car is released through <code>D865</code>, and the next candidate either finishes the selection or starts a 2-second deadline into state 4.</li>
+        <li><strong>State 1 (<code>D369</code>).</strong> Advances a progress icon every tick. At the deadline it forces icon <code>0x0C</code> and moves to state 3 with a 5-second deadline.</li>
+        <li><strong>States 2–3 (<code>D3BB</code>).</strong> Refresh the display each tick. When due, and when the linked gate allows, release the player's car through <code>D824</code> and enter state 4.</li>
+        <li><strong>State 4 (<code>D41F</code>).</strong> When due, set a short 500 ms deadline, start a fade to black through the resident dispatcher with AX=6 (chapter 01), and enter state 5.</li>
+        <li><strong>State 5 (<code>D47F</code>).</strong> Point the display at the candidate car and clear the display modes, then state 6.</li>
+        <li><strong>State 6 (<code>D4C2</code>).</strong> Store the countdown display format words at <code>DS:2933</code>/<code>2935</code>, then state 7.</li>
+        <li><strong>State 7 (<code>D50A</code>).</strong> Show the countdown every tick. When due and permitted, select the next identity, activate the car, draw its pace from the random-number generator, and return to state 0. If the candidate has retired in the meantime, fall back to the <code>D331</code> rescan.</li>
+      </ul>
+
+      <h3 id="linked-differences">What changes when linked</h3>
+      <p>The same machine runs in single-machine races. Linking adds three things, all visible in the code:</p>
+      <ol>
+        <li><strong>A gate.</strong> The linked gate is true when <code>SS:0A27</code> is set, a guard byte at <code>DS:0924</code> is non-zero, and the word at <code>DS:0122</code> is not 1. While it holds, states 3 and 7 wait, and state 0 can defer releasing a retired car. Our reading is that this keeps one machine from running ahead of the other's hand-off.</li>
+        <li><strong>Events out.</strong> <code>D824</code> appends the eight-byte opcode-4 event from <code>3F15</code>. <code>D865</code> appends the one-byte opcode <code>0x0B</code> through <span class="addr">213F:40D6</span> and clears <code>DS:2907</code> if it pointed at the released car. A successful activation appends opcode 5; a retired candidate appends the two-byte opcode <code>0x0A</code>.</li>
+        <li><strong>The partner's cars.</strong> The partner's events, applied through <code>42A4</code>, update the partner's car records on this machine, so both screens agree on who is driving what.</li>
+      </ol>
+
+      <h2 id="linked-frame">A linked frame</h2>
+      <p>A linked race does not use the ordinary frame loop from chapter 01 unchanged. When <code>SS:0A27</code> is set, the first-frame code leaves the normal path at <span class="addr">0752:F02A</span>. That entry clears two latches, builds the first events, reads the joystick through <span class="addr">213F:2A78</span>, sends, and receives. Each later frame then runs this order:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 330" role="img" aria-label="Linked frame order: replay history and keyboard; linked timer wait at 213F:2A85; player input; race commands, history and linked race services; build events and send with AX=8; render and present with the pacer's linked branch; post-frame receive with AX=9 and apply events; pause poll; loop.">
+          <g font-size="12" fill="currentColor">
+            <rect x="20" y="20" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="45"><tspan font-weight="600">F04F..F09A</tspan>  history (C40A), keyboard</text>
+            <rect x="20" y="72" width="290" height="40" rx="5" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="32" y="97"><tspan font-weight="600">213F:2A85</tspan>  wait for the frame interval</text>
+            <rect x="20" y="124" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="149"><tspan font-weight="600">213F:29BD</tspan>  player input</text>
+            <rect x="20" y="176" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="201"><tspan font-weight="600">E2BC, C3B4, DA84</tspan>  commands, services</text>
+            <rect x="20" y="228" width="290" height="40" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="32" y="253"><tspan font-weight="600">213F:4293</tspan>  build events, AX=8 send</text>
+            <rect x="330" y="20" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="342" y="45"><tspan font-weight="600">F0C3</tspan>  physics, render, HUD</text>
+            <rect x="330" y="72" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="342" y="97"><tspan font-weight="600">C2A6</tspan>  linked branch: no wait</text>
+            <rect x="330" y="124" width="290" height="40" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="342" y="149"><tspan font-weight="600">F0F0</tspan>  AX=10, AX=9 receive</text>
+            <rect x="330" y="176" width="290" height="40" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="342" y="201"><tspan font-weight="600">213F:42A4</tspan>  apply partner's events</text>
+            <rect x="330" y="228" width="290" height="40" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="342" y="253"><tspan font-weight="600">DCF9, F104..F18A</tspan>  pause, loop</text>
+            <path d="M310 248 C322 248 318 40 330 40" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+            <path d="M475 268 L475 300 L165 300 L165 60" fill="none" style="stroke:var(--red)"/>
+            <polygon points="165,62 160,70 170,70" style="fill:var(--red)"/>
+            <text x="180" y="318" style="fill:var(--red)">next frame</text>
+          </g>
+        </svg>
+        <figcaption>The linked frame. Blue steps talk to the other machine. The timer wait moves to the start of the frame, so the ordinary pacer skips its own wait.</figcaption>
+      </figure>
+
+      <p>The timer wait moves. In the linked frame, <span class="addr">213F:2A85</span> and its helper <code>2ABE</code> copy the frame counter into <code>DS:2C63</code> and wait until <code>SS:05C8</code> reaches <code>SS:1230</code>, the same test the ordinary pacer uses. They then wait for an optional latch deadline at <code>SS:01A6 + 3</code>, and clear the counter unless mode 1 (<code>SS:0A2D == 1</code>) owns it. Because the wait has already happened, the pacer at <span class="addr">0752:C2A6</span> tests <code>SS:0A27</code> first and jumps straight past its snapshot, wait and reset. It still installs the screen pointers and presents the frame.</p>
+      <div class="callout story"><span class="label">From the port</span><p>This branch was first missed. A lesson recorded on the way: the pacer's linked gate skips the timer stores and joins the common tail, so it must be ported, not treated as unsupported; linked mode must leave <code>SS:05C8</code> and <code>DS:2C63</code> unchanged there. Another correction, dated 2026-09-20, found that a call first read as a resident AX=10 serial wrapper at <code>F097</code> was really a near call to the local keyboard decoder at <span class="addr">0752:0005</span>. Reading the actual bytes at file offset <code>0x10693</code> settled it.</p></div>
+
+      <h2 id="linked-pause">Linked pause</h2>
+      <p>Pausing is harder with two machines. If one player presses P, both games must stop, and both must resume together. The ordinary pause poll at <span class="addr">0752:DCF9</span> has a linked message branch (bit <code>0x40</code> of <code>DS:877F</code>) as well as its three-key stop branch, and they must stay distinct: the source runs stop before message.</p>
+      <p>The linked pause callers at <span class="addr">0752:DE1B</span> and <span class="addr">0752:DFEB</span> first exchange events through <span class="addr">213F:43BC</span> and the <code>42A4</code> transport. Then they act on the flags in <code>DS:877F</code>, in a fixed priority: <code>0x20</code>, <code>0x10</code>, <code>0x01</code>, <code>0x40</code>. A delay captures <code>SS:05C8 + 0x32</code> once and compares against it with signed 16-bit wrap on later ticks. If the exchange fails, the resident sets <code>SS:0A2A</code> to <code>0xFF</code>, and the caller maps that to a link failure. Receiving a type-2 event ORs its flags into <code>DS:877F</code> and <code>SS:124E</code> and advances the event cursor by three.</p>
+      <p>In the port, <code>linked_pause::Controller</code> in <code>src/original_runtime_linked_pause.rs</code> is a resumable continuation of those two callers. The transport is injected. When the resident would wait inside a send or receive, the controller returns <code>Pending</code> and publishes the image and adapter state together. When anything breaks a source boundary, it publishes neither.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>On 2026-09-12 the project believed the <code>42A4</code> transport body was missing from the executable, and recorded "linked 42A4 framing is absent". It was not missing; it was elsewhere. The resident code at <code>8B6E</code> is part of the same MZ image, just outside the canonical data and stack window. By 2026-09-15 the port loaded and authenticated that interval with the same relocation rules as the main image, and AX=8 and AX=9 became real ported code instead of an assumed interface.</p></div>
+
+      <h2 id="modem-conversation">Talking to a modem</h2>
+      <p>With a modem, the serial port first carries a text conversation in the Hayes command language. The original routine at <code>6BE7:A073</code> owns it. Its helpers normalise the initialisation string (<code>A1A0</code>: trim spaces and expand caret notation such as <code>^M</code>), build the dial command (<code>A28F</code>), send strings (<code>A2CA</code>) and parse responses (<code>A2D7</code>):</p>
+      <ol>
+        <li>Send the player's initialisation string and wait for <code>OK</code>.</li>
+        <li>The caller sends <code>ATE0D</code> followed by <code>P</code> or <code>T</code> for pulse or tone, then the number filtered to digits and commas. The answerer sends <code>ATE0S0=1</code>, which turns echo off and answers on the first ring.</li>
+        <li>Wait for <code>CONNECT</code>. Terminal failures end the attempt.</li>
+        <li>To abort or hang up, send <code>ATH0</code>.</li>
+      </ol>
+      <div class="callout story"><span class="label">From the port</span><p>The modem Big Race uses reports <code>CONNECT 14400</code>, with the negotiated speed. The first port of the original parser waited for a bare <code>CONNECT</code> and hung. A regression reproduced it, and the parser now accepts <code>CONNECT</code> followed by a non-empty number while still rejecting any other suffix.</p></div>
+
+      <h2 id="virtual-modems">Big Race: virtual modems</h2>
+      <p>Big Race runs the whole original link stack: Link Options, the Hayes conversation, the packets, the retries and the linked race. What it cannot use is a telephone line. Its answer, designed and built on 2026-09-21, is to give each machine a real modem in software and to carry the <em>telephone line</em> over the network.</p>
+      <p>Each Big Race machine runs a virtual modem from the mddosem emulator project, copied into the repository as <code>vendor/mddosem-modem</code> with its provenance recorded, so no external checkout is needed. The modem is a full digital signal processor. It understands Hayes commands, dials, answers, trains and carries data as audio, sampled at 16 kHz. The two modems exchange that audio, in 10 ms chunks, over one TCP connection.</p>
+      <div class="callout how"><span class="label">How it works</span><p>Game bytes never cross the socket as bytes. The original game writes a packet to its UART; the local virtual modem modulates it into sound; the sound crosses TCP; the remote modem demodulates it; the remote game reads it from its UART. Keeping the original modem wire format also means the original <code>GP.EXE</code>, running under the mddosem emulator, could in principle join the same line. The design names that as its final proof step; the sources do not yet record it as done.</p></div>
+      <p>The telephone number in Link Options stays a telephone number. It shapes the dial command and the audible dialling, and nothing else. The TCP connection that stands in for the line is set up separately.</p>
+      <p>You can hear all of it. Big Race copies the exact 16 kHz audio the local modem sends, resamples it for the sound device at 44.1, 48 or 96 kHz, and plays the dial tone, answer, training, carrier and hang-up. That copy is presentation only and drops chunks rather than delay the modem.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>Putting that audio tap <em>before</em> the wire send made training fail twice with <code>NO CARRIER</code>. Moving it after the wire, terminal and signal work fixed it. The lesson is recorded as: publish modem audio after the wire and DTE work.</p></div>
+
+      <h2 id="the-uart-seam">The UART seam</h2>
+      <p>Between the ported game and the virtual modem sits the host's model of an 8250 UART, in <code>src/native_modem_link.rs</code>. The game's code performs its port reads and writes as it always did; the seam supplies what the hardware would have shown:</p>
+      <ul>
+        <li><strong>Pacing.</strong> Bytes leave at the chosen baud rate. Each byte costs <code>1,193,182 × 10 / baud</code> PIT cycles, rounded up: ten bit-times for a start bit, eight data bits and a stop bit.</li>
+        <li><strong>Status.</strong> The interrupt identification, line status and modem status registers are reported in the 8250's own priority order, including the delta bits for CTS, DSR, ring and carrier detect.</li>
+        <li><strong>Commit first.</strong> A port write reaches the modem only after the source routine that made it has committed. A rolled-back transaction never leaks a byte.</li>
+        <li><strong>Backpressure, never loss.</strong> Both directions use bounded 4,096-byte queues. RTS gates delivery to the game; CTS reflects room towards the modem. When a queue is full, the pump holds the byte and tries again next turn. Protocol bytes are never dropped.</li>
+      </ul>
+      <p>A separate worker thread owns the modem DSP and the non-blocking socket, and ticks every 10 ms. The game thread only swaps bytes and reads a snapshot of the line signals, so a slow network can never stall a frame. Sockets, threads, clocks and DSP state stay outside the canonical memory image, which is why Big Race refuses to save during a live linked session.</p>
+
+      <h2 id="finding-each-other">Finding each other</h2>
+      <p>The first version needed an environment variable naming an address on each machine. On 2026-09-22 Big Race gained automatic discovery for an ordinary local network. The player just chooses <strong>Wait For Call</strong> on one machine and <strong>Dial</strong> on the other.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 380" role="img" aria-label="Discovery sequence between the waiting and dialling machines: the waiting machine listens on a dynamic TCP port and UDP 47771; the dialler broadcasts a query with a nonce every 300 ms; the waiter replies with an offer echoing the nonce plus TCP port and session token; the dialler connects over TCP and sends a claim with the token; the waiter acknowledges; then raw PCM flows.">
+          <g font-size="12" fill="currentColor">
+            <text x="40" y="24" font-weight="600" font-size="13">Wait For Call</text>
+            <text x="470" y="24" font-weight="600" font-size="13">Dial</text>
+            <line x1="100" y1="36" x2="100" y2="360" style="stroke:var(--ink-3)"/>
+            <line x1="530" y1="36" x2="530" y2="360" style="stroke:var(--ink-3)"/>
+            <rect x="20" y="46" width="160" height="40" rx="4" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="30" y="63">bind TCP port 0 (OS picks)</text>
+            <text x="30" y="79">then bind UDP 47771</text>
+            <g stroke="currentColor">
+              <line x1="530" y1="115" x2="100" y2="115" style="stroke:var(--blue)"/>
+              <polygon points="100,115 110,110 110,120" style="fill:var(--blue)"/>
+              <line x1="100" y1="160" x2="530" y2="160" style="stroke:var(--blue)"/>
+              <polygon points="530,160 520,155 520,165" style="fill:var(--blue)"/>
+              <line x1="530" y1="215" x2="100" y2="215" style="stroke:var(--amber)"/>
+              <polygon points="100,215 110,210 110,220" style="fill:var(--amber)"/>
+              <line x1="530" y1="255" x2="100" y2="255" style="stroke:var(--amber)"/>
+              <polygon points="100,255 110,250 110,260" style="fill:var(--amber)"/>
+              <line x1="100" y1="290" x2="530" y2="290" style="stroke:var(--amber)"/>
+              <polygon points="530,290 520,285 520,295" style="fill:var(--amber)"/>
+            </g>
+            <text x="150" y="108" style="fill:var(--blue)">UDP QUERY: magic, version, nonce (broadcast)</text>
+            <text x="150" y="153" style="fill:var(--blue)">UDP OFFER: nonce, TCP port, session token</text>
+            <text x="150" y="208" style="fill:var(--amber)">TCP connect to the reply's source address</text>
+            <text x="150" y="248" style="fill:var(--amber)">CLAIM: session token</text>
+            <text x="150" y="283" style="fill:var(--amber)">ACK; both listeners close</text>
+            <rect x="120" y="310" width="390" height="36" rx="4" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="134" y="333" style="fill:var(--red)">raw 16 kHz PCM both ways; the modems take over</text>
+            <text x="370" y="135" font-size="11" style="fill:var(--ink-3)">repeat every 300 ms, 5 s limit</text>
+          </g>
+        </svg>
+        <figcaption>Discovery and claim happen before any modem audio. After the acknowledgement, the TCP stream is handed to the modem worker as a plain audio line.</figcaption>
+      </figure>
+
+      <p>The protocol, in <code>src/native_link_discovery.rs</code>, uses only the standard library. Every packet starts with an eight-byte header carrying the magic <code>BRLN</code>, a protocol version, a transport identifier (modem) and a message kind: query, offer, claim or acknowledgement. Packets have one exact length and zeroed reserved bytes; anything else is ignored.</p>
+      <ul>
+        <li><strong>Wait For Call</strong> binds a TCP listener on a port the operating system chooses, then takes the fixed UDP port 47771. A dedicated thread answers queries and accepts candidate connections. If the UDP port is already taken, startup fails visibly and releases the TCP listener.</li>
+        <li><strong>Dial</strong> sends a query with a fresh 128-bit nonce to the broadcast address and to loopback every 300 ms. It accepts only an offer that echoes the live nonce and names a non-zero port. It connects to the offer's <em>source</em> address, never an address written inside a packet, sends the 128-bit session token, and waits for the acknowledgement. Each TCP step has a 500 ms bound, and the whole search a 5-second limit.</li>
+        <li>After one valid claim, the waiting side closes both listeners, so it cannot later accept a stray connection.</li>
+      </ul>
+      <p>The design is honest about its limits. The tokens stop accidental or stale connections; they are not authentication against a hostile network. Broadcast follows the default interface, so VPNs, several adapters or routed subnets can defeat it. For those cases the manual override remains: start both machines with <code>MDF1GP_MODEM_LINE</code> set to <code>listen:</code> or <code>connect:</code> plus a numeric address and port. The two modes never mix.</p>
+
+      <h2 id="why-original-cars">Why linked races use the original cars</h2>
+      <p>Big Race adds alternative vehicle sets that overlay each circuit's driving data before the grid and calibration read it. A linked race ignores that setting and always races the original cars, printing one line on the error stream to say so. The code's own reason: both peers simulate the same grid, and only one of them owns this setting. Nothing in the original link protocol carries a vehicle set, so two machines with different settings would compute different physics from the same events and drift apart.</p>
+
+      <h2 id="making-it-work">Making it work on two real machines</h2>
+      <p>The link was proved in stages, each with a test that was made to fail once before it passed. The final proof on 2026-09-21, run inside one test process, carried two real modem DSPs through dial and answer, the Link Options packets, the full <code>A709</code> exchange, linked cold setup and both race owners entering linked startup. The source setup alone took about 55 seconds over the virtual line.</p>
+      <p>That proof ran inside one process. Two separate machines then exposed a run of faults that one process hid.</p>
+
+      <ol class="timeline">
+        <li><time>2026-09-21</time><h4>Faults the in-process tests found</h4><p>The packet queue omitted the final CRC byte. The receiver threw away a valid header while the rest of the frame was still arriving. A fresh image lacked the four serial-table rows, so both machines wrote to UART base zero. The resident adapter cleared 66 bytes at <code>SS:0B60</code> although the mailbox is 64, wiping channel zero's transmit slot at <code>SS:0BA0</code>. And link-menu bytes at <code>605A</code> offsets had been written into the canonical data segment, where they could corrupt live game state.</p></li>
+        <li><time>2026-09-22</time><h4>Training never reaches carrier (MDF1GP-BUG-FLU-00098)</h4><p>After discovery, both machines played training noise forever. Ordinary network jitter was ruled out: a relay delaying every second audio frame by 15 ms still connected. The confirmed gap was that the modem asks its owner to discard stale pre-call audio, and the worker never did. The fix honours that request, discarding through the next 320-byte frame boundary so the stream stays aligned.</p></li>
+        <li><time>2026-09-22</time><h4>Stuck on STARTING LINK (MDF1GP-BUG-FLU-00101)</h4><p>Two machines still stalled while the in-process harness passed. A two-process harness at 19,200 baud reached carrier, which moved the fault past negotiation. The UART bridge had advanced its own clock but never passed the elapsed time to the ported transport, whose serial timeout therefore never moved. It also never published the modem-control register. Extending the harness past carrier found one more: a worker that missed a 10 ms tick sent silence, and the first packet arrived corrupted. A small playout buffer fixed that, and the session now eats the trailing line feed after <code>CONNECT</code> so it cannot become the first packet byte.</p></li>
+        <li><time>2026-09-22</time><h4>Adaptive buffering and a flight recorder</h4><p>A later build still stalled between two real machines. The playout buffer became adaptive: it starts at 30 ms, grows by 10 ms after each real underrun up to 100 ms, and shrinks by 10 ms after each stable ten seconds. It never resamples, duplicates or drops audio. A two-slot diagnostic log began recording every phase transition, off the modem thread.</p></li>
+        <li><time>2026-09-22</time><h4>The self-driven diagnostic</h4><p><code>big-race diagnose-link</code> launches a leader and a follower as separate processes on one machine, with automatic discovery at 19,200 baud, and bundles both logs. It reached carrier and the link hello, then stalled in <code>A709</code>. Byte tracing showed the modems delivered exact bytes, but the wire held spliced packets. The bridge had passed each 10 ms host turn to the source's 16-unit transmit wait as a whole unit, so the wait expired early and the next packet overwrote a buffer still being sent. Converting elapsed PIT cycles into the source's 65,536-cycle units fixed it. A 500 ms settling period after <code>CONNECT</code> and a stale-memory bug in startup went with it. Both processes then completed linked race startup and reached <span class="addr">0752:F02A</span>.</p></li>
+      </ol>
+
+      <div class="callout proof"><span class="label">How we know</span><p>Every fix came with a failing test first. The most telling one is the last: lower-level packet tests had installed timer observations by hand, which masked the missing hand-off in production. The regression for that bug fails without the hand-off and passes with it. The self-driven diagnostic now reproduces the production path, discovery included, without a second computer.</p></div>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Nearly every one of these faults was a <em>time</em> fault, not a data fault. The original transport was written for a PC where the timer, the UART and the code share one clock. Big Race splits them across a game thread, a modem thread and a network. Each seam had to hand real elapsed time across in the source's own units, or the original code, correct as it is, would wait forever or not long enough.</p></div>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

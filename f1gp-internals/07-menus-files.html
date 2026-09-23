@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Formula One Grand Prix stores its menus inside GP.EXE, draws them from BACKDROP.DAT and its own fonts, packs pictures in the f1pcanim container, and classifies its save files by length and checksum.">
+  <title>Menus, files and saves — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 07</p>
+      <h1>Menus, files and saves</h1>
+      <p class="lede">Before the race there are menus, and around it there are files. The game keeps every menu as a small data record inside its own executable, paints it over a backdrop from a picture archive, and writes its own fonts. Its save files carry no names or headers: the game knows them by exact length and a four-byte checksum. This chapter takes each piece apart, and shows how the port rebuilt the menus pixel for pixel by reading them straight out of the player's copy of the game.</p>
+
+      <h2 id="menus-as-data">Menus are data inside GP.EXE</h2>
+      <p>F1GP does not draw its menus with hand-written code for each screen. Each screen is a <strong>resource</strong>: a block of bytes inside <code>GP.EXE</code> that describes a panel, a title and a list of controls. One general routine draws any resource and runs its keyboard and mouse input. The Main Menu, the Options pages, Driver Select, the file selector and the rest are all this one shape with different numbers in it.</p>
+
+      <p>The executable on disk is packed with Microsoft's EXEPACK. The port has its own EXEPACK decoder (<code>src/native_exepack.rs</code>). On the owned copy it rebuilds the 600,848-byte unpacked image byte for byte: the raw image prefix, the backward literal and fill runs, all 1,306 relocations, the ordinary MZ header and its checksum. The unpacked image lives only in memory; nothing is written back to the install.</p>
+
+      <h3 id="resource-layout">The shape of a menu resource</h3>
+      <p>Take the Main Menu as the example. Its resource is laid out like this:</p>
+      <ul>
+        <li>An <strong>18-byte header</strong>. After a leading word, it holds the control count (9), a zero word, the panel's left, top, right and bottom edges, and two more words.</li>
+        <li>A <strong>5-byte descriptor</strong> giving the title's screen position.</li>
+        <li>The <strong>title string</strong>, zero-terminated.</li>
+        <li>Nine <strong>24-byte control records</strong>, one per row.</li>
+        <li>The <strong>row labels</strong> as consecutive zero-terminated strings, which the control records point at.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 270" role="img" aria-label="Layout of one 24-byte menu control record: byte 0 id, byte 1 group, bytes 2 to 9 an inclusive rectangle as left, top, right, bottom words, bytes 10 and 11 a label pointer, bytes 12 to 19 callback and drawing metadata, bytes 20 to 23 the left, right, up and down neighbour ids, with 0xFF meaning none.">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="20" font-weight="600">One control record — 24 bytes</text>
+            <g style="fill:none;stroke-width:2">
+              <rect x="10" y="34" width="26" height="46" style="stroke:currentColor"/>
+              <rect x="36" y="34" width="26" height="46" style="stroke:currentColor"/>
+              <rect x="62" y="34" width="208" height="46" style="stroke:var(--blue)"/>
+              <rect x="270" y="34" width="52" height="46" style="stroke:currentColor"/>
+              <rect x="322" y="34" width="208" height="46" style="stroke:var(--ink-3)"/>
+              <rect x="530" y="34" width="140" height="46" style="stroke:var(--red)"/>
+            </g>
+            <text x="23" y="62" text-anchor="middle">id</text>
+            <text x="49" y="62" text-anchor="middle">grp</text>
+            <text x="166" y="55" text-anchor="middle">rectangle (inclusive)</text>
+            <text x="166" y="71" text-anchor="middle" style="fill:var(--ink-3)">left · top · right · bottom</text>
+            <text x="296" y="55" text-anchor="middle">label</text>
+            <text x="296" y="71" text-anchor="middle" style="fill:var(--ink-3)">ptr</text>
+            <text x="426" y="62" text-anchor="middle">callback / drawing metadata</text>
+            <text x="600" y="55" text-anchor="middle">neighbours</text>
+            <text x="600" y="71" text-anchor="middle" style="fill:var(--ink-3)">L · R · U · D</text>
+            <g style="fill:var(--ink-3)" font-size="11">
+              <text x="10" y="96">0</text><text x="36" y="96">1</text><text x="62" y="96">2</text><text x="258" y="96">9</text>
+              <text x="270" y="96">10</text><text x="322" y="96">12</text><text x="516" y="96">19</text><text x="530" y="96">20</text><text x="656" y="96">23</text>
+            </g>
+            <text x="10" y="130" font-weight="600">Main Menu neighbour graph (Up / Down only)</text>
+            <g style="fill:none;stroke:currentColor">
+              <rect x="10" y="146" width="66" height="28" rx="4"/><rect x="84" y="146" width="66" height="28" rx="4"/>
+              <rect x="158" y="146" width="66" height="28" rx="4"/><rect x="232" y="146" width="66" height="28" rx="4"/>
+              <rect x="306" y="146" width="66" height="28" rx="4"/><rect x="380" y="146" width="66" height="28" rx="4"/>
+              <rect x="454" y="146" width="66" height="28" rx="4"/><rect x="528" y="146" width="66" height="28" rx="4"/>
+              <rect x="602" y="146" width="66" height="28" rx="4"/>
+            </g>
+            <g text-anchor="middle">
+              <text x="43" y="165">0</text><text x="117" y="165">1</text><text x="191" y="165">2</text><text x="265" y="165">3</text><text x="339" y="165">4</text><text x="413" y="165">5</text><text x="487" y="165">6</text><text x="561" y="165">7</text><text x="635" y="165">8</text>
+            </g>
+            <g style="stroke:var(--blue)">
+              <line x1="76" y1="160" x2="84" y2="160"/><line x1="150" y1="160" x2="158" y2="160"/><line x1="224" y1="160" x2="232" y2="160"/><line x1="298" y1="160" x2="306" y2="160"/><line x1="372" y1="160" x2="380" y2="160"/><line x1="446" y1="160" x2="454" y2="160"/><line x1="520" y1="160" x2="528" y2="160"/><line x1="594" y1="160" x2="602" y2="160"/>
+            </g>
+            <text x="10" y="205">Row 0 has no Up neighbour and row 8 has no Down neighbour, so the menu stops at its ends.</text>
+            <text x="10" y="225" style="fill:var(--ink-3)">It does not wrap. The port first made it wrap, and the executable's own graph corrected it.</text>
+            <text x="10" y="252" style="fill:var(--ink-3)">Screen: 320 × 200. Every rectangle must lie inside it, and left ≤ right, top ≤ bottom.</text>
+          </g>
+        </svg>
+        <figcaption>Each control carries its own hit box and its own navigation links. Arrow keys follow the links; the mouse tests the rectangles.</figcaption>
+      </figure>
+
+      <p>The neighbour bytes are the menu's navigation graph. Each arrow key follows one link, and <code>0xFF</code> means "nowhere". Because the links are stored per control, a menu can have any shape: a single column, a grid, or two buttons side by side at the bottom of a column.</p>
+
+      <h3 id="strict-discovery">Finding a menu without an address</h3>
+      <p>The port never hard-codes where a menu lives in the executable. Each parser, one per screen in <code>src/native_original_*.rs</code>, searches for the screen's title string. It requires exactly one match, walks back over the descriptor and header, and then validates everything: the header words, every rectangle, every label pointer, every metadata word and every neighbour link. Zero matches is "not found". Two is "ambiguous". Anything malformed is an error, and the app refuses to start rather than draw a menu it cannot vouch for.</p>
+
+      <p>This strictness pays off in odd places. <code>RACE OPTIONS</code> also appears inside <code>QUICK RACE OPTIONS</code>, so its parser has to validate candidate structure rather than trust the string. And because the parser reads what is actually there, it works on modified copies of the game. A season pack called GP1998 changes the roster; parsing its packed <code>GP.EXE</code> in memory turned up team slots with more car numbers than names. The port's first rule had rejected that. The rule was the port's own assumption, not something the original enforces, so it was relaxed.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The header's four panel values look like x, y, width and height. They are <strong>left, top, right and bottom</strong>. The Options menu header reads <code>0x20, 0x08, 0x120, 0xC0</code>. Treated as sizes, the panel ran to the screen edges. Read as edges, it is a 256 × 184 panel at (32, 8), and the frame then matched the original exactly. The Main Menu and the Load-Save menu share one panel: left 48, top 4, 224 wide and 192 tall.</p></div>
+
+      <div class="callout proof"><span class="label">How we know</span><p>Every recreated page is checked against a capture from the original game running in the mdpc emulator. The port renders the page at the original 320 × 200, converts it through the palette, and hashes all the RGB pixels. The only pixel excluded is the parked mouse cursor in the bottom-right corner — 63,999 of 64,000 pixels must match. Each test was first run against a deliberately wrong digest to watch it fail, and direct pixel comparison was used to find what differed. That is how the port learned, for example, that the Race Options page defaults Opposition Standard to <em>Rookie</em>, not the assumed <em>Ace</em>.</p></div>
+
+      <h2 id="navigation">Focus, choice and navigation</h2>
+      <p>The first thing a new player sees is a language dialog with three flags: English, Français and Deutsch, and an O.K. button. It is a small screen with an idea that the port got wrong at first: <strong>the focused control and the chosen language are separate things</strong>.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 250" role="img" aria-label="The language dialog's navigation graph. Left and Right move focus between English, French and German. Down from French focuses O.K.; Up from O.K. returns to French. Activating a flag changes the chosen language; activating O.K. accepts it. English can stay chosen while French or O.K. carries focus.">
+          <g font-size="12" fill="currentColor">
+            <rect x="60" y="30" width="130" height="50" rx="6" style="fill:none;stroke:var(--blue);stroke-width:3"/>
+            <text x="125" y="52" text-anchor="middle" font-weight="600">English</text>
+            <text x="125" y="68" text-anchor="middle" font-size="11" style="fill:var(--blue)">chosen (pressed)</text>
+            <rect x="275" y="30" width="130" height="50" rx="6" style="fill:none;stroke:var(--red);stroke-width:3"/>
+            <text x="340" y="52" text-anchor="middle" font-weight="600">Français</text>
+            <text x="340" y="68" text-anchor="middle" style="fill:var(--red)">focused (red)</text>
+            <rect x="490" y="30" width="130" height="50" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="555" y="60" text-anchor="middle" font-weight="600">Deutsch</text>
+            <g style="stroke:currentColor;fill:none">
+              <path d="M190 48 H275"/><path d="M405 48 H490"/>
+              <path d="M275 62 H190"/><path d="M490 62 H405"/>
+            </g>
+            <text x="232" y="42" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">Right</text>
+            <text x="232" y="76" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">Left</text>
+            <text x="447" y="42" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">Right</text>
+            <text x="447" y="76" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">Left</text>
+            <rect x="290" y="150" width="100" height="40" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="340" y="175" text-anchor="middle" font-weight="600">O.K.</text>
+            <path d="M330 80 V150" style="stroke:currentColor"/><path d="M350 150 V80" style="stroke:currentColor"/>
+            <text x="322" y="120" text-anchor="end" font-size="11" style="fill:var(--ink-3)">Down</text>
+            <text x="358" y="120" font-size="11" style="fill:var(--ink-3)">Up</text>
+            <text x="10" y="222">Activate a flag → choose it.   Activate O.K. → accept the choice.</text>
+            <text x="10" y="242" style="fill:var(--ink-3)">Flags: 39 × 28 FLAGS.DAT images, drawn over a rectangle cleared to index 0.</text>
+          </g>
+        </svg>
+        <figcaption>Two independent states. The port's first version merged them, so moving the cursor changed the language.</figcaption>
+      </figure>
+
+      <p>The graph comes from the executable's neighbour links. Left and Right move among the flags; Down from French reaches O.K.; Up from O.K. returns to French. Activating a flag chooses that language. Activating O.K. accepts it. So English can stay drawn as the pressed blue choice while French, or O.K., carries the red focus highlight. The original frames for "French focused, English chosen" and "O.K. focused, English chosen" each have their own digest, and the port matches both.</p>
+
+      <p>The flags hold a subtlety too. Their images have transparent pixels, but the dialog first clears each 39 × 28 rectangle to palette index 0 (black) and only then skips the transparent pixels. Compositing them straight over the blue panel looks almost right and is wrong: the black flag borders and Germany's black stripe depend on that clear.</p>
+
+      <p>After the language dialog comes a two-row Startup menu — Quick Race above Main Menu, with Quick Race focused — and then the nine-row Main Menu. None of these menus wrap: the executable's graph has no link from the last row back to the first.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Main Menu row</th><th>Leads to</th></tr></thead>
+        <tbody>
+          <tr><td>Quick Race</td><td>circuit choice, then straight to a race</td></tr>
+          <tr><td>Driver/Team Selection</td><td>the Driver Select list</td></tr>
+          <tr><td>Load/Save Game</td><td>the Load-Save menu and its file selector</td></tr>
+          <tr><td>Help Options Setup</td><td>Setup Options (driving aids and similar Yes/No choices)</td></tr>
+          <tr><td>Practise any Circuit</td><td>a practice session</td></tr>
+          <tr><td>Non-Championship Race</td><td>a single race weekend</td></tr>
+          <tr><td>Championship Season</td><td>the sixteen-round season</td></tr>
+          <tr><td>Game Options Menu</td><td>the Options menu</td></tr>
+          <tr><td>Exit to DOS</td><td>quit</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The fourth label really is <code>Help Options Setup</code>, without a slash. The port's first guess had one; pixel analysis of the original row removed it.</p>
+
+      <h2 id="backdrops">Backdrops and pictures</h2>
+      <p>Behind every menu is a full-screen picture. They come from <code>BACKDROP.DAT</code>, which holds 36 records arranged as <strong>18 pairs</strong>. In each pair the first record is a 256-colour palette and the second is a 320 × 200 screen. A menu screen always uses its pair's palette, not the race's, which is why result pages drawn over a race still show the menu's colours.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pair</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>Constructors' Championship table</td></tr>
+          <tr><td>3</td><td>the language dialog</td></tr>
+          <tr><td>4</td><td>Drivers' Championship table</td></tr>
+          <tr><td>5</td><td>Driver Select</td></tr>
+          <tr><td>6</td><td>Driver Lap Times</td></tr>
+          <tr><td>12</td><td>race results pages</td></tr>
+          <tr><td>14</td><td>the Grand Prix page</td></tr>
+          <tr><td>15</td><td>Startup, Main, Options, Setup Options, Load-Save, Credits</td></tr>
+          <tr><td>16</td><td>the race winner</td></tr>
+          <tr><td>17</td><td>the podium</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The port's first menu backdrop used records 6 and 7 — pair 3 — on every page. It looked like a plausible title picture. It is the language screen's backdrop. The fix came from an oracle, not an opinion: with the original running, the uncovered 32-pixel strips at either side of each menu were compared against all 18 decoded pairs. The language screen matched only pair 3. Startup and Main matched only pair 15, with no error at all. Setup Options was later caught the same way: it too is pair 15, not pair 3.</p></div>
+
+      <h3 id="trackpix">Circuit previews and other archives</h3>
+      <p><code>TRACKPIX.DAT</code> works the same way with 17 palette-and-screen pairs. Pairs 0 to 15 map directly onto the sixteen circuit files <code>F1CT01.DAT</code> to <code>F1CT16.DAT</code>, and are the previews shown when a circuit is chosen. The seventeenth pair is not a circuit. It is the fixed landscape behind the Select Circuit grid. An earlier note in the project had concluded that the exposed background there was not from <code>TRACKPIX</code> at all; a later full-frame comparison matched pair 17 at all 11,296 exposed pixels, and the port now keeps that pair instead of discarding it.</p>
+
+      <p>Other archives in the same container format include <code>FLAGS.DAT</code> (six records; the first three are the language flags), <code>HELMETS.DAT</code> (39 helmet pictures used on the Driver Select detail pages), and the two ceremony animations, <code>CHAMP.DAT</code> (23 records) and <code>TROPHY.DAT</code> (17 records). Across the nine archives in the owned install, the port validated 34, 36, 6, 39, 23, 31, 29, 33 and 17 records, every one with a gap-free layout and no trailing bytes.</p>
+
+      <h2 id="f1pcanim">The f1pcanim container</h2>
+      <p>All those picture files share one container. It starts with the eight ASCII bytes <code>f1pcanim</code> and a <code>u16</code> record count. A directory of 14-byte entries follows. Each entry gives a record type, a <code>u32</code> payload offset, a <code>u32</code> payload length, and the image's width and height. The payloads follow the directory with no gaps: the first begins where the directory ends, each next one where the last ended, and the last ends at the end of the file. The port's parser, <code>src/pc_animation.rs</code>, rejects any gap, overlap or leftover byte.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 230" role="img" aria-label="The f1pcanim container: a 10-byte header with the magic string and a record count, a directory of 14-byte records giving type, offset, length, width and height, then contiguous payloads. Four record types: 0x06f0 palette, 0x06e9 LZW screen, 0x06e8 byte-run XOR frame, 0x06ee byte-run small image.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="20" width="120" height="50" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="70" y="42" text-anchor="middle">"f1pcanim"</text>
+            <text x="70" y="58" text-anchor="middle" style="fill:var(--ink-3)">+ u16 count</text>
+            <rect x="130" y="20" width="200" height="50" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="230" y="42" text-anchor="middle">directory</text>
+            <text x="230" y="58" text-anchor="middle" style="fill:var(--ink-3)">count × 14 bytes</text>
+            <rect x="330" y="20" width="110" height="50" style="fill:none;stroke:currentColor"/>
+            <text x="385" y="50" text-anchor="middle">payload 0</text>
+            <rect x="440" y="20" width="140" height="50" style="fill:none;stroke:currentColor"/>
+            <text x="510" y="50" text-anchor="middle">payload 1</text>
+            <rect x="580" y="20" width="90" height="50" style="fill:none;stroke:currentColor"/>
+            <text x="625" y="50" text-anchor="middle">…</text>
+            <text x="10" y="96" font-weight="600">Directory entry</text>
+            <g style="fill:none;stroke:currentColor">
+              <rect x="10" y="106" width="80" height="34"/><rect x="90" y="106" width="130" height="34"/><rect x="220" y="106" width="130" height="34"/><rect x="350" y="106" width="80" height="34"/><rect x="430" y="106" width="80" height="34"/>
+            </g>
+            <g text-anchor="middle">
+              <text x="50" y="128">type</text><text x="155" y="128">u32 offset</text><text x="285" y="128">u32 length</text><text x="390" y="128">width</text><text x="470" y="128">height</text>
+            </g>
+            <text x="10" y="170"><tspan font-weight="600">0x06f0</tspan> palette: 256 six-bit RGB triples (width 256, height 0)</text>
+            <text x="10" y="188"><tspan font-weight="600">0x06e9</tspan> 320 × 200 screen, 12-bit LZW-style codec — a keyframe</text>
+            <text x="10" y="206"><tspan font-weight="600">0x06e8</tspan> 320 × 200 byte-run frame, XORed over the previous screen</text>
+            <text x="10" y="224"><tspan font-weight="600">0x06ee</tspan> small byte-run image: helmets, flags</text>
+          </g>
+        </svg>
+        <figcaption>A simple, strict envelope. The interesting part is the four record types and their three codecs.</figcaption>
+      </figure>
+
+      <h3 id="palettes">Palettes</h3>
+      <p>A <code>0x06f0</code> record is exactly 768 bytes: 256 red, green and blue values in the VGA DAC's six-bit range, uploaded by BIOS call <code>AX=1017h</code>. The port rejects any component above 63. To show a six-bit value on a modern screen it expands it to eight bits as <code>(v &lt;&lt; 2) | (v &gt;&gt; 4)</code>, which maps 0 to 0 and 63 to 255.</p>
+
+      <h3 id="byte-run">Byte runs</h3>
+      <p>Types <code>0x06e8</code> and <code>0x06ee</code> share one run-length codec. Read a control byte <code>c</code>:</p>
+      <ul>
+        <li><code>0x00</code>–<code>0x7F</code>: copy the next <code>c + 1</code> bytes literally.</li>
+        <li><code>0x81</code>–<code>0xFF</code>: repeat the next byte <code>257 − c</code> times (from 128 down to 2).</li>
+        <li><code>0x80</code>: never seen; the port treats it as an error.</li>
+      </ul>
+      <p>The expansion must come to exactly width × height bytes. On the owned install, the port expanded all 166 byte-run records this way — 121 screens, 39 helmets and six flags — and every one ended exactly.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Each <code>0x06e8</code> record expands to a full 64,000 bytes, so it looks like a complete picture. It is not. The original <strong>XORs every expanded byte over the existing screen</strong>. A zero therefore means "leave this pixel alone" — it is the identity of XOR, not a transparency colour. An animation is a keyframe followed by a chain of XOR deltas. The Championship ceremony in <code>CHAMP.DAT</code> is two such chains: records 1 to 7 are the podium scene, and records 9 to 22 are the champagne. The winner's sequence shows records 1 to 7 seven times, then record 1 again, then the champagne frames.</p></div>
+
+      <h3 id="lzw">The LZW-style screen codec</h3>
+      <p>Type <code>0x06e9</code> is the keyframe codec, and it was the last to be understood. It is a dictionary coder in the LZW family, with a twist: the dictionary does not hold strings, it holds <em>places in the output already decoded</em>.</p>
+
+      <p>Tokens are 12 bits, packed two to every three bytes. The first token takes the first byte plus the low four bits of the second; the second token takes the high four bits of the second byte plus the third byte.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 290" role="img" aria-label="Twelve-bit token packing: three bytes hold two tokens. Token A is byte 0 plus the low nibble of byte 1 as its high bits. Token B is byte 2 plus the high nibble of byte 1. Tokens below 256 are literal bytes; tokens from 256 up index a dictionary of 3,840 entries, each an offset and length into the output already decoded. Every step adds a new entry: the start of what was just emitted, with length one more.">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="20" font-weight="600">Three bytes, two tokens</text>
+            <g style="fill:none;stroke:currentColor">
+              <rect x="10" y="32" width="150" height="40"/><rect x="160" y="32" width="75" height="40"/><rect x="235" y="32" width="75" height="40"/><rect x="310" y="32" width="150" height="40"/>
+            </g>
+            <text x="85" y="57" text-anchor="middle">byte 0</text>
+            <text x="197" y="52" text-anchor="middle">byte 1</text><text x="197" y="66" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">low 4</text>
+            <text x="272" y="52" text-anchor="middle">byte 1</text><text x="272" y="66" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">high 4</text>
+            <text x="385" y="57" text-anchor="middle">byte 2</text>
+            <path d="M85 72 V96 H120 M197 72 V96 H150" style="stroke:var(--blue);fill:none;stroke-width:2"/>
+            <rect x="60" y="96" width="150" height="30" rx="4" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="135" y="116" text-anchor="middle">token A = low4·256 + b0</text>
+            <path d="M272 72 V96 H300 M385 72 V96 H340" style="stroke:var(--red);fill:none;stroke-width:2"/>
+            <rect x="250" y="96" width="170" height="30" rx="4" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="335" y="116" text-anchor="middle">token B = high4·256 + b2</text>
+            <text x="480" y="52">Token &lt; 0x100:</text>
+            <text x="480" y="68" style="fill:var(--ink-3)">emit that byte</text>
+            <text x="480" y="96">Token ≥ 0x100:</text>
+            <text x="480" y="112" style="fill:var(--ink-3)">entry (token − 0x100)</text>
+            <text x="10" y="160" font-weight="600">Dictionary: 3,840 entries of (offset, length) into the decoded output</text>
+            <rect x="10" y="172" width="660" height="40" style="fill:none;stroke:var(--rule)"/>
+            <rect x="130" y="172" width="120" height="40" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="190" y="196" text-anchor="middle">copy source</text>
+            <rect x="420" y="172" width="150" height="40" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="495" y="196" text-anchor="middle">bytes just written</text>
+            <path d="M190 212 C 190 250, 495 250, 495 214" style="stroke:currentColor;fill:none;stroke-dasharray:4 3"/>
+            <polygon points="490,218 495,210 500,218" fill="currentColor"/>
+            <text x="10" y="268">After each token, the next entry records where that output started, with length one more.</text>
+            <text x="10" y="284" style="fill:var(--ink-3)">The index wraps round after 3,840 entries: 4,096 twelve-bit codes minus 256 literals.</text>
+          </g>
+        </svg>
+        <figcaption>Copies go forwards byte by byte, like the original's <code>REP MOVSB</code>, so a copy may repeat bytes it wrote a moment earlier.</figcaption>
+      </figure>
+
+      <p>Decoding runs like this. The first token must be a literal byte. The dictionary's entry 0 is then set to "offset 0, length 2". For each further token, a value below <code>0x100</code> emits one literal byte; a larger value looks up entry <code>token − 0x100</code> and copies that many bytes from that earlier position in the output. Either way, a new entry is written: the position where this step's output started, with a length one greater than what was just emitted. That is the classic LZW rule — "what I just said, plus the next byte" — expressed as a pointer back into the image. The entry index wraps round at 3,840, which is exactly the number of 12-bit codes left once the 256 literals are taken.</p>
+
+      <p>The copy runs forwards one byte at a time. When the source and destination overlap, the copy repeats bytes it has only just written, which is how a long run of one colour compresses. The port copies in the same order on purpose. It validates the whole stream before it touches the output: an uninitialised dictionary entry, a reference to output that does not exist yet, or leftover tokens are all errors.</p>
+
+      <h2 id="fonts">Fonts and icons from the executable</h2>
+      <p>The menu text uses the game's own fonts, and they live in <code>GP.EXE</code>, not in a data file. The port bundles none of them. It finds them at launch by their structure, in <code>src/native_original_font.rs</code>:</p>
+      <ul>
+        <li>The <strong>proportional font</strong> is 96 glyphs, one for each ASCII character from space upwards, eight rows each with the most significant bit on the left, plus a 96-byte table of advances. The finder looks for an advance table whose first entry (the space) is 4 and whose others are all between 3 and 9, then searches up to 4,096 bytes before it for a glyph bank whose shapes fit those widths. The match must be unique.</li>
+        <li>Beyond the ASCII range the same bank holds <strong>icons</strong>. Glyphs <code>0x8A</code> and <code>0x8B</code> are increase and decrease arrows, <code>0x8C</code> and <code>0x8D</code> previous and next, <code>0x8E</code> and <code>0x8F</code> page up and page down. All six have an advance of 8. Glyph <code>0x9D</code> is a degree sign, and ten small digits start at <code>0x91</code>.</li>
+        <li>The <strong>title font</strong> is a separate object: 27 descriptors for A to Z and the hyphen, each giving a width, a height of 12 and an offset to row-major pixel bytes. Zero is transparent; other bytes are already-shaded palette indices, so the bevelled look is baked into the font.</li>
+        <li>A separate fixed-width <strong>digit bank</strong>, ten digits of eight rows, draws numbers on some pages. The proportional font's digits look visibly different.</li>
+      </ul>
+
+      <p>Drawing uses simple palette tricks. A normal row label is drawn three times: in index 4 one pixel up and left, in index 8 one pixel down and right, and in index 15 at its true place. The selected row uses indices 19, 21 and 15. Main Menu labels sit at <code>y = 33 + 18n</code>. The title <code>MAIN MENU</code> sits at (116, 12); drawn glyphs advance by their width plus one, and a space by four. Replaying that draw gave 636 non-transparent pixels, and every one matched the original screenshot.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>Before the fonts were found, the port drew menus with its own 3 × 5 pixel font, and it still does if <code>GP.EXE</code> is missing. The first check that the real font had been found was a measurement: the label <code>Driver/Team Selection</code> is 162 source pixels wide in the proportional font, which is exactly what its x = 79 position on screen requires. The icons had a similar moment. The Select Circuit arrows look like drawn triangles; they are font glyphs <code>0x8C</code> and <code>0x8D</code>.</p></div>
+
+      <h2 id="option-pages">Option pages</h2>
+      <p>The Options menu is ten records: eight vertical choices, then Save Options and Main Menu side by side, with focus starting on Main Menu. Each choice opens a nested page, and each page is another resource with its own labels, controls, value ranges and inline value labels. The port recreated each one and pinned its default frame with a digest.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Page</th><th>What the executable supplies</th><th>Original defaults</th></tr></thead>
+        <tbody>
+          <tr><td>Game Options</td><td>9 labels, 19 controls, ranges, inline values</td><td>25.0 fps, Animations Yes, two turns per player, Miles, joystick in menus No, Fast Windows No, fade speed Fast</td></tr>
+          <tr><td>Race Options</td><td>320 × 192 panel, 7 labels, 20 controls, 8 inline choice labels</td><td>Practice 5 min, qualifying 15 min, race distance 10%, separate setups No, Opposition Standard Rookie, Opposition Spread 1991 Levels</td></tr>
+          <tr><td>Quick Race Options</td><td>6 labels, 17 controls, handler words, ranges</td><td>Suzuka, car 01, grid 07, 5% distance, Dry, two linked cars No; car 1–40, grid 1–26, distance 0–100 in steps of 5</td></tr>
+          <tr><td>Startup Files</td><td>title, 9 labels, 10 controls</td><td>all three loads No; each filename <code>gpsaves\</code></td></tr>
+          <tr><td>Setup Options</td><td>6 labels, 13 controls</td><td>Auto Brakes No, the other five Yes</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Small visual rules matter at this level. Game Options and Quick Race draw their numeric values as flat fields in palette index 6. Race Options draws them as progress bars. Quick Race's distance uses a black frame, a dark blue interior and a palette-19 fill bar rounded upwards. Setup Options marks each stored Yes or No with a pressed bevel. Escape does nothing on these pages; Return goes back to the Options menu with the page's own row focused.</p>
+
+      <p>The Startup Files page shows how the executable and the preferences file line up. It offers three files to load at start-up — driver names, setups and circuit records — each with a Yes/No and a filename. The three filename buffers are 32 bytes apart, both in the executable's initialisers and in <code>F1PREFS.DAT</code>, which suggests 31 characters plus a terminating zero. The port treats that input limit as an inference, because no available trace shows anyone typing into the field.</p>
+
+      <h3 id="credits">Credits</h3>
+      <p>The original's About entry opens two Credits pages, and those too are resources in <code>GP.EXE</code>: twelve text records per page, each with its text, position and palette colour, plus button labels, rectangles and neighbour links. The panel is 256 × 200 at (32, 0) over backdrop pair 15. The port recreated both pages exactly on 2026-09-01. On 2026-09-19 it replaced that route with its own About page, to keep the original credit text out of release builds, and on 2026-09-22 the same slot became the Big Race options page (scaling, scanlines, renderer and vehicles). The Options resource is untouched; the port only re-routes the one row it owns.</p>
+
+      <h2 id="driver-team">Driver and team selection</h2>
+      <p>Driver Select is the most intricate menu. Its resource has 19 controls: nine rows of two team columns, an O.K. button and a driver-number pane. It is drawn over backdrop pair 5 with the separate fixed-width digit bank for the car numbers. The team names on the list come from an 18-entry, 13-byte alias table in the executable.</p>
+
+      <p>Behind the list sits the roster, also resident in the executable: 40 car numbers, 40 driver names of 24 bytes each, and 20 team text slots of 13 bytes. Only 18 teams are real; the last two slots read "Not Used". The same data area holds per-team performance words and a driver ranking that the race uses to seed and cut the field — see <a href="03-field.html">Chapter 03</a>.</p>
+
+      <p>Choosing a team opens a detail page with helmet pictures from <code>HELMETS.DAT</code>. From there the player can select or deselect drivers, and edit driver, team and engine names. A few rules are exact:</p>
+      <ul>
+        <li>The selection is a set of zero, one or several drivers, not a single car.</li>
+        <li>The first typed character overwrites the whole field. Driver names cap at 19 characters and accept only the original character set. Enter commits; Escape cancels in place.</li>
+        <li>An active field shows a 2 × 8 caret just after the measured text, alternating black and white.</li>
+        <li>Escape is a page stack: detail and confirmation go back to the list, the edit page goes back to detail, and Escape on the list leaves without committing anything. Only the confirmation action writes the staged names into the live roster.</li>
+      </ul>
+
+      <h2 id="bitmap-banks">F1GPDATA and F1GPDATB</h2>
+      <p>The race's object pictures — trees, signs, marshals and the like — live in a pair of files that act as one bank. <code>F1GPDATA.DAT</code> starts with a directory of little-endian <code>u32</code> entries. The first entry is both the offset of the first record and the byte length of the directory; on the owned install it is <code>0x398</code>, which means 230 entries. Bit 31 of each entry picks the bank: clear means the record is in <code>F1GPDATA.DAT</code>, set means it is in <code>F1GPDATB.DAT</code>, and the remaining 31 bits are the offset. IDs 0 to 136 use the first file and IDs 137 to 229 the second. How those bitmaps are drawn belongs to <a href="05-rendering.html">Chapter 05</a>.</p>
+
+      <h2 id="file-selector">The file selector</h2>
+      <p>The Load-Save menu lists seven operations: Load Game, Load and Save Track Records, Load and Save Names, Load and Save Car Setups. There is no Save Game row in the menu the player can reach — more on that below. Every operation opens one shared file-selector resource, with the operation's title supplied by the caller.</p>
+
+      <p>The selector lists regular files from the game's <code>GPSAVES</code> directory, sorted without regard to case, twelve to a page. It pages with the <code>0x8E</code> and <code>0x8F</code> icons, and because paging counts in pairs, an even number of files stops one row earlier than you might expect. Focus starts on Cancel. Clicking a file fills it red and copies its name into the Filename field. The Parent, Root and drive buttons A: to D: move between directories.</p>
+
+      <p>Two details reveal how the original thinks about files:</p>
+      <ul>
+        <li><strong>Filenames are arbitrary.</strong> There are no fixed extensions. A Names file can be called anything.</li>
+        <li><strong>Filter works on contents, not names.</strong> With Filter on, the selector lists only files whose length and checksum fit the operation. With No Filter it lists everything.</li>
+      </ul>
+
+      <div class="callout how"><span class="label">How it works</span><p>A DOS game can see the whole disk; a port should not show the player's entire computer. The port maps the virtual <code>C:</code> drive and its root to the game directory, not the host's root. <code>A:</code>, <code>B:</code> and <code>D:</code> stay on screen with their original DOS paths but list nothing when no drive is mapped. Parent from <code>GPSAVES</code> still reaches the game directory, so files kept beside the game remain loadable.</p></div>
+
+      <h2 id="save-files">Save files: length plus checksum</h2>
+      <p>Three kinds of file are simple copies of a block of the game's memory with four bytes added. The game recognises them by <strong>exact total length and a valid trailer</strong>, and by nothing else. It does not check names, circuit numbers, setup values or padding.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 280" role="img" aria-label="Save file layout: a body copied from memory, then a four-byte trailer of two little-endian words. Word one is a 16-bit wrapping sum of the body bytes. Word two starts at zero and, for each byte, rotates left three bits then adds the byte. Three fixed file types: Track Records 1,440 plus 4, Names 1,480 plus 4, Car Setups 322 plus 4.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="20" width="520" height="46" style="fill:none;stroke:currentColor"/>
+            <text x="270" y="48" text-anchor="middle">body — a raw copy of a block of live game memory</text>
+            <rect x="530" y="20" width="70" height="46" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="565" y="40" text-anchor="middle">sum</text>
+            <text x="565" y="56" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">u16</text>
+            <rect x="600" y="20" width="70" height="46" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="635" y="40" text-anchor="middle">roll</text>
+            <text x="635" y="56" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">u16</text>
+            <text x="10" y="96" style="fill:var(--red)">sum  = sum + byte                          (wrapping, 16-bit)</text>
+            <text x="10" y="114" style="fill:var(--blue)">roll = rotate_left(roll, 3) + byte     (wrapping, 16-bit)</text>
+            <text x="10" y="132" style="fill:var(--ink-3)">Both start at zero and run over every body byte. Both are stored little-endian.</text>
+            <g>
+              <rect x="10" y="156" width="210" height="100" rx="6" style="fill:none;stroke:currentColor"/>
+              <text x="115" y="178" text-anchor="middle" font-weight="600">Track Records</text>
+              <text x="115" y="198" text-anchor="middle">1,440 + 4 = 1,444</text>
+              <text x="115" y="218" text-anchor="middle" style="fill:var(--ink-3)">16 circuits × 90 B</text>
+              <text x="115" y="236" text-anchor="middle" style="fill:var(--ink-3)">merged on load</text>
+              <rect x="235" y="156" width="210" height="100" rx="6" style="fill:none;stroke:currentColor"/>
+              <text x="340" y="178" text-anchor="middle" font-weight="600">Names</text>
+              <text x="340" y="198" text-anchor="middle">1,480 + 4 = 1,484</text>
+              <text x="340" y="218" text-anchor="middle" style="fill:var(--ink-3)">40×24 + 20×13 + 20×13</text>
+              <text x="340" y="236" text-anchor="middle" style="fill:var(--ink-3)">drivers, teams, engines</text>
+              <rect x="460" y="156" width="210" height="100" rx="6" style="fill:none;stroke:currentColor"/>
+              <text x="565" y="178" text-anchor="middle" font-weight="600">Car Setups</text>
+              <text x="565" y="198" text-anchor="middle">322 + 4 = 326</text>
+              <text x="565" y="218" text-anchor="middle" style="fill:var(--ink-3)">2 B header + 32 × 10 B</text>
+              <text x="565" y="236" text-anchor="middle" style="fill:var(--ink-3)">kept opaque</text>
+            </g>
+          </g>
+        </svg>
+        <figcaption>One trailer format covers every original save. The length alone decides what kind of file it is.</figcaption>
+      </figure>
+
+      <p>The checksum is two 16-bit words. The first is a plain wrapping sum of the body bytes. The second starts at zero and, for each byte, rotates itself left by three bits and then adds the byte. The rotation makes the second word sensitive to byte order, which a plain sum is not. The same two-word checksum protects <code>F1PREFS.DAT</code>, whose body is <code>0x48A</code> bytes.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>It is tempting to make a loader "safer" by checking that names are printable or circuit numbers are in range. For these files that would be wrong. The original accepts any body with the right length and trailer, so a stricter port rejects files the original accepts. The port's classifier checks exactly what the original checks and no more. Its Names decoder does the same kindly: it bounds each string to its slot, ignores bytes after the first zero, and substitutes unsupported display bytes rather than failing.</p></div>
+
+      <h3 id="track-records">Track Records</h3>
+      <p>The lap-record table holds 16 circuit records of 90 bytes. Each starts with a <code>u16</code> circuit ID, then two 44-byte lap records, one for qualifying and one for the race. A lap record is a 24-byte driver name, a 14-byte team name, a <code>u32</code> lap time in milliseconds and a <code>u16</code> date, counted in days from 1978. Saving copies the 1,440-byte table from <span class="addr">2914:2312</span>.</p>
+
+      <p>Loading does not replace the table; it <strong>merges</strong> it. For each circuit ID in the file, the game finds the first matching live circuit and compares the qualifying and race times separately as unsigned 32-bit numbers. Only a strictly smaller time wins, and then the whole 44-byte lap record is copied, name and date included. Equal or slower times leave the live record alone. So loading a friend's records file can only improve your table.</p>
+
+      <h3 id="names-setups">Names and Car Setups</h3>
+      <p>A Names file is the three name tables back to back: 40 driver names of 24 bytes, then 20 team names of 13 bytes, then 20 engine names of 13 bytes. Loading replaces the live tables. The port has one extra obligation here: any in-progress edits from the Driver/Team pages must be committed to the live roster before Save Names serialises it.</p>
+
+      <p>Car Setups is a 322-byte image of live memory at <span class="addr">2914:1416</span>: a two-byte header followed by 32 ten-byte setup records. The port keeps it as an opaque block and preserves every byte, including ones it does not understand. The port's own simple setup model, used by early clean-room races, could never have represented it.</p>
+
+      <p>The shared save writer has its own small rules. If a file of the expected size already exists, it offers Replace without first checking that file's checksum. If a file of another size is in the way, it refuses with <code>SAVE ABORTED</code>. Result dialogs size themselves from their text: the width is <code>(max_width / 2 + 15) &amp; ~7</code>, doubled and centred on x = 160. <code>TRACK RECORDS LOADED</code> produces a 256-pixel panel; <code>CAR SETUPS SAVED</code> a 192-pixel one.</p>
+
+      <h2 id="save-game">SAVE GAME: a snapshot of the race</h2>
+      <p>Saving a race in progress is a different kind of file. It is not a fixed table. It is a snapshot assembled from three separate memory ranges, written into a temporary buffer at <span class="addr">381C:4C38</span>, with the same four-byte checksum added:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 250" role="img" aria-label="SAVE GAME assembly: three memory ranges, stack segment 121C to 2012, data segment 096B to 298F, and segment 381C 11E6 to 4C38, are concatenated into a 26,732-byte body at 381C:4C38, then the two-word checksum is appended for a 26,736-byte file. Before copying, the writer stores a far pointer into DS:096B.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="20" width="200" height="54" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="110" y="42" text-anchor="middle" font-weight="600">SS:121C … 2012</text>
+            <text x="110" y="60" text-anchor="middle" style="fill:var(--ink-3)">3,574 bytes</text>
+            <rect x="240" y="20" width="200" height="54" rx="6" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="340" y="42" text-anchor="middle" font-weight="600">DS:096B … 298F</text>
+            <text x="340" y="60" text-anchor="middle" style="fill:var(--ink-3)">8,228 bytes</text>
+            <rect x="470" y="20" width="200" height="54" rx="6" style="fill:none;stroke:currentColor;stroke-width:2"/>
+            <text x="570" y="42" text-anchor="middle" font-weight="600">381C:11E6 … 4C38</text>
+            <text x="570" y="60" text-anchor="middle" style="fill:var(--ink-3)">14,930 bytes</text>
+            <path d="M110 74 V110 M340 74 V110 M570 74 V110" style="stroke:currentColor"/>
+            <rect x="10" y="110" width="140" height="44" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <rect x="150" y="110" width="200" height="44" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <rect x="350" y="110" width="260" height="44" style="fill:none;stroke:currentColor;stroke-width:2"/>
+            <rect x="610" y="110" width="60" height="44" style="fill:none;stroke:var(--ink-3);stroke-width:2"/>
+            <text x="80" y="137" text-anchor="middle">stack</text>
+            <text x="250" y="137" text-anchor="middle">data</text>
+            <text x="480" y="137" text-anchor="middle">scene / pit</text>
+            <text x="640" y="137" text-anchor="middle" font-size="11">sum/roll</text>
+            <text x="10" y="180">Body 0x686C = 26,732 bytes, assembled at 381C:4C38. File = 26,736 bytes.</text>
+            <text x="10" y="200" style="fill:var(--red)">Before copying, the writer at 15F2:C5E0 stores DS:096B = 0x4813 and DS:096D = 0x381C.</text>
+            <text x="10" y="220" style="fill:var(--ink-3)">The first 0x1C bytes form a scene header: circuit, distance, weather, linked mode,</text>
+            <text x="10" y="238" style="fill:var(--ink-3)">and at +0x16 an operation selector (1 = SAVE GAME, 2 = Championship race continuation).</text>
+          </g>
+        </svg>
+        <figcaption>A saved race is three pieces of live memory glued together. The two seed words just before the copy are what the original's loader needs to find its way back.</figcaption>
+      </figure>
+
+      <p>The body is <code>0x686C</code> = 26,732 bytes: the stack range (3,574 bytes), the data range (8,228) and the scene range (14,930) in that order. The file is 26,736 bytes with its trailer. The front of the body is a scene header. It records the circuit, race distance, weather and linked-mode flag as little-endian words. The word at offset <code>0x16</code> is not the player's car number, as it first appeared; it is an operation selector. The SAVE GAME route writes 1, and the Championship's own "continue the race" path writes 2 and restores the same three ranges.</p>
+
+      <p>Loading is different from the three fixed types. The original Load Game routine does not have one fixed size. It derives two accepted lengths at run time from <code>SS:04BE</code> and <code>SS:04C0</code>, allows two-byte variants of each, and hands the data to a separate Load Game subsystem. That is why the port first deferred it rather than treat it as "one more fixed-size file". A checksum-valid buffer is not the same as a restorable game.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The port's first raw-save writer copied the three ranges in the right order and computed a correct checksum. The original game's Load Game said <code>GAME LOADED</code> — and then <code>LOAD FAILED / Invalid Data</code>. The team swapped pieces between a known-good original save and the port's save, range by range and in combination; every swap reproduced the failure, while mutating header words did not. That separated "the file is well-formed" from "the state inside it is right". The missing step, found in the writer at <span class="addr">15F2:C5E0</span>, was two stores made <em>before</em> the copy: <code>DS:096B = 0x4813</code> and <code>DS:096D = 0x381C</code>. In the port's first files those four bytes were zero. With the seeds in place, the original <code>GP.EXE</code> loaded the port's file and reached the restored race frame.</p></div>
+
+      <p>There is one more surprise. In the Load-Save menu the player can actually reach, there is no Save Game row. The port offers saving through a key instead (below), and still writes the original format so the original game can read it.</p>
+
+      <h2 id="port-files">The port's own files</h2>
+      <p>The port adds files of its own, all kept separate from the original formats so that neither is ever mistaken for the other.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>File</th><th>What it holds</th></tr></thead>
+        <tbody>
+          <tr><td><code>BIGRACE.STATE.SAV</code></td><td>A complete checkpoint of an active Practice, Qualifying or Race session, written with <kbd>S</kbd>. Magic <code>MDF1GPS</code> and a version word; the session mode and vehicle set; grid position, circuit, car number, distance, weather and linked flag; a checksum of the resident image before live start-up; then the full canonical memory image, the lower-screen image and the <code>XSOUND</code> image, and a two-word checksum.</td></tr>
+          <tr><td><code>BIGRACE.SAV</code></td><td>The same moment as a 26,736-byte original SAVE GAME file, written alongside. It carries no vehicle set, so it loads only under the Original vehicles.</td></tr>
+          <tr><td><code>BIGRACE.CSE</code></td><td>A Championship checkpoint, written automatically after each completed round. Magic <code>MDF1GPCS</code>. It stores standings for the 34-car season pool, round history and the next circuit. Older <code>MDF1GP.CSE</code> files still load.</td></tr>
+          <tr><td>settings file</td><td>A tiny versioned text file with lines such as <code>sound=on</code>, plus companion files beside it with their own extensions: display, vehicles, driver aids and track selection.</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Load Game in the port accepts all three kinds of save file. It tries the port's session checkpoint first, then the Championship checkpoint, then the original SAVE GAME format with its scene header, operation selector and checksum. A malformed or incompatible file is rejected before the live game is touched.</p>
+
+      <p>The version numbers carry a small courtesy. When vehicle sets arrived, the session checkpoint spent a pad byte that was already zero on the set, and the Championship checkpoint appended one byte. In both, a save made with the Original cars is still written in the older version, byte for byte, and still loads in a build that predates vehicle sets. Only a Bangers or Monster Trucks save uses the new version number.</p>
+
+      <p>Preferences follow the same "original first" rule. At the first Escape hand-off from the menu, the port reads <code>F1PREFS.DAT</code>, checks its body against the two-word checksum, and applies the driver-aid byte at body offset <code>0x478</code>. A missing or invalid file leaves the executable's built-in default in place, and an explicit setting in the port's own file still wins.</p>
+
+      <h2 id="how-it-came-together">How the menus came together</h2>
+      <ol class="timeline">
+        <li><time>2026-08-31</time><h4>Discovery and the first pictures</h4><p>The game-data inventory, the <code>f1pcanim</code> envelope for all nine archives, the byte-run decoder, the first backdrop (the wrong pair), the Main Menu from pair 15, and the original fonts read from <code>GP.EXE</code>.</p></li>
+        <li><time>2026-09-01</time><h4>A day of exact pages</h4><p>The language and Startup menus, navigation endpoints, Options and every nested page, Credits, Setup Options, Driver Select and name editing, the file selector, the save-file checksum, and the Track Records, Names and Car Setups operations — each pinned to an original capture.</p></li>
+        <li><time>2026-09-10</time><h4>Restoring a race</h4><p>Load Game began restoring the original raw scene image through the source session route.</p></li>
+        <li><time>2026-09-15</time><h4>Interoperable saves</h4><p>The DS seed words were found, and the original <code>GP.EXE</code> loaded the port's SAVE GAME file. Select Circuit gained its true background, <code>TRACKPIX</code> pair 17.</p></li>
+        <li><time>2026-09-18</time><h4>The ceremonies</h4><p>All 21 <code>CHAMP.DAT</code> frames were checked against the production presenter, alongside the 16-frame <code>TROPHY.DAT</code> season-complete animation.</p></li>
+        <li><time>2026-09-22</time><h4>A page of its own</h4><p>The About slot became the Big Race options page, the one place where the port adds choices the original never had.</p></li>
+      </ol>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

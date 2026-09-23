@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Formula One Grand Prix drives an AdLib OPL2 chip: the music catalogue, the 300 Hz sound clock, the three-voice engine note, the effect driver, and the port's own clean-room chip model.">
+  <title>Sound — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 06</p>
+      <h1>Sound</h1>
+      <p class="lede">The game's sound comes from one small FM synthesis chip, the Yamaha OPL2 on an AdLib card. The music is a catalogue of four songs. The engine note is not recorded or sequenced at all: it is three chip voices, retuned from the engine's RPM fifty times a second. This chapter explains how the original drives that chip, and how the port rebuilt the chip itself without copying anyone else's emulator.</p>
+
+      <h2 id="driver-and-catalogue">A driver and a catalogue</h2>
+      <p>The original splits sound into two kinds of file. <strong>Drivers</strong> are small flat binaries that know how to talk to one sound device. <strong>Catalogues</strong> hold the music as data. Each supported device gets four drivers: one for the intro, one for in-game music, one for sound effects and one for the credits. Only three devices have catalogues.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Device</th><th>Drivers</th><th>Catalogue</th></tr></thead>
+        <tbody>
+          <tr><td>AdLib (OPL2)</td><td><code>AINTRO</code> <code>AINGAME</code> <code>ASOUND</code> <code>ACREDIT</code> <code>.BIN</code></td><td><code>ADLIB.CAT</code>, 42,612 bytes</td></tr>
+          <tr><td>PC speaker</td><td><code>B*.BIN</code></td><td><code>BEEP.CAT</code>, 1,875 bytes</td></tr>
+          <tr><td>Roland MT-32</td><td><code>R*.BIN</code></td><td><code>ROLAND.CAT</code>, 36,777 bytes</td></tr>
+          <tr><td>Installed slot</td><td><code>X*.BIN</code></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The <code>X*</code> files are not a fourth device. They are the <em>installed</em> slot. The installer copies the chosen device's four drivers over the <code>X*</code> names, and <code>GP.EXE</code> only ever loads <code>X*</code>. On the install the project studied, the <code>X*</code> files were byte-identical to the <code>A*</code> files, so AdLib had been chosen. Nothing picks a device at run time. Device identity lives entirely inside the driver binary: the catalogue filename it embeds and the I/O ports it uses. The preferences file <code>F1PREFS.DAT</code> has no device field; its only sound byte, at <code>+0x408</code>, switches music on or off.</p>
+
+      <p>One consequence shapes everything else. The effects driver and the front-end music driver load at the same run-time segment, <span class="addr">9438:0000</span>. <strong>The original plays music or effects, never both at once.</strong> The menus have music. The race has an engine, tyres and crashes, and no music.</p>
+
+      <div class="callout how"><span class="label">How it works</span><p>A driver is a flat binary loaded at <code>segment:0000</code>. Bytes <code>0x00</code> to <code>0x23</code> are a small data block that <code>GP.EXE</code> writes into directly — this is how the game tells the effects driver the current RPM. At <code>0x24</code> sit seven near-offset words. The game copies them into seven far pointers on its stack and calls through them. <code>AX</code> is the only argument.</p></div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Slot</th><th>Purpose</th><th><code>XSOUND.BIN</code> (effects)</th><th><code>XINGAME.BIN</code> (music)</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Fast tick, every timer interrupt</td><td><code>0x057F</code></td><td>a bare <code>retf</code></td></tr>
+          <tr><td>1</td><td>Init: probe the device, reset the chip</td><td><code>0x0258</code></td><td><code>0x10B2</code></td></tr>
+          <tr><td>2</td><td>Silence and shut down</td><td><code>0x0353</code></td><td><code>0x11BB</code></td></tr>
+          <tr><td>3</td><td>Start(AX): play a tune or start an effect</td><td><code>0x0532</code></td><td><code>0x1152</code></td></tr>
+          <tr><td>4</td><td>Stop(AX) or reset</td><td><code>0x0556</code></td><td><code>0x1188</code></td></tr>
+          <tr><td>5</td><td>Main tick, every sixth interrupt</td><td><code>0x05C5</code></td><td><code>0x0F8A</code></td></tr>
+          <tr><td>6</td><td>Fade out (music only)</td><td>none</td><td><code>0x1181</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The effects driver has no slot 6. The word where its pointer would sit is actually a configuration constant, <code>0x0006</code>. The game only calls slot 6 on the music path, so it never fires in practice. But a port that treats all drivers alike and calls "fade" on the effects driver would jump into nonsense.</p></div>
+
+      <h2 id="adlib-cat">Inside ADLIB.CAT</h2>
+      <p>All three catalogues share one container. It starts with a directory of little-endian <code>(u32 offset, u32 length)</code> pairs. The first offset is also the directory's own size, so the entry count is <code>first_offset / 8</code>. The chunks follow back to back: the first begins where the directory ends, each next one begins where the last ended, and the last ends exactly at the end of the file.</p>
+
+      <p><code>ADLIB.CAT</code> has four entries. The first question was what they hold. An early guess was that some chunks were sound-effect tables. They are not. <strong>Every chunk is a song.</strong> The three effect drivers contain no catalogue filename at all; they carry their own sounds inside themselves.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 300" role="img" aria-label="Layout of ADLIB.CAT: a 32-byte directory of four offset and length pairs, then four song chunks. Each song chunk holds an instrument count, a bank of 24-byte instrument records, and a MIDI-like event stream ending in FF 2F.">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="20" font-weight="600">ADLIB.CAT — 42,612 bytes</text>
+            <rect x="10" y="32" width="70" height="44" rx="3" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="45" y="52" text-anchor="middle">directory</text>
+            <text x="45" y="68" text-anchor="middle" style="fill:var(--ink-3)">4 × 8 B</text>
+            <rect x="80" y="32" width="210" height="44" style="fill:none;stroke:currentColor"/>
+            <text x="185" y="52" text-anchor="middle">song 0</text>
+            <text x="185" y="68" text-anchor="middle" style="fill:var(--ink-3)">0x37C9 B, 13 patches</text>
+            <rect x="290" y="32" width="250" height="44" style="fill:none;stroke:currentColor"/>
+            <text x="415" y="52" text-anchor="middle">song 1</text>
+            <text x="415" y="68" text-anchor="middle" style="fill:var(--ink-3)">0x5BEC B, 13 patches</text>
+            <rect x="540" y="32" width="80" height="44" style="fill:none;stroke:currentColor"/>
+            <text x="580" y="52" text-anchor="middle">song 2</text>
+            <text x="580" y="68" text-anchor="middle" style="fill:var(--ink-3)">6 patches</text>
+            <rect x="620" y="32" width="50" height="44" style="fill:none;stroke:currentColor"/>
+            <text x="645" y="52" text-anchor="middle">3</text>
+            <text x="645" y="68" text-anchor="middle" style="fill:var(--ink-3)">7</text>
+            <path d="M80 80 L10 130 M290 80 L670 130" style="stroke:var(--ink-3);stroke-dasharray:4 3;fill:none"/>
+            <text x="10" y="150" font-weight="600">One song chunk</text>
+            <rect x="10" y="160" width="90" height="50" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="55" y="182" text-anchor="middle">u16 N</text>
+            <text x="55" y="198" text-anchor="middle" style="fill:var(--ink-3)">+0x00</text>
+            <rect x="100" y="160" width="250" height="50" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="225" y="182" text-anchor="middle">N × 24-byte instrument records</text>
+            <text x="225" y="198" text-anchor="middle" style="fill:var(--ink-3)">+0x02</text>
+            <rect x="350" y="160" width="320" height="50" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="510" y="182" text-anchor="middle">event stream … FF 2F</text>
+            <text x="510" y="198" text-anchor="middle" style="fill:var(--ink-3)">+0x02 + 24·N</text>
+            <text x="10" y="240">Event: [variable-length delta][status + data], with running status.</text>
+            <text x="10" y="260">Statuses: 9n note-on (velocity 0 = note-off), Bn controller, Cn program, En pitch bend.</text>
+            <text x="10" y="280" style="fill:var(--ink-3)">No tempo event: the tick rate lives in the driver. The terminator has no length byte.</text>
+          </g>
+        </svg>
+        <figcaption>The catalogue is a directory and four contiguous songs. Only the AdLib catalogue puts an instrument bank in front of each song's event stream.</figcaption>
+      </figure>
+
+      <h3 id="event-stream">The event stream</h3>
+      <p>Each song is close to a standard MIDI track. Every event starts with a variable-length delta time, then a status byte and its data. Running status lets repeated statuses be omitted. Only four channel statuses ever occur: note-on (<code>0x9n</code>, where a velocity of zero means note-off), control change (<code>0xBn</code>, only controllers 1, 7 and 10), program change (<code>0xCn</code>) and pitch bend (<code>0xEn</code>). There is no tempo event anywhere. The stream ends with the two bytes <code>FF 2F</code>, and that end marker carries no length byte. That last detail is where the format departs from a real MIDI file.</p>
+
+      <p>The port's reader, <code>src/adlib_cat.rs</code>, rejects any other status rather than skipping it. The original driver never emits anything else, so an unexpected status means the decoder has lost its place. Quietly resynchronising would hide that.</p>
+
+      <h3 id="patch-bank">The instrument bank</h3>
+      <p>AdLib chunks, and only AdLib chunks, start with an instrument bank: a <code>u16</code> count <code>N</code>, then <code>N</code> records of 24 bytes each. The event stream begins at <code>+2 + 24N</code>. The stream parses cleanly at exactly that offset and at no other, including the tempting <code>+3 + 24N</code>.</p>
+
+      <p>Each record uses 11 of its 24 bytes. Modulator and carrier values are interleaved, which is the classic SBI instrument order:</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Bytes</th><th>OPL2 register</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>0, 1</td><td><code>0x20</code> mod, car</td><td>tremolo, vibrato, sustain, key-scale rate, frequency multiple</td></tr>
+          <tr><td>2, 3</td><td><code>0x40</code> mod, car</td><td>key-scale level and total level</td></tr>
+          <tr><td>4, 5</td><td><code>0x60</code> mod, car</td><td>attack and decay rates</td></tr>
+          <tr><td>6, 7</td><td><code>0x80</code> mod, car</td><td>sustain level and release rate</td></tr>
+          <tr><td>8, 9</td><td><code>0xE0</code> mod, car</td><td>waveform select</td></tr>
+          <tr><td>10</td><td><code>0xC0</code></td><td>feedback and connection</td></tr>
+          <tr><td>11–23</td><td>—</td><td>zero padding in the catalogue</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Byte 3, the carrier's level, is the same placeholder value in every record. The driver overwrites it with a level worked out from each note's velocity and its channel's volume.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>The reading is over-determined rather than merely plausible. All eleven chunks across the three catalogues parse to exactly <code>FF 2F</code> at exactly the chunk end, with zero bytes left over. Note-ons balance note-offs exactly in every file: 4,937 against 4,937 for AdLib, 4,863 for Roland, 304 for the PC speaker. All 39 AdLib instrument records pass range checks with zero violations: byte 8 is always a valid modulator waveform, byte 9 a valid carrier waveform, byte 10 at most <code>0x0F</code>, and the tail always zero. The alternative "all modulators, then all carriers" order would put a waveform at byte 4; none of the 39 records fits it.</p></div>
+
+      <h3 id="three-encodings">Three encodings of the same music</h3>
+      <p>Chunk <em>i</em> is the same song on every device, and that turns the Roland stream into a check on the AdLib one. The total tick counts agree: song 0 is 4,481 ticks on both; song 1 is 4,831 against 4,830; song 3 is 662 against 663. The best transposition between them is zero semitones for all four songs. When note-onset times are compared, each song matches its own counterpart far better than any other song.</p>
+
+      <p>The sharpest single piece of evidence is one strange event. Program change to value <strong>126</strong> occurs exactly once, in song 2, at tick 535 — in the AdLib, Roland <em>and</em> PC-speaker encodings. Three independent encodings agree on one event's position. The value 126 is larger than any song's instrument bank, so it cannot be a patch. It is a sentinel, and the driver reads it as "all notes off". Playback carries on past it.</p>
+
+      <p>The PC-speaker catalogue carries only songs 0, 2 and 3, and its credits driver is a 57-byte stub. Two independent facts point the same way, so the project infers that song 1 is the credits music. That remains an inference.</p>
+
+      <h2 id="the-clock">The 300 Hz clock</h2>
+      <p>A song's delta times are in ticks, but the catalogue never says how long a tick is. That lives in the timer, and for a while the timer rate looked unknowable.</p>
+
+      <p>The game reprograms the PC's interval timer itself. At file offset <code>0x6D3B3</code> in the unpacked executable it loads divisor <strong>3977</strong> and far-calls a routine that writes command <code>0x36</code> to port <code>0x43</code> — channel 0, mode 3 — followed by the divisor. The timer's input clock is 1,193,182 Hz, so the interrupt rate is 1,193,182 / 3977 = <strong>300.02 Hz</strong>.</p>
+
+      <p>The interrupt handler calls the sound driver's fast tick on every interrupt. It reloads a counter with 5 and calls the main tick on every sixth. So the two sound rates are 300 Hz and exactly 50 Hz. The RPM hand-off to the effects driver happens at the 50 Hz rate too.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 230" role="img" aria-label="Timing ladder: the timer fires 300 times a second; every interrupt runs the fast tick; every sixth runs the main tick at 50 Hz, which advances songs, retunes the engine and publishes RPM.">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="22" font-weight="600">PIT channel 0, divisor 3977 → 300.02 Hz</text>
+            <line x1="20" y1="60" x2="660" y2="60" style="stroke:var(--rule)"/>
+            <g style="stroke:var(--blue);stroke-width:2">
+              <line x1="40" y1="45" x2="40" y2="75"/><line x1="90" y1="45" x2="90" y2="75"/><line x1="140" y1="45" x2="140" y2="75"/>
+              <line x1="190" y1="45" x2="190" y2="75"/><line x1="240" y1="45" x2="240" y2="75"/><line x1="290" y1="45" x2="290" y2="75"/>
+              <line x1="340" y1="45" x2="340" y2="75"/><line x1="390" y1="45" x2="390" y2="75"/><line x1="440" y1="45" x2="440" y2="75"/>
+              <line x1="490" y1="45" x2="490" y2="75"/><line x1="540" y1="45" x2="540" y2="75"/><line x1="590" y1="45" x2="590" y2="75"/>
+              <line x1="640" y1="45" x2="640" y2="75"/>
+            </g>
+            <text x="20" y="96" style="fill:var(--blue)">fast tick (slot 0), every interrupt: re-jitter top engine voice, sweep effects</text>
+            <g style="fill:var(--red)">
+              <circle cx="40" cy="130" r="8"/><circle cx="340" cy="130" r="8"/><circle cx="640" cy="130" r="8"/>
+            </g>
+            <line x1="40" y1="130" x2="640" y2="130" style="stroke:var(--red);stroke-dasharray:3 4"/>
+            <text x="190" y="126" text-anchor="middle" style="fill:var(--ink-3)">6 interrupts = 20 ms</text>
+            <text x="20" y="160" style="fill:var(--red)">main tick (slot 5) — every sixth, 50 Hz:</text>
+            <text x="20" y="178">advance a song by one delta tick · retune the engine from RPM · slew engine volume</text>
+            <text x="20" y="206" style="fill:var(--ink-3)">Longest song: 4,831 ticks at 50 Hz ≈ 97 s. Song 0: 4,481 ticks ≈ 90 s, a sensible menu theme.</text>
+          </g>
+        </svg>
+        <figcaption>One hardware timer drives both sound rates. The fast tick exists for effects that need finer time than 20 ms.</figcaption>
+      </figure>
+
+      <p>Three independent facts agree on this rate. First, 3977 is the only divisor constant in the executable that gives a round rate. Second, the game's saved frame period gives a frame rate of 300 / <em>N</em>, and that reproduces the documented 8.1, 10 and 15 frames per second exactly (300/37, 300/30 and 300/20). Third, song 0's 4,481 ticks come to about ninety seconds at 50 Hz, which is the right length for a menu theme.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>An earlier pass through the same code concluded that the game never reprograms the timer, only reads it. The reason: writing <code>0x00</code> to port <code>0x43</code> is a <em>latch</em> command, used to read the counter, but <code>0x36</code> is <em>mode programming</em>. Reading only the latch sites produces a confident, wrong "no reprogramming" answer and loses the tick rate. The lesson the project kept: check what a negative result actually searched before trusting it.</p></div>
+
+      <h2 id="sequencer">The music sequencer</h2>
+      <p>The music driver turns a song into chip writes. The port's equivalent is <code>MusicPlayer</code> in <code>src/sound_driver.rs</code>. Its job, once per 50 Hz main tick, is simple to describe:</p>
+      <ol>
+        <li>If an event is waiting, count its delta down by one.</li>
+        <li>While the remaining wait is zero, fire the pending event and read the next one with its delta.</li>
+      </ol>
+      <p>The loop in step 2 matters. A chord is several note-ons with a delta of zero between them. Firing until the wait becomes non-zero makes all of them sound on the same tick.</p>
+
+      <h3 id="off-by-one">The delta+1 bug</h3>
+      <p>The first version of the sequencer did the two steps the other way round in effect. It decremented the wait on a tick where the event could not also fire. Each event then cost its delta <em>plus one</em> tick. Nothing sounded wrong at first listen — the music simply ran slow. Song 0 took <strong>6,093</strong> ticks to play instead of <strong>4,482</strong>, about 36 per cent longer.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 220" role="img" aria-label="Two timelines. In the correct sequencer an event with delta 2 fires on the second tick. In the buggy sequencer the countdown and the firing happen on different ticks, so each event fires one tick late and the song stretches from 4,482 to 6,093 ticks.">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="20" font-weight="600">Three events, each with delta 2</text>
+            <text x="10" y="58">Correct</text>
+            <g style="stroke:var(--rule)">
+              <line x1="110" y1="50" x2="660" y2="50"/>
+            </g>
+            <g style="fill:var(--ink-3)">
+              <text x="140" y="80" text-anchor="middle">1</text><text x="200" y="80" text-anchor="middle">2</text><text x="260" y="80" text-anchor="middle">3</text><text x="320" y="80" text-anchor="middle">4</text><text x="380" y="80" text-anchor="middle">5</text><text x="440" y="80" text-anchor="middle">6</text><text x="500" y="80" text-anchor="middle">7</text><text x="560" y="80" text-anchor="middle">8</text><text x="620" y="80" text-anchor="middle">9</text>
+            </g>
+            <g style="fill:var(--blue)">
+              <circle cx="200" cy="50" r="9"/><circle cx="320" cy="50" r="9"/><circle cx="440" cy="50" r="9"/>
+            </g>
+            <text x="10" y="138">Buggy</text>
+            <line x1="110" y1="130" x2="660" y2="130" style="stroke:var(--rule)"/>
+            <g style="fill:var(--ink-3)">
+              <text x="140" y="160" text-anchor="middle">1</text><text x="200" y="160" text-anchor="middle">2</text><text x="260" y="160" text-anchor="middle">3</text><text x="320" y="160" text-anchor="middle">4</text><text x="380" y="160" text-anchor="middle">5</text><text x="440" y="160" text-anchor="middle">6</text><text x="500" y="160" text-anchor="middle">7</text><text x="560" y="160" text-anchor="middle">8</text><text x="620" y="160" text-anchor="middle">9</text>
+            </g>
+            <g style="fill:var(--red)">
+              <circle cx="260" cy="130" r="9"/><circle cx="440" cy="130" r="9"/><circle cx="620" cy="130" r="9"/>
+            </g>
+            <text x="10" y="200">Every event costs delta + 1 ticks. Song 0: 4,482 ticks → 6,093 ticks.</text>
+          </g>
+        </svg>
+        <figcaption>The tick that exhausts a delta must also be the tick the event fires on. Otherwise every gap grows by one tick.</figcaption>
+      </figure>
+
+      <p>The fix is the rule now written in the code: the tick that uses up a delta is the tick the event fires on, so a delta of one costs exactly one tick. The test that guards it plays song 0 to its end and requires exactly 4,482 calls. Why 4,482 and not 4,481? The stream's deltas add up to 4,481. The first event fires on the first call, and the end marker fires on the call at absolute time 4,481, so playing the song out takes one call more than the total delta.</p>
+
+      <h3 id="voices">Voices, volume and fades</h3>
+      <p>Songs use sixteen logical MIDI channels, but the chip has only nine voices. The original's allocator, at <code>XINGAME.BIN:0x1328</code>, picks a voice for each new note in this order: a free voice that already holds the right instrument (so it needs no reprogramming), else any free voice, else voice 8 regardless. The port keeps that exact policy.</p>
+
+      <p>A note's pitch comes from a twelve-entry F-number table, one entry per semitone. The OPL2 sets octave through a separate "block" field, so twelve entries cover the whole range. Each entry is <code>round(440 × 2^((k − 57) / 12) × 2^20 / 49716)</code>, and the tests re-derive them.</p>
+
+      <p>Only controller 7, channel volume, changes what the chip hears. The songs also carry modulation (controller 1) and pan (controller 10). An OPL2 can do nothing with either, so the driver reads and discards them. It does not synthesise pitch bend either. A fade-out runs for 127 main ticks, raising every sounding voice's attenuation step by step until the player falls silent.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>A mutation test found a real bug in the port's volume handling. When a volume controller arrived mid-note, the first version rescaled the <em>level already derived</em> from the note's velocity. The result was inaudible. The voice now remembers the velocity it was struck with and recombines it with the new volume. The same round of mutation testing caught two tests that passed for the wrong reason: one compared a constant with itself, and one released voices in an order that made the check it was meant to test redundant.</p></div>
+
+      <h2 id="engine-note">The engine note</h2>
+      <p>The engine is the sound you hear most, and it is not music at all. The effects driver builds it from three OPL2 voices whose pitches it recomputes whenever the RPM value changes. Voices 0, 7 and 8 are permanently reserved for it.</p>
+
+      <h3 id="rpm-in">RPM in</h3>
+      <p>On the game side, the timer handler updates an RPM word in game data and hands it to the driver's word 0. Before it does, it clamps the value to the F1GP rev range and adds a little noise:</p>
+<pre><code>rpm   = clamp(rpm + delta, 500, 14873)
+out   = max(rpm + (random &amp; 0x7F), 500)   ; 0..127 rpm of jitter
+driver word 0 = out</code></pre>
+      <p>The 500 to 14,873 band settles the units: the driver's word 0 is engine speed in real revolutions per minute. Separately, the viewed-car engine update at <span class="addr">0752:92E0</span>..<span class="addr">93E9</span> publishes a second word, at offset <code>0x10</code> of the driver's own memory. That routine also handles the automatic gear, with a signed gear test and an alternating downshift gate above 8,500 rpm. The word it publishes comes from one of two game words, chosen by whether the car is accelerating. The effects driver compares it with 12 to choose between its two engine loudness sets. The first design document had listed the meaning of that word as unknown; the port settled it by porting the writer.</p>
+
+      <h3 id="three-voices">Three voices out</h3>
+      <p>The driver scales the RPM once, then derives three voices from it:</p>
+<pre><code>F   = (rpm × 0x597A) &gt;&gt; 16         ; about rpm × 0.34955
+ch0 = ((F × 2) &amp; 0xFFFF) &gt;&gt; 2     ; F / 2      fundamental
+ch7 = ((F × 6) &amp; 0xFFFF) &gt;&gt; 2     ; F × 1.5    ×3 harmonic
+ch8 = ((F × 5) &amp; 0xFFFF) &gt;&gt; 2     ; F × 1.25   ×2.5 harmonic
+ch0 += random &amp; 0x0030
+ch7 += random &amp; 0x0070
+ch8  = base + (random &amp; 0x0070)    ; re-jittered on every fast tick</code></pre>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 290" role="img" aria-label="Engine pipeline: RPM is clamped and jittered, scaled by 0x597A over 65536, multiplied by 2, 6 and 5 and shifted right by two to give three linear values in the ratio 1 to 3 to 2.5, each with its own noise, then normalised into an F-number and block and written to chip voices 0, 7 and 8.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="20" width="140" height="56" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="80" y="42" text-anchor="middle" font-weight="600">RPM word</text>
+            <text x="80" y="60" text-anchor="middle" style="fill:var(--ink-3)">500 … 14,873</text>
+            <path d="M150 48 H190" style="stroke:currentColor;fill:none"/>
+            <polygon points="190,43 200,48 190,53" fill="currentColor"/>
+            <rect x="200" y="20" width="150" height="56" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="275" y="42" text-anchor="middle" font-weight="600">scale</text>
+            <text x="275" y="60" text-anchor="middle" style="fill:var(--ink-3)">F = rpm·0x597A ≫ 16</text>
+            <path d="M350 48 C 390 48, 390 120, 420 120 M350 48 C 390 48, 390 180, 420 180 M350 48 C 390 48, 390 240, 420 240" style="stroke:currentColor;fill:none"/>
+            <rect x="420" y="100" width="120" height="40" rx="5" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="480" y="118" text-anchor="middle">×2 ≫ 2 = F/2</text>
+            <text x="480" y="133" text-anchor="middle" style="fill:var(--ink-3)">noise &amp; 0x30</text>
+            <rect x="420" y="160" width="120" height="40" rx="5" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="480" y="178" text-anchor="middle">×6 ≫ 2 = 1.5F</text>
+            <text x="480" y="193" text-anchor="middle" style="fill:var(--ink-3)">noise &amp; 0x70</text>
+            <rect x="420" y="220" width="120" height="40" rx="5" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="480" y="238" text-anchor="middle">×5 ≫ 2 = 1.25F</text>
+            <text x="480" y="253" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">noise &amp; 0x70 · 300Hz</text>
+            <path d="M540 120 H580 M540 180 H580 M540 240 H580" style="stroke:currentColor;fill:none"/>
+            <text x="590" y="124">voice 0</text>
+            <text x="590" y="184">voice 7</text>
+            <text x="590" y="244">voice 8</text>
+            <text x="10" y="120">ratio</text>
+            <text x="10" y="142" font-size="20" font-weight="600">1 : 3 : 2.5</text>
+            <text x="10" y="180" style="fill:var(--ink-3)">normalise: halve until</text>
+            <text x="10" y="196" style="fill:var(--ink-3)">it fits 10 bits; count</text>
+            <text x="10" y="212" style="fill:var(--ink-3)">the halvings as block</text>
+            <text x="10" y="262" style="fill:var(--ink-3)">≈ 66 Hz fundamental at 8,000 rpm</text>
+          </g>
+        </svg>
+        <figcaption>One scaled value feeds three voices at a fixed 1 : 3 : 2.5 frequency ratio. Each gets its own small random wobble, and the highest is re-wobbled six times per main tick.</figcaption>
+      </figure>
+
+      <p>The frequency ratio is exactly 1 : 3 : 2.5. Each linear value becomes an F-number and a block by repeated halving until it fits the chip's 10-bit F-number field; the number of halvings is the block. The audible frequency is about <code>v × 49716 / 2^20</code>, or <code>v × 0.047418</code> Hz, which gives a fundamental of roughly 66 Hz at 8,000 rpm. Because only the low 16 bits of each product survive the shift, the arithmetic would wrap above about 31,000 rpm. The clamp means it never gets there.</p>
+
+      <p>Loudness does not jump. When the RPM has changed, the main tick moves each voice's level one step toward its target, so a change is heard as a swell. An unchanged RPM costs no chip writes at all. The register write complements the value (<code>level XOR 0x3F</code>) because the OPL2 register holds attenuation, not volume. The noise itself comes from a tiny generator: add a constant, then rotate right three bits.</p>
+
+      <h3 id="timbre-bank">Where the engine's timbre lives</h3>
+      <p>The engine's sound colour is not in <code>ADLIB.CAT</code>. It is in the effects driver's own instrument bank: thirteen records at <code>XSOUND.BIN:0x0094</code>, in the same 24-byte layout the catalogue uses. The engine takes records 3, 8 and 9. All three are two-operator FM with a sustained envelope and frequency multiple 1 on both operators; they differ only in waveform and feedback.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The port's first bank reader reused the catalogue rule "the record tail must be zero". It rejected the genuine driver. The effects bank keeps four extra words in the tail — a duration, a random mask and a random base — for the one instrument whose effect sweeps its own pitch. The reader now checks the register fields (valid waveforms and feedback) and leaves the tail alone.</p></div>
+
+      <p>Reading the timbre from the player's own driver keeps the sound original without bundling anything. The installed <code>XSOUND.BIN</code> and the AdLib <code>ASOUND.BIN</code> are byte-identical, so either name works.</p>
+
+      <h2 id="effects">Effects and the channel map</h2>
+      <p>With percussion mode off, the effects driver uses a fixed channel layout:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Channel</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>engine fundamental</td></tr>
+          <tr><td>1–4</td><td>short one-shot voices</td></tr>
+          <tr><td>5</td><td>continuous tyre tone</td></tr>
+          <tr><td>6</td><td>one-shot bursts</td></tr>
+          <tr><td>7</td><td>engine ×3 harmonic — temporarily stolen by the contact effect</td></tr>
+          <tr><td>8</td><td>engine ×2.5 harmonic</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The start entry, slot 3 at <code>XSOUND.BIN:0x0532</code>, doubles <code>AX</code> and dispatches through a table. The port's reading of the methods, confirmed as each was connected to its real caller in the race code, is:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>What reaches it</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>reset; programs voices 0, 7 and 8 from bank records 3, 8 and 9</td></tr>
+          <tr><td>1</td><td>the continuous tyre squeal on channel 5, pitch from a random byte and a base word</td></tr>
+          <tr><td>2</td><td>a race-sequence state machine (the routine at <code>DAC8</code>)</td></tr>
+          <tr><td>3</td><td>the pit-stop animation; a sweep between <code>0x10FE</code> and <code>0x132E</code></td></tr>
+          <tr><td>4</td><td>viewed-car contact, which takes channel 6 <em>and</em> channel 7</td></tr>
+          <tr><td>5</td><td>a secondary sound sequence driven from the race frame</td></tr>
+          <tr><td>6–9</td><td>passing-car voices for the stationary trackside camera</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The first design document, written before these callers were traced, had guessed different names for methods 2 to 4 (collision, siren, kerb noise). The later port names come from following the real call sites, so this chapter uses those. The separate stop entry, slot 4, walks methods 9 down to 0. Only methods 1 and 5 have real stop handlers; the rest share a full reset. A complete stop loop issues 116 chip writes.</p>
+
+      <p>When contact steals channel 7, the engine's ×3 harmonic goes quiet for the burst. The port restores the engine key-on when the burst ends, and keeps reasserting the contact pitch in the meantime, because the engine's own main tick also writes channel 7.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The driver's chip writer, <code>XSOUND.BIN:0x02BE</code>, puts the register in <code>AL</code>, the value in <code>AH</code>, and then reads the status port several times as a delay. Its last read replaces <code>AL</code>. One routine passes that whole <code>AX</code> straight on to program the next voice, so <strong>the chip's status byte leaks into a pitch</strong>. A port that invents a constant status value changes that voice's pitch. The port therefore treats the final status observation of every write as an ordered input: each source-level call must be supplied with it, and the call fails up front if it is missing.</p></div>
+
+      <h2 id="opl2-model">Building the chip</h2>
+      <p>To play any of this, the port needs an OPL2. The obvious route was to borrow one. The project's own DOS emulator, mddosem, already has an OPL core. Reading it closely changed the plan: that core is a line-for-line Rust transliteration of <strong>Nuked-OPL3</strong>, which is licensed under the LGPL 2.1 or later. Its C source sits vendored in that repository, the Rust cites it in nineteen doc comments, and its constant tables match byte for byte. Copying it would make the port a derivative of an LGPL work and break the project's clean-room boundary.</p>
+
+      <p>So the port writes its own, in <code>src/opl2.rs</code>. It is integer-only, has no heap allocation and no floating point, and uses only the core library. It takes register writes and produces signed samples at the chip's own rate: its 3.579545 MHz master clock divided by 72, which is <strong>49,716 Hz</strong>. Resampling to the sound card's rate is the caller's job.</p>
+
+      <h3 id="closed-form">Every table is a formula</h3>
+      <p>The work turned out to be smaller than it sounds, because every constant table the chip needs is a closed-form function of its index. Nothing has to be copied from anyone's ROM dump or emulator.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Table</th><th>Entries</th><th>Formula</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>log-sin</td><td>256</td><td><code>round(−log2(sin((i + 0.5)·π/512)) · 256)</code></td><td>A quarter sine wave as attenuation, in 1/256-octave units</td></tr>
+          <tr><td>exponent</td><td>256</td><td><code>round(2^((255 − i)/256) · 1024)</code></td><td>Turns attenuation back into linear amplitude</td></tr>
+          <tr><td>key-scale level</td><td>16</td><td><code>ceil(8·log2(i)) + 32</code>, and 0 at <code>i = 0</code></td><td>Extra attenuation for higher notes, 0.75 dB units</td></tr>
+        </tbody>
+      </table></div>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 210" role="img" aria-label="How one operator makes a sample: phase indexes the log-sin table, total attenuation from envelope, level, key scaling and tremolo is added in the log domain, then the exponent table and a shift turn the sum into a signed linear sample.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="30" width="110" height="50" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="65" y="52" text-anchor="middle" font-weight="600">phase</text>
+            <text x="65" y="68" text-anchor="middle" style="fill:var(--ink-3)">20-bit turn</text>
+            <path d="M120 55 H150" style="stroke:currentColor"/><polygon points="150,50 160,55 150,60" fill="currentColor"/>
+            <rect x="160" y="30" width="120" height="50" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="220" y="52" text-anchor="middle" font-weight="600">log-sin</text>
+            <text x="220" y="68" text-anchor="middle" style="fill:var(--ink-3)">¼ wave, mirrored</text>
+            <path d="M280 55 H310" style="stroke:currentColor"/><polygon points="310,50 320,55 310,60" fill="currentColor"/>
+            <circle cx="340" cy="55" r="18" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="340" y="60" text-anchor="middle" font-size="16">+</text>
+            <path d="M358 55 H390" style="stroke:currentColor"/><polygon points="390,50 400,55 390,60" fill="currentColor"/>
+            <rect x="400" y="30" width="130" height="50" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="465" y="52" text-anchor="middle" font-weight="600">exponent</text>
+            <text x="465" y="68" text-anchor="middle" style="fill:var(--ink-3)">low 8 bits, then shift</text>
+            <path d="M530 55 H560" style="stroke:currentColor"/><polygon points="560,50 570,55 560,60" fill="currentColor"/>
+            <text x="578" y="52">± sample</text>
+            <text x="578" y="68" style="fill:var(--ink-3)">sign from phase</text>
+            <path d="M340 140 V75" style="stroke:var(--red)"/><polygon points="335,80 340,73 345,80" style="fill:var(--red)"/>
+            <rect x="200" y="140" width="280" height="50" rx="6" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="340" y="162" text-anchor="middle">envelope + total level + key-scale level</text>
+            <text x="340" y="178" text-anchor="middle">+ tremolo (all in attenuation units)</text>
+          </g>
+        </svg>
+        <figcaption>Working in the log domain turns every multiplication into an addition. The only non-trivial step, back to linear, is one table lookup and a shift.</figcaption>
+      </figure>
+
+      <p>The tables ship as constant arrays emitted by <code>tools/gen_opl2_tables.rs</code>. The chip's tests regenerate each table from the same formula in 64-bit floating point and assert equality, so the derivation is re-proved on every test run rather than claimed in a comment.</p>
+
+      <h3 id="what-is-modelled">What the model covers</h3>
+      <p>The model covers all nine melodic channels: the phase generator with F-number, block and frequency multiple; the four-stage envelope (attack, decay, sustain, release) with key-scaled rates and key-scale level; the four OPL2 waveforms; FM and additive connection; modulator self-feedback; and the global tremolo (a triangle of about 3.7 Hz, 1.2 dB or 4.8 dB deep) and vibrato. A few chip quirks are worth knowing:</p>
+      <ul>
+        <li>The key-scale level settings are not in increasing order. Setting 0 is off; 1, 2 and 3 give 3, 1.5 and 6 dB per octave.</li>
+        <li>Frequency-multiple setting 0 means one half, and settings 11, 13 and 15 repeat their neighbours. The model stores twice the multiple to stay in integers.</li>
+        <li>Each sustain-level step is 3 dB, except the last, which means silence rather than 45 dB.</li>
+        <li>With register <code>0x01</code> bit 5 clear, every operator plays a plain sine whatever its waveform register says.</li>
+        <li>The eighteen operators sit in a 22-slot register offset space with gaps, so a third of the offsets in each register block address nothing.</li>
+      </ul>
+      <p>Two things are deliberately left out. Percussion mode (register <code>0xBD</code> bit 5) is stored but inert: the effects driver writes <code>0xBD = 0xC0</code> at init, which leaves it off, and the music allocator hands out all nine voices, which percussion mode would cut to six. The chip's two timers produce no sound; the original uses them only to detect the card.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>The chip's validation needs no licensed code. The tables are checked against their formulas. Physical tests check the documented behaviour: a programmed F-number and block must produce a tone at <code>v × 49716 / 2^20</code> Hz, counted by zero crossings; eight total-level steps must halve the amplitude; a sustaining operator must hold until key-off; a percussive one must decay with the key still down. A battery of eighteen deliberate breaks in the chip and parser — wrong stride, swapped operator bytes, dropped bounds checks — was killed by the tests. Four tests earned their keep: one exposed a sustaining operator decaying at its release rate, and three turned out to pass for the wrong reason and were fixed.</p></div>
+
+      <h2 id="port-audio">How the port plays it</h2>
+      <p>The port has two separate sound paths, mirroring the original's "music or effects" split.</p>
+
+      <h3 id="race-audio">In the race: the original driver's own logic</h3>
+      <p>During a race, the port runs the original effects driver's methods as ported source. <code>src/original_runtime_effect_trigger.rs</code> covers the start and stop entries; <code>src/original_runtime_timer_sound.rs</code> covers the fast tick at <code>057F</code> and the main tick at <code>05C5</code>; <code>src/original_runtime_engine_sound.rs</code> covers the viewed-engine update. The driver's memory image belongs to the caller, because the original mutates data inside its own code segment as it runs. No copy of <code>XSOUND.BIN</code> is built into the program; it is read from the player's install.</p>
+
+      <p>A portable library cannot perform port I/O. So each source <code>OUT</code> pair to ports <code>0x388</code> and <code>0x389</code> becomes one ordered <code>OplWrite</code> record in a buffer the caller supplies. Everything is transactional: driver memory, game memory and the write list are published together only after the whole stage succeeds.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 250" role="img" aria-label="Port audio pipeline: ported XSOUND methods emit ordered OPL register writes, timestamped at timer boundaries; the port's OPL2 model advances by timer time at 49,716 Hz; a rational resampler converts to the device rate; a bounded queue feeds the audio device; a separate resampler feeds the 48 kHz Opus recording.">
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="20" width="150" height="60" rx="6" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="85" y="44" text-anchor="middle" font-weight="600">ported XSOUND</text>
+            <text x="85" y="62" text-anchor="middle" style="fill:var(--ink-3)">start, stop, ticks</text>
+            <path d="M160 50 H200" style="stroke:currentColor"/><polygon points="200,45 210,50 200,55" fill="currentColor"/>
+            <text x="185" y="40" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">OplWrite</text>
+            <rect x="210" y="20" width="150" height="60" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="285" y="44" text-anchor="middle" font-weight="600">OPL2 model</text>
+            <text x="285" y="62" text-anchor="middle" style="fill:var(--ink-3)">49,716 Hz</text>
+            <path d="M360 50 H400" style="stroke:currentColor"/><polygon points="400,45 410,50 400,55" fill="currentColor"/>
+            <rect x="410" y="20" width="120" height="60" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="470" y="44" text-anchor="middle" font-weight="600">resampler</text>
+            <text x="470" y="62" text-anchor="middle" style="fill:var(--ink-3)">exact rational</text>
+            <path d="M530 50 H560" style="stroke:currentColor"/><polygon points="560,45 570,50 560,55" fill="currentColor"/>
+            <rect x="570" y="20" width="100" height="60" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="620" y="44" text-anchor="middle" font-weight="600">device</text>
+            <text x="620" y="62" text-anchor="middle" style="fill:var(--ink-3)">8,192 queue</text>
+            <path d="M285 80 V120 H470 V150" style="stroke:currentColor;fill:none"/><polygon points="465,150 470,160 475,150" fill="currentColor"/>
+            <rect x="400" y="160" width="140" height="56" rx="6" style="fill:none;stroke:currentColor"/>
+            <text x="470" y="182" text-anchor="middle" font-weight="600">capture resampler</text>
+            <text x="470" y="200" text-anchor="middle" style="fill:var(--ink-3)">48 kHz → Opus</text>
+            <rect x="10" y="130" width="330" height="96" rx="6" style="fill:none;stroke:var(--rule)"/>
+            <text x="20" y="152" font-weight="600">The clock is the game's timer, not the device</text>
+            <text x="20" y="172">chip samples = PIT cycles × 12 × 49,716</text>
+            <text x="20" y="190">                       ÷ 14,318,180</text>
+            <text x="20" y="212" style="fill:var(--ink-3)">Device demand never advances the game.</text>
+          </g>
+        </svg>
+        <figcaption>The chip advances by game time. When the device falls behind, new samples are dropped and counted; the game never waits for audio.</figcaption>
+      </figure>
+
+      <p>The chip is advanced by the game's own programmed timer time. Timer cycles convert to chip samples as <code>cycles × 12 × 49716 / 14318180</code> (the timer clock is the 14.31818 MHz crystal divided by 12). Register batches are stamped at the timer boundary where they were produced; the port has no instruction-level timestamps. A resampler then interpolates between consecutive chip samples with exact rational arithmetic. It adds at most one chip period of delay, because a sample is published only once its right-hand neighbour exists. A single-producer, single-consumer queue of 8,192 samples feeds the device callback. If it fills, the newest samples are dropped and counted, and underflows are counted too. The rule, stated in <code>src/native_original_audio.rs</code>, is that device demand never advances the original clock or the sound driver. Silent stretches are skipped in bulk rather than sample by sample.</p>
+
+      <p>The one hardware feature the race path touches but does not model is the chip's timers. An early adapter rejected any write that started timer 1 or 2. That failure also threw away the valid writes before it in the same batch. The fix, on 2026-09-13, forwards every ordered register pair to the chip. A write to register <code>0x04</code> with bit 7 set clears the adapter's timer flags, and that status goes back to the driver. The host timer stays the game's only interrupt clock.</p>
+
+      <h3 id="menu-music">In the menus: the port's own sequencer</h3>
+      <p>Front-end music uses the port's clean-room <code>MusicPlayer</code> on its own <code>Opl2</code>, driven at 50 Hz from the sample stream, and resampled to the device rate. It reads <code>ADLIB.CAT</code> from the player's install. Which song plays where is the port's choice, based on the inferences above rather than a trace of the original's calls:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Screen</th><th>Song</th></tr></thead>
+        <tbody>
+          <tr><td>Language, Startup, Main, Options, file pages, results, circuit selection and most others</td><td>0</td></tr>
+          <tr><td>Options → About (once the credits pages; now the Big Race options page)</td><td>1</td></tr>
+          <tr><td>Pre-race pages</td><td>2</td></tr>
+          <tr><td>Grand Prix page</td><td>3</td></tr>
+        </tbody>
+      </table></div>
+      <p>Changing screen fades the current song out before starting the next. When a driving session starts, a scoped, nestable "suspension" silences menu music for the whole session and releases it on return — the port's version of the original's shared driver segment. The <code>-</code> and <code>=</code> keys adjust sound level during a race, as in the original, and the settings file carries a plain <code>sound=on</code> or <code>sound=off</code> line.</p>
+
+      <h3 id="recording">Recording</h3>
+      <p>Launching with <code>--record</code> captures the whole presentation — menus, races and sound — into a Matroska file with VP9 video and Opus audio, named <code>YYYY.MM.DD - big-race.mkv</code> in the user's Videos (Movies on macOS) folder. Audio is captured at 48 kHz stereo through its own resampler tap, and the menu music has a non-blocking tap of its own, so the game loop never waits for the encoder. The encoder lives in a shared crate from the mddosem project.</p>
+
+      <h2 id="timeline">How the sound came together</h2>
+      <ol class="timeline">
+        <li><time>2026-08-31</time><h4>A placeholder engine</h4><p>The first native races got a provisional clean-room engine tone: an integer saw/square wave at RPM/10 Hz, with ramps to silence on pause. It was explicitly temporary.</p></li>
+        <li><time>2026-09-05</time><h4>The AdLib investigation</h4><p>One day produced the design record of the catalogue, driver interface, engine arithmetic and channel map; the discovery that the emulator's OPL core was an LGPL derivative; the independent chip and catalogue parser; the sequencer and engine voice; the 300.02 Hz timer rate; and the engine played through the real chip with the timbre read from the player's driver.</p></li>
+        <li><time>2026-09-08</time><h4>The original driver in the race</h4><p>The race sequence began dispatching ported <code>XSOUND</code> methods into caller-owned driver memory, the viewed-engine update was ported, and ordered OPL output was connected to native Quick Race playback.</p></li>
+        <li><time>2026-09-09</time><h4>Contact and trackside sound</h4><p>Wall-impact sound was connected before wall damage, as the source orders it, and methods 6–9 brought passing-car sound to the stationary camera.</p></li>
+        <li><time>2026-09-12</time><h4>The placeholder retires</h4><p>The provisional engine and effects host was removed. The original race sound interrupt replaced it; menu music kept the catalogue, sequencer and chip.</p></li>
+        <li><time>2026-09-13</time><h4>Timer writes accepted</h4><p>The last shipped audio rejection — timer-control writes — was closed without inventing a second clock.</p></li>
+      </ol>
+
+      <div class="callout story"><span class="label">From the port</span><p>The honest boundary: the race sound is source-backed state and ordered chip writes, checked method by method against the owned driver image and with mutations that each turned a test red. The status bytes in those tests are supplied inputs. The project does not claim a captured, sample-for-sample match against a real AdLib card.</p></div>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The product built around the original runtime: drop-in launch, window presentation, the enhanced renderer, vehicle sets, recording, multiplayer, an experimental AI driver and two new circuits.">
+  <title>What Big Race adds — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part II — The port</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 12</p>
+      <h1>What Big Race adds</h1>
+      <p class="lede">The original runtime is the engine. Big Race is the car built around it: a native app that drops into an existing install, fits the 1991 picture to a modern window, and adds a few things the original never had. Every addition obeys one rule: it may read the game's state, but it never changes the race behind the game's back.</p>
+
+      <h2 id="the-rule">The one rule</h2>
+      <p>Everything in this chapter is a host-side feature. The architecture guide states the contract plainly: each is a Big Race addition around the source runtime, and none writes source memory mid-race. The enhanced renderer reads state and redraws it. The window presenter scales finished frames. The recorder copies pixels and audio. Even the vehicle sets, which do change how cars drive, make their one change at startup, before the race begins, and then let the original simulation run unaided.</p>
+      <p>That rule is what keeps the oracle work of <a href="10-method.html">chapter 10</a> meaningful. If the original option is selected everywhere, the game you play is the game the tests compare against.</p>
+
+      <h2 id="drop-in">Native launch and drop-in behaviour</h2>
+      <p>Big Race is one Rust binary, <code>big-race</code>. It is meant to be dropped into a player's existing game folder and started like the original.</p>
+      <ul>
+        <li><strong>No arguments means play.</strong> A drop-in replacement must not print usage when double-clicked. With no command, the binary runs <code>play</code>; with no path, it looks for the owned game files beside itself.</li>
+        <li><strong>Case does not matter.</strong> DOS filenames were case-insensitive. The data inventory in <code>src/native_game_data.rs</code> finds files whatever case the install uses.</li>
+        <li><strong>The packed executable wins.</strong> The original ships as an EXEPACK-compressed <code>GP.EXE</code>. Big Race unpacks it itself with a native decoder in <code>src/native_exepack.rs</code>. If an unpacked <code>GP_UNPACKED.EXE</code> also exists, the packed file is authoritative, because mod folders can hold stale unpacked copies that change the roster and the random number history.</li>
+        <li><strong>The game's C: drive is the game folder.</strong> The original's file dialogs think in DOS drive letters. Big Race maps its virtual <code>C:</code> root to the drop-in game directory, never to the host's root.</li>
+        <li><strong>Missing data fails loudly.</strong> Optional menu art is loaded before the window opens, and present-but-malformed data is an error with a message, not a silent fallback.</li>
+      </ul>
+      <p>Two direct commands skip the menus: <code>original-quick-race &lt;path&gt;</code> starts a preset Quick Race, and <code>jev-race &lt;path&gt;</code> starts one with the experimental AI driver described below. Settings live in a per-user application directory. When the product was renamed from its working name to Big Race, the settings code gained new write paths plus read fallbacks for the old ones, so nobody lost their preferences.</p>
+      <p>Release builds are the way to play. Debug builds keep extra runtime checks and are much more CPU-hungry. During a race, the original's own <kbd>D</kbd> (lower detail) and <kbd>T</kbd> (track texture shading off) keys still trade visuals for speed.</p>
+
+      <h2 id="the-menu">The original-style menu</h2>
+      <p>A normal launch opens the original menus, rebuilt from the player's own files rather than drawn from scratch. Labels, hit boxes and navigation come from records inside <code>GP.EXE</code>, parsed after EXEPACK decoding; if an owned record is missing, the menu fails closed. Backdrops come from the game's <code>BACKDROP.DAT</code>, text from the executable's own glyphs. <a href="07-menus-files.html">Chapter 7</a> covers how those menus work.</p>
+      <p>The menu offers Quick Race, Practice, Qualifying, Non-Championship Race, Championship Season, Load/Save Game, setup, options, help and exit. Menu music plays the original <code>ADLIB.CAT</code> catalogue through Big Race's own OPL2 synthesiser model. When a session starts, the original sound interrupt takes over, and the menu music resumes on return.</p>
+      <p>Big Race owns exactly one slot in the original menus: the first control of the Options menu, whose label in the game's resource is already the product-owned "About Big Race". The original Options menu is defined by a resource and parsed against exact rectangles, so adding a new row would mean inventing original UI. Taking over the About slot does not.</p>
+      <p>Saves extend the original's. Pressing <kbd>S</kbd> during a session writes a complete native checkpoint, <code>BIGRACE.STATE.SAV</code>, and a 26,736-byte raw sidecar, <code>BIGRACE.SAV</code>, that the original <code>GP.EXE</code> itself accepts through its Load Game route. Championship checkpoints (<code>BIGRACE.CSE</code>) are written automatically after each round.</p>
+
+      <h2 id="options-page">The Big Race options page</h2>
+      <p>Options → About Big Race opens a page that holds the choices the original never had. It is drawn in the original's style, in the same 320x200 coordinate space, at 2x like every other options page.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 420" role="img" aria-label="Layout of the Big Race options page in source coordinates: title at row 14, version at 36, Renderer 58, Vehicles 80, Scaling 102, Scanlines 124, attribution lines from 144, Return at 183">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="120" y="10" width="400" height="400" rx="6" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="320" y="40" text-anchor="middle" font-weight="600" letter-spacing="2">BIG RACE</text>
+            <text x="320" y="78" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">version line</text>
+            <rect x="175" y="104" width="290" height="28" rx="3" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="320" y="123" text-anchor="middle">RENDERER  Original / Enhanced</text>
+            <rect x="175" y="148" width="290" height="28" rx="3" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="320" y="167" text-anchor="middle">VEHICLES  Original / Bangers / Trucks</text>
+            <rect x="175" y="192" width="290" height="28" rx="3" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="320" y="211" text-anchor="middle">SCALING  Auto / Integer / Fit</text>
+            <rect x="175" y="236" width="290" height="28" rx="3" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="320" y="255" text-anchor="middle">SCANLINES  Off / On</text>
+            <text x="320" y="296" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">three attribution lines</text>
+            <rect x="175" y="354" width="290" height="28" rx="3" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="320" y="373" text-anchor="middle">Return to Options Menu</text>
+            <g font-size="11" style="fill:var(--ink-3)" font-family="IBM Plex Mono, monospace">
+              <text x="110" y="40" text-anchor="end">14</text>
+              <text x="110" y="78" text-anchor="end">36</text>
+              <text x="110" y="123" text-anchor="end">58</text>
+              <text x="110" y="167" text-anchor="end">80</text>
+              <text x="110" y="211" text-anchor="end">102</text>
+              <text x="110" y="255" text-anchor="end">124</text>
+              <text x="110" y="296" text-anchor="end">144</text>
+              <text x="110" y="373" text-anchor="end">183</text>
+            </g>
+            <text x="530" y="163" font-size="11" style="fill:var(--red)">race</text>
+            <text x="530" y="235" font-size="11" style="fill:var(--blue)">picture</text>
+          </g>
+        </svg>
+        <figcaption>The page's rows at their source y positions. Vehicles takes effect at the next race; the other three apply at once. The page cannot be reached mid-race.</figcaption>
+      </figure>
+
+      <p>Up and Down move focus, wrapping. Enter or Space cycles the focused setting. Pressing a row with the mouse focuses it, as on every other options page; hovering does not, because hover-focus would fight the keyboard. Each change is saved at once to a small companion file beside the main settings file:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Companion file</th><th>Header</th><th>Holds</th></tr></thead>
+        <tbody>
+          <tr><td><code>settings.display</code></td><td><code>big-race-display-v2</code></td><td><code>scaling=auto|integer|fit</code>, <code>scanlines=0|1</code>, <code>renderer=original|enhanced</code></td></tr>
+          <tr><td><code>settings.vehicles</code></td><td><code>big-race-vehicles-v1</code></td><td><code>set=original|bangers|monster-trucks</code></td></tr>
+          <tr><td><code>settings.driver-aids</code></td><td>(existing)</td><td>the driver-aid mask</td></tr>
+          <tr><td><code>settings.track</code></td><td>(existing)</td><td>the selected circuit, including authored ones</td></tr>
+        </tbody>
+      </table></div>
+      <p>The display settings are deliberately kept out of the structure that the original Options save writes, so they can never leak into the original's save format. A malformed companion file is reported on the console and ignored, and is not rewritten until the player changes a setting.</p>
+
+      <h2 id="window">Window presentation</h2>
+      <p>The original drew a 320x200 picture for a 4:3 CRT. VGA mode 13h pixels were not square: 200 rows filled the same height as 240 square pixels would. A modern window has square pixels and any shape. Big Race's presenter, <code>src/native_window.rs</code>, is the single owner of that last step. Nothing outside it hands a frame to the window library.</p>
+
+      <h3 id="aspect">Always 4:3</h3>
+      <p>Every screen reaches the window as a 4:3 picture, centred, with nearest-neighbour sampling. Screens are presented at the height they were composed: menus as 640x400, races as 320x200. The presenter alone performs the "tall pixel" stretch to 4:3. That replaced an older arrangement in which menus were stretched from 400 to 480 rows during composition and then scaled again by the window library, which quantised rows twice. At a 2x window a source row came out 4 or 6 pixels tall instead of 4 or 5.</p>
+      <p>Rows still cannot all be the same height. At 1280x960, 640x400 maps rows in a repeating 3, 2, 3, 2, 2 pattern (a 12:5 ratio). That is inherent to 200 rows on a 4:3 screen, and it is how the original hardware displayed them too. What integer placement buys is uniform <em>columns</em>.</p>
+
+      <h3 id="placement">Choosing the rectangle</h3>
+      <p>The Scaling setting decides how big the 4:3 picture is:</p>
+      <ul>
+        <li><strong>Fit</strong> always takes the largest 4:3 rectangle that fits the window.</li>
+        <li><strong>Integer</strong> takes the largest whole multiple of 640x480 that fits, falling back to Fit only if not even 1x fits.</li>
+        <li><strong>Auto</strong>, the default, takes the whole multiple only when its width is at least two thirds of the Fit width. Otherwise it takes the Fit.</li>
+      </ul>
+      <p>Pure integer scaling would show a 640x480 picture on a common 1440x900 laptop screen. The two-thirds rule avoids that while still preferring crisp integer steps when they are close.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 300" role="img" aria-label="Two windows compared. On a 1440 by 900 view, Fit is 1200 by 900 and the 1x integer step is 640 by 480, less than two thirds of the fit width, so Auto chooses Fit. On a 1728 by 1117 view, the 2x step of 1280 by 960 keeps more than two thirds of the 1489 by 1117 fit, so Auto chooses 1280 by 960">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor">
+            <!-- scale 1 px = 6 points -->
+            <text x="20" y="20" font-weight="600" font-size="13">View 1440x900</text>
+            <rect x="20" y="30" width="240" height="150" style="fill:none;stroke:var(--ink-3)"/>
+            <rect x="40" y="30" width="200" height="150" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <rect x="87" y="70" width="107" height="80" style="fill:none;stroke:var(--red);stroke-dasharray:4 3"/>
+            <text x="140" y="114" text-anchor="middle" style="fill:var(--red)">640x480</text>
+            <text x="140" y="198" text-anchor="middle" style="fill:var(--blue)">fit 1200x900</text>
+            <text x="20" y="222">640 &lt; ⅔ × 1200 = 800</text>
+            <text x="20" y="242" font-weight="600">Auto → 1200x900</text>
+            <text x="20" y="262" style="fill:var(--ink-3)">Integer → 640x480 · Fit → 1200x900</text>
+
+            <text x="360" y="20" font-weight="600" font-size="13">View 1728x1117</text>
+            <rect x="360" y="30" width="288" height="186" style="fill:none;stroke:var(--ink-3)"/>
+            <rect x="380" y="30" width="248" height="186" style="fill:none;stroke:var(--blue);stroke-width:1.5;stroke-dasharray:2 3"/>
+            <rect x="397" y="43" width="213" height="160" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="504" y="127" text-anchor="middle" style="fill:var(--red)">1280x960</text>
+            <text x="504" y="234" text-anchor="middle" style="fill:var(--blue)">fit 1489x1117</text>
+            <text x="360" y="256">1280 ≥ ⅔ × 1489 ≈ 993</text>
+            <text x="360" y="276" font-weight="600">Auto → 1280x960</text>
+            <text x="360" y="294" style="fill:var(--ink-3)">Integer → 1280x960 · Fit → 1489x1117</text>
+          </g>
+        </svg>
+        <figcaption>The Auto rule in two real cases from the design's test table. Rectangles are drawn to scale. A tiny 500x300 window gives 400x300 in every mode.</figcaption>
+      </figure>
+
+      <p>The placement is keyed on a fixed 640x480 base, not on the width of the frame being shown, so the picture does not change size between the 640-wide menu and the 320-wide race. The cost, recorded in the design: when the Fit wins, as at 1200x900, race pixels are 3.75 points wide, so the integer-step promise holds for the 640-wide base rather than for every frame.</p>
+
+      <h3 id="scanlines">Scanlines</h3>
+      <p>Scanlines darken one line per source row. The pass works in logical source rows (<code>logical(y) = y × 200 / rect_height</code>) and dims the <em>last</em> output row of each source row's run by a quarter, per channel <code>v − v/4</code>. That gives exactly one line per source row at any scale, and the same picture for a 320x200 race frame and its 640x400 menu doubling. A simpler "every odd row" pass was rejected because it beats visibly at the 12:5 menu ratio. Scanlines only appear when the picture has at least two output rows per source row; below that they would dim half the picture. They never reach recordings.</p>
+
+      <h3 id="mouse-and-fullscreen">Mouse, fullscreen and macOS quirks</h3>
+      <p><kbd>Alt</kbd>+<kbd>Enter</kbd> toggles fullscreen. The presenter inverts its own mapping for the mouse, so a click lands on the source pixel under the pointer at any size, and a click in the border returns nothing. Getting that right exposed several quirks of the <code>minifb</code> window library on macOS:</p>
+      <ul>
+        <li>Its reported window size updates only at the end of a live drag-resize. After a fullscreen toggle it is stale. Big Race reads the live content-view bounds itself.</li>
+        <li>It flips the mouse y using a frame calculation that assumes a title bar. In fullscreen there is no title bar, so every y was short by the title-bar height. A correction adds it back.</li>
+        <li>The existing fullscreen toggle called the Objective-C runtime through a variadic declaration. On Apple Silicon that passes the <code>nil</code> sender on the stack; it had only worked because AppKit ignores that argument. The declaration is now typed per message.</li>
+        <li>Before the rework, two mouse sites applied a 480-to-400 inverse to content that had never been stretched, so the Season Complete control responded about 40 rows below where it was drawn.</li>
+      </ul>
+      <p>Hold loops, which wait on a static screen, now re-present on a size change, so a fullscreen toggle during a ceremony frame does not leave a stale, distorted picture.</p>
+
+      <h2 id="enhanced-renderer">The enhanced renderer</h2>
+      <p>The original draws its 3D scene into a 320x164 canvas. Scaled up to a large window, polygon edges become staircases. The enhanced renderer, chosen with the Renderer row, redraws the whole race scene (sky and horizon, road, verges, kerbs, strips, trackside objects, cars, trees and signs) at the window's own resolution, with sharp straight edges. Original remains the default, and it is the only renderer that is a source oracle.</p>
+
+      <h3 id="enhanced-constraints">Why it cannot just render bigger</h3>
+      <p>Three facts forced the design.</p>
+      <ol>
+        <li><strong>The exact frame must always be drawn.</strong> The original renderer reads and writes game memory during a frame: it marks cars on road records, publishes scene state, uses bitmap scratch, and its pit-crew overlay consumes the shared random number generator. Skip or reorder any of that and the race desynchronises.</li>
+        <li><strong>The exact pipeline is fixed at 320x164.</strong> Its scan-line arena, edge rings and every rounding step assume that size. It cannot be handed a bigger canvas.</li>
+        <li><strong>Camera-space geometry is not recoverable in one place.</strong> The first design tried to tap road points before projection. Four independent reviews found that unworkable: projection receives track-space coordinates, two of its eighteen slots are derived rather than projected, near points keep the previous frame's screen words, and a fill's edge endpoints are carried across entries.</li>
+      </ol>
+      <p>So the enhanced renderer does not re-project anything. It records what the exact renderer <em>painted</em>, in screen space, and paints it again bigger.</p>
+
+      <h3 id="command-stream">Recording the paint</h3>
+      <p>The exact renderer accepts an optional <code>SceneSink</code>. When one is attached, every terminal drawing site, in parent and nested pit scenes alike, records one command in the order it paints. Coordinates stay in the original's 320x164 integer space.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Command</th><th>Recorded from</th></tr></thead>
+        <tbody>
+          <tr><td><code>Band</code></td><td>full-width colour bands between two rows</td></tr>
+          <tr><td><code>Polygon</code></td><td>each road ring fill and each object polygon: vertices, colour, flat or textured</td></tr>
+          <tr><td><code>Bitmap</code></td><td>billboards and element-list bitmaps such as wheels, with bank, record, scale and resolved palette</td></tr>
+          <tr><td><code>Line</code></td><td>the element list's vertical lines</td></tr>
+          <tr><td><code>Horizon</code></td><td>resolved sky bands with their dither pairs and the copied panorama rows</td></tr>
+          <tr><td><code>Texture</code></td><td>the rows the track-texture pass remaps after publication</td></tr>
+        </tbody>
+      </table></div>
+      <p>The ordering claim was checked against the code: every writer in the exact pipeline is an opaque overwrite into one layer, in back-to-front order, with no coverage test. Replaying the sequence is therefore correct without a depth buffer. With no sink attached, the exact path pays one <code>Option</code> check per command and nothing else.</p>
+
+      <h3 id="rasteriser">Painting it again</h3>
+      <p>The rasteriser in <code>src/enhanced_scene.rs</code> maps each coordinate as <code>x' = x × w / 320</code> and <code>y' = y × h / 164</code>, horizontally and vertically independent, and fills polygons with a scanline fill on floating-point edges. Per-pixel patterns, such as the sky dither and the road texture, sample the pattern at the corresponding source pixel, so they look as they did, only larger. Bitmaps use the original's own row-walk scaling rule with the geometry multiplied up, sampled nearest-neighbour, so sprites stay blocky and sharp. Output is palette indices, not colours, so palette fades apply once at the end and a palette-only change is a lookup rather than a re-render.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 340" role="img" aria-label="Enhanced renderer pipeline: the exact 320 by 164 renderer draws the frame and writes game memory, while a scene sink records draw commands; the enhanced rasteriser replays them at window size; composition picks the enhanced pixel only where the mask is set, the page byte still equals the published copy, and the pixel is outside the mirrors">
+          <defs>
+            <marker id="a12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="20" y="20" width="200" height="60" rx="8" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="120" y="45" text-anchor="middle" font-weight="600">Exact renderer</text>
+            <text x="120" y="64" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">320x164, always runs</text>
+            <line x1="120" y1="80" x2="120" y2="120" stroke="currentColor" marker-end="url(#a12)"/>
+            <rect x="20" y="124" width="200" height="54" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="120" y="148" text-anchor="middle">Page + published copy</text>
+            <text x="120" y="166" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">and the publication mask</text>
+
+            <line x1="220" y1="50" x2="266" y2="50" stroke="currentColor" marker-end="url(#a12)"/>
+            <rect x="270" y="20" width="170" height="60" rx="8" style="fill:none;stroke:var(--ink-3);stroke-dasharray:5 3"/>
+            <text x="355" y="45" text-anchor="middle">SceneSink</text>
+            <text x="355" y="64" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">commands, in paint order</text>
+            <line x1="440" y1="50" x2="486" y2="50" stroke="currentColor" marker-end="url(#a12)"/>
+            <rect x="490" y="20" width="190" height="60" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="585" y="45" text-anchor="middle" font-weight="600">Enhanced rasteriser</text>
+            <text x="585" y="64" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">indices at window size</text>
+
+            <line x1="220" y1="151" x2="296" y2="220" stroke="currentColor" marker-end="url(#a12)"/>
+            <line x1="585" y1="80" x2="470" y2="216" stroke="currentColor" marker-end="url(#a12)"/>
+            <rect x="200" y="220" width="370" height="100" rx="8" style="fill:none;stroke:currentColor"/>
+            <text x="385" y="244" text-anchor="middle" font-weight="600">Compose, per output pixel</text>
+            <text x="220" y="266" font-size="12">use the enhanced index only if the source pixel is in the</text>
+            <text x="220" y="284" font-size="12">scene, the mask marks it, the page byte still equals the</text>
+            <text x="220" y="302" font-size="12">published copy, and it lies outside both mirrors</text>
+          </g>
+        </svg>
+        <figcaption>The exact frame is never skipped. The enhanced picture is a second painting of the same commands, and it only shows where nothing else has drawn on top.</figcaption>
+      </figure>
+
+      <h3 id="composition">Composition</h3>
+      <p>After the 3D scene is published, the original paints more on top of it: the map, cockpit strips, the pit crew, HUD, messages and pause text. None of those later passes updates the scene's publication mask. So the composer keeps a byte copy of the published scene and, for each pixel, uses the enhanced index only when the page byte still equals that copy, the mask marks it, the pixel lies inside the scene rows, and it is outside the two 48x22 mirror rectangles. Anything the original drew later wins. The cockpit, HUD and mirrors stay as the original draws them, nearest-scaled.</p>
+      <p>Two further details keep scene and page in step. The canvas sits at row 0 in the cockpit view and 16 rows down in external views, and that offset is captured at draw time because the original zeroes it before presenting. And the enhanced buffer is promoted from "pending" to "displayed" only when the original copies its page to video, so a palette update in between never mixes a new scene with an old page.</p>
+      <p>The enhanced width is capped at 1,280 pixels. Measured in a release build at 1280x960, a full composition plus a cached palette-only one took 1.7 ms, and sixty frames of simulation, exact render, replay and composition ran in about a quarter of a second.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>With a sink attached, the in-repo Suzuka road fixture test passes unchanged, and an owned-asset race of sixty idle frames with the renderer on and off leaves byte-identical game memory while the composed frames differ. Replayed at the original 320x164 size, the recorded Suzuka scene has 0.21% "neighbourhood strangers" (pixels whose colour appears nowhere in the 3x3 neighbourhood of the exact frame), and every colour's pixel count is within three percent, with a 64-pixel floor for two thin horizon slivers.</p></div>
+      <p>The review found three real bugs, each fixed with a test made to fail once: the mask was indexed in page rows, so external views were sixteen rows off; a bitmap folded the vertical scale into the column step; and a pattern fill could paint the raw <code>0x1b</code> sentinel colour where nothing had been recorded. The first live run composed nothing at all: the lower race buffer was the whole 64 KiB video segment rather than the 64,000-byte page, and a size check refused it.</p>
+      <p>What the milestone deliberately leaves out: integer vertices only (sub-pixel positions are a planned extension of the same commands), no smoothing or lighting, no high-resolution cockpit or mirrors, and recordings stay at 640x480. At the time of the journal the live-window look had not yet been checked by eye.</p>
+
+      <h2 id="vehicle-sets">Vehicle sets</h2>
+      <p>The Vehicles row picks who is on the grid: <strong>Original</strong>, <strong>Bangers</strong> or <strong>Monster Trucks</strong>. A set changes how every car drives, the player's and every AI car's, and swaps the car body the renderer draws up close. Original is the default and runs no code from <code>src/vehicle_sets.rs</code> at all. Everything a set adds lives in that module and its data, so the feature can be switched off by the setting or removed by deleting the module.</p>
+
+      <h3 id="driving-block">One seam: the decoded driving block</h3>
+      <p>Each circuit file carries a 38-byte block of driving parameters. At every startup the loader decodes it into <code>DS:0204..0229</code>, and then grid initialisation, the driver ratings and the corner-speed calibration read it. It holds four scalars that reach every car, including the player's:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Word</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>DS:0216</code></td><td>engine scale; thrust is <code>fixed(fixed(fixed(0x16C9, torque), DS:0216), rating)</code></td></tr>
+          <tr><td><code>DS:020E</code></td><td>tyre grip scale</td></tr>
+          <tr><td><code>DS:0218</code></td><td>wing scale</td></tr>
+          <tr><td><code>DS:0222</code></td><td>performance spread</td></tr>
+        </tbody>
+      </table></div>
+      <p>The same block holds the AI cars' shared setup record: front and rear wing, six gear ratios, tyre compound and brake balance. A set is a <code>DrivingOverlay</code> applied to this block right after it is decoded and before anything reads it. Nothing touches game memory during the race; the original simulation drives the new cars with its own code.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 250" role="img" aria-label="Startup sequence: the loader decodes the 38-byte driving block from the track file; the vehicle overlay rewrites it; then grid, ratings and corner calibration read it, and the race runs unmodified. Patching the executable image is overwritten by the decode">
+          <defs>
+            <marker id="a12b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="10" y="40" width="130" height="60" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="75" y="66" text-anchor="middle">Track file</text>
+            <text x="75" y="84" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">38-byte block</text>
+            <line x1="140" y1="70" x2="176" y2="70" stroke="currentColor" marker-end="url(#a12b)"/>
+            <rect x="180" y="40" width="130" height="60" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="245" y="66" text-anchor="middle">Loader decode</text>
+            <text x="245" y="84" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">DS:0204..0229</text>
+            <line x1="310" y1="70" x2="346" y2="70" stroke="currentColor" marker-end="url(#a12b)"/>
+            <rect x="350" y="40" width="130" height="60" rx="8" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="415" y="66" text-anchor="middle" font-weight="600">Overlay</text>
+            <text x="415" y="84" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">only if a set is chosen</text>
+            <line x1="480" y1="70" x2="516" y2="70" stroke="currentColor" marker-end="url(#a12b)"/>
+            <rect x="520" y="40" width="170" height="60" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="605" y="62" text-anchor="middle">Grid, ratings,</text>
+            <text x="605" y="80" text-anchor="middle">corner calibration</text>
+            <line x1="605" y1="100" x2="605" y2="146" stroke="currentColor" marker-end="url(#a12b)"/>
+            <rect x="480" y="150" width="210" height="50" rx="8" style="fill:none;stroke:var(--blue)"/>
+            <text x="585" y="180" text-anchor="middle">Original simulation runs</text>
+            <rect x="10" y="150" width="300" height="50" rx="8" style="fill:none;stroke:var(--rule);stroke-dasharray:4 3"/>
+            <text x="160" y="172" text-anchor="middle" style="fill:var(--ink-3)">Patching the executable image?</text>
+            <text x="160" y="190" text-anchor="middle" style="fill:var(--ink-3)">Overwritten by the decode: a no-op.</text>
+            <line x1="200" y1="150" x2="238" y2="104" style="stroke:var(--ink-3);stroke-dasharray:3 3" marker-end="url(#a12b)"/>
+            <text x="350" y="236" font-size="12" style="fill:var(--ink-3)" text-anchor="middle">Nothing writes game memory once the race is running.</text>
+          </g>
+        </svg>
+        <figcaption>The overlay sits in the only place a change survives: after the decode, before the first reader.</figcaption>
+      </figure>
+
+      <h3 id="fixed-point-bounds">Bounds from the original's arithmetic</h3>
+      <p>The original multiplies in fixed point: <code>fixed(a, b) = a × b / 0x4000</code>, so <code>0x4000</code> is 1.0. The overlay type refuses to be built outside a set of bounds drawn from that arithmetic. Engine scale stays at or below 1.0, because the design review found that a scaled word at or above <code>0x4000</code> wraps negative. Grip scale stays at or above 0.6, because the AI corner solver divides by grip in a 32/16-bit divide whose overflow is swallowed and reads as "no corner limit". The code is candid that the grip floor is a heuristic, not a proven invariant: it is where a 9,000-frame Suzuka measurement found zero faults, not where the arithmetic is known to break. The other scales are capped at 2.0, and the AI setup record is validated (wings 0..64, non-zero gear ratios 16..80, compound 0..5).</p>
+
+      <h3 id="tuning">Tuning the field</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Set</th><th>Engine</th><th>Grip</th><th>Wing</th><th>Gears</th><th>AI laps in 9,000 frames</th></tr></thead>
+        <tbody>
+          <tr><td>Original</td><td colspan="4">the circuit's decoded values, untouched</td><td>81</td></tr>
+          <tr><td>Bangers</td><td>0.5</td><td>0.7</td><td>0.5</td><td>short</td><td>70</td></tr>
+          <tr><td>Monster Trucks</td><td>0.6</td><td>0.65</td><td>0.25</td><td>short</td><td>58</td></tr>
+        </tbody>
+      </table></div>
+      <p>The first guesses were wrong in instructive ways. Bangers started with tall gears: the field crawled off the line into each other and up to five cars retired where the original loses one. Raising banger grip to 0.8 made it worse, so grip was not the cause; short gears fixed it. Monster trucks started at full engine. With the wing cut, drag went too, and at 9,000 frames the trucks outran the Formula One field. Pace is now measured as the computer field's laps completed rather than peak speed, because one spin makes peak speed noise. The final runs had no retirements and no corner-solver faults. The player's truck still tops the F1 car by about five percent on the straight, which the journal calls "the joke".</p>
+
+      <h3 id="car-bodies">New bodies, old billboards</h3>
+      <p>Each set also brings a polygon car body, a boxy saloon for bangers and a cab on a tall chassis for trucks, encoded in the original's shape format and checked by parsing it back. The shape cannot replace the original in place: the renderer re-copies the whole <code>0x8800</code>-byte shape segment from live memory every frame, and shape 0 is already the longest with about 252 bytes of headroom. So the new body is appended past the segment and the table entry for shape 0 is re-pointed after every copy. The body's last detail record is the original's own far billboard, copied from the player's shape 0, so distant cars and mirror reflections still show the Formula One sprite. That is an accepted oddity until new sprites exist.</p>
+
+      <h3 id="set-limits">Where a set does not apply</h3>
+      <ul>
+        <li><strong>Linked races always run Original.</strong> Both machines must simulate the same grid, and the peer carries no set. The race says so once on the console.</li>
+        <li><strong>Saves record the set.</strong> A native session save made under a set is refused under another, with a message naming both. The original's own SAVE GAME file carries no set and loads only under Original. An Original save keeps its old layout byte for byte; only a set writes the newer version.</li>
+        <li><strong>Championships.</strong> Until 2026-09-23 a Championship season ran Original throughout, because its checkpoint had no place to record a set. A change on that date records the Vehicles setting in the season checkpoint when the season starts, races every weekend with it, and refuses to resume under a different set, by name. An Original season still writes the old checkpoint layout byte for byte. The README's description still reflects the earlier behaviour.</li>
+      </ul>
+
+      <h2 id="recording">Recording</h2>
+      <p>Pass <code>--record</code> to capture everything the window shows, menus and races, with audio, as a Matroska file with VP9 video and Opus audio. It works with the menu route and with <code>original-quick-race</code>. The file goes to the user's Videos folder (Movies on macOS) as <code>YYYY.MM.DD - big-race.mkv</code>; an existing name gets a numbered suffix.</p>
+      <p>Recordings are 640x480, sampled from the composed frame by the same nearest-neighbour sampler as the window, with 48 kHz stereo audio. Scanlines never reach them. The encoder itself lives in a shared crate from the emulator project; Big Race owns the clock, the frame sizing and a non-blocking tap on the menu music, so the game loop never waits for encoding.</p>
+
+      <h2 id="multiplayer">Modem multiplayer</h2>
+      <p>Big Race runs the original's own linked protocol between two machines, through two virtual modems that exchange 16 kHz modem audio over TCP. Game packets never cross the socket; only modem sound does. On a local network, <strong>Wait For Call</strong> advertises a session on UDP port 47771 and <strong>Dial</strong> finds and claims it, with no address typed in. With sound on you hear the original dial, answer, training, carrier and hang-up audio. The original runtime owns packet framing, retries and Link Options; sockets and threads never enter the game's memory, and saving is refused during a live linked session. <a href="08-link.html">Chapter 8</a> tells the whole story.</p>
+
+      <h2 id="jev-driver">The experimental Jev driver</h2>
+      <p>One addition is openly an experiment: handing the steering to an external AI model, TypeSafe's Jev, while the race stays visible and runs at normal speed. It starts with <code>jev-race &lt;path&gt;</code> for a direct Quick Race, or <code>--jev</code> to keep the normal menus. It needs the user's own access to that service, which stays inside the process and is never passed on a command line.</p>
+      <p>The integration holds the throttle and enables the original game's Auto Brakes aid for that session only, leaving the saved driver-aid preference untouched. It sends compact telemetry read from the runtime, not screenshots: the car's signed distance from the ideal line as a percentage of track half-width, its angle to that line in degrees, and a preview of the driving line whose range and point count grow with speed. Jev chooses, at a slower rate, between the ideal line and a temporary 25-percent left or right avoidance target. A local controller blends toward that target and turns the line geometry into proportional digital steering pulses every frame, as ordinary key make and break edges. The window title shows each accepted decision, the local steering, the latency and the confidence.</p>
+      <p>The game loop never waits for the model. While a request is in flight it keeps the last control, replaces queued telemetry with the newest frame, and rejects replies older than two seconds. The player's own steering keys are ignored while Jev drives; Escape still leaves the race normally. Two small lessons came out of it: the racing line's heading word can flip by 180°, so it is folded to ±90° before steering, and the HTTPS client is native Rust, so the feature needs no Python runtime.</p>
+
+      <h2 id="authored-circuits">Authored circuits</h2>
+      <p>Big Race adds two circuits the original never had: <strong>Bahrain</strong> and <strong>Madrid</strong>, entries 17 and 18 in the extended catalogue. They run on the original Quick Race runtime with their own track data. Their lifecycle (startup, driving, pit, retirement, finish, escape and relaunch) is tested separately from the evidence for the original sixteen circuits.</p>
+      <p>They are built by a second binary, <code>track-author</code>, which compiles a frozen source package into a complete original-format track file offline. It fits the main and pit section streams, emits the racing line, named car parameters and loader tail, and adds authored shapes, scenery settings and placement commands. It has no network access and reads no game assets. Accuracy has explicit bounds: the main path's ordered error must be at most 2.5 m at the 95th percentile and 5 m at worst, and the pit path's 2.5 m and 6 m. A track record in this format is 4.8768 m long.</p>
+      <p>Bahrain's centreline comes from OpenStreetMap, under the Open Database License, with the request, date and snapshot hash recorded. Madrid's comes from the city's geoportal snapshot through a separate, explicit fetch script that builds never run. Elevation, width and corner landmarks are the project's own estimates, kept apart from the source data and labelled as assumptions. The authored preview palette is used only in the track picker; the race itself uses the original executable's palette.</p>
+      <p>Authoring taught its own lessons about the original's track format, several of which are in <a href="11-field-notes.html">chapter 11</a>'s spirit:</p>
+      <ul>
+        <li>Polygon colours are shade-row indices, not palette bytes; flat objects have sixteen entries, and Bahrain's first shapes vanished because their colours indexed past that row.</li>
+        <li>An object distance of 256 is one road half-width, not a world unit. World-unit offsets put Bahrain's scenery 12 to 48 half-widths away and out of view.</li>
+        <li>Packed track curvature is scaled by π/2: the previous record receives <code>(boundary_delta × 0x6488) &gt;&gt; 14</code>, not a heading increment.</li>
+        <li>A racing line with zero radius skips the corner-speed setup entirely. Bahrain passed its path checks with every corner-speed word still at its seed value.</li>
+        <li>Pit entry needs section mode bits, entry, through and exit as 1, 3 and 2; pointers alone do not enable a route. And the pit service window must contain its line patch: a 96/128 window skipped Bahrain's whole 87–98 service patch.</li>
+      </ul>
+
+      <h2 id="by-the-numbers">By the numbers</h2>
+      <p>These figures were computed from the repository on 2026-09-23, at version 0.1.714.</p>
+      <div class="stats">
+        <div class="stat"><b>24</b><span>days from the first commit on 2026-08-30 to 2026-09-23</span></div>
+        <div class="stat"><b>2,654</b><span>commits; 648 of them version bumps</span></div>
+        <div class="stat"><b>290</b><span>commits on the busiest day, 2026-09-09</span></div>
+        <div class="stat"><b>0.1.714</b><span>version at the time of writing</span></div>
+        <div class="stat"><b>~278k</b><span>lines of Rust in 376 source files, including frozen fixtures</span></div>
+        <div class="stat"><b>125</b><span><code>original_runtime_*</code> bridge files</span></div>
+        <div class="stat"><b>2,554</b><span>test functions; 317 need the player's own game data</span></div>
+        <div class="stat"><b>529</b><span>engineering journals</span></div>
+        <div class="stat"><b>96</b><span>design and task documents</span></div>
+        <div class="stat"><b>103</b><span>bug records: 70 closed, 32 fixed awaiting closure, 1 open</span></div>
+        <div class="stat"><b>~260</b><span>lessons in the lessons file after its first prune</span></div>
+        <div class="stat"><b>64 / 64</b><span>full races, 16 circuits × dry/wet × idle/held, all 26 entrants terminal</span></div>
+        <div class="stat"><b>0 / 64,000</b><span>pixel mismatches on each of four race-start pages</span></div>
+        <div class="stat"><b>576 / 577</b><span>boundary checklist rows checked</span></div>
+        <div class="stat"><b>18</b><span>circuits: the original sixteen plus Bahrain and Madrid</span></div>
+        <div class="stat"><b>0</b><span>original game files in the repository</span></div>
+      </div>
+      <p>One recorded run of the full local gate, on an integrated tree, passed 1,529 library tests, 21 main-binary tests and 35 track-tool tests in the core gate, and 401 native tests with 64 ignored, with zero failures. Test functions are counted by their <code>#[test]</code> attribute in the source and track tool; counts from a single gate run differ because many owned-asset tests are skipped by default.</p>
+
+      <footer class="colophon">
+        <p><strong>Colophon.</strong> Big Race is an unofficial Rust host and source-runtime bridge for a player-owned copy of Formula One Grand Prix v1.05, the 1991 game by Geoff Crammond, published by MicroProse. It is not associated with or endorsed by the original game, its creators or its publishers. It reads the player's executable and game data at run time and bundles neither. Every figure in this chapter comes from the project's own repository, journals and design documents as of 2026-09-23; where two sources disagreed, the text says so.</p>
+      </footer>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

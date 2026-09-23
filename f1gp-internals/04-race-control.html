@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Formula One Grand Prix runs a session: modes, start lights, the clock, lap counting, the chequered flag, results, Championship tables, pause, replay, SAVE GAME and the trophy.">
+  <title>Race control — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 04</p>
+      <h1>Race control</h1>
+      <p class="lede">The previous chapter moved the cars. This one covers the officials: what kind of session is running, when it starts and ends, who has completed which lap, who won, how the results and the Championship tables are built, and how the game pauses, replays and saves a race in progress.</p>
+
+      <h2 id="session-modes">One byte decides the session</h2>
+      <p>Every session in the game, from a Quick Race to round 16 of a season, runs through the same engine. What changes its behaviour is one byte in the stack segment, <span class="addr">SS:124A</span>. The menu code at <span class="addr">15F2:C02A</span> sets it.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Value</th><th>Session</th><th>What it changes</th></tr></thead>
+        <tbody>
+          <tr><td><code>0x00</code></td><td>Practice</td><td>Timed session; lap times shown; cars come in after runs</td></tr>
+          <tr><td><code>0x40</code></td><td>Qualifying</td><td>Timed session; best laps sorted into a grid</td></tr>
+          <tr><td><code>0x80</code></td><td>Race</td><td>Lap-limited; classification, gaps and the finish sequence</td></tr>
+        </tbody>
+      </table></div>
+      <p>Race is the only value with the top bit set, so the code usually tests the byte as a <em>signed</em> number: negative means race, anything else is a timed session. That one sign test chooses between two branches of the clock, two ways of counting laps and two exits. You will see it again and again below.</p>
+      <p>A Grand Prix weekend is driven from the game's GRAND PRIX menu. Its five entries are Free Practice, Qualifying, Pre-Race Practice, Race and Abandon Event. Pre-Race Practice is the game's warm-up. The sources do not record which mode byte it uses, so this chapter says nothing more about it. A Quick Race skips straight to the race with choices the menu stores in the stack segment: grid position at <span class="addr">SS:11A8</span>, circuit at <span class="addr">SS:11A9</span>, car at <span class="addr">SS:11AA</span>, weather at <span class="addr">SS:11AB</span> and race distance at <span class="addr">SS:11AC</span>.</p>
+      <div class="callout story"><span class="label">From the port</span><p>Just before it sets the mode, the menu hand-off at <span class="addr">15F2:C024</span> writes a duration word of 120. It does this for every session type. The port first wrote it only for races. Practice and Qualifying then started with no time on the clock and finished at once. The fix was to follow the original and write it for all three.</p></div>
+
+      <h2 id="startup">Getting to the green light</h2>
+      <p>By the time a race starts, the track is loaded (Chapter 2) and the field is cut and placed on the grid (Chapter 3). The unlinked race caller at <span class="addr">0752:EC4B..ECE6</span> then runs a fixed sequence: preparation, the race branch at <span class="addr">ECE7..ED23</span> (seeds, grid, first classification), the view and countdown set-up, the generated trackside features, the controls, and some final start-up gates. Preparation reuses the physics start-up routine without repeating its 720-call corner calibration.</p>
+      <p>Part of the race branch normalises the route. At <span class="addr">0752:ECFC..ED0A</span> the game clears <span class="addr">DS:2917</span>, sets <span class="addr">DS:0306</span> to <code>0x80</code> for a moment so that the route switch at <span class="addr">0701</span> leaves every car's track pointer alone, then clears it again. Without that guard the route switch would move the cars it is meant to leave in place.</p>
+      <p>The start lights are ordinary game state. A countdown at <span class="addr">DS:290D</span> runs 6, 5, 4, 3, 2, 1. The red and green light states sit at <span class="addr">DS:2923</span>, and the light graphics are copied from resource rectangles by <span class="addr">213F:3B46</span>. The lights clear at <span class="addr">0752:DB11</span>. From there, the first race frame is entered at <span class="addr">0752:EDE0..EE52</span>.</p>
+
+      <h3 id="frame-order">What happens in one frame</h3>
+      <p>Each frame of a live session runs a set of services in a fixed order. The port captured the original at the boundaries between them, so the early part of the order is known exactly.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 470" role="img" aria-label="Order of services in one frame of a live session">
+          <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="10" width="420" height="44" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="37"><tspan font-weight="600">C40A</tspan> replay snapshot, when due</text>
+            <line x1="230" y1="54" x2="230" y2="68" style="stroke:var(--ink-3)" marker-end="url(#a4)"/>
+            <rect x="20" y="70" width="420" height="44" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="97"><tspan font-weight="600">0005</tspan> keyboard bindings decoded</text>
+            <line x1="230" y1="114" x2="230" y2="128" style="stroke:var(--ink-3)" marker-end="url(#a4)"/>
+            <rect x="20" y="130" width="420" height="44" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="157"><tspan font-weight="600">213F:29BD</tspan> player controls into the car</text>
+            <line x1="230" y1="174" x2="230" y2="188" style="stroke:var(--ink-3)" marker-end="url(#a4)"/>
+            <rect x="20" y="190" width="420" height="44" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="217"><tspan font-weight="600">E2BC</tspan> race commands: aids, pit, detail, sound</text>
+            <line x1="230" y1="234" x2="230" y2="248" style="stroke:var(--ink-3)" marker-end="url(#a4)"/>
+            <rect x="20" y="250" width="420" height="120" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="34" y="272" font-weight="600">DA48 pre-physics services</text>
+            <text x="34" y="292">object scan, display cycle, D25E state,</text>
+            <text x="34" y="310">DAC8 sequence, 1E48 finish scan,</text>
+            <text x="34" y="328">periodic classification (4546),</text>
+            <text x="34" y="346">ambient-effect counter</text>
+            <line x1="230" y1="370" x2="230" y2="384" style="stroke:var(--ink-3)" marker-end="url(#a4)"/>
+            <rect x="20" y="386" width="420" height="44" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="34" y="413"><tspan font-weight="600">5C2F</tspan> field tick: all 26 cars (Chapter 3)</text>
+            <text x="230" y="458" text-anchor="middle" style="fill:var(--ink-3)">then views, drawing and presentation</text>
+          </g>
+        </svg>
+        <figcaption>Addresses are in segment <code>0752</code> unless shown. The first four stages come from capture boundaries at <span class="addr">EE52</span> to <span class="addr">EE64</span>. In Qualifying, <span class="addr">0752:EE7F</span> runs DA48 and then the field tick.</figcaption>
+      </figure>
+      <div class="callout trap"><span class="label">The trap</span><p>An earlier port change ran the one-car qualifying update before the <span class="addr">DA48</span> services, because that looked tidier. A review of the original's call order showed the reverse: <span class="addr">EE7F</span> runs <span class="addr">DA48</span> first and then the whole field at <span class="addr">5C2F</span>. The change was reverted. In this project, the original's order is the specification, even when it looks odd.</p></div>
+
+      <h2 id="race-length">How long is a race?</h2>
+      <p>A race's length is set as a percentage of the real Grand Prix distance. The routine at <span class="addr">213F:02B9..030D</span> turns that percentage into laps:</p>
+      <pre><code>laps = ((full_laps × percent) / 50 + 1) &gt;&gt; 1
+if percent == 5 or laps &lt; 3:  laps = 3</code></pre>
+      <p>The full distance in laps comes from the track, at <span class="addr">DS:024E</span>. The percentage is at <span class="addr">SS:1226</span>, and the result goes to <span class="addr">SS:123C</span>, which the rest of the game reads as "the lap limit". Dividing by 50, adding one and halving is a rounded divide by 100. For Suzuka the track holds 53. At 5 per cent that rounds to 3 laps, which is also the minimum.</p>
+      <p>The same routine can also reset the session. When <span class="addr">DS:0B99</span> is non-zero it sets two words at <span class="addr">DS:2943</span>/<span class="addr">2945</span> to <code>0xFFFF</code>, clears effects and markers, clears <span class="addr">DS:2917</span> and switches route.</p>
+
+      <h2 id="clock">The session clock</h2>
+      <p>All timing hangs off one clock. The primary clock is a 32-bit count with a fractional word: low word at <span class="addr">DS:294F</span>, high word at <span class="addr">DS:2951</span>, fraction at <span class="addr">DS:2953</span>. A second, auxiliary clock sits just after it at <span class="addr">DS:2955..2959</span>. Each tick adds a step held at <span class="addr">DS:223B..2245</span>. Initialisation is at <span class="addr">0752:0909..0983</span> and the advance at <span class="addr">0984..0AED</span>.</p>
+      <p>The clock counts in milliseconds. No single line of code says so, but everything agrees. The decimal formatter at <span class="addr">0752:0C17..0D3F</span> divides by 6,000,000, 600,000, 60,000, 10,000, 1,000, 100 and 10, which are the places of a minutes-and-seconds display in milliseconds. The "never" deadline used below is 86,400,000, exactly 24 hours. Finished three-to-five-lap races end with the clock between about 400,000 and 530,000, seven to nine minutes.</p>
+      <p>In a timed session the clock drives the countdown on screen. The remaining time is the total at <span class="addr">DS:2221</span>/<span class="addr">2223</span> less the clock, floored at zero. It is formatted into <span class="addr">DS:298D</span>, and any change raises display flags at <span class="addr">DS:0040</span> and <span class="addr">DS:003A</span>. For the player's own car only, the current lap time is the clock minus the time the lap started, held in the car's <code>+54</code>/<code>+56</code>, and it is published to <span class="addr">DS:295B</span>/<span class="addr">295D</span>. The race-only display service at <span class="addr">0D40</span> is never entered in Practice or Qualifying.</p>
+
+      <h2 id="lap-line">Crossing the line</h2>
+      <p>Each car decides for itself when it has completed a lap. That happens near the end of its own update in the field tick, in the tail at <span class="addr">0752:6976..6A7E</span>. Two flag bits on the car's current track record choose one of three paths:</p>
+      <ul>
+        <li><strong>Lap-limit marker.</strong> In a race, if a car that has not finished is on its final lap (lap byte equal to the limit), the game calls <span class="addr">0752:CA25</span> to place the lap-limit trackside object and sets <span class="addr">DS:2915</span>. No lap is counted on this path.</li>
+        <li><strong>Re-arming.</strong> The game clears the car's timing-line latch, bit <code>0x02</code> of <code>+23</code>, ready for the next crossing. Crossing the line does not by itself retire a car.</li>
+        <li><strong>Counting.</strong> On a timing-line record, if the latch is set, nothing happens: a car sitting on the line is not counted twice. Otherwise the game sets the latch and counts the lap.</li>
+      </ul>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 420" role="img" aria-label="Steps taken when a car crosses the timing line">
+          <defs><marker id="b4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="10" width="420" height="44" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="37" text-anchor="middle">Car reaches the line; latch +23 bit 0x02 clear</text>
+            <line x1="230" y1="54" x2="230" y2="72" style="stroke:var(--ink-3)" marker-end="url(#b4)"/>
+            <rect x="20" y="74" width="420" height="62" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="97" font-weight="600">200E..20BF lap timing</text>
+            <text x="34" y="119">lap time into +40; best into +AE and SS:1800</text>
+            <line x1="230" y1="136" x2="230" y2="154" style="stroke:var(--ink-3)" marker-end="url(#b4)"/>
+            <rect x="20" y="156" width="420" height="62" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="179" font-weight="600">1FC7 count the lap</text>
+            <text x="34" y="201">leader's old lap to DS:298B; +22 += 1</text>
+            <line x1="230" y1="218" x2="230" y2="236" style="stroke:var(--ink-3)" marker-end="url(#b4)"/>
+            <rect x="20" y="238" width="200" height="104" rx="6" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="32" y="261" font-weight="600">Race: 1E80</text>
+            <text x="32" y="283">stop requests</text>
+            <text x="32" y="303">finish marking</text>
+            <text x="32" y="323">gap to car ahead</text>
+            <rect x="240" y="238" width="200" height="104" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="252" y="261" font-weight="600">Timed: 1F77</text>
+            <text x="252" y="283">call the car in</text>
+            <text x="252" y="303">after a run of laps</text>
+            <line x1="120" y1="342" x2="120" y2="366" style="stroke:var(--ink-3)" marker-end="url(#b4)"/>
+            <line x1="340" y1="342" x2="340" y2="366" style="stroke:var(--ink-3)" marker-end="url(#b4)"/>
+            <rect x="20" y="368" width="420" height="44" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="395" text-anchor="middle">Player's car only: redraw the lap display</text>
+          </g>
+        </svg>
+        <figcaption>The path taken on the line. All addresses are in segment <code>0752</code>.</figcaption>
+      </figure>
+      <p><strong>Timing.</strong> The lap-timing code at <span class="addr">0752:200E..20BF</span> computes the lap time as the clock less <code>+54</code>, stores it in <code>+40</code>, and compares it with the best lap in <code>+AE</code> as a signed 32-bit value. From there <span class="addr">0752:20C4</span> writes the car's best lap into a table indexed by car number at <span class="addr">SS:1800</span>, four bytes per car, and keeps the working order at <span class="addr">SS:17D8</span> sorted. The sort at <span class="addr">0752:4434</span> is stable, and compares the high word as signed and the low word as unsigned. In a timed session a new best lap also updates the on-screen position.</p>
+      <p><strong>Counting.</strong> The counter at <span class="addr">0752:1FC7</span> increments the lap byte <code>+22</code>. If the car is the race leader (<code>+AA</code> equal to zero), it first copies the leader's old lap into <span class="addr">DS:298B</span> and <span class="addr">SS:123E</span>. The rest of race control reads "which lap is the leader on" from there.</p>
+      <h3 id="stop-requests">Who pits, and when</h3>
+      <p>In a race, <span class="addr">0752:1E80</span> runs next. From <span class="addr">1BF6</span> it decides whether to call the car in for a pit stop. It sets the car's stop-request flags (<code>+23</code> bit <code>0x80</code>, <code>+B3</code> bit <code>0x04</code> and <code>+97</code> bit <code>0x04</code>) only when all of these hold:</p>
+      <ul>
+        <li>the leader has not yet started the last lap;</li>
+        <li>the leader has reached a threshold lap held at <span class="addr">DS:0250</span>;</li>
+        <li>bit <code>0x01</code> of the car's <code>+97</code> is still set (the pit-stop code clears it, subject to a lap test against the same threshold);</li>
+        <li>fewer than seven cars already have a request raised;</li>
+        <li>the car's team-mate has not already asked. The check at <span class="addr">0752:49AA..49CB</span> looks up the paired car.</li>
+      </ul>
+      <p>A pending request can also be withdrawn as the leader starts the final lap. So the original spreads its AI pit stops out, never sends more than seven cars in at once, and never brings both cars of a team in together. The stop itself is the state machine described in Chapter 3.</p>
+      <p>Timed sessions use the same flags differently. The branch at <span class="addr">0752:1F77..1FC6</span> calls a car in once it has done a run of laps. In Practice an AI car comes in after 10 laps. In Qualifying the threshold is 3. For a third, unnamed non-race mode, an AI car gets a one-in-eight random chance each lap once it has done 3. This reads like a real team's run plan: long runs in practice, short ones in qualifying.</p>
+
+      <h2 id="finish">The chequered flag</h2>
+      <p>Finishing is spread across four places in the code. Here is the sequence in a race.</p>
+      <ol>
+        <li><strong>The winner.</strong> In the same <span class="addr">1E80</span> path, at <span class="addr">1C78</span>, a car that crosses the line with its lap byte above the limit becomes the winner. Its record offset goes into <span class="addr">DS:28FF</span>, unless bit <code>0x20</code> of its <code>+23</code> is set. The car is marked finished: <code>+5E</code> gets bits <code>0x11</code> and <code>+9A</code> gets bit <code>0x01</code>.</li>
+        <li><strong>Everyone else.</strong> Once <span class="addr">DS:28FF</span> is set, <em>every</em> car that crosses the line is marked finished too, whatever lap it is on. That is the real rule: after the winner takes the flag, each car's race ends at its next crossing.</li>
+        <li><strong>The scan.</strong> Among the pre-physics services, <span class="addr">DA65</span> calls <span class="addr">1E48</span>. It checks every entrant once every 16 calls and sets bit <code>0x80</code> of <span class="addr">DS:2913</span> only when every car has either finished or retired.</li>
+        <li><strong>The grace period.</strong> On the next clock tick, <span class="addr">0984</span> sees the bit. It sets <span class="addr">DS:2911</span> and <span class="addr">DS:2903</span> to <code>0x80</code> and arms a deadline at <span class="addr">SS:1250</span>/<span class="addr">1252</span>: the clock plus 6,000, which is six seconds. In a linked two-machine race both machines' finish bits are needed, both to arm and to expire it.</li>
+        <li><strong>The exit.</strong> When the deadline passes, the clock service sets bit <code>0x40</code> of <span class="addr">SS:124E</span>. That is the terminal flag. The session loop sees it, stops the sound and fades the screen to black, then goes to the results.</li>
+      </ol>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 330" role="img" aria-label="Race finish sequence from the winner crossing the line to the terminal flag">
+          <g font-size="13" fill="currentColor">
+            <line x1="40" y1="30" x2="40" y2="300" style="stroke:var(--rule);stroke-width:3"/>
+            <circle cx="40" cy="40" r="8" style="fill:var(--paper);stroke:var(--red);stroke-width:2"/>
+            <text x="62" y="36" font-weight="600">Winner crosses, lap &gt; limit</text>
+            <text x="62" y="54">DS:28FF = winner; +5E |= 0x11</text>
+            <circle cx="40" cy="100" r="8" style="fill:var(--paper);stroke:var(--red);stroke-width:2"/>
+            <text x="62" y="96" font-weight="600">Each later crossing finishes a car</text>
+            <text x="62" y="114">retired cars are already terminal</text>
+            <circle cx="40" cy="160" r="8" style="fill:var(--paper);stroke:var(--red);stroke-width:2"/>
+            <text x="62" y="156" font-weight="600">1E48: all finished or retired</text>
+            <text x="62" y="174">DS:2913 |= 0x80 (checked every 16 calls)</text>
+            <circle cx="40" cy="220" r="8" style="fill:var(--paper);stroke:var(--red);stroke-width:2"/>
+            <text x="62" y="216" font-weight="600">0984: grace deadline armed</text>
+            <text x="62" y="234">SS:1250 = clock + 6,000 ms</text>
+            <circle cx="40" cy="280" r="8" style="fill:var(--red);stroke:var(--red);stroke-width:2"/>
+            <text x="62" y="276" font-weight="600">Deadline passes: SS:124E |= 0x40</text>
+            <text x="62" y="294">sound stop, black fade, results</text>
+          </g>
+        </svg>
+        <figcaption>The race ends only when the last running car has taken the flag or retired, plus six seconds.</figcaption>
+      </figure>
+      <p>Timed sessions end on the clock instead. There the clock service needs the remaining time to reach zero before it arms the same six-second grace, and on expiry it sets bit <code>0x20</code> of <span class="addr">SS:124E</span> rather than <code>0x40</code>. The formatter drops the last digit, so "zero" shows once under a minute remains. In the port's test runs, Practice and Qualifying both ended at clock 7,146,677. That fits a 120-minute session that ends at the zero readout plus the grace period. This fit is our inference from the numbers, not a rule stated in the code.</p>
+      <p>The pre-physics services also run a finish-marshal routine, <span class="addr">CDF4</span>. It finds the leader by comparing signed 32-bit progress, counting retired cars as zero and resolving ties in favour of the later entrant. It then places a trackside object 80 units away through the same marshal-placement routine, <span class="addr">CAB1</span>, used for flags elsewhere.</p>
+      <div class="callout how"><span class="label">How it works</span><p>Nothing in the original ends a race early. There is no "race over" timer and no forced retirement. The session ends only when every car has reached a terminal state by itself, finished or retired. The port keeps that rule strictly. It never forces a retirement, moves a car, or relaxes a check to make a test finish. When an automated run could not finish, the fix was always to drive better, for example steering through corners with real key presses instead of holding the throttle, never to loosen the ending.</p></div>
+      <div class="callout story"><span class="label">From the port</span><p>One deliberate difference. The original freezes a finished car's lap counter. But a player who wins can keep driving while the rest of the field finishes, and in a five-lap race the dash then stayed at "6 of 5" for good. On 2026-09-22 the port changed this for one car only: the player's own car, when it is the winner. It counts each later crossing once, using the same timing-line latch, and redraws the dash. Every other finished car stays frozen, as in the original.</p></div>
+
+      <h2 id="retirement">Retirement and the hand-over state machine</h2>
+      <p>Cars leave a race by retiring, for example after a heavy crash (Chapter 3). The retirement code sets the car's flag bits, reclassifies the field through <span class="addr">4FD0</span>, and updates the list of runners on screen. A player's retirement then goes through a delayed removal. <span class="addr">5394</span> stores the flags, <span class="addr">49CC</span> handles driver availability and removes the car's model pair, the resident display at <span class="addr">213F:1BCB</span> updates the icons, and the common physics resumes at <span class="addr">9B06</span>. After that, <span class="addr">E6E0</span> picks a new car for the camera.</p>
+      <p>Alongside this runs a small state machine the port calls the session state. Its state word is <span class="addr">DS:2963</span>, and its deadline, at <span class="addr">DS:292F..2932</span>, is compared with the clock.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>State</th><th>Routine</th><th>Behaviour</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td><span class="addr">D25E</span></td><td>Normal running. When the deadline expires, rescan for a candidate at <span class="addr">D331</span>.</td></tr>
+          <tr><td>1</td><td><span class="addr">D369</span></td><td>Advance a session icon each tick until the deadline.</td></tr>
+          <tr><td>2, 3</td><td><span class="addr">D3BB</span></td><td>Refresh the display, release the player, wait 5,000 ms.</td></tr>
+          <tr><td>4</td><td><span class="addr">D41F</span></td><td>Wait 500 ms, start a fade, allow 1,000 ms more.</td></tr>
+          <tr><td>5</td><td><span class="addr">D47F</span></td><td>Copy the candidate into the display state, wait 5,000 ms.</td></tr>
+          <tr><td>6</td><td><span class="addr">D4C2</span></td><td>Write a display word, wait 5,000 ms.</td></tr>
+          <tr><td>7</td><td><span class="addr">D50A</span></td><td>Activate the next identity, or finish.</td></tr>
+        </tbody>
+      </table></div>
+      <p>The rescan at <span class="addr">D331</span> has three outcomes. If there is no candidate, the selection finishes. If the candidate is the same identity as before, the deadline is pushed out by 86,400,000 ms: never. If it is a different identity, the machine enters state 1 with a 15-second deadline.</p>
+      <p>The start deadline comes from <span class="addr">0752:D167..D25D</span>. It counts the selected entrants and sums a per-car byte from each, divides the session's time budget between them, and applies some offsets. With one selected entrant or fewer, the deadline is the 24-hour "never".</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The code only talks about identities, candidates and hand-overs. Our reading is that this is the original's support for several human players sharing one race, each driving in turn: the time is split between the selected humans, and a lone player never hands over. That is an inference from the arithmetic and the 24-hour special case. The sources do not state it.</p></div>
+
+      <h2 id="results">Results and timing pages</h2>
+      <p>When a session ends, the results screens read their data straight out of the game's memory. The port found that each page has its own sources, and that the obvious table is often the wrong one.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Page</th><th>Reads</th></tr></thead>
+        <tbody>
+          <tr><td>Race Finishing Times</td><td>Classification order <span class="addr">SS:1940</span>; raw times <span class="addr">SS:1982</span> (a high word of <code>0x8000</code> means no time); names <span class="addr">SS:1A4A</span>; car numbers <span class="addr">SS:1A22</span>; team and engine text <span class="addr">SS:1E0A</span> and <span class="addr">SS:1F0E</span></td></tr>
+          <tr><td>Driver Lap Times</td><td>The working order <span class="addr">SS:17D8</span> and best laps <span class="addr">SS:1800</span>, kept apart from the race results</td></tr>
+          <tr><td>Fastest Laps</td><td>Current track index <span class="addr">SS:1236</span>, lap count <span class="addr">SS:123C</span>, a flag at <span class="addr">SS:1234</span>, this event's fastest qualifying and race laps at <span class="addr">SS:1278..1283</span>, and a 90-byte record for the track at <span class="addr">SS:2312</span> + track × <code>0x5A</code></td></tr>
+          <tr><td>Starting Grid</td><td>The first ten entries of <span class="addr">SS:17D8</span>, with best laps from <span class="addr">SS:1800</span>; skips times of one hour (<code>3,600,000</code>) or more</td></tr>
+        </tbody>
+      </table></div>
+      <p>Qualifying leaves two tables behind, and they must not be confused. <span class="addr">SS:17D8</span> is a 40-byte working order used for lap times. <span class="addr">SS:1940</span> is the ordered list of the 26 cars in the classification, and it becomes the race grid. The port once used the working order as the Championship's list of drivers. Reserve identities slipped in, and the season grew to 31 drivers. A regression test now fills <span class="addr">SS:17D8</span> with reversed entries and checks that the grid still comes from <span class="addr">SS:1940</span>.</p>
+      <p>Before the results, two routines settle the final order. <span class="addr">0752:4E23..4F75</span> sorts the final timing order on top of the progress classification. <span class="addr">D923..D96B</span> produces the controlled driver's own result; outside a race it returns a fixed <code>0x8000</code>. A car's finishing place is stored as twice its position at <code>+AA</code>.</p>
+      <p>The PRINT RESULTS menu lays out ten controls, from Starting Grid to Return to Results Menu, and is reachable from both the Non-Championship and Championship results menus. Result pages draw over artwork from <code>BACKDROP.DAT</code>: pair 12 for the generic results, pair 4 for the Drivers table, pair 2 for Constructors and pair 14 for Seasons Results.</p>
+
+      <h2 id="championship">The Championship</h2>
+      <p>A season is sixteen rounds, always in the same order: Phoenix, Interlagos, Imola, Monte-Carlo, Montreal, Mexico City, Magny Cours, Silverstone, Hockenheim, Hungaroring, Spa-Francorchamps, Monza, Estoril, Barcelona, Suzuka and Adelaide. Each round is a full weekend of Practice, Qualifying and Race.</p>
+      <h3 id="scoring">Scoring and countback</h3>
+      <p>The original keeps a points table as 26 bytes at <span class="addr">SS:28B4..28CD</span>, one per finishing place, with a best-results limit at <span class="addr">SS:28B2</span> (zero means count every result). The port awards 10, 6, 4, 3, 2 and 1 points to the first six places. The season history lives at <span class="addr">SS:1558..17D7</span>: 16 result bytes for each of 40 driver slots. The standings are rebuilt from those results each time a table is drawn.</p>
+      <p>The order is decided like this. Sort by points. If two drivers have the same non-zero points, compare their number of wins, then second places, and so on down to 26th. If everything is equal, the later driver gets bit <code>0x8000</code>, and the table prints "=" in the position column. The Constructors table adds up both cars of each team, identified by car number, and combines their finishing counts in the same way.</p>
+      <h3 id="tables">Drawing the tables</h3>
+      <p>The Drivers and Constructors pages are drawn by code at file offsets <code>0x717A5</code> and <code>0x71935</code>, and the Seasons Results grid at <code>0x71ABD</code>. The standings scroll. A signed cursor at <span class="addr">DS:1B65</span> starts at −1. The page draws twelve slots from Y = 50 at a 10-pixel pitch, so position 1 first appears at Y = 60. The cursor is clamped between −10 and the number of scoring entries less two. Drivers with no points are left blank. Seasons Results lays out sixteen columns with rotated country names.</p>
+      <div class="callout proof"><span class="label">How we know</span><p>The port's Drivers, Constructors and Seasons Results pages match the original pixel for pixel. The only exception is a 368-pixel patch where the emulator's mouse pointer sat during the capture. The same exact comparison passes for the Championship Results menu, Race Finishing Times, Driver Lap Times and Fastest Laps.</p></div>
+      <div class="callout trap"><span class="label">The trap</span><p>The sources disagree on the size of the season's field. The seed data and the port's Championship code describe 26 cars cut from a pool of 34 for each circuit. A later full-season run (2026-09-21) found the offline game running a fixed field of thirteen teams, 26 drivers, each starting all sixteen rounds, and it superseded an earlier expectation of 27. How the two fit together is not settled in the sources.</p></div>
+
+      <h2 id="pause">Pause</h2>
+      <p>Pause is polled once a frame by <span class="addr">0752:DCF9</span>. Held keys live in a bitmap at <span class="addr">SS:04CC</span>, and the pause key's code is at <span class="addr">DS:0066</span>. The poll has three outcomes:</p>
+      <ul>
+        <li><strong>Continue</strong>, the normal case.</li>
+        <li><strong>Message.</strong> If the pause key is held, or in a linked race the other machine has set bit <code>0x40</code> of <span class="addr">DS:877F</span>, the game shows the PAUSED message at <span class="addr">DD94..DDD1</span>.</li>
+        <li><strong>Stop.</strong> If three particular keys are held together, the game jumps to <span class="addr">DDD6</span> and runs the stop sequence.</li>
+      </ul>
+      <p>A latch at <span class="addr">DS:0071</span> waits for a held key to be released. While paused, the timer and keyboard interrupts keep running, but the race does not move. In one port test, 196 real timer interrupts arrived during a pause, and the race clock and all 26 cars were unchanged. The PAUSED panel changes 1,280 pixels on the upper screen. On resume, the frame that was interrupted is not re-run from the start. It continues from <span class="addr">EE67</span>.</p>
+      <div class="callout story"><span class="label">From the port</span><p>The port first folded the message and stop outcomes into one "enter pause" result. That changed the order of events: in the original the stop check comes before the message. The port now returns a separate stop result so the sequence matches.</p></div>
+
+      <h2 id="replay-views">Replay and camera views</h2>
+      <p>The original's instant replay is built from snapshots. The history writer at <span class="addr">0752:C40A..C4A2</span> fires on a deadline at <span class="addr">DS:2231</span>, re-armed each time by an interval at <span class="addr">DS:012C</span>. Each time it fires, it copies two ranges into the next slot of a ring in a scene bank: <span class="addr">DS:0AAD..209A</span>, which covers the entrant table and the list before it, and <span class="addr">DS:28F7..298E</span>, which holds the race globals. The copy runs as 350 batches of eight words followed by byte loops. The slot index is at <span class="addr">DS:2229</span>. The restore at <span class="addr">C4A3..C50A</span> brings back the oldest snapshot and saves the live clock so the replay knows where to stop.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The copy has to be done the original's way: eight words at a time, then bytes. A scene bank can overlap the live image, so a single large block copy would read bytes the copy had already overwritten, and give a different result.</p></div>
+      <p>The player also feeds the replay. The controls read during replay come from the snapshot, not the keyboard. The routine at <span class="addr">213F:29A2..29BC</span> skips the hardware and, once the saved control deadline is reached, restores the control-method bytes to the selected cars.</p>
+      <p>Camera views are chosen by <span class="addr">0752:E576</span>. Requests are bits in <span class="addr">DS:0983</span>, handled in a fixed order of priority at <span class="addr">E7A0..E825</span>. The keys are:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Key</th><th>View</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Page Down</kbd></td><td>Rear external view (mode <code>A0</code>)</td></tr>
+          <tr><td><kbd>Delete</kbd></td><td>Front external view (mode <code>B0</code>)</td></tr>
+          <tr><td><kbd>Left</kbd></td><td>Stationary trackside camera</td></tr>
+          <tr><td><kbd>Up</kbd> / <kbd>Down</kbd></td><td>Change the car being watched</td></tr>
+          <tr><td><kbd>Right</kbd></td><td>Back to the cockpit</td></tr>
+          <tr><td><kbd>Home</kbd></td><td>Back to the player's car, keeping the view</td></tr>
+          <tr><td><kbd>P</kbd>, then <kbd>R</kbd></td><td>Pause, then instant replay</td></tr>
+        </tbody>
+      </table></div>
+      <p>The external views move the scene by <code>0x1400</code> at <span class="addr">E761</span>, and <span class="addr">C2D0</span> resets it after drawing. The camera's own record is at <span class="addr">DS:099B</span>. The stationary trackside camera is a small system of its own: placement at <span class="addr">C713</span>/<span class="addr">C7DF</span>, aiming along the route at <span class="addr">C767</span> and at a live car at <span class="addr">C94B</span>, alignment at <span class="addr">C819</span>, and a marker search at <span class="addr">C882</span>. It also plays the sound of a car passing, through <span class="addr">213F:2E44</span>. A view change fades through black. The call at <span class="addr">E4FF</span> resolves to the resident routine <span class="addr">213F:0046</span> and on to <span class="addr">8B6E:0143</span>, with <span class="addr">SS:08E6</span> set before function 6. The hand-over state machine uses the same black-fade call.</p>
+      <p>The same per-frame command routine, <span class="addr">0752:E2BC</span>, handles the other in-race keys: <kbd>G</kbd> shows nearby gaps, <kbd>D</kbd> cycles the detail level (<span class="addr">DS:0068</span>, wrapping from 0 back to 3), <kbd>-</kbd> and <kbd>=</kbd> set the sound level (<span class="addr">DS:006A</span>, 0 to 2), and <kbd>Enter</kbd> requests or cancels a pit stop.</p>
+
+      <h2 id="save-game">SAVE GAME</h2>
+      <p>The original can save a session in progress. Its save is a raw copy of three memory ranges, made by <span class="addr">15F2:C5E0</span>, followed by a checksum. The file is 26,736 bytes: a 26,732-byte body and a four-byte checksum.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 480 300" role="img" aria-label="Layout of the original SAVE GAME file: three memory ranges and a checksum">
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="20" width="440" height="56" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="43" font-weight="600">SS:121C..2012 (0x0DF6 bytes)</text>
+            <text x="34" y="63">session settings; word at SS:1232 replaced</text>
+            <rect x="20" y="86" width="440" height="56" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="34" y="109" font-weight="600">DS:096B..298F (0x2024 bytes)</text>
+            <text x="34" y="129">cars and race state; two seed words first</text>
+            <rect x="20" y="152" width="440" height="56" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="34" y="175" font-weight="600">381C:11E6..4C38 (0x3A52 bytes)</text>
+            <text x="34" y="195">scene bank</text>
+            <rect x="20" y="218" width="440" height="40" rx="4" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="34" y="243" font-weight="600">checksum: byte sum, rotate-and-add sum</text>
+            <text x="240" y="284" text-anchor="middle" style="fill:var(--ink-3)">26,732-byte body + 4-byte checksum = 26,736 bytes</text>
+          </g>
+        </svg>
+        <figcaption>The three ranges, in file order. The checksum covers the body.</figcaption>
+      </figure>
+      <p>The writer makes two changes as it copies. In the first range it replaces the word at <span class="addr">SS:1232</span> with an operation code of 1 from <span class="addr">DS:0918</span>. Before copying the second range it seeds <span class="addr">DS:096B</span> and <span class="addr">DS:096D</span> with the main and pit segment values. The checksum is two words. One is a plain 16-bit sum of the bytes. The other starts at zero and, for each byte, rotates left three bits and adds the byte. The same checksum protects the preferences file (Chapter 3).</p>
+      <p>The third range begins at <code>0x11E6</code> in the scene bank. That is also where the replay ring wraps to. It is likely, though not confirmed, that a save carries the replay history with it.</p>
+      <div class="callout story"><span class="label">From the port</span><p>The save format took three attempts. The first reading (2026-09-10) was a single copy starting at <span class="addr">381C:4C38</span>. By 2026-09-14 that had fallen apart: the live range at that address began with a road-scene header, not a save header, and a careful trace found the three-range writer. Then on 2026-09-15 the original game loaded a file the port had written, said "GAME LOADED", and rejected it as "Invalid Data". Swapping ranges into a known-good save showed the checksum and header were fine. The fault was the two segment seeds, which the port had not written. With them added, the original loads the port's save and reaches the same restored frame.</p></div>
+      <p>The port adds its own checkpoint beside the raw save, because the raw format does not hold everything a live session needs: the lower screen, the sound state, the pause and replay state. Pressing <kbd>S</kbd> during a session writes both. A loaded raw save is checked for its scene header, operation code and checksum before anything live is touched. A checksum alone would also accept other files in the save folder.</p>
+
+      <h2 id="ceremony">The ceremony and the trophy</h2>
+      <p>At the end of a season the game plays an animated ceremony. The animations are held in two files. <code>CHAMP.DAT</code> has 23 records: an LZW-compressed base frame followed by frames stored as byte runs XORed onto the one before, each with a VGA palette. Records 1 to 7 are the "WORLD CHAMPIONSHIP" podium and records 9 to 22 the champagne scene. <code>TROPHY.DAT</code> holds the sixteen-frame season-complete sequence.</p>
+      <p>Both are played by a resident dispatcher at <span class="addr">7339:0000</span>, which looks up a script through a word table at <span class="addr">7339:002C</span>. A capture from the original, loading a constructed final-season save through Load Game, followed the whole route. It ran from the results caller at <span class="addr">213F:0FA6</span> into the dispatcher, and the trophy sequence played. After Continue came about 45 captured steps: the results still visible, the trophy car scene, a fade of the car, a fade to black, the board scene coming in, the full board, and finally the SEASON COMPLETE menu. That menu offers Review, which goes back to the Championship results, and Save.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The route to <code>CHAMP.DAT</code> is not settled. The project's notes from 2026-09-19 disagree on which dispatcher entries lead to which file. A probe that ran a whole unlinked season with breakpoints on the candidate callers hit none of them. No capture yet shows the original reaching the <code>CHAMP.DAT</code> podium naturally, so this chapter does not claim a route for it.</p></div>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

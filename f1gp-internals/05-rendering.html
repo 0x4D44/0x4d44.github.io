@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Formula One Grand Prix draws its 3D world: camera, sky, road, objects, clipping, polygon fill, shading, bitmaps, cars, mirrors and the cockpit, and how the port proved every pixel.">
+  <title>Drawing the world — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 05</p>
+      <h1>Drawing the world</h1>
+      <p class="lede">Every frame, GP.EXE builds a 320 by 164 picture of the circuit out of integer arithmetic, then shows it through the windows of a cockpit it keeps inside the executable. This chapter follows that picture from the camera to the last pixel, then explains how the port proved it draws the same pixels.</p>
+
+      <p>The 3D renderer in Formula One Grand Prix has no depth buffer, no floating point and no textures in the modern sense. It is a painter. It draws the far things first and the near things last, and each write simply overwrites what was there. Everything else in this chapter is about how it decides <em>what</em> to paint and <em>in which order</em>: which track records are in view, how their points reach the screen, how edges become filled polygons, and where the trackside objects and cars slot in between the road's pieces.</p>
+
+      <p>The addresses below use the segment labels the port uses. Renderer code is cited as <span class="addr">15F2:XXXX</span>; the game's main code segment as <span class="addr">0752:XXXX</span>. The same routine can appear under a second, runtime label (for example <span class="addr">1699:0999</span> for the fill at <span class="addr">15F2:1409</span>), because the renderer segment is relocated when the program loads.</p>
+
+      <h2 id="one-frame">One frame, start to finish</h2>
+
+      <p>The frame driver is <span class="addr">15F2:8C3E</span>. It runs a fixed sequence of stages. Most of them only build lists; drawing happens late, in one back-to-front sweep.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 330" role="img" aria-label="The ten stages of one rendered frame, from marking cars to presenting the canvas">
+          <defs>
+            <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker>
+          </defs>
+          <g font-size="13" fill="currentColor">
+            <g style="stroke:var(--rule)" fill="none" stroke-width="1.5">
+              <rect x="10" y="20" width="190" height="52" rx="6"/>
+              <rect x="225" y="20" width="190" height="52" rx="6"/>
+              <rect x="440" y="20" width="190" height="52" rx="6"/>
+              <rect x="10" y="110" width="190" height="52" rx="6"/>
+              <rect x="225" y="110" width="190" height="52" rx="6" style="stroke:var(--red)"/>
+              <rect x="440" y="110" width="190" height="52" rx="6"/>
+              <rect x="10" y="200" width="190" height="52" rx="6"/>
+              <rect x="225" y="200" width="190" height="52" rx="6" style="stroke:var(--ink-3)" stroke-dasharray="5 4"/>
+              <rect x="440" y="200" width="190" height="52" rx="6"/>
+              <rect x="225" y="270" width="190" height="48" rx="6" style="stroke:var(--blue)"/>
+            </g>
+            <text x="22" y="42" font-weight="600">1  Mark cars</text><text x="22" y="61" style="fill:var(--ink-3)">AFA3 stamps records</text>
+            <text x="237" y="42" font-weight="600">2  Road pass</text><text x="237" y="61" style="fill:var(--ink-3)">45A2 reset, 46C0 walk</text>
+            <text x="452" y="42" font-weight="600">3  Sky and panorama</text><text x="452" y="61" style="fill:var(--ink-3)">7D2E</text>
+            <text x="22" y="132" font-weight="600">4  Edge builder</text><text x="22" y="151" style="fill:var(--ink-3)">5682: points to edges</text>
+            <text x="237" y="132" font-weight="600">5  Draw stretches</text><text x="237" y="151" style="fill:var(--ink-3)">8A9A: road + objects</text>
+            <text x="452" y="132" font-weight="600">6  Leftover objects</text><text x="452" y="151" style="fill:var(--ink-3)">5E8B</text>
+            <text x="22" y="222" font-weight="600">7  Nested pit scene</text><text x="22" y="241" style="fill:var(--ink-3)">when SS:0170 ≥ 0</text>
+            <text x="237" y="222" font-weight="600">8  Texture pass</text><text x="237" y="241" style="fill:var(--ink-3)">89D4, only if toggled</text>
+            <text x="452" y="222" font-weight="600">9  Unmark cars</text><text x="452" y="241" style="fill:var(--ink-3)">B1A7 masks stamps</text>
+            <text x="237" y="291" font-weight="600">10  Present</text><text x="237" y="309" style="fill:var(--ink-3)">31FA: canvas to VGA</text>
+            <g style="stroke:var(--ink-3)" stroke-width="1.5" fill="none" marker-end="url(#arr1)">
+              <line x1="200" y1="46" x2="222" y2="46"/><line x1="415" y1="46" x2="437" y2="46"/>
+              <path d="M535,72 L535,90 L105,90 L105,107"/>
+              <line x1="200" y1="136" x2="222" y2="136"/><line x1="415" y1="136" x2="437" y2="136"/>
+              <path d="M535,162 L535,180 L105,180 L105,197"/>
+              <line x1="200" y1="226" x2="222" y2="226"/><line x1="415" y1="226" x2="437" y2="226"/>
+              <path d="M535,252 L535,262 L420,290"/>
+            </g>
+          </g>
+        </svg>
+        <figcaption>The frame driver <span class="addr">15F2:8C3E</span>. Stages 1 to 4 only build lists. Stage 5 (red) does most of the painting, far to near. Stage 8 runs only when the player has switched on the track-texture mode.</figcaption>
+      </figure>
+
+      <p>In words:</p>
+      <ol>
+        <li><strong>Mark the cars.</strong> <span class="addr">15F2:AFA3</span> stamps "a car is here" onto the track records the visible cars occupy. It draws nothing. The road pass will find the stamps and treat those records as objects.</li>
+        <li><strong>Walk the road.</strong> The pass (<span class="addr">15F2:46C0</span>) walks the track records in view, projects a block of points for each one, and writes a list of segment entries, object marks and scene headers. Its fix-up (<span class="addr">5473</span>) settles the horizon rows.</li>
+        <li><strong>Paint the sky.</strong> <span class="addr">15F2:7D2E</span> fills the sky bands, copies the horizon panorama and lays down the ground colour.</li>
+        <li><strong>Build the edges.</strong> <span class="addr">15F2:5682</span> turns pairs of projected points into clipped, scan-converted screen edges.</li>
+        <li><strong>Draw.</strong> <span class="addr">15F2:8A9A</span> sorts the object marks (<span class="addr">5BB9</span>), then for each stretch of road fills the road colour band, the verges, the strips and the kerbs, drawing each object when its turn comes.</li>
+        <li><strong>Draw the rest</strong> of the objects (<span class="addr">5E8B</span>).</li>
+        <li><strong>Draw the nested scene</strong>, a second, smaller road scene used for the pit lane.</li>
+        <li><strong>Optionally shade the road texture</strong> (<span class="addr">15F2:89D4</span>).</li>
+        <li><strong>Unmark the cars</strong> (<span class="addr">15F2:B1A7</span>).</li>
+        <li><strong>Present.</strong> Later, a presenter copies the finished canvas into video memory through the cockpit's windows.</li>
+      </ol>
+
+      <p>One small piece of defensive engineering sits under all of it. GP.EXE hooks the divide-error interrupt (INT 0) so that a division that overflows sets a flag and returns, instead of crashing the machine. The renderer divides constantly: every projected point is a division by depth. A bad divide therefore degrades a frame rather than ending the game. The port reproduces that behaviour as a checked result wherever the original relies on it.</p>
+
+      <h2 id="canvas-and-cockpit">A 320 by 164 canvas behind a cockpit</h2>
+
+      <p>The game does not draw its 3D scene straight into VGA memory at <span class="addr">A000:0000</span>. It draws into an offscreen canvas in the segment the program calls <code>580C</code> (its own "upper" segment <code>50BA</code>, relocated by the load segment <code>0752</code>). A far pointer at offset <code>+0x1C</code> of the scene data names the exact start. The port's capture tools read that pointer from the running game and got <span class="addr">580C:1400</span>. The design for the enhanced renderer records the offset as 0 in the cockpit view and <code>0x1400</code> in the external views. <code>0x1400</code> is 5,120 bytes, which is exactly sixteen rows of 320 pixels.</p>
+
+      <p>The scene is 320 pixels wide and 164 rows tall. Every clip, every edge stream and every fill assumes those numbers. The bottom 36 rows of the 200-row screen belong to the cockpit panel and are never part of the scene.</p>
+
+      <p>The cockpit itself is a complete 320 by 200 indexed picture stored inside GP.EXE. When a frame is ready, the presenter at <span class="addr">19ED:31FA</span> copies the scene into the VGA page. It does <em>not</em> clear the page first, and it does not copy the whole scene:</p>
+
+      <ul>
+        <li>Rows 0 to 102 are copied whole. Above row 103 there is nothing in front of the windscreen.</li>
+        <li>Rows 103 to 163 are copied as two spans per row, a left one and a right one. Between them sits the car's nose and the dashboard, which stay as they were. A few rows copy nothing at all, and some spans stop short of the screen edge where the cockpit frame intrudes.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 440" role="img" aria-label="The 320 by 200 screen: rows 0 to 102 copied whole from the scene, rows 103 to 163 copied as two spans around the cockpit nose, rows 164 to 199 the static panel">
+          <g font-size="13" fill="currentColor">
+            <rect x="0" y="0" width="640" height="206" style="fill:var(--blue-soft);stroke:var(--blue)" stroke-width="1.5"/>
+            <path d="M0,206 L242,206 L60,328 L0,328 Z" style="fill:var(--blue-soft);stroke:var(--blue)" stroke-width="1.5"/>
+            <path d="M640,206 L398,206 L580,328 L640,328 Z" style="fill:var(--blue-soft);stroke:var(--blue)" stroke-width="1.5"/>
+            <path d="M242,206 L398,206 L580,328 L60,328 Z" style="fill:var(--paper);stroke:var(--ink-3)" stroke-width="1.5"/>
+            <rect x="0" y="328" width="640" height="72" style="fill:var(--paper);stroke:var(--ink-3)" stroke-width="1.5"/>
+            <text x="320" y="96" text-anchor="middle" font-weight="600">Scene rows 0–102: copied whole</text>
+            <text x="320" y="118" text-anchor="middle" style="fill:var(--ink-3)">sky, panorama, far road</text>
+            <text x="320" y="270" text-anchor="middle" font-weight="600">cockpit nose stays</text>
+            <text x="12" y="226">left span</text>
+            <text x="628" y="226" text-anchor="end">right span</text>
+            <text x="320" y="360" text-anchor="middle" font-weight="600">Rows 164–199: static panel and HUD</text>
+            <text x="320" y="382" text-anchor="middle" style="fill:var(--ink-3)">never part of the scene</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" style="fill:var(--ink-3)">
+              <text x="4" y="420">row 103 starts the spans; scene ends at row 164</text>
+            </g>
+            <line x1="0" y1="206" x2="640" y2="206" style="stroke:var(--red)" stroke-dasharray="6 4" stroke-width="1.5"/>
+          </g>
+        </svg>
+        <figcaption>The presenter's copy, drawn at twice scale. Blue areas come from the canvas each frame. The notch is schematic: the real spans are a per-row table reconstructed from the presenter (at row 103, for example, pixels 121 to 198 stay cockpit).</figcaption>
+      </figure>
+
+      <p>Two consequences follow, and both mattered to the port. First, the presenter copies only about 61% of the VGA page per frame. The rest is whatever an earlier frame or the cockpit drew. A test that reads the whole VGA page and compares it compares <em>history</em>, not one frame. Second, pixels the scene draws behind the cockpit nose are real work that nobody sees. When the port later compared its canvas byte for byte, 13,190 of the 52,480 scene bytes differed on each test frame, and all of them lay outside the presenter's spans. The presented pages were identical.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The first renderer oracles read <span class="addr">A000:0000</span>, the VGA page. The port's own capture tooling later printed the game's real target, <code>0x580c 0x1400</code>. Any whole-page diff taken at <code>A000</code> mixes the current frame with retained pixels from earlier frames. The fix was to capture the canvas and the presented page separately, and to compare each against the right thing.</p></div>
+
+      <h2 id="camera">The camera</h2>
+
+      <p>The camera is built each frame from the car the view is following. The routine (image offsets <code>8BD8..8DE6</code> in the main segment) takes the car's record, how far along the record it is, how far across, its heading, its ride height and its own pitch term. From those it produces a world position, a height, a heading with its cosine and sine, a horizon row and a perspective scale.</p>
+
+      <h3 id="two-views">Two views, two sets of terms</h3>
+
+      <p>The game has two parallel routines that set the session camera, at <span class="addr">0752:E985</span> and <span class="addr">0752:E9BC</span>. They differ in exactly three things:</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th>View A (<code>E985</code>)</th><th>View B (<code>E9BC</code>)</th></tr></thead>
+        <tbody>
+          <tr><td>Camera pitch <code>[0x4d0]</code></td><td>0</td><td><code>-0x400</code> (−1024)</td></tr>
+          <tr><td>Eye height source</td><td><code>[0x2253]</code> = <code>0xa0</code> (160)</td><td><code>[0x2345]</code> = <code>0x180</code> (384)</td></tr>
+          <tr><td>Viewpoint car <code>[0x97d]</code></td><td>follows the subject car</td><td>pinned to the pseudo-record at <code>0x99b</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Both eye heights are copied from values that sit static in the executable image, into the slot <code>[0x233f]</code> the camera reads. A Quick Race starts in View A. View B is an external view: its viewpoint is a pseudo-record at <code>DS:0x099B</code> rather than a real car.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>For a long stretch the port hardcoded an eye height of <code>0x180</code> and a pitch of <code>-0x400</code>, because the first camera capture happened to be taken in View B. Every later capture was in View A and disagreed. Five iterations produced plausible explanations that were all wrong. The answer came from a raw scan for writes to <code>[0x233f]</code>: exactly two sites, 64 bytes apart, the two view routines. The race-start residuals were exactly View B minus View A: 384 − 160 = 224 units of height and 1024 units of pitch, about 25 rows of horizon.</p></div>
+
+      <h3 id="horizon-row">The horizon row</h3>
+
+      <p>The camera's pitch is the sum of four terms: the road's own pitch where the car stands, the view's fixed pitch, the car's pitch term (entrant <code>+0xB6</code>) and a small camera bob that race control integrates. The horizon row is then:</p>
+
+      <pre><code>horizon_row = 0x50 + (sin(pitch) >> 6)      // clamped at the view bottom</code></pre>
+
+      <p>With a level camera the horizon sits on row 80 (<code>0x50</code>). The sine is a 1.14 fixed-point value, so shifting it right by six could move the horizon by at most 256 rows either way; the observed movement is a few rows. The port observed <code>[bp+0x130]</code> at 64 while driving and 66 at rest in one Suzuka session, which is this term at work. The vertical perspective scale <code>[bp+0x17c]</code> read <code>0x6e80</code> in the running game.</p>
+
+      <p>The car's world position has one subtlety. When the camera places the car between two records, it rotates by an <em>interpolated</em> cosine (see the next section), while pitch uses the plain table value. A moving car on a curve stayed one world unit wrong in the port until that interpolation (<span class="addr">0752:03C8</span>) was found.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Two camera comments in the port once cited <code>8C53</code> and <code>8D6A</code> for the pitch sum and the sine. A later check found that the first lands mid-instruction and the second is buffer zeroing, not trigonometry. The arithmetic is right; those two citations are not. The project now checks that any cited address falls on an instruction boundary before trusting it.</p></div>
+
+      <h2 id="trig">Angles and the cosine table</h2>
+
+      <p>Angles in F1GP are 16-bit words: <code>0x10000</code> is a full turn, <code>0x4000</code> a right angle. There is one trigonometry table in GP.EXE: a half-turn of cosines, one 16-bit word for every eight heading units, 4,097 words plus a spare. Values are 1.14 fixed point, so <code>0x4000</code> means 1.0.</p>
+
+      <ul>
+        <li><strong>Cosine</strong> takes the absolute value of the angle as a signed word, shifts it right three, and reads that word. Cosine is symmetric, so the half-turn covers everything.</li>
+        <li><strong>Sine</strong> is cosine of <code>0x4000 − angle</code>.</li>
+        <li><strong>Interpolated cosine</strong> (<span class="addr">0752:03C8..03FA</span>) reads the next word as well and blends by the angle's three low bits: <code>c + ((next − c) × (angle &amp; 7)) &gt;&gt; 3</code>. Only some callers use it; the others deliberately use the plain lookup.</li>
+      </ul>
+
+      <p>The port never approximates these with floating point. It reads the table from the player's own GP.EXE and applies the same shifts. That is the only way a sine, multiplied by a record heading and shifted six places, lands on the same pixel.</p>
+
+      <h2 id="projection">From world to screen</h2>
+
+      <p>Every point the renderer draws, whether a road edge, a kerb corner or a vertex of a grandstand, goes through the same short chain: move into camera space, rotate by the heading, divide by depth.</p>
+
+      <h3 id="anchor-transform">The anchor transform</h3>
+
+      <p>The shared stage is the anchor transform at <span class="addr">15F2:2B1B</span>. The road enters it at <span class="addr">2B49</span>, a sixteen-bit camera entry with no pre-scale. Objects enter at <code>2B1B</code> itself. The routine:</p>
+      <ol>
+        <li>takes the 32-bit horizontal and depth offsets from the camera and, unless the object is flagged near (<code>[0x2a4]</code> negative), shifts both right by three;</li>
+        <li>multiplies their low words by the 1.14 sine and cosine and rotates the pair;</li>
+        <li>keeps the horizontal result shifted right six, and the depth as the high word after two left shifts.</li>
+      </ol>
+
+      <p>Near objects keep eight times more precision than far ones. The near flag travels with every point as bit 15 of its flag word, and the near-plane clipper later has to reconcile points of the two scales.</p>
+
+      <h3 id="perspective">The perspective divide</h3>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 300" role="img" aria-label="Side view of the camera: eye height above the car, the near plane at depth 8, a point projected by dividing by its depth">
+          <g font-size="13" fill="currentColor">
+            <line x1="20" y1="250" x2="620" y2="250" style="stroke:var(--ink-3)" stroke-width="2"/>
+            <text x="620" y="272" text-anchor="end" style="fill:var(--ink-3)">road</text>
+            <rect x="40" y="228" width="70" height="22" rx="5" style="fill:var(--paper);stroke:currentColor" stroke-width="1.5"/>
+            <text x="75" y="244" text-anchor="middle">car</text>
+            <circle cx="90" cy="120" r="6" style="fill:var(--red)"/>
+            <line x1="90" y1="126" x2="90" y2="228" style="stroke:var(--red)" stroke-dasharray="4 3"/>
+            <text x="100" y="180" style="fill:var(--red)">eye height</text>
+            <text x="100" y="198" style="fill:var(--red)">0xa0 or 0x180</text>
+            <line x1="90" y1="120" x2="620" y2="120" style="stroke:var(--ink-3)" stroke-dasharray="2 4"/>
+            <text x="612" y="112" text-anchor="end" style="fill:var(--ink-3)">horizon: row 0x50 + (sin(pitch) &gt;&gt; 6)</text>
+            <line x1="150" y1="60" x2="150" y2="250" style="stroke:var(--blue)" stroke-width="2"/>
+            <text x="156" y="72" style="fill:var(--blue)">near plane, depth 8</text>
+            <circle cx="520" cy="200" r="6" style="fill:currentColor"/>
+            <text x="532" y="196">point</text>
+            <line x1="90" y1="120" x2="520" y2="200" style="stroke:currentColor" stroke-width="1.2"/>
+            <line x1="90" y1="276" x2="520" y2="276" style="stroke:var(--ink-3)"/>
+            <line x1="90" y1="270" x2="90" y2="282" style="stroke:var(--ink-3)"/>
+            <line x1="520" y1="270" x2="520" y2="282" style="stroke:var(--ink-3)"/>
+            <text x="305" y="294" text-anchor="middle" style="fill:var(--ink-3)">depth d (camera space)</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12.5">
+              <text x="230" y="30">column = 160 + (h &lt;&lt; 8) / d</text>
+              <text x="230" y="50">row = horizon − ((v × scale) &lt;&lt; k) / d</text>
+            </g>
+          </g>
+        </svg>
+        <figcaption>A point in front of the near plane is divided by its depth. The horizontal focal length is 256; the vertical goes through the perspective scale <code>0x6e80</code>. Points closer than depth 8 get clip flags and no screen position at all.</figcaption>
+      </figure>
+
+      <p>The per-point projector (<span class="addr">15F2:8D8F</span>, and its body <code>9078..91FC</code>) works like this:</p>
+
+      <ul>
+        <li>If the depth is below 8, the point takes the near path. It gets flag <code>0x10</code> plus left/right and above/below bits from the signs of its horizontal and vertical offsets. Its screen words are <strong>never written</strong>.</li>
+        <li>Otherwise the column is <code>160 + (horizontal &lt;&lt; 8) / depth</code>.</li>
+        <li>The row multiplies the vertical offset by the perspective scale, keeps the high word after one left shift, shifts that left by five (or eight for a near object), divides by depth, and applies a small rounding step (<code>8EBC..8EE2</code>) shared by every vertical divide. The result is subtracted from the camera's base row.</li>
+        <li>A column that will not fit in a word goes through a normalising branch (<code>2A1D</code>) that shifts numerator and vertical together until they fit, and records the remaining shift in the flags.</li>
+        <li>Finally each point gets clip bits for being off the left or right (column not in 0..319) or above or below the scene.</li>
+      </ul>
+
+      <h3 id="visibility">Visibility: the AND of the flags</h3>
+
+      <p>Before an object's elements are walked, the shape names a short list of points to test (<span class="addr">15F2:9877..989E</span>). The renderer ANDs their clip flags together, starting from the mask <code>0x1c</code> (left, right and near). If a bit survives the whole list, every test point lies beyond the same edge, and the object is skipped. If the accumulator reaches zero, the object is drawn at once.</p>
+
+      <p>No single point needs to be on screen. A tall sign can have its base off the left edge and its top off the right edge and still cross the screen. The port once required at least one visible point, and lost objects that the original drew.</p>
+
+      <h2 id="sky">Sky, panorama and ground</h2>
+
+      <p>Between the road pass and the edge builder, <span class="addr">15F2:7D2E..7DFD</span> paints everything above the road. It needs two rows: the road's top row (the higher row of the first scene header, and never above the tracked horizon), and the camera horizon <code>[bp+0x130]</code>, moved by the panorama's eight rows unless the car's section flag <code>0x08</code> hides the panorama.</p>
+
+      <p><strong>The sky</strong> comes from a table at <code>DS:0x76</code> in the executable (<code>7CE1..7D2D</code>). It is a list of pairs: a row count and a colour. The stage fills upward from the lower of the two rows, one band per pair, through the band filler <span class="addr">19ED:314A</span>. A colour at or below <code>0x10</code> is special: it produces a single row dithered between the neighbouring pairs' colours, with the next colour on even columns (<code>7CCC</code>). The shipped table is fifteen three-row bands with dithered seams, then one 250-row band that covers everything above. That gives the smooth-looking gradient with a handful of palette entries.</p>
+
+      <p><strong>The panorama</strong> is a 512 by 8 strip of scenery that each circuit file supplies, copied at load time. The drawer at <span class="addr">19ED:39ED</span> places its bottom row on the camera horizon, clips it to the road top, and picks the starting column from the heading:</p>
+
+      <pre><code>column = (camera_heading &gt;&gt; 5) &amp; 511</code></pre>
+
+      <p>A full turn is 65,536 heading units, and 65,536 shifted right five is 2,048 columns. The 512-pixel strip therefore repeats four times per full turn. When the wet-weather flag <code>SS:[0x122E]</code> is set, a helper then maps every copied panorama row through one of the four shade banks, picked from <code>SS:[0x0184]</code> plus one and clamped to 0..3, so the far scenery greys out in the rain.</p>
+
+      <p><strong>The ground</strong> colour (<code>[bp+0x1af]</code>, or <code>[bp+0x1ae]</code> when a flag at <code>[es:0x175]</code> has bit 7) fills from the road top down to the view bottom when the "outer fill" is on, or between the horizon and the road top otherwise.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>An early frame test fed the road scene no panorama, reasoning that the horizon was a separate stage. It is not: this stage paints it. The test was scoring a whole band of sky against a sky it never drew. Supplying the panorama moved the race-start score from 26.62% to 51.06% in one step, and it retracted a whole iteration's worth of shading analysis that had been built on the artefact.</p></div>
+
+      <h2 id="road-pass">The road pass</h2>
+
+      <p>A circuit is a ring of track records, 46 bytes each (Chapter 02 describes them). The road pass turns the records in view into three lists: segment entries, point blocks and object marks.</p>
+
+      <h3 id="bands">Walking back toward the car in bands</h3>
+
+      <p>The pass at <span class="addr">15F2:46C0</span> starts at the car's record plus its draw distance (a byte at record <code>+0x20</code>, 60 by default) and walks back toward the car, 46 bytes at a time. It divides the walk into four detail bands. The farther a band, the fewer features it draws:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 230" role="img" aria-label="The four detail bands along the road, from the far end of the draw distance to the car, each adding features">
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="60" width="300" height="40" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <rect x="320" y="60" width="140" height="40" style="fill:var(--blue-soft);stroke:var(--ink-3)"/>
+            <rect x="460" y="60" width="90" height="40" style="fill:var(--amber-soft);stroke:var(--ink-3)"/>
+            <rect x="550" y="60" width="70" height="40" style="fill:var(--red-soft);stroke:var(--ink-3)"/>
+            <text x="170" y="85" text-anchor="middle">outer edges <tspan font-family="IBM Plex Mono, monospace">0x300</tspan></text>
+            <text x="390" y="85" text-anchor="middle">+ verges <tspan font-family="IBM Plex Mono, monospace">0x30</tspan></text>
+            <text x="505" y="80" text-anchor="middle" font-size="12">+ edges,</text>
+            <text x="505" y="94" text-anchor="middle" font-size="12">kerbs <tspan font-family="IBM Plex Mono, monospace">0xf</tspan></text>
+            <text x="585" y="80" text-anchor="middle" font-size="12">+ pairs</text>
+            <text x="585" y="94" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace">0xc3</text>
+            <g style="stroke:var(--ink-3)"><line x1="320" y1="54" x2="320" y2="112"/><line x1="460" y1="54" x2="460" y2="112"/><line x1="550" y1="54" x2="550" y2="112"/></g>
+            <text x="320" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12">58</text>
+            <text x="460" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12">25</text>
+            <text x="550" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12">9</text>
+            <text x="620" y="130" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="12">car</text>
+            <text x="20" y="130" font-family="IBM Plex Mono, monospace" font-size="12">draw distance</text>
+            <text x="320" y="150" text-anchor="middle" style="fill:var(--ink-3)" font-size="12">records from the car</text>
+            <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--red)"/></marker></defs>
+            <line x1="40" y1="30" x2="600" y2="30" style="stroke:var(--red)" stroke-width="2" marker-end="url(#arr2)"/>
+            <text x="320" y="22" text-anchor="middle" style="fill:var(--red)">the pass walks far to near</text>
+            <text x="20" y="185">first record of a band: <tspan font-family="IBM Plex Mono, monospace">3EAA</tspan>   loop body: <tspan font-family="IBM Plex Mono, monospace">3FBF</tspan></text>
+            <text x="20" y="207">near the car: <tspan font-family="IBM Plex Mono, monospace">40EE</tspan> (in front)   <tspan font-family="IBM Plex Mono, monospace">4380</tspan> (behind)</text>
+          </g>
+        </svg>
+        <figcaption>Band limits as captured on Suzuka (9, 25 and 58 records). Each band adds feature bits to what the pass will draw. The limits are byte offsets in a small table at <code>DS:0x1d6..0x1e2</code>.</figcaption>
+      </figure>
+
+      <p>Each band reads a different feature byte from the record: <code>+0x2b</code> for outer edges, <code>+0xa</code> for strips, <code>+0x2a</code> for edges and kerbs, <code>+0x27</code> for the feature pairs. The pass doubles the byte into both halves of a word and masks it to <code>0x3ff</code>. A running mask <code>[0x142]</code> collects the bits the bands allow, and <span class="addr">3D76</span> clears the bits of any feature whose points have all left the screen.</p>
+
+      <p>A band's first record goes through <span class="addr">15F2:3EAA</span>; the rest go through the loop <span class="addr">15F2:3FBF</span>. Two more loops handle the stretch in front of the car (<span class="addr">40EE</span>, which forces the edge and kerb polygons closed three records out and switches the road colour four records out) and the records just behind it (<span class="addr">4380</span>).</p>
+
+      <h3 id="segment-entries">Segment entries mark changes, not records</h3>
+
+      <p>A record produces a 16-byte <em>segment entry</em> only when its feature byte carries bits the pass still allows. Most records on a straight have nothing new to say, so they add nothing. In one captured Suzuka frame, 22 entries covered 60 records. The list lives at <code>0xA13E..0xA47E</code>, room for 52 entries.</p>
+
+      <p>An entry holds the features, the closing bits that say where each feature's polygon ends, a flag (<code>0x80</code> in <code>[0x14a]</code>) for a record that faces more than a quarter turn away from the camera, the road colour, the kerb and strip colours (remapped through tables at <code>DS:0x208</code> and <code>DS:0x220</code>), and a distance key <code>[0x66]</code> the draw loop later uses to interleave objects.</p>
+
+      <h3 id="point-blocks">The point block: eighteen slots per record</h3>
+
+      <p>For each entry the band routine projects a block of eighteen twelve-byte anchor records, 216 bytes (<span class="addr">3474</span>, <span class="addr">3782</span>, <span class="addr">39EC</span> and <span class="addr">3BF1</span>, each falling through to the next lower band). Each point is the record's position moved sideways along its lateral axis, then run through the anchor transform at <span class="addr">2B49</span>. The road uses exactly the same arithmetic as the objects.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Slots</th><th>Feature</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>0, 3</td><td>Outer edges</td><td>Where the verge meets the scenery.</td></tr>
+          <tr><td>1, 2</td><td>Road edges</td><td>The tarmac boundary.</td></tr>
+          <tr><td>4, 5</td><td>Lateral feature pair</td><td>Width from record <code>+0x1c</code>; the second point sits half a verge from the first.</td></tr>
+          <tr><td>6, 7</td><td>Longitudinal feature pair</td><td>Width from <code>+0x1d</code>, same lateral formula.</td></tr>
+          <tr><td>8, 9</td><td>Left strip and its twin</td><td>The twin is raised by <code>DS:0x18c[axis_z &amp; 7]</code>.</td></tr>
+          <tr><td>10, 11</td><td>Right strip and its twin</td><td>As above.</td></tr>
+          <tr><td>12, 13</td><td>Left kerb inner and outer</td><td>Lifted <code>0x20</code>; <code>0x14</code> wide (or flat).</td></tr>
+          <tr><td>14, 15</td><td>Right kerb inner and outer</td><td>As above.</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The port proved this against 240 records captured over three frames and a throttle run. Every slot that appeared matched exactly: 162 outer edges, 79 road edges and 95 strips and twins. The later whole-frame capture exercised the feature pairs for the first time and exposed two small errors, both in where the second point of a pair sits.</p>
+
+      <h3 id="road-colour">The road colour</h3>
+
+      <p>The road colour comes from a triple of colours at <code>DS:0x258</code> (far, near, nearest), and the pass switches between them at the near band and four records out. Which of three triples it uses is chosen at <code>4669..469F</code> from a word at <code>[bp+0x150]</code>: below <code>-0x200</code> picks the second triple, <code>0x200</code> or more the third, anything between the first.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The port's reconnaissance named that word "pitch", and the code comments described the triples as "level, nose down, nose up". Tracing the writer showed <span class="addr">0752:75D8</span> copying the entrant's <code>+0x0A</code> field there. That is the car's <em>lateral</em> position on the road, not its pitch. The field keeps its old Rust name for compatibility; the behaviour follows the writer.</p></div>
+
+      <h3 id="horizon-tracker">Scene headers and the horizon tracker</h3>
+
+      <p>A road that rises and falls hides parts of itself. The original handles this without a depth buffer. When both outer edges of a record are present, the pass feeds their points to a horizon tracker (<code>320E</code>/<code>3341</code>). If the road rises above every earlier row, or dips back down after a crest, the tracker starts a <em>scene header</em>. Each header marks a stretch of road that will be drawn together, with the ground and sky filled up to its row.</p>
+
+      <p>When a point is off the screen sideways, the tracker recomputes its row from the true distance, through a three-step Newton square root (<span class="addr">0752:024E</span>) that lands one below the exact root for perfect squares. Afterwards <code>5473..5681</code> picks the header range, sets the horizon rows <code>[0x136..0x13a]</code>, writes a terminator header at row <code>0xa4</code> (164), and reduces the entries before the first header to their strips.</p>
+
+      <p>A negative <code>SS:0136</code> selects a reverse walk (entered at file offset <code>0x14D73</code>), with the next physical record as origin. This is the view looking back along the track. It is independent of the mirrors.</p>
+
+      <h2 id="edges-and-clipping">Edges, clipping and scan conversion</h2>
+
+      <p>After the pass, the edge builder <span class="addr">15F2:5682..5BB8</span> walks the entries from the far end and turns pairs of points into screen edges. Each entry gets a 120-byte structure: thirty four-byte descriptors, each a status byte and a pointer into a scan-line arena. A feature's point is joined to the same point of the last segment that carried that feature. If the record says the feature continues but no earlier segment supplied it, the point is joined to a fixed sentinel at screen <code>(160, 160)</code>. A <em>cross edge</em> joins a feature's two points where its polygon ends.</p>
+
+      <h3 id="near-clip">The near plane</h3>
+
+      <p>A point with depth below 8 has no screen position. An edge with such an endpoint cannot be clipped on screen, and the original does not try. The clipper tests the <code>0x10</code> bit and hands the edge to <span class="addr">15F2:0B3A..0D53</span>, which finds where the edge crosses the plane <code>depth = 8</code> in camera space and only then projects that crossing.</p>
+
+      <ol>
+        <li>If only one endpoint belongs to a near object, that endpoint's horizontal and depth are shifted right three, to match the other's scale. If that pushes the far endpoint inside the plane too, the edge is abandoned.</li>
+        <li>The parameter of the crossing is a 2.14 fraction: <code>((8 − near_depth) &lt;&lt; 14) / span</code>, with the span floored at 8.</li>
+        <li>Each axis is interpolated and projected in one step: <code>(near &lt;&lt; 5) + ((far − near) × t) &gt;&gt; 9</code>.</li>
+      </ol>
+
+      <p>The <code>&lt;&lt; 5</code> looks arbitrary. It is not. The ordinary projection is <code>(x &lt;&lt; 8) / depth</code>, and on the near plane the depth is 8, so <code>(x &lt;&lt; 8) / 8</code> is <code>x &lt;&lt; 5</code>. The <code>&gt;&gt; 9</code> brings the 2.14 product back onto that scale.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>The port's first projector returned "no position" for a near point and dropped any polygon that had one. Half a grandstand vanished. A provisional rasteriser that tried to draw the result flooded the frame from a vertex 17,648 pixels off screen. Near-clipped geometry lands far outside the frame by design; the answer is outcodes and a clipping fill, not a bigger canvas.</p></div>
+
+      <h3 id="outcodes">Outcodes and the screen clip</h3>
+
+      <p>The screen clipper at <span class="addr">15F2:0E59</span> is a Cohen-Sutherland clipper. Each point carries a four-bit outcode:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 300" role="img" aria-label="Cohen-Sutherland outcodes around the 320 by 164 scene: bottom 1, top 2, right 4, left 8, and near 0x10">
+          <g font-size="13" fill="currentColor" font-family="IBM Plex Mono, monospace">
+            <rect x="170" y="70" width="300" height="154" style="fill:var(--blue-soft);stroke:var(--blue)" stroke-width="2"/>
+            <g style="stroke:var(--ink-3)" stroke-dasharray="4 4">
+              <line x1="20" y1="70" x2="620" y2="70"/><line x1="20" y1="224" x2="620" y2="224"/>
+              <line x1="170" y1="20" x2="170" y2="280"/><line x1="470" y1="20" x2="470" y2="280"/>
+            </g>
+            <text x="320" y="150" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600">0  on screen</text>
+            <text x="320" y="170" text-anchor="middle" font-size="12">x 0..319, y 0..163</text>
+            <text x="320" y="50" text-anchor="middle">2 top</text>
+            <text x="320" y="258" text-anchor="middle">1 bottom</text>
+            <text x="95" y="150" text-anchor="middle">8 left</text>
+            <text x="545" y="150" text-anchor="middle">4 right</text>
+            <text x="95" y="50" text-anchor="middle">0xa</text>
+            <text x="545" y="50" text-anchor="middle">6</text>
+            <text x="95" y="258" text-anchor="middle">9</text>
+            <text x="545" y="258" text-anchor="middle">5</text>
+            <text x="470" y="292" text-anchor="middle" font-size="12">x = 320 kept exact</text>
+            <text x="620" y="228" text-anchor="end" font-size="12">y = 164</text>
+          </g>
+        </svg>
+        <figcaption>The four outcode bits. A fifth, <code>0x10</code>, marks a point in front of the near plane. An edge whose two outcodes share a bit is rejected outright; the corner tables at <code>DS:0x264..0x294</code> turn out to be nothing more than "which screen corners does this outcode span".</figcaption>
+      </figure>
+
+      <p>The clipper orders each edge lower-to-upper and clips in a fixed order: bottom, top, left, right. The screen is half-open: pixels 0 to 319 and rows 0 to 163. But clipped endpoints keep the exclusive boundary values 320 and 164, because the scan converter and fill that follow expect them there.</p>
+
+      <p>The intersection arithmetic truncates twice. For a clip at distance <code>d</code> along an edge with deltas <code>a</code> and <code>b</code>, the clipper forms a 16.16 ratio <code>(a &lt;&lt; 16) / b</code>, truncated, then multiplies and keeps the high word, truncated again. It compares the magnitudes with signed jumps even though the divide and multiply are unsigned. Every one of those details moves a pixel on some frame.</p>
+
+      <p>An edge rejected without a stream gets status <code>0x80</code>. Bottom clipping that leaves both points beyond the same side yields <code>0x81</code> or <code>0x84</code>; top clipping yields <code>0x88</code> or <code>0x82</code>. The fill reads these statuses later to decide which screen border a polygon may run along.</p>
+
+      <h3 id="edge-streams">Edge streams</h3>
+
+      <p>The scan converter (<span class="addr">15F2:12D2..1408</span>) writes each surviving edge into the arena as a stream: a four-word header (lower y, upper y, lower x, upper x), then one x word for every row from the bottom upward, then the terminator <code>0x8000</code>. It steps with a Bresenham-style error term that starts at the complement of half the major delta. The arena is reset every frame (<code>[0x2aa] = 0xB458</code>).</p>
+
+      <h2 id="polygon-fill">Filling polygons</h2>
+
+      <p>The filler at <span class="addr">15F2:1409..22A8</span> is the only routine that paints road and object polygons. It is handed a <em>ring</em> of edge descriptors, a colour and the polygon's accumulated status flags (<code>[0x640]</code>).</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 320" role="img" aria-label="A polygon ring: the fill starts at the lowest edge, walks the left side forward and the right side backward, and fills each row from left to right, bottom up">
+          <g font-size="13" fill="currentColor">
+            <path d="M250,280 L140,150 L230,50 L420,40 L520,170 L430,280 Z" style="fill:var(--amber-soft);stroke:none"/>
+            <g stroke-width="2.5" fill="none">
+              <line x1="250" y1="280" x2="140" y2="150" style="stroke:var(--blue)"/>
+              <line x1="140" y1="150" x2="230" y2="50" style="stroke:var(--blue)"/>
+              <line x1="230" y1="50" x2="420" y2="40" style="stroke:var(--ink-3)"/>
+              <line x1="420" y1="40" x2="520" y2="170" style="stroke:var(--red)"/>
+              <line x1="520" y1="170" x2="430" y2="280" style="stroke:var(--red)"/>
+              <line x1="430" y1="280" x2="250" y2="280" style="stroke:var(--ink-3)"/>
+            </g>
+            <g style="stroke:var(--ink-3)" stroke-width="1">
+              <line x1="233" y1="260" x2="447" y2="260"/><line x1="216" y1="240" x2="463" y2="240"/><line x1="199" y1="220" x2="480" y2="220"/>
+            </g>
+            <text x="150" y="230" style="fill:var(--blue)" font-weight="600">left side</text>
+            <text x="150" y="248" style="fill:var(--blue)">cursor walks forward</text>
+            <text x="470" y="248" style="fill:var(--red)" font-weight="600">right side</text>
+            <text x="470" y="266" style="fill:var(--red)">cursor walks backward</text>
+            <text x="340" y="305" text-anchor="middle">start: the stream whose head is lowest</text>
+            <text x="340" y="160" text-anchor="middle">rows filled bottom-up</text>
+            <text x="340" y="178" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12">as [left, right)</text>
+            <text x="325" y="30" text-anchor="middle" style="fill:var(--ink-3)">sides meet: done</text>
+          </g>
+        </svg>
+        <figcaption>The fill picks the descriptor whose stream starts lowest on screen, then walks two cursors round the ring in opposite directions. When a stream ends, the next descriptor must begin on that same row.</figcaption>
+      </figure>
+
+      <h3 id="fill-walk">The walk</h3>
+
+      <p>The fill first computes the ring's size in bytes and stores it in two places: <code>[0x2fa]</code>, which stays fixed for the wrap arithmetic, and <code>[0x63c]</code>, the live count of descriptor bytes still to consume. An empty ring returns at once.</p>
+
+      <p>The chooser (<code>1473..1491</code>) walks the ring four bytes at a time, reading the word at each descriptor's stream pointer: the lower y of that edge. It keeps the maximum with a signed, strictly-greater compare, so the first of any tie wins. If that edge's stream runs in its stored direction, it starts the left side and the previous descriptor starts the right; a reversed start swaps the two. The left cursor then walks forward through the ring and the right cursor backward, until the two meet. A shared count stops either side from taking a descriptor the other already owns.</p>
+
+      <p>Rows are filled bottom-up. The first filled row is one above the lower y, and each row is written as the half-open span <code>[left, right)</code>, without swapping if the two x values cross.</p>
+
+      <h3 id="fill-fork">The three-way fork</h3>
+
+      <p>After the chooser, <span class="addr">15F2:1495..14AB</span> forks three ways, on the ring's accumulated corner bits and the chosen descriptor's <code>0x40</code> status bit:</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Path</th><th>Condition</th><th>Target</th><th>Polygons at race start</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>no corner bits in <code>[0x640]</code></td><td><span class="addr">15F2:1797</span></td><td>9</td></tr>
+          <tr><td>B</td><td>corner bits set, <code>0x40</code> set</td><td><span class="addr">15F2:1623</span></td><td>2</td></tr>
+          <tr><td>C</td><td>corner bits set, <code>0x40</code> clear</td><td><span class="addr">15F2:14AE</span></td><td>1</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The three paths differ in one thing. B and C pair the chosen descriptor with its successor or predecessor, exactly as A does, but they also back <code>[0x63c]</code> up by one four-byte entry, so a polygon that touches a screen corner consumes one more descriptor. The <code>0x40</code> bit records whether the edge's stored direction was reversed.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>A breakpoint census on all three targets, over the twelve polygons that reach the fill in the race-start frame, gave the 9 / 2 / 1 split above. Every earlier probe had been set on path A, so paths B and C were invisible. On a two-descriptor ring the predecessor and the successor are the same descriptor, so for most polygons the branch cannot change the result at all. That helps explain why four earlier attempts to wire the choice each cost pixels: for most polygons the difference had to be elsewhere.</p></div>
+
+      <h3 id="boundary-bridges">Running along the screen border</h3>
+
+      <p>A polygon that leaves the screen has edges that stop at the border. The fill bridges the gap with a synthetic stream along the border itself: <code>x = 0</code> from a 165-word table at <code>DS:0x360..0x4A8</code>, or <code>x = 320</code> from <code>DS:0x4F2..0x63A</code>. The table is indexed backwards from the row the real edge ended on, and its terminator joins the next real descriptor. The polygon's flags must allow each bridge: <code>0x08</code> permits the left border up to row 0, <code>0x02</code> the right; a start clipped at the bottom bridges from row 164 under <code>0x01</code> or <code>0x04</code>. Any inconsistency abandons the polygon at <span class="addr">1DE4</span>, keeping the rows already filled.</p>
+
+      <h3 id="row-masks">Row masks: cutting out the cockpit</h3>
+
+      <p>Rows 103 to 163 are partly hidden by the cockpit nose. Rows from the view bottom <code>[bp+0x132]</code> down take a masked writer (<span class="addr">182A</span>, with <code>1AAB..1B1E</code>). Each such row has five words, stored as five parallel arrays at <code>SS:0x6364</code>: a canvas offset, a covered interval and an outer interval. The writer clamps the span to the outer interval, and if it crosses the covered middle it writes the surviving left and right pieces separately.</p>
+
+      <p>These masks are built at startup (<span class="addr">0752:CF2B..CF9C</span>) by scanning the cockpit picture itself for a marker colour in the left half of each row; the right bounds are the reflection about column 320. The table in the executable image is non-zero, but the game overwrites every row it uses. In cockpit frames the view bottom was observed at 103, so the mask path is live for the whole lower window. An earlier reading had concluded the masked path never ran; later captures showed it does.</p>
+
+      <h3 id="patterned-fill">The patterned colour <code>0x1b</code></h3>
+
+      <p>One polygon colour is not a colour. <code>0x1b</code> asks for a textured fill, used for things like the grandstand crowd. When the scene flag at <code>[bp+0x124a]</code> is clear, the fill simply writes <code>0x0a</code> instead. When it is set, the fill copies each span from a 512-byte-wide pattern: its source is part of the cockpit picture (the 1,024 bytes at <code>+1000</code>), with four shaded copies made through the shade banks at startup (<code>ECC3..ECE8</code>), and a list of 64 per-row offsets produced from 4,096 draws of the game's random number generator (<code>8150..817D</code>). Each row advances a row index, adds that row's offset, wraps at 511 and copies.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>The biggest single difference in the race-start frame was once a wedge of flat <code>0x1b</code> where the original had a crowd dither: 1,699 pixels of "ours <code>0x1b</code>, theirs <code>0x27</code>". The grandstand call turned out to be one fill of 4,447 pixels over columns 0 to 130, rows 19 to 80, through the textured boundary path at <code>1E9A</code>. It was not a missing transform at all.</p></div>
+
+      <h2 id="road-draw">Drawing the road</h2>
+
+      <p>With every list built, <span class="addr">15F2:8A9A</span> paints. First it sorts the object marks (next section but one). Then it resets thirteen polygon rings, one per polygon type, at <code>DS:0xA70A</code>. Each ring is <code>0x106</code> bytes: a left cursor, a right cursor, a flags word and sixty-four descriptor slots, with both cursors starting at slot 32.</p>
+
+      <p>The strip-only entries before the first header are drawn first. Then, for each scene header in turn:</p>
+      <ol>
+        <li>The band filler <span class="addr">19ED:314A</span> fills the rows from the previous header's row down to this one with the road colour.</li>
+        <li><span class="addr">5EE0</span> draws, per entry, the left and right verges, the lateral and longitudinal feature pairs and, in a second loop, the ground beyond the outer edges.</li>
+        <li><span class="addr">6E95</span> draws the strips, the kerbs and the kerb-to-outer-edge polygons, drawing each object whose key has come due between them.</li>
+      </ol>
+
+      <p>A ring collects one polygon across consecutive entries. An edge that joins the previous segment is pushed on the ring's left side (with its reversal bit flipped by <code>xor ax,0x40</code>) or its right side. When an entry's closing bits say the polygon ends, the cross edge closes the left side, the colour is shaded, the ring goes to the filler, and the same cross edge restarts the ring as the far edge of the next polygon.</p>
+
+      <p>The shade comes from <span class="addr">15F2:22FA</span>. The distance is the entry's key minus the car's key <code>[0x68]</code>, with a per-feature floor (2 for verges, 4 for pairs, 5 for strips, 1 for kerbs, 0 for ground). The shade level is <code>(distance − 10) &gt;&gt; 3</code>, capped at four levels, and indexes the four shade banks.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>One Suzuka practice frame was traced fill by fill in the running original: 26 entries, 59 road fills, 18 object fills, 8 object draws and 34 framebuffer dumps. The port reproduces every road polygon's ring, colour and flags in order, and every pixel of the first thirty fills against the framebuffer the original held before its next stop, masking only pixels that objects painted. Dropping the left-side reversal flip turned the test red at the first strip. This test runs in an ordinary <code>cargo test</code> with no emulator.</p></div>
+
+      <h2 id="objects">Trackside objects and shapes</h2>
+
+      <p>Trees, grandstands, bridges, signs, marshals and cars are all <em>objects</em>. Objects are placed on the track by the loader as 46-byte runtime object records, and each record's class byte indexes the circuit's object-setting table at <code>DS:[0x23a]</code>.</p>
+
+      <h3 id="placement">Placement</h3>
+
+      <p>The object stage at <span class="addr">15F2:A89A</span> takes one runtime object record and derives its world position, heading, height, shape, palette list and scale patch. Sideways offsets use the record's lateral axis:</p>
+
+      <pre><code>offset_along_axis = ((axis &gt;&gt; 6) × distance) &gt;&gt; 5</code></pre>
+
+      <p>In the port's measurements an object distance of 256 is one road half-width. It then calls the shape walker at <span class="addr">15F2:9315</span>. The walker looks up the view-relative rotation, moves the position into camera space, chooses near or far precision, and lets the anchor transform write the anchor that every shape point is projected from. <code>9454..96E5</code> then works out the depth used to pick a detail level, a screen-angle correction and the optional scale-word patch.</p>
+
+      <h3 id="shape-format">The shape format</h3>
+
+      <p>A shape starts with a 32-byte header. Five words in it are pointers, and they divide the rest of the shape into sections in a fixed order.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 250" role="img" aria-label="Shape layout: a 32-byte header whose pointers at +2, +6, +10, +14 and +28 mark the scale words, graphical elements, points, vectors and the angle-indexed element tables">
+          <g font-size="13" fill="currentColor">
+            <rect x="10" y="120" width="90" height="46" style="fill:var(--paper);stroke:currentColor"/>
+            <rect x="100" y="120" width="90" height="46" style="fill:var(--blue-soft);stroke:currentColor"/>
+            <rect x="190" y="120" width="120" height="46" style="fill:var(--amber-soft);stroke:currentColor"/>
+            <rect x="310" y="120" width="110" height="46" style="fill:var(--green-soft);stroke:currentColor"/>
+            <rect x="420" y="120" width="90" height="46" style="fill:var(--red-soft);stroke:currentColor"/>
+            <rect x="510" y="120" width="120" height="46" style="fill:var(--paper-2);stroke:currentColor"/>
+            <text x="55" y="140" text-anchor="middle" font-weight="600">header</text><text x="55" y="157" text-anchor="middle" font-size="12">32 bytes</text>
+            <text x="145" y="140" text-anchor="middle" font-weight="600">scale</text><text x="145" y="157" text-anchor="middle" font-size="12">words</text>
+            <text x="250" y="140" text-anchor="middle" font-weight="600">graphical</text><text x="250" y="157" text-anchor="middle" font-size="12">test pts, elements</text>
+            <text x="365" y="140" text-anchor="middle" font-weight="600">points</text><text x="365" y="157" text-anchor="middle" font-size="12">8 bytes each</text>
+            <text x="465" y="140" text-anchor="middle" font-weight="600">vectors</text><text x="465" y="157" text-anchor="middle" font-size="12">2 bytes</text>
+            <text x="570" y="140" text-anchor="middle" font-weight="600">element</text><text x="570" y="157" text-anchor="middle" font-size="12">lists by angle</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12.5">
+              <text x="100" y="98" text-anchor="middle">+2</text>
+              <text x="190" y="98" text-anchor="middle">+6</text>
+              <text x="310" y="98" text-anchor="middle">+10</text>
+              <text x="420" y="98" text-anchor="middle">+14</text>
+              <text x="510" y="98" text-anchor="middle" style="fill:var(--red)">+28</text>
+            </g>
+            <g style="stroke:var(--ink-3)" fill="none"><path d="M100,104 L100,118"/><path d="M190,104 L190,118"/><path d="M310,104 L310,118"/><path d="M420,104 L420,118"/></g>
+            <path d="M510,104 L510,118" style="stroke:var(--red)" stroke-width="2"/>
+            <text x="510" y="52" text-anchor="middle" style="fill:var(--red)">end of vectors</text>
+            <text x="510" y="70" text-anchor="middle" style="fill:var(--red)">= first detail record's list table</text>
+            <text x="10" y="200">Header also: <tspan font-family="IBM Plex Mono, monospace">+0</tspan> extent, <tspan font-family="IBM Plex Mono, monospace">+0x12</tspan> point height, <tspan font-family="IBM Plex Mono, monospace">+0x14</tspan> anchor height,</text>
+            <text x="10" y="222">detail records from <tspan font-family="IBM Plex Mono, monospace">+0x16</tspan>, ten bytes each: depth, scale mask, angle shift, list table</text>
+          </g>
+        </svg>
+        <figcaption>The header word at <code>+28</code> is read twice, and both readings are right: it ends the vector array and it is the first detail record's element-table offset, because the tables begin exactly where the vectors end (true on all twelve Suzuka shapes).</figcaption>
+      </figure>
+
+      <p>The pieces:</p>
+      <ul>
+        <li><strong>Detail records</strong> start at header <code>+0x16</code> and repeat every ten bytes: the largest depth the level serves, a mask that selects scale words, an angle shift and the offset of an angle-indexed table of element lists. The walker takes the first record whose depth threshold is not below the object's depth. A shape that is too far for its last level is not drawn.</li>
+        <li><strong>Points</strong> are eight bytes: two axis words, a signed vertical offset, and a partner index. A point whose first word has bit 15 set is a <em>reference</em> point: it reuses another point's column and depth and only recomputes its own row. A shape may have at most 86 points; the projected-point records at <code>DS:0x830..0xD90</code> and the visited flags at <code>DS:0xF10..0xF66</code> both allow exactly that many.</li>
+        <li><strong>Vectors</strong> are two-byte pairs of point indices: the edges polygons are built from.</li>
+        <li><strong>Graphical elements</strong> follow the visibility test points. An indicator with bit 7 is a line (three bytes) when bit 5 is set, otherwise a bitmap (four bytes, six with an inline palette offset). Anything else is a polygon: a colour, then directed vector bytes to a zero, plus a cull point when the colour carries <code>0x40</code>.</li>
+        <li><strong>Element lists by angle.</strong> For the current view angle the walker shifts the angle by the detail record's shift, makes it even, and indexes the table to find which elements to draw and in what order. This is how a building shows the right faces from each side without any hidden-surface test.</li>
+      </ul>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Same silhouette, wrong colour means the wrong <em>face</em>, not a palette bug. The port first drew structures from the flat element stream instead of the detail level's angle-indexed list. Fixing it gained 0.61% of the whole race-start frame, the largest gain since the car grid landed.</p></div>
+
+      <h3 id="scale-tables">Scale tables: no multiplies per point</h3>
+
+      <p>A shape's points do not store coordinates directly. Their two axis words are offsets into three small tables that the walker builds once per object (<span class="addr">15F2:96EC..9834</span>) at <code>DS:0xD90</code>, <code>DS:0xE10</code> and <code>DS:0xE50</code>. For every scale word the detail mask selects, the tables hold <code>±(scale word × rotated axis component)</code>: the vertical, the cosine and the sine of the object's view-relative heading and slope. The negated copy of slot <code>k</code> sits at slot <code>k + 16</code>.</p>
+
+      <p>The product is a scale word times a 1.14 component. A near object keeps it as <code>product &gt;&gt; 14</code>; a far object as <code>product &gt;&gt; 17</code>, three bits less, to match the anchor's far pre-scale. A point's camera position is then just additions:</p>
+
+      <pre><code>horizontal = cos_table[first]  + sin_table[second] + anchor.horizontal
+depth      = cos_table[second] − sin_table[first]  + anchor.depth
+vertical   = point.vertical + vert_table[second]   + anchor.vertical</code></pre>
+
+      <p>Each point is projected the first time a test or element names it, and the record is reused after that. The port verified this word for word against live records for two Phoenix shapes.</p>
+
+      <h3 id="executable-shapes">Seventeen shapes inside GP.EXE</h3>
+
+      <p>Most shapes come from the circuit file. Seventeen live in the executable instead. <span class="addr">15F2:9346</span> resolves a shape id through a far-pointer table at <code>25B3:358D</code>; ids below 17 point into the program's own data segment. Ten are polygon shapes, including shape 0, the car. Seven (5 and 7 to 12) are billboards with null section pointers and a lone detail record naming a bitmap. Shape 5 is the tree; 7 and 9 to 12 are marshals, whose bitmap bytes game logic animates at run time.</p>
+
+      <p>Before drawing, <code>15F2:AA3C..AA64</code> writes an object setting's word into three resident shapes: the sign-face bitmap in shapes 1 and 13, and the tree's bitmap index in shape 5. The original patches its resident copy in place, so one tree shape serves every tree species a circuit asks for.</p>
+
+      <h2 id="shading">Shade banks, distance and weather</h2>
+
+      <p>The game has no lighting. Distance and weather are expressed by remapping palette indices through four 256-entry <em>shade banks</em>. The banks do not exist in the executable image; its bytes at that location are zeros. They are computed at startup from the palette by <span class="addr">EA2D</span> (with <code>EA7F</code>, <code>EB9A</code> and <code>EC3D</code>) and live at <code>7BCE:7BC0</code>. The arithmetic deliberately treats palette components as raw bytes and keeps the 8086 byte wrapping, because the game's palette staging can hold values larger than six bits.</p>
+
+      <p>The road's polygons shade by record distance, as described above. Objects shade by depth through <span class="addr">15F2:9271</span>:</p>
+
+      <ol>
+        <li>Take the anchor depth (an eighth of it for near objects), but at least an eighth of the shape's extent.</li>
+        <li>Add <code>0x80</code> and clamp to <code>0..0x3c00</code>.</li>
+        <li>The level is <code>((high_byte − 5) &gt;&gt; 3)</code> clamped to 0..4, then minus one.</li>
+        <li>Level −1 copies the object's sixteen source colours unchanged. Levels 0 to 3 remap them through that shade bank.</li>
+      </ol>
+
+      <p>The code has a level-4 branch that would flatten all sixteen colours to the fog colour <code>[ss:0x1b2]</code>. It can never run. The clamp caps the level at 4 <em>before</em> the decrement, so the deepest level is 3. The fog fill is dead code in v1.05.</p>
+
+      <p>The result is a sixteen-entry colour table per object. A polygon's colour byte is an index into that table, not a palette index. A line uses entry zero.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Because polygon colours are shade-row indices, only values 0 to 15 mean anything. When the port authored new scenery for Bahrain, the shapes decoded correctly but some fills vanished: the authored colours <code>0x10</code> to <code>0x30</code> indexed past the end of the sixteen-entry row. The encoder now rejects them.</p></div>
+
+      <p><strong>Weather.</strong> When the wet flag <code>SS:[0x122E]</code> is set, three places change. The road shade clamps the distance to <code>0..0x78</code>, multiplies by the fog scale <code>SS:[0x182]</code>, and takes the high byte, clamped to four levels. The object shade takes the depth times the same scale, clamped 1..4 and decremented, so it starts at level 0 even for a nearby object. The bitmap drawer (<code>1931</code>) picks its bank from its divisor and the same two words. And the panorama rows are shaded, as described in the sky section.</p>
+
+      <p><strong>The texture mode.</strong> <span class="addr">15F2:89D4</span> is an optional pass that runs after every road, object and nested-scene draw, and re-shades only the road and ground indices <code>0x12</code> and <code>0x1A</code> in the finished canvas. Its gate is bit 7 of <code>[ss:0x11a6]</code>, whose only writer toggles it on the release edge of an option bit, through a one-shot latch: a player-operated switch. It is not part of a default frame.</p>
+
+      <h2 id="bitmaps">Bitmaps and billboards</h2>
+
+      <p>Distant cars, trees, marshals, signs and wheels are bitmaps. The game keeps them in two archive files. <code>F1GPDATA</code>'s first 32-bit word sizes its directory; a directory entry with bit 31 set routes the record to <code>F1GPDATB</code>. A two-byte record whose first word has bit 15 set (but not bit 14) is an alias: the drawer masks it to a byte and looks that record up instead.</p>
+
+      <h3 id="choosing-a-frame">Choosing a frame by angle</h3>
+
+      <p>A billboard should show the side of the object that faces the camera. The shape's bitmap element does not name an archive record directly. It names a seed, and the selector at <span class="addr">15F2:9969..9A6F</span> combines it with angles:</p>
+
+      <ul>
+        <li>Seeds of <code>0x4b</code> and above are fixed records; two indicator bits pick a centred or negated direction.</li>
+        <li>Seeds <code>0x42</code> to <code>0x4a</code> quantise the object's own angle term in <code>0x1000</code>-unit steps.</li>
+        <li>Lower seeds start from the view heading adjusted by a screen-angle table, fold the result into a half turn, and step through records every <code>0x200</code> units.</li>
+      </ul>
+
+      <p>The screen-angle table has 256 entries indexed by the projected column's distance from the centre, 160. It holds <code>atan(offset / 256)</code>, which matches the projection's 256 focal length: an object at the edge of the screen is seen from a slightly different angle than one in the middle. Wiring the live table removed a small bias the port had when it assumed zero.</p>
+
+      <p>An object can also be drawn entirely as one bitmap. After the anchor, <span class="addr">15F2:961F</span> picks the detail record; a record whose scale mask has no sign bit sends the object to the billboard path at <span class="addr">15F2:A4E5..A648</span> instead of the point projector.</p>
+
+      <h3 id="bitmap-drawer">The bitmap drawer</h3>
+
+      <p>The drawer at <span class="addr">15F2:2458</span> takes the record, a direction, the anchor column and row, the object's depth as the divisor and a palette list. It:</p>
+
+      <ol>
+        <li>derives a 13.19 fixed-point scale step from the record header and the divisor;</li>
+        <li>builds an <em>endpoint table</em> of up to 256 screen columns, stepping by that scale (reversed for a negative direction, so the same bitmap draws mirrored);</li>
+        <li>builds sixteen palette words, either straight from the palette list or through a shade bank;</li>
+        <li>walks rows upward from the base row. A 32-bit accumulator advanced by the step per screen row gives the source row in its high word (<code>25D3..2721</code> set it up), so bitmaps shrink vertically by the same scale as horizontally;</li>
+        <li>decodes each source row as runs: a command byte picks one of the sixteen palette words, and two endpoint bytes pick columns from the endpoint table.</li>
+      </ol>
+
+      <p>A row ends at its zero terminator. In the shipped archives, 658 of 9,404 row fragments hold a second, unused sequence after the terminator, in the filler before the next row's offset. The drawer ignores it, and so must any decoder. Rows from 103 down take a separate loop that applies the cockpit masks.</p>
+
+      <h2 id="cars">Cars</h2>
+
+      <p>Cars are not a separate renderer. They are objects that borrow track records for one frame.</p>
+
+      <h3 id="car-marks">Marking the records</h3>
+
+      <p><span class="addr">15F2:AFA3</span> walks the track-order ring at <code>25B3:0C65</code> backwards from the viewpoint car's own place. That ring is the <em>spatial</em> order of the field round the lap, sorted on record <code>+0x26</code>, not the race classification. For each car it accepts, it stamps one track record:</p>
+
+      <ul>
+        <li><code>+0x26</code> gets <code>0xC0</code>, <code>+0x2a</code> and <code>+0x0a</code> get bit 7;</li>
+        <li><code>+0x1e</code>, the class byte, becomes <code>0x80 | place_byte</code>, where the place byte (entrant <code>+0x66</code>) is <strong>twice</strong> the car's place in the track order.</li>
+      </ul>
+
+      <p>Classes therefore run <code>0x80, 0x82, …</code>, and the consumers' guard <code>cmp cx,0xb4</code> (<code>0x80 | 2×26</code>) sends anything at or above it down the generic object path. The walk examines at most 26 places. It stops when a draw budget <code>[0x2225]</code> runs out; that budget is derived from the frame rate and clamped to 12..23. A car excluded by entrant <code>+0x96</code> bit 7 costs nothing; the camera's own car, when hidden, costs a place.</p>
+
+      <p>If the car's own record is already claimed this frame, the walk steps forward to the next free record, and each step adds one to the car's <strong>draw-order bias</strong> at entrant <code>+0x84</code>. The bias starts at 1, or 2 when the folded angle between camera and road at <code>[es:0x186]</code> is <code>0x2000</code> or more. Both readers negate it.</p>
+
+      <p>After every pass has drawn, <span class="addr">15F2:B1A7</span> takes the stamps off. It is a <em>mask</em>, not a restore: it clears <code>+0x26</code> bits 6 and 7, bit 7 of <code>+0x2a</code> and <code>+0x0a</code>, writes zero to <code>+0x1e</code>, and also clears bit 7 of <code>+0x2b</code>, which the mark never set.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The port had two of the three subtleties wrong at first. It used the entrant's index instead of twice its place, and it saved and restored the stamped bytes. A restore diverges from the original the moment a marked record already carried any of those bits, and it leaves the fifth byte's bit set when the original would have cleared it.</p></div>
+
+      <h3 id="draw-order">The draw order</h3>
+
+      <p>The road pass collects an object mark for every record whose feature byte (or <code>+0x26</code> in the counted loops) has its sign bit set: a key, a second key and the record. Before drawing, <span class="addr">15F2:5BB9..5E8A</span> sorts them into two lists. Each mark's object setting supplies a draw-order offset (its word <code>+0xa</code>: low byte at least 2, high byte flags); car classes look theirs up through the order ring and the entrant's <code>+0x84</code> bias instead.</p>
+
+      <ul>
+        <li>A record with <code>+0x26</code> bit <code>0x40</code> goes to the first list with its key <em>reduced</em> by the offset. That list is drawn once both strips of the current entry are present.</li>
+        <li>Every other mark goes to the second list with its key <em>raised</em> by the offset (or replaced by the distance to a car when the record's <code>+0x1f</code> bit 2 is set), clamped below the current header when the setting asks.</li>
+        <li>Both lists are bubble-sorted, largest key first. The draw loop consumes the second list before each entry.</li>
+      </ul>
+
+      <p>This is the whole of the game's hidden-surface logic between road and objects: a sort key and a hand-tuned bias per object type.</p>
+
+      <h3 id="drawing-a-car">Drawing a car</h3>
+
+      <p>A marked record reaches the object stage like any other. The class picks resident shape 0, the car. Near, it is a polygon shape whose element list includes the wheels as bitmaps, gated by entrant <code>+0x96</code> bit <code>0x20</code>; far, the detail level switches to a billboard and the angle selector picks the frame. The team's colours come from a palette list chosen with a signed subtract, including edge cases at team 0 and team 129. Damaged or special cars (entrant <code>+0x97</code> bit 7 or <code>+0x9A</code> bit <code>0x10</code>) go through their own composition at <code>15F2:ABA7..AFA2</code>.</p>
+
+      <h2 id="walls">Walls</h2>
+
+      <p>Walls are drawn by the road pass, not the object system. Two track-file commands mark them: <code>0x8a</code> sets bit <code>0x80</code> (lateral wall) and <code>0x8b</code> sets bit <code>0x40</code> (longitudinal wall) in record <code>+0x1f</code>, across a run of records, and build a small table at scene <code>0xb6</code>: five 8-entry byte tables, three computed outputs and two static sources. Suzuka carries three <code>0x8a</code> and two <code>0x8b</code> commands; a live capture showed 76 of its records with a wall bit.</p>
+
+      <p>During the pass, <span class="addr">15F2:3474</span> handles a lateral wall and <span class="addr">15F2:3606</span> a longitudinal one (the same routine reading <code>+0x1d</code> and bit <code>0x40</code>). The wall's type (its feature byte minus <code>0x7c</code>) indexes the three computed tables, which supply a height adjustment and sideways offsets, and each point goes through the same <code>2B49</code> projection as the road.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>For a while every wall call site in the port passed "no walls". The whole wall draw body could be deleted and 738 tests stayed green. The four frozen Suzuka frames happened to contain no wall record. An oracle only covers the path its test takes; the project now breaks a new path deliberately before citing any suite as evidence for it.</p></div>
+
+      <h2 id="mirrors">The mirrors</h2>
+
+      <p>The two rear-view mirrors do not render a second road scene. They are cheaper than that:</p>
+
+      <ol>
+        <li>Inside the sky stage, a far call into the <code>19ED</code> segment copies two opaque 48 by 22 rectangles from the cockpit picture's atlas, at <code>(0,16)</code> and <code>(64,16)</code>, into the mirror positions at <code>(0,116)</code> and <code>(272,116)</code>. It runs only when <code>[0x981]</code> is zero, and before the sky and ground bands.</li>
+        <li>Cars behind the player are then drawn as <em>reflected</em> car billboards. A shape-0 object below a scene threshold enters a reflected path; the sign of its horizontal position picks the mirror and a centre offset of −140 or +140; the usual quantised trigonometry, projector and farthest bitmap detail feed the ordinary billboard selector.</li>
+        <li>Mirror bitmaps clip against their own mask table for rows 116 to 137, built at startup by scanning the mirror interiors in the cockpit picture for two marker colours. The vertical quotient is scaled by <code>SS:017E</code>, except for three specific records.</li>
+      </ol>
+
+      <p>The port's lesson here was about finding code, not reading it. The mirror copy is a far call, so a scan for near <code>call rel16</code> instructions never found it, and the routine switches its data segment mid-way, so memory dumps taken under the frame's segment returned plausible but wrong words.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>The mirror replay matched 43 captured mirror shape calls, 51 bitmap canvases, 78 band canvases and 4 backdrops, as complete canvas comparisons. The first run failed at one moving-car pixel: the endpoint generator put the negative edge one step early. Fixing that shared generator made all 43 natural bitmap canvases match.</p></div>
+
+      <h2 id="hud">The cockpit HUD</h2>
+
+      <p>Everything below row 163 is the cockpit panel. The HUD is not drawn with a font engine; each element is a small rectangle copied from elsewhere in the same cockpit picture, or a glyph from a digit bank in the executable. Positions below are screen pixels.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Element</th><th>Where</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>MPH</td><td>(111, 183)</td><td>Three zero-padded digits from the high word of <code>velocity × 0x02BA</code>. Glyphs are eight rows, seven visible bits, seven-pixel advance, drawn by <span class="addr">213F:3927</span> from the caller at <span class="addr">213F:184B</span>.</td></tr>
+          <tr><td>Gear</td><td>(265, 145)</td><td>A 5 by 10 character inside the dashboard's shaded ring. R, N and 1 to 6 sit in sixteen-pixel cells of a staging row. Neutral is copied like every other gear.</td></tr>
+          <tr><td>Engine indicator</td><td>(98, 165)</td><td>An opaque 6 by 6 image with two states, stored bottom-up outside the visible canvas.</td></tr>
+          <tr><td>POS</td><td>label (124, 194)</td><td>A copied label and digits from the same 7 by 8 bank.</td></tr>
+          <tr><td>LAP / OF</td><td>labels (166, 184), (203, 184)</td><td>Copied labels; digits right-aligned at (181, 183) and (214, 183).</td></tr>
+          <tr><td>Grid position</td><td>(270, 162)</td><td>15 by 13 cells for positions 1 to 6, from the cockpit atlas.</td></tr>
+          <tr><td>Driving aids</td><td>(133, 168), pitch 15</td><td>Six 10 by 5 icons. Each comes from one of three banks: selected, allowed but off, or not allowed. They encode the aid masks, not the session.</td></tr>
+          <tr><td>Start lights</td><td>panel (224, 8)</td><td>An 80 by 47 gantry panel, then three 19 by 14 opaque lamp tiles in a red row and a green row, swapped dim to red to green.</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The port checked these against captures of the running game. For example, stable captures at race positions 4, 24 and 26 pin the position label copy and the right-aligned use of the shared 7 by 8 digit bank.</p>
+
+      <h2 id="proving-it">Proving it pixel by pixel</h2>
+
+      <p>Writing a renderer that looks like F1GP is easy. Writing one that produces the same bytes is not, and nothing short of the same bytes would do for the port. The method changed several times before it worked.</p>
+
+      <h3 id="race-start-oracle">The race-start page oracle</h3>
+
+      <p>The first problem was the camera. The port's early renderer drew through a camera built from its own provisional physics, so its car was never exactly where the original's was. The way through was to pick the one frame where no physics has run: the race start. The car is stationary, so the original's own car state can be injected exactly.</p>
+
+      <p>The capture recipe starts the game under the emulator, selects Quick Race (the top menu item, which goes straight to Suzuka), presses Enter on the focused <code>O.K.</code>, and waits a fixed 600 ticks of the recipe's clock. Three runs from independently staged copies of the install gave the same frame checksum and a byte-identical car record, so the frame is deterministic. The recipe asserts both hashes, and the captured frame is never committed: it is regenerated from the player's own install.</p>
+
+      <h3 id="whole-frame-diffs">Whole-frame diffs, and the confounds</h3>
+
+      <p>The first comparisons were scores: the percentage of the frame's 64,000 pixels that matched. The journey shows how misleading a score can be.</p>
+
+      <ol class="timeline">
+        <li><time>26.62%</time><h4>Road scene only</h4><p>The first race-start comparison. The test fed no panorama.</p></li>
+        <li><time>51.06%</time><h4>Panorama supplied</h4><p>The sky band had been scored against a sky the test never drew.</p></li>
+        <li><time>68.47%</time><h4>Eleven exact rows</h4><p>Rows 92 to 102 matched all 320 pixels. Row 103 dropped to 75%: the test was scoring the road against the cockpit.</p></li>
+        <li><time>42.31% → 77.81%</time><h4>The real frame</h4><p>Driving the public render path brought in objects and the cockpit. The first run scored lower, until the test also ran the two presentation steps the game runs.</p></li>
+        <li><time>77.25%</time><h4>Down, honestly</h4><p>Near clipping made the grandstand the right shape in the wrong colour. The score fell; the picture got closer.</p></li>
+        <li><time>79.22%</time><h4>The right faces</h4><p>Angle-indexed element lists replaced the flat stream.</p></li>
+        <li><time>0 / 64,000</time><h4>Exact</h4><p>On 14 September 2026 the source runtime renderer matched four complete presented pages with no mismatches.</p></li>
+      </ol>
+
+      <p>Six times, a "renderer defect" turned out to be the test running less of the pipeline than the game does. Among them: no panorama, no cockpit presenter, and a race-start frame that drew no competitor cars. The project's rule became: check that the test runs what play runs before theorising about a residual. The other rule was to look at the pictures. Two iterations of histograms and per-row analysis produced a wrong cause; a whole-frame difference map (red where pixels differ, a dimmed original elsewhere) named the crowd, the gantry, the barrier, car outlines, mirrors and HUD text as separate problems in one glance.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>A differential test that suppresses a call and sees "no change" proves nothing unless the destination was poisoned first. Otherwise the suppressed call simply leaves the previous frame's pixels in place. This produced a false refutation of the nested pit scene routine before the poison step was added.</p></div>
+
+      <h3 id="exact-oracle">The exact oracle</h3>
+
+      <p>The final acceptance does not score. It captures, from the running original, the complete memory banks after the camera stage, the resource bank, the texture state, fingerprints of the code involved, the original canvas and the presented page, for four frames: one stationary and three moving. The port then renders from those inputs and compares complete 320 by 200 pages.</p>
+
+      <div class="stats">
+        <div class="stat"><b>0 / 64,000</b><span>mismatched pixels on each of four presented pages</span></div>
+        <div class="stat"><b>9,980</b><span>mismatches after a deliberate one-byte canvas shift, proving the test can fail</span></div>
+        <div class="stat"><b>16</b><span>circuit files with source-road acceptance by 18 September 2026</span></div>
+      </div>
+
+      <p>Three tests pass on those captures: the runtime renderer against the original pages, the production native renderer against the same pages, and the two against each other. The run was repeated on fresh captures on 15 and 18 September 2026. By 18 September each of the sixteen circuit files had four natural captures and eight authored seam and distance cases, checked on entries, marks, headers, edges, retained road state and order state.</p>
+
+      <p>The claim has edges, and the project states them. The race-start captures are dry, so they do not exercise the wet shading call sites. A source-authenticated Phoenix moving frame exposed a road-edge rejection mismatch, fixed and independently verified, but the all-circuit native road comparator still needs a complete Phoenix rerun before parity is claimed for every circuit.</p>
+
+      <h2 id="enhanced-renderer">The enhanced renderer</h2>
+
+      <p>Once the exact renderer matched, the port added an optional second picture: the same scene redrawn at the window's resolution, with sharp edges instead of scaled-up pixels. It is off by default and chosen on the Big Race options page.</p>
+
+      <p>The exact frame is always drawn anyway. It reads and writes game memory during a frame (car marks on road records, the pit-crew overlay's use of the shared random number generator), so skipping it would desynchronise the race. And it cannot simply be given a bigger canvas: the scan-line arena, the edge rings and every rounding step assume 320 by 164.</p>
+
+      <p>So the enhanced renderer <em>replays</em> the exact one. Every terminal drawing site of the exact pipeline, main and pit scenes alike, can hand a command to a sink in the order it paints:</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 260" role="img" aria-label="The exact renderer records draw commands; the enhanced rasteriser replays them at window size; composition chooses enhanced pixels only where the published scene still shows">
+          <defs><marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="10" y="30" width="180" height="70" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="100" y="58" text-anchor="middle" font-weight="600">Exact renderer</text>
+            <text x="100" y="78" text-anchor="middle" style="fill:var(--ink-3)">320 × 164, unchanged</text>
+            <rect x="230" y="30" width="180" height="70" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="320" y="52" text-anchor="middle" font-weight="600">Command list</text>
+            <text x="320" y="71" text-anchor="middle" font-size="12">Band, Polygon, Bitmap,</text>
+            <text x="320" y="87" text-anchor="middle" font-size="12">Line, Horizon, Texture</text>
+            <rect x="450" y="30" width="180" height="70" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="540" y="58" text-anchor="middle" font-weight="600">Replay at W × H</text>
+            <text x="540" y="78" text-anchor="middle" style="fill:var(--ink-3)">float edges, indices</text>
+            <rect x="10" y="160" width="180" height="70" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="100" y="188" text-anchor="middle" font-weight="600">Published copy</text>
+            <text x="100" y="208" text-anchor="middle" style="fill:var(--ink-3)">scene rows + mask</text>
+            <rect x="230" y="160" width="400" height="70" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="430" y="184" text-anchor="middle" font-weight="600">Compose each output pixel</text>
+            <text x="430" y="204" text-anchor="middle" font-size="12">enhanced only if: in scene, masked, page byte still</text>
+            <text x="430" y="220" text-anchor="middle" font-size="12">equals the published copy, and outside both mirrors</text>
+            <g style="stroke:var(--ink-3)" stroke-width="1.5" fill="none" marker-end="url(#arr3)">
+              <line x1="190" y1="65" x2="227" y2="65"/><line x1="410" y1="65" x2="447" y2="65"/>
+              <line x1="100" y1="100" x2="100" y2="157"/><line x1="540" y1="100" x2="540" y2="157"/>
+              <line x1="190" y1="195" x2="227" y2="195"/>
+            </g>
+          </g>
+        </svg>
+        <figcaption>The enhanced picture reuses every decision the exact renderer made. Anything the game paints after the scene is published (map, HUD, messages, pit crew) still wins, because its bytes no longer match the published copy.</figcaption>
+      </figure>
+
+      <p>The key observation came from the design review: every writer in the exact pipeline is an opaque overwrite into one layer, in back-to-front order, with no coverage test inside any fill. The recorded sequence is therefore a complete painter's order, and replaying it needs no depth buffer. An earlier design that recorded camera-space road points was rejected by three independent reviewers and an external review, for concrete reasons: the road's points are projected from track space, two of the eighteen slots are derived rather than projected, near points keep the previous frame's screen words, and a fill's edge endpoints are found by feature carry rather than adjacency. Only the resolved screen-space commands hold exactly what was painted.</p>
+
+      <p>The replay scales x and y independently (<code>x × W / 320</code>, <code>y × H / 164</code>) and fills polygons from float edges with half-open pixel coverage, so edges are straight and sharp. Per-pixel patterns (the sky dither, the <code>0x1b</code> crowd, the panorama) sample the source pixel, so they look as they do in the original, only bigger. Bitmaps use the original row-walk rule with the geometry scaled and nearest-neighbour sampling. The output is palette indices, not colours, so palette fades apply to both halves of the picture and a palette-only change is a lookup. The cockpit, HUD and mirrors stay as the original draws them, scaled.</p>
+
+      <p>Measured in a release build at 1280 by 960, a full composition plus a cached palette-only one took 1.7 ms. Replayed at the native 320 by 164 against the in-repo Suzuka fixture, 0.21% of pixels had a colour that appears nowhere in the matching 3 by 3 neighbourhood of the exact frame. And with the renderer on, the game's memory after a frame is byte-identical to the off case: the new picture only reads.</p>
+
+      <div class="callout how"><span class="label">How it works</span><p>The whole renderer reduces to one idea the enhanced mode makes visible: F1GP decides everything at 320 by 164, in integers, and then paints in order. Reproduce the decisions exactly and the order comes for free. That is why the port could prove the original pixel for pixel first, and only then draw it at any size.</p></div>
+
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
