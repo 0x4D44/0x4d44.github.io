@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How a Formula One Grand Prix circuit is stored in F1CT01..16.DAT and how the game's track expander turns a few kilobytes of sections and commands into a 46-byte-per-unit running track, its racing line, pit lane and scenery.">
+  <title>Circuits in a file — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 02</p>
+      <h1>Circuits in a file</h1>
+      <p class="lede">Each of the sixteen circuits ships as one small file. It holds no 3D model of the track. It holds a list of instructions: go this far, bend this much, climb this much, put a wall here. At load time the game runs those instructions and builds the real track, one 46-byte record for every sixteen feet of tarmac. This chapter follows that process from the file's bytes to the track the cars drive on. It ends with the two circuits the port authored from scratch.</p>
+
+      <h2 id="sixteen-files">Sixteen files, one grammar</h2>
+      <p>The stock circuits live in <code>F1CT01.DAT</code> to <code>F1CT16.DAT</code>, in calendar order. Phoenix is 01, Interlagos 02, Imola 03, Monte-Carlo 04, Montreal 05, Mexico City 06, Magny Cours 07, Silverstone 08, Hockenheim 09, Hungaroring 10, Spa-Francorchamps 11, Monza 12, Estoril 13, Barcelona 14, Suzuka 15 and Adelaide 16. All sixteen use the same format. The port's catalogue (<code>src/circuit_catalog.rs</code>) keeps these sixteen IDs exactly as they are. Its separate user-facing catalogue (<code>src/track_catalog.rs</code>) adds authored tracks after them.</p>
+      <p>Much of the port's evidence comes from Suzuka. The v1.05 Practice route loads <code>F1CT15.DAT</code>, not Phoenix, and the emulator captures of the running game were taken there. Suzuka's main track expands to 1,203 records. That number comes up often below.</p>
+      <p>The file format was documented long ago by the community ArgDocs reference, which the port's parsers credit (<code>src/track.rs</code>, <code>src/track_sections.rs</code>, <code>src/track_shapes.rs</code>). What ArgDocs could not give was the executable's side: what the loader actually does with each byte. The port recovered that by reading the loader's code and checking every result against tables captured from the running original.</p>
+
+      <h2 id="envelope">The file envelope</h2>
+      <p>A track file is a fixed front section followed by variable data, ending in a checksum.</p>
+      <ul>
+        <li><strong>Horizon, bytes 0x0000–0x0FFF.</strong> A 512 × 8 indexed image: the distant panorama drawn behind the circuit (4,096 bytes, row-major).</li>
+        <li><strong>Offset table, bytes 0x1000–0x100F.</strong> Eight little-endian words. The first must be <code>0x1010</code>, the base every other offset is relative to. Word 4 locates the checksum, word 5 the object settings, and word 6 the track data. Word 7, at <code>0x100E</code>, is the number of 3D object shapes.</li>
+        <li><strong>Shape table and shapes.</strong> At <code>0x1010</code> sits one four-byte pointer per shape, then the shapes themselves.</li>
+        <li><strong>Object settings.</strong> Fixed 16-byte records between the object-data and track-data offsets. Each one describes how to place a shape beside the road.</li>
+        <li><strong>Track data.</strong> A short header, then the section stream, the encoded racing line, 38 bytes of driving parameters, the pit-lane section stream and a loader tail.</li>
+        <li><strong>Checksum, last four bytes.</strong> Two 16-bit words computed over every byte before them. One is a plain wrapping sum. The other is rotated left three bits before each byte is added. The checksum offset must point exactly four bytes from the end, or the parser rejects the file.</li>
+      </ul>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 430" role="img" aria-label="Layout of an F1GP track file from horizon image to checksum">
+          <g font-size="12">
+            <rect x="20" y="10" width="220" height="30" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="30" y="30" fill="currentColor">Horizon 512 × 8</text>
+            <text x="252" y="30" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">0x0000</text>
+            <text x="320" y="30" style="fill:var(--ink-3)">4,096 bytes of panorama</text>
+
+            <rect x="20" y="44" width="220" height="30" fill="none" style="stroke:var(--red)"/>
+            <text x="30" y="64" fill="currentColor">Offset table (8 words)</text>
+            <text x="252" y="64" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">0x1000</text>
+            <text x="320" y="64" style="fill:var(--ink-3)">base 0x1010, checksum, objects, track, shape count</text>
+
+            <rect x="20" y="78" width="220" height="30" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="30" y="98" fill="currentColor">Shape pointers + shapes</text>
+            <text x="252" y="98" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">0x1010</text>
+            <text x="320" y="98" style="fill:var(--ink-3)">4 bytes per shape, then shape bodies</text>
+
+            <rect x="20" y="112" width="220" height="30" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="30" y="132" fill="currentColor">Object settings</text>
+            <text x="252" y="132" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">objects</text>
+            <text x="320" y="132" style="fill:var(--ink-3)">16-byte records</text>
+
+            <rect x="20" y="146" width="220" height="30" fill="none" style="stroke:var(--blue)"/>
+            <text x="30" y="166" fill="currentColor">Track header</text>
+            <text x="252" y="166" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">track</text>
+            <text x="320" y="166" style="fill:var(--ink-3)">start pose, width, verges, kerb colours</text>
+
+            <rect x="20" y="180" width="220" height="44" fill="none" style="stroke:var(--blue)"/>
+            <text x="30" y="200" fill="currentColor">Main section stream</text>
+            <text x="30" y="216" style="fill:var(--ink-3)" font-size="11">sections + commands … FFFF</text>
+            <text x="320" y="206" style="fill:var(--ink-3)">the circuit itself</text>
+
+            <rect x="20" y="228" width="220" height="30" fill="none" style="stroke:var(--blue)"/>
+            <text x="30" y="248" fill="currentColor">Racing line blocks … 0000</text>
+            <text x="320" y="248" style="fill:var(--ink-3)">variable-length blocks</text>
+
+            <rect x="20" y="262" width="220" height="30" fill="none" style="stroke:var(--blue)"/>
+            <text x="30" y="282" fill="currentColor">Driving parameters</text>
+            <text x="320" y="282" style="fill:var(--ink-3)">38 bytes, decoded to DS:0204..0229</text>
+
+            <rect x="20" y="296" width="220" height="44" fill="none" style="stroke:var(--blue)"/>
+            <text x="30" y="316" fill="currentColor">Pit section stream</text>
+            <text x="30" y="332" style="fill:var(--ink-3)" font-size="11">sections + commands … FFFF</text>
+            <text x="320" y="322" style="fill:var(--ink-3)">the pit lane, same grammar</text>
+
+            <rect x="20" y="344" width="220" height="30" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="30" y="364" fill="currentColor">Loader tail</text>
+            <text x="320" y="364" style="fill:var(--ink-3)">further records (e.g. lap count)</text>
+
+            <rect x="20" y="378" width="220" height="30" fill="none" style="stroke:var(--red)"/>
+            <text x="30" y="398" fill="currentColor">Checksum (2 words)</text>
+            <text x="252" y="398" fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">end − 4</text>
+            <text x="320" y="398" style="fill:var(--ink-3)">sum, and rotate-left-3 sum</text>
+          </g>
+        </svg>
+        <figcaption>The whole file. Blue blocks form the "track data" that the loader expands; they sit one after another with no index between them, so the loader finds each one by reading the previous one to its terminator.</figcaption>
+      </figure>
+
+      <div class="callout trap"><span class="label">The trap</span><p>On 4 September the port found 738 bytes after Suzuka's first <code>0xffff</code> terminator: the main stream used 1,432 of the 2,170 bytes. A delegated decode claimed the expander simply kept reading past the terminator for a second run. Resuming the section parser there produced five "sections", one command and then an unknown-command error. The bytes had a regular 12-byte stride in two circuits, and a 10-byte section record with a zero second byte misparses easily against zero-padded data. The team recorded the claim as half right and did not act on it. Later loader work settled what follows the terminator: the encoded racing line, 38 bytes of driving parameters, and then the pit stream.</p></div>
+
+      <h2 id="header">The track header</h2>
+      <p>The track data begins with a header of word values. The loader reads it word by word (<code>OriginalTrackStart</code> in <code>src/original_track_table.rs</code>):</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Word</th><th>Meaning to the loader</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Heading of the first record (a 16-bit angle; the full circle wraps at 65,536)</td></tr>
+          <tr><td>1</td><td>Pitch of the first record</td></tr>
+          <tr><td>2, 3, 4</td><td>Start position: X, height, Z</td></tr>
+          <tr><td>5</td><td>Road half-width in world units</td></tr>
+          <tr><td>7</td><td>Side and scenery flags, copied to <span class="addr">DS:0174</span>. Bit <code>0x02</code> picks the side of the pit entry, bit <code>0x08</code> the side of the exit; the same byte gates the outer ground fill</td></tr>
+          <tr><td>8</td><td>Right (low byte) and left (high byte) verge widths that the first section ramps from</td></tr>
+          <tr><td>9</td><td>Number of kerb colour entries that follow</td></tr>
+          <tr><td>10…</td><td>Kerb colour list: selector 8 is a fixed kerb and takes one word; every other selector takes two</td></tr>
+        </tbody>
+      </table></div>
+      <p>ArgDocs names some of these fields differently. The port's first parser, <code>TrackFile</code> in <code>src/track.rs</code>, follows ArgDocs. The loader port follows the executable. The kerb list becomes a four-row kerb colour table, and eight "height words" are copied into two banks of scene data (<code>src/original_runtime_track_header.rs</code>, file <code>902DC..9041B</code>). The loader then enters the expander.</p>
+
+      <h2 id="section-stream">The section stream</h2>
+      <p>The heart of the file is a flat stream of two kinds of record, read two bytes at a time.</p>
+      <ul>
+        <li><strong>A section</strong> is ten bytes. Byte 0 is its length in track units and byte 1 is zero. Then come a signed curvature word, a signed height word, a flags word, and one byte each for the right and left verge widths.</li>
+        <li><strong>A command</strong> starts with a one-byte argument and then a command byte between <code>0x80</code> and <code>0xAC</code>. A per-command number of 16-bit argument words follows: none for <code>0x83</code>, one for <code>0x80</code>, two for <code>0x85</code>, five for the wall commands <code>0x8a</code>/<code>0x8b</code>.</li>
+        <li><strong>The terminator</strong> is the two bytes <code>0xff 0xff</code>.</li>
+      </ul>
+      <p>The rule that tells them apart is simple: if the second byte is zero, it is a section. So a section can never be longer than 255 units; a length of 256 would put a non-zero high byte where the parser looks for a command. The port's authoring tool splits long straights for exactly this reason. Commands attach to the section that follows them, and the one-byte argument usually says how many records ahead of the current position the command acts.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 250" role="img" aria-label="Byte layout of a section record, a command record and the terminator">
+          <g font-family="IBM Plex Mono, monospace" font-size="11">
+            <text x="10" y="22" fill="currentColor" font-family="IBM Plex Sans, sans-serif" font-size="13" font-weight="600">Section, 10 bytes</text>
+            <g transform="translate(10,32)">
+              <rect x="0" width="56" height="34" fill="none" style="stroke:var(--blue)"/><text x="8" y="22" fill="currentColor">len</text>
+              <rect x="56" width="56" height="34" fill="none" style="stroke:var(--blue)"/><text x="72" y="22" fill="currentColor">00</text>
+              <rect x="112" width="112" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="126" y="22" fill="currentColor">curvature</text>
+              <rect x="224" width="112" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="244" y="22" fill="currentColor">height</text>
+              <rect x="336" width="112" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="360" y="22" fill="currentColor">flags</text>
+              <rect x="448" width="56" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="462" y="22" fill="currentColor">R</text>
+              <rect x="504" width="56" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="518" y="22" fill="currentColor">L</text>
+            </g>
+            <text x="10" y="102" fill="currentColor" font-family="IBM Plex Sans, sans-serif" font-size="13" font-weight="600">Command, 2 + 2n bytes</text>
+            <g transform="translate(10,112)">
+              <rect x="0" width="56" height="34" fill="none" style="stroke:var(--red)"/><text x="8" y="22" fill="currentColor">arg</text>
+              <rect x="56" width="56" height="34" fill="none" style="stroke:var(--red)"/><text x="64" y="22" fill="currentColor">80–AC</text>
+              <rect x="112" width="112" height="34" fill="none" style="stroke:var(--ink-3)"/><text x="138" y="22" fill="currentColor">word 1</text>
+              <rect x="224" width="112" height="34" fill="none" style="stroke:var(--ink-3)" stroke-dasharray="4 3"/><text x="252" y="22" fill="currentColor">word 2</text>
+              <text x="350" y="22" fill="currentColor">… up to 5 words</text>
+            </g>
+            <text x="10" y="182" fill="currentColor" font-family="IBM Plex Sans, sans-serif" font-size="13" font-weight="600">Terminator</text>
+            <g transform="translate(10,192)">
+              <rect x="0" width="56" height="34" fill="none" style="stroke:var(--ink)"/><text x="18" y="22" fill="currentColor">FF</text>
+              <rect x="56" width="56" height="34" fill="none" style="stroke:var(--ink)"/><text x="74" y="22" fill="currentColor">FF</text>
+            </g>
+            <text x="150" y="214" style="fill:var(--ink-3)" font-family="IBM Plex Sans, sans-serif" font-size="12">Second byte zero → section; 0x80+ → command.</text>
+          </g>
+        </svg>
+        <figcaption>The two record shapes of the section stream. The second byte decides everything, which is why section lengths stop at 255 and why command bytes all sit at 0x80 and above.</figcaption>
+      </figure>
+
+      <p>Suzuka's main stream holds 76 sections and 153 commands. The sections carry the shape; the commands carry nearly everything else: width changes, scenery, walls, pit-lane markers, draw distances and anchor points.</p>
+
+      <h3>Curvature and height</h3>
+      <p>A section's curvature is how much the heading turns per track unit. Its "height" field is the vertical equivalent: how much the <em>pitch</em> changes per unit. Neither is a position. The track's shape only exists once the loader integrates them, unit by unit, from the start pose in the header.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>Before the loader was ported, the project's first renderer had to guess what the height field meant. On 30 August the team checked all sixteen stock files. Individual height values ranged from −88 to +182, yet <code>sum(height × length)</code> stayed between −11 and +21 on every circuit, and two circuits used only zero. A value that sums to almost nothing over a lap behaves like a rate of change, not an altitude, just as curvature must sum to one full turn. The design treated height as a pitch increment and was marked as falsifiable. The real loader later confirmed the model, and on 10 September the guessed renderer was retired in favour of the original code.</p></div>
+
+      <h2 id="expander">The track expander</h2>
+      <p>The code that turns the stream into a track sits in an overlay whose code segment starts at file offset <code>0x90000</code> of the unpacked executable. In the game's runtime addressing, <span class="addr">19ED:X</span> is file offset <code>X + 0x8B4D0</code>, so the expander's entry <span class="addr">19ED:519F</span> is file <code>0x9066F</code>. It fires once when a session's track is built, with <code>ES:DI</code> pointing at the output table.</p>
+      <p>The port found it by an unusual route. Cited addresses had drifted, so the team searched the whole 600 KB image for one distinctive instruction pair, <code>CWD; IDIV</code>, which the width-ramp command uses. One scan found it at <code>0x90a5c</code>. From there the command dispatcher was easy to recognise: it subtracts <code>0x80</code> from the command byte and switches on the result in <code>cl</code>.</p>
+
+      <h3>Two passes, one switch</h3>
+      <p>The expander reads each stream <em>twice</em>. A single byte, <span class="addr">DS:0238</span>, says which pass is running. The code at file <code>9066F..9069B</code> sets it to <code>0</code> for the first pass and <code>0x80</code> for the second, and it does this for both the main and the pit bank.</p>
+      <ul>
+        <li><strong>Pass 1 (DS:0238 = 0)</strong> walks every section and writes the geometry: heading, pitch, position, width, verges and the trackside pattern bytes. First-pass commands change state for the records that follow: road width (<code>0x85</code>), pattern channels (<code>0x8e</code>/<code>0x8f</code>, <code>0x94</code>/<code>0x95</code>), lane flags (<code>0x98</code>/<code>0x99</code>), a marker bit (<code>0x83</code> clears it, <code>0x84</code> sets it), a reversed half-step (<code>0xa5</code>), and the pit entry and exit (<code>0x86</code>/<code>0x87</code>).</li>
+        <li><strong>Pass 2 (DS:0238 = 0x80)</strong> walks the stream again with a cursor over the finished records. It attaches everything that needs a finished record to point at: object placements (<code>0x80</code>), draw-distance seeds (<code>0x81</code>/<code>0x82</code>), walls (<code>0x8a</code>/<code>0x8b</code>), pit strip bits (<code>0x88</code>/<code>0x89</code>), flag runs (<code>0x92</code>, <code>0x93</code>, <code>0xa8</code>), height words (<code>0x9a</code>), far pointers (<code>0x9b</code>–<code>0x9e</code>), anchors (<code>0x9f</code>/<code>0xa0</code>) and pit joins (<code>0xa1</code>–<code>0xa4</code>).</li>
+      </ul>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Because the game builds a main bank and a pit bank, it was tempting to read <span class="addr">DS:0238</span> as "main or pit". It is not. It selects the pass, and object placement (<code>0x80</code>) runs during the second pass of <em>either</em> bank. Getting this wrong puts pit-lane scenery in the wrong place or nowhere at all.</p></div>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 330" role="img" aria-label="Pipeline of the track expander: header setup, pass one, lap closure, pass two, then the pit bank and the racing line">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-size="12" fill="currentColor">
+            <rect x="10" y="12" width="190" height="52" rx="6" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="22" y="34">Header setup</text>
+            <text x="22" y="52" style="fill:var(--ink-3)" font-size="11">start pose, kerbs, heights</text>
+
+            <rect x="225" y="12" width="190" height="52" rx="6" fill="none" style="stroke:var(--blue)"/>
+            <text x="237" y="34">Pass 1 — DS:0238 = 0</text>
+            <text x="237" y="52" style="fill:var(--ink-3)" font-size="11">geometry + pattern bytes</text>
+
+            <rect x="440" y="12" width="190" height="52" rx="6" fill="none" style="stroke:var(--blue)"/>
+            <text x="452" y="34">Pass 2 — DS:0238 = 0x80</text>
+            <text x="452" y="52" style="fill:var(--ink-3)" font-size="11">objects, walls, marks</text>
+
+            <rect x="440" y="100" width="190" height="52" rx="6" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="452" y="122">Close the lap</text>
+            <text x="452" y="140" style="fill:var(--ink-3)" font-size="11">spread error, draw distances</text>
+
+            <rect x="225" y="100" width="190" height="52" rx="6" fill="none" style="stroke:var(--red)"/>
+            <text x="237" y="122">Pit bank</text>
+            <text x="237" y="140" style="fill:var(--ink-3)" font-size="11">restore state saved at 0x86</text>
+
+            <rect x="10" y="100" width="190" height="52" rx="6" fill="none" style="stroke:var(--red)"/>
+            <text x="22" y="122">Pit passes 1 + 2</text>
+            <text x="22" y="140" style="fill:var(--ink-3)" font-size="11">close onto main exit</text>
+
+            <rect x="10" y="190" width="190" height="52" rx="6" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="22" y="212">Racing line</text>
+            <text x="22" y="230" style="fill:var(--ink-3)" font-size="11">writes +0x16 / +0x18</text>
+
+            <rect x="225" y="190" width="190" height="52" rx="6" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="237" y="212">Speed annotation</text>
+            <text x="237" y="230" style="fill:var(--ink-3)" font-size="11">writes +0x2C</text>
+
+            <rect x="440" y="190" width="190" height="52" rx="6" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="452" y="212">Features, metadata</text>
+            <text x="452" y="230" style="fill:var(--ink-3)" font-size="11">strip weights, marks</text>
+
+            <line x1="200" y1="38" x2="223" y2="38" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="415" y1="38" x2="438" y2="38" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="535" y1="64" x2="535" y2="98" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="440" y1="126" x2="417" y2="126" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="225" y1="126" x2="202" y2="126" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="105" y1="152" x2="105" y2="188" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="200" y1="216" x2="223" y2="216" stroke="currentColor" marker-end="url(#arr2)"/>
+            <line x1="415" y1="216" x2="438" y2="216" stroke="currentColor" marker-end="url(#arr2)"/>
+            <text x="10" y="280" style="fill:var(--ink-3)" font-size="11">The loader runs these in source order and publishes one finished image (src/original_runtime_cold_track.rs).</text>
+            <text x="10" y="300" style="fill:var(--ink-3)" font-size="11">Main table A lands at 4813:0030; pit table B at 381C:D7AE. Both bases are static words at DS:879F and DS:8797.</text>
+          </g>
+        </svg>
+        <figcaption>The loader's order of work. The racing line and speed passes run after both banks exist, because they read finished geometry.</figcaption>
+      </figure>
+
+      <h3>What each command does</h3>
+      <p>The table lists the commands whose effect the port has traced. The parser also accepts <code>0x8c</code>/<code>0x8d</code>, <code>0x90</code>/<code>0x91</code>, <code>0xa6</code>/<code>0xa7</code>, <code>0xaa</code>, <code>0xab</code> and <code>0xac</code> with their argument counts; <code>0xab</code> publishes two words to <span class="addr">DS:0192</span> in the first pass, and the others are outside this chapter.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Command</th><th>Pass</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>0x80</code></td><td>2</td><td>Place a trackside object. The word is a byte offset into the object settings; divided by 16 it is the object's class.</td></tr>
+          <tr><td><code>0x81</code>/<code>0x82</code></td><td>2</td><td>Seed the forward and backward draw distance at a record (<code>+0x16</code>/<code>+0x17</code> before the racing line reuses the word).</td></tr>
+          <tr><td><code>0x83</code>/<code>0x84</code></td><td>1</td><td>Clear or set a marker bit that is OR-ed into record <code>+0x26</code> as <code>0x08</code>.</td></tr>
+          <tr><td><code>0x85</code></td><td>1</td><td>Change road width: at once if the ramp length is zero, otherwise spread over that many records.</td></tr>
+          <tr><td><code>0x86</code>/<code>0x87</code></td><td>1</td><td>Mark pit entry and pit exit. At <code>0x86</code> the loader saves its entire expansion state for the pit bank.</td></tr>
+          <tr><td><code>0x88</code>/<code>0x89</code></td><td>2</td><td>Mark a pit strip run (bit <code>0x20</code> or <code>0x10</code>) and publish the service anchor to <span class="addr">DS:019A</span>.</td></tr>
+          <tr><td><code>0x8a</code>/<code>0x8b</code></td><td>2</td><td>Mark a wall run: lateral (bit <code>0x80</code>) or longitudinal (bit <code>0x40</code>) in <code>+0x1f</code>.</td></tr>
+          <tr><td><code>0x8e</code>/<code>0x8f</code>, <code>0x94</code>/<code>0x95</code></td><td>1</td><td>Reconfigure the trackside pattern machine's runs and curve bounds.</td></tr>
+          <tr><td><code>0x92</code>/<code>0x93</code></td><td>2</td><td>OR bit <code>0x10</code> or <code>0x20</code> into <code>+0x12</code> over a run of records.</td></tr>
+          <tr><td><code>0x96</code>/<code>0x97</code></td><td>2</td><td>Publish the pit service window bounds to <span class="addr">DS:019C</span>/<span class="addr">DS:019E</span>.</td></tr>
+          <tr><td><code>0x98</code>/<code>0x99</code></td><td>1</td><td>Set lane flags folded into the axis word, as <code>(arg − 1) &amp; 7</code>.</td></tr>
+          <tr><td><code>0x9a</code></td><td>2</td><td>Set one of sixteen height words (two banks of eight).</td></tr>
+          <tr><td><code>0x9b</code>–<code>0x9e</code></td><td>2</td><td>Publish four far pointers to records, at <span class="addr">DS:01A8</span>.</td></tr>
+          <tr><td><code>0x9f</code>/<code>0xa0</code></td><td>2</td><td>Set the two stack anchors at <span class="addr">SS:0160</span>/<span class="addr">SS:0164</span>.</td></tr>
+          <tr><td><code>0xa1</code>–<code>0xa4</code></td><td>2</td><td>Publish four pit-join pointers and set pit wall bits in <code>+0x1f</code>.</td></tr>
+          <tr><td><code>0xa5</code></td><td>1</td><td>Start the next section with a reversed half-step.</td></tr>
+          <tr><td><code>0xa8</code></td><td>2</td><td>OR bit <code>0x02</code> into <code>+0x12</code> on six consecutive records.</td></tr>
+          <tr><td><code>0xa9</code></td><td>1</td><td>Set the pit lane's draw distance (default <code>0x5a</code>).</td></tr>
+        </tbody>
+      </table></div>
+      <p>Two details show how literal the port had to be. <code>0xa8</code> marks six records by adding 46 to a pointer six times, with none of the end-of-table check that <code>0x92</code>/<code>0x93</code> use. It can write past the active records; only 16-bit wrap stops it. And the run loop behind <code>0x92</code>/<code>0x93</code> is a "subtract one, loop while not negative" pattern that tests for zero only on entry. An argument of <code>0xffff</code> runs once, while <code>0x8000</code> runs 32,769 times. The port reproduces both rather than "fixing" them.</p>
+      <p>The anchors deserve a note. The pit-lane join renderer reads its anchor from a far pointer at <code>[bp+0x160]</code>, a stack slot. For a long time the port could not find what wrote it. A histogram of the main stream found no <code>0x9f</code> or <code>0xa0</code>. The answer was that they live in the <em>pit</em> stream and point into the pit table in segment <code>381C</code>, not the main table in <code>4813</code>. On Suzuka they select pit records 13 and 178.</p>
+
+      <h2 id="integration">Integrating the geometry</h2>
+      <p>For each section the first pass does the same small loop (<span class="addr">19ED:7477</span>). It turns heading and pitch by a <em>half</em> step into the first record, by full steps between records, and by a half step out. This puts each record's heading at its own centre, not at its start. At each record it advances the world position with the executable's own 1.14 fixed-point cosine table:</p>
+      <pre><code>x      += (sin(heading) × 1024) >> 14
+z      += (cos(heading) × 1024) >> 14
+height += (sin(pitch)   × 1024) >> 14</code></pre>
+      <p>So one record is 1,024 world units long at heading zero. ArgDocs gives the track unit as sixteen feet, 4.8768 m. The port's authoring reports use exactly that: "4.8768 m = 1024 world units per record".</p>
+      <p>Command <code>0xa5</code> changes the rhythm. The next section begins by undoing the pending half-step and applying a full one. The port's authoring tool learned a related lesson the hard way: because each section applies two rounded half-steps, an odd curvature or height value split across a section boundary shifts the geometry. The compiler now rejects such splits.</p>
+
+      <h3>Curvature packed by pi/2</h3>
+      <p>Each record also stores a curvature word at <code>+0x14</code>. It is not the section's curvature. After a record is filled, code at file <code>0x929c8</code> calls <code>0x90140</code>, which writes into the <em>previous</em> record:</p>
+      <pre><code>previous.curvature = (boundary_delta × 0x6488) >> 14</code></pre>
+      <p>Here <code>boundary_delta</code> is how far the heading at the record boundary moved, and <code>0x6488</code> is a fixed multiplier held at <span class="addr">DS:0890</span>. Since 0x6488 / 16384 ≈ 1.5708, this scales the turn by π/2. A raw boundary turn of 256 packs to 402; 1,024 packs to 1,608; −1,024 to −1,609.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The port's first racing-line fitter treated <code>+0x14</code> as a plain heading increment. It fitted radii that validated on synthetic test tracks, because those tracks were built with the same wrong assumption, and failed on every real circuit. The fix was to recover the raw turn with a signed ceiling of <code>packed × 16384 / 0x6488</code>, then check it by packing again. The team verified exact inversion for all 41,721 unwrapped raw increments.</p></div>
+
+      <h3>Closing the lap</h3>
+      <p>Integer integration drifts. After a full lap the last position rarely lands exactly on the first. The loader measures the error between record 0 and the record one past the last (<span class="addr">19ED:5C59..5DB9</span>). It then spreads that error over records 1 to N with one integer accumulator per axis. Each record adds the absolute error to its accumulator, and whenever the accumulator reaches the record count it moves one more unit of correction into the running total. The effect is a linear ramp, record <em>i</em> corrected by about <em>i/N</em> of the error, done without a division per record.</p>
+      <p>The pass assumes a closed loop. An open test track collapses toward its start, so the port's table fixtures must be closed loops. The pit bank uses the same accumulator, but closes onto a different target, as described below.</p>
+
+      <h2 id="record">The 46-byte track record</h2>
+      <p>The result is a table with one 46-byte record per track unit. Suzuka's 1,203 records fill <code>4813:0030</code> onwards. The road renderer, the physics, the AI and the scenery all read it. The table below lists what each field holds, as <code>src/original_track_table.rs</code> and the loader journals document it.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Offset</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td><code>+0x00</code></td><td>Heading at the record centre</td></tr>
+          <tr><td><code>+0x02</code></td><td>Pitch at the record centre</td></tr>
+          <tr><td><code>+0x04</code>, <code>+0x06</code>, <code>+0x08</code></td><td>Position: X and Z are stored shifted right by three, with their low three bits packed into <code>+0x21</code>; <code>+0x06</code> is the height's low word</td></tr>
+          <tr><td><code>+0x0a</code></td><td>Kerb pattern flags (bit 7 marks an object)</td></tr>
+          <tr><td><code>+0x0b</code></td><td>Edge pattern flags, plus the section's <code>0x30</code> bits</td></tr>
+          <tr><td><code>+0x0c</code></td><td>Lateral axis X, with the half-width folded into its low six bits</td></tr>
+          <tr><td><code>+0x0e</code></td><td>Lateral axis Z, with the lane flags in its low byte</td></tr>
+          <tr><td><code>+0x10</code>, <code>+0x12</code></td><td>Guidance bytes owned by later passes; <code>+0x12</code> takes the <code>0x92</code>/<code>0x93</code>/<code>0xa8</code> bits</td></tr>
+          <tr><td><code>+0x11</code>, <code>+0x13</code></td><td>Outer road edge beyond the axis, in 64-unit steps</td></tr>
+          <tr><td><code>+0x14</code></td><td>Packed curvature (the π/2-scaled boundary turn)</td></tr>
+          <tr><td><code>+0x16</code>, <code>+0x18</code></td><td>Racing-line lateral offset and heading delta (draw-distance seeds until the line overwrites them)</td></tr>
+          <tr><td><code>+0x1a</code></td><td>Record index word; low bit and sector bits read by the renderer, low 11 bits used as an index</td></tr>
+          <tr><td><code>+0x1c</code>, <code>+0x1d</code></td><td>Lateral and longitudinal feature widths (or wall-table indices)</td></tr>
+          <tr><td><code>+0x1e</code></td><td>Object class when <code>+0x26</code> bit 7 marks a placed object</td></tr>
+          <tr><td><code>+0x1f</code></td><td>Wall bits: <code>0x80</code> lateral wall, <code>0x40</code> longitudinal wall, <code>0x20</code>/<code>0x10</code> pit-lane sides</td></tr>
+          <tr><td><code>+0x20</code></td><td>Draw distance: how many records ahead the road pass draws (starts at <code>0x3c</code>)</td></tr>
+          <tr><td><code>+0x22</code>–<code>+0x25</code></td><td>Colour bytes (kerb cycle, colour nibbles; <code>+0x25</code> is a live wall-shade byte)</td></tr>
+          <tr><td><code>+0x26</code></td><td>Section flags: low bits are the pit mode, <code>0x08</code> the marker, <code>0x10</code>/<code>0x20</code> routed strips, <code>0x80</code> object</td></tr>
+          <tr><td><code>+0x27</code></td><td>Pattern run flags</td></tr>
+          <tr><td><code>+0x28</code>, <code>+0x29</code></td><td>Left and right verge strip bytes</td></tr>
+          <tr><td><code>+0x2a</code></td><td>Pattern verge flags</td></tr>
+          <tr><td><code>+0x2b</code></td><td>Kerb start mark (3 at a section start whose flags ask for it)</td></tr>
+          <tr><td><code>+0x2c</code></td><td>Target speed word, seeded to <code>0xEE00</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>Verges ramp smoothly. At each section start the loader computes a per-record step from the previous section's verge byte to the new one, in 8.8 fixed point, and adds it every record. <code>+0x28</code>/<code>+0x29</code> hold the high bytes.</p>
+      <p>The strip bytes have a second life. Over a routed run (a run of records whose <code>+0x26</code> carries <code>0x20</code> or <code>0x10</code>), <code>+0x28</code> is rewritten as a weight. For a run of length L, position <em>i</em> gets <code>i + 1</code> on even positions and <code>L − i</code> on odd ones, so neighbours pair up to sum to L. For L = 8 the run reads 1 7 3 5 5 3 7 1. The renderer uses the byte both as a blend input and as a record stride: it subtracts <code>byte × 0x2e</code> from its pointer to find a partner record. A first attempt fitted <code>2L − i</code> to what looked like a run of eight; it was half of a sixteen-record run, and reading whole runs corrected it.</p>
+      <p>Draw distances are spread after closure (<span class="addr">19ED:6547</span>, <span class="addr">65A5</span>). A forward pass walks the table <code>count + 256</code> times, carrying the largest <code>+0x16</code> seed of <code>0x3c</code> or more and letting it decay by one per record. Even records take the carry when it beats their own value. A backward pass does the same for odd records with the <code>+0x17</code> seeds. A non-zero seed below <code>0x3c</code> freezes a record.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>On 18 September the port read the whole Suzuka table from the running original in fourteen authenticated chunks: 1,203 records × 46 bytes. It compared the port's own table against it byte for byte. 55,332 of 55,338 bytes matched. The six differences were all <code>+0x25</code> wall-shade bytes that the original's display pass rewrites before the capture pause takes effect. A second test, on four frames of a fresh capture, matched all 55,338 bytes once car marks were accounted for.</p></div>
+
+      <h2 id="pattern-machine">The trackside pattern machine</h2>
+      <p>Kerbs, verge stripes and roadside features are not stored per record. The loader generates them while it expands the track, with a small state machine at <span class="addr">19ED:7164</span> that runs once per record.</p>
+      <p>It has eight channels, kinds 7 down to 0, with masks <code>0x80</code> down to <code>0x01</code>. Each channel has a 44-byte definition in the executable's data segment, at <span class="addr">DS:0514</span> for straights and <span class="addr">DS:0674</span> for curves. A definition holds an initial gap, two runs and two gaps whose lengths are <code>(rng &amp; mask) + base</code>, two colour-pick arguments, two repeat periods and the channel's own counters.</p>
+      <p>A channel runs only when the section's processed flag word enables its kind. The loader processes the raw section flags as <code>((flags | 0xc300) ^ 0x3000) &amp; 0xff37</code>. A channel then cycles: wait out the gap, start a run of random length, and while running OR its mask into four accumulators. When a run starts, kind 7 draws a random width for the lateral feature and kind 6 for the longitudinal one, in the range −61..61. A colour nibble is picked through the table at <span class="addr">DS:07D4</span> and redrawn once if it did not change. At the end of each record the accumulators become the kerb, edge, run and verge bytes (<code>+0x0a</code>, <code>+0x0b</code>, <code>+0x27</code>, <code>+0x2a</code>) and are cleared.</p>
+
+      <h3>The five-byte random number generator</h3>
+      <p>Everything random in the pattern comes from one generator, <span class="addr">0752:04D7</span>, over a five-byte register at <span class="addr">DS:2984..2988</span>. Each draw reads the register as two little-endian words, shifts them, XORs the low bytes, then shifts the whole register up one byte and puts the new byte at the bottom.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 230" role="img" aria-label="The five byte shift-register random number generator">
+          <defs>
+            <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-size="13" fill="currentColor" font-family="IBM Plex Mono, monospace">
+            <rect x="60" y="20" width="90" height="40" fill="none" style="stroke:var(--red)"/><text x="94" y="45">s0</text>
+            <rect x="150" y="20" width="90" height="40" fill="none" style="stroke:var(--blue)"/><text x="184" y="45">s1</text>
+            <rect x="240" y="20" width="90" height="40" fill="none" style="stroke:var(--blue)"/><text x="274" y="45">s2</text>
+            <rect x="330" y="20" width="90" height="40" fill="none" style="stroke:var(--ink-3)"/><text x="364" y="45">s3</text>
+            <rect x="420" y="20" width="90" height="40" fill="none" style="stroke:var(--ink-3)"/><text x="454" y="45">s4</text>
+            <text x="520" y="45" style="fill:var(--ink-3)" font-size="11">DS:2984..2988</text>
+
+            <path d="M195 60 V90 M285 60 V90 M195 90 H285" fill="none" style="stroke:var(--blue)"/>
+            <text x="150" y="112" font-size="12">(s1 | s2&lt;&lt;8) &gt;&gt; 4</text>
+            <path d="M375 60 V90 M465 60 V90 M375 90 H465" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="340" y="112" font-size="12">(s3 | s4&lt;&lt;8) &gt;&gt; 1</text>
+
+            <circle cx="310" cy="150" r="14" fill="none" stroke="currentColor"/>
+            <text x="303" y="155">⊕</text>
+            <line x1="240" y1="118" x2="298" y2="142" stroke="currentColor" marker-end="url(#arr3)"/>
+            <line x1="400" y1="118" x2="322" y2="142" stroke="currentColor" marker-end="url(#arr3)"/>
+            <text x="332" y="180" font-size="12">low bytes → AL (the output)</text>
+            <path d="M296 150 H105 V64" fill="none" style="stroke:var(--red)" marker-end="url(#arr3)"/>
+            <text x="112" y="140" font-size="11" style="fill:var(--red)">new s0</text>
+            <text x="60" y="210" font-size="11" style="fill:var(--ink-3)" font-family="IBM Plex Sans, sans-serif">Each draw shifts s0→s1→s2→s3→s4 and drops the old s4.</text>
+          </g>
+        </svg>
+        <figcaption>The shift-register generator. It is tiny, deterministic and fully determined by five bytes, so the whole trackside pattern of a circuit depends on the register's contents at the moment the loader starts.</figcaption>
+      </figure>
+
+      <p>That last point cost the port time. The Suzuka pattern bytes only matched the running original once the team captured the register at the loader's entry. The same generator also serves a later feature pass. Resident code at <span class="addr">0752:053C</span> initialises the longitudinal track features with a temporarily seeded register, then restores the caller's six RNG bytes. A later resident step replaces each main record's longitudinal feature width and shade nibble from the racing line or the RNG.</p>
+
+      <h2 id="walls">Walls and the 0xb6 table</h2>
+      <p>Walls are not geometry in the file. They are marks on records. Commands <code>0x8a</code> (lateral wall, bit <code>0x80</code>) and <code>0x8b</code> (longitudinal wall, bit <code>0x40</code>) each carry five words: a colour byte and mode byte, an outer count, an initial width, a width step, and a packed pair of counts called the phase and the gap. They run in the second pass, from handler <span class="addr">19ED:5B8F</span> (file <code>0x90b8f</code>).</p>
+      <p>The marking loop has three nested counters. Each outer pass marks <code>phase + 1</code> consecutive records, then skips <code>gap − 1</code>, so the pattern repeats every <code>phase + gap</code> records. Suzuka uses both shapes. Phase 1, gap 1 marks every record: its two sixteen-record runs at 38..53 and 1026..1041. Phase 1, gap 2 marks two records in every three: the alternating run at 1163..1202.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 180" role="img" aria-label="Wall run marking patterns with period two and period three">
+          <g font-size="12" fill="currentColor">
+            <text x="10" y="24">phase 1, gap 1 → period 2 (every record)</text>
+            <g transform="translate(10,34)">
+              <rect x="0" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="38" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="76" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="114" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="152" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="190" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="228" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="266" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="304" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="342" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="380" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="418" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+            </g>
+            <text x="10" y="100">phase 1, gap 2 → period 3 (two marked, one skipped)</text>
+            <g transform="translate(10,110)">
+              <rect x="0" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="38" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="76" width="34" height="30" fill="none" style="stroke:var(--ink-3)"/>
+              <rect x="114" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="152" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="190" width="34" height="30" fill="none" style="stroke:var(--ink-3)"/>
+              <rect x="228" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="266" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="304" width="34" height="30" fill="none" style="stroke:var(--ink-3)"/>
+              <rect x="342" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="380" width="34" height="30" style="fill:var(--red);stroke:var(--red)"/>
+              <rect x="418" width="34" height="30" fill="none" style="stroke:var(--ink-3)"/>
+            </g>
+            <text x="480" y="56" style="fill:var(--ink-3)" font-size="11">Suzuka 38..53</text>
+            <text x="480" y="132" style="fill:var(--ink-3)" font-size="11">Suzuka 1163..1202</text>
+          </g>
+        </svg>
+        <figcaption>Each square is one track record; red means the wall bit is set in +0x1f. The loop advances one record per step and uses the first count as a phase counter.</figcaption>
+      </figure>
+
+      <p>The wall bits in <code>+0x1f</code> are only ever OR-ed. The clearing helpers touch <code>+0x0b</code>, <code>+0x27</code> and <code>+0x22</code>, never <code>+0x1f</code>, so every record the marking step reaches keeps its bit. With both commands ported, about 74 records per circuit carry wall bits.</p>
+      <p>Each marked record also gets a width, computed by dividing by the axis half-width bits (<code>axis_x &amp; 0x3f</code>). The divisor comes from the record where the command was seen, not the record being marked. Suzuka proves it: record 53 ends the 38..53 run with its own half-width bits at 54, which would give 432 / 54 = 8, but the original wrote 7, which is what 56 yields.</p>
+      <p>When the mode byte has bit <code>0x20</code> set, the handler at file <code>0x91046</code> overwrites that width with a <em>table index</em>: <code>0x7c + (step &amp; mode)</code>, where the step is 7 on the inner loop and 6 on the outer. A single command therefore writes two indices. With mode <code>0x23</code> Suzuka's lateral walls alternate <code>0x7f</code> and <code>0x7e</code>; with mode <code>0x25</code> its longitudinal walls alternate <code>0x81</code> and <code>0x80</code>.</p>
+      <p>Those indices point into the wall colour tables in scene data at <code>0xb6..0xdd</code>: five eight-entry byte tables, three outputs (<code>0xb6</code>, <code>0xbe</code>, <code>0xc6</code>) and two sources (<code>0xce</code>, <code>0xd6</code>). The sources are static in the executable image. The builder at file <code>0x91072</code> computes each output entry as <code>source × 64 / (axis_x &amp; 0x3f)</code>, signed and truncating. The <code>0xbe</code> table is the record's previous feature width minus half the <code>0xc6</code> value. The final value of each entry is whatever the <em>last</em> record with that index wrote, so the table depends on geometry, not just on the circuit number.</p>
+      <div class="callout story"><span class="label">From the port</span><p>A full 128 MB memory diff could not find the <code>0xb6</code> table's bytes anywhere else, which proved it was computed, not copied. Bisecting the menu recipe showed it fills during the menu phase, on the mode-select click, when the expander runs. Where the width division hits a zero divisor, the original's <code>IDIV</code> faults, and because the game hooks INT 0 the fault just sets a flag and the entry keeps its old value. The port reproduces that instead of adding a guard the original lacks. The team calls that kind of added guard its "recurring defect class".</p></div>
+      <div class="callout trap"><span class="label">The trap</span><p>An early port of the wall pass advanced two records per iteration. It produced period 2 everywhere and looked plausible. The live capture of <code>+0x1f</code> rejected it at the alternating Suzuka run, because the oracle had been built before the port. A later 49-agent review of the wall work found four more real defects, including a gap loop that never cleared its records and an outer loop whose exit falls into a trailing walk rather than returning.</p></div>
+
+      <h2 id="racing-line">The racing line and its speeds</h2>
+      <p>After the main table exists, a second encoded stream describes the line the computer cars follow. The materializer at <span class="addr">95FC:23C0</span> reads it block by block. Each block starts with a header word: the low 14 bits are a record count, bit <code>0x8000</code> means an explicit lateral word follows, and bit <code>0x4000</code> means the radius has an extra high word. Then come a turn word and a radius. A header of zero ends the stream.</p>
+      <ul>
+        <li>With a <strong>zero radius</strong>, the turn word is a simple heading change applied at the start of the block.</li>
+        <li>With a <strong>non-zero radius</strong>, the line follows an arc. The radius is in eight-world-unit steps; positive puts the centre to the right of travel. The turn word then means forward advance, in four-unit steps.</li>
+      </ul>
+      <p>For every record the block covers, the materializer writes two words: <code>+0x18</code>, the line's heading minus the track's heading, and <code>+0x16</code>, the line's lateral offset. The walk wraps from the end of the main table back to record zero.</p>
+
+      <h3>Corner speeds and the 63-group limit</h3>
+      <p>Before the line is built, every record's <code>+0x2c</code> speed word is seeded to <code>0xEE00</code>, and <code>+0x16</code>/<code>+0x18</code> are zeroed. The speed annotation pass (<span class="addr">0752:70A0</span> and neighbours, <code>src/original_track_annotation.rs</code>) then rereads the line stream and looks for corners.</p>
+      <p>A block qualifies as a corner only if it has no extended-radius flag and a non-zero curvature, and if <code>0x145F30 / |curvature|</code> comes out at 60 or more. Each qualifying block becomes a <em>group</em>: its radius and a computed corner speed are stored as a pair in a 64-slot table at <span class="addr">DS:3053</span>. The pass stores the speed across the corner's records, accelerating where the corner allows, then walks backwards from the corner's entry, braking, so the approach speeds fall towards the corner speed.</p>
+      <p>Slot 0 is preset, which leaves 63 usable groups. A 64th group would overwrite the globals that follow the table, and the original then loops forever. The port turns that into an explicit error.</p>
+      <p>The pass also reads one record past the end: the closing record. On Suzuka the line loop produces 1,203 records but the guidance consumes 1,204. The port initialises the closing record's line words before this pass so it never depends on stale data. The team found this by poisoning the following record to expose any captured-input dependency.</p>
+
+      <h2 id="scenery">Scenery objects</h2>
+      <p>Trackside objects are placed by command <code>0x80</code>. Its argument byte says how many records ahead the object sits; its word is a byte offset into the object settings. Each setting is 16 bytes: a shape ID, a detail level, a palette word, a distance from the track, two angles, a height and a second ID.</p>
+      <p>The distance is not in world units. The record's lateral axis already includes the road width, and placement multiplies <code>(axis &gt;&gt; 6) × distance &gt;&gt; 5</code>. So a distance of 256 is one road half-width from the centre line. Along the track, one record is 1,024 world units.</p>
+      <p>The object's class is the setting's offset divided by 16, and classes 0 to 2 are special:</p>
+      <ul>
+        <li><strong>Classes 0 and 1</strong> render a nested scene through <span class="addr">15F2:A675</span>. The authoring notes call them the reserved camera placements; they publish the pointers at <span class="addr">DS:01C4</span>/<span class="addr">DS:01C8</span>.</li>
+        <li><strong>Class 2</strong> is a marshal post. It borrows setting 2 when the post is left of the road and setting 3 when it is right.</li>
+        <li><strong>Classes 4 and 5</strong> are pit objects whose palette comes from a team's car colours.</li>
+      </ul>
+      <p>Ordinary scenery must therefore use settings from index 3 upwards. The shapes themselves are track-local 3D models. Each has a 32-byte header with ten-byte detail-level records (a depth threshold, a scale mask, an angle shift and an element-list offset), eight-byte points and two-byte vectors. Polygon colours are indices into a shade row, not palette bytes; flat objects have sixteen entries per row.</p>
+
+      <h2 id="pit-lane">The pit lane</h2>
+      <p>The pit lane is a second track. It has its own section stream after the racing line and driving parameters, and its own table of 46-byte records. The main bank is table A at <code>4813:0030</code>; the pit bank is table B at <code>381C:D7AE</code>.</p>
+      <h3>How the pit bank is built</h3>
+      <p>When the main first pass meets command <code>0x86</code>, it snapshots its whole expansion state. Command <code>0x87</code> marks the exit. After the main bank is finished and closed, the loader restores the heading, pitch, flags, verges and pattern state from the <code>0x86</code> snapshot. It sets the pit half-width to <code>0x280</code> and the outer width to <code>0x2d0</code>. It starts the pit at the main entry record's position, shifted sideways by the difference between the main width there and <code>0x280</code>. Header bits <code>0x02</code> and <code>0x08</code> decide which side the entry and exit offsets fall on.</p>
+      <p>The pit stream then expands with the same code and the same two passes. Pit records get index words based at the saved count plus <code>0x2000</code>. Command <code>0xa9</code> sets their draw distance. Instead of closing onto its own start, the pit bank closes onto the main exit record, offset sideways. Finally the loader copies the main exit record into the pit's last slot, so the lane rejoins the circuit exactly.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 250" role="img" aria-label="Main track and pit lane with entry, through and exit pit mode sections">
+          <g font-size="12" fill="currentColor">
+            <line x1="20" y1="50" x2="620" y2="50" stroke="currentColor" stroke-width="3"/>
+            <text x="20" y="30">Main bank (table A)</text>
+            <circle cx="90" cy="50" r="6" style="fill:var(--red)"/>
+            <text x="64" y="76" style="fill:var(--red)">0x86 entry</text>
+            <circle cx="560" cy="50" r="6" style="fill:var(--red)"/>
+            <text x="530" y="76" style="fill:var(--red)">0x87 exit</text>
+
+            <path d="M90 50 C120 100 130 130 160 140" fill="none" style="stroke:var(--blue)" stroke-width="3"/>
+            <line x1="160" y1="140" x2="480" y2="140" style="stroke:var(--blue)" stroke-width="3"/>
+            <path d="M480 140 C510 130 530 100 560 50" fill="none" style="stroke:var(--blue)" stroke-width="3"/>
+
+            <rect x="96" y="160" width="84" height="26" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="104" y="178">mode 1</text>
+            <rect x="180" y="160" width="250" height="26" fill="none" style="stroke:var(--blue)"/>
+            <text x="250" y="178">mode 3 — through / service</text>
+            <rect x="430" y="160" width="70" height="26" fill="none" style="stroke:var(--ink-3)"/>
+            <text x="438" y="178">mode 2</text>
+            <rect x="500" y="160" width="60" height="26" fill="none" style="stroke:var(--ink-3)" stroke-dasharray="4 3"/>
+            <text x="506" y="178">mode 0</text>
+            <text x="96" y="206" style="fill:var(--ink-3)" font-size="11">entry</text>
+            <text x="180" y="206" style="fill:var(--ink-3)" font-size="11">0x96 … 0x89 anchor … 0x97: service window</text>
+            <text x="430" y="206" style="fill:var(--ink-3)" font-size="11">exit</text>
+            <text x="20" y="236" style="fill:var(--ink-3)" font-size="11">Pit bank (table B) starts from the saved 0x86 state and closes onto the main exit record.</text>
+          </g>
+        </svg>
+        <figcaption>The pit lane as the engine sees it. The low bits of each pit record's +0x26 carry a mode: 1 on the entry, 3 through the lane, 2 on the exit, 0 outside. Suzuka's pit bank uses 0 on records 0–12, 1 on 13–29, 3 on 30–165, 2 on 166–177 and 0 on 178–198.</figcaption>
+      </figure>
+
+      <h3>Joins, anchors and walls</h3>
+      <p>Second-pass commands <code>0xa1</code>–<code>0xa4</code> publish four join pointers to scene data at <code>01AC</code> and set a pit-side wall bit, <code>0x20</code> or <code>0x10</code>, in <code>+0x1f</code>. Which bit depends on the side flags. On Suzuka the main joins select records 1049/1050 and 22/21. The anchors from <code>0x9f</code>/<code>0xa0</code>, described above, give the renderer the pit records where the lane's join geometry is drawn from.</p>
+      <h3>The service window</h3>
+      <p>Commands <code>0x96</code> and <code>0x97</code> publish two pit record indices to <span class="addr">DS:019C</span> and <span class="addr">DS:019E</span>. Command <code>0x89</code> publishes a pattern anchor at <span class="addr">DS:019A</span>. A car's stop target is <code>DS:019A + 1 + 3 × team</code>: the teams' bays are three records apart. To actually stop, the car must be at least <code>0x400</code> sideways, at or past its bay record, and at least <code>0x1E0</code> into that record. Meanwhile the physics clamps the car's steering reference to the window from the first bound + 10 to the second bound − 10. The stock values show the pattern: Barcelona uses 52, 77 and 139 for <code>0x96</code>, the <code>0x89</code> anchor and <code>0x97</code>; Suzuka uses 95, 103 and 166.</p>
+      <h3>The implicit outer boundary</h3>
+      <p>A pit record with no wall bits is still not open ground. The ordinary collision path compares the car's lateral position plus 512 against <code>width + ((width × strip) &gt;&gt; 5) + 80</code>, where the strip is the verge strip byte. So a narrow strip byte is a wall in all but name. This matters, as the port found out below.</p>
+
+      <h2 id="horizon">Horizon and ground</h2>
+      <p>The first 4 KB of the file is the panorama: 512 columns by 8 rows of palette indices. The sky stage (<span class="addr">15F2:7D2E..7DFD</span>) fills the sky upwards from a colour-band table, then draws the panorama with its bottom row on the camera horizon. The column comes from the camera heading shifted right five bits and wrapped at 512, so one full turn of 65,536 heading units sweeps 2,048 columns, four times round the image. The horizon row itself is <code>0x50 + (sin(pitch) &gt;&gt; 6)</code> with a fixed −0x400 camera pitch. The stage then paints the ground colour below.</p>
+      <p>A record can hide the panorama: the stage checks section flag <code>0x08</code> on the car's record. That is the same <code>+0x26</code> bit that commands <code>0x83</code>/<code>0x84</code> control. (That these two are the same switch is our reading of two separate sources, not a traced call chain.)</p>
+
+      <h2 id="authoring">Writing new circuits</h2>
+      <p>Once the port could load every stock circuit exactly, the author asked for something the original never had: new circuits in the original format. The design (9 September 2026) set a strict bar. Bahrain had to be recognisable, use the existing cars and physics, and complete a three-lap race with a full grid and a real player pit stop. "A parser success or a screenshot is not completion."</p>
+      <p>The result is <code>track-author</code>, a second binary in the same Cargo package. It compiles a frozen source package into a complete DAT: envelope, main and pit section streams, racing line, the 38 named driving parameters, loader tail, authored shapes, settings, placements and checksum. It has no network access and reads no game assets. Its source data are open geometry, frozen with checksums: OpenStreetMap ways for Bahrain (ODbL) and the Madrid city Geoportal's MADRING dataset for Madrid. Widths and elevations are labelled estimates, since neither source provides them. Bahrain became catalogue entry 17 and Madrid entry 18.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th>Bahrain</th><th>Madrid ("madring")</th></tr></thead>
+        <tbody>
+          <tr><td>Source path length</td><td>5,419.680 m</td><td>5,417.349 m</td></tr>
+          <tr><td>Main records (incl. closing)</td><td>1,112</td><td>1,111</td></tr>
+          <tr><td>Main sections / bytes</td><td>479 / 4,792</td><td>691 / 6,912</td></tr>
+          <tr><td>Pit records / sections</td><td>159 / 137</td><td>193 / 183</td></tr>
+          <tr><td>Fit error p95 / max</td><td>1.161 / 1.205 m</td><td>2.233 / 3.067 m</td></tr>
+          <tr><td>Raw lap closure (horizontal)</td><td>4.748 m</td><td>4.449 m</td></tr>
+          <tr><td>Corner-speed groups</td><td>39</td><td>35</td></tr>
+        </tbody>
+      </table></div>
+      <p>The fit uses rigid rotation and translation only; no scaling or warping. The raw closure error must be under one record (4.8768 m) before the loader's own closure spreads it away.</p>
+
+      <h3>What the pit lane taught</h3>
+      <p>Bahrain's first complete file loaded on 10 September. It then failed, in turn, in almost every way the pit-lane mechanics above allow.</p>
+      <ul>
+        <li><strong>Mode bits.</strong> A car reached the pit entry record within the ±720 lateral gate and was refused. The compiler had written all pit sections with flags zero. The source rejects a pit record whose low <code>+0x26</code> bits are zero. Lifecycle pointers alone do not enable the route. The fix was to author entry, through and exit modes 1, 3 and 2 and an outside suffix, modelled on Suzuka's layout.</li>
+        <li><strong>The service window.</strong> With entry fixed, the car drove through without stopping. Bahrain's 96/128 window clamped the steering reference to pit records 106–118, entirely after the line's service patch at 87–98. Held steering decayed and the car returned to the lane centre. Moving the first bound to 52 put the bays inside the window.</li>
+        <li><strong>The invisible wall.</strong> The car still could not reach its bay. The pit strip byte was 16, and through the implicit boundary formula that blocked the 1,024-unit move to the service gate. A strip of 96 (<code>0x60</code>) on the service side cleared it.</li>
+        <li><strong>Missing parameters.</strong> An earlier probe spun for ten million work steps at the first pit record. The driving-parameter encoder had skipped the byte at <span class="addr">DS:020D</span>, shifting every later scale word. The corrected encoder names all 38 bytes at their decoded addresses.</li>
+      </ul>
+      <p>Madrid added one more. Its pit centreline ran backwards relative to the source, so the loader got an exit pointer that did not precede the entry in the wrapped main bank, and refused to start. The compiler now rejects any such pair.</p>
+
+      <h3>What the racing line taught</h3>
+      <p>Bahrain's first line used only zero-radius blocks: straight chords with heading changes. It passed every geometric check. But zero-radius blocks never qualify as corners, so all 1,112 speed words stayed at the seed <code>0xEE00</code> and no corner-speed group was built. The computer cars had no idea where to brake.</p>
+      <p>The fix was to fit real arcs. The fitter finds same-sign curvature runs of at least 60 (recovered through the π/2 unpacking), seeds each radius from <code>0x145F30 × count / curvature sum</code>, and replays each candidate through the port's shared materializer so every block sees the true incoming state. It must stay within the 63-group limit. The final Bahrain file produced 39 groups and 1,211 speed stores, and all fifteen named corners showed braking in the 16 records before them. On 10 September the final 12,060-byte file passed the full test: a three-lap race with the player serviced in the pits, and all 26 cars ending classified or retired.</p>
+      <p>Madrid's hairpin failed the same way two days later. It was encoded as chords, left at the seed speed, and one computer car stalled against it near record 250. The fitter now keeps short variable-radius corners while leaving room in the shared group table. Madrid then produced 35 groups and 929 speed stores, and passed its own full race with a pit stop.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>The lesson the team wrote down is blunt: "a parser success or a screenshot is not completion". Each failure above passed some static check first: a clean load, a good geometric fit, a correct-looking cockpit view. Only a real car driving the real loop through a real pit stop exposed them. And every one was a fact about the original engine, not about the new circuits.</p></div>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

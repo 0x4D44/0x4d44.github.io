@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Forty-one short stories from porting a 1991 binary: each one a trap, what we believed, what settled it, and the rule we kept.">
+  <title>Field notes — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part II — The port</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 11</p>
+      <h1>Field notes</h1>
+      <p class="lede">The project kept a running file of lessons: every time a wrong belief cost real time, the correction was written down with the code it touched. This chapter retells forty-one of them as short stories: the trap, what we believed, what settled it, and the rule we kept.</p>
+
+      <h2 id="how-to-read">How to read these notes</h2>
+      <p>The lessons file, <code>lessons_learnt.md</code>, is written newest first. Each entry has a one-line nugget, which is injected into every new working session, and optional detail below it. It held 308 entries before a prune on 2026-09-23 cut it to 259. That prune dropped entries whose code had been deleted and merged near-duplicates, including a handful of entries headed "WRONG" or "SUPERSEDED": corrections to earlier lessons. Several of the stories below come from those removed entries, recovered from the file's history.</p>
+      <p>Addresses follow the conventions in <a href="10-method.html">chapter 10</a>. <code>15F2:XXXX</code> is the graphics segment as the disassembly listing names it; <code>0752:XXXX</code> is the main code segment; <code>19ED:XXXX</code> is the track expander overlay; bare hex such as <code>0x90a94</code> is a file offset in the unpacked executable.</p>
+      <p>The notes are grouped under five themes. Most notes could sit under two.</p>
+
+      <h2 id="reading-the-binary">Reading the binary</h2>
+      <p>Disassembly is a map drawn by someone who has never visited. These notes are about the places where the map and the territory disagreed.</p>
+
+      <h3 id="note-computed-pointers">1. The writer you cannot find</h3>
+      <p><strong>The trap.</strong> We needed to know which code writes the track expander's scene tables. Static scans of the disassembly for stores to those offsets found a small set of candidate sites.</p>
+      <p><strong>What we believed.</strong> A lesson was written: "expander scene-data writers are only 5 sites".</p>
+      <p><strong>What settled it.</strong> Fourteen breakpoints on the candidate sites never fired. The real builder of the wall table at scene <code>0xb6</code> writes through an <code>ES</code> register loaded long before the store, which no "segment switch" signature catches. Absolute, <code>BP</code>-relative, <code>SS</code>-prefixed and immediate-load scans had all failed the same way: F1GP sets its data structures through pointers it computes at run time, so static scans find the readers and never the writer. The lesson was marked WRONG and withdrawn.</p>
+      <p><strong>The rule.</strong> Static scans find readers. To find a writer, arm a write watchpoint on the byte and let the game tell you.</p>
+
+      <h3 id="note-misaligned-disassembly">2. The instruction the disassembler never showed</h3>
+      <p><strong>The trap.</strong> A whole-file disassembly is convenient. It is also misaligned wherever code sits next to data, because the disassembler cannot tell where an instruction starts.</p>
+      <p><strong>What we believed.</strong> Nothing wrote track record byte <code>+0x1f</code>, the wall flags. The disassembly had no such store.</p>
+      <p><strong>What settled it.</strong> Disassembling again from a known instruction start revealed <code>or [es:bx+0x1f],1</code> at file offset <code>0x90a94</code>. The "nothing writes it" conclusion had come from reading garbage decoded out of phase.</p>
+      <p><strong>The rule.</strong> Disassemble from a known instruction boundary, and treat "nothing writes it" from a whole-file listing as unproven.</p>
+
+      <h3 id="note-same-offset">3. Same offset, different segment</h3>
+      <p><strong>The trap.</strong> In 16-bit code, <code>[0x1c0]</code> means offset <code>0x1c0</code> in whichever segment <code>DS</code> holds at that moment. Most routines use the frame's data segment. Some do not.</p>
+      <p><strong>What we believed.</strong> The polygon fill's tables were "unidentified": a full working session dumped the game data segment <code>25B3</code> and found nothing that made sense. Separately, a dump for the mirror code returned plausible, non-zero words.</p>
+      <p><strong>What settled it.</strong> The fill runs with <code>DS = 381C</code>, the scene data segment. The mirror code does <code>mov ds,[ss:X]</code> part-way through and switches to <code>25B3</code>, so its plausible words came from the wrong table. The sharpest example: routine <code>3043</code> reads <code>[0x1c0]</code> in scene data, where it holds <code>0x20</code>, while routine <code>A749</code> writes game-data <code>25B3:0x1c0</code>. Same offset, two unrelated variables.</p>
+      <p><strong>The rule.</strong> Confirm which segment a routine runs under before reading its globals. Read the <code>[ss:X]</code> it loads from before you dump anything.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 230" role="img" aria-label="Offset 0x1C0 resolves to two different bytes depending on the data segment: scene data 381C holds 0x20 read by routine 3043, game data 25B3 is written by routine A749">
+          <defs>
+            <marker id="a11a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="250" y="20" width="180" height="44" rx="8" style="fill:none;stroke:currentColor"/>
+            <text x="340" y="47" text-anchor="middle" font-family="IBM Plex Mono, monospace">[0x1c0]</text>
+            <line x1="300" y1="64" x2="150" y2="120" stroke="currentColor" marker-end="url(#a11a)"/>
+            <line x1="380" y1="64" x2="530" y2="120" stroke="currentColor" marker-end="url(#a11a)"/>
+            <text x="190" y="88" text-anchor="end" font-size="12" style="fill:var(--ink-3)">DS = 381C</text>
+            <text x="490" y="88" font-size="12" style="fill:var(--ink-3)">DS = 25B3</text>
+            <rect x="30" y="124" width="250" height="74" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="155" y="150" text-anchor="middle" font-weight="600">Scene data 381C:01C0</text>
+            <text x="155" y="170" text-anchor="middle">holds 0x20</text>
+            <text x="155" y="188" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">read by routine 3043</text>
+            <rect x="400" y="124" width="250" height="74" rx="8" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="525" y="150" text-anchor="middle" font-weight="600">Game data 25B3:01C0</text>
+            <text x="525" y="170" text-anchor="middle">a different variable</text>
+            <text x="525" y="188" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">written by routine A749</text>
+          </g>
+        </svg>
+        <figcaption>An offset is half an address. Without the segment the routine really uses, a dump returns a real table: just not the one you wanted.</figcaption>
+      </figure>
+
+      <h3 id="note-caller-scan">4. Find callers by arithmetic</h3>
+      <p><strong>The trap.</strong> We needed the code that finishes drawing a polygon after clipping. Reading about 3 KB of surrounding disassembly had not found it.</p>
+      <p><strong>What we believed.</strong> Understanding the code around the clipper was the way in.</p>
+      <p><strong>What settled it.</strong> A near call is <code>E8</code> followed by a 16-bit displacement equal to <code>target − (site + 3)</code>. The segment base cancels out of that sum, so you can scan the file for every call to a routine without knowing where it loads. Scanning for calls to the clipper at <span class="addr">15F2:0E59</span> gave one hit, inside the element drawer, and located the polygon tail in one step. Later a scan missed the mirror blit, because that is a <em>far</em> call into the <code>19ED</code> overlay from inside the sky stage. A related trick found the track expander itself: one scan of the 600 KB file for the unique pair <code>CWD; IDIV</code> landed at file <code>0x90a5c</code>.</p>
+      <p><strong>The rule.</strong> Scan for call sites, near and far, before reading. Search by a unique opcode signature rather than trusting a cited address.</p>
+
+      <h3 id="note-file-offset-not-ip">5. A file offset is not an instruction pointer</h3>
+      <p><strong>The trap.</strong> Comments in the port cited addresses in mixed spaces, and some labels for "unported" routines were plain file offsets.</p>
+      <p><strong>What we believed.</strong> That a label such as <code>1469F</code> named the routine at <span class="addr">0752:469F</span>.</p>
+      <p><strong>What settled it.</strong> Checking the caller's actual call bytes. File <code>1469F</code> is not runtime <code>0752:469F</code>, and file <code>1228E</code> is not <code>0752:228E</code>. Other citations failed a simpler test: the camera comments cited <code>8C53</code>, which is the middle of an instruction, and <code>8D6A</code>, which is aligned but turned out to be buffer zeroing, not trigonometry.</p>
+      <p><strong>The rule.</strong> Resolve the code bank and inspect the caller's bytes before porting a named boundary. Check a citation lands on an instruction boundary before you trust it.</p>
+
+      <h3 id="note-pit-latch">6. A latch is not a reprogramming</h3>
+      <p><strong>The trap.</strong> The PC's programmable interval timer is controlled through port <code>0x43</code>. Writing <code>0x00</code> there latches the counter for reading; writing <code>0x36</code> programs a new mode and rate.</p>
+      <p><strong>What we believed.</strong> Looking only at the latch sites, that the game never reprograms the timer, so the tick rate was the BIOS default.</p>
+      <p><strong>What settled it.</strong> Reading every write to port <code>0x43</code> and decoding its control byte. The game programs divisor 3977, found at file <code>0x6D3B3</code>, which gives 300.02 Hz. The main game tick runs on every sixth interrupt: exactly 50 Hz.</p>
+      <p><strong>The rule.</strong> Decode the control byte of every port write. A read path and a write path through the same port are different stories.</p>
+
+      <h3 id="note-reads-as-ret">7. Control flow that reads one way and runs another</h3>
+      <p><strong>The trap.</strong> Two small pieces of the track expander looked obvious. A loop ending near a <code>ret</code> looked finished. A <code>sub</code> after a call looked like a step backwards.</p>
+      <p><strong>What we believed.</strong> That the loop returned, and that the <code>sub</code> moved the marker back one place.</p>
+      <p><strong>What settled it.</strong> The loop at <span class="addr">19ED:57D0</span> falls into a trailing walk that clears forward until byte <code>+0x22</code> has a bit set; skipping it left about 13 records dirty. And the routine called just before the <code>sub</code>, at <span class="addr">19ED:577C</span>, contains an <code>add</code> of the same amount, so the pair nets to zero and the next mark reuses the value.</p>
+      <p><strong>The rule.</strong> Follow a loop to its real exit, and read a callee's side effects before interpreting the arithmetic at its call site.</p>
+
+      <h3 id="note-modrm">8. One eighth of the accesses</h3>
+      <p><strong>The trap.</strong> To find every access of the form <code>[reg+disp16]</code>, a scan searched for ModRM bytes <code>0x84</code> to <code>0x87</code>.</p>
+      <p><strong>What we believed.</strong> That those four bytes covered the addressing form.</p>
+      <p><strong>What settled it.</strong> Those are only the forms whose register field is zero. The full set is <code>0x80 | (reg &lt;&lt; 3) | rm</code>, so the scan found about an eighth of the accesses.</p>
+      <p><strong>The rule.</strong> When scanning machine code, derive the byte set from the encoding, not from the first example you saw.</p>
+
+      <h2 id="measuring-vs-believing">Measuring versus believing</h2>
+      <p>The second theme is the gap between a plausible explanation and a measured one. Most of these cost an entire working iteration before a single measurement ended them.</p>
+
+      <h3 id="note-crops">9. Stop looking at crops</h3>
+      <p><strong>The trap.</strong> Comparing the port's cockpit frame with the original by zooming into 4x crops of the two images.</p>
+      <p><strong>What we believed.</strong> Two diagnoses, both from eyeballing: "the icons have a palette swap" and "the text has shifted one column". Two more iterations of colour histograms and per-row analysis produced a third wrong cause.</p>
+      <p><strong>What settled it.</strong> Rendering the whole frame with the real palette and counting pixels by colour pair killed both diagnoses. Viewing the two full images side by side named the real cause in one step. A difference map (red where pixels differ, the original dimmed elsewhere) then ranked the residual as separate items: crowd, gantry, barrier, car outlines, mirrors and HUD text.</p>
+      <p><strong>The rule.</strong> Render the whole frame with the real palette, diff it, and measure before naming a cause.</p>
+
+      <h3 id="note-count-it-runs">10. Count that the new code runs</h3>
+      <p><strong>The trap.</strong> The port had two polygon walkers. New work kept going into one of them.</p>
+      <p><strong>What we believed.</strong> That the walker being improved was the one the renderer used.</p>
+      <p><strong>What settled it.</strong> Counting calls. Two iterations had gone into the walker the renderer never called. Worse, the port's faithful polygon fill refused any polygon whose lowest point was a single vertex, so a fallback painter was doing most of the drawing and nothing said so.</p>
+      <p><strong>The rule.</strong> Count that new code runs before debugging why it does nothing. A silent fallback hides how little of a port is live.</p>
+
+      <h3 id="note-score-still">11. A number that does not move</h3>
+      <p><strong>The trap.</strong> To measure how much the trackside objects contributed, a test rendered the frame without the track table.</p>
+      <p><strong>What we believed.</strong> That the difference, 40,524 pixels, was the objects' contribution.</p>
+      <p><strong>What settled it.</strong> The whole road stage is gated on the track table, so removing the table removed the road, not the objects. Holding the road constant and blanking only the object class gave the true figure: 1,446 pixels.</p>
+      <p><strong>The rule.</strong> A score that does not move is not proof a stage is inert, and a score that moves is not proof it measured what you meant. Hold the other stages constant and diff pixels.</p>
+
+      <h3 id="note-lower-score">12. A worse score is evidence</h3>
+      <p><strong>The trap.</strong> A change made the oracle score drop. The natural reaction is to explain the drop away.</p>
+      <p><strong>What we believed.</strong> For a whole iteration, that a large polygon flooding the frame was "the grandstand", drawn a little wrong.</p>
+      <p><strong>What settled it.</strong> Dumping its outline. One vertex was 17,648 pixels off screen. It was garbage geometry, not a grandstand.</p>
+      <p><strong>The rule.</strong> A change that lowers the oracle score is evidence, not a cost to explain away.</p>
+
+      <h3 id="note-pixel-gain">13. A better score can be wrong too</h3>
+      <p><strong>The trap.</strong> A change to the polygon fill's edge pairing gained 79 matching pixels.</p>
+      <p><strong>What we believed.</strong> That the gain showed the pairing was right.</p>
+      <p><strong>What settled it.</strong> The pairing chose ring neighbours in a <em>compacted</em> array, where the neighbour of an edge is an unrelated edge. The mechanism was wrong by construction; it happened to help in a few cases.</p>
+      <p><strong>The rule.</strong> Restrict a change to the cases it is valid for before believing its number.</p>
+
+      <h3 id="note-whole-runs">14. Fit the rule to whole runs</h3>
+      <p><strong>The trap.</strong> Deriving the rule for routed verge-strip weights from a window of eight consecutive track records.</p>
+      <p><strong>What we believed.</strong> That the weight byte <code>+0x28</code> followed <code>2L − i</code>.</p>
+      <p><strong>What settled it.</strong> The eight records were half of a sixteen-record run. Reading complete runs gave the real rule: over a run of length L, the weight is <code>i + 1</code> on even positions and <code>L − i</code> on odd ones, so each pair sums to L.</p>
+      <p><strong>The rule.</strong> Fit a rule to whole runs, never a window.</p>
+
+      <h3 id="note-already-can">15. Check what the renderer can already do</h3>
+      <p><strong>The trap.</strong> Renderer progress stalled on a single trackside polygon, and seven iterations went into it.</p>
+      <p><strong>What we believed.</strong> That the next gain lay in pushing deeper down that thread.</p>
+      <p><strong>What settled it.</strong> Stepping back to ask what the renderer could already do. Car drawing was fully ported. It had simply never been given a car.</p>
+      <p><strong>The rule.</strong> Before deepening a stalled thread, check what the code can already do and what it is being handed.</p>
+
+      <h3 id="note-call-sites">16. Count call sites before reaching for the emulator</h3>
+      <p><strong>The trap.</strong> Working out where the mirror image is drawn. The obvious move was a long emulator session.</p>
+      <p><strong>What we believed.</strong> That the mirror path needed live tracing.</p>
+      <p><strong>What settled it.</strong> A caller count. The edge builder at <span class="addr">15F2:5682</span> has exactly two callers, and one is not the main scene. That second caller is the mirror render.</p>
+      <p><strong>The rule.</strong> Count call sites first. One caller rules a path out; two is a lead.</p>
+
+      <h3 id="note-stack-garbage">17. Deterministic garbage</h3>
+      <p><strong>The trap.</strong> A stack slot held the same value on two separate cold loads of the game.</p>
+      <p><strong>What we believed.</strong> That a repeated value meant the slot was written on purpose.</p>
+      <p><strong>What settled it.</strong> The emulator is deterministic. It replays identical stack garbage on every cold load, so repetition proves nothing about intent.</p>
+      <p><strong>The rule.</strong> In a deterministic emulator, "same value on two cold loads" never proves a slot was written deliberately.</p>
+
+      <h2 id="oracles-that-lie">Oracles that lie</h2>
+      <p>An oracle is only as honest as the question you ask it. These notes are about measurements that were correct and still misleading.</p>
+
+      <h3 id="note-poison">18. The NOP differential needs a poison step</h3>
+      <p><strong>The trap.</strong> A cheap way to ask "does routine X draw anything?" is to suppress the call and compare the frame with and without it. If nothing changes, the routine is inert.</p>
+      <p><strong>What we believed.</strong> That routine <span class="addr">15F2:A675</span> made no difference to the frame. The zero-diff was taken as a refutation.</p>
+      <p><strong>What settled it.</strong> The suppressed call left the backing buffer holding stale pixels from the previous frame, which happened to be the same pixels the routine would have drawn. The zero-diff was a false negative. Filling the destination with a sentinel value before the frame exposes it: with the call suppressed, sentinel pixels survive.</p>
+      <p><strong>The rule.</strong> A suppress-and-compare test needs a poison step. Fill the destination with a sentinel first.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 250" role="img" aria-label="Without poison, a suppressed routine leaves stale pixels that match and give a false zero difference; with a sentinel fill first, the suppressed routine leaves sentinel pixels and the difference shows">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <text x="175" y="24" text-anchor="middle" font-weight="600">Without poison</text>
+            <text x="525" y="24" text-anchor="middle" font-weight="600">With poison</text>
+            <!-- left: buffer stale -->
+            <rect x="40" y="40" width="120" height="70" style="fill:none;stroke:var(--ink-3)"/>
+            <rect x="60" y="58" width="80" height="34" style="fill:var(--ink-3);opacity:.45"/>
+            <text x="100" y="128" text-anchor="middle" font-size="12">call suppressed</text>
+            <text x="100" y="144" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">stale pixels remain</text>
+            <rect x="190" y="40" width="120" height="70" style="fill:none;stroke:var(--ink-3)"/>
+            <rect x="210" y="58" width="80" height="34" style="fill:var(--ink-3);opacity:.45"/>
+            <text x="250" y="128" text-anchor="middle" font-size="12">call made</text>
+            <text x="250" y="144" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">same pixels drawn</text>
+            <text x="175" y="186" text-anchor="middle" style="fill:var(--red)" font-weight="600">diff = 0</text>
+            <text x="175" y="206" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">false negative</text>
+            <!-- right: sentinel -->
+            <rect x="390" y="40" width="120" height="70" style="fill:none;stroke:var(--red);stroke-dasharray:4 3"/>
+            <rect x="410" y="58" width="80" height="34" style="fill:none;stroke:var(--red)"/>
+            <line x1="410" y1="58" x2="490" y2="92" style="stroke:var(--red)"/>
+            <line x1="490" y1="58" x2="410" y2="92" style="stroke:var(--red)"/>
+            <text x="450" y="128" text-anchor="middle" font-size="12">call suppressed</text>
+            <text x="450" y="144" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">sentinel survives</text>
+            <rect x="540" y="40" width="120" height="70" style="fill:none;stroke:var(--red);stroke-dasharray:4 3"/>
+            <rect x="560" y="58" width="80" height="34" style="fill:var(--ink-3);opacity:.45"/>
+            <text x="600" y="128" text-anchor="middle" font-size="12">call made</text>
+            <text x="600" y="144" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">sentinel overwritten</text>
+            <text x="525" y="186" text-anchor="middle" style="fill:var(--blue)" font-weight="600">diff ≠ 0</text>
+            <text x="525" y="206" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">the routine's real output is visible</text>
+            <line x1="350" y1="30" x2="350" y2="220" style="stroke:var(--rule)"/>
+          </g>
+        </svg>
+        <figcaption>The dashed frame marks a buffer pre-filled with a sentinel. Only then can "no difference" mean "draws nothing".</figcaption>
+      </figure>
+
+      <h3 id="note-one-branch">19. One sample, one branch</h3>
+      <p><strong>The trap.</strong> The polygon fill's selection logic forks at <span class="addr">15F2:1495</span>. A capture confirmed the port's handling of it.</p>
+      <p><strong>What we believed.</strong> That the selection was verified, because the port matched the original on the captured sample.</p>
+      <p><strong>What settled it.</strong> The sample had taken the path where status bit <code>0x40</code> is set. Three iterations then went into wiring the bit-clear path, which every real polygon takes and no capture had covered. A breakpoint census over a whole frame found the fork is three-way, and that 3 of 12 polygons took code the port had never seen. Because the arms produce symmetric output, only the value of <code>BX</code> at the deciding <code>test [bx],0x40</code> tells them apart.</p>
+      <p><strong>The rule.</strong> Record which branch a capture exercised and the value that decided it. A census over real data finds paths that reading misses.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 680 250" role="img" aria-label="A three-way branch at 15F2:1495. Early probes all sat on one arm; a census over twelve polygons found three polygons on arms the port had never seen">
+          <defs>
+            <marker id="a11b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="250" y="16" width="180" height="48" rx="8" style="fill:none;stroke:currentColor"/>
+            <text x="340" y="38" text-anchor="middle" font-weight="600">fill selection</text>
+            <text x="340" y="56" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12">15F2:1495</text>
+            <line x1="290" y1="64" x2="130" y2="130" stroke="currentColor" marker-end="url(#a11b)"/>
+            <line x1="340" y1="64" x2="340" y2="130" stroke="currentColor" marker-end="url(#a11b)"/>
+            <line x1="390" y1="64" x2="550" y2="130" stroke="currentColor" marker-end="url(#a11b)"/>
+            <rect x="40" y="134" width="180" height="56" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="130" y="158" text-anchor="middle">arm A</text>
+            <text x="130" y="178" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">every early probe</text>
+            <rect x="250" y="134" width="180" height="56" rx="8" style="fill:none;stroke:var(--red);stroke-width:2;stroke-dasharray:5 3"/>
+            <text x="340" y="158" text-anchor="middle">arm B</text>
+            <text x="340" y="178" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">never captured</text>
+            <rect x="460" y="134" width="180" height="56" rx="8" style="fill:none;stroke:var(--red);stroke-width:2;stroke-dasharray:5 3"/>
+            <text x="550" y="158" text-anchor="middle">arm C</text>
+            <text x="550" y="178" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">never captured</text>
+            <text x="340" y="226" text-anchor="middle">Census of one Suzuka frame: <tspan font-weight="600">3 of 12</tspan> polygons took arms B or C</text>
+          </g>
+        </svg>
+        <figcaption>A capture proves the path it took. A census proves which paths exist. The arm labels here are schematic; the source names the deciding value, not the arms.</figcaption>
+      </figure>
+
+      <h3 id="note-agreeing-measurements">20. Three agreeing measurements</h3>
+      <p><strong>The trap.</strong> The camera's eye height and pitch constants were checked against several captures from the running game, and every capture agreed.</p>
+      <p><strong>What we believed.</strong> That agreement across captures proved the constants.</p>
+      <p><strong>What settled it.</strong> Every capture had landed on the same track record, 1191. The pit-lane state had never been measured. A live pit-lane capture disagreed. The constants were not wrong; they were conditional. F1GP has two camera views, entered at <span class="addr">0752:E985</span> and <span class="addr">0752:E9BC</span>, and the hard-coded eye height and pitch were View B's. View A frames came out off by exactly the difference between the two.</p>
+      <p><strong>The rule.</strong> Agreeing measurements are not proof. Check they sampled different states, and that the state that matters is among them.</p>
+
+      <h3 id="note-matching-value">21. A matching value is not an identification</h3>
+      <p><strong>The trap.</strong> Hunting for the variable behind a behaviour, a cited address held the expected value.</p>
+      <p><strong>What we believed.</strong> That <code>[0x233f]</code> was the variable, because it read <code>0xa0</code> exactly when it should.</p>
+      <p><strong>What settled it.</strong> The same value appeared in four states that needed two different terms. A single coincident value had passed for identification.</p>
+      <p><strong>The rule.</strong> A cited address plus a matching value is a lead, not a proof. Find a state where the candidate must differ, and check that it does.</p>
+
+      <h3 id="note-image-vs-live">22. The file shows you where a table started</h3>
+      <p><strong>The trap.</strong> Reading a data table from the executable file is quick and needs no emulator.</p>
+      <p><strong>What we believed.</strong> That the cockpit mask table at <span class="addr">25B3:6364</span> could be ported from its file contents. It was non-zero and looked complete.</p>
+      <p><strong>What settled it.</strong> A live read. The game overwrites the table at run time for every row it actually uses. The file held a stale initialiser that only looked portable. The same limit once produced a retracted claim that two wall routines "could not work if called"; both of their tables are rewritten after load (see <a href="10-method.html#image-reads">chapter 10</a>).</p>
+      <p><strong>The rule.</strong> A file read gives the value at load. For anything a routine branches on, read the live value.</p>
+
+      <h3 id="note-different-subjects">23. Contradicting measurements with different subjects</h3>
+      <p><strong>The trap.</strong> Two investigations of the polygon fill's chooser disagreed: one said the original's branch mattered, the other showed it was a no-op on the port's data.</p>
+      <p><strong>What we believed.</strong> That one of the two measurements had to be wrong.</p>
+      <p><strong>What settled it.</strong> Naming what each one keyed on. The original's chooser keys on <code>lower_y</code>, the first word of the edge stream. The port's shipped heuristic keyed on an x coordinate, the third word. Both statements were true, about different things.</p>
+      <p><strong>The rule.</strong> When measurements contradict, name the subject of each before choosing between them.</p>
+
+      <h3 id="note-sticky-flag">24. A sticky flag hides repeated faults</h3>
+      <p><strong>The trap.</strong> The game hooks the CPU's divide-error interrupt so a faulting <code>DIV</code> sets a flag and carries on. A test compared the final value of that flag with the original's.</p>
+      <p><strong>What we believed.</strong> That a matching final flag meant matching fault handling.</p>
+      <p><strong>What settled it.</strong> The flag is sticky. The zero-divisor case in the pit annotation code faults 415 times in one original call. A port that dropped every exception but the last, or skipped square-root steps, would leave the same final flag.</p>
+      <p><strong>The rule.</strong> Pair each divide with its handler invocation, and count them.</p>
+
+      <h2 id="porting-faithfully">Porting faithfully, and wrongly</h2>
+      <p>Faithful does not mean literal. These notes are about the places where copying the original exactly would have been wrong, or where the "obvious" meaning of a field was not its meaning.</p>
+
+      <h3 id="note-faithful-wrong">25. A faithful port can be the wrong port</h3>
+      <p><strong>The trap.</strong> Routine <span class="addr">15F2:B1A7</span> blind-clears part of a track record after drawing. Porting it exactly seemed like the faithful choice.</p>
+      <p><strong>What we believed.</strong> That any deviation from the original's cleanup was a fidelity loss.</p>
+      <p><strong>What settled it.</strong> Asking what regenerates the record. The original rebuilds that table, so its blind clear is harmless there. In the port at the time, the table persisted, so copying the clear would have stripped section flags for a whole lap. The deviation was the correct port. A related detail came out of the same work: the un-mark is a mask, not a restore. It sets <code>+0x1e</code> to zero and clears bit 7 of <code>+0x2b</code> even though the mark never set that bit.</p>
+      <p><strong>The rule.</strong> Before copying destructive cleanup, ask what regenerates it in your architecture. If nothing does, the literal copy is the bug.</p>
+
+      <h3 id="note-two-representations">26. One table, two representations</h3>
+      <p><strong>The trap.</strong> The port marked competitor cars into the runtime track record bytes, as the original does. The painter, however, read each car's class from decoded Rust structs.</p>
+      <p><strong>What we believed.</strong> That the cars were marked, so they would draw.</p>
+      <p><strong>What settled it.</strong> Competitors were queued and drew nothing. The marks went into one copy and the painter read the other.</p>
+      <p><strong>The rule.</strong> Keep one source of truth. A table held in two representations invites a silent half-update. This lesson is one of the roots of the single canonical memory image described in <a href="10-method.html#one-memory-image">chapter 10</a>.</p>
+
+      <h3 id="note-patch-noop">27. The patch that did nothing</h3>
+      <p><strong>The trap.</strong> The first design for Big Race's vehicle sets patched the driving parameters in the executable image and swapped the car shape in a host-side copy of the shape table.</p>
+      <p><strong>What we believed.</strong> That patching the image changes how every car drives, and that a swapped shape stays swapped.</p>
+      <p><strong>What settled it.</strong> Independent design reviews read the loader. The 38-byte per-circuit driving block at <code>DS:0204..0229</code> is decoded from the track file at every startup, overwriting whatever the image held. And the renderer re-copies the shape segment from live memory every frame, which erases a host-side swap. Both mechanisms would have been no-ops.</p>
+      <p><strong>The rule.</strong> Find where the game rebuilds a value before deciding where to change it. The shipped design overlays the block after the loader decodes it, and re-applies the shape override after each copy (<a href="12-big-race.html#vehicle-sets">chapter 12</a>).</p>
+
+      <h3 id="note-names-are-hypotheses">28. A field's name is a hypothesis</h3>
+      <p><strong>The trap.</strong> Early investigations named fields by what they seemed to do.</p>
+      <p><strong>What we believed.</strong> Three names in particular. That car record <code>+0x84</code>, written by routine <code>AFA3</code>, is a "detail level". That <code>[0x2225]</code> is the entrant count. That the table at <span class="addr">25B3:0C65</span> is the race order.</p>
+      <p><strong>What settled it.</strong> Reading every consumer. Both readers of <code>+0x84</code> negate it: it is a per-car draw-order bias, base 1 or 2 plus one per occupied scene slot skipped. <code>[0x2225]</code> is a frame-rate draw budget clamped to 12..23, which is why <code>AFA3</code> always runs. And <code>0C65</code> is the <em>spatial</em> order around the lap, sorted on record <code>+0x26</code>; the race classification lives in <code>+0xAA</code> and is sorted separately. The first name stuck in places: the capture toolchain's own notes still describe <code>+0x84</code> as a detail level.</p>
+      <p><strong>The rule.</strong> Name a field after you have read all of its readers, and fix the name everywhere when it changes.</p>
+
+      <h3 id="note-mark-class">29. Twice a place, not an index</h3>
+      <p><strong>The trap.</strong> Each frame, race control marks the track records near visible cars with a class byte. The natural guess is <code>0x80 | car_index</code>.</p>
+      <p><strong>What we believed.</strong> That the low bits indexed the car list directly.</p>
+      <p><strong>What settled it.</strong> The consumers' bound check. They compare against <code>0xb4</code>, which is <code>0x80 | (2 × 26)</code>. The class is <code>0x80 | (2 × place)</code>, resolved through the order table, as the car placement routine at <span class="addr">15F2:AAED</span> does, never a direct car-list index.</p>
+      <p><strong>The rule.</strong> Let a guard's constant tell you the encoding. <code>cmp cx,0xb4</code> was the whole answer.</p>
+
+      <h3 id="note-near-clip">30. Clipped geometry is supposed to leave the screen</h3>
+      <p><strong>The trap.</strong> A projector that returns "no screen position" for a point behind the near plane seems safe.</p>
+      <p><strong>What we believed.</strong> That dropping polygons with a near vertex was a reasonable approximation.</p>
+      <p><strong>What settled it.</strong> Half a grandstand disappeared, and a provisional rasteriser flooded the frame with a polygon whose vertex lay thousands of pixels away. The original assigns Cohen–Sutherland outcodes so near geometry is <em>clipped</em>, and the clipped result lands far outside the frame by design; only a clipping fill may rasterise it. Along the way, a mysterious <code>x &lt;&lt; 5</code> in the near clip turned out to be the general projection <code>(x &lt;&lt; 8) / depth</code> evaluated at the near-plane depth of 8.</p>
+      <p><strong>The rule.</strong> A shift that looks arbitrary is often the general formula at a special value. And "no screen position" is half a port; the other half is the clip.</p>
+
+      <h3 id="note-missing-input">31. When no rule can pass both tests, an input is missing</h3>
+      <p><strong>The trap.</strong> Two tests of the polygon fill wanted opposite left/right edge assignments from what looked like identical input.</p>
+      <p><strong>What we believed.</strong> That the assignment rule was subtle and needed more cases.</p>
+      <p><strong>What settled it.</strong> No choice of assignment converged. Printing the descriptors each stage was handed settled it in one run: the original's decision uses status bit <code>0x40</code>, which the port was not passing in. A related check paid off in the same code: the fill tests its corner bits once, on an accumulator at <code>[0x640]</code>, not per descriptor, and that input already existed in the port.</p>
+      <p><strong>The rule.</strong> If identical input must give opposite outputs to pass two tests, the input is incomplete. Print what the stage is handed before adding another piece.</p>
+
+      <h3 id="note-guard-codesigned">32. A guard that only holds for the code it guards</h3>
+      <p><strong>The trap.</strong> The port's fill rejected any edge ring whose two descriptors differed in <code>lower_y</code>, and the rejection never fired on real data.</p>
+      <p><strong>What we believed.</strong> That the guard was a safe invariant of the original.</p>
+      <p><strong>What settled it.</strong> Swapping in the original's selection rule. The guard had held only because of the port's own invented selection; with the real rule it rejected valid rings. A cousin of this trap: the fill appeared to "tolerate" stream-less descriptors, but in fact its caller only ever handed it a window between two cursors. Tolerating a case and excluding it look identical from outside.</p>
+      <p><strong>The rule.</strong> A guard co-designed with the code it guards is only valid for that code. Recheck it whenever the rule changes, and check how a caller narrows input before copying its success.</p>
+
+      <h3 id="note-mark-before-render">33. Port the marks before the renderer they gate</h3>
+      <p><strong>The trap.</strong> The wall-drawing routines looked like dead code: no circuit set any wall flag in track record <code>+0x1f</code>.</p>
+      <p><strong>What we believed.</strong> A lesson recorded that both wall routes were dead. A later one recorded that the road units were blocked on tables built outside the expander.</p>
+      <p><strong>What settled it.</strong> Both were marked SUPERSEDED or WRONG. The wall marks come from track commands <code>0x8a</code> (lateral) and <code>0x8b</code> (longitudinal), with ten argument bytes each, handled in the expander's second pass. The wall-width table is built inside the expander too. Once the port ran those commands, about 74 records per circuit carried wall bits and drew. A capture of the live <code>+0x1f</code> bytes, built before the port, rejected a first wall pass written from a partial reading of the loop, before any wrong geometry shipped.</p>
+      <p><strong>The rule.</strong> Port the loader marks before the renderer they gate, or the renderer is unreachable and unverifiable. Build the oracle before the port.</p>
+
+      <h3 id="note-wet-finish">34. Do not relax the finish; drive better</h3>
+      <p><strong>The trap.</strong> Automated full-race runs on wet circuits sometimes never finished. The player car, held on straight throttle, could get stranded.</p>
+      <p><strong>What we believed.</strong> It was tempting to treat this as a harness problem and loosen the finish check.</p>
+      <p><strong>What settled it.</strong> The car was valid; the input was not. Held throttle can also be limited by the game itself: with the owned slip inputs, the original reduces a requested 16,384 to 15,074. A "source driver" that steers corners with real keyboard make and break edges, derived from live track geometry, finished every run naturally.</p>
+      <p><strong>The rule.</strong> Keep the terminal predicate strict. Never force a retirement or relax a finish flag; fix the input.</p>
+
+      <h2 id="testing-that-proves-nothing">Testing that proves nothing</h2>
+      <p>The last theme is the most humbling: tests that were green, and meant nothing.</p>
+
+      <h3 id="note-assert-ne">35. <code>assert_ne!</code> cannot see an inversion</h3>
+      <p><strong>The trap.</strong> A near-clip test checked that two outputs differed, with <code>assert_ne!(a, b)</code>.</p>
+      <p><strong>What we believed.</strong> That the test pinned the branch.</p>
+      <p><strong>What settled it.</strong> A mutation that swapped the two outputs. They were still unequal, so the "both objects near" test passed the mutant.</p>
+      <p><strong>The rule.</strong> Name both expected values. Inequality cannot tell a correct branch from an inverted one.</p>
+
+      <h3 id="note-walls-none">36. 738 green tests and no wall drawing</h3>
+      <p><strong>The trap.</strong> The wall-drawing body was covered by a large, green suite.</p>
+      <p><strong>What we believed.</strong> That the suite exercised it.</p>
+      <p><strong>What settled it.</strong> Every wall call site in the tests passed <code>walls: None</code>. The whole draw body could be deleted and all 738 tests stayed green. Worse, no frame-level differential test covered walls at all: the four frozen Suzuka frames contain no wall record, so they passed with walls both declining and drawing.</p>
+      <p><strong>The rule.</strong> An oracle only covers the path its test takes. Break a new path deliberately before citing any suite as evidence for it.</p>
+
+      <h3 id="note-inert-mutation">37. The mutation that could not fail</h3>
+      <p><strong>The trap.</strong> A mutation survived, which normally means the test is weak.</p>
+      <p><strong>What we believed.</strong> In one case, that a cast chain needed a stronger test. In another, that the wall build index was untested.</p>
+      <p><strong>What settled it.</strong> Working out why each survived. The cast chain <code>as u8 as i8 as u8 as i8</code> is the identity, so the "mutant" was the original code. And flipping the low bit of the wall build index only swaps within a command's own pair, which changes nothing on Suzuka because its commands share a divisor.</p>
+      <p><strong>The rule.</strong> An inert mutation reads exactly like a weak test. Explain a survivor before believing either verdict.</p>
+
+      <h3 id="note-direct-call">38. The test that skipped the interesting return</h3>
+      <p><strong>The trap.</strong> Lap counting was tested by calling <code>race_lap_state</code> directly.</p>
+      <p><strong>What we believed.</strong> That the lap display was covered.</p>
+      <p><strong>What settled it.</strong> A car that has already finished skips the lap increment and returns early; later crossings only redraw. The direct call never went through that return. Reproducing through the timing-line latch, and checking the actual digit pixels, did.</p>
+      <p><strong>The rule.</strong> Test through the path play takes. A direct call to the inner routine skips the branches the caller adds.</p>
+
+      <h3 id="note-empty-success">39. Exit code zero, nothing ran</h3>
+      <p><strong>The trap.</strong> Capture scripts were run as inline Python heredocs under a timeout wrapper.</p>
+      <p><strong>What we believed.</strong> That a zero exit status meant the capture and its test had run.</p>
+      <p><strong>What settled it.</strong> Two separate sessions observed the same thing: the heredoc executed nothing and exited 0. A shared Cargo target directory produced a similar ghost: a clean tree "passed" with a neighbouring worktree's test binary, reporting that tree's temporary mutant warning and test count without compiling anything.</p>
+      <p><strong>The rule.</strong> Run scripts from files, give every worktree its own build target, and read the real test output rather than the exit code.</p>
+
+      <h3 id="note-hardlink">40. The mutation that damaged the original</h3>
+      <p><strong>The trap.</strong> A mutation self-test for captured metadata created its mutant files as hard links to save time.</p>
+      <p><strong>What we believed.</strong> That the genuine capture was safe, because the mutation wrote to a "copy".</p>
+      <p><strong>What settled it.</strong> A hard link is the same file. The JSON mutation altered a genuine capture.</p>
+      <p><strong>The rule.</strong> Mutation fixtures copy, never link, and verify the source hashes after every run.</p>
+
+      <h3 id="note-stale-lessons">41. Lessons go stale too</h3>
+      <p><strong>The trap.</strong> Measurement lessons ("this routine does not run in a practice frame", "no circuit sets this flag") are true when written.</p>
+      <p><strong>What we believed.</strong> That a verified lesson stays verified.</p>
+      <p><strong>What settled it.</strong> Six lessons outlived their truth after the thing they measured was ported. Because every new session was fed the lessons' first lines, those six were repeated as fact until someone noticed.</p>
+      <p><strong>The rule.</strong> A measurement lesson goes stale the moment you port what it measured. Prune or rewrite it then. These notes are a snapshot of a file that keeps moving.</p>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

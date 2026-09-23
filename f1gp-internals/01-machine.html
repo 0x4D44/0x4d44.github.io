@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How GP.EXE v1.05 runs as a DOS real-mode program: packing, segments, the 300 Hz timer, the frame loop, the divide-error hook, the resident dispatcher, calibration and the shared random number generator.">
+  <title>The machine — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 01</p>
+      <h1>The machine</h1>
+      <p class="lede">Formula One Grand Prix is a 16-bit DOS program that owns the whole PC while it runs. This chapter describes the machine it builds for itself: how the executable is packed and loaded, where code and data live, how a 300 Hz timer paces everything, and how the port keeps all of that in one faithful memory image.</p>
+
+      <div class="stats">
+        <div class="stat"><b>v1.05</b><span>the <code>GP.EXE</code> build the port runs</span></div>
+        <div class="stat"><b>300.02 Hz</b><span>PIT channel 0, divisor 3977</span></div>
+        <div class="stat"><b>50 Hz</b><span>the main tick, every sixth interrupt</span></div>
+        <div class="stat"><b>271,760</b><span>bytes in the port's one canonical memory image</span></div>
+      </div>
+
+      <h2 id="a-real-mode-program">A real-mode program</h2>
+      <p>Geoff Crammond's game for MicroProse runs in x86 real mode. There is no protected mode, no flat address space and no operating system help once a race starts. Every address is a pair: a 16-bit <em>segment</em> and a 16-bit <em>offset</em>. The CPU multiplies the segment by 16 and adds the offset to get a 20-bit physical address. So <span class="addr">25B3:0D1B</span> means physical byte <code>0x25B30 + 0x0D1B</code>.</p>
+      <p>This matters for everything that follows. A table the game reads at <span class="addr">DS:2984</span> sits in whatever segment the <code>DS</code> register holds at that moment. Two different segment:offset pairs can name the same physical byte. And a program loaded by DOS does not know its own segments until DOS tells it, so the executable carries a list of places to patch.</p>
+      <p>This site cites addresses the way the port's sources do. <span class="addr">0752:5C2F</span> is a code address in the running game. <code>DS:2984</code> and <code>SS:05C8</code> are offsets into the data and stack segments. Where a citation is a <em>file</em> offset instead, the text says so, because the two are easy to confuse.</p>
+
+      <h2 id="packed-and-unpacked">Packed and unpacked</h2>
+      <p>The <code>GP.EXE</code> on the original disks is compressed with Microsoft EXEPACK. EXEPACK squeezes the program image and its relocation table, then appends a small stub. When DOS starts the program, the stub runs first, expands the image in memory, applies the relocations itself and jumps to the real entry point. The packed file's own MZ header therefore has no relocations; its entry point is the stub at offset <code>0x0010</code>, and the stub's header carries an <code>RB</code> signature.</p>
+      <p>Game and mod folders often also hold an unpacked copy, usually named <code>GP_UNPACKED.EXE</code>, which is far easier to study. The port's research used one heavily. Every file offset quoted in the port's sources is an offset into such an unpacked image.</p>
+      <p>The port does its own unpacking. <code>src/native_exepack.rs</code> is a small, safe decoder. It checks the MZ signature, insists that the declared size matches the file and that there are no overlays, finds the EXEPACK header from the packed <code>CS</code>, checks the signature, decodes the sixteen groups of packed relocations and the image, and rebuilds an ordinary relocatable MZ file. A test reconstructs the owned game's unpacked file byte for byte when the owner's copy is available.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>A game folder can contain both files, and they need not match. On 2026-09-12 the project found that an adjacent <code>GP_UNPACKED.EXE</code> could be a stale generic image with a different driver roster and different random-number state from the packed <code>GP.EXE</code> beside it. Comparisons against a fresh capture of the real game only agreed once the port unpacked <code>GP.EXE</code> itself.</p></div>
+      <p>The rule that came out of this is short: when both files exist, <strong>the packed <code>GP.EXE</code> is authoritative</strong>. The host decodes it with the native EXEPACK decoder and ignores the unpacked copy. Mod folders are the usual source of a stale unpacked file, so the same lesson applies to roster bytes: decode <code>GP.EXE</code> before comparing anything.</p>
+
+      <h2 id="loading-and-relocation">Loading at 0752</h2>
+      <p>An MZ executable is written as if it will load at segment zero. Every instruction that needs an absolute segment, such as <code>mov ax, seg data</code> or a far call, holds a value relative to that imaginary zero. The header lists where those words are. DOS picks a real load segment, copies the image there, and adds the load segment to each listed word.</p>
+      <p>Under the reference setup the project used, the game's image starts at segment <code>0752</code>. The port fixes that base. <code>src/original_runtime_image.rs</code> defines <code>LOAD_SEGMENT = 0x0752</code> and loads the image exactly as DOS would: validate the header, validate every relocation target first, copy the bytes, then add <code>0x0752</code> to each relocated word inside the window being loaded. If any check fails, the destination is left untouched.</p>
+      <p>Relocation explains many strange-looking numbers in the port. The executable's code refers to the off-screen canvas segment as <code>50BA</code>. Add <code>0752</code> and it becomes <code>580C</code>, which is where the game actually draws. The VGA aperture at <code>A000</code> is a hardware address, so it is never relocated.</p>
+
+      <h2 id="the-address-map">The address map</h2>
+      <p>Once loaded, the game occupies a set of fixed segments. The table lists the ones this site cites most often. All are runtime segments, after relocation.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Segment</th><th>Role</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td><span class="addr">0752</span></td><td>Main game code: physics, race control, the frame loop, session services.</td><td>Physics tick <span class="addr">0752:5C2F</span>; player dynamics <span class="addr">0752:995C</span>; frame pacing <span class="addr">0752:C2A6</span></td></tr>
+          <tr><td><span class="addr">15F2</span></td><td>Renderer code: road, objects, bitmaps, clipping.</td><td>Bitmap scale divide <span class="addr">15F2:24AE</span>; visibility flags <span class="addr">15F2:9882</span></td></tr>
+          <tr><td><span class="addr">213F</span></td><td>Resident service code: presentation, palette fades, link event handling, the divide-error handler.</td><td>Divide handler <span class="addr">213F:2602</span>; pixel copy <span class="addr">213F:31FA</span>; RNG warm-up <span class="addr">213F:0C34</span></td></tr>
+          <tr><td><span class="addr">25B3</span></td><td>The data segment (<code>DS</code>).</td><td>26-car table <span class="addr">25B3:0D1B</span>, stride <code>0xC0</code></td></tr>
+          <tr><td><span class="addr">3066</span></td><td>The stack segment (<code>SS</code>), which also holds many game variables.</td><td>Frame counter <code>SS:05C8</code>; frame interval <code>SS:1230</code></td></tr>
+          <tr><td><span class="addr">381C</span></td><td>Generated scene data, including the pit-lane bank.</td><td>Second 46-byte-stride record table</td></tr>
+          <tr><td><span class="addr">4813</span></td><td>Generated main track bank: the expanded 46-byte track table.</td><td>Track records built by the loader</td></tr>
+          <tr><td><span class="addr">580C</span></td><td>Off-screen canvas and upper bank.</td><td>The world is drawn at <span class="addr">580C:1400</span></td></tr>
+          <tr><td><span class="addr">92C0</span></td><td>A separate resident image: timer interrupt, keyboard hook, palette and serial services.</td><td>Timer IRQ <span class="addr">92C0:033F</span></td></tr>
+          <tr><td><span class="addr">9438</span></td><td>The XSOUND AdLib driver, loaded from its own file.</td><td>Called from the timer's sound service</td></tr>
+          <tr><td><span class="addr">A000</span></td><td>VGA mode 13h video memory (hardware, not relocated).</td><td>The visible 320×200 page</td></tr>
+        </tbody>
+      </table></div>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 430" role="img" aria-label="The port's canonical memory image: data segment at offset 0, stack segment overlapping it at AB30, scene bank at 12690, main track bank at 22600 and upper canvas bank at 32590, ending at 42590.">
+          <g font-size="13" fill="currentColor">
+            <text x="20" y="22" font-weight="600">One physical image, physical 0x25B30 to 0x680C0</text>
+            <text x="20" y="42" font-size="12" style="fill:var(--ink-3)">Offsets are from the start of the image; each view is 64 KiB</text>
+          </g>
+          <g font-size="12">
+            <rect x="170" y="60" width="200" height="70" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="180" y="80" style="fill:var(--blue)" font-weight="600">DS 25B3</text>
+            <text x="180" y="98" fill="currentColor">data segment</text>
+            <text x="180" y="116" fill="currentColor">offset 0x00000</text>
+            <rect x="390" y="100" width="210" height="70" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="400" y="120" style="fill:var(--amber)" font-weight="600">SS 3066</text>
+            <text x="400" y="138" fill="currentColor">stack segment</text>
+            <text x="400" y="156" fill="currentColor">offset 0x0AB30</text>
+            <rect x="370" y="100" width="20" height="30" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="20" y="120" font-size="12" style="fill:var(--red)">DS:AB30..FFFF</text>
+            <text x="20" y="136" font-size="12" style="fill:var(--red)">= SS:0000..54CF</text>
+            <line x1="120" y1="126" x2="366" y2="116" style="stroke:var(--red)" stroke-dasharray="4 3"/>
+            <rect x="170" y="190" width="430" height="44" rx="4" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="180" y="210" fill="currentColor" font-weight="600">381C scene data, pit-lane bank</text>
+            <text x="180" y="226" fill="currentColor">offset 0x12690 (generated)</text>
+            <rect x="170" y="250" width="430" height="44" rx="4" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="180" y="270" fill="currentColor" font-weight="600">4813 main track bank</text>
+            <text x="180" y="286" fill="currentColor">offset 0x22600 (generated)</text>
+            <rect x="170" y="310" width="430" height="60" rx="4" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="180" y="330" fill="currentColor" font-weight="600">580C upper bank and canvas</text>
+            <text x="180" y="346" fill="currentColor">offset 0x32590; world drawn at 580C:1400</text>
+            <text x="180" y="362" fill="currentColor">image ends at 0x42590</text>
+            <line x1="150" y1="60" x2="150" y2="170" style="stroke:var(--green)" stroke-width="3"/>
+            <text x="20" y="75" font-size="12" style="fill:var(--green)">Loaded from</text>
+            <text x="20" y="91" font-size="12" style="fill:var(--green)">the executable</text>
+            <line x1="150" y1="190" x2="150" y2="370" style="stroke:var(--ink-3)" stroke-width="3"/>
+            <text x="20" y="260" font-size="12" style="fill:var(--ink-3)">Zeroed, then</text>
+            <text x="20" y="276" font-size="12" style="fill:var(--ink-3)">built by the</text>
+            <text x="20" y="292" font-size="12" style="fill:var(--ink-3)">game's own</text>
+            <text x="20" y="308" font-size="12" style="fill:var(--ink-3)">startup code</text>
+            <text x="20" y="405" font-size="12" style="fill:var(--ink-3)">Outside this image: code segments, the 92C0 resident, XSOUND at 9438, and VGA at A000.</text>
+          </g>
+        </svg>
+        <figcaption>The five segments the port keeps in one buffer. The data and stack segments overlap: the last 0x54D0 bytes of the DS view are the first bytes of the SS view.</figcaption>
+      </figure>
+
+      <p>Two details in that map surprise people.</p>
+      <p>First, the stack segment starts inside the data segment. <code>3066 − 25B3 = 0xAB3</code> paragraphs, so <code>SS:0000</code> is <code>DS:AB30</code>. The last <code>0x54D0</code> bytes of the data segment and the first <code>0x54D0</code> bytes of the stack segment are the same memory. The game stores many ordinary variables at low <code>SS</code> offsets, so a write through <code>SS</code> changes what a read through <code>DS</code> sees.</p>
+      <p>Second, the "pit" bank at <code>381C</code> has nothing to do with the programmable interval timer. The port's constant is called <code>PIT_SEGMENT</code> because the bank holds the pit-lane track data. One of the port's lessons records that the pit-lane join reads its anchor from a second 46-byte-stride record table in this scene bank, not from the main table at <code>4813</code>.</p>
+
+      <h3 id="the-canvas">The canvas and the screen</h3>
+      <p>The game does not draw the 3D world straight into video memory. It draws into an off-screen canvas in the <code>580C</code> bank, starting at <span class="addr">580C:1400</span>. <code>0x1400</code> is 5,120 bytes, which is exactly 16 rows of 320 pixels, so the canvas's first row lines up with page row 16. When a frame is ready, a separate resident routine at <span class="addr">213F:31FA</span> copies the pixels to the VGA page at <code>A000</code>.</p>
+      <p>The screen-pointer setup at <span class="addr">213F:25CB</span> installs these pointers: the primary and lower destinations at <code>A000:0000</code>, the upper and saved-upper pointers at <code>580C:0000</code>, and a copy of the upper segment in the scene record. The frame pacer repeats the same stores every frame.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>Comparing the whole VGA page between two runs compares <em>frame history</em>, not the current frame, because parts of <code>A000</code> hold whatever earlier frames left there. Early oracle work compared the wrong buffer. The rule became: the world is drawn to <code>580C:1400</code>, so compare that. A related slip: the port's "lower" buffer is the whole 64 KiB <code>A000</code> segment, not the 64,000-byte visible page, so it must be sliced before any size check.</p></div>
+
+      <h2 id="address-spaces">Three ways to write an address</h2>
+      <p>The port's sources mix runtime addresses and file offsets, and that caused real mistakes. The rules that hold are simple once written down. For a runtime address <code>SSSS:X</code>, the file offset in the unpacked executable is:</p>
+      <pre><code>file = (SSSS − 0x752) × 16 + X + 0x1600</code></pre>
+      <p>The <code>0x1600</code> is the size of the unpacked file's MZ header, and <code>0x752</code> undoes the load base. Three special cases fall out of the same formula:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Citation</th><th>File offset</th><th>Worked example</th></tr></thead>
+        <tbody>
+          <tr><td><code>0752:X</code></td><td><code>0x1600 + X</code></td><td><span class="addr">0752:E985</span> is file <code>0xFF85</code></td></tr>
+          <tr><td><code>05F2:X</code></td><td><code>X</code></td><td>A segment chosen so that offset equals file offset</td></tr>
+          <tr><td><code>15F2:X</code></td><td><code>0x10000 + X</code></td><td><span class="addr">15F2:AFA3</span> is file <code>0x1AFA3</code></td></tr>
+          <tr><td><code>25B3:X</code></td><td>file segment <code>1E61</code> plus header</td><td>The data segment's image begins at file segment <code>1E61</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>There is a second naming habit in the sources. Some citations name a segment by its position <em>in the image</em>, before the load base is added. The resident that runs at <code>92C0</code> is also cited as <code>8B6E</code>, because <code>0x8B6E + 0x0752 = 0x92C0</code> and its bytes begin at image offset <code>0x8B6E0</code>. The menu overlays are cited the same way, as <code>605A</code> and <code>6BE7</code>. One journal notes that a service cited as <code>19ED:2D73</code> is resident <span class="addr">213F:2D73</span>, which fits the same arithmetic, since <code>0x19ED + 0x0752 = 0x213F</code>.</p>
+      <div class="callout trap"><span class="label">An honest gap</span><p><code>19ED:X</code> citations are not consistent across the project's own sources. One lesson says the track-expander overlay is file <code>X + 0x8B4D0</code>, and says that rule checked out against four citations. The track-table module cites <span class="addr">19ED:5B8F</span> as file <code>0x90B8F</code>. The cockpit module treats <code>19ED:X</code> as image-relative, at file <code>0x19ED0 + X + 0x1600</code>. A disassembly note maps a listing of the same area to run-time linear <code>0x19ED0 + offset + 0x7520</code>, so the loader entry <code>19ED:519F</code> breaks at <code>9658:000F</code>, not at <code>213F:519F</code>. The project's own guidance is to check the bytes before relying on any <code>19ED</code> mapping, and this site follows it.</p></div>
+      <p>A bare hex number such as <code>E0B1</code> is the worst case, because it may be a file offset or a segment offset. Older labels in the port once confused file <code>1469F</code> with runtime <span class="addr">0752:469F</span>. The fix was procedural: resolve the code bank and read the caller's actual call bytes before porting anything by name.</p>
+
+      <h2 id="the-timer">The 300 Hz timer</h2>
+      <p>The PC's programmable interval timer (PIT) is fed by a 1,193,182 Hz clock. Channel 0 divides that by a programmable count and raises interrupt 0 (IRQ 0) each time the count runs out. DOS leaves it at the slowest setting, about 18.2 Hz. The game speeds it up.</p>
+      <p>At boot, code in the startup overlay (cited as <code>605A:B76C..B81B</code>) installs the game's interrupt handlers and programs channel 0 twice: first with a count of zero, then with the final count. The final divisor is <strong>3977</strong>. <code>1,193,182 / 3977 = 300.02</code>, so the game's timer interrupt fires just over 300 times a second.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>Writing <code>0x00</code> to PIT port <code>0x43</code> only latches the counter for reading. Writing <code>0x36</code> programs channel 0's mode. An early reading that looked only at the latch sites concluded the game never reprogrammed the PIT, and so lost the tick rate. Both kinds of write have to be read.</p></div>
+
+      <h3 id="inside-the-interrupt">Inside the interrupt</h3>
+      <p>The handler lives in the separate resident at <span class="addr">92C0:033F</span>. The port ports it as one call, <code>original_runtime_timer::tick</code>, and the host calls it once per elapsed PIT interrupt. Each interrupt does four things, in this order:</p>
+      <ol>
+        <li><strong>Sound.</strong> A shared sound service runs the six-interrupt divider. Every sixth interrupt is a <em>main tick</em>, which advances the music sequencer through the XSOUND AdLib driver at <code>9438</code>. The OPL register writes it produces come out in order, before the interrupt completes.</li>
+        <li><strong>Counters.</strong> It increments two 16-bit counters at <code>SS:05D2</code> and <code>SS:05C8</code>. The second is the frame counter the main loop watches.</li>
+        <li><strong>BIOS accounting.</strong> It adds an increment from <code>SS:05CC</code> into an accumulator at <code>SS:05CE</code>.</li>
+        <li><strong>Completion.</strong> If that add carries (or the increment is zero), the handler chains to the saved BIOS timer handler. Otherwise it sends end-of-interrupt to the PIC and returns.</li>
+      </ol>
+      <p>The accumulator is the classic way to speed up the timer without breaking DOS's time of day: only a fraction of the fast interrupts are passed on to the BIOS. (That this is its purpose is our reading of the mechanism; the sources state the carry test, not the intent.) There is also an alternate handler at <span class="addr">92C0:0373</span>, selected when <code>SS:0A26</code> is <code>0xFF</code>. It uses <code>SS:05C5</code> as a re-entrancy latch, runs the same accumulator split, and skips the sound service while <code>SS:08EB</code> is <code>0xFF</code>.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 300" role="img" aria-label="Timer chain: 1.193 MHz clock divided by 3977 gives 300 Hz interrupts. Each interrupt increments SS:05C8. Every sixth interrupt is a 50 Hz main sound tick. The frame pacer waits until SS:05C8 reaches SS:1230.">
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="30" width="150" height="56" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="54" font-weight="600">PIT input clock</text>
+            <text x="32" y="74">1,193,182 Hz</text>
+            <line x1="170" y1="58" x2="240" y2="58" stroke="currentColor"/>
+            <polygon points="240,58 232,53 232,63" fill="currentColor"/>
+            <text x="178" y="48" font-size="12">÷ 3977</text>
+            <rect x="240" y="30" width="170" height="56" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="252" y="54" font-weight="600" style="fill:var(--blue)">IRQ 0 handler</text>
+            <text x="252" y="74">300.02 per second</text>
+            <line x1="410" y1="58" x2="470" y2="58" stroke="currentColor"/>
+            <polygon points="470,58 462,53 462,63" fill="currentColor"/>
+            <text x="420" y="48" font-size="12">÷ 6</text>
+            <rect x="470" y="30" width="150" height="56" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="482" y="54" font-weight="600" style="fill:var(--amber)">Main tick</text>
+            <text x="482" y="74">50 Hz music, sound</text>
+            <line x1="325" y1="86" x2="325" y2="140" stroke="currentColor"/>
+            <polygon points="325,140 320,132 330,132" fill="currentColor"/>
+            <text x="335" y="118" font-size="12">+1 per interrupt</text>
+            <rect x="240" y="140" width="170" height="50" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="252" y="162" font-weight="600">SS:05C8</text>
+            <text x="252" y="180">frame counter</text>
+            <line x1="325" y1="190" x2="325" y2="230" stroke="currentColor"/>
+            <polygon points="325,230 320,222 330,222" fill="currentColor"/>
+            <rect x="150" y="230" width="350" height="56" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="162" y="254" font-weight="600" style="fill:var(--green)">Frame pacer 0752:C2A6</text>
+            <text x="162" y="274">wait until SS:05C8 ≥ SS:1230, then reset to 0</text>
+            <rect x="20" y="140" width="170" height="50" rx="6" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="32" y="162" font-weight="600">SS:1230</text>
+            <text x="32" y="180">ticks per frame</text>
+            <line x1="105" y1="190" x2="190" y2="230" stroke="currentColor" stroke-dasharray="4 3"/>
+          </g>
+        </svg>
+        <figcaption>One clock drives everything. The 300 Hz interrupt counts ticks for the frame pacer; every sixth one advances the music.</figcaption>
+      </figure>
+
+      <h2 id="frame-pacing">Frame pacing</h2>
+      <p>The game's frame rate is not tied to the timer directly. The Graphics menu stores a <em>frame interval</em>: the number of 300 Hz ticks each frame should take. The menu byte is zero-extended into <code>SS:1230</code>. An interval of 12, which the project's reference test scenario selects, gives <code>300 / 12 = 25</code> frames a second.</p>
+      <p>The pacer at <span class="addr">0752:C2A6..C2FB</span> runs once per frame, after the world is drawn. In the ordinary case it:</p>
+      <ol>
+        <li>copies the current frame counter into <code>DS:2C63</code>, recording how many ticks the frame used;</li>
+        <li>waits, with an unsigned comparison, until <code>SS:05C8</code> reaches <code>SS:1230</code>;</li>
+        <li>resets <code>SS:05C8</code> to zero;</li>
+        <li>installs the screen pointers (the same stores as <span class="addr">213F:25CB</span>);</li>
+        <li>calls the pixel copy at <span class="addr">213F:31FA</span>.</li>
+      </ol>
+      <p>A fast PC therefore waits. A slow PC finds the counter already past the target and carries straight on, so the game simply runs slower. In a linked two-machine race, the pacer takes a different branch: if <code>SS:0A27</code> is non-zero it skips the snapshot, the wait and the reset, and jumps straight to the common pointer stores. Chapter 08 explains why a linked race paces itself elsewhere.</p>
+
+      <h3 id="timing-configuration">What the interval feeds</h3>
+      <p>The interval is not only a wait. A one-off routine at <span class="addr">0752:7CAF..7D2F</span> turns it into fixed-point timing words that the physics uses. From the interval <code>r</code> it computes:</p>
+      <ul>
+        <li>a draw budget, <code>30 − r/2</code>, clamped to 12..23, at <code>DS:2225</code>;</li>
+        <li>a full time step, <code>(r × 65536) / 300</code>, stored at <code>DS:2C5D</code> and copied to two more words;</li>
+        <li>the frame rate <code>300 / r</code> at <code>DS:2C61</code>;</li>
+        <li>a low-rate marker at <code>DS:2C5F</code>: when the frame rate is below 12, the marker becomes <code>0xFF</code> and two of the step words are halved.</li>
+      </ul>
+      <p>The step is proportional to the interval. Our reading is that a lower frame rate therefore means larger physics steps rather than slower cars. The divides here use the game's divide-error rule, described next, so a zero or overflowing divisor cannot crash the setup.</p>
+
+      <h2 id="divide-by-zero">When a divide fails</h2>
+      <p>On x86, a <code>DIV</code> or <code>IDIV</code> whose divisor is zero, or whose quotient does not fit, raises interrupt 0. Under DOS that normally ends the program. Formula One Grand Prix replaces the vector at <code>0000:0000</code> with its own handler at <span class="addr">213F:2602</span>. The handler sets a flag and returns. The flag is the byte at <code>SS:00C0</code>, and it is sticky: nothing clears it between faults.</p>
+      <p>After a risky divide, the game either tests the flag and takes a coded fallback, or carries on with a clamped value. In the physics, one path skips the <code>IDIV</code> and a later instruction replaces the quotient with zero. In the renderer, a bitmap-scale quotient is clamped to <code>0x8000</code> right after the divide, so any overflow simply becomes that ceiling.</p>
+      <div class="callout story"><span class="label">From the port</span><p>On 2026-09-04 the port's race dropped back to the menu at Suzuka's first corner. The session loop treated any render error as "circuit unavailable", but the original never fails a frame. A sweep that rendered every Suzuka track record from three lateral positions, facing both ways, found 292 failures in three places the port rejected and the original survives: the bitmap-scale divide at <span class="addr">15F2:24AE</span>, the anchor-centre divide at <span class="addr">15F2:2C27</span>, and routed verge strips. Folding the overflow into the clamp, porting the renormalisation at <span class="addr">15F2:2A1D</span> so off-screen points clip instead of erroring, and letting one strip drop for a segment took the sweep to zero.</p></div>
+      <p>The lesson generalises: render divides in this game <em>degrade</em>; they never error. A port that raises an error on a divide fault is less tolerant than the original. The flag also hides repeats. One pit-lane annotation call with a zero divisor faults 415 times. Checking only the final flag would miss dropped exceptions, so the project's tools pair every <code>DIV</code> with its handler call.</p>
+
+      <h2 id="the-resident">The resident dispatcher</h2>
+      <p>A separate block of code sits between the main image and the sound driver. The sources cite it as the <code>8B6E</code> resident; it runs at <code>92C0</code> and is <code>0x1780</code> bytes long. It holds the timer interrupt, the keyboard hook, the joystick reader, the palette fade engine and the serial link.</p>
+      <p>Its entry point, <span class="addr">92C0:0000</span>, is a dispatcher. The caller puts a method number in <code>AX</code> and makes a far call. The dispatcher saves the registers, rejects anything above 10, doubles <code>AX</code> to index a table of eleven near addresses, calls the target, restores the registers and returns. The main game reaches it through small wrappers in the <code>213F</code> segment.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>AX</th><th>Target</th><th>Service</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td><code>002E</code></td><td>A single <code>RET</code>: does nothing.</td></tr>
+          <tr><td>1, 2</td><td><code>002F</code>, <code>00B4</code></td><td>Present in the table; not named in the port's sources.</td></tr>
+          <tr><td>3</td><td><code>0105</code></td><td>Run a palette fade to completion.</td></tr>
+          <tr><td>4</td><td><code>0114</code></td><td>Run a fade to black to completion.</td></tr>
+          <tr><td>5</td><td><code>0123</code></td><td>Start a palette fade.</td></tr>
+          <tr><td>6</td><td><code>0143</code></td><td>Start a fade to black.</td></tr>
+          <tr><td>7</td><td><code>0159</code></td><td>Advance a fade by one batch.</td></tr>
+          <tr><td>8</td><td><code>01D1</code></td><td>Build and send a link packet.</td></tr>
+          <tr><td>9</td><td><code>01D7</code></td><td>Receive a link packet and acknowledge it.</td></tr>
+          <tr><td>10</td><td><code>0F0B</code></td><td>Wait for the serial transmitter and queue one byte.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 id="palette-fades">Palette fades</h3>
+      <p>The game's fades are one of the clearest examples of the dispatcher at work. The wrapper at <span class="addr">213F:002C</span> starts a fade-in: it sets a retrace flag at <code>SS:08E6</code>, then calls AX=5. AX=5 records the source palette pointer (resource segment <code>8320</code>, offset <code>7440</code>), clears the black-fade flag at <code>SS:08E2</code>, copies the step count from <code>SS:08DC</code> to <code>SS:08DA</code>, and zeroes the colour cursor at <code>SS:08E4</code>. The wrapper at <span class="addr">213F:008C</span> then calls AX=7 once per frame.</p>
+      <p>Each AX=7 call emits one batch of colours through BIOS <code>INT 10h</code>, function <code>AX=1012h</code> (set a block of DAC registers), optionally after waiting for vertical retrace. When a full 256-colour pass completes, it moves every component one step towards its target using a signed byte divide, and counts down the steps. AX=6, used when a race ends, sets the black flag instead of loading a new palette.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>Because <code>213F:002C</code> and <code>008C</code> sit near the sound code, they were first taken for sound-driver calls. Following the <code>AX</code> value through the dispatcher showed they drive palette fades. The retrace wait inside a fade also lets separate timer interrupts arrive, which the port has to allow for.</p></div>
+
+      <h2 id="input">Keyboard and joystick</h2>
+      <p>The game does not read the keyboard through DOS. It hooks the BIOS keyboard intercept, <code>INT 15h</code> with <code>AH=4Fh</code>, which the BIOS calls with each raw scan code. The resident's hook (cited at <code>8B6E:0533..0563</code>) keeps a bitmap of which keys are currently down, at <code>SS:04CC</code>. Make and break codes set and clear bits.</p>
+      <p>Once per frame, <span class="addr">0752:0005..00C5</span> turns that bitmap into commands. It reads the player's key bindings from tables in the data segment and writes active-low command bytes: a bit is 0 when its action is requested. The binding tables pack bitmap positions differently from raw scan codes, so a port has to use the game's own tables rather than a scan-code map. The joystick is read by the resident at <code>8B6E:06DA</code>, reached through <span class="addr">213F:2A78</span>.</p>
+
+      <h2 id="the-frame">One frame, start to finish</h2>
+      <p>The race loop is long, but its order is fixed and the port follows it exactly. The project reconstructed it from the executable and wrote it down as the host's call order.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 520" role="img" aria-label="The ordered race frame: replay history C40A, keyboard and player input, race commands E2BC, history C3B4, pause poll DCF9, pre-physics services DA48, entrant timing E26B, field physics 5C2F, camera 7757, renderer, view commands E576, cockpit refresh E9F5, HUD, frame pacing C2A6, pixel copy 31FA, clock 0984.">
+          <g font-size="12" fill="currentColor">
+            <g>
+              <rect x="40" y="16" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="38"><tspan font-weight="600">C40A</tspan>  replay history snapshot</text>
+              <rect x="40" y="62" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="84"><tspan font-weight="600">0005</tspan>  keyboard, player input</text>
+              <rect x="40" y="108" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="130"><tspan font-weight="600">E2BC</tspan>  race commands</text>
+              <rect x="40" y="154" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="176"><tspan font-weight="600">C3B4</tspan>  history</text>
+              <rect x="40" y="200" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="222"><tspan font-weight="600">DCF9</tspan>  pause poll</text>
+              <rect x="40" y="246" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="268"><tspan font-weight="600">DA48</tspan>  pre-physics services</text>
+              <rect x="40" y="292" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="52" y="314"><tspan font-weight="600">E26B</tspan>  entrant timing refresh</text>
+              <rect x="40" y="338" width="260" height="34" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+              <text x="52" y="360"><tspan font-weight="600">5C2F</tspan>  all 26 cars: physics</text>
+            </g>
+            <g>
+              <rect x="340" y="16" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="352" y="38"><tspan font-weight="600">7757</tspan>  camera</text>
+              <rect x="340" y="62" width="260" height="34" rx="5" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+              <text x="352" y="84"><tspan font-weight="600">renderer</tspan>  world into 580C</text>
+              <rect x="340" y="108" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="352" y="130"><tspan font-weight="600">E576</tspan>  view commands</text>
+              <rect x="340" y="154" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="352" y="176"><tspan font-weight="600">E9F5</tspan>  cockpit refresh</text>
+              <rect x="340" y="200" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="352" y="222"><tspan font-weight="600">HUD</tspan>  dash and standings</text>
+              <rect x="340" y="246" width="260" height="34" rx="5" style="fill:var(--green-soft);stroke:var(--green)"/>
+              <text x="352" y="268"><tspan font-weight="600">C2A6</tspan>  wait for the timer</text>
+              <rect x="340" y="292" width="260" height="34" rx="5" style="fill:var(--green-soft);stroke:var(--green)"/>
+              <text x="352" y="314"><tspan font-weight="600">213F:31FA</tspan>  copy to A000</text>
+              <rect x="340" y="338" width="260" height="34" rx="5" style="fill:var(--paper);stroke:var(--ink-3)"/>
+              <text x="352" y="360"><tspan font-weight="600">0984</tspan>  advance race clock</text>
+            </g>
+            <path d="M300 355 C320 355 320 33 340 33" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+            <path d="M600 355 C630 355 630 470 320 470 C10 470 10 33 40 33" fill="none" style="stroke:var(--red)"/>
+            <text x="220" y="492" style="fill:var(--red)">next frame, about 25 per second at interval 12</text>
+            <rect x="40" y="394" width="560" height="44" rx="5" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="52" y="414" style="fill:var(--amber)" font-weight="600">Meanwhile, 300 times a second:</text>
+            <text x="52" y="430">IRQ 0 bumps SS:05C8 and, every sixth time, plays the music.</text>
+          </g>
+        </svg>
+        <figcaption>The order of one race frame, by <code>0752</code> entry point unless marked. The race clock advances after rendering, not before.</figcaption>
+      </figure>
+
+      <p>A few points in that order carry weight. Input is sampled before anything moves. The pre-physics services at <span class="addr">0752:DA48</span> run object scanning, display cycling, the session state machine, the finish scan and periodic classification. The physics tick at <span class="addr">0752:5C2F</span> walks the cars in the order given by a table at <span class="addr">25B3:0C65</span>. And the race clock at <code>0984</code> is advanced only after the frame is drawn.</p>
+
+      <h2 id="computed-pointers">Computed pointers</h2>
+      <p>One property of the executable shaped the whole research method. The game fills many of its data structures through <em>computed pointers</em>: it loads a segment and offset into registers, often from another table, and writes through them. It rarely writes a table through a fixed address.</p>
+      <p>That defeats static search. Hunting for a scene table at offset <code>0xB6</code> in the <code>381C</code> bank, the project scanned for absolute writes, immediate loads, <code>BP</code>-relative and <code>SS</code>-prefixed forms, and relocations. Every scan found only reads. Signature searches such as <code>mov es,[ss:0xf4]</code> also missed far-pointer loads like <code>les di,[var]</code> and writes through an <code>ES</code> loaded long before. The table's bytes were not even in the executable or in any data file; the game builds them at startup.</p>
+      <div class="callout proof"><span class="label">How we know</span><p>The working instrument was a <em>write watchpoint</em> in the mdpc emulator: stop the machine when a given physical address is written, then read the registers. The rule the project adopted: static scans find readers, never the writer, in this binary. Use a watchpoint.</p></div>
+
+      <h2 id="calibration">Calibration</h2>
+      <p>Before a session starts, the game measures its own car. The routine at <span class="addr">0752:A718..A820</span> sets up the first entrant and runs the real physics 360 times accelerating from rest and 360 times braking. It records the results as two tables of 360 words each, 720 bytes apiece: acceleration at <code>DS:2357..2626</code>, and braking at <code>DS:2627..28F6</code>, which the game stores backwards. The acceleration table starts at speed 0; the braking table starts at raw speed 64.</p>
+      <p>These tables come from the actual car setup, the generated track geometry and the racing-line data, all in the game's own units. The port therefore cannot substitute a formula or convert from some native car model. It runs the same 720 updates through the same ported physics.</p>
+      <div class="callout story"><span class="label">From the port</span><p>Calibration also depends on the frame interval, because the physics step does. The executable's static default for <code>SS:1230</code> differs from the value the project's reference scenario selects in the Graphics menu (12). Only when the port committed the same menu choice before calibration did both 720-byte tables, and the random-number state, match the real game.</p></div>
+
+      <h2 id="the-rng">The random number generator</h2>
+      <p>The game has one main source of randomness: a five-byte shift register at <code>DS:2984..2988</code>, drawn by the far routine at <span class="addr">0752:04D7</span>. A second copy of the routine at <span class="addr">0752:0509</span> serves another register at <code>DS:08C3</code>. Each draw combines two 16-bit words from the register, shifts every byte up one place and puts the new byte at the bottom:</p>
+      <pre><code>ax = (s1 | s2 &lt;&lt; 8) &gt;&gt; 4
+bx = (s3 | s4 &lt;&lt; 8) &gt;&gt; 1
+al = al XOR bl
+s4 = s3;  s3 = s2;  s2 = s1;  s1 = s0;  s0 = al</code></pre>
+      <p>The routine returns all of <code>AX</code>; callers mask the bits they need.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 640 220" role="img" aria-label="The five-byte shift register s0 to s4. Words s1-s2 shifted right by 4 and s3-s4 shifted right by 1 are combined by XOR into a new byte that enters at s0 while the others shift up.">
+          <g font-size="13" fill="currentColor">
+            <text x="20" y="24" font-weight="600">DS:2984..2988</text>
+            <g>
+              <rect x="120" y="40" width="80" height="44" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/><text x="148" y="67">s0</text>
+              <rect x="210" y="40" width="80" height="44" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/><text x="238" y="67">s1</text>
+              <rect x="300" y="40" width="80" height="44" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/><text x="328" y="67">s2</text>
+              <rect x="390" y="40" width="80" height="44" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/><text x="418" y="67">s3</text>
+              <rect x="480" y="40" width="80" height="44" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/><text x="508" y="67">s4</text>
+            </g>
+            <text x="120" y="104" font-size="12" style="fill:var(--ink-3)">each byte moves one place right; s4 falls off</text>
+            <line x1="295" y1="84" x2="295" y2="135" style="stroke:var(--blue)"/>
+            <text x="220" y="150" font-size="12" style="fill:var(--blue)">word s2:s1 &gt;&gt; 4</text>
+            <line x1="475" y1="84" x2="475" y2="135" style="stroke:var(--amber)"/>
+            <text x="420" y="150" font-size="12" style="fill:var(--amber)">word s4:s3 &gt;&gt; 1</text>
+            <circle cx="385" cy="185" r="16" style="fill:var(--paper);stroke:var(--ink-3)"/>
+            <text x="377" y="190">⊕</text>
+            <line x1="295" y1="158" x2="370" y2="182" stroke="currentColor"/>
+            <line x1="475" y1="158" x2="400" y2="182" stroke="currentColor"/>
+            <path d="M369 188 L160 188 L160 88" fill="none" style="stroke:var(--green)"/>
+            <polygon points="160,86 155,96 165,96" style="fill:var(--green)"/>
+            <text x="170" y="206" font-size="12" style="fill:var(--green)">low byte becomes new s0 and is returned</text>
+          </g>
+        </svg>
+        <figcaption>The shared generator. Every draw by any part of the game advances the same five bytes.</figcaption>
+      </figure>
+
+      <p>Two properties matter more than the formula.</p>
+      <p><strong>It is deterministic and global.</strong> The generator is never reseeded from the clock during play. But every system draws from the same register: the track loader uses it for trackside pattern run lengths, feature widths and colour picks; the session hand-off draws a pace value from it; the field's ranking depends on it. So the outcome of any one draw depends on every draw made before it. The project's lesson: the field's ranking is only as deterministic as the generator's <em>history</em>, so a port must reproduce every prior draw, in order.</p>
+      <p><strong>Its starting point depends on the timer.</strong> At program entry, <span class="addr">213F:0C34..0C4F</span> reads the PIT channel-0 counter, shifts it right twice, keeps the low byte, adds one, and draws that many values. The static starting bytes are fixed, but the number of warm-up draws depends on where the hardware timer happened to be. The port makes that an explicit input: its virtual PIT starts at phase zero, so the latch equals the programmed divisor, and a separate entry accepts any observed latch.</p>
+      <div class="callout proof"><span class="label">How we know</span><p>A byte-exact track table needs the register's contents at the moment the loader starts at <code>19ED:519F</code>. The project captured the register from the real game at the first race frame (<span class="addr">0752:EE52</span>) and made the port's cold start reproduce the same six bytes at <code>DS:2983..2988</code>. The earlier attempt matched a stale unpacked executable instead, which is part of how the packed-file rule was found. Tests that vary one input also hold the generator still, restarting it before each call, so that noise cannot hide a sign error.</p></div>
+
+      <h2 id="one-memory-image">How the port represents the machine</h2>
+      <p>Big Race does not emulate an x86 CPU. It ports the game's routines to Rust, one source-mapped boundary at a time. What keeps those pieces faithful is a single decision: <strong>the game's state lives in one physical memory image</strong>, laid out exactly as the original lays it out.</p>
+      <p><code>src/original_runtime_memory.rs</code> defines that image. It spans physical <code>0x25B30</code> (the start of <code>DS</code>) to <code>0x680C0</code> (the end of the <code>580C</code> view): 271,760 bytes. <code>RuntimeMemory</code> borrows one caller-owned buffer and hands out 64 KiB views of the five segments without copying. The first <code>0x1AB30</code> bytes, through the end of the stack segment, are loaded and relocated from the executable. The generated banks are zeroed and then filled by the game's own ported startup code; no captured memory is used as input.</p>
+
+      <h3 id="bridges">Bridges at source boundaries</h3>
+      <p>Every <code>original_runtime_*</code> module is a <em>bridge</em>: a Rust port of one source routine or a stretch of one, named by its address range, that reads and writes the canonical image exactly where the original does. <code>original_runtime_frame_present</code> is <span class="addr">0752:C2A6..C2FB</span>. <code>original_runtime_timer</code> is <span class="addr">92C0:033F..0496</span>. <code>original_runtime_timing</code> is <span class="addr">0752:7CAF..7D2F</span>. The overlapping <code>DS</code> and <code>SS</code> views get special care: a helper that wants two separate 64 KiB views receives disposable copies, and its result is published only if the aliased <code>0x54D0</code> bytes agree.</p>
+      <p>Bridges are transactional. A routine runs against a staged copy of the image; on success the whole copy is published at once, and on any error nothing changes. That rule is enforced by tests that inject a late failure and check that no earlier write leaked out. Where the original would <em>wait</em>, the bridge instead returns a resumable "pending" state, so the host is never blocked.</p>
+
+      <h3 id="what-the-host-owns">What the host owns</h3>
+      <p>Hardware is represented at the edges, not inside the image. The host owns the real clock, the audio device, the window, sockets and threads, and none of that ever enters canonical memory. Some examples:</p>
+      <ul>
+        <li><strong>The PIT.</strong> The native host computes due interrupts from elapsed wall time as <code>elapsed × 14,318,180 / (12 × divisor)</code>, using an absolute phase so fractions never round away, and calls <code>timer::tick</code> once for each. Before each tick it advances the audio model to that PIT boundary, so OPL writes land at the right moment.</li>
+        <li><strong>The frame pacer.</strong> <code>FramePacer::poll</code> takes an observed value of <code>SS:05C8</code> and returns <code>Pending</code> or <code>Ready</code>. It never blocks and never invents ticks. It remembers the first counter snapshot across polls, just as the original captures it once before looping.</li>
+        <li><strong>The BIOS.</strong> Chaining to the old timer handler becomes a <code>ChainBios</code> event the host counts. A palette batch becomes a value for the host to apply to its own colour table.</li>
+        <li><strong>The divide fault.</strong> Each ported divide reproduces the sticky <code>SS:00C0</code> flag and the original's fallback, rather than panicking.</li>
+      </ul>
+      <div class="callout how"><span class="label">How it works</span><p>Think of the canonical image as the game's RAM and the bridges as its CPU, one routine at a time. The host plays the part of the motherboard: it supplies timer interrupts, key scan codes and hardware status, and it takes away pixels, OPL writes and palette batches. Because the RAM is laid out exactly as the original's, any byte can be compared against a capture of the real game at the same moment. That comparison is how every chapter in Part I was checked.</p></div>
+      <p>Because host state never enters the image, saving a session is a copy of the canonical bytes. The same rule is why Big Race refuses to save during a live linked race: the modem, socket and threads that the race depends on cannot be restored from memory alone.</p>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

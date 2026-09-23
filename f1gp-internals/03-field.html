@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Formula One Grand Prix builds, orders, drives and services its field of 26 cars: the entrant table, the pre-qualifying cut, the physics tick, the AI, contacts, pit stops and the player's controls.">
+  <title>Twenty-six cars — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part I — The original</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 03</p>
+      <h1>Twenty-six cars</h1>
+      <p class="lede">Every car in the game, yours included, is one 192-byte record in a single table. This chapter follows that table from the static data it is built from, through the cut from 34 entrants to 26, to the physics tick that moves every car, the AI that steers them, the walls and pit crews they meet, and the keys that drive yours.</p>
+
+      <h2 id="the-table">One table, built at run time</h2>
+      <p>The game keeps its whole field in one array in the data segment at <span class="addr">25B3:0D1B</span>. It holds 26 records of <code>0xC0</code> (192) bytes each, 4,992 bytes in all, running up to <code>0x209A</code>. The code that wraps round the table tests for <code>0x209B</code>, one byte past the end.</p>
+      <div class="stats">
+        <div class="stat"><b>26</b><span>records, a count hard-coded at 22 separate sites</span></div>
+        <div class="stat"><b>192</b><span>bytes per record (<code>0xC0</code>)</span></div>
+        <div class="stat"><b>4,992</b><span>bytes, all zero in the load image</span></div>
+        <div class="stat"><b>34</b><span>entrants in the seed data, cut to 26</span></div>
+      </div>
+      <p>None of those numbers was guessed. The stride comes from a block copy that moves <code>0xC0</code> bytes per record over 26 iterations. The count comes from <code>mov cx,0x1a</code> sitting beside <code>mov si,0xd1b</code> at 22 separate places in the code. Nothing in the game shortens the table. Every loop over it runs 26 times, and the order table that indexes it is always 52 bytes long.</p>
+      <p>The table is empty on disk. In the executable's load image all 4,992 bytes are zero, and the game zeroes each record again before it fills it, so nothing is inherited from a template. Everything that ends up in the table is computed at run time from seed data that <em>is</em> in the executable: car numbers, driver names, team strengths and driver rankings. That matters for the port. It can rebuild the field from the player's own copy of the game without shipping a single byte of it.</p>
+      <div class="callout how"><span class="label">How it works</span><p>A car that drops out does not leave the table. The game cannot express a field of 25. Instead it sets bit <code>0x80</code> of the record's flag byte at <code>+0x96</code> and leaves the car where it is. Every reader steps over a flagged record. The AI's search for the car ahead, for example, tests that bit and keeps walking back through the order until it finds a runner.</p></div>
+
+      <h2 id="record-layout">What a record holds</h2>
+      <p>The port has decoded 88 of the 192 bytes with confidence, and has listed the widths of most of the rest. Width and signedness were settled by reading every instruction that touches a field, not by what looked reasonable. Get one wrong and nothing errors: a speed read as unsigned turns a reversing car into one doing 65,000 km/h.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 520 430" role="img" aria-label="Map of the 192-byte entrant record, grouped into position, motion, control and race bands, with key offsets labelled">
+          <g font-size="13" fill="currentColor">
+            <text x="10" y="20" font-weight="600">Entrant record, 0xC0 bytes</text>
+            <rect x="10" y="34" width="120" height="86" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="18" y="54" font-weight="600">+00 – +2F</text>
+            <text x="18" y="72">position</text>
+            <text x="18" y="88">on the track</text>
+            <text x="145" y="52">+0A lateral in segment</text>
+            <text x="145" y="70">+10 speed (signed)</text>
+            <text x="145" y="88">+12 far pointer to track record</text>
+            <text x="145" y="106">+1C lap distance, +1E fraction, +22 lap, +24 gear</text>
+            <rect x="10" y="130" width="120" height="86" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="18" y="150" font-weight="600">+30 – +5F</text>
+            <text x="18" y="168">forces and</text>
+            <text x="18" y="184">timing</text>
+            <text x="145" y="148">+3C HUD flags, +3E corridor half-width</text>
+            <text x="145" y="166">+40 last lap time (32-bit)</text>
+            <text x="145" y="184">+48 yaw rate, +4A slip</text>
+            <text x="145" y="202">+54 lap start time, +5F brake input</text>
+            <rect x="10" y="226" width="120" height="86" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="18" y="246" font-weight="600">+60 – +9F</text>
+            <text x="18" y="264">control and</text>
+            <text x="18" y="280">order</text>
+            <text x="145" y="244">+62 rpm, +66 place in track order, +67 pit state</text>
+            <text x="145" y="262">+7C steering, +7F digital input bits</text>
+            <text x="145" y="280">+84 draw-order bias, +92 deadline</text>
+            <text x="145" y="298">+96 out-of-field flag, +98 limited throttle</text>
+            <rect x="10" y="322" width="120" height="86" rx="4" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="18" y="342" font-weight="600">+A0 – +BF</text>
+            <text x="18" y="360">race and</text>
+            <text x="18" y="376">identity</text>
+            <text x="145" y="340">+A4 race progress (32-bit)</text>
+            <text x="145" y="358">+AA twice the race position</text>
+            <text x="145" y="376">+AC car number byte, +AD team</text>
+            <text x="145" y="394">+AE best lap time (32-bit)</text>
+          </g>
+        </svg>
+        <figcaption>The record falls into four rough bands. Position fields sit at the front, the race classification and identity at the back. The two different "place" fields, <code>+66</code> and <code>+AA</code>, are the subject of a later section.</figcaption>
+      </figure>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Offset</th><th>Width</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>+04</code>/<code>+06</code></td><td>dword</td><td>Always set to <code>0x80000000</code>, a "no value" sentinel. The classification resets it whenever a car changes place.</td></tr>
+          <tr><td><code>+0A</code></td><td>signed word</td><td>Lateral offset within the current track segment. The AI compares it with its target at <code>+0E</code>.</td></tr>
+          <tr><td><code>+10</code></td><td>signed word</td><td>Speed. The cockpit converts it with <code>v × 1124 &gt;&gt; 16</code> for km/h and <code>v × 698 &gt;&gt; 16</code> for mph.</td></tr>
+          <tr><td><code>+12</code>/<code>+14</code></td><td>far pointer</td><td>The 46-byte track record the car occupies, loaded 24 times as <code>les di,[si+0x12]</code>.</td></tr>
+          <tr><td><code>+1A</code></td><td>angle</td><td>Heading, 65,536 units to a full turn. Angles wrap, so the code subtracts them with wrapping and reads the difference as signed.</td></tr>
+          <tr><td><code>+1C</code>, <code>+1E</code></td><td>words</td><td>Distance within the lap, and position along the current segment where <code>0x4000</code> means 1.0.</td></tr>
+          <tr><td><code>+22</code></td><td>byte</td><td>Lap number, counting from 1.</td></tr>
+          <tr><td><code>+24</code></td><td>signed byte</td><td>Gear. Reverse is stored as <code>0xFF</code>, which is −1.</td></tr>
+          <tr><td><code>+25</code></td><td>byte</td><td>Team slot within the current entry list, counting from 1.</td></tr>
+          <tr><td><code>+26</code></td><td>signed word</td><td>Progress round the lap. The spatial sort and the AI's proximity checks key on it.</td></tr>
+          <tr><td><code>+28</code>, <code>+2C</code></td><td>dwords</td><td>Absolute world X and Z.</td></tr>
+          <tr><td><code>+3C</code></td><td>flags</td><td>Bit <code>0x40</code> gates the whole cockpit display.</td></tr>
+          <tr><td><code>+66</code></td><td>byte</td><td>The car's own byte offset into the track-order table, that is twice its place on the road.</td></tr>
+          <tr><td><code>+67</code></td><td>low nibble</td><td>Pit-stop state, 0 to 9.</td></tr>
+          <tr><td><code>+7C</code></td><td>signed word</td><td>Steering.</td></tr>
+          <tr><td><code>+7F</code></td><td>flags</td><td>Digital inputs, derived rather than raw: throttle, brake, left, right and gear.</td></tr>
+          <tr><td><code>+84</code></td><td>byte</td><td>A small draw-order bias for the renderer.</td></tr>
+          <tr><td><code>+92</code></td><td>dword</td><td>An absolute deadline on the game clock, used by the pit and repair logic.</td></tr>
+          <tr><td><code>+98</code></td><td>word</td><td>Throttle after the traction limiter, <code>0x4000</code> = full. An output of the physics, not the player's demand.</td></tr>
+          <tr><td><code>+A4</code></td><td>dword</td><td>Race progress for the classification: laps times track length, plus distance.</td></tr>
+          <tr><td><code>+AA</code></td><td>byte</td><td>Twice the race position, counting from 0.</td></tr>
+          <tr><td><code>+AC</code></td><td>byte</td><td>Car number in the low six bits, plus two flag bits.</td></tr>
+          <tr><td><code>+AD</code></td><td>byte</td><td>Championship team, counting from 0. It picks the car's 3D shape and livery at a stride of <code>0x8A</code>.</td></tr>
+          <tr><td><code>+AE</code></td><td>dword</td><td>Best lap time, compared as a signed 32-bit value.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Several words, <code>+98</code> and <code>+A8</code> among them, start life at <code>0x4000</code>. That is 1.0 in the game's fixed-point maths, and the same unit turns up throughout this chapter. The busiest byte in the whole record is <code>+B3</code>, with 138 accesses. Its bits <code>0x40</code> and <code>0x08</code> are set together on both cars in what looks like the collision path. The port records that as a reading, not a fact.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>Two fields look like a word and are not. <code>+1E</code> is a signed word, but the game also reads <code>+1F</code> on its own as a signed byte, so the two overlap. And <code>+3C</code> is one flag byte even though a single instruction clears it as a word. That instruction also clears <code>+3D</code>, which is a separate set of flags.</p></div>
+
+      <h2 id="seeds">Where the cars come from</h2>
+      <p>The seed data lives in the stack segment of the running game. It is static in the executable file, which is how the port can read it from the player's copy.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Seed</th><th>Address</th><th>Shape</th></tr></thead>
+        <tbody>
+          <tr><td>Car numbers</td><td><span class="addr">SS:1A22</span></td><td>40 bytes: 20 teams × 2 slots</td></tr>
+          <tr><td>Driver names</td><td><span class="addr">SS:1A4A</span></td><td>40 records of <code>0x18</code> bytes</td></tr>
+          <tr><td>Team performance</td><td><span class="addr">SS:28EC</span></td><td>18 words, indexed by team − 1; larger is faster</td></tr>
+          <tr><td>Driver rank</td><td><span class="addr">SS:2914</span> or <span class="addr">SS:293C</span></td><td>One byte per car number: a global rank where 1 is the best driver</td></tr>
+          <tr><td>Team count</td><td><span class="addr">SS:28D2</span></td><td>18 in the shipped game</td></tr>
+        </tbody>
+      </table></div>
+      <p>A slot's team is <code>(slot &gt;&gt; 1) + 1</code>, so the 40 slots cover 20 teams. The season runs 18 teams, so the last two slot pairs are never scanned. A zero car number is an empty slot. The shipped table leaves some teams on a single car and leaves out car 13 altogether. That is how 40 slots come to hold 34 real entrants. The second rank table, at <span class="addr">SS:293C</span>, is used when bit 7 of the session-type byte is set.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The sources do not fully agree on the field. The seed data and this cut describe 34 entrants. A later full Championship run found the offline game racing a fixed field of thirteen teams and 26 drivers, all starting every round (Chapter 4). How the two fit together is not settled.</p></div>
+
+      <h2 id="the-cut">Thirty-four into twenty-six</h2>
+      <p>Only 26 cars fit on the grid, so eight entrants have to go. The game decides who by running a real session. Pre-qualifying is not a lookup table. The routine at <span class="addr">0752:506B</span> flattens the 40-slot seed into a dense working list at <span class="addr">DS:0AB1</span>, with its count at <span class="addr">DS:0AAD</span>. That list is copied to <span class="addr">SS:17D8</span> and kept bubble-sorted by each car's best lap. The lap times are real, measured 32-bit values stored four bytes per car at <span class="addr">SS:1800</span>. Every time a car completes a lap, <span class="addr">0752:20C4</span> stores the time and re-sorts the list on the spot.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 470" role="img" aria-label="Flow of the pre-qualifying cut from the 40-slot seed to the 26-record entrant table">
+          <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="60" y="10" width="340" height="50" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="31" text-anchor="middle" font-weight="600">Car-number seed, SS:1A22</text>
+            <text x="230" y="49" text-anchor="middle">40 slots, 34 non-zero</text>
+            <line x1="230" y1="60" x2="230" y2="84" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <rect x="60" y="86" width="340" height="50" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="107" text-anchor="middle" font-weight="600">0752:506B flattens</text>
+            <text x="230" y="125" text-anchor="middle">working list DS:0AB1 → SS:17D8</text>
+            <line x1="230" y1="136" x2="230" y2="160" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <rect x="20" y="162" width="200" height="74" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="120" y="183" text-anchor="middle" font-weight="600">Pre-qualifying run</text>
+            <text x="120" y="201" text-anchor="middle">sort by best lap</text>
+            <text x="120" y="219" text-anchor="middle">SS:1800 (0752:20C4)</text>
+            <rect x="240" y="162" width="200" height="74" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="340" y="183" text-anchor="middle" font-weight="600">Skipped: 0752:5093</text>
+            <text x="340" y="201" text-anchor="middle">synthesised score</text>
+            <text x="340" y="219" text-anchor="middle">(SS:1234 clear)</text>
+            <line x1="120" y1="236" x2="200" y2="262" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <line x1="340" y1="236" x2="260" y2="262" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <rect x="60" y="264" width="340" height="50" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="285" text-anchor="middle" font-weight="600">0752:510E promotes human players</text>
+            <text x="230" y="303" text-anchor="middle">into the top 26</text>
+            <line x1="230" y1="314" x2="230" y2="338" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <rect x="60" y="340" width="340" height="50" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="230" y="361" text-anchor="middle" font-weight="600">0752:4D91 snapshot, 0752:5175 cut</text>
+            <text x="230" y="379" text-anchor="middle">first 26 back to DS:0AB1, count = 26</text>
+            <line x1="230" y1="390" x2="230" y2="414" style="stroke:var(--ink-3)" marker-end="url(#a3)"/>
+            <rect x="60" y="416" width="340" height="44" rx="6" style="fill:var(--red-soft);stroke:var(--red)"/>
+            <text x="230" y="443" text-anchor="middle" font-weight="600">Entrant table 25B3:0D1B</text>
+          </g>
+        </svg>
+        <figcaption>Both routes meet before the cut. The left one is a real timed session; the right one is arithmetic the game uses when there was no such session.</figcaption>
+      </figure>
+      <p>When the session ends, <span class="addr">0752:510E</span> forces any human player into the top 26, <span class="addr">0752:4D91</span> takes a snapshot of the list, and <span class="addr">0752:5175</span> copies the first 26 entries back over <span class="addr">DS:0AB1</span> and sets the count to 26. There is no per-team cap. It really is the fastest 26, plus a guaranteed place for the player. In the working list each entry is one byte: the car number in the low six bits, bit 7 for a human player's car, and bit 6 (only alongside bit 7) for the second player.</p>
+      <h3 id="synthesised-order">When nobody ran pre-qualifying</h3>
+      <p>If <span class="addr">SS:1234</span> is clear, no pre-qualifying took place. Then <span class="addr">0752:5093</span> builds the same ordering from arithmetic. This is the path the port reaches, because it has no pre-qualifying session of its own, and it is the path the original takes when the player skips pre-qualifying. It works like this:</p>
+      <ol>
+        <li><strong>Circuit scale.</strong> <span class="addr">0752:4B52</span> starts from a per-circuit spread word at <span class="addr">DS:0222</span>, supplied by the track file. In wet conditions (<span class="addr">SS:122E</span> set) it first folds the word through a factor of <code>0x3700</code>. It then blends towards a flat <code>0x4000</code> by difficulty: <code>((word − 0x4000) × (4 − difficulty) &gt;&gt; 2) + 0x4000</code>. At the lowest difficulty the circuit's own word decides how far the field spreads. At the highest, every circuit is the same.</li>
+        <li><strong>Team base.</strong> <span class="addr">0752:4AF0</span> gives each team <code>scale × performance / 716</code>. The divisor, 716, is also the largest performance value in the shipped table. If the performance mode at <span class="addr">SS:1224</span> is not exactly 1, every team gets the fastest team's performance, so the machinery is equal.</li>
+        <li><strong>Driver term.</strong> <span class="addr">0752:4BFA</span> subtracts a weighted rank and a noise term from 1.0, then multiplies the base by what is left. The rank weights by difficulty are <code>0x80, 0x20, 0x08, 0x04, 0</code> and the noise weights <code>0x400, 0x100, 0x40, 0x20, 0</code>. At the top difficulty both are zero, so the driver stops mattering.</li>
+        <li><strong>Jitter and floor.</strong> Every score loses twice a random byte, and no AI score falls below <code>0x1000</code>.</li>
+      </ol>
+      <p>A player's car is not scored on pace at all. A named player gets a flat <code>0x4000</code> less the same jitter. The ranking step then subtracts <code>0x4000</code> again, so the player sorts to the bottom of the list, and the promotion step puts them back in. That is how the original starts a player at the back without dropping them from the field.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The routine that maps a list entry back to its team, <span class="addr">0752:4717</span>, compares the whole entry byte, flags included. A player's entry has bit 7 set, so it never matches a seed slot, and the routine falls back to team 1. That is a quirk of the original. The port keeps it, because "fixing" it would change which field appears.</p></div>
+      <div class="callout proof"><span class="label">How we know</span><p>There is no live capture of the cut. The port transcribed the fallback from the instructions and checked it step by step. Before writing any code, the author worked out two things the arithmetic must imply and wrote them as tests. With no circuit loaded at difficulty 0, the scale collapses to zero, so every car sits on the floor. At difficulty 4, the driver's rank cannot reach the score at all. Both held on the first run. A third test holds the random generator still, varies only the rank, and requires the score to fall steadily. A sign error cannot survive that.</p></div>
+
+      <h2 id="two-orders">Two orders: the road and the results</h2>
+      <p>The game keeps two separate orderings of the same 26 cars, and they answer different questions.</p>
+      <p>The <strong>track order</strong> at <span class="addr">25B3:0C65</span> says who is where on the road. It holds one word per car: the car's byte offset from the start of the entrant table (<code>0</code>, <code>0xC0</code>, <code>0x180</code> and so on). A <code>0xFFFF</code> sentinel sits at each end. The spatial sort at <span class="addr">0752:44C5</span> keeps it in order of <code>+0x26</code>, the car's progress round the lap, taken modulo the track length at <span class="addr">DS:0172</span>. The sort is a plain bubble sort: each pass that makes a swap is followed by another, until a pass is clean. Each swap rewrites both cars' <code>+66</code> bytes, so every car always knows its own slot.</p>
+      <p>The <strong>race classification</strong> says who is winning. It lives in each record's <code>+AA</code> byte and in a list of car-number bytes at <span class="addr">SS:1940</span>. The two orders agree only when the cars are first placed on the grid. They part company as soon as anyone is lapped: a backmarker just ahead of the leader on the road is a lap behind in the results.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 520 250" role="img" aria-label="Two orderings of the same cars: the track order by position on the lap, and the classification by total race progress">
+          <g font-size="13" fill="currentColor">
+            <text x="120" y="22" text-anchor="middle" font-weight="600">Track order 0C65</text>
+            <text x="120" y="40" text-anchor="middle" style="fill:var(--ink-3)">key: +26 mod lap length</text>
+            <text x="400" y="22" text-anchor="middle" font-weight="600">Classification +AA</text>
+            <text x="400" y="40" text-anchor="middle" style="fill:var(--ink-3)">key: +A4 race progress</text>
+            <rect x="40" y="56" width="160" height="34" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="120" y="78" text-anchor="middle">C: lap 3, 90% round</text>
+            <rect x="40" y="100" width="160" height="34" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="120" y="122" text-anchor="middle">A: lap 4, 85% round</text>
+            <rect x="40" y="144" width="160" height="34" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="120" y="166" text-anchor="middle">B: lap 4, 40% round</text>
+            <rect x="320" y="56" width="160" height="34" rx="4" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="400" y="78" text-anchor="middle">1st A</text>
+            <rect x="320" y="100" width="160" height="34" rx="4" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="400" y="122" text-anchor="middle">2nd B</text>
+            <rect x="320" y="144" width="160" height="34" rx="4" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="400" y="166" text-anchor="middle">3rd C (lapped)</text>
+            <line x1="200" y1="73" x2="320" y2="161" style="stroke:var(--ink-3);stroke-dasharray:4 3"/>
+            <line x1="200" y1="117" x2="320" y2="73" style="stroke:var(--ink-3);stroke-dasharray:4 3"/>
+            <line x1="200" y1="161" x2="320" y2="117" style="stroke:var(--ink-3);stroke-dasharray:4 3"/>
+            <text x="260" y="212" text-anchor="middle">The AI, traffic and renderer use the left.</text>
+            <text x="260" y="232" text-anchor="middle">The timing screens and results use the right.</text>
+          </g>
+        </svg>
+        <figcaption>An illustrative example. Car C is a lap down but just ahead of A on the road, so it heads the track order while trailing the classification.</figcaption>
+      </figure>
+      <p>The classification pass at <span class="addr">0752:4546</span> runs only in a race, and only when the spatial sort actually swapped something. It first works out the finishing distance: the race's lap count at <span class="addr">SS:123C</span> times the track length. For each car it computes race progress as <code>(lap − 1) × track length + track-record index</code> and stores it at <code>+A4</code>. A car that has passed the finishing distance is frozen at <code>finish + (1000 − its old place byte)</code>, so cars that have finished keep the order they finished in. Then it bubble-sorts the 26 cars on that value, comparing the high word as signed and the low word as unsigned, and breaks ties on <code>+1E</code>. Finally it writes each car's <code>+AA</code> as twice its place and copies its car-number byte into <span class="addr">SS:1940</span>. When a car's place changes, the <code>+04</code> sentinel is reset. If the player's cockpit is showing, the same pass prints the new position.</p>
+      <h3 id="draw-order">Why the renderer cares</h3>
+      <p>The renderer needs the track order too. Every frame, <span class="addr">15F2:AFA3</span> walks the track order backwards from the viewing car's own place. It draws nothing itself. For each car it accepts, it stamps "a car is here" onto one track record: a few flag bits, plus a class byte made from <code>0x80 | record[+66]</code>. The road passes then draw those records as cars. Afterwards, <span class="addr">15F2:B1A7</span> clears the stamps by masking bits off, not by restoring saved bytes, and it clears one bit the stamp never set.</p>
+      <p>The class byte carries twice the car's place on the road, not its index in the table. The consumer at <span class="addr">15F2:5C6B</span> treats anything below <code>0xB4</code> as a car, and <code>0xB4</code> is exactly <code>0x80 | (2 × 26)</code>. It masks off the top bit, uses the result as a byte offset into the track order, follows the word it finds there to the entrant record, and reads <code>+84</code>. That byte is a small bias that decides which of two overlapping objects is drawn on top.</p>
+      <div class="callout story"><span class="label">From the port</span><p>An early survey read <code>+84</code> as a level-of-detail setting. A research pass that chased every <em>writer</em> of the byte found it had exactly one: the car-list routine sets it to 1 (or 2 when a scene word is large) and adds one for each busy scene slot it steps over. So it is a draw-order bias. The same approach showed that <code>0C65</code> is spatial, not the race order. Both corrections came from asking who writes a thing rather than reading the thing itself.</p></div>
+
+      <h2 id="the-tick">One physics tick</h2>
+      <p>The routine that moves the whole field once is <span class="addr">0752:5C2F</span>. For a long time the project carried a different address, <span class="addr">19ED:6F90</span>, as "the physics". That turned out to be track-building code. The real tick runs in this order:</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 560" role="img" aria-label="Order of operations in one field tick at 0752:5C2F: prepass, per-car loop over the track order, then post-loop services">
+          <defs><marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="10" width="420" height="92" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="34" y="32" font-weight="600">Prepass (5C2F → 586A)</text>
+            <text x="34" y="52">44C5 spatial sort of the track order</text>
+            <text x="34" y="70">   → 4546 classification, race only, if a swap</text>
+            <text x="34" y="90">29E0 spatial-neighbour pass</text>
+            <line x1="230" y1="102" x2="230" y2="124" style="stroke:var(--ink-3)" marker-end="url(#b3)"/>
+            <rect x="20" y="126" width="420" height="206" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="34" y="148" font-weight="600">Car loop 5C3D … 6A7E, 26 times</text>
+            <text x="34" y="168">read next word of the track order</text>
+            <text x="34" y="188">5C42 setup prefix: heading, track state</text>
+            <text x="34" y="208">runner or non-runner branch at 5CBC</text>
+            <text x="50" y="228">3945 traffic ahead</text>
+            <text x="50" y="248">1ACD section and corridor gates</text>
+            <text x="50" y="268">995C driving: controls, forces, motion</text>
+            <text x="50" y="288">1717 track association</text>
+            <text x="34" y="308">continuation: contact, pits, lap line</text>
+            <text x="34" y="326" style="fill:var(--ink-3)">6A7E: next car, or leave to 6A88</text>
+            <line x1="230" y1="332" x2="230" y2="354" style="stroke:var(--ink-3)" marker-end="url(#b3)"/>
+            <rect x="20" y="356" width="420" height="190" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="34" y="378" font-weight="600">Post-loop services</text>
+            <text x="34" y="400">5B27 one car's mass, tyre and reliability</text>
+            <text x="34" y="420">2124 timed display deadlines</text>
+            <text x="34" y="440">3739 car-to-car contact scan</text>
+            <text x="34" y="460">C1F0 transient effects</text>
+            <text x="34" y="480">960D secondary sequence (conditional)</text>
+            <text x="34" y="500">sound reset (conditional)</text>
+            <text x="34" y="520">92E0 engine speed and automatic gears</text>
+            <text x="34" y="540">3A81 spray from the car ahead</text>
+          </g>
+        </svg>
+        <figcaption>All addresses are in segment <code>0752</code>. The car loop visits cars in track order, not in table order.</figcaption>
+      </figure>
+      <p>The tick begins by setting <span class="addr">DS:0B99</span> to <code>0x80</code> and calling <span class="addr">0752:586A</span>. That runs the spatial sort and the neighbour pass. The car loop then walks the freshly sorted track order. For each car it resolves one order word, runs a short setup prefix at <span class="addr">0752:5C42</span>, and takes one of two branches. A car that is still racing (a "runner") goes through the traffic check, the section gates, the driving update and track association, then the long continuation. A retired car takes a shorter path.</p>
+      <p>After all 26 cars, a set of services runs once per frame. The parameter service at <span class="addr">0752:5B27</span> updates just <em>one</em> car per frame: its mass, tyre grip and reliability, using the tyre-wear curve at <span class="addr">0752:77EB</span> and one random draw. A cursor at <span class="addr">DS:2925</span> steps on by <code>0xC0</code> each frame and wraps after the 26th car, so each car is refreshed every 26 frames. The spray service at <span class="addr">0752:3A81</span> clears its level in the dry. In the wet it scans the cars ahead in track order, keeps the nearest eligible one, and works out how much spray it throws, using the cosine table.</p>
+      <div class="callout proof"><span class="label">How we know</span><p>The port was checked against two complete ticks captured from the original running in an emulator, one on the grid and one with cars moving. Each captured snapshot covers the whole of memory at the start and end of the tick and at every boundary inside it. The port's version of <span class="addr">5C2F..6AB8</span> reproduces both ticks byte for byte, across the full 26-car loop and at every single-car boundary. That proves those two ticks, not every possible race state.</p></div>
+
+      <h2 id="dynamics">Driving a car: the dynamics at 995C</h2>
+      <p>The per-car driving update is <span class="addr">0752:995C</span>. It runs for the player's car and for every AI car alike. Only the inputs differ: keys and joystick for the player, the AI's own steering and pedal decisions for everyone else. It breaks into four stages.</p>
+      <ol>
+        <li><strong>The head</strong> (<span class="addr">995C..9B1D</span>) prepares the car's controls. It includes the recovery steering for a spinning car and the special handling for a retired car.</li>
+        <li><strong>The producers</strong> (<span class="addr">9B1D..9FEA</span>) work out wheel speed, aerodynamics, gear, engine and brakes. They fill a force workspace at <span class="addr">DS:226F..2306</span>, which holds two 48-byte force records at <span class="addr">DS:2277</span> and <span class="addr">DS:22A7</span>.</li>
+        <li><strong>Force resolution</strong> (<span class="addr">A02D..A48E</span>, with traction limits at <span class="addr">96E1..97E8</span>) turns those forces into two acceleration words. If one force record hits its grip limit, the other is recoupled. This stage changes no entrant byte except the traction flags at <code>+7E</code>.</li>
+        <li><strong>Integration</strong> (<span class="addr">A48F..A554</span>) updates velocity, world position and yaw over the selected timestep. It is skipped when <span class="addr">DS:3195</span> is non-zero.</li>
+      </ol>
+      <p>Everything is integer maths in the game's own units, with 1.0 written as <code>0x4000</code>. The port keeps those units. It never converts to metres or seconds, because every rounding step has to match.</p>
+      <h3 id="throttle-limiter">Why your throttle is not your throttle</h3>
+      <p>The throttle producer at <span class="addr">0752:93EA..9534</span> shows the style. The player's pedal decides whether the throttle is on. The car record then holds, at <code>+98</code>, what the physics actually allows. When the car is moving above a threshold speed, the traction flag at <code>+7E</code> bit <code>0x40</code> is set and the surface is not type 3, the producer subtracts a step from the previous value, never going below <code>0x1000</code>. Otherwise it adds the step back. Either way the result is capped at 1.0. The step is a surface-dependent rate multiplied by the timestep, scaled down by 2<sup>14</sup>.</p>
+      <div class="callout story"><span class="label">From the port</span><p>An acceptance test held the throttle key down and expected full throttle, 16,384, every frame. On frame 445 it read 15,074 and failed. The runtime was right. With a rate of 8,192 and a timestep of 2,621, the step works out at 1,310, and 16,384 − 1,310 = 15,074. The code at <span class="addr">0752:94F5</span> had simply cut the throttle as the car began to slide. The test had treated a physics output as a keyboard input. The fix was to the test, which now expects 15,074 exactly, then 13,764, then recovery.</p></div>
+      <h3 id="gears">Gears and the engine</h3>
+      <p>Gear changes run at <span class="addr">0752:9535..95F0</span>, and the automatic-shift decisions at <span class="addr">A621</span>, <span class="addr">A6B4</span> and <span class="addr">A6E6</span>. The gear byte is signed, and the gearbox ratio lookup at <span class="addr">7B18</span>/<span class="addr">7B5F</span> uses it to pick a setup byte before an unsigned divide. After the car loop, <span class="addr">0752:92E0..93E9</span> updates engine speed and the automatic gearbox for the car being heard. It works out the rpm before any shift, clamps the gear as a signed value, alternates the downshift gates and smooths the result. The same routine publishes a word for the sound driver, which is how the engine note follows the car.</p>
+
+      <h2 id="association">Keeping to the road</h2>
+      <p>A circuit is a chain of 46-byte track records (see Chapter 2). Each car holds a far pointer at <code>+12</code> to the record it occupies. After the dynamics move the car in world coordinates, <span class="addr">0752:1717..179D</span> works out which record it is now over and updates that pointer, and only that pointer. It copes with the wrap at the end of the lap and with the jump between the main track and alternative routes such as the pit lane.</p>
+      <p>Next, <span class="addr">0752:6AB9..6C16</span> refreshes the car's track-relative coordinates. It reads the world position at <code>+28</code>/<code>+2C</code>, five words from the new track record, and the cosine table, and it updates exactly six words in the car record: lateral offset, distance along the segment and their relatives. Before the dynamics run, <span class="addr">0752:1ACD..1BCD</span> applies the section gates: corridor checks on the main track and association with an alternative route.</p>
+      <div class="callout how"><span class="label">How it works</span><p>World position and track position are kept side by side. The physics works in world space, where forces and velocities make sense. The AI, the timing and the renderer work in track space: which record, how far along it, how far from the centre. The association and refresh steps keep the two in step once per car per frame.</p></div>
+
+      <h2 id="ai">How the AI drives</h2>
+      <p>The computer cars drive with the same dynamics as yours. What makes them AI is where their inputs come from. Four pieces of code supply them.</p>
+      <h3 id="racing-line">Following the line</h3>
+      <p>Each track record carries racing-line words, filled in when the track loads (Chapter 2). The AI steers towards a <strong>lateral target</strong> held at <code>+0E</code>. At <span class="addr">0752:6C3F</span> the game reads the racing-line word in the current record and the same word in the next record, 46 bytes on. It interpolates between them by the car's fraction along the segment:</p>
+      <pre><code>target = current + ((next − current) × fraction) &gt;&gt; 14</code></pre>
+      <p>where a fraction of <code>0x4000</code> means the car is at the end of the segment. If flag <code>+18</code> bit <code>0x10</code> is set, the target is simply zero, the centre of the road. The steering logic then compares the car's lateral offset at <code>+0A</code> with that target.</p>
+      <p>A fault in that steering logic produced visible spinning in the port. At <span class="addr">0752:5FC8</span> the original clears a steering demand of the opposite sign, then jumps to a shared clamp-and-add. The port had put the shared clamp and add inside only one branch. A six-case regression test showed the old code giving zero where the original gave +20. After the fix, all seven car-state differences in a captured moving tick went away.</p>
+      <h3 id="corner-speed">Corner speeds</h3>
+      <p>How fast to take a corner comes from a speed curve refreshed by <span class="addr">0752:1061..10B9</span>. Its caller stores the product in the car's <code>+50</code>/<code>+52</code>. The corner solver inside it divides by the circuit's grip word. When the grip word is small, the first divide at <span class="addr">0752:AB56</span> overflows.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>On the 8086 a divide overflow raises interrupt 0. The game hooks that interrupt to set a flag byte at <span class="addr">SS:00C0</span> and return, leaving the registers as they were. The corner solver clears the flag at <span class="addr">AB85</span> before its next divide, so an overflowed radius is read as "no corner limit". Nothing in the game notices. The port reproduces the behaviour and also counts these faults, purely as evidence: a run with a non-zero count drove on corner speeds the AI never meant to compute.</p></div>
+      <h3 id="traffic">Traffic</h3>
+      <p>The traffic check at <span class="addr">0752:3945..3A80</span> looks for a slower car to worry about. A flag at <code>+7E</code> bit <code>0x04</code> makes it return at once. Otherwise it clamps the car's speed between a floor and a ceiling, then steps through the track order towards the cars ahead, one entry at a time from its own place. It reads at most 26 entries and skips any record flagged out of the field. It stops at the first car that is not ahead of it, or once the gap is bigger than the car's speed shifted right by 10. The faster the car, the further ahead it looks.</p>
+      <p>For each candidate it checks three things: that the other car is inside a lateral corridor (the car's half-width at <code>+3E</code> plus <code>0x400</code>, or a narrower <code>0x280</code> in some cases), that this car is faster, and that both are on the same route. A close car inside a lateral limit also yields a first braking estimate, written to <code>+78</code>. A car that passes every test sets bit <code>0x10</code> of <code>+BC</code>: traffic ahead.</p>
+      <h3 id="neighbours">Neighbours and the car ahead</h3>
+      <p>Before the car loop, the neighbour pass at <span class="addr">0752:29E0</span> uses the fresh track order to find each car's spatial neighbours and records them in the entrant records and some low stack-segment scratch. The controls code at <span class="addr">0752:89A8</span> asks for "the next car" and gets the next car in track order, not the next slot in the table. The pointer at <code>+7A</code> names another entrant record: the car this one is tracking.</p>
+
+      <h2 id="contacts">Contacts, walls and damage</h2>
+      <p>After the car loop, <span class="addr">0752:3739..37BF</span> scans backwards through pairs of cars that are close together. A vertical-separation test at <span class="addr">B4F3</span> can rule a pair out early. For the rest, <span class="addr">B518</span> prepares the contact, <span class="addr">B024</span> runs a swept-box search, and <span class="addr">B564</span> computes the response. The box test at <span class="addr">ACD8..AE93</span> checks the four corners of one car in the other car's local coordinates. When the boxes overlap for the whole interval, <span class="addr">AEC2</span> separates them along a separation vector.</p>
+      <p>Walls are handled inside each car's own update. The contact leaf at <span class="addr">0752:BF7E..C0F1</span> owns ordinary wall geometry. The impact at <span class="addr">BA28..BDC2</span> moves the car back, reflects its velocity and applies an angular impulse. A projected-wall variant at <span class="addr">BDC3..BF75</span> handles walls the track builds from other data. The pit lane keeps an implicit outer boundary even where the track has no wall flags: the ordinary path compares lateral position plus 512 against the width plus a strip term plus 80.</p>
+      <p>Damage uses one pair of services, <span class="addr">B9B0</span> and <span class="addr">B9D9</span>, for both kinds of hit. For a car-to-car contact the impact strength is <span class="addr">DS:08EA</span>. For a wall it is half the absolute value of <span class="addr">DS:08DC</span>. A hit hard enough goes on to throw debris, raise a repair request and draw damage on the cockpit. The hardest wall impacts retire the car outright: after the signed thresholds at <span class="addr">C079</span>/<span class="addr">C0BF</span>, <span class="addr">0752:53B9</span> sets the retirement bits, reclassifies the field through <span class="addr">4FD0</span> and updates the on-screen list of runners.</p>
+      <div class="callout story"><span class="label">From the port</span><p>These paths were reached one at a time, by driving. A scripted replay with the throttle held down stopped at frame 3,479 on a wall impact the port had not yet written. With that done it ran to frame 5,081, then stopped at the repair request. Next came the retired-car relocation, then the terminal contact at <span class="addr">53B9</span>. Each stop was a guard that said exactly which original routine had been reached. None was skipped to make the run longer.</p></div>
+
+      <h2 id="pit-stops">Pit stops</h2>
+      <p>Pit stops run as a ten-state machine at <span class="addr">0752:4012..4354</span>, with the state in the low nibble of <code>+67</code>. Times are in ticks of the game clock at <span class="addr">DS:294F</span>. The clock formatter divides by 60,000 per minute, so a tick is a millisecond. The pit lane runs between two track-record indices, <span class="addr">DS:019C</span> and <span class="addr">DS:019E</span>.</p>
+      <figure class="diagram">
+        <svg viewBox="0 0 460 520" role="img" aria-label="Pit-stop state machine with states zero to nine">
+          <defs><marker id="c3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink-3)"/></marker></defs>
+          <g font-size="13" fill="currentColor">
+            <rect x="20" y="8" width="420" height="40" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="32" y="33"><tspan font-weight="600">0</tspan> approach; past index 019C → 1</text>
+            <rect x="20" y="58" width="420" height="40" rx="6" style="fill:var(--blue-soft);stroke:var(--blue)"/>
+            <text x="32" y="83"><tspan font-weight="600">1</tspan> in the lane; find own box, stop, +400 ms</text>
+            <rect x="20" y="108" width="420" height="40" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="32" y="133"><tspan font-weight="600">2</tspan> raise the car; start work, set deadline</text>
+            <rect x="20" y="158" width="420" height="40" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="32" y="183"><tspan font-weight="600">3</tspan> service until the deadline</text>
+            <rect x="20" y="208" width="420" height="40" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="32" y="233"><tspan font-weight="600">4</tspan> extra 2,000 ms (qualifying mode bit)</text>
+            <rect x="20" y="258" width="420" height="40" rx="6" style="fill:var(--amber-soft);stroke:var(--amber)"/>
+            <text x="32" y="283"><tspan font-weight="600">5</tspan> lower the car; then +300 ms</text>
+            <rect x="20" y="308" width="420" height="40" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="32" y="333"><tspan font-weight="600">6</tspan> wait; then +400 ms</text>
+            <rect x="20" y="358" width="420" height="40" rx="6" style="fill:var(--green-soft);stroke:var(--green)"/>
+            <text x="32" y="383"><tspan font-weight="600">7</tspan> release: engine on, flags cleared</text>
+            <rect x="20" y="408" width="420" height="40" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="32" y="433"><tspan font-weight="600">8</tspan> drive out; leave 019C..019E → 9</text>
+            <rect x="20" y="458" width="420" height="40" rx="6" style="fill:var(--paper);stroke:var(--rule)"/>
+            <text x="32" y="483"><tspan font-weight="600">9</tspan> done</text>
+          </g>
+        </svg>
+        <figcaption>State 4 is taken only when bit <code>0x40</code> of the session byte is set, which is qualifying. Otherwise state 3 goes straight to 5.</figcaption>
+      </figure>
+      <p><strong>Finding the box.</strong> Each team has its own spot. In state 1 the car waits until it is at least <code>0x400</code> off the centre line and has reached track index <code>team × 3 + 1 + DS:019A</code>, where the team is <code>+AD</code>. So pit boxes are three track records apart, in team order. A separate reference step, <span class="addr">0752:3BBE</span>, steers the car there: it offsets the car's track index by <code>(9 − team) × 3</code> records, clamps the result to ten records inside each end of the pit lane, and converts it to a byte offset at 46 bytes per record. When the car arrives, the game zeroes its speed and six force words, sets its pit flags and starts a 400 ms timer.</p>
+      <p><strong>On the jacks.</strong> In state 2 the game adds <span class="addr">DS:0366</span> to the car's ride height at <code>+8C</code> each frame, up to a limit at <span class="addr">DS:03F6</span>. That reads as the car being lifted on jacks; it is our reading of the numbers, not a label in the code. It then starts the repairs, chooses tyres and sets the service deadline. State 5 lowers the car again at the same rate.</p>
+      <p><strong>How long a stop takes.</strong> The service deadline depends on the session and the car:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Session</th><th>Car</th><th>Service time</th></tr></thead>
+        <tbody>
+          <tr><td>Race</td><td>Any</td><td>6,000 ms + 10 × (two random bytes summed − 255), with the upper tail stretched ten-fold; +14,000 ms more if a flag in <code>+9A</code> is set</td></tr>
+          <tr><td>Practice</td><td>AI</td><td>1,000 ms</td></tr>
+          <tr><td>Practice or qualifying</td><td>Player</td><td>10,000 ms</td></tr>
+          <tr><td>Qualifying</td><td>AI</td><td>15,000 ms + 256 × a random byte</td></tr>
+          <tr><td>Race, or qualifying</td><td>A car that has already finished (<code>+5E</code> bit <code>0x01</code>)</td><td>86,400,000 ms: 24 hours, which in practice means never</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Tyres.</strong> The compound is chosen into <code>+B2</code>: 5 in the wet, 4 in qualifying (dropping to 3 once a car's allowance at <span class="addr">DS:0AD9</span> reaches 4), and 2 otherwise. When the work finishes, the game reads a grip coefficient from a table at <span class="addr">DS:299B</span>, indexed by the weather word and 16 bytes per compound.</p>
+
+      <h2 id="player-input">The player's hands</h2>
+      <p>The player's controls reach the car in three steps. First, the keyboard. The game's interrupt handler keeps a bitmap of held keys, updated through INT 15h at <span class="addr">8B6E:0533..0563</span>. Then <span class="addr">0752:0005..00C5</span> decodes the player's key bindings against that bitmap into command words. The bindings pack bitmap positions, not raw scan codes. By default <kbd>A</kbd> is throttle, <kbd>Z</kbd> brake, <kbd>,</kbd> and <kbd>.</kbd> steer, and <kbd>Space</kbd> is the gear control.</p>
+      <p>Second, the player-input routine at <span class="addr">213F:29BD..2A35</span> reads the game port at I/O <code>0x201</code> and, if a joystick is set up, samples its axes through <span class="addr">8B6E:06DA</span>. Third, four selectors turn whatever the player chose (keys, joystick axes or buttons) into the car record:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Selector</th><th>Writes</th><th>Digital bit in <code>+7F</code></th></tr></thead>
+        <tbody>
+          <tr><td>Steering, <span class="addr">213F:2AF6</span></td><td><code>+7C</code>, clamped to ±<code>0x0FFF</code> from an axis</td><td><code>0x08</code> right, <code>0x04</code> left, set beyond ±<code>0x800</code></td></tr>
+          <tr><td>Throttle, <span class="addr">213F:2B99</span></td><td><code>+9B</code>, signed</td><td><code>0x01</code>, set at <code>0x40</code> or more</td></tr>
+          <tr><td>Brake, <span class="addr">213F:2BF8</span></td><td><code>+5F</code>, signed</td><td><code>0x02</code>, set at <code>0x40</code> or more</td></tr>
+          <tr><td>Gear, <span class="addr">213F:2C73</span></td><td>two selectors combined</td><td><code>0x10</code> primary, <code>0x90</code> secondary</td></tr>
+        </tbody>
+      </table></div>
+      <p>So <code>+7F</code> is a derived summary. The physics reads it alongside the analogue values: the throttle producer, for example, zeroes the throttle when bit <code>0x01</code> is clear.</p>
+      <div class="callout trap"><span class="label">The trap</span><p>The gear selectors lose information when they combine. A secondary selector alone and both selectors together both produce <code>0x90</code>. But the routine also leaves the primary selector's value in a register, and a later feature routine uses it. The combined byte cannot recover it, so the port carries the primary value separately.</p></div>
+      <h3 id="driver-aids">Driver aids</h3>
+      <p>The game offers six driver aids, listed in its setup menu as Auto Brakes, Auto Gears, Self-Righting Spins, Indestructable (the game's spelling), Dotted "Best Line" and Suggested Gear. They are the low six bits of <span class="addr">SS:1220</span>. A second mask at <span class="addr">DS:2251</span> says which aids are allowed. The effective set, the AND of the two, lives at <span class="addr">DS:297D</span>. The cockpit draws each aid as a 10 × 5 tile in one of three states: not allowed, allowed but off, and on.</p>
+      <p>In a race the function keys toggle aids. The command routine at <span class="addr">0752:E2BC</span> checks six key edges, from command bit <code>0x80</code> down to <code>0x04</code>. Each press flips one bit of <span class="addr">SS:1220</span>, recomputes <span class="addr">DS:297D</span>, redraws the tile and sets <span class="addr">SS:0192</span> so that the next frame copies the new mask into each car. Two keys do more: the fifth also sets up the dotted-line feature and the sixth works out a gear recommendation. We read those two as the Best Line and Suggested Gear aids, which matches the menu order. That mapping is an inference.</p>
+      <p>Aid choices persist in <code>F1PREFS.DAT</code>. The file is <code>0x48A</code> bytes of body plus a four-byte checksum, with the aid mask at offset <code>0x478</code>. The checksum is two words: a plain sum of the bytes, and a running value rotated left three bits before each byte is added. A missing or invalid file leaves the executable's built-in default alone.</p>
+
+      <h2 id="rng">The dice</h2>
+      <p>All the randomness in this chapter comes from one generator. It is a five-byte shift register at <span class="addr">DS:2984..2988</span>, drawn from by the far routine at <span class="addr">0752:04D7</span>. A second copy of the routine at <span class="addr">0752:0509</span> serves another register at <span class="addr">DS:08C3</span>. Each draw forms a byte from two words of the register, then shifts every byte up one place and puts the new byte at the bottom:</p>
+      <pre><code>ax = (s1 | s2&lt;&lt;8) &gt;&gt; 4
+bx = (s3 | s4&lt;&lt;8) &gt;&gt; 1
+al = al XOR bl
+s4 = s3; s3 = s2; s2 = s1; s1 = s0; s0 = al</code></pre>
+      <p>The routine returns the whole of <code>AX</code>, and callers mask the bits they want. A register of all zeros draws zero forever.</p>
+      <p>The generator is never seeded from a clock, so it is fully deterministic. But it is shared by everything: the track loader draws from it for trackside scenery, the pre-qualifying fallback for jitter, the parameter service for reliability, the pit logic for stop times. Its state at any moment depends on every draw made before. Reproducing one particular field or one particular pit stop means reproducing that whole history, menus included.</p>
+      <div class="callout story"><span class="label">From the port</span><p>One lesson from the project: the static executable holds <code>37</code> at <span class="addr">SS:1230</span>, but the test scenario the original was captured in selects <code>12</code>. Only when the port fed in the same menu choice did its calibration tables and random-generator state agree with the capture.</p></div>
+
+      <h2 id="driving-block">The per-circuit driving block</h2>
+      <p>One more piece of data shapes how every car drives. A 38-byte block at <span class="addr">DS:0204..0229</span> is decoded from the circuit file when the track loads. Its first ten bytes are the AI cars' shared setup, in the same shape as a player's car-setup record: front and rear wing (0 to 64), six gear ratios (a non-zero ratio is clamped to 16 to 80), a tyre compound (0 to 5) and a signed brake balance. Later words scale grip (at <span class="addr">DS:020E</span>), engine (<span class="addr">DS:0216</span>) and wing (<span class="addr">DS:0218</span>). The word at <span class="addr">DS:0222</span> is the circuit spread the pre-qualifying fallback reads.</p>
+      <p>Because the block comes from the track at start-up, patching it in the executable does nothing. The port's alternative vehicle sets (Chapter 12) change the field by scaling these words after they are decoded, before the grid and the corner calibration read them. The original simulation then runs as normal. The engine scale is capped at 1.0 because the game's thrust arithmetic wraps negative above it.</p>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The day-by-day story of the Big Race port, from a clean-room two-car simulation on 30 August 2026 to a source-runtime bridge running the whole original game by 23 September.">
+  <title>Twenty-four days — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part II — The port</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 09</p>
+      <h1>Twenty-four days</h1>
+      <p class="lede">On 30 August 2026 the project began as a small, independent Rust racing game that borrowed F1GP's track files. On 23 September it was Big Race: a program that runs the player's own copy of the 1991 game through a Rust bridge, with all 26 cars, every menu, the saves, the Championship and the modem link. This chapter tells how it got from one to the other, including the wrong turns.</p>
+
+      <h2 id="at-a-glance">At a glance</h2>
+      <p>The repository's history is the spine of this chapter. It holds 2,654 commits dated 30 August to 23 September 2026. Every number below was counted from that history, from the project's status log (<code>STATE.md</code>), from its 529 dated engineering journals, from its 96 design documents, and from its bug ledger of 103 records.</p>
+
+      <div class="stats">
+        <div class="stat"><b>2,654</b><span>commits, 30 Aug to 23 Sep 2026</span></div>
+        <div class="stat"><b>0.1.0 → 0.1.714</b><span>version, bumped 713 times, once per integrated change</span></div>
+        <div class="stat"><b>529</b><span>dated engineering journals</span></div>
+        <div class="stat"><b>103</b><span>bug records: 70 Closed, 32 Fixed, 1 Open</span></div>
+        <div class="stat"><b>1,529</b><span>library tests in the 18 September core gate</span></div>
+        <div class="stat"><b>290</b><span>commits on the busiest day, 9 September</span></div>
+      </div>
+
+      <p>The version number is a useful clock. The project bumps the patch version once for each change that lands on the main branch. The first commit carries <code>0.1.0</code>. The last carries <code>0.1.714</code>. So 713 separate changes reached the trunk in twenty-four days. That is roughly one every 48 minutes, around the clock.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 720 310" role="img" aria-label="Bar chart of commits per day from 30 August to 23 September 2026. Peaks of 220 on 8 September, 290 on 9 September, 254 on 13 September and 206 on 20 September. A strip under the bars shows the share of commits with a Claude co-author trailer: all of them on 3 to 5 September and 23 September, about half on 22 September, almost none on other days.">
+          <line x1="44" y1="250" x2="706" y2="250" style="stroke:var(--rule)" />
+          <line x1="44" y1="40" x2="44" y2="250" style="stroke:var(--rule)" />
+          <line x1="44" y1="180" x2="706" y2="180" style="stroke:var(--rule);stroke-dasharray:3 4" />
+          <line x1="44" y1="110" x2="706" y2="110" style="stroke:var(--rule);stroke-dasharray:3 4" />
+          <line x1="44" y1="40" x2="706" y2="40" style="stroke:var(--rule);stroke-dasharray:3 4" />
+          <text x="38" y="254" text-anchor="end" font-size="11" fill="currentColor">0</text>
+          <text x="38" y="184" text-anchor="end" font-size="11" fill="currentColor">100</text>
+          <text x="38" y="114" text-anchor="end" font-size="11" fill="currentColor">200</text>
+          <text x="38" y="44" text-anchor="end" font-size="11" fill="currentColor">300</text>
+          <text x="48" y="22" font-size="12" fill="currentColor">Commits per day (red: turning-point days)</text>
+          <rect x="48.0" y="198.9" width="18" height="51.1" style="fill:var(--blue)"><title>2026-08-30: 73 commits</title></rect>
+          <rect x="74.4" y="191.2" width="18" height="58.8" style="fill:var(--blue)"><title>2026-08-31: 84 commits</title></rect>
+          <rect x="100.8" y="207.3" width="18" height="42.7" style="fill:var(--blue)"><title>2026-09-01: 61 commits</title></rect>
+          <rect x="127.2" y="196.8" width="18" height="53.2" style="fill:var(--blue)"><title>2026-09-02: 76 commits</title></rect>
+          <rect x="153.6" y="224.8" width="18" height="25.2" style="fill:var(--blue)"><title>2026-09-03: 36 commits</title></rect>
+          <rect x="180.0" y="170.9" width="18" height="79.1" style="fill:var(--blue)"><title>2026-09-04: 113 commits</title></rect>
+          <text x="189.0" y="166.9" text-anchor="middle" font-size="11" fill="currentColor">113</text>
+          <rect x="206.4" y="224.8" width="18" height="25.2" style="fill:var(--blue)"><title>2026-09-05: 36 commits</title></rect>
+          <rect x="232.8" y="156.9" width="18" height="93.1" style="fill:var(--blue)"><title>2026-09-06: 133 commits</title></rect>
+          <text x="241.8" y="152.9" text-anchor="middle" font-size="11" fill="currentColor">133</text>
+          <rect x="259.2" y="181.4" width="18" height="68.6" style="fill:var(--blue)"><title>2026-09-07: 98 commits</title></rect>
+          <rect x="285.6" y="96.0" width="18" height="154.0" style="fill:var(--blue)"><title>2026-09-08: 220 commits</title></rect>
+          <text x="294.6" y="92.0" text-anchor="middle" font-size="11" fill="currentColor">220</text>
+          <rect x="312.0" y="47.0" width="18" height="203.0" style="fill:var(--red)"><title>2026-09-09: 290 commits</title></rect>
+          <text x="321.0" y="43.0" text-anchor="middle" font-size="11" fill="currentColor">290</text>
+          <rect x="338.4" y="163.9" width="18" height="86.1" style="fill:var(--red)"><title>2026-09-10: 123 commits</title></rect>
+          <text x="347.4" y="159.9" text-anchor="middle" font-size="11" fill="currentColor">123</text>
+          <rect x="364.8" y="231.1" width="18" height="18.9" style="fill:var(--blue)"><title>2026-09-11: 27 commits</title></rect>
+          <rect x="391.2" y="210.8" width="18" height="39.2" style="fill:var(--blue)"><title>2026-09-12: 56 commits</title></rect>
+          <rect x="417.6" y="72.2" width="18" height="177.8" style="fill:var(--red)"><title>2026-09-13: 254 commits</title></rect>
+          <text x="426.6" y="68.2" text-anchor="middle" font-size="11" fill="currentColor">254</text>
+          <rect x="444.0" y="147.8" width="18" height="102.2" style="fill:var(--blue)"><title>2026-09-14: 146 commits</title></rect>
+          <text x="453.0" y="143.8" text-anchor="middle" font-size="11" fill="currentColor">146</text>
+          <rect x="470.4" y="174.4" width="18" height="75.6" style="fill:var(--blue)"><title>2026-09-15: 108 commits</title></rect>
+          <rect x="496.8" y="211.5" width="18" height="38.5" style="fill:var(--blue)"><title>2026-09-16: 55 commits</title></rect>
+          <rect x="523.2" y="211.5" width="18" height="38.5" style="fill:var(--blue)"><title>2026-09-17: 55 commits</title></rect>
+          <rect x="549.6" y="182.1" width="18" height="67.9" style="fill:var(--blue)"><title>2026-09-18: 97 commits</title></rect>
+          <rect x="576.0" y="178.6" width="18" height="71.4" style="fill:var(--blue)"><title>2026-09-19: 102 commits</title></rect>
+          <rect x="602.4" y="105.8" width="18" height="144.2" style="fill:var(--blue)"><title>2026-09-20: 206 commits</title></rect>
+          <text x="611.4" y="101.8" text-anchor="middle" font-size="11" fill="currentColor">206</text>
+          <rect x="628.8" y="201.0" width="18" height="49.0" style="fill:var(--blue)"><title>2026-09-21: 70 commits</title></rect>
+          <rect x="655.2" y="159.0" width="18" height="91.0" style="fill:var(--red)"><title>2026-09-22: 130 commits</title></rect>
+          <text x="664.2" y="155.0" text-anchor="middle" font-size="11" fill="currentColor">130</text>
+          <rect x="681.6" y="246.5" width="18" height="3.5" style="fill:var(--blue)"><title>2026-09-23: 5 commits</title></rect>
+          <!-- agent strip: full-width blue, red overlay = Claude share of trailered commits -->
+          <g>
+            <rect x="48.0" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="74.4" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="100.8" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="127.2" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="153.6" y="256" width="18" height="6" style="fill:var(--red)" />
+            <rect x="180.0" y="256" width="18" height="6" style="fill:var(--red)" />
+            <rect x="206.4" y="256" width="18" height="6" style="fill:var(--red)" />
+            <rect x="232.8" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="232.8" y="256" width="1" height="6" style="fill:var(--red)" />
+            <rect x="259.2" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="285.6" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="312.0" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="338.4" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="364.8" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="391.2" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="417.6" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="444.0" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="470.4" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="496.8" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="523.2" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="549.6" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="576.0" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="602.4" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="628.8" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="655.2" y="256" width="18" height="6" style="fill:var(--ink-3)" />
+            <rect x="655.2" y="256" width="8.2" height="6" style="fill:var(--red)" />
+            <rect x="681.6" y="256" width="18" height="6" style="fill:var(--red)" />
+          </g>
+          <text x="57.0" y="278" text-anchor="middle" font-size="11" fill="currentColor">08-30</text>
+          <text x="136.2" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-02</text>
+          <text x="215.4" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-05</text>
+          <text x="294.6" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-08</text>
+          <text x="373.8" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-11</text>
+          <text x="453.0" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-14</text>
+          <text x="532.2" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-17</text>
+          <text x="611.4" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-20</text>
+          <text x="690.6" y="278" text-anchor="middle" font-size="11" fill="currentColor">09-23</text>
+          <rect x="48" y="292" width="12" height="6" style="fill:var(--red)" />
+          <text x="64" y="299" font-size="11" fill="currentColor">strip: Claude co-author share</text>
+          <rect x="250" y="292" width="12" height="6" style="fill:var(--ink-3)" />
+          <text x="266" y="299" font-size="11" fill="currentColor">strip: OpenAI Codex co-author share</text>
+        </svg>
+        <figcaption>Commits per day by author date, counted from the full history (2,654 in all). Red bars mark the days the story turns: the first full races (9 Sep), the deletion of the clean-room game (10 Sep), the boundary classification sweep (13 Sep) and the last big feature day (22 Sep). The strip beneath shows which AI family's co-author trailer the day's commits carry. The low count on 5 September hides a busy day: that day's 51 branch commits landed as one squash merge.</figcaption>
+      </figure>
+
+      <h2 id="who-did-the-work">Who did the work</h2>
+      <p>The author directed the project. AI coding agents wrote almost all of the code, tests and journals. The commit history says which agents did so, because commits carry <code>Co-Authored-By</code> trailers naming the model. We counted them. Of the 2,654 commits:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Trailer on the commit</th><th>Commits</th><th>What they are</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI Codex / GPT-series models only</td><td>1,405</td><td>Most feature, port and audit work</td></tr>
+          <tr><td>Claude models only</td><td>171</td><td>Concentrated on 3–5 Sep and 22–23 Sep</td></tr>
+          <tr><td>Both families</td><td>2</td><td>Joint commits</td></tr>
+          <tr><td>No trailer, version bumps</td><td>648</td><td>The integration step's single version bump</td></tr>
+          <tr><td>No trailer, other</td><td>428</td><td>Mostly bug-ledger claim, fix and close records</td></tr>
+        </tbody>
+      </table></div>
+      <p>So the port is mostly the work of OpenAI Codex sessions. Claude sessions led two stretches. The first was the renderer deep dive and the long autonomous loop of 3 to 5 September. The second was the last feature day, 22 September, which added the enhanced renderer, vehicle sets and window scaling. The two families also reviewed each other's designs. The quality records name an "OpenAI Codex lead session" as the attester of the current quality assessment, and several design documents record a Claude model as a consulted reviewer.</p>
+      <p>The agents often worked in parallel. From 6 September a lead session briefed several "owner" agents, each in its own copy of the repository, and accepted their work only after rerunning the evidence itself. Later journals describe up to three workers per feature, plus independent adversarial reviewers. That parallelism is why a single day could land 290 commits.</p>
+
+      <h2 id="the-shape-of-it">The shape of it</h2>
+      <p>The twenty-four days fall into seven overlapping phases. Each one began when the previous one exposed a limit.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 720 300" role="img" aria-label="Phase chart across 25 days. Clean-room core 30 Aug to 1 Sep. Reading original assets and menus 31 Aug to 1 Sep. Routine-by-routine renderer port 1 to 5 Sep. Original producers and physics 6 to 8 Sep. Source runtime owns the race 8 to 11 Sep. Audits and exact oracles 12 to 20 Sep. Product features 19 to 23 Sep.">
+          <g font-size="11" fill="currentColor">
+            <text x="10" y="44">Clean-room core</text>
+            <text x="10" y="76">Original assets, menus</text>
+            <text x="10" y="108">Renderer, routine by routine</text>
+            <text x="10" y="140">Original producers, physics</text>
+            <text x="10" y="172">Source runtime owns the race</text>
+            <text x="10" y="204">Audits and exact oracles</text>
+            <text x="10" y="236">Big Race features</text>
+          </g>
+          <g>
+            <line x1="190" y1="20" x2="190" y2="250" style="stroke:var(--rule)" />
+            <line x1="190" y1="250" x2="705" y2="250" style="stroke:var(--rule)" />
+          </g>
+          <!-- day width = 515/25 = 20.6; day i starts at 190 + i*20.6 -->
+          <rect x="190.0" y="32" width="61.8" height="16" rx="3" style="fill:var(--ink-3)" />
+          <rect x="210.6" y="64" width="41.2" height="16" rx="3" style="fill:var(--ink-3)" />
+          <rect x="231.2" y="96" width="103.0" height="16" rx="3" style="fill:var(--blue)" />
+          <rect x="334.2" y="128" width="61.8" height="16" rx="3" style="fill:var(--blue)" />
+          <rect x="375.4" y="160" width="82.4" height="16" rx="3" style="fill:var(--red)" />
+          <text x="419" y="172" font-size="11" text-anchor="middle" style="fill:var(--paper)">bridge</text>
+          <rect x="457.8" y="192" width="185.4" height="16" rx="3" style="fill:var(--red)" />
+          <rect x="602.0" y="224" width="103.0" height="16" rx="3" style="fill:var(--blue)" />
+          <!-- milestones -->
+          <line x1="416.6" y1="20" x2="416.6" y2="250" style="stroke:var(--red);stroke-dasharray:4 3" />
+          <text x="421" y="18" font-size="11" fill="currentColor">10 Sep: clean-room game deleted</text>
+          <g font-size="11" fill="currentColor" text-anchor="middle">
+            <text x="200.3" y="268">30 Aug</text>
+            <text x="323.9" y="268">5 Sep</text>
+            <text x="426.9" y="268">10 Sep</text>
+            <text x="529.9" y="268">15 Sep</text>
+            <text x="632.9" y="268">20 Sep</text>
+            <text x="694.7" y="268">23</text>
+          </g>
+          <text x="190" y="292" font-size="11" fill="currentColor">Bars are approximate spans read from commit subjects and journal dates.</text>
+        </svg>
+        <figcaption>The phases overlap because different agents worked different fronts at once. The hinge is 10 September, when the original clean-room simulation stopped being a live route and was deleted.</figcaption>
+      </figure>
+
+      <h3>The day-by-day spine</h3>
+      <ol class="timeline">
+        <li><time>2026-08-30 · v0.1.0 → 0.1.27 · 73 commits</time><h4>A portable core and a two-car race</h4><p>"Bootstrap portable F1GP engine core." By evening the project parses all sixteen original track files, runs a deterministic car, a lap lifecycle, an AI driver, a human-versus-AI race weekend and a cockpit view. All of it is independent code; only the track files are the original's.</p></li>
+        <li><time>2026-08-31 · 84 commits</time><h4>Original assets arrive</h4><p>Contact, damage, pit service, setups and a 16-round Championship are added to the clean-room game. The same day, the port starts decoding the original's LZW screens, palettes and animations, reads menu fonts and the cockpit straight out of the player's <code>GP.EXE</code>, and runs a smoke build on an emulated SunOS SPARC workstation.</p></li>
+        <li><time>2026-09-01 · 61 commits</time><h4>Every menu page</h4><p>Twenty-seven "Recreate the original …" commits rebuild the whole menu tree against the original. Late in the day, "Add exact indexed presenter and frame oracle" starts the renderer port.</p></li>
+        <li><time>2026-09-02 → 03 · 112 commits</time><h4>The renderer, one routine at a time</h4><p>Edge clipping, the edge scan stream, paired and masked fills, the bitmap drawer, the object transform, point projection, the track table, the loader's pattern machine and the road pass. The original road appears on the cockpit screen on 3 September.</p></li>
+        <li><time>2026-09-04 · 113 commits</time><h4>Walls, and the runtime-table wall</h4><p>Four graphics subsystems all stop at tables the original builds at run time. A 49-agent adversarial review finds four real defects in the day's wall port. The capture toolchain is rescued from scratch space into the repository.</p></li>
+        <li><time>2026-09-05 · 36 commits</time><h4>The long loop</h4><p>An autonomous loop runs 57 iterations in a day against one captured Suzuka race-start frame. The whole-frame match climbs from 42.31% to 79.22%. The 26-car entrant table is decoded. The original AdLib music is modelled with an independent OPL2 chip.</p></li>
+        <li><time>2026-09-06 · 133 commits</time><h4>The physics tick is found</h4><p>The real per-frame car update is located at <span class="addr">0752:5C2F</span>, and the address the project had carried for it is shown to be wrong. Parallel owners port force resolution, motion integration and the grid initializer. The first bug records are raised.</p></li>
+        <li><time>2026-09-07 · 98 commits</time><h4>Startup producers</h4><p>"Brief, record independent evidence, implement, accept" cycles port the loader tail, route annotation, race length, classification text, countdown and camera startup.</p></li>
+        <li><time>2026-09-08 · 220 commits</time><h4>One memory, one race</h4><p>The Quick Race memory-ownership design puts all original state in one buffer. The ported producers are connected to it. The native Quick Race now runs the original field, sound, retirements and exit.</p></li>
+        <li><time>2026-09-09 · 290 commits · busiest day</time><h4>Full races on every circuit</h4><p>Pause, replay, pit stops, cameras, wet weather. By the end of the day: "record all sixteen circuits in dry and wet races". Work on an authored Bahrain circuit starts.</p></li>
+        <li><time>2026-09-10 · 123 commits</time><h4>The clean-room game is deleted</h4><p>"remove provisional runtime surfaces" deletes 19,136 lines, including the two-car duel, its AI, sessions and renderer. Practice, Qualifying, Race and Championship now all run on the original engine.</p></li>
+        <li><time>2026-09-12 → 13 · 310 commits</time><h4>The boundary checklist</h4><p>Every remaining error path in the bridge is classified. The final-tree race matrix passes 64 of 64 runs with every entrant finished or retired. The authored Madrid circuit becomes raceable.</p></li>
+        <li><time>2026-09-14 · 146 commits</time><h4>Exact pixels and real saves</h4><p>Four race-start pages match the original at 0 of 64,000 pixels. The final source-boundary audit maps every production route. The original raw save is written from live state, and full-game video recording is added.</p></li>
+        <li><time>2026-09-15 → 18 · 315 commits</time><h4>Results and standings</h4><p>The original results pages, Championship tables and ceremony come in, each with an exact-pixel oracle. All sixteen circuits pass exact road replays. The core gate reaches 1,529 library tests.</p></li>
+        <li><time>2026-09-19 · 102 commits</time><h4>Big Race</h4><p>The product is renamed Big Race. Fullscreen and resizable windows arrive, along with hardening against corrupt saves.</p></li>
+        <li><time>2026-09-20 → 21 · 276 commits</time><h4>Linked play and the modem</h4><p>The original two-machine link is ported through its frame loop. A modem engine is vendored, and the original's modem command builders drive virtual modems whose audio crosses a network.</p></li>
+        <li><time>2026-09-22 · 130 commits</time><h4>Beyond the original</h4><p>LAN discovery, a full-scene enhanced renderer, vehicle sets (bangers and monster trucks), 4:3 integer window scaling, and a two-machine modem race.</p></li>
+        <li><time>2026-09-23 · v0.1.714 · 5 commits</time><h4>Tidy-up</h4><p>"Championships honour the Vehicles setting", and the architecture and testing guides are written up.</p></li>
+      </ol>
+
+      <h2 id="clean-room-start">Day one: a clean-room game</h2>
+      <p>The first journal is titled "F1GP Rust vertical slice". Its objective was modest and careful: build one deterministic practice slice "in portable Rust" that loads user-supplied data, advances one car at a fixed tick, draws an indexed framebuffer, and compares "selected stable observations" with the original game running in the emulator.</p>
+      <p>The rules were set on the first page and never relaxed. The repository ships no original executable, assets or extracted data. The core library is <code>no_std</code> with no dependencies. Disk bytes are decoded field by field, little-endian, never cast to native structures. Simulation uses fixed-width integers with defined wrapping, and no floating point. The journal records the very first tests as seven unit tests, each one made to fail once by a deliberate mutation before it was trusted.</p>
+      <p>That first day moved fast. By its end the project had parsed all sixteen original <code>F1CTxx.DAT</code> track files, checked their checksums, and walked every section of every track. Phoenix gave 67 sections, 769 track-length units and 233 section commands, matching an independent count. On top of that it built its own game: a car model with "provisional integer trigonometry", a lap lifecycle, human input replay, track limits, a deterministic AI lap driver, a "portable human versus AI race", qualifying, a manual gearbox and a cockpit view with instruments. The journal for the duel race specifies an allocation-free <code>DuelRace</code> that owns two <code>RaceSession</code> values and one <code>AiDriver</code>.</p>
+      <p>Two things about this start matter for the rest of the story. First, almost everything was labelled <em>provisional</em>: "provisional track geometry", "provisional runoff grip", "provisional track limits". The geometry design kept "65,536 heading units and curvature-per-track-unit explicitly provisional". Second, the oracle was there from the first hour: "Add repeatable mdpc practice oracle" is the twelfth commit. The project always meant to check itself against the real game. It did not yet know how much of the real game it would end up running.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>On 31 August the clean-room core was cross-compiled for SPARC and built on an emulated SPARCstation 2 running SunOS 4.1.4 with its own GCC 2.7.2.3. The journal records the old assembler's 2,048-byte statement limit and the extra leading underscore that SunOS a.out symbols need. It proved the core was genuinely portable. It also shows the project's early idea of itself: a new engine that could run anywhere.</p></div>
+
+      <h2 id="reading-the-original">Reading the original's own files</h2>
+      <p>On 31 August the direction began to tilt. The clean-room game kept growing: two-car contact, damage and retirement, pit service, car setup, race flags, a 16-round Championship. But alongside it a second line of commits started reading the original's data directly: "Decode original LZW screen records", "Reconstruct original palette animation frames", "Render original menu fonts from adjacent GP.EXE", "Render the original cockpit from adjacent GP.EXE".</p>
+      <p>The cockpit journal shows the method that would carry the whole project. The native program decodes the player's packed executable in memory only. It checks exact fingerprints for the 256-entry racing palette and the 320×200 cockpit template. Then it composes the live world with that template using the original presenter's own row mask. The journal gives the layout: the palette sits at file offset <code>0x22DC3</code>, the 64,000-byte template at <code>0x7D2E0</code>, and the presenter copies full-width scene rows 0–102, then span-masked rows 103–163, and keeps the template for rows 164–199. Nothing from the executable is written to disk or bundled.</p>
+      <p>On 1 September the menus followed. Twenty-seven commits titled "Recreate the original …" rebuilt the language menu, Setup Options, Driver Select, Load-Save, Select Circuit, every controls page, the printer page and the link dialogs, each with its own journal. File operations such as Load Names and Save Names were made byte-exact. Then, late that day, one commit changed the project's centre of gravity: "Add exact indexed presenter and frame oracle".</p>
+
+      <h2 id="renderer-routine-by-routine">The renderer, routine by routine</h2>
+      <p>From 1 to 4 September the project ported the original 3D renderer one routine at a time. The commit subjects read like a table of contents for <a href="05-rendering.html">Chapter 05</a>: projected edge clipping, the edge scan stream, the paired edge fill, the masked span fill, the edge descriptor ring, synthetic screen-boundary edges, the bitmap scanline decoder, the object transform, per-point projection, the object placement stage, the runtime track table, road cross-section points, the pattern machine the loader uses to decorate trackside, the per-segment road edge builder, the road pass and the draw-order sort.</p>
+      <p>Each routine got an oracle before it got a port. A small capture toolchain parked the original in the emulator at a breakpoint, read the inputs and outputs of one routine, and emitted a Rust fixture. The port then had to reproduce those outputs exactly. By 3 September, "Draw the original road on the native cockpit" put the original's own road geometry on screen, drawn by ported code.</p>
+      <p>On 4 September a nine-agent survey asked how graphics fidelity should be driven. It found a risk more urgent than either option it was asked about. The whole capture toolchain, eleven shell scripts and five Python emitters, existed only in a session's temporary scratch space. It was moved into the repository that day, and two emitters were re-run to reproduce their checked-in fixtures byte for byte. The survey also found three facts that shaped every later oracle:</p>
+      <ul>
+        <li>The original does not draw the road to the VGA page at <span class="addr">A000:0000</span>. It draws to a 320×164 canvas at <span class="addr">580C:1400</span>, and the presenter copies only about 61% of the page each frame. A whole-page diff therefore compares execution history, not one frame.</li>
+        <li>The release emulator could not rewind. So each probe had to run from a parked state and never restore it.</li>
+        <li>"Citation is not porting." Most comments naming an address recorded that the routine was <em>not</em> reproduced. A coverage count built on comments overstated progress by roughly a factor of two.</li>
+      </ul>
+
+      <h3>The wall that was a table</h3>
+      <p>Also on 4 September, the renderer ran into something bigger than a missing routine. A design note that day is titled "the runtime-table blocker is architectural, not local". Four separate graphics subsystems had stopped at the same kind of obstacle: a table the original builds at run time, by code that no static technique could find. Walls needed a wall table in scene data. Pit-lane strips needed anchor records set at startup. The masked-row polygon fill needed a per-row mask table at <span class="addr">25B3:6364</span>.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The mask table at <span class="addr">25B3:6364</span> is non-zero in the executable image. That looked like good news: the port already read the cockpit from the player's executable, so a static table would have been portable at once. A live read disproved it. The first 20 bytes, exactly the entries for rows 104 to 113 that the routine uses first, are overwritten at run time. Only the tail from row 114 matches the image. Reading the image would have shipped a wrong cockpit mask.</p></div>
+
+      <p>The note's conclusion was that this is "how F1GP builds its tables generally, not a quirk of the road renderer". The fix was a tool, not a port: an emulator write-watchpoint, which names the instruction that stores to an address. With it, the wall table builder was decoded the same day, then the marking loop, then the wall points, each against a byte-exact oracle. "Put walls on screen" landed that evening.</p>
+
+      <h3>Forty-nine reviewers and one wrong claim</h3>
+      <p>That night a 49-agent adversarial review examined the wall work. It returned 45 findings, four of which its own verifiers rejected. Four independent review angles converged on the same code defects, and all four held when re-derived from the binary: a verge halved on the wrong branch, an accumulator that rewound where the original nets to zero, a gap loop that never cleared its records, and a loop exit that was a trailing walk rather than a return.</p>
+      <p>The journal's more useful half was about method. The landing commit had claimed the sweep test was green "with walls live". It was not: every test call passed <code>walls: None</code>. A drop in a fill metric that the commit read as confirmation was geometry being lost. "The entire wall-drawing body could have been replaced with an unconditional decline and the suite would have stayed green." From then on the rule was: when a change adds a new path, break that path on purpose and confirm something goes red before citing any suite.</p>
+
+      <h2 id="the-long-loop">5 September: the long loop</h2>
+      <p><code>STATE.md</code> calls itself "the loop's memory". It was written so that each iteration of an autonomous agent loop could start with no conversation context, read the file, do one unit of work and update it. Its goal line reads: "Port F1GP.EXE (v1.05) fully to Rust. First milestone: an authentic Quick Race. The oracle is the original itself." Iterations 1 to 57 are dated 5 September; 58 to 61 are dated 6 September.</p>
+      <p>Iteration 1 built the oracle route. Quick Race goes straight to Suzuka with no circuit choice, so it made a clean target. After <code>O.K.</code> and a fixed wait, the race-start frame always hashes to the same value with the car stationary and the start lights lit. Three runs from independently staged copies gave identical frames. The frame itself was never committed; the recipe regenerates it from the player's install.</p>
+      <p>What followed was a slow climb, with setbacks recorded as carefully as gains.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 290" role="img" aria-label="Step chart of the whole-frame match against the original Suzuka race-start frame. 42.31 percent at first measure in iteration 24, 77.81 percent once the cockpit presenter was included, 77.25 at iteration 32, 78.48 at 38, 78.61 at 39, 79.22 at 45, 78.46 after the iteration 51 integration, and 81.475 percent after the first parallel round on 6 September.">
+          <line x1="60" y1="240" x2="680" y2="240" style="stroke:var(--rule)" />
+          <line x1="60" y1="30" x2="60" y2="240" style="stroke:var(--rule)" />
+          <g font-size="11" fill="currentColor" text-anchor="end">
+            <text x="54" y="244">40%</text>
+            <text x="54" y="184">60%</text>
+            <text x="54" y="124">80%</text>
+            <text x="54" y="64">100%</text>
+          </g>
+          <line x1="60" y1="120" x2="680" y2="120" style="stroke:var(--rule);stroke-dasharray:3 4" />
+          <line x1="60" y1="60" x2="680" y2="60" style="stroke:var(--rule);stroke-dasharray:3 4" />
+          <!-- y = 240 - (pct-40)*3 -->
+          <polyline fill="none" style="stroke:var(--blue);stroke-width:2.5" points="90,233.1 150,233.1 150,126.6 250,126.6 250,128.3 350,128.3 350,124.6 400,124.6 400,124.2 460,124.2 460,122.3 540,122.3 540,124.6 620,124.6 620,115.6 670,115.6" />
+          <g style="fill:var(--red)">
+            <circle cx="90" cy="233.1" r="4" />
+            <circle cx="150" cy="126.6" r="4" />
+            <circle cx="250" cy="128.3" r="4" />
+            <circle cx="350" cy="124.6" r="4" />
+            <circle cx="400" cy="124.2" r="4" />
+            <circle cx="460" cy="122.3" r="4" />
+            <circle cx="540" cy="124.6" r="4" />
+            <circle cx="620" cy="115.6" r="4" />
+          </g>
+          <g font-size="11" fill="currentColor">
+            <text x="96" y="226">42.31% first measure</text>
+            <text x="156" y="145">77.81%</text>
+            <text x="238" y="150">77.25%</text>
+            <text x="336" y="146">78.48%</text>
+            <text x="410" y="108">78.61%</text>
+            <text x="446" y="146">79.22%</text>
+            <text x="524" y="150">78.46%</text>
+            <text x="600" y="100">81.475%</text>
+          </g>
+          <g font-size="11" fill="currentColor" text-anchor="middle">
+            <text x="90" y="258">it. 24</text>
+            <text x="150" y="272">+presenter</text>
+            <text x="250" y="258">it. 32</text>
+            <text x="350" y="258">it. 38</text>
+            <text x="400" y="272">it. 39</text>
+            <text x="460" y="258">it. 45</text>
+            <text x="540" y="258">it. 51</text>
+            <text x="620" y="272">6 Sep</text>
+          </g>
+        </svg>
+        <figcaption>Whole-frame agreement with the original Suzuka race-start frame (64,000 pixels), as recorded in the status log. The jump at iteration 24 was not a renderer fix: the test simply began running the cockpit steps the live game already ran. The dips are honest trades, not regressions.</figcaption>
+      </figure>
+
+      <p>The early numbers came from a narrower road-scene test, and they already taught the main lesson. Iteration 8 went from 26.62% to 51.06% "by removing a confound I introduced myself": the test had been told to skip the horizon panorama, which this stage does draw. Iteration 24 then built the whole-frame test through the public render path. It first reported 42.31%, with the cockpit rows at 13.83%. The live game also runs a palette remap and the original cockpit presenter; the test did not. Adding those two steps gave 77.81%.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Six times, a poor score was caused by the oracle running less of the pipeline than the game. The status log lists them: the skipped panorama, a shade diagnosis built on it, the cockpit rows, objects that were never queued, the cockpit presenter, and, sixth, the missing competitor cars. "Every time, the renderer was less wrong than the number implied." The lesson file keeps it as one line: check the test runs what play runs, before theorising about a residual.</p></div>
+
+      <p>Retractions are recorded in the headings themselves. Iteration 25 is marked "DIAGNOSIS RETRACTED by 26": it had blamed a draw-distance cap, based on a percentage that did not move, when in fact objects painted 1,446 pixels and no culled population existed. Iteration 34 "RETRACTS ITERATION 33": a grandstand wedge that seemed to reach column 0 was a single garbage polygon with points seventeen thousand pixels off-screen, which the original clips inside its fill and the provisional rasteriser could not.</p>
+      <p>Iteration 37 is marked <strong>PIVOT</strong>. Seven iterations had gone into one grandstand fill without moving the frame. The loop parked it and turned to the cars. The grid was read from the running original: the car array at <span class="addr">25B3:0D1B</span> with a stride of <code>0xC0</code>, the player at position 7, six cars visible ahead. Iteration 38, "THE GRID DRAWS", gave the first frame movement since iteration 24. Iteration 39 found each car's team at record offset <code>+0x25</code>, where every value appeared exactly twice: a grid of two-car teams. The loop's own verdict on that step: "the score is the weaker evidence here; the picture is the stronger".</p>
+      <p>Iteration 51 shows how parallel work collides. While the loop's branch ran, another agent landed "Draw cars through the ported car list, not a hand-rolled imitation" on the trunk. The trunk's version was correct: it resolves a car's mark through the order table, which the loop's shortcut got wrong. The loop took the trunk's code whole and dropped its own. The frame went from 79.22% to 78.46%, and the log says so plainly: this was the branch declining to carry a superseded mechanism forward.</p>
+      <p>Meanwhile the same day produced the 26-car entrant subsystem, "the 34-to-26 field cut", and a new audio path. The original drives an AdLib card, so the port wrote an independent OPL2 chip model and a parser for the original's music catalogue. "Play the engine through the real chip" landed that afternoon.</p>
+
+      <h2 id="physics-and-producers">The physics tick, and the producers</h2>
+      <p>Iteration 61, on 6 September, carries the heading "THE PHYSICS TICK IS LOCATED, and the address this project has carried for it was wrong". The live Quick Race update is at <span class="addr">0752:5C2F</span>, called from <span class="addr">0752:EE85</span>. It walks the car list through the spatial order table. Detailed player dynamics are at <span class="addr">0752:995C</span>. The address the file had named for physics all along turned out to be track-building code. A delegated agent found it; the loop corroborated it by disassembly. Two independent runs then matched every before-and-after byte of all 26 cars across 80 grid updates and 32 moving updates. For the first time, car physics could be ported against a tick-by-tick oracle rather than invented. The full mechanism is in <a href="03-field.html">Chapter 03</a>.</p>
+      <p>The same day the work changed shape. A lead session briefed two parallel owners, one for physics and one for rendering, each in a separate worktree. The lead reviewed their code and reran their evidence before committing. The first round landed the track-relative coordinate refresh (all 192 entrant bytes matching 76 calls in two captures), a shared cockpit presenter, and a corrected neutral-gear glyph. The frame reached 52,144 of 64,000 pixels, 81.475%. The journal is careful to say only 41 of those pixels were a product fix. The other 1,890 corrected the old measurement.</p>
+      <p>Nine "parallel deliveries" followed over 6 and 7 September. The pattern in the commit log is distinctive: "Brief …", "Record independent … evidence", "Implement …", "Accept …". Each unit was a <em>producer</em>: a piece of the original that creates state another piece consumes. Force resolution and motion integration. The grid initializer, with its random-number read order preserved. The runtime racing line. Pit-bank geometry. Startup calibration. Session deadline. Route annotation. Loader tail. Race length and reset. Classification text. The countdown. Startup camera and clock. By the evening of 7 September the log shows the field's per-car continuation being corrected branch by branch: steering, acceleration, contact.</p>
+      <p>This is also when the bug ledger began. Bug 1, raised and fixed on 6 September, was a bitmap selector that mishandled the minimum signed object angle. Bugs 4 to 11 came in one burst the same afternoon, all in the road scene: forward car ordering used on reversed passes, a missing vertical scale on front billboards, a road heading marker using an absolute angle instead of an accumulated sign. All eight were fixed that day.</p>
+
+      <h2 id="the-bridge">8 September: one memory, one race</h2>
+      <p>By 8 September the port had dozens of faithful producers, each proven against captures. They did not yet make a game. Each had its own typed inputs and outputs, and the glue between them was new code. The turning point is a design note titled "Original Quick Race memory ownership".</p>
+      <p>Its decision is short: "The playable Quick Race must use one authoritative original-engine state." The native program owns one byte buffer spanning physical addresses <code>25B30</code> to <code>680C0</code>. The portable core borrows it. Static data comes from the player's unpacked executable. Track and entrant records are generated by the original startup routines. "Captured dynamic memory is only a test oracle." The note adds that this "does not introduce an emulated CPU". The ported routines are Rust functions. They simply read and write the same bytes, at the same segment-and-offset addresses, as the original.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 300" role="img" aria-label="One contiguous byte buffer from physical 25B30 to 680C0, seen through five overlapping 16-bit segment windows: DS 25B3, SS 3066, 381C (pit bank and scene data), 4813 (main track bank) and 580C (road canvas at offset 1400). The overlap identities are DS:AB30 = SS:0000, SS:7B60 = 381C:0000, 381C:FF70 = 4813:0000, 4813:FF90 = 580C:0000.">
+          <!-- scale: 0x25B30..0x680C0 (0x42590 bytes) onto x 40..660 (620px) => 1px = 0x1b7 bytes approx -->
+          <rect x="40" y="130" width="620" height="34" rx="4" style="fill:none;stroke:currentColor" />
+          <text x="350" y="152" font-size="12" text-anchor="middle" fill="currentColor">one authoritative buffer, physical 25B30 … 680C0</text>
+          <text x="40" y="182" font-size="11" fill="currentColor">25B30</text>
+          <text x="660" y="182" font-size="11" text-anchor="end" fill="currentColor">680C0</text>
+          <!-- DS 25B30..35B30 : x 40 .. 40+0x10000/0x42590*620 = 40+149.4 = 189.4 -->
+          <rect x="40" y="36" width="149.4" height="18" rx="3" style="fill:var(--blue)" />
+          <text x="44" y="30" font-size="11" fill="currentColor">DS = 25B3 (data)</text>
+          <!-- SS 30660..40660 : start offset 0xAB30 -> 101.2px -> x=141.2 -->
+          <rect x="140.0" y="66" width="149.4" height="18" rx="3" style="fill:var(--ink-3)" />
+          <text x="145" y="60" font-size="11" fill="currentColor">SS = 3066 (globals, stack)</text>
+          <!-- 381C 381C0..481C0 : offset 0x12690 -> 172.2px -> x=212.2 -->
+          <rect x="212.2" y="96" width="149.4" height="18" rx="3" style="fill:var(--red)" />
+          <text x="300" y="92" font-size="11" fill="currentColor">381C (pit bank, scene data)</text>
+          <!-- 4813 48130..58130 : offset 0x22600 -> 321.4 -> x=361.4 -->
+          <rect x="361.4" y="200" width="149.4" height="18" rx="3" style="fill:var(--blue)" />
+          <text x="365" y="234" font-size="11" fill="currentColor">4813 (main track bank)</text>
+          <!-- 580C 580C0..680C0 : offset 0x32590 -> 470.6 -> x=510.6 -->
+          <rect x="510.6" y="248" width="149.4" height="18" rx="3" style="fill:var(--ink-3)" />
+          <text x="512" y="284" font-size="11" fill="currentColor">580C (road canvas at :1400)</text>
+          <g style="stroke:var(--rule)">
+            <line x1="140.0" y1="54" x2="140.0" y2="130" />
+            <line x1="212.2" y1="84" x2="212.2" y2="130" />
+            <line x1="361.4" y1="164" x2="361.4" y2="200" />
+            <line x1="510.6" y1="164" x2="510.6" y2="248" />
+          </g>
+          <g font-size="11" fill="currentColor">
+            <text x="470" y="30">DS:AB30 = SS:0000</text>
+            <text x="470" y="48">SS:7B60 = 381C:0000</text>
+            <text x="470" y="66">381C:FF70 = 4813:0000</text>
+            <text x="470" y="84">4813:FF90 = 580C:0000</text>
+          </g>
+        </svg>
+        <figcaption>The bridge's core idea. The original's five 16-bit segment windows overlap in real memory, so writing through one changes what another reads. The port keeps one buffer and maps each segment-and-offset view onto it, instead of keeping separate typed copies that can drift apart.</figcaption>
+      </figure>
+
+      <p>The note is equally clear about what it rejected. Helpers that need separate DS and SS slices get temporary snapshots, and their overlapping outputs must agree before either is published. A consultant had proposed repairing divergent snapshots with a three-way merge. The note refuses: that "could conceal a missing alias publication", and any disagreement "needs a source-backed correction at the helper that owns the write". The same design fixes BP at zero, because "low BP-relative words are live game globals, not disposable CPU stack", and reserves a scratch stack region at <code>SS:7000..7B60</code>, since addresses above it alias the pit bank.</p>
+      <p>This is the moment the project's idea of itself flipped. It had set out to write an engine and check it against the original. It was now running the original's own routines, against the original's own memory layout, fed by the original's own startup code. The clean-room game still existed, but it was becoming a fallback. The remaining work was no longer "make ours look like theirs". It was "connect theirs, completely".</p>
+      <p>The rest of 8 September was connection work, 220 commits of it: grid initialization into shared memory, Quick Race choices and timing, the cold track loader from the player's own files, roster and entrant seeds, the full-field car loop, the keyboard scan and bindings, sound driver calls, retirements, marshals, the fastest-lap notice, Escape cleanup with its black fade. A milestone task defined that day asked for a playable Suzuka Quick Race in which "a passing helper replay or static captured frame alone does not satisfy this milestone".</p>
+
+      <h2 id="full-races">9 September: full races everywhere</h2>
+      <p>The busiest day of the project has 290 commits. Its headline evidence is in the milestone record. Strict startup-to-exit replays at <code>v0.1.284</code> reached the original three-lap finish with idle input at frame 11,054 and held throttle at frame 14,862, "with every entrant finished or retired". Both exits delivered 116 sound-stop writes and 84 black-palette batches, exactly as the original's cleanup does. A live window run held the throttle for 40 seconds and showed moving Suzuka scenery, 62 mph, lap 1 of 3 and 26 runners.</p>
+      <p>Pause and resume landed "with live timer interrupts", then instant replay, pit requests, tyre choice, the pit-crew animation, rear and front cameras, trackside cameras, wet weather palettes. Bugs came in fast because real driving reached paths that no capture had. Changing a driving aid aborted the race at <span class="addr">213F:3CD1</span>. Circuit index 7 aborted on scenery projection. Suzuka's first grid aborted on a polygon edge overflow. F5 after the player retired aborted the race. Each was raised, claimed, fixed and recorded, and the evening commits read "record full dry and wet races after scenery correction" and then "record all sixteen circuits in dry and wet races".</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>Bug 38 began as a playtester's report: at Suzuka's first-gear left-hander after the bridge, the grandstand flickered in and out. It was confirmed with 240 consecutive captured scene states driven by a recorded input. The original kept the grandstand in frames 193, 194, 212 and 216; the port dropped most of it at 194 and 212, and frame 212 differed at 19,724 of 32,000 upper-scene pixels. The fix made the visibility test match the original at <span class="addr">15F2:9877</span>: start with mask <code>0x1c</code>, AND in each projected visibility point's mask in source order, and draw as soon as the common mask clears. Across the 240 frames, exactly 49 changed, all 718,289 changed pixels now equalled the original, and no previously correct pixel moved.</p></div>
+
+      <p>Not every race finished. Bug 47 recorded a wet race on circuit 6 in which one AI car stayed stranded for 30,000 frames, off-track and nearly stationary. The record insists: "Do not force retirement or finish as a workaround." The eventual fix was in the AI's reverse-heading recovery, which had returned early instead of keeping the original's recovery turn when lateral recovery was active.</p>
+
+      <h2 id="deletion-day">10 September: deleting the clean-room game</h2>
+      <p>At 12:29 on 10 September, a commit titled "remove provisional runtime surfaces" deleted 19,136 lines and added 2,835 across 27 files. Its message: "Delete the unreachable simulation, duel, AI, session, replay, smoke, and provisional rendering entry points now that desktop play uses the original runtime routes." The file list is the day-one game: <code>duel.rs</code> (1,776 lines), <code>duel_weekend.rs</code>, <code>ai.rs</code>, <code>session.rs</code>, <code>weekend.rs</code>, <code>championship.rs</code>, <code>replay.rs</code>, <code>track_render.rs</code>, and 13,609 changed lines of <code>native.rs</code>, the old native front end. Two hours later the provisional procedural audio module followed.</p>
+      <p>The "Final original-engine delivery" journal records what replaced it. The native original-engine route now owned Practice, Qualifying, Non-Championship Race, Quick Race and Championship Season. The whole matrix of 16 circuits in dry and wet weather passed 32 of 32 runs with every one of the 26 entrants in a natural terminal state. The test count at that point was 1,350 library tests, 322 native binary tests and 29 track-author tests. The architecture guide now states the rule flatly: "No shipped gameplay or renderer route bypasses the original runtime."</p>
+      <p>The deletion was not the end of clean-room remnants, and later commits kept removing them as each was found. On 14 September, "remove inert clean-room setup controls" took out Wing and Final Drive controls that looked real but reached nothing (811 lines deleted). On 20 September, "Remove source-less native menu rendering" deleted another 2,548 lines. The same day as the big deletion, the authored Bahrain circuit reached raceable state: it is described below.</p>
+
+      <div class="callout how"><span class="label">How it works</span><p>Why delete working code? Because two engines that both "work" invite drift. While the clean-room route stayed live, any failure in the original route could quietly fall back to the invented one, and a green test could be testing the wrong engine. After 10 September, a missing piece of the original shows up as an explicit error with a source address, not as a plausible substitute.</p></div>
+
+      <h2 id="boundary-audits">12–14 September: the boundary audits</h2>
+      <p>With the original runtime owning every route, the question changed again. What happens when the bridge meets a path it has not ported? Early code answered with <code>Unported(address)</code> errors. Some of those were real gaps. Others were guards for malformed input that a valid game never produces. The project could not claim fidelity until it knew which was which.</p>
+      <p>On 12 September a task document, "Original runtime boundary checklist", set out to classify every one. 13 September, with 254 commits, is almost entirely that sweep: "Classify animation parser and startup view boundaries", "Classify original race command adapter boundaries", "Classify remaining source boundaries", and alongside them the genuine ports it turned up, such as the linked race setup, the pause poll phases and the sixteen-unit neighbour route. Dead markers were removed only after their reachability was checked: "a passing short race does not classify one as dead".</p>
+      <p>Physics corrections surfaced in the same sweep. "fix: use source car angle for final force rotation" and "fix: rotate final forces by saved body heading" closed bug 62, where the final force rotation had used steering trigonometry instead of the saved body heading. The curve speed scaling, obstacle axle selection and route target quotient were all brought back to the source that day.</p>
+      <p>Then came the final-tree race matrix. Every one of the 16 original circuits, dry and wet, was raced twice: once with idle input and once holding the throttle with steering from a "source-derived geometry driver". That driver reads live entrant and track fields, applies the source's steering arithmetic and deadband, and emits only keyboard make and break codes. It writes no game state. All 64 runs passed the unchanged terminal predicate, which requires the source exit flags, the finish state, the winner's lap and every entrant carrying either the finish bit or the retirement bit.</p>
+
+      <div class="callout proof"><span class="label">How we know</span><p>The matrix ran with output suppressed and stopped on the first non-zero exit. All 64 cases returned zero, so each one exercised its assertions rather than just hitting the frame cap. An earlier "held-throttle with no steering" schedule is kept as a negative control: on the second circuit (index 1) in the wet it validly leaves the player stranded, so it cannot serve as a completion oracle.</p></div>
+
+      <p>On 14 September two more proofs landed. The race-start comparison passed at the pixel level: the production renderer and the source presenter matched four owned source captures, one stationary and three moving, at 0 of 64,000 mismatches per page, on version <code>0.1.441</code>. A deliberate one-byte canvas shift made the stationary case fail with 9,980 mismatches before being restored. And the "Final source boundary audit" mapped every production session route to the source runtime, including Weekend and Championship coordinators, Load Game dispatch by save format, and authored track startup.</p>
+      <p>The quality map records the result: the integrated audit "checks 576 of 577 checklist rows". The checklist has since grown to 579 rows, and it still has exactly one unchecked. That row is the broad lifecycle item covering save and load, Practice, Qualifying, Weekend, Championship, pause, replay, input, audio and results together. Many sub-slices of it are proven; the row stays open until the attended end-to-end sweep and the ceremony comparison are done.</p>
+
+      <h2 id="results-and-championship">15–20 September: results, standings, ceremony</h2>
+      <p>The next front was everything that happens after the chequered flag. The original shows Race Finishing Times, Driver Lap Times, Fastest Lap Times, race points, Drivers and Constructors Championship tables, Seasons Results, and a trophy ceremony. Each was brought across from the original's menu resources: "parse original results menu resources", "render original results menu", "present original seasons results", "Original Championship tables follow source scroll cursor".</p>
+      <p>Each one also needed an exact oracle, and that proved harder than the code. A result page depends on a palette, on result data and on the page artwork. The status log for 16 September notes that exact result-page pixels "still lack a retained paired source page, RGB6 palette and result-data snapshot". Over the following days those pairs were captured, and by 18 September the integrated tree matched the three populated Championship standings pages exactly, outside the source's cursor, alongside the earlier exact result-page oracles. Gates recorded on 18 September put the core suite at 1,529 library tests, 21 main-binary tests and 35 track-author tests. The quality map's integrated gate adds the native binary suite at 401 passed and 64 ignored.</p>
+      <p>The same week closed road-rendering parity circuit by circuit. Journals dated 18 September record exact source road replays for Phoenix, circuit one and F1CT03 through F1CT16, across natural and authored stationary and moving variants. Some mirror comparisons stay open where the source capture covers only one sign, and the checklist says so rather than rounding up.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>Bug 68: the port wrote a raw save file of exactly the right size, 26,736 bytes, with a valid checksum and header. The original game accepted it in the file selector, said GAME LOADED, and then rejected it as Invalid Data. Swapping payload ranges into a known-good save showed the fault was in the state, not the checksum. The cause was two words the original's save preparation seeds before copying: <code>DS:096B = 0x4813</code> and <code>DS:096D = 0x381C</code>, the main and pit segments. With them written, the original loaded the port's save and reached the expected frame.</p></div>
+
+      <p>On 20 September the Championship work finished its terminal path: "follow source Championship ceremony script", "follow source CHAMP presenter timing", "complete source championship terminal state". On 21–22 September a Championship run was accepted offline with the source-authentic 26-driver field, and "fix: retain the 26-driver Championship field" closed the last gap there.</p>
+
+      <h2 id="authored-circuits">Bahrain and Madrid</h2>
+      <p>Adding circuits the original never had was a test of the bridge as much as a feature. The design for Bahrain, approved on 9 September, set a strict first-playable contract: the standard 5.412 km layout, clockwise, fifteen named corners, dry daylight; the original cars, physics, sound and full 26-car grid; and "a parser success or a screenshot is not completion". Bahrain became the seventeenth catalogue entry, and the catalogue was extended so further tracks need not fit the original's sixteen slots. Geometry came from public map data, with every estimate labelled.</p>
+      <p>The first full race failed dramatically. Bug 50: the authored race "retires the entire field before a classified finish". After 98.81 seconds all 26 cars had retired, with no winner. The cars left their corridor and reversed along the main bank. The cause was the racing line: the authoring compiler now fits curvature in the source's own packed units, keeps midpoint headings, and validates the line and its seam before publishing the track file. Further bugs followed the same theme of units: scenery placed in world distances where the original expects road-width-relative offsets (bug 53), shade-table indices outside the valid range (bug 52), pit-entry records missing a route transition mode (bug 54).</p>
+      <p>Madrid (the authored package is called Madring) had two failures of its own, recorded on 12 September. Its pit centreline was reversed relative to the main route, which made the original loader reject the pit pointer before a race could start. And its hairpin was encoded as zero-radius chords, so the original speed pass left those records at a seeded speed and one AI car stuck in contact. The fixed package has 1,111 main records and 193 pit records. The full authored acceptance then ran for 284 seconds: the player pitted, was serviced, rejoined, finished three laps and exited, with all 26 entrants terminal. Both authored circuits passed their full lifecycle checks on 14 September.</p>
+
+      <h2 id="big-race">Becoming Big Race</h2>
+      <p>On 19 September a commit renamed the public product to Big Race: the package, the executable, the interface and the developer commands, while keeping reads of the old settings and save paths. The README now opens: "Big Race is an unofficial Rust host and source-runtime bridge for a player-owned copy of the original game." The same day brought Alt-Enter fullscreen and resizable windows, and hardening fixes for corrupt Championship saves and non-printable option text. Full-game recording to a VP9 and Opus video had arrived on 14 September.</p>
+      <p>The bug ledger in this period shifts from fidelity to robustness. Records 72 to 91 include an audio device reporting a zero sample rate that trapped the music callback in a huge resampling loop, a file selector that exited on a non-ASCII filename, a malformed Championship checkpoint that aborted the menu, an options save that could destroy the previous valid record if interrupted, and several test-harness defects, such as corpus tests that silently passed when their assets were absent and a full-frame oracle that accepted a truncated expected frame as a match.</p>
+
+      <h2 id="link-and-modem">Two machines: the link and the modem</h2>
+      <p>The original supports a two-player race over a serial cable or a modem, described in <a href="08-link.html">Chapter 08</a>. The port worked through that path from 12 September onwards: the linked pause controller, the linked race setup, the packet transmitter and its retry and acknowledgement. On 20 September the linked frame was extended through player input and the post-frame continuation, and a staged cold-startup owner was added for linked play.</p>
+      <p>On 21 September the project chose the most faithful route to a network game it could find. Rather than turning the original's modem into a socket, it vendored a modem engine from the mddosem emulator, complete with its DSP, and modelled the PC's 8250 UART as the original sees it. The original runtime drives a virtual modem. The modem's 16 kHz audio crosses TCP. The peer's modem feeds the peer's original runtime. Keeping mddosem's PCM wire format means the original <code>GP.EXE</code>, running under mddosem, can act as an independent interoperability oracle. The original's own modem command builders were ported, and a commit titled "Present the authentic modem line audio" plays the modem line sound to the player.</p>
+      <p>On 22 September automatic LAN discovery removed the need to type addresses. The original Wait For Call and Dial now find each other with typed UDP query and offer packets, then claim a TCP connection before any modem audio flows. Three adversarial reviews and a cross-family review shaped the design; an independent code review then found four lifecycle defects, all fixed.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>Bug 101: on two real machines, version 0.1.704 sat on STARTING LINK with continuous modem noise, while the in-process test harness connected perfectly. A two-process harness reached carrier, which moved the fault past negotiation. Two causes emerged. The production bridge advanced its UART with timer cycles but never passed them to the linked transport, so the original's serial timeout saw no time pass and could wait forever. And independent workers substituted silence whenever a network packet missed one 10 ms tick, which corrupted the first linked packet. A bounded three-chunk playout buffer fixed the second; publishing the timer and modem-control observations fixed the first. The dialog now names the live link phase, so any future stall reports where it stopped.</p></div>
+
+      <h2 id="beyond-the-original">22 September: beyond the original</h2>
+      <p>The last big day turned to things the original never did. A Claude session led three features, each with a design revised under adversarial review before any code landed.</p>
+      <p><strong>The enhanced renderer</strong> redraws the whole race scene at window resolution, as an option, "reading source state and never writing it". Its first design tapped camera-relative road points. Three reviewers and a Codex review all found that unrecoverable, so revision 2 taps the resolved screen-space draw commands instead. A 60-frame owned-asset race with the renderer on and off proves the original's memory stays byte-identical. At 1280×960 a full composition cost about 1.7 ms. <a href="12-big-race.html">Chapter 12</a> covers it in detail.</p>
+      <p><strong>Vehicle sets</strong> put old bangers or monster trucks on the grid, kept strictly separate from the original. The first design patched the executable image. Reviewers showed that was a no-op: the per-circuit driving block is decoded from the track at startup, and the renderer re-copies shapes from live memory every frame. Revision 2 overlays the decoded driving block, within bounds taken from the original's fixed-point maths (engine at most 1.0, grip at least 0.6, below which the corner solver overflows), and re-points a host-side shape override after each copy. Tuning was done against laps completed: at first a banger on grid 5 stalled in its tall first gear at the first corner, and raising grip made things worse; shorter gears fixed it.</p>
+      <p><strong>Window presentation</strong> now shows every screen at 4:3 with integer-scaled pixels at any window size. Reading the code found nine separate buffer-update sites, some screens stretched and others shown squashed with a repeated last row. Revision 3 of the design lets the presenter do the tall-pixel mapping in one place, which deleted the older stretch, padding and mouse-correction code.</p>
+      <p>The final commits on 23 September make Championships honour the Vehicles setting and write up the architecture and testing guides.</p>
+
+      <h2 id="wrong-turns">Wrong turns, and how they were caught</h2>
+      <p>The project's records are unusually frank about their own mistakes. That is deliberate: the lesson file, the status log and the bug ledger all record retractions next to the claims they retract. The most instructive ones, in order:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>When</th><th>What was believed</th><th>What was true</th><th>How it was caught</th></tr></thead>
+        <tbody>
+          <tr><td>30 Aug – 10 Sep</td><td>An independent engine, checked against the original, could be made faithful.</td><td>Faithfulness needed the original's own routines and memory layout.</td><td>The runtime-table wall; the bridge design of 8 Sep.</td></tr>
+          <tr><td>4 Sep</td><td>Some road features were "dead on shipped data".</td><td>The pit-lane routes are live.</td><td>"Retract 'dead on shipped data': the pit-lane routes are live", the same day.</td></tr>
+          <tr><td>4 Sep</td><td>The wall sweep was green with walls live.</td><td>Every test passed <code>walls: None</code>.</td><td>The 49-agent adversarial review.</td></tr>
+          <tr><td>5 Sep</td><td>Six separate renderer defects.</td><td>Six times the oracle ran less pipeline than the game.</td><td>Adding the missing stages to the test.</td></tr>
+          <tr><td>5 Sep</td><td>Scenery was capped at a quarter draw distance (it. 25).</td><td>Objects painted 1,446 px; no culled population existed.</td><td>Iteration 26 measured pixels instead of a percentage.</td></tr>
+          <tr><td>up to 6 Sep</td><td>Physics lived at the address the project had carried.</td><td>That was track-building code; the tick is <span class="addr">0752:5C2F</span>.</td><td>A poisoned-NOP test and byte-exact 26-car captures.</td></tr>
+          <tr><td>—</td><td>Copy the original's destructive clean-up faithfully.</td><td>The original rebuilds that table; the port keeps it, so copying would strip flags for a lap.</td><td>Asking what regenerates it here (lesson file).</td></tr>
+          <tr><td>22 Sep</td><td>Patch the executable image to change the cars.</td><td>The driving block is decoded from the track; the patch is a no-op.</td><td>Design review before any code.</td></tr>
+        </tbody>
+      </table></div>
+      <p>A playtester's report produced one of the neatest examples. Bug 67 fixed a lap counter that stayed stale after a winner crossed the line again on the cooldown lap. The fix was verified. Then bug 103 reported that the dash still showed "6 of 5" in the running game. The earlier test had checked that a display service was called, not what the dash showed. The real cause was that the source lifecycle stopped at the finished-car gate before a later crossing could advance the winner's lap byte. The new regression reproduces the frozen 6, then checks the rendered 7 in the pixels. The record's instruction is the lesson: "verify the visible dash pixels, not only a display-service call".</p>
+
+      <h2 id="what-is-not-claimed">What is not claimed</h2>
+      <p>The status log is explicit that "no defensible whole-game completion percentage is established". The quality map rates the four main areas as Sound rather than Strong, because some evidence is still missing:</p>
+      <ul>
+        <li>The final attended sweep through the outer menus, results and standings, on the integrated tree.</li>
+        <li>An exact-pixel comparison of the Championship ceremony.</li>
+        <li>Some one-sign mirror comparisons on a few circuits.</li>
+        <li>One open bug (97), a strict lint failure in the driver-team menu.</li>
+      </ul>
+      <p>The raw capture files are also deliberately kept out of the repository, because they hold far more original memory than the fixtures distil. The repository records which captured bytes it relies on in a registered exception list, and that list may not grow without a row.</p>
+
+      <h2 id="by-the-numbers">By the numbers</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Measure</th><th>Value</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Calendar span</td><td>30 Aug 2026, 09:28 → 23 Sep 2026, 07:15</td><td>First and last commit</td></tr>
+          <tr><td>Commits</td><td>2,654</td><td>Git history</td></tr>
+          <tr><td>Integrated changes (version bumps)</td><td>713, from 0.1.0 to 0.1.714</td><td>Git history</td></tr>
+          <tr><td>Busiest days</td><td>290 (9 Sep), 254 (13 Sep), 220 (8 Sep), 206 (20 Sep)</td><td>Git history</td></tr>
+          <tr><td>Journals / designs</td><td>529 / 96</td><td>Repository</td></tr>
+          <tr><td>Status-log loop iterations</td><td>61 (5–6 Sep)</td><td><code>STATE.md</code></td></tr>
+          <tr><td>Lines deleted with the clean-room game</td><td>19,136 in one commit (10 Sep)</td><td>Git history</td></tr>
+          <tr><td>Library tests</td><td>7 (30 Aug) → 491 (5 Sep) → 1,350 (10 Sep) → 1,529 (18 Sep)</td><td>Journals and status log</td></tr>
+          <tr><td>Race matrix</td><td>64 of 64 dry and wet runs, all 26 entrants terminal</td><td>Boundary checklist</td></tr>
+          <tr><td>Race-start pages</td><td>4 of 4 at 0 / 64,000 mismatched pixels</td><td>14 Sep journal</td></tr>
+          <tr><td>Boundary checklist</td><td>576 of 577 rows checked</td><td>Quality map</td></tr>
+          <tr><td>Bugs</td><td>103 raised; 70 Closed, 32 Fixed, 1 Open</td><td>Bug ledger</td></tr>
+          <tr><td>Rust source</td><td>372 files directly under <code>src/</code>, about 274,000 lines</td><td>Repository</td></tr>
+        </tbody>
+      </table></div>
+      <p>The next chapter, <a href="10-method.html">The oracle</a>, looks at the method that held all of this together: capture the original, prove the port against it, and never trust a green test that has not first been seen to fail.</p>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

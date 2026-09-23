@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How MicroProse's Formula One Grand Prix (1991) works inside — tracks, cars, race control, the 3D renderer, sound and files — and the story of porting it, byte-faithful, to a Rust source-runtime bridge.">
+  <title>Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Cover and contents</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter wide" id="main">
+      <section class="cover">
+        <p class="kicker">A field guide to a 1991 simulator, and to rebuilding it</p>
+        <h1>Inside Formula One Grand Prix</h1>
+        <p class="lede">In 1991 Geoff Crammond and MicroProse shipped a Formula One simulator that ran a full
+          26-car field, sixteen real circuits and a filled-polygon 3D world on a PC of the day. This is
+          an account of how it works, from the timer interrupt to the last pixel of the cockpit, and of
+          how a small project spent twenty-four days making it run again, exactly, inside a modern
+          Rust host.</p>
+        <div class="checker" aria-hidden="true"></div>
+      </section>
+
+      <div class="stats">
+        <div class="stat"><b>26</b><span>cars in the field, each a 192-byte record</span></div>
+        <div class="stat"><b>300.02&nbsp;Hz</b><span>the timer; the game ticks every sixth interrupt, at 50&nbsp;Hz</span></div>
+        <div class="stat"><b>320×164</b><span>pixels of 3D world, drawn behind a fixed cockpit</span></div>
+        <div class="stat"><b>24 days</b><span>from first commit to a playable, byte-faithful port</span></div>
+        <div class="stat"><b>2,655</b><span>commits, 529 journals and 96 design notes</span></div>
+        <div class="stat"><b>~2,500</b><span>tests guarding 278,000 lines of Rust</span></div>
+      </div>
+
+      <h2 id="what-this-is">What this is</h2>
+      <p>The site has two parts. <strong>Part I</strong> takes the original game apart, one subsystem
+        per chapter: the machine it runs on, how a circuit is stored and expanded, the car field and its
+        physics, race control, the renderer, sound, and the menus and files. Where it helps, it gives
+        the real addresses and record offsets, written as <span class="addr">segment:offset</span> in
+        the executable's own run-time layout.</p>
+      <p><strong>Part II</strong> is the story of the port, called <em>Big Race</em>: what we built, in
+        what order, what went wrong, and the methods that made a faithful port possible. The most
+        important of those is the <em>oracle</em>: the original executable running under an emulator,
+        against which every ported routine was compared.</p>
+
+      <div class="callout trap"><span class="label">What this is not</span>
+        <p>Big Race is an unofficial project. It is not associated with or endorsed by the original game,
+          its creators or its publishers. It reads a player's own copy of the game at run time and
+          bundles none of it, and this site reproduces none of it either: no game code, data, artwork or
+          screenshots. Every diagram here is new.</p>
+      </div>
+
+      <h2 id="part-one">Part I — The original</h2>
+      <div class="cards">
+        <a class="card" href="01-machine.html"><span class="num">01</span><h3>The machine</h3><p>A packed DOS executable, its segments and address spaces, a 300&nbsp;Hz timer and one global random number generator.</p></a>
+        <a class="card" href="02-tracks.html"><span class="num">02</span><h3>Circuits in a file</h3><p>Section streams, a command-driven expander, the 46-byte track table, the racing line and the pit lane.</p></a>
+        <a class="card" href="03-field.html"><span class="num">03</span><h3>Twenty-six cars</h3><p>The entrant table, pre-qualifying, the order tables, the physics tick and the AI drivers.</p></a>
+        <a class="card" href="04-race-control.html"><span class="num">04</span><h3>Race control</h3><p>Sessions, timing lines, finish flags, results, the Championship, pause, replay and saves.</p></a>
+        <a class="card" href="05-rendering.html"><span class="num">05</span><h3>Drawing the world</h3><p>Camera, sky, road, objects, clipping, polygon fill, cars, mirrors and the cockpit.</p></a>
+        <a class="card" href="06-sound.html"><span class="num">06</span><h3>Sound</h3><p>An OPL2 FM chip, a catalogue of songs and an engine voice that lives somewhere else.</p></a>
+        <a class="card" href="07-menus-files.html"><span class="num">07</span><h3>Menus, files and saves</h3><p>Menus stored as records in the executable, animation formats, and saves identified by size and checksum.</p></a>
+        <a class="card" href="08-link.html"><span class="num">08</span><h3>Two machines, one race</h3><p>The linked serial and modem mode, and how Big Race carries it across a LAN as modem audio.</p></a>
+      </div>
+
+      <h2 id="part-two">Part II — The port</h2>
+      <div class="cards">
+        <a class="card" href="09-story.html"><span class="num">09</span><h3>Twenty-four days</h3><p>From a clean-room simulator to running the original runtime itself, day by day.</p></a>
+        <a class="card" href="10-method.html"><span class="num">10</span><h3>The oracle</h3><p>Emulator captures, frozen differential fixtures, boundary audits and the rules of acceptance.</p></a>
+        <a class="card" href="11-field-notes.html"><span class="num">11</span><h3>Field notes</h3><p>The craft of reverse engineering, learnt the hard way, one trap at a time.</p></a>
+        <a class="card" href="12-big-race.html"><span class="num">12</span><h3>What Big Race adds</h3><p>An enhanced renderer, vehicle sets, window scaling, recording and multiplayer over a LAN.</p></a>
+      </div>
+
+      <h2 id="how-to-read">How to read it</h2>
+      <p>Each chapter stands alone. Coloured boxes mark four kinds of aside:</p>
+      <div class="callout how"><span class="label">How it works</span><p>The mechanism, stated plainly.</p></div>
+      <div class="callout story"><span class="label">From the port</span><p>What the port found, and how.</p></div>
+      <div class="callout trap"><span class="label">The trap</span><p>A reading that looked right and was not.</p></div>
+      <div class="callout proof"><span class="label">How we know</span><p>The evidence that settled a question.</p></div>
+      <p>Addresses such as <span class="addr">0752:5C2F</span> are run-time segment:offset pairs inside
+        the loaded v1.05 executable. Chapter 01 explains how they map to the file on disk.</p>
+
+      <footer class="colophon">
+        Written from the Big Race project's source, design notes, journals and commit history, as of
+        23 September 2026 (version 0.1.714). Formula One Grand Prix is © its original authors and
+        publishers; all trademarks belong to their owners.
+      </footer>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

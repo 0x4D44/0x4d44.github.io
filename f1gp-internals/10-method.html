@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How the Big Race port checks itself against the real 1991 game: an emulated oracle, breakpoints and watchpoints, frozen differential fixtures, one canonical memory image, and acceptance rules that refuse shortcuts.">
+  <title>The oracle — Inside Formula One Grand Prix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html">Inside Formula One Grand Prix</a>
+    <span class="part">Part II — The port</span>
+    <span class="spacer"></span>
+    <button type="button" data-theme-toggle>Light / dark</button>
+  </header>
+  <div class="shell">
+    <nav class="toc" aria-label="Contents"></nav>
+    <main class="chapter" id="main">
+      <p class="kicker">Chapter 10</p>
+      <h1>The oracle</h1>
+      <p class="lede">You cannot port a 1991 binary faithfully by reading it. You port it by running it, asking it questions, and freezing its answers into tests. This chapter describes the machinery the project built to do that, and the rules that stop a green test from lying.</p>
+
+      <h2 id="why-an-oracle">Why a port needs an oracle</h2>
+      <p>Big Race does not re-imagine Formula One Grand Prix. It runs the player's own copy of the v1.05 executable, <code>GP.EXE</code>, through a Rust "source runtime": each original routine is re-expressed in Rust with the same arithmetic, the same memory layout, the same flags and the same caller wiring. The bar is not "looks like the game". The bar is "writes the same bytes the game writes".</p>
+      <p>Reading the disassembly is necessary but nowhere near enough. The executable is about 600 KB of 16-bit real-mode code. Its data structures are reached through pointers computed at run time, its tables are rewritten after load, and its behaviour forks on values that no static read can predict. A port written from reading alone is a guess about all of that.</p>
+      <p>So the project's primary source of truth is the original program itself, running under emulation. We call it <em>the oracle</em>. Every claim about what the original does is either measured on the oracle or labelled as inference.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>Early on, a naive coverage count scored any routine as "ported" if its address appeared in a comment. A survey on 2026-09-04 found the opposite was common: the main reason to cite a <code>15F2:XXXX</code> address was to note that the routine was <em>not</em> reproduced. Four cases alone (<code>A675</code>, <code>3043</code>, <code>2EB5</code>, <code>8331</code>, 1,475 bytes) counted as covered while two were listed as open work. Only explicit <code>XXXX..YYYY</code> ranges proved coverage, and they covered 51.3% of the 42,888-byte graphics segment. An annotation grep overstated coverage by roughly a factor of two.</p></div>
+
+      <h2 id="the-emulator">The emulator and its recipes</h2>
+      <p>The oracle is <code>GP.EXE</code> running under <strong>mdpc</strong>, a DOS PC emulator from the sibling <strong>mddosem</strong> project. A second mddosem tool, <strong>emuscru</strong>, drives it from a script. The two talk over a named control pipe, so a Python capture script, a shell script, or a recipe runner can all steer the same running emulator.</p>
+      <p>The recipes live in <code>oracle/*.emu</code>. They read like a tester's notes. The Practice recipe, for example:</p>
+      <ul>
+        <li>launches the game from a private temporary copy of the player's install, at "pentium" speed with audio off, then switches the emulator to turbo;</li>
+        <li>waits for the title screen to stop changing, asserts a 320x200 video mode and checks a hash of that static screen, so a wrong install fails immediately;</li>
+        <li>presses Escape twice, clicks through the opening screens with mouse clicks at fixed coordinates, selects keyboard control, and taps Up repeatedly to clamp the menu cursor to its first item whatever state it started in;</li>
+        <li>enters Practice and parks in a live cockpit.</li>
+      </ul>
+      <p>A second recipe, <code>f1gp_v105_quick_race_suzuka_start.emu</code>, reaches the Suzuka race start. Area folders under <code>oracle/</code> (calibration, entrant initialisation, entrant rendering, entrant seeds, physics, pit annotation, racing line, session deadline, track annotation) each hold the method note for one differential comparison and, where needed, their own parking recipes such as <code>park_quick_race.emu</code>.</p>
+      <p>Animated cockpit frames deliberately carry no exact framebuffer assertion in the recipes. The cockpit's checksums change from frame to frame, so recipes assert the stable title screen and the selected menu state instead.</p>
+
+      <h3 id="parked-not-rewound">Parked, not rewound</h3>
+      <p>Two limits of the emulator shaped every capture. First, the release build of mdpc has no time machine: its checkpoint-restore commands exist only in debug builds and answer "Time machine not available in release builds". Second, commands that write memory or set registers only work while the guest is paused. So the oracle is <em>parked</em>: a recipe navigates once to a live cockpit, leaves the emulator paused there, and every probe runs from that one park. Nothing is rewound.</p>
+      <p>Long runs start mdpc in the background with a named pipe and connect emuscru to it afterwards. The obvious alternative, emuscru's own keep-alive flag, dies with the command that started it. Every emulator call is wrapped in a timeout, because a hung call otherwise strands the capture.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 330" role="img" aria-label="Pipeline from the player's install through the parked emulator, raw capture, emitter and frozen Rust fixture to an offline cargo test comparing the port against the original">
+          <defs>
+            <marker id="a10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="10" y="20" width="150" height="56" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="85" y="44" text-anchor="middle">Player's install</text>
+            <text x="85" y="62" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">copied to a temp dir</text>
+
+            <rect x="210" y="20" width="170" height="56" rx="8" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="295" y="44" text-anchor="middle" font-weight="600">mdpc (parked)</text>
+            <text x="295" y="62" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">original GP.EXE running</text>
+
+            <rect x="430" y="20" width="250" height="56" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="555" y="44" text-anchor="middle">emuscru recipe / capture script</text>
+            <text x="555" y="62" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">keys, clicks, breakpoints, reads</text>
+
+            <line x1="160" y1="48" x2="206" y2="48" stroke="currentColor" marker-end="url(#a10)"/>
+            <line x1="430" y1="48" x2="384" y2="48" stroke="currentColor" marker-end="url(#a10)"/>
+
+            <rect x="210" y="120" width="170" height="56" rx="8" style="fill:none;stroke:var(--ink-3);stroke-dasharray:5 4"/>
+            <text x="295" y="144" text-anchor="middle">Raw capture</text>
+            <text x="295" y="162" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">never committed</text>
+            <line x1="295" y1="76" x2="295" y2="116" stroke="currentColor" marker-end="url(#a10)"/>
+
+            <rect x="430" y="120" width="250" height="56" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="555" y="144" text-anchor="middle">Emitter (Python)</text>
+            <text x="555" y="162" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">distils, XOR-delta, run-length</text>
+            <line x1="380" y1="148" x2="426" y2="148" stroke="currentColor" marker-end="url(#a10)"/>
+
+            <rect x="430" y="220" width="250" height="56" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="555" y="244" text-anchor="middle" font-weight="600">src/original_*_fixture.rs</text>
+            <text x="555" y="262" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">frozen, test-only</text>
+            <line x1="555" y1="176" x2="555" y2="216" stroke="currentColor" marker-end="url(#a10)"/>
+
+            <rect x="10" y="220" width="370" height="56" rx="8" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="195" y="244" text-anchor="middle" font-weight="600">cargo test, offline</text>
+            <text x="195" y="262" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">Rust port output compared with the frozen original</text>
+            <line x1="430" y1="248" x2="384" y2="248" stroke="currentColor" marker-end="url(#a10)"/>
+
+            <text x="350" y="310" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">slow and non-deterministic above the line · fast and exact below it</text>
+            <line x1="10" y1="198" x2="690" y2="198" style="stroke:var(--rule);stroke-dasharray:3 5"/>
+          </g>
+        </svg>
+        <figcaption>The capture route is slow and needs the emulator and the player's data. The comparison is fast and needs neither. Freezing the capture into a fixture separates the two.</figcaption>
+      </figure>
+
+      <h2 id="address-spaces">Relocation and address spaces</h2>
+      <p>Before you can set a breakpoint you need to know where the code will be. That is harder than it sounds, because a DOS program's segments are relocated when it loads, and the project's sources cite addresses in several different spaces.</p>
+      <p>The disassembly listing names the graphics code segment <code>15F2</code>. At run time, in the observed session, that code lives at <code>1699</code>, and the offset shifts too. The relocation rule is: listing <span class="addr">15F2:XXXX</span> runs at <span class="addr">1699:(XXXX − 0xA70)</span>. It was verified on four independent breakpoints, for example <span class="addr">15F2:5BB0</span> → <span class="addr">1699:5140</span> and <span class="addr">15F2:46C0</span> → <span class="addr">1699:3C50</span>. The capture scripts are written in runtime addresses with the listing address alongside in a comment, which keeps them readable against the disassembly.</p>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Runtime segment</th><th>Holds (observed session)</th></tr></thead>
+        <tbody>
+          <tr><td><span class="addr">1699</span></td><td>Graphics code (listing segment <code>15F2</code>)</td></tr>
+          <tr><td><span class="addr">3066</span></td><td>The stack segment frame: camera words, perspective terms, many game globals</td></tr>
+          <tr><td><span class="addr">381C</span></td><td>Scene data (the renderer's <code>DS</code>): point blocks, edges, arena, colour tables</td></tr>
+          <tr><td><span class="addr">25B3</span></td><td>Game data: car record pointer, class tables, shape headers, the 26-car table</td></tr>
+          <tr><td><span class="addr">4813</span></td><td>The runtime track record table (46-byte records)</td></tr>
+          <tr><td><span class="addr">580C</span></td><td>The road canvas; the drawn frame lives at <span class="addr">580C:1400</span></td></tr>
+        </tbody>
+      </table></div>
+      <p>Absolute segment values depend on the DOS load base, so the capture README tells you to re-derive them from the live registers before trusting a script. The differences between segments are believed invariant; the README labels that as inference.</p>
+
+      <h3 id="four-address-forms">Four ways to name a byte</h3>
+      <p>The code base cites addresses in four forms. The architecture guide records how each maps to a file offset in the unpacked executable:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Citation</th><th>File offset in <code>GP_UNPACKED.EXE</code></th></tr></thead>
+        <tbody>
+          <tr><td>Runtime <code>SSSS:X</code></td><td><code>(SSSS − 0x752) × 16 + X + 0x1600</code></td></tr>
+          <tr><td><code>0752:X</code> (main code)</td><td><code>0x1600 + X</code> (so <span class="addr">0752:E985</span> is file <code>0xFF85</code>)</td></tr>
+          <tr><td><code>05F2:X</code></td><td><code>X</code></td></tr>
+          <tr><td><code>15F2:X</code> (graphics listing)</td><td><code>0x10000 + X</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>A bare hex number such as <code>E0B1</code> might be a file offset rather than a segment offset. The track expander overlay, cited as <code>19ED:X</code>, is not even consistent across the tree: three files use three different mappings, and the guide says to verify the bytes before relying on any of them.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 250" role="img" aria-label="One graphics routine named three ways: listing address 15F2:46C0, runtime address 1699:3C50, and file offset 0x146C0; mdpc breakpoints must use the runtime cs:ip form">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="20" y="30" width="200" height="60" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="120" y="55" text-anchor="middle" font-weight="600">Listing</text>
+            <text x="120" y="76" text-anchor="middle" font-family="IBM Plex Mono, monospace">15F2:46C0</text>
+
+            <rect x="250" y="30" width="200" height="60" rx="8" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="350" y="55" text-anchor="middle" font-weight="600">Runtime cs:ip</text>
+            <text x="350" y="76" text-anchor="middle" font-family="IBM Plex Mono, monospace">1699:3C50</text>
+
+            <rect x="480" y="30" width="200" height="60" rx="8" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="580" y="55" text-anchor="middle" font-weight="600">File offset</text>
+            <text x="580" y="76" text-anchor="middle" font-family="IBM Plex Mono, monospace">0x146C0</text>
+
+            <text x="235" y="124" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">segment 15F2→1699,</text>
+            <text x="235" y="140" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">offset − 0xA70</text>
+            <text x="465" y="124" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">0x10000 + listing</text>
+            <text x="465" y="140" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">offset</text>
+
+            <rect x="20" y="170" width="660" height="60" rx="8" style="fill:none;stroke:var(--rule)"/>
+            <text x="350" y="195" text-anchor="middle">mdpc matches a breakpoint on the <tspan font-weight="600">executing cs:ip form</tspan>, not the linear address.</text>
+            <text x="350" y="216" text-anchor="middle" font-size="12" style="fill:var(--ink-3)">9000:6D52 never fires on code running as 95FC:0D92, although both are the same byte.</text>
+          </g>
+        </svg>
+        <figcaption>Three names for one instruction. Only the runtime form arms a breakpoint, and even that must match the segment the CPU actually uses.</figcaption>
+      </figure>
+
+      <h3 id="image-reads">Reading data straight from the file</h3>
+      <p>Because the segments sit contiguously after the code, a data segment's <em>initial</em> contents can be read from the unpacked file without any emulator: file offset = <code>0x10000 + (SEG − 0x15F2) × 16 + OFF</code>. The rule was checked against the live machine: scene data <span class="addr">381C:01C0</span> reads <code>0x20</code> in both places. It answers "what does this table hold before anything runs" in one line of Python.</p>
+      <p>It also produced one of the project's retracted claims. An earlier note used file values to argue that the pit-lane strip join <code>2EB5</code> and the wall routines at <code>3474</code> "could not work if they were called". Both tables they depend on are rewritten at run time. The wall-width table at scene offset <code>0xb6</code> is all zero in its first column in the file and populated live; the pit-record table at <code>0x1ac</code> holds four null entries in the file and four live pointers into the track table at run time. Those pointers decode to Suzuka records 1049, 1050, 22 and 21: the pit entry and exit. The note was retracted and the rule became: the file gives you the value at load, never at any later moment.</p>
+
+      <h2 id="instruments">Breakpoints, watchpoints and RAM dumps</h2>
+      <p>Three instruments do most of the work. Each has sharp edges the project learnt the hard way.</p>
+
+      <h3 id="breakpoints">Breakpoints</h3>
+      <p>A breakpoint in mdpc halts the guest. The recipe runner's <code>wait</code> command then reports "hang detected", which is the breakpoint firing, not a fault. Recipes that read memory after a breakpoint must run with <code>--continue-on-error</code>, or they stop before their memory reads.</p>
+      <p>Breakpoints are expensive even when they never fire. While any breakpoint exists, the emulator drops to one interpreted instruction per iteration with its fast dynamic core bypassed. One exit breakpoint raised emulator CPU load to about 670%; clearing it brought load back to 34–35%. So captures arm breakpoints late, clear them as soon as possible, and clear every one before any live driving.</p>
+      <p>Smaller rules followed from specific failures:</p>
+      <ul>
+        <li>mdpc reports a breakpoint set just after a <code>CALL</code> at call time, so "return markers" placed there are useless.</li>
+        <li>Clearing and re-setting a breakpoint while stopped on it can recapture the same instruction. A 512-frame wait never advanced until the capture first moved past the stop.</li>
+        <li>A menu breakpoint armed as <span class="addr">15F2:C047</span> reported <span class="addr">213F:0B77</span>. Both resolve to physical <code>21F67</code>. Match the physical address and check the code bytes.</li>
+        <li><code>STEP</code> cannot advance interrupt-driven work: there is no timer tick while paused. Eight million instructions stepped while paused never processed a queued mouse click.</li>
+        <li>Setting <code>DS</code> through the emulator's register command leaves a stale segment cache. Eighteen authored polygon fills returned without drawing, even though the displayed registers and memory looked right. The fix is to reload <code>DS</code> through a real <code>MOV DS,AX</code> in the guest, and to require evidence that the input was read and output written.</li>
+      </ul>
+
+      <h3 id="watchpoints">Write watchpoints</h3>
+      <p>The original sets most of its data structures through pointers it computes at run time. Static scans of the disassembly find the readers of a table, never its writer. Absolute, <code>BP</code>-relative, <code>SS</code>-prefixed and immediate-load scans all failed to find writers; one hunt set fourteen breakpoints on candidate "segment switch" sites and none fired, because the real writer used an <code>ES</code> loaded long before.</p>
+      <p>The answer is a write watchpoint, and mdpc has one, with conditions. It needs an mdpc built with debug assertions and an <code>emu_probes</code> feature. The executable must be passed as an argument, not only a control pipe. You arm a trigger on a linear address (<code>TM_TRIGGER_WRITE_ADDR &lt;linear&gt; pause</code>) and the emulator pauses when that byte is written. A companion query, <code>TM_LAST_WRITE</code>, names the instruction that last wrote an address, but its answer "No writes found" means "older than the history buffer", not "never written". So you arm the trigger before the event you care about.</p>
+
+      <h3 id="ram-dumps">RAM dumps</h3>
+      <p>mdpc can dump all guest RAM with <code>raw RAMDUMP &lt;relative-path&gt;</code>. The path is relative to the emulator's working directory, so the emulator always runs from a scratch directory; otherwise it writes into the repository.</p>
+      <p>A before-and-after diff of two dumps answers a question disassembly struggles with: is this table <em>copied</em> from somewhere, or <em>computed</em>? The wall-width table at scene <code>0xb6</code> settled it this way. A full RAM diff found its bytes nowhere else in memory, so it is computed: <code>out = source × 64 / (axis_x &amp; 0x3f)</code> from scene entries at <code>0xce</code> onwards, verified on six live entries. Bisecting the menu recipe then located <em>when</em> it fills: during the menu phase, on the mode-select click, not at race start.</p>
+
+      <h2 id="census-and-profile">Censuses and profiles</h2>
+      <p>mddosem's breakpoint list reports a hit count per breakpoint. That turns the emulator into a profiler. <code>tools/oracle-capture/profile_routines.py</code> parks the game in a live frame, sets breakpoints on a list of candidate routines, resumes a fixed number of times, and reads the counts once at the end. It clears every breakpoint on the way out, including on failure.</p>
+      <p>This mattered for planning. Ranking unported routines by size is misleading, because much of the largest uncovered code sits behind run-time gates. The two-frame profile compared a stationary car in the Suzuka pit lane with a moving car in a full 26-car field:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Routine (listing offset)</th><th>Pit, stationary</th><th>Moving, 26 runners</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td><code>9315</code> per-object drawer</td><td>30</td><td>24</td><td>ported; always hot</td></tr>
+          <tr><td><code>2458</code> bitmap drawer</td><td>23</td><td>16</td><td>ported; always hot</td></tr>
+          <tr><td><code>A4E5</code> billboard entry</td><td>0</td><td>29</td><td>fires only with cars in view</td></tr>
+          <tr><td><code>AFA3</code> car-list detail</td><td>21</td><td>1</td><td>frequent parked, rare driving</td></tr>
+          <tr><td><code>B3B4</code> car effects</td><td>20</td><td>0</td><td>pit-lane only: the mechanic and garage animation</td></tr>
+          <tr><td><code>89D4</code> shading overlay cluster</td><td>0</td><td>0</td><td>not seen in either frame</td></tr>
+        </tbody>
+      </table></div>
+      <p>The shading overlay was the largest single block of uncovered bytes. It never ran in a practice frame, stationary or moving; it turned out to be an optional display mode the player toggles. Porting it on size alone would have been wasted effort.</p>
+      <p>Two rules came out of the profiling work. A <strong>non-zero count is decisive</strong>: the routine runs. A <strong>zero is provisional</strong>: the frame may simply not exercise it. And every negative needs a control in the same batch: "resumed 0 of 60 polls" looks identical to a misconfigured segment until a known-hot routine in the same run fires.</p>
+
+      <div class="callout trap"><span class="label">The trap</span><p>The driving recipe originally left the emulator in turbo. The three-lap session finished while the first probes were still running, and the game sat on the results screen, where the 3D scene still renders behind the menu panel. The profile looked alive and the control fired, but every number described a static post-race scene. The recipe now drops to normal speed before driving and prints the player's track record index, <code>(word at 25B3:096F − 0x30) / 0x2E</code>, before and after each profile. In the re-taken run it moved from 134 to 137.</p></div>
+
+      <h3 id="branch-census">The branch census</h3>
+      <p>A census is the same idea aimed at branches instead of routines: put a breakpoint on each arm of a fork and count which arms real data takes. The polygon fill's selection logic forks three ways at <span class="addr">15F2:1495</span>. Every earlier probe had sat on one arm. A census showed that 3 of 12 polygons in a Suzuka frame took code the port had never seen. The arms are symmetric in their output, so only the value of <code>BX</code> at the deciding <code>test [bx],0x40</code> tells them apart; the census had to record the deciding value, not just the outcome.</p>
+      <p>Later captures made the census routine. The loader metadata capture counts seven complete phases, 18 marker calls, 125 stores and 412 visits on the natural path, and each authored variant is checked against the same call-and-store census. The route capture matched 1,067 complete source calls.</p>
+
+      <h2 id="frozen-fixtures">Frozen differential fixtures</h2>
+      <p>A capture is slow, needs a working emulator and the player's data, and is not deterministic. A comparison should be none of those things. So the project separates them: capture once, then freeze the result into a Rust source file under <code>src/original_*_fixture.rs</code>. After that the comparison runs in an ordinary <code>cargo test</code>, offline, with no emulator present.</p>
+      <p>Each capture script under <code>tools/oracle-capture/</code> stops at named routines and appends raw emulator responses to a file. An emitter parses that file and writes the fixture module. The draw emitter stores each canvas snapshot as a run-length-encoded XOR delta against the previous snapshot, which keeps a whole frame's drawing trace to about 102 KB of source.</p>
+      <p>When the toolchain was checked in, two emitters were re-run against their original captures and reproduced the committed fixtures byte for byte. One needed a "ground word" argument that appeared nowhere in the scripts; without it the emitted fixture differed on exactly one line. The argument now lives in the emitter's docstring.</p>
+
+      <div class="callout story"><span class="label">From the port</span><p>For a while the whole capture toolchain, eleven shell scripts and five Python emitters, existed only in a session scratchpad under the system temp directory. It held knowledge recorded nowhere else: the canvas address, the relocation rule and the breakpoint addresses. The raw capture files it produced were lost that way and are now treated as gone. The scripts were rescued into the repository on 2026-09-04, and the fixtures they produced are the reason those comparisons still run.</p></div>
+
+      <h3 id="what-a-good-oracle-compares">What a good comparison looks like</h3>
+      <p>The flagship road test, <code>suzuka_frame_polygon_fills_object_order_and_pixels_match_the_original</code>, does not diff two screenshots. It compares the original's <em>sequence</em> of fill events, then the pixels written by each fill, masking pixels that the original's object draws touched, over more than 100,000 pixels. When it fails, it names the event index that diverged. A whole-frame diff localises a defect only to one bounding box, which grows to the whole frame as soon as two defects are far apart.</p>
+      <p>The capture work also found that the original does not draw its road into video memory at <span class="addr">A000:0000</span>. It draws into an off-screen 320x164 canvas at <span class="addr">580C:1400</span>, and the presenter copies only about 61% of the VGA page per frame. A whole-page read of video memory mixes the current frame with retained pixels from earlier ones. The canvas address is not a guess: the draw emitter reads it out of the game's own far pointer and prints it.</p>
+
+      <h3 id="owned-asset-tests">Tests that need the player's data</h3>
+      <p>The repository never contains the original executable or game assets. Tests that need them are marked <code>#[ignore]</code> (317 of them at the time of writing) and read their inputs from environment variables such as <code>MDF1GP_ORIGINAL_GAME_DIR</code>. A hygiene test, <code>src/test_source_hygiene.rs</code>, fails any owned-asset test that would silently pass when its variable is unset, and any test that hard-codes a developer's path.</p>
+
+      <h2 id="captured-bytes">The captured-bytes register</h2>
+      <p>The project's rule is simple: <strong>original data is read at run time from the player's own install, and never bundled.</strong> Frozen fixtures are an exception to that rule, so the exception has a register, <code>wrk_docs/CAPTURED-ORIGINAL-BYTES.md</code>, and nothing joins it without a row.</p>
+      <p>Every entry today is test-only. The fixtures are included inside <code>#[cfg(test)]</code> modules and compiled out of release builds. They include the Suzuka road drawing trace (102 KB of source), the edge builder captured moving and at rest, the road pass inputs, the object sort order, the track pattern tables, and a handful of tiny scalar oracles from isolated runs of single routines. In all, roughly 232 KB of source, none of it in a shipped binary.</p>
+      <p>The shade table shows how the rule works in practice. The renderer needs four 256-colour shade banks. They were once captured from the running game, and a 2026-09-05 capture matched all 1,024 bytes. But the product does not ship that capture. At startup, <code>original_runtime_resource_preparation</code> generates the banks from the player's own executable inputs and publishes them where the original keeps them. The captured copy survives only as a test oracle for the generator. The executable file cannot supply the table as a byte range, because the file holds zeros at that offset: the game builds it at run time too.</p>
+      <p>Adding to the register takes three things: a row with provenance and a route to eliminating the entry; a statement of whether it ships or is test-only; and, for anything that would ship, a reason it cannot be read or computed from the player's install. Sometimes the right answer is to derive instead of capture. Three status tables in the screen clipper turned out to be "all the screen corners an outcode spans"; deriving them removed three copies of original bytes from the repository.</p>
+
+      <h2 id="one-memory-image">One memory image, bridges at the boundaries</h2>
+      <p>The central design decision of the port is where the game's state lives. The answer is: in one place, laid out exactly as the original lays it out.</p>
+      <p>The native host owns a single byte buffer spanning physical addresses <code>25B30</code> to <code>680C0</code>. The portable core borrows it. Five segment views share those bytes, just as they overlap in the real machine:</p>
+      <ul>
+        <li><span class="addr">DS:AB30</span> is the same byte as <span class="addr">SS:0000</span>;</li>
+        <li><span class="addr">SS:7B60</span> is <span class="addr">381C:0000</span>;</li>
+        <li><span class="addr">381C:FF70</span> is <span class="addr">4813:0000</span>;</li>
+        <li><span class="addr">4813:FF90</span> is <span class="addr">580C:0000</span>.</li>
+      </ul>
+      <p>A checked segment-and-offset range maps each view onto the same buffer. There is no emulated CPU. Each ported routine is ordinary Rust that reads and writes this image at the offsets the original uses.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 270" role="img" aria-label="The canonical memory image from physical 25B30 to 680C0, with overlapping 64 kilobyte windows for game data DS 25B3, stack SS 3066, scene 381C, track table 4813 and canvas 580C">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor">
+            <rect x="20" y="200" width="660" height="26" style="fill:none;stroke:currentColor"/>
+            <text x="350" y="218" text-anchor="middle">one canonical byte buffer</text>
+            <text x="20" y="246" font-family="IBM Plex Mono, monospace">25B30</text>
+            <text x="680" y="246" text-anchor="end" font-family="IBM Plex Mono, monospace">680C0</text>
+            <!-- scale: 0x42590 bytes over 660 px; 1 px ≈ 0x19C bytes. 64KB = 0x10000 ≈ 159 px -->
+            <!-- DS 25B30 -> x=20 -->
+            <rect x="20" y="30" width="159" height="22" rx="4" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="26" y="46">DS 25B3 game data</text>
+            <!-- SS 30660: offset 0xAB30 -> 20 + 0xAB30/0x19C ≈ 20+106 = 126 -->
+            <rect x="126" y="62" width="159" height="22" rx="4" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="132" y="78">SS 3066 stack/globals</text>
+            <!-- 381C0: offset 0x12690 -> 20+183=203 -->
+            <rect x="203" y="94" width="159" height="22" rx="4" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="209" y="110">381C scene data</text>
+            <!-- 48130: offset 0x22600 -> 20+342=362 -->
+            <rect x="362" y="126" width="159" height="22" rx="4" style="fill:none;stroke:var(--ink-3);stroke-width:2"/>
+            <text x="368" y="142">4813 track table</text>
+            <!-- 580C0: offset 0x32590 -> 20+521=521 -->
+            <rect x="521" y="158" width="159" height="22" rx="4" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="527" y="174">580C canvas</text>
+            <line x1="126" y1="52" x2="126" y2="200" style="stroke:var(--rule);stroke-dasharray:3 3"/>
+            <line x1="203" y1="84" x2="203" y2="200" style="stroke:var(--rule);stroke-dasharray:3 3"/>
+            <line x1="362" y1="116" x2="362" y2="200" style="stroke:var(--rule);stroke-dasharray:3 3"/>
+            <line x1="521" y1="148" x2="521" y2="200" style="stroke:var(--rule);stroke-dasharray:3 3"/>
+          </g>
+        </svg>
+        <figcaption>Each 64 KB segment window overlaps the next. A write through one view is visible through every other view of the same byte, exactly as on the original machine. Positions are to scale.</figcaption>
+      </figure>
+
+      <h3 id="call-scoped-state">Typed state lives for one call</h3>
+      <p>Rust code likes typed structs, and the port uses them: entrant tables, order tables, RNG state. But none of them persists. Each is decoded from the image immediately before a routine runs, and its fields are published back only after the routine succeeds. No typed copy of the entrant table or the RNG is allowed to drift away from the bytes the next routine will read.</p>
+      <p>Where a helper needs separate mutable views of <code>DS</code> and <code>SS</code>, it works on temporary snapshots, and their whole overlapping region must agree before either is published. An error, or a disagreement, leaves the authoritative image untouched. The design explicitly rejected a three-way merge to reconcile divergent snapshots. A merge could hide a missing alias publication, and could not fix a stale read inside a helper; the fix belongs at the helper that owns the write.</p>
+
+      <h3 id="the-stack">The stack is part of the state</h3>
+      <p>The native caller fixes <code>BP</code> at zero, and in this program the low <code>BP</code>-relative words are live game globals, not disposable stack. Some continuation helpers also leave the residue of original <code>CALL</code> and <code>PUSH</code> instructions, which private differential replays compare. The runtime places temporary source frames in a reserved window, <span class="addr">SS:7000</span>–<span class="addr">SS:7B60</span>, with a working stack pointer of <code>7B1C</code> and a measured footprint of <code>0x60</code> bytes. The window ends at <code>7B60</code> because higher addresses alias the pit bank. A stack pointer of zero is unsafe for the same reason: wrapped stores at <span class="addr">SS:FFFC</span> land in the generated pit bank.</p>
+      <p>A focused test, <code>native_game_outputs_ignore_reserved_stack_contents_and_location</code>, poisons that private memory and moves the stack pointer by <code>0x100</code>. Every game output, all of <code>DS</code> and all non-private <code>SS</code> must stay identical. Injecting a read of an unwritten stack word makes it fail.</p>
+
+      <h3 id="bridges">Bridges at source boundaries</h3>
+      <p>About 125 files named <code>original_runtime_*</code> are the bridges. Each connects the canonical image to one source routine or service: startup, the loader tail, the cold track load, the grid, the per-frame field update, race commands, qualifying, pause, replay, rendering, the clock and timer interrupt, and the serial link. Host state (sockets, threads, wall clocks, audio DSP) never enters the image. That is what lets a save file be a copy of the image, and what lets two machines in a linked race agree.</p>
+
+      <div class="callout how"><span class="label">How it works</span><p>A bridge's job is narrow. It stages the inputs the original routine would find in memory, runs the ported routine against the canonical image, and publishes exactly the bytes the original writes. An acceptance test for a bridge checks two things: the routine's own outputs match an original capture, and every other byte of the image is unchanged.</p></div>
+
+      <h2 id="guards-not-stubs">Guards, not stubs</h2>
+      <p>A port in progress is full of places that return an error because the real code is not there yet. The danger is that those places quietly become permanent, and a game that "works" is really running around holes.</p>
+      <p>The project draws a hard line. An error on a shipped path is either a <em>guard</em> (a bounded check on malformed input, a missing caller capability, an exhausted table walk, or a transactional rollback) or it is a defect. A stub that stands in for unported behaviour is not allowed on a shipped route. And a guard stays until its source contract and reachability have been checked. <strong>A passing short race does not classify a guard as unreachable.</strong></p>
+      <p>The clean-room two-car simulation that bootstrapped the project, and its menu routes, were removed on 2026-09-10. Since then no shipped gameplay or rendering route bypasses the original runtime.</p>
+
+      <h3 id="boundary-checklist">The boundary checklist and audits</h3>
+      <p>The running record is <code>wrk_docs/2026.09.12 - TSK - Original runtime boundary checklist.md</code>. It is described as an open verification queue, not a count of missing functions. Each row names a source boundary by address and states what was ported and what proves it. A typical row: the session state machine at <span class="addr">0752:D331</span> now scans for the next candidate when its deadline expires and follows the original's three branches (no candidate, same identity, different identity), with focused regressions for the fifteen-second handoff and the long same-identity timeout.</p>
+      <p>Periodic audits sweep the tree. The 2026-09-17 inventory searched the gameplay, presentation, audio, replay, camera, pit, retirement, results, save and Championship paths and found no live missing production route among the <code>Unsupported</code> and <code>Unported</code> outcomes. What remained were bounded guards; two public error variants had no construction site at all and were kept only as compatibility markers. By the latest audit the checklist stood at 576 of 577 rows checked.</p>
+
+      <h2 id="acceptance-rules">Acceptance rules</h2>
+      <p>The quality guide sets a small number of rules that apply to every claim of "done". Each one exists because its opposite once produced a false green.</p>
+
+      <h3 id="natural-terminal">Every race ends naturally, with all 26 cars</h3>
+      <p>Race acceptance needs all 26 entrants to reach a terminal state, finished or retired, through the original's own exit flags. The host must never force a retirement, teleport a car, or relax the terminal checks to get a run to finish.</p>
+      <p>The final-tree matrix runs all sixteen original circuits in dry and wet weather, with both idle and held-throttle control: 64 runs, all reaching the natural source terminal with all 26 entrants classified or retired. An earlier 2026-09-10 delivery run covered 32 of 32 dry and wet races. Held-throttle runs use a "source driver" that emits real keyboard make and break edges for steering, derived from live track geometry. A straight-input run is kept as a negative control: on wet corners, straight held throttle can strand a perfectly valid player car, which is why the terminal predicate stays strict and the input gets smarter instead.</p>
+      <p>A headless test runs one production-shaped race to a frame cap. Its finish requirement accepts only the source winner crossing the lap limit, all entrants terminal, and the source finish flags requesting exit.</p>
+
+      <h3 id="pixel-oracles">Exact full-page pixel oracles</h3>
+      <p>"The page shows the right title" is route evidence. "The capture is not empty" is route evidence. Neither is pixel parity. Pixel parity means a complete-page comparison against an authenticated original frame.</p>
+      <p>The race-start oracle compares the production renderer's presented VGA page against four owned captures of the original at Suzuka: stationary and three moving frames. Every page reports 0 of 64,000 mismatches. To prove the comparison can fail, a deliberate one-byte shift of the canvas was made: the stationary check then reported 9,980 mismatches, and was restored. The same standard now covers the outer Championship Results menu, Race Finishing Times, Driver Lap Times, Fastest Laps and all three populated Championship standings pages, outside the original's blinking cursor. The native renderer also reproduces the complete 55,338-byte active track table after the original's car-list unmark, across stationary and three moving frames.</p>
+
+      <h3 id="red-once">Every regression test goes red once</h3>
+      <p>A test written alongside its fix passes the first time whether or not it tests anything. So every new regression test must be made to fail once, by mutating the source position, the fixture or the assertion, then restored and rerun green. Journals record the mutation and the red result.</p>
+      <p>Mutation testing here is mostly deliberate and by hand: temporary mutants of the port, recorded as killed or, honestly, as survivors. Capture drivers go further. The route capture's Rust replay runs a 16-case corruption self-test, and the metadata capture checks 74 deliberate integrity mutations, including deleted equal-value stores, interleaved instruction order and truncated snapshots, all of which must be rejected. Two further rules came from accidents: mutation fixtures are copied, never hard-linked (a hard-linked mutation once altered a genuine capture), and an inert mutation must be explained before either verdict is believed.</p>
+
+      <figure class="diagram">
+        <svg viewBox="0 0 700 300" role="img" aria-label="Evidence ladder from route evidence at the bottom, through focused test made red once, differential fixture, and full-page pixel oracle, to natural terminal with all 26 entrants at the top">
+          <g font-family="IBM Plex Sans, sans-serif" font-size="13" fill="currentColor">
+            <rect x="40" y="240" width="620" height="40" rx="6" style="fill:none;stroke:var(--rule)"/>
+            <text x="56" y="265" font-weight="600">Route evidence</text>
+            <text x="644" y="265" text-anchor="end" font-size="12" style="fill:var(--ink-3)">a title, a nonempty capture: proves you got there</text>
+            <rect x="70" y="190" width="590" height="40" rx="6" style="fill:none;stroke:var(--ink-3)"/>
+            <text x="86" y="215" font-weight="600">Focused test, made red once</text>
+            <text x="644" y="215" text-anchor="end" font-size="12" style="fill:var(--ink-3)">proves this code path</text>
+            <rect x="100" y="140" width="560" height="40" rx="6" style="fill:none;stroke:var(--blue)"/>
+            <text x="116" y="165" font-weight="600">Differential fixture</text>
+            <text x="644" y="165" text-anchor="end" font-size="12" style="fill:var(--ink-3)">same bytes as the original call</text>
+            <rect x="130" y="90" width="530" height="40" rx="6" style="fill:none;stroke:var(--blue);stroke-width:2"/>
+            <text x="146" y="115" font-weight="600">Full-page pixel oracle</text>
+            <text x="644" y="115" text-anchor="end" font-size="12" style="fill:var(--ink-3)">0 / 64,000 mismatches</text>
+            <rect x="160" y="40" width="500" height="40" rx="6" style="fill:none;stroke:var(--red);stroke-width:2"/>
+            <text x="176" y="65" font-weight="600">Natural terminal, 26 entrants</text>
+            <text x="644" y="65" text-anchor="end" font-size="12" style="fill:var(--ink-3)">whole-race lifecycle</text>
+            <text x="20" y="20" font-size="12" style="fill:var(--ink-3)">stronger claim ↑</text>
+          </g>
+        </svg>
+        <figcaption>Each rung supports a stronger claim. A claim is only as strong as the rung its evidence reaches, and journals must say which.</figcaption>
+      </figure>
+
+      <h3 id="provenance">Check provenance and pipeline</h3>
+      <p>Two more rules guard the oracle itself. Check a fixture's provenance before treating agreement as identity: one frozen grandstand frame came from Phoenix practice, and its depth of 9282 nearly became "same object, verified" against a Suzuka object at 9281. And check that the test runs the same pipeline play runs: six apparent "renderer defects" were the test harness running less of the pipeline than the game.</p>
+      <p>Independent acceptance adds a second pair of eyes. For many units a separate session re-captured the original from scratch, recomputed the arithmetic, compared registers at entry, store, pre-return and actual return, and confirmed that the emulator process and its private staging directory were gone afterwards. Journals separate what was observed from what was inferred, and name any limit of the host that prevents a claim.</p>
+
+      <h2 id="quality-programme">The quality programme</h2>
+      <p>Above individual tests sits a written quality programme, authored as a machine-readable programme file and projected into a generated quality map. Its title is "Faithful Formula One Grand Prix v1.05 runtime", and it is still marked draft: the targets have not been formally confirmed.</p>
+      <p>It states four outcomes. The original runtime owns gameplay, rendering, audio, save and load, and menu-routed sessions. Every session type behaves correctly across the stated matrix. Presented pages match the authenticated source oracle where comparison is required. And no shipped route bypasses the original runtime. It also names four dealbreakers, including "a green claim depends on an unintegrated branch, an unreviewed mutation, or a test that does not exercise the production route".</p>
+      <p>Work is divided into four areas, each rated on a three-step scale. <em>Weak</em> means a material boundary or acceptance is unproven or provisional. <em>Sound</em> means the route is exercised with current evidence and known gaps are recorded. <em>Strong</em> means the full matrix and exact comparisons pass on the integrated tree and every remaining error is a validated guard.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Area</th><th>In plain terms</th><th>Target</th><th>Now</th><th>What keeps it from the target</th></tr></thead>
+        <tbody>
+          <tr><td>RT-001 Boundary fidelity</td><td>Does every original routine on a shipped path run with the original's arithmetic, memory, flags and callers?</td><td>Strong</td><td>Sound</td><td>Private snapshots between loader return and the first display pass are not yet capturable.</td></tr>
+          <tr><td>RT-002 Lifecycle</td><td>Do sessions start, run and end naturally, with every entrant accounted for, across every mode and circuit?</td><td>Strong</td><td>Sound</td><td>The attended end-to-end sweep through results, ceremony, save and relaunch is incomplete.</td></tr>
+          <tr><td>RT-003 Presentation</td><td>Do presented pages match the original pixel for pixel where an exact oracle is required?</td><td>Strong</td><td>Sound</td><td>The Championship ceremony frame has no matching original capture yet.</td></tr>
+          <tr><td>RT-004 Build safety</td><td>Is every claim made on the integrated trunk with the local gates green?</td><td>Sound</td><td>Sound</td><td>Met; kept current after each acceptance unit.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Every area rating carries a written rationale and a list of dated evidence records pointing at journals. The rule is that ratings are evidence-based working judgements, not a release declaration.</p>
+
+      <h2 id="local-gates">Local gates</h2>
+      <p>There is no hosted continuous integration. The gates are run by hand, locally, and recorded in journals. The Cargo package is <code>big-race</code>, with binaries <code>big-race</code> and <code>track-author</code>. The portable core in <code>src/lib.rs</code> is <code>#![no_std]</code>; the windowed application lives behind the default <code>native</code> feature.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Gate</th><th>What it runs</th></tr></thead>
+        <tbody>
+          <tr><td>Core gate</td><td><code>cargo test --locked --offline --no-default-features</code>: the library, the non-native binary and the track tool, proving the core stays <code>no_std</code> and dependency-free</td></tr>
+          <tr><td>Native gate</td><td><code>cargo test --locked --offline --features native --bin big-race</code>: host, menus, renderer, audio, modem, settings, saves</td></tr>
+          <tr><td>Lint</td><td>Clippy on the core with warnings as errors; no new warnings on native code</td></tr>
+          <tr><td>Format</td><td><code>cargo fmt --check</code> and <code>git diff --check</code></td></tr>
+          <tr><td>Smoke</td><td><code>big-race smoke</code> prints <code>smoke: ok</code> and a canonical state hex from the track parser and original RNG arithmetic</td></tr>
+          <tr><td>Platform adapters</td><td>SunOS SPARC and Win32 crates emit the same smoke vector; platform checks, not gameplay acceptance</td></tr>
+        </tbody>
+      </table></div>
+      <p>The full gate is the core gate, the native gate, core lint, smoke and the format checks. It runs when a change crosses a runtime boundary; otherwise focused tests for the touched area are enough. On one recorded integrated tree the core gate passed 1,529 library tests, 21 main-binary tests and 35 track-tool tests, and the native gate passed 401 with 64 ignored, all with zero failures.</p>
+      <p>Three practical rules keep results honest. Tests run with standard input closed, so none can hang on a read. Each worktree gets its own Cargo target directory: a shared one once served a neighbouring tree's test binary, complete with the wrong test count. And a test filter must be checked with <code>-- --list</code> before a green run is trusted, because a filter that matches nothing passes with zero tests.</p>
+    </main>
+  </div>
+  <script src="chapters.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>
