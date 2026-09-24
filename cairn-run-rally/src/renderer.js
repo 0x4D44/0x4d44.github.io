@@ -22,7 +22,8 @@ void main(){
   vec4 world=uModel*vec4(aPosition,1.0);
   vWorld=world.xyz;
   vNormal=normalize(mat3(uModel)*aNormal);
-  vColor=aColor;
+  // Linearise per vertex, not per pixel: flat-shaded faces share one colour.
+  vColor=pow(max(aColor,vec3(0.0)),vec3(2.2));
   gl_Position=uViewProjection*world;
 }`;
 const WORLD_FRAGMENT = `#version 300 es
@@ -62,10 +63,12 @@ void main(){
   float wrapped=clamp(ndl*0.5+0.5,0.0,1.0);
   float direct=wrapped*wrapped;
   float skyFacing=clamp(normal.y*0.5+0.5,0.0,1.0);
-  vec3 base=toLinear(vColor);
-  vec3 sunLinear=toLinear(uSunColor);
-  vec3 keyLight=toLinear(uSunLight);
-  vec3 ambient=mix(toLinear(uGroundAmbient),toLinear(uSkyAmbient),skyFacing)*uAmbientStrength;
+  // Every colour arrives linear: vertex colours from the vertex stage, the
+  // environment from the CPU, so the only per-pixel pow is the final encode.
+  vec3 base=vColor;
+  vec3 sunLinear=uSunColor;
+  vec3 keyLight=uSunLight;
+  vec3 ambient=mix(uGroundAmbient,uSkyAmbient,skyFacing)*uAmbientStrength;
   vec3 lit=base*(ambient+keyLight*uSunStrength*direct);
   vec3 halfVector=normalize(sun+view);
   float specular=pow(max(dot(normal,halfVector),0.0),uShininess)*uSpecular*step(0.0,ndl);
@@ -76,7 +79,7 @@ void main(){
   float fog=smoothstep(uFogNear,uFogFar,distanceToCamera);
   fog*=mix(0.6,1.0,exp(-max(0.0,vWorld.y-uFogHeight)*0.006));
   float towardsSun=pow(max(dot(-view,sun),0.0),4.0);
-  vec3 fogLinear=toLinear(uFogColor)+sunLinear*uSunStrength*towardsSun*0.14;
+  vec3 fogLinear=uFogColor+sunLinear*uSunStrength*towardsSun*0.14;
   lit=mix(lit,fogLinear,clamp(fog,0.0,1.0));
   outColor=vec4(encodeColor(lit,uExposure),uAlpha);
 }`;
@@ -86,7 +89,7 @@ out vec2 vUv;
 void main(){
  vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);
  vUv=p;
- gl_Position=vec4(p*2.0-1.0,0.999,1.0);
+ gl_Position=vec4(p*2.0-1.0,1.0,1.0);
 }`;
 const SKY_FRAGMENT = `#version 300 es
 precision highp float;
@@ -174,7 +177,7 @@ void main(){
  gl_PointSize=clamp(aSize*430.0/max(1.0,clip.w),1.0,110.0);
  float fade=1.0-smoothstep(uFogNear*1.1,uFogFar,distance(aPosition,uCamera));
  vAlpha=aAlpha*clamp(fade,0.05,1.0);
- vColor=aColor;
+ vColor=pow(max(aColor,vec3(0.0)),vec3(2.2));
 }`;
 const PARTICLE_FRAGMENT = `#version 300 es
 precision highp float;
@@ -191,7 +194,7 @@ void main(){
  float d=dot(p,p);
  if(d>1.0)discard;
  float alpha=(1.0-smoothstep(0.08,1.0,d))*vAlpha;
- vec3 lit=toLinear(vColor)*(vec3(uAmbientStrength*0.9)+toLinear(uSunColor)*uSunStrength*0.85);
+ vec3 lit=vColor*(vec3(uAmbientStrength*0.9)+uSunColor*uSunStrength*0.85);
  outColor=vec4(encodeColor(lit,uExposure),alpha);
 }`;
 const SHADOW_VERTEX = `#version 300 es
@@ -309,6 +312,9 @@ export function deriveRenderEnvironment(palette = {}, weather = {}) {
   });
 }
 
+/** sRGB-authored colour to linear light, once on the CPU instead of per pixel. */
+export function linearColor(value){return value.map(channel=>Math.pow(Math.max(0,channel),2.2));}
+
 export class MeshBuilder {
  constructor(){this.data=[];}
  vertex(p,n,c){this.data.push(p.x,p.y,p.z,n.x,n.y,n.z,c[0],c[1],c[2]);}
@@ -396,11 +402,30 @@ export class WebGLRenderer {
   const inverse=mat4Invert(vp)||this.identity;
   const fogNear=Math.min(e.fogNear,camera.far||e.fogNear),fogFar=Math.min(e.fogFar,camera.far||e.fogFar);
   this.frameFog={near:fogNear,far:fogFar};
-  // Sky first, depth-disabled: a world-space ray means the sun, cloud deck and
-  // star field stay put while the car turns under them.
-  gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
-  gl.useProgram(this.skyProgram);const s=this.skyUniforms;
-  gl.uniformMatrix4fv(s.uInverseViewProjection,false,inverse);
+  // Clear instead of painting the sky first: the sky is drawn after the opaque
+  // world, on the far plane, so it is only shaded where nothing covers it.
+  gl.clearColor(e.fogColor[0],e.fogColor[1],e.fogColor[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  this.skyInverse=inverse;this.skyDrawn=false;
+  // Hoist every per-frame world uniform out of the per-mesh path.
+  gl.useProgram(this.worldProgram);const u=this.worldUniforms;
+  gl.uniformMatrix4fv(u.uViewProjection,false,vp);
+  gl.uniform3f(u.uCamera,camera.position.x,camera.position.y,camera.position.z);
+  const lin=this.linearEnvironment();
+  gl.uniform3fv(u.uSunDirection,e.sunDirection);gl.uniform3fv(u.uSunColor,lin.sunColor);gl.uniform3fv(u.uSunLight,lin.sunLight);
+  gl.uniform3fv(u.uSkyAmbient,lin.skyAmbient);gl.uniform3fv(u.uGroundAmbient,lin.groundAmbient);gl.uniform3fv(u.uFogColor,lin.fogColor);
+  gl.uniform1f(u.uSunStrength,e.sunStrength);gl.uniform1f(u.uAmbientStrength,e.ambientStrength);
+  gl.uniform1f(u.uFogNear,fogNear);gl.uniform1f(u.uFogFar,fogFar);gl.uniform1f(u.uFogHeight,e.fogHeightM);gl.uniform1f(u.uExposure,e.exposure);
+  this.drawCalls=0;
+ }
+ drawSky(){
+  if(this.skyDrawn||!this.camera)return;
+  this.skyDrawn=true;
+  const gl=this.gl,e=this.environment,camera=this.camera,s=this.skyUniforms;
+  // A world-space ray means the sun, cloud deck and star field stay put while
+  // the car turns under them. Depth-tested on the far plane, never written.
+  gl.depthFunc(gl.LEQUAL);gl.depthMask(false);gl.disable(gl.BLEND);
+  gl.useProgram(this.skyProgram);
+  gl.uniformMatrix4fv(s.uInverseViewProjection,false,this.skyInverse||this.identity);
   gl.uniform3f(s.uCamera,camera.position.x,camera.position.y,camera.position.z);
   gl.uniform3fv(s.uSkyTop,e.skyTop);gl.uniform3fv(s.uSkyHorizon,e.skyHorizon);gl.uniform3fv(s.uSkyLower,e.skyLower);
   gl.uniform3fv(s.uSunColor,e.sunColor);gl.uniform3fv(s.uSunDirection,e.sunDirection);
@@ -408,17 +433,16 @@ export class WebGLRenderer {
   gl.uniform1f(s.uSunStrength,e.sunStrength);gl.uniform1f(s.uCloudCover,e.cloudCover);gl.uniform1f(s.uCloudScale,e.cloudScale);
   gl.uniform1f(s.uTime,this.time);gl.uniform1f(s.uWind,this.wind);gl.uniform1f(s.uNight,e.nightFactor);
   gl.uniform1f(s.uSunSize,e.sunSize);gl.uniform1f(s.uHaze,e.haze);gl.uniform1f(s.uExposure,e.exposure);
-  gl.drawArrays(gl.TRIANGLES,0,3);
-  gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.clear(gl.DEPTH_BUFFER_BIT);
-  // Hoist every per-frame world uniform out of the per-mesh path.
-  gl.useProgram(this.worldProgram);const u=this.worldUniforms;
-  gl.uniformMatrix4fv(u.uViewProjection,false,vp);
-  gl.uniform3f(u.uCamera,camera.position.x,camera.position.y,camera.position.z);
-  gl.uniform3fv(u.uSunDirection,e.sunDirection);gl.uniform3fv(u.uSunColor,e.sunColor);gl.uniform3fv(u.uSunLight,e.sunLight);
-  gl.uniform3fv(u.uSkyAmbient,e.skyAmbient);gl.uniform3fv(u.uGroundAmbient,e.groundAmbient);gl.uniform3fv(u.uFogColor,e.fogColor);
-  gl.uniform1f(u.uSunStrength,e.sunStrength);gl.uniform1f(u.uAmbientStrength,e.ambientStrength);
-  gl.uniform1f(u.uFogNear,fogNear);gl.uniform1f(u.uFogFar,fogFar);gl.uniform1f(u.uFogHeight,e.fogHeightM);gl.uniform1f(u.uExposure,e.exposure);
-  this.drawCalls=1;
+  gl.bindVertexArray(null);gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.depthMask(true);gl.enable(gl.BLEND);this.material=null;this.drawCalls++;
+ }
+ linearEnvironment(){
+  const e=this.environment;
+  if(this.linearCache?.source!==e){
+   this.linearCache={source:e,sunColor:new Float32Array(linearColor(e.sunColor)),sunLight:new Float32Array(linearColor(e.sunLight)),
+    skyAmbient:new Float32Array(linearColor(e.skyAmbient)),groundAmbient:new Float32Array(linearColor(e.groundAmbient)),fogColor:new Float32Array(linearColor(e.fogColor))};
+  }
+  return this.linearCache;
  }
  applyMaterial(material){
   const gl=this.gl,u=this.worldUniforms,next=material||DEFAULT_MATERIAL;
@@ -448,15 +472,15 @@ export class WebGLRenderer {
   gl.depthMask(true);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   this.material=null;this.drawCalls++;
  }
- drawParticles(particles){if(!particles.length)return;if(particles.length>this.particleCapacity){while(this.particleCapacity<particles.length)this.particleCapacity*=2;this.particleData=new Float32Array(this.particleCapacity*8);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,this.particleBuffer);this.gl.bufferData(this.gl.ARRAY_BUFFER,this.particleData.byteLength,this.gl.DYNAMIC_DRAW);}let o=0;for(const p of particles){this.particleData[o++]=p.x;this.particleData[o++]=p.y;this.particleData[o++]=p.z;this.particleData[o++]=p.size;this.particleData[o++]=p.alpha;this.particleData[o++]=p.color[0];this.particleData[o++]=p.color[1];this.particleData[o++]=p.color[2];}
+ drawParticles(particles){this.drawSky();if(!particles.length)return;if(particles.length>this.particleCapacity){while(this.particleCapacity<particles.length)this.particleCapacity*=2;this.particleData=new Float32Array(this.particleCapacity*8);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,this.particleBuffer);this.gl.bufferData(this.gl.ARRAY_BUFFER,this.particleData.byteLength,this.gl.DYNAMIC_DRAW);}let o=0;for(const p of particles){this.particleData[o++]=p.x;this.particleData[o++]=p.y;this.particleData[o++]=p.z;this.particleData[o++]=p.size;this.particleData[o++]=p.alpha;this.particleData[o++]=p.color[0];this.particleData[o++]=p.color[1];this.particleData[o++]=p.color[2];}
   const gl=this.gl,e=this.environment,u=this.particleUniforms,fog=this.frameFog||{near:e.fogNear,far:e.fogFar};
   gl.useProgram(this.particleProgram);
   gl.uniformMatrix4fv(u.uViewProjection,false,this.viewProjection);
   gl.uniform3f(u.uCamera,this.camera.position.x,this.camera.position.y,this.camera.position.z);
   gl.uniform1f(u.uFogNear,fog.near);gl.uniform1f(u.uFogFar,fog.far);
-  gl.uniform3fv(u.uSunColor,e.sunColor);gl.uniform1f(u.uSunStrength,e.sunStrength);gl.uniform1f(u.uAmbientStrength,e.ambientStrength);gl.uniform1f(u.uExposure,e.exposure);
+  gl.uniform3fv(u.uSunColor,this.linearEnvironment().sunColor);gl.uniform1f(u.uSunStrength,e.sunStrength);gl.uniform1f(u.uAmbientStrength,e.ambientStrength);gl.uniform1f(u.uExposure,e.exposure);
   gl.bindVertexArray(this.particleVao);gl.bindBuffer(gl.ARRAY_BUFFER,this.particleBuffer);gl.bufferSubData(gl.ARRAY_BUFFER,0,this.particleData.subarray(0,o));
   gl.depthMask(false);gl.drawArrays(gl.POINTS,0,particles.length);gl.depthMask(true);this.drawCalls++;
  }
- end(){const gl=this.gl;if(this.activeGpuQuery){gl.endQuery(this.gpuExt.TIME_ELAPSED_EXT);this.gpuQueries.push(this.activeGpuQuery);this.activeGpuQuery=null;}while(this.gpuQueries.length){const query=this.gpuQueries[0],ready=gl.getQueryParameter(query,gl.QUERY_RESULT_AVAILABLE),disjoint=gl.getParameter(this.gpuExt.GPU_DISJOINT_EXT);if(!ready)break;this.gpuQueries.shift();if(!disjoint)this.gpuFrameMs=gl.getQueryParameter(query,gl.QUERY_RESULT)/1e6;gl.deleteQuery(query);}const ms=performance.now()-this.frameStart;this.frameSamples.push(ms);if(this.frameSamples.length>120)this.frameSamples.shift();const avg=this.frameSamples.reduce((a,b)=>a+b,0)/this.frameSamples.length;this.fps=avg>0?1000/avg:0;return{cpuFrameMs:ms,averageFrameMs:avg,gpuFrameMs:this.gpuFrameMs,fps:this.fps,drawCalls:this.drawCalls,triangles:this.triangles,width:this.canvas.width,height:this.canvas.height};}
+ end(){this.drawSky();const gl=this.gl;if(this.activeGpuQuery){gl.endQuery(this.gpuExt.TIME_ELAPSED_EXT);this.gpuQueries.push(this.activeGpuQuery);this.activeGpuQuery=null;}while(this.gpuQueries.length){const query=this.gpuQueries[0],ready=gl.getQueryParameter(query,gl.QUERY_RESULT_AVAILABLE),disjoint=gl.getParameter(this.gpuExt.GPU_DISJOINT_EXT);if(!ready)break;this.gpuQueries.shift();if(!disjoint)this.gpuFrameMs=gl.getQueryParameter(query,gl.QUERY_RESULT)/1e6;gl.deleteQuery(query);}const ms=performance.now()-this.frameStart;this.frameSamples.push(ms);if(this.frameSamples.length>120)this.frameSamples.shift();const avg=this.frameSamples.reduce((a,b)=>a+b,0)/this.frameSamples.length;this.fps=avg>0?1000/avg:0;return{cpuFrameMs:ms,averageFrameMs:avg,gpuFrameMs:this.gpuFrameMs,fps:this.fps,drawCalls:this.drawCalls,triangles:this.triangles,width:this.canvas.width,height:this.canvas.height};}
 }

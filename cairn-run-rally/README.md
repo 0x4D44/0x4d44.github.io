@@ -138,8 +138,8 @@ Observed evidence for the current build:
 - seven menu shells at 390×844 and 768×1024 have no overflow or clipped controls;
 - the previous build measured GPU **0.45 ms** and frame p95 **9.6 ms** at 1920×1080 on an
   Apple M5 Max (ANGLE Metal). The current renderer adds a ray-cast sky, per-pixel fog
-  scattering and a shadow pass and has only been measured on SwiftShader, where it is
-  roughly four times the previous build's cost; re-measure it on hardware before quoting a
+  scattering and a shadow pass and has only been measured on SwiftShader, where a frame costs
+  176 ms against the previous build's 56 ms; re-measure it on hardware before quoting a
   number.
 
 `npm run review` writes generated captures under `artifacts/review/`. Those captures are
