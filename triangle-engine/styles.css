@@ -1544,3 +1544,10 @@ figcaption {
   color: var(--amb);
 }
 .vendor-close strong { color: var(--ink); }
+
+@media (max-width: 720px) {
+  /* The number gutter costs more than it is worth at phone width. */
+  .vendor-reasons li { padding-left: 0; }
+  .vendor-reasons li::before { position: static; display: block; margin-bottom: 4px; }
+  .vendor-reasons { gap: 24px; }
+}
