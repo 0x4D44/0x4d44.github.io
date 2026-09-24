@@ -25,7 +25,11 @@
      normal-size text (resolution criteria, watchlist triggers, scenario
      labels), not just decoration. #7a8ca9 clears AA on every surface it
      is used on. */
-  --ink-faint: #7a8ca9;
+  /* #7a8ca9 passed AA on the page background but fell to 3.96:1 on the
+     highlighted readout cell. #8fa0bc clears 4.5:1 on every surface it is
+     used on, including .cone .tick — the chart's axis labels, and its
+     only text. */
+  --ink-faint: #8fa0bc;
 
   --ai:      #38bdf8;
   --climate: #f59e0b;
@@ -376,9 +380,17 @@ a.card:hover { transform: translateY(-3px); border-color: var(--accent); backgro
 .cone .ref { stroke: rgba(255,255,255,.28); stroke-width: 1.5; stroke-dasharray: 6 6; }
 .cone .reflab { fill: var(--ink-faint); font: 600 11.5px var(--sans); }
 
-.cone .band { stroke: none; }
-.cone .band.outer { fill: var(--accent); opacity: .17; }
-.cone .band.inner { fill: var(--accent); opacity: .28; }
+/* The bands ARE the chart, so they have to be visible. At .17/.28 fill
+   alone they sat at 1.2-1.8:1 against the panel and the boundary between
+   them was a 1.2:1 step in transparency — under the 3:1 WCAG 1.4.11 asks
+   of a graphic you need to see to understand the content, and worst for
+   the peace cone, whose rose reads darkest on this background. Fill alone
+   cannot reach 3:1 at any alpha that still lets the gridlines through, so
+   each band now carries a stroke at full accent: the boundary is a line
+   against the panel rather than a change in fill. */
+.cone .band { stroke: var(--accent); stroke-width: 1.4; }
+.cone .band.outer { fill: var(--accent); fill-opacity: .22; stroke-opacity: .70; }
+.cone .band.inner { fill: var(--accent); fill-opacity: .42; stroke-opacity: .95; }
 .cone .median { stroke: var(--accent); stroke-width: 3; fill: none; stroke-linecap: round; }
 .cone .scrub { stroke: #fff; stroke-width: 1.5; opacity: .55; }
 .cone .knot { fill: #fff; opacity: .8; }
