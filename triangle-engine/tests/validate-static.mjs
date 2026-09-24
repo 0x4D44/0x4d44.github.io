@@ -194,7 +194,7 @@ test("the ledger covers both API families and four decades of hardware", () => {
 test("the page explains why the vendor APIs lost, structurally rather than by taste", () => {
   // The question is why eleven of thirteen died, and the answer is not
   // "the survivors were nicer to use" — so the page must say so.
-  assert.match(html, /Nine vendor APIs in three years\. None of them survived/i);
+  assert.match(html, /Nine vendor APIs\. None of them survived/i);
   assert.match(html, /None of the reasons for that is that Direct3D and OpenGL were nicer to use/i);
   // The nine must actually be named, or the count is decoration.
   for (const api of ["NVLIB", "Glide", "Speedy3D", "RRedline", "SGL", "3D CIF",
