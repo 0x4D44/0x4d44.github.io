@@ -782,7 +782,7 @@
       <div class="section-heading">
         <p class="section-number">11 · The ledger</p>
         <h2>Every version number,<br><em>and the silicon that answered it.</em></h2>
-        <p>Specifications in one lane, hardware in the other, a shared year axis between them. The interesting part is the race: sometimes the specification led and the silicon chased it, sometimes a card shipped a capability years before anyone standardised it, and once or twice a version number marked nothing at all. Where an entry introduced a mechanism this page explains, it says which section.</p>
+        <p>Specifications in one lane, hardware in the other, a shared year axis between them. The interesting part is the race: sometimes the specification led and the silicon chased it, sometimes a card shipped a capability years before anyone standardised it, and once or twice a version number marked nothing at all. Where an entry introduced a mechanism this page explains, it says which section. The dozen vendor APIs of 1995&#8211;98 are in here too, with a note at the foot on why every one of them is gone.</p>
         <div class="section-tries">
           <p class="tries-label">Look for</p>
           <ul>
@@ -806,6 +806,38 @@
           <span>Year</span><span>Specifications</span><span>Hardware</span>
         </div>
         <div class="ledger-body" id="ledger-body"></div>
+      </div>
+
+      <div class="panel-card vendor-card">
+        <h4>Nine vendor APIs. None of them survived</h4>
+        <p class="vendor-lede">Between 1995 and 1998, almost every company selling a 3D chip also shipped the interface for programming it: <strong>NVLIB</strong> for NV1, <strong>Glide</strong> for the Voodoo, <strong>Speedy3D</strong> and <strong>RRedline</strong> for the Vérité, <strong>SGL</strong> for PowerVR, <strong>3D CIF</strong> for the Rage, <strong>Matrox Simple Interface</strong> for the Mystique, and S3's <strong>S3d</strong> and later <strong>MeTaL</strong>. Apple's RAVE tried to be a neutral layer across all of them; Microsoft's own Talisman proposed replacing the architecture outright, and was cancelled without shipping. Glide and MeTaL were still being written to in 1999, but nothing new was being started against any of them, and by the early 2000s all nine were gone. None of the reasons for that is that Direct3D and OpenGL were nicer to use.</p>
+        <ol class="vendor-reasons">
+          <li>
+            <h5>Every game had to be written N times</h5>
+            <p>Unreal went on sale in 1998 with a software renderer and a Glide one, then spent its patch cycle acquiring Direct3D, OpenGL, S3 MeTaL and PowerVR SGL back-ends — six renderers in the end, six sets of bugs, six things to test on hardware you had to own, to sell the same one copy. That bill is paid by the developer, and it grew every time another vendor shipped another chip. Developers get a vote on which world they would rather live in.</p>
+          </li>
+          <li>
+            <h5>They exposed the hardware, so they died with the hardware</h5>
+            <p>Glide was fast because it was thin: close enough to the Voodoo's registers that the chip's limits were the API's limits. A 16-bit framebuffer, and textures no bigger than 256 by 256, because that is what the silicon did. That is a wonderful property right up to the moment your next chip is different, at which point the interface must either break or start lying about the machine underneath it. Direct3D and OpenGL carried a layer of abstraction that cost performance in 1996 and bought survival in 2000.</p>
+          </li>
+          <li>
+            <h5>Microsoft owned the distribution channel</h5>
+            <p>Direct3D was already on the machine, cost nothing, arrived with the operating system, and sat behind a driver model every vendor had to write for anyway if they wanted to sell a Windows card at all. A proprietary API needed the game to ship your library <em>and</em> the user to own your hardware. One of those is a far better place to start from than the other, independently of any technical merit either had.</p>
+          </li>
+          <li>
+            <h5>Capability bits were ugly, and they worked</h5>
+            <p>Direct3D's answer to hardware that varied wildly was to let the application interrogate the driver about what it could do. It was widely disliked, produced years of combinatorial testing misery, and meant one binary ran on every card. No vendor API had any reason to solve that problem, because from inside a vendor API the problem does not exist.</p>
+          </li>
+          <li>
+            <h5>The vendors defected before the developers did</h5>
+            <p>Every chip maker wanted their card to run the games that already existed, which meant writing a good Direct3D driver mattered more each year than promoting an interface of their own. 3dfx made the point most sharply itself: in January 1997 it shipped <strong>MiniGL</strong>, a cut-down OpenGL driver implementing just enough of the standard to run GLQuake, because OpenGL was what id Software had chosen to target. Not a principled stand by id — it had shipped VQuake against Rendition's proprietary API seven weeks earlier — but leverage. The most successful proprietary API in the industry shipped a rival's interface because one developer could insist on it.</p>
+          </li>
+          <li>
+            <h5>OpenGL survived because vendors could extend it without forking it</h5>
+            <p>This is the mechanism the proprietary APIs lacked rather than a virtue they lacked. OpenGL let a vendor ship its differentiator as a named extension inside the standard, so being ahead of the specification did not require leaving it. A vendor API has nowhere to put a feature except its own version number, and nobody else ever implements that.</p>
+          </li>
+        </ol>
+        <p class="vendor-close">The lesson took twenty years to be learned in public. When AMD built <strong>Mantle</strong> in 2013 — a vendor API, thin, fast and close to the hardware, exactly like Glide — it donated the design to Khronos rather than defend it, and the result is Vulkan. A vendor API that wants to live has to stop being one.</p>
       </div>
 
       <p class="model-caveat">Representative, not exhaustive: one or two entries per year, chosen for the capability they introduced rather than for market share. Dates are ship dates unless the entry says the announcement came first. Version numbers are missing from the run where nothing that matters to this page happened in them: OpenGL 2.1 and 3.3, and four of the five releases between 4.0 and 4.6. DirectX 4 is missing for a different reason — it was announced, then cancelled, and never existed.</p>
