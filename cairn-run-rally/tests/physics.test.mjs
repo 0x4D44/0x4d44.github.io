@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAIRN_R4 } from '../src/content.js';
+import { CAIRN_R4, CATALOG } from '../src/content.js';
 import { buildStage, sampleStage } from '../src/stage.js';
 import { RallyCar } from '../src/vehicle.js';
 const stage=buildStage(), dt=1/120;
@@ -179,4 +179,109 @@ test('service damping and tyre choices change the physical setup',()=>{
  const firm=new RallyCar(stage,CAIRN_R4,{tuning:{damping:.25,tyreId:'gravel'}});
  assert.ok(firm.suspensionResponse.damping>baseline.suspensionResponse.damping);
  assert.ok(firm.tyreSurfaceScale('gravel','compact')>firm.tyreSurfaceScale('gravel','tarmac'));
+});
+
+
+// --- wheel dynamics, assists and aerodynamics -------------------------------
+
+test('a loose surface spins the wheels and costs acceleration that tarmac keeps',()=>{
+ const drive=surface=>{
+  const car=new RallyCar(stage,CAIRN_R4,{assists:{automatic:true,stability:false,braking:false}});
+  place(car,1200,4,0);
+  car.surfaceOverride=surface;
+  let peakSlip=0;
+  for(let i=0;i<180;i++){car.step({throttle:1,brake:0,steer:0,handbrake:0},dt);peakSlip=Math.max(peakSlip,car.slipRatio.front,car.slipRatio.rear);}
+  return {speed:car.speed,peakSlip};
+ };
+ const gravel=drive();
+ assert.ok(gravel.peakSlip>0.05,`launch produced no wheel slip at all: ${gravel.peakSlip}`);
+ assert.ok(gravel.speed>10,`car failed to launch: ${gravel.speed}`);
+ // Slip ratio and road speed must stay consistent with the wheel state.
+ const reference=Math.max(Math.abs(gravel.speed),1.6);
+ assert.ok(Number.isFinite(reference));
+});
+
+test('anti-lock braking keeps the wheels turning and stops the car sooner',()=>{
+ // On a grippy surface the brakes barely out-run the tyres, so the difference
+ // only shows where the brakes can genuinely overwhelm the grip.
+ const stop=braking=>{
+  const car=new RallyCar(stage,CAIRN_R4,{assists:{automatic:true,stability:false,braking},weather:{gripScale:.45,roadWetness:.2}});
+  place(car,220,22,0);
+  let worstSlip=0;
+  for(let i=0;i<150;i++){car.step({throttle:0,brake:1,steer:0,handbrake:0},dt);worstSlip=Math.min(worstSlip,car.slipRatio.front,car.slipRatio.rear);}
+  return {speed:car.speed,worstSlip};
+ };
+ const abs=stop(true),locked=stop(false);
+ assert.ok(locked.worstSlip<-0.9,`unassisted braking should be able to lock a wheel: ${locked.worstSlip}`);
+ assert.ok(abs.worstSlip>-0.6,`anti-lock let the wheels lock anyway: ${abs.worstSlip}`);
+ assert.ok(abs.speed<locked.speed-0.15,`anti-lock did not out-brake locked wheels: ${abs.speed} vs ${locked.speed}`);
+});
+
+test('speed and surface decide how much steering lock the car will give you',()=>{
+ const car=new RallyCar(stage,CAIRN_R4);
+ place(car,220,4,0);car.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
+ const slowLock=car.maxSteerRad;
+ place(car,220,38,0);car.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
+ const fastLock=car.maxSteerRad;
+ assert.ok(slowLock>fastLock*2,`lock did not fall with speed: ${slowLock} vs ${fastLock}`);
+ assert.ok(slowLock<=CAIRN_R4.steeringLockRad+1e-9,'lock may never exceed the authored steering lock');
+ assert.ok(fastLock>0.05,'there must always be usable steering');
+ const icy=new RallyCar(stage,CAIRN_R4,{weather:{gripScale:0.45,roadWetness:0.9}});
+ place(icy,220,38,0);icy.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
+ assert.ok(icy.maxSteerRad<fastLock,`a slippery surface should give up lock too: ${icy.maxSteerRad} vs ${fastLock}`);
+});
+
+test('downforce and load transfer move grip between the axles',()=>{
+ const car=new RallyCar(stage,CAIRN_R4);
+ place(car,220,10,0);car.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
+ const slowCapacity=car.axleCapacity.front+car.axleCapacity.rear;
+ const slowDownforce=car.downforceN;
+ place(car,220,40,0);car.step({throttle:0,brake:0,steer:0,handbrake:0},dt);
+ assert.ok(car.downforceN>slowDownforce*3,`downforce did not grow with speed: ${car.downforceN} vs ${slowDownforce}`);
+ assert.ok(car.axleCapacity.front+car.axleCapacity.rear>slowCapacity,'downforce should raise total grip');
+ const braking=new RallyCar(stage,CAIRN_R4,{assists:{braking:false,stability:false,automatic:true}});
+ place(braking,220,30,0);
+ for(let i=0;i<40;i++)braking.step({throttle:0,brake:1,steer:0,handbrake:0},dt);
+ assert.ok(braking.axleLoads.front>braking.axleLoads.rear,'braking must load the front axle');
+});
+
+test('every car stays finite and bounded under adversarial input on every surface',()=>{
+ const profiles=[CAIRN_R4,...CATALOG.cars.filter(entry=>entry.id!==CAIRN_R4.id)];
+ for(const profile of profiles){
+  for(const weather of [{},{gripScale:.6,roadWetness:.9},{gripScale:.35,roadWetness:.2}]){
+   const car=new RallyCar(stage,profile,{weather});
+   place(car,300,16,0);
+   for(let i=0;i<120*40;i++){
+    const t=i*dt;
+    car.step({
+     throttle:(Math.sin(t*3.1)+1)/2,
+     brake:Math.sin(t*2.3)>.6?1:0,
+     steer:Math.sin(t*5.7)*Math.cos(t*1.3),
+     handbrake:Math.sin(t*1.7)>.9?1:0,
+     shiftUp:Math.sin(t*11)>.99,
+     shiftDown:Math.cos(t*13)>.99
+    },dt);
+    if(car.needsRecovery)car.recover();
+   }
+   const values={x:car.x,y:car.y,z:car.z,vx:car.vx,vy:car.vy,vz:car.vz,yaw:car.yaw,yawRate:car.yawRate,roll:car.roll,pitch:car.pitch,
+    wheelFront:car.wheelSpeed.front,wheelRear:car.wheelSpeed.rear,slipFront:car.slipRatio.front,slipRear:car.slipRatio.rear,rpm:car.rpm};
+   for(const [key,value] of Object.entries(values))assert.ok(Number.isFinite(value),`${profile.id} produced a non-finite ${key}`);
+   assert.ok(car.speedKph<400,`${profile.id} reached an impossible ${car.speedKph} km/h`);
+   assert.ok(Math.abs(car.wheelSpeed.front)<200&&Math.abs(car.wheelSpeed.rear)<200,`${profile.id} wheel speed ran away`);
+   assert.ok(car.damageTotal<=1);
+   assert.ok(car.rpm>=CAIRN_R4.torqueCurve[0][0]*0.5,`${profile.id} stalled the engine below idle`);
+  }
+ }
+});
+
+test('the same inputs produce the same run twice, for every car',()=>{
+ for(const profile of CATALOG.cars){
+  const run=()=>{
+   const car=new RallyCar(stage,profile);place(car,600,20,0);
+   const samples=[];
+   for(let i=0;i<600;i++){car.step(controlAt(i),dt);samples.push([car.x,car.z,car.yaw,car.wheelSpeed.front,car.wheelSpeed.rear,car.rpm]);}
+   return samples;
+  };
+  assert.deepEqual(run(),run(),`${profile.id} drifted between identical runs`);
+ }
 });

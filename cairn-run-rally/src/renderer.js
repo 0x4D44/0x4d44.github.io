@@ -350,6 +350,28 @@ export class WebGLRenderer {
  gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
  }
  setQuality(q){this.quality=q;}
+ /**
+  * Shader and context health, for the browser harness: a silently failing
+  * program or a lost context otherwise shows up only as a blank screen.
+  */
+ diagnostics(){
+  const gl=this.gl,programs={world:this.worldProgram,sky:this.skyProgram,particle:this.particleProgram,shadow:this.shadowProgram};
+  const linked=Object.fromEntries(Object.entries(programs).map(([name,program])=>[name,Boolean(program)&&gl.getProgramParameter(program,gl.LINK_STATUS)]));
+  const missingUniforms=[];
+  for(const [name,uniforms] of [['world',this.worldUniforms],['sky',this.skyUniforms],['particle',this.particleUniforms],['shadow',this.shadowUniforms]]){
+   for(const [key,location] of Object.entries(uniforms))if(location===null)missingUniforms.push(`${name}.${key}`);
+  }
+  return {
+   linked,
+   allLinked:Object.values(linked).every(Boolean),
+   missingUniforms,
+   glError:gl.getError(),
+   contextLost:gl.isContextLost(),
+   quality:this.quality,
+   exposure:this.environment.exposure,
+   cloudCover:this.environment.cloudCover
+  };
+ }
  setEnvironment(environment={}){
   const source=environment&&typeof environment==='object'?environment:{};
   const palette=source.palette&&typeof source.palette==='object'?source.palette:source;

@@ -286,7 +286,7 @@ export class RallyCar {
       // run past the peak of the curve, which is exactly where a wheel locks.
       if (this.assists.braking && axleBrake > 0) {
         const excess = (-this.slipRatio[axle] - peakSlip) / peakSlip;
-        axleBrake *= clamp(1 - excess * 0.85, 0.15, 1);
+        axleBrake *= clamp(1 - excess * 0.7, 0.2, 1);
       }
       const wheel = stepWheelSpeed({
         wheelSpeed: this.wheelSpeed[axle],

@@ -181,8 +181,14 @@ export function stepWheelSpeed({
   const brake = Math.max(0, brakeForceN) * Math.tanh(wheelSpeed / 0.4);
   const mass = Math.max(1, inertiaKg);
   let next = wheelSpeed + dt * (driveForceN - force - brake) / (mass + dt * Math.max(0, slope));
-  // Brakes stop a wheel; they never drive it backwards.
-  if (brakeForceN > 0 && driveForceN <= 0 && wheelSpeed * next < 0) next = 0;
+  // Brakes stop a wheel; they never drive it backwards. A wheel that is already
+  // stopped stays stopped while the brake can out-hold the tyre force trying to
+  // spin it back up — without that, a locked wheel chatters between zero and a
+  // spin-up every other step instead of sitting locked.
+  if (brakeForceN > 0 && driveForceN <= 0) {
+    if (wheelSpeed * next < 0) next = 0;
+    else if (Math.abs(wheelSpeed) < 1e-6 && brakeForceN >= Math.abs(force)) next = 0;
+  }
   if (!Number.isFinite(next)) next = roadSpeed;
   return {
     wheelSpeed: next,
