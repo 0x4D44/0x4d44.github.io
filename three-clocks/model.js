@@ -847,7 +847,7 @@
 
     var temp = [], auto = [], cap = [], deaths = [], emissions = [];
     var nuke = [], gp = [], inc = [], tip = [];
-    var nukeYears = [], nukeDeaths = [], peakYears = [], taus = [], oom50s = [];
+    var nukeYears = [], nukeDeaths = [], nukeEvents = [], peakYears = [], taus = [], oom50s = [];
 
     for (var r = 0; r < runs; r++) {
       var t = trajectory(rand, d, N);
@@ -855,7 +855,11 @@
       deaths.push(t.deaths); emissions.push(t.emissions);
       nuke.push(t.nuke); gp.push(t.gp); inc.push(t.inc); tip.push(t.tip);
       peakYears.push(t.peakYear); taus.push(t.tau); oom50s.push(t.oom50);
-      if (t.nukeYear) { nukeYears.push(t.nukeYear); nukeDeaths.push(t.nukeDeaths); }
+      if (t.nukeYear) {
+        nukeYears.push(t.nukeYear);
+        nukeDeaths.push(t.nukeDeaths);
+        nukeEvents.push({ y: t.nukeYear, d: t.nukeDeaths });
+      }
     }
 
     var years = new Array(N);
@@ -912,6 +916,24 @@
         nukeDeaths: nukeDeaths.slice().sort(function (a, b) { return a - b; }),
         pNukeBig: nukeDeaths.filter(function (x) { return x > 1e7; }).length / runs,
         pNukeVeryBig: nukeDeaths.filter(function (x) { return x > 1e8; }).length / runs,
+        // Severity conditioned on a year. The page reports these under a
+        // heading that says "by <year>", and reporting century-wide
+        // figures there meant scrubbing the timeline moved the heading
+        // and left the numbers alone.
+        nukeDeathsBefore: function (year) {
+          var out = [];
+          for (var i = 0; i < nukeEvents.length; i++) {
+            if (nukeEvents[i].y <= year) out.push(nukeEvents[i].d);
+          }
+          return out.sort(function (a, b) { return a - b; });
+        },
+        pVeryBigBefore: function (year) {
+          var c = 0;
+          for (var i = 0; i < nukeEvents.length; i++) {
+            if (nukeEvents[i].y <= year && nukeEvents[i].d > 1e8) c++;
+          }
+          return c / runs;
+        },
       },
       pop: pop,
     };

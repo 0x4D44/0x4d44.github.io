@@ -508,7 +508,8 @@
 
     // Conditional severity of nuclear use — the decomposition that a
     // single probability hides.
-    var nd = r.peace.nukeDeaths;
+    // Conditioned on the same year as the heading above them.
+    var nd = r.peace.nukeDeathsBefore(coneState.scrub);
     var sev = "";
     if (nd.length > 20) {
       var q = function (f) { return nd[Math.min(nd.length - 1, Math.floor(nd.length * f))]; };
@@ -516,8 +517,8 @@
         "exchanges: a median of <b>" + big(q(0.5)) + "</b> deaths, a 25th percentile of <b>" +
         big(q(0.25)) + "</b>, and a 90th percentile of <b>" + big(q(0.9)) + "</b>, including modelled " +
         "famine mortality, which dominates the larger classes. Unconditionally, the chance that " +
-        "nuclear use kills more than a hundred million people this century is <b>" +
-        pct(r.peace.pNukeVeryBig) + "</b>. Reporting one probability for &ldquo;nuclear war&rdquo; " +
+        "nuclear use kills more than a hundred million people by " + coneState.scrub +
+        " is <b>" + pct(r.peace.pVeryBigBefore(coneState.scrub)) + "</b>. Reporting one probability for &ldquo;nuclear war&rdquo; " +
         "collapses a demonstration shot and the end of the northern hemisphere into a single " +
         "number, and the difference between them is the part policy can still act on.</div>";
     }
