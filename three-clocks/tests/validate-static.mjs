@@ -377,3 +377,102 @@ test("every stated credence either matches the model or admits that it does not"
   }
   assert.deepEqual(undisclosed, []);
 });
+
+// ============================================================
+// Regression guards
+// ------------------------------------------------------------
+// Both of these were found in review, fixed, and then reappeared when
+// the document was rebuilt. A comment saying "do not lower this" is not
+// a guard; this is.
+// ============================================================
+
+// Relative luminance and contrast, WCAG 2.x.
+function lum(hex) {
+  const h = hex.replace("#", "");
+  const ch = [0, 2, 4].map((i) => {
+    const c = parseInt(h.slice(i, i + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+function ratio(a, b) {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+function overlay(fg, bg, alpha) {
+  const p = (h) => [0, 2, 4].map((i) => parseInt(h.replace("#", "").slice(i, i + 2), 16));
+  const [f, b] = [p(fg), p(bg)];
+  return "#" + f.map((v, i) => Math.round(v * alpha + b[i] * (1 - alpha))
+    .toString(16).padStart(2, "0")).join("");
+}
+const cssVar = (name) => {
+  const m = css.match(new RegExp("--" + name + ":\\s*(#[0-9a-fA-F]{6})"));
+  assert.ok(m, `--${name} not found in style.css`);
+  return m[1];
+};
+
+test("dim text clears WCAG AA on every surface it is used on", () => {
+  // --ink-faint carries .cone .tick, which is the chart's only text.
+  const PANEL = cssVar("panel");
+  const faint = cssVar("ink-faint");
+  const readoutMid = overlay("#ffffff", PANEL, 0.09);   // .ro.mid
+  const readout = overlay("#ffffff", PANEL, 0.04);      // .ro
+  for (const [surface, hex] of [["panel", PANEL], ["readout", readout], ["readout-mid", readoutMid]]) {
+    const r = ratio(faint, hex);
+    assert.ok(r >= 4.5,
+      `--ink-faint ${faint} on ${surface} ${hex} is ${r.toFixed(2)}:1, below the 4.5:1 AA needs`);
+  }
+});
+
+test("the cone's bands are visible enough to read as a chart", () => {
+  // WCAG 1.4.11 asks 3:1 of a graphic you need to see to understand the
+  // content, and the bands are the entire content here. Fill alone
+  // cannot reach it at a usable alpha, so the guard is on the stroke:
+  // the band edges must be drawn as lines, at close to full accent.
+  assert.match(css, /\.cone \.band \{[^}]*stroke:\s*var\(--accent\)/,
+    "the cone's bands must carry a stroke; fill alpha alone never reaches 3:1");
+
+  const sw = css.match(/\.cone \.band \{[^}]*stroke-width:\s*([\d.]+)/);
+  assert.ok(sw && Number(sw[1]) >= 1.2, "band stroke-width must be at least 1.2");
+
+  for (const band of ["outer", "inner"]) {
+    const m = css.match(new RegExp(`\\.cone \\.band\\.${band} \\{([^}]*)\\}`));
+    assert.ok(m, `.cone .band.${band} rule not found`);
+    const so = m[1].match(/stroke-opacity:\s*([\d.]+)/);
+    assert.ok(so && Number(so[1]) >= 0.6,
+      `.cone .band.${band} stroke-opacity is ${so && so[1]}, too faint to define an edge`);
+    // and the old bare `opacity`, which dimmed the stroke too, must be gone
+    assert.ok(!/[^-]opacity:/.test(m[1]),
+      `.cone .band.${band} still sets a bare opacity, which dims its stroke as well as its fill`);
+  }
+
+  // The accent itself must stand off the panel, or the stroke is moot.
+  const PANEL = cssVar("panel");
+  for (const name of ["ai", "climate", "peace"]) {
+    const r = ratio(cssVar(name), PANEL);
+    assert.ok(r >= 3, `--${name} against --panel is ${r.toFixed(2)}:1, under 3:1`);
+  }
+});
+
+test("the nuclear severity figures are scoped to the year they are shown under", () => {
+  // The box sits beneath a "Cumulative hazards by <year>" heading. Drawn
+  // from the whole run it did not move when the reader scrubbed, so the
+  // heading and the numbers disagreed.
+  assert.match(appSrc, /nukeDeathsBefore\(coneState\.scrub\)/,
+    "the severity box must read the exchanges that happened by the scrubbed year");
+  assert.match(appSrc, /pVeryBigBefore\(coneState\.scrub\)/,
+    "the catastrophic-exchange probability must be scoped to the scrubbed year too");
+  assert.ok(!/pct\(r\.peace\.pNukeVeryBig\)/.test(appSrc),
+    "the century-wide pNukeVeryBig is still being rendered under a year-scoped heading");
+
+  // and the model must actually honour the scoping
+  const r = M.run({}, { runs: 1200, seed: 4242 });
+  const early = r.peace.nukeDeathsBefore(2040);
+  const late = r.peace.nukeDeathsBefore(2100);
+  assert.ok(late.length > early.length,
+    `scoping does nothing: ${early.length} exchanges by 2040 vs ${late.length} by 2100`);
+  assert.ok(r.peace.pVeryBigBefore(2040) < r.peace.pVeryBigBefore(2100),
+    "the catastrophic probability must grow with the horizon");
+  assert.ok(r.peace.pVeryBigBefore(2100) <= r.peace.pNukeVeryBig + 1e-9,
+    "the by-2100 figure should equal the century-wide one");
+});
