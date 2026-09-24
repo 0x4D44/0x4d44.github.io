@@ -99,3 +99,16 @@ test('a wet road answers the light differently from a dry one', () => {
   assert.ok(MATERIALS.glass.specular > MATERIALS.rubber.specular, 'glass must be shinier than a tyre');
   assert.ok(Object.isFrozen(MATERIALS.bodywork));
 });
+
+test('baked ground shadows fall away from the sun and lengthen as it drops', async () => {
+  const { groundShadowCast } = await import('../src/world.js');
+  const noon = groundShadowCast([.1, .98, .1]);
+  const dusk = groundShadowCast([.6, .25, .5]);
+  assert.ok(dusk.reach > noon.reach * 3, `${dusk.reach} vs ${noon.reach}`);
+  assert.ok(dusk.stretch > noon.stretch);
+  // The shadow points opposite the sun's horizontal direction.
+  assert.ok(dusk.dx < 0 && dusk.dz < 0, JSON.stringify(dusk));
+  const flat = groundShadowCast([1, 0, 0]);
+  assert.ok(Number.isFinite(flat.reach) && flat.reach <= 2.4, 'a horizon sun must not throw an infinite shadow');
+  assert.ok(Number.isFinite(groundShadowCast(null).heading));
+});

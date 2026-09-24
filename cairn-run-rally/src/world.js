@@ -1,6 +1,6 @@
 import { angleLerp, clamp, expSmoothing, hash01, mat4Compose, mat4Identity, mat4Multiply } from './math.js';
 import { roadEdgePoint, sampleStage } from './stage.js';
-import { MATERIALS, color, MeshBuilder } from './renderer.js';
+import { MATERIALS, color, deriveRenderEnvironment, MeshBuilder } from './renderer.js';
 
 const C = {
   road: color('#817563'), roadAlt: color('#796f5f'), roadPatch: color('#8a7d69'),
@@ -88,6 +88,20 @@ function inferRegion(stage, region) {
 }
 
 function inferWeather(weather) { return isObject(weather) ? { ...DEFAULT_WEATHER, ...weather } : { ...DEFAULT_WEATHER }; }
+
+/**
+ * Where a baked ground shadow falls for a given sun. Returns the offset per
+ * metre of object height and how far the shadow stretches, so a low dusk sun
+ * throws long shadows and a high noon one keeps them under the object.
+ */
+export function groundShadowCast(sunDirection = [.35, .84, .26]) {
+  const [sx, sy, sz] = Array.isArray(sunDirection) && sunDirection.length >= 3 ? sunDirection.map(Number) : [.35, .84, .26];
+  const length = Math.hypot(sx, sy, sz) || 1;
+  const x = sx / length, y = Math.max(.18, sy / length), z = sz / length;
+  const reach = clamp(Math.hypot(x, z) / y, 0, 2.4);
+  const heading = Math.atan2(-x, -z);
+  return { dx: -x / y, dz: -z / y, reach, heading, stretch: 1 + reach * .55 };
+}
 
 /**
  * Surface shading response for one weather state. A wet road is not a darker
@@ -536,10 +550,14 @@ export class RallyWorld {
     this.groundLevelM=Math.min(...stage.samples.map(sample=>sample.y));
     this.renderer.setEnvironment?.({ palette: this.colors, weather: this.weather, weatherId: this.weather.id, visibilityM: this.visualPlan.visibilityM, fogHeightM: this.groundLevelM });
     this.materials=surfaceMaterials(this.weather);
+    const litBy=deriveRenderEnvironment(this.colors,{...this.weather,visibilityM:this.visualPlan.visibilityM});
+    this.shadowCast=groundShadowCast(litBy.sunDirection);
+    this.bakedShadow=mixColor(this.colors.shadow,this.colors.darkGrass,.25);
+    this.rutColor={road:scaleColor(this.colors.road,.87),loose:scaleColor(this.colors.loose,.89)};
     this.carVisual=planCarVisual(this.carSpec);
     this.regionSpec=this.region;this.weatherSpec=this.weather;this.car=this.carSpec;this.carProfile=this.carVisual;
     this.hazardVisuals=planHazardVisuals(stage);
-    this.chunks=[];this.particles=[];this.clock=0;this.wheelRotation=0;
+    this.chunks=[];this.particles=[];this.clock=0;this.wheelRotation=0;this.frameSeed=1;
     this.buildBackdrop();this.buildStaticWorld();this.buildCar();
   }
   setQuality(quality){this.quality=quality==='low'?'low':'high';}
@@ -575,6 +593,21 @@ export class RallyWorld {
     for(let i=start;i<end;i++){
       const a=this.stage.samples[i],b=this.stage.samples[i+1],block=Math.floor(i/16),shade=hash01(block*811+31),roadCol=a.surface==='loose'?(shade>.48?this.colors.loose:this.colors.looseAlt):(shade>.55?this.colors.roadAlt:this.colors.road);
       const al=roadEdgePoint(a,-a.width/2,.035),ar=roadEdgePoint(a,a.width/2,.035),bl=roadEdgePoint(b,-b.width/2,.035),br=roadEdgePoint(b,b.width/2,.035);builder.quad(al,bl,br,ar,roadCol);
+      // Wheel ruts: the line every car before you took, a shade darker and
+      // pressed into the surface. They are what makes a gravel road read as
+      // driven rather than as a flat ribbon.
+      const rutColor=a.surface==='loose'?this.rutColor.loose:this.rutColor.road;
+      for(const offset of [-.82,.82]){
+        const wander=Math.sin(i*.07+offset)*.12,half=.24,r1=roadEdgePoint(a,offset+wander-half,.043),r2=roadEdgePoint(b,offset+Math.sin((i+1)*.07+offset)*.12-half,.043),r3=roadEdgePoint(b,offset+Math.sin((i+1)*.07+offset)*.12+half,.043),r4=roadEdgePoint(a,offset+wander+half,.043);
+        builder.quad(r1,r2,r3,r4,rutColor,{x:0,y:1,z:0});
+      }
+      if(this.visualPlan.quality==='high'&&i%2===0){
+        for(const side of [-1,1]){
+          const roll=hash01(i*431+side*17);if(roll>.62)continue;
+          const tuft=roadEdgePoint(a,side*(a.width/2+.7+roll*1.9),-.03),size=.15+hash01(i*97+side)*.22;
+          builder.cone(tuft,size,size*1.5,4,roll>.3?this.colors.grassAlt:this.colors.darkGrass);
+        }
+      }
       if(i%19===7){
         const lateral=(hash01(i*1709)-.5)*a.width*.52,half=.22+hash01(i*919)*.18,p1=roadEdgePoint(a,lateral-half,.052),p2=roadEdgePoint(b,lateral-half,.052),p3=roadEdgePoint(b,lateral+half,.052),p4=roadEdgePoint(a,lateral+half,.052);builder.quad(p1,p2,p3,p4,this.colors.roadPatch);
       }
@@ -617,7 +650,22 @@ export class RallyWorld {
     this.addRegionalLandmarks(builder,rangeStart,rangeEnd);
   }
 
+  /** A soft baked shadow under an object, thrown away from the sun. */
+  addGroundShadow(builder,point,radius,height){
+    const cast=this.shadowCast||groundShadowCast(),lift=.03,offset=Math.min(height*.5*cast.reach,radius*3);
+    const cx=point.x+Math.sin(cast.heading)*offset,cz=point.z+Math.cos(cast.heading)*offset;
+    const along={x:Math.sin(cast.heading),z:Math.cos(cast.heading)},across={x:along.z,z:-along.x};
+    const long=radius*cast.stretch+offset*.6,wide=radius*1.05,segments=8,centre={x:cx,y:point.y+lift,z:cz};
+    for(let k=0;k<segments;k++){
+      const a0=k/segments*Math.PI*2,a1=(k+1)/segments*Math.PI*2;
+      const p0={x:cx+along.x*Math.cos(a0)*long+across.x*Math.sin(a0)*wide,y:point.y+lift,z:cz+along.z*Math.cos(a0)*long+across.z*Math.sin(a0)*wide};
+      const p1={x:cx+along.x*Math.cos(a1)*long+across.x*Math.sin(a1)*wide,y:point.y+lift,z:cz+along.z*Math.cos(a1)*long+across.z*Math.sin(a1)*wide};
+      builder.triangle(centre,p1,p0,this.bakedShadow||this.colors.shadow,{x:0,y:1,z:0});
+    }
+  }
+
   addTree(builder,point,scale,pine,variant=.5){
+    this.addGroundShadow(builder,point,(pine?.95:.8)*scale,(pine?4.2:3.6)*scale);
     if(pine){
       builder.cylinder({x:point.x,y:point.y+1.25*scale,z:point.z},.15*scale,2.5*scale,6,this.colors.trunk);
       builder.cone({x:point.x,y:point.y+.75*scale,z:point.z},1.08*scale,2.45*scale,7,this.colors.pine);
@@ -629,9 +677,9 @@ export class RallyWorld {
       builder.cone({x:point.x+.2*scale,y:point.y+2.15*scale,z:point.z},.62*scale,1.25*scale,8,this.colors.grass);
     }
   }
-  addBush(builder,point,scale){builder.cone({x:point.x,y:point.y+.05,z:point.z},.58*scale,.85*scale,7,this.colors.darkGrass);builder.cone({x:point.x+.34*scale,y:point.y+.02,z:point.z+.18*scale},.42*scale,.62*scale,7,this.colors.grassAlt);}
+  addBush(builder,point,scale){this.addGroundShadow(builder,point,.6*scale,.8*scale);builder.cone({x:point.x,y:point.y+.05,z:point.z},.58*scale,.85*scale,7,this.colors.darkGrass);builder.cone({x:point.x+.34*scale,y:point.y+.02,z:point.z+.18*scale},.42*scale,.62*scale,7,this.colors.grassAlt);}
   addSmallRock(builder,point,scale){builder.cone({x:point.x,y:point.y+.03,z:point.z},.5*scale,.42*scale,6,this.colors.rock);}
-  addRock(builder,hazard){builder.cone({x:hazard.x,y:hazard.y+.38,z:hazard.z},hazard.radius,.85,6,this.colors.rock);}
+  addRock(builder,hazard){this.addGroundShadow(builder,hazard,hazard.radius*.9,.85);builder.cone({x:hazard.x,y:hazard.y+.38,z:hazard.z},hazard.radius,.85,6,this.colors.rock);}
   addHazardPost(builder,hazard){builder.box({x:hazard.x,y:hazard.y+.55,z:hazard.z},{x:.16,y:1.1,z:.16},this.colors.post);builder.box({x:hazard.x,y:hazard.y+.92,z:hazard.z},{x:.18,y:.24,z:.18},this.colors.red);}
   addMarker(builder,point,heading,side){builder.box({x:point.x,y:point.y+.55,z:point.z},{x:.11,y:1.1,z:.11},this.colors.post);const rx=Math.cos(heading),rz=-Math.sin(heading);builder.box({x:point.x+rx*side*.015,y:point.y+.95,z:point.z+rz*side*.015},{x:.15,y:.24,z:.15},this.colors.red);}
 
@@ -977,7 +1025,12 @@ export class RallyWorld {
   }
 
   update(dt,car,input){
-    this.clock+=dt;this.wheelRotation+=car.longitudinalSpeed/Math.max(.1,this.carVisual.wheelRadius)*dt;
+    this.clock+=dt;
+    // Each axle turns at its own simulated speed, so a spinning or locked wheel
+    // is something you can see, not just hear.
+    const radius=Math.max(.1,this.carVisual.wheelRadius),front=car.wheelSpeed?.front??car.longitudinalSpeed,rear=car.wheelSpeed?.rear??car.longitudinalSpeed;
+    this.wheelRotationFront=(this.wheelRotationFront||0)+front/radius*dt;this.wheelRotationRear=(this.wheelRotationRear||0)+rear/radius*dt;
+    this.wheelRotation=this.wheelRotationFront;
     const speed=car.speed,surface=String(car.surface||'compact'),slip=clamp01(car.slipAmount),profile=deriveWeatherParticleProfile(this.weather,surface),weatherEmit=profile.kind!=='dust'&&speed>2;
     const emit=(weatherEmit&&speed>2)||(speed>5&&(input.throttle>.15||slip>.05||surface!=='compact'));
     if(emit){
@@ -996,6 +1049,7 @@ export class RallyWorld {
       }
       if(slip>.22&&car.grounded)this.particles.push({x:car.x,y:car.y-.51,z:car.z,vx:0,vy:0,vz:0,life:4,maxLife:4,size:.11,alpha:.42,color:[.16,.15,.12],kind:'mark'});
     }
+    this.emitWheelEffects(car,profile);
     let write=0;
     for(let read=0;read<this.particles.length;read++){
       const particle=this.particles[read];particle.life-=dt;if(particle.life<=0)continue;
@@ -1005,6 +1059,34 @@ export class RallyWorld {
       this.particles[write++]=particle;
     }
     this.particles.length=write;const max=this.quality==='high'?420:190;if(this.particles.length>max)this.particles.splice(0,this.particles.length-max);
+  }
+
+  /**
+   * Particles that come from the wheels rather than from the car: a rooster
+   * tail when the driven wheels spin, a smoke puff and a mark when a wheel
+   * locks. They read the wheel state the physics now carries.
+   */
+  emitWheelEffects(car,profile){
+    if(!car.grounded||this.quality!=='high')return;
+    const spin=clamp01(car.wheelSpin||0),lock=clamp01(car.wheelLock||0),speed=car.speed;
+    if(spin<.12&&lock<.3)return;
+    const fx=Math.sin(car.yaw),fz=Math.cos(car.yaw),rx=Math.cos(car.yaw),rz=-Math.sin(car.yaw);
+    const drive=String(car.profile?.drive||'awd'),axles=drive==='fwd'?[this.carVisual.frontAxle]:drive==='rwd'?[this.carVisual.rearAxle]:[this.carVisual.frontAxle,this.carVisual.rearAxle];
+    const loose=profile.kind==='dust'||profile.kind==='mud'||profile.kind==='snow';
+    if(spin>=.12){
+      for(const axle of axles)for(const side of [-1,1]){
+        if(hash01(this.frameSeed++)>spin*1.4)continue;
+        const x=car.x+fx*axle+rx*side*this.carVisual.track*.5,z=car.z+fz*axle+rz*side*this.carVisual.track*.5,kick=2+spin*6;
+        this.particles.push({x,y:car.y-.42,z,vx:-fx*kick+rx*side*.6,vy:.8+spin*2.4,vz:-fz*kick+rz*side*.6,life:.7+spin*.6,maxLife:.7+spin*.6,
+          size:profile.size*(loose?1.1:.7),alpha:profile.alpha*(loose?1:.6),baseAlpha:profile.alpha*(loose?1:.6),color:[...profile.color],kind:profile.kind,gravity:loose?-2.2:.3});
+      }
+    }
+    if(lock>=.3&&speed>4){
+      const x=car.x-fx*this.carVisual.length*.2,z=car.z-fz*this.carVisual.length*.2,smoke=car.surface==='tarmac'||car.surface==='wet-tarmac';
+      this.particles.push({x,y:car.y-.4,z,vx:-fx*1.2,vy:.4,vz:-fz*1.2,life:1.4,maxLife:1.4,size:smoke?.7:.55,alpha:smoke?.34:.4,baseAlpha:smoke?.34:.4,
+        color:smoke?[.62,.62,.6]:[...profile.color],kind:smoke?'smoke':profile.kind,gravity:smoke?.25:.1});
+      for(const side of [-1,1])this.particles.push({x:car.x+rx*side*this.carVisual.track*.5,y:car.y-.51,z:car.z+rz*side*this.carVisual.track*.5,vx:0,vy:0,vz:0,life:5,maxLife:5,size:.12,alpha:.5,color:[.13,.12,.1],kind:'mark'});
+    }
   }
 
   draw(camera,car){
@@ -1020,7 +1102,7 @@ export class RallyWorld {
     const carModel=mat4Compose({x:car.x,y:car.y,z:car.z},car.yaw,car.pitch,car.roll);this.renderer.draw(this.carBody,carModel,1,materials.body);
     this.renderer.draw(this.carGlass,carModel,1,materials.glass);
     const wheelY=this.carVisual.wheelCenterY,frontZ=this.carVisual.frontAxle,rearZ=this.carVisual.rearAxle,track=this.carVisual.track;
-    for(const z of [frontZ,rearZ])for(const x of [-track/2,track/2]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*.38:0,this.wheelRotation,0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local),1,materials.wheel);}
+    for(const z of [frontZ,rearZ])for(const x of [-track/2,track/2]){const local=mat4Compose({x,y:wheelY-(x>0?car.roll:-car.roll)*.28,z},z>0?car.steer*(car.maxSteerRad??.38):0,z>0?(this.wheelRotationFront||0):(this.wheelRotationRear||0),0);this.renderer.draw(this.wheel,mat4Multiply(carModel,local),1,materials.wheel);}
     const damage=car.damage.body,bumperLocal=mat4Compose({x:damage>.58?.18:0,y:this.carVisual.bumperY-damage*.12,z:this.carVisual.frontZ+damage*.1},damage>.58?damage*.24:0,0,damage>.58?-.12:0);this.renderer.draw(this.bumper,mat4Multiply(carModel,bumperLocal),1,materials.body);
     this.renderer.drawParticles(this.particles);
   }
