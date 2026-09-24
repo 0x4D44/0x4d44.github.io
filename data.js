@@ -81,7 +81,7 @@ window.ESSAYS = [
   {
     slug: "cairn-run-rally",
     title: "Cairn Run Rally",
-    tagline: "A five-minute point-to-point rally game through Kestrel Ridge: fast crests, forest bends, two hairpins and a co-driver calling the road ahead. A 120 Hz loose-surface car model, lightweight damage, local spoken pace notes and a procedural WebGL2 renderer; no dependencies or build step.",
+    tagline: "A six-region point-to-point rally championship with a co-driver calling the road ahead. A 120 Hz combined-slip tyre model with real wheelspin, anti-lock braking and load transfer, spoken pace notes, and a linear-lit WebGL2 renderer under a world-space sky; no dependencies or build step.",
     url: "https://0x4d44.github.io/cairn-run-rally/",
     illustration: "ill-rally",
     date: "2026-08-22T13:44:15",
