@@ -107,7 +107,6 @@ class S01Hook(PMRScene):
             self.play(Write(card[0]), run_time=1.4)
             self.play(FadeIn(card[1], shift=UP * 0.2), run_time=0.8)
             self.play(LaggedStart(*[FadeIn(n, shift=UP * 0.1) for n in note], lag_ratio=0.3), run_time=1.4)
-        self.wait(0.6)
         self.clear_all()
 
 
@@ -245,7 +244,6 @@ class S02Tissues(PMRScene):
                       "happen in other illnesses as well. It's the overall pattern that matters."):
             self.play(LaggedStart(*[FadeIn(c, shift=DOWN * 0.2) for c in chips], lag_ratio=0.2), run_time=1.6)
             self.sfx("tick", -6)
-        self.wait(0.4)
         self.clear_all()
 
 
@@ -350,7 +348,6 @@ class S03Causes(PMRScene):
                 x = Line(w.get_left(), w.get_right(), color=RED, stroke_width=4)
                 self.sfx("tick", -4)
                 self.play(Create(x), w.animate.set_opacity(0.5), run_time=0.4)
-        self.wait(0.4)
         self.clear_all()
 
 
@@ -579,7 +576,6 @@ class S05Rhythm(PMRScene):
             self.play(FadeIn(d44, scale=2), GrowArrow(a44), FadeIn(q44), run_time=0.8)
             self.sfx("pop", -8)
             self.play(FadeIn(d46, scale=2), GrowArrow(a46), FadeIn(q46), run_time=0.8)
-        self.wait(0.4)
         self.clear_all()
 
 
@@ -663,7 +659,6 @@ class S06Diagnosis(PMRScene):
             self.sfx("blip_low", -6)
             self.play(FadeIn(b, shift=UP * 0.2), run_time=0.9)
             self.play(FadeIn(why), run_time=0.7)
-        self.wait(0.4)
         self.clear_all()
 
 
@@ -805,7 +800,6 @@ class S07GCA(PMRScene):
             self.sfx("pop", -6)
             self.play(GrowArrow(arrs[1]), FadeIn(steps[2], shift=RIGHT * 0.2), run_time=0.8)
             self.play(FadeIn(note), run_time=0.6)
-        self.wait(0.4)
         self.clear_all()
 
 
@@ -931,7 +925,6 @@ class S08Taper(PMRScene):
             self.wait(0.6)
             self.sfx("alert", -8)
             self.play(FadeIn(never, shift=UP * 0.2), run_time=0.8)
-        self.wait(0.5)
         self.clear_all()
 
 
@@ -1002,7 +995,6 @@ class S09Trials(PMRScene):
             for c in cards:
                 self.sfx("pop", -9)
                 self.play(FadeIn(c, scale=0.8), run_time=0.45)
-            self.wait(1.0)
         self.play(FadeOut(cards), run_time=0.5)
 
         def header(name, sub, pop_):
@@ -1145,7 +1137,6 @@ class S09Trials(PMRScene):
             for hb in habits:
                 self.sfx("tick", -4)
                 self.play(FadeIn(hb, shift=UP * 0.2), run_time=0.5)
-        self.wait(0.5)
         self.clear_all()
 
 
@@ -1237,7 +1228,6 @@ class S10Recovery(PMRScene):
             for g in goals:
                 self.sfx("pop", -10)
                 self.play(FadeIn(g, shift=UP * 0.2), run_time=0.45)
-        self.wait(0.5)
         self.clear_all()
 
 
@@ -1332,6 +1322,6 @@ class S11Close(PMRScene):
             self.play(Write(title), run_time=1.4)
             self.play(FadeIn(url, shift=UP * 0.2), run_time=0.8)
             self.play(FadeIn(fine), run_time=0.8)
-        self.wait(2.5)
+        self.wait(1.8)
         self.play(FadeOut(VGroup(card, fine)), run_time=1.2)
         self.wait(0.8)

@@ -108,7 +108,7 @@ def spoken(text):
 class PiperService(SpeechService):
     """Offline neural TTS (Piper) for manim-voiceover."""
 
-    def __init__(self, model=VOICE_MODEL, length_scale=0.9, sentence_silence=0.2, **kwargs):
+    def __init__(self, model=VOICE_MODEL, length_scale=0.9, sentence_silence=0.15, **kwargs):
         self.model = str(model)
         self.length_scale = length_scale
         self.sentence_silence = sentence_silence
@@ -157,8 +157,8 @@ class PMRScene(VoiceoverScene):
         self.play(FadeIn(grp[0], shift=RIGHT * 0.3), Write(head, run_time=1.1), run_time=1.1)
         self.play(FadeIn(sub, shift=UP * 0.15), run_time=0.6)
         self.wait(0.25)
-        self.play(FadeOut(grp, shift=UP * 0.3), run_time=0.6)
+        self.play(FadeOut(grp, shift=UP * 0.3), run_time=0.45)
 
-    def clear_all(self, run_time=0.6):
+    def clear_all(self, run_time=0.45):
         if self.mobjects:
             self.play(*[FadeOut(m) for m in self.mobjects], run_time=run_time)
