@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from faster_whisper import WhisperModel
+import whisper
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -40,9 +40,8 @@ def wer(r, h):
 
 
 def main():
-    model = WhisperModel("base.en", device="cpu", compute_type="int8")
-    segs, _ = model.transcribe(sys.argv[1], beam_size=5)
-    hyp = " ".join(s.text for s in segs)
+    model = whisper.load_model("base.en")
+    hyp = model.transcribe(sys.argv[1], fp16=False)["text"]
     (ROOT / "out" / "asr_transcript.txt").write_text(hyp)
     r, h = norm(" ".join(script_texts())), norm(hyp)
     print(f"ref words {len(r)}  hyp words {len(h)}  WER {wer(r, h):.3f}")
