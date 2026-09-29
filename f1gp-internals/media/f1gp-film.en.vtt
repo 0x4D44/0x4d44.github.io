@@ -1,0 +1,189 @@
+WEBVTT
+
+1
+00:00:02.600 --> 00:00:07.840
+In 1991, Geoff Crammond and MicroProse shipped Formula One Grand Prix.
+
+2
+00:00:08.261 --> 00:00:09.437
+Twenty-six cars.
+
+3
+00:00:09.437 --> 00:00:11.055
+Sixteen real circuits.
+
+4
+00:00:11.055 --> 00:00:14.364
+A filled-polygon 3D world, on an ordinary PC.
+
+5
+00:00:14.783 --> 00:00:18.550
+This is a look inside how it works, and how it was brought back to life.
+
+6
+00:00:20.220 --> 00:00:22.604
+The game takes over the whole machine.
+
+7
+00:00:22.604 --> 00:00:27.936
+It is a sixteen-bit DOS program, with no operating system to help once a race begins.
+
+8
+00:00:28.356 --> 00:00:31.843
+It speeds the PC's timer up to three hundred interrupts a second.
+
+9
+00:00:32.263 --> 00:00:34.759
+Every sixth one, the whole world takes a step.
+
+10
+00:00:34.759 --> 00:00:38.068
+Fifty ticks a second, and everything keeps time to that beat.
+
+11
+00:00:39.738 --> 00:00:42.215
+A circuit is not stored as a 3D model.
+
+12
+00:00:42.635 --> 00:00:45.144
+Each track file is a list of instructions.
+
+13
+00:00:45.144 --> 00:00:45.861
+Go this far.
+
+14
+00:00:45.861 --> 00:00:46.757
+Bend this much.
+
+15
+00:00:46.757 --> 00:00:47.115
+Climb.
+
+16
+00:00:47.115 --> 00:00:48.071
+Put a wall here.
+
+17
+00:00:48.491 --> 00:00:55.819
+When a race loads, the game runs those instructions, and lays down a forty-six-byte record for every sixteen feet of tarmac.
+
+18
+00:00:57.488 --> 00:01:02.028
+Every car, yours included, is one hundred and ninety-two bytes in a single table.
+
+19
+00:01:02.448 --> 00:01:06.986
+Thirty-four entrants become twenty-six, through a real pre-qualifying session.
+
+20
+00:01:07.406 --> 00:01:10.903
+And the computer drivers use exactly the same physics as you.
+
+21
+00:01:10.903 --> 00:01:12.737
+Only their inputs are different.
+
+22
+00:01:14.407 --> 00:01:20.610
+Every frame, the game paints a picture three hundred and twenty pixels wide, using only whole-number arithmetic.
+
+23
+00:01:21.030 --> 00:01:24.825
+Sky first, then road, kerbs, trees and cars, from back to front,
+
+24
+00:01:25.245 --> 00:01:29.524
+all seen through the windows of a cockpit it keeps inside the program itself.
+
+25
+00:01:31.194 --> 00:01:34.224
+The sound comes from one small Yamaha FM chip.
+
+26
+00:01:34.644 --> 00:01:36.755
+The engine note is not a recording.
+
+27
+00:01:36.755 --> 00:01:41.460
+It is three chip voices, retuned from the engine's revs, fifty times a second.
+
+28
+00:01:43.130 --> 00:01:47.070
+Two PCs could even race each other, joined by a serial cable,
+
+29
+00:01:47.489 --> 00:01:49.800
+or by modem, down a telephone line.
+
+30
+00:01:51.470 --> 00:01:55.679
+Thirty-five years later, a small project set out to make it run again.
+
+31
+00:01:55.679 --> 00:01:56.160
+Exactly.
+
+32
+00:01:56.580 --> 00:01:57.641
+Twenty-four days.
+
+33
+00:01:57.641 --> 00:02:02.320
+Two thousand six hundred commits, most of them written by AI coding agents.
+
+34
+00:02:02.740 --> 00:02:04.618
+The result is called Big Race.
+
+35
+00:02:04.618 --> 00:02:08.187
+The original's routines, re-expressed one by one in Rust.
+
+36
+00:02:09.858 --> 00:02:13.979
+The key was an oracle: the original game, running inside an emulator.
+
+37
+00:02:14.399 --> 00:02:18.232
+Every ported routine was checked against it, byte for byte.
+
+38
+00:02:18.651 --> 00:02:20.985
+The bar was never, looks like the game.
+
+39
+00:02:20.985 --> 00:02:23.739
+It was: writes the same bytes the game writes.
+
+40
+00:02:25.410 --> 00:02:27.186
+Wrong turns were written down too.
+
+41
+00:02:27.186 --> 00:02:31.520
+Like the routine long believed to be the physics, which turned out to build tracks.
+
+42
+00:02:31.940 --> 00:02:34.165
+And tests that were green, but proved nothing.
+
+43
+00:02:35.835 --> 00:02:39.396
+Big Race drops into your own copy of the game, and bundles none of it.
+
+44
+00:02:39.816 --> 00:02:45.801
+It adds sharp modern graphics, video recording, and races across a home network, carried as modem sound.
+
+45
+00:02:47.472 --> 00:02:53.046
+Part one takes the 1991 game apart, from the timer to the menus and saves.
+
+46
+00:02:53.046 --> 00:02:55.983
+Part two tells how Big Race rebuilt it.
+
+47
+00:02:56.403 --> 00:03:02.717
+It is an unofficial project, and it is all written up, chapter by chapter, in Inside Formula One Grand Prix.
