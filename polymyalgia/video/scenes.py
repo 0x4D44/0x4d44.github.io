@@ -47,8 +47,8 @@ class S01Hook(PMRScene):
         halos = VGroup(*[glow(r, ORANGE, layers=4, max_width=22, opacity=0.12) for r in rings])
         lab_s = S("SHOULDERS", 24, ORANGE).next_to(rings[0], LEFT, buff=0.45)
         lab_h = S("HIPS", 24, ORANGE).next_to(rings[2], LEFT, buff=0.45)
-        with self.say("The aching sits around both shoulders and both hips, and it is at its worst "
-                      "after rest, first thing in the morning.") as tr:
+        with self.say("The aching sits around both shoulders and both hips, and it's worst after rest, "
+                      "first thing in the morning.") as tr:
             self.play(FadeOut(acts), arm_l.animate.set_color(INK), arm_r.animate.set_color(INK), run_time=0.6)
             self.play(Rotate(arm_l, 0.8, about_point=sh_l), Rotate(arm_r, -0.8, about_point=sh_r), run_time=0.8)
             self.sfx("pop", -6)
@@ -148,13 +148,13 @@ class S02Tissues(PMRScene):
         legend.arrange(DOWN, aligned_edge=LEFT, buff=0.42).move_to([3.6, 0.2, 0])
         schem = tag("schematic · not to scale").to_corner(DR, buff=0.4)
 
-        with self.say("Let's peel a shoulder apart into layers. At the centre is the ball at the top "
-                      "of the upper arm bone, sitting beneath an arch of bone above it."):
+        with self.say("Let's peel a shoulder apart. At the centre is the ball at the top of the arm bone, "
+                      "beneath an arch of bone."):
             self.play(FadeIn(bone, shift=UP * 0.3), FadeIn(schem), run_time=1.2)
             self.play(Create(arch), run_time=1.2)
-        with self.say("Wrapped around the joint is its lining, the synovium. Tendons run over the "
-                      "top, carrying force. And between tendon and bone sits a bursa: a tiny, "
-                      "fluid-lined cushion that lets things glide."):
+        with self.say("Around the joint is its lining, the synovium. Tendons run over the top, carrying "
+                      "force. And between tendon and bone sits a bursa, a tiny fluid-lined cushion that "
+                      "lets things glide."):
             self.play(Create(lining), FadeIn(legend[2], shift=LEFT * 0.2), run_time=1.3)
             self.sfx("blip", -6)
             self.play(Create(tendon), FadeIn(legend[1], shift=LEFT * 0.2), run_time=1.3)
@@ -171,9 +171,8 @@ class S02Tissues(PMRScene):
                        glow(lining, ORANGE, 5, 30, 0.07))
         intact = VGroup(T("✓", 34, MINT), S("force intact", 22, MINT)).arrange(RIGHT, buff=0.15)
         intact.next_to(legend[3][1], RIGHT, buff=0.35)
-        with self.say("Ultrasound and MRI studies show that in PMR, inflammation concentrates around "
-                      "the joint: in bursae, tendon sheaths and joint linings, rather than in "
-                      "destroyed muscle fibres."):
+        with self.say("Ultrasound and MRI studies show that in PMR, inflammation concentrates around the "
+                      "joint, in bursae, tendon sheaths and joint linings, not in destroyed muscle."):
             self.sfx("rise", -2)
             self.play(bursa.animate.set_color(ORANGE), tendon.animate.set_color(ORANGE),
                       lining.animate.set_color(ORANGE), FadeIn(halos), run_time=1.6)
@@ -200,9 +199,9 @@ class S02Tissues(PMRScene):
         brace = Brace(cards[:2], DOWN, color=ORANGE)
         pmr_note.next_to(brace, DOWN, buff=0.2)
         weak_note.next_to(cards[2], DOWN, buff=0.35)
-        with self.say("That distinction matters. I can't raise my arms might mean that it hurts, "
-                      "that the joint won't move freely, or that the muscle is genuinely weak. In "
-                      "PMR it's usually the first two: painful, stiff movement, not lost strength."):
+        with self.say("That matters. I can't raise my arms could mean it hurts, the joint won't move "
+                      "freely, or the muscle is genuinely weak. In PMR it's usually the first two: painful,"
+                      " stiff movement, not lost strength."):
             self.play(FadeIn(quote, shift=DOWN * 0.2), run_time=0.8)
             for cd in cards:
                 self.sfx("pop", -8)
@@ -242,9 +241,8 @@ class S02Tissues(PMRScene):
         chips = VGroup(*[chip(s, size=24) for s in ["fatigue", "low appetite", "weight loss",
                                                      "mild fever", "low mood"]])
         chips.arrange(RIGHT, buff=0.25).to_edge(UP, buff=0.35)
-        with self.say("Fatigue, low appetite, weight loss, a mild fever or low mood can come along "
-                      "too. They're real, but they happen in other illnesses as well. It's the "
-                      "overall pattern that matters."):
+        with self.say("Fatigue, low appetite, weight loss, a mild fever or low mood can come too, but they "
+                      "happen in other illnesses as well. It's the overall pattern that matters."):
             self.play(LaggedStart(*[FadeIn(c, shift=DOWN * 0.2) for c in chips], lag_ratio=0.2), run_time=1.6)
             self.sfx("tick", -6)
         self.wait(0.4)
@@ -279,9 +277,8 @@ class S03Causes(PMRScene):
         )
         for lab, i in zip(labels, (2, 5, 7)):
             lab.next_to(doms[i], DOWN, buff=0.35)
-        with self.say("Picture a row of dominoes. We understand a lot about the later ones: the "
-                      "immune signals, the inflammation and the symptoms. But the first domino, "
-                      "the initial trigger, is still unknown."):
+        with self.say("Picture a row of dominoes. We understand much of the later chain: immune signals, "
+                      "inflammation, symptoms. But the first domino, the trigger, is still unknown."):
             self.play(FadeOut(what), FadeOut(why), phrase.animate.scale(0.7).to_edge(UP, buff=0.5), run_time=0.8)
             self.play(Create(floor), LaggedStart(*[FadeIn(d, shift=UP * 0.3) for d in doms], lag_ratio=0.08),
                       run_time=1.3)
@@ -328,10 +325,9 @@ class S03Causes(PMRScene):
         land_title = T("a landscape, not a switch", 36, INK, slant=ITALIC).to_edge(UP, buff=1.3)
         forces = VGroup(chip("older age", size=22), chip("genes: HLA, ANKRD55–IL6ST", size=22),
                         chip("unknown triggers", size=22)).arrange(RIGHT, buff=0.3).to_edge(DOWN, buff=0.3)
-        with self.say("Genetic studies do point to immune-related regions of the genome, such as "
-                      "HLA. But these are susceptibility signals, not a prediction. Think of a "
-                      "landscape rather than a switch. Several small influences tilt the ground, "
-                      "making an inflammatory state more likely, without deciding it."):
+        with self.say("Genetic studies point to immune-related regions, such as HLA. But these are "
+                      "susceptibility signals, not predictions. Think of a landscape, not a switch: small "
+                      "influences tilt the ground, making inflammation more likely without deciding it."):
             self.play(Create(ground), FadeIn(land_title), run_time=1.4)
             self.play(FadeIn(ball, scale=0.5), FadeIn(calm), FadeIn(infl), run_time=0.8)
             for i, f in enumerate(forces):
@@ -422,9 +418,8 @@ class S04Signal(PMRScene):
             self.play(Flash(rec_a.get_end(), color=AMBER), run_time=0.5)
             self.play(GrowArrow(relay), FadeIn(nucleus), FadeIn(labs[2]), run_time=1.1)
             self.play(Indicate(nucleus, color=VIOLET), run_time=0.9)
-        with self.say("One place this matters is the liver. Prompted by IL-6, liver cells release "
-                      "acute-phase proteins, including C-reactive protein, or CRP: one of the blood "
-                      "tests used to track inflammation."):
+        with self.say("One place this matters is the liver. Prompted by IL-6, it releases C-reactive "
+                      "protein, or CRP, one of the blood tests used to track inflammation."):
             self.play(GrowArrow(arrow2), DrawBorderThenFill(liver), FadeIn(labs[3]), run_time=1.3)
             self.play(GrowArrow(arrow3), Create(gauge_box), FadeIn(fill), FadeIn(labs[4]), run_time=1.0)
             self.sfx("rise", 0)
@@ -432,8 +427,8 @@ class S04Signal(PMRScene):
 
         network = VGroup(cell, particles, il6, membrane, receptor, relay, nucleus, arrow2, liver, arrow3,
                          gauge_box, fill)
-        with self.say("Now watch what treatment does. A glucocorticoid steroid, such as prednisolone, "
-                      "acts broadly. It turns down many parts of the network at once."):
+        with self.say("Now watch what treatment does. A glucocorticoid steroid, such as prednisolone, acts "
+                      "broadly, turning down much of the network at once."):
             wash = Rectangle(width=14.5, height=5.2, stroke_width=0, fill_color=VIOLET, fill_opacity=0.14)
             wash.move_to([-12, y, 0])
             gl = chip("glucocorticoid: broad dimming", VIOLET, 24).to_edge(UP, buff=0.4).set_x(-2)
@@ -459,9 +454,8 @@ class S04Signal(PMRScene):
         neq = T("≠", 52, INK)
         safe = S("disease or infection ruled out", 26, INK)
         eq = VGroup(low, neq, safe).arrange(RIGHT, buff=0.4).move_to([0, -2.6, 0])
-        with self.say("Which leaves an important subtlety. On these drugs, a low CRP doesn't prove "
-                      "that the disease, or an infection, has gone quiet. Turning down a warning "
-                      "light is not the same as proving the system is safe."):
+        with self.say("A subtlety follows. On these drugs, a low CRP doesn't prove that the disease, or an "
+                      "infection, has gone quiet. Dimming a warning light doesn't prove the system is safe."):
             self.play(FadeOut(labs[1:4]), FadeIn(eq[0]), run_time=0.7)
             self.play(Write(neq), FadeIn(safe), run_time=0.9)
             self.sfx("blip_low", -4)
@@ -537,10 +531,10 @@ class S05Rhythm(PMRScene):
             low = S("lowest ≈ 16:00", 22, AMBER).next_to(ax.c2p(16, symptom(16)), DOWN, buff=0.3)
             self.play(FadeIn(low), run_time=0.5)
             self.sfx("blip", -8)
-        with self.say("The body's own cortisol, an anti-inflammatory hormone, also rises and falls "
-                      "through the day. It's tempting to say that PMR is simply too little cortisol. "
-                      "But that study actually found cortisol was higher in PMR than in people "
-                      "without it. The story is about timing and demand, not a simple shortage."):
+        with self.say("The body's own cortisol, an anti-inflammatory hormone, also rises and falls each "
+                      "day. It's tempting to blame too little cortisol, but that study found cortisol was "
+                      "higher in PMR than in people without it. The story is timing and demand, not a "
+                      "simple shortage."):
             self.play(Create(cor), FadeIn(cor_l), run_time=2.0)
             later = CurvedArrow(ax.c2p(6, symptom(6) + 0.06), ax.c2p(8.5, cortisol(8.5) + 0.08), angle=-PI / 3,
                                 color=VIOLET, stroke_width=3, tip_length=0.18)
@@ -574,9 +568,9 @@ class S05Rhythm(PMRScene):
         q46 = VGroup(S("46", 24, BLUE), S("not ruled in", 20, INK)).arrange(DOWN, buff=0.1).next_to(d46, DOWN, buff=0.9).shift(RIGHT * 1.2)
         a44 = Arrow(q44.get_top(), d44.get_bottom(), buff=0.1, color=BLUE, stroke_width=3)
         a46 = Arrow(q46.get_top(), d46.get_bottom(), buff=0.1, color=BLUE, stroke_width=3)
-        with self.say("Morning stiffness lasting more than forty-five minutes is one feature "
-                      "researchers use to classify PMR. But it is not a magic threshold. Forty-four "
-                      "minutes doesn't rule it out, and forty-six doesn't rule it in."):
+        with self.say("Morning stiffness over forty-five minutes is one feature researchers use to classify"
+                      " PMR. But it's no magic threshold: forty-four minutes doesn't rule it out, and "
+                      "forty-six doesn't rule it in."):
             self.play(Create(nl), FadeIn(nl_l), run_time=1.0)
             self.play(Create(mark), FadeIn(m_lab), run_time=0.9)
             self.wait(1.2)
@@ -622,11 +616,10 @@ class S06Diagnosis(PMRScene):
             self.play(LaggedStart(*[GrowFromCenter(L) for L in lenses], lag_ratio=0.2), run_time=1.6)
             for _ in lenses:
                 self.sfx("pop", -9)
-        with self.say("The pattern: age, where it hurts, morning stiffness, and the examination. "
-                      "Blood tests: inflammatory markers like CRP and ESR, plus tests that look for "
-                      "other explanations. Imaging: ultrasound can reveal inflamed bursae and tendon "
-                      "sheaths. And review: a plan to revisit the diagnosis if the course stops "
-                      "fitting."):
+        with self.say("Pattern: age, where it hurts, morning stiffness, the examination. Blood tests: "
+                      "markers like CRP and ESR, plus tests for other explanations. Imaging: ultrasound can"
+                      " show inflamed bursae and tendon sheaths. And review: revisiting the diagnosis if "
+                      "the course stops fitting."):
             for L, d in zip(lenses, det):
                 self.play(Indicate(L[0], color=L[0].get_color(), scale_factor=1.08), FadeIn(d, shift=UP * 0.1),
                           run_time=0.7)
@@ -651,9 +644,8 @@ class S06Diagnosis(PMRScene):
         angles = np.linspace(PI * 0.5, PI * 2.5, len(mimics), endpoint=False)
         for c, a in zip(chips_, angles):
             c.move_to([4.7 * np.cos(a), 2.95 * np.sin(a) - 0.1, 0])
-        with self.say("Several other conditions can look like PMR: older-onset rheumatoid arthritis, "
-                      "shoulder problems, muscle disease, an underactive thyroid, infection, or even "
-                      "cancer. Clinicians keep these in view."):
+        with self.say("Other conditions can look like PMR: older-onset rheumatoid arthritis, shoulder "
+                      "problems, muscle disease, an underactive thyroid, infection, even cancer."):
             self.play(LaggedStart(*[FadeIn(c, scale=0.7) for c in chips_], lag_ratio=0.2), run_time=2.4)
             pass
         self.play(*[FadeOut(m) for m in self.mobjects], run_time=0.6)
@@ -780,10 +772,9 @@ class S07GCA(PMRScene):
                "visual loss, stroke symptoms or collapse. Otherwise, your GP urgently or NHS 111.", 24, INK)
         uk.next_to(panel, DOWN, buff=0.4)
         head = T("Do not wait for the next routine appointment", 38).to_edge(UP, buff=0.5)
-        with self.say("That's why these symptoms must not wait. New loss of vision, a curtain over "
-                      "your vision, or double vision needs emergency assessment now, even if it has "
-                      "already passed. A new headache, scalp tenderness, or jaw pain when chewing "
-                      "needs urgent, same-day medical assessment."):
+        with self.say("So these symptoms must not wait. New loss of vision, a curtain over vision, or "
+                      "double vision needs emergency assessment now, even if it has passed. A new headache,"
+                      " scalp tenderness, or jaw pain when chewing needs urgent, same-day assessment."):
             self.sfx("alert", -7)
             self.play(FadeIn(head, shift=DOWN * 0.2), run_time=0.7)
             self.play(FadeIn(r1, shift=UP * 0.3), run_time=0.8)
@@ -828,9 +819,9 @@ class S08Taper(PMRScene):
         ph = VGroup(p1, p2).arrange(RIGHT, buff=1.2)
         arr = Arrow(p1.get_right(), p2.get_left(), buff=0.15, color=MUTED)
         drug = S("usually a glucocorticoid: prednisolone in UK practice", 24).next_to(ph, DOWN, buff=0.6)
-        with self.say("Treatment has two phases. First, control the inflammation. Then, carefully, "
-                      "earn each reduction. The usual starting point is a glucocorticoid steroid, "
-                      "commonly prednisolone in the UK."):
+        with self.say("Treatment has two phases: control the inflammation, then carefully earn each "
+                      "reduction. It usually starts with a glucocorticoid steroid, commonly prednisolone in"
+                      " the UK."):
             self.play(FadeIn(p1, shift=RIGHT * 0.3), run_time=0.8)
             self.play(GrowArrow(arr), FadeIn(p2, shift=RIGHT * 0.3), run_time=0.9)
             self.play(FadeIn(drug), run_time=0.7)
@@ -851,9 +842,9 @@ class S08Taper(PMRScene):
             r[1].next_to(ORIGIN, RIGHT, buff=0).align_to(np.array([-3.2, 0, 0]), LEFT)
             r[0].next_to(r[1], LEFT, buff=0.5)
         rows.arrange(DOWN, buff=0.7, aligned_edge=LEFT).shift(DOWN * 0.4 + LEFT * 0.8)
-        with self.say("Here's some simple arithmetic that shows why the last steps can feel the "
-                      "biggest. Cutting one unit from twenty is five percent of the starting amount. "
-                      "The same one unit from ten is ten percent. And from five, it's twenty percent."):
+        with self.say("Some simple arithmetic shows why the last steps can feel the biggest. One unit from "
+                      "twenty is five percent. From ten, it's ten percent. And from five, it's twenty "
+                      "percent."):
             self.play(FadeIn(formula), run_time=0.8)
             for i, (r, pct) in enumerate(zip(rows, (5, 10, 20))):
                 self.play(FadeIn(r[0]), LaggedStart(*[FadeIn(s) for s in r[1]], lag_ratio=0.03), run_time=0.9)
@@ -893,10 +884,9 @@ class S08Taper(PMRScene):
         mB = Triangle(color=VIOLET, fill_opacity=1).scale(0.14).rotate(PI)
         mA.next_to(A[1][0], UP, buff=0.08)
         mB.next_to(B[1][0], UP, buff=0.08)
-        with self.say("Clock A is the disease: active, then suppressed, then tested as the dose comes "
-                      "down, and hopefully, remission. Clock B is the body's own cortisol system. "
-                      "Long-term steroid treatment tells the brain to turn down the adrenal glands, "
-                      "and they may need time to recover."):
+        with self.say("Clock A is the disease: active, suppressed, tested as the dose comes down, and "
+                      "hopefully, remission. Clock B is your own cortisol system. Long-term steroids tell "
+                      "the brain to turn down the adrenal glands, which may need time to recover."):
             self.play(FadeIn(A[0]), LaggedStart(*[FadeIn(b) for b in A[1]], lag_ratio=0.15), run_time=1.2)
             self.play(FadeIn(mA), run_time=0.3)
             for k in (1, 2, 3):
@@ -930,10 +920,9 @@ class S08Taper(PMRScene):
             T("Never stop prolonged steroid treatment abruptly.", 36, INK),
         ).to_edge(DOWN, buff=0.5)
         never[1].move_to(never[0])
-        with self.say("So feeling worse during a reduction could be a relapse, steroid withdrawal "
-                      "symptoms, or adrenal insufficiency. Telling them apart needs proper "
-                      "assessment. And it's why prolonged steroid treatment must never be stopped "
-                      "abruptly."):
+        with self.say("So feeling worse during a reduction could be relapse, steroid withdrawal, or adrenal"
+                      " insufficiency, and telling them apart needs assessment. It's also why prolonged "
+                      "steroid treatment must never be stopped abruptly."):
             self.play(FadeIn(worse), run_time=0.6)
             for c, a in zip(causes, arrows):
                 self.sfx("pop", -8)
@@ -1005,8 +994,8 @@ class S09Trials(PMRScene):
     def construct(self):
         self.chapter(8, "What the trials show", "Four trials, four different questions")
 
-        with self.say("What about medicines that spare steroids? Four trials asked four different "
-                      "questions, so let's read each on its own, not rank them."):
+        with self.say("What about steroid-sparing medicines? Four trials asked four different questions, so"
+                      " we'll read each on its own, not rank them."):
             cards = VGroup(*[chip(s, size=26, fill="#262A35") for s in
                              ["SAPHYR · 2023", "Methotrexate · 2025/26", "PMR-SPARE · 2022", "REPLENISH · 2026"]])
             cards.arrange_in_grid(2, 2, buff=(0.8, 0.6))
@@ -1027,9 +1016,9 @@ class S09Trials(PMRScene):
 
         def notes(lines, col=INK):
             g = VGroup(*[S(l, 22, col) for l in lines]).arrange(DOWN, aligned_edge=LEFT, buff=0.22)
-            if g.width > 5.0:
-                g.scale_to_fit_width(5.0)
-            g.move_to([1.6, -0.3, 0], aligned_edge=LEFT)
+            if g.width > 4.7:
+                g.scale_to_fit_width(4.7)
+            g.move_to([2.1, -0.3, 0], aligned_edge=LEFT)
             return g
 
         mtag = tag("reported trial results", MINT).to_corner(DR, buff=0.35)
@@ -1043,12 +1032,10 @@ class S09Trials(PMRScene):
         n = notes(["+18.0 percentage points", "(95% CI 4.15–31.82)", "median steroid used:",
                    "777 mg vs 2,044 mg", "endpoint includes CRP,", "which this drug lowers directly"])
         n[0].set_color(MINT); n[3].set_color(MINT); n[4].set_color(AMBER); n[5].set_color(AMBER)
-        with self.say("In SAPHYR, people with relapsing PMR received the IL-6 receptor blocker "
-                      "sarilumab with a fourteen-week steroid taper, or a placebo with a fifty-two "
-                      "week taper. Sustained remission at one year: twenty-eight percent versus ten "
-                      "percent, an eighteen point difference, with far less steroid used overall. "
-                      "Remember, though, that the endpoint included CRP, which this drug lowers "
-                      "directly."):
+        with self.say("In SAPHYR, people with relapsing PMR got the IL-6 receptor blocker sarilumab plus a "
+                      "fourteen-week taper, or placebo plus a fifty-two-week taper. Sustained remission at "
+                      "one year: twenty-eight versus ten percent, an eighteen-point difference, with far "
+                      "less steroid used. But the endpoint included CRP, which this drug lowers directly."):
             self.play(FadeIn(h, shift=RIGHT * 0.2), FadeIn(mtag), FadeIn(c[:2]), FadeIn(c.names), run_time=1.0)
             self.add(c.nums)
             self.sfx("rise", -4)
@@ -1071,11 +1058,11 @@ class S09Trials(PMRScene):
                    "never daily: daily dosing", "errors have been fatal"])
         n[0].set_color(MINT); n[2].set_color(RED); n[3].set_color(RED); n[4].set_color(RED)
         n[2:].shift(DOWN * 0.4)
-        with self.say("A newer trial tested methotrexate at twenty-five milligrams, once a week, in "
-                      "recently diagnosed PMR. Eighty percent versus forty-six percent had low "
-                      "disease activity and needed no steroids at one year. Promising, but it was a "
-                      "small study. And a vital safety point: for inflammatory disease, methotrexate "
-                      "is taken once weekly. Accidental daily dosing has caused fatal toxicity."):
+        with self.say("A newer trial gave methotrexate, twenty-five milligrams once a week, in recently "
+                      "diagnosed PMR. Eighty versus forty-six percent had low disease activity and no "
+                      "steroids at one year. Promising, but small. And note: for inflammatory disease, "
+                      "methotrexate is taken once weekly. Accidental daily dosing has caused fatal "
+                      "toxicity."):
             self.play(FadeIn(h, shift=RIGHT * 0.2), FadeIn(c[:2]), FadeIn(c.names), run_time=1.0)
             self.add(c.nums)
             self.sfx("rise", -4)
@@ -1097,10 +1084,9 @@ class S09Trials(PMRScene):
         n = notes(["12 / 19  vs  2 / 17", "both arms: prednisone", "20 mg → 0 over 11 weeks",
                    "small & short: can't gauge", "rare harms, or be compared", "with a 52-week trial"])
         n[0].set_color(MINT)
-        with self.say("PMR-SPARE tested tocilizumab, which blocks the same receptor, in new-onset PMR. "
-                      "Sixty-three percent versus twelve percent were in steroid-free remission at "
-                      "sixteen weeks. But with only thirty-six participants and a short endpoint, it "
-                      "can't tell us much about rare harms."):
+        with self.say("PMR-SPARE tested tocilizumab, which blocks the same receptor, in new-onset PMR: "
+                      "sixty-three versus twelve percent in steroid-free remission at sixteen weeks. But "
+                      "with thirty-six participants, it can't tell us much about rare harms."):
             self.play(FadeIn(h, shift=RIGHT * 0.2), FadeIn(c[:2]), FadeIn(c.names), run_time=1.0)
             self.add(c.nums)
             self.sfx("rise", -4)
@@ -1118,10 +1104,10 @@ class S09Trials(PMRScene):
         n = notes(["both doses beat placebo", "infections more common", "on active treatment",
                    "a trial result is not a", "licence or NHS funding"])
         n[0].set_color(MINT); n[1].set_color(AMBER); n[2].set_color(AMBER)
-        with self.say("And in twenty twenty-six, REPLENISH tested secukinumab, which targets a "
-                      "different cytokine, IL-17A. About forty-one percent on either dose, versus "
-                      "twenty percent on placebo, stayed in remission from week twelve to week "
-                      "fifty-two. Infections were more common on the active drug."):
+        with self.say("And in twenty twenty-six, REPLENISH tested secukinumab, which targets a different "
+                      "cytokine, IL-17A. About forty-one percent on either dose, versus twenty percent on "
+                      "placebo, stayed in remission from week twelve to fifty-two. Infections were more "
+                      "common on the drug."):
             self.play(FadeIn(h, shift=RIGHT * 0.2), FadeIn(c[:2]), FadeIn(c.names), run_time=1.0)
             self.add(c.nums)
             self.sfx("rise", -4)
@@ -1149,9 +1135,9 @@ class S09Trials(PMRScene):
                           ["Who was studied?", "What counted as success?", "What came with the drug?"]])
         habits.arrange(RIGHT, buff=0.35).next_to(warn, DOWN, buff=0.6)
         self.play(FadeOut(mtag), run_time=0.3)
-        with self.say("Different populations, endpoints and tapers mean these bars can't be compared "
-                      "across trials. So for any trial, ask three things: who was studied, what "
-                      "counted as success, and what came with the drug."):
+        with self.say("Different people, endpoints and tapers mean these bars can't be compared across "
+                      "trials. For any trial, ask: who was studied, what counted as success, and what came "
+                      "with the drug?"):
             self.play(FadeIn(minis, scale=0.9), run_time=1.0)
             self.sfx("snip", -6)
             self.play(LaggedStart(*[Create(s) for s in seps], lag_ratio=0.2), FadeIn(warn), run_time=1.2)
@@ -1188,9 +1174,9 @@ class S10Recovery(PMRScene):
             self.play(*anims, ChangeDecimalToValue(big, pct), *extra, run_time=rt)
             return new_yr
 
-        with self.say("Many people recover, but not everyone follows a two-year script. In a pooled "
-                      "analysis of real-world patients, about seventy-seven percent were still "
-                      "taking glucocorticoids after one year,"):
+        with self.say("Many people recover, but not on a two-year script. In a pooled analysis of real-"
+                      "world cohorts, about seventy-seven percent were still taking glucocorticoids after "
+                      "one year,"):
             self.play(LaggedStart(*[FadeIn(d) for d in dots], lag_ratio=0.005), FadeIn(legend), FadeIn(stag),
                       run_time=1.4)
             grp = VGroup(big, pc).arrange(RIGHT, buff=0.08, aligned_edge=DOWN).move_to([3.6, 0.3, 0])
@@ -1206,8 +1192,8 @@ class S10Recovery(PMRScene):
             yr = show(25, "after 5 years", rt=1.4)
         caveat = S("different time points pool different cohorts:\nnot a single survival curve", 22, AMBER)
         caveat.next_to(info, DOWN, buff=0.4)
-        with self.say("These cohorts were varied, and mostly predate newer treatments. So this is a "
-                      "guide to expectations, not a prediction for any one person."):
+        with self.say("These cohorts varied, and mostly predate newer treatments: a guide to expectations, "
+                      "not a prediction for any one person."):
             self.play(FadeIn(caveat), run_time=0.8)
             self.wait(1.0)
         pc.clear_updaters()
@@ -1219,9 +1205,8 @@ class S10Recovery(PMRScene):
         rel_l = VGroup(S("had at least one relapse", 26, INK), S("in the first year", 26, INK)).arrange(DOWN, buff=0.12)
         rel_l.next_to(rel, DOWN, buff=0.35)
         nf = S("a feature of the disease,\nnot a personal failure", 24, MINT).next_to(rel_l, DOWN, buff=0.45)
-        with self.say("The same review found that about forty-three percent had at least one relapse in "
-                      "the first year. Relapse is a common feature of the disease. It is not a "
-                      "personal failure."):
+        with self.say("The same review found about forty-three percent relapsed at least once in the first "
+                      "year. Relapse is a common feature of the disease, not a personal failure."):
             dots2 = VGroup(*[Circle(0.15, stroke_color=MUTED, stroke_width=2, fill_color=AMBER,
                                     fill_opacity=0.9 if i < 43 else 0) for i in range(100)])
             dots2.arrange_in_grid(10, 10, buff=0.16).move_to(dots)
@@ -1243,10 +1228,9 @@ class S10Recovery(PMRScene):
                           "sleeping better", "returning to valued activities"]])
         goals.arrange_in_grid(2, 3, buff=(0.35, 0.4)).shift(DOWN * 1.2)
         glab = S("recovery goals worth tracking alongside blood tests", 24).next_to(goals, UP, buff=0.4)
-        with self.say("There is reassurance too. A Norwegian cohort, followed over a thirty-eight year "
-                      "period, found no increase in overall mortality with PMR. And alongside "
-                      "treatment, rebuilding strength and function is its own project: dressing, "
-                      "walking, rising from a chair, and getting back to the things that matter."):
+        with self.say("There's reassurance too: a Norwegian cohort, over a thirty-eight-year study period, "
+                      "found no increase in overall mortality with PMR. And rebuilding strength and "
+                      "function, dressing, walking, rising from a chair, is part of getting better."):
             self.play(FadeIn(mort[0], shift=DOWN * 0.2), run_time=0.8)
             self.play(FadeIn(mort[1]), run_time=0.7)
             self.play(FadeIn(mort[2]), run_time=0.6)
@@ -1287,9 +1271,9 @@ class S11Close(PMRScene):
             it[0].set(height=min(it[0].height, 1.1))
             it[1].next_to(it[0], DOWN, buff=0.35)
         items.arrange_in_grid(2, 3, buff=(1.3, 0.8), cell_alignment=UP).move_to(ORIGIN)
-        with self.say("So, to put it all together. PMR is inflammation around the joints, not "
-                      "destroyed muscle. It involves immune signals such as IL-6, it follows a daily "
-                      "rhythm, and it's diagnosed by assembling evidence."):
+        with self.say("To put it together: PMR is inflammation around the joints, not destroyed muscle. It "
+                      "involves immune signals such as IL-6, follows a daily rhythm, and is diagnosed by "
+                      "assembling evidence."):
             for it in items[:4]:
                 self.sfx("pop", -9)
                 self.play(FadeIn(it, shift=UP * 0.2), run_time=0.7)
