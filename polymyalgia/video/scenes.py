@@ -1192,10 +1192,8 @@ class S10Recovery(PMRScene):
             yr = show(25, "after 5 years", rt=1.4)
         caveat = S("different time points pool different cohorts:\nnot a single survival curve", 22, AMBER)
         caveat.next_to(info, DOWN, buff=0.4)
-        with self.say("These cohorts varied, and mostly predate newer treatments: a guide to expectations, "
-                      "not a prediction for any one person."):
+        with self.say("A guide to expectations, not a prediction for anyone."):
             self.play(FadeIn(caveat), run_time=0.8)
-            self.wait(1.0)
         pc.clear_updaters()
         self.play(FadeOut(VGroup(big, pc, yr, info, caveat)), run_time=0.5)
 
