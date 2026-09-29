@@ -96,6 +96,8 @@ SAY = [
     (r"\bNHS\b", "N H S"),
     (r"\bUK\b", "U K"),
     (r"(\d)\s?%", r"\1 percent"),
+    (r"\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)-(one|two|three|four|five|six|seven|eight|nine)\b",
+     r"\1 \2"),
 ]
 
 
