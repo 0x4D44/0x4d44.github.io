@@ -134,7 +134,7 @@ class S02Tissues(PMRScene):
                                fill_color=BLUE, fill_opacity=0.45, stroke_color=BLUE, stroke_width=2)
 
         legend_items = [
-            (bursa, AMBER, "Bursa", "a fluid-filled gliding cushion"),
+            (bursa, AMBER, "Bursa", "a fluid-lined gliding cushion"),
             (tendon, "#C8B48E", "Tendon", "carries muscle force to bone"),
             (lining, VIOLET, "Joint lining", "the synovium"),
             (muscle, BLUE, "Muscle", "generates force"),
@@ -154,7 +154,7 @@ class S02Tissues(PMRScene):
             self.play(Create(arch), run_time=1.2)
         with self.say("Wrapped around the joint is its lining, the synovium. Tendons run over the "
                       "top, carrying force. And between tendon and bone sits a bursa: a tiny, "
-                      "fluid-filled cushion that lets things glide."):
+                      "fluid-lined cushion that lets things glide."):
             self.play(Create(lining), FadeIn(legend[2], shift=LEFT * 0.2), run_time=1.3)
             self.sfx("blip", -6)
             self.play(Create(tendon), FadeIn(legend[1], shift=LEFT * 0.2), run_time=1.3)
@@ -196,7 +196,7 @@ class S02Tissues(PMRScene):
             cards.add(VGroup(box, T(n, 32).move_to(box)))
         cards.arrange(RIGHT, buff=0.45).shift(UP * 0.1)
         pmr_note = S("typical of PMR: painful, stiff movement", 26, ORANGE)
-        weak_note = S("objective weakness points to other causes:\nan examination tells them apart", 24, BLUE)
+        weak_note = S("true weakness points to\nother causes: an examination\ntells them apart", 22, BLUE)
         brace = Brace(cards[:2], DOWN, color=ORANGE)
         pmr_note.next_to(brace, DOWN, buff=0.2)
         weak_note.next_to(cards[2], DOWN, buff=0.35)
@@ -230,14 +230,14 @@ class S02Tissues(PMRScene):
         m65 = DashedLine(ax.n2p(65), ax.n2p(65) + UP * 3.4, color=MUTED)
         l50 = S("uncommon before 50", 22, INK).next_to(m50, UP, buff=0.1).shift(LEFT * 0.7)
         l65 = S("much more typical after 65", 22, INK).next_to(m65, UP, buff=0.1).shift(RIGHT * 0.9)
-        stag = tag("schematic · not data").to_corner(UR, buff=0.5)
+        stag = tag("schematic · not data").to_corner(DR, buff=0.4)
         with self.say("PMR is uncommon before the age of fifty, and much more typical after "
                       "sixty-five. Women are affected more often than men."):
             self.play(Create(ax), FadeIn(xlabel), FadeIn(stag), run_time=1.0)
             self.play(Create(curve), FadeIn(area), run_time=1.6)
             self.play(Create(m50), FadeIn(l50), run_time=0.7)
             self.play(Create(m65), FadeIn(l65), run_time=0.7)
-            fm = S("women  >  men", 30, INK).move_to([-3.4, -0.6, 0])
+            fm = S("women  >  men", 30, INK).move_to([-5.1, 0.3, 0])
             self.play(FadeIn(fm, shift=RIGHT * 0.2), run_time=0.6)
         chips = VGroup(*[chip(s, size=24) for s in ["fatigue", "low appetite", "weight loss",
                                                      "mild fever", "low mood"]])
@@ -245,7 +245,6 @@ class S02Tissues(PMRScene):
         with self.say("Fatigue, low appetite, weight loss, a mild fever or low mood can come along "
                       "too. They're real, but they happen in other illnesses as well. It's the "
                       "overall pattern that matters."):
-            self.play(FadeOut(stag), run_time=0.3)
             self.play(LaggedStart(*[FadeIn(c, shift=DOWN * 0.2) for c in chips], lag_ratio=0.2), run_time=1.6)
             self.sfx("tick", -6)
         self.wait(0.4)
@@ -315,8 +314,15 @@ class S03Causes(PMRScene):
             return g
         ground = always_redraw(make_land)
         ball_x = ValueTracker(-4.3)
-        ball = always_redraw(lambda: Dot(radius=0.2, color=AMBER).move_to(
-            [ball_x.get_value(), land(ball_x.get_value(), tilt.get_value()) + 0.2, 0]))
+        def calm_min(k):
+            xs = np.linspace(-5.5, 0.5, 400)
+            return xs[np.argmin([land(x, k) for x in xs])]
+
+        def ball_pos():
+            x = calm_min(tilt.get_value()) + ball_x.get_value()
+            return [x, land(x, tilt.get_value()) + 0.2, 0]
+        ball_x.set_value(0)
+        ball = always_redraw(lambda: Dot(radius=0.2, color=AMBER).move_to(ball_pos()))
         calm = S("calm", 26, BLUE).move_to([-4.3, -2.6, 0])
         infl = S("inflamed state", 26, ORANGE).move_to([4.3, -2.6, 0])
         land_title = T("a landscape, not a switch", 36, INK, slant=ITALIC).to_edge(UP, buff=1.3)
@@ -330,9 +336,9 @@ class S03Causes(PMRScene):
             self.play(FadeIn(ball, scale=0.5), FadeIn(calm), FadeIn(infl), run_time=0.8)
             for i, f in enumerate(forces):
                 self.sfx("blip", -8)
-                self.play(FadeIn(f, shift=UP * 0.2), tilt.animate.set_value(0.28 * (i + 1)),
-                          ball_x.animate.set_value(-4.3 + 0.55 * (i + 1)), run_time=1.3)
-            self.play(ball_x.animate.set_value(-2.2), rate_func=there_and_back, run_time=1.4)
+                self.play(FadeIn(f, shift=UP * 0.2), tilt.animate.set_value(0.28 * (i + 1)), run_time=1.3)
+            # a nudge rolls the ball up the ridge and back: more likely, not decided
+            self.play(ball_x.animate.set_value(1.6), rate_func=there_and_back, run_time=1.6)
         self.play(*[FadeOut(m) for m in self.mobjects], run_time=0.6)
         ground.clear_updaters(); ball.clear_updaters()
 
@@ -357,7 +363,7 @@ class S04Signal(PMRScene):
     def construct(self):
         self.chapter(3, "Inside the signal network", "From a molecule to a morning")
 
-        y = 0.5
+        y = 0.1
         # immune cell
         cell = VGroup(Circle(0.85, color=BLUE, fill_color=BLUE, fill_opacity=0.15, stroke_width=4),
                       Circle(0.32, color=BLUE, fill_color=BLUE, fill_opacity=0.45, stroke_width=0))
@@ -461,7 +467,10 @@ class S04Signal(PMRScene):
             self.sfx("blip_low", -4)
             ember = Dot(radius=0.12, color=ORANGE).move_to(cell)
             self.play(FadeIn(ember), Flash(cell, color=ORANGE, flash_radius=1.1), run_time=0.9)
-            self.play(ember.animate.scale(1.6), rate_func=there_and_back, run_time=0.9)
+            ember_l = S("inflammation may persist", 22, ORANGE).next_to(cell, UP, buff=0.7)
+            self.play(ember.animate.scale(1.6), FadeIn(ember_l, shift=DOWN * 0.1), rate_func=there_and_back,
+                      run_time=0.9)
+            self.play(FadeIn(ember_l), run_time=0.3)
         self.wait(0.4)
         fill.clear_updaters()
         self.clear_all()
@@ -492,7 +501,7 @@ class S05Rhythm(PMRScene):
         yl = S("relative level", 22).rotate(PI / 2).next_to(ax.y_axis, LEFT, buff=0.25)
         band = Rectangle(width=ax.c2p(8, 0)[0] - ax.c2p(4, 0)[0], height=4.4, stroke_width=0,
                          fill_color=ORANGE, fill_opacity=0.1).move_to(ax.c2p(6, 0.55))
-        band_l = S("04:00 – 08:00", 22, ORANGE).next_to(band, UP, buff=0.12)
+        band_l = S("04:00–08:00", 20, ORANGE).move_to(ax.c2p(6, 0.07))
         sym = ax.plot(symptom, x_range=[0, 24], color=ORANGE, stroke_width=5)
         cor = DashedVMobject(ax.plot(cortisol, x_range=[0, 24], color=VIOLET, stroke_width=4), num_dashes=60)
         sym_l = S("pain & stiffness (illustrative)", 22, ORANGE).move_to(ax.c2p(18.5, 0.95))
@@ -508,8 +517,9 @@ class S05Rhythm(PMRScene):
 
         def clock_label():
             h = hour.get_value() % 24
-            h = min(hour.get_value(), 23.99)
-            return S(f"{int(h):02d}:{int((h % 1) * 60):02d}", 34, AMBER).next_to(ax.c2p(0, 1.1), RIGHT, buff=0.4)
+            h = hour.get_value()
+            txt = "24:00" if h >= 23.99 else f"{int(h):02d}:{int((h % 1) * 60):02d}"
+            return S(txt, 34, AMBER).next_to(ax.c2p(0, 1.1), RIGHT, buff=0.4)
         clock = always_redraw(clock_label)
 
         with self.say("PMR also has a daily rhythm. Why does getting up feel so much worse than "
@@ -532,6 +542,10 @@ class S05Rhythm(PMRScene):
                       "But that study actually found cortisol was higher in PMR than in people "
                       "without it. The story is about timing and demand, not a simple shortage."):
             self.play(Create(cor), FadeIn(cor_l), run_time=2.0)
+            later = CurvedArrow(ax.c2p(6, symptom(6) + 0.06), ax.c2p(8.5, cortisol(8.5) + 0.08), angle=-PI / 3,
+                                color=VIOLET, stroke_width=3, tip_length=0.18)
+            later_l = S("cortisol peaks later", 20, VIOLET).next_to(later, RIGHT, buff=0.1).shift(UP * 0.1)
+            self.play(Create(later), FadeIn(later_l), run_time=0.9)
             self.play(hour.animate.set_value(24), run_time=2.2, rate_func=linear)
             myth = VGroup(S("“too little cortisol”", 26, INK), T("✗", 30, RED)).arrange(RIGHT, buff=0.25)
             myth.to_corner(UR, buff=0.5)
@@ -641,8 +655,7 @@ class S06Diagnosis(PMRScene):
                       "shoulder problems, muscle disease, an underactive thyroid, infection, or even "
                       "cancer. Clinicians keep these in view."):
             self.play(LaggedStart(*[FadeIn(c, scale=0.7) for c in chips_], lag_ratio=0.2), run_time=2.4)
-            self.play(LaggedStart(*[Indicate(c, color=AMBER, scale_factor=1.08) for c in chips_], lag_ratio=0.15),
-                      run_time=2.0)
+            pass
         self.play(*[FadeOut(m) for m in self.mobjects], run_time=0.6)
 
         a = VGroup(chip("fast response to steroids", size=28, fill="#262A35"),
@@ -763,21 +776,29 @@ class S07GCA(PMRScene):
         r2 = row(AMBER, "New head & jaw symptoms", "new headache, scalp tenderness, jaw pain when chewing",
                  "urgent, same day")
         panel = VGroup(r1, r2).arrange(DOWN, buff=0.4).shift(DOWN * 0.1)
-        uk = S("In the UK: an emergency eye service or A&E for visual symptoms;\n"
-               "999 for sudden severe visual loss, stroke symptoms or collapse.", 22).next_to(panel, DOWN, buff=0.4)
+        uk = S("In the UK: an emergency eye service or A&E for visual symptoms; 999 for sudden severe\n"
+               "visual loss, stroke symptoms or collapse. Otherwise, your GP urgently or NHS 111.", 24, INK)
+        uk.next_to(panel, DOWN, buff=0.4)
         head = T("Do not wait for the next routine appointment", 38).to_edge(UP, buff=0.5)
         with self.say("That's why these symptoms must not wait. New loss of vision, a curtain over "
                       "your vision, or double vision needs emergency assessment now, even if it has "
                       "already passed. A new headache, scalp tenderness, or jaw pain when chewing "
                       "needs urgent, same-day medical assessment."):
-            self.sfx("alert", -2)
+            self.sfx("alert", -7)
             self.play(FadeIn(head, shift=DOWN * 0.2), run_time=0.7)
             self.play(FadeIn(r1, shift=UP * 0.3), run_time=0.8)
-            self.play(Indicate(r1[2], color=RED, scale_factor=1.1), run_time=0.8)
+            self.play(Circumscribe(r1[2], color=RED, buff=0.08), run_time=0.8)
             self.wait(2.6)
             self.play(FadeIn(r2, shift=UP * 0.3), run_time=0.8)
-            self.play(Indicate(r2[2], color=AMBER, scale_factor=1.1), run_time=0.8)
+            self.play(Circumscribe(r2[2], color=AMBER, buff=0.08), run_time=0.8)
             self.play(FadeIn(uk), run_time=0.6)
+        ignore = T("A normal blood test, an existing PMR diagnosis or a steroid dose\n"
+                   "does not make these symptoms safe to ignore.", 30).to_edge(UP, buff=0.35)
+        with self.say("And a normal blood test, an existing PMR diagnosis, or already taking "
+                      "steroids does not make these symptoms safe to ignore."):
+            self.play(ReplacementTransform(head, ignore), run_time=1.0)
+            self.play(Circumscribe(ignore, color=RED, buff=0.12), run_time=1.2)
+        head = ignore
         self.play(FadeOut(VGroup(head, panel, uk)), run_time=0.6)
 
         steps = VGroup(chip("strong suspicion", size=26), chip("treatment may start", size=26, color=BG,
@@ -785,9 +806,9 @@ class S07GCA(PMRScene):
                        chip("ultrasound / biopsy", size=26)).arrange(RIGHT, buff=1.0)
         arrs = VGroup(*[Arrow(steps[i].get_right(), steps[i + 1].get_left(), buff=0.15, color=MUTED)
                         for i in range(2)])
-        note = S("delay can risk irreversible sight loss", 26, RED).next_to(steps, DOWN, buff=0.8)
+        note = S("delay can risk irreversible harm, including to sight", 26, RED).next_to(steps, DOWN, buff=0.8)
         with self.say("Doctors may start treatment for strongly suspected GCA before tests confirm it, "
-                      "because delay can risk permanent loss of sight."):
+                      "because delay can risk irreversible harm, including to sight."):
             self.play(FadeIn(steps[0]), run_time=0.6)
             self.play(GrowArrow(arrs[0]), FadeIn(steps[1], shift=RIGHT * 0.2), run_time=0.8)
             self.sfx("pop", -6)
@@ -899,9 +920,10 @@ class S08Taper(PMRScene):
         causes.arrange(DOWN, buff=0.55, aligned_edge=RIGHT).shift(LEFT * 3.0 + UP * 0.8)
         worse = chip("feeling worse during a reduction", size=28, fill="#262A35").shift(RIGHT * 3.0 + UP * 0.8)
         arrows = VGroup(*[Arrow(c.get_right(), worse.get_left() + UP * 0.12 * (1 - i), buff=0.15, color=MUTED,
-                                stroke_width=3, max_tip_length_to_length_ratio=0.08)
+                                stroke_width=3, tip_length=0.2, max_tip_length_to_length_ratio=0.5)
                           for i, c in enumerate(causes)])
-        q = S("telling them apart needs assessment, not guessing", 24, INK).next_to(worse, DOWN, buff=0.9)
+        q = S("telling them apart needs assessment, not guessing", 24, INK)
+        q.next_to(VGroup(causes, worse), DOWN, buff=0.55)
         never = VGroup(
             RoundedRectangle(corner_radius=0.2, width=12, height=1.1, stroke_color=RED, stroke_width=3,
                              fill_color=RED, fill_opacity=0.08),
@@ -950,7 +972,8 @@ class BarChart_(VGroup):
             self.values.append(value)
             nm = S(name, 22, INK).next_to(RIGHT * (x + bar_w / 2), DOWN, buff=0.2)
             self.names.add(nm)
-            num = DecimalNumber(0, num_decimal_places=decimals, font_size=30, color=col).next_to(r, UP, buff=0.12)
+            num = DecimalNumber(0, num_decimal_places=decimals, unit=r"\%", font_size=30, color=col)
+            num.next_to(r, UP, buff=0.12)
             self.nums.add(num)
         self.add(self.bars, self.names, self.nums)
 
@@ -967,6 +990,18 @@ class BarChart_(VGroup):
 
 
 class S09Trials(PMRScene):
+    @staticmethod
+    def _gap(c, i, j, label):
+        """A measured double-arrow between two bar tops, labelled with the difference."""
+        hi, lo = c.bars[i], c.bars[j]
+        x = lo.get_right()[0] + 0.3
+        top, bot = hi.get_top()[1], lo.get_top()[1]
+        guide = DashedLine(hi.get_corner(UR), [x, top, 0], color=MINT, stroke_width=2, dash_length=0.06)
+        arr = DoubleArrow([x, bot, 0], [x, top, 0], buff=0, color=MINT, stroke_width=3, tip_length=0.14,
+                          max_tip_length_to_length_ratio=0.5)
+        lab = S(label, 22, MINT).next_to(arr, RIGHT, buff=0.1)
+        return VGroup(guide, arr, lab)
+
     def construct(self):
         self.chapter(8, "What the trials show", "Four trials, four different questions")
 
@@ -1018,17 +1053,18 @@ class S09Trials(PMRScene):
             self.add(c.nums)
             self.sfx("rise", -4)
             self.play(c.grow(), run_time=1.8)
+            gap_ = self._gap(c, 0, 1, "+18 pts")
+            self.play(GrowFromCenter(gap_), run_time=0.8)
             self.play(LaggedStart(*[FadeIn(x, shift=LEFT * 0.1) for x in n[:4]], lag_ratio=0.35), run_time=2.0)
-            self.wait(3.0)
             self.play(FadeIn(n[4:]), run_time=0.7)
             self.sfx("blip_low", -6)
         for num in c.nums:
             num.clear_updaters()
         minis.add(VGroup(h[0].copy(), c.copy()))
-        self.play(FadeOut(VGroup(h, c, n)), run_time=0.5)
+        self.play(FadeOut(VGroup(h, c, n, gap_)), run_time=0.5)
 
         # Methotrexate
-        h = header("Methotrexate 25 mg / week", "recently diagnosed PMR, same 24-week steroid taper",
+        h = header("Methotrexate 25 mg / week (study dose)", "recently diagnosed PMR, same 24-week steroid taper",
                    "64 randomised, 58 analysed · endpoint: low activity & no steroids at week 52")
         c = chart([("methotrexate", 80, BLUE), ("placebo", 46, MUTED)], decimals=0)
         n = notes(["34-point reported difference", "promising, but a small study", "taken ONCE A WEEK,",
@@ -1044,14 +1080,15 @@ class S09Trials(PMRScene):
             self.add(c.nums)
             self.sfx("rise", -4)
             self.play(c.grow(), run_time=1.8)
-            self.play(FadeIn(n[:2]), run_time=0.8)
-            self.wait(3.2)
+            gap_ = self._gap(c, 0, 1, "+34 pts")
+            self.play(GrowFromCenter(gap_), FadeIn(n[:2]), run_time=0.9)
+            self.wait(1.0)
             self.sfx("alert", -8)
             self.play(FadeIn(n[2:], shift=UP * 0.1), run_time=0.8)
         for num in c.nums:
             num.clear_updaters()
         minis.add(VGroup(h[0].copy(), c.copy()))
-        self.play(FadeOut(VGroup(h, c, n)), run_time=0.5)
+        self.play(FadeOut(VGroup(h, c, n, gap_)), run_time=0.5)
 
         # PMR-SPARE
         h = header("PMR-SPARE", "tocilizumab (IL-6 receptor blocker), new-onset PMR",
@@ -1098,15 +1135,19 @@ class S09Trials(PMRScene):
         # grid of four + reading habits
         for m in minis:
             m[0].next_to(m[1], UP, buff=0.35)
+        for m in minis:
+            ch = m[1]
+            ch[0].set_opacity(0.35)  # grid + axis labels recede in the thumbnails
+            ch.nums.set_opacity(1)
         minis.arrange(RIGHT, buff=0.55)
-        minis.scale_to_fit_width(12.4).shift(UP * 1.3)
+        minis.scale_to_fit_width(12.6).move_to(UP * 0.9)
         seps = VGroup(*[DashedLine(UP * 1.6, DOWN * 1.6, color=RED, stroke_width=2).move_to(
             (minis[i].get_right() + minis[i + 1].get_left()) / 2) for i in range(3)])
         warn = S("different people, endpoints and tapers: don't compare bars across trials", 24, RED)
         warn.next_to(minis, DOWN, buff=0.35)
         habits = VGroup(*[chip(s, size=24, fill="#262A35") for s in
                           ["Who was studied?", "What counted as success?", "What came with the drug?"]])
-        habits.arrange(RIGHT, buff=0.35).to_edge(DOWN, buff=0.5)
+        habits.arrange(RIGHT, buff=0.35).next_to(warn, DOWN, buff=0.6)
         self.play(FadeOut(mtag), run_time=0.3)
         with self.say("Different populations, endpoints and tapers mean these bars can't be compared "
                       "across trials. So for any trial, ask three things: who was studied, what "
@@ -1177,12 +1218,17 @@ class S10Recovery(PMRScene):
         rel.move_to([3.6, 0.9, 0])
         rel_l = VGroup(S("had at least one relapse", 26, INK), S("in the first year", 26, INK)).arrange(DOWN, buff=0.12)
         rel_l.next_to(rel, DOWN, buff=0.35)
-        nf = S("a feature of the disease, not a personal failure", 24, MINT).next_to(rel_l, DOWN, buff=0.45)
+        nf = S("a feature of the disease,\nnot a personal failure", 24, MINT).next_to(rel_l, DOWN, buff=0.45)
         with self.say("The same review found that about forty-three percent had at least one relapse in "
                       "the first year. Relapse is a common feature of the disease. It is not a "
                       "personal failure."):
-            self.play(*[dots[i].animate.set_fill(AMBER, opacity=0.9 if i < 43 else 0) for i in range(100)],
-                      FadeIn(rel), FadeIn(rel_l), run_time=1.6)
+            dots2 = VGroup(*[Circle(0.15, stroke_color=MUTED, stroke_width=2, fill_color=AMBER,
+                                    fill_opacity=0.9 if i < 43 else 0) for i in range(100)])
+            dots2.arrange_in_grid(10, 10, buff=0.16).move_to(dots)
+            self.play(FadeOut(dots, shift=LEFT * 0.4), FadeOut(stag), run_time=0.6)
+            self.sfx("pop", -8)
+            self.play(FadeIn(dots2, shift=LEFT * 0.4), FadeIn(rel), FadeIn(rel_l),
+                      FadeIn(tag("a different measure: relapse", AMBER).to_corner(DR, buff=0.35)), run_time=1.0)
             self.wait(1.6)
             self.sfx("chime", -12)
             self.play(FadeIn(nf, shift=UP * 0.1), run_time=0.8)
@@ -1228,7 +1274,7 @@ class S11Close(PMRScene):
         clocks = VGroup(Line(LEFT * 0.7, RIGHT * 0.7, color=ORANGE, stroke_width=6).shift(UP * 0.25),
                         Line(LEFT * 0.7, RIGHT * 0.7, color=VIOLET, stroke_width=6).shift(DOWN * 0.25))
         motifs = VGroup(ring, rec, wave, lens, art, clocks)
-        caps = ["around the joints,\nnot destroyed muscle", "driven by immune\nsignals like IL-6",
+        caps = ["around the joints,\nnot destroyed muscle", "involves immune\nsignals such as IL-6",
                 "a daily rhythm", "an assembled\ndiagnosis", "GCA: vision\nnever waits",
                 "control, then\nreduce: two clocks"]
         items = VGroup()
@@ -1242,7 +1288,7 @@ class S11Close(PMRScene):
             it[1].next_to(it[0], DOWN, buff=0.35)
         items.arrange_in_grid(2, 3, buff=(1.3, 0.8), cell_alignment=UP).move_to(ORIGIN)
         with self.say("So, to put it all together. PMR is inflammation around the joints, not "
-                      "destroyed muscle. It's driven by immune signals like IL-6, it follows a daily "
+                      "destroyed muscle. It involves immune signals such as IL-6, it follows a daily "
                       "rhythm, and it's diagnosed by assembling evidence."):
             for it in items[:4]:
                 self.sfx("pop", -9)
@@ -1274,21 +1320,31 @@ class S11Close(PMRScene):
                 self.sfx("tick", -6)
                 self.play(FadeIn(q, shift=RIGHT * 0.2), run_time=0.55)
             self.wait(1.2)
-        self.play(FadeOut(VGroup(head, qs)), run_time=0.6)
+        with self.say("And remember: this isn't medical advice. Never stop long-term steroids "
+                      "suddenly, and new vision symptoms are an emergency."):
+            warn_ = VGroup(chip("not medical advice", size=26, fill="#262A35"),
+                           chip("never stop long-term steroids suddenly", size=26, color=BG, fill=AMBER),
+                           chip("new vision symptoms: emergency", size=26, color=BG, fill=RED)).arrange(RIGHT, buff=0.3)
+            warn_.scale_to_fit_width(min(warn_.width, 13)).to_edge(DOWN, buff=0.5)
+            self.sfx("chime", -12)
+            self.play(LaggedStart(*[FadeIn(w, shift=UP * 0.2) for w in warn_], lag_ratio=0.35), run_time=1.6)
+            self.wait(1.5)
+        self.play(FadeOut(VGroup(head, qs, warn_)), run_time=0.6)
 
         title = T("Polymyalgia, explained", 64)
         url = T("0x4d44.github.io/polymyalgia", 34, BLUE, font=SANS)
         fine = VGroup(
-            S("Educational research synthesis · not medical advice · AI-assisted, not independently clinically reviewed", 20),
-            S("Key sources: NHS · EULAR 2025 recommendations (online 2026) · SAPHYR · Bolhuis 2025/26 · PMR-SPARE · REPLENISH · Floris 2022 · Tengesdal 2025", 18),
-            S("Narration: Piper neural TTS · music and sound composed in code · animation: Manim Community", 18),
-        ).arrange(DOWN, buff=0.18)
+            S("Not medical advice · educational research synthesis · AI-assisted, not independently clinically reviewed", 24, INK),
+            S("Key sources: NHS · EULAR 2025 recommendations (online 2026) · SAPHYR · Bolhuis 2025/26", 21),
+            S("PMR-SPARE · REPLENISH · Floris 2022 · Tengesdal 2025 · Galbo 2016 · Dasgupta 2012", 21),
+            S("Narration: Piper neural TTS · music and sound composed in code · animation: Manim Community", 20),
+        ).arrange(DOWN, buff=0.16)
         card = VGroup(title, url).arrange(DOWN, buff=0.5).shift(UP * 0.6)
         for f in fine:
             if f.width > 12.8:
                 f.scale_to_fit_width(12.8)
         fine.to_edge(DOWN, buff=0.6)
-        with self.say("The full interactive guide, with every source, lives in the 0x4D44 Almanac. "
+        with self.say("The full interactive guide, with every source, lives in the Almanac. "
                       "Thanks for watching."):
             self.sfx("sparkle", -6)
             self.play(Write(title), run_time=1.4)
