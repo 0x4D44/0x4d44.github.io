@@ -1322,6 +1322,6 @@ class S11Close(PMRScene):
             self.play(Write(title), run_time=1.4)
             self.play(FadeIn(url, shift=UP * 0.2), run_time=0.8)
             self.play(FadeIn(fine), run_time=0.8)
-        self.wait(1.8)
+        self.wait(1.4)
         self.play(FadeOut(VGroup(card, fine)), run_time=1.2)
-        self.wait(0.8)
+        self.wait(0.4)
