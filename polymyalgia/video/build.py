@@ -108,7 +108,7 @@ def main():
     speaking = (env > 0.02).astype(np.float32)
     speaking = maximum_filter1d(speaking, int(0.35 * SR))           # hold through short gaps
     duck = uniform_filter1d(speaking, int(0.4 * SR))                 # smooth attack/release
-    bed, under = 10 ** (-14 / 20), 10 ** (-25 / 20)
+    bed, under = 10 ** (-12 / 20), 10 ** (-21 / 20)
     gain = under + (bed - under) * (1 - duck)
     mix = vo + music * gain[:, None]
     peak = np.max(np.abs(mix))

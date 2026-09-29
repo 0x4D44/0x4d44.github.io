@@ -115,25 +115,27 @@ def pattern_steps(kind, nchord):
 
 def section(dur, mood, sr):
     prog, bars_per, pat, dens, octv, padlvl = MOODS[mood]
+    beat = BEAT * {"danger": 1.35, "close": 1.15}.get(mood, 1.0)  # slower, heavier sections
+    bar = 4 * beat
     n = int((dur + 3) * sr)
     pno = np.zeros(n); pad = np.zeros(n); bas = np.zeros(n)
     t0, ci = 0.0, 0
     while t0 < dur:
         root, qual = prog[ci % len(prog)]
         cf = chord_freqs(root, qual, octv)
-        length = BAR * bars_per
+        length = bar * bars_per
         add(pad, pad_chord(chord_freqs(root, qual, 3), length + 0.8, sr), t0 * sr)
         add(bas, bass_note(hz(root, 2), length, sr), t0 * sr)
-        for bar in range(bars_per):
+        for bi in range(bars_per):
             for pos, idx, vel in pattern_steps(pat, len(cf)):
                 if rng.random() > dens:  # thin out by density
                     continue
-                tt = t0 + bar * BAR + pos * BEAT + rng.normal(0, 0.006)
+                tt = t0 + bi * bar + pos * beat + rng.normal(0, 0.006)
                 f = cf[idx % len(cf)] * (2 if idx >= len(cf) else 1)
-                add(pno, piano_note(f, BEAT * 0.9, sr, vel * rng.uniform(0.85, 1.0)), tt * sr)
+                add(pno, piano_note(f, beat * 0.9, sr, vel * rng.uniform(0.85, 1.0)), tt * sr)
             # an occasional high melody tone on the downbeat of the second chord pass
             if ci % 4 == 1 and mood not in ("danger",):
-                add(pno, piano_note(cf[-1] * 2, BEAT * 1.8, sr, 0.35), (t0 + 2 * BEAT) * sr)
+                add(pno, piano_note(cf[-1] * 2, beat * 1.8, sr, 0.35), (t0 + 2 * beat) * sr)
         t0 += length
         ci += 1
     if mood == "danger":
