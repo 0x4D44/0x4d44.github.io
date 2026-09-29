@@ -73,7 +73,7 @@ def main():
     OUT.mkdir(exist_ok=True)
     (ROOT / "logs").mkdir(exist_ok=True)
     if "--mix-only" not in sys.argv:
-        with ThreadPoolExecutor(max_workers=3) as ex:
+        with ThreadPoolExecutor(max_workers=2) as ex:
             for name in ex.map(render, [s for s, _ in SCENES]):
                 print("rendered", name, flush=True)
 
