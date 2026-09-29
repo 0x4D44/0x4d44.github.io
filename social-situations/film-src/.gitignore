@@ -1,0 +1,10 @@
+fonts/
+frames/
+stills/
+__pycache__/
+*.wav
+events.json
+render.log
+audio_analysis.png
+social-situations.mp4
+web.mp4
