@@ -3,6 +3,11 @@
     python build.py            # 1080p30 render + mix  -> out/polymyalgia-explained.mp4
     python build.py --quick    # 480p15 preview        -> out/preview.mp4
     python build.py --mix-only # reuse existing scene renders
+
+Prerequisites: a Python venv at /opt/mv with `manim` and `manim-voiceover`
+(+ piper-tts, scipy), ffmpeg, a TeX Live with latex-extra + dvisvgm, the CMU Serif
+and Lato fonts, and the Piper voice en_GB-cori-high in /opt/voices (paths set in
+common.py). Optional intelligibility check: `tools/asr_check.py` (openai-whisper).
 """
 import json
 import re

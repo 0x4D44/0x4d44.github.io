@@ -26,6 +26,27 @@ The article, warnings, citations and all four trial summaries remain readable wi
 
 Print the whole guide from the top bar, or print the consultation-question sheet from chapter 12. Whole-guide printing includes every trial panel and expands deeper explanations; the prior expansion state is restored after printing.
 
+## Video explainer
+
+`video/` holds a ~10-minute animated explainer embedded near the top of the page
+(`#film`): `polymyalgia-explained.mp4` (H.264/AAC, 1080p30) with a VP9/Opus
+`.webm` fallback, `captions.vtt` and `poster.jpg`. It is built from source in the
+same folder — Manim Community Edition scenes (`scenes.py`, one per chapter) with
+manim-voiceover narration (offline Piper neural TTS), plus a score and sound
+effects synthesised in numpy (`audio/music.py`, `audio/sfx.py`). `SCRIPT.md` is the
+scene plan and `RUBRIC.md` the review rubric it was iterated against.
+
+```sh
+python video/audio/sfx.py         # regenerate sound effects
+python video/build.py --quick     # 480p preview -> video/out/preview.mp4
+python video/build.py             # 1080p render + mix -> video/out/polymyalgia-explained.mp4
+```
+
+Copy `out/polymyalgia-explained.mp4` and `out/captions.vtt` over the published files
+after a rebuild. Build prerequisites (Manim, LaTeX, ffmpeg, a Piper voice) are listed
+in the docstring of `video/build.py`; the page itself still needs no
+build step.
+
 ## Tests
 
 Test dependencies are separate from the website:
