@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Monster Films</title>
+<style>
+:root{
+  --bg:#f4f1ea; --fg:#2a2433; --muted:#6b6577; --btn-bg:#ffffff; --btn-border:#cfc8d8; --btn-fg:#2a2433; --accent:#d8305a; --shadow:rgba(40,30,60,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16131c; --fg:#ece8f2; --muted:#9d97ab; --btn-bg:#252130; --btn-border:#3e3850; --btn-fg:#ece8f2; --accent:#ff6b8b; --shadow:rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16131c; --fg:#ece8f2; --muted:#9d97ab; --btn-bg:#252130; --btn-border:#3e3850; --btn-fg:#ece8f2; --accent:#ff6b8b; --shadow:rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+main{max-width:880px;margin:0 auto;padding:52px 16px 28px}
+h1{font-size:1.5rem;margin:0 0 4px;font-weight:700}
+.sub{margin:0 0 14px;color:var(--muted);font-size:.95rem}
+.stage{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 6px 22px var(--shadow);background:#eef4fa}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.controls{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.controls input[type=range]{flex:1 1 140px}
+button{font:inherit;font-size:1rem;color:var(--btn-fg);background:var(--btn-bg);border:2px solid var(--btn-border);border-radius:999px;padding:8px 16px;cursor:pointer;min-height:44px}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:44px}
+.credit{margin:10px 0 0;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>Little Monster Films</h1>
+  <p class="sub">Three short films about one worried felt-tip monster.</p>
+  <svg id="stage" class="stage" viewBox="0 0 800 600" role="img" aria-label="Animated drawings of a little red felt-tip monster: it flies into an old PC, gets filmed by a webcam, and learns to fly">
+    <defs>
+      <filter id="boil" filterUnits="userSpaceOnUse" x="0" y="0" width="800" height="600">
+        <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="1" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+        <line x1="0" y1="2" x2="9" y2="2" stroke="#b8123a" stroke-width="2.2" opacity=".55"/>
+        <line x1="0" y1="6.5" x2="9" y2="6.5" stroke="#ff7d9a" stroke-width="1.6" opacity=".6"/>
+      </pattern>
+      <pattern id="hatch2" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(-50)">
+        <line x1="0" y1="4" x2="13" y2="4" stroke="#a00f33" stroke-width="1.4" opacity=".4"/>
+      </pattern>
+      <pattern id="hatchB" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+        <line x1="0" y1="3" x2="8" y2="3" stroke="#a79c80" stroke-width="1.2" opacity=".5"/>
+      </pattern>
+      <pattern id="hatchV" width="5" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(8)"><line x1="1.5" y1="0" x2="1.5" y2="9" stroke="#d8312e" stroke-width="2.6"/><line x1="4.2" y1="0" x2="4.2" y2="6" stroke="#e8604c" stroke-width="1.6" opacity=".8"/></pattern>
+      <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect y="2" width="4" height="1.6" fill="#000" opacity=".38"/></pattern>
+      <radialGradient id="glow" cx="50%" cy="50%" r="70%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".6"/></radialGradient>
+    </defs>
+
+    <rect width="800" height="600" fill="#eef4fa"/>
+    <!-- faint paper creases -->
+    <path d="M0 300 L800 296" stroke="#dbe6f0" stroke-width="2" fill="none"/>
+    <path d="M402 0 L398 600" stroke="#dbe6f0" stroke-width="2" fill="none"/>
+
+    <g filter="url(#boil)">
+      <!-- ground and doodles -->
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M70 510 C160 505 230 514 330 508 S520 512 610 507 S720 511 735 509" stroke="#6a8a4a" stroke-width="2.4"/>
+        <path d="M110 508 l-6 -20 M110 508 l2 -24 M110 508 l9 -18 M250 511 l-5 -18 M250 511 l5 -22 M520 512 l-4 -20 M520 512 l6 -18 M690 508 l-6 -22 M690 508 l5 -20" stroke="#6fae4a" stroke-width="2.4"/>
+        <path d="M600 507 L598 470 M598 470 q-14 -4 -12 -16 M598 470 q14 -2 14 -14" stroke="#4f9a3c" stroke-width="2.4"/>
+        <circle cx="598" cy="448" r="9" stroke="#f0a020" stroke-width="2.4" fill="#ffd24a"/>
+        <g id="drawOn" stroke="#e8a21a" stroke-width="2.6">
+          <path id="sun" pathLength="100" d="M722 90 a30 30 0 1 1 -2 -1 M722 40 l1 -14 M758 56 l12 -8 M772 92 l14 1 M758 130 l12 9 M722 142 l1 14 M686 130 l-11 9 M672 92 l-14 1 M686 56 l-10 -8" />
+          <path id="cloud1" pathLength="100" stroke="#8fb0d6" d="M50 118 c-18 -2 -22 -26 -2 -28 c4 -20 32 -22 40 -4 c18 -8 36 6 28 20 c14 4 8 20 -6 18 z"/>
+          <path id="cloud2" pathLength="100" stroke="#8fb0d6" d="M620 330 c-14 -2 -16 -20 -2 -22 c3 -14 24 -16 30 -3 c13 -6 27 4 21 15 c11 3 6 15 -5 13 z"/>
+        </g>
+      </g>
+
+      <!-- trail -->
+      <polyline id="trail" fill="none" stroke="#e04a3c" stroke-width="2.4" stroke-dasharray="2 12" stroke-linecap="round" opacity="0"/>
+
+      <!-- shadow -->
+      <ellipse id="shadow" cx="400" cy="508" rx="70" ry="9" fill="#5a6a8a" opacity=".2"/>
+
+
+      <!-- film 1: old beige PC -->
+      <g id="pcBox" display="none" stroke-linejoin="round" stroke-linecap="round">
+        <rect x="440" y="438" width="330" height="62" rx="5" fill="#d9d0b6" stroke="#6f6550" stroke-width="2.6"/>
+        <rect x="440" y="438" width="330" height="62" rx="5" fill="url(#hatchB)"/>
+        <rect x="470" y="462" width="96" height="10" rx="2" fill="#3a3426"/>
+        <rect x="578" y="462" width="18" height="10" rx="2" fill="#bdb398" stroke="#6f6550" stroke-width="2"/>
+        <circle cx="708" cy="470" r="4.5" fill="#3fbf4a" stroke="#2a6a2e" stroke-width="1.5"/>
+        <circle cx="726" cy="470" r="4.5" fill="#e0a020" stroke="#8a5f10" stroke-width="1.5"/>
+        <path d="M640 450 h60 M640 456 h60 M640 462 h40" stroke="#8a7f66" stroke-width="2" fill="none"/>
+        <rect x="560" y="426" width="100" height="14" fill="#c9bfa3" />
+        <path d="M492 184 L728 184 Q750 184 750 206 L750 406 Q750 430 728 430 L492 430 Q470 430 470 406 L470 206 Q470 184 492 184 Z" fill="#ded5ba" stroke="#6f6550" stroke-width="2.6"/>
+        <path d="M492 184 L728 184 Q750 184 750 206 L750 406 Q750 430 728 430 L492 430 Q470 430 470 406 L470 206 Q470 184 492 184 Z" fill="url(#hatchB)"/>
+        <rect x="488" y="200" width="244" height="194" rx="16" fill="#bdb398" stroke="#6f6550" stroke-width="2.6"/>
+        <rect x="500" y="212" width="220" height="170" rx="16" fill="#0a0c0a"/>
+        <circle cx="690" cy="412" r="6" fill="#bdb398" stroke="#6f6550" stroke-width="2"/>
+        <circle cx="712" cy="412" r="6" fill="#bdb398" stroke="#6f6550" stroke-width="2"/>
+        <path d="M500 414 h90" stroke="#8a7f66" stroke-width="2.4" fill="none"/>
+      </g>
+
+      <!-- film 2: webcam -->
+      <g id="cam" display="none" stroke-linejoin="round" stroke-linecap="round">
+        <g id="camBody" transform="translate(660,504)">
+          <rect x="-34" y="-14" width="68" height="14" rx="5" fill="#4a4d5c" stroke="#1d1f28" stroke-width="2.4"/>
+          <path d="M0 -14 C-2 -70 12 -110 0 -164" fill="none" stroke="#2f313d" stroke-width="10"/>
+          <path d="M0 -14 C-2 -70 12 -110 0 -164" fill="none" stroke="#5a5d6e" stroke-width="2.4"/>
+          <g id="camHead" transform="translate(0,-184)">
+            <rect x="-42" y="-30" width="84" height="58" rx="14" fill="#3a3d4a" stroke="#1d1f28" stroke-width="2.6"/>
+            <circle cx="0" cy="0" r="22" fill="#1a1c26" stroke="#9a9db0" stroke-width="2.4"/>
+            <circle cx="0" cy="0" r="14" fill="#3a6fa0"/>
+            <circle cx="-5" cy="-5" r="4" fill="#fff" opacity=".85"/>
+            <circle id="ledGlow" cx="29" cy="-20" r="10" fill="#ff3030" opacity=".4"/>
+            <circle id="led" cx="29" cy="-20" r="5" fill="#ff2020" stroke="#7a0a0a" stroke-width="1.5"/>
+          </g>
+        </g>
+      </g>
+      <g id="frame" display="none" fill="none" stroke="#e02424" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M100 215 V170 H145 M520 170 H565 V215 M565 500 V545 H520 M145 545 H100 V500"/>
+        <g id="rec"><circle cx="124" cy="196" r="7" fill="#e02424" stroke="none"/><text x="140" y="203" font-size="20" fill="#e02424" stroke="none" font-family="Courier New,monospace" font-weight="700">REC</text></g>
+      </g>
+    </g>
+
+    <!-- CRT screen contents (crisp, not boiled) -->
+    <g id="screen" display="none">
+      <clipPath id="scrClip"><rect x="500" y="212" width="220" height="170" rx="16"/></clipPath>
+      <g clip-path="url(#scrClip)">
+        <rect x="500" y="212" width="220" height="170" fill="#050805"/>
+        <g id="swirl" opacity="0" transform="translate(610,297)">
+          <path d="M0 0 q20 -34 56 -14 M0 0 q-24 30 -58 8 M0 0 q34 24 14 58 M0 0 q-30 -22 -10 -56" fill="none" stroke="#55ffff" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <g id="pix" transform="translate(534,226)" shape-rendering="crispEdges">
+          <path id="pR" fill="#ff5555"/><path id="pr" fill="#aa0000"/><path id="pW" fill="#ffffff"/><path id="pK" fill="#000000"/><path id="pCy" fill="#55ffff"/><path id="pC" fill="#00aaaa"/>
+        </g>
+        <text id="prompt" x="508" y="374" font-size="15" fill="#aaaaaa" font-family="Courier New,Courier,monospace" xml:space="preserve">C:\&gt;_</text>
+        <rect id="flash" x="500" y="212" width="220" height="170" fill="#ffffff" opacity="0"/>
+        <rect x="500" y="212" width="220" height="170" fill="url(#scan)"/>
+        <rect x="500" y="212" width="220" height="170" fill="url(#glow)"/>
+        <path d="M512 224 q60 -8 120 -4 l-6 8 q-50 -2 -106 4 z" fill="#fff" opacity=".07"/>
+      </g>
+    </g>
+
+    <g filter="url(#boil)">
+      <!-- monster -->
+      <g id="monster">
+        <g id="wingsBack">
+        <g id="wingL" transform="translate(-58,-36)">
+          <g id="wingLg"><path id="wpL" d="M0 -6 C-10 -34 -48 -44 -64 -28 C-92 -40 -106 -6 -86 8 C-100 28 -62 40 -40 26 C-24 34 -8 24 0 12" fill="#eef4fa" fill-opacity="0" stroke="#7f8bab" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></g>
+        </g>
+        <g id="wingR" transform="translate(58,-36) scale(-1,1)">
+          <g id="wingRg"><path id="wpR" d="M0 -6 C-10 -34 -48 -44 -64 -28 C-92 -40 -106 -6 -86 8 C-100 28 -62 40 -40 26 C-24 34 -8 24 0 12" fill="#eef4fa" fill-opacity="0" stroke="#7f8bab" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></g>
+        </g>
+        </g>
+        <g id="footL" transform="translate(-42,90)">
+          <path d="M-14 -4 L-17 16 L-4 19 L13 17 L12 -2 Z" fill="url(#hatchV)" stroke="#a81f1f" stroke-width="1.8" stroke-linejoin="round"/>
+        </g>
+        <g id="footR" transform="translate(38,90)">
+          <path d="M-12 -2 L-13 18 L3 17 L18 19 L14 -4 Z" fill="url(#hatchV)" stroke="#a81f1f" stroke-width="1.8" stroke-linejoin="round"/>
+        </g>
+        <clipPath id="bodyClip"><path d="M-58,-76 L-64,-112 L-52,-94 L-49,-110 L-41,-90 L-35,-102 L-33,-80 L-12,-84 L10,-79 L30,-83 L36,-102 L42,-88 L50,-114 L54,-92 L66,-108 L61,-74 L58,-40 L62,-8 L57,20 L63,40 L84,44 L82,58 L60,62 L57,84 L52,96 L30,92 L22,98 L-4,90 L-12,98 L-34,92 L-54,98 L-58,80 L-52,50 L-60,22 L-56,-12 L-62,-44 Z"/></clipPath>
+        <g id="bodyFill" clip-path="url(#bodyClip)"></g>
+        <path d="M-58,-76 L-64,-112 L-52,-94 L-49,-110 L-41,-90 L-35,-102 L-33,-80 L-12,-84 L10,-79 L30,-83 L36,-102 L42,-88 L50,-114 L54,-92 L66,-108 L61,-74 L58,-40 L62,-8 L57,20 L63,40 L84,44 L82,58 L60,62 L57,84 L52,96 L30,92 L22,98 L-4,90 L-12,98 L-34,92 L-54,98 L-58,80 L-52,50 L-60,22 L-56,-12 L-62,-44 Z" fill="none" stroke="#a81f1f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M-58,-76 L-64,-112 L-52,-94 L-49,-110 L-41,-90 L-35,-102 L-33,-80 L-12,-84 L10,-79 L30,-83 L36,-102 L42,-88 L50,-114 L54,-92 L66,-108 L61,-74 L58,-40 L62,-8 L57,20 L63,40 L84,44 L82,58 L60,62 L57,84 L52,96 L30,92 L22,98 L-4,90 L-12,98 L-34,92 L-54,98 L-58,80 L-52,50 L-60,22 L-56,-12 L-62,-44 Z" fill="none" stroke="#d8312e" stroke-width="1.1" stroke-linejoin="round" transform="translate(1.6,-1.2)" opacity=".7"/>
+        <ellipse id="blushL" cx="-40" cy="10" rx="13" ry="7" fill="#ff9fb4" opacity="0"/>
+        <ellipse id="blushR" cx="40" cy="10" rx="13" ry="7" fill="#ff9fb4" opacity="0"/>
+        <g id="eyeL">
+          <ellipse cx="0" cy="0" rx="21" ry="22" fill="#fff" stroke="#3b2a3a" stroke-width="1.8"/>
+          <circle id="pupL" cx="5" cy="2" r="7.5" fill="#1b1020"/>
+        </g>
+        <g id="eyeR">
+          <ellipse cx="0" cy="0" rx="21" ry="22" fill="#fff" stroke="#3b2a3a" stroke-width="1.8"/>
+          <circle id="pupR" cx="-5" cy="2" r="7.5" fill="#1b1020"/>
+        </g>
+        <g id="wingsFront"></g>
+        <path id="mouthFill" d="" fill="#7a1030" opacity="0"/>
+        <path id="mouth" d="" fill="none" stroke="#5a1030" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+
+      <g id="bang" opacity="0"><path d="M0 -26 L-2 8 M0 20 l0 .1" stroke="#d83030" stroke-width="5" stroke-linecap="round" fill="none"/></g>
+      <g id="hearts"></g>
+    </g>
+
+    <!-- title card -->
+    <g id="card" opacity="0" filter="url(#boil)">
+      <g id="cardTilt" transform="translate(400,66) rotate(-1.2)">
+        <rect id="cardBg" x="-210" y="-30" width="420" height="60" rx="8" fill="#fffdf4" stroke="#8b1030" stroke-width="2.5"/>
+        <text id="cardNum" x="-196" y="-12" font-size="13" fill="#8b1030" font-family="Bradley Hand,Segoe Print,Chalkboard SE,Comic Sans MS,cursive">scene 1</text>
+        <text id="cardText" x="0" y="14" text-anchor="middle" font-size="27" fill="#2a2433" font-family="Bradley Hand,Segoe Print,Chalkboard SE,Comic Sans MS,cursive">A worried little monster</text>
+      </g>
+    </g>
+    <text x="786" y="588" text-anchor="end" font-size="13" fill="#8895ab" font-family="Bradley Hand,Segoe Print,Chalkboard SE,Comic Sans MS,cursive">after a felt-tip drawing</text>
+    <rect id="veil" width="800" height="600" fill="#eef4fa" opacity="1"/>
+  </svg>
+
+  <div class="tabs"><button id="all" type="button" aria-pressed="true">Play all</button><span id="tabs" style="display:contents"></span></div>
+  <div class="controls">
+    <button id="play" type="button" aria-label="Play">Play</button>
+    <button id="replay" type="button" aria-label="Replay this film">Replay</button>
+    <input id="seek" type="range" min="0" max="580" value="0" step="1" aria-label="Film position">
+  </div>
+</main>
+
+<script>
+(function(){
+  var G = 400;
+  var $ = function(id){ return document.getElementById(id); };
+  var el = {};
+  ['monster','wingL','wingR','wingLg','wingRg','wingsBack','wingsFront','footL','footR','eyeL','eyeR','pupL','pupR',
+   'mouth','mouthFill','blushL','blushR','shadow','trail','bang','hearts','card','cardNum','cardText',
+   'veil','turb','sun','cloud1','cloud2','play','replay','seek','pcBox','cam','camBody','camHead','led','ledGlow','frame','rec',
+   'screen','swirl','pR','pr','pW','pK','pCy','pC','prompt','flash','all','tabs'].forEach(function(n){ el[n]=$(n); });
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function sm(x){ x = clamp(x,0,1); return x*x*(3-2*x); }
+  function lerp(a,b,u){ return a+(b-a)*u; }
+  function f(n){ return n.toFixed(2); }
+  function set(n,a,v){ n.setAttribute(a,v); }
+
+  // ---------- hearts ----------
+  var hearts = [];
+  for (var i=0;i<7;i++){
+    var h = document.createElementNS(SVGNS,'path');
+    h.setAttribute('d','M0 6 C-14 -6 -15 -17 -7 -17 C-3 -17 0 -13 0 -10 C0 -13 3 -17 7 -17 C15 -17 14 -6 0 6 Z');
+    h.setAttribute('fill','#ff7d9a'); h.setAttribute('stroke','#c4163f'); h.setAttribute('stroke-width','2.2');
+    h.setAttribute('stroke-linejoin','round'); h.setAttribute('opacity','0');
+    el.hearts.appendChild(h); hearts.push(h);
+  }
+
+
+  // ---------- scribbled body fill (seeded, deterministic) ----------
+  (function(){
+    var seed = 7; function rnd(){ seed = (seed*16807) % 2147483647; return seed/2147483647; }
+    var cols = ['#d8312e','#cc2a2a','#e04a3c','#c02424','#e8604c'];
+    var g = $('bodyFill'), out = '';
+    function strokes(x0, x1, step, w, op, gapP){
+      for (var x=x0; x<x1; x+=step){
+        var y = -92 + rnd()*8, d = 'M'+f(x+rnd()*2)+' '+f(y), end = 98 + rnd()*6, gapAt = rnd()<gapP ? -50 + rnd()*120 : 999, dir = 1;
+        while (y < end){
+          y += 11 + rnd()*10; dir = -dir;
+          if (y > gapAt && gapAt < 900){ d += ' M'+f(x+dir*2.5+rnd()*2)+' '+f(y+10+rnd()*8); gapAt = 999; continue; }
+          d += ' L'+f(x+dir*(1.5+rnd()*2.2))+' '+f(Math.min(y,end));
+        }
+        out += '<path d="'+d+'" fill="none" stroke="'+cols[Math.floor(rnd()*cols.length)]+'" stroke-width="'+f(w*(0.8+rnd()*0.5))+'" stroke-linecap="round" stroke-linejoin="round" opacity="'+f(op-rnd()*0.15)+'"/>';
+      }
+    }
+    strokes(-68, 72, 6.2, 6.4, 0.95, 0.35);
+    strokes(-65, 70, 11, 3, 0.55, 0.2);
+    // a few quick diagonal scribbles
+    for (var k=0;k<7;k++){ var x=-55+rnd()*110, y=-70+rnd()*150; out += '<path d="M'+f(x)+' '+f(y)+' l'+f(14+rnd()*10)+' '+f(-10-rnd()*8)+'" stroke="#a81f1f" stroke-width="1.4" opacity=".5" fill="none" stroke-linecap="round"/>'; }
+    g.innerHTML = out;
+  })();
+  // ---------- monster pose ----------
+  var wingPhase = 0, wingsInFront = false;
+  function blink(t, list){
+    for (var i=0;i<list.length;i++){
+      var u = (t-list[i])/0.2;
+      if (u>0 && u<1) return 1 - 0.92*Math.sin(Math.PI*u);
+    }
+    return 1;
+  }
+  function flapAng(dt, rate, amp, base){ wingPhase += dt*rate; return base + amp*Math.sin(wingPhase*2*Math.PI); }
+
+  function applyMonster(t, o){
+    var m = { x:400, y:G, rot:0, sc:1, sx:1, sy:1, lookx:0, looky:0, eyeS:1, cross:1, s:0, gasp:0,
+              wL:4, wR:4, cL:0, cR:0, fl:0, blinks:[], vis:1, front:false };
+    for (var k in o) m[k] = o[k];
+    set(el.monster,'opacity', m.vis);
+    set(el.monster,'transform','translate('+f(m.x)+','+f(m.y)+') rotate('+f(m.rot)+') scale('+f(m.sc)+') translate(0,100) scale('+f(m.sx)+','+f(m.sy)+') translate(0,-100)');
+    if (m.front !== wingsInFront){
+      wingsInFront = m.front;
+      var host = m.front ? el.wingsFront : el.wingsBack;
+      host.appendChild(el.wingL); host.appendChild(el.wingR);
+    }
+    set($('wpL'),'fill-opacity', f(clamp(m.cL*3,0,0.96))); set($('wpR'),'fill-opacity', f(clamp(m.cR*3,0,0.96)));
+    set(el.wingLg,'transform','rotate('+f(m.wL)+') scale('+f(1-2*m.cL)+',1)');
+    set(el.wingRg,'transform','rotate('+f(m.wR)+') scale('+f(1-2*m.cR)+',1)');
+    var da = 10*m.fl*Math.sin(t*5.5);
+    set(el.footL,'transform','translate(-42,90) rotate('+f(da)+')');
+    set(el.footR,'transform','translate(38,90) rotate('+f(-da)+')');
+    var bl = blink(t, m.blinks), ey = bl*m.eyeS;
+    set(el.eyeL,'transform','translate(-29,-28) scale('+f(m.eyeS)+','+f(ey)+')');
+    set(el.eyeR,'transform','translate(28,-25) scale('+f(m.eyeS)+','+f(ey)+')');
+    var cs = 5*m.cross;
+    set(el.pupL,'cx',f(cs+m.lookx)); set(el.pupL,'cy',f(2+m.looky));
+    set(el.pupR,'cx',f(-cs+m.lookx)); set(el.pupR,'cy',f(2+m.looky));
+    var s = m.s;
+    var md;
+    if (m.gasp > 0.5){
+      md = 'M-8 30 a8 10 0 1 0 16 0 a8 10 0 1 0 -16 0 Z';
+      set(el.mouthFill,'opacity','1');
+    } else {
+      var ey2 = 32 - 8*s, cy = 19 + 32*s, wob = 1.6*Math.sin(t*3), hw = 18 + 4*s;
+      md = 'M'+f(-hw)+' '+f(ey2)+' C-8 '+f(cy+wob)+' 8 '+f(cy-wob)+' '+f(hw)+' '+f(ey2);
+      set(el.mouthFill,'opacity', f(clamp((s-0.6)*2.5,0,1)));
+    }
+    set(el.mouth,'d',md); set(el.mouthFill,'d', m.gasp>0.5 ? md : md+' Z');
+    set(el.blushL,'opacity', f(0.65*s*s)); set(el.blushR,'opacity', f(0.65*s*s));
+    // shadow
+    var h = clamp(G-m.y,0,400), sc = (1 - h/520)*clamp(m.sc*1.2,0,1);
+    set(el.shadow,'cx',f(m.x)); set(el.shadow,'rx',f(Math.max(0,70*sc))); set(el.shadow,'ry',f(Math.max(0,9*sc)));
+    set(el.shadow,'opacity', f(0.22*sc*m.vis));
+    return m;
+  }
+  function bangAt(m, op, t){
+    set(el.bang,'opacity', f(op));
+    set(el.bang,'transform','translate('+f(m.x+88)+','+f(m.y-115 - 6*Math.sin(t*14))+') rotate(12)');
+  }
+
+  // ---------- Film 1: Emulated ----------
+  var SPR_W = 19, SPR_H = 15, lastSpriteKey = '';
+  function buildSprite(rows, look, smile, wdyL, wdyR){
+    var g = [], y, x;
+    for (y=0;y<SPR_H;y++){ g.push([]); for (x=0;x<SPR_W;x++) g[y].push('.'); }
+    function P(x,y,c){ if (y>=0 && y<SPR_H && x>=0 && x<SPR_W) g[y][x]=c; }
+    var wing = [[2,5],[3,5],[4,5],[1,6],[2,6],[3,6],[4,6],[1,7],[2,7],[3,7],[4,7],[2,8],[3,8]];
+    wing.forEach(function(c){
+      var dark = c[1]===8;
+      P(c[0], c[1]+wdyL, dark?'C':'c'); P(18-c[0], c[1]+wdyR, dark?'C':'c');
+    });
+    for (y=3;y<=12;y++) for (x=5;x<=13;x++) P(x,y,(x===13||y===12)?'r':'R');
+    for (y=4;y<=11;y+=2) P(5,y,'r');
+    [[5,1],[5,2],[13,1],[13,2],[6,2],[12,2],[6,3],[12,3]].forEach(function(c){ P(c[0],c[1],'R'); });
+    for (y=4;y<=6;y++) for (x=6;x<=8;x++){ P(x,y,'W'); P(x+4,y,'W'); }
+    var lp, rp;
+    if (look==='x'){ lp=8; rp=10; } else if (look===-1){ lp=6; rp=10; } else if (look===1){ lp=8; rp=12; } else { lp=7; rp=11; }
+    P(lp,5,'K'); P(rp,5,'K');
+    if (smile){ P(7,10,'K'); P(11,10,'K'); P(8,11,'K'); P(9,11,'K'); P(10,11,'K'); P(8,10,'r'); }
+    else { P(8,11,'K'); P(9,10,'K'); P(10,11,'K'); }
+    [[6,13],[7,13],[11,13],[12,13],[6,14],[7,14],[11,14],[12,14]].forEach(function(c){ P(c[0],c[1],'r'); });
+    var d = { R:'', r:'', W:'', K:'', c:'', C:'' }, tops = 0;
+    for (y=0;y<SPR_H;y++){
+      if (y>rows) break;
+      for (x=0;x<SPR_W;x++){
+        var c = g[y][x]; if (c==='.') continue;
+        if (y===rows && rows<SPR_H-1) c = 'W';
+        d[c] += 'M'+(x*8)+' '+(y*8)+'h8v8h-8z';
+      }
+    }
+    set(el.pR,'d',d.R); set(el.pr,'d',d.r); set(el.pW,'d',d.W); set(el.pK,'d',d.K); set(el.pCy,'d',d.c); set(el.pC,'d',d.C);
+  }
+
+  function drawEmu(t, dt){
+    var m = { x:190, y:G };
+    if (t < 0.3){
+      m.x += Math.sin(t*23)*0.7; m.lookx = 3*Math.sin(t*1.1); m.wL = m.wR = 4 + 2*Math.sin(t*9);
+    } else if (t < 0.9){
+      var u = (t-0.3)/0.6;
+      m.y = G - 60*sm(u); m.eyeS = 1.1; m.s = 0.85*sm((t-0.35)/0.4); m.fl = u;
+      m.wL = m.wR = flapAng(dt, 2.6, 12+24*u, 8);
+      m.lookx = 4*u;
+    } else if (t < 2.6){
+      var u2 = (t-0.9)/1.7, e = sm(u2);
+      m.x = lerp(190,560,e); m.y = lerp(340,300,e) - 55*Math.sin(Math.PI*u2);
+      m.rot = 12*Math.sin(Math.PI*u2) + 4*Math.sin(t*5); m.s = 0.85; m.fl = 1; m.eyeS = 1.1; m.lookx = 5; m.cross = 0.6;
+      m.wL = m.wR = flapAng(dt, 3.0, 36, 10);
+    } else if (t < 3.55){
+      var v = (t-2.6)/0.95, e2 = v*v;
+      m.x = lerp(560,610,e2); m.y = lerp(300,297,e2);
+      m.sc = lerp(1,0.03,e2); m.rot = 900*e2; m.sx = 1+0.5*e2; m.sy = 1-0.3*e2;
+      m.gasp = 1; m.eyeS = 1.3; m.fl = 1; m.lookx = 4;
+      m.wL = m.wR = flapAng(dt, 4, 30, 10);
+    } else m.vis = 0;
+    if (t > 2.5 && t < 3.0) bangAt(m, sm((t-2.5)/0.1)*(1-sm((t-2.8)/0.2)), t); else set(el.bang,'opacity','0');
+    m.blinks = [0.15];
+    applyMonster(t, m);
+
+    // CRT screen contents
+    var look = 'x', smile = false, wL = -1, wR = -1;
+    if (t >= 4.2 && t < 4.5) look = -1; else if (t >= 4.5 && t < 4.9) look = 1; else if (t >= 4.9 && t < 5.0) look = 0;
+    if (t >= 5.0){ smile = true; wL = -1 - (Math.floor((t-5.0)/0.18)%2)*2; wR = 0; }
+    var rows = t < 3.6 ? -1 : Math.ceil(sm((t-3.6)/0.6)*(SPR_H-1));
+    var bob = (t>=4.2 && t<5.0) ? Math.floor(t*4)%2 : 0;
+    var key = rows+'|'+look+'|'+smile+'|'+wL+'|'+wR;
+    if (key !== lastSpriteKey){ lastSpriteKey = key; buildSprite(rows, look, smile, wL, wR); }
+    set($('pix'),'transform','translate(534,'+(226+bob*0)+')');
+    var sw = sm((t-2.3)/0.3)*(1-sm((t-3.5)/0.2));
+    set(el.swirl,'opacity',f(sw)); set(el.swirl,'transform','translate(610,297) rotate('+f(t*700)+')');
+    set(el.flash,'opacity',f(Math.max(0,1-Math.abs(t-3.55)/0.22)*0.9));
+    var cur = Math.floor(t*2.2)%2 ? ' ' : '_';
+    el.prompt.textContent = t >= 5.0 ? 'C:\\>HI!' + cur : 'C:\\>' + cur;
+  }
+
+  // ---------- Film 2: The Webcam ----------
+  function drawCam(t, dt){
+    var m = { x:300, y:G, s:0.35, front: t >= 2.0 };
+    var cx = 220*(1-sm((t-0.4)/0.6));
+    var tilt = -6 + 3*Math.sin((t-1)*8)*Math.exp(-Math.max(0,t-1)*2);
+    if (t < 1.0){
+      m.lookx = 3*Math.sin(t*1.6); m.wL = m.wR = 5+3*Math.sin(t*2.2);
+    } else if (t < 1.5){
+      var u = sm((t-1.0)/0.5);
+      m.lookx = 5*u; m.cross = 1-0.5*u; m.eyeS = 1+0.1*u; m.s = 0.35*(1-u); m.wL = m.wR = 6+8*u;
+    } else if (t < 2.1){
+      var p = (t-1.5)/0.6;
+      m.y = G - 70*Math.sin(Math.PI*p);
+      m.sy = 1+0.08*Math.sin(Math.PI*p); m.sx = 1-0.05*Math.sin(Math.PI*p);
+      m.eyeS = 1.35; m.gasp = 1; m.lookx = 5; m.cross = 0.4; m.rot = 5*Math.sin(t*40);
+      m.wL = m.wR = flapAng(dt, 4, 28, 30); m.fl = 1;
+    } else if (t < 3.6){
+      var c = sm((t-2.1)/0.5);
+      m.cL = c; m.cR = c; m.gasp = 0;
+      m.eyeS = lerp(1.35,1,sm((t-2.1)/0.3)); m.lookx = 5; m.cross = 0.4;
+      m.sy = 1 - 0.06*c; m.x += 1.6*Math.sin(t*38)*c; m.rot = 1.5*Math.sin(t*31)*c;
+      m.wL = m.wR = 2; m.s = 0;
+    } else {
+      var pk = sm((t-3.6)/0.6);
+      m.cL = 1-pk; m.cR = 1-0.15*pk;
+      m.s = 0.2 + 0.6*sm((t-3.8)/1.0); m.lookx = 5; m.cross = 0.55; m.eyeS = 1;
+      m.rot = -3*pk; m.x += -4*pk; m.sy = lerp(0.94,1,pk);
+      m.wR = 2;
+      if (t < 4.3) m.wL = 2 + 20*pk; else m.wL = 40 + 24*Math.sin((t-4.3)*9);
+    }
+    m.blinks = [0.7, 4.9];
+    m.front = t >= 2.0;
+    var mm = applyMonster(t, m);
+    var bo = (t>1.5 && t<2.5) ? sm((t-1.5)/0.1)*(1-sm((t-2.2)/0.3)) : 0;
+    bangAt(mm, bo, t);
+
+    set(el.camBody,'transform','translate('+f(660+cx)+',504)');
+    set(el.camHead,'transform','translate(0,-184) rotate('+f(tilt+ (t>2.1&&t<3.6?-3:0))+')');
+    var on = (Math.floor(t*2.4)%2===0) || t<1.0;
+    set(el.led,'opacity', on?'1':'0.25'); set(el.ledGlow,'opacity', on?'0.5':'0');
+    set(el.frame,'display', t>1.0 ? 'inline' : 'none');
+    set(el.rec,'opacity', on?'1':'0.2');
+  }
+
+  // ---------- Film 3: The Flight ----------
+  var P = [
+    [11.4,400,370],[12.0,400,350],[13.2,300,250],[14.4,170,175],[15.6,290,135],
+    [16.6,430,150],[17.2,500,115],[17.8,565,165],[18.2,520,225],[18.7,445,185],[19.2,485,138],
+    [19.9,650,150],[20.8,700,265],[21.8,600,350],[22.6,470,382],[23.2,405,400],[23.6,400,400],[24.0,400,400]
+  ];
+  function flightPos(t){
+    t = clamp(t, P[1][0], P[P.length-3][0]+0.6);
+    var k = 1;
+    while (k < P.length-3 && t > P[k+1][0]) k++;
+    var p0=P[k-1],p1=P[k],p2=P[k+1],p3=P[k+2];
+    var u = clamp((t-p1[0])/(p2[0]-p1[0]),0,1), u2=u*u, u3=u2*u;
+    function c(a,b,cc,d){ return 0.5*((2*b)+(-a+cc)*u+(2*a-5*b+4*cc-d)*u2+(-a+3*b-3*cc+d)*u3); }
+    return [c(p0[1],p1[1],p2[1],p3[1]), c(p0[2],p1[2],p2[2],p3[2])];
+  }
+  function wingAngle(t){
+    if (t < 7.4) return 4 + 2*Math.sin(t*9);
+    if (t < 9.6) { var e = sm((t-7.4)/0.4)*(1-sm((t-9.2)/0.4)); return 4 + 20*e*Math.sin((t-7.4)*10) + 4*e; }
+    if (t < 10.4) return 4 + 18*sm((t-9.6)/0.4);
+    return 0;
+  }
+  function flapAmp(t){
+    if (t < 10.4) return 0;
+    if (t < 12) return lerp(14,34,sm((t-10.4)/1.6));
+    if (t < 20.5) return 36;
+    if (t < 23.2) return lerp(36,12,sm((t-20.5)/2.7));
+    return lerp(12,9,sm((t-23.2)/1.5));
+  }
+  function flapRate(t){
+    if (t < 12) return 2.4;
+    if (t < 20.5) return 2.9;
+    if (t < 23.2) return lerp(2.9,1.6,sm((t-20.5)/2.7));
+    return 1.1;
+  }
+  function drawOn(node, t, t0, dur){
+    var p = sm((t-t0)/dur);
+    set(node,'stroke-dasharray','100'); set(node,'stroke-dashoffset', f(100*(1-p)));
+    set(node,'opacity', p>0 ? '1' : '0');
+  }
+  function hideFlightBits(){
+    set(el.trail,'opacity','0'); set(el.bang,'opacity','0');
+    for (var j=0;j<hearts.length;j++) set(hearts[j],'opacity','0');
+    drawOn(el.sun,-9,0,1); drawOn(el.cloud1,-9,0,1); drawOn(el.cloud2,-9,0,1);
+  }
+
+  function drawFlight(t, dt){
+    var x=400, y=G, rot=0, sx=1, sy=1, lookx=0, looky=0, eyeS=1, s=0, fl=0, cross=1;
+    if (t < 6){
+      x += Math.sin(t*23)*0.7; sy = 1 + 0.012*Math.sin(t*2);
+      lookx = 4*Math.sin(t*1.1); looky = 1.5*Math.sin(t*1.7);
+    } else if (t < 12){
+      x += (t<9.6 ? Math.sin(t*23)*0.5 : 0);
+      if (t < 7.4) lookx = 3*Math.sin(t*1.1);
+      else if (t < 8.4) { lookx = -5; looky = -2; }
+      else if (t < 9.4) { lookx = 5; looky = -2; }
+      if (t >= 9.6 && t < 10.3){
+        var u = (t-9.6)/0.7;
+        y -= 34*Math.sin(Math.PI*u);
+        sy = 1 + 0.08*Math.sin(Math.PI*u); sx = 1 - 0.05*Math.sin(Math.PI*u);
+        eyeS = 1 + 0.2*Math.sin(Math.PI*clamp(u*1.2,0,1));
+      }
+      if (t >= 10.3 && t < 12){
+        var e = sm((t-10.6)/1.4);
+        y = G - 50*e + 3*Math.sin(t*6)*e;
+        eyeS = 1 + 0.2*(1-sm((t-10.3)/0.7));
+      }
+      s = 0.85*sm((t-9.7)/0.9);
+      fl = sm((t-10.6)/1.4);
+    } else if (t < 23.2){
+      var pp = flightPos(t);
+      x = pp[0]; y = pp[1];
+      var a = flightPos(t-0.03), b = flightPos(t+0.03);
+      var vx = (b[0]-a[0])/0.06;
+      rot = clamp(vx/16, -15, 15);
+      if (t > 16.7 && t < 19.0) rot += 360*sm((t-16.7)/2.3);
+      sx = 1 + 0.03*Math.sin(t*5.8); sy = 1 - 0.03*Math.sin(t*5.8);
+      lookx = clamp(vx/90,-5,5); looky = -1; eyeS = 1.08;
+      s = 0.85; fl = 1;
+      if (t > 22.0) fl = 1 - sm((t-22.0)/1.2);
+    } else {
+      var q = t - 23.2;
+      if (q < 0.45){ var uu = q/0.45; sy = 1 - 0.14*Math.sin(Math.PI*uu); sx = 1 + 0.1*Math.sin(Math.PI*uu); }
+      else if (q > 1.9 && q < 3.3){ var hu = (q-1.9)/0.7; y -= 16*Math.abs(Math.sin(Math.PI*hu)); }
+      s = 0.85 + 0.15*sm((t-23.7)/1.0);
+      cross = 1 - 0.7*sm((t-23.7)/1.0);
+      rot = 3*Math.sin(t*5)*sm((t-24.5)/0.5);
+      lookx = 2*Math.sin(t*1.3)*(1-s*0.5);
+    }
+    var ang = wingAngle(t);
+    if (t >= 10.4) ang = 8 + (wingPhase += dt*flapRate(t), flapAmp(t)*Math.sin(wingPhase*2*Math.PI));
+    else wingPhase = 0;
+    applyMonster(t, {x:x,y:y,rot:rot,sx:sx,sy:sy,lookx:lookx,looky:looky,eyeS:eyeS,s:s,fl:fl,cross:cross,wL:ang,wR:ang,blinks:[3.2,6.4,6.85,24.3]});
+    var bo = (t>9.6 && t<10.9) ? sm((t-9.6)/0.15)*(1-sm((t-10.5)/0.4)) : 0;
+    bangAt({x:x,y:y}, bo, t);
+
+    if (t > 12.4 && t < 23.3){
+      var pts = [];
+      for (var k=0;k<26;k++){
+        var tt = t - k*0.07;
+        if (tt < 12.0) break;
+        var tp = flightPos(tt);
+        pts.push(f(tp[0])+','+f(tp[1]+40));
+      }
+      set(el.trail,'points', pts.join(' '));
+      set(el.trail,'opacity', f(0.55*(1-sm((t-22.4)/0.8))*sm((t-12.4)/0.4)));
+    } else set(el.trail,'opacity','0');
+    drawOn(el.cloud1, t, 12.6, 1.4); drawOn(el.sun, t, 13.0, 1.8); drawOn(el.cloud2, t, 17.0, 1.4);
+    for (var j=0;j<hearts.length;j++){
+      var u0 = (t - (24.5 + j*0.32))/2.4, hh = hearts[j];
+      if (u0 > 0 && u0 < 1 && t < 27.4){
+        var hx = x + (j*41 % 120) - 60 + 10*Math.sin(u0*6+j);
+        var hy = y - 40 - 170*u0;
+        var scl = 0.8 + 0.5*((j*7)%3)/2;
+        set(hh,'transform','translate('+f(hx)+','+f(hy)+') scale('+f(scl)+')');
+        set(hh,'opacity', f(Math.min(1,u0*5)*(1-sm((u0-0.7)/0.3))));
+      } else set(hh,'opacity','0');
+    }
+  }
+
+  // ---------- films table ----------
+  var FILMS = [
+    { name:'1  Emulated', D:5.8, draw:drawEmu, fin:0.3, fout:0.35, still:1.0,
+      cards:[[0.2,1.7,'film 1','Emulated']] },
+    { name:'2  The Webcam', D:5.8, draw:drawCam, fin:0.3, fout:0.35, still:1.0,
+      cards:[[0.2,1.7,'film 2','The Webcam']] },
+    { name:'3  The Flight', D:28, draw:drawFlight, fin:0.5, fout:0.7, still:1.8,
+      cards:[[0.5,4.0,'film 3 - scene 1','A worried little monster'],[6.2,9.4,'film 3 - scene 2','Wait... are those wings?'],[12.1,14.2,'film 3 - scene 3','Whoosh!'],[23.6,27.1,'film 3 - scene 4','Home again, and happy.']] }
+  ];
+
+  var cur = 0, t = 0, playing = false, allMode = true, lastSeed = 0, seeds = 0, last = null;
+  var tabBtns = [];
+  FILMS.forEach(function(F, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = F.name; b.setAttribute('aria-pressed','false');
+    b.addEventListener('click', function(){ allMode = false; selectFilm(i); setPlaying(true); });
+    el.tabs.appendChild(b); tabBtns.push(b);
+  });
+
+  function refreshTabs(){
+    tabBtns.forEach(function(b,i){ b.setAttribute('aria-pressed', (!allMode && i===cur) ? 'true' : 'false'); });
+    el.all.setAttribute('aria-pressed', allMode ? 'true' : 'false');
+  }
+  function selectFilm(i){
+    cur = i; t = 0; wingPhase = 0; wingsInFront = false;
+    el.wingsBack.appendChild(el.wingL); el.wingsBack.appendChild(el.wingR);
+    var F = FILMS[i];
+    set(el.pcBox,'display', i===0?'inline':'none'); set(el.screen,'display', i===0?'inline':'none');
+    set(el.cam,'display', i===1?'inline':'none'); set(el.frame,'display','none');
+    set(el.bang,'opacity','0');
+    hideFlightBits(); lastSpriteKey = '';
+    el.seek.max = Math.round(F.D*100);
+    refreshTabs();
+    render(0,0);
+  }
+
+  function render(tt, dt){
+    var F = FILMS[cur];
+    F.draw(tt, dt);
+    var ca = 0;
+    F.cards.forEach(function(C){
+      if (tt > C[0] && tt < C[1]){
+        ca = Math.min(sm((tt-C[0])/0.35), 1-sm((tt-(C[1]-0.4))/0.4));
+        el.cardNum.textContent = C[2]; el.cardText.textContent = C[3];
+      }
+    });
+    set(el.card,'opacity', f(ca));
+    var vo = 0;
+    if (tt < F.fin) vo = 1 - tt/F.fin; else if (tt > F.D-F.fout) vo = clamp((tt-(F.D-F.fout))/F.fout,0,1);
+    set(el.veil,'opacity', f(vo));
+    el.seek.value = Math.round(tt*100);
+  }
+
+  function setPlaying(p){
+    playing = p;
+    el.play.textContent = p ? 'Pause' : 'Play';
+    el.play.setAttribute('aria-label', p ? 'Pause' : 'Play');
+  }
+  el.play.addEventListener('click', function(){ setPlaying(!playing); });
+  el.replay.addEventListener('click', function(){ selectFilm(cur); setPlaying(true); });
+  el.all.addEventListener('click', function(){ allMode = true; selectFilm(0); setPlaying(true); });
+  el.seek.addEventListener('input', function(){ t = parseInt(el.seek.value,10)/100; wingPhase = 0; if (!playing) render(t,0); });
+
+  function frame(now){
+    if (last === null) last = now;
+    var dt = Math.min((now-last)/1000, 0.1); last = now;
+    if (playing){
+      t += dt;
+      if (t >= FILMS[cur].D){
+        if (allMode) selectFilm((cur+1) % FILMS.length); else selectFilm(cur);
+      }
+      if (now - lastSeed > 110){ lastSeed = now; seeds = (seeds % 7) + 1; el.turb.setAttribute('seed', seeds); }
+      render(t, dt);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- start ----------
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hash = location.hash || '', mf = /f=([0-9])/.exec(hash), mt = /t=([0-9.]+)/.exec(hash);
+  if (mf){ cur = parseInt(mf[1],10) % FILMS.length; allMode = false; }
+  selectFilm(cur);
+  if (mt) t = parseFloat(mt[1]); else if (reduce) t = FILMS[cur].still;
+  setPlaying(!reduce && !/pause/.test(hash));
+  render(t, 0);
+  requestAnimationFrame(frame);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
