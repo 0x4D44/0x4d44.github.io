@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "little-monster-films",
+    title: "Little Monster Films",
+    tagline: "Three short looping films about a little red felt-tip monster, redrawn from a child's drawing: it is emulated into a 1990s PC, caught on webcam, and learns to fly. Inline SVG with CSS and JS animation, no libraries.",
+    url: "https://0x4d44.github.io/little-monster-films/",
+    illustration: "ill-monster",
+    date: "2026-10-01T21:26:00",
+    year: 2026,
+    readingMin: 2,
+    words: 150,
+    tag: "fiction",
+    real: true,
+  },
+  {
     slug: "meiosis",
     title: "Meiosis \u2014 One of Each",
     tagline: "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
@@ -1879,7 +1892,7 @@ window.COLLECTIONS = [
       "constellation"] },
   { id: "cabinet", name: "The Cabinet", icon: "ill-sleeve",
     blurb: "The comic, the con and other curiosities.",
-    slugs: ["news", "win-at-cards", "mr-poop", "ipo-history"] },
+    slugs: ["news", "win-at-cards", "mr-poop", "ipo-history", "little-monster-films"] },
 ];
 
 window.fmtDate = function (iso) {
