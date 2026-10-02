@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "cold-cache",
+    title: "The Cold Cache",
+    tagline: "Where the tokens go when an AI coding agent stops to wait. Eleven days, four machines and 336,000 requests, counted by cause — and a five-minute default that turned out to set a quarter of the bill. Static HTML, no libraries.",
+    url: "https://0x4d44.github.io/cold-cache/",
+    illustration: "ill-tokens",
+    date: "2026-10-02T12:00:00",
+    year: 2026,
+    readingMin: 8,
+    words: 1500,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "little-monster-films",
     title: "Little Monster Films",
     tagline: "Three short looping films about a little red felt-tip monster, redrawn from a child's drawing: it is emulated into a 1990s PC, caught on webcam, and learns to fly. Inline SVG with CSS and JS animation, no libraries.",
@@ -1854,7 +1867,7 @@ window.COLLECTIONS = [
       "chief-engineer"] },
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
-    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
+    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache",
       "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work, and what becomes of the sound afterwards — the physics of the string, the mechanism, and the codecs that carry the result.",
