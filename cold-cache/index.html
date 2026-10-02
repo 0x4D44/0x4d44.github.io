@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cold Cache</title>
+<meta name="description" content="Where the tokens go when an AI coding agent pauses: eleven days, four machines, 336,000 requests, and the five-minute gap that cost a quarter of the bill.">
+<style>
+  :root {
+    --bg: #f6f4ee; --panel: #fffdf8; --ink: #1d2327; --muted: #5d676e; --rule: #d9d4c7;
+    --cold: #2f6f9f; --cold-soft: #cfe1ee; --warm: #c2562b; --warm-soft: #f3d9cc; --good: #3d7a4f;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14181b; --panel: #1b2125; --ink: #e6e3da; --muted: #9aa5ab; --rule: #313a40;
+      --cold: #6fb1de; --cold-soft: #24394a; --warm: #e58a62; --warm-soft: #46291d; --good: #7cc391;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--sans); }
+  header.mast { padding: 14px 16px 14px 124px; border-bottom: 1px solid var(--rule);
+    font: 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  h1 { font: 700 clamp(38px, 9vw, 64px)/1.02 var(--serif); margin: 56px 0 14px; letter-spacing: -.015em; text-wrap: balance; }
+  .dek { font: 20px/1.45 var(--serif); color: var(--muted); margin: 0 0 28px; text-wrap: pretty; }
+  h2 { font: 700 26px/1.2 var(--serif); margin: 56px 0 10px; text-wrap: balance; }
+  h2 small { display: block; font: 12px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cold); margin-bottom: 6px; }
+  p { margin: 0 0 16px; text-wrap: pretty; }
+  ul { margin: 0 0 16px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 650; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 28px 0 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 14px 12px; }
+  .stat b { display: block; font: 700 28px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+  .stat span { display: block; font-size: 13px; line-height: 1.35; color: var(--muted); margin-top: 6px; }
+  .stat.cold b { color: var(--cold); }
+  .scroll { overflow-x: auto; margin: 18px 0 22px; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { padding: 9px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font: 600 12px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tr.total td { font-weight: 650; }
+  td.wrap { white-space: normal; min-width: 220px; text-align: left; }
+  .bars { margin: 18px 0 24px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+  .bars h3 { font: 600 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+  .bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 76px; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 14px; }
+  .bar .track { height: 18px; background: var(--cold-soft); border-radius: 3px; overflow: hidden; display: flex; }
+  .bar .fill { height: 100%; background: var(--cold); }
+  .bar .fill.warm { background: var(--warm); }
+  .bar .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .note { border-left: 3px solid var(--cold); padding: 2px 0 2px 14px; margin: 20px 0; color: var(--muted); font-size: 15.5px; }
+  .note.warm { border-color: var(--warm); }
+  footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); }
+  @media (max-width: 520px) {
+    body { font-size: 16px; }
+    .bar { grid-template-columns: 72px minmax(0, 1fr) 64px; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">Field report &middot; October 2026</header>
+<main>
+
+<h1>The Cold Cache</h1>
+<p class="dek">Where the tokens go when an AI coding agent stops to wait. Eleven days, four machines, 336,000 requests &mdash; and a five-minute gap that turned out to cost a quarter of the bill.</p>
+
+<div class="stats">
+  <div class="stat"><b>335,664</b><span>model requests measured across four machines</span></div>
+  <div class="stat"><b>8.1bn</b><span>input-token equivalents spent on context</span></div>
+  <div class="stat cold"><b>77%</b><span>of that spent by sub-agents, not the main sessions</span></div>
+  <div class="stat cold"><b>28%</b><span>spent re-reading context after a pause of 5&ndash;11 minutes</span></div>
+</div>
+
+<h2><small>The problem</small>A conversation is re-sent every time</h2>
+<p>A language model has no memory between requests. Every time an agent runs a tool or answers a message, the whole conversation so far is sent again: the instructions, every file it has read, every command output. In a long coding session that is hundreds of thousands of tokens, re-sent hundreds of times a day.</p>
+<p>What makes this affordable is the <strong>prompt cache</strong>. The first time the model processes a stretch of conversation, the provider can keep the model's internal state for it. The next request that begins with the same text skips the computation and loads the saved state, at a small fraction of the price.</p>
+<p>The cache has a lifetime. Leave a conversation untouched for longer than that lifetime and the saved state is thrown away. The next request has to process everything from scratch, and pay to store it again. We call that a <strong>cold rewrite</strong>.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>What happens to a token</th><th>Price, relative to plain input</th></tr></thead>
+  <tbody>
+    <tr><td>Read from a warm cache</td><td class="num">0.05&times;</td></tr>
+    <tr><td>Plain input, not cached</td><td class="num">1&times;</td></tr>
+    <tr><td>Written to a 5-minute cache</td><td class="num">1.25&times;</td></tr>
+    <tr><td>Written to a 1-hour cache</td><td class="num">2&times;</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The same token costs <strong>forty times more</strong> written cold at the one-hour rate than read warm. So the question that decides the bill is simple: how often does a conversation go cold, and why?</p>
+
+<h2><small>A common confusion</small>Why not skip the cache?</h2>
+<p>If a cold rewrite costs 2&times; and plain input costs 1&times;, it is tempting to think the cache is the expensive part. It is not, because of what happens on the request after.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Request</th><th>Cached</th><th>Not cached</th></tr></thead>
+  <tbody>
+    <tr><td>First, after a long pause</td><td class="num">2.00</td><td class="num">1.00</td></tr>
+    <tr><td>Second</td><td class="num">0.05</td><td class="num">1.00</td></tr>
+    <tr><td>Each one after that</td><td class="num">+0.05</td><td class="num">+1.00</td></tr>
+  </tbody>
+</table>
+</div>
+<p>By the third request the cache is ahead, and it stays ahead. On one machine over nine days, each cached token was read back about <strong>92 times</strong>. Without the cache the same work would have cost roughly fourteen times more. The cheap read on every later request is paid for by the write premium on the first.</p>
+<p>The premium only hurts in two cases: when the same context is written more than once, and when a write is never read back.</p>
+
+<h2><small>Method</small>What we measured</h2>
+<p>The agent keeps a local log of every request, including how many tokens were read from cache and how many were written. We built a small reporting tool that reads only the structural fields of those logs: token counts, timestamps and the kind of event that woke the session. It never keeps conversation text.</p>
+<p>For every request it asks one question: was the previous context mostly re-written instead of read? If so, that is a cold rewrite, and the tool works out what ended the silence before it:</p>
+<ul>
+  <li><strong>Work</strong> &mdash; the agent was waiting on something it had started, such as a build or a sub-agent, and that finished.</li>
+  <li><strong>User</strong> &mdash; a person came back and typed.</li>
+  <li><strong>Peer</strong> &mdash; a message arrived from another agent.</li>
+  <li><strong>Cap</strong> &mdash; the session had hit a usage limit and resumed when it lifted.</li>
+  <li><strong>Account switch</strong> and <strong>other</strong> &mdash; the remainder.</li>
+</ul>
+<p>Rewrites caused by deliberately shrinking the conversation, or by changing model, are counted separately and left out. They are not waste.</p>
+<p>Costs below are in <strong>input-token equivalents</strong>: every read and write converted to plain input tokens at the rates above. The window is 22 September to 2 October 2026, one model, four machines.</p>
+
+<h2><small>Finding one</small>The helpers cost more than the lead</h2>
+<p>An agent often hands part of a job to <strong>sub-agents</strong>: short-lived helpers with their own conversation. We expected the long main sessions to dominate. They did not.</p>
+
+<div class="bars">
+  <h3>Context cost by machine, millions of input-token equivalents</h3>
+  <div class="bar"><span>Machine A</span><div class="track"><div class="fill warm" style="width:12.3%"></div><div class="fill" style="width:87.7%"></div></div><span class="v">3,913</span></div>
+  <div class="bar"><span>Machine B</span><div class="track" style="width:75%"><div class="fill warm" style="width:31.9%"></div><div class="fill" style="width:68.1%"></div></div><span class="v">2,937</span></div>
+  <div class="bar"><span>Machine C</span><div class="track" style="width:22.8%"><div class="fill warm" style="width:26.6%"></div><div class="fill" style="width:73.4%"></div></div><span class="v">893</span></div>
+  <div class="bar"><span>Machine D</span><div class="track" style="width:9.5%"><div class="fill warm" style="width:66%"></div><div class="fill" style="width:34%"></div></div><span class="v">370</span></div>
+  <div class="legend"><span><i style="background:var(--warm)"></i>Main sessions</span><span><i style="background:var(--cold)"></i>Sub-agents</span></div>
+</div>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Machine</th><th>Main</th><th>Sub-agents</th><th>Total</th><th>Sub-agent share</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>480.6M</td><td>3,432.6M</td><td>3,913.2M</td><td>88%</td></tr>
+    <tr><td>B</td><td>936.4M</td><td>2,000.2M</td><td>2,936.6M</td><td>68%</td></tr>
+    <tr><td>C</td><td>237.2M</td><td>655.6M</td><td>892.8M</td><td>73%</td></tr>
+    <tr><td>D</td><td>244.3M</td><td>125.8M</td><td>370.1M</td><td>34%</td></tr>
+    <tr class="total"><td>All four</td><td>1,898.5M</td><td>6,214.2M</td><td>8,112.7M</td><td>77%</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Sub-agents made about three times as many requests as main sessions (247,950 against 87,714), but that is not the whole story. They were also far more likely to go cold.</p>
+
+<h2><small>Finding two</small>The five-minute gap</h2>
+<p>Main sessions were writing to the one-hour cache. Sub-agents, it turned out, were writing to the <strong>five-minute</strong> cache: every one of them, on every machine. Nobody had chosen that. It was the default for anything outside the main conversation.</p>
+<p>Five minutes is shorter than a test suite. A sub-agent starts a build, waits seven minutes for it, and comes back to find its whole context gone.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Machine</th><th>Sub-agent cache writes</th><th>Share that were cold rewrites</th><th>Cold events</th><th>Of those: waiting on work, 5&ndash;11 min</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>1,693.1M</td><td>81.6%</td><td>5,255</td><td>4,227</td></tr>
+    <tr><td>B</td><td>848.7M</td><td>71.5%</td><td>1,786</td><td>1,282</td></tr>
+    <tr><td>C</td><td>294.6M</td><td>75.2%</td><td>869</td><td>742</td></tr>
+    <tr><td>D</td><td>54.8M</td><td>64.1%</td><td>308</td><td>278</td></tr>
+    <tr class="total"><td>All four</td><td>2,891.2M</td><td>77.7%</td><td>8,218</td><td>6,529</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>More than three-quarters of everything sub-agents wrote to the cache was a rewrite of something they had already written. And four in five of those rewrites had the same shape: a pause of between five and eleven minutes, ended by the sub-agent's own tool call returning.</p>
+<p>Those 6,529 events rewrote 1,803 million tokens. At the five-minute rate that is about 2,250 million input-token equivalents: <strong>28% of all context cost on the four machines</strong>, spent on pauses that a longer cache lifetime would have ridden out.</p>
+
+<div class="bars">
+  <h3>Sub-agent cold rewrites by cause, millions of tokens rewritten</h3>
+  <div class="bar"><span>Work</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="v">1,802.6</span></div>
+  <div class="bar"><span>Other</span><div class="track"><div class="fill" style="width:14.2%"></div></div><span class="v">255.6</span></div>
+  <div class="bar"><span>Peer</span><div class="track"><div class="fill" style="width:6%"></div></div><span class="v">108.5</span></div>
+  <div class="bar"><span>Cap</span><div class="track"><div class="fill" style="width:2.5%"></div></div><span class="v">44.2</span></div>
+  <div class="bar"><span>Account</span><div class="track"><div class="fill" style="width:1%"></div></div><span class="v">18.5</span></div>
+  <div class="bar"><span>User</span><div class="track"><div class="fill" style="width:.9%"></div></div><span class="v">16.1</span></div>
+</div>
+
+<h2><small>Finding three</small>Main sessions go cold too, for mixed reasons</h2>
+<p>Main sessions had the one-hour cache, so they went cold far less often: 601 times across the four machines. But each event was large, because a main session's context is large. Between a fifth and three-fifths of main-session cache writes were cold rewrites, depending on the machine.</p>
+
+<div class="bars">
+  <h3>Main-session cold rewrites by cause, millions of tokens rewritten</h3>
+  <div class="bar"><span>Work</span><div class="track"><div class="fill warm" style="width:100%"></div></div><span class="v">52.8</span></div>
+  <div class="bar"><span>User</span><div class="track"><div class="fill warm" style="width:84.7%"></div></div><span class="v">44.7</span></div>
+  <div class="bar"><span>Cap</span><div class="track"><div class="fill warm" style="width:43.6%"></div></div><span class="v">23.0</span></div>
+  <div class="bar"><span>Account</span><div class="track"><div class="fill warm" style="width:34.7%"></div></div><span class="v">18.3</span></div>
+  <div class="bar"><span>Peer</span><div class="track"><div class="fill warm" style="width:29.9%"></div></div><span class="v">15.8</span></div>
+  <div class="bar"><span>Other</span><div class="track"><div class="fill warm" style="width:2.1%"></div></div><span class="v">1.1</span></div>
+</div>
+
+<p>The largest single cause was again <strong>work</strong>: a lead agent starts sub-agents or a long job, hears nothing for an hour or more, and wakes cold when it finishes. The second was simply the person stepping away. That one is not waste in the same sense; it is the price of lunch.</p>
+<p>The gap pattern was sharp. Under fifty minutes, a main session almost never came back cold. Over an hour, it almost always did.</p>
+
+<h2><small>What we changed</small>Three small things</h2>
+<ul>
+  <li><strong>Sub-agents now use the one-hour cache.</strong> One line of configuration, rolled out to every machine. It makes each write dearer (2&times; instead of 1.25&times;) in exchange for surviving any pause under an hour.</li>
+  <li><strong>A waiting agent wakes every fifty minutes.</strong> While it has background work running, it checks on that work at least that often. The first purpose is to catch hung jobs. The side effect is that the cache never reaches its one-hour limit.</li>
+  <li><strong>A lead agent checks in with its team every fifty minutes</strong>, for the same two reasons.</li>
+</ul>
+<p>And the reporting tool now stores one summary record per day, so the before-and-after survives the logs being cleaned up.</p>
+
+<h2><small>Prediction</small>What it should save</h2>
+<p>For the sub-agent change, the tool re-prices the same eleven days as if every sub-agent write had been at the one-hour rate, and every cold resume of 5&ndash;60 minutes had been a warm read instead.</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Machine</th><th>Sub-agent cost, actual</th><th>With 1-hour cache</th><th>Change</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>3,432.6M</td><td>2,111.5M</td><td>&minus;38.5%</td></tr>
+    <tr><td>B</td><td>2,000.2M</td><td>1,484.4M</td><td>&minus;25.8%</td></tr>
+    <tr><td>C</td><td>655.6M</td><td>458.3M</td><td>&minus;30.1%</td></tr>
+    <tr><td>D</td><td>125.8M</td><td>103.0M</td><td>&minus;18.1%</td></tr>
+    <tr class="total"><td>All four</td><td>6,214.2M</td><td>4,157.1M</td><td>&minus;33.1%</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>That is about <strong>2,057 million input-token equivalents</strong>, a third of sub-agent cost and a quarter of everything. The estimate already carries the downside: with no rewrites saved at all, the dearer write rate alone would have added 31&ndash;37%.</p>
+<p>For the fifty-minute wake, the arithmetic is rougher. The 187 work-caused cold rewrites in main sessions cost about 106 million equivalents. Kept warm, they would have cost under 3 million as reads, plus roughly 6 million for the extra wake-ups themselves. Net saving: about <strong>97 million</strong>, or 1.2% of the total.</p>
+
+<div class="note">The sub-agent change is worth about twenty times the wake rule. The wake rule earns its place by catching stuck work; the token saving is a bonus.</div>
+
+<h2><small>Early evidence</small>Two days in</h2>
+<p>On the first machine to pick up the change:</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Day</th><th>Sub-agent writes at 1-hour rate</th><th>Cold resumes, 5&ndash;60 min</th></tr></thead>
+  <tbody>
+    <tr><td>Nine days before</td><td>0%</td><td>24 to 467 a day</td></tr>
+    <tr><td>Changeover day</td><td>18.2%</td><td>388</td></tr>
+    <tr><td>Day after (part)</td><td>100%</td><td>4</td></tr>
+  </tbody>
+</table>
+</div>
+<p>One part-day on one machine is not a result. It is the right direction, and the daily record will show whether it holds.</p>
+
+<h2><small>Roads not taken</small>Ideas the numbers argued against</h2>
+<ul>
+  <li><strong>Poking a five-minute cache to keep it alive.</strong> The five-minute rate is cheaper per write, so in principle one could use it everywhere and send a tiny request every four and a half minutes. Keeping a context alive that way costs about 0.65&times; of it per idle hour, against 0.06&times; on the one-hour cache. It only wins if idle time is short, and it cannot help the case that matters: a sub-agent cannot be poked while it is inside a long tool call.</li>
+  <li><strong>Compacting sooner.</strong> Shrinking conversations earlier would trim only about 7% of the cold rewrites on the machine we checked. Most cold events happened at ordinary context sizes.</li>
+  <li><strong>Pasting the conversation into a fresh session.</strong> It costs the same. To the model, a resumed session and a pasted one are identical: text it has no saved state for.</li>
+</ul>
+
+<h2><small>Caveats</small>How far to trust this</h2>
+<ul>
+  <li>The savings are scenarios, not bounds. Agents may behave differently once pauses stop being punished.</li>
+  <li>The wake-rule estimate guesses the number of wake-ups from gap buckets, and leaves out the output tokens each wake produces.</li>
+  <li>Counts are a floor. Logs that had already been deleted cannot be counted.</li>
+  <li>One model only. Two machines used an older model for part of the window; those requests are excluded.</li>
+  <li>The tool's classifier was checked against an independent reference implementation on thousands of generated histories, fuzzed, and reviewed by a second model family. Two small diagnostic disagreements remain open; neither affects token totals.</li>
+</ul>
+
+<div class="note warm">The lesson that generalises: a default nobody chose was setting a quarter of the bill. It was invisible until something counted cold rewrites by cause.</div>
+
+<footer>Figures cover 22 September to 2 October 2026. Costs are input-token equivalents at the relative rates shown in the first table.</footer>
+</main>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
