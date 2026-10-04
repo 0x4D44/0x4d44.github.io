@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — Looking Down the Bond</title>
+<meta name="description" content="Newman projections from scratch: how to draw them, staggered and eclipsed ethane, torsional strain, and the anti, gauche and eclipsed conformations of butane — all interactive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./"><b>1</b>Overview</a>
+    <a href="newman.html" aria-current="page"><b>2</b>Newman projections</a>
+    <a href="rings.html"><b>3</b>Ring strain</a>
+    <a href="chair.html"><b>4</b>The chair</a>
+    <a href="substituents.html"><b>5</b>Substituents</a>
+    <a href="review.html"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero">
+  <div>
+    <div class="kicker">Chapter 2 · Newman projections</div>
+    <h1>Looking <span>down the bond</span></h1>
+    <p class="lede">To judge how a molecule feels about a twist, you need to see the twist. The trick, introduced by Melvin Newman in the 1950s, is almost embarrassingly simple: stop looking at the bond from the side, and look straight along it.</p>
+  </div>
+  <div class="figure" style="margin:0">
+    <svg id="heroNewman" class="plot" role="img" aria-label="A Newman projection of staggered ethane" style="max-width:300px;margin:0 auto"></svg>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Turn the molecule end-on</h2>
+  <p>Here is ethane, CH<sub>3</sub>–CH<sub>3</sub>, drawn from the side. Two carbons, each carrying three hydrogens. Press the button and the camera swings round until you're looking straight down the carbon–carbon bond.</p>
+
+  <div class="figure wide">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.85"><canvas id="lookCanvas" aria-label="Ethane in 3D"></canvas><div class="tag" id="lookTag">side view (a "sawhorse")</div><div class="hint">drag to turn</div></div>
+      <div class="stage" style="aspect-ratio: 1 / 0.85; display:grid; place-items:center"><svg id="lookNewman" class="plot" style="max-width:300px" role="img" aria-label="The matching Newman projection"></svg><div class="tag">the Newman projection</div></div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="lookDown">Look down the C–C bond</button>
+      <button class="btn" id="lookSide">Back to side view</button>
+    </div>
+    <p class="cap">End-on, the front carbon hides the back one completely. The Newman projection keeps what matters: the <b>front carbon</b> becomes a point where three bonds meet, and the <b>back carbon</b> becomes a circle, with its three bonds poking out from behind the rim.</p>
+  </div>
+
+  <h3>How to draw one, every time</h3>
+  <ol>
+    <li><b>Pick the bond</b> you want to look along, and decide which carbon is in front.</li>
+    <li><b>Front carbon:</b> draw three bonds meeting at a point, 120° apart (a "Y" or an upside-down "Y").</li>
+    <li><b>Back carbon:</b> draw a circle centred on that point. Its three bonds start at the <em>edge</em> of the circle, never at the centre.</li>
+    <li><b>Add the groups</b> at the ends of each bond. Check each carbon has four things attached: three drawn groups plus the C–C bond you're looking along.</li>
+  </ol>
+  <p>The angle between a front bond and a back bond, measured around the circle, is the <span class="term">dihedral angle</span> (or <em>torsion angle</em>), written θ or φ. It's the single number that describes a twist.</p>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Ethane: staggered and eclipsed</h2>
+  <p>Now grab the back carbon and turn it. You'll find two special poses repeating every 120°:</p>
+  <ul>
+    <li><span class="term">Staggered</span> — each back bond sits neatly between two front bonds (dihedral 60°, 180°, 300°). Every hydrogen is as far as possible from its neighbours.</li>
+    <li><span class="term">Eclipsed</span> — each back bond hides directly behind a front bond (dihedral 0°, 120°, 240°). Three pairs of C–H bonds are lined up, nose to nose.</li>
+  </ul>
+
+  <div class="figure wide" id="ethaneRotor">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.9; display:grid; place-items:center"><svg class="newman plot" style="max-width:320px; touch-action:none; cursor:grab" role="img" aria-label="Draggable Newman projection"></svg><div class="tag">drag the back carbon</div></div>
+      <div class="stage" style="aspect-ratio: 1 / 0.9"><canvas class="mol" aria-label="The same molecule in 3D"></canvas><div class="tag">the same molecule</div><div class="hint">drag to turn</div></div>
+    </div>
+    <svg class="energy plot" role="img" aria-label="Energy against dihedral angle" style="margin-top:14px"></svg>
+    <div class="controls">
+      <label class="grow">Dihedral <input class="dial" type="range" min="0" max="360" step="1" value="60"></label>
+      <button class="btn snap" data-to="60">staggered</button>
+      <button class="btn snap" data-to="0">eclipsed</button>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Dihedral (pink H's)</small><span class="o-phi"></span></div>
+      <div class="chip"><small>Conformation</small><span class="o-name"></span></div>
+      <div class="chip"><small>Energy</small><span class="o-e"></span></div>
+    </div>
+    <p class="cap">Three views, one molecule — they move together. You can also click or drag along the energy curve. The two <b class="c-pink">pink</b> hydrogens mark the pair whose dihedral angle we're measuring.</p>
+  </div>
+
+  <p>The energy difference is small but real: eclipsed ethane sits <strong>12&nbsp;kJ/mol</strong> above staggered. Because the eclipsed pose has three identical H/H eclipsings, each one costs about <strong>4.0&nbsp;kJ/mol</strong>. That penalty is <span class="term">torsional strain</span>.</p>
+  <p>Notice what <em>kind</em> of thing the eclipsed pose is. It's not a conformer — it's the top of a hill, a <em>transition state</em> the molecule passes over on its way from one staggered well to the next. With a 12&nbsp;kJ/mol hill and 2.5&nbsp;kJ/mol of typical thermal energy, ethane makes that crossing around 10<sup>10</sup> times every second. At any instant, nearly every ethane molecule in a sample is staggered or close to it.</p>
+
+  <details class="aside">
+    <summary>Why does eclipsing cost energy at all? Hydrogens are tiny.</summary>
+    <p>They are — the hydrogens in eclipsed ethane are about 2.3&nbsp;Å apart, roughly their comfortable contact distance, so plain bumping (steric strain) is only a minor part of it. Two effects do most of the work. First, the bonding electron pairs in eclipsed C–H bonds are closer together and repel each other. Second, in the staggered pose each filled C–H bonding orbital on one carbon lines up perfectly with an empty C–H <em>antibonding</em> orbital (σ*) on the other, and a little electron density leaks across, stabilising the molecule. This is called <em>hyperconjugation</em>. Chemists still argue about the exact split between the two; for this course, "eclipsed bonds repel, staggered bonds don't" is the right picture.</p>
+  </details>
+
+  <h3>One step up: propane</h3>
+  <p>Swap one hydrogen for a methyl group and you have propane. Its barrier is about <strong>14&nbsp;kJ/mol</strong>. Bookkeeping explains it: the eclipsed pose now has two H/H eclipsings (4.0 each) and one H/CH<sub>3</sub> eclipsing, which costs a bit more — about <strong>6.0&nbsp;kJ/mol</strong>, because the methyl is bigger. 4.0 + 4.0 + 6.0 = 14. Conformational energies really are this additive, and that's what makes them easy to estimate.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Butane: the rollercoaster</h2>
+  <p>Butane, CH<sub>3</sub>CH<sub>2</sub>–CH<sub>2</sub>CH<sub>3</sub>, is the first molecule where the poses stop being equal. Look down the central C2–C3 bond and each carbon carries one methyl group and two hydrogens. Now the dihedral angle that matters is the one between the two <b class="c-gold">methyls</b>.</p>
+
+  <div class="figure wide" id="butaneRotor">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.9; display:grid; place-items:center"><svg class="newman plot" style="max-width:320px; touch-action:none; cursor:grab" role="img" aria-label="Draggable Newman projection of butane"></svg><div class="tag">drag the back carbon</div></div>
+      <div class="stage" style="aspect-ratio: 1 / 0.9"><canvas class="mol" aria-label="Butane in 3D"></canvas><div class="tag">butane, looking down C2–C3</div><div class="hint">drag to turn</div></div>
+    </div>
+    <svg class="energy plot" role="img" aria-label="Energy of butane against dihedral angle" style="margin-top:14px"></svg>
+    <div class="controls">
+      <label class="grow"><span>CH₃–C–C–CH₃ dihedral</span> <input class="dial" type="range" min="0" max="360" step="1" value="180"></label>
+    </div>
+    <div class="controls">
+      <button class="btn snap" data-to="180">anti</button>
+      <button class="btn snap" data-to="60">gauche</button>
+      <button class="btn snap" data-to="120">eclipsed</button>
+      <button class="btn snap" data-to="0">fully eclipsed</button>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Dihedral</small><span class="o-phi"></span></div>
+      <div class="chip"><small>Conformation</small><span class="o-name"></span></div>
+      <div class="chip"><small>Energy</small><span class="o-e"></span></div>
+      <div class="chip" style="flex:1 1 220px"><small>What's costing energy</small><span class="o-why" style="font-size:15px"></span></div>
+    </div>
+  </div>
+
+  <p>Walk round the circle from the best pose to the worst:</p>
+  <ul>
+    <li><b class="c-green">Anti (180°)</b> — the methyls point in opposite directions. Everything is staggered and nothing is crowded. This is the global minimum: 0&nbsp;kJ/mol.</li>
+    <li><b class="c-gold">Gauche (60° and 300°)</b> — still staggered, but the two methyls are now neighbours, 60° apart. Their hydrogens jostle: <span class="term">steric strain</span> of about 3.8&nbsp;kJ/mol. A local minimum — a genuine conformer, and there are two of them (mirror images).</li>
+    <li><b class="c-blue">Eclipsed (120° and 240°)</b> — each methyl eclipses a hydrogen: two H/CH<sub>3</sub> eclipsings (6.0 each) plus one H/H (4.0) = 16&nbsp;kJ/mol. A hilltop.</li>
+    <li><b class="c-coral">Fully eclipsed (0°)</b> — methyl directly behind methyl. CH<sub>3</sub>/CH<sub>3</sub> eclipsing (≈11) plus two H/H (4.0 each) ≈ 19&nbsp;kJ/mol. The highest point on the curve.</li>
+  </ul>
+
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th>Interaction</th><th>Type of strain</th><th class="n">Cost, kJ/mol</th></tr></thead>
+      <tbody>
+        <tr><td>H ↔ H eclipsed</td><td>torsional</td><td class="n">4.0</td></tr>
+        <tr><td>H ↔ CH<sub>3</sub> eclipsed</td><td>mostly torsional</td><td class="n">6.0</td></tr>
+        <tr><td>CH<sub>3</sub> ↔ CH<sub>3</sub> eclipsed</td><td>torsional + steric</td><td class="n">11</td></tr>
+        <tr><td>CH<sub>3</sub> ↔ CH<sub>3</sub> gauche</td><td>steric</td><td class="n">3.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>These four numbers are worth knowing. With them you can rebuild the whole butane curve on the back of an envelope — and in <a href="substituents.html">Chapter 5</a> the gauche value will turn up again, inside a cyclohexane ring, to explain something that looks unrelated.</p>
+
+  <div class="key">
+    <h4>Minimum or maximum?</h4>
+    <p>Staggered poses (anti, gauche) are the <strong>conformers</strong> — the energy minima. Eclipsed poses are <strong>maxima</strong> — the barriers between them. If an exam asks you to "draw the most stable conformation", it's always a staggered one.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span>So which pose wins?</h2>
+  <p>"Anti is lowest" doesn't mean every butane molecule is anti. Thermal energy keeps kicking molecules up and over the barriers, and the population of each conformer is set by a <span class="term">Boltzmann distribution</span>: a pose that's <i>ΔE</i> higher in energy is less populated by a factor e<sup>−<i>ΔE</i>/<i>RT</i></sup>.</p>
+  <p>Below, one butane molecule is being buffeted by random kicks (a slowed-down simulation). Every position it visits is added to the histogram. Leave it running and the histogram settles onto the Boltzmann prediction.</p>
+
+  <div class="figure wide">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.8; display:grid; place-items:center"><svg id="simNewman" class="plot" style="max-width:260px" role="img" aria-label="A butane molecule jiggling"></svg><div class="tag">one molecule, slowed ~10<sup>11</sup>×</div></div>
+      <div>
+        <svg id="simHist" class="plot" role="img" aria-label="Histogram of visited dihedral angles"></svg>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="grow">Temperature <input id="simT" type="range" min="100" max="1000" step="10" value="298"></label>
+      <button class="btn" id="simReset">Clear histogram</button>
+      <button class="btn" id="simPause" aria-pressed="false">Pause</button>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Temperature</small><span id="simTout">298 K</span></div>
+      <div class="chip"><small>Anti (simulated)</small><span id="simAnti">—</span></div>
+      <div class="chip"><small>Anti (Boltzmann)</small><span id="simPred">—</span></div>
+    </div>
+    <p class="cap"><b>Bars</b>: where the molecule has actually been. <b class="c-gold">Gold line</b>: the Boltzmann prediction, ∝ e<sup>−E/RT</sup>. Cool it down and the molecule gets trapped in whichever well it's in; heat it up and the gauche wells fill in.</p>
+  </div>
+
+  <p>At 25&nbsp;°C the sums come out at about <strong>70% anti and 30% gauche</strong> (15% in each gauche well). Gauche is a minority, but hardly rare — and since there are two gauche wells to one anti, entropy partly offsets the energy cost.</p>
+  <p>That's why long alkane chains are mostly zig-zags. Each C–C bond along the chain prefers to be anti, so a chain left alone stretches out into the familiar zig-zag. Every gauche bond puts a kink in it. Straight, all-anti chains pack together neatly, which is part of why long-chain waxes and saturated fats are solids at room temperature.</p>
+</section>
+
+<section>
+  <h2><span class="num">✓</span>Quick check</h2>
+  <div class="quiz">
+    <div class="qn">Question 1</div>
+    <p class="q">In a Newman projection, the bonds to the <em>back</em> carbon are drawn…</p>
+    <div class="opts">
+      <button>meeting at the centre point</button>
+      <button data-ok>starting from the edge of the circle</button>
+      <button>as dashed wedges</button>
+    </div>
+    <p class="why">The circle <em>is</em> the back carbon, seen from in front. Its bonds emerge from behind the rim; only the front carbon's bonds meet at the centre.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 2</div>
+    <p class="q">Using the table, estimate the energy of the eclipsed conformation of propane relative to staggered.</p>
+    <div class="opts">
+      <button>12 kJ/mol</button>
+      <button data-ok>14 kJ/mol</button>
+      <button>19 kJ/mol</button>
+    </div>
+    <p class="why">Two H/H eclipsings (2 × 4.0) plus one H/CH<sub>3</sub> eclipsing (6.0) = 14&nbsp;kJ/mol.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 3</div>
+    <p class="q">Gauche butane is higher in energy than anti butane mainly because of…</p>
+    <div class="opts">
+      <button>torsional strain — some bonds are eclipsed</button>
+      <button>angle strain</button>
+      <button data-ok>steric strain — the two methyls are crowded at 60°</button>
+    </div>
+    <p class="why">Gauche is fully staggered, so there's no torsional strain at all. The 3.8&nbsp;kJ/mol comes purely from the two methyl groups bumping into each other.</p>
+  </div>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="prev" href="./"><small>← Chapter 1</small><span>Overview</span></a>
+<a class="next" href="rings.html"><small>Chapter 3 →</small><span>Ring strain</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="newman.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

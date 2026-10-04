@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — Toolkit and Practice</title>
+<meta name="description" content="A one-page summary of conformational analysis for first-year organic chemistry: the energies worth remembering, a step-by-step method, a glossary, and exam-style practice questions with explanations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./"><b>1</b>Overview</a>
+    <a href="newman.html"><b>2</b>Newman projections</a>
+    <a href="rings.html"><b>3</b>Ring strain</a>
+    <a href="chair.html"><b>4</b>The chair</a>
+    <a href="substituents.html"><b>5</b>Substituents</a>
+    <a href="review.html" aria-current="page"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero" style="grid-template-columns:minmax(0,1fr)">
+  <div class="wrap" style="margin:0">
+    <div class="kicker">Chapter 6 · Toolkit &amp; practice</div>
+    <h1>Everything on <span>one page</span></h1>
+    <p class="lede">The numbers worth carrying in your head, a method that works on any conformation question, and a set of problems to test it on. Everything here was built in Chapters 1–5; follow the links back if something feels shaky.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Numbers worth knowing</h2>
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th>Quantity</th><th class="n">kJ/mol</th><th>Where you met it</th></tr></thead>
+      <tbody>
+        <tr><td>Thermal energy, <i>RT</i> at 25&nbsp;°C</td><td class="n">2.5</td><td><a href="./">Ch. 1</a></td></tr>
+        <tr><td>Every factor of 10 in rate or ratio</td><td class="n">5.7</td><td><a href="./">Ch. 1</a></td></tr>
+        <tr><td>H/H eclipsed</td><td class="n">4.0</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>H/CH<sub>3</sub> eclipsed</td><td class="n">6.0</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>CH<sub>3</sub>/CH<sub>3</sub> eclipsed</td><td class="n">11</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>CH<sub>3</sub>/CH<sub>3</sub> gauche</td><td class="n">3.8</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>Ethane rotation barrier</td><td class="n">12</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>Butane: anti → fully eclipsed</td><td class="n">19</td><td><a href="newman.html">Ch. 2</a></td></tr>
+        <tr><td>Ring strain: C3 / C4 / C5 / C6</td><td class="n">115 / 110 / 26 / 0</td><td><a href="rings.html">Ch. 3</a></td></tr>
+        <tr><td>Cyclohexane: twist-boat / boat / half-chair</td><td class="n">23 / 30 / 45</td><td><a href="chair.html">Ch. 4</a></td></tr>
+        <tr><td>CH<sub>3</sub>/H 1,3-diaxial (each)</td><td class="n">3.8</td><td><a href="substituents.html">Ch. 5</a></td></tr>
+        <tr><td>A-value: CH<sub>3</sub> / <i>t</i>-Bu</td><td class="n">7.6 / ~23</td><td><a href="substituents.html">Ch. 5</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Notice how many of these are really the same number. The gauche interaction in butane, each 1,3-diaxial contact in methylcyclohexane, and half a methyl's A-value are all ≈3.8&nbsp;kJ/mol, because they're all the same physical crowding seen from different angles.</p>
+</section>
+
+<section>
+  <h2><span class="num">2</span>A method for any conformation question</h2>
+  <h3>Open chains</h3>
+  <ol>
+    <li><b>Find the bond</b> the question is about and draw a Newman projection along it.</li>
+    <li><b>Put the biggest group</b> on the front carbon at 12 o'clock.</li>
+    <li><b>Turn the back carbon</b> in 60° steps: staggered, eclipsed, staggered… For each pose, list every eclipsed pair and every gauche pair of large groups.</li>
+    <li><b>Add up the costs</b> from the table. Lowest total = most stable. Staggered poses are minima; eclipsed poses are maxima.</li>
+  </ol>
+  <h3>Cyclohexanes</h3>
+  <ol>
+    <li><b>Draw a chair</b> properly (parallel lines; axial vertical; equatorial parallel to the ring bonds once removed).</li>
+    <li><b>Place the groups</b> using up/down (wedge/dash) from the question. On each carbon, decide whether "up" is axial or equatorial — it alternates round the ring.</li>
+    <li><b>Flip the ring.</b> Every axial ↔ equatorial; up stays up. Draw the second chair.</li>
+    <li><b>Cost each chair</b>: sum the A-values of its axial groups (plus any gauche penalty between neighbouring groups). The cheaper chair is the major conformer.</li>
+    <li><b>If asked for the ratio</b>, use <i>K</i> = e<sup>Δ<i>G</i>/<i>RT</i></sup>.</li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Glossary</h2>
+  <div class="tablewrap">
+    <table class="data">
+      <tbody>
+        <tr><td><b>Conformation</b></td><td>Any 3D arrangement reachable by rotating about single bonds.</td></tr>
+        <tr><td><b>Conformer</b></td><td>A conformation at an energy minimum (e.g. anti, gauche, chair).</td></tr>
+        <tr><td><b>Configuration</b></td><td>An arrangement that can only change by breaking bonds (<i>cis</i>/<i>trans</i>, <i>R</i>/<i>S</i>).</td></tr>
+        <tr><td><b>Dihedral (torsion) angle</b></td><td>The angle between two bonds on neighbouring atoms, seen along the bond joining them.</td></tr>
+        <tr><td><b>Staggered / eclipsed</b></td><td>Back bonds between / behind the front bonds of a Newman projection.</td></tr>
+        <tr><td><b>Anti / gauche</b></td><td>Two large groups 180° / 60° apart in a staggered conformation.</td></tr>
+        <tr><td><b>Torsional strain</b></td><td>Energy cost of eclipsed bonds.</td></tr>
+        <tr><td><b>Steric strain</b></td><td>Energy cost of groups crowding each other (van der Waals repulsion).</td></tr>
+        <tr><td><b>Angle (Baeyer) strain</b></td><td>Energy cost of bond angles bent away from ideal (109.5° for sp³ carbon).</td></tr>
+        <tr><td><b>Ring strain</b></td><td>Total extra energy of a ring compared with an unstrained chain; measured by heat of combustion.</td></tr>
+        <tr><td><b>Axial / equatorial</b></td><td>Bonds parallel to the ring's axis / pointing out round the ring's equator.</td></tr>
+        <tr><td><b>Ring flip</b></td><td>Chair-to-chair interconversion; swaps every axial and equatorial position.</td></tr>
+        <tr><td><b>1,3-Diaxial interaction</b></td><td>Steric clash between an axial group and the axial groups two carbons away on the same face.</td></tr>
+        <tr><td><b>A-value</b></td><td>Energy difference between axial and equatorial conformers for one substituent.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span>Practice problems</h2>
+  <p>Work each one on paper first — draw the Newman or the chair — then pick your answer.</p>
+
+  <div class="quiz">
+    <div class="qn">Problem 1 · Newman projections</div>
+    <p class="q">Looking along the C2–C3 bond of 2-methylbutane, (CH<sub>3</sub>)<sub>2</sub>CH–CH<sub>2</sub>CH<sub>3</sub>, what is the energy of the <em>lowest</em> staggered conformation, relative to a hypothetical strain-free one?</p>
+    <div class="opts">
+      <button>0 kJ/mol</button>
+      <button data-ok>3.8 kJ/mol</button>
+      <button>7.6 kJ/mol</button>
+    </div>
+    <p class="why">C2 carries two methyls and an H; C3 carries one methyl and two H's. However you stagger them, C3's methyl must sit between two groups on C2, and at least one of them is a methyl: one CH<sub>3</sub>/CH<sub>3</sub> gauche interaction at best, 3.8&nbsp;kJ/mol. Two of the three staggered poses manage that; the third wedges C3's methyl between both of C2's methyls (two gauche interactions, 7.6).</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 2 · Rotation barriers</div>
+    <p class="q">Estimate the barrier to rotation about the C2–C3 bond of butane when going from anti to the eclipsed conformation at 120°.</p>
+    <div class="opts">
+      <button>12 kJ/mol</button>
+      <button data-ok>16 kJ/mol</button>
+      <button>19 kJ/mol</button>
+    </div>
+    <p class="why">At 120°, each methyl eclipses an H (2 × 6.0) and the remaining H's eclipse each other (4.0): 16&nbsp;kJ/mol. 19 is the barrier at 0°, the fully eclipsed pose.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 3 · Ring strain</div>
+    <p class="q">Cyclopentane releases 3320&nbsp;kJ/mol on combustion. Using 658.6&nbsp;kJ/mol per unstrained CH<sub>2</sub>, its ring strain is about…</p>
+    <div class="opts">
+      <button data-ok>27 kJ/mol</button>
+      <button>5 kJ/mol</button>
+      <button>664 kJ/mol</button>
+    </div>
+    <p class="why">5 × 658.6 = 3293. 3320 − 3293 = 27&nbsp;kJ/mol (the usual quoted figure is 26). "5" is the strain <em>per CH<sub>2</sub></em>; "664" is the heat per CH<sub>2</sub>.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 4 · Shapes of rings</div>
+    <p class="q">Which statement about cyclobutane is correct?</p>
+    <div class="opts">
+      <button>It is flat, with 90° angles, to minimise angle strain</button>
+      <button data-ok>It is puckered, which slightly increases angle strain but reduces torsional strain</button>
+      <button>It adopts a chair conformation like cyclohexane</button>
+    </div>
+    <p class="why">Folding by ~25° pushes the angles down to ~88° (slightly worse) but staggers the C–H bonds a little (better). The trade is a small net win.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 5 · The chair</div>
+    <p class="q">On carbon 1 of a chair, the axial bond points up. On carbon 2, the axial bond points…</p>
+    <div class="opts">
+      <button>up</button>
+      <button data-ok>down</button>
+      <button>sideways — carbon 2 has no axial bond</button>
+    </div>
+    <p class="why">Axial directions alternate round the ring. So on carbon 2 the <em>equatorial</em> bond is the one on the top face.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 6 · Equilibria</div>
+    <p class="q">Isopropylcyclohexane has an A-value of 9.2&nbsp;kJ/mol. The ratio of equatorial to axial conformers at 25&nbsp;°C is closest to…</p>
+    <div class="opts">
+      <button>4 : 1</button>
+      <button>20 : 1</button>
+      <button data-ok>40 : 1</button>
+    </div>
+    <p class="why"><i>K</i> = e<sup>9.2/2.48</sup> = e<sup>3.7</sup> ≈ 41.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 7 · cis / trans</div>
+    <p class="q">Which dimethylcyclohexane can place both methyl groups equatorial at the same time?</p>
+    <div class="opts">
+      <button><i>cis</i>-1,2</button>
+      <button><i>trans</i>-1,3</button>
+      <button data-ok><i>cis</i>-1,3</button>
+    </div>
+    <p class="why">On C1 and C3, the "up" bonds are both axial or both equatorial (they're the same kind of carbon, two apart). So <i>cis</i> (both up) can be e,e. <i>cis</i>-1,2 and <i>trans</i>-1,3 are always a,e.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 8 · Putting it together</div>
+    <p class="q">In the major conformer of <i>trans</i>-1-<i>tert</i>-butyl-3-methylcyclohexane, the methyl group is…</p>
+    <div class="opts">
+      <button>equatorial, because methyl always prefers equatorial</button>
+      <button data-ok>axial, because the <i>t</i>-butyl group takes the equatorial position</button>
+      <button>split 50:50 between axial and equatorial</button>
+    </div>
+    <p class="why"><i>trans</i>-1,3 is always a,e — one group must be axial. Axial methyl costs 7.6&nbsp;kJ/mol; axial <i>t</i>-butyl costs ~23. The ring sits with <i>t</i>-butyl equatorial and the methyl axial, with a preference of about 15&nbsp;kJ/mol (over 99.7%).</p>
+  </div>
+
+  <div class="quiz">
+    <div class="qn">Problem 9 · Conformation or configuration?</div>
+    <p class="q">The two chair conformations of methylcyclohexane…</p>
+    <div class="opts">
+      <button>are different compounds that could be separated at room temperature</button>
+      <button data-ok>interconvert about 10<sup>5</sup> times a second at room temperature, so can't be separated</button>
+      <button>are enantiomers</button>
+    </div>
+    <p class="why">The ring-flip barrier is only ~45&nbsp;kJ/mol. They're conformers of a single compound, in rapid equilibrium (about 95:5 in favour of equatorial methyl).</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Where next</h2>
+  <p>Conformations come back again and again later in organic chemistry. A few places to look out for them:</p>
+  <ul>
+    <li><b>E2 eliminations</b> need the H and the leaving group <em>anti-periplanar</em> — a Newman projection question. In cyclohexanes that means both must be axial.</li>
+    <li><b>Sugars</b> such as glucose are six-membered rings in chairs; β-glucose is the most common sugar in nature partly because every one of its large groups can be equatorial.</li>
+    <li><b>Steroids</b> are fused cyclohexanes locked into rigid chairs, which is why their shapes, and their biology, are so precise.</li>
+    <li><b>NMR spectroscopy</b> can measure dihedral angles directly: the coupling between two H's depends on the angle between them (the Karplus relationship).</li>
+  </ul>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="prev" href="substituents.html"><small>← Chapter 5</small><span>Substituents</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="review.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

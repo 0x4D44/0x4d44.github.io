@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — The Trouble with Rings</title>
+<meta name="description" content="Ring strain in cycloalkanes for first-year chemists: Baeyer's angle-strain theory, heats of combustion, torsional strain and why cyclopropane, cyclobutane and cyclopentane pucker the way they do.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./"><b>1</b>Overview</a>
+    <a href="newman.html"><b>2</b>Newman projections</a>
+    <a href="rings.html" aria-current="page"><b>3</b>Ring strain</a>
+    <a href="chair.html"><b>4</b>The chair</a>
+    <a href="substituents.html"><b>5</b>Substituents</a>
+    <a href="review.html"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero">
+  <div>
+    <div class="kicker">Chapter 3 · Ring strain</div>
+    <h1>The trouble <span>with rings</span></h1>
+    <p class="lede">Tie the two ends of an alkane chain together and you lose a freedom: the bonds can no longer turn however they like. Now the ring has to make compromises — between the angles it would like, the twists it would like, and the room its atoms need. The bill for those compromises is called <strong>ring strain</strong>.</p>
+  </div>
+  <div class="figure" style="margin:0">
+    <div class="stage" style="aspect-ratio: 1 / 0.86"><canvas id="heroRing" aria-label="Cyclopropane, cyclobutane, cyclopentane and cyclohexane"></canvas><div class="tag" id="heroRingTag">cyclopropane</div><div class="hint">drag to turn</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Baeyer's flat rings</h2>
+  <p>In 1885 Adolf von Baeyer reasoned like this. A saturated carbon is tetrahedral and wants bond angles of <strong>109.5°</strong>. Rings, he assumed, are flat — regular polygons. And the interior angle of a flat polygon is fixed by its number of corners. So every ring except one of exactly the right size must have its angles <em>bent</em> away from 109.5°, and the bigger the bend, the more strained the ring.</p>
+
+  <div class="figure">
+    <div class="split" style="align-items:center">
+      <svg id="polygon" class="plot" role="img" aria-label="A flat ring and its angle compared with 109.5 degrees"></svg>
+      <div>
+        <div class="seg" id="ringPick" role="group" aria-label="Ring size">
+          <button class="btn" data-n="3" aria-pressed="true">3</button><button class="btn" data-n="4">4</button><button class="btn" data-n="5">5</button><button class="btn" data-n="6">6</button><button class="btn" data-n="7">7</button><button class="btn" data-n="8">8</button>
+        </div>
+        <div class="readout">
+          <div class="chip"><small>Ring</small><span id="polyName">cyclopropane</span></div>
+          <div class="chip"><small>Flat angle</small><span id="polyAng">60°</span></div>
+          <div class="chip"><small>Bend from 109.5°</small><span id="polyDev">49.5°</span></div>
+        </div>
+        <p class="cap" id="polyNote"></p>
+      </div>
+    </div>
+  </div>
+
+  <p>Baeyer's theory predicts that cyclopentane (108°) should be the happiest ring, and that rings get steadily <em>more</em> strained from cyclohexane upwards, as the flat angles open out past 109.5°. Half of that is right. To find out which half, we need to measure strain.</p>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Measuring strain by setting fire to it</h2>
+  <p>Strain is stored energy — a compressed spring. The cleanest way to measure stored energy is to release all of it. So chemists burn the rings and measure the heat:</p>
+  <div class="formula">(CH<sub>2</sub>)<sub><i>n</i></sub> + 1.5<i>n</i> O<sub>2</sub> → <i>n</i> CO<sub>2</sub> + <i>n</i> H<sub>2</sub>O</div>
+  <p>Every cycloalkane is just a loop of CH<sub>2</sub> groups, and every CH<sub>2</sub> ends up as the same CO<sub>2</sub> and H<sub>2</sub>O. In a long, relaxed alkane chain, each CH<sub>2</sub> gives out <strong>658.6&nbsp;kJ/mol</strong> when it burns. If a ring gives out more than that per CH<sub>2</sub>, the extra was stored in the ring as strain.</p>
+
+  <div class="figure">
+    <svg id="combust" class="plot" role="img" aria-label="Heat of combustion per CH2 for rings of 3 to 8 carbons"></svg>
+    <div class="controls">
+      <div class="seg" id="combustMode" role="group" aria-label="What to plot">
+        <button class="btn" data-m="per" aria-pressed="true">heat per CH₂</button><button class="btn" data-m="total">total ring strain</button>
+      </div>
+    </div>
+    <p class="cap"><b>Strain = n × (heat per CH₂ − 658.6).</b> Cyclopropane releases 38.5&nbsp;kJ/mol extra for each of its three CH<sub>2</sub> groups: 115&nbsp;kJ/mol of strain. Cyclohexane releases exactly the unstrained value.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th>Ring</th><th class="n">n</th><th class="n">Heat per CH₂, kJ/mol</th><th class="n">Total strain, kJ/mol</th><th>Shape it actually adopts</th></tr></thead>
+      <tbody>
+        <tr><td>cyclopropane</td><td class="n">3</td><td class="n">697.1</td><td class="n">115</td><td>flat (it has no choice)</td></tr>
+        <tr><td>cyclobutane</td><td class="n">4</td><td class="n">686.2</td><td class="n">110</td><td>puckered "butterfly"</td></tr>
+        <tr><td>cyclopentane</td><td class="n">5</td><td class="n">663.6</td><td class="n">26</td><td>envelope</td></tr>
+        <tr><td>cyclohexane</td><td class="n">6</td><td class="n">658.6</td><td class="n">0</td><td>chair</td></tr>
+        <tr><td>cycloheptane</td><td class="n">7</td><td class="n">662.3</td><td class="n">26</td><td>twist-chair</td></tr>
+        <tr><td>cyclooctane</td><td class="n">8</td><td class="n">663.6</td><td class="n">40</td><td>boat-chair</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Baeyer was right about small rings: three- and four-membered rings are badly strained. But he was wrong about the rest. Cyclohexane, which "should" have 10.5° of bend, has <strong>no strain at all</strong>, and rings bigger than six are only mildly strained. Baeyer's mistake was the assumption that rings are flat. Real rings with four or more carbons <em>pucker</em>.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>The three bills a ring pays</h2>
+  <p>Ring strain is the total of the same three penalties you met in chains:</p>
+  <ul>
+    <li><span class="term">Angle strain</span> (Baeyer strain) — ring angles squeezed or stretched away from 109.5°.</li>
+    <li><span class="term">Torsional strain</span> — bonds on neighbouring ring carbons eclipsed. In a <em>flat</em> ring, every single C–C bond is fully eclipsed, because a flat ring forces every dihedral to 0°.</li>
+    <li><span class="term">Steric strain</span> — atoms across the ring bumping into each other. In rings this is called <em>transannular strain</em> ("across the ring"), and it matters most in 7- to 11-membered rings, whose inward-pointing hydrogens get in each other's way.</li>
+  </ul>
+  <p>Here's the tension. Flattening a ring is good for some angles but forces every bond to eclipse. Puckering staggers the bonds but usually squeezes the angles. A real ring settles wherever the <em>sum</em> is smallest — and you can find that point yourself.</p>
+</section>
+
+<section>
+  <h2><span class="num">4</span>Find the pucker</h2>
+  <p>Below is a toy version of the calculation a computer would do. Pick a ring and drag the slider from flat to puckered. The model charges each ring angle 0.02&nbsp;kJ/mol per degree² of bend (angle strain) and each ring bond up to 8&nbsp;kJ/mol for eclipsing (torsional strain, two H/H eclipsings per bond). Watch the two curves fight, and look for the bottom of the total.</p>
+
+  <div class="figure wide">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.85"><canvas id="puckerMol" aria-label="The ring in 3D"></canvas><div class="tag" id="puckerTag"></div><div class="hint">drag to turn</div></div>
+      <svg id="puckerPlot" class="plot" role="img" aria-label="Strain against pucker"></svg>
+    </div>
+    <div class="controls">
+      <div class="seg" id="puckerPick" role="group" aria-label="Ring">
+        <button class="btn" data-n="3">cyclopropane</button><button class="btn" data-n="4" aria-pressed="true">cyclobutane</button><button class="btn" data-n="5">cyclopentane</button><button class="btn" data-n="6">cyclohexane</button>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="grow">flat <input id="pucker" type="range" min="0" max="100" value="0"> puckered</label>
+      <button class="btn primary" id="puckerBest">Find the minimum</button>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Ring angles</small><span id="pkAng">—</span></div>
+      <div class="chip"><small>Largest twist</small><span id="pkDih">—</span></div>
+      <div class="chip"><small class="c-coral">Angle strain</small><span id="pkA">—</span></div>
+      <div class="chip"><small class="c-blue">Torsional</small><span id="pkT">—</span></div>
+      <div class="chip"><small class="c-gold">Total</small><span id="pkSum">—</span></div>
+    </div>
+    <p class="cap">A toy model with two terms, not a real force field — yet it lands within a few kJ/mol of the measured strains for four-, five- and six-membered rings. It can't explain cyclopropane: the real molecule beats the model by bending its bonds instead of its angles (see below).</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Ring by ring</h2>
+
+  <h3>Cyclopropane — the coiled spring</h3>
+  <p>Three points always lie in a plane, so cyclopropane is flat whether it likes it or not. Its C–C–C angles are 60°, a staggering 49.5° below ideal, and all six of its C–H bonds are eclipsed with their neighbours. Strain: 115&nbsp;kJ/mol.</p>
+  <p>Cyclopropane copes with the impossible angle by cheating. The carbon orbitals can't point along the 60° lines between the nuclei, so they point <em>outside</em> the triangle, at about 104° to each other, and overlap at an angle. The result is the <span class="term">bent bond</span> or "banana bond": weaker than a normal C–C bond, because the overlap is poor, with electron density bulging outside the ring.</p>
+
+  <div class="figure">
+    <svg id="banana" class="plot" role="img" aria-label="Bent bonds in cyclopropane" style="max-width:520px;margin:0 auto"></svg>
+    <p class="cap">The orbitals (purple) point about 22° outside the line between the nuclei. They still overlap — but sideways, and less well. That weak, strained bond is why cyclopropane rings snap open in reactions that leave other alkanes untouched; with 115&nbsp;kJ/mol to release, it behaves a little like an alkene.</p>
+  </div>
+
+  <h3>Cyclobutane — the butterfly</h3>
+  <p>Flat cyclobutane would have 90° angles and eight eclipsed C–H pairs. Instead it folds about one diagonal by roughly 25°, like a butterfly closing its wings. That makes the angles slightly <em>worse</em> (about 88°) but relieves a good chunk of the eclipsing. It's a narrow win, and the butterfly flips its wings back and forth constantly. Strain: 110&nbsp;kJ/mol, almost as bad as cyclopropane.</p>
+
+  <h3>Cyclopentane — the envelope</h3>
+  <p>Flat cyclopentane would have angles of 108°, almost perfect. Baeyer loved it. But a flat cyclopentane would have <em>ten</em> eclipsed C–H pairs, about 40&nbsp;kJ/mol of torsional strain. So it lifts one carbon out of the plane, like the flap of an envelope. The angles get a little worse; the eclipsing gets a lot better. Strain: 26&nbsp;kJ/mol. The flap doesn't stay on one carbon, either: it ripples round the ring continuously, a motion called <span class="term">pseudorotation</span>.</p>
+
+  <h3>Cyclohexane — the one that gets it right</h3>
+  <p>Pucker a six-membered ring the right way and something lovely happens: every angle comes out at about 111° <em>and</em> every bond is perfectly staggered — all at once. No angle strain, no torsional strain, no strain at all. That shape is the <span class="term">chair</span>, and it gets <a href="chair.html">the whole next chapter</a>.</p>
+
+  <h3>And bigger rings?</h3>
+  <p>Seven- to eleven-membered "medium" rings can pucker their way out of angle and torsional strain, but they pay instead in transannular strain: hydrogens on opposite sides of the ring point inwards and collide. Around twelve carbons and up, rings are big and floppy enough to behave like ordinary chains again, nearly strain-free.</p>
+
+  <div class="key">
+    <h4>The pattern</h4>
+    <p>Small rings (3, 4) are strained because they <strong>can't</strong> reach good angles. Rings of 4 and more <strong>pucker</strong> to stagger their bonds. Six is the sweet spot where puckering fixes everything at once — which is why six-membered rings are everywhere in nature, from sugars to steroids.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">✓</span>Quick check</h2>
+  <div class="quiz">
+    <div class="qn">Question 1</div>
+    <p class="q">Cyclopentane isn't flat, even though flat cyclopentane would have nearly ideal 108° angles. Why?</p>
+    <div class="opts">
+      <button>Flat cyclopentane would have too much angle strain</button>
+      <button data-ok>Flat cyclopentane would have ten eclipsed C–H pairs; puckering relieves that torsional strain</button>
+      <button>Its hydrogens are too large to fit in a plane</button>
+    </div>
+    <p class="why">In any flat ring every dihedral is 0°, so every bond is eclipsed. For cyclopentane that's about 40&nbsp;kJ/mol of torsional strain, which is worth trading a few degrees of angle for.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 2</div>
+    <p class="q">Cyclobutane's heat of combustion is 2744&nbsp;kJ/mol. What is its ring strain?</p>
+    <div class="opts">
+      <button>27&nbsp;kJ/mol</button>
+      <button data-ok>110&nbsp;kJ/mol</button>
+      <button>686&nbsp;kJ/mol</button>
+    </div>
+    <p class="why">An unstrained (CH<sub>2</sub>)<sub>4</sub> would release 4 × 658.6 = 2634&nbsp;kJ/mol. 2744 − 2634 = 110&nbsp;kJ/mol extra — that's the stored strain.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 3</div>
+    <p class="q">Which ring has essentially zero ring strain?</p>
+    <div class="opts">
+      <button>cyclopentane, because its flat angle is 108°</button>
+      <button data-ok>cyclohexane, in its chair conformation</button>
+      <button>cyclooctane, because it is large and flexible</button>
+    </div>
+    <p class="why">The chair gives cyclohexane ~111° angles and fully staggered bonds simultaneously. Its heat of combustion per CH<sub>2</sub> is exactly the unstrained 658.6&nbsp;kJ/mol.</p>
+  </div>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="prev" href="newman.html"><small>← Chapter 2</small><span>Newman projections</span></a>
+<a class="next" href="chair.html"><small>Chapter 4 →</small><span>The chair</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="rings.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
