@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "chasing-dosbox-x",
+    title: "Chasing DOSBox-X",
+    tagline: "How mdem's x86 recompilers went from ten times slower than DOSBox-X to twice as fast in four months. A hand-painted three-minute film, then the full report: timeline, charts, setbacks and the AI models that did the work. Static HTML and SVG, no libraries.",
+    url: "https://0x4d44.github.io/chasing-dosbox-x/",
+    illustration: "ill-pc",
+    date: "2026-10-04T18:00:00",
+    year: 2026,
+    readingMin: 21,
+    words: 4600,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "cold-cache",
     title: "The Cold Cache",
     tagline: "Where the tokens go when an AI coding agent stops to wait. Eleven days, four machines and 336,000 requests, counted by cause — and a five-minute default that turned out to set a quarter of the bill. Static HTML, no libraries.",
@@ -1867,7 +1880,7 @@ window.COLLECTIONS = [
       "chief-engineer"] },
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
-    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache",
+    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache", "chasing-dosbox-x",
       "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work, and what becomes of the sound afterwards — the physics of the string, the mechanism, and the codecs that carry the result.",
@@ -1896,7 +1909,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["f1gp-internals", "mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["f1gp-internals", "mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "chasing-dosbox-x", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",

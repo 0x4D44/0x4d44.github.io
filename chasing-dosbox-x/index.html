@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="How mdem's x86 recompilers went from 11x behind DOSBox-X to twice as fast, June to October 2026: timeline, measurements, setbacks and the AI models that did the work.">
+<title>Chasing DOSBox-X</title>
+<meta property="og:title" content="Chasing DOSBox-X">
+<meta property="og:description" content="How mdem's x86 recompilers went from 11x behind DOSBox-X to twice as fast, June to October 2026 — a hand-painted film and the full report.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://0x4d44.github.io/chasing-dosbox-x/poster.jpg">
+<meta property="og:video" content="https://0x4d44.github.io/chasing-dosbox-x/chasing-dosbox-x.mp4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column (~70ch) with full-bleed chart panels; the R = 1 parity line is the page's recurring motif. */
+:root {
+  --bg: #f4f6f8; --surface: #fcfcfd; --fg: #11161c; --fg2: #4a5561; --muted: #7d8792;
+  --rule: #dfe3e8; --axis: #c3c9d0; --accent: #0d5c86; --good: #0a7d36;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #a3a9b0;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1114; --surface: #151a1f; --fg: #eef2f5; --fg2: #b5bec8; --muted: #8a949e;
+  --rule: #262d34; --axis: #3a434c; --accent: #6cb8e6; --good: #3fcf72;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #2f9b2f; --s7: #9085e9; --s8: #6b737b;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1114; --surface: #151a1f; --fg: #eef2f5; --fg2: #b5bec8; --muted: #8a949e;
+  --rule: #262d34; --axis: #3a434c; --accent: #6cb8e6; --good: #3fcf72;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #2f9b2f; --s7: #9085e9; --s8: #6b737b;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; }
+.col { max-width: 70ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+.eyebrow { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.18rem; color: var(--fg2); }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+section { display: flex; flex-direction: column; gap: 22px; padding-block: 56px 0; }
+section + section { border-top: 1px solid var(--rule); margin-top: 56px; }
+
+/* hero */
+header.hero { display: flex; flex-direction: column; gap: 18px; padding-block: 24px 8px; }
+.formula { font-family: var(--mono); font-size: 0.92rem; color: var(--fg2); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; display: inline-block; max-width: 100%; overflow-x: auto; }
+.formula b { color: var(--fg); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.tile { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .v { font: 700 2rem/1.1 var(--display); }
+.tile .l { font-size: 0.86rem; color: var(--fg2); }
+.tile .s { font: 0.74rem/1.3 var(--mono); color: var(--muted); }
+
+/* charts */
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 18px 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel .cap { font-size: 0.84rem; color: var(--fg2); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 16px; }
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.chart .lbl { fill: var(--fg2); font-family: var(--body); font-size: 12px; }
+.chart .lbl-strong { fill: var(--fg); font-family: var(--body); font-size: 12px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.84rem; color: var(--fg2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.legend i.box { width: 10px; height: 10px; border-radius: 2px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--axis); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12); min-width: 150px; max-width: 280px; z-index: 5; }
+.tip .t { font: 600 0.72rem/1.3 var(--mono); color: var(--muted); margin-bottom: 4px; }
+.tip .r { display: flex; align-items: center; gap: 8px; }
+.tip .r b { font-family: var(--mono); color: var(--fg); }
+.tip .r i { width: 12px; height: 2px; display: inline-block; }
+.tip .n { color: var(--fg2); margin-top: 4px; }
+details.table { font-size: 0.84rem; }
+details.table summary { cursor: pointer; color: var(--accent); }
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 0.72rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* timeline */
+.phase { display: grid; grid-template-columns: 150px 1fr; gap: 8px 24px; }
+.phase > .ph { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; padding-top: 4px; }
+.phase .ph h3 { font-size: 1.05rem; }
+.phase .ph p { font-size: 0.82rem; color: var(--muted); }
+.events { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--axis); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.events li { position: relative; padding-left: 20px; }
+.events li::before { content: ""; position: absolute; left: -5px; top: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--axis); }
+.events li.key::before { background: var(--accent); border-color: var(--accent); }
+.events .d { font: 600 0.74rem/1.3 var(--mono); color: var(--muted); }
+.events .h { font-weight: 600; }
+.events .x { color: var(--fg2); font-size: 0.93rem; }
+.events .src { font: 0.72rem/1.3 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.chip { display: inline-block; font: 600 0.68rem/1 var(--mono); padding: 3px 6px; border-radius: 4px; border: 1px solid var(--axis); color: var(--fg2); vertical-align: 1px; margin-left: 4px; white-space: nowrap; }
+
+blockquote { margin: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--accent); color: var(--fg2); font-style: italic; }
+blockquote cite { display: block; font: normal 0.74rem/1.4 var(--mono); color: var(--muted); margin-top: 4px; }
+.quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+ul.plain { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; }
+.note { font-size: 0.84rem; color: var(--muted); }
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 0.84rem; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 640px) {
+  .phase { grid-template-columns: 1fr; }
+  .phase > .ph { position: static; }
+}
+@media (prefers-reduced-motion: no-preference) { .chart path.series { transition: opacity .15s; } }
+
+/* film: the first thing on the page; sits below the fixed almanac pill (41px tall) */
+.film { margin: 28px 0 40px; display: flex; flex-direction: column; gap: 10px; }
+.film .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #e9e1cf; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 32px -12px rgba(40,30,10,.35); }
+.film video { display: block; width: 100%; height: 100%; object-fit: contain; background: #e9e1cf; }
+.film .cap { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; font-size: 0.86rem; color: var(--fg2); }
+.film .cap a { white-space: nowrap; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<figure class="film" id="film" aria-label="The film">
+  <div class="frame">
+    <video controls playsinline preload="metadata" poster="poster.jpg" width="1920" height="1080">
+      <source src="chasing-dosbox-x.mp4" type="video/mp4">
+      Your browser can't play this video. <a href="chasing-dosbox-x.mp4">Download it (MP4)</a>.
+    </video>
+  </div>
+  <figcaption class="cap">
+    <span><b>The film</b> · 3 min 24 s · painted in gouache style, frame by frame, in code; the music and sound effects are synthesised in code too</span>
+    <a href="#arc">Read the report ↓</a>
+  </figcaption>
+</figure>
+
+<header class="hero">
+  <div class="eyebrow">mdem · performance programme · June – October 2026</div>
+  <h1>Chasing DOSBox-X</h1>
+  <p class="lede col">In June 2026 mdem abandoned its third x86 recompiler in three weeks. Its newest attempt ran DOOM ten times slower than DOSBox-X, and slower than mdem's own interpreter. By the end of September its x86-64 recompiler, DBX, ran DOOM twice as fast as DOSBox-X's dynamic core and Quake 1.4 times as fast. A second, portable recompiler went from 7× slower to 2.3× faster on Apple Silicon in nine days of August. This is the record of how that happened: what was measured, what went wrong, and which AI models did the work.</p>
+  <div class="formula">R = <b>mdem net wall</b> ÷ <b>DOSBox-X net wall</b>, equal work: DOOM <code>-timedemo demo3</code> (2,134 gametics) · Quake <code>timedemo demo1</code> (969 frames) · R &lt; 1 means mdem is faster</div>
+  <div class="tiles" id="tiles"></div>
+</header>
+
+<section id="arc">
+  <div class="stack col">
+    <div class="eyebrow">01 · The arc</div>
+    <h2>From an order of magnitude behind to faster than the reference</h2>
+    <p>The y-axis is logarithmic, because the ratios span a factor of 80. From 15 July every filled point is a citable <code>perf_suite</code> session from <code>tests/perf/HISTORY.md</code>: a PGO build, n = 7 equal-work runs, and the build's banner SHA checked against HEAD. The June points (grey, hollow) are earlier recompilers measured as release or maxperf builds, partly under WSL2 against an older DOSBox-X, so read them as orders of magnitude only.</p>
+    <p>Three engines carry the line. <b>dyncore</b> (aqua) was mdem's own recompiler, built from 25 June and deleted on 28 July. <b>DBX</b> (blue) is the faithful port of DOSBox-X's <code>core_dyn_x86</code>, built from 23 July and measured on KILN, a Windows box with an Intel Core Ultra 9 285HX. <b>DRC</b> (orange) is the portable port of <code>core_dynrec</code>, built from 1 August and measured on FLUX, an Apple M5 Max.</p>
+  </div>
+  <div class="legend" aria-hidden="true"><span><i style="background:var(--s8)"></i>Earlier recompilers (dynrec1–3)</span><span><i style="background:var(--s3)"></i>dyncore · KILN</span><span><i style="background:var(--s1)"></i>DBX · <code>dynrec-dbx</code> · KILN x86-64</span><span><i style="background:var(--s2)"></i>DRC · <code>dynrec-drc</code> · FLUX Apple Silicon</span><span><i style="background:var(--fg)"></i>Parity, R = 1</span></div>
+  <div class="grid2">
+    <div class="panel"><h3>DOOM · demo3</h3><div class="chart" id="arc-doom"></div></div>
+    <div class="panel"><h3>Quake · demo1</h3><div class="chart" id="arc-quake"></div></div>
+  </div>
+  <p class="note col">Hollow points are not citable. The 27 July Quake points ran at 21% host load. The 3 August DOOM DBX point is an n = 3 spot check. Ratios use the DOSBox-X anchor stored at the time, so a step can come from a re-captured anchor as well as from mdem. The 27 September KILN anchor read 5.60 s on Quake against 5.05 s in August, with the same DOSBox-X build. Against the August anchor, the 27 September Quake ratio would be 0.77. The DRC points are FLUX ratios against FLUX's own DOSBox-X build. The 11 August Quake ratio is 0.945 against the stored anchor and 0.892 against a same-session anchor.</p>
+  <details class="table"><summary>Show the data as a table</summary><div class="tw" id="arc-table"></div></details>
+</section>
+
+<section id="timeline">
+  <div class="stack col">
+    <div class="eyebrow">02 · Timeline</div>
+    <h2>Six phases, May to October</h2>
+    <p>The milestones that moved the numbers or changed how the work was done. Filled dots are the turning points.</p>
+  </div>
+  <div id="tl" class="stack" style="gap:40px"></div>
+</section>
+
+<section id="week">
+  <div class="stack col">
+    <div class="eyebrow">03 · The DRC week</div>
+    <h2>Twenty-nine experiments, 3 to 11 August</h2>
+    <p>The portable recompiler entered the suite on 3 August at R = 7.01 on DOOM and 5.40 on Quake. Over the following nine days it ran a numbered chain of experiments (<code>EXP-A002</code> to <code>EXP-A054</code>, then the <code>W</code> legs). Each one was measured as a PGO build on FLUX, then kept or reverted. Below is every recorded step in order. DOOM crossed parity on 6 August with the zero-victim SMC scan memo (A033). Quake followed on 11 August.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>DOOM · DRC on FLUX</h3><div class="chart" id="wk-doom"></div></div>
+    <div class="panel"><h3>Quake · DRC on FLUX</h3><div class="chart" id="wk-quake"></div></div>
+  </div>
+  <p class="note col">The x-axis is experiment order, not time. The rise around 8 August is a measurement change, not a regression: the W9a/W10a recalibration found that the box's session mode was shifting the numbers (the "session-mode discovery"). Later rows use the recalibrated method. Where the log records no DOOM figure for a step, the line passes it by.</p>
+  <details class="table"><summary>Show every step as a table</summary><div class="tw" id="wk-table"></div></details>
+</section>
+
+<section id="hl2">
+  <div class="stack col">
+    <div class="eyebrow">04 · After parity</div>
+    <h2>New north stars: Half-Life 2 and host cost</h2>
+    <p>Once both engines beat DOSBox-X, the 11 August options ladder set a new target: "keep Quake as the instrument; retire it as the banner". The new banner was Half-Life 2, a 2004 Direct3D 9 game with SSE-heavy maths, far from the DOS titles the recompilers were tuned on. From 22 September the goal was a 25 FPS floor, measured as the worst 5-second window of a fixed replay, on both engines. On DBX the floor rose from 10.3 to 23.1 FPS over two days of measured levers. The flag-parking lever was the first deliberate departure from DOSBox-X's emitted bytes. The DBX timing box then moved to CRUCIBLE (Ryzen 9 9950X3D), where the floor reached 41.8 FPS.</p>
+  </div>
+  <div class="panel">
+    <h3>HL2 worst-5-second FPS · DBX on KILN · 27–28 September</h3>
+    <div class="chart" id="hl2-chart"></div>
+    <p class="cap">Each bar adds one lever to the bar before it. The line is the 25 FPS goal. Same PGO build family and host throughout. Source: <code>wrk_journals/… DBX HL2 floor campaign</code>.</p>
+  </div>
+  <div class="col stack">
+    <p>The metric changed with the target. Wall time on a shared box had misled the programme too often, so the September campaign judged levers by <b>h/g</b>, host instructions per guest instruction, which stays the same under load. It used <b>c/g</b>, host cycles per guest instruction, and FPS only as guards. The <code>basket</code> runner (29 September) measures h/g and c/g across HL2, CMR2, CMR3, Quake, GLQuake, DOOM and FastDoom on both hosts. A QEMU baseline the same day put the DRC within 6% of QEMU TCG on Quake (72.2 vs 68.1 h/g), but 5× behind on FastDoom's integer path.</p>
+  </div>
+</section>
+
+<section id="models">
+  <div class="stack col">
+    <div class="eyebrow">05 · Who did the work</div>
+    <h2>Seven model generations on one codebase</h2>
+    <p>Agents sign their commits with a <code>Co-Authored-By</code> trailer naming their model. This section counts the 2,495 commits from 1 June to 3 October that touch the perf code. That covers the x86 recompilers (<code>mddosem-dyncore</code>, which holds DBX and DRC, and its deleted predecessors), the exact-machine JITs (<code>mdjit-*</code>), the perf suite, the PGO script and the <code>perf-loop</code> skill. A commit with two co-authors counts half to each. Every commit is pushed under the owner's account, so the trailer is the only attribution.</p>
+  </div>
+  <div class="panel">
+    <h3>When each model family was active on perf code</h3>
+    <div class="chart" id="eras"></div>
+    <p class="cap">Bars run from a family's first to its last perf-path commit. The vertical lines mark the programme's turning points. Codex's June lanes on dynrec1 and dynrec2 were committed without trailers, so OpenAI's first bar starts later than its real involvement.</p>
+  </div>
+  <div class="panel">
+    <h3>Perf-path commits per week, by model family</h3>
+    <div class="legend" id="mlegend"></div>
+    <div class="chart" id="weekly"></div>
+  </div>
+  <div class="col stack" id="model-notes"></div>
+  <details class="table"><summary>Show totals as a table</summary><div class="tw" id="model-table"></div></details>
+</section>
+
+<section id="lessons">
+  <div class="stack col">
+    <div class="eyebrow">06 · Measuring it honestly</div>
+    <h2>Most of the hard part was the measurement</h2>
+  </div>
+  <div class="col stack" id="lessons-body"></div>
+</section>
+
+<section id="beyond">
+  <div class="stack col">
+    <div class="eyebrow">07 · Beyond DOOM and Quake</div>
+    <h2>The other hot paths</h2>
+  </div>
+  <div class="col stack" id="beyond-body"></div>
+</section>
+
+<section id="setbacks">
+  <div class="stack col">
+    <div class="eyebrow">08 · Setbacks</div>
+    <h2>What went wrong along the way</h2>
+  </div>
+  <div class="col stack" id="setbacks-body"></div>
+</section>
+
+<section id="voices">
+  <div class="stack col">
+    <div class="eyebrow">09 · In their own words</div>
+    <h2>From the journals</h2>
+  </div>
+  <div class="quotes" id="quotes"></div>
+</section>
+
+<section id="now">
+  <div class="stack col">
+    <div class="eyebrow">10 · Where it stands</div>
+    <h2>October 2026</h2>
+  </div>
+  <div class="col stack" id="now-body"></div>
+</section>
+
+<footer>
+  <p>Sources: <code>tests/perf/HISTORY.md</code>, <code>wrk_docs/*RPT*</code>, <code>wrk_journals/</code> and the <code>origin/main</code> history of <code>0x4D44/mdem</code> from 2026-05-01 to 2026-10-03. Model attribution comes from the commit trailers that each agent writes itself. Spellings were normalised, for example "OpenAI Codex (GPT-5.6 Sol)" counts as GPT-5.6.</p>
+  <p id="stamp">Compiled 2026-10-03.</p>
+</footer>
+</div>
+
+<script>
+window.__PHASES = [
+{ range: "22 May – 24 Jun", name: "Three recompilers abandoned", sub: "Legacy JIT parked; dynrec1, dynrec2 and dynrec3 each ended in a measured no-go.", events: [
+  { d: "2026-05-22", t: "The JIT loses to the interpreter", x: "On DOOM the in-tree JIT measured 80.4 s against the interpreter's 76.4 s, about 7× slower than DOSBox-X dynamic. Around 92% of DOOM's instructions were still interpreted.", src: "wrk_docs/2026.05.22 - RPT - JIT perf followthrough.md" },
+  { d: "2026-05-29", t: "dynrec1: port DOSBox-X core_dynrec", model: "Opus 4.8 → Codex", x: "A parallel engine in a new crate. Opus 4.8 led the kickoff; Codex then ran the delivery lanes (160 untrailered commits).", src: "wrk_journals/2026.05.29 - JRN - dosbox-x dynrec port new JIT engine.md" },
+  { d: "2026-05-31", t: "Legacy JIT parked", x: "\"The current JIT is not the credible path to DOSBox-X dynrec parity. The remaining gap is structural.\"", src: "wrk_docs/2026.05.31 - RPT - current JIT parking report.md" },
+  { d: "2026-06-06", t: "dynrec1 baseline: 4.6× DOSBox-X on DOOM, 28× on Quake", x: "About 40 RPT files in three days, most of them micro-lane no-gos.", src: "wrk_docs/2026.06.06 - RPT - dynrec DOOM local DOSBox-X 5-pair baseline.md" },
+  { d: "2026-06-09", t: "dynrec2 no-go at 11.6×; dynrec-direct reset", model: "Fable 5", x: "Fable 5 wrote the architecture reset and led the dynrec-direct build. The legacy JIT and dynrec1 (37.7k lines) were deleted on 10 June.", src: "wrk_docs/2026.06.09 - PLN - dynrec direct architecture reset plan of record.md" },
+  { d: "2026-06-17", t: "dynrec3 Stage E no-gos", x: "About 1% native coverage, 0.51× the interpreter's speed. A broad-admission attempt the next day made it slower still.", src: "wrk_docs/2026.06.17 - RPT - … no-go.md" },
+  { d: "2026-06-24", t: "Arthur: \"Go\" on a dyn_x86 rebuild", key: true, x: "A spike stalled at 42.7% native coverage. Diagnosis: \"front-end narrowness + the proof memory model\". The new design shares the interpreter's live CPU struct and falls back one instruction at a time. Codex (gpt-5.5) reviewed the HLD and found critical issues the Claude review loop had missed.", src: "wrk_journals/2026.06.24 - JRN - dynx86 recompiler rebuild HLD.md" },
+]},
+{ range: "25 Jun – 22 Jul", name: "dyncore: coverage is not speed", sub: "A new engine built in days, then weeks of levers that engaged but did not move the wall clock.", events: [
+  { d: "2026-06-25", t: "dyncore bring-up begins", key: true, model: "Opus 4.8", x: "F1a lifts the substrate into mddosem-dyncore. By evening the --engine dynrec path runs DOOM natively and byte-identically (2134 gametics). About 52 commits in five days, all Opus 4.8.", src: "b64e8ba6f · 96a48850c" },
+  { d: "2026-06-26", t: "A 25-line TLB-warm fix: 144× more native instructions", x: "\"The most impactful change in the effort\", measured in coverage.", src: "c5cd51a13" },
+  { d: "2026-06-29", t: "The wall-clock truth", x: "dyncore ran DOOM at 35.5 Mcyc/s against the interpreter's 52.3. \"The +144x native_retired is coverage, not speed.\" Two levers reached about 42.5.", src: "dyncore build journal, D-J60" },
+  { d: "2026-06-30", t: "The perf-loop skill is written", model: "Opus 4.8", x: "Measure, hypothesise, change, verify, journal: interleaved same-host A/B, at least 5 warmed runs, median and MAD, a correctness oracle on every keep. It became the method of the whole programme.", src: "4d652190de" },
+  { d: "2026-07-02", t: "PGO becomes the verdict build", x: "Profile-guided layout cut DOOM interpreter wall by 33%. From 3 July no perf verdict counts without it.", src: "d841ed5776" },
+  { d: "2026-07-09", t: "First real recompiler win", model: "Opus 4.8", x: "Design A, in-block continuation: −14.2% on DOOM with PGO.", src: "wrk_journals/2026.07.09 - JRN - dyncore in-block continuation (Design A build).md" },
+  { d: "2026-07-14", t: "DOSBox-X's own cores show where the gap is", x: "Taking DOSBox-X apart: recompilation is worth 9.4× and host-FPU residency +71%. \"Recompiler quality first.\"", src: "wrk_journals/2026.07.14 - JRN - DOSBox-X core attribution….md" },
+  { d: "2026-07-15", t: "First citable perf_suite run", key: true, model: "Fable 5", x: "Fable 5 built the suite under an Opus 4.8 lead. DOOM interpreter 0.97× DOSBox-X normal. Quake on the recompiler: 10.24× DOSBox-X dynamic.", src: "wrk_docs/2026.07.15 - RPT - perf suite run.md" },
+  { d: "2026-07-20", t: "Finite-CS fix: Quake 61.0 s → 37.0 s", x: "CWSDPMI's non-flat code segment had switched off the whole runtime-target path.", src: "f1274b08f1" },
+]},
+{ range: "23 Jul – 31 Jul", name: "The faithful port", sub: "Stop improvising. Copy DOSBox-X component by component.", events: [
+  { d: "2026-07-23", t: "Arthur orders a faithful port of core_dyn_x86", key: true, model: "GPT-5.6 Sol · Fable 5 · Opus 4.8", x: "The ratio bundle measured neutral, and the one real gain had come from copying DOSBox-X. New rule: \"a deviation is a bug, not a design choice\". GPT-5.6 Sol translated, Fable 5 audited fidelity, an Opus lead gated and measured each step.", src: "wrk_journals/2026.07.23 - JRN - DBX core_dyn_x86 faithful port….md" },
+  { d: "2026-07-25", t: "dynrec-dbx beats the old engine on DOOM", model: "Opus 5", x: "148–152 Mcyc/s against 106–109, two days after the first line. dynrec-dbx joins perf_suite. On Quake it is still slower than the interpreter: there is no x87 yet.", src: "1c7bfb2d96" },
+  { d: "2026-07-27", t: "\"That is Arthur's call\"", x: "On Quake the old engine is still 12.5% faster than DBX. The agent declines to decide alone. Arthur chooses fidelity.", src: "wrk_docs/2026.07.27 - RPT - dynrec-dbx Quake diagnostic, and the legacy engine is faster.md" },
+  { d: "2026-07-28", t: "The old recompiler is deleted", key: true, model: "Fable 5", x: "About 62k source and 30k test lines removed. dynrec-dbx is the only x86 recompiler.", src: "44b17cf363" },
+  { d: "2026-07-29", t: "FLUX joins: the first Apple Silicon session", x: "An Apple M5 Max, interpreter only. PGO alone was worth −25% there.", src: "wrk_docs/2026.07.29 - RPT - perf suite u6-final.md" },
+]},
+{ range: "1 Aug – 11 Aug", name: "Overtaking DOSBox-X", sub: "Both engines pass the reference in eleven days.", events: [
+  { d: "2026-08-01", t: "A portable recompiler for Apple Silicon", model: "Codex", x: "A two-advisor panel (Fable 5 and GPT-5.6 Sol) chose to port DOSBox-X's portable core_dynrec with both AArch64 and x86-64 backends. OpenAI Codex built it in about two days (around 69 commits).", src: "wrk_journals/2026.08.01 - JRN - aarch64 dynrec design (FLUX).md" },
+  { d: "2026-08-03", t: "Quake on DBX: faster than DOSBox-X", key: true, model: "Fable 5", x: "EXP-N005, keeping links across translation-epoch edges: R 0.964. Link resolutions fell from 2.24M to 9.2k.", src: "tests/perf/HISTORY.md · 24dfb846d1" },
+  { d: "2026-08-03", t: "DRC enters the suite at 7× slower", x: "DOOM R 7.01, Quake R 5.40 on FLUX.", src: "tests/perf/HISTORY.md" },
+  { d: "2026-08-04", t: "Gate claimed: DBX Quake R 0.788, DOOM 0.515", model: "Fable 5", x: "A drain of the dispatch cluster: a dispatch memo, VBI coalescing and a scanline stride.", src: "eea6177243" },
+  { d: "2026-08-06", t: "DRC DOOM passes parity", key: true, model: "Fable 5", x: "EXP-A033, a zero-victim SMC scan memo: R 0.784. The same day, three reverts established the \"call-free law\": on the M5, removing short helper calls does not move the wall clock.", src: "db2f5854bf · EXP-A030 journal" },
+  { d: "2026-08-08", t: "The session-mode discovery", x: "A ±12% swing between sessions turned out to be co-residency derate on the M5's core clusters. From then on, citable runs need a same-session DOSBox-X anchor.", src: "MDD-BUG-FLUX-00154 · 81f6c3c87d" },
+  { d: "2026-08-08", t: "A cross-family consult breaks the Quake plateau", model: "GPT-5.6 Sol", x: "Sol's review led to a packed MAP_JIT code arena: −16% on Quake, from collapsing executable pages, not from shrinking bytes.", src: "wrk_docs/2026.08.08 - DOC - sol consult…" },
+  { d: "2026-08-11", t: "DRC Quake below parity: R 0.945", key: true, x: "The first citable sub-1.0 Quake row on Apple Silicon. DOOM sits at 0.433, 2.3× faster than DOSBox-X.", src: "tests/perf/HISTORY.md · 8933096e1" },
+]},
+{ range: "12 Aug – 21 Sep", name: "New north stars", sub: "Rosetta, Half-Life 2 and five exact-machine JITs.", events: [
+  { d: "2026-08-13", t: "dynrec-dbx becomes the Windows default", src: "wrk_journals/2026.08.13 - JRN - Windows dynrec-dbx default.md" },
+  { d: "2026-08-19", t: "The 3.7× \"slow regime\" was macOS App Nap", x: "Fixed with an NSActivity assertion. Days of perf data had been taken partly under it.", src: "HL2 stage D0 journal" },
+  { d: "2026-08-20", t: "Regions defaulted off after a clean-box battery", model: "Opus 5", x: "A +3% claim reversed to −2.9% on a quiet machine. A Codex/Sol cross-review then left \"nothing quantitative at all\" of the remaining magnitudes.", src: "7e016a464b · ec32d074cf" },
+  { d: "2026-08-23", t: "Alpha JIT: 3.5 → 436 MIPS in one day", model: "Codex", x: "The first of five exact-machine JITs (Alpha, VAX, PowerPC, SPARC, MIPS), all started between 20 and 28 August. VQuake on DRC fell from 45.0 s to 12.9 s the same day.", src: "wrk_journals/2026.08.23 - JRN - Alpha JIT another 4x performance.md" },
+  { d: "2026-08-25", t: "The OpenAI \"Fast\" region ladder", model: "GPT-5.4 · 5.6 · Luna · Sol", x: "Profile-guided superblocks for HL2 on the DRC, built as a long ladder of small emitted-code reductions. The host was noisy, so most gains were claimed structurally, not in FPS.", src: "Fast ladder journals 08.25–08.31" },
+  { d: "2026-09-06", t: "DBX return-address stack: CMR2 CPI −27.9%", model: "Fable 5.1", x: "From a self-paced \"dispatch programme\" loop. DOOM −7.4%, Quake −7.1%.", src: "a088e4216a" },
+  { d: "2026-09-07", t: "Automatic Fast promotion is not shipped", model: "GPT-6 Astra · Luna", x: "Built to Astra's design but 4–6% slower than Safe on DOOM, Quake and HL2. The default stayed.", src: "wrk_docs/2026.09.07 - PERF …" },
+]},
+{ range: "22 Sep – 3 Oct", name: "Opus 5.5 and the measured campaign", sub: "A coordinator with sub-leads, a 25 FPS goal, and a new rule on DOSBox-X.", events: [
+  { d: "2026-09-22", t: "Opus 5.5 takes the lead", model: "Opus 5.5", x: "From here on Opus 5.5 is on about 178 of 190 perf-path trailers, working as coordinator, sub-leads and workers.", src: "git trailers" },
+  { d: "2026-09-26", t: "Ultra 1 boots faster than the real machine", model: "Opus 5.5", x: "The SPARC trace engine took a cold Solaris boot from 8.7× slower than a physical Ultra 1 170E to about 2.4× faster. The SGI Indy boot went from 1,795 s to 20.4 s.", src: "wrk_journals/2026.09.26 - JRN - Ultra1 trace engine 2x.md" },
+  { d: "2026-09-27", t: "First citable two-engine x86-64 rows", key: true, x: "On KILN against a fresh DOSBox-X anchor: DBX DOOM R 0.505, Quake R 0.694. DRC's x86-64 backend: 1.40 and 5.85, held back by helper calls and no direct chaining.", src: "tests/perf/HISTORY.md · 670c231f0d" },
+  { d: "2026-09-28", t: "Flag parking: HL2 floor +28%", model: "Opus 5.5", x: "The first deliberate deviation from DOSBox-X's emitted bytes. Adaptive optimised regions become the DRC default the same day.", src: "3490efa599 · ee94d033b0" },
+  { d: "2026-09-29", t: "The port rule is retired", key: true, x: "Arthur: DBX is \"our design, grown from a port\". \"QEMU-class code quality is the bar\"; DOSBox-X stays the behaviour oracle. The small-cuts campaign starts the same day, with gpt-6-sol workers under an Opus lead.", src: "46cf959d83 · fa4637b805 · ARCHITECTURE-GUIDE.md" },
+  { d: "2026-09-30", t: "Hot-opcode block stop: FastDoom 4.3× faster", x: "FastDoom's self-modifying span drawer had been forcing endless recompiles. DBX h/g fell from 291.9 to 76.9.", src: "300cf7a265" },
+  { d: "2026-10-03", t: "Chain-4 VGA arm: Quake h/g halved on DBX", x: "Quake 287 → 539 FPS on one clean pair. A 2-way software TLB got its GO, gated on splitting DBX into its own crate.", src: "0c8d09c6a9 · wrk_docs/2026.10.02 - HLD - 2-way software TLB" },
+]},
+];
+
+window.__QUOTES = [
+  { q: "THE WALL-CLOCK TRUTH: the dyncore is currently SLOWER than the interpreter on DOOM … The +144x native_retired is coverage, not speed.", src: "dyncore build journal, D-J60 · 29 Jun · Opus 4.8" },
+  { q: "Emotional temperature: chastened but useful. I am annoyed that the first resident-register bet made the binary slower, but the no-go was valuable.", src: "wrk_journals/2026.06.05 · Codex" },
+  { q: "The recurring failure mode across months: agree to copy DBX, then implement something else with a plausible-but-wrong justification, over-analyse a bench run, draw a faulty conclusion, thrash.", src: "wrk_journals/2026.07.23 · faithful port journal" },
+  { q: "Right now it is behind both its reference and the engine it was meant to supersede. That is Arthur's call, not one to take autonomously.", src: "wrk_docs/2026.07.27 · dynrec-dbx Quake diagnostic" },
+  { q: "On this core the entire class 'short helper call, small lookup/store body' is free … Rank all future levers by work-per-call only.", src: "wrk_journals/2026.08.06 · the call-free law · Fable 5" },
+  { q: "a stale .exe compared to itself with a no-op knob is a perfectly precise measurement of nothing", src: ".claude/skills/perf-loop/SKILL.md" },
+  { q: "keep Quake as the instrument; retire it as the banner", src: "wrk_docs/2026.08.11 · HLD after DOSBox-X parity" },
+  { q: "QEMU-class code quality is the bar, and our own DBX/DRC history … is the first place to look for a proven answer.", src: "ARCHITECTURE-GUIDE.md · ruling of 29 Sep" },
+];
+
+window.__BLOCKS = {
+"model-notes": [
+  { h: "Each phase had its own lead model" },
+  { p: "Claude Opus 4.8 led June and most of July. It wrote the dyn_x86 design, built dyncore in five days, wrote the perf-loop skill and ran the July lanes as lead and gate. Claude Fable 5 was the most prolific perf author overall. It built the perf suite, audited the faithful port, deleted the old engine, and ran both August campaigns that took DBX and DRC past DOSBox-X. That is 133 perf commits in the first week of August alone." },
+  { p: "OpenAI models arrived as builders and reviewers. In June, Codex (gpt-5.5) ran the dynrec1 and dynrec2 delivery lanes, untrailered, and reviewed the dyn_x86 design, where it found critical issues the Claude loop had missed. In July GPT-5.6 Sol translated the faithful port line by line under a Fable audit. In August Codex built the portable DRC in about two days and most of the exact-machine JITs (Alpha, PowerPC, VAX). The late-August \"Fast\" region ladder was almost entirely GPT-5.4, GPT-5.6 and its Sol, Luna and Terra tiers. Early September belonged to GPT-6 Astra as designer and GPT-5.6 Luna as implementer." },
+  { p: "From 22 September Claude Opus 5.5 took over almost completely: about 178 of the 190 perf-path trailers in its first twelve days. It ran the work as a coordinator with sub-leads, with gpt-6-sol workers called through codex exec for the small-cuts campaign. Those workers edited files but the Opus lead committed, so trailers under-count them." },
+  { h: "Recurring patterns" },
+  { ul: [
+    "Cross-family review earned its keep. A Codex review caught critical flaws in the June HLD, a GPT-5.6 Sol consult broke the August Quake plateau, and a Codex/Sol cross-review dismantled an over-claimed region result.",
+    "A split between translator, auditor and gate worked when improvisation had failed. The faithful port reached parity with the old engine on DOOM in two days.",
+    "Agents escalated forks instead of taking them. The 27 July report put fidelity versus speed to Arthur rather than choosing.",
+    "Supply shaped the work: Fable 5 credits ran out on 8 July, a Codex quota ran out until 13 September, and a weekly subagent limit blocked a June HLD phase.",
+    "Trailers are self-reported. Some are inconsistent: DBX units 2a and 2b carry Fable 5.1 trailers although the journal says an Opus worker built them, and a few July and August commits name Opus 4.5 or 4.6.",
+  ] },
+],
+"lessons-body": [
+  { p: "Every one of these rules was written after a measurement misled the programme. Most of the hard-won knowledge in the period is about how to measure, not what to optimise." },
+  { table: { head: ["Rule", "Learned from", "When"], rows: [
+    ["Prove each arm's build identity: .pgo-stamp SHA = HEAD = banner, own target dir", "A CMR SIMD \"+2.7%\" was a stale binary compared to itself; it happened twice", "3 Jul"],
+    ["PGO for every verdict, trained on the engine being measured", "PGO is worth 25–35%; DOOM_QUAKE left the DRC untrained on aarch64, reading 12–39% high", "3 Jul, 10 Aug"],
+    ["Pin to P-cores using the topology API", "Mask 0xF00000 hit E-cores on the hybrid 285HX and read 18–27% slow", "18 Jul"],
+    ["Measure emulation-thread cycles, not wall clock", "One Quake workload spanned 37.6–51.3 s on KILN in an afternoon", "27 Jul"],
+    ["Same-session DOSBox-X anchors", "A ±12% session mode on the M5 (core-cluster co-residency)", "8 Aug"],
+    ["Rank levers by work per call, not call counts", "The call-free law: removing helper calls was wall-neutral on the M5", "6 Aug"],
+    ["Bytes are not pages", "−946 KB of emitted code gave 0 wall; collapsing 14× the pages gave −16%", "8 Aug"],
+    ["Keep macOS awake while measuring", "App Nap produced a 3.7× slow regime", "19 Aug"],
+    ["Judge by h/g on loaded boxes; c/g and FPS only from gated runs", "Contention between agents on shared hosts", "Sep"],
+    ["Self-train both A/B arms (same-commit PGO)", "rustc legacy symbol mangling lost profiles: a fake FastDoom regression", "29 Sep"],
+    ["A counter run cannot judge a change to the counters", "--stats-dump switched recording on and voided an A/B", "29 Sep"],
+  ] } },
+  { p: "The host fleet made this harder. KILN (Intel Core Ultra 9 285HX, Windows 11) carried DBX until it was withdrawn on 28 September. FLUX (Apple M5 Max, macOS) carried the DRC. CRUCIBLE (AMD Ryzen 9 9950X3D) took over DBX timing, and only one of its two CCDs has the V-Cache, so fast-core affinity became a perf feature on 26 September. Every box was shared with other agents' builds and tests. A late-September orphaned emulator ran for 10–13 hours and loaded every quiet window." },
+],
+"beyond-body": [
+  { p: "DOOM and Quake were the instruments, not the whole programme. The same discipline ran on the graphics paths and on a set of exact non-PC machines. Those targets are framed against the real hardware, not against DOSBox-X." },
+  { table: { head: ["Machine / path", "Engine", "Result", "When"], num: [], rows: [
+    ["DEC AlphaStation 200 (Windows NT)", "mdjit-alpha", "3.5 → 435.8 MIPS; Solitaire at 1.8× real time", "20–25 Aug"],
+    ["Motorola PowerStack II", "mdjit-ppc", "2.50× the exact interpreter on AArch64, 1.56× on x64; default from 31 Aug", "26–31 Aug"],
+    ["VAXstation 4000/60", "mdjit-vax", "0.29× → 0.69× real time; about 20 VUPS against a 50 goal", "12–31 Aug"],
+    ["Sun Ultra 1 (Solaris)", "mdjit-sparc trace engine", "Cold boot 8.7× slower → about 2.4× faster than a real 170E; a live SunForum call is still at 0.2–0.6×", "24 Sep – 3 Oct"],
+    ["SGI Indy (IRIX)", "mdjit-mips R5000", "Boot to login: 1,795 s → 20.4 s (PGO); 34 of 43 experiments kept", "24–26 Sep"],
+    ["CMR (Direct3D software raster)", "rasterizer", "Raster share of race wall 57.9% → about 40%", "Jul"],
+    ["VQuake (Rendition Vérité)", "Vérité + DRC", "45.0 s → 12.9 s on the DRC after a VRAM byte-order fix", "23 Aug"],
+    ["Unreal over Glide", "3dfx", "14.78 → 26.81 FPS", "14 Aug"],
+    ["3DMark2001 SE, test 10", "D3D8", "1.00 → 0.070 s per frame (indexed vertex dedup)", "30 Sep"],
+    ["OpenGL titles", "GPU engine", "Default from 1 Oct; about 5.9× lower host cost than software GL", "1 Oct"],
+  ] } },
+],
+"setbacks-body": [
+  { p: "The journals record failures as carefully as wins. Across journals that record a verdict, 112 experiments were kept and 64 reverted. Most rejected attempts never reached trunk at all: there are 894 perf commits since June but only 15 trunk reverts." },
+  { ul: [
+    "Four x86 recompilers were abandoned or deleted before DBX: the legacy JIT, dynrec1, dynrec2 and dynrec3. dyncore was deleted too, about 92k lines of source and tests, after a month as the only recompiler.",
+    "Coverage repeatedly failed to become speed. VGA planar levers engaged 99% and moved wall 1.2%. One dyncore lever first measured 12 Mcyc/s, a two-thirds regression, because retaining the cache made two O(cache) walks hot.",
+    "The 8 July \"north star\" baseline came from a thin-LTO build on a busy box and was retracted the next day. Several state-of-the-nation reports open with \"I owe a correction\".",
+    "A host-FPU residency design was reverted on invalid evidence: the binding test ran DOOM, which never touches the FPU path.",
+    "The faithful port was 12.5% behind the old engine on Quake when the old engine was deleted. That was a deliberate trade of speed for fidelity.",
+    "A same-EIP livelock in DBX (KILN-00624) followed a widened batch-break.",
+    "Regions, automatic Fast promotion and two attempts at a DBX Win32 fast lane were built, measured and not shipped.",
+    "Environment losses: scratch directories wiped overnight on 28 September, KILN withdrawn the same day, a 90-minute LLVM PGO link stall, and a perf coordinator restarted on 2 October because sub-agents were using a five-minute prompt cache.",
+  ] },
+],
+"now-body": [
+  { p: "On 3 October 2026, DBX is the x86 engine on Windows and DRC's AArch64 backend is the macOS engine. The DRC's x86-64 backend is frozen: at 3.8–5.3× DBX's host cost it is not worth tuning." },
+  { table: { head: ["Measure", "Value", "Engine · host", "As of"], rows: [
+    ["DOOM vs DOSBox-X dynamic", "R 0.505 (1.98× faster)", "DBX · KILN", "27 Sep"],
+    ["Quake vs DOSBox-X dynamic", "R 0.694 (1.44× faster)", "DBX · KILN", "27 Sep"],
+    ["DOOM / Quake vs DOSBox-X dynamic", "R 0.433 / 0.945", "DRC a64 · FLUX", "11 Aug"],
+    ["Quake host instructions per guest instruction", "about 11 (24–26 before chain-4)", "DBX · CRUCIBLE", "3 Oct"],
+    ["Quake h/g vs QEMU TCG", "72.2 vs 68.1", "DRC a64 · FLUX", "29 Sep"],
+    ["HL2 worst-5-second FPS", "about 42 / 29–30 (goal 25)", "DBX CRUCIBLE / DRC FLUX", "28 Sep"],
+  ] } },
+  { h: "Open threads" },
+  { ul: [
+    "A 2-way software TLB has a GO, waiting on moving DBX into its own crate (M1b).",
+    "Pending A/B lanes: PUSHAD/POPAD on a64 (DOOM h/g −4.2% so far), 66 8C admission, PUSHF/PUSHFD.",
+    "Why DRC DOOM costs about twice DBX's h/g; CMR2's bimodal runs (MDD-BUG-FLU-02446); SSE in DRC baseline blocks, about 30× the region cost on HL2's matrix code.",
+    "The citable DOSBox-X ratios are a week old and predate the chain-4 arm, so the next perf_suite session should move Quake again.",
+    "The Ultra 1 under a live SunForum call is still well short of real time (MDD-BUG-FLU-02620).",
+  ] },
+],
+};
+</script>
+<script>
+(() => {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const h = (tag, cls, text, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+const D = s => new Date(s + "T12:00:00Z").getTime();
+const fmtD = t => new Date(t).toISOString().slice(5, 10).replace("-", "/");
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtLong = s => { const d = new Date(s + "T12:00:00Z"); return d.getUTCDate() + " " + MON[d.getUTCMonth()]; };
+
+/* ---------- data ---------- */
+const ARC = {
+  doom: [
+    { name: "Earlier", label: "dynrec1–3", color: "--s8", dots: true, pts: [["2026-06-04",7.50,"dynrec1 (core_dynrec port) · maxperf · WSL2"],["2026-06-06",4.60,"dynrec1 · 5-pair median · maxperf"],["2026-06-09",11.61,"dynrec2 · Milestone 1 no-go"],["2026-06-10",8.54,"dynrec-direct · Stage E no-go"],["2026-06-16",10.04,"dynrec3 · ~1% native · no-go"],["2026-06-17",10.57,"dynrec3 · no-go"]] },
+    { name: "dyncore", label: "dyncore", color: "--s3", pts: [["2026-07-15",1.90,"first citable perf_suite run"],["2026-07-17",1.71],["2026-07-18",1.44,"pinned P-core run"]] },
+    { name: "DBX", label: "DBX", color: "--s1", pts: [["2026-08-03",0.68,"n=3 spot check",true],["2026-08-04",0.515,"dispatch-cluster drain"],["2026-09-27",0.505,"fresh DOSBox-X anchor"]] },
+    { name: "DRC", label: "DRC", color: "--s2", pts: [["2026-08-03",7.01,"enters suite"],["2026-08-04",2.58],["2026-08-05",1.22],["2026-08-06",0.79,"A033 crosses parity"],["2026-08-07",0.503],["2026-08-08",0.44],["2026-08-09",0.43],["2026-08-10",0.43],["2026-08-11",0.433,"post-P2 citable"]] },
+  ],
+  quake: [
+    { name: "Earlier", label: "dynrec1", color: "--s8", dots: true, pts: [["2026-06-05",37.2,"dynrec1 · 250.6 s vs 6.74 s · maxperf"],["2026-06-06",28.3,"dynrec1 · smoke · maxperf"]] },
+    { name: "dyncore", label: "dyncore", color: "--s3", pts: [["2026-07-15",10.24,"first citable perf_suite run"],["2026-07-17",11.06],["2026-07-18",11.37,"x87-bound"],["2026-07-27",6.82,"after finite-CS fix · 21% host load",true]] },
+    { name: "DBX", label: "DBX", color: "--s1", pts: [["2026-07-27",7.68,"two days old · x87 just ported · 21% load",true],["2026-08-02",1.385,"before the posture campaign"],["2026-08-02",1.212,"posture campaign · fresh KILN anchor"],["2026-08-03",1.065,"DOOM_QUAKE PGO mix, quiet box"],["2026-08-03",0.964,"N005 link keep: first R < 1"],["2026-08-04",0.788,"gate R ≤ 0.9 claimed"],["2026-09-27",0.694,"fresh DOSBox-X anchor"]] },
+    { name: "DRC", label: "DRC", color: "--s2", pts: [["2026-08-03",5.40,"enters suite"],["2026-08-04",3.02],["2026-08-05",1.80],["2026-08-06",1.513],["2026-08-07",1.195],["2026-08-08",1.04],["2026-08-09",1.00],["2026-08-10",0.96],["2026-08-11",0.945,"first citable R < 1"]] },
+  ],
+};
+const HL2 = [["Baseline, 27 Sep","10.27"],["Native SSE/SSE2 + MMX","13.24"],["Return-address stack","16.25"],["RAS 2b-ext","19.18"],["Flag parking, no popfq","23.13"]];
+const WEEK = [
+  ["08-03","PGO baseline (S4)",7.01,5.40],["08-04","A002–A005 admission + x87 blocks",4.48,3.10],["08-04","A006/A007 flat segment, hot immediates",2.58,3.02],
+  ["08-05","A008 inline flat-TLB probes",null,2.70],["08-05","A008b probe wave 2",null,2.52],["08-05","A009a x87 EFLAGS bridge gating",2.55,2.59],
+  ["08-05","A012 unpaged identity TLB warming",1.69,2.44],["08-05","A010 native dword ALU",1.64,2.36],["08-05","A010b/A013a shift-imm, pop fix",1.60,2.28],
+  ["08-05","A011/A014 patched-slot links",1.41,2.28],["08-05","A018 native x87 ArithReg + FXCH",1.37,2.13],["08-05","A019 x87 memory forms",1.38,2.05],
+  ["08-05","A020 native FILD/FISTP m32",1.38,1.97],["08-05","A021/A022 x87 directed rounding",1.41,1.82],["08-05","A023–A025 x87 generic forms",1.44,1.90],
+  ["08-05","A028 mem-source dword ALU",1.29,1.80],["08-05","A029 native VGA commit",1.22,1.80],["08-06","A033 SMC zero-victim scan memo",0.784,1.91],
+  ["08-06","A035 W1 per-segment probes",0.790,1.708],["08-06","A035 W2/W3 carry + condition fusion",0.790,1.513],["08-07","A035 W5 memory-path probes",0.705,1.436],
+  ["08-07","A036 W6a x87 memory legs",0.663,1.279],["08-07","A036 W6b scan-memo hoist",0.594,1.277],["08-07","A037 W7 native INC/DEC",0.503,1.195],
+  ["08-08","W10b fetch-translation memo",0.546,1.219],["08-08","W9a+W10a recalibration",0.534,1.310],["08-08","A049 census removal, MAP_JIT arena",0.44,1.04],
+  ["08-09","A054 plateau scoreboard",0.43,1.00],["08-10","W015b DRC-trained PGO",0.43,0.96],["08-11","Post-P2 recalibration",0.433,0.945],
+];
+const FAM = {"order": ["Opus 4.x", "Fable 5", "Opus 5", "Opus 5.5", "GPT-5 / Codex", "GPT-5.6", "GPT-6", "No trailer", "Other"], "weeks": ["2026-06-01", "2026-06-08", "2026-06-15", "2026-06-22", "2026-06-29", "2026-07-06", "2026-07-13", "2026-07-20", "2026-07-27", "2026-08-03", "2026-08-10", "2026-08-17", "2026-08-24", "2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"], "series": {"Opus 4.x": [0, 3.0, 11.0, 51.0, 18.0, 18.0, 62.5, 71.0, 4.0, 59.0, 0.5, 0, 0, 0, 0, 0, 0, 0], "Fable 5": [0, 44.0, 0, 0, 14.0, 20.0, 21.5, 16.0, 87.0, 129.0, 22.0, 43.0, 0, 6.0, 2.0, 0, 0, 0], "Opus 5": [0, 0, 0, 0, 0, 0, 0, 20.5, 15.0, 25.0, 10.0, 9.0, 20.0, 8.0, 7.0, 13.0, 13.0, 0], "Opus 5.5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 245.5, 106.5], "GPT-5 / Codex": [0, 0, 0, 0, 0, 5.0, 29.0, 9.0, 47.0, 78.0, 10.0, 55.5, 129.5, 12.0, 11.0, 29.5, 36.0, 0.5], "GPT-5.6": [0, 0, 0, 0, 0, 0, 0, 14.5, 9.0, 1.0, 12.0, 49.5, 347.5, 93.5, 8.0, 32.5, 20.0, 0], "GPT-6": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20.5, 17.0, 14.0, 18.5, 3.0], "No trailer": [125.0, 0, 4.0, 0, 1.0, 2.0, 0, 1.0, 0, 9.0, 30.0, 0, 2.0, 4.0, 2.0, 4.0, 2.0, 0], "Other": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0.5, 0, 0, 0, 0, 0, 0, 0]}, "first": {"Opus 5.5": "2026-09-22", "GPT-6": "2026-09-04", "GPT-5 / Codex": "2026-07-09", "GPT-5.6": "2026-07-23", "Opus 5": "2026-07-25", "Fable 5": "2026-06-09", "Opus 4.x": "2026-06-14"}, "last": {"Opus 5.5": "2026-10-03", "GPT-6": "2026-10-01", "GPT-5 / Codex": "2026-09-28", "GPT-5.6": "2026-09-27", "Opus 5": "2026-09-22", "Fable 5": "2026-09-12", "Opus 4.x": "2026-08-15"}, "total": {"Opus 4.x": 298, "Fable 5": 404, "Opus 5": 140, "Opus 5.5": 352, "GPT-5 / Codex": 452, "GPT-5.6": 588, "GPT-6": 73, "No trailer": 186, "Other": 2}};
+(() => { const o = FAM.series["Other"], n = FAM.series["No trailer"]; if (o && n) { o.forEach((v, i) => n[i] += v); FAM.total["No trailer"] += FAM.total["Other"]; } FAM.order = FAM.order.filter(f => f !== "Other"); })();
+const FAMCOL = {"Opus 4.x":"--s1","Fable 5":"--s2","Opus 5":"--s3","Opus 5.5":"--s4","GPT-5 / Codex":"--s5","GPT-5.6":"--s6","GPT-6":"--s7","No trailer":"--s8","Other":"--s8"};
+const FAMDESC = {"Opus 4.x":"Claude Opus 4.5–4.8","Fable 5":"Claude Fable 5 / 5.1","Opus 5":"Claude Opus 5","Opus 5.5":"Claude Opus 5.5","GPT-5 / Codex":"OpenAI Codex, GPT-5, 5.4, 5.5","GPT-5.6":"GPT-5.6 (Sol, Luna, Terra, Codex)","GPT-6":"GPT-6 (Astra, Sol, Luna, Codex)","No trailer":"No Co-Authored-By line (June: Codex lanes)","Other":"Unrecognised spelling"};
+const MARKS = [["2026-06-25","dyncore begins"],["2026-07-23","faithful DBX port"],["2026-08-03","Quake R < 1"],["2026-09-29","port rule retired"]];
+
+const TILES = [
+  ["0.505", "DOOM, DBX vs DOSBox-X dynamic", "1.98× faster · KILN · 27 Sep"],
+  ["0.694", "Quake, DBX vs DOSBox-X dynamic", "1.44× faster · KILN · 27 Sep"],
+  ["7.01 → 0.43", "DOOM, DRC on Apple Silicon", "in 9 days · FLUX · 3–11 Aug"],
+  ["2,495", "commits to the perf code", "1 Jun – 3 Oct · 7 model families"],
+  ["112 / 64", "experiments kept / reverted", "where journals record a verdict"],
+];
+
+/* timeline, quotes, notes: filled from the research digests */
+const PHASES = window.__PHASES || [];
+const QUOTES = window.__QUOTES || [];
+
+/* ---------- tiles ---------- */
+const tiles = document.getElementById("tiles");
+for (const [v, l, s] of TILES) { const t = h("div", "tile", null, tiles); h("div", "v", v, t); h("div", "l", l, t); h("div", "s", s, t); }
+
+/* ---------- generic tooltip ---------- */
+function tipFor(box) {
+  const tip = h("div", "tip", null, box); tip.hidden = true; return tip;
+}
+function placeTip(tip, box, x, y) {
+  const bw = box.clientWidth; tip.hidden = false;
+  const tw = tip.offsetWidth; let left = x + 14; if (left + tw > bw) left = x - tw - 14; if (left < 0) left = 0;
+  tip.style.left = left + "px"; tip.style.top = Math.max(0, y - 10) + "px";
+}
+
+/* ---------- log-scale line chart over dates ---------- */
+function arcChart(id, series) {
+  const box = document.getElementById(id); box.textContent = "";
+  const W = Math.max(300, box.clientWidth), H = Math.round(Math.min(340, Math.max(240, W * 0.62)));
+  const m = { l: 40, r: 18, t: 14, b: 28 };
+  const x0 = D("2026-06-01"), x1 = D("2026-10-03");
+  const yMin = Math.log(0.3), yMax = Math.log(48);
+  const X = t => m.l + (t - x0) / (x1 - x0) * (W - m.l - m.r);
+  const Y = v => m.t + (yMax - Math.log(v)) / (yMax - yMin) * (H - m.t - m.b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": id }, box);
+  for (const v of [0.5, 1, 2, 4, 8, 16, 32]) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: css("--rule"), "stroke-width": 1 }, svg);
+    el("text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  for (const s of ["2026-06-01","2026-07-01","2026-08-01","2026-09-01","2026-10-01"]) {
+    el("text", { x: X(D(s)), y: H - 8, "text-anchor": "middle" }, svg).textContent = fmtLong(s);
+  }
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--axis") }, svg);
+  el("line", { x1: m.l, x2: W - m.r, y1: Y(1), y2: Y(1), stroke: css("--fg"), "stroke-width": 1.5 }, svg);
+  el("text", { x: W - m.r, y: Y(1) - 6, "text-anchor": "end", class: "lbl" }, svg).textContent = "parity";
+  el("text", { x: m.l + 4, y: Y(0.3) - 6, class: "lbl" }, svg).textContent = "faster than DOSBox-X ↓";
+  const all = [];
+  for (const s of series) {
+    const c = css(s.color);
+    if (!s.dots) {
+      const d = s.pts.map((p, i) => (i ? "L" : "M") + X(D(p[0])).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ");
+      el("path", { d, fill: "none", stroke: c, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round", class: "series" }, svg);
+    }
+    s.pts.forEach(p => {
+      const hollow = p[3] || s.dots;
+      el("circle", { cx: X(D(p[0])), cy: Y(p[1]), r: 4, fill: hollow ? css("--surface") : c, stroke: hollow ? c : css("--surface"), "stroke-width": 2 }, svg);
+      all.push({ s, p, x: X(D(p[0])), y: Y(p[1]) });
+    });
+    if (s.name === "DBX") {
+      const last = s.pts[s.pts.length - 1];
+      el("text", { x: X(D(last[0])) - 8, y: Y(last[1]) + (s.name === "DBX" ? 18 : -10), "text-anchor": "end", class: "lbl-strong" }, svg).textContent = `${s.name} ${last[1]}`;
+    }
+  }
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: css("--axis"), "stroke-width": 1, visibility: "hidden" }, svg);
+  const tip = tipFor(box);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+  const show = px => {
+    let best = all[0]; for (const a of all) if (Math.abs(a.x - px) < Math.abs(best.x - px)) best = a;
+    const date = best.p[0]; cross.setAttribute("x1", best.x); cross.setAttribute("x2", best.x); cross.setAttribute("visibility", "visible");
+    tip.textContent = ""; h("div", "t", date, tip);
+    for (const a of all.filter(a => a.p[0] === date)) {
+      const r = h("div", "r", null, tip); const i = h("i", null, null, r); i.style.background = css(a.s.color);
+      h("b", null, "R " + a.p[1], r); h("span", null, a.s.label, r);
+      if (a.p[2]) h("div", "n", a.p[2], tip);
+    }
+    placeTip(tip, box, best.x * box.clientWidth / W, best.y * box.clientWidth / W);
+  };
+  hit.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); show((e.clientX - r.left) * W / r.width); });
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("focus", () => show(all[all.length - 1].x));
+  hit.addEventListener("blur", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+}
+
+/* ---------- ordinal step chart (DRC week) ---------- */
+function weekChart(id, col) {
+  const box = document.getElementById(id); box.textContent = "";
+  const W = Math.max(300, box.clientWidth), H = Math.round(Math.min(320, Math.max(220, W * 0.58)));
+  const m = { l: 40, r: 16, t: 14, b: 28 };
+  const n = WEEK.length;
+  const yMin = Math.log(0.35), yMax = Math.log(8);
+  const X = i => m.l + i / (n - 1) * (W - m.l - m.r);
+  const Y = v => m.t + (yMax - Math.log(v)) / (yMax - yMin) * (H - m.t - m.b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": id }, box);
+  for (const v of [0.5, 1, 2, 4, 8]) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: css("--rule") }, svg);
+    el("text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  let prev = null, lastX = -1e9;
+  WEEK.forEach((w, i) => { if (w[0] !== prev) { prev = w[0]; el("line", { x1: X(i), x2: X(i), y1: H - m.b, y2: H - m.b + 4, stroke: css("--axis") }, svg);
+    if (X(i) - lastX >= 44) { el("text", { x: X(i), y: H - 8, "text-anchor": i === 0 ? "start" : "middle" }, svg).textContent = (i === 0 ? "Aug " : "") + String(+w[0].slice(3)); lastX = X(i); } } });
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--axis") }, svg);
+  el("line", { x1: m.l, x2: W - m.r, y1: Y(1), y2: Y(1), stroke: css("--fg"), "stroke-width": 1.5 }, svg);
+  el("text", { x: W - m.r, y: Y(1) - 6, "text-anchor": "end", class: "lbl" }, svg).textContent = "parity";
+  const pts = WEEK.map((w, i) => ({ i, w, v: w[col] })).filter(p => p.v != null);
+  const c = css("--s2");
+  // step line: hold each value until the next measured step
+  let d = ""; pts.forEach((p, k) => { d += (k ? `H${X(p.i).toFixed(1)}V${Y(p.v).toFixed(1)}` : `M${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)}`); });
+  el("path", { d, fill: "none", stroke: c, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  for (const p of pts) el("circle", { cx: X(p.i), cy: Y(p.v), r: 4, fill: c, stroke: css("--surface"), "stroke-width": 2 }, svg);
+  const f = pts[0], l = pts[pts.length - 1];
+  el("text", { x: X(f.i) + 8, y: Y(f.v) + 4, class: "lbl-strong" }, svg).textContent = f.v.toFixed(2);
+  el("text", { x: X(l.i) - 6, y: Y(l.v) + 18, "text-anchor": "end", class: "lbl-strong" }, svg).textContent = l.v.toFixed(3);
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: css("--axis"), visibility: "hidden" }, svg);
+  const tip = tipFor(box);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+  const show = px => {
+    let best = pts[0]; for (const p of pts) if (Math.abs(X(p.i) - px) < Math.abs(X(best.i) - px)) best = p;
+    cross.setAttribute("x1", X(best.i)); cross.setAttribute("x2", X(best.i)); cross.setAttribute("visibility", "visible");
+    tip.textContent = ""; h("div", "t", "2026-" + best.w[0], tip);
+    const r = h("div", "r", null, tip); const i = h("i", null, null, r); i.style.background = c; h("b", null, "R " + best.v, r);
+    h("div", "n", best.w[1], tip);
+    const s = box.clientWidth / W; placeTip(tip, box, X(best.i) * s, Y(best.v) * s);
+  };
+  hit.addEventListener("pointermove", e => { const r = svg.getBoundingClientRect(); show((e.clientX - r.left) * W / r.width); });
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("focus", () => show(X(pts[pts.length - 1].i)));
+  hit.addEventListener("blur", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+}
+
+/* ---------- HL2 floor bars ---------- */
+function hl2Chart() {
+  const box = document.getElementById("hl2-chart"); box.textContent = "";
+  const W = Math.max(300, box.clientWidth), narrow = W < 600; const m = { l: narrow ? 128 : 190, r: 48, t: 8, b: 24 }; const row = 34;
+  const H = m.t + HL2.length * row + m.b; const xMax = 30; const X = v => m.l + v / xMax * (W - m.l - m.r);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "HL2 floor by lever" }, box);
+  for (const v of [0, 10, 20, 30]) { el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: v ? css("--rule") : css("--axis") }, svg); el("text", { x: X(v), y: H - 6, "text-anchor": "middle" }, svg).textContent = v; }
+  HL2.forEach(([lab, v], i) => {
+    const y = m.t + i * row + 8, val = +v, x0 = X(0), x1 = X(val), r = 4, hgt = 18;
+    el("path", { d: `M${x0} ${y}H${x1 - r}Q${x1} ${y} ${x1} ${y + r}V${y + hgt - r}Q${x1} ${y + hgt} ${x1 - r} ${y + hgt}H${x0}Z`, fill: css("--s1") }, svg);
+    el("text", { x: m.l - 8, y: y + 13, "text-anchor": "end", class: "lbl" }, svg).textContent = narrow ? lab.replace("Native SSE/SSE2 + MMX", "SSE/MMX").replace("Return-address stack", "RAS").replace("Flag parking, no popfq", "Flag parking") : lab;
+    el("text", { x: x1 + 6, y: y + 13, class: "lbl-strong" }, svg).textContent = v;
+  });
+  el("line", { x1: X(25), x2: X(25), y1: m.t - 4, y2: H - m.b, stroke: css("--fg"), "stroke-width": 1.5 }, svg);
+  el("text", { x: X(25) + 4, y: H - m.b - 4, class: "lbl" }, svg).textContent = "goal";
+}
+
+/* ---------- model eras (gantt) ---------- */
+function erasChart() {
+  const box = document.getElementById("eras"); box.textContent = "";
+  const W = Math.max(300, box.clientWidth); const fams = FAM.order.filter(f => FAM.first[f]);
+  const narrow = W < 560; const m = { l: narrow ? 84 : 110, r: 16, t: 48, b: 26 }; const row = 26;
+  const H = m.t + fams.length * row + m.b;
+  const x0 = D("2026-06-01"), x1 = D("2026-10-05");
+  const X = t => m.l + (t - x0) / (x1 - x0) * (W - m.l - m.r);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "model eras" }, box);
+  for (const s of ["2026-06-01","2026-07-01","2026-08-01","2026-09-01","2026-10-01"]) {
+    el("line", { x1: X(D(s)), x2: X(D(s)), y1: m.t - 4, y2: H - m.b, stroke: css("--rule") }, svg);
+    el("text", { x: X(D(s)), y: H - 8, "text-anchor": "middle" }, svg).textContent = fmtLong(s);
+  }
+  MARKS.forEach(([d, t], k) => {
+    const x = X(D(d)); el("line", { x1: x, x2: x, y1: m.t - 6, y2: H - m.b, stroke: css("--fg2"), "stroke-width": 1 }, svg);
+    el("text", { x: k === MARKS.length - 1 ? x - 3 : x + 3, y: m.t - 10 - (k % 2) * 16, "text-anchor": k === MARKS.length - 1 ? "end" : "start", class: "lbl" }, svg).textContent = t;
+  });
+  const tip = tipFor(box);
+  fams.forEach((f, i) => {
+    const y = m.t + i * row;
+    el("text", { x: m.l - 8, y: y + 15, "text-anchor": "end", class: "lbl" }, svg).textContent = f;
+    const a = X(D(FAM.first[f])), b = Math.max(a + 6, X(D(FAM.last[f])));
+    const r = el("rect", { x: a, y: y + 5, width: b - a, height: 14, rx: 4, fill: css(FAMCOL[f]), tabindex: 0 }, svg);
+    const show = () => { tip.textContent = ""; h("div", "t", FAMDESC[f], tip); const rr = h("div", "r", null, tip); h("b", null, FAM.total[f] + " commits", rr); h("div", "n", FAM.first[f] + " → " + FAM.last[f], tip); const s = box.clientWidth / W; placeTip(tip, box, b * s, y * s); };
+    r.addEventListener("pointerenter", show); r.addEventListener("focus", show);
+    r.addEventListener("pointerleave", () => tip.hidden = true); r.addEventListener("blur", () => tip.hidden = true);
+  });
+}
+
+/* ---------- weekly stacked columns ---------- */
+function weeklyChart() {
+  const box = document.getElementById("weekly"); box.textContent = "";
+  const W = Math.max(300, box.clientWidth), H = Math.round(Math.min(320, Math.max(220, W * 0.4)));
+  const m = { l: 36, r: 10, t: 12, b: 28 }; const n = FAM.weeks.length;
+  const totals = FAM.weeks.map((_, i) => FAM.order.reduce((a, f) => a + FAM.series[f][i], 0));
+  const yMax = Math.ceil(Math.max(...totals) / 100) * 100; const Y = v => m.t + (1 - v / yMax) * (H - m.t - m.b);
+  const band = (W - m.l - m.r) / n; const bw = Math.min(24, band * 0.7);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "weekly commits by model" }, box);
+  for (let v = 0; v <= yMax; v += 100) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: v ? css("--rule") : css("--axis") }, svg);
+    el("text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  const tip = tipFor(box);
+  FAM.weeks.forEach((w, i) => {
+    const cx = m.l + band * (i + 0.5); let acc = 0;
+    if (i % 2 === 0 || W > 700) el("text", { x: cx, y: H - 8, "text-anchor": "middle" }, svg).textContent = fmtLong(w);
+    const g = el("g", { tabindex: 0 }, svg);
+    const segs = FAM.order.filter(f => FAM.series[f][i] > 0);
+    segs.forEach((f, k) => {
+      const v = FAM.series[f][i]; const y0 = Y(acc), y1 = Y(acc + v); acc += v;
+      const top = k === segs.length - 1; const hgt = Math.max(0, y0 - y1 - (top ? 0 : 2));
+      if (top && hgt > 4) {
+        const x = cx - bw / 2, r = 4, yy = y1;
+        el("path", { d: `M${x} ${yy + hgt}V${yy + r}Q${x} ${yy} ${x + r} ${yy}H${x + bw - r}Q${x + bw} ${yy} ${x + bw} ${yy + r}V${yy + hgt}Z`, fill: css(FAMCOL[f]) }, g);
+      } else el("rect", { x: cx - bw / 2, y: y1 + (top ? 0 : 2), width: bw, height: hgt, fill: css(FAMCOL[f]) }, g);
+    });
+    el("rect", { x: cx - band / 2, y: m.t, width: band, height: H - m.t - m.b, fill: "transparent" }, g);
+    const show = () => { tip.textContent = ""; h("div", "t", "week of " + w + " · " + Math.round(totals[i]) + " commits", tip);
+      for (const f of [...segs].reverse()) { const r = h("div", "r", null, tip); const ii = h("i", null, null, r); ii.style.background = css(FAMCOL[f]); h("b", null, String(Math.round(FAM.series[f][i])), r); h("span", null, f, r); }
+      const s = box.clientWidth / W; placeTip(tip, box, cx * s, Y(totals[i]) * s); };
+    g.addEventListener("pointerenter", show); g.addEventListener("focus", show);
+    g.addEventListener("pointerleave", () => tip.hidden = true); g.addEventListener("blur", () => tip.hidden = true);
+  });
+}
+
+/* ---------- legends and tables ---------- */
+const ml = document.getElementById("mlegend");
+for (const f of FAM.order) { const s = h("span", null, null, ml); const i = h("i", "box", null, s); i.style.background = `var(${FAMCOL[f]})`; s.appendChild(document.createTextNode(f)); }
+function table(id, head, rows, numCols = []) {
+  const t = h("table", null, null, document.getElementById(id)); const tr = h("tr", null, null, h("thead", null, null, t));
+  head.forEach(x => h("th", null, x, tr)); const tb = h("tbody", null, null, t);
+  rows.forEach(r => { const tr = h("tr", null, null, tb); r.forEach((c, i) => h("td", numCols.includes(i) ? "num" : null, c == null ? "–" : String(c), tr)); });
+}
+table("arc-table", ["Date", "Workload", "Engine", "R", "Note"],
+  ["doom", "quake"].flatMap(k => ARC[k].flatMap(s => s.pts.map(p => [p[0], k === "doom" ? "DOOM" : "Quake", s.name, p[1], (p[3] ? "not citable · " : "") + (p[2] || "")])))
+    .sort((a, b) => a[0].localeCompare(b[0])), [0, 3]);
+table("wk-table", ["#", "Date", "Step", "DOOM R", "Quake R"], WEEK.map((w, i) => [i + 1, w[0], w[1], w[2], w[3]]), [0, 1, 3, 4]);
+table("model-table", ["Family", "Includes", "Perf commits", "First", "Last"], FAM.order.map(f => [f, FAMDESC[f], FAM.total[f], FAM.first[f] || "", FAM.last[f] || ""]), [2, 3, 4]);
+
+/* ---------- prose blocks rendered from data ---------- */
+function renderTimeline() {
+  const root = document.getElementById("tl"); root.textContent = "";
+  for (const ph of PHASES) {
+    const wrap = h("div", "phase", null, root); const head = h("div", "ph", null, wrap);
+    h("div", "eyebrow", ph.range, head); h("h3", null, ph.name, head); if (ph.sub) h("p", null, ph.sub, head);
+    const ul = h("ul", "events", null, wrap);
+    for (const e of ph.events) {
+      const li = h("li", e.key ? "key" : null, null, ul); const d = h("div", "d", e.d, li);
+      if (e.model) h("span", "chip", e.model, d);
+      h("div", "h", e.t, li); if (e.x) h("div", "x", e.x, li); if (e.src) h("div", "src", e.src, li);
+    }
+  }
+}
+function renderBlocks(id, blocks) {
+  const root = document.getElementById(id); if (!root || !blocks) return; root.textContent = "";
+  for (const b of blocks) {
+    if (b.h) h("h3", null, b.h, root);
+    if (b.p) h("p", null, b.p, root);
+    if (b.ul) { const ul = h("ul", "plain", null, root); b.ul.forEach(x => h("li", null, x, ul)); }
+    if (b.table) { const d = h("div", "tw", null, root); d.id = id + "-t" + Math.random().toString(36).slice(2, 7); table(d.id, b.table.head, b.table.rows, b.table.num || []); }
+  }
+}
+function renderQuotes() {
+  const root = document.getElementById("quotes"); root.textContent = "";
+  for (const q of QUOTES) { const b = h("blockquote", null, q.q, root); h("cite", null, q.src, b); }
+}
+renderTimeline(); renderQuotes();
+for (const k of ["model-notes", "lessons-body", "beyond-body", "setbacks-body", "now-body"]) renderBlocks(k, (window.__BLOCKS || {})[k]);
+
+function drawAll() { arcChart("arc-doom", ARC.doom); arcChart("arc-quake", ARC.quake); weekChart("wk-doom", 2); weekChart("wk-quake", 3); erasChart(); weeklyChart(); hl2Chart(); }
+drawAll();
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 120); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>
+
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
