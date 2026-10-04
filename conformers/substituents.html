@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — Room for Big Groups</title>
+<meta name="description" content="Substituted cyclohexanes for first-year chemists: axial versus equatorial substituents, 1,3-diaxial interactions, A-values and equilibria, and the conformations of cis and trans disubstituted rings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./"><b>1</b>Overview</a>
+    <a href="newman.html"><b>2</b>Newman projections</a>
+    <a href="rings.html"><b>3</b>Ring strain</a>
+    <a href="chair.html"><b>4</b>The chair</a>
+    <a href="substituents.html" aria-current="page"><b>5</b>Substituents</a>
+    <a href="review.html"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero">
+  <div>
+    <div class="kicker">Chapter 5 · Substituted cyclohexanes</div>
+    <h1>Room for <span>big groups</span></h1>
+    <p class="lede">In plain cyclohexane the two chairs are identical, so the ring flip changes nothing. Put a single methyl group on the ring and suddenly the two chairs are different molecules-in-waiting: in one the methyl is axial, in the other equatorial. One of them is noticeably more comfortable, and working out which — and by how much — is what conformational analysis is for.</p>
+  </div>
+  <div class="figure" style="margin:0">
+    <div class="stage" style="aspect-ratio: 1 / 0.86"><canvas id="heroMe" aria-label="Methylcyclohexane"></canvas><div class="tag">methylcyclohexane</div><div class="hint">drag to turn</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Axial is crowded</h2>
+  <p>Here is methylcyclohexane with the <b class="c-gold">methyl</b> group axial. An axial bond points straight up, parallel to the ring's axis — and so do the two other axial bonds on the same face, two carbons along in each direction. All three are packed together on the same side of the ring, uncomfortably close. Flip the ring and the methyl swings out to an equatorial position, pointing away from everything.</p>
+
+  <div class="figure wide">
+    <div class="stage" style="aspect-ratio: 16 / 9; min-height: 300px"><canvas id="meFlip" aria-label="Methylcyclohexane ring flip"></canvas><div class="tag" id="meTag">methyl axial</div><div class="hint">drag to turn</div></div>
+    <div class="controls">
+      <button class="btn primary" id="meFlipBtn">▶ Flip the ring</button>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Methyl is</small><span id="mePos">axial</span></div>
+      <div class="chip"><small>Strain</small><span id="meE">7.6 kJ/mol</span></div>
+    </div>
+    <p class="cap">When the methyl is axial, the two hydrogens it collides with glow <b class="c-coral">red</b>. These are <b>1,3-diaxial interactions</b>: the methyl is on carbon 1, the hydrogens on carbons 3 and 5 — "1,3" relative to it in both directions.</p>
+  </div>
+
+  <p>Each 1,3-diaxial CH<sub>3</sub>/H interaction costs about <strong>3.8&nbsp;kJ/mol</strong>, and an axial methyl has two of them, so the axial chair is <strong>7.6&nbsp;kJ/mol</strong> higher in energy than the equatorial chair. That number might ring a bell.</p>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Gauche butane in disguise</h2>
+  <p>Look at axial methylcyclohexane along the C1–C2 bond, and the ring carbon C3 is sitting 60° from the methyl — exactly the arrangement of gauche butane. Look at the equatorial conformer the same way and C3 is 180° from the methyl: anti butane.</p>
+
+  <div class="figure">
+    <div class="split">
+      <div style="text-align:center"><svg id="nmAx" class="plot" style="max-width:280px;margin:0 auto" role="img" aria-label="Newman projection along C1–C2, axial methyl"></svg><p class="cap" style="text-align:center"><b class="c-coral">Axial</b> methyl: gauche to C3</p></div>
+      <div style="text-align:center"><svg id="nmEq" class="plot" style="max-width:280px;margin:0 auto" role="img" aria-label="Newman projection along C1–C2, equatorial methyl"></svg><p class="cap" style="text-align:center"><b class="c-blue">Equatorial</b> methyl: anti to C3</p></div>
+    </div>
+    <p class="cap">Looking from C1 (front) to C2 (back). The ring continues from C2 to C3 behind the circle, and from C1 to C6 in front. The same is true along C1–C6, with C5 in the role of C3.</p>
+  </div>
+
+  <p>An axial methyl is gauche to two ring carbons (C3, via the C1–C2 bond, and C5, via the C1–C6 bond). An equatorial methyl is anti to both. So the penalty is two gauche-butane interactions: 2 × 3.8 = <strong>7.6&nbsp;kJ/mol</strong>. The "1,3-diaxial interaction" and the "gauche interaction" are two descriptions of the same crowding — one counting the hydrogens that get bumped, the other counting the carbons they're attached to. Use either, but don't count both.</p>
+
+  <div class="key">
+    <h4>Rule of thumb</h4>
+    <p>Substituents prefer to be <strong>equatorial</strong>. The bigger the group, the stronger the preference.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">3</span>How strong is the preference?</h2>
+  <p>Both chairs are in rapid equilibrium, so the energy gap Δ<i>G</i>° sets the ratio between them through the familiar relationship:</p>
+  <div class="formula"><i>K</i> = [equatorial] / [axial] = e<sup>Δ<i>G</i>°/<i>RT</i></sup></div>
+  <p>The energy cost of putting a group axial is called its <span class="term">A-value</span>. Pick a group and see what it does to the equilibrium:</p>
+
+  <div class="figure">
+    <div class="controls" style="margin-top:0">
+      <label>Substituent
+        <select id="aPick" class="btn" style="padding-right:10px">
+        </select>
+      </label>
+      <label class="grow">Temperature <input id="aT" type="range" min="150" max="500" value="298" step="1"></label>
+    </div>
+    <svg id="aBar" class="plot" role="img" aria-label="Proportion of equatorial and axial conformers" style="margin-top:12px"></svg>
+    <div class="readout">
+      <div class="chip"><small>A-value</small><span id="aVal">—</span></div>
+      <div class="chip"><small>Temperature</small><span id="aTout">—</span></div>
+      <div class="chip"><small>K (eq : ax)</small><span id="aK">—</span></div>
+      <div class="chip"><small>Equatorial</small><span id="aPct">—</span></div>
+    </div>
+    <p class="cap" id="aNote"></p>
+  </div>
+
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th>Group</th><th class="n">A-value, kJ/mol</th><th class="n">% equatorial at 25&nbsp;°C</th></tr></thead>
+      <tbody id="aTable"></tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:15px">Values are typical textbook figures (twice the 1,3-diaxial cost per H). Measured A-values vary a little with solvent and method.</p>
+
+  <p>Three patterns are worth understanding rather than memorising:</p>
+  <ul>
+    <li><b>Ethyl ≈ methyl.</b> An axial ethyl group can rotate so that its CH<sub>3</sub> points <em>away</em> from the ring, leaving only a hydrogen facing the axial hydrogens. Isopropyl can still turn its single H inwards, so it's only a little worse.</li>
+    <li><b><i>tert</i>-Butyl is enormous.</b> It has no hydrogen to turn inward: whatever way it rotates, one of its methyls points straight at the axial hydrogens. The axial conformer is so bad (~23&nbsp;kJ/mol) that a <i>t</i>-butyl group effectively <strong>locks</strong> the ring in the chair that puts it equatorial — a trick chemists use to freeze a ring's conformation.</li>
+    <li><b>Halogens are small.</b> Bromine is a big atom, but the C–Br bond is long (1.93&nbsp;Å against 1.54 for C–C), which holds it further from the axial hydrogens. Size and distance roughly cancel.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">4</span>Two substituents: <i>cis</i> and <i>trans</i></h2>
+  <p>With two groups on the ring there's a new question: are they on the same face (<span class="term"><i>cis</i></span>) or opposite faces (<span class="term"><i>trans</i></span>)? That's configuration — fixed for good, because flipping never moves a group to the other face. But <em>within</em> each isomer the ring can still flip, and each chair puts the groups in different axial/equatorial positions.</p>
+  <p>Build a dimethylcyclohexane and the page will draw both chairs and do the bookkeeping.</p>
+
+  <div class="figure wide">
+    <div class="controls" style="margin-top:0">
+      <div class="seg" id="dPos" role="group" aria-label="Positions">
+        <button class="btn" data-p="1" aria-pressed="true">1,2</button><button class="btn" data-p="2">1,3</button><button class="btn" data-p="3">1,4</button>
+      </div>
+      <div class="seg" id="dRel" role="group" aria-label="Relationship">
+        <button class="btn" data-r="cis" aria-pressed="true"><i>cis</i></button><button class="btn" data-r="trans"><i>trans</i></button>
+      </div>
+    </div>
+    <div class="split" style="margin-top:14px">
+      <div class="stage" style="padding:8px"><svg id="dA" class="plot" role="img" aria-label="First chair"></svg></div>
+      <div class="stage" style="padding:8px"><svg id="dB" class="plot" role="img" aria-label="Second chair, after a ring flip"></svg></div>
+    </div>
+    <div class="split" style="margin-top:10px">
+      <div><p class="cap" id="dAcost"></p></div>
+      <div><p class="cap" id="dBcost"></p></div>
+    </div>
+    <p class="cap" id="dVerdict" style="font-size:16px;color:var(--ink-2)"></p>
+  </div>
+
+  <p>Run through all six and a neat pattern falls out:</p>
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th></th><th><i>cis</i></th><th><i>trans</i></th></tr></thead>
+      <tbody>
+        <tr><td><b>1,2</b></td><td>a,e ⇌ e,a</td><td><b>e,e</b> ⇌ a,a</td></tr>
+        <tr><td><b>1,3</b></td><td><b>e,e</b> ⇌ a,a</td><td>a,e ⇌ e,a</td></tr>
+        <tr><td><b>1,4</b></td><td>a,e ⇌ e,a</td><td><b>e,e</b> ⇌ a,a</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Whichever isomer can put <em>both</em> groups equatorial at once is the more stable one: <i>trans</i>-1,2, <i>cis</i>-1,3 and <i>trans</i>-1,4. You don't need to memorise the table — just draw one chair, put the groups in, and flip it.</p>
+
+  <details class="aside">
+    <summary>What if the two groups are different?</summary>
+    <p>When one chair has group X axial and the other has group Y axial, compare their A-values: the chair with the <em>smaller</em> group axial wins. Take <i>cis</i>-1-<i>tert</i>-butyl-4-methylcyclohexane: one chair has methyl axial (7.6&nbsp;kJ/mol), the other has <i>t</i>-butyl axial (~23&nbsp;kJ/mol). The molecule sits almost entirely in the first.</p>
+  </details>
+</section>
+
+<section>
+  <h2><span class="num">✓</span>Quick check</h2>
+  <div class="quiz">
+    <div class="qn">Question 1</div>
+    <p class="q">In the more stable chair of <i>trans</i>-1,4-dimethylcyclohexane, the methyls are…</p>
+    <div class="opts">
+      <button>one axial, one equatorial</button>
+      <button data-ok>both equatorial</button>
+      <button>both axial</button>
+    </div>
+    <p class="why">On C1 and C4, "up" and "down" on opposite faces correspond to the same kind of position. <i>trans</i>-1,4 can be e,e (0 kJ/mol of methyl strain) or a,a (15.2&nbsp;kJ/mol); the e,e chair dominates.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 2</div>
+    <p class="q">Why does a <i>tert</i>-butyl group have such a large A-value compared with isopropyl?</p>
+    <div class="opts">
+      <button>It is more electronegative</button>
+      <button data-ok>It has no C–H it can rotate towards the ring; one methyl always points at the axial hydrogens</button>
+      <button>It makes the C–C bond to the ring shorter</button>
+    </div>
+    <p class="why">Isopropyl can turn so that only its small hydrogen points into the ring. <i>t</i>-Butyl has three methyls and no hydrogen, so it can't dodge.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 3</div>
+    <p class="q">Cyclohexanol's OH has an A-value of about 4.2&nbsp;kJ/mol. Roughly what fraction is equatorial at 25&nbsp;°C?</p>
+    <div class="opts">
+      <button>about 50%</button>
+      <button data-ok>about 85%</button>
+      <button>over 99%</button>
+    </div>
+    <p class="why"><i>K</i> = e<sup>4.2/2.48</sup> ≈ 5.4, so the equatorial fraction is 5.4/6.4 ≈ 84%.</p>
+  </div>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="prev" href="chair.html"><small>← Chapter 4</small><span>The chair</span></a>
+<a class="next" href="review.html"><small>Chapter 6 →</small><span>Practice</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="substituents.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — Molecules That Won't Sit Still</title>
+<meta name="description" content="An illustrated, interactive first-year guide to conformations in organic chemistry: single-bond rotation, Newman projections, ring strain and the cyclohexane chair.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./" aria-current="page"><b>1</b>Overview</a>
+    <a href="newman.html"><b>2</b>Newman projections</a>
+    <a href="rings.html"><b>3</b>Ring strain</a>
+    <a href="chair.html"><b>4</b>The chair</a>
+    <a href="substituents.html"><b>5</b>Substituents</a>
+    <a href="review.html"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero">
+  <div>
+    <div class="kicker">Chapter 1 · Overview</div>
+    <h1>Molecules that <span>won't sit still</span></h1>
+    <p class="lede">The butane in a lighter isn't one shape. Every molecule in it is twisting about its middle bond billions of times a second, flickering between a handful of favourite poses. Those poses are called <strong>conformations</strong>, and learning to see them is one of the most useful habits in organic chemistry.</p>
+    <p class="meta">Six short chapters · first-year university level · everything on these pages can be dragged, spun or poked.</p>
+  </div>
+  <div class="figure" style="margin:0">
+    <div class="stage" style="aspect-ratio: 1 / 0.86">
+      <canvas id="hero3d" aria-label="A butane molecule twisting about its central carbon–carbon bond"></canvas>
+      <div class="tag">butane, C<sub>4</sub>H<sub>10</sub></div>
+      <div class="hint">drag to turn</div>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Twist</small><span id="heroPhi">180°</span></div>
+      <div class="chip"><small>Pose</small><span id="heroName">anti</span></div>
+      <div class="chip"><small>Energy</small><span id="heroE">0.0 kJ/mol</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Single bonds are axles</h2>
+  <p>Draw butane the way you first learned to — <code>CH<sub>3</sub>–CH<sub>2</sub>–CH<sub>2</sub>–CH<sub>3</sub></code> — and it looks like a fixed, flat zig-zag. It isn't. Each carbon–carbon single bond behaves like an axle: the two ends can spin relative to each other without the bond breaking.</p>
+  <p>The reason is the shape of the bond itself. A single bond is a <span class="term">σ (sigma) bond</span>: the electron density sits on the line between the two nuclei, and it is <em>cylindrically symmetric</em> around that line, like a sausage. Spin one end and the overlap between the two orbitals doesn't change at all — so nothing is lost by turning.</p>
+  <p>A double bond is different. On top of its σ bond it has a <span class="term">π (pi) bond</span>, made from two p orbitals that overlap side-by-side, above and below the bond. Twist one end and those p orbitals stop pointing the same way; at 90° they don't overlap at all and the π bond is gone. Breaking it costs roughly 270&nbsp;kJ/mol — far more than everyday thermal jostling can supply — so double bonds are, in practice, locked.</p>
+
+  <div class="figure">
+    <svg id="orbitals" class="plot" role="img" aria-label="Twisting a sigma bond versus a pi bond"></svg>
+    <div class="controls">
+      <label class="grow">Twist the right-hand atom <input id="twist" type="range" min="0" max="90" value="0" step="1"></label>
+      <span class="chip"><small>Twist</small><span id="twistOut">0°</span></span>
+    </div>
+    <p class="cap"><b>Drag the slider.</b> The σ bond (left) keeps all of its overlap however far you turn it. The π bond (right) loses overlap as cos&nbsp;θ — by 90° there is nothing left holding it together.</p>
+  </div>
+
+  <div class="key">
+    <h4>The key idea</h4>
+    <p>Rotation about <strong>single</strong> bonds is (nearly) free. Rotation about <strong>double</strong> bonds is not. Everything in this guide follows from that one asymmetry.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Conformation or configuration?</h2>
+  <p>Two words that sound alike and mean very different things. It's worth getting them straight now, because exam questions love to blur them.</p>
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th></th><th>Conformations</th><th>Configurations</th></tr></thead>
+      <tbody>
+        <tr><td><b>Changed by</b></td><td>rotating about single bonds</td><td>breaking and re-making bonds</td></tr>
+        <tr><td><b>Energy to swap</b></td><td>small: ~1–60 kJ/mol</td><td>large: ~250+ kJ/mol</td></tr>
+        <tr><td><b>How fast at 25&nbsp;°C</b></td><td>millions to billions of times a second</td><td>effectively never, unaided</td></tr>
+        <tr><td><b>Can you bottle them separately?</b></td><td>no — they interconvert as you watch</td><td>yes</td></tr>
+        <tr><td><b>Examples</b></td><td>anti vs gauche butane; the two chairs of cyclohexane</td><td><i>cis</i> vs <i>trans</i>-but-2-ene; the two enantiomers of a chiral centre</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A <span class="term">conformer</span> (short for <em>conformational isomer</em>) is a conformation that sits at an energy minimum — one of the poses a molecule actually lingers in, rather than one it merely passes through. Butane has three conformers (one <i>anti</i>, two <i>gauche</i>); it passes through infinitely many other conformations on the way between them.</p>
+  <p>A useful test: <em>could I get from one structure to the other by twisting single bonds, without lifting a bond off the page?</em> If yes, they're conformations of the same molecule. If you'd have to break something, they're different configurations — genuinely different compounds.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Not all poses are equal</h2>
+  <p>"Free" rotation isn't quite free. As a molecule twists, its atoms and bonds drift closer together and further apart, and the energy rises and falls. Chemists call any energy penalty for a bad geometry <span class="term">strain</span>, and in this guide you'll meet three kinds:</p>
+
+  <div class="cards" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));">
+    <div class="card">
+      <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="none" stroke="#58c4dd" stroke-width="3"/><g stroke="#eef0ff" stroke-width="3" stroke-linecap="round"><line x1="32" y1="32" x2="32" y2="10"/><line x1="32" y1="32" x2="51" y2="43"/><line x1="32" y1="32" x2="13" y2="43"/></g><g stroke="#ff6f6f" stroke-width="3" stroke-linecap="round" opacity=".9"><line x1="35" y1="14" x2="35" y2="4"/><line x1="49" y1="47" x2="57" y2="52"/><line x1="15" y1="47" x2="7" y2="52"/></g></svg>
+      <h3>Torsional strain</h3>
+      <p>The cost of <b>eclipsing</b>: bonds on neighbouring carbons lined up behind one another, their electron clouds pushing apart.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 64 64"><circle cx="22" cy="34" r="13" fill="#e8a93a"/><circle cx="42" cy="34" r="13" fill="#e8a93a" opacity=".85"/><path d="M32 22 v24" stroke="#ff6f6f" stroke-width="3" stroke-dasharray="3 3"/></svg>
+      <h3>Steric strain</h3>
+      <p>The cost of <b>crowding</b>: two groups pushed closer than their sizes allow, so their electron clouds collide.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 64 64"><path d="M10 50 L32 12 L54 50 Z" fill="none" stroke="#58c4dd" stroke-width="3" stroke-linejoin="round"/><path d="M24 26 A 10 10 0 0 0 40 26" fill="none" stroke="#ff6f6f" stroke-width="3"/><path d="M32 12 L18 4 M32 12 L46 4" stroke="#5bd6a2" stroke-width="2" stroke-dasharray="3 3"/></svg>
+      <h3>Angle strain</h3>
+      <p>The cost of <b>bending</b>: forcing a bond angle away from the 109.5° that an sp³ carbon wants. Mostly a ring problem.</p>
+    </div>
+  </div>
+
+  <p>Every conformational question in this course is the same question in disguise: <em>add up the strains in each pose, and the lowest total wins</em>. Mostly wins, anyway — which brings us to temperature.</p>
+</section>
+
+<section>
+  <h2><span class="num">4</span>How big is "small"?</h2>
+  <p>Molecules in a liquid or gas are constantly being hit by their neighbours. At room temperature the typical energy of that jostling is about <strong><i>RT</i> ≈ 2.5&nbsp;kJ/mol</strong>. Occasionally a lucky run of collisions delivers much more, and the rate at which a molecule climbs over an energy barrier <i>E</i><sub>a</sub> is set by how rare those lucky runs are:</p>
+  <div class="formula">rate ≈ (6 × 10<sup>12</sup> s<sup>−1</sup>) × e<sup>−<i>E</i><sub>a</sub> / <i>RT</i></sup></div>
+  <p>That exponential is ferocious. Every extra 5.7&nbsp;kJ/mol of barrier makes the process <em>ten times slower</em>. Slide the barrier and watch the timescale fly past.</p>
+
+  <div class="figure">
+    <svg id="barrier" class="plot" role="img" aria-label="Rate of crossing an energy barrier"></svg>
+    <div class="controls">
+      <label class="grow">Barrier height <input id="ea" type="range" min="0" max="300" value="12" step="1"></label>
+    </div>
+    <div class="readout">
+      <div class="chip"><small>Barrier</small><span id="eaOut">12 kJ/mol</span></div>
+      <div class="chip"><small>Hops per second</small><span id="rateOut">—</span></div>
+      <div class="chip"><small>One hop every</small><span id="waitOut">—</span></div>
+    </div>
+    <p class="cap">At 25&nbsp;°C. The dots on the scale are real barriers you'll meet in this guide: <b class="c-blue">ethane rotation</b>, <b class="c-gold">butane's worst eclipse</b>, the <b class="c-green">cyclohexane ring flip</b> — and, far to the right, <b class="c-coral">twisting a C=C double bond</b>.</p>
+  </div>
+
+  <p>Everything below about 60–80&nbsp;kJ/mol happens faster than you can blink, so those shapes are <em>conformers</em> that swap freely. Somewhere around 100&nbsp;kJ/mol, swaps start taking hours to years, and the shapes behave like separate compounds you could put in different bottles. That fuzzy boundary is exactly the line between conformations and configurations.</p>
+
+  <details class="aside">
+    <summary>Where does the 6 × 10¹² come from?</summary>
+    <p>It's <i>k</i><sub>B</sub><i>T</i>/<i>h</i> — Boltzmann's constant times temperature divided by Planck's constant — the "attempt frequency" from transition-state theory, roughly how often a molecular vibration tries its luck at the barrier. At 298&nbsp;K it comes to 6.2&nbsp;×&nbsp;10<sup>12</sup> per second. You don't need the derivation this year; what matters is the exponential.</p>
+  </details>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Drawing 3D on flat paper</h2>
+  <p>Half of conformational analysis is just <em>drawing</em> the shapes so you can see the strains. Chemists use a handful of conventions, each good at one job:</p>
+  <ul>
+    <li><span class="term">Wedge-and-dash</span> — a solid wedge comes towards you, a hashed wedge goes away. Good for showing a single carbon's 3D arrangement.</li>
+    <li><span class="term">Sawhorse</span> — the C–C bond drawn diagonally, in perspective. Good for seeing both carbons at once.</li>
+    <li><span class="term">Newman projection</span> — looking straight down one bond. The best tool for judging staggered vs eclipsed. <a href="newman.html">Chapter 2.</a></li>
+    <li><span class="term">The chair</span> — a stylised drawing of cyclohexane that encodes every up, down, axial and equatorial position. <a href="chair.html">Chapter 4.</a></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">6</span>Where we're going</h2>
+  <div class="cards">
+    <a class="card" href="newman.html">
+      <div class="n">Chapter 2</div><h3>Looking down the bond</h3>
+      <p>Newman projections, ethane's staggered and eclipsed poses, and the energy rollercoaster of butane.</p>
+    </a>
+    <a class="card" href="rings.html">
+      <div class="n">Chapter 3</div><h3>The trouble with rings</h3>
+      <p>Why cyclopropane is a coiled spring, why most rings pucker, and how burning them measures their strain.</p>
+    </a>
+    <a class="card" href="chair.html">
+      <div class="n">Chapter 4</div><h3>The chair</h3>
+      <p>Cyclohexane's perfect, strain-free shape: axial and equatorial, drawing it properly, and the ring flip.</p>
+    </a>
+    <a class="card" href="substituents.html">
+      <div class="n">Chapter 5</div><h3>Room for big groups</h3>
+      <p>Substituted cyclohexanes, 1,3-diaxial interactions, A-values and <i>cis</i>/<i>trans</i> rings.</p>
+    </a>
+    <a class="card" href="review.html">
+      <div class="n">Chapter 6</div><h3>Toolkit &amp; practice</h3>
+      <p>The numbers worth remembering, a one-page method, and a set of exam-style problems.</p>
+    </a>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">✓</span>Quick check</h2>
+  <div class="quiz">
+    <div class="qn">Question 1</div>
+    <p class="q"><i>cis</i>-But-2-ene and <i>trans</i>-but-2-ene are…</p>
+    <div class="opts">
+      <button>conformers — they interconvert by rotation</button>
+      <button data-ok>configurational isomers — rotation would break the π bond</button>
+      <button>the same molecule drawn twice</button>
+    </div>
+    <p class="why">Getting from one to the other means twisting the C=C bond through 90°, which breaks the π bond (~270&nbsp;kJ/mol). At room temperature that never happens, so they are separate, bottleable compounds.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 2</div>
+    <p class="q">A barrier rises from 12 to 24&nbsp;kJ/mol. Roughly how much slower does the molecule cross it at 25&nbsp;°C?</p>
+    <div class="opts">
+      <button>about 2× slower</button>
+      <button>about 12× slower</button>
+      <button data-ok>about 100× slower</button>
+    </div>
+    <p class="why">Each 5.7&nbsp;kJ/mol is a factor of ten, and 12&nbsp;kJ/mol is about two of those: e<sup>−12/2.48</sup> ≈ 1/126. Doubling a barrier does far more than double the wait.</p>
+  </div>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="next" href="newman.html"><small>Chapter 2 →</small><span>Newman projections</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="overview.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

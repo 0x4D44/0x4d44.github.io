@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conformers — The Chair</title>
+<meta name="description" content="The cyclohexane chair conformation for first-year chemists: why it is strain-free, axial and equatorial positions, how to draw a chair step by step, and the ring flip through half-chair, twist-boat and boat.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#1e2446"/><path d="M7 22 L13 15 L21 19 L27 12 L33 18 L27 25 L19 21 L13 28 Z" fill="none" stroke="#58c4dd" stroke-width="2.4" stroke-linejoin="round"/><circle cx="27" cy="12" r="2.6" fill="#f4b942"/><circle cx="13" cy="28" r="2.6" fill="#f4b942"/></svg>Conformers</a>
+  <nav class="chapters" aria-label="Chapters">
+    <a href="./"><b>1</b>Overview</a>
+    <a href="newman.html"><b>2</b>Newman projections</a>
+    <a href="rings.html"><b>3</b>Ring strain</a>
+    <a href="chair.html" aria-current="page"><b>4</b>The chair</a>
+    <a href="substituents.html"><b>5</b>Substituents</a>
+    <a href="review.html"><b>6</b>Practice</a>
+  </nav>
+</header>
+<main>
+<div class="hero">
+  <div>
+    <div class="kicker">Chapter 4 · Cyclohexane</div>
+    <h1>The <span>chair</span></h1>
+    <p class="lede">Cyclohexane manages something no other small ring can: every bond angle comfortable, every bond perfectly staggered, no strain at all. It does it by folding into a zig-zag that looks, with a little imagination, like a deckchair. Learn this one shape properly and a large chunk of organic chemistry opens up.</p>
+  </div>
+  <div class="figure" style="margin:0">
+    <div class="stage" style="aspect-ratio: 1 / 0.86"><canvas id="heroChair" aria-label="Cyclohexane chair, rotating"></canvas><div class="tag">cyclohexane, C<sub>6</sub>H<sub>12</sub></div><div class="hint">drag to turn</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2><span class="num">1</span>Meet the chair</h2>
+  <p>Take a flat hexagon of carbons. Lift alternate corners up and push the others down, so the ring zig-zags round its edge: up, down, up, down, up, down. That's the chair. Two things come out of it, both exactly right:</p>
+  <ul>
+    <li><b>The angles.</b> Every C–C–C angle is about 111°, a whisker from the ideal 109.5°. No angle strain.</li>
+    <li><b>The twists.</b> Look along any C–C bond and the substituents are perfectly staggered. No torsional strain.</li>
+  </ul>
+  <p>Turn the model below and try the "look along a bond" view: you're seeing two Newman projections side by side, and both are staggered.</p>
+
+  <div class="figure wide">
+    <div class="stage" style="aspect-ratio: 16 / 9; min-height: 300px"><canvas id="chair3d" aria-label="Cyclohexane chair with axial and equatorial hydrogens"></canvas><div class="tag" id="chairTag">side view</div><div class="hint">drag to turn</div></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="View">
+        <button class="btn" data-view="side" aria-pressed="true">side</button><button class="btn" data-view="top">from above</button><button class="btn" data-view="newman">along a C–C bond</button>
+      </div>
+      <div class="seg" role="group" aria-label="Colouring">
+        <button class="btn" data-col="axeq" aria-pressed="true">axial / equatorial</button><button class="btn" data-col="updown">up / down</button><button class="btn" data-col="none">plain</button>
+      </div>
+    </div>
+    <p class="cap" id="chairCap"></p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Axial and equatorial</h2>
+  <p>Each carbon in the chair carries two hydrogens, and they're <em>not</em> equivalent. Every carbon has exactly one of each kind:</p>
+  <ul>
+    <li><span class="term" style="color:var(--coral)">Axial</span> bonds point straight up or straight down, parallel to the ring's axis. They alternate round the ring: up, down, up, down. Three point up, three point down.</li>
+    <li><span class="term" style="color:var(--blue)">Equatorial</span> bonds stick out sideways, around the ring's "equator". They tilt slightly too — down where the axial bond goes up, and up where it goes down.</li>
+  </ul>
+  <p>So on every carbon, one hydrogen is on the top face of the ring and one is on the bottom face, and one is axial while the other is equatorial. Switch the colouring above to "up / down" and you'll see that up and down <em>don't</em> line up with axial and equatorial: on an "up" carbon the axial bond is the up one, on a "down" carbon the equatorial bond is the up one. Keeping those two ideas separate is the whole game in the next chapter.</p>
+
+  <div class="key">
+    <h4>Remember</h4>
+    <p><strong>Axial</strong> = parallel to the axis, straight up or down. <strong>Equatorial</strong> = roughly in the plane, pointing outwards. Each carbon: one axial, one equatorial; one up, one down.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Drawing a chair that looks right</h2>
+  <p>A badly drawn chair is the most common reason for losing marks on conformation questions, because a wrong angle makes axial and equatorial impossible to tell apart. The method below is built entirely from parallel lines. Step through it; the drawing is projected from the real 3D geometry, so every line is where it should be.</p>
+
+  <div class="figure">
+    <svg id="drawChair" class="plot" role="img" aria-label="Drawing a cyclohexane chair, step by step" style="max-width:620px;margin:0 auto"></svg>
+    <div class="controls" style="justify-content:space-between">
+      <button class="btn" id="drawPrev">← Back</button>
+      <span class="chip"><small>Step</small><span id="drawStep">1 / 5</span></span>
+      <button class="btn primary" id="drawNext">Next step →</button>
+    </div>
+    <p class="cap" id="drawCap" style="font-size:16px;color:var(--ink-2)"></p>
+  </div>
+
+  <details class="aside">
+    <summary>Common mistakes to look out for</summary>
+    <ul>
+      <li><b>Equatorial bonds drawn horizontal.</b> They're never horizontal — each one is parallel to a ring bond.</li>
+      <li><b>Axial bonds slanted.</b> They're always vertical: up at the corners that point up, down at the corners that point down.</li>
+      <li><b>Equatorial bond drawn inside the ring.</b> Equatorial bonds always point <em>away</em> from the ring.</li>
+      <li><b>The two ends of the chair at the same height.</b> One tip goes up, the other goes down; that's what makes it a chair rather than a boat.</li>
+    </ul>
+  </details>
+</section>
+
+<section>
+  <h2><span class="num">4</span>The ring flip</h2>
+  <p>The chair isn't rigid. By twisting about its C–C bonds — no bonds broken — it can turn itself inside out into a second chair. The headrest swings down, the footrest swings up, and the molecule passes through a series of less comfortable shapes on the way.</p>
+
+  <div class="figure wide">
+    <div class="split">
+      <div class="stage" style="aspect-ratio: 1 / 0.85"><canvas id="flip3d" aria-label="Ring flip animation"></canvas><div class="tag" id="flipTag">chair</div><div class="hint">drag to turn</div></div>
+      <svg id="flipPlot" class="plot" role="img" aria-label="Energy along the ring flip"></svg>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="flipPlay">▶ Flip it</button>
+      <label class="grow">progress <input id="flipS" type="range" min="0" max="1000" value="0"></label>
+    </div>
+    <p class="cap">Watch the <b class="c-coral">red</b> hydrogens — axial in the starting chair. After the flip, every one of them is equatorial, and every <b class="c-blue">blue</b> one is axial. But a red hydrogen that pointed <em>up</em> still points up. The energy profile is schematic: the real pathway wanders through two twist-boats, and the true boat is a small hump between them.</p>
+  </div>
+
+  <p>The stops along the way:</p>
+  <ul>
+    <li><b>Half-chair (≈45&nbsp;kJ/mol)</b> — five carbons nearly in a plane, so lots of eclipsing and squashed angles. This is the top of the barrier.</li>
+    <li><b>Twist-boat (≈23&nbsp;kJ/mol)</b> — a genuine but shallow energy minimum; a twisted boat that relieves some of the boat's problems.</li>
+    <li><b>Boat (≈30&nbsp;kJ/mol)</b> — both ends up. Four bonds are eclipsed, and the two "flagpole" hydrogens at the bow and stern point at each other, only about 1.8&nbsp;Å apart: steric strain.</li>
+  </ul>
+  <p>A 45&nbsp;kJ/mol barrier is small. At room temperature each cyclohexane molecule flips around 10<sup>5</sup> times a second, so you can't isolate the two chairs of cyclohexane any more than you can isolate the gauche and anti forms of butane. Cool it to −100&nbsp;°C, though, and the flipping slows enough that NMR spectroscopy can see axial and equatorial hydrogens as separate signals.</p>
+
+  <details class="aside">
+    <summary>Why doesn't the boat count as a conformer?</summary>
+    <p>Look at the boat along its two side bonds and you'll find them fully eclipsed, and its flagpole hydrogens bumping. Twisting slightly relieves both at once, so the boat slides downhill into a twist-boat. That makes the boat a hilltop (a transition state between two twist-boats) and the twist-boat the real local minimum. At room temperature only about one molecule in 10<sup>4</sup> is in a twist-boat at any moment; for practical purposes cyclohexane is all chairs.</p>
+  </details>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Up stays up</h2>
+  <p>The flip is the reason it's so important to separate the two vocabularies:</p>
+  <div class="tablewrap">
+    <table class="data">
+      <thead><tr><th></th><th>Changes in a ring flip?</th><th>Describes</th></tr></thead>
+      <tbody>
+        <tr><td><b class="c-coral">axial</b> / <b class="c-blue">equatorial</b></td><td><b>yes</b> — every axial becomes equatorial and vice versa</td><td>the <em>conformation</em> (which chair you're in)</td></tr>
+        <tr><td><b>up</b> / <b>down</b> (wedge / dash)</td><td><b>no</b> — a group on the top face stays on the top face</td><td>the <em>configuration</em> (which molecule you have)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Flipping turns the ring inside out, not upside down. Since no bond is broken, nothing can swap faces. That's why <i>cis</i> and <i>trans</i> ring compounds stay <i>cis</i> and <i>trans</i> through any number of flips — and it's the key to the next chapter.</p>
+</section>
+
+<section>
+  <h2><span class="num">✓</span>Quick check</h2>
+  <div class="quiz">
+    <div class="qn">Question 1</div>
+    <p class="q">How many axial hydrogens does chair cyclohexane have, and how many point up?</p>
+    <div class="opts">
+      <button>6 axial, all pointing up</button>
+      <button data-ok>6 axial, 3 up and 3 down, alternating</button>
+      <button>3 axial, all pointing up</button>
+    </div>
+    <p class="why">Every carbon has one axial bond, so there are six. Their direction alternates round the ring: up on the carbons that pucker up, down on the ones that pucker down.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 2</div>
+    <p class="q">A hydrogen is axial and pointing down. After a ring flip it is…</p>
+    <div class="opts">
+      <button>axial, pointing up</button>
+      <button data-ok>equatorial, still on the bottom face (pointing slightly down)</button>
+      <button>equatorial, now on the top face</button>
+    </div>
+    <p class="why">A flip swaps axial and equatorial, but never moves a group to the other face of the ring. Down stays down.</p>
+  </div>
+  <div class="quiz">
+    <div class="qn">Question 3</div>
+    <p class="q">Which shape is the highest-energy point on the ring-flip pathway?</p>
+    <div class="opts">
+      <button>the boat</button>
+      <button>the twist-boat</button>
+      <button data-ok>the half-chair</button>
+    </div>
+    <p class="why">The half-chair (≈45&nbsp;kJ/mol) has five carbons nearly coplanar, with heavy eclipsing and angle strain. The boat (≈30) and twist-boat (≈23) are both lower.</p>
+  </div>
+</section>
+
+</div>
+
+<nav class="pager" aria-label="Chapters">
+<a class="prev" href="rings.html"><small>← Chapter 3</small><span>Ring strain</span></a>
+<a class="next" href="substituents.html"><small>Chapter 5 →</small><span>Substituents</span></a>
+</nav>
+
+<footer class="foot">
+  <p>Conformers — a first-year guide to the shapes molecules take. Energies are typical textbook values (kJ/mol, 25&nbsp;°C); every model on these pages is drawn live in your browser from real bond lengths and angles.</p>
+</footer>
+</main>
+<script src="kit.js"></script>
+<script src="chair.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

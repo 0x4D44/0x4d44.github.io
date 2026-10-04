@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "conformers",
+    title: "Conformers",
+    tagline: "A six-chapter interactive guide to conformations for first-year organic chemistry: Newman projections, staggered and eclipsed butane, ring strain, the cyclohexane chair, the ring flip and A-values. Every molecule is drawn live from real geometry and can be spun, twisted and flipped. Canvas, SVG and vanilla JavaScript.",
+    url: "https://0x4d44.github.io/conformers/",
+    illustration: "ill-chair",
+    date: "2026-10-04T19:00:00",
+    year: 2026,
+    readingMin: 40,
+    words: 8100,
+    tag: "science",
+    real: true,
+  },
+  {
     slug: "chasing-dosbox-x",
     title: "Chasing DOSBox-X",
     tagline: "How mdem's x86 recompilers went from ten times slower than DOSBox-X to twice as fast in four months. A hand-painted three-minute film, then the full report: timeline, charts, setbacks and the AI models that did the work. Static HTML and SVG, no libraries.",
@@ -1887,7 +1900,7 @@ window.COLLECTIONS = [
     slugs: ["instruments", "audio-compression"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["conformers", "meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
