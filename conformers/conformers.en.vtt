@@ -1,0 +1,145 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:06.678
+Hello, and, welcome to the Aperture Science Enrichment Center. Today's test subject is a molecule that will not sit still.
+
+00:00:07.091 --> 00:00:15.600
+The butane in a lighter isn't one shape. Every molecule in it twists about its middle bond billions of times a second, flickering between a handful of favourite poses.
+
+00:00:15.491 --> 00:00:21.102
+Those poses are called conformations, and learning to see them is one of the most useful habits in organic chemistry.
+
+00:00:21.193 --> 00:00:25.930
+Butane looks like a fixed, flat zig-zag. It isn't. Each single bond is an axle.
+
+00:00:25.822 --> 00:00:34.587
+A single bond is a sigma bond. Its electron density is cylindrically symmetric around the line between the nuclei, like a sausage. Spin one end, and nothing is lost.
+
+00:00:34.478 --> 00:00:44.762
+A double bond adds a π bond, made from two p orbitals overlapping side by side. Twist one end, and the overlap falls off as the cosine of the angle. At ninety degrees, it is gone.
+
+00:00:44.653 --> 00:00:53.382
+Breaking it costs roughly two hundred and seventy kilojoules per mole, far more than thermal jostling can supply. So double bonds are locked, and single bonds are nearly free.
+
+00:00:53.473 --> 00:01:00.812
+Two words that sound alike. Conformations change by rotating single bonds, for under sixty kilojoules per mole, millions of times a second.
+
+00:01:00.704 --> 00:01:11.926
+Configurations change only by breaking and remaking bonds, at two hundred and fifty or more. At room temperature, never. Cis and trans butene are configurations. You can bottle them separately.
+
+00:01:11.817 --> 00:01:19.586
+A conformer is a conformation at an energy minimum, a pose the molecule lingers in. Butane has three. One anti, and two gauche.
+
+00:01:19.678 --> 00:01:28.242
+Free rotation isn't quite free. As a molecule twists, its energy rises and falls. Chemists call any penalty for bad geometry strain, and there are three kinds.
+
+00:01:28.133 --> 00:01:38.934
+Torsional strain is the cost of eclipsing. Steric strain is the cost of crowding. Angle strain is the cost of bending a bond away from one hundred and nine point five degrees, mostly a ring problem.
+
+00:01:38.826 --> 00:01:45.458
+Every conformational question is the same question in disguise. Add up the strains in each pose, and the lowest total wins.
+
+00:01:45.549 --> 00:01:52.958
+To see a twist, look straight down the bond. That is a Newman projection. The front carbon is a point. The back carbon is a circle behind it.
+
+00:01:52.850 --> 00:02:03.111
+Turn the back carbon of ethane, and two poses repeat every one hundred and twenty degrees. Staggered, where hydrogens sit far apart. And eclipsed, where bonds hide behind one another.
+
+00:02:03.002 --> 00:02:11.952
+Eclipsed ethane is twelve kilojoules per mole higher, about four per hydrogen pair. It is not a conformer. It is the top of a hill, crossed ten billion times every second.
+
+00:02:12.043 --> 00:02:17.428
+Now butane. Anti, with the two methyls opposite, is the lowest point. Call it zero.
+
+00:02:17.319 --> 00:02:22.552
+Gauche, with the methyls sixty degrees apart, costs three point eight kilojoules per mole of crowding.
+
+00:02:22.443 --> 00:02:30.118
+Eclipse a methyl with a hydrogen, and the energy climbs to sixteen. Eclipse the two methyls, and you reach the worst pose, nineteen above anti.
+
+00:02:30.210 --> 00:02:35.444
+So how big is small? Thermal jostling at room temperature carries about two and a half kilojoules per mole.
+
+00:02:35.335 --> 00:02:47.186
+The rate of crossing a barrier is six times ten to the twelve per second, times e to the minus barrier over RT. That exponential is ferocious. Every extra five point seven kilojoules per mole makes the crossing ten times slower.
+
+00:02:47.078 --> 00:02:59.223
+Ethane's twelve is crossed ten billion times a second. The cyclohexane ring flip, around forty five, a hundred thousand times. Twisting a double bond, at two hundred and seventy, would take longer than the age of the universe.
+
+00:02:59.315 --> 00:03:05.672
+Half of conformational analysis is simply drawing the shapes. Chemists use four conventions, each good at one job.
+
+00:03:05.564 --> 00:03:11.406
+Wedge and dash. A solid wedge comes towards you, a hashed one goes away. Good for one carbon's arrangement.
+
+00:03:11.297 --> 00:03:16.809
+The sawhorse draws the carbon-carbon bond diagonally, in perspective, so you can see both carbons at once.
+
+00:03:16.700 --> 00:03:21.808
+The Newman projection looks straight down the bond, the best tool for judging staggered against eclipsed.
+
+00:03:21.699 --> 00:03:28.561
+And the chair, a stylised drawing of cyclohexane that encodes every up, down, axial and equatorial position.
+
+00:03:28.652 --> 00:03:43.294
+Tie the ends of a chain together and you lose a freedom. The bill is called ring strain. In eighteen eighty five, Adolf von Baeyer assumed rings are flat polygons. A flat cyclopropane has sixty degree angles, a coiled spring, forty nine and a half degrees from ideal.
+
+00:03:43.186 --> 00:03:52.518
+To measure strain, set fire to it. In a relaxed chain, each CH₂ group releases six hundred and fifty eight point six kilojoules. Anything extra was stored in the ring.
+
+00:03:52.409 --> 00:04:02.197
+Cyclopropane stores one hundred and fifteen. Cyclobutane, one hundred and ten. Cyclopentane, twenty six. And cyclohexane, exactly zero.
+
+00:04:02.088 --> 00:04:08.733
+Baeyer was right about small rings, and wrong about the rest, because real rings pucker. Each ring settles where the strains sum smallest.
+
+00:04:08.824 --> 00:04:18.802
+Cyclohexane manages something no other small ring can. Every angle comfortable, every bond staggered, no strain at all. It folds into a zig-zag like a deckchair. The chair.
+
+00:04:18.693 --> 00:04:29.165
+Each carbon carries two hydrogens that are not equivalent. Axial bonds point straight up or down, parallel to the axis. Equatorial bonds stick out around the equator, and are never horizontal.
+
+00:04:29.057 --> 00:04:38.755
+Keep two ideas apart. Up and down is not the same as axial and equatorial. On an up carbon, the axial bond is the up one. On a down carbon, it is the equatorial one.
+
+00:04:38.646 --> 00:04:47.839
+To draw a chair that looks right, build it from parallel lines. Axial bonds are always vertical. Equatorial bonds run parallel to a ring bond, and point away from the ring.
+
+00:04:47.731 --> 00:04:52.688
+The chair isn't rigid. It turns itself inside out, over a half chair at forty five kilojoules.
+
+00:04:52.579 --> 00:05:00.464
+After the flip, every axial hydrogen is equatorial, and every equatorial one is axial. But a hydrogen that pointed up still points up.
+
+00:05:00.556 --> 00:05:08.225
+Put a single methyl group on the ring, and the two chairs are no longer identical. In one, the methyl is axial. In the other, equatorial.
+
+00:05:08.116 --> 00:05:20.018
+Axial is crowded. The methyl bumps into the axial hydrogens on carbons three and five. Each one three diaxial contact costs three point eight kilojoules per mole, so seven point six in all. It is gauche butane in disguise.
+
+00:05:19.910 --> 00:05:25.305
+That seven point six is the A value. It gives about twenty one to one, ninety five percent equatorial.
+
+00:05:25.196 --> 00:05:32.887
+Tert-butyl is enormous, around twenty three. It locks the ring in the chair that puts it equatorial. Halogens are small, and barely mind.
+
+00:05:32.979 --> 00:05:40.409
+Chapter six puts it on one page. Notice how many numbers are really the same one. Three point eight. The same crowding, seen from different angles.
+
+00:05:40.300 --> 00:05:48.018
+Quick check. Cis and trans butene are. Conformers. Configurational isomers. Or the same molecule. Take your time. I'll wait.
+
+00:05:51.310 --> 00:05:57.035
+Interpreting unclear answer as. Configurational isomers. Correct. Rotation would break the π bond.
+
+00:05:56.926 --> 00:06:00.680
+A reward will be provided at the end of the test. It is cake. Probably.
+
+00:06:00.771 --> 00:06:07.895
+Six short chapters, and everything on these pages can be dragged, spun or poked. Add up the strains, and the lowest total wins.
+
+00:06:07.786 --> 00:06:15.522
+Thank you for participating in this Enrichment Center activity. The full guide lives at 0x4d44.github.io/conformers.
+
+00:06:15.414 --> 00:06:17.826
+The cake is a lie. The chemistry is not.
