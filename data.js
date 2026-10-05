@@ -18,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "conformers",
     title: "Conformers",
-    tagline: "A six-chapter interactive guide to conformations for first-year organic chemistry: Newman projections, staggered and eclipsed butane, ring strain, the cyclohexane chair, the ring flip and A-values. Every molecule is drawn live from real geometry and can be spun, twisted and flipped. Canvas, SVG and vanilla JavaScript.",
+    tagline: "A six-chapter interactive guide to conformations for first-year organic chemistry: Newman projections, staggered and eclipsed butane, ring strain, the cyclohexane chair, the ring flip and A-values. Every molecule is drawn live from real geometry and can be spun, twisted and flipped. Includes a six-minute gouache-painted, narrated video. Canvas, SVG and vanilla JavaScript.",
     url: "https://0x4d44.github.io/conformers/",
     illustration: "ill-chair",
     date: "2026-10-04T19:00:00",
