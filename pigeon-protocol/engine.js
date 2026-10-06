@@ -88,12 +88,14 @@
   function jitterSchedule(lv, seed) {
     var j = lv.jitter;
     if (!j) return lv.cap.map(function (c) { return [c[0], c[1]]; });
-    var rng = mulberry32(hash(seed >>> 0, 4401)), out = [];
+    var rng = mulberry32(hash(seed >>> 0, 4401)), out = [], prevStart = 0;
     lv.cap.forEach(function (c, i) {
       var shift = i === 0 || !j.shift ? 0 : Math.round((rng() * 2 - 1) * j.shift), d = j.cap ? Math.round((rng() * 2 - 1) * j.cap) : 0;
-      out.push([Math.max(1, c[0] + shift), Math.max(3, c[1] + d)]);
+      // every weather segment survives the wobble: distinct start rounds, each segment at least two rounds long
+      var start = i === 0 ? 1 : Math.max(prevStart + 2, c[0] + shift);
+      out.push([start, Math.max(3, Math.min(MAX_W, c[1] + d))]);
+      prevStart = start;
     });
-    out.sort(function (a, b) { return a[0] - b[0]; });
     return out;
   }
 
@@ -240,12 +242,23 @@
     run.history.forEach(function (h) { if (h.rivalOn) { mine += h.delivered; theirs += h.rivalDelivered; } });
     return mine + theirs ? mine / (mine + theirs) : 1;
   }
-  // Did the sender ever respond to a loss by flying fewer birds next time? A flock that only ever grows
-  // (or only ever holds) has not adapted to anything, however well the numbers worked out.
+  // Responsiveness: when a round went badly (at least two birds and a quarter of the flock lost), did the
+  // sender fly clearly fewer birds next time (at most 85% of what it had asked for)? A flock that only grows,
+  // only holds, or makes one token cut and carries on has not responded to anything. The last round is
+  // ignored, since there is no 'next time' after it.
+  function responseStats(run) {
+    var h = run.history, events = 0, responded = 0;
+    for (var i = 0; i < h.length - 1; i++) {
+      if (h[i].lost >= 2 && h[i].lost / h[i].w >= 0.25) {
+        events++;
+        if (h[i + 1].requested <= 0.85 * h[i].requested) responded++;
+      }
+    }
+    return { events: events, responded: responded };
+  }
   function adaptedOf(run) {
-    var h = run.history;
-    for (var i = 0; i < h.length - 1; i++) if (h[i].lost >= 1 && h[i + 1].requested < h[i].requested) return true;
-    return false;
+    var st = responseStats(run);
+    return st.events >= 1 && st.responded >= 0.75 * st.events;
   }
   function starsFor(run) {
     var st = run.level.stars;
@@ -257,11 +270,31 @@
     return s;
   }
 
+  // Saved progress comes from localStorage, which anybody can edit. Keep only what is plainly valid.
+  function plain(o) { return !!o && typeof o === 'object' && !Array.isArray(o); }
+  function sanitizeProgress(o) {
+    var out = { stars: {}, fails: {}, helped: {}, adapted: {}, flock: '', fast: false };
+    if (!plain(o)) return out;
+    function each(src, dst, fn) {
+      if (!plain(src)) return;
+      Object.keys(src).forEach(function (k) {
+        var id = +k; if (!(id >= 1 && id <= 6) || Math.floor(id) !== id) return;
+        var v = fn(src[k]); if (v > 0) dst[id] = v;
+      });
+    }
+    var num = function (max) { return function (v) { v = typeof v === 'number' && isFinite(v) ? Math.floor(v) : 0; return Math.max(0, Math.min(max, v)); }; };
+    each(o.stars, out.stars, num(3)); each(o.fails, out.fails, num(99));
+    each(o.helped, out.helped, function (v) { return v ? 1 : 0; }); each(o.adapted, out.adapted, function (v) { return v ? 1 : 0; });
+    if (typeof o.flock === 'string') out.flock = o.flock.slice(0, 28);
+    out.fast = o.fast === true;
+    return out;
+  }
+
   return {
     LEVELS: LEVELS, JAM: JAM, MAX_W: MAX_W,
     hash: hash, mulberry32: mulberry32, capAt: capAt, gapPasses: gapPasses,
     createRun: createRun, playRound: playRound, pendingIds: pendingIds,
     createReno: createReno, renoNext: renoNext, renoPolicy: renoPolicy,
-    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor, shareOf: shareOf, adaptedOf: adaptedOf
+    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor, shareOf: shareOf, sanitizeProgress: sanitizeProgress, adaptedOf: adaptedOf, responseStats: responseStats
   };
 });
