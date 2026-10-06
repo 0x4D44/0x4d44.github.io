@@ -5,7 +5,8 @@
  *   - A rival flock (if any) releases its own birds at the same moment.
  *   - The Gap passes at most C birds. If more are offered, the excess is lost to crowding,
  *     AND the jostling takes a few more out of the sky (JAM), so the Gap passes LESS than C.
- *     That is what makes congestion collapse emerge rather than be scripted.
+ *     Collapse is therefore MODELLED by this congestion penalty (a deliberate simplification, not
+ *     derived from queueing). ACKs are never lost and every round is a lockstep RTT.
  *   - Every bird that got through the Gap is independently taken by hawks with probability p,
  *     whatever the load. That is loss which is NOT congestion.
  *   - Survivors deliver; their ACKs come home; the sender learns the result after the round.
@@ -16,8 +17,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var JAM = 0.75;         // in a crowd the scrum takes out MORE than the excess, so offering more can deliver less
-  var JAM_RIVAL = 1.0;    // two flocks mixing in the Gap collide more than one flock does         // each bird beyond capacity also knocks this many others out of the sky
+  var JAM = 0.75;         // congestion penalty: each bird beyond capacity also knocks this many others out, so offering more can deliver less
+  var JAM_RIVAL = 1.0;    // the same penalty, harsher, while a rival flock shares the Gap
   var JAM_FLOOR = 0.35;   // the Gap never passes fewer than this fraction of C
   var MAX_W = 24;
 
@@ -248,14 +249,15 @@
   // ignored, since there is no 'next time' after it.
   var RESP = { minEvents: 1, minLost: 3, minFrac: 0.3, k: 0.8, need: 0.75 };
   function responseStats(run) {
-    var h = run.history, events = 0, responded = 0, rs = (run.level && run.level.respond) || RESP;
+    var h = run.history, events = 0, responded = 0, weak = 0, rs = (run.level && run.level.respond) || RESP;
     for (var i = 0; i < h.length - 1; i++) {
       if (h[i].lost >= rs.minLost && h[i].lost / h[i].w >= rs.minFrac) {
         events++;
         if (h[i + 1].requested <= Math.min(0.7, Math.max(0.5, 1 - RESP.k * h[i].lost / h[i].w)) * h[i].requested) responded++;
+        else if (h[i + 1].requested < h[i].requested) weak++;   // cut, but too little to count
       }
     }
-    return { events: events, responded: responded };
+    return { events: events, responded: responded, weak: weak };
   }
   function adaptedOf(run, minEvents) {
     var st = responseStats(run);

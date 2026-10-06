@@ -256,3 +256,13 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 .db-unlock { background: #e3efdc; border: 1.5px solid var(--green); border-radius: 4px; padding: 6px 10px; }
 
 .pace { white-space: nowrap; }
+
+/* desktop: keep the Release button above the fold on a 1280x800-ish window */
+@media (min-width: 980px) and (max-height: 900px) {
+  .colA { gap: 10px; }
+  .mapwrap { max-width: 470px; justify-self: center; width: 100%; }
+  .status { padding-top: 8px; padding-bottom: 8px; }
+}
+
+.status-clock { grid-column: 1 / -1; font: italic .85rem var(--serif); opacity: .92; }
+.status-clock:empty { display: none; }

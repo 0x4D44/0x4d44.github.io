@@ -36,6 +36,7 @@
     afterClean: 'Everyone arrived. Suspicious. Could you send a few more next time?',
     tinyLoss: 'Only a handful went up and some still did not come back. Losses at a small flock do not prove the Gap is full, but they do not prove it is empty either.',
     repeatLoss: 'Losses at a flock size that was fine before. Either the Gap has shrunk or something else is helping itself.',
+    hawkish: ['A few birds missing at a size that has flown clean before. Not every absence is the Gap\u2019s doing.', 'The sky has other tenants. A small loss is not always a verdict.', 'One or two missing, at a flock that has done better. The Ministry declines to speculate, loudly.'],
     bigLoss: 'More than a quarter of the flock lost this round. Worth asking whether the flock was too big, or the sky was.'
   };
   var REACT = {
@@ -185,13 +186,13 @@
          rivalIn: 'The Bearsden Club has turned up. So have the hawks. They have not coordinated.', rivalOut: 'The Bearsden Club has gone home. The Gap is a lot emptier than it was.' }
   };
 
-  var POOL_EVENTS = ['A gull strike is reported. The gull is fine.', 'A pleasant breeze. Aerodynamically irrelevant.', 'Hawks are being hawks. It is what they are for.', 'A man with a drone has been moved on by the pigeons.', 'The sky is doing its best.', 'Today the Gap is just the Gap.'];
+  var POOL_EVENTS = ['A gull strike is reported. The gull is fine.', 'A pleasant breeze. Aerodynamically irrelevant.', 'Hawks are being hawks. It is what they are for.', 'A man with a drone has been moved on by the pigeons.', 'The sky is doing its best.', 'Today the Gap is just the Gap.', 'A seagull has been seen reading the Ministry circular. It looked unimpressed.', 'A walker on the Pentlands has waved at a pigeon. The pigeon has not waved back.', 'The Gap has been measured again. It declined to be measured.', 'A kestrel hovers politely, then less politely.', 'Somewhere a tea urn has boiled over. This is not connected, but it is being minuted.', 'A cloud shaped like a pigeon has been reported. The pigeons are not flattered.', 'Wind: sideways. Morale: also sideways.', 'The Ministry has lost a pen. All flights are asked to look out for it.', 'A heron stands in the Gap and says nothing, which is worse.', 'A crow has applied to join the flock. Application under review.', 'Rain, briefly, then a rumour of rain.', 'The lighthouse at Cramond reports that it is not involved.', 'A sparrow has asked what all the fuss is about. It has been given a leaflet.', 'The M8 is busy. So, for once, is the sky.'];
 
   var FACTS = {
     1: 'In October 1986 the Internet suffered a real congestion collapse: throughput on a 400-yard link between Lawrence Berkeley Lab and UC Berkeley fell from 32 kilobits a second to 40 bits a second, largely because senders kept retransmitting data that was still in flight. Van Jacobson\'s 1988 fix was slow start plus additive increase and multiplicative decrease.',
     2: 'Classic TCP treats every loss as congestion, so on a lossy radio link it slows down for no reason. Google\'s BBR, published in 2016, instead estimates the available bandwidth and round-trip time, and does not panic at every dropped packet.',
     3: 'Chiu and Jain showed in 1989 that, of the simple increase and decrease rules, additive increase with multiplicative decrease is the one that converges towards a fair share between competing senders. A sender that ignores loss, like a flooding UDP stream, takes more than its share, which is why "TCP-friendly" is a phrase in standards documents. The rival here is simpler and more stubborn than a real TCP flow.',
-    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s fast recovery is the halve-and-carry-on that the Hire a Reno autopilot imitates.',
+    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s congestion response, halve the window on loss and then grow it by one a round, is the multiplicative decrease that the Hire a Reno autopilot imitates. (The real Reno also has fast retransmit and fast recovery, which this game leaves out.)',
     5: 'RFC 1149 specifies that the datagram is printed, on a small scroll of paper, in hexadecimal, and notes that the maximum packet size is variable and, paradoxically, tends to increase with the weight of the bird.',
     6: 'RFC 1149, "A Standard for the Transmission of IP Datagrams on Avian Carriers", was published by David Waitzman on 1 April 1990. Its follow-up RFC 2549 (1999) added quality of service.'
   };

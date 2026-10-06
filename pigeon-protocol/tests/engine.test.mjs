@@ -202,7 +202,7 @@ test('responsiveness metric: token cuts do not count, real cuts do, and the last
   assert.equal(E.adaptedOf(mk([[10, 1], [11, 0], [12, 1]]), 1), false);
   // the final round is not an event (there is no next time)
   assert.equal(E.responseStats(mk([[10, 0], [10, 8]])).events, 0);
-  assert.deepEqual(E.responseStats(mk([[10, 6], [5, 0], [12, 7], [12, 0]])), { events: 2, responded: 1 });
+  assert.deepEqual(E.responseStats(mk([[10, 6], [5, 0], [12, 7], [12, 0]])), { events: 2, responded: 1, weak: 0 });
 });
 
 test('no blind ramp with a token cut after its first loss reaches 5% 3 stars on any level (cut of 1 or 3 birds)', () => {
