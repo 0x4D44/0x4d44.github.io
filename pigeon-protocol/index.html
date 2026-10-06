@@ -43,12 +43,15 @@
 
 <header class="bar">
   <div class="bar-title"><span class="rfc-tag">RFC 1149</span> Pigeon Protocol</div>
-  <nav class="desk" aria-label="Flight desk">
-    <button type="button" class="chip" id="btn-levels">Levels</button>
-    <button type="button" class="chip" id="btn-howto">How to play</button>
-    <button type="button" class="chip" id="btn-fast" aria-pressed="false">Fast flights: off</button>
-    <button type="button" class="chip" id="btn-sound" aria-pressed="false">Coos: off</button>
-  </nav>
+  <details class="deskmenu" id="deskmenu">
+    <summary class="chip" id="deskmenu-sum">Menu</summary>
+    <nav class="desk" aria-label="Flight desk">
+      <button type="button" class="chip" id="btn-levels">Levels</button>
+      <button type="button" class="chip" id="btn-howto">How to play</button>
+      <button type="button" class="chip" id="btn-fast" aria-pressed="false">Fast flights: off</button>
+      <button type="button" class="chip" id="btn-sound" aria-pressed="false">Coos: off</button>
+    </nav>
+  </details>
 </header>
 
 <main id="main">
@@ -63,6 +66,15 @@
     <h1 id="t-title">Pigeon<br>Protocol</h1>
     <p class="subtitle">A Standard for the Transmission of Scrolls on Avian Carriers, from Colinton to Glasgow</p>
 
+    <p class="pitch">Run a pigeon post from Colinton to Glasgow. Work out, without being told, how many birds the sky will bear.</p>
+    <label class="flockname" for="flock">Name your flock (the Ministry will engrave it on the obituaries)</label>
+    <input id="flock" type="text" maxlength="28" placeholder="The Colinton Aerial Postal Service" autocomplete="off" spellcheck="false">
+
+    <div class="cta-row">
+      <button type="button" class="btn btn-primary" id="btn-start">Open the loft</button>
+    </div>
+    <details class="howto-d" id="howto-d">
+      <summary>Status of this Memo, and how to play (20 seconds, 2 pigeons)</summary>
     <h2>Status of this Memo</h2>
     <p>This memo provides information for the pigeon community. It does not specify a standard of any kind. Distribution is unlimited, as is, apparently, the number of ways a bird can go missing. <em>Request for Comments: please do not send comments by pigeon.</em></p>
 
@@ -74,12 +86,7 @@
       <li>You learn of losses only after each flight, and never why. Like a real sender. Like a real, slightly worried sender.</li>
     </ol>
 
-    <label class="flockname" for="flock">Name your flock (the Ministry will engrave it on the obituaries)</label>
-    <input id="flock" type="text" maxlength="28" placeholder="The Colinton Aerial Postal Service" autocomplete="off" spellcheck="false">
-
-    <div class="cta-row">
-      <button type="button" class="btn btn-primary" id="btn-start">Open the loft</button>
-    </div>
+    </details>
   </article>
 
   <h2 class="levels-h" id="levels-h">Flight schedule</h2>
@@ -171,7 +178,7 @@
       <button type="button" class="btn btn-primary btn-go" id="btn-go">Release the flock</button>
       <button type="button" class="btn btn-ghost" id="btn-reno" aria-pressed="false" hidden>Hire a Reno</button>
     </div>
-    <p class="keys" id="keys">Keys: <kbd>+</kbd> <kbd>&minus;</kbd> change the flock, <kbd>R</kbd> releases it. Press <kbd>H</kbd> to hire the Reno once he is unlocked.</p>
+    <p class="keys" id="keys">Keys: <kbd>+</kbd> <kbd>&minus;</kbd> change the flock, <kbd>R</kbd> releases it.</p>
   </div>
 
   <section class="debrief" id="debrief" hidden aria-labelledby="db-h" tabindex="-1"></section>

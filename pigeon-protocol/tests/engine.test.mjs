@@ -47,7 +47,7 @@ test('collapse over a whole run: flooding delivers far less per bird than steady
 
 test('hawk loss is independent of load (about p per bird, even when under capacity)', () => {
   let sent = 0, lostHawk = 0, lostCrowd = 0;
-  for (let s = 0; s < 400; s++) { const r = E.createRun(L(2), s); const rec = E.playRound(r, 5); sent += rec.w; lostHawk += rec.lostHawk; lostCrowd += rec.lostCrowd; }
+  for (let s = 0; s < 400; s++) { const r = E.createRun(Object.assign({}, L(2), { jitter: null }), s); const rec = E.playRound(r, 5); sent += rec.w; lostHawk += rec.lostHawk; lostCrowd += rec.lostCrowd; }
   assert.equal(lostCrowd, 0); assert.ok(Math.abs(lostHawk / sent - 0.1) < 0.025, 'hawk rate ' + lostHawk / sent);
 });
 

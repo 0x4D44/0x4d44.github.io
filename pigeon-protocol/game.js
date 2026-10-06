@@ -92,7 +92,7 @@
   function beginBrief(lv) {
     clearTimeout(S.timer); S.runId++;
     S.level = lv; S.run = E.createRun(lv, seedFor(lv)); S.shown = 0; S.busy = false; S.auto = false; S.assisted = false; S.reno = null;
-    S.roll = []; S.finished = false; S.skipping = false; S.w = 1; S.phase = 'brief';
+    S.roll = []; S.finished = false; S.skipping = false; S.w = 1; S.phase = 'brief'; S.hiredAt = 0; S._reactRound = null;
     $('sky').innerHTML = ''; $('btn-skip').hidden = true; $('mapwrap').classList.remove('shake');
     show('game'); $('debrief').hidden = true;
     renderAll(); renderBrief(lv);
@@ -107,8 +107,8 @@
   }
   function starsKey(lv) {
     var st = lv.stars; if (!st) return '';
-    var sh = function (t) { return t.share !== undefined ? ', and no more than ' + Math.round(t.share * 100) + '% of the Gap while the rival is flying' : ''; };
-    return '<b>Three stars:</b> in ' + st.three.rounds + ' rounds or fewer, losing ' + st.three.lost + ' birds or fewer' + sh(st.three) + '.<br><b>Two:</b> ' + st.two.rounds + ' rounds, ' + st.two.lost + ' birds' + sh(st.two) + '. <b>One:</b> deliver all of it, in time, with birds left.';
+    var sh = function (t) { return (t.share !== undefined ? ', no more than ' + Math.round(t.share * 100) + '% of the Gap while the rival is flying' : '') + (t.minShare !== undefined ? ', and at least ' + Math.round(t.minShare * 100) + '%' : ''); };
+    return '<b>Three stars:</b> in ' + st.three.rounds + ' rounds or fewer, losing ' + st.three.lost + ' birds or fewer' + sh(st.three) + '.<br><b>Two:</b> ' + st.two.rounds + ' rounds, ' + st.two.lost + ' birds' + (st.two.share !== undefined ? ', no more than ' + Math.round(st.two.share * 100) + '% of the Gap' : '') + '. <b>One:</b> deliver all of it, in time, with birds left.<br><b>Two and three also need</b> you to have flown fewer birds at least once after losing some: a flock that only grows, or only holds, has not adapted to anything.';
   }
   function renderBrief(lv) {
     var c = C.LEVELS[lv.id], d = $('debrief'); d.hidden = false; d.innerHTML = '';
@@ -122,12 +122,12 @@
       if ((prog.stars[1] || 0) > 0 || lv.id > 1) p.innerHTML += '<br><i>' + esc(renoRecordText(lv, S.run)) + '</i>';
       d.appendChild(p);
     }
-    var row = el('div', 'cta-row');
+    var row = el('div', 'cta-row brief-cta');
     var go = el('button', 'btn btn-primary', 'Begin the first flight'); go.type = 'button'; go.id = 'btn-begin';
     go.addEventListener('click', function () { S.phase = 'play'; d.hidden = true; renderAll(); showStatus(); focusGo(); });
     row.appendChild(go); d.appendChild(row);
     S.phase = 'brief'; $('controls').hidden = true;
-    setTimeout(function () { go.focus({ preventScroll: true }); }, 0);
+    setTimeout(function () { go.focus({ preventScroll: true }); if (window.innerWidth < 980) window.scrollTo({ top: Math.max(0, window.scrollY + d.getBoundingClientRect().top - 60), behavior: reduceMotion ? 'auto' : 'smooth' }); }, 30);
   }
   function focusGo() { try { $('btn-go').focus({ preventScroll: true }); } catch (e) {} }
   function showStatus() {
@@ -158,21 +158,22 @@
     $('controls').hidden = S.finished || S.phase === 'brief';
     $('event').innerHTML = eventLine();
   }
+  var reactIdx = {};
+  // The bulletin is filed AFTER the flight it describes (and weather bulletins are not forecasts): it never
+  // announces what the next round will do.
   function eventLine() {
     var lv = S.level, h = seen();
     if (S.finished) return '<b>NOTAM</b>The Ministry is closed for the day.';
-    if (S.phase === 'brief') return '<b>NOTAM</b>Awaiting your instructions, and a pigeon.';
-    var nextRound = Math.min(S.shown + 1, lv.deadline), evs = C.LEVELS[lv.id].events, tx = evs[nextRound - 1];
-    if (!tx) tx = C.POOL_EVENTS[(nextRound * 7 + lv.id) % C.POOL_EVENTS.length];
-    var out = '<b>NOTAM ' + String(nextRound).padStart(2, '0') + '</b>' + esc(tx);
-    if (h.length) {
-      var r = h[h.length - 1], prev = h.length > 1 ? h[h.length - 2] : null, kind;
-      if (r.lost === 0) kind = prev && r.w > prev.w ? 'grow' : prev && r.w === prev.w ? 'same' : 'clean';
-      else if (r.lost / r.w >= 0.4) kind = 'heavy'; else kind = prev && r.w < prev.w ? 'shrink' : 'some';
-      var pool = C.REACT[kind] || C.REACT.some;
-      out += '<br><span class="react">' + esc(pool[(r.round * 5 + r.w) % pool.length]) + '</span>';
-    }
-    return out;
+    if (S.phase === 'brief' || !h.length) return '<b>NOTAM</b>Awaiting your instructions, and a pigeon. Weather bulletins are filed after each flight, never before.';
+    var done = h.length, evs = C.LEVELS[lv.id].events, tx = evs[done - 1];
+    if (!tx) tx = C.POOL_EVENTS[(done * 7 + lv.id) % C.POOL_EVENTS.length];
+    var out = '<b>NOTAM, FILED LATE, ROUND ' + String(done).padStart(2, '0') + '</b>' + esc(tx);
+    var r = h[h.length - 1], prev = h.length > 1 ? h[h.length - 2] : null, kind;
+    if (r.lost === 0) kind = prev && r.w > prev.w ? 'grow' : prev && r.w === prev.w ? 'same' : 'clean';
+    else if (r.lost / r.w >= 0.4) kind = 'heavy'; else kind = prev && r.w < prev.w ? 'shrink' : 'some';
+    var pool = C.REACT[kind] || C.REACT.some, i = reactIdx[kind] || 0;
+    if (S._reactRound !== done + ':' + S.runId) { reactIdx[kind] = i + 1; S._reactRound = done + ':' + S.runId; S._reactPick = pool[i % pool.length]; }
+    return out + '<br><span class="react">' + esc(S._reactPick) + '</span>';
   }
 
   function renderScrolls() {
@@ -229,6 +230,7 @@
     reno.hidden = !unlocked; reno.disabled = S.finished || S.phase !== 'play' || (S.busy && !S.auto);
     reno.setAttribute('aria-pressed', S.auto ? 'true' : 'false');
     reno.textContent = S.auto ? 'Fire the Reno' : 'Hire a Reno';
+    $('keys').innerHTML = 'Keys: <kbd>+</kbd> <kbd>&minus;</kbd> change the flock, <kbd>R</kbd> releases it' + (unlocked ? ', <kbd>H</kbd> hires the Reno.' : '.');
     var f = $('btn-fast'); f.setAttribute('aria-pressed', prog.fast ? 'true' : 'false'); f.textContent = 'Fast flights: ' + (prog.fast ? 'on' : 'off');
   }
 
@@ -256,13 +258,14 @@
 
   /* ---------- sparkline (status area) ---------- */
   function renderSpark() {
-    var h = seen(), svg = $('spark'), D = Math.max(S.level.deadline, 1);
-    if (!h.length) { svg.innerHTML = '<text x="60" y="21" text-anchor="middle" font-size="9" fill="#f3e7cf" opacity=".7" font-family="Georgia, serif">sent vs arrived</text>'; return; }
+    var h = seen(), svg = $('spark');
+    if (h.length < 4) { svg.classList.remove('on'); svg.innerHTML = ''; return; }
+    svg.classList.add('on');
     var mx = 6; h.forEach(function (r) { mx = Math.max(mx, r.w); });
-    var X = function (r) { return 4 + (r - 1) / Math.max(1, D - 1) * 112; }, Y = function (v) { return 32 - v / mx * 28; };
+    var X = function (i) { return 4 + i / Math.max(1, h.length - 1) * 112; }, Y = function (v) { return 32 - v / mx * 28; };
     var d1 = '', d2 = '';
-    h.forEach(function (r, i) { d1 += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r.w) + ' '; d2 += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r.delivered) + ' '; });
-    svg.innerHTML = '<path d="' + d1 + '" fill="none" stroke="#f3e7cf" stroke-width="1.8"/><path d="' + d2 + '" fill="none" stroke="#8fd19e" stroke-width="1.8" stroke-dasharray="3 2"/>';
+    h.forEach(function (r, i) { d1 += (i ? 'L' : 'M') + X(i) + ' ' + Y(r.w) + ' '; d2 += (i ? 'L' : 'M') + X(i) + ' ' + Y(r.delivered) + ' '; });
+    svg.innerHTML = '<path d="' + d1 + '" fill="none" stroke="#f3e7cf" stroke-width="2"/><path d="' + d2 + '" fill="none" stroke="#8fd19e" stroke-width="2" stroke-dasharray="3 2"/>';
     svg.setAttribute('aria-label', 'Sparkline: ' + h.map(function (r) { return r.w + ' sent, ' + r.delivered + ' arrived'; }).join('; '));
   }
 
@@ -322,7 +325,7 @@
   function animateRound(rec, runId) {
     return new Promise(function (resolve) {
       var sky = $('sky'); sky.innerHTML = '';
-      if (reduceMotion || S.skipping) { resolve(); return; }
+      if (reduceMotion || S.skipping) { var cp0 = $('map-caption'); if (reduceMotion) { cp0.style.display = 'block'; cp0.textContent = 'Round ' + rec.round + ': ' + rec.w + ' released, ' + rec.delivered + ' arrived.'; } resolve(); return; }
       var n = rec.birds.length, sp = (prog.fast ? 0.4 : 1) * (rec.round > 3 ? 0.75 : 1) * (S.auto ? 0.8 : 1);
       var OUT = Math.min(2300, 1000 + 50 * n) * sp, BACK = 750 * sp, STAG = (250 + 14 * n) * sp;
       var birds = [], puffs = [], pops = [], i;
@@ -333,7 +336,7 @@
         u.style.color = isYou ? '#8b97ad' : '#b59469'; u.setAttribute('href', '#pgA');
         sky.appendChild(u);
         // every loss looks the same from the ground: a poof of feathers somewhere between Colinton and Glasgow
-        var dieU = b.fate === 'crowd' ? 0.45 + rr() * 0.15 : b.fate === 'hawk' ? 0.35 + rr() * 0.5 : null;
+        var dieU = b.fate === 'ok' ? null : 0.35 + rr() * 0.5;
         birds.push({ el: u, b: b, lane: isYou ? (i % 7) - 3 : ((i % 5) - 2) * 0.8 + 3, delay: (i / Math.max(1, n)) * STAG, dieU: dieU, dead: false, ack: null, size: isYou ? 28 : 23, ph: rr() * 6 });
       }
       var heavy = rec.lost >= Math.max(4, rec.w * 0.4);
@@ -405,7 +408,7 @@
   function hireReno() {
     if (S.finished || S.phase !== 'play') return;
     if (S.auto) { S.auto = false; clearTimeout(S.timer); renderControls(); toast('The Reno has been dismissed. He is relieved, mostly.'); return; }
-    S.assisted = true; S.auto = true;
+    S.assisted = true; S.auto = true; S.hiredAt = S.shown + 1;
     var h = S.run.history.slice(0, S.shown), r = E.createReno(S.w);
     if (h.length) {
       r.w = h[h.length - 1].w;
@@ -428,12 +431,13 @@
 
   /* ---------- debrief: reads what the player actually did ---------- */
   function analyze(run) {
-    var h = run.history, f = { rounds: h.length, doubled: 0, backoffs: 0, ignoredBig: 0, panic: 0, nerve: 0, probes: 0 }, i, ws = h.map(function (r) { return r.w; });
-    var lost = 0, crowd = 0, hawk = 0, sumW = 0, sumCap = 0, cnt = 0;
+    var h = run.history, f = { rounds: h.length, doubled: 0, backoffs: 0, ignoredBig: 0, panic: 0, nerve: 0, probes: 0, smallLoss: 0 }, i, ws = h.map(function (r) { return r.w; });
+    var lost = 0, crowd = 0, hawk = 0, sumW = 0, sumRoom = 0, cnt = 0;
     for (i = 0; i < h.length; i++) {
       var r = h[i], nx = h[i + 1], frac = r.lost / r.w;
       lost += r.lost; crowd += r.lostCrowd; hawk += r.lostHawk;
-      if (i >= 2) { sumW += r.w; sumCap += r.cap; cnt++; }
+      if (i >= 2) { sumW += r.w; sumRoom += Math.max(1, r.cap - r.rivalW); cnt++; }
+      if (r.lost > 0 && r.w <= 6) f.smallLoss++;
       if (i < 4 && nx && r.lost <= 1 && nx.w >= r.w * 1.6) f.doubled++;
       if (nx) {
         if (r.lost >= 2 && frac > 0.3) { if (nx.w <= r.w * 0.8) f.backoffs++; else if (nx.w >= r.w) f.ignoredBig++; }
@@ -441,66 +445,113 @@
         if (i >= 2 && h[i - 1].lost === 0 && h[i - 2].lost === 0 && r.lost === 0 && nx.w > r.w) f.probes++;
       }
     }
-    var tail = ws.slice(2), mx = Math.max.apply(null, tail.length ? tail : ws), mn = Math.min.apply(null, tail.length ? tail : ws);
-    var sorted = ws.slice().sort(function (a, b) { return a - b; }), med = sorted[sorted.length >> 1];
-    f.median = med; f.flat = h.length >= 5 && (mx - mn) <= Math.max(2, 0.25 * med);
-    f.lost = lost; f.crowdShare = lost ? crowd / lost : 0; f.hawkShare = lost ? hawk / lost : 0;
-    f.fill = cnt ? sumW / sumCap : 1;
+    // the last round may be a short remainder (only a few scrolls left): it says nothing about the player's rule
+    var body = ws.slice(0, ws.length > 1 && h[h.length - 1].requested > h[h.length - 1].w ? -1 : ws.length), tail = body.slice(2);
+    if (!tail.length) tail = body;
+    var mx = Math.max.apply(null, tail), mn = Math.min.apply(null, tail);
+    var sorted = body.slice().sort(function (a, b) { return a - b; }), med = sorted[sorted.length >> 1];
+    f.median = med; f.flat = body.length >= 5 && (mx - mn) <= Math.max(2, 0.25 * med);
+    f.lost = lost; f.hawkLost = hawk; f.crowdShare = lost ? crowd / lost : 0; f.hawkShare = lost ? hawk / lost : 0;
+    f.fill = cnt ? sumW / sumRoom : 1;
     f.peak = Math.max.apply(null, ws);
     return f;
   }
 
+  function thirdStarNote(run, lv) {
+    var st = lv.stars; if (!st) return null;
+    var miss = [], t = st.three;
+    if (run.round > t.rounds) miss.push('finish in ' + t.rounds + ' rounds or fewer (you took ' + run.round + ')');
+    if (run.lost > t.lost) miss.push('lose ' + t.lost + ' birds or fewer (you lost ' + run.lost + ')');
+    if (!E.adaptedOf(run)) miss.push('fly fewer birds at least once after losing some (you never did, so the Gap never taught you anything)');
+    var sh = lv.rival ? E.shareOf(run) : null;
+    if (t.share !== undefined && sh !== null && sh > t.share) miss.push('take no more than ' + pct(t.share) + ' of the shared Gap (you took ' + pct(sh) + ')');
+    if (t.minShare !== undefined && sh !== null && sh < t.minShare) miss.push('carry at least ' + pct(t.minShare) + ' of the shared Gap (you carried ' + pct(sh) + ')');
+    return miss.length ? 'For the third star you would also have needed to ' + miss.join('; and to ') + '.' : null;
+  }
+
+  function assistedDebrief(run, lv, f, share) {
+    var out = { title: 'The Reno flew this.', mine: [], concept: [], fact: C.FACTS[lv.id] }, win = run.won;
+    out.mine.push((S.hiredAt > 1 ? 'You handed over the flock at round ' + S.hiredAt + '. ' : 'You hired the Reno before the first flight. ') + 'He doubles until the first loss, halves on any loss, and otherwise adds one bird a round. He did not need your help and did not ask for it.');
+    if (lv.p > 0) out.concept.push((win ? 'He got through, but this' : 'This') + ' sky has hawks, and the Reno treats every missing bird as a crowded Gap, so he halves the flock for nothing. ' + (f.hawkLost ? 'Hawks took ' + f.hawkLost + ' of the birds he lost. ' : '') + 'A sender that held its nerve on isolated losses would have been much quicker.');
+    else if (win) out.concept.push('He won because the Gap left enough slack for slow growth. One extra bird a round is cautious: it keeps losses low, and it recovers slowly when the Gap widens.');
+    else out.concept.push('He is cautious by design. One extra bird per round recovers slowly after a storm and cannot make up time once the deadline is close, and halving at every loss is expensive when the Gap keeps changing.');
+    if (lv.rival && share !== null) out.concept.push('While the rival flew he carried ' + pct(share) + ' of the traffic.');
+    return out;
+  }
+
   function buildDebrief(run, lv, f, share) {
+    if (S.assisted) return assistedDebrief(run, lv, f, share);
     var out = { title: '', mine: [], concept: [], fact: C.FACTS[lv.id] };
-    var win = run.won, id = lv.id, med = f.median;
+    var win = run.won, id = lv.id, med = f.median, moves = lv.cap.length > 1, gap0 = run.capSched[0][1];
     // what the player did
-    if (f.flat) out.mine.push('You held a steady flock of about ' + med + ' birds for most of the flight.' + (win ? ' On this sky that worked' + (lv.cap.length === 1 && Math.abs(med - lv.cap[0][1]) <= 2 ? ': you guessed the Gap’s size, which is a fine way to win and a poor way to learn. Slow start would have found it by doubling; AIMD would then have crept upwards and backed off at the first real losses, and would have kept doing so if the Gap had moved.' : ', but a steady flock cannot follow a Gap that moves, and cannot tell you when it has.') : ' A steady flock cannot follow a Gap that changes, and cannot notice that it has.'));
-    else {
+    if (f.flat) {
+      var guessed = lv.cap.length === 1 && Math.abs(med - gap0) <= 2;
+      out.mine.push('You held a steady flock of about ' + med + ' birds for most of the flight.' + (win
+        ? (!moves ? ' This sky’s Gap was ' + gap0 + (guessed ? ', so you guessed it, which is a fine way to win and a poor way to learn. Slow start would have found it by doubling; AIMD would then have crept upwards and backed off at the first real losses.' : ', so a flock of ' + med + ' held steady either wasted room or lost a few birds.')
+          : ' That worked, but a steady flock cannot follow a Gap that moves, and cannot tell you when it has.')
+        : (moves ? ' A steady flock cannot follow a Gap that changes, and cannot notice that it has.' : ' The Gap did not move; the size you chose just was not the right one.')));
+    } else {
       if (f.doubled >= 2) out.mine.push('You roughly doubled the flock each flight while every bird arrived. That is slow start: exponential growth until the first losses say stop.');
-      else if (f.doubled === 0 && f.rounds > 4) out.mine.push('You never doubled up early, so you crept towards the Gap’s size instead of racing to it. Safe, but the first rounds were spent underusing a Gap you had not yet measured.');
+      else if (f.doubled === 0 && f.rounds > 4) out.mine.push('You never doubled up early, so you crept towards the Gap’s size instead of racing to it. Safe, but the first rounds went on underusing a Gap you had not yet measured.');
       if (f.backoffs) out.mine.push('After heavy losses you cut the flock ' + f.backoffs + ' ' + plural(f.backoffs, 'time') + '. That is multiplicative decrease: when the Gap says no, back off hard and quickly.');
-      if (f.ignoredBig) out.mine.push('On ' + f.ignoredBig + ' ' + plural(f.ignoredBig, 'round') + ' you flew on, or bigger, after heavy losses. That is how crowds get worse: the scrum takes out more than the birds that did not fit.');
-      if (f.probes) out.mine.push('After calm rounds you edged the flock upwards (' + f.probes + ' ' + plural(f.probes, 'time') + '). That is additive increase: probing to see whether the Gap has widened.');
-      if (f.panic) out.mine.push('On ' + f.panic + ' ' + plural(f.panic, 'round') + ', one or two missing birds made you cut the flock sharply. An isolated loss is not a verdict from the Gap; the autopilot does this too, and it is why he is slow.');
+      if (f.ignoredBig) out.mine.push('On ' + f.ignoredBig + ' ' + plural(f.ignoredBig, 'round') + ' you flew on, or bigger, after heavy losses. In this game’s Gap that makes things worse: the scrum takes out more than the birds that did not fit.');
+      if (f.probes) out.mine.push('After calm rounds you edged the flock upwards (' + f.probes + ' ' + plural(f.probes, 'time') + '). That is probing: testing whether the Gap has widened.');
+      if (f.panic) out.mine.push('On ' + f.panic + ' ' + plural(f.panic, 'round') + ', one or two missing birds made you cut the flock sharply. An isolated loss is not a verdict from the Gap; the Reno does this too, and it is why he is slow.');
       else if (f.nerve >= 2) out.mine.push('A bird or two went missing on ' + f.nerve + ' rounds and you kept your nerve instead of halving the flock. Losses that do not grow with the flock are not about the flock.');
       if (!out.mine.length) out.mine.push('Your flock sizes wandered without a clear rule. That is allowed. Next time try choosing a rule in advance: grow while everyone returns, back off when many do not.');
     }
+    var rivalNote = function () {
+      var dug = run.history.filter(function (r) { return r.rivalDugIn; }).length, bits = [];
+      if (share !== null) {
+        if (share < 0.3) bits.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. That is not sharing; that is being sat on, and the third star needs at least 30%.');
+        else if (share <= 0.45) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: courteous, leaning generous. Roughly half is what two polite senders drift towards.');
+        else if (share <= 0.6) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: close to an even split. Two senders that each add a little and halve on loss drift towards equal shares without speaking to each other.');
+        else bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic, more than a fair half. A sender that pushes on regardless of loss takes bandwidth from polite flows, which is why “TCP-friendliness” is a phrase people put in standards documents.');
+      }
+      if (dug) bits.push('The rival dug in ' + dug + ' ' + plural(dug, 'time') + ' after being squeezed twice running, and the Gap jammed for both of you.');
+      return bits;
+    };
     // outcome, keyed on cause
     if (!win) {
       if (run.endReason === 'loft') {
-        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. Past the Gap’s limit the scrum takes out more birds than the ones that did not fit, and every lost scroll must be flown again, so offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'The cure is to treat loss as a signal. When many birds go missing under load, send fewer, not more.'); out.fact = C.FACTS[1]; }
+        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. In this game’s Gap, once more birds are offered than it can pass, the scrum takes out more than the ones that did not fit, and every lost scroll must be flown again. Offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'The cure is to treat loss as a signal. When many birds go missing under load, send fewer, not more.'); out.fact = C.FACTS[1]; }
         else { out.title = 'The hawks, mostly.'; out.concept.push('This was not mainly a collapse: more of the birds you lost went to hawks than to crowding. Bigger flocks into hawk country simply feed the hawks more birds, and loss that does not rise with load is not the Gap speaking.', 'Keep the flock near what actually arrives, and do not mistake a hungry sky for a crowded one.'); out.fact = C.FACTS[2]; }
+        if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); });
+      } else if (lv.p > 0 && f.hawkShare >= 0.4 && f.fill < 0.85 && (f.panic >= 1 || f.backoffs >= 2)) {
+        out.title = 'Hawk loss, mistaken for congestion.';
+        out.concept.push('You cut the flock after losses that were largely hawks, not crowding. Each cut left the Gap emptier and the deadline nearer. Hawks take about the same share of a big flock as a small one, so shrinking the flock does not save birds, it only delivers fewer.', 'The Reno does exactly this, which is why he rarely finishes on a sky like this.');
+        out.fact = C.FACTS[2];
+      } else if (f.fill < 0.65) {
+        out.title = 'Too timid.'; out.concept.push('You flew, on average, under two thirds of the room the Gap had left, so the deadline arrived with scrolls still in the loft. Not delivering is as much a failure as crowding. Slow start exists so a sender can find the ceiling quickly, and probing exists so it can keep finding it.'); out.fact = 'A sender that never grows its window wastes the link. That is why TCP keeps increasing until it is told to stop.';
+        if (lv.rival && share !== null && share < 0.45) rivalNote().forEach(function (x) { out.concept.push(x); });
       } else {
-        if (f.fill < 0.65) { out.title = 'Too timid.'; out.concept.push('You flew, on average, under two thirds of what the Gap could carry, so the deadline arrived with scrolls still in the loft. Not delivering is as much a failure as crowding. Slow start exists so a sender can find the ceiling quickly, and probing exists so it can keep finding it.'); out.fact = 'A sender that never grows its window wastes the link. That is why TCP keeps increasing until it is told to stop.'; }
-        else { out.title = 'So close, and too slow.'; out.concept.push('You used most of the Gap, but the rounds ran out. Time went on backing off, hunting for the limit again, or flying scrolls a second time. Every loss costs a round trip to repair, so the aim is to find the limit once, early, and stay just under it.'); }
+        out.title = 'So close, and too slow.'; out.concept.push('You used most of the room, but the rounds ran out. Time went on backing off, hunting for the limit again, or flying scrolls a second time. Every loss costs a round trip to repair, so the aim is to find the limit once, early, and stay just under it.');
+        if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); });
       }
       return out;
     }
-    // wins, per level
-    var seeShare = share !== null;
+    // wins, per level, conditional on what actually happened
     if (id === 1) {
-      out.title = f.lost === 0 ? 'Not a feather out of place.' : f.crowdShare > 0 && f.peak > run.history[run.history.length - 1].cap ? 'You have invented slow start.' : 'You have found the limit.';
-      out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. Doubling until that moment is slow start; backing off and then creeping up one bird at a time is additive increase, multiplicative decrease, the heart of TCP congestion control.');
-      if (f.lost === 0) out.concept.push('You never lost a bird, which means either luck, a very polite ramp, or a flock that never reached the limit. There is no shame in that, but the sawtooth in the chart only appears once you have gone over the edge at least once.');
+      out.title = f.flat ? 'You guessed the Gap.' : f.lost === 0 ? 'Not a feather out of place.' : f.peak > run.history[run.history.length - 1].cap ? 'You have invented slow start.' : 'You have found the limit.';
+      out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. Doubling until that moment is slow start; backing off and then creeping up is additive increase, multiplicative decrease, the heart of TCP congestion control.');
+      if (f.lost === 0) out.concept.push('You never lost a bird, which means a very polite ramp, a lucky guess, or a flock that never reached the limit. There is no shame in that, but the sawtooth only appears once you have gone over the edge and come back.');
     } else if (id === 2) {
       out.title = 'Loss is not always congestion.';
-      out.concept.push('Birds went missing even when the flock was small, and some losses did not grow with the flock size. Loss that does not grow with load is not the Gap speaking; treating every missing bird as congestion, as the autopilot does, throttles you for nothing.', 'Telling the two apart, by checking whether losses rise when the flock does, is the problem real senders face on Wi-Fi, satellite and mobile links.');
+      if (f.hawkLost >= 3) out.concept.push('Hawks took ' + f.hawkLost + ' of your birds' + (f.smallLoss ? ', some of them even when the flock was small' : '') + '. Loss that does not grow with the flock is not the Gap speaking; treating every missing bird as congestion, as the Reno does, throttles you for nothing.');
+      else out.concept.push('The hawks were kind this time: only ' + f.hawkLost + ' ' + plural(f.hawkLost, 'bird') + ' went to them. They take about the same share of any flock, so loss that does not grow with the flock is not the Gap speaking, and a sender that halves at every missing bird throttles itself for nothing.');
+      out.concept.push('Telling the two apart, by checking whether losses rise when the flock does, is the problem real senders face on Wi-Fi, satellite and mobile links.');
     } else if (id === 3) {
-      out.title = share !== null && share > 0.6 ? 'You won the Gap. Politely? Less so.' : 'You shared the Gap.';
-      if (seeShare) {
-        if (share <= 0.45) out.concept.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. Courteous; possibly too much so. Additive increase with multiplicative decrease drifts two senders towards equal shares, but only if both keep probing.');
-        else if (share <= 0.6) out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: close to an even split. Two senders that both add a bird at a time and halve on loss drift towards equal shares without ever speaking to each other.');
-        else out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic. That is more than a fair half. A sender that pushes on regardless of loss takes bandwidth from polite flows, which is exactly why "TCP-friendliness" is a thing, and why a bully who keeps squeezing gets a rival that digs in and a Gap that jams for both.');
-      }
-      var dug = run.history.filter(function (r) { return r.rivalDugIn; }).length;
-      if (dug) out.concept.push('The rival dug in ' + dug + ' ' + plural(dug, 'time') + ' after being squeezed twice running, and the Gap jammed for both of you.');
+      out.title = share === null ? 'You flew alone.' : share > 0.6 ? 'You won the Gap. Politely? Less so.' : share < 0.3 ? 'You were very, very polite.' : 'You shared the Gap.';
+      rivalNote().forEach(function (x) { out.concept.push(x); });
+      if (!out.concept.length) out.concept.push('The rival hardly turned up for you.');
     } else if (id === 4) {
-      out.title = 'You have been probing.';
-      out.concept.push('The Gap changed size without telling you, so the only way to find out is to keep testing: add a bird, see what happens. Losses tell you when it has shrunk; a run of calm rounds is the only hint it has widened.', 'This is why AIMD keeps increasing even when everything is fine. The ceiling is a moving target, not a number you learn once.');
+      out.title = f.probes || f.backoffs ? 'You have been probing.' : 'You rode out the storm.';
+      if (f.probes || f.backoffs) out.concept.push('The Gap changed size without telling you, so the only way to find out is to keep testing: add some birds, see what happens. Losses tell you when it has shrunk; a run of calm rounds is the only hint it has widened.', 'Growing by a bird a round, as the Reno does, is safe but slow at reclaiming room; probing faster when the coast is clear got more scrolls through. Newer algorithms such as BBR and CUBIC probe more boldly for exactly this reason.');
+      else out.concept.push('The Gap changed size without telling you, and you got through without much testing. The cautious way to find out whether it has widened is to probe: add some birds and watch what comes back.', 'Growing a bird a round is safe but slow at reclaiming room; bolder probing is why newer algorithms such as BBR and CUBIC exist.');
     } else if (id === 5) {
       out.title = 'Everything, all at once.';
       out.concept.push('Hawk losses, a rival flock and a moving ceiling together need all of it: slow start to find the room, backing off for crowding but not for stray losses, sharing with someone else, and probing again when the weather moves.', 'No single rule does it. The sawtooth is just what balancing those jobs looks like.');
-      if (seeShare) out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic.');
+      rivalNote().forEach(function (x) { out.concept.push(x); });
     } else {
       out.title = 'Free flight.';
       out.concept.push('Nothing here is scored, so use it to ask questions. What if the hawks are at 20 per cent? If the Gap is huge? If the rival is a bully? Every setting is a real network parameter: capacity, random loss, competing traffic.');
@@ -512,7 +563,7 @@
     var d = el('div', 'victory');
     var medal = stars === 3 ? '<g class="medal-bob"><path d="M50 52 L46 70 L54 66 L58 70 L54 52Z" fill="#b3202a" stroke="#2b2118"/><circle cx="52" cy="72" r="7" fill="#e0b23a" stroke="#2b2118" stroke-width="1.5"/><text x="52" y="75.5" text-anchor="middle" font-size="9" font-family="Georgia, serif" fill="#2b2118">1</text></g>' : '';
     d.innerHTML = '<svg viewBox="0 0 96 84" aria-hidden="true"><g class="scroll-un"><rect x="6" y="4" width="46" height="30" rx="3" fill="#fbf4e3" stroke="#2b2118" stroke-width="1.5"/><path d="M12 12h34M12 18h28M12 24h32" stroke="#8d7a5a" stroke-width="1.5"/><circle cx="48" cy="28" r="4" fill="#b3202a"/></g><use href="#pgA" x="30" y="40" width="62" height="45" style="color:#8b97ad"/>' + medal + '</svg>';
-    var q = el('q', null, stars === 3 ? C.WINS[lv.id] : C.WIN_LESSER);
+    var q = el('q', null, stars === 3 ? C.WINS[lv.id] : (C.WINS2[lv.id] || C.WIN_LESSER));
     var box = el('div'); box.appendChild(el('b', null, stars === 3 ? 'A pigeon has been decorated.' : 'The scrolls arrived.')); box.appendChild(q); d.appendChild(box);
     return d;
   }
@@ -529,7 +580,7 @@
     var stars = 0;
     if (run.won && !S.assisted && !lv.sandbox) { stars = E.starsFor(run); if (stars > (prog.stars[lv.id] || 0)) prog.stars[lv.id] = stars; save(); }
     else if (run.won && S.assisted) { prog.helped[lv.id] = 1; save(); }
-    else if (!run.won) { prog.fails[lv.id] = (prog.fails[lv.id] || 0) + 1; save(); }
+    else if (!run.won && !S.assisted) { prog.fails[lv.id] = (prog.fails[lv.id] || 0) + 1; save(); }
     renderAll();
     var f = analyze(run), share = lv.rival ? (run.history.some(function (h) { return h.rivalOn; }) ? E.shareOf(run) : null) : null;
     var data = buildDebrief(run, lv, f, share);
@@ -547,7 +598,7 @@
       var key = el('p', 'db-reno stars-key');
       key.innerHTML = '<b>Your run:</b> ' + run.round + ' rounds, ' + run.lost + ' birds lost' + (share !== null ? ', ' + pct(share) + ' of the shared Gap' : '') + '.<br>' + starsKey(lv);
       d.appendChild(key);
-    } else if (!lv.sandbox) {
+    } else if (!lv.sandbox && !S.assisted) {
       var k2 = el('p', 'db-reno stars-key'); k2.innerHTML = '<b>What the stars wanted:</b><br>' + starsKey(lv); d.appendChild(k2);
     }
     if (!lv.sandbox) {
@@ -555,7 +606,9 @@
       rp.textContent = 'For comparison, the Reno on this same sky: ' + (ref.inTime ? ref.rounds + ' rounds, ' + ref.lost + ' ' + plural(ref.lost, 'bird') + ' lost.' : ref.won ? 'about ' + ref.rounds + ' rounds, ' + ref.lost + ' birds lost, which is past the deadline.' : 'did not finish.');
       d.appendChild(rp);
     }
-    d.appendChild(el('h3', 'db-sub', 'What you did'));
+    var note3 = run.won && !S.assisted && !lv.sandbox && stars < 3 ? thirdStarNote(run, lv) : null;
+    if (note3) d.appendChild(el('p', 'db-reno', note3));
+    d.appendChild(el('h3', 'db-sub', S.assisted ? 'What happened' : 'What you did'));
     data.mine.forEach(function (x) { d.appendChild(el('p', null, x)); });
     d.appendChild(el('h3', 'db-sub', 'What it was'));
     data.concept.forEach(function (x) { d.appendChild(el('p', null, x)); });
@@ -636,6 +689,11 @@
     });
     var onMq = function (e) { reduceMotion = e.matches; };
     try { var mq = window.matchMedia('(prefers-reduced-motion: reduce)'); mq.addEventListener ? mq.addEventListener('change', onMq) : mq.addListener(onMq); } catch (e) {}
+    var dm = $('deskmenu'), mqW = window.matchMedia ? window.matchMedia('(min-width: 640px)') : null;
+    var syncMenu = function () { if (mqW && mqW.matches) dm.open = true; };
+    syncMenu(); if (mqW) { try { mqW.addEventListener('change', function () { dm.open = mqW.matches; }); } catch (e) {} }
+    dm.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { if (!(mqW && mqW.matches)) dm.open = false; }); });
+    var hd = $('howto-d'); if (hd && window.innerWidth >= 900) hd.open = true;
     var h1 = document.querySelector('#screen-title h1'); if (h1 && !reduceMotion) h1.classList.add('wob');
     show('title');
   }

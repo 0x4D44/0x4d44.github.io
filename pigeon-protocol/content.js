@@ -6,7 +6,8 @@
     'Fiona', 'Terry', 'Moira', 'Duncan', 'Pauline', 'Colin', 'Shona', 'Archibald', 'Maureen', 'Gordon', 'Isla', 'Keith', 'Wee Barry',
     'Dolores', 'Ewan', 'Janette', 'Norman', 'Cheryl', 'Callum', 'Bev', 'Lord Coo', 'Rab', 'Edith', 'Stuart', 'Nessa', 'Alasdair', 'Trish', 'Malcolm'];
   var TRAITS = ['nervous', 'overconfident', 'easily distracted', 'a union man', 'sceptical', 'fond of chips', 'poor at maps', 'unusually pious',
-    'in it for the pension', 'a bit of a show-off', 'afraid of gulls', 'asked a lot of questions', 'frankly average', 'weighed down by paperwork'];
+    'in it for the pension', 'a bit of a show-off', 'afraid of gulls', 'asked a lot of questions', 'frankly average', 'weighed down by paperwork',
+    'allergic to Tuesdays', 'a committee member', 'self-taught', 'recently promoted', 'fond of a sit-down', 'terrible at goodbyes'];
 
   // Cause-neutral on purpose: a real sender only knows that a packet did not come back.
   var OBITS = [
@@ -21,7 +22,11 @@
     'Died as they lived: in transit.',
     'Failed to ACK. The reasons are between the bird and the weather.',
     'Neither arrived nor complained.',
-    'Absent at roll call. The scroll is being reissued.'
+    'Absent at roll call. The scroll is being reissued.',
+    'Left a note, since lost. Presumed to say goodbye.',
+    'Has been replaced by a younger bird, who is already nervous.',
+    'Reportedly seen waving. Cause unknown. Direction unknown.',
+    'Is survived by a scroll, which is being flown again.'
   ];
   var ACKS = ['ACK... mostly.', 'ACK. (Probably.)', 'ACK. Smugly.', 'ACK, with reservations.', 'ACK. Do not ask about the journey.', 'ACK. Has a sit-down now.', 'ACK. Wants a medal.'];
 
@@ -29,17 +34,17 @@
     start: 'Pick a number of birds. The Gap\'s limit is not posted anywhere; you will have to work it out from what arrives. The Ministry considers this character-building.',
     afterLoss: 'Birds have been lost. Was that your doing? The sky declines to say.',
     afterClean: 'Everyone arrived. Suspicious. Could you send a few more next time?',
-    tinyLoss: 'Only a handful went up, and something still went wrong. A Gap this empty is unlikely to be crowded. Something else is about.',
+    tinyLoss: 'Only a handful went up and some still did not come back. Losses at a small flock do not prove the Gap is full, but they do not prove it is empty either.',
     repeatLoss: 'Losses at a flock size that was fine before. Either the Gap has shrunk or something else is helping itself.',
-    bigLoss: 'More than a quarter of the flock lost. That is not a stray. That is a pattern.'
+    bigLoss: 'More than a quarter of the flock lost this round. Worth asking whether the flock was too big, or the sky was.'
   };
   var REACT = {
-    clean: ['The Ministry notes that everybody came home. It has no form for this.', 'All present. The pigeons look suspicious of their own luck.', 'A clean flight. Somebody should tell the sky.'],
-    some: ['Losses duly noted and filed under Weather.', 'The Ministry has sent a form. The form is for the birds.', 'A few missing. The Ministry asks that you do not take it personally. The pigeons have.'],
-    heavy: ['The Ministry is sending flowers. To the loft. In bulk.', 'Heavy losses. A moment of silence is scheduled. It will be brief; there is paperwork.', 'The Roll of Honour has been asked to move over.'],
-    same: ['The flock size has not changed. The Ministry admires consistency and has questions.', 'Same again, then. Bold. Or tired.'],
-    grow: ['The loft is getting crowded with ambition.', 'More birds, more hope. The Ministry has noted both.'],
-    shrink: ['Fewer birds this time. The loft has exhaled.', 'A cautious flock. The Ministry respects caution, in moderation.']
+    clean: ['The Ministry notes that everybody came home. It has no form for this.', 'All present. The pigeons look suspicious of their own luck.', 'A clean flight. Somebody should tell the sky.', 'Not a feather out of place. The Ministry is uneasy.', 'Everyone home for tea. A rare and slightly worrying event.', 'The loft is full and the clipboard is empty. Splendid.'],
+    some: ['Losses duly noted and filed under Weather.', 'The Ministry has sent a form. The form is for the birds.', 'A few missing. The Ministry asks that you do not take it personally. The pigeons have.', 'Some did not return. The Ministry blames the sky, as is traditional.', 'Missing birds have been written up in a memo nobody will read.', 'A handful short. The kettle has been put on, out of respect.'],
+    heavy: ['The Ministry is sending flowers. To the loft. In bulk.', 'Heavy losses. A moment of silence is scheduled. It will be brief; there is paperwork.', 'The Roll of Honour has been asked to move over.', 'That was a lot of birds. The Ministry is rewriting the rota in pencil.', 'Mass absence noted. The loft is quieter, and not in a restful way.', 'The sky has taken a big bite. The Ministry is considering a strongly worded memo.'],
+    same: ['The flock size has not changed. The Ministry admires consistency and has questions.', 'Same again, then. Bold. Or tired.', 'No change to the flock. The Ministry assumes this is a plan.', 'Steady as she goes. The pigeons are choosing not to comment.', 'The same number again. The Ministry respects a routine.', 'Unchanged. A decision, technically, to not decide.'],
+    grow: ['The loft is getting crowded with ambition.', 'More birds, more hope. The Ministry has noted both.', 'The flock grows. So does the paperwork.', 'Bigger flock. The perches are filling and the pigeons are being brave about it.', 'Up you go, then. The Ministry will watch with interest and a clipboard.', 'More birds aloft. Somewhere, a gull has noticed.'],
+    shrink: ['Fewer birds this time. The loft has exhaled.', 'A cautious flock. The Ministry respects caution, in moderation.', 'Smaller flock. The surviving pigeons look relieved and slightly smug.', 'Backing off. The Ministry calls this prudence; the pigeons call it lunch break.', 'A thinner flock. The perches look spacious and a bit lonely.', 'Fewer birds. A decision the Ministry will judge when it sees the numbers.']
   };
   var WINS = {
     1: 'Mrs Pettigrew: "Cheese AND pickle. The right pickle. I shall tell the others."',
@@ -49,18 +54,24 @@
     5: 'Head Office: "Kettle manual received in full. Nobody will read it. Revision F is delighted."',
     6: 'Whoever it is: "Thank you. I think. What was it?"'
   };
+  var WINS2 = {
+    1: 'Mrs Pettigrew: "It all arrived. The pickle is a bit forward. I shall manage."',
+    2: 'The Bin Department: "Your letter has been received and filed under Bins. We will be in touch. We will not."',
+    3: 'The Secretary: "Minutes received. A little late, a little battered. Motion carried regardless."',
+    4: 'Cousin Ailsa: "Tablet recipe received. Slightly overstirred. Gran will know."',
+    5: 'Head Office: "Kettle manual received. We have noted that you had a hard day."'
+  };
   var WIN_LESSER = 'The recipient is satisfied, in the way people are when a thing has merely turned up.';
-
   var LEVELS = {
     1: {
       doc: 'One (1) Sandwich Order, With Annotations', to: 'Mrs Agnes Pettigrew, Glasgow Central Tearooms',
-      blurb: 'The Kilsyth Gap can only take so many birds at once. Nobody will tell you how many. Find out, without feeding the sky.',
+      blurb: 'The Kilsyth Gap can only take so many birds at once. Nobody will tell you how many, and it is not the same size every time you ask. Find out, without feeding the sky.',
       snippets: ['one cheese', 'and pickle', 'no, the other pickle', 'a smidge of mustard', 'crusts on', 'crusts off, a decision', 'two tomatoes', 'if the tomatoes are sad, cucumber', 'butter to the edges', 'cut diagonally', 'NOT diagonally', 'a pot of tea, strong'],
       events: ['Clear skies. The Ministry of Weather has nothing to report and is reporting it.', 'A pleasant breeze. Aerodynamically irrelevant, spiritually helpful.', 'A man on the Kilsyth road is waving at the birds. The birds ignore him; he means well.', 'A gull is looking at the flock. It is only looking.', 'High pressure. The pigeons feel high-pressured.', 'The Gap is, as ever, the Gap.', 'Sunshine. Please do not read anything into this.', 'Visibility excellent. Sense of foreboding: also excellent.']
     },
     2: {
       doc: 'Strongly Worded Letter to the Council (Concerning the Bins)', to: 'The Bin Department, City Chambers, Glasgow',
-      blurb: 'Hawk season. The Ministry would like it noted that hawks have been reported and that the Ministry has not done anything about it. Also, a coach party of starlings has taken the Gap for the weekend: its size is not what it was.',
+      blurb: 'Hawk season. The Ministry would like it noted that hawks have been reported and that the Ministry has not done anything about it. The Gap is, as ever, subject to change without notice.',
       snippets: ['Dear Sir or Madam,', 'I write with some feeling', 'on the subject of the Tuesday bins', 'which were not collected', 'nor were they, on Wednesday,', 'a matter of public record', 'I have photographs', 'I have also a neighbour', 'who has thoughts', 'I shall be writing again', 'in a more strongly worded way', 'Yours faithfully, (a ratepayer)'],
       events: ['Hawks reported over Kilsyth. The Ministry has noted this in a memo and left it there.',
         'A coach party of starlings is booked on the Gap from tomorrow. They are not in a hurry.',
@@ -160,15 +171,15 @@
     1: 'In October 1986 the Internet suffered a real congestion collapse: throughput on a 400-yard link between Lawrence Berkeley Lab and UC Berkeley fell from 32 kilobits a second to 40 bits a second. Van Jacobson\'s 1988 fix, slow start plus additive increase and multiplicative decrease, is what this level is about.',
     2: 'Classic TCP treats every loss as congestion, so on a lossy radio link it slows down for no reason. Google\'s BBR, published in 2016, instead estimates the available bandwidth and round-trip time, and does not panic at every dropped packet.',
     3: 'Chiu and Jain showed in 1989 that additive increase with multiplicative decrease is the combination that converges towards a fair share. A sender that ignores loss, like a flooding UDP stream, takes more than its share. That is why "TCP-friendly" is a phrase people put in standards documents.',
-    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). Like 4.3BSD-Tahoe before it, it was named after Lake Tahoe and Reno, Nevada. Its fast recovery is the halve-and-carry-on you saw the autopilot do.',
-    5: 'In 2001 the Bergen Linux User Group actually ran RFC 1149: nine pigeons each carried one ping packet over a few kilometres, only four of the nine came back (roughly 55 per cent lost), and the average round trip was over an hour.',
+    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s fast recovery is the halve-and-carry-on you saw the autopilot do.',
+    5: 'RFC 1149 specifies that the datagram is printed, on a small scroll of paper, in hexadecimal, and notes that the maximum packet size is variable and, paradoxically, tends to increase with the weight of the bird.',
     6: 'RFC 1149, "A Standard for the Transmission of IP Datagrams on Avian Carriers", was published by David Waitzman on 1 April 1990. Its follow-up RFC 2549 (1999) added quality of service.'
   };
 
   var FOOT_BERGEN = 'In April 2001 the Bergen Linux User Group actually ran RFC 1149: nine pigeons carrying ping packets over a few kilometres. Four came back, roughly 55 per cent were lost, and the average round trip was over an hour. They deserve a medal; this paragraph is the pigeon-sized one.';
 
   root.PigeonContent = {
-    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, HINTS: HINTS, REACT: REACT, WINS: WINS, WIN_LESSER: WIN_LESSER,
+    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, HINTS: HINTS, REACT: REACT, WINS: WINS, WINS2: WINS2, WIN_LESSER: WIN_LESSER,
     LEVELS: LEVELS, POOL_EVENTS: POOL_EVENTS, FACTS: FACTS, FOOT_BERGEN: FOOT_BERGEN
   };
 })(typeof self !== 'undefined' ? self : this);
