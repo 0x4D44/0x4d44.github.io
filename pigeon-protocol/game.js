@@ -9,11 +9,8 @@
 
   /* ---------- persistence (never required) ---------- */
   var KEY = 'pigeon-protocol.v1';
-  var prog = { stars: {}, fails: {}, helped: {}, flock: '', fast: false };
-  try {
-    var raw = localStorage.getItem(KEY);
-    if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') { prog.stars = o.stars || {}; prog.fails = o.fails || {}; prog.helped = o.helped || {}; prog.fast = !!o.fast; prog.flock = typeof o.flock === 'string' ? o.flock : ''; } }
-  } catch (e) {}
+  var prog = E.sanitizeProgress(null);
+  try { var raw = localStorage.getItem(KEY); if (raw) prog = E.sanitizeProgress(JSON.parse(raw)); } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} }
 
   /* ---------- state ---------- */
@@ -51,11 +48,14 @@
     $('screen-game').hidden = which !== 'game';
     if (which === 'title') S.phase = 'title';
   }
+  // A level opens when the one before it was won AND the player showed it can respond to loss (2+ stars imply
+  // that), or the Reno flew it, or the player failed it twice. A blind win does not open the next level.
   function isUnlocked(id) {
     if (id === 1) return true;
     var prev = id === 6 ? 1 : id - 1;
-    return (prog.stars[prev] || 0) > 0 || (prog.helped[prev] || 0) > 0 || (prog.fails[prev] || 0) >= 2;
+    return ((prog.stars[prev] || 0) >= 2) || (prog.adapted[prev] || 0) > 0 || (prog.helped[prev] || 0) > 0 || (prog.fails[prev] || 0) >= 2;
   }
+  function renoUnlocked() { return (prog.stars[1] || 0) > 0 || (prog.helped[1] || 0) > 0; }
   function starsHtml(n) { var s = ''; for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= n ? 'on' : 'off') + '">★</span>'; return s; }
 
   function renderLevels() {
@@ -118,9 +118,14 @@
     memo.innerHTML = '<b>Consignment:</b> ' + esc(c.doc) + '<br><b>Addressed to:</b> ' + esc(c.to) + '<br><b>Scrolls:</b> ' + lv.scrolls + ' &middot; <b>Deadline:</b> ' + lv.deadline + ' rounds' + (lv.sandbox ? '' : ' &middot; <b>Loft reserve:</b> ' + lv.loft + ' birds (lose them all and the club folds)');
     d.appendChild(memo);
     if (!lv.sandbox) {
-      var p = el('p', 'db-reno stars-key'); p.innerHTML = starsKey(lv);
-      if ((prog.stars[1] || 0) > 0 || lv.id > 1) p.innerHTML += '<br><i>' + esc(renoRecordText(lv, S.run)) + '</i>';
+      var p = el('div', 'db-reno stars-key');
+      p.innerHTML = '<b>3 stars:</b> quick and tidy, and you must have responded to losses. <details class="star-d"><summary>Star rules in full</summary><p>' + starsKey(lv) + '</p></details>' + (renoUnlocked() || lv.id > 1 ? '<i>' + esc(renoRecordText(lv, S.run)) + '</i>' : '');
       d.appendChild(p);
+      if ((prog.fails[lv.id] || 0) > 0) {
+        var lab = el('label', 'prefill'); var cb = el('input'); cb.type = 'checkbox'; cb.checked = !!S.prefill; cb.id = 'prefill';
+        cb.addEventListener('change', function () { S.prefill = cb.checked; });
+        lab.appendChild(cb); lab.appendChild(document.createTextNode(' Pre-fill my first three flocks (2, 4, 8). I will still press the button.')); d.appendChild(lab);
+      }
     }
     var row = el('div', 'cta-row brief-cta');
     var go = el('button', 'btn btn-primary', 'Begin the first flight'); go.type = 'button'; go.id = 'btn-begin';
@@ -149,6 +154,8 @@
     $('s-level').textContent = lv.id + '. ' + lv.name;
     $('s-doc').textContent = flockName();
     $('s-round').textContent = S.shown + '/' + lv.deadline;
+    $('s-pace').textContent = lv.stars ? '3\u2605 by round ' + lv.stars.three.rounds : '';
+    if (S.prefill && S.phase === 'play' && !S.busy && !S.finished && S.shown < 3) S.w = [2, 4, 8][S.shown];
     $('s-del').textContent = t.del + '/' + lv.scrolls;
     var lostEl = $('s-lost'); lostEl.textContent = lv.sandbox ? String(t.lost) : Math.min(t.lost, lv.loft) + '/' + lv.loft;
     lostEl.className = (!lv.sandbox && t.lost >= lv.loft * 0.6) ? 'danger' : '';
@@ -159,13 +166,23 @@
     $('event').innerHTML = eventLine();
   }
   var reactIdx = {};
-  // The bulletin is filed AFTER the flight it describes (and weather bulletins are not forecasts): it never
-  // announces what the next round will do.
+  function weatherLine(lv, done) {
+    var W = C.WEATHER[lv.id], sched = S.run.capSched;
+    if (!W) return null;
+    var k = 0, i;
+    for (i = 0; i < sched.length; i++) if (sched[i][0] <= done) k = i;
+    if (lv.rival && lv.rival.from === done && W.rivalIn) return W.rivalIn;
+    if (lv.rival && lv.rival.to + 1 === done && W.rivalOut) return W.rivalOut;
+    if (k > 0 && sched[k][0] === done && W.shifts[k - 1]) return W.shifts[k - 1];
+    var dip = k > 0 && sched[k][1] < sched[k - 1][1], pool = dip ? W.dip : W.clear;
+    return pool[(done * 3 + lv.id + k) % pool.length];
+  }
+  // The bulletin is filed AFTER the flight it describes, and describes the sky that was actually flown.
   function eventLine() {
     var lv = S.level, h = seen();
     if (S.finished) return '<b>NOTAM</b>The Ministry is closed for the day.';
     if (S.phase === 'brief' || !h.length) return '<b>NOTAM</b>Awaiting your instructions, and a pigeon. Weather bulletins are filed after each flight, never before.';
-    var done = h.length, evs = C.LEVELS[lv.id].events, tx = evs[done - 1];
+    var done = h.length, tx = lv.id === 1 ? C.LEVELS[1].events[done - 1] : weatherLine(lv, done);
     if (!tx) tx = C.POOL_EVENTS[(done * 7 + lv.id) % C.POOL_EVENTS.length];
     var out = '<b>NOTAM, FILED LATE, ROUND ' + String(done).padStart(2, '0') + '</b>' + esc(tx);
     var r = h[h.length - 1], prev = h.length > 1 ? h[h.length - 2] : null, kind;
@@ -205,7 +222,13 @@
     var r = h[h.length - 1], i, maxClean = 0, prevLossAtOrBelow = false;
     for (i = 0; i < h.length - 1; i++) { if (h[i].lost === 0) maxClean = Math.max(maxClean, h[i].w); if (h[i].lost > 0 && h[i].w >= r.w) prevLossAtOrBelow = true; }
     if (h.length === 1) return r.lost ? 'First flight, first losses. The Ministry notes you started big. Brave, or hasty.' : 'Everyone arrived. Nobody has told you what the limit is. The Ministry suggests asking the sky.';
-    if (r.lost === 0) return h.length < 4 ? C.HINTS.afterClean : 'Smooth. The Gap may have more to give, or this may be exactly right. Only birds can tell you.';
+    if (r.lost === 0) {
+      var streak = 0, peak = 0, j;
+      for (j = h.length - 1; j >= 0 && h[j].lost === 0; j--) streak++;
+      for (j = 0; j < h.length; j++) peak = Math.max(peak, h[j].w);
+      if (streak >= 3 && r.w <= 0.75 * peak) return 'Everyone is home. The sky is bigger than your nerve.';
+      return h.length < 4 ? C.HINTS.afterClean : C.CLEAN_STREAK[Math.min(streak - 1, C.CLEAN_STREAK.length - 1)];
+    }
     if (r.w <= 3) return C.HINTS.tinyLoss;
     if (r.lost / r.w > 0.25) return C.HINTS.bigLoss;
     if (r.w <= maxClean) return C.HINTS.repeatLoss;
@@ -226,7 +249,7 @@
     if (S.w >= max && pend < E.MAX_W) note = 'Only ' + pend + ' ' + plural(pend, 'scroll') + ' left to send.';
     else if (S.w >= E.MAX_W) note = 'The loft has only 24 perches. This is the maximum flock.';
     $('w-note').textContent = note;
-    var reno = $('btn-reno'), unlocked = (prog.stars[1] || 0) > 0;
+    var reno = $('btn-reno'), unlocked = renoUnlocked();
     reno.hidden = !unlocked; reno.disabled = S.finished || S.phase !== 'play' || (S.busy && !S.auto);
     reno.setAttribute('aria-pressed', S.auto ? 'true' : 'false');
     reno.textContent = S.auto ? 'Fire the Reno' : 'Hire a Reno';
@@ -431,29 +454,35 @@
 
   /* ---------- debrief: reads what the player actually did ---------- */
   function analyze(run) {
-    var h = run.history, f = { rounds: h.length, doubled: 0, backoffs: 0, ignoredBig: 0, panic: 0, nerve: 0, probes: 0, smallLoss: 0 }, i, ws = h.map(function (r) { return r.w; });
-    var lost = 0, crowd = 0, hawk = 0, sumW = 0, sumRoom = 0, cnt = 0;
-    for (i = 0; i < h.length; i++) {
+    var h = run.history, n = h.length, i;
+    var f = { rounds: n, doubled: 0, steady: false, backoffs: 0, ignoredBig: 0, panic: 0, nerve: 0, probes: 0, smallLoss: 0 };
+    var lost = 0, crowd = 0, hawk = 0, sumW = 0, sumRoom = 0, cnt = 0, streak = 0;
+    for (i = 0; i < n; i++) {
       var r = h[i], nx = h[i + 1], frac = r.lost / r.w;
       lost += r.lost; crowd += r.lostCrowd; hawk += r.lostHawk;
       if (i >= 2) { sumW += r.w; sumRoom += Math.max(1, r.cap - r.rivalW); cnt++; }
       if (r.lost > 0 && r.w <= 6) f.smallLoss++;
-      if (i < 4 && nx && r.lost <= 1 && nx.w >= r.w * 1.6) f.doubled++;
+      // every comparison is on what the player ASKED for, so a short final round (few scrolls left) is never a "cut"
+      if (i < 4 && nx) { if (r.lost <= 1 && nx.requested >= 1.8 * r.requested) { streak++; f.doubled = Math.max(f.doubled, streak); } else streak = 0; }
       if (nx) {
-        if (r.lost >= 2 && frac > 0.3) { if (nx.w <= r.w * 0.8) f.backoffs++; else if (nx.w >= r.w) f.ignoredBig++; }
-        else if (r.lost >= 1 && frac <= 0.3) { if (nx.w <= r.w * 0.6) f.panic++; else f.nerve++; }
-        if (i >= 2 && h[i - 1].lost === 0 && h[i - 2].lost === 0 && r.lost === 0 && nx.w > r.w) f.probes++;
+        if (r.lost >= 2 && frac > 0.3) { if (nx.requested <= r.requested * 0.8) f.backoffs++; else if (nx.requested >= r.requested) f.ignoredBig++; }
+        else if (r.lost >= 1 && frac <= 0.3) { if (nx.requested <= r.requested * 0.6) f.panic++; else f.nerve++; }
+        if (i >= 2 && h[i - 1].lost === 0 && h[i - 2].lost === 0 && r.lost === 0 && nx.requested > r.requested) f.probes++;
       }
     }
-    // the last round may be a short remainder (only a few scrolls left): it says nothing about the player's rule
-    var body = ws.slice(0, ws.length > 1 && h[h.length - 1].requested > h[h.length - 1].w ? -1 : ws.length), tail = body.slice(2);
-    if (!tail.length) tail = body;
+    var up = 0, early = Math.min(4, n - 1);
+    for (i = 0; i < early; i++) if (h[i + 1].requested > h[i].requested && h[i + 1].requested < 1.8 * h[i].requested) up++;
+    f.steady = f.doubled < 2 && early >= 3 && up >= early - 1;
+    var body = h.map(function (r) { return r.requested; });
+    if (n > 1 && h[n - 1].requested > h[n - 1].w) body.pop();      // a short final round says nothing about the rule
+    var tail = body.slice(2); if (!tail.length) tail = body;
     var mx = Math.max.apply(null, tail), mn = Math.min.apply(null, tail);
     var sorted = body.slice().sort(function (a, b) { return a - b; }), med = sorted[sorted.length >> 1];
     f.median = med; f.flat = body.length >= 5 && (mx - mn) <= Math.max(2, 0.25 * med);
     f.lost = lost; f.hawkLost = hawk; f.crowdShare = lost ? crowd / lost : 0; f.hawkShare = lost ? hawk / lost : 0;
     f.fill = cnt ? sumW / sumRoom : 1;
-    f.peak = Math.max.apply(null, ws);
+    f.peak = Math.max.apply(null, body.concat([1]));
+    f.responsive = E.adaptedOf(run, 1);
     return f;
   }
 
@@ -462,7 +491,7 @@
     var miss = [], t = st.three;
     if (run.round > t.rounds) miss.push('finish in ' + t.rounds + ' rounds or fewer (you took ' + run.round + ')');
     if (run.lost > t.lost) miss.push('lose ' + t.lost + ' birds or fewer (you lost ' + run.lost + ')');
-    if (!E.adaptedOf(run)) miss.push('fly fewer birds at least once after losing some (you never did, so the Gap never taught you anything)');
+    if (!E.adaptedOf(run, t.minEvents)) miss.push('fly fewer birds at least once after losing some (you never did, so the Gap never taught you anything)');
     var sh = lv.rival ? E.shareOf(run) : null;
     if (t.share !== undefined && sh !== null && sh > t.share) miss.push('take no more than ' + pct(t.share) + ' of the shared Gap (you took ' + pct(sh) + ')');
     if (t.minShare !== undefined && sh !== null && sh < t.minShare) miss.push('carry at least ' + pct(t.minShare) + ' of the shared Gap (you carried ' + pct(sh) + ')');
@@ -483,16 +512,18 @@
     if (S.assisted) return assistedDebrief(run, lv, f, share);
     var out = { title: '', mine: [], concept: [], fact: C.FACTS[lv.id] };
     var win = run.won, id = lv.id, med = f.median, moves = lv.cap.length > 1, gap0 = run.capSched[0][1];
+    var minShare = lv.stars && lv.stars.three && lv.stars.three.minShare;
     // what the player did
+    var guessed = f.flat && lv.cap.length === 1 && Math.abs(med - gap0) <= 2;
     if (f.flat) {
-      var guessed = lv.cap.length === 1 && Math.abs(med - gap0) <= 2;
       out.mine.push('You held a steady flock of about ' + med + ' birds for most of the flight.' + (win
         ? (!moves ? ' This sky’s Gap was ' + gap0 + (guessed ? ', so you guessed it, which is a fine way to win and a poor way to learn. Slow start would have found it by doubling; AIMD would then have crept upwards and backed off at the first real losses.' : ', so a flock of ' + med + ' held steady either wasted room or lost a few birds.')
           : ' That worked, but a steady flock cannot follow a Gap that moves, and cannot tell you when it has.')
         : (moves ? ' A steady flock cannot follow a Gap that changes, and cannot notice that it has.' : ' The Gap did not move; the size you chose just was not the right one.')));
     } else {
       if (f.doubled >= 2) out.mine.push('You roughly doubled the flock each flight while every bird arrived. That is slow start: exponential growth until the first losses say stop.');
-      else if (f.doubled === 0 && f.rounds > 4) out.mine.push('You never doubled up early, so you crept towards the Gap’s size instead of racing to it. Safe, but the first rounds went on underusing a Gap you had not yet measured.');
+      else if (f.steady) out.mine.push('You grew the flock steadily, a few birds a round, rather than doubling. That is additive increase on its own: safe, but it takes a long time to find a Gap you have not measured.');
+      else if (f.doubled === 0 && f.rounds > 4) out.mine.push('Your early flocks did not double or climb in any pattern, so the first rounds went on underusing a Gap you had not yet measured.');
       if (f.backoffs) out.mine.push('After heavy losses you cut the flock ' + f.backoffs + ' ' + plural(f.backoffs, 'time') + '. That is multiplicative decrease: when the Gap says no, back off hard and quickly.');
       if (f.ignoredBig) out.mine.push('On ' + f.ignoredBig + ' ' + plural(f.ignoredBig, 'round') + ' you flew on, or bigger, after heavy losses. In this game’s Gap that makes things worse: the scrum takes out more than the birds that did not fit.');
       if (f.probes) out.mine.push('After calm rounds you edged the flock upwards (' + f.probes + ' ' + plural(f.probes, 'time') + '). That is probing: testing whether the Gap has widened.');
@@ -502,10 +533,11 @@
     }
     var rivalNote = function () {
       var dug = run.history.filter(function (r) { return r.rivalDugIn; }).length, bits = [];
+      bits.push('This rival is a Reno with a stubborn streak: it backs off when it loses birds, but digs in if you squeeze it twice running. So the lesson here is not "be nice"; it is do not squeeze, and do not get squeezed. The real-world cousin is Chiu and Jain’s result that additive increase with multiplicative decrease converges towards fair shares.');
       if (share !== null) {
-        if (share < 0.3) bits.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. That is not sharing; that is being sat on, and the third star needs at least 30%.');
-        else if (share <= 0.45) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: courteous, leaning generous. Roughly half is what two polite senders drift towards.');
-        else if (share <= 0.6) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: close to an even split. Two senders that each add a little and halve on loss drift towards equal shares without speaking to each other.');
+        if (share < 0.3) bits.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. That was not courtesy: the rival simply took the room' + (f.responsive ? '.' : ', and your flock never really responded to it.') + (minShare ? ' The third star needs at least ' + pct(minShare) + '.' : ''));
+        else if (share <= 0.45) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: giving way more than you had to. Roughly half is what well-behaved senders drift towards.');
+        else if (share <= 0.6) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: close to an even split, which is what well-behaved senders drift towards.');
         else bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic, more than a fair half. A sender that pushes on regardless of loss takes bandwidth from polite flows, which is why “TCP-friendliness” is a phrase people put in standards documents.');
       }
       if (dug) bits.push('The rival dug in ' + dug + ' ' + plural(dug, 'time') + ' after being squeezed twice running, and the Gap jammed for both of you.');
@@ -514,7 +546,7 @@
     // outcome, keyed on cause
     if (!win) {
       if (run.endReason === 'loft') {
-        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. In this game’s Gap, once more birds are offered than it can pass, the scrum takes out more than the ones that did not fit, and every lost scroll must be flown again. Offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'The cure is to treat loss as a signal. When many birds go missing under load, send fewer, not more.'); out.fact = C.FACTS[1]; }
+        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. In this game’s Gap, once more birds are offered than it can pass, the scrum takes out more than the ones that did not fit, and every lost scroll must be flown again. Offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'This game exaggerates the mechanism. The real 1986 collapse came mostly from senders retransmitting data that was already queued or in flight, not from birds knocking each other out of the sky. The cure is the same: treat loss as a signal, and send fewer, not more.'); out.fact = C.FACTS[1]; }
         else { out.title = 'The hawks, mostly.'; out.concept.push('This was not mainly a collapse: more of the birds you lost went to hawks than to crowding. Bigger flocks into hawk country simply feed the hawks more birds, and loss that does not rise with load is not the Gap speaking.', 'Keep the flock near what actually arrives, and do not mistake a hungry sky for a crowded one.'); out.fact = C.FACTS[2]; }
         if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); });
       } else if (lv.p > 0 && f.hawkShare >= 0.4 && f.fill < 0.85 && (f.panic >= 1 || f.backoffs >= 2)) {
@@ -532,8 +564,10 @@
     }
     // wins, per level, conditional on what actually happened
     if (id === 1) {
-      out.title = f.flat ? 'You guessed the Gap.' : f.lost === 0 ? 'Not a feather out of place.' : f.peak > run.history[run.history.length - 1].cap ? 'You have invented slow start.' : 'You have found the limit.';
-      out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. Doubling until that moment is slow start; backing off and then creeping up is additive increase, multiplicative decrease, the heart of TCP congestion control.');
+      out.title = guessed ? 'You guessed the Gap.' : f.flat ? 'You held steady.' : f.lost === 0 ? 'Not a feather out of place.' : f.doubled >= 2 ? 'You have invented slow start.' : f.responsive ? 'You have found the limit.' : 'You got there.';
+      if (f.doubled >= 2) out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. Doubling until that moment is slow start; backing off and then creeping up is additive increase, multiplicative decrease, the heart of TCP congestion control.');
+      else if (f.responsive) out.concept.push('You found the Gap’s limit by feel and backed off when it said no. Doubling early, which you did not need to, is slow start; backing off hard and then creeping up is additive increase, multiplicative decrease, the heart of TCP congestion control.');
+      else out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. The real skill is what you do next: back off hard when it happens (multiplicative decrease), then creep up again (additive increase). That is the heart of TCP congestion control.');
       if (f.lost === 0) out.concept.push('You never lost a bird, which means a very polite ramp, a lucky guess, or a flock that never reached the limit. There is no shame in that, but the sawtooth only appears once you have gone over the edge and come back.');
     } else if (id === 2) {
       out.title = 'Loss is not always congestion.';
@@ -541,13 +575,14 @@
       else out.concept.push('The hawks were kind this time: only ' + f.hawkLost + ' ' + plural(f.hawkLost, 'bird') + ' went to them. They take about the same share of any flock, so loss that does not grow with the flock is not the Gap speaking, and a sender that halves at every missing bird throttles itself for nothing.');
       out.concept.push('Telling the two apart, by checking whether losses rise when the flock does, is the problem real senders face on Wi-Fi, satellite and mobile links.');
     } else if (id === 3) {
-      out.title = share === null ? 'You flew alone.' : share > 0.6 ? 'You won the Gap. Politely? Less so.' : share < 0.3 ? 'You were very, very polite.' : 'You shared the Gap.';
+      out.title = share === null ? 'You flew alone.' : share > 0.6 ? 'You won the Gap. Politely? Less so.' : share < 0.3 ? (f.responsive ? 'You were crowded out.' : 'You were sat on.') : share <= 0.45 ? 'You gave way.' : 'You shared the Gap.';
       rivalNote().forEach(function (x) { out.concept.push(x); });
-      if (!out.concept.length) out.concept.push('The rival hardly turned up for you.');
     } else if (id === 4) {
-      out.title = f.probes || f.backoffs ? 'You have been probing.' : 'You rode out the storm.';
-      if (f.probes || f.backoffs) out.concept.push('The Gap changed size without telling you, so the only way to find out is to keep testing: add some birds, see what happens. Losses tell you when it has shrunk; a run of calm rounds is the only hint it has widened.', 'Growing by a bird a round, as the Reno does, is safe but slow at reclaiming room; probing faster when the coast is clear got more scrolls through. Newer algorithms such as BBR and CUBIC probe more boldly for exactly this reason.');
-      else out.concept.push('The Gap changed size without telling you, and you got through without much testing. The cautious way to find out whether it has widened is to probe: add some birds and watch what comes back.', 'Growing a bird a round is safe but slow at reclaiming room; bolder probing is why newer algorithms such as BBR and CUBIC exist.');
+      var heavy = f.ignoredBig >= 2 || run.lost > lv.stars.three.lost;
+      out.title = f.probes && f.responsive ? 'You have been probing.' : f.responsive ? 'You rode out the storms.' : 'You flew through the storms.';
+      if (f.probes && f.responsive && !heavy) out.concept.push('The Gap changed size without telling you, so the only way to find out is to keep testing: add some birds, see what happens. Losses tell you when it has shrunk; a run of calm rounds is the only hint it has widened.', 'Growing by a bird a round, as the Reno does, is safe but slow at reclaiming room; probing faster when the coast is clear got more scrolls through. Newer algorithms such as BBR and CUBIC probe more boldly for exactly this reason.');
+      else if (f.responsive) out.concept.push('The Gap changed size without telling you, and you responded when losses said it had shrunk. Reclaiming room afterwards is the other half: a bird a round is safe but slow, which is why newer algorithms such as BBR and CUBIC probe more boldly.');
+      else out.concept.push('The Gap changed size without telling you, and your flock did not much respond to what came back. The Gap shrank and widened regardless; a flock that responds to losses, and probes after calm, rides that far better.');
     } else if (id === 5) {
       out.title = 'Everything, all at once.';
       out.concept.push('Hawk losses, a rival flock and a moving ceiling together need all of it: slow start to find the room, backing off for crowding but not for stray losses, sharing with someone else, and probing again when the weather moves.', 'No single rule does it. The sawtooth is just what balancing those jobs looks like.');
@@ -578,13 +613,15 @@
   function endRun() {
     var run = S.run, lv = S.level; S.finished = true; S.auto = false; clearTimeout(S.timer);
     var stars = 0;
-    if (run.won && !S.assisted && !lv.sandbox) { stars = E.starsFor(run); if (stars > (prog.stars[lv.id] || 0)) prog.stars[lv.id] = stars; save(); }
+    var adaptedNow = false;
+    if (run.won && !S.assisted && !lv.sandbox) { stars = E.starsFor(run); adaptedNow = E.adaptedOf(run, lv.stars.two.minEvents); if (stars > (prog.stars[lv.id] || 0)) prog.stars[lv.id] = stars; if (adaptedNow) prog.adapted[lv.id] = 1; save(); }
     else if (run.won && S.assisted) { prog.helped[lv.id] = 1; save(); }
     else if (!run.won && !S.assisted) { prog.fails[lv.id] = (prog.fails[lv.id] || 0) + 1; save(); }
     renderAll();
     var f = analyze(run), share = lv.rival ? (run.history.some(function (h) { return h.rivalOn; }) ? E.shareOf(run) : null) : null;
     var data = buildDebrief(run, lv, f, share);
     var d = $('debrief'); d.hidden = false; d.innerHTML = '';
+    S.lastEnd = run.endReason;
     d.appendChild(el('h2', null, data.title));
     var t = totals(), verdict;
     if (run.won) verdict = 'Delivered: all ' + lv.scrolls + ' scrolls in ' + run.round + ' ' + plural(run.round, 'round') + ', losing ' + t.lost + ' ' + plural(t.lost, 'bird') + '.';
@@ -606,6 +643,9 @@
       rp.textContent = 'For comparison, the Reno on this same sky: ' + (ref.inTime ? ref.rounds + ' rounds, ' + ref.lost + ' ' + plural(ref.lost, 'bird') + ' lost.' : ref.won ? 'about ' + ref.rounds + ' rounds, ' + ref.lost + ' birds lost, which is past the deadline.' : 'did not finish.');
       d.appendChild(rp);
     }
+    var nextLocked = run.won && !S.assisted && !lv.sandbox && lv.id < 5 && !isUnlocked(lv.id + 1);
+    if (run.won && !S.assisted && !lv.sandbox && !adaptedNow) d.appendChild(el('p', 'db-blind', 'You flew blind: this flock never really changed in response to what came back, so the Gap taught it nothing' + (nextLocked ? '. The Ministry will not open the next level until you have shown you can respond to a loss, or the Reno has flown this one.' : '.')));
+    if (run.won && lv.id === 1 && !S.assisted && renoUnlocked()) d.appendChild(el('p', 'db-unlock', 'Unlocked: Hire a Reno, a bird-brained autopilot. Find the button beside Release the flock.'));
     var note3 = run.won && !S.assisted && !lv.sandbox && stars < 3 ? thirdStarNote(run, lv) : null;
     if (note3) d.appendChild(el('p', 'db-reno', note3));
     d.appendChild(el('h3', 'db-sub', S.assisted ? 'What happened' : 'What you did'));
@@ -622,12 +662,11 @@
     if (canNext) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
     if (run.won && S.assisted && !lv.sandbox) btn('Now fly it yourself', canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; beginBrief(lv); });
     else btn(run.won ? 'Fly it again' : 'Try again', run.won && canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; lv.sandbox ? sandboxRestart() : beginBrief(lv); });
-    if ((prog.stars[1] || 0) > 0) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); });
+    if (renoUnlocked()) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); });
     if (lv.sandbox) btn('Set the weather again', '', openSandboxDialog);
     btn('All levels', '', function () { goTitle(true); });
     d.appendChild(row);
     d.appendChild(el('p', 'smallprint', 'Signed, ' + flockName() + '. Request for Comments: please do not send comments by pigeon.'));
-    if (run.won && lv.id === 1 && !S.assisted) toast('Unlocked: Hire a Reno, a bird-brained autopilot.');
     setTimeout(function () { d.focus({ preventScroll: true }); d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }, 80);
   }
 
@@ -685,7 +724,7 @@
       if (k === '+' || k === '=') { setW(S.w + 1); e.preventDefault(); }
       else if (k === '-' || k === '_') { setW(S.w - 1); e.preventDefault(); }
       else if (k === 'r' || k === 'R') { if ((tag !== 'BUTTON' || e.target.id === 'btn-go') && !e.repeat) release(); }
-      else if (k === 'h' || k === 'H') { if ((prog.stars[1] || 0) > 0 && !e.repeat) hireReno(); }
+      else if (k === 'h' || k === 'H') { if (renoUnlocked() && !e.repeat) hireReno(); }
     });
     var onMq = function (e) { reduceMotion = e.matches; };
     try { var mq = window.matchMedia('(prefers-reduced-motion: reduce)'); mq.addEventListener ? mq.addEventListener('change', onMq) : mq.addListener(onMq); } catch (e) {}

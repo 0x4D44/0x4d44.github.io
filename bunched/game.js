@@ -90,11 +90,11 @@
 
   var LEVEL_COPY = [
     {
-      brief: 'Six buses, perfectly spaced round the Water of Leith. Tap a bus and a man chases a pigeon in front of it for fifty seconds (the pigeon needs a minute to recover, then you can have another go). Underneath runs a twin of the same route with no pigeon, so you can see what the pigeon actually changes.',
+      brief: 'Six buses, perfectly spaced round the Water of Leith. Tap a bus and a man chases a pigeon in front of it for fifty seconds (the pigeon needs a minute to recover, then you can have another go). Underneath runs a twin of the same route with no incidents at all, so you can see what the pigeon actually changes.',
       how: ['Tap a bus on the ring (or its Pigeon button) to unleash a pigeon on it. Do it to the same bus a few times if you are feeling cruel. If you are shy, one turns up anyway.', 'Watch the headway ruler: those gaps are the whole story. The twin ruler below is the control experiment.', 'Bored? Press 8x. Too fast? 2x.'],
       lesson: [
         'This is the model from Newell and Potts (1964). Passengers arrive at a steady rate, and a bus stays at each stop for a few seconds per person boarding. A bus that is a little late finds a longer queue (the gap since the last bus is bigger), so it loads for longer, so it is later still. The bus behind finds a short queue and catches up. Positive feedback: any small wobble grows.',
-        'Your pigeons only brought the collapse forward. The pigeon-free twin got there on its own as well, a bit later, because passengers never turn up on a perfect schedule: the evenly spaced ring was never stable, it just needed something to disagree with. And the inspection paradox is why it feels so bad: random passengers are likelier to turn up during a long gap than a short one, so the average wait is E[H&sup2;] / 2E[H], more than half the average gap whenever the gaps are uneven. (Real waits run a little over that figure: the formula counts waiting for a bus to arrive, and real people also wait while it loads.)'
+        'A pigeon usually brings the collapse forward, though not every time: it is a nudge in a chaotic system, not a lever. The twin, which has no incidents at all, collapsed on its own too, because passengers never turn up on a perfect schedule: the evenly spaced ring was never stable, it just needed something to disagree with. And the inspection paradox is why it feels so bad: random passengers are likelier to turn up during a long gap than a short one, so the average wait is E[H&sup2;] / 2E[H], more than half the average gap whenever the gaps are uneven. (Measured waits come out close to that figure, a little under it, because the queues we start with and the queues that join a bus already loading shave a few seconds.)'
       ],
       fact: 'Real-world fact: it is not just buses. Lifts in a tall building bunch for the same reason, and a bus route is just a very slow lift going sideways.'
     },
@@ -102,7 +102,7 @@
       brief: 'A gentle morning with a lollipop lady already in action. You have a radio with two channels: at most two buses can be on hold (or waiting to be held) at once, and a bus that has just been held takes about a lap to recover before it will take another. Choose.',
       how: ['Tap a bus (or the two buttons under the ring) to hold it at its next stop. It lets itself go once the gap to the bus ahead is right, or when you release it, or after two and a half minutes.', 'Which bus? The one doing the chasing: a bus too close behind another. Holding the bus in FRONT only lets the chaser catch up.', 'Do not spam. Every hold ties up a radio channel, the bus then cools down for about a lap, and the people aboard sit there. Choosy beats busy.', 'Bus Inspector Dalgleish will point at someone. She is right about two times in three, and she does not see crowds coming.'],
       lesson: [
-        'What you just did is headway-based holding: if a bus is too close behind its leader, make it wait until the gap is right. It works because it fixes the thing that matters, the spacing. On a frequent service nobody checks a timetable; they just want a bus soon, so the sensible target is an even gap.',
+        'Headway-based holding means: if a bus is too close behind its leader, make it wait until the gap is right. It works because it fixes the thing that matters, the spacing. On a frequent service nobody checks a timetable; they just want a bus soon, so the sensible target is an even gap.',
         'The catch is that holding is scarce and has a price. Every hold makes the people aboard sit still, and a control resource (a radio channel, an inspector, a layover) can only be in so many places at once. So the skill is not holding, it is choosing which bus, when, and where: hold the empty follower crowding a loaded leader, not the leader.'
       ],
       fact: 'Real-world fact: London bus performance is measured as "excess wait time": how much longer passengers waited than the timetable promised, which for a frequent route means half the scheduled gap. Bunching shows up in it directly.'
@@ -127,7 +127,7 @@
     },
     {
       brief: 'Roadworks: a pair of temporary traffic lights and a one-lane crawl section, with a coach party at Canonmills. The tram works, but with no tram.',
-      how: ['Delays here are frequent: a red light costs a bus about half a minute, and the crawl lane costs several minutes a lap.', 'Try the Inspector\'s "by timetable" method here at the default slack, then padded, then the gap method. Notice which survives.', 'Hold the chaser behind a slow bus, before it hits the lights, not after.'],
+      how: ['Delays here are frequent: a red light costs a bus up to a minute (about 15 seconds on average), and the crawl lane costs several minutes a lap.', 'Try the Inspector\'s "by timetable" method here at the default slack, then padded, then the gap method. Notice which survives.', 'Hold the chaser behind a slow bus, before it hits the lights, not after.'],
       lesson: [
         'The default timetable fails here for a plain reason: the crawl lane alone costs every bus several minutes a lap that the printed running times did not budget for, so every bus is late and nobody is ever held. A padded timetable simply scores better, because its running times now match the roadworks. Headway holding gets the same result without being told, because it looks at the gap that is really there.',
         'You cannot remove the delays, only stop them growing. Each hold absorbs a delay at a stop, where the bus is already standing still, rather than letting it ripple down the route.'
@@ -274,6 +274,7 @@
       shape.focus = svgEl('circle', { class: 'busfocus', r: 19, fill: 'none', stroke: 'transparent' }, bGroup);
       shape.sugg = svgEl('circle', { r: 21, fill: 'none', stroke: '#d99a2b', 'stroke-width': 3, class: 'pulse', visibility: 'hidden' }, bGroup);
       shape.sel = svgEl('circle', { r: 19, fill: 'none', stroke: '#2a1a14', 'stroke-width': 1.6, 'stroke-dasharray': '3 3', visibility: 'hidden' }, bGroup);
+      shape.cool = svgEl('circle', { r: 17, fill: 'none', stroke: '#2f6fb0', 'stroke-width': 3, 'stroke-linecap': 'round', transform: 'rotate(-90)', visibility: 'hidden' }, bGroup);
       shape.tag = svgEl('g', { visibility: 'hidden', 'pointer-events': 'none' }, bGroup);
       shape.tagBg = svgEl('rect', { x: -24, y: -9, width: 48, height: 14, rx: 7, fill: '#8c1d35' }, shape.tag);
       shape.tagTx = svgEl('text', { x: 0, y: 1, 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: '#fff', 'font-family': 'ui-monospace,monospace' }, shape.tag);
@@ -309,6 +310,7 @@
 
   function renderRing(ts) {
     var sim = S.sim; if (!sim) return;
+    S.frameN = (S.frameN || 0) + 1; var heavy = S.speed < 8 || S.frameN % 4 === 0;
     var L = sim.L, C = 2 * Math.PI * R, tgt = visualAngles(sim), i;
     for (i = 0; i < sim.n; i++) {
       var b = sim.buses[i], sh = ring.buses[i];
@@ -320,6 +322,7 @@
       var x = CX + R * Math.cos(a), y = CY + R * Math.sin(a), deg = a * 180 / Math.PI + 90;
       sh.root.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
       sh.body.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ')');
+      if (!heavy) continue;
       var frac = b.pax.length / sim.cfg.cap, k;
       for (k = 0; k < 5; k++) sh.wins[k].setAttribute('fill', (k + 0.5) / 5 <= frac + 0.08 ? '#f1cd76' : '#2a1a14');
       // tags
@@ -337,6 +340,9 @@
         sh.tag.setAttribute('transform', 'translate(' + ox.toFixed(1) + ' ' + (oy + 2).toFixed(1) + ')');
       } else sh.tag.setAttribute('visibility', 'hidden');
       sh.sel.setAttribute('visibility', S.selected === i ? 'visible' : 'hidden');
+      var cl = b.coolUntil - sim.t, coolOn = S.level.levers && cl > 0 && !b.hold.active && !b.hold.armed;
+      if (coolOn) { var cf = clamp(cl / sim.cfg.cooldown, 0, 1), circ = 2 * Math.PI * 17; sh.cool.setAttribute('stroke-dasharray', (cf * circ).toFixed(1) + ' ' + circ.toFixed(1)); }
+      sh.cool.setAttribute('visibility', coolOn ? 'visible' : 'hidden');
       var sug = S.suggestion && S.suggestion.bus === i;
       sh.sugg.setAttribute('visibility', sug ? 'visible' : 'hidden');
       var lbl = 'Bus ' + (i + 1) + ', ' + b.pax.length + ' aboard' + (b.hold.active ? ', held' : '') + '. Press Enter to ' + (S.level.watch ? 'send a pigeon at it' : b.hold.active ? 'release it' : 'hold it') + '.';
@@ -475,7 +481,23 @@
           }
           break;
         case 'holdstart':
-          if (!e.auto) { ding(1320, 0.45); if (S.speed <= 2) { var hp = busXY(e.bus); bubble(hp.x, hp.y - 12, 'Held. Regulating.', 'smug'); } }
+          if (!e.auto) ding(1320, 0.45);
+          break;
+        case 'holdq':
+          if (S.speed <= 4) {
+            var qp = busXY(e.bus);
+            if (e.q === 'good') bubble(qp.x, qp.y - 12, 'Held. Regulating.', 'smug');
+            else if (e.q === 'leader') bubble(qp.x, qp.y - 12, 'Wrong one! This bus is being chased, not chasing.', 'angry', { force: true, life: 4200 });
+            else if (e.q === 'loose') bubble(qp.x, qp.y - 12, 'Held for no reason. Passengers noticed.', 'angry', { force: true, life: 3600 });
+          }
+          if (e.q === 'leader') live('Bus ' + (e.bus + 1) + ' is the bus being chased: holding it only lets the bus behind catch up.');
+          break;
+        case 'holdend':
+          if (S.speed <= 4 && e.why === 'target' && e.q) {
+            var ep = busXY(e.bus);
+            if (e.q === 'good') bubble(ep.x, ep.y - 12, 'Gap restored. Carry on.', 'smug');
+            else if (e.q === 'leader') bubble(ep.x, ep.y - 12, 'The bus behind has caught up. It says thank you.', 'angry');
+          }
           break;
         case 'burst':
           var bs = stopXY(e.stop); bubble(bs.x, bs.y - 12, (e.label || 'Crowd') + '!', 'event', { force: true, life: 4200 });
@@ -540,7 +562,7 @@
     $('busHint').textContent = lv.watch ? 'a pigeon button for each' : 'tap a bus on the ring, or its button';
     $('sbTools').hidden = lv.id !== 99;
     $('quick').hidden = !leversFor('hold');
-    $('twinCard').hidden = !lv.watch; document.body.classList.toggle('watchlvl', !!lv.watch);
+    $('twinWrap').hidden = !lv.watch; document.body.classList.toggle('watchlvl', !!lv.watch);
   }
 
   function stateText(b, sim) {
@@ -582,14 +604,14 @@
     }
     if (sim.t > 0) for (i = 0; i < sim.n; i++) if (sim.buses[i].stuck <= 0) delete S.busNote[i];
     // waiting, in plain terms (waiting only: time sat on held buses is shown separately)
-    var warm = sim.t >= 400 && m.boarded >= 40;
+    var warm = sim.t >= 150 && m.boarded >= 15;
     var act = m.waitWin, even = m.evenWin, heldPer = m.heldPaxSec / Math.max(1, m.boarded);
     $('waitNow').textContent = warm ? fmt(act) : '-:--'; $('waitEven').textContent = warm ? fmt(even) : '-:--';
     $('waitPen').textContent = fmt(heldPer);
     var mx = Math.max(act, even, 1);
     $('barNow').style.width = warm ? (act / mx * 100) + '%' : '0'; $('barEven').style.width = warm ? (even / mx * 100) + '%' : '0';
     var pen = even > 0 ? act / even - 1 : 0;
-    $('waitNote').textContent = !warm ? 'Warming up: a few minutes of data first.'
+    $('waitNote').textContent = !warm ? 'Warming up: a few minutes of data first. The first numbers are rough.'
       : pen > 0.1 ? 'Bunching tax: waits are ' + Math.round(pen * 100) + '% longer than evenly spaced buses would give. Passengers land in the long gaps more often than the short ones: E[H²] / 2E[H] = ' + fmt(m.formulaWin) + ' for your gaps. (Waiting only; held-bus time is on the right.)'
       : 'About as good as evenly spaced buses would be (waiting only; held-bus time is on the right).';
     $('tCompl').textContent = m.complaints; $('tStrand').textContent = m.stranded;
@@ -621,11 +643,13 @@
   function holdable(b, sim) { return b.hold.active || b.hold.armed || (b.coolUntil <= sim.t && sim.radioBusy() < sim.cfg.radioMax); }
   function updateQuick(gaps, H) {
     var sim = S.sim, q = $('quick'); if (q.hidden) return;
-    var wi = -1, i;
-    for (i = 0; i < sim.n; i++) if (wi < 0 || gaps[i] < gaps[wi]) wi = i;
+    var wi = -1, i, allCool = true;
+    for (i = 0; i < sim.n; i++) { var hb = holdable(sim.buses[i], sim); if (hb) allCool = false; if (hb && (wi < 0 || gaps[i] < gaps[wi])) wi = i; }
+    if (wi < 0) for (i = 0; i < sim.n; i++) if (wi < 0 || gaps[i] < gaps[wi]) wi = i;
     var wb = sim.buses[wi], bw = $('qWorst');
     bw.setAttribute('data-bus', wi);
-    bw.textContent = (wb.hold.active || wb.hold.armed ? 'Release Bus ' : 'Hold Bus ') + (wi + 1) + ': closest, ' + fmt(gaps[wi]) + ' behind Bus ' + (sim.leader(wi) + 1);
+    bw.textContent = allCool || !holdable(wb, sim) ? 'Radio busy or buses cooling' : (wb.hold.active || wb.hold.armed ? 'Release Bus ' : 'Hold Bus ') + (wi + 1) + ' \u00b7 ' + fmt(gaps[wi]) + ' gap';
+    bw.setAttribute('aria-label', 'Hold the closest holdable bus: bus ' + (wi + 1) + ', ' + fmt(gaps[wi]) + ' behind bus ' + (sim.leader(wi) + 1));
     bw.classList.toggle('dis', !holdable(wb, sim));
     var ni = -1, nd = Infinity;
     for (i = 0; i < sim.n; i++) {
@@ -634,10 +658,11 @@
       if (d < nd) { nd = d; ni = i; }
     }
     var bn = $('qNext');
-    if (ni < 0) { bn.textContent = 'No bus about to arrive'; bn.removeAttribute('data-bus'); bn.classList.add('dis'); }
+    if (ni < 0) { bn.textContent = 'No bus arriving'; bn.removeAttribute('data-bus'); bn.classList.add('dis'); }
     else {
       var nb = sim.buses[ni], eta = nd / sim.cfg.vFree; bn.setAttribute('data-bus', ni);
-      bn.textContent = (nb.hold.armed ? 'Cancel hold: Bus ' : 'Hold next arrival: Bus ') + (ni + 1) + ' at ' + sim.stops[nb.ns].name + (eta < 3 ? ', arriving now' : ' in ' + fmt(eta));
+      bn.textContent = (nb.hold.armed ? 'Cancel: Bus ' : 'Hold next: Bus ') + (ni + 1) + ' \u00b7 ' + (eta < 3 ? 'now' : fmt(eta));
+      bn.setAttribute('aria-label', (nb.hold.armed ? 'Cancel hold on bus ' : 'Hold the next arrival: bus ') + (ni + 1) + ' at ' + sim.stops[nb.ns].name + (eta < 3 ? ', arriving now' : ' in ' + fmt(eta)));
       bn.classList.toggle('dis', !holdable(nb, sim));
     }
   }
@@ -682,7 +707,7 @@
     var sg = B.suggest(sim, mode), top = sg.length ? sg[0] : null;
     if (!top && sim.radioBusy() >= sim.cfg.radioMax) { S.suggestion = null; text.textContent = 'Both radio channels are busy. I shall wait until one frees up.'; btn.hidden = true; return; }
     S.suggestion = top;
-    if (!top) { text.textContent = mode === 'gap' ? 'All gaps look civilised. I shall write "Satisfactory" on the clipboard. (I cannot see crowds that are about to appear.)' : 'Everyone is on or behind the printed timetable. Nothing to hold.'; btn.hidden = true; return; }
+    if (!top) { text.textContent = mode === 'gap' ? (sim.cv > 0.3 ? 'No bus is close enough behind another for me to name, but the spread is wide. Keep an eye on the big gaps. (I cannot see crowds that are about to appear.)' : 'All gaps look civilised. I shall write "Satisfactory" on the clipboard. (I cannot see crowds that are about to appear.)') : 'Everyone is on or behind the printed timetable. Nothing to hold.'; btn.hidden = true; return; }
     var b = sim.buses[top.bus], ld = sim.leader(top.bus);
     var slackBtn = $('inspSlack'); slackBtn.hidden = !(mode === 'sched' && lv.id >= 2);
     slackBtn.textContent = 'Slack: ' + slackName();
@@ -701,7 +726,7 @@
     if (sim.t - S.lastPigeon < 60) { setStatus('The pigeon needs a minute to recover (' + fmt(60 - (sim.t - S.lastPigeon)) + ').'); return; }
     S.lastPigeon = sim.t; S.pigeoned = true; S.nPigeons = (S.nPigeons || 0) + 1;
     sim.incident(id, 50, 'pigeon');
-    setStatus('Pigeon released at Bus ' + (id + 1) + '. Compare the ruler with its pigeon-free twin below.');
+    setStatus('Pigeon released at Bus ' + (id + 1) + '. Compare the ruler with the incident-free twin below it.');
   }
   function actHold(id, mode) {
     if (!S.sim || !S.running) return;
@@ -740,9 +765,9 @@
 
   // ------------------------------------------------------------ ruler & chart
   function drawRuler(svgA, simA) {
-    var sim = simA || S.sim, svg = svgA || $('ruler'), w = Math.max(240, svg.clientWidth || 340), h = 104, L = sim.L, n = sim.n, i;
-    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-    var x0 = 12, x1 = w - 12, W = x1 - x0, ly = 34, H = sim.Hest;
+    var sim = simA || S.sim, svg = svgA || $('ruler'), w = Math.max(240, svg.clientWidth || 340), compact = !!(S.level && S.level.watch), h = compact ? 58 : 104, L = sim.L, n = sim.n, i;
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h); svg.style.height = h + 'px';
+    var x0 = 12, x1 = w - 12, W = x1 - x0, ly = compact ? 29 : 34, H = sim.Hest;
     var out = '<rect x="' + x0 + '" y="' + (ly - 9) + '" width="' + W + '" height="18" rx="5" fill="#efe5cf"/>';
     for (i = 0; i < sim.N; i++) { var tx = x0 + sim.stops[i].pos / L * W; out += '<rect x="' + (tx - 0.5).toFixed(1) + '" y="' + (ly - 13) + '" width="1" height="26" fill="#a99a86"/>'; }
     var gaps = sim.gapsTime();
@@ -763,6 +788,13 @@
     // pins, laned so convoys stay legible
     var order = sim.buses.map(function (b) { return b.id; }).sort(function (p, q) { return sim.buses[p].pos - sim.buses[q].pos; });
     var lastX = -99, lane = 0;
+    if (compact) {
+      order.forEach(function (id) {
+        var x = x0 + sim.buses[id].pos / L * W;
+        out += '<circle cx="' + x.toFixed(1) + '" cy="' + (ly + 14) + '" r="6.5" fill="#8c1d35" stroke="#2a1a14"/><text x="' + x.toFixed(1) + '" y="' + (ly + 17) + '" text-anchor="middle" font-size="9" font-weight="800" fill="#fff4dc" font-family="system-ui,sans-serif">' + (id + 1) + '</text>';
+      });
+      svg.innerHTML = out; return;
+    }
     order.forEach(function (id) {
       var x = x0 + sim.buses[id].pos / L * W;
       if (x - lastX < 15) lane = (lane + 1) % 5; else lane = 0;
@@ -827,11 +859,12 @@
     if (S.running && !S.paused && !S.ended) {
       S.acc += dtReal * TS * S.speed;
       var dt = sim.cfg.dt, steps = 0;
-      while (S.acc >= dt && steps < 300) { sim.step(); S.acc -= dt; steps++; if (sim.t >= sim.cfg.duration) break; }
-      if (S.acc > dt * 20) S.acc = 0;
+      while (S.acc >= dt && steps < 40) { sim.step(); S.acc -= dt; steps++; if (sim.t >= sim.cfg.duration) break; }
+      if (S.acc > dt * 120) S.acc = dt * 120;
       handleEvents(ts);
       if (S.level.watch && !S.pigeoned && sim.t >= 1000) { sim.incident(2, 50, 'pigeon'); S.pigeoned = true; S.lastPigeon = sim.t; setStatus('A pigeon turned up anyway. They do.'); }
       if (S.twin) { while (S.twin.t < sim.t - 1e-9) S.twin.step(); S.twin.events.length = 0; }
+      if (S.level.watch) { if (S.collapse.main < 0 && sim.cv > 0.5) S.collapse.main = sim.t; if (S.collapse.twin < 0 && S.twin.cv > 0.5) S.collapse.twin = S.twin.t; }
       if (sim.t >= sim.cfg.duration) { finish(false); }
     } else if (sim.events.length) sim.drain();
     renderRing(ts);
@@ -866,7 +899,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'lcard' + (lv.id === nextId ? ' next' : '') + (open ? '' : ' locked');
       b.innerHTML = '<span class="n">Level ' + lv.id + (lv.id === nextId ? ' · up next' : '') + '</span><span class="t"></span><span class="b"></span><span class="st">' + st + '</span>';
       b.querySelector('.t').textContent = lv.name;
-      b.querySelector('.b').textContent = open ? lv.blurb : 'Opens with 2 stars on Level ' + (lv.id - 1) + ', or after two honest attempts at it.';
+      b.querySelector('.b').textContent = open ? lv.blurb : 'Opens with 2 stars on Level ' + (lv.id - 1) + ', or after two honest attempts at it (three or more holds each).';
       b.setAttribute('aria-label', 'Level ' + lv.id + ': ' + lv.name + (lv.id && open ? ', ' + levelStars(lv.id) + ' of 3 stars' : '') + (open ? '' : ', locked'));
       if (!open) b.setAttribute('aria-disabled', 'true');
       b.addEventListener('click', function () { if (unlocked(lv.id)) openLevel(lv.id); });
@@ -887,7 +920,7 @@
       lv.cfg = { nBus: s.bus, lambda: 0.02 * s.dem, k: s.k, speedNoise: 0.04, incidentRate: 1 / 700 };
     }
     var cfg = id === 99 ? B.levelConfig(lv) : B.levelConfig(lv, cfgOver);
-    S.sim = B.createSim(cfg); S.twin = B.createSim(cfg);
+    S.sim = B.createSim(cfg); S.twin = B.createSim(lv.watch ? Object.assign({}, cfg, { incidents: [] }) : cfg); S.collapse = { main: -1, twin: -1 };
     S.wrongFollowed = 0; S.inspFollowed = 0; S.nPigeons = 0; S.curStars = 0; S.statusUntil = 0;
     S.running = false; S.paused = false; S.acc = 0; S.ended = false; S.selected = -1; S.slipQ = []; S.bubbles = []; S.busNote = {}; S.caption = ''; S.suggestion = null; S.needle = 0; S.lastPigeon = -1e9; S.pigeoned = false; S.grow = false; S.inspMode = 'gap';
     S.speed = lv.speed || 2; S.autoSlow = false;
@@ -939,19 +972,41 @@
     pb.setAttribute('aria-label', S.paused ? 'Resume' : 'Pause');
   }
 
+  function l0Headline() {
+    var m = S.collapse.main, t = S.collapse.twin;
+    if (m >= 0 && t >= 0) {
+      var d = t - m;
+      if (d > 150) return 'Your pigeons brought the collapse forward by about ' + Math.max(1, Math.round(d / 60)) + ' minutes. The twin collapsed too.';
+      if (d < -150) return 'The incident-free twin collapsed first. The pigeons were not the cause.';
+      return 'Your pigeon changed almost nothing. The twin collapsed too.';
+    }
+    if (m >= 0) return 'Your pigeons broke it. The incident-free twin was still holding on.';
+    if (t >= 0) return 'The twin collapsed; yours held out. Pigeons are not the whole story.';
+    return 'Neither route fully collapsed this time. Have another go.';
+  }
+  function playerNote(st) {
+    var h = st.holds, q = st.hq;
+    if (!h) return 'You did nothing. The buses did it to themselves.';
+    var parts = [];
+    if (q.leader >= Math.max(2, 0.25 * h)) parts.push(q.leader + ' of your ' + h + ' holds were on the bus being chased, which only lets the bus behind catch up. Hold the chaser, not the chased.');
+    if (q.loose >= Math.max(2, 0.3 * h)) parts.push(q.loose + ' were on buses that were not really close behind anyone: a radio channel and the passengers\' patience for nothing.');
+    if (h > 12 && q.good < 0.4 * h) parts.unshift('That was a lot of holds with not much method in them. The radio noticed.');
+    if (!parts.length) parts.push('You held ' + h + ' times and ' + q.good + ' of them were chasers crowding the bus ahead, held until the gap was right. That is exactly the right instinct.');
+    return parts.join(' ');
+  }
   function finish(early) {
     if (S.ended) return;
     S.ended = true; S.running = false;
     var sim = S.sim, lv = S.level, m = sim.metrics(), st = sim.stats;
     var stars = 0, rated = false;
     var tw = S.twin ? S.twin.metrics() : null, ratio = S.twin ? B.ratioOf(sim, S.twin) : 1;
-    if (lv.stars && !early) { stars = B.starsFor(lv, ratio); rated = true; if (stars > levelStars(lv.id)) { store.data.stars[lv.id] = stars; } if (stars < 2) store.data.fails[lv.id] = (store.data.fails[lv.id] || 0) + 1; }
+    if (lv.stars && !early) { stars = B.starsFor(lv, ratio); rated = true; if (stars > levelStars(lv.id)) { store.data.stars[lv.id] = stars; } if (stars < 2 && st.holds >= 3) store.data.fails[lv.id] = (store.data.fails[lv.id] || 0) + 1; }
     if (lv.watch && !early) store.data.watched = true;
     if (!early && lv.id !== 99) store.data.runs[lv.id] = (store.data.runs[lv.id] || 0) + 1;
     store.save();
     var meanHAll = st.nH ? st.sumH / st.nH : sim.Hest, evenAll = meanHAll / 2, formAll = st.sumH > 0 ? st.sumH2 / (2 * st.sumH) : evenAll;
     $('debTag').textContent = early ? 'Shift ended early' : (lv.id === 99 ? 'Sandbox shift' : 'Shift complete');
-    $('debH').textContent = lv.watch ? 'You watched a bunch form' : lv.id === 99 ? 'That was a shift' : (early ? 'Shift ended early' : (stars === 3 ? 'Immaculate dispatching' : stars === 2 ? 'Perfectly respectable' : stars === 1 ? 'You survived. The buses did not cooperate.' : 'No stars. The buses won this one.'));
+    $('debH').textContent = lv.watch ? l0Headline() : lv.id === 99 ? 'That was a shift' : (early ? 'Shift ended early' : (stars === 3 ? 'Immaculate dispatching' : stars === 2 ? 'Perfectly respectable' : stars === 1 ? 'You survived. The buses did not cooperate.' : 'No stars. The buses won this one.'));
     var sr = $('debStars');
     var cutPct = Math.round((1 - ratio) * 100);
     if (rated) sr.innerHTML = '★'.repeat(stars) + '<span class="off">' + '★'.repeat(3 - stars) + '</span><small>Delay per passenger ' + fmt(m.score) + ' against ' + fmt(tw.score) + ' for doing nothing: ' + (cutPct >= 0 ? cutPct + '% less' : -cutPct + '% more') + '  (★ ' + Math.round((1 - lv.stars[0]) * 100) + '%, ★★ ' + Math.round((1 - lv.stars[1]) * 100) + '%, ★★★ ' + Math.round((1 - lv.stars[2]) * 100) + '% less)</small>';
@@ -964,7 +1019,7 @@
       item(fmt(evenAll), 'wait if perfectly even (waiting only)', 'gold');
       item(fmt(formAll), 'predicted by your gaps: E[H\u00b2]/2E[H]');
       item(fmt(Math.max.apply(null, gaps)), 'longest gap now'); item(fmt(Math.min.apply(null, gaps)), 'shortest gap now'); item(st.maxConvoy, 'biggest bunch');
-      if (tw) { item(m.cv.toFixed(2), 'wobble: your route'); item(tw.cv.toFixed(2), 'wobble: pigeon-free twin'); }
+      if (tw) { item(m.cv.toFixed(2), 'wobble: your route'); item(tw.cv.toFixed(2), 'wobble: incident-free twin'); }
       item(S.nPigeons || 0, 'pigeons you released');
     } else {
       item(fmt(m.score), 'delay per passenger (scored)');
@@ -982,10 +1037,10 @@
     note.textContent = lv.watch ? '' : 'Delay per passenger = waiting + time sat on held buses. A hold can look free on the waiting figure; the held-bus time is where it costs. ' + (st.holds > 12 && st.wasted > st.holds * 0.3 ? 'You held ' + st.holds + ' times and ' + st.wasted + ' of them were over almost at once: the buses were holding you. ' : '') + (st.denied ? 'The radio said no ' + st.denied + ' times.' : '');
     grid.appendChild(note);
     var c = lv.id === 99 ? null : LEVEL_COPY[lv.id], ls = $('debLesson'); ls.innerHTML = '';
-    var paras = c ? c.lesson : ['You have just built your own bunch, or cured it. Either way: a late bus finds more people, loads for longer, and is later; the one behind catches up. Holding by gap, not by clock, is how real operators cure it.'];
+    var paras = (c && !lv.watch ? [playerNote(st)] : []).concat(c ? c.lesson : ['You have just built your own bunch, or cured it. Either way: a late bus finds more people, loads for longer, and is later; the one behind catches up. Holding by gap, not by clock, is how real operators cure it.']);
     paras.forEach(function (t) { var p = document.createElement('p'); p.innerHTML = t; ls.appendChild(p); });
     if (c) { var f = document.createElement('p'); f.className = 'fact'; f.textContent = c.fact; ls.appendChild(f); }
-    $('debRobot').textContent = (!lv.watch && lv.id !== 99 && lv.id < B.LEVELS.length - 1 && !unlocked(lv.id + 1)) ? 'Level ' + (lv.id + 1) + ' opens with 2 stars, or after a second honest attempt at this one.' : '';
+    $('debRobot').textContent = (!lv.watch && lv.id !== 99 && lv.id < B.LEVELS.length - 1 && !unlocked(lv.id + 1)) ? 'Level ' + (lv.id + 1) + ' opens with 2 stars, or after two honest attempts (three or more holds each).' : '';
     var nxt = $('debNext');
     var hasNext = lv.id !== 99 && lv.id < B.LEVELS.length - 1;
     nxt.hidden = !hasNext;

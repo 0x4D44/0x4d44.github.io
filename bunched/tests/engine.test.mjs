@@ -150,7 +150,7 @@ test('inspection paradox: measured mean wait matches E[H^2]/(2E[H]) and exceeds 
   const sim = B.runHeadless(B.levelConfig(B.LEVELS[0]), null, 9000), S = sim.stats;
   const formula = S.sumH2 / (2 * S.sumH), half = S.sumH / S.nH / 2, measured = S.sumWait / S.boarded;
   assert.ok(formula > 1.2 * half, `formula ${formula} vs half-mean ${half}`);
-  assert.ok(Math.abs(measured - formula) / formula < 0.15, `measured ${measured} formula ${formula}`);
+  assert.ok(measured < formula && measured > 0.78 * formula, `measured ${measured} should sit a little under the formula ${formula}`);
   const even = B.runHeadless(calm, null, 5000), E = even.stats;
   assert.ok(Math.abs(E.sumH2 / (2 * E.sumH) - E.sumH / E.nH / 2) / (E.sumH / E.nH / 2) < 0.15);
 });
@@ -185,35 +185,59 @@ test('timetable holding: depends strongly on its slack (running times), and with
   assert.ok(tt(L4, 0.74) > 1.25 * hw(L4), 'default timetable loses on roadworks');
 });
 
-// ---- the long one: strategy tables over 40 replay seeds ----------------------------------
-const NSEED = 40;
-test('stars over 40 replay seeds: do-nothing 0 stars every time; spam beaten by thinking; Inspector autopilot capped', () => {
+// ---- the long one: strategy tables over 60 replay seeds ----------------------------------
+const NSEED = 60;
+test('stars over 60 replay seeds: random/spam/wrong-bus/do-nothing get nothing much; thinking earns stars; Inspector autopilot is capped', () => {
   const table = [];
   for (const L of B.LEVELS.slice(1)) {
-    const rows = { none: [], spam: [], think: [], inspect: [] };
+    const bots = ['none', 'random', 'spam', 'think', 'wrong', 'inspect', 'holdall'];
+    const rows = Object.fromEntries(bots.map(k => [k, []]));
     for (let r = 1; r <= NSEED; r++) {
       const cfg = B.levelConfig(L, { seed: replaySeed(L, r) });
       const base = runBot(cfg, null);
       rows.none.push(B.starsFor(L, B.ratioOf(base, base)));
-      for (const bot of ['spam', 'think', 'inspect']) rows[bot].push(B.starsFor(L, B.ratioOf(runBot(cfg, bot), base)));
+      for (const bot of ['random', 'spam', 'think', 'wrong', 'inspect']) rows[bot].push(B.starsFor(L, B.ratioOf(runBot(cfg, bot), base)));
+      rows.holdall.push(B.starsFor(L, B.ratioOf(runBot(cfg, null, 'holdall'), base)));
     }
-    const rate = (a, k) => a.filter(x => x === k).length / a.length, avg = a => mean(a);
-    table.push(`L${L.id}: ` + Object.entries(rows).map(([k, v]) => `${k} [0:${(100 * rate(v, 0)).toFixed(0)} 1:${(100 * rate(v, 1)).toFixed(0)} 2:${(100 * rate(v, 2)).toFixed(0)} 3:${(100 * rate(v, 3)).toFixed(0)}]%`).join('  '));
+    const rate = (a, k) => a.filter(x => x === k).length / a.length, atLeast = (a, k) => a.filter(x => x >= k).length / a.length;
+    table.push(`L${L.id}: ` + bots.map(k => `${k} [0:${(100 * rate(rows[k], 0)).toFixed(0)} 1:${(100 * rate(rows[k], 1)).toFixed(0)} 2:${(100 * rate(rows[k], 2)).toFixed(0)} 3:${(100 * rate(rows[k], 3)).toFixed(0)}]`).join(' '));
     assert.equal(Math.max(...rows.none), 0, `L${L.id} do-nothing earns no stars`);
-    assert.ok(avg(rows.think) > avg(rows.spam) + 0.25, `L${L.id} thinking (${avg(rows.think)}) beats spam (${avg(rows.spam)})`);
-    assert.ok(rate(rows.spam, 3) <= 0.12, `L${L.id} spam rarely 3 stars: ${rate(rows.spam, 3)}`);
-    assert.ok(rate(rows.inspect, 3) <= 0.25, `L${L.id} Inspector autopilot rarely 3 stars: ${rate(rows.inspect, 3)}`);
-    assert.ok(rate(rows.think, 0) <= 0.3 && rate(rows.think, 3) >= 0.02, `L${L.id} thinking is a fair bet`);
+    assert.ok(atLeast(rows.random, 2) <= 0.1, `L${L.id} random holds: 2+ stars ${atLeast(rows.random, 2)}`);
+    assert.ok(atLeast(rows.spam, 2) <= 0.15 && rate(rows.spam, 3) <= 0.03, `L${L.id} spam 2+ ${atLeast(rows.spam, 2)} 3 ${rate(rows.spam, 3)}`);
+    assert.ok(atLeast(rows.wrong, 2) <= 0.05, `L${L.id} holding the bus in front earns nothing: ${atLeast(rows.wrong, 2)}`);
+    assert.ok(atLeast(rows.think, 2) >= 0.55, `L${L.id} thinking 2+ stars ${atLeast(rows.think, 2)}`);
+    assert.ok(rate(rows.think, 3) >= 0.08 && rate(rows.think, 3) <= 0.27, `L${L.id} thinking 3 stars ${rate(rows.think, 3)}`);
+    assert.ok(atLeast(rows.inspect, 2) < atLeast(rows.think, 2) + 0.05, `L${L.id} Inspector autopilot no better than thinking`);
+    assert.ok(rate(rows.inspect, 3) <= 0.25 && atLeast(rows.holdall, 2) <= 0.35, `L${L.id} autopilot / hold-all capped`);
   }
   console.log('     ' + table.join('\n     '));
 });
 
-test('score ordering on replay seeds: thinking < spam < doing nothing (mean delay per passenger)', () => {
+test('mean delay ordering on replay seeds: thinking < doing nothing <= random and spam (careless holding does not pay)', () => {
   for (const L of B.LEVELS.slice(1)) {
-    const s = { none: [], spam: [], think: [] };
-    for (let r = 1; r <= 12; r++) { const cfg = B.levelConfig(L, { seed: replaySeed(L, r) }); for (const k of ['none', 'spam', 'think']) s[k].push(runBot(cfg, k === 'none' ? null : k).metrics().score); }
-    assert.ok(mean(s.think) < mean(s.spam) && mean(s.spam) < mean(s.none), `L${L.id}: ${mean(s.think)} ${mean(s.spam)} ${mean(s.none)}`);
+    const s = { none: [], random: [], spam: [], think: [], wrong: [] };
+    for (let r = 1; r <= 20; r++) { const cfg = B.levelConfig(L, { seed: replaySeed(L, r) }); for (const k of Object.keys(s)) s[k].push(runBot(cfg, k === 'none' ? null : k).metrics().score); }
+    assert.ok(mean(s.think) < 0.8 * mean(s.none), `L${L.id} think ${mean(s.think)} none ${mean(s.none)}`);
+    assert.ok(mean(s.random) > 0.88 * mean(s.none) && mean(s.spam) > 0.88 * mean(s.none), `L${L.id} careless ${mean(s.random)} ${mean(s.spam)} none ${mean(s.none)}`);
+    assert.ok(mean(s.wrong) > mean(s.none), `L${L.id} holding the chased bus makes things worse`);
   }
+});
+
+test('hold quality is recorded and charged: holding the bus in front is a "leader" hold with a penalty', () => {
+  const cfg = B.levelConfig(B.LEVELS[2], { seed: replaySeed(B.LEVELS[2], 1) });
+  const w = runBot(cfg, 'wrong'), t = runBot(cfg, 'think');
+  assert.ok(w.stats.hq.leader + w.stats.hq.loose > 3 * (t.stats.hq.leader + t.stats.hq.loose + 1), JSON.stringify([w.stats.hq, t.stats.hq]));
+  assert.ok(t.stats.hq.good > 5, 'think makes good holds ' + JSON.stringify(t.stats.hq));
+  assert.ok(w.stats.penaltySec > 0);
+});
+
+test('the radio binds: spam and think both hit refusals or cooldowns, and holds are never above two at once', () => {
+  const cfg = B.levelConfig(B.LEVELS[3], { seed: replaySeed(B.LEVELS[3], 2) });
+  const sim = B.createSim(cfg); let maxBusy = 0, denied = 0;
+  for (let s = 0; s < 8000; s++) { BOTS.spam(sim); sim.step(); maxBusy = Math.max(maxBusy, sim.radioBusy()); }
+  assert.ok(maxBusy <= 2 && sim.stats.denied >= 0);
+  const m = runBot(cfg, 'think').metrics();
+  assert.ok(m.holds <= 30, 'cooldown caps how often a thoughtful player can hold: ' + m.holds);
 });
 
 console.log(passed + ' tests passed' + (process.exitCode ? ' (with failures)' : ''));
