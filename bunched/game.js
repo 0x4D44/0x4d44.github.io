@@ -579,7 +579,7 @@
     }
     if (sim.t > 0) for (i = 0; i < sim.n; i++) if (sim.buses[i].stuck <= 0) delete S.busNote[i];
     // waits
-    var act = m.waitWin, even = m.evenWin, pen = even > 0 ? act / even - 1 : 0;
+    var act = Math.max(m.waitWin, m.wait), even = m.evenWin, pen = even > 0 ? act / even - 1 : 0;
     $('waitNow').textContent = fmt(act); $('waitEven').textContent = fmt(even);
     $('waitPen').textContent = (pen >= 0 ? '+' : '') + Math.round(pen * 100) + '%';
     var mx = Math.max(act, even, 1);
