@@ -39,11 +39,16 @@
   }
 
   var LEVELS = [
-    { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], p: 0, rival: null, seed: 1149, loft: 45, stars: { three: { rounds: 10, lost: 10 }, two: { rounds: 12, lost: 18 } } },
-    { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 90, deadline: 14, cap: [[1, 14]], p: 0.1, rival: null, seed: 1990, loft: 45, stars: { three: { rounds: 12, lost: 18 }, two: { rounds: 14, lost: 26 } } },
-    { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 80, deadline: 14, cap: [[1, 20]], p: 0, rival: { start: 3 }, seed: 2001, loft: 36, stars: { three: { rounds: 11, lost: 20 }, two: { rounds: 14, lost: 30 } } },
-    { id: 4, key: 'storm-front', name: 'Storm Front', scrolls: 90, deadline: 14, cap: [[1, 14], [6, 7], [10, 18]], p: 0, rival: null, seed: 1701, loft: 45, stars: { three: { rounds: 13, lost: 17 }, two: { rounds: 14, lost: 24 } } },
-    { id: 5, key: 'big-delivery', name: 'The Big Delivery', scrolls: 76, deadline: 15, cap: [[1, 18], [6, 10], [10, 22]], p: 0.06, rival: { start: 4 }, seed: 1707, loft: 45, stars: { three: { rounds: 13, lost: 24 }, two: { rounds: 15, lost: 40 } } },
+    { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], p: 0, rival: null, seed: 1149, loft: 45,
+      stars: { three: { rounds: 10, lost: 10 }, two: { rounds: 12, lost: 18 } } },
+    { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 150, deadline: 18, cap: [[1, 14], [3, 5], [6, 24]], p: 0.1, rival: null, seed: 1990, loft: 45,
+      stars: { three: { rounds: 17, lost: 27 }, two: { rounds: 18, lost: 35 } } },
+    { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 90, deadline: 18, cap: [[1, 18], [3, 7], [9, 20]], p: 0, rival: { start: 3, from: 2, to: 9 }, seed: 2001, loft: 36,
+      stars: { three: { rounds: 17, lost: 16, share: 0.6 }, two: { rounds: 18, lost: 24, share: 0.7 } } },
+    { id: 4, key: 'storm-front', name: 'Storm Front', scrolls: 120, deadline: 14, cap: [[1, 14], [3, 7], [8, 23]], p: 0, rival: null, seed: 1701, loft: 45,
+      stars: { three: { rounds: 13, lost: 17 }, two: { rounds: 14, lost: 25 } } },
+    { id: 5, key: 'big-delivery', name: 'The Big Delivery', scrolls: 90, deadline: 18, cap: [[1, 15], [3, 6], [7, 24]], p: 0.06, rival: { start: 3, from: 2, to: 10 }, seed: 1707, loft: 45,
+      stars: { three: { rounds: 16, lost: 22, share: 0.6 }, two: { rounds: 18, lost: 26, share: 0.65 } } },
     { id: 6, key: 'sandbox', name: 'The Open Sky', scrolls: 100, deadline: 30, cap: [[1, 15]], p: 0, rival: null, seed: 4242, sandbox: true, loft: 9999 }
   ];
 
