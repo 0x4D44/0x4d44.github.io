@@ -20,7 +20,7 @@ button { font: inherit; color: inherit; }
 
 /* top bar: nothing interactive in the top-left 112x41 (the Almanac pill lives there) */
 .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 16px 6px 120px; border-bottom: 2px solid var(--ink); background: var(--paper-2); min-height: 48px; }
-.bar-title { font-weight: bold; font-size: 1.05rem; flex: 1 1 auto; min-width: 0; }
+.bar-title { min-height: 36px; display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 1.05rem; flex: 1 1 auto; min-width: 0; }
 .rfc-tag { font-family: var(--mono); font-size: .72rem; background: var(--red); color: var(--paper-3); padding: 1px 6px; border-radius: 3px; margin-right: 4px; vertical-align: 1px; }
 .desk { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 0 -104px; width: calc(100% + 104px); }
 @media (min-width: 640px) { .desk { margin: 0; width: auto; } }
@@ -48,7 +48,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 16px 16px 8px; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
 .btn-primary { background: var(--red); color: var(--paper-3); }
 .btn-primary:hover:not([disabled]) { background: var(--red-d); }
-.btn-ghost:hover:not([disabled]) { background: #fff; }
+.btn-ghost:hover:not([disabled]):not([aria-pressed="true"]) { background: #fff; }
 .btn-ghost[aria-pressed="true"] { background: var(--ink); color: var(--paper-3); }
 
 /* level list */
