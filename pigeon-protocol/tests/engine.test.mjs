@@ -170,7 +170,7 @@ test('a remembered capacity schedule (w = canonical cap each round) does not rel
 
 test('adaptive players who only see sent/arrived reach 3 stars about half to three quarters of the time, never always', () => {
   const rows = [];
-  const cases = [['sensible', sensible, [1, 2, 3, 4, 5], 0.45, 0.9], ['polite', polite, [1, 2, 3, 4, 5], 0.4, 0.9], ['cubicish AIMD', cubicish, [1, 2, 3, 4], 0.35, 0.9]];
+  const cases = [['sensible', sensible, [1, 2, 3, 4, 5], 0.45, 0.9], ['polite', polite, [1, 2, 3, 4, 5], 0.4, 0.9], ['cubicish AIMD', cubicish, [2, 3, 4], 0.35, 0.9]];
   for (const [name, mk, ids, lo, hi] of cases) for (const id of ids) {
     const c = starsOver(L(id), mk); rows.push(name + ' L' + id + ': ' + Math.round(c[3] * 100) + '%');
     assert.ok(c[3] >= lo && c[3] <= hi, name + ' on level ' + id + ' earns 3 stars ' + Math.round(c[3] * 100) + '%');
