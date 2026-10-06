@@ -149,11 +149,22 @@
   }
   function pendingCount() { return S.level.scrolls - totals().del; }
 
+  // Own-trace only: compares what the last two flights delivered with what the remaining rounds must average.
+  function paceHint(lv) {
+    var h = seen(), n = h.length;
+    if (lv.sandbox || S.finished || n < 2) return '';
+    var left = lv.deadline - n, pend = pendingCount();
+    if (pend <= 0) return '';
+    if (left <= 0) return 'pace: out of time';
+    var rate = (h[n - 1].delivered + h[n - 2].delivered) / 2, need = pend / left;
+    return 'pace: ' + (rate >= need * 1.15 ? 'ahead of the deadline' : rate >= need * 0.85 ? 'on the deadline' : 'behind the deadline');
+  }
   function renderAll() {
     var lv = S.level, t = totals();
     $('s-level').textContent = lv.id + '. ' + lv.name;
     $('s-doc').textContent = flockName();
     $('s-round').textContent = S.shown + '/' + lv.deadline;
+    $('s-clock').textContent = paceHint(lv);
     $('s-pace').textContent = lv.stars ? '3\u2605 \u2264 r' + lv.stars.three.rounds : '';
     if (S.prefill && S.phase === 'play' && !S.busy && !S.finished && S.shown < 3) S.w = [2, 4, 8][S.shown];
     $('s-del').textContent = t.del + '/' + lv.scrolls;
@@ -165,7 +176,7 @@
     $('controls').hidden = S.finished || S.phase === 'brief';
     $('event').innerHTML = eventLine();
   }
-  var reactIdx = {};
+  var reactIdx = {}, usedLines = {}, evCache = {};
   function weatherLine(lv, done) {
     var W = C.WEATHER[lv.id], sched = S.run.capSched;
     if (!W) return null;
@@ -183,7 +194,15 @@
     if (S.finished) return '<b>NOTAM</b>The Ministry is closed for the day.';
     if (S.phase === 'brief' || !h.length) return '<b>NOTAM</b>Awaiting your instructions, and a pigeon. Weather bulletins are filed after each flight, never before.';
     var done = h.length, tx = lv.id === 1 ? C.LEVELS[1].events[done - 1] : weatherLine(lv, done);
-    if (!tx) tx = C.POOL_EVENTS[(done * 7 + lv.id) % C.POOL_EVENTS.length];
+    var ck = S.runId + ':' + done;
+    if (evCache[ck] !== undefined) tx = evCache[ck];
+    else {
+      if (!tx || usedLines[tx]) {                    // a line already told this session (any level) is swapped for a fresh one
+        var pl = C.POOL_EVENTS, j, base = (done * 7 + lv.id) % pl.length;
+        for (j = 0; j < pl.length; j++) { var cand = pl[(base + j) % pl.length]; if (!usedLines[cand]) { tx = cand; break; } }
+      }
+      usedLines[tx] = 1; evCache[ck] = tx;
+    }
     var out = '<b>NOTAM, FILED LATE, ROUND ' + String(done).padStart(2, '0') + '</b>' + esc(tx);
     var r = h[h.length - 1], prev = h.length > 1 ? h[h.length - 2] : null, kind;
     if (r.lost === 0) kind = prev && r.w > prev.w ? 'grow' : prev && r.w === prev.w ? 'same' : 'clean';
@@ -231,11 +250,13 @@
     }
     if (r.w <= 3) return C.HINTS.tinyLoss;
     if (r.lost / r.w > 0.25) return C.HINTS.bigLoss;
+    if (r.w <= maxClean && S.level.p > 0 && r.lost / r.w <= 0.25) return C.HINTS.hawkish[h.length % C.HINTS.hawkish.length];
     if (r.w <= maxClean) return C.HINTS.repeatLoss;
     return C.HINTS.afterLoss;
   }
 
   function renderControls() {
+    if (!S.level || !S.run) { var fb = $('btn-fast'); fb.setAttribute('aria-pressed', prog.fast ? 'true' : 'false'); fb.textContent = 'Fast flights: ' + (prog.fast ? 'on' : 'off'); return; }
     var pend = Math.max(1, pendingCount()), max = Math.min(E.MAX_W, pend), r = $('w-range');
     S.w = Math.max(1, Math.min(S.w, max));
     r.max = String(max); r.value = String(S.w);
@@ -349,7 +370,7 @@
     return new Promise(function (resolve) {
       var sky = $('sky'); sky.innerHTML = '';
       if (reduceMotion || S.skipping) { var cp0 = $('map-caption'); if (reduceMotion) { cp0.style.display = 'block'; cp0.textContent = 'Round ' + rec.round + ': ' + rec.w + ' released, ' + rec.delivered + ' arrived.'; } resolve(); return; }
-      var n = rec.birds.length, sp = (prog.fast ? 0.4 : 1) * (rec.round > 3 ? 0.75 : 1) * (S.auto ? 0.8 : 1);
+      var n = rec.birds.length, sp = (prog.fast ? 0.2 : S.level.id > 1 ? 0.7 : 1) * (rec.round > 3 ? 0.75 : 1) * (S.auto ? 0.8 : 1);
       var OUT = Math.min(2300, 1000 + 50 * n) * sp, BACK = 750 * sp, STAG = (250 + 14 * n) * sp;
       var birds = [], puffs = [], pops = [], i;
       var rr = E.mulberry32(rec.round * 977 + S.run.seed);
@@ -363,7 +384,7 @@
         birds.push({ el: u, b: b, lane: isYou ? (i % 7) - 3 : ((i % 5) - 2) * 0.8 + 3, delay: (i / Math.max(1, n)) * STAG, dieU: dieU, dead: false, ack: null, size: isYou ? 28 : 23, ph: rr() * 6 });
       }
       var heavy = rec.lost >= Math.max(4, rec.w * 0.4);
-      var total = STAG + OUT + BACK + 250, start = performance.now(), done = false, captioned = false;
+      var total = STAG + OUT + BACK + 250 * Math.min(1, sp * 1.5), start = performance.now(), done = false, captioned = false;
       coo('release');
       function puff(x, y, now) {
         for (var k = 0; k < 8; k++) {
@@ -465,7 +486,7 @@
       // every comparison is on what the player ASKED for, so a short final round (few scrolls left) is never a "cut"
       if (i < 4 && nx) { if (r.lost <= 1 && nx.requested >= 1.8 * r.requested) { streak++; f.doubled = Math.max(f.doubled, streak); } else streak = 0; }
       if (nx) {
-        if (r.lost >= 2 && frac > 0.3) { if (nx.requested <= r.requested * 0.8) f.backoffs++; else if (nx.requested >= r.requested) f.ignoredBig++; }
+        if (r.lost >= 2 && frac > 0.3) { if (nx.requested >= r.requested) f.ignoredBig++; }
         else if (r.lost >= 1 && frac <= 0.3) { if (nx.requested <= r.requested * 0.6) f.panic++; else f.nerve++; }
         if (i >= 2 && h[i - 1].lost === 0 && h[i - 2].lost === 0 && r.lost === 0 && nx.requested > r.requested) f.probes++;
       }
@@ -482,6 +503,8 @@
     f.lost = lost; f.hawkLost = hawk; f.crowdShare = lost ? crowd / lost : 0; f.hawkShare = lost ? hawk / lost : 0;
     f.fill = cnt ? sumW / sumRoom : 1;
     f.peak = Math.max.apply(null, body.concat([1]));
+    var rst = E.responseStats(run);
+    f.backoffs = rst.responded; f.weakCuts = rst.weak; f.events = rst.events;      // ONE definition of 'responded', shared with the stars
     f.responsive = E.adaptedOf(run, 1);
     return f;
   }
@@ -491,7 +514,7 @@
     var miss = [], t = st.three;
     if (run.round > t.rounds) miss.push('finish in ' + t.rounds + ' rounds or fewer (you took ' + run.round + ')');
     if (run.lost > t.lost) miss.push('lose ' + t.lost + ' birds or fewer (you lost ' + run.lost + ')');
-    if (!E.adaptedOf(run, t.minEvents)) miss.push('fly fewer birds at least once after losing some (you never did, so the Gap never taught you anything)');
+    if (!E.adaptedOf(run, t.minEvents)) { var rs3 = E.responseStats(run); miss.push(rs3.events && rs3.weak ? 'cut the flock properly after a bad round (your cuts were under 30%, too small to count)' : rs3.events ? 'cut the flock after a bad round (you never did)' : 'meet a bad round and cut the flock in answer (none happened this time, so there was nothing to answer)'); }
     var sh = lv.rival ? E.shareOf(run) : null;
     if (t.share !== undefined && sh !== null && sh > t.share) miss.push('take no more than ' + pct(t.share) + ' of the shared Gap (you took ' + pct(sh) + ')');
     if (t.minShare !== undefined && sh !== null && sh < t.minShare) miss.push('carry at least ' + pct(t.minShare) + ' of the shared Gap (you carried ' + pct(sh) + ')');
@@ -525,6 +548,7 @@
       else if (f.steady) out.mine.push('You grew the flock steadily, a few birds a round, rather than doubling. That is additive increase on its own: safe, but it takes a long time to find a Gap you have not measured.');
       else if (f.doubled === 0 && f.rounds > 4) out.mine.push('Your early flocks did not double or climb in any pattern, so the first rounds went on underusing a Gap you had not yet measured.');
       if (f.backoffs) out.mine.push('After heavy losses you cut the flock ' + f.backoffs + ' ' + plural(f.backoffs, 'time') + '. That is multiplicative decrease: when the Gap says no, back off hard and quickly.');
+      if (f.weakCuts && !f.responsive) out.mine.push('After heavy losses you trimmed the flock ' + f.weakCuts + ' ' + plural(f.weakCuts, 'time') + ', but your cuts were under 30%, too small to count as backing off. Multiplicative decrease means a real cut, roughly halving.');
       if (f.ignoredBig) out.mine.push('On ' + f.ignoredBig + ' ' + plural(f.ignoredBig, 'round') + ' you flew on, or bigger, after heavy losses. In this game’s Gap that makes things worse: the scrum takes out more than the birds that did not fit.');
       if (f.probes) out.mine.push('After calm rounds you edged the flock upwards (' + f.probes + ' ' + plural(f.probes, 'time') + '). That is probing: testing whether the Gap has widened.');
       if (f.panic) out.mine.push('On ' + f.panic + ' ' + plural(f.panic, 'round') + ', one or two missing birds made you cut the flock sharply. An isolated loss is not a verdict from the Gap; the Reno does this too, and it is why he is slow.');
@@ -654,11 +678,17 @@
     data.concept.forEach(function (x) { d.appendChild(el('p', null, x)); });
     if (lv.rival) { var sb = shareBar(run); if (sb) d.appendChild(sb); }
     var fct = el('p', 'db-fact'); fct.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d.appendChild(fct);
+    d.appendChild(el('p', 'smallprint', 'Model note: the Ministry simplifies. Congestion collapse here is modelled by a penalty (birds over the Gap’s limit knock out others), not derived from real queues; ACKs never go astray; and every round is one lockstep round trip.'));
     if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: ' + (lv.p > 0 ? 'same Gap, different hawks.' : lv.rival ? 'same Gap, a rival in a different mood.' : 'same Gap, a different scatter of luck.')));
     var row = el('div', 'cta-row');
     var btn = function (txt, cls, fn) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); row.appendChild(b); return b; };
     var nextId = lv.id < 6 ? lv.id + 1 : null;
+    var pity = !run.won && !S.assisted && !lv.sandbox && nextId && (prog.fails[lv.id] || 0) >= 2;
+    if (pity) {
+      d.appendChild(el('p', 'db-unlock', 'Level ' + nextId + ' is open: the Ministry takes pity. Two honest failures here have been noted, with sympathy, in a drawer.'));
+    }
     var canNext = run.won && nextId && isUnlocked(nextId);
+    if (pity) btn(nextId === 6 ? 'Level 6 is open: the Ministry takes pity' : 'Level ' + nextId + ' is open: the Ministry takes pity', 'btn-primary', function () { openLevel(nextId); });
     if (canNext) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
     if (run.won && S.assisted && !lv.sandbox) btn('Now fly it yourself', canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; beginBrief(lv); });
     else btn(run.won ? 'Fly it again' : 'Try again', run.won && canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; lv.sandbox ? sandboxRestart() : beginBrief(lv); });
