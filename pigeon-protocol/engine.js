@@ -248,7 +248,7 @@
   // ignored, since there is no 'next time' after it.
   var RESP = { minEvents: 1, minLost: 3, minFrac: 0.3, k: 0.8, need: 0.75 };
   function responseStats(run) {
-    var h = run.history, events = 0, responded = 0, rs = run.level.respond || RESP;
+    var h = run.history, events = 0, responded = 0, rs = (run.level && run.level.respond) || RESP;
     for (var i = 0; i < h.length - 1; i++) {
       if (h[i].lost >= rs.minLost && h[i].lost / h[i].w >= rs.minFrac) {
         events++;
