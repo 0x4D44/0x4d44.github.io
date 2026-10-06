@@ -569,23 +569,32 @@
     holdall: function (sim, bus, st) { startAutoHold(sim, bus, st, 'timed', 0, 20); }
   };
   // The Inspector: suggests holds. mode 'gap' (headway) or 'sched' (printed timetable).
+  // The Inspector does her rounds: she speaks for the first INSP_OPEN seconds of every INSP_WIN, then
+  // goes back to her clipboard. About one or two suggestions a lap, never a running commentary.
+  var INSP_WIN = 600, INSP_OPEN = 110;
+  function inspectorWindow(sim) {
+    var ph = sim.t % INSP_WIN, idx = Math.floor(sim.t / INSP_WIN);
+    return { open: ph < INSP_OPEN, wait: ph < INSP_OPEN ? 0 : INSP_WIN - ph, idx: idx };
+  }
   function suggest(sim, mode) {
     var out = [], H = sim.Hest, tg = sim.gapsTime();
     if (sim.radioBusy() >= sim.cfg.radioMax) return out;
+    var win = inspectorWindow(sim);
+    if (!win.open) return out;
     sim.buses.forEach(function (b) {
       if (b.hold.active || b.hold.armed || b.coolUntil > sim.t) return;
       var stopIdx = b.state === 'dwell' ? b.stop : b.ns;
       if (mode === 'sched') {
         var ah = sim.aheadOfSchedule(b.id);
         if (ah > 10) out.push({ bus: b.id, stop: stopIdx, gap: tg[b.id], ahead: ah, want: Math.min(sim.cfg.holdMax, ah), dwelling: b.state === 'dwell', mode: 'sched' });
-      } else if (tg[b.id] < H * 0.62) {
+      } else if (tg[b.id] < H * 0.55) {
         out.push({ bus: b.id, stop: stopIdx, gap: tg[b.id], want: Math.min(sim.cfg.holdMax, H * sim.cfg.hwFactor - tg[b.id]), dwelling: b.state === 'dwell', mode: 'gap' });
       }
     });
     out.sort(function (a, b) { return mode === 'sched' ? b.ahead - a.ahead : a.gap - b.gap; });
     // She is fallible: one suggestion in three she looks at the pair the wrong way round and
     // names the bus in FRONT (the one being chased) instead of the one doing the chasing.
-    if (mode !== 'sched' && out.length && Math.floor(sim.t / 240) % 3 === 2) {
+    if (mode !== 'sched' && out.length && win.idx % 3 === 2) {
       var t = out[0], ld = sim.leader(t.bus), lb = sim.buses[ld];
       if (!lb.hold.active && !lb.hold.armed && lb.coolUntil <= sim.t) {
         out[0] = { bus: ld, stop: lb.state === 'dwell' ? lb.stop : lb.ns, gap: t.gap, chaser: t.bus, wrong: true, want: t.want, dwelling: lb.state === 'dwell', mode: 'gap' };
@@ -605,13 +614,13 @@
     },
     {
       id: 1, name: 'Gentle Morning', blurb: 'Light demand, a few hiccups. Hold buses to restore even spacing.',
-      seed: 21, duration: 5400, speed: 2, levers: ['hold'],
-      cfg: { lambda: 0.02, speedNoise: 0.04, incidentRate: 1 / 700, incidents: [{ t: 30, bus: 1, dur: 60, kind: 'lollipop' }, { t: 400, bus: 4, dur: 40, kind: 'photo' }], bursts: [{ t: 2100, stop: 4, n: 16, label: 'School trip' }] }, stars: [0.9, 0.66, 0.53]
+      seed: 10, duration: 5400, speed: 2, levers: ['hold'],
+      cfg: { lambda: 0.02, speedNoise: 0.04, incidentRate: 1 / 700, incidents: [{ t: 30, bus: 1, dur: 60, kind: 'lollipop' }, { t: 400, bus: 4, dur: 40, kind: 'photo' }], bursts: [{ t: 2100, stop: 4, n: 16, label: 'School trip' }] }, stars: [0.92, 0.75, 0.56]
     },
     {
       id: 2, name: 'Rush Hour', blurb: 'More passengers, crush loads, and everything goes wrong faster.',
       seed: 32, duration: 5400, speed: 2, levers: ['hold'],
-      cfg: { lambda: 0.028, speedNoise: 0.05, incidentRate: 1 / 600, incidents: [{ t: 30, bus: 1, dur: 60, kind: 'lollipop' }, { t: 300, bus: 4, dur: 45, kind: 'haggis' }], bursts: [{ t: 1900, stop: 8, n: 24, label: 'Football crowd' }, { t: 3600, stop: 2, n: 20, label: 'Concert lets out' }] }, stars: [0.9, 0.67, 0.51]
+      cfg: { lambda: 0.028, speedNoise: 0.05, incidentRate: 1 / 600, incidents: [{ t: 30, bus: 1, dur: 60, kind: 'lollipop' }, { t: 300, bus: 4, dur: 45, kind: 'haggis' }], bursts: [{ t: 1900, stop: 8, n: 24, label: 'Football crowd' }, { t: 3600, stop: 2, n: 20, label: 'Concert lets out' }] }, stars: [0.9, 0.65, 0.48]
     },
     {
       id: 3, name: 'Festival Fortnight', blurb: 'Crowds at three stops. The rest of the route gets the leftovers.',
@@ -620,7 +629,7 @@
         lambda: 0.018, speedNoise: 0.05, incidentRate: 1 / 700, incidents: [{ t: 30, bus: 1, dur: 70, kind: 'bagpipes' }, { t: 30, bus: 4, dur: 70, kind: 'lollipop' }],
         demandMult: [1, 1, 1, 3.2, 1, 1, 3.4, 1, 1, 1, 3, 1],
         bursts: [{ t: 900, stop: 6, n: 22, label: 'Fringe show lets out' }, { t: 2400, stop: 3, n: 26, label: 'Tattoo lets out' }, { t: 3900, stop: 10, n: 22, label: 'Comedy gig lets out' }]
-      }, stars: [0.88, 0.57, 0.46]
+      }, stars: [0.88, 0.55, 0.43]
     },
     {
       id: 4, name: 'Roadworks', blurb: 'Temporary lights and a crawl lane. Tram works, but for no tram.',
@@ -633,14 +642,14 @@
     },
     {
       id: 5, name: "The Dispatcher's Nightmare", blurb: 'All of it at once. Good luck. Mind the haggis.',
-      seed: 65, duration: 7200, speed: 2, levers: ['hold'],
+      seed: 32, duration: 7200, speed: 2, levers: ['hold'],
       cfg: {
         lambda: 0.02, speedNoise: 0.06, incidentRate: 1 / 420, incidents: [{ t: 30, bus: 1, dur: 70, kind: 'seagull' }, { t: 30, bus: 3, dur: 70, kind: 'bagpipes' }, { t: 30, bus: 5, dur: 70, kind: 'wheelie' }, { t: 500, bus: 4, dur: 40, kind: 'haggis' }],
         demandMult: [1, 1, 1, 2.6, 1, 1, 2.8, 1, 1, 1, 2.4, 1],
         bursts: [{ t: 1200, stop: 6, n: 24, label: 'Fringe show lets out' }, { t: 3000, stop: 3, n: 28, label: 'Tattoo lets out' }, { t: 5000, stop: 10, n: 24, label: 'Comedy gig lets out' }],
         lights: [{ pos: 1250, period: 120, red: 50, offset: 0 }, { pos: 4250, period: 150, red: 70, offset: 40 }],
         slow: [{ from: 2700, to: 3700, factor: 0.45 }]
-      }, stars: [0.9, 0.67, 0.54]
+      }, stars: [0.9, 0.70, 0.56]
     }
   ];
 
@@ -673,7 +682,7 @@
   }
 
   root.Bunched = {
-    createSim: createSim, runHeadless: runHeadless, suggest: suggest, starsFor: starsFor, ratioOf: ratioOf,
+    createSim: createSim, runHeadless: runHeadless, suggest: suggest, inspectorWindow: inspectorWindow, starsFor: starsFor, ratioOf: ratioOf,
     levelConfig: levelConfig, LEVELS: LEVELS, STOP_NAMES: STOP_NAMES, NAMES: NAMES, INCIDENTS: INCIDENTS,
     DEFAULTS: DEFAULTS, mulberry32: mulberry32, AUTO: AUTO
   };

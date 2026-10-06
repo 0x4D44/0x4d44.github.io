@@ -122,6 +122,7 @@
       <div class="card rulercard">
         <div class="card-h"><h3>Headway ruler</h3><span class="hint">gap behind the bus ahead</span></div>
         <svg id="ruler" viewBox="0 0 360 70" preserveAspectRatio="none" role="img" aria-label="Headway ruler: the route laid out as a line, with each bus marked and the gaps between them coloured."></svg>
+        <p class="vsline" id="vsLine" aria-live="off" hidden></p>
         <div id="twinWrap" hidden>
           <p class="twinlab">The twin: same route, no incidents at all</p>
           <svg id="ruler2" viewBox="0 0 360 58" role="img" aria-label="Headway ruler of the twin route, which has no pigeons or other incidents."></svg>
@@ -201,6 +202,7 @@
     <div class="lesson" id="debLesson"></div>
     <p class="robot" id="debRobot"></p>
     <div class="cta sticky">
+      <p class="fine why" id="debWhy" role="note" hidden></p>
       <button type="button" class="btn primary big" id="debNext">Next level</button>
       <button type="button" class="btn" id="debRetry">Try again</button>
       <button type="button" class="btn ghost" id="debMenu">Levels</button>
