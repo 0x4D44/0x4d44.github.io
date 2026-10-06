@@ -285,7 +285,7 @@
       bGroup.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onBusTap(e); }
       });
-      shape.vs = null; shape.v = null;
+      shape.root = bGroup; shape.v = null;
       ring.buses.push(shape);
     }
     ring.bub = svgEl('g', { 'pointer-events': 'none' }, svg);
@@ -321,7 +321,7 @@
       sh.v = ((sh.v % C) + C) % C;
       var a = sh.v / C * Math.PI * 2 - Math.PI / 2;
       var x = CX + R * Math.cos(a), y = CY + R * Math.sin(a), deg = a * 180 / Math.PI + 90;
-      sh.g.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
+      sh.root.setAttribute('transform', 'translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')');
       sh.body.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ')');
       var frac = b.pax.length / sim.cfg.cap, k;
       for (k = 0; k < 5; k++) sh.wins[k].setAttribute('fill', (k + 0.5) / 5 <= frac + 0.08 ? '#f1cd76' : '#2a1a14');
@@ -344,7 +344,7 @@
       var sug = S.suggestion && S.suggestion.bus === i;
       sh.sugg.setAttribute('visibility', sug ? 'visible' : 'hidden');
       var lbl = 'Bus ' + (i + 1) + ', ' + b.pax.length + ' aboard' + (b.hold.active ? ', held' : '') + '. Press Enter to ' + (b.hold.active ? 'release' : 'hold') + ' it.';
-      if (sh.lastLbl !== lbl) { sh.g.setAttribute('aria-label', lbl); sh.lastLbl = lbl; }
+      if (sh.lastLbl !== lbl) { sh.root.setAttribute('aria-label', lbl); sh.lastLbl = lbl; }
     }
     // stop queues
     for (i = 0; i < sim.N; i++) {
