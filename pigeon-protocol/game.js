@@ -652,6 +652,9 @@
     else if (run.endReason === 'loft') verdict = 'The loft is empty. ' + Math.min(t.lost, lv.loft) + ' birds lost; ' + t.del + ' of ' + lv.scrolls + ' scrolls got through. ' + flockName() + ' has been dissolved.';
     else verdict = 'The deadline passed with ' + t.del + ' of ' + lv.scrolls + ' scrolls delivered. The council has already moved on.';
     d.appendChild(el('p', 'db-verdict', verdict));
+    var nextId = lv.id < 6 ? lv.id + 1 : null;
+    var pity = !run.won && !S.assisted && !lv.sandbox && nextId && (prog.fails[lv.id] || 0) >= 2;
+    if (pity) d.appendChild(el('p', 'db-unlock', 'Level ' + nextId + ' is open: the Ministry takes pity. Two honest failures here have been noted, with sympathy, in a drawer. The button is at the bottom of this page.'));
     if (run.won && !lv.sandbox) {
       var sp = el('div', 'db-stars'); sp.innerHTML = S.assisted ? '' : starsHtml(stars); if (!S.assisted) sp.setAttribute('aria-label', stars + ' of 3 stars'); d.appendChild(sp);
       if (S.assisted) d.appendChild(el('p', 'db-reno', 'The Reno flew some or all of this. He accepts no credit and the Ministry awards no stars. The next level is open anyway.'));
@@ -682,11 +685,6 @@
     if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: ' + (lv.p > 0 ? 'same Gap, different hawks.' : lv.rival ? 'same Gap, a rival in a different mood.' : 'same Gap, a different scatter of luck.')));
     var row = el('div', 'cta-row');
     var btn = function (txt, cls, fn) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); row.appendChild(b); return b; };
-    var nextId = lv.id < 6 ? lv.id + 1 : null;
-    var pity = !run.won && !S.assisted && !lv.sandbox && nextId && (prog.fails[lv.id] || 0) >= 2;
-    if (pity) {
-      d.appendChild(el('p', 'db-unlock', 'Level ' + nextId + ' is open: the Ministry takes pity. Two honest failures here have been noted, with sympathy, in a drawer.'));
-    }
     var canNext = run.won && nextId && isUnlocked(nextId);
     if (pity) btn(nextId === 6 ? 'Level 6 is open: the Ministry takes pity' : 'Level ' + nextId + ' is open: the Ministry takes pity', 'btn-primary', function () { openLevel(nextId); });
     if (canNext) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
