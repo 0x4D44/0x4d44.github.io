@@ -215,11 +215,12 @@
 <dialog id="dlg-sandbox" aria-labelledby="sb-h">
   <form method="dialog" id="sb-form">
     <h2 id="sb-h">Set the weather</h2>
-    <label>The Gap passes <output id="sb-c-o">15</output> birds per flight<input type="range" id="sb-c" min="4" max="24" value="15"></label>
-    <label>Hawks take <output id="sb-p-o">0</output>% of birds<input type="range" id="sb-p" min="0" max="40" value="0"></label>
+    <label>The Gap passes <output id="sb-c-o">?</output> birds per flight<input type="range" id="sb-c" min="4" max="24" value="15"></label>
+    <label>Hawks take <output id="sb-p-o">?</output>% of birds<input type="range" id="sb-p" min="0" max="40" value="0"></label>
+    <label class="chk sb-peek"><input type="checkbox" id="sb-peek"> Peek at the numbers (spoils the discovery)</label>
     <label class="chk"><input type="checkbox" id="sb-r"> A rival flock shares the Gap</label>
     <p class="sb-msg" id="sb-msg" role="status"></p>
-    <div class="cta-row"><button class="btn btn-primary" value="ok" id="sb-ok">Fly it</button></div>
+    <div class="cta-row"><button class="btn btn-primary" value="ok" id="sb-ok">Fly it</button> <button type="button" class="btn" id="sb-cancel">Cancel</button></div>
   </form>
 </dialog>
 

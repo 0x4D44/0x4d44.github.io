@@ -222,6 +222,10 @@
     g.setAttribute('aria-label', ok + ' of ' + n + ' scrolls acknowledged, ' + re + ' awaiting a second attempt.');
   }
 
+  function ackLine(r) {
+    var f = r.delivered / Math.max(1, r.w), pool = f < 0.4 ? C.ACKS_LOW : f < 0.85 ? C.ACKS_MID : C.ACKS_HIGH;
+    return pool[(r.round * 3 + r.delivered) % pool.length];
+  }
   function renderReport() {
     var box = $('report'), h = seen();
     if (!h.length) { box.innerHTML = '<p class="muted">No flights yet. The sky is still undecided.</p><p class="coach">' + esc(C.HINTS.start) + '</p>'; return; }
@@ -231,7 +235,7 @@
     html += '<p class="rep-head ' + (r.lost ? 'rep-bad' : 'rep-good') + '">' + esc(head) + '</p>';
     if (r.requested > r.w) html += '<p class="muted">You asked for ' + r.requested + ' birds. Only ' + r.w + ' ' + plural(r.w, 'scroll was', 'scrolls were') + ' left to send. The rest stayed home with tea.</p>';
     if (r.retx) html += '<p>' + r.retx + ' of those ' + plural(r.retx, 'was a', 'were') + ' <span class="ribbon">second attempt</span> ' + (r.retx > 1 ? 'scrolls' : 'scroll') + ', retransmitted first.</p>';
-    if (r.delivered) html += '<p class="ack">' + esc(C.ACKS[(r.round * 3 + r.delivered) % C.ACKS.length]) + ' (' + r.delivered + ' ACK ' + plural(r.delivered, 'pigeon') + ' home.)</p>';
+    if (r.delivered) html += '<p class="ack">' + esc(ackLine(r)) + ' (' + r.delivered + ' ACK ' + plural(r.delivered, 'pigeon') + ' home.)</p>';
     if (r.lost) html += '<p class="muted">' + r.lost + ' ' + plural(r.lost, 'scroll') + ' will be flown again next round. Obituaries below. They are not informative.</p>';
     html += '<p class="coach">' + esc(coachLine(h)) + '</p>';
     box.innerHTML = html;
@@ -247,6 +251,13 @@
       for (j = 0; j < h.length; j++) peak = Math.max(peak, h[j].w);
       if (streak >= 3 && r.w <= 0.75 * peak && r.requested === r.w) return 'Everyone is home. The sky is bigger than your nerve.';
       return h.length < 4 ? C.HINTS.afterClean : C.CLEAN_STREAK[Math.min(streak - 1, C.CLEAN_STREAK.length - 1)];
+    }
+    if (S.level.p > 0) {
+      var ls = h.filter(function (x) { return x.lost > 0; });
+      if (ls.length >= 2) {
+        var lo = ls.reduce(function (a, b) { return b.w < a.w ? b : a; }), hi = ls.reduce(function (a, b) { return b.w > a.w ? b : a; });
+        if (hi.w >= 1.5 * lo.w && hi.lost / hi.w <= lo.lost / lo.w + 0.1 && hi.lost / hi.w <= 0.3) return C.HINTS.noScale[h.length % C.HINTS.noScale.length];
+      } else if (r.lost / r.w <= 0.25 && r.w >= 4) return C.HINTS.firstSmall;
     }
     if (r.w <= 3) return C.HINTS.tinyLoss;
     if (r.lost / r.w > 0.25) return C.HINTS.bigLoss;
@@ -423,7 +434,7 @@
         });
         puffs.forEach(function (p) { var pt = (now - p.t0) / 1000; if (pt > 1) { p.el.setAttribute('opacity', 0); return; } p.el.setAttribute('transform', 'translate(' + (p.x + p.vx * pt) + ' ' + (p.y + p.vy * pt + 60 * pt * pt) + ') rotate(' + (p.rot + p.vr * pt) + ')'); p.el.setAttribute('opacity', 1 - pt); });
         pops.forEach(function (p) { var pt = (now - p.t0) / 900; if (pt > 1) { p.el.setAttribute('opacity', 0); return; } p.el.setAttribute('x', p.x); p.el.setAttribute('y', p.y - pt * 14); p.el.setAttribute('opacity', 1 - pt * pt); });
-        if (!captioned && rec.delivered && t > STAG + OUT) { captioned = true; var cp = $('map-caption'); cp.style.display = 'block'; cp.textContent = C.ACKS[(rec.round * 3 + rec.delivered) % C.ACKS.length]; }
+        if (!captioned && rec.delivered && t > STAG + OUT) { captioned = true; var cp = $('map-caption'); cp.style.display = 'block'; cp.textContent = ackLine(rec); }
         if (S.skipping || t >= total) { finish(); return; }
         requestAnimationFrame(frame);
       }
@@ -557,7 +568,7 @@
     }
     var rivalNote = function () {
       var dug = run.history.filter(function (r) { return r.rivalDugIn; }).length, bits = [];
-      bits.push('This rival is a Reno with a stubborn streak: it backs off when it loses birds, but digs in if you squeeze it twice running. So the lesson here is not "be nice"; it is do not squeeze, and do not get squeezed. The real-world cousin is Chiu and Jain’s result that additive increase with multiplicative decrease converges towards fair shares.');
+      bits.push('This rival is a Reno with a stubborn streak: it backs off when it loses birds, but digs in if you squeeze it twice running. So the lesson here is not "be nice"; it is do not squeeze, and do not get squeezed. Real AIMD flows squeeze each other symmetrically and converge on fair shares (Chiu and Jain, 1989); this rival is a bully on purpose, so it never will.');
       if (share !== null) {
         if (share < 0.3) bits.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. That was not courtesy: the rival simply took the room' + (f.responsive ? '.' : ', and your flock never really responded to it.') + (minShare ? ' The third star needs at least ' + pct(minShare) + '.' : ''));
         else if (share <= 0.45) bits.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: giving way more than you had to. Roughly half is what well-behaved senders drift towards.');
@@ -570,7 +581,7 @@
     // outcome, keyed on cause
     if (!win) {
       if (run.endReason === 'loft') {
-        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. In this game’s Gap, once more birds are offered than it can pass, the scrum takes out more than the ones that did not fit, and every lost scroll must be flown again. Offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'This game exaggerates the mechanism. The real 1986 collapse came mostly from senders retransmitting data that was already queued or in flight, not from birds knocking each other out of the sky. The cure is the same: treat loss as a signal, and send fewer, not more.'); out.fact = C.FACTS[1]; }
+        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. In this game’s Gap, once more birds are offered than it can pass, the scrum takes out more than the ones that did not fit, and every lost scroll must be flown again. Offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.'); out.fact = C.FACTS[1]; }
         else { out.title = 'The hawks, mostly.'; out.concept.push('This was not mainly a collapse: more of the birds you lost went to hawks than to crowding. Bigger flocks into hawk country simply feed the hawks more birds, and loss that does not rise with load is not the Gap speaking.', 'Keep the flock near what actually arrives, and do not mistake a hungry sky for a crowded one.'); out.fact = C.FACTS[2]; }
         if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); });
       } else if (lv.p > 0 && f.hawkShare >= 0.4 && f.fill < 0.85 && (f.panic >= 1 || f.backoffs >= 2)) {
@@ -581,6 +592,8 @@
         out.title = 'Too timid.'; out.concept.push('You flew, on average, under two thirds of the room the Gap had left, so the deadline arrived with scrolls still in the loft. Not delivering is as much a failure as crowding. Slow start exists so a sender can find the ceiling quickly, and probing exists so it can keep finding it.'); out.fact = 'A sender that never grows its window wastes the link. That is why TCP keeps increasing until it is told to stop.';
         if (lv.rival && share !== null && share < 0.45) rivalNote().forEach(function (x) { out.concept.push(x); });
       } else {
+        var got = run.history.reduce(function (a, r) { return a + r.delivered; }, 0);
+        if (got < 0.7 * lv.scrolls) { out.title = 'Nowhere near.'; out.concept.push('Only ' + got + ' of ' + lv.scrolls + ' scrolls got through before time ran out. The shortfall is not a matter of a round or two: the flock spent too long too small, too large, or too busy being lost.'); if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); }); return out; }
         out.title = 'So close, and too slow.'; out.concept.push('You used most of the room, but the rounds ran out. Time went on backing off, hunting for the limit again, or flying scrolls a second time. Every loss costs a round trip to repair, so the aim is to find the limit once, early, and stay just under it.');
         if (lv.rival && share !== null && share > 0.6) rivalNote().forEach(function (x) { out.concept.push(x); });
       }
@@ -644,6 +657,13 @@
     renderAll();
     var f = analyze(run), share = lv.rival ? (run.history.some(function (h) { return h.rivalOn; }) ? E.shareOf(run) : null) : null;
     var data = buildDebrief(run, lv, f, share);
+    if (lv.p > 0 && !S.assisted) {
+      var rows = run.history.filter(function (x) { return x.lost > 0; }).sort(function (a, b) { return a.w - b.w; });
+      if (rows.length >= 2) {
+        if (rows.length > 6) rows = rows.filter(function (x, i) { return i % Math.ceil(rows.length / 6) === 0; });
+        data.mine.push('Your losses by flock size: ' + rows.map(function (x) { return x.w + ' ' + plural(x.w, 'bird') + ', ' + x.lost + ' lost (' + pct(x.lost / x.w) + (x.lostHawk && x.lostCrowd ? '; hawks ' + x.lostHawk + ', crowding ' + x.lostCrowd : x.lostHawk ? '; hawks' : '; crowding') + ')'; }).join(' / ') + '. Hawks take a fixed share of whatever you send; crowding grows sharply once you pass the limit.');
+      }
+    }
     var d = $('debrief'); d.hidden = false; d.innerHTML = '';
     S.lastEnd = run.endReason;
     d.appendChild(el('h2', null, data.title));
@@ -654,9 +674,12 @@
     d.appendChild(el('p', 'db-verdict', verdict));
     var nextId = lv.id < 6 ? lv.id + 1 : null;
     var pity = !run.won && !S.assisted && !lv.sandbox && nextId && (prog.fails[lv.id] || 0) >= 2;
-    if (pity) d.appendChild(el('p', 'db-unlock', 'Level ' + nextId + ' is open: the Ministry takes pity. Two honest failures here have been noted, with sympathy, in a drawer. The button is at the bottom of this page.'));
+    if (pity) d.appendChild(el('p', 'db-unlock', 'Level ' + nextId + ' is open: the Ministry takes pity. Two honest failures here have been noted, with sympathy, in a drawer.'));
+    var topSlot = el('div', 'cta-row cta-top');
+    if (!(run.won && !lv.sandbox)) d.appendChild(topSlot);
     if (run.won && !lv.sandbox) {
       var sp = el('div', 'db-stars'); sp.innerHTML = S.assisted ? '' : starsHtml(stars); if (!S.assisted) sp.setAttribute('aria-label', stars + ' of 3 stars'); d.appendChild(sp);
+      d.appendChild(topSlot);
       if (S.assisted) d.appendChild(el('p', 'db-reno', 'The Reno flew some or all of this. He accepts no credit and the Ministry awards no stars. The next level is open anyway.'));
       else d.appendChild(victoryScene(stars, lv));
       var key = el('p', 'db-reno stars-key');
@@ -677,30 +700,36 @@
     if (note3) d.appendChild(el('p', 'db-reno', note3));
     d.appendChild(el('h3', 'db-sub', S.assisted ? 'What happened' : 'What you did'));
     data.mine.forEach(function (x) { d.appendChild(el('p', null, x)); });
-    d.appendChild(el('h3', 'db-sub', 'What it was'));
-    data.concept.forEach(function (x) { d.appendChild(el('p', null, x)); });
-    if (lv.rival) { var sb = shareBar(run); if (sb) d.appendChild(sb); }
-    var fct = el('p', 'db-fact'); fct.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d.appendChild(fct);
-    d.appendChild(el('p', 'smallprint', 'Model note: the Ministry simplifies. Congestion collapse here is modelled by a penalty (birds over the Gap’s limit knock out others), not derived from real queues; ACKs never go astray; and every round is one lockstep round trip.'));
+    var wide = window.matchMedia && window.matchMedia('(min-width: 700px)').matches;
+    var disc = function (title) { var dt = el('details', 'db-disc'); if (wide) dt.open = true; dt.appendChild(el('summary', null, title)); d.appendChild(dt); return dt; };
+    var d1 = disc('What it was');
+    data.concept.forEach(function (x) { d1.appendChild(el('p', null, x)); });
+    if (lv.rival) { var sb = shareBar(run); if (sb) d1.appendChild(sb); }
+    var d2 = disc('Real-world fact, and a model note');
+    var fct = el('p', 'db-fact'); fct.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d2.appendChild(fct);
+    d2.appendChild(el('p', 'smallprint', 'Model note: the Ministry simplifies. Real collapse comes from queues overflowing and senders needlessly retransmitting; here a simple penalty (birds over the limit knock out others) stands in for it, so it exaggerates. ACKs never go astray, and every round is one lockstep round trip.'));
     if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: ' + (lv.p > 0 ? 'same Gap, different hawks.' : lv.rival ? 'same Gap, a rival in a different mood.' : 'same Gap, a different scatter of luck.')));
-    var row = el('div', 'cta-row');
-    var btn = function (txt, cls, fn) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); row.appendChild(b); return b; };
+    var row = el('div', 'cta-row brief-cta'), row2 = el('div', 'cta-row'), firstPrimary = null;
+    var btn = function (txt, cls, fn, more) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); (more ? row2 : row).appendChild(b); if (!more && !firstPrimary && /primary/.test(cls)) firstPrimary = { t: txt, c: cls, f: fn }; return b; };
     var canNext = run.won && nextId && isUnlocked(nextId);
     if (pity) btn(nextId === 6 ? 'Level 6 is open: the Ministry takes pity' : 'Level ' + nextId + ' is open: the Ministry takes pity', 'btn-primary', function () { openLevel(nextId); });
     if (canNext) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
     if (run.won && S.assisted && !lv.sandbox) btn('Now fly it yourself', canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; beginBrief(lv); });
     else btn(run.won ? 'Fly it again' : 'Try again', run.won && canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; lv.sandbox ? sandboxRestart() : beginBrief(lv); });
-    if (renoUnlocked()) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); });
-    if (lv.sandbox) btn('Set the weather again', '', openSandboxDialog);
-    btn('All levels', '', function () { goTitle(true); });
-    d.appendChild(row);
+    if (renoUnlocked()) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); }, true);
+    if (lv.sandbox) btn('Set the weather again', '', openSandboxDialog, true);
+    btn('All levels', '', function () { goTitle(true); }, true);
+    d.appendChild(row); d.appendChild(row2);
+    if (firstPrimary) { var tb = el('button', 'btn ' + firstPrimary.c, firstPrimary.t); tb.type = 'button'; tb.addEventListener('click', firstPrimary.f); topSlot.appendChild(tb); }
     d.appendChild(el('p', 'smallprint', 'Signed, ' + flockName() + '. Request for Comments: please do not send comments by pigeon.'));
     setTimeout(function () { d.focus({ preventScroll: true }); d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }, 80);
   }
 
   /* ---------- sandbox ---------- */
   function sbMessage() {
-    var c = +$('sb-c').value, p = +$('sb-p').value, r = $('sb-r').checked, m = '';
+    var c = +$('sb-c').value, p = +$('sb-p').value, r = $('sb-r').checked, m = '', pk = $('sb-peek').checked;
+    $('sb-c-o').textContent = pk ? c : '?'; $('sb-p-o').textContent = pk ? p : '?';
+    if (!pk) { $('sb-msg').textContent = ''; return; }
     if (r && c < 8) m = 'With a Gap this narrow two flocks will mostly meet each other. Educational. Unpleasant.';
     else if (p >= 30) m = 'At this hawk density the Ministry advises against naming the birds.';
     else if (c < 6) m = 'A Gap this narrow rewards patience, and a very small flock.';
@@ -709,7 +738,7 @@
   function openSandboxDialog() {
     var dlg = $('dlg-sandbox');
     $('sb-c').value = S.sandbox.C; $('sb-p').value = S.sandbox.p; $('sb-r').checked = S.sandbox.rival;
-    $('sb-c-o').textContent = S.sandbox.C; $('sb-p-o').textContent = S.sandbox.p; sbMessage();
+    $('sb-peek').checked = false; sbMessage();
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
   function sandboxRestart() { beginBrief(sandboxLevel()); }
@@ -741,7 +770,8 @@
     $('btn-reno').addEventListener('click', hireReno);
     $('btn-skip').addEventListener('click', function () { S.skipping = true; });
     $('mapwrap').addEventListener('click', function () { if (S.busy) S.skipping = true; });
-    ['sb-c', 'sb-p', 'sb-r'].forEach(function (id) { $(id).addEventListener('input', function () { $('sb-c-o').textContent = $('sb-c').value; $('sb-p-o').textContent = $('sb-p').value; sbMessage(); }); });
+    ['sb-c', 'sb-p', 'sb-r', 'sb-peek'].forEach(function (id) { $(id).addEventListener('input', sbMessage); $(id).addEventListener('change', sbMessage); });
+    $('sb-cancel').addEventListener('click', function () { var dl = $('dlg-sandbox'); if (dl.close) dl.close(); else dl.removeAttribute('open'); });
     $('sb-form').addEventListener('submit', function () { S.sandbox.C = +$('sb-c').value; S.sandbox.p = +$('sb-p').value; S.sandbox.rival = $('sb-r').checked; setTimeout(sandboxRestart, 0); });
     $('egg').addEventListener('click', function () { var t = $('egg-text'), open = t.hidden; t.hidden = !open; t.textContent = open ? ' ' + C.FOOT_BERGEN : ''; this.setAttribute('aria-expanded', open); });
     document.addEventListener('keydown', function (e) {

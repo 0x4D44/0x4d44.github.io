@@ -28,6 +28,9 @@
     'Reportedly seen waving. Cause unknown. Direction unknown.',
     'Is survived by a scroll, which is being flown again.'
   ];
+  var ACKS_LOW = ['ACK. Barely. Send flowers.', 'ACK. One survivor, and it is not talking.', 'ACK. Against the odds, and the Ministry.', 'ACK. The others are, officially, "delayed".'];
+  var ACKS_HIGH = ['ACK. Smugly.', 'ACK. Wants a medal.', 'ACK. Has a sit-down now.', 'ACK. Textbook. The Ministry is suspicious.'];
+  var ACKS_MID = ['ACK... mostly.', 'ACK. (Probably.)', 'ACK, with reservations.', 'ACK. Do not ask about the journey.'];
   var ACKS = ['ACK... mostly.', 'ACK. (Probably.)', 'ACK. Smugly.', 'ACK, with reservations.', 'ACK. Do not ask about the journey.', 'ACK. Has a sit-down now.', 'ACK. Wants a medal.'];
 
   var HINTS = {
@@ -37,6 +40,8 @@
     tinyLoss: 'Only a handful went up and some still did not come back. Losses at a small flock do not prove the Gap is full, but they do not prove it is empty either.',
     repeatLoss: 'Losses at a flock size that was fine before. Either the Gap has shrunk or something else is helping itself.',
     hawkish: ['A few birds missing at a size that has flown clean before. Not every absence is the Gap\u2019s doing.', 'The sky has other tenants. A small loss is not always a verdict.', 'One or two missing, at a flock that has done better. The Ministry declines to speculate, loudly.'],
+    noScale: ['Losses have not been growing with the flock. The Ministry notes this and declines to say what it means.', 'Small flock, small loss; bigger flock, hardly more. Worth a second look at who is taking them.'],
+    firstSmall: 'A small share of the flock missing. Next time, compare it with a different flock size before you decide who to blame.',
     bigLoss: 'More than a quarter of the flock lost this round. Worth asking whether the flock was too big, or the sky was.'
   };
   var REACT = {
@@ -192,7 +197,7 @@
     1: 'In October 1986 the Internet suffered a real congestion collapse: throughput on a 400-yard link between Lawrence Berkeley Lab and UC Berkeley fell from 32 kilobits a second to 40 bits a second, largely because senders kept retransmitting data that was still in flight. Van Jacobson\'s 1988 fix was slow start plus additive increase and multiplicative decrease.',
     2: 'Classic TCP treats every loss as congestion, so on a lossy radio link it slows down for no reason. Google\'s BBR, published in 2016, instead estimates the available bandwidth and round-trip time, and does not panic at every dropped packet.',
     3: 'Chiu and Jain showed in 1989 that, of the simple increase and decrease rules, additive increase with multiplicative decrease is the one that converges towards a fair share between competing senders. A sender that ignores loss, like a flooding UDP stream, takes more than its share, which is why "TCP-friendly" is a phrase in standards documents. The rival here is simpler and more stubborn than a real TCP flow.',
-    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s congestion response, halve the window on loss and then grow it by one a round, is the multiplicative decrease that the Hire a Reno autopilot imitates. (The real Reno also has fast retransmit and fast recovery, which this game leaves out.)',
+    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s congestion response, halve the window on loss and then grow it by one a round, is the multiplicative decrease that the Hire a Reno autopilot imitates. (Fast retransmit arrived with Tahoe and fast recovery with Reno; this autopilot does neither. It simply halves on loss and otherwise adds one a round.)',
     5: 'RFC 1149 specifies that the datagram is printed, on a small scroll of paper, in hexadecimal, and notes that the maximum packet size is variable and, paradoxically, tends to increase with the weight of the bird.',
     6: 'RFC 1149, "A Standard for the Transmission of IP Datagrams on Avian Carriers", was published by David Waitzman on 1 April 1990. Its follow-up RFC 2549 (1999) added quality of service.'
   };
@@ -200,7 +205,7 @@
   var FOOT_BERGEN = 'In April 2001 the Bergen Linux User Group actually ran RFC 1149: nine pigeons carrying ping packets over a few kilometres. Four came back, roughly 55 per cent were lost, and the average round trip was over an hour. They deserve a medal; this paragraph is the pigeon-sized one.';
 
   root.PigeonContent = {
-    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, HINTS: HINTS, REACT: REACT, CLEAN_STREAK: CLEAN_STREAK, WINS: WINS, WINS2: WINS2, WIN_LESSER: WIN_LESSER,
+    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, ACKS_LOW: ACKS_LOW, ACKS_MID: ACKS_MID, ACKS_HIGH: ACKS_HIGH, HINTS: HINTS, REACT: REACT, CLEAN_STREAK: CLEAN_STREAK, WINS: WINS, WINS2: WINS2, WIN_LESSER: WIN_LESSER,
     LEVELS: LEVELS, WEATHER: WEATHER, POOL_EVENTS: POOL_EVENTS, FACTS: FACTS, FOOT_BERGEN: FOOT_BERGEN
   };
 })(typeof self !== 'undefined' ? self : this);

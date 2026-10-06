@@ -266,3 +266,9 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 
 .status-clock { grid-column: 1 / -1; font: italic .85rem var(--serif); opacity: .92; }
 .status-clock:empty { display: none; }
+
+.db-disc { margin: 8px 0; border-top: 1px solid var(--line); }
+.db-disc > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font: bold 1rem var(--serif); color: var(--red-d); }
+.cta-top { margin: 8px 0 12px; }
+.cta-top .btn { flex: 1 1 220px; }
+.sb-peek { display: flex; gap: 8px; align-items: center; min-height: 44px; }
