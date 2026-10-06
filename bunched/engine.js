@@ -266,7 +266,7 @@
       bus.boardAcc = 0; bus.dwellId++; bus.lastStopT = sim.t; bus.full = false;
       if (armed) {
         bus.hold.armed = false; st.armedHold = false;
-        bus.hold.active = true; bus.hold.left = cfg.holdMax; bus.hold.mode = 'gap'; bus.hold.target = sim.holdTarget(); sim.stats.holds++;
+        bus.hold.active = true; bus.hold.left = cfg.holdMax; bus.hold.mode = bus.hold.armMode || 'gap'; bus.hold.target = sim.holdTarget(); bus.hold.armMode = null; sim.stats.holds++;
         emit({ type: 'holdstart', bus: bus.id, stop: si, auto: false });
       }
       emit({ type: 'arrive', bus: bus.id, stop: si, alight: alight.length, waiting: st.queue.length, h: h });
@@ -473,15 +473,15 @@
     };
 
     // ---- player levers ----------------------------------------------
-    sim.toggleHold = function (id) {
+    sim.toggleHold = function (id, mode) {
       var b = sim.buses[id];
       if (!b) return 'none';
       if (b.hold.active) { b.hold.active = false; emit({ type: 'holdend', bus: id, stop: b.stop, auto: false }); return 'released'; }
       if (b.state === 'dwell') {
-        b.hold.active = true; b.hold.left = cfg.holdMax; b.hold.armed = false; b.hold.mode = 'gap'; b.hold.target = sim.holdTarget(); sim.stats.holds++;
+        b.hold.active = true; b.hold.left = cfg.holdMax; b.hold.armed = false; b.hold.mode = mode || 'gap'; b.hold.target = sim.holdTarget(); sim.stats.holds++;
         emit({ type: 'holdstart', bus: id, stop: b.stop, auto: false }); return 'held';
       }
-      b.hold.armed = !b.hold.armed;
+      b.hold.armed = !b.hold.armed; b.hold.armMode = b.hold.armed ? (mode || 'gap') : null;
       return b.hold.armed ? 'armed' : 'disarmed';
     };
     sim.toggleSkip = function (id) {
@@ -597,8 +597,8 @@
   }
 
   // ---- levels -------------------------------------------------------------
-  // stars: [two-star, three-star] thresholds on "delay per passenger" (s),
-  // calibrated by tests/engine.test.mjs against unmanaged / timetable / headway runs.
+  // stars: [1-star, 2-star, 3-star] lines on "delay per passenger" (s), calibrated over 8 seeds
+  // against the unmanaged and tuned-headway runs (see tests/engine.test.mjs and its tables).
   var LEVELS = [
     {
       id: 0, name: 'Watch it happen', blurb: 'Six buses, perfectly spaced. One of them meets a pigeon.',

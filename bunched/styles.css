@@ -41,7 +41,7 @@ h1, h2, h3, h4, p, ul, ol, figure { margin: 0; }
 button { font: inherit; color: inherit; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .skip { position: absolute; left: -999px; top: 0; background: var(--madder); color: #fff; padding: 8px 12px; z-index: 9999; }
-.skip:focus { left: 120px; top: 8px; }
+.skip:focus { left: 124px; top: 8px; }
 
 :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
 
@@ -135,8 +135,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 .clock { font: 800 22px var(--mono); color: var(--madder-deep); min-width: 66px; }
 .progress { flex: 1; min-width: 80px; height: 10px; border-radius: 999px; background: #eadfc8; overflow: hidden; }
 .progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--madder), var(--gold)); }
-.speed { display: flex; gap: 4px; }
-.sp { min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--hair-strong); background: var(--paper-2); font: 700 14px var(--mono); cursor: pointer; padding: 0 6px; }
+.speed { display: flex; gap: 4px; flex-wrap: wrap; }
+.sp { flex: 0 0 44px; min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--hair-strong); background: var(--paper-2); font: 700 14px var(--mono); cursor: pointer; padding: 0 6px; }
 .sp[aria-pressed="true"] { background: var(--madder); color: #fff; border-color: var(--madder-deep); }
 .sp.paused { background: var(--gold); color: var(--madder-deep); border-color: var(--gold-deep); }
 
@@ -151,7 +151,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 .caption { font: 700 15px/1.35 var(--display); color: var(--madder-deep); text-align: center; min-height: 3.1em; display: flex; align-items: center; justify-content: center; padding: 0 6px; max-width: 640px; margin: 0 auto; }
 .status { font: 12px var(--mono); color: var(--ink-3); text-align: center; min-height: 18px; margin-top: -6px; }
 .rulercard { max-width: 640px; margin: 0 auto; width: 100%; }
-#ruler { width: 100%; height: 76px; display: block; }
+#ruler { width: 100%; height: 104px; display: block; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font: 11px var(--mono); color: var(--ink-2); margin-top: 4px; }
 .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
 .sw.tight { background: var(--madder-bright); } .sw.ok { background: var(--gold); } .sw.wide { background: var(--sky); }
@@ -203,8 +203,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 
 /* ring svg bits */
 .hit { cursor: pointer; fill: transparent; }
-.busg { cursor: pointer; }
-.busg:focus-visible .busfocus { stroke: var(--gold); stroke-width: 3; }
+.busg { cursor: pointer; outline: none; }
+.busg:focus { outline: none; }
+.busg:focus-visible .busfocus { stroke: var(--gold-deep); stroke-width: 3; }
 .pulse { animation: pulse 1.1s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
 .shake { animation: shake 0.5s linear infinite; }
@@ -263,4 +264,20 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* quick hold strip */
+.quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 640px; margin: 0 auto; width: 100%; }
+.quick .btn { min-height: 48px; padding: 4px 8px; font-size: 13px; line-height: 1.2; text-align: center; }
+.insp-btns { display: flex; gap: 6px; }
+.brow .binfo { min-width: 0; }
+.brow.nsk { grid-template-columns: 36px minmax(0, 1fr) auto; }
+.brow.nh { grid-template-columns: 36px minmax(0, 1fr); }
+.sheet .cta.sticky { position: sticky; bottom: -17px; background: var(--card); padding: 10px 0 18px; margin-top: 12px; border-top: 1px solid var(--hair); z-index: 2; }
+@media (max-width: 520px) {
+  .brow, .brow.nsk { grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr); row-gap: 4px; }
+  .brow.nh { grid-template-columns: 36px minmax(0, 1fr); }
+  .brow .binfo { grid-column: 2 / -1; }
+  .brow .binfo b, .brow .binfo span { white-space: normal; overflow: visible; }
+  .brow .bbtn { grid-column: 2 / -1; width: 100%; }
 }
