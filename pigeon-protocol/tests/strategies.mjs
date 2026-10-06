@@ -25,7 +25,7 @@ export function sensible(opts = {}) {
     calm = 0;
     ss = false; strays = 0;
     // A big loss: what ARRIVED is the best evidence of what the Gap passes; go a little above it.
-    if (frac > 0.4) return Math.max(2, Math.round(last.delivered * 1.3));
+    if (frac > 0.4) return Math.max(2, Math.min(Math.round(last.delivered * 1.1), Math.floor(last.w * back)));
     return Math.max(2, Math.floor(last.w * back));
   };
 }

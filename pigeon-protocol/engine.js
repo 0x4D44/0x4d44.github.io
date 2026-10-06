@@ -45,13 +45,13 @@
     { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], jitter: { cap: 2 }, p: 0, rival: null, seed: 1149, loft: 45,
       stars: { three: { rounds: 11, lost: 20, adapt: true, minEvents: 1 }, two: { rounds: 14, lost: 32, adapt: true, minEvents: 1 } } },
     { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 150, deadline: 20, cap: [[1, 14], [3, 5], [6, 24]], jitter: { shift: 2, cap: 3 }, p: 0.1, rival: null, seed: 1990, loft: 45,
-      stars: { three: { rounds: 18, lost: 30, adapt: true }, two: { rounds: 20, lost: 38, adapt: true } } },
+      stars: { three: { rounds: 18, lost: 30, adapt: true, minEvents: 2 }, two: { rounds: 20, lost: 38, adapt: true, minEvents: 2 } } },
     { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 90, deadline: 20, cap: [[1, 18], [3, 7], [9, 20]], jitter: { shift: 1, cap: 2 }, p: 0, rival: { start: 3, from: 2, to: 9 }, seed: 2001, loft: 36,
-      stars: { three: { rounds: 17, lost: 18, share: 0.6, minShare: 0.3, adapt: true }, two: { rounds: 20, lost: 30, share: 0.7, adapt: true } } },
+      stars: { three: { rounds: 17, lost: 18, share: 0.6, minShare: 0.3, adapt: true, minEvents: 2 }, two: { rounds: 20, lost: 30, share: 0.7, adapt: true, minEvents: 2 } } },
     { id: 4, key: 'storm-front', name: 'Storm Front', scrolls: 120, deadline: 20, cap: [[1, 14], [3, 7], [8, 23], [11, 9], [13, 20]], jitter: { shift: 2, cap: 3 }, p: 0, rival: null, seed: 1701, loft: 45,
-      stars: { three: { rounds: 17, lost: 32, adapt: true }, two: { rounds: 20, lost: 40, adapt: true } } },
+      stars: { three: { rounds: 17, lost: 32, adapt: true, minEvents: 2 }, two: { rounds: 20, lost: 40, adapt: true, minEvents: 2 } } },
     { id: 5, key: 'big-delivery', name: 'The Big Delivery', scrolls: 90, deadline: 20, cap: [[1, 15], [3, 6], [7, 24]], jitter: { shift: 2, cap: 3 }, p: 0.06, rival: { start: 3, from: 2, to: 10 }, seed: 1707, loft: 45,
-      stars: { three: { rounds: 20, lost: 34, share: 0.65, minShare: 0.25, adapt: true }, two: { rounds: 20, lost: 40, share: 0.75, adapt: true } } },
+      stars: { three: { rounds: 20, lost: 34, share: 0.65, minShare: 0.25, adapt: true, minEvents: 2 }, two: { rounds: 20, lost: 40, share: 0.75, adapt: true, minEvents: 2 } } },
     { id: 6, key: 'sandbox', name: 'The Open Sky', scrolls: 100, deadline: 30, cap: [[1, 15]], p: 0, rival: null, seed: 4242, sandbox: true, loft: 9999 }
   ];
 
@@ -243,16 +243,16 @@
     return mine + theirs ? mine / (mine + theirs) : 1;
   }
   // Responsiveness: when a round went badly (at least three birds and 30% of the flock lost), did the
-  // sender fly clearly fewer birds next time (at most 85% of what it had asked for)? A flock that only grows,
+  // sender fly clearly fewer birds next time, by at least 80% of the fraction it lost (lose half the flock, cut by at least 40%; halving always counts)? A flock that only grows,
   // only holds, or makes one token cut and carries on has not responded to anything. The last round is
   // ignored, since there is no 'next time' after it.
-  var RESP = { minEvents: 2, minLost: 3, minFrac: 0.3, ratio: 0.85, need: 0.75 };
+  var RESP = { minEvents: 1, minLost: 3, minFrac: 0.3, k: 0.8, need: 0.75 };
   function responseStats(run) {
     var h = run.history, events = 0, responded = 0;
     for (var i = 0; i < h.length - 1; i++) {
       if (h[i].lost >= RESP.minLost && h[i].lost / h[i].w >= RESP.minFrac) {
         events++;
-        if (h[i + 1].requested <= RESP.ratio * h[i].requested) responded++;
+        if (h[i + 1].requested <= Math.max(0.5, 1 - RESP.k * h[i].lost / h[i].w) * h[i].requested) responded++;
       }
     }
     return { events: events, responded: responded };
