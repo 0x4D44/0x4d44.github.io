@@ -61,3 +61,7 @@ export function cubicish() {
 
 // A courteous version of the above for shared skies: it grows in smaller steps, so it does not barge.
 export const polite = () => sensible({ boost: 0.12 });
+
+// Open-loop ramp: never reads a single result. w = min(cap, start + step * (round - 1)).
+export const ramp = (start, step, cap) => (run) => Math.min(cap, start + step * run.round);
+export function* allRamps() { for (let start = 1; start <= 12; start++) for (const step of [0, 1, 2, 3]) for (let cap = 6; cap <= 24; cap += 2) if (step || cap === start + 0) yield { start, step, cap }; }
