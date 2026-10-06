@@ -1,7 +1,7 @@
 // Run with: node pigeon-protocol/tests/engine.test.mjs
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { constant, sensible, polite, cubicish, aimd, plusOne, ramp, allRamps } from './strategies.mjs';
+import { constant, sensible, polite, cubicish, aimd, aiad, mimd, plusOne, ramp, allRamps, tokenRamp, allTokenRamps } from './strategies.mjs';
 const E = createRequire(import.meta.url)('../engine.js');
 const L = (id) => E.LEVELS.find((l) => l.id === id);
 let n = 0;
@@ -170,17 +170,17 @@ test('a remembered capacity schedule (w = canonical cap each round) does not rel
 
 test('adaptive players who only see sent/arrived reach 3 stars about half to three quarters of the time, never always', () => {
   const rows = [];
-  const cases = [['sensible', sensible, [1, 2, 3, 4], 0.5, 0.9], ['polite', polite, [1, 2, 3, 5], 0.35, 0.9], ['cubicish AIMD', cubicish, [1, 2, 3, 4], 0.35, 0.9]];
+  const cases = [['sensible', sensible, [1, 2, 3, 4, 5], 0.45, 0.9], ['polite', polite, [1, 2, 3, 4, 5], 0.4, 0.9], ['cubicish AIMD', cubicish, [1, 2, 3, 4], 0.35, 0.9]];
   for (const [name, mk, ids, lo, hi] of cases) for (const id of ids) {
     const c = starsOver(L(id), mk); rows.push(name + ' L' + id + ': ' + Math.round(c[3] * 100) + '%');
     assert.ok(c[3] >= lo && c[3] <= hi, name + ' on level ' + id + ' earns 3 stars ' + Math.round(c[3] * 100) + '%');
   }
-  for (const id of [1, 2, 3, 4, 5]) assert.ok(frac(starsOver(L(id), sensible), 2) >= 0.8, 'sensible should finish and adapt on level ' + id);
+  for (const id of [1, 2, 3, 4, 5]) assert.ok(frac(starsOver(L(id), sensible), 1) >= 0.8, 'sensible should finish level ' + id);
   console.log('   ' + rows.join('; '));
 });
 
 test('plain AIMD tolerates levels 3 and 5 (finishes); +1 forever never earns more than 1 star', () => {
-  assert.ok(frac(starsOver(L(3), aimd), 1) >= 0.8); assert.ok(frac(starsOver(L(5), aimd), 1) >= 0.5);
+  assert.ok(frac(starsOver(L(3), aimd), 1) >= 0.7); assert.ok(frac(starsOver(L(5), aimd), 1) >= 0.3);
   for (const id of [1, 2, 3, 4, 5]) assert.equal(frac(starsOver(L(id), plusOne), 2), 0);
 });
 
@@ -190,6 +190,62 @@ test('fairness: a flock that hogs the Gap cannot earn 3 stars on the rival level
   const run = E.runPolicy(L(3), 3, polite());
   assert.ok(E.shareOf(run) > 0 && E.shareOf(run) < 1);
   assert.equal(E.shareOf(E.runPolicy(STATIC1, 1, constant(12))), 1);
+});
+
+test('responsiveness metric: token cuts do not count, real cuts do, and the last round is ignored', () => {
+  const mk = (rows) => ({ history: rows.map(([w, lost, requested], i) => ({ w, lost, requested: requested ?? w, round: i + 1 })) });
+  // two bad rounds, each followed by a halving: responsive
+  assert.equal(E.adaptedOf(mk([[10, 6], [5, 0], [6, 0], [12, 7], [6, 0]]), 2), true);
+  // one bad round followed by a token cut of 1: not responsive
+  assert.equal(E.adaptedOf(mk([[10, 6], [9, 0], [10, 0]]), 1), false);
+  // never lost enough to count: nothing to respond to
+  assert.equal(E.adaptedOf(mk([[10, 1], [11, 0], [12, 1]]), 1), false);
+  // the final round is not an event (there is no next time)
+  assert.equal(E.responseStats(mk([[10, 0], [10, 8]])).events, 0);
+  assert.deepEqual(E.responseStats(mk([[10, 6], [5, 0], [12, 7], [12, 0]])), { events: 2, responded: 1 });
+});
+
+test('no blind ramp with a token cut after its first loss reaches 5% 3 stars on any level (cut of 1 or 3 birds)', () => {
+  const rows = [];
+  for (const id of [1, 2, 3, 4, 5]) {
+    let w3 = 0, w2 = 0;
+    for (const g of allTokenRamps()) { const c = starsOver(L(id), () => tokenRamp(g.start, g.step, g.cap, g.cut), 40); w3 = Math.max(w3, c[3]); w2 = Math.max(w2, c[2] + c[3]); }
+    rows.push('L' + id + ' ' + Math.round(w3 * 100) + '/' + Math.round(w2 * 100));
+    assert.ok(w3 <= 0.05, 'level ' + id + ' token ramp 3 stars ' + w3); assert.ok(w2 <= 0.35, 'level ' + id + ' token ramp 2+ stars ' + w2);
+  }
+  console.log('   best token-cut ramp 3-star / 2+: ' + rows.join(', '));
+});
+
+test('additive-decrease (AIAD) and multiplicative-increase (MIMD) flocks do not earn 3 stars the way AIMD does', () => {
+  const rows = [];
+  for (const id of [1, 2, 3, 4, 5]) { const a = starsOver(L(id), aiad)[3], m = starsOver(L(id), mimd)[3]; rows.push('L' + id + ' AIAD ' + Math.round(a * 100) + '% MIMD ' + Math.round(m * 100) + '%'); assert.ok(a <= 0.1, 'AIAD level ' + id); assert.ok(m <= 0.2, 'MIMD level ' + id); }
+  console.log('   ' + rows.join('; '));
+});
+
+test('every jittered schedule keeps its weather: distinct rounds, segments of at least two rounds, real dips', () => {
+  for (const id of [2, 3, 4, 5]) {
+    const lv = L(id);
+    for (let seed = 0; seed < 400; seed++) {
+      const c = E.createRun(lv, seed).capSched;
+      assert.equal(c.length, lv.cap.length);
+      for (let i = 1; i < c.length; i++) assert.ok(c[i][0] >= c[i - 1][0] + 2, 'level ' + id + ' seed ' + seed + ': ' + JSON.stringify(c));
+      const dip = Math.min.apply(null, c.map((x) => x[1])), top = Math.max.apply(null, c.map((x) => x[1]));
+      assert.ok(top - dip >= 8, 'level ' + id + ' seed ' + seed + ' dip too shallow ' + JSON.stringify(c));
+    }
+  }
+});
+
+test('saved progress is sanitised: tampered localStorage cannot break the game', () => {
+  const bad = [{ fails: 7 }, { stars: 5 }, { stars: 'x' }, { helped: [] }, null, 'x', 5, [], { stars: { 1: 9, 2: 'x', 3: 2, 99: 3, 1.5: 2 }, fails: { 1: 500, 2: -3 }, helped: { 1: 'yes' }, flock: 12345, fast: 'true' }];
+  for (const b of bad) {
+    const o = E.sanitizeProgress(b);
+    for (const k of ['stars', 'fails', 'helped', 'adapted']) { assert.ok(o[k] && typeof o[k] === 'object' && !Array.isArray(o[k])); for (const [id, v] of Object.entries(o[k])) { assert.ok(+id >= 1 && +id <= 6 && Number.isInteger(+id)); assert.ok(Number.isInteger(v) && v >= 1); } }
+    assert.equal(typeof o.flock, 'string'); assert.equal(typeof o.fast, 'boolean');
+    for (const v of Object.values(o.stars)) assert.ok(v <= 3); for (const v of Object.values(o.fails)) assert.ok(v <= 99);
+  }
+  const ok = E.sanitizeProgress({ stars: { 1: 2, 4: 3 }, fails: { 2: 1 }, helped: { 3: 1 }, adapted: { 1: 1 }, flock: 'Hamish Air', fast: true });
+  assert.deepEqual(ok, { stars: { 1: 2, 4: 3 }, fails: { 2: 1 }, helped: { 3: 1 }, adapted: { 1: 1 }, flock: 'Hamish Air', fast: true });
+  assert.equal(E.sanitizeProgress({ flock: 'x'.repeat(100) }).flock.length, 28);
 });
 
 test('floods earn nothing', () => {

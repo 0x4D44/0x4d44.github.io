@@ -46,6 +46,7 @@
     grow: ['The loft is getting crowded with ambition.', 'More birds, more hope. The Ministry has noted both.', 'The flock grows. So does the paperwork.', 'Bigger flock. The perches are filling and the pigeons are being brave about it.', 'Up you go, then. The Ministry will watch with interest and a clipboard.', 'More birds aloft. Somewhere, a gull has noticed.'],
     shrink: ['Fewer birds this time. The loft has exhaled.', 'A cautious flock. The Ministry respects caution, in moderation.', 'Smaller flock. The surviving pigeons look relieved and slightly smug.', 'Backing off. The Ministry calls this prudence; the pigeons call it lunch break.', 'A thinner flock. The perches look spacious and a bit lonely.', 'Fewer birds. A decision the Ministry will judge when it sees the numbers.']
   };
+  var CLEAN_STREAK = ['Smooth. The Gap may have more to give, or this may be exactly right. Only birds can tell you.', 'Still smooth. The Ministry is starting to enjoy this.', 'Another clean one. The pigeons are getting ideas.', 'Everyone home again. The sky may be bigger than your nerve.', 'Still no losses. Nothing wrong with caution, but caution does not deliver scrolls.', 'A very long run of everybody coming home. Somebody should check the Gap is still there.'];
   var WINS = {
     1: 'Mrs Pettigrew: "Cheese AND pickle. The right pickle. I shall tell the others."',
     2: 'The Bin Department: "We have received your letter. We have also received forty others. Yours was the strongest worded."',
@@ -165,13 +166,32 @@
     }
   };
 
+  // Weather bulletins for levels 2-5 are built from the sky that was actually flown (its jittered schedule),
+  // so a bulletin is true of the round it describes: shifts[k] is filed when segment k+1 of the schedule begins.
+  var WEATHER = {
+    2: { shifts: ['A coach party of starlings has settled on the Gap. They are not in a hurry.', 'The starlings have gone. The Gap is open again, for what that is worth.', 'Fog has come down on the Gap. Visibility: poetic.', 'The fog has lifted, suddenly and rudely.'],
+         dip: ['The starlings are still there. They have brought sandwiches.', 'Fog still down. The hawks, who can see in it, are delighted.', 'Still crowded. Still foggy. The Ministry is considering a leaflet.', 'Visibility remains a matter of opinion.'],
+         clear: ['Hawks reported over Kilsyth. The Ministry has noted this in a memo and left it there.', 'A buzzard has been seen. Technically not a hawk. Technically also a problem.', 'The hawks are in a good mood. It is not good for anyone else.', 'A gull strike is reported. The gull is fine. The gull has an agent.', 'Hawk density: undiminished. Hawk morale: very high.', 'Somewhere a falcon is clearing its throat.'] },
+    3: { shifts: ['Mist settles on the Gap. Visibility is, in the Ministry\'s words, \'a bit much\'.', 'The mist lifts, a little late for some.', 'Mist again. It has brought friends.', 'The second mist has gone, taking its dignity with it.'],
+         dip: ['The mist is still there. Everyone is very polite and very squashed.', 'Still misty. Still jostling. The Ministry is writing a leaflet.', 'The mist is thinking about it. So is everyone else.', 'A rival bird has been seen tutting, in the mist.'],
+         clear: ['Clear. The Gap is, as ever, the Gap.', 'A pleasant breeze. Aerodynamically irrelevant.', 'Settled. As far as anybody can tell.', 'The Ministry would like a word. Afterwards.', 'Nothing to report, and the Ministry is reporting it.', 'Visibility excellent. Sense of foreboding: also excellent.'],
+         rivalIn: 'The Bearsden Racing Pigeon Club has arrived and is also trying to get through the Gap. They have jackets.', rivalOut: 'The Bearsden Club has gone home for its tea.' },
+    4: { shifts: ['A squall has sat down on the Gap. It does not look like it is leaving.', 'The squall has gone to bother Dundee. The sky is open.', 'Cloud again over the Campsies. A second squall has arrived, unannounced.', 'The second squall has passed. It did not say goodbye.'],
+         dip: ['The squall is still there. It has brought a flask.', 'Still blowing. Pigeons are flying with their eyes shut, which is not a technique.', 'Squall still present. Mood: smug.', 'The squall appears to be thinking about leaving. It is not.'],
+         clear: ['Fine out. The barometer is being coy about it.', 'Clear again. Do not assume it is the same clear.', 'The Gap feels wider. Not that anybody measured.', 'Blue sky, no squall. The pigeons are suspicious.', 'Settled. Possibly.', 'Dusk is mentioned, officially.'] },
+    5: { shifts: ['The wind has got up. The Gap feels narrower and the pigeons have noticed.', 'The wind has dropped. The sky is bigger than it was.', 'A squall has lowered itself onto the Gap and rolled up its sleeves.', 'The squall has passed. Everything is suddenly possible.'],
+         dip: ['Squall unchanged. Hawks unchanged. Rival unchanged. You: ongoing.', 'The squall is, technically, still squalling.', 'Everyone is tired. Hawks included. Hawks are not stopping.', 'The Ministry would like this done by tea.'],
+         clear: ['Hawks, a rival and weather: the Ministry describes this as a full day.', 'A gull strike is reported. The gull is fine. The gull has an agent.', 'Hawks resume. They were only taking a call.', 'The end is in sight. Do not look directly at it.', 'Nothing to report, and the Ministry is reporting it.', 'The Ministry will be marking this.'],
+         rivalIn: 'The Bearsden Club has turned up. So have the hawks. They have not coordinated.', rivalOut: 'The Bearsden Club has gone home. The Gap is a lot emptier than it was.' }
+  };
+
   var POOL_EVENTS = ['A gull strike is reported. The gull is fine.', 'A pleasant breeze. Aerodynamically irrelevant.', 'Hawks are being hawks. It is what they are for.', 'A man with a drone has been moved on by the pigeons.', 'The sky is doing its best.', 'Today the Gap is just the Gap.'];
 
   var FACTS = {
-    1: 'In October 1986 the Internet suffered a real congestion collapse: throughput on a 400-yard link between Lawrence Berkeley Lab and UC Berkeley fell from 32 kilobits a second to 40 bits a second. Van Jacobson\'s 1988 fix, slow start plus additive increase and multiplicative decrease, is what this level is about.',
+    1: 'In October 1986 the Internet suffered a real congestion collapse: throughput on a 400-yard link between Lawrence Berkeley Lab and UC Berkeley fell from 32 kilobits a second to 40 bits a second, largely because senders kept retransmitting data that was still in flight. Van Jacobson\'s 1988 fix was slow start plus additive increase and multiplicative decrease.',
     2: 'Classic TCP treats every loss as congestion, so on a lossy radio link it slows down for no reason. Google\'s BBR, published in 2016, instead estimates the available bandwidth and round-trip time, and does not panic at every dropped packet.',
-    3: 'Chiu and Jain showed in 1989 that additive increase with multiplicative decrease is the combination that converges towards a fair share. A sender that ignores loss, like a flooding UDP stream, takes more than its share. That is why "TCP-friendly" is a phrase people put in standards documents.',
-    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s fast recovery is the halve-and-carry-on you saw the autopilot do.',
+    3: 'Chiu and Jain showed in 1989 that, of the simple increase and decrease rules, additive increase with multiplicative decrease is the one that converges towards a fair share between competing senders. A sender that ignores loss, like a flooding UDP stream, takes more than its share, which is why "TCP-friendly" is a phrase in standards documents. The rival here is simpler and more stubborn than a real TCP flow.',
+    4: 'The name Reno comes from the 4.3BSD-Reno release (1990). It followed 4.3BSD-Tahoe (1988); the two were named after Lake Tahoe and the city of Reno, in the Sierra Nevada region. Reno\'s fast recovery is the halve-and-carry-on that the Hire a Reno autopilot imitates.',
     5: 'RFC 1149 specifies that the datagram is printed, on a small scroll of paper, in hexadecimal, and notes that the maximum packet size is variable and, paradoxically, tends to increase with the weight of the bird.',
     6: 'RFC 1149, "A Standard for the Transmission of IP Datagrams on Avian Carriers", was published by David Waitzman on 1 April 1990. Its follow-up RFC 2549 (1999) added quality of service.'
   };
@@ -179,7 +199,7 @@
   var FOOT_BERGEN = 'In April 2001 the Bergen Linux User Group actually ran RFC 1149: nine pigeons carrying ping packets over a few kilometres. Four came back, roughly 55 per cent were lost, and the average round trip was over an hour. They deserve a medal; this paragraph is the pigeon-sized one.';
 
   root.PigeonContent = {
-    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, HINTS: HINTS, REACT: REACT, WINS: WINS, WINS2: WINS2, WIN_LESSER: WIN_LESSER,
-    LEVELS: LEVELS, POOL_EVENTS: POOL_EVENTS, FACTS: FACTS, FOOT_BERGEN: FOOT_BERGEN
+    NAMES: NAMES, TRAITS: TRAITS, OBITS: OBITS, ACKS: ACKS, HINTS: HINTS, REACT: REACT, CLEAN_STREAK: CLEAN_STREAK, WINS: WINS, WINS2: WINS2, WIN_LESSER: WIN_LESSER,
+    LEVELS: LEVELS, WEATHER: WEATHER, POOL_EVENTS: POOL_EVENTS, FACTS: FACTS, FOOT_BERGEN: FOOT_BERGEN
   };
 })(typeof self !== 'undefined' ? self : this);
