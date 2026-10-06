@@ -305,7 +305,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 }
 @media (min-width: 900px) {
   .stagecol { position: sticky; top: 8px; align-self: start; }
-  .stagecol .ringwrap { max-width: min(560px, calc(100vh - 360px)); min-width: 320px; }
+  body.watchlvl .stagecol { position: static; }
+  .stagecol .ringwrap { max-width: min(560px, calc(100vh - 380px)); min-width: 320px; }
+  .hud-row { display: none; }
 }
 .sheet .cta.sticky { gap: 8px; flex-wrap: nowrap; margin-top: 12px; padding: 8px 0 14px; }
 .sheet .cta.sticky .btn { min-height: 44px; font-size: 14px; padding: 0 12px; white-space: nowrap; }
