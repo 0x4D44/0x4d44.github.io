@@ -10,7 +10,10 @@
   /* ---------- persistence (never required) ---------- */
   var KEY = 'pigeon-protocol.v1';
   var prog = { stars: {}, fails: {}, helped: {}, flock: '', fast: false };
-  try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') { prog.stars = o.stars || {}; prog.fails = o.fails || {}; prog.helped = o.helped || {}; prog.fast = !!o.fast; prog.flock = typeof o.flock === 'string' ? o.flock : ''; } } } catch (e) {}
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') { prog.stars = o.stars || {}; prog.fails = o.fails || {}; prog.helped = o.helped || {}; prog.fast = !!o.fast; prog.flock = typeof o.flock === 'string' ? o.flock : ''; } }
+  } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} }
 
   /* ---------- state ---------- */
@@ -25,7 +28,8 @@
   function plural(n, a, b) { return n === 1 ? a : (b || a + 's'); }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 3200); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 2600); }
+  function pct(x) { return Math.round(x * 100) + '%'; }
 
   /* ---------- sound (off by default) ---------- */
   var actx = null;
@@ -45,7 +49,7 @@
   function show(which) {
     $('screen-title').hidden = which !== 'title';
     $('screen-game').hidden = which !== 'game';
-    S.phase = which === 'title' ? 'title' : S.phase;
+    if (which === 'title') S.phase = 'title';
   }
   function isUnlocked(id) {
     if (id === 1) return true;
@@ -59,18 +63,16 @@
     LV.forEach(function (lv) {
       var li = el('li', 'lvl' + (isUnlocked(lv.id) ? '' : ' locked'));
       var c = C.LEVELS[lv.id];
-      var h = el('h3', null, lv.id + '. ' + lv.name);
-      var meta = el('div', 'meta', lv.sandbox ? 'Unscored. Set the weather, break things.' : lv.scrolls + ' scrolls in ' + lv.deadline + ' rounds. ' + c.doc);
-      li.appendChild(h); li.appendChild(meta);
+      li.appendChild(el('h3', null, lv.id + '. ' + lv.name));
+      li.appendChild(el('div', 'meta', lv.sandbox ? 'Unscored. Set the weather, break things.' : lv.scrolls + ' scrolls in ' + lv.deadline + ' rounds. ' + c.doc));
       var right = el('div', 'stars');
       if (!lv.sandbox) { right.innerHTML = starsHtml(prog.stars[lv.id] || 0); right.setAttribute('aria-label', (prog.stars[lv.id] || 0) + ' of 3 stars'); }
       li.appendChild(right);
       var b = el('button', 'btn ' + (isUnlocked(lv.id) ? 'btn-primary' : ''), isUnlocked(lv.id) ? ((prog.stars[lv.id] || 0) > 0 ? 'Fly again' : 'Fly') : 'Locked');
       b.type = 'button'; b.disabled = !isUnlocked(lv.id);
       if (!b.disabled) b.addEventListener('click', function () { commitFlock(); openLevel(lv.id); });
-      if (!isUnlocked(lv.id)) b.setAttribute('aria-label', 'Level ' + lv.id + ' is locked. Complete the previous level, or fail it twice and the Ministry will take pity.');
+      else b.setAttribute('aria-label', 'Level ' + lv.id + ' is locked. Complete the previous level, or fail it twice and the Ministry will take pity.');
       li.appendChild(b);
-      li.style.gridTemplateColumns = 'minmax(0,1fr) auto';
       ol.appendChild(li);
     });
     var done = 0; for (var k in prog.stars) if (prog.stars[k] > 0) done++;
@@ -80,147 +82,132 @@
 
   /* ---------- level lifecycle ---------- */
   function sandboxLevel() {
-    var base = levelById(6), lv = JSON.parse(JSON.stringify(base));
+    var lv = JSON.parse(JSON.stringify(levelById(6)));
     lv.cap = [[1, S.sandbox.C]]; lv.p = S.sandbox.p / 100; lv.rival = S.sandbox.rival ? { start: 3 } : null;
     return lv;
   }
-  function openLevel(id) {
-    var lv = levelById(id);
-    if (id === 6) { openSandboxDialog(); return; }
-    beginBrief(lv);
-  }
-  function seedFor(lv) {
-    var a = S.attempt[lv.id] || 0;
-    return lv.seed + a * 7919 + SALT * 31;
-  }
-  function beginBrief(lv, opts) {
-    opts = opts || {};
-    clearTimeout(S.timer); S.runId++; S.skipping = true;
+  function openLevel(id) { if (id === 6) { openSandboxDialog(); return; } beginBrief(levelById(id)); }
+  function seedFor(lv) { return lv.seed + (S.attempt[lv.id] || 0) * 7919 + SALT * 31; }
+
+  function beginBrief(lv) {
+    clearTimeout(S.timer); S.runId++;
     S.level = lv; S.run = E.createRun(lv, seedFor(lv)); S.shown = 0; S.busy = false; S.auto = false; S.assisted = false; S.reno = null;
     S.roll = []; S.finished = false; S.skipping = false; S.w = 1; S.phase = 'brief';
-    $('sky').innerHTML = ''; $('btn-skip').hidden = true;
-    show('game');
-    $('debrief').hidden = true;
-    renderAll();
-    renderBrief(lv, opts);
+    $('sky').innerHTML = ''; $('btn-skip').hidden = true; $('mapwrap').classList.remove('shake');
+    show('game'); $('debrief').hidden = true;
+    renderAll(); renderBrief(lv);
     window.scrollTo(0, 0);
   }
 
   function renoRecordText(lv, run) {
     var ref = E.renoReference(lv, run.seed);
-    if (ref.inTime) return 'The Reno flies this in ' + ref.rounds + ' rounds and loses ' + ref.lost + ' ' + plural(ref.lost, 'bird') + '.';
-    if (ref.won && ref.rounds > lv.deadline) return 'The Reno needs about ' + ref.rounds + ' rounds, which is past the deadline of ' + lv.deadline + '. He loses ' + ref.lost + ' ' + plural(ref.lost, 'bird') + ' on the way, and most of them to bad judgement.';
+    if (ref.inTime) return 'The Reno flies this sky in ' + ref.rounds + ' rounds and loses ' + ref.lost + ' ' + plural(ref.lost, 'bird') + '.';
+    if (ref.won) return 'The Reno needs about ' + ref.rounds + ' rounds on this sky, which is past the deadline of ' + lv.deadline + '.';
     return 'The Reno does not finish this one.';
   }
-
-  function renderBrief(lv, opts) {
+  function starsKey(lv) {
+    var st = lv.stars; if (!st) return '';
+    var sh = function (t) { return t.share !== undefined ? ', and no more than ' + Math.round(t.share * 100) + '% of the Gap while the rival is flying' : ''; };
+    return '<b>Three stars:</b> in ' + st.three.rounds + ' rounds or fewer, losing ' + st.three.lost + ' birds or fewer' + sh(st.three) + '.<br><b>Two:</b> ' + st.two.rounds + ' rounds, ' + st.two.lost + ' birds' + sh(st.two) + '. <b>One:</b> deliver all of it, in time, with birds left.';
+  }
+  function renderBrief(lv) {
     var c = C.LEVELS[lv.id], d = $('debrief'); d.hidden = false; d.innerHTML = '';
-    var h = el('h2', null, 'Level ' + (lv.sandbox ? '∞' : lv.id) + ': ' + lv.name); d.appendChild(h);
+    d.appendChild(el('h2', null, 'Level ' + (lv.sandbox ? '∞' : lv.id) + ': ' + lv.name));
     d.appendChild(el('p', null, c.blurb));
     var memo = el('p', 'db-reno');
     memo.innerHTML = '<b>Consignment:</b> ' + esc(c.doc) + '<br><b>Addressed to:</b> ' + esc(c.to) + '<br><b>Scrolls:</b> ' + lv.scrolls + ' &middot; <b>Deadline:</b> ' + lv.deadline + ' rounds' + (lv.sandbox ? '' : ' &middot; <b>Loft reserve:</b> ' + lv.loft + ' birds (lose them all and the club folds)');
     d.appendChild(memo);
     if (!lv.sandbox) {
-      var st = lv.stars, p = el('p', 'db-reno');
-      p.innerHTML = '<b>Three stars:</b> done in ' + st.three.rounds + ' rounds or fewer, losing ' + st.three.lost + ' birds or fewer. <b>Two:</b> ' + st.two.rounds + ' and ' + st.two.lost + '. <b>One:</b> deliver all of it, in time.' + (lv.id > 1 || (prog.stars[1] || 0) > 0 ? '<br><i>' + esc(renoRecordText(lv, S.run)) + ' Beat the bird-brain.</i>' : '');
+      var p = el('p', 'db-reno stars-key'); p.innerHTML = starsKey(lv);
+      if ((prog.stars[1] || 0) > 0 || lv.id > 1) p.innerHTML += '<br><i>' + esc(renoRecordText(lv, S.run)) + '</i>';
       d.appendChild(p);
     }
     var row = el('div', 'cta-row');
     var go = el('button', 'btn btn-primary', 'Begin the first flight'); go.type = 'button'; go.id = 'btn-begin';
-    go.addEventListener('click', function () { S.phase = 'play'; d.hidden = true; renderAll(); focusGo(); });
+    go.addEventListener('click', function () { S.phase = 'play'; d.hidden = true; renderAll(); showStatus(); focusGo(); });
     row.appendChild(go); d.appendChild(row);
     S.phase = 'brief'; $('controls').hidden = true;
     setTimeout(function () { go.focus({ preventScroll: true }); }, 0);
   }
   function focusGo() { try { $('btn-go').focus({ preventScroll: true }); } catch (e) {} }
+  function showStatus() {
+    var st = $('status'), r = st.getBoundingClientRect();
+    if (r.top < 0 || r.top > 90) window.scrollTo({ top: window.scrollY + r.top - 56, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
 
   /* ---------- derived views (only ever what the player has already seen) ---------- */
   function seen() { return S.run.history.slice(0, S.shown); }
   function totals() {
-    var h = seen(), t = { flown: 0, del: 0, lost: 0, crowd: 0, hawk: 0 };
-    h.forEach(function (r) { t.flown += r.w; t.del += r.delivered; t.lost += r.lost; t.crowd += r.lostCrowd; t.hawk += r.lostHawk; });
+    var t = { flown: 0, del: 0, lost: 0 };
+    seen().forEach(function (r) { t.flown += r.w; t.del += r.delivered; t.lost += r.lost; });
     return t;
   }
   function pendingCount() { return S.level.scrolls - totals().del; }
 
   function renderAll() {
-    var lv = S.level, run = S.run, t = totals(), h = seen();
+    var lv = S.level, t = totals();
     $('s-level').textContent = lv.id + '. ' + lv.name;
     $('s-doc').textContent = flockName();
     $('s-round').textContent = S.shown + '/' + lv.deadline;
     $('s-del').textContent = t.del + '/' + lv.scrolls;
-    var lostEl = $('s-lost'); lostEl.textContent = lv.sandbox ? String(t.lost) : t.lost + '/' + lv.loft;
+    var lostEl = $('s-lost'); lostEl.textContent = lv.sandbox ? String(t.lost) : Math.min(t.lost, lv.loft) + '/' + lv.loft;
     lostEl.className = (!lv.sandbox && t.lost >= lv.loft * 0.6) ? 'danger' : '';
     $('doc-name').textContent = '(' + C.LEVELS[lv.id].doc + ')';
     $('rival-loft').setAttribute('visibility', lv.rival ? 'visible' : 'hidden');
-    renderScrolls(); renderReport(); renderChart(); renderControls(); renderRoll();
-    var over = S.finished;
-    $('controls').hidden = over || S.phase === 'brief';
-    var nextRound = Math.min(S.shown + 1, lv.deadline);
-    if (!over && S.phase !== 'brief') {
-      var evs = C.LEVELS[lv.id].events, tx = evs[nextRound - 1];
-      if (!tx) tx = C.POOL_EVENTS[(nextRound * 7 + lv.id) % C.POOL_EVENTS.length];
-      $('event').innerHTML = '<b>NOTAM ' + String(nextRound).padStart(2, '0') + '</b>' + esc(tx);
-    } else if (over) { $('event').innerHTML = '<b>NOTAM</b>The Ministry is closed for the day.'; } else { $('event').innerHTML = '<b>NOTAM</b>Awaiting your instructions, and a pigeon.'; }
-    // gap sign
-    var reveal = capacityRevealed();
-    var sign = $('gap-sign');
-    if (reveal && h.length) { sign.setAttribute('visibility', 'visible'); $('gap-sign-t').textContent = 'Gap: ' + h[h.length - 1].cap; } else sign.setAttribute('visibility', 'hidden');
+    renderScrolls(); renderReport(); renderChart(); renderControls(); renderRoll(); renderSpark();
+    $('controls').hidden = S.finished || S.phase === 'brief';
+    $('event').innerHTML = eventLine();
   }
-  function capacityRevealed() {
-    if (S.finished) return true;
-    if (S.level.id === 1) return false;
-    return S.shown >= 2;
+  function eventLine() {
+    var lv = S.level, h = seen();
+    if (S.finished) return '<b>NOTAM</b>The Ministry is closed for the day.';
+    if (S.phase === 'brief') return '<b>NOTAM</b>Awaiting your instructions, and a pigeon.';
+    var nextRound = Math.min(S.shown + 1, lv.deadline), evs = C.LEVELS[lv.id].events, tx = evs[nextRound - 1];
+    if (!tx) tx = C.POOL_EVENTS[(nextRound * 7 + lv.id) % C.POOL_EVENTS.length];
+    var out = '<b>NOTAM ' + String(nextRound).padStart(2, '0') + '</b>' + esc(tx);
+    if (h.length) {
+      var r = h[h.length - 1], prev = h.length > 1 ? h[h.length - 2] : null, kind;
+      if (r.lost === 0) kind = prev && r.w > prev.w ? 'grow' : prev && r.w === prev.w ? 'same' : 'clean';
+      else if (r.lost / r.w >= 0.4) kind = 'heavy'; else kind = prev && r.w < prev.w ? 'shrink' : 'some';
+      var pool = C.REACT[kind] || C.REACT.some;
+      out += '<br><span class="react">' + esc(pool[(r.round * 5 + r.w) % pool.length]) + '</span>';
+    }
+    return out;
   }
 
   function renderScrolls() {
-    var run = S.run, n = S.level.scrolls, h = seen(), acked = {}, lastLost = {};
+    var n = S.level.scrolls, h = seen(), acked = {}, lastLost = {};
     h.forEach(function (r) { r.newlyAcked.forEach(function (s) { acked[s] = 1; }); });
     if (h.length) h[h.length - 1].birds.forEach(function (b) { if (b.owner === 'you' && b.fate !== 'ok') lastLost[b.scroll] = 1; });
-    var g = $('scroll-grid'), html = '', ok = 0, re = 0;
+    var html = '', ok = 0, re = 0;
     for (var i = 1; i <= n; i++) { var cls = acked[i] ? 'ok' : (lastLost[i] ? 're' : ''); if (acked[i]) ok++; if (lastLost[i] && !acked[i]) re++; html += '<i class="sc ' + cls + '"></i>'; }
-    g.innerHTML = html;
+    var g = $('scroll-grid'); g.innerHTML = html;
     g.setAttribute('aria-label', ok + ' of ' + n + ' scrolls acknowledged, ' + re + ' awaiting a second attempt.');
   }
 
-  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function renderReport() {
-    var box = $('report'), h = seen(), lv = S.level;
-    $('shared').hidden = !(lv.rival && h.length);
-    if (!h.length) {
-      box.innerHTML = '<p class="muted">No flights yet. The sky is still undecided.</p><p class="coach">' + esc(C.HINTS.start) + '</p>';
-      return;
-    }
+    var box = $('report'), h = seen();
+    if (!h.length) { box.innerHTML = '<p class="muted">No flights yet. The sky is still undecided.</p><p class="coach">' + esc(C.HINTS.start) + '</p>'; return; }
     var r = h[h.length - 1], html = '';
     var head = 'Round ' + r.round + ': you released ' + r.w + ' ' + plural(r.w, 'bird') + '. ';
-    if (r.lost === 0) head += 'All ' + r.w + ' arrived.'; else head += r.delivered + ' arrived, ' + r.lost + ' ' + plural(r.lost, 'was', 'were') + ' lost.';
+    head += r.lost === 0 ? 'All ' + r.w + ' arrived.' : r.delivered + ' arrived, ' + r.lost + ' ' + plural(r.lost, 'was', 'were') + ' lost.';
     html += '<p class="rep-head ' + (r.lost ? 'rep-bad' : 'rep-good') + '">' + esc(head) + '</p>';
     if (r.requested > r.w) html += '<p class="muted">You asked for ' + r.requested + ' birds. Only ' + r.w + ' ' + plural(r.w, 'scroll was', 'scrolls were') + ' left to send. The rest stayed home with tea.</p>';
     if (r.retx) html += '<p>' + r.retx + ' of those ' + plural(r.retx, 'was a', 'were') + ' <span class="ribbon">second attempt</span> ' + (r.retx > 1 ? 'scrolls' : 'scroll') + ', retransmitted first.</p>';
     if (r.delivered) html += '<p class="ack">' + esc(C.ACKS[(r.round * 3 + r.delivered) % C.ACKS.length]) + ' (' + r.delivered + ' ACK ' + plural(r.delivered, 'pigeon') + ' home.)</p>';
-    if (r.lost) html += '<p class="muted">' + r.lost + ' ' + plural(r.lost, 'scroll') + ' will be flown again next round. Obituaries below.</p>';
+    if (r.lost) html += '<p class="muted">' + r.lost + ' ' + plural(r.lost, 'scroll') + ' will be flown again next round. Obituaries below. They are not informative.</p>';
     html += '<p class="coach">' + esc(coachLine(h)) + '</p>';
     box.innerHTML = html;
-    if (lv.rival) {
-      var tot = r.cap, you = r.delivered, riv = r.rivalDelivered, over = r.offered > r.cap ? (r.offered - r.passes) : 0;
-      var scale = Math.max(r.offered, r.cap);
-      var bar = $('shared-bar'); bar.innerHTML = '';
-      var mk = function (cls, n) { var i = document.createElement('i'); i.className = cls; i.style.width = (n / scale * 100) + '%'; return i; };
-      bar.appendChild(mk('you', you)); bar.appendChild(mk('riv', riv)); if (over) bar.appendChild(mk('over', over));
-      var m = el('span', 'capm'); m.style.left = 'calc(' + (r.cap / scale * 100) + '% - 1px)'; bar.appendChild(m);
-      var lab = 'Gap capacity ' + r.cap + '. You flew ' + r.w + ' and ' + you + ' arrived. The rival flew ' + r.rivalW + ' and ' + riv + ' arrived. ' + over + ' birds were lost to crowding or jostling.';
-      bar.setAttribute('aria-label', lab);
-    }
   }
+  // Coaching reads only the player's own trace: what they sent and what came back.
   function coachLine(h) {
-    var r = h[h.length - 1], lv = S.level;
-    if (lv.id === 1 && h.length === 1) return r.lost ? 'First flight, first losses. The Ministry notes you started big. Brave, or hasty.' : 'Everyone arrived. Nobody has told you what the limit is. The Ministry suggests asking the sky.';
-    if (r.lost === 0 && r.delivered >= r.w) return h.length < 4 ? C.HINTS.afterClean : 'Smooth. The Gap may have more to give, or this may be exactly right. Only birds can tell you.';
-    if (r.lost > 0 && h.length > 1) {
-      var prev = h[h.length - 2];
-      if (r.w > prev.w) return 'Losses after sending more than last time. This looks like the sky answering back.';
-      if (r.w <= prev.w && prev.lost === 0) return lv.p > 0 ? 'Losses at a flock size that was fine last time. Odd. The sky may simply be hostile.' : 'Losses at a size that worked before. Something else is using the Gap.';
-    }
+    var r = h[h.length - 1], i, maxClean = 0, prevLossAtOrBelow = false;
+    for (i = 0; i < h.length - 1; i++) { if (h[i].lost === 0) maxClean = Math.max(maxClean, h[i].w); if (h[i].lost > 0 && h[i].w >= r.w) prevLossAtOrBelow = true; }
+    if (h.length === 1) return r.lost ? 'First flight, first losses. The Ministry notes you started big. Brave, or hasty.' : 'Everyone arrived. Nobody has told you what the limit is. The Ministry suggests asking the sky.';
+    if (r.lost === 0) return h.length < 4 ? C.HINTS.afterClean : 'Smooth. The Gap may have more to give, or this may be exactly right. Only birds can tell you.';
+    if (r.w <= 3) return C.HINTS.tinyLoss;
+    if (r.lost / r.w > 0.25) return C.HINTS.bigLoss;
+    if (r.w <= maxClean) return C.HINTS.repeatLoss;
     return C.HINTS.afterLoss;
   }
 
@@ -231,8 +218,7 @@
     $('w-out').textContent = String(S.w);
     $('w-lab').textContent = plural(S.w, 'bird') + ' this round';
     var blocked = S.busy || S.auto || S.finished || S.phase !== 'play';
-    $('btn-go').disabled = blocked;
-    r.disabled = blocked; $('w-minus').disabled = blocked || S.w <= 1; $('w-plus').disabled = blocked || S.w >= max;
+    $('btn-go').disabled = blocked; r.disabled = blocked; $('w-minus').disabled = blocked || S.w <= 1; $('w-plus').disabled = blocked || S.w >= max;
     $('btn-go').textContent = S.busy ? 'Birds in flight…' : S.auto ? 'The Reno is flying' : 'Release the flock';
     $('controls').classList.toggle('busy', S.busy || S.auto);
     var note = '';
@@ -243,7 +229,7 @@
     reno.hidden = !unlocked; reno.disabled = S.finished || S.phase !== 'play' || (S.busy && !S.auto);
     reno.setAttribute('aria-pressed', S.auto ? 'true' : 'false');
     reno.textContent = S.auto ? 'Fire the Reno' : 'Hire a Reno';
-    $('keys').hidden = false;
+    var f = $('btn-fast'); f.setAttribute('aria-pressed', prog.fast ? 'true' : 'false'); f.textContent = 'Fast flights: ' + (prog.fast ? 'on' : 'off');
   }
 
   function renderRoll() {
@@ -256,191 +242,179 @@
     });
   }
   function birdIdent(serial) {
-    var n = C.NAMES.length, base = C.NAMES[serial % n], gen = Math.floor(serial / n);
-    var rom = ['', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII'];
-    return { name: base + (rom[gen] !== undefined ? rom[gen] : ' the ' + (gen + 1) + 'th'), trait: C.TRAITS[(serial * 7 + 3) % C.TRAITS.length] };
+    var n = C.NAMES.length, rom = ['', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII'], gen = Math.floor(serial / n);
+    return { name: C.NAMES[serial % n] + (rom[gen] !== undefined ? rom[gen] : ' the ' + (gen + 1) + 'th'), trait: C.TRAITS[(serial * 7 + 3) % C.TRAITS.length] };
   }
   function addObits(rec) {
     var sn = C.LEVELS[S.level.id].snippets;
     rec.birds.forEach(function (b) {
       if (b.owner !== 'you' || b.fate === 'ok') return;
-      var id = birdIdent(b.serial), pool = b.fate === 'crowd' ? C.OBIT_CROWD : C.OBIT_HAWK;
-      S.roll.push({ name: id.name, trait: id.trait, round: rec.round, line: pool[(b.serial * 5 + rec.round) % pool.length], cargo: 'Scroll ' + b.scroll + ': ' + sn[b.scroll % sn.length] });
+      var id = birdIdent(b.serial);
+      S.roll.push({ name: id.name, trait: id.trait, round: rec.round, line: C.OBITS[(b.serial * 5 + rec.round) % C.OBITS.length], cargo: 'Scroll ' + b.scroll + ': ' + sn[b.scroll % sn.length] });
     });
+  }
+
+  /* ---------- sparkline (status area) ---------- */
+  function renderSpark() {
+    var h = seen(), svg = $('spark'), D = Math.max(S.level.deadline, 1);
+    if (!h.length) { svg.innerHTML = '<text x="60" y="21" text-anchor="middle" font-size="9" fill="#f3e7cf" opacity=".7" font-family="Georgia, serif">sent vs arrived</text>'; return; }
+    var mx = 6; h.forEach(function (r) { mx = Math.max(mx, r.w); });
+    var X = function (r) { return 4 + (r - 1) / Math.max(1, D - 1) * 112; }, Y = function (v) { return 32 - v / mx * 28; };
+    var d1 = '', d2 = '';
+    h.forEach(function (r, i) { d1 += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r.w) + ' '; d2 += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r.delivered) + ' '; });
+    svg.innerHTML = '<path d="' + d1 + '" fill="none" stroke="#f3e7cf" stroke-width="1.8"/><path d="' + d2 + '" fill="none" stroke="#8fd19e" stroke-width="1.8" stroke-dasharray="3 2"/>';
+    svg.setAttribute('aria-label', 'Sparkline: ' + h.map(function (r) { return r.w + ' sent, ' + r.delivered + ' arrived'; }).join('; '));
   }
 
   /* ---------- chart ---------- */
   function renderChart() {
-    var wrap = $('chart-wrap'), h = seen(), lv = S.level;
-    if (h.length < 2 && !S.finished) {
-      wrap.innerHTML = '<div class="chart-empty">The chart appears after your second flight. It is the only honest thing in this document.</div>';
-      $('tiles').innerHTML = tiles(h); $('logtbl').innerHTML = logTable(h); return;
-    }
-    var D = Math.max(lv.deadline, h.length), reveal = capacityRevealed();
-    var maxY = 8;
-    h.forEach(function (r) { maxY = Math.max(maxY, r.w, reveal ? r.cap : 0); });
+    var wrap = $('chart-wrap'), h = seen(), lv = S.level, over = S.finished;
+    $('tiles').innerHTML = tiles(h); $('logtbl').innerHTML = logTable(h);
+    if (h.length < 2 && !over) { wrap.innerHTML = '<div class="chart-empty">The chart appears after your second flight. It is the only honest thing in this document.</div>'; return; }
+    var D = Math.max(lv.deadline, h.length), maxY = 8;
+    h.forEach(function (r) { maxY = Math.max(maxY, r.w, over ? r.cap : 0); });
     maxY = Math.ceil((maxY + 1) / 4) * 4;
     var W = 360, H = 210, ml = 30, mr = 10, mt = 26, mb = 30, pw = W - ml - mr, ph = H - mt - mb;
     var X = function (r) { return ml + (D === 1 ? 0 : (r - 1) / (D - 1)) * pw; }, Y = function (v) { return mt + ph - v / maxY * ph; };
-    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(chartLabel(h, reveal)) + '" font-family="Georgia, serif">';
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(chartLabel(h, over)) + '" font-family="Georgia, serif">';
     s += '<rect x="' + ml + '" y="' + mt + '" width="' + pw + '" height="' + ph + '" fill="#fbf4e3" stroke="#2b2118" stroke-width="1.2"/>';
     for (var v = 0; v <= maxY; v += 4) s += '<line x1="' + ml + '" x2="' + (ml + pw) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#cdb88f" stroke-width=".7"/><text x="' + (ml - 4) + '" y="' + (Y(v) + 3.5) + '" font-size="10" text-anchor="end" fill="#5a4a3a">' + v + '</text>';
-    var step = D > 16 ? 5 : 2;
+    var step = D > 16 ? 3 : 2;
     for (var r = 1; r <= D; r++) if (r === 1 || r % step === 0) s += '<text x="' + X(r) + '" y="' + (H - mb + 13) + '" font-size="10" text-anchor="middle" fill="#5a4a3a">' + r + '</text>';
     s += '<text x="' + (ml + pw / 2) + '" y="' + (H - 4) + '" font-size="10" text-anchor="middle" fill="#5a4a3a">round (one flight each)</text>';
-    // capacity (hindsight)
-    if (reveal && h.length) {
+    if (over && h.length) {
       var cp = '';
       h.forEach(function (r, i) { var x1 = i === 0 ? X(r.round) - 4 : (X(h[i - 1].round) + X(r.round)) / 2, x2 = i === h.length - 1 ? X(r.round) + 4 : (X(r.round) + X(h[i + 1].round)) / 2; cp += (i === 0 ? 'M' : 'L') + x1 + ' ' + Y(r.cap) + ' L' + x2 + ' ' + Y(r.cap) + ' '; });
-      s += '<path d="' + cp + '" fill="none" stroke="#b3202a" stroke-width="2.2" stroke-dasharray="6 4"/>';
+      s += '<path d="' + cp + '" fill="none" stroke="#b3202a" stroke-width="2.4" stroke-dasharray="6 4" opacity=".85"/>';
     }
-    var line = function (key, col) { var d = ''; h.forEach(function (r, i) { d += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r[key]) + ' '; }); return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round"/>'; };
-    s += line('delivered', '#2f6b3a'); s += line('w', '#2b2118');
+    var line = function (key, col, dash) { var d = ''; h.forEach(function (r, i) { d += (i ? 'L' : 'M') + X(r.round) + ' ' + Y(r[key]) + ' '; }); return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linejoin="round"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>'; };
+    s += line('w', '#2b2118'); s += line('delivered', '#2f6b3a', '6 3');
     h.forEach(function (r) {
-      s += '<circle cx="' + X(r.round) + '" cy="' + Y(r.delivered) + '" r="3" fill="#2f6b3a"/>';
-      s += '<circle cx="' + X(r.round) + '" cy="' + Y(r.w) + '" r="' + (r.lost ? 4.2 : 3) + '" fill="' + (r.lost ? '#b3202a' : '#2b2118') + '" stroke="#fbf4e3" stroke-width="1"/>';
+      s += '<circle cx="' + X(r.round) + '" cy="' + Y(r.w) + '" r="' + (r.lost ? 4.4 : 3) + '" fill="' + (r.lost ? '#b3202a' : '#2b2118') + '" stroke="#fbf4e3" stroke-width="1"/>';
+      s += '<circle cx="' + X(r.round) + '" cy="' + Y(r.delivered) + '" r="5.4" fill="none" stroke="#2f6b3a" stroke-width="1.8"/>';
     });
-    // legend
     var lx = ml;
-    s += '<line x1="' + lx + '" x2="' + (lx + 16) + '" y1="11" y2="11" stroke="#2b2118" stroke-width="2.2"/><text x="' + (lx + 20) + '" y="14.5" font-size="10" fill="#2b2118">flown</text>';
-    s += '<line x1="' + (lx + 62) + '" x2="' + (lx + 78) + '" y1="11" y2="11" stroke="#2f6b3a" stroke-width="2.2"/><text x="' + (lx + 82) + '" y="14.5" font-size="10" fill="#2b2118">arrived</text>';
+    s += '<line x1="' + lx + '" x2="' + (lx + 16) + '" y1="11" y2="11" stroke="#2b2118" stroke-width="2.4"/><text x="' + (lx + 20) + '" y="14.5" font-size="10" fill="#2b2118">flown</text>';
+    s += '<line x1="' + (lx + 62) + '" x2="' + (lx + 78) + '" y1="11" y2="11" stroke="#2f6b3a" stroke-width="2.4" stroke-dasharray="5 3"/><text x="' + (lx + 82) + '" y="14.5" font-size="10" fill="#2b2118">arrived</text>';
     s += '<circle cx="' + (lx + 140) + '" cy="11" r="4" fill="#b3202a"/><text x="' + (lx + 148) + '" y="14.5" font-size="10" fill="#2b2118">losses</text>';
-    if (reveal) s += '<line x1="' + (lx + 194) + '" x2="' + (lx + 210) + '" y1="11" y2="11" stroke="#b3202a" stroke-width="2.2" stroke-dasharray="4 3"/><text x="' + (lx + 214) + '" y="14.5" font-size="10" fill="#2b2118">the Gap</text>';
-    s += '</svg>';
-    wrap.innerHTML = s;
-    $('tiles').innerHTML = tiles(h); $('logtbl').innerHTML = logTable(h);
+    if (over) s += '<line x1="' + (lx + 194) + '" x2="' + (lx + 210) + '" y1="11" y2="11" stroke="#b3202a" stroke-width="2.4" stroke-dasharray="4 3"/><text x="' + (lx + 214) + '" y="14.5" font-size="10" fill="#2b2118">the Gap (hindsight)</text>';
+    wrap.innerHTML = s + '</svg>';
   }
-  function chartLabel(h, reveal) {
-    var t = 'Chart of birds flown and scrolls delivered per round. ' + h.map(function (r) { return 'Round ' + r.round + ': flown ' + r.w + ', arrived ' + r.delivered + (reveal ? ', Gap ' + r.cap : ''); }).join('. ') + '.';
-    return t;
+  function chartLabel(h, over) {
+    return 'Chart of birds flown and scrolls delivered per round. ' + h.map(function (r) { return 'Round ' + r.round + ': flown ' + r.w + ', arrived ' + r.delivered + (over ? ', Gap ' + r.cap : ''); }).join('. ') + '.';
   }
   function tiles(h) {
     var t = totals(), eff = t.flown ? Math.round(t.del / t.flown * 100) : 0, last = h.length ? h[h.length - 1] : null;
     var tile = function (b, l) { return '<div class="tile"><b>' + b + '</b><span>' + l + '</span></div>'; };
-    return tile(t.flown, 'birds flown') + tile(t.del, 'scrolls delivered') + tile(t.flown ? eff + '%' : '-', 'goodput per bird' + (last ? ' (last: ' + (last.w ? Math.round(last.delivered / last.w * 100) : 0) + '%)' : ''));
+    return tile(t.flown, 'birds flown') + tile(t.del, 'scrolls delivered') + tile(t.flown ? eff + '%' : '-', 'delivered per bird' + (last ? ' (last round: ' + last.delivered + ' of ' + last.w + ')' : ''));
   }
   function logTable(h) {
     if (!h.length) return '<p class="muted">Nothing to report. Fly something.</p>';
-    var rows = h.map(function (r) { return '<tr><td>' + r.round + '</td><td>' + r.w + '</td><td>' + r.delivered + '</td><td>' + r.lost + '</td><td>' + (capacityRevealed() ? r.cap : '?') + '</td></tr>'; }).join('');
-    return '<div class="tbl-scroll"><table><thead><tr><th>Round</th><th>Flown</th><th>Arrived</th><th>Lost</th><th>Gap</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    var rows = h.map(function (r) { return '<tr><td>' + r.round + '</td><td>' + r.w + '</td><td>' + r.delivered + '</td><td>' + r.lost + '</td>' + (S.finished ? '<td>' + r.cap + '</td>' : '') + '</tr>'; }).join('');
+    return '<div class="tbl-scroll"><table><thead><tr><th>Round</th><th>Flown</th><th>Arrived</th><th>Lost</th>' + (S.finished ? '<th>Gap</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   /* ---------- flight animation ---------- */
   function sv(tag, attrs) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
-  var GX = 185;
   function px(u) { return 58 + 240 * u; }
-  function py(u, lane) { return 86 - 20 * Math.sin(Math.PI * u) + lane * 5; }
+  function py(u, lane) { return 98 - 36 * Math.sin(Math.PI * u) + lane * 4; }
 
-  function animateRound(rec) {
+  function animateRound(rec, runId) {
     return new Promise(function (resolve) {
       var sky = $('sky'); sky.innerHTML = '';
       if (reduceMotion || S.skipping) { resolve(); return; }
-      var speed = S.auto ? 0.6 : 1, OUT = 2000 * speed, BACK = 1100 * speed, STAG = 700 * speed;
-      var birds = [], puffs = [], hawks = [], i, n = rec.birds.length;
+      var n = rec.birds.length, sp = (prog.fast ? 0.4 : 1) * (rec.round > 3 ? 0.75 : 1) * (S.auto ? 0.8 : 1);
+      var OUT = Math.min(2300, 1000 + 50 * n) * sp, BACK = 750 * sp, STAG = (250 + 14 * n) * sp;
+      var birds = [], puffs = [], pops = [], i;
       var rr = E.mulberry32(rec.round * 977 + S.run.seed);
       for (i = 0; i < n; i++) {
         var b = rec.birds[i], isYou = b.owner === 'you';
-        var u = sv('use', { width: isYou ? 26 : 22, height: isYou ? 19 : 16 });
-        u.setAttributeNS(XLINK, 'href', '#pgA'); u.setAttribute('href', '#pgA');
-        u.style.color = isYou ? '#8b97ad' : '#b59469';
+        var u = sv('use', { width: isYou ? 28 : 23, height: isYou ? 20 : 16 });
+        u.style.color = isYou ? '#8b97ad' : '#b59469'; u.setAttribute('href', '#pgA');
         sky.appendChild(u);
-        var lane = (i % 7) - 3, delay = (i / Math.max(1, n)) * STAG;
-        var dieU = b.fate === 'crowd' ? 0.53 : b.fate === 'hawk' ? 0.62 + rr() * 0.25 : null;
-        birds.push({ el: u, b: b, lane: isYou ? lane : lane * 0.8 + 3, delay: delay, dieU: dieU, dead: false, ack: null, size: isYou ? 26 : 22 });
+        // every loss looks the same from the ground: a poof of feathers somewhere between Colinton and Glasgow
+        var dieU = b.fate === 'crowd' ? 0.45 + rr() * 0.15 : b.fate === 'hawk' ? 0.35 + rr() * 0.5 : null;
+        birds.push({ el: u, b: b, lane: isYou ? (i % 7) - 3 : ((i % 5) - 2) * 0.8 + 3, delay: (i / Math.max(1, n)) * STAG, dieU: dieU, dead: false, ack: null, size: isYou ? 28 : 23, ph: rr() * 6 });
       }
-      var survivors = birds.filter(function (o) { return o.b.fate === 'ok' && o.b.owner === 'you'; });
-      var crowdN = rec.birds.filter(function (b) { return b.fate === 'crowd'; }).length;
-      var cloud = null, ackTextShown = false;
-      if (crowdN) {
-        cloud = sv('g', { opacity: 0 });
-        [[-12, 4, 11], [0, -2, 14], [13, 4, 11], [-4, 10, 9], [8, 11, 9]].forEach(function (c) { cloud.appendChild(sv('circle', { cx: GX + c[0], cy: 80 + c[1], r: c[2], fill: '#fbf4e3', stroke: '#2b2118', 'stroke-width': 1.4 })); });
-        var t = sv('text', { x: GX, y: 85, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 'bold', fill: '#b3202a', 'font-family': 'Georgia, serif' }); t.textContent = '!?#*'; cloud.appendChild(t);
-        sky.appendChild(cloud);
-      }
-      var total = STAG + OUT + BACK + 250, start = performance.now(), done = false;
+      var heavy = rec.lost >= Math.max(4, rec.w * 0.4);
+      var total = STAG + OUT + BACK + 250, start = performance.now(), done = false, captioned = false;
       coo('release');
-      function puff(x, y, now, hawkish) {
-        for (var k = 0; k < 7; k++) {
-          var f = sv('ellipse', { rx: 3.2, ry: 1.3, fill: k % 2 ? '#fbf4e3' : '#aeb7c6', stroke: '#2b2118', 'stroke-width': .6 });
-          sky.appendChild(f); puffs.push({ el: f, x: x, y: y, vx: (rr() - .5) * 60, vy: -20 - rr() * 30, rot: rr() * 360, vr: (rr() - .5) * 600, t0: now });
+      function puff(x, y, now) {
+        for (var k = 0; k < 8; k++) {
+          var f = sv('ellipse', { rx: 3.4, ry: 1.4, fill: k % 2 ? '#fbf4e3' : '#aeb7c6', stroke: '#2b2118', 'stroke-width': .6 });
+          sky.appendChild(f); puffs.push({ el: f, x: x, y: y, vx: (rr() - .5) * 70, vy: -25 - rr() * 35, rot: rr() * 360, vr: (rr() - .5) * 700, t0: now });
         }
-        if (S.sound) coo('lost');
+        var t = sv('text', { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: '#b3202a', 'font-family': 'Georgia, serif', stroke: '#fbf4e3', 'stroke-width': 3, 'paint-order': 'stroke' }); t.textContent = ['?!', '!?', '*#!', 'ack?'][Math.floor(rr() * 4)];
+        sky.appendChild(t); pops.push({ el: t, x: x, y: y - 8, t0: now });
+        coo('lost');
       }
+      function finish() { done = true; sky.innerHTML = ''; $('map-caption').style.display = 'none'; if (heavy && S.runId === runId) { var mw = $('mapwrap'); mw.classList.remove('shake'); void mw.offsetWidth; mw.classList.add('shake'); } resolve(); }
       function frame(now) {
         if (done) return;
-        var t = now - start, flap = Math.floor(t / 110) % 2 ? '#pgB' : '#pgA';
+        if (S.runId !== runId) { done = true; sky.innerHTML = ''; resolve(); return; }
+        var t = now - start, flap = Math.floor(t / 100) % 2 ? '#pgB' : '#pgA';
         birds.forEach(function (o) {
           var lt = t - o.delay, u = Math.max(0, Math.min(1, lt / OUT));
           if (o.dead) return;
-          if (lt < 0) { o.el.setAttribute('x', 10); o.el.setAttribute('y', 100 + o.lane * 3); o.el.setAttribute('href', '#pgA'); return; }
-          if (o.dieU !== null && u >= o.dieU) {
-            o.dead = true; o.el.setAttribute('visibility', 'hidden');
-            var x = px(o.dieU), y = py(o.dieU, o.lane);
-            puff(x, y, now);
-            if (o.b.fate === 'hawk') { var hw = sv('use', { width: 34, height: 20 }); hw.setAttribute('href', '#hawk'); sky.appendChild(hw); hawks.push({ el: hw, x: x, y: y, t0: now }); }
-            return;
-          }
-          var x2 = px(u), y2 = py(u, o.lane);
-          o.el.setAttribute('x', x2 - o.size / 2); o.el.setAttribute('y', y2 - 9); o.el.setAttribute('href', flap);
+          if (lt < 0) { o.el.setAttribute('x', 12); o.el.setAttribute('y', 118 + o.lane * 2.5); o.el.setAttribute('href', '#pgA'); return; }
+          if (o.dieU !== null && u >= o.dieU) { o.dead = true; o.el.setAttribute('visibility', 'hidden'); puff(px(o.dieU), py(o.dieU, o.lane), now); return; }
+          var x2 = px(u), y2 = py(u, o.lane), wob = Math.sin(t / 85 + o.ph) * 9;
+          o.el.setAttribute('x', x2 - o.size / 2); o.el.setAttribute('y', y2 - 10); o.el.setAttribute('href', flap);
+          o.el.setAttribute('transform', 'rotate(' + wob + ' ' + x2 + ' ' + y2 + ')');
           if (o.b.fate === 'ok' && o.b.owner === 'you' && u >= 1 && !o.ack) {
-            var a = sv('use', { width: 15, height: 11 }); a.setAttribute('href', '#pgA'); a.style.color = '#a9b4c8'; sky.appendChild(a);
+            var a = sv('use', { width: 16, height: 11 }); a.setAttribute('href', '#pgA'); a.style.color = '#a9b4c8'; sky.appendChild(a);
             var sc = sv('rect', { width: 5, height: 3, rx: 1, fill: '#fbf4e3', stroke: '#b3202a', 'stroke-width': .8 }); sky.appendChild(sc);
             o.ack = { el: a, sc: sc, t0: now }; o.el.setAttribute('visibility', 'hidden'); coo('ack');
           }
         });
-        // scrum cloud at the Gap
-        if (cloud) {
-          var first = STAG * 0.1 + OUT * 0.53, cl = t - first;
-          cloud.setAttribute('opacity', cl > 0 && cl < OUT * 0.9 ? Math.min(1, cl / 200) * (1 - Math.max(0, (cl - OUT * 0.7) / (OUT * 0.2))) : 0);
-          cloud.setAttribute('transform', 'translate(0 ' + (Math.sin(t / 60) * 1.2) + ')');
-        }
         birds.forEach(function (o) {
           if (!o.ack) return;
-          var au = Math.max(0, Math.min(1, (now - o.ack.t0) / BACK)), ax = 304 - au * 246, ay = 102 - 14 * Math.sin(Math.PI * au) + o.lane * 2;
-          o.ack.el.setAttribute('x', ax - 7); o.ack.el.setAttribute('y', ay - 5); o.ack.el.setAttribute('href', Math.floor(now / 110) % 2 ? '#pgB' : '#pgA');
+          var au = Math.max(0, Math.min(1, (now - o.ack.t0) / BACK)), ax = 304 - au * 246, ay = 112 - 16 * Math.sin(Math.PI * au) + o.lane * 2;
+          o.ack.el.setAttribute('x', ax - 8); o.ack.el.setAttribute('y', ay - 5); o.ack.el.setAttribute('href', Math.floor(now / 100) % 2 ? '#pgB' : '#pgA');
           o.ack.sc.setAttribute('x', ax - 3); o.ack.sc.setAttribute('y', ay + 4);
           if (au >= 1) { o.ack.el.setAttribute('visibility', 'hidden'); o.ack.sc.setAttribute('visibility', 'hidden'); }
         });
-        hawks.forEach(function (hk) { var ht = (now - hk.t0) / 500, hx = hk.x + 30 - ht * 80, hy = hk.y - 30 + ht * 38; hk.el.setAttribute('x', hx - 17); hk.el.setAttribute('y', hy - 10); hk.el.setAttribute('transform', 'rotate(' + (-20) + ' ' + hx + ' ' + hy + ')'); hk.el.setAttribute('opacity', ht > 1 ? 0 : 1); });
-        puffs.forEach(function (p) { var pt = (now - p.t0) / 1000; if (pt > 1) { p.el.setAttribute('opacity', 0); return; } var x = p.x + p.vx * pt, y = p.y + p.vy * pt + 60 * pt * pt; p.el.setAttribute('transform', 'translate(' + x + ' ' + y + ') rotate(' + (p.rot + p.vr * pt) + ')'); p.el.setAttribute('opacity', 1 - pt); });
-        if (!ackTextShown && survivors.length && t > STAG + OUT) { ackTextShown = true; $('map-caption').style.display = 'block'; $('map-caption').textContent = C.ACKS[(rec.round * 3 + rec.delivered) % C.ACKS.length]; }
+        puffs.forEach(function (p) { var pt = (now - p.t0) / 1000; if (pt > 1) { p.el.setAttribute('opacity', 0); return; } p.el.setAttribute('transform', 'translate(' + (p.x + p.vx * pt) + ' ' + (p.y + p.vy * pt + 60 * pt * pt) + ') rotate(' + (p.rot + p.vr * pt) + ')'); p.el.setAttribute('opacity', 1 - pt); });
+        pops.forEach(function (p) { var pt = (now - p.t0) / 900; if (pt > 1) { p.el.setAttribute('opacity', 0); return; } p.el.setAttribute('x', p.x); p.el.setAttribute('y', p.y - pt * 14); p.el.setAttribute('opacity', 1 - pt * pt); });
+        if (!captioned && rec.delivered && t > STAG + OUT) { captioned = true; var cp = $('map-caption'); cp.style.display = 'block'; cp.textContent = C.ACKS[(rec.round * 3 + rec.delivered) % C.ACKS.length]; }
         if (S.skipping || t >= total) { finish(); return; }
         requestAnimationFrame(frame);
       }
-      function finish() { done = true; sky.innerHTML = ''; $('map-caption').style.display = 'none'; resolve(); }
       requestAnimationFrame(frame);
     });
   }
 
   /* ---------- playing a round ---------- */
   function release() {
-    if (S.busy || S.finished || S.phase !== 'play') return;
+    if (S.busy) { S.skipping = true; return; }
+    if (S.finished || S.phase !== 'play') return;
+    var id = S.runId;
     S.busy = true; S.skipping = false;
     var rec = E.playRound(S.run, S.w);
-    $('btn-skip').hidden = reduceMotion; renderControls();
-    announce('Flock released: ' + rec.w + ' ' + plural(rec.w, 'bird') + '.');
-    animateRound(rec).then(function () {
+    $('btn-skip').hidden = reduceMotion; renderControls(); showStatus();
+    var r = $('report'), p = r.querySelector('.fly'); if (!p) { p = el('p', 'fly vh'); r.insertBefore(p, r.firstChild); } p.textContent = 'Flock released: ' + rec.w + ' ' + plural(rec.w, 'bird') + '.';
+    animateRound(rec, id).then(function () {
+      if (S.runId !== id) return;                       // abandoned mid-flight: nothing is awarded, nothing is failed
       S.busy = false; S.shown = S.run.round; $('btn-skip').hidden = true;
       addObits(rec); renderAll();
       if (S.run.done) { endRun(); return; }
-      if (S.auto) { S.timer = setTimeout(autoStep, reduceMotion ? 300 : 500); } else focusGo();
+      if (S.auto) { S.timer = setTimeout(autoStep, reduceMotion ? 300 : 400); } else focusGo();
     });
   }
-  function announce(msg) { /* the report region is the live region; this nudges screen readers during flight */ var r = $('report'); if (S.busy) { var p = r.querySelector('.fly'); if (!p) { p = el('p', 'fly vh'); r.insertBefore(p, r.firstChild); } p.textContent = msg; } }
 
   function hireReno() {
     if (S.finished || S.phase !== 'play') return;
     if (S.auto) { S.auto = false; clearTimeout(S.timer); renderControls(); toast('The Reno has been dismissed. He is relieved, mostly.'); return; }
     S.assisted = true; S.auto = true;
-    var h = S.run.history, r = E.createReno(S.w);
+    var h = S.run.history.slice(0, S.shown), r = E.createReno(S.w);
     if (h.length) {
       r.w = h[h.length - 1].w;
-      var lastLoss = null; h.forEach(function (x) { if (x.lostCrowd > 0 || x.lost > 0) lastLoss = x; });
+      var lastLoss = null; h.forEach(function (x) { if (x.lost > 0) lastLoss = x; });
       if (lastLoss) r.ssthresh = Math.max(2, Math.floor(lastLoss.w / 2));
       r._fresh = false;
     } else r._fresh = true;
     S.reno = r;
-    toast('Reno hired. Stars do not count while he flies. He does not mind.');
+    toast('Reno hired. Stars do not count while he flies.');
     renderControls();
     if (!S.busy) S.timer = setTimeout(autoStep, 350);
   }
@@ -452,44 +426,150 @@
     renderControls(); release();
   }
 
-  /* ---------- debrief ---------- */
+  /* ---------- debrief: reads what the player actually did ---------- */
+  function analyze(run) {
+    var h = run.history, f = { rounds: h.length, doubled: 0, backoffs: 0, ignoredBig: 0, panic: 0, nerve: 0, probes: 0 }, i, ws = h.map(function (r) { return r.w; });
+    var lost = 0, crowd = 0, hawk = 0, sumW = 0, sumCap = 0, cnt = 0;
+    for (i = 0; i < h.length; i++) {
+      var r = h[i], nx = h[i + 1], frac = r.lost / r.w;
+      lost += r.lost; crowd += r.lostCrowd; hawk += r.lostHawk;
+      if (i >= 2) { sumW += r.w; sumCap += r.cap; cnt++; }
+      if (i < 4 && nx && r.lost <= 1 && nx.w >= r.w * 1.6) f.doubled++;
+      if (nx) {
+        if (r.lost >= 2 && frac > 0.3) { if (nx.w <= r.w * 0.8) f.backoffs++; else if (nx.w >= r.w) f.ignoredBig++; }
+        else if (r.lost >= 1 && frac <= 0.3) { if (nx.w <= r.w * 0.6) f.panic++; else f.nerve++; }
+        if (i >= 2 && h[i - 1].lost === 0 && h[i - 2].lost === 0 && r.lost === 0 && nx.w > r.w) f.probes++;
+      }
+    }
+    var tail = ws.slice(2), mx = Math.max.apply(null, tail.length ? tail : ws), mn = Math.min.apply(null, tail.length ? tail : ws);
+    var sorted = ws.slice().sort(function (a, b) { return a - b; }), med = sorted[sorted.length >> 1];
+    f.median = med; f.flat = h.length >= 5 && (mx - mn) <= Math.max(2, 0.25 * med);
+    f.lost = lost; f.crowdShare = lost ? crowd / lost : 0; f.hawkShare = lost ? hawk / lost : 0;
+    f.fill = cnt ? sumW / sumCap : 1;
+    f.peak = Math.max.apply(null, ws);
+    return f;
+  }
+
+  function buildDebrief(run, lv, f, share) {
+    var out = { title: '', mine: [], concept: [], fact: C.FACTS[lv.id] };
+    var win = run.won, id = lv.id, med = f.median;
+    // what the player did
+    if (f.flat) out.mine.push('You held a steady flock of about ' + med + ' birds for most of the flight.' + (win ? ' On this sky that worked' + (lv.cap.length === 1 && Math.abs(med - lv.cap[0][1]) <= 2 ? ': you guessed the Gap’s size, which is a fine way to win and a poor way to learn. Slow start would have found it by doubling; AIMD would then have crept upwards and backed off at the first real losses, and would have kept doing so if the Gap had moved.' : ', but a steady flock cannot follow a Gap that moves, and cannot tell you when it has.') : ' A steady flock cannot follow a Gap that changes, and cannot notice that it has.'));
+    else {
+      if (f.doubled >= 2) out.mine.push('You roughly doubled the flock each flight while every bird arrived. That is slow start: exponential growth until the first losses say stop.');
+      else if (f.doubled === 0 && f.rounds > 4) out.mine.push('You never doubled up early, so you crept towards the Gap’s size instead of racing to it. Safe, but the first rounds were spent underusing a Gap you had not yet measured.');
+      if (f.backoffs) out.mine.push('After heavy losses you cut the flock ' + f.backoffs + ' ' + plural(f.backoffs, 'time') + '. That is multiplicative decrease: when the Gap says no, back off hard and quickly.');
+      if (f.ignoredBig) out.mine.push('On ' + f.ignoredBig + ' ' + plural(f.ignoredBig, 'round') + ' you flew on, or bigger, after heavy losses. That is how crowds get worse: the scrum takes out more than the birds that did not fit.');
+      if (f.probes) out.mine.push('After calm rounds you edged the flock upwards (' + f.probes + ' ' + plural(f.probes, 'time') + '). That is additive increase: probing to see whether the Gap has widened.');
+      if (f.panic) out.mine.push('On ' + f.panic + ' ' + plural(f.panic, 'round') + ', one or two missing birds made you cut the flock sharply. An isolated loss is not a verdict from the Gap; the autopilot does this too, and it is why he is slow.');
+      else if (f.nerve >= 2) out.mine.push('A bird or two went missing on ' + f.nerve + ' rounds and you kept your nerve instead of halving the flock. Losses that do not grow with the flock are not about the flock.');
+      if (!out.mine.length) out.mine.push('Your flock sizes wandered without a clear rule. That is allowed. Next time try choosing a rule in advance: grow while everyone returns, back off when many do not.');
+    }
+    // outcome, keyed on cause
+    if (!win) {
+      if (run.endReason === 'loft') {
+        if (f.crowdShare >= 0.6) { out.title = 'Congestion collapse.'; out.concept.push('Most of the birds you lost were lost to crowding. Past the Gap’s limit the scrum takes out more birds than the ones that did not fit, and every lost scroll must be flown again, so offering more delivers less. That is congestion collapse, and you caused it with enthusiasm.', 'The cure is to treat loss as a signal. When many birds go missing under load, send fewer, not more.'); out.fact = C.FACTS[1]; }
+        else { out.title = 'The hawks, mostly.'; out.concept.push('This was not mainly a collapse: more of the birds you lost went to hawks than to crowding. Bigger flocks into hawk country simply feed the hawks more birds, and loss that does not rise with load is not the Gap speaking.', 'Keep the flock near what actually arrives, and do not mistake a hungry sky for a crowded one.'); out.fact = C.FACTS[2]; }
+      } else {
+        if (f.fill < 0.65) { out.title = 'Too timid.'; out.concept.push('You flew, on average, under two thirds of what the Gap could carry, so the deadline arrived with scrolls still in the loft. Not delivering is as much a failure as crowding. Slow start exists so a sender can find the ceiling quickly, and probing exists so it can keep finding it.'); out.fact = 'A sender that never grows its window wastes the link. That is why TCP keeps increasing until it is told to stop.'; }
+        else { out.title = 'So close, and too slow.'; out.concept.push('You used most of the Gap, but the rounds ran out. Time went on backing off, hunting for the limit again, or flying scrolls a second time. Every loss costs a round trip to repair, so the aim is to find the limit once, early, and stay just under it.'); }
+      }
+      return out;
+    }
+    // wins, per level
+    var seeShare = share !== null;
+    if (id === 1) {
+      out.title = f.lost === 0 ? 'Not a feather out of place.' : f.crowdShare > 0 && f.peak > run.history[run.history.length - 1].cap ? 'You have invented slow start.' : 'You have found the limit.';
+      out.concept.push('The Gap passes only so many birds a flight, and the first sign of that is birds not coming home. Doubling until that moment is slow start; backing off and then creeping up one bird at a time is additive increase, multiplicative decrease, the heart of TCP congestion control.');
+      if (f.lost === 0) out.concept.push('You never lost a bird, which means either luck, a very polite ramp, or a flock that never reached the limit. There is no shame in that, but the sawtooth in the chart only appears once you have gone over the edge at least once.');
+    } else if (id === 2) {
+      out.title = 'Loss is not always congestion.';
+      out.concept.push('Birds went missing even when the flock was small, and some losses did not grow with the flock size. Loss that does not grow with load is not the Gap speaking; treating every missing bird as congestion, as the autopilot does, throttles you for nothing.', 'Telling the two apart, by checking whether losses rise when the flock does, is the problem real senders face on Wi-Fi, satellite and mobile links.');
+    } else if (id === 3) {
+      out.title = share !== null && share > 0.6 ? 'You won the Gap. Politely? Less so.' : 'You shared the Gap.';
+      if (seeShare) {
+        if (share <= 0.45) out.concept.push('While the rival was flying you carried only ' + pct(share) + ' of the traffic. Courteous; possibly too much so. Additive increase with multiplicative decrease drifts two senders towards equal shares, but only if both keep probing.');
+        else if (share <= 0.6) out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic: close to an even split. Two senders that both add a bird at a time and halve on loss drift towards equal shares without ever speaking to each other.');
+        else out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic. That is more than a fair half. A sender that pushes on regardless of loss takes bandwidth from polite flows, which is exactly why "TCP-friendliness" is a thing, and why a bully who keeps squeezing gets a rival that digs in and a Gap that jams for both.');
+      }
+      var dug = run.history.filter(function (r) { return r.rivalDugIn; }).length;
+      if (dug) out.concept.push('The rival dug in ' + dug + ' ' + plural(dug, 'time') + ' after being squeezed twice running, and the Gap jammed for both of you.');
+    } else if (id === 4) {
+      out.title = 'You have been probing.';
+      out.concept.push('The Gap changed size without telling you, so the only way to find out is to keep testing: add a bird, see what happens. Losses tell you when it has shrunk; a run of calm rounds is the only hint it has widened.', 'This is why AIMD keeps increasing even when everything is fine. The ceiling is a moving target, not a number you learn once.');
+    } else if (id === 5) {
+      out.title = 'Everything, all at once.';
+      out.concept.push('Hawk losses, a rival flock and a moving ceiling together need all of it: slow start to find the room, backing off for crowding but not for stray losses, sharing with someone else, and probing again when the weather moves.', 'No single rule does it. The sawtooth is just what balancing those jobs looks like.');
+      if (seeShare) out.concept.push('While the rival was flying you carried ' + pct(share) + ' of the traffic.');
+    } else {
+      out.title = 'Free flight.';
+      out.concept.push('Nothing here is scored, so use it to ask questions. What if the hawks are at 20 per cent? If the Gap is huge? If the rival is a bully? Every setting is a real network parameter: capacity, random loss, competing traffic.');
+    }
+    return out;
+  }
+
+  function victoryScene(stars, lv) {
+    var d = el('div', 'victory');
+    var medal = stars === 3 ? '<g class="medal-bob"><path d="M50 52 L46 70 L54 66 L58 70 L54 52Z" fill="#b3202a" stroke="#2b2118"/><circle cx="52" cy="72" r="7" fill="#e0b23a" stroke="#2b2118" stroke-width="1.5"/><text x="52" y="75.5" text-anchor="middle" font-size="9" font-family="Georgia, serif" fill="#2b2118">1</text></g>' : '';
+    d.innerHTML = '<svg viewBox="0 0 96 84" aria-hidden="true"><g class="scroll-un"><rect x="6" y="4" width="46" height="30" rx="3" fill="#fbf4e3" stroke="#2b2118" stroke-width="1.5"/><path d="M12 12h34M12 18h28M12 24h32" stroke="#8d7a5a" stroke-width="1.5"/><circle cx="48" cy="28" r="4" fill="#b3202a"/></g><use href="#pgA" x="30" y="40" width="62" height="45" style="color:#8b97ad"/>' + medal + '</svg>';
+    var q = el('q', null, stars === 3 ? C.WINS[lv.id] : C.WIN_LESSER);
+    var box = el('div'); box.appendChild(el('b', null, stars === 3 ? 'A pigeon has been decorated.' : 'The scrolls arrived.')); box.appendChild(q); d.appendChild(box);
+    return d;
+  }
+  function shareBar(run) {
+    var mine = 0, theirs = 0, rounds = 0; run.history.forEach(function (h) { if (h.rivalOn) { mine += h.delivered; theirs += h.rivalDelivered; rounds++; } });
+    if (!rounds) return null;
+    var wrap = el('div'), tot = mine + theirs || 1;
+    wrap.innerHTML = '<div class="shared-lab">Who got through the Gap while the rival was flying (' + rounds + ' rounds)</div><div class="share-bar" role="img" aria-label="You ' + pct(mine / tot) + ', rival ' + pct(theirs / tot) + '"><i class="you" style="width:' + (mine / tot * 100) + '%"></i><i class="riv" style="width:' + (theirs / tot * 100) + '%"></i><span class="capm" style="left:calc(50% - 1px)" title="an even split"></span></div><div class="shared-leg"><span class="k you">You ' + pct(mine / tot) + '</span><span class="k riv">Rival ' + pct(theirs / tot) + '</span><span class="k cap">even split</span></div>';
+    return wrap;
+  }
+
   function endRun() {
     var run = S.run, lv = S.level; S.finished = true; S.auto = false; clearTimeout(S.timer);
     var stars = 0;
     if (run.won && !S.assisted && !lv.sandbox) { stars = E.starsFor(run); if (stars > (prog.stars[lv.id] || 0)) prog.stars[lv.id] = stars; save(); }
+    else if (run.won && S.assisted) { prog.helped[lv.id] = 1; save(); }
     else if (!run.won) { prog.fails[lv.id] = (prog.fails[lv.id] || 0) + 1; save(); }
-    else if (run.won && S.assisted && !prog.stars[lv.id] && lv.id === 1) { /* assisted wins do not unlock */ }
     renderAll();
+    var f = analyze(run), share = lv.rival ? (run.history.some(function (h) { return h.rivalOn; }) ? E.shareOf(run) : null) : null;
+    var data = buildDebrief(run, lv, f, share);
     var d = $('debrief'); d.hidden = false; d.innerHTML = '';
-    var data = run.won ? C.DEBRIEF.win[lv.id] : C.DEBRIEF.fail[run.endReason === 'loft' ? 'loft' : 'deadline'];
     d.appendChild(el('h2', null, data.title));
     var t = totals(), verdict;
     if (run.won) verdict = 'Delivered: all ' + lv.scrolls + ' scrolls in ' + run.round + ' ' + plural(run.round, 'round') + ', losing ' + t.lost + ' ' + plural(t.lost, 'bird') + '.';
-    else if (run.endReason === 'loft') verdict = 'The loft is empty. ' + t.lost + ' birds lost; ' + t.del + ' of ' + lv.scrolls + ' scrolls got through. ' + flockName() + ' has been dissolved.';
+    else if (run.endReason === 'loft') verdict = 'The loft is empty. ' + Math.min(t.lost, lv.loft) + ' birds lost; ' + t.del + ' of ' + lv.scrolls + ' scrolls got through. ' + flockName() + ' has been dissolved.';
     else verdict = 'The deadline passed with ' + t.del + ' of ' + lv.scrolls + ' scrolls delivered. The council has already moved on.';
-    var vp = el('p', 'db-verdict', verdict); d.appendChild(vp);
+    d.appendChild(el('p', 'db-verdict', verdict));
     if (run.won && !lv.sandbox) {
-      var sp = el('div', 'db-stars'); sp.innerHTML = S.assisted ? '' : starsHtml(stars); d.appendChild(sp);
-      if (S.assisted) d.appendChild(el('p', 'db-reno', 'The Reno flew some or all of this. He accepts no credit and the Ministry awards no stars.'));
-      else sp.setAttribute('aria-label', stars + ' of 3 stars');
+      var sp = el('div', 'db-stars'); sp.innerHTML = S.assisted ? '' : starsHtml(stars); if (!S.assisted) sp.setAttribute('aria-label', stars + ' of 3 stars'); d.appendChild(sp);
+      if (S.assisted) d.appendChild(el('p', 'db-reno', 'The Reno flew some or all of this. He accepts no credit and the Ministry awards no stars. The next level is open anyway.'));
+      else d.appendChild(victoryScene(stars, lv));
+      var key = el('p', 'db-reno stars-key');
+      key.innerHTML = '<b>Your run:</b> ' + run.round + ' rounds, ' + run.lost + ' birds lost' + (share !== null ? ', ' + pct(share) + ' of the shared Gap' : '') + '.<br>' + starsKey(lv);
+      d.appendChild(key);
+    } else if (!lv.sandbox) {
+      var k2 = el('p', 'db-reno stars-key'); k2.innerHTML = '<b>What the stars wanted:</b><br>' + starsKey(lv); d.appendChild(k2);
     }
     if (!lv.sandbox) {
       var ref = E.renoReference(lv, run.seed), rp = el('p', 'db-reno');
-      rp.textContent = 'The Reno on this same sky: ' + (ref.inTime ? ref.rounds + ' rounds, ' + ref.lost + ' ' + plural(ref.lost, 'bird') + ' lost.' : ref.won ? 'about ' + ref.rounds + ' rounds, ' + ref.lost + ' birds lost, which is past the deadline.' : 'did not finish.');
+      rp.textContent = 'For comparison, the Reno on this same sky: ' + (ref.inTime ? ref.rounds + ' rounds, ' + ref.lost + ' ' + plural(ref.lost, 'bird') + ' lost.' : ref.won ? 'about ' + ref.rounds + ' rounds, ' + ref.lost + ' birds lost, which is past the deadline.' : 'did not finish.');
       d.appendChild(rp);
     }
-    // personalised observations
-    var obs = observations(run, lv);
-    obs.forEach(function (o) { d.appendChild(el('p', null, o)); });
-    data.text.forEach(function (p) { d.appendChild(el('p', null, p)); });
-    var f = el('p', 'db-fact'); f.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d.appendChild(f);
-    if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: same Gap, different hawks.'));
+    d.appendChild(el('h3', 'db-sub', 'What you did'));
+    data.mine.forEach(function (x) { d.appendChild(el('p', null, x)); });
+    d.appendChild(el('h3', 'db-sub', 'What it was'));
+    data.concept.forEach(function (x) { d.appendChild(el('p', null, x)); });
+    if (lv.rival) { var sb = shareBar(run); if (sb) d.appendChild(sb); }
+    var fct = el('p', 'db-fact'); fct.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d.appendChild(fct);
+    if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: ' + (lv.p > 0 ? 'same Gap, different hawks.' : lv.rival ? 'same Gap, a rival in a different mood.' : 'same Gap, a different scatter of luck.')));
     var row = el('div', 'cta-row');
     var btn = function (txt, cls, fn) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); row.appendChild(b); return b; };
     var nextId = lv.id < 6 ? lv.id + 1 : null;
-    if (run.won && nextId && isUnlocked(nextId)) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
-    btn(run.won ? 'Fly it again' : 'Try again', run.won ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; lv.sandbox ? sandboxRestart() : beginBrief(lv); });
-    if ((prog.stars[1] || 0) > 0 || (run.won && lv.id === 1 && !S.assisted)) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); });
+    var canNext = run.won && nextId && isUnlocked(nextId);
+    if (canNext) btn(nextId === 6 ? 'On to the Open Sky' : 'Next: ' + levelById(nextId).name, 'btn-primary', function () { openLevel(nextId); });
+    if (run.won && S.assisted && !lv.sandbox) btn('Now fly it yourself', canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; beginBrief(lv); });
+    else btn(run.won ? 'Fly it again' : 'Try again', run.won && canNext ? '' : 'btn-primary', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; lv.sandbox ? sandboxRestart() : beginBrief(lv); });
+    if ((prog.stars[1] || 0) > 0) btn('Watch the Reno fly this', '', function () { S.attempt[lv.id] = (S.attempt[lv.id] || 0) + 1; var again = lv.sandbox ? sandboxLevel() : lv; beginBrief(again); S.phase = 'play'; $('debrief').hidden = true; renderAll(); hireReno(); });
     if (lv.sandbox) btn('Set the weather again', '', openSandboxDialog);
     btn('All levels', '', function () { goTitle(true); });
     d.appendChild(row);
@@ -498,39 +578,27 @@
     setTimeout(function () { d.focus({ preventScroll: true }); d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }, 80);
   }
 
-  function observations(run, lv) {
-    var h = run.history, out = [], i;
-    // collapse in miniature
-    for (i = 0; i < h.length; i++) {
-      var r = h[i];
-      if (r.w >= r.cap * 1.5 && r.delivered <= r.cap * 0.6 && !lv.rival) { out.push('Round ' + r.round + ': you released ' + r.w + ' birds into a Gap that takes ' + r.cap + ', and only ' + r.delivered + ' arrived. More birds flown, fewer scrolls delivered. That is congestion collapse in miniature.'); break; }
-    }
-    if (lv.id === 2 || lv.id === 5) {
-      var panics = 0, hawkOnly = 0;
-      for (i = 0; i + 1 < h.length; i++) if (h[i].lostHawk > 0 && h[i].lostCrowd === 0) { hawkOnly++; if (h[i + 1].w <= Math.floor(h[i].w * 0.6)) panics++; }
-      if (hawkOnly >= 2) out.push(panics ? 'On ' + panics + ' of the ' + hawkOnly + ' rounds where only hawks took birds, you cut the flock sharply. The Gap was not the problem there.' : 'On ' + hawkOnly + ' rounds hawks took birds and the Gap was fine. You kept your nerve each time, which is the whole trick.');
-    }
-    if (lv.rival && h.length) {
-      var y = 0, v = 0; h.forEach(function (r) { y += r.delivered; v += r.rivalDelivered; });
-      if (y + v) out.push('Across the flight you carried ' + Math.round(y / (y + v) * 100) + '% of the traffic through the Gap; the rival carried ' + Math.round(v / (y + v) * 100) + '%.');
-    }
-    if (lv.cap.length > 1 && h.length) { var first = null; for (i = 0; i < h.length; i++) if (h[i].cap !== h[0].cap) { first = h[i]; break; } if (first) out.push('The Gap changed size at round ' + first.round + ', from ' + h[0].cap + ' to ' + first.cap + '. The sender is never told. It can only notice.'); }
-    return out;
-  }
-
   /* ---------- sandbox ---------- */
+  function sbMessage() {
+    var c = +$('sb-c').value, p = +$('sb-p').value, r = $('sb-r').checked, m = '';
+    if (r && c < 8) m = 'With a Gap this narrow two flocks will mostly meet each other. Educational. Unpleasant.';
+    else if (p >= 30) m = 'At this hawk density the Ministry advises against naming the birds.';
+    else if (c < 6) m = 'A Gap this narrow rewards patience, and a very small flock.';
+    $('sb-msg').textContent = m;
+  }
   function openSandboxDialog() {
     var dlg = $('dlg-sandbox');
     $('sb-c').value = S.sandbox.C; $('sb-p').value = S.sandbox.p; $('sb-r').checked = S.sandbox.rival;
-    $('sb-c-o').textContent = S.sandbox.C; $('sb-p-o').textContent = S.sandbox.p;
+    $('sb-c-o').textContent = S.sandbox.C; $('sb-p-o').textContent = S.sandbox.p; sbMessage();
     if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
   function sandboxRestart() { beginBrief(sandboxLevel()); }
 
   /* ---------- navigation ---------- */
+  function midFlight() { return S.run && !S.finished && S.phase === 'play' && (S.shown > 0 || S.busy); }
   function goTitle(force) {
-    if (!force && S.run && !S.finished && S.shown > 0 && !S.auto && !window.confirm('Abandon this flight? The birds will be told it was a drill.')) return;
-    clearTimeout(S.timer); S.auto = false; S.busy = false; S.skipping = true;
+    if (!force && midFlight() && !S.auto) { var d = $('dlg-leave'); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); return; }
+    clearTimeout(S.timer); S.runId++; S.auto = false; S.busy = false; S.skipping = true; S.finished = true;
     renderLevels(); show('title'); $('flock').value = prog.flock; window.scrollTo(0, 0);
   }
 
@@ -544,6 +612,8 @@
     $('btn-levels').addEventListener('click', function () { goTitle(false); });
     $('btn-howto').addEventListener('click', function () { var d = $('dlg-howto'); if (d.showModal) d.showModal(); else d.setAttribute('open', ''); });
     $('btn-sound').addEventListener('click', function () { S.sound = !S.sound; this.setAttribute('aria-pressed', S.sound); this.textContent = 'Coos: ' + (S.sound ? 'on' : 'off'); if (S.sound) { ensureAudio(); coo('release'); } });
+    $('btn-fast').addEventListener('click', function () { prog.fast = !prog.fast; save(); renderControls(); });
+    $('dlg-leave').addEventListener('close', function () { if (this.returnValue === 'leave') goTitle(true); this.returnValue = ''; });
     $('w-minus').addEventListener('click', function () { setW(S.w - 1); });
     $('w-plus').addEventListener('click', function () { setW(S.w + 1); });
     $('w-range').addEventListener('input', function () { setW(+this.value); });
@@ -551,25 +621,22 @@
     $('btn-reno').addEventListener('click', hireReno);
     $('btn-skip').addEventListener('click', function () { S.skipping = true; });
     $('mapwrap').addEventListener('click', function () { if (S.busy) S.skipping = true; });
-    $('sb-c').addEventListener('input', function () { $('sb-c-o').textContent = this.value; });
-    $('sb-p').addEventListener('input', function () { $('sb-p-o').textContent = this.value; });
+    ['sb-c', 'sb-p', 'sb-r'].forEach(function (id) { $(id).addEventListener('input', function () { $('sb-c-o').textContent = $('sb-c').value; $('sb-p-o').textContent = $('sb-p').value; sbMessage(); }); });
     $('sb-form').addEventListener('submit', function () { S.sandbox.C = +$('sb-c').value; S.sandbox.p = +$('sb-p').value; S.sandbox.rival = $('sb-r').checked; setTimeout(sandboxRestart, 0); });
     $('egg').addEventListener('click', function () { var t = $('egg-text'), open = t.hidden; t.hidden = !open; t.textContent = open ? ' ' + C.FOOT_BERGEN : ''; this.setAttribute('aria-expanded', open); });
     document.addEventListener('keydown', function (e) {
       var tag = (e.target && e.target.tagName) || '';
       if (tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.type === 'text') || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (document.querySelector('dialog[open]')) return;
-      if ($('screen-game').hidden) return;
+      if (document.querySelector('dialog[open]') || $('screen-game').hidden) return;
       var k = e.key;
       if (k === '+' || k === '=') { setW(S.w + 1); e.preventDefault(); }
       else if (k === '-' || k === '_') { setW(S.w - 1); e.preventDefault(); }
-      else if (k === 'r' || k === 'R') { if (tag !== 'BUTTON' || e.target.id === 'btn-go') { if (!e.repeat) release(); } }
+      else if (k === 'r' || k === 'R') { if ((tag !== 'BUTTON' || e.target.id === 'btn-go') && !e.repeat) release(); }
       else if (k === 'h' || k === 'H') { if ((prog.stars[1] || 0) > 0 && !e.repeat) hireReno(); }
     });
     var onMq = function (e) { reduceMotion = e.matches; };
     try { var mq = window.matchMedia('(prefers-reduced-motion: reduce)'); mq.addEventListener ? mq.addEventListener('change', onMq) : mq.addListener(onMq); } catch (e) {}
-    // title mascot
-    var h1 = document.querySelector('#screen-title h1'); if (h1) h1.classList.add('wob');
+    var h1 = document.querySelector('#screen-title h1'); if (h1 && !reduceMotion) h1.classList.add('wob');
     show('title');
   }
   init();
