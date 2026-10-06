@@ -709,7 +709,7 @@
     var fct = el('p', 'db-fact'); fct.innerHTML = '<b>Real-world fact.</b> ' + esc(data.fact); d2.appendChild(fct);
     d2.appendChild(el('p', 'smallprint', 'Model note: the Ministry simplifies. Real collapse comes from queues overflowing and senders needlessly retransmitting; here a simple penalty (birds over the limit knock out others) stands in for it, so it exaggerates. ACKs never go astray, and every round is one lockstep round trip.'));
     if (!run.won) d.appendChild(el('p', 'muted', 'Retrying gives you a fresh sky: ' + (lv.p > 0 ? 'same Gap, different hawks.' : lv.rival ? 'same Gap, a rival in a different mood.' : 'same Gap, a different scatter of luck.')));
-    var row = el('div', 'cta-row brief-cta'), row2 = el('div', 'cta-row'), firstPrimary = null;
+    var row = el('div', 'cta-row db-sticky'), row2 = el('div', 'cta-row'), firstPrimary = null;
     var btn = function (txt, cls, fn, more) { var b = el('button', 'btn ' + cls, txt); b.type = 'button'; b.addEventListener('click', fn); (more ? row2 : row).appendChild(b); if (!more && !firstPrimary && /primary/.test(cls)) firstPrimary = { t: txt, c: cls, f: fn }; return b; };
     var canNext = run.won && nextId && isUnlocked(nextId);
     if (pity) btn(nextId === 6 ? 'Level 6 is open: the Ministry takes pity' : 'Level ' + nextId + ' is open: the Ministry takes pity', 'btn-primary', function () { openLevel(nextId); });
@@ -720,6 +720,7 @@
     if (lv.sandbox) btn('Set the weather again', '', openSandboxDialog, true);
     btn('All levels', '', function () { goTitle(true); }, true);
     d.appendChild(row); d.appendChild(row2);
+    if ('IntersectionObserver' in window) { var io = new IntersectionObserver(function (es) { es.forEach(function (e) { row.classList.toggle('on', !e.isIntersecting && e.boundingClientRect.bottom < 0); }); }); io.observe(topSlot); }
     if (firstPrimary) { var tb = el('button', 'btn ' + firstPrimary.c, firstPrimary.t); tb.type = 'button'; tb.addEventListener('click', firstPrimary.f); topSlot.appendChild(tb); }
     d.appendChild(el('p', 'smallprint', 'Signed, ' + flockName() + '. Request for Comments: please do not send comments by pigeon.'));
     setTimeout(function () { d.focus({ preventScroll: true }); d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }, 80);
