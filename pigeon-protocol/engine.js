@@ -16,7 +16,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var JAM = 0.75;         // each bird beyond capacity also knocks this many others out of the sky
+  var JAM = 0.75;         // in a crowd the scrum takes out MORE than the excess, so offering more can deliver less
+  var JAM_RIVAL = 1.0;    // two flocks mixing in the Gap collide more than one flock does         // each bird beyond capacity also knocks this many others out of the sky
   var JAM_FLOOR = 0.35;   // the Gap never passes fewer than this fraction of C
   var MAX_W = 24;
 
@@ -103,9 +104,9 @@
     return out;
   }
 
-  function gapPasses(offered, C) {
+  function gapPasses(offered, C, jam) {
     if (offered <= C) return offered;
-    var p = Math.round(C - JAM * (offered - C));
+    var p = Math.round(C - (jam === undefined ? JAM : jam) * (offered - C));
     return Math.max(Math.ceil(JAM_FLOOR * C), p);
   }
 
@@ -117,7 +118,9 @@
     var requested = Math.round(w);
     w = Math.max(1, Math.min(requested, MAX_W, pend.length));
     var C = capAt(lv, r);
-    var rw = run.rival ? run.rival.w : 0;
+    var rivalOn = !!run.rival && (lv.rival.from === undefined || r >= lv.rival.from) && (lv.rival.to === undefined || r <= lv.rival.to);
+    if (rivalOn && lv.rival.from === r) run.rival = createReno(lv.rival.start || 2);   // a fresh flock turns up
+    var rw = rivalOn ? run.rival.w : 0;
 
     var birds = [], i;
     for (i = 0; i < w; i++) {
@@ -127,7 +130,7 @@
     for (i = 0; i < rw; i++) birds.push({ owner: 'rival', serial: -1, scroll: 0, attempt: 0, fate: 'ok' });
 
     var offered = birds.length;
-    var passes = gapPasses(offered, C);
+    var passes = gapPasses(offered, C, rivalOn ? JAM_RIVAL : JAM);
     var order = [];
     for (i = 0; i < offered; i++) order.push(i);
     for (i = offered - 1; i > 0; i--) {
@@ -156,7 +159,14 @@
         if (b.fate === 'ok') rec.rivalDelivered++; else rec.rivalLost++;
       }
     }
-    if (run.rival) renoNext(run.rival, rec.rivalLost > 0);
+    rec.rivalDugIn = false; rec.rivalOn = rivalOn;
+    if (rivalOn) {
+      // The rival is a Reno: it halves when it loses birds. But a flock that keeps squeezing it gets
+      // pushed back: after two losing rounds in a row it digs in and doubles instead of backing off.
+      run.rival.streak = rec.rivalLost > 0 ? (run.rival.streak || 0) + 1 : 0;
+      if (rec.rivalLost > 0 && run.rival.streak >= 2) { run.rival.w = Math.min(MAX_W, run.rival.w * 2); rec.rivalDugIn = true; }
+      else renoNext(run.rival, rec.rivalLost > 0);
+    }
 
     run.round = r;
     run.sent += w;
@@ -197,10 +207,12 @@
   // ---- stars -------------------------------------------------------------------------------
   // 1: delivered everything in time.  2: matched the bird-brain.  3: beat it.
   // Thresholds are per level (level.stars), derived from Reno's behaviour and checked in the tests.
-  // Share of the traffic through the Gap that was yours (1 when there is no rival).
+  // Share of the traffic through the Gap that was yours, over the rounds the rival was actually flying
+  // (1 when there was no rival).
   function shareOf(run) {
-    var tot = run.delivered + run.rivalDelivered;
-    return tot ? run.delivered / tot : 1;
+    var mine = 0, theirs = 0;
+    run.history.forEach(function (h) { if (h.rivalOn) { mine += h.delivered; theirs += h.rivalDelivered; } });
+    return mine + theirs ? mine / (mine + theirs) : 1;
   }
   function starsFor(run) {
     var st = run.level.stars;
