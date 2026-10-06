@@ -79,13 +79,29 @@
   }
 
   // ---- run ---------------------------------------------------------------------------------
+  // Each attempt gets a slightly different sky: the weather arrives a round early or late, and the Gap is a
+  // bird or two wider or narrower, so a remembered schedule does not win on a retry. The canonical level
+  // schedule (level.cap) is what the tests and the brief describe; the jittered one is what is flown.
+  function jitterSchedule(lv, seed) {
+    var j = lv.jitter;
+    if (!j) return lv.cap.map(function (c) { return [c[0], c[1]]; });
+    var rng = mulberry32(hash(seed >>> 0, 4401)), out = [];
+    lv.cap.forEach(function (c, i) {
+      var shift = i === 0 || !j.shift ? 0 : Math.round((rng() * 2 - 1) * j.shift), d = j.cap ? Math.round((rng() * 2 - 1) * j.cap) : 0;
+      out.push([Math.max(1, c[0] + shift), Math.max(3, c[1] + d)]);
+    });
+    out.sort(function (a, b) { return a[0] - b[0]; });
+    return out;
+  }
+
   function createRun(level, seed) {
     var lv = clone(level);
     var scrolls = [];
     for (var i = 1; i <= lv.scrolls; i++) scrolls.push({ id: i, acked: false, attempts: 0 });
-    return {
+    var run = {
       level: lv,
       seed: (seed === undefined ? lv.seed : seed) >>> 0,
+      capSched: null,
       round: 0,
       scrolls: scrolls,
       delivered: 0,
@@ -101,6 +117,8 @@
       won: false,
       endReason: null
     };
+    run.capSched = jitterSchedule(lv, run.seed);
+    return run;
   }
 
   function pendingIds(run) {
@@ -122,7 +140,7 @@
     var pend = pendingIds(run);
     var requested = Math.round(w);
     w = Math.max(1, Math.min(requested, MAX_W, pend.length));
-    var C = capAt(lv, r);
+    var C = capAt({ cap: run.capSched }, r);
     var rivalOn = !!run.rival && (lv.rival.from === undefined || r >= lv.rival.from) && (lv.rival.to === undefined || r <= lv.rival.to);
     if (rivalOn && lv.rival.from === r) run.rival = createReno(lv.rival.start || 2);   // a fresh flock turns up
     var rw = rivalOn ? run.rival.w : 0;
@@ -223,7 +241,7 @@
     var st = run.level.stars;
     if (!run.won || !st) return run.won ? 1 : 0;
     var rounds = run.round, lost = run.lost, sh = shareOf(run), s = 1;
-    function ok(t) { return rounds <= t.rounds && lost <= t.lost && (t.share === undefined || sh <= t.share); }
+    function ok(t) { return rounds <= t.rounds && lost <= t.lost && (t.share === undefined || sh <= t.share) && (t.minShare === undefined || sh >= t.minShare) && (t.minLost === undefined || lost >= t.minLost); }
     if (ok(st.two)) s = 2;
     if (ok(st.three)) s = 3;
     return s;
