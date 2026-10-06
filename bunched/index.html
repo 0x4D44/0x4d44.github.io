@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bunched</title>
+<meta name="description" content="You are the dispatcher of a circular Edinburgh bus route. Cause bus bunching on purpose, watch three buses arrive at once, then learn how to cure it. Newell and Potts, with pigeons.">
+<meta name="theme-color" content="#8c1d35">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the game</a>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1 id="brandTitle">Bunched</h1>
+      <span class="kicker">Water of Leith Omnibus Company &middot; Dispatch Office</span>
+    </div>
+    <div class="top-tools">
+      <button type="button" class="tool" id="soundBtn" aria-pressed="false" title="Bell sounds (off by default)">
+        <span class="ico" aria-hidden="true">&#9834;</span><span class="lbl">Bell: off</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ TITLE ============ -->
+<section id="title" class="screen" aria-labelledby="heroH">
+  <div class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">A dispatcher's guide to a very Scottish phenomenon</p>
+      <h2 id="heroH">Why do three buses come at once, after a half-hour wait?</h2>
+      <p class="lede">You run a circular route round the Water of Leith. Six perfectly spaced buses. One pigeon. You will cause a bunch on purpose, then learn to cure it, using only a clipboard and the power to say <em>"not yet"</em>.</p>
+      <div class="cta">
+        <button type="button" class="btn primary big" id="startBtn">Start: watch it happen</button>
+        <button type="button" class="btn big" id="levelsBtn">Pick a level</button>
+      </div>
+      <p class="fine">About eight minutes to learn it properly. No pigeons were harmed. Several were chased.</p>
+    </div>
+    <figure class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 360 200" class="heroSvg">
+        <rect x="0" y="130" width="360" height="40" rx="6" fill="#4a3f3a"/>
+        <path d="M0 150 H360" stroke="#f1cd76" stroke-width="2" stroke-dasharray="14 12" opacity=".8"/>
+        <g id="heroBuses"></g>
+        <g transform="translate(300 60)">
+          <rect x="-38" y="-24" width="76" height="30" rx="9" fill="#fffdf7" stroke="#2a1a14" stroke-width="1.5"/>
+          <path d="M-12 6 l-4 12 l16 -12 z" fill="#fffdf7" stroke="#2a1a14" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M-14 6 h14" stroke="#fffdf7" stroke-width="3"/>
+          <text x="0" y="-4" text-anchor="middle" font-size="14" font-weight="800" fill="#2a1a14" font-family="ui-rounded,system-ui,sans-serif">Typical.</text>
+        </g>
+        <g transform="translate(300 160)"><use href="#px4" x="-8" y="-24" width="16" height="26" style="color:#2f6fb0"/></g>
+      </svg>
+    </figure>
+  </div>
+
+  <div class="block" id="levelsBlock">
+    <h3 class="sec">The shifts</h3>
+    <ol class="levels" id="levelList"></ol>
+    <div class="sandbox card" id="sandboxCard">
+      <div class="sb-head">
+        <h4>Sandbox</h4>
+        <p>Turn the dials. Break the timetable. Release a pigeon on demand.</p>
+      </div>
+      <div class="sb-ctl">
+        <label>Buses <output id="sbBusOut">6</output>
+          <input type="range" id="sbBus" min="3" max="10" step="1" value="6"></label>
+        <label>Passengers <output id="sbDemOut">1.0x</output>
+          <input type="range" id="sbDem" min="0.4" max="2.4" step="0.1" value="1"></label>
+        <label>Boarding slowness <output id="sbKOut">2.5 s</output>
+          <input type="range" id="sbK" min="1" max="5" step="0.5" value="2.5"></label>
+        <button type="button" class="btn" id="sbGo">Open the sandbox</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block about">
+    <h3 class="sec">The fine print</h3>
+    <p>The Water of Leith Omnibus Company is fictional, which will come as a relief to everyone. The mechanism is not. It is the model from Newell and Potts, <em>Maintaining a bus schedule</em> (1964): passengers turn up at a steady rate, and a bus stays at each stop for a fixed minimum plus a few seconds per person who boards. Nothing in this game makes buses bunch. They manage it by themselves.</p>
+  </div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="game" class="screen" hidden aria-label="The route">
+  <div class="levelbar">
+    <div class="lb-top">
+      <button type="button" class="btn small" id="menuBtn" aria-label="Back to the level list">&larr; Levels</button>
+      <div class="lb-name"><span id="lvTag" class="tag">Level 1</span> <strong id="lvName">Gentle Morning</strong></div>
+      <button type="button" class="btn small ghost" id="endBtn">End shift</button>
+    </div>
+    <div class="lb-row">
+      <div class="clock" aria-label="Time of day"><span id="clock">07:00</span></div>
+      <div class="progress" role="progressbar" aria-label="Shift progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><i id="progressFill"></i></div>
+      <div class="speed" role="group" aria-label="Game speed">
+        <button type="button" class="sp" id="pauseBtn" aria-label="Pause" title="Pause (space)">&#10074;&#10074;</button>
+        <button type="button" class="sp" data-speed="1" aria-pressed="false">1x</button>
+        <button type="button" class="sp" data-speed="2" aria-pressed="true">2x</button>
+        <button type="button" class="sp" data-speed="4" aria-pressed="false">4x</button>
+        <button type="button" class="sp" data-speed="8" aria-pressed="false">8x</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="gamegrid">
+    <div class="stagecol">
+      <div class="ringwrap" id="ringWrap">
+        <svg id="ring" viewBox="0 0 380 380" role="group" aria-label="The ring road with its buses and bus stops. Use the bus list below to hold buses with the keyboard." focusable="false"></svg>
+      </div>
+      <p class="caption" id="caption" aria-live="off">Evenly spaced. Savour it.</p>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <div class="card rulercard">
+        <div class="card-h"><h3>Headway ruler</h3><span class="hint">gap behind the bus ahead</span></div>
+        <svg id="ruler" viewBox="0 0 360 70" preserveAspectRatio="none" role="img" aria-label="Headway ruler: the route laid out as a line, with each bus marked and the gaps between them coloured."></svg>
+        <div class="legend"><span><i class="sw tight"></i>bunched</span><span><i class="sw ok"></i>about right</span><span><i class="sw wide"></i>a long wait</span></div>
+      </div>
+    </div>
+
+    <div class="panelcol">
+      <div class="card waitcard" id="waitCard">
+        <div class="card-h"><h3>Your average wait</h3><span class="hint">last 20 minutes</span></div>
+        <div class="waitnums">
+          <div><span class="big" id="waitNow">0:00</span><span class="sub">actual</span></div>
+          <div><span class="big gold" id="waitEven">0:00</span><span class="sub">if perfectly even</span></div>
+          <div><span class="big pen" id="waitPen">+0%</span><span class="sub">bunching tax</span></div>
+        </div>
+        <div class="bars" aria-hidden="true"><i id="barNow"></i><i id="barEven"></i></div>
+        <p class="note" id="waitNote">For evenly spaced buses the average wait is half the gap. Bunch them and it's longer, even though the same number of buses are running.</p>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><span class="v" id="tCompl">0</span><span class="l">complaints</span></div>
+        <div class="tile"><span class="v" id="tStrand">0</span><span class="l">stranded</span></div>
+        <div class="tile"><span class="v" id="tScore">-</span><span class="l" id="tScoreL">delay per person</span></div>
+      </div>
+      <p class="goal" id="goal"></p>
+
+      <div class="card inspector" id="inspector" hidden>
+        <div class="card-h"><h3>Bus Inspector Dalgleish</h3>
+          <button type="button" class="mini" id="inspToggle" aria-pressed="true">On</button></div>
+        <p id="inspText" class="insp-text">Clipboard at the ready.</p>
+        <button type="button" class="btn small primary" id="inspDo" hidden>Do as the clipboard says</button>
+      </div>
+
+      <div class="card buscard">
+        <div class="card-h"><h3 id="busH">Your buses</h3><span class="hint" id="busHint">tap a bus or its button</span></div>
+        <ul class="buses" id="busList"></ul>
+        <div class="sbtools" id="sbTools" hidden><button type="button" class="btn small" id="pigeonBtn">Release a pigeon</button></div>
+      </div>
+
+      <div class="card chartcard">
+        <div class="card-h"><h3>Gaps over time</h3><span class="hint">one line per bus</span></div>
+        <canvas id="chart" height="130" role="img" aria-label="Chart of the gap behind each bus over time. Lines that fan apart mean the buses are bunching."></canvas>
+        <p class="note">Lines fanning out: bunching. Lines hugging the gold dashed line: a service you could set your watch by.</p>
+      </div>
+
+      <div class="card slipcard">
+        <div class="card-h"><h3>Complaints desk</h3><span class="hint" id="slipCount">0 slips</span></div>
+        <ul class="slips" id="slips"><li class="empty">No complaints yet. Give it a few laps.</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ BRIEFING ============ -->
+<div class="overlay" id="brief" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="briefH">
+    <p class="eyebrow" id="briefTag">Level 1</p>
+    <h2 id="briefH">Gentle Morning</h2>
+    <p id="briefText" class="lede"></p>
+    <ul class="how" id="briefHow"></ul>
+    <div class="stars-need" id="briefStars"></div>
+    <div class="cta"><button type="button" class="btn primary big" id="briefGo">Roll the buses</button>
+    <button type="button" class="btn" id="briefBack">Back</button></div>
+  </div>
+</div>
+
+<!-- ============ DEBRIEF ============ -->
+<div class="overlay" id="debrief" hidden>
+  <div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="debH">
+    <p class="eyebrow" id="debTag">Level complete</p>
+    <h2 id="debH">Shift over</h2>
+    <div class="starrow" id="debStars" aria-live="polite"></div>
+    <div class="debgrid" id="debGrid"></div>
+    <div class="lesson" id="debLesson"></div>
+    <p class="robot" id="debRobot"></p>
+    <div class="cta">
+      <button type="button" class="btn primary big" id="debNext">Next level</button>
+      <button type="button" class="btn" id="debRetry">Try again</button>
+      <button type="button" class="btn ghost" id="debMenu">Levels</button>
+    </div>
+  </div>
+</div>
+
+<div class="sr-only" id="live" role="status" aria-live="polite"></div>
+
+<script src="engine.js"></script>
+<script src="game.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
