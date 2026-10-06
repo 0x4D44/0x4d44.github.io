@@ -65,3 +65,38 @@ export const polite = () => sensible({ boost: 0.12 });
 // Open-loop ramp: never reads a single result. w = min(cap, start + step * (round - 1)).
 export const ramp = (start, step, cap) => (run) => Math.min(cap, start + step * run.round);
 export function* allRamps() { for (let start = 1; start <= 12; start++) for (const step of [0, 1, 2, 3]) for (let cap = 6; cap <= 24; cap += 2) if (step || cap === start + 0) yield { start, step, cap }; }
+
+// Open-loop ramp with ONE token cut: after the first round in which any bird is lost it flies one bird fewer,
+// then carries on ramping. (A gaming attempt: it technically "flew fewer birds after a loss".)
+export function tokenRamp(start, step, cap, cut = 1) {
+  let base = null, done = false;
+  return (run, last) => {
+    if (base === null) base = start;
+    if (last && last.lost > 0 && !done) { done = true; base = Math.max(1, last.requested - cut) - step; }
+    base += last ? step : 0;
+    return Math.max(1, Math.min(cap, base));
+  };
+}
+export function* allTokenRamps() { for (let start = 1; start <= 12; start++) for (const step of [0, 1, 2, 3]) for (let cap = 6; cap <= 24; cap += 3) for (const cut of [1, 3]) yield { start, step, cap, cut }; }
+
+// Additive increase, additive decrease (+1 / -2): adapts, but not multiplicatively.
+export function aiad() {
+  let w = 1, ss = true;
+  return (run, last) => {
+    if (!last) return w;
+    const lost = last.w - last.delivered;
+    if (lost <= 1) w = ss ? last.w * 2 : last.w + 1;
+    else { ss = false; w = Math.max(1, last.w - 2); }
+    return w;
+  };
+}
+// Multiplicative increase, multiplicative decrease (x1.5 up, x0.7 down).
+export function mimd() {
+  let w = 2;
+  return (run, last) => {
+    if (!last) return w;
+    const lost = last.w - last.delivered;
+    w = lost <= 1 ? Math.ceil(last.w * 1.5) : Math.max(1, Math.floor(last.w * 0.7));
+    return Math.min(24, w);
+  };
+}
