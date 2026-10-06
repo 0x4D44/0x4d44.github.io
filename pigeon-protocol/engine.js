@@ -43,7 +43,7 @@
   // "jitter" is the per-attempt wobble of the weather (rounds early or late, birds wider or narrower).
   var LEVELS = [
     { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], jitter: { cap: 2 }, p: 0, rival: null, seed: 1149, loft: 45,
-      stars: { three: { rounds: 11, lost: 20, adapt: true }, two: { rounds: 14, lost: 32, adapt: true } } },
+      stars: { three: { rounds: 11, lost: 20, adapt: true, minEvents: 1 }, two: { rounds: 14, lost: 32, adapt: true, minEvents: 1 } } },
     { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 150, deadline: 20, cap: [[1, 14], [3, 5], [6, 24]], jitter: { shift: 2, cap: 3 }, p: 0.1, rival: null, seed: 1990, loft: 45,
       stars: { three: { rounds: 18, lost: 30, adapt: true }, two: { rounds: 20, lost: 38, adapt: true } } },
     { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 90, deadline: 20, cap: [[1, 18], [3, 7], [9, 20]], jitter: { shift: 1, cap: 2 }, p: 0, rival: { start: 3, from: 2, to: 9 }, seed: 2001, loft: 36,
@@ -242,29 +242,30 @@
     run.history.forEach(function (h) { if (h.rivalOn) { mine += h.delivered; theirs += h.rivalDelivered; } });
     return mine + theirs ? mine / (mine + theirs) : 1;
   }
-  // Responsiveness: when a round went badly (at least two birds and a quarter of the flock lost), did the
+  // Responsiveness: when a round went badly (at least three birds and 30% of the flock lost), did the
   // sender fly clearly fewer birds next time (at most 85% of what it had asked for)? A flock that only grows,
   // only holds, or makes one token cut and carries on has not responded to anything. The last round is
   // ignored, since there is no 'next time' after it.
+  var RESP = { minEvents: 2, minLost: 3, minFrac: 0.3, ratio: 0.85, need: 0.75 };
   function responseStats(run) {
     var h = run.history, events = 0, responded = 0;
     for (var i = 0; i < h.length - 1; i++) {
-      if (h[i].lost >= 2 && h[i].lost / h[i].w >= 0.25) {
+      if (h[i].lost >= RESP.minLost && h[i].lost / h[i].w >= RESP.minFrac) {
         events++;
-        if (h[i + 1].requested <= 0.85 * h[i].requested) responded++;
+        if (h[i + 1].requested <= RESP.ratio * h[i].requested) responded++;
       }
     }
     return { events: events, responded: responded };
   }
-  function adaptedOf(run) {
+  function adaptedOf(run, minEvents) {
     var st = responseStats(run);
-    return st.events >= 1 && st.responded >= 0.75 * st.events;
+    return st.events >= (minEvents || RESP.minEvents) && st.responded >= RESP.need * st.events;
   }
   function starsFor(run) {
     var st = run.level.stars;
     if (!run.won || !st) return run.won ? 1 : 0;
     var rounds = run.round, lost = run.lost, sh = shareOf(run), s = 1;
-    function ok(t) { return rounds <= t.rounds && lost <= t.lost && (t.share === undefined || sh <= t.share) && (t.minShare === undefined || sh >= t.minShare) && (t.adapt === undefined || !t.adapt || adaptedOf(run)); }
+    function ok(t) { return rounds <= t.rounds && lost <= t.lost && (t.share === undefined || sh <= t.share) && (t.minShare === undefined || sh >= t.minShare) && (t.adapt === undefined || !t.adapt || adaptedOf(run, t.minEvents)); }
     if (ok(st.two)) s = 2;
     if (ok(st.three)) s = 3;
     return s;
@@ -295,6 +296,6 @@
     hash: hash, mulberry32: mulberry32, capAt: capAt, gapPasses: gapPasses,
     createRun: createRun, playRound: playRound, pendingIds: pendingIds,
     createReno: createReno, renoNext: renoNext, renoPolicy: renoPolicy,
-    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor, shareOf: shareOf, sanitizeProgress: sanitizeProgress, adaptedOf: adaptedOf, responseStats: responseStats
+    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor, shareOf: shareOf, sanitizeProgress: sanitizeProgress, adaptedOf: adaptedOf, RESP: RESP, responseStats: responseStats
   };
 });
