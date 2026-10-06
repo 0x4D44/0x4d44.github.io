@@ -188,7 +188,7 @@ dialog .chk input { width: 24px; height: 24px; }
 .status { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
 .status-lvl { grid-column: 1 / -1; }
 .spark { width: 100%; max-width: 220px; height: 36px; background: rgba(255,255,255,.08); border-radius: 4px; }
-@media (min-width: 640px) { .status { grid-template-columns: minmax(0, 1fr) auto auto; } .spark.on { width: 140px; } .status-lvl { grid-column: auto; } }
+@media (min-width: 640px) { .status { grid-template-columns: minmax(150px, 1fr) auto auto; } .spark.on { width: 140px; } .status-lvl { grid-column: auto; } }
 .logtbl summary, .egg-btn { min-height: 44px; display: flex; align-items: center; }
 .egg-btn { color: var(--red-d); text-decoration: underline; font-weight: bold; }
 dialog .chk { min-height: 44px; }
@@ -254,3 +254,5 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 .prefill input { width: 24px; height: 24px; }
 .db-blind { background: #f7dcd8; border: 1.5px solid var(--red); border-radius: 4px; padding: 6px 10px; font-weight: bold; }
 .db-unlock { background: #e3efdc; border: 1.5px solid var(--green); border-radius: 4px; padding: 6px 10px; }
+
+.pace { white-space: nowrap; }
