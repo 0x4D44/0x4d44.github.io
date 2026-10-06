@@ -231,9 +231,13 @@
       return 'good';
     }
     function chargeStart(bus) {
-      var q = holdQuality(bus); bus.hold.q = q; sim.stats.hq[q]++;
+      var RK = { good: 0, loose: 1, leader: 2 }, q = holdQuality(bus), aq = bus.hold.armQ, changed = false;
+      // judged on the better of the moment the order was given and the moment the hold begins:
+      // a correct call is not billed because the bus ahead moved on while the order was waiting
+      if (aq && RK[aq] < RK[q]) { q = aq; changed = true; }
+      bus.hold.armQ = null; bus.hold.q = q; sim.stats.hq[q]++;
       if (q === 'leader') sim.stats.penaltySec += cfg.penLeader; else if (q === 'loose') sim.stats.penaltySec += cfg.penLoose;
-      emit({ type: 'holdq', bus: bus.id, q: q });
+      emit({ type: 'holdq', bus: bus.id, q: q, changed: changed });
     }
     function endHold(bus, why, auto) {
       bus.hold.active = false; bus.coolUntil = sim.t + cfg.cooldown;
@@ -495,7 +499,7 @@
         b.hold.active = true; b.hold.startT = sim.t; b.hold.left = cfg.holdMax; b.hold.mode = mode || 'gap'; b.hold.target = sim.holdTarget(); sim.stats.holds++; chargeStart(b);
         emit({ type: 'holdstart', bus: id, stop: b.stop, auto: false }); return 'held';
       }
-      b.hold.armed = true; b.hold.armMode = mode || 'gap';
+      b.hold.armed = true; b.hold.armMode = mode || 'gap'; b.hold.armQ = holdQuality(b);
       return 'armed';
     };
     sim.incident = function (id, dur, kind) {
