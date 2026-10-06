@@ -55,7 +55,7 @@ export function cubicish() {
     const lost = last.w - last.delivered, frac = lost / last.w;
     if (lost <= 1 || frac <= 0.3) { grow++; return ss ? last.w * 2 : last.w + grow; }
     ss = false; grow = 0;
-    return Math.max(2, Math.floor(last.w / 2));
+    return Math.max(2, Math.min(Math.floor(last.w / 2), Math.round(last.delivered * 1.5)));
   };
 }
 

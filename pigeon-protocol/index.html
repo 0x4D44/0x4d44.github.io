@@ -46,6 +46,7 @@
   <nav class="desk" aria-label="Flight desk">
     <button type="button" class="chip" id="btn-levels">Levels</button>
     <button type="button" class="chip" id="btn-howto">How to play</button>
+    <button type="button" class="chip" id="btn-fast" aria-pressed="false">Fast flights: off</button>
     <button type="button" class="chip" id="btn-sound" aria-pressed="false">Coos: off</button>
   </nav>
 </header>
@@ -69,8 +70,8 @@
     <ol class="howto">
       <li><b>Choose a number of birds</b> and press <b>Release the flock</b>. Every flight is one round.</li>
       <li>Each bird carries one numbered scroll. Birds that arrive send back an ACK: a smaller bird with a smaller scroll. <b>Lost scrolls are flown again, first.</b></li>
-      <li>The Kilsyth Gap can only take so many birds at once. <b>Nobody will tell you how many.</b> Too few and you miss the deadline; too many and the sky goes badly wrong.</li>
-      <li>You see losses only after each flight. Like a real sender. Like a real, slightly worried sender.</li>
+      <li>The Kilsyth Gap can only take so many birds at once, and <b>its limit is not posted anywhere</b>: you must work it out from what arrives. Too few birds and you miss the deadline; too many and the sky goes badly wrong.</li>
+      <li>You learn of losses only after each flight, and never why. Like a real sender. Like a real, slightly worried sender.</li>
     </ol>
 
     <label class="flockname" for="flock">Name your flock (the Ministry will engrave it on the obituaries)</label>
@@ -92,6 +93,7 @@
   <div class="colA">
   <div class="status" id="status">
     <div class="status-lvl"><span id="s-level">Clear Skies</span><span class="status-sub" id="s-doc"></span></div>
+    <svg class="spark" id="spark" viewBox="0 0 120 36" role="img" aria-label="Sparkline of birds flown and arrived per round"></svg>
     <dl class="status-nums">
       <div><dt>Round</dt><dd id="s-round">0/14</dd></div>
       <div><dt>Delivered</dt><dd id="s-del">0/84</dd></div>
@@ -100,14 +102,15 @@
   </div>
 
   <div class="mapwrap" id="mapwrap">
-    <svg id="map" viewBox="0 0 360 170" role="img" aria-label="Map strip: Colinton loft on the left, the Kilsyth Gap in the middle, Glasgow on the right. Pigeons fly left to right and return.">
-      <rect width="360" height="170" fill="#efe0c2"/>
+    <svg id="map" viewBox="0 0 360 190" role="img" aria-label="Map strip: Colinton loft on the left, the Kilsyth Gap in the middle, Glasgow on the right. Pigeons fly left to right and return.">
+      <rect width="360" height="190" fill="#efe0c2"/>
       <!-- sky bits -->
       <g fill="#fbf4e3" stroke="#2b2118" stroke-width="1.2" opacity=".9">
-        <path d="M30 24c-8 0-10-10-2-12 3-7 14-6 15 0 8-1 10 10 2 12z"/>
+        <path d="M110 30c-8 0-10-10-2-12 3-7 14-6 15 0 8-1 10 10 2 12z"/>
         <path d="M250 18c-7 0-9-9-2-10 3-6 12-5 13 0 7-1 9 9 2 10z"/>
         <path d="M150 32c-6 0-8-8-2-9 3-5 10-4 11 0 6 0 7 8 2 9z"/>
       </g>
+      <g transform="translate(0 20)">
       <!-- Pentlands -->
       <path d="M0 120 L28 92 L52 108 L84 78 L118 112 L140 120 L140 170 L0 170Z" fill="#c9b48c" stroke="#2b2118" stroke-width="1.4" stroke-linejoin="round"/>
       <!-- the Gap: two hills with a space -->
@@ -138,19 +141,15 @@
       </g>
       <!-- dashed route -->
       <path d="M52 100 C 100 70, 140 70, 185 96 S 270 112, 304 100" fill="none" stroke="#b3202a" stroke-width="1.4" stroke-dasharray="3 4" opacity=".55"/>
-      <!-- Gap capacity indicator (shown only when revealed) -->
-      <g id="gap-sign" visibility="hidden">
-        <rect x="150" y="116" width="70" height="16" rx="3" fill="#b3202a" stroke="#2b2118"/>
-        <text id="gap-sign-t" x="185" y="127.5" text-anchor="middle" font-size="9" font-family="Georgia, serif" fill="#fbf4e3">Gap: 12</text>
       </g>
       <g id="rival-loft" visibility="hidden">
-        <rect x="8" y="132" width="52" height="14" rx="3" fill="#e5d3ae" stroke="#2b2118"/>
-        <text x="34" y="142.5" text-anchor="middle" font-size="7.5" font-family="Georgia, serif" fill="#2b2118">Bearsden Club</text>
+        <rect x="6" y="6" width="66" height="16" rx="3" fill="#e5d3ae" stroke="#2b2118"/>
+        <text x="39" y="17.5" text-anchor="middle" font-size="8.5" font-family="Georgia, serif" fill="#2b2118">Bearsden Club</text>
       </g>
       <g id="sky"></g>
     </svg>
     <div class="map-caption" id="map-caption" aria-hidden="true"></div>
-    <button type="button" class="chip skip-anim" id="btn-skip" hidden>Skip flight</button>
+    <button type="button" class="chip skip-anim" id="btn-skip" hidden>Skip flight &raquo;</button>
   </div>
 
   <p class="event" id="event"></p>
@@ -180,11 +179,6 @@
   <section class="report" aria-labelledby="rep-h">
     <h2 id="rep-h">Flight report</h2>
     <div id="report" aria-live="polite" aria-atomic="true"><p class="muted">No flights yet. The sky is still undecided.</p></div>
-    <div class="shared" id="shared" hidden>
-      <div class="shared-lab">The Gap, this round (shared with the rival)</div>
-      <div class="shared-bar" id="shared-bar" role="img" aria-label=""></div>
-      <div class="shared-leg"><span class="k you">You</span><span class="k riv">Rival</span><span class="k cap">Capacity marker</span></div>
-    </div>
   </section>
 
   </div>
@@ -213,10 +207,19 @@
 <dialog id="dlg-sandbox" aria-labelledby="sb-h">
   <form method="dialog" id="sb-form">
     <h2 id="sb-h">Set the weather</h2>
-    <label>The Gap passes <output id="sb-c-o">15</output> birds per flight<input type="range" id="sb-c" min="4" max="30" value="15"></label>
-    <label>Hawks take <output id="sb-p-o">0</output>% of birds<input type="range" id="sb-p" min="0" max="30" value="0"></label>
+    <label>The Gap passes <output id="sb-c-o">15</output> birds per flight<input type="range" id="sb-c" min="4" max="24" value="15"></label>
+    <label>Hawks take <output id="sb-p-o">0</output>% of birds<input type="range" id="sb-p" min="0" max="40" value="0"></label>
     <label class="chk"><input type="checkbox" id="sb-r"> A rival flock shares the Gap</label>
+    <p class="sb-msg" id="sb-msg" role="status"></p>
     <div class="cta-row"><button class="btn btn-primary" value="ok" id="sb-ok">Fly it</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-leave" aria-labelledby="lv-h">
+  <form method="dialog">
+    <h2 id="lv-h">Abandon this flight?</h2>
+    <p>The birds will be told it was a drill. Nothing will be saved, including the lessons.</p>
+    <div class="cta-row"><button class="btn btn-primary" value="stay" id="lv-stay">Stay</button><button class="btn" value="leave" id="lv-leave">Leave</button></div>
   </form>
 </dialog>
 
@@ -224,9 +227,9 @@
   <form method="dialog">
     <h2 id="ht-h">How to play, again, slower</h2>
     <p>Each round you choose how many birds to send. Each bird carries one scroll. Birds that arrive send an ACK back; birds that do not are not coming back.</p>
-    <p>The Gap has a limit you cannot see. Fly too few and you miss the deadline. Fly too many and the sky jams, birds are lost, and lost scrolls must be flown again, which makes it worse.</p>
-    <p>Some birds are simply eaten by hawks, however many you send. Learn to tell the two apart. Nobody can do it perfectly.</p>
-    <p>Stars: one for delivering in time, two for matching Reno (an autopilot), three for beating him. He is a bird-brain. He also never panics, which is annoying.</p>
+    <p>The Gap has a limit you cannot see, and it may move. Fly too few and you miss the deadline. Fly too many and the Gap jams: in a crowd the scrum takes out more birds than the ones that did not fit, so offering more can deliver less.</p>
+    <p>Some birds may be lost for reasons that have nothing to do with crowding. Learn to tell which losses are about you. Nobody can do it perfectly.</p>
+    <p>Stars: one for delivering in time, two for doing it respectably, three for doing it quickly and tidily (the numbers are on each level's brief). The Reno, an autopilot you unlock after level 1, halves his flock at every sign of loss, which is sensible and also sometimes ridiculous. Stars do not count while he flies.</p>
     <div class="cta-row"><button class="btn btn-primary" value="ok">Right. Birds.</button></div>
   </form>
 </dialog>
@@ -235,7 +238,7 @@
 
 <footer class="foot">
   <p>Pigeon Protocol is a game about <abbr title="Transmission Control Protocol">TCP</abbr> congestion control. No birds were harmed; several were written about.</p>
-  <p class="egg"><button type="button" class="egg-btn" id="egg" aria-expanded="false" aria-controls="egg-text">Colophon</button><span id="egg-text" hidden></span></p>
+  <p class="egg"><button type="button" class="egg-btn" id="egg" aria-expanded="false" aria-controls="egg-text">Colophon: who actually did this? (tap)</button><span id="egg-text" hidden></span></p>
 </footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

@@ -9,15 +9,16 @@
 
   /* ---------- persistence (never required) ---------- */
   var KEY = 'pigeon-protocol.v1';
-  var prog = { stars: {}, fails: {}, flock: '' };
-  try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') { prog.stars = o.stars || {}; prog.fails = o.fails || {}; prog.flock = typeof o.flock === 'string' ? o.flock : ''; } } } catch (e) {}
+  var prog = { stars: {}, fails: {}, helped: {}, flock: '', fast: false };
+  try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); if (o && typeof o === 'object') { prog.stars = o.stars || {}; prog.fails = o.fails || {}; prog.helped = o.helped || {}; prog.fast = !!o.fast; prog.flock = typeof o.flock === 'string' ? o.flock : ''; } } } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch (e) {} }
 
   /* ---------- state ---------- */
   var S = {
     level: null, run: null, attempt: {}, shown: 0, w: 1, phase: 'title', busy: false, auto: false, assisted: false, reno: null,
-    sound: false, skipping: false, roll: [], sandbox: { C: 15, p: 0, rival: false }, timer: 0, finished: false
+    sound: false, skipping: false, roll: [], sandbox: { C: 15, p: 0, rival: false }, timer: 0, finished: false, runId: 0
   };
+  var SALT = Math.floor(Math.random() * 90000) + 1;   // so a reload is a new sky
   var LV = E.LEVELS;
   function levelById(id) { for (var i = 0; i < LV.length; i++) if (LV[i].id === id) return LV[i]; return null; }
   function flockName() { return (prog.flock || '').trim() || 'The Colinton Aerial Postal Service'; }
@@ -48,8 +49,8 @@
   }
   function isUnlocked(id) {
     if (id === 1) return true;
-    if (id === 6) return (prog.stars[1] || 0) > 0 || (prog.fails[1] || 0) >= 2;
-    return (prog.stars[id - 1] || 0) > 0 || (prog.fails[id - 1] || 0) >= 2;
+    var prev = id === 6 ? 1 : id - 1;
+    return (prog.stars[prev] || 0) > 0 || (prog.helped[prev] || 0) > 0 || (prog.fails[prev] || 0) >= 2;
   }
   function starsHtml(n) { var s = ''; for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= n ? 'on' : 'off') + '">★</span>'; return s; }
 
@@ -90,11 +91,11 @@
   }
   function seedFor(lv) {
     var a = S.attempt[lv.id] || 0;
-    return lv.sandbox ? (lv.seed + a * 7919 + (Date.now() % 1000)) : lv.seed + a * 7919;
+    return lv.seed + a * 7919 + SALT * 31;
   }
   function beginBrief(lv, opts) {
     opts = opts || {};
-    clearTimeout(S.timer);
+    clearTimeout(S.timer); S.runId++; S.skipping = true;
     S.level = lv; S.run = E.createRun(lv, seedFor(lv)); S.shown = 0; S.busy = false; S.auto = false; S.assisted = false; S.reno = null;
     S.roll = []; S.finished = false; S.skipping = false; S.w = 1; S.phase = 'brief';
     $('sky').innerHTML = ''; $('btn-skip').hidden = true;
