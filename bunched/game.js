@@ -277,7 +277,7 @@
       shape.tag = svgEl('g', { visibility: 'hidden', 'pointer-events': 'none' }, bGroup);
       shape.tagBg = svgEl('rect', { x: -24, y: -9, width: 48, height: 14, rx: 7, fill: '#8c1d35' }, shape.tag);
       shape.tagTx = svgEl('text', { x: 0, y: 1, 'text-anchor': 'middle', 'font-size': 9, 'font-weight': 800, fill: '#fff', 'font-family': 'ui-monospace,monospace' }, shape.tag);
-      svgEl('circle', { class: 'hit', r: 30, cx: 0, cy: 0 }, bGroup);
+      svgEl('circle', { class: 'hit', r: 32, cx: 0, cy: 0 }, bGroup);
       bGroup.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); actHold(+e.currentTarget.getAttribute('data-bus')); }
       });
@@ -540,7 +540,7 @@
     $('busHint').textContent = lv.watch ? 'a pigeon button for each' : 'tap a bus on the ring, or its button';
     $('sbTools').hidden = lv.id !== 99;
     $('quick').hidden = !leversFor('hold');
-    $('twinCard').hidden = !lv.watch;
+    $('twinCard').hidden = !lv.watch; document.body.classList.toggle('watchlvl', !!lv.watch);
   }
 
   function stateText(b, sim) {
@@ -985,12 +985,12 @@
     var paras = c ? c.lesson : ['You have just built your own bunch, or cured it. Either way: a late bus finds more people, loads for longer, and is later; the one behind catches up. Holding by gap, not by clock, is how real operators cure it.'];
     paras.forEach(function (t) { var p = document.createElement('p'); p.innerHTML = t; ls.appendChild(p); });
     if (c) { var f = document.createElement('p'); f.className = 'fact'; f.textContent = c.fact; ls.appendChild(f); }
-    $('debRobot').textContent = '';
+    $('debRobot').textContent = (!lv.watch && lv.id !== 99 && lv.id < B.LEVELS.length - 1 && !unlocked(lv.id + 1)) ? 'Level ' + (lv.id + 1) + ' opens with 2 stars, or after a second honest attempt at this one.' : '';
     var nxt = $('debNext');
     var hasNext = lv.id !== 99 && lv.id < B.LEVELS.length - 1;
     nxt.hidden = !hasNext;
     nxt.textContent = lv.watch ? 'Level 1: have a go' : 'Next: ' + (B.LEVELS[lv.id + 1] ? B.LEVELS[lv.id + 1].name : '');
-    if (!lv.watch && lv.id !== 99 && hasNext && !unlocked(lv.id + 1)) { nxt.disabled = true; nxt.textContent = 'Locked: needs 2 stars'; } else nxt.disabled = false;
+    if (!lv.watch && lv.id !== 99 && hasNext && !unlocked(lv.id + 1)) { nxt.disabled = true; nxt.textContent = 'Next: locked'; } else nxt.disabled = false;
     $('debrief').hidden = false; S.modal = 'debrief';
     $('debH').focus({ preventScroll: true });
     $('debrief').scrollTop = 0;
@@ -1001,7 +1001,7 @@
       setTimeout(function () {
         try {
           var hw = B.runHeadless(B.levelConfig(lv, { seed: sim.cfg.seed }), 'headway').metrics().score;
-          $('debRobot').textContent = 'For scale, on this very shift: doing nothing scored ' + fmt(tw.score) + '; a robot with an unlimited radio, holding any bus too close to the one ahead, scored ' + fmt(hw) + '; you scored ' + fmt(m.score) + '.';
+          $('debRobot').textContent = ($('debRobot').textContent ? $('debRobot').textContent + ' ' : '') + 'For scale, on this very shift: doing nothing scored ' + fmt(tw.score) + '; a robot with an unlimited radio, holding any bus too close to the one ahead, scored ' + fmt(hw) + '; you scored ' + fmt(m.score) + '.';
         } catch (e) { }
       }, 60);
     }
