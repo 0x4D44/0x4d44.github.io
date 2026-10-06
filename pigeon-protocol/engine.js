@@ -16,9 +16,9 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var JAM = 0.5;          // each bird beyond capacity also knocks this many others out of the sky
+  var JAM = 0.75;         // each bird beyond capacity also knocks this many others out of the sky
   var JAM_FLOOR = 0.35;   // the Gap never passes fewer than this fraction of C
-  var MAX_W = 40;
+  var MAX_W = 24;
 
   function hash(a, b) {
     var h = (a ^ 0x9e3779b9) >>> 0;
@@ -38,12 +38,12 @@
   }
 
   var LEVELS = [
-    { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], p: 0, rival: null, seed: 1149 },
-    { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 90, deadline: 14, cap: [[1, 14]], p: 0.1, rival: null, seed: 1990 },
-    { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 70, deadline: 14, cap: [[1, 20]], p: 0, rival: { start: 3 }, seed: 2001 },
-    { id: 4, key: 'storm-front', name: 'Storm Front', scrolls: 90, deadline: 14, cap: [[1, 14], [6, 7], [10, 18]], p: 0, rival: null, seed: 1701 },
-    { id: 5, key: 'big-delivery', name: 'The Big Delivery', scrolls: 100, deadline: 14, cap: [[1, 18], [6, 10], [10, 22]], p: 0.06, rival: { start: 4 }, seed: 1707 },
-    { id: 6, key: 'sandbox', name: 'The Open Sky', scrolls: 100, deadline: 30, cap: [[1, 15]], p: 0, rival: null, seed: 4242, sandbox: true }
+    { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], p: 0, rival: null, seed: 1149, loft: 45, stars: { three: { rounds: 10, lost: 10 }, two: { rounds: 12, lost: 18 } } },
+    { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 90, deadline: 14, cap: [[1, 14]], p: 0.1, rival: null, seed: 1990, loft: 45, stars: { three: { rounds: 12, lost: 18 }, two: { rounds: 14, lost: 26 } } },
+    { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 80, deadline: 14, cap: [[1, 20]], p: 0, rival: { start: 3 }, seed: 2001, loft: 36, stars: { three: { rounds: 11, lost: 20 }, two: { rounds: 14, lost: 30 } } },
+    { id: 4, key: 'storm-front', name: 'Storm Front', scrolls: 90, deadline: 14, cap: [[1, 14], [6, 7], [10, 18]], p: 0, rival: null, seed: 1701, loft: 45, stars: { three: { rounds: 13, lost: 17 }, two: { rounds: 14, lost: 24 } } },
+    { id: 5, key: 'big-delivery', name: 'The Big Delivery', scrolls: 76, deadline: 15, cap: [[1, 18], [6, 10], [10, 22]], p: 0.06, rival: { start: 4 }, seed: 1707, loft: 45, stars: { three: { rounds: 13, lost: 24 }, two: { rounds: 15, lost: 40 } } },
+    { id: 6, key: 'sandbox', name: 'The Open Sky', scrolls: 100, deadline: 30, cap: [[1, 15]], p: 0, rival: null, seed: 4242, sandbox: true, loft: 9999 }
   ];
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -91,7 +91,8 @@
       rival: lv.rival ? createReno(lv.rival.start || 2) : null,
       history: [],
       done: false,
-      won: false
+      won: false,
+      endReason: null
     };
   }
 
@@ -163,8 +164,9 @@
     run.lostCrowd += rec.lostCrowd;
     run.lostHawk += rec.lostHawk;
     run.history.push(rec);
-    if (run.delivered >= lv.scrolls) { run.done = true; run.won = true; }
-    else if (r >= lv.deadline) { run.done = true; run.won = false; }
+    if (run.delivered >= lv.scrolls) { run.done = true; run.won = true; run.endReason = 'delivered'; }
+    else if (run.lost >= lv.loft) { run.done = true; run.won = false; run.endReason = 'loft'; }
+    else if (r >= lv.deadline) { run.done = true; run.won = false; run.endReason = 'deadline'; }
     return rec;
   }
 
@@ -183,22 +185,22 @@
     };
   }
   function renoReference(level, seed) {
-    var run = runPolicy(level, seed, renoPolicy(1));
-    return { rounds: run.won ? run.round : level.deadline + 1, lost: run.lost, won: run.won, run: run };
+    // Reno is given plenty of time here, so we learn how long it WOULD take, not just whether it beat the clock.
+    var lv = clone(level); lv.deadline = Math.max(60, lv.deadline); lv.loft = 9999;
+    var run = runPolicy(lv, seed, renoPolicy(1));
+    var inTime = run.won && run.round <= level.deadline && run.lost < level.loft;
+    return { rounds: run.round, lost: run.lost, won: run.won, inTime: inTime, run: run };
   }
 
   // ---- stars -------------------------------------------------------------------------------
-  // 1: delivered everything in time.  2: matched the bird-brain (Reno).  3: beat it.
-  function thresholds(ref) {
-    var two = { rounds: ref.rounds + 1, lost: ref.lost + 2 };
-    var three = { rounds: ref.rounds, lost: Math.max(0, Math.floor(ref.lost * 0.6)) };
-    return { two: two, three: three };
-  }
-  function starsFor(run, ref) {
-    if (!run.won) return 0;
-    var th = thresholds(ref), rounds = run.round, lost = run.lost, s = 1;
-    if (rounds <= th.two.rounds && lost <= th.two.lost) s = 2;
-    if (rounds <= th.three.rounds && lost <= th.three.lost && (rounds < ref.rounds || lost < ref.lost)) s = 3;
+  // 1: delivered everything in time.  2: matched the bird-brain.  3: beat it.
+  // Thresholds are per level (level.stars), derived from Reno's behaviour and checked in the tests.
+  function starsFor(run) {
+    var st = run.level.stars;
+    if (!run.won || !st) return run.won ? 1 : 0;
+    var rounds = run.round, lost = run.lost, s = 1;
+    if (rounds <= st.two.rounds && lost <= st.two.lost) s = 2;
+    if (rounds <= st.three.rounds && lost <= st.three.lost) s = 3;
     return s;
   }
 
@@ -207,6 +209,6 @@
     hash: hash, mulberry32: mulberry32, capAt: capAt, gapPasses: gapPasses,
     createRun: createRun, playRound: playRound, pendingIds: pendingIds,
     createReno: createReno, renoNext: renoNext, renoPolicy: renoPolicy,
-    runPolicy: runPolicy, renoReference: renoReference, thresholds: thresholds, starsFor: starsFor
+    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor
   };
 });
