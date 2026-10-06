@@ -68,7 +68,7 @@
     speedNoise: 0, incidentRate: 0, incidents: [],
     slow: [], lights: [], holdMax: 150, dt: 0.5, duration: 6000,
     minGap: 14, reach: 80, phase: 0.35, patience: 1,
-    auto: null, prefill: true, graceFrac: 0.25
+    auto: null, prefill: true, graceFrac: 0.25, hwFactor: 1.05, ttSpeed: 0.74, carryPenalty: 90, skipFrac: 0.35, skipQueue: 3
   };
 
   function createSim(userCfg) {
@@ -83,7 +83,7 @@
       stats: {
         spawned: 0, boarded: 0, delivered: 0, sumWait: 0, complaints: 0, stranded: 0,
         heldPaxSec: 0, sumRide: 0, holds: 0, skips: 0, cvSum: 0, cvN: 0, maxConvoy: 1,
-        sumH: 0, sumH2: 0, nH: 0
+        sumH: 0, sumH2: 0, nH: 0, penalty: 0, carried: 0
       },
       Hest: (L / cfg.vFree) * 1.25 / n,
       nextId: 1, convoyShown: 1, auto: cfg.auto, bunched: []
@@ -105,7 +105,7 @@
         id: sim.nextId++, t: at, from: st.i, dest: (st.i + ride) % N,
         name: NAMES[Math.floor(r() * NAMES.length)], look: Math.floor(r() * 7),
         coat: Math.floor(r() * 6),
-        pat: (170 + r() * 230) * cfg.patience, patHold: 30 + r() * 55,
+        pat: (300 + r() * 300) * cfg.patience, patHold: 30 + r() * 55,
         complained: false, passed: false, held: 0, boardT: -1
       };
     }
@@ -121,8 +121,9 @@
       var st = {
         i: i, name: STOP_NAMES[i % STOP_NAMES.length], pos: i * spacing, queue: [],
         rate: cfg.lambda * mult, mult: mult, rng: mulberry32(cfg.seed * 31337 + i * 977 + 5),
-        lastPass: -1, armedHold: false, nextArr: 0
+        lastPass: -1, armedHold: false, nextArr: 0, passT: []
       };
+      for (var q0 = 0; q0 < n; q0++) st.passT.push(-1);
       st.nextArr = nextArrival(st, 0, true);
       sim.stops.push(st);
     }
@@ -132,10 +133,10 @@
       var pos = (i * L / n + cfg.phase * spacing) % L;
       sim.buses.push({
         id: i, pos: pos, dist: 0, dist0: 0, state: 'run', ns: Math.ceil(pos / spacing - 1e-9) % N, stop: -1,
-        pax: [], hold: { armed: false, active: false, left: 0 }, skip: false, stuck: 0,
+        pax: [], hold: { armed: false, active: false, left: 0, mode: 'gap', target: 0 }, skip: false, stuck: 0,
         speedMult: 1, nextSpeedAt: 0, alightLeft: 0, openLeft: 0, boardAcc: 0,
         rng: mulberry32(cfg.seed * 65537 + i * 131 + 3), arrH: 0, laps: 0, dwellId: 0,
-        lastStopT: -1, speed: 0, full: false, held: false
+        lastStopT: -1, speed: 0, full: false, held: false, lastPs: -1, lastPt: 0
       });
     }
 
@@ -218,7 +219,7 @@
         sim.stats.sumH += h; sim.stats.sumH2 += h * h; sim.stats.nH++;
         if (h > 20) sim.Hest += 0.01 * (h - sim.Hest);
       }
-      bus.arrH = h; st.lastPass = sim.t;
+      bus.arrH = h; st.lastPass = sim.t; st.passT[bus.id] = sim.t; bus.lastPs = st.i; bus.lastPt = sim.t;
       return h;
     }
 
@@ -236,6 +237,7 @@
         // passengers who wanted off are carried past (and say so)
         for (k4 = 0; k4 < alight.length; k4++) {
           alight[k4].dest = (si + 1) % N;
+          sim.stats.carried++; sim.stats.penalty += cfg.carryPenalty;
           strand(alight[k4], si, bus.id, 'over');
         }
         for (k4 = 0; k4 < st.queue.length; k4++) strand(st.queue[k4], si, bus.id, 'skipped');
@@ -264,7 +266,7 @@
       bus.boardAcc = 0; bus.dwellId++; bus.lastStopT = sim.t; bus.full = false;
       if (armed) {
         bus.hold.armed = false; st.armedHold = false;
-        bus.hold.active = true; bus.hold.left = cfg.holdMax; sim.stats.holds++;
+        bus.hold.active = true; bus.hold.left = cfg.holdMax; bus.hold.mode = 'gap'; bus.hold.target = sim.holdTarget(); sim.stats.holds++;
         emit({ type: 'holdstart', bus: bus.id, stop: si, auto: false });
       }
       emit({ type: 'arrive', bus: bus.id, stop: si, alight: alight.length, waiting: st.queue.length, h: h });
@@ -284,6 +286,7 @@
       }
       bus.state = 'run'; bus.stop = -1; bus.held = false;
       emit({ type: 'depart', bus: bus.id, stop: st.i });
+      if (sim.auto && AUTO_DEP[sim.auto]) AUTO_DEP[sim.auto](sim, bus, st);
     }
 
     function dwellStep(bus, dt) {
@@ -291,9 +294,16 @@
       var h = bus.hold;
       if (h.active) {
         h.left -= dt;
-        if (h.left <= 0) { h.active = false; emit({ type: 'holdend', bus: bus.id, stop: st.i, auto: true }); }
+        var why = null;
+        if (h.left <= 0) why = 'max';
+        else if (h.mode === 'gap') {
+          var pt = st.passT[sim.leader(bus.id)];
+          if (pt >= 0 && sim.t - pt >= h.target) why = 'target';
+        } else if (h.mode === 'sched') {
+          if (bus.dist - cfg.vFree * cfg.ttSpeed * sim.t <= 0) why = 'target';
+        }
+        if (why) { h.active = false; emit({ type: 'holdend', bus: bus.id, stop: st.i, auto: true, why: why }); }
       }
-      if (bus.stuck > 0) bus.stuck -= dt;
       if (bus.alightLeft > 0) bus.alightLeft -= dt;
       else if (bus.openLeft > 0) bus.openLeft -= dt;
       else {
@@ -309,6 +319,8 @@
         if (!st.queue.length || bus.pax.length >= cfg.cap) bus.boardAcc = Math.min(bus.boardAcc, cfg.k * 0.999);
       }
       var idle = bus.alightLeft <= 0 && bus.openLeft <= 0 && (!st.queue.length || bus.pax.length >= cfg.cap);
+      // a delay (pigeon, haggis) starts counting once the bus has finished its own work: it genuinely adds to the dwell
+      if (idle && bus.stuck > 0) bus.stuck -= dt;
       if (h.active && idle) {
         // the held bus sits there; the people on it do not enjoy it
         bus.held = true;
@@ -397,7 +409,7 @@
       }
       sim.t = now;
       if (!sim.snap && sim.t >= cfg.duration * cfg.graceFrac) {
-        sim.snap = { sumWait: sim.stats.sumWait, boarded: sim.stats.boarded, held: sim.stats.heldPaxSec };
+        sim.snap = { sumWait: sim.stats.sumWait, boarded: sim.stats.boarded, held: sim.stats.heldPaxSec, pen: sim.stats.penalty };
       }
       analyse();
     };
@@ -423,7 +435,7 @@
       else if (maxC < sim.convoyShown) sim.convoyShown = maxC;
       if (sim.t - lastSample >= 15) {
         lastSample = sim.t;
-        sim.hist.push({ t: sim.t, g: sim.gapsSec(), cv: sim.cv });
+        sim.hist.push({ t: sim.t, g: sim.gapsTime(), cv: sim.cv });
         sim.stats.cvSum += sim.cv; sim.stats.cvN++;
       }
     }
@@ -439,13 +451,34 @@
       return out;
     };
 
+    sim.holdTarget = function () { return sim.Hest * cfg.hwFactor; };
+    // true time headway: when this bus passed its last stop, how long after the bus ahead had passed it
+    sim.timeGap = function (id) {
+      var b = sim.buses[id], ld = sim.buses[(id + 1) % n];
+      if (n > 1 && b.lastPs >= 0) {
+        var pl = sim.stops[b.lastPs].passT[ld.id];
+        if (pl >= 0 && b.lastPt >= pl) return b.lastPt - pl;
+      }
+      return gapAhead(id) * sim.Hest * n / L;
+    };
+    sim.gapsTime = function () { var o = [], i9; for (i9 = 0; i9 < n; i9++) o.push(sim.timeGap(i9)); return o; };
+    // seconds this bus is ahead of the printed timetable (positive: should wait)
+    sim.aheadOfSchedule = function (id) { return (sim.buses[id].dist - cfg.vFree * cfg.ttSpeed * sim.t) / (cfg.vFree * cfg.ttSpeed); };
+    sim.holdRemaining = function (b) {
+      var h = b.hold; if (!h.active) return 0;
+      var rem = h.left;
+      if (h.mode === 'gap') { var pt = sim.stops[b.stop].passT[sim.leader(b.id)]; if (pt >= 0) rem = Math.min(rem, Math.max(0, h.target - (sim.t - pt))); }
+      else if (h.mode === 'sched') rem = Math.min(rem, Math.max(0, sim.aheadOfSchedule(b.id)));
+      return rem;
+    };
+
     // ---- player levers ----------------------------------------------
     sim.toggleHold = function (id) {
       var b = sim.buses[id];
       if (!b) return 'none';
       if (b.hold.active) { b.hold.active = false; emit({ type: 'holdend', bus: id, stop: b.stop, auto: false }); return 'released'; }
       if (b.state === 'dwell') {
-        b.hold.active = true; b.hold.left = cfg.holdMax; b.hold.armed = false; sim.stats.holds++;
+        b.hold.active = true; b.hold.left = cfg.holdMax; b.hold.armed = false; b.hold.mode = 'gap'; b.hold.target = sim.holdTarget(); sim.stats.holds++;
         emit({ type: 'holdstart', bus: id, stop: b.stop, auto: false }); return 'held';
       }
       b.hold.armed = !b.hold.armed;
@@ -486,15 +519,15 @@
       var wait = nw ? sw / nw : meanWaitAll;
       var meanH = nh ? sh / nh : sim.Hest;
       var formula = nh && sh > 0 ? sh2 / (2 * sh) : meanH / 2;
-      var delay = (S.sumWait + w.sum + S.heldPaxSec) / Math.max(1, S.boarded + w.n);
-      var z = sim.snap || { sumWait: 0, boarded: 0, held: 0 };
-      var score = (S.sumWait - z.sumWait + w.sum + S.heldPaxSec - z.held) / Math.max(1, S.boarded - z.boarded + w.n);
+      var delay = (S.sumWait + w.sum + S.heldPaxSec + S.penalty) / Math.max(1, S.boarded + w.n);
+      var z = sim.snap || { sumWait: 0, boarded: 0, held: 0, pen: 0 };
+      var score = (S.sumWait - z.sumWait + w.sum + S.heldPaxSec - z.held + S.penalty - z.pen) / Math.max(1, S.boarded - z.boarded + w.n);
       return {
         score: score, t: sim.t, wait: meanWaitAll, waitWin: wait, evenWin: meanH / 2, formulaWin: formula, meanH: meanH,
         cv: sim.cv, cvAvg: S.cvN ? S.cvSum / S.cvN : 0, complaints: S.complaints, stranded: S.stranded,
         delivered: S.delivered, spawned: S.spawned, boarded: S.boarded, waiting: w.n, onboard: sim.onboard(),
         heldPaxSec: S.heldPaxSec, delay: delay, maxConvoy: S.maxConvoy, convoy: sim.maxConvoy,
-        holds: S.holds, skips: S.skips
+        holds: S.holds, skips: S.skips, carried: S.carried, penalty: S.penalty
       };
     };
     sim.drain = function () { var e = sim.events; sim.events = []; return e; };
@@ -508,36 +541,58 @@
   }
 
   // ---- strategies: they use only the levers a player has -----------------
-  function startAutoHold(sim, bus, st, secs) {
-    bus.hold.active = true; bus.hold.left = Math.min(sim.cfg.holdMax, secs); sim.stats.holds++;
+  function startAutoHold(sim, bus, st, mode, target, left) {
+    bus.hold.active = true; bus.hold.mode = mode; bus.hold.target = target;
+    bus.hold.left = Math.min(sim.cfg.holdMax, left || sim.cfg.holdMax); sim.stats.holds++;
     sim.events.push({ type: 'holdstart', bus: bus.id, stop: st.i, auto: true, t: sim.t });
   }
+  function headwayRule(sim, bus, st, h, trigger, targetF) {
+    var H = sim.Hest;
+    if (h > 0 && h < H * trigger) startAutoHold(sim, bus, st, 'gap', H * targetF);
+  }
   var AUTO = {
-    // timetable holding: do not leave a stop ahead of a fixed schedule
+    // timetable holding: do not leave a stop ahead of a fixed printed schedule
     timetable: function (sim, bus, st) {
-      var vs = sim.cfg.vFree * (sim.cfg.ttSpeed || 0.84);
-      var ahead = (bus.dist - vs * sim.t) / vs; // seconds ahead of schedule
-      if (ahead > 4) startAutoHold(sim, bus, st, ahead);
+      if (sim.aheadOfSchedule(bus.id) > 4) startAutoHold(sim, bus, st, 'sched', 0);
     },
     // headway-based holding: do not leave until the bus ahead is a full headway away
-    headway: function (sim, bus, st, h) {
-      var extra = sim.Hest * (sim.cfg.hwFactor || 0.98) - h;
-      if (h > 0 && extra > 6) startAutoHold(sim, bus, st, extra);
-    }
+    headway: function (sim, bus, st, h) { headwayRule(sim, bus, st, h, sim.cfg.hwFactor - 0.04, sim.cfg.hwFactor); },
+    'headway+skip': function (sim, bus, st, h) { headwayRule(sim, bus, st, h, sim.cfg.hwFactor - 0.04, sim.cfg.hwFactor); },
+    skip: function () { }, skipall: function () { }, 'lazy+skip': function (sim, bus, st, h) { headwayRule(sim, bus, st, h, 0.5, 0.75); },
+    // half-hearted: only acts on near-collisions
+    lazy: function (sim, bus, st, h) { headwayRule(sim, bus, st, h, 0.5, 0.75); },
+    // naive: hold every bus for 20 s at every stop
+    holdall: function (sim, bus, st) { startAutoHold(sim, bus, st, 'timed', 0, 20); }
+  };
+  // skip rule: the leader of a tight pair, with nobody to drop at the next stop and a queue
+  // there, skips it; the follower, seconds behind, serves the queue and the pair spreads.
+  function skipRule(sim, bus) {
+    var cfg = sim.cfg, n = sim.n; if (n < 2) return;
+    var fol = sim.buses[(bus.id - 1 + n) % n], fg = sim.timeGap(fol.id);
+    var ns = bus.ns, alight = 0, i;
+    for (i = 0; i < bus.pax.length; i++) if (bus.pax[i].dest === ns) alight++;
+    if (fg < sim.Hest * cfg.skipFrac && alight <= cfg.skipAlight && sim.stops[ns].queue.length >= cfg.skipQueue && !bus.skip) bus.skip = true;
+  }
+  var AUTO_DEP = {
+    'headway+skip': skipRule, 'skip': skipRule, 'lazy+skip': skipRule,
+    // skip-all: every bus runs express whenever nobody needs to get off (a bad idea, tabulated for the record)
+    skipall: function (sim, bus) { var ns = bus.ns, i; for (i = 0; i < bus.pax.length; i++) if (bus.pax[i].dest === ns) return; bus.skip = true; }
   };
 
-  // The Inspector: suggests holds using the same rule the "headway" strategy uses.
-  function suggest(sim) {
-    var out = [], H = sim.Hest;
+  // The Inspector: suggests holds. mode 'gap' (headway) or 'sched' (printed timetable).
+  function suggest(sim, mode) {
+    var out = [], H = sim.Hest, tg = sim.gapsTime();
     sim.buses.forEach(function (b) {
       if (b.hold.active || b.hold.armed) return;
-      var ahead = sim.gapAhead(b.id) * sim.Hest * sim.n / sim.L; // seconds behind the bus ahead
-      if (ahead < H * 0.62) {
-        out.push({ bus: b.id, stop: b.state === 'dwell' ? b.stop : b.ns, gap: ahead,
-          want: Math.min(sim.cfg.holdMax, H - ahead), dwelling: b.state === 'dwell' });
+      var stopIdx = b.state === 'dwell' ? b.stop : b.ns;
+      if (mode === 'sched') {
+        var ah = sim.aheadOfSchedule(b.id);
+        if (ah > 10) out.push({ bus: b.id, stop: stopIdx, gap: tg[b.id], ahead: ah, want: Math.min(sim.cfg.holdMax, ah), dwelling: b.state === 'dwell', mode: 'sched' });
+      } else if (tg[b.id] < H * 0.62) {
+        out.push({ bus: b.id, stop: stopIdx, gap: tg[b.id], want: Math.min(sim.cfg.holdMax, H * sim.cfg.hwFactor - tg[b.id]), dwelling: b.state === 'dwell', mode: 'gap' });
       }
     });
-    out.sort(function (a, b) { return a.gap - b.gap; });
+    out.sort(function (a, b) { return mode === 'sched' ? b.ahead - a.ahead : a.gap - b.gap; });
     return out;
   }
 
@@ -547,47 +602,47 @@
   var LEVELS = [
     {
       id: 0, name: 'Watch it happen', blurb: 'Six buses, perfectly spaced. One of them meets a pigeon.',
-      watch: true, seed: 11, duration: 6600, speed: 4,
-      cfg: { lambda: 0.02, incidents: [{ t: 150, bus: 2, dur: 20, kind: 'pigeon' }] }
+      watch: true, seed: 11, duration: 5400, speed: 8,
+      cfg: { lambda: 0.024, incidents: [{ t: 2700, bus: 4, dur: 30, kind: 'haggis' }] }
     },
     {
       id: 1, name: 'Gentle Morning', blurb: 'Light demand, a few hiccups. Hold buses to restore even spacing.',
       seed: 21, duration: 5400, speed: 2, levers: ['hold'],
-      cfg: { lambda: 0.02, speedNoise: 0.04, incidentRate: 1 / 700 }, stars: [135, 124]
+      cfg: { lambda: 0.02, speedNoise: 0.04, incidentRate: 1 / 700 }, stars: [173, 154, 132]
     },
     {
       id: 2, name: 'Rush Hour', blurb: 'More passengers, crush loads, and everything goes wrong faster.',
-      seed: 32, duration: 5400, speed: 2, levers: ['hold', 'skip'],
-      cfg: { lambda: 0.028, speedNoise: 0.05, incidentRate: 1 / 600 }, stars: [229, 179]
+      seed: 32, duration: 5400, speed: 2, levers: ['hold'],
+      cfg: { lambda: 0.028, speedNoise: 0.05, incidentRate: 1 / 600 }, stars: [201, 178, 151]
     },
     {
       id: 3, name: 'Festival Fortnight', blurb: 'Crowds at three stops. The rest of the route gets the leftovers.',
-      seed: 43, duration: 6000, speed: 2, levers: ['hold', 'skip'],
+      seed: 43, duration: 6000, speed: 2, levers: ['hold'],
       cfg: {
         lambda: 0.018, speedNoise: 0.05, incidentRate: 1 / 700,
         demandMult: [1, 1, 1, 3.2, 1, 1, 3.4, 1, 1, 1, 3, 1],
         bursts: [{ t: 900, stop: 6, n: 22, label: 'Fringe show lets out' }, { t: 2400, stop: 3, n: 26, label: 'Tattoo lets out' }, { t: 3900, stop: 10, n: 22, label: 'Comedy gig lets out' }]
-      }, stars: [188, 145]
+      }, stars: [215, 186, 154]
     },
     {
       id: 4, name: 'Roadworks', blurb: 'Temporary lights and a crawl lane. Tram works, but for no tram.',
-      seed: 54, duration: 6000, speed: 2, levers: ['hold', 'skip'],
+      seed: 54, duration: 6000, speed: 2, levers: ['hold'],
       cfg: {
         lambda: 0.024, speedNoise: 0.05, incidentRate: 1 / 800,
         lights: [{ pos: 1250, period: 120, red: 50, offset: 0 }, { pos: 4250, period: 150, red: 70, offset: 40 }],
         slow: [{ from: 2700, to: 3700, factor: 0.4 }]
-      }, stars: [245, 220]
+      }, stars: [241, 212, 183]
     },
     {
       id: 5, name: "The Dispatcher's Nightmare", blurb: 'All of it at once. Good luck. Mind the haggis.',
-      seed: 65, duration: 7200, speed: 2, levers: ['hold', 'skip'],
+      seed: 65, duration: 7200, speed: 2, levers: ['hold'],
       cfg: {
         lambda: 0.02, speedNoise: 0.06, incidentRate: 1 / 420,
         demandMult: [1, 1, 1, 2.6, 1, 1, 2.8, 1, 1, 1, 2.4, 1],
         bursts: [{ t: 1200, stop: 6, n: 24, label: 'Fringe show lets out' }, { t: 3000, stop: 3, n: 28, label: 'Tattoo lets out' }, { t: 5000, stop: 10, n: 24, label: 'Comedy gig lets out' }],
         lights: [{ pos: 1250, period: 120, red: 50, offset: 0 }, { pos: 4250, period: 150, red: 70, offset: 40 }],
         slow: [{ from: 2700, to: 3700, factor: 0.45 }]
-      }, stars: [270, 240]
+      }, stars: [288, 261, 235]
     }
   ];
 
@@ -608,11 +663,14 @@
     return sim;
   }
 
+  // stars: [1-star line, 2-star line, 3-star line] on delay per passenger; doing nothing earns none
   function starsFor(level, delay) {
     if (!level || !level.stars) return 1;
-    if (delay <= level.stars[1]) return 3;
-    if (delay <= level.stars[0]) return 2;
-    return 1;
+    var t = level.stars;
+    if (delay <= t[2]) return 3;
+    if (delay <= t[1]) return 2;
+    if (delay <= t[0]) return 1;
+    return 0;
   }
 
   root.Bunched = {

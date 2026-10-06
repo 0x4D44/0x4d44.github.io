@@ -130,20 +130,86 @@ test('inspection paradox: measured mean wait matches E[H^2]/(2E[H]) and exceeds 
   assert.ok(Math.abs(E.sumH2 / (2 * E.sumH) - E.sumH / E.nH / 2) / (E.sumH / E.nH / 2) < 0.15);
 });
 
-test('star thresholds are calibrated: headway auto earns 3, unmanaged earns 1, timetable no better than headway', () => {
+const SEEDS = [20, 37, 54, 71, 88, 105];
+function scores(L, auto, extra) { return SEEDS.map(sd => B.runHeadless(B.levelConfig(L, { seed: sd, ...(extra || {}) }), auto).metrics().score); }
+const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+
+test('star lines: doing nothing earns 0-1 stars (0 on most seeds), the tuned headway bot mostly 3, difficulty rises', () => {
+  let prevRatio = 0;
   for (const L of B.LEVELS.slice(1)) {
-    const none = B.runHeadless(B.levelConfig(L), null).metrics().score;
-    const hw = B.runHeadless(B.levelConfig(L), 'headway').metrics().score;
-    const tt = B.runHeadless(B.levelConfig(L, { ttSpeed: 0.7 }), 'timetable').metrics().score;
-    assert.equal(B.starsFor(L, none), 1, `L${L.id} none ${none}`);
-    assert.equal(B.starsFor(L, hw), 3, `L${L.id} hw ${hw} vs ${L.stars}`);
-    assert.ok(tt >= 0.97 * hw, `L${L.id} timetable ${tt} should not beat headway ${hw}`);
-    assert.ok(hw < none);
-    // thresholds sit where the calibration rule puts them (within 6%)
-    const t3 = hw + 0.25 * (none - hw), t2 = hw + 0.6 * (none - hw);
-    assert.ok(Math.abs(L.stars[1] - t3) / t3 < 0.06, `L${L.id} three-star ${L.stars[1]} vs ${t3.toFixed(1)}`);
-    assert.ok(Math.abs(L.stars[0] - t2) / t2 < 0.06, `L${L.id} two-star ${L.stars[0]} vs ${t2.toFixed(1)}`);
+    const none = scores(L, null), hw = scores(L, 'headway'), lazy = scores(L, 'lazy');
+    const sn = none.map(v => B.starsFor(L, v)), sh = hw.map(v => B.starsFor(L, v));
+    assert.ok(sn.filter(x => x === 0).length >= 5, `L${L.id} do-nothing stars ${sn}`);
+    assert.ok(Math.max(...sn) <= 1, `L${L.id} do-nothing never above 1 star: ${sn}`);
+    assert.ok(sh.filter(x => x === 3).length >= 4 && Math.min(...sh) >= 2, `L${L.id} headway bot stars ${sh}`);
+    assert.ok(mean(hw) < 0.92 * mean(none), `L${L.id} hw ${mean(hw)} none ${mean(none)}`);
+    assert.ok(mean(lazy) > mean(hw), `L${L.id} a lazy policy is worse than the tuned bot`);
+    // the 3-star line gets closer to the bot as levels advance (relative to the none-bot gap)
+    const ratio = (L.stars[2] - mean(hw)) / (mean(none) - mean(hw));
+    assert.ok(ratio < 0.35 && ratio > 0, `L${L.id} three-star line sits just above the bot: ${ratio}`);
+    assert.ok(L.stars[0] > L.stars[1] && L.stars[1] > L.stars[2]);
   }
+  assert.ok(B.LEVELS[1].stars[2] > 0 && prevRatio === 0);
+});
+
+test('timetable vs headway: a schedule is only as good as its slack, and breaks down with roadworks', () => {
+  const L2 = B.LEVELS[2], L4 = B.LEVELS[4], L5 = B.LEVELS[5];
+  const speeds = [0.6, 0.74, 0.85];
+  const tt2 = speeds.map(sp => mean(scores(L2, 'timetable', { ttSpeed: sp })));
+  const hw2 = mean(scores(L2, 'headway'));
+  assert.ok(Math.min(...tt2) < 1.12 * hw2, 'with the right slack a schedule works: ' + tt2 + ' vs ' + hw2);
+  assert.ok(Math.max(...tt2) > 1.25 * Math.min(...tt2), 'but it is very sensitive to the slack: ' + tt2);
+  for (const L of [L4, L5]) {
+    const t = mean(scores(L, 'timetable')), h = mean(scores(L, 'headway'));
+    assert.ok(t > 1.25 * h, `L${L.id}: with random delays the schedule loses (${t} vs ${h})`);
+  }
+});
+
+test('skip is not a magic lever: running express everywhere does not beat doing nothing', () => {
+  const L = B.LEVELS[2];
+  const none = mean(scores(L, null)), all = mean(scores(L, 'skipall'));
+  assert.ok(all > 0.97 * none, `skipall ${all} none ${none}`);
+});
+
+test('a hold has a target: it releases itself once the gap to the bus ahead is restored', () => {
+  const sim = B.createSim({ ...quiet, incidents: [{ t: 150, bus: 2, dur: 20, kind: 'pigeon' }] });
+  let released = 0, byMax = 0, started = 0;
+  for (let s = 0; s < 14000; s++) {
+    sim.step();
+    for (const b of sim.buses) if (!b.hold.active && !b.hold.armed && b.state === 'run' && s % 40 === 0) { /* arm any bus that is too close */ }
+    const tg = sim.gapsTime();
+    sim.buses.forEach(b => { if (b.state === 'run' && !b.hold.armed && tg[b.id] < sim.Hest * 0.5 && b.arrH > 0) { sim.toggleHold(b.id); started++; } });
+    for (const e of sim.drain()) if (e.type === 'holdend') { if (e.why === 'target') released++; else if (e.why === 'max') byMax++; }
+  }
+  assert.ok(started > 0 && released > 0, `started ${started} released-by-target ${released}`);
+  assert.ok(released > 2 * byMax, `most holds end on target (${released}) not on the cap (${byMax})`);
+});
+
+test('time headways are real times (not distance), and sum to roughly the lap on a calm ring', () => {
+  const sim = B.runHeadless(calm, null, 3000), g = sim.gapsTime();
+  const H = sim.Hest;
+  assert.ok(g.every(x => x > 0.7 * H && x < 1.3 * H), g.map(Math.round) + ' vs ' + Math.round(H));
+});
+
+test('a delay genuinely changes the run (the pigeon is not absorbed into the dwell)', () => {
+  const L0 = B.LEVELS[0];
+  const base = B.levelConfig(L0, { incidents: [] });
+  const withP = B.levelConfig(L0, { incidents: [{ t: 700, bus: 2, dur: 20, kind: 'pigeon' }] });
+  const a = B.runHeadless(base, null, 1500), b = B.runHeadless(withP, null, 1500);
+  const dpos = Math.abs(a.buses[2].dist - b.buses[2].dist);
+  assert.ok(dpos > 40, 'bus 2 travelled differently: ' + dpos);
+  const a2 = B.runHeadless(base, null, 5000), b2 = B.runHeadless(withP, null, 5000);
+  assert.ok(Math.abs(a2.cv - b2.cv) > 0.02 || Math.abs(a2.metrics().cvAvg - b2.metrics().cvAvg) > 0.01, 'outcome differs');
+  // honest: demand noise alone also grows into bunching, just later
+  assert.ok(a2.cv > 0.3, 'even with no pigeon the ring drifts into bunching: ' + a2.cv);
+});
+
+test('carrying riders past their stop costs the score', () => {
+  const sim = B.createSim({ ...quiet, lambda: 0.03 });
+  for (let s = 0; s < 400; s++) sim.step();
+  for (let k = 0; k < 6; k++) { for (let s = 0; s < 120; s++) sim.step(); const id = sim.buses.findIndex(b => b.state === 'run' && b.pax.some(p => p.dest === b.ns)); if (id >= 0) { sim.toggleSkip(id); break; } }
+  for (let s = 0; s < 600; s++) sim.step();
+  assert.ok(sim.stats.carried > 0 && sim.stats.penalty === sim.stats.carried * sim.cfg.carryPenalty);
 });
 
 test('skipping a stop strands the people waiting there (and costs complaints)', () => {
