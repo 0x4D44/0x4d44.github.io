@@ -562,7 +562,7 @@
     $('busHint').textContent = lv.watch ? 'a pigeon button for each' : 'tap a bus on the ring, or its button';
     $('sbTools').hidden = lv.id !== 99;
     $('quick').hidden = !leversFor('hold');
-    $('twinWrap').hidden = !lv.watch; document.body.classList.toggle('watchlvl', !!lv.watch);
+    $('twinWrap').hidden = !lv.watch; $('vsLine').hidden = !lv.watch; document.body.classList.toggle('watchlvl', !!lv.watch);
   }
 
   function stateText(b, sim) {
@@ -671,9 +671,10 @@
     $('hClock').textContent = $('clock').textContent;
     var busy = sim.radioBusy(), mx = sim.cfg.radioMax, dots = '';
     for (var i = 0; i < mx; i++) dots += i < busy ? '\u25cf' : '\u25cb';
+    if (lv.watch && S.twin) { var vs = $('vsLine'), cm = S.collapse.main, ct = S.collapse.twin; vs.textContent = 'Wobble now: you ' + sim.cv.toFixed(2) + (cm >= 0 ? ' (bunched)' : '') + '  |  twin ' + S.twin.cv.toFixed(2) + (ct >= 0 ? ' (bunched)' : '') + '.  Above 0.5 is a bunch.'; vs.classList.toggle('twinfirst', ct >= 0 && cm < 0); }
     $('hRadio').textContent = lv.watch ? '' : 'Radio ' + dots;
     $('hRadio').setAttribute('aria-label', 'Radio channels busy: ' + busy + ' of ' + mx);
-    $('hScore').textContent = lv.watch ? 'biggest bunch ' + m.maxConvoy : (lv.stars && S.twin ? (S.curStars ? '\u2605'.repeat(S.curStars) + '\u2606'.repeat(3 - S.curStars) : '\u2606\u2606\u2606') + ' ' + fmt(m.score) : fmt(m.delay));
+    $('hScore').textContent = lv.watch ? (S.twin ? 'wobble you ' + sim.cv.toFixed(2) + ' / twin ' + S.twin.cv.toFixed(2) : 'biggest bunch ' + m.maxConvoy) : (lv.stars && S.twin ? (S.curStars ? '\u2605'.repeat(S.curStars) + '\u2606'.repeat(3 - S.curStars) : '\u2606\u2606\u2606') + ' ' + fmt(m.score) : fmt(m.delay));
   }
 
   function captionFor(sim, lv) {
@@ -885,7 +886,7 @@
 
   function unlocked(id) {
     if (id <= 1) return true;
-    return levelStars(id - 1) >= 2 || (store.data.fails[id - 1] || 0) >= 2;
+    return levelStars(id - 1) >= 2 || (store.data.fails[id - 1] || 0) >= 1;
   }
   function renderLevels() {
     var ul = $('levelList'); ul.innerHTML = '';
@@ -899,7 +900,7 @@
       var b = document.createElement('button'); b.type = 'button'; b.className = 'lcard' + (lv.id === nextId ? ' next' : '') + (open ? '' : ' locked');
       b.innerHTML = '<span class="n">Level ' + lv.id + (lv.id === nextId ? ' · up next' : '') + '</span><span class="t"></span><span class="b"></span><span class="st">' + st + '</span>';
       b.querySelector('.t').textContent = lv.name;
-      b.querySelector('.b').textContent = open ? lv.blurb : 'Opens with 2 stars on Level ' + (lv.id - 1) + ', or after two honest attempts at it (three or more holds each).';
+      b.querySelector('.b').textContent = open ? lv.blurb : 'Opens with 2 stars on Level ' + (lv.id - 1) + ', or after one honest attempt at it (three or more holds).';
       b.setAttribute('aria-label', 'Level ' + lv.id + ': ' + lv.name + (lv.id && open ? ', ' + levelStars(lv.id) + ' of 3 stars' : '') + (open ? '' : ', locked'));
       if (!open) b.setAttribute('aria-disabled', 'true');
       b.addEventListener('click', function () { if (unlocked(lv.id)) openLevel(lv.id); });
@@ -947,10 +948,17 @@
       var li = document.createElement('li'); li.textContent = t; how.appendChild(li);
     });
     var sn = $('briefStars');
-    if (lv.stars) sn.textContent = 'Stars are for how far you cut the delay per passenger (waiting, plus time sat on held buses) compared with doing nothing on this very shift: 1 star for ' + Math.round((1 - lv.stars[0]) * 100) + '% less, 2 stars for ' + Math.round((1 - lv.stars[1]) * 100) + '% less, 3 stars for ' + Math.round((1 - lv.stars[2]) * 100) + '% less. Do nothing and you get exactly none. The first quarter of the shift is a warm-up and is not scored.'; else sn.textContent = '';
+    if (lv.stars) {
+      var c1 = Math.round((1 - lv.stars[0]) * 100), c2 = Math.round((1 - lv.stars[1]) * 100), c3 = Math.round((1 - lv.stars[2]) * 100);
+      var phone = window.matchMedia && window.matchMedia('(max-width: 600px)').matches;
+      sn.textContent = phone
+        ? 'Stars: delay per passenger cut versus doing nothing on this shift. 1 star ' + c1 + '% less, 2 stars ' + c2 + '%, 3 stars ' + c3 + '%. First quarter is warm-up.'
+        : 'Stars are for how far you cut the delay per passenger (waiting, plus time sat on held buses) compared with doing nothing on this very shift: 1 star for ' + c1 + '% less, 2 stars for ' + c2 + '% less, 3 stars for ' + c3 + '% less. Do nothing and you get exactly none. The first quarter of the shift is a warm-up and is not scored.';
+    } else sn.textContent = '';
     $('briefGo').textContent = lv.watch ? 'Roll the buses' : 'Start the shift';
     $('brief').hidden = false;
-    $('briefGo').focus();
+    $('brief').scrollTop = 0; var sh = $('brief').querySelector('.sheet'); if (sh) sh.scrollTop = 0;
+    $('briefH').focus({ preventScroll: true });
     S.modal = 'brief';
   }
 
@@ -973,16 +981,19 @@
   }
 
   function l0Headline() {
-    var m = S.collapse.main, t = S.collapse.twin;
-    if (m >= 0 && t >= 0) {
+    var m = S.collapse.main, t = S.collapse.twin, n = S.nPigeons || 0;
+    var mm = function (x) { return Math.max(1, Math.round(x / 60)); };
+    if (t >= 0) {
+      var head = 'The twin, with no pigeons at all, fell into a bunch after about ' + mm(t) + ' minutes, all on its own. ';
+      if (!n) return head + 'You never touched it, so the bunching was nothing but the route.';
+      if (m < 0) return head + 'Yours held out this time, so the pigeons were not the cause either way.';
       var d = t - m;
-      if (d > 150) return 'Your pigeons brought the collapse forward by about ' + Math.max(1, Math.round(d / 60)) + ' minutes. The twin collapsed too.';
-      if (d < -150) return 'The incident-free twin collapsed first. The pigeons were not the cause.';
-      return 'Your pigeon changed almost nothing. The twin collapsed too.';
+      if (d > 150) return head + 'Your pigeons did bring yours forward, by about ' + mm(d) + ' minutes, but only sometimes: a pigeon is a nudge, not a lever.';
+      if (d < -150) return head + 'Yours came later still. The pigeons did not speed it up this time; they only sometimes do.';
+      return head + 'Yours went at about the same time. The pigeons changed almost nothing, as they often do.';
     }
-    if (m >= 0) return 'Your pigeons broke it. The incident-free twin was still holding on.';
-    if (t >= 0) return 'The twin collapsed; yours held out. Pigeons are not the whole story.';
-    return 'Neither route fully collapsed this time. Have another go.';
+    if (m >= 0) return 'Your pigeons broke it, after about ' + mm(m) + ' minutes, while the incident-free twin was still holding on. That does happen: a nudge sometimes does bring it forward. Given longer, the twin would go too.';
+    return 'Neither route fully collapsed this time. The twin would have, given longer: the even ring is never stable.';
   }
   function playerNote(st) {
     var h = st.holds, q = st.hq;
@@ -1040,12 +1051,13 @@
     var paras = (c && !lv.watch ? [playerNote(st)] : []).concat(c ? c.lesson : ['You have just built your own bunch, or cured it. Either way: a late bus finds more people, loads for longer, and is later; the one behind catches up. Holding by gap, not by clock, is how real operators cure it.']);
     paras.forEach(function (t) { var p = document.createElement('p'); p.innerHTML = t; ls.appendChild(p); });
     if (c) { var f = document.createElement('p'); f.className = 'fact'; f.textContent = c.fact; ls.appendChild(f); }
-    $('debRobot').textContent = (!lv.watch && lv.id !== 99 && lv.id < B.LEVELS.length - 1 && !unlocked(lv.id + 1)) ? 'Level ' + (lv.id + 1) + ' opens with 2 stars, or after two honest attempts (three or more holds each).' : '';
+    $('debRobot').textContent = '';
     var nxt = $('debNext');
     var hasNext = lv.id !== 99 && lv.id < B.LEVELS.length - 1;
     nxt.hidden = !hasNext;
     nxt.textContent = lv.watch ? 'Level 1: have a go' : 'Next: ' + (B.LEVELS[lv.id + 1] ? B.LEVELS[lv.id + 1].name : '');
-    if (!lv.watch && lv.id !== 99 && hasNext && !unlocked(lv.id + 1)) { nxt.disabled = true; nxt.textContent = 'Next: locked'; } else nxt.disabled = false;
+    var why = $('debWhy'), lockedNext = !lv.watch && lv.id !== 99 && hasNext && !unlocked(lv.id + 1);
+    if (lockedNext) { nxt.disabled = true; nxt.textContent = 'Next: locked'; why.hidden = false; why.textContent = 'Level ' + (lv.id + 1) + ' opens with 2 stars, or after one honest attempt here (three or more holds). You made ' + st.holds + '.'; } else { nxt.disabled = false; why.hidden = true; why.textContent = ''; }
     $('debrief').hidden = false; S.modal = 'debrief';
     $('debH').focus({ preventScroll: true });
     $('debrief').scrollTop = 0;

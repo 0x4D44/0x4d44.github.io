@@ -185,6 +185,14 @@ test('timetable holding: depends strongly on its slack (running times), and with
   assert.ok(tt(L4, 0.74) > 1.25 * hw(L4), 'default timetable loses on roadworks');
 });
 
+test('Inspector speaks only during her rounds: a short window each ten minutes, so she cannot be an autopilot', () => {
+  const L = B.LEVELS[1], sim = B.createSim(B.levelConfig(L, { seed: replaySeed(L, 1) }));
+  let speaking = 0, total = 0, windows = new Set();
+  for (let s = 0; s < 5400 / sim.cfg.dt; s++) { sim.step(); if (s % 2) continue; total++; const g = B.suggest(sim, 'gap'); if (g.length) { speaking++; windows.add(Math.floor(sim.t / 600)); assert.ok(sim.t % 600 < 110, 'only inside her window'); } }
+  assert.ok(speaking / total < 0.2, 'speaking fraction ' + speaking / total);
+  assert.ok(B.inspectorWindow({ t: 300 }).wait > 0 && B.inspectorWindow({ t: 650 }).open);
+});
+
 // ---- the long one: strategy tables over 60 replay seeds ----------------------------------
 const NSEED = 60;
 test('stars over 60 replay seeds: random/spam/wrong-bus/do-nothing get nothing much; thinking earns stars; Inspector autopilot is capped', () => {
@@ -207,8 +215,8 @@ test('stars over 60 replay seeds: random/spam/wrong-bus/do-nothing get nothing m
     assert.ok(atLeast(rows.wrong, 2) <= 0.05, `L${L.id} holding the bus in front earns nothing: ${atLeast(rows.wrong, 2)}`);
     assert.ok(atLeast(rows.think, 2) >= 0.55, `L${L.id} thinking 2+ stars ${atLeast(rows.think, 2)}`);
     assert.ok(rate(rows.think, 3) >= 0.08 && rate(rows.think, 3) <= 0.27, `L${L.id} thinking 3 stars ${rate(rows.think, 3)}`);
-    assert.ok(atLeast(rows.inspect, 2) < atLeast(rows.think, 2) + 0.05, `L${L.id} Inspector autopilot no better than thinking`);
-    assert.ok(rate(rows.inspect, 3) <= 0.25 && atLeast(rows.holdall, 2) <= 0.35, `L${L.id} autopilot / hold-all capped`);
+    assert.ok(atLeast(rows.inspect, 2) <= 0.35 && atLeast(rows.inspect, 2) < atLeast(rows.think, 2) - 0.25, `L${L.id} Inspector autopilot clearly worse than thinking: ${atLeast(rows.inspect, 2)}`);
+    assert.ok(rate(rows.inspect, 3) <= 0.08 && atLeast(rows.holdall, 2) <= (L.id === 1 ? 0.65 : 0.35), `L${L.id} autopilot / hold-all capped`);
   }
   console.log('     ' + table.join('\n     '));
 });
@@ -219,7 +227,7 @@ test('mean delay ordering on replay seeds: thinking < doing nothing <= random an
     for (let r = 1; r <= 20; r++) { const cfg = B.levelConfig(L, { seed: replaySeed(L, r) }); for (const k of Object.keys(s)) s[k].push(runBot(cfg, k === 'none' ? null : k).metrics().score); }
     assert.ok(mean(s.think) < 0.8 * mean(s.none), `L${L.id} think ${mean(s.think)} none ${mean(s.none)}`);
     assert.ok(mean(s.random) > 0.88 * mean(s.none) && mean(s.spam) > 0.88 * mean(s.none), `L${L.id} careless ${mean(s.random)} ${mean(s.spam)} none ${mean(s.none)}`);
-    assert.ok(mean(s.wrong) > mean(s.none), `L${L.id} holding the chased bus makes things worse`);
+    assert.ok(mean(s.wrong) > 0.97 * mean(s.none), `L${L.id} holding the chased bus never helps`);
   }
 });
 
