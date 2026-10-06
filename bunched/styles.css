@@ -305,7 +305,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 }
 @media (min-width: 900px) {
   .stagecol { align-self: start; }
-  .stagecol .ringwrap { max-width: min(640px, calc(100vh - 290px)); min-width: 320px; }
+  .stagecol .ringwrap { max-width: min(640px, calc(100vh - 345px)); min-width: 320px; }
   .hud-row { display: none; }
 }
 .sheet .cta.sticky { gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 8px 0 14px; }
