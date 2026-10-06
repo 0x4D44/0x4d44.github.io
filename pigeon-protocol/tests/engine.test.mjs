@@ -1,12 +1,13 @@
 // Run with: node pigeon-protocol/tests/engine.test.mjs
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { constant, sensible, polite, cubicish, aimd, plusOne } from './strategies.mjs';
+import { constant, sensible, polite, cubicish, aimd, plusOne, ramp, allRamps } from './strategies.mjs';
 const E = createRequire(import.meta.url)('../engine.js');
 const L = (id) => E.LEVELS.find((l) => l.id === id);
 let n = 0;
 function test(name, fn) { fn(); n++; console.log('ok - ' + name); }
 const SEEDS = 200;
+const STATIC1 = Object.assign({}, L(1), { jitter: null });   // level 1 with the Gap pinned at 12, for the mechanics tests
 const starsOver = (lv, mk, seeds = SEEDS) => { const c = [0, 0, 0, 0]; for (let s = 0; s < seeds; s++) c[E.starsFor(E.runPolicy(lv, lv.seed + s, mk()))]++; return c.map((x) => x / seeds); };
 const frac = (c, min) => c.slice(min).reduce((a, b) => a + b, 0);
 const free = (lv) => Object.assign({}, lv, { deadline: 60, loft: 9999 });
@@ -19,25 +20,25 @@ test('determinism: same seed, same history; different seed, different history', 
 });
 
 test('under capacity, with no hawks, nothing is lost', () => {
-  for (let w = 1; w <= 12; w++) { const run = E.createRun(L(1), 3); const rec = E.playRound(run, w); assert.equal(rec.lost, 0); assert.equal(rec.delivered, w); }
+  for (let w = 1; w <= 12; w++) { const run = E.createRun(STATIC1, 3); const rec = E.playRound(run, w); assert.equal(rec.lost, 0); assert.equal(rec.delivered, w); }
 });
 
 test('capacity overflow loses birds (at least the excess)', () => {
   for (const w of [13, 16, 20, 24]) {
-    const run = E.createRun(L(1), 3); const rec = E.playRound(run, w);
+    const run = E.createRun(STATIC1, 3); const rec = E.playRound(run, w);
     assert.ok(rec.lostCrowd >= w - 12, 'w=' + w); assert.ok(rec.delivered <= 12); assert.equal(rec.lostHawk, 0);
   }
 });
 
 test('collapse emerges: goodput at 2x capacity is below goodput at capacity', () => {
-  const lv = free(Object.assign({}, L(1), { scrolls: 4000 }));
+  const lv = free(Object.assign({}, STATIC1, { scrolls: 4000 }));
   const goodput = (w) => { let d = 0; for (let s = 0; s < 40; s++) d += E.playRound(E.createRun(lv, s), w).delivered; return d / 40; };
   const atC = goodput(12), over = goodput(24);
   assert.equal(atC, 12); assert.ok(over < atC); assert.ok(over <= 0.5 * atC);
 });
 
 test('collapse over a whole run: flooding delivers far less per bird than steady flying', () => {
-  const lv = free(L(1));
+  const lv = free(STATIC1);
   const flood = E.runPolicy(lv, 1, constant(24)), steady = E.runPolicy(lv, 1, constant(12));
   assert.ok(flood.sent > steady.sent && flood.lost > 10 * steady.lost);
   assert.ok(flood.delivered / flood.sent < 0.5 * steady.delivered / steady.sent);
@@ -51,7 +52,7 @@ test('hawk loss is independent of load (about p per bird, even when under capaci
 });
 
 test('lost scrolls are retransmitted first, and flagged as second attempts', () => {
-  const run = E.createRun(L(1), 3); const r1 = E.playRound(run, 20);
+  const run = E.createRun(STATIC1, 3); const r1 = E.playRound(run, 20);
   assert.ok(r1.lost > 0);
   const lostScrolls = r1.birds.filter((b) => b.fate !== 'ok').map((b) => b.scroll).sort((a, b) => a - b);
   const r2 = E.playRound(run, lostScrolls.length);
@@ -72,23 +73,37 @@ test('Reno: slow start doubles, loss halves, then +1 per round', () => {
   assert.deepEqual(seq, [1, 2, 4, 8, 4, 5, 6, 7]);
 });
 
-test('Reno completes every level given time; flies levels 1 and 6 in time; wins the rival level most of the time', () => {
+test('Reno completes every level given time; flies levels 1 and 6 in time', () => {
   for (const lv of E.LEVELS) assert.ok(E.renoReference(lv, lv.seed).won, lv.name);
   for (const id of [1, 6]) assert.ok(E.renoReference(L(id), L(id).seed).inTime, 'Reno in time on level ' + id);
-  assert.ok(frac(starsOver(L(3), () => E.renoPolicy(1)), 1) >= 0.7, 'textbook AIMD wins the rival level comfortably');
+});
+
+test('textbook Reno (halve on any loss, +1 otherwise) finishes levels 1, 3 and 4 with at least 2 stars on >= 70% of seeds', () => {
+  const rows = [];
+  for (const id of [1, 3, 4]) { const c = starsOver(L(id), () => E.renoPolicy(1)); rows.push('L' + id + ' ' + Math.round(frac(c, 2) * 100) + '%'); assert.ok(frac(c, 2) >= 0.7, 'Reno on level ' + id + ': ' + frac(c, 2)); }
+  console.log('   Reno 2+ stars: ' + rows.join(', '));
 });
 
 test('Reno stalls under hawks (it mistakes loss for congestion); a hold-on-stray-loss rule does not', () => {
-  const lv = L(2);
-  assert.ok(frac(starsOver(lv, () => E.renoPolicy(1)), 1) <= 0.1, 'Reno almost never finishes Hawk Season in time');
-  assert.ok(frac(starsOver(lv, sensible), 1) >= 0.8);
+  assert.ok(frac(starsOver(L(2), () => E.renoPolicy(1)), 1) <= 0.1, 'Reno almost never finishes Hawk Season in time');
+  assert.ok(frac(starsOver(L(2), sensible), 1) >= 0.8);
+});
+
+test('each attempt gets its own weather, but the canonical schedule is untouched', () => {
+  const lv = L(4), a = E.createRun(lv, 1), b = E.createRun(lv, 2), c = E.createRun(lv, 3);
+  const key = (r) => JSON.stringify(r.capSched);
+  assert.ok(new Set([key(a), key(b), key(c)]).size > 1);
+  assert.deepEqual(lv.cap, [[1, 14], [3, 7], [8, 23], [11, 9], [13, 20]]);
+  assert.equal(E.createRun(L(1), 1).capSched[0][1] >= 10 && E.createRun(L(1), 1).capSched[0][1] <= 14, true);
+  const seenCaps = new Set(); for (let s = 0; s < 40; s++) seenCaps.add(E.createRun(L(1), s).capSched[0][1]); assert.ok(seenCaps.size >= 4, 'level 1 Gap varies per attempt');
+  assert.deepEqual(E.createRun(L(6), 1).capSched, L(6).cap);
 });
 
 test('rival flock: exists only on its schedule, adapts, digs in when squeezed, and a bully is punished', () => {
   const lv = L(3), run = E.runPolicy(lv, 5, polite());
-  assert.equal(run.history[0].rivalW, 0);                                   // not there yet
-  assert.ok(run.history[1].rivalW > 0 && run.history[1].rivalOn);           // arrives
-  assert.equal(run.history[lv.rival.to].rivalW, 0);                          // and leaves
+  assert.equal(run.history[0].rivalW, 0);
+  assert.ok(run.history[1].rivalW > 0 && run.history[1].rivalOn);
+  assert.equal(run.history[lv.rival.to].rivalW, 0);
   assert.ok(run.history.some((h) => h.rivalLost > 0));
   const bully = E.runPolicy(lv, 5, constant(24));
   assert.ok(bully.history.some((h) => h.rivalDugIn), 'the rival digs in when squeezed twice running');
@@ -96,68 +111,88 @@ test('rival flock: exists only on its schedule, adapts, digs in when squeezed, a
   assert.ok(bully.delivered / bully.sent < 0.65);
 });
 
-test('capacity schedule changes mid-run (Storm Front)', () => {
-  const caps = E.runPolicy(L(4), 1, sensible()).history.map((h) => h.cap);
-  assert.deepEqual([caps[0], caps[3], caps[8]], [14, 7, 23]);
+test('capacity schedule changes mid-run (Storm Front), canonical caps visible with jitter off', () => {
+  const lv = Object.assign({}, L(4), { jitter: null });
+  const caps = E.runPolicy(lv, 1, sensible()).history.map((h) => h.cap);
+  assert.deepEqual([caps[0], caps[3], caps[8], caps[11], caps[13]], [14, 7, 23, 9, 20]);
 });
 
 test('end conditions: deadline, loft and delivery', () => {
-  assert.equal(E.runPolicy(L(1), 1, constant(1)).endReason, 'deadline');
-  assert.equal(E.runPolicy(L(1), 1, constant(24)).endReason, 'loft');
-  assert.equal(E.runPolicy(L(1), 1, constant(12)).endReason, 'delivered');
-  assert.throws(() => { const r = E.runPolicy(L(1), 1, constant(12)); E.playRound(r, 3); });
+  assert.equal(E.runPolicy(STATIC1, 1, constant(1)).endReason, 'deadline');
+  assert.equal(E.runPolicy(STATIC1, 1, constant(24)).endReason, 'loft');
+  assert.equal(E.runPolicy(STATIC1, 1, constant(12)).endReason, 'delivered');
+  assert.throws(() => { const r = E.runPolicy(STATIC1, 1, constant(12)); E.playRound(r, 3); });
 });
 
-test('star thresholds are ordered and fit inside the deadline', () => {
+test('star thresholds are ordered, fit inside the deadline, and demand adaptation', () => {
   for (const lv of E.LEVELS.filter((l) => l.stars)) {
     assert.ok(lv.stars.three.rounds <= lv.stars.two.rounds && lv.stars.three.lost <= lv.stars.two.lost, lv.name);
     assert.ok(lv.stars.two.rounds <= lv.deadline, lv.name);
-    if (lv.rival) assert.ok(lv.stars.three.share < lv.stars.two.share);
+    assert.ok(lv.stars.three.adapt && lv.stars.two.adapt, lv.name + ' needs the adapt rule');
+    if (lv.rival) assert.ok(lv.stars.three.share < lv.stars.two.share && lv.stars.three.minShare > 0);
   }
 });
 
-test('no flat strategy earns 3 stars on levels 2-5 (adaptation is required)', () => {
+test('adaptedOf: only a flock that shrinks after a loss has adapted', () => {
+  const run = E.createRun(STATIC1, 3); E.playRound(run, 20); assert.equal(E.adaptedOf(run), false);
+  E.playRound(run, 8); assert.equal(E.adaptedOf(run), true);
+  const grow = E.runPolicy(STATIC1, 3, plusOne()); assert.equal(E.adaptedOf(grow), false);
+  const flat = E.runPolicy(STATIC1, 3, constant(12)); assert.equal(E.adaptedOf(flat), false);
+});
+
+test('no flat flock earns 3 stars on any ranked level, and none earns 2 (adaptation is required)', () => {
   const table = [];
-  for (const id of [2, 3, 4, 5]) {
-    let worst = 0, worstK = 0;
-    for (let k = 1; k <= 24; k++) { const c = starsOver(L(id), () => constant(k)); if (c[3] > worst) { worst = c[3]; worstK = k; } }
-    table.push('L' + id + ' best constant 3-star ' + Math.round(worst * 100) + '% (k=' + worstK + ')');
-    assert.ok(worst <= 0.05, 'level ' + id + ': a constant window of ' + worstK + ' earns 3 stars ' + Math.round(worst * 100) + '%');
+  for (const id of [1, 2, 3, 4, 5]) {
+    let w3 = 0, w2 = 0;
+    for (let k = 1; k <= 24; k++) { const c = starsOver(L(id), () => constant(k)); w3 = Math.max(w3, c[3]); w2 = Math.max(w2, c[2] + c[3]); }
+    table.push('L' + id + ' best flat: 3-star ' + Math.round(w3 * 100) + '%, 2+ ' + Math.round(w2 * 100) + '%');
+    assert.ok(w3 <= 0.05, 'level ' + id + ' flat 3 stars ' + w3); assert.ok(w2 <= 0.03, 'level ' + id + ' flat 2 stars ' + w2);
   }
   console.log('   ' + table.join('; '));
 });
 
-test('no flat strategy earns 2 stars on the Storm Front or the Big Delivery (at most 3% noise)', () => {
-  for (const id of [4, 5]) for (let k = 1; k <= 24; k++) { const c = starsOver(L(id), () => constant(k)); assert.ok(c[2] + c[3] <= 0.03, 'L' + id + ' k=' + k + ' 2+ stars ' + (c[2] + c[3])); }
+test('no blind open-loop ramp (start, step, cap: all combinations) earns 50% 3 stars on any level (L1: under 25%)', () => {
+  const worst = {};
+  for (const id of [1, 2, 3, 4, 5]) {
+    let w3 = 0, w2 = 0;
+    for (const g of allRamps()) { const c = starsOver(L(id), () => ramp(g.start, g.step, g.cap), 16); w3 = Math.max(w3, c[3]); w2 = Math.max(w2, c[2] + c[3]); }
+    worst[id] = [w3, w2]; assert.ok(w3 < (id === 1 ? 0.25 : 0.5), 'level ' + id + ' ramp 3 stars ' + w3); assert.ok(w2 <= 0.1, 'level ' + id + ' ramp 2 stars ' + w2);
+  }
+  console.log('   best blind ramp 3-star / 2+: ' + Object.entries(worst).map(([k, v]) => 'L' + k + ' ' + Math.round(v[0] * 100) + '/' + Math.round(v[1] * 100)).join(', '));
 });
 
-test('adaptive players who only see sent/arrived reach 3 stars most of the time', () => {
-  const rows = [];
-  for (const [name, mk, ids, min] of [['sensible', sensible, [2, 3, 4], 0.6], ['polite', polite, [2, 3, 5], 0.4], ['cubicish AIMD', cubicish, [2, 3], 0.6]]) {
-    for (const id of ids) { const c = starsOver(L(id), mk); rows.push(name + ' L' + id + ': ' + Math.round(c[3] * 100) + '%'); assert.ok(c[3] >= min, name + ' on level ' + id + ' earns 3 stars only ' + Math.round(c[3] * 100) + '%'); }
+test('a remembered capacity schedule (w = canonical cap each round) does not reliably win on retries', () => {
+  for (const id of [2, 4, 5]) {
+    const lv = L(id); const oracle = () => (run) => Math.max(1, E.capAt(lv, run.round + 1));
+    const c = starsOver(lv, oracle); assert.ok(c[3] <= 0.5, 'level ' + id + ' oracle 3 stars ' + c[3]);
   }
-  for (const id of [2, 3, 4, 5]) assert.ok(frac(starsOver(L(id), sensible), 1) >= 0.8 || id === 5, 'sensible should finish level ' + id);
-  assert.ok(frac(starsOver(L(5), sensible), 1) >= 0.7);
+});
+
+test('adaptive players who only see sent/arrived reach 3 stars about half to three quarters of the time, never always', () => {
+  const rows = [];
+  const cases = [['sensible', sensible, [1, 2, 3, 4], 0.5, 0.9], ['polite', polite, [1, 2, 3, 5], 0.35, 0.9], ['cubicish AIMD', cubicish, [1, 2, 3, 4], 0.35, 0.9]];
+  for (const [name, mk, ids, lo, hi] of cases) for (const id of ids) {
+    const c = starsOver(L(id), mk); rows.push(name + ' L' + id + ': ' + Math.round(c[3] * 100) + '%');
+    assert.ok(c[3] >= lo && c[3] <= hi, name + ' on level ' + id + ' earns 3 stars ' + Math.round(c[3] * 100) + '%');
+  }
+  for (const id of [1, 2, 3, 4, 5]) assert.ok(frac(starsOver(L(id), sensible), 2) >= 0.8, 'sensible should finish and adapt on level ' + id);
   console.log('   ' + rows.join('; '));
 });
 
-test('plain AIMD tolerates levels 3 and 5 (finishes); +1 forever never earns 3 stars on level 2 or 4', () => {
-  assert.ok(frac(starsOver(L(3), aimd), 1) >= 0.8);
-  assert.ok(frac(starsOver(L(5), aimd), 1) >= 0.5);
-  for (const id of [2, 4]) assert.equal(starsOver(L(id), plusOne)[3], 0);
+test('plain AIMD tolerates levels 3 and 5 (finishes); +1 forever never earns more than 1 star', () => {
+  assert.ok(frac(starsOver(L(3), aimd), 1) >= 0.8); assert.ok(frac(starsOver(L(5), aimd), 1) >= 0.5);
+  for (const id of [1, 2, 3, 4, 5]) assert.equal(frac(starsOver(L(id), plusOne), 2), 0);
 });
 
-test('fairness: a flock that hogs the Gap cannot earn 3 stars on the rival levels', () => {
+test('fairness: a flock that hogs the Gap cannot earn 3 stars on the rival levels; shares are measured only while the rival flies', () => {
   const greedy = () => { let w = 2; return (run, last) => { if (last) w = Math.min(24, last.lost ? Math.max(14, last.w - 1) : last.w + 3); return w; }; };
   for (const id of [3, 5]) assert.ok(starsOver(L(id), greedy)[3] <= 0.05, 'level ' + id);
-  // and share is measured only over rounds the rival was actually flying
   const run = E.runPolicy(L(3), 3, polite());
   assert.ok(E.shareOf(run) > 0 && E.shareOf(run) < 1);
-  assert.equal(E.shareOf(E.runPolicy(L(1), 1, constant(12))), 1);
+  assert.equal(E.shareOf(E.runPolicy(STATIC1, 1, constant(12))), 1);
 });
 
-test('level 1 teaches by discovery: capacity is a plain static number the UI never needs to reveal; floods earn nothing', () => {
-  assert.equal(L(1).cap.length, 1);
+test('floods earn nothing', () => {
   for (const lv of E.LEVELS.filter((l) => l.stars)) assert.equal(E.starsFor(E.runPolicy(lv, lv.seed, constant(24))), 0);
 });
 
