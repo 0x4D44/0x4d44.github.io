@@ -272,3 +272,12 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 .cta-top { margin: 8px 0 12px; }
 .cta-top .btn { flex: 1 1 220px; }
 .sb-peek { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+
+.db-sticky { }
+@media (max-width: 979px) {
+  #debrief { padding-bottom: 12px; }
+  .db-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--paper-3); border-top: 2px solid var(--ink); transform: translateY(120%); transition: transform .18s; flex-wrap: nowrap; }
+  .db-sticky.on { transform: none; }
+  .db-sticky .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; }
+  .db-sticky:not(.on) { visibility: hidden; }
+}
