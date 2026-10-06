@@ -7,7 +7,8 @@
   var CX = 190, CY = 190, R = 118;
   var BUS_COLOURS = ['#8c1d35', '#d99a2b', '#2f6fb0', '#2e8158', '#7a3f98', '#c4551f', '#4b5563', '#0e8a8a', '#b3284a', '#6b8e23'];
   var COATS = ['#8c1d35', '#2f6fb0', '#2e8158', '#6b4a8f', '#c4551f', '#3b4a5a'];
-  var STOP_SHORT = ['Pub', 'Colinton', 'Slateford', 'Murrayfield', 'Roseburn', 'Dean Vill.', 'Stockbridge', 'Canonmills', 'Warriston', 'Bonnington', 'The Shore', 'Newhaven'];
+  var STOP_SHORT = ['Pub', 'Colinton', 'Slateford', 'Murrayfield', 'Roseburn', 'Dean Village', 'Stockbridge', 'Canonmills', 'Warriston', 'Bonnington', 'The Shore', 'Newhaven'];
+  var STOP_TINY = ['Pub', 'Colin.', 'Slate.', 'Murray.', 'Rose.', 'Dean', 'Stock.', 'Canon.', 'Warr.', 'Bonn.', 'Shore', 'Newh.'];
 
   function $(id) { return document.getElementById(id); }
   function svgEl(name, attrs, parent) {
@@ -246,8 +247,8 @@
       svgEl('circle', { cx: pk.x, cy: pk.y, r: 10, fill: 'none', stroke: '#d99a2b', 'stroke-width': 2.5, class: 'pulse' }, flag);
       var cosA = Math.cos(pl.a), anchor = Math.abs(cosA) < 0.35 ? 'middle' : (cosA > 0 ? 'end' : 'start');
       var tx = CX + (R - 22) * Math.cos(pl.a), ty = CY + (R - 22) * Math.sin(pl.a);
-      var lab = svgEl('text', { x: tx.toFixed(1), y: (ty + 3).toFixed(1), 'text-anchor': anchor, 'font-size': 9.5, fill: hot ? '#8a5d08' : '#5a4538', 'font-weight': hot ? 800 : 600, 'font-family': 'system-ui,sans-serif' }, sg);
-      lab.textContent = STOP_SHORT[i] || ('Stop ' + i);
+      var lab = svgEl('text', { x: tx.toFixed(1), y: (ty + 3).toFixed(1), 'text-anchor': anchor, 'font-size': 9, fill: hot ? '#8a5d08' : '#5a4538', 'font-weight': hot ? 800 : 600, 'font-family': 'system-ui,sans-serif' }, sg);
+      lab.textContent = STOP_TINY[i] || ('Stop ' + i);
       var hit = svgEl('circle', { class: 'hit', cx: pr.x.toFixed(1), cy: pr.y.toFixed(1), r: 17, tabindex: -1, 'data-stop': i }, sg);
       hit.addEventListener('click', onStopTap);
       var ti = svgEl('title', {}, hit); ti.textContent = st.name + ': tap to hold the next bus here';
@@ -265,9 +266,9 @@
     svgEl('path', { d: 'M-2.5 0 L0 -42 L2.5 0Z', fill: '#2a1a14' }, ring.needle);
     svgEl('circle', { r: 5, fill: '#2a1a14' }, hub);
     ring.word = svgEl('text', { x: 0, y: 20, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 800, fill: '#5c0f22', 'font-family': 'ui-rounded,system-ui,sans-serif' }, hub);
-    var cap = svgEl('text', { x: 0, y: -62, 'text-anchor': 'middle', 'font-size': 8.5, 'font-weight': 700, fill: '#5a4538', 'font-family': 'ui-monospace,monospace', 'letter-spacing': '0.08em' }, hub);
+    var cap = svgEl('text', { x: 0, y: -56, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: '#5a4538', 'font-family': 'ui-monospace,monospace', 'letter-spacing': '0.08em' }, hub);
     cap.textContent = 'BUNCHING-O-METER';
-    ring.sub = svgEl('text', { x: 0, y: 33, 'text-anchor': 'middle', 'font-size': 9.5, fill: '#5a4538', 'font-family': 'ui-monospace,monospace' }, hub);
+    ring.sub = svgEl('text', { x: 0, y: 36, 'text-anchor': 'middle', 'font-size': 9.5, fill: '#5a4538', 'font-family': 'ui-monospace,monospace' }, hub);
     // buses
     var bg = svgEl('g', {}, svg);
     for (i = 0; i < sim.n; i++) {
