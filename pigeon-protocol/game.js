@@ -189,6 +189,7 @@
     return pool[(done * 3 + lv.id + k) % pool.length];
   }
   // The bulletin is filed AFTER the flight it describes, and describes the sky that was actually flown.
+  function pl0(done, lv) { var pl = C.POOL_EVENTS; return pl[(done * 7 + lv.id) % pl.length]; }
   function eventLine() {
     var lv = S.level, h = seen();
     if (S.finished) return '<b>NOTAM</b>The Ministry is closed for the day.';
@@ -201,6 +202,7 @@
         var pl = C.POOL_EVENTS, j, base = (done * 7 + lv.id) % pl.length;
         for (j = 0; j < pl.length; j++) { var cand = pl[(base + j) % pl.length]; if (!usedLines[cand]) { tx = cand; break; } }
       }
+      if (!tx) tx = pl0(done, lv);
       usedLines[tx] = 1; evCache[ck] = tx;
     }
     var out = '<b>NOTAM, FILED LATE, ROUND ' + String(done).padStart(2, '0') + '</b>' + esc(tx);
@@ -643,7 +645,7 @@
     var mine = 0, theirs = 0, rounds = 0; run.history.forEach(function (h) { if (h.rivalOn) { mine += h.delivered; theirs += h.rivalDelivered; rounds++; } });
     if (!rounds) return null;
     var wrap = el('div'), tot = mine + theirs || 1;
-    wrap.innerHTML = '<div class="shared-lab">Who got through the Gap while the rival was flying (' + rounds + ' rounds)</div><div class="share-bar" role="img" aria-label="You ' + pct(mine / tot) + ', rival ' + pct(theirs / tot) + '"><i class="you" style="width:' + (mine / tot * 100) + '%"></i><i class="riv" style="width:' + (theirs / tot * 100) + '%"></i><span class="capm" style="left:calc(50% - 1px)" title="an even split"></span></div><div class="shared-leg"><span class="k you">You ' + pct(mine / tot) + '</span><span class="k riv">Rival ' + pct(theirs / tot) + '</span><span class="k cap">even split</span></div>';
+    wrap.innerHTML = '<div class="shared-lab">Who got through the Gap while the rival was flying (' + rounds + ' rounds)</div><div class="share-bar" role="img" aria-label="You ' + pct(mine / tot) + ', rival ' + pct(theirs / tot) + '"><i class="you" style="width:' + (mine / tot * 100) + '%"></i><i class="riv" style="width:' + (theirs / tot * 100) + '%"></i><span class="capm" style="left:calc(50% - 1px)" title="an even split"></span></div><div class="shared-leg"><span class="k you">You ' + pct(mine / tot) + '</span><span class="k riv">Rival ' + pct(theirs / tot) + '</span><span class="k cap">fair share 50%</span></div>';
     return wrap;
   }
 
