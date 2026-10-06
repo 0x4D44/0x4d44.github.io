@@ -337,3 +337,5 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
   body.ingame .hudbar .quick { flex: 1; }
 }
 .quick .btn { white-space: normal; }
+body.watchlvl .legend { display: none; }
+@media (max-width: 899px) { .caption { min-height: 2.4em; } }

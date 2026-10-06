@@ -43,7 +43,7 @@
   // "jitter" is the per-attempt wobble of the weather (rounds early or late, birds wider or narrower).
   var LEVELS = [
     { id: 1, key: 'clear-skies', name: 'Clear Skies', scrolls: 84, deadline: 14, cap: [[1, 12]], jitter: { cap: 2 }, respond: { minLost: 3, minFrac: 0.15 }, p: 0, rival: null, seed: 1149, loft: 45,
-      stars: { three: { rounds: 11, lost: 20, adapt: true, minEvents: 1 }, two: { rounds: 14, lost: 32, adapt: true, minEvents: 1 } } },
+      stars: { three: { rounds: 10, lost: 16, adapt: true, minEvents: 1 }, two: { rounds: 14, lost: 32, adapt: true, minEvents: 1 } } },
     { id: 2, key: 'hawk-season', name: 'Hawk Season', scrolls: 82, deadline: 19, cap: [[1, 15], [3, 3], [5, 24], [8, 4], [11, 21]], jitter: { shift: 2, cap: 3 }, p: 0.1, rival: null, seed: 1990, loft: 45,
       stars: { three: { rounds: 18, lost: 30, adapt: true, minEvents: 2 }, two: { rounds: 19, lost: 38, adapt: true, minEvents: 1 } } },
     { id: 3, key: 'rival-loft', name: 'The Rival Loft', scrolls: 68, deadline: 19, cap: [[1, 19], [3, 3], [6, 18], [10, 3], [12, 18]], jitter: { shift: 1, cap: 2 }, p: 0, rival: { start: 3, from: 2, to: 9 }, seed: 2001, loft: 36,
