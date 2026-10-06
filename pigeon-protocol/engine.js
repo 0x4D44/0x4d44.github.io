@@ -87,6 +87,7 @@
       lost: 0,
       lostCrowd: 0,
       lostHawk: 0,
+      rivalDelivered: 0,
       birdSerial: 0,
       rival: lv.rival ? createReno(lv.rival.start || 2) : null,
       history: [],
@@ -163,6 +164,7 @@
     run.lost += rec.lost;
     run.lostCrowd += rec.lostCrowd;
     run.lostHawk += rec.lostHawk;
+    run.rivalDelivered += rec.rivalDelivered;
     run.history.push(rec);
     if (run.delivered >= lv.scrolls) { run.done = true; run.won = true; run.endReason = 'delivered'; }
     else if (run.lost >= lv.loft) { run.done = true; run.won = false; run.endReason = 'loft'; }
@@ -195,12 +197,18 @@
   // ---- stars -------------------------------------------------------------------------------
   // 1: delivered everything in time.  2: matched the bird-brain.  3: beat it.
   // Thresholds are per level (level.stars), derived from Reno's behaviour and checked in the tests.
+  // Share of the traffic through the Gap that was yours (1 when there is no rival).
+  function shareOf(run) {
+    var tot = run.delivered + run.rivalDelivered;
+    return tot ? run.delivered / tot : 1;
+  }
   function starsFor(run) {
     var st = run.level.stars;
     if (!run.won || !st) return run.won ? 1 : 0;
-    var rounds = run.round, lost = run.lost, s = 1;
-    if (rounds <= st.two.rounds && lost <= st.two.lost) s = 2;
-    if (rounds <= st.three.rounds && lost <= st.three.lost) s = 3;
+    var rounds = run.round, lost = run.lost, sh = shareOf(run), s = 1;
+    function ok(t) { return rounds <= t.rounds && lost <= t.lost && (t.share === undefined || sh <= t.share); }
+    if (ok(st.two)) s = 2;
+    if (ok(st.three)) s = 3;
     return s;
   }
 
@@ -209,6 +217,6 @@
     hash: hash, mulberry32: mulberry32, capAt: capAt, gapPasses: gapPasses,
     createRun: createRun, playRound: playRound, pendingIds: pendingIds,
     createReno: createReno, renoNext: renoNext, renoPolicy: renoPolicy,
-    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor
+    runPolicy: runPolicy, renoReference: renoReference, starsFor: starsFor, shareOf: shareOf
   };
 });
