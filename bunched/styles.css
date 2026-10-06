@@ -222,7 +222,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
 .how { padding-left: 20px; margin: 12px 0 0; color: var(--ink); font-size: 15px; }
 .how li { margin-bottom: 6px; }
 .stars-need { margin-top: 12px; font: 12.5px var(--mono); color: var(--ink-2); }
-.starrow { font-size: 40px; letter-spacing: 6px; color: var(--gold); line-height: 1; margin: 4px 0 10px; text-shadow: 0 2px 0 rgba(140, 29, 53, 0.25); }
+.starrow { font-size: 40px; letter-spacing: 6px; color: var(--gold); line-height: 1; margin: 4px 0 10px; }
 .starrow .off { color: #d8ccb6; text-shadow: none; }
 .starrow small { display: block; font: 600 13px var(--mono); letter-spacing: 0; color: var(--ink-2); margin-top: 4px; }
 .debgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
@@ -281,3 +281,32 @@ main { max-width: 1280px; margin: 0 auto; padding: 18px var(--gut) 56px; }
   .brow .binfo b, .brow .binfo span { white-space: normal; overflow: visible; }
   .brow .bbtn { grid-column: 2 / -1; width: 100%; }
 }
+
+/* round 2 */
+.hudbar { max-width: 640px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.hud-row { display: flex; justify-content: space-between; gap: 10px; font: 700 13px var(--mono); color: var(--madder-deep); }
+.hud-row .hr { letter-spacing: 3px; }
+.bbtn.dis, .quick .btn.dis { opacity: 0.55; }
+.lb-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+.lb-top .btn { white-space: nowrap; }
+#ruler2 { width: 100%; height: 104px; display: block; }
+.stagecol .ringwrap { max-width: min(640px, 100%); }
+@media (max-width: 899px) {
+  body.ingame main { padding-bottom: 150px; }
+  body.ingame .hudbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-width: none; margin: 0; padding: 6px var(--gut) 10px; background: rgba(255, 253, 247, 0.97); border-top: 2px solid var(--madder); box-shadow: 0 -8px 20px -12px rgba(60, 20, 10, 0.5); }
+  body.ingame .hud-row { font-size: 12.5px; }
+  .quick .btn { min-height: 44px; font-size: 12px; }
+}
+@media (max-width: 480px) {
+  .lb-name .tag-hide { display: none; }
+  #lvTag { display: none; }
+  .lb-name { font-size: 13px; }
+  .lb-top .btn.small { padding: 0 10px; font-size: 13px; }
+}
+@media (min-width: 900px) {
+  .stagecol { position: sticky; top: 8px; align-self: start; }
+  .stagecol .ringwrap { max-width: min(560px, calc(100vh - 360px)); min-width: 320px; }
+}
+.sheet .cta.sticky { gap: 8px; flex-wrap: nowrap; margin-top: 12px; padding: 8px 0 14px; }
+.sheet .cta.sticky .btn { min-height: 44px; font-size: 14px; padding: 0 12px; white-space: nowrap; }
+.sheet .cta.sticky .btn.big { font-size: 14px; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }

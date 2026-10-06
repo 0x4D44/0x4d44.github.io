@@ -111,15 +111,22 @@
       </div>
       <p class="caption" id="caption" aria-live="off">Evenly spaced. Savour it.</p>
       <p class="status" id="status" role="status" aria-live="polite"></p>
-      <div class="quick" id="quick" hidden>
-        <button type="button" class="btn small" id="qWorst"></button>
-        <button type="button" class="btn small" id="qNext"></button>
+      <div class="hudbar" id="hudbar">
+        <div class="hud-row"><span class="hc" id="hClock">07:00</span><span class="hs" id="hScore"></span><span class="hr" id="hRadio"></span></div>
+        <div class="quick" id="quick" hidden>
+          <button type="button" class="btn small" id="qWorst"></button>
+          <button type="button" class="btn small" id="qNext"></button>
+        </div>
       </div>
 
       <div class="card rulercard">
         <div class="card-h"><h3>Headway ruler</h3><span class="hint">gap behind the bus ahead</span></div>
         <svg id="ruler" viewBox="0 0 360 70" preserveAspectRatio="none" role="img" aria-label="Headway ruler: the route laid out as a line, with each bus marked and the gaps between them coloured."></svg>
         <div class="legend"><span><i class="sw tight"></i>bunched</span><span><i class="sw ok"></i>about right</span><span><i class="sw wide"></i>a long wait</span></div>
+      </div>
+      <div class="card rulercard" id="twinCard" hidden>
+        <div class="card-h"><h3>The twin: same route, no pigeon</h3><span class="hint">the control experiment</span></div>
+        <svg id="ruler2" viewBox="0 0 360 104" role="img" aria-label="Headway ruler of the twin route, which has no pigeon."></svg>
       </div>
     </div>
 
@@ -144,7 +151,7 @@
 
       <div class="card inspector" id="inspector" hidden>
         <div class="card-h"><h3>Bus Inspector Dalgleish</h3>
-          <span class="insp-btns"><button type="button" class="mini" id="inspMode" aria-label="Method" hidden>Gap</button><button type="button" class="mini" id="inspToggle" aria-pressed="true">On</button></span></div>
+          <span class="insp-btns"><button type="button" class="mini" id="inspSlack" hidden>Slack: normal</button><button type="button" class="mini" id="inspMode" aria-label="Method" hidden>Gap</button><button type="button" class="mini" id="inspToggle" aria-pressed="true">On</button></span></div>
         <p id="inspText" class="insp-text">Clipboard at the ready.</p>
         <button type="button" class="btn small primary" id="inspDo" hidden>Do as the clipboard says</button>
       </div>
