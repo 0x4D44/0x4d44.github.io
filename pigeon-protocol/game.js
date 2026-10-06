@@ -154,7 +154,7 @@
     $('s-level').textContent = lv.id + '. ' + lv.name;
     $('s-doc').textContent = flockName();
     $('s-round').textContent = S.shown + '/' + lv.deadline;
-    $('s-pace').textContent = lv.stars ? '3\u2605 by round ' + lv.stars.three.rounds : '';
+    $('s-pace').textContent = lv.stars ? '3\u2605 \u2264 r' + lv.stars.three.rounds : '';
     if (S.prefill && S.phase === 'play' && !S.busy && !S.finished && S.shown < 3) S.w = [2, 4, 8][S.shown];
     $('s-del').textContent = t.del + '/' + lv.scrolls;
     var lostEl = $('s-lost'); lostEl.textContent = lv.sandbox ? String(t.lost) : Math.min(t.lost, lv.loft) + '/' + lv.loft;
@@ -226,7 +226,7 @@
       var streak = 0, peak = 0, j;
       for (j = h.length - 1; j >= 0 && h[j].lost === 0; j--) streak++;
       for (j = 0; j < h.length; j++) peak = Math.max(peak, h[j].w);
-      if (streak >= 3 && r.w <= 0.75 * peak) return 'Everyone is home. The sky is bigger than your nerve.';
+      if (streak >= 3 && r.w <= 0.75 * peak && r.requested === r.w) return 'Everyone is home. The sky is bigger than your nerve.';
       return h.length < 4 ? C.HINTS.afterClean : C.CLEAN_STREAK[Math.min(streak - 1, C.CLEAN_STREAK.length - 1)];
     }
     if (r.w <= 3) return C.HINTS.tinyLoss;
@@ -644,7 +644,7 @@
       d.appendChild(rp);
     }
     var nextLocked = run.won && !S.assisted && !lv.sandbox && lv.id < 5 && !isUnlocked(lv.id + 1);
-    if (run.won && !S.assisted && !lv.sandbox && !adaptedNow) d.appendChild(el('p', 'db-blind', 'You flew blind: this flock never really changed in response to what came back, so the Gap taught it nothing' + (nextLocked ? '. The Ministry will not open the next level until you have shown you can respond to a loss, or the Reno has flown this one.' : '.')));
+    if (run.won && !S.assisted && !lv.sandbox && !adaptedNow) d.appendChild(el('p', 'db-blind', 'You flew (partly) blind: this flock did not consistently change in response to what came back, so the Gap taught it less than it might' + (nextLocked ? '. The Ministry will not open the next level until you have shown you can respond to a loss, or the Reno has flown this one.' : '.')));
     if (run.won && lv.id === 1 && !S.assisted && renoUnlocked()) d.appendChild(el('p', 'db-unlock', 'Unlocked: Hire a Reno, a bird-brained autopilot. Find the button beside Release the flock.'));
     var note3 = run.won && !S.assisted && !lv.sandbox && stars < 3 ? thirdStarNote(run, lv) : null;
     if (note3) d.appendChild(el('p', 'db-reno', note3));
