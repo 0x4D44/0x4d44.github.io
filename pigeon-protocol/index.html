@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Pigeon Protocol: run an RFC 1149 pigeon post from Colinton to Glasgow and, without being told, discover how TCP congestion control works. Slow start, the sawtooth and the odd obituary.">
+<meta name="theme-color" content="#f3e7cf">
+<title>Pigeon Protocol</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b3202a'/%3E%3Cellipse cx='15' cy='19' rx='10' ry='6' fill='%23f3e7cf'/%3E%3Ccircle cx='24' cy='13' r='5' fill='%23f3e7cf'/%3E%3Cpath d='M28 13l4 1.5-4 1z' fill='%232b2118'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the pigeons</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="pgA" viewBox="0 0 44 32" overflow="visible">
+      <path d="M9 17 L0 10 L2 21 Z" fill="#5c6678"/>
+      <ellipse cx="21" cy="19" rx="13" ry="8" fill="currentColor" stroke="#2b2118" stroke-width="1.4"/>
+      <path d="M15 17 Q18 1 28 3 Q25 12 23 18 Z" fill="#4a5466" stroke="#2b2118" stroke-width="1.2"/>
+      <circle cx="33" cy="14" r="5.2" fill="currentColor" stroke="#2b2118" stroke-width="1.4"/>
+      <path d="M37.5 13.5 L43 15.5 L37.5 17 Z" fill="#e0932b" stroke="#2b2118" stroke-width="1"/>
+      <circle cx="34.2" cy="13" r="1.5" fill="#fff"/><circle cx="34.6" cy="13" r=".8" fill="#2b2118"/>
+      <rect x="15" y="25" width="12" height="4.5" rx="2.2" fill="#b3202a" stroke="#2b2118" stroke-width="1"/>
+    </symbol>
+    <symbol id="pgB" viewBox="0 0 44 32" overflow="visible">
+      <path d="M9 17 L0 10 L2 21 Z" fill="#5c6678"/>
+      <ellipse cx="21" cy="19" rx="13" ry="8" fill="currentColor" stroke="#2b2118" stroke-width="1.4"/>
+      <path d="M15 20 Q18 33 29 31 Q26 25 23 20 Z" fill="#4a5466" stroke="#2b2118" stroke-width="1.2"/>
+      <circle cx="33" cy="14" r="5.2" fill="currentColor" stroke="#2b2118" stroke-width="1.4"/>
+      <path d="M37.5 13.5 L43 15.5 L37.5 17 Z" fill="#e0932b" stroke="#2b2118" stroke-width="1"/>
+      <circle cx="34.2" cy="13" r="1.5" fill="#fff"/><circle cx="34.6" cy="13" r=".8" fill="#2b2118"/>
+      <rect x="15" y="25" width="12" height="4.5" rx="2.2" fill="#b3202a" stroke="#2b2118" stroke-width="1"/>
+    </symbol>
+    <symbol id="hawk" viewBox="0 0 60 36" overflow="visible">
+      <path d="M2 18 L22 12 L36 2 L40 14 L56 18 L40 22 L36 34 L22 24 Z" fill="#2b2118" stroke="#2b2118" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M52 17 L60 19 L52 21 Z" fill="#e0932b"/>
+      <path d="M44 14 L52 12" stroke="#b3202a" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="47" cy="17" r="1.5" fill="#f3e7cf"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="bar">
+  <div class="bar-title"><span class="rfc-tag">RFC 1149</span> Pigeon Protocol</div>
+  <details class="deskmenu" id="deskmenu">
+    <summary class="chip" id="deskmenu-sum">Menu</summary>
+    <nav class="desk" aria-label="Flight desk">
+      <button type="button" class="chip" id="btn-levels">Levels</button>
+      <button type="button" class="chip" id="btn-howto">How to play</button>
+      <button type="button" class="chip" id="btn-fast" aria-pressed="false">Fast flights: off</button>
+      <button type="button" class="chip" id="btn-sound" aria-pressed="false">Coos: off</button>
+    </nav>
+  </details>
+</header>
+
+<main id="main">
+
+<!-- ========== TITLE / MEMO ========== -->
+<section id="screen-title" class="screen" aria-labelledby="t-title">
+  <article class="memo">
+    <div class="rfc-head" aria-hidden="true">
+      <span>Network Working Group</span><span>D. Waitzman (and a flock)</span>
+      <span>Request for Comments: 1149 (ish)</span><span>1 April 1990 / re-run most days</span>
+    </div>
+    <h1 id="t-title">Pigeon<br>Protocol</h1>
+    <p class="subtitle">A Standard for the Transmission of Scrolls on Avian Carriers, from Colinton to Glasgow</p>
+
+    <p class="pitch">Run a pigeon post from Colinton to Glasgow. Work out, without being told, how many birds the sky will bear.</p>
+    <label class="flockname" for="flock">Name your flock (the Ministry will engrave it on the obituaries)</label>
+    <input id="flock" type="text" maxlength="28" placeholder="The Colinton Aerial Postal Service" autocomplete="off" spellcheck="false">
+
+    <div class="cta-row">
+      <button type="button" class="btn btn-primary" id="btn-start">Open the loft</button>
+    </div>
+    <details class="howto-d" id="howto-d">
+      <summary>Status of this Memo, and how to play (20 seconds, 2 pigeons)</summary>
+    <h2>Status of this Memo</h2>
+    <p>This memo provides information for the pigeon community. It does not specify a standard of any kind. Distribution is unlimited, as is, apparently, the number of ways a bird can go missing. <em>Request for Comments: please do not send comments by pigeon.</em></p>
+
+    <h2>How to play (20 seconds, 2 pigeons)</h2>
+    <ol class="howto">
+      <li><b>Choose a number of birds</b> and press <b>Release the flock</b>. Every flight is one round.</li>
+      <li>Each bird carries one numbered scroll. Birds that arrive send back an ACK: a smaller bird with a smaller scroll. <b>Lost scrolls are flown again, first.</b></li>
+      <li>The Kilsyth Gap can only take so many birds at once, and <b>its limit is not posted anywhere</b>: you must work it out from what arrives. Too few birds and you miss the deadline; too many and the sky goes badly wrong.</li>
+      <li>You learn of losses only after each flight, and never why. Like a real sender. Like a real, slightly worried sender.</li>
+    </ol>
+
+    </details>
+  </article>
+
+  <h2 class="levels-h" id="levels-h">Flight schedule</h2>
+  <ol class="levels" id="levels" aria-labelledby="levels-h"></ol>
+  <p class="smallprint" id="progress-note"></p>
+</section>
+
+<!-- ========== GAME ========== -->
+<section id="screen-game" class="screen" hidden aria-label="The flight desk">
+
+  <div class="colA">
+  <div class="status" id="status">
+    <div class="status-lvl"><span id="s-level">Clear Skies</span><span class="status-sub" id="s-doc"></span></div>
+    <svg class="spark" id="spark" viewBox="0 0 120 36" role="img" aria-label="Sparkline of birds flown and arrived per round"></svg>
+    <dl class="status-nums">
+      <div><dt>Round</dt><dd id="s-round">0/14</dd><dd class="pace" id="s-pace"></dd></div>
+      <div><dt>Delivered</dt><dd id="s-del">0/84</dd></div>
+      <div><dt>Birds lost</dt><dd id="s-lost">0/45</dd></div>
+    </dl>
+    <div class="status-clock" id="s-clock"></div>
+  </div>
+
+  <div class="mapwrap" id="mapwrap">
+    <svg id="map" viewBox="0 0 360 190" role="img" aria-label="Map strip: Colinton loft on the left, the Kilsyth Gap in the middle, Glasgow on the right. Pigeons fly left to right and return.">
+      <rect width="360" height="190" fill="#efe0c2"/>
+      <!-- sky bits -->
+      <g fill="#fbf4e3" stroke="#2b2118" stroke-width="1.2" opacity=".9">
+        <path d="M110 30c-8 0-10-10-2-12 3-7 14-6 15 0 8-1 10 10 2 12z"/>
+        <path d="M250 18c-7 0-9-9-2-10 3-6 12-5 13 0 7-1 9 9 2 10z"/>
+        <path d="M150 32c-6 0-8-8-2-9 3-5 10-4 11 0 6 0 7 8 2 9z"/>
+      </g>
+      <g transform="translate(0 20)">
+      <!-- Pentlands -->
+      <path d="M0 120 L28 92 L52 108 L84 78 L118 112 L140 120 L140 170 L0 170Z" fill="#c9b48c" stroke="#2b2118" stroke-width="1.4" stroke-linejoin="round"/>
+      <!-- the Gap: two hills with a space -->
+      <path d="M118 128 L138 100 L158 78 L172 112 L172 170 L118 170Z" fill="#b9a276" stroke="#2b2118" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M198 112 L212 82 L232 100 L252 128 L252 170 L198 170Z" fill="#b9a276" stroke="#2b2118" stroke-width="1.4" stroke-linejoin="round"/>
+      <!-- Glasgow plain -->
+      <path d="M252 128 L360 128 L360 170 L252 170Z" fill="#d9c79f"/>
+      <path d="M172 150 L198 150" stroke="#2b2118" stroke-width="1" stroke-dasharray="2 3"/>
+      <!-- Colinton loft -->
+      <g transform="translate(10 82)">
+        <rect x="0" y="18" width="40" height="26" fill="#f3e7cf" stroke="#2b2118" stroke-width="1.6"/>
+        <path d="M-4 20 L20 2 L44 20 Z" fill="#b3202a" stroke="#2b2118" stroke-width="1.6" stroke-linejoin="round"/>
+        <rect x="14" y="28" width="12" height="16" fill="#2b2118"/>
+        <circle cx="20" cy="14" r="3" fill="#f3e7cf" stroke="#2b2118"/>
+        <path d="M20 2 V-8 M20 -8 l9 3 -9 3z" stroke="#2b2118" stroke-width="1.4" fill="#b3202a"/>
+      </g>
+      <!-- Glasgow skyline -->
+      <g transform="translate(296 66)" fill="#f3e7cf" stroke="#2b2118" stroke-width="1.5" stroke-linejoin="round">
+        <rect x="0" y="22" width="12" height="40"/><rect x="14" y="8" width="14" height="54"/><rect x="30" y="28" width="12" height="34"/><rect x="44" y="16" width="10" height="46"/>
+        <path d="M14 8 L21 -4 L28 8" fill="#b3202a"/>
+        <g stroke-width="1" fill="none"><path d="M4 30h4M4 38h4M18 18h6M18 26h6M18 34h6M34 36h4M48 24h2M48 32h2"/></g>
+      </g>
+      <!-- labels -->
+      <g font-family="Georgia, 'Times New Roman', serif" font-size="9" fill="#2b2118" text-anchor="middle" font-weight="bold" stroke="#efe0c2" stroke-width="3" paint-order="stroke" stroke-linejoin="round">
+        <text x="30" y="148" >COLINTON</text>
+        <text x="185" y="168" >THE KILSYTH GAP</text>
+        <text x="322" y="148" >GLASGOW</text>
+      </g>
+      <!-- dashed route -->
+      <path d="M52 100 C 100 70, 140 70, 185 96 S 270 112, 304 100" fill="none" stroke="#b3202a" stroke-width="1.4" stroke-dasharray="3 4" opacity=".55"/>
+      </g>
+      <g id="rival-loft" visibility="hidden">
+        <rect x="6" y="6" width="66" height="16" rx="3" fill="#e5d3ae" stroke="#2b2118"/>
+        <text x="39" y="17.5" text-anchor="middle" font-size="8.5" font-family="Georgia, serif" fill="#2b2118">Bearsden Club</text>
+      </g>
+      <g id="sky"></g>
+    </svg>
+    <div class="map-caption" id="map-caption" aria-hidden="true"></div>
+    <button type="button" class="chip skip-anim" id="btn-skip" hidden>Skip flight &raquo;</button>
+  </div>
+
+  <p class="event" id="event"></p>
+
+  <div class="controls" id="controls">
+    <div class="wrow">
+      <button type="button" class="step" id="w-minus" aria-label="Fewer birds">&minus;</button>
+      <div class="wdisp">
+        <output id="w-out" for="w-range" class="wnum">1</output>
+        <span class="wlab" id="w-lab">bird</span>
+      </div>
+      <button type="button" class="step" id="w-plus" aria-label="More birds">+</button>
+    </div>
+    <label class="srange" for="w-range"><span class="vh">Flock size this round</span>
+      <input type="range" id="w-range" min="1" max="24" step="1" value="1">
+    </label>
+    <div class="wnote" id="w-note"></div>
+    <div class="go-row">
+      <button type="button" class="btn btn-primary btn-go" id="btn-go">Release the flock</button>
+      <button type="button" class="btn btn-ghost" id="btn-reno" aria-pressed="false" hidden>Hire a Reno</button>
+    </div>
+    <p class="keys" id="keys">Keys: <kbd>+</kbd> <kbd>&minus;</kbd> change the flock, <kbd>R</kbd> releases it.</p>
+  </div>
+
+  <section class="debrief" id="debrief" hidden aria-labelledby="db-h" tabindex="-1"></section>
+
+  <section class="report" aria-labelledby="rep-h">
+    <h2 id="rep-h">Flight report</h2>
+    <div id="report" aria-live="polite" aria-atomic="true"><p class="muted">No flights yet. The sky is still undecided.</p></div>
+  </section>
+
+  </div>
+  <div class="colB">
+  <section class="scrolls" aria-labelledby="sc-h">
+    <h2 id="sc-h">The document <span class="muted" id="doc-name"></span></h2>
+    <div class="scroll-grid" id="scroll-grid" role="img" aria-label=""></div>
+    <div class="scroll-leg"><span class="sw sw-ok"></span> acknowledged <span class="sw sw-re"></span> lost (second attempt due) <span class="sw sw-p"></span> not yet sent</div>
+  </section>
+
+  <section class="chart-sec" aria-labelledby="ch-h">
+    <h2 id="ch-h">Birds flown vs scrolls delivered</h2>
+    <div id="chart-wrap" class="chart-wrap"></div>
+    <div class="tiles" id="tiles"></div>
+    <details class="logtbl"><summary>The numbers, for those who prefer them</summary><div id="logtbl"></div></details>
+  </section>
+
+  <section class="roll" aria-labelledby="roll-h">
+    <h2 id="roll-h">Roll of Honour</h2>
+    <ol class="roll-list" id="roll" aria-live="off"><li class="muted">Nobody yet. The Ministry is as surprised as you.</li></ol>
+  </section>
+  </div>
+</section>
+
+<!-- sandbox panel lives in the game screen on level 6 -->
+<dialog id="dlg-sandbox" aria-labelledby="sb-h">
+  <form method="dialog" id="sb-form">
+    <h2 id="sb-h">Set the weather</h2>
+    <label>The Gap passes <output id="sb-c-o">?</output> birds per flight<input type="range" id="sb-c" min="4" max="24" value="15"></label>
+    <label>Hawks take <output id="sb-p-o">?</output>% of birds<input type="range" id="sb-p" min="0" max="40" value="0"></label>
+    <label class="chk sb-peek"><input type="checkbox" id="sb-peek"> Peek at the numbers (spoils the discovery)</label>
+    <label class="chk"><input type="checkbox" id="sb-r"> A rival flock shares the Gap</label>
+    <p class="sb-msg" id="sb-msg" role="status"></p>
+    <div class="cta-row"><button class="btn btn-primary" value="ok" id="sb-ok">Fly it</button> <button type="button" class="btn" id="sb-cancel">Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-leave" aria-labelledby="lv-h">
+  <form method="dialog">
+    <h2 id="lv-h">Abandon this flight?</h2>
+    <p>The birds will be told it was a drill. Nothing will be saved, including the lessons.</p>
+    <div class="cta-row"><button class="btn btn-primary" value="stay" id="lv-stay">Stay</button><button class="btn" value="leave" id="lv-leave">Leave</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-howto" aria-labelledby="ht-h">
+  <form method="dialog">
+    <h2 id="ht-h">How to play, again, slower</h2>
+    <p>Each round you choose how many birds to send. Each bird carries one scroll. Birds that arrive send an ACK back; birds that do not are not coming back.</p>
+    <p>The Gap has a limit you cannot see, and it may move. Fly too few and you miss the deadline. Fly too many and the Gap jams: in a crowd the scrum takes out more birds than the ones that did not fit, so offering more can deliver less.</p>
+    <p>Some birds may be lost for reasons that have nothing to do with crowding. Learn to tell which losses are about you. Nobody can do it perfectly.</p>
+    <p>Stars: one for delivering in time, two for doing it respectably, three for doing it quickly and tidily (the numbers are on each level's brief). The Reno, an autopilot you unlock after level 1, halves his flock at every sign of loss, which is sensible and also sometimes ridiculous. Stars do not count while he flies.</p>
+    <div class="cta-row"><button class="btn btn-primary" value="ok">Right. Birds.</button></div>
+  </form>
+</dialog>
+
+</main>
+
+<footer class="foot">
+  <p>Pigeon Protocol is a game about <abbr title="Transmission Control Protocol">TCP</abbr> congestion control. No birds were harmed; several were written about.</p>
+  <p class="egg"><button type="button" class="egg-btn" id="egg" aria-expanded="false" aria-controls="egg-text">Colophon: who actually did this? (tap)</button><span id="egg-text" hidden></span></p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="engine.js"></script>
+<script src="content.js"></script>
+<script src="game.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
