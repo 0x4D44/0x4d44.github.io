@@ -1,0 +1,13 @@
+node_modules/
+frames/
+wav/
+sh_*/
+sheet_*.jpg
+*.onnx
+*.onnx.json
+narration_pre.wav
+narration_raw.wav
+tv1.wav
+tv2.wav
+audio.wav
+__pycache__/

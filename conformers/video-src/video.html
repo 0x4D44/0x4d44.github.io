@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:PH;src:url(node_modules/@fontsource/patrick-hand/files/patrick-hand-latin-400-normal.woff2)}
+@font-face{font-family:FR;font-weight:600;src:url(node_modules/@fontsource/fraunces/files/fraunces-latin-600-normal.woff2)}
+@font-face{font-family:CV;font-weight:700;src:url(node_modules/@fontsource/caveat/files/caveat-latin-700-normal.woff2)}
+html,body{margin:0;background:#ece3cf;overflow:hidden}
+#stage{position:relative;width:1280px;height:720px}
+#stage canvas{position:absolute;left:0;top:0}
+#ov{pointer-events:none}
+#paper{mix-blend-mode:multiply;pointer-events:none}
+</style></head><body>
+<div id="stage"><canvas id="ov" width="1280" height="720"></canvas><canvas id="paper" width="1280" height="720"></canvas></div>
+<script src="node_modules/p5/lib/p5.min.js"></script>
+<script src="node_modules/p5.brush/dist/p5.brush.js"></script>
+<script src="lib.js"></script>
+<script src="scenes_a.js"></script><script src="scenes_b.js"></script><script src="scenes_c.js"></script><script src="scenes.js"></script>
+<script>
+let CUES=null;window.TT=0;
+function setup(){
+  const c=createCanvas(1280,720,WEBGL);c.parent('stage');
+  const st=document.getElementById('stage');st.insertBefore(c.elt,st.firstChild);
+  pixelDensity(1);noLoop();makePaper();
+  Promise.all([fetch('cues.json').then(r=>r.json()),document.fonts.load('20px PH'),document.fonts.load('600 20px FR'),document.fonts.load('700 20px CV')]).then(([c])=>{CUES=c;window.ready=true;});
+}
+function draw(){
+  if(!CUES)return;
+  const t=window.TT;
+  let si=0;for(let i=0;i<CUES.scenes.length;i++){if(t>=CUES.scenes[i].start)si=i;}
+  const sc=CUES.scenes[si];
+  background(PAL.paper);translate(-width/2,-height/2);
+  OV.clearRect(0,0,1280,720);
+  randomSeed(1000+si);noiseSeed(1000+si);   // fixed seed: brush texture never boils
+  const ctx={t,si,lt:t-sc.start,dur:sc.end-sc.start,S:k=>t-sc.sents[Math.min(k,sc.sents.length-1)].start,sc};
+  SCENES[si](ctx);
+  chrome(ctx);
+}
+window.renderFrame=function(t){window.TT=t;redraw();};
+</script></body></html>
