@@ -1,0 +1,14 @@
+{
+  "name": "conformers-video",
+  "private": true,
+  "description": "Build scripts for the narrated gouache Conformers explainer video",
+  "type": "commonjs",
+  "dependencies": {
+    "@fontsource/caveat": "^5.2.0",
+    "@fontsource/fraunces": "^5.2.0",
+    "@fontsource/patrick-hand": "^5.2.0",
+    "p5": "^2.3.4",
+    "p5.brush": "^2.2.3",
+    "playwright-core": "^1.50.0"
+  }
+}

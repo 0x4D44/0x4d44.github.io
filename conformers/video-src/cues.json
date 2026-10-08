@@ -1,0 +1,336 @@
+{
+ "duration": 377.9173043478261,
+ "scenes": [
+  {
+   "id": "title",
+   "start": 0.0,
+   "sents": [
+    {
+     "start": 0.0,
+     "end": 6.378,
+     "text": "Hello, and, welcome to the Aperture Science Enrichment Center. Today's test subject is a molecule that will not sit still."
+    },
+    {
+     "start": 7.091,
+     "end": 15.299999999999999,
+     "text": "The butane in a lighter isn't one shape. Every molecule in it twists about its middle bond billions of times a second, flickering between a handful of favourite poses."
+    },
+    {
+     "start": 15.491,
+     "end": 20.802,
+     "text": "Those poses are called conformations, and learning to see them is one of the most useful habits in organic chemistry."
+    }
+   ],
+   "end": 21.193
+  },
+  {
+   "id": "axles",
+   "start": 21.193,
+   "sents": [
+    {
+     "start": 21.193,
+     "end": 25.63,
+     "text": "Butane looks like a fixed, flat zig-zag. It isn't. Each single bond is an axle."
+    },
+    {
+     "start": 25.822,
+     "end": 34.287000000000006,
+     "text": "A single bond is a sigma bond. Its electron density is cylindrically symmetric around the line between the nuclei, like a sausage. Spin one end, and nothing is lost."
+    },
+    {
+     "start": 34.478,
+     "end": 44.462,
+     "text": "A double bond adds a pie bond, made from two p orbitals overlapping side by side. Twist one end, and the overlap falls off as the cosine of the angle. At ninety degrees, it is gone."
+    },
+    {
+     "start": 44.653,
+     "end": 53.082,
+     "text": "Breaking it costs roughly two hundred and seventy kilojoules per mole, far more than thermal jostling can supply. So double bonds are locked, and single bonds are nearly free."
+    }
+   ],
+   "end": 53.473
+  },
+  {
+   "id": "conf",
+   "start": 53.473,
+   "sents": [
+    {
+     "start": 53.473,
+     "end": 60.512,
+     "text": "Two words that sound alike. Conformations change by rotating single bonds, for under sixty kilojoules per mole, millions of times a second."
+    },
+    {
+     "start": 60.704,
+     "end": 71.626,
+     "text": "Configurations change only by breaking and remaking bonds, at two hundred and fifty or more. At room temperature, never. Cis and trans butene are configurations. You can bottle them separately."
+    },
+    {
+     "start": 71.81700000000001,
+     "end": 79.286,
+     "text": "A conformer is a conformation at an energy minimum, a pose the molecule lingers in. Butane has three. One anti, and two gauche."
+    }
+   ],
+   "end": 79.678
+  },
+  {
+   "id": "strain",
+   "start": 79.678,
+   "sents": [
+    {
+     "start": 79.678,
+     "end": 87.94200000000001,
+     "text": "Free rotation isn't quite free. As a molecule twists, its energy rises and falls. Chemists call any penalty for bad geometry strain, and there are three kinds."
+    },
+    {
+     "start": 88.133,
+     "end": 98.634,
+     "text": "Torsional strain is the cost of eclipsing. Steric strain is the cost of crowding. Angle strain is the cost of bending a bond away from one hundred and nine point five degrees, mostly a ring problem."
+    },
+    {
+     "start": 98.826,
+     "end": 105.158,
+     "text": "Every conformational question is the same question in disguise. Add up the strains in each pose, and the lowest total wins."
+    }
+   ],
+   "end": 105.549
+  },
+  {
+   "id": "newman",
+   "start": 105.549,
+   "sents": [
+    {
+     "start": 105.549,
+     "end": 112.658,
+     "text": "To see a twist, look straight down the bond. That is a Newman projection. The front carbon is a point. The back carbon is a circle behind it."
+    },
+    {
+     "start": 112.85,
+     "end": 122.811,
+     "text": "Turn the back carbon of ethane, and two poses repeat every one hundred and twenty degrees. Staggered, where hydrogens sit far apart. And eclipsed, where bonds hide behind one another."
+    },
+    {
+     "start": 123.002,
+     "end": 131.652,
+     "text": "Eclipsed ethane is twelve kilojoules per mole higher, about four per hydrogen pair. It is not a conformer. It is the top of a hill, crossed ten billion times every second."
+    }
+   ],
+   "end": 132.043
+  },
+  {
+   "id": "butane",
+   "start": 132.043,
+   "sents": [
+    {
+     "start": 132.043,
+     "end": 137.128,
+     "text": "Now butane. Anti, with the two methyls opposite, is the lowest point. Call it zero."
+    },
+    {
+     "start": 137.319,
+     "end": 142.25199999999998,
+     "text": "Gauche, with the methyls sixty degrees apart, costs three point eight kilojoules per mole of crowding."
+    },
+    {
+     "start": 142.443,
+     "end": 149.81799999999998,
+     "text": "Eclipse a methyl with a hydrogen, and the energy climbs to sixteen. Eclipse the two methyls, and you reach the worst pose, nineteen above anti."
+    }
+   ],
+   "end": 150.21
+  },
+  {
+   "id": "small",
+   "start": 150.21,
+   "sents": [
+    {
+     "start": 150.21,
+     "end": 155.144,
+     "text": "So how big is small? Thermal jostling at room temperature carries about two and a half kilojoules per mole."
+    },
+    {
+     "start": 155.335,
+     "end": 166.886,
+     "text": "The rate of crossing a barrier is six times ten to the twelve per second, times e to the minus barrier over R T. That exponential is ferocious. Every extra five point seven kilojoules per mole makes the crossing ten times slower."
+    },
+    {
+     "start": 167.078,
+     "end": 178.923,
+     "text": "Ethane's twelve is crossed ten billion times a second. The cyclohexane ring flip, around forty five, a hundred thousand times. Twisting a double bond, at two hundred and seventy, would take longer than the age of the universe."
+    }
+   ],
+   "end": 179.315
+  },
+  {
+   "id": "draw",
+   "start": 179.315,
+   "sents": [
+    {
+     "start": 179.315,
+     "end": 185.37199999999999,
+     "text": "Half of conformational analysis is simply drawing the shapes. Chemists use four conventions, each good at one job."
+    },
+    {
+     "start": 185.564,
+     "end": 191.106,
+     "text": "Wedge and dash. A solid wedge comes towards you, a hashed one goes away. Good for one carbon's arrangement."
+    },
+    {
+     "start": 191.297,
+     "end": 196.509,
+     "text": "The sawhorse draws the carbon-carbon bond diagonally, in perspective, so you can see both carbons at once."
+    },
+    {
+     "start": 196.7,
+     "end": 201.50799999999998,
+     "text": "The Newman projection looks straight down the bond, the best tool for judging staggered against eclipsed."
+    },
+    {
+     "start": 201.699,
+     "end": 208.261,
+     "text": "And the chair, a stylised drawing of cyclohexane that encodes every up, down, axial and equatorial position."
+    }
+   ],
+   "end": 208.652
+  },
+  {
+   "id": "baeyer",
+   "start": 208.652,
+   "sents": [
+    {
+     "start": 208.652,
+     "end": 222.99399999999997,
+     "text": "Tie the ends of a chain together and you lose a freedom. The bill is called ring strain. In eighteen eighty five, Adolf von Baeyer assumed rings are flat polygons. A flat cyclopropane has sixty degree angles, a coiled spring, forty nine and a half degrees from ideal."
+    },
+    {
+     "start": 223.186,
+     "end": 232.218,
+     "text": "To measure strain, set fire to it. In a relaxed chain, each C H two group releases six hundred and fifty eight point six kilojoules. Anything extra was stored in the ring."
+    },
+    {
+     "start": 232.409,
+     "end": 241.897,
+     "text": "Cyclopropane stores one hundred and fifteen. Cyclobutane, one hundred and ten. Cyclopentane, twenty six. And cyclohexane, exactly zero."
+    },
+    {
+     "start": 242.088,
+     "end": 248.433,
+     "text": "Baeyer was right about small rings, and wrong about the rest, because real rings pucker. Each ring settles where the strains sum smallest."
+    }
+   ],
+   "end": 248.824
+  },
+  {
+   "id": "chair",
+   "start": 248.824,
+   "sents": [
+    {
+     "start": 248.824,
+     "end": 258.502,
+     "text": "Cyclohexane manages something no other small ring can. Every angle comfortable, every bond staggered, no strain at all. It folds into a zig-zag like a deckchair. The chair."
+    },
+    {
+     "start": 258.693,
+     "end": 268.865,
+     "text": "Each carbon carries two hydrogens that are not equivalent. Axial bonds point straight up or down, parallel to the axis. Equatorial bonds stick out around the equator, and are never horizontal."
+    },
+    {
+     "start": 269.057,
+     "end": 278.455,
+     "text": "Keep two ideas apart. Up and down is not the same as axial and equatorial. On an up carbon, the axial bond is the up one. On a down carbon, it is the equatorial one."
+    },
+    {
+     "start": 278.646,
+     "end": 287.539,
+     "text": "To draw a chair that looks right, build it from parallel lines. Axial bonds are always vertical. Equatorial bonds run parallel to a ring bond, and point away from the ring."
+    },
+    {
+     "start": 287.731,
+     "end": 292.388,
+     "text": "The chair isn't rigid. It turns itself inside out, over a half chair at forty five kilojoules."
+    },
+    {
+     "start": 292.579,
+     "end": 300.164,
+     "text": "After the flip, every axial hydrogen is equatorial, and every equatorial one is axial. But a hydrogen that pointed up still points up."
+    }
+   ],
+   "end": 300.556
+  },
+  {
+   "id": "subst",
+   "start": 300.556,
+   "sents": [
+    {
+     "start": 300.556,
+     "end": 307.925,
+     "text": "Put a single methyl group on the ring, and the two chairs are no longer identical. In one, the methyl is axial. In the other, equatorial."
+    },
+    {
+     "start": 308.116,
+     "end": 319.718,
+     "text": "Axial is crowded. The methyl bumps into the axial hydrogens on carbons three and five. Each one three diaxial contact costs three point eight kilojoules per mole, so seven point six in all. It is gauche butane in disguise."
+    },
+    {
+     "start": 319.91,
+     "end": 325.005,
+     "text": "That seven point six is the A value. It gives about twenty one to one, ninety five percent equatorial."
+    },
+    {
+     "start": 325.196,
+     "end": 332.587,
+     "text": "Tert-butyl is enormous, around twenty three. It locks the ring in the chair that puts it equatorial. Halogens are small, and barely mind."
+    }
+   ],
+   "end": 332.979
+  },
+  {
+   "id": "toolkit",
+   "start": 332.979,
+   "sents": [
+    {
+     "start": 332.979,
+     "end": 340.109,
+     "text": "Chapter six puts it on one page. Notice how many numbers are really the same one. Three point eight. The same crowding, seen from different angles."
+    },
+    {
+     "start": 340.3,
+     "end": 347.718,
+     "text": "Quick check. Cis and trans butene are. Conformers. Configurational isomers. Or the same molecule. Take your time. I'll wait."
+    },
+    {
+     "start": 351.31,
+     "end": 356.73499999999996,
+     "text": "Interpreting unclear answer as. Configurational isomers. Correct. Rotation would break the pie bond."
+    },
+    {
+     "start": 356.926,
+     "end": 360.38,
+     "text": "A reward will be provided at the end of the test. It is cake. Probably."
+    }
+   ],
+   "end": 360.771
+  },
+  {
+   "id": "outro",
+   "start": 360.771,
+   "sents": [
+    {
+     "start": 360.771,
+     "end": 367.59499999999997,
+     "text": "Six short chapters, and everything on these pages can be dragged, spun or poked. Add up the strains, and the lowest total wins."
+    },
+    {
+     "start": 367.786,
+     "end": 375.222,
+     "text": "Thank you for participating in this Enrichment Center activity. The full guide lives at zero ex four dee four dee dot github dot io, slash conformers."
+    },
+    {
+     "start": 375.414,
+     "end": 377.526,
+     "text": "The cake is a lie. The chemistry is not."
+    }
+   ],
+   "end": 377.9173043478261
+  }
+ ]
+}
