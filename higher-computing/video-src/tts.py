@@ -5,7 +5,7 @@ needs: pip install piper-tts numpy ; voices in $VOICES (default ./voices):
   en_GB-alba-medium.onnx(.json), en_GB-alan-medium.onnx(.json)  from rhasspy/piper-voices
 writes: build/<id>/narration.wav, cues/<id>.json
 """
-import json, os, sys, wave, io
+import json, os, re, sys, wave, io
 import numpy as np
 from piper import PiperVoice, SynthesisConfig
 from script import VIDEOS
@@ -25,7 +25,9 @@ def say(voice, text):
         _loaded[voice] = PiperVoice.load(os.path.join(VOICES, CAST[voice][0]))
     buf = io.BytesIO()
     with wave.open(buf, "wb") as w:
-        _loaded[voice].synthesize_wav(text, w, syn_config=CAST[voice][1])
+        # Piper stresses "mantissa" oddly; respell it for the voice only (captions keep the real word).
+        spoken = re.sub(r"\b[Mm]antissa", "man tissa", text)
+        _loaded[voice].synthesize_wav(spoken, w, syn_config=CAST[voice][1])
     buf.seek(0)
     with wave.open(buf) as r:
         assert r.getframerate() == SR, r.getframerate()

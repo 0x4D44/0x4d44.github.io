@@ -225,7 +225,7 @@
   function js(box) {
     const ship = (c, extra = "") => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges"><rect width="32" height="32" fill="#9fc6e8"/><rect y="24" width="32" height="8" fill="#2f6fb5"/><rect x="4" y="18" width="24" height="6" fill="${c}"/><rect x="6" y="20" width="2" height="2" fill="#e0b23a"/><rect x="12" y="20" width="2" height="2" fill="#e0b23a"/><rect x="18" y="20" width="2" height="2" fill="#e0b23a"/><rect x="15" y="4" width="2" height="14" fill="#3b2a1a"/><rect x="9" y="6" width="12" height="9" fill="#f4ecd8"/>${extra}</svg>`);
     const idle = ship("#7a5532"), fire = ship("#7a5532", `<rect x="0" y="17" width="5" height="5" fill="#ffb21e"/><rect x="27" y="17" width="5" height="5" fill="#ffb21e"/><rect x="2" y="12" width="4" height="4" fill="#ddd"/><rect x="26" y="12" width="4" height="4" fill="#ddd"/>`);
-    window.hcShow = function (id) {
+    window.showSection = function (id) {
       document.getElementById("gunnery").style.display = "none";
       document.getElementById("signals").style.display = "none";
       document.getElementById("rigging").style.display = "none";
@@ -242,9 +242,9 @@
   onmouseover="document.getElementById('orders').style.color='darkRed'"
   onmouseout="document.getElementById('orders').style.color=''">
 <p id="orders">Orders: the squadron sails from Leith at dawn.</p>`, "The event is on the <b>image</b>, but the action changes a <b>different</b> element, the paragraph, found with <code>document.getElementById('orders')</code>. Changing <code>style.color</code> changes the look of its text."],
-      ["4 · Reveal one section (onclick, by id)", `<button onclick="hcShow('gunnery')">Gunnery</button>
-<button onclick="hcShow('signals')">Signals</button>
-<button onclick="hcShow('rigging')">Rigging</button>
+      ["4 · Reveal one section (onclick, by id)", `<button onclick="showSection('gunnery')">Gunnery</button>
+<button onclick="showSection('signals')">Signals</button>
+<button onclick="showSection('rigging')">Rigging</button>
 <section id="gunnery" style="display:none">Gunnery: 32-pounders on the lower deck.</section>
 <section id="signals" style="display:none">Signals: Popham's numbered flags.</section>
 <section id="rigging" style="display:none">Rigging: up the ratlines, one hand for the ship.</section>`, "The function hides all three sections, then shows the chosen one by setting <code>style.display</code> to <code>\"block\"</code>. It finds each section by its <b>id</b>. SQA's own example uses one function per section (<code>displayJC()</code> and so on). Passing the id as a parameter does the same job with less code."],
@@ -263,7 +263,7 @@
       box.append(el("h4", null, t), el("div", { class: "js-demo" }, live, pre), el("p", { class: "hint", html: why }));
     });
     const fn = el("pre", { "data-lang": "JavaScript" });
-    fn.textContent = `<script>\nfunction hcShow(id) {\n  document.getElementById("gunnery").style.display = "none";\n  document.getElementById("signals").style.display = "none";\n  document.getElementById("rigging").style.display = "none";\n  document.getElementById(id).style.display = "block";\n}\n</script>`;
+    fn.textContent = `<script>\nfunction showSection(id) {\n  document.getElementById("gunnery").style.display = "none";\n  document.getElementById("signals").style.display = "none";\n  document.getElementById("rigging").style.display = "none";\n  document.getElementById(id).style.display = "block";\n}\n</script>`;
     box.append(el("p", { class: "hint" }, "The function for demo 4, placed in the page's <head>:"), fn);
     box.prepend(el("p", { class: "hint" }, "On a touchscreen, tap an image (or tab to it with a keyboard) to trigger its mouse-over event."));
     HC.highlight(fn);

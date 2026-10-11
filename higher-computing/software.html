@@ -167,7 +167,7 @@
 </div>
 </figure>
 
-<p>Here is a design for the Top Cadet program, with every step refined in the pseudocode and two refinements drawn below. Read the top level from left to right. The data flow is written under each box, with an arrow showing whether data goes in or out.</p>
+<p>Here is a design for the Top Cadet program, with every step refined in the pseudocode and two refinements drawn below. Read the top level from left to right. The data flow is written under each box, with an arrow showing whether data goes in or out. Where a step is refined, its data flow sits beside the line down to the refinement.</p>
 <figure class="diagram">
 <div class="diagram-scroll">
 <svg viewBox="0 0 800 480" role="img" aria-labelledby="sd-t sd-d">
@@ -183,7 +183,7 @@
     <rect x="488" y="92" width="136" height="44"/><path d="M500 92 V136 M612 92 V136" fill="none"/>
     <rect x="648" y="92" width="136" height="44"/><path d="M660 92 V136 M772 92 V136" fill="none"/>
     <!-- refinement of step 1 -->
-    <path d="M76 136 V146 H3 V256 H231 M38 256 V276 M136 256 V276 M231 256 V276" fill="none"/>
+    <path d="M76 136 V256 M38 256 H231 M38 256 V276 M136 256 V276 M231 256 V276" fill="none"/>
     <rect x="0" y="276" width="76" height="44"/>
     <rect x="86" y="276" width="100" height="44" rx="22"/>
     <rect x="196" y="276" width="70" height="44"/>
@@ -191,7 +191,7 @@
     <rect x="62" y="356" width="76" height="40"/>
     <rect x="144" y="356" width="76" height="40"/>
     <!-- refinement of step 4 -->
-    <path d="M556 136 V146 H792 V256 H504 M504 256 V276 M690 256 V276" fill="none"/>
+    <path d="M556 136 V256 M504 256 H690 M504 256 V276 M690 256 V276" fill="none"/>
     <rect x="456" y="276" width="96" height="44"/>
     <rect x="626" y="276" width="128" height="44" rx="22"/>
     <path d="M690 320 V350" fill="none"/>
@@ -219,13 +219,13 @@
     </g>
   </g>
   <g font-size="11" class="mono" fill="var(--sea)">
-    <path d="M24 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="30" y="176">OUT: cadets()</text>
-    <path d="M176 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="182" y="176">IN: cadets()</text>
-    <path d="M176 192 V210" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="182" y="206">OUT: topPos</text>
-    <path d="M336 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="342" y="176">OUT: flight</text>
-    <path d="M496 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="502" y="176">IN: cadets(),</text><text x="502" y="190">flight</text>
-    <path d="M496 200 V218" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="502" y="214">OUT: count</text>
-    <path d="M656 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="662" y="176">IN: cadets(),</text><text x="662" y="190">topPos, flight,</text><text x="662" y="204">count</text>
+    <path d="M86 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="94" y="176">OUT: cadets()</text>
+    <path d="M198 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="206" y="176">IN: cadets()</text>
+    <path d="M198 192 V210" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="206" y="206">OUT: topPos</text>
+    <path d="M358 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="366" y="176">OUT: flight</text>
+    <path d="M566 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="574" y="176">IN: cadets(),</text><text x="574" y="190">flight</text>
+    <path d="M566 200 V218" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="574" y="214">OUT: count</text>
+    <path d="M680 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="688" y="176">IN: cadets(),</text><text x="688" y="190">topPos, flight,</text><text x="688" y="204">count</text>
   </g>
 </svg>
 </div>

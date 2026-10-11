@@ -87,7 +87,7 @@ const SC_TWOS = {
     if (s.t > s.L[1] + 0.5) { block(c, xv(-128) - 10, y0 - 120, 20, 90, COL.red); mono(c, "10000000", xv(-128) + 90, y0 - 80, { size: 30, weight: 700, color: COL.red }); }
     if (s.t > s.L[1] + 3.5) { block(c, xv(127) - 10, y0 - 120, 20, 90, COL.grass); mono(c, "01111111", xv(127) - 200, y0 - 80, { size: 30, weight: 700, color: COL.grass }); }
     if (s.t > s.L[2]) {
-      px(c, "n bits:  −2ⁿ⁻¹  to  2ⁿ⁻¹ − 1", CX, P.y + 340, { size: 40, align: "center", color: COL.navy });
+      px(c, "n bits:  −2^(n−1)  to  2^(n−1) − 1", CX, P.y + 340, { size: 40, align: "center", color: COL.navy });
       mono(c, "4 bits: −8 to 7    8 bits: −128 to 127    16 bits: −32 768 to 32 767", CX, P.y + 400, { size: 22, align: "center", color: COL.ink2 });
     }
   },
@@ -130,7 +130,7 @@ const SC_FP = {
     const h = Math.floor(clamp((s.t - s.L[1]) / 0.6, 0, hops));
     const pos = start - h;
     digitsWithPoint(c, digits, pos, CX, P.y + 170, { lead: -1 });
-    px(c, `hops left: ${h}`, CX, P.y + 250, { size: 32, align: "center", color: COL.red });
+    px(c, `hops so far: ${h}`, CX, P.y + 250, { size: 32, align: "center", color: COL.red });
     if (h === hops && s.t > s.L[1] + 3.5) mono(c, "= 0.340068 × 10⁵", CX, P.y + 350, { size: 52, align: "center", weight: 700, color: COL.navy });
     txt(c, "(34 006.8)", CX, P.y + 80, { size: 28, align: "center", color: COL.ink2 });
   },
@@ -139,7 +139,7 @@ const SC_FP = {
     const h = Math.floor(clamp((s.t - s.L[1] - 0.3) / 0.45, 0, 7));
     digitsWithPoint(c, digits, start - h, CX, P.y + 170, { lead: 0, w: 52 });
     txt(c, "66.625 in binary", CX, P.y + 80, { size: 28, align: "center", color: COL.ink2 });
-    px(c, `hops left: ${h}`, CX, P.y + 250, { size: 32, align: "center", color: COL.red });
+    px(c, `hops so far: ${h}`, CX, P.y + 250, { size: 32, align: "center", color: COL.red });
     if (h === 7) mono(c, "= 0.1000010101 × 2⁷", CX, P.y + 350, { size: 52, align: "center", weight: 700, color: COL.navy });
   },
   fields(c, s) {
@@ -202,10 +202,10 @@ function fxBase(c, s, st) {
   reg("ACCUMULATOR", st.acc, cpu.y + 288, st.accHl);
   block(c, mem.x, mem.y, mem.w, mem.h, "#6b4a2a");
   px(c, "MAIN MEMORY", mem.x + mem.w / 2, mem.y + 40, { size: 26, align: "center", color: "#fff" });
-  [["04", "LOAD 9"], ["05", "ADD 10"], ["06", "STORE 11"], ["09", "12"], ["10", "7"], ["11", "0"]].forEach(([a, v], i) => {
-    const y = mem.y + 64 + i * 50;
-    rect(c, mem.x + 20, y, mem.w - 40, 42, st.memHl === a ? "#bcd3f0" : COL.paper);
-    mono(c, a, mem.x + 34, y + 30, { size: 22, color: COL.ink2 }); mono(c, v, mem.x + 100, y + 30, { size: 24, weight: 700 });
+  [["04", "LOAD 9"], ["05", "ADD 10"], ["06", "STORE 11"], ["07", "HALT"], ["08", "—"], ["09", "12"], ["10", "7"], ["11", "0"]].forEach(([a, v], i) => {
+    const y = mem.y + 62 + i * 39;
+    rect(c, mem.x + 20, y, mem.w - 40, 34, st.memHl === a ? "#bcd3f0" : COL.paper);
+    mono(c, a, mem.x + 34, y + 25, { size: 22, color: COL.ink2 }); mono(c, v, mem.x + 100, y + 25, { size: 24, weight: 700 });
   });
   const bus = (y, col, lab, w, glow) => {
     c.save(); if (glow) { c.shadowColor = COL.gold; c.shadowBlur = 24; }
@@ -251,8 +251,8 @@ const SC_FX = {
     const exec = s.t > 2.4;
     fxBase(c, s, { pc: "05", ir: "LOAD 9", acc: exec ? "12" : "0", buses: 3, cu: s.t > 0.8 ? "decode: LOAD" : "", cuHl: s.t > 0.8, accHl: exec });
     if (s.t > s.L[1] && s.t < s.L[1] + 1.2) {
-      c.save(); c.globalAlpha = 1 - prog(s.t, s.L[1], 1.2); c.fillStyle = "#ffb21e"; c.beginPath(); c.arc(CX, P.y + 240, 60 + 80 * prog(s.t, s.L[1], 1.2), 0, Math.PI * 2); c.fill(); c.restore();
-      px(c, "FIRE!", CX, P.y + 255, { size: 60, align: "center", color: COL.red });
+      c.save(); c.globalAlpha = 1 - prog(s.t, s.L[1], 1.2); c.fillStyle = "#ffb21e"; c.beginPath(); c.arc(CX, P.y + 180, 60 + 80 * prog(s.t, s.L[1], 1.2), 0, Math.PI * 2); c.fill(); c.restore();
+      px(c, "FIRE!", CX, P.y + 195, { size: 60, align: "center", color: COL.red });
     }
   },
   perf(c, s) {
@@ -352,7 +352,7 @@ const SC_ENC = {
     c.save(); c.globalAlpha = a;
     block(c, CX - 330, P.y + 40, 660, 300, "#f6ecd2");
     px(c, "DIGITAL CERTIFICATE", CX, P.y + 90, { size: 30, align: "center", color: COL.navy });
-    [["Name", "redstone.example"], ["Public key", "3f:a2:9c:…"], ["Expires", "2027-03-01"], ["Signed by", "a trusted CA"]].forEach(([k, v], i) => {
+    [["Name", "redstone.example"], ["Public key", "3f:a2:9c:…"], ["Expires", "2027-03-01"], ["Signed by", "a trusted authority (CA)"]].forEach(([k, v], i) => {
       txt(c, k + ":", CX - 290, P.y + 140 + i * 44, { size: 24, weight: 700 }); mono(c, v, CX - 120, P.y + 140 + i * 44, { size: 22 });
     });
     c.fillStyle = COL.gold; c.beginPath(); c.arc(CX + 270, P.y + 290, 36, 0, Math.PI * 2); c.fill();
@@ -377,7 +377,7 @@ function sqlRows(c, s, phase) {
   const x = P.x + 60, rowH = 26, w = 420;
   const groups = [1805, 2212, 2471, 3110];
   const counts = { 1805: 4, 2212: 3, 2471: 3, 3110: 2 };
-  const orderG = phase >= 3 ? [1805, 2212, 2471, 3110].sort((a, b) => counts[b] - counts[a] || a - b) : groups;
+  const orderG = phase >= 3 ? [1805, 2212, 2471, 3110].sort((a, b) => counts[a] - counts[b] || a - b) : groups;
   const pg = ease(clamp(phase - Math.floor(phase)));
   const base = Math.floor(phase);
   px(c, base >= 2 ? (base >= 3 ? "squadronNo · Cadets" : "squadronNo · COUNT(*)") : "cadetID · firstname · squadronNo", x, P.y + 40, { size: 22, color: COL.navy });
@@ -426,7 +426,7 @@ const SC_SQL = {
   },
   order(c, s) {
     sqlRows(c, s, s.t > s.L[0] + 3 ? 3 : 2);
-    sqlText(c, ["SELECT squadronNo,", "  COUNT(*) AS [Cadets]", "FROM Cadet", "GROUP BY squadronNo", "ORDER BY COUNT(*) DESC;"], s.t > s.L[1] ? 3 : 1);
+    sqlText(c, ["SELECT squadronNo,", "  COUNT(*) AS [Cadets]", "FROM Cadet", "GROUP BY squadronNo", "ORDER BY COUNT(*) ASC;"], s.t > s.L[1] ? 3 : 1);
     if (s.t > s.L[1]) { arrow(c, P.x + 1140, P.y + 236, P.x + 1140, P.y + 278, COL.gold, 5, 14); }
   },
   traps(c, s) {
@@ -437,8 +437,8 @@ const SC_SQL = {
       cross(c, P.x + 100, y + 48, 0.9);
       if (s.t > at + 3) { mono(c, good, P.x + 130, y + 118, { size: 24, weight: 700, color: COL.grass }); tick(c, P.x + 80, y + 116, 0.7); }
     };
-    card(P.y + 30, "WHERE flyingHours > AVG(flyingHours)", "save AVG in query 1 → use it in query 2", s.L[1]);
-    card(P.y + 220, "SELECT surname, MAX(flyingHours) FROM Cadet;", "aggregate with a plain field only with GROUP BY", s.L[2]);
+    card(P.y + 30, "SELECT firstname FROM Cadet WHERE squadronNo = MAX(squadronNo);", "save MAX in query 1 → use it in query 2", s.L[1]);
+    card(P.y + 220, "SELECT firstname, COUNT(*) FROM Cadet;", "aggregate with a plain field only with GROUP BY", s.L[2]);
   },
   outro(c, s) {
     badge(c, CX - 520, P.y + 140, 300, "1 · GROUP", "#3e6fa8", prog(s.t, 0.2));
@@ -486,7 +486,7 @@ const SC_CSS = {
       cx += full;
     }
     const each = 186 + 4 + 2 * margin;
-    mono(c, `186 + 2×2 + 2×${margin} = ${each}px  ×4 = ${each * 4}px`, CX, P.y + 418, { size: 26, align: "center", weight: 700, color: each * 4 > 800 ? COL.red : COL.grass });
+    mono(c, `186 + 2×2 + 2×${margin} = ${each}px  ×4 = ${each * 4}px`, CX, P.y + 400, { size: 26, align: "center", weight: 700, color: each * 4 > 800 ? COL.red : COL.grass });
     void sx;
   },
   float(c, s) {
@@ -508,8 +508,8 @@ const SC_CSS = {
     const fy = cleared ? lerp(y0 + 110, y0 + 312, ease(prog(s.t, s.L[1] + 3.5, 1))) : y0 + 110;
     rect(c, x0 + (cleared ? 20 : 240), fy, cleared ? 760 : 320, 50, COL.navy2);
     px(c, "footer", x0 + (cleared ? 400 : 400), fy + 34, { size: 22, align: "center", color: "#fff" });
-    if (!cleared && s.t > 1) { cross(c, x0 + 400, fy - 30, 0.8); }
-    if (cleared) { mono(c, "footer {clear:both}", CX, P.y + 450, { size: 26, align: "center", weight: 700, color: COL.grass }); }
+    if (!cleared && s.t > 1) { cross(c, x0 + 525, fy + 25, 0.8, COL.gold); }
+    if (cleared) { mono(c, "footer {clear:both}", x0 + 400, y0 + 200, { size: 26, align: "center", weight: 700, color: COL.grass }); }
   },
   outro(c, s) {
     badge(c, CX - 580, P.y + 140, 360, "COUNT BOTH SIDES", COL.gold, prog(s.t, 0.2));

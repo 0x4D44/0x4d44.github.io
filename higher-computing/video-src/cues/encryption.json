@@ -5,32 +5,32 @@
   {
    "id": "title",
    "start": 1.2,
-   "end": 9.391
+   "end": 9.347
   },
   {
    "id": "pair",
-   "start": 9.391,
-   "end": 22.761
+   "start": 9.347,
+   "end": 22.873
   },
   {
    "id": "secret",
-   "start": 22.761,
-   "end": 35.55
+   "start": 22.873,
+   "end": 35.994
   },
   {
    "id": "signature",
-   "start": 35.55,
-   "end": 55.261
+   "start": 35.994,
+   "end": 55.42
   },
   {
    "id": "certificate",
-   "start": 55.261,
-   "end": 69.703
+   "start": 55.42,
+   "end": 69.549
   },
   {
    "id": "outro",
-   "start": 69.703,
-   "end": 77.443
+   "start": 69.549,
+   "end": 77.477
   }
  ],
  "lines": [
@@ -40,7 +40,7 @@
    "li": 0,
    "voice": "A",
    "start": 1.2,
-   "end": 8.491,
+   "end": 8.447,
    "cap": "Orders sent by sea could be captured. Data sent over the internet can be intercepted. Encryption keeps it safe."
   },
   {
@@ -48,8 +48,8 @@
    "si": 1,
    "li": 0,
    "voice": "A",
-   "start": 9.391,
-   "end": 17.278,
+   "start": 9.347,
+   "end": 17.484,
    "cap": "Public key encryption gives everyone a matched pair of keys. The public key is shared with the world. The private key never leaves its owner."
   },
   {
@@ -57,8 +57,8 @@
    "si": 1,
    "li": 1,
    "voice": "A",
-   "start": 17.728,
-   "end": 21.861,
+   "start": 17.934,
+   "end": 21.973,
    "cap": "Whatever one key locks, only the other key in the pair can unlock."
   },
   {
@@ -66,8 +66,8 @@
    "si": 2,
    "li": 0,
    "voice": "A",
-   "start": 22.761,
-   "end": 26.506,
+   "start": 22.873,
+   "end": 26.577,
    "cap": "To send the Captain a secret, I lock it with the Captain's public key."
   },
   {
@@ -75,8 +75,8 @@
    "si": 2,
    "li": 1,
    "voice": "A",
-   "start": 26.956,
-   "end": 34.65,
+   "start": 27.027,
+   "end": 35.094,
    "cap": "A spy can intercept it, but the public key can't unlock it. Only the Captain's private key can."
   },
   {
@@ -84,8 +84,8 @@
    "si": 3,
    "li": 0,
    "voice": "H",
-   "start": 35.55,
-   "end": 38.979,
+   "start": 35.994,
+   "end": 39.36,
    "cap": "But how do I know an order truly came from you, Lieutenant?"
   },
   {
@@ -93,8 +93,8 @@
    "si": 3,
    "li": 1,
    "voice": "A",
-   "start": 39.429,
-   "end": 46.686,
+   "start": 39.81,
+   "end": 47.045,
    "cap": "With a digital signature. I sign with my private key, like a wax seal. You check it with my public key."
   },
   {
@@ -102,8 +102,8 @@
    "si": 3,
    "li": 2,
    "voice": "A",
-   "start": 47.136,
-   "end": 54.361,
+   "start": 47.495,
+   "end": 54.52,
    "cap": "If anyone alters the message, the seal won't match. A signature proves who sent it, and that it's unchanged."
   },
   {
@@ -111,8 +111,8 @@
    "si": 4,
    "li": 0,
    "voice": "A",
-   "start": 55.261,
-   "end": 59.766,
+   "start": 55.42,
+   "end": 59.769,
    "cap": "How do you know a public key really belongs to its owner? A digital certificate."
   },
   {
@@ -120,8 +120,8 @@
    "si": 4,
    "li": 1,
    "voice": "A",
-   "start": 60.216,
-   "end": 68.803,
+   "start": 60.219,
+   "end": 68.649,
    "cap": "A trusted certificate authority signs it, as the Admiralty signs a captain's commission. Your browser checks it before showing the padlock."
   },
   {
@@ -129,10 +129,10 @@
    "si": 5,
    "li": 0,
    "voice": "A",
-   "start": 69.703,
-   "end": 76.543,
+   "start": 69.549,
+   "end": 76.577,
    "cap": "Encrypt with their public key. Sign with your private key. Trust a public key only when its certificate checks out."
   }
  ],
- "duration": 79.443
+ "duration": 79.477
 }

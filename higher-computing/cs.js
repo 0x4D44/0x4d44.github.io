@@ -236,26 +236,46 @@
   /* ============ Fetch-execute animation ============ */
   function fetchW(box) {
     const S = HC.svg;
-    const svg = S("svg", { viewBox: "0 0 680 360", role: "img", "aria-label": "Processor and memory joined by address, data and control buses. The current step is described in the text below." });
+    const svg = S("svg", { role: "img", "aria-label": "Processor and memory joined by address, data and control buses. The current step is described in the text below." });
     const mem = [[4, "LOAD 9"], [5, "ADD 10"], [6, "STORE 11"], [7, "HALT"], [8, "—"], [9, "12"], [10, "7"], [11, "0"]];
-    const base = `
+    const procBox = `
       <rect x="10" y="20" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--navy-2)" stroke-width="3"/>
       <text x="125" y="44" text-anchor="middle" class="px ink" font-size="16">Processor</text>
-      <rect x="440" y="20" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--dirt)" stroke-width="3"/>
-      <text x="555" y="44" text-anchor="middle" class="px ink" font-size="16">Main memory</text>
-      <line x1="240" y1="90" x2="440" y2="90" stroke="#5b8fc7" stroke-width="8"/><text x="340" y="80" text-anchor="middle" font-size="12" class="ink2">address bus →</text>
-      <line x1="240" y1="170" x2="440" y2="170" stroke="#4f8a2e" stroke-width="12"/><text x="340" y="157" text-anchor="middle" font-size="12" class="ink2">← data bus →</text>
-      <line id="fx-ctl" x1="240" y1="250" x2="440" y2="250" stroke="#8e6cc1" stroke-width="6"/><text x="340" y="240" text-anchor="middle" font-size="12" class="ink2">control bus (read line)</text>
-      ${mem.map(([a, v], i) => `<g id="fx-m${a}"><rect x="460" y="${60 + i * 34}" width="190" height="28" fill="var(--paper)" stroke="var(--line)"/><text x="470" y="${79 + i * 34}" font-size="13" class="mono muted">${String(a).padStart(2, "0")}</text><text x="505" y="${79 + i * 34}" font-size="13" class="mono ink">${v}</text></g>`).join("")}
       <g class="mono" font-size="12">
         <rect x="26" y="62" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="78" class="muted" font-size="10">PROGRAM COUNTER</text><text id="fx-pc" x="34" y="96" class="ink">04</text>
         <rect x="26" y="112" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="128" class="muted" font-size="10">INSTRUCTION REGISTER</text><text id="fx-ir" x="34" y="146" class="ink">—</text>
         <rect id="fx-cu" x="26" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="180" class="muted" font-size="10">CONTROL</text><text x="34" y="194" class="muted" font-size="10">UNIT /</text><text x="34" y="208" class="muted" font-size="10">DECODER</text>
         <rect id="fx-alu" x="128" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="136" y="180" class="muted" font-size="10">ALU</text>
         <rect x="26" y="232" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="248" class="muted" font-size="10">ACCUMULATOR</text><text id="fx-acc" x="34" y="266" class="ink">0</text>
-      </g>
+      </g>`;
+    const memBox = `
+      <rect x="0" y="0" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--dirt)" stroke-width="3"/>
+      <text x="115" y="24" text-anchor="middle" class="px ink" font-size="16">Main memory</text>
+      ${mem.map(([a, v], i) => `<g id="fx-m${a}"><rect x="20" y="${40 + i * 34}" width="190" height="28" fill="var(--paper)" stroke="var(--line)"/><text x="30" y="${59 + i * 34}" font-size="13" class="mono muted">${String(a).padStart(2, "0")}</text><text x="65" y="${59 + i * 34}" font-size="13" class="mono ink">${v}</text></g>`).join("")}`;
+    // Two layouts: side by side, or (on a phone) memory stacked under the processor with vertical buses.
+    // BUS[k] = [x1, y1, x2, y2] from the processor end to the memory end, for k = address, data, control.
+    const narrowMq = matchMedia("(max-width: 600px)");
+    let BUS;
+    function layout() {
+      if (narrowMq.matches) {
+        BUS = [[110, 340, 110, 450], [190, 340, 190, 450], [270, 340, 270, 450]];
+        svg.setAttribute("viewBox", "0 0 380 790");
+        svg.innerHTML = `<g transform="translate(65,-10)">${procBox}</g><g transform="translate(75,450)">${memBox}</g>
+      <line x1="110" y1="340" x2="110" y2="450" stroke="#5b8fc7" stroke-width="8"/><path d="M102 436 L118 436 L110 448 Z" fill="#3e6fa8"/><text transform="translate(94,395) rotate(-90)" text-anchor="middle" font-size="12" class="ink2">address bus</text>
+      <line x1="190" y1="340" x2="190" y2="450" stroke="#4f8a2e" stroke-width="12"/><text transform="translate(172,395) rotate(-90)" text-anchor="middle" font-size="12" class="ink2">data bus</text>
+      <line id="fx-ctl" x1="270" y1="340" x2="270" y2="450" stroke="#8e6cc1" stroke-width="6"/><text transform="translate(256,395) rotate(-90)" text-anchor="middle" font-size="12" class="ink2">control bus</text>
       <g id="fx-token"></g>`;
-    svg.innerHTML = base;
+      } else {
+        BUS = [[240, 90, 440, 90], [240, 170, 440, 170], [240, 250, 440, 250]];
+        svg.setAttribute("viewBox", "0 0 680 360");
+        svg.innerHTML = `${procBox}<g transform="translate(440,20)">${memBox}</g>
+      <line x1="240" y1="90" x2="440" y2="90" stroke="#5b8fc7" stroke-width="8"/><text x="340" y="80" text-anchor="middle" font-size="12" class="ink2">address bus →</text>
+      <line x1="240" y1="170" x2="440" y2="170" stroke="#4f8a2e" stroke-width="12"/><text x="340" y="157" text-anchor="middle" font-size="12" class="ink2">← data bus →</text>
+      <line id="fx-ctl" x1="240" y1="250" x2="440" y2="250" stroke="#8e6cc1" stroke-width="6"/><text x="340" y="240" text-anchor="middle" font-size="12" class="ink2">control bus (read line)</text>
+      <g id="fx-token"></g>`;
+      }
+    }
+    layout();
     const panel = el("div", { class: "fx-drill" });
     const note = el("p", { class: "stepper-note", "aria-live": "polite" });
     const back = el("button", { class: "btn small", type: "button" }, "◀ Back");
@@ -281,13 +301,19 @@
       steps.push({ k: 3, p, txt: `<b>4. Decode and execute.</b> The decoder interprets <code>${p.ins}</code>. ` });
     });
     let i = -1, timer = null, anim = 0;
-    function token(x1, y, x2, label, colour, done) {
+    // Move a labelled token along bus k, towards memory (toMem) or back to the processor.
+    function token(k, toMem, label, colour, done) {
       const g = svg.querySelector("#fx-token");
       cancelAnimationFrame(anim);
+      const [bx1, by1, bx2, by2] = BUS[k];
+      const len = Math.hypot(bx2 - bx1, by2 - by1), inset = len < 150 ? 18 : 42, ux = (bx2 - bx1) / len, uy = (by2 - by1) / len;
+      const p0 = [bx1 + ux * inset, by1 + uy * inset], p1 = [bx2 - ux * inset, by2 - uy * inset];
+      const [from, to] = toMem ? [p0, p1] : [p1, p0];
       const t0 = performance.now(), dur = HC.reduced ? 1 : 800;
       const step = (now) => {
-        const f = Math.min(1, (now - t0) / dur), x = x1 + (x2 - x1) * (f < .5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2);
-        g.innerHTML = `<rect x="${x - 40}" y="${y - 13}" width="80" height="26" rx="3" fill="${colour}" stroke="#000" stroke-opacity=".3"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="12" fill="#fff" class="mono">${label}</text>`;
+        const f = Math.min(1, (now - t0) / dur), e = f < .5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2;
+        const x = from[0] + (to[0] - from[0]) * e, y = from[1] + (to[1] - from[1]) * e;
+        g.innerHTML = `<rect x="${x - 36}" y="${y - 13}" width="72" height="26" rx="3" fill="${colour}" stroke="#000" stroke-opacity=".3"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="12" fill="#fff" class="mono">${label}</text>`;
         if (f < 1) anim = requestAnimationFrame(step); else if (done) done();
       };
       anim = requestAnimationFrame(step);
@@ -315,9 +341,9 @@
       } else {
         const m = svg.querySelector("#fx-m" + cur.p.a + " rect");
         if (cur.k >= 0) m.setAttribute("fill", "color-mix(in srgb, #5b8fc7 30%, var(--paper))");
-        if (cur.k === 0) token(282, 90, 398, String(cur.p.a).padStart(2, "0"), "#3e6fa8");
-        if (cur.k === 1) { svg.querySelector("#fx-ctl").setAttribute("stroke", "#e0b23a"); token(282, 250, 398, "READ", "#6b4fa0"); }
-        if (cur.k === 2) token(398, 170, 282, cur.p.ins, "#3d7022");
+        if (cur.k === 0) token(0, true, String(cur.p.a).padStart(2, "0"), "#3e6fa8");
+        if (cur.k === 1) { svg.querySelector("#fx-ctl").setAttribute("stroke", "#e0b23a"); token(2, true, "READ", "#6b4fa0"); }
+        if (cur.k === 2) token(1, false, cur.p.ins, "#3d7022");
         if (cur.k === 3) { svg.querySelector("#fx-cu").setAttribute("fill", "color-mix(in srgb, #e0b23a 40%, var(--paper))"); if (cur.p.ins.startsWith("ADD")) svg.querySelector("#fx-alu").setAttribute("fill", "color-mix(in srgb, #b3261e 30%, var(--paper))"); }
         note.innerHTML = cur.txt + (cur.k === 3 ? s.last : "") + `<br><span class="hint">Instruction ${prog.indexOf(cur.p) + 1} of 3 · step ${cur.k + 1} of 4</span>`;
         panel.innerHTML = DRILL.map((d, k) => `<div class="fx-d${k === cur.k ? " on" : ""}"><span>${d[0]}</span><div>${d[1]}<small>${d[2]}</small></div></div>`).join("");
@@ -325,6 +351,7 @@
       back.disabled = i < 0; next.disabled = i >= steps.length - 1;
     }
     const stop = () => { clearInterval(timer); timer = null; auto.textContent = "▶ Auto"; };
+    narrowMq.addEventListener("change", () => { cancelAnimationFrame(anim); layout(); render(); });
     back.addEventListener("click", () => { stop(); i = Math.max(-1, i - 1); render(); });
     next.addEventListener("click", () => { stop(); i = Math.min(steps.length - 1, i + 1); render(); });
     auto.addEventListener("click", () => {
@@ -380,7 +407,8 @@
       deck.classList.add("firing"); setTimeout(() => deck.classList.remove("firing"), ms);
       res.innerHTML = `Time for ${N} instructions: <b>${m.us.toFixed(1)} µs</b>\n` +
         `Average cycles per instruction: ${m.cpi.toFixed(2)} (${m.h ? Math.round(m.h * 100) + "% of fetches hit the cache" : "every fetch goes to main memory"}, ${64 / m.w} bus transfer${m.w === 64 ? "" : "s"} per memory fetch)\n` +
-        `Cores: ×${m.speedup.toFixed(2)} speed-up from ${m.c} core${m.c > 1 ? "s" : ""}${m.c > 1 ? `, not ×${m.c}, because a quarter of the work can't be shared between cores` : ""}`;
+        `Cores: ×${m.speedup.toFixed(2)} speed-up from ${m.c} core${m.c > 1 ? "s" : ""}${m.c > 1 ? `, not ×${m.c}, because a quarter of the work can't be shared between cores` : ""}\n` +
+        `(Cycles per instruction = clock ticks each instruction takes on average; fewer is faster. A 32-line bus needs 2 trips to move one 64-bit item.)`;
       hist.innerHTML = `<table><caption>Your last runs (newest first)</caption><thead><tr><th>Cores</th><th>Bus</th><th>Cache hits</th><th>Clock</th><th class="num">Time (µs)</th></tr></thead><tbody>${runs.map((r) => `<tr><td>${r.c}</td><td>${r.w}</td><td>${Math.round(r.h * 100)}%</td><td>${r.f} GHz</td><td class="num">${r.us.toFixed(1)}</td></tr>`).join("")}</tbody></table>`;
     });
     show();

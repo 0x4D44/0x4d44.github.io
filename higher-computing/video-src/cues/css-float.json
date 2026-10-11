@@ -5,32 +5,32 @@
   {
    "id": "title",
    "start": 1.2,
-   "end": 7.62
+   "end": 8.236
   },
   {
    "id": "box",
-   "start": 7.62,
-   "end": 26.918
+   "start": 8.236,
+   "end": 27.229
   },
   {
    "id": "fit",
-   "start": 26.918,
-   "end": 54.732
+   "start": 27.229,
+   "end": 54.994
   },
   {
    "id": "float",
-   "start": 54.732,
-   "end": 61.122
+   "start": 54.994,
+   "end": 61.34
   },
   {
    "id": "runaway",
-   "start": 61.122,
-   "end": 72.145
+   "start": 61.34,
+   "end": 72.588
   },
   {
    "id": "outro",
-   "start": 72.145,
-   "end": 78.36
+   "start": 72.588,
+   "end": 78.848
   }
  ],
  "lines": [
@@ -40,7 +40,7 @@
    "li": 0,
    "voice": "A",
    "start": 1.2,
-   "end": 6.72,
+   "end": 7.336,
    "cap": "Today, a layout mystery. The page looked perfect in the wireframe. So why did the footer run away?"
   },
   {
@@ -48,8 +48,8 @@
    "si": 1,
    "li": 0,
    "voice": "A",
-   "start": 7.62,
-   "end": 17.432,
+   "start": 8.236,
+   "end": 18.025,
    "cap": "Every element is a box. Padding is space inside the border. Margin is space outside it."
   },
   {
@@ -57,8 +57,8 @@
    "si": 1,
    "li": 1,
    "voice": "A",
-   "start": 17.882,
-   "end": 26.018,
+   "start": 18.475,
+   "end": 26.329,
    "cap": "Both are added to each side: two boxes with 10px margins leave a 20px gap between them."
   },
   {
@@ -66,8 +66,8 @@
    "si": 2,
    "li": 0,
    "voice": "A",
-   "start": 26.918,
-   "end": 40.939,
+   "start": 27.229,
+   "end": 41.09,
    "cap": "Four images in an 800px section: 186 + 2×2 border + 2×5 margin = 200px each, 800px in total."
   },
   {
@@ -75,8 +75,8 @@
    "si": 2,
    "li": 1,
    "voice": "A",
-   "start": 41.389,
-   "end": 53.832,
+   "start": 41.54,
+   "end": 54.094,
    "cap": "Raise the margin to 10px: 210px each, 840px for four. The last image drops to a new line, so the page no longer matches its wireframe."
   },
   {
@@ -84,8 +84,8 @@
    "si": 3,
    "li": 0,
    "voice": "A",
-   "start": 54.732,
-   "end": 60.222,
+   "start": 54.994,
+   "end": 60.44,
    "cap": "float:left pushes an element to the left, and the content after it wraps around it."
   },
   {
@@ -93,8 +93,8 @@
    "si": 4,
    "li": 0,
    "voice": "H",
-   "start": 61.122,
-   "end": 64.58,
+   "start": 61.34,
+   "end": 64.753,
    "cap": "Lieutenant, the footer has run up beside the images!"
   },
   {
@@ -102,8 +102,8 @@
    "si": 4,
    "li": 1,
    "voice": "A",
-   "start": 65.03,
-   "end": 71.245,
+   "start": 65.203,
+   "end": 71.688,
    "cap": "Floats affect everything after them. clear:both makes the footer start below every float."
   },
   {
@@ -111,10 +111,10 @@
    "si": 5,
    "li": 0,
    "voice": "A",
-   "start": 72.145,
-   "end": 77.46,
+   "start": 72.588,
+   "end": 77.948,
    "cap": "Count both sides of the box. Float to line things up. clear:both to start again below."
   }
  ],
- "duration": 80.36
+ "duration": 80.848
 }
