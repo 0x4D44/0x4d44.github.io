@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam Drill · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Higher Computing Science exam technique: timing, command words, A and C marks, the assignment, SQA reference language, common mistakes from course reports, a mock paper with marking guidance, and a glossary.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The parade ground · Exam technique</p>
+<h1>Exam drill</h1>
+<p class="lede">Knowing the content is half the battle. The other half is giving the examiner exactly what the marking instructions reward, in the time available.</p>
+</div>
+
+<section id="timing" class="prose">
+<h2 data-short="Timing">1 · Timing the question paper</h2>
+<p>You have <strong>120 minutes for 80 marks</strong>: one and a half minutes per mark. Use it as a budget:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Part</th><th class="num">Marks</th><th class="num">Budget</th></tr></thead>
+<tbody>
+<tr><td>A quick look through the whole paper</td><td class="num">–</td><td class="num">≈ 3 min</td></tr>
+<tr><td>Section 1: Software design and development, and Computer systems</td><td class="num">55</td><td class="num">≈ 80 min</td></tr>
+<tr><td>Section 2 (Database) <b>or</b> Section 3 (Web): answer only one</td><td class="num">25</td><td class="num">≈ 35 min</td></tr>
+<tr><td>Checking</td><td class="num">–</td><td class="num">≈ 2 min</td></tr>
+</tbody></table></div>
+<div class="callout exam"><div class="callout-title">⚠ Answer the right option</div><p>Answer Section 2 <em>or</em> Section 3, whichever option you studied. Don't split your time between both.</p></div>
+<p>Each section opens with short, mostly "C"-grade questions in simple contexts, then moves on to longer, context-based questions that include "A" marks. The examiners advise: always <strong>attempt the large-tariff questions</strong>. They are built to contain C marks as well as the A-grade discriminators, so even a partial answer scores.</p>
+</section>
+
+<section id="commands" class="prose">
+<h2 data-short="Command words">2 · Command words</h2>
+<p>The verb at the start of a question tells you how much to write. Extended "describe" and "explain" answers are still the area candidates find hardest (2025 course report).</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Word</th><th scope="col">What it wants</th><th scope="col">Example answer (1–2 marks)</th></tr></thead>
+<tbody>
+<tr><th scope="row">State / identify / name</th><td>A short fact, with no reason needed.</td><td><em>State the bus used to send the address.</em> "The address bus."</td></tr>
+<tr><th scope="row">Describe</th><td>Say <strong>what</strong> happens or what something is like, in enough detail. Typically one mark per relevant point.</td><td><em>Describe a watchpoint.</em> "A watchpoint is set on a variable. Execution pauses whenever that variable's value changes, so the programmer can inspect it."</td></tr>
+<tr><th scope="row">Explain</th><td>Say <strong>why</strong> or <strong>how</strong>: give a reason or a consequence. Use "because…" or "so that…".</td><td><em>Explain why more cache improves performance.</em> "More instructions and data can be held in cache, so there are more cache hits. Fewer slower accesses to main memory are needed, so instructions are fetched faster."</td></tr>
+<tr><th scope="row">Compare</th><td>Both items, on the <strong>same point</strong>, linked by a connective such as "whereas" or "but".</td><td>"In agile, testing happens during every sprint, <b>whereas</b> in iterative development testing is a separate phase after implementation."</td></tr>
+<tr><th scope="row">Evaluate</th><td>Judge the solution against the named criterion, <strong>with evidence</strong> from the code, test or specification.</td><td>"The program is robust, because entering 'Q' for the flight is rejected and the user is asked to re-enter (test 5)."</td></tr>
+<tr><th scope="row">Write / design / complete</th><td>Produce code, SQL, a design or a diagram. Any language is accepted, and the marks are for the logic.</td><td>"Using a design technique, show the refinement of step 2…"</td></tr>
+</tbody></table></div>
+<div class="callout tip"><div class="callout-title">Refer to the context</div><p>The 2025 report: "Candidates should refer their answer to the context of the question and not just the operation of the lines of code." When asked what code does, say what it achieves <em>in the scenario</em> ("finds the cadet with the most flying hours"), not just "it loops and compares".</p></div>
+<div class="check" data-check="exam-commands"></div>
+</section>
+
+<section id="assignment" class="prose">
+<h2 data-short="The assignment">3 · The assignment</h2>
+<ul>
+<li><strong>6 hours</strong>, usually spread over several lessons, under supervision. It is <strong>open book</strong>: class notes, programming manuals, textbooks and your own programs are allowed.</li>
+<li>Task 1 (Software, 25 marks) is compulsory. Then do Task 2 (Database) <em>or</em> Task 3 (Web), each 15 marks.</li>
+<li>About 22–24 of the 40 marks are for <strong>implementation</strong>. The rest are for analysis, design, testing and evaluation, which candidates do worst on.</li>
+<li><strong>Follow the design you are given.</strong> If the brief supplies a data flow and refinements, your code must implement <em>those</em>, using the sub-programs and parameters exactly as shown.</li>
+<li><strong>Check the output against every requirement</strong>, not just "it ran". Make SQL work for all data (<code>&gt;=</code> versus <code>&gt;</code>), and match web pages to the wireframe exactly (margins, positions).</li>
+<li>Evaluations must refer to <em>your</em> code: name the function, loop or data structure. Generic National 5-style answers get little credit.</li>
+<li>Hand in only the pages with your evidence, <strong>in task order</strong>. Discard pages that only contain instructions.</li>
+</ul>
+</section>
+
+<section id="reflang" class="prose">
+<h2 data-short="Reference language">4 · SQA reference language: cheat sheet</h2>
+<p>Exam code is written in SQA's reference language. You need to <em>read</em> it fluently. You can <em>answer</em> in any language.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Construct</th><th>Reference language</th><th>Python</th></tr></thead>
+<tbody>
+<tr><td>Types</td><td><code>INTEGER</code>, <code>REAL</code>, <code>BOOLEAN</code>, <code>CHARACTER</code>, <code>STRING</code>, <code>ARRAY OF …</code></td><td><code>int</code>, <code>float</code>, <code>bool</code>, <code>str</code>, <code>list</code></td></tr>
+<tr><td>Comment</td><td><code># comment</code></td><td><code># comment</code></td></tr>
+<tr><td>Declare</td><td><code>DECLARE total INITIALLY 0</code></td><td><code>total = 0</code></td></tr>
+<tr><td>Declare with a type</td><td><code>DECLARE price AS REAL INITIALLY 0.0</code></td><td><code>price = 0.0</code></td></tr>
+<tr><td>Declare from input</td><td><code>DECLARE age AS INTEGER INITIALLY FROM KEYBOARD</code></td><td><code>age = int(input())</code></td></tr>
+<tr><td>Declare an array</td><td><code>DECLARE marks AS ARRAY OF INTEGER INITIALLY [0]*30</code></td><td><code>marks = [0]*30</code></td></tr>
+<tr><td>Assign</td><td><code>SET total TO total + mark</code></td><td><code>total = total + mark</code></td></tr>
+<tr><td>Input / output</td><td><code>RECEIVE name FROM (STRING) KEYBOARD</code><br><code>SEND "Hello " &amp; name TO DISPLAY</code></td><td><code>name = input()</code><br><code>print("Hello " + name)</code></td></tr>
+<tr><td>Selection</td><td><code>IF x &gt; 5 THEN … ELSE … END IF</code></td><td><code>if x &gt; 5: … else: …</code></td></tr>
+<tr><td>Fixed loop</td><td><code>FOR i FROM 0 TO 9 DO … END FOR</code> (includes 9)</td><td><code>for i in range(0, 10):</code></td></tr>
+<tr><td>Fixed loop with a step</td><td><code>FOR i FROM 10 TO 0 STEP -2 DO … END FOR</code> (10, 8, 6, 4, 2, 0)</td><td><code>for i in range(10, -1, -2):</code></td></tr>
+<tr><td>Fixed loop</td><td><code>REPEAT 5 TIMES … END REPEAT</code></td><td><code>for _ in range(5):</code></td></tr>
+<tr><td>For each</td><td><code>FOR EACH c FROM cadets DO … END FOR EACH</code></td><td><code>for c in cadets:</code></td></tr>
+<tr><td>Conditional loops</td><td><code>WHILE … DO … END WHILE</code><br><code>REPEAT … UNTIL condition</code></td><td><code>while …:</code><br>(no direct equivalent: use <code>while True … break</code>)</td></tr>
+<tr><td>Record type</td><td><code>RECORD Cadet IS {STRING name, INTEGER hours}</code></td><td><code>@dataclass</code><br><code>class Cadet:</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;name: str</code><br><code>&nbsp;&nbsp;&nbsp;&nbsp;hours: int</code></td></tr>
+<tr><td>Record value</td><td><code>SET c TO Cadet("Ross", 12)</code> · <code>c.hours</code></td><td><code>c = Cadet("Ross", 12)</code> · <code>c.hours</code></td></tr>
+<tr><td>Procedure</td><td><code>PROCEDURE show(STRING s) … END PROCEDURE</code></td><td><code>def show(s): …</code></td></tr>
+<tr><td>Function</td><td><code>FUNCTION sq(INTEGER n) RETURNS INTEGER<br>&nbsp;&nbsp;RETURN n * n<br>END FUNCTION</code></td><td><code>def sq(n): return n * n</code></td></tr>
+<tr><td>Files</td><td><code>OPEN "f.txt"</code> · <code>CREATE "f.txt"</code> · <code>CLOSE "f.txt"</code><br><code>RECEIVE line FROM "f.txt"</code> · <code>SEND line TO "f.txt"</code></td><td><code>open("f.txt","r")</code> · <code>open("f.txt","w")</code> · <code>.close()</code><br><code>f.readline()</code> · <code>f.write(line)</code></td></tr>
+<tr><td>Operators</td><td><code>&amp;</code> joins strings · <code>MOD</code> · <code>^</code> power · <code>≠ ≤ ≥</code> · <code>AND OR NOT</code></td><td><code>+</code> · <code>%</code> · <code>**</code> · <code>!= &lt;= &gt;=</code> · <code>and or not</code></td></tr>
+<tr><td>Elision</td><td><code>&lt;get valid mark&gt;</code> means "code that does this, written in English"</td><td></td></tr>
+</tbody></table></div>
+</section>
+
+<section id="mistakes" class="prose">
+<h2 data-short="Common mistakes">5 · The examiners' greatest hits: common mistakes</h2>
+<p>Every item here comes from the 2025 course report.</p>
+<ol>
+<li>Generic evaluation answers ("it is efficient") that don't refer to the actual code.</li>
+<li>Answering about <em>robustness</em> when the question asked about <em>fitness for purpose</em>.</li>
+<li>Giving a digital <em>certificate</em>'s benefit when asked about a digital <em>signature</em>.</li>
+<li>Recognising a vector image without using technical terms (objects, attributes, resolution independent).</li>
+<li>Adding unnecessary parameters to a data flow.</li>
+<li>Writing two near-identical sub-programs instead of one with a parameter, called twice.</li>
+<li>Describing the code to <em>change</em> when the question asked what code to <em>add</em>.</li>
+<li>SQL: vague error answers ("missing join") instead of the exact fix; missing GROUP BY; not combining SUM with a calculation; <code>&gt;</code> where "at least" needed <code>&gt;=</code>.</li>
+<li>Not explaining that a new entity is needed to <em>resolve a many-to-many relationship</em>.</li>
+<li>Web: not spotting float as the cause of a layout fault, or missing <code>clear:both</code>; margins that exceed the container width; confusing block and inline placement; answering "screen size" when the issue is resolution.</li>
+<li>Web functional requirements that don't mention form elements or JavaScript events.</li>
+</ol>
+</section>
+
+<section id="mock" class="prose">
+<h2 data-short="Mock questions">6 · Mock broadside: exam-style questions</h2>
+<p>Longer questions in the exam's style, each with marking guidance. Write a full answer before you reveal the guidance, then give yourself the marks you earned against each marking point. The first set is a complete context-based question of the kind that makes up most of a real paper. It is not a timed mock paper: use a past paper from the official site for that.</p>
+<div class="check" data-check="exam-mock-context"></div>
+<div class="check" data-check="exam-mock-sdd"></div>
+<div class="check" data-check="exam-mock-cs"></div>
+<div class="check" data-check="exam-mock-ddd"></div>
+<div class="check" data-check="exam-mock-wdd"></div>
+</section>
+
+<section id="glossary" class="prose">
+<h2 data-short="Glossary">7 · Glossary</h2>
+<dl class="glossary" id="glossary-list">
+<dt>Actual parameter</dt><dd>The value or variable passed to a sub-program when it is called.</dd>
+<dt>Agile</dt><dd>An adaptive methodology: short sprints, constant client feedback, testing throughout.</dd>
+<dt>Aggregate function</dt><dd>An SQL function that returns one value from many rows: COUNT, SUM, AVG, MIN, MAX.</dd>
+<dt>Alias</dt><dd>A temporary column heading in a query result, given with AS.</dd>
+<dt>Array of records</dt><dd>An array in which each element is a record.</dd>
+<dt>Boundaries</dt><dd>The limits of a project, and the assumptions made about it.</dd>
+<dt>Breakpoint</dt><dd>A marker on a line of code where execution pauses.</dd>
+<dt>Cache</dt><dd>A small amount of fast memory on or near the processor, checked before main memory.</dd>
+<dt>Cardinality</dt><dd>One-to-one, one-to-many or many-to-many: how many occurrences relate.</dd>
+<dt>Compound key</dt><dd>A primary key made from two or more attributes, each a primary key in its own right.</dd>
+<dt>Computed value</dt><dd>A value calculated in a query when it runs, not stored in the database.</dd>
+<dt>Computer Misuse Act 1990</dt><dd>UK law covering unauthorised access, access with intent to commit a further offence, and unauthorised modification.</dd>
+<dt>Data dictionary</dt><dd>A table describing every attribute: key, type, size and validation.</dd>
+<dt>Data flow</dt><dd>The data passed IN to and OUT of each step of a design.</dd>
+<dt>Descendant selector</dt><dd>A CSS selector such as <code>nav ul</code> that matches elements inside other elements.</dd>
+<dt>Digital certificate</dt><dd>A document from a Certificate Authority that binds a public key to an identity.</dd>
+<dt>Digital signature</dt><dd>Made with the sender's private key. It proves who sent a message and that it is unaltered.</dd>
+<dt>DoS attack</dt><dd>Denial of service: stops genuine users reaching a service, through bandwidth consumption, resource starvation or DNS faults.</dd>
+<dt>Entity occurrence</dt><dd>One instance of an entity (one row of a table).</dd>
+<dt>Execution error</dt><dd>An error that crashes a program while it is running, such as dividing by zero.</dd>
+<dt>Exponent</dt><dd>The part of a floating-point number that says where the binary point goes (stored in two's complement).</dd>
+<dt>Extreme test data</dt><dd>Data on the boundaries of the valid range.</dd>
+<dt>Fetch-execute cycle</dt><dd>Address bus → read line → data bus to the instruction register → decode and execute.</dd>
+<dt>Fitness for purpose</dt><dd>Whether a solution meets every requirement in the specification.</dd>
+<dt>Float / clear</dt><dd>CSS that pushes an element to the left or right / makes an element start below any floats.</dd>
+<dt>Foreign key</dt><dd>A field that is the primary key of another table and links the two tables.</dd>
+<dt>Formal parameter</dt><dd>A variable named in a sub-program's definition that receives the passed value.</dd>
+<dt>Function</dt><dd>A sub-program that returns a single value.</dd>
+<dt>GROUP BY</dt><dd>Groups rows that share a value so that an aggregate runs once per group.</dd>
+<dt>Grouping selector</dt><dd>A CSS selector list such as <code>header, nav, footer</code> that applies one rule to several elements.</dd>
+<dt>Iterative development</dt><dd>A predictive methodology: fixed phases in order, repeated when problems are found.</dd>
+<dt>Local variable</dt><dd>A variable declared inside a sub-program, visible only there.</dd>
+<dt>Logic error</dt><dd>The program runs but gives the wrong result.</dd>
+<dt>Low-fidelity prototype</dt><dd>A quick, cheap mock-up of a website made from wireframes, used for early usability testing.</dd>
+<dt>Maintainability</dt><dd>How easily the code can be changed: readability and modularity.</dd>
+<dt>Mantissa</dt><dd>The significant digits of a floating-point number. More bits give more precision.</dd>
+<dt>Modulus</dt><dd>The remainder after division (MOD, or % in Python).</dd>
+<dt>Persona</dt><dd>A fictional, realistic user adopted by a tester during usability testing.</dd>
+<dt>Private key</dt><dd>The secret half of a key pair. It decrypts messages, and creates signatures.</dd>
+<dt>Public key</dt><dd>The shared half of a key pair. It encrypts messages to its owner, and verifies their signatures.</dd>
+<dt>Procedure</dt><dd>A sub-program that carries out a task without returning a value.</dd>
+<dt>Range (floating point)</dt><dd>How large and how small the numbers that can be stored are. More exponent bits give more range.</dd>
+<dt>Record</dt><dd>A data structure grouping fields of different types.</dd>
+<dt>Robustness</dt><dd>How well software copes with unexpected or exceptional input without crashing.</dd>
+<dt>Scope (analysis)</dt><dd>The deliverables of a project and its time limits.</dd>
+<dt>Scope (variable)</dt><dd>The part of a program where a variable can be used.</dd>
+<dt>Sprint</dt><dd>A short agile development cycle that delivers a working increment.</dd>
+<dt>Syntax error</dt><dd>Code that breaks the language's grammar, so it can't be translated.</dd>
+<dt>Tracking cookie</dt><dd>A cookie that records browsing across sites to build a profile of the user.</dd>
+<dt>Two's complement</dt><dd>A binary representation of integers in which the leftmost bit has a negative place value.</dd>
+<dt>Unicode</dt><dd>A 16- or 32-bit character set covering all the world's writing systems.</dd>
+<dt>Usability</dt><dd>How intuitive and easy a solution is for its users.</dd>
+<dt>Watchpoint</dt><dd>Pauses execution when a chosen variable changes or a condition becomes true.</dd>
+<dt>Wildcard</dt><dd><code>%</code> (any number of characters) and <code>_</code> (exactly one), used with LIKE.</dd>
+<dt>Normalised</dt><dd>A floating-point number with its point moved to just before the first 1, so the mantissa starts 0.1.</dd>
+<dt>Wireframe</dt><dd>A simple sketch of one screen's layout, showing the position of every element.</dd>
+</dl>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="web.html">← Web</a>
+  <a class="btn primary" href="index.html#ranks">Check your rank →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24) and the 2025 course report. On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+{
+ "id": "fetch-execute",
+ "title": "Beat to quarters",
+ "scenes": [
+  {
+   "id": "title",
+   "start": 1.2,
+   "end": 10.196
+  },
+  {
+   "id": "parts",
+   "start": 10.196,
+   "end": 21.712
+  },
+  {
+   "id": "step1",
+   "start": 21.712,
+   "end": 29.422
+  },
+  {
+   "id": "step2",
+   "start": 29.422,
+   "end": 36.41
+  },
+  {
+   "id": "step3",
+   "start": 36.41,
+   "end": 46.43
+  },
+  {
+   "id": "step4",
+   "start": 46.43,
+   "end": 53.14
+  },
+  {
+   "id": "perf",
+   "start": 53.14,
+   "end": 74.464
+  },
+  {
+   "id": "outro",
+   "start": 74.464,
+   "end": 82.822
+  }
+ ],
+ "lines": [
+  {
+   "scene": "title",
+   "si": 0,
+   "li": 0,
+   "voice": "H",
+   "start": 1.2,
+   "end": 9.296,
+   "cap": "Beat to quarters! Every gun crew aboard follows the same drill, over and over. So does every processor."
+  },
+  {
+   "scene": "parts",
+   "si": 1,
+   "li": 0,
+   "voice": "A",
+   "start": 10.196,
+   "end": 20.812,
+   "cap": "The processor and main memory, joined by three buses: the address bus, the data bus and the control bus."
+  },
+  {
+   "scene": "step1",
+   "si": 2,
+   "li": 0,
+   "voice": "A",
+   "start": 21.712,
+   "end": 26.816,
+   "cap": "Step 1: the processor sets up the address bus with the address of the instruction."
+  },
+  {
+   "scene": "step1",
+   "si": 2,
+   "li": 1,
+   "voice": "H",
+   "start": 27.266,
+   "end": 28.522,
+   "cap": "Locker 04!"
+  },
+  {
+   "scene": "step2",
+   "si": 3,
+   "li": 0,
+   "voice": "A",
+   "start": 29.422,
+   "end": 35.51,
+   "cap": "Step 2: the processor activates the read line on the control bus."
+  },
+  {
+   "scene": "step3",
+   "si": 4,
+   "li": 0,
+   "voice": "A",
+   "start": 36.41,
+   "end": 45.53,
+   "cap": "Step 3: the instruction travels along the data bus and is stored in the instruction register."
+  },
+  {
+   "scene": "step4",
+   "si": 5,
+   "li": 0,
+   "voice": "A",
+   "start": 46.43,
+   "end": 51.245,
+   "cap": "Step 4: the instruction is decoded and executed."
+  },
+  {
+   "scene": "step4",
+   "si": 5,
+   "li": 1,
+   "voice": "H",
+   "start": 51.695,
+   "end": 52.24,
+   "cap": "Fire!"
+  },
+  {
+   "scene": "perf",
+   "si": 6,
+   "li": 0,
+   "voice": "A",
+   "start": 53.14,
+   "end": 58.091,
+   "cap": "To speed up the drill: more cores, more crews firing at once."
+  },
+  {
+   "scene": "perf",
+   "si": 6,
+   "li": 1,
+   "voice": "A",
+   "start": 58.541,
+   "end": 68.568,
+   "cap": "A wider data bus: more bits per trip. More cache: fewer slow trips to main memory."
+  },
+  {
+   "scene": "perf",
+   "si": 6,
+   "li": 2,
+   "voice": "A",
+   "start": 69.018,
+   "end": 73.564,
+   "cap": "A higher clock speed: a faster drumbeat, more cycles per second."
+  },
+  {
+   "scene": "outro",
+   "si": 7,
+   "li": 0,
+   "voice": "H",
+   "start": 74.464,
+   "end": 81.922,
+   "cap": "Address bus. Read line. Data bus. Decode and execute. Learn it like your drill, cadets."
+  }
+ ],
+ "duration": 84.822
+}

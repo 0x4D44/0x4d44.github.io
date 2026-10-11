@@ -1,0 +1,120 @@
+{
+ "id": "css-float",
+ "title": "The runaway footer",
+ "scenes": [
+  {
+   "id": "title",
+   "start": 1.2,
+   "end": 7.62
+  },
+  {
+   "id": "box",
+   "start": 7.62,
+   "end": 26.918
+  },
+  {
+   "id": "fit",
+   "start": 26.918,
+   "end": 54.732
+  },
+  {
+   "id": "float",
+   "start": 54.732,
+   "end": 61.122
+  },
+  {
+   "id": "runaway",
+   "start": 61.122,
+   "end": 72.145
+  },
+  {
+   "id": "outro",
+   "start": 72.145,
+   "end": 78.36
+  }
+ ],
+ "lines": [
+  {
+   "scene": "title",
+   "si": 0,
+   "li": 0,
+   "voice": "A",
+   "start": 1.2,
+   "end": 6.72,
+   "cap": "Today, a layout mystery. The page looked perfect in the wireframe. So why did the footer run away?"
+  },
+  {
+   "scene": "box",
+   "si": 1,
+   "li": 0,
+   "voice": "A",
+   "start": 7.62,
+   "end": 17.432,
+   "cap": "Every element is a box. Padding is space inside the border. Margin is space outside it."
+  },
+  {
+   "scene": "box",
+   "si": 1,
+   "li": 1,
+   "voice": "A",
+   "start": 17.882,
+   "end": 26.018,
+   "cap": "Both are added to each side: two boxes with 10px margins leave a 20px gap between them."
+  },
+  {
+   "scene": "fit",
+   "si": 2,
+   "li": 0,
+   "voice": "A",
+   "start": 26.918,
+   "end": 40.939,
+   "cap": "Four images in an 800px section: 186 + 2×2 border + 2×5 margin = 200px each, 800px in total."
+  },
+  {
+   "scene": "fit",
+   "si": 2,
+   "li": 1,
+   "voice": "A",
+   "start": 41.389,
+   "end": 53.832,
+   "cap": "Raise the margin to 10px: 210px each, 840px for four. The last image drops to a new line, so the page no longer matches its wireframe."
+  },
+  {
+   "scene": "float",
+   "si": 3,
+   "li": 0,
+   "voice": "A",
+   "start": 54.732,
+   "end": 60.222,
+   "cap": "float:left pushes an element to the left, and the content after it wraps around it."
+  },
+  {
+   "scene": "runaway",
+   "si": 4,
+   "li": 0,
+   "voice": "H",
+   "start": 61.122,
+   "end": 64.58,
+   "cap": "Lieutenant, the footer has run up beside the images!"
+  },
+  {
+   "scene": "runaway",
+   "si": 4,
+   "li": 1,
+   "voice": "A",
+   "start": 65.03,
+   "end": 71.245,
+   "cap": "Floats affect everything after them. clear:both makes the footer start below every float."
+  },
+  {
+   "scene": "outro",
+   "si": 5,
+   "li": 0,
+   "voice": "A",
+   "start": 72.145,
+   "end": 77.46,
+   "cap": "Count both sides of the box. Float to line things up. clear:both to start again below."
+  }
+ ],
+ "duration": 80.36
+}

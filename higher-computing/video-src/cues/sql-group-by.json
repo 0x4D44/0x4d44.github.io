@@ -1,0 +1,134 @@
+{
+ "id": "sql-group-by",
+ "title": "Muster by squadron",
+ "scenes": [
+  {
+   "id": "title",
+   "start": 1.2,
+   "end": 6.018
+  },
+  {
+   "id": "table",
+   "start": 6.018,
+   "end": 17.117
+  },
+  {
+   "id": "group",
+   "start": 17.117,
+   "end": 24.559
+  },
+  {
+   "id": "collapse",
+   "start": 24.559,
+   "end": 32.026
+  },
+  {
+   "id": "order",
+   "start": 32.026,
+   "end": 43.067
+  },
+  {
+   "id": "traps",
+   "start": 43.067,
+   "end": 59.456
+  },
+  {
+   "id": "outro",
+   "start": 59.456,
+   "end": 63.798
+  }
+ ],
+ "lines": [
+  {
+   "scene": "title",
+   "si": 0,
+   "li": 0,
+   "voice": "H",
+   "start": 1.2,
+   "end": 5.118,
+   "cap": "Muster the cadets! I want a headcount for every squadron."
+  },
+  {
+   "scene": "table",
+   "si": 1,
+   "li": 0,
+   "voice": "A",
+   "start": 6.018,
+   "end": 16.217,
+   "cap": "The Cadet table: 12 rows. COUNT(*) alone gives 12. The Captain wants one count for each squadron."
+  },
+  {
+   "scene": "group",
+   "si": 2,
+   "li": 0,
+   "voice": "A",
+   "start": 17.117,
+   "end": 23.659,
+   "cap": "GROUP BY squadronNo gathers rows with the same squadron number. Four squadrons, four groups."
+  },
+  {
+   "scene": "collapse",
+   "si": 3,
+   "li": 0,
+   "voice": "A",
+   "start": 24.559,
+   "end": 31.126,
+   "cap": "The aggregate runs once per group. Each group collapses into one row with its count."
+  },
+  {
+   "scene": "order",
+   "si": 4,
+   "li": 0,
+   "voice": "A",
+   "start": 32.026,
+   "end": 38.332,
+   "cap": "Add an alias for a readable heading, then ORDER BY COUNT(*) DESC for the biggest first."
+  },
+  {
+   "scene": "order",
+   "si": 4,
+   "li": 1,
+   "voice": "A",
+   "start": 38.782,
+   "end": 42.167,
+   "cap": "Remember: GROUP BY always comes before ORDER BY."
+  },
+  {
+   "scene": "traps",
+   "si": 5,
+   "li": 0,
+   "voice": "H",
+   "start": 43.067,
+   "end": 45.517,
+   "cap": "Any traps for the unwary, Lieutenant?"
+  },
+  {
+   "scene": "traps",
+   "si": 5,
+   "li": 1,
+   "voice": "A",
+   "start": 45.967,
+   "end": 53.71,
+   "cap": "Two. An aggregate can't go in a WHERE clause: work it out in one query and use it in a second."
+  },
+  {
+   "scene": "traps",
+   "si": 5,
+   "li": 2,
+   "voice": "A",
+   "start": 54.16,
+   "end": 58.556,
+   "cap": "And never mix a plain field with an aggregate unless you GROUP BY that field."
+  },
+  {
+   "scene": "outro",
+   "si": 6,
+   "li": 0,
+   "voice": "A",
+   "start": 59.456,
+   "end": 62.898,
+   "cap": "Group, then aggregate, then order. Dismissed!"
+  }
+ ],
+ "duration": 65.798
+}

@@ -1,0 +1,74 @@
+WEBVTT
+
+1
+00:00:01.200 --> 00:00:03.652
+<v Alba>Orders sent by sea could be captured.
+
+2
+00:00:03.652 --> 00:00:08.741
+<v Alba>Data sent over the internet can be intercepted. Encryption keeps it safe.
+
+3
+00:00:09.391 --> 00:00:12.771
+<v Alba>Public key encryption gives everyone a matched pair of keys.
+
+4
+00:00:12.771 --> 00:00:17.528
+<v Alba>The public key is shared with the world. The private key never leaves its owner.
+
+5
+00:00:17.728 --> 00:00:22.111
+<v Alba>Whatever one key locks, only the other key in the pair can unlock.
+
+6
+00:00:22.761 --> 00:00:26.756
+<v Alba>To send the Captain a secret, I lock it with the Captain's public key.
+
+7
+00:00:26.956 --> 00:00:31.785
+<v Alba>A spy can intercept it, but the public key can't unlock it.
+
+8
+00:00:31.785 --> 00:00:34.900
+<v Alba>Only the Captain's private key can.
+
+9
+00:00:35.550 --> 00:00:39.229
+<v Captain>But how do I know an order truly came from you, Lieutenant?
+
+10
+00:00:39.429 --> 00:00:43.200
+<v Alba>With a digital signature. I sign with my private key,
+
+11
+00:00:43.200 --> 00:00:46.936
+<v Alba>like a wax seal. You check it with my public key.
+
+12
+00:00:47.136 --> 00:00:50.580
+<v Alba>If anyone alters the message, the seal won't match.
+
+13
+00:00:50.580 --> 00:00:54.611
+<v Alba>A signature proves who sent it, and that it's unchanged.
+
+14
+00:00:55.261 --> 00:01:00.016
+<v Alba>How do you know a public key really belongs to its owner? A digital certificate.
+
+15
+00:01:00.216 --> 00:01:05.692
+<v Alba>A trusted certificate authority signs it, as the Admiralty signs a captain's commission.
+
+16
+00:01:05.692 --> 00:01:09.053
+<v Alba>Your browser checks it before showing the padlock.
+
+17
+00:01:09.703 --> 00:01:13.183
+<v Alba>Encrypt with their public key. Sign with your private key.
+
+18
+00:01:13.183 --> 00:01:16.793
+<v Alba>Trust a public key only when its certificate checks out.
+

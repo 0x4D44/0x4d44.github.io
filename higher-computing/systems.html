@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computer Systems · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Higher Computing Science, Computer Systems: two's complement, floating point, Unicode, bitmap and vector graphics, the fetch-execute cycle, performance, environmental impact, the Computer Misuse Act, cookies, DoS and encryption.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The orlop &amp; the magazine · Computer Systems (CS)</p>
+<h1>What happens below decks</h1>
+<p class="lede">Computer Systems is worth 10–14 marks, all in Section 1 of the question paper. It is not in the assignment. The marks are small but reliable, and the examiners keep saying the same thing: use <strong>precise technical terms</strong>. "It's faster" earns nothing. "More instructions can be processed per second" earns the mark.</p>
+<div class="callout log">
+  <div class="callout-title">⚓ Ship's log: redstone</div>
+  <p>In Minecraft, a redstone lamp is either lit or dark: a single <strong>bit</strong>. Every number, letter, picture and instruction in a computer is just a row of these lamps. This deck shows how the rows are read.</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<section id="twos" class="prose">
+<h2 data-short="Two's complement">1 · Negative integers: two's complement <span class="spec-tag">CS · describe, exemplify, convert, range</span></h2>
+<p>At National 5 every bit had a positive place value: 128, 64, 32 … 1. To store <strong>negative</strong> whole numbers, Higher uses <dfn>two's complement</dfn>. It changes just one thing: <strong>the leftmost bit (the most significant bit) has a negative place value</strong>.</p>
+<div class="table-wrap">
+<table class="bits-table">
+<thead><tr><th>Place value</th><th class="num" style="color:var(--redstone)">−128</th><th class="num">64</th><th class="num">32</th><th class="num">16</th><th class="num">8</th><th class="num">4</th><th class="num">2</th><th class="num">1</th><th>Denary</th></tr></thead>
+<tbody>
+<tr><td>Example</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td>−128 + 32 + 16 + 4 + 2 = <b>−74</b></td></tr>
+<tr><td>Example</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td>64 + 8 + 2 + 1 = <b>75</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>This means:</p>
+<ul>
+<li>If the leftmost bit is <b>0</b>, the number is zero or positive. Read it exactly as at National 5.</li>
+<li>If the leftmost bit is <b>1</b>, the number is negative. Start at −128, then add the other place values.</li>
+</ul>
+
+<div class="widget" id="w-twos">
+  <h3 class="widget-title">Redstone register: 8 lamps, one number</h3>
+  <p class="hint">Click a lamp to flip it, or type a number from −128 to 127 and watch the conversion step by step.</p>
+</div>
+
+<h3>Converting a negative denary number to binary</h3>
+<p>Use the <strong>flip and add one</strong> method. Here is −45 in 8 bits:</p>
+<ol>
+<li>Write the <em>positive</em> number in binary: 45 = <code>00101101</code></li>
+<li><strong>Invert</strong> every bit (0↔1): <code>11010010</code></li>
+<li><strong>Add 1</strong>: <code>11010010 + 1 = 11010011</code></li>
+</ol>
+<p>Check it with the place values: −128 + 64 + 16 + 2 + 1 = −45 ✔. Always check: it takes ten seconds and catches most slips.</p>
+<p>There is a second method that also works: start with −128 and decide which positive place values to add to reach the target. For −45: −128 + 83, and 83 = 64 + 16 + 2 + 1, giving <code>11010011</code> again.</p>
+
+<h3>Range</h3>
+<p>With <var>n</var> bits, two's complement can store whole numbers from <strong>−2<sup>n−1</sup></strong> to <strong>2<sup>n−1</sup> − 1</strong>.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Bits</th><th>Most negative</th><th>Most positive</th><th>How many values</th></tr></thead>
+<tbody>
+<tr><td>4</td><td class="num">−8 (<code>1000</code>)</td><td class="num">7 (<code>0111</code>)</td><td class="num">16</td></tr>
+<tr><td>8</td><td class="num">−128 (<code>10000000</code>)</td><td class="num">127 (<code>01111111</code>)</td><td class="num">256</td></tr>
+<tr><td>16</td><td class="num">−32 768</td><td class="num">32 767</td><td class="num">65 536</td></tr>
+<tr><td>32</td><td class="num">−2 147 483 648</td><td class="num">2 147 483 647</td><td class="num">4 294 967 296</td></tr>
+</tbody>
+</table>
+</div>
+<h3>How many bits are needed?</h3>
+<p>To store a number <var>x</var>, find the smallest <var>n</var> whose range includes it. For −300: 9 bits reach only −256 to 255, which is not enough, but 10 bits reach −512 to 511. So <strong>10 bits</strong> are needed. For a positive number, remember that the leftmost bit must stay 0: 200 needs 9 bits, not 8, because 8-bit two's complement stops at 127.</p>
+<p>There is one more negative number than positive numbers, because zero takes one of the "positive" patterns (<code>00000000</code>). Notice also that <code>11111111</code> is −1, not 255.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>"State the range of numbers that can be stored in 12-bit two's complement" means you write <strong>−2048 to 2047</strong>. Show your working (−2<sup>11</sup> to 2<sup>11</sup> − 1), because a slip in the arithmetic can still earn a mark for the method. In 2025, most candidates could find the largest number and many could work out the bits needed for it.</p></div>
+
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/twos-complement.jpg">
+    <source src="videos/twos-complement.mp4" type="video/mp4">
+    <track kind="captions" src="videos/twos-complement.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · The minus-128 lamp</strong> · how two's complement stores negative numbers, narrated by Flight Lieutenant Alba Murray. Captions available.</figcaption>
+</figure>
+
+<div class="check" data-check="cs-twos"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="float" class="prose">
+<h2 data-short="Floating point">2 · Real numbers: floating-point representation <span class="spec-tag">CS · mantissa, exponent, range, precision</span></h2>
+<p>Two's complement only stores whole numbers. Navigators need real numbers too: 56.1875° of latitude, or 0.0003 seconds of drift. These are stored in <dfn>floating-point</dfn> form, as two separate parts:</p>
+<p style="text-align:center;font-size:1.2rem"><b>number = mantissa × 2<sup>exponent</sup></b></p>
+<ul>
+<li>The <dfn>mantissa</dfn> holds the significant digits of the number, written as a binary fraction that starts <code>0.1…</code></li>
+<li>The <dfn>exponent</dfn> says how many places the binary point has moved. It is stored in <strong>two's complement</strong>, so it can be negative for very small numbers.</li>
+</ul>
+<p>Denary has the same idea. 34 006.8 = 0.340068 × 10<sup>5</sup>: the point has moved 5 places left, so the exponent is 5. At Higher you must do this in <strong>binary</strong>.</p>
+
+<h3>Binary fractions: a quick refresher</h3>
+<p>To the right of the binary point, place values keep halving: ½, ¼, ⅛, ¹⁄₁₆ … So <code>101.011</code> = 4 + 1 + ¼ + ⅛ = <b>5.375</b>.</p>
+
+<h3>Turning a denary fraction into binary</h3>
+<p>Convert the whole-number part as usual. For the fraction, <strong>multiply by 2 again and again</strong>. Each time, the digit in front of the point is the next bit, and you carry on with what is left after the point:</p>
+<div class="table-wrap"><table>
+<caption>0.625 in binary: read the bits from top to bottom, giving 0.101</caption>
+<thead><tr><th>Fraction</th><th>× 2</th><th>Bit</th></tr></thead>
+<tbody><tr><td>0.625</td><td>1.25</td><td><b>1</b></td></tr><tr><td>0.25</td><td>0.5</td><td><b>0</b></td></tr><tr><td>0.5</td><td>1.0</td><td><b>1</b> (nothing left, so stop)</td></tr></tbody>
+</table></div>
+<p>So 66.625 = 1000010 (66) + .101 (0.625) = <code>1000010.101</code>. Some fractions, such as 0.1, never reach zero. They repeat for ever in binary, so they can only be stored approximately.</p>
+
+<h3>Why the mantissa starts 0.1: normalisation</h3>
+<p>Every floating-point number is <dfn>normalised</dfn>: the point is moved until it sits just before the first 1, so the mantissa always begins <code>0.1…</code>. That wastes no bits on leading zeros, so the mantissa holds as many significant digits as possible, giving the most precision. It also means each number has only one correct representation.</p>
+
+<h3>The SQA layout</h3>
+<p>The course notes give an example layout of 24 bits: <strong>1 sign bit + 15 mantissa bits + 8 exponent bits</strong>. Questions can use other sizes, so always use the sizes given in the question.</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 96" role="img" aria-labelledby="fp-t">
+<title id="fp-t">A 24-bit floating-point number: 1 sign bit, 15 bits of mantissa, 8 bits of exponent in two's complement</title>
+<rect x="10" y="20" width="26" height="40" fill="var(--redstone)"/><text x="23" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0</text>
+<rect x="36" y="20" width="390" height="40" fill="var(--sea)"/><text x="231" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">1 0 0 0 0 1 0 1 0 1 0 0 0 0 0</text>
+<rect x="426" y="20" width="204" height="40" fill="var(--grass)"/><text x="528" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0 0 0 0 0 1 1 1</text>
+<g font-size="12" class="ink2" text-anchor="middle"><text x="23" y="78">sign</text><text x="231" y="78">mantissa (15 bits) · the digits after "0."</text><text x="528" y="78">exponent (8 bits, two's complement)</text></g>
+<text x="10" y="14" font-size="12" class="muted">66.625 = 1000010.101 = 0.1000010101 × 2⁷</text>
+</svg>
+</figure>
+<p>The <strong>sign bit</strong> belongs to the mantissa: 0 means positive and 1 means negative. The mantissa itself is stored as an ordinary positive binary fraction. Only the <em>exponent</em> uses two's complement.</p>
+
+<h3>Worked examples</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Number</th><th>Move the point</th><th>Sign</th><th>Mantissa (15 bits)</th><th>Exponent (8 bits)</th></tr></thead>
+<tbody>
+<tr><td><code>1000010.101</code> (66.625)</td><td>0.1000010101 × 2<sup>7</sup></td><td>0</td><td><code>100001010100000</code></td><td><code>00000111</code> (+7)</td></tr>
+<tr><td><code>−1101.11</code> (−13.75)</td><td>−0.110111 × 2<sup>4</sup></td><td>1</td><td><code>110111000000000</code></td><td><code>00000100</code> (+4)</td></tr>
+<tr><td><code>0.0010101</code> (0.1640625)</td><td>0.10101 × 2<sup>−2</sup></td><td>0</td><td><code>101010000000000</code></td><td><code>11111110</code> (−2)</td></tr>
+<tr><td><code>−0.00001101</code></td><td>−0.1101 × 2<sup>−4</sup></td><td>1</td><td><code>110100000000000</code></td><td><code>11111100</code> (−4)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The rule: move the point until it sits just before the first <b>1</b>. Moving it <strong>left</strong> gives a <strong>positive</strong> exponent, because the number was big. Moving it <strong>right</strong> gives a <strong>negative</strong> exponent, because the number was tiny. Pad the mantissa with zeros on the right to fill 15 bits.</p>
+
+<h3>Going the other way: stored bits → number</h3>
+<p>Given <code>1 | 101100000000000 | 11111111</code>:</p>
+<ol>
+<li>The sign bit is 1, so the number is <strong>negative</strong>.</li>
+<li>The mantissa is 0.1011 (drop the trailing zeros).</li>
+<li>The exponent 11111111 is −1 in two's complement, so the point moves <strong>one place left</strong>: 0.1011 → 0.01011.</li>
+<li>0.01011 = ¼ + ¹⁄₁₆ + ¹⁄₃₂ = 0.34375, so the number is <strong>−0.34375</strong>.</li>
+</ol>
+
+<div class="widget" id="w-float">
+  <h3 class="widget-title">The navigator's converter</h3>
+  <p class="hint">Type a real number. Watch the point hop, then see the three fields.</p>
+</div>
+
+<h3>Range and precision: the trade-off</h3>
+<p>The total number of bits is fixed, so bits given to one part are taken from the other:</p>
+<ul>
+<li>More bits for the <strong>mantissa</strong> → more significant digits stored → <strong>more precision</strong> (but less range).</li>
+<li>More bits for the <strong>exponent</strong> → the point can move further → a bigger <strong>range</strong> of very large and very small numbers (but less precision).</li>
+</ul>
+<div class="widget" id="w-tradeoff">
+  <h3 class="widget-title">Trim the sails: share 24 bits</h3>
+  <p class="hint">Move the slider to give more bits to the exponent or to the mantissa.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>Use the exact words <strong>precision</strong> (mantissa) and <strong>range</strong> (exponent). In 2025, most candidates gained 2 or 3 marks converting to floating point, so the method is learnable. The usual slips are a wrong exponent sign and forgetting to pad the mantissa.</p></div>
+
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/floating-point.jpg">
+    <source src="videos/floating-point.mp4" type="video/mp4">
+    <track kind="captions" src="videos/floating-point.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · The hopping point</strong> · mantissa, exponent, range and precision. Captions available.</figcaption>
+</figure>
+
+<div class="check" data-check="cs-float"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="text" class="prose">
+<h2 data-short="Unicode &amp; ASCII">3 · Characters: extended ASCII and Unicode <span class="spec-tag">CS · describe, advantage</span></h2>
+<p>A <dfn>character set</dfn> is an agreed codebook: every character gets a number, and the number is stored in binary.</p>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: Popham's code</div><p>From 1800, Sir Home Popham's <em>Telegraphic Signals</em> gave the Royal Navy a numbered codebook of words. Hoisting the flags for 253 might mean "England", and 269 "expects". At Trafalgar, Nelson's famous signal was spelled out this way, in numbers. A character set is the same trick: the receiver must hold the same codebook as the sender.</p></div>
+<div class="compare">
+<div><h3>Extended ASCII</h3><p>Uses <strong>8 bits</strong> per character, so 2<sup>8</sup> = <strong>256</strong> different characters. That covers English letters, digits, punctuation, control codes and some accented letters such as à and é.</p><p>Original ASCII used 7 bits, giving 128 characters.</p></div>
+<div><h3>Unicode</h3><p>Uses <strong>16 bits</strong> (65 536 different codes) or <strong>32 bits</strong> per character. Unicode defines over a million possible characters (code points), enough for every writing system in the world (Chinese, Arabic, Devanagari …) plus maths symbols and emoji.</p></div>
+</div>
+<p><strong>The advantage of Unicode:</strong> it can represent far <em>more characters</em> than extended ASCII, so text in any language, or several languages mixed together, can be stored and shared correctly. <strong>The cost:</strong> every character takes 2 or 4 times as much storage, so files are bigger and take longer to transmit.</p>
+<div class="widget" id="w-unicode">
+  <h3 class="widget-title">The signal book</h3>
+  <p class="hint">Type anything: Gaelic, Japanese or emoji. Each character's code number is shown, along with the smallest character set that can hold it.</p>
+</div>
+<div class="callout scope"><div class="callout-title">Beyond Higher</div><p>Real-world Unicode is usually stored as <em>UTF-8</em>, which uses 1 to 4 bytes per character depending on the character. Higher uses the simpler fixed 16-bit or 32-bit model above, and that is what to write in the exam.</p></div>
+<div class="check" data-check="cs-text"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="graphics" class="prose">
+<h2 data-short="Bitmap vs vector">4 · Graphics: bit-mapped versus vector <span class="spec-tag">CS · advantages and disadvantages</span></h2>
+<p>A <dfn>bit-mapped</dfn> graphic stores the colour of <strong>every pixel</strong> in a grid, like every block in a Minecraft wall. A <dfn>vector</dfn> graphic stores a list of <strong>objects and their attributes</strong>: "circle, centre (50,50), radius 20, fill red, line black".</p>
+<div class="widget" id="w-graphics">
+  <h3 class="widget-title">Zoom the spyglass</h3>
+  <p class="hint">The same anchor is stored two ways. Zoom in and compare.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th><span class="sr-only">Property</span></th><th>Bit-mapped</th><th>Vector</th></tr></thead>
+<tbody>
+<tr><th scope="row">Scaling up</th><td>✘ Becomes <strong>pixelated</strong> (blocky and jagged), because each pixel is just made bigger.</td><td>✔ <strong>Resolution independent</strong>: the shapes are recalculated at the new size, so they stay sharp.</td></tr>
+<tr><th scope="row">Editing</th><td>✔ Individual <strong>pixels</strong> can be edited.<br>✘ Once shapes overlap they become one set of pixels, so you can't pick one up and move it.</td><td>✔ Each <strong>object</strong> can be selected and edited separately (move, resize, recolour).<br>✘ Individual pixels cannot be edited.</td></tr>
+<tr><th scope="row">File size</th><td>Uncompressed, it depends on <strong>resolution × colour depth</strong>, not on what is in the picture. Usually large.</td><td>Depends on the <strong>number of objects</strong>. Usually small for simple diagrams, but large for very complex scenes.</td></tr>
+<tr><th scope="row">Best for</th><td>Photographs and realistic images with continuous tones.</td><td>Logos, diagrams, maps, fonts and anything that must be resized.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Many candidates recognised the vector image but "answered without using the appropriate technical terminology". Write <em>"the image is stored as objects with attributes, so it is resolution independent"</em>, not <em>"it looks smoother"</em>.</p></div>
+<div class="check" data-check="cs-graphics"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="fetch" class="prose">
+<h2 data-short="Fetch-execute cycle">5 · The fetch-execute cycle <span class="spec-tag">CS · describe</span></h2>
+<p>A program is a list of machine-code instructions stored in main memory. The processor works through them by repeating one cycle, billions of times a second: <strong>fetch</strong> an instruction from memory, <strong>decode</strong> it, <strong>execute</strong> it. SQA describes the cycle in four steps:</p>
+<ol>
+<li>The processor sets up the <strong>address bus</strong> with the address of the required memory location.</li>
+<li>The processor activates the <strong>read line</strong> on the <strong>control bus</strong>.</li>
+<li>The instruction is fetched from that memory location using the <strong>data bus</strong>, and stored in the <strong>instruction register</strong>.</li>
+<li>The instruction in the instruction register is <strong>decoded</strong> (interpreted by the decoder) and <strong>executed</strong>.</li>
+</ol>
+<div class="widget" id="w-fetch">
+  <h3 class="widget-title">Beat to quarters: one cycle, step by step</h3>
+  <p class="hint">Step through the cycle. The gun-deck drill on the right is the same process in 1805 dress.</p>
+</div>
+<details class="fx-key"><summary>Key to the parts in the animation</summary>
+<dl class="glossary">
+<dt>Program counter</dt><dd>A register holding the address of the next instruction (beyond Higher, but it is where the address comes from).</dd>
+<dt>Instruction register</dt><dd>Holds the instruction that has just been fetched, while it is decoded.</dd>
+<dt>Control unit / decoder</dt><dd>Works out what the instruction means and sends the signals to carry it out.</dd>
+<dt>ALU</dt><dd>Arithmetic and logic unit: does calculations and comparisons.</dd>
+<dt>Accumulator</dt><dd>A register that holds the result of a calculation.</dd>
+<dt>LOAD 9 · ADD 10 · STORE 11</dt><dd>Made-up machine-code instructions: copy the value at address 09 into the accumulator; add the value at address 10 to it; write the result to address 11. HALT stops the program.</dd>
+</dl></details>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Bus</th><th>Carries</th><th>Direction</th></tr></thead>
+<tbody>
+<tr><td><b>Address bus</b></td><td>The address of the memory location to read from or write to.</td><td>One way: processor → memory</td></tr>
+<tr><td><b>Data bus</b></td><td>The instruction or data itself.</td><td>Both ways</td></tr>
+<tr><td><b>Control bus</b></td><td>Separate lines that carry signals: <em>read</em>, <em>write</em>, clock, reset, interrupt.</td><td>Each line has its own direction</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>In 2025 many candidates correctly said "the control bus activates the <em>read line</em>". Name the <strong>bus</strong> and the <strong>line</strong> for each step. "The CPU gets the instruction from memory" is too vague for a mark.</p></div>
+<div class="callout scope"><div class="callout-title">Beyond Higher (but helpful)</div><p>The address comes from the <em>program counter</em>, a register that is increased after each fetch so it points to the next instruction. SQA's description doesn't require it, but mentioning it never costs marks.</p></div>
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/fetch-execute.jpg">
+    <source src="videos/fetch-execute.mp4" type="video/mp4">
+    <track kind="captions" src="videos/fetch-execute.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · Beat to quarters</strong> · the fetch-execute cycle as a gun-deck drill, with Captain Hamish Blackwood. Captions available.</figcaption>
+</figure>
+<div class="check" data-check="cs-fetch"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="performance" class="prose">
+<h2 data-short="System performance">6 · Factors affecting system performance <span class="spec-tag">CS · cores, data bus width, cache, clock speed</span></h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Factor</th><th scope="col">What it is</th><th scope="col">Why it improves performance</th><th scope="col">On the gun deck</th></tr></thead>
+<tbody>
+<tr><th scope="row">Number of processors (cores)</th><td>Several complete processing units on one chip (dual-core, quad-core …).</td><td>Each core can fetch and execute its own instructions, so <strong>more instructions are processed at the same time</strong>. It is not a perfect multiple, because some tasks can't be split evenly between cores.</td><td>More gun crews firing at once. But if only one gun bears on the target, extra crews don't help.</td></tr>
+<tr><th scope="row">Width of data bus</th><td>The number of parallel wires, which is the number of bits carried in one transfer.</td><td>A wider bus carries <strong>more bits per transfer</strong>. Going from 32 to 64 lines doubles the data moved at once, so fewer transfers are needed.</td><td>Powder monkeys carrying cartridges up from the magazine side by side.</td></tr>
+<tr><th scope="row">Cache memory</th><td>A small amount of very fast memory on or near the processor chip.</td><td>The processor checks cache first. A <strong>cache hit</strong> avoids a slower trip to main memory. Multi-level caches (L1, L2, L3) are checked fastest first.</td><td>A ready-use rack of cartridges beside each gun, instead of fetching from the magazine three decks below.</td></tr>
+<tr><th scope="row">Clock speed</th><td>The frequency of the pulses that trigger each step, measured in hertz (e.g. 3.5 GHz = 3.5 billion pulses a second).</td><td>A faster clock means <strong>more fetch-execute cycles per second</strong>. Clock rates from different manufacturers are not always directly comparable.</td><td>The drummer beating the rhythm of the drill faster.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="widget" id="w-perf">
+  <h3 class="widget-title">Broadside drill simulator</h3>
+  <p class="hint">Fit out your ship's processor, then fire a broadside of 2 000 instructions. The model is simplified, but the trends are real.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>Explanations must say <em>why</em>. "Increasing the cache means more instructions/data can be found in cache, so there are fewer slower accesses to main memory" earns the mark. "Cache makes it faster" does not.</p></div>
+<div class="check" data-check="cs-performance"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="environment" class="prose">
+<h2 data-short="Environmental impact">7 · Environmental impact of intelligent systems <span class="spec-tag">CS · heating, traffic control, car management</span></h2>
+<p>An <dfn>intelligent system</dfn> senses its surroundings, makes decisions with software and acts on them automatically. All three that SQA names follow the same loop:</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 150" role="img" aria-labelledby="loop-t">
+<title id="loop-t">The sense, decide, act loop: sensors feed a processor running software, which drives actuators, whose effect is measured again by the sensors</title>
+<defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="var(--ink)"/></marker></defs>
+<g fill="var(--card)" stroke="var(--ink)" stroke-width="2">
+<rect x="20" y="40" width="160" height="60"/><rect x="240" y="40" width="160" height="60"/><rect x="460" y="40" width="160" height="60"/></g>
+<g class="ink" text-anchor="middle" font-size="14"><text x="100" y="66" font-weight="700">Sensors</text><text x="100" y="86" font-size="12">temperature, cameras, O₂</text>
+<text x="320" y="66" font-weight="700">Processor + software</text><text x="320" y="86" font-size="12">compares with targets</text>
+<text x="540" y="66" font-weight="700">Actuators</text><text x="540" y="86" font-size="12">boiler, lights, fuel injector</text></g>
+<g stroke="var(--ink)" stroke-width="2" fill="none"><path d="M180 70 H236" marker-end="url(#ar2)"/><path d="M400 70 H456" marker-end="url(#ar2)"/><path d="M540 100 V130 H100 V104" marker-end="url(#ar2)"/></g>
+<text x="320" y="144" text-anchor="middle" font-size="12" class="muted">the effect is measured again: a feedback loop</text>
+</svg>
+</figure>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">System</th><th scope="col">How it works</th><th scope="col">Environmental benefit</th></tr></thead>
+<tbody>
+<tr><th scope="row">Heating systems</th><td>Smart thermostats learn when rooms are used and what temperature people prefer. Activity sensors detect whether anyone is home. An app lets the owner switch the heating off remotely, or on early.</td><td>Rooms are only heated when needed and only to the right temperature, so <strong>less energy is used</strong> and less CO₂ is emitted. Bills are lower too.</td></tr>
+<tr><th scope="row">Traffic control</th><td>Cameras and sensors measure traffic flow, and software adjusts signal timings to keep traffic moving. Sat-navs use live traffic data to route drivers around congestion.</td><td>Less stop-start driving and idling, so <strong>less fuel is burned and fewer emissions</strong> are produced. Vehicles are most efficient at a steady speed. SQA's notes say 45–65 mph.</td></tr>
+<tr><th scope="row">Car management systems</th><td><em>Start-stop</em> switches the engine off when the car is stationary and restarts it when the accelerator is pressed. <em>Engine control units</em> use sensors to control the air/fuel ratio very accurately.</td><td>Less time idling and more efficient combustion, so <strong>lower fuel consumption and less CO₂</strong>.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout tip"><div class="callout-title">A balanced view</div><p>These systems are not free for the planet. The sensors, processors and networks need energy and raw materials to make and to run, and they eventually become e-waste. A strong answer explains the <em>saving</em> and links it to <em>energy use</em> or <em>emissions</em>.</p></div>
+<div class="check" data-check="cs-environment"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="cma" class="prose">
+<h2 data-short="Computer Misuse Act">8 · The Computer Misuse Act 1990 <span class="spec-tag">CS · implications for individuals and businesses</span></h2>
+<p>The <dfn>Computer Misuse Act 1990</dfn> makes these acts criminal offences in the UK, including Scotland. Higher covers three:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Offence</th><th scope="col">Example</th><th scope="col">Maximum penalty*</th></tr></thead>
+<tbody>
+<tr><th scope="row">Unauthorised access to computer material</th><td>Guessing a shipmate's password and reading their messages, even if nothing is changed.</td><td>2 years' imprisonment and/or a fine</td></tr>
+<tr><th scope="row">Unauthorised access with intent to commit a further offence</th><td>Logging into the purser's account to transfer the crew's prize money to yourself, or to find material for blackmail.</td><td>5 years and/or a fine</td></tr>
+<tr><th scope="row">Unauthorised modification of programs or data on a computer</th><td>Planting a virus or ransomware, deleting the ship's log, or changing exam results.</td><td>10 years and/or a fine</td></tr>
+</tbody>
+</table>
+<p class="hint" style="font-size:.84rem;color:var(--muted)">*Penalties as amended since 1990. You do not need them for the exam, but they show how seriously each offence is treated.</p>
+</div>
+<h3>Implications</h3>
+<div class="compare">
+<div><h3>For individuals</h3><ul><li>A criminal record, fines or prison, even for "just looking".</li><li>Victims may lose personal data or money, or have their identity stolen.</li><li>The Act gives victims a legal route to have offenders prosecuted.</li></ul></div>
+<div><h3>For businesses</h3><ul><li>They can prosecute intruders, including their own staff who exceed their access rights.</li><li>They need security measures (access levels, strong passwords, monitoring) and staff training, which cost money.</li><li>A breach can mean lost revenue and data, repair costs and damage to their reputation.</li></ul></div>
+</div>
+<div class="widget">
+  <h3 class="widget-title">Court martial: which offence?</h3>
+  <div class="sorter" data-bins="Unauthorised access|Access with intent|Modification">
+    <div data-ans="Unauthorised access" data-why="They viewed material they had no right to see, but there was no further intent and nothing was changed.">A cadet uses a teacher's unlocked laptop to look at next week's test questions.</div>
+    <div data-ans="Modification" data-why="Data on the computer was changed without permission.">A former employee deletes the company's customer database on her last day.</div>
+    <div data-ans="Access with intent" data-why="The access was made in order to commit a further crime (fraud).">A hacker breaks into an online shop's system to copy card numbers and sell them.</div>
+    <div data-ans="Modification" data-why="Ransomware encrypts, and so modifies, data without permission.">Ransomware encrypts every file on the hospital's network.</div>
+  </div>
+</div>
+<div class="check" data-check="cs-cma"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="threats" class="prose">
+<h2 data-short="Cookies &amp; DoS">9 · Security risks: tracking cookies and denial of service <span class="spec-tag">CS · describe and identify</span></h2>
+<h3>Tracking cookies</h3>
+<p>A <dfn>cookie</dfn> is a small text file that a website stores on your device through your browser. Many are harmless: they keep you logged in or remember your basket. A <dfn>tracking cookie</dfn> (usually a <em>third-party</em> cookie from an advertising network) records which sites you visit, across many different websites, and builds up a <strong>profile</strong> of your browsing habits and interests.</p>
+<p><strong>The risks:</strong> a loss of privacy, since your browsing history is collected without you really noticing. The profile can be <strong>sold or shared</strong> with other companies and used to target adverts at you. If the data is stolen or leaked, it could help with identity theft or scams.</p>
+<p><strong>Precautions:</strong> block third-party cookies in the browser settings, delete cookies regularly, use private browsing, and reject non-essential cookies in consent banners.</p>
+
+<h3>Denial of service (DoS) attacks</h3>
+<p>A <dfn>DoS attack</dfn> stops legitimate users from reaching a service, usually by overwhelming a server or network. When the attack comes from thousands of hijacked computers (a <em>botnet</em>) at once, it is a <em>distributed</em> DoS (DDoS).</p>
+<div class="widget" id="w-dos">
+  <h3 class="widget-title">Blockade of the harbour fort</h3>
+  <p class="hint">The fort's web server can answer a limited number of requests each second. Release the attackers and watch what happens to genuine visitors.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">SQA heading</th><th scope="col">What to know</th></tr></thead>
+<tbody>
+<tr><th scope="row">Symptoms</th><td>Slow performance; the website or service cannot be accessed.</td></tr>
+<tr><th scope="row">Effects</th><td>Disruption to users, who can't log in, buy or bank, and to businesses, which can't trade or serve customers.</td></tr>
+<tr><th scope="row">Costs</th><td>Lost revenue while the service is down; the cost of the labour needed to investigate and fix the fault (and to prevent a repeat).</td></tr>
+<tr><th scope="row">Type of fault</th><td><b>Bandwidth consumption</b>: the network connection is flooded with so much traffic that genuine requests can't get through.<br><b>Resource starvation</b>: the server's own resources (memory, processor time, connection slots) are used up, for example by opening thousands of connections that are never completed.<br><b>Domain Name Service (DNS)</b>: the DNS servers that turn domain names into IP addresses are attacked or flooded, so users can't find the site at all, even though the site itself is fine.</td></tr>
+<tr><th scope="row">Reasons</th><td><b>Financial</b>: extortion ("pay us and we'll stop"), or a rival harming a competitor. <b>Political</b>: "hacktivists" protesting against an organisation or government. <b>Personal</b>: revenge, a grudge, or showing off.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="check" data-check="cs-threats"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="encryption" class="prose">
+<h2 data-short="Encryption">10 · Encryption: keys, signatures and certificates <span class="spec-tag">CS · public/private keys, digital certificates, digital signatures</span></h2>
+<p><dfn>Encryption</dfn> scrambles data so that anyone who intercepts it in transit can't read it. Higher uses <dfn>public key</dfn> (asymmetric) encryption, where each person has a matched <strong>pair</strong> of keys:</p>
+<ul>
+<li>The <dfn>public key</dfn> is shared openly with anyone.</li>
+<li>The <dfn>private key</dfn> is kept secret by its owner and never sent anywhere.</li>
+</ul>
+<p>Whatever one key locks, <strong>only the other key of the pair</strong> can unlock.</p>
+<div class="widget" id="w-crypto">
+  <h3 class="widget-title">Sealed orders: three uses of a key pair</h3>
+  <p class="hint">Choose a scenario, then step through it.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col"><span class="sr-only">Use</span></th><th scope="col">What it does</th><th scope="col">Which keys</th></tr></thead>
+<tbody>
+<tr><th scope="row">Sending a secret message</th><td>Keeps the content <strong>confidential</strong>.</td><td>Encrypt with the <b>receiver's public</b> key; only the <b>receiver's private</b> key can decrypt.</td></tr>
+<tr><th scope="row">Digital signature</th><td>Proves <strong>who sent</strong> a message and that it <strong>hasn't been altered</strong> on the way.</td><td>The sender creates the signature with their <b>own private</b> key; anyone can verify it with the <b>sender's public</b> key.</td></tr>
+<tr><th scope="row">Digital certificate</th><td>Proves that a <strong>public key really belongs</strong> to the website or organisation it claims to come from.</td><td>Issued and signed by a trusted <b>Certificate Authority</b> (CA). It contains the owner's name, their public key, the CA's signature, a serial number and an expiry date. Browsers check it before setting up an HTTPS connection.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>How a signature detects tampering:</strong> software first works out a short "fingerprint" of the message called a <dfn>hash</dfn>. Change even one letter of the message and the hash changes completely. The sender encrypts the hash with their private key to make the signature. The receiver decrypts the signature with the sender's public key and compares the result with their own hash of the message. If the two match, the message really came from that sender and is unaltered.</p>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: wax and warrants</div><p>A <strong>digital signature</strong> is the captain's personal wax seal on a letter. Only his signet ring (the private key) can make that seal, and anyone with a sample (the public key) can check it is genuine and unbroken. A <strong>digital certificate</strong> is the captain's <em>commission</em> from the Admiralty: a trusted authority vouches that this seal really belongs to Captain Blackwood of HMS Redstone.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked for a benefit of a <em>digital signature</em>, some candidates gave a benefit of a <em>digital certificate</em>. Signature = <b>who sent this and is it unaltered</b>. Certificate = <b>does this public key really belong to this site or organisation</b>.</p></div>
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/encryption.jpg">
+    <source src="videos/encryption.mp4" type="video/mp4">
+    <track kind="captions" src="videos/encryption.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · Seals and commissions</strong> · public and private keys, digital signatures and certificates. Captions available.</figcaption>
+</figure>
+<div class="check" data-check="cs-encryption"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="software.html">← Software</a>
+  <a class="btn primary" href="database.html">Next: Database Design →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24). On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script src="cs.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

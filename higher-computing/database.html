@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database Design &amp; Development · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Higher Computing Science, Database Design and Development: requirements, entity-relationship diagrams, entity-occurrence diagrams, compound keys, data dictionaries, query design and SQL, with a live SQL playground.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The purser's office · Database Design and Development (DDD)</p>
+<h1>The squadron's records</h1>
+<p class="lede">DDD is one of the two <strong>options</strong>. You answer either Section 2 (Database, 25 marks) <em>or</em> Section 3 (Web, 25 marks) in the question paper, and either Task 2 (Database, 15 marks) <em>or</em> Task 3 (Web, 15 marks) in the assignment. In 2025, 66% of candidates chose Database. At Higher, every database has <strong>at least three linked tables</strong>.</p>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: our database</div><p>The squadron's database links cadets, their squadrons and the ships they are posted to for sea training. It has four tables: <b>Squadron</b>, <b>Cadet</b>, <b>Ship</b> and <b>Posting</b>. The same data is loaded into the live SQL playground in Chapter 6, so every query on this page can be run for real.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<section id="analysis" class="prose">
+<h2 data-short="Analysis">1 · Analysis: end-user and functional requirements <span class="spec-tag">DDD · identify</span></h2>
+<p>Before designing a database, find out what it must do. At Higher this is split into two lists:</p>
+<div class="compare">
+<div><h3>End-user requirements</h3><p>The <strong>tasks the users expect to carry out</strong> with the database, written from their point of view. "The training officer needs to see which cadets are posted to HMS Redstone."</p></div>
+<div><h3>Functional requirements</h3><p>The <strong>processes the system must perform</strong> and the <strong>data it must hold</strong>: the tables, fields and queries. "A query to display firstname, surname and startDate from Cadet and Posting where shipCode = 'RED'."</p></div>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Written answers have "significantly improved" since candidates started phrasing functional requirements as <strong>"a query to …"</strong>, for example <em>"a query to display the average flying hours for each squadron"</em>. Use that pattern.</p></div>
+<div class="widget">
+  <h3 class="widget-title">Whose requirement is it?</h3>
+  <div class="sorter" data-bins="End-user requirement|Functional requirement">
+    <div data-ans="End-user requirement" data-why="It describes a task the user wants to do, from their point of view.">"I want to find every cadet whose surname begins with Mac."</div>
+    <div data-ans="Functional requirement" data-why="It specifies the process (a query), the fields and the criteria the system needs.">A query to display firstname and surname from Cadet where surname LIKE "Mac%".</div>
+    <div data-ans="Functional requirement" data-why="It describes data the system must hold: a table and its fields.">The Ship table must store shipCode, shipName, rate, guns, launched and homePort.</div>
+    <div data-ans="End-user requirement" data-why="It describes what the user expects to see.">"The squadron leader needs to know how many cadets each squadron has."</div>
+  </div>
+</div>
+<div class="check" data-check="ddd-analysis"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="erd" class="prose">
+<h2 data-short="Entity-relationship diagrams">2 · Entities, relationships and ERDs <span class="spec-tag">DDD · three or more entities, cardinality</span></h2>
+<p>These words have precise meanings, so learn them exactly:</p>
+<dl class="glossary">
+<dt>Entity</dt><dd>A person, place, thing, event or concept that data is stored about: Cadet, Ship.</dd>
+<dt>Entity occurrence</dt><dd>One specific instance of an entity: <em>Cadet C104 Mhairi Campbell</em>. One occurrence is one row of a table.</dd>
+<dt>Attribute</dt><dd>A characteristic of an entity, such as surname or flyingHours. Each attribute becomes a field.</dd>
+<dt>Primary key</dt><dd>An attribute (or attributes) that uniquely identifies one entity occurrence. <u>Underlined</u> on an ERD.</dd>
+<dt>Foreign key</dt><dd>An attribute in one table that is the primary key of another table, so it links the two. Marked with an asterisk (*).</dd>
+<dt>Relationship</dt><dd>A natural association between entities, named with a verb: a Squadron <em>has</em> Cadets.</dd>
+<dt>Cardinality</dt><dd>How many occurrences of one entity relate to one occurrence of the other: <b>one-to-one</b>, <b>one-to-many</b> or <b>many-to-many</b>.</dd>
+</dl>
+
+<h3>Entity-relationship diagram</h3>
+<p>An ERD shows each entity as a rectangle. Each relationship is a named line, and <strong>crow's feet</strong> mark the "many" end. Read every relationship in <em>both</em> directions.</p>
+<figure class="diagram">
+<div class="diagram-scroll">
+<svg viewBox="0 0 760 300" role="img" aria-labelledby="erd-t erd-d">
+<title id="erd-t">Entity-relationship diagram for the squadron database</title>
+<desc id="erd-d">Squadron has many Cadets; each Cadet belongs to one Squadron. Cadet is given many Postings; each Posting is for one Cadet. Ship receives many Postings; each Posting is on one Ship.</desc>
+<g fill="var(--card)" stroke="var(--ink)" stroke-width="2.5">
+<rect x="20" y="40" width="150" height="60"/><rect x="305" y="40" width="150" height="60"/><rect x="590" y="40" width="150" height="60"/><rect x="305" y="200" width="150" height="60"/>
+</g>
+<g class="px ink" font-size="17" text-anchor="middle"><text x="95" y="76">Squadron</text><text x="380" y="76">Cadet</text><text x="665" y="76">Ship</text><text x="380" y="236">Posting</text></g>
+<g stroke="var(--ink)" stroke-width="2.5" fill="none">
+<!-- Squadron 1 — M Cadet -->
+<path d="M170 70 H305"/><path d="M180 60 V80"/><path d="M285 70 L305 58 M285 70 L305 82"/>
+<!-- Cadet 1 — M Posting -->
+<path d="M380 100 V200"/><path d="M370 110 H390"/><path d="M380 180 L368 200 M380 180 L392 200"/>
+<!-- Ship 1 — M Posting -->
+<path d="M665 100 V230 H455"/><path d="M655 110 H675"/><path d="M475 230 L455 218 M475 230 L455 242"/>
+</g>
+<g class="ink" font-size="13" font-style="italic"><text x="200" y="60">has</text><text x="392" y="155">is given</text><text x="540" y="222">receives</text></g>
+<g class="muted" font-size="11"><text x="20" y="125">each Squadron has one or more Cadets;</text><text x="20" y="140">each Cadet belongs to exactly one Squadron</text>
+<text x="20" y="200">Cadet ⟷ Ship would be</text><text x="20" y="215">many-to-many, so the Posting</text><text x="20" y="230">entity sits between them.</text></g>
+</svg>
+</div>
+<figcaption>Crow's foot = "many". A plain bar = "one". Every relationship has a name, and the diagram shows its cardinality.</figcaption>
+</figure>
+
+<p>An ERD can also show every entity's <strong>attributes</strong>, as ovals joined to the entity. The primary key is <u>underlined</u> and a foreign key has an asterisk (*). This is the full design of the squadron database:</p>
+<figure class="diagram">
+<div class="diagram-scroll wide">
+<svg viewBox="0 0 1000 640" role="img" aria-labelledby="erd2-t erd2-d">
+<title id="erd2-t">Entity-relationship diagram with attributes</title>
+<desc id="erd2-d">Squadron has attributes squadronNo (primary key), squadronName, wing, town. Cadet has cadetID (primary key), firstname, surname, rank, dateOfBirth, squadronNo (foreign key), flyingHours, glidingWings. Ship has shipCode (primary key), shipName, rate, guns, launched, homePort. Posting has cadetID and shipCode (together the compound primary key, each also a foreign key), startDate, nights, role, reportTime. Squadron has many Cadets; Cadet is given many Postings; Ship receives many Postings.</desc>
+<g stroke="var(--ink)" stroke-width="2.5" fill="none">
+<path d="M220 190 H440"/><path d="M232 180 V200"/><path d="M420 190 L440 178 M420 190 L440 202"/>
+<path d="M500 210 V480"/><path d="M490 222 H510"/><path d="M500 460 L488 480 M500 460 L512 480"/>
+<path d="M850 210 L560 490"/><path d="M836 216 L850 230"/><path d="M582 469 L560 476 M582 469 L571 490"/>
+</g>
+<g class="ink" font-size="14" font-style="italic"><text x="300" y="182">has</text><text x="508" y="345">is given</text><text x="712" y="330">receives</text></g>
+<g stroke="var(--muted)" stroke-width="1.5"><line x1="160" y1="190" x2="32" y2="190"/><line x1="160" y1="190" x2="69" y2="99"/><line x1="160" y1="190" x2="160" y2="62"/><line x1="160" y1="190" x2="69" y2="281"/><line x1="500" y1="190" x2="395" y2="117"/><line x1="500" y1="190" x2="446" y2="74"/><line x1="500" y1="190" x2="511" y2="62"/><line x1="500" y1="190" x2="573" y2="85"/><line x1="500" y1="190" x2="616" y2="136"/><line x1="500" y1="190" x2="628" y2="201"/><line x1="500" y1="190" x2="605" y2="263"/><line x1="500" y1="190" x2="395" y2="263"/><line x1="850" y1="190" x2="786" y2="79"/><line x1="850" y1="190" x2="850" y2="62"/><line x1="850" y1="190" x2="914" y2="79"/><line x1="850" y1="190" x2="961" y2="126"/><line x1="850" y1="190" x2="978" y2="190"/><line x1="850" y1="190" x2="961" y2="254"/><line x1="500" y1="500" x2="398" y2="559"/><line x1="500" y1="500" x2="382" y2="500"/><line x1="500" y1="500" x2="398" y2="441"/><line x1="500" y1="500" x2="469" y2="614"/><line x1="500" y1="500" x2="531" y2="614"/><line x1="500" y1="500" x2="590" y2="576"/></g>
+<g fill="var(--card)" stroke="var(--ink)" stroke-width="1.5"><ellipse cx="32" cy="190" rx="58" ry="16"/><ellipse cx="69" cy="99" rx="65" ry="16"/><ellipse cx="160" cy="62" rx="58" ry="16"/><ellipse cx="69" cy="281" rx="58" ry="16"/><ellipse cx="395" cy="117" rx="58" ry="16"/><ellipse cx="446" cy="74" rx="58" ry="16"/><ellipse cx="511" cy="62" rx="58" ry="16"/><ellipse cx="573" cy="85" rx="58" ry="16"/><ellipse cx="616" cy="136" rx="61" ry="16"/><ellipse cx="628" cy="201" rx="61" ry="16"/><ellipse cx="605" cy="263" rx="61" ry="16"/><ellipse cx="395" cy="263" rx="65" ry="16"/><ellipse cx="786" cy="79" rx="58" ry="16"/><ellipse cx="850" cy="62" rx="58" ry="16"/><ellipse cx="914" cy="79" rx="58" ry="16"/><ellipse cx="961" cy="126" rx="58" ry="16"/><ellipse cx="978" cy="190" rx="58" ry="16"/><ellipse cx="961" cy="254" rx="58" ry="16"/><ellipse cx="398" cy="559" rx="58" ry="16"/><ellipse cx="382" cy="500" rx="58" ry="16"/><ellipse cx="398" cy="441" rx="58" ry="16"/><ellipse cx="469" cy="614" rx="58" ry="16"/><ellipse cx="531" cy="614" rx="58" ry="16"/><ellipse cx="590" cy="576" rx="58" ry="16"/></g>
+<g class="ink" font-size="12" text-anchor="middle"><text x="32" y="194" text-decoration="underline">squadronNo</text><text x="69" y="103">squadronName</text><text x="160" y="66">wing</text><text x="69" y="285">town</text><text x="395" y="121" text-decoration="underline">cadetID</text><text x="446" y="78">firstname</text><text x="511" y="66">surname</text><text x="573" y="89">rank</text><text x="616" y="140">dateOfBirth</text><text x="628" y="205">squadronNo*</text><text x="605" y="267">flyingHours</text><text x="395" y="267">glidingWings</text><text x="786" y="83" text-decoration="underline">shipCode</text><text x="850" y="66">shipName</text><text x="914" y="83">rate</text><text x="961" y="130">guns</text><text x="978" y="194">launched</text><text x="961" y="258">homePort</text><text x="398" y="563" text-decoration="underline">cadetID*</text><text x="382" y="504" text-decoration="underline">shipCode*</text><text x="398" y="445">startDate</text><text x="469" y="618">nights</text><text x="531" y="618">role</text><text x="590" y="580">reportTime</text></g>
+<g fill="var(--paper-2)" stroke="var(--ink)" stroke-width="2.5">
+<rect x="98" y="168" width="124" height="44"/>
+<rect x="438" y="168" width="124" height="44"/>
+<rect x="788" y="168" width="124" height="44"/>
+<rect x="438" y="478" width="124" height="44"/>
+</g><g class="px ink" font-size="17" text-anchor="middle">
+<text x="160" y="196">Squadron</text>
+<text x="500" y="196">Cadet</text>
+<text x="850" y="196">Ship</text>
+<text x="500" y="506">Posting</text>
+</g></svg>
+</div>
+<figcaption>Posting's primary key is the compound key <u>cadetID</u> + <u>shipCode</u>. Each part is also a foreign key, linking a posting to one cadet and one ship.</figcaption>
+</figure>
+
+<h3>One-to-one</h3>
+<p>In a <dfn>one-to-one</dfn> relationship, each occurrence of one entity is linked to <strong>exactly one</strong> occurrence of the other, and the other way round. Each squadron is commanded by one, and only one, commanding officer, and each commanding officer commands one, and only one, squadron.</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 120" role="img" aria-labelledby="oto-t">
+<title id="oto-t">Squadron is commanded by Commanding Officer: one-to-one, with a single bar at each end of the line</title>
+<g fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"><rect x="20" y="30" width="150" height="56"/><rect x="430" y="30" width="190" height="56"/></g>
+<g stroke="var(--ink)" stroke-width="2.5"><path d="M170 58 H430"/><path d="M186 46 V70"/><path d="M414 46 V70"/></g>
+<g class="px ink" font-size="17" text-anchor="middle"><text x="95" y="64">Squadron</text><text x="525" y="64">CommandingOfficer</text></g>
+<text x="300" y="48" text-anchor="middle" class="ink" font-size="14" font-style="italic">is commanded by</text>
+<text x="300" y="106" text-anchor="middle" class="muted" font-size="12">a plain bar at both ends: "one" on each side</text>
+</svg>
+<figcaption>Open the "Squadron ⟷ Commanding officer" view in the entity-occurrence diagram below to see what one-to-one looks like occurrence by occurrence.</figcaption>
+</figure>
+
+<h3>Resolving a many-to-many relationship</h3>
+<p>A cadet can be posted to many ships, and a ship takes many cadets. That is <strong>many-to-many</strong>, and a relational database <strong>cannot implement it directly</strong>: there is no single place to put the foreign key. The fix is to add a new linking entity, here <b>Posting</b>, which turns one M:N relationship into <strong>two one-to-many relationships</strong>. Each Posting row records one cadet on one ship.</p>
+<div class="widget" id="w-eod">
+  <h3 class="widget-title">Entity-occurrence diagram: untangle the rigging</h3>
+  <p class="hint">Each tall oval is an entity and each label is one occurrence. Lines link related occurrences. Press the buttons to change the view.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>"Only a few candidates" could explain how a new entity lets a many-to-many relationship exist. In the assignment, only some explained the need for the extra entity by referring to <strong>removing the many-to-many relationship</strong>. Say it in those words: <em>"A Posting entity is needed because Cadet and Ship have a many-to-many relationship, which can't be implemented directly. Posting resolves it into two one-to-many relationships."</em></p></div>
+
+<h3>Compound keys</h3>
+<p>A <dfn>compound key</dfn> is a primary key made from <strong>two or more attributes</strong>, where each of those attributes is a primary key in its own right in another table. In <b>Posting</b>, the primary key is <u>cadetID</u> + <u>shipCode</u>. Neither on its own is unique (Mhairi has two postings, and Redstone has many cadets), but together they identify exactly one posting. Each part is also a foreign key.</p>
+<p>Note the boundary this design sets: a cadet can be posted to each ship <strong>at most once</strong>. If repeat voyages were needed, startDate would have to join the key (cadetID + shipCode + startDate).</p>
+<div class="table-wrap"><table>
+<caption>Posting: no value of cadetID or shipCode is unique on its own, but every pair is.</caption>
+<thead><tr><th><u>cadetID</u>*</th><th><u>shipCode</u>*</th><th>startDate</th><th>nights</th><th>role</th></tr></thead>
+<tbody><tr><td>C104</td><td>RED</td><td>2026-07-04</td><td class="num">7</td><td>Signals</td></tr><tr><td>C104</td><td>LAP</td><td>2026-08-15</td><td class="num">5</td><td>Navigation</td></tr><tr><td>C101</td><td>RED</td><td>2026-07-04</td><td class="num">7</td><td>Gunnery</td></tr></tbody>
+</table></div>
+<div class="check" data-check="ddd-erd"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="dictionary" class="prose">
+<h2 data-short="Data dictionary">3 · The data dictionary <span class="spec-tag">DDD · keys, types, sizes, validation</span></h2>
+<p>A <dfn>data dictionary</dfn> describes every attribute of every entity in a table. For each one it gives the entity, the attribute name, its key, its type, its size and its validation.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Entity</th><th>Attribute</th><th>Key</th><th>Type</th><th>Size</th><th>Validation</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">Squadron</td><td>squadronNo</td><td>PK</td><td>Number</td><td></td><td>Presence; range 1–3999</td></tr>
+<tr><td>squadronName</td><td></td><td>Text</td><td>30</td><td>Presence</td></tr>
+<tr><td>wing</td><td></td><td>Text</td><td>20</td><td>Restricted choice: North Wing, South Wing</td></tr>
+<tr><td>town</td><td></td><td>Text</td><td>30</td><td></td></tr>
+<tr><td rowspan="8">Cadet</td><td>cadetID</td><td>PK</td><td>Text</td><td>4</td><td>Presence; field length = 4</td></tr>
+<tr><td>firstname</td><td></td><td>Text</td><td>20</td><td>Presence</td></tr>
+<tr><td>surname</td><td></td><td>Text</td><td>30</td><td>Presence</td></tr>
+<tr><td>rank</td><td></td><td>Text</td><td>25</td><td>Restricted choice: Cadet, Cpl, Sgt, FS, CWO</td></tr>
+<tr><td>dateOfBirth</td><td></td><td>Date</td><td></td><td>Range: between 2007-01-01 and 2014-12-31</td></tr>
+<tr><td>squadronNo</td><td>FK</td><td>Number</td><td></td><td>Presence; range 1–3999</td></tr>
+<tr><td>flyingHours</td><td></td><td>Number</td><td></td><td>Range: 0 to 200</td></tr>
+<tr><td>glidingWings</td><td></td><td>Boolean</td><td></td><td></td></tr>
+<tr><td rowspan="6">Ship</td><td>shipCode</td><td>PK</td><td>Text</td><td>3</td><td>Presence; field length = 3</td></tr>
+<tr><td>shipName</td><td></td><td>Text</td><td>30</td><td>Presence</td></tr>
+<tr><td>rate</td><td></td><td>Number</td><td></td><td>Range: 1 to 6</td></tr>
+<tr><td>guns</td><td></td><td>Number</td><td></td><td>Range: 6 to 140</td></tr>
+<tr><td>launched</td><td></td><td>Number</td><td></td><td>Range: 1700 to 1815</td></tr>
+<tr><td>homePort</td><td></td><td>Text</td><td>20</td><td>Restricted choice: Portsmouth, Plymouth, Chatham, Leith</td></tr>
+<tr><td rowspan="6">Posting</td><td>cadetID</td><td>PK, FK</td><td>Text</td><td>4</td><td>Presence; field length = 4</td></tr>
+<tr><td>shipCode</td><td>PK, FK</td><td>Text</td><td>3</td><td>Presence; field length = 3</td></tr>
+<tr><td>startDate</td><td></td><td>Date</td><td></td><td>Presence</td></tr>
+<tr><td>nights</td><td></td><td>Number</td><td></td><td>Range: 1 to 14</td></tr>
+<tr><td>role</td><td></td><td>Text</td><td>15</td><td>Restricted choice: Gunnery, Signals, Navigation, Rigging</td></tr>
+<tr><td>reportTime</td><td></td><td>Time</td><td></td><td>Presence; range 06:00 to 12:00</td></tr>
+</tbody></table></div>
+<div class="compare">
+<div><h3>Attribute types at Higher</h3><p><b>Text</b>, <b>Number</b>, <b>Date</b>, <b>Time</b> and <b>Boolean</b>. A <em>size</em> is normally given only for text: the maximum number of characters.</p></div>
+<div><h3>The four validation checks</h3><p><b>Presence check</b>: the field can't be left empty. <b>Restricted choice</b>: the value must come from a fixed list. <b>Field length</b>: a set or maximum number of characters. <b>Range</b>: a number or date between limits.</p></div>
+</div>
+<p class="hint" style="font-size:.9rem;color:var(--muted)">A foreign key value must also match an existing primary key in the linked table (Cadet.squadronNo must be a real squadron). That is <em>referential integrity</em>, enforced by the relationship itself rather than by one of the four validation checks.</p>
+<div class="callout tip"><div class="callout-title">Why is cadetID text, not a number?</div><p>It contains a letter (C104), and you never do arithmetic on it. The same goes for phone numbers and postcodes: an identifier made of digits is usually still text, because a number type would drop leading zeros.</p></div>
+<div class="check" data-check="ddd-dictionary"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="design" class="prose">
+<h2 data-short="Query design">4 · Designing a query <span class="spec-tag">DDD · exemplify a design</span></h2>
+<p>Before writing SQL, plan the query in a design table. SQA uses these headings:</p>
+<div class="table-wrap"><table>
+<caption>Design: "Show the firstname, surname and ship name of every cadet posted to a Portsmouth ship, in surname order."</caption>
+<tbody>
+<tr><th scope="row">Field(s) and calculation(s)</th><td>firstname, surname, shipName</td></tr>
+<tr><th scope="row">Table(s) and query</th><td>Cadet, Posting, Ship</td></tr>
+<tr><th scope="row">Search criteria</th><td>homePort = "Portsmouth"</td></tr>
+<tr><th scope="row">Grouping</th><td>(none)</td></tr>
+<tr><th scope="row">Sort order</th><td>surname ASC</td></tr>
+</tbody></table></div>
+<p>Notice what is <em>not</em> written under search criteria: the joins (<code>Cadet.cadetID = Posting.cadetID</code> and <code>Posting.shipCode = Ship.shipCode</code>). In the design, the joins are implied by listing the tables. In the SQL they must appear in the WHERE clause. Forgetting one is an easy way to get far too many rows.</p>
+<p>The <b>calculations</b> and <b>grouping</b> rows are used once you know aggregate functions and GROUP BY. There is a full example of them in the next chapter.</p>
+<div class="check" data-check="ddd-design"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="sql" class="prose">
+<h2 data-short="SQL at Higher">5 · SQL at Higher <span class="spec-tag">DDD · SELECT, UPDATE, INSERT, DELETE; wildcards, aggregates, alias, GROUP BY, ORDER BY</span></h2>
+<p>You already know SELECT, INSERT, UPDATE and DELETE from National 5, and equi-joins between two tables. Higher adds <strong>three or more tables</strong>, <strong>wildcards</strong>, <strong>aggregate functions</strong>, <strong>computed values with aliases</strong> and <strong>GROUP BY</strong>.</p>
+
+<h3>Joining three tables</h3>
+<p>List every table in FROM, then add one join condition in WHERE for every link between them. Three tables need <strong>two</strong> joins.</p>
+<pre data-lang="SQL">SELECT firstname, surname, shipName, startDate
+FROM Cadet, Posting, Ship
+WHERE Cadet.cadetID = Posting.cadetID
+  AND Posting.shipCode = Ship.shipCode
+  AND shipName = "HMS Redstone";</pre>
+
+<h3>Wildcards with LIKE</h3>
+<p>The <code>%</code> wildcard matches <strong>any number</strong> of characters, including none. The <code>_</code> wildcard matches <strong>exactly one</strong> character. Wildcards only work with <code>LIKE</code>, never with <code>=</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Criteria</th><th>Matches</th></tr></thead>
+<tbody>
+<tr><td><code>surname LIKE "Mac%"</code></td><td>starts with Mac: MacLeod, MacDonald</td></tr>
+<tr><td><code>surname LIKE "%son"</code></td><td>ends in son: Paterson, Robertson, Henderson</td></tr>
+<tr><td><code>surname LIKE "%ar%"</code></td><td>contains "ar" anywhere: Stewart, Barr, Marshall</td></tr>
+<tr><td><code>firstname LIKE "_a%"</code></td><td>second letter a: Callum, Hamish</td></tr>
+<tr><td><code>startDate LIKE "2026-07-%"</code></td><td>any date in July 2026. Our dates are stored as YYYY-MM-DD so that they sort correctly. SQA examples use DD/MM/YYYY, where the same search would be <code>LIKE "%/07/%"</code>.</td></tr>
+</tbody></table></div>
+
+<h3>Aggregate functions</h3>
+<p><code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> and <code>MAX</code> each turn a set of rows into <strong>one value</strong>. SUM and AVG work only on numbers. COUNT(*) counts rows.</p>
+<pre data-lang="SQL">SELECT MIN(guns) AS [Fewest guns], MAX(guns) AS [Most guns], ROUND(AVG(guns), 1) AS [Average guns]
+FROM Ship;</pre>
+<div class="callout exam"><div class="callout-title">⚠ Two rules examiners test</div><ul><li><b>An aggregate cannot go in a WHERE clause.</b> <code>WHERE flyingHours &gt; AVG(flyingHours)</code> is illegal. Instead, save one query that works out the average, then use its result in a second query (Mission 10 below).</li><li><b>Don't mix aggregate and non-aggregate fields without GROUP BY.</b> <code>SELECT shipName, MAX(guns) FROM Ship;</code> is wrong at Higher, even though some database programs (including the SQLite engine in our playground) let it run.</li></ul></div>
+
+<h3>Computed values and aliases</h3>
+<p>A <dfn>computed value</dfn> is calculated when the query runs and is never stored in the database. An <dfn>alias</dfn> (<code>AS</code>) gives a column a readable heading that lasts only for that query.</p>
+<pre data-lang="SQL">SELECT shipName, guns, guns / 2 AS [Guns per broadside]
+FROM Ship
+ORDER BY guns DESC;</pre>
+
+<h3>GROUP BY</h3>
+<p><code>GROUP BY</code> gathers rows that share a value into groups, and the aggregate then runs <strong>once per group</strong>. This is how you get "for each …" answers. When both are used, GROUP BY always comes <strong>before</strong> ORDER BY.</p>
+<div class="widget" id="w-groupby">
+  <h3 class="widget-title">Muster by squadron: GROUP BY in slow motion</h3>
+  <p class="hint">Watch how <code>SELECT squadronNo, COUNT(*) FROM Cadet GROUP BY squadronNo;</code> is worked out.</p>
+</div>
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/sql-group-by.jpg">
+    <source src="videos/sql-group-by.mp4" type="video/mp4">
+    <track kind="captions" src="videos/sql-group-by.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · Muster by squadron</strong> · aggregate functions, GROUP BY and the classic mistakes. Captions available.</figcaption>
+</figure>
+
+<h3>A design that uses grouping</h3>
+<div class="table-wrap"><table>
+<caption>Design: "Show each squadron's name and the number of its cadets with gliding wings, most first."</caption>
+<tbody>
+<tr><th scope="row">Field(s) and calculation(s)</th><td>squadronName, Winged cadets = COUNT(*)</td></tr>
+<tr><th scope="row">Table(s) and query</th><td>Squadron, Cadet</td></tr>
+<tr><th scope="row">Search criteria</th><td>glidingWings = True</td></tr>
+<tr><th scope="row">Grouping</th><td>squadronName</td></tr>
+<tr><th scope="row">Sort order</th><td>COUNT(*) DESC</td></tr>
+</tbody></table></div>
+
+<h3>Using the result of one query in another</h3>
+<p>Because an aggregate can't go in a WHERE clause, a question like "which cadets have more hours than the average?" takes <strong>two queries</strong>. Query 1 works out the average and is <em>saved</em>. Query 2 then uses the saved query as if it were a table. In Microsoft Access you simply save Query 1 under a name. In SQL the same thing is written <code>CREATE VIEW</code>:</p>
+<pre data-lang="SQL">CREATE VIEW [Find Average] AS
+SELECT AVG(flyingHours) AS [Average Hours] FROM Cadet;
+
+SELECT firstname, surname, flyingHours
+FROM Cadet, [Find Average]
+WHERE flyingHours &gt; [Average Hours];</pre>
+<p>You will not be asked to write <code>CREATE VIEW</code> in the exam, but you may be asked to design or explain the two-query approach.</p>
+
+<h3>UPDATE, INSERT and DELETE</h3>
+<pre data-lang="SQL">-- 1805 Squadron's Cadets with at least 10 flying hours are promoted to Cpl
+-- and credited with 2 hours for the promotion flight
+UPDATE Cadet
+SET rank = "Cpl", flyingHours = flyingHours + 2
+WHERE squadronNo = 1805 AND flyingHours &gt;= 10 AND rank = "Cadet";
+
+INSERT INTO Posting (cadetID, shipCode, startDate, nights, role)
+VALUES ("C109", "OBS", "2026-09-12", 4, "Rigging");
+
+DELETE FROM Posting
+WHERE startDate &lt; "2026-07-01";</pre>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Some candidates found "the syntax to increment a field value challenging". The pattern is <code>SET field = field + amount</code>. Without a WHERE clause, an UPDATE or DELETE changes <strong>every row</strong> in the table.</p></div>
+<div class="check" data-check="ddd-sql"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="playground" class="prose">
+<h2 data-short="SQL playground">6 · The live SQL playground <span class="spec-tag">DDD · practise</span></h2>
+<p>A real SQL database engine (SQLite, running in your browser) loaded with the squadron's four tables. Pick a mission, write the SQL, then press <b>Run</b>. Your result is checked against the expected output. <b>Reset data</b> puts every table back as it started, which you'll need after experimenting with UPDATE or DELETE.</p>
+<div class="widget" id="w-sql">
+  <h3 class="widget-title">The purser's terminal</h3>
+  <p class="hint">Loading the database engine…</p>
+  <noscript><p>The SQL playground needs JavaScript. Every query on this page is shown in full above.</p></noscript>
+</div>
+<div class="callout scope"><div class="callout-title">SQLite vs the exam</div><p>Our engine is SQLite. It accepts SQA-style <code>[square bracket]</code> aliases and double-quoted strings, and it treats <code>LIKE</code> as case-insensitive, as Microsoft Access does. Differences: <code>=</code> is case-sensitive on text, and SQLite won't stop you mixing aggregate and non-aggregate fields without GROUP BY. The playground warns you when you do that.</p></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="testing" class="prose">
+<h2 data-short="Testing &amp; evaluation">7 · Testing and evaluating SQL <span class="spec-tag">DDD · testing; fitness for purpose, accuracy of output</span></h2>
+<h3>Testing that SQL works correctly</h3>
+<ol>
+<li>Work out the <strong>expected output by hand</strong> from the data <em>before</em> running the query.</li>
+<li>Run the query and compare the <strong>actual output</strong> with the expected output: the same rows, the same columns and the right order.</li>
+<li>Test the criteria on their <strong>boundaries</strong>. If the requirement says "at least 20 hours", is a cadet with exactly 20 included? Then you need <code>&gt;=</code>, not <code>&gt;</code>.</li>
+<li>Check that an UPDATE or DELETE affected <strong>only</strong> the intended rows. Run a SELECT with the same WHERE clause first.</li>
+</ol>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 assignment</div><p>Several candidates used <code>&gt;</code> where the task said "at least". With the given data it produced the right output, so it <em>looked</em> correct, but it would fail if the data changed. "Candidates should ensure that their code will work for all values, not just the given set of data."</p></div>
+<h3>Evaluating a database solution</h3>
+<div class="compare">
+<div><h3>Fitness for purpose</h3><p>Does the solution meet <strong>every end-user and functional requirement</strong>? If a requirement can't be met, say <em>which</em> one and <em>what data or structure is missing</em>: <em>"The profit can't be calculated because the Ship table has no cost field. A cost attribute would need to be added to Ship."</em></p></div>
+<div><h3>Accuracy of output</h3><p>Are the results <strong>correct and complete</strong>? Right rows, right calculated values, right order and readable headings. A query missing a join produces far too many rows (every cadet paired with every ship), and that is inaccurate.</p></div>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Be specific</div><p>In 2025, answers like "missing join", "missing GROUP BY" or "missing table" were "not specific enough for marks". Say <em>which</em> join (<code>Cadet.cadetID = Posting.cadetID</code>), which field to group by, and which table to add.</p></div>
+<div class="check" data-check="ddd-testing"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="systems.html">← Systems</a>
+  <a class="btn primary" href="web.html">Next: Web Design →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24). On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. The SQL playground uses <a href="https://sql.js.org/">sql.js</a> (SQLite compiled to WebAssembly, MIT licence). 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script src="ddd.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

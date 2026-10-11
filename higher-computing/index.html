@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blocks, Wings &amp; Broadsides · Higher Computing Science</title>
+<meta name="description" content="A complete, interactive revision guide to SQA Higher Computing Science, taught by an Air Cadet squadron aboard a block-built ship of the line: software, computer systems, databases, web design and exam technique, with animations, videos and a live SQL playground.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="hero" aria-hidden="true">
+  <canvas id="hero-canvas" width="960" height="240"></canvas>
+</div>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">Briefing room · read before your first watch</p>
+<h1>Welcome aboard, Cadet.</h1>
+<p class="lede">This is a complete, interactive guide to <strong>SQA Higher Computing Science</strong>, the course that Qualifications Scotland now awards. It covers every topic in the course specification, explained from the ground up, with diagrams, animations, short narrated videos, a step-by-step debugger, a live SQL database and exam-style questions with marking guidance.</p>
+<p>You will learn it alongside <strong>1805 (Blockhaven) Squadron</strong>, a crew of RAF Air Cadets posted for sea training aboard <em>HMS Redstone</em>. She is a 104-gun ship of the line from Nelson's navy, built entirely out of Minecraft blocks. It is a ridiculous premise, but every analogy on the site is chosen because it explains something. The gun crew's drill is the fetch-execute cycle. The redstone lamps are bits. The captain's wax seal is a digital signature.</p>
+</div>
+
+<section id="course" class="prose">
+<h2 data-short="The course at a glance">The course at a glance</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr><th scope="row">Qualification</th><td>Higher Computing Science (course code C816 76), SCQF level 6, 24 SCQF credit points</td></tr>
+<tr><th scope="row">Study time</th><td>About 160 hours of learning, including preparation for assessment</td></tr>
+<tr><th scope="row">Usually taken</th><td>S5 or S6, after National 5 Computing Science (or equivalent)</td></tr>
+<tr><th scope="row">Awarding body</th><td>Qualifications Scotland, which replaced SQA on 1 February 2026. The course specification (version 3.0, valid from session 2023–24) is still the current one.</td></tr>
+<tr><th scope="row">Grades</th><td>A to D, decided by your total mark out of 120</td></tr>
+</tbody></table></div>
+
+<h3>Four areas of study</h3>
+<div class="deck-grid">
+  <a class="deck-card" href="software.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#3b2a1a"/><rect x="2" y="6" width="10" height="4" fill="#555"/><rect x="11" y="7" width="4" height="2" fill="#333"/><rect x="3" y="10" width="7" height="2" fill="#7a5532"/><rect x="3" y="12" width="2" height="2" fill="#4a3522"/><rect x="8" y="12" width="2" height="2" fill="#4a3522"/></svg><span class="marks">Mandatory · QP ≈ 41–45 marks · Assignment task 1: 25 marks</span><h3>Software Design &amp; Development</h3><p>Methodologies, analysis, design, data structures, sub-programs, files, standard algorithms, testing, debugging, evaluation.</p></a>
+  <a class="deck-card" href="systems.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#3a1414"/><rect x="5" y="2" width="6" height="6" fill="#ff4b3a"/><rect x="6" y="3" width="4" height="4" fill="#ffd0c8"/><rect x="7" y="8" width="2" height="6" fill="#7a5532"/><rect x="4" y="13" width="8" height="2" fill="#888"/></svg><span class="marks">Mandatory · QP 10–14 marks</span><h3>Computer Systems</h3><p>Two's complement, floating point, Unicode, graphics, fetch-execute, performance, environment, law and security.</p></a>
+  <a class="deck-card" href="database.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1c3b66"/><rect x="3" y="2" width="10" height="3" fill="#e0b23a"/><rect x="3" y="6" width="10" height="3" fill="#e0b23a"/><rect x="3" y="10" width="10" height="3" fill="#e0b23a"/><rect x="4" y="3" width="2" height="1" fill="#7a5532"/><rect x="4" y="7" width="2" height="1" fill="#7a5532"/><rect x="4" y="11" width="2" height="1" fill="#7a5532"/></svg><span class="marks">Option · QP 25 marks · Assignment task 2: 15 marks</span><h3>Database Design &amp; Development</h3><p>Requirements, ERDs, compound keys, data dictionaries, query design and SQL, with a live database.</p></a>
+  <a class="deck-card" href="web.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1d4f2b"/><rect x="3" y="1" width="1" height="14" fill="#c8c8c8"/><rect x="4" y="2" width="9" height="3" fill="#c8102e"/><rect x="4" y="5" width="9" height="3" fill="#fff"/><rect x="4" y="8" width="9" height="3" fill="#1c5fb3"/></svg><span class="marks">Option · QP 25 marks · Assignment task 3: 15 marks</span><h3>Web Design &amp; Development</h3><p>Site structure, wireframes, usability testing, HTML, CSS positioning, forms, JavaScript events.</p></a>
+</div>
+<p>Everyone studies Software and Computer Systems. Your school picks <strong>one</strong> of the two options, Database or Web. You can read both on this site, but in the exam you answer only one option section.</p>
+
+<h3>How you are assessed</h3>
+<figure class="diagram" aria-labelledby="as-cap">
+  <p class="px-label"><b>Question paper</b> · 80 marks · 2 hours · exam hall</p>
+  <div class="assess-row">
+    <div style="flex:55;background:var(--bg-sea)"><b>Section 1 · 55</b>Software + Computer Systems</div>
+    <div style="flex:25;background:#8a6510"><b>Section 2 or 3 · 25</b>Database <i>or</i> Web</div>
+  </div>
+  <p class="px-label"><b>Assignment</b> · 40 marks · 6 hours · in class, open book</p>
+  <div class="assess-row" style="max-width:calc(40 / 80 * 100%)">
+    <div style="flex:25;background:var(--bg-green)"><b>Task 1 · 25</b>Software</div>
+    <div style="flex:15;background:#6b4a2a"><b>Task 2 or 3 · 15</b>DB <i>or</i> Web</div>
+  </div>
+  <figcaption id="as-cap">Bar lengths are to scale. 120 marks in total: about 67% from the exam and 33% from the assignment.</figcaption>
+</figure>
+<ul>
+<li><strong>Question paper</strong> (2 hours, 80 marks). Each section starts with short questions, mostly "C" marks, then moves on to longer questions set in a context. Code is shown in <a href="exam.html#reflang">SQA reference language</a>, and you may answer in any language.</li>
+<li><strong>Assignment</strong> (6 hours, 40 marks), done in class over several sessions under supervision. It is open book: notes, manuals and your own programs are allowed. It is set and marked by the awarding body. You submit program listings and screenshots.</li>
+<li>About <strong>30% of marks are "A" marks</strong> (they need deeper understanding) and about <strong>50% are "C" marks</strong>.</li>
+</ul>
+
+<h3>What the marks reward</h3>
+<figure class="diagram">
+<div class="chart-bars" role="list" aria-label="Share of the total course assessment by skill">
+  <div class="chart-row" role="listitem"><span>Implementation</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:var(--bg-green);width:calc(40 / 40 * 100%)">40%</div><span class="lab">48 marks</span></div></div>
+  <div class="chart-row" role="listitem"><span>Design</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:var(--bg-sea);width:calc(30 / 40 * 100%)">30%</div><span class="lab">36 marks</span></div></div>
+  <div class="chart-row" role="listitem"><span>Testing</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:#8a6510;width:calc(10 / 40 * 100%)">10%</div><span class="lab">12 marks</span></div></div>
+  <div class="chart-row" role="listitem"><span>Systems</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:var(--bg-red);width:calc(10 / 40 * 100%)">10%</div><span class="lab">12 marks</span></div></div>
+  <div class="chart-row" role="listitem"><span>Analysis</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:#2f5f97;width:calc(5 / 40 * 100%)">5%</div><span class="lab">6 marks</span></div></div>
+  <div class="chart-row" role="listitem"><span>Evaluation</span><div class="chart-bar-wrap"><div class="chart-bar" style="--c:#6b4fa0;width:calc(5 / 40 * 100%)">5%</div><span class="lab">6 marks</span></div></div>
+</div>
+<figcaption>Source: course specification, "Course assessment overview" (whole course: question paper + assignment).</figcaption>
+</figure>
+<p>Nearly three-quarters of the marks are for <strong>designing and writing solutions</strong>, so practise by building things, not by reading. Every deck has interactive tools for exactly that.</p>
+
+<h3>Last year's grade boundaries (2025)</h3>
+<div class="table-wrap"><table>
+<caption>2025 Higher Computing Science course report: 3 962 candidates, marks out of 120. Boundaries change slightly from year to year.</caption>
+<thead><tr><th>Grade</th><th class="num">Minimum mark</th><th class="num">≈ %</th><th class="num">Candidates</th><th class="num">Cumulative</th></tr></thead>
+<tbody>
+<tr><td>A</td><td class="num">82</td><td class="num">68%</td><td class="num">1 668</td><td class="num">42.1%</td></tr>
+<tr><td>B</td><td class="num">71</td><td class="num">59%</td><td class="num">729</td><td class="num">60.5%</td></tr>
+<tr><td>C</td><td class="num">60</td><td class="num">50%</td><td class="num">593</td><td class="num">75.5%</td></tr>
+<tr><td>D</td><td class="num">49</td><td class="num">41%</td><td class="num">408</td><td class="num">85.8%</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="how" class="prose">
+<h2 data-short="How to use this site">How to use this site</h2>
+<ol>
+<li><strong>Work through a deck in order.</strong> Each chapter is mapped to the course specification (look for the small <span class="spec-tag">SDD · …</span> tags) and builds on the one before.</li>
+<li><strong>Play with every interactive.</strong> Flip bits, step through the debugger, break the form, run SQL. Learning sticks when you do something with it.</li>
+<li><strong>Read the <span style="color:var(--redstone);font-weight:700">⚠ Exam lookout</span> boxes.</strong> The ones headed "From the 2025 course report" quote what the examiners saw candidates get wrong. The others are common slips worth avoiding.</li>
+<li><strong>Pass the ✈ pre-flight check</strong> at the end of each chapter. Multiple-choice questions mark themselves. Open questions show the marking guidance so you can mark yourself honestly.</li>
+<li><strong>Finish with the <a href="exam.html">Exam drill</a></strong>: command words, timing, the reference language and exam-style mock questions.</li>
+</ol>
+</section>
+
+<section id="ranks" class="prose">
+<h2 data-short="Your rank">Your rank</h2>
+<p>Every pre-flight check you pass counts towards promotion through the Air Cadet ranks, from Cadet to Cadet Warrant Officer. Only <strong>one</strong> option counts, Database or Web, whichever you have done more of, because that is how the exam works. Progress is saved in this browser only. Nothing is sent anywhere.</p>
+<p class="readout" data-progress-text style="font-family:var(--font-body)"></p>
+<div class="rank-ladder" data-rank-ladder></div>
+<div class="btn-row"><button class="btn small danger" type="button" id="reset-progress">Reset my progress</button></div>
+</section>
+
+<section id="videos" class="prose">
+<h2 data-short="Video explainers">Video explainers</h2>
+<p>Six short narrated films, each one to two minutes long, on the topics candidates find hardest. They are narrated by Flight Lieutenant Alba Murray and Captain Hamish Blackwood (computer voices, Scottish accents) and every one has captions. They also appear in the matching chapters.</p>
+<div class="video-grid">
+  <figure class="video"><video controls preload="none" playsinline poster="videos/twos-complement.jpg"><source src="videos/twos-complement.mp4" type="video/mp4"><track kind="captions" src="videos/twos-complement.vtt" srclang="en" label="English" default></video><figcaption><strong>The minus-128 lamp</strong> · two's complement</figcaption></figure>
+  <figure class="video"><video controls preload="none" playsinline poster="videos/floating-point.jpg"><source src="videos/floating-point.mp4" type="video/mp4"><track kind="captions" src="videos/floating-point.vtt" srclang="en" label="English" default></video><figcaption><strong>The hopping point</strong> · floating point</figcaption></figure>
+  <figure class="video"><video controls preload="none" playsinline poster="videos/fetch-execute.jpg"><source src="videos/fetch-execute.mp4" type="video/mp4"><track kind="captions" src="videos/fetch-execute.vtt" srclang="en" label="English" default></video><figcaption><strong>Beat to quarters</strong> · the fetch-execute cycle</figcaption></figure>
+  <figure class="video"><video controls preload="none" playsinline poster="videos/encryption.jpg"><source src="videos/encryption.mp4" type="video/mp4"><track kind="captions" src="videos/encryption.vtt" srclang="en" label="English" default></video><figcaption><strong>Seals and commissions</strong> · keys, signatures, certificates</figcaption></figure>
+  <figure class="video"><video controls preload="none" playsinline poster="videos/sql-group-by.jpg"><source src="videos/sql-group-by.mp4" type="video/mp4"><track kind="captions" src="videos/sql-group-by.vtt" srclang="en" label="English" default></video><figcaption><strong>Muster by squadron</strong> · aggregates and GROUP BY</figcaption></figure>
+  <figure class="video"><video controls preload="none" playsinline poster="videos/css-float.jpg"><source src="videos/css-float.mp4" type="video/mp4"><track kind="captions" src="videos/css-float.vtt" srclang="en" label="English" default></video><figcaption><strong>The runaway footer</strong> · float, clear and the box model</figcaption></figure>
+</div>
+</section>
+
+<section id="mashup" class="prose">
+<h2 data-short="Decoding the theme">Decoding the theme</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>You'll see…</th><th>…which stands for</th></tr></thead>
+<tbody>
+<tr><td>🟥 Redstone lamps, Minecraft blocks, crafting tables, chests</td><td>Bits, binary patterns and data structures. A chest of mixed items is a record. A row of chests is an array of records.</td></tr>
+<tr><td>✈ Cadet ranks, pre-flight checks, the squadron's records</td><td>Your progress, the end-of-chapter quizzes, and the sample data used in programs and SQL.</td></tr>
+<tr><td>⚓ The gun deck, powder monkeys, the drummer, the magazine</td><td>The processor, the data bus, the clock and main memory. A ready-use rack by the gun is cache.</td></tr>
+<tr><td>🚩 Popham's signal flags (Computer Systems)</td><td>Character sets: an agreed codebook that turns numbers into words.</td></tr>
+<tr><td>🖋 Wax seals and Admiralty commissions</td><td>Digital signatures and digital certificates.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="shipwords" class="prose">
+<h2 data-short="Ship's glossary">Ship's glossary</h2>
+<p>None of these words will be in your exam. They are the period flavour, explained so they never get in the way.</p>
+<dl class="glossary">
+<dt>Ship of the line / first-rate</dt><dd>The biggest warships of Nelson's era, big enough to fight in the main battle line. A first-rate carried 100 or more guns over three gun decks.</dd>
+<dt>Broadside</dt><dd>All the guns on one side of a ship fired together. "Weight of metal" is the total weight of shot a broadside throws.</dd>
+<dt>Beat to quarters</dt><dd>The drum signal that sends every sailor to their battle station.</dd>
+<dt>Gun deck / orlop</dt><dd>The decks where the cannon stand / the lowest deck, below the waterline, where stores and the magazine are kept.</dd>
+<dt>Magazine</dt><dd>The protected store room for gunpowder cartridges, deep in the ship. On this site it stands for main memory.</dd>
+<dt>Powder monkey</dt><dd>A boy who carried cartridges from the magazine up to the guns. On this site, the data bus.</dd>
+<dt>Quarterdeck</dt><dd>The raised deck at the stern where the captain commands. On this site, the main program's global variables.</dd>
+<dt>Bosun (boatswain)</dt><dd>The officer in charge of the crew's work, who gave orders with a whistle called a bosun's call.</dd>
+<dt>Purser</dt><dd>The officer in charge of stores, pay and records: the ship's database keeper.</dd>
+<dt>Victualling</dt><dd>Supplying a ship with food and drink.</dd>
+<dt>Rigging / ratlines</dt><dd>The ropes that hold up the masts and work the sails / the rope ladders sailors climbed to go aloft.</dd>
+<dt>Admiralty commission</dt><dd>The official document appointing an officer, signed by the Admiralty. On this site, a digital certificate.</dd>
+<dt>Air Cadets, squadron, flight</dt><dd>The RAF Air Cadets is a youth organisation for 12–20 year olds. Cadets belong to a local numbered squadron, which is split into smaller groups called flights (A, B, C).</dd>
+<dt>Grob Tutor</dt><dd>The small two-seat training aircraft in which Air Cadets get flying experience.</dd>
+</dl>
+</section>
+
+<section id="sources" class="prose">
+<h2 data-short="Sources">Sources and official documents</h2>
+<p>All course content on this site is checked against the official documents. Always treat these as the final word:</p>
+<ul>
+<li><a href="https://www.sqa.org.uk/sqa/56924.html">Higher Computing Science subject page</a>: the course specification, specimen papers, past papers and course reports.</li>
+<li><a href="https://www.sqa.org.uk/files_ccc/h-course-spec-computing-science.pdf">Higher Computing Science course specification (v3.0, PDF)</a></li>
+<li><a href="https://www.sqa.org.uk/sqa/files_ccc/Reference-language-for-Computing-Science-summary-Sep2016.pdf">Reference language for Computing Science: summary (PDF)</a></li>
+<li><a href="https://www.sqa.org.uk/sqa/files_ccc/2025-h-course-report-computing-science.pdf">2025 Higher Computing Science course report (PDF)</a>: the source of every "From the 2025 course report" box.</li>
+<li><a href="https://www.sqa.org.uk/pastpapers/findpastpaper.htm">Past papers and marking instructions</a></li>
+</ul>
+<nav class="next-deck" aria-label="Deck navigation">
+  <span></span>
+  <a class="btn primary" href="software.html">Report to the gun deck: start Software →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24). On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. Narration uses the open <a href="https://github.com/rhasspy/piper">Piper</a> text-to-speech voices.</p>
+  </div>
+</footer>
+<script src="hero.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

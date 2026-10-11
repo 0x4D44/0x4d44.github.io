@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Design &amp; Development · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Higher Computing Science, Software Design and Development: methodologies, analysis, design, data structures, sub-programs, pre-defined functions, files, standard algorithms, testing, debugging and evaluation.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The gun deck · Software Design and Development (SDD)</p>
+<h1>Building programs that don't sink</h1>
+<p class="lede">SDD is the biggest part of Higher Computing Science. It fills most of Section 1 of the exam (about 41–45 of its 55 marks) and the whole of Task 1 of the assignment (25 marks). Every chapter here follows the order a real project follows: analyse, design, implement, test, evaluate.</p>
+
+<div class="callout log">
+  <div class="callout-title">⚓ Ship's log: why a gun deck?</div>
+  <p>On a ship of the line, a broadside only works if every gun crew follows the same drill in the same order: sponge, load, ram, run out, aim, fire. A program is the same. It is a drill written down so precisely that a machine can follow it. Our examples all come from <strong>1805 (Blockhaven) Squadron</strong>, a crew of Air Cadets posted aboard <em>HMS Redstone</em>, a 104-gun first-rate built entirely out of blocks.</p>
+</div>
+
+<div class="callout tip">
+  <div class="callout-title">Code on this page</div>
+  <p>Exam questions show code in <strong>SQA reference language</strong> (<code>SET … TO …</code>, <code>END IF</code> and so on). You may <em>answer</em> in any language, and you are marked on understanding, not syntax. Each example has two tabs: <strong>Python</strong>, the language most Scottish schools use, and <strong>Reference</strong>, which is how the question paper will show it.</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<section id="methods" class="prose">
+<h2 data-short="Development methodologies">1 · Development methodologies <span class="spec-tag">SDD · describe &amp; compare</span></h2>
+<p>A <dfn>development methodology</dfn> is the overall plan a team follows to build software. At Higher you must <strong>describe and compare</strong> two of them.</p>
+
+<h3>The iterative development process</h3>
+<p>You met this at National 5. A project moves through fixed phases in order:</p>
+<p><strong>analysis → design → implementation → testing → documentation → evaluation</strong></p>
+<p>It is called <em>iterative</em> because when a later phase finds a problem, the team goes back to an earlier phase and repeats it. SQA's course notes say it is "often called the waterfall model". It is a <dfn>predictive</dfn> method: the team tries to plan the whole project in detail at the start.</p>
+
+<h3>Agile methodologies</h3>
+<p><dfn>Agile</dfn> development splits the project into short cycles called <dfn>sprints</dfn>, often one to four weeks long. In every sprint a small cross-functional team plans, designs, codes and tests one working piece of the product, then shows it to the client. The client's feedback shapes the next sprint. Agile is <dfn>adaptive</dfn>: it expects requirements to change and is built to cope with that.</p>
+
+<div class="widget" id="w-methods">
+  <h3 class="widget-title">Two shipyards build the same frigate</h3>
+  <p class="hint">Press <b>Launch</b>. Halfway through, the Admiralty asks for an extra gun deck. Watch how each yard copes with the change.</p>
+</div>
+
+<h3>How they compare</h3>
+<p>SQA compares the two methods under six headings. Learn these headings: they are exactly what "compare" questions ask about.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Heading</th><th scope="col">Iterative (waterfall)</th><th scope="col">Agile</th></tr></thead>
+<tbody>
+<tr><th scope="row">Client interaction</th><td>Heavily involved at the start (analysis) and at the end (evaluation), with little contact in between.</td><td>Involved throughout. Gives constant feedback on prototypes, and that feedback is acted on quickly.</td></tr>
+<tr><th scope="row">Teamwork</th><td>Separate teams of analysts, programmers, testers and documenters work mostly alone, handing work on at each phase.</td><td>Small cross-functional teams work closely together. Fast face-to-face communication keeps the project moving.</td></tr>
+<tr><th scope="row">Documentation</th><td>A detailed specification is written at the start. A lot of time goes on design documents, commentary and test plans.</td><td>Documentation is kept to a minimum. Anything written must help the project move forward.</td></tr>
+<tr><th scope="row">Measuring progress</th><td>Progress is measured against a strict plan and the deadlines set at the start.</td><td>Progress is measured by the time taken to produce prototypes or working components at the end of each sprint. Agile focuses on delivering software as quickly as possible.</td></tr>
+<tr><th scope="row">Predictive vs adaptive</th><td>Predictive: it plans the future in detail, so a mistake in the early analysis is hard to recover from.</td><td>Adaptive: it changes quickly when the project's needs change. An adaptive team has difficulty saying exactly what it will do next week, but can report which features it plans for next month.</td></tr>
+<tr><th scope="row">Testing</th><td>A separate testing phase happens after implementation is finished.</td><td>There is no separate testing phase. Testing happens during every sprint, alongside the coding.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout exam">
+  <div class="callout-title">⚠ Exam lookout</div>
+  <p>A "compare" question needs both sides of the same heading. For example: <em>"In agile the client gives feedback throughout development, <strong>whereas</strong> in iterative development the client is mainly involved at the start and the end."</em> Describing agile on its own scores nothing for the comparison. The 2025 course report notes that many candidates could explain why agile suited a given client. To do that, link the client's situation (changing needs, wanting to see progress) to a feature of agile.</p>
+</div>
+
+<div class="check" data-check="sdd-methods"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="analysis" class="prose">
+<h2 data-short="Analysis">2 · Analysis <span class="spec-tag">SDD · identify</span></h2>
+<p>Analysis turns a vague request into a precise <dfn>software specification</dfn>. This is often the basis of a legal contract between the client and the developers. At Higher you identify four things:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Term</th><th scope="col">Meaning</th><th scope="col">Squadron example</th></tr></thead>
+<tbody>
+<tr><th scope="row">Purpose</th><td>A general description of what the software is for.</td><td>Read every cadet's name, flight and flying hours from a file. Find and display the cadet with the most hours, and count how many cadets are in a flight chosen by the user.</td></tr>
+<tr><th scope="row">Scope</th><td>The <strong>deliverables</strong> handed to the client (design, program, test plan, test results, evaluation report), plus any time limits.</td><td>A modular program, its design, a test plan with completed test data, the test results and an evaluation report, delivered within 4 hours.</td></tr>
+<tr><th scope="row">Boundaries</th><td>The limits of the project: what is in it, what is not, and any assumptions the developers make.</td><td>Exactly 8 cadets are read from <code>cadets.csv</code>. The file is assumed to be correct, so its data is not validated, but the flight letter typed by the user is. If two cadets tie for the most hours, the first one in the file is shown. Only the top cadet and one flight's count are displayed.</td></tr>
+<tr><th scope="row">Functional requirements</th><td>What the system must do, written as <strong>inputs, processes and outputs</strong>.</td><td><b>Inputs:</b> name, flight and hours for each cadet (from the file); a flight letter A, B or C (from the keyboard).<br><b>Processes:</b> validate the flight letter; find the position of the maximum hours; count the cadets in the chosen flight.<br><b>Outputs:</b> the top cadet's name and hours; the number of cadets in the chosen flight.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout exam">
+  <div class="callout-title">⚠ Exam lookout</div>
+  <p>Scope is about <em>deliverables and time</em>. Boundaries are about <em>limits and assumptions</em>. They are easy to mix up. In the 2025 assignment, some candidates also missed one of the inputs when listing functional requirements, so check every input, process and output against the brief.</p>
+</div>
+
+<div class="widget">
+  <h3 class="widget-title">Sort the orders</h3>
+  <p class="hint">A new brief from the quartermaster. Decide which part of the analysis each statement belongs to.</p>
+  <div class="sorter" data-bins="Purpose|Scope|Boundaries|Functional requirement">
+    <div data-ans="Scope" data-why="A deliverable (the test plan) is part of the scope.">The completed test plan will be handed to the quartermaster with the program.</div>
+    <div data-ans="Boundaries" data-why="This is an assumption that limits what the program has to do, so it is a boundary.">The stock file will always contain valid data, so it does not need to be validated.</div>
+    <div data-ans="Functional requirement" data-why="It is a process the program must carry out, so it is a functional requirement.">Calculate the total value of each item of stock.</div>
+    <div data-ans="Purpose" data-why="A general description of what the software is for.">The program will help the quartermaster track powder and shot held on board.</div>
+    <div data-ans="Scope" data-why="Time limits are included in the scope.">The project must be completed within two weeks.</div>
+    <div data-ans="Functional requirement" data-why="It is an output the program must produce.">Display the name of any item with fewer than 10 left.</div>
+    <div data-ans="Boundaries" data-why="It says what is NOT part of the project, so it is a boundary.">The program will not place orders with suppliers.</div>
+  </div>
+</div>
+
+<div class="check" data-check="sdd-analysis"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="design" class="prose">
+<h2 data-short="Design">3 · Design: structure diagrams, pseudocode and wireframes <span class="spec-tag">SDD · read, exemplify, implement</span></h2>
+<p>Before any code is written, the solution is planned. At Higher you must be able to <strong>read</strong> designs written as structure diagrams or pseudocode. You must also <strong>produce</strong> a design that shows three things:</p>
+<ul>
+<li><dfn>Top level design</dfn>: the main steps of the program, which usually become its sub-programs.</li>
+<li><dfn>Data flow</dfn>: which data goes <strong>IN</strong> to each step and which comes <strong>OUT</strong>. This becomes the parameters.</li>
+<li><dfn>Refinements</dfn>: each main step broken down into smaller, more detailed steps.</li>
+</ul>
+
+<h3>Structure diagrams</h3>
+<p>A structure diagram is read <strong>top-down and left to right</strong>. SQA uses four symbols:</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 110" role="img" aria-labelledby="sym-t">
+  <title id="sym-t">The four structure diagram symbols: process (rectangle), loop (rectangle with rounded ends), selection (hexagon), predefined process (rectangle with double sides)</title>
+  <g fill="none" class="stroke-ink" stroke-width="2">
+    <rect x="20" y="20" width="120" height="44"/>
+    <rect x="175" y="20" width="120" height="44" rx="22"/>
+    <path d="M345 20 H435 L455 42 L435 64 H345 L325 42 Z"/>
+    <rect x="495" y="20" width="120" height="44"/><path d="M507 20 V64 M603 20 V64"/>
+  </g>
+  <g class="ink" font-size="14" text-anchor="middle">
+    <text x="80" y="47">Process</text><text x="235" y="47">Loop</text><text x="390" y="47">Selection</text><text x="555" y="47">Predefined</text>
+  </g>
+  <g class="muted" font-size="12" text-anchor="middle">
+    <text x="80" y="88">a step or calculation</text><text x="235" y="88">repeat these children</text><text x="390" y="88">IF a condition…</text><text x="555" y="88">sub-program / function</text>
+  </g>
+</svg>
+</figure>
+
+<p>Here is a design for the Top Cadet program, with every step refined in the pseudocode and two refinements drawn below. Read the top level from left to right. The data flow is written under each box, with an arrow showing whether data goes in or out.</p>
+<figure class="diagram">
+<div class="diagram-scroll">
+<svg viewBox="0 0 800 480" role="img" aria-labelledby="sd-t sd-d">
+  <title id="sd-t">Structure diagram for the Top Cadet program</title>
+  <desc id="sd-d">The top box, Top Cadet program, has five children. 1 Get cadet data outputs cadets. 2 Find top position takes cadets in and gives topPos out. 3 Get valid flight gives flight out. 4 Count flight takes cadets and flight in and gives count out. 5 Display results takes cadets, topPos, flight and count in. Step 1 is refined into: open cadets.csv; a loop for each line, whose children read the line and split it into a record; then close the file. Step 4 is refined into: set count to 0; then a loop for each cadet, containing a selection asking whether the cadet's flight equals the chosen flight, whose child adds 1 to count.</desc>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="var(--sea)"/></marker></defs>
+  <g fill="var(--card)" class="stroke-ink" stroke-width="2">
+    <rect x="310" y="12" width="180" height="40"/>
+    <path d="M400 52 V72 M76 72 H716 M76 72 V92 M236 72 V92 M396 72 V92 M556 72 V92 M716 72 V92" fill="none"/>
+    <rect x="8" y="92" width="136" height="44"/><path d="M20 92 V136 M132 92 V136" fill="none"/>
+    <rect x="168" y="92" width="136" height="44"/><path d="M180 92 V136 M292 92 V136" fill="none"/>
+    <rect x="328" y="92" width="136" height="44"/><path d="M340 92 V136 M452 92 V136" fill="none"/>
+    <rect x="488" y="92" width="136" height="44"/><path d="M500 92 V136 M612 92 V136" fill="none"/>
+    <rect x="648" y="92" width="136" height="44"/><path d="M660 92 V136 M772 92 V136" fill="none"/>
+    <!-- refinement of step 1 -->
+    <path d="M76 136 V146 H3 V256 H231 M38 256 V276 M136 256 V276 M231 256 V276" fill="none"/>
+    <rect x="0" y="276" width="76" height="44"/>
+    <rect x="86" y="276" width="100" height="44" rx="22"/>
+    <rect x="196" y="276" width="70" height="44"/>
+    <path d="M136 320 V340 M100 340 H180 M100 340 V356 M180 340 V356" fill="none"/>
+    <rect x="62" y="356" width="76" height="40"/>
+    <rect x="144" y="356" width="76" height="40"/>
+    <!-- refinement of step 4 -->
+    <path d="M556 136 V146 H792 V256 H504 M504 256 V276 M690 256 V276" fill="none"/>
+    <rect x="456" y="276" width="96" height="44"/>
+    <rect x="626" y="276" width="128" height="44" rx="22"/>
+    <path d="M690 320 V350" fill="none"/>
+    <path d="M622 350 H758 L774 373 L758 396 H622 L606 373 Z"/>
+    <path d="M690 396 V420" fill="none"/>
+    <rect x="636" y="420" width="108" height="40"/>
+  </g>
+  <g class="ink" font-size="13" text-anchor="middle">
+    <text x="400" y="37" font-weight="700">Top Cadet program</text>
+    <text x="76" y="112">1 Get cadet</text><text x="76" y="128">data</text>
+    <text x="236" y="112">2 Find top</text><text x="236" y="128">position</text>
+    <text x="396" y="112">3 Get valid</text><text x="396" y="128">flight</text>
+    <text x="556" y="112">4 Count</text><text x="556" y="128">flight</text>
+    <text x="716" y="112">5 Display</text><text x="716" y="128">results</text>
+    <g font-size="12">
+    <text x="38" y="296">Open</text><text x="38" y="311">cadets.csv</text>
+    <text x="136" y="296">For each</text><text x="136" y="311">line in file</text>
+    <text x="231" y="296">Close</text><text x="231" y="311">file</text>
+    <text x="100" y="380">Read line</text>
+    <text x="182" y="374">Split into</text><text x="182" y="388">record</text>
+    <text x="504" y="296">Set count</text><text x="504" y="311">to 0</text>
+    <text x="690" y="296">For each</text><text x="690" y="311">cadet</text>
+    <text x="690" y="370">Cadet's flight</text><text x="690" y="385">= flight?</text>
+    <text x="690" y="444">Add 1 to count</text>
+    </g>
+  </g>
+  <g font-size="11" class="mono" fill="var(--sea)">
+    <path d="M24 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="30" y="176">OUT: cadets()</text>
+    <path d="M176 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="182" y="176">IN: cadets()</text>
+    <path d="M176 192 V210" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="182" y="206">OUT: topPos</text>
+    <path d="M336 162 V180" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="342" y="176">OUT: flight</text>
+    <path d="M496 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="502" y="176">IN: cadets(),</text><text x="502" y="190">flight</text>
+    <path d="M496 200 V218" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="502" y="214">OUT: count</text>
+    <path d="M656 180 V162" stroke="var(--sea)" stroke-width="2" marker-end="url(#arr)"/><text x="662" y="176">IN: cadets(),</text><text x="662" y="190">topPos, flight,</text><text x="662" y="204">count</text>
+  </g>
+</svg>
+</div>
+<figcaption>Steps 1–5 use the double-sided "predefined" box because each becomes its own sub-program. Step 1 is refined with a loop (rounded box) over the lines of the file. Step 4 is refined with a loop containing a selection (hexagon). Only the true branch of the selection needs a box here.</figcaption>
+</figure>
+
+<h3>Pseudocode</h3>
+<p>The same design written as pseudocode. The top level is numbered 1–5, with the data flow on the right. Each refinement is numbered as a sub-step of its parent (1.1, 1.2 …).</p>
+<pre>1  Get cadet data          OUT: cadets()
+2  Find top position       IN: cadets()                        OUT: topPos
+3  Get valid flight        OUT: flight
+4  Count flight            IN: cadets(), flight                OUT: count
+5  Display results         IN: cadets(), topPos, flight, count
+
+1.1  Open cadets.csv
+1.2  For each line in the file
+1.3      Split the line at the commas
+1.4      Store name, flight and hours in the next cadet record
+1.5  End loop
+1.6  Close cadets.csv
+
+2.1  Set topPos to 0
+2.2  Loop from the second cadet to the last
+2.3      If this cadet's hours &gt; cadets(topPos).hours then
+2.4          Set topPos to this position
+2.5      End if
+2.6  End loop
+
+3.1  Ask the user for a flight letter
+3.2  While the letter is not "A", "B" or "C"
+3.3      Display an error message
+3.4      Ask the user for the flight letter again
+3.5  End while
+
+4.1  Set count to 0
+4.2  Loop for each cadet
+4.3      If this cadet's flight = flight then
+4.4          Add 1 to count
+4.5      End if
+4.6  End loop
+
+5.1  Display "Top cadet:", cadets(topPos).name, "with", cadets(topPos).hours, "hours"
+5.2  Display "Cadets in", flight, "Flight:", count</pre>
+
+<div class="callout exam">
+  <div class="callout-title">⚠ Exam lookout: data flow</div>
+  <p>Only pass in the data a step actually <em>needs</em>, and only pass out what it <em>creates or changes</em>. In 2025 many candidates added unnecessary parameters to their data flow, and that makes the code less efficient. Ask yourself two questions for every step: <em>"Does this step read it?"</em> (IN) and <em>"Does this step produce it?"</em> (OUT).</p>
+</div>
+
+<h3>User-interface design: wireframes</h3>
+<p>A <dfn>wireframe</dfn> is a simple sketch of a screen. It shows where each <strong>input</strong> and <strong>output</strong> will appear, with no colours or real content. For a text-based program, the wireframe shows the prompts the user will see and where the results will be displayed.</p>
+<figure class="diagram">
+<svg viewBox="0 0 560 230" role="img" aria-labelledby="wf-t">
+  <title id="wf-t">Wireframe of the Top Cadet program's screen: a title, an input prompt for a flight letter, and two labelled output areas</title>
+  <g fill="none" class="stroke-ink" stroke-width="2">
+    <rect x="10" y="10" width="540" height="210" rx="6"/>
+    <path d="M10 40 H550"/>
+    <rect x="30" y="100" width="70" height="28" stroke-dasharray="5 4"/>
+    <rect x="30" y="148" width="500" height="26" stroke-dasharray="5 4"/>
+    <rect x="30" y="184" width="500" height="26" stroke-dasharray="5 4"/>
+  </g>
+  <g class="ink" font-size="14">
+    <text x="22" y="30" font-weight="700">1805 SQUADRON — TOP CADET</text>
+    <text x="30" y="88">Prompt: "Which flight should I count? (A, B or C)"</text>
+    <text x="110" y="119" class="muted" font-size="12">← INPUT: one letter, validated A–C</text>
+    <text x="40" y="166" class="muted" font-size="12">OUTPUT: "Top cadet: &lt;name&gt; with &lt;hours&gt; hours"</text>
+    <text x="40" y="202" class="muted" font-size="12">OUTPUT: "Cadets in &lt;flight&gt; Flight: &lt;count&gt;"</text>
+  </g>
+</svg>
+<figcaption>Dashed boxes are where data appears. Labels say whether each one is an input or an output.</figcaption>
+</figure>
+
+<div class="check" data-check="sdd-design"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="data" class="prose">
+<h2 data-short="Data structures">4 · Data types and structures <span class="spec-tag">SDD · parallel arrays, records, arrays of records</span></h2>
+<p>From National 5 you know the basic <dfn>data types</dfn>: <strong>character, string, integer, real and Boolean</strong>. You also know the 1D array, a numbered list of values that all have the same type. Higher adds three ways of organising <em>related</em> data.</p>
+
+<h3>Parallel 1D arrays</h3>
+<p>Each attribute gets its own array. The <strong>same index</strong> in every array refers to the same cadet. <code>names[3]</code>, <code>flights[3]</code> and <code>hours[3]</code> all describe Mhairi.</p>
+
+<h3>Records</h3>
+<p>A <dfn>record</dfn> groups several values of <em>different</em> types under one name. Each value is a <dfn>field</dfn>. A record is like a Minecraft chest that holds a sword, some bread and a map together. One chest, one cadet.</p>
+
+<h3>Arrays of records</h3>
+<p>An <dfn>array of records</dfn> is a numbered row of chests. <code>cadets[3].hours</code> means "open chest 3 and take out the hours field". Each cadet's data travels together, so it can't drift out of line.</p>
+
+<div class="widget" id="w-structs">
+  <h3 class="widget-title">The crafting table</h3>
+  <p class="hint">Drag the slider (or use the arrow keys) to pick an index. Then press <b>Craft</b> to turn three parallel arrays into one array of records.</p>
+</div>
+
+<div class="code-tabs">
+<pre data-lang="Python">from dataclasses import dataclass
+
+# --- parallel 1D arrays: one array per attribute ---
+names   = ["Ross", "Ailsa", "Callum", "Mhairi"]
+flights = ["A",    "B",     "A",      "C"]
+hours   = [12,     31,      7,        31]
+print(names[1], hours[1])          # Ailsa 31
+
+# --- a record type: one "chest" per cadet ---
+@dataclass
+class Cadet:
+    name: str
+    flight: str
+    hours: int
+
+# --- an array of records ---
+cadets = [Cadet("", "", 0) for _ in range(8)]   # 8 empty records
+cadets[0] = Cadet("Ross", "A", 12)
+cadets[0].hours = cadets[0].hours + 2             # Ross flies 2 more hours
+print(cadets[0].name, cadets[0].hours)           # Ross 14</pre>
+<pre data-lang="Reference">DECLARE names INITIALLY ["Ross", "Ailsa", "Callum", "Mhairi"]
+DECLARE flights INITIALLY ["A", "B", "A", "C"]
+DECLARE hours INITIALLY [12, 31, 7, 31]
+SEND names[1] &amp; " " &amp; hours[1] TO DISPLAY
+
+RECORD Cadet IS {STRING name, STRING flight, INTEGER hours}
+
+DECLARE cadets AS ARRAY OF Cadet INITIALLY [ Cadet("", "", 0) ] * 8
+SET cadets[0] TO Cadet("Ross", "A", 12)
+SET cadets[0].hours TO cadets[0].hours + 2
+SEND cadets[0].name &amp; " " &amp; cadets[0].hours TO DISPLAY</pre>
+</div>
+
+<div class="compare">
+  <div><h3>Why choose parallel arrays?</h3><p>They are simple to declare, and each attribute can be processed on its own, for example adding up all the hours. Their weakness is that the arrays must be kept in step by hand. Sort one and forget the others, and Ross gets Mhairi's flying hours.</p></div>
+  <div><h3>Why choose an array of records?</h3><p>All the data about one item is stored together. That is easier to read, harder to get out of line, and one record can be passed to a sub-program as a single parameter. SQA usually rewards an array of records when a question asks for the "most suitable data structure" for mixed data.</p></div>
+</div>
+
+<div class="check" data-check="sdd-data"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="subprograms" class="prose">
+<h2 data-short="Sub-programs &amp; scope">5 · Sub-programs, parameters and scope <span class="spec-tag">SDD · functions, procedures, parameter passing, local/global</span></h2>
+<p>A <dfn>sub-program</dfn> (or subroutine) is a named block of code that does one job. It is defined by its <strong>name</strong> and its <strong>arguments</strong>: the data that goes in and comes out. There are two kinds:</p>
+<div class="compare">
+  <div><h3>Procedure</h3><p>Carries out a task, such as displaying a report or writing a file. It does <strong>not</strong> return a value to the code that called it.</p><p><code>display_results(cadets, top_pos, count)</code></p></div>
+  <div><h3>Function</h3><p>Carries out a task and <strong>returns a single value</strong>, so it is used inside an expression or assignment.</p><p><code>top_pos = find_max_position(cadets)</code></p></div>
+</div>
+
+<h3>Formal and actual parameters</h3>
+<p>The variables listed in a sub-program's <strong>definition</strong> are its <dfn>formal parameters</dfn>. The values or variables supplied when the sub-program is <strong>called</strong> are the <dfn>actual parameters</dfn>. When the call happens, each actual parameter is matched by position to a formal parameter.</p>
+
+<div class="code-tabs">
+<pre data-lang="Python">def count_flight(cadets, flight):        # formal parameters: cadets, flight
+    count = 0                              # local variable
+    for cadet in cadets:
+        if cadet.flight == flight:
+            count = count + 1
+    return count
+
+b_total = count_flight(squadron, "B")      # actual parameters: squadron, "B"</pre>
+<pre data-lang="Reference">FUNCTION countFlight(ARRAY OF Cadet cadets, STRING flight) RETURNS INTEGER
+    DECLARE count INITIALLY 0
+    FOR EACH cadet FROM cadets DO
+        IF cadet.flight = flight THEN
+            SET count TO count + 1
+        END IF
+    END FOR EACH
+    RETURN count
+END FUNCTION
+
+SET bTotal TO countFlight(squadron, "B")</pre>
+</div>
+
+<h3>Scope: local and global variables</h3>
+<p>The <dfn>scope</dfn> of a variable is the part of the program where it can be used.</p>
+<ul>
+<li>A <dfn>local variable</dfn> is declared inside a sub-program. It exists only while that sub-program runs and cannot be seen from outside. <code>count</code> above is local.</li>
+<li>A <dfn>global variable</dfn> is declared in the main program, outside every sub-program, and can be accessed from anywhere.</li>
+</ul>
+<p>Good practice is to use <strong>local variables and parameter passing</strong>, and to avoid globals. Each sub-program then has clear inputs and outputs. It can be tested on its own and reused. Two sub-programs can each have a local variable called <code>count</code> without interfering with each other. A global, by contrast, can be changed by any line of the program, which makes errors very hard to trace.</p>
+
+<div class="widget" id="w-scope">
+  <h3 class="widget-title">Below decks: watch a function call</h3>
+  <p class="hint">Step through the program. The quarterdeck holds the main program's variables. A cabin opens when <code>count_flight</code> is called and is cleared when it returns.</p>
+</div>
+
+<div class="callout scope">
+  <div class="callout-title">Beyond Higher</div>
+  <p>Passing <em>by value</em> versus <em>by reference</em> is not in the current Higher course (older past papers sometimes ask about it). You only need formal and actual parameters.</p>
+</div>
+
+<div class="check" data-check="sdd-subprograms"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="predefined" class="prose">
+<h2 data-short="Pre-defined functions">6 · Pre-defined functions <span class="spec-tag">SDD · substring, ASCII, float→int, modulus</span></h2>
+<p>A <dfn>pre-defined function</dfn> is built into the language, so you can call it with parameters without writing it yourself. Higher names four jobs:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Job</th><th scope="col">Python</th><th scope="col">Example</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><td>Create a substring</td><td><code>text[start:end]</code></td><td><code>"REDSTONE"[0:3]</code></td><td><code>"RED"</code> (characters 0, 1, 2; the end index is not included)</td></tr>
+<tr><td>Character → ASCII</td><td><code>ord(ch)</code></td><td><code>ord("A")</code></td><td><code>65</code></td></tr>
+<tr><td>ASCII → character</td><td><code>chr(n)</code></td><td><code>chr(66)</code></td><td><code>"B"</code></td></tr>
+<tr><td>Float → integer</td><td><code>int(x)</code></td><td><code>int(7.9)</code></td><td><code>7</code> (it cuts off the fraction; it does not round)</td></tr>
+<tr><td>Modulus (remainder)</td><td><code>a % b</code></td><td><code>17 % 5</code></td><td><code>2</code> (17 = 3 × 5 + <b>2</b>)</td></tr>
+</tbody>
+</table>
+</div>
+<p>In SQA reference language, modulus is written <code>MOD</code> (for example <code>17 MOD 5</code>). The other functions may appear by name, for example <code>left(text, 3)</code>, <code>ord(ch)</code> and <code>int(x)</code>. When a question shows one, it says what it does.</p>
+
+<div class="widget" id="w-predef">
+  <h3 class="widget-title">The signal locker: try the functions</h3>
+  <p class="hint">Change the inputs and the results update live.</p>
+</div>
+
+<h3>Where these turn up</h3>
+<ul>
+<li><strong>Substring:</strong> make a username from the first three letters of a surname, or take the area code from a postcode.</li>
+<li><strong>ord/chr:</strong> simple ciphers, such as shifting every letter along the alphabet, or checking that a character lies between "A" and "Z".</li>
+<li><strong>int:</strong> turn a calculated average into a whole number, or turn 3.7 hours into 3 complete hours.</li>
+<li><strong>Modulus:</strong> test for even numbers (<code>n % 2 == 0</code>), find what is left over (130 shot shared among 8 guns leaves <code>130 % 8 = 2</code> spare), or make values wrap round, like a clock.</li>
+</ul>
+
+<div class="code-tabs">
+<pre data-lang="Python"># A Caesar shift of 3, like a ship's cipher: A→D, Z→C
+def shift_letter(ch):
+    position = ord(ch) - ord("A")          # 0..25
+    new_position = (position + 3) % 26     # modulus wraps Z round to C
+    return chr(new_position + ord("A"))
+
+print(shift_letter("Z"))   # C</pre>
+<pre data-lang="Reference">FUNCTION shiftLetter(CHARACTER ch) RETURNS CHARACTER
+    DECLARE position INITIALLY ord(ch) - ord("A")
+    DECLARE newPosition INITIALLY (position + 3) MOD 26
+    RETURN chr(newPosition + ord("A"))
+END FUNCTION</pre>
+</div>
+
+<div class="check" data-check="sdd-predefined"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="files" class="prose">
+<h2 data-short="File handling">7 · File handling <span class="spec-tag">SDD · sequential CSV and txt: open, create, read, write, close</span></h2>
+<p>A <dfn>sequential file</dfn> is read or written in order, from the first line to the last, like a ship's log read page by page. Higher uses two kinds:</p>
+<ul>
+<li><strong>.txt</strong>: plain text, often one value per line.</li>
+<li><strong>.csv</strong> (comma-separated values): each line is one record, and the fields are separated by commas. For example <code>Ailsa,B,31</code>.</li>
+</ul>
+<p>There are five operations to know:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Operation</th><th scope="col">What it does</th><th scope="col">Python</th></tr></thead>
+<tbody>
+<tr><td>Open</td><td>Connect to an existing file so it can be read (or added to).</td><td><code>f = open("cadets.csv", "r")</code></td></tr>
+<tr><td>Create</td><td>Make a new, empty file. In Python, opening with <code>"w"</code> creates the file, or wipes it if it already exists.</td><td><code>f = open("report.txt", "w")</code></td></tr>
+<tr><td>Read</td><td>Get the next line from the file.</td><td><code>line = f.readline()</code> or <code>for line in f:</code></td></tr>
+<tr><td>Write</td><td>Send text to the file.</td><td><code>f.write("Ross,A,12\n")</code></td></tr>
+<tr><td>Close</td><td>Finish with the file. Closing saves any buffered data and frees the file for other programs.</td><td><code>f.close()</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="widget" id="w-file">
+  <h3 class="widget-title">Reading the log, line by line</h3>
+  <p class="hint">Step through to see a <em>file pointer</em> move down <code>cadets.csv</code>. Each line is split at the commas and stored in the next record.</p>
+</div>
+
+<div class="code-tabs">
+<pre data-lang="Python">def get_cadet_data():
+    cadets = []
+    file = open("cadets.csv", "r")
+    for line in file:
+        fields = line.strip().split(",")      # "Ailsa,B,31\n" → ["Ailsa","B","31"]
+        cadets.append(Cadet(fields[0], fields[1], int(fields[2])))
+    file.close()
+    return cadets
+
+def write_report(cadets, top_pos):
+    file = open("report.txt", "w")            # creates the file
+    file.write("Top cadet: " + cadets[top_pos].name + "\n")
+    file.close()</pre>
+<pre data-lang="Reference">FUNCTION getCadetData() RETURNS ARRAY OF Cadet
+    DECLARE cadets AS ARRAY OF Cadet INITIALLY [ Cadet("", "", 0) ] * 8
+    DECLARE line INITIALLY ""
+    OPEN "cadets.csv"
+    FOR index FROM 0 TO 7 DO
+        RECEIVE line FROM "cadets.csv"
+        &lt;split line at the commas into name, flight and hours&gt;
+        SET cadets[index] TO Cadet(name, flight, hours)
+    END FOR
+    CLOSE "cadets.csv"
+    RETURN cadets
+END FUNCTION
+
+PROCEDURE writeReport(ARRAY OF Cadet cadets, INTEGER topPos)
+    CREATE "report.txt"
+    SEND "Top cadet: " &amp; cadets[topPos].name TO "report.txt"
+    CLOSE "report.txt"
+END PROCEDURE</pre>
+</div>
+<div class="callout tip"><div class="callout-title">Remember</div><p>Every value read from a file arrives as a <strong>string</strong>. Convert numbers with <code>int()</code> or <code>float()</code> before doing arithmetic. Otherwise <code>"31" + "7"</code> gives <code>"317"</code>.</p></div>
+
+<div class="check" data-check="sdd-files"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="algorithms" class="prose">
+<h2 data-short="Standard algorithms">8 · Standard algorithms <span class="spec-tag">SDD · linear search, find min/max, count occurrences</span></h2>
+<p>Three algorithms appear in nearly every Higher paper and assignment. You must be able to write each one from memory, using a 1D array or an array of records.</p>
+
+<h3>Linear search</h3>
+<p>Check each item in turn until the target is found, or until the end of the array is reached. The efficient version uses a <strong>conditional loop</strong> that stops as soon as the item is found. A fixed loop would carry on checking pointlessly.</p>
+<div class="code-tabs">
+<pre data-lang="Python">def linear_search(cadets, target):
+    found = False
+    position = -1
+    index = 0
+    while index &lt; len(cadets) and not found:
+        if cadets[index].name == target:
+            found = True
+            position = index
+        index = index + 1
+    return position                 # -1 means "not found"</pre>
+<pre data-lang="Reference">FUNCTION linearSearch(ARRAY OF Cadet cadets, STRING target) RETURNS INTEGER
+    DECLARE found INITIALLY false
+    DECLARE position INITIALLY -1
+    DECLARE index INITIALLY 0
+    WHILE index &lt; length(cadets) AND found = false DO
+        IF cadets[index].name = target THEN
+            SET found TO true
+            SET position TO index
+        END IF
+        SET index TO index + 1
+    END WHILE
+    RETURN position
+END FUNCTION</pre>
+</div>
+
+<h3>Find maximum and minimum</h3>
+<p>Assume the <strong>first</strong> item is the biggest so far. Then compare every other item with it, replacing it whenever a bigger one turns up. For the minimum, flip the <code>&gt;</code> to <code>&lt;</code>. Exam questions often ask for the <em>position</em> of the maximum. Store the index, and you can then get every field of the winning record.</p>
+<div class="code-tabs">
+<pre data-lang="Python">def find_max_position(cadets):
+    max_pos = 0
+    for index in range(1, len(cadets)):
+        if cadets[index].hours &gt; cadets[max_pos].hours:
+            max_pos = index
+    return max_pos</pre>
+<pre data-lang="Reference">FUNCTION findMaxPosition(ARRAY OF Cadet cadets) RETURNS INTEGER
+    DECLARE maxPos INITIALLY 0
+    FOR index FROM 1 TO length(cadets) - 1 DO
+        IF cadets[index].hours &gt; cadets[maxPos].hours THEN
+            SET maxPos TO index
+        END IF
+    END FOR
+    RETURN maxPos
+END FUNCTION</pre>
+</div>
+<p>Exam questions often use <strong>parallel arrays</strong> instead of records. The algorithm is identical: only the way you reach the data changes. <code>cadets[index].hours</code> becomes <code>hours[index]</code>, and the winning name is <code>names[maxPos]</code>.</p>
+<div class="code-tabs">
+<pre data-lang="Reference">DECLARE maxPos INITIALLY 0
+FOR index FROM 1 TO 7 DO
+    IF hours[index] &gt; hours[maxPos] THEN
+        SET maxPos TO index
+    END IF
+END FOR
+SEND names[maxPos] &amp; " flew the most: " &amp; hours[maxPos] &amp; " hours" TO DISPLAY</pre>
+<pre data-lang="Python">max_pos = 0
+for index in range(1, len(hours)):
+    if hours[index] &gt; hours[max_pos]:
+        max_pos = index
+print(names[max_pos], "flew the most:", hours[max_pos], "hours")</pre>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ A common slip</div><p>Never start the maximum at <code>0</code>. If every value is negative (temperatures in the Arctic, say), the maximum will wrongly come out as 0. Starting the <em>minimum</em> at 0 goes wrong for positive data in the same way. Always start with the first element of the array.</p></div>
+
+<h3>Count occurrences</h3>
+<p>Set a counter to zero. Go through every item and add one each time an item matches. A fixed loop is correct here, because every item must be checked.</p>
+<div class="code-tabs">
+<pre data-lang="Python">def count_flight(cadets, flight):
+    count = 0
+    for index in range(len(cadets)):
+        if cadets[index].flight == flight:
+            count = count + 1
+    return count</pre>
+<pre data-lang="Reference">FUNCTION countFlight(ARRAY OF Cadet cadets, STRING flight) RETURNS INTEGER
+    DECLARE count INITIALLY 0
+    FOR index FROM 0 TO length(cadets) - 1 DO
+        IF cadets[index].flight = flight THEN
+            SET count TO count + 1
+        END IF
+    END FOR
+    RETURN count
+END FUNCTION</pre>
+</div>
+
+<p>You can watch all three run, line by line, in the ship's debugger at the end of the next chapter.</p>
+
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 assignment</div><p>Some candidates wrote two near-identical count functions. They should have written one function and called it twice with different parameters, for example <code>count_flight(cadets, "A")</code> then <code>count_flight(cadets, "B")</code>. Reusing one parameterised sub-program is exactly the "efficient use of coding constructs" that evaluation questions want you to point out.</p></div>
+
+<div class="check" data-check="sdd-algorithms"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="testing" class="prose">
+<h2 data-short="Testing &amp; debugging">9 · Testing and debugging <span class="spec-tag">SDD · test plans, error types, debugging techniques</span></h2>
+
+<h3>A comprehensive final test plan</h3>
+<p>A <dfn>test plan</dfn> lists the tests you will run, the data you will use and the result you <strong>expect</strong>, all written <em>before</em> testing starts. It is <dfn>comprehensive</dfn> when it shows that <strong>every functional requirement</strong> has been met, using a full range of test data:</p>
+<ul>
+<li><dfn>Normal</dfn>: sensible data that should be accepted. Flying hours of 12.</li>
+<li><dfn>Extreme</dfn>: data on the boundaries of what is allowed. 0 and 100 if the valid range is 0–100.</li>
+<li><dfn>Exceptional</dfn>: data that should be rejected. −5, 101 or "twelve".</li>
+</ul>
+<div class="table-wrap">
+<table>
+<caption>Part of a final test plan for the Top Cadet program: one row per functional requirement, plus validation tests. This program has no numeric range to validate, so it has no extreme data. If it asked for hours from 0 to 200, the extreme test data would be 0 and 200.</caption>
+<thead><tr><th>Test</th><th>Requirement tested</th><th>Test data</th><th>Type</th><th>Expected result</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Find top cadet</td><td>cadets.csv as supplied</td><td>Normal</td><td>"Top cadet: Ailsa with 31 hours"</td></tr>
+<tr><td>2</td><td>Find top cadet: tie (boundary in the specification)</td><td>Ailsa 31, Mhairi 31</td><td>Normal</td><td>The first cadet with the highest hours (Ailsa) is shown, because the comparison is <code>&gt;</code></td></tr>
+<tr><td>3</td><td>Count flight</td><td>"B"</td><td>Normal</td><td>"Cadets in B Flight: 3"</td></tr>
+<tr><td>4</td><td>Validate flight</td><td>"C"</td><td>Normal</td><td>Accepted: the count for C Flight is shown</td></tr>
+<tr><td>5</td><td>Validate flight</td><td>"Q"</td><td>Exceptional</td><td>Error message; user asked to re-enter</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout log"><div class="callout-title">✈ Flight log: the pre-flight checklist</div><p>Before every flight, an Air Cadet and their pilot work through a written checklist: every item planned in advance, each with the result it should give ("fuel: full", "flaps: move freely"), ticked off one by one. A test plan is the same idea for software: planned before testing begins, with an expected result for every test.</p></div>
+
+<h3>Three kinds of error</h3>
+<div class="compare">
+<div><h3>Syntax error</h3><p>The code breaks the <strong>grammar</strong> of the language, so it cannot be translated at all. Examples: a missing bracket, a misspelt keyword like <code>whlie</code>, or a missing colon in Python.</p></div>
+<div><h3>Execution (run-time) error</h3><p>The code translates, but <strong>crashes while running</strong> because it asks for something impossible. Examples: dividing by zero, using an array index that doesn't exist, or opening a file that isn't there.</p></div>
+<div><h3>Logic error</h3><p>The program runs to the end, but gives the <strong>wrong answer</strong>. Examples: <code>&lt;</code> instead of <code>&gt;</code>, starting a loop at 1 instead of 0, or <code>AND</code> instead of <code>OR</code>.</p></div>
+</div>
+<div class="widget">
+  <h3 class="widget-title">Damage report: name that error</h3>
+  <div class="sorter" data-bins="Syntax|Execution|Logic">
+    <div data-ans="Logic" data-why="It runs and finishes, but finds the minimum instead of the maximum. That is a wrong answer, so it is a logic error."><code>if cadets[index].hours &lt; cadets[max_pos].hours:</code> inside find_max_position</div>
+    <div data-ans="Syntax" data-why="The missing closing bracket breaks the language's grammar, so the line cannot be translated."><code>print("Top cadet:", cadets[top].name</code></div>
+    <div data-ans="Execution" data-why="An array of 8 has indexes 0–7. Asking for cadets[8] crashes the program while it is running."><code>for index in range(0, 9): total = total + cadets[index].hours</code> with 8 cadets</div>
+    <div data-ans="Logic" data-why="The average is wrong (divided by 7, not 8), but nothing crashes."><code>average = total / 7</code> when there are 8 cadets</div>
+    <div data-ans="Execution" data-why="The file is missing, so open() fails while the program is running."><code>open("cadet.csv", "r")</code> when the file is actually called cadets.csv</div>
+  </div>
+</div>
+
+<h3>Debugging techniques</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Technique</th><th scope="col">How it works</th><th scope="col">Best for</th></tr></thead>
+<tbody>
+<tr><th scope="row">Dry run</th><td>Work through the code <strong>by hand</strong>, on paper, without a computer, following each line as the computer would.</td><td>Short sections of code. Checking your own algorithm before you type it in.</td></tr>
+<tr><th scope="row">Trace table</th><td>A table with a column for each variable, filled in row by row during a dry run, so you can see how each value changes. Trace <em>tools</em> do the same job automatically inside the development environment.</td><td>Loops and calculations: spotting exactly when a value goes wrong.</td></tr>
+<tr><th scope="row">Breakpoint</th><td>A marker set on a <strong>line</strong>. The program runs at full speed and pauses when it reaches that line, so you can inspect the variables.</td><td>Checking the state of the program at a particular point, such as just before a calculation.</td></tr>
+<tr><th scope="row">Watchpoint</th><td>A marker set on a <strong>variable</strong>, or a condition on one. The program pauses whenever that variable changes or the condition becomes true.</td><td>Finding where a value is unexpectedly altered, when you don't know which line is to blame.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: telling them apart</div><p>A <strong>breakpoint</strong> is like the bosun saying "stop the drill when the crew reaches gun 12". It is tied to a <em>place</em>. A <strong>watchpoint</strong> is "stop the drill the moment anyone touches the powder store". It is tied to <em>data</em>, wherever in the program the change happens. Try both in the debugger below.</p></div>
+
+<h3>Try them: the ship's debugger</h3>
+<p>Here are the three standard algorithms from Chapter 8, running for real. Pick one and step through it a line at a time: the trace table fills in as you go, just as it would in a dry run. Then try the tools:</p>
+<ul>
+<li>Click a <strong>line number</strong> to set a breakpoint (a red dot), then press <b>Run</b>. Execution pauses just <em>before</em> that line runs.</li>
+<li>Choose a variable for the <strong>watchpoint</strong>, then press <b>Run</b>. Execution pauses every time that variable changes.</li>
+<li>Tick <b>🐛 plant a logic error</b> and use the trace table, a breakpoint or a watchpoint to find out what went wrong.</li>
+</ul>
+<div class="widget" id="w-debugger">
+  <h3 class="widget-title">The ship's debugger</h3>
+</div>
+
+<div class="check" data-check="sdd-testing"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="evaluation" class="prose">
+<h2 data-short="Evaluation">10 · Evaluation <span class="spec-tag">SDD · fitness for purpose, efficiency, usability, maintainability, robustness</span></h2>
+<p>Evaluation is an objective review of the finished software. Is it any good, and how do you know? You judge it under five headings. The 2025 course report says candidates "continue to find evaluation to be an area that is significantly challenging", and that answers were often <strong>generic</strong>. Name the actual construct, data structure or test from <em>this</em> program.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th scope="col">Criterion</th><th scope="col">The question it answers</th><th scope="col">Weak answer ✘</th><th scope="col">Higher-standard answer ✔</th></tr></thead>
+<tbody>
+<tr><th scope="row">Fitness for purpose</th><td>Does it do <em>everything</em> in the specification? Compare the finished program against the functional requirements.</td><td>"It works."</td><td>"It is fit for purpose: every functional requirement was met. Test 1 showed the top cadet correctly and test 3 counted B Flight correctly."</td></tr>
+<tr><th scope="row">Efficient use of coding constructs</th><td>Were the right constructs used, so there is no wasted code or processing?</td><td>"I used loops so it is efficient."</td><td>"<code>count_flight</code> is one function with the flight as a parameter, called twice, instead of two copies of the code. The linear search uses a conditional loop, so it stops as soon as the cadet is found."</td></tr>
+<tr><th scope="row">Usability</th><td>How easy and intuitive is it for the <em>user</em>?</td><td>"It is easy to use."</td><td>"The prompt tells the user exactly what to enter, 'A, B or C', and the results are labelled with units ('31 hours')."</td></tr>
+<tr><th scope="row">Maintainability</th><td>How easy would it be for <em>another programmer</em> to change it later?</td><td>"It has comments."</td><td>"It is modular: each task is its own sub-program, with meaningful names like <code>find_max_position</code>, plus local variables and internal commentary. A change to the counting rule only affects one function."</td></tr>
+<tr><th scope="row">Robustness</th><td>Does it cope with unexpected or exceptional input without crashing?</td><td>"It doesn't crash."</td><td>"Entering 'Q' as the flight is rejected and the user is asked again (test 5). However, the program would crash if <code>cadets.csv</code> were missing, because there is no check before the file is opened."</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>One question asked about <strong>fitness for purpose</strong>, but many candidates answered about <strong>robustness</strong>. Read which criterion the question names, then link your answer to the specification (fitness for purpose) or to the code (efficiency, maintainability).</p></div>
+
+<div class="check" data-check="sdd-evaluation"></div>
+
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="index.html">← Briefing room</a>
+  <a class="btn primary" href="systems.html">Next: Computer Systems →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24). On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script src="sdd.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
