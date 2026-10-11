@@ -82,7 +82,7 @@
 <ul>
 <li><strong>6 hours</strong>, usually spread over several lessons, under supervision. It is <strong>open book</strong>: class notes, programming manuals, textbooks and your own programs are allowed.</li>
 <li>Task 1 (Software, 25 marks) is compulsory. Then do Task 2 (Database) <em>or</em> Task 3 (Web), each 15 marks.</li>
-<li>About 22–24 of the 40 marks are for <strong>implementation</strong>. The rest are for analysis, design, testing and evaluation, which candidates do worst on.</li>
+<li>About 22–24 of the 40 marks are for <strong>implementation</strong>. The rest are for analysis, design, testing and evaluation. The 2025 course report notes that written answers tend to score lower than code, so don't neglect them.</li>
 <li><strong>Follow the design you are given.</strong> If the brief supplies a data flow and refinements, your code must implement <em>those</em>, using the sub-programs and parameters exactly as shown.</li>
 <li><strong>Check the output against every requirement</strong>, not just "it ran". Make SQL work for all data (<code>&gt;=</code> versus <code>&gt;</code>), and match web pages to the wireframe exactly (margins, positions).</li>
 <li>Evaluations must refer to <em>your</em> code: name the function, loop or data structure. Generic National 5-style answers get little credit.</li>
@@ -103,6 +103,7 @@
 <tr><td>Declare from input</td><td><code>DECLARE age AS INTEGER INITIALLY FROM KEYBOARD</code></td><td><code>age = int(input())</code></td></tr>
 <tr><td>Declare an array</td><td><code>DECLARE marks AS ARRAY OF INTEGER INITIALLY [0]*30</code></td><td><code>marks = [0]*30</code></td></tr>
 <tr><td>Assign</td><td><code>SET total TO total + mark</code></td><td><code>total = total + mark</code></td></tr>
+<tr><td>Assign vs compare</td><td><code>SET total TO 0</code><br><code>IF total = 0 THEN</code></td><td><code>total = 0</code><br><code>if total == 0:</code> (JavaScript also uses <code>==</code> or <code>===</code>). One <code>=</code> in a Python or JavaScript condition is a common slip.</td></tr>
 <tr><td>Input / output</td><td><code>RECEIVE name FROM (STRING) KEYBOARD</code><br><code>SEND "Hello " &amp; name TO DISPLAY</code></td><td><code>name = input()</code><br><code>print("Hello " + name)</code></td></tr>
 <tr><td>Selection</td><td><code>IF x &gt; 5 THEN … ELSE … END IF</code></td><td><code>if x &gt; 5: … else: …</code></td></tr>
 <tr><td>Fixed loop</td><td><code>FOR i FROM 0 TO 9 DO … END FOR</code> (includes 9)</td><td><code>for i in range(0, 10):</code></td></tr>
@@ -152,8 +153,8 @@
 <h2 data-short="Glossary">7 · Glossary</h2>
 <dl class="glossary" id="glossary-list">
 <dt>Actual parameter</dt><dd>The value or variable passed to a sub-program when it is called.</dd>
-<dt>Agile</dt><dd>An adaptive methodology: short sprints, constant client feedback, testing throughout.</dd>
 <dt>Aggregate function</dt><dd>An SQL function that returns one value from many rows: COUNT, SUM, AVG, MIN, MAX.</dd>
+<dt>Agile</dt><dd>An adaptive methodology: short sprints, constant client feedback, testing throughout.</dd>
 <dt>Alias</dt><dd>A temporary column heading in a query result, given with AS.</dd>
 <dt>Array of records</dt><dd>An array in which each element is a record.</dd>
 <dt>Boundaries</dt><dd>The limits of a project, and the assumptions made about it.</dd>
@@ -188,10 +189,11 @@
 <dt>Maintainability</dt><dd>How easily the code can be changed: readability and modularity.</dd>
 <dt>Mantissa</dt><dd>The significant digits of a floating-point number. More bits give more precision.</dd>
 <dt>Modulus</dt><dd>The remainder after division (MOD, or % in Python).</dd>
+<dt>Normalised</dt><dd>A floating-point number with its point moved to just before the first 1, so the mantissa starts 0.1.</dd>
 <dt>Persona</dt><dd>A fictional, realistic user adopted by a tester during usability testing.</dd>
 <dt>Private key</dt><dd>The secret half of a key pair. It decrypts messages, and creates signatures.</dd>
-<dt>Public key</dt><dd>The shared half of a key pair. It encrypts messages to its owner, and verifies their signatures.</dd>
 <dt>Procedure</dt><dd>A sub-program that carries out a task without returning a value.</dd>
+<dt>Public key</dt><dd>The shared half of a key pair. It encrypts messages to its owner, and verifies their signatures.</dd>
 <dt>Range (floating point)</dt><dd>How large and how small the numbers that can be stored are. More exponent bits give more range.</dd>
 <dt>Record</dt><dd>A data structure grouping fields of different types.</dd>
 <dt>Robustness</dt><dd>How well software copes with unexpected or exceptional input without crashing.</dd>
@@ -205,7 +207,6 @@
 <dt>Usability</dt><dd>How intuitive and easy a solution is for its users.</dd>
 <dt>Watchpoint</dt><dd>Pauses execution when a chosen variable changes or a condition becomes true.</dd>
 <dt>Wildcard</dt><dd><code>%</code> (any number of characters) and <code>_</code> (exactly one), used with LIKE.</dd>
-<dt>Normalised</dt><dd>A floating-point number with its point moved to just before the first 1, so the mantissa starts 0.1.</dd>
 <dt>Wireframe</dt><dd>A simple sketch of one screen's layout, showing the position of every element.</dd>
 </dl>
 <nav class="next-deck" aria-label="Deck navigation">

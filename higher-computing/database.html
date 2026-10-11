@@ -162,7 +162,7 @@
 
 <h3>Compound keys</h3>
 <p>A <dfn>compound key</dfn> is a primary key made from <strong>two or more attributes</strong>, where each of those attributes is a primary key in its own right in another table. In <b>Posting</b>, the primary key is <u>cadetID</u> + <u>shipCode</u>. Neither on its own is unique (Mhairi has two postings, and Redstone has many cadets), but together they identify exactly one posting. Each part is also a foreign key.</p>
-<p>Note the boundary this design sets: a cadet can be posted to each ship <strong>at most once</strong>. If repeat voyages were needed, startDate would have to join the key (cadetID + shipCode + startDate).</p>
+<p>Note the boundary this design sets: a cadet can be posted to each ship <strong>at most once</strong>. If repeat voyages were needed, startDate would have to join the key (cadetID + shipCode + startDate). Strictly, SQA would call that a <em>composite</em> key rather than a compound one, because startDate is not a primary key in its own right.</p>
 <div class="table-wrap"><table>
 <caption>Posting: no value of cadetID or shipCode is unique on its own, but every pair is.</caption>
 <thead><tr><th><u>cadetID</u>*</th><th><u>shipCode</u>*</th><th>startDate</th><th>nights</th><th>role</th></tr></thead>
@@ -251,7 +251,7 @@ WHERE Cadet.cadetID = Posting.cadetID
 <tr><td><code>surname LIKE "Mac%"</code></td><td>starts with Mac: MacLeod, MacDonald</td></tr>
 <tr><td><code>surname LIKE "%son"</code></td><td>ends in son: Paterson, Robertson, Henderson</td></tr>
 <tr><td><code>surname LIKE "%ar%"</code></td><td>contains "ar" anywhere: Stewart, Barr, Marshall</td></tr>
-<tr><td><code>firstname LIKE "_a%"</code></td><td>second letter a: Callum, Hamish</td></tr>
+<tr><td><code>firstname LIKE "_a%"</code></td><td>second letter a: Callum, Hamish, Zara</td></tr>
 <tr><td><code>startDate LIKE "2026-07-%"</code></td><td>any date in July 2026. Our dates are stored as YYYY-MM-DD so that they sort correctly. SQA examples use DD/MM/YYYY, where the same search would be <code>LIKE "%/07/%"</code>.</td></tr>
 </tbody></table></div>
 
@@ -309,8 +309,8 @@ UPDATE Cadet
 SET rank = "Cpl", flyingHours = flyingHours + 2
 WHERE squadronNo = 1805 AND flyingHours &gt;= 10 AND rank = "Cadet";
 
-INSERT INTO Posting (cadetID, shipCode, startDate, nights, role)
-VALUES ("C109", "OBS", "2026-09-12", 4, "Rigging");
+INSERT INTO Posting (cadetID, shipCode, startDate, nights, role, reportTime)
+VALUES ("C109", "OBS", "2026-09-12", 4, "Rigging", "07:45");
 
 DELETE FROM Posting
 WHERE startDate &lt; "2026-07-01";</pre>

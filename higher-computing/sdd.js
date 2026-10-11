@@ -393,7 +393,7 @@
         "    return count",
       ],
       param: { label: "flight", options: ["A", "B", "C"], def: "A" },
-      bug: { line: 3, text: "    for index in range(1, len(cadets)):", note: "Sabotaged: the loop starts at 1, so the first cadet is skipped" },
+      bug: { line: 3, text: "    for index in range(1, len(cadets)):", note: "Sabotaged: the loop starts at 1, so the first cadet (Ross, flight A) is skipped. Count flight B or C and the answer still looks right; count flight A to expose it. Good test data must reach the first item." },
       *run(v, d, p, bug) {
         yield 2; v.count = 0;
         let i = bug ? 1 : 0;
