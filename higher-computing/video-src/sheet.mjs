@@ -1,0 +1,22 @@
+// node sheet.mjs <id> t1 t2 ... -> build/<id>/sheet.png (contact sheet for review)
+import { chromium } from "/opt/node-tools/node_modules/playwright/index.mjs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+const HERE = dirname(fileURLToPath(import.meta.url));
+const [id, ...ts] = process.argv.slice(2);
+const cues = JSON.parse(readFileSync(join(HERE, "cues", id + ".json"), "utf8"));
+mkdirSync(join(HERE, "build", id), { recursive: true });
+const b = await chromium.launch({ args: ["--allow-file-access-from-files"] });
+const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
+p.on("pageerror", (e) => console.error("PAGE ERROR", e.message));
+await p.goto("file://" + join(HERE, "video.html"));
+await p.evaluate((c) => window.setup(c), cues);
+const times = ts.length ? ts.map(Number) : cues.scenes.map((s) => (s.start + s.end) / 2 + 1);
+const imgs = [];
+for (const T of times) imgs.push(await p.evaluate(([T]) => window.frame(T, 0.8), [T]));
+await p.setContent(`<body style="margin:0;background:#222;display:grid;grid-template-columns:repeat(2,640px);gap:4px">${imgs.map((u, i) => `<div style="position:relative"><img src="${u}" width="640"><b style="position:absolute;left:6px;top:4px;color:#ff0;font:16px monospace">${times[i].toFixed(1)}s</b></div>`).join("")}</body>`);
+await p.setViewportSize({ width: 1284, height: Math.ceil(imgs.length / 2) * 364 });
+await p.screenshot({ path: join(HERE, "build", id, "sheet.png"), fullPage: true });
+await b.close();
+console.log("sheet", times.map((t) => t.toFixed(1)).join(" "));

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Design &amp; Development · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Higher Computing Science, Web Design and Development: requirements, multi-level site structure, wireframes, prototyping, usability testing, HTML layout and forms, CSS positioning and navigation bars, JavaScript mouse events, testing and evaluation.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The chart room · Web Design and Development (WDD)</p>
+<h1>Hoisting the squadron's website</h1>
+<p class="lede">WDD is the other <strong>option</strong>: Section 3 of the question paper (25 marks) or Task 3 of the assignment (15 marks), instead of Database. It has more to implement than Database (HTML, CSS and JavaScript), but less to design. In 2025, 34% of candidates chose it.</p>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: this site is built the same way</div><p>The bar of deck links at the top of every page is built like an SQA navigation bar: a <code>&lt;nav&gt;</code> holding a <code>&lt;ul&gt;</code> of links, styled with descendant selectors (<code>nav.decks a</code>) and a <code>:hover</code> rule. Every page also uses <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;section&gt;</code> and <code>&lt;footer&gt;</code>. One difference: we line the links up with a newer CSS tool called flexbox. In the exam, use the <code>float:left</code> method shown in Chapter 5.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<section id="analysis" class="prose">
+<h2 data-short="Analysis">1 · Analysis: end-user and functional requirements <span class="spec-tag">WDD · identify</span></h2>
+<div class="compare">
+<div><h3>End-user requirements</h3><p>What visitors to the site <strong>want to be able to do</strong>. "Parents should be able to see the dates of the summer camp." "Recruits should be able to register their interest."</p></div>
+<div><h3>Functional requirements</h3><p>What the site must contain and <strong>do</strong>, described in terms of pages, media and code. "The Join page will have a form with a text input for the name (presence check, maximum 20 characters), a number input for age (range 12–17) and a submit button." "Clicking a ship's image will use JavaScript <code>onclick</code> to show its details."</p></div>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Web functional requirements "often lacked technical detail as they did not refer to the underlying code". Name the actual <strong>form element</strong>, <strong>validation</strong> or <strong>JavaScript event</strong> in your answer.</p></div>
+<div class="check" data-check="wdd-analysis"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="structure" class="prose">
+<h2 data-short="Site structure">2 · Multi-level site structure <span class="spec-tag">WDD · home + two levels, ≤ 4 pages per level</span></h2>
+<p>At Higher, a site has a <strong>home page</strong> and <strong>two further levels</strong>, with <strong>no more than four pages per level</strong>. SQA draws the structure in a fixed style:</p>
+<ul>
+<li><strong>Shaded</strong> boxes are pages that appear in the <strong>horizontal navigation bar</strong>. That bar is at the top of every page, and the home page is always in it.</li>
+<li><strong>Horizontal lines</strong> join the navigation bar pages, because every one of them links to all the others (two-way links).</li>
+<li><strong>Vertical lines</strong> are one-way links, from a page down to its sub-page. (Our diagram adds small arrowheads to make the direction obvious; in the exam a plain vertical line means the same thing.)</li>
+</ul>
+<div class="widget" id="w-sitemap">
+  <h3 class="widget-title">The squadron website's structure</h3>
+  <p class="hint">Select any page to see which pages it links to.</p>
+</div>
+<div class="check" data-check="wdd-structure"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="wireframes" class="prose">
+<h2 data-short="Wireframes &amp; prototypes">3 · Wireframes, media and low-fidelity prototypes <span class="spec-tag">WDD · user-interface design</span></h2>
+<p>A <dfn>wireframe</dfn> plans the layout of <strong>one page</strong>. It needs to show:</p>
+<ul>
+<li>the <strong>horizontal navigation bar</strong></li>
+<li>the <strong>relative horizontal and vertical positions</strong> of the text, images, video and audio</li>
+<li>any <strong>form inputs</strong> (labelled with their type and validation)</li>
+<li>the <strong>file formats</strong> of the media: text, graphics (JPG, PNG, GIF, SVG), video (MP4) and audio (MP3, WAV)</li>
+</ul>
+<p>It must also take account of the <strong>end user and the device type</strong>. A smartphone wireframe usually stacks content in one column, with bigger tap targets.</p>
+<figure class="diagram">
+<div class="diagram-scroll">
+<svg viewBox="0 0 760 384" role="img" aria-labelledby="wf2-t">
+<title id="wf2-t">Desktop and smartphone wireframes for the Sea Training page</title>
+<g fill="none" stroke="var(--ink)" stroke-width="2">
+<rect x="10" y="10" width="480" height="340"/><rect x="20" y="20" width="460" height="40"/><rect x="20" y="66" width="460" height="28" fill="var(--paper-2)"/>
+<rect x="20" y="102" width="220" height="140"/><path d="M20 102 L240 242 M240 102 L20 242" stroke-width="1"/>
+<rect x="250" y="102" width="230" height="140"/><rect x="20" y="250" width="460" height="56" stroke-dasharray="6 4"/><rect x="20" y="314" width="460" height="28"/>
+<rect x="540" y="10" width="210" height="340" rx="14"/><rect x="552" y="26" width="186" height="30"/><rect x="552" y="62" width="186" height="40" fill="var(--paper-2)"/><rect x="552" y="110" width="186" height="70"/><path d="M552 110 L738 180 M738 110 L552 180" stroke-width="1"/><rect x="552" y="186" width="186" height="50"/><rect x="552" y="242" width="186" height="30" stroke-dasharray="6 4"/><rect x="552" y="278" width="186" height="26" stroke-dasharray="6 4"/><rect x="552" y="310" width="186" height="30"/>
+</g>
+<g font-size="12" class="ink">
+<text x="30" y="45">header: banner logo (PNG) + "Sea Training"</text>
+<text x="30" y="85">nav bar: Home | Flying | Sea Training | Events | Join</text>
+<text x="60" y="176">image: redstone.jpg</text>
+<text x="260" y="122">section: text about HMS Redstone,</text><text x="260" y="138">heading + 2 paragraphs</text>
+<text x="260" y="170">onclick on image reveals</text><text x="260" y="186">the gun deck plan (hidden)</text>
+<text x="30" y="272">video: broadside.mp4 (with controls)</text><text x="30" y="290" class="muted">audio: bosun-pipe.mp3 below video</text>
+<text x="30" y="333">footer: contact · © 1805 Squadron</text>
+<text x="560" y="46">header</text><text x="560" y="80">nav: 5 links,</text><text x="560" y="95">wraps to 2 rows</text>
+<text x="600" y="150">redstone.jpg</text><text x="560" y="206">section text</text><text x="560" y="222">(full width)</text><text x="560" y="262">broadside.mp4</text><text x="560" y="296">bosun-pipe.mp3</text><text x="560" y="330">footer</text>
+<text x="10" y="374" class="muted">Desktop: two columns side by side</text><text x="540" y="374" class="muted">Smartphone: one column</text>
+</g>
+</svg>
+</div>
+<figcaption>The same page, wireframed for two device types. Crossed boxes are images, and dashed boxes are video and audio. File formats are labelled.</figcaption>
+</figure>
+<h3>Low-fidelity prototypes</h3>
+<p>A <dfn>low-fidelity prototype</dfn> is a quick, cheap mock-up made from the wireframes: paper sketches, or simple linked boxes with no real styling. It is good enough for users to "click" through and try the site <strong>before any code is written</strong>, so design problems are found while they are still cheap to fix.</p>
+
+<h3>Usability testing with personas, test cases and scenarios</h3>
+<p>Testers work through the low-fidelity prototype while observers note any difficulties.</p>
+<div class="compare">
+<div><h3>Persona</h3><p>A made-up but realistic user the tester pretends to be: <em>"Moira, 52, a cadet's parent. Uses a phone and isn't confident online. Wants camp dates and the kit list."</em></p></div>
+<div><h3>Test case</h3><p>A set of actions that checks one feature: <em>"From the home page, open Join, fill in the form with valid data, then submit."</em></p></div>
+<div><h3>Scenario</h3><p>A realistic task with a goal: <em>"Your daughter wants to try gliding. Find out what she needs to bring."</em></p></div>
+</div>
+<div class="check" data-check="wdd-design"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="html" class="prose">
+<h2 data-short="HTML page layout">4 · HTML: page layout elements <span class="spec-tag">WDD · nav, header, footer, section, main, form, id</span></h2>
+<p>HTML5 has elements whose names say what each part of a page is for:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Element</th><th scope="col">Holds</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;header&gt;</code></td><td>The page banner: title, logo, often a link to the home page.</td></tr>
+<tr><td><code>&lt;nav&gt;</code></td><td>The navigation bar: a <code>&lt;ul&gt;</code> of links to the main pages.</td></tr>
+<tr><td><code>&lt;main&gt;</code></td><td>The main content of the page (one per page).</td></tr>
+<tr><td><code>&lt;section&gt;</code></td><td>A themed part of the content inside main: text, images, video, audio or a form.</td></tr>
+<tr><td><code>&lt;footer&gt;</code></td><td>General information at the bottom: contact details, copyright, legal links.</td></tr>
+<tr><td><code>&lt;form&gt;</code></td><td>A set of inputs for the user to fill in (Chapter 6).</td></tr>
+</tbody></table></div>
+<p>A complete page skeleton looks like this. Each element sits inside the <code>&lt;body&gt;</code>, and the external stylesheet is linked in the <code>&lt;head&gt;</code>:</p>
+<pre data-lang="HTML">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Sea Training&lt;/title&gt;
+  &lt;link rel="stylesheet" href="squadron.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;&lt;h1&gt;1805 Squadron&lt;/h1&gt;&lt;/header&gt;
+  &lt;nav&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href="index.html"&gt;Home&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href="sea.html"&gt;Sea Training&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+  &lt;main&gt;
+    &lt;section id="gunnery"&gt; … &lt;/section&gt;
+    &lt;section&gt; &lt;form&gt; … &lt;/form&gt; &lt;/section&gt;
+  &lt;/main&gt;
+  &lt;footer&gt;Contact · © 1805 Squadron&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+<div class="widget" id="w-layout">
+  <h3 class="widget-title">Anatomy of a page</h3>
+  <p class="hint">Select an element in the code or on the page to see what it is for.</p>
+</div>
+<p>The <dfn>id attribute</dfn> gives one element a <strong>unique</strong> name on the page. CSS can style it with <code>#name</code>, and JavaScript can find it with <code>document.getElementById("name")</code>. A <dfn>class</dfn> can be shared by many elements; an id must be unique.</p>
+<div class="check" data-check="wdd-html"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="css" class="prose">
+<h2 data-short="CSS">5 · CSS: appearance and positioning <span class="spec-tag">WDD · inline, internal, external; grouping and descendant selectors; display, float, clear, margin, padding, sizes</span></h2>
+<h3>Three places to put CSS</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Where</th><th>Example</th><th>Use it for</th></tr></thead>
+<tbody>
+<tr><td><b>Inline</b></td><td>A <code>style</code> attribute on one element</td><td><code>&lt;p style="color:red"&gt;</code></td><td>A one-off change to a single element. It overrides the other two.</td></tr>
+<tr><td><b>Internal</b></td><td>A <code>&lt;style&gt;</code> block in the page's <code>&lt;head&gt;</code></td><td><code>&lt;style&gt; h1 {color:navy} &lt;/style&gt;</code></td><td>Rules needed by one page only</td></tr>
+<tr><td><b>External</b></td><td>A separate <code>.css</code> file, linked from every page</td><td><code>&lt;link rel="stylesheet" href="style.css"&gt;</code></td><td>The whole site. One file gives every page the same look, and a single edit changes them all. This is the <strong>most efficient</strong> option.</td></tr>
+</tbody></table></div>
+
+<h3>Efficient selectors</h3>
+<div class="compare">
+<div><h3>Grouping selector (comma)</h3><p>One rule for several elements:</p><pre data-lang="CSS">header, nav, main, footer {margin-top:5px}</pre><p>This replaces four separate rules, so there is less code and it is easier to maintain.</p></div>
+<div><h3>Descendant selector (space)</h3><p>Matches elements <strong>inside</strong> other elements:</p><pre data-lang="CSS">nav ul {list-style-type:none}</pre><p>This affects only the <code>ul</code> inside the <code>nav</code>, and not any other list on the page.</p></div>
+</div>
+
+<h3>The box model: margin, padding and size</h3>
+<p>Every element is a box. Its <strong>width</strong> and <strong>height</strong> set the content area. <strong>Padding</strong> is space <em>inside</em> the border, which pushes the content in from the edge. <strong>Margin</strong> is transparent space <em>outside</em> the border, which pushes other elements away.</p>
+<div class="callout log"><div class="callout-title">⛏ Building it in blocks</div><p>Picture a Minecraft build. The <strong>content</strong> is the item in the middle, the <strong>padding</strong> is a ring of wool around it inside the frame, the <strong>border</strong> is the frame of planks, and the <strong>margin</strong> is the ring of air blocks you leave so the next build doesn't touch it. Every ring is added on <em>every</em> side.</p></div>
+<div class="widget" id="w-box">
+  <h3 class="widget-title">The box model and the 800-pixel deck</h3>
+  <p class="hint">Four images sit in an 800px-wide section. Change the margin and padding and watch what happens to the total width.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>"Few candidates were able to identify that the increased margin would exceed the given width", and fewer still explained that the images would then <strong>no longer match the wireframe</strong>: the last one drops to a new line. Remember that margin and padding are added to <em>both</em> sides. Some candidates added 10px to both sides of each section when the design wanted a 10px gap in total, which gave a 20px gap.</p></div>
+
+<h3>display: block, inline and none</h3>
+<div class="widget" id="w-display">
+  <h3 class="widget-title">Block, inline, none</h3>
+</div>
+
+<h3>float and clear</h3>
+<p><code>float:left</code> or <code>float:right</code> pushes an element to one side of its container, and following content <strong>wraps around it</strong>. That is how images sit beside text and how navigation bar items line up side by side. The float carries on affecting everything after it until something <strong>clears</strong> it: <code>clear:both</code> makes an element start below every floated element above it.</p>
+<div class="widget" id="w-float">
+  <h3 class="widget-title">The float and clear workbench</h3>
+  <p class="hint">Float the boxes, then see what happens to the footer with and without <code>clear:both</code>.</p>
+</div>
+<figure class="video">
+  <video controls preload="none" playsinline poster="videos/css-float.jpg">
+    <source src="videos/css-float.mp4" type="video/mp4">
+    <track kind="captions" src="videos/css-float.vtt" srclang="en" label="English" default>
+  </video>
+  <figcaption><strong>Video · Float, clear and the runaway footer</strong> · positioning with float, clear and the box model. Captions available.</figcaption>
+</figure>
+
+<h3>Building a horizontal navigation bar</h3>
+<p>SQA builds every navigation bar the same way: a <code>&lt;nav&gt;</code> containing an unordered list of links. CSS then turns it from a bulleted list into a bar.</p>
+<div class="widget" id="w-navbar">
+  <h3 class="widget-title">Rig the navigation bar, one rule at a time</h3>
+</div>
+<div class="check" data-check="wdd-css"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="forms" class="prose">
+<h2 data-short="Forms &amp; validation">6 · Forms and validation <span class="spec-tag">WDD · input text/number/radio/submit, textarea, select; length, presence, range</span></h2>
+<p>A <code>&lt;form&gt;</code> collects input from the user. HTML can validate that input in the browser itself, with no JavaScript needed:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Check</th><th>HTML</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Presence</b></td><td><code>required</code></td><td>The field can't be left empty</td></tr>
+<tr><td><b>Length</b></td><td><code>maxlength="20"</code> (and <code>minlength</code>)</td><td>Limits the number of characters</td></tr>
+<tr><td><b>Range</b></td><td><code>type="number" min="12" max="17"</code></td><td>The number must be between the limits</td></tr>
+</tbody></table></div>
+<div class="widget" id="w-form">
+  <h3 class="widget-title">Enlistment form: live</h3>
+  <p class="hint">Try to break it: leave the name blank, type 18 for age, then press <b>Enlist</b>. The code that builds it is shown underneath.</p>
+</div>
+<div class="callout tip"><div class="callout-title">Good practice</div><p>Give every input a <code>name</code>, and give radio buttons a shared <code>name</code> plus their own <code>value</code>. Radio buttons with the same name form a group, so only one can be chosen. At Higher, forms are not sent to a server, but the names are still expected.</p></div>
+<div class="check" data-check="wdd-forms"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="js" class="prose">
+<h2 data-short="JavaScript events">7 · JavaScript: mouse events <span class="spec-tag">WDD · onmouseover, onmouseout, onclick</span></h2>
+<p>An <dfn>event</dfn> is something the user does. Higher uses three mouse events, written as attributes on an HTML element. The JavaScript inside the quotes runs when the event happens:</p>
+<ul>
+<li><code>onmouseover</code>: the pointer moves <strong>onto</strong> the element</li>
+<li><code>onmouseout</code>: the pointer moves <strong>off</strong> the element</li>
+<li><code>onclick</code>: the element is <strong>clicked</strong> (or tapped)</li>
+</ul>
+<p>The code can change <strong>this</strong> element (the one with the event), or a <strong>different</strong> element found by its id, or it can call a <strong>function</strong> defined in a <code>&lt;script&gt;</code> block.</p>
+<div class="widget" id="w-js">
+  <h3 class="widget-title">Three demonstrations from the signal deck</h3>
+</div>
+<div class="callout tip"><div class="callout-title">Why use a function?</div><p>If several images all need to grow and shrink, write the actions once in a function such as <code>displayLarger(this)</code> and call it from every image. That is less code, and one change updates every image: more efficient and more maintainable.</p></div>
+<div class="check" data-check="wdd-js"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="testing" class="prose">
+<h2 data-short="Testing &amp; evaluation">8 · Testing and evaluation <span class="spec-tag">WDD · validation, navigation, media, compatibility; fitness for purpose, usability</span></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Test</th><th scope="col">How</th></tr></thead>
+<tbody>
+<tr><th scope="row">Input validation</th><td>Try to make <em>every</em> form field accept wrong data: leave required fields blank, type too many characters, and enter numbers just outside the range.</td></tr>
+<tr><th scope="row">Navigation bar works</th><td>Click every link in the bar on every page. Check that each one opens the right page and that every page can get back to the home page.</td></tr>
+<tr><th scope="row">Links</th><td>Check internal and external links. Look for <strong>orphan pages</strong>: pages that no other page links to.</td></tr>
+<tr><th scope="row">Media content displays correctly</th><td>Check that text, images, video and audio appear and play, in the positions shown on the wireframe.</td></tr>
+<tr><th scope="row">Compatibility: device type</th><td>Test on a <strong>desktop</strong>, a <strong>tablet</strong> and a <strong>smartphone</strong>. Different screen sizes and resolutions can break layouts, shift alignment or overlap content.</td></tr>
+<tr><th scope="row">Compatibility: browser</th><td>Test in several browsers (Chrome, Firefox, Safari, Edge…). They can render fonts, CSS and form validation slightly differently.</td></tr>
+</tbody></table></div>
+<h3>Evaluation</h3>
+<div class="compare">
+<div><h3>Fitness for purpose</h3><p>Does the site meet every end-user and functional requirement? Name any that it doesn't meet: <em>"The site is not fit for purpose: the Events page has no form to book camp places, which was a functional requirement."</em></p></div>
+<div><h3>Usability</h3><p>Is it easy to use? Is the navigation consistent, is the text readable, is the layout clear on every device, and are the form labels and error messages helpful?</p></div>
+</div>
+<div class="callout exam"><div class="callout-title">Resolution, not "screen size"</div><p>In 2025 few candidates could explain a problem "related to resolution". Most wrote about screen width instead. A page built with fixed pixel sizes (<code>body {width:800px}</code>) takes up a different proportion of screens with different resolutions. On a low-resolution display it may not fit, forcing horizontal scrolling. On a high-resolution display it looks small. A small bitmap image stretched to fill a large area looks pixelated.</p></div>
+<div class="check" data-check="wdd-testing"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="database.html">← Database</a>
+  <a class="btn primary" href="exam.html">Next: Exam drill →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24). On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script src="wdd.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

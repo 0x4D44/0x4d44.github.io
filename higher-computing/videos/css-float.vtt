@@ -1,0 +1,66 @@
+WEBVTT
+
+1
+00:00:01.200 --> 00:00:04.956
+<v Alba>Today, a layout mystery. The page looked perfect in the wireframe.
+
+2
+00:00:04.956 --> 00:00:06.970
+<v Alba>So why did the footer run away?
+
+3
+00:00:07.620 --> 00:00:14.351
+<v Alba>Every element is a box. Padding is space inside the border.
+
+4
+00:00:14.351 --> 00:00:17.682
+<v Alba>Margin is space outside it.
+
+5
+00:00:17.882 --> 00:00:20.531
+<v Alba>Both are added to each side:
+
+6
+00:00:20.531 --> 00:00:26.268
+<v Alba>two boxes with 10px margins leave a 20px gap between them.
+
+7
+00:00:26.918 --> 00:00:31.848
+<v Alba>Four images in an 800px section:
+
+8
+00:00:31.848 --> 00:00:41.189
+<v Alba>186 + 2×2 border + 2×5 margin = 200px each, 800px in total.
+
+9
+00:00:41.389 --> 00:00:46.347
+<v Alba>Raise the margin to 10px: 210px each, 840px for four.
+
+10
+00:00:46.347 --> 00:00:54.082
+<v Alba>The last image drops to a new line, so the page no longer matches its wireframe.
+
+11
+00:00:54.732 --> 00:01:00.472
+<v Alba>float:left pushes an element to the left, and the content after it wraps around it.
+
+12
+00:01:01.122 --> 00:01:04.830
+<v Captain>Lieutenant, the footer has run up beside the images!
+
+13
+00:01:05.030 --> 00:01:07.573
+<v Alba>Floats affect everything after them.
+
+14
+00:01:07.573 --> 00:01:11.495
+<v Alba>clear:both makes the footer start below every float.
+
+15
+00:01:12.145 --> 00:01:15.459
+<v Alba>Count both sides of the box. Float to line things up.
+
+16
+00:01:15.459 --> 00:01:17.710
+<v Alba>clear:both to start again below.
+

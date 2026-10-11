@@ -1,0 +1,70 @@
+WEBVTT
+
+1
+00:00:01.200 --> 00:00:06.117
+<v Alba>Welcome aboard, cadets. Today: how a computer stores negative numbers,
+
+2
+00:00:06.117 --> 00:00:09.106
+<v Alba>using nothing but eight redstone lamps.
+
+3
+00:00:09.756 --> 00:00:19.040
+<v Alba>At National 5, every lamp had a positive place value: 128, 64, 32 … down to 1.
+
+4
+00:00:19.240 --> 00:00:28.656
+<v Alba>Light the right lamps and add their values: 32 + 8 + 4 + 1 = 45.
+
+5
+00:00:29.306 --> 00:00:33.033
+<v Captain>But there's no such thing as a negative lamp, Lieutenant!
+
+6
+00:00:33.233 --> 00:00:36.960
+<v Alba>Then we make one, Captain. In two's complement,
+
+7
+00:00:36.960 --> 00:00:42.365
+<v Alba>the leftmost lamp is worth −128. Every other lamp stays positive.
+
+8
+00:00:43.015 --> 00:00:53.745
+<v Alba>So 1101 0011 means −128 + 64 + 16 + 2 + 1 …
+
+9
+00:00:53.945 --> 00:00:59.397
+<v Alba>… = −45. If the leftmost lamp is lit, the number is negative.
+
+10
+00:01:00.047 --> 00:01:04.206
+<v Alba>To turn −45 into binary, use flip and add one.
+
+11
+00:01:04.406 --> 00:01:10.057
+<v Alba>First write +45:  0010 1101
+
+12
+00:01:10.257 --> 00:01:16.332
+<v Alba>Flip every bit:  1101 0010
+
+13
+00:01:16.532 --> 00:01:24.237
+<v Alba>Add 1:  1101 0011. Check with the place values: it works.
+
+14
+00:01:24.887 --> 00:01:27.250
+<v Captain>And how far can eight lamps count?
+
+15
+00:01:27.450 --> 00:01:36.527
+<v Alba>From −128 (only the leftmost lamp lit) up to 127 (every lamp except that one).
+
+16
+00:01:36.727 --> 00:01:43.884
+<v Alba>For n bits: −2ⁿ⁻¹ to 2ⁿ⁻¹ − 1.
+
+17
+00:01:44.534 --> 00:01:50.375
+<v Alba>Leftmost lamp negative. Flip and add one. Always check your answer. Dismissed!
+

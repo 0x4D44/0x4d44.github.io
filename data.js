@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "higher-computing",
+    title: "Blocks, Wings & Broadsides",
+    tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, worked exam technique and a mock paper. Minecraft blocks, RAF Air Cadets and Napoleonic ships of the line carry the examples; live SQL, stepping algorithms and narrated video explainers do the teaching. Vanilla JavaScript, sql.js, Piper TTS.",
+    url: "https://0x4d44.github.io/higher-computing/",
+    illustration: "ill-higher-computing",
+    date: "2026-10-11T22:00:00",
+    year: 2026,
+    readingMin: 90,
+    words: 17800,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "pigeon-protocol",
     title: "Pigeon Protocol",
     tagline: "RFC 1149 is real, so run it: a carrier-pigeon network from Colinton to Glasgow, where hawks, a crowded mountain pass and a rival loft teach you slow start, the sawtooth and congestion collapse by feel. Obituaries for lost birds included. Vanilla JS on a seeded, tested engine.",
@@ -1951,7 +1964,7 @@ window.COLLECTIONS = [
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger", "pigeon-protocol"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
-    slugs: ["f1gp-internals", "mos-6502", "winrisk", "mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
+    slugs: ["higher-computing", "f1gp-internals", "mos-6502", "winrisk", "mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
       "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier",
       "constellation"] },
   { id: "cabinet", name: "The Cabinet", icon: "ill-sleeve",
