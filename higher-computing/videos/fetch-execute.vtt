@@ -1,66 +1,66 @@
 WEBVTT
 
 1
-00:00:01.200 --> 00:00:06.200
+00:00:01.200 --> 00:00:06.313
 <v Captain>Beat to quarters! Every gun crew aboard follows the same drill,
 
 2
-00:00:06.200 --> 00:00:09.546
+00:00:06.313 --> 00:00:09.728
 <v Captain>over and over. So does every processor.
 
 3
-00:00:10.196 --> 00:00:15.659
+00:00:10.378 --> 00:00:15.702
 <v Alba>The processor and main memory, joined by three buses:
 
 4
-00:00:15.659 --> 00:00:21.062
+00:00:15.702 --> 00:00:20.975
 <v Alba>the address bus, the data bus and the control bus.
 
 5
-00:00:21.712 --> 00:00:27.066
+00:00:21.625 --> 00:00:26.924
 <v Alba>Step 1: the processor sets up the address bus with the address of the instruction.
 
 6
-00:00:27.266 --> 00:00:28.772
+00:00:27.124 --> 00:00:28.617
 <v Captain>Locker 04!
 
 7
-00:00:29.422 --> 00:00:35.760
+00:00:29.267 --> 00:00:35.524
 <v Alba>Step 2: the processor activates the read line on the control bus.
 
 8
-00:00:36.410 --> 00:00:37.104
-<v Alba>Step 3:
+00:00:36.174 --> 00:00:45.449
+<v Alba>Step 3: the instruction travels along the data bus into the instruction register,
 
 9
-00:00:37.104 --> 00:00:45.780
-<v Alba>the instruction travels along the data bus and is stored in the instruction register.
+00:00:45.449 --> 00:00:50.165
+<v Alba>and the program counter steps on to 05.
 
 10
-00:00:46.430 --> 00:00:51.495
+00:00:50.815 --> 00:00:55.397
 <v Alba>Step 4: the instruction is decoded and executed.
 
 11
-00:00:51.695 --> 00:00:52.490
+00:00:55.597 --> 00:00:56.373
 <v Captain>Fire!
 
 12
-00:00:53.140 --> 00:00:58.341
+00:00:57.023 --> 00:01:01.995
 <v Alba>To speed up the drill: more cores, more crews firing at once.
 
 13
-00:00:58.541 --> 00:01:08.818
+00:01:02.195 --> 00:01:12.783
 <v Alba>A wider data bus: more bits per trip. More cache: fewer slow trips to main memory.
 
 14
-00:01:09.018 --> 00:01:13.814
+00:01:12.983 --> 00:01:17.782
 <v Alba>A higher clock speed: a faster drumbeat, more cycles per second.
 
 15
-00:01:14.464 --> 00:01:19.060
+00:01:18.432 --> 00:01:22.999
 <v Captain>Address bus. Read line. Data bus. Decode and execute.
 
 16
-00:01:19.060 --> 00:01:22.172
+00:01:22.999 --> 00:01:26.093
 <v Captain>Learn it like your drill, cadets.
 

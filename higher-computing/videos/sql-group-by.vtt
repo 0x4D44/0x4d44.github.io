@@ -1,58 +1,58 @@
 WEBVTT
 
 1
-00:00:01.200 --> 00:00:05.368
+00:00:01.200 --> 00:00:05.534
 <v Captain>Muster the cadets! I want a headcount for every squadron.
 
 2
-00:00:06.018 --> 00:00:11.330
+00:00:06.184 --> 00:00:11.412
 <v Alba>The Cadet table: 12 rows. COUNT(*) alone gives 12.
 
 3
-00:00:11.330 --> 00:00:16.467
+00:00:11.412 --> 00:00:16.471
 <v Alba>The Captain wants one count for each squadron.
 
 4
-00:00:17.117 --> 00:00:21.646
+00:00:17.121 --> 00:00:21.606
 <v Alba>GROUP BY squadronNo gathers rows with the same squadron number.
 
 5
-00:00:21.646 --> 00:00:23.909
+00:00:21.606 --> 00:00:23.850
 <v Alba>Four squadrons, four groups.
 
 6
-00:00:24.559 --> 00:00:31.376
+00:00:24.500 --> 00:00:31.253
 <v Alba>The aggregate runs once per group. Each group collapses into one row with its count.
 
 7
-00:00:32.026 --> 00:00:34.666
+00:00:31.903 --> 00:00:34.598
 <v Alba>Add an alias for a readable heading,
 
 8
-00:00:34.666 --> 00:00:38.582
-<v Alba>then ORDER BY COUNT(*) DESC for the biggest first.
+00:00:34.598 --> 00:00:38.591
+<v Alba>then ORDER BY COUNT(*) ASC for the smallest first.
 
 9
-00:00:38.782 --> 00:00:42.417
+00:00:38.791 --> 00:00:42.273
 <v Alba>Remember: GROUP BY always comes before ORDER BY.
 
 10
-00:00:43.067 --> 00:00:45.767
+00:00:42.923 --> 00:00:45.618
 <v Captain>Any traps for the unwary, Lieutenant?
 
 11
-00:00:45.967 --> 00:00:49.714
+00:00:45.818 --> 00:00:49.492
 <v Alba>Two. An aggregate can't go in a WHERE clause:
 
 12
-00:00:49.714 --> 00:00:53.960
+00:00:49.492 --> 00:00:53.661
 <v Alba>work it out in one query and use it in a second.
 
 13
-00:00:54.160 --> 00:00:58.806
+00:00:53.861 --> 00:00:58.604
 <v Alba>And never mix a plain field with an aggregate unless you GROUP BY that field.
 
 14
-00:00:59.456 --> 00:01:03.148
+00:00:59.254 --> 00:01:02.894
 <v Alba>Group, then aggregate, then order. Dismissed!
 
