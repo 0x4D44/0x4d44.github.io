@@ -225,6 +225,7 @@
   function js(box) {
     const ship = (c, extra = "") => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges"><rect width="32" height="32" fill="#9fc6e8"/><rect y="24" width="32" height="8" fill="#2f6fb5"/><rect x="4" y="18" width="24" height="6" fill="${c}"/><rect x="6" y="20" width="2" height="2" fill="#e0b23a"/><rect x="12" y="20" width="2" height="2" fill="#e0b23a"/><rect x="18" y="20" width="2" height="2" fill="#e0b23a"/><rect x="15" y="4" width="2" height="14" fill="#3b2a1a"/><rect x="9" y="6" width="12" height="9" fill="#f4ecd8"/>${extra}</svg>`);
     const idle = ship("#7a5532"), fire = ship("#7a5532", `<rect x="0" y="17" width="5" height="5" fill="#ffb21e"/><rect x="27" y="17" width="5" height="5" fill="#ffb21e"/><rect x="2" y="12" width="4" height="4" fill="#ddd"/><rect x="26" y="12" width="4" height="4" fill="#ddd"/>`);
+    // Global on purpose: the demo mirrors the SQA-style inline onclick="showSection(...)" it teaches.
     window.showSection = function (id) {
       document.getElementById("gunnery").style.display = "none";
       document.getElementById("signals").style.display = "none";

@@ -243,11 +243,11 @@
       <rect x="10" y="20" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--navy-2)" stroke-width="3"/>
       <text x="125" y="44" text-anchor="middle" class="px ink" font-size="16">Processor</text>
       <g class="mono" font-size="12">
-        <rect x="26" y="62" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="78" class="muted" font-size="10">PROGRAM COUNTER</text><text id="fx-pc" x="34" y="96" class="ink">04</text>
-        <rect x="26" y="112" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="128" class="muted" font-size="10">INSTRUCTION REGISTER</text><text id="fx-ir" x="34" y="146" class="ink">—</text>
-        <rect id="fx-cu" x="26" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="180" class="muted" font-size="10">CONTROL</text><text x="34" y="194" class="muted" font-size="10">UNIT /</text><text x="34" y="208" class="muted" font-size="10">DECODER</text>
-        <rect id="fx-alu" x="128" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="136" y="180" class="muted" font-size="10">ALU</text>
-        <rect x="26" y="232" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="248" class="muted" font-size="10">ACCUMULATOR</text><text id="fx-acc" x="34" y="266" class="ink">0</text>
+        <rect x="26" y="62" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="78" class="ink2" font-size="12">PROGRAM COUNTER</text><text id="fx-pc" x="34" y="96" class="ink">04</text>
+        <rect x="26" y="112" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="128" class="ink2" font-size="12">INSTRUCTION REGISTER</text><text id="fx-ir" x="34" y="146" class="ink">—</text>
+        <rect id="fx-cu" x="26" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="180" class="ink2" font-size="12">CONTROL</text><text x="34" y="194" class="ink2" font-size="12">UNIT /</text><text x="34" y="208" class="ink2" font-size="12">DECODER</text>
+        <rect id="fx-alu" x="128" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="136" y="180" class="ink2" font-size="12">ALU</text>
+        <rect x="26" y="232" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="248" class="ink2" font-size="12">ACCUMULATOR</text><text id="fx-acc" x="34" y="266" class="ink">0</text>
       </g>`;
     const memBox = `
       <rect x="0" y="0" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--dirt)" stroke-width="3"/>
@@ -542,7 +542,7 @@
   function crypto(box) {
     const KEY = (x, y, col, lab) => `<g transform="translate(${x} ${y})"><circle cx="8" cy="8" r="7" fill="none" stroke="${col}" stroke-width="4"/><path d="M15 8 H40 M32 8 V15 M38 8 V13" stroke="${col}" stroke-width="4"/><text x="0" y="30" font-size="11" fill="${col}" font-weight="700">${lab}</text></g>`;
     const PERSON = (x, name, emoji) => `<g><text x="${x}" y="70" font-size="40" text-anchor="middle">${emoji}</text><text x="${x}" y="96" font-size="13" text-anchor="middle" class="ink" font-weight="700">${name}</text></g>`;
-    const SCROLL = (x, y, txt, col = "#f4ecd8", seal) => `<g transform="translate(${x} ${y})"><rect width="150" height="44" rx="6" fill="${col}" stroke="#7a5532" stroke-width="2"/><text x="75" y="27" text-anchor="middle" font-size="12" class="mono" fill="#2b2216">${txt}</text>${seal ? `<circle cx="140" cy="38" r="12" fill="${seal}" stroke="#5a1410" stroke-width="2"/>` : ""}</g>`;
+    const SCROLL = (x, y, txt, col = "#f4ecd8", seal) => `<g transform="translate(${x} ${y})"><rect width="150" height="44" rx="6" fill="${col}" stroke="#7a5532" stroke-width="2"/><text x="75" y="27" text-anchor="middle" font-size="12" class="mono" fill="#2b2216">${txt}</text>${seal ? `<circle cx="150" cy="44" r="11" fill="${seal}" stroke="#5a1410" stroke-width="2"/>` : ""}</g>`;
     const BLUE = "var(--sky)", RED = "var(--redstone)", GOLD = "var(--gold)";
     const base = (inner) => `<svg viewBox="0 0 640 230" role="img" aria-hidden="true"><rect x="0" y="0" width="640" height="230" fill="var(--paper-2)"/><path d="M0 200 Q80 190 160 200 T320 200 T480 200 T640 200 V230 H0 Z" fill="#5b8fc7" opacity=".35"/>${inner}</svg>`;
     const SC = {
@@ -557,7 +557,7 @@
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(40, 120, BLUE, "Ailsa's PUBLIC key") + KEY(40, 160, RED, "Ailsa's PRIVATE key"), "This time Ailsa needs to prove that the order comes from <b>her</b>, and that nobody has changed it. She uses <b>her own</b> key pair."],
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(40, 120, RED, "Ailsa's PRIVATE key") + SCROLL(160, 40, "Fleet sails at dawn", undefined, RED), "Software works out a short summary (a <i>hash</i>) of the message. Ailsa encrypts that summary with her <b>private key</b>. This is her <b>digital signature</b>, the wax seal attached to the message."],
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(470, 120, BLUE, "Ailsa's PUBLIC key") + SCROLL(300, 40, "Fleet sails at dawn", undefined, RED) + `<text x="320" y="125" font-size="14" fill="var(--grass)" font-weight="700">✔ seal matches</text>`, "The captain decrypts the signature with <b>Ailsa's public key</b> and compares it with his own summary of the message. They match, so it <b>must</b> have come from Ailsa and it is <b>unaltered</b>."],
-        [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + PERSON(320, "Le Renard (spy)", "🦊") + SCROLL(245, 120, "Fleet sails at dusk", undefined, RED) + `<text x="440" y="140" font-size="14" fill="var(--redstone)" font-weight="700">✘ seal doesn't match!</text>`, "If the spy changes <i>dawn</i> to <i>dusk</i>, the summary no longer matches the signature, and he can't make a new one without Ailsa's <b>private</b> key. <b>Tampering is detected.</b> (A signature proves origin and integrity. It does not hide the message.)"],
+        [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + PERSON(320, "Le Renard (spy)", "🦊") + SCROLL(245, 120, "Fleet sails at dusk", undefined, RED) + `<text x="415" y="150" font-size="14" fill="var(--redstone)" font-weight="700">✘ seal doesn't match!</text>`, "If the spy changes <i>dawn</i> to <i>dusk</i>, the summary no longer matches the signature, and he can't make a new one without Ailsa's <b>private</b> key. <b>Tampering is detected.</b> (A signature proves origin and integrity. It does not hide the message.)"],
       ],
       cert: [
         [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + KEY(520, 120, BLUE, "site's PUBLIC key"), "You visit <code>https://redstone.example</code>. It sends its public key, but how do you know a fake site isn't pretending to be Redstone?"],
@@ -566,6 +566,7 @@
         [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + `<text x="320" y="70" font-size="36" text-anchor="middle">🔒</text><text x="320" y="110" font-size="13" text-anchor="middle" class="ink">encrypted HTTPS connection</text>`, "Now the browser trusts the public key, and it uses it to set up an encrypted connection: the padlock. A forged certificate would fail the check and trigger a big warning."],
       ],
     };
+    const FOCUS = {secret: [480, 160, 200, 370, 450], signature: [110, 170, 430, 400], cert: [480, 320, 320, 320]};
     const tabs = el("div", { class: "btn-row", role: "group", "aria-label": "Scenario" });
     const stage = el("div", { class: "diagram-scroll crypto-stage" });
     const cap = el("p", { class: "stepper-note", "aria-live": "polite" });
@@ -584,6 +585,12 @@
     function render() {
       const [svg, txt] = SC[cur][i];
       stage.innerHTML = base(svg);
+      // On a phone the scene is wider than the screen: scroll to the part this step is about.
+      const over = stage.scrollWidth - stage.clientWidth;
+      if (over > 2) {
+        const fx = FOCUS[cur][i] / 640 * stage.scrollWidth - stage.clientWidth / 2;
+        stage.scrollTo({ left: Math.max(0, Math.min(over, fx)), behavior: HC.reduced ? "auto" : "smooth" });
+      }
       cap.innerHTML = txt;
       pos.textContent = `Scene ${i + 1} of ${SC[cur].length}`;
       back.disabled = i === 0; next.disabled = i === SC[cur].length - 1;

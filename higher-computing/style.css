@@ -586,3 +586,4 @@ ul.anat-code li { margin: 0; }
 .swipe-hint { display: none; margin: 4px 0 0; font-size: .8rem; color: var(--muted); text-align: right; }
 .is-scrollable + .swipe-hint { display: block; }
 .is-scrollable.at-end + .swipe-hint { visibility: hidden; }
+#w-unicode td code { white-space: nowrap; overflow-wrap: normal; }
