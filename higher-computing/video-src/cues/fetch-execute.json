@@ -5,42 +5,42 @@
   {
    "id": "title",
    "start": 1.2,
-   "end": 10.196
+   "end": 10.378
   },
   {
    "id": "parts",
-   "start": 10.196,
-   "end": 21.712
+   "start": 10.378,
+   "end": 21.625
   },
   {
    "id": "step1",
-   "start": 21.712,
-   "end": 29.422
+   "start": 21.625,
+   "end": 29.267
   },
   {
    "id": "step2",
-   "start": 29.422,
-   "end": 36.41
+   "start": 29.267,
+   "end": 36.174
   },
   {
    "id": "step3",
-   "start": 36.41,
-   "end": 46.43
+   "start": 36.174,
+   "end": 50.815
   },
   {
    "id": "step4",
-   "start": 46.43,
-   "end": 53.14
+   "start": 50.815,
+   "end": 57.023
   },
   {
    "id": "perf",
-   "start": 53.14,
-   "end": 74.464
+   "start": 57.023,
+   "end": 78.432
   },
   {
    "id": "outro",
-   "start": 74.464,
-   "end": 82.822
+   "start": 78.432,
+   "end": 86.743
   }
  ],
  "lines": [
@@ -50,7 +50,7 @@
    "li": 0,
    "voice": "H",
    "start": 1.2,
-   "end": 9.296,
+   "end": 9.478,
    "cap": "Beat to quarters! Every gun crew aboard follows the same drill, over and over. So does every processor."
   },
   {
@@ -58,8 +58,8 @@
    "si": 1,
    "li": 0,
    "voice": "A",
-   "start": 10.196,
-   "end": 20.812,
+   "start": 10.378,
+   "end": 20.725,
    "cap": "The processor and main memory, joined by three buses: the address bus, the data bus and the control bus."
   },
   {
@@ -67,8 +67,8 @@
    "si": 2,
    "li": 0,
    "voice": "A",
-   "start": 21.712,
-   "end": 26.816,
+   "start": 21.625,
+   "end": 26.674,
    "cap": "Step 1: the processor sets up the address bus with the address of the instruction."
   },
   {
@@ -76,8 +76,8 @@
    "si": 2,
    "li": 1,
    "voice": "H",
-   "start": 27.266,
-   "end": 28.522,
+   "start": 27.124,
+   "end": 28.367,
    "cap": "Locker 04!"
   },
   {
@@ -85,8 +85,8 @@
    "si": 3,
    "li": 0,
    "voice": "A",
-   "start": 29.422,
-   "end": 35.51,
+   "start": 29.267,
+   "end": 35.274,
    "cap": "Step 2: the processor activates the read line on the control bus."
   },
   {
@@ -94,17 +94,17 @@
    "si": 4,
    "li": 0,
    "voice": "A",
-   "start": 36.41,
-   "end": 45.53,
-   "cap": "Step 3: the instruction travels along the data bus and is stored in the instruction register."
+   "start": 36.174,
+   "end": 49.915,
+   "cap": "Step 3: the instruction travels along the data bus into the instruction register, and the program counter steps on to 05."
   },
   {
    "scene": "step4",
    "si": 5,
    "li": 0,
    "voice": "A",
-   "start": 46.43,
-   "end": 51.245,
+   "start": 50.815,
+   "end": 55.147,
    "cap": "Step 4: the instruction is decoded and executed."
   },
   {
@@ -112,8 +112,8 @@
    "si": 5,
    "li": 1,
    "voice": "H",
-   "start": 51.695,
-   "end": 52.24,
+   "start": 55.597,
+   "end": 56.123,
    "cap": "Fire!"
   },
   {
@@ -121,8 +121,8 @@
    "si": 6,
    "li": 0,
    "voice": "A",
-   "start": 53.14,
-   "end": 58.091,
+   "start": 57.023,
+   "end": 61.745,
    "cap": "To speed up the drill: more cores, more crews firing at once."
   },
   {
@@ -130,8 +130,8 @@
    "si": 6,
    "li": 1,
    "voice": "A",
-   "start": 58.541,
-   "end": 68.568,
+   "start": 62.195,
+   "end": 72.533,
    "cap": "A wider data bus: more bits per trip. More cache: fewer slow trips to main memory."
   },
   {
@@ -139,8 +139,8 @@
    "si": 6,
    "li": 2,
    "voice": "A",
-   "start": 69.018,
-   "end": 73.564,
+   "start": 72.983,
+   "end": 77.532,
    "cap": "A higher clock speed: a faster drumbeat, more cycles per second."
   },
   {
@@ -148,10 +148,10 @@
    "si": 7,
    "li": 0,
    "voice": "H",
-   "start": 74.464,
-   "end": 81.922,
+   "start": 78.432,
+   "end": 85.843,
    "cap": "Address bus. Read line. Data bus. Decode and execute. Learn it like your drill, cadets."
   }
  ],
- "duration": 84.822
+ "duration": 88.743
 }

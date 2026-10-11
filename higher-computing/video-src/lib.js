@@ -25,7 +25,10 @@ function txt(c, s, x, y, o = {}) {
   c.restore();
 }
 // Pixelify's "5" reads as "S", so its digits come from JetBrains Mono (same trick as the site's "HC Digits").
-const px = (c, s, x, y, o = {}) => txt(c, s, x, y, { font: "'HC Digits', 'Pixelify Sans'", weight: 700, ...o });
+// Below ~40px Pixelify's capital "C" reads as "O", so small labels use Atkinson Hyperlegible bold.
+const px = (c, s, x, y, o = {}) => txt(c, s, x, y, (o.size || 28) < 40
+  ? { weight: 700, ...o, font: "'Atkinson Hyperlegible'" }
+  : { font: "'HC Digits', 'Pixelify Sans'", weight: 700, ...o });
 const mono = (c, s, x, y, o = {}) => txt(c, s, x, y, { font: "'JetBrains Mono'", ...o });
 
 function rect(c, x, y, w, h, fill, stroke, lw = 3, alpha = 1) {

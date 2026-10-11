@@ -5,37 +5,37 @@
   {
    "id": "title",
    "start": 1.2,
-   "end": 13.566
+   "end": 13.517
   },
   {
    "id": "denary",
-   "start": 13.566,
-   "end": 29.026
+   "start": 13.517,
+   "end": 29.062
   },
   {
    "id": "binary",
-   "start": 29.026,
-   "end": 46.331
+   "start": 29.062,
+   "end": 46.612
   },
   {
    "id": "fields",
-   "start": 46.331,
-   "end": 62.052
+   "start": 46.612,
+   "end": 63.404
   },
   {
    "id": "small",
-   "start": 62.052,
-   "end": 78.716
+   "start": 63.404,
+   "end": 79.777
   },
   {
    "id": "tradeoff",
-   "start": 78.716,
-   "end": 93.909
+   "start": 79.777,
+   "end": 94.674
   },
   {
    "id": "outro",
-   "start": 93.909,
-   "end": 100.695
+   "start": 94.674,
+   "end": 101.561
   }
  ],
  "lines": [
@@ -45,7 +45,7 @@
    "li": 0,
    "voice": "A",
    "start": 1.2,
-   "end": 12.666,
+   "end": 12.617,
    "cap": "Two's complement only stores whole numbers. A navigator needs fractions, like latitude 56.1875°. For real numbers, computers use floating point."
   },
   {
@@ -53,8 +53,8 @@
    "si": 1,
    "li": 0,
    "voice": "A",
-   "start": 13.566,
-   "end": 18.273,
+   "start": 13.517,
+   "end": 18.304,
    "cap": "The idea in denary: move the point to the front, and count the hops."
   },
   {
@@ -62,17 +62,17 @@
    "si": 1,
    "li": 1,
    "voice": "A",
-   "start": 18.723,
-   "end": 28.126,
-   "cap": "Five hops left: 34 006.8 = 0.340068 × 10⁵"
+   "start": 18.754,
+   "end": 28.162,
+   "cap": "Five hops to the left: 34 006.8 = 0.340068 × 10⁵"
   },
   {
    "scene": "binary",
    "si": 2,
    "li": 0,
    "voice": "A",
-   "start": 29.026,
-   "end": 38.251,
+   "start": 29.062,
+   "end": 38.476,
    "cap": "Computers do the same in binary: 66.625 = 1000010.101"
   },
   {
@@ -80,8 +80,8 @@
    "si": 2,
    "li": 1,
    "voice": "A",
-   "start": 38.701,
-   "end": 45.431,
+   "start": 38.926,
+   "end": 45.712,
    "cap": "Hop the point left until it sits just before the first 1. Seven hops, so the exponent is 7."
   },
   {
@@ -89,17 +89,17 @@
    "si": 3,
    "li": 0,
    "voice": "A",
-   "start": 46.331,
-   "end": 51.408,
-   "cap": "Store three parts. A sign bit: 0 for positive, 1 for negative."
+   "start": 46.612,
+   "end": 52.654,
+   "cap": "Store three parts. First, the sign bit: 0 for positive, 1 for negative."
   },
   {
    "scene": "fields",
    "si": 3,
    "li": 1,
    "voice": "A",
-   "start": 51.858,
-   "end": 56.528,
+   "start": 53.104,
+   "end": 57.836,
    "cap": "The mantissa: the digits after the point, padded with zeros to 15 bits."
   },
   {
@@ -107,8 +107,8 @@
    "si": 3,
    "li": 2,
    "voice": "A",
-   "start": 56.978,
-   "end": 61.152,
+   "start": 58.286,
+   "end": 62.504,
    "cap": "And the exponent: 7, stored in 8-bit two's complement."
   },
   {
@@ -116,8 +116,8 @@
    "si": 4,
    "li": 0,
    "voice": "H",
-   "start": 62.052,
-   "end": 64.704,
+   "start": 63.404,
+   "end": 66.087,
    "cap": "And what about a tiny number, Lieutenant?"
   },
   {
@@ -125,8 +125,8 @@
    "si": 4,
    "li": 1,
    "voice": "A",
-   "start": 65.154,
-   "end": 77.816,
+   "start": 66.537,
+   "end": 78.877,
    "cap": "Then the point hops right and the exponent is negative. 0.0010101 needs two hops right: −2 = 1111 1110."
   },
   {
@@ -134,8 +134,8 @@
    "si": 5,
    "li": 0,
    "voice": "A",
-   "start": 78.716,
-   "end": 85.957,
+   "start": 79.777,
+   "end": 86.713,
    "cap": "The total number of bits is fixed. More bits for the mantissa: more precision."
   },
   {
@@ -143,8 +143,8 @@
    "si": 5,
    "li": 1,
    "voice": "A",
-   "start": 86.407,
-   "end": 93.009,
+   "start": 87.163,
+   "end": 93.774,
    "cap": "More bits for the exponent: more range. You can't have both."
   },
   {
@@ -152,10 +152,10 @@
    "si": 6,
    "li": 0,
    "voice": "A",
-   "start": 93.909,
-   "end": 99.795,
+   "start": 94.674,
+   "end": 100.661,
    "cap": "Mantissa → precision. Exponent → range. Use those exact words in the exam."
   }
  ],
- "duration": 102.695
+ "duration": 103.561
 }

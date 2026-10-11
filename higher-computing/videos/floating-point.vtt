@@ -1,66 +1,66 @@
 WEBVTT
 
 1
-00:00:01.200 --> 00:00:06.973
+00:00:01.200 --> 00:00:06.948
 <v Alba>Two's complement only stores whole numbers. A navigator needs fractions,
 
 2
-00:00:06.973 --> 00:00:12.916
+00:00:06.948 --> 00:00:12.867
 <v Alba>like latitude 56.1875°. For real numbers, computers use floating point.
 
 3
-00:00:13.566 --> 00:00:18.523
+00:00:13.517 --> 00:00:18.554
 <v Alba>The idea in denary: move the point to the front, and count the hops.
 
 4
-00:00:18.723 --> 00:00:28.376
-<v Alba>Five hops left: 34 006.8 = 0.340068 × 10⁵
+00:00:18.754 --> 00:00:28.412
+<v Alba>Five hops to the left: 34 006.8 = 0.340068 × 10⁵
 
 5
-00:00:29.026 --> 00:00:38.501
+00:00:29.062 --> 00:00:38.726
 <v Alba>Computers do the same in binary: 66.625 = 1000010.101
 
 6
-00:00:38.701 --> 00:00:42.963
+00:00:38.926 --> 00:00:43.224
 <v Alba>Hop the point left until it sits just before the first 1.
 
 7
-00:00:42.963 --> 00:00:45.681
+00:00:43.224 --> 00:00:45.962
 <v Alba>Seven hops, so the exponent is 7.
 
 8
-00:00:46.331 --> 00:00:51.658
-<v Alba>Store three parts. A sign bit: 0 for positive, 1 for negative.
+00:00:46.612 --> 00:00:52.904
+<v Alba>Store three parts. First, the sign bit: 0 for positive, 1 for negative.
 
 9
-00:00:51.858 --> 00:00:56.778
+00:00:53.104 --> 00:00:58.086
 <v Alba>The mantissa: the digits after the point, padded with zeros to 15 bits.
 
 10
-00:00:56.978 --> 00:01:01.402
+00:00:58.286 --> 00:01:02.754
 <v Alba>And the exponent: 7, stored in 8-bit two's complement.
 
 11
-00:01:02.052 --> 00:01:04.954
+00:01:03.404 --> 00:01:06.337
 <v Captain>And what about a tiny number, Lieutenant?
 
 12
-00:01:05.154 --> 00:01:11.982
+00:01:06.537 --> 00:01:13.191
 <v Alba>Then the point hops right and the exponent is negative.
 
 13
-00:01:11.982 --> 00:01:18.066
+00:01:13.191 --> 00:01:19.127
 <v Alba>0.0010101 needs two hops right: −2 = 1111 1110.
 
 14
-00:01:18.716 --> 00:01:26.207
+00:01:19.777 --> 00:01:26.963
 <v Alba>The total number of bits is fixed. More bits for the mantissa: more precision.
 
 15
-00:01:26.407 --> 00:01:33.259
+00:01:27.163 --> 00:01:34.024
 <v Alba>More bits for the exponent: more range. You can't have both.
 
 16
-00:01:33.909 --> 00:01:40.045
+00:01:34.674 --> 00:01:40.911
 <v Alba>Mantissa → precision. Exponent → range. Use those exact words in the exam.
 

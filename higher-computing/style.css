@@ -236,7 +236,7 @@ pre .hl { background: rgba(255,214,90,.22); display: inline-block; width: 100%; 
 .callout.model .callout-title { color: var(--sea); }
 
 /* ---------- block buttons (Minecraft bevel) ---------- */
-.btn {
+.btn { font-variant-ligatures: none;
   font: 600 .9rem/1 var(--font-pixel); color: #fff; cursor: pointer; padding: 10px 14px; min-height: 40px;
   background: #6b6b6b; border: 2px solid #1b1b1b; border-radius: 0;
   box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -3px 0 rgba(0,0,0,.35);
@@ -468,6 +468,7 @@ dl.glossary dd { margin: 0; }
 .spy { display: flex; flex-wrap: wrap; gap: 16px; }
 .spy figure { margin: 0; flex: 1 1 200px; max-width: 260px; }
 .spy canvas, .spy svg { width: 100%; height: auto; border: 3px solid var(--dirt); display: block; image-rendering: pixelated; background: #f4ecd8; }
+.fx-grid .diagram-scroll > svg { min-width: 0; width: 100%; }
 .fx-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 210px); gap: 12px; align-items: start; }
 @media (max-width: 760px) { .fx-grid { grid-template-columns: minmax(0, 1fr); } }
 .fx-d { display: flex; gap: 8px; padding: 6px 8px; margin-bottom: 6px; background: var(--paper); border: 2px solid var(--line); font-size: .86rem; line-height: 1.3; }
@@ -523,7 +524,7 @@ details summary { cursor: pointer; font-weight: 700; }
 .bm-img span { display: block; }
 .disp-demo { padding: 10px; background: var(--paper); border: 2px solid var(--line); margin: 8px 0; }
 .disp-el { background: var(--bg-red); color: #fff; padding: 2px 6px; font: 700 .9rem var(--font-pixel); }
-.fl-stage { background: var(--paper); border: 2px solid var(--line); padding: 6px; margin: 8px 0; font-size: .92rem; }
+.fl-stage { background: var(--paper); border: 2px solid var(--line); padding: 6px 6px 60px; margin: 8px 0; font-size: .92rem; }
 .fl-box { width: 90px; margin: 6px; display: block; box-sizing: content-box; text-align: center; color: #fff; font: 700 1rem/3 var(--font-pixel); }
 .fl-a { height: 90px; background: var(--bg-sea); }
 .fl-b { height: 120px; background: var(--bg-green); }
@@ -580,3 +581,4 @@ video:focus-visible { outline: 3px solid #ffd65a; outline-offset: 2px; }
 ul.anat-code { list-style: none; margin: 0; }
 ul.anat-code li { margin: 0; }
 .sw { display: inline-block; width: 0.8em; height: 0.8em; vertical-align: -0.05em; border: 1px solid var(--ink); }
+.twos-steps:empty { display: none; }

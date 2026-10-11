@@ -70,7 +70,7 @@ VIDEOS = {
                 ("A", "Here's the idea in denary. Move the point to the front of the number, and count the hops.",
                       "The idea in denary: move the point to the front, and count the hops."),
                 ("A", "Five hops to the left. So thirty four thousand and six point eight is zero point three four zero zero six eight, times ten to the power five.",
-                      "Five hops left: 34 006.8 = 0.340068 × 10⁵"),
+                      "Five hops to the left: 34 006.8 = 0.340068 × 10⁵"),
             ]),
             ("binary", [
                 ("A", "Computers do exactly the same, in binary. Sixty six point six two five is one zero zero zero zero one zero, point, one zero one.",
@@ -79,8 +79,8 @@ VIDEOS = {
                       "Hop the point left until it sits just before the first 1. Seven hops, so the exponent is 7."),
             ]),
             ("fields", [
-                ("A", "Now store three parts. A sign bit. Zero for positive, one for negative.",
-                      "Store three parts. A sign bit: 0 for positive, 1 for negative."),
+                ("A", "Now store three parts. First, the sign bit. Zero for positive, one for negative.",
+                      "Store three parts. First, the sign bit: 0 for positive, 1 for negative."),
                 ("A", "The mantissa. The digits after the point, padded with zeros to fifteen bits.",
                       "The mantissa: the digits after the point, padded with zeros to 15 bits."),
                 ("A", "And the exponent. Seven, stored in eight bit two's complement.",
@@ -126,8 +126,8 @@ VIDEOS = {
                       "Step 2: the processor activates the read line on the control bus."),
             ]),
             ("step3", [
-                ("A", "Step three. The instruction travels back along the data bus, and is stored in the instruction register. Like a powder monkey running a cartridge up from the magazine.",
-                      "Step 3: the instruction travels along the data bus and is stored in the instruction register."),
+                ("A", "Step three. The instruction travels back along the data bus, and is stored in the instruction register. The program counter steps on to zero five, ready for the next locker. Like a powder monkey running a cartridge up from the magazine.",
+                      "Step 3: the instruction travels along the data bus into the instruction register, and the program counter steps on to 05."),
             ]),
             ("step4", [
                 ("A", "Step four. The instruction is decoded, and then executed.",
@@ -208,8 +208,8 @@ VIDEOS = {
                       "The aggregate runs once per group. Each group collapses into one row with its count."),
             ]),
             ("order", [
-                ("A", "Add an alias, for a readable heading. Then order by count, descending, to put the biggest squadron first.",
-                      "Add an alias for a readable heading, then ORDER BY COUNT(*) DESC for the biggest first."),
+                ("A", "Add an alias, for a readable heading. Then order by count, ascending, to put the smallest squadron first.",
+                      "Add an alias for a readable heading, then ORDER BY COUNT(*) ASC for the smallest first."),
                 ("A", "And remember, group by always comes before order by.",
                       "Remember: GROUP BY always comes before ORDER BY."),
             ]),

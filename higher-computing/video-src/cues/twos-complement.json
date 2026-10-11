@@ -5,37 +5,37 @@
   {
    "id": "title",
    "start": 1.2,
-   "end": 9.756
+   "end": 9.96
   },
   {
    "id": "positive",
-   "start": 9.756,
-   "end": 29.306
+   "start": 9.96,
+   "end": 29.109
   },
   {
    "id": "negative",
-   "start": 29.306,
-   "end": 43.015
+   "start": 29.109,
+   "end": 43.529
   },
   {
    "id": "readneg",
-   "start": 43.015,
-   "end": 60.047
+   "start": 43.529,
+   "end": 60.495
   },
   {
    "id": "flip",
-   "start": 60.047,
-   "end": 84.887
+   "start": 60.495,
+   "end": 86.36
   },
   {
    "id": "range",
-   "start": 84.887,
-   "end": 104.534
+   "start": 86.36,
+   "end": 106.294
   },
   {
    "id": "outro",
-   "start": 104.534,
-   "end": 111.025
+   "start": 106.294,
+   "end": 113.017
   }
  ],
  "lines": [
@@ -45,7 +45,7 @@
    "li": 0,
    "voice": "A",
    "start": 1.2,
-   "end": 8.856,
+   "end": 9.06,
    "cap": "Welcome aboard, cadets. Today: how a computer stores negative numbers, using nothing but eight redstone lamps."
   },
   {
@@ -53,8 +53,8 @@
    "si": 1,
    "li": 0,
    "voice": "A",
-   "start": 9.756,
-   "end": 18.79,
+   "start": 9.96,
+   "end": 19.071,
    "cap": "At National 5, every lamp had a positive place value: 128, 64, 32 … down to 1."
   },
   {
@@ -62,8 +62,8 @@
    "si": 1,
    "li": 1,
    "voice": "A",
-   "start": 19.24,
-   "end": 28.406,
+   "start": 19.521,
+   "end": 28.209,
    "cap": "Light the right lamps and add their values: 32 + 8 + 4 + 1 = 45."
   },
   {
@@ -71,8 +71,8 @@
    "si": 2,
    "li": 0,
    "voice": "H",
-   "start": 29.306,
-   "end": 32.783,
+   "start": 29.109,
+   "end": 32.664,
    "cap": "But there's no such thing as a negative lamp, Lieutenant!"
   },
   {
@@ -80,8 +80,8 @@
    "si": 2,
    "li": 1,
    "voice": "A",
-   "start": 33.233,
-   "end": 42.115,
+   "start": 33.114,
+   "end": 42.629,
    "cap": "Then we make one, Captain. In two's complement, the leftmost lamp is worth −128. Every other lamp stays positive."
   },
   {
@@ -89,8 +89,8 @@
    "si": 3,
    "li": 0,
    "voice": "A",
-   "start": 43.015,
-   "end": 53.495,
+   "start": 43.529,
+   "end": 53.88,
    "cap": "So 1101 0011 means −128 + 64 + 16 + 2 + 1 …"
   },
   {
@@ -98,8 +98,8 @@
    "si": 3,
    "li": 1,
    "voice": "A",
-   "start": 53.945,
-   "end": 59.147,
+   "start": 54.33,
+   "end": 59.595,
    "cap": "… = −45. If the leftmost lamp is lit, the number is negative."
   },
   {
@@ -107,8 +107,8 @@
    "si": 4,
    "li": 0,
    "voice": "A",
-   "start": 60.047,
-   "end": 63.956,
+   "start": 60.495,
+   "end": 64.797,
    "cap": "To turn −45 into binary, use flip and add one."
   },
   {
@@ -116,8 +116,8 @@
    "si": 4,
    "li": 1,
    "voice": "A",
-   "start": 64.406,
-   "end": 69.807,
+   "start": 65.247,
+   "end": 71.013,
    "cap": "First write +45:  0010 1101"
   },
   {
@@ -125,8 +125,8 @@
    "si": 4,
    "li": 2,
    "voice": "A",
-   "start": 70.257,
-   "end": 76.082,
+   "start": 71.463,
+   "end": 77.267,
    "cap": "Flip every bit:  1101 0010"
   },
   {
@@ -134,8 +134,8 @@
    "si": 4,
    "li": 3,
    "voice": "A",
-   "start": 76.532,
-   "end": 83.987,
+   "start": 77.717,
+   "end": 85.46,
    "cap": "Add 1:  1101 0011. Check with the place values: it works."
   },
   {
@@ -143,8 +143,8 @@
    "si": 5,
    "li": 0,
    "voice": "H",
-   "start": 84.887,
-   "end": 87.0,
+   "start": 86.36,
+   "end": 88.437,
    "cap": "And how far can eight lamps count?"
   },
   {
@@ -152,8 +152,8 @@
    "si": 5,
    "li": 1,
    "voice": "A",
-   "start": 87.45,
-   "end": 96.277,
+   "start": 88.887,
+   "end": 97.919,
    "cap": "From −128 (only the leftmost lamp lit) up to 127 (every lamp except that one)."
   },
   {
@@ -161,8 +161,8 @@
    "si": 5,
    "li": 2,
    "voice": "A",
-   "start": 96.727,
-   "end": 103.634,
+   "start": 98.369,
+   "end": 105.394,
    "cap": "For n bits: −2ⁿ⁻¹ to 2ⁿ⁻¹ − 1."
   },
   {
@@ -170,10 +170,10 @@
    "si": 6,
    "li": 0,
    "voice": "A",
-   "start": 104.534,
-   "end": 110.125,
+   "start": 106.294,
+   "end": 112.117,
    "cap": "Leftmost lamp negative. Flip and add one. Always check your answer. Dismissed!"
   }
  ],
- "duration": 113.025
+ "duration": 115.017
 }
