@@ -227,7 +227,7 @@
   </g>
 </svg>
 </div>
-<figcaption>Steps 1–5 use the double-sided "predefined" box because each becomes its own sub-program. Step 1 is refined with a loop (rounded box) over the lines of the file. Step 4 is refined with a loop containing a selection (hexagon). Only the true branch of the selection needs a box here.</figcaption>
+<figcaption>Steps 1–5 use the double-sided "predefined" box because each becomes its own sub-program. (SQA's key calls this symbol a predefined function. We use it for any step handled by a separate sub-program, including ones you write yourself; if a question's key is stricter, follow the question.) Step 1 is refined with a loop (rounded box) over the lines of the file. Step 4 is refined with a loop containing a selection (hexagon). Only the true branch of the selection needs a box here.</figcaption>
 </figure>
 
 <h3>Pseudocode</h3>
@@ -641,8 +641,8 @@ END FUNCTION</pre>
 <caption>Part of a final test plan for the Top Cadet program: one row per functional requirement, plus validation tests. This program has no numeric range to validate, so it has no extreme data. If it asked for hours from 0 to 200, the extreme test data would be 0 and 200.</caption>
 <thead><tr><th>Test</th><th>Requirement tested</th><th>Test data</th><th>Type</th><th>Expected result</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>Find top cadet</td><td>cadets.csv as supplied</td><td>Normal</td><td>"Top cadet: Ailsa with 31 hours"</td></tr>
-<tr><td>2</td><td>Find top cadet: tie (boundary in the specification)</td><td>Ailsa 31, Mhairi 31</td><td>Normal</td><td>The first cadet with the highest hours (Ailsa) is shown, because the comparison is <code>&gt;</code></td></tr>
+<tr><td>1</td><td>Find top cadet</td><td>Test file: Ross 12, Callum 7, Freya 19</td><td>Normal</td><td>"Top cadet: Freya with 19 hours"</td></tr>
+<tr><td>2</td><td>Find top cadet: tie (boundary in the specification)</td><td>cadets.csv as supplied (Ailsa 31 and Mhairi 31 tie)</td><td>Normal</td><td>The first cadet with the highest hours (Ailsa) is shown, because the comparison is <code>&gt;</code></td></tr>
 <tr><td>3</td><td>Count flight</td><td>"B"</td><td>Normal</td><td>"Cadets in B Flight: 3"</td></tr>
 <tr><td>4</td><td>Validate flight</td><td>"C"</td><td>Normal</td><td>Accepted: the count for C Flight is shown</td></tr>
 <tr><td>5</td><td>Validate flight</td><td>"Q"</td><td>Exceptional</td><td>Error message; user asked to re-enter</td></tr>
