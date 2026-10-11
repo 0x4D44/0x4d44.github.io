@@ -22,7 +22,7 @@
     const tx = (t) => X0 + (t / TMAX) * (X1 - X0);
     const S = HC.svg;
     const svg = S("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Animated comparison of an iterative project and an agile project. Text below the animation describes each event." });
-    const PH = { A: ["Analysis", "#5b8fc7"], D: ["Design", "#8e6cc1"], I: ["Implement", "#4f8a2e"], T: ["Test", "#c47a14"], Doc: ["Document", "#7a5532"], E: ["Evaluate", "#b3261e"] };
+    const PH = { A: ["Analysis", "#3e6fa8"], D: ["Design", "#6b4fa0"], I: ["Implement", "#4f8a2e"], T: ["Test", "#9a5f10"], Doc: ["Document", "#7a5532"], E: ["Evaluate", "#b3261e"] };
     // iterative plan; the change arrives at t = 0.45 and forces rework from analysis
     const CHANGE = 0.45;
     const iterPlan = [["A", 0, 0.14], ["D", 0.14, 0.28], ["I", 0.28, 0.54], ["T", 0.54, 0.7], ["Doc", 0.7, 0.8], ["E", 0.8, 0.9]];
@@ -93,7 +93,7 @@
       sprints.forEach((a, k) => {
         if (t <= a) return;
         const b = a + 0.15, e = Math.min(t, b);
-        const quarters = ["#5b8fc7", "#8e6cc1", "#4f8a2e", "#c47a14"];
+        const quarters = ["#3e6fa8", "#6b4fa0", "#4f8a2e", "#9a5f10"];
         for (let q = 0; q < 4; q++) {
           const qa = a + q * 0.0375, qb = qa + 0.0375;
           if (e <= qa) break;
@@ -111,7 +111,7 @@
       // playhead
       s += `<line x1="${tx(Math.min(t, TMAX))}" y1="30" x2="${tx(Math.min(t, TMAX))}" y2="300" stroke="var(--ink)" stroke-width="2"/>`;
       // legend
-      s += Object.entries(PH).map(([k, [n, c]], i) => `<rect x="${X0 + i * 92}" y="146" width="10" height="10" fill="${c}"/><text x="${X0 + 14 + i * 92}" y="155" font-size="10" class="ink2">${n}</text>`).join("") + `<text x="${X0 + 6 * 92}" y="155" font-size="10" class="ink2">⚓ = client (the Admiralty) sees the work</text>`;
+      s += Object.entries(PH).map(([k, [n, c]], i) => `<rect x="${X0 + i * 92}" y="146" width="10" height="10" fill="${c}"/><text x="${X0 + 14 + i * 92}" y="155" font-size="10" class="ink2">${n}</text>`).join("") + `<text x="${X0 + 6 * 92}" y="155" font-size="10" class="ink2">⚓ = client sees the work</text>`;
       g.innerHTML = s;
       log.textContent = narrate(t);
       range.value = Math.round((t / TMAX) * 1000);
@@ -393,7 +393,7 @@
         "    return count",
       ],
       param: { label: "flight", options: ["A", "B", "C"], def: "A" },
-      bug: { line: 3, text: "    for index in range(1, len(cadets)):", note: "Sabotaged: the loop starts at 1, so the first cadet (Ross, flight A) is skipped. Count flight B or C and the answer still looks right; count flight A to expose it. Good test data must reach the first item." },
+      bug: { line: 3, text: "    for index in range(1, len(cadets)):", note: "Sabotaged: the loop starts at 1, so the first cadet (Ross, flight A) is skipped. Count flight B or C and the answer still looks right; count flight A to expose it. Good test data must reach the first item" },
       *run(v, d, p, bug) {
         yield 2; v.count = 0;
         let i = bug ? 1 : 0;
@@ -512,7 +512,7 @@
     });
     function verdict() {
       if (alg === ALGS.max) return v.returned === 1 ? " Position 1 is Ailsa (31 hours). Mhairi also has 31, but <code>&gt;</code> keeps the first." : ` <span class="bad">Position ${v.returned} is ${CADETS[v.returned].name} with ${CADETS[v.returned].hours} hours. That isn't the maximum! Use a watchpoint on <code>max_pos</code> to see where it goes wrong.</span>`;
-      if (alg === ALGS.count) { const truth = CADETS.filter((c) => c.flight === paramSel.value).length; return v.returned === truth ? " Correct." : ` <span class="bad">There are really ${truth}. Set a breakpoint on line 4 and check the first value of <code>index</code>.</span>`; }
+      if (alg === ALGS.count) { const truth = CADETS.filter((c) => c.flight === paramSel.value).length; return v.returned === truth ? (bugBox.checked ? ` That happens to be right for flight ${paramSel.value}, but the loop skips cadets[0] (Ross, flight A). Try flight A to expose the bug.` : " Correct.") : ` <span class="bad">There are really ${truth}. Set a breakpoint on line 4 and check the first value of <code>index</code>.</span>`; }
       return v.returned === -1 ? " −1 means the target was not in the array: every element was checked." : ` Found at index ${v.returned}. The loop stopped early, without checking the rest of the array.`;
     }
     resetB.addEventListener("click", restart);

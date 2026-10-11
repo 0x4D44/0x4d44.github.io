@@ -70,6 +70,8 @@ a:hover { color: var(--redstone); }
 /* on dark surfaces the ring turns gold so it stays visible */
 .masthead, .foot, pre, .dbg-code, .anat-code, .code-tabs [role="tablist"], .video { --focus: #ffd65a; }
 .masthead :focus-visible, .foot :focus-visible, .dbg-code :focus-visible, .anat-code :focus-visible { box-shadow: 0 0 0 6px #000; }
+/* a dark box that is itself focused: draw the gold ring inside it, where it contrasts */
+pre:focus-visible, .dbg-trace:focus-visible, .sql-out:focus-visible, .code-tabs [role="tab"]:focus-visible { outline-offset: -4px; box-shadow: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .skip { position: absolute; left: 120px; top: -60px; background: var(--card); padding: 8px 12px; z-index: 50; }
 .skip:focus { top: 8px; }
@@ -277,7 +279,7 @@ pre .hl { background: rgba(255,214,90,.22); display: inline-block; width: 100%; 
 .stepper-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
 @media (max-width: 700px) { .stepper-grid { grid-template-columns: minmax(0, 1fr); } }
 .stepper-code { margin: 0; max-height: 380px; overflow: auto; font-size: .8rem; white-space: pre; }
-.stepper-code .ln, .dbg-code .ln { color: #7d8597; user-select: none; }
+.stepper-code .ln, .dbg-code .ln { color: #8d95a8; user-select: none; }
 .stepper-note { min-height: 3.2em; margin: 6px 0 10px; padding: 8px 10px; background: var(--paper-2); border-left: 4px solid var(--sea); font-size: .95rem; }
 .stepper-state { font-size: .9rem; }
 .frame { border: 2px solid var(--line); background: var(--paper); padding: 8px 10px; margin-bottom: 8px; border-radius: 2px; }
@@ -294,7 +296,7 @@ figure.diagram { background: var(--card); border: 2px solid var(--line); border-
 figure.diagram svg { display: block; width: 100%; height: auto; margin: 0 auto; }
 figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; }
 .diagram-scroll { overflow-x: auto; }
-.diagram-scroll > svg { min-width: 640px; }
+.diagram-scroll > svg { min-width: 760px; }
 /* a fade on the right edge says "there is more this way" */
 .is-scrollable { mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
 .is-scrollable.at-end { mask-image: none; -webkit-mask-image: none; }
@@ -426,7 +428,7 @@ dl.glossary dd { margin: 0; }
 .pf-stack.rem { background: var(--bg-red); }
 .dbg-code { background: var(--code-bg); color: var(--code-ink); font: .8rem/1.45 var(--font-mono); padding: 8px 0; border-radius: var(--radius); overflow-x: auto; }
 .dbg-row { display: flex; align-items: stretch; white-space: pre; }
-.dbg-row .bp { flex: 0 0 auto; width: 36px; min-height: 26px; border: 0; background: transparent; color: #7d8597; font: inherit; cursor: pointer; text-align: right; padding: 0 8px 0 0; border-right: 2px solid #333a48; }
+.dbg-row .bp { flex: 0 0 auto; width: 36px; min-height: 26px; border: 0; background: transparent; color: #8d95a8; font: inherit; cursor: pointer; text-align: right; padding: 0 8px 0 0; border-right: 2px solid #333a48; }
 .dbg-row .bp:hover { color: #fff; }
 .dbg-row .bp.on { color: #fff; background: radial-gradient(circle at 10px 50%, #e5383b 6px, transparent 7px); }
 .dbg-line { padding: 2px 10px; flex: 1 1 auto; }
@@ -480,7 +482,8 @@ dl.glossary dd { margin: 0; }
 @keyframes recoil { from { transform: translateX(0); } to { transform: translateX(-5px); } }
 .perf-bar { height: 16px; background: var(--paper-2); border: 2px solid var(--line); margin: 8px 0; }
 .perf-bar span { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--redstone) 0 10px, #d65a3c 10px 20px); }
-.crypto-stage svg, .diagram-scroll.crypto-stage > svg { width: 100%; height: auto; display: block; min-width: 0; }
+/* the storyboard keeps one layout; on phones it scrolls sideways rather than shrinking its labels */
+.diagram-scroll.crypto-stage > svg { width: 100%; height: auto; display: block; min-width: 600px; }
 details.rsa { margin-top: 12px; }
 details summary { cursor: pointer; font-weight: 700; }
 #w-dos canvas { width: 100%; height: auto; min-width: 0; display: block; border: 2px solid var(--line); }
@@ -555,7 +558,6 @@ code, kbd, samp, pre, .mono, textarea.sql-editor, .output-box, .readout { font-v
 
 /* headings promoted for document outline but styled as before */
 .compare h3 { font-size: 1.04rem; margin: 0 0 .3em; }
-.toc-sticky-fix { }
 @media (min-width: 921px) and (max-width: 1240px) { .toc { top: 52px; max-height: calc(100vh - 64px); } }
 video:focus-visible { outline: 3px solid #ffd65a; outline-offset: 2px; }
 .hc-toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60; background: #12284a; color: #fff; padding: 12px 16px; border: 3px solid #e0b23a; font: 600 .95rem var(--font-pixel); max-width: min(92vw, 520px); text-align: center; box-shadow: 4px 4px 0 rgba(0,0,0,.35); }
@@ -571,10 +573,10 @@ video:focus-visible { outline: 3px solid #ffd65a; outline-offset: 2px; }
 .assess-row > div { color: #fff; padding: 8px 10px; font-size: .9rem; line-height: 1.3; min-width: 0; }
 .assess-row b { display: block; }
 .px-label { margin: 0 0 4px; font-size: .92rem; }
-.chart-bar { max-width: 100%; }
-.diagram-scroll.wide > svg { min-width: 760px; }
+.diagram-scroll.wide > svg { min-width: 900px; }
 .gb-head { font: 700 .85rem var(--font-mono); color: var(--navy-2); margin: 6px 0 4px; max-width: 420px; padding: 0 8px; }
 :root[data-theme="dark"] .gb-head { color: var(--sky); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gb-head { color: var(--sky); } }
 ul.anat-code { list-style: none; margin: 0; }
 ul.anat-code li { margin: 0; }
+.sw { display: inline-block; width: 0.8em; height: 0.8em; vertical-align: -0.05em; border: 1px solid var(--ink); }

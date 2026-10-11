@@ -148,6 +148,7 @@
 <h3>Structure diagrams</h3>
 <p>A structure diagram is read <strong>top-down and left to right</strong>. SQA uses four symbols:</p>
 <figure class="diagram">
+<div class="diagram-scroll">
 <svg viewBox="0 0 640 110" role="img" aria-labelledby="sym-t">
   <title id="sym-t">The four structure diagram symbols: process (rectangle), loop (rectangle with rounded ends), selection (hexagon), predefined process (rectangle with double sides)</title>
   <g fill="none" class="stroke-ink" stroke-width="2">
@@ -163,6 +164,7 @@
     <text x="80" y="88">a step or calculation</text><text x="235" y="88">repeat these children</text><text x="390" y="88">IF a condition…</text><text x="555" y="88">sub-program / function</text>
   </g>
 </svg>
+</div>
 </figure>
 
 <p>Here is a design for the Top Cadet program, with every step refined in the pseudocode and two refinements drawn below. Read the top level from left to right. The data flow is written under each box, with an arrow showing whether data goes in or out.</p>
@@ -276,6 +278,7 @@
 <h3>User-interface design: wireframes</h3>
 <p>A <dfn>wireframe</dfn> is a simple sketch of a screen. It shows where each <strong>input</strong> and <strong>output</strong> will appear, with no colours or real content. For a text-based program, the wireframe shows the prompts the user will see and where the results will be displayed.</p>
 <figure class="diagram">
+<div class="diagram-scroll">
 <svg viewBox="0 0 560 230" role="img" aria-labelledby="wf-t">
   <title id="wf-t">Wireframe of the Top Cadet program's screen: a title, an input prompt for a flight letter, and two labelled output areas</title>
   <g fill="none" class="stroke-ink" stroke-width="2">
@@ -293,6 +296,7 @@
     <text x="40" y="202" class="muted" font-size="12">OUTPUT: "Cadets in &lt;flight&gt; Flight: &lt;count&gt;"</text>
   </g>
 </svg>
+</div>
 <figcaption>Dashed boxes are where data appears. Labels say whether each one is an input or an output.</figcaption>
 </figure>
 
@@ -641,7 +645,7 @@ END FUNCTION</pre>
 <caption>Part of a final test plan for the Top Cadet program: one row per functional requirement, plus validation tests. This program has no numeric range to validate, so it has no extreme data. If it asked for hours from 0 to 200, the extreme test data would be 0 and 200.</caption>
 <thead><tr><th>Test</th><th>Requirement tested</th><th>Test data</th><th>Type</th><th>Expected result</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>Find top cadet</td><td>Test file: Ross 12, Callum 7, Freya 19</td><td>Normal</td><td>"Top cadet: Freya with 19 hours"</td></tr>
+<tr><td>1</td><td>Find top cadet</td><td>Test file: the supplied 8 cadets, but with Freya (the 8th) changed to 45 hours</td><td>Normal</td><td>"Top cadet: Freya with 45 hours" (the maximum is found even when it is the last cadet)</td></tr>
 <tr><td>2</td><td>Find top cadet: tie (boundary in the specification)</td><td>cadets.csv as supplied (Ailsa 31 and Mhairi 31 tie)</td><td>Normal</td><td>The first cadet with the highest hours (Ailsa) is shown, because the comparison is <code>&gt;</code></td></tr>
 <tr><td>3</td><td>Count flight</td><td>"B"</td><td>Normal</td><td>"Cadets in B Flight: 3"</td></tr>
 <tr><td>4</td><td>Validate flight</td><td>"C"</td><td>Normal</td><td>Accepted: the count for C Flight is shown</td></tr>
@@ -706,7 +710,7 @@ END FUNCTION</pre>
 <thead><tr><th scope="col">Criterion</th><th scope="col">The question it answers</th><th scope="col">Weak answer ✘</th><th scope="col">Higher-standard answer ✔</th></tr></thead>
 <tbody>
 <tr><th scope="row">Fitness for purpose</th><td>Does it do <em>everything</em> in the specification? Compare the finished program against the functional requirements.</td><td>"It works."</td><td>"It is fit for purpose: every functional requirement was met. Test 1 showed the top cadet correctly and test 3 counted B Flight correctly."</td></tr>
-<tr><th scope="row">Efficient use of coding constructs</th><td>Were the right constructs used, so there is no wasted code or processing?</td><td>"I used loops so it is efficient."</td><td>"<code>count_flight</code> is one function with the flight as a parameter, called twice, instead of two copies of the code. The linear search uses a conditional loop, so it stops as soon as the cadet is found."</td></tr>
+<tr><th scope="row">Efficient use of coding constructs</th><td>Were the right constructs used, so there is no wasted code or processing?</td><td>"I used loops so it is efficient."</td><td>"<code>count_flight</code> is one function with the flight as a parameter, so the same code counts flight A, B or C: there are no three near-identical copies. <code>find_max_position</code> uses a fixed loop, because every cadet must be checked to be sure of the maximum."</td></tr>
 <tr><th scope="row">Usability</th><td>How easy and intuitive is it for the <em>user</em>?</td><td>"It is easy to use."</td><td>"The prompt tells the user exactly what to enter, 'A, B or C', and the results are labelled with units ('31 hours')."</td></tr>
 <tr><th scope="row">Maintainability</th><td>How easy would it be for <em>another programmer</em> to change it later?</td><td>"It has comments."</td><td>"It is modular: each task is its own sub-program, with meaningful names like <code>find_max_position</code>, plus local variables and internal commentary. A change to the counting rule only affects one function."</td></tr>
 <tr><th scope="row">Robustness</th><td>Does it cope with unexpected or exceptional input without crashing?</td><td>"It doesn't crash."</td><td>"Entering 'Q' as the flight is rejected and the user is asked again (test 5). However, the program would crash if <code>cadets.csv</code> were missing, because there is no check before the file is opened."</td></tr>
