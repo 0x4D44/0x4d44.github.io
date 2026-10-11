@@ -451,6 +451,11 @@
       if (el.closest('[aria-hidden="true"]')) return;  // never make hidden content focusable
       const over = el.scrollWidth - el.clientWidth > 2 || el.scrollHeight - el.clientHeight > 2;
       el.classList.toggle("is-scrollable", el.scrollWidth - el.clientWidth > 2);
+      // a visible cue on phones that a wide diagram continues off-screen
+      if (el.matches(".diagram-scroll, .crypto-stage") && !el.closest('[aria-hidden="true"]') && !(el.nextElementSibling && el.nextElementSibling.classList.contains("swipe-hint"))) {
+        const h = document.createElement("p"); h.className = "swipe-hint"; h.setAttribute("aria-hidden", "true"); h.textContent = "↔ Swipe sideways to see the whole diagram";
+        el.after(h);
+      }
       if (over) {
         if (!el.hasAttribute("tabindex")) { el.setAttribute("tabindex", "0"); el.dataset.hcTab = "1"; }
         if (!el.hasAttribute("aria-label") || el.dataset.hcLabel) {

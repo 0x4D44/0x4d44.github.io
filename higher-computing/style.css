@@ -500,6 +500,7 @@ details summary { cursor: pointer; font-weight: 700; }
 .gb-row.tinted { background: color-mix(in srgb, var(--c) 22%, var(--card)); border-color: var(--c); }
 .gb-group { grid-template-columns: 1fr 1fr; background: var(--c); color: #fff; border-color: rgba(0,0,0,.3); height: 30px; font-weight: 700; opacity: 0; }
 .gb-count::before { content: "COUNT(*) = "; font-weight: 400; opacity: .85; }
+.gb-stage.aliased .gb-count::before { content: "Cadets = "; }
 .sql-editor { width: 100%; min-height: 130px; font: .9rem/1.5 var(--font-mono); padding: 10px; background: var(--code-bg); color: var(--code-ink); border: 3px solid #111; border-left: 6px solid var(--grass); resize: vertical; }
 .sql-out { max-height: 320px; overflow: auto; }
 .sql-result td, .sql-result th { font: .82rem var(--font-mono); white-space: nowrap; }
@@ -582,3 +583,6 @@ ul.anat-code { list-style: none; margin: 0; }
 ul.anat-code li { margin: 0; }
 .sw { display: inline-block; width: 0.8em; height: 0.8em; vertical-align: -0.05em; border: 1px solid var(--ink); }
 .twos-steps:empty { display: none; }
+.swipe-hint { display: none; margin: 4px 0 0; font-size: .8rem; color: var(--muted); text-align: right; }
+.is-scrollable + .swipe-hint { display: block; }
+.is-scrollable.at-end + .swipe-hint { visibility: hidden; }

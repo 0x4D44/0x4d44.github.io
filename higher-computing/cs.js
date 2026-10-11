@@ -409,7 +409,7 @@
       res.innerHTML = `Time for ${N} instructions: <b>${m.us.toFixed(1)} µs</b>\n` +
         `Average cycles per instruction: ${m.cpi.toFixed(2)} (${m.h ? Math.round(m.h * 100) + "% of fetches hit the cache" : "every fetch goes to main memory"}, ${64 / m.w} bus transfer${m.w === 64 ? "" : "s"} per memory fetch)\n` +
         `Cores: ×${m.speedup.toFixed(2)} speed-up from ${m.c} core${m.c > 1 ? "s" : ""}${m.c > 1 ? `, not ×${m.c}, because a quarter of the work can't be shared between cores` : ""}\n` +
-        `(Cycles per instruction = clock ticks each instruction takes on average; fewer is faster. A 32-line bus needs 2 trips to move one 64-bit item.)`;
+        `(Cycles per instruction = clock ticks each instruction takes on average; fewer is faster. With a ${m.w}-line data bus, each 64-bit item from memory takes ${64 / m.w} trip${m.w === 64 ? "" : "s"}.)`;
       hist.innerHTML = `<table><caption>Your last runs (newest first)</caption><thead><tr><th>Cores</th><th>Bus</th><th>Cache hits</th><th>Clock</th><th class="num">Time (µs)</th></tr></thead><tbody>${runs.map((r) => `<tr><td>${r.c}</td><td>${r.w}</td><td>${Math.round(r.h * 100)}%</td><td>${r.f} GHz</td><td class="num">${r.us.toFixed(1)}</td></tr>`).join("")}</tbody></table>`;
     });
     show();
