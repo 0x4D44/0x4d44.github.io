@@ -355,6 +355,7 @@ SET cadets[0] TO Cadet("Ross", "A", 12)
 SET cadets[0].hours TO cadets[0].hours + 2
 SEND cadets[0].name &amp; " " &amp; cadets[0].hours TO DISPLAY</pre>
 </div>
+<p class="hint"><b>Reading the Python:</b> <code>@dataclass</code> is the usual way to write a record in Python: it lists the fields and their types, and Python builds <code>Cadet("Ross", "A", 12)</code> for you. <code>[Cadet("", "", 0) for _ in range(8)]</code> is a short way to make a list of 8 separate empty records; it does the same job as a fixed loop that appends one empty record 8 times. You only need to read these, not memorise them.</p>
 
 <div class="compare">
   <div><h3>Why choose parallel arrays?</h3><p>They are simple to declare, and each attribute can be processed on its own, for example adding up all the hours. Their weakness is that the arrays must be kept in step by hand. Sort one and forget the others, and Ross gets Mhairi's flying hours.</p></div>

@@ -152,6 +152,7 @@ ${POSTINGS.map((r) => `INSERT INTO Posting VALUES (${r.concat([REPORT[r[1]]]).ma
         rows.forEach((r) => { const g = order.findIndex((x) => x.sq === r.sq); Object.assign(r.el.style, { top: g * (H + 12) + "px", opacity: 0 }); });
         stage.style.height = 4 * (H + 12) + "px";
       }
+      stage.classList.toggle("aliased", i === 3);
       head.textContent = i < 2 ? "cadetID · firstname · squadronNo" : i === 2 ? "squadronNo · COUNT(*)" : "squadronNo · Cadets";
       sqlBox.textContent = STEPS[i].sql; delete sqlBox.dataset.hl; HC.highlight(sqlBox);
       note.innerHTML = STEPS[i].note;

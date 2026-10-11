@@ -87,7 +87,7 @@ const SC_TWOS = {
     if (s.t > s.L[1] + 0.5) { block(c, xv(-128) - 10, y0 - 120, 20, 90, COL.red); mono(c, "10000000", xv(-128) + 90, y0 - 80, { size: 30, weight: 700, color: COL.red }); }
     if (s.t > s.L[1] + 3.5) { block(c, xv(127) - 10, y0 - 120, 20, 90, COL.grass); mono(c, "01111111", xv(127) - 200, y0 - 80, { size: 30, weight: 700, color: COL.grass }); }
     if (s.t > s.L[2]) {
-      px(c, "n bits:  −2^(n−1)  to  2^(n−1) − 1", CX, P.y + 340, { size: 40, align: "center", color: COL.navy });
+      mono(c, "n bits:  −2^(n−1)  to  2^(n−1) − 1", CX, P.y + 340, { size: 36, weight: 700, align: "center", color: COL.navy });
       mono(c, "4 bits: −8 to 7    8 bits: −128 to 127    16 bits: −32 768 to 32 767", CX, P.y + 400, { size: 22, align: "center", color: COL.ink2 });
     }
   },
@@ -251,8 +251,8 @@ const SC_FX = {
     const exec = s.t > 2.4;
     fxBase(c, s, { pc: "05", ir: "LOAD 9", acc: exec ? "12" : "0", buses: 3, cu: s.t > 0.8 ? "decode: LOAD" : "", cuHl: s.t > 0.8, accHl: exec });
     if (s.t > s.L[1] && s.t < s.L[1] + 1.2) {
-      c.save(); c.globalAlpha = 1 - prog(s.t, s.L[1], 1.2); c.fillStyle = "#ffb21e"; c.beginPath(); c.arc(CX, P.y + 180, 60 + 80 * prog(s.t, s.L[1], 1.2), 0, Math.PI * 2); c.fill(); c.restore();
-      px(c, "FIRE!", CX, P.y + 195, { size: 60, align: "center", color: COL.red });
+      c.save(); c.globalAlpha = 1 - prog(s.t, s.L[1], 1.2); c.fillStyle = "#ffb21e"; c.beginPath(); c.arc(CX, P.y + 385, 25 + 35 * prog(s.t, s.L[1], 1.2), 0, Math.PI * 2); c.fill(); c.restore();
+      px(c, "FIRE!", CX, P.y + 402, { size: 48, align: "center", color: COL.red });
     }
   },
   perf(c, s) {
