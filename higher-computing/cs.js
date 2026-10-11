@@ -84,9 +84,10 @@
       if (!isFinite(x)) { note.innerHTML = "<span class='bad'>Please type a number, like 66.625 or -0.75.</span>"; return; }
       if (x === 0) { stage.innerHTML = ""; fields.innerHTML = ""; expo.textContent = ""; note.innerHTML = "Zero is a special case: the mantissa is all zeros, so there is no leading 1 to move the point to."; return; }
       const sign = x < 0 ? 1 : 0;
-      const { ib, fb, exact } = toBin(Math.abs(x), 60);
+      const { ib, fb, exact } = toBin(Math.abs(x), 200);
       const digits = (ib + fb).split("");
       const first = digits.indexOf("1");
+      if (first === -1) { stage.innerHTML = ""; fields.innerHTML = ""; expo.textContent = ""; note.innerHTML = "<span class='bad'>This number is so small that its first 1 bit is more than 200 places after the point. The exponent would be far below −128, so it cannot be stored: it underflows to zero.</span>"; return; }
       const e = ib.length - first;
       const sig = digits.slice(first).join("");
       const mant = sig.slice(0, 15).padEnd(15, "0");
@@ -115,7 +116,7 @@
         const back = (sign ? -1 : 1) * parseInt(mant, 2) / 2 ** 15 * 2 ** e;
         note.innerHTML = `Normalised: ${sign ? "−" : ""}0.${sig.slice(0, 15)}${sig.length > 15 ? "<s>" + sig.slice(15, 25) + "</s>…" : ""} × 2<sup>${e}</sup><br>` +
           (expOk ? "" : "<span class='bad'>Exponent out of range for 8 bits (−128…127): this number is too big or too small to store.</span><br>") +
-          (lost ? `<span class='bad'>Only 15 mantissa bits fit, so the rest are lost. The stored value is ${back}, not ${Math.abs(x) * (sign ? -1 : 1)}. That is a loss of <b>precision</b>.</span>` : `<span class='ok'>Stored exactly.</span> Check: 0.${mant} × 2<sup>${e}</sup> = ${back}`);
+          (lost ? `<span class='bad'>Only 15 mantissa bits fit, so the rest are lost. The stored value is ${back}, not ${Math.abs(x) * (sign ? -1 : 1)}. That is a loss of <b>precision</b>.</span>` : `<span class='ok'>Stored exactly.</span> Check: ${sign ? "−" : ""}0.${mant} × 2<sup>${e}</sup> = ${back}`);
       };
       if (HC.reduced || p === target) return finish();
       timer = setInterval(() => { p += p > target ? -1 : 1; draw(p); if (p === target) { clearInterval(timer); setTimeout(finish, 350); } }, 380);
