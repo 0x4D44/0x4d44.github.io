@@ -400,7 +400,7 @@
     const summary = el("p", { class: "sr-only", "aria-live": "polite" });
     const expl = el("p", { class: "hint" });
     const legend = el("p", { class: "hint" });
-    legend.innerHTML = 'Key: <b style="color:#2f6fb5">■ blue</b> = genuine visitor requests &nbsp; <b style="color:#b3261e">■ red</b> = attacker traffic &nbsp; <b style="color:#3f7426">■ green</b> = answered requests / server connection slots. Choose an attack from the <b>Scenario</b> list.';
+    legend.innerHTML = 'Key: <span class="sw" style="background:#2f6fb5"></span> <b>blue</b> = genuine visitor requests &nbsp; <span class="sw" style="background:#d33a2c"></span> <b>red</b> = attacker traffic &nbsp; <span class="sw" style="background:#4f8a2e"></span> <b>green</b> = answered requests / server connection slots. Choose an attack from the <b>Scenario</b> list.';
     box.append(el("div", { class: "btn-row" }, el("label", null, "Scenario ", mode), pause), el("div", { class: "diagram-scroll" }, cv), legend, stats, summary, expl);
     const ctx = cv.getContext("2d");
     let parts = [], served = 0, failed = 0, slots = [], running = !HC.reduced, t = 0, raf = 0, lastT = 0, lastStat = 0, lastSay = 0;
@@ -528,7 +528,7 @@
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(40, 120, BLUE, "Ailsa's PUBLIC key") + KEY(40, 160, RED, "Ailsa's PRIVATE key"), "This time Ailsa needs to prove that the order comes from <b>her</b>, and that nobody has changed it. She uses <b>her own</b> key pair."],
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(40, 120, RED, "Ailsa's PRIVATE key") + SCROLL(160, 40, "Fleet sails at dawn", undefined, RED), "Software works out a short summary (a <i>hash</i>) of the message. Ailsa encrypts that summary with her <b>private key</b>. This is her <b>digital signature</b>, the wax seal attached to the message."],
         [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + KEY(470, 120, BLUE, "Ailsa's PUBLIC key") + SCROLL(300, 40, "Fleet sails at dawn", undefined, RED) + `<text x="320" y="125" font-size="14" fill="var(--grass)" font-weight="700">✔ seal matches</text>`, "The captain decrypts the signature with <b>Ailsa's public key</b> and compares it with his own summary of the message. They match, so it <b>must</b> have come from Ailsa and it is <b>unaltered</b>."],
-        [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + PERSON(320, "Le Renard (spy)", "🦊") + SCROLL(245, 120, "Fleet sails at dusk", undefined, RED) + `<text x="500" y="140" font-size="14" fill="var(--redstone)" font-weight="700">✘ no match!</text>`, "If the spy changes <i>dawn</i> to <i>dusk</i>, the summary no longer matches the signature, and he can't make a new one without Ailsa's <b>private</b> key. <b>Tampering is detected.</b> (A signature proves origin and integrity. It does not hide the message.)"],
+        [PERSON(80, "Cadet Ailsa", "🧑‍✈️") + PERSON(560, "Capt. Blackwood", "🧔") + PERSON(320, "Le Renard (spy)", "🦊") + SCROLL(245, 120, "Fleet sails at dusk", undefined, RED) + `<text x="440" y="140" font-size="14" fill="var(--redstone)" font-weight="700">✘ seal doesn't match!</text>`, "If the spy changes <i>dawn</i> to <i>dusk</i>, the summary no longer matches the signature, and he can't make a new one without Ailsa's <b>private</b> key. <b>Tampering is detected.</b> (A signature proves origin and integrity. It does not hide the message.)"],
       ],
       cert: [
         [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + KEY(520, 120, BLUE, "site's PUBLIC key"), "You visit <code>https://redstone.example</code>. It sends its public key, but how do you know a fake site isn't pretending to be Redstone?"],
@@ -555,17 +555,6 @@
     function render() {
       const [svg, txt] = SC[cur][i];
       stage.innerHTML = base(svg);
-      // on narrow screens, scale the scene to fit and enlarge its text
-      const narrow = (stage.clientWidth || 600) < 560;
-      stage.querySelectorAll("text").forEach((t) => { const f = +t.getAttribute("font-size") || 13; if (narrow && f < 30) t.setAttribute("font-size", Math.round(f * 1.6)); });
-      // enlarged labels near the right edge would run off the scene, so slide them back in
-      const sv = stage.querySelector("svg"), vbw = sv && sv.viewBox.baseVal ? sv.viewBox.baseVal.width : 0;
-      if (narrow && vbw) stage.querySelectorAll("text").forEach((t) => {
-        const sr = sv.getBoundingClientRect(), tr = t.getBoundingClientRect();
-        if (!sr.width) return;
-        const over = (tr.right - (sr.right - 4)) * (vbw / sr.width);
-        if (over > 0) t.setAttribute("x", (+t.getAttribute("x") || 0) - over);
-      });
       cap.innerHTML = txt;
       pos.textContent = `Scene ${i + 1} of ${SC[cur].length}`;
       back.disabled = i === 0; next.disabled = i === SC[cur].length - 1;

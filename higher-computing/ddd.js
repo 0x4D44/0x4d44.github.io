@@ -132,7 +132,7 @@ ${POSTINGS.map((r) => `INSERT INTO Posting VALUES (${r.concat([REPORT[r[1]]]).ma
       { sql: "SELECT cadetID, firstname, squadronNo\nFROM Cadet;", note: "Start with every row in Cadet: 12 rows, one per cadet." },
       { sql: "SELECT squadronNo, COUNT(*)\nFROM Cadet\nGROUP BY squadronNo;", note: "<b>GROUP BY squadronNo</b> gathers together the rows that share the same squadronNo. There are four squadrons, so there are four groups." },
       { sql: "SELECT squadronNo, COUNT(*)\nFROM Cadet\nGROUP BY squadronNo;", note: "The aggregate <b>COUNT(*)</b> now runs <b>once for each group</b>, and each group collapses into a single result row. squadronNo is allowed in the SELECT list because it is the grouping field: it has one value per group." },
-      { sql: "SELECT squadronNo, COUNT(*) AS [Cadets]\nFROM Cadet\nGROUP BY squadronNo\nORDER BY COUNT(*) DESC;", note: "<b>ORDER BY</b> comes <b>after</b> GROUP BY and sorts the finished groups, largest first. The alias gives the column a readable heading. (2212 and 2471 tie on 3, so they could come out in either order.)" },
+      { sql: "SELECT squadronNo, COUNT(*) AS [Cadets]\nFROM Cadet\nGROUP BY squadronNo\nORDER BY COUNT(*) ASC;", note: "<b>ORDER BY</b> comes <b>after</b> GROUP BY and sorts the finished groups. <b>ASC</b> puts the smallest squadron first, so 3110 (2 cadets) rises to the top; <b>DESC</b> would give largest first. The alias gives the column a readable heading. (2212 and 2471 tie on 3, so they could come out in either order.)" },
     ];
     let i = 0;
     function layout() {
@@ -147,7 +147,7 @@ ${POSTINGS.map((r) => `INSERT INTO Posting VALUES (${r.concat([REPORT[r[1]]]).ma
         stage.style.height = y + "px";
         groups.forEach((g) => (g.el.style.opacity = 0));
       } else {
-        const order = i === 3 ? groups.slice().sort((a, b) => b.n - a.n || a.sq - b.sq) : groups;
+        const order = i === 3 ? groups.slice().sort((a, b) => a.n - b.n || a.sq - b.sq) : groups;
         order.forEach((g, k) => { Object.assign(g.el.style, { top: k * (H + 12) + "px", opacity: 1 }); });
         rows.forEach((r) => { const g = order.findIndex((x) => x.sq === r.sq); Object.assign(r.el.style, { top: g * (H + 12) + "px", opacity: 0 }); });
         stage.style.height = 4 * (H + 12) + "px";
@@ -225,7 +225,10 @@ ${POSTINGS.map((r) => `INSERT INTO Posting VALUES (${r.concat([REPORT[r[1]]]).ma
     for (let i = 0; i < A.length; i++) if (A[i] !== B[i]) {
       const sa = A.slice().sort(), sb = B.slice().sort();
       if (ordered && JSON.stringify(sa) === JSON.stringify(sb)) return { ok: false, why: "The right rows, but in the wrong order. Check your ORDER BY." };
-      return { ok: false, why: `Row ${i + 1} differs from what was expected.` };
+      // same values in every row, just in a different column order?
+      const bag = (vals) => vals.map((r) => JSON.stringify(r.map(norm).map(String).sort())).sort().join("|");
+      if (bag(a.values) === bag(b.values)) return { ok: false, why: "The right data, but the columns are in a different order. List the fields in the order the brief gives them." };
+      return { ok: false, why: `Row ${i + 1} differs from what was expected. Compare it with the brief: check the WHERE conditions and which fields you selected.` };
     }
     return { ok: true };
   }

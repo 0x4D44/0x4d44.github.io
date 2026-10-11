@@ -437,25 +437,43 @@
 
 
   /* ---------- scrollable regions: keyboard-reachable, with an edge cue ---------- */
+  function scrollLabel(el) {
+    const tcap = el.querySelector("caption");
+    const fig = el.closest("figure"), cap = fig && fig.querySelector("figcaption");
+    if (tcap || cap) return (tcap || cap).textContent.trim().slice(0, 80);
+    const box = el.closest(".widget, section");
+    const head = box && box.querySelector(".widget-title, h2, h3");
+    const what = el.tagName === "PRE" ? ((el.dataset.lang || el.closest("[data-lang]")?.dataset.lang || "") + " code").trim() : "content";
+    return what + (head ? ": " + head.textContent.replace(/\s+/g, " ").trim().slice(0, 60) : "");
+  }
   function markScrollables() {
     document.querySelectorAll(".table-wrap, .diagram-scroll, pre, .crypto-stage, .dbg-trace, .sql-out").forEach((el) => {
-      const over = el.scrollWidth - el.clientWidth > 2;
-      el.classList.toggle("is-scrollable", over);
+      if (el.closest('[aria-hidden="true"]')) return;  // never make hidden content focusable
+      const over = el.scrollWidth - el.clientWidth > 2 || el.scrollHeight - el.clientHeight > 2;
+      el.classList.toggle("is-scrollable", el.scrollWidth - el.clientWidth > 2);
       if (over) {
         if (!el.hasAttribute("tabindex")) { el.setAttribute("tabindex", "0"); el.dataset.hcTab = "1"; }
-        if (!el.getAttribute("role") && !el.getAttribute("aria-label")) {
-          const cap = el.closest("figure") && el.closest("figure").querySelector("figcaption");
-          const tcap = el.querySelector("caption");
-          el.setAttribute("role", "region");
-          el.setAttribute("aria-label", "Scrollable: " + ((tcap || cap) ? (tcap || cap).textContent.trim().slice(0, 80) : el.tagName === "PRE" ? "code" : "content"));
+        if (!el.hasAttribute("aria-label") || el.dataset.hcLabel) {
+          const lab = "Scrollable " + scrollLabel(el);
+          // a group (not a landmark region) so that several code boxes on a page don't collide as landmarks
+          if (!el.getAttribute("role") || el.dataset.hcLabel) el.setAttribute("role", "group");
+          el.setAttribute("aria-label", lab); el.dataset.hcLabel = "1";
         }
         if (!el.dataset.hcScroll) {
           el.dataset.hcScroll = "1";
           el.addEventListener("scroll", () => el.classList.toggle("at-end", el.scrollLeft + el.clientWidth >= el.scrollWidth - 4), { passive: true });
         }
-      } else if (el.dataset.hcTab) { el.removeAttribute("tabindex"); delete el.dataset.hcTab; }
+      } else if (el.dataset.hcTab) {
+        el.removeAttribute("tabindex"); delete el.dataset.hcTab;
+        if (el.dataset.hcLabel) { el.removeAttribute("aria-label"); el.removeAttribute("role"); delete el.dataset.hcLabel; }
+      }
     });
   }
+  // widgets redraw their output (SQL results, debugger trace...), so re-check after any change inside one
+  let moT = 0;
+  const mo = new MutationObserver(() => { clearTimeout(moT); moT = setTimeout(markScrollables, 250); });
+  const watchWidgets = () => document.querySelectorAll(".widget").forEach((w) => mo.observe(w, { childList: true, subtree: true }));
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", watchWidgets); else watchWidgets();
   HC.markScrollables = markScrollables;
   let rsT = 0;
   window.addEventListener("resize", () => { clearTimeout(rsT); rsT = setTimeout(markScrollables, 200); });

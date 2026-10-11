@@ -8,7 +8,7 @@
   const W = 320, H = 80;
   cv.width = W; cv.height = H;
   const c = cv.getContext("2d");
-  const reduced = window.HC && window.HC.reduced;
+  let reduced = !!(window.HC && window.HC.reduced);
   const px = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
   // tiny 3x5 pixel font for the banner
   const FONT = { A: "010101111101101", C: "011100100100011", E: "111100110100111", G: "011100101101011", H: "101101111101101", I: "111010010010111", M: "101111111101101", N: "110101101101101", O: "010101101101010", P: "110101110100100", R: "110101110101101", S: "011100010001110", T: "111010010010010", U: "101101101101111", "": "000000000000000", " ": "000000000000000" };
@@ -66,13 +66,19 @@
     if (running && !reduced) raf = requestAnimationFrame(frame);
   }
   frame(performance.now());
-  if (!reduced && "IntersectionObserver" in window) {
+  if ("IntersectionObserver" in window) {
     new IntersectionObserver((e) => {
       running = e[0].isIntersecting;
       cancelAnimationFrame(raf);
-      if (running) raf = requestAnimationFrame(frame);
+      if (running && !reduced) raf = requestAnimationFrame(frame);
     }).observe(cv);
   }
+  // follow a change to the reduced-motion setting while the page is open
+  const mq = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  if (mq && mq.addEventListener) mq.addEventListener("change", (e) => {
+    reduced = e.matches; cancelAnimationFrame(raf);
+    if (reduced) frame(performance.now()); else if (running) raf = requestAnimationFrame(frame);
+  });
   // progress reset on the briefing page
   const rb = document.getElementById("reset-progress");
   if (rb) rb.addEventListener("click", () => {

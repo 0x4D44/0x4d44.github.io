@@ -148,7 +148,8 @@
     const RULES = [
       ["", "Plain HTML: a nav containing an unordered list of links. The browser shows it as a bulleted list."],
       ["nav ul {list-style-type:none}", "<b>list-style-type:none</b> removes the bullets. The descendant selector <code>nav ul</code> means only lists <em>inside nav</em> are affected."],
-      ["nav ul li {float:left}", "<b>float:left</b> on each list item lines them up side by side, left to right."],
+      ["nav ul li {float:left}", "<b>float:left</b> on each list item lines them up side by side, left to right. But look: the page content has crept up <em>beside</em> the links, because floated items are taken out of the normal flow. That runaway needs fixing."],
+      ["p {clear:both}", "<b>clear:both</b> on the content after the bar makes it start <b>below</b> every floated element. The runaway is fixed."],
       ["nav ul li {float:left; width:70px; text-align:center}", "A fixed <b>width</b> spaces the items evenly, and <b>text-align:center</b> centres each link in its space."],
       ["nav ul li a {display:block; padding:8px}", "<b>display:block</b> turns each link into a box, so the whole area is clickable, not just the word. <b>padding</b> gives it room."],
       ["nav {height:35px; background-color:#12284a}\nnav ul li a {color:white; text-decoration:none}", "A fixed <b>height</b> and a background turn it into a bar. White links with no underline."],
@@ -169,8 +170,8 @@
     function upd() {
       const css = RULES.slice(1, i + 1).map((r) => r[0]).join("\n");
       // scope every rule to the demo
-      style.textContent = css.split("\n").map((line) => line.replace(/^(\s*)([^{]+)\{/, (m0, sp, sel) => sp + sel.split(",").map((x) => ".nb-demo " + x.trim()).join(", ") + " {")).join("\n") + (i >= 2 ? "\n.nb-demo .nb-after {clear:both; padding-top:4px}" : "");
-      code.innerHTML = (RULES.slice(1, i + 1).map((r, k) => (k === i - 1 ? `<span class="hl">${HC.esc(r[0])}</span>` : HC.esc(r[0]))).join("\n") || "/* no CSS yet */") + (i >= 2 ? "\n<span class=\"c\">/* and so the page content starts below the floated links: */</span>\np {clear:both}" : "");
+      style.textContent = css.split("\n").map((line) => line.replace(/^(\s*)([^{]+)\{/, (m0, sp, sel) => sp + sel.split(",").map((x) => ".nb-demo " + x.trim()).join(", ") + " {")).join("\n");
+      code.innerHTML = (RULES.slice(1, i + 1).map((r, k) => (k === i - 1 ? `<span class="hl">${HC.esc(r[0])}</span>` : HC.esc(r[0]))).join("\n") || "/* no CSS yet */");
       note.innerHTML = RULES[i][1];
       pos.textContent = `Rule ${i} of ${RULES.length - 1}`;
       back.disabled = i === 0; next.disabled = i === RULES.length - 1;

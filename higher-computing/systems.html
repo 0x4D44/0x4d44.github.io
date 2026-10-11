@@ -141,14 +141,16 @@
 <h3>The SQA layout</h3>
 <p>The course notes give an example layout of 24 bits: <strong>1 sign bit + 15 mantissa bits + 8 exponent bits</strong>. Questions can use other sizes, so always use the sizes given in the question.</p>
 <figure class="diagram">
+<div class="diagram-scroll">
 <svg viewBox="0 0 640 96" role="img" aria-labelledby="fp-t">
 <title id="fp-t">A 24-bit floating-point number: 1 sign bit, 15 bits of mantissa, 8 bits of exponent in two's complement</title>
-<rect x="10" y="20" width="26" height="40" fill="var(--redstone)"/><text x="23" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0</text>
-<rect x="36" y="20" width="390" height="40" fill="var(--sea)"/><text x="231" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">1 0 0 0 0 1 0 1 0 1 0 0 0 0 0</text>
-<rect x="426" y="20" width="204" height="40" fill="var(--grass)"/><text x="528" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0 0 0 0 0 1 1 1</text>
+<rect x="10" y="20" width="26" height="40" fill="var(--bg-red)"/><text x="23" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0</text>
+<rect x="36" y="20" width="390" height="40" fill="var(--bg-sea)"/><text x="231" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">1 0 0 0 0 1 0 1 0 1 0 0 0 0 0</text>
+<rect x="426" y="20" width="204" height="40" fill="var(--bg-green)"/><text x="528" y="45" text-anchor="middle" fill="#fff" font-size="13" class="mono">0 0 0 0 0 1 1 1</text>
 <g font-size="12" class="ink2" text-anchor="middle"><text x="23" y="78">sign</text><text x="231" y="78">mantissa (15 bits) · the digits after "0."</text><text x="528" y="78">exponent (8 bits, two's complement)</text></g>
 <text x="10" y="14" font-size="12" class="muted">66.625 = 1000010.101 = 0.1000010101 × 2⁷</text>
 </svg>
+</div>
 </figure>
 <p>The <strong>sign bit</strong> belongs to the mantissa: 0 means positive and 1 means negative. The mantissa itself is stored as an ordinary positive binary fraction. Only the <em>exponent</em> uses two's complement.</p>
 
@@ -316,6 +318,7 @@
 <h2 data-short="Environmental impact">7 · Environmental impact of intelligent systems <span class="spec-tag">CS · heating, traffic control, car management</span></h2>
 <p>An <dfn>intelligent system</dfn> senses its surroundings, makes decisions with software and acts on them automatically. All three that SQA names follow the same loop:</p>
 <figure class="diagram">
+<div class="diagram-scroll">
 <svg viewBox="0 0 640 150" role="img" aria-labelledby="loop-t">
 <title id="loop-t">The sense, decide, act loop: sensors feed a processor running software, which drives actuators, whose effect is measured again by the sensors</title>
 <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="var(--ink)"/></marker></defs>
@@ -327,6 +330,7 @@
 <g stroke="var(--ink)" stroke-width="2" fill="none"><path d="M180 70 H236" marker-end="url(#ar2)"/><path d="M400 70 H456" marker-end="url(#ar2)"/><path d="M540 100 V130 H100 V104" marker-end="url(#ar2)"/></g>
 <text x="320" y="144" text-anchor="middle" font-size="12" class="muted">the effect is measured again: a feedback loop</text>
 </svg>
+</div>
 </figure>
 <div class="table-wrap">
 <table>
