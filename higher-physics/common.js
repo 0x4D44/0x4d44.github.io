@@ -263,7 +263,7 @@
       } else {
         const opts = HP.el("div", { class: "q-opts", role: "group", "aria-label": "Options for question " + (qi + 1) });
         q.opts.forEach((o, oi) => {
-          const b = HP.el("button", { class: "q-opt", type: "button", html: o });
+          const b = HP.el("button", { class: "q-opt", type: "button", html: (q.opts.length === 5 ? `<span class="q-letter">${"ABCDE"[oi]}</span> ` : "") + o });
           b.addEventListener("click", () => {
             if (answered.has(qi)) return;
             const ok = oi === q.a;
@@ -274,7 +274,7 @@
             });
             if (!ok) { b.classList.add("wrong"); b.insertAdjacentHTML("afterbegin", '<span class="q-mark">✘ Your answer: </span>'); }
             const right = HP.el("span", { html: q.opts[q.a] }).textContent;
-            fb.innerHTML = (ok ? "<span class='ok'>Correct.</span> " : `<span class='bad'>Not this time.</span> The answer is: <b>${HP.esc(right)}</b>. `) + (q.why || "");
+            fb.innerHTML = (ok ? "<span class='ok'>Correct.</span> " : `<span class='bad'>Not this time.</span> The answer is ${q.opts.length === 5 ? "ABCDE"[q.a] + ": " : ""}<b>${HP.esc(right)}</b>. `) + (q.why || "");
             answered.set(qi, ok);
             update();
           });
