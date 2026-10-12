@@ -34,6 +34,16 @@
     for (const kid of kids.flat()) if (kid) e.append(kid);
     return e;
   };
+  /* A live-region readout that animations rewrite every frame: only touch the DOM when the
+     value really changes, so screen readers are not handed the same text sixty times a second. */
+  HP.quiet = function (e) {
+    for (const p of ["textContent", "innerHTML"]) {
+      const d = Object.getOwnPropertyDescriptor(p === "textContent" ? Node.prototype : Element.prototype, p);
+      let last = null;
+      Object.defineProperty(e, p, { configurable: true, get() { return d.get.call(e); }, set(v) { v = String(v); if (v === last) return; last = v; d.set.call(e, v); } });
+    }
+    return e;
+  };
   HP.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   HP.sleep = (ms) => new Promise((r) => setTimeout(r, HP.reduced ? Math.min(ms, 30) : ms));
 

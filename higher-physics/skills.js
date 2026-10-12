@@ -108,7 +108,14 @@
         out.innerHTML = `Points above the line: ${above}, below: ${below}. ` + (good
           ? `<span class="ok">A good line of best fit.</span> Gradient ≈ ${m.toFixed(2).replace("-", "−")} V A⁻¹, so the internal resistance r = −gradient ≈ ${(-m).toFixed(2)} Ω, and the EMF (the V intercept) ≈ ${c.toFixed(2)} V.`
           : "Adjust the line: aim for a straight line with the points scattered evenly on both sides, close to as many as possible. Don't force it through the origin, and don't just join the first point to the last.");
-        if (showFit) HP.label(ctx, `least squares: gradient ${mBest.toFixed(2)} Ω, intercept ${cBest.toFixed(2)} V`.replace("-", "−"), gb.x + gb.w, gb.y + 10, { size: 11, align: "right", col: C.gold, bold: true });
+        if (showFit) {
+          // two lines when one would run back over the V axis label on a narrow canvas
+          const g = `least squares: gradient ${mBest.toFixed(2).replace("-", "−")} Ω`, k = `intercept ${cBest.toFixed(2).replace("-", "−")} V`;
+          ctx.font = 'bold 11px "Atkinson Hyperlegible", system-ui, sans-serif';
+          const o = { size: 11, align: "right", col: C.gold, bold: true };
+          if (ctx.measureText(g + ", " + k).width < gb.w - 60) HP.label(ctx, g + ", " + k, gb.x + gb.w, gb.y + 10, o);
+          else { HP.label(ctx, g, gb.x + gb.w, gb.y + 10, o); HP.label(ctx, k, gb.x + gb.w, gb.y + 24, o); }
+        }
       },
     });
   });

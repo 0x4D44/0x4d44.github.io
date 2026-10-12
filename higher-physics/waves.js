@@ -11,7 +11,7 @@
   function canvasIn(box, cls, label) { const cv = HP.el("canvas", { class: "sim" + (cls ? " " + cls : ""), role: "img", "aria-label": label || "" }); box.append(cv); return cv; }
   const readouts = (box, items) => {
     const wrap = HP.el("div", { class: "readouts", "aria-live": "polite" }); const map = {};
-    items.forEach(([k, label]) => { const b = HP.el("b"); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
+    items.forEach(([k, label]) => { const b = HP.quiet(HP.el("b")); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
     box.append(wrap); return map;
   };
   const px = (ctx, x, y, w, hh, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(hh)); };
