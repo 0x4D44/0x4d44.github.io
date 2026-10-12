@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills and the assignment · Shot, Spark &amp; Starlight</title>
+<meta name="description" content="Higher Physics skills: units, prefixes, standard form and significant figures, scale-reading, random and systematic uncertainties, graphs, lines of best fit and gradients, and a mark-by-mark guide to the 20-mark assignment.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%231c5fb3'/%3E%3Ccircle cx='8' cy='8' r='5' fill='%23fff'/%3E%3Ccircle cx='8' cy='8' r='2.6' fill='%23c8102e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Shot, Spark and Starlight — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="8" y="2" width="2" height="1" fill="#e0b23a"/><rect x="7" y="3" width="2" height="2" fill="#e0b23a"/><rect x="6" y="5" width="4" height="2" fill="#e0b23a"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/><rect x="6" y="9" width="2" height="2" fill="#e0b23a"/><rect x="6" y="11" width="1" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Shot, Spark &amp; Starlight</span><span class="brand-sub">Higher Physics · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="dynamics.html">Universe</a></li>
+        <li><a href="waves.html">Particles &amp; Waves</a></li>
+        <li><a href="electricity.html">Electricity</a></li>
+        <li><a href="skills.html">Skills</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The chart room · units, uncertainties, graphs and the assignment</p>
+<h1>Measure twice, plot once</h1>
+<p class="lede">Every number in physics comes with a unit, a sensible number of significant figures and an uncertainty. These skills are tested all through the question paper and earn a large share of the assignment's 20 marks, so they are worth learning properly.</p>
+<div class="callout log">
+  <div class="callout-title">⚓ Ship's log: Captain Blackwood</div>
+  <p>"A navigator who writes down a position with no idea how wrong it might be will put this ship on the rocks. Every reading has an error. Know how big it is, and say so."</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<section id="units" class="prose">
+<h2 data-short="Units and significant figures">1 · Units, prefixes, standard form and significant figures <span class="spec-tag">Units, prefixes and uncertainties</span></h2>
+<p>Use SI units for every physical quantity, and convert prefixes <em>before</em> you substitute into a relationship. You need these eight prefixes:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>Symbol</th><th>Multiply by</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>tera</td><td>T</td><td class="num">10¹²</td><td>1 TW = 1 × 10¹² W</td></tr>
+<tr><td>giga</td><td>G</td><td class="num">10⁹</td><td>2.4 GHz wifi = 2.4 × 10⁹ Hz</td></tr>
+<tr><td>mega</td><td>M</td><td class="num">10⁶</td><td>3.0 MJ = 3.0 × 10⁶ J</td></tr>
+<tr><td>kilo</td><td>k</td><td class="num">10³</td><td>2.0 kV = 2.0 × 10³ V</td></tr>
+<tr><td>milli</td><td>m</td><td class="num">10⁻³</td><td>20 ms = 2.0 × 10⁻² s</td></tr>
+<tr><td>micro</td><td>μ</td><td class="num">10⁻⁶</td><td>470 μF = 4.70 × 10⁻⁴ F</td></tr>
+<tr><td>nano</td><td>n</td><td class="num">10⁻⁹</td><td>633 nm = 6.33 × 10⁻⁷ m</td></tr>
+<tr><td>pico</td><td>p</td><td class="num">10⁻¹²</td><td>10 pF = 1.0 × 10⁻¹¹ F</td></tr>
+</tbody></table></div>
+<p><strong>Standard form</strong> (scientific notation) writes a number as a value between 1 and 10 multiplied by a power of ten: 0.000 47 = 4.7 × 10⁻⁴. On a calculator use the ×10ˣ (or EXP) key, not "× 10 ^".</p>
+<h3>Significant figures</h3>
+<p>The final answer can have <strong>no more significant figures than the data value with the fewest</strong> significant figures. So 2.4 m ÷ 0.0315 s = 76 m s⁻¹, not 76.19047…, because 2.4 has only two significant figures. Markers accept answers from one figure fewer to two figures more than that, but a long string of calculator digits loses the mark. Don't round in the middle of a calculation: keep the full value in your calculator until the end.</p>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Examiners asked candidates not to copy down long calculator answers or ellipses ("…") as a step before the final answer, because it causes transcription errors. Show <strong>the relationship, the substitution, then the answer with its unit</strong>, rounded sensibly. And watch the powers of ten on a graph's axis: many candidates calculated a gradient but ignored the "× 10⁻³" written on the axis label.</p></div>
+<div class="widget" id="w-sf">
+  <h3 class="widget-title">Quartermaster's drill: prefixes and figures</h3>
+  <p class="hint">Answer in your head or on paper, then reveal. New questions each time.</p>
+</div>
+<div class="check" data-check="sk-units"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="uncertainty" class="prose">
+<h2 data-short="Uncertainties">2 · Uncertainties <span class="spec-tag">Units, prefixes and uncertainties</span></h2>
+<p>Every measurement is uncertain. You need three kinds of uncertainty, and you can express each as an <strong>absolute</strong> value (± 0.02 s) or a <strong>percentage</strong> (± 0.8%).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>What it is</th><th>How to deal with it</th></tr></thead>
+<tbody>
+<tr><td><strong>Scale-reading uncertainty</strong></td><td>How precisely the instrument's scale can be read.</td><td>Usually ± half the smallest division on an analogue scale (a ruler marked in mm gives ± 0.5 mm), and ± 1 in the last digit on a digital display (a meter reading 2.36 V gives ± 0.01 V). Use a more precise instrument to reduce it.</td></tr>
+<tr><td><strong>Random uncertainty</strong></td><td>The scatter when a measurement is repeated: slight variations in reaction time, release, reading.</td><td>Take repeated readings and use the mean. More repeats reduce its effect. Approximate random uncertainty = (max − min) ÷ number of readings.</td></tr>
+<tr><td><strong>Systematic uncertainty</strong></td><td>All the readings are too large, or all too small, because of the technique or the design of the experiment: a meter that reads 0.1 V with nothing connected, measuring a length from the wrong end of a ruler.</td><td>Repeating does <em>not</em> help: the mean is simply offset. It often shows up as a best-fit line that misses the origin when theory says it should pass through it. Fix the method or correct for the offset.</td></tr>
+</tbody></table></div>
+<p class="eq">random uncertainty = <span class="frac"><span>max. value − min. value</span><span>number of values</span></span></p>
+<p>The <strong>mean</strong> of repeated readings is the best estimate of the true value. Quote the final result as <strong>value ± uncertainty</strong>, for example (2.36 ± 0.02) s.</p>
+<div class="widget" id="w-uncert">
+  <h3 class="widget-title">The navigator's reckoning: repeated readings</h3>
+  <p class="hint">Here are five stopwatch times for a trolley to run down the slipway. Edit them, or paste your own.</p>
+</div>
+<h3>Which uncertainty matters most?</h3>
+<p>When an experiment measures several quantities, find the <strong>percentage</strong> uncertainty in each. The largest one dominates, and is a good estimate of the percentage uncertainty in the final result.</p>
+<div class="worked"><p class="worked-title">Worked example · the dominant uncertainty</p>
+<p>A student measures the speed of a trolley: distance (0.800 ± 0.001) m, time (2.36 ± 0.02) s. Calculate the speed with its uncertainty.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>Speed = 0.800 ÷ 2.36 = 0.339 m s⁻¹</li>
+<li>% uncertainty in distance = 0.001 ÷ 0.800 × 100 = 0.13%. % uncertainty in time = 0.02 ÷ 2.36 × 100 = 0.85%.</li>
+<li>Time dominates, so the speed is uncertain by about 0.85%: 0.85% of 0.339 = 0.003 m s⁻¹.</li>
+<li><span class="ans">Speed = (0.339 ± 0.003) m s⁻¹</span>. To improve the experiment, improve the timing (light gates instead of a stopwatch), not the distance measurement.</li>
+</ol>
+</details></div>
+<div class="callout tip"><div class="callout-title">✔ Accuracy, precision and reliability</div><p>You don't have to use these words, but if you do, use them correctly. <strong>Accurate</strong>: close to the true value. <strong>Precise</strong>: repeated readings close to each other (small random uncertainty). A result can be precise but inaccurate if there is a systematic uncertainty. The 2025 examiners noted that candidates still mix these up.</p></div>
+<div class="check" data-check="sk-uncert"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="graphs" class="prose">
+<h2 data-short="Graphs">3 · Graphs and analysis</h2>
+<p>A good graph earns marks in the paper and three marks in the assignment. Check every one of these:</p>
+<ul>
+<li><strong>Axes</strong>: the quantity you changed on the x-axis and the quantity you measured on the y-axis, each <strong>labelled with quantity and unit</strong> (V / V, I / A).</li>
+<li><strong>Scales</strong>: linear, easy to read (steps of 1, 2 or 5 units per division, never 3 or 7), and spreading the points over most of the grid. The origin does not have to be on the graph.</li>
+<li><strong>Points</strong>: plotted accurately as small crosses.</li>
+<li><strong>Line of best fit</strong>: a single straight line (or smooth curve, if the points curve) drawn <strong>with a ruler</strong>, with the points scattered evenly on both sides. Do <em>not</em> force it through the origin, and do not just join the first and last points.</li>
+<li><strong>Gradient</strong>: use two points <em>on your line</em> that are far apart (a large triangle), not two data points. Gradient = rise ÷ run, with units.</li>
+</ul>
+<div class="widget" id="w-bestfit">
+  <h3 class="widget-title">Draw the line: terminal p.d. against current</h3>
+  <p class="hint">Move the line until it fits the crosses well, then read off the EMF and internal resistance. Compare with the least-squares line a computer would draw.</p>
+</div>
+<h3>Using the gradient</h3>
+<p>Arrange the relationship you are testing into the form <span class="eqi">y = (gradient) × x (+ intercept)</span>, then read off what the gradient means:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Experiment</th><th>Plot</th><th>Gradient gives</th></tr></thead>
+<tbody>
+<tr><td>Acceleration due to gravity</td><td>h against t²</td><td>g/2</td></tr>
+<tr><td>Inverse square law</td><td>I against 1/d²</td><td>k (and a straight line through the origin confirms I ∝ 1/d²)</td></tr>
+<tr><td>Refractive index</td><td>sin θ₁ against sin θ₂</td><td>n</td></tr>
+<tr><td>EMF and internal resistance</td><td>V against I</td><td>−r (y-intercept = E)</td></tr>
+<tr><td>Diffraction grating</td><td>sin θ against m</td><td>λ/d</td></tr>
+<tr><td>Capacitance</td><td>Q against V</td><td>C</td></tr>
+</tbody></table></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>In the paper's data-analysis question, few candidates drew a proper line of best fit. Some forced it through the origin, then claimed a systematic uncertainty because their line went through the origin. Few went on to use their gradient to find the quantity asked for. In assignments, some candidates averaged a value of g calculated from each separate data point, which is invalid. The right method is to <strong>find the gradient of the best-fit line and use that</strong>. And say "linear relationship" for any straight line; only say "directly proportional" if the line also passes through the origin.</p></div>
+<div class="check" data-check="sk-graphs"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="assignment" class="prose">
+<h2 data-short="The assignment">4 · The assignment: 20 marks, scaled to 33</h2>
+<p>The assignment is your own experimental investigation, written up as a report. It has two stages:</p>
+<ol>
+<li><strong>Research</strong> (with some supervision): choose a topic with your teacher's guidance, carry out experimental work that gives measurements (you may work in a group), and find data or information from the internet, books or journals.</li>
+<li><strong>Report</strong> (a high degree of supervision, at most 2 hours, no internet): write the report on your own. You may take in only the instructions for candidates, your experimental method, your <strong>raw</strong> data (tabulated, but with no extra columns for means or derived values), your internet/literature data and extracts, and a record of your sources. No drafts, no templates, no marking instructions.</li>
+</ol>
+<p>The whole assignment should take no more than about 8 hours. Your teacher cannot give you an aim, data or feedback on your report, and cannot let you redraft it. It is marked by Qualifications Scotland.</p>
+<h3>Where the 20 marks come from</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Section</th><th class="num">Marks</th><th>To earn them (with lessons from the 2025 course report)</th></tr></thead>
+<tbody>
+<tr><td>Aim</td><td class="num">1</td><td>Clearly describes the purpose. Be specific: "To investigate how the irradiance of light from a lamp depends on the distance from it", not "to investigate light".</td></tr>
+<tr><td>Underlying physics</td><td class="num">3</td><td>An account of the physics relevant to your aim, at Higher level, with relationships explained. Topics at National 5 level leave little Higher physics to write about; Advanced Higher topics are often not understood.</td></tr>
+<tr><td>Data collection: summary of method</td><td class="num">1</td><td>A <em>brief summary</em> of how you collected the data, naming all the measuring instruments. Not a step-by-step recipe.</td></tr>
+<tr><td>Data collection: raw data</td><td class="num">1</td><td>Enough raw data from your own experiment (usually at least five values of the independent variable, with repeats).</td></tr>
+<tr><td>Data collection: table</td><td class="num">1</td><td>Data, means and derived values in a correctly produced table: every column headed with <strong>quantity and unit</strong> ("mean voltage / V", not "mean"), values to a consistent precision (2.00 and 3.45, not 2 and 3.45), means calculated correctly. Only some candidates got this "straightforward" mark in 2025.</td></tr>
+<tr><td>Data collection: secondary data</td><td class="num">1</td><td>Data from the internet or literature that <em>can be compared with your own results</em> (not just a data-book constant, and not a graph with no data on it), or data from a second, related experiment.</td></tr>
+<tr><td>Data collection: citation and reference</td><td class="num">1</td><td>A citation in the text and a full reference: author/title/URL <em>and date accessed</em> for a website; page numbers for a book. A bare URL as a citation is never enough.</td></tr>
+<tr><td>Graph: scales</td><td class="num">1</td><td>Suitable, linear, easy-to-read scales.</td></tr>
+<tr><td>Graph: labels and units</td><td class="num">1</td><td>Both axes labelled with quantity and unit.</td></tr>
+<tr><td>Graph: points and line</td><td class="num">1</td><td>Points plotted accurately and an appropriate best-fit line (or curve). If you use software, make the graph big, with minor gridlines and small markers, so plotting can be checked.</td></tr>
+<tr><td>Uncertainties</td><td class="num">2</td><td><strong>Both</strong> scale-reading uncertainties (for every measured quantity, matching the precision you quoted) <strong>and</strong> random uncertainties. Most candidates gave one kind; only some gave both.</td></tr>
+<tr><td>Analysis</td><td class="num">1</td><td>A meaningful calculation, usually from the gradient of your graph, with a sample calculation shown. Mathematical analysis beats a wordy description.</td></tr>
+<tr><td>Conclusion</td><td class="num">1</td><td>A valid conclusion that relates to your aim and is supported by <strong>all</strong> the data in the report, your own and your secondary data.</td></tr>
+<tr><td>Evaluation</td><td class="num">3</td><td>Several evaluative points, each with a <strong>justification</strong> that fits <em>your</em> experiment and data. "Repeat more times" earns nothing if your readings hardly varied. Don't recite evaluation points memorised from examples.</td></tr>
+<tr><td>Structure</td><td class="num">1</td><td>A clear, concise report with an informative title.</td></tr>
+</tbody></table></div>
+<h3>Good Higher topics</h3>
+<p>Your teacher will offer a range of topics. Ones that work well at Higher, because they give a graph and a value to compare with literature, include: irradiance against distance (inverse square law); refractive index, or critical angle, of a block or liquid; wavelength of a laser using a grating; EMF and internal resistance of a cell; charging or discharging a capacitor through different resistors; the threshold voltage of different coloured LEDs (and an estimate of Planck's constant); a thermistor or LDR in a potential divider; acceleration down a slope at different angles; the Doppler effect for a moving sound source.</p>
+<div class="callout tip"><div class="callout-title">✔ Before the report stage</div><ul><li>Raw data tabulated, with units and consistent precision, and the scale-reading uncertainty of each instrument written down.</li><li>Secondary data you can genuinely compare with your own, with full reference details and the date you accessed it.</li><li>An extract that explains the underlying physics (without sample calculations).</li><li>A brief summary of your method, naming every instrument.</li></ul></div>
+<div class="check" data-check="sk-assignment"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="electricity.html">← Electricity</a>
+  <a class="btn primary" href="exam.html">To the parade ground: Exam drill →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Qualifications Scotland Higher Physics course specification (version 4.1, September 2026, valid from session 2026–27). Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion site <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> covers Higher Computing Science.</p>
+  </div>
+</footer>
+<script src="skills.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
