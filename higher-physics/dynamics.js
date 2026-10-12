@@ -51,8 +51,8 @@
   mount("w-graphs", (box) => {
     const scen = {
       taxi: {
-        name: "Tutor take-off run", T: 13, up: "forward",
-        // a: 2 m/s² for 5 s, steady 10 m/s for 4 s, −2.5 m/s² for 4 s (abandoned take-off)
+        name: "Tutor taxiing out", T: 13, up: "forward",
+        // a: 2 m/s² for 5 s, steady 10 m/s for 4 s, −2.5 m/s² for 4 s (brakes to a stop at the holding point)
         state(t) {
           if (t < 5) return { s: t * t, v: 2 * t, a: 2 };
           if (t < 9) return { s: 25 + 10 * (t - 5), v: 10, a: 0 };
@@ -102,7 +102,7 @@
     let key = "taxi", upPos = true;
     const top = HP.el("div");
     box.append(top);
-    HP.choice(top, "Scenario:", [["taxi", "Tutor take-off run"], ["throw", "Shot fired upwards"], ["bounce", "Bouncing ball"]], key, (v) => { key = v; sim.reset(); if (!sim.playing) sim.play(); pb.sync(); });
+    HP.choice(top, "Scenario:", [["taxi", "Tutor taxiing out"], ["throw", "Shot fired upwards"], ["bounce", "Bouncing ball"]], key, (v) => { key = v; sim.reset(); if (!sim.playing) sim.play(); pb.sync(); });
     const signSeg = HP.choice(top, "Sign convention:", [["up", "up is positive"], ["down", "down is positive"]], "up", (v) => { upPos = v === "up"; sim.redraw(); });
     const cv = canvasIn(box);
     cv.setAttribute("aria-label", "Animated scene with displacement–time, velocity–time and acceleration–time graphs drawn as the motion happens.");
@@ -237,7 +237,7 @@
       let net, a, T = 0, txt;
       if (mode === "slide") {
         if (par > Ff) { net = par - Ff; a = net / m; txt = `mg sin θ (${F(par, 3)} N) is bigger than friction (${Ff} N), so there is an unbalanced force of ${F(net, 3)} N down the slope and the block accelerates at a = F/m = ${F(a, 3)} m s⁻².`; }
-        else { net = 0; a = 0; txt = `Friction can supply up to ${Ff} N, which is enough to balance the ${F(par, 3)} N component down the slope. The forces are balanced and the block stays at rest (friction is only ${F(par, 3)} N here).`; }
+        else { net = 0; a = 0; txt = `The friction setting (${Ff} N) is at least as big as mg sin θ (${F(par, 3)} N), so the block does not slide: it stays at rest with balanced forces. Steepen the slope or reduce the friction to set it moving. (Higher questions only ask about friction on objects that are already moving.)`; }
       } else {
         // towed up at constant speed: friction acts DOWN the slope, opposing the motion
         T = par + Ff; net = 0; a = 0;
@@ -510,7 +510,7 @@
     let rebound = false;
     const sT = HP.slider(ctr, { label: "Contact time", min: 5, max: 200, step: 5, value: 20, unit: "ms", oninput: () => upd() });
     HP.choice(box, "After the hit, the shot…", [["stop", "stops dead"], ["rebound", "bounces back at 8 m s⁻¹"]], "stop", (v) => { rebound = v === "rebound"; upd(); });
-    const R = readouts(box, [["dp", "change in momentum mv − mu"], ["imp", "impulse = area under graph"], ["Fav", "average force F = Δp / t"]]);
+    const R = readouts(box, [["dp", "change in momentum mv − mu"], ["imp", "impulse Ft = area under graph"], ["Fav", "average force F = Δp / t"]]);
     const m = 14.5, u = 20;
     function upd() { sim.redraw(); }
     const sim = HP.sim(cv, {
@@ -520,8 +520,8 @@
         const dp = m * (v - u); // negative: force on the shot is backwards
         const Fav = Math.abs(dp) / tc, Fpk = Fav * Math.PI / 2; // half-sine pulse
         R.dp.textContent = `${m} × (${String(v).replace("-", "−")} − ${u}) = ${F(dp, 3)} kg m s⁻¹`;
-        R.imp.textContent = F(Math.abs(dp), 3) + " N s";
-        R.Fav.textContent = F(Fav, 3) + " N";
+        R.imp.textContent = F(dp, 3) + " N s (on the shot: backwards)";
+        R.Fav.textContent = F(Fav, 3) + " N (size)";
         const gb = { x: 60, y: 22, w: S.w - 80, h: S.h - 58 };
         const yMax = 100000;
         const ax = HP.plot(ctx, gb, { x0: 0, x1: 0.2, y0: 0, y1: yMax, xt: 0.04, yt: 20000, xl: "t / s", yl: "F / N", C, fs: 11, ytf: (v) => v ? (v / 1000) + "k" : "0", tf: (v) => v.toFixed(2) });
@@ -617,8 +617,8 @@
             HP.arrow(ctx, X(x), Y(y), X(x) + uh * vs, Y(y), "#1c5fb3", 2.5);
             HP.arrow(ctx, X(x), Y(y), X(x), Y(y) - vv * vs, "#b86a00", 2.5);
             HP.arrow(ctx, X(x), Y(y), X(x) + uh * vs, Y(y) - vv * vs, "#3f7426", 1.5, 6);
-            HP.label(ctx, `v_h = ${uh.toFixed(1)}`, X(x) + uh * vs + 4, Y(y) + 10, { size: 11, col: "#12284a", haloCol: "#cfe3f5" });
-            HP.label(ctx, `v_v = ${vv.toFixed(1)}`, X(x) + 8, Y(y) - vv * vs, { size: 11, col: "#7a4500", haloCol: "#cfe3f5" });
+            HP.label(ctx, `vₕ = ${uh.toFixed(1)} m/s`, X(x) + uh * vs + 4, Y(y) + 10, { size: 11, col: "#12284a", haloCol: "#cfe3f5" });
+            HP.label(ctx, `vᵥ = ${vv.toFixed(1).replace("-", "−")} m/s`, X(x) + 8, Y(y) - vv * vs, { size: 11, col: "#7a4500", haloCol: "#cfe3f5" });
           }
         } else {
           pxRect(ctx, X(rng) - 6, seaY - 14, 12, 14, "#e8f4ff"); pxRect(ctx, X(rng) - 2, seaY - 22, 4, 8, "#e8f4ff");
@@ -652,19 +652,21 @@
       let x = 0, y = r0, vx = vo, vy = 0;
       const pts = [[x, y]];
       const h = 0.002;
-      let crashed = false, escaped = false, angle = 0;
+      let crashed = false, offscreen = false, angle = 0;
+      const escaped = sV.value >= Math.SQRT2; // energy test: v² ≥ 2GM/r
       for (let i = 0; i < 60000; i++) {
         const r = Math.hypot(x, y), a = GM / (r * r);
         vx += -a * x / r * h; vy += -a * y / r * h; x += vx * h; y += vy * h;
         if (i % 6 === 0) pts.push([x, y]);
         if (r < 1) { crashed = true; break; }
-        if (r > 6) { escaped = true; break; }
+        if (r > 6) { offscreen = true; break; }
         angle += h * (x * vy - y * vx) / (r * r);
         if (Math.abs(angle) > 2 * Math.PI + 0.05) break;
       }
       const f = sV.value;
       note.textContent = crashed ? (f < 0.7 ? "Too slow: the shot falls and hits the ground quite close to the mountain." : "Faster: the shot still falls, but the curved ground drops away beneath it, so it lands much further round the planet.")
-        : escaped ? "Above about 1.41 × orbital speed (escape speed) the shot never comes back."
+        : escaped ? "At or above about 1.41 × orbital speed (escape speed) the shot never comes back: it escapes the planet's gravity."
+        : offscreen ? "Still a closed ellipse: the shot will come back, but its far point is way off the screen. Only at 1.41 × orbital speed (escape speed) would it never return."
           : Math.abs(f - 1) < 0.02 ? "Orbital speed: the shot falls towards the centre all the time, but the ground curves away exactly as fast. It is in free fall, round and round: a satellite."
             : "A closed orbit that isn't a circle: an ellipse. The shot is still in free fall the whole way round.";
       return pts;
