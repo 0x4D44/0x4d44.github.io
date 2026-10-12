@@ -135,7 +135,7 @@
         // (the LDR's circle and light arrow need the label further out and lower)
         const r1x = mode === "ldr" ? xR - 30 : xR - 18, r1y = mode === "ldr" ? yT + 48 : yT + 40;
         HP.label(ctx, "R₁", r1x, r1y - (mode === "fixed" ? 0 : 7), { size: 12, bold: true, align: "right" });
-        if (mode !== "fixed") HP.label(ctx, mode === "therm" ? "(thermistor)" : "(LDR)", r1x, r1y + 7, { size: 10, align: "right" });
+        if (mode !== "fixed") HP.label(ctx, mode === "therm" ? "(thermistor)" : "(LDR)", r1x, r1y + 7, { size: 11, align: "right" });
         // variable resistor: an arrow drawn diagonally through the box
         if (mode === "fixed") HP.arrow(ctx, xR - 16, yT + 62, xR + 16, yT + 20, C.ink, 2, 8);
         HP.label(ctx, "R₂", xR - 18, yB - 40, { size: 12, bold: true, align: "right" });
@@ -201,7 +201,7 @@
         // energy bar: E split into V and Ir
         const bx = cx0 + cw * 0.2, by = cy0 + ch + 14, bw = cw * 0.6;
         px(ctx, bx, by, bw * V / E, 12, C.sea); px(ctx, bx + bw * V / E, by, bw * I * r / E, 12, C.red);
-        HP.label(ctx, "t.p.d.", bx, by + 22, { size: 10, col: C.sea }); HP.label(ctx, "lost volts", bx + bw, by + 22, { size: 10, align: "right", col: C.red });
+        HP.label(ctx, "t.p.d.", bx, by + 22, { size: 11, col: C.sea }); HP.label(ctx, "lost volts", bx + bw, by + 22, { size: 11, align: "right", col: C.red });
         // graph
         const gb = narrow ? { x: 50, y: 262, w: S.w - 66, h: S.h - 262 - 34 } : { x: S.w * 0.5 + 40, y: 18, w: S.w * 0.5 - 56, h: S.h - 52 };
         const ax = HP.plot(ctx, gb, { x0: 0, x1: 3.2, y0: 0, y1: 1.6, xt: 0.5, yt: 0.25, xl: "I / A", yl: "t.p.d. / V", C, fs: 11, tf: (v) => +v.toFixed(2) + "" });
@@ -259,7 +259,7 @@
         ctx.font = 'bold 11px "Atkinson Hyperlegible", system-ui, sans-serif';
         const cFits = rx + 20 + ctx.measureText(cLab).width <= S.w - 4;
         HP.label(ctx, cLab, cFits ? rx + 20 : rx - 22, cy + ch / 2, { size: 11, bold: true, align: cFits ? "left" : "right" });
-        const q = Vc / Vs; for (let k = 0; k < Math.round(q * 5); k++) { HP.label(ctx, "+", rx - 12 + k * 6, cy + ch / 2 - 15, { size: 10, col: C.red, halo: false, bold: true }); HP.label(ctx, "−", rx - 12 + k * 6, cy + ch / 2 + 16, { size: 10, col: C.sea, halo: false, bold: true }); }
+        const q = Vc / Vs; for (let k = 0; k < Math.round(q * 5); k++) { HP.label(ctx, "+", rx - 12 + k * 6, cy + ch / 2 - 15, { size: 11, col: C.red, halo: false, bold: true }); HP.label(ctx, "−", rx - 12 + k * 6, cy + ch / 2 + 16, { size: 11, col: C.sea, halo: false, bold: true }); }
         // switch blade
         [cA, cB, pivot].forEach(([x, y]) => { ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill(); });
         ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(...pivot); ctx.lineTo(...(charging ? cA : cB)); ctx.stroke();
@@ -272,13 +272,13 @@
         const g2 = narrow ? { x: gx, y: 380, w: gw, h: 120 } : { x: gx, y: S.h / 2 + 12, w: gw, h: S.h / 2 - 34 };
         const a1 = HP.plot(ctx, g1, { x0: 0, x1: 60, y0: 0, y1: 13, xt: 10, yt: 4, xl: "t / s", yl: "Vc / V", C, fs: 11 });
         const Imax = Vs / 10e3 * 1e6; // μA at the smallest R, fixed axis so R's effect shows
-        const a2 = HP.plot(ctx, g2, { x0: 0, x1: 60, y0: -Imax * 1.05, y1: Imax * 1.05, xt: 10, yt: 400, xl: "t / s", yl: "I / μA", C, fs: 11 });
+        const a2 = HP.plot(ctx, g2, { x0: 0, x1: 60, y0: -Imax * 1.05, y1: Imax * 1.05, xt: 10, yt: 400, xl: "t / s", yl: "I / μA", C, fs: 11, tf: (v) => String(+v.toFixed(6)).replace("-", "−") });
         ctx.lineWidth = 2.5;
         ctx.strokeStyle = C.sea; ctx.beginPath(); hist.forEach(([tt, v], i) => (i ? ctx.lineTo(a1.X(tt), a1.Y(v)) : ctx.moveTo(a1.X(tt), a1.Y(v)))); ctx.stroke();
         ctx.strokeStyle = C.red; ctx.beginPath(); hist.forEach(([tt, , ii], i) => (i ? ctx.lineTo(a2.X(tt), a2.Y(ii * 1e6)) : ctx.moveTo(a2.X(tt), a2.Y(ii * 1e6)))); ctx.stroke();
         if (tSwitch) { ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; [a1, a2].forEach((a, k) => { const g = k ? g2 : g1; ctx.beginPath(); ctx.moveTo(a.X(tSwitch), g.y); ctx.lineTo(a.X(tSwitch), g.y + g.h); ctx.stroke(); }); ctx.setLineDash([]); }
         // under the circuit, clear of the graph axes and their labels
-        HP.label(ctx, `time constant RC = ${F(tau, 2)} s (for interest only)`, cx + cw / 2, bot + 36, { size: 10, align: "center", col: C.muted });
+        HP.label(ctx, `time constant RC = ${F(tau, 2)} s (for interest only)`, cx + cw / 2, bot + 36, { size: 11, align: "center", col: C.muted });
       },
     });
     const pb = HP.playButton(sim, ["▶ Run", "❚❚ Pause"]);
@@ -324,9 +324,9 @@
           // valence band (lower)
           ctx.fillStyle = "rgba(179,38,30,.15)"; ctx.fillRect(x0, vbTop, w, bot - vbTop);
           ctx.strokeStyle = C.red; ctx.strokeRect(x0, vbTop, w, bot - vbTop);
-          HP.label(ctx, "conduction band", x0 + 4, top + 10, { size: 10, col: C.sea });
-          HP.label(ctx, "valence band", x0 + 4, bot - 8, { size: 10, col: C.red });
-          if (!metal) HP.label(ctx, `gap ${gap < 2 ? "small" : "large"}`, x0 + w / 2, (cbBot + vbTop) / 2, { size: 10, align: "center", col: C.muted });
+          HP.label(ctx, "conduction band", x0 + 4, top + 10, { size: 11, col: C.sea });
+          HP.label(ctx, "valence band", x0 + 4, bot - 8, { size: 11, col: C.red });
+          if (!metal) HP.label(ctx, `gap ${gap < 2 ? "small" : "large"}`, x0 + w / 2, (cbBot + vbTop) / 2, { size: 11, align: "center", col: C.muted });
           // electrons
           const nV = 40;
           let excited;

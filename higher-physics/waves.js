@@ -227,9 +227,9 @@
         ITEMS.forEach(([p], i) => { ctx.fillStyle = i === sI.value ? C.red : C.muted; ctx.beginPath(); ctx.arc(X(p), 60, i === sI.value ? 7 : 3.5, 0, 7); ctx.fill(); });
         const [p, lab] = ITEMS[sI.value];
         HP.label(ctx, lab, Math.min(Math.max(X(p), 60), S.w - 60), 32, { size: 13, bold: true, align: "center", col: C.red });
-        HP.label(ctx, "sub-nuclear", X(-16), 100, { size: 10, align: "center", col: C.muted });
-        HP.label(ctx, "human scale", X(0), 100, { size: 10, align: "center", col: C.muted });
-        HP.label(ctx, "cosmic", X(22), 100, { size: 10, align: "center", col: C.muted });
+        HP.label(ctx, "sub-nuclear", X(-16), 100, { size: 11, align: "center", col: C.muted });
+        HP.label(ctx, "human scale", X(0), 100, { size: 11, align: "center", col: C.muted });
+        HP.label(ctx, "cosmic", X(22), 100, { size: 11, align: "center", col: C.muted });
       },
     });
   });
@@ -382,14 +382,16 @@
           const scale = (m) => (m - ma * 0.995) / (mb - ma * 0.995) * (bw - 70);
           px(ctx, bx + 60, by, scale(mb), 18, C.sea); px(ctx, bx + 60, by + 28, scale(ma), 18, C.red);
           HP.label(ctx, "before", bx, by + 9, { size: 11 }); HP.label(ctx, "after", bx, by + 37, { size: 11 });
-          HP.label(ctx, "(bars zoomed: only the top 0.5% of the mass is shown)", bx, by + 62, { size: 10, col: C.muted });
+          HP.label(ctx, "Bars zoomed in: they start at 99.5% of", bx, by + 60, { size: 11, col: C.muted });
+          HP.label(ctx, "the mass after the reaction.", bx, by + 75, { size: 11, col: C.muted });
         } else {
           const scale = (m) => (m - ma * 0.995) / (mb - ma * 0.995) * (bh - 30);
           px(ctx, bx + 10, by + bh - scale(mb), bw / 2 - 20, scale(mb), C.sea);
           px(ctx, bx + bw / 2 + 10, by + bh - scale(ma), bw / 2 - 20, scale(ma), C.red);
           HP.label(ctx, "mass before", bx + bw / 4, by + bh + 12, { size: 11, align: "center" });
           HP.label(ctx, "mass after", bx + bw * 0.75, by + bh + 12, { size: 11, align: "center" });
-          HP.label(ctx, "top 0.5% of the bars only", bx + bw / 2, by - 10, { size: 10, align: "center", col: C.muted });
+          HP.label(ctx, "bars start at 99.5% of the", bx + bw / 2, by - 24, { size: 11, align: "center", col: C.muted });
+          HP.label(ctx, "mass after the reaction", bx + bw / 2, by - 10, { size: 11, align: "center", col: C.muted });
           ctx.strokeStyle = C.gold; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(bx + bw / 2 + 10, by + bh - scale(mb)); ctx.lineTo(bx + bw - 10, by + bh - scale(mb)); ctx.stroke(); ctx.setLineDash([]);
           HP.label(ctx, "Δm", bx + bw - 14, by + bh - (scale(mb) + scale(ma)) / 2, { size: 12, bold: true, align: "right", col: C.gold });
         }
@@ -443,7 +445,7 @@
         // light meter
         px(ctx, xs + 4, ly - 12, 18, 24, "#333"); px(ctx, xs + 7, ly - 8, 12, 8, "#9fd0ff");
         HP.label(ctx, `d = ${d.toFixed(1)} m`, xs, ly + half * d + 16 > sc.h - 6 ? sc.h - 8 : ly + half * d + 16, { size: 11, align: "center", col: "#fff", halo: false });
-        HP.label(ctx, "Signal lantern (a point source)", sc.x + 8, sc.y + sc.h - 10, { size: 10, col: "#cfd6e6", halo: false });
+        HP.label(ctx, "Signal lantern (a point source)", sc.x + 8, sc.y + sc.h - 10, { size: 11, col: "#cfd6e6", halo: false });
         // graph
         const gb = narrow ? { x: 52, y: sc.h + 24, w: S.w - 68, h: S.h - sc.h - 56 } : { x: sc.w + 58, y: 20, w: S.w - sc.w - 72, h: S.h - 56 };
         if (graph === "d") {
@@ -451,12 +453,12 @@
           ctx.strokeStyle = C.red; ctx.lineWidth = 2.5; ctx.beginPath();
           for (let x = 0.5; x <= 3.001; x += 0.02) { const y = k / (x * x); x > 0.5 ? ctx.lineTo(ax.X(x), ax.Y(y)) : ctx.moveTo(ax.X(x), ax.Y(y)); }
           ctx.stroke(); ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(ax.X(d), ax.Y(I), 5, 0, 7); ctx.fill();
-          HP.label(ctx, "a curve: hard to prove it is inverse square", gb.x + gb.w, gb.y + 12, { size: 10, align: "right", col: C.muted });
+          HP.label(ctx, "a curve: hard to prove it is inverse square", gb.x + gb.w, gb.y + 12, { size: 11, align: "right", col: C.muted });
         } else {
           const ax = HP.plot(ctx, gb, { x0: 0, x1: 4, y0: 0, y1: 3.2, xt: 1, yt: 0.8, xl: "1/d² / m⁻²", yl: "I / W m⁻²", C, fs: 11 });
           ctx.strokeStyle = C.red; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ax.X(0), ax.Y(0)); ctx.lineTo(ax.X(4), ax.Y(3.2)); ctx.stroke();
           ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(ax.X(1 / (d * d)), ax.Y(I), 5, 0, 7); ctx.fill();
-          HP.label(ctx, "a straight line through the origin: I ∝ 1/d²", gb.x + 8, gb.y + 12, { size: 10, col: C.muted });
+          HP.label(ctx, "a straight line through the origin: I ∝ 1/d²", gb.x + 8, gb.y + 12, { size: 11, col: C.muted });
         }
       },
     });
@@ -569,14 +571,16 @@
         ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(probe.x, probe.y); ctx.lineTo(s2.x, s2.y); ctx.stroke(); ctx.setLineDash([]);
         ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(probe.x, probe.y, 8, 0, 7); ctx.stroke();
-        const pdl = Math.abs(r2 - r1) / lam;
-        const frac = pdl - Math.floor(pdl);
+        const pdl = +(Math.abs(r2 - r1) / lam).toFixed(2); // classify the value the reader sees
+        const frac = +(pdl - Math.floor(pdl)).toFixed(2);
         R.p1.textContent = (r1 / lam).toFixed(2) + " λ"; R.p2.textContent = (r2 / lam).toFixed(2) + " λ";
         R.pd.textContent = pdl.toFixed(2) + " λ";
-        const nearWhole = frac < 0.12 || frac > 0.88, nearHalf = Math.abs(frac - 0.5) < 0.12;
+        const TOL = 0.06 + 1e-9; // within ±0.06λ of a whole or half number of wavelengths
+        const nearWhole = frac <= TOL || frac >= 1 - TOL, nearHalf = Math.abs(frac - 0.5) <= TOL;
+        const between = "in between: neither a maximum nor a minimum";
         let res;
-        if (!phase180) res = nearWhole ? `maximum (constructive): ≈ ${Math.round(pdl)}λ` : nearHalf ? `minimum (destructive): ≈ (${Math.floor(pdl)} + ½)λ` : "between a maximum and a minimum";
-        else res = nearWhole ? "minimum: antiphase sources swap the rule" : nearHalf ? "maximum: antiphase sources swap the rule" : "between a maximum and a minimum";
+        if (!phase180) res = nearWhole ? `maximum (constructive): ≈ ${Math.round(pdl)}λ` : nearHalf ? `minimum (destructive): ≈ (${Math.floor(pdl)} + ½)λ` : between;
+        else res = nearWhole ? "minimum: antiphase sources swap the rule" : nearHalf ? "maximum: antiphase sources swap the rule" : between;
         R.res.textContent = res;
         HP.label(ctx, "drag the white ring to probe the pattern", S.w - 8, 14, { size: 11, align: "right", col: "#fff", halo: false });
         // scale bar: 5 cm
@@ -694,15 +698,15 @@
         const Y = (en) => lv.y + lv.h - (en - E(1)) / (0 - E(1)) * lv.h;
         // zero line
         ctx.strokeStyle = C.muted; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(lv.x, Y(0)); ctx.lineTo(lv.x + lv.w, Y(0)); ctx.stroke(); ctx.setLineDash([]);
-        HP.label(ctx, "0 J (ionisation)", lv.x + lv.w, Y(0) - 8, { size: 10, align: "right", col: C.muted });
+        HP.label(ctx, "0 J (ionisation)", lv.x + lv.w, Y(0) - 8, { size: 11, align: "right", col: C.muted });
         for (let n = 1; n <= 6; n++) {
           ctx.strokeStyle = n === hi || n === lo ? C.red : C.ink; ctx.lineWidth = n === hi || n === lo ? 3 : 1.5;
           ctx.beginPath(); ctx.moveTo(lv.x, Y(E(n))); ctx.lineTo(lv.x + lv.w, Y(E(n))); ctx.stroke();
-          if (n <= 4) HP.label(ctx, `n = ${n}`, lv.x - 6, Y(E(n)), { size: 10, align: "right" });
-          if (n <= 3) HP.label(ctx, F(E(n), 3) + " J", lv.x + lv.w - 4, Y(E(n)) + (n === 1 ? -9 : 10), { size: 10, align: "right", col: C.ink2 });
+          if (n <= 4) HP.label(ctx, `n = ${n}`, lv.x - 6, Y(E(n)), { size: 11, align: "right" });
+          if (n <= 3) HP.label(ctx, F(E(n), 3) + " J", lv.x + lv.w - 4, Y(E(n)) + (n === 1 ? -9 : 10), { size: 11, align: "right", col: C.ink2 });
         }
-        HP.label(ctx, "ground state", lv.x + 6, Y(E(1)) - 9, { size: 10, col: C.ink2 });
-        HP.label(ctx, "n = 5, 6 … crowd up towards 0 J", lv.x - 6, Y(0) - 8, { size: 9, col: C.muted, align: "left" });
+        HP.label(ctx, "ground state", lv.x + 6, Y(E(1)) - 9, { size: 11, col: C.ink2 });
+        HP.label(ctx, "n = 5, 6 … crowd up towards 0 J", lv.x - 6, Y(0) - 8, { size: 11, col: C.muted, align: "left" });
         if (hi > lo) {
           const x = lv.x + lv.w * 0.35, y1 = Y(E(hi)), y2 = Y(E(lo));
           const l = c / ((E(hi) - E(lo)) / h) * 1e9;
@@ -732,8 +736,8 @@
           px(ctx, X(l) - 1.5, sp.y, 3, sp.h, mode === "emit" ? HP.nmToRGB(l) : "#000");
         });
         HP.label(ctx, mode === "emit" ? "emission line spectrum" : "absorption spectrum: dark lines at the same wavelengths", sp.x, sp.y - 10, { size: 11, bold: true });
-        for (let l = 400; l <= 700; l += 100) HP.label(ctx, l + " nm", X(l), sp.y + sp.h + 12, { size: 10, align: "center", col: C.ink2 });
-        HP.label(ctx, "(only visible lines appear on this strip)", sp.x, sp.y + sp.h + 30, { size: 10, col: C.muted });
+        for (let l = 400; l <= 700; l += 100) HP.label(ctx, l + " nm", X(l), sp.y + sp.h + 12, { size: 11, align: "center", col: C.ink2 });
+        HP.label(ctx, "(only visible lines appear on this strip)", sp.x, sp.y + sp.h + 30, { size: 11, col: C.muted });
       },
     });
     go();
@@ -766,7 +770,7 @@
         HP.label(ctx, "air", cx - Rb * 0.8, cy - Rb * 0.7, { size: 12 });
         // normal
         ctx.strokeStyle = C.muted; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy - Rb - 10); ctx.lineTo(cx, cy + Rb + 10); ctx.stroke(); ctx.setLineDash([]);
-        HP.label(ctx, "normal", cx + 6, cy - Rb - 2, { size: 10, col: C.muted });
+        HP.label(ctx, "normal", cx + 6, cy - Rb - 2, { size: 11, col: C.muted });
         const crit = Math.asin(1 / n);
         const ray = (nn, col, w, main) => {
           if (dir === "in") {

@@ -128,7 +128,7 @@
           const x = scene.x + 30 + st.s / sc.smax * (scene.w - 70);
           drawTutor(ctx, x, gyy, narrow ? 2 : 1.6);
           HP.label(ctx, `s = ${st.s.toFixed(1)} m`, scene.x + 8, scene.y + 16, { size: 12, haloCol: C.paper2 });
-          HP.label(ctx, `v = ${st.v.toFixed(1)} m s⁻¹`, scene.x + 8, scene.y + 32, { size: 12, haloCol: C.paper2 });
+          HP.label(ctx, `v = ${st.v.toFixed(1).replace("-", "−")} m s⁻¹`, scene.x + 8, scene.y + 32, { size: 12, haloCol: C.paper2 });
         } else {
           const floorY = scene.y + scene.h - 18;
           pxRect(ctx, scene.x, floorY, scene.w, 18, "#7a5532"); pxRect(ctx, scene.x, floorY, scene.w, 4, "#3f7426");
@@ -160,7 +160,13 @@
             n ? ctx.lineTo(ax.X(tt), yy) : ctx.moveTo(ax.X(tt), yy);
           }
           ctx.stroke(); ctx.restore();
-          if (sc.spike && k === "a") HP.label(ctx, "(bounce spikes are much taller than shown)", boxR.x + boxR.w, boxR.y + 8, { size: 11, align: "right", col: C.muted });
+          if (sc.spike && k === "a") {
+            // keep the note clear of the "a / m s⁻²" title on narrow screens
+            ctx.font = font(11, true); const titleEnd = boxR.x + 5 + ctx.measureText(lab).width + 8;
+            ctx.font = font(11); const long = "(bounce spikes are much taller than shown)";
+            const txt = boxR.x + boxR.w - ctx.measureText(long).width >= titleEnd ? long : "(spikes are taller than shown)";
+            HP.label(ctx, txt, boxR.x + boxR.w, boxR.y + 8, { size: 11, align: "right", col: C.muted });
+          }
           // cursor
           ctx.strokeStyle = C.gold; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
           ctx.beginPath(); ctx.moveTo(ax.X(tc), boxR.y); ctx.lineTo(ax.X(tc), boxR.y + boxR.h); ctx.stroke(); ctx.setLineDash([]);
@@ -456,12 +462,12 @@
       R.pb.textContent = z(pb) + " kg m s⁻¹";
       R.pa.textContent = z(pa) + " kg m s⁻¹";
       R.kb.textContent = F(kb, 3) + " J"; R.ka.textContent = F(ka, 3) + " J";
-      R.va.textContent = `${va.toFixed(2)}, ${vb.toFixed(2)} m s⁻¹`;
+      R.va.textContent = `${va.toFixed(2)}, ${vb.toFixed(2)} m s⁻¹`.replace(/-(?=\d)/g, "−");
       let txt;
       if (!st.collide) txt = "These carts are not closing on each other, so they never meet. Give A a larger velocity than B (remember: right is positive).";
       else if (type === "elastic") txt = "Elastic: total momentum AND total kinetic energy are the same before and after.";
       else if (type === "bounce") txt = `Inelastic: the carts bounce apart, but ${F(kb - ka, 3)} J of kinetic energy has become heat and sound. Total momentum is still conserved: inelastic does not mean "stuck together".`;
-      else if (type === "stick") txt = `Stuck together: they share one velocity, ${va.toFixed(2)} m s⁻¹. This is the most inelastic collision possible: ${F(kb - ka, 3)} J of kinetic energy is lost, but total momentum is unchanged.`;
+      else if (type === "stick") txt = `Stuck together: they share one velocity, ${va.toFixed(2).replace("-", "−")} m s⁻¹. This is the most inelastic collision possible: ${F(kb - ka, 3)} J of kinetic energy is lost, but total momentum is unchanged.`;
       else txt = `Explosion: total momentum before is zero, so after it the two momenta are equal in size and opposite in direction (${F(Math.abs(m1 * va), 3)} kg m s⁻¹ each way). Kinetic energy has increased from 0 to 3600 J, released by the spring. The lighter cart moves faster.`;
       note.innerHTML = txt;
     }
@@ -564,7 +570,9 @@
         const gb = { x: 60, y: 22, w: S.w - 80, h: S.h - 58 };
         const yMax = 100000;
         const ax = HP.plot(ctx, gb, { x0: 0, x1: 0.1, y0: 0, y1: yMax, xt: 0.02, yt: 20000, C, fs: 11, ytf: (v) => v ? (v / 1000) + "k" : "0", tf: (v) => v.toFixed(2) });
-        ctx.save(); ctx.beginPath(); ctx.rect(gb.x, gb.y - 4, gb.w, gb.h + 4); ctx.clip();
+        // a pulse that runs off the top is cut short below the "F / N" title
+        const clipTop = Fpk > yMax ? gb.y + 14 : gb.y - 4;
+        ctx.save(); ctx.beginPath(); ctx.rect(gb.x, clipTop, gb.w, gb.y + gb.h - clipTop); ctx.clip();
         ctx.beginPath(); ctx.moveTo(ax.X(0), ax.Y(0));
         for (let i = 0; i <= 200; i++) { const tt = tc * i / 200; ctx.lineTo(ax.X(tt), ax.Y(Fpk * Math.sin(Math.PI * tt / tc))); }
         ctx.lineTo(ax.X(tc), ax.Y(0)); ctx.closePath();
@@ -1045,10 +1053,10 @@
         let labX = ax.X(lp) + 6;
         if (labY > pkY - 8) { let l = lp; while (l < 2500 && ax.Y(B(l, T)) < labY + 8) l += 5; labX = ax.X(l) + 10; }
         HP.label(ctx, `peak ${lp.toFixed(0)} nm`, labX, labY, { size: 11, col: C.red, bold: true });
-        HP.label(ctx, "dashed: the Sun (5800 K)", gb.x + gb.w, gb.y + 30, { size: 11, align: "right", col: C.muted });
+        HP.label(ctx, "dashed: the Sun (5800 K)", gb.x + gb.w, gb.y + 42, { size: 11, align: "right", col: C.muted });
         // a star swatch
         const col = T < 3700 ? "#ffb070" : T < 5200 ? "#ffd2a0" : T < 6500 ? "#fff4e8" : T < 9000 ? "#e6eeff" : "#b8ccff";
-        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(gb.x + gb.w - 26, gb.y + 62, 16, 0, 7); ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(gb.x + gb.w - 26, gb.y + 72, 16, 0, 7); ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
         R.pk.textContent = lp.toFixed(0) + " nm";
         R.col.textContent = T < 3700 ? "orange-red" : T < 5200 ? "orange-yellow" : T < 6500 ? "yellow-white" : T < 9000 ? "white" : "blue-white";
         R.pw.textContent = "× " + F(Math.pow(T / Ts, 4), 2);
