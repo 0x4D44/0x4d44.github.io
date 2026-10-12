@@ -230,6 +230,7 @@
     const R = readouts(box, [["W", "weight W = mg"], ["par", "component down the slope = mg sin θ"], ["nor", "component into the slope = mg cos θ"], ["net", "unbalanced force"], ["a", "acceleration"]]);
     const note = HP.el("p", { class: "sim-note", "aria-live": "polite" });
     box.append(note);
+    cv.after(HP.el("p", { class: "sim-note" }, "Arrow lengths are to scale (forces in newtons)."));
     let phys = {};
     function update() {
       const th = sA.value * Math.PI / 180, m = sM.value, Ff = sF.value;
@@ -274,17 +275,26 @@
         // angle marker, against a horizontal reference line
         ctx.strokeStyle = "#f4ecd8"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + 70, y0); ctx.stroke(); ctx.setLineDash([]);
         ctx.strokeStyle = "#f4ecd8"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x0, y0, 34, -th, 0); ctx.stroke();
-        HP.label(ctx, "θ = " + Math.round(th * 180 / Math.PI) + "°", x0 + 40, y0 - 10, { size: 12, haloCol: "#7a5532", col: "#fff" });
+        // on shallow slopes the wedge is too thin for the label, so it goes just below the foot
+        const shallow = th < 15 * Math.PI / 180;
+        HP.label(ctx, "θ = " + Math.round(th * 180 / Math.PI) + "°", x0 + 40, shallow ? y0 + 12 : y0 - 10, { size: 12, haloCol: shallow && !lift ? "#5a4026" : "#7a5532", col: "#fff" });
         // block position along slope (distance from top), animated if accelerating
         const ux = -Math.cos(th), uy = Math.sin(th); // unit vector DOWN the slope (canvas coords)
         const nx = -Math.sin(th), ny = -Math.cos(th); // unit normal out of slope
         let d = slopeLen * f;
-        if (mode === "slide" && a > 0) {
-          // slide, but stop while the weight arrow still ends on the canvas
-          const dMax = Math.max(d, Math.min(slopeLen - 40, (S.h - 6 - W * sc - yTop - ny * 18) / uy));
-          d = Math.min(dMax, d + 0.5 * a * t * t * 12);
+        if (mode === "slide") {
+          // start higher up so there is room to slide; stop while the weight arrow is still on
+          // the canvas and clear of the θ label
+          d = slopeLen * Math.max(0.1, f - 0.25);
+          const dMax = Math.max(d, Math.min(slopeLen - 40, (S.h - 6 - W * sc - yTop - ny * 18) / uy, (xTop + nx * 18 - x0 - 112) / Math.cos(th)));
+          if (a > 0) d = Math.min(dMax, d + 0.5 * a * t * t * 12);
         }
-        if (mode === "tow") d = Math.max(24, slopeLen * (f + 0.12) - ((t * 18) % (slopeLen * 0.24)));
+        if (mode === "tow") {
+          // keep the tension arrow below the top of the slope and friction above its foot
+          const lo = T * sc + 42, hi = Math.max(lo, slopeLen - Ff * sc - 22);
+          const c = Math.min(hi, Math.max(lo, d)), span = c - Math.max(lo, c - slopeLen * 0.24);
+          d = span > 1 ? c - ((t * 18) % span) : c;
+        }
         const cxB = xTop + ux * d + nx * 18, cyB = yTop + uy * d + ny * 18;
         ctx.save(); ctx.translate(cxB, cyB); ctx.rotate(-th);
         pxRect(ctx, -18, -18, 36, 36, "#a67c46"); pxRect(ctx, -18, -18, 36, 4, "#c8a06a"); pxRect(ctx, -18, 14, 36, 4, "#7a5532");
@@ -293,7 +303,7 @@
         const inSlope = { haloCol: "#f4ecd8" };
         // weight straight down; its label sits to the left of the tip
         HP.arrow(ctx, cxB, cyB, cxB, cyB + W * sc, C.red, 3);
-        HP.label(ctx, "W = mg", cxB - 6, cyB + W * sc - 8, Object.assign({ size: 12, col: "#9a2a22", bold: true, align: "right" }, inSlope));
+        HP.label(ctx, "W = mg", cxB - 6, cyB + W * sc * 0.62, Object.assign({ size: 12, col: "#9a2a22", bold: true, align: "right" }, inSlope));
         // components: mg sin θ down the slope (label above its tip), mg cos θ into the slope (label right of its tip)
         const pX = cxB + ux * par * sc, pY = cyB + uy * par * sc;
         HP.arrow(ctx, cxB, cyB, pX, pY, C.gold, 2);
@@ -313,7 +323,8 @@
           const fx = cxB - nx * 18 + ux * 18 * fdir, fy = cyB - ny * 18 + uy * 18 * fdir; // leading corner
           const tx = fx + ux * fdir * fr * sc, ty = fy + uy * fdir * fr * sc;
           HP.arrow(ctx, fx, fy, tx, ty, C.violet, 2.5);
-          HP.label(ctx, "friction", tx - nx * 16 + ux * fdir * 6, ty - ny * 16 + uy * fdir * 6, { size: 12, col: "#4a2f7a", bold: true, align: fdir > 0 ? "right" : "center", haloCol: "#f4ecd8" });
+          ctx.font = font(12, true);
+          HP.label(ctx, "friction", Math.max(fdir > 0 ? ctx.measureText("friction").width + 4 : 32, tx - nx * 16 + ux * fdir * 6), ty - ny * 16 + uy * fdir * 6, { size: 12, col: "#4a2f7a", bold: true, align: fdir > 0 ? "right" : "center", haloCol: "#f4ecd8" });
         }
         if (mode === "tow") {
           const rx = cxB - ux * (T * sc + 20), ry = cyB - uy * (T * sc + 20);
@@ -321,7 +332,6 @@
           HP.arrow(ctx, cxB - ux * 18, cyB - uy * 18, rx, ry, C.grass, 3);
           HP.label(ctx, "T", rx - 4, ry - 12, { size: 12, col: C.grass, bold: true });
         }
-        HP.label(ctx, "Arrow lengths are to scale (forces in newtons).", S.w - 8, 14, { size: 11, align: "right", col: C.muted });
       },
     });
     const replay = HP.el("button", { class: "btn small", type: "button" }, "▶ Release / tow");
@@ -356,7 +366,9 @@
         }
         if (dt > 0) { hist.push([t, v]); if (t > 40) { reset(); return; } }
         const k = kClosed + (kOpen - kClosed) * opening, air = k * v * v, net = W - air, a = net / m;
-        R.v.textContent = v.toFixed(1) + " m s⁻¹"; R.air.textContent = air.toFixed(0) + " N"; R.net.textContent = net.toFixed(0) + " N"; R.a.textContent = a.toFixed(2) + " m s⁻²";
+        // fixed-point readouts, with no "−0" at terminal velocity: anything that rounds to zero shows as 0
+        const fx = (x, dp) => (Math.abs(x) < 0.5 * Math.pow(10, -dp) ? 0 : x).toFixed(dp).replace("-", "−");
+        R.v.textContent = fx(v, 1) + " m s⁻¹"; R.air.textContent = fx(air, 0) + " N"; R.net.textContent = fx(net, 0) + " N"; R.a.textContent = fx(a, 2) + " m s⁻²";
         let txt;
         if (!chute) txt = v < 2 ? "Just after jumping: air resistance is tiny, so the unbalanced force is almost the whole weight (784 N) and a ≈ 9.8 m s⁻²."
           : Math.abs(net) > 30 ? "As speed increases, air resistance increases. The unbalanced force gets smaller, so the acceleration gets smaller: the v–t graph curves over."
@@ -389,7 +401,7 @@
         const ax = HP.plot(ctx, gb, { x0: 0, x1: 40, y0: 0, y1: 60, xt: 5, yt: 10, xl: "t / s", yl: "v / m s⁻¹", C, fs: 11 });
         ctx.strokeStyle = C.red; ctx.lineWidth = 2.5; ctx.beginPath();
         hist.forEach(([tt, vv], i) => (i ? ctx.lineTo(ax.X(tt), ax.Y(vv)) : ctx.moveTo(ax.X(tt), ax.Y(vv)))); ctx.stroke();
-        if (tOpen != null) { ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(ax.X(tOpen), gb.y); ctx.lineTo(ax.X(tOpen), gb.y + gb.h); ctx.stroke(); ctx.setLineDash([]); HP.label(ctx, "canopy opens", ax.X(tOpen) + 4, gb.y + 10, { size: 10, col: C.muted }); }
+        if (tOpen != null) { ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(ax.X(tOpen), gb.y); ctx.lineTo(ax.X(tOpen), gb.y + gb.h); ctx.stroke(); ctx.setLineDash([]); ctx.font = font(11); const left = ax.X(tOpen) + 12 + ctx.measureText("canopy opens").width > gb.x + gb.w; HP.label(ctx, "canopy opens", ax.X(tOpen) + (left ? -6 : 12), ax.Y(30), { size: 11, col: C.muted, align: left ? "right" : "left" }); }
       },
     });
     function reset() { v = 0; y = 0; chute = false; hist = []; tOpen = null; opening = 0; sim.t = 0; openBtn.disabled = false; sim.redraw(); }
@@ -454,7 +466,7 @@
       note.innerHTML = txt;
     }
     const sim = HP.sim(cv, {
-      height: (w) => (w < 560 ? 360 : 330),
+      height: (w) => (w < 560 ? 420 : 390),
       draw(ctx, t, dt, C, S) {
         const { m1, m2, a, b, va, vb, collide } = st;
         if (m1 == null) return;
@@ -483,30 +495,40 @@
         else { cart(xA, wA, "#1c5fb3", "A", m1); cart(xB, wB, "#b3261e", "B", m2); }
         if (type === "explode" && t < 1) { ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.beginPath(); for (let k = 0; k <= 8; k++) ctx.lineTo(mid - 6 + (k % 2) * 12, railY - 2 + k * 2); ctx.stroke(); }
         HP.label(ctx, "+ direction →", S.w - 8, 18, { size: 11, align: "right", col: C.muted });
-        // bars: momentum (signed, kg m/s) and total kinetic energy (J), before and after
-        const by = 158, bh = S.h - by - 26;
+        // two separate panels, each with its own scale: momentum (signed, kg m s⁻¹, A / B / total,
+        // before and after) and, below it, total kinetic energy (J) as horizontal bars
+        const narrow = S.w < 560, ph = narrow ? 150 : 120, pTop = 138;
+        const panel = (y, h, title) => {
+          ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.strokeRect(6.5, y + 0.5, S.w - 13, h);
+          HP.label(ctx, title, 14, y + 12, { size: 12, bold: true, col: C.ink, halo: false });
+        };
+        const pH = ph + 60;
+        panel(pTop, pH, narrow ? "Momentum / kg m s⁻¹" : "Momentum / kg m s⁻¹ (above the line = to the right)");
         const cols = [["before", m1 * a, m2 * b, st.kb], ["after", m1 * va, m2 * vb, st.ka]];
-        const pMax = Math.max(1, ...cols.flatMap(([, pA, pB]) => [Math.abs(pA), Math.abs(pB), Math.abs(pA + pB)])) * 1.15;
-        const kMax = Math.max(st.kb, st.ka, 1) * 1.15;
-        const half = (S.w - 20) / 2;
-        cols.forEach(([lab, pA, pB, k], i) => {
+        const pMax = Math.max(1, ...cols.flatMap(([, pA, pB]) => [Math.abs(pA), Math.abs(pB), Math.abs(pA + pB)]));
+        const half = (S.w - 20) / 2, rTop = pTop + 40, amp = (ph - 32) / 2, mid0 = rTop + 16 + amp;
+        cols.forEach(([lab, pA, pB], i) => {
           const x0 = 10 + i * half;
-          const mid0 = by + 12 + (bh - 30) / 2, amp = (bh - 30) / 2;
-          HP.label(ctx, lab, x0 + half / 2, by, { size: 12, bold: true, align: "center" });
-          const bw = Math.min(30, (half - 40) / 5.5);
-          ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0 + 4, mid0); ctx.lineTo(x0 + 4 + 3 * (bw + 8), mid0); ctx.stroke();
-          [[pA, "#1c5fb3", "p A"], [pB, "#b3261e", "p B"], [pA + pB, C.ink2, "total p"]].forEach(([p, col, l], j) => {
-            const hgt = p / pMax * amp, bx = x0 + 8 + j * (bw + 8);
+          HP.label(ctx, lab, x0 + half / 2, pTop + 30, { size: 12, bold: true, align: "center", col: C.ink2, halo: false });
+          const step = Math.min(56, (half - 16) / 3), bw = Math.min(30, step - 14), gx = x0 + half / 2 - 1.5 * step;
+          ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx, mid0); ctx.lineTo(gx + 3 * step, mid0); ctx.stroke();
+          [[pA, "#1c5fb3", "A"], [pB, "#b3261e", "B"], [pA + pB, C.ink2, "total"]].forEach(([p, col, l], j) => {
+            const hgt = p / pMax * amp, bx = gx + j * step + (step - bw) / 2;
             pxRect(ctx, bx, Math.min(mid0, mid0 - hgt), bw, Math.max(1, Math.abs(hgt)), col);
-            HP.label(ctx, Math.round(p) + "", bx + bw / 2, hgt >= 0 ? mid0 - hgt - 8 : mid0 - hgt + 9, { size: 10, align: "center", col: C.ink });
-            HP.label(ctx, l, bx + bw / 2, by + bh - 2, { size: 10, align: "center", col: C.ink2 });
+            HP.label(ctx, (Math.round(p) + "").replace("-", "−"), bx + bw / 2, hgt >= 0 ? mid0 - hgt - 8 : mid0 - hgt + 9, { size: 11, align: "center", col: C.ink });
+            HP.label(ctx, l, bx + bw / 2, rTop + ph + 10, { size: 11, align: "center", col: C.ink2, halo: false });
           });
-          const kx = x0 + 8 + 3 * (bw + 8) + 14, kh = k / kMax * (bh - 30);
-          pxRect(ctx, kx, by + bh - 12 - kh, bw, kh, C.gold);
-          HP.label(ctx, Math.round(k) + " J", kx + bw / 2, by + bh - 20 - kh, { size: 10, align: "center", col: C.ink });
-          HP.label(ctx, "total Eₖ", kx + bw / 2, by + bh - 2, { size: 10, align: "center", col: C.ink2 });
         });
-        HP.label(ctx, "momentum in kg m s⁻¹ (above the line = to the right)", S.w / 2, S.h - 6, { size: 10, align: "center", col: C.muted });
+        const eTop = pTop + pH + 8;
+        panel(eTop, 64, "Total kinetic energy / J");
+        const kMax = Math.max(st.kb, st.ka, 1), ex = 64, eMaxW = S.w - ex - 70;
+        cols.forEach(([lab, , , k], i) => {
+          const yy = eTop + 30 + i * 20;
+          HP.label(ctx, lab, 14, yy, { size: 11, col: C.ink2, halo: false });
+          const wk = k / kMax * eMaxW;
+          pxRect(ctx, ex, yy - 6, Math.max(1, wk), 12, C.gold);
+          HP.label(ctx, Math.round(k) + " J", ex + wk + 6, yy, { size: 11, col: C.ink });
+        });
       },
       loop: true,
     });
@@ -634,8 +656,13 @@
             HP.arrow(ctx, X(x), Y(y), X(x) + uh * vs, Y(y), "#1c5fb3", 2.5);
             HP.arrow(ctx, X(x), Y(y), X(x), Y(y) - vv * vs, "#b86a00", 2.5);
             HP.arrow(ctx, X(x), Y(y), X(x) + uh * vs, Y(y) - vv * vs, "#3f7426", 1.5, 6);
-            HP.label(ctx, `vₕ = ${uh.toFixed(1)} m/s`, X(x) + uh * vs + 4, Y(y) + 10, { size: 11, col: "#12284a", haloCol: "#cfe3f5" });
-            HP.label(ctx, `vᵥ = ${vv.toFixed(1).replace("-", "−")} m/s`, X(x) + 8, Y(y) - vv * vs, { size: 11, col: "#7a4500", haloCol: "#cfe3f5" });
+            // keep both labels inside the canvas when the ball is near the right-hand edge
+            ctx.font = font(11);
+            const lh = `vₕ = ${uh.toFixed(1)} m s⁻¹`, lv = `vᵥ = ${(Math.abs(vv) < 0.05 ? 0 : vv).toFixed(1).replace("-", "−")} m s⁻¹`;
+            const inX = (x0, txt) => Math.max(4, Math.min(x0, S.w - 4 - ctx.measureText(txt).width));
+            const vRight = X(x) + 8 + ctx.measureText(lv).width < S.w - 4; // else put vᵥ left of its arrow
+            HP.label(ctx, lh, inX(X(x) + uh * vs + 4, lh), vRight ? Y(y) + 10 : Y(y) - 12, { size: 11, col: "#12284a", haloCol: "#cfe3f5" });
+            HP.label(ctx, lv, vRight ? X(x) + 8 : X(x) - 8, Math.min(Y(y) - vv * vs * (vRight ? 1 : 0.5), seaY - 8), { size: 11, col: "#7a4500", haloCol: "#cfe3f5", align: vRight ? "left" : "right" });
           }
         } else {
           pxRect(ctx, X(rng) - 6, seaY - 14, 12, 14, "#e8f4ff"); pxRect(ctx, X(rng) - 2, seaY - 22, 4, 8, "#e8f4ff");
@@ -660,7 +687,7 @@
     cv.setAttribute("aria-label", "Newton's thought experiment: a cannon on a very tall mountain fires shot horizontally at increasing speeds until the shot falls all the way round the planet.");
     const ctr = HP.el("div", { class: "sim-controls" });
     box.append(ctr);
-    const sV = HP.slider(ctr, { label: "Launch speed (fraction of orbital speed)", min: 0.3, max: 1.5, step: 0.01, value: 0.8, fmt: (v) => v.toFixed(2) + " × v_orbit", oninput: () => { path = trace(); sim.t = 0; } });
+    const sV = HP.slider(ctr, { label: "Launch speed (fraction of orbital speed)", min: 0.3, max: 1.5, step: 0.01, value: 0.8, fmt: (v) => v.toFixed(2) + " × v_orbit", oninput: () => { path = trace(); sim.t = 0; sim.redraw(); } });
     const note = HP.el("p", { class: "sim-note", "aria-live": "polite" });
     box.append(note);
     const GM = 1, r0 = 1.18; // planet radius 1, mountain top at 1.18 (units scaled)
@@ -796,6 +823,11 @@
       },
       loop: true,
     });
+    // a play / pause button (the clock never auto-plays under prefers-reduced-motion) and a reset
+    const pb = HP.playButton(sim);
+    const rs = HP.el("button", { class: "btn small", type: "button" }, "↺ Reset");
+    rs.addEventListener("click", () => { sim.t = 0; sim.redraw(); });
+    box.insertBefore(HP.el("div", { class: "btn-row" }, pb, rs), ctr);
     upd();
   });
 
@@ -996,10 +1028,10 @@
         const lp = 2.898e6 / T;
         ctx.strokeStyle = C.red; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(ax.X(lp), ax.Y(B(lp, T))); ctx.lineTo(ax.X(lp), ax.Y(0)); ctx.stroke(); ctx.setLineDash([]);
         HP.label(ctx, `peak ${lp.toFixed(0)} nm`, ax.X(lp) + 6, ax.Y(B(lp, T)) - 8, { size: 11, col: C.red, bold: true });
-        HP.label(ctx, "dashed: the Sun (5800 K)", gb.x + gb.w, gb.y + 10, { size: 11, align: "right", col: C.muted });
+        HP.label(ctx, "dashed: the Sun (5800 K)", gb.x + gb.w, gb.y + 30, { size: 11, align: "right", col: C.muted });
         // a star swatch
         const col = T < 3700 ? "#ffb070" : T < 5200 ? "#ffd2a0" : T < 6500 ? "#fff4e8" : T < 9000 ? "#e6eeff" : "#b8ccff";
-        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(gb.x + gb.w - 26, gb.y + 50, 16, 0, 7); ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(gb.x + gb.w - 26, gb.y + 62, 16, 0, 7); ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
         R.pk.textContent = lp.toFixed(0) + " nm";
         R.col.textContent = T < 3700 ? "orange-red" : T < 5200 ? "orange-yellow" : T < 6500 ? "yellow-white" : T < 9000 ? "white" : "blue-white";
         R.pw.textContent = "× " + F(Math.pow(T / Ts, 4), 2);

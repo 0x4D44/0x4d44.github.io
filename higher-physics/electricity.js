@@ -10,7 +10,7 @@
   function canvasIn(box, cls, label) { const cv = HP.el("canvas", { class: "sim" + (cls ? " " + cls : ""), role: "img", "aria-label": label || "" }); box.append(cv); return cv; }
   const readouts = (box, items) => {
     const wrap = HP.el("div", { class: "readouts", "aria-live": "polite" }); const map = {};
-    items.forEach(([k, label]) => { const b = HP.el("b"); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
+    items.forEach(([k, label]) => { const b = HP.quiet(HP.el("b")); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
     box.append(wrap); return map;
   };
   const px = (ctx, x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
@@ -310,10 +310,11 @@
         HP.arrow(ctx, 12, S.h - 24, 12, 34, C.ink, 2, 8);
         ctx.save(); ctx.translate(12, (S.h + 10) / 2); ctx.rotate(-Math.PI / 2);
         HP.label(ctx, "energy", 0, 0, { size: 11, bold: true, align: "center" }); ctx.restore();
+        // one title size for all three, shrunk so the widest still fits its column
+        ctx.font = 'bold 12px "Atkinson Hyperlegible", system-ui, sans-serif';
+        const nw = Math.max(...cols.map(([n]) => ctx.measureText(n).width)), nfs = nw > pw - 6 ? Math.max(9, Math.floor(12 * (pw - 6) / nw)) : 12;
         cols.forEach(([name, gap, metal], i) => {
           const x0 = ax0 + i * pw + 6, w = pw - 12, top = 40, bot = S.h - 30;
-          ctx.font = 'bold 12px "Atkinson Hyperlegible", system-ui, sans-serif';
-          const nw = ctx.measureText(name).width, nfs = nw > pw - 6 ? Math.max(9, Math.floor(12 * (pw - 6) / nw)) : 12;
           HP.label(ctx, name, x0 + w / 2, 18, { size: nfs, bold: true, align: "center" });
           const gapPx = metal ? 0 : Math.min(110, 20 + gap * 16);
           const vbTop = (top + bot) / 2 + gapPx / 2 - (metal ? 10 : 0), cbBot = (top + bot) / 2 - gapPx / 2 - (metal ? -10 : 0);
