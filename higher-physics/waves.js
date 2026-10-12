@@ -75,53 +75,61 @@
      ===================================================================== */
   mount("w-magnetic", (box) => {
     let sign = 1;
-    HP.choice(box, "Charge:", [["1", "positive (proton)"], ["-1", "negative (electron)"]], "1", (v) => { sign = +v; sim.t = 0; });
+    HP.choice(box, "Charge:", [["1", "positive (proton)"], ["-1", "negative (electron)"]], "1", (v) => { sign = +v; sim.t = 0; sim.redraw(); });
     const cv = canvasIn(box, "", "A charged particle enters a region of magnetic field directed into the screen and is pushed into a circular path, upwards for a positive charge and downwards for a negative charge.");
     const ctr = HP.el("div", { class: "sim-controls" }); box.append(ctr);
-    const sB = HP.slider(ctr, { label: "Magnetic field strength (relative)", min: 0.4, max: 2, step: 0.1, value: 1, fmt: (v) => v.toFixed(1) + " ×" });
+    const sB = HP.slider(ctr, { label: "Magnetic field strength (relative)", min: 0.4, max: 2, step: 0.1, value: 1, fmt: (v) => v.toFixed(1) + " ×", oninput: () => sim.redraw() });
     const note = HP.el("p", { class: "sim-note", "aria-live": "polite" }); box.append(note);
     const sim = HP.sim(cv, {
-      height: (w) => (w < 560 ? 280 : 300),
+      height: (w) => (w < 560 ? 300 : 320),
       draw(ctx, t, dt, C, S) {
         const fieldX = S.w * 0.32;
-        // field region: crosses (into page)
-        ctx.fillStyle = C.paper2; ctx.fillRect(fieldX, 0, S.w - fieldX, S.h);
+        // the field region sits between two clear bands: the legend above, the field label below
+        const top = 28, bot = S.h - 26;
+        ctx.fillStyle = C.paper2; ctx.fillRect(fieldX, top, S.w - fieldX, bot - top);
         ctx.strokeStyle = C.muted; ctx.lineWidth = 1.5;
-        for (let x = fieldX + 20; x < S.w; x += 34) for (let y = 18; y < S.h; y += 34) { ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke(); }
-        HP.label(ctx, "× magnetic field into the screen", fieldX + 8, S.h - 10, { size: 11, haloCol: C.paper2 });
+        for (let x = fieldX + 20; x < S.w - 6; x += 34) for (let y = top + 17; y < bot - 6; y += 34) { ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke(); }
+        HP.label(ctx, "× = magnetic field into the screen", fieldX, S.h - 12, { size: 11, col: C.ink2 });
         const v = 120; // px/s
-        const R = Math.min(S.h * 0.4, 150) / sB.value;
-        const y0 = S.h / 2;
-        const T = (fieldX - 20) / v + Math.PI * R / v + 1.5;
-        const tt = t % T;
-        let x, y, vx, vy;
-        const tIn = (fieldX - 20) / v;
-        // canvas y grows downwards: a positive charge moving right in B (into page) is pushed UP the screen
+        const R = (bot - top - 16) / 2 * 0.7 / sB.value;
+        // canvas y grows downwards: a positive charge moving right in B (into page) is pushed UP the screen,
+        // so it enters low in the field region (and a negative charge enters high) to keep the turn in view
         const dir = -sign; // −1 → up the screen
+        const y0 = sign > 0 ? bot - 8 : top + 8;
+        const tIn = (fieldX - 20) / v, tArc = Math.PI * R / v;
+        const T = tIn + tArc + 1.5;
+        // a still frame (paused at the start, e.g. under reduced motion) shows the particle part-way round its turn
+        const tt = (!S.playing && t === 0) ? tIn + tArc * 0.6 : t % T;
+        let x, y, vx, vy;
         if (tt < tIn) { x = 20 + v * tt; y = y0; vx = v; vy = 0; }
         else {
           const ang = (tt - tIn) * v / R;
           if (ang < Math.PI) { x = fieldX + R * Math.sin(ang); y = y0 + dir * R * (1 - Math.cos(ang)); vx = v * Math.cos(ang); vy = dir * v * Math.sin(ang); }
-          else { const t2 = (tt - tIn) - Math.PI * R / v; x = fieldX - v * t2; y = y0 + dir * 2 * R; vx = -v; vy = 0; }
+          else { const t2 = (tt - tIn) - tArc; x = fieldX - v * t2; y = y0 + dir * 2 * R; vx = -v; vy = 0; }
         }
         // trail
         ctx.strokeStyle = sign > 0 ? "#b3261e" : "#1c5fb3"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(20, y0);
         for (let s2 = 0; s2 <= tt; s2 += 0.02) {
           let xx, yy;
-          if (s2 < tIn) { xx = 20 + v * s2; yy = y0; } else { const a2 = (s2 - tIn) * v / R; if (a2 < Math.PI) { xx = fieldX + R * Math.sin(a2); yy = y0 + dir * R * (1 - Math.cos(a2)); } else { xx = fieldX - v * ((s2 - tIn) - Math.PI * R / v); yy = y0 + dir * 2 * R; } }
+          if (s2 < tIn) { xx = 20 + v * s2; yy = y0; } else { const a2 = (s2 - tIn) * v / R; if (a2 < Math.PI) { xx = fieldX + R * Math.sin(a2); yy = y0 + dir * R * (1 - Math.cos(a2)); } else { xx = fieldX - v * ((s2 - tIn) - tArc); yy = y0 + dir * 2 * R; } }
           ctx.lineTo(xx, yy);
         }
+        ctx.lineTo(x, y);
         ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = sign > 0 ? "#b3261e" : "#1c5fb3"; ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill();
         HP.label(ctx, sign > 0 ? "+" : "−", x, y + 1, { size: 13, bold: true, align: "center", col: "#fff", halo: false });
         HP.arrow(ctx, x, y, x + vx * 0.3, y + vy * 0.3, C.grass, 2.5);
-        if (x > fieldX && tt > tIn && tt < tIn + Math.PI * R / v) {
+        if (x > fieldX && tt > tIn && tt < tIn + tArc) {
           // force towards the centre of the circle
           const cx = fieldX, cy = y0 + dir * R;
           const d = Math.hypot(cx - x, cy - y);
           HP.arrow(ctx, x, y, x + (cx - x) / d * 34, y + (cy - y) / d * 34, C.gold, 2.5);
         }
-        HP.label(ctx, "green: velocity · gold: magnetic force", 10, 14, { size: 11, col: C.ink2 });
+        // legend, in its own band above the field
+        ctx.fillStyle = C.grass; ctx.fillRect(10, 9, 14, 4);
+        HP.label(ctx, "velocity", 30, 11, { size: 11, col: C.ink2 });
+        ctx.fillStyle = C.gold; ctx.fillRect(94, 9, 14, 4);
+        HP.label(ctx, "magnetic force", 114, 11, { size: 11, col: C.ink2 });
         const txt = sign > 0
           ? "Positive charge moving right, field into the screen: the force is up the screen (left-hand rule: First finger Field, seCond finger the motion of the positive charge, thuMb the force). The force is always at right angles to the motion, so it changes the direction, not the speed."
           : "Negative charge moving right, field into the screen: the force is down the screen, the opposite way to a positive charge (right-hand rule: First finger Field, seCond finger the motion of the electron, thuMb the force).";
@@ -129,6 +137,7 @@
       },
       loop: true,
     });
+    box.insertBefore(HP.el("div", { class: "btn-row" }, HP.playButton(sim)), ctr);
   });
 
   /* =====================================================================
@@ -229,37 +238,51 @@
      5. The Standard Model particle board
      ===================================================================== */
   mount("w-sm", (box) => {
-    const P = [
-      ["q", "u", "up", "+⅔", "Quark. Two ups and a down make a proton."],
-      ["q", "c", "charm", "+⅔", "Quark (second generation). Heavier copy of the up quark."],
-      ["q", "t", "top", "+⅔", "Quark (third generation). The heaviest fundamental particle known, about as massive as a gold atom."],
-      ["b", "g", "gluon", "0", "Boson. Carries the strong force that holds quarks together inside protons and neutrons (and holds the nucleus together)."],
-      ["h", "H", "Higgs", "0", "Boson. Discovered at CERN in 2012; explains how particles get mass. Not needed for the course, but part of the Standard Model."],
-      ["q", "d", "down", "−⅓", "Quark. One up and two downs make a neutron."],
-      ["q", "s", "strange", "−⅓", "Quark (second generation). Heavier copy of the down quark."],
-      ["q", "b", "bottom", "−⅓", "Quark (third generation). Heaviest copy of the down quark."],
-      ["b", "γ", "photon", "0", "Boson. Carries the electromagnetic force. A particle of light."],
-      ["b", "W", "W⁺ W⁻", "±1", "Bosons. Carry the weak force, responsible for beta decay."],
-      ["l", "e", "electron", "−1", "Lepton. Orbits the nucleus in atoms; carries the current in wires."],
-      ["l", "μ", "muon", "−1", "Lepton (second generation). A heavy electron that decays in about 2.2 μs (see special relativity)."],
-      ["l", "τ", "tau", "−1", "Lepton (third generation). An even heavier electron."],
-      ["b", "Z", "Z⁰", "0", "Boson. Also carries the weak force."],
-      null,
-      ["l", "νₑ", "electron neutrino", "0", "Lepton. Almost massless, no charge, barely interacts: billions pass through you every second. First predicted from beta decay."],
-      ["l", "ν_μ", "muon neutrino", "0", "Lepton. Partner of the muon."],
-      ["l", "ν_τ", "tau neutrino", "0", "Lepton. Partner of the tau."],
+    // three labelled groups (quarks, leptons, bosons) that stay together at every width:
+    // the two fermion groups share a column; the bosons sit beside them, or below on a phone.
+    // (margin:0 on each block: the quark class "q" also matches the quiz-question rule .q in style.css)
+    const GROUPS = [
+      ["Quarks", [
+        ["q", "u", "up", "+⅔", "Quark. Two ups and a down make a proton."],
+        ["q", "c", "charm", "+⅔", "Quark (second generation). Heavier copy of the up quark."],
+        ["q", "t", "top", "+⅔", "Quark (third generation). The heaviest fundamental particle known, about as massive as a gold atom."],
+        ["q", "d", "down", "−⅓", "Quark. One up and two downs make a neutron."],
+        ["q", "s", "strange", "−⅓", "Quark (second generation). Heavier copy of the down quark."],
+        ["q", "b", "bottom", "−⅓", "Quark (third generation). Heaviest copy of the down quark."],
+      ]],
+      ["Leptons", [
+        ["l", "e", "electron", "−1", "Lepton. Orbits the nucleus in atoms; carries the current in wires."],
+        ["l", "μ", "muon", "−1", "Lepton (second generation). A heavy electron that decays in about 2.2 μs (see special relativity)."],
+        ["l", "τ", "tau", "−1", "Lepton (third generation). An even heavier electron."],
+        ["l", "νₑ", "electron neutrino", "0", "Lepton. Almost massless, no charge, barely interacts: billions pass through you every second. First predicted from beta decay."],
+        ["l", "ν_μ", "muon neutrino", "0", "Lepton. Partner of the muon."],
+        ["l", "ν_τ", "tau neutrino", "0", "Lepton. Partner of the tau."],
+      ]],
+      ["Bosons", [
+        ["b", "g", "gluon", "0", "Boson. Carries the strong force that holds quarks together inside protons and neutrons (and holds the nucleus together)."],
+        ["b", "γ", "photon", "0", "Boson. Carries the electromagnetic force. A particle of light."],
+        ["b", "W", "W⁺ W⁻", "±1", "Bosons. Carry the weak force, responsible for beta decay."],
+        ["b", "Z", "Z⁰", "0", "Boson. Also carries the weak force."],
+        ["h", "H", "Higgs", "0", "Boson. Discovered at CERN in 2012; explains how particles get mass. Not needed for the course, but part of the Standard Model."],
+      ]],
     ];
-    const grid = HP.el("div", { class: "sm-grid" });
+    const board = HP.el("div", { class: "sm-board", style: "display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start" });
+    const fermions = HP.el("div", { style: "flex:3 1 270px;min-width:0;display:grid;gap:10px" });
     const info = HP.el("p", { class: "sim-note sm-info", "aria-live": "polite" }, "Click a particle. Purple: quarks. Green: leptons. Brown: force-carrying bosons. Every particle has an antiparticle; the photon is its own.");
     const btns = [];
-    P.forEach((p) => {
-      if (!p) { grid.append(HP.el("div")); return; }
-      const [k, sym, name, q, txt] = p;
-      const b = HP.el("button", { type: "button", class: "sm-p " + k, "aria-pressed": "false", html: `<b>${sym.replace("_μ", "<sub>μ</sub>").replace("_τ", "<sub>τ</sub>")}</b><small>${name}</small><small>charge ${q}</small>` });
-      b.addEventListener("click", () => { btns.forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); info.innerHTML = `<b>${name}</b> (charge ${q}): ${txt}`; });
-      btns.push(b); grid.append(b);
+    GROUPS.forEach(([title, list], gi) => {
+      const head = HP.el("div", { id: "sm-g" + gi, style: "font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:0 0 4px" }, title);
+      const grid = HP.el("div", { class: "sm-grid", style: gi < 2 ? "grid-template-columns:repeat(3,minmax(0,1fr))" : "grid-template-columns:repeat(auto-fill,minmax(84px,1fr))" });
+      list.forEach(([k, sym, name, q, txt]) => {
+        const b = HP.el("button", { type: "button", class: "sm-p " + k, style: "margin:0", "aria-pressed": "false", html: `<b>${sym.replace("_μ", "<sub>μ</sub>").replace("_τ", "<sub>τ</sub>")}</b><small>${name}</small><small>charge ${q}</small>` });
+        b.addEventListener("click", () => { btns.forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); info.innerHTML = `<b>${name}</b> (charge ${q}): ${txt}`; });
+        btns.push(b); grid.append(b);
+      });
+      const group = HP.el("div", { role: "group", "aria-labelledby": "sm-g" + gi, style: gi < 2 ? "min-width:0" : "flex:2 1 190px;min-width:0" }, head, grid);
+      (gi < 2 ? fermions : board).append(group);
+      if (gi === 0) board.append(fermions);
     });
-    box.append(grid, info);
+    box.append(board, info);
   });
 
   /* =====================================================================
@@ -316,7 +339,7 @@
       fission: { before: [["²³⁵U", 235.043930], ["n", 1.008665]], after: [["¹⁴¹Ba", 140.914411], ["⁹²Kr", 91.926156], ["n", 1.008665], ["n", 1.008665], ["n", 1.008665]], eq: "²³⁵₉₂U + ¹₀n → ¹⁴¹₅₆Ba + ⁹²₃₆Kr + 3 ¹₀n" },
     };
     let key = "fusion";
-    HP.choice(box, "Reaction:", [["fusion", "fusion (deuterium + tritium)"], ["fission", "induced fission of uranium-235"]], key, (v) => { key = v; sim.t = 0; upd(); });
+    HP.choice(box, "Reaction:", [["fusion", "fusion (deuterium + tritium)"], ["fission", "induced fission of uranium-235"]], key, (v) => { key = v; sim.t = 0; upd(); sim.redraw(); });
     const cv = canvasIn(box, "", "Animation of a nuclear reaction with bar charts showing total mass before and after; the small missing mass is released as energy.");
     const Rd = readouts(box, [["mb", "total mass before"], ["ma", "total mass after"], ["dm", "mass lost Δm"], ["E", "energy released E = Δmc²"]]);
     function upd() {
@@ -373,6 +396,7 @@
       },
       loop: true,
     });
+    box.insertBefore(HP.el("div", { class: "btn-row" }, HP.playButton(sim)), Rd.mb.closest(".readouts"));
     upd();
   });
 
@@ -509,8 +533,10 @@
   mount("w-ripple", (box) => {
     const cv = canvasIn(box, "", "Two sources produce overlapping circular waves. Bright and dark bands show constructive and destructive interference. A probe point shows the path difference in wavelengths.");
     const ctr = HP.el("div", { class: "sim-controls" }); box.append(ctr);
-    const sL = HP.slider(ctr, { label: "Wavelength λ", min: 14, max: 40, step: 1, value: 24, unit: "px", oninput: () => sim.redraw() });
-    const sS = HP.slider(ctr, { label: "Separation of the sources", min: 40, max: 160, step: 2, value: 90, unit: "px", oninput: () => sim.redraw() });
+    // the tank is drawn to scale: 10 drawing units = 1 cm (a 5 cm scale bar is shown on the water)
+    const UNIT_PER_CM = 10;
+    const sL = HP.slider(ctr, { label: "Wavelength λ", min: 14, max: 40, step: 1, value: 24, unit: "cm", fmt: (v) => (v / UNIT_PER_CM).toFixed(1), oninput: () => sim.redraw() });
+    const sS = HP.slider(ctr, { label: "Separation of the sources", min: 40, max: 160, step: 2, value: 90, unit: "cm", fmt: (v) => (v / UNIT_PER_CM).toFixed(1), oninput: () => sim.redraw() });
     let phase180 = false;
     HP.choice(box, "Sources:", [["0", "in phase"], ["1", "in antiphase (180° out of phase)"]], "0", (v) => { phase180 = v === "1"; sim.redraw(); });
     const R = readouts(box, [["p1", "distance from S₁"], ["p2", "distance from S₂"], ["pd", "path difference"], ["res", "at the probe"]]);
@@ -553,6 +579,10 @@
         else res = nearWhole ? "minimum: antiphase sources swap the rule" : nearHalf ? "maximum: antiphase sources swap the rule" : "between a maximum and a minimum";
         R.res.textContent = res;
         HP.label(ctx, "drag the white ring to probe the pattern", S.w - 8, 14, { size: 11, align: "right", col: "#fff", halo: false });
+        // scale bar: 5 cm
+        const sbx = S.w - 16 - 5 * UNIT_PER_CM, sby = S.h - 14;
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sbx, sby - 4); ctx.lineTo(sbx, sby); ctx.lineTo(sbx + 5 * UNIT_PER_CM, sby); ctx.lineTo(sbx + 5 * UNIT_PER_CM, sby - 4); ctx.stroke();
+        HP.label(ctx, "5 cm", sbx - 6, sby - 2, { size: 11, align: "right", col: "#fff", halo: false });
       },
       loop: true,
     });
@@ -652,14 +682,14 @@
       const dE = E(hi) - E(lo), f = dE / h, l = c / f * 1e9;
       R.dE.textContent = F(dE, 3) + " J"; R.f.textContent = F(f, 3) + " Hz";
       R.l.textContent = l.toFixed(0) + " nm (" + (l < 380 ? "ultraviolet" : l > 750 ? "infrared" : "visible") + ")";
-      lines.add(hi + "-" + lo); anim = sim.t; if (!sim.playing) sim.play();
+      lines.add(hi + "-" + lo); anim = sim.t; if (!sim.playing && !HP.reduced) sim.play();
       sim.redraw();
     }
     const sim = HP.sim(cv, {
       height: (w) => (w < 560 ? 460 : 340),
       draw(ctx, t, dt, C, S) {
         const narrow = S.w < 560;
-        const lv = narrow ? { x: 60, y: 24, w: S.w - 80, h: 290 } : { x: 70, y: 24, w: S.w * 0.46, h: S.h - 44 };
+        const lv = narrow ? { x: 60, y: 24, w: S.w - 80, h: 290 } : { x: 70, y: 24, w: S.w * 0.46, h: S.h - 54 };
         const Y = (en) => lv.y + lv.h - (en - E(1)) / (0 - E(1)) * lv.h;
         // zero line
         ctx.strokeStyle = C.muted; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(lv.x, Y(0)); ctx.lineTo(lv.x + lv.w, Y(0)); ctx.stroke(); ctx.setLineDash([]);
@@ -676,15 +706,18 @@
           const x = lv.x + lv.w * 0.35, y1 = Y(E(hi)), y2 = Y(E(lo));
           const l = c / ((E(hi) - E(lo)) / h) * 1e9;
           const col = l < 380 ? "#8a5cd6" : l > 750 ? "#a01818" : HP.nmToRGB(l);
-          const p = Math.min(1, (t - anim) / 1.2);
-          if (mode === "emit") HP.arrow(ctx, x, y1, x, y1 + (y2 - y1) * Math.max(p, 0.05), C.red, 2.5);
-          else HP.arrow(ctx, x, y2, x, y2 + (y1 - y2) * Math.max(p, 0.05), C.sea, 2.5);
+          const p = HP.reduced ? 1 : Math.min(1, (t - anim) / 1.2);
+          // the arrow grows from one level and finishes exactly on the other
+          if (mode === "emit") HP.arrow(ctx, x, y1, x, p >= 1 ? y2 : y1 + (y2 - y1) * Math.max(p, 0.05), C.red, 2.5);
+          else HP.arrow(ctx, x, y2, x, p >= 1 ? y1 : y2 + (y1 - y2) * Math.max(p, 0.05), C.sea, 2.5);
           // photon squiggle
           ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath();
           const py = (y1 + y2) / 2, sx0 = mode === "emit" ? x + 10 : x + 120 - p * 100;
           for (let k = 0; k <= 60; k++) { const xx = sx0 + k * 1.5, yy = py + Math.sin(k * 0.6) * 5; k ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
           if (mode === "emit" ? p > 0.3 : p < 0.9) ctx.stroke();
-          HP.label(ctx, mode === "emit" ? "electron falls: photon emitted" : "photon absorbed: electron rises", x + 8, py + 18, { size: 11, bold: true });
+          // caption in the clear space just below the ground state, away from the squiggle and the level labels
+          HP.label(ctx, mode === "emit" ? `electron falls n = ${hi} → ${lo}: photon emitted` : `photon absorbed: electron rises n = ${lo} → ${hi}`, lv.x, Y(E(1)) + 14, { size: 11, bold: true, col: mode === "emit" ? C.red : C.sea });
+          if (p >= 1 && S.playing) S.pause(); // the transition animation runs once, then rests
         }
         // spectrum strip
         const sp = narrow ? { x: 14, y: lv.y + lv.h + 40, w: S.w - 28, h: 50 } : { x: lv.x + lv.w + 30, y: S.h / 2 - 20, w: S.w - lv.x - lv.w - 44, h: 50 };
