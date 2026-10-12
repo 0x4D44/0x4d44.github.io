@@ -63,7 +63,8 @@
     const range = el("input", { type: "range", min: 0, max: 1000, value: 0, "aria-label": "Timeline position" });
     const go = el("button", { class: "btn primary", type: "button" }, "⚓ Launch");
     const rs = el("button", { class: "btn", type: "button" }, "↺ Reset");
-    box.append(el("div", { class: "diagram-scroll" }, svg), el("div", { class: "btn-row" }, go, rs, range), log);
+    const scroller = el("div", { class: "diagram-scroll" }, svg);
+    box.append(scroller, el("div", { class: "btn-row" }, go, rs, range), log);
 
     function narrate(t) {
       if (t < 0.02) return "Both yards receive the same order: build a frigate. The Admiralty is the client.";
@@ -117,6 +118,8 @@
       // legend, on a backing strip so the dashed marker lines don't cross its words
       s += `<rect x="${X0 - 4}" y="142" width="${W - X0}" height="18" fill="var(--card)"/>` + Object.entries(PH).map(([k, [n, c]], i) => `<rect x="${X0 + i * 92}" y="146" width="10" height="10" fill="${c}"/><text x="${X0 + 14 + i * 92}" y="155" font-size="10" class="ink2">${n}</text>`).join("") + `<text x="${X0 + 6 * 92}" y="155" font-size="10" class="ink2">⚓ = client sees the work</text>`;
       g.innerHTML = s;
+      // on a narrow screen, keep the playhead in view while the animation runs
+      if (playing && scroller.scrollWidth > scroller.clientWidth) scroller.scrollLeft = tx(Math.min(t, TMAX)) / W * scroller.scrollWidth - scroller.clientWidth / 2;
       log.textContent = narrate(t);
       range.value = Math.round((t / TMAX) * 1000);
     }
