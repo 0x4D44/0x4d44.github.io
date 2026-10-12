@@ -453,12 +453,14 @@
           ctx.strokeStyle = C.red; ctx.lineWidth = 2.5; ctx.beginPath();
           for (let x = 0.5; x <= 3.001; x += 0.02) { const y = k / (x * x); x > 0.5 ? ctx.lineTo(ax.X(x), ax.Y(y)) : ctx.moveTo(ax.X(x), ax.Y(y)); }
           ctx.stroke(); ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(ax.X(d), ax.Y(I), 5, 0, 7); ctx.fill();
-          HP.label(ctx, "a curve: hard to prove it is inverse square", gb.x + gb.w, gb.y + 12, { size: 11, align: "right", col: C.muted });
+          HP.label(ctx, "a curve: hard to prove", gb.x + gb.w, gb.y + 12, { size: 11, align: "right", col: C.muted });
+          HP.label(ctx, "it is inverse square", gb.x + gb.w, gb.y + 26, { size: 11, align: "right", col: C.muted });
         } else {
           const ax = HP.plot(ctx, gb, { x0: 0, x1: 4, y0: 0, y1: 3.2, xt: 1, yt: 0.8, xl: "1/d² / m⁻²", yl: "I / W m⁻²", C, fs: 11 });
           ctx.strokeStyle = C.red; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ax.X(0), ax.Y(0)); ctx.lineTo(ax.X(4), ax.Y(3.2)); ctx.stroke();
           ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(ax.X(1 / (d * d)), ax.Y(I), 5, 0, 7); ctx.fill();
-          HP.label(ctx, "a straight line through the origin: I ∝ 1/d²", gb.x + 8, gb.y + 12, { size: 11, col: C.muted });
+          HP.label(ctx, "a straight line through", gb.x + 8, gb.y + 30, { size: 11, col: C.muted });
+          HP.label(ctx, "the origin: I ∝ 1/d²", gb.x + 8, gb.y + 44, { size: 11, col: C.muted });
         }
       },
     });
