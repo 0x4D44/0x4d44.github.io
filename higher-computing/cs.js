@@ -242,12 +242,12 @@
     const procBox = `
       <rect x="10" y="20" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--navy-2)" stroke-width="3"/>
       <text x="125" y="44" text-anchor="middle" class="px ink" font-size="16">Processor</text>
-      <g class="mono" font-size="12">
-        <rect x="26" y="62" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="78" class="ink2" font-size="12">PROGRAM COUNTER</text><text id="fx-pc" x="34" y="96" class="ink">04</text>
-        <rect x="26" y="112" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="128" class="ink2" font-size="12">INSTRUCTION REGISTER</text><text id="fx-ir" x="34" y="146" class="ink">—</text>
-        <rect id="fx-cu" x="26" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="180" class="ink2" font-size="12">CONTROL</text><text x="34" y="194" class="ink2" font-size="12">UNIT /</text><text x="34" y="208" class="ink2" font-size="12">DECODER</text>
-        <rect id="fx-alu" x="128" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="136" y="180" class="ink2" font-size="12">ALU</text>
-        <rect x="26" y="232" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="248" class="ink2" font-size="12">ACCUMULATOR</text><text id="fx-acc" x="34" y="266" class="ink">0</text>
+      <g class="mono" font-size="14">
+        <rect x="26" y="62" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="78" class="ink2" font-size="13">PROGRAM COUNTER</text><text id="fx-pc" x="34" y="96" class="ink">04</text>
+        <rect x="26" y="112" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="128" class="ink2" font-size="13">INSTRUCTION REGISTER</text><text id="fx-ir" x="34" y="146" class="ink">—</text>
+        <rect id="fx-cu" x="26" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="180" class="ink2" font-size="13">CONTROL</text><text x="34" y="194" class="ink2" font-size="13">UNIT /</text><text x="34" y="208" class="ink2" font-size="13">DECODER</text>
+        <rect id="fx-alu" x="128" y="162" width="96" height="60" fill="var(--paper)" stroke="var(--line)"/><text x="136" y="180" class="ink2" font-size="13">ALU</text>
+        <rect x="26" y="232" width="198" height="40" fill="var(--paper)" stroke="var(--line)"/><text x="34" y="248" class="ink2" font-size="13">ACCUMULATOR</text><text id="fx-acc" x="34" y="266" class="ink">0</text>
       </g>`;
     const memBox = `
       <rect x="0" y="0" width="230" height="330" rx="6" fill="var(--card)" stroke="var(--dirt)" stroke-width="3"/>
@@ -562,11 +562,11 @@
       cert: [
         [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + KEY(520, 120, BLUE, "site's PUBLIC key"), "You visit <code>https://redstone.example</code>. It sends its public key, but how do you know a fake site isn't pretending to be Redstone?"],
         [PERSON(320, "Certificate Authority", "🏛️") + PERSON(560, "redstone.example", "🏰") + `<g transform="translate(230 110)"><rect width="180" height="86" rx="4" fill="#fffaf0" stroke="${GOLD}" stroke-width="3"/><text x="10" y="20" font-size="11" class="mono">Name: redstone.example</text><text x="10" y="36" font-size="11" class="mono">Public key: 🔑 3f:a2:…</text><text x="10" y="52" font-size="11" class="mono">Expires: 2027-03-01</text><text x="10" y="68" font-size="11" class="mono">Serial: 0451…</text><circle cx="160" cy="70" r="12" fill="${GOLD}"/></g>`, "Earlier, the site proved its identity to a trusted <b>Certificate Authority</b> (CA), the Admiralty of the web. The CA issued a <b>digital certificate</b> holding the site's name, its public key, an expiry date and a serial number, all <b>signed with the CA's private key</b>."],
-        [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + KEY(40, 120, GOLD, "CA public keys (built in)") + `<text x="320" y="120" font-size="14" text-anchor="middle" fill="var(--grass)" font-weight="700">✔ CA signature valid · ✔ name matches · ✔ not expired</text>`, "Your browser already holds the public keys of trusted CAs. It checks the certificate's signature, that the name matches the address, and that the certificate hasn't expired."],
+        [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + KEY(40, 120, GOLD, "CA public keys (built in)") + `<text x="262" y="100" font-size="14" text-anchor="middle" fill="var(--grass)" font-weight="700"><tspan x="262">✔ CA signature valid</tspan><tspan x="262" dy="20">✔ name matches</tspan><tspan x="262" dy="20">✔ not expired</tspan></text>`, "Your browser already holds the public keys of trusted CAs. It checks the certificate's signature, that the name matches the address, and that the certificate hasn't expired."],
         [PERSON(80, "Your browser", "🧭") + PERSON(560, "redstone.example", "🏰") + `<text x="320" y="70" font-size="36" text-anchor="middle">🔒</text><text x="320" y="110" font-size="13" text-anchor="middle" class="ink">encrypted HTTPS connection</text>`, "Now the browser trusts the public key, and it uses it to set up an encrypted connection: the padlock. A forged certificate would fail the check and trigger a big warning."],
       ],
     };
-    const FOCUS = {secret: [480, 160, 200, 370, 450], signature: [110, 170, 430, 400], cert: [480, 320, 320, 320]};
+    const FOCUS = {secret: [480, 160, 200, 370, 450], signature: [110, 170, 430, 400], cert: [480, 320, 176, 320]};
     const tabs = el("div", { class: "btn-row", role: "group", "aria-label": "Scenario" });
     const stage = el("div", { class: "diagram-scroll crypto-stage" });
     const cap = el("p", { class: "stepper-note", "aria-live": "polite" });

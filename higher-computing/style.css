@@ -297,6 +297,7 @@ figure.diagram svg { display: block; width: 100%; height: auto; margin: 0 auto; 
 figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; }
 .diagram-scroll { overflow-x: auto; }
 .diagram-scroll > svg { min-width: 760px; }
+.diagram-scroll.fit > svg { min-width: 0; width: 100%; }
 /* a fade on the right edge says "there is more this way" */
 .is-scrollable { mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
 .is-scrollable.at-end { mask-image: none; -webkit-mask-image: none; }
@@ -305,6 +306,7 @@ svg .px { font-family: var(--font-pixel); }
 svg .mono { font-family: var(--font-mono); }
 svg .ink { fill: var(--ink); }
 svg .ink2 { fill: var(--ink-2); }
+svg .halo { stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke; }
 svg .muted { fill: var(--muted); }
 svg .stroke-ink { stroke: var(--ink); }
 svg .card { fill: var(--card); }
@@ -585,5 +587,4 @@ ul.anat-code li { margin: 0; }
 .twos-steps:empty { display: none; }
 .swipe-hint { display: none; margin: 4px 0 0; font-size: .8rem; color: var(--muted); text-align: right; }
 .is-scrollable + .swipe-hint { display: block; }
-.is-scrollable.at-end + .swipe-hint { visibility: hidden; }
 #w-unicode td code { white-space: nowrap; overflow-wrap: normal; }

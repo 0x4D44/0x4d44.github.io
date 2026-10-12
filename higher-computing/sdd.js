@@ -75,7 +75,14 @@
       return "Yard 1 delivers last, with the client involved mainly at the start and the end. Agile can't make change free, but it makes change cheaper. That suits a client whose needs change.";
     }
     function draw() {
-      let s = "";
+      // playhead first, so labels sit on top of it
+      let s = `<line x1="${tx(Math.min(t, TMAX))}" y1="30" x2="${tx(Math.min(t, TMAX))}" y2="300" stroke="var(--ink)" stroke-width="2"/>`;
+      if (t < 0.02) {
+        // before launch: a faint outline of each yard's plan, so the frame is never empty
+        for (const [p, a, b] of iterPlan) s += `<rect x="${tx(a)}" y="40" width="${tx(b) - tx(a)}" height="34" fill="${PH[p][1]}" opacity=".18" stroke="${PH[p][1]}" stroke-dasharray="3 3"/>`;
+        for (const a of sprints.slice(0, 6)) s += `<rect x="${tx(a)}" y="200" width="${tx(a + 0.15) - tx(a)}" height="34" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+        s += `<text x="${tx(0.45)}" y="62" text-anchor="middle" font-size="12" class="ink2 halo">the plan · press ⚓ Launch</text><text x="${tx(0.45)}" y="222" text-anchor="middle" font-size="12" class="ink2 halo">six sprints planned · press ⚓ Launch</text>`;
+      }
       // iterative bars
       for (const [p, a, b] of iterReal) {
         if (t <= a) continue;
@@ -99,8 +106,7 @@
           if (e <= qa) break;
           s += `<rect x="${tx(qa)}" y="200" width="${tx(Math.min(e, qb)) - tx(qa)}" height="34" fill="${quarters[q]}"/>`;
         }
-        s += `<text x="${tx(a) + 3}" y="250" font-size="10" class="ink2">Sprint ${k + 1}</text>`;
-        
+        s += `<text x="${tx(a) + 3}" y="250" font-size="10" class="ink2 halo">Sprint ${k + 1}</text>`;
         if (t > b) s += `<text x="${tx(b) - 14}" y="196" font-size="13">⚓</text><text x="${tx(b) - 2}" y="${276 + (k % 2) * 13}" font-size="10" text-anchor="end" fill="var(--grass)">✔ ${parts[k]}</text>`;
       });
       // ships
@@ -108,10 +114,8 @@
       s += ship(598, 214, agileParts, 6);
       const iterDone = t >= 1.15;
       s += iterDone ? ship(598, 54, 6, 6) : `<text x="650" y="96" text-anchor="middle" font-size="11" class="muted">${t > 0.02 ? "nothing to show yet…" : ""}</text>`;
-      // playhead
-      s += `<line x1="${tx(Math.min(t, TMAX))}" y1="30" x2="${tx(Math.min(t, TMAX))}" y2="300" stroke="var(--ink)" stroke-width="2"/>`;
-      // legend
-      s += Object.entries(PH).map(([k, [n, c]], i) => `<rect x="${X0 + i * 92}" y="146" width="10" height="10" fill="${c}"/><text x="${X0 + 14 + i * 92}" y="155" font-size="10" class="ink2">${n}</text>`).join("") + `<text x="${X0 + 6 * 92}" y="155" font-size="10" class="ink2">⚓ = client sees the work</text>`;
+      // legend, on a backing strip so the dashed marker lines don't cross its words
+      s += `<rect x="${X0 - 4}" y="142" width="${W - X0}" height="18" fill="var(--card)"/>` + Object.entries(PH).map(([k, [n, c]], i) => `<rect x="${X0 + i * 92}" y="146" width="10" height="10" fill="${c}"/><text x="${X0 + 14 + i * 92}" y="155" font-size="10" class="ink2">${n}</text>`).join("") + `<text x="${X0 + 6 * 92}" y="155" font-size="10" class="ink2">⚓ = client sees the work</text>`;
       g.innerHTML = s;
       log.textContent = narrate(t);
       range.value = Math.round((t / TMAX) * 1000);
