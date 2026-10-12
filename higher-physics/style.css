@@ -339,6 +339,7 @@ svg .paper2 { fill: var(--paper-2); }
   background: var(--paper); border: 2px solid var(--line); border-radius: 2px; min-height: 40px;
 }
 .q-opt:hover { border-color: var(--sky); }
+.q-letter { display: inline-block; min-width: 1.4em; font-weight: 700; }
 .q-opt.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 16%, var(--paper)); }
 .q-opt.wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 12%, var(--paper)); }
 .q-opt[disabled] { cursor: default; }
