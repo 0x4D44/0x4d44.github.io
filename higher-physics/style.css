@@ -539,3 +539,8 @@ svg .s-line { stroke: var(--line); }
 .callout.logbook ul { margin: 4px 0 0; }
 .callout ul.lessons { margin: 4px 0 0; padding-left: 1.2em; }
 .callout ul.lessons li { margin: 4px 0; }
+.diagram.hand svg { max-width: 200px; margin: 0 auto; display: block; }
+.exam-timer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); }
+.exam-timer .timer-label { font-weight: 700; }
+.exam-timer .timer-face { font-family: var(--font-body); font-variant-numeric: tabular-nums; font-size: 1.4rem; font-weight: 700; min-width: 4ch; }
+.exam-timer.done .timer-face { color: var(--redstone); }

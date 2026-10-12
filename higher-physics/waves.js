@@ -190,7 +190,7 @@
       [-18, "less than 10⁻¹⁸ m", "Quarks and electrons: no measurable size at all (smaller than 10⁻¹⁸ m)"],
       [-15, "10⁻¹⁵ m", "A proton or a neutron"],
       [-14, "10⁻¹⁴ m", "A large nucleus (uranium)"],
-      [-10, "10⁻¹⁰ m", "An atom: the nucleus is 10 000 times smaller than the atom it sits in"],
+      [-10, "10⁻¹⁰ m", "An atom: its nucleus is between 10 000 and 100 000 times smaller"],
       [-7, "10⁻⁷ m", "A virus; the wavelength of ultraviolet light"],
       [-6, "10⁻⁶ m", "A bacterium; the wavelength of visible light is about half this"],
       [-4, "10⁻⁴ m", "The width of a human hair"],
@@ -250,7 +250,7 @@
       ["l", "ν_τ", "tau neutrino", "0", "Lepton. Partner of the tau."],
     ];
     const grid = HP.el("div", { class: "sm-grid" });
-    const info = HP.el("p", { class: "sim-note sm-info", "aria-live": "polite" }, "Click a particle. Purple: quarks. Green: leptons. Brown: force-carrying bosons. Every one of them also has an antiparticle.");
+    const info = HP.el("p", { class: "sim-note sm-info", "aria-live": "polite" }, "Click a particle. Purple: quarks. Green: leptons. Brown: force-carrying bosons. Every fermion also has a distinct antiparticle (the photon is its own).");
     const btns = [];
     P.forEach((p) => {
       if (!p) { grid.append(HP.el("div")); return; }
@@ -448,7 +448,7 @@
     const cv = canvasIn(box, "dark", "Photons stream onto a metal plate. If each photon has enough energy, electrons are ejected; their speed depends on the frequency, while the number ejected depends on the irradiance.");
     const ctr = HP.el("div", { class: "sim-controls" }); box.append(ctr);
     const sF = HP.slider(ctr, { label: "Frequency of the light f", min: 3.5, max: 15, step: 0.1, value: 12, fmt: (v) => v.toFixed(1) + " × 10¹⁴", unit: "Hz", oninput: () => upd() });
-    const sI = HP.slider(ctr, { label: "Irradiance (photons per second)", min: 1, max: 10, step: 1, value: 4, fmt: (v) => "level " + v, oninput: () => upd() });
+    const sI = HP.slider(ctr, { label: "Number of photons per second", min: 1, max: 10, step: 1, value: 4, fmt: (v) => "level " + v, oninput: () => upd() });
     const R = readouts(box, [["E", "photon energy E = hf"], ["W", "work function hf₀"], ["f0", "threshold frequency f₀"], ["Ek", "max E<sub>k</sub> = hf − hf₀"], ["v", "max speed of electrons"]]);
     const note = HP.el("p", { class: "sim-note", "aria-live": "polite" }); box.append(note);
     let photons = [], electrons = [], last = 0;
@@ -718,7 +718,7 @@
     const sA = HP.slider(ctr, { label: "Angle of incidence θ₁ (from the normal)", min: 0, max: 89, step: 1, value: 30, unit: "°", oninput: () => sim.redraw() });
     const opt = HP.el("label", null); const cb = HP.el("input", { type: "checkbox" }); cb.addEventListener("change", () => { disp = cb.checked; sim.redraw(); }); opt.append(cb, " show red and violet separately (dispersion)");
     box.append(HP.el("div", { class: "btn-row" }, opt));
-    const R = readouts(box, [["r", "angle of refraction θ₂"], ["n", "sin θ₁ / sin θ₂ (air ÷ material)"], ["cA", "critical angle θc = sin⁻¹(1/n)"], ["what", "what happens"]]);
+    const R = readouts(box, [["r", "angle of refraction θ₂"], ["n", "n = sin(angle in air) ÷ sin(angle in material)"], ["cA", "critical angle θc = sin⁻¹(1/n)"], ["what", "what happens"]]);
     const sim = HP.sim(cv, {
       height: (w) => (w < 560 ? 320 : 330),
       draw(ctx, t, dt, C, S) {

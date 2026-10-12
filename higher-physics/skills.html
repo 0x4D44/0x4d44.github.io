@@ -73,6 +73,19 @@
   <h3 class="widget-title">Quartermaster's drill: prefixes and figures</h3>
   <p class="hint">Answer in your head or on paper, then reveal. New questions each time.</p>
 </div>
+<h3 id="symbols">Same letter, different meaning</h3>
+<p>The relationships sheet reuses some letters for different quantities. Before you substitute, ask which quantity the letter means <em>in this relationship</em>, and check its unit.</p>
+<div class="table-wrap"><table><thead><tr><th>Letter</th><th>Meaning 1</th><th>Meaning 2</th><th>Watch out in</th></tr></thead><tbody>
+<tr><td><strong>W</strong></td><td>weight (N), in W = mg</td><td>work done (J), in E<sub>w</sub> = Fd and W = QV</td><td>Dynamics; Particles and Waves</td></tr>
+<tr><td><strong>E</strong></td><td>energy (J), in E = mc², E = hf, E = ½CV²</td><td>EMF (V), in E = V + Ir</td><td>Electricity: both appear on the same page</td></tr>
+<tr><td><strong>I</strong></td><td>current (A), in V = IR</td><td>irradiance (W m⁻²), in I = P/A</td><td>Particles and Waves</td></tr>
+<tr><td><strong>m</strong></td><td>mass (kg)</td><td>order of a maximum (a whole number), in d sin θ = mλ</td><td>Particles and Waves</td></tr>
+<tr><td><strong>T</strong></td><td>period (s), in f = 1/T</td><td>tension (N) in a rope or tow line</td><td>Dynamics; Electricity</td></tr>
+<tr><td><strong>d</strong></td><td>distance or displacement (m)</td><td>grating spacing (m), in d sin θ = mλ</td><td>Particles and Waves</td></tr>
+<tr><td><strong>v</strong></td><td>velocity of an object (m s⁻¹)</td><td>speed of a wave (m s⁻¹), in v = fλ and the Doppler relationship</td><td>Dynamics</td></tr>
+</tbody></table></div>
+<p class="sim-note">⚠ Subscripts are labels, not powers: V₁ and V₂ are two different voltages, and E<sub>k</sub> is kinetic energy. Write them small and low so they can't be misread as V¹ or V².</p>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Use SI units and the prefixes from pico (10⁻¹²) to giga (10⁹).</li><li>Write numbers in standard form and round a final answer to a sensible number of significant figures.</li><li>Say what each letter means in the relationship you are using.</li></ul></div>
 <div class="check" data-check="sk-units"></div>
 </section>
 
@@ -87,6 +100,7 @@
 <tr><td><strong>Random uncertainty</strong></td><td>The scatter when a measurement is repeated: slight variations in reaction time, release, reading.</td><td>Take repeated readings and use the mean. More repeats reduce its effect. Approximate random uncertainty = (max − min) ÷ number of readings.</td></tr>
 <tr><td><strong>Systematic uncertainty</strong></td><td>All the readings are too large, or all too small, because of the technique or the design of the experiment: a meter that reads 0.1 V with nothing connected, measuring a length from the wrong end of a ruler.</td><td>Repeating does <em>not</em> help: the mean is simply offset. It often shows up as a best-fit line that misses the origin when theory says it should pass through it. Fix the method or correct for the offset.</td></tr>
 </tbody></table></div>
+<div class="callout log"><div class="callout-title">⚓ Dead reckoning in the chart room</div><p>With no stars to steer by, a navigator plots the ship's position from speed, heading and time. Every one of those readings is a little uncertain, so the pencil mark on the chart is drawn as a circle, not a dot, and it grows the further you sail. The navigator's question is the one you will ask in every experiment: <em>which reading is the least certain?</em> Improve that one and the circle shrinks the most.</p></div>
 <p class="eq">random uncertainty = <span class="frac"><span>max. value − min. value</span><span>number of values</span></span></p>
 <p>The <strong>mean</strong> of repeated readings is the best estimate of the true value. Quote the final result as <strong>value ± uncertainty</strong>, for example (2.36 ± 0.02) s.</p>
 <div class="widget" id="w-uncert">
@@ -105,7 +119,8 @@
 <li><span class="ans">Speed = (0.339 ± 0.003) m s⁻¹</span>. To improve the experiment, improve the timing (light gates instead of a stopwatch), not the distance measurement.</li>
 </ol>
 </details></div>
-<div class="callout tip"><div class="callout-title">✔ Accuracy, precision and reliability</div><p>You don't have to use these words, but if you do, use them correctly. <strong>Accurate</strong>: close to the true value. <strong>Precise</strong>: repeated readings close to each other (small random uncertainty). A result can be precise but inaccurate if there is a systematic uncertainty. The 2025 examiners noted that candidates still mix these up.</p></div>
+<div class="callout tip"><div class="callout-title">✔ Accuracy, precision and reliability</div><p>You don't have to use these words, but if you do, use them correctly. <strong>Accurate</strong>: close to the true value. <strong>Precise</strong>: repeated readings close to each other (small random uncertainty). A result can be precise but inaccurate if there is a systematic uncertainty. <strong>Reliable</strong>: when the experiment is repeated (by you or someone else), it gives similar results. Repeated readings and a consistent method make a result more reliable. The 2025 examiners noted that candidates still mix these words up.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Identify scale-reading, random and systematic uncertainties, and say how to reduce each.</li><li>Calculate a mean and its random uncertainty, and express an uncertainty as absolute or percentage.</li><li>Identify the largest percentage uncertainty in an experiment.</li></ul></div>
 <div class="check" data-check="sk-uncert"></div>
 </section>
 
@@ -137,6 +152,7 @@
 <tr><td>Capacitance</td><td>Q against V</td><td>C</td></tr>
 </tbody></table></div>
 <div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>In the paper's data-analysis question, few candidates drew a proper line of best fit. Some forced it through the origin, then claimed a systematic uncertainty because their line went through the origin. Few went on to use their gradient to find the quantity asked for. In assignments, some candidates averaged a value of g calculated from each separate data point, which is invalid. The right method is to <strong>find the gradient of the best-fit line and use that</strong>. And say "linear relationship" for any straight line; only say "directly proportional" if the line also passes through the origin.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Draw a graph with suitable scales, labels and units, and a line of best fit (not dot-to-dot, not forced through the origin).</li><li>Calculate a gradient from points on the line, with its unit, and use it to find a quantity.</li><li>Choose what to plot to get a straight line (for example I against 1/d²).</li></ul></div>
 <div class="check" data-check="sk-graphs"></div>
 </section>
 
@@ -148,7 +164,8 @@
 <li><strong>Research</strong> (with some supervision): choose a topic with your teacher's guidance, carry out experimental work that gives measurements (you may work in a group), and find data or information from the internet, books or journals.</li>
 <li><strong>Report</strong> (a high degree of supervision, at most 2 hours, no internet): write the report on your own. You may take in only the instructions for candidates, your experimental method, your <strong>raw</strong> data (tabulated, but with no extra columns for means or derived values), your internet/literature data and extracts, and a record of your sources. No drafts, no templates, no marking instructions.</li>
 </ol>
-<p>The whole assignment should take no more than about 8 hours. Your teacher cannot give you an aim, data or feedback on your report, and cannot let you redraft it. It is marked by Qualifications Scotland.</p>
+<p>The whole assignment should take no more than about 8 hours. It is marked by Qualifications Scotland. The rules on help (course specification, version 4.1):</p>
+<ul><li>Your teacher <strong>must</strong> offer a range of topics, agree your choice with you and advise on whether your aim is suitable.</li><li>Your teacher <strong>can</strong> give you a basic list of instructions for the experimental procedure.</li><li>Your teacher <strong>must not</strong> give you a list of websites (URLs), books or journals: you find your own sources, using only websites, journals and/or books.</li><li>Nobody may give you a template or model answers, and your teacher cannot give you feedback on your report or let you redraft it.</li></ul>
 <h3>Where the 20 marks come from</h3>
 <div class="table-wrap"><table>
 <thead><tr><th>Section</th><th class="num">Marks</th><th>To earn them (with lessons from the 2025 course report)</th></tr></thead>
@@ -169,13 +186,17 @@
 <tr><td>Evaluation</td><td class="num">3</td><td>Several evaluative points, each with a <strong>justification</strong> that fits <em>your</em> experiment and data. "Repeat more times" earns nothing if your readings hardly varied. Don't recite evaluation points memorised from examples.</td></tr>
 <tr><td>Structure</td><td class="num">1</td><td>A clear, concise report with an informative title.</td></tr>
 </tbody></table></div>
+<h3>Planning an experiment</h3>
+<p>The question paper can ask you to plan or improve an experiment, and the assignment needs a clear method. A good plan covers:</p>
+<ol><li><strong>Aim</strong>: what relationship or value you are finding.</li><li><strong>Variables</strong>: the one you change (independent), the one you measure (dependent), and the ones you keep the same (controlled).</li><li><strong>Apparatus and measurements</strong>: name every instrument and what it measures. Choose a <strong>range</strong> wide enough, with at least five different values, and repeat each reading.</li><li><strong>Safety</strong>: name a real hazard and how you reduce it. For example: a hot lamp (let it cool before moving it), a laser (never look along the beam), mains equipment (check leads and keep water away), falling masses (keep feet clear, use a sand tray).</li><li><strong>Analysis</strong>: what you will plot to get a straight line, and what its gradient or intercept tells you.</li></ol>
 <h3>Good Higher topics</h3>
 <p>Your teacher will offer a range of topics. Ones that work well at Higher, because they give a graph and a value to compare with literature, include: irradiance against distance (inverse square law); refractive index, or critical angle, of a block or liquid; wavelength of a laser using a grating; EMF and internal resistance of a cell; charging or discharging a capacitor through different resistors; the threshold voltage of different coloured LEDs (and an estimate of Planck's constant); a thermistor or LDR in a potential divider; acceleration down a slope at different angles; the Doppler effect for a moving sound source.</p>
 <div class="callout tip"><div class="callout-title">✔ Before the report stage</div><ul><li>Raw data tabulated, with units and consistent precision, and the scale-reading uncertainty of each instrument written down.</li><li>Secondary data you can genuinely compare with your own, with full reference details and the date you accessed it.</li><li>An extract that explains the underlying physics (without sample calculations).</li><li>A brief summary of your method, naming every instrument.</li></ul></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Plan an experiment: aim, variables, apparatus, range and repeats, safety measures, and analysis.</li><li>List what you may take into the report stage, and which help is and isn't allowed.</li><li>Know where the 20 assignment marks come from.</li></ul></div>
 <div class="check" data-check="sk-assignment"></div>
 <nav class="next-deck" aria-label="Deck navigation">
   <a class="btn" href="electricity.html">← Electricity</a>
-  <a class="btn primary" href="exam.html">To the parade ground: Exam drill →</a>
+  <a class="btn primary" href="exam.html">To the quarterdeck: Exam drill →</a>
 </nav>
 </section>
 </main>

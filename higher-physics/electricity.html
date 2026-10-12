@@ -81,7 +81,8 @@
 <li>(c) T = 4.0 × 5 ms = 20 ms = 0.020 s. <span class="eqi">f = 1 / T = 1 / 0.020</span> → <span class="ans">50 Hz</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked to show that a frequency was 50 Hz, "some did not show where the value of the period came from and so could not access all the marks". In a "show" question, write the division count and the timebase: "4.0 div × 5 ms/div = 20 ms". Few candidates could state <em>and justify</em> what happened to the trace's amplitude when a switch in the circuit was closed: always link the change in the trace to a change in the voltage across the component the oscilloscope is connected to.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><ul class="lessons"><li><strong>Markers saw:</strong> asked to show that a frequency was 50 Hz, "some did not show where the value of the period came from and so could not access all the marks". <strong>Do this:</strong> write the division count and the timebase: "4.0 div × 5 ms/div = 20 ms", then f = 1/T.</li><li><strong>Markers saw:</strong> "Few candidates stated and justified what happened to the amplitude of the trace when the switch was closed." <strong>Do this:</strong> state the change, then link it to the change in voltage across the component the oscilloscope is connected to.</li></ul></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Find peak voltage, period and frequency from an oscilloscope trace (divisions × setting).</li><li>Use V<sub>peak</sub> = √2 V<sub>r.m.s.</sub> and I<sub>peak</sub> = √2 I<sub>r.m.s.</sub>, and f = 1/T.</li></ul></div>
 <div class="check" data-check="el-ac"></div>
 </section>
 
@@ -108,6 +109,7 @@
 
 <h3>Potential dividers</h3>
 <p>Two resistors in series across a supply share the supply voltage in proportion to their resistances. This is a <dfn>potential divider</dfn>, and it is how sensor circuits turn a change in temperature or light into a change in voltage.</p>
+<div class="callout log"><div class="callout-title">⚓ The redstone analogy, and where it breaks</div><p>In Minecraft, a redstone signal starts at strength 15 and drops by one for every block of dust it crosses. That is a good picture of <strong>lost volts</strong>: each part of a circuit uses up some of the energy per coulomb, until none is left at the end. A <strong>comparator</strong> reads a signal and passes on a different strength depending on what it is measuring: that is the job a potential divider does in a sensor circuit.</p><p><strong>Where it breaks:</strong> redstone dust loses signal by the block, whatever is attached, so it behaves like a long chain of equal resistors. A real wire has almost no resistance, and the voltage across each resistor depends on its <em>share</em> of the total resistance, not on its length in blocks. And a redstone repeater tops a signal back up to 15 for free; nothing in a real circuit adds energy except the supply.</p></div>
 <div class="eq-grid">
 <div class="eq-card"><div class="eq"><var>V</var>₁ = <span class="frac"><span><var>R</var>₁</span><span><var>R</var>₁ + <var>R</var>₂</span></span> <var>V</var><sub>S</sub></div><p>The p.d. across R₁.</p></div>
 <div class="eq-card"><div class="eq"><span class="frac"><span><var>V</var>₁</span><span><var>V</var>₂</span></span> = <span class="frac"><span><var>R</var>₁</span><span><var>R</var>₂</span></span></div><p>The bigger resistor gets the bigger share.</p></div>
@@ -126,6 +128,7 @@
 <p>The resistances only need to be in the same units: kilohms in both is fine.</p>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>In 2025, only some candidates picked the circuit giving the greatest power in a lamp. For "which circuit" questions, work out the current or voltage for the lamp in <em>each</em> option rather than guessing. P = I²R means that doubling the current quadruples the power.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Solve series and parallel resistor networks in several steps.</li><li>Use P = IV = I²R = V²/R.</li><li>Use both potential-divider relationships, including sensor circuits with a thermistor or LDR.</li></ul></div>
 <div class="check" data-check="el-circuits"></div>
 </section>
 
@@ -135,7 +138,7 @@
 <p>Connect a bulb to a battery and measure the voltage across the battery's terminals: it is less than the voltage printed on the battery. Some of the energy is used up driving the current through the battery itself, because every real source has some resistance inside it.</p>
 <div class="callout def"><div class="callout-title">📘 Definitions</div>
 <ul>
-<li><strong>Electromotive force (EMF), E</strong>: the energy the source gives to each coulomb of charge that passes through it. It equals the p.d. across the terminals when no current flows.</li>
+<li><strong>Electromotive force (EMF), E</strong>: the energy the source gives to each coulomb of charge that passes through it. It equals the p.d. across the terminals when no current flows. ⚠ Here <strong>E is EMF</strong> (in volts), not energy; the same letter means energy in E = ½QV below. See <a href="skills.html#symbols">same letter, different meaning</a>.</li>
 <li><strong>Internal resistance, r</strong>: the resistance of the source itself.</li>
 <li><strong>Terminal potential difference (t.p.d.), V</strong>: the p.d. across the terminals of the source when a current flows.</li>
 <li><strong>Lost volts, Ir</strong>: the p.d. across the internal resistance: the energy per coulomb turned into heat inside the source.</li>
@@ -176,11 +179,12 @@
 <details><summary>Show solution</summary>
 <ol class="steps">
 <li>(a) <span class="eqi">E = I(R + r)</span> → <span class="eqi">1.5 = I × (2.5 + 0.50)</span> → <span class="ans">I = 0.50 A</span></li>
-<li>(b) <span class="eqi">V = IR = 0.50 × 2.5</span> → <span class="ans">1.25 V</span> (1.3 V)</li>
+<li>(b) <span class="eqi">V = IR = 0.50 × 2.5</span> → <span class="ans">V = 1.3 V</span> (unrounded: 1.25 V)</li>
 <li>(c) <span class="eqi">lost volts = Ir = 0.50 × 0.50</span> → <span class="ans">0.25 V</span>. Check: 1.25 + 0.25 = 1.5 V = E ✔</li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report: evaluating this experiment</div><p>In assignments on internal resistance, candidates who measured V and I directly "were claiming that the resistance of the wires should have been taken into account. This is not valid for this experimental method." Wire resistance doesn't matter when you measure the t.p.d. and the current directly: it is simply part of the external resistance. Only make evaluative comments that fit the method you actually used.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report: evaluating this experiment</div><ul class="lessons"><li><strong>Markers saw:</strong> in assignments on internal resistance, candidates who measured V and I directly "were claiming that the resistance of the wires should have been taken into account. This is not valid for this experimental method." <strong>Do this:</strong> remember that wire resistance is simply part of the external resistance when you measure the t.p.d. and current directly. Only make evaluative comments that fit the method you actually used.</li></ul></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>State the definitions of EMF, internal resistance, t.p.d. and lost volts.</li><li>Use E = V + Ir and E = I(R + r).</li><li>Describe the experiment to find E and r, and read them from the V–I graph (intercept = E, gradient = −r).</li></ul></div>
 <div class="check" data-check="el-emf"></div>
 </section>
 
@@ -190,13 +194,15 @@
 <p>A <dfn>capacitor</dfn> is two conducting plates separated by an insulator. Connect it to a supply and electrons pile up on one plate and are pulled off the other: the capacitor stores charge, and with it energy. The Leyden jar is a capacitor: metal foil inside and outside a glass jar, with the glass as the insulator.</p>
 <div class="callout def"><div class="callout-title">📘 Capacitance</div><p>Capacitance is the charge stored per volt: <span class="eqi"><var>C</var> = <var>Q</var> / <var>V</var></span>. A capacitor of <strong>1 farad stores 1 coulomb of charge when the potential difference across it is 1 volt</strong>. Practical capacitors are measured in microfarads (μF) or picofarads (pF).</p></div>
 <p>If a capacitor is charged by a <strong>constant current</strong>, the charge stored after a time t is <span class="eqi"><var>Q</var> = <var>I</var><var>t</var></span>.</p>
+<p><strong>Keeping the current constant.</strong> As the capacitor charges, its p.d. V<sub>C</sub> rises, so the p.d. left across the series resistor (V<sub>S</sub> − V<sub>C</sub>) falls. To keep the current I = (V<sub>S</sub> − V<sub>C</sub>) / R the same, you must <strong>reduce the resistance of the variable resistor</strong> steadily as the capacitor charges, watching the ammeter. The 2025 examiners asked for exactly this explanation.</p>
 <h3>Energy stored</h3>
 <div class="two-col">
 <figure class="diagram"><svg viewBox="0 0 300 200" role="img" aria-label="Graph of charge against potential difference for a capacitor: a straight line through the origin. The shaded triangle under the line is the energy stored."><polygon points="50,170 250,170 250,40" class="f-gold" opacity=".4"/><line x1="50" y1="170" x2="250" y2="40" class="s-red" stroke-width="3"/><line x1="50" y1="180" x2="50" y2="20" class="stroke-ink" stroke-width="1.5"/><line x1="40" y1="170" x2="275" y2="170" class="stroke-ink" stroke-width="1.5"/><text x="56" y="24" font-size="13" class="ink" font-weight="700">Q</text><text x="275" y="160" font-size="13" class="ink" text-anchor="end" font-weight="700">V</text><line x1="250" y1="40" x2="250" y2="170" class="stroke-ink" stroke-width="1" stroke-dasharray="4 3"/><text x="190" y="155" font-size="13" text-anchor="middle" class="ink" font-weight="700">area = ½QV</text><text x="160" y="80" font-size="12" text-anchor="end" class="f-red" font-weight="700">gradient = C</text></svg><figcaption>Charge against p.d.: a straight line through the origin.</figcaption></figure>
 <div>
 <p>The work done in charging a capacitor, which is the energy it stores, is the <strong>area under its charge–p.d. graph</strong>. That area is a triangle, ½ × base × height:</p>
 <p class="eq"><var>E</var> = ½<var>Q</var><var>V</var> = ½<var>C</var><var>V</var>² = ½ <span class="frac"><span><var>Q</var>²</span><span><var>C</var></span></span></p>
-<p>Why only half of QV? Charging starts at 0 V, so early charges are moved through a small p.d. and later ones through a larger p.d. On average, each coulomb is moved through ½V.</p></div></div>
+<p class="sim-note">⚠ Here <strong>E is energy</strong> (in joules), not EMF.</p></div></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"W = QV for the electron gun. Why is the capacitor only ½QV?"</p><p><strong>Captain Blackwood:</strong> "Because the jar fights back as it fills. The first coulomb goes on when the p.d. is nearly zero, so it costs almost nothing. The last coulomb goes on against the full V. The p.d. rises steadily from 0 to V, so on average each coulomb is moved through ½V. In the electron gun every charge falls through the whole V, so there it is the full QV."</p></div>
 <div class="worked"><p class="worked-title">Worked example · the camera-flash capacitor</p>
 <p>A 470 μF capacitor is charged to 12 V. Calculate (a) the charge stored and (b) the energy stored.</p>
 <details><summary>Show solution</summary>
@@ -235,7 +241,8 @@
 <li>Move the switch to B and record V<sub>C</sub> and I again as the capacitor discharges.</li>
 <li>Plot graphs of V<sub>C</sub> and I against time. Repeat with a different resistor, or a different capacitor, to see the effect on the curves.</li>
 </ol>
-<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked to sketch a capacitor graph, some candidates drew the wrong shape and "others did not add the correct values to the axes". A good sketch has labelled axes with units, the right curve (steep at first, then levelling off), and <strong>key values marked</strong>: the starting current V<sub>S</sub>/R, and the final voltage V<sub>S</sub>. And when asked how a change in resistance affects charging time, many stated the change but "few justified the change correctly". Link it to the current: "a larger R gives a smaller current, so charge builds up more slowly".</p></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><ul class="lessons"><li><strong>Markers saw:</strong> "A number of candidates did not draw the correct shape for the curve, and others did not add the correct values to the axes of the graph." <strong>Do this:</strong> labelled axes with units, the right curve (steep at first, then levelling off), and <strong>key values marked</strong>: the starting current V<sub>S</sub>/R and the final voltage V<sub>S</sub>.</li><li><strong>Markers saw:</strong> "Many candidates stated the correct change for the resistance, but few justified the change correctly." <strong>Do this:</strong> for constant-current charging, the resistance must be <em>reduced</em>, because as V<sub>C</sub> rises the p.d. across the resistor falls; a smaller R keeps I = (V<sub>S</sub> − V<sub>C</sub>)/R constant.</li><li><strong>Markers saw:</strong> "Most candidates calculated the charge stored on the capacitor correctly" and most found the capacitance. Keep those marks.</li></ul></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Use C = Q/V, Q = It and E = ½QV = ½CV² = ½Q²/C.</li><li>Sketch and explain charging and discharging graphs of current and p.d. against time, with key values marked.</li><li>Explain the effect of R and C on charging time, and why R is reduced to keep a charging current constant.</li></ul></div>
 <div class="check" data-check="el-capacitors"></div>
 </section>
 
@@ -268,6 +275,7 @@
 </ul>
 <h3>The p-n junction</h3>
 <p>When p-type and n-type layers are made next to each other in one crystal, a <dfn>p-n junction</dfn> forms. Some free electrons from the n side fill holes on the p side. This leaves a thin region with no free charge carriers (the <strong>depletion layer</strong>), and there is an <strong>electric field in the junction</strong> that stops any more charge crossing.</p>
+<p><strong>Why a field appears.</strong> Electrons that cross leave behind positive ions on the n side and make negative ions on the p side. That charge separation produces an electric field pointing from the n side to the p side. For electrons it is like a <strong>hill</strong>: an electron on the n side would have to climb it to reach the p side. Forward bias lowers the hill so electrons can roll over; reverse bias makes it steeper.</p>
 <ul>
 <li><dfn>Forward bias</dfn> (p-type connected to the positive terminal) <strong>reduces the electric field</strong> in the junction, and current flows.</li>
 <li><dfn>Reverse bias</dfn> (p-type connected to the negative terminal) <strong>increases the electric field</strong>, and almost no current flows.</li>
@@ -290,6 +298,7 @@
 <h3>Solar cells</h3>
 <p>A solar cell is a p-n junction designed so that a <strong>potential difference is produced when photons are absorbed</strong>: the <dfn>photovoltaic effect</dfn>. The absorbed photons give electrons enough energy to rise from the valence band into the conduction band. The electric field in the junction pushes the electrons in the conduction band towards the n-type side (and the holes towards the p-type side), so a potential difference appears across the cell, which can drive a current.</p>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>In 2025 only some candidates chose the correct statement about red and blue LEDs. Keep the chain straight: <strong>bigger band gap → higher-energy photons → higher frequency (bluer light) → larger forward p.d. needed</strong>. And use the band words precisely: electrons move in the <em>conduction</em> band and fall into holes in the <em>valence</em> band.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>Explain conductors, insulators and semiconductors with band theory.</li><li>Describe n-type and p-type doping, and forward and reverse bias of a p-n junction.</li><li>Explain how an LED and a solar cell work, and use E = hf with the band gap.</li></ul></div>
 <div class="check" data-check="el-semis"></div>
 <nav class="next-deck" aria-label="Deck navigation">
   <a class="btn" href="waves.html">← Particles and Waves</a>

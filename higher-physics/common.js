@@ -156,6 +156,26 @@
   }
   HP.toast = toast;
 
+  /* ---------- exam timer: a countdown for the mock paper ---------- */
+  function initTimer(box) {
+    const total = +box.getAttribute("data-minutes") * 60;
+    let left = total, tick = null;
+    const face = HP.el("span", { class: "timer-face", role: "timer", "aria-live": "off" });
+    const go = HP.el("button", { class: "btn small", type: "button" }, "▶ Start timer");
+    const reset = HP.el("button", { class: "btn small", type: "button" }, "↺ Reset");
+    const show = () => { const m = Math.floor(left / 60), s = left % 60; face.textContent = `${m}:${String(s).padStart(2, "0")}`; box.classList.toggle("done", left === 0); };
+    const stop = () => { clearInterval(tick); tick = null; go.textContent = left ? "▶ Start timer" : "Time's up"; };
+    go.addEventListener("click", () => {
+      if (tick) { stop(); go.textContent = "▶ Resume"; return; }
+      if (!left) return;
+      go.textContent = "❚❚ Pause";
+      tick = setInterval(() => { left = Math.max(0, left - 1); show(); if (!left) { stop(); toast("Time's up: pens down for Section 1."); } }, 1000);
+    });
+    reset.addEventListener("click", () => { stop(); left = total; show(); });
+    box.append(HP.el("span", { class: "timer-label" }, "Section 1 clock"), face, go, reset);
+    show();
+  }
+
   /* ---------- pre-flight checks ---------- */
   function renderCheck(box) {
     const id = box.getAttribute("data-check");
@@ -464,6 +484,7 @@
     initTabs();
     initSorters();
     document.querySelectorAll(".check[data-check]").forEach(renderCheck);
+    document.querySelectorAll(".exam-timer[data-minutes]").forEach(initTimer);
     paintRank();
     setTimeout(markScrollables, 300);
     window.addEventListener("load", () => setTimeout(markScrollables, 300));
