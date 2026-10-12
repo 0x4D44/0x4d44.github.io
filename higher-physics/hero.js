@@ -84,22 +84,39 @@
     px(bx + 14, by + 3, 8, 1, "#888");
     px(bx + 22, by - 1, 90, 9, "#f4ecd8"); px(bx + 22, by - 1, 90, 1, "#c8102e"); px(bx + 22, by + 7, 90, 1, "#c8102e");
     text("HIGHER PHYSICS", bx + 28, by + 1, "#12284a");
-    if (running && !reduced) raf = requestAnimationFrame(frame);
+    if (running && !reduced && !paused) raf = requestAnimationFrame(frame);
   }
+  let paused = false;
   frame(performance.now());
   if ("IntersectionObserver" in window) {
     new IntersectionObserver((e) => {
       running = e[0].isIntersecting;
       cancelAnimationFrame(raf);
-      if (running && !reduced) raf = requestAnimationFrame(frame);
+      if (running && !reduced && !paused) raf = requestAnimationFrame(frame);
     }).observe(cv);
   }
   // follow a change to the reduced-motion setting while the page is open
   const mq = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
   if (mq && mq.addEventListener) mq.addEventListener("change", (e) => {
     reduced = e.matches; cancelAnimationFrame(raf);
-    if (reduced) frame(performance.now()); else if (running) raf = requestAnimationFrame(frame);
+    if (reduced) frame(performance.now()); else if (running && !paused) raf = requestAnimationFrame(frame);
+    syncBtn();
   });
+  // WCAG 2.2.2: anything that moves for more than five seconds can be paused
+  const pb = document.getElementById("hero-pause");
+  let pausedAt = 0;
+  function syncBtn() { if (pb) pb.hidden = reduced; }
+  if (pb) {
+    syncBtn();
+    pb.addEventListener("click", () => {
+      paused = !paused;
+      pb.setAttribute("aria-pressed", String(paused));
+      pb.textContent = paused ? "Play animation" : "Pause animation";
+      cancelAnimationFrame(raf);
+      if (paused) pausedAt = performance.now();
+      else { t0 += performance.now() - pausedAt; if (running && !reduced) raf = requestAnimationFrame(frame); }
+    });
+  }
   // progress reset on the briefing page
   const rb = document.getElementById("reset-progress");
   if (rb) rb.addEventListener("click", () => {

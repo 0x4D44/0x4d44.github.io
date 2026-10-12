@@ -40,10 +40,28 @@
     for (const p of ["textContent", "innerHTML"]) {
       const d = Object.getOwnPropertyDescriptor(p === "textContent" ? Node.prototype : Element.prototype, p);
       let last = null;
-      Object.defineProperty(e, p, { configurable: true, get() { return d.get.call(e); }, set(v) { v = String(v); if (v === last) return; last = v; d.set.call(e, v); } });
+      Object.defineProperty(e, p, { configurable: true, get() { return d.get.call(e); }, set(v) { v = String(v); if (v === last) return; last = v; d.set.call(e, v); e._hpRestate = () => d.set.call(e, v); settle(e); } });
     }
     return e;
   };
+  /* While an animation rewrites a live region every frame, silence it; once the values
+     have been still for 600 ms, switch it back on and re-state them once. */
+  function settle(e) {
+    const r = e.closest("[aria-live]");
+    if (!r) return;
+    const now = performance.now();
+    if (r._hpLast && now - r._hpLast < 400) r.setAttribute("aria-live", "off");
+    r._hpLast = now;
+    r._hpEls = r._hpEls || [];
+    if (!r._hpEls.includes(e)) r._hpEls.push(e);
+    clearTimeout(r._hpT);
+    r._hpT = setTimeout(() => {
+      if (r.getAttribute("aria-live") !== "off") return;
+      r.setAttribute("aria-live", "polite");
+      (r._hpEls || []).forEach((x) => x._hpRestate && x._hpRestate()); // re-announce the settled values in place
+      r._hpEls = [];
+    }, 600);
+  }
   HP.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   HP.sleep = (ms) => new Promise((r) => setTimeout(r, HP.reduced ? Math.min(ms, 30) : ms));
 
@@ -307,15 +325,15 @@
       HP.el("summary", null, "☰ Chapters on this deck"), ol);
     // on wide screens the summary is hidden, so the list must never be left closed
     if (wide.addEventListener) wide.addEventListener("change", (e) => { if (e.matches) det.open = true; });
-    aside.append(HP.el("h2", null, "On this deck"), det);
+    aside.append(HP.el("p", { class: "toc-title" }, "On this deck"), det);
     if (!("IntersectionObserver" in window)) return;
     const links = new Map([...ol.querySelectorAll("a")].map((a) => [a.getAttribute("href").slice(1), a]));
     const visible = new Set();
     const io = new IntersectionObserver((ents) => {
       ents.forEach((e) => (e.isIntersecting ? visible.add(e.target.id) : visible.delete(e.target.id)));
-      links.forEach((a) => a.classList.remove("active"));
+      links.forEach((a) => { a.classList.remove("active"); a.removeAttribute("aria-current"); });
       const first = secs.map((h) => h.parentElement.id).find((id) => visible.has(id));
-      if (first) links.get(first).classList.add("active");
+      if (first) { links.get(first).classList.add("active"); links.get(first).setAttribute("aria-current", "location"); }
     }, { rootMargin: "-20% 0px -70% 0px" });
     secs.forEach((h) => io.observe(h.parentElement));
   }
@@ -651,7 +669,8 @@
     const X = (v) => box.x + (v - o.x0) / (o.x1 - o.x0) * box.w;
     const Y = (v) => box.y + box.h - (v - o.y0) / (o.y1 - o.y0) * box.h;
     ctx.save();
-    ctx.font = `${o.fs || 12}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+    const fs = Math.max(11, o.fs || 12);
+    ctx.font = `${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
     if (o.grid !== false) {
       ctx.strokeStyle = C.line; ctx.lineWidth = 0.6; ctx.globalAlpha = 0.6;
       if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { ctx.beginPath(); ctx.moveTo(X(v), box.y); ctx.lineTo(X(v), box.y + box.h); ctx.stroke(); }
@@ -662,12 +681,12 @@
     const yAxisX = o.x0 <= 0 && o.x1 >= 0 ? X(0) : box.x;
     const xAxisY = o.y0 <= 0 && o.y1 >= 0 ? Y(0) : box.y + box.h;
     ctx.beginPath(); ctx.moveTo(yAxisX, box.y); ctx.lineTo(yAxisX, box.y + box.h); ctx.moveTo(box.x, xAxisY); ctx.lineTo(box.x + box.w, xAxisY); ctx.stroke();
-    const tf = o.tf || ((v) => +v.toFixed(6) + "");
+    const tf = o.tf || ((v) => (+v.toFixed(6) + "").replace("-", "−"));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && o.y0 < 0) continue; ctx.fillText(tf(v), X(v), xAxisY + 3); }
+    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ctx.fillText(tf(v), X(v), xAxisY + 3); }
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) ctx.fillText((o.ytf || tf)(v), yAxisX - 4, Y(v));
-    ctx.fillStyle = C.ink; ctx.font = `bold ${o.fs || 12}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+    ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
     if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(o.xl, box.x + box.w, xAxisY - 4); }
     if (o.yl) { ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(o.yl, yAxisX + 5, box.y); }
     ctx.restore();
@@ -688,7 +707,7 @@
   /* text with a halo so it reads over busy backgrounds */
   HP.label = function (ctx, txt, x, y, o = {}) {
     ctx.save();
-    ctx.font = `${o.bold ? "bold " : ""}${o.size || 13}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+    ctx.font = `${o.bold ? "bold " : ""}${Math.max(11, o.size || 13)}px "Atkinson Hyperlegible", system-ui, sans-serif`;
     ctx.textAlign = o.align || "left"; ctx.textBaseline = o.base || "middle";
     if (o.halo !== false) { ctx.lineWidth = 4; ctx.strokeStyle = o.haloCol || HP.css("--card"); ctx.lineJoin = "round"; ctx.strokeText(txt, x, y); }
     ctx.fillStyle = o.col || HP.css("--ink"); ctx.fillText(txt, x, y);
