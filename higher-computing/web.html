@@ -188,6 +188,27 @@
 <h3>The box model: margin, padding and size</h3>
 <p>Every element is a box. Its <strong>width</strong> and <strong>height</strong> set the content area. <strong>Padding</strong> is space <em>inside</em> the border, which pushes the content in from the edge. <strong>Margin</strong> is transparent space <em>outside</em> the border, which pushes other elements away.</p>
 <div class="callout log"><div class="callout-title">⛏ Building it in blocks</div><p>Picture a Minecraft build. The <strong>content</strong> is the item in the middle, the <strong>padding</strong> is a ring of wool around it inside the frame, the <strong>border</strong> is the frame of planks, and the <strong>margin</strong> is the ring of air blocks you leave so the next build doesn't touch it. Every ring is added on <em>every</em> side.</p></div>
+<figure class="diagram">
+<div class="diagram-scroll fit">
+<svg viewBox="0 0 640 420" role="img" aria-labelledby="bm-t bm-d">
+<title id="bm-t">The CSS box model</title>
+<desc id="bm-d">Four nested boxes. In the middle is the content, 150 pixels wide. Around it is padding of 15 pixels, then a border of 2 pixels, then a transparent margin of 10 pixels. The total width taken up is 10 + 2 + 15 + 150 + 15 + 2 + 10 = 204 pixels.</desc>
+<rect x="20" y="20" width="600" height="300" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="8 6"/>
+<rect x="70" y="64" width="500" height="212" fill="var(--paper-2)" stroke="var(--gold)" stroke-width="8"/>
+<rect x="150" y="122" width="340" height="96" fill="var(--card)" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<g font-size="21" font-weight="700">
+<text x="32" y="48" class="ink">margin 10px</text><text x="34" y="306" class="ink2" font-weight="400" font-size="17">transparent: pushes other boxes away</text>
+<text x="608" y="48" text-anchor="end" fill="var(--gold)">border 2px</text><path d="M560 52 L566 60" stroke="var(--gold)" stroke-width="2"/>
+<text x="86" y="98" class="ink">padding 15px</text><text x="86" y="258" class="ink2" font-weight="400" font-size="17">inside the border, shows the background</text>
+<text x="320" y="164" text-anchor="middle" class="ink">content</text><text x="320" y="194" text-anchor="middle" class="ink2" font-weight="400" font-size="19">width: 150px</text>
+</g>
+<g stroke="var(--ink)" stroke-width="1.5" fill="none"><path d="M20 340 V356 M620 340 V356 M20 348 H620"/><path d="M30 342 L20 348 L30 354 M610 342 L620 348 L610 354"/></g>
+<text x="320" y="380" text-anchor="middle" font-size="20" font-weight="700" class="ink">total width taken up = 204px</text>
+<text x="320" y="408" text-anchor="middle" font-size="19" class="mono ink2">10 + 2 + 15 + 150 + 15 + 2 + 10</text>
+</svg>
+</div>
+<figcaption>Not to scale. Padding, border and margin are each added on <strong>both</strong> sides, so the box takes up 54px more than its 150px <code>width</code>.</figcaption>
+</figure>
 <div class="widget" id="w-box">
   <h3 class="widget-title">The box model and the 800-pixel deck</h3>
   <p class="hint">Four images sit in an 800px-wide section. Change the margin and padding and watch what happens to the total width.</p>
