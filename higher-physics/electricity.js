@@ -375,23 +375,21 @@
         ctx.fillStyle = "rgba(179,38,30,.10)"; ctx.fillRect(x0, 30, w / 2, S.h - 70);
         ctx.fillStyle = "rgba(29,106,128,.12)"; ctx.fillRect(mid, 30, w / 2, S.h - 70);
         ctx.fillStyle = "rgba(0,0,0,.08)"; ctx.fillRect(mid - depl * w / 2, 30, depl * w, S.h - 70);
-        HP.label(ctx, "p-type (holes)", x0 + w / 4, 18, { size: 12, bold: true, align: "center", col: C.red });
-        HP.label(ctx, "n-type (free electrons)", x0 + w * 0.75, 18, { size: 12, bold: true, align: "center", col: C.sea });
+        HP.label(ctx, "p-type (holes)", x0 + w / 4, 16, { size: 12, bold: true, align: "center", col: C.red });
+        HP.label(ctx, "n-type (free electrons)", x0 + w * 0.75, 16, { size: 12, bold: true, align: "center", col: C.sea });
         HP.label(ctx, "depletion layer", mid, S.h - 28, { size: 11, align: "center", col: C.ink2 });
         // band edges: step at the junction (bigger step = bigger field)
         const step = mode === "fwd" ? 18 : mode === "rev" ? 70 : 40;
-        const cbN = S.h * 0.3, vbN = S.h * 0.62;
+        const cbN = S.h * 0.35, vbN = S.h * 0.67;
         const gapFactor = mode === "fwd" && colour === "blue" ? 1.35 : 1;
         const cbP = cbN - step, vbP = vbN - step;
         const edge = (yp, yn, col) => { ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, yp); ctx.lineTo(mid - depl * w / 2, yp); ctx.bezierCurveTo(mid, yp, mid, yn, mid + depl * w / 2, yn); ctx.lineTo(x0 + w, yn); ctx.stroke(); };
         const gapPx = (vbN - cbN) * gapFactor;
         edge(cbP - (gapFactor - 1) * 20, cbN - (gapFactor - 1) * 20, C.sea);
         edge(cbP - (gapFactor - 1) * 20 + gapPx, cbN - (gapFactor - 1) * 20 + gapPx, C.red);
-        HP.label(ctx, "conduction band", x0 + 4, cbP - (gapFactor - 1) * 20 - 10, { size: 10, col: C.sea });
-        HP.label(ctx, "valence band", x0 + 4, cbP - (gapFactor - 1) * 20 + gapPx + 12, { size: 10, col: C.red });
         // field arrow inside the depletion layer (from n to p, i.e. pointing left)
         HP.arrow(ctx, mid + 18 + depl * w * 0.3, S.h - 46, mid - 18 - depl * w * 0.3, S.h - 46, C.gold, 2 + (mode === "rev" ? 1.5 : 0), 8);
-        HP.label(ctx, mode === "fwd" ? "field reduced" : mode === "rev" ? "field increased" : "electric field", mid + 30 + depl * w * 0.3, S.h - 46, { size: 10, col: C.gold });
+        HP.label(ctx, mode === "fwd" ? "field reduced" : mode === "rev" ? "field increased" : "electric field", mid + 30 + depl * w * 0.3, S.h - 46, { size: 11, col: C.gold });
         // electrons in n conduction band, holes in p valence band
         const cbAt = (fx) => { const X = x0 + fx * w; return X < mid ? cbP - (gapFactor - 1) * 20 : cbN - (gapFactor - 1) * 20; };
         parts.forEach((p, k) => {
@@ -425,6 +423,10 @@
             ctx.strokeStyle = C.red; ctx.beginPath(); ctx.arc(ph.x - f * 90, vbP + 12, 3.2, 0, 7); ctx.stroke();
           }
         }
+        // band labels last, on the n side (no holes there), just inside the gap: electrons sit above the conduction band
+        const cbR = cbN - (gapFactor - 1) * 20;
+        HP.label(ctx, "conduction band", x0 + w - 6, cbR + 12, { size: 11, bold: true, align: "right", col: C.sea });
+        HP.label(ctx, "valence band", x0 + w - 6, cbR + gapPx - 12, { size: 11, bold: true, align: "right", col: C.red });
         if (mode === "solar") HP.label(ctx, "p.d. produced: p side +, n side −", mid, S.h - 12, { size: 11, align: "center", bold: true, col: C.grass });
         if (mode === "fwd") HP.label(ctx, `photons emitted (${colour}): energy ≈ the band gap`, mid, S.h - 12, { size: 11, align: "center", bold: true, col: colour === "blue" ? "#3a6bff" : C.red });
         const txt = {

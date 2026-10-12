@@ -626,7 +626,7 @@
         px(ctx, gx - 3, cy - 40, 6, 80, "#9aa4b5");
         for (let y = cy - 38; y < cy + 38; y += 4) px(ctx, gx - 3, y, 6, 1, "#333");
         HP.label(ctx, "grating", gx, cy + 54, { size: 11, align: "center", col: "#cfd6e6", halo: false });
-        HP.label(ctx, "curved screen: angles drawn true to size", S.w - 8, S.h - 10, { size: 10, align: "right", col: "#cfd6e6", halo: false });
+        HP.label(ctx, "curved screen: angles drawn true to size", S.w - 8, S.h - 10, { size: 11, align: "right", col: "#cfd6e6", halo: false });
         ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx + Rs, cy); ctx.stroke(); ctx.setLineDash([]);
         const draw = (lam, col, width, labels) => {
           for (let m = -6; m <= 6; m++) {
@@ -641,8 +641,9 @@
         if (src === "white") {
           for (let lam = 400; lam <= 700; lam += 10) draw(lam, HP.nmToRGB(lam), 1, false);
           ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(gx + Rs, cy, 6, 0, 7); ctx.fill();
-          HP.label(ctx, "central maximum: white", gx + Rs - 8, cy + 16, { size: 11, align: "right", col: "#fff", halo: false });
-          HP.label(ctx, "in each order, red is deviated more than violet", 10, 14, { size: 11, col: "#cfd6e6", halo: false });
+          HP.label(ctx, "central maximum: white", gx + Rs - 10, cy + 18, { size: 11, align: "right", col: "#fff", haloCol: "#0d1424" });
+          // the note sits under "grating", inside the screen arc and clear of the order dots; a dark halo lifts it off the fan
+          ["in each order,", "red is deviated", "more than violet"].forEach((ln, i) => HP.label(ctx, ln, 8, cy + 74 + i * 14, { size: 11, col: "#cfd6e6", haloCol: "#0d1424" }));
         } else {
           px(ctx, 4, cy - 4, Math.max(10, gx - 10), 8, "#666");
           draw(+src, HP.nmToRGB(+src), 2, true);
