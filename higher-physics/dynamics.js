@@ -149,7 +149,7 @@
           if (sgn < 0) { y0 = -hi; y1 = -lo; }
           const boxR = { x: gx, y: gy0 + i * (gh + gap), w: gw, h: gh };
           const rng = hi - lo, step = rng > 60 ? 20 : rng > 30 ? 10 : rng > 12 ? 5 : rng > 4 ? 2 : 0.5;
-          const ax = HP.plot(ctx, boxR, { x0: 0, x1: sc.T, y0, y1, xt: sc.T > 6 ? 2 : 0.5, yt: step, xl: "t / s", yl: lab, C, fs: 11 });
+          const ax = HP.plot(ctx, boxR, { x0: 0, x1: sc.T, y0, y1, xt: sc.T > 6 ? 2 : 0.5, yt: step, xl: "t / s", yl: lab, C, fs: 11, tf: (v) => (+v.toFixed(6) + "").replace("-", "−") });
           ctx.save(); ctx.beginPath(); ctx.rect(boxR.x - 2, boxR.y - 2, boxR.w + 4, boxR.h + 4); ctx.clip();
           ctx.strokeStyle = i === 0 ? C.navy : i === 1 ? C.red : C.grass; ctx.lineWidth = 2.5; ctx.beginPath();
           const N = 600;
@@ -160,7 +160,7 @@
             n ? ctx.lineTo(ax.X(tt), yy) : ctx.moveTo(ax.X(tt), yy);
           }
           ctx.stroke(); ctx.restore();
-          if (sc.spike && k === "a") HP.label(ctx, "(bounce spikes are much taller than shown)", boxR.x + boxR.w, boxR.y + 8, { size: 10, align: "right", col: C.muted });
+          if (sc.spike && k === "a") HP.label(ctx, "(bounce spikes are much taller than shown)", boxR.x + boxR.w, boxR.y + 8, { size: 11, align: "right", col: C.muted });
           // cursor
           ctx.strokeStyle = C.gold; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
           ctx.beginPath(); ctx.moveTo(ax.X(tc), boxR.y); ctx.lineTo(ax.X(tc), boxR.y + boxR.h); ctx.stroke(); ctx.setLineDash([]);
@@ -547,7 +547,7 @@
     const ctr = HP.el("div", { class: "sim-controls" });
     box.append(ctr);
     let rebound = false;
-    const sT = HP.slider(ctr, { label: "Contact time", min: 5, max: 200, step: 5, value: 20, unit: "ms", oninput: () => upd() });
+    const sT = HP.slider(ctr, { label: "Contact time", min: 5, max: 100, step: 5, value: 20, unit: "ms", oninput: () => upd() });
     HP.choice(box, "After the hit, the shot…", [["stop", "stops dead"], ["rebound", "bounces back at 8 m s⁻¹"]], "stop", (v) => { rebound = v === "rebound"; upd(); });
     const R = readouts(box, [["dp", "change in momentum mv − mu"], ["imp", "impulse Ft = area under graph"], ["Fav", "average force F = Δp / t"]]);
     const m = 14.5, u = 20;
@@ -563,7 +563,7 @@
         R.Fav.textContent = F(Fav, 3) + " N (size)";
         const gb = { x: 60, y: 22, w: S.w - 80, h: S.h - 58 };
         const yMax = 100000;
-        const ax = HP.plot(ctx, gb, { x0: 0, x1: 0.2, y0: 0, y1: yMax, xt: 0.04, yt: 20000, xl: "t / s", yl: "F / N", C, fs: 11, ytf: (v) => v ? (v / 1000) + "k" : "0", tf: (v) => v.toFixed(2) });
+        const ax = HP.plot(ctx, gb, { x0: 0, x1: 0.1, y0: 0, y1: yMax, xt: 0.02, yt: 20000, C, fs: 11, ytf: (v) => v ? (v / 1000) + "k" : "0", tf: (v) => v.toFixed(2) });
         ctx.save(); ctx.beginPath(); ctx.rect(gb.x, gb.y - 4, gb.w, gb.h + 4); ctx.clip();
         ctx.beginPath(); ctx.moveTo(ax.X(0), ax.Y(0));
         for (let i = 0; i <= 200; i++) { const tt = tc * i / 200; ctx.lineTo(ax.X(tt), ax.Y(Fpk * Math.sin(Math.PI * tt / tc))); }
@@ -572,9 +572,18 @@
         // average-force rectangle (same area)
         ctx.setLineDash([5, 4]); ctx.strokeStyle = C.sea; ctx.lineWidth = 1.5; ctx.strokeRect(ax.X(0), ax.Y(Fav), ax.X(tc) - ax.X(0), ax.Y(0) - ax.Y(Fav)); ctx.setLineDash([]);
         ctx.restore();
-        if (Fpk > yMax) HP.label(ctx, `peak ≈ ${F(Fpk, 2)} N (off the top of the graph)`, gb.x + 10, gb.y + 8, { size: 11, col: C.red });
-        HP.label(ctx, "dashed box: average force × time (same area)", gb.x + gb.w, gb.y + gb.h - 12, { size: 11, align: "right", col: C.sea });
-        HP.label(ctx, tc <= 0.03 ? "oak hull: short contact, huge force" : tc >= 0.12 ? "sandbags: long contact, small force" : "", gb.x + gb.w, gb.y + 10, { size: 12, align: "right", bold: true });
+        // axis titles drawn after the pulse (with a halo), the x title below the tick numbers so a long, low pulse can't cover it
+        HP.label(ctx, "F / N", gb.x + 5, gb.y, { size: 11, bold: true, base: "top", col: C.ink });
+        HP.label(ctx, "t / s", gb.x + gb.w, gb.y + gb.h + 27, { size: 11, bold: true, align: "right", col: C.ink, halo: false });
+        // notes stacked top-right, clear of the axis titles and (at short contact times) of the pulse on the left
+        const R0 = gb.x + gb.w, scen = tc <= 0.03 ? "oak hull: short contact, huge force" : tc >= 0.08 ? "sandbags: long contact, small force" : "";
+        if (scen) HP.label(ctx, scen, R0, gb.y + 10, { size: 12, align: "right", bold: true });
+        ctx.font = font(11);
+        const box1 = "dashed box: average force × time (same area)";
+        const noteL = ctx.measureText(box1).width > gb.w - 70 ? ["dashed box: average force × time", "(same area)"] : [box1];
+        let ny = gb.y + 28;
+        noteL.forEach((l) => { HP.label(ctx, l, R0, ny, { size: 11, align: "right", col: C.sea }); ny += 15; });
+        if (Fpk > yMax) HP.label(ctx, `peak ≈ ${F(Fpk, 2)} N (off the top)`, R0, ny, { size: 11, align: "right", col: C.red });
       },
     });
     upd();
@@ -634,7 +643,7 @@
         ctx.strokeStyle = "rgba(0,0,0,.08)"; ctx.lineWidth = 1;
         const gstep = worldW > 150 ? 20 : 10;
         for (let x = 0; x <= worldW; x += gstep) { ctx.beginPath(); ctx.moveTo(X(x), topM); ctx.lineTo(X(x), seaY); ctx.stroke(); }
-        ctx.fillStyle = "#12284a"; ctx.font = font(10);
+        ctx.fillStyle = "#12284a"; ctx.font = font(11);
         ctx.textAlign = "center"; for (let x = 0; x <= worldW; x += gstep * 2) ctx.fillText(x + " m", X(x), seaY + 26);
         // full path (faint)
         ctx.strokeStyle = "rgba(18,40,74,.35)"; ctx.setLineDash([4, 4]); ctx.beginPath();
@@ -668,7 +677,7 @@
           pxRect(ctx, X(rng) - 6, seaY - 14, 12, 14, "#e8f4ff"); pxRect(ctx, X(rng) - 2, seaY - 22, 4, 8, "#e8f4ff");
         }
         HP.label(ctx, `t = ${tc.toFixed(2)} s`, S.w - 10, 14, { size: 12, align: "right", bold: true, haloCol: "#cfe3f5", col: "#12284a" });
-        HP.label(ctx, "dots every 0.5 s · air resistance ignored", S.w - 10, 30, { size: 10, align: "right", haloCol: "#cfe3f5", col: "#12284a" });
+        HP.label(ctx, "dots every 0.5 s · air resistance ignored", S.w - 10, 30, { size: 11, align: "right", haloCol: "#cfe3f5", col: "#12284a" });
       },
       loop: true,
     });
@@ -687,7 +696,7 @@
     cv.setAttribute("aria-label", "Newton's thought experiment: a cannon on a very tall mountain fires shot horizontally at increasing speeds until the shot falls all the way round the planet.");
     const ctr = HP.el("div", { class: "sim-controls" });
     box.append(ctr);
-    const sV = HP.slider(ctr, { label: "Launch speed (fraction of orbital speed)", min: 0.3, max: 1.5, step: 0.01, value: 0.8, fmt: (v) => v.toFixed(2) + " × v_orbit", oninput: () => { path = trace(); sim.t = 0; sim.redraw(); } });
+    const sV = HP.slider(ctr, { label: "Launch speed (fraction of orbital speed)", min: 0.3, max: 1.5, step: 0.01, value: 0.8, fmt: (v) => v.toFixed(2) + " × v_orbit", oninput: () => { path = trace(); sim.t = 0; if (!sim.playing && !HP.reduced) sim.play(); sim.redraw(); } });
     const note = HP.el("p", { class: "sim-note", "aria-live": "polite" });
     box.append(note);
     const GM = 1, r0 = 1.18; // planet radius 1, mountain top at 1.18 (units scaled)
@@ -731,7 +740,9 @@
         // mountain
         ctx.fillStyle = "#8a8a8a"; ctx.beginPath(); ctx.moveTo(cx - R * 0.16, cy - R * 0.97); ctx.lineTo(cx, cy - R * 1.18); ctx.lineTo(cx + R * 0.16, cy - R * 0.97); ctx.fill();
         pxRect(ctx, cx - 5, cy - R * 1.18 - 4, 10, 5, "#222");
-        const n = Math.min(path.length, Math.floor(t * 60 * 6) + 2);
+        // reduced motion: show the whole path at once; otherwise grow it, and stop the loop once it is complete
+        const n = HP.reduced && !S.playing ? path.length : Math.min(path.length, Math.floor(t * 60 * 6) + 2);
+        if (n >= path.length && S.playing) S.pause();
         ctx.strokeStyle = "#ffd65a"; ctx.lineWidth = 2; ctx.beginPath();
         for (let i = 0; i < n; i++) { const [x, y] = path[i]; const X = cx + x * R, Y = cy - y * R; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
         ctx.stroke();
@@ -739,7 +750,7 @@
         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx + lx * R, cy - ly * R, 4, 0, 7); ctx.fill();
         // gravity arrow on shot, towards the centre
         const r = Math.hypot(lx, ly);
-        if (r > 1) HP.arrow(ctx, cx + lx * R, cy - ly * R, cx + lx * R - lx / r * 26, cy - ly * R + ly / r * 26, "#ff6a5c", 2);
+        if (r > 0) HP.arrow(ctx, cx + lx * R, cy - ly * R, cx + lx * R - lx / r * 26, cy - ly * R + ly / r * 26, "#ff6a5c", 2);
         HP.label(ctx, "red arrow: the pull of gravity (always towards the centre)", 10, 16, { size: 11, col: "#ffb3aa", halo: false });
       },
       loop: true,
@@ -819,7 +830,7 @@
         const yB = ph < 0.5 ? topB + H - ph * 2 * H : topB + (ph - 0.5) * 2 * H;
         ctx.fillStyle = "#ffd65a"; ctx.beginPath(); ctx.arc(cxB, yB + 3, 5, 0, 7); ctx.fill();
         HP.label(ctx, `ticks: ${Math.floor(t / per)}`, cxB, pB.y + pB.h - 14, { size: 12, align: "center", col: "#ffd65a", halo: false, bold: true });
-        if (b > 0.05) HP.label(ctx, narrow ? "longer path, same speed c → each tick takes longer" : "the light travels further each tick, at the same speed c, so each tick takes longer", pB.x + pB.w / 2, pB.y + 32, { size: 10, align: "center", col: "#cfd6e6", halo: false });
+        if (b > 0.05) HP.label(ctx, narrow ? "longer path, same speed c → each tick takes longer" : "the light travels further each tick, at the same speed c, so each tick takes longer", pB.x + pB.w / 2, pB.y + 32, { size: 11, align: "center", col: "#cfd6e6", halo: false });
       },
       loop: true,
     });
@@ -927,9 +938,9 @@
         ctx.strokeStyle = C.ink2; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
         LINES.forEach((L) => { ctx.beginPath(); ctx.moveTo(X(L), 64); ctx.lineTo(X(L * (1 + z)), 108); ctx.stroke(); });
         ctx.setLineDash([]);
-        ctx.fillStyle = C.ink2; ctx.font = font(10); ctx.textAlign = "center";
+        ctx.fillStyle = C.ink2; ctx.font = font(11); ctx.textAlign = "center";
         for (let l = 400; l <= 800; l += 100) ctx.fillText(l + " nm", X(l), 186);
-        HP.label(ctx, "infrared →", X(785), 128, { size: 10, align: "center", col: "#fff", halo: false });
+        HP.label(ctx, "infrared →", X(785), 128, { size: 11, align: "center", col: "#fff", halo: false });
         const lo = 656 * (1 + z), vv = z * c, d = vv / H0;
         R.l.textContent = `656 × (1 + ${z.toFixed(3)}) = ${lo.toFixed(0)} nm`;
         R.v.textContent = F(vv, 2) + " m s⁻¹";
@@ -1017,7 +1028,9 @@
         // visible band
         for (let l = 380; l < 750; l += 2) { ctx.fillStyle = HP.nmToRGB(l); ctx.globalAlpha = 0.25; ctx.fillRect(gb.x + (l / 2500) * gb.w, gb.y, (2 / 2500) * gb.w + 0.5, gb.h); }
         ctx.globalAlpha = 1;
-        const ax = HP.plot(ctx, gb, { x0: 0, x1: 2500, y0: 0, y1: ymax, xt: 500, yt: ymax / 4, xl: "wavelength / nm", yl: "energy emitted per second per m², per nm", C, fs: 11, ytf: () => "" });
+        const ax = HP.plot(ctx, gb, { x0: 0, x1: 2500, y0: 0, y1: ymax, xt: 500, yt: ymax / 4, yl: "energy emitted per second per m², per nm", C, fs: 11, ytf: () => "" });
+        // x-axis title below the tick numbers, where no curve can reach it
+        HP.label(ctx, "wavelength / nm", gb.x + gb.w, gb.y + gb.h + 27, { size: 11, bold: true, align: "right", col: C.ink, halo: false });
         const curve = (TT, col, w, dash) => {
           ctx.strokeStyle = col; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.beginPath();
           for (let l = 50; l <= 2500; l += 10) { const y = B(l, TT); l > 50 ? ctx.lineTo(ax.X(l), ax.Y(Math.min(y, ymax * 1.2))) : ctx.moveTo(ax.X(l), ax.Y(y)); }
@@ -1027,7 +1040,11 @@
         curve(T, C.red, 3);
         const lp = 2.898e6 / T;
         ctx.strokeStyle = C.red; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(ax.X(lp), ax.Y(B(lp, T))); ctx.lineTo(ax.X(lp), ax.Y(0)); ctx.stroke(); ctx.setLineDash([]);
-        HP.label(ctx, `peak ${lp.toFixed(0)} nm`, ax.X(lp) + 6, ax.Y(B(lp, T)) - 8, { size: 11, col: C.red, bold: true });
+        // peak label: above the peak, but never up among the y-axis title; if clamped, slide it right until it clears the curve
+        const pkY = ax.Y(B(lp, T)), labY = Math.max(pkY - 8, gb.y + 24);
+        let labX = ax.X(lp) + 6;
+        if (labY > pkY - 8) { let l = lp; while (l < 2500 && ax.Y(B(l, T)) < labY + 8) l += 5; labX = ax.X(l) + 10; }
+        HP.label(ctx, `peak ${lp.toFixed(0)} nm`, labX, labY, { size: 11, col: C.red, bold: true });
         HP.label(ctx, "dashed: the Sun (5800 K)", gb.x + gb.w, gb.y + 30, { size: 11, align: "right", col: C.muted });
         // a star swatch
         const col = T < 3700 ? "#ffb070" : T < 5200 ? "#ffd2a0" : T < 6500 ? "#fff4e8" : T < 9000 ? "#e6eeff" : "#b8ccff";
