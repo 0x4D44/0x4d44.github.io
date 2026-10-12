@@ -18,7 +18,7 @@
   --redstone-glow: #ff4b3a;
   --grass: #3f7426;
   --dirt: #7a5532;
-  --gold: #8a6510;
+  --gold: #7a5808;
   --gold-bright: #e0b23a;
   --sea: #1d6a80;
   --code-bg: #20232b;
@@ -126,7 +126,7 @@ nav.decks a[aria-current="page"] { background: var(--paper); color: var(--ink); 
   display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 36px;
 }
 .toc { position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 24px); overflow: auto; font-size: .9rem; }
-.toc h2 { font: 600 .95rem var(--font-pixel); margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.toc .toc-title { font: 600 .95rem var(--font-pixel); margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
 .toc li a {
   display: flex; gap: 8px; padding: 5px 8px; color: var(--ink-2); text-decoration: none;
@@ -148,7 +148,7 @@ main { min-width: 0; }
   }
   .toc details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
   .toc details ol { background: var(--card); border: 2px solid var(--line); border-top: 0; padding: 6px 0; }
-  .toc h2 { display: none; }
+  .toc .toc-title { display: none; }
 }
 @media (max-width: 560px) {
   body { font-size: 16px; }
@@ -405,7 +405,9 @@ dl.glossary dd { margin: 0; }
 }
 
 /* hero */
-.hero { background: #2a5a9a; border-bottom: 4px solid var(--dirt); }
+.hero { position: relative; background: #2a5a9a; border-bottom: 4px solid var(--dirt); }
+.hero-pause { position: absolute; right: 6px; bottom: 4px; font: 600 .72rem var(--font-pixel); padding: 2px 8px; min-height: 28px; opacity: .9; background: #12284a; color: #f4ecd8; border: 2px solid #f4ecd8; border-radius: 4px; cursor: pointer; }
+.hero-pause:focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
 .hero canvas { display: block; width: 100%; max-width: 1180px; height: auto; margin: 0 auto; image-rendering: pixelated; aspect-ratio: 4 / 1; max-height: 300px; object-fit: cover; }
 
 /* small-screen safety */
