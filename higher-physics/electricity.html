@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Electricity · Shot, Spark &amp; Starlight</title>
+<meta name="description" content="Higher Physics, Electricity: alternating current and the oscilloscope, peak and r.m.s. values, resistor networks and potential dividers, EMF and internal resistance, capacitors charging and discharging, energy bands, semiconductors, p-n junctions, LEDs and solar cells.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%231c5fb3'/%3E%3Ccircle cx='8' cy='8' r='5' fill='%23fff'/%3E%3Ccircle cx='8' cy='8' r='2.6' fill='%23c8102e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Shot, Spark and Starlight — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="8" y="2" width="2" height="1" fill="#e0b23a"/><rect x="7" y="3" width="2" height="2" fill="#e0b23a"/><rect x="6" y="5" width="4" height="2" fill="#e0b23a"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/><rect x="6" y="9" width="2" height="2" fill="#e0b23a"/><rect x="6" y="11" width="1" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Shot, Spark &amp; Starlight</span><span class="brand-sub">Higher Physics · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="dynamics.html">Universe</a></li>
+        <li><a href="waves.html">Particles &amp; Waves</a></li>
+        <li><a href="electricity.html">Electricity</a></li>
+        <li><a href="skills.html">Skills</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The redstone works · Electricity (E)</p>
+<h1>Redstone, Leyden jars and the light of an LED</h1>
+<p class="lede">Electricity is the smallest of the three areas, but it is packed with calculations that need several steps, and with graphs you must be able to read and sketch. It builds directly on National 5: V = IR, P = IV, series and parallel circuits. Here you add alternating current, the hidden resistance inside every battery, capacitors, and the semiconductor physics behind LEDs and solar cells.</p>
+<div class="callout log">
+  <div class="callout-title">⚓ Ship's log: Cadet Sergeant Rahman</div>
+  <p>"Somebody has built a redstone workshop on the orlop deck. Redstone dust works like wire, torches like power supplies, and there's a glass jar in the captain's cabin lined with silver foil. The captain says it's a <em>Leyden jar</em>, invented in 1745, and it stores electric charge. We're not to touch it. I'm going to find out why."</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<section id="ac" class="prose">
+<h2 data-short="Alternating current">1 · Monitoring and measuring AC <span class="spec-tag">E · monitoring and measuring AC</span></h2>
+<p>A battery gives <strong>direct current</strong> (DC): it flows one way at a steady value. <dfn>Alternating current</dfn> (AC) is a current that <strong>changes direction and instantaneous value with time</strong>. The mains supply in the UK is AC with a frequency of 50 Hz: it reverses direction 100 times every second.</p>
+<figure class="diagram"><svg viewBox="0 0 400 225" role="img" aria-label="An alternating voltage: a sine wave with its peak value marked, and the root mean square value at about 0.71 of the peak. One period is the time for one complete cycle."><line x1="50.0" y1="210.0" x2="50.0" y2="12.8" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="50.0,6.0 53.3,13.3 46.7,13.3" class="ink"/><line x1="50.0" y1="110.0" x2="318.8" y2="110.0" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="325.6,110.0 318.3,113.3 318.3,106.7" class="ink"/><polyline points="50.0,110.0 51.3,106.2 52.6,102.5 53.9,98.7 55.2,95.0 56.5,91.3 57.8,87.7 59.1,84.1 60.4,80.6 61.7,77.1 63.0,73.7 64.3,70.4 65.6,67.1 66.9,64.0 68.2,61.0 69.5,58.0 70.8,55.2 72.1,52.5 73.4,50.0 74.7,47.6 76.0,45.3 77.3,43.1 78.6,41.1 79.9,39.3 81.2,37.6 82.5,36.1 83.8,34.7 85.1,33.5 86.4,32.5 87.7,31.7 89.0,31.0 90.3,30.5 91.6,30.2 92.9,30.0 94.2,30.0 95.5,30.2 96.8,30.6 98.1,31.2 99.4,31.9 100.7,32.8 102.0,33.9 103.3,35.2 104.6,36.6 105.9,38.2 107.2,39.9 108.5,41.8 109.8,43.8 111.1,46.0 112.4,48.4 113.7,50.8 115.0,53.4 116.3,56.2 117.6,59.0 118.9,62.0 120.2,65.0 121.5,68.2 122.8,71.5 124.1,74.8 125.4,78.2 126.7,81.7 128.0,85.3 129.3,88.9 130.6,92.5 131.9,96.2 133.2,100.0 134.5,103.7 135.8,107.5 137.1,111.3 138.4,115.0 139.7,118.8 141.0,122.5 142.3,126.2 143.6,129.9 144.9,133.5 146.2,137.1 147.5,140.6 148.8,144.1 150.1,147.4 151.4,150.7 152.7,153.9 154.0,157.0 155.3,160.0 156.6,162.9 157.9,165.7 159.2,168.3 160.5,170.8 161.8,173.2 163.1,175.5 164.4,177.5 165.7,179.5 167.0,181.3 168.3,182.9 169.6,184.4 170.9,185.7 172.2,186.8 173.5,187.8 174.8,188.6 176.1,189.2 177.4,189.6 178.7,189.9 180.0,190.0 181.3,189.9 182.6,189.6 183.9,189.2 185.2,188.6 186.5,187.8 187.8,186.8 189.1,185.7 190.4,184.4 191.7,182.9 193.0,181.3 194.3,179.5 195.6,177.5 196.9,175.5 198.2,173.2 199.5,170.8 200.8,168.3 202.1,165.7 203.4,162.9 204.7,160.0 206.0,157.0 207.3,153.9 208.6,150.7 209.9,147.4 211.2,144.1 212.5,140.6 213.8,137.1 215.1,133.5 216.4,129.9 217.7,126.2 219.0,122.5 220.3,118.8 221.6,115.0 222.9,111.3 224.2,107.5 225.5,103.7 226.8,100.0 228.1,96.2 229.4,92.5 230.7,88.9 232.0,85.3 233.3,81.7 234.6,78.2 235.9,74.8 237.2,71.5 238.5,68.2 239.8,65.0 241.1,62.0 242.4,59.0 243.7,56.2 245.0,53.4 246.3,50.8 247.6,48.4 248.9,46.0 250.2,43.8 251.5,41.8 252.8,39.9 254.1,38.2 255.4,36.6 256.7,35.2 258.0,33.9 259.3,32.8 260.6,31.9 261.9,31.2 263.2,30.6 264.5,30.2 265.8,30.0 267.1,30.0 268.4,30.2 269.7,30.5 271.0,31.0 272.3,31.7 273.6,32.5 274.9,33.5 276.2,34.7 277.5,36.1 278.8,37.6 280.1,39.3 281.4,41.1 282.7,43.1 284.0,45.3 285.3,47.6 286.6,50.0 287.9,52.5 289.2,55.2 290.5,58.0 291.8,61.0 293.1,64.0 294.4,67.1 295.7,70.4 297.0,73.7 298.3,77.1 299.6,80.6 300.9,84.1 302.2,87.7 303.5,91.3 304.8,95.0 306.1,98.7 307.4,102.5 308.7,106.2 310.0,110.0" fill="none" class="s-red" stroke-width="3"/><line x1="50.0" y1="30.0" x2="310.0" y2="30.0" class="s-gold" stroke-width="1.5" stroke-dasharray="6 4"/><text x="44" y="34" text-anchor="end" font-size="12" class="f-gold" font-weight="700">V<tspan baseline-shift="sub" font-size="10">peak</tspan></text><line x1="50.0" y1="53.4" x2="310.0" y2="53.4" class="s-sea" stroke-width="2"/><text x="44" y="57.440000000000005" text-anchor="end" font-size="12" class="f-sea" font-weight="700">V<tspan baseline-shift="sub" font-size="10">rms</tspan></text><line x1="50.0" y1="190.0" x2="136.7" y2="190.0" class="stroke-ink" stroke-width="1" stroke-dasharray="3 3"/><line x1="93.3" y1="18.0" x2="266.7" y2="18.0" class="stroke-ink" stroke-width="1.2"/><text x="179.99999999999997" y="12" text-anchor="middle" font-size="12" class="ink" font-weight="700">one period T</text><text x="325.6" y="128" text-anchor="end" font-size="13" class="ink" font-weight="700" font-style="italic">t</text><text x="56" y="10.0" text-anchor="start" font-size="13" class="ink" font-weight="700" font-style="italic">V</text><text x="180.0" y="220" text-anchor="middle" font-size="13" class="f-sea" font-weight="700">V<tspan baseline-shift="sub" font-size="10">rms</tspan> = V<tspan baseline-shift="sub" font-size="10">peak</tspan> / √2 ≈ 0.71 × V<tspan baseline-shift="sub" font-size="10">peak</tspan></text></svg></figure>
+<h3>Peak and r.m.s. values</h3>
+<p>Because an AC voltage keeps changing, we need a fair way to compare it with DC. The <dfn>root mean square</dfn> (r.m.s.) value of an alternating voltage or current is the value of the <strong>direct</strong> voltage or current that would produce the <strong>same power</strong> in a resistor. For a sine wave:</p>
+<div class="eq-grid">
+<div class="eq-card"><div class="eq"><var>V</var><sub>rms</sub> = <span class="frac"><span><var>V</var><sub>peak</sub></span><span>√2</span></span></div><p>The peak is about 1.4 times the r.m.s. value.</p></div>
+<div class="eq-card"><div class="eq"><var>I</var><sub>rms</sub> = <span class="frac"><span><var>I</var><sub>peak</sub></span><span>√2</span></span></div><p>The same rule for current.</p></div>
+<div class="eq-card"><div class="eq"><var>T</var> = <span class="frac"><span>1</span><span><var>f</var></span></span></div><p>Period: the time for one complete cycle.</p></div>
+</div>
+<p>The UK mains is quoted as 230 V. That is the r.m.s. value, so the peak voltage is 230 × √2 = <strong>325 V</strong>. Meters on an AC setting read r.m.s. values.</p>
+<h3>Reading an oscilloscope</h3>
+<p>An oscilloscope draws a graph of voltage against time on a grid of squares called divisions. Two settings turn divisions into real values:</p>
+<ul>
+<li>The <strong>Y-gain</strong> (volts per division): peak voltage = number of divisions from the centre line to a peak × Y-gain.</li>
+<li>The <strong>timebase</strong> (time per division): period = number of divisions for one complete wave × timebase. Then f = 1/T.</li>
+</ul>
+<div class="widget" id="w-scope">
+  <h3 class="widget-title">The ship's oscilloscope</h3>
+  <p class="hint">Change the supply, then the scope settings. Work out the peak voltage, r.m.s. voltage, period and frequency from the trace, then press "Show the answers" to check.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example · reading the trace</p>
+<p>An oscilloscope is set to 2.0 V/div and 5 ms/div. The trace rises 3.5 divisions above the centre line, and one complete wave spans 4.0 divisions. Calculate (a) the peak voltage, (b) the r.m.s. voltage, (c) the frequency.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) V<sub>peak</sub> = 3.5 × 2.0 = <span class="ans">7.0 V</span></li>
+<li>(b) <span class="eqi">V<sub>rms</sub> = V<sub>peak</sub> / √2 = 7.0 / √2</span> → <span class="ans">4.9 V</span></li>
+<li>(c) T = 4.0 × 5 ms = 20 ms = 0.020 s. <span class="eqi">f = 1 / T = 1 / 0.020</span> → <span class="ans">50 Hz</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked to show that a frequency was 50 Hz, "some did not show where the value of the period came from and so could not access all the marks". In a "show" question, write the division count and the timebase: "4.0 div × 5 ms/div = 20 ms". Few candidates could state <em>and justify</em> what happened to the trace's amplitude when a switch in the circuit was closed: always link the change in the trace to a change in the voltage across the component the oscilloscope is connected to.</p></div>
+<div class="check" data-check="el-ac"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="circuits" class="prose">
+<h2 data-short="Circuits and potential dividers">2 · Current, potential difference, power and resistance <span class="spec-tag">E · current, potential difference, power, and resistance</span></h2>
+<div class="eq-grid">
+<div class="eq-card"><div class="eq"><var>V</var> = <var>I</var><var>R</var></div><p>Ohm's law for a resistor.</p></div>
+<div class="eq-card"><div class="eq"><var>P</var> = <var>I</var><var>V</var> = <var>I</var>²<var>R</var> = <span class="frac"><span><var>V</var>²</span><span><var>R</var></span></span></div><p>Power: choose the version that uses what you know.</p></div>
+<div class="eq-card"><div class="eq"><var>R</var><sub>T</sub> = <var>R</var>₁ + <var>R</var>₂ + …</div><p>Series: total resistance is larger than any one.</p></div>
+<div class="eq-card"><div class="eq"><span class="frac"><span>1</span><span><var>R</var><sub>T</sub></span></span> = <span class="frac"><span>1</span><span><var>R</var>₁</span></span> + <span class="frac"><span>1</span><span><var>R</var>₂</span></span> + …</div><p>Parallel: total resistance is smaller than the smallest one.</p></div>
+</div>
+<p>Remember the rules from National 5: in <strong>series</strong> the current is the same everywhere and the potential differences add up to the supply voltage; in <strong>parallel</strong> each branch has the same potential difference and the branch currents add up. At Higher, questions chain several steps together. Draw a quick sketch and label everything you know as you go.</p>
+<div class="worked"><p class="worked-title">Worked example · a resistor network</p>
+<figure class="diagram"><svg viewBox="0 0 340 165" role="img" aria-label="A resistor network: a 6.0 ohm resistor in series with a 12 ohm and a 4.0 ohm resistor connected in parallel, between terminals X and Y."><polyline points="20.0,90.0 60.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><rect x="67.0" y="82.0" width="46" height="16" class="f-card" stroke="currentColor" stroke-width="2"/><text x="90" y="76.0" text-anchor="middle" font-size="13" class="ink" font-weight="700">6.0 Ω</text><polyline points="113.0,90.0 150.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="150.0,50.0 150.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="150.0,50.0 185.0,50.0" fill="none" class="stroke-ink" stroke-width="2"/><rect x="192.0" y="42.0" width="46" height="16" class="f-card" stroke="currentColor" stroke-width="2"/><text x="215" y="36.0" text-anchor="middle" font-size="13" class="ink" font-weight="700">12 Ω</text><polyline points="238.0,50.0 280.0,50.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="150.0,130.0 185.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><rect x="192.0" y="122.0" width="46" height="16" class="f-card" stroke="currentColor" stroke-width="2"/><text x="215" y="154.0" text-anchor="middle" font-size="13" class="ink" font-weight="700">4.0 Ω</text><polyline points="238.0,130.0 280.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="280.0,50.0 280.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="280.0,90.0 320.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><circle cx="20" cy="90" r="4" class="f-card" stroke="currentColor" stroke-width="2"/><circle cx="320" cy="90" r="4" class="f-card" stroke="currentColor" stroke-width="2"/><text x="20" y="112" text-anchor="middle" font-size="13" class="ink" font-weight="700">X</text><text x="320" y="112" text-anchor="middle" font-size="13" class="ink" font-weight="700">Y</text></svg></figure>
+<p>A potential difference of 18 V is applied between X and Y. Calculate (a) the total resistance, (b) the current in the 4.0 Ω resistor, (c) the power dissipated in the 12 Ω resistor.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) Parallel pair: <span class="eqi">1/R = 1/12 + 1/4.0</span> → R = 3.0 Ω. Total: <span class="eqi">R<sub>T</sub> = 6.0 + 3.0</span> → <span class="ans">9.0 Ω</span></li>
+<li>(b) Total current: <span class="eqi">I = V/R = 18 / 9.0 = 2.0 A</span>. The p.d. across the 6.0 Ω resistor is 2.0 × 6.0 = 12 V, so the parallel pair has 18 − 12 = 6.0 V across it. Current in 4.0 Ω: <span class="eqi">I = 6.0 / 4.0</span> → <span class="ans">1.5 A</span></li>
+<li>(c) <span class="eqi">P = V²/R = 6.0² / 12</span> → <span class="ans">3.0 W</span></li>
+</ol>
+</details></div>
+
+<h3>Potential dividers</h3>
+<p>Two resistors in series across a supply share the supply voltage in proportion to their resistances. This is a <dfn>potential divider</dfn>, and it is how sensor circuits turn a change in temperature or light into a change in voltage.</p>
+<div class="eq-grid">
+<div class="eq-card"><div class="eq"><var>V</var>₁ = <span class="frac"><span><var>R</var>₁</span><span><var>R</var>₁ + <var>R</var>₂</span></span> <var>V</var><sub>S</sub></div><p>The p.d. across R₁.</p></div>
+<div class="eq-card"><div class="eq"><span class="frac"><span><var>V</var>₁</span><span><var>V</var>₂</span></span> = <span class="frac"><span><var>R</var>₁</span><span><var>R</var>₂</span></span></div><p>The bigger resistor gets the bigger share.</p></div>
+</div>
+<div class="widget" id="w-divider">
+  <h3 class="widget-title">Redstone comparator: a potential divider</h3>
+  <p class="hint">Change R₁ and watch the voltages share out. Then make R₁ a thermistor (its resistance falls as it gets warmer) or an LDR (its resistance falls as light increases).</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example · a frost alarm</p>
+<p>A thermistor and a 1.0 kΩ resistor are connected in series across a 9.0 V supply. At 0 °C the thermistor's resistance is 2.0 kΩ. Calculate the p.d. across the thermistor. State what happens to this p.d. as the temperature rises.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li><span class="eqi">V₁ = R₁ / (R₁ + R₂) × V<sub>S</sub> = 2.0 / (2.0 + 1.0) × 9.0</span> → <span class="ans">6.0 V</span></li>
+<li>As the temperature rises the thermistor's resistance falls, so it takes a smaller share of the supply: <span class="ans">the p.d. across it decreases</span>.</li>
+</ol>
+<p>The resistances only need to be in the same units: kilohms in both is fine.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>In 2025, only some candidates picked the circuit giving the greatest power in a lamp. For "which circuit" questions, work out the current or voltage for the lamp in <em>each</em> option rather than guessing. P = I²R means that doubling the current quadruples the power.</p></div>
+<div class="check" data-check="el-circuits"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="emf" class="prose">
+<h2 data-short="EMF and internal resistance">3 · Electrical sources and internal resistance <span class="spec-tag">E · electrical sources and internal resistance</span></h2>
+<p>Connect a bulb to a battery and measure the voltage across the battery's terminals: it is less than the voltage printed on the battery. Some of the energy is used up driving the current through the battery itself, because every real source has some resistance inside it.</p>
+<div class="callout def"><div class="callout-title">📘 Definitions</div>
+<ul>
+<li><strong>Electromotive force (EMF), E</strong>: the energy the source gives to each coulomb of charge that passes through it. It equals the p.d. across the terminals when no current flows.</li>
+<li><strong>Internal resistance, r</strong>: the resistance of the source itself.</li>
+<li><strong>Terminal potential difference (t.p.d.), V</strong>: the p.d. across the terminals of the source when a current flows.</li>
+<li><strong>Lost volts, Ir</strong>: the p.d. across the internal resistance: the energy per coulomb turned into heat inside the source.</li>
+<li><strong>Ideal supply</strong>: a source with no internal resistance (r = 0), so V = E whatever the current.</li>
+<li><strong>Short circuit</strong>: the terminals joined by a wire of (almost) zero resistance, so the current is the largest possible, I = E/r.</li>
+<li><strong>Open circuit</strong>: no current flows (I = 0), so there are no lost volts and the t.p.d. equals the EMF.</li>
+</ul></div>
+<p>The energy given to each coulomb (E) is shared between the outside circuit (V) and the inside of the source (Ir):</p>
+<div class="eq-grid">
+<div class="eq-card"><div class="eq"><var>E</var> = <var>V</var> + <var>I</var><var>r</var></div><p>EMF = t.p.d. + lost volts.</p></div>
+<div class="eq-card"><div class="eq"><var>E</var> = <var>I</var>(<var>R</var> + <var>r</var>)</div><p>Using V = IR for the external resistance R.</p></div>
+</div>
+<p>So as the current increases (lower external resistance), the lost volts increase and the t.p.d. <em>falls</em>. That is why car headlights dim while the starter motor is turning.</p>
+<div class="widget" id="w-emf">
+  <h3 class="widget-title">The redstone torch's hidden resistance</h3>
+  <p class="hint">This cell has E = 1.5 V and r = 0.50 Ω. Vary R, record five or more readings, and watch the V–I graph appear. Try R = 0 (short circuit).</p>
+</div>
+<h3 id="emf-experiment">Experiment: measuring EMF and internal resistance</h3>
+<figure class="diagram"><svg viewBox="0 0 330 225" role="img" aria-label="Circuit for measuring EMF and internal resistance: a cell, shown as an EMF with internal resistance r inside a dashed box, in series with an ammeter and a variable resistor, with a voltmeter connected across the cell's terminals."><rect x="110" y="20" width="120" height="44" fill="none" class="s-muted" stroke-width="1.5" stroke-dasharray="5 4"/><rect x="128" y="28" width="3" height="28" class="ink"/><rect x="137" y="34" width="5" height="16" class="ink"/><rect x="131" y="40.5" width="6" height="3" class="f-card"/><rect x="173.0" y="36.0" width="34" height="12" class="f-card" stroke="currentColor" stroke-width="2"/><polyline points="142.0,42.0 173.0,42.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="207.0,42.0 230.0,42.0" fill="none" class="stroke-ink" stroke-width="2"/><text x="170" y="14" text-anchor="middle" font-size="12" class="ink" font-weight="700">cell: E and r</text><text x="190" y="30" text-anchor="middle" font-size="12" class="ink" font-weight="700" font-style="italic">r</text><polyline points="110.0,42.0 40.0,42.0 40.0,180.0 300.0,180.0 300.0,42.0 230.0,42.0" fill="none" class="stroke-ink" stroke-width="2"/><circle cx="40" cy="110" r="13" class="f-card" stroke="currentColor" stroke-width="2"/><text x="40" y="115" text-anchor="middle" font-size="14" class="ink" font-weight="700">A</text><rect x="145.0" y="172.0" width="50" height="16" class="f-card" stroke="currentColor" stroke-width="2"/><line x1="140" y1="200" x2="200" y2="160" class="stroke-ink" stroke-width="2"/><polygon points="200,160 190,163 196,170" class="ink"/><text x="170" y="215" text-anchor="middle" font-size="12" class="ink">variable resistor R</text><polyline points="110.0,42.0 110.0,90.0 155.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="230.0,42.0 230.0,90.0 185.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><circle cx="170" cy="90" r="13" class="f-card" stroke="currentColor" stroke-width="2"/><text x="170" y="95" text-anchor="middle" font-size="14" class="ink" font-weight="700">V</text><text x="255" y="104" text-anchor="start" font-size="12" class="ink">t.p.d.</text></svg></figure>
+<ol>
+<li>Connect the cell in series with an ammeter and a variable resistor. Connect a voltmeter across the cell's terminals.</li>
+<li>Record the current I and the t.p.d. V. Change the resistance and repeat for a wide range of currents.</li>
+<li>Plot a graph of <strong>V (y-axis) against I (x-axis)</strong>. Since V = E − rI, it is a straight line:
+<ul><li>the <strong>y-intercept is the EMF</strong> E;</li><li>the <strong>gradient is −r</strong>, so r = −gradient;</li><li>the <strong>x-intercept is the short-circuit current</strong>, E/r.</li></ul></li>
+<li>Switch off between readings so the cell does not warm up, which would change r.</li>
+</ol>
+<div class="worked"><p class="worked-title">Worked example · from the graph</p>
+<p>A student's V–I graph is a straight line that meets the V axis at 1.60 V and the I axis at 2.00 A. Find the EMF, the internal resistance and the short-circuit current.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>EMF = y-intercept = <span class="ans">1.60 V</span></li>
+<li>Gradient = (0 − 1.60) / (2.00 − 0) = −0.80 Ω, so <span class="ans">r = 0.80 Ω</span></li>
+<li>Short-circuit current = x-intercept = <span class="ans">2.00 A</span> (check: E/r = 1.60/0.80 = 2.00 A ✔)</li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example · lost volts</p>
+<p>A cell of EMF 1.5 V and internal resistance 0.50 Ω is connected to a 2.5 Ω resistor. Calculate (a) the current, (b) the t.p.d., (c) the lost volts.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) <span class="eqi">E = I(R + r)</span> → <span class="eqi">1.5 = I × (2.5 + 0.50)</span> → <span class="ans">I = 0.50 A</span></li>
+<li>(b) <span class="eqi">V = IR = 0.50 × 2.5</span> → <span class="ans">1.25 V</span> (1.3 V)</li>
+<li>(c) <span class="eqi">lost volts = Ir = 0.50 × 0.50</span> → <span class="ans">0.25 V</span>. Check: 1.25 + 0.25 = 1.5 V = E ✔</li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report: evaluating this experiment</div><p>In assignments on internal resistance, candidates who measured V and I directly "were claiming that the resistance of the wires should have been taken into account. This is not valid for this experimental method." Wire resistance doesn't matter when you measure the t.p.d. and the current directly: it is simply part of the external resistance. Only make evaluative comments that fit the method you actually used.</p></div>
+<div class="check" data-check="el-emf"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="capacitors" class="prose">
+<h2 data-short="Capacitors">4 · Capacitors <span class="spec-tag">E · capacitors</span></h2>
+<p>A <dfn>capacitor</dfn> is two conducting plates separated by an insulator. Connect it to a supply and electrons pile up on one plate and are pulled off the other: the capacitor stores charge, and with it energy. The Leyden jar is a capacitor: metal foil inside and outside a glass jar, with the glass as the insulator.</p>
+<div class="callout def"><div class="callout-title">📘 Capacitance</div><p>Capacitance is the charge stored per volt: <span class="eqi"><var>C</var> = <var>Q</var> / <var>V</var></span>. A capacitor of <strong>1 farad stores 1 coulomb of charge when the potential difference across it is 1 volt</strong>. Practical capacitors are measured in microfarads (μF) or picofarads (pF).</p></div>
+<p>If a capacitor is charged by a <strong>constant current</strong>, the charge stored after a time t is <span class="eqi"><var>Q</var> = <var>I</var><var>t</var></span>.</p>
+<h3>Energy stored</h3>
+<div class="two-col">
+<figure class="diagram"><svg viewBox="0 0 300 200" role="img" aria-label="Graph of charge against potential difference for a capacitor: a straight line through the origin. The shaded triangle under the line is the energy stored."><polygon points="50,170 250,170 250,40" class="f-gold" opacity=".4"/><line x1="50" y1="170" x2="250" y2="40" class="s-red" stroke-width="3"/><line x1="50" y1="180" x2="50" y2="20" class="stroke-ink" stroke-width="1.5"/><line x1="40" y1="170" x2="275" y2="170" class="stroke-ink" stroke-width="1.5"/><text x="56" y="24" font-size="13" class="ink" font-weight="700">Q</text><text x="275" y="160" font-size="13" class="ink" text-anchor="end" font-weight="700">V</text><line x1="250" y1="40" x2="250" y2="170" class="stroke-ink" stroke-width="1" stroke-dasharray="4 3"/><text x="190" y="155" font-size="13" text-anchor="middle" class="ink" font-weight="700">area = ½QV</text><text x="160" y="80" font-size="12" text-anchor="end" class="f-red" font-weight="700">gradient = C</text></svg><figcaption>Charge against p.d.: a straight line through the origin.</figcaption></figure>
+<div>
+<p>The work done in charging a capacitor, which is the energy it stores, is the <strong>area under its charge–p.d. graph</strong>. That area is a triangle, ½ × base × height:</p>
+<p class="eq"><var>E</var> = ½<var>Q</var><var>V</var> = ½<var>C</var><var>V</var>² = ½ <span class="frac"><span><var>Q</var>²</span><span><var>C</var></span></span></p>
+<p>Why only half of QV? Charging starts at 0 V, so early charges are moved through a small p.d. and later ones through a larger p.d. On average, each coulomb is moved through ½V.</p></div></div>
+<div class="worked"><p class="worked-title">Worked example · the camera-flash capacitor</p>
+<p>A 470 μF capacitor is charged to 12 V. Calculate (a) the charge stored and (b) the energy stored.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) <span class="eqi">Q = CV = 470 × 10⁻⁶ × 12</span> → <span class="ans">Q = 5.6 × 10⁻³ C</span></li>
+<li>(b) <span class="eqi">E = ½CV² = ½ × 470 × 10⁻⁶ × 12²</span> → <span class="ans">E = 3.4 × 10⁻² J</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example · charging at constant current</p>
+<p>A capacitor is charged at a constant current of 3.0 × 10⁻⁵ A for 40 s. The p.d. across it is then 6.0 V. Calculate its capacitance.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li><span class="eqi">Q = It = 3.0 × 10⁻⁵ × 40 = 1.2 × 10⁻³ C</span></li>
+<li><span class="eqi">C = Q / V = 1.2 × 10⁻³ / 6.0</span> → <span class="ans">C = 2.0 × 10⁻⁴ F</span> (200 μF)</li>
+</ol>
+</details></div>
+
+<h3>Charging and discharging through a resistor</h3>
+<figure class="diagram"><svg viewBox="0 0 400 232" role="img" aria-label="Capacitor circuit: a 12 volt supply, a two-way switch, a resistor R and a capacitor C in series with an ammeter, and a voltmeter across the capacitor. In position A the capacitor charges; in position B it discharges through R."><rect x="38" y="96" width="3" height="28" class="ink"/><rect x="47" y="102" width="5" height="16" class="ink"/><rect x="41" y="108.5" width="6" height="3" class="f-card"/><text x="45" y="90" text-anchor="middle" font-size="13" class="ink" font-weight="700">12 V</text><polyline points="40.0,96.0 40.0,30.0 150.0,30.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="40.0,124.0 40.0,190.0 300.0,190.0 300.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><circle cx="150" cy="30" r="3" class="ink"/><circle cx="150" cy="70" r="3" class="ink"/><circle cx="185" cy="40" r="3" class="ink"/><line x1="185.0" y1="40.0" x2="152.0" y2="32.0" class="stroke-ink" stroke-width="2.5"/><text x="140" y="24" text-anchor="end" font-size="12" class="ink" font-weight="700">A</text><text x="140" y="74" text-anchor="end" font-size="12" class="ink" font-weight="700">B</text><polyline points="150.0,70.0 120.0,70.0 120.0,190.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="185.0,40.0 210.0,40.0" fill="none" class="stroke-ink" stroke-width="2"/><rect x="218.0" y="33.0" width="44" height="14" class="f-card" stroke="currentColor" stroke-width="2"/><text x="240" y="27.0" text-anchor="middle" font-size="13" class="ink" font-weight="700">R</text><polyline points="262.0,40.0 300.0,40.0 300.0,90.0" fill="none" class="stroke-ink" stroke-width="2"/><rect x="284" y="95" width="32" height="3" class="ink"/><rect x="284" y="105" width="32" height="3" class="ink"/><polyline points="300.0,108.0 300.0,130.0" fill="none" class="stroke-ink" stroke-width="2"/><text x="322" y="106" text-anchor="start" font-size="14" class="ink" font-weight="700" font-style="italic">C</text><polyline points="300.0,92.0 350.0,92.0 350.0,100.0" fill="none" class="stroke-ink" stroke-width="2"/><polyline points="350.0,126.0 350.0,134.0 300.0,134.0" fill="none" class="stroke-ink" stroke-width="2"/><circle cx="350" cy="113" r="13" class="f-card" stroke="currentColor" stroke-width="2"/><text x="350" y="118" text-anchor="middle" font-size="14" class="ink" font-weight="700">V</text><text x="370" y="118" text-anchor="start" font-size="12" class="ink">V<tspan baseline-shift="sub" font-size="10">C</tspan></text><circle cx="210" cy="190" r="13" class="f-card" stroke="currentColor" stroke-width="2"/><text x="210" y="195" text-anchor="middle" font-size="14" class="ink" font-weight="700">A</text><text x="200" y="222" text-anchor="middle" font-size="12" class="ink2">A: charging · B: discharging through R</text></svg></figure>
+<div class="widget" id="w-rc">
+  <h3 class="widget-title">Charging the Leyden jar</h3>
+  <p class="hint">Run it to charge the capacitor, then flip the switch to discharge it. Restart with a bigger R or C and compare the curves. The current axis stays fixed, so you can see how R changes the starting current.</p>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Charging</th><th>Discharging</th></tr></thead>
+<tbody>
+<tr><td>p.d. across the capacitor V<sub>C</sub></td><td>rises quickly at first, then more and more slowly, levelling off at the supply voltage</td><td>falls quickly at first, then more slowly, towards zero</td></tr>
+<tr><td>Current I</td><td>largest at the start (I = V<sub>S</sub>/R, since V<sub>C</sub> = 0), falling towards zero</td><td>largest at the start (I = V<sub>C</sub>/R) but in the <strong>opposite direction</strong>, falling towards zero</td></tr>
+<tr><td>Why</td><td>As charge builds up, V<sub>C</sub> grows, so the p.d. across the resistor (V<sub>S</sub> − V<sub>C</sub>) falls, so the current falls.</td><td>As charge flows off, V<sub>C</sub> falls, so the current it drives through R falls.</td></tr>
+</tbody></table></div>
+<p><strong>Effect of R and C:</strong> a <strong>larger resistance</strong> means a smaller current, so the capacitor takes <strong>longer</strong> to charge or discharge. The starting current is smaller, but the final voltage is the same. A <strong>larger capacitance</strong> means more charge must flow to reach the same voltage, so it also takes <strong>longer</strong>. The starting current is unchanged (it depends only on V<sub>S</sub> and R).</p>
+<h3 id="rc-experiment">Experiment: current and voltage against time</h3>
+<ol>
+<li>Set up the circuit above, with a voltmeter across the capacitor and an ammeter in series (or voltage and current sensors connected to a data logger).</li>
+<li>Move the switch to A and start a stopwatch. Record V<sub>C</sub> and I every 5 s (or let the data logger record them) until they stop changing.</li>
+<li>Move the switch to B and record V<sub>C</sub> and I again as the capacitor discharges.</li>
+<li>Plot graphs of V<sub>C</sub> and I against time. Repeat with a different resistor, or a different capacitor, to see the effect on the curves.</li>
+</ol>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked to sketch a capacitor graph, some candidates drew the wrong shape and "others did not add the correct values to the axes". A good sketch has labelled axes with units, the right curve (steep at first, then levelling off), and <strong>key values marked</strong>: the starting current V<sub>S</sub>/R, and the final voltage V<sub>S</sub>. And when asked how a change in resistance affects charging time, many stated the change but "few justified the change correctly". Link it to the current: "a larger R gives a smaller current, so charge builds up more slowly".</p></div>
+<div class="check" data-check="el-capacitors"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="semis" class="prose">
+<h2 data-short="Semiconductors">5 · Semiconductors and p-n junctions <span class="spec-tag">E · semiconductors and p-n junctions</span></h2>
+<h3>Energy bands</h3>
+<p>In a single atom, electrons occupy separate <strong>energy levels</strong> (as in the Bohr model). When atoms come together to form a solid, the levels spread out into <strong>energy bands</strong> separated by gaps. Two bands matter:</p>
+<ul>
+<li>The <dfn>valence band</dfn>: the highest band that is occupied by electrons.</li>
+<li>The <dfn>conduction band</dfn>: the band above it. Electrons in the conduction band are free to move through the solid and carry a current.</li>
+</ul>
+<p>Every solid has its own characteristic band structure. For a solid to conduct, there must be <strong>both free electrons and empty states</strong> available for them to move into.</p>
+<div class="widget" id="w-bands">
+  <h3 class="widget-title">Band structure: three materials compared</h3>
+  <p class="hint">Raise the temperature and watch the semiconductor (the numbers of electrons are illustrative). Dots are electrons; red rings are the holes they leave behind.</p>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Material</th><th>Band structure</th><th>Conduction</th></tr></thead>
+<tbody>
+<tr><td><strong>Conductor</strong> (metal)</td><td>One or more bands is only partly filled, or the valence and conduction bands overlap.</td><td>Plenty of free electrons with empty states to move into: highly conductive.</td></tr>
+<tr><td><strong>Insulator</strong></td><td>The valence band is full and the gap to the conduction band is large.</td><td>At room temperature there is not enough energy to lift electrons across the gap: no conduction.</td></tr>
+<tr><td><strong>Semiconductor</strong> (silicon, germanium)</td><td>Like an insulator, but the gap is small.</td><td>At room temperature some electrons gain enough energy to reach the conduction band, so there is some conduction. <strong>Increasing the temperature increases the conductivity</strong>, because more electrons cross the gap.</td></tr>
+</tbody></table></div>
+<h3>Doping: p-type and n-type</h3>
+<p>Pure semiconductors conduct poorly. During manufacture they can be <dfn>doped</dfn>: tiny amounts of particular impurity atoms are added to increase their conductivity. This makes two types:</p>
+<ul>
+<li><strong>n-type</strong>: the impurity atoms have one more outer electron than silicon (for example phosphorus or arsenic). The extra electrons are free to move in the conduction band, so the majority charge carriers are <strong>negative</strong> electrons.</li>
+<li><strong>p-type</strong>: the impurity atoms have one fewer outer electron (for example boron). This leaves gaps, called <dfn>holes</dfn>, in the valence band. Neighbouring electrons can move into a hole, so the hole moves the other way, acting like a <strong>positive</strong> charge carrier.</li>
+</ul>
+<h3>The p-n junction</h3>
+<p>When p-type and n-type layers are made next to each other in one crystal, a <dfn>p-n junction</dfn> forms. Some free electrons from the n side fill holes on the p side. This leaves a thin region with no free charge carriers (the <strong>depletion layer</strong>), and there is an <strong>electric field in the junction</strong> that stops any more charge crossing.</p>
+<ul>
+<li><dfn>Forward bias</dfn> (p-type connected to the positive terminal) <strong>reduces the electric field</strong> in the junction, and current flows.</li>
+<li><dfn>Reverse bias</dfn> (p-type connected to the negative terminal) <strong>increases the electric field</strong>, and almost no current flows.</li>
+</ul>
+<div class="widget" id="w-pn">
+  <h3 class="widget-title">Inside the junction</h3>
+  <p class="hint">The coloured lines are the conduction band (top) and valence band (bottom), stepped at the junction. Try each bias, then light the junction up.</p>
+</div>
+<h3>LEDs</h3>
+<p>A light-emitting diode is a <strong>forward-biased p-n junction that emits photons</strong>. The forward-bias p.d. makes electrons move from the conduction band of the n-type semiconductor towards the conduction band of the p-type. Photons are emitted when electrons "fall" from the conduction band into the valence band (filling holes) on either side of the junction. Each photon's energy is roughly the size of the band gap, so the semiconductor material decides the colour. A <strong>blue LED needs a larger band gap than a red LED</strong> (higher-energy photons, E = hf), so it needs a larger forward p.d. to light.</p>
+<div class="worked"><p class="worked-title">Worked example · a red LED</p>
+<p>A red LED emits light of wavelength 650 nm. Calculate the energy of each photon, which is approximately the band gap.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li><span class="eqi">f = v / λ = 3.00 × 10⁸ / 650 × 10⁻⁹ = 4.62 × 10¹⁴ Hz</span></li>
+<li><span class="eqi">E = hf = 6.63 × 10⁻³⁴ × 4.62 × 10¹⁴</span> → <span class="ans">E = 3.1 × 10⁻¹⁹ J</span></li>
+</ol>
+<p>Each electron needs about this much energy from the supply, and E = QV gives V = 3.1 × 10⁻¹⁹ / 1.60 × 10⁻¹⁹ ≈ 1.9 V. That is roughly why red LEDs need about 2 V across them.</p>
+</details></div>
+<h3>Solar cells</h3>
+<p>A solar cell is a p-n junction designed so that a <strong>potential difference is produced when photons are absorbed</strong>: the <dfn>photovoltaic effect</dfn>. The absorbed photons give electrons enough energy to rise from the valence band into the conduction band. The electric field in the junction pushes the electrons in the conduction band towards the n-type side (and the holes towards the p-type side), so a potential difference appears across the cell, which can drive a current.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>In 2025 only some candidates chose the correct statement about red and blue LEDs. Keep the chain straight: <strong>bigger band gap → higher-energy photons → higher frequency (bluer light) → larger forward p.d. needed</strong>. And use the band words precisely: electrons move in the <em>conduction</em> band and fall into holes in the <em>valence</em> band.</p></div>
+<div class="check" data-check="el-semis"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="waves.html">← Particles and Waves</a>
+  <a class="btn primary" href="skills.html">To the chart room: Skills →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Qualifications Scotland Higher Physics course specification (version 4.1, September 2026, valid from session 2026–27). Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion site <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> covers Higher Computing Science.</p>
+  </div>
+</footer>
+<script src="electricity.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

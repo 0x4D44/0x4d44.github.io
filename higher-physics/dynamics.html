@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Our Dynamic Universe · Shot, Spark &amp; Starlight</title>
+<meta name="description" content="Higher Physics, Our Dynamic Universe: equations of motion, motion graphs, forces on slopes, tension, terminal velocity, energy and power, momentum and impulse, projectiles, gravitation and satellites, special relativity, the Doppler effect, redshift, Hubble's law, dark matter, dark energy and evidence for the Big Bang.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%231c5fb3'/%3E%3Ccircle cx='8' cy='8' r='5' fill='%23fff'/%3E%3Ccircle cx='8' cy='8' r='2.6' fill='%23c8102e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Shot, Spark and Starlight — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="8" y="2" width="2" height="1" fill="#e0b23a"/><rect x="7" y="3" width="2" height="2" fill="#e0b23a"/><rect x="6" y="5" width="4" height="2" fill="#e0b23a"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/><rect x="6" y="9" width="2" height="2" fill="#e0b23a"/><rect x="6" y="11" width="1" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Shot, Spark &amp; Starlight</span><span class="brand-sub">Higher Physics · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="dynamics.html">Universe</a></li>
+        <li><a href="waves.html">Particles &amp; Waves</a></li>
+        <li><a href="electricity.html">Electricity</a></li>
+        <li><a href="skills.html">Skills</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The gun deck &amp; the crow's nest · Our Dynamic Universe (ODU)</p>
+<h1>Shot, sail and the edge of the Universe</h1>
+<p class="lede">Our Dynamic Universe starts with a cannonball and ends with the Big Bang. On the way it covers how things move, why they move, what happens when they collide, how gravity holds a satellite up, why fast clocks run slow and how we know the Universe is expanding. It is the biggest area of the course, and every part of the question paper draws on it.</p>
+<div class="callout log">
+  <div class="callout-title">⚓ Ship's log: Master Gunner Kerr</div>
+  <p>"A gun crew that can't do arithmetic is a danger to the ship. How far will the shot carry? How hard will the gun kick? How long will the rope have to hold it? Every one of those is a sum, Cadets, and today you're going to learn them."</p>
+</div>
+<div class="callout scope">
+  <div class="callout-title">What you need from National 5</div>
+  <p>Speed = distance ÷ time, a = (v − u) / t, W = mg, F = ma, and energy as E<sub>k</sub> and E<sub>p</sub>. Scalars have size only. <strong>Vectors</strong> have size and direction. At Higher, directions matter in almost every calculation, so you must choose a positive direction and stick to it.</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<section id="motion" class="prose">
+<h2 data-short="Motion: equations">1 · Motion: the equations of motion <span class="spec-tag">ODU · motion — equations and graphs</span></h2>
+<p>The <dfn>equations of motion</dfn> describe anything moving in a straight line with a <strong>constant acceleration</strong>: an aircraft on its take-off run, a ball in flight, a trolley rolling down a slope. They use five quantities:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Symbol</th><th>Quantity</th><th>Unit</th><th>Vector?</th></tr></thead>
+<tbody>
+<tr><td><var>s</var></td><td>displacement: distance in a stated direction from the start point</td><td>m</td><td>yes</td></tr>
+<tr><td><var>u</var></td><td>initial velocity</td><td>m s⁻¹</td><td>yes</td></tr>
+<tr><td><var>v</var></td><td>final velocity</td><td>m s⁻¹</td><td>yes</td></tr>
+<tr><td><var>a</var></td><td>acceleration: change in velocity per second</td><td>m s⁻²</td><td>yes</td></tr>
+<tr><td><var>t</var></td><td>time</td><td>s</td><td>no</td></tr>
+</tbody></table></div>
+<div class="eq-grid">
+  <div class="eq-card"><div class="eq"><var>v</var> = <var>u</var> + <var>a</var><var>t</var></div><p>No <var>s</var>. This is just a = (v − u)/t rearranged.</p></div>
+  <div class="eq-card"><div class="eq"><var>s</var> = <var>u</var><var>t</var> + ½<var>a</var><var>t</var>²</div><p>No <var>v</var>.</p></div>
+  <div class="eq-card"><div class="eq"><var>v</var>² = <var>u</var>² + 2<var>a</var><var>s</var></div><p>No <var>t</var>.</p></div>
+  <div class="eq-card"><div class="eq"><var>s</var> = ½(<var>u</var> + <var>v</var>)<var>t</var></div><p>No <var>a</var>. Average velocity × time.</p></div>
+</div>
+<p>The relationships sheet also gives <span class="eqi"><var>d</var> = <var>v̄</var><var>t</var></span> and <span class="eqi"><var>s</var> = <var>v̄</var><var>t</var></span> for average speed and average velocity. Each equation of motion links <strong>four</strong> of the five quantities, so the trick is always the same: list the three you know and the one you want, then pick the equation that leaves out the fifth.</p>
+
+<div class="widget" id="w-suvat">
+  <h3 class="widget-title">Which equation? The quartermaster's picker</h3>
+  <p class="hint">Mark what you know and what you want. The picker shows the equation that skips the quantity you don't need, already rearranged.</p>
+</div>
+
+<h3>Signs: pick a positive direction</h3>
+<p>Because <var>s</var>, <var>u</var>, <var>v</var> and <var>a</var> are vectors, they carry a sign. Choose one direction as positive, usually <strong>up</strong> or the direction of the initial motion, and write it down. Anything in the opposite direction is negative. For a shot fired straight up, with up as positive, <var>u</var> is positive and <var>a</var> = −9.8 m s⁻² <em>all the way up and all the way down</em>.</p>
+
+<h3>Where s = ut + ½at² comes from</h3>
+<figure class="diagram"><svg viewBox="0 0 480 200" role="img" aria-label="Velocity–time graph for constant acceleration from u to v in time t. The area splits into a rectangle u times t and a triangle one half times t times (v minus u), and v minus u equals a t."><rect x="60" y="122" width="300" height="48" class="f-sea" opacity=".3"/><polygon points="60,122 360,122 360,26" class="f-gold" opacity=".45"/><line x1="60.0" y1="170.0" x2="60.0" y2="13.6" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="60.0,6.8 63.3,14.1 56.7,14.1" class="ink"/><line x1="60.0" y1="170.0" x2="401.2" y2="170.0" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="408.0,170.0 400.7,173.3 400.7,166.7" class="ink"/><line x1="60.0" y1="122.0" x2="360.0" y2="26.0" class="s-red" stroke-width="3"/><line x1="360.0" y1="170.0" x2="360.0" y2="26.0" class="stroke-ink" stroke-width="1" stroke-dasharray="4 3"/><text x="54" y="126" text-anchor="end" font-size="14" class="ink" font-weight="700" font-style="italic">u</text><text x="54" y="30" text-anchor="end" font-size="14" class="ink" font-weight="700" font-style="italic">v</text><line x1="57.0" y1="26.0" x2="360.0" y2="26.0" class="stroke-ink" stroke-width="1" stroke-dasharray="4 3"/><text x="360" y="188" text-anchor="middle" font-size="14" class="ink" font-weight="700" font-style="italic">t</text><text x="210.0" y="151" text-anchor="middle" font-size="14" class="halo" font-weight="700">rectangle: ut</text><text x="210.0" y="151" text-anchor="middle" font-size="14" class="ink" font-weight="700">rectangle: ut</text><text x="264.0" y="98.19999999999999" text-anchor="middle" font-size="13" class="halo" font-weight="700">triangle: ½ × t × (v − u)</text><text x="264.0" y="98.19999999999999" text-anchor="middle" font-size="13" class="ink" font-weight="700">triangle: ½ × t × (v − u)</text><text x="368" y="79" text-anchor="start" font-size="13" class="halo" font-weight="700">v − u = at</text><text x="368" y="79" text-anchor="start" font-size="13" class="f-red" font-weight="700">v − u = at</text><text x="66" y="10.800000000000011" text-anchor="start" font-size="13" class="ink" font-weight="700" font-style="italic">v</text><text x="408.0" y="164" text-anchor="end" font-size="13" class="ink" font-weight="700" font-style="italic">t</text></svg><figcaption>The area under a velocity–time graph is the displacement. Splitting it into a rectangle and a triangle gives s = ut + ½t(v − u), and since v − u = at, s = ut + ½at². You will not be asked to derive it, but seeing where it comes from makes it easier to remember.</figcaption></figure>
+
+<div class="worked"><p class="worked-title">Worked example · the Tutor's take-off run</p>
+<p>A Grob Tutor accelerates uniformly from rest along the runway and reaches its take-off speed of 33 m s⁻¹ after travelling 290 m. Calculate (a) its acceleration and (b) the time the take-off run takes.</p>
+<details><summary>Show solution</summary>
+<p>Known: u = 0, v = 33 m s⁻¹, s = 290 m. Wanted: a, which leaves out t, so use v² = u² + 2as.</p>
+<ol class="steps">
+<li>(a) <span class="eqi">v² = u² + 2as</span></li>
+<li><span class="eqi">33² = 0² + 2 × a × 290</span></li>
+<li><span class="ans">a = 1.9 m s⁻²</span> (1089 ÷ 580 = 1.877…; the data have 2 significant figures)</li>
+<li>(b) <span class="eqi">v = u + at</span> → <span class="eqi">33 = 0 + 1.877 × t</span> → <span class="ans">t = 18 s</span></li>
+</ol>
+<p>Notice we carried the unrounded value of a (1.877…) into part (b). Rounding to 1.9 first would give 17.4 s instead, which a marker might not accept.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example · a signal flare fired straight up</p>
+<p>A flare is fired vertically upwards from the deck at 35 m s⁻¹. Ignore air resistance. Calculate (a) its maximum height above the deck and (b) how long it takes to come back down to deck level.</p>
+<details><summary>Show solution</summary>
+<p>Take <strong>up as positive</strong>: u = +35 m s⁻¹, a = −9.8 m s⁻². At the top, v = 0.</p>
+<ol class="steps">
+<li>(a) <span class="eqi">v² = u² + 2as</span> → <span class="eqi">0 = 35² + 2 × (−9.8) × s</span> → <span class="ans">s = 63 m</span> (62.5 m)</li>
+<li>(b) Back at deck level the displacement is zero: <span class="eqi">s = ut + ½at²</span> → <span class="eqi">0 = 35t + ½ × (−9.8) × t²</span></li>
+<li>So <span class="eqi">t(35 − 4.9t) = 0</span>, giving t = 0 (the launch) or <span class="ans">t = 7.1 s</span>.</li>
+</ol>
+<p>Check: the trip up takes 35 ÷ 9.8 = 3.6 s, and the trip down takes the same, which gives 7.1 s in total.</p>
+</details></div>
+
+<div class="check" data-check="odu-suvat"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="graphs" class="prose">
+<h2 data-short="Motion graphs">2 · Motion graphs <span class="spec-tag">ODU · motion — equations and graphs</span></h2>
+<p>Three graphs describe the same motion in different ways, and the exam expects you to move between them:</p>
+<ul>
+<li><strong>The gradient of a displacement–time graph is the velocity.</strong></li>
+<li><strong>The gradient of a velocity–time graph is the acceleration.</strong></li>
+<li><strong>The area under a velocity–time graph is the displacement.</strong> Area below the time axis counts as <em>negative</em> displacement (motion in the negative direction).</li>
+</ul>
+<p>At Higher, accelerations are always constant on each part of a graph, so v–t graphs are made of straight lines and a–t graphs are made of horizontal lines.</p>
+
+<div class="widget" id="w-graphs">
+  <h3 class="widget-title">Motion-graph lab: watch all three graphs grow together</h3>
+  <p class="hint">Choose a scenario. The gold dashed line marks "now" on every graph. For the vertical motions, try switching the sign convention and see every graph flip upside down while the physics stays the same.</p>
+</div>
+
+<h3>Thrown upwards and bouncing</h3>
+<p>Two shapes come up again and again, so know them cold:</p>
+<ul>
+<li><strong>Thrown upwards (up positive):</strong> the v–t graph is one straight line sloping down, crossing the time axis at the top of the flight. The a–t graph is a flat line at −9.8 m s⁻². The acceleration does <em>not</em> become zero at the top: only the velocity does.</li>
+<li><strong>Bouncing ball (up positive):</strong> the v–t graph is a saw-tooth. Each flight is a straight line with gradient −9.8 m s⁻². At each bounce the velocity jumps almost instantly from negative to positive, and the next line starts a bit lower because energy is lost in the bounce. With <em>down</em> as positive, the same graph appears upside down.</li>
+</ul>
+
+<h3>Displacement and distance from a v–t graph</h3>
+<figure class="diagram"><svg viewBox="0 0 560 215" role="img" aria-label="Velocity–time graph: velocity falls steadily from 6 metres per second at time 0 to minus 4 metres per second at 5 seconds, crossing zero at 3 seconds. The area above the axis is 9 metres and the area below is minus 4 metres."><polygon points="60,130 60,46 300,130" class="f-gold" opacity=".35"/><polygon points="300,130 460,186 460,130" class="f-violet" opacity=".35"/><line x1="60.0" y1="32.0" x2="60.0" y2="200.0" class="s-line" stroke-width="1"/><line x1="140.0" y1="32.0" x2="140.0" y2="200.0" class="s-line" stroke-width="1"/><text x="140" y="148" text-anchor="middle" font-size="12" class="ink2">1</text><line x1="220.0" y1="32.0" x2="220.0" y2="200.0" class="s-line" stroke-width="1"/><text x="220" y="148" text-anchor="middle" font-size="12" class="ink2">2</text><line x1="300.0" y1="32.0" x2="300.0" y2="200.0" class="s-line" stroke-width="1"/><text x="300" y="148" text-anchor="middle" font-size="12" class="ink2">3</text><line x1="380.0" y1="32.0" x2="380.0" y2="200.0" class="s-line" stroke-width="1"/><text x="380" y="148" text-anchor="middle" font-size="12" class="ink2">4</text><line x1="460.0" y1="32.0" x2="460.0" y2="200.0" class="s-line" stroke-width="1"/><text x="460" y="148" text-anchor="middle" font-size="12" class="ink2">5</text><line x1="60.0" y1="186.0" x2="508.0" y2="186.0" class="s-line" stroke-width="1"/><text x="52" y="190" text-anchor="end" font-size="12" class="ink2">-4</text><line x1="60.0" y1="158.0" x2="508.0" y2="158.0" class="s-line" stroke-width="1"/><text x="52" y="162" text-anchor="end" font-size="12" class="ink2">-2</text><line x1="60.0" y1="130.0" x2="508.0" y2="130.0" class="s-line" stroke-width="1"/><text x="52" y="134" text-anchor="end" font-size="12" class="ink2">0</text><line x1="60.0" y1="102.0" x2="508.0" y2="102.0" class="s-line" stroke-width="1"/><text x="52" y="106" text-anchor="end" font-size="12" class="ink2">2</text><line x1="60.0" y1="74.0" x2="508.0" y2="74.0" class="s-line" stroke-width="1"/><text x="52" y="78" text-anchor="end" font-size="12" class="ink2">4</text><line x1="60.0" y1="46.0" x2="508.0" y2="46.0" class="s-line" stroke-width="1"/><text x="52" y="50" text-anchor="end" font-size="12" class="ink2">6</text><line x1="60.0" y1="200.0" x2="60.0" y2="30.4" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="60.0,23.6 63.3,30.9 56.7,30.9" class="ink"/><line x1="60.0" y1="130.0" x2="509.2" y2="130.0" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="516.0,130.0 508.7,133.3 508.7,126.7" class="ink"/><text x="66" y="27.60000000000001" text-anchor="start" font-size="12" class="ink" font-weight="700">v / m s⁻¹</text><text x="516.0" y="124" text-anchor="end" font-size="12" class="ink" font-weight="700">t / s</text><line x1="60.0" y1="46.0" x2="460.0" y2="186.0" class="s-red" stroke-width="3"/><text x="132.0" y="107.6" text-anchor="middle" font-size="13" class="halo" font-weight="700">area = +9 m</text><text x="132.0" y="107.6" text-anchor="middle" font-size="13" class="ink" font-weight="700">area = +9 m</text><text x="408.0" y="148.2" text-anchor="middle" font-size="13" class="halo" font-weight="700">area = −4 m</text><text x="408.0" y="148.2" text-anchor="middle" font-size="13" class="ink" font-weight="700">area = −4 m</text><text x="316.0" y="51.60000000000001" text-anchor="start" font-size="13" class="halo" font-weight="700">gradient = −10 ÷ 5 = −2 m s⁻²</text><text x="316.0" y="51.60000000000001" text-anchor="start" font-size="13" class="f-red" font-weight="700">gradient = −10 ÷ 5 = −2 m s⁻²</text></svg><figcaption>A trolley pushed up a slope rolls back down. For the first 3 s it moves forwards and slows down; after that it moves backwards and speeds up. The acceleration is −2 m s⁻² the whole time.</figcaption></figure>
+<ul>
+<li><strong>Displacement</strong> after 5 s = +9 + (−4) = <strong>5 m</strong> forwards of the start.</li>
+<li><strong>Distance</strong> travelled = 9 + 4 = <strong>13 m</strong>, because distance is a scalar and ignores direction.</li>
+<li><strong>Acceleration</strong> = gradient = (−4 − 6) ÷ 5 = <strong>−2 m s⁻²</strong>. The same value applies at every instant, including at t = 3 s when the trolley is momentarily at rest.</li>
+</ul>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>In multiple-choice question 2, only some candidates chose the right acceleration–time graph: many picked the option that showed the <em>velocity</em>–time line instead. Read the axis labels before you read the shape.</p></div>
+
+<h3 id="slope-experiment">Experiment: measuring the acceleration of a trolley down a slope</h3>
+<figure class="diagram"><svg viewBox="0 0 480 205" role="img" aria-label="A trolley carrying a card of known length runs down a slope through two light gates connected to a timer."><polygon points="20,190 460,190 460,70" class="f-paper2" /><line x1="20.0" y1="190.0" x2="460.0" y2="70.0" class="stroke-ink" stroke-width="3"/><g transform="translate(161.0,137.0) rotate(-15.3)"><rect x="-30" y="-10" width="60" height="20" class="f-sea"/><rect x="-6" y="-34" width="12" height="24" class="ink"/><circle cx="-18" cy="12" r="5" class="ink"/><circle cx="18" cy="12" r="5" class="ink"/></g><g transform="translate(241.9,129.5) rotate(-15.3)"><rect x="-6" y="-62" width="12" height="62" class="f-red"/><rect x="-6" y="-62" width="12" height="10" class="ink"/></g><text x="241.89567888467838" y="57.48299666781497" text-anchor="middle" font-size="12" class="halo" font-weight="700">light gate 1</text><text x="241.89567888467838" y="57.48299666781497" text-anchor="middle" font-size="12" class="ink" font-weight="700">light gate 1</text><g transform="translate(377.0,92.6) rotate(-15.3)"><rect x="-6" y="-62" width="12" height="62" class="f-red"/><rect x="-6" y="-62" width="12" height="10" class="ink"/></g><text x="376.9626138579609" y="20.64655985691975" text-anchor="middle" font-size="12" class="halo" font-weight="700">light gate 2</text><text x="376.9626138579609" y="20.64655985691975" text-anchor="middle" font-size="12" class="ink" font-weight="700">light gate 2</text><line x1="200.0" y1="20.0" x2="250.0" y2="20.0" class="stroke-ink" stroke-width="1"/><text x="255" y="24" text-anchor="start" font-size="12" class="ink">to timer / data logger</text><text x="155.03092950457028" y="85.0256956338554" text-anchor="middle" font-size="12" class="halo" font-weight="700">card, length L</text><text x="155.03092950457028" y="85.0256956338554" text-anchor="middle" font-size="12" class="ink" font-weight="700">card, length L</text><text x="30" y="182" text-anchor="start" font-size="12" class="ink2">slope</text></svg><figcaption>Two light gates and a card of known length.</figcaption></figure>
+<ol>
+<li>Measure the length <var>L</var> of the card on the trolley with a ruler.</li>
+<li>Release the trolley from rest so that the card passes through both light gates.</li>
+<li>The timer records <var>t</var><sub>1</sub>, the time the card takes to pass through gate 1, <var>t</var><sub>2</sub>, the time it takes to pass through gate 2, and <var>t</var><sub>3</sub>, the time taken to travel from gate 1 to gate 2.</li>
+<li>Calculate <span class="eqi">u = L / t₁</span> and <span class="eqi">v = L / t₂</span>, then <span class="eqi">a = (v − u) / t₃</span>.</li>
+<li>Repeat several times from the same release point and find the mean acceleration and its random uncertainty.</li>
+</ol>
+<p>Alternatives that also earn the marks: a single light gate with a double-segment card (the timer measures the two segment times and the time between them), or a motion sensor connected to a computer, which plots a v–t graph whose gradient is the acceleration.</p>
+<div class="callout exam"><div class="callout-title">⚠ "Describe an experiment" questions</div><p>The course specification names this experiment, so you can be asked to describe it. A full answer names the <strong>apparatus</strong>, the <strong>measurements</strong> taken (with the instruments used to take them), and <strong>how the result is calculated</strong>. The 2025 examiners noted that candidates who had never done an experiment struggled to describe it.</p></div>
+
+<div class="check" data-check="odu-graphs"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="forces" class="prose">
+<h2 data-short="Forces">3 · Forces, vectors and Newton's laws <span class="spec-tag">ODU · forces, energy and power</span></h2>
+<div class="callout def"><div class="callout-title">📘 Newton's laws</div>
+<p><strong>First law:</strong> an object stays at rest, or moves at a constant velocity in a straight line, unless an unbalanced force acts on it.</p>
+<p><strong>Second law:</strong> an unbalanced force causes an acceleration: <span class="eqi"><var>F</var> = <var>m</var><var>a</var></span>, where F is the <em>unbalanced</em> (resultant) force.</p>
+<p><strong>Third law:</strong> if object A exerts a force on object B, then B exerts a force on A that is equal in size and opposite in direction.</p></div>
+<p>Weight is the force of gravity on a mass: <span class="eqi"><var>W</var> = <var>m</var><var>g</var></span>, with g = 9.8 N kg⁻¹ on Earth. <dfn>Friction</dfn> always acts to oppose the motion of a moving object. It turns kinetic energy into heat, so a moving object with no driving force slows down.</p>
+
+<h3>Adding vectors</h3>
+<p>Forces, velocities and displacements add <strong>nose to tail</strong>. If two forces act at right angles, use Pythagoras for the size of the resultant and trigonometry for its direction. (A scale drawing also earns the marks if it is accurate and has a stated scale.)</p>
+<div class="two-col">
+<figure class="diagram"><svg viewBox="0 0 360 220" role="img" aria-label="Vector addition, nose to tail: 3.0 kilonewtons east followed by 4.0 kilonewtons north gives a resultant of 5.0 kilonewtons at an angle theta north of east."><line x1="60.0" y1="190.0" x2="229.8" y2="190.0" class="s-sea" stroke-width="4" stroke-linecap="round"/><polygon points="240.0,190.0 229.0,194.9 229.0,185.1" class="f-sea"/><text x="150" y="212" text-anchor="middle" font-size="13" class="f-sea" font-weight="700">3.0 kN (east)</text><line x1="240.0" y1="190.0" x2="240.0" y2="40.2" class="s-gold" stroke-width="4" stroke-linecap="round"/><polygon points="240.0,30.0 244.9,41.0 235.1,41.0" class="f-gold"/><text x="250" y="110" text-anchor="start" font-size="13" class="f-gold" font-weight="700">4.0 kN (north)</text><line x1="60.0" y1="190.0" x2="232.4" y2="36.8" class="s-red" stroke-width="4" stroke-linecap="round"/><polygon points="240.0,30.0 235.1,40.9 228.6,33.6" class="f-red"/><text x="130" y="95" text-anchor="end" font-size="13" class="halo" font-weight="700">resultant 5.0 kN</text><text x="130" y="95" text-anchor="end" font-size="13" class="f-red" font-weight="700">resultant 5.0 kN</text><path d="M 100 190 A 40 40 0 0 0 89.9 163.4" fill="none" class="stroke-ink" stroke-width="1.5"/><text x="110" y="178" text-anchor="start" font-size="14" class="ink" font-weight="700" font-style="italic">θ</text><text x="300" y="40" text-anchor="middle" font-size="13" class="ink" font-weight="700">N</text><line x1="300.0" y1="70.0" x2="300.0" y2="51.0" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="300.0,45.0 302.9,51.4 297.1,51.4" class="ink"/></svg><figcaption>Two of the ship's boats tow HMS Redstone out of harbour.</figcaption></figure>
+<div>
+<p>The resultant of 3.0 kN east and 4.0 kN north:</p>
+<p class="eq">F = √(3.0² + 4.0²) = 5.0 kN</p>
+<p class="eq">tan θ = 4.0 / 3.0 → θ = 53°</p>
+<p>So the resultant is <strong>5.0 kN at 53° north of east</strong> (a bearing of 037°). A vector answer needs <em>both</em> size and direction.</p>
+</div></div>
+
+<h3>Resolving a vector into components</h3>
+<p>The reverse job: any vector can be split into two perpendicular <dfn>components</dfn> that together have the same effect.</p>
+<div class="two-col">
+<figure class="diagram"><svg viewBox="0 0 300 200" role="img" aria-label="A force F at angle theta to the horizontal splits into a horizontal component F cos theta and a vertical component F sin theta."><line x1="50.0" y1="170.0" x2="180.8" y2="170.0" class="s-sea" stroke-width="3" stroke-linecap="round"/><polygon points="189.3,170.0 180.1,174.1 180.1,165.9" class="f-sea"/><text x="119.6279237645643" y="190" text-anchor="middle" font-size="14" class="f-sea" font-weight="700">F cos θ</text><line x1="189.3" y1="170.0" x2="189.3" y2="81.0" class="s-gold" stroke-width="3" stroke-linecap="round"/><polygon points="189.3,72.5 193.3,81.6 185.2,81.6" class="f-gold"/><text x="197.2558475291286" y="126.24600291016108" text-anchor="start" font-size="14" class="f-gold" font-weight="700">F sin θ</text><line x1="50.0" y1="170.0" x2="180.9" y2="78.3" class="s-red" stroke-width="4" stroke-linecap="round"/><polygon points="189.3,72.5 183.1,82.8 177.5,74.8" class="f-red"/><text x="109.6279237645643" y="111.24600291016108" text-anchor="end" font-size="16" class="f-red" font-weight="700" font-style="italic">F</text><path d="M 95 170 A 45 45 0 0 0 86.9 144.2" fill="none" class="stroke-ink" stroke-width="1.5"/><text x="102" y="160" text-anchor="start" font-size="14" class="ink" font-weight="700" font-style="italic">θ</text></svg><figcaption>Horizontal = F cos θ, vertical = F sin θ, where θ is measured from the horizontal.</figcaption></figure>
+<div><p>A cadet drags a crate along the deck with a rope at 30° above the horizontal. The tension in the rope is 50 N.</p>
+<p>Horizontal component = 50 cos 30° = <strong>43 N</strong> (this pulls the crate along).<br>Vertical component = 50 sin 30° = <strong>25 N</strong> (this partly lifts it, which reduces the push between crate and deck).</p>
+<p>Use cos for the component <em>next to</em> the angle and sin for the one <em>opposite</em> it. Don't just learn "horizontal is cos": in the slope problems below, the angle sits differently.</p></div></div>
+
+<h3>Forces on a slope</h3>
+<p>For an object on a slope at angle θ, resolve its <strong>weight</strong> into two components:</p>
+<ul>
+<li><strong>parallel to the slope</strong> (down the slope): <span class="eqi">mg sin θ</span></li>
+<li><strong>normal (perpendicular) to the slope</strong>, into the surface: <span class="eqi">mg cos θ</span>. This is balanced by the normal reaction force from the slope.</li>
+</ul>
+<p>Then apply F = ma <em>along the slope</em>, with friction acting in the direction that opposes the motion.</p>
+<div class="widget" id="w-slope">
+  <h3 class="widget-title">The slipway: a block of oak on a slope</h3>
+  <p class="hint">Change the angle, mass and friction. Then switch to "towed up the slope" and watch friction turn round.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>In a multiple-choice question about an object pulled up a slope, candidates who got it wrong had <em>subtracted</em> friction instead of adding it. When an object moves <strong>up</strong> a slope, friction acts <strong>down</strong> the slope, alongside mg sin θ. Draw the free-body diagram first, every time.</p></div>
+
+<div class="worked"><p class="worked-title">Worked example · a crate slides down the slipway</p>
+<p>A 12 kg crate is released on a slope at 20° to the horizontal. The friction force on it is 15 N. Calculate its acceleration.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>Component of weight down the slope: <span class="eqi">mg sin θ = 12 × 9.8 × sin 20° = 40.2 N</span></li>
+<li>Unbalanced force down the slope: <span class="eqi">40.2 − 15 = 25.2 N</span></li>
+<li><span class="eqi">F = ma</span> → <span class="eqi">25.2 = 12 × a</span> → <span class="ans">a = 2.1 m s⁻²</span> down the slope</li>
+</ol>
+</details></div>
+
+<h3>Tension: the powder hoist</h3>
+<p>Below decks, gunpowder is lifted from the magazine in a cage on a rope, like a lift on a cable. The cage has two forces on it: the <strong>tension</strong> T upwards and its <strong>weight</strong> mg downwards. Taking up as positive, the unbalanced force is T − mg, so:</p>
+<div class="two-col">
+<figure class="diagram"><svg viewBox="0 0 340 225" role="img" aria-label="Free-body diagram of the powder-hoist cage: tension T upwards, weight mg downwards, acceleration a upwards taken as positive."><rect x="100" y="80" width="80" height="70" class="f-paper2" stroke="currentColor" stroke-width="2"/><text x="140" y="120" text-anchor="middle" font-size="13" class="ink">cage</text><line x1="140.0" y1="80.0" x2="140.0" y2="20.2" class="s-sea" stroke-width="4" stroke-linecap="round"/><polygon points="140.0,10.0 144.9,21.0 135.1,21.0" class="f-sea"/><text x="150" y="30" text-anchor="start" font-size="14" class="f-sea" font-weight="700">tension T</text><line x1="140.0" y1="150.0" x2="140.0" y2="204.8" class="s-red" stroke-width="4" stroke-linecap="round"/><polygon points="140.0,215.0 135.1,204.0 144.9,204.0" class="f-red"/><text x="150" y="205" text-anchor="start" font-size="14" class="f-red" font-weight="700">weight W = mg</text><line x1="240.0" y1="150.0" x2="240.0" y2="103.5" class="s-grass" stroke-width="3" stroke-linecap="round"/><polygon points="240.0,95.0 244.1,104.1 235.9,104.1" class="f-grass"/><text x="250" y="125" text-anchor="start" font-size="15" class="f-grass" font-weight="700" font-style="italic">a</text><text x="250" y="142" text-anchor="start" font-size="12" class="ink2">(up +)</text></svg><figcaption>Free-body diagram of the cage.</figcaption></figure>
+<div>
+<p class="eq">T − mg = ma &nbsp;→&nbsp; T = m(g + a)</p>
+<div class="table-wrap"><table>
+<caption>A 250 kg cage (mg = 2450 N), up taken as positive.</caption>
+<thead><tr><th>The cage is…</th><th class="num">a / m s⁻²</th><th class="num">T / N</th></tr></thead>
+<tbody>
+<tr><td>accelerating upwards</td><td class="num">+0.80</td><td class="num">2650</td></tr>
+<tr><td>at rest, or moving up or down at steady speed</td><td class="num">0</td><td class="num">2450</td></tr>
+<tr><td>moving up but slowing down</td><td class="num">−0.80</td><td class="num">2250</td></tr>
+<tr><td>moving down and speeding up</td><td class="num">−0.80</td><td class="num">2250</td></tr>
+<tr><td>moving down and slowing down</td><td class="num">+0.80</td><td class="num">2650</td></tr>
+</tbody></table></div></div></div>
+<p>The direction of the <em>acceleration</em>, not the direction of motion, decides whether the tension is more or less than the weight.</p>
+
+<div class="worked"><p class="worked-title">Worked example · two minecarts on a rope</p>
+<p>A cadet pulls two coupled minecarts along a level track with a force of 270 N. The front cart has a mass of 40 kg and the rear cart 20 kg. Friction is 20 N on the front cart and 10 N on the rear cart. Calculate (a) the acceleration and (b) the tension in the coupling.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) Treat both carts as one object. Unbalanced force = 270 − (20 + 10) = 240 N.</li>
+<li><span class="eqi">F = ma</span> → <span class="eqi">240 = 60 × a</span> → <span class="ans">a = 4.0 m s⁻²</span></li>
+<li>(b) Now look at the rear cart alone. The only forces along the track are the tension T forwards and friction 10 N backwards.</li>
+<li><span class="eqi">T − 10 = 20 × 4.0</span> → <span class="ans">T = 90 N</span></li>
+</ol>
+<p>Check with the front cart: 270 − 20 − 90 = 160 N, and 40 × 4.0 = 160 N. ✔</p>
+</details></div>
+
+<h3>Terminal velocity</h3>
+<p>Air resistance increases as an object moves faster. A falling object therefore goes through three stages:</p>
+<ol>
+<li>At first, air resistance is small. The unbalanced force is nearly mg, so the acceleration is about 9.8 m s⁻².</li>
+<li>As it speeds up, air resistance increases, the unbalanced force decreases, so the acceleration decreases. The v–t graph curves and becomes less steep.</li>
+<li>Eventually air resistance equals the weight. The forces are <strong>balanced</strong>, so by Newton's first law the object moves at a <strong>constant velocity</strong>: its <dfn>terminal velocity</dfn>.</li>
+</ol>
+<div class="widget" id="w-terminal">
+  <h3 class="widget-title">Cadet parachute descent</h3>
+  <p class="hint">Press Jump, wait for terminal velocity, then open the parachute. The forces and the v–t graph update as you fall. (This is an illustration: the cadet's weight is 784 N.)</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>"Explain, in terms of forces, why the parachutist reaches terminal velocity" is a two-mark favourite. You need <strong>both</strong> ideas: air resistance increases with speed until it is equal to the weight, <em>and</em> the forces are then balanced, so the velocity is constant (Newton's first law). Never say the forces are balanced "so there is no motion".</p></div>
+
+<div class="check" data-check="odu-forces"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="energy" class="prose">
+<h2 data-short="Energy and power">4 · Work, energy and power <span class="spec-tag">ODU · forces, energy and power</span></h2>
+<div class="eq-grid">
+  <div class="eq-card"><div class="eq"><var>E</var><sub>w</sub> = <var>F</var><var>d</var></div><p>Work done (J) by a force F (N) moving through distance d (m) in the direction of the force. Also written W = Fd.</p></div>
+  <div class="eq-card"><div class="eq"><var>E</var><sub>p</sub> = <var>m</var><var>g</var><var>h</var></div><p>Gravitational potential energy gained when mass m is lifted through height h.</p></div>
+  <div class="eq-card"><div class="eq"><var>E</var><sub>k</sub> = ½<var>m</var><var>v</var>²</div><p>Kinetic energy. Doubling the speed gives four times the kinetic energy.</p></div>
+  <div class="eq-card"><div class="eq"><var>P</var> = <span class="frac"><span><var>E</var></span><span><var>t</var></span></span></div><p>Power (W): energy transferred per second.</p></div>
+</div>
+<p>The <dfn>principle of conservation of energy</dfn>: energy cannot be created or destroyed, only changed from one form into another. In problems, the energy you start with equals the energy you finish with plus any work done against friction (which ends up as heat).</p>
+<div class="worked"><p class="worked-title">Worked example · a minecart on a roller-coaster track</p>
+<p>A minecart and its crew, total mass 450 kg, start from rest at the top of a track 12 m high. At the bottom they are moving at 14 m s⁻¹. The track is 80 m long. Calculate the average friction force.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>E<sub>p</sub> lost = mgh = 450 × 9.8 × 12 = 52 920 J</li>
+<li>E<sub>k</sub> gained = ½mv² = ½ × 450 × 14² = 44 100 J</li>
+<li>Work done against friction = 52 920 − 44 100 = 8820 J</li>
+<li><span class="eqi">E<sub>w</sub> = Fd</span> → <span class="eqi">8820 = F × 80</span> → <span class="ans">F = 110 N</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example · weighing anchor</p>
+<p>The crew at the capstan raise the 1500 kg anchor through 20 m at a steady speed in 60 s. Calculate the useful power they produce.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>At steady speed the work done goes into potential energy: E<sub>p</sub> = mgh = 1500 × 9.8 × 20 = 294 000 J</li>
+<li><span class="eqi">P = E / t = 294 000 / 60</span> → <span class="ans">P = 4900 W</span> (4.9 kW: about 50 sailors each producing roughly 100 W)</li>
+</ol>
+</details></div>
+<div class="check" data-check="odu-energy"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="collisions" class="prose">
+<h2 data-short="Collisions and impulse">5 · Collisions, explosions and impulse <span class="spec-tag">ODU · collisions, explosions, and impulse</span></h2>
+<p><dfn>Momentum</dfn> is mass × velocity: <span class="eqi"><var>p</var> = <var>m</var><var>v</var></span>, measured in kg m s⁻¹. It is a <strong>vector</strong>: a minecart moving left has negative momentum if right is positive.</p>
+<div class="callout def"><div class="callout-title">📘 Conservation of linear momentum</div>
+<p>The <strong>total</strong> momentum before a collision (or explosion) is equal to the <strong>total</strong> momentum after it, <strong>in the absence of external forces</strong>.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked to state this law, many candidates did not say that it is the <em>total</em> momentum that is conserved, and others did not mention the <em>absence of external forces</em>. Both are needed. Learn the box above word for word.</p></div>
+
+<h3>Elastic, inelastic and explosions</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Interaction</th><th>Total momentum</th><th>Total kinetic energy</th></tr></thead>
+<tbody>
+<tr><td><strong>Elastic</strong> collision</td><td>conserved</td><td>conserved</td></tr>
+<tr><td><strong>Inelastic</strong> collision (they may bounce apart <em>or</em> stick together)</td><td>conserved</td><td>decreases: some becomes heat and sound</td></tr>
+<tr><td><strong>Explosion</strong> (objects start together and push apart)</td><td>conserved (often zero before, so zero after)</td><td>increases: stored energy (chemical, or in a spring) becomes kinetic</td></tr>
+</tbody></table></div>
+<p>To show a collision is inelastic, calculate the total E<sub>k</sub> before and after and show that it has decreased. Just saying "they stuck together" is not enough.</p>
+<div class="widget" id="w-carts">
+  <h3 class="widget-title">Minecart crash lab</h3>
+  <p class="hint">Set the masses and velocities (right is positive), choose the type of interaction and watch the bars. Total momentum never changes. Kinetic energy only stays the same in the elastic case.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example · head-on minecarts</p>
+<p>Minecart A (400 kg) moves right at 4.0 m s⁻¹. It collides head-on with minecart B (200 kg) moving left at 2.0 m s⁻¹. They lock together. (a) Calculate their velocity after the collision. (b) Show that the collision is inelastic.</p>
+<details><summary>Show solution</summary>
+<p>Take <strong>right as positive</strong>, so B's velocity is −2.0 m s⁻¹.</p>
+<ol class="steps">
+<li>(a) Total momentum before = total momentum after</li>
+<li><span class="eqi">m<sub>A</sub>u<sub>A</sub> + m<sub>B</sub>u<sub>B</sub> = (m<sub>A</sub> + m<sub>B</sub>)v</span></li>
+<li><span class="eqi">(400 × 4.0) + (200 × −2.0) = 600 × v</span></li>
+<li><span class="eqi">1600 − 400 = 600v</span> → <span class="ans">v = 2.0 m s⁻¹ to the right</span></li>
+<li>(b) E<sub>k</sub> before = ½ × 400 × 4.0² + ½ × 200 × 2.0² = 3200 + 400 = 3600 J</li>
+<li>E<sub>k</sub> after = ½ × 600 × 2.0² = 1200 J. The total kinetic energy has decreased, so <span class="ans">the collision is inelastic</span>.</li>
+</ol>
+<p>Forget the minus sign on B's velocity and you get 3.3 m s⁻¹: the most common way to lose these marks.</p>
+</details></div>
+
+<h3>Newton's third law and the gun's recoil</h3>
+<p>When a gun fires, the expanding powder gases push the shot forwards and push the gun backwards with a force of the <em>same size</em> for the <em>same time</em> (Newton's third law). So the shot and the gun receive equal and opposite changes in momentum. That is why total momentum is conserved, and it is why guns recoil.</p>
+<div class="worked"><p class="worked-title">Worked example · the 32-pounder's kick</p>
+<p>A 32-pounder fires a 14.5 kg shot at 450 m s⁻¹. The gun and its carriage have a mass of 3300 kg and start at rest. Ignore the mass of the powder gases. (a) Calculate the recoil velocity of the gun. (b) The breeching rope brings the gun to rest in 0.40 s. Calculate the average force the rope exerts.</p>
+<details><summary>Show solution</summary>
+<p>Take the direction the shot travels as positive. Before firing, the total momentum is zero.</p>
+<ol class="steps">
+<li>(a) <span class="eqi">0 = (14.5 × 450) + (3300 × v)</span> → <span class="ans">v = −2.0 m s⁻¹</span>: 2.0 m s⁻¹ backwards</li>
+<li>(b) <span class="eqi">Ft = mv − mu</span> → <span class="eqi">F × 0.40 = 3300 × 0 − 3300 × (−1.98)</span></li>
+<li><span class="ans">F = 1.6 × 10⁴ N</span>, acting forwards on the gun (which is why the rope had to be so thick)</li>
+</ol>
+</details></div>
+
+<h3>Impulse and force–time graphs</h3>
+<p>Rearranging F = ma with a = (v − u)/t gives:</p>
+<p class="eq"><var>F</var><var>t</var> = <var>m</var><var>v</var> − <var>m</var><var>u</var></p>
+<p>The quantity <var>F</var><var>t</var> is the <dfn>impulse</dfn> of the force (unit N s, which is the same as kg m s⁻¹). <strong>Impulse equals the change in momentum</strong>, and it equals the <strong>area under a force–time graph</strong>. Real forces in collisions are not constant: they rise and fall. The average force is the constant force that would give the same area in the same time.</p>
+<div class="widget" id="w-impulse">
+  <h3 class="widget-title">Oak hull or sandbags? Stopping a 14.5 kg shot travelling at 20 m s⁻¹</h3>
+  <p class="hint">Stretch the contact time. The area (the impulse) stays the same, because the change in momentum is fixed, but the peak force drops dramatically. Then make the shot bounce back.</p>
+</div>
+<p>This is why crumple zones, airbags, cycle helmets and the soft mats under a high jump work: they <strong>increase the time</strong> over which the momentum changes, which <strong>reduces the average force</strong>.</p>
+<div class="worked"><p class="worked-title">Worked example · a rebound (watch the vectors)</p>
+<p>A 0.20 kg ball hits a wall at 12 m s⁻¹ and rebounds along the same line at 8.0 m s⁻¹. It is in contact with the wall for 0.050 s. Calculate the average force the wall exerts on the ball.</p>
+<details><summary>Show solution</summary>
+<p>Take the direction towards the wall as positive, so u = +12 m s⁻¹ and v = −8.0 m s⁻¹.</p>
+<ol class="steps">
+<li><span class="eqi">Ft = mv − mu</span></li>
+<li><span class="eqi">F × 0.050 = (0.20 × −8.0) − (0.20 × 12)</span> = −1.6 − 2.4 = −4.0 N s</li>
+<li><span class="ans">F = −80 N</span>: 80 N directed away from the wall</li>
+</ol>
+<p>Forgetting that velocity is a vector gives (0.20 × 8.0 − 0.20 × 12)/0.050 = −16 N, which is far too small.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>"Few candidates calculated the mean force correctly. Many candidates did not take the vector nature of the velocities into account." If something bounces back, its change in velocity is the <em>sum</em> of the two speeds.</p></div>
+<div class="check" data-check="odu-collisions"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="projectiles" class="prose">
+<h2 data-short="Projectiles">6 · Projectiles: the bow chaser <span class="spec-tag">ODU · gravitation</span></h2>
+<p>A <dfn>projectile</dfn> is anything moving freely under gravity alone: a cannonball, a thrown ball, a parcel dropped from an aircraft. The single most important idea is this:</p>
+<div class="callout def"><div class="callout-title">📘 Key idea</div><p><strong>The horizontal motion and the vertical motion of a projectile are independent of each other.</strong> Ignoring air resistance, the horizontal velocity stays constant (no horizontal force), while the vertical motion has a constant acceleration of 9.8 m s⁻² downwards.</p></div>
+<p>So you solve a projectile problem as <em>two separate</em> one-dimensional problems linked only by the <strong>time</strong>:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Horizontal</th><th>Vertical</th></tr></thead>
+<tbody>
+<tr><td>Acceleration</td><td>0</td><td>9.8 m s⁻² downwards</td></tr>
+<tr><td>Velocity</td><td>constant, u<sub>h</sub> = u cos θ</td><td>starts at u<sub>v</sub> = u sin θ, changes by 9.8 m s⁻¹ every second</td></tr>
+<tr><td>Use</td><td>d = v̄t (here v̄ = u<sub>h</sub>)</td><td>the equations of motion</td></tr>
+</tbody></table></div>
+<figure class="diagram"><svg viewBox="0 0 520 215" role="img" aria-label="Path of a projectile launched at speed u and angle theta. The horizontal component u cos theta stays the same; the vertical component decreases to zero at the top, then increases downwards."><polyline points="40.0,190.0 49.8,178.6 59.7,167.7 69.5,157.4 79.4,147.7 89.2,138.7 99.1,130.1 108.9,122.2 118.8,114.9 128.6,108.1 138.5,102.0 148.3,96.4 158.2,91.4 168.0,87.0 177.9,83.2 187.7,80.0 197.6,77.3 207.4,75.3 217.3,73.8 227.1,72.9 237.0,72.6 246.8,72.9 256.7,73.8 266.5,75.3 276.4,77.3 286.2,80.0 296.1,83.2 305.9,87.0 315.7,91.4 325.6,96.4 335.4,102.0 345.3,108.1 355.1,114.9 365.0,122.2 374.8,130.1 384.7,138.7 394.5,147.7 404.4,157.4 414.2,167.7 424.1,178.6 433.9,190.0" fill="none" class="stroke-ink" stroke-width="2" stroke-dasharray="5 4"/><line x1="30.0" y1="190.0" x2="453.9" y2="190.0" class="stroke-ink" stroke-width="1.5"/><line x1="40.0" y1="190.0" x2="79.0" y2="143.5" class="s-red" stroke-width="3.5" stroke-linecap="round"/><polygon points="85.0,136.4 82.0,147.0 75.1,141.2" class="f-red"/><text x="58" y="120" text-anchor="start" font-size="15" class="f-red" font-weight="700" font-style="italic">u</text><line x1="40.0" y1="190.0" x2="76.5" y2="190.0" class="s-sea" stroke-width="3" stroke-linecap="round"/><polygon points="85.0,190.0 75.9,194.1 75.9,185.9" class="f-sea"/><text x="70" y="208" text-anchor="middle" font-size="13" class="f-sea" font-weight="700">u cos θ</text><line x1="85.0" y1="190.0" x2="85.0" y2="144.9" class="s-gold" stroke-width="3" stroke-linecap="round"/><polygon points="85.0,136.4 89.1,145.5 80.9,145.5" class="f-gold"/><text x="90.99513267805776" y="164" text-anchor="start" font-size="13" class="f-gold" font-weight="700">u sin θ</text><circle cx="138.5" cy="102.0" r="5" class="ink"/><line x1="138.5" y1="102.0" x2="160.5" y2="102.0" class="s-sea" stroke-width="2.5" stroke-linecap="round"/><polygon points="167.3,102.0 160.0,105.2 160.0,98.7" class="f-sea"/><line x1="138.5" y1="102.0" x2="138.5" y2="91.6" class="s-gold" stroke-width="2.5" stroke-linecap="round"/><polygon points="138.5,84.8 141.7,92.1 135.2,92.1" class="f-gold"/><text x="148.4807753012208" y="87.97638667498023" text-anchor="start" font-size="12" class="halo" font-weight="700">v_v up, getting smaller</text><text x="148.4807753012208" y="87.97638667498023" text-anchor="start" font-size="12" class="ink" font-weight="700">v_v up, getting smaller</text><circle cx="237.0" cy="72.6" r="5" class="ink"/><line x1="237.0" y1="72.6" x2="259.0" y2="72.6" class="s-sea" stroke-width="2.5" stroke-linecap="round"/><polygon points="265.8,72.6 258.5,75.9 258.5,69.4" class="f-sea"/><text x="236.9615506024416" y="52.63518223330698" text-anchor="middle" font-size="12" class="halo" font-weight="700">v_v = 0 at the top</text><text x="236.9615506024416" y="52.63518223330698" text-anchor="middle" font-size="12" class="ink" font-weight="700">v_v = 0 at the top</text><circle cx="355.1" cy="114.9" r="5" class="ink"/><line x1="355.1" y1="114.9" x2="377.1" y2="114.9" class="s-sea" stroke-width="2.5" stroke-linecap="round"/><polygon points="383.9,114.9 376.6,118.1 376.6,111.6" class="f-sea"/><line x1="355.1" y1="114.9" x2="355.1" y2="128.7" class="s-gold" stroke-width="2.5" stroke-linecap="round"/><polygon points="355.1,135.5 351.9,128.2 358.4,128.2" class="f-gold"/><text x="365.1384809639066" y="142.88651662931656" text-anchor="start" font-size="12" class="halo" font-weight="700">v_v down, getting bigger</text><text x="365.1384809639066" y="142.88651662931656" text-anchor="start" font-size="12" class="ink" font-weight="700">v_v down, getting bigger</text><text x="236.9615506024416" y="210" text-anchor="middle" font-size="12" class="f-sea" font-weight="700">horizontal velocity u cos θ: the same all the way</text></svg><figcaption>Resolve the launch velocity first. The horizontal arrow is the same length at every point; the vertical arrow shrinks to zero at the top and then grows downwards.</figcaption></figure>
+<div class="widget" id="w-cannon">
+  <h3 class="widget-title">The bow chaser: projectile range</h3>
+  <p class="hint">Fire horizontally (0°) with "drop a second ball" ticked. The red ball is simply dropped at the moment of firing. It hits the sea at <em>exactly</em> the same time as the cannonball, whatever the launch speed. That is independence. Then try angles above and below the horizontal.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example · fired horizontally from the gun deck</p>
+<p>A gun on the lower deck, 4.9 m above the sea, fires a shot horizontally at 450 m s⁻¹. Ignore air resistance. Calculate (a) the time the shot is in the air, (b) the horizontal distance it travels, (c) its vertical velocity just before it hits the water.</p>
+<details><summary>Show solution</summary>
+<p>Vertically, take down as positive: u<sub>v</sub> = 0, a = 9.8 m s⁻², s = 4.9 m.</p>
+<ol class="steps">
+<li>(a) <span class="eqi">s = ut + ½at²</span> → <span class="eqi">4.9 = 0 + ½ × 9.8 × t²</span> → <span class="ans">t = 1.0 s</span></li>
+<li>(b) Horizontally: <span class="eqi">d = v̄t = 450 × 1.0</span> → <span class="ans">450 m</span></li>
+<li>(c) <span class="eqi">v = u + at = 0 + 9.8 × 1.0</span> → <span class="ans">9.8 m s⁻¹ downwards</span></li>
+</ol>
+<p>A ball simply <em>dropped</em> from the same height would also take 1.0 s. The 450 m s⁻¹ horizontal speed makes no difference to the time of flight.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example · fired at an angle</p>
+<p>A shot is fired from sea level at 25 m s⁻¹ at 40° above the horizontal. Ignore air resistance. Calculate (a) the components of its initial velocity, (b) the time to reach maximum height, (c) the range, (d) the maximum height.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) <span class="eqi">u<sub>h</sub> = 25 cos 40° = 19.2 m s⁻¹</span>; <span class="eqi">u<sub>v</sub> = 25 sin 40° = 16.1 m s⁻¹</span></li>
+<li>(b) Vertically, up positive: at the top v<sub>v</sub> = 0. <span class="eqi">v = u + at</span> → <span class="eqi">0 = 16.1 + (−9.8)t</span> → <span class="ans">t = 1.6 s</span> (1.64 s)</li>
+<li>(c) It lands at the same height, so total time = 2 × 1.64 = 3.28 s. Range <span class="eqi">= 19.2 × 3.28</span> → <span class="ans">63 m</span></li>
+<li>(d) <span class="eqi">v² = u² + 2as</span> → <span class="eqi">0 = 16.1² + 2(−9.8)s</span> → <span class="ans">s = 13 m</span></li>
+</ol>
+<p>Check with the lab above: set 25 m s⁻¹, 40° and a height of 0 m.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout</div><p>At the top of the flight the velocity is <strong>not</strong> zero: the vertical component is zero, but the horizontal component is still u cos θ. And on a v–t graph for the vertical motion, the gradient is −9.8 m s⁻² all the way.</p></div>
+<div class="check" data-check="odu-projectiles"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="gravity" class="prose">
+<h2 data-short="Gravity and satellites">7 · Gravity, satellites and universal gravitation <span class="spec-tag">ODU · gravitation</span></h2>
+
+<h3 id="g-experiment">Experiment: measuring the acceleration of a falling object</h3>
+<ol>
+<li>A steel ball is held by an electromagnet above a trapdoor (or above a light gate). Switching off the magnet releases the ball <em>and</em> starts an electronic timer.</li>
+<li>The ball falls through a measured height <var>h</var> (metre stick) and opens the trapdoor, which stops the timer, giving the time of fall <var>t</var>.</li>
+<li>Since the ball starts from rest, <span class="eqi">s = ut + ½at²</span> becomes <span class="eqi">h = ½ g t²</span>, so <span class="eqi">g = 2h / t²</span>.</li>
+<li>Repeat for several heights. Plot <var>h</var> against <var>t</var>²: the graph is a straight line through the origin whose <strong>gradient is g/2</strong>. Using the gradient is better than averaging separate values, because it uses all the data and reveals any systematic offset.</li>
+</ol>
+<p>Other acceptable versions: two light gates and a card (as on the slope, but vertical), or a ball dropped through a single light gate with a known diameter, measuring its speed after falling a known height and using v² = u² + 2as.</p>
+
+<h3>Satellites are falling</h3>
+<p>Isaac Newton imagined a cannon on a mountain so tall that it was above the air. Fire a shot horizontally and it falls to the ground. Fire faster and it lands further away. Fire fast enough, and the curved Earth drops away beneath the shot as fast as the shot falls: it never lands. It keeps falling around the planet. That is an orbit.</p>
+<div class="callout def"><div class="callout-title">📘 Key idea</div><p><strong>A satellite is in free fall around the planet (or star).</strong> The only force acting on it is gravity. Its horizontal velocity carries it sideways while gravity accelerates it towards the centre.</p></div>
+<div class="widget" id="w-newton">
+  <h3 class="widget-title">Newton's cannon on a block-built planet</h3>
+  <p class="hint">Raise the launch speed slowly from 0.3 to 1.5 times orbital speed. The red arrow is gravity: it never switches off, and it always points to the centre.</p>
+</div>
+<p>Astronauts on the International Space Station feel "weightless" for the same reason a cadet feels light at the top of a loop in the Tutor: they and their craft are all falling together. Gravity at the ISS's height is still about 90% of its strength at the surface.</p>
+
+<h3>Newton's law of universal gravitation</h3>
+<p>Every mass attracts every other mass. The force between two masses is:</p>
+<p class="eq"><var>F</var> = <var>G</var> <span class="frac"><span><var>m</var>₁<var>m</var>₂</span><span><var>r</var>²</span></span></p>
+<p>where G = 6.67 × 10⁻¹¹ m³ kg⁻¹ s⁻² (on the data sheet) and <var>r</var> is the distance between the <strong>centres</strong> of the two masses. The force acts on <em>both</em> masses, equal and opposite (Newton's third law). It is an <dfn>inverse square law</dfn>: double the separation and the force falls to a quarter.</p>
+<div class="worked"><p class="worked-title">Worked example · the Earth and the Moon</p>
+<p>The Earth has a mass of 6.0 × 10²⁴ kg and the Moon a mass of 7.3 × 10²² kg. The distance between their centres is 3.84 × 10⁸ m. Calculate the gravitational force between them.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li><span class="eqi">F = Gm₁m₂ / r²</span></li>
+<li><span class="eqi">F = 6.67 × 10⁻¹¹ × 6.0 × 10²⁴ × 7.3 × 10²² / (3.84 × 10⁸)²</span></li>
+<li><span class="ans">F = 2.0 × 10²⁰ N</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example · two ships of the line</p>
+<p>Two first-rates, each of mass 3.5 × 10⁶ kg, lie 100 m apart (centre to centre). Calculate the gravitational force between them.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li><span class="eqi">F = 6.67 × 10⁻¹¹ × 3.5 × 10⁶ × 3.5 × 10⁶ / 100²</span></li>
+<li><span class="ans">F = 0.082 N</span>, less than the weight of a single cartridge. Gravity is very weak unless at least one of the masses is enormous.</li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Asked whether the force on a more distant planet would be smaller, many candidates said "less" but only some justified it. A full answer refers to the relationship: F is inversely proportional to r², so a larger r gives a smaller F. A quick calculation also counts as justification.</p></div>
+<div class="check" data-check="odu-gravity"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="relativity" class="prose">
+<h2 data-short="Special relativity">8 · Special relativity <span class="spec-tag">ODU · special relativity</span></h2>
+<p>In 1905 Albert Einstein built a new theory of space and time on one experimental fact:</p>
+<div class="callout def"><div class="callout-title">📘 Key idea</div><p><strong>The speed of light in a vacuum is the same for all observers</strong>, whatever their own motion, and whatever the motion of the light source: c = 3.00 × 10⁸ m s⁻¹.</p></div>
+<p>That sounds harmless, but it isn't. If the Tutor flies towards a cadet at 60 m s⁻¹ and throws a ball forward at 10 m s⁻¹, the cadet sees the ball arrive at 70 m s⁻¹. If the pilot shines a torch forward instead, the cadet does <em>not</em> measure c + 60 m s⁻¹. They measure c, exactly as the pilot does. For both of them to measure the same speed for the same light, their measurements of <strong>time</strong> and <strong>distance</strong> must differ.</p>
+
+<h3>Time dilation</h3>
+<p>Imagine a <dfn>light clock</dfn>: a pulse of light bouncing between two mirrors. Each round trip is one tick. On board a fast craft the pulse simply goes up and down. Seen from HMS Redstone, the clock is moving, so the pulse travels along a longer, slanting path. Light has the same speed for both observers, so the longer path must take longer. The moving clock ticks slowly.</p>
+<div class="widget" id="w-lightclock">
+  <h3 class="widget-title">Two light clocks</h3>
+  <p class="hint">Raise the speed of the craft. Count the ticks: the moving clock falls behind. Watch the hull too: the moving craft is shorter in the direction it travels.</p>
+</div>
+<p class="eq"><var>t</var>′ = <span class="frac"><span><var>t</var></span><span class="sqrt">√<span>1 − (<var>v</var>/<var>c</var>)²</span></span></span></p>
+<ul>
+<li><var>t</var> is the time interval measured by an observer who is <strong>at rest relative to the event</strong> (moving with the clock). For example, the time on the craft's own clock.</li>
+<li><var>t</var>′ is the time interval for the <em>same</em> event measured by an observer for whom the event is <strong>moving</strong> at speed v. It is always longer: this is <dfn>time dilation</dfn>.</li>
+</ul>
+<details class="worked"><summary><b>Optional: where the formula comes from</b></summary>
+<figure class="diagram"><svg viewBox="0 0 420 220" role="img" aria-label="Light clock geometry. On board, light travels straight up a distance D. Seen from the ship, the clock moves sideways v t prime over 2 while the light travels c t prime over 2 along a diagonal, forming a right-angled triangle with side D."><line x1="40.0" y1="40.0" x2="40.0" y2="160.0" class="stroke-ink" stroke-width="1"/><rect x="20" y="30" width="40" height="6" class="ink"/><rect x="20" y="160" width="40" height="6" class="ink"/><line x1="40.0" y1="158.0" x2="40.0" y2="47.6" class="s-gold" stroke-width="3" stroke-linecap="round"/><polygon points="40.0,40.0 43.7,48.2 36.3,48.2" class="f-gold"/><text x="48" y="100" text-anchor="start" font-size="15" class="ink" font-weight="700" font-style="italic">D</text><text x="40" y="190" text-anchor="middle" font-size="12" class="ink">on board: light goes up 2D in t</text><rect x="160" y="160" width="40" height="6" class="ink"/><rect x="260" y="30" width="40" height="6" class="ink" opacity=".6"/><rect x="360" y="160" width="40" height="6" class="ink" opacity=".35"/><line x1="180.0" y1="158.0" x2="275.1" y2="45.8" class="s-gold" stroke-width="3" stroke-linecap="round"/><polygon points="280.0,40.0 277.5,48.6 271.9,43.9" class="f-gold"/><line x1="280.0" y1="40.0" x2="375.1" y2="152.2" class="s-gold" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 4"/><polygon points="380.0,158.0 371.9,154.1 377.5,149.4" class="f-gold"/><line x1="280.0" y1="40.0" x2="280.0" y2="160.0" class="stroke-ink" stroke-width="1" stroke-dasharray="4 3"/><text x="286" y="110" text-anchor="start" font-size="15" class="ink" font-weight="700" font-style="italic">D</text><line x1="180.0" y1="175.0" x2="280.0" y2="175.0" class="stroke-ink" stroke-width="1.5"/><text x="230" y="192" text-anchor="middle" font-size="14" class="ink" font-weight="700" font-style="italic">v t′/2</text><text x="214" y="90" text-anchor="end" font-size="14" class="f-gold" font-weight="700" font-style="italic">c t′/2</text><text x="280" y="210" text-anchor="middle" font-size="12" class="ink">from the ship: the clock moves, the light's path is longer</text></svg></figure>
+<p>On board, one half-tick takes t/2 = D/c. Seen from the ship, during half a tick (t′/2) the light travels c t′/2 along the diagonal while the clock moves v t′/2 sideways. Pythagoras gives (c t′/2)² = D² + (v t′/2)². Rearranging: t′²(c² − v²) = 4D², and since 2D/c = t, this gives t′ = t / √(1 − v²/c²). You don't need this for the exam, but it shows the formula is nothing more than Pythagoras plus "light has the same speed for everyone".</p>
+</details>
+
+<h3>Length contraction</h3>
+<p class="eq"><var>l</var>′ = <var>l</var> <span class="sqrt">√<span>1 − (<var>v</var>/<var>c</var>)²</span></span></p>
+<ul>
+<li><var>l</var> is the length measured by an observer <strong>at rest relative to the object</strong>.</li>
+<li><var>l</var>′ is the length measured by an observer for whom the object is moving at speed v, along its direction of motion. It is always shorter: <dfn>length contraction</dfn>.</li>
+</ul>
+<p>Only the length <em>along</em> the direction of motion contracts. A craft flying left to right gets shorter, not thinner.</p>
+
+<div class="worked"><p class="worked-title">Worked example · a fast courier</p>
+<p>A spacecraft travels past Earth at 0.80c. The journey between two beacons takes 3.0 hours on the craft's own clock. (a) How long does the journey take as measured from Earth? (b) The craft is 60 m long when at rest. How long is it as measured from Earth?</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>√(1 − 0.80²) = √0.36 = 0.60</li>
+<li>(a) <span class="eqi">t′ = t / √(1 − v²/c²) = 3.0 / 0.60</span> → <span class="ans">t′ = 5.0 hours</span></li>
+<li>(b) <span class="eqi">l′ = l √(1 − v²/c²) = 60 × 0.60</span> → <span class="ans">l′ = 36 m</span></li>
+</ol>
+<p>The times can stay in hours: the formula only needs t and t′ in the same unit. The ratio v/c has no unit at all.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example · the muons that shouldn't reach the ground</p>
+<p>Muons are created about 10 km up, when cosmic rays strike the top of the atmosphere. In their own frame of reference they last (on average) 2.2 μs. They travel at 0.995c. Explain how many of them reach the ground.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>Without relativity: distance = speed × time = 0.995 × 3.00 × 10⁸ × 2.2 × 10⁻⁶ ≈ 660 m. They should all decay long before the ground.</li>
+<li>From the ground, their lifetime is dilated: <span class="eqi">t′ = 2.2 × 10⁻⁶ / √(1 − 0.995²)</span> = <span class="ans">2.2 × 10⁻⁵ s</span> (ten times longer).</li>
+<li>In that time they travel 0.995 × 3.00 × 10⁸ × 2.2 × 10⁻⁵ ≈ 6.6 km, so a large fraction of them reach detectors on the ground, as is observed.</li>
+</ol>
+<p>From the muon's point of view, its lifetime is normal but the atmosphere is length-contracted to about 1 km. Both views agree on what happens.</p>
+</details></div>
+<p>Why don't we notice any of this? At the Tutor's cruising speed of about 60 m s⁻¹, v/c is 2 × 10⁻⁷ and the effect is about one part in 5 × 10¹³. Relativity matters for particles in accelerators, for cosmic rays, and for GPS satellites, whose clocks must be corrected or the system would drift by kilometres a day.</p>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Most candidates identified the effect as time dilation, but "a significant number of candidates did not spell dilation correctly, with 'dilatation' being a common error." It is <strong>dilation</strong>. The most common slip in calculations is mixing up t and t′: the moving clock's own reading is the <em>shorter</em> one.</p></div>
+<div class="check" data-check="odu-relativity"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="doppler" class="prose">
+<h2 data-short="Doppler and redshift">9 · The Doppler effect and redshift <span class="spec-tag">ODU · the expanding Universe</span></h2>
+<p>When a source of waves moves, the waves it sends forwards are squashed together and the waves it sends backwards are spread out. A listener ahead hears a <strong>higher</strong> frequency; a listener behind hears a <strong>lower</strong> one. This is the <dfn>Doppler effect</dfn>. You hear it as a siren, a racing car or a low-flying aircraft goes past: "neeee-owww".</p>
+<div class="widget" id="w-doppler">
+  <h3 class="widget-title">The ship's bell, rowed past at speed</h3>
+  <p class="hint">The rings are wavefronts. They all travel at the speed of sound, 340 m s⁻¹, but each one starts from wherever the boat was when it was sent out. Press 🔊 to hear the pitch drop as it passes.</p>
+</div>
+<p>For a source moving with speed v<sub>s</sub> towards or away from a stationary observer, with waves of speed v:</p>
+<p class="eq"><var>f</var><sub>o</sub> = <var>f</var><sub>s</sub> <span class="frac"><span><var>v</var></span><span><var>v</var> ∓ <var>v</var><sub>s</sub></span></span></p>
+<ul>
+<li>Source moving <strong>towards</strong> the observer: use <strong>v − v<sub>s</sub></strong> (smaller denominator, so f<sub>o</sub> is bigger).</li>
+<li>Source moving <strong>away</strong>: use <strong>v + v<sub>s</sub></strong> (f<sub>o</sub> is smaller).</li>
+</ul>
+<p>Check your answer makes sense: approaching always means a higher pitch.</p>
+<div class="worked"><p class="worked-title">Worked example · the Tutor's flypast</p>
+<p>The Tutor flies directly towards a cadet at 55 m s⁻¹. Its engine produces a note of 160 Hz. The speed of sound is 340 m s⁻¹. Calculate the frequency the cadet hears (a) as it approaches and (b) after it has passed.</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) <span class="eqi">f<sub>o</sub> = 160 × 340 / (340 − 55)</span> → <span class="ans">190 Hz</span> (190.9 Hz)</li>
+<li>(b) <span class="eqi">f<sub>o</sub> = 160 × 340 / (340 + 55)</span> → <span class="ans">138 Hz</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Many candidates explained well, "in terms of wavefronts", why a moving buzzer sounded higher. A good answer: <em>the source moves towards the observer between emitting one wavefront and the next, so the wavefronts arrive closer together; the wavelength is shorter and, since the speed of sound is unchanged, the frequency heard is higher.</em> The examiners noted that a labelled diagram made answers clearer.</p></div>
+
+<h3>Redshift</h3>
+<p>Light from a source moving <em>away</em> from us is Doppler-shifted to longer wavelengths: towards the red end of the spectrum. This is <dfn>redshift</dfn>. (Light from an approaching source is blueshifted.) Astronomers measure it using the dark absorption lines of elements such as hydrogen, which appear at precisely known wavelengths in the laboratory.</p>
+<div class="callout def"><div class="callout-title">📘 Redshift</div>
+<p>The <strong>redshift z</strong> of a galaxy is the change in wavelength divided by the emitted (rest) wavelength:</p>
+<p class="eq"><var>z</var> = <span class="frac"><span>λ<sub>observed</sub> − λ<sub>rest</sub></span><span>λ<sub>rest</sub></span></span></p>
+<p>For slowly moving galaxies (v much less than c), redshift is also the ratio of the galaxy's recessional velocity to the speed of light:</p>
+<p class="eq"><var>z</var> = <span class="frac"><span><var>v</var></span><span><var>c</var></span></span></p>
+<p>z is a ratio, so it has no unit.</p></div>
+<div class="widget" id="w-redshift">
+  <h3 class="widget-title">The captain's telescope: a galaxy's spectrum</h3>
+  <p class="hint">Raise the redshift. Every hydrogen line moves to a longer wavelength by the same <em>fraction</em>, so the gap grows for the longer wavelengths.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example · how fast and how far?</p>
+<p>The red hydrogen line (rest wavelength 656 nm, from the data sheet) is observed at 689 nm in the light from a galaxy. Calculate (a) the redshift, (b) the recessional velocity and (c) the distance to the galaxy. (H₀ = 2.3 × 10⁻¹⁸ s⁻¹.)</p>
+<details><summary>Show solution</summary>
+<ol class="steps">
+<li>(a) <span class="eqi">z = (689 − 656) / 656</span> → <span class="ans">z = 0.050</span> (0.0503)</li>
+<li>(b) <span class="eqi">z = v / c</span> → <span class="eqi">v = 0.0503 × 3.00 × 10⁸</span> → <span class="ans">v = 1.5 × 10⁷ m s⁻¹</span></li>
+<li>(c) <span class="eqi">v = H₀d</span> → <span class="eqi">d = 1.51 × 10⁷ / 2.3 × 10⁻¹⁸</span> → <span class="ans">d = 6.6 × 10²⁴ m</span> (about 700 million light-years)</li>
+</ol>
+</details></div>
+<div class="check" data-check="odu-doppler"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="universe" class="prose">
+<h2 data-short="The expanding Universe">10 · The expanding Universe <span class="spec-tag">ODU · the expanding Universe</span></h2>
+<h3>The Hubble–Lemaître law</h3>
+<p>In the 1920s Georges Lemaître and Edwin Hubble found that the further away a galaxy is, the faster it is moving away from us. The recessional velocity is proportional to the distance:</p>
+<p class="eq"><var>v</var> = <var>H</var>₀<var>d</var></p>
+<p>H₀ is the <dfn>Hubble constant</dfn>, about 2.3 × 10⁻¹⁸ s⁻¹ (data sheet). Measurements of the <strong>velocities</strong> of galaxies (from redshift) and their <strong>distances</strong> led to the theory of the <strong>expanding Universe</strong>. Galaxies are not flying apart through space like shrapnel: space itself is stretching, carrying the galaxies with it, and every galaxy sees the others receding.</p>
+<div class="widget" id="w-hubble">
+  <h3 class="widget-title">Stretching the map: there is no centre</h3>
+  <p class="hint">The block grid of galaxies grows. Pick any galaxy as "home": from there, every other galaxy moves away at a speed proportional to its distance.</p>
+</div>
+<h3>The age of the Universe</h3>
+<p>Run the expansion backwards. If a galaxy at distance d has always moved away at speed v = H₀d, it left "here" a time t = d/v = 1/H₀ ago:</p>
+<p class="eq">t = <span class="frac"><span>1</span><span>H₀</span></span> = <span class="frac"><span>1</span><span>2.3 × 10⁻¹⁸</span></span> = 4.3 × 10¹⁷ s ≈ 1.4 × 10¹⁰ years</p>
+<p>About 14 billion years. That is why the Hubble–Lemaître law lets us estimate the age of the Universe. (Precise measurements give 13.8 billion years.)</p>
+
+<h3>Weighing galaxies: dark matter</h3>
+<p>Stars orbit the centre of their galaxy, held by the gravity of all the mass inside their orbit. Measure how fast stars orbit (from the Doppler shift of their light) and you can estimate the <strong>mass of the galaxy</strong>. The results are startling: stars far from the centre orbit far too fast for the visible matter to hold them. There must be extra mass that we cannot see.</p>
+<figure class="diagram"><svg viewBox="0 0 500 205" role="img" aria-label="Galaxy rotation curve. Calculated from visible matter alone, the orbital speed of stars should fall with distance from the centre; the observed speed stays high, so the galaxy must contain extra unseen mass: dark matter."><line x1="60.0" y1="180.0" x2="60.0" y2="24.8" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="60.0,18.0 63.3,25.3 56.7,25.3" class="ink"/><line x1="60.0" y1="180.0" x2="473.2" y2="180.0" class="stroke-ink" stroke-width="1.5" stroke-linecap="round"/><polygon points="480.0,180.0 472.7,183.3 472.7,176.7" class="ink"/><text x="66" y="22.0" text-anchor="start" font-size="12" class="ink" font-weight="700">orbital speed of stars</text><text x="480" y="198.0" text-anchor="end" font-size="12" class="ink" font-weight="700">distance from centre of galaxy</text><polyline points="60.0,180.0 65.0,165.2 70.0,151.9 75.0,140.1 80.0,129.6 85.0,120.2 90.0,111.8 95.0,104.3 100.0,97.6 105.0,91.6 110.0,86.3 115.0,81.5 120.0,77.3 125.0,73.5 130.0,70.1 135.0,67.1 140.0,64.4 145.0,62.0 150.0,59.8 155.0,57.9 160.0,56.2 165.0,54.7 170.0,53.3 175.0,52.1 180.0,51.0 185.0,50.1 190.0,49.2 195.0,48.4 200.0,47.7 205.0,47.1 210.0,46.6 215.0,46.1 220.0,45.6 225.0,45.2 230.0,44.9 235.0,44.6 240.0,44.3 245.0,44.1 250.0,43.8 255.0,43.6 260.0,43.5 265.0,43.3 270.0,43.2 275.0,43.0 280.0,42.9 285.0,42.8 290.0,42.7 295.0,42.7 300.0,42.6 305.0,42.5 310.0,42.5 315.0,42.4 320.0,42.4 325.0,42.3 330.0,42.3 335.0,42.3 340.0,42.2 345.0,42.2 350.0,42.2 355.0,42.2 360.0,42.2 365.0,42.1 370.0,42.1 375.0,42.1 380.0,42.1 385.0,42.1 390.0,42.1 395.0,42.1 400.0,42.1 405.0,42.1 410.0,42.0 415.0,42.0 420.0,42.0 425.0,42.0 430.0,42.0 435.0,42.0 440.0,42.0 445.0,42.0 450.0,42.0 455.0,42.0 460.0,42.0" fill="none" class="s-red" stroke-width="3"/><polyline points="60.0,180.0 65.0,165.2 70.0,151.9 75.0,140.1 80.0,129.6 85.0,120.2 90.0,111.8 95.0,104.3 100.0,97.6 105.0,91.6 110.0,86.3 115.0,81.5 120.0,77.3 125.0,73.5 130.0,70.1 135.0,67.1 140.0,64.4 145.0,67.9 150.0,71.0 155.0,73.9 160.0,76.6 165.0,79.1 170.0,81.4 175.0,83.6 180.0,85.6 185.0,87.5 190.0,89.3 195.0,91.0 200.0,92.6 205.0,94.1 210.0,95.6 215.0,97.0 220.0,98.3 225.0,99.5 230.0,100.7 235.0,101.8 240.0,102.9 245.0,104.0 250.0,105.0 255.0,106.0 260.0,106.9 265.0,107.8 270.0,108.7 275.0,109.5 280.0,110.3 285.0,111.1 290.0,111.8 295.0,112.6 300.0,113.3 305.0,113.9 310.0,114.6 315.0,115.3 320.0,115.9 325.0,116.5 330.0,117.1 335.0,117.7 340.0,118.2 345.0,118.8 350.0,119.3 355.0,119.8 360.0,120.3 365.0,120.8 370.0,121.3 375.0,121.7 380.0,122.2 385.0,122.6 390.0,123.1 395.0,123.5 400.0,123.9 405.0,124.3 410.0,124.7 415.0,125.1 420.0,125.5 425.0,125.9 430.0,126.2 435.0,126.6 440.0,127.0 445.0,127.3 450.0,127.6 455.0,128.0 460.0,128.3" fill="none" class="s-sea" stroke-width="3" stroke-dasharray="7 5"/><text x="300" y="37.20000000000002" text-anchor="middle" font-size="13" class="halo" font-weight="700">observed: stays high</text><text x="300" y="37.20000000000002" text-anchor="middle" font-size="13" class="f-red" font-weight="700">observed: stays high</text><text x="340" y="123.0" text-anchor="middle" font-size="13" class="halo" font-weight="700">expected from visible matter alone</text><text x="340" y="123.0" text-anchor="middle" font-size="13" class="f-sea" font-weight="700">expected from visible matter alone</text></svg></figure>
+<p>This invisible mass is called <dfn>dark matter</dfn>. The <strong>evidence for dark matter comes from estimates of the mass of galaxies</strong>: the mass needed to explain the orbital speeds is several times the mass of all the stars, gas and dust we can see.</p>
+<h3>The accelerating Universe: dark energy</h3>
+<p>Gravity should slow the expansion down. In 1998, observations of distant exploding stars (type Ia supernovae) showed the opposite: the <strong>rate of expansion of the Universe is accelerating</strong>. Something is working against gravity on the largest scales. We call it <dfn>dark energy</dfn>. Current estimates are that ordinary matter makes up only about 5% of the Universe, dark matter about 27% and dark energy about 68%.</p>
+
+<h3>Temperature and colour of stars</h3>
+<p>Every hot object emits radiation over a wide range of wavelengths. For stars:</p>
+<ul>
+<li>The <strong>temperature</strong> of a star is related to the <strong>distribution</strong> of the radiation it emits across wavelengths.</li>
+<li>The <strong>peak wavelength</strong> of the distribution is <strong>shorter for hotter objects</strong>. Hot stars look blue-white; cooler stars look orange-red.</li>
+<li>Hotter objects emit <strong>more radiation per unit surface area per unit time</strong>, at every wavelength.</li>
+</ul>
+<div class="widget" id="w-blackbody">
+  <h3 class="widget-title">Starlight through the ship's prism</h3>
+  <p class="hint">Raise the temperature. The peak moves left (shorter wavelength) and the whole curve rises above the Sun's.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>When asked to sketch the curve for a hotter star, many drew a curve with a shorter peak wavelength but "fewer drew a curve that had a higher energy emitted per second per unit area at all wavelengths". The hotter curve must be above the cooler one <em>everywhere</em>. And when asked why a star looks redder than the Sun, "a number of candidates wrongly attempted to explain the difference in colour in terms of redshift". Colour tells you temperature: a cooler star has a longer peak wavelength.</p></div>
+
+<h3>Evidence for the Big Bang</h3>
+<p>The Big Bang theory says that the Universe began about 14 billion years ago in an extremely hot, dense state and has been expanding and cooling ever since. You need four pieces of evidence:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Evidence</th><th>What it is</th><th>Why it supports the Big Bang</th></tr></thead>
+<tbody>
+<tr><td><strong>Cosmic microwave background (CMB) radiation</strong></td><td>Faint microwave radiation arriving from every direction in the sky, with almost exactly the same intensity everywhere.</td><td>It is the heat glow of the early Universe, released when it had cooled enough to become transparent (about 380 000 years after the Big Bang) and stretched by the expansion from visible and infrared wavelengths into microwaves (about 2.7 K).</td></tr>
+<tr><td><strong>Abundance of hydrogen and helium</strong></td><td>About three-quarters of the ordinary matter in the Universe (by mass) is hydrogen and about one-quarter helium.</td><td>The Big Bang theory predicts exactly these amounts, made by nuclear fusion in the first few minutes while the Universe was hot enough.</td></tr>
+<tr><td><strong>The darkness of the sky (Olbers' paradox)</strong></td><td>If the Universe were infinite, unchanging and infinitely old, every line of sight would end on a star and the night sky would be bright.</td><td>A dark night sky means the Universe has a finite age (light from far enough away has not reached us yet) and is expanding (distant light is redshifted and weakened).</td></tr>
+<tr><td><strong>Redshift, not blueshift</strong></td><td>The light from the large majority of galaxies is redshifted.</td><td>Almost all galaxies are moving away from us, as expected in an expanding Universe.</td></tr>
+</tbody></table></div>
+<div class="callout exam"><div class="callout-title">⚠ From the 2025 course report</div><p>Many candidates could pick out correct statements about the CMB, and many could say that dark energy is thought to be responsible for the accelerating expansion. Learn the four pieces of evidence as a list. Questions often ask for two of them.</p></div>
+<div class="check" data-check="odu-universe"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="index.html">← Briefing room</a>
+  <a class="btn primary" href="waves.html">Up to the signal deck: Particles and Waves →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Qualifications Scotland Higher Physics course specification (version 4.1, September 2026, valid from session 2026–27). Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion site <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> covers Higher Computing Science.</p>
+  </div>
+</footer>
+<script src="dynamics.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

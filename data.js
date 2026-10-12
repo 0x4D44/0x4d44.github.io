@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "higher-physics",
+    title: "Shot, Spark & Starlight",
+    tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
+    url: "https://0x4d44.github.io/higher-physics/",
+    illustration: "ill-higher-physics",
+    date: "2026-10-12T22:00:00",
+    year: 2026,
+    readingMin: 110,
+    words: 22300,
+    tags: ["science", "simulation"],
+    real: true,
+  },
+  {
     slug: "higher-computing",
     title: "Blocks, Wings & Broadsides",
     tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, worked exam technique and a mock paper. Minecraft blocks, RAF Air Cadets and Napoleonic ships of the line carry the examples; live SQL, stepping algorithms and narrated video explainers do the teaching. Vanilla JavaScript, sql.js, Piper TTS.",
@@ -1938,7 +1951,7 @@ window.COLLECTIONS = [
     slugs: ["instruments", "audio-compression"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["conformers", "meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["higher-physics", "conformers", "meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },
