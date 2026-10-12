@@ -22,7 +22,7 @@
   const readouts = (box, items) => {
     const wrap = HP.el("div", { class: "readouts", "aria-live": "polite" });
     const map = {};
-    items.forEach(([k, label]) => { const b = HP.el("b"); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
+    items.forEach(([k, label]) => { const b = HP.quiet(HP.el("b")); map[k] = b; wrap.append(HP.el("div", null, b, HP.el("span", { html: label }))); });
     box.append(wrap);
     return map;
   };
