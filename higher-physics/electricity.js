@@ -102,7 +102,8 @@
     const sVs = HP.slider(ctr, { label: "Supply voltage V<sub>s</sub>", min: 3, max: 12, step: 0.5, value: 9, unit: "V", fmt: (v) => v.toFixed(1), oninput: () => sim.redraw() });
     const s1 = HP.slider(ctr, { label: "R₁", min: 100, max: 10000, step: 100, value: 2000, unit: "Ω", oninput: () => sim.redraw() });
     const s2 = HP.slider(ctr, { label: "R₂ (fixed)", min: 100, max: 10000, step: 100, value: 1000, unit: "Ω", oninput: () => sim.redraw() });
-    const sEnv = HP.slider(ctr, { label: "Temperature", min: 0, max: 80, step: 1, value: 20, unit: "°C", oninput: () => sim.redraw() });
+    let envUnit = "°C";
+    const sEnv = HP.slider(ctr, { label: "Temperature", min: 0, max: 80, step: 1, value: 20, fmt: (v) => envUnit ? v + " " + envUnit : "level " + v, oninput: () => sim.redraw() });
     const R = readouts(box, [["I", "current I = V<sub>s</sub> / (R₁ + R₂)"], ["V1", "V₁ = R₁ / (R₁ + R₂) × V<sub>s</sub>"], ["V2", "V₂"], ["ratio", "V₁ / V₂ = R₁ / R₂"]]);
     function r1() {
       if (mode === "fixed") return s1.value;
@@ -113,6 +114,8 @@
       s1.input.closest(".slider").hidden = mode !== "fixed";
       sEnv.input.closest(".slider").hidden = mode === "fixed";
       sEnv.input.closest(".slider").querySelector(".slider-name").textContent = mode === "therm" ? "Temperature" : "Light level";
+      envUnit = mode === "therm" ? "°C" : "";
+      sEnv.set(sEnv.value);
       sim.redraw();
     }
     const sim = HP.sim(cv, {
