@@ -158,20 +158,31 @@
 
   /* ---------- exam timer: a countdown for the mock paper ---------- */
   function initTimer(box) {
-    const total = +box.getAttribute("data-minutes") * 60;
-    let left = total, tick = null;
+    // deadline-based, so a throttled or backgrounded tab cannot make the clock drift
+    const totalMs = +box.getAttribute("data-minutes") * 60000;
+    let leftMs = totalMs, deadline = 0, tick = null;
     const face = HP.el("span", { class: "timer-face", role: "timer", "aria-live": "off" });
     const go = HP.el("button", { class: "btn small", type: "button" }, "▶ Start timer");
     const reset = HP.el("button", { class: "btn small", type: "button" }, "↺ Reset");
-    const show = () => { const m = Math.floor(left / 60), s = left % 60; face.textContent = `${m}:${String(s).padStart(2, "0")}`; box.classList.toggle("done", left === 0); };
-    const stop = () => { clearInterval(tick); tick = null; go.textContent = left ? "▶ Start timer" : "Time's up"; };
+    const remaining = () => (tick ? Math.max(0, deadline - Date.now()) : leftMs);
+    const show = () => {
+      const left = Math.ceil(remaining() / 1000), m = Math.floor(left / 60), s = left % 60;
+      face.textContent = `${m}:${String(s).padStart(2, "0")}`; box.classList.toggle("done", left === 0);
+    };
+    const stop = () => {
+      if (tick) leftMs = remaining();
+      clearInterval(tick); tick = null; box.classList.remove("running");
+      go.textContent = leftMs ? "▶ Start timer" : "Time's up";
+    };
     go.addEventListener("click", () => {
-      if (tick) { stop(); go.textContent = "▶ Resume"; return; }
-      if (!left) return;
+      if (tick) { stop(); show(); go.textContent = "▶ Resume"; return; }
+      if (!leftMs) return;
       go.textContent = "❚❚ Pause";
-      tick = setInterval(() => { left = Math.max(0, left - 1); show(); if (!left) { stop(); toast("Time's up: pens down for Section 1."); } }, 1000);
+      deadline = Date.now() + leftMs;
+      box.classList.add("running");
+      tick = setInterval(() => { show(); if (!remaining()) { stop(); show(); toast("Time's up: pens down for Section 1."); } }, 250);
     });
-    reset.addEventListener("click", () => { stop(); left = total; show(); });
+    reset.addEventListener("click", () => { stop(); leftMs = totalMs; go.textContent = "▶ Start timer"; show(); });
     box.append(HP.el("span", { class: "timer-label" }, "Section 1 clock"), face, go, reset);
     show();
   }
@@ -604,7 +615,7 @@
     const input = HP.el("input", { type: "range", id, min: o.min, max: o.max, step: o.step || 1, value: o.value });
     const wrap = HP.el("div", { class: "slider" },
       HP.el("label", { for: id }, HP.el("span", { class: "slider-name", html: o.label }), out), input);
-    const show = () => { out.textContent = (o.fmt ? o.fmt(+input.value) : input.value) + (o.unit ? " " + o.unit : ""); };
+    const show = () => { const t = (o.fmt ? o.fmt(+input.value) : input.value) + (o.unit ? " " + o.unit : ""); out.textContent = t; input.setAttribute("aria-valuetext", String(t).replace(/<[^>]*>/g, "")); };
     input.addEventListener("input", () => { show(); if (o.oninput) o.oninput(+input.value); });
     show();
     parent.append(wrap);

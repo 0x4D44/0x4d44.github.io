@@ -158,7 +158,8 @@ main { min-width: 0; }
   .brand-sub { display: none; }
   .mast-tools { margin-left: 0; width: 100%; justify-content: flex-end; }
   nav.decks { margin-left: -108px; width: calc(100% + 108px); }
-  nav.decks ul { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  /* wrap onto a second row rather than clipping tabs off the right edge */
+  nav.decks ul { flex-wrap: wrap; row-gap: 2px; }
   nav.decks li { flex: 0 0 auto; }
   nav.decks a { padding: 7px 9px; font-size: .86rem; }
   .rank-chip .rank-label strong { display: none; }
@@ -541,6 +542,8 @@ svg .s-line { stroke: var(--line); }
 .callout ul.lessons li { margin: 4px 0; }
 .diagram.hand svg { max-width: 200px; margin: 0 auto; display: block; }
 .exam-timer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); }
+/* while running, the clock stays on screen; top: 48px clears the fixed "← Almanac" pill [0,0 109x41] */
+.exam-timer.running { position: sticky; top: 48px; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
 .exam-timer .timer-label { font-weight: 700; }
 .exam-timer .timer-face { font-family: var(--font-body); font-variant-numeric: tabular-nums; font-size: 1.4rem; font-weight: 700; min-width: 4ch; }
 .exam-timer.done .timer-face { color: var(--redstone); }
