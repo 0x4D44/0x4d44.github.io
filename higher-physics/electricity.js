@@ -124,14 +124,20 @@
         const Vs = sVs.value, R1 = r1(), R2 = s2.value, I = Vs / (R1 + R2), V1 = I * R1, V2 = I * R2;
         R.I.textContent = F(I * 1000, 3) + " mA"; R.V1.textContent = F(V1, 3) + " V"; R.V2.textContent = F(V2, 3) + " V"; R.ratio.textContent = F(V1 / V2, 3);
         if (mode !== "fixed") s1.input.closest(".slider").querySelector(".slider-val").textContent = F(R1, 3) + " Ω";
-        const xL = 60, xR = Math.min(S.w - 120, 300), yT = 40, yB = 200, ym = 120;
+        const xL = 60, xR = Math.min(S.w - 160, 300), yT = 40, yB = 200, ym = 120;
         // supply on the left
         wire(ctx, [[xL, ym - 14], [xL, yT], [xR, yT], [xR, yB], [xL, yB], [xL, ym + 14]], "#b3261e", t, 0);
         px(ctx, xL - 14, ym - 3, 28, 3, C.ink); px(ctx, xL - 8, ym + 4, 16, 6, C.ink);
         HP.label(ctx, `${Vs.toFixed(1)} V`, xL - 18, ym, { size: 12, bold: true, align: "right" });
         resistor(ctx, xR, yT + 40, 50, 20, "", C, true);
         resistor(ctx, xR, yB - 40, 50, 20, "", C, true);
-        HP.label(ctx, mode === "fixed" ? "R₁" : mode === "therm" ? "R₁ (thermistor)" : "R₁ (LDR)", xR - 18, yT + 40, { size: 12, bold: true, align: "right" });
+        // the component name goes on two lines so it stays clear of the supply wire at narrow widths
+        // (the LDR's circle and light arrow need the label further out and lower)
+        const r1x = mode === "ldr" ? xR - 30 : xR - 18, r1y = mode === "ldr" ? yT + 48 : yT + 40;
+        HP.label(ctx, "R₁", r1x, r1y - (mode === "fixed" ? 0 : 7), { size: 12, bold: true, align: "right" });
+        if (mode !== "fixed") HP.label(ctx, mode === "therm" ? "(thermistor)" : "(LDR)", r1x, r1y + 7, { size: 10, align: "right" });
+        // variable resistor: an arrow drawn diagonally through the box
+        if (mode === "fixed") HP.arrow(ctx, xR - 16, yT + 62, xR + 16, yT + 20, C.ink, 2, 8);
         HP.label(ctx, "R₂", xR - 18, yB - 40, { size: 12, bold: true, align: "right" });
         if (mode === "therm") { ctx.strokeStyle = C.ink; ctx.beginPath(); ctx.moveTo(xR - 16, yT + 64); ctx.lineTo(xR + 16, yT + 16); ctx.lineTo(xR + 24, yT + 16); ctx.stroke(); }
         if (mode === "ldr") { ctx.beginPath(); ctx.strokeStyle = C.ink; ctx.arc(xR, yT + 40, 22, 0, 7); ctx.stroke(); HP.arrow(ctx, xR - 44, yT + 14, xR - 26, yT + 28, C.gold, 1.5, 6); }
@@ -140,8 +146,13 @@
         wire(ctx, [[xR, yT + 10], [vx, yT + 10], [vx, yT + 26]], C.ink2); wire(ctx, [[vx, yT + 54], [vx, ym], [xR, ym]], C.ink2);
         wire(ctx, [[vx, ym], [vx, ym + 26]], C.ink2); wire(ctx, [[vx, ym + 54], [vx, yB - 10], [xR, yB - 10]], C.ink2);
         meter(ctx, vx, yT + 40, "V", C); meter(ctx, vx, ym + 40, "V", C);
-        HP.label(ctx, `V₁ = ${F(V1, 3)} V`, vx + 20, yT + 40, { size: 12, bold: true, col: C.red });
-        HP.label(ctx, `V₂ = ${F(V2, 3)} V`, vx + 20, ym + 40, { size: 12, bold: true, col: C.red });
+        // readings sit right of the meters, shrinking if the canvas is too narrow for them
+        const v1t = `V₁ = ${F(V1, 3)} V`, v2t = `V₂ = ${F(V2, 3)} V`;
+        ctx.font = 'bold 12px "Atkinson Hyperlegible", system-ui, sans-serif';
+        const vw = Math.max(ctx.measureText(v1t).width, ctx.measureText(v2t).width), room = S.w - (vx + 18) - 4;
+        const vfs = vw > room ? Math.max(9, Math.floor(12 * room / vw)) : 12;
+        HP.label(ctx, v1t, vx + 18, yT + 40, { size: vfs, bold: true, col: C.red });
+        HP.label(ctx, v2t, vx + 18, ym + 40, { size: vfs, bold: true, col: C.red });
         HP.label(ctx, "the bigger resistor takes the bigger share of V", 10, S.h - 10, { size: 11, col: C.muted });
       },
     });
@@ -244,7 +255,10 @@
         // capacitor plates on the right-hand side
         ctx.fillStyle = C.paper; ctx.fillRect(rx - 4, cy + ch / 2 - 4, 8, 8);
         px(ctx, rx - 16, cy + ch / 2 - 6, 32, 3, C.ink); px(ctx, rx - 16, cy + ch / 2 + 4, 32, 3, C.ink);
-        HP.label(ctx, `C = ${sC.value} μF`, rx + 20, cy + ch / 2, { size: 11, bold: true });
+        const cLab = `C = ${sC.value} μF`;
+        ctx.font = 'bold 11px "Atkinson Hyperlegible", system-ui, sans-serif';
+        const cFits = rx + 20 + ctx.measureText(cLab).width <= S.w - 4;
+        HP.label(ctx, cLab, cFits ? rx + 20 : rx - 22, cy + ch / 2, { size: 11, bold: true, align: cFits ? "left" : "right" });
         const q = Vc / Vs; for (let k = 0; k < Math.round(q * 5); k++) { HP.label(ctx, "+", rx - 12 + k * 6, cy + ch / 2 - 15, { size: 10, col: C.red, halo: false, bold: true }); HP.label(ctx, "−", rx - 12 + k * 6, cy + ch / 2 + 16, { size: 10, col: C.sea, halo: false, bold: true }); }
         // switch blade
         [cA, cB, pivot].forEach(([x, y]) => { ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill(); });
@@ -263,7 +277,8 @@
         ctx.strokeStyle = C.sea; ctx.beginPath(); hist.forEach(([tt, v], i) => (i ? ctx.lineTo(a1.X(tt), a1.Y(v)) : ctx.moveTo(a1.X(tt), a1.Y(v)))); ctx.stroke();
         ctx.strokeStyle = C.red; ctx.beginPath(); hist.forEach(([tt, , ii], i) => (i ? ctx.lineTo(a2.X(tt), a2.Y(ii * 1e6)) : ctx.moveTo(a2.X(tt), a2.Y(ii * 1e6)))); ctx.stroke();
         if (tSwitch) { ctx.setLineDash([3, 3]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; [a1, a2].forEach((a, k) => { const g = k ? g2 : g1; ctx.beginPath(); ctx.moveTo(a.X(tSwitch), g.y); ctx.lineTo(a.X(tSwitch), g.y + g.h); ctx.stroke(); }); ctx.setLineDash([]); }
-        HP.label(ctx, `time constant RC = ${F(tau, 2)} s (for interest only)`, g1.x + g1.w, g1.y + g1.h - 12, { size: 10, align: "right", col: C.muted });
+        // under the circuit, clear of the graph axes and their labels
+        HP.label(ctx, `time constant RC = ${F(tau, 2)} s (for interest only)`, cx + cw / 2, bot + 36, { size: 10, align: "center", col: C.muted });
       },
     });
     const pb = HP.playButton(sim, ["▶ Run", "❚❚ Pause"]);
@@ -290,10 +305,16 @@
       draw(ctx, t, dt, C, S) {
         const T = sT.value;
         const cols = [["Conductor (metal)", 0, true], ["Semiconductor", 1.1, false], ["Insulator", 6, false]];
-        const pw = S.w / 3;
+        const ax0 = 26, pw = (S.w - ax0) / 3;
+        // energy axis: an upward arrow down the left-hand edge
+        HP.arrow(ctx, 12, S.h - 24, 12, 34, C.ink, 2, 8);
+        ctx.save(); ctx.translate(12, (S.h + 10) / 2); ctx.rotate(-Math.PI / 2);
+        HP.label(ctx, "energy", 0, 0, { size: 11, bold: true, align: "center" }); ctx.restore();
         cols.forEach(([name, gap, metal], i) => {
-          const x0 = i * pw + 10, w = pw - 20, top = 40, bot = S.h - 30;
-          HP.label(ctx, name, x0 + w / 2, 18, { size: 12, bold: true, align: "center" });
+          const x0 = ax0 + i * pw + 6, w = pw - 12, top = 40, bot = S.h - 30;
+          ctx.font = 'bold 12px "Atkinson Hyperlegible", system-ui, sans-serif';
+          const nw = ctx.measureText(name).width, nfs = nw > pw - 6 ? Math.max(9, Math.floor(12 * (pw - 6) / nw)) : 12;
+          HP.label(ctx, name, x0 + w / 2, 18, { size: nfs, bold: true, align: "center" });
           const gapPx = metal ? 0 : Math.min(110, 20 + gap * 16);
           const vbTop = (top + bot) / 2 + gapPx / 2 - (metal ? 10 : 0), cbBot = (top + bot) / 2 - gapPx / 2 - (metal ? -10 : 0);
           // conduction band (upper)

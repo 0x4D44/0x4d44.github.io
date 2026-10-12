@@ -255,54 +255,71 @@
       draw(ctx, t, dt, C, S) {
         const { th, par, nor, Ff, a, T, W } = phys;
         if (th == null) return;
-        const x0 = 30, y0 = S.h - 24; // bottom-left of slope
+        const yG = S.h - 24; // top of the ground band
+        const Wlen = Math.min(110, S.h * 0.36); // the longest force arrow, in px
+        const sc = Wlen / Math.max(W, mode === "tow" ? T : 0, Ff, 1); // pixels per newton: every arrow fits
         // the longest slope that fits the box at this angle
         const Lx = Math.min(S.w - 70, (S.h - 70) / Math.tan(th)), slopeLen = Lx / Math.cos(th);
-        const xTop = x0 + Lx, yTop = y0 - Lx * Math.tan(th);
+        const rise = Lx * Math.tan(th), cn = 18 * Math.cos(th);
+        // rest position (fraction of the slope from the top) high enough for the weight arrow to
+        // end above the ground; on shallow slopes raise the whole ramp on a bank instead
+        const f = Math.max(0.15, Math.min(0.5, 1 - (W * sc + 12 - cn) / Math.max(rise, 1)));
+        const lift = Math.max(0, Math.min(yG - rise - 50, W * sc + 12 - cn - (1 - f) * rise));
+        const x0 = 30, y0 = yG - lift; // bottom-left of slope
+        const xTop = x0 + Lx, yTop = y0 - rise;
         // ground and slope (grass-topped dirt blocks)
-        ctx.fillStyle = "#7a5532"; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xTop, yTop); ctx.lineTo(xTop, y0); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#7a5532"; ctx.beginPath(); ctx.moveTo(x0, yG); ctx.lineTo(x0, y0); ctx.lineTo(xTop, yTop); ctx.lineTo(xTop, yG); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = "#3f7426"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xTop, yTop); ctx.stroke();
-        pxRect(ctx, 0, y0, S.w, 24, "#5a4026");
-        // angle marker
-        ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x0, y0, 34, -th, 0); ctx.stroke();
+        pxRect(ctx, 0, yG, S.w, 24, "#5a4026");
+        // angle marker, against a horizontal reference line
+        ctx.strokeStyle = "#f4ecd8"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + 70, y0); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = "#f4ecd8"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x0, y0, 34, -th, 0); ctx.stroke();
         HP.label(ctx, "θ = " + Math.round(th * 180 / Math.PI) + "°", x0 + 40, y0 - 10, { size: 12, haloCol: "#7a5532", col: "#fff" });
         // block position along slope (distance from top), animated if accelerating
-        let d = slopeLen * 0.5;
-        if (mode === "slide" && a > 0) { d = slopeLen * 0.5 + 0.5 * a * t * t * 12; if (d > slopeLen - 40) { d = slopeLen - 40; } }
-        if (mode === "tow") d = slopeLen * 0.75 - ((t * 18) % (slopeLen * 0.4));
         const ux = -Math.cos(th), uy = Math.sin(th); // unit vector DOWN the slope (canvas coords)
         const nx = -Math.sin(th), ny = -Math.cos(th); // unit normal out of slope
+        let d = slopeLen * f;
+        if (mode === "slide" && a > 0) {
+          // slide, but stop while the weight arrow still ends on the canvas
+          const dMax = Math.max(d, Math.min(slopeLen - 40, (S.h - 6 - W * sc - yTop - ny * 18) / uy));
+          d = Math.min(dMax, d + 0.5 * a * t * t * 12);
+        }
+        if (mode === "tow") d = Math.max(24, slopeLen * (f + 0.12) - ((t * 18) % (slopeLen * 0.24)));
         const cxB = xTop + ux * d + nx * 18, cyB = yTop + uy * d + ny * 18;
         ctx.save(); ctx.translate(cxB, cyB); ctx.rotate(-th);
         pxRect(ctx, -18, -18, 36, 36, "#a67c46"); pxRect(ctx, -18, -18, 36, 4, "#c8a06a"); pxRect(ctx, -18, 14, 36, 4, "#7a5532");
         for (let k = -12; k < 18; k += 10) pxRect(ctx, k, -10, 2, 24, "#8d6634");
         ctx.restore();
-        const sc = Math.min(120, S.h * 0.38) / Math.max(W, 1); // pixels per newton
         const inSlope = { haloCol: "#f4ecd8" };
-        // weight straight down
+        // weight straight down; its label sits to the left of the tip
         HP.arrow(ctx, cxB, cyB, cxB, cyB + W * sc, C.red, 3);
-        HP.label(ctx, "W = mg", cxB - 6, cyB + W * sc + 2, Object.assign({ size: 12, col: "#9a2a22", bold: true, align: "right" }, inSlope));
-        // components (dashed look: thinner)
-        HP.arrow(ctx, cxB, cyB, cxB + ux * par * sc, cyB + uy * par * sc, C.gold, 2);
-        HP.label(ctx, "mg sin θ", cxB + ux * par * sc - 6, cyB + uy * par * sc - 10, { size: 11, col: "#6b4d00", align: "right", bold: true, haloCol: "#f4ecd8" });
-        HP.arrow(ctx, cxB, cyB, cxB - nx * nor * sc, cyB - ny * nor * sc, C.gold, 2);
-        HP.label(ctx, "mg cos θ", cxB - nx * nor * sc + 8, cyB - ny * nor * sc + 6, Object.assign({ size: 11, col: "#6b4d00", bold: true }, inSlope));
+        HP.label(ctx, "W = mg", cxB - 6, cyB + W * sc - 8, Object.assign({ size: 12, col: "#9a2a22", bold: true, align: "right" }, inSlope));
+        // components: mg sin θ down the slope (label above its tip), mg cos θ into the slope (label right of its tip)
+        const pX = cxB + ux * par * sc, pY = cyB + uy * par * sc;
+        HP.arrow(ctx, cxB, cyB, pX, pY, C.gold, 2);
+        HP.label(ctx, "mg sin θ", Math.max(4, pX - 4), pY - 14, { size: 12, col: "#6b4d00", align: pX - 4 < 60 ? "left" : "right", bold: true, haloCol: "#f4ecd8" });
+        const cX = cxB - nx * nor * sc, cY = cyB - ny * nor * sc;
+        HP.arrow(ctx, cxB, cyB, cX, cY, C.gold, 2);
+        ctx.font = font(12, true);
+        const cLx = Math.min(cX + 8, S.w - 6 - ctx.measureText("mg cos θ").width);
+        HP.label(ctx, "mg cos θ", cLx, Math.min(cLx < cX + 8 ? cY + 16 : cY + 4, yG - 10), Object.assign({ size: 12, col: "#6b4d00", bold: true }, inSlope));
         // normal reaction
         HP.arrow(ctx, cxB, cyB, cxB + nx * nor * sc, cyB + ny * nor * sc, C.sea, 2.5);
         HP.label(ctx, "R", cxB + nx * nor * sc - 10, cyB + ny * nor * sc, { size: 12, col: C.sea, bold: true });
-        // friction
+        // friction acts at the contact face, along the surface; its label sits just inside the slope
         const fr = mode === "slide" ? Math.min(Ff, par) : Ff;
         const fdir = mode === "slide" ? -1 : 1; // slide: friction up the slope; tow: down
         if (fr > 0) {
-          const fx = cxB + ux * 18 * -fdir, fy = cyB + uy * 18 * -fdir;
-          HP.arrow(ctx, fx, fy, fx + ux * fdir * fr * sc, fy + uy * fdir * fr * sc, C.violet, 2.5);
-          HP.label(ctx, "friction", fx + ux * fdir * fr * sc, fy + uy * fdir * fr * sc - 12, { size: 11, col: C.violet, align: "center" });
+          const fx = cxB - nx * 18 + ux * 18 * fdir, fy = cyB - ny * 18 + uy * 18 * fdir; // leading corner
+          const tx = fx + ux * fdir * fr * sc, ty = fy + uy * fdir * fr * sc;
+          HP.arrow(ctx, fx, fy, tx, ty, C.violet, 2.5);
+          HP.label(ctx, "friction", tx - nx * 16 + ux * fdir * 6, ty - ny * 16 + uy * fdir * 6, { size: 12, col: "#4a2f7a", bold: true, align: fdir > 0 ? "right" : "center", haloCol: "#f4ecd8" });
         }
         if (mode === "tow") {
           const rx = cxB - ux * (T * sc + 20), ry = cyB - uy * (T * sc + 20);
           ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(cxB - ux * 18, cyB - uy * 18); ctx.lineTo(xTop, yTop - 18); ctx.stroke(); ctx.setLineDash([]);
           HP.arrow(ctx, cxB - ux * 18, cyB - uy * 18, rx, ry, C.grass, 3);
-          HP.label(ctx, "T", rx - 4, ry - 10, { size: 12, col: C.grass, bold: true });
+          HP.label(ctx, "T", rx - 4, ry - 12, { size: 12, col: C.grass, bold: true });
         }
         HP.label(ctx, "Arrow lengths are to scale (forces in newtons).", S.w - 8, 14, { size: 11, align: "right", col: C.muted });
       },

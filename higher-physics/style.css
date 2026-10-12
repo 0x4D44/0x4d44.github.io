@@ -157,11 +157,11 @@ main { min-width: 0; }
   .brand-title { font-size: .95rem; }
   .brand-sub { display: none; }
   .mast-tools { margin-left: 0; width: 100%; justify-content: flex-end; }
-  nav.decks { margin-left: -108px; width: calc(100% + 108px); }
+  nav.decks { margin-left: -108px; flex-basis: calc(100% + 108px); width: calc(100% + 108px); }
   /* wrap onto a second row rather than clipping tabs off the right edge */
   nav.decks ul { flex-wrap: wrap; row-gap: 2px; }
   nav.decks li { flex: 0 0 auto; }
-  nav.decks a { padding: 7px 9px; font-size: .86rem; }
+  nav.decks a { padding: 7px 7px; font-size: .84rem; }
   .rank-chip .rank-label strong { display: none; }
   .rank-chip .rank-label br { display: none; }
   .hero canvas { max-height: 90px; }
@@ -547,3 +547,10 @@ svg .s-line { stroke: var(--line); }
 .exam-timer .timer-label { font-weight: 700; }
 .exam-timer .timer-face { font-family: var(--font-body); font-variant-numeric: tabular-nums; font-size: 1.4rem; font-weight: 700; min-width: 4ch; }
 .exam-timer.done .timer-face { color: var(--redstone); }
+@media (max-width: 560px) {
+  .exam-timer { gap: 6px 8px; padding: 8px 10px; }
+  .exam-timer .timer-label { font-size: .85rem; }
+  .exam-timer .timer-face { font-size: 1.2rem; }
+}
+/* keep keyboard focus and in-page jumps clear of the sticky clock while it runs */
+html:has(.exam-timer.running) { scroll-padding-top: 130px; }
