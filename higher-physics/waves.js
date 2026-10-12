@@ -250,7 +250,7 @@
       ["l", "ν_τ", "tau neutrino", "0", "Lepton. Partner of the tau."],
     ];
     const grid = HP.el("div", { class: "sm-grid" });
-    const info = HP.el("p", { class: "sim-note sm-info", "aria-live": "polite" }, "Click a particle. Purple: quarks. Green: leptons. Brown: force-carrying bosons. Every fermion also has an antiparticle (the photon is its own).");
+    const info = HP.el("p", { class: "sim-note sm-info", "aria-live": "polite" }, "Click a particle. Purple: quarks. Green: leptons. Brown: force-carrying bosons. Every particle has an antiparticle; the photon is its own.");
     const btns = [];
     P.forEach((p) => {
       if (!p) { grid.append(HP.el("div")); return; }
