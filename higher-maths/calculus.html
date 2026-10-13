@@ -95,7 +95,7 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
   <div class="eq-card">$$\frac{d}{dx}(\sin x) = \cos x$$<p>So $\frac{d}{dx}(k\sin x) = k\cos x$.</p></div>
   <div class="eq-card">$$\frac{d}{dx}(\cos x) = -\sin x$$<p>Note the minus sign. $\frac{d}{dx}(k\cos x) = -k\sin x$.</p></div>
 </div>
-<p>The formulae list gives $\frac{d}{dx}(\sin ax) = a\cos ax$ and $\frac{d}{dx}(\cos ax) = -a\sin ax$. These rules are only true in radians.</p>
+<p>The formulae list gives $\frac{d}{dx}(\sin ax) = a\cos ax$ and $\frac{d}{dx}(\cos ax) = -a\sin ax$. These rules are only true in radians. The reason: for a small angle in radians, $\sin x \approx x$ (try $\sin 0.01 = 0.0099998$), so $y = \sin x$ leaves the origin with gradient exactly 1, matching $\cos 0 = 1$. In degrees, $\sin 1° \approx 0.01745$, and every trig derivative would carry an awkward extra factor of $\frac{\pi}{180}$.</p>
 <div class="worked"><p class="worked-title">Worked example 3 · P1 · trig derivative at an exact value</p>
 <p>$f(x) = 5\sin x - 3\cos x$. Find the exact value of $f'\left(\frac{\pi}{3}\right)$.</p>
 <details><summary>Show solution</summary>
@@ -105,13 +105,24 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 </ol>
 </details></div>
 <h3>Rates of change</h3>
-<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the distance of a minecart along its track after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling.</p>
+<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the distance of a minecart along its track after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Tutor's height, $\frac{dh}{dt}$ is its rate of climb.</p>
 <div class="worked"><p class="worked-title">Worked example 4 · P1 · a velocity</p>
 <p>A minecart's displacement after $t$ seconds is $s = t^3 - 6t^2 + 9t$ metres. Find its velocity when $t = 4$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
 <li>$v = \dfrac{ds}{dt} = 3t^2 - 12t + 9$ <span class="why">Velocity is the rate of change of displacement.</span></li>
 <li>$t = 4$: $v = 48 - 48 + 9 = 9$ m s$^{-1}$ <span class="why">Substitute.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 5 · P2 · the Tutor's climb</p>
+<p>For the first 20 seconds after it leaves the runway, a Grob Tutor's height is $h = 0.3t^2 - 0.01t^3$ metres, $t$ seconds after take-off. (a) Find its rate of climb when $t = 5$. (b) Find the greatest rate of climb in the first 20 seconds.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\dfrac{dh}{dt} = 0.6t - 0.03t^2$ <span class="why">Rate of climb is the rate of change of height.</span></li>
+<li>$t = 5$: $\dfrac{dh}{dt} = 3 - 0.75 = 2.25$ m s$^{-1}$ <span class="why">Substitute.</span></li>
+<li>(b) The rate $r = 0.6t - 0.03t^2$ is itself a function of $t$. $\dfrac{dr}{dt} = 0.6 - 0.06t = 0 \Rightarrow t = 10$ <span class="why">To find where the rate is greatest, differentiate the rate and set it to zero.</span></li>
+<li>$\dfrac{dr}{dt}$ is positive before $t = 10$ and negative after, so $t = 10$ gives a maximum. At $t = 0$ and $t = 20$, $r = 0$. <span class="why">Justify the maximum, and check the endpoints of the interval.</span></li>
+<li>Greatest rate of climb: $r = 6 - 3 = 3$ m s$^{-1}$, at $t = 10$ s. <span class="why">Substitute $t = 10$ and answer in context.</span></li>
 </ol>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>rewrite roots, fractions and brackets as powers of $x$, then differentiate;</li><li>differentiate $k\sin x$ and $k\cos x$ (radians);</li><li>use a derivative as a rate of change.</li></ul></div>
@@ -126,9 +137,9 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <p>Think of gears in the capstan's gearbox. If the middle gear $u$ turns 3 times for every turn of $x$, and the last gear $y$ turns 80 times for every turn of $u$, then $y$ turns $3 \times 80 = 240$ times for every turn of $x$. Rates of change in a chain multiply.</p>
 <div class="widget" id="w-gears">
   <h3 class="widget-title">The capstan's gearbox: rates multiply</h3>
-  <p class="hint">Pick a composite function and a value of $x$. Each gear turns at the rate shown, and the last gear's speed is the product. Compare it with the gradient measured directly from the graph.</p>
+  <p class="hint">Pick a composite function and a value of $x$. Each gear is labelled with its rate compared with the gear before it: $\frac{du}{dx}$, then $\frac{dy}{du}$. Multiply the two rates to get $\frac{dy}{dx}$, and compare it with the gradient measured directly from the graph.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 5 · P1 · the chain rule four ways</p>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · the chain rule four ways</p>
 <p>Differentiate (a) $(3x - 1)^5$, (b) $\sqrt{x^2 + 5}$, (c) $\dfrac{1}{(2x + 1)^3}$, (d) $\cos^3 x$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -139,7 +150,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 </ol>
 </details></div>
 <p>The trig rules on the formulae list are the chain rule in action: $\frac{d}{dx}\sin(3x - \frac{\pi}{4}) = \cos(3x - \frac{\pi}{4}) \times 3$.</p>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the inside derivative</div><p>The most common chain-rule error is forgetting to multiply by the derivative of the inside. A quick check: if the inside is just $x$, the extra factor is 1 and you are back to the ordinary rule. If the inside is anything else, there <em>must</em> be an extra factor.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the inside derivative</div><p>The most common chain-rule error is forgetting to multiply by the derivative of the inside. A quick check: if the inside is just $x$, the extra factor is 1 and you are back to the ordinary rule. If the inside is anything else, there <em>must</em> be an extra factor.</p><p>In 2025, on differentiating a composite function of the form $\sqrt{\ldots} + 3$, "most candidates did not differentiate '+3' correctly or did not apply the chain rule correctly". A constant added on the outside differentiates to 0. And "a few candidates attempted to expand their answer from part (a), which led to errors": use the chain rule instead.</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>differentiate $(ax + b)^n$ and other composites, including roots and negative powers;</li><li>differentiate $\sin(ax + b)$, $\cos(ax + b)$ and powers of $\sin x$ and $\cos x$.</li></ul></div>
 <div class="check" data-check="calc-chain"></div>
 </section>
@@ -153,17 +164,17 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li><strong>Gradient:</strong> $m = f'(a)$.</li>
 <li><strong>Equation:</strong> $y - f(a) = m(x - a)$.</li>
 </ol>
-<div class="worked"><p class="worked-title">Worked example 6 · P1 · from the specimen paper</p>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · from the specimen paper</p>
 <p>A curve has equation $y = x^2 - 4x + 7$. Find the equation of the tangent to this curve at the point where $x = 5$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$y = 25 - 20 + 7 = 12$, so the point is $(5, 12)$ <span class="why">Find the $y$-coordinate.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
 <li>$\dfrac{dy}{dx} = 2x - 4$ <span class="why">Differentiate.</span></li>
 <li>$m = 2(5) - 4 = 6$ <span class="why">Gradient at $x = 5$.</span></li>
-<li>$y - 12 = 6(x - 5) \Rightarrow y = 6x - 18$ <span class="why">Equation of the line.</span></li>
+<li>$y = 25 - 20 + 7 = 12$, so the point is $(5, 12)$ <span class="why">Find the $y$-coordinate.</span></li>
+<li>$y - 12 = 6(x - 5) \Rightarrow y = 6x - 18$ <span class="why">Equation of the line. The bullets follow the order of the official marking instructions.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 7 · P1 · working backwards from a gradient</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · working backwards from a gradient</p>
 <p>Find the points on $y = x^3 - 3x^2$ where the gradient of the tangent is 9.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -176,7 +187,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 
 <h3>Increasing and decreasing</h3>
 <p>A function is <dfn>strictly increasing</dfn> where its graph goes up from left to right, which is where its gradient is positive: $f'(x) \gt 0$. It is <dfn>strictly decreasing</dfn> where $f'(x) \lt 0$.</p>
-<div class="worked"><p class="worked-title">Worked example 8 · P1 · find where a function decreases</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · find where a function decreases</p>
 <p>Find the values of $x$ for which $f(x) = 2x^3 - 3x^2 - 12x$ is strictly decreasing.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -186,7 +197,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>$-1 \lt x \lt 2$ <span class="why">The $\cup$-shaped parabola $f'$ is negative between its roots. Sketch it to check.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 9 · P1 · never decreasing</p>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · never decreasing</p>
 <p>Show that $f(x) = x^3 + 3x^2 + 3x + 5$ is never decreasing.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -195,7 +206,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>$(x + 1)^2 \ge 0$ for all $x$, so $f'(x) \ge 0$ and $f$ is never decreasing. <span class="why">A square is never negative. Communicate.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a question about where a function is strictly decreasing, "some candidates did not state the necessary condition ($f'(x) \lt 0$ or $12x^2 - 24x \lt 0$)". Write the condition down before you solve it.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 the function had derivative $f'(x) = 12x^2 - 24x$, and when asked where it was strictly decreasing, "some candidates did not state the necessary condition ($f'(x) \lt 0$ or $12x^2 - 24x \lt 0$)". Write the condition down before you solve it.</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find the equation of a tangent at a given point;</li><li>find the point(s) where the tangent has a given gradient;</li><li>find where a function is increasing or decreasing, stating the condition on $f'(x)$.</li></ul></div>
 <div class="check" data-check="calc-tangent"></div>
 </section>
@@ -208,8 +219,8 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <g stroke-width="2.5" class="stroke-ink"><line x1="80" y1="55" x2="120" y2="55"/><line x1="290" y1="95" x2="330" y2="95"/><line x1="515" y1="80" x2="555" y2="80"/></g>
 <g font-size="15" font-weight="700" class="ink" text-anchor="middle"><text x="100" y="160">maximum: + 0 −</text><text x="310" y="160">minimum: − 0 +</text><text x="535" y="160">rising inflection: + 0 +</text></g>
 </svg><figcaption>The signs are the signs of $f'(x)$ just before, at and just after the point. A falling point of inflection is $-\ 0\ -$.</figcaption></figure>
-<p>To find the nature of each stationary point, use a <dfn>nature table</dfn>: check the sign of $f'(x)$ on each side of it. (Advanced Higher uses the second derivative; at Higher, the table is expected.)</p>
-<div class="worked"><p class="worked-title">Worked example 10 · P1 · stationary points of a cubic</p>
+<p>To find the nature of each stationary point, use a <dfn>nature table</dfn>: check the sign of $f'(x)$ on each side of it. A nature table is the standard method at Higher.</p>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · stationary points of a cubic</p>
 <p>Find the stationary points of $y = x^3 - 3x^2 - 9x + 5$ and determine their nature.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -235,13 +246,13 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates did not write consistent lines of working", for example jumping between unequal expressions while factorising $3x^2 + 4x - 4$, and "inconsistencies prevented the responses that reached the correct factorised form from gaining full marks." Every line must equal the line before it.</p></div>
 
 <h3>Sketching a curve</h3>
-<p>To sketch $y = f(x)$, find and label:</p>
+<p>In 2025 a question asked for a sketch of a cubic from given conditions, and the course report says "only a few candidates drew a cubic function and most candidates did not interpret the conditions stated in the question". Read every condition, mark each on the axes first, then join them with the right shape. To sketch $y = f(x)$, find and label:</p>
 <ul>
 <li>where it cuts the axes: the $y$-intercept ($x = 0$) and the roots ($y = 0$, often by factorising);</li>
 <li>the stationary points and their nature;</li>
 <li>what happens for large positive and negative $x$: the highest power dominates. For $x^3$, $y \to +\infty$ as $x \to +\infty$ and $y \to -\infty$ as $x \to -\infty$; for $-x^4$, $y \to -\infty$ both ways.</li>
 </ul>
-<div class="worked"><p class="worked-title">Worked example 11 · P1 · a quartic with a point of inflection</p>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · a quartic with a point of inflection</p>
 <p>Sketch $y = x^4 - 4x^3$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -279,11 +290,11 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
   <h3 class="widget-title">The firing arc: greatest and least on a closed interval</h3>
   <p class="hint">The curve is $f(x) = x^3 - 3x^2 - 9x + 5$. Move the ends of the interval. Sometimes the greatest value is the maximum turning point; sometimes it is an endpoint.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 12 · P1 · an endpoint wins</p>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · an endpoint wins</p>
 <p>Find the greatest and least values of $f(x) = x^3 - 3x^2 - 9x + 5$ on the interval $-2 \le x \le 6$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
-<li>Stationary points at $x = -1$ and $x = 3$ (worked example 10), both inside the interval. <span class="why">$f'(x) = 3(x-3)(x+1) = 0$.</span></li>
+<li>Stationary points at $x = -1$ and $x = 3$ (worked example 11), both inside the interval. <span class="why">$f'(x) = 3(x-3)(x+1) = 0$.</span></li>
 <li>$f(-1) = 10$, $f(3) = -22$ <span class="why">Values at the stationary points.</span></li>
 <li>$f(-2) = 3$, $f(6) = 216 - 108 - 54 + 5 = 59$ <span class="why">Values at the endpoints.</span></li>
 <li>Greatest value $59$ (at $x = 6$); least value $-22$ (at $x = 3$) <span class="why">Compare all four.</span></li>
@@ -304,7 +315,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
   <h3 class="widget-title">Copper sheathing: the biggest box from a sheet</h3>
   <p class="hint">The ship's carpenter cuts a square of side $x$ from each corner of a 24 cm by 15 cm copper sheet and folds up the sides to make an open box. Slide $x$ and watch the box fold and the volume graph trace out. Which $x$ gives the most volume?</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 13 · P1 · the copper box</p>
+<div class="worked"><p class="worked-title">Worked example 14 · P1 · the copper box</p>
 <p>The box above has volume $V(x) = x(24 - 2x)(15 - 2x) = 4x^3 - 78x^2 + 360x$. Find the value of $x$ that gives the greatest volume, and the greatest volume.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -315,7 +326,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 14 · P1 · a minimum</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · a minimum</p>
 <p>An open-topped water tank has a square base of side $x$ metres and holds 32 m³. Its surface area is $A = x^2 + \dfrac{128}{x}$. Find the dimensions that use the least metal.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -333,6 +344,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <h2 data-short="Integration">6 · Integration <span class="spec-tag">CALC · integrating functions</span></h2>
 <p><dfn>Integration</dfn> undoes differentiation. If $F'(x) = f(x)$, then $F(x)$ is an <dfn>integral</dfn> (or antiderivative) of $f(x)$. Since a constant differentiates to zero, there is a whole family of answers, so we add an arbitrary <dfn>constant of integration</dfn> $C$:</p>
 $$\int f(x)\,dx = F(x) + C.$$
+<p>The function being integrated, $f(x)$, is called the <dfn>integrand</dfn>. The $dx$ says that $x$ is the variable.</p>
 <div class="eq-grid">
   <div class="eq-card">$$\int ax^n\,dx = \frac{ax^{n+1}}{n+1} + C$$<p>"Add one to the power, divide by the new power." $n \ne -1$.</p></div>
   <div class="eq-card">$$\int (px + q)^n\,dx = \frac{(px + q)^{n+1}}{p(n+1)} + C$$<p>Also divide by $p$, the derivative of the inside. $n \ne -1$.</p></div>
@@ -340,7 +352,7 @@ $$\int f(x)\,dx = F(x) + C.$$
   <div class="eq-card">$$\int \sin ax\,dx = -\tfrac1a\cos ax + C$$<p>On the formulae list. Watch the minus.</p></div>
 </div>
 <p>As with differentiation, rewrite roots and fractions as powers of $x$ before you integrate. And check your answer by differentiating it: you should get back to the original.</p>
-<div class="worked"><p class="worked-title">Worked example 15 · P1 · indefinite integrals</p>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · indefinite integrals</p>
 <p>Find (a) $\displaystyle\int \left(\frac{3}{x^3} + \sqrt{x}\right)dx$, (b) $\displaystyle\int (2x + 1)^4\,dx$, (c) $\displaystyle\int 4\sin\left(2x - \tfrac{\pi}{3}\right)dx$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -357,13 +369,22 @@ $$\int f(x)\,dx = F(x) + C.$$
   <h3 class="widget-title">One gradient, many curves: the constant of integration</h3>
   <p class="hint">Every curve in the family has the same gradient at each $x$, so they are vertical shifts of each other. Drag $C$ to pick one, or drag the point the curve must pass through and let the widget solve for $C$.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 16 · P1 · a curve from its gradient</p>
+<div class="worked"><p class="worked-title">Worked example 17 · P1 · a curve from its gradient</p>
 <p>A curve has $\dfrac{dy}{dx} = 6x^2 - 2x$ and passes through $(1, 5)$. Find its equation.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
 <li>$y = \displaystyle\int (6x^2 - 2x)\,dx = 2x^3 - x^2 + C$ <span class="why">Integrate. Include $C$.</span></li>
 <li>$5 = 2(1)^3 - (1)^2 + C \Rightarrow C = 4$ <span class="why">Use the point.</span></li>
 <li>$y = 2x^3 - x^2 + 4$ <span class="why">State the equation.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 18 · P1 · from a rate back to an amount</p>
+<p>Water is pumped into the bilge-water tank at a rate of $\dfrac{dV}{dt} = 6t - t^2$ litres per minute, for $0 \le t \le 6$. The tank is empty at $t = 0$. How much water is in it after 3 minutes?</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$V = \displaystyle\int (6t - t^2)\,dt = 3t^2 - \tfrac13t^3 + C$ <span class="why">Integrate the rate to get the amount.</span></li>
+<li>$V = 0$ when $t = 0$, so $C = 0$ <span class="why">Use the starting condition to find $C$.</span></li>
+<li>$V = 3(3)^2 - \tfrac13(3)^3 = 27 - 9 = 18$ litres <span class="why">Substitute $t = 3$ and give the units.</span></li>
 </ol>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>integrate powers of $x$ (after rewriting), $(px + q)^n$, $p\sin(qx + r)$ and $p\cos(qx + r)$;</li><li>always include $+\,C$ in an indefinite integral;</li><li>solve $\frac{dy}{dx} = f(x)$ with an initial condition.</li></ul></div>
@@ -375,7 +396,7 @@ $$\int f(x)\,dx = F(x) + C.$$
 <p>A <dfn>definite integral</dfn> has limits, and gives a number:</p>
 $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 <p>No $+\,C$ is needed, because it would cancel. Limits can be integers, fractions, surds or radians.</p>
-<div class="worked"><p class="worked-title">Worked example 17 · P1 · evaluate</p>
+<div class="worked"><p class="worked-title">Worked example 19 · P1 · evaluate</p>
 <p>Evaluate (a) $\displaystyle\int_1^3 (3x^2 - 2x)\,dx$, (b) $\displaystyle\int_0^{\pi/4} 4\cos 2x\,dx$, (c) $\displaystyle\int_0^1 (2x + 1)^3\,dx$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -384,7 +405,16 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 <li>(c) $\left[\dfrac{(2x + 1)^4}{8}\right]_0^1 = \dfrac{81}{8} - \dfrac18 = 10$ <span class="why">$3^4 = 81$ and $1^4 = 1$.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a trig definite integral, a few candidates "attempted to expand the integrand in an invalid way or started to work in degrees before completing the integration", and some "did not calculate $\cos 0$ and $\cos\frac{\pi}{2}$ correctly without a calculator". The report also notes that some "did not use the formulae list effectively". The list gives you $\int\sin ax\,dx$: use it.</p></div>
+<div class="worked"><p class="worked-title">Worked example 20 · P1 · fraction and surd limits</p>
+<p>Evaluate (a) $\displaystyle\int_{1/2}^{2} \frac{1}{x^2}\,dx$, (b) $\displaystyle\int_0^{\sqrt2} x^3\,dx$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\displaystyle\int_{1/2}^{2} x^{-2}\,dx = \Big[-x^{-1}\Big]_{1/2}^{2} = \Big[-\frac1x\Big]_{1/2}^{2}$ <span class="why">Rewrite as a power, integrate, and turn back into a fraction before substituting.</span></li>
+<li>$= \left(-\tfrac12\right) - \left(-2\right) = \tfrac32$ <span class="why">$\frac{1}{1/2} = 2$. Keep each substitution in brackets: the double negative is where marks go.</span></li>
+<li>(b) $\Big[\tfrac14x^4\Big]_0^{\sqrt2} = \tfrac14(\sqrt2)^4 - 0 = \tfrac14 \times 4 = 1$ <span class="why">$(\sqrt2)^4 = \left((\sqrt2)^2\right)^2 = 2^2 = 4$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a trig definite integral, a few candidates "attempted to expand the integrand in an invalid way or started to work in degrees before completing the integration", and some "did not calculate $\cos 0$ and $\cos\frac{\pi}{2}$ correctly without a calculator". The report also notes that "a few candidates did not use the formulae list effectively". The list gives you $\int\sin ax\,dx$: use it.</p></div>
 
 <h3>Area under a curve</h3>
 <p>Slice the region under a curve into thin vertical strips. Each strip is nearly a rectangle with area $f(x) \times$ width. As the strips get thinner, the total of their areas gets closer and closer to the definite integral. This is why integration finds area.</p>
@@ -397,7 +427,7 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 <li>if the curve is below the axis, the integral is negative: the area is its size (drop the minus sign, and say why);</li>
 <li>if the curve crosses the axis between the limits, split the integral at the root, and add the sizes of the two parts.</li>
 </ul>
-<div class="worked"><p class="worked-title">Worked example 18 · P2 · an area below the axis</p>
+<div class="worked"><p class="worked-title">Worked example 21 · P2 · an area below the axis</p>
 <p>Calculate the area enclosed by the curve $y = x^2 - x - 2$ and the $x$-axis.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -409,6 +439,19 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>A question just like this appeared in 2026. "Some candidates did not include '$dx$' in their statement of the definite integral." "Many candidates who calculated $\int_{-1}^{2}(x^2 - x - 2)\,dx$ did not effectively communicate that the area would be positive." And on Paper 2, "most candidates included additional lines of working instead of using their calculator efficiently".</p></div>
 
+<div class="worked"><p class="worked-title">Worked example 22 · P1 · a curve that crosses the axis</p>
+<p>Find the total area enclosed between $y = x^2 - 4x$, the $x$-axis and the lines $x = 0$ and $x = 5$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 - 4x = x(x - 4) = 0 \Rightarrow x = 0$ or $x = 4$ <span class="why">Find where the curve crosses the axis. $x = 4$ is between the limits, so split there.</span></li>
+<li>$\displaystyle\int_0^4 (x^2 - 4x)\,dx = \Big[\tfrac13x^3 - 2x^2\Big]_0^4 = \tfrac{64}{3} - 32 = -\tfrac{32}{3}$ <span class="why">Below the axis: negative.</span></li>
+<li>$\displaystyle\int_4^5 (x^2 - 4x)\,dx = \left(\tfrac{125}{3} - 50\right) - \left(\tfrac{64}{3} - 32\right) = -\tfrac{25}{3} + \tfrac{32}{3} = \tfrac73$ <span class="why">Above the axis: positive.</span></li>
+<li>Total area $= \tfrac{32}{3} + \tfrac73 = \tfrac{39}{3} = 13$ square units <span class="why">Add the <em>sizes</em> of the two parts.</span></li>
+</ol>
+<p>A single integral from 0 to 5 gives $-\tfrac{32}{3} + \tfrac73 = -\tfrac{25}{3}$: the parts above and below cancel, which is not the area. Set the "planking" widget to this curve to see it.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2025 course report</div><p>In 2025, on a question about stationary points, "some candidates did not have solutions that met the minimum requirements for a nature table. Common errors included numerical errors when evaluating the derived function in a neighbourhood of the minimum and incorrect labelling within the nature table." A nature table needs: the $x$ values (stationary point and one on each side, or a neighbourhood like $\rightarrow 3 \rightarrow$), the sign of $f'(x)$ in each column, the slope arrows, and a conclusion naming the nature.</p></div>
+
 <h3>Area between two curves</h3>
 <p>The area between an upper curve $y = f(x)$ and a lower curve $y = g(x)$, from $x = a$ to $x = b$, is</p>
 $$\int_a^b \big(f(x) - g(x)\big)\,dx \qquad\text{(upper minus lower).}$$
@@ -417,7 +460,7 @@ $$\int_a^b \big(f(x) - g(x)\big)\,dx \qquad\text{(upper minus lower).}$$
   <h3 class="widget-title">Between the swells: the area between two curves</h3>
   <p class="hint">The region lies between $y = x^2$ and the line $y = 2x + c$. Change $c$. The widget finds where they meet, sets up "upper minus lower" and evaluates the integral.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 19 · P1 · a line and a parabola</p>
+<div class="worked"><p class="worked-title">Worked example 23 · P1 · a line and a parabola</p>
 <p>Find the area enclosed by $y = x^2$ and $y = 2x + 3$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">

@@ -103,7 +103,7 @@
       const evalAt = (x) => v.reduce((acc, c) => acc * x + c, 0);
       const rows = cands.map((x) => { const fx = evalAt(x); return `<tr><td class="num">${N(x)}</td><td class="num">${N(fx, 4)}</td><td>${Math.abs(fx) < 1e-9 ? "<span class='ok'>root ✔</span>" : ""}</td></tr>`; });
       const hit = cands.find((x) => Math.abs(evalAt(x)) < 1e-9);
-      note.innerHTML = `Candidates are the factors of ${c0}, positive and negative. ` + (hit !== undefined ? `First root found: <b>${N(hit)}</b>. It is now loaded as the trial root.` : "None of them is a root, so this polynomial has no whole-number roots.");
+      note.innerHTML = `Candidates are the factors of ${c0}, positive and negative. ` + (hit !== undefined ? `First root found: <b>${N(hit)}</b>. It is now loaded as the trial root.` : (v.every(Number.isInteger) ? "None of them is a root, so this polynomial has no whole-number roots." : "None of them is a root. (With non-whole coefficients this test is not conclusive.)"));
       out.innerHTML = `<div class="table-wrap" style="margin:0"><table><thead><tr><th class="num">Try $x =$</th><th class="num">$f(x)$</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
       HM.math(out); HM.math(note);
       if (hit !== undefined) { rIn.value = hit; cs = []; }
@@ -195,7 +195,7 @@
       if (a !== 1) lines.push(`= ${a === -1 ? "-" : N(a)}\\left(x^2 ${inner < 0 ? "-" : "+"} ${F(Math.abs(inner))}x\\right)${cT}`);
       const sq = half * half;
       const brk = `\\left(x ${half < 0 ? "-" : "+"} ${F(Math.abs(half))}\\right)^2`;
-      lines.push(a === 1 ? `= ${brk} - ${F(sq)}${cT}` : `= ${a === -1 ? "-" : N(a)}\\left[${brk} - ${F(sq)}\\right]${cT}`);
+      lines.push(a === 1 ? `= ${brk} - ${F(sq, 144)}${cT}` : `= ${a === -1 ? "-" : N(a)}\\left[${brk} - ${F(sq, 144)}\\right]${cT}`);
       lines.push(`= ${a === 1 ? "" : a === -1 ? "-" : N(a)}${brk} ${q < 0 ? "-" : "+"} ${F(Math.abs(q))}`);
       if (b === 0) { lines.length = 0; lines.push(`${polyTex([a, b, c])}`, `\\text{already in the form } a(x+p)^2+q \\text{ with } p = 0`); }
       tex.innerHTML = HM.tex(`\\begin{aligned}${lines.map((l, i) => (i ? "&" : "&") + l).join("\\\\")}\\end{aligned}`, true) +
@@ -270,7 +270,7 @@
     const ctl = controls(box);
     let m = 2, k = 1;
     HM.slider(ctl, { label: "gradient $m$", min: -6, max: 6, step: 0.5, value: m, fmt: (v) => N(v), oninput: (v) => { m = v; sim.redraw(); info(); } });
-    const sk = HM.slider(ctl, { label: "intercept $k$", min: -6, max: 10, step: 0.25, value: k, fmt: (v) => N(v), oninput: (v) => { k = v; sim.redraw(); info(); } });
+    const sk = HM.slider(ctl, { label: "intercept $k$", min: -6, max: 10, step: 0.0625, value: k, fmt: (v) => N(v), oninput: (v) => { k = v; sim.redraw(); info(); } });
     const snap = HM.el("button", { class: "btn small", type: "button" }, "Make it a tangent");
     box.append(HM.el("div", { class: "btn-row" }, snap));
     const cv = canvasIn(box, "");
@@ -297,8 +297,8 @@
     function info() {
       const D = m * m - 4 * (4 - k);
       const z = Math.abs(D) < 1e-9;
-      out.innerHTML = HM.tex(`x^2 + 4 = ${N(m).replace("−", "-")}x ${k < 0 ? "-" : "+"} ${N(Math.abs(k))} \\;\\Rightarrow\\; x^2 ${m > 0 ? "-" : "+"} ${N(Math.abs(m))}x ${4 - k < 0 ? "-" : "+"} ${N(Math.abs(4 - k))} = 0`, true) +
-        `<p style="margin:0">Discriminant $= (${N(-m).replace("−", "-")})^2 - 4(1)(${N(4 - k).replace("−", "-")}) = ${N(z ? 0 : D).replace("−", "-")}$: <b>${z ? "zero, so the line is a tangent" : D > 0 ? "positive, so the line cuts the curve at two points" : "negative, so the line misses the curve"}</b>.</p>`;
+      out.innerHTML = HM.tex(`x^2 + 4 = ${polyTex([m, k], "x", true)} \\;\\Rightarrow\\; ${polyTex([1, -m, 4 - k], "x", true)} = 0`, true) +
+        `<p style="margin:0">Discriminant $= (${N(-m).replace("−", "-")})^2 - 4(1)(${HM.fracTex(4 - k, 16)}) = ${z ? 0 : HM.fracTex(D, 16)}$: <b>${z ? "zero, so the line is a tangent" : D > 0 ? "positive, so the line cuts the curve at two points" : "negative, so the line misses the curve"}</b>.</p>`;
       HM.math(out);
     }
     info();
@@ -696,12 +696,20 @@
         cv.setAttribute("aria-label", `Cobweb diagram and term plot for u(n+1) = ${N(a)} u(n) + ${b}, starting at ${u0}. ${Math.abs(a) < 1 ? `The terms settle towards ${N(b / (1 - a), 1)}.` : "The terms do not settle."}`);
       },
     });
+    function noLimit() {
+      const L = a === 1 ? null : b / (1 - a);
+      if (L !== null && Math.abs(u0 - L) < 1e-9) return `This start happens to be the fixed point $${N(L, 2).replace("−", "-")}$, so every term is the same, but any other start would move away: the recurrence has no limit in general.`;
+      if (a === 1) return b === 0 ? "Every term equals $u_0$: the sequence is constant, but this recurrence has no limit in general." : `Each term ${b > 0 ? "adds" : "subtracts"} ${Math.abs(b)}, so the terms ${b > 0 ? "increase" : "decrease"} without end (the cobweb staircases away).`;
+      if (a === -1) return "The terms flip between two values for ever: they are bounded but never settle, so there is no limit (the cobweb is a closed square).";
+      if (a > 1) return `The terms run away from $${N(L, 2).replace("−", "-")}$, ${u0 > L ? "increasing" : "decreasing"} without end (the cobweb staircases away).`;
+      return "The terms swing either side of the fixed point, further each time (the cobweb spirals outwards).";
+    }
     function info() {
       const us = [u0]; for (let i = 0; i < 5; i++) us.push(a * us[i] + b);
       const ok = a > -1 && a < 1;
       out.innerHTML = `<p style="margin:0">$u_{n+1} = ${N(a).replace("−", "-")}u_n ${b < 0 ? "-" : "+"} ${Math.abs(b)}$: $u_1 = ${N(us[1], 2).replace("−", "-")}$, $u_2 = ${N(us[2], 2).replace("−", "-")}$, $u_3 = ${N(us[3], 2).replace("−", "-")}$, … </p>` +
         (ok ? `<p style="margin:4px 0 0">A limit exists because $-1 \\lt ${N(a).replace("−", "-")} \\lt 1$. $L = \\dfrac{${b}}{1 - ${a < 0 ? `(${N(a).replace("−", "-")})` : N(a)}} = ${N(b / (1 - a), 2).replace("−", "-")}$.${a < 0 ? " Because $a$ is negative, the terms zig-zag above and below the limit: the cobweb spirals in." : ""}</p>`
-          : `<p style="margin:4px 0 0"><b>No limit</b>: $a = ${N(a).replace("−", "-")}$ is not between $-1$ and $1$, so the terms ${a >= 1 ? "keep growing" : "swing further and further"} (the cobweb ${a >= 1 ? "staircases away" : "spirals outwards"}).</p>`);
+          : `<p style="margin:4px 0 0"><b>No limit</b>: $a = ${N(a).replace("−", "-")}$ is not between $-1$ and $1$. ${noLimit()}</p>`);
       HM.math(out);
     }
     info();

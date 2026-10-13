@@ -85,6 +85,7 @@
     "alg-explog": {
       title: "Exponentials and logarithms",
       questions: [
+        { q: R`A pupil solves $\log_2 x + \log_2(x - 2) = 3$: "$\log_2\big(x(x - 2)\big) = 3$, so $x^2 - 2x = 8$, $(x - 4)(x + 2) = 0$, so $x = 4$ or $x = -2$." What is wrong?`, opts: [R`Nothing: both answers are correct`, R`The law of logs is used wrongly in the first line`, R`$x = -2$ must be rejected: $\log_2(-2)$ is undefined`, R`It should be $x^2 - 2x = 9$`], a: 2, why: R`The working is right up to the last step, but you can only take the log of a positive number. $x = -2$ makes both logs undefined, so the only solution is $x = 4$. State the rejection.` },
         { q: R`Evaluate $\log_4 64$.`, opts: [R`$3$`, R`$16$`, R`$4$`, R`$\tfrac13$`], a: 0, why: R`$4^3 = 64$, so $\log_4 64 = 3$.` },
         { q: R`Simplify $\log_3 54 - \log_3 2$.`, opts: [R`$\log_3 52$`, R`$27$`, R`$3$`, R`$\log_3 108$`], a: 2, why: R`$\log_3 \frac{54}{2} = \log_3 27 = 3$, since $3^3 = 27$.` },
         { q: R`Which expression equals $2\log x + \log 5$?`, opts: [R`$\log(10x)$`, R`$\log(5x^2)$`, R`$\log(x^2 + 5)$`, R`$\log(25x^2)$`], a: 1, why: R`Move the 2 up as a power, then add logs by multiplying: $\log x^2 + \log 5 = \log(5x^2)$.` },
@@ -147,6 +148,7 @@
     "geo-circle": {
       title: "The circle",
       questions: [
+        { q: R`Which line of working correctly shows that $y = 2x + 10$ is a tangent to $x^2 + y^2 = 20$?`, opts: [R`"$(-4, 2)$ is on both the line and the circle, so the line is a tangent."`, R`"Substituting gives $x^2 + 8x + 16 = 0$; $b^2 - 4ac = 64 - 64 = 0$, so there is only one point of contact and the line is a tangent."`, R`"Substituting gives a quadratic, so the line meets the circle, so it is a tangent."`, R`"The gradient of the line is 2, which is the gradient of the circle there."`], a: 1, why: R`Meeting the circle is not enough: a line through two points of the circle meets it too. Tangency needs exactly one point of contact, shown by a zero discriminant and stated in words.` },
         { q: R`What are the centre and radius of $x^2 + y^2 + 8x - 10y + 5 = 0$?`, opts: [R`centre $(4, -5)$, radius $6$`, R`centre $(-4, 5)$, radius $6$`, R`centre $(-8, 10)$, radius $\sqrt{159}$`, R`centre $(-4, 5)$, radius $\sqrt{46}$`], a: 1, why: R`$g = 4$, $f = -5$, $c = 5$. Centre $(-g, -f) = (-4, 5)$; $r = \sqrt{16 + 25 - 5} = \sqrt{36} = 6$.` },
         { q: R`Which is the equation of the circle with centre $(2, -3)$ and radius 4?`, opts: [R`$(x + 2)^2 + (y - 3)^2 = 16$`, R`$(x - 2)^2 + (y + 3)^2 = 4$`, R`$(x - 2)^2 + (y + 3)^2 = 16$`, R`$(x - 2)^2 - (y + 3)^2 = 16$`], a: 2, why: R`$(x - a)^2 + (y - b)^2 = r^2$ with $a = 2$, $b = -3$, $r^2 = 16$.` },
         { q: R`For which values of $k$ does $x^2 + y^2 - 4x + 6y + k = 0$ represent a circle?`, opts: [R`$k \lt 13$`, R`$k \gt 13$`, R`$k \lt 5$`, R`all $k$`], a: 0, why: R`$g = -2$, $f = 3$: we need $g^2 + f^2 - c \gt 0$, so $4 + 9 - k \gt 0$, giving $k \lt 13$.` },
@@ -185,7 +187,7 @@
           R`•1 $\mathbf{u}\cdot\mathbf{v} = 1(3) + 2(0) + 2(4) = 11$`,
           R`•2 $|\mathbf{u}| = 3$, $|\mathbf{v}| = 5$`,
           R`•3 $\cos\theta = \dfrac{11}{15}$`,
-          R`•4 $\theta = 42.8°$ (or $0.747$ radians)`) },
+          R`•4 $\theta = 42.8°$ (or $0.748$ radians)`) },
       ],
     },
 
@@ -235,6 +237,7 @@
     "trig-formulae": {
       title: "Addition and double angle formulae",
       questions: [
+        { q: R`A pupil solves $\cos 2x° + \cos x° = 0$ for $0 \le x \lt 360$. Which line contains the error? (A) $2\cos^2 x° + \cos x° - 1 = 0$ (B) $(2\cos x° - 1)(\cos x° + 1) = 0$ (C) $\cos x° = \tfrac12$ or $\cos x° = -1$ (D) $x = 60,\ 300$`, opts: [R`(A)`, R`(B)`, R`(C)`, R`(D)`], a: 3, why: R`Lines A to C are right. But $\cos x° = -1$ also has a solution, $x = 180$, which (D) has lost. The full answer is $x = 60,\ 180,\ 300$.` },
         { q: R`Expand $\cos(x + 60°)$.`, opts: [R`$\tfrac12\cos x + \tfrac{\sqrt3}{2}\sin x$`, R`$\tfrac12\cos x - \tfrac{\sqrt3}{2}\sin x$`, R`$\cos x + \tfrac12$`, R`$\tfrac{\sqrt3}{2}\cos x - \tfrac12\sin x$`], a: 1, why: R`$\cos(A + B) = \cos A\cos B - \sin A\sin B$, with $\cos 60° = \tfrac12$ and $\sin 60° = \tfrac{\sqrt3}{2}$. Note the minus sign for $\cos$ of a sum.` },
         { q: R`$A$ is acute and $\sin A = \tfrac{5}{13}$. What is $\sin 2A$?`, opts: [R`$\tfrac{10}{13}$`, R`$\tfrac{60}{169}$`, R`$\tfrac{120}{169}$`, R`$\tfrac{119}{169}$`], a: 2, why: R`$\cos A = \tfrac{12}{13}$ (5–12–13 triangle), so $\sin 2A = 2 \times \tfrac{5}{13} \times \tfrac{12}{13} = \tfrac{120}{169}$.` },
         { q: R`$\cos^2 x - \sin^2 x$ is equal to…`, opts: [R`$1$`, R`$\cos 2x$`, R`$\sin 2x$`, R`$-1$`], a: 1, why: R`It is one of the three forms of $\cos 2x$. (It is $\cos^2 x + \sin^2 x$ that equals 1.)` },
@@ -357,6 +360,7 @@
     "calc-area": {
       title: "Definite integrals and area",
       questions: [
+        { q: R`A pupil writes: "Area $= \displaystyle\int_0^5 (x^2 - 4x)\,dx = -\tfrac{25}{3}$, so the area is $\tfrac{25}{3}$." What is wrong?`, opts: [R`Nothing: drop the minus sign and say why`, R`The curve crosses the $x$-axis at $x = 4$, so the integral must be split there. The area is $\tfrac{32}{3} + \tfrac73 = 13$`, R`The answer needs $+\,C$`, R`The limits should be $0$ and $4$ only`], a: 1, why: R`Between 0 and 4 the curve is below the axis (integral $-\tfrac{32}{3}$); between 4 and 5 it is above ($+\tfrac73$). One integral lets them cancel. Split at the root and add the sizes.` },
         { q: R`Evaluate $\displaystyle\int_0^2 3x^2\,dx$.`, opts: [R`$6$`, R`$8$`, R`$12$`, R`$24$`], a: 1, why: R`$\Big[x^3\Big]_0^2 = 8 - 0 = 8$.` },
         { q: R`Evaluate $\displaystyle\int_0^{\pi} \sin x\,dx$.`, opts: [R`$0$`, R`$1$`, R`$2$`, R`$-2$`], a: 2, why: R`$\Big[-\cos x\Big]_0^{\pi} = -\cos\pi - (-\cos 0) = 1 + 1 = 2$.` },
         { q: R`For a region entirely below the $x$-axis, a definite integral gives $-6$. What is the area?`, opts: [R`$-6$ square units`, R`$6$ square units`, R`$36$ square units`, R`It cannot be found.`], a: 1, why: R`Integrals count area below the axis as negative. Areas are positive: 6 square units, and say why.` },

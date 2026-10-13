@@ -50,7 +50,7 @@
 
 <section id="line" class="prose">
 <h2 data-short="The straight line">1 · The straight line <span class="spec-tag">ALG-GEO · rectilinear shapes</span></h2>
-<p>You met these at National 5. Higher uses them constantly, so make sure they are automatic. For points $A(x_1, y_1)$ and $B(x_2, y_2)$:</p>
+<p>A <dfn>rectilinear</dfn> shape is one made only of straight lines: triangles, quadrilaterals and other polygons drawn on a coordinate grid. You met these skills at National 5. Higher uses them constantly, so make sure they are automatic. For points $A(x_1, y_1)$ and $B(x_2, y_2)$:</p>
 <div class="eq-grid">
   <div class="eq-card">$$m_{AB} = \frac{y_2 - y_1}{x_2 - x_1}$$<p>Gradient. A vertical line has no gradient (undefined); a horizontal line has $m = 0$.</p></div>
   <div class="eq-card">$$y - b = m(x - a)$$<p>The line through $(a, b)$ with gradient $m$. The most useful form at Higher.</p></div>
@@ -68,14 +68,14 @@ $$m = \tan\theta.$$
 </div>
 <div class="worked"><p class="worked-title">Worked example 1 · P1 · from the specimen paper</p>
 <p>Line $l_1$ has equation $\sqrt3\,y - x = 0$. (a) Line $l_2$ is perpendicular to $l_1$. Find the gradient of $l_2$. (b) Calculate the angle $l_2$ makes with the positive direction of the $x$-axis.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
 <li>(a) $\sqrt3\,y = x \Rightarrow y = \tfrac{1}{\sqrt3}x$, so $m_{l_1} = \tfrac{1}{\sqrt3}$ <span class="why">Rearrange to $y = mx + c$ to read off the gradient.</span></li>
 <li>$m_{l_2} = -\sqrt3$ <span class="why">Perpendicular: $m_1 \times m_2 = -1$, so flip the fraction and change the sign.</span></li>
 <li>(b) $\tan\theta = -\sqrt3$ <span class="why">Use $m = \tan\theta$.</span></li>
-<li>$\theta = 180° - 60° = 120°$ (or $\tfrac{2\pi}{3}$) <span class="why">$\tan 60° = \sqrt3$ is an exact value. The gradient is negative, so the angle is obtuse.</span></li>
+<li>$\theta = 180° - 60° = 120°$ (or $\tfrac{2\pi}{3}$ in radians: see <a href="trig.html#radians">Trigonometry</a>) <span class="why">$\tan 60° = \sqrt3$ is an exact value. The gradient is negative, so the angle is obtuse.</span></li>
 </ol>
-<p>Paper 1 has no calculator, so angles like this always come from the exact values: $m = 1$ gives $45°$, $m = \sqrt3$ gives $60°$, $m = \tfrac{1}{\sqrt3}$ gives $30°$.</p>
+<p>The bullets •1 to •4 follow the official marking instructions: one mark per step. Paper 1 has no calculator, so angles like this always come from the exact values: $m = 1$ gives $45°$, $m = \sqrt3$ gives $60°$, $m = \tfrac{1}{\sqrt3}$ gives $30°$.</p>
 </details></div>
 
 <h3>Parallel, perpendicular and collinear</h3>
@@ -123,6 +123,18 @@ $$m = \tan\theta.$$
 <li>$y = -3(-1) - 5 = -2$. They meet at $(-1, -2)$. <span class="why">Find $y$ and state the point.</span></li>
 </ol>
 </details></div>
+<div class="worked"><p class="worked-title">Worked example 3 · P2 · a perpendicular bisector and the angle between two lines</p>
+<p>$P$ is $(-2, 1)$ and $Q$ is $(4, 3)$. (a) Find the equation of the perpendicular bisector of $PQ$. (b) Find the acute angle between the perpendicular bisector and the line $y = x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) Midpoint of $PQ$: $(1, 2)$ <span class="why">A perpendicular bisector passes through the midpoint.</span></li>
+<li>$m_{PQ} = \dfrac{3 - 1}{4 - (-2)} = \tfrac13$, so $m_\perp = -3$ <span class="why">Negative reciprocal.</span></li>
+<li>$y - 2 = -3(x - 1) \Rightarrow y = -3x + 5$ <span class="why">Point and gradient.</span></li>
+<li>(b) For $m = -3$: $\tan^{-1}(-3) = -71.6°$, so $\theta_1 = 180° - 71.6° = 108.4°$ <span class="why">$m = \tan\theta$. A negative gradient gives an obtuse angle with the positive $x$-axis.</span></li>
+<li>For $y = x$: $m = 1$, so $\theta_2 = 45°$ <span class="why">$\tan 45° = 1$.</span></li>
+<li>Angle between the lines $= 108.4° - 45° = 63.4°$ <span class="why">Subtract the two angles. It is under $90°$, so it is the acute angle.</span></li>
+</ol>
+</details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 most candidates found the midpoint and gradient for a perpendicular bisector, but "only some candidates used $m = \tan\theta$ to calculate the angles between the two lines and the positive direction of the $x$-axis appropriately". To find the angle <em>between</em> two lines, find each line's angle with the positive $x$-axis and subtract.</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find the equation of a line parallel or perpendicular to a given line;</li><li>use $m = \tan\theta$ in both directions, including obtuse angles;</li><li>find medians, altitudes and perpendicular bisectors, and where lines intersect;</li><li>decide whether two lines are perpendicular, or three points are collinear.</li></ul></div>
 <div class="check" data-check="geo-line"></div>
@@ -140,7 +152,7 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
 <p>Centre $(-g, -f)$, radius $\sqrt{g^2 + f^2 - c}$. It is a real circle only if $g^2 + f^2 - c \gt 0$.</p></div>
 </div>
 <p>The general form is just the centre–radius form multiplied out. To use it, <strong>halve</strong> the coefficients of $x$ and $y$ and change their signs to get the centre. The coefficients of $x^2$ and $y^2$ must both be 1; if they are both 2, divide everything by 2 first.</p>
-<div class="worked"><p class="worked-title">Worked example 3 · P1 · general form</p>
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · general form</p>
 <p>Find the centre and radius of the circle $x^2 + y^2 - 6x + 4y - 12 = 0$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -149,13 +161,13 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
 <li>$r = \sqrt{(-3)^2 + 2^2 - (-12)} = \sqrt{9 + 4 + 12} = 5$ <span class="why">Brackets round negatives; $-c$ becomes $+12$.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 4 · P1 · from a diameter (specimen paper)</p>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · from a diameter (specimen paper)</p>
 <p>$A(-7, 3)$ and $B(1, 5)$ are the ends of a diameter of a circle. Find its equation.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
 <li>Centre $= $ midpoint of $AB = (-3,\ 4)$ <span class="why">The centre is halfway along a diameter.</span></li>
-<li>$r^2 = (1 - (-3))^2 + (5 - 4)^2 = 16 + 1 = 17$ <span class="why">Distance from the centre to $B$, squared.</span></li>
-<li>$(x + 3)^2 + (y - 4)^2 = 17$ <span class="why">Leave $r^2$ as 17; there is no need to find $\sqrt{17}$.</span></li>
+<li>$r = \sqrt{(1 - (-3))^2 + (5 - 4)^2} = \sqrt{17}$ <span class="why">Distance from the centre to $B$. The radius earns its own mark.</span></li>
+<li>$(x + 3)^2 + (y - 4)^2 = 17$ <span class="why">$r^2 = 17$: leave it exact.</span></li>
 </ol>
 </details></div>
 <div class="widget" id="w-circle">
@@ -163,13 +175,24 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
   <p class="hint">Set $g$, $f$ and $c$ to define the circle (it vanishes if $g^2 + f^2 - c \le 0$). Then move the line $y = mx + k$. Substituting the line into the circle gives a quadratic, and its discriminant tells you whether the line cuts, touches or misses.</p>
 </div>
 
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · where a line meets a circle</p>
+<p>Find where the line $y = x - 2$ meets the circle $x^2 + y^2 - 4x + 2y - 20 = 0$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 + (x - 2)^2 - 4x + 2(x - 2) - 20 = 0$ <span class="why">Substitute the line into the circle.</span></li>
+<li>$2x^2 - 6x - 20 = 0 \Rightarrow x^2 - 3x - 10 = 0$ <span class="why">Expand, collect and divide by 2.</span></li>
+<li>$(x - 5)(x + 2) = 0 \Rightarrow x = 5$ or $x = -2$ <span class="why">Two distinct roots: the line cuts the circle twice.</span></li>
+<li>$y = 3$ or $y = -4$: the points are $(5, 3)$ and $(-2, -4)$. <span class="why">Use the <em>line</em> to find each $y$; it is simpler than the circle.</span></li>
+</ol>
+</details></div>
+
 <h3>Tangents to a circle</h3>
 <p>A tangent touches the circle at one point, and it is always <strong>perpendicular to the radius</strong> at that point. That gives two ways in:</p>
 <ul>
 <li><strong>Tangent at a known point $P$:</strong> find the gradient of the radius from the centre to $P$, take the negative reciprocal, and use $y - b = m(x - a)$ through $P$.</li>
 <li><strong>Is a given line a tangent?</strong> Substitute the line into the circle. If the resulting quadratic has discriminant zero (equal roots), the line is a tangent.</li>
 </ul>
-<div class="worked"><p class="worked-title">Worked example 5 · P1 · tangent at a point</p>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · tangent at a point</p>
 <p>The point $P(6, 2)$ lies on the circle $(x - 3)^2 + (y + 2)^2 = 25$. Find the equation of the tangent at $P$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -179,7 +202,7 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
 <li>$y - 2 = -\tfrac34(x - 6) \Rightarrow 3x + 4y - 26 = 0$ <span class="why">Equation through $P$.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 6 · P1 · prove tangency</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · prove tangency</p>
 <p>Show that the line $y = 2x + 10$ is a tangent to the circle $x^2 + y^2 = 20$, and find the point of contact.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -202,17 +225,19 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
   <h3 class="widget-title">Two lighthouses: when do the beams' ranges touch?</h3>
   <p class="hint">Drag the second centre and change the radii. The widget compares the distance between the centres with $r_1 + r_2$ and $|r_1 - r_2|$.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 7 · P1 · touching circles</p>
-<p>Show that the circles $x^2 + y^2 = 16$ and $(x - 6)^2 + (y - 8)^2 = 36$ touch externally.</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · touching circles</p>
+<p>(a) Show that the circles $x^2 + y^2 = 16$ and $(x - 6)^2 + (y - 8)^2 = 36$ touch externally. (b) Find the point of contact.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
 <li>Centres $(0, 0)$ and $(6, 8)$; radii $4$ and $6$ <span class="why">Read off both circles.</span></li>
 <li>$d = \sqrt{6^2 + 8^2} = 10$ <span class="why">Distance between the centres.</span></li>
 <li>$r_1 + r_2 = 4 + 6 = 10 = d$, so the circles touch externally. <span class="why">Compare and communicate.</span></li>
+<li>(b) The point of contact lies on the line of centres, $4$ units from $(0, 0)$ and $6$ from $(6, 8)$: it divides the line of centres in the ratio $4 : 6 = 2 : 3$. <span class="why">The radii give the ratio.</span></li>
+<li>$\tfrac25\begin{pmatrix} 6 \\ 8 \end{pmatrix} = \left(\tfrac{12}{5}, \tfrac{16}{5}\right)$, i.e. $(2.4,\ 3.2)$ <span class="why">Start at the first centre and go $\tfrac25$ of the way.</span></li>
 </ol>
 </details></div>
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"How do I know if a point is inside a circle?"</p><p><strong>Sailing Master Fraser:</strong> "Put its coordinates into the left-hand side of $(x - a)^2 + (y - b)^2$. That's the squared distance from the centre. If it's less than $r^2$ the point is inside; equal, on the circle; more, outside. The same works with the general form: substitute and see whether you get less than, equal to, or more than zero."</p></div>
-<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>switch between the two forms and find the centre and radius;</li><li>state when $x^2 + y^2 + 2gx + 2fy + c = 0$ is a circle;</li><li>find the equation of a tangent at a point, and prove a line is a tangent;</li><li>find where a line meets a circle;</li><li>decide whether two circles touch, intersect or do neither.</li></ul></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>switch between the two forms and find the centre and radius;</li><li>state when $x^2 + y^2 + 2gx + 2fy + c = 0$ is a circle;</li><li>find the equation of a tangent at a point, and prove a line is a tangent;</li><li>find where a line meets a circle;</li><li>decide whether two circles touch, intersect or do neither, and find a point of contact.</li></ul></div>
 <div class="check" data-check="geo-circle"></div>
 </section>
 
@@ -221,6 +246,7 @@ $$x^2 + y^2 + 2gx + 2fy + c = 0$$
 <p>A <dfn>vector</dfn> has size (magnitude) and direction. A Minecraft world is the perfect place to learn them, because it is built on a three-dimensional grid of unit cubes. Moving 3 blocks east, 2 blocks north and 5 blocks up is the vector</p>
 $$\mathbf{v} = \begin{pmatrix} 3 \\ 2 \\ 5 \end{pmatrix} = 3\mathbf{i} + 2\mathbf{j} + 5\mathbf{k},$$
 <p>where $\mathbf{i}$, $\mathbf{j}$ and $\mathbf{k}$ are <dfn>unit vectors</dfn> (length 1) along the $x$-, $y$- and $z$-axes. Both notations are used in exams.</p>
+<div class="callout tip"><div class="callout-title">⛏ Minecraft's axes are not the exam's</div><p>In Minecraft's own coordinates (press F3) the <em>y</em>-axis points up and <em>z</em> runs north–south. In these notes, as in most exam diagrams, $z$ is the up axis. Every exam diagram labels its axes: use those, not the game's.</p></div>
 <div class="eq-grid">
   <div class="eq-card">$$\overrightarrow{AB} = \mathbf{b} - \mathbf{a}$$<p>The vector from $A$ to $B$ is "end minus start". $\mathbf{a}$ is the <dfn>position vector</dfn> of $A$: the vector from the origin to $A$.</p></div>
   <div class="eq-card">$$|\mathbf{v}| = \sqrt{x^2 + y^2 + z^2}$$<p>Magnitude, by 3D Pythagoras.</p></div>
@@ -228,13 +254,23 @@ $$\mathbf{v} = \begin{pmatrix} 3 \\ 2 \\ 5 \end{pmatrix} = 3\mathbf{i} + 2\mathb
   <div class="eq-card">$$k\mathbf{v}$$<p>Multiplying by a number $k$ scales the length. If $\mathbf{u} = k\mathbf{v}$, then $\mathbf{u}$ and $\mathbf{v}$ are <dfn>parallel</dfn>.</p></div>
 </div>
 
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · a unit vector</p>
+<p>Find a unit vector parallel to $\mathbf{v} = 2\mathbf{i} - \mathbf{j} + 2\mathbf{k}$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$|\mathbf{v}| = \sqrt{2^2 + (-1)^2 + 2^2} = \sqrt9 = 3$ <span class="why">Magnitude first.</span></li>
+<li>$\hat{\mathbf{v}} = \tfrac13(2\mathbf{i} - \mathbf{j} + 2\mathbf{k}) = \tfrac23\mathbf{i} - \tfrac13\mathbf{j} + \tfrac23\mathbf{k}$ <span class="why">Divide every component by the length.</span></li>
+</ol>
+<p>Check: $\left(\tfrac23\right)^2 + \left(\tfrac13\right)^2 + \left(\tfrac23\right)^2 = \tfrac{4 + 1 + 4}{9} = 1$. $-\hat{\mathbf{v}}$ is also a unit vector parallel to $\mathbf{v}$, pointing the other way.</p>
+</details></div>
+
 <h3>Vector pathways</h3>
 <p>To get from one point to another, you can follow any route through known vectors and add them. This is how questions on cuboids and pyramids work. Going backwards along a vector changes its sign: $\overrightarrow{BA} = -\overrightarrow{AB}$.</p>
 <div class="widget" id="w-cuboid">
   <h3 class="widget-title">A block-built cuboid: vector pathways in 3D</h3>
   <p class="hint">Drag the cuboid (or use the slider) to turn it. Choose a target point: the widget walks the path along the edges, adding one vector at a time. $O$ is the origin; $\overrightarrow{OA} = 6\mathbf{i}$, $\overrightarrow{OC} = 4\mathbf{j}$ and $\overrightarrow{OD} = 3\mathbf{k}$.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 8 · P1 · a pathway</p>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · a pathway</p>
 <p>In the cuboid above, $M$ is the midpoint of $FG$. Express $\overrightarrow{AM}$ in component form.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -244,11 +280,11 @@ $$\mathbf{v} = \begin{pmatrix} 3 \\ 2 \\ 5 \end{pmatrix} = 3\mathbf{i} + 2\mathb
 </ol>
 <p>Check with coordinates: $A(6, 0, 0)$ and $M(3, 4, 3)$, and $\mathbf{m} - \mathbf{a} = (-3, 4, 3)$.</p>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>Vector pathways: many candidates "stated a vector pathway as a sum of directed line segments" and gained full marks. Write the route first, as $\overrightarrow{PQ} = \overrightarrow{PR} + \overrightarrow{RQ}$, then substitute. The report also asks teachers to "consider how best to practise determining vector pathways in three dimensions", so this is a weakness markers expect.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>Vector pathways: many candidates "stated a vector pathway as a sum of directed line segments" and gained full marks. Write the route first, as $\overrightarrow{PQ} = \overrightarrow{PR} + \overrightarrow{RQ}$, then substitute. The 2025 and 2026 reports both ask teachers to "consider how best to practise determining vector pathways in three dimensions". In 2025, "many candidates did not gain any marks" on the pathway question: "some candidates stated incorrect pathways, and some candidates did not add vectors presented in terms of i, j and k". To add vectors in $\mathbf{i}, \mathbf{j}, \mathbf{k}$ form, collect each letter separately, or convert to columns first.</p></div>
 
 <h3>Collinearity with vectors</h3>
 <p>Three points $A$, $B$, $C$ are collinear if $\overrightarrow{AB} = k\overrightarrow{BC}$ for some number $k$ (so the vectors are parallel) <strong>and</strong> the two vectors share a point ($B$). Both parts belong in your answer.</p>
-<div class="worked"><p class="worked-title">Worked example 9 · P1 · collinear points</p>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · collinear points</p>
 <p>Show that $A(1, 2, -1)$, $B(3, 5, 1)$ and $C(7, 11, 5)$ are collinear, and find the ratio in which $B$ divides $AC$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -267,7 +303,7 @@ $$\mathbf{p} = \mathbf{a} + \frac{m}{m+n}\overrightarrow{AB} \qquad\text{or}\qqu
   <h3 class="widget-title">Rigging a stay: dividing a line in a ratio</h3>
   <p class="hint">Set the ratio $m : n$. The point $P$ slides along $AB$, and its coordinates are worked out both ways.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 10 · P1 · internal division</p>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · internal division</p>
 <p>$A$ is $(2, -1, 4)$ and $B$ is $(7, 9, -1)$. $P$ divides $AB$ in the ratio $3 : 2$. Find the coordinates of $P$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -276,7 +312,7 @@ $$\mathbf{p} = \mathbf{a} + \frac{m}{m+n}\overrightarrow{AB} \qquad\text{or}\qqu
 <li>$P(5, 5, 1)$ <span class="why">Give coordinates, not a position vector, if the question asks for coordinates.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On internal division, "a few candidates left their answer as a position vector or did not use point F as the internal division point". Read which point is doing the dividing, and answer in the form asked.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 the question asked for the point $F$ that divided a line in a given ratio, and "a few candidates left their answer as a position vector or did not use point F as the internal division point in their calculation". Read which point is doing the dividing, and answer in the form asked.</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find vectors between points, magnitudes and unit vectors, in components or $\mathbf{i}, \mathbf{j}, \mathbf{k}$;</li><li>build a vector pathway in a 3D shape;</li><li>prove collinearity with full communication;</li><li>find the point that divides a line in a given ratio.</li></ul></div>
 <div class="check" data-check="geo-vec"></div>
 </section>
@@ -292,7 +328,7 @@ $$\cos\theta = \frac{a_1b_1 + a_2b_2 + a_3b_3}{|\mathbf{a}||\mathbf{b}|}.$$
   <h3 class="widget-title">Bracing the yard: the scalar product and the angle</h3>
   <p class="hint">Set the components of $\mathbf{a}$ and $\mathbf{b}$, and drag the view to turn it. The widget works out $\mathbf{a}\cdot\mathbf{b}$ both ways and the angle between the vectors. Try to make them perpendicular.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 11 · P2 · the angle between two vectors</p>
+<div class="worked"><p class="worked-title">Worked example 14 · P2 · the angle between two vectors</p>
 <p>$\mathbf{a} = 2\mathbf{i} - \mathbf{j} + 2\mathbf{k}$ and $\mathbf{b} = 3\mathbf{i} + 4\mathbf{j}$. Find the angle between $\mathbf{a}$ and $\mathbf{b}$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -302,14 +338,14 @@ $$\cos\theta = \frac{a_1b_1 + a_2b_2 + a_3b_3}{|\mathbf{a}||\mathbf{b}|}.$$
 <li>$\theta = 82.3°$ <span class="why">Inverse cosine.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 12 · P1 · perpendicular (specimen paper)</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · perpendicular (specimen paper)</p>
 <p>The points $A(0, 9, 7)$, $B(5, -1, 2)$, $C(4, 1, 3)$ and $D(x, -2, 2)$ are such that $AB$ is perpendicular to $CD$. Find $x$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$\overrightarrow{AB} = \begin{pmatrix} 5 \\ -10 \\ -5 \end{pmatrix}$, $\overrightarrow{CD} = \begin{pmatrix} x - 4 \\ -3 \\ -1 \end{pmatrix}$ <span class="why">Find both vectors.</span></li>
-<li>$\overrightarrow{AB}\cdot\overrightarrow{CD} = 0$ <span class="why">State the condition for perpendicular vectors.</span></li>
-<li>$5(x - 4) + 30 + 5 = 0 \Rightarrow 5x + 15 = 0$ <span class="why">Expand.</span></li>
-<li>$x = -3$ <span class="why">Solve.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\overrightarrow{CD} = \begin{pmatrix} x - 4 \\ -3 \\ -1 \end{pmatrix}$ <span class="why">End minus start.</span></li>
+<li>$\overrightarrow{AB} = \begin{pmatrix} 5 \\ -10 \\ -5 \end{pmatrix}$ <span class="why">Each vector earns a mark.</span></li>
+<li>$\overrightarrow{AB}\cdot\overrightarrow{CD} = 5(x - 4) + (-10)(-3) + (-5)(-1) = 0$ <span class="why">Perpendicular vectors have scalar product zero. Write the condition.</span></li>
+<li>$5x - 20 + 30 + 5 = 0 \Rightarrow x = -3$ <span class="why">Solve.</span></li>
 </ol>
 </details></div>
 <h3>The angle at a vertex</h3>
@@ -328,7 +364,7 @@ $$\cos\theta = \frac{a_1b_1 + a_2b_2 + a_3b_3}{|\mathbf{a}||\mathbf{b}|}.$$
 <li>$\mathbf{a}\cdot\mathbf{b} = \mathbf{b}\cdot\mathbf{a}$, and $\mathbf{a}\cdot(\mathbf{b} + \mathbf{c}) = \mathbf{a}\cdot\mathbf{b} + \mathbf{a}\cdot\mathbf{c}$ (you can expand brackets).</li>
 <li>$\mathbf{a}\cdot\mathbf{a} = |\mathbf{a}|^2$, since the angle between a vector and itself is $0°$.</li>
 </ul>
-<div class="worked"><p class="worked-title">Worked example 13 · P1 · using the properties</p>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · using the properties</p>
 <p>$|\mathbf{a}| = 3$, $|\mathbf{b}| = 4$ and the angle between $\mathbf{a}$ and $\mathbf{b}$ is $60°$. Evaluate $\mathbf{a}\cdot(\mathbf{a} + \mathbf{b})$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
