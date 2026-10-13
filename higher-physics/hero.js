@@ -110,7 +110,6 @@
     syncBtn();
     pb.addEventListener("click", () => {
       paused = !paused;
-      pb.setAttribute("aria-pressed", String(paused));
       pb.textContent = paused ? "Play animation" : "Pause animation";
       cancelAnimationFrame(raf);
       if (paused) pausedAt = performance.now();
