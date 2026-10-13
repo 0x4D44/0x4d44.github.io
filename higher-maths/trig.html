@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trigonometry · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Higher Maths trigonometry, interactive: radians and exact values, CAST and the four quadrants, trig graphs, solving trig equations including quadratic and multiple-angle ones, the addition and double angle formulae, and the wave function, with animated diagrams and exam-style checks.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The quarterdeck · waves, angles and the swell</p>
+<h1>Trigonometry</h1>
+<p class="lede">On the quarterdeck, the officer of the watch feels the ship rise and fall on the swell, measures the Sun's angle with a sextant and times the tide. All three are trigonometry. This deck covers radians and exact values, trig graphs, solving trig equations, the addition and double angle formulae, and the wave function: about 10–25% of the marks, and the trig skills you need again in calculus.</p>
+</div>
+
+<section id="radians" class="prose">
+<h2 data-short="Radians and exact values">1 · Radians, exact values and the four quadrants <span class="spec-tag">ALG · trigonometric expressions</span></h2>
+<h3>Radians</h3>
+<p>Degrees are a human choice: 360 in a full turn. Mathematicians prefer a natural unit. One <dfn>radian</dfn> is the angle at the centre of a circle when the arc it cuts off is exactly one radius long. A full circle has circumference $2\pi r$, so a full turn is $2\pi$ radians:</p>
+$$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
+<p>To convert degrees to radians multiply by $\frac{\pi}{180}$; to convert back multiply by $\frac{180}{\pi}$. The ones you will meet constantly are $\frac{\pi}{6} = 30°$, $\frac{\pi}{4} = 45°$, $\frac{\pi}{3} = 60°$, $\frac{\pi}{2} = 90°$, $\pi = 180°$, $\frac{3\pi}{2} = 270°$ and $2\pi = 360°$. Calculus at Higher <strong>only</strong> works in radians, so get used to them now.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · calculator mode</div><p>If a question is in radians (it mentions $\pi$, or the interval is $0 \le x \lt 2\pi$), switch your calculator to radian mode. If you leave it in degrees, every answer will be wrong. The 2026 course report asks teachers to "consider how best to practise using radian measure and the exact values of trigonometric ratios".</p></div>
+
+<h3>Exact values</h3>
+<p>Paper 1 has no calculator, so you need the exact values. Don't memorise a table: learn two triangles and read them off. Half a square with sides 1 gives the $45°$ values. Half an equilateral triangle with sides 2 gives the $30°$ and $60°$ values.</p>
+<figure class="diagram"><svg viewBox="0 0 560 220" role="img" aria-label="Two exact-value triangles. Left: a right-angled isosceles triangle with legs 1 and 1, hypotenuse root 2, and two 45 degree angles. Right: half an equilateral triangle with hypotenuse 2, short side 1, long side root 3, and angles of 30 and 60 degrees.">
+<polygon points="40,190 200,190 200,30" class="f-card stroke-ink" stroke-width="2.5" fill-opacity="1"/>
+<path d="M186 190 v-14 h14" fill="none" class="stroke-ink" stroke-width="1.5"/>
+<g font-size="17" font-weight="700" class="ink"><text x="120" y="212" text-anchor="middle">1</text><text x="212" y="116">1</text><text x="104" y="100" text-anchor="end">√2</text></g>
+<g font-size="15" class="f-red" font-weight="700"><text x="76" y="182">45°</text><text x="178" y="64">45°</text></g>
+<polygon points="320,190 520,190 520,74.5" class="f-card stroke-ink" stroke-width="2.5"/>
+<path d="M506 190 v-14 h14" fill="none" class="stroke-ink" stroke-width="1.5"/>
+<g font-size="17" font-weight="700" class="ink"><text x="420" y="212" text-anchor="middle">√3</text><text x="532" y="138">1</text><text x="410" y="122" text-anchor="end">2</text></g>
+<g font-size="15" class="f-red" font-weight="700"><text x="364" y="182">30°</text><text x="494" y="102">60°</text></g>
+</svg><figcaption>SOH CAH TOA on these gives every exact value. For example $\sin 60° = \frac{\sqrt3}{2}$, $\cos 60° = \frac12$, $\tan 30° = \frac{1}{\sqrt3}$, $\sin 45° = \frac{1}{\sqrt2}$.</figcaption></figure>
+<div class="table-wrap"><table>
+<thead><tr><th>Degrees</th><th>$0°$</th><th>$30°$</th><th>$45°$</th><th>$60°$</th><th>$90°$</th></tr></thead>
+<tbody>
+<tr><th scope="row">Radians</th><td>$0$</td><td>$\frac{\pi}{6}$</td><td>$\frac{\pi}{4}$</td><td>$\frac{\pi}{3}$</td><td>$\frac{\pi}{2}$</td></tr>
+<tr><th scope="row">$\sin$</th><td>$0$</td><td>$\frac12$</td><td>$\frac{1}{\sqrt2}$</td><td>$\frac{\sqrt3}{2}$</td><td>$1$</td></tr>
+<tr><th scope="row">$\cos$</th><td>$1$</td><td>$\frac{\sqrt3}{2}$</td><td>$\frac{1}{\sqrt2}$</td><td>$\frac12$</td><td>$0$</td></tr>
+<tr><th scope="row">$\tan$</th><td>$0$</td><td>$\frac{1}{\sqrt3}$</td><td>$1$</td><td>$\sqrt3$</td><td>undefined</td></tr>
+</tbody></table></div>
+
+<h3>Angles in all four quadrants</h3>
+<p>Picture a point moving anticlockwise round a circle of radius 1, centred on the origin, starting from the positive $x$-axis. After turning through angle $\theta$ the point is at $(\cos\theta, \sin\theta)$. That is the real definition of sine and cosine, and it works for any angle, not just those in a right-angled triangle.</p>
+<div class="widget" id="w-unit">
+  <h3 class="widget-title">The capstan: sine and cosine from a turning circle</h3>
+  <p class="hint">Drag the point round the circle, press play, or tap an exact angle. The height of the point is $\sin\theta$ and its across-distance is $\cos\theta$. As it turns, those two lengths trace out the sine and cosine graphs.</p>
+</div>
+<p>Because the point's coordinates change sign from quadrant to quadrant, so do the ratios. The memory aid is <dfn>CAST</dfn>, reading anticlockwise from the fourth quadrant: <b>C</b>os positive, <b>A</b>ll positive, <b>S</b>in positive, <b>T</b>an positive.</p>
+<figure class="diagram"><svg viewBox="0 0 300 260" style="max-width:300px" role="img" aria-label="The CAST diagram. First quadrant, 0 to 90 degrees: All positive. Second quadrant, 90 to 180: Sin positive. Third quadrant, 180 to 270: Tan positive. Fourth quadrant, 270 to 360: Cos positive.">
+<line x1="20" y1="130" x2="280" y2="130" class="stroke-ink" stroke-width="2"/><line x1="150" y1="10" x2="150" y2="250" class="stroke-ink" stroke-width="2"/>
+<g font-size="34" font-weight="700" text-anchor="middle"><text x="215" y="90" class="f-grass">A</text><text x="85" y="90" class="f-sea">S</text><text x="85" y="200" class="f-gold">T</text><text x="215" y="200" class="f-red">C</text></g>
+<g font-size="13" class="ink2" text-anchor="middle"><text x="215" y="110">all</text><text x="85" y="110">sin</text><text x="85" y="220">tan</text><text x="215" y="220">cos</text></g>
+<g font-size="13" class="ink"><text x="266" y="148">0°</text><text x="156" y="22">90°</text><text x="24" y="148">180°</text><text x="156" y="246">270°</text></g>
+</svg><figcaption>For an acute angle $a$, the related angles are $180° - a$ (second quadrant), $180° + a$ (third) and $360° - a$ (fourth). In radians: $\pi - a$, $\pi + a$, $2\pi - a$.</figcaption></figure>
+<div class="worked"><p class="worked-title">Worked example 1 · P1 · exact values anywhere</p>
+<p>Find the exact values of (a) $\cos 150°$, (b) $\sin\frac{4\pi}{3}$ and (c) $\tan\frac{7\pi}{4}$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $150° = 180° - 30°$, second quadrant, where cos is negative: $\cos 150° = -\frac{\sqrt3}{2}$ <span class="why">Related acute angle, then the sign from CAST.</span></li>
+<li>(b) $\frac{4\pi}{3} = \pi + \frac{\pi}{3}$, third quadrant, where sin is negative: $\sin\frac{4\pi}{3} = -\frac{\sqrt3}{2}$ <span class="why">$\sin\frac{\pi}{3} = \frac{\sqrt3}{2}$.</span></li>
+<li>(c) $\frac{7\pi}{4} = 2\pi - \frac{\pi}{4}$, fourth quadrant, where tan is negative: $\tan\frac{7\pi}{4} = -1$ <span class="why">$\tan\frac{\pi}{4} = 1$.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>convert between degrees and radians;</li><li>give exact values of sin, cos and tan for multiples of $30°$ and $45°$ (or $\frac{\pi}{6}$ and $\frac{\pi}{4}$) in every quadrant.</li></ul></div>
+<div class="check" data-check="trig-rad"></div>
+</section>
+
+<section id="graphs" class="prose">
+<h2 data-short="Trig graphs">2 · Trig graphs <span class="spec-tag">ALG · related functions</span></h2>
+<p>The graphs of $y = \sin x$ and $y = \cos x$ are waves that repeat every $360°$ ($2\pi$), between $-1$ and $1$. The graph of $y = \tan x$ repeats every $180°$ ($\pi$) and has asymptotes where $\cos x = 0$. The graph transformations from the <a href="algebra.html#transform">algebra deck</a> work on them exactly as on any other graph:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>In $y = a\sin(bx + c) + d$</th><th>What it changes</th></tr></thead>
+<tbody>
+<tr><td>$a$</td><td><b>Amplitude</b> $|a|$: the height of each peak above the centre line. Negative $a$ flips the graph upside down.</td></tr>
+<tr><td>$b$</td><td>Number of complete waves in $360°$. The <b>period</b> is $\frac{360°}{b}$ (or $\frac{2\pi}{b}$).</td></tr>
+<tr><td>$c$</td><td>Shift sideways (inside the bracket, so the opposite way: $+c$ moves left).</td></tr>
+<tr><td>$d$</td><td>Moves the centre line up to $y = d$. The maximum is $d + |a|$ and the minimum is $d - |a|$.</td></tr>
+</tbody></table></div>
+<div class="widget" id="w-trigtrans">
+  <h3 class="widget-title">Reading the swell: $y = a\sin(bx + c) + d$</h3>
+  <p class="hint">Change the four numbers and watch the amplitude, period and centre line change. The readout gives the maximum and minimum values and where the first maximum occurs.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 2 · P1 · identify the equation from a graph</p>
+<p>A graph has equation $y = a\cos bx + d$. It has a maximum of $5$ at $x = 0$, a minimum of $-1$ at $x = 60°$, and the pattern repeats every $120°$. Find $a$, $b$ and $d$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$d = \dfrac{5 + (-1)}{2} = 2$ <span class="why">The centre line is halfway between maximum and minimum.</span></li>
+<li>$a = 5 - 2 = 3$ <span class="why">The amplitude is the distance from the centre line to a peak. A cosine graph with $a \gt 0$ starts at a maximum, as here.</span></li>
+<li>$b = \dfrac{360°}{120°} = 3$ <span class="why">Period $= \frac{360°}{b}$.</span></li>
+</ol>
+<p>So $y = 3\cos 3x + 2$.</p>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>sketch $y = a\sin(bx + c) + d$ and the cosine version, in degrees or radians;</li><li>find the amplitude, period, maximum and minimum from an equation, and the equation from a graph.</li></ul></div>
+<div class="check" data-check="trig-graph"></div>
+</section>
+
+<section id="equations" class="prose">
+<h2 data-short="Solving trig equations">3 · Solving trig equations <span class="spec-tag">ALG · trigonometric equations</span></h2>
+<p>A trig equation usually has several solutions in a given interval, because the graph keeps repeating. The method is always the same:</p>
+<ol>
+<li><strong>Rearrange</strong> to get $\sin(\ldots) = k$, $\cos(\ldots) = k$ or $\tan(\ldots) = k$.</li>
+<li><strong>Find the acute angle</strong> from the exact values or with $\sin^{-1}|k|$ etc.</li>
+<li><strong>Use CAST</strong> (the sign of $k$) to find every solution in one full turn.</li>
+<li>If the angle is $2x$, $3x$, …, <strong>extend the interval</strong> first: for $0 \le x \lt 360°$, $2x$ runs from $0$ to $720°$. Then divide by 2 at the end.</li>
+<li>Give the solutions in the interval and in the units asked.</li>
+</ol>
+<div class="widget" id="w-solve">
+  <h3 class="widget-title">Fixing a position: where the line meets the wave</h3>
+  <p class="hint">Choose the function, the multiple angle $b$ and the value $k$. Every solution of the equation in the interval is a point where the horizontal line $y = k$ meets the graph. The widget lists them and explains where each comes from.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 3 · P1 · a multiple angle</p>
+<p>Solve $2\cos 2x° = \sqrt3$, for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\cos 2x° = \dfrac{\sqrt3}{2}$ <span class="why">Rearrange.</span></li>
+<li>Acute angle $30°$; cos is positive in the first and fourth quadrants, so $2x = 30,\ 330$ <span class="why">CAST.</span></li>
+<li>$0 \le 2x \lt 720$, so add $360$: $2x = 30,\ 330,\ 390,\ 690$ <span class="why">Extend to two full turns.</span></li>
+<li>$x = 15,\ 165,\ 195,\ 345$ <span class="why">Divide by 2.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · in radians</p>
+<p>Solve $2\cos x + 1 = 0$, for $0 \le x \lt 2\pi$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\cos x = -\tfrac12$ <span class="why">Rearrange.</span></li>
+<li>Acute angle $\frac{\pi}{3}$; cos is negative in the second and third quadrants. <span class="why">CAST.</span></li>
+<li>$x = \pi - \frac{\pi}{3} = \frac{2\pi}{3}$ and $x = \pi + \frac{\pi}{3} = \frac{4\pi}{3}$ <span class="why">Related angles in radians.</span></li>
+</ol>
+</details></div>
+<h3>Quadratic trig equations</h3>
+<p>If the equation contains $\cos^2 x$ and $\cos x$, treat it as a quadratic in $\cos x$: factorise, then solve each factor separately. One factor may give an impossible value (sin and cos are always between $-1$ and $1$).</p>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · a quadratic in $\cos x$</p>
+<p>Solve $2\cos^2 x° - \cos x° - 1 = 0$, for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$(2\cos x° + 1)(\cos x° - 1) = 0$ <span class="why">Factorise, as $2c^2 - c - 1 = (2c + 1)(c - 1)$.</span></li>
+<li>$\cos x° = -\tfrac12$ or $\cos x° = 1$ <span class="why">Set each factor to zero.</span></li>
+<li>$x = 120,\ 240$ or $x = 0$ <span class="why">Solve each.</span></li>
+</ol>
+<p>So $x = 0,\ 120,\ 240$.</p>
+</details></div>
+<h3>Equations that need a formula first</h3>
+<p>If the equation mixes $\cos 2x$ with $\cos x$ (or $\sin 2x$ with $\sin x$), use a double angle formula so that everything is in terms of a single angle $x$. Choose the version of $\cos 2x$ that matches the other term: $2\cos^2 x - 1$ goes with $\cos x$; $1 - 2\sin^2 x$ goes with $\sin x$.</p>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · use $\cos 2x$</p>
+<p>Solve $\cos 2x° - 3\cos x° + 2 = 0$, for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$2\cos^2 x° - 1 - 3\cos x° + 2 = 0$ <span class="why">Substitute $\cos 2x = 2\cos^2 x - 1$.</span></li>
+<li>$2\cos^2 x° - 3\cos x° + 1 = 0 \Rightarrow (2\cos x° - 1)(\cos x° - 1) = 0$ <span class="why">Standard quadratic form, then factorise.</span></li>
+<li>$\cos x° = \tfrac12$ or $\cos x° = 1$ <span class="why">Each factor.</span></li>
+<li>$x = 60,\ 300$ or $x = 0$, so $x = 0,\ 60,\ 300$ <span class="why">Solve.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · never divide by $\sin x$</p>
+<p>Solve $\sin 2x° = \sin x°$, for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$2\sin x°\cos x° - \sin x° = 0$ <span class="why">Use $\sin 2x = 2\sin x\cos x$, and bring everything to one side.</span></li>
+<li>$\sin x°(2\cos x° - 1) = 0$ <span class="why">Take out the common factor.</span></li>
+<li>$\sin x° = 0 \Rightarrow x = 0,\ 180$; $\cos x° = \tfrac12 \Rightarrow x = 60,\ 300$ <span class="why">Solve each factor.</span></li>
+</ol>
+<p>Dividing both sides by $\sin x$ would lose $x = 0$ and $x = 180$.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a quadratic trig equation, "some candidates did not factorise the quadratic in $\cos x$. Incorrect responses included attempting to solve a quadratic that was not in standard form or incorrectly identifying a 'common factor' of $\cos x$. A few candidates did not communicate that $\cos x = -2$ had no solutions." Get the quadratic to "$= 0$" first, and when a factor gives a value outside $-1$ to $1$, write "no solutions" for it.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>solve trig equations in degrees or radians in a given interval, including multiple angles and shifted angles;</li><li>solve quadratic trig equations by factorising;</li><li>use a double angle formula or $\sin^2 x + \cos^2 x = 1$ to get the equation in one ratio.</li></ul></div>
+<div class="check" data-check="trig-eq"></div>
+</section>
+
+<section id="formulae" class="prose">
+<h2 data-short="Addition formulae">4 · Addition and double angle formulae <span class="spec-tag">ALG · trigonometric expressions</span></h2>
+<p>These four formulae are on the formulae list. You need to recognise when to use them, and use them fluently in both directions.</p>
+<div class="eq-grid">
+  <div class="eq-card">$$\sin(A \pm B) = \sin A\cos B \pm \cos A\sin B$$<p>Sine: "sin cos, cos sin", same sign.</p></div>
+  <div class="eq-card">$$\cos(A \pm B) = \cos A\cos B \mp \sin A\sin B$$<p>Cosine: "cos cos, sin sin", <b>opposite</b> sign.</p></div>
+  <div class="eq-card">$$\sin 2A = 2\sin A\cos A$$<p>Put $B = A$ in $\sin(A + B)$.</p></div>
+  <div class="eq-card">$$\begin{aligned}\cos 2A &= \cos^2 A - \sin^2 A\\ &= 2\cos^2 A - 1\\ &= 1 - 2\sin^2 A\end{aligned}$$<p>Three versions, using $\sin^2 A + \cos^2 A = 1$.</p></div>
+</div>
+<p>You also need two identities from National 5, which are <strong>not</strong> on the formulae list:</p>
+$$\sin^2 A + \cos^2 A = 1, \qquad \tan A = \frac{\sin A}{\cos A}.$$
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Isn't $\sin(A + B)$ just $\sin A + \sin B$?"</p><p><strong>Captain Grant:</strong> "Try it with $A = B = 90°$. $\sin 180° = 0$, but $\sin 90° + \sin 90° = 2$. Sine isn't a number you can multiply out of a bracket; it's a function. The addition formula is the true rule for what happens when you add angles. Use the widget below to see how far wrong the shortcut goes."</p></div>
+<div class="widget" id="w-compound">
+  <h3 class="widget-title">Two bearings combined: checking the addition formula</h3>
+  <p class="hint">Set two angles $A$ and $B$. The diagram builds $A + B$ out of two right-angled triangles stacked on each other, so you can see where each term of $\sin(A + B) = \sin A\cos B + \cos A\sin B$ comes from. The bars compare the true value with the tempting wrong answer.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · an exact value from the formula</p>
+<p>Find the exact value of $\sin 75°$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\sin 75° = \sin(45° + 30°) = \sin 45°\cos 30° + \cos 45°\sin 30°$ <span class="why">Split into angles with known exact values.</span></li>
+<li>$= \dfrac{1}{\sqrt2}\cdot\dfrac{\sqrt3}{2} + \dfrac{1}{\sqrt2}\cdot\dfrac12 = \dfrac{\sqrt3 + 1}{2\sqrt2}$ <span class="why">Substitute.</span></li>
+<li>$= \dfrac{\sqrt6 + \sqrt2}{4}$ <span class="why">Rationalise the denominator (multiply top and bottom by $\sqrt2$).</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · two right-angled triangles</p>
+<p>Acute angles $p$ and $q$ satisfy $\sin p = \frac35$ and $\cos q = \frac{5}{13}$. Find the exact values of (a) $\sin(p + q)$ and (b) $\tan(p + q)$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\cos p = \frac45$ (a 3–4–5 triangle), $\sin q = \frac{12}{13}$ (a 5–12–13 triangle) <span class="why">Draw each right-angled triangle and use Pythagoras for the missing side.</span></li>
+<li>(a) $\sin(p + q) = \frac35\cdot\frac{5}{13} + \frac45\cdot\frac{12}{13} = \frac{15}{65} + \frac{48}{65} = \frac{63}{65}$ <span class="why">Addition formula.</span></li>
+<li>(b) $\cos(p + q) = \frac45\cdot\frac{5}{13} - \frac35\cdot\frac{12}{13} = \frac{20}{65} - \frac{36}{65} = -\frac{16}{65}$ <span class="why">You need $\cos(p+q)$ too.</span></li>
+<li>$\tan(p + q) = \dfrac{\sin(p+q)}{\cos(p+q)} = \dfrac{63/65}{-16/65} = -\dfrac{63}{16}$ <span class="why">Use $\tan = \frac{\sin}{\cos}$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a question like this, "most candidates did not apply the trigonometric identity $\tan a = \frac{\sin a}{\cos a}$ from National 5", and a few could not process a subtraction like $\frac{56}{65} - \frac{33}{65}$. Others "missed out on marks due to a lack of rigour" when finding the third side, writing a chain like $\sqrt{169 - 25} = \sqrt{144} = 12$ with the square-root signs missing. Write every line so that it is true.</p></div>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · double angles</p>
+<p>$A$ is acute and $\cos A = \frac35$. Find the exact values of $\sin 2A$ and $\cos 2A$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\sin A = \frac45$ <span class="why">3–4–5 triangle.</span></li>
+<li>$\sin 2A = 2\cdot\frac45\cdot\frac35 = \frac{24}{25}$ <span class="why">Double angle formula.</span></li>
+<li>$\cos 2A = \left(\frac35\right)^2 - \left(\frac45\right)^2 = \frac{9 - 16}{25} = -\frac{7}{25}$ <span class="why">Any version works; $2\cos^2 A - 1 = \frac{18}{25} - 1$ gives the same.</span></li>
+</ol>
+</details></div>
+<h3>Proving identities</h3>
+<p>To show that two expressions are identical, start with one side (usually the more complicated one) and use formulae until it becomes the other side. Never work on both sides at once, and never assume what you are trying to prove.</p>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · show that</p>
+<p>Show that $\dfrac{\sin 2x}{1 + \cos 2x} = \tan x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\text{LHS} = \dfrac{2\sin x\cos x}{1 + (2\cos^2 x - 1)}$ <span class="why">Pick the version of $\cos 2x$ that cancels the 1.</span></li>
+<li>$= \dfrac{2\sin x\cos x}{2\cos^2 x} = \dfrac{\sin x}{\cos x}$ <span class="why">Simplify by cancelling $2\cos x$.</span></li>
+<li>$= \tan x = \text{RHS}$ <span class="why">Finish with the target.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a demanding identity question, "many candidates did not expand the brackets accurately", simplifying $3\sin\theta \times 3\cos\theta$ to things like $3\sin\theta\cos\theta$ or $9\sin\cos\theta$. Multiply the numbers and keep every angle: $3\sin\theta \times 3\cos\theta = 9\sin\theta\cos\theta$, and $3\sin\theta \times \sin\theta = 3\sin^2\theta$.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>expand $\sin(A \pm B)$ and $\cos(A \pm B)$, and spot them in reverse;</li><li>find exact values using right-angled triangles and the formulae;</li><li>use $\sin 2A$ and all three forms of $\cos 2A$;</li><li>prove simple identities, setting out each line clearly.</li></ul></div>
+<div class="check" data-check="trig-formulae"></div>
+</section>
+
+<section id="wave" class="prose">
+<h2 data-short="The wave function">5 · The wave function <span class="spec-tag">ALG · wave function</span></h2>
+<p>When two waves of the same period meet, they add up to another wave of that period. On HMS Lodestone, a long swell from the west meets another from the north, and the ship rides their sum. Mathematically, any expression $a\cos x + b\sin x$ can be rewritten as a single wave:</p>
+$$a\cos x + b\sin x = k\cos(x - \alpha), \qquad k \gt 0.$$
+<p>The single wave has amplitude $k$ and is shifted by $\alpha$. You can also be asked for $k\cos(x + \alpha)$, $k\sin(x - \alpha)$ or $k\sin(x + \alpha)$; the method is the same.</p>
+<div class="widget" id="w-wave">
+  <h3 class="widget-title">Two swells, one wave: $a\cos x + b\sin x = k\cos(x - \alpha)$</h3>
+  <p class="hint">Set $a$ and $b$. On the left, a cos arrow of length $a$ and a sin arrow of length $b$ add to one arrow of length $k$ at angle $\alpha$; press play to turn them. On the right, the two component waves (faint) add up, point by point, to the single wave.</p>
+</div>
+<h3>The method</h3>
+<ol>
+<li><strong>Expand</strong> the target form with the addition formula: $k\cos(x - \alpha) = k\cos x\cos\alpha + k\sin x\sin\alpha$.</li>
+<li><strong>Compare coefficients</strong> with $a\cos x + b\sin x$: $\ k\cos\alpha = a$ and $k\sin\alpha = b$.</li>
+<li><strong>Find $k$</strong>: $k = \sqrt{a^2 + b^2}$.</li>
+<li><strong>Find $\alpha$</strong>: $\tan\alpha = \frac{k\sin\alpha}{k\cos\alpha} = \frac{b}{a}$. Use the <em>signs</em> of $k\sin\alpha$ and $k\cos\alpha$ to pick the quadrant (CAST).</li>
+</ol>
+<div class="worked"><p class="worked-title">Worked example 12 · P2 · $\alpha$ in the fourth quadrant</p>
+<p>Express $5\cos x° - 12\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$k\cos x°\cos\alpha° + k\sin x°\sin\alpha°$ <span class="why">Expand the target.</span></li>
+<li>$k\cos\alpha° = 5$ and $k\sin\alpha° = -12$ <span class="why">Compare coefficients. Keep the minus sign with $\sin$.</span></li>
+<li>$k = \sqrt{5^2 + (-12)^2} = 13$ <span class="why">Find $k$.</span></li>
+<li>$\tan\alpha° = -\frac{12}{5}$; cos positive, sin negative, so $\alpha$ is in the fourth quadrant: $\alpha = 360 - 67.4 = 292.6$ <span class="why">$\tan^{-1}\frac{12}{5} = 67.4°$, then CAST.</span></li>
+</ol>
+<p>So $5\cos x° - 12\sin x° = 13\cos(x - 292.6)°$.</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · solve using the wave function</p>
+<p>(a) Express $\sqrt3\cos x° + \sin x°$ in the form $k\cos(x - \alpha)°$, $k \gt 0$, $0 \le \alpha \lt 360$. (b) Hence solve $\sqrt3\cos x° + \sin x° = 1$ for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $k\cos\alpha = \sqrt3$, $k\sin\alpha = 1$, $k = \sqrt{3 + 1} = 2$ <span class="why">Compare and find $k$.</span></li>
+<li>$\tan\alpha = \frac{1}{\sqrt3}$, both positive, so $\alpha = 30$: the expression is $2\cos(x - 30)°$ <span class="why">First quadrant.</span></li>
+<li>(b) $2\cos(x - 30)° = 1 \Rightarrow \cos(x - 30)° = \frac12$ <span class="why">Use part (a).</span></li>
+<li>$x - 30 = 60$ or $300 \Rightarrow x = 90$ or $330$ <span class="why">Solve, then add 30. (Check $x - 30$ stays in range: $-30 \le x - 30 \lt 330$.)</span></li>
+</ol>
+</details></div>
+<h3>Maximum and minimum values</h3>
+<p>Because $\cos$ is between $-1$ and $1$, $k\cos(x - \alpha)$ has maximum $k$ (when $x - \alpha = 0$, so $x = \alpha$) and minimum $-k$ (when $x - \alpha = 180°$). For example, $4\cos x + 3\sin x = 5\cos(x - 36.9)°$ has maximum $5$ at $x = 36.9°$ and minimum $-5$ at $x = 216.9°$.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Many candidates made processing errors during at least one stage of their working", and in the harder part "only a few candidates applied the period of the graph accurately". The most common slip is a wrong quadrant for $\alpha$: always write down the signs of $k\sin\alpha$ and $k\cos\alpha$ and mark the quadrant on a CAST diagram.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>write $a\cos x + b\sin x$ as $k\cos(x \pm \alpha)$ or $k\sin(x \pm \alpha)$, choosing the right quadrant;</li><li>use it to solve equations and to find maximum and minimum values and where they occur;</li><li>sketch the resulting graph.</li></ul></div>
+<div class="check" data-check="trig-wave"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="geometry.html">← Geometry</a>
+  <a class="btn primary" href="calculus.html">To the gun deck: Calculus →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="trig.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

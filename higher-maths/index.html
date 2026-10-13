@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chart, Compass &amp; Calculus · Higher Maths</title>
+<meta name="description" content="A complete, interactive guide to Higher Mathematics (Qualifications Scotland, course C847 76), taught by an Air Cadet squadron aboard a block-built frigate: algebra and functions, logs and sequences, straight lines, circles and vectors, trigonometry and the wave function, differentiation and integration, and exam technique, with live graphs and exam-style checks.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <canvas id="hero-canvas" width="960" height="240" aria-hidden="true"></canvas>
+  <button type="button" id="hero-pause" class="hero-pause">Pause animation</button>
+</div>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The wardroom · read before your first watch</p>
+<h1>Welcome aboard, Cadet.</h1>
+<p class="lede">This is a complete, interactive guide to <strong>Higher Mathematics</strong>, the course awarded by Qualifications Scotland. It covers every skill in the course specification, starting from what you already know from National 5. Each chapter has clear explanations, diagrams, graphs you can drag and change, worked examples set out the way markers want them, and a short check at the end.</p>
+<p>You will learn it with <strong>1805 (Blockhaven) Squadron</strong>, the Air Cadets who already wrote up <a href="../higher-computing/">Higher Computing Science</a> and <a href="../higher-physics/">Higher Physics</a>. This time they are posted to <em>HMS Lodestone</em>, a 38-gun frigate built entirely from Minecraft blocks and named after the block that makes a compass point home. A frigate lives or dies by its navigation, and navigation is mathematics: the Sailing Master's chart is a coordinate grid, the gun crews depend on parabolas, the swell is a sum of waves, and the purser's ledger grows by percentages.</p>
+</div>
+
+<section id="course" class="prose">
+<h2 data-short="The course at a glance">The course at a glance</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr><th scope="row">Qualification</th><td>Higher Mathematics, course code C847 76, SCQF level 6, 24 SCQF credit points</td></tr>
+<tr><th scope="row">Study time</th><td>About 160 hours of learning, including time to prepare for assessment</td></tr>
+<tr><th scope="row">Usually taken</th><td>S5 or S6, after National 5 Mathematics (or equivalent)</td></tr>
+<tr><th scope="row">Awarding body</th><td>Qualifications Scotland, which replaced SQA on 1 February 2026. This site follows the <b>course specification version 3.0 (May 2023)</b>, valid from session 2023–24. Qualifications Scotland says this document is still current.</td></tr>
+<tr><th scope="row">Grades</th><td>A to D, decided by your total mark across the two question papers. There is no coursework.</td></tr>
+</tbody></table></div>
+
+<h3>Four strands, five decks</h3>
+<p>The course specification lists skills under four headings: <em>algebraic and trigonometric</em>, <em>geometric</em>, <em>calculus</em>, and <em>algebraic and geometric</em>, plus <em>reasoning</em> skills that run through everything. This site sorts them into four teaching decks and an exam deck. Every chapter carries a small tag, like <span class="spec-tag">ALG · polynomials</span>, so you can see which skill it covers.</p>
+<div class="deck-grid">
+  <a class="deck-card" href="algebra.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#3b2a1a"/><rect x="2" y="2" width="12" height="12" fill="#efe4c8"/><rect x="3" y="4" width="10" height="1" fill="#7a5532"/><rect x="3" y="7" width="7" height="1" fill="#7a5532"/><rect x="3" y="10" width="9" height="1" fill="#7a5532"/><rect x="10" y="9" width="3" height="3" fill="#2f5fa8"/><rect x="4" y="12" width="1" height="1" fill="#b3261e"/><rect x="6" y="11" width="1" height="1" fill="#b3261e"/><rect x="8" y="9" width="1" height="2" fill="#b3261e"/></svg><span class="marks">≈ 30–45% of the marks · 8 chapters</span><h3>Algebra &amp; functions</h3><p>Polynomials and the factor theorem, quadratics and the discriminant, functions and their graphs, logarithms and exponentials, recurrence relations.</p></a>
+  <a class="deck-card" href="geometry.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#155457"/><rect x="1" y="1" width="14" height="14" fill="#e8f0ea"/><rect x="1" y="8" width="14" height="1" fill="#7a8a80"/><rect x="8" y="1" width="1" height="14" fill="#7a8a80"/><rect x="3" y="12" width="2" height="1" fill="#b3261e"/><rect x="5" y="10" width="2" height="2" fill="#b3261e"/><rect x="7" y="8" width="2" height="2" fill="#b3261e"/><rect x="9" y="6" width="2" height="2" fill="#b3261e"/><rect x="11" y="4" width="2" height="2" fill="#b3261e"/><rect x="10" y="9" width="4" height="1" fill="#2f5fa8"/><rect x="9" y="10" width="1" height="3" fill="#2f5fa8"/><rect x="14" y="10" width="1" height="3" fill="#2f5fa8"/><rect x="10" y="13" width="4" height="1" fill="#2f5fa8"/></svg><span class="marks">≈ 15–35% · 4 chapters</span><h3>Lines, circles &amp; vectors</h3><p>Gradient and <i>m</i> = tan θ, perpendicular lines and triangle centres, the equation of a circle and tangents, vectors in three dimensions and the scalar product.</p></a>
+  <a class="deck-card" href="trig.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1f5e66"/><rect x="0" y="9" width="16" height="7" fill="#226f86"/><rect x="0" y="7" width="2" height="1" fill="#e9f6ff"/><rect x="2" y="5" width="2" height="2" fill="#e9f6ff"/><rect x="4" y="4" width="2" height="1" fill="#e9f6ff"/><rect x="6" y="5" width="2" height="2" fill="#e9f6ff"/><rect x="8" y="7" width="2" height="2" fill="#e9f6ff"/><rect x="10" y="9" width="2" height="1" fill="#e9f6ff"/><rect x="12" y="7" width="2" height="2" fill="#e9f6ff"/><rect x="14" y="5" width="2" height="2" fill="#e9f6ff"/><rect x="11" y="1" width="3" height="3" fill="#ffe27a"/></svg><span class="marks">≈ 10–25% · 5 chapters</span><h3>Trigonometry</h3><p>Radians and exact values, trig graphs, solving equations, the addition and double angle formulae, and the wave function.</p></a>
+  <a class="deck-card" href="calculus.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#241a3a"/><rect x="1" y="13" width="14" height="1" fill="#cfc6b2"/><rect x="2" y="12" width="2" height="1" fill="#e0b23a"/><rect x="4" y="9" width="2" height="3" fill="#e0b23a"/><rect x="6" y="6" width="2" height="2" fill="#e0b23a"/><rect x="8" y="5" width="2" height="1" fill="#e0b23a"/><rect x="10" y="6" width="2" height="2" fill="#e0b23a"/><rect x="12" y="9" width="2" height="3" fill="#e0b23a"/><rect x="5" y="5" width="6" height="1" fill="#ff4b3a"/><rect x="4" y="9" width="10" height="4" fill="#e0b23a" opacity=".35"/></svg><span class="marks">≈ 15–40% · 7 chapters</span><h3>Calculus</h3><p>Differentiation and the chain rule, tangents, stationary points, curve sketching, optimisation, integration, areas and differential equations.</p></a>
+  <a class="deck-card" href="exam.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1d4f2b"/><rect x="3" y="1" width="1" height="14" fill="#c8c8c8"/><rect x="4" y="2" width="9" height="9" fill="#f2c200"/><polygon points="4,2 13,2 4,11" fill="#c8102e"/></svg><span class="marks">Paper 1 · Paper 2 · formulae list</span><h3>Exam drill</h3><p>How marks are awarded, the formulae list, non-calculator technique, the mistakes markers see most, and a timed mixed paper.</p></a>
+</div>
+<p>The percentages are the official "approximate share of the marks across the papers" from the course specification. They add up to more than 100% because many questions mix strands: a tangent to a curve is both calculus and straight-line geometry.</p>
+
+<h3>How you are assessed</h3>
+<figure class="diagram" aria-labelledby="as-cap">
+  <p class="px-label"><b>Paper 1 (non-calculator)</b> · 55 marks · 1 hour 15 minutes</p>
+  <div class="assess-row" style="max-width:calc(55 / 65 * 100%);min-width:12em">
+    <div style="flex:1;background:var(--bg-red)"><b>Paper 1 · 55</b>No calculator</div>
+  </div>
+  <p class="px-label"><b>Paper 2</b> · 65 marks · 1 hour 30 minutes</p>
+  <div class="assess-row">
+    <div style="flex:1;background:var(--bg-sea)"><b>Paper 2 · 65</b>Calculator allowed</div>
+  </div>
+  <figcaption id="as-cap">Bar lengths are to scale. 120 marks in total, all from the two exam papers. That is about 1.4 minutes per mark in each paper.</figcaption>
+</figure>
+<ul>
+<li>Both papers have <strong>short-answer and extended-response</strong> questions. There is no multiple choice. You write your working in an answer booklet.</li>
+<li>Each paper starts with a <a href="exam.html#formulae">formulae list</a>: the circle equations, the scalar product, the addition and double angle formulae, and the derivatives and integrals of sin <i>ax</i> and cos <i>ax</i>. Everything else, such as the quadratic formula, the laws of logarithms, the chain rule and the exact values, you must know.</li>
+<li>About <strong>65%</strong> of the marks are aimed at grade C. The rest are harder steps that separate A from B.</li>
+<li>About <strong>35%</strong> of the marks are for <strong>reasoning</strong>: choosing a strategy for an unfamiliar problem, and explaining or interpreting an answer. The rest test routine skills.</li>
+<li><strong>A correct answer with no working gets no marks</strong>, unless the question says otherwise. See <a href="exam.html#marking">how marks are awarded</a>.</li>
+</ul>
+
+<h3>Grade boundaries, 2026</h3>
+<div class="table-wrap"><table>
+<caption>From the 2026 Higher Mathematics course report: 19 792 candidates. Boundaries move a little each year. 2025's were 86, 73, 60 and 47.</caption>
+<thead><tr><th>Grade</th><th class="num">Minimum mark (of 120)</th><th class="num">≈ %</th><th class="num">Candidates</th><th class="num">Cumulative</th></tr></thead>
+<tbody>
+<tr><td>A</td><td class="num">83</td><td class="num">69%</td><td class="num">7 433</td><td class="num">37.6%</td></tr>
+<tr><td>B</td><td class="num">70</td><td class="num">58%</td><td class="num">4 025</td><td class="num">57.9%</td></tr>
+<tr><td>C</td><td class="num">58</td><td class="num">48%</td><td class="num">3 097</td><td class="num">73.5%</td></tr>
+<tr><td>D</td><td class="num">45</td><td class="num">38%</td><td class="num">2 271</td><td class="num">85.0%</td></tr>
+</tbody></table></div>
+<p>The 2026 course report says candidates did well on routine questions but "did not perform as well in questions that required deeper reasoning or precise mathematical communication", and that many "missed out on marks due to numerical inaccuracies", especially with fractions and negative numbers. Look for the <span style="color:var(--redstone);font-weight:700">⚠ Exam lookout</span> boxes. The ones headed "From the course report" quote what markers actually saw in 2025 and 2026.</p>
+</section>
+
+<section id="how" class="prose">
+<h2 data-short="How to use this site">How to use this site</h2>
+<ol>
+<li><strong>Work through the decks in order if you can.</strong> Algebra comes first because every other deck uses it. Calculus uses the trigonometry deck too. Each chapter builds on the one before.</li>
+<li><strong>Play with every widget.</strong> Drag the points, move the sliders, step through the algebra. Before you change anything, <em>predict</em> what the graph will do. Then check. Working like this builds the understanding that unfamiliar questions need.</li>
+<li><strong>Try the worked examples yourself first.</strong> Cover the solution, write your own working, then open it. Solutions are set out with the marks shown as •1, •2, … like the official marking instructions, so you can see exactly what earns each mark.</li>
+<li><strong>Do the maths on paper.</strong> Paper 1 has no calculator. Whenever you see the <span class="pill p1">P1</span> tag, do the arithmetic by hand. Fractions, surds and exact values must become automatic.</li>
+<li><strong>Pass the ✈ pre-flight check</strong> at the end of each chapter. Multiple-choice questions mark themselves. For open questions you write your answer, reveal the marking scheme and mark yourself honestly.</li>
+<li><strong>Finish with the <a href="exam.html">Exam drill</a></strong>: how marking works, the formulae list, the most common errors and a timed mixed paper.</li>
+</ol>
+<div class="callout tip"><div class="callout-title">✎ Typing maths</div><p>In the open questions, type answers however you like (for example <code>x^2 - 4x + 3</code> or <code>sqrt(13)</code>). Nothing is marked by the computer. The box is just a place to commit to an answer before you look.</p></div>
+</section>
+
+<section id="ranks" class="prose">
+<h2 data-short="Your rank">Your rank</h2>
+<p>Every pre-flight check you pass counts towards promotion through the Air Cadet ranks, from Cadet to Cadet Warrant Officer. Progress is saved in this browser only. Nothing is sent anywhere.</p>
+<p class="readout" data-progress-text style="font-family:var(--font-body)"></p>
+<div class="rank-ladder" data-rank-ladder></div>
+<div class="btn-row"><button class="btn small danger" type="button" id="reset-progress">Reset my progress</button></div>
+</section>
+
+<section id="mashup" class="prose">
+<h2 data-short="Decoding the theme">Decoding the theme</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>You'll see…</th><th>…which stands for</th></tr></thead>
+<tbody>
+<tr><td>🧭 The chart table, the compass, bearings and the Sailing Master</td><td>Coordinates, gradients, straight lines and circles (<a href="geometry.html">Geometry</a>). A chart is a coordinate grid, and a course is a straight line on it.</td></tr>
+<tr><td>🟫 Minecraft blocks, cuboids and the lodestone</td><td>Three-dimensional vectors: every block is a unit cube, so a path through blocks is a sum of vectors. Algebra tiles for completing the square are blocks too.</td></tr>
+<tr><td>🔥 Furnaces, hoppers and minecarts</td><td>Functions: a value goes in, a new value comes out. Two furnaces in a row make a composite function, and running one backwards is an inverse.</td></tr>
+<tr><td>⚓ Cannon, shot and the gun deck</td><td>Parabolas, quadratics and optimisation. The path of a shot is a quadratic graph, and its gradient at any instant is a derivative (<a href="calculus.html">Calculus</a>).</td></tr>
+<tr><td>🌊 The swell, the tide and the ship's bell</td><td>Trigonometric graphs and the wave function (<a href="trig.html">Trigonometry</a>).</td></tr>
+<tr><td>📜 The purser's ledger and the log line</td><td>Exponentials, logarithms and recurrence relations: money, stores and populations that grow or shrink by a percentage. (A ship's "log" and a logarithm share only a name.)</td></tr>
+<tr><td>✈ Air Cadets, the Grob Tutor and the parade ground</td><td>Your progress (ranks and pre-flight checks), and the flight paths used for rates of change.</td></tr>
+</tbody></table></div>
+<p>The crew you will meet: <strong>Flight Lieutenant Alba Murray</strong>, the squadron's officer in charge; <strong>Captain Isobel Grant</strong> of HMS Lodestone; <strong>Sailing Master Euan Fraser</strong>, who navigates the ship and keeps the charts; and <strong>Cadet Sergeant Jamie Rahman</strong>, who asks the questions you are probably thinking. Look for the violet <b>🎖 Cadet Sergeant Rahman asks…</b> boxes. Each one tackles a common misconception.</p>
+</section>
+
+<section id="shipwords" class="prose">
+<h2 data-short="Ship's glossary">Ship's glossary</h2>
+<p>None of these words will be in your exam. They are period flavour, explained here so they never get in the way.</p>
+<dl class="glossary">
+<dt>Frigate</dt><dd>A fast warship of Nelson's era with one main gun deck, used for scouting and carrying messages. HMS Lodestone carries 38 guns.</dd>
+<dt>Sailing Master</dt><dd>The officer responsible for navigation: the charts, the course, the ship's position and the log.</dd>
+<dt>Log line / heaving the log</dt><dd>A knotted rope thrown over the stern to measure the ship's speed. Knots passing in a set time gave the speed "in knots". The ship's log book is named after it.</dd>
+<dt>Purser</dt><dd>The officer who kept the ship's accounts and stores of food and drink.</dd>
+<dt>Bearing</dt><dd>A direction measured clockwise from north, as a three-figure angle such as 045°.</dd>
+<dt>Sextant</dt><dd>An instrument that measures the angle between the horizon and the Sun or a star, used to find latitude.</dd>
+<dt>Bow chaser</dt><dd>A gun at the front (bow) of the ship that fires forwards.</dd>
+<dt>Swell</dt><dd>Long, smooth waves that keep rolling after the wind that made them has dropped.</dd>
+<dt>Lodestone</dt><dd>A naturally magnetic rock, used to magnetise compass needles. In Minecraft, a lodestone block makes a compass point to it.</dd>
+<dt>Furnace, hopper, minecart</dt><dd>Minecraft blocks and items: a furnace turns one item into another, a hopper feeds items in, a minecart runs on rails.</dd>
+<dt>Air Cadets, squadron, flight</dt><dd>The RAF Air Cadets is a youth organisation for 12 to 20 year olds. Cadets belong to a local numbered squadron, split into smaller groups called flights.</dd>
+<dt>Grob Tutor</dt><dd>The small two-seat aircraft in which Air Cadets get flying experience.</dd>
+<dt>Watch, night watch</dt><dd>A sailor's spell of duty. "Night watch" is also this site's dark-mode button.</dd>
+<dt>Blockhaven, 1805 Squadron</dt><dd>The made-up Minecraft town and Air Cadet squadron of this site. 1805 is the year of Trafalgar.</dd>
+</dl>
+</section>
+
+<section id="sources" class="prose">
+<h2 data-short="Sources">Sources and official documents</h2>
+<p>All course content on this site is checked against the official documents. Always treat these as the final word:</p>
+<ul>
+<li><a href="https://www.sqa.org.uk/sqa/47910.html">Higher Mathematics subject page</a>: the course specification, specimen papers, past papers and course reports.</li>
+<li><a href="https://www.sqa.org.uk/sqa/files_ccc/h-course-spec-mathematics.pdf">Higher Mathematics course specification (version 3.0, PDF)</a>: the list of skills on which every chapter here is based.</li>
+<li><a href="https://www.sqa.org.uk/files_ccc/HigherSQPMathematicsPaper1.pdf">Specimen Paper 1</a> and <a href="https://www.sqa.org.uk/files_ccc/HigherSQPMathematicsPaper2.pdf">Specimen Paper 2</a> (PDF): include the formulae list, the general marking principles and full marking instructions.</li>
+<li><a href="https://www.sqa.org.uk/files_ccc/2026-h-course-report-mathematics.pdf">2026 course report</a> and <a href="https://www.sqa.org.uk/files_ccc/2025-h-course-report-mathematics.pdf">2025 course report</a> (PDF): the source of every "From the course report" box.</li>
+<li><a href="https://www.sqa.org.uk/pastpapers/findpastpaper.htm">Past papers and marking instructions</a></li>
+</ul>
+<nav class="next-deck" aria-label="Deck navigation">
+  <span></span>
+  <a class="btn primary" href="algebra.html">Report to the purser: start Algebra →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script src="hero.js"></script>
+<script>
+document.getElementById("reset-progress").addEventListener("click", () => {
+  if (!confirm("Reset every pre-flight check and your rank?")) return;
+  HM.state.checks = {};
+  try { localStorage.setItem("hm-higher.v1", JSON.stringify(HM.state)); } catch (e) {}
+  HM.paintRank();
+  HM.toast("Progress reset. Back to Cadet.");
+});
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

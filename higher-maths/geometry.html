@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lines, circles &amp; vectors · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Higher Maths geometry, interactive: gradient and m = tan θ, parallel and perpendicular lines, medians, altitudes and perpendicular bisectors, the equation of a circle and its tangents, vectors in three dimensions, collinearity, internal division and the scalar product, with live diagrams and exam-style checks.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The chart table · lines, circles and vectors</p>
+<h1>Lines, circles &amp; vectors</h1>
+<p class="lede">Sailing Master Fraser's chart is a coordinate grid. Every course is a straight line on it, the range of a lighthouse is a circle, and the rigging of a ship is a web of vectors in three dimensions. This deck covers the geometric skills in the course specification: about 15–35% of the marks.</p>
+</div>
+
+<section id="line" class="prose">
+<h2 data-short="The straight line">1 · The straight line <span class="spec-tag">ALG-GEO · rectilinear shapes</span></h2>
+<p>You met these at National 5. Higher uses them constantly, so make sure they are automatic. For points $A(x_1, y_1)$ and $B(x_2, y_2)$:</p>
+<div class="eq-grid">
+  <div class="eq-card">$$m_{AB} = \frac{y_2 - y_1}{x_2 - x_1}$$<p>Gradient. A vertical line has no gradient (undefined); a horizontal line has $m = 0$.</p></div>
+  <div class="eq-card">$$y - b = m(x - a)$$<p>The line through $(a, b)$ with gradient $m$. The most useful form at Higher.</p></div>
+  <div class="eq-card">$$\left(\tfrac{x_1 + x_2}{2},\ \tfrac{y_1 + y_2}{2}\right)$$<p>Midpoint of $AB$.</p></div>
+  <div class="eq-card">$$d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$$<p>Distance, by Pythagoras.</p></div>
+</div>
+
+<h3>Gradient and angle: $m = \tan\theta$</h3>
+<p>The angle $\theta$ that a line makes with the <strong>positive direction of the $x$-axis</strong> (measured anticlockwise) is linked to its gradient by</p>
+$$m = \tan\theta.$$
+<p>The gradient is "up over along", and so is the tangent of the angle in the right-angled triangle under the line. For a positive gradient, $\theta = \tan^{-1} m$ is an acute angle. For a negative gradient the line slopes down and $\theta$ is obtuse: your calculator gives a negative angle, so add $180°$.</p>
+<div class="widget" id="w-line">
+  <h3 class="widget-title">The Sailing Master's ruler: gradient, angle and equation</h3>
+  <p class="hint">Drag $A$ and $B$ (or use the sliders). The widget gives the gradient, the angle with the positive $x$-axis, and the equation of the line. Switch on the perpendicular bisector or the perpendicular through $A$.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 1 · P1 · from the specimen paper</p>
+<p>Line $l_1$ has equation $\sqrt3\,y - x = 0$. (a) Line $l_2$ is perpendicular to $l_1$. Find the gradient of $l_2$. (b) Calculate the angle $l_2$ makes with the positive direction of the $x$-axis.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\sqrt3\,y = x \Rightarrow y = \tfrac{1}{\sqrt3}x$, so $m_{l_1} = \tfrac{1}{\sqrt3}$ <span class="why">Rearrange to $y = mx + c$ to read off the gradient.</span></li>
+<li>$m_{l_2} = -\sqrt3$ <span class="why">Perpendicular: $m_1 \times m_2 = -1$, so flip the fraction and change the sign.</span></li>
+<li>(b) $\tan\theta = -\sqrt3$ <span class="why">Use $m = \tan\theta$.</span></li>
+<li>$\theta = 180° - 60° = 120°$ (or $\tfrac{2\pi}{3}$) <span class="why">$\tan 60° = \sqrt3$ is an exact value. The gradient is negative, so the angle is obtuse.</span></li>
+</ol>
+<p>Paper 1 has no calculator, so angles like this always come from the exact values: $m = 1$ gives $45°$, $m = \sqrt3$ gives $60°$, $m = \tfrac{1}{\sqrt3}$ gives $30°$.</p>
+</details></div>
+
+<h3>Parallel, perpendicular and collinear</h3>
+<ul>
+<li>Parallel lines have <strong>equal gradients</strong>: $m_1 = m_2$.</li>
+<li>Perpendicular lines have gradients that multiply to $-1$: $m_1 \times m_2 = -1$. So the perpendicular gradient is the <dfn>negative reciprocal</dfn>: $\tfrac23 \to -\tfrac32$.</li>
+<li>Points $A$, $B$, $C$ are <dfn>collinear</dfn> (on one straight line) if $m_{AB} = m_{BC}$ <em>and</em> $B$ is a point common to both.</li>
+</ul>
+
+<h3>The three special lines of a triangle</h3>
+<figure class="diagram"><svg viewBox="0 0 660 230" role="img" aria-label="Three copies of a triangle. Left: a median joins a vertex to the midpoint of the opposite side. Middle: an altitude goes from a vertex to the opposite side, meeting it at right angles. Right: a perpendicular bisector passes through the midpoint of a side at right angles to it, and need not pass through a vertex.">
+<g fill="none" stroke-width="2.5" class="stroke-ink">
+<polygon points="40,190 200,190 90,40"/>
+<polygon points="260,190 420,190 310,40"/>
+<polygon points="480,190 640,190 530,40"/>
+</g>
+<line x1="90" y1="40" x2="120" y2="190" class="s-sea" stroke-width="3"/><circle cx="120" cy="190" r="5" class="f-sea"/>
+<line x1="310" y1="40" x2="310" y2="190" class="s-red" stroke-width="3"/><path d="M310 176 h14 v14" fill="none" class="s-red" stroke-width="2"/>
+<line x1="560" y1="215" x2="560" y2="30" class="s-gold" stroke-width="3"/><path d="M560 176 h14 v14" fill="none" class="s-gold" stroke-width="2"/><circle cx="560" cy="190" r="5" class="f-gold"/>
+<g font-size="15" text-anchor="middle" class="ink" font-weight="700"><text x="120" y="20">Median</text><text x="340" y="20">Altitude</text><text x="560" y="20">Perpendicular bisector</text></g>
+<g font-size="13" text-anchor="middle" class="ink2"><text x="120" y="216">vertex → midpoint</text><text x="340" y="216">vertex, at right angles</text></g>
+</svg><figcaption>A <b>median</b> joins a vertex to the midpoint of the opposite side. An <b>altitude</b> goes from a vertex perpendicular to the opposite side. A <b>perpendicular bisector</b> passes through the midpoint of a side, perpendicular to it.</figcaption></figure>
+<p>To find the equation of each one you need a point and a gradient:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Line</th><th>Point to use</th><th>Gradient to use</th></tr></thead>
+<tbody>
+<tr><td>Median from $A$</td><td>$A$</td><td>from $A$ to the midpoint of $BC$</td></tr>
+<tr><td>Altitude from $A$</td><td>$A$</td><td>perpendicular to $BC$</td></tr>
+<tr><td>Perpendicular bisector of $BC$</td><td>the midpoint of $BC$</td><td>perpendicular to $BC$</td></tr>
+</tbody></table></div>
+<div class="widget" id="w-triangle">
+  <h3 class="widget-title">Triangulating a position: medians, altitudes and bisectors</h3>
+  <p class="hint">Drag the vertices. Each family of three lines always meets at one point: the medians at the centroid, the altitudes at the orthocentre and the perpendicular bisectors at the circumcentre (the centre of the circle through all three vertices).</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 2 · P1 · median meets altitude</p>
+<p>Triangle $ABC$ has vertices $A(3, -4)$, $B(1, -8)$ and $C(9, -2)$. Find (a) the equation of the median from $A$, (b) the equation of the altitude from $B$, and (c) the point where they meet.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) Midpoint of $BC$: $M = \left(\tfrac{1+9}{2}, \tfrac{-8-2}{2}\right) = (5, -5)$ <span class="why">A median goes to a midpoint.</span></li>
+<li>$m_{AM} = \dfrac{-5 - (-4)}{5 - 3} = -\tfrac12$ <span class="why">Gradient of the median.</span></li>
+<li>$y + 4 = -\tfrac12(x - 3) \Rightarrow x + 2y + 5 = 0$ <span class="why">Equation through $A$.</span></li>
+<li>(b) $m_{AC} = \dfrac{-2 - (-4)}{9 - 3} = \tfrac13$, so $m_\perp = -3$ <span class="why">The altitude from $B$ is perpendicular to $AC$.</span></li>
+<li>$y + 8 = -3(x - 1) \Rightarrow y = -3x - 5$ <span class="why">Equation through $B$.</span></li>
+<li>(c) $x + 2(-3x - 5) + 5 = 0 \Rightarrow -5x - 5 = 0 \Rightarrow x = -1$ <span class="why">Solve simultaneously: substitute $y$.</span></li>
+<li>$y = -3(-1) - 5 = -2$. They meet at $(-1, -2)$. <span class="why">Find $y$ and state the point.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 most candidates found the midpoint and gradient for a perpendicular bisector, but "only some candidates used $m = \tan\theta$ to calculate the angles between the two lines and the positive direction of the $x$-axis appropriately". To find the angle <em>between</em> two lines, find each line's angle with the positive $x$-axis and subtract.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find the equation of a line parallel or perpendicular to a given line;</li><li>use $m = \tan\theta$ in both directions, including obtuse angles;</li><li>find medians, altitudes and perpendicular bisectors, and where lines intersect;</li><li>decide whether two lines are perpendicular, or three points are collinear.</li></ul></div>
+<div class="check" data-check="geo-line"></div>
+</section>
+
+<section id="circle" class="prose">
+<h2 data-short="The circle">2 · The circle <span class="spec-tag">ALG-GEO · circles</span></h2>
+<p>A circle is every point at a fixed distance $r$ (the radius) from a centre $(a, b)$. By Pythagoras, a point $(x, y)$ is on it exactly when $(x - a)^2 + (y - b)^2 = r^2$. Both forms below are on the formulae list.</p>
+<div class="compare">
+<div><h3>Centre–radius form</h3>
+$$(x - a)^2 + (y - b)^2 = r^2$$
+<p>Centre $(a, b)$, radius $r$. Watch the signs: $(x + 3)^2$ means $a = -3$.</p></div>
+<div><h3>General form</h3>
+$$x^2 + y^2 + 2gx + 2fy + c = 0$$
+<p>Centre $(-g, -f)$, radius $\sqrt{g^2 + f^2 - c}$. It is a real circle only if $g^2 + f^2 - c \gt 0$.</p></div>
+</div>
+<p>The general form is just the centre–radius form multiplied out. To use it, <strong>halve</strong> the coefficients of $x$ and $y$ and change their signs to get the centre. The coefficients of $x^2$ and $y^2$ must both be 1; if they are both 2, divide everything by 2 first.</p>
+<div class="worked"><p class="worked-title">Worked example 3 · P1 · general form</p>
+<p>Find the centre and radius of the circle $x^2 + y^2 - 6x + 4y - 12 = 0$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$2g = -6 \Rightarrow g = -3$; $2f = 4 \Rightarrow f = 2$; $c = -12$ <span class="why">Match with the general form.</span></li>
+<li>Centre $(-g, -f) = (3, -2)$ <span class="why">Change the signs.</span></li>
+<li>$r = \sqrt{(-3)^2 + 2^2 - (-12)} = \sqrt{9 + 4 + 12} = 5$ <span class="why">Brackets round negatives; $-c$ becomes $+12$.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · from a diameter (specimen paper)</p>
+<p>$A(-7, 3)$ and $B(1, 5)$ are the ends of a diameter of a circle. Find its equation.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Centre $= $ midpoint of $AB = (-3,\ 4)$ <span class="why">The centre is halfway along a diameter.</span></li>
+<li>$r^2 = (1 - (-3))^2 + (5 - 4)^2 = 16 + 1 = 17$ <span class="why">Distance from the centre to $B$, squared.</span></li>
+<li>$(x + 3)^2 + (y - 4)^2 = 17$ <span class="why">Leave $r^2$ as 17; there is no need to find $\sqrt{17}$.</span></li>
+</ol>
+</details></div>
+<div class="widget" id="w-circle">
+  <h3 class="widget-title">The lighthouse's range: a circle and a line</h3>
+  <p class="hint">Set $g$, $f$ and $c$ to define the circle (it vanishes if $g^2 + f^2 - c \le 0$). Then move the line $y = mx + k$. Substituting the line into the circle gives a quadratic, and its discriminant tells you whether the line cuts, touches or misses.</p>
+</div>
+
+<h3>Tangents to a circle</h3>
+<p>A tangent touches the circle at one point, and it is always <strong>perpendicular to the radius</strong> at that point. That gives two ways in:</p>
+<ul>
+<li><strong>Tangent at a known point $P$:</strong> find the gradient of the radius from the centre to $P$, take the negative reciprocal, and use $y - b = m(x - a)$ through $P$.</li>
+<li><strong>Is a given line a tangent?</strong> Substitute the line into the circle. If the resulting quadratic has discriminant zero (equal roots), the line is a tangent.</li>
+</ul>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · tangent at a point</p>
+<p>The point $P(6, 2)$ lies on the circle $(x - 3)^2 + (y + 2)^2 = 25$. Find the equation of the tangent at $P$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Centre $(3, -2)$ <span class="why">Read off from the equation.</span></li>
+<li>$m_{\text{radius}} = \dfrac{2 - (-2)}{6 - 3} = \tfrac43$ <span class="why">Gradient from the centre to $P$.</span></li>
+<li>$m_{\text{tangent}} = -\tfrac34$ <span class="why">Perpendicular to the radius.</span></li>
+<li>$y - 2 = -\tfrac34(x - 6) \Rightarrow 3x + 4y - 26 = 0$ <span class="why">Equation through $P$.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · prove tangency</p>
+<p>Show that the line $y = 2x + 10$ is a tangent to the circle $x^2 + y^2 = 20$, and find the point of contact.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 + (2x + 10)^2 = 20$ <span class="why">Substitute the line into the circle.</span></li>
+<li>$5x^2 + 40x + 80 = 0 \Rightarrow x^2 + 8x + 16 = 0$ <span class="why">Expand, collect, and divide by 5.</span></li>
+<li>$b^2 - 4ac = 64 - 64 = 0$, so the line is a tangent. <span class="why">Discriminant zero: one point of contact. Say so.</span></li>
+<li>$(x + 4)^2 = 0 \Rightarrow x = -4$, $y = 2$. Point of contact $(-4, 2)$. <span class="why">Solve and find $y$.</span></li>
+</ol>
+</details></div>
+
+<h3>Two circles</h3>
+<p>Compare the distance $d$ between the centres with the radii $r_1$ and $r_2$:</p>
+<ul>
+<li>$d = r_1 + r_2$: the circles <strong>touch externally</strong>;</li>
+<li>$d = |r_1 - r_2|$: they <strong>touch internally</strong> (one inside the other);</li>
+<li>$|r_1 - r_2| \lt d \lt r_1 + r_2$: they <strong>intersect</strong> at two points;</li>
+<li>$d \gt r_1 + r_2$: they are separate; $d \lt |r_1 - r_2|$: one is inside the other without touching.</li>
+</ul>
+<div class="widget" id="w-circles">
+  <h3 class="widget-title">Two lighthouses: when do the beams' ranges touch?</h3>
+  <p class="hint">Drag the second centre and change the radii. The widget compares the distance between the centres with $r_1 + r_2$ and $|r_1 - r_2|$.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · touching circles</p>
+<p>Show that the circles $x^2 + y^2 = 16$ and $(x - 6)^2 + (y - 8)^2 = 36$ touch externally.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Centres $(0, 0)$ and $(6, 8)$; radii $4$ and $6$ <span class="why">Read off both circles.</span></li>
+<li>$d = \sqrt{6^2 + 8^2} = 10$ <span class="why">Distance between the centres.</span></li>
+<li>$r_1 + r_2 = 4 + 6 = 10 = d$, so the circles touch externally. <span class="why">Compare and communicate.</span></li>
+</ol>
+</details></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"How do I know if a point is inside a circle?"</p><p><strong>Sailing Master Fraser:</strong> "Put its coordinates into the left-hand side of $(x - a)^2 + (y - b)^2$. That's the squared distance from the centre. If it's less than $r^2$ the point is inside; equal, on the circle; more, outside. The same works with the general form: substitute and see whether you get less than, equal to, or more than zero."</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>switch between the two forms and find the centre and radius;</li><li>state when $x^2 + y^2 + 2gx + 2fy + c = 0$ is a circle;</li><li>find the equation of a tangent at a point, and prove a line is a tangent;</li><li>find where a line meets a circle;</li><li>decide whether two circles touch, intersect or do neither.</li></ul></div>
+<div class="check" data-check="geo-circle"></div>
+</section>
+
+<section id="vectors" class="prose">
+<h2 data-short="Vectors in 3D">3 · Vectors in three dimensions <span class="spec-tag">GEO · vector connections</span></h2>
+<p>A <dfn>vector</dfn> has size (magnitude) and direction. A Minecraft world is the perfect place to learn them, because it is built on a three-dimensional grid of unit cubes. Moving 3 blocks east, 2 blocks north and 5 blocks up is the vector</p>
+$$\mathbf{v} = \begin{pmatrix} 3 \\ 2 \\ 5 \end{pmatrix} = 3\mathbf{i} + 2\mathbf{j} + 5\mathbf{k},$$
+<p>where $\mathbf{i}$, $\mathbf{j}$ and $\mathbf{k}$ are <dfn>unit vectors</dfn> (length 1) along the $x$-, $y$- and $z$-axes. Both notations are used in exams.</p>
+<div class="eq-grid">
+  <div class="eq-card">$$\overrightarrow{AB} = \mathbf{b} - \mathbf{a}$$<p>The vector from $A$ to $B$ is "end minus start". $\mathbf{a}$ is the <dfn>position vector</dfn> of $A$: the vector from the origin to $A$.</p></div>
+  <div class="eq-card">$$|\mathbf{v}| = \sqrt{x^2 + y^2 + z^2}$$<p>Magnitude, by 3D Pythagoras.</p></div>
+  <div class="eq-card">$$\hat{\mathbf{v}} = \frac{1}{|\mathbf{v}|}\mathbf{v}$$<p>A <dfn>unit vector</dfn> in the direction of $\mathbf{v}$: divide by its length.</p></div>
+  <div class="eq-card">$$k\mathbf{v}$$<p>Multiplying by a number $k$ scales the length. If $\mathbf{u} = k\mathbf{v}$, then $\mathbf{u}$ and $\mathbf{v}$ are <dfn>parallel</dfn>.</p></div>
+</div>
+
+<h3>Vector pathways</h3>
+<p>To get from one point to another, you can follow any route through known vectors and add them. This is how questions on cuboids and pyramids work. Going backwards along a vector changes its sign: $\overrightarrow{BA} = -\overrightarrow{AB}$.</p>
+<div class="widget" id="w-cuboid">
+  <h3 class="widget-title">A block-built cuboid: vector pathways in 3D</h3>
+  <p class="hint">Drag the cuboid (or use the slider) to turn it. Choose a target point: the widget walks the path along the edges, adding one vector at a time. $O$ is the origin; $\overrightarrow{OA} = 6\mathbf{i}$, $\overrightarrow{OC} = 4\mathbf{j}$ and $\overrightarrow{OD} = 3\mathbf{k}$.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · a pathway</p>
+<p>In the cuboid above, $M$ is the midpoint of $FG$. Express $\overrightarrow{AM}$ in component form.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\overrightarrow{AM} = \overrightarrow{AB} + \overrightarrow{BF} + \overrightarrow{FM}$ <span class="why">Choose a route along known edges.</span></li>
+<li>$\overrightarrow{AB} = 4\mathbf{j}$, $\overrightarrow{BF} = 3\mathbf{k}$, $\overrightarrow{FM} = \tfrac12\overrightarrow{FG} = -3\mathbf{i}$ <span class="why">$\overrightarrow{FG}$ points back along the $x$-axis: $-6\mathbf{i}$.</span></li>
+<li>$\overrightarrow{AM} = \begin{pmatrix} -3 \\ 4 \\ 3 \end{pmatrix}$ <span class="why">Add the components.</span></li>
+</ol>
+<p>Check with coordinates: $A(6, 0, 0)$ and $M(3, 4, 3)$, and $\mathbf{m} - \mathbf{a} = (-3, 4, 3)$.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>Vector pathways: many candidates "stated a vector pathway as a sum of directed line segments" and gained full marks. Write the route first, as $\overrightarrow{PQ} = \overrightarrow{PR} + \overrightarrow{RQ}$, then substitute. The report also asks teachers to "consider how best to practise determining vector pathways in three dimensions", so this is a weakness markers expect.</p></div>
+
+<h3>Collinearity with vectors</h3>
+<p>Three points $A$, $B$, $C$ are collinear if $\overrightarrow{AB} = k\overrightarrow{BC}$ for some number $k$ (so the vectors are parallel) <strong>and</strong> the two vectors share a point ($B$). Both parts belong in your answer.</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · collinear points</p>
+<p>Show that $A(1, 2, -1)$, $B(3, 5, 1)$ and $C(7, 11, 5)$ are collinear, and find the ratio in which $B$ divides $AC$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\overrightarrow{AB} = \begin{pmatrix} 2 \\ 3 \\ 2 \end{pmatrix}$, $\overrightarrow{BC} = \begin{pmatrix} 4 \\ 6 \\ 4 \end{pmatrix}$ <span class="why">End minus start for each.</span></li>
+<li>$\overrightarrow{BC} = 2\overrightarrow{AB}$, so $\overrightarrow{AB}$ is parallel to $\overrightarrow{BC}$ <span class="why">One is a multiple of the other.</span></li>
+<li>$B$ is a common point, so $A$, $B$ and $C$ are collinear. <span class="why">The full communication.</span></li>
+<li>$AB : BC = 1 : 2$ <span class="why">$\overrightarrow{BC}$ is twice as long as $\overrightarrow{AB}$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Only a few candidates communicated the condition for collinearity in a coherent way. Some incorrect responses implied that the points were parallel, the lines were collinear, or did not identify that the line segments were parallel. … A few candidates attempted to find a 'gradient of a vector'." Points are collinear; <em>vectors</em> (or line segments) are parallel. Use those words exactly.</p></div>
+
+<h3>Dividing a line in a ratio</h3>
+<p>If $P$ divides $AB$ internally in the ratio $m : n$, then $P$ is $\frac{m}{m+n}$ of the way from $A$ to $B$:</p>
+$$\mathbf{p} = \mathbf{a} + \frac{m}{m+n}\overrightarrow{AB} \qquad\text{or}\qquad \mathbf{p} = \frac{n\mathbf{a} + m\mathbf{b}}{m + n}.$$
+<div class="widget" id="w-section">
+  <h3 class="widget-title">Rigging a stay: dividing a line in a ratio</h3>
+  <p class="hint">Set the ratio $m : n$. The point $P$ slides along $AB$, and its coordinates are worked out both ways.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · internal division</p>
+<p>$A$ is $(2, -1, 4)$ and $B$ is $(7, 9, -1)$. $P$ divides $AB$ in the ratio $3 : 2$. Find the coordinates of $P$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\overrightarrow{AB} = \begin{pmatrix} 5 \\ 10 \\ -5 \end{pmatrix}$, and $P$ is $\tfrac35$ of the way along. <span class="why">$m + n = 5$ parts.</span></li>
+<li>$\mathbf{p} = \begin{pmatrix} 2 \\ -1 \\ 4 \end{pmatrix} + \tfrac35\begin{pmatrix} 5 \\ 10 \\ -5 \end{pmatrix} = \begin{pmatrix} 5 \\ 5 \\ 1 \end{pmatrix}$ <span class="why">Start at $A$ and add the fraction of the journey.</span></li>
+<li>$P(5, 5, 1)$ <span class="why">Give coordinates, not a position vector, if the question asks for coordinates.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On internal division, "a few candidates left their answer as a position vector or did not use point F as the internal division point". Read which point is doing the dividing, and answer in the form asked.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find vectors between points, magnitudes and unit vectors, in components or $\mathbf{i}, \mathbf{j}, \mathbf{k}$;</li><li>build a vector pathway in a 3D shape;</li><li>prove collinearity with full communication;</li><li>find the point that divides a line in a given ratio.</li></ul></div>
+<div class="check" data-check="geo-vec"></div>
+</section>
+
+<section id="scalar" class="prose">
+<h2 data-short="The scalar product">4 · The scalar product <span class="spec-tag">GEO · working with vectors</span></h2>
+<p>The <dfn>scalar product</dfn> (or dot product) of two vectors is a single number. It has two formulas, both on the formulae list:</p>
+$$\mathbf{a}\cdot\mathbf{b} = |\mathbf{a}||\mathbf{b}|\cos\theta \qquad\qquad \mathbf{a}\cdot\mathbf{b} = a_1b_1 + a_2b_2 + a_3b_3,$$
+<p>where $\theta$ is the angle between the vectors. Putting them together gives the angle between any two vectors:</p>
+$$\cos\theta = \frac{a_1b_1 + a_2b_2 + a_3b_3}{|\mathbf{a}||\mathbf{b}|}.$$
+<p>The most important consequence: two non-zero vectors are <strong>perpendicular if and only if $\mathbf{a}\cdot\mathbf{b} = 0$</strong>, because $\cos 90° = 0$.</p>
+<div class="widget" id="w-dot">
+  <h3 class="widget-title">Bracing the yard: the scalar product and the angle</h3>
+  <p class="hint">Set the components of $\mathbf{a}$ and $\mathbf{b}$, and drag the view to turn it. The widget works out $\mathbf{a}\cdot\mathbf{b}$ both ways and the angle between the vectors. Try to make them perpendicular.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 11 · P2 · the angle between two vectors</p>
+<p>$\mathbf{a} = 2\mathbf{i} - \mathbf{j} + 2\mathbf{k}$ and $\mathbf{b} = 3\mathbf{i} + 4\mathbf{j}$. Find the angle between $\mathbf{a}$ and $\mathbf{b}$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\mathbf{a}\cdot\mathbf{b} = 2(3) + (-1)(4) + 2(0) = 2$ <span class="why">Component form. $\mathbf{b}$ has no $\mathbf{k}$ part, so $b_3 = 0$.</span></li>
+<li>$|\mathbf{a}| = \sqrt{4 + 1 + 4} = 3$, $|\mathbf{b}| = \sqrt{9 + 16} = 5$ <span class="why">Magnitudes.</span></li>
+<li>$\cos\theta = \dfrac{2}{3 \times 5} = \dfrac{2}{15}$ <span class="why">Combine.</span></li>
+<li>$\theta = 82.3°$ <span class="why">Inverse cosine.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · perpendicular (specimen paper)</p>
+<p>The points $A(0, 9, 7)$, $B(5, -1, 2)$, $C(4, 1, 3)$ and $D(x, -2, 2)$ are such that $AB$ is perpendicular to $CD$. Find $x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\overrightarrow{AB} = \begin{pmatrix} 5 \\ -10 \\ -5 \end{pmatrix}$, $\overrightarrow{CD} = \begin{pmatrix} x - 4 \\ -3 \\ -1 \end{pmatrix}$ <span class="why">Find both vectors.</span></li>
+<li>$\overrightarrow{AB}\cdot\overrightarrow{CD} = 0$ <span class="why">State the condition for perpendicular vectors.</span></li>
+<li>$5(x - 4) + 30 + 5 = 0 \Rightarrow 5x + 15 = 0$ <span class="why">Expand.</span></li>
+<li>$x = -3$ <span class="why">Solve.</span></li>
+</ol>
+</details></div>
+<h3>The angle at a vertex</h3>
+<p>To find angle $ABC$ in a 3D shape, use the vectors $\overrightarrow{BA}$ and $\overrightarrow{BC}$: both must start at the vertex $B$. Using $\overrightarrow{AB}$ and $\overrightarrow{BC}$ (one going in, one going out) gives the angle outside the corner, $180° - \theta$.</p>
+<figure class="diagram"><svg viewBox="0 0 420 170" style="max-width:440px" role="img" aria-label="Angle ABC. Both arrows start at B: one pointing to A, one pointing to C. The angle theta between them is the angle at B.">
+<defs><marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" class="f-sea"/></marker></defs>
+<line x1="80" y1="140" x2="300" y2="140" class="s-sea" stroke-width="3" marker-end="url(#arg)"/>
+<line x1="80" y1="140" x2="190" y2="30" class="s-sea" stroke-width="3" marker-end="url(#arg)"/>
+<path d="M130 140 A50 50 0 0 0 115.4 104.6" fill="none" class="s-red" stroke-width="2.5"/>
+<text x="140" y="124" font-size="16" class="f-red" font-weight="700">θ</text>
+<g font-size="16" font-weight="700" class="ink"><text x="66" y="158">B</text><text x="306" y="146">C</text><text x="196" y="30">A</text></g>
+<text x="210" y="100" font-size="14" class="ink2">both vectors start at B</text>
+</svg></figure>
+<h3>Properties you can use</h3>
+<ul>
+<li>$\mathbf{a}\cdot\mathbf{b} = \mathbf{b}\cdot\mathbf{a}$, and $\mathbf{a}\cdot(\mathbf{b} + \mathbf{c}) = \mathbf{a}\cdot\mathbf{b} + \mathbf{a}\cdot\mathbf{c}$ (you can expand brackets).</li>
+<li>$\mathbf{a}\cdot\mathbf{a} = |\mathbf{a}|^2$, since the angle between a vector and itself is $0°$.</li>
+</ul>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · using the properties</p>
+<p>$|\mathbf{a}| = 3$, $|\mathbf{b}| = 4$ and the angle between $\mathbf{a}$ and $\mathbf{b}$ is $60°$. Evaluate $\mathbf{a}\cdot(\mathbf{a} + \mathbf{b})$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\mathbf{a}\cdot(\mathbf{a} + \mathbf{b}) = \mathbf{a}\cdot\mathbf{a} + \mathbf{a}\cdot\mathbf{b}$ <span class="why">Expand.</span></li>
+<li>$= |\mathbf{a}|^2 + |\mathbf{a}||\mathbf{b}|\cos 60° = 9 + 3 \times 4 \times \tfrac12$ <span class="why">Use both properties and the exact value $\cos 60° = \tfrac12$.</span></li>
+<li>$= 15$ <span class="why">Evaluate.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>The scalar product is a <strong>number</strong>, not a vector. Writing $\begin{pmatrix}3\\2\\6\end{pmatrix}\cdot\begin{pmatrix}-5\\-2\\4\end{pmatrix} = \begin{pmatrix}-15\\-4\\24\end{pmatrix} = 5$ "did not gain a mark". Write $3(-5) + 2(-2) + 6(4) = 5$.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>evaluate a scalar product from components, or from lengths and an angle;</li><li>find the angle between two vectors, taking both vectors from the vertex;</li><li>use $\mathbf{a}\cdot\mathbf{b} = 0$ for perpendicular vectors;</li><li>expand $\mathbf{a}\cdot(\mathbf{b} + \mathbf{c})$ and use $\mathbf{a}\cdot\mathbf{a} = |\mathbf{a}|^2$.</li></ul></div>
+<div class="check" data-check="geo-dot"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="algebra.html">← Algebra</a>
+  <a class="btn primary" href="trig.html">To the quarterdeck: Trigonometry →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="geometry.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
