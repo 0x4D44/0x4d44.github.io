@@ -73,6 +73,7 @@ body {
   overflow-wrap: break-word;
 }
 img, svg, video, canvas { max-width: 100%; }
+.katex svg { max-width: none; } /* KaTeX sizes its own glyph SVGs (root signs, arrows) */
 a { color: var(--sea); text-underline-offset: 2px; }
 a:hover { color: var(--redstone); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; box-shadow: 0 0 0 6px var(--paper); }
@@ -304,7 +305,7 @@ pre .hl { background: rgba(255,214,90,.22); display: inline-block; width: 100%; 
 /* diagrams */
 figure { margin: 1.4em 0; }
 figure.diagram { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 12px; }
-figure.diagram svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+figure.diagram svg:not(.katex svg) { display: block; width: 100%; height: auto; margin: 0 auto; }
 figcaption { font-size: .86rem; color: var(--muted); margin-top: 8px; }
 .diagram-scroll { overflow-x: auto; }
 .diagram-scroll > svg { min-width: 760px; }
@@ -541,7 +542,7 @@ svg .s-line { stroke: var(--line); }
 .callout.logbook ul { margin: 4px 0 0; }
 .callout ul.lessons { margin: 4px 0 0; padding-left: 1.2em; }
 .callout ul.lessons li { margin: 4px 0; }
-.diagram.hand svg { max-width: 200px; margin: 0 auto; display: block; }
+.diagram.hand svg:not(.katex svg) { max-width: 200px; margin: 0 auto; display: block; }
 .exam-timer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; padding: 10px 14px; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); }
 /* while running, the clock stays on screen; top: 48px clears the fixed "← Almanac" pill [0,0 109x41] */
 .exam-timer.running { position: sticky; top: 48px; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
@@ -562,6 +563,10 @@ html:has(.exam-timer.running) { scroll-padding-top: 130px; }
 .katex { font-size: 1.08em; }
 .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: .8em 0; }
 .katex-display > .katex { font-size: 1.12em; }
+/* a display too wide for its box scrolls; common.js marks which edge has more, and that edge fades */
+.katex-display.more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.katex-display.more-l { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); }
+.katex-display.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
 .q-opt .katex, .readouts .katex { font-size: 1em; }
 h3 .katex, h4 .katex { font-size: 1em; }
 .step-list { counter-reset: st; list-style: none; padding-left: 0; }
@@ -601,3 +606,10 @@ canvas.sim.draggable.dragging { cursor: grabbing; }
 .tex-out { min-height: 2.2em; padding: 8px 10px; background: var(--paper); border: 2px dashed var(--line); border-radius: 2px; overflow-x: auto; }
 .tex-out .katex-display { margin: .2em 0; }
 .marks-n { font: 600 .8rem var(--font-mono); color: var(--gold); margin-left: .4em; }
+/* figures with small type: on a phone they keep a readable size and scroll sideways instead of shrinking */
+figure.diagram svg.wide[data-minw="500"] { min-width: 500px; }
+figure.diagram svg.wide[data-minw="600"] { min-width: 600px; }
+/* answered sorter buttons stay at full contrast; the one you pressed is ringed */
+.sorter-btns .btn[disabled] { opacity: 1; cursor: default; }
+.sorter-btns .btn.chosen { outline: 3px solid var(--gold); outline-offset: 2px; }
+.sorter-btns .btn.chosen::before { content: "▸ "; }

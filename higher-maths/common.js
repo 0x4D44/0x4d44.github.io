@@ -63,6 +63,16 @@
       r._hmEls = [];
     }, 600);
   }
+  /* plain-text terms for screen readers: HM.terms([[2, "x²"], [-1, "x"], [0, ""]]) is "2x² − x" */
+  HM.terms = function (ts) {
+    let out = "";
+    ts.forEach(([c, v]) => {
+      if (Math.abs(c) < 1e-12) return;
+      const m = Math.abs(c), mag = v && Math.abs(m - 1) < 1e-12 ? "" : HM.n(m, 3).replace("−", "");
+      out += out ? (c < 0 ? " − " : " + ") + mag + v : (c < 0 ? "−" : "") + mag + v;
+    });
+    return out || "0";
+  };
   HM.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   /* typeset $…$ and $$…$$ inside el with the self-hosted KaTeX (a no-op if it failed to load) */
   HM.math = function (el) {
@@ -412,7 +422,9 @@
             const ok = b === it.getAttribute("data-ans");
             card.classList.add(ok ? "right" : "wrong");
             btns.querySelectorAll("button").forEach((x) => { x.disabled = true; if (x.textContent === it.getAttribute("data-ans")) x.classList.add("primary"); });
-            why.innerHTML = (ok ? "<span class='ok'>✔ " : "<span class='bad'>✘ ") + it.getAttribute("data-ans") + ".</span> " + (it.getAttribute("data-why") || "");
+            btn.classList.add("chosen"); btn.setAttribute("aria-pressed", "true");
+            const ans = it.getAttribute("data-ans"), lc = ans.charAt(0).toLowerCase() + ans.slice(1);
+            why.innerHTML = (ok ? `<span class='ok'>✔ Right: it ${lc}.</span> ` : `<span class='bad'>✘ Not quite: it ${lc}.</span> `) + (it.getAttribute("data-why") || "");
             done++; if (ok) right++;
             tally.textContent = `${right} of ${done} correct` + (done === items.length ? (right === items.length ? " — flawless!" : " — check the explanations for the ones you missed.") : "");
           });
@@ -425,7 +437,7 @@
       const again = HM.el("button", { class: "btn small", type: "button" }, "↺ Try these again");
       again.addEventListener("click", () => {
         right = 0; done = 0; tally.textContent = "";
-        wrap.querySelectorAll(".sorter-item").forEach((c) => { c.classList.remove("right", "wrong"); c.querySelector(".why").innerHTML = ""; c.querySelectorAll("button").forEach((b) => { b.disabled = false; b.classList.remove("primary"); }); });
+        wrap.querySelectorAll(".sorter-item").forEach((c) => { c.classList.remove("right", "wrong"); c.querySelector(".why").innerHTML = ""; c.querySelectorAll("button").forEach((b) => { b.disabled = false; b.classList.remove("primary", "chosen"); b.removeAttribute("aria-pressed"); }); });
       });
       box.append(wrap, tally, HM.el("div", { class: "btn-row" }, again));
     });
@@ -485,7 +497,24 @@
     const what = el.tagName === "PRE" ? ((el.dataset.lang || el.closest("[data-lang]")?.dataset.lang || "") + " code").trim() : "content";
     return what + (head ? ": " + head.textContent.replace(/\s+/g, " ").trim().slice(0, 60) : "");
   }
+  /* a display equation wider than its box: fade whichever edge has more to scroll to */
+  function mathEdges(el) {
+    const max = el.scrollWidth - el.clientWidth;
+    el.classList.toggle("more-l", max > 2 && el.scrollLeft > 2);
+    el.classList.toggle("more-r", max > 2 && el.scrollLeft < max - 2);
+  }
+  let edgeQueued = false;
+  function allMathEdges() {
+    if (edgeQueued) return; edgeQueued = true;
+    requestAnimationFrame(() => { edgeQueued = false; document.querySelectorAll(".katex-display").forEach(mathEdges); });
+  }
+  document.addEventListener("scroll", (e) => { if (e.target.classList && e.target.classList.contains("katex-display")) mathEdges(e.target); }, true);
+  window.addEventListener("resize", allMathEdges);
+  if ("MutationObserver" in window) document.addEventListener("DOMContentLoaded", () => {
+    const m = document.querySelector("main"); if (m) new MutationObserver(allMathEdges).observe(m, { childList: true, subtree: true });
+  });
   function markScrollables() {
+    allMathEdges();
     document.querySelectorAll(".table-wrap, .diagram-scroll, pre").forEach((el) => {
       if (el.closest('[aria-hidden="true"]')) return;  // never make hidden content focusable
       const over = el.scrollWidth - el.clientWidth > 2 || el.scrollHeight - el.clientHeight > 2;
@@ -615,6 +644,7 @@
     function paint(dt) {
       ctx.setTransform(api.scale, 0, 0, api.scale, 0, 0);
       ctx.clearRect(0, 0, cfg.w, cfg.h);
+      ctx._hmBoxes = []; // text drawn this frame, for labels that avoid each other
       cfg.draw(ctx, api.t, dt || 0, HM.colors(), api);
     }
     function frame(now) {
@@ -702,11 +732,13 @@
     const yAxisX = o.x0 <= 0 && o.x1 >= 0 ? X(0) : box.x;
     const xAxisY = o.y0 <= 0 && o.y1 >= 0 ? Y(0) : box.y + box.h;
     ctx.beginPath(); ctx.moveTo(yAxisX, box.y); ctx.lineTo(yAxisX, box.y + box.h); ctx.moveTo(box.x, xAxisY); ctx.lineTo(box.x + box.w, xAxisY); ctx.stroke();
+    const keep = (x, y, w, h) => { if (ctx._hmBoxes) ctx._hmBoxes.push({ x, y, w, h }); };
+    keep(yAxisX - 2, box.y, 4, box.h); keep(box.x, xAxisY - 2, box.w, 4);
     const tf = o.tf || ((v) => (+v.toFixed(6) + "").replace("-", "−"));
     ctx.textAlign = "center"; ctx.textBaseline = "top";
-    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ctx.fillText(tf(v), X(v), xAxisY + 3); }
+    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ctx.fillText(tf(v), X(v), xAxisY + 3); const tw = ctx.measureText(tf(v)).width; keep(X(v) - tw / 2, xAxisY + 3, tw, fs); }
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) ctx.fillText((o.ytf || tf)(v), yAxisX - 4, Y(v));
+    if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) { const s = (o.ytf || tf)(v), tw = ctx.measureText(s).width; ctx.fillText(s, yAxisX - 4, Y(v)); keep(yAxisX - 4 - tw, Y(v) - fs / 2, tw, fs); }
     ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
     if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(o.xl, box.x + box.w, xAxisY - 4); }
     if (o.yl) { ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(o.yl, yAxisX + 5, box.y); }
@@ -730,6 +762,17 @@
     ctx.save();
     ctx.font = `${o.bold ? "bold " : ""}${Math.max(11, o.size || 13)}px "Atkinson Hyperlegible", system-ui, sans-serif`;
     ctx.textAlign = o.align || "left"; ctx.textBaseline = o.base || "middle";
+    // the label's box; with o.avoid, nudge it clear of axes, tick numbers and labels already drawn this frame
+    const tw = ctx.measureText(txt).width, th = Math.max(11, o.size || 13) + 2;
+    const at = (px, py) => { const lx = ctx.textAlign === "center" ? px - tw / 2 : ctx.textAlign === "right" ? px - tw : px; return { x: lx - 2, y: py - th / 2, w: tw + 4, h: th }; };
+    const hit = (b) => (ctx._hmBoxes || []).some((q) => b.x < q.x + q.w && q.x < b.x + b.w && b.y < q.y + q.h && q.y < b.y + b.h);
+    if (o.avoid && ctx._hmBoxes) {
+      const cw = ctx.canvas.width / (ctx.getTransform ? ctx.getTransform().a : 1);
+      const tries = [[0, 0], [0, -th], [0, th], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th]];
+      const ok = tries.map(([dx, dy]) => [x + dx, y + dy]).find(([px, py]) => { const b = at(px, py); return b.x >= 0 && b.x + b.w <= cw && b.y >= 0 && !hit(b); });
+      if (ok) [x, y] = ok;
+    }
+    if (ctx._hmBoxes) ctx._hmBoxes.push(at(x, y));
     if (o.halo !== false) { ctx.lineWidth = 4; ctx.strokeStyle = o.haloCol || HM.css("--card"); ctx.lineJoin = "round"; ctx.strokeText(txt, x, y); }
     ctx.fillStyle = o.col || HM.css("--ink"); ctx.fillText(txt, x, y);
     ctx.restore();
@@ -771,6 +814,7 @@
     ctx.save(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
     if (ring) { ctx.strokeStyle = ring; ctx.lineWidth = 2; ctx.stroke(); }
     ctx.restore();
+    if (ctx._hmBoxes) ctx._hmBoxes.push({ x: x - r - 1, y: y - r - 1, w: 2 * r + 2, h: 2 * r + 2 });
   };
   /* a clipped plotting rectangle */
   HM.clip = function (ctx, b, fn) { ctx.save(); ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.h); ctx.clip(); fn(); ctx.restore(); };

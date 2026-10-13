@@ -130,7 +130,7 @@
       const h = 1e-5, num = (F.y(x + h) - F.y(x - h)) / (2 * h);
       out.innerHTML = HM.tex(`${F.tex}:\\quad ${F.inner},\\ \\ ${F.outer}`, true) +
         HM.tex(`\\frac{dy}{dx} = \\frac{dy}{du}\\times\\frac{du}{dx} = ${F.dft} \\times ${F.dgt}`, true) +
-        `<p style="margin:0">At $x = ${N(x, 2)}$: $u = ${N(u, 3)}$, $\\frac{du}{dx} = ${N(r1, 3)}$, $\\frac{dy}{du} = ${N(r2, 3)}$, so $\\frac{dy}{dx} = ${N(r1, 3)} \\times ${N(r2, 3)} = ${N(r, 3)}$. Measured straight from the graph: $${N(num, 3)}$.</p>`;
+        `<p style="margin:0">At $x = ${N(x, 2)}$: $u = ${N(u, 3)}$, $\\frac{du}{dx} = ${N(r1, 3)}$, $\\frac{dy}{du} = ${N(r2, 3)}$, so $\\frac{dy}{dx} = ${N(r1, 3)} \\times ${N(r2, 3)} = ${N(r, 3)}$. Checked numerically (gradient over a tiny step): $${N(num, 3)}$.</p>`;
       HM.math(out);
     }
     info();
@@ -173,8 +173,8 @@
           HM.curve(ctx, P, (x) => (fd(x) <= 0 ? f(x) : NaN), x0, x1, C.red, 3.5, { n: 600 });
           pts.forEach((x) => HM.dot(ctx, P.X(x), P.Y(f(x)), C.ink, 6, C.card));
         });
-        pts.forEach((x) => HM.label(ctx, `(${N(x, 2)}, ${N(f(x), 2)})`, Math.min(P.X(x) + 8, S.w - 100), P.Y(f(x)) + (fd(x - 0.01) > 0 ? -14 : 16), { size: 12, bold: true }));
-        cv.setAttribute("aria-label", `Cubic y = ${a}x³ + ${b}x² + ${c}x + ${d}: green where increasing, red where decreasing; ${pts.length} stationary point${pts.length === 1 ? "" : "s"}.`);
+        pts.forEach((x) => HM.label(ctx, `(${N(x, 2)}, ${N(f(x), 2)})`, Math.min(P.X(x) + 8, S.w - 100), P.Y(f(x)) + (fd(x - 0.01) > 0 ? -14 : 16), { avoid: true, size: 12, bold: true }));
+        cv.setAttribute("aria-label", `Cubic y = ${HM.terms([[a, "x³"], [b, "x²"], [c, "x"], [d, ""]])}: green where increasing, red where decreasing; ${pts.length} stationary point${pts.length === 1 ? "" : "s"}.`);
       },
     });
     function upd() {
@@ -220,7 +220,7 @@
           HM.curve(ctx, P, f, A, B, C.sea, 3.5);
           cs.forEach(([x, k]) => { const v = f(x); HM.dot(ctx, P.X(x), P.Y(v), v === mx ? C.grass : v === mn ? C.red : C.ink, 6.5, C.card); });
         });
-        cs.forEach(([x]) => { const v = f(x); if (v === mx || v === mn) HM.label(ctx, `${v === mx ? "greatest" : "least"} ${N(v, 2)}`, Math.min(P.X(x) + 8, S.w - 110), P.Y(v) + (v === mx ? -12 : 14), { bold: true, size: 12, col: v === mx ? C.grass : C.red }); });
+        cs.forEach(([x]) => { const v = f(x); if (v === mx || v === mn) HM.label(ctx, `${v === mx ? "greatest" : "least"} ${N(v, 2)}`, Math.min(P.X(x) + 8, S.w - 110), P.Y(v) + (v === mx ? -12 : 14), { avoid: true, bold: true, size: 12, col: v === mx ? C.grass : C.red }); });
         cv.setAttribute("aria-label", `f(x) = x³ − 3x² − 9x + 5 on ${A} ≤ x ≤ ${B}: greatest ${N(mx, 2)}, least ${N(mn, 2)}.`);
       },
     });
@@ -287,7 +287,7 @@
           ctx.setLineDash([4, 3]); ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Pg.X(3), Pg.Y(486)); ctx.lineTo(Pg.X(3), Pg.Y(0)); ctx.stroke(); ctx.setLineDash([]);
           HM.dot(ctx, Pg.X(x), Pg.Y(V(x)), C.red, 6.5, C.card);
         });
-        HM.label(ctx, `V = ${N(V(x), 1)}`, Math.min(Pg.X(x) + 8, S.w - 80), Pg.Y(V(x)) - 12, { bold: true, col: C.red });
+        HM.label(ctx, `V = ${N(V(x), 1)}`, Math.min(Pg.X(x) + 8, S.w - 80), Pg.Y(V(x)) - 12, { avoid: true, bold: true, col: C.red });
         cv.setAttribute("aria-label", `A 24 by 15 copper sheet with ${N(x, 2)} cm squares cut from the corners, folded into a box of volume ${N(V(x), 1)} cubic centimetres. The volume graph peaks at x = 3 with 486.`);
       },
     });
