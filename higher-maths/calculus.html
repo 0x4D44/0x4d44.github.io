@@ -105,7 +105,7 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 </ol>
 </details></div>
 <h3>Rates of change</h3>
-<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the distance of a minecart along its track after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Tutor's height, $\frac{dh}{dt}$ is its rate of climb.</p>
+<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the minecart's displacement (its distance along the track from the start) after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Tutor's height, $\frac{dh}{dt}$ is its rate of climb.</p>
 <div class="worked"><p class="worked-title">Worked example 4 · P1 · a velocity</p>
 <p>A minecart's displacement after $t$ seconds is $s = t^3 - 6t^2 + 9t$ metres. Find its velocity when $t = 4$.</p>
 <details><summary>Show solution</summary>
@@ -133,6 +133,7 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 <h2 data-short="The chain rule">2 · The chain rule <span class="spec-tag">CALC · composite functions</span></h2>
 <p>How do you differentiate $(3x - 1)^5$? You could multiply it out, but that is slow, and for $\sqrt{x^2 + 5}$ it's impossible. These are composite functions: an inner function inside an outer one. Their derivative is given by the <dfn>chain rule</dfn>:</p>
 $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \frac{d}{dx}f\big(g(x)\big) = f'\big(g(x)\big) \times g'(x).$$
+<p>Here $u$ is the inner function. For $y = (3x - 1)^5$, let $u = 3x - 1$, so $y = u^5$: then $\frac{dy}{du} = 5u^4$ and $\frac{du}{dx} = 3$.</p>
 <p>In words: <strong>differentiate the outside (leaving the inside alone), then multiply by the derivative of the inside.</strong></p>
 <p>Think of gears in the capstan's gearbox. If the middle gear $u$ turns 3 times for every turn of $x$, and the last gear $y$ turns 80 times for every turn of $u$, then $y$ turns $3 \times 80 = 240$ times for every turn of $x$. Rates of change in a chain multiply.</p>
 <div class="widget" id="w-gears">
@@ -213,7 +214,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 
 <section id="stationary" class="prose">
 <h2 data-short="Stationary points; sketching">4 · Stationary points and curve sketching <span class="spec-tag">CALC · properties of functions</span></h2>
-<p>At the top of a shot's flight the gradient is zero for an instant: the shot is moving neither up nor down. Points where $f'(x) = 0$ are called <dfn>stationary points</dfn>. There are three kinds:</p>
+<p>At the top of a shot's flight the gradient is zero for an instant: the shot is moving neither up nor down. Points where $f'(x) = 0$ are called <dfn>stationary points</dfn>. There are four kinds: a maximum turning point, a minimum turning point, and a rising or falling <dfn>point of inflection</dfn>, where the curve flattens for an instant and then carries on in the same direction.</p>
 <figure class="diagram"><svg viewBox="0 0 640 170" role="img" aria-label="Three kinds of stationary point. A maximum turning point: gradient positive, then zero, then negative. A minimum turning point: negative, zero, positive. A rising point of inflection: positive, zero, positive. A falling point of inflection is negative, zero, negative.">
 <g fill="none" stroke-width="3"><path d="M30 120 Q100 -10 170 120" class="s-sea"/><path d="M240 30 Q310 160 380 30" class="s-red"/><path d="M450 140 C 500 70, 520 80, 535 80 C 550 80, 570 90, 620 20" class="s-gold"/></g>
 <g stroke-width="2.5" class="stroke-ink"><line x1="80" y1="55" x2="120" y2="55"/><line x1="290" y1="95" x2="330" y2="95"/><line x1="515" y1="80" x2="555" y2="80"/></g>
@@ -244,13 +245,14 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
   <p class="hint">Change the cubic's coefficients. The curve is green where it increases and red where it decreases. The widget finds the stationary points and fills in the nature table.</p>
 </div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates did not write consistent lines of working", for example jumping between unequal expressions while factorising $3x^2 + 4x - 4$, and "inconsistencies prevented the responses that reached the correct factorised form from gaining full marks." Every line must equal the line before it.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2025 course report</div><p>In 2025, on an optimisation question, "some candidates did not have solutions that met the minimum requirements for a nature table. Common errors included numerical errors when evaluating the derived function in a neighbourhood of the minimum and incorrect labelling within the nature table." A nature table needs: the $x$ values (stationary point and one on each side, or a neighbourhood like $\rightarrow 3 \rightarrow$), the sign of $f'(x)$ in each column, the slope arrows, and a conclusion naming the nature.</p></div>
 
 <h3>Sketching a curve</h3>
 <p>In 2025 a question asked for a sketch of a cubic from given conditions, and the course report says "only a few candidates drew a cubic function and most candidates did not interpret the conditions stated in the question". Read every condition, mark each on the axes first, then join them with the right shape. To sketch $y = f(x)$, find and label:</p>
 <ul>
 <li>where it cuts the axes: the $y$-intercept ($x = 0$) and the roots ($y = 0$, often by factorising);</li>
 <li>the stationary points and their nature;</li>
-<li>what happens for large positive and negative $x$: the highest power dominates. For $x^3$, $y \to +\infty$ as $x \to +\infty$ and $y \to -\infty$ as $x \to -\infty$; for $-x^4$, $y \to -\infty$ both ways.</li>
+<li>what happens for large positive and negative $x$: the highest power dominates. For $x^3$, $y \to +\infty$ as $x \to +\infty$ (read: $y$ grows without limit as $x$ grows) and $y \to -\infty$ as $x \to -\infty$; for $-x^4$, $y \to -\infty$ both ways.</li>
 </ul>
 <div class="worked"><p class="worked-title">Worked example 12 · P1 · a quartic with a point of inflection</p>
 <p>Sketch $y = x^4 - 4x^3$.</p>
@@ -332,7 +334,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <ol class="step-list">
 <li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
 <li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
-<li>$A'(3) = 6 - 14.2 \lt 0$, $A'(5) = 10 - 5.12 \gt 0$: $-\ 0\ +$, a minimum. <span class="why">Nature table.</span></li>
+<li>$A'(2) = 4 - 32 \lt 0$, $A'(8) = 16 - 2 \gt 0$: $-\ 0\ +$, a minimum. <span class="why">Nature table.</span></li>
 <li>Base 4 m by 4 m, height $\frac{32}{16} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
 </ol>
 </details></div>
@@ -450,7 +452,6 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 </ol>
 <p>A single integral from 0 to 5 gives $-\tfrac{32}{3} + \tfrac73 = -\tfrac{25}{3}$: the parts above and below cancel, which is not the area. Set the "planking" widget to this curve to see it.</p>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2025 course report</div><p>In 2025, on a question about stationary points, "some candidates did not have solutions that met the minimum requirements for a nature table. Common errors included numerical errors when evaluating the derived function in a neighbourhood of the minimum and incorrect labelling within the nature table." A nature table needs: the $x$ values (stationary point and one on each side, or a neighbourhood like $\rightarrow 3 \rightarrow$), the sign of $f'(x)$ in each column, the slope arrows, and a conclusion naming the nature.</p></div>
 
 <h3>Area between two curves</h3>
 <p>The area between an upper curve $y = f(x)$ and a lower curve $y = g(x)$, from $x = a$ to $x = b$, is</p>
@@ -474,7 +475,7 @@ $$\int_a^b \big(f(x) - g(x)\big)\,dx \qquad\text{(upper minus lower).}$$
 <div class="check" data-check="calc-area"></div>
 <nav class="next-deck" aria-label="Deck navigation">
   <a class="btn" href="trig.html">← Trigonometry</a>
-  <a class="btn primary" href="exam.html">To the quarterdeck: Exam drill →</a>
+  <a class="btn primary" href="exam.html">To the parade ground: Exam drill →</a>
 </nav>
 </section>
 </main>

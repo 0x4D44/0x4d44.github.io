@@ -142,7 +142,7 @@
   mount("w-nature", (box) => {
     let a = 1, b = -3, c = -9, d = 5;
     const ctl = controls(box);
-    HM.slider(ctl, { label: "$a$ ($x^3$)", min: -2, max: 2, step: 1, value: a, oninput: (v) => { a = v || 1; upd(); } });
+    const sa = HM.slider(ctl, { label: "$a$ ($x^3$)", min: -2, max: 2, step: 1, value: a, oninput: (v) => { a = v || (a > 0 ? -1 : 1); if (!v) sa.set(a); upd(); } });
     HM.slider(ctl, { label: "$b$ ($x^2$)", min: -6, max: 6, step: 1, value: b, oninput: (v) => { b = v; upd(); } });
     HM.slider(ctl, { label: "$c$ ($x$)", min: -12, max: 12, step: 1, value: c, oninput: (v) => { c = v; upd(); } });
     HM.slider(ctl, { label: "$d$", min: -20, max: 20, step: 1, value: d, oninput: (v) => { d = v; upd(); } });
@@ -348,8 +348,10 @@
     let key = "quad", n = 4, a = FN[key].a, b = FN[key].b;
     HM.choice(box, "Curve:", Object.entries(FN).map(([k, v]) => [k, `$y = ${v.tex}$`]), key, (v) => { key = v; a = FN[v].a; b = FN[v].b; as.input.min = bs.input.min = FN[v].x0; as.input.max = bs.input.max = FN[v].x1; as.set(a); bs.set(b); });
     const ctl = controls(box);
-    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => N(v, 2), oninput: (v) => { a = Math.min(v, b - 0.1); upd(); } });
-    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => N(v, 2), oninput: (v) => { b = Math.max(v, a + 0.1); upd(); } });
+    // on the sine curve, a slider stop within half a step of a multiple of pi/2 means that multiple exactly
+    const snap = (v) => { if (!FN[key].rad) return v; const m = Math.round(v / (Math.PI / 2)) * Math.PI / 2; return Math.abs(v - m) < 0.026 ? m : v; };
+    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => N(snap(v), 2), oninput: (v) => { a = Math.min(snap(v), b - 0.1); upd(); } });
+    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => N(snap(v), 2), oninput: (v) => { b = Math.max(snap(v), a + 0.1); upd(); } });
     const ns = HM.slider(ctl, { label: "number of strips", min: 1, max: 200, step: 1, value: n, oninput: (v) => { n = v; upd(); } });
     const go = HM.el("button", { class: "btn small primary", type: "button" }, "▶ More and more strips");
     box.append(HM.el("div", { class: "btn-row" }, go));

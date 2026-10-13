@@ -28,7 +28,7 @@
     a: "000011101101011", c: "000011100100011", d: "001001111101111", e: "000010111100011", g: "000011101011110",
     i: "010000010010010", l: "110010010010111", m: "000111111101101", n: "000110101101101", o: "000010101101010",
     p: "000110101110100", r: "000101110100100", s: "000011100001110", t: "010111010010001", x: "000101010101000",
-    y: "000101111001110",
+    y: "000101111001110", k: "100101110110101",
     "0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111", "4": "101101111001001",
     "5": "111100111001111", "6": "111100111101111", "7": "111001001001001", "8": "111101111101111", "9": "111101111001111",
     "-": "000000111000000", "+": "000010111010000", ".": "000000000000010", "=": "000111000111000", "/": "001001010100100",
@@ -242,7 +242,7 @@
         if (P.roll && u > P.roll[0] && u < P.roll[1]) {
           const f = (u - P.roll[0]) / (P.roll[1] - P.roll[0]), th = 360 * f;
           roll = Math.cos(th);
-          readout(Math.floor(th / (2 * Math.PI)) + " rolls");
+          { const n = Math.floor(th / (2 * Math.PI)); readout(n + (n === 1 ? " roll" : " rolls")); }
         } else if (P.roll && u >= P.roll[1]) readout("57.3 rolls");
         const ang = P.fx ? -Math.atan(slope(P, p.x)) : 0;
         tutor(p.x, p.y, P.dir, { t, ang, roll });
@@ -292,10 +292,10 @@
       const k = Math.floor(u / 5.5), tf = t - u + k * 5.5;
       if (u - k * 5.5 < 4.2) { const s0 = shipAt(tf); shot(tf, tf + 3, s0.x + 66 + 110, SEA + 2, t, true); }
     }
-    joke(t);
-    // the function being flown, on a chart-table label
-    const L = passAt(t).P.label;
+    // the function being flown, on a chart-table label (under the banners, so it never hides one)
+    const L = P.label;
     px(2, 2, L.length * 4 + 3, 9, "rgba(13,52,54,.8)"); text(L, 4, 4, "#fff6c8");
+    joke(t);
     if (running && !reduced) raf = requestAnimationFrame(frame);
   }
   const btn = document.getElementById("hero-pause");

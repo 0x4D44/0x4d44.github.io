@@ -85,10 +85,20 @@
       if (q.length !== 3) return q.length > 3 ? `<p class="hint" style="margin:4px 0 0">The quotient is still degree ${q.length - 1}: test it for another root.</p>` : "";
       const [a, b, c] = q, d = b * b - 4 * a * c;
       if (d < -1e-9) return HM.el("p", { class: "hint", style: "margin:4px 0 0", html: `Quadratic factor: $b^2 - 4ac = ${N(d, 3)} \\lt 0$, so it has no real roots and cannot be factorised further.` }).outerHTML;
+      const P = (h) => `<p class="hint" style="margin:4px 0 0">${h}</p>`;
+      const nice = (x) => { for (let k = 1; k <= 24; k++) if (Math.abs(x * k - Math.round(x * k)) < 1e-9) return true; return false; };
+      const F = (x) => HM.tex(HM.fracTex(x, 24));
+      // list the roots of f(x) = 0, counting repeats: "1 (twice) and -2"
+      const all = (rs) => { const u = []; rs.forEach((x) => { const e = u.find((o) => Math.abs(o.x - x) < 1e-9); e ? e.n++ : u.push({ x, n: 1 }); });
+        const w = u.map((o) => (nice(o.x) ? F(o.x) : HM.tex(N(o.x, 3))) + ["", "", " (twice)", " (three times)"][o.n]);
+        return w.length === 1 ? w[0] : w.slice(0, -1).join(", ") + " and " + w[w.length - 1]; };
+      if (Math.abs(d) < 1e-9) {
+        const r0 = -b / (2 * a);
+        return P(`Quadratic factor: $b^2 - 4ac = 0$, so it has a repeated root ${nice(r0) ? F(r0) : HM.tex(N(r0, 3))}. The roots of $f(x) = 0$ are ${all([r, r0, r0])}.`);
+      }
       const s = Math.sqrt(d), r1 = (-b + s) / (2 * a), r2 = (-b - s) / (2 * a);
-      const nice = (x) => Math.abs(x * 6 - Math.round(x * 6)) < 1e-9;
-      if (nice(r1) && nice(r2)) return `<p class="hint" style="margin:4px 0 0">The quadratic factor has roots ${HM.tex(HM.fracTex(r1))} and ${HM.tex(HM.fracTex(r2))}, so all the roots of $f(x) = 0$ are ${HM.tex(HM.fracTex(r))}, ${HM.tex(HM.fracTex(r1))} and ${HM.tex(HM.fracTex(r2))}.</p>`;
-      return `<p class="hint" style="margin:4px 0 0">$b^2 - 4ac = ${N(d, 3)} \\gt 0$: two more real roots, but they are not whole numbers. Use the quadratic formula: $x = ${N(r1, 3)}$ or $x = ${N(r2, 3)}$.</p>`;
+      if (nice(r1) && nice(r2)) return P(`The quadratic factor has roots ${F(r1)} and ${F(r2)}, so the roots of $f(x) = 0$ are ${all([r, r1, r2])}.`);
+      return P(`$b^2 - 4ac = ${N(d, 3)} \\gt 0$ but is not a perfect square, so the quadratic factor will not factorise: its two real roots are irrational. Use the quadratic formula: $x = ${N(r1, 3)}$ or $x = ${N(r2, 3)}$ (to 3 significant figures).`);
     }
     step.addEventListener("click", () => { if (!cs.length && !reset()) return; if (k < cs.length - 1) { k++; draw(); HM.math(out); } });
     all.addEventListener("click", () => { if (!reset()) return; k = cs.length - 1; draw(); HM.math(out); });
@@ -433,7 +443,7 @@
       },
     });
     function info() {
-      out.innerHTML = HM.tex(FN[key].inv, true) + `<p style="margin:0">Every point swaps its coordinates. ${key === "exp" ? "The asymptote swaps too: $y = 0$ for $2^x$ becomes $x = 0$ for $\\log_2 x$." : key === "rec" ? "The asymptotes swap: $x = 1, y = 0$ for $f$ become $y = 1, x = 0$ for $f^{-1}$." : ""}</p>`;
+      out.innerHTML = HM.tex(FN[key].inv, true) + `<p style="margin:0">Every point swaps its coordinates. ${key === "exp" ? "The asymptote (the line the graph gets ever closer to but never meets) swaps too: $y = 0$ for $2^x$ becomes $x = 0$ for $\\log_2 x$." : key === "rec" ? "The asymptotes swap: $x = 1, y = 0$ for $f$ become $y = 1, x = 0$ for $f^{-1}$." : ""}</p>`;
       HM.math(out);
     }
     info();

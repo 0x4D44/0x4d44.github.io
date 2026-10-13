@@ -120,7 +120,7 @@
     let fn = "sin", a = 3, b = 2, c = 0, d = 1;
     HM.choice(box, "Function:", [["sin", "$\\sin$"], ["cos", "$\\cos$"]], fn, (v) => { fn = v; upd(); });
     const ctl = controls(box);
-    HM.slider(ctl, { label: "$a$ (amplitude)", min: -4, max: 4, step: 0.5, value: a, fmt: (v) => N(v), oninput: (v) => { a = v || 0.5; upd(); } });
+    const sa = HM.slider(ctl, { label: "$a$ (amplitude)", min: -4, max: 4, step: 0.5, value: a, fmt: (v) => N(v), oninput: (v) => { a = v || (a > 0 ? -0.5 : 0.5); if (!v) sa.set(a); upd(); } });
     HM.slider(ctl, { label: "$b$ (waves per 360°)", min: 0.5, max: 4, step: 0.5, value: b, fmt: (v) => N(v), oninput: (v) => { b = v; upd(); } });
     HM.slider(ctl, { label: "$c$ (inside shift)", min: -180, max: 180, step: 15, value: c, unit: "°", oninput: (v) => { c = v; upd(); } });
     HM.slider(ctl, { label: "$d$ (centre line)", min: -3, max: 3, step: 0.5, value: d, fmt: (v) => N(v), oninput: (v) => { d = v; upd(); } });
@@ -297,8 +297,8 @@
   mount("w-wave", (box) => {
     let a = 4, b = 3, x = 0, playing = false;
     const ctl = controls(box);
-    HM.slider(ctl, { label: "$a$ (coefficient of $\\cos x$)", min: -5, max: 5, step: 1, value: a, oninput: (v) => { a = v; if (!a && !b) a = 1; upd(); } });
-    HM.slider(ctl, { label: "$b$ (coefficient of $\\sin x$)", min: -5, max: 5, step: 1, value: b, oninput: (v) => { b = v; if (!a && !b) b = 1; upd(); } });
+    const sa = HM.slider(ctl, { label: "$a$ (coefficient of $\\cos x$)", min: -5, max: 5, step: 1, value: a, oninput: (v) => { if (!v && !b) { sa.set(a > 0 ? -1 : 1); return; } a = v; upd(); } });
+    const sb = HM.slider(ctl, { label: "$b$ (coefficient of $\\sin x$)", min: -5, max: 5, step: 1, value: b, oninput: (v) => { if (!v && !a) { sb.set(b > 0 ? -1 : 1); return; } b = v; upd(); } });
     const play = HM.el("button", { class: "btn small primary", type: "button" }, "▶ Roll the swell");
     box.append(HM.el("div", { class: "btn-row" }, play));
     play.addEventListener("click", () => { playing = !playing; playing ? sim.play() : sim.pause(); play.textContent = playing ? "❚❚ Pause" : "▶ Roll the swell"; });
