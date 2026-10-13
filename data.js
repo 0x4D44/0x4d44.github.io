@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "higher-maths",
+    title: "Chart, Compass & Calculus",
+    tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and two timed mini-papers. The Blockhaven Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and self-hosted KaTeX.",
+    url: "https://0x4d44.github.io/higher-maths/",
+    illustration: "ill-higher-maths",
+    date: "2026-10-13T20:00:00",
+    year: 2026,
+    readingMin: 110,
+    words: 19100,
+    tags: ["math", "science"],
+    real: true,
+  },
+  {
     slug: "higher-physics",
     title: "Shot, Spark & Starlight",
     tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
@@ -1951,7 +1964,7 @@ window.COLLECTIONS = [
     slugs: ["instruments", "audio-compression"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["higher-physics", "conformers", "meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["higher-maths", "higher-physics", "conformers", "meiosis", "audio-compression", "social-situations", "polymyalgia", "triangle-engine", "x86-evolution", "arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents", "influence"] },

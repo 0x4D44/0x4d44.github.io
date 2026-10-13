@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam drill · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Higher Maths exam technique: the formulae list, how marks are awarded, command words and which method to use, non-calculator arithmetic drill, the mistakes markers see most, and two timed mini-papers with marking schemes.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The quarterdeck · exam drill</p>
+<h1>Exam drill</h1>
+<p class="lede">Knowing the maths is half the job. The other half is showing it in the way markers reward, under time pressure, without a calculator for the first paper. This deck covers the formulae list, how marks are awarded, the command words, Paper 1 arithmetic, the mistakes markers see most, and two timed mini-papers.</p>
+</div>
+
+<section id="formulae" class="prose">
+<h2 data-short="The formulae list">1 · The formulae list</h2>
+<p>This is printed at the start of both papers. Know exactly what is on it, so you don't waste memory on these, and so you know what is <em>not</em> on it.</p>
+<div class="ds-grid">
+<div class="eq-card"><p><b>Circle</b></p><p>$x^2 + y^2 + 2gx + 2fy + c = 0$ represents a circle centre $(-g, -f)$ and radius $\sqrt{g^2 + f^2 - c}$.</p><p>$(x - a)^2 + (y - b)^2 = r^2$ represents a circle centre $(a, b)$ and radius $r$.</p></div>
+<div class="eq-card"><p><b>Scalar product</b></p><p>$\mathbf{a}\cdot\mathbf{b} = |\mathbf{a}||\mathbf{b}|\cos\theta$, where $\theta$ is the angle between $\mathbf{a}$ and $\mathbf{b}$,</p><p>or $\mathbf{a}\cdot\mathbf{b} = a_1b_1 + a_2b_2 + a_3b_3$.</p></div>
+<div class="eq-card"><p><b>Trigonometric formulae</b></p>$$\begin{aligned}\sin(A \pm B) &= \sin A\cos B \pm \cos A\sin B\\ \cos(A \pm B) &= \cos A\cos B \mp \sin A\sin B\\ \sin 2A &= 2\sin A\cos A\\ \cos 2A &= \cos^2 A - \sin^2 A\\ &= 2\cos^2 A - 1\\ &= 1 - 2\sin^2 A\end{aligned}$$</div>
+<div class="eq-card"><p><b>Standard derivatives and integrals</b></p><div class="table-wrap" style="margin:0"><table><thead><tr><th>$f(x)$</th><th>$f'(x)$</th><th>$\int f(x)\,dx$</th></tr></thead><tbody><tr><td>$\sin ax$</td><td>$a\cos ax$</td><td>$-\frac1a\cos ax + C$</td></tr><tr><td>$\cos ax$</td><td>$-a\sin ax$</td><td>$\frac1a\sin ax + C$</td></tr></tbody></table></div></div>
+</div>
+<h3>Not on the list: learn these</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Topic</th><th>You must know</th></tr></thead>
+<tbody>
+<tr><td>Straight line</td><td>$m = \frac{y_2 - y_1}{x_2 - x_1}$, $y - b = m(x - a)$, $m = \tan\theta$, $m_1m_2 = -1$, midpoint, distance</td></tr>
+<tr><td>Quadratics</td><td>quadratic formula, discriminant conditions</td></tr>
+<tr><td>Logs and indices</td><td>$\log_a x = y \iff x = a^y$; the three log laws; $a^m a^n = a^{m+n}$, $a^{-n} = \frac{1}{a^n}$, $a^{\frac{m}{n}} = \sqrt[n]{a^m}$</td></tr>
+<tr><td>Trigonometry</td><td>exact values, CAST, radians, $\sin^2 x + \cos^2 x = 1$, $\tan x = \frac{\sin x}{\cos x}$, wave function method</td></tr>
+<tr><td>Recurrence</td><td>limit condition $-1 \lt a \lt 1$ and $L = \frac{b}{1 - a}$</td></tr>
+<tr><td>Vectors</td><td>$\overrightarrow{AB} = \mathbf{b} - \mathbf{a}$, magnitude, unit vector, section formula</td></tr>
+<tr><td>Calculus</td><td>power rule both ways, chain rule, $\int (px + q)^n\,dx$, area rules</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="marking" class="prose">
+<h2 data-short="How marks are awarded">2 · How marks are awarded</h2>
+<p>Every question has a marking scheme that lists, mark by mark, what earns it: •1, •2, •3… Each mark is for one step: a strategy, a process, or a piece of communication. The official general marking principles are worth knowing, because they explain exactly how you gain and lose marks. These are summarised from the specimen papers.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Principle</th><th>What it means for you</th></tr></thead>
+<tbody>
+<tr><td>Positive marking</td><td>You collect marks for what is right. Nothing is subtracted for errors, so <b>always attempt every part</b>.</td></tr>
+<tr><td>Working must be shown</td><td>"A correct answer with no working receives no mark, unless specifically mentioned." Each line should follow from the one before.</td></tr>
+<tr><td>Follow-through</td><td>After an error, the rest is still marked, and you can earn later marks if the difficulty is similar. One slip doesn't wreck a question.</td></tr>
+<tr><td>"Show that"</td><td>In a "show that" question the last mark is <b>not</b> given as a follow-through from an earlier error: you must reach the stated result legitimately.</td></tr>
+<tr><td>Transcription errors</td><td>Copying a number wrongly from the paper (or from your own line above) usually loses the next process mark.</td></tr>
+<tr><td>Simplify final answers</td><td>$\frac{15}{12}$ must become $\frac54$; $\frac{4}{\frac13}$ must become 12; $\sqrt{64}$ must become 8. You are expected to know square roots up to $\sqrt{144}$.</td></tr>
+<tr><td>Not penalised</td><td>Working after a correct answer; correct working in the wrong part; sensible rounding; omitting units; "bad form" that is put right (such as missing brackets that you clearly meant); a repeated error within one question.</td></tr>
+<tr><td>Multiple attempts</td><td>If you leave two attempts with the same method and don't say which is your answer, the <b>lower</b> mark is awarded. Score out what you don't want marked.</td></tr>
+<tr><td>Horizontal/vertical marking</td><td>When a question has two pairs of answers, markers can award marks by pair or by part, whichever helps you.</td></tr>
+</tbody></table></div>
+<div class="callout exam"><div class="callout-title">⚠ From the course report: what to do in the exam</div><ul class="lessons">
+<li>"Maintain and practise basic numerical skills regularly, particularly fractions and negative numbers."</li>
+<li>Write consistent lines of working: "statements that are inconsistent from line to line do not gain full marks".</li>
+<li>"Use brackets appropriately… particularly when calculating definite integrals, working with logarithms or trigonometric functions, and when substituting negative numbers into formulae."</li>
+<li>"Use notation and symbols accurately… for example integral and vector notation."</li>
+<li>"Score out working that does not form part of their final response", including in the additional space at the back.</li>
+<li>"Use a calculator, and efficiently record their working" in Paper 2.</li>
+</ul></div>
+<p>Try the red pen yourself. For each piece of candidate working, decide whether it gains the mark it is going for.</p>
+<div class="widget" id="w-redpen">
+  <h3 class="widget-title">The marker's red pen</h3>
+  <p class="hint">Each line is taken from the kinds of responses the course reports describe. Decide: does it gain the mark?</p>
+  <div class="sorter" data-bins="Gains the mark|Loses the mark">
+    <div data-ans="Loses the mark" data-why="The scalar product is a number. Writing a vector equal to 5 is false working and did not gain the mark in 2026.">$\begin{pmatrix}3\\2\\6\end{pmatrix}\cdot\begin{pmatrix}-5\\-2\\4\end{pmatrix} = \begin{pmatrix}-15\\-4\\24\end{pmatrix} = 5$</div>
+    <div data-ans="Gains the mark" data-why="Correct, and it states why the area is positive: exactly the communication markers want.">$\int_{-1}^{2}(x^2 - x - 2)\,dx = -4.5$, so the area is $4.5$ square units because the region is below the $x$-axis.</div>
+    <div data-ans="Loses the mark" data-why="An indefinite integral needs $+\,C$.">$\displaystyle\int (2x + 1)^4\,dx = \frac{(2x+1)^5}{10}$</div>
+    <div data-ans="Loses the mark" data-why="Points are collinear; line segments or vectors are parallel. The wording is wrong, and the common point is missing.">"$\overrightarrow{AB} = 2\overrightarrow{BC}$, so $A$, $B$ and $C$ are parallel."</div>
+    <div data-ans="Gains the mark" data-why="States the condition with the actual value of $a$.">"A limit exists because $-1 \lt 0.6 \lt 1$."</div>
+    <div data-ans="Gains the mark" data-why="The remainder alone is not enough in a 'show that': this sentence is the communication mark.">"Remainder is 0, so $(x - 2)$ is a factor."</div>
+    <div data-ans="Loses the mark" data-why="The square-root signs are missing, so the chain claims $144 = 12$, which is false. The 2026 report calls this a lack of rigour. Write $\sqrt{169 - 25} = \sqrt{144} = 12$.">$169 - 25 = 144 = 12$, so the third side is 12.</div>
+    <div data-ans="Loses the mark" data-why="A correct answer with no working gets no marks unless the marking instructions say otherwise.">"$x = 3$" written with no working, for a 3-mark equation.</div>
+    <div data-ans="Loses the mark" data-why="Final answers must be simplified: $\frac54$.">Final answer left as $\frac{15}{12}$.</div>
+    <div data-ans="Gains the mark" data-why="Omitting units is not penalised unless the marking instructions say so (but write them anyway).">$V = 486$, with "cm³" left off.</div>
+  </div>
+</div>
+</section>
+
+<section id="command" class="prose">
+<h2 data-short="Command words">3 · Command words</h2>
+<p>The opening word tells you what the marker expects. In 2026 some candidates said the wording felt unfamiliar, and the course report advises giving candidates "opportunities to attempt unfamiliar and challenging questions". Whatever the words, the maths underneath is always one of the skills on this site.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Word</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>Find, Calculate, Determine, Evaluate</td><td>Work it out, showing working. "Evaluate" means get a number.</td></tr>
+<tr><td>Show that</td><td>The answer is given. Every step must be shown and true, and the last line must match the target exactly. If you can't do it, use the given result in the next part anyway.</td></tr>
+<tr><td>Hence</td><td>You <b>must</b> use the previous part. Another method gets no credit.</td></tr>
+<tr><td>Hence, or otherwise</td><td>Using the previous part is the quickest way, but any valid method is accepted.</td></tr>
+<tr><td>Express … in the form …</td><td>Match the given form exactly, with the given conditions (for example $k \gt 0$, $0 \le \alpha \lt 360$).</td></tr>
+<tr><td>Sketch</td><td>Shape correct, with all key points labelled with coordinates (intercepts, turning points, asymptotes). Use the axes given.</td></tr>
+<tr><td>State, Write down</td><td>An answer is enough; little or no working needed.</td></tr>
+<tr><td>Explain, Justify, Give a reason</td><td>Write a sentence in words that uses the mathematics: "because the discriminant is negative…", "because $-1 \lt a \lt 1$…".</td></tr>
+<tr><td>Interpret, In context</td><td>Say what the number means in the situation, with units: "The tank holds about 267 litres in the long run."</td></tr>
+</tbody></table></div>
+<h3>Which tool for which question?</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>If the question says…</th><th>…reach for</th></tr></thead>
+<tbody>
+<tr><td>"factor", "remainder", "roots of a cubic"</td><td>synthetic division, <a href="algebra.html#poly">factor theorem</a></td></tr>
+<tr><td>"real roots", "equal roots", "no real roots", "tangent" (line and curve)</td><td>the <a href="algebra.html#quad">discriminant</a></td></tr>
+<tr><td>"tangent" (to a circle at a point)</td><td>gradient of radius, then <a href="geometry.html#circle">perpendicular</a></td></tr>
+<tr><td>"angle with the positive direction of the $x$-axis"</td><td><a href="geometry.html#line">$m = \tan\theta$</a></td></tr>
+<tr><td>"collinear"</td><td>gradients (2D) or <a href="geometry.html#vectors">vectors as multiples</a> (3D), plus a common point</td></tr>
+<tr><td>"perpendicular" (vectors)</td><td><a href="geometry.html#scalar">$\mathbf{a}\cdot\mathbf{b} = 0$</a></td></tr>
+<tr><td>"$a\cos x + b\sin x$", "maximum value of" a trig sum</td><td><a href="trig.html#wave">wave function</a></td></tr>
+<tr><td>"rate of change", "gradient", "increasing", "stationary", "greatest"</td><td><a href="calculus.html#diff">differentiate</a></td></tr>
+<tr><td>"area", "$\frac{dy}{dx} = \dots$, find $y$"</td><td><a href="calculus.html#integrate">integrate</a></td></tr>
+<tr><td>"limit", "in the long run"</td><td><a href="algebra.html#recur">recurrence relation</a> limit</td></tr>
+<tr><td>"straight line graph of $\log y$"</td><td><a href="algebra.html#loggraph">log graphs</a>: check which axes</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="nocalc" class="prose">
+<h2 data-short="Paper 1 arithmetic">4 · Paper 1: arithmetic without a calculator</h2>
+<p>Paper 1 is 55 marks with no calculator, and the 2026 report says "many candidates missed out on marks due to numerical inaccuracies". These are the skills that have to be automatic:</p>
+<div class="fn-grid">
+<div><b>Fractions</b><br>$\frac34 - \frac56 = \frac{9 - 10}{12} = -\frac{1}{12}$<br>$\frac{2}{3} \div \frac{4}{9} = \frac23 \times \frac94 = \frac32$</div>
+<div><b>Surds</b><br>$\sqrt{48} = \sqrt{16 \times 3} = 4\sqrt3$<br>$\frac{6}{\sqrt3} = \frac{6\sqrt3}{3} = 2\sqrt3$</div>
+<div><b>Indices</b><br>$8^{\frac23} = (\sqrt[3]{8})^2 = 4$<br>$16^{-\frac12} = \frac{1}{4}$</div>
+<div><b>Negatives</b><br>$(-2)^3 - 3(-2)^2 = -8 - 12 = -20$<br>$-x^2$ at $x = -3$ is $-9$</div>
+</div>
+<div class="widget" id="w-drill">
+  <h3 class="widget-title">Gun drill: ten quick Paper 1 rounds</h3>
+  <p class="hint">Ten quick questions on fractions, surds, indices, logs and exact values, chosen at random each time. Work each one out in your head or on paper before you pick. Gun crews drilled until loading was automatic, and so should you.</p>
+</div>
+</section>
+
+<section id="timing" class="prose">
+<h2 data-short="Timing and strategy">5 · Timing and strategy</h2>
+<ul>
+<li><strong>About 1.4 minutes per mark</strong> in both papers (75 minutes for 55 marks; 90 minutes for 65 marks). A 4-mark question deserves about 5 to 6 minutes.</li>
+<li><strong>Questions get harder</strong> through each paper, but not smoothly: easy parts can come late. If you are stuck, move on and come back.</li>
+<li><strong>Part (b) often needs part (a).</strong> If you couldn't do (a), assume its result (especially in a "show that") and carry on.</li>
+<li><strong>Read the final instruction twice.</strong> Degrees or radians? Exact value or decimal? Coordinates or a position vector? An equation or a gradient?</li>
+<li><strong>Check with a quick substitution.</strong> Put your roots back into the equation, differentiate your integral, test a point on your tangent.</li>
+</ul>
+</section>
+
+<section id="mock" class="prose">
+<h2 data-short="Mock papers">6 · Timed mini-papers</h2>
+<p>Two short papers in the exam style, about half the length of the real ones. Start the clock, work on paper, then reveal each marking scheme and give yourself the marks honestly. The schemes show the marks in •1, •2… form, as in the official marking instructions.</p>
+<h3>Mini Paper 1 (non-calculator): 31 marks, 42 minutes</h3>
+<div class="exam-timer" data-minutes="42" data-label="Paper 1 clock"></div>
+<div class="check" data-check="exam-p1"></div>
+<h3>Mini Paper 2 (calculator): 29 marks, 40 minutes</h3>
+<div class="exam-timer" data-minutes="40" data-label="Paper 2 clock"></div>
+<div class="check" data-check="exam-p2"></div>
+<p>For more, the <a href="https://www.sqa.org.uk/pastpapers/findpastpaper.htm">past papers and marking instructions</a> are free. Papers from 2024 onwards have the current format (55 + 65 marks). Earlier papers (70 + 80 marks) test the same skills and are still excellent practice.</p>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="calculus.html">← Calculus</a>
+  <a class="btn primary" href="index.html#ranks">Back to the wardroom: check your rank →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="exam.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

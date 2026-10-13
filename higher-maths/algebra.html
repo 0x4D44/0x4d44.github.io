@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algebra &amp; functions · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Higher Maths algebra, interactive: the factor theorem and synthetic division, completing the square, the discriminant, quadratic inequalities, tangency, composite and inverse functions, graph transformations, logarithms and exponentials, log graphs and recurrence relations, with live graphs, worked examples and exam-style checks.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The purser's office · algebra and functions</p>
+<h1>Algebra &amp; functions</h1>
+<p class="lede">Algebra is the language of the whole course, and it earns the biggest share of the marks: about 30–45% across the two papers. This deck covers the algebra skills in the course specification: polynomials, quadratics, functions and their graphs, exponentials and logarithms, and recurrence relations.</p>
+<p>Captain Grant has put the cadets to work in the purser's office, where HMS Lodestone's stores, accounts and supplies are kept. Algebra is how the purser predicts what will be left and when it will run out.</p>
+</div>
+
+<section id="poly" class="prose">
+<h2 data-short="Polynomials">1 · Polynomials and the factor theorem <span class="spec-tag">ALG · polynomials</span></h2>
+<p>A <dfn>polynomial</dfn> is a sum of terms, each a number times a whole-number power of $x$, such as $2x^3 + x^2 - 13x + 6$. Its <dfn>degree</dfn> is the highest power: 2 for a quadratic, 3 for a cubic, 4 for a quartic. The numbers in front of the powers are the <dfn>coefficients</dfn>. A <dfn>root</dfn> (or zero) of $f(x)$ is a value of $x$ that makes $f(x) = 0$. On a graph, the roots are where the curve crosses or touches the $x$-axis.</p>
+<p>At National 5 you factorised quadratics by spotting numbers. A cubic or quartic is too big to spot, so Higher gives you one tool: the factor theorem.</p>
+
+<div class="callout def"><div class="callout-title">📘 The factor theorem</div>
+<p>For a polynomial $f(x)$: if $f(a) = 0$, then $(x - a)$ is a factor of $f(x)$. The reverse is also true: if $(x - a)$ is a factor, then $f(a) = 0$.</p>
+<p>More generally (the <dfn>remainder theorem</dfn>), when $f(x)$ is divided by $(x - a)$ the remainder is $f(a)$. A remainder of zero means $(x-a)$ divides exactly: it is a factor.</p></div>
+
+<p>Watch the signs. A root $x = 2$ gives the factor $(x - 2)$. A root $x = -3$ gives $(x + 3)$.</p>
+
+<h3>Synthetic division</h3>
+<p>You could test a value by substituting it, but <dfn>synthetic division</dfn> does two jobs at once. It finds the remainder $f(a)$ <em>and</em> gives you the quotient, the polynomial left over after dividing by $(x - a)$. Here it is for $f(x) = 2x^3 + x^2 - 13x + 6$ with $a = 2$.</p>
+<figure class="diagram"><svg viewBox="0 0 520 190" style="max-width:560px" role="img" aria-label="Synthetic division table. The trial root 2 sits on the left. The top row holds the coefficients 2, 1, minus 13, 6. The second row holds the products 4, 10, minus 6. The bottom row holds the sums 2, 5, minus 3 and the remainder 0. Arrows show: bring down the 2, multiply by 2 and write the result under the next coefficient, then add.">
+<text x="40" y="52" font-size="22" font-weight="700" class="ink" text-anchor="middle">2</text>
+<line x1="70" y1="20" x2="70" y2="150" class="stroke-ink" stroke-width="2"/>
+<line x1="70" y1="112" x2="500" y2="112" class="stroke-ink" stroke-width="2"/>
+<g font-size="22" font-weight="700" text-anchor="middle" class="ink">
+<text x="130" y="52">2</text><text x="230" y="52">1</text><text x="330" y="52">−13</text><text x="430" y="52">6</text>
+<text x="230" y="96" class="f-sea">4</text><text x="330" y="96" class="f-sea">10</text><text x="430" y="96" class="f-sea">−6</text>
+<text x="130" y="142">2</text><text x="230" y="142">5</text><text x="330" y="142">−3</text><text x="430" y="142" class="f-grass">0</text>
+</g>
+<path d="M130 60 V122" class="s-muted" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+<path d="M146 136 L210 100" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar1)"/>
+<path d="M246 136 L310 100" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar1)"/>
+<path d="M350 136 L410 100" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar1)"/>
+<defs><marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" class="f-red"/></marker></defs>
+<text x="178" y="176" font-size="13" class="ink2" text-anchor="middle">× 2, write below</text>
+<text x="430" y="176" font-size="13" class="f-grass" font-weight="700" text-anchor="middle">remainder</text>
+</svg>
+<figcaption>Bring the first coefficient down. Multiply it by the trial root and write the answer under the next coefficient. Add. Repeat to the end. The last number is the remainder; the others are the coefficients of the quotient, one degree lower.</figcaption></figure>
+<p>The remainder is $0$, so $(x-2)$ is a factor, and the bottom row says the quotient is $2x^2 + 5x - 3$:</p>
+$$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
+<p>So the equation $f(x) = 0$ has roots $x = 2$, $x = \tfrac12$ and $x = -3$.</p>
+
+<div class="widget" id="w-synth">
+  <h3 class="widget-title">The purser's divider: synthetic division, step by step</h3>
+  <p class="hint">Type the coefficients, highest power first, and include a 0 for any missing power ($x^3 - 7x + 6$ is <code>1, 0, -7, 6</code>). Pick a trial root and step through. Or press <b>Hunt for roots</b> to test every whole-number factor of the constant term, the way you would in an exam.</p>
+</div>
+
+<h3>Which numbers should I try?</h3>
+<p>If all the coefficients are whole numbers and the leading coefficient is 1, any whole-number root must be a factor of the constant term. For $x^3 - 4x^2 + x + 6$ the candidates are $\pm1, \pm2, \pm3, \pm6$. Try the small ones first; $x = 1$ is easiest because $f(1)$ is just the sum of the coefficients. When the leading coefficient is not 1 there might be a fraction root, but exam questions almost always give you a factor or a whole-number root to start from.</p>
+
+<div class="worked"><p class="worked-title">Worked example 1 · P1 · find a coefficient, then solve</p>
+<p>$(x - 3)$ is a factor of $f(x) = x^3 - 4x^2 + kx + 6$.</p>
+<p><span class="q-part">(a)</span> Find the value of $k$. <span class="q-part">(b)</span> Hence solve $f(x) = 0$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(3) = 27 - 36 + 3k + 6 = 3k - 3$ <span class="why">Use the factor theorem: substitute $x = 3$.</span></li>
+<li>$3k - 3 = 0 \Rightarrow k = 1$ <span class="why">$(x-3)$ is a factor, so $f(3) = 0$.</span></li>
+<li>Synthetic division of $1,\ -4,\ 1,\ 6$ by $3$ gives $1,\ -1,\ -2$ remainder $0$, so $f(x) = (x-3)(x^2 - x - 2)$ <span class="why">Find the quadratic factor.</span></li>
+<li>$f(x) = (x-3)(x-2)(x+1)$, so $x = 3,\ 2$ or $-1$ <span class="why">Factorise fully, then state the roots.</span></li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · P1 · a quartic</p>
+<p>Fully factorise $f(x) = x^4 - 2x^3 - 7x^2 + 8x + 12$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(-1) = 1 + 2 - 7 - 8 + 12 = 0$, so $(x+1)$ is a factor. <span class="why">Try factors of 12. $f(1) = 6$, so try $-1$.</span></li>
+<li>Divide by $-1$: $1,\ -2,\ -7,\ 8,\ 12 \to 1,\ -3,\ -4,\ 12$ remainder $0$, so $f(x) = (x+1)(x^3 - 3x^2 - 4x + 12)$ <span class="why">The quotient is a cubic. Keep going.</span></li>
+<li>For the cubic, $x = 2$ gives $8 - 12 - 8 + 12 = 0$. Divide by $2$: $1,\ -3,\ -4,\ 12 \to 1,\ -1,\ -6$ remainder $0$. <span class="why">Find a second factor.</span></li>
+<li>$f(x) = (x+1)(x-2)(x^2 - x - 6) = (x+1)(x-2)(x-3)(x+2)$ <span class="why">Factorise the last quadratic.</span></li>
+</ol>
+<p>Check with $x = 0$: $(1)(-2)(-3)(2) = 12$, which matches the constant term of $f(x)$.</p>
+</details></div>
+
+<h3>When the quadratic factor will not factorise</h3>
+<p>Sometimes the quotient is a quadratic with no real roots. Then the polynomial has fewer real roots than its degree. To <em>prove</em> that the quadratic cannot be factorised, show that its discriminant is negative (see the <a href="#quad">next chapter</a>).</p>
+<div class="worked"><p class="worked-title">Worked example 3 · P1 · only one real root</p>
+<p>Show that $x^3 + x^2 + x - 3 = 0$ has only one real root.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(1) = 1 + 1 + 1 - 3 = 0$, so $x = 1$ is a root and $(x - 1)$ is a factor. <span class="why">Find one root.</span></li>
+<li>Divide by $1$: $1,\ 1,\ 1,\ -3 \to 1,\ 2,\ 3$ remainder $0$, so $f(x) = (x-1)(x^2 + 2x + 3)$. <span class="why">Find the quadratic factor.</span></li>
+<li>For $x^2 + 2x + 3$: $b^2 - 4ac = 4 - 12 = -8 \lt 0$ <span class="why">Test the quadratic with the discriminant.</span></li>
+<li>So $x^2 + 2x + 3 = 0$ has no real roots, and $x = 1$ is the only real root. <span class="why">Communicate the conclusion.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In a question like the one above, "only a few candidates identified that the discriminant should be used to determine that a quadratic factor is <strong>impossible</strong> (rather than difficult) to factorise." Saying "it doesn't factorise" earns nothing: you must show $b^2 - 4ac \lt 0$. The same report saw candidates "looking for linear factors again" in a later part instead of building on their earlier work. If part (a) gave you a factor, use it in part (b).</p></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"When I use synthetic division to show something is a factor, isn't the zero at the end enough?"</p><p><strong>Flight Lieutenant Murray:</strong> "The zero is your evidence, but the mark is for the <em>conclusion</em>. Write the sentence: 'remainder is 0, so $(x-2)$ is a factor.' Marking instructions for 'show that' questions expect the communication, not just the table."</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>use synthetic division (or substitution) to test a possible root and find the quotient;</li><li>factorise a cubic or quartic fully and solve the equation $f(x)=0$;</li><li>find an unknown coefficient from a given factor or remainder;</li><li>use the discriminant to show a quadratic factor has no real roots.</li></ul></div>
+<div class="check" data-check="alg-poly"></div>
+</section>
+
+<section id="quad" class="prose">
+<h2 data-short="Quadratics">2 · Quadratics: completing the square and the discriminant <span class="spec-tag">ALG · quadratics</span></h2>
+<p>Every quadratic $y = ax^2 + bx + c$ has a U-shaped graph called a <dfn>parabola</dfn>. If $a \gt 0$ it opens upwards and has a minimum turning point; if $a \lt 0$ it opens downwards and has a maximum. The gun crews know the shape well: a shot fired from the bow chaser follows (nearly) a downward-opening parabola.</p>
+
+<h3>Completing the square</h3>
+<p>Completing the square rewrites $ax^2 + bx + c$ as $a(x + p)^2 + q$. In that form you can read off the turning point, $(-p,\ q)$, and its nature, from the sign of $a$. The axis of symmetry is the line $x = -p$. At Higher the coefficient $a$ need not be 1.</p>
+<p>The name comes from a picture. $x^2 + 6x$ is an $x$-by-$x$ square plus six $x$-by-1 strips. Split the strips into two groups of three and place them on two sides of the square. The shape is now almost a bigger square, $(x+3)$ by $(x+3)$, with a $3$-by-$3$ corner missing. So $x^2 + 6x = (x+3)^2 - 9$.</p>
+
+<div class="widget" id="w-square">
+  <h3 class="widget-title">Block-built squares: completing the square</h3>
+  <p class="hint">Set $a$, $b$ and $c$. The blocks complete the square on $x^2 + \frac{b}{a}x$ (they can only show positive lengths, so they appear when $\frac{b}{a} \gt 0$). The algebra on the right works for any values, and the graph marks the turning point it predicts.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · non-unitary $x^2$ coefficient</p>
+<p>Express $2x^2 + 12x + 5$ in the form $a(x+p)^2 + q$, and state the coordinates of the turning point of $y = 2x^2 + 12x + 5$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$2(x^2 + 6x) + 5$ <span class="why">Take the $x^2$ coefficient out of the first two terms only.</span></li>
+<li>$2\big[(x+3)^2 - 9\big] + 5$ <span class="why">Complete the square inside the bracket: half of 6 is 3, and subtract $3^2$.</span></li>
+<li>$2(x+3)^2 - 13$ <span class="why">Multiply out the outer bracket: $2 \times (-9) = -18$, and $-18 + 5 = -13$.</span></li>
+</ol>
+<p>Turning point $(-3,\ -13)$. It is a minimum because $a = 2 \gt 0$.</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · a negative $x^2$ coefficient</p>
+<p>Write $5 + 4x - x^2$ in the form $a(x+p)^2 + q$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$-x^2 + 4x + 5 = -(x^2 - 4x) + 5$ <span class="why">Reorder, then take out $-1$. Inside, the sign of $4x$ flips.</span></li>
+<li>$-\big[(x-2)^2 - 4\big] + 5$ <span class="why">Half of $-4$ is $-2$.</span></li>
+<li>$-(x-2)^2 + 9$ <span class="why">$-1 \times (-4) = +4$, and $4 + 5 = 9$.</span></li>
+</ol>
+<p>So $a = -1$, $p = -2$, $q = 9$, and the graph has a maximum turning point at $(2,\ 9)$.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the number outside</div><p>The most common slip is in the last step: forgetting to multiply the $-9$ (or $-4$) by the $a$ outside the bracket. Expand your answer back out to check. $2(x+3)^2 - 13 = 2x^2 + 12x + 18 - 13$, which is correct.</p></div>
+
+<h3>The discriminant</h3>
+<p>The quadratic formula solves $ax^2 + bx + c = 0$:</p>
+$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
+<p>You must know this formula; it is not on the formulae list. The part under the square root, $b^2 - 4ac$, is called the <dfn>discriminant</dfn>. Its sign tells you how many real roots there are, without solving anything.</p>
+<figure class="diagram"><svg viewBox="0 0 600 196" role="img" aria-label="Three parabolas. The first crosses the x-axis twice: discriminant greater than zero, two real and distinct roots. The second touches the x-axis once: discriminant equal to zero, equal roots. The third stays above the x-axis: discriminant less than zero, no real roots."><line x1="10" y1="120" x2="190" y2="120" class="s-muted" stroke-width="1.5"/><path d="M32.8 45.2 L35.6 54.2 L38.4 62.8 L41.2 71.0 L44.0 78.8 L46.8 86.2 L49.6 93.3 L52.4 99.9 L55.2 106.2 L58.0 112.1 L60.8 117.7 L63.6 122.8 L66.4 127.6 L69.2 131.9 L72.0 135.9 L74.8 139.6 L77.6 142.8 L80.4 145.7 L83.2 148.1 L86.0 150.2 L88.8 152.0 L91.6 153.3 L94.4 154.2 L97.2 154.8 L100.0 155.0 L102.8 154.8 L105.6 154.2 L108.4 153.3 L111.2 152.0 L114.0 150.2 L116.8 148.1 L119.6 145.7 L122.4 142.8 L125.2 139.6 L128.0 135.9 L130.8 131.9 L133.6 127.6 L136.4 122.8 L139.2 117.7 L142.0 112.1 L144.8 106.2 L147.6 99.9 L150.4 93.3 L153.2 86.2 L156.0 78.8 L158.8 71.0 L161.6 62.8 L164.4 54.2 L167.2 45.2" fill="none" stroke-width="3" class="s-sea"/><text x="100" y="168" font-weight="700" font-size="15" text-anchor="middle" class="ink">b² − 4ac &gt; 0</text><text x="100" y="188" font-size="15" text-anchor="middle" class="ink">two real, distinct roots</text><line x1="210" y1="120" x2="390" y2="120" class="s-muted" stroke-width="1.5"/><path d="M232.8 10.2 L235.6 19.2 L238.4 27.8 L241.2 36.0 L244.0 43.8 L246.8 51.2 L249.6 58.3 L252.4 64.9 L255.2 71.2 L258.0 77.1 L260.8 82.7 L263.6 87.8 L266.4 92.6 L269.2 96.9 L272.0 100.9 L274.8 104.6 L277.6 107.8 L280.4 110.7 L283.2 113.1 L286.0 115.2 L288.8 117.0 L291.6 118.3 L294.4 119.2 L297.2 119.8 L300.0 120.0 L302.8 119.8 L305.6 119.2 L308.4 118.3 L311.2 117.0 L314.0 115.2 L316.8 113.1 L319.6 110.7 L322.4 107.8 L325.2 104.6 L328.0 100.9 L330.8 96.9 L333.6 92.6 L336.4 87.8 L339.2 82.7 L342.0 77.1 L344.8 71.2 L347.6 64.9 L350.4 58.3 L353.2 51.2 L356.0 43.8 L358.8 36.0 L361.6 27.8 L364.4 19.2 L367.2 10.2" fill="none" stroke-width="3" class="s-gold"/><text x="300" y="168" font-weight="700" font-size="15" text-anchor="middle" class="ink">b² − 4ac = 0</text><text x="300" y="188" font-size="15" text-anchor="middle" class="ink">equal (repeated) roots</text><line x1="410" y1="120" x2="590" y2="120" class="s-muted" stroke-width="1.5"/><path d="M432.8 -17.8 L435.6 -8.8 L438.4 -0.2 L441.2 8.0 L444.0 15.8 L446.8 23.2 L449.6 30.3 L452.4 36.9 L455.2 43.2 L458.0 49.1 L460.8 54.7 L463.6 59.8 L466.4 64.6 L469.2 68.9 L472.0 72.9 L474.8 76.6 L477.6 79.8 L480.4 82.7 L483.2 85.1 L486.0 87.2 L488.8 89.0 L491.6 90.3 L494.4 91.2 L497.2 91.8 L500.0 92.0 L502.8 91.8 L505.6 91.2 L508.4 90.3 L511.2 89.0 L514.0 87.2 L516.8 85.1 L519.6 82.7 L522.4 79.8 L525.2 76.6 L528.0 72.9 L530.8 68.9 L533.6 64.6 L536.4 59.8 L539.2 54.7 L542.0 49.1 L544.8 43.2 L547.6 36.9 L550.4 30.3 L553.2 23.2 L556.0 15.8 L558.8 8.0 L561.6 -0.2 L564.4 -8.8 L567.2 -17.8" fill="none" stroke-width="3" class="s-red"/><text x="500" y="168" font-weight="700" font-size="15" text-anchor="middle" class="ink">b² − 4ac &lt; 0</text><text x="500" y="188" font-size="15" text-anchor="middle" class="ink">no real roots</text><circle cx="62.1" cy="120" r="4.5" class="f-sea"/><circle cx="137.9" cy="120" r="4.5" class="f-sea"/><circle cx="300" cy="120" r="4.5" class="f-gold"/></svg><figcaption>The discriminant counts the crossings of the $x$-axis. When it is zero the graph just touches the axis: the two roots are equal. Exam questions also say "real roots" to mean $b^2 - 4ac \ge 0$, which covers both of the first two cases.</figcaption></figure>
+
+<div class="widget" id="w-disc">
+  <h3 class="widget-title">The gunner's discriminant: how many roots?</h3>
+  <p class="hint">Move $a$, $b$ and $c$ and watch the parabola cross, touch or miss the $x$-axis as $b^2 - 4ac$ changes sign. Turn on the shading to see the solution of a quadratic inequality.</p>
+</div>
+
+<h3>Finding an unknown from the nature of the roots</h3>
+<p>A typical question gives a quadratic with an unknown $k$ and tells you about its roots. Write down the right condition on the discriminant and solve for $k$. Be careful: the condition may lead to a quadratic <em>inequality</em> in $k$.</p>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · equal roots</p>
+<p>Find the values of $k$ for which $kx^2 - 6x + k = 0$ has equal roots.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$a = k,\ b = -6,\ c = k$ and equal roots means $b^2 - 4ac = 0$ <span class="why">State the condition.</span></li>
+<li>$(-6)^2 - 4 \times k \times k = 36 - 4k^2 = 0$ <span class="why">Substitute. Brackets round the $-6$.</span></li>
+<li>$k^2 = 9 \Rightarrow k = 3$ or $k = -3$ <span class="why">Solve.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · no real roots, so an inequality</p>
+<p>Find the range of values of $k$ for which $x^2 + (k+1)x + 4 = 0$ has no real roots.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$b^2 - 4ac \lt 0$ <span class="why">The condition for no real roots.</span></li>
+<li>$(k+1)^2 - 4 \times 1 \times 4 \lt 0 \Rightarrow k^2 + 2k - 15 \lt 0$ <span class="why">Substitute and simplify: $k^2 + 2k + 1 - 16$.</span></li>
+<li>$(k+5)(k-3) \lt 0$: the parabola in $k$ has roots $-5$ and $3$. <span class="why">Factorise and find the roots.</span></li>
+<li>$-5 \lt k \lt 3$ <span class="why">It opens upwards, so it is below zero between the roots. Sketch it to be sure.</span></li>
+</ol>
+</details></div>
+
+<h3>Quadratic inequalities</h3>
+<p>To solve $ax^2 + bx + c \gt 0$ (or $\lt$, $\ge$, $\le$), never divide or square-root. Instead: find the roots, sketch the parabola through them, and read off where the graph is above (or below) the axis.</p>
+<figure class="diagram"><svg viewBox="0 0 400 210" style="max-width:420px" role="img" aria-label="The parabola y equals x squared minus 2x minus 8 crosses the x-axis at minus 2 and 4. The parts of the x-axis to the left of minus 2 and to the right of 4, where the curve is above the axis, are highlighted.">
+<line x1="20" y1="100" x2="380" y2="100" class="stroke-ink" stroke-width="1.5"/>
+<path d="M48.8 30.9 L53.8 40.1 L58.9 49.1 L63.9 57.7 L69.0 66.0 L74.0 74.0 L79.0 81.7 L84.1 89.1 L89.1 96.1 L94.2 102.9 L99.2 109.3 L104.2 115.4 L109.3 121.2 L114.3 126.7 L119.4 131.9 L124.4 136.7 L129.4 141.3 L134.5 145.5 L139.5 149.4 L144.6 153.0 L149.6 156.3 L154.6 159.3 L159.7 162.0 L164.7 164.3 L169.8 166.4 L174.8 168.1 L179.8 169.5 L184.9 170.6 L189.9 171.4 L195.0 171.8 L200.0 172.0 L205.0 171.8 L210.1 171.4 L215.1 170.6 L220.2 169.5 L225.2 168.1 L230.2 166.4 L235.3 164.3 L240.3 162.0 L245.4 159.3 L250.4 156.3 L255.4 153.0 L260.5 149.4 L265.5 145.5 L270.6 141.3 L275.6 136.7 L280.6 131.9 L285.7 126.7 L290.7 121.2 L295.8 115.4 L300.8 109.3 L305.8 102.9 L310.9 96.1 L315.9 89.1 L321.0 81.7 L326.0 74.0 L331.0 66.0 L336.1 57.7 L341.1 49.1 L346.2 40.1 L351.2 30.9" fill="none" class="s-muted" stroke-width="2.5"/>
+<path d="M48.8 30.9 L51.0 34.9 L53.1 38.8 L55.3 42.7 L57.4 46.5 L59.6 50.3 L61.8 54.0 L63.9 57.7 L66.1 61.3 L68.2 64.8 L70.4 68.3 L72.6 71.7 L74.7 75.1 L76.9 78.4 L79.0 81.7 L81.2 84.9 L83.4 88.0 L85.5 91.1 L87.7 94.1 L89.8 97.1 L92.0 100.0" fill="none" class="s-sea" stroke-width="5"/>
+<path d="M308.0 100.0 L310.2 97.1 L312.3 94.1 L314.5 91.1 L316.6 88.0 L318.8 84.9 L321.0 81.7 L323.1 78.4 L325.3 75.1 L327.4 71.7 L329.6 68.3 L331.8 64.8 L333.9 61.3 L336.1 57.7 L338.2 54.0 L340.4 50.3 L342.6 46.5 L344.7 42.7 L346.9 38.8 L349.0 34.9 L351.2 30.9" fill="none" class="s-sea" stroke-width="5"/>
+<line x1="20" y1="100" x2="92" y2="100" class="s-sea" stroke-width="5"/><line x1="308" y1="100" x2="380" y2="100" class="s-sea" stroke-width="5"/>
+<circle cx="92" cy="100" r="5" class="f-card s-sea" stroke-width="2"/><circle cx="308" cy="100" r="5" class="f-card s-sea" stroke-width="2"/>
+<text x="84" y="120" text-anchor="end" font-size="15" class="ink">−2</text><text x="316" y="120" text-anchor="start" font-size="15" class="ink">4</text>
+<text x="200" y="202" text-anchor="middle" font-size="15" class="ink" font-weight="700">x² − 2x − 8 &gt; 0 when x &lt; −2 or x &gt; 4</text>
+</svg><figcaption>Open circles: the roots are not included, because the inequality is strict ($\gt$). For $\ge$ they would be included.</figcaption></figure>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · a downward parabola</p>
+<p>Solve $6 + x - x^2 \ge 0$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$6 + x - x^2 = -(x^2 - x - 6) = -(x-3)(x+2)$, so the roots are $x = 3$ and $x = -2$. <span class="why">Find the roots.</span></li>
+<li>The coefficient of $x^2$ is negative, so the parabola is $\cap$-shaped and is on or above the axis between its roots. <span class="why">Sketch.</span></li>
+<li>$-2 \le x \le 3$ <span class="why">State the answer, including the roots because of $\ge$.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>complete the square when the $x^2$ coefficient is not 1, and read off the turning point;</li><li>state and use the three discriminant conditions, including "real roots" ($\ge 0$);</li><li>find an unknown from the nature of the roots, even when that needs a quadratic inequality;</li><li>solve a quadratic inequality with a sketch.</li></ul></div>
+<div class="check" data-check="alg-quad"></div>
+</section>
+
+<section id="meet" class="prose">
+<h2 data-short="Where graphs meet">3 · Where graphs meet: intersections and tangents <span class="spec-tag">ALG · intersections</span></h2>
+<p>Two graphs meet where their $y$-values are equal. So to find the intersection of $y = f(x)$ and $y = g(x)$, solve $f(x) = g(x)$. Then substitute each $x$ back into either equation to get $y$.</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · a line and a parabola</p>
+<p>Find the points of intersection of $y = x^2 - 3x + 4$ and $y = x + 1$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 - 3x + 4 = x + 1$ <span class="why">Equate the two expressions for $y$.</span></li>
+<li>$x^2 - 4x + 3 = 0 \Rightarrow (x-1)(x-3) = 0$ <span class="why">Rearrange to "$= 0$" and factorise.</span></li>
+<li>$x = 1$ or $x = 3$ <span class="why">Solve.</span></li>
+<li>$(1,\ 2)$ and $(3,\ 4)$ <span class="why">Substitute into $y = x + 1$, the simpler equation.</span></li>
+</ol>
+</details></div>
+<h3>Tangency: one point, equal roots</h3>
+<p>When you equate a line and a parabola you get a quadratic. Its discriminant tells you what the line does:</p>
+<ul>
+<li>$b^2 - 4ac \gt 0$: the line cuts the curve at two points;</li>
+<li>$b^2 - 4ac = 0$: the line meets the curve at exactly one point. It is a <dfn>tangent</dfn>;</li>
+<li>$b^2 - 4ac \lt 0$: the line misses the curve.</li>
+</ul>
+<div class="widget" id="w-tangent">
+  <h3 class="widget-title">Sighting the shot: when does a line just touch?</h3>
+  <p class="hint">The curve is $y = x^2 + 4$. Move the line $y = mx + k$ and watch the quadratic $x^2 - mx + (4 - k) = 0$ that their meeting gives. Tangency happens exactly when its discriminant is zero.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · show that a line is a tangent</p>
+<p>Show that the line $y = 4x - 5$ is a tangent to the curve $y = x^2 - 2x + 4$, and find the point of contact.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 - 2x + 4 = 4x - 5 \Rightarrow x^2 - 6x + 9 = 0$ <span class="why">Equate and rearrange.</span></li>
+<li>$b^2 - 4ac = 36 - 36 = 0$ <span class="why">Find the discriminant.</span></li>
+<li>The discriminant is zero, so there are equal roots and the line is a tangent. <span class="why">Communicate the conclusion.</span></li>
+<li>$(x-3)^2 = 0 \Rightarrow x = 3$, $y = 4(3) - 5 = 7$. Point of contact $(3,\ 7)$. <span class="why">Find the point.</span></li>
+</ol>
+<p>Factorising to $(x-3)^2 = 0$ and saying "repeated root, so tangent" is an equally good method.</p>
+</details></div>
+<p>The same idea answers "find $k$ so that $y = 2x + k$ is a tangent to $y = x^2 + 4$": equate to get $x^2 - 2x + (4 - k) = 0$, set $b^2 - 4ac = 4 - 4(4 - k) = 0$ and solve: $k = 3$.</p>
+<p>Two curves work the same way. For $y = x^2 + 2$ and $y = 2x^2 - 2$: $x^2 + 2 = 2x^2 - 2$ gives $x^2 = 4$, so $x = \pm 2$, and both points have $y = 6$.</p>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find where a line meets a curve, or two curves meet, by equating and solving;</li><li>use the discriminant to prove tangency or to find an unknown that makes a line a tangent.</li></ul></div>
+<div class="check" data-check="alg-meet"></div>
+</section>
+
+<section id="func" class="prose">
+<h2 data-short="Functions">4 · Functions: domain, range, composite and inverse <span class="spec-tag">ALG · functions</span></h2>
+<p>A <dfn>function</dfn> is a rule that takes each allowed input and gives exactly one output. Think of a Minecraft furnace: put in iron ore, get out an iron ingot, every time. $f(x) = 3x - 1$ is a furnace that triples whatever goes in and subtracts one.</p>
+<ul>
+<li>The <dfn>domain</dfn> is the set of inputs the function is allowed to take.</li>
+<li>The <dfn>range</dfn> is the set of outputs it actually produces.</li>
+</ul>
+<p>In Higher questions, the domain is usually "all real numbers except the ones that break something". Three things break a function:</p>
+<div class="fn-grid">
+<div><b>Dividing by zero</b><br>$f(x) = \dfrac{1}{x-4}$ needs $x \ne 4$.</div>
+<div><b>Square root of a negative</b><br>$f(x) = \sqrt{x+3}$ needs $x \ge -3$.</div>
+<div><b>Log of zero or a negative</b><br>$f(x) = \log_2(x-1)$ needs $x \gt 1$.</div>
+</div>
+<p>Ranges matter too. $g(x) = x^2 + 1$ can take any $x$, but its outputs are all at least 1: the range is $g(x) \ge 1$. Likewise $\sin x$ and $\cos x$ have range $-1$ to $1$.</p>
+<p>The course also uses set notation. You need to <em>read</em> it, not write it: $x \in \mathbb{R}$ means "$x$ is a real number". The sets are $\mathbb{N}$ (natural numbers $1, 2, 3, \dots$), $\mathbb{W}$ (whole numbers $0, 1, 2, \dots$), $\mathbb{Z}$ (integers), $\mathbb{Q}$ (rational numbers) and $\mathbb{R}$ (real numbers). The symbol $\notin$ means "is not a member of".</p>
+
+<h3>Composite functions</h3>
+<p>A <dfn>composite function</dfn> feeds the output of one function into another. $f(g(x))$ means "do $g$ first, then $f$". Read it from the inside out, like two furnaces in a row where the hopper from $g$ feeds $f$.</p>
+<div class="widget" id="w-furnace">
+  <h3 class="widget-title">Two furnaces in a row: composite functions</h3>
+  <p class="hint">Choose $f$ and $g$ and an input. The minecart carries the value through $g$ first, then $f$. Swap the order to see that $f(g(x))$ and $g(f(x))$ are usually different.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · both orders</p>
+<p>$f(x) = 3x - 1$ and $g(x) = x^2 + 2$. Find (a) $f(g(x))$ and (b) $g(f(x))$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $f(g(x)) = f(x^2 + 2) = 3(x^2 + 2) - 1 = 3x^2 + 5$ <span class="why">Replace every $x$ in $f$ with the whole of $g(x)$, in a bracket.</span></li>
+<li>(b) $g(f(x)) = g(3x - 1) = (3x-1)^2 + 2 = 9x^2 - 6x + 3$ <span class="why">Now $f(x)$ goes into $g$.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · domain of a composite</p>
+<p>$f(x) = \dfrac{1}{x - 5}$ and $g(x) = x^2 + 1$. Find $f(g(x))$ and state a suitable domain.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(g(x)) = \dfrac{1}{x^2 + 1 - 5} = \dfrac{1}{x^2 - 4}$ <span class="why">Substitute $g(x)$ into $f$ and simplify.</span></li>
+<li>$x^2 - 4 = 0$ when $x = \pm 2$, so the domain is $x \in \mathbb{R},\ x \ne \pm 2$ <span class="why">Exclude any value that makes the denominator zero.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · using the range</p>
+<p>$f(x) = \log_2 x$ and $g(x) = 2 + \cos x$. Explain why $f(g(x))$ is defined for every real number $x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$-1 \le \cos x \le 1$, so the range of $g$ is $1 \le g(x) \le 3$. <span class="why">Find the range of the inner function.</span></li>
+<li>Every output of $g$ is positive, and $\log_2$ is defined for all positive inputs, so $f(g(x))$ is defined for all $x \in \mathbb{R}$. <span class="why">Link the range of $g$ to the domain of $f$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On composite functions, "most candidates did not apply knowledge of the range of a function". The question to ask is always: <strong>what can come out of the inner function, and can the outer function cope with it?</strong></p></div>
+
+<h3>Inverse functions</h3>
+<p>The <dfn>inverse</dfn> $f^{-1}$ undoes $f$: if $f(3) = 1$ then $f^{-1}(1) = 3$. Running a furnace backwards, ingot to ore. Only a function that never gives the same output twice (a <dfn>one-to-one</dfn> function) has an inverse. To find it:</p>
+<ol>
+<li>Write $y = f(x)$.</li>
+<li>Rearrange to make $x$ the subject.</li>
+<li>Swap the letters: replace $y$ with $x$, and write the result as $f^{-1}(x) = \dots$.</li>
+</ol>
+<div class="worked"><p class="worked-title">Worked example 14 · P1 · inverse of a rational function</p>
+<p>$f(x) = \dfrac{2}{x - 1}$, $x \ne 1$. Find $f^{-1}(x)$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$y = \dfrac{2}{x-1} \Rightarrow x - 1 = \dfrac{2}{y}$ <span class="why">Start to rearrange: multiply by $(x-1)$, divide by $y$.</span></li>
+<li>$x = 1 + \dfrac{2}{y}$ <span class="why">Make $x$ the subject.</span></li>
+<li>$f^{-1}(x) = 1 + \dfrac{2}{x}$, $x \ne 0$ <span class="why">Swap the letters and write it as $f^{-1}(x)$.</span></li>
+</ol>
+<p>Check: $f(3) = 1$ and $f^{-1}(1) = 1 + 2 = 3$.</p>
+</details></div>
+<p>Graphically, the inverse is the reflection of $y = f(x)$ in the line $y = x$, because reflecting swaps every point $(a, b)$ to $(b, a)$. The domain of $f^{-1}$ is the range of $f$.</p>
+<div class="widget" id="w-inverse">
+  <h3 class="widget-title">The mirror in the chart room: inverse functions</h3>
+  <p class="hint">Choose a function and press <b>Reflect</b>. Each marked point $(a, b)$ swings across the line $y = x$ to $(b, a)$, and the reflected curve is the graph of $f^{-1}$.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates stated multiple expressions for '$y = \dots$' or '$g^{-1}(x) = \dots$', which did not gain full marks." Give <strong>one</strong> final answer, clearly written as $g^{-1}(x) = \dots$, and score out any rough attempts.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>state a suitable domain, and use the range of an inner function;</li><li>find $f(g(x))$ and $g(f(x))$ for algebraic, trigonometric, exponential or log functions;</li><li>find $f^{-1}(x)$ by rearranging, and know its graph is the reflection in $y = x$.</li></ul></div>
+<div class="check" data-check="alg-func"></div>
+</section>
+
+<section id="transform" class="prose">
+<h2 data-short="Graph transformations">5 · Graph transformations <span class="spec-tag">ALG · related functions</span></h2>
+<p>If you know the graph of $y = f(x)$, you can sketch many related graphs without plotting a single point. There are four basic moves, and every one is a rule about what happens to each point $(x, y)$.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Graph</th><th>What happens</th><th>Point $(x,\ y)$ goes to</th></tr></thead>
+<tbody>
+<tr><td>$y = f(x) + k$</td><td>Moves <b>up</b> $k$ (down if $k \lt 0$)</td><td>$(x,\ y + k)$</td></tr>
+<tr><td>$y = f(x + k)$</td><td>Moves <b>left</b> $k$ (right if $k \lt 0$)</td><td>$(x - k,\ y)$</td></tr>
+<tr><td>$y = kf(x)$</td><td>Vertical stretch, scale factor $k$. If $k = -1$: reflect in the $x$-axis.</td><td>$(x,\ ky)$</td></tr>
+<tr><td>$y = f(kx)$</td><td>Horizontal stretch, scale factor $\frac1k$. If $k = -1$: reflect in the $y$-axis.</td><td>$\left(\frac{x}{k},\ y\right)$</td></tr>
+</tbody></table></div>
+<p>A handy way to remember it: a change <em>outside</em> the bracket acts on $y$ and does what it says. A change <em>inside</em> the bracket acts on $x$ and does the opposite of what it looks like: $+3$ moves left, $\times 2$ squashes to half the width.</p>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Why does $f(x + 3)$ move the graph <em>left</em>? Plus usually means right."</p><p><strong>Sailing Master Fraser:</strong> "Ask where the new graph reaches a particular height. Say $f(0) = 5$. The new graph $y = f(x+3)$ gives 5 when $x + 3 = 0$, that is when $x = -3$. Every feature now happens 3 earlier, which on a chart means 3 to the left."</p></div>
+<div class="widget" id="w-transform">
+  <h3 class="widget-title">The chart-table transformer: $y = a\,f(bx + c) + d$</h3>
+  <p class="hint">Pick a base graph, set the four numbers, then press <b>Transform</b>. The original stays faint, and the labelled points travel to their new positions so you can see each rule at work.</p>
+</div>
+<h3>Combining transformations: follow the points</h3>
+<p>In an exam you sketch the new graph by moving the <em>labelled</em> points: turning points, intercepts and any marked coordinates. Do the moves one at a time to each point. For $y = af(x + c) + d$: first shift the $x$-coordinate (subtract $c$), then multiply the $y$-coordinate by $a$, then add $d$ to it.</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · two labelled points</p>
+<p>The graph of $y = f(x)$ has a maximum turning point at $(-1,\ 2)$ and a minimum turning point at $(1,\ -2)$. Sketch $y = 2f(x - 1) + 3$, showing the images of the turning points.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(x - 1)$: move right 1. $(-1, 2) \to (0, 2)$ and $(1, -2) \to (2, -2)$. <span class="why">Inside the bracket, $-1$ means right 1.</span></li>
+<li>$2f(\dots)$: double each $y$. $(0, 2) \to (0, 4)$ and $(2, -2) \to (2, -4)$. <span class="why">Vertical stretch, scale factor 2.</span></li>
+<li>$+3$: up 3. Maximum $(0,\ 7)$, minimum $(2,\ -1)$. <span class="why">Draw the same shape through these points.</span></li>
+</ol>
+<p>Since $a = 2$ is positive, the maximum is still a maximum. If $a$ were negative, the reflection would turn maxima into minima.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates did not use the axes provided, which affected the accuracy of their sketches." Draw on the printed axes, label the images of all marked points with their coordinates, and show where the graph crosses any axis or approaches an asymptote.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>identify $kf(x)$, $f(kx)$, $f(x) + k$, $f(x + k)$ and combinations, from a graph or an equation;</li><li>sketch a transformed graph, labelling the images of the marked points.</li></ul></div>
+<div class="check" data-check="alg-transform"></div>
+</section>
+
+<section id="explog" class="prose">
+<h2 data-short="Exponentials and logs">6 · Exponentials and logarithms <span class="spec-tag">ALG · logs and exponentials</span></h2>
+<p>An <dfn>exponential function</dfn> has the variable in the power: $f(x) = a^x$, where the base $a$ is positive and not 1. If $a \gt 1$ the graph grows ever faster; if $0 \lt a \lt 1$ it decays towards zero. Every graph $y = a^x$ passes through $(0, 1)$ (because $a^0 = 1$) and through $(1, a)$, and gets ever closer to the $x$-axis without touching it: the line $y = 0$ is an <dfn>asymptote</dfn>.</p>
+<p>The most important base is $e \approx 2.718$. The function $y = e^x$ is called <em>the</em> exponential function, and it appears whenever something grows or decays at a rate in proportion to its size.</p>
+<div class="callout def"><div class="callout-title">📘 What a logarithm is</div>
+<p>$\log_a x$ is the power you raise $a$ to in order to get $x$:</p>
+$$y = \log_a x \iff x = a^y.$$
+<p>So $\log_2 8 = 3$ because $2^3 = 8$, and $\log_{10} 0.01 = -2$ because $10^{-2} = 0.01$. The natural logarithm $\ln x$ means $\log_e x$.</p></div>
+<p>Because logs undo exponentials, the graph of $y = \log_a x$ is the reflection of $y = a^x$ in the line $y = x$. It passes through $(1, 0)$ and $(a, 1)$, and the $y$-axis is an asymptote. You can only take the log of a positive number.</p>
+<div class="widget" id="w-explog">
+  <h3 class="widget-title">The log line: an exponential and its mirror</h3>
+  <p class="hint">Change the base $a$. The exponential graph and the log graph are always reflections of each other in $y = x$. Notice the fixed points $(0, 1)$ and $(1, 0)$, and the points $(1, a)$ and $(a, 1)$.</p>
+</div>
+
+<h3>The laws of logarithms</h3>
+<p>These come straight from the laws of indices, and are <em>not</em> on the formulae list. For $x, y \gt 0$:</p>
+<div class="eq-grid">
+  <div class="eq-card">$$\log_a x + \log_a y = \log_a (xy)$$<p>Adding logs multiplies the numbers.</p></div>
+  <div class="eq-card">$$\log_a x - \log_a y = \log_a \frac{x}{y}$$<p>Subtracting logs divides.</p></div>
+  <div class="eq-card">$$\log_a x^n = n\log_a x$$<p>A power comes down to the front, and a number in front can go up as a power.</p></div>
+  <div class="eq-card">$$\log_a 1 = 0,\quad \log_a a = 1$$<p>Because $a^0 = 1$ and $a^1 = a$.</p></div>
+</div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Is $\log(x + y)$ the same as $\log x + \log y$?"</p><p><strong>Captain Grant:</strong> "No, and the purser would lose his job if it were. There is no law for the log of a sum. $\log_{10}(10 + 10) = \log_{10} 20 \approx 1.30$, but $\log_{10} 10 + \log_{10} 10 = 2$. The laws only turn a <em>sum of logs</em> into the <em>log of a product</em>."</p></div>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · simplify</p>
+<p>Evaluate (a) $\log_2 40 - \log_2 5$ and (b) $2\log_5 10 - \log_5 4$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\log_2 \frac{40}{5} = \log_2 8 = 3$ <span class="why">Subtracting logs divides; $2^3 = 8$.</span></li>
+<li>(b) $\log_5 10^2 - \log_5 4 = \log_5 \frac{100}{4} = \log_5 25 = 2$ <span class="why">Move the 2 up as a power first, then combine.</span></li>
+</ol>
+</details></div>
+
+<h3>Solving log equations</h3>
+<p>Combine everything into a single log, then convert to exponential form using $\log_a x = y \iff x = a^y$. Finally check each answer: you cannot take the log of zero or a negative, so some algebraic solutions must be rejected.</p>
+<div class="worked"><p class="worked-title">Worked example 17 · P1 · reject a solution</p>
+<p>Solve $\log_3(x+1) + \log_3(x-1) = 1$, $x \gt 1$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\log_3\big((x+1)(x-1)\big) = 1$ <span class="why">Use a log law to make one log.</span></li>
+<li>$(x+1)(x-1) = 3^1 \Rightarrow x^2 - 1 = 3$ <span class="why">Convert to exponential form.</span></li>
+<li>$x^2 = 4 \Rightarrow x = 2$ (since $x \gt 1$, reject $x = -2$) <span class="why">Solve and use the domain.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 18 · P1 · a quotient</p>
+<p>Solve $\log_2(x+5) - \log_2(x-2) = 3$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\log_2 \dfrac{x+5}{x-2} = 3$ <span class="why">Subtracting logs divides.</span></li>
+<li>$\dfrac{x+5}{x-2} = 2^3 = 8$ <span class="why">Exponential form.</span></li>
+<li>$x + 5 = 8x - 16 \Rightarrow 7x = 21 \Rightarrow x = 3$ <span class="why">Check: $x - 2 = 1 \gt 0$, so both logs exist.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Some candidates did not convert from logarithmic form to exponential form correctly, and some candidates incorrectly attempted to 'cancel out' logs." You can never cross out "log" from both sides of $\log_2(x+5) - \log_2(x-2) = 3$. Combine into one log, then use the definition.</p></div>
+
+<h3>Solving exponential equations</h3>
+<p>When the unknown is in a power, take logs of both sides (any base, but $\ln$ or $\log_{10}$ is on your calculator) and bring the power down.</p>
+<div class="worked"><p class="worked-title">Worked example 19 · P2 · unknown in the power</p>
+<p>Solve (a) $5^x = 30$ and (b) $e^{2x} = 7$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\ln 5^x = \ln 30 \Rightarrow x\ln 5 = \ln 30 \Rightarrow x = \dfrac{\ln 30}{\ln 5} = 2.11$ <span class="why">Take logs; the power comes down.</span></li>
+<li>(b) $2x = \ln 7 \Rightarrow x = \dfrac{\ln 7}{2} = 0.973$ <span class="why">$\ln$ undoes $e$ directly.</span></li>
+</ol>
+</details></div>
+
+<h3>Modelling with exponentials</h3>
+<p>Real things often grow or decay exponentially: money with compound interest, a population, a cooling cannon barrel. A typical model is $A = A_0 e^{kt}$, where $A_0$ is the starting amount, $k \gt 0$ for growth and $k \lt 0$ for decay. Questions ask you to use the model, or to find an unknown in it, which always needs logs.</p>
+<div class="widget" id="w-cool">
+  <h3 class="widget-title">After the broadside: a cooling gun barrel</h3>
+  <p class="hint">After firing, the barrel's temperature is modelled by $T = 20 + 180e^{-kt}$ °C, $t$ minutes later. Set the cooling rate $k$ and the safe temperature for reloading. The widget solves for $t$ with logs, showing every line.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 20 · P2 · how long until it is safe?</p>
+<p>The barrel temperature is $T = 20 + 180e^{-0.05t}$ °C. (a) What is the temperature just after firing? (b) How long does it take to cool to 50 °C?</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $t = 0$: $T = 20 + 180e^0 = 200$ °C <span class="why">$e^0 = 1$.</span></li>
+<li>(b) $20 + 180e^{-0.05t} = 50 \Rightarrow e^{-0.05t} = \dfrac{30}{180} = \dfrac16$ <span class="why">Isolate the exponential first.</span></li>
+<li>$-0.05t = \ln\dfrac16 \Rightarrow t = \dfrac{\ln 6}{0.05} = 35.8$ minutes <span class="why">Take natural logs. $\ln\frac16 = -\ln 6$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In a model like this, candidates evaluated $800e^{-0.12 \times 40} + 25$ wrongly or simply gave the starting value. Others "made errors when converting the equation from exponential form to logarithmic form". Isolate the exponential term <strong>before</strong> you take logs: $\ln(20 + 180e^{-0.05t})$ does not simplify.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>switch between $y = \log_a x$ and $x = a^y$;</li><li>use the three laws of logs to simplify and to solve equations, rejecting impossible solutions;</li><li>solve $a^x = b$ and $e^{kx} = b$ by taking logs;</li><li>use and find unknowns in exponential models;</li><li>sketch $y = a^x$ and $y = \log_a x$ as inverses of each other.</li></ul></div>
+<div class="check" data-check="alg-explog"></div>
+</section>
+
+<section id="loggraph" class="prose">
+<h2 data-short="Log graphs and data">7 · Straight lines from curves: log graphs <span class="spec-tag">ALG · log graphs</span></h2>
+<p>The Sailing Master measures something, plots it, and gets a curve. Is it $y = ab^x$ (exponential) or $y = ax^b$ (a power)? And what are $a$ and $b$? Taking logs turns the right kind of curve into a straight line, and a straight line is easy to read.</p>
+<div class="compare">
+<div><h3>Exponential: $y = ab^x$</h3>
+<p>Take logs: $\log y = \log a + \log b^x$, so</p>
+$$\log y = (\log b)\,x + \log a.$$
+<p>Plot $\log y$ against $x$. You get a straight line with gradient $\log b$ and intercept $\log a$.</p></div>
+<div><h3>Power: $y = ax^b$</h3>
+<p>Take logs: $\log y = \log a + \log x^b$, so</p>
+$$\log y = b\log x + \log a.$$
+<p>Plot $\log y$ against $\log x$. You get a straight line with gradient $b$ and intercept $\log a$.</p></div>
+</div>
+<p>Compare each with $Y = mX + c$. The base of the logs can be anything (10, $e$, 2…) as long as you use the same base throughout.</p>
+<div class="widget" id="w-loglin">
+  <h3 class="widget-title">The Sailing Master's experiment: straightening the data</h3>
+  <p class="hint">Pick a data set, then choose a pair of log axes. The points slide to their new positions. Only the right choice of axes lines them up, and then the line's gradient and intercept give $a$ and $b$.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 21 · P1 · a power law</p>
+<p>The graph of $\log_2 y$ against $\log_2 x$ is a straight line through $(0,\ 3)$ and $(4,\ 11)$. Find $a$ and $b$ such that $y = ax^b$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Gradient $= \dfrac{11 - 3}{4 - 0} = 2$, intercept $= 3$, so $\log_2 y = 2\log_2 x + 3$ <span class="why">Find the line's equation.</span></li>
+<li>$\log_2 y = \log_2 x^2 + \log_2 2^3 = \log_2(8x^2)$ <span class="why">Write $3$ as $\log_2 8$ and combine.</span></li>
+<li>$y = 8x^2$, so $a = 8$ and $b = 2$ <span class="why">Remove the logs: both sides are $\log_2$ of something.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 22 · P1 · an exponential</p>
+<p>The graph of $\log_3 y$ against $x$ is a straight line through $(0,\ 2)$ with gradient 1. Express $y$ in the form $y = ab^x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\log_3 y = x + 2$ <span class="why">The line's equation.</span></li>
+<li>$y = 3^{x+2} = 3^2 \times 3^x = 9 \times 3^x$ <span class="why">Exponential form, then split the power.</span></li>
+<li>$a = 9$, $b = 3$ <span class="why">Compare with $ab^x$.</span></li>
+</ol>
+<p>Alternatively compare with $\log_3 y = x\log_3 b + \log_3 a$: $\log_3 b = 1$ gives $b = 3$, and $\log_3 a = 2$ gives $a = 9$.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>This was one of the hardest questions in 2026, and "a few candidates incorrectly used the relationship $y = ax^b$ instead of the relationship stated in the question, $y = ab^x$. These candidates did not gain any marks." Underline the relationship in the question, and check which axes are logged.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>take logs of $y = ab^x$ and $y = ax^b$ to get straight-line forms;</li><li>find $a$ and $b$ from a straight-line graph or from two points;</li><li>decide which model data fit by seeing which log graph is straight.</li></ul></div>
+<div class="check" data-check="alg-loggraph"></div>
+</section>
+
+<section id="recur" class="prose">
+<h2 data-short="Recurrence relations">8 · Recurrence relations <span class="spec-tag">ALG-GEO · sequences</span></h2>
+<p>HMS Lodestone's freshwater tank holds 100 litres at the start of a voyage. Each day the crew uses 15% of what is in it, and then the distilling still adds 40 litres. How much is there after a week? After a year?</p>
+<p>A <dfn>recurrence relation</dfn> gives each term of a sequence from the one before. Here, if $u_n$ is the volume after $n$ days,</p>
+$$u_{n+1} = 0.85u_n + 40, \qquad u_0 = 100.$$
+<p>Keeping 85% is multiplying by $0.85$. At Higher every recurrence relation is <dfn>linear</dfn>: $u_{n+1} = au_n + b$.</p>
+<div class="widget" id="w-cobweb">
+  <h3 class="widget-title">The water tank: watching a sequence settle</h3>
+  <p class="hint">Set $a$, $b$ and the starting value. The cobweb diagram bounces between the line $y = ax + b$ and the line $y = x$: each bounce is one day. On the right, the terms are plotted against $n$. Try $a$ outside $-1 \lt a \lt 1$ and see what goes wrong.</p>
+</div>
+<h3>The limit</h3>
+<p>If $-1 \lt a \lt 1$, the terms get closer and closer to a fixed value $L$ called the <dfn>limit</dfn>. At the limit, applying the rule changes nothing, so $L = aL + b$. Rearranging gives</p>
+$$L = \frac{b}{1 - a}.$$
+<p>For the water tank, $L = \dfrac{40}{1 - 0.85} = 266.\dot6$ litres. In the long run, the tank holds about 267 litres, whatever it started with.</p>
+<p>If $a \ge 1$ or $a \le -1$ the terms do not settle (they grow without limit or swing ever more wildly), so there is no limit, even though $\frac{b}{1-a}$ might still give a number.</p>
+<div class="worked"><p class="worked-title">Worked example 23 · P1 · state why a limit exists</p>
+<p>A sequence is defined by $u_{n+1} = 0.6u_n + 12$. Explain why it has a limit, and find it.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>A limit exists because $-1 \lt 0.6 \lt 1$. <span class="why">State the condition with the actual value of $a$.</span></li>
+<li>$L = 0.6L + 12$ or $L = \dfrac{12}{1 - 0.6}$ <span class="why">Set up the limit.</span></li>
+<li>$L = \dfrac{12}{0.4} = 30$ <span class="why">Evaluate.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 24 · P1 · find the rule from three terms</p>
+<p>A sequence satisfies $u_{n+1} = au_n + b$, with $u_1 = 4$, $u_2 = 10$ and $u_3 = 22$. Find $a$ and $b$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$10 = 4a + b$ and $22 = 10a + b$ <span class="why">Write the rule for $u_2$ and for $u_3$.</span></li>
+<li>Subtract: $12 = 6a \Rightarrow a = 2$ <span class="why">Solve simultaneously.</span></li>
+<li>$b = 10 - 8 = 2$ <span class="why">Substitute back.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 25 · P2 · when does it pass a target?</p>
+<p>The tank model is $u_{n+1} = 0.85u_n + 40$, $u_0 = 100$. After how many days does the tank first hold more than 250 litres?</p>
+<details><summary>Show solution</summary>
+<p>Use your calculator's "Ans" key: type 100, then repeatedly enter <code>0.85 × Ans + 40</code>, counting the presses. Write the terms down so the marker can see your method.</p>
+<ol class="step-list">
+<li>$u_1 = 125$, $u_2 = 146.25$, $u_3 = 164.31$, … , $u_{14} = 249.54$, $u_{15} = 252.11$ <span class="why">Generate terms until you pass 250.</span></li>
+<li>The tank first holds more than 250 litres after <b>15 days</b>. <span class="why">State the value of $n$ in context.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Many candidates did not clearly communicate why a limit did not exist … and only some candidates stated the final value of $n$." Use the exact words: "a limit exists (or does not exist) because $a = \dots$, which is (or is not) between $-1$ and $1$." And finish a "how many" question with a sentence that gives the number.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>write a recurrence relation from a description (percentage kept, amount added);</li><li>calculate terms, and find $n$ for a target;</li><li>state the condition for a limit, find the limit and interpret it in context;</li><li>find $a$ and $b$ from given terms.</li></ul></div>
+<div class="check" data-check="alg-recur"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="index.html">← Briefing</a>
+  <a class="btn primary" href="geometry.html">To the chart table: Geometry →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="algebra.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

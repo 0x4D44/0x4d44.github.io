@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculus · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Higher Maths calculus, interactive: differentiation and the chain rule, tangents, increasing functions, stationary points and curve sketching, closed intervals and optimisation, integration, differential equations, definite integrals and areas between curves, with animated graphs and exam-style checks.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The gun deck · rates, gradients and areas</p>
+<h1>Calculus</h1>
+<p class="lede">Calculus is the mathematics of change. Differentiation finds how fast something is changing: the gradient of a curve, the speed of a shot, the rate at which a barrel fills. Integration runs the other way: from a rate back to an amount, or to an area. This deck covers every calculus skill in the course specification, about 15–40% of the marks.</p>
+<p>On HMS Lodestone's gun deck, Captain Grant's gunners already know that a shot climbs fast, slows, hangs at the top and falls. Calculus lets the cadets say exactly how fast, at every instant.</p>
+</div>
+
+<section id="diff" class="prose">
+<h2 data-short="Differentiation">1 · Differentiation: the gradient at a point <span class="spec-tag">CALC · differentiating functions</span></h2>
+<p>A straight line has one gradient everywhere. A curve's steepness changes as you move along it. The gradient of a curve at a point is the gradient of the <dfn>tangent</dfn> there: the straight line that just touches the curve and points the same way.</p>
+<p>The <dfn>derivative</dfn> of $f(x)$, written $f'(x)$ or $\dfrac{dy}{dx}$, is a new function that gives that gradient at every $x$. It also measures a <strong>rate of change</strong>: how fast $y$ is changing compared with $x$.</p>
+<div class="widget" id="w-deriv">
+  <h3 class="widget-title">The gunner's sight: a tangent that slides along the curve</h3>
+  <p class="hint">Move the point along the curve. The red tangent shows the gradient there, and as the point moves, the lower graph plots that gradient against $x$: that is the graph of $f'(x)$. Watch what $f'$ does at turning points.</p>
+</div>
+
+<h3>The rule for powers</h3>
+<p>Differentiation from first principles is not in the course. You need the rule:</p>
+$$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
+<p>"Multiply by the power, then take one off the power." It works for <strong>any</strong> power: whole, negative or fractional. A constant on its own differentiates to 0 (a horizontal line has gradient 0), and each term of a sum is differentiated separately.</p>
+<div class="callout tip"><div class="callout-title">✎ Prepare before you differentiate</div>
+<p>The rule only works on terms of the form $ax^n$. Rewrite everything first:</p>
+<ul>
+<li>roots as powers: $\sqrt{x} = x^{\frac12}$, $\ \sqrt[3]{x^2} = x^{\frac23}$;</li>
+<li>$x$ on the bottom as negative powers: $\dfrac{3}{x^2} = 3x^{-2}$, $\ \dfrac{1}{2x} = \tfrac12x^{-1}$;</li>
+<li>brackets multiplied out: $(x+3)(x-1) = x^2 + 2x - 3$;</li>
+<li>fractions split into separate terms: $\dfrac{x^2 + 4}{x} = x + 4x^{-1}$.</li>
+</ul></div>
+<div class="worked"><p class="worked-title">Worked example 1 · P1 · prepare, then differentiate</p>
+<p>Differentiate $y = 4x^3 - \dfrac{2}{x} + \sqrt{x}$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$y = 4x^3 - 2x^{-1} + x^{\frac12}$ <span class="why">Rewrite with powers of $x$.</span></li>
+<li>$\dfrac{dy}{dx} = 12x^2 + 2x^{-2} + \tfrac12x^{-\frac12}$ <span class="why">Differentiate each term. $-2 \times (-1) = +2$.</span></li>
+<li>$= 12x^2 + \dfrac{2}{x^2} + \dfrac{1}{2\sqrt{x}}$ <span class="why">Positive powers are tidier, though not required unless asked.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 2 · P1 · split the fraction</p>
+<p>$f(x) = \dfrac{2x^2 - 3}{x}$, $x \ne 0$. Find $f'(x)$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f(x) = \dfrac{2x^2}{x} - \dfrac{3}{x} = 2x - 3x^{-1}$ <span class="why">Divide each term on top by $x$.</span></li>
+<li>$f'(x) = 2 + 3x^{-2}$ <span class="why">Differentiate.</span></li>
+</ol>
+</details></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Can't I just differentiate the top and the bottom of a fraction separately?"</p><p><strong>Flight Lieutenant Murray:</strong> "No. There's no rule like that at Higher. With $\frac{2x^2 - 3}{x}$, differentiating top and bottom gives $\frac{4x}{1} = 4x$, but the true answer is $2 + \frac{3}{x^2}$. Divide through first, so that every term is a single power of $x$."</p></div>
+
+<h3>Sine and cosine</h3>
+<p>Watch the tangent slide along $y = \sin x$ in the widget: the gradient is largest at $x = 0$, zero at the peaks and most negative at $x = \pi$. That is the cosine graph. When $x$ is in <strong>radians</strong>:</p>
+<div class="eq-grid">
+  <div class="eq-card">$$\frac{d}{dx}(\sin x) = \cos x$$<p>So $\frac{d}{dx}(k\sin x) = k\cos x$.</p></div>
+  <div class="eq-card">$$\frac{d}{dx}(\cos x) = -\sin x$$<p>Note the minus sign. $\frac{d}{dx}(k\cos x) = -k\sin x$.</p></div>
+</div>
+<p>The formulae list gives $\frac{d}{dx}(\sin ax) = a\cos ax$ and $\frac{d}{dx}(\cos ax) = -a\sin ax$. These rules are only true in radians.</p>
+<div class="worked"><p class="worked-title">Worked example 3 · P1 · trig derivative at an exact value</p>
+<p>$f(x) = 5\sin x - 3\cos x$. Find the exact value of $f'\left(\frac{\pi}{3}\right)$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f'(x) = 5\cos x + 3\sin x$ <span class="why">$-3 \times (-\sin x) = +3\sin x$.</span></li>
+<li>$f'\left(\tfrac{\pi}{3}\right) = 5 \times \tfrac12 + 3 \times \tfrac{\sqrt3}{2} = \dfrac{5 + 3\sqrt3}{2}$ <span class="why">Exact values.</span></li>
+</ol>
+</details></div>
+<h3>Rates of change</h3>
+<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the distance of a minecart along its track after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling.</p>
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · a velocity</p>
+<p>A minecart's displacement after $t$ seconds is $s = t^3 - 6t^2 + 9t$ metres. Find its velocity when $t = 4$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$v = \dfrac{ds}{dt} = 3t^2 - 12t + 9$ <span class="why">Velocity is the rate of change of displacement.</span></li>
+<li>$t = 4$: $v = 48 - 48 + 9 = 9$ m s$^{-1}$ <span class="why">Substitute.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>rewrite roots, fractions and brackets as powers of $x$, then differentiate;</li><li>differentiate $k\sin x$ and $k\cos x$ (radians);</li><li>use a derivative as a rate of change.</li></ul></div>
+<div class="check" data-check="calc-diff"></div>
+</section>
+
+<section id="chain" class="prose">
+<h2 data-short="The chain rule">2 · The chain rule <span class="spec-tag">CALC · composite functions</span></h2>
+<p>How do you differentiate $(3x - 1)^5$? You could multiply it out, but that is slow, and for $\sqrt{x^2 + 5}$ it's impossible. These are composite functions: an inner function inside an outer one. Their derivative is given by the <dfn>chain rule</dfn>:</p>
+$$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \frac{d}{dx}f\big(g(x)\big) = f'\big(g(x)\big) \times g'(x).$$
+<p>In words: <strong>differentiate the outside (leaving the inside alone), then multiply by the derivative of the inside.</strong></p>
+<p>Think of gears in the capstan's gearbox. If the middle gear $u$ turns 3 times for every turn of $x$, and the last gear $y$ turns 80 times for every turn of $u$, then $y$ turns $3 \times 80 = 240$ times for every turn of $x$. Rates of change in a chain multiply.</p>
+<div class="widget" id="w-gears">
+  <h3 class="widget-title">The capstan's gearbox: rates multiply</h3>
+  <p class="hint">Pick a composite function and a value of $x$. Each gear turns at the rate shown, and the last gear's speed is the product. Compare it with the gradient measured directly from the graph.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · the chain rule four ways</p>
+<p>Differentiate (a) $(3x - 1)^5$, (b) $\sqrt{x^2 + 5}$, (c) $\dfrac{1}{(2x + 1)^3}$, (d) $\cos^3 x$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $5(3x - 1)^4 \times 3 = 15(3x - 1)^4$ <span class="why">Outside: power 5. Inside: $3x - 1$ differentiates to 3.</span></li>
+<li>(b) $(x^2 + 5)^{\frac12} \to \tfrac12(x^2 + 5)^{-\frac12} \times 2x = \dfrac{x}{\sqrt{x^2 + 5}}$ <span class="why">Rewrite the root as a power first.</span></li>
+<li>(c) $(2x + 1)^{-3} \to -3(2x + 1)^{-4} \times 2 = -6(2x + 1)^{-4}$ <span class="why">Negative power.</span></li>
+<li>(d) $(\cos x)^3 \to 3(\cos x)^2 \times (-\sin x) = -3\cos^2 x\sin x$ <span class="why">$\cos^3 x$ means $(\cos x)^3$: the inside is $\cos x$.</span></li>
+</ol>
+</details></div>
+<p>The trig rules on the formulae list are the chain rule in action: $\frac{d}{dx}\sin(3x - \frac{\pi}{4}) = \cos(3x - \frac{\pi}{4}) \times 3$.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the inside derivative</div><p>The most common chain-rule error is forgetting to multiply by the derivative of the inside. A quick check: if the inside is just $x$, the extra factor is 1 and you are back to the ordinary rule. If the inside is anything else, there <em>must</em> be an extra factor.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>differentiate $(ax + b)^n$ and other composites, including roots and negative powers;</li><li>differentiate $\sin(ax + b)$, $\cos(ax + b)$ and powers of $\sin x$ and $\cos x$.</li></ul></div>
+<div class="check" data-check="calc-chain"></div>
+</section>
+
+<section id="tangents" class="prose">
+<h2 data-short="Tangents; increasing">3 · Tangents, and increasing or decreasing <span class="spec-tag">CALC · properties of functions</span></h2>
+<h3>The equation of a tangent</h3>
+<p>To find the equation of the tangent to $y = f(x)$ at $x = a$ you need a point and a gradient:</p>
+<ol>
+<li><strong>Point:</strong> $y = f(a)$, so the point is $(a, f(a))$.</li>
+<li><strong>Gradient:</strong> $m = f'(a)$.</li>
+<li><strong>Equation:</strong> $y - f(a) = m(x - a)$.</li>
+</ol>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · from the specimen paper</p>
+<p>A curve has equation $y = x^2 - 4x + 7$. Find the equation of the tangent to this curve at the point where $x = 5$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$y = 25 - 20 + 7 = 12$, so the point is $(5, 12)$ <span class="why">Find the $y$-coordinate.</span></li>
+<li>$\dfrac{dy}{dx} = 2x - 4$ <span class="why">Differentiate.</span></li>
+<li>$m = 2(5) - 4 = 6$ <span class="why">Gradient at $x = 5$.</span></li>
+<li>$y - 12 = 6(x - 5) \Rightarrow y = 6x - 18$ <span class="why">Equation of the line.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · working backwards from a gradient</p>
+<p>Find the points on $y = x^3 - 3x^2$ where the gradient of the tangent is 9.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\dfrac{dy}{dx} = 3x^2 - 6x = 9$ <span class="why">Set the derivative equal to the gradient.</span></li>
+<li>$3x^2 - 6x - 9 = 0 \Rightarrow 3(x - 3)(x + 1) = 0 \Rightarrow x = 3$ or $x = -1$ <span class="why">Solve.</span></li>
+<li>$(3, 0)$ and $(-1, -4)$ <span class="why">Find each $y$ from the curve's equation.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>Asked for the gradient of a tangent, "a few candidates did additional unnecessary working and found the equation of the tangent line". Answer the question that is asked: a gradient is a number.</p></div>
+
+<h3>Increasing and decreasing</h3>
+<p>A function is <dfn>strictly increasing</dfn> where its graph goes up from left to right, which is where its gradient is positive: $f'(x) \gt 0$. It is <dfn>strictly decreasing</dfn> where $f'(x) \lt 0$.</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · find where a function decreases</p>
+<p>Find the values of $x$ for which $f(x) = 2x^3 - 3x^2 - 12x$ is strictly decreasing.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f'(x) = 6x^2 - 6x - 12$ <span class="why">Differentiate.</span></li>
+<li>$f'(x) \lt 0$ for strictly decreasing <span class="why">State the condition: it carries a mark.</span></li>
+<li>$6(x - 2)(x + 1) \lt 0$ <span class="why">Factorise.</span></li>
+<li>$-1 \lt x \lt 2$ <span class="why">The $\cup$-shaped parabola $f'$ is negative between its roots. Sketch it to check.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · never decreasing</p>
+<p>Show that $f(x) = x^3 + 3x^2 + 3x + 5$ is never decreasing.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$f'(x) = 3x^2 + 6x + 3$ <span class="why">Differentiate.</span></li>
+<li>$= 3(x^2 + 2x + 1) = 3(x + 1)^2$ <span class="why">Factorise (or complete the square).</span></li>
+<li>$(x + 1)^2 \ge 0$ for all $x$, so $f'(x) \ge 0$ and $f$ is never decreasing. <span class="why">A square is never negative. Communicate.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a question about where a function is strictly decreasing, "some candidates did not state the necessary condition ($f'(x) \lt 0$ or $12x^2 - 24x \lt 0$)". Write the condition down before you solve it.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find the equation of a tangent at a given point;</li><li>find the point(s) where the tangent has a given gradient;</li><li>find where a function is increasing or decreasing, stating the condition on $f'(x)$.</li></ul></div>
+<div class="check" data-check="calc-tangent"></div>
+</section>
+
+<section id="stationary" class="prose">
+<h2 data-short="Stationary points; sketching">4 · Stationary points and curve sketching <span class="spec-tag">CALC · properties of functions</span></h2>
+<p>At the top of a shot's flight the gradient is zero for an instant: the shot is moving neither up nor down. Points where $f'(x) = 0$ are called <dfn>stationary points</dfn>. There are three kinds:</p>
+<figure class="diagram"><svg viewBox="0 0 640 170" role="img" aria-label="Three kinds of stationary point. A maximum turning point: gradient positive, then zero, then negative. A minimum turning point: negative, zero, positive. A rising point of inflection: positive, zero, positive. A falling point of inflection is negative, zero, negative.">
+<g fill="none" stroke-width="3"><path d="M30 120 Q100 -10 170 120" class="s-sea"/><path d="M240 30 Q310 160 380 30" class="s-red"/><path d="M450 140 C 500 70, 520 80, 535 80 C 550 80, 570 90, 620 20" class="s-gold"/></g>
+<g stroke-width="2.5" class="stroke-ink"><line x1="80" y1="55" x2="120" y2="55"/><line x1="290" y1="95" x2="330" y2="95"/><line x1="515" y1="80" x2="555" y2="80"/></g>
+<g font-size="15" font-weight="700" class="ink" text-anchor="middle"><text x="100" y="160">maximum: + 0 −</text><text x="310" y="160">minimum: − 0 +</text><text x="535" y="160">rising inflection: + 0 +</text></g>
+</svg><figcaption>The signs are the signs of $f'(x)$ just before, at and just after the point. A falling point of inflection is $-\ 0\ -$.</figcaption></figure>
+<p>To find the nature of each stationary point, use a <dfn>nature table</dfn>: check the sign of $f'(x)$ on each side of it. (Advanced Higher uses the second derivative; at Higher, the table is expected.)</p>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · stationary points of a cubic</p>
+<p>Find the stationary points of $y = x^3 - 3x^2 - 9x + 5$ and determine their nature.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\dfrac{dy}{dx} = 3x^2 - 6x - 9$ <span class="why">Differentiate.</span></li>
+<li>$3x^2 - 6x - 9 = 0$ <span class="why">Set the derivative to zero: this is the stationary-point condition.</span></li>
+<li>$3(x - 3)(x + 1) = 0 \Rightarrow x = -1$ or $x = 3$ <span class="why">Solve.</span></li>
+<li>$(-1, 10)$ and $(3, -22)$ <span class="why">Substitute into the original equation for $y$.</span></li>
+<li>Nature table (below): maximum turning point at $(-1, 10)$, minimum turning point at $(3, -22)$. <span class="why">Signs of $\frac{dy}{dx}$ either side.</span></li>
+</ol>
+<div class="table-wrap"><table class="nature-table">
+<thead><tr><th>$x$</th><th>$\to -1^-$</th><th>$-1$</th><th>$\to -1^+$</th><th>$\to 3^-$</th><th>$3$</th><th>$\to 3^+$</th></tr></thead>
+<tbody>
+<tr><th scope="row">$x - 3$</th><td>−</td><td>−</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">$x + 1$</th><td>−</td><td>0</td><td>+</td><td>+</td><td>+</td><td>+</td></tr>
+<tr><th scope="row">$\frac{dy}{dx}$</th><td>+</td><td>0</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">slope</th><td>↗</td><td>→</td><td>↘</td><td>↘</td><td>→</td><td>↗</td></tr>
+</tbody></table></div>
+</details></div>
+<div class="widget" id="w-nature">
+  <h3 class="widget-title">Rising and falling: a live nature table</h3>
+  <p class="hint">Change the cubic's coefficients. The curve is green where it increases and red where it decreases. The widget finds the stationary points and fills in the nature table.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates did not write consistent lines of working", for example jumping between unequal expressions while factorising $3x^2 + 4x - 4$, and "inconsistencies prevented the responses that reached the correct factorised form from gaining full marks." Every line must equal the line before it.</p></div>
+
+<h3>Sketching a curve</h3>
+<p>To sketch $y = f(x)$, find and label:</p>
+<ul>
+<li>where it cuts the axes: the $y$-intercept ($x = 0$) and the roots ($y = 0$, often by factorising);</li>
+<li>the stationary points and their nature;</li>
+<li>what happens for large positive and negative $x$: the highest power dominates. For $x^3$, $y \to +\infty$ as $x \to +\infty$ and $y \to -\infty$ as $x \to -\infty$; for $-x^4$, $y \to -\infty$ both ways.</li>
+</ul>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · a quartic with a point of inflection</p>
+<p>Sketch $y = x^4 - 4x^3$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Roots: $x^3(x - 4) = 0 \Rightarrow (0, 0)$ and $(4, 0)$; $y$-intercept $(0, 0)$ <span class="why">Axes.</span></li>
+<li>$\dfrac{dy}{dx} = 4x^3 - 12x^2 = 4x^2(x - 3) = 0 \Rightarrow x = 0$ or $x = 3$ <span class="why">Stationary points: $(0, 0)$ and $(3, -27)$.</span></li>
+<li>Signs of $4x^2(x - 3)$: at $x = -1$: $-$; at $x = 1$: $-$; at $x = 4$: $+$ <span class="why">$4x^2$ is never negative, so the sign is the sign of $x - 3$.</span></li>
+<li>$(0, 0)$ is a falling point of inflection ($-\ 0\ -$); $(3, -27)$ is a minimum ($-\ 0\ +$). <span class="why">Nature.</span></li>
+<li>As $x \to \pm\infty$, $y \to +\infty$ ($x^4$ dominates). <span class="why">Ends of the graph.</span></li>
+</ol>
+<figure class="diagram" style="margin:.6em 0 0"><svg viewBox="0 0 360 230" style="max-width:360px" role="img" aria-label="Sketch of y equals x to the fourth minus 4 x cubed: it comes down from the top left, flattens at the origin (a falling point of inflection), falls to a minimum at (3, minus 27), and rises steeply through (4, 0).">
+<line x1="20" y1="60" x2="350" y2="60" class="stroke-ink" stroke-width="1.5"/><line x1="100" y1="10" x2="100" y2="225" class="stroke-ink" stroke-width="1.5"/>
+<path d="M50.0 32.5 L53.2 37.8 L56.4 42.3 L59.7 46.1 L62.9 49.3 L66.1 52.0 L69.3 54.1 L72.5 55.9 L75.8 57.2 L79.0 58.2 L82.2 58.9 L85.4 59.4 L88.6 59.7 L91.8 59.9 L95.1 60.0 L98.3 60.0 L101.5 60.0 L104.7 60.0 L107.9 60.1 L111.2 60.2 L114.4 60.5 L117.6 60.9 L120.8 61.4 L124.0 62.1 L127.2 63.1 L130.5 64.2 L133.7 65.6 L136.9 67.2 L140.1 69.1 L143.3 71.2 L146.6 73.6 L149.8 76.3 L153.0 79.3 L156.2 82.5 L159.4 86.0 L162.7 89.7 L165.9 93.7 L169.1 98.0 L172.3 102.5 L175.5 107.2 L178.8 112.1 L182.0 117.2 L185.2 122.5 L188.4 127.9 L191.6 133.4 L194.8 138.9 L198.1 144.6 L201.3 150.3 L204.5 155.9 L207.7 161.5 L210.9 167.0 L214.2 172.4 L217.4 177.6 L220.6 182.5 L223.8 187.3 L227.0 191.6 L230.3 195.6 L233.5 199.2 L236.7 202.3 L239.9 204.8 L243.1 206.7 L246.3 208.0 L249.6 208.5 L252.8 208.2 L256.0 207.0 L259.2 204.9 L262.4 201.7 L265.7 197.4 L268.9 191.9 L272.1 185.2 L275.3 177.1 L278.5 167.5 L281.8 156.4 L285.0 143.7 L288.2 129.3 L291.4 113.0 L294.6 94.9 L297.8 74.7 L301.1 52.4 L304.3 27.9 L307.5 1.0" fill="none" class="s-red" stroke-width="3"/>
+<circle cx="100" cy="60" r="4" class="f-red"/><circle cx="250" cy="208.5" r="4" class="f-red"/><circle cx="300" cy="60" r="4" class="f-red"/>
+<g font-size="13" class="ink"><text x="106" y="52">(0, 0)</text><text x="258" y="212">(3, −27)</text><text x="304" y="52">(4, 0)</text><text x="340" y="76">x</text><text x="106" y="20">y</text></g>
+</svg></figure>
+</details></div>
+
+<h3>The graph of the derived function</h3>
+<p>You may be asked to sketch $y = f'(x)$ from the graph of $y = f(x)$, without an equation. Read off the gradient of $f$ as you move along it:</p>
+<ul>
+<li>where $f$ has a stationary point, $f'$ crosses or touches the $x$-axis;</li>
+<li>where $f$ is increasing, $f'$ is above the axis; where $f$ is decreasing, $f'$ is below;</li>
+<li>where $f$ is steepest, $f'$ is furthest from the axis.</li>
+</ul>
+<p>The derivative widget in <a href="#diff">chapter 1</a> draws exactly this. A cubic's derivative is a parabola; a quartic's is a cubic.</p>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find stationary points and justify their nature with a nature table;</li><li>sketch a curve showing intercepts, stationary points and behaviour for large $|x|$;</li><li>sketch $y = f'(x)$ from the graph of $y = f(x)$.</li></ul></div>
+<div class="check" data-check="calc-stat"></div>
+</section>
+
+<section id="optimise" class="prose">
+<h2 data-short="Optimisation">5 · Closed intervals and optimisation <span class="spec-tag">CALC · applying differential calculus</span></h2>
+<h3>Greatest and least values on a closed interval</h3>
+<p>On a <dfn>closed interval</dfn> $a \le x \le b$, the greatest or least value of a function can occur at a stationary point <strong>or at an end of the interval</strong>. So evaluate $f$ at every stationary point inside the interval and at both endpoints, then compare.</p>
+<div class="widget" id="w-interval">
+  <h3 class="widget-title">The firing arc: greatest and least on a closed interval</h3>
+  <p class="hint">The curve is $f(x) = x^3 - 3x^2 - 9x + 5$. Move the ends of the interval. Sometimes the greatest value is the maximum turning point; sometimes it is an endpoint.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · an endpoint wins</p>
+<p>Find the greatest and least values of $f(x) = x^3 - 3x^2 - 9x + 5$ on the interval $-2 \le x \le 6$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>Stationary points at $x = -1$ and $x = 3$ (worked example 10), both inside the interval. <span class="why">$f'(x) = 3(x-3)(x+1) = 0$.</span></li>
+<li>$f(-1) = 10$, $f(3) = -22$ <span class="why">Values at the stationary points.</span></li>
+<li>$f(-2) = 3$, $f(6) = 216 - 108 - 54 + 5 = 59$ <span class="why">Values at the endpoints.</span></li>
+<li>Greatest value $59$ (at $x = 6$); least value $-22$ (at $x = 3$) <span class="why">Compare all four.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Few candidates checked the endpoints of the closed interval and only focused on the nature of stationary points." Others "obtained incorrect values when evaluating the function". Evaluate carefully, with brackets round negatives.</p></div>
+
+<h3>Optimisation</h3>
+<p>An optimisation problem asks for the best: the largest volume, the least cost, the shortest time. The method:</p>
+<ol>
+<li>Get a formula for the quantity in terms of <strong>one</strong> variable (the question often gives it, or a "show that" part leads you there).</li>
+<li>Differentiate, set the derivative to zero, solve.</li>
+<li>Reject values that make no sense in context (a negative length, a box with no base).</li>
+<li><strong>Justify</strong> that it is a maximum (or minimum) with a nature table.</li>
+<li>Answer the question, with units.</li>
+</ol>
+<div class="widget" id="w-box">
+  <h3 class="widget-title">Copper sheathing: the biggest box from a sheet</h3>
+  <p class="hint">The ship's carpenter cuts a square of side $x$ from each corner of a 24 cm by 15 cm copper sheet and folds up the sides to make an open box. Slide $x$ and watch the box fold and the volume graph trace out. Which $x$ gives the most volume?</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · the copper box</p>
+<p>The box above has volume $V(x) = x(24 - 2x)(15 - 2x) = 4x^3 - 78x^2 + 360x$. Find the value of $x$ that gives the greatest volume, and the greatest volume.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$V'(x) = 12x^2 - 156x + 360$ <span class="why">Differentiate.</span></li>
+<li>$12x^2 - 156x + 360 = 0 \Rightarrow 12(x^2 - 13x + 30) = 0 \Rightarrow 12(x - 3)(x - 10) = 0$ <span class="why">Set $V'(x) = 0$ and solve.</span></li>
+<li>$x = 3$ (reject $x = 10$: the sheet is only 15 cm wide, so $x \lt 7.5$) <span class="why">Use the context.</span></li>
+<li>$V'(2) = 96 \gt 0$, $V'(4) = -72 \lt 0$: $+\ 0\ -$, a maximum. <span class="why">Justify the nature.</span></li>
+<li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
+</ol>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 14 · P1 · a minimum</p>
+<p>An open-topped water tank has a square base of side $x$ metres and holds 32 m³. Its surface area is $A = x^2 + \dfrac{128}{x}$. Find the dimensions that use the least metal.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
+<li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
+<li>$A'(3) = 6 - 14.2 \lt 0$, $A'(5) = 10 - 5.12 \gt 0$: $-\ 0\ +$, a minimum. <span class="why">Nature table.</span></li>
+<li>Base 4 m by 4 m, height $\frac{32}{16} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find greatest and least values on a closed interval, checking endpoints;</li><li>solve optimisation problems and justify the nature of the optimum;</li><li>solve problems about rates of change.</li></ul></div>
+<div class="check" data-check="calc-optim"></div>
+</section>
+
+<section id="integrate" class="prose">
+<h2 data-short="Integration">6 · Integration <span class="spec-tag">CALC · integrating functions</span></h2>
+<p><dfn>Integration</dfn> undoes differentiation. If $F'(x) = f(x)$, then $F(x)$ is an <dfn>integral</dfn> (or antiderivative) of $f(x)$. Since a constant differentiates to zero, there is a whole family of answers, so we add an arbitrary <dfn>constant of integration</dfn> $C$:</p>
+$$\int f(x)\,dx = F(x) + C.$$
+<div class="eq-grid">
+  <div class="eq-card">$$\int ax^n\,dx = \frac{ax^{n+1}}{n+1} + C$$<p>"Add one to the power, divide by the new power." $n \ne -1$.</p></div>
+  <div class="eq-card">$$\int (px + q)^n\,dx = \frac{(px + q)^{n+1}}{p(n+1)} + C$$<p>Also divide by $p$, the derivative of the inside. $n \ne -1$.</p></div>
+  <div class="eq-card">$$\int \cos ax\,dx = \tfrac1a\sin ax + C$$<p>On the formulae list.</p></div>
+  <div class="eq-card">$$\int \sin ax\,dx = -\tfrac1a\cos ax + C$$<p>On the formulae list. Watch the minus.</p></div>
+</div>
+<p>As with differentiation, rewrite roots and fractions as powers of $x$ before you integrate. And check your answer by differentiating it: you should get back to the original.</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · indefinite integrals</p>
+<p>Find (a) $\displaystyle\int \left(\frac{3}{x^3} + \sqrt{x}\right)dx$, (b) $\displaystyle\int (2x + 1)^4\,dx$, (c) $\displaystyle\int 4\sin\left(2x - \tfrac{\pi}{3}\right)dx$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\displaystyle\int (3x^{-3} + x^{\frac12})\,dx = \frac{3x^{-2}}{-2} + \frac{x^{\frac32}}{\frac32} + C = -\frac{3}{2x^2} + \frac23x^{\frac32} + C$ <span class="why">Rewrite, then add one to each power.</span></li>
+<li>(b) $\dfrac{(2x + 1)^5}{2 \times 5} + C = \dfrac{(2x + 1)^5}{10} + C$ <span class="why">Divide by the new power and by $p = 2$.</span></li>
+<li>(c) $4 \times \left(-\tfrac12\right)\cos\left(2x - \tfrac{\pi}{3}\right) + C = -2\cos\left(2x - \tfrac{\pi}{3}\right) + C$ <span class="why">The integral of $\sin$ is $-\cos$, divided by the 2.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On an indefinite integral, "a few candidates did not include a constant of integration at an appropriate point in their solution". Every indefinite integral needs $+\,C$.</p></div>
+
+<h3>Differential equations</h3>
+<p>An equation like $\dfrac{dy}{dx} = 6x^2 - 2x$ gives the gradient of a curve but not the curve itself. Integrating gives the whole family $y = 2x^3 - x^2 + C$. One known point on the curve (an <dfn>initial condition</dfn>) picks out the single member you want.</p>
+<div class="widget" id="w-family">
+  <h3 class="widget-title">One gradient, many curves: the constant of integration</h3>
+  <p class="hint">Every curve in the family has the same gradient at each $x$, so they are vertical shifts of each other. Drag $C$ to pick one, or drag the point the curve must pass through and let the widget solve for $C$.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · a curve from its gradient</p>
+<p>A curve has $\dfrac{dy}{dx} = 6x^2 - 2x$ and passes through $(1, 5)$. Find its equation.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$y = \displaystyle\int (6x^2 - 2x)\,dx = 2x^3 - x^2 + C$ <span class="why">Integrate. Include $C$.</span></li>
+<li>$5 = 2(1)^3 - (1)^2 + C \Rightarrow C = 4$ <span class="why">Use the point.</span></li>
+<li>$y = 2x^3 - x^2 + 4$ <span class="why">State the equation.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>integrate powers of $x$ (after rewriting), $(px + q)^n$, $p\sin(qx + r)$ and $p\cos(qx + r)$;</li><li>always include $+\,C$ in an indefinite integral;</li><li>solve $\frac{dy}{dx} = f(x)$ with an initial condition.</li></ul></div>
+<div class="check" data-check="calc-int"></div>
+</section>
+
+<section id="area" class="prose">
+<h2 data-short="Definite integrals; area">7 · Definite integrals and area <span class="spec-tag">CALC · applying integral calculus</span></h2>
+<p>A <dfn>definite integral</dfn> has limits, and gives a number:</p>
+$$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
+<p>No $+\,C$ is needed, because it would cancel. Limits can be integers, fractions, surds or radians.</p>
+<div class="worked"><p class="worked-title">Worked example 17 · P1 · evaluate</p>
+<p>Evaluate (a) $\displaystyle\int_1^3 (3x^2 - 2x)\,dx$, (b) $\displaystyle\int_0^{\pi/4} 4\cos 2x\,dx$, (c) $\displaystyle\int_0^1 (2x + 1)^3\,dx$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>(a) $\Big[x^3 - x^2\Big]_1^3 = (27 - 9) - (1 - 1) = 18$ <span class="why">Integrate, then top limit minus bottom limit, each in brackets.</span></li>
+<li>(b) $\Big[2\sin 2x\Big]_0^{\pi/4} = 2\sin\tfrac{\pi}{2} - 2\sin 0 = 2$ <span class="why">Radians. $\sin\frac{\pi}{2} = 1$.</span></li>
+<li>(c) $\left[\dfrac{(2x + 1)^4}{8}\right]_0^1 = \dfrac{81}{8} - \dfrac18 = 10$ <span class="why">$3^4 = 81$ and $1^4 = 1$.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a trig definite integral, a few candidates "attempted to expand the integrand in an invalid way or started to work in degrees before completing the integration", and some "did not calculate $\cos 0$ and $\cos\frac{\pi}{2}$ correctly without a calculator". The report also notes that some "did not use the formulae list effectively". The list gives you $\int\sin ax\,dx$: use it.</p></div>
+
+<h3>Area under a curve</h3>
+<p>Slice the region under a curve into thin vertical strips. Each strip is nearly a rectangle with area $f(x) \times$ width. As the strips get thinner, the total of their areas gets closer and closer to the definite integral. This is why integration finds area.</p>
+<div class="widget" id="w-riemann">
+  <h3 class="widget-title">Planking the deck: strips that become an area</h3>
+  <p class="hint">Choose a curve and the limits, then increase the number of strips. The total area of the strips approaches the definite integral. Strips below the $x$-axis count as <b>negative</b>, which is why an area below the axis needs care.</p>
+</div>
+<p>The important rule: a definite integral counts area <strong>above</strong> the $x$-axis as positive and area <strong>below</strong> as negative. So:</p>
+<ul>
+<li>if the curve is below the axis, the integral is negative: the area is its size (drop the minus sign, and say why);</li>
+<li>if the curve crosses the axis between the limits, split the integral at the root, and add the sizes of the two parts.</li>
+</ul>
+<div class="worked"><p class="worked-title">Worked example 18 · P2 · an area below the axis</p>
+<p>Calculate the area enclosed by the curve $y = x^2 - x - 2$ and the $x$-axis.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 - x - 2 = (x - 2)(x + 1) = 0 \Rightarrow x = -1$, $x = 2$ <span class="why">The limits are the roots.</span></li>
+<li>$\displaystyle\int_{-1}^{2} (x^2 - x - 2)\,dx$ <span class="why">State the integral, including the $dx$.</span></li>
+<li>$= \left[\dfrac{x^3}{3} - \dfrac{x^2}{2} - 2x\right]_{-1}^{2} = \left(\dfrac83 - 2 - 4\right) - \left(-\dfrac13 - \dfrac12 + 2\right) = -\dfrac92$ <span class="why">Integrate and substitute.</span></li>
+<li>The region is below the $x$-axis, so the integral is negative: the area is $\dfrac92 = 4.5$ square units. <span class="why">Communicate why the area is positive.</span></li>
+</ol>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>A question just like this appeared in 2026. "Some candidates did not include '$dx$' in their statement of the definite integral." "Many candidates who calculated $\int_{-1}^{2}(x^2 - x - 2)\,dx$ did not effectively communicate that the area would be positive." And on Paper 2, "most candidates included additional lines of working instead of using their calculator efficiently".</p></div>
+
+<h3>Area between two curves</h3>
+<p>The area between an upper curve $y = f(x)$ and a lower curve $y = g(x)$, from $x = a$ to $x = b$, is</p>
+$$\int_a^b \big(f(x) - g(x)\big)\,dx \qquad\text{(upper minus lower).}$$
+<p>This works even if part of the region is below the $x$-axis, because only the gap between the curves matters. The limits are usually the $x$-coordinates of the points where the curves meet.</p>
+<div class="widget" id="w-between">
+  <h3 class="widget-title">Between the swells: the area between two curves</h3>
+  <p class="hint">The region lies between $y = x^2$ and the line $y = 2x + c$. Change $c$. The widget finds where they meet, sets up "upper minus lower" and evaluates the integral.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 19 · P1 · a line and a parabola</p>
+<p>Find the area enclosed by $y = x^2$ and $y = 2x + 3$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$x^2 = 2x + 3 \Rightarrow (x - 3)(x + 1) = 0 \Rightarrow x = -1$, $x = 3$ <span class="why">Limits from the intersections.</span></li>
+<li>$\displaystyle\int_{-1}^{3} \big(2x + 3 - x^2\big)\,dx$ <span class="why">The line is above the parabola between them (check $x = 0$: $3 \gt 0$).</span></li>
+<li>$= \left[x^2 + 3x - \dfrac{x^3}{3}\right]_{-1}^{3} = (9 + 9 - 9) - \left(1 - 3 + \dfrac13\right) = 9 + \dfrac53$ <span class="why">Integrate and evaluate.</span></li>
+<li>$= \dfrac{32}{3}$ square units <span class="why">Positive, as it must be for upper minus lower.</span></li>
+</ol>
+</details></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>evaluate definite integrals with integer, fraction, surd or radian limits;</li><li>find the area between a curve and the $x$-axis, dealing with regions below the axis;</li><li>find the area between a line and a curve, or two curves.</li></ul></div>
+<div class="check" data-check="calc-area"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="trig.html">← Trigonometry</a>
+  <a class="btn primary" href="exam.html">To the quarterdeck: Exam drill →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="calculus.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

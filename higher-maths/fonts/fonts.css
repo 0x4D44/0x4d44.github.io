@@ -1,0 +1,9 @@
+/* Self-hosted Google Fonts (SIL Open Font License), latin subsets.
+   Variable files: one file serves every weight. */
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 400; font-display: swap; src: url(AtkinsonHyperlegible-400.woff2) format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 700; font-display: swap; src: url(AtkinsonHyperlegible-700.woff2) format("woff2"); }
+@font-face { font-family: "IM Fell English SC"; font-weight: 400; font-display: swap; src: url(IMFellEnglishSC-400.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 100 900; font-display: swap; src: url(JetBrainsMono-700.woff2) format("woff2"); }
+@font-face { font-family: "Pixelify Sans"; font-weight: 400 700; font-display: swap; src: url(PixelifySans-700.woff2) format("woff2"); }
+/* Pixelify's "5" reads as "S": borrow JetBrains Mono's digits for every pixel heading. */
+@font-face { font-family: "HC Digits"; font-weight: 100 900; font-display: swap; src: url(JetBrainsMono-700.woff2) format("woff2"); unicode-range: U+0030-0039; }
