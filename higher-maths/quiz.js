@@ -170,9 +170,9 @@
         { q: R`$A$ is the origin and $B$ is $(8, 4, -4)$. $P$ divides $AB$ in the ratio $1 : 3$. What are the coordinates of $P$?`, opts: [R`$(2, 1, -1)$`, R`$(6, 3, -3)$`, R`$(\tfrac83, \tfrac43, -\tfrac43)$`, R`$(4, 2, -2)$`], a: 0, why: R`$P$ is $\tfrac14$ of the way from $A$ to $B$: $\tfrac14(8, 4, -4) = (2, 1, -1)$.` },
         { q: R`$\overrightarrow{AB} = 3\overrightarrow{BC}$. Which conclusion is correctly communicated?`, opts: [R`The points $A$, $B$, $C$ are parallel.`, R`$AB$ is parallel to $BC$, and $B$ is a common point, so $A$, $B$ and $C$ are collinear.`, R`The lines $AB$ and $BC$ are collinear.`, R`The gradient of $\overrightarrow{AB}$ is 3.`], a: 1, why: R`Vectors (line segments) are parallel; points are collinear. You also need the common point. These are exactly the slips the 2026 course report lists.` },
         { type: "open", q: R`Show that the points $P(-1, 3, 2)$, $Q(1, 4, 5)$ and $R(5, 6, 11)$ are collinear.`, marks: 3, model: mi(
-          R`•1 find two vectors: $\overrightarrow{PQ} = \begin{pmatrix}2\\1\\3\end{pmatrix}$, $\overrightarrow{QR} = \begin{pmatrix}4\\2\\6\end{pmatrix}$`,
-          R`•2 $\overrightarrow{QR} = 2\overrightarrow{PQ}$, so $PQ$ is parallel to $QR$`,
-          R`•3 $Q$ is a common point, so $P$, $Q$ and $R$ are collinear`) },
+          R`•1 $\overrightarrow{PQ} = \begin{pmatrix}2\\1\\3\end{pmatrix}$`,
+          R`•2 $\overrightarrow{QR} = \begin{pmatrix}4\\2\\6\end{pmatrix}$, so $\overrightarrow{QR} = 2\overrightarrow{PQ}$`,
+          R`•3 $PQ$ and $QR$ are parallel, $Q$ is a common point, so $P$, $Q$ and $R$ are collinear (all three statements needed for this mark)`) },
       ],
     },
     "geo-dot": {
@@ -183,11 +183,12 @@
         { q: R`For which value of $t$ are $\begin{pmatrix}t\\2\\1\end{pmatrix}$ and $\begin{pmatrix}3\\t\\-4\end{pmatrix}$ perpendicular?`, opts: [R`$t = \tfrac45$`, R`$t = 4$`, R`$t = -\tfrac45$`, R`$t = 2$`], a: 0, why: R`Perpendicular: scalar product zero. $3t + 2t - 4 = 0$, so $5t = 4$ and $t = \tfrac45$.` },
         { q: R`To find the size of angle $PQR$ with the scalar product, which two vectors should you use?`, opts: [R`$\overrightarrow{PQ}$ and $\overrightarrow{QR}$`, R`$\overrightarrow{QP}$ and $\overrightarrow{QR}$`, R`$\overrightarrow{PR}$ and $\overrightarrow{QR}$`, R`$\overrightarrow{OP}$ and $\overrightarrow{OR}$`], a: 1, why: R`Both vectors must start at the vertex $Q$. $\overrightarrow{PQ}$ and $\overrightarrow{QR}$ would give $180°$ minus the angle.` },
         { q: R`$\mathbf{a}\cdot\mathbf{a}$ is equal to…`, opts: [R`$0$`, R`$1$`, R`$|\mathbf{a}|^2$`, R`$2|\mathbf{a}|$`], a: 2, why: R`The angle between $\mathbf{a}$ and itself is $0°$, and $\cos 0° = 1$, so $\mathbf{a}\cdot\mathbf{a} = |\mathbf{a}||\mathbf{a}|$.` },
-        { type: "open", q: R`Calculate the angle between $\mathbf{u} = \mathbf{i} + 2\mathbf{j} + 2\mathbf{k}$ and $\mathbf{v} = 3\mathbf{i} + 4\mathbf{k}$.`, marks: 4, model: mi(
+        { type: "open", q: R`Calculate the angle between $\mathbf{u} = \mathbf{i} + 2\mathbf{j} + 2\mathbf{k}$ and $\mathbf{v} = 3\mathbf{i} + 4\mathbf{k}$.`, marks: 5, model: mi(
           R`•1 $\mathbf{u}\cdot\mathbf{v} = 1(3) + 2(0) + 2(4) = 11$`,
-          R`•2 $|\mathbf{u}| = 3$, $|\mathbf{v}| = 5$`,
-          R`•3 $\cos\theta = \dfrac{11}{15}$`,
-          R`•4 $\theta = 42.8°$ (or $0.748$ radians)`) },
+          R`•2 $|\mathbf{u}| = \sqrt{1 + 4 + 4} = 3$`,
+          R`•3 $|\mathbf{v}| = \sqrt{9 + 0 + 16} = 5$`,
+          R`•4 $\cos\theta = \dfrac{11}{3 \times 5} = \dfrac{11}{15}$`,
+          R`•5 $\theta = 42.8°$ (or $0.748$ radians)`) },
       ],
     },
 
@@ -415,9 +416,9 @@
           R`•2 $L = \tfrac13L + 10$ or $L = \dfrac{10}{1 - \frac13}$`,
           R`•3 $L = 15$`) },
         { type: "open", q: R`Show that the points $A(1, 3, -2)$, $B(2, 0, 1)$ and $C(5, -9, 10)$ are collinear.`, marks: 3, model: mi(
-          R`•1 $\overrightarrow{AB} = \begin{pmatrix}1\\-3\\3\end{pmatrix}$ and $\overrightarrow{BC} = \begin{pmatrix}3\\-9\\9\end{pmatrix}$`,
-          R`•2 $\overrightarrow{BC} = 3\overrightarrow{AB}$, so $AB$ is parallel to $BC$`,
-          R`•3 $B$ is a common point, so $A$, $B$ and $C$ are collinear`) },
+          R`•1 $\overrightarrow{AB} = \begin{pmatrix}1\\-3\\3\end{pmatrix}$`,
+          R`•2 $\overrightarrow{BC} = \begin{pmatrix}3\\-9\\9\end{pmatrix}$, so $\overrightarrow{BC} = 3\overrightarrow{AB}$`,
+          R`•3 $AB$ and $BC$ are parallel, $B$ is a common point, so $A$, $B$ and $C$ are collinear (all three statements needed for this mark)`) },
       ],
     },
     "exam-p2": {
@@ -428,11 +429,12 @@
           R`•2 compare: $k\cos\alpha° = 2$, $k\sin\alpha° = -5$`,
           R`•3 $k = \sqrt{29}$`,
           R`•4 $\tan\alpha° = -\tfrac52$, fourth quadrant: $\alpha = 291.8$`) },
-        { type: "open", q: R`Calculate the angle between $\mathbf{a} = \mathbf{i} - 2\mathbf{j} + 2\mathbf{k}$ and $\mathbf{b} = 4\mathbf{i} + 3\mathbf{k}$.`, marks: 4, model: mi(
+        { type: "open", q: R`Calculate the angle between $\mathbf{a} = \mathbf{i} - 2\mathbf{j} + 2\mathbf{k}$ and $\mathbf{b} = 4\mathbf{i} + 3\mathbf{k}$.`, marks: 5, model: mi(
           R`•1 $\mathbf{a}\cdot\mathbf{b} = 4 + 0 + 6 = 10$`,
-          R`•2 $|\mathbf{a}| = 3$, $|\mathbf{b}| = 5$`,
-          R`•3 $\cos\theta = \dfrac{10}{15}$`,
-          R`•4 $\theta = 48.2°$`) },
+          R`•2 $|\mathbf{a}| = \sqrt{1 + 4 + 4} = 3$`,
+          R`•3 $|\mathbf{b}| = \sqrt{16 + 0 + 9} = 5$`,
+          R`•4 $\cos\theta = \dfrac{10}{15}$`,
+          R`•5 $\theta = 48.2°$`) },
         { type: "open", q: R`Find the values of $k$ for which $x^2 + (k - 3)x + k = 0$ has equal roots.`, marks: 4, model: mi(
           R`•1 use $b^2 - 4ac = 0$`,
           R`•2 $(k - 3)^2 - 4k = 0$`,
