@@ -2,7 +2,7 @@
    HMS Redstone under sail. Her bow chaser lobs a shot along a true parabola
    (constant horizontal velocity, constant downward acceleration, with the
    trail dots dropped at equal time intervals) while an Air Cadet Grob Tutor
-   tows a banner. Every other pass a shot finds the Tutor: it ditches, and the cadet
+   tows a banner. On every pass a shot finds the Tutor: it ditches, and the cadet
    parachutes onto the ship. Static for prefers-reduced-motion; paused when off-screen. */
 (function () {
   "use strict";
@@ -54,7 +54,7 @@
   }
   let t0 = performance.now(), raf = 0, running = true;
   // hold the routine bow chaser while the aimed shot is in the air, so there is one ball to follow
-  function quietGun(tg) { const P = (W + 300) / 22, n = Math.floor(tg / P), u = tg - n * P; return n % 2 === 0 && u > 6.4 && u < 11.5; }
+  function quietGun(tg) { const P = (W + 300) / 22, n = Math.floor(tg / P), u = tg - n * P; return u > 6.4 && u < 11.5; }
   function frame(now) {
     const t = reduced ? 6 : (now - t0) / 1000;
     // sky
@@ -96,11 +96,11 @@
     while (smoke.length && smoke[0].a <= 0) smoke.shift();
     smoke.forEach((s) => { c.globalAlpha = Math.max(0, s.a); px(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2, "#e8e8e8"); });
     c.globalAlpha = 1;
-    // Air Cadet Tutor towing a banner. Every other pass is the joke pass: the bow chaser
+    // Air Cadet Tutor towing a banner. Every pass is the joke pass: the bow chaser
     // lands one aimed shot, the Tutor goes into the sea, and the cadet pilot parachutes
     // onto the forecastle of the very ship that shot them down.
     const PASS = (W + 300) / 22, pass = Math.floor(t / PASS), tau = t - pass * PASS;
-    const joke = !reduced && pass % 2 === 0;
+    const joke = !reduced;
     const planeY = (tg) => 14 + Math.round(Math.sin(tg * 1.3) * 1.5);
     const shipAt = (tg) => ({ x: 120 + Math.sin(tg * 0.25) * 30, y: 32 + Math.round(Math.sin(tg * 1.6)) });
     const TH = 9.8, FLY = 1.4, TL = TH - FLY;           // hit time, shot flight time, launch time
@@ -129,8 +129,11 @@
         if (s < sW) {
           for (let k = Math.max(0, s - 1.2); k < s; k += 0.08) { const q = plane(k); c.globalAlpha = 0.25 + 0.6 * (k - s + 1.2); px(q.x + 12, q.y + 1, 2, 2, "#3a3a3a"); }
           c.globalAlpha = 1;
-          tutor(pw.x, pw.y);
-          if (Math.floor(s * 12) % 2) px(pw.x + 9, pw.y + 1, 3, 2, "#ff7a1e");
+          // tip nose-down as it falls (the nose is on the left, so a negative turn)
+          c.save(); c.translate(pw.x + 7, pw.y + 3); c.rotate(-Math.min(0.9, s * 1.1));
+          tutor(-7, -3);
+          if (Math.floor(s * 12) % 2) { px(1, -3, 4, 3, "#ff7a1e"); px(2, -5, 2, 2, "#ffd23a"); }
+          c.restore();
         } else if (s < sW + 1.6) {
           const w = s - sW, sp = Math.max(0, 6 - w * 5);
           px(pw.x + 2, 54 - sp, 3, sp, "#e8f4ff"); px(pw.x + 9, 54 - sp * 0.7, 3, sp * 0.7, "#e8f4ff");
@@ -140,11 +143,18 @@
         const fy = hy - 4 + 9 * s, fx = hx + 16 + 4 * s;
         if (fy < 58) banner(fx, Math.min(fy, 54), Math.sin(s * 5));
         // the hit itself
-        if (s < 0.6) {
-          const r = 2 + s * 10;
-          for (let i = 0; i < 8; i++) { const an = i * Math.PI / 4 + s; px(hx + Math.cos(an) * r, hy + Math.sin(an) * r, 2, 2, i % 2 ? "#ffd23a" : "#ff6a1e"); }
-          px(hx - 2, hy - 2, 5, 5, s < 0.2 ? "#fff6c8" : "#ff9a2e");
+        if (s < 0.12) { c.globalAlpha = 0.5; px(hx - 12, hy - 1, 24, 3, "#fffbe6"); px(hx - 1, hy - 10, 3, 21, "#fffbe6"); px(hx - 5, hy - 5, 11, 11, "#fffbe6"); c.globalAlpha = 1; } // the flash
+        if (s < 1) {
+          const r = 3 + s * 16;
+          for (let i = 0; i < 12; i++) { const an = i * Math.PI / 6 + s; px(hx + Math.cos(an) * r, hy + Math.sin(an) * r, 2, 2, i % 3 ? "#ffd23a" : "#ff6a1e"); }
+          const fb = Math.max(1, Math.round(9 - s * 8));
+          px(hx - fb / 2, hy - fb / 2, fb, fb, s < 0.25 ? "#fff6c8" : s < 0.6 ? "#ff9a2e" : "#6a6a6a");
         }
+        // debris: bits of airframe tumbling on their own parabolas
+        [[-14, -24, "#e8e8e8"], [10, -30, "#c8102e"], [18, -14, "#e8e8e8"], [-4, -34, "#1c5fb3"]].forEach(([vx, vy, col]) => {
+          const dy = hy + vy * s + 13 * s * s;
+          if (dy < 55) px(hx + vx * s, dy, 2, 1, col);
+        });
         // the pilot: pops out, opens the chute, steers for the forecastle
         const E = 0.25, A = 0.5, D = 5.2;
         if (s >= E) {
