@@ -184,7 +184,7 @@
       const arrow = (v) => (Math.abs(v) < 1e-9 ? "→" : v > 0 ? "↗" : "↘");
       const poly = HM.polyTex([a, b, c, d]);
       let s = HM.tex(`y = ${poly},\\qquad \\frac{dy}{dx} = ${HM.polyTex([3 * a, 2 * b, c])}`, true);
-      if (!pts.length) s += `<p style="margin:0">$b^2 - 4ac \\lt 0$ for $\\frac{dy}{dx} = 0$: <b>no stationary points</b>. The cubic is always ${a > 0 ? "increasing" : "decreasing"}.</p>`;
+      if (!pts.length) s += `<p style="margin:0">$\\frac{dy}{dx} = 0$ has no real roots: its discriminant is $(${2 * b})^2 - 4(${3 * a})(${c}) = ${4 * b * b - 12 * a * c} \\lt 0$. So there are <b>no stationary points</b>. The cubic is always ${a > 0 ? "increasing" : "decreasing"}.</p>`;
       else {
         const cols = [];
         pts.forEach((x) => { cols.push([`→ ${N(x, 2)}⁻`, fd(x - 0.01)], [N(x, 2), 0], [`→ ${N(x, 2)}⁺`, fd(x + 0.01)]); });
@@ -307,12 +307,12 @@
     let Cc = 4, px = 1, py = 5;
     const F = (x) => 2 * x ** 3 - x * x;
     const ctl = controls(box);
-    const cs = HM.slider(ctl, { label: "constant $C$", min: -8, max: 8, step: 0.5, value: Cc, fmt: (v) => N(v), oninput: (v) => { Cc = v; sim.redraw(); info(false); } });
+    const cs = HM.slider(ctl, { label: "constant $C$", min: -13, max: 17, step: 0.5, value: Cc, fmt: (v) => N(v), oninput: (v) => { Cc = v; sim.redraw(); info(false); } });
     const pxs = HM.slider(ctl, { label: "point: $x$", min: -1.5, max: 1.5, step: 0.5, value: px, fmt: (v) => N(v), oninput: (v) => { px = v; fit(); } });
     const pys = HM.slider(ctl, { label: "point: $y$", min: -8, max: 8, step: 1, value: py, oninput: (v) => { py = v; fit(); } });
     const cv = canvasIn(box);
     const out = texBox(box);
-    function fit() { Cc = py - F(px); cs.input.value = Cc; cs.input.dispatchEvent(new Event("input")); info(true); }
+    function fit() { Cc = py - F(px); cs.input.value = Cc; const o = cs.input.closest(".slider").querySelector("output"); if (o) o.textContent = N(Cc); sim.redraw(); info(true); }
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 300 : 320),
       draw(ctx, t, dt, C, S) {
@@ -379,12 +379,29 @@
       },
     });
     function upd() { sim.redraw(); txt(); }
+    // the verdict comes from the curve itself (its roots inside the limits), never from the strips
+    function verdict(Fn, I) {
+      const roots = [], M = 2000;
+      let xp = a, fp = Fn.f(a);
+      for (let i = 1; i <= M; i++) {
+        const x = a + (b - a) * i / M, fx = Fn.f(x);
+        if (fp * fx < 0) { let lo = xp, hi = x; for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; if (Fn.f(lo) * Fn.f(mid) <= 0) hi = mid; else lo = mid; } roots.push((lo + hi) / 2); }
+        else if (fx === 0 && i < M) roots.push(x);
+        xp = x; fp = fx;
+      }
+      const ks = [a, ...roots, b];
+      const parts = ks.slice(1).map((x, i) => Fn.F(x) - Fn.F(ks[i]));
+      const area = parts.reduce((t, v) => t + Math.abs(v), 0);
+      const fmt = (r) => { const q = r / Math.PI; if (Fn.rad && Math.abs(q - Math.round(q)) < 1e-6) return Math.round(q) === 1 ? "\\pi" : Math.round(q) + "\\pi"; return N(r, 3).replace("−", "-"); };
+      if (roots.length) return `The curve crosses the $x$-axis at $x = ${roots.map(fmt).join(",\\ ")}$, inside the limits, so this integral is <b>not</b> the area: the parts above and below partly cancel. Split at the root${roots.length > 1 ? "s" : ""}: the parts are $${parts.map((v) => N(v, 3).replace("−", "-")).join(",\\ ")}$, so the area is $${parts.map((v) => N(Math.abs(v), 3)).join(" + ")} = ${N(area, 3)}$.`;
+      return I < 0 ? `All of the curve here is below the axis: the integral is negative, and the area is its size, $${N(Math.abs(I), 3)}$.` : "All of the curve here is above the axis: the integral is the area.";
+    }
     function txt() {
       const Fn = FN[key], w = (b - a) / n;
       let pos = 0, neg = 0;
       for (let i = 0; i < n; i++) { const y = Fn.f(a + (i + 0.5) * w) * w; if (y >= 0) pos += y; else neg += y; }
       const I = Fn.F(b) - Fn.F(a);
-      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${N(a, 2)}}^{${N(b, 2)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${neg < -1e-6 && pos > 1e-6 ? "The curve crosses the axis here, so this integral is <b>not</b> the area: positive and negative parts partly cancel. Split at the root." : neg < -1e-6 ? "All of it is below the axis: the integral is negative, and the area is its size, $" + N(Math.abs(I), 3) + "$." : "All above the axis: the integral is the area."}</p>`;
+      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${N(a, 2)}}^{${N(b, 2)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
       HM.math(out);
     }
     upd();
@@ -421,7 +438,7 @@
           if (r) r.forEach((x) => HM.dot(ctx, P.X(x), P.Y(x * x), C.ink, 5.5, C.card));
         });
         if (r) HM.label(ctx, "upper − lower", P.X((r[0] + r[1]) / 2) + 6, P.Y(((r[0] + r[1]) / 2) ** 2 + 1.5), { size: 12, col: C.violet, bold: true });
-        cv.setAttribute("aria-label", `The parabola y = x² and the line y = 2x + ${N(c)}${r ? `, meeting at x = ${N(r[0], 2)} and x = ${N(r[1], 2)}, with the region between them shaded` : ", which do not meet"}.`);
+        cv.setAttribute("aria-label", `The parabola y = x² and the line y = 2x ${c < 0 ? "−" : "+"} ${N(Math.abs(c))}${r ? `, meeting at x = ${N(r[0], 2)} and x = ${N(r[1], 2)}, with the region between them shaded` : ", which do not meet"}.`);
       },
     });
     function info() {
@@ -429,7 +446,9 @@
       if (!r || r[1] - r[0] < 1e-9) { out.innerHTML = `<p style="margin:0">The line does not cross the parabola, so no region is enclosed.</p>`; return; }
       const G = (x) => x * x + c * x - x ** 3 / 3;
       const A = G(r[1]) - G(r[0]);
-      out.innerHTML = `<p style="margin:0">Meet where $x^2 = 2x + ${N(c)}$: $x = ${N(r[0], 3)}$ and $x = ${N(r[1], 3)}$. Area $= \\displaystyle\\int_{${N(r[0], 3)}}^{${N(r[1], 3)}} \\big(2x + ${N(c)} - x^2\\big)\\,dx = \\Big[x^2 + ${N(c)}x - \\tfrac{x^3}{3}\\Big] = ${N(A, 3)}$ square units.</p>`;
+      const pm = (v, x = "") => (v === 0 ? "" : ` ${v < 0 ? "-" : "+"} ${N(Math.abs(v))}${x}`);
+      const lo = N(r[0], 3), hi = N(r[1], 3);
+      out.innerHTML = `<p style="margin:0">Meet where $x^2 = 2x${pm(c)}$: $x = ${lo}$ and $x = ${hi}$. Area $= \\displaystyle\\int_{${lo}}^{${hi}} \\big(2x${pm(c)} - x^2\\big)\\,dx = \\Big[x^2${pm(c, "x")} - \\tfrac{x^3}{3}\\Big]_{${lo}}^{${hi}} = ${N(A, 3)}$ square units.</p>`;
       HM.math(out);
     }
     info();

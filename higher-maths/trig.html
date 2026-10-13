@@ -111,9 +111,10 @@ $$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
 <tbody>
 <tr><td>$a$</td><td><b>Amplitude</b> $|a|$: the height of each peak above the centre line. Negative $a$ flips the graph upside down.</td></tr>
 <tr><td>$b$</td><td>Number of complete waves in $360°$. The <b>period</b> is $\frac{360°}{b}$ (or $\frac{2\pi}{b}$).</td></tr>
-<tr><td>$c$</td><td>Shift sideways (inside the bracket, so the opposite way: $+c$ moves left).</td></tr>
+<tr><td>$c$</td><td>Shift sideways by $\frac{c}{b}$, because $bx + c = b\left(x + \frac{c}{b}\right)$. It is inside the bracket, so it works the opposite way: $+c$ moves the graph left.</td></tr>
 <tr><td>$d$</td><td>Moves the centre line up to $y = d$. The maximum is $d + |a|$ and the minimum is $d - |a|$.</td></tr>
 </tbody></table></div>
+<div class="callout tip"><div class="callout-title">⛏ The Overworld's sun is a sine wave</div><p>A Minecraft day lasts 20 minutes (24 000 game ticks), with the sun rising at tick 0 and highest at tick 6000. Its height above the horizon is modelled well by $h = \sin\left(\frac{2\pi t}{24\,000}\right)$: period $24\,000$ ticks, amplitude 1, and below the horizon (night) whenever $h \lt 0$. The moon follows the same wave shifted by half a period, $h = -\sin\left(\frac{2\pi t}{24\,000}\right)$.</p></div>
 <div class="widget" id="w-trigtrans">
   <h3 class="widget-title">Reading the swell: $y = a\sin(bx + c) + d$</h3>
   <p class="hint">Change the four numbers and watch the amplitude, period and centre line change. The readout gives the maximum and minimum values and where the first maximum occurs.</p>
@@ -177,9 +178,30 @@ $$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
 </ol>
 <p>So $x = 0,\ 120,\ 240$.</p>
 </details></div>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · use $\sin^2 x + \cos^2 x = 1$</p>
+<p>Solve $2\sin^2 x° - \cos x° - 1 = 0$, for $0 \le x \lt 360$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$2(1 - \cos^2 x°) - \cos x° - 1 = 0$ <span class="why">Replace $\sin^2 x$ by $1 - \cos^2 x$, so that only $\cos x$ is left.</span></li>
+<li>$2\cos^2 x° + \cos x° - 1 = 0$ <span class="why">Tidy up and multiply through by $-1$.</span></li>
+<li>$(2\cos x° - 1)(\cos x° + 1) = 0$ <span class="why">Factorise.</span></li>
+<li>$\cos x° = \tfrac12 \Rightarrow x = 60,\ 300$; $\cos x° = -1 \Rightarrow x = 180$ <span class="why">Solve each factor. $\cos x = -1$ only at $180°$ in one turn.</span></li>
+</ol>
+<p>So $x = 60,\ 180,\ 300$.</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · a shifted multiple angle in radians</p>
+<p>Solve $2\sin\left(2x - \frac{\pi}{3}\right) = \sqrt3$, for $0 \le x \lt \pi$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$\sin\left(2x - \frac{\pi}{3}\right) = \frac{\sqrt3}{2}$ <span class="why">Rearrange.</span></li>
+<li>$0 \le x \lt \pi$, so $-\frac{\pi}{3} \le 2x - \frac{\pi}{3} \lt \frac{5\pi}{3}$ <span class="why">Find the interval for the whole angle: double, then subtract $\frac{\pi}{3}$.</span></li>
+<li>$2x - \frac{\pi}{3} = \frac{\pi}{3}$ or $\frac{2\pi}{3}$ <span class="why">Acute angle $\frac{\pi}{3}$; sin is positive in the first and second quadrants. Both lie in the interval, and no others do.</span></li>
+<li>$2x = \frac{2\pi}{3}$ or $\pi$, so $x = \frac{\pi}{3}$ or $\frac{\pi}{2}$ <span class="why">Add $\frac{\pi}{3}$, then halve.</span></li>
+</ol>
+</details></div>
 <h3>Equations that need a formula first</h3>
 <p>If the equation mixes $\cos 2x$ with $\cos x$ (or $\sin 2x$ with $\sin x$), use a double angle formula so that everything is in terms of a single angle $x$. Choose the version of $\cos 2x$ that matches the other term: $2\cos^2 x - 1$ goes with $\cos x$; $1 - 2\sin^2 x$ goes with $\sin x$.</p>
-<div class="worked"><p class="worked-title">Worked example 6 · P1 · use $\cos 2x$</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · use $\cos 2x$</p>
 <p>Solve $\cos 2x° - 3\cos x° + 2 = 0$, for $0 \le x \lt 360$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -189,7 +211,7 @@ $$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
 <li>$x = 60,\ 300$ or $x = 0$, so $x = 0,\ 60,\ 300$ <span class="why">Solve.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 7 · P1 · never divide by $\sin x$</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · never divide by $\sin x$</p>
 <p>Solve $\sin 2x° = \sin x°$, for $0 \le x \lt 360$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -220,7 +242,7 @@ $$\sin^2 A + \cos^2 A = 1, \qquad \tan A = \frac{\sin A}{\cos A}.$$
   <h3 class="widget-title">Two bearings combined: checking the addition formula</h3>
   <p class="hint">Set two angles $A$ and $B$. The diagram builds $A + B$ out of two right-angled triangles stacked on each other, so you can see where each term of $\sin(A + B) = \sin A\cos B + \cos A\sin B$ comes from. The bars compare the true value with the tempting wrong answer.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 8 · P1 · an exact value from the formula</p>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · an exact value from the formula</p>
 <p>Find the exact value of $\sin 75°$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -229,7 +251,7 @@ $$\sin^2 A + \cos^2 A = 1, \qquad \tan A = \frac{\sin A}{\cos A}.$$
 <li>$= \dfrac{\sqrt6 + \sqrt2}{4}$ <span class="why">Rationalise the denominator (multiply top and bottom by $\sqrt2$).</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 9 · P1 · two right-angled triangles</p>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · two right-angled triangles</p>
 <p>Acute angles $p$ and $q$ satisfy $\sin p = \frac35$ and $\cos q = \frac{5}{13}$. Find the exact values of (a) $\sin(p + q)$ and (b) $\tan(p + q)$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -239,8 +261,8 @@ $$\sin^2 A + \cos^2 A = 1, \qquad \tan A = \frac{\sin A}{\cos A}.$$
 <li>$\tan(p + q) = \dfrac{\sin(p+q)}{\cos(p+q)} = \dfrac{63/65}{-16/65} = -\dfrac{63}{16}$ <span class="why">Use $\tan = \frac{\sin}{\cos}$.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a question like this, "most candidates did not apply the trigonometric identity $\tan a = \frac{\sin a}{\cos a}$ from National 5", and a few could not process a subtraction like $\frac{56}{65} - \frac{33}{65}$. Others "missed out on marks due to a lack of rigour" when finding the third side, writing a chain like $\sqrt{169 - 25} = \sqrt{144} = 12$ with the square-root signs missing. Write every line so that it is true.</p></div>
-<div class="worked"><p class="worked-title">Worked example 10 · P1 · double angles</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a question like this, "most candidates did not apply the trigonometric identity $\tan a = \frac{\sin a}{\cos a}$ from National 5", and "a few candidates did not process $\frac{56}{65} \div -\frac{33}{65}$ to find $\tan a$". Others "missed out on marks due to a lack of rigour in their supporting working, by making statements such as $169 - 25 = \sqrt{144} = 12$": $169 - 25$ is $144$, not $\sqrt{144}$. Write $\sqrt{169 - 25} = \sqrt{144} = 12$, so that every line is true. Dividing fractions with the same denominator is quick: $\frac{56}{65} \div -\frac{33}{65} = -\frac{56}{33}$.</p></div>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · double angles</p>
 <p>$A$ is acute and $\cos A = \frac35$. Find the exact values of $\sin 2A$ and $\cos 2A$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -251,7 +273,7 @@ $$\sin^2 A + \cos^2 A = 1, \qquad \tan A = \frac{\sin A}{\cos A}.$$
 </details></div>
 <h3>Proving identities</h3>
 <p>To show that two expressions are identical, start with one side (usually the more complicated one) and use formulae until it becomes the other side. Never work on both sides at once, and never assume what you are trying to prove.</p>
-<div class="worked"><p class="worked-title">Worked example 11 · P1 · show that</p>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · show that</p>
 <p>Show that $\dfrac{\sin 2x}{1 + \cos 2x} = \tan x$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -281,7 +303,7 @@ $$a\cos x + b\sin x = k\cos(x - \alpha), \qquad k \gt 0.$$
 <li><strong>Find $k$</strong>: $k = \sqrt{a^2 + b^2}$.</li>
 <li><strong>Find $\alpha$</strong>: $\tan\alpha = \frac{k\sin\alpha}{k\cos\alpha} = \frac{b}{a}$. Use the <em>signs</em> of $k\sin\alpha$ and $k\cos\alpha$ to pick the quadrant (CAST).</li>
 </ol>
-<div class="worked"><p class="worked-title">Worked example 12 · P2 · $\alpha$ in the fourth quadrant</p>
+<div class="worked"><p class="worked-title">Worked example 14 · P2 · $\alpha$ in the fourth quadrant</p>
 <p>Express $5\cos x° - 12\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -292,7 +314,18 @@ $$a\cos x + b\sin x = k\cos(x - \alpha), \qquad k \gt 0.$$
 </ol>
 <p>So $5\cos x° - 12\sin x° = 13\cos(x - 292.6)°$.</p>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 13 · P1 · solve using the wave function</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · the sine form, in radians</p>
+<p>Express $\sin x - \sqrt3\cos x$ in the form $k\sin(x - \alpha)$, where $k \gt 0$ and $0 \le \alpha \lt 2\pi$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$k\sin(x - \alpha) = k\sin x\cos\alpha - k\cos x\sin\alpha$ <span class="why">Expand with $\sin(A - B)$. Note the minus sign it brings.</span></li>
+<li>$k\cos\alpha = 1$ and $-k\sin\alpha = -\sqrt3$, so $k\sin\alpha = \sqrt3$ <span class="why">Compare the coefficients of $\sin x$ and of $\cos x$.</span></li>
+<li>$k = \sqrt{1^2 + (\sqrt3)^2} = 2$ <span class="why">Find $k$.</span></li>
+<li>$\tan\alpha = \sqrt3$; sin and cos both positive, so $\alpha = \frac{\pi}{3}$ <span class="why">First quadrant, exact value in radians.</span></li>
+</ol>
+<p>So $\sin x - \sqrt3\cos x = 2\sin\left(x - \frac{\pi}{3}\right)$. Check at $x = 0$: left side $-\sqrt3$, right side $2\sin\left(-\frac{\pi}{3}\right) = -\sqrt3$.</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · solve using the wave function</p>
 <p>(a) Express $\sqrt3\cos x° + \sin x°$ in the form $k\cos(x - \alpha)°$, $k \gt 0$, $0 \le \alpha \lt 360$. (b) Hence solve $\sqrt3\cos x° + \sin x° = 1$ for $0 \le x \lt 360$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">

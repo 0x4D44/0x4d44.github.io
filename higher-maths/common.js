@@ -805,14 +805,14 @@
     return HM.n(x, 3).replace("−", "-");
   };
   /* format a polynomial from coefficients (highest power first) as TeX */
-  HM.polyTex = function (cs, v = "x") {
+  HM.polyTex = function (cs, v = "x", exact = false) {
     const deg = cs.length - 1;
     let out = "";
     cs.forEach((c, i) => {
       const p = deg - i;
       if (Math.abs(c) < 1e-12) return;
       const a = Math.abs(c), sign = c < 0 ? "-" : "+";
-      const coef = (a === 1 && p > 0) ? "" : HM.n(a, 3).replace("−", "");
+      const coef = (a === 1 && p > 0) ? "" : exact ? HM.fracTex(a, 16) : HM.n(a, 3).replace("−", "");
       const term = coef + (p === 0 ? "" : p === 1 ? v : `${v}^{${p}}`);
       out += out ? ` ${sign} ${term}` : (c < 0 ? "-" : "") + term;
     });

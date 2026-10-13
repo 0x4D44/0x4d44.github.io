@@ -566,7 +566,8 @@ html:has(.exam-timer.running) { scroll-padding-top: 130px; }
 h3 .katex, h4 .katex { font-size: 1em; }
 .step-list { counter-reset: st; list-style: none; padding-left: 0; }
 .step-list > li { counter-increment: st; position: relative; padding-left: 2.4em; margin: .5em 0; }
-.step-list > li::before { content: "•" counter(st); position: absolute; left: 0; top: 0; font: 700 .85rem/1.9 var(--font-mono); color: var(--gold); }
+.step-list > li::before { content: counter(st) "."; position: absolute; left: 0; top: 0; font: 700 .85rem/1.9 var(--font-mono); color: var(--muted); }
+.step-list.marks > li::before { content: "•" counter(st); color: var(--gold); }
 .mi { width: 100%; border-collapse: collapse; font-size: .93rem; }
 .mi td { vertical-align: middle; }
 .mi td:first-child { font: 700 .85rem var(--font-mono); color: var(--gold); white-space: nowrap; width: 2.6em; }
@@ -599,3 +600,4 @@ canvas.sim.draggable.dragging { cursor: grabbing; }
 .synth-wrap { overflow-x: auto; }
 .tex-out { min-height: 2.2em; padding: 8px 10px; background: var(--paper); border: 2px dashed var(--line); border-radius: 2px; overflow-x: auto; }
 .tex-out .katex-display { margin: .2em 0; }
+.marks-n { font: 600 .8rem var(--font-mono); color: var(--gold); margin-left: .4em; }

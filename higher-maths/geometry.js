@@ -33,6 +33,9 @@
     if (dy === 0) return `y = ${F(y1)}`;
     // dy x - dx y + (dx y1 - dy x1) = 0, scaled to integers
     let a = dy, b = -dx, c = dx * y1 - dy * x1;
+    // a midpoint can be a half-integer: double everything until c is whole
+    for (let k = 0; k < 3 && Math.abs(c - Math.round(c)) > 1e-9; k++) { a *= 2; b *= 2; c *= 2; }
+    c = Math.round(c);
     const g = gcd(gcd(Math.abs(a), Math.abs(b)), Math.abs(c)) || 1;
     a /= g; b /= g; c /= g;
     if (a < 0) { a = -a; b = -b; c = -c; }
@@ -247,7 +250,7 @@
           if (r2 > 0 && D >= -1e-9) [(-b - Math.sqrt(Math.max(0, D))) / (2 * a), (-b + Math.sqrt(Math.max(0, D))) / (2 * a)].forEach((x) => HM.dot(ctx, P.X(x), P.Y(m * x + k), Math.abs(D) < 1e-6 ? C.gold : C.ink, 6, C.card));
         });
         if (r2 > 0) HM.label(ctx, `(${N(-g)}, ${N(-f)})`, P.X(-g) + 8, P.Y(-f) + 12, { size: 12, col: C.sea, bold: true });
-        cv.setAttribute("aria-label", r2 > 0 ? `Circle centre (${-g}, ${-f}) radius ${N(Math.sqrt(r2), 2)} and the line y = ${N(m)}x + ${N(k)}.` : "Not a circle: g² + f² − c is not positive.");
+        cv.setAttribute("aria-label", r2 > 0 ? `Circle centre (${-g}, ${-f}) radius ${N(Math.sqrt(r2), 2)} and the line y = ${N(m)}x ${k < 0 ? "−" : "+"} ${N(Math.abs(k))}.` : "Not a circle: g² + f² − c is not positive.");
       },
     });
     function info() {
@@ -260,7 +263,9 @@
         s += `<p style="margin:0">Centre $(-g, -f) = (${-g}, ${-f})$, radius $\\sqrt{${g * g} + ${f * f} - (${c})} = \\sqrt{${r2}}${Number.isInteger(rt) ? ` = ${rt}` : ` \\approx ${N(rt, 2)}`}$.</p>`;
         const [a, b, cc] = quad(), D = b * b - 4 * a * cc;
         const z = Math.abs(D) < 1e-6;
-        s += `<p style="margin:4px 0 0">Substituting $y = ${N(m)}x ${k < 0 ? "-" : "+"} ${N(Math.abs(k))}$ gives $${N(a, 4)}x^2 ${b < 0 ? "-" : "+"} ${N(Math.abs(b), 4)}x ${cc < 0 ? "-" : "+"} ${N(Math.abs(cc), 4)} = 0$, discriminant $${N(z ? 0 : D, 3)}$: <b>${z ? "the line is a tangent" : D > 0 ? "two points of intersection" : "the line misses the circle"}</b>.</p>`;
+        const term = (v, x) => (Math.abs(v) < 1e-9 ? "" : ` ${v < 0 ? "-" : "+"} ${Math.abs(v) === 1 && x ? "" : N(Math.abs(v), 4)}${x}`);
+        const ln = m === 0 ? N(k) : `${m === 1 ? "" : m === -1 ? "-" : N(m)}x${term(k, "")}`;
+        s += `<p style="margin:4px 0 0">Substituting $y = ${ln}$ gives $${N(a, 4)}x^2${term(b, "x")}${term(cc, "")} = 0$, discriminant $${N(z ? 0 : D, 3)}$: <b>${z ? "the line is a tangent" : D > 0 ? "two points of intersection" : "the line misses the circle"}</b>.</p>`;
       }
       out.innerHTML = s; HM.math(out);
     }
@@ -465,7 +470,7 @@
     const a = [2, -1, 2], b = [3, 4, 0];
     const st = { yaw: -0.7, pitch: 0.45 };
     const ctl = controls(box);
-    const mk = (v, i, lab) => HM.slider(ctl, { label: lab, min: -4, max: 4, step: 1, value: v[i], oninput: (x) => { v[i] = x; if (!v.some(Boolean)) v[i] = 1; sim.redraw(); info(); } });
+    const mk = (v, i, lab) => { const sl = HM.slider(ctl, { label: lab, min: -4, max: 4, step: 1, value: v[i], oninput: (x) => { v[i] = x; if (!v.some(Boolean)) { sl.set(1); return; } sim.redraw(); info(); } }); return sl; };
     ["$a_1$", "$a_2$", "$a_3$"].forEach((l, i) => mk(a, i, l));
     ["$b_1$", "$b_2$", "$b_3$"].forEach((l, i) => mk(b, i, l));
     const cv = canvasIn(box);

@@ -31,9 +31,11 @@
   }
   /* degrees → a radian label like 5π/6 */
   function radTex(deg) {
-    const k = Math.round(deg / 15);
-    if (Math.abs(k * 15 - deg) > 1e-6) return N(deg * D2R, 3);
-    let n = k, d = 12;
+    const r = deg / 180;
+    let d = 1;
+    while (d <= 36 && Math.abs(Math.round(r * d) - r * d) > 1e-7) d++;
+    if (d > 36) return N(deg * D2R, 3);
+    let n = Math.round(r * d);
     const g = (a, b) => (b ? g(b, a % b) : a);
     const c = g(Math.abs(n), d) || 1; n /= c; d /= c;
     if (n === 0) return "0";
@@ -129,7 +131,7 @@
       height: (w) => (w < 560 ? 280 : 300),
       draw(ctx, t, dt, C, S) {
         const bx = { x: 40, y: 10, w: S.w - 54, h: S.h - 32 };
-        const P = HM.plot(ctx, bx, { x0: 0, x1: 360, y0: -8, y1: 8, xt: 45, yt: 2, C, xl: "x°", yl: "y", tf: (v) => (v % 90 ? "" : String(v).replace("-", "−")) });
+        const P = HM.plot(ctx, bx, { x0: 0, x1: 360, y0: -8, y1: 8, xt: 45, yt: 2, C, xl: "x°", yl: "y", tf: (v) => (v % 90 ? "" : String(v).replace("-", "−")), ytf: (v) => (v % 4 ? "" : String(v).replace("-", "−")) });
         HM.clip(ctx, bx, () => {
           HM.curve(ctx, P, () => d, 0, 360, C.muted, 1.5, { dash: [6, 4] });
           HM.curve(ctx, P, () => d + Math.abs(a), 0, 360, C.gold, 1, { dash: [2, 4] });
@@ -158,7 +160,7 @@
     function upd() {
       sim.redraw();
       const per = 360 / b;
-      out.innerHTML = `<p style="margin:0">$y = ${a === 1 ? "" : a === -1 ? "-" : N(a)}\\${fn}(${b === 1 ? "" : N(b)}x${c ? (c < 0 ? " - " : " + ") + Math.abs(c) : ""})° ${d ? (d < 0 ? "- " : "+ ") + N(Math.abs(d)) : ""}$: amplitude $${N(Math.abs(a))}$, period $\\frac{360°}{${N(b)}} = ${N(per, 1)}°$, maximum $${N(d + Math.abs(a))}$, minimum $${N(d - Math.abs(a))}$. First maximum at $x = ${N(firstMax(), 1)}°$.</p>`;
+      out.innerHTML = `<p style="margin:0">$y = ${a === 1 ? "" : a === -1 ? "-" : N(a)}\\${fn}(${b === 1 ? "" : N(b)}x${c ? (c < 0 ? " - " : " + ") + Math.abs(c) : ""})° ${d ? (d < 0 ? "- " : "+ ") + N(Math.abs(d)) : ""}$: amplitude $${N(Math.abs(a))}$, period $\\frac{360°}{${N(b)}} = ${N(per, 1)}°$, maximum $${N(d + Math.abs(a))}$, minimum $${N(d - Math.abs(a))}$. First maximum at $x = ${N(firstMax(), 1)}°$.${c ? ` Sideways shift: $\\frac{c}{b} = \\frac{${c}}{${N(b)}} = ${N(c / b, 1)}°$, so the graph of $y = ${a === 1 ? "" : a === -1 ? "-" : N(a)}\\${fn} ${b === 1 ? "" : N(b)}x$ moves ${N(Math.abs(c / b), 1)}° to the ${c > 0 ? "left" : "right"}.` : ""}</p>`;
       HM.math(out);
     }
     upd();
@@ -188,7 +190,8 @@
       const base = fn === "sin" ? [p, 180 - p] : fn === "cos" ? [p, 360 - p] : [p];
       for (const q of base) for (let n = -2; n <= 2 * b + 2; n++) { const th = q + n * per; if (th >= -1e-9 && th < 360 * b - 1e-9) S.push(th); }
       const uniq = [...new Set(S.map((v) => Math.round(v * 1e6) / 1e6))].sort((x, y) => x - y);
-      return { S: uniq, base: base.map((v) => ((v % per) + per) % per) };
+      const bs = [...new Set(base.map((v) => Math.round((((v % per) + per) % per) * 1e6) / 1e6))].sort((x, y) => x - y);
+      return { S: uniq, base: bs };
     }
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 280 : 300),
@@ -204,7 +207,7 @@
         cv.setAttribute("aria-label", `Graph of y = ${fn} ${b}x with the line y = ${N(k, 3)}; the ${sols().S.length} crossing points are the solutions.`);
       },
     });
-    const fmtX = (deg) => (units === "deg" ? `${N(deg, 1)}°` : (Math.abs(deg / 15 - Math.round(deg / 15)) < 1e-6 ? radTex(deg) : N(deg * D2R, 3)));
+    const fmtX = (deg) => (units === "deg" ? `${N(deg, 1)}°` : radTex(deg));
     function upd() {
       sim.redraw();
       const { S, base } = sols();
@@ -213,7 +216,10 @@
       const acute = fn === "tan" ? Math.atan(Math.abs(k)) / D2R : fn === "sin" ? Math.asin(Math.abs(k)) / D2R : Math.acos(Math.abs(k)) / D2R;
       const quads = { sin: k >= 0 ? "first and second" : "third and fourth", cos: k >= 0 ? "first and fourth" : "second and third", tan: k >= 0 ? "first and third" : "second and fourth" }[fn];
       const v = b === 1 ? "x" : `${b}x`;
-      let s = `<p style="margin:0">$${lhs}$. Acute angle $= ${fmtX(acute)}$; $\\${fn}$ is ${k >= 0 ? "positive" : "negative"}, so use the ${quads} quadrants: $${v} = ${base.map((q) => fmtX(q)).join(",\\ ")}$`;
+      const axis = fn === "tan" ? k === 0 : k === 0 || Math.abs(k) === 1;
+      let s = axis
+        ? `<p style="margin:0">$${lhs}$. This value is on an axis of the unit circle, not inside a quadrant, so CAST is not needed: read it from the graph. In one turn, $${v} = ${base.map((q) => fmtX(q)).join(",\\ ")}$`
+        : `<p style="margin:0">$${lhs}$. Acute angle $= ${fmtX(acute)}$; $\\${fn}$ is ${k > 0 ? "positive" : "negative"}, so use the ${quads} quadrants: $${v} = ${base.map((q) => fmtX(q)).join(",\\ ")}$`;
       if (b > 1) s += `, then add $${fmtX(fn === "tan" ? 180 : 360)}$ until $${v}$ reaches $${units === "deg" ? 360 * b + "°" : b * 2 + "\\pi"}$: $${v} = ${S.map(fmtX).join(",\\ ")}$`;
       s += `.</p><p style="margin:4px 0 0"><b>Solutions:</b> $x = ${S.map((th) => fmtX(th / b)).join(",\\ ")}$${b > 1 ? ` (after dividing by ${b})` : ""}.</p>`;
       out.innerHTML = s; HM.math(out);
@@ -330,7 +336,7 @@
         const val = a * Math.cos(x * D2R) + b * Math.sin(x * D2R);
         ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(P.X(x), g.y); ctx.lineTo(P.X(x), g.y + g.h); ctx.stroke();
         HM.dot(ctx, P.X(x), P.Y(val), C.red, 5.5, C.card);
-        cv.setAttribute("aria-label", `Phasor diagram and graphs: ${a} cos x plus ${b} sin x equals ${N(k, 3)} cos(x minus ${N(alpha(), 1)} degrees).`);
+        cv.setAttribute("aria-label", `Phasor diagram and graphs: ${a} cos x ${b < 0 ? "minus" : "plus"} ${Math.abs(b)} sin x equals ${N(k, 3)} cos(x minus ${N(alpha(), 1)} degrees).`);
       },
     });
     function alpha() { let al = Math.atan2(b, a) / D2R; if (al < 0) al += 360; return al; }
@@ -341,9 +347,13 @@
       const q = b >= 0 ? (a >= 0 ? 1 : 2) : (a >= 0 ? 4 : 3);
       const acute = a === 0 || b === 0 ? null : Math.atan(Math.abs(b / a)) / D2R;
       const qtxt = a === 0 || b === 0 ? "on an axis" : `$\\sin\\alpha$ ${b > 0 ? "positive" : "negative"}, $\\cos\\alpha$ ${a > 0 ? "positive" : "negative"}: quadrant ${q}`;
-      out.innerHTML = HM.tex(`${a}\\cos x ${b < 0 ? "-" : "+"} ${Math.abs(b)}\\sin x = k\\cos x\\cos\\alpha + k\\sin x\\sin\\alpha`, true) +
-        `<p style="margin:0">$k\\cos\\alpha = ${a}$, $k\\sin\\alpha = ${b}$, so $k = \\sqrt{${a < 0 ? `(${a})` : a}^2 + ${b < 0 ? `(${b})` : b}^2} = ${kt}${Number.isInteger(k) ? "" : ` \\approx ${N(k, 3)}`}$. $\\tan\\alpha = \\frac{${b}}{${a}}$; ${qtxt}${acute !== null ? `, acute angle $${N(acute, 1)}°$` : ""}, so $\\alpha = ${N(al, 1)}°$.</p>` +
-        HM.tex(`${a}\\cos x ${b < 0 ? "-" : "+"} ${Math.abs(b)}\\sin x = ${kt}\\cos(x - ${N(al, 1)})^\\circ`, true) +
+      const co = (v, f, first) => (v === 0 ? "" : `${v < 0 ? "-" : first ? "" : "+"} ${Math.abs(v) === 1 ? "" : Math.abs(v)}${f}`);
+      const lhs = `${co(a, "\\cos x", true)} ${co(b, "\\sin x", a === 0)}`.trim();
+      const kc = kt === "1" ? "" : kt;
+      const rhs = al === 0 ? `${kc}\\cos x^\\circ` : `${kc}\\cos(x - ${N(al, 1)})^\\circ`;
+      out.innerHTML = HM.tex(`${lhs} = k\\cos x\\cos\\alpha + k\\sin x\\sin\\alpha`, true) +
+        `<p style="margin:0">$k\\cos\\alpha = ${a}$, $k\\sin\\alpha = ${b}$, so $k = \\sqrt{${a < 0 ? `(${a})` : a}^2 + ${b < 0 ? `(${b})` : b}^2} = ${kt}${Number.isInteger(k) ? "" : ` \\approx ${N(k, 3)}`}$. ${a === 0 ? "$\\cos\\alpha = 0$ (so $\\tan\\alpha$ is undefined)" : `$\\tan\\alpha = \\frac{${b}}{${a}}$`}; ${qtxt}${acute !== null ? `, acute angle $${N(acute, 1)}°$` : ""}, so $\\alpha = ${N(al, 1)}°$.</p>` +
+        HM.tex(`${lhs} = ${rhs}`, true) +
         `<p style="margin:0">Maximum $${kt}$ at $x = ${N(al, 1)}°$; minimum $-${kt}$ at $x = ${N((al + 180) % 360, 1)}°$.</p>`;
       HM.math(out);
     }
