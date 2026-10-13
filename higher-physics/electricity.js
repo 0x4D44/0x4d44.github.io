@@ -6,6 +6,8 @@
   const HP = window.HP;
   const $ = (id) => document.getElementById(id);
   const F = HP.fmt;
+  // electrons: navy on the light theme, pale blue on the dark one so they show against the band fills
+  const eCol = () => { const t = document.documentElement.dataset.theme; return t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches) ? "#9cc8ff" : "#1c3b66"; };
   function mount(id, fn) { const box = $(id); if (!box) return; try { fn(box); } catch (err) { console.error(id, err); } }
   function canvasIn(box, cls, label) { const cv = HP.el("canvas", { class: "sim" + (cls ? " " + cls : ""), role: "img", "aria-label": label || "" }); box.append(cv); return cv; }
   const readouts = (box, items) => {
@@ -337,7 +339,7 @@
             const jitter = Math.sin(t * 3 + k) * 1.5;
             const xx = x0 + 6 + rnd(k + i * 100) * (w - 12);
             const yy = up ? top + 16 + rnd(k * 7 + i) * (cbBot - top - 22) : vbTop + 6 + rnd(k * 3 + i * 7) * (bot - vbTop - 20);
-            ctx.fillStyle = "#1c3b66"; ctx.beginPath(); ctx.arc(xx + (up ? jitter : 0), yy, 2.6, 0, 7); ctx.fill();
+            ctx.fillStyle = eCol(); ctx.beginPath(); ctx.arc(xx + (up ? jitter : 0), yy, 2.6, 0, 7); ctx.fill();
             if (up && !metal) { ctx.strokeStyle = C.red; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x0 + 6 + rnd(k * 5 + 9 + i) * (w - 12), vbTop + 8 + rnd(k * 11 + i) * 12, 2.6, 0, 7); ctx.stroke(); }
           }
         });
@@ -402,7 +404,7 @@
             p.x += (p.type === "e" ? Math.max(p.home + 0.05, 0.65) - p.x : Math.min(p.home - 0.05, 0.35) - p.x) * 0.05;
           } else p.x += (p.home - p.x) * 0.05;
           const X = x0 + p.x * w;
-          if (p.type === "e") { const y = cbAt(p.x) - 8 - (k % 3) * 7; ctx.fillStyle = "#1c3b66"; ctx.beginPath(); ctx.arc(X, y, 3.2, 0, 7); ctx.fill(); }
+          if (p.type === "e") { const y = cbAt(p.x) - 8 - (k % 3) * 7; ctx.fillStyle = eCol(); ctx.beginPath(); ctx.arc(X, y, 3.2, 0, 7); ctx.fill(); }
           else { const y = cbAt(p.x) + gapPx + 8 + (k % 3) * 7; ctx.strokeStyle = C.red; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(X, y, 3.2, 0, 7); ctx.stroke(); }
         });
         if (mode === "solar") {
@@ -419,7 +421,7 @@
           ctx.stroke();
           if (ph.inbound && age > 0.9) {
             const f = (age - 0.9) / 0.7;
-            ctx.fillStyle = "#1c3b66"; ctx.beginPath(); ctx.arc(ph.x + f * 90, cbN - 12, 3.2, 0, 7); ctx.fill();
+            ctx.fillStyle = eCol(); ctx.beginPath(); ctx.arc(ph.x + f * 90, cbN - 12, 3.2, 0, 7); ctx.fill();
             ctx.strokeStyle = C.red; ctx.beginPath(); ctx.arc(ph.x - f * 90, vbP + 12, 3.2, 0, 7); ctx.stroke();
           }
         }
