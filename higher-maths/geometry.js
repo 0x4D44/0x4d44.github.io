@@ -144,7 +144,21 @@
     pre("Equilateral-ish", [[-5, -4], [5, -4], [0, 4.66]]);
     box.append(presets);
     const cv = canvasIn(box);
-    box.append(HM.el("p", { class: "drag-hint" }, "Drag the vertices A, B and C."));
+    box.append(HM.el("p", { class: "drag-hint" }, "Drag the vertices A, B and C, or use the buttons to step one vertex a square at a time."));
+    // keyboard (and fine-touch) control: pick a vertex, then step it one grid square
+    let pick = 0;
+    HM.choice(box, "Move vertex:", [[0, "A"], [1, "B"], [2, "C"]], 0, (v) => { pick = +v; });
+    const nudges = HM.el("div", { class: "btn-row" });
+    [["←", -1, 0, "left"], ["→", 1, 0, "right"], ["↑", 0, 1, "up"], ["↓", 0, -1, "down"]].forEach(([t, dx, dy, w]) => {
+      const b = HM.el("button", { class: "btn small", type: "button", "aria-label": `Move the vertex ${w} one square` }, t);
+      b.addEventListener("click", () => {
+        const g = [Math.max(-9, Math.min(9, V[pick][0] + dx)), Math.max(-9, Math.min(9, V[pick][1] + dy))];
+        if (V.some((p, j) => j !== pick && p[0] === g[0] && p[1] === g[1])) return;
+        V[pick] = g; sim.redraw(); info();
+      });
+      nudges.append(b);
+    });
+    box.append(nudges);
     const out = texBox(box);
     let Pm = null;
     const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
@@ -313,7 +327,7 @@
     function info() {
       const d2 = c2[0] ** 2 + c2[1] ** 2, d = Math.sqrt(d2), sum = r1 + r2, dif = Math.abs(r1 - r2);
       const eq = (a, b) => Math.abs(a - b) < 1e-9;
-      const verdict = eq(d, sum) ? "touch externally ($d = r_1 + r_2$)" : eq(d, dif) && d > 0 ? "touch internally ($d = |r_1 - r_2|$)" : d === 0 && r1 === r2 ? "are the same circle" : d > sum ? "are separate ($d \\gt r_1 + r_2$)" : d < dif ? "one lies inside the other without touching ($d \\lt |r_1 - r_2|$)" : "intersect at two points ($|r_1 - r_2| \\lt d \\lt r_1 + r_2$)";
+      const verdict = eq(d, sum) ? "touch externally $(d = r_1 + r_2)$" : eq(d, dif) && d > 0 ? "touch internally $(d = |r_1 - r_2|)$" : d === 0 && r1 === r2 ? "are the same circle" : d > sum ? "are separate $(d \\gt r_1 + r_2)$" : d < dif ? "one lies inside the other without touching $(d \\lt |r_1 - r_2|)$" : "intersect at two points $(|r_1 - r_2| \\lt d \\lt r_1 + r_2)$";
       out.innerHTML = `<p style="margin:0">$d = \\sqrt{${c2[0]}^2 + ${c2[1] < 0 ? `(${c2[1]})` : c2[1]}^2} = ${Number.isInteger(d) ? d : `\\sqrt{${d2}} \\approx ${N(d, 2)}`}$; $r_1 + r_2 = ${sum}$; $|r_1 - r_2| = ${dif}$. The circles <b>${verdict}</b>.</p>`;
       HM.math(out);
     }
@@ -364,8 +378,13 @@
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 320 : 360),
       draw(ctx, t, dt, C, S) {
-        const pr = view3(S, st.yaw, st.pitch, Math.min(S.w, S.h * 1.4) / 13, S.w / 2, S.h * 0.66);
-        const c0 = [-3, -2, -1.5]; // centre the box on screen
+        // fit the cuboid and its axes inside the canvas at any angle: project at unit scale, then scale and centre the bounding box
+        const c0 = [-3, -2, -1.5];
+        const unit = view3(S, st.yaw, st.pitch, 1, 0, 0);
+        const ext = Object.values(V).concat([[7.5, 0, 0], [0, 5.5, 0], [0, 0, 4.5]]).map((p) => unit([p[0] + c0[0], p[1] + c0[1], p[2] + c0[2]]));
+        const x0 = Math.min(...ext.map((q) => q.x)), x1 = Math.max(...ext.map((q) => q.x)), y0 = Math.min(...ext.map((q) => q.y)), y1 = Math.max(...ext.map((q) => q.y));
+        const k = Math.min(Math.min(S.w, S.h * 1.4) / 13, (S.w - 56) / (x1 - x0), (S.h - 56) / (y1 - y0));
+        const pr = view3(S, st.yaw, st.pitch, k, S.w / 2 - k * (x0 + x1) / 2, S.h / 2 - k * (y0 + y1) / 2 + 6);
         const P = (p) => pr([p[0] + c0[0], p[1] + c0[1], p[2] + c0[2]]);
         ctx.fillStyle = C.paper; ctx.fillRect(0, 0, S.w, S.h);
         // faces of the cuboid, painter's order
@@ -417,7 +436,7 @@
         legs.push({ name: `\\overrightarrow{${R.path[i]}${R.path[i + 1]}}`, v });
       }
       const col = (v) => `\\begin{pmatrix}${v.join("\\\\")}\\end{pmatrix}`;
-      out.innerHTML = HM.tex(`\\overrightarrow{${R.from}${R.to}} = ${legs.map((l) => l.name).join(" + ")} = ${legs.map((l) => col(l.v)).join(" + ")} = ${col(sum)}`, true) +
+      out.innerHTML = HM.tex(`\\overrightarrow{${R.from}${R.to}} = ${legs.map((l) => l.name).join(" + ")}`, true) + HM.tex(`= ${legs.map((l) => col(l.v)).join(" + ")} = ${col(sum)}`, true) +
         `<p style="margin:0">Check with coordinates: $${R.to}(${V[R.to].join(", ")})$ minus $${R.from}(${V[R.from].join(", ")})$ gives $(${sum.join(", ")})$. Length $= \\sqrt{${sum.map((x) => (x < 0 ? `(${x})` : x) + "^2").join(" + ")}} = \\sqrt{${sum.reduce((s, x) => s + x * x, 0)}}$.</p>`;
       HM.math(out);
     }
@@ -456,7 +475,7 @@
       const AB = B.map((b, i) => b - A[i]);
       const p = A.map((a, i) => a + AB[i] * m / (m + n));
       const col = (v) => `\\begin{pmatrix}${v.map((x) => F(x, 30)).join("\\\\")}\\end{pmatrix}`;
-      out.innerHTML = HM.tex(`\\mathbf{p} = \\mathbf{a} + \\tfrac{${m}}{${m + n}}\\overrightarrow{AB} = ${col(A)} + \\tfrac{${m}}{${m + n}}${col(AB)} = ${col(p)}`, true) +
+      out.innerHTML = HM.tex(`\\mathbf{p} = \\mathbf{a} + \\tfrac{${m}}{${m + n}}\\overrightarrow{AB}`, true) + HM.tex(`= ${col(A)} + \\tfrac{${m}}{${m + n}}${col(AB)} = ${col(p)}`, true) +
         HM.tex(`\\text{or}\\quad \\mathbf{p} = \\frac{${n}\\mathbf{a} + ${m}\\mathbf{b}}{${m + n}} = ${col(p)}`, true) + `<p style="margin:0">$A(2, -1, 4)$, $B(7, 9, -1)$, so $P$ is $(${p.map((x) => F(x, 30)).join(", ")})$.</p>`;
       HM.math(out);
     }
@@ -473,8 +492,9 @@
     const mk = (v, i, lab) => { const sl = HM.slider(ctl, { label: lab, min: -4, max: 4, step: 1, value: v[i], oninput: (x) => { v[i] = x; if (!v.some(Boolean)) { sl.set(1); return; } sim.redraw(); info(); } }); return sl; };
     ["$a_1$", "$a_2$", "$a_3$"].forEach((l, i) => mk(a, i, l));
     ["$b_1$", "$b_2$", "$b_3$"].forEach((l, i) => mk(b, i, l));
+    st.slider = HM.slider(ctl, { label: "turn the picture", min: 0, max: 359, step: 1, value: 320, unit: "°", oninput: (v) => { st.yaw = v * Math.PI / 180; sim.redraw(); } });
     const cv = canvasIn(box);
-    box.append(HM.el("p", { class: "drag-hint" }, "Drag the picture to turn it."));
+    box.append(HM.el("p", { class: "drag-hint" }, "Drag the picture, or use the turn slider, to turn it."));
     const out = texBox(box);
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 300 : 340),
@@ -507,7 +527,7 @@
       const p = (x) => (x < 0 ? `(${x})` : `${x}`);
       const th = Math.acos(dot / Math.sqrt(la2 * lb2)) * 180 / Math.PI;
       out.innerHTML = HM.tex(`\\mathbf{a}\\cdot\\mathbf{b} = ${a.map((x, i) => `${x}(${b[i]})`).join(" + ").replace(/\+ -/g, "- ")} = ${dot}`, true) +
-        HM.tex(`|\\mathbf{a}| = ${sq(la2)},\\quad |\\mathbf{b}| = ${sq(lb2)},\\quad \\cos\\theta = \\frac{${dot}}{${sq(la2)} \\times ${sq(lb2)}} \\Rightarrow \\theta = ${N(th, 1)}^\\circ`, true) +
+        HM.tex(`|\\mathbf{a}| = ${sq(la2)},\\quad |\\mathbf{b}| = ${sq(lb2)}`, true) + HM.tex(`\\cos\\theta = \\frac{${dot}}{${sq(la2)} \\times ${sq(lb2)}} \\Rightarrow \\theta = ${N(th, 1)}^\\circ`, true) +
         `<p style="margin:0">${dot === 0 ? "<b>$\\mathbf{a}\\cdot\\mathbf{b} = 0$: the vectors are perpendicular.</b>" : dot > 0 ? "Positive scalar product: the angle is acute." : "Negative scalar product: the angle is obtuse."}</p>`;
       HM.math(out);
     }

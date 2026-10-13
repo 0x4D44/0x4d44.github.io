@@ -190,9 +190,9 @@
           HM.curve(ctx, P, (x) => a * x * x + b * x + c, x0, x1, C.sea, 3);
           HM.dot(ctx, P.X(xc), P.Y(q), C.red, 6, C.card);
         });
-        HM.label(ctx, `${a > 0 ? "minimum" : "maximum"} (${N(xc)}, ${N(q)})`, Math.min(Math.max(P.X(xc) + 10, bx.x + 4), S.w - 170), Math.min(Math.max(P.Y(q) + (a > 0 ? 18 : -18), 24), S.h - 30), { bold: true, col: C.red });
-        HM.label(ctx, `x = ${N(xc)}`, P.X(xc) + 5, bx.y + 10, { size: 12, col: C.ink2 });
-        gcv.setAttribute("aria-label", `Graph of y = ${N(a)}x² + ${N(b)}x + ${N(c)}, a parabola with ${a > 0 ? "minimum" : "maximum"} turning point (${N(xc)}, ${N(q)}) and axis of symmetry x = ${N(xc)}.`);
+        HM.label(ctx, `${a > 0 ? "minimum" : "maximum"} (${N(xc)}, ${N(q)})`, Math.min(Math.max(P.X(xc) + 10, bx.x + 4), S.w - 170), Math.min(Math.max(P.Y(q) + (a > 0 ? 18 : -18), 24), S.h - 30), { avoid: true, bold: true, col: C.red });
+        HM.label(ctx, `x = ${N(xc)}`, P.X(xc) + 5, bx.y + 10, { avoid: true, size: 12, col: C.ink2 });
+        gcv.setAttribute("aria-label", `Graph of y = ${HM.terms([[a, "x²"], [b, "x"], [c, ""]])}, a parabola with ${a > 0 ? "minimum" : "maximum"} turning point (${N(xc)}, ${N(q)}) and axis of symmetry x = ${N(xc)}.`);
       },
     });
     function upd() {
@@ -250,7 +250,7 @@
             [(-b - s) / (2 * a), (-b + s) / (2 * a)].forEach((r) => HM.dot(ctx, P.X(r), P.Y(0), D === 0 ? C.gold : C.red, 6, C.card));
           }
         });
-        cv.setAttribute("aria-label", `Parabola y = ${N(a)}x² + ${N(b)}x + ${N(c)}. ${D > 0 ? "It crosses the x-axis twice." : D === 0 ? "It touches the x-axis once." : "It does not meet the x-axis."}`);
+        cv.setAttribute("aria-label", `Parabola y = ${HM.terms([[a, "x²"], [b, "x"], [c, ""]])}. ${D > 0 ? "It crosses the x-axis twice." : D === 0 ? "It touches the x-axis once." : "It does not meet the x-axis."}`);
       },
     });
     function info() {
@@ -301,7 +301,7 @@
           }
         });
         const D = m * m - 4 * (4 - k);
-        cv.setAttribute("aria-label", `The parabola y = x² + 4 and the line y = ${N(m)}x + ${N(k)}. ${Math.abs(D) < 1e-9 ? "The line is a tangent." : D > 0 ? "The line cuts the curve twice." : "The line misses the curve."}`);
+        cv.setAttribute("aria-label", `The parabola y = x² + 4 and the line y = ${HM.terms([[m, "x"], [k, ""]])}. ${Math.abs(D) < 1e-9 ? "The line is a tangent." : D > 0 ? "The line cuts the curve twice." : "The line misses the curve."}`);
       },
     });
     function info() {
@@ -433,8 +433,12 @@
             ctx.beginPath(); ctx.moveTo(P.X(a), P.Y(b)); ctx.lineTo(P.X(b), P.Y(a)); ctx.stroke(); ctx.setLineDash([]);
             HM.dot(ctx, P.X(a), P.Y(b), C.sea, 5);
             HM.dot(ctx, P.X(xa), P.Y(yb), C.red, 5.5, C.card);
-            if (ph >= 1) HM.label(ctx, `(${N(b, 2)}, ${N(a, 2)})`, P.X(b) + 6, P.Y(a) + (a > b ? -10 : 12), { size: 12, col: C.red });
-            else HM.label(ctx, `(${N(a, 2)}, ${N(b, 2)})`, P.X(a) + 6, P.Y(b) - 10, { size: 12, col: C.sea });
+          });
+          // labels after every dot, so each can steer clear of all of them
+          F.pts.forEach((a) => {
+            const b = F.f(a);
+            if (ph >= 1) HM.label(ctx, `(${N(b, 2)}, ${N(a, 2)})`, P.X(b) + 6, P.Y(a) + (a > b ? -10 : 12), { avoid: true, size: 12, col: C.red });
+            else HM.label(ctx, `(${N(a, 2)}, ${N(b, 2)})`, P.X(a) + 6, P.Y(b) - 10, { avoid: true, size: 12, col: C.sea });
           });
         });
         HM.label(ctx, "y = x", P.X(5.2), P.Y(5.2) + 14, { size: 12, col: C.ink2, align: "right" });
@@ -464,7 +468,7 @@
     const ctl = controls(box);
     const sliders = {
       a: HM.slider(ctl, { label: "$a$ (outside, multiplies $y$)", min: -3, max: 3, step: 0.5, value: 2, fmt: (v) => N(v), oninput: (v) => { target.a = v; preview(); } }),
-      b: HM.slider(ctl, { label: "$b$ (inside, multiplies $x$)", min: -2, max: 3, step: 0.5, value: 1, fmt: (v) => N(v), oninput: (v) => { target.b = v === 0 ? 0.5 : v; preview(); } }),
+      b: HM.slider(ctl, { label: "$b$ (inside, multiplies $x$)", min: -2, max: 3, step: 0.5, value: 1, fmt: (v) => N(v), oninput: (v) => { if (v === 0) { sliders.b.set(target.b > 0 ? -0.5 : 0.5); return; } target.b = v; preview(); } }),
       c: HM.slider(ctl, { label: "$c$ (inside, added)", min: -4, max: 4, step: 1, value: -1, oninput: (v) => { target.c = v; preview(); } }),
       d: HM.slider(ctl, { label: "$d$ (outside, added)", min: -4, max: 4, step: 1, value: 3, oninput: (v) => { target.d = v; preview(); } }),
     };
@@ -506,11 +510,11 @@
             HM.dot(ctx, P.X(px), P.Y(py), C.muted, 4);
             ctx.setLineDash([2, 3]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(P.X(px), P.Y(py)); ctx.lineTo(P.X(nx), P.Y(ny)); ctx.stroke(); ctx.setLineDash([]);
             HM.dot(ctx, P.X(nx), P.Y(ny), C.red, 5.5, C.card);
-            if (ph >= 1 || start < 0) HM.label(ctx, `(${N(nx, 2)}, ${N(ny, 2)})`, P.X(nx) + 7, P.Y(ny) - 11, { size: 12, col: C.red, bold: true });
+            if (ph >= 1 || start < 0) HM.label(ctx, `(${N(nx, 2)}, ${N(ny, 2)})`, P.X(nx) + 7, P.Y(ny) - 11, { avoid: true, size: 12, col: C.red, bold: true });
           });
         });
         if (ph >= 1 && S.playing) S.pause();
-        cv.setAttribute("aria-label", `The graph of y = f(x) (dashed) and of y = ${N(target.a)} f(${N(target.b)}x + ${N(target.c)}) + ${N(target.d)} (red), with marked points mapped.`);
+        cv.setAttribute("aria-label", `The graph of y = f(x) (dashed) and of y = ${HM.terms([[target.a, "f(" + HM.terms([[target.b, "x"], [target.c, ""]]) + ")"], [target.d, ""]])} (red), with marked points mapped.`);
       },
     });
     function preview() {
@@ -535,12 +539,13 @@
   mount("w-explog", (box) => {
     const ctl = controls(box);
     let a = 2;
-    HM.slider(ctl, { label: "base $a$", min: 0.2, max: 5, step: 0.1, value: a, fmt: (v) => (Math.abs(v - Math.E) < 0.05 ? "≈ e" : N(v, 1)), oninput: (v) => { a = Math.abs(v - 1) < 0.05 ? 1.1 : v; sim.redraw(); info(); } });
+    // base 1 is skipped (no log), and the stop at 2.7 stands for e itself
+    const sa = HM.slider(ctl, { label: "base $a$", min: 0.2, max: 5, step: 0.1, value: a, fmt: (v) => (Math.abs(v - Math.E) < 0.05 ? "≈ e" : N(v, 1)), oninput: (v) => { if (Math.abs(v - 1) < 0.05) { sa.set(a > 1 ? 0.9 : 1.1); return; } a = Math.abs(v - Math.E) < 0.05 ? Math.E : v; sim.redraw(); info(); } });
     const eBtn = HM.el("button", { class: "btn small", type: "button" }, "Set a = e");
     box.append(HM.el("div", { class: "btn-row" }, eBtn));
     const cv = canvasIn(box, "");
     const out = texBox(box);
-    eBtn.addEventListener("click", () => { a = Math.E; sim.redraw(); info(); });
+    eBtn.addEventListener("click", () => sa.set(2.7));
     const sim = HM.sim(cv, {
       height: (w) => Math.min(440, Math.max(300, Math.round(w * 0.6))),
       draw(ctx, t, dt, C, S) {
@@ -553,9 +558,9 @@
           HM.curve(ctx, P, (x) => (x > 0 ? Math.log(x) / Math.log(a) : NaN), 0.001, 6, C.red, 3, { ylo: -8, yhi: 8, n: 1200 });
           [[0, 1, C.sea], [1, a, C.sea], [1, 0, C.red], [a, 1, C.red]].forEach(([x, y, col]) => HM.dot(ctx, P.X(x), P.Y(y), col, 5, C.card));
         });
-        HM.label(ctx, `y = ${a === Math.E ? "e" : N(a, 1)}ˣ`, P.X(Math.log(5) / Math.log(a) * (a > 1 ? 1 : 1)) + 6, P.Y(5), { col: C.sea, bold: true });
+        HM.label(ctx, `y = ${a === Math.E ? "e" : N(a, 1)}ˣ`, P.X(Math.log(5) / Math.log(a) * (a > 1 ? 1 : 1)) + 6, P.Y(5), { avoid: true, col: C.sea, bold: true });
         const subs = (t) => String(t).replace(/[0-9.]/g, (d) => "₀₁₂₃₄₅₆₇₈₉"[d] || "․");
-        HM.label(ctx, `y = log${a === Math.E ? "ₑ" : subs(N(a, 1))} x`, P.X(5.6), P.Y(Math.log(5.6) / Math.log(a)) + (a > 1 ? 16 : -16), { col: C.red, bold: true, align: "right" });
+        HM.label(ctx, `y = log${a === Math.E ? "ₑ" : subs(N(a, 1))} x`, P.X(5.6), P.Y(Math.log(5.6) / Math.log(a)) + (a > 1 ? 16 : -16), { avoid: true, col: C.red, bold: true, align: "right" });
         cv.setAttribute("aria-label", `Graphs of y = a to the power x (blue) and y = log base a of x (red) for a = ${N(a, 2)}, reflections of each other in the line y = x.`);
       },
     });
