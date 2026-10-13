@@ -2,7 +2,8 @@
    HMS Redstone under sail. Her bow chaser lobs a shot along a true parabola
    (constant horizontal velocity, constant downward acceleration, with the
    trail dots dropped at equal time intervals) while an Air Cadet Grob Tutor
-   tows a banner. Static for prefers-reduced-motion; paused when off-screen. */
+   tows a banner. Every other pass a shot finds the Tutor: it ditches, and the cadet
+   parachutes onto the ship. Static for prefers-reduced-motion; paused when off-screen. */
 (function () {
   "use strict";
   const cv = document.getElementById("hero-canvas");
@@ -35,7 +36,25 @@
     px(x, y + 2, 14, 3, "#e8e8e8"); px(x + 4, y, 4, 7, "#e8e8e8"); px(x + 11, y, 2, 3, "#c8102e"); px(x + 1, y + 2, 2, 2, "#1c5fb3");
     px(x + 6, y + 3, 1, 1, "#c8102e"); px(x - 1, y + 3, 1, 1, "#555");
   }
+  function banner(x, y, flap = 0) {
+    const sag = Math.round(flap * 2);
+    px(x, y + sag, 90, 9, "#f4ecd8"); px(x, y + sag, 90, 1, "#c8102e"); px(x, y + 8 + sag, 90, 1, "#c8102e");
+    text("HIGHER PHYSICS", x + 6, y + 2 + sag, "#12284a");
+  }
+  function pilot(x, y, chute, wave) {
+    // y is where the boots are
+    if (chute) {
+      px(x - 3, y - 11, 7, 2, "#c8102e"); px(x - 2, y - 12, 5, 1, "#c8102e"); px(x - 1, y - 11, 1, 2, "#f2ead8"); px(x + 1, y - 11, 1, 2, "#f2ead8");
+      px(x - 3, y - 9, 1, 4, "#dddddd"); px(x + 3, y - 9, 1, 4, "#dddddd");
+    }
+    px(x, y - 5, 1, 1, "#f0c8a0");                 // face
+    px(x - 1, y - 4, 3, 2, "#5b6f8f");             // RAF blue-grey flying suit
+    px(x - 1, y - 2, 1, 2, "#2a2a2a"); px(x + 1, y - 2, 1, 2, "#2a2a2a");
+    if (wave) px(x + 2, y - 6, 1, 2, "#f0c8a0");   // safe on deck: a sheepish wave
+  }
   let t0 = performance.now(), raf = 0, running = true;
+  // hold the routine bow chaser while the aimed shot is in the air, so there is one ball to follow
+  function quietGun(tg) { const P = (W + 300) / 22, n = Math.floor(tg / P), u = tg - n * P; return n % 2 === 0 && u > 6.4 && u < 11.5; }
   function frame(now) {
     const t = reduced ? 6 : (now - t0) / 1000;
     // sky
@@ -57,7 +76,7 @@
     if (phase < 0.12) for (let i = 0; i < 9; i++) px(sx + 7 + i * 6, sy + 18, 3, 2, "#ffb21e");
     // the bow chaser fires half a cycle later: a real projectile, g = 26 px/s²
     const bphase = t % 7;
-    if (!reduced && bphase < 0.05 && (!balls.length || balls[balls.length - 1].born < t - 1)) balls.push({ x0: sx + 76, y0: sy + 10, vx: 34, vy: -22, born: t });
+    if (!reduced && bphase < 0.05 && !quietGun(t) && (!balls.length || balls[balls.length - 1].born < t - 1)) balls.push({ x0: sx + 76, y0: sy + 10, vx: 34, vy: -22, born: t });
     if (bphase < 0.15) { px(sx + 75, sy + 8, 4, 4, "#ffb21e"); }
     for (const b of balls) {
       const age = t - b.born;
@@ -77,13 +96,69 @@
     while (smoke.length && smoke[0].a <= 0) smoke.shift();
     smoke.forEach((s) => { c.globalAlpha = Math.max(0, s.a); px(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2, "#e8e8e8"); });
     c.globalAlpha = 1;
-    // Air Cadet Tutor towing a banner
-    const bx = W + 140 - ((t * 22) % (W + 300));
-    const by = 14 + Math.round(Math.sin(t * 1.3) * 1.5);
-    tutor(bx, by);
-    px(bx + 14, by + 3, 8, 1, "#888");
-    px(bx + 22, by - 1, 90, 9, "#f4ecd8"); px(bx + 22, by - 1, 90, 1, "#c8102e"); px(bx + 22, by + 7, 90, 1, "#c8102e");
-    text("HIGHER PHYSICS", bx + 28, by + 1, "#12284a");
+    // Air Cadet Tutor towing a banner. Every other pass is the joke pass: the bow chaser
+    // lands one aimed shot, the Tutor goes into the sea, and the cadet pilot parachutes
+    // onto the forecastle of the very ship that shot them down.
+    const PASS = (W + 300) / 22, pass = Math.floor(t / PASS), tau = t - pass * PASS;
+    const joke = !reduced && pass % 2 === 0;
+    const planeY = (tg) => 14 + Math.round(Math.sin(tg * 1.3) * 1.5);
+    const shipAt = (tg) => ({ x: 120 + Math.sin(tg * 0.25) * 30, y: 32 + Math.round(Math.sin(tg * 1.6)) });
+    const TH = 9.8, FLY = 1.4, TL = TH - FLY;           // hit time, shot flight time, launch time
+    const bx = W + 140 - 22 * tau;
+    if (!joke || tau < TH) {
+      const by = planeY(t);
+      tutor(bx, by);
+      px(bx + 14, by + 3, 8, 1, "#888");
+      banner(bx + 22, by - 1);
+    }
+    if (joke) {
+      const tH = t - tau + TH, hx = W + 140 - 22 * TH + 6, hy = planeY(tH) + 3;
+      // the aimed shot: still a true parabola, solved so it meets the Tutor at time TH
+      if (tau >= TL && tau < TH) {
+        const sL = shipAt(t - tau + TL), x0 = sL.x + 76, y0 = sL.y + 10;
+        const vx = (hx - x0) / FLY, vy = (hy - y0 - 13 * FLY * FLY) / FLY, a = tau - TL;
+        if (a < 0.15) px(x0 - 1, y0 - 2, 4, 4, "#ffb21e");
+        for (let k = 0.2; k < a; k += 0.2) px(x0 + vx * k, y0 + vy * k + 13 * k * k, 1, 1, "#fff6c8");
+        px(x0 + vx * a - 1, y0 + vy * a + 13 * a * a - 1, 3, 3, "#222");
+      }
+      if (tau >= TH) {
+        const s = tau - TH;
+        // the plane: drag bleeds off its forward speed while it drops, trailing smoke
+        const plane = (q) => ({ x: hx - 6 - 22 * (1 - Math.exp(-1.5 * q)) / 1.5, y: hy - 3 + 10 * q * q });
+        const sW = Math.sqrt((54 - (hy - 3)) / 10), pw = plane(Math.min(s, sW));
+        if (s < sW) {
+          for (let k = Math.max(0, s - 1.2); k < s; k += 0.08) { const q = plane(k); c.globalAlpha = 0.25 + 0.6 * (k - s + 1.2); px(q.x + 12, q.y + 1, 2, 2, "#3a3a3a"); }
+          c.globalAlpha = 1;
+          tutor(pw.x, pw.y);
+          if (Math.floor(s * 12) % 2) px(pw.x + 9, pw.y + 1, 3, 2, "#ff7a1e");
+        } else if (s < sW + 1.6) {
+          const w = s - sW, sp = Math.max(0, 6 - w * 5);
+          px(pw.x + 2, 54 - sp, 3, sp, "#e8f4ff"); px(pw.x + 9, 54 - sp * 0.7, 3, sp * 0.7, "#e8f4ff");
+          if (w < 0.9) px(pw.x + 10, 52 + w * 4, 3, 2, "#c8102e"); // the tail goes under
+        }
+        // the banner flutters down on its own and sinks
+        const fy = hy - 4 + 9 * s, fx = hx + 16 + 4 * s;
+        if (fy < 58) banner(fx, Math.min(fy, 54), Math.sin(s * 5));
+        // the hit itself
+        if (s < 0.6) {
+          const r = 2 + s * 10;
+          for (let i = 0; i < 8; i++) { const an = i * Math.PI / 4 + s; px(hx + Math.cos(an) * r, hy + Math.sin(an) * r, 2, 2, i % 2 ? "#ffd23a" : "#ff6a1e"); }
+          px(hx - 2, hy - 2, 5, 5, s < 0.2 ? "#fff6c8" : "#ff9a2e");
+        }
+        // the pilot: pops out, opens the chute, steers for the forecastle
+        const E = 0.25, A = 0.5, D = 5.2;
+        if (s >= E) {
+          const p0 = plane(E), u = s - E, sh = shipAt(t);
+          const aX = p0.x + 4 - 4 * A, aY = p0.y - 20 * A + 13 * A * A;
+          const tx = sh.x + 62, ty = sh.y + 11;
+          let x, y, chute = false, landed = false;
+          if (u < A) { x = p0.x + 4 - 4 * u; y = p0.y - 20 * u + 13 * u * u; }
+          else if (u < A + D) { const f = (u - A) / D, e = f * f * (3 - 2 * f); x = aX + (tx - aX) * e; y = aY + (ty - aY) * f; chute = true; }
+          else { x = tx; y = ty; landed = true; }
+          pilot(x, y, chute, landed && Math.floor((u - A - D) * 3) % 2 === 0);
+        }
+      }
+    }
     if (running && !reduced && !paused) raf = requestAnimationFrame(frame);
   }
   let paused = false;
