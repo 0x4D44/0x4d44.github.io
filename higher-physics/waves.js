@@ -632,16 +632,19 @@
         px(ctx, gx - 3, cy - 40, 6, 80, "#9aa4b5");
         for (let y = cy - 38; y < cy + 38; y += 4) px(ctx, gx - 3, y, 6, 1, "#333");
         HP.label(ctx, "grating", gx, cy + 54, { size: 11, align: "center", col: "#cfd6e6", halo: false });
-        HP.label(ctx, "curved screen: angles drawn true to size", S.w - 8, S.h - 10, { size: 11, align: "right", col: "#cfd6e6", halo: false });
+        HP.label(ctx, "curved screen:", S.w - 8, S.h - 24, { size: 11, align: "right", col: "#cfd6e6", halo: false });
+        HP.label(ctx, "angles drawn true to size", S.w - 8, S.h - 10, { size: 11, align: "right", col: "#cfd6e6", halo: false });
         ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(gx + Rs, cy); ctx.stroke(); ctx.setLineDash([]);
         const draw = (lam, col, width, labels) => {
+          // when the orders crowd together (few lines per mm), label every 2nd or 3rd one so the labels never overprint
+          const every = Math.max(1, Math.ceil(15 / (Rs * lam * 1e-9 / d)));
           for (let m = -6; m <= 6; m++) {
             const sn = m * lam * 1e-9 / d;
             if (Math.abs(sn) >= 1) continue;
             const th = Math.asin(sn), ex = gx + Rs * Math.cos(th), ey = cy - Rs * Math.sin(th);
             ctx.strokeStyle = col; ctx.globalAlpha = 0.45; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(gx, cy); ctx.lineTo(ex, ey); ctx.stroke(); ctx.globalAlpha = 1;
             ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ex, ey, 5, 0, 7); ctx.fill();
-            if (labels) HP.label(ctx, m === 0 ? "m = 0" : `m = ${m > 0 ? m : "−" + -m}`, ex + 10 * Math.cos(th), ey - 10 * Math.sin(th), { size: 11, align: "left", col: "#fff", halo: false });
+            if (labels && m % every === 0) HP.label(ctx, m === 0 ? "m = 0" : `m = ${m > 0 ? m : "−" + -m}`, ex + 10 * Math.cos(th), ey - 10 * Math.sin(th), { size: 11, align: "left", col: "#fff", halo: false });
           }
         };
         if (src === "white") {
