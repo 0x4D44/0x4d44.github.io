@@ -103,7 +103,10 @@
       const nx = Math.max(-8, Math.min(8, gx)), ny = Math.max(-8, Math.min(8, gy));
       if (nx === o[0] && ny === o[1]) return;
       if (nx === p[0] && ny === p[1]) return;
-      (id === "A" ? S.ax : S.bx).set(nx); (id === "A" ? S.ay : S.by).set(ny);
+      // move both coordinates at once: setting x then y could pass through B's square and trip the slider's step-on rule
+      p[0] = nx; p[1] = ny;
+      (id === "A" ? S.ax : S.bx).sync(nx); (id === "A" ? S.ay : S.by).sync(ny);
+      sim.redraw(); info();
     });
     const x0FromX = (X) => { const a = Pm.X(0), b = Pm.X(1); return (X - a) / (b - a); };
     const y0FromY = (Y) => { const a = Pm.Y(0), b = Pm.Y(1); return (Y - a) / (b - a); };
@@ -111,7 +114,7 @@
       const dy = B[1] - A[1], dx = B[0] - A[0];
       const pn = (v) => (v < 0 ? `(${N(v)})` : N(v));
       let s = `$m_{AB} = \\dfrac{${N(B[1])} - ${pn(A[1])}}{${N(B[0])} - ${pn(A[0])}} = ${dx ? `\\dfrac{${dy}}{${dx}}${Number.isInteger(dy / dx) || Math.abs(gcd(dy, dx)) === 1 && dx > 0 ? "" : ` = ${mTex(dy, dx)}`}` : "\\text{undefined}"}$; `;
-      if (dx === 0) s += "The line is vertical: $\\theta = 90°$.";
+      if (dx === 0) s += "the line is vertical: $\\theta = 90°$.";
       else if (dy === 0) s += "The line is horizontal: $\\theta = 0°$.";
       else {
         const m = dy / dx, th = Math.atan(m) * 180 / Math.PI;
@@ -142,7 +145,7 @@
     pre("Worked example", [[3, -4], [1, -8], [9, -2]]);
     pre("Right-angled", [[-4, -4], [4, -4], [-4, 4]]);
     pre("Obtuse", [[-7, -3], [7, -3], [-3, 0]]);
-    pre("Equilateral-ish", [[-5, -4], [5, -4], [0, 4.66]]);
+    pre("Nearly equilateral", [[-5, -4], [5, -4], [0, 5]]);
     box.append(presets);
     const cv = canvasIn(box);
     box.append(HM.el("p", { class: "drag-hint" }, "Drag the vertices A, B and C, or use the buttons to step one vertex a square at a time."));
@@ -317,7 +320,7 @@
           ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(P.X(0), P.Y(0)); ctx.lineTo(P.X(c2[0]), P.Y(c2[1])); ctx.stroke(); ctx.setLineDash([]);
         });
         const d = Math.hypot(...c2);
-        HM.label(ctx, `d = ${N(d, 2)}`, P.X(c2[0] / 2) + 8, P.Y(c2[1] / 2), { bold: true });
+        HM.label(ctx, `d = ${N(d, 2)}`, P.X(c2[0] / 2) + 8, P.Y(c2[1] / 2) - (d === 0 ? 22 : 0), { bold: true, avoid: true });
         cv.setAttribute("aria-label", `Two circles: centres (0, 0) and (${c2}), radii ${r1} and ${r2}, distance between centres ${N(d, 2)}.`);
       },
     });
@@ -338,7 +341,17 @@
   /* =====================================================================
      3D helpers: orthographic view with yaw and pitch
      ===================================================================== */
+  // the shear below sends an axis onto the screen vertical (on top of z) when yaw = 15.6° + 90°k;
+  // keep the view at least 10° away from those angles so no axis or cuboid face goes edge-on
+  const BAD = Math.atan(0.28), GAP = 10 * Math.PI / 180, Q = Math.PI / 2;
+  function safeYaw(yaw) {
+    const r = ((yaw - BAD) % Q + Q) % Q; // 0..90°, measured from the nearest bad angle below
+    if (r < GAP) return yaw - r + GAP;
+    if (r > Q - GAP) return yaw + (Q - r) - GAP;
+    return yaw;
+  }
   function view3(S, yaw, pitch, scale, cx, cy) {
+    yaw = safeYaw(yaw);
     const cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
     return (p) => {
       const x1 = p[0] * cyw - p[1] * syw, y1 = p[0] * syw + p[1] * cyw;
@@ -354,7 +367,7 @@
     cv.addEventListener("pointermove", (e) => {
       if (!last) return;
       st.yaw += (e.clientX - last[0]) * 0.01; st.pitch = Math.max(-0.2, Math.min(1.3, st.pitch + (e.clientY - last[1]) * 0.01));
-      last = [e.clientX, e.clientY]; if (st.slider) st.slider.input.value = Math.round(((st.yaw * 180 / Math.PI) % 360 + 360) % 360); redraw();
+      last = [e.clientX, e.clientY]; if (st.slider) st.slider.sync(Math.round(((st.yaw * 180 / Math.PI) % 360 + 360) % 360) % 360); redraw();
     });
     const end = () => { last = null; cv.classList.remove("dragging"); };
     cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
@@ -410,7 +423,7 @@
           ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.stroke();
         });
         // axes from O
-        [[[7.5, 0, 0], "x"], [[0, 5.5, 0], "y"], [[0, 0, 4.5], "z"]].forEach(([e, l]) => { const a = P([0, 0, 0]), b = P(e); HM.arrow(ctx, a.x, a.y, b.x, b.y, C.ink2, 1.5, 7); HM.label(ctx, l, b.x + 6, b.y - 6, { size: 13, col: C.ink2, bold: true }); });
+        [[[7.5, 0, 0], "x"], [[0, 5.5, 0], "y"], [[0, 0, 4.5], "z"]].forEach(([e, l]) => { const a = P([0, 0, 0]), b = P(e); HM.arrow(ctx, a.x, a.y, b.x, b.y, C.ink2, 1.5, 7); HM.label(ctx, l, b.x + 6, b.y - 6, { size: 13, col: C.ink2, bold: true, avoid: true }); });
         // the route, one edge at a time
         const R = ROUTES[route];
         const legs = R.path.length - 1;
@@ -422,7 +435,7 @@
           HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.red, 4, 12);
         }
         if (prog >= legs) { const pa = P(V[R.from]), pb = P(V[R.to]); ctx.setLineDash([7, 5]); HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.lode || C.sea, 3, 12); ctx.setLineDash([]); }
-        Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.dot(ctx, q.x, q.y, C.ink, 3.5); HM.label(ctx, k, q.x + 7, q.y - 9, { bold: true, size: 14 }); });
+        Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.dot(ctx, q.x, q.y, C.ink, 3.5); }); Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.label(ctx, k, q.x + 7, q.y - 9, { bold: true, size: 14, avoid: true }); });
         if (prog >= legs && S.playing) S.pause();
         cv.setAttribute("aria-label", `A 6 by 4 by 3 cuboid of blocks with vertices O, A, B, C on the bottom and D, E, F, G on top. The path ${R.path.join(" to ")} is drawn.`);
       },
@@ -492,7 +505,7 @@
     const a = [2, -1, 2], b = [3, 4, 0];
     const st = { yaw: -0.7, pitch: 0.45 };
     const ctl = controls(box);
-    const mk = (v, i, lab) => { const sl = HM.slider(ctl, { label: lab, min: -4, max: 4, step: 1, value: v[i], oninput: (x) => { v[i] = x; if (!v.some(Boolean)) { sl.set(1); return; } sim.redraw(); info(); } }); return sl; };
+    const mk = (v, i, lab) => { const sl = HM.slider(ctl, { label: lab, min: -4, max: 4, step: 1, value: v[i], oninput: (x) => { const prev = v[i]; v[i] = x; if (!v.some(Boolean)) { sl.set(prev > 0 ? -1 : 1); return; } sim.redraw(); info(); } }); return sl; };
     ["$a_1$", "$a_2$", "$a_3$"].forEach((l, i) => mk(a, i, l));
     ["$b_1$", "$b_2$", "$b_3$"].forEach((l, i) => mk(b, i, l));
     st.slider = HM.slider(ctl, { label: "turn the picture", min: 0, max: 359, step: 1, value: 320, unit: "°", oninput: (v) => { st.yaw = v * Math.PI / 180; sim.redraw(); } });
