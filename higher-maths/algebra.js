@@ -207,8 +207,9 @@
       const brk = `\\left(x ${half < 0 ? "-" : "+"} ${F(Math.abs(half))}\\right)^2`;
       lines.push(a === 1 ? `= ${brk} - ${F(sq, 144)}${cT}` : `= ${a === -1 ? "-" : N(a)}\\left[${brk} - ${F(sq, 144)}\\right]${cT}`);
       lines.push(`= ${a === 1 ? "" : a === -1 ? "-" : N(a)}${brk} ${q < 0 ? "-" : "+"} ${F(Math.abs(q))}`);
-      if (b === 0) { lines.length = 0; lines.push(`${polyTex([a, b, c])}`, `\\text{already in the form } a(x+p)^2+q \\text{ with } p = 0`); }
-      tex.innerHTML = HM.tex(`\\begin{aligned}${lines.map((l, i) => (i ? "&" : "&") + l).join("\\\\")}\\end{aligned}`, true) +
+      const already = b === 0 ? `<p class="hint" style="margin:6px 0 0">With $b = 0$ this is already in the form $a(x + p)^2 + q$, with $p = 0$.</p>` : "";
+      if (b === 0) { lines.length = 0; lines.push(`${polyTex([a, b, c])}`); }
+      tex.innerHTML = HM.tex(`\\begin{aligned}${lines.map((l, i) => (i ? "&" : "&") + l).join("\\\\")}\\end{aligned}`, true) + already +
         `<p class="hint" style="margin:6px 0 0">Turning point ${HM.tex(`\\left(${F(-p)},\\ ${F(q)}\\right)`)}, a <b>${a > 0 ? "minimum" : "maximum"}</b> because $a ${a > 0 ? "\\gt" : "\\lt"} 0$.</p>`;
       HM.math(tex);
       tiles.redraw(); graph.redraw();
@@ -222,7 +223,7 @@
   mount("w-disc", (box) => {
     const ctl = controls(box);
     let a = 1, b = -2, c = -8, shade = "none";
-    HM.slider(ctl, { label: "$a$", min: -3, max: 3, step: 0.5, value: a, fmt: (v) => N(v), oninput: (v) => { a = v === 0 ? 0.5 : v; sim.redraw(); info(); } });
+    const sa = HM.slider(ctl, { label: "$a$", min: -3, max: 3, step: 0.5, value: a, fmt: (v) => N(v), oninput: (v) => { if (v === 0) { sa.set(a > 0 ? -0.5 : 0.5); return; } a = v; sim.redraw(); info(); } });
     HM.slider(ctl, { label: "$b$", min: -8, max: 8, step: 0.5, value: b, fmt: (v) => N(v), oninput: (v) => { b = v; sim.redraw(); info(); } });
     HM.slider(ctl, { label: "$c$", min: -10, max: 10, step: 0.5, value: c, fmt: (v) => N(v), oninput: (v) => { c = v; sim.redraw(); info(); } });
     HM.choice(box, "Shade where:", [["none", "no shading"], ["gt", "$f(x) \\gt 0$"], ["lt", "$f(x) \\lt 0$"]], shade, (v) => { shade = v; sim.redraw(); info(); });
@@ -349,6 +350,7 @@
       height: (w) => (w < 560 ? 200 : 180),
       draw(ctx, t, dt, C, S) {
         const first = order === "fg" ? gk : fk, second = order === "fg" ? fk : gk;
+        const fN = order === "fg" ? "g" : "f", sN = order === "fg" ? "f" : "g"; // by position, so f and g can be the same rule
         const v1 = FUNCS[first].f(x), v2 = FUNCS[second].f(v1);
         const y = S.h * 0.62;
         ctx.fillStyle = C.paper2; ctx.fillRect(0, y + 14, S.w, S.h - y - 14);
@@ -367,8 +369,8 @@
         const tt = start < 0 ? 99 : t - start, dur = 3.4;
         const ph = Math.min(1, tt / dur);
         const cx = 20 + ph * (S.w - 60);
-        furn(fx[0], `${first === fk ? "f" : "g"}`, first, cx > fx[0] - 40 && cx < fx[0] + 40);
-        furn(fx[1], `${second === fk ? "f" : "g"}`, second, cx > fx[1] - 40 && cx < fx[1] + 40);
+        furn(fx[0], fN, first, cx > fx[0] - 40 && cx < fx[0] + 40);
+        furn(fx[1], sN, second, cx > fx[1] - 40 && cx < fx[1] + 40);
         const val = cx < fx[0] ? x : cx < fx[1] ? v1 : v2;
         // the minecart
         ctx.fillStyle = "#555"; ctx.fillRect(cx - 18, y - 6, 36, 16); ctx.fillStyle = "#333"; ctx.fillRect(cx - 14, y + 8, 6, 6); ctx.fillRect(cx + 8, y + 8, 6, 6);
@@ -376,7 +378,7 @@
         HM.label(ctx, `in: ${N(x)}`, 14, 16, { size: 13 });
         HM.label(ctx, `out: ${ph >= 1 ? N(v2, 3) : "…"}`, S.w - 14, 16, { size: 13, align: "right" });
         if (ph >= 1 && start >= 0 && S.playing) S.pause();
-        cv.setAttribute("aria-label", `A minecart carries ${N(x)} through furnace ${first === fk ? "f" : "g"} giving ${N(v1, 3)}, then through furnace ${second === fk ? "f" : "g"} giving ${N(v2, 3)}.`);
+        cv.setAttribute("aria-label", `A minecart carries ${N(x)} through furnace ${fN} giving ${N(v1, 3)}, then through furnace ${sN} giving ${N(v2, 3)}.`);
       },
     });
     function run() {
@@ -701,7 +703,7 @@
           ctx.stroke();
           if (Math.abs(a) < 1) { const L = b / (1 - a); HM.dot(ctx, P1.X(L), P1.Y(L), C.gold, 6, C.card); }
         });
-        HM.label(ctx, "cobweb", b1.x + b1.w - 4, b1.y + 10, { align: "right", size: 12, col: C.ink2 });
+        HM.label(ctx, "cobweb", b1.x + b1.w - 4, b1.y + 10, { align: "right", size: 12, col: C.ink2, avoid: true });
         const P2 = HM.plot(ctx, b2, { x0: 0, x1: 30, y0: R[0], y1: R[1], xt: 5, yt: step, C, xl: "n", yl: "uₙ", tf: (v) => N(v, 0) });
         HM.clip(ctx, b2, () => {
           if (Math.abs(a) < 1) HM.curve(ctx, P2, () => b / (1 - a), 0, 30, C.gold, 1.5, { dash: [5, 4] });
