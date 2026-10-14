@@ -146,7 +146,7 @@
             HM.label(ctx, `period ${N(per, 1)}°`, P.X(xm + per / 2), y - 9, { align: "center", size: 12, col: C.sea, bold: true });
           }
         });
-        cv.setAttribute("aria-label", `Graph of y = ${N(a)} ${fn}(${N(b)}x ${HM.sgn(c)}) ${HM.sgn(d)} from 0 to 360 degrees, with y = ${fn} x faint behind it.`);
+        cv.setAttribute("aria-label", `Graph of y = ${N(a)} ${fn}(${N(b)}x${c ? " " + HM.sgn(c) : ""})${d ? " " + HM.sgn(d) : ""} from 0 to 360 degrees, with y = ${fn} x faint behind it.`);
       },
     });
     function firstMax() {
@@ -328,7 +328,9 @@
         ctx.setLineDash([3, 3]); ctx.strokeStyle = C.red; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(tip2[0], tip2[1]); ctx.lineTo(tip2[0], cy); ctx.stroke(); ctx.setLineDash([]);
         HM.dot(ctx, tip2[0], cy, C.red, 5);
         HM.label(ctx, `x = ${Math.round(x)}°`, cx - R + 2, cy - R + 8, { size: 12, bold: true });
-        HM.label(ctx, `k = ${N(k, 2)}`, tip2[0] + 6, tip2[1] - 8, { size: 12, bold: true, col: C.red });
+        // push the k label outward along the red arrow, clear of the dashed circle and the dot
+        const kd = Math.hypot(tip2[0] - cx, tip2[1] - cy) || 1, kx = tip2[0] + (tip2[0] - cx) / kd * 16, ky = tip2[1] + (tip2[1] - cy) / kd * 16;
+        HM.label(ctx, `k = ${N(k, 2)}`, kx, ky, { size: 12, bold: true, col: C.red, align: kx < cx ? "right" : "left", avoid: true });
         // waves
         const g = narrow ? { x: 34, y: cy + R + 26, w: S.w - 46, h: S.h - (cy + R + 26) - 22 } : { x: cx + R + 46, y: 10, w: S.w - (cx + R + 46) - 12, h: S.h - 32 };
         const P = HM.plot(ctx, g, { x0: 0, x1: 360, y0: -7.5, y1: 7.5, xt: 90, yt: 2.5, C, xl: "x°", yl: "", tf: (v) => String(v), ytf: (v) => (v % 5 ? "" : String(v).replace("-", "−")) });

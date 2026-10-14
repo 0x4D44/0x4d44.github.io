@@ -191,7 +191,8 @@
           HM.dot(ctx, P.X(xc), P.Y(q), C.red, 6, C.card);
         });
         HM.label(ctx, `${a > 0 ? "minimum" : "maximum"} (${N(xc)}, ${N(q)})`, Math.min(Math.max(P.X(xc) + 10, bx.x + 4), S.w - 170), Math.min(Math.max(P.Y(q) + (a > 0 ? 18 : -18), 24), S.h - 30), { avoid: true, bold: true, col: C.red });
-        HM.label(ctx, `x = ${N(xc)}`, P.X(xc) + 5, bx.y + 10, { avoid: true, size: 12, col: C.ink2 });
+        // clear of the y-axis label when the axis of symmetry is the y-axis itself
+        HM.label(ctx, `x = ${N(xc)}`, P.X(xc) + (Math.abs(P.X(xc) - P.X(0)) < 24 ? 16 : 5), bx.y + (Math.abs(P.X(xc) - P.X(0)) < 24 ? 30 : 10), { avoid: true, size: 12, col: C.ink2 });
         gcv.setAttribute("aria-label", `Graph of y = ${HM.terms([[a, "x²"], [b, "x"], [c, ""]])}, a parabola with ${a > 0 ? "minimum" : "maximum"} turning point (${N(xc)}, ${N(q)}) and axis of symmetry x = ${N(xc)}.`);
       },
     });
@@ -388,7 +389,8 @@
       out.innerHTML = HM.tex(`${oN}\\big(${iN}(x)\\big) = ${oN}\\left(${FUNCS[innerK].tex}\\right) = ${FUNCS[outerK].sub(FUNCS[innerK].tex)} = ${SIMPLE[outerK + "|" + innerK]}`, true) +
         `<p style="margin:0">With $x = ${x}$: $${iN}(${x}) = ${N(v1, 3).replace("−", "-")}$, then $${oN}(${N(v1, 3).replace("−", "-")}) = ${N(v2, 3).replace("−", "-")}$. ${iN === "g" ? "$g$ acts first because it is on the inside." : "Now $f$ is on the inside, so it acts first."}</p>`;
       HM.math(out);
-      start = sim.t; if (!sim.playing && !HM.reduced) sim.play(); else sim.redraw();
+      // with reduced motion there is no ride: draw the finished state (start = -1) straight away
+      start = HM.reduced ? -1 : sim.t; if (!sim.playing && !HM.reduced) sim.play(); else sim.redraw();
     }
     run();
   });
@@ -436,14 +438,15 @@
             HM.dot(ctx, P.X(a), P.Y(b), C.sea, 5);
             HM.dot(ctx, P.X(xa), P.Y(yb), C.red, 5.5, C.card);
           });
-          // labels after every dot, so each can steer clear of all of them
-          F.pts.forEach((a) => {
-            const b = F.f(a);
-            if (ph >= 1) HM.label(ctx, `(${N(b, 2)}, ${N(a, 2)})`, P.X(b) + 6, P.Y(a) + (a > b ? -10 : 12), { avoid: true, size: 12, col: C.red });
-            else HM.label(ctx, `(${N(a, 2)}, ${N(b, 2)})`, P.X(a) + 6, P.Y(b) - 10, { avoid: true, size: 12, col: C.sea });
-          });
         });
+        // labels after every dot and outside the clip, kept inside the plot box so none is cut off;
+        // "y = x" goes first so the point labels steer round it
         HM.label(ctx, "y = x", P.X(5.2), P.Y(5.2) + 14, { size: 12, col: C.ink2, align: "right" });
+        F.pts.forEach((a) => {
+          const b = F.f(a);
+          if (ph >= 1) HM.label(ctx, `(${N(b, 2)}, ${N(a, 2)})`, P.X(b) + 6, P.Y(a) + (a > b ? -10 : 12), { avoid: true, bounds: bx, size: 12, col: C.red });
+          else HM.label(ctx, `(${N(a, 2)}, ${N(b, 2)})`, P.X(a) + 6, P.Y(b) - 10, { avoid: true, bounds: bx, size: 12, col: C.sea });
+        });
         if (ph >= 1 && S.playing) S.pause();
         cv.setAttribute("aria-label", `Graph of ${F.name.replace(/\$/g, "")} in blue${ph ? " and its inverse in red, its reflection in the line y = x" : ""}. Marked points (a, b) on f become (b, a) on the inverse.`);
       },
@@ -724,7 +727,7 @@
     function info() {
       const us = [u0]; for (let i = 0; i < 5; i++) us.push(a * us[i] + b);
       const ok = a > -1 && a < 1;
-      out.innerHTML = `<p style="margin:0">$u_{n+1} = ${N(a).replace("−", "-")}u_n ${b < 0 ? "-" : "+"} ${Math.abs(b)}$: $u_1 = ${N(us[1], 2).replace("−", "-")}$, $u_2 = ${N(us[2], 2).replace("−", "-")}$, $u_3 = ${N(us[3], 2).replace("−", "-")}$, … </p>` +
+      out.innerHTML = `<p style="margin:0">$u_{n+1} = ${a === 0 ? (b < 0 ? "-" : "") + Math.abs(b) : `${N(a).replace("−", "-")}u_n ${b < 0 ? "-" : "+"} ${Math.abs(b)}`}$: $u_1 = ${N(us[1], 2).replace("−", "-")}$, $u_2 = ${N(us[2], 2).replace("−", "-")}$, $u_3 = ${N(us[3], 2).replace("−", "-")}$, … </p>` +
         (ok ? `<p style="margin:4px 0 0">A limit exists because $-1 \\lt ${N(a).replace("−", "-")} \\lt 1$. $L = \\dfrac{${b}}{1 - ${a < 0 ? `(${N(a).replace("−", "-")})` : N(a)}} = ${N(b / (1 - a), 2).replace("−", "-")}$.${a < 0 ? " Because $a$ is negative, the terms zig-zag above and below the limit: the cobweb spirals in." : ""}</p>`
           : `<p style="margin:4px 0 0"><b>No limit</b>: $a = ${N(a).replace("−", "-")}$ is not between $-1$ and $1$. ${noLimit()}</p>`);
       HM.math(out);

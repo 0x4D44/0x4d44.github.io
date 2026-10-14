@@ -462,7 +462,7 @@
       const pm = (v, x = "") => (v === 0 ? "" : ` ${v < 0 ? "-" : "+"} ${N(Math.abs(v))}${x}`);
       const lo = N(r[0], 3), hi = N(r[1], 3);
       out.innerHTML = `<p style="margin:0">Meet where $x^2 = 2x${pm(c)}$: $x = ${lo}$ and $x = ${hi}$. The area between them is</p>` +
-        HM.tex(`\\begin{aligned}&\\int_{${lo}}^{${hi}} \\big(2x${pm(c)} - x^2\\big)\\,dx\\\\ &= \\Big[x^2${pm(c, "x")} - \\tfrac{x^3}{3}\\Big]_{${lo}}^{${hi}} = ${N(A, 3)} \\text{ square units.}\\end{aligned}`, true);
+        HM.tex(`\\begin{aligned}&\\int_{${lo}}^{${hi}} \\big(2x${pm(c)} - x^2\\big)\\,dx\\\\ &= \\Big[x^2${pm(c, "x")} - \\tfrac{x^3}{3}\\Big]_{${lo}}^{${hi}}\\\\ &= ${N(A, 3)} \\text{ square units.}\\end{aligned}`, true);
       HM.math(out);
     }
     info();

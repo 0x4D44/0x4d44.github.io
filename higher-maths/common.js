@@ -740,8 +740,8 @@
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
     if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) { const s = (o.ytf || tf)(v), tw = ctx.measureText(s).width; ctx.fillText(s, yAxisX - 4, Y(v)); keep(yAxisX - 4 - tw, Y(v) - fs / 2, tw, fs); }
     ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
-    if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(o.xl, box.x + box.w, xAxisY - 4); }
-    if (o.yl) { ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(o.yl, yAxisX + 5, box.y); }
+    if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(o.xl, box.x + box.w, xAxisY - 4); const w = ctx.measureText(o.xl).width; keep(box.x + box.w - w, xAxisY - 4 - fs, w, fs); }
+    if (o.yl) { ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(o.yl, yAxisX + 5, box.y); keep(yAxisX + 5, box.y, ctx.measureText(o.yl).width, fs); }
     ctx.restore();
     return { X, Y };
   };
@@ -768,8 +768,11 @@
     const hit = (b) => (ctx._hmBoxes || []).some((q) => b.x < q.x + q.w && q.x < b.x + b.w && b.y < q.y + q.h && q.y < b.y + b.h);
     if (o.avoid && ctx._hmBoxes) {
       const cw = ctx.canvas.width / (ctx.getTransform ? ctx.getTransform().a : 1);
-      const tries = [[0, 0], [0, -th], [0, th], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th]];
-      const ok = tries.map(([dx, dy]) => [x + dx, y + dy]).find(([px, py]) => { const b = at(px, py); return b.x >= 0 && b.x + b.w <= cw && b.y >= 0 && !hit(b); });
+      const ch = ctx.canvas.height / (ctx.getTransform ? ctx.getTransform().d : 1);
+      // o.bounds keeps the label inside a plot box (a clipped plot would otherwise cut it off)
+      const B = o.bounds || { x: 0, y: 0, w: cw, h: ch };
+      const tries = [[0, 0], [0, -th], [0, th], [6, 4], [6, 14], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th], [-tw - 16, -2 * th], [-tw - 16, 2 * th]];
+      const ok = tries.map(([dx, dy]) => [x + dx, y + dy]).find(([px, py]) => { const b = at(px, py); return b.x >= B.x && b.x + b.w <= B.x + B.w && b.y >= B.y && b.y + b.h <= B.y + B.h && !hit(b); });
       if (ok) [x, y] = ok;
     }
     if (ctx._hmBoxes) ctx._hmBoxes.push(at(x, y));
