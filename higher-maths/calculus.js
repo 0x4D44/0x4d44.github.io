@@ -45,7 +45,7 @@
       height: (w) => (w < 560 ? 480 : 440),
       draw(ctx, t, dt, C, S) {
         const F = FN[key];
-        if (auto) { x += dt * (F.x1 - F.x0) / 7; if (x >= F.x1) { x = F.x1; auto = false; S.pause(); go.textContent = "▶ Sweep along the curve"; } xs.input.value = x; info(); }
+        if (auto) { x += dt * (F.x1 - F.x0) / 7; if (x >= F.x1) { x = F.x1; auto = false; S.pause(); go.textContent = "▶ Sweep along the curve"; } xs.sync(x); info(); }
         const h1 = S.h * 0.56;
         const b1 = { x: 40, y: 10, w: S.w - 54, h: h1 - 24 }, b2 = { x: 40, y: h1 + 8, w: S.w - 54, h: S.h - h1 - 30 };
         const tf = F.rad ? (v) => ["0", "π/2", "π", "3π/2", "2π"][Math.round(v / (Math.PI / 2))] || "" : undefined;
@@ -105,7 +105,7 @@
         // turning speeds (radians per second), squashed so huge ratios still look sensible
         const sq = (v) => Math.sign(v) * Math.min(6, Math.log1p(Math.abs(v)) * 1.4);
         const speeds = [0.6, 0.6 * sq(r1), 0.6 * sq(r)];
-        if (!HM.reduced) for (let i = 0; i < 3; i++) angles[i] += speeds[i] * dt;
+        for (let i = 0; i < 3; i++) angles[i] += speeds[i] * dt; // dt is 0 on a still redraw
         const ys = S.h * 0.48;
         const gx = [S.w * 0.17, S.w * 0.5, S.w * 0.83];
         const R = Math.min(56, S.w * 0.12);
@@ -124,11 +124,13 @@
         gear(gx[0], angles[0], "#8a8f99", "x", "turns at 1");
         gear(gx[1], angles[1], "#a8794f", "u", `du/dx = ${N(r1, 3)}`);
         gear(gx[2], angles[2], "#c99a2e", "y", `dy/dx = ${N(r, 3)}`);
-        HM.label(ctx, `× ${N(r1, 3)}`, (gx[0] + gx[1]) / 2, ys, { align: "center", bold: true, col: C.sea });
-        HM.label(ctx, `× ${N(r2, 3)}`, (gx[1] + gx[2]) / 2, ys, { align: "center", bold: true, col: C.red });
+        HM.label(ctx, `× ${N(r1, 3)}`, (gx[0] + gx[1]) / 2, ys + R + 16, { align: "center", bold: true, col: C.sea });
+        HM.label(ctx, `× ${N(r2, 3)}`, (gx[1] + gx[2]) / 2, ys + R + 16, { align: "center", bold: true, col: C.red });
         cv.setAttribute("aria-label", `Three gears: x drives u at du/dx = ${N(r1, 3)}, u drives y at dy/du = ${N(r2, 3)}, so y turns at dy/dx = ${N(r, 3)}.`);
       },
     });
+    // with reduced motion the gears stay still until asked to turn
+    if (HM.reduced) ctl.append(HM.playButton(sim, ["▶ Turn the gears", "❚❚ Stop"]));
     function info() {
       const F = FN[key], u = F.g(x), r1 = F.dg(x), r2 = F.df(u), r = r1 * r2;
       const h = 1e-5, num = (F.y(x + h) - F.y(x - h)) / (2 * h);
@@ -459,7 +461,8 @@
       const A = G(r[1]) - G(r[0]);
       const pm = (v, x = "") => (v === 0 ? "" : ` ${v < 0 ? "-" : "+"} ${N(Math.abs(v))}${x}`);
       const lo = N(r[0], 3), hi = N(r[1], 3);
-      out.innerHTML = `<p style="margin:0">Meet where $x^2 = 2x${pm(c)}$: $x = ${lo}$ and $x = ${hi}$. Area $= \\displaystyle\\int_{${lo}}^{${hi}} \\big(2x${pm(c)} - x^2\\big)\\,dx = \\Big[x^2${pm(c, "x")} - \\tfrac{x^3}{3}\\Big]_{${lo}}^{${hi}} = ${N(A, 3)}$ square units.</p>`;
+      out.innerHTML = `<p style="margin:0">Meet where $x^2 = 2x${pm(c)}$: $x = ${lo}$ and $x = ${hi}$. The area between them is</p>` +
+        HM.tex(`\\begin{aligned}&\\int_{${lo}}^{${hi}} \\big(2x${pm(c)} - x^2\\big)\\,dx\\\\ &= \\Big[x^2${pm(c, "x")} - \\tfrac{x^3}{3}\\Big]_{${lo}}^{${hi}} = ${N(A, 3)} \\text{ square units.}\\end{aligned}`, true);
       HM.math(out);
     }
     info();

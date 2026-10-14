@@ -68,7 +68,7 @@
         if (ok) right++;
         b.classList.add(ok ? "right" : "wrong");
         if (!ok) [...grid.children].find((x) => x.dataset.v === ans).classList.add("right");
-        fb.innerHTML = (ok ? "<span class='ok'>Correct.</span> " : `<span class='bad'>Not this time:</span> it is $${ans}$. `) + why;
+        fb.innerHTML = (ok ? "<span class='ok'>Correct.</span> " : `<span class='bad'>Not this time:</span> it is <b>$${ans}$</b>: `) + why;
         HM.math(fb);
         next.hidden = false; next.focus();
       });

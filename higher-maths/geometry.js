@@ -51,7 +51,8 @@
     let A = [-2, 1], B = [4, 5], mode = "none";
     const ctl = controls(box);
     const S = {};
-    const sl = (lab, arr, i) => HM.slider(ctl, { label: lab, min: -8, max: 8, step: 1, value: arr[i], oninput: (v) => { arr[i] = v; if (A[0] === B[0] && A[1] === B[1]) arr[i] = v + (v < 8 ? 1 : -1); sim.redraw(); info(); } });
+    // A and B may not coincide: step this slider on by one, so its value stays the state
+    const sl = (lab, arr, i) => { const h = HM.slider(ctl, { label: lab, min: -8, max: 8, step: 1, value: arr[i], oninput: (v) => { arr[i] = v; if (A[0] === B[0] && A[1] === B[1]) { h.set(v + (v < 8 ? 1 : -1)); return; } sim.redraw(); info(); } }); return h; };
     S.ax = sl("$A$: $x$", A, 0); S.ay = sl("$A$: $y$", A, 1); S.bx = sl("$B$: $x$", B, 0); S.by = sl("$B$: $y$", B, 1);
     HM.choice(box, "Also show:", [["none", "nothing"], ["perp", "perpendicular through $A$"], ["bis", "perpendicular bisector of $AB$"]], mode, (v) => { mode = v; sim.redraw(); info(); });
     const cv = canvasIn(box);
@@ -78,13 +79,13 @@
             ctx.strokeStyle = C.red; ctx.lineWidth = 2.5;
             ctx.beginPath(); ctx.arc(P.X(xc), P.Y(0), 26, 0, -th, true); ctx.stroke();
             ctx.setLineDash([4, 3]); ctx.strokeStyle = C.red; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(P.X(xc), P.Y(0)); ctx.lineTo(P.X(xc) + 60, P.Y(0)); ctx.stroke(); ctx.setLineDash([]);
-            HM.label(ctx, "θ", P.X(xc) + 32 * Math.cos(th / 2), P.Y(0) - 32 * Math.sin(th / 2), { col: C.red, bold: true, align: "center" });
+            HM.label(ctx, "θ", P.X(xc) + 32 * Math.cos(th / 2), P.Y(0) - 32 * Math.sin(th / 2), { col: C.red, bold: true, align: "center", avoid: true });
           }
           // run-and-rise triangle
           ctx.setLineDash([4, 3]); ctx.strokeStyle = C.gold; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.moveTo(P.X(A[0]), P.Y(A[1])); ctx.lineTo(P.X(B[0]), P.Y(A[1])); ctx.lineTo(P.X(B[0]), P.Y(B[1])); ctx.stroke(); ctx.setLineDash([]);
-          if (dx) HM.label(ctx, `run ${N(dx)}`, P.X((A[0] + B[0]) / 2), P.Y(A[1]) + (dy >= 0 ? 14 : -14), { align: "center", size: 12, col: C.gold, bold: true });
-          if (dy) HM.label(ctx, `rise ${N(dy)}`, P.X(B[0]) + 6, P.Y((A[1] + B[1]) / 2), { size: 12, col: C.gold, bold: true });
+          if (dx) HM.label(ctx, `run ${N(dx)}`, P.X((A[0] + B[0]) / 2), P.Y(A[1]) + (dy >= 0 ? 14 : -14), { align: "center", size: 12, col: C.gold, bold: true, avoid: true });
+          if (dy) HM.label(ctx, `rise ${N(dy)}`, P.X(B[0]) + 6, P.Y((A[1] + B[1]) / 2), { size: 12, col: C.gold, bold: true, avoid: true });
           if (mode === "perp") ext(A[0], A[1], -dy, dx, C.violet, 2.5, [8, 5]);
           if (mode === "bis") { const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]; ext(M[0], M[1], -dy, dx, C.violet, 2.5, [8, 5]); HM.dot(ctx, P.X(M[0]), P.Y(M[1]), C.violet, 5); }
           HM.dot(ctx, P.X(A[0]), P.Y(A[1]), C.ink, 7, C.card); HM.dot(ctx, P.X(B[0]), P.Y(B[1]), C.ink, 7, C.card);
@@ -217,9 +218,9 @@
       const name = { med: "centroid", alt: "orthocentre", bis: "circumcentre" }[fam];
       const l = L[0], foot = l.foot;
       let s = "";
-      if (fam === "med") s = `Median from $A$: through $A(${F(V[0][0])}, ${F(V[0][1])})$ and the midpoint of $BC$, $(${F(foot[0])}, ${F(foot[1])})$.`;
+      if (fam === "med") s = `Median from $A$: through $A(${F(V[0][0])}, ${F(V[0][1])})$ and the midpoint of $BC$, $(${F(foot[0], 60)}, ${F(foot[1], 60)})$.`;
       if (fam === "alt") s = `Altitude from $A$: through $A$, perpendicular to $BC$ (gradient ${V[2][0] - V[1][0] === 0 ? "$0$" : V[2][1] === V[1][1] ? "undefined" : `$${F(-(V[2][0] - V[1][0]) / (V[2][1] - V[1][1]), 30)}$`}).`;
-      if (fam === "bis") s = `Perpendicular bisector of $BC$: through its midpoint $(${F(foot[0])}, ${F(foot[1])})$, perpendicular to $BC$.`;
+      if (fam === "bis") s = `Perpendicular bisector of $BC$: through its midpoint $(${F(foot[0], 60)}, ${F(foot[1], 60)})$, perpendicular to $BC$.`;
       s += X ? ` All three meet at the <b>${name}</b> $(${F(X[0], 30)}, ${F(X[1], 30)})$.` : "";
       if (fam === "alt" && X && L.some((q) => false)) s += "";
       if (fam === "med") s += " The centroid is always two thirds of the way down each median.";
@@ -341,7 +342,9 @@
     const cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
     return (p) => {
       const x1 = p[0] * cyw - p[1] * syw, y1 = p[0] * syw + p[1] * cyw;
-      return { x: cx + scale * x1, y: cy - scale * (p[2] * cp + y1 * sp), z: y1 * cp - p[2] * sp };
+      // a slight oblique shear on depth: an edge pointing straight away from the viewer would
+      // otherwise project onto the vertical and look parallel (or opposite) to the z-axis
+      return { x: cx + scale * (x1 + 0.28 * y1), y: cy - scale * (p[2] * cp + y1 * sp), z: y1 * cp - p[2] * sp };
     };
   }
   function rotDrag(cv, st, redraw) {

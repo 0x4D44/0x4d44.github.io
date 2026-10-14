@@ -60,12 +60,12 @@
     const out = texBox(box);
     let Pc = null;
     const sync = () => { btns.forEach((b, i) => b.setAttribute("aria-pressed", angs[i] === Math.round(th) ? "true" : "false")); sim.redraw(); info(); };
-    const stop = () => { playing = false; sim.pause(); play.textContent = "▶ Turn the capstan"; };
+    const stop = () => { playing = false; sim.pause(); play.textContent = "▶ Turn the capstan"; sync(); };
     play.addEventListener("click", () => { if (playing) return stop(); playing = true; play.textContent = "❚❚ Stop"; sim.play(); });
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 430 : 300),
       draw(ctx, t, dt, C, S) {
-        if (playing) { th = (th + dt * 45) % 360; if (Math.round(th) % 15 === 0) info(); }
+        if (playing) { const was = Math.round(th); th = (th + dt * 45) % 360; if (Math.round(th) !== was) { info(); btns.forEach((bt) => bt.setAttribute("aria-pressed", "false")); } }
         const narrow = S.w < 560;
         const R = narrow ? Math.min(S.w / 2 - 40, 100) : Math.min(S.h / 2 - 34, 115);
         const cx = narrow ? S.w / 2 : R + 40, cy = narrow ? R + 26 : S.h / 2;
@@ -146,7 +146,7 @@
             HM.label(ctx, `period ${N(per, 1)}°`, P.X(xm + per / 2), y - 9, { align: "center", size: 12, col: C.sea, bold: true });
           }
         });
-        cv.setAttribute("aria-label", `Graph of y = ${N(a)} ${fn}(${N(b)}x + ${c}) + ${N(d)} from 0 to 360 degrees, with y = ${fn} x faint behind it.`);
+        cv.setAttribute("aria-label", `Graph of y = ${N(a)} ${fn}(${N(b)}x ${HM.sgn(c)}) ${HM.sgn(d)} from 0 to 360 degrees, with y = ${fn} x faint behind it.`);
       },
     });
     function firstMax() {

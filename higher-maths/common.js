@@ -698,7 +698,7 @@
     input.addEventListener("input", () => { show(); if (o.oninput) o.oninput(+input.value); });
     show();
     parent.append(wrap);
-    return { input, get value() { return +input.value; }, set(v) { input.value = v; show(); if (o.oninput) o.oninput(+input.value); } };
+    return { input, get value() { return +input.value; }, set(v) { input.value = v; show(); if (o.oninput) o.oninput(+input.value); }, sync(v) { input.value = v; show(); } };
   };
   /* segmented choice: HM.choice(parent, label, [[value, text], ...], value, onchange) */
   HM.choice = function (parent, label, opts, value, onchange) {
