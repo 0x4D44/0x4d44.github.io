@@ -537,7 +537,17 @@ $$\log y = b\log x + \log a.$$
 <li>$y = 8x^2$, so $a = 8$ and $b = 2$ <span class="why">Remove the logs: both sides are $\log_2$ of something.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 24 · P1 · an exponential</p>
+<div class="worked"><p class="worked-title">Worked example 24 · P1 · a power law from two points</p>
+<p>The relationship $y = ax^b$ fits the data points $(2,\ 20)$ and $(8,\ 320)$. Find $a$ and $b$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>$20 = a \times 2^b$ and $320 = a \times 8^b$ <span class="why">Substitute each point.</span></li>
+<li>$\dfrac{320}{20} = \dfrac{8^b}{2^b} \Rightarrow 16 = 4^b \Rightarrow b = 2$ <span class="why">Divide to eliminate $a$.</span></li>
+<li>$20 = a \times 2^2 \Rightarrow a = 5$, so $y = 5x^2$ <span class="why">Substitute back.</span></li>
+</ol>
+<p>With less friendly numbers, take logs instead: $\log y = b\log x + \log a$ is a straight line in $(\log x, \log y)$. Its gradient is $b = \dfrac{\log 320 - \log 20}{\log 8 - \log 2}$, and then $\log a = \log 20 - b\log 2$. On a calculator paper, use $\ln$ or $\log_{10}$, either works.</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 25 · P1 · an exponential</p>
 <p>The graph of $\log_3 y$ against $x$ is a straight line through $(0,\ 2)$ with gradient 1. Express $y$ in the form $y = ab^x$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -567,7 +577,7 @@ $$u_{n+1} = 0.85u_n + 40, \qquad u_0 = 100.$$
 $$L = \frac{b}{1 - a}.$$
 <p>For the water tank, $L = \dfrac{40}{1 - 0.85} = 266.\dot6$ litres. In the long run, the tank holds about 267 litres, whatever it started with.</p>
 <p>If $a \ge 1$ or $a \le -1$ the sequence does not, in general, converge to a limit. For $a \gt 1$ or $a \lt -1$ the terms run away from $\frac{b}{1-a}$ (growing without end, or swinging ever more wildly); for $a = -1$ they flip between two values for ever; for $a = 1$ they go up or down by $b$ each time. So $L = \frac{b}{1-a}$ is not a limit there, even when it gives a number. (Only the start $u_0 = \frac{b}{1-a}$ stays put, and then every term is the same.)</p>
-<div class="worked"><p class="worked-title">Worked example 25 · P1 · state why a limit exists</p>
+<div class="worked"><p class="worked-title">Worked example 26 · P1 · state why a limit exists</p>
 <p>A sequence is defined by $u_{n+1} = 0.6u_n + 12$. Explain why it has a limit, and find it.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -576,7 +586,7 @@ $$L = \frac{b}{1 - a}.$$
 <li>$L = \dfrac{12}{0.4} = 30$ <span class="why">Evaluate.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 26 · P1 · find the rule from three terms</p>
+<div class="worked"><p class="worked-title">Worked example 27 · P1 · find the rule from three terms</p>
 <p>A sequence satisfies $u_{n+1} = au_n + b$, with $u_1 = 4$, $u_2 = 10$ and $u_3 = 22$. Find $a$ and $b$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -585,7 +595,7 @@ $$L = \frac{b}{1 - a}.$$
 <li>$b = 10 - 8 = 2$ <span class="why">Substitute back.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 27 · P2 · when does it pass a target?</p>
+<div class="worked"><p class="worked-title">Worked example 28 · P2 · when does it pass a target?</p>
 <p>The tank model is $u_{n+1} = 0.85u_n + 40$, $u_0 = 100$. After how many days does the tank first hold more than 250 litres?</p>
 <details><summary>Show solution</summary>
 <p>Use your calculator's "Ans" key: type 100, then repeatedly enter <code>0.85 × Ans + 40</code>, counting the presses. Write the terms down so the marker can see your method.</p>

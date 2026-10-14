@@ -15,11 +15,12 @@
         { q: R`Which of these is a factor of $x^3 - 7x + 6$?`, opts: [R`$(x + 1)$`, R`$(x - 3)$`, R`$(x + 2)$`, R`$(x + 3)$`], a: 3, why: R`$f(-3) = -27 + 21 + 6 = 0$, so $(x+3)$ is a factor. The others give $f(-1) = f(3) = f(-2) = 12$. (Remember the 0 coefficient for the missing $x^2$ term.)` },
         { q: R`Synthetic division of $x^3 + 2x^2 - 5x - 6$ by $(x + 1)$ uses the trial root $-1$. What is the bottom row?`, opts: [R`$1,\ 3,\ -2,\ -8$`, R`$1,\ 1,\ -6,\ 0$`, R`$1,\ 1,\ -4,\ -2$`, R`$1,\ -1,\ -3,\ 3$`], a: 1, why: R`Bring down 1. $1 \times (-1) = -1$, $2 - 1 = 1$. $1 \times (-1) = -1$, $-5 - 1 = -6$. $-6 \times (-1) = 6$, $-6 + 6 = 0$. The first option is what you get by wrongly using $+1$.` },
         { q: R`$(x + 2)$ is a factor of $2x^3 + px^2 - 5x - 6$. What is $p$?`, opts: [R`$-3$`, R`$1$`, R`$3$`, R`$12$`], a: 2, why: R`$f(-2) = -16 + 4p + 10 - 6 = 4p - 12 = 0$, so $p = 3$.` },
-        { type: "open", q: R`$f(x) = 2x^3 + 3x^2 - 5x - 6$. Show that $(x + 2)$ is a factor of $f(x)$, and hence solve $f(x) = 0$.`, marks: 4, model: mi(
+        { type: "open", q: R`$f(x) = 2x^3 + 3x^2 - 5x - 6$. Show that $(x + 2)$ is a factor of $f(x)$, and hence solve $f(x) = 0$.`, marks: 5, model: mi(
           R`•1 know to use $x = -2$: synthetic division with $-2$, or evaluate $f(-2)$`,
           R`•2 complete the working, get remainder $0$ (or $f(-2) = 0$), and <b>communicate</b>: "remainder is 0, so $(x + 2)$ is a factor"`,
           R`•3 find the quadratic factor $2x^2 - x - 3$`,
-          R`•4 factorise fully $(x+2)(2x-3)(x+1)$ and state $x = -2,\ -1,\ \tfrac32$`) },
+          R`•4 factorise fully: $(x + 2)(2x - 3)(x + 1)$`,
+          R`•5 state the solutions: $x = -2,\ -1,\ \tfrac32$`) },
         { q: R`$x^3 + x^2 + 4x + 4 = (x + 1)(x^2 + 4)$. How many real roots does $x^3 + x^2 + 4x + 4 = 0$ have?`, opts: [R`one`, R`two`, R`three`, R`none`], a: 0, why: R`$x = -1$ is a root. For $x^2 + 4$, $b^2 - 4ac = 0 - 16 \lt 0$, so it adds no real roots.` },
       ],
     },
@@ -77,8 +78,8 @@
         { q: R`$y = f(x)$ has a maximum at $(2,\ 5)$. Where is it on $y = 3f(x) - 1$?`, opts: [R`$(2,\ 14)$`, R`$(2,\ 12)$`, R`$(6,\ 4)$`, R`$(2,\ 16)$`], a: 0, why: R`Multiply $y$ by 3 first, then subtract 1: $3 \times 5 - 1 = 14$. Changes outside the bracket do not touch $x$.` },
         { q: R`The graph of $y = f(x)$ is moved 4 units right and 2 units down. Its equation is…`, opts: [R`$y = f(x + 4) - 2$`, R`$y = f(x - 4) + 2$`, R`$y = f(x - 4) - 2$`, R`$y = f(x - 2) - 4$`], a: 2, why: R`Right 4 is $f(x - 4)$ (inside does the opposite). Down 2 is $-2$ outside.` },
         { type: "open", q: R`$y = f(x)$ has a minimum turning point at $(-2,\ -4)$ and crosses the $x$-axis at $(1,\ 0)$. State the coordinates of the images of these two points on the graph of $y = 1 - f(x)$, and the nature of the turning point.`, marks: 3, model: mi(
-          R`•1 recognise $1 - f(x) = -f(x) + 1$: reflect in the $x$-axis, then up 1`,
-          R`•2 turning point $(-2,\ 5)$, now a <b>maximum</b>`,
+          R`•1 image of the turning point: $(-2,\ -4) \to (-2,\ 5)$ (reflect in the $x$-axis, then up 1)`,
+          R`•2 its nature: now a <b>maximum</b> turning point`,
           R`•3 $(1,\ 0) \to (1,\ 1)$`) },
       ],
     },
@@ -112,6 +113,11 @@
           R`•1 gradient $3$, so $\log_5 y = 3\log_5 x + 2$`,
           R`•2 write 2 as $\log_5 25$ and use log laws: $\log_5 y = \log_5(25x^3)$ (or $a = 5^2$, $b = 3$)`,
           R`•3 $y = 25x^3$`) },
+        { type: "open", q: R`The curve $y = ax^b$ passes through the points $(2,\ 12)$ and $(4,\ 48)$. Find $a$ and $b$.`, marks: 4, model: mi(
+          R`•1 substitute both points: $12 = a \times 2^b$ and $48 = a \times 4^b$`,
+          R`•2 divide (or take logs and subtract): $\dfrac{48}{12} = \dfrac{4^b}{2^b} \Rightarrow 4 = 2^b$`,
+          R`•3 $b = 2$`,
+          R`•4 $12 = a \times 4 \Rightarrow a = 3$`) },
       ],
     },
     "alg-recur": {
@@ -164,6 +170,7 @@
     "geo-vec": {
       title: "Vectors in 3D",
       questions: [
+        { q: R`The magnitude of $\mathbf{a} = \mathbf{i} + 3\mathbf{j} + k\mathbf{k}$ is…`, opts: [R`$\sqrt{10 + k^2}$`, R`$\sqrt{10} + k$`, R`$10 + k^2$`, R`$\sqrt{4 + k}$`], a: 0, why: R`$|\mathbf{a}| = \sqrt{1 + 9 + k^2}$. A square root does not split over a sum: $\sqrt{10 + k^2} \ne \sqrt{10} + k$.` },
         { q: R`$A$ is $(1, -2, 3)$ and $B$ is $(4, 2, 3)$. What is $|\overrightarrow{AB}|$?`, opts: [R`$5$`, R`$7$`, R`$\sqrt{7}$`, R`$25$`], a: 0, why: R`$\overrightarrow{AB} = (3, 4, 0)$ and $\sqrt{9 + 16 + 0} = 5$.` },
         { q: R`Which is a unit vector parallel to $2\mathbf{i} - \mathbf{j} + 2\mathbf{k}$?`, opts: [R`$\tfrac12\mathbf{i} - \mathbf{j} + \tfrac12\mathbf{k}$`, R`$\tfrac23\mathbf{i} - \tfrac13\mathbf{j} + \tfrac23\mathbf{k}$`, R`$\tfrac29\mathbf{i} - \tfrac19\mathbf{j} + \tfrac29\mathbf{k}$`, R`$\mathbf{i} - \mathbf{j} + \mathbf{k}$`], a: 1, why: R`Its magnitude is $\sqrt{4 + 1 + 4} = 3$. Divide each component by 3.` },
         { q: R`In the block-built cuboid, $\overrightarrow{OA} = 6\mathbf{i}$, $\overrightarrow{OC} = 4\mathbf{j}$ and $\overrightarrow{OD} = 3\mathbf{k}$, and $G$ is above $C$. What is $\overrightarrow{OG}$?`, opts: [R`$6\mathbf{i} + 4\mathbf{j} + 3\mathbf{k}$`, R`$4\mathbf{j} + 3\mathbf{k}$`, R`$6\mathbf{i} + 3\mathbf{k}$`, R`$4\mathbf{j} - 3\mathbf{k}$`], a: 1, why: R`$\overrightarrow{OG} = \overrightarrow{OC} + \overrightarrow{CG} = 4\mathbf{j} + 3\mathbf{k}$.` },
@@ -340,7 +347,7 @@
           R`•1 $C'(v) = 200 - 80000v^{-2}$`,
           R`•2 set $C'(v) = 0$`,
           R`•3 $v^2 = 400 \Rightarrow v = 20$ knots`,
-          R`•4 nature table: $C'(10) = 200 - 800 \lt 0$, $C'(30) \gt 0$, so $-\ 0\ +$: minimum`,
+          R`•4 nature table: $v$: $\to 20^-$, $20$, $\to 20^+$; $C'(v)$: $-$, $0$, $+$; slope ↘ → ↗; so a <b>minimum</b>`,
           R`•5 $C(20) = 4000 + 4000 = £8000$`) },
       ],
     },
@@ -440,10 +447,10 @@
           R`•2 $(k - 3)^2 - 4k = 0$`,
           R`•3 $k^2 - 10k + 9 = 0$`,
           R`•4 $(k - 1)(k - 9) = 0 \Rightarrow k = 1$ or $k = 9$`) },
-        { type: "open", q: R`The value of a ship's chronometer is modelled by $V = 5000e^{-0.08t}$ pounds, $t$ years after purchase. After how many years is it first worth less than £2000?`, marks: 3, model: mi(
+        { type: "open", q: R`The value of a ship's chronometer is modelled by $V = 5000e^{-0.08t}$ pounds, $t$ years after purchase. After how many complete years is it first worth less than £2000?`, marks: 3, model: mi(
           R`•1 $5000e^{-0.08t} = 2000 \Rightarrow e^{-0.08t} = 0.4$`,
           R`•2 $-0.08t = \ln 0.4$`,
-          R`•3 $t = 11.45$: during the 12th year (accept 11.5 years)`) },
+          R`•3 $t = \dfrac{\ln 0.4}{-0.08} = 11.45\ldots$, so after <b>12</b> complete years`) },
         { type: "open", q: R`Calculate the area enclosed by the curve $y = x^2 - 4x + 5$ and the line $y = x + 1$.`, marks: 5, model: mi(
           R`•1 equate: $x^2 - 4x + 5 = x + 1 \Rightarrow x^2 - 5x + 4 = 0$`,
           R`•2 limits $x = 1$ and $x = 4$`,
@@ -452,15 +459,15 @@
           R`•5 $= \tfrac92$ square units`) },
         { type: "open", q: R`Find the greatest and least values of $f(x) = x^3 - 6x^2 + 9x + 1$ on the interval $0 \le x \le 5$.`, marks: 5, model: mi(
           R`•1 $f'(x) = 3x^2 - 12x + 9$`,
-          R`•2 $3(x - 1)(x - 3) = 0 \Rightarrow x = 1,\ 3$`,
-          R`•3 $f(1) = 5$, $f(3) = 1$`,
-          R`•4 endpoints: $f(0) = 1$, $f(5) = 21$`,
+          R`•2 set $f'(x) = 0$`,
+          R`•3 $3(x - 1)(x - 3) = 0 \Rightarrow x = 1,\ 3$`,
+          R`•4 evaluate at the stationary points and the endpoints: $f(1) = 5$, $f(3) = 1$, $f(0) = 1$, $f(5) = 21$`,
           R`•5 greatest $21$, least $1$`) },
         { type: "open", q: R`The graph of $\ln y$ against $\ln x$ is a straight line through $(1,\ 2.5)$ and $(3,\ 6.5)$. Find $a$ and $b$ such that $y = ax^b$.`, marks: 4, model: mi(
-          R`•1 gradient $2$`,
-          R`•2 $\ln y = 2\ln x + 0.5$`,
-          R`•3 $b = 2$`,
-          R`•4 $a = e^{0.5} = 1.65$`) },
+          R`•1 gradient $= \dfrac{6.5 - 2.5}{3 - 1} = 2$`,
+          R`•2 intercept: $2.5 = 2(1) + c \Rightarrow c = 0.5$`,
+          R`•3 $\ln y = 2\ln x + 0.5$; compare with $\ln y = b\ln x + \ln a$: $b = 2$`,
+          R`•4 $\ln a = 0.5 \Rightarrow a = e^{0.5} = 1.65$`) },
       ],
     },
   };
