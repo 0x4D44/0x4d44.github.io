@@ -19,7 +19,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
-      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="5" y="6" width="6" height="1" fill="#e0b23a"/><rect x="6" y="7" width="1" height="4" fill="#e0b23a"/><rect x="9" y="7" width="1" height="3" fill="#e0b23a"/><rect x="10" y="10" width="1" height="1" fill="#e0b23a"/></svg>
       <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
     </a>
     <div class="mast-tools">
@@ -132,7 +132,7 @@ $$m = \tan\theta.$$
 <li>$y - 2 = -3(x - 1) \Rightarrow y = -3x + 5$ <span class="why">Point and gradient.</span></li>
 <li>(b) For $m = -3$: $\tan^{-1}(-3) = -71.6°$, so $\theta_1 = 180° - 71.6° = 108.4°$ <span class="why">$m = \tan\theta$. A negative gradient gives an obtuse angle with the positive $x$-axis.</span></li>
 <li>For $y = x$: $m = 1$, so $\theta_2 = 45°$ <span class="why">$\tan 45° = 1$.</span></li>
-<li>Angle between the lines $= 108.4° - 45° = 63.4°$ <span class="why">Subtract the two angles. It is under $90°$, so it is the acute angle.</span></li>
+<li>Angle between the lines $= 108.4° - 45° = 63.4°$ <span class="why">Subtract the two angles. It is under $90°$, so it is the acute angle. If the difference were over $90°$, the acute angle would be $180°$ minus it.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 most candidates found the midpoint and gradient for a perpendicular bisector, but "only some candidates used $m = \tan\theta$ to calculate the angles between the two lines and the positive direction of the $x$-axis appropriately". To find the angle <em>between</em> two lines, find each line's angle with the positive $x$-axis and subtract.</p></div>
@@ -294,7 +294,7 @@ $$\mathbf{v} = \begin{pmatrix} 3 \\ 2 \\ 5 \end{pmatrix} = 3\mathbf{i} + 2\mathb
 <li>$AB : BC = 1 : 2$ <span class="why">$\overrightarrow{BC}$ is twice as long as $\overrightarrow{AB}$.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Only a few candidates communicated the condition for collinearity in a coherent way. Some incorrect responses implied that the points were parallel, the lines were collinear, or did not identify that the line segments were parallel. … A few candidates attempted to find a 'gradient of a vector'." Points are collinear; <em>vectors</em> (or line segments) are parallel. Use those words exactly.</p><p>The same report: "A few candidates made statements such as $\overrightarrow{DE} = (2, -4, 6) \div 2 = (1, -2, 3)$, which did not gain full marks." A vector cannot equal a different vector. Write $\overrightarrow{AB} = 3\begin{pmatrix}3\\-1\\2\end{pmatrix}$, keeping the scalar multiple outside, rather than an "equals" chain that changes the vector.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Only a few candidates communicated the condition for collinearity in a coherent way. Some incorrect responses implied that the points were parallel, the lines were collinear, or did not identify that the line segments were parallel. … A few candidates attempted to find a 'gradient of a vector'." Points are collinear; <em>vectors</em> (or line segments) are parallel. Use those words exactly.</p><p>The same report: "A few candidates made statements such as $\overrightarrow{DE} = (2, -4, 6) \div 2 = (1, -2, 3)$, which did not gain full marks." A vector cannot equal a different vector. Write $\overrightarrow{AB} = 3\begin{pmatrix}3\\-1\\2\end{pmatrix}$, keeping the scalar multiple (the number multiplying the vector) outside, rather than an "equals" chain that changes the vector.</p></div>
 
 <h3>Dividing a line in a ratio</h3>
 <p>If $P$ divides $AB$ internally in the ratio $m : n$, then $P$ is $\frac{m}{m+n}$ of the way from $A$ to $B$:</p>
@@ -360,12 +360,22 @@ $$\cos\theta = \frac{a_1b_1 + a_2b_2 + a_3b_3}{|\mathbf{a}||\mathbf{b}|}.$$
 <g font-size="16" font-weight="700" class="ink"><text x="66" y="158">B</text><text x="306" y="146">C</text><text x="196" y="30">A</text></g>
 <text x="210" y="100" font-size="14" class="ink2">both vectors start at B</text>
 </svg></figure>
+<div class="worked"><p class="worked-title">Worked example 16 · P2 · the angle at a vertex</p>
+<p>$A$ is $(1, 3, 2)$, $B$ is $(2, 1, 0)$ and $C$ is $(4, 2, 1)$. Find the size of angle $ABC$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>•1 $\overrightarrow{BA} = \mathbf{a} - \mathbf{b} = \begin{pmatrix}-1\\2\\2\end{pmatrix}$ <span class="why">Start at the vertex $B$.</span></li>
+<li>•2 $\overrightarrow{BC} = \mathbf{c} - \mathbf{b} = \begin{pmatrix}2\\1\\1\end{pmatrix}$ <span class="why">Also starting at $B$.</span></li>
+<li>•3 $\overrightarrow{BA}\cdot\overrightarrow{BC} = -2 + 2 + 2 = 2$, $|\overrightarrow{BA}| = \sqrt{1 + 4 + 4} = 3$, $|\overrightarrow{BC}| = \sqrt{4 + 1 + 1} = \sqrt6$ <span class="why">Scalar product and both magnitudes.</span></li>
+<li>•4 $\cos ABC = \dfrac{2}{3\sqrt6} \Rightarrow ABC = 74.2°$ <span class="why">Calculator in degree mode.</span></li>
+</ol>
+</details></div>
 <h3>Properties you can use</h3>
 <ul>
 <li>$\mathbf{a}\cdot\mathbf{b} = \mathbf{b}\cdot\mathbf{a}$, and $\mathbf{a}\cdot(\mathbf{b} + \mathbf{c}) = \mathbf{a}\cdot\mathbf{b} + \mathbf{a}\cdot\mathbf{c}$ (you can expand brackets).</li>
 <li>$\mathbf{a}\cdot\mathbf{a} = |\mathbf{a}|^2$, since the angle between a vector and itself is $0°$.</li>
 </ul>
-<div class="worked"><p class="worked-title">Worked example 16 · P1 · using the properties</p>
+<div class="worked"><p class="worked-title">Worked example 17 · P1 · using the properties</p>
 <p>$|\mathbf{a}| = 3$, $|\mathbf{b}| = 4$ and the angle between $\mathbf{a}$ and $\mathbf{b}$ is $60°$. Evaluate $\mathbf{a}\cdot(\mathbf{a} + \mathbf{b})$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">

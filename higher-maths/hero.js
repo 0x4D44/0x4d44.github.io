@@ -136,7 +136,7 @@
       if (showGrad) {
         const m = (vy + 26 * a) / vx; // dy/dx on screen (y grows downwards)
         for (let k = -8; k <= 8; k++) px(bx + k, by + m * k, 1, 1, "#ff4b3a");
-        readout("dy/dx=" + (-m).toFixed(1).replace("-0.0", "0.0"));
+        readout("shot dy/dx=" + (-m).toFixed(1).replace("-0.0", "0.0"));
       }
       px(bx - 1, by - 1, 3, 3, "#111");
     } else splash(bx, (by - SEA) / 20);
@@ -168,7 +168,7 @@
     // 6. exponential growth: parrots double every second
     { label: "y=2^t", len: 12, dir: 1, fx: () => 9, pos: lvl(-30, 34, 9), banner: "EXPONENTIAL GROWTH", parrots: true },
     // 7. a roll of 360... radians
-    { label: "roll 360", len: 14, dir: 1, pos(u) { const x = -20 + 28 * u, w = u > 7.5 ? Math.sin(u * 9) * 3 * Math.exp(-(u - 7.5) / 2) : 0; return { x, y: 18 + w }; }, banner: "DEGREES NOT RADIANS", roll: [3.5, 7.5] },
+    { label: "roll 360", len: 14, dir: 1, pos(u) { const x = -20 + 28 * u, w = u > 7.5 ? Math.sin(u * 9) * 3 * Math.exp(-(u - 7.5) / 2) : 0; return { x, y: 18 + w }; }, banner: "MEANT 360 DEGREES", roll: [3.5, 7.5] },
     // 8. dividing by zero
     { label: "1/0", len: 13, dir: 1, fx: () => 20, pos: lvl(-20, 30, 20), banner: "DIVIDE BY ZERO", zero: 228 },
     // 9. the wave function in formation, and the ship signals Q.E.D.

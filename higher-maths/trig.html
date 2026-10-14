@@ -19,7 +19,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
-      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="5" y="6" width="6" height="1" fill="#e0b23a"/><rect x="6" y="7" width="1" height="4" fill="#e0b23a"/><rect x="9" y="7" width="1" height="3" fill="#e0b23a"/><rect x="10" y="10" width="1" height="1" fill="#e0b23a"/></svg>
       <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
     </a>
     <div class="mast-tools">
@@ -201,14 +201,15 @@ $$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
 </details></div>
 <h3>Equations that need a formula first</h3>
 <p>If the equation mixes $\cos 2x$ with $\cos x$ (or $\sin 2x$ with $\sin x$), use a double angle formula so that everything is in terms of a single angle $x$. Choose the version of $\cos 2x$ that matches the other term: $2\cos^2 x - 1$ goes with $\cos x$; $1 - 2\sin^2 x$ goes with $\sin x$.</p>
-<div class="worked"><p class="worked-title">Worked example 8 · P1 · use $\cos 2x$</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · use $\cos 2x$ (specimen paper) [5 marks]</p>
 <p>Solve $\cos 2x° - 3\cos x° + 2 = 0$, for $0 \le x \lt 360$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
-<li>$2\cos^2 x° - 1 - 3\cos x° + 2 = 0$ <span class="why">Substitute $\cos 2x = 2\cos^2 x - 1$.</span></li>
-<li>$2\cos^2 x° - 3\cos x° + 1 = 0 \Rightarrow (2\cos x° - 1)(\cos x° - 1) = 0$ <span class="why">Standard quadratic form, then factorise.</span></li>
-<li>$\cos x° = \tfrac12$ or $\cos x° = 1$ <span class="why">Each factor.</span></li>
-<li>$x = 60,\ 300$ or $x = 0$, so $x = 0,\ 60,\ 300$ <span class="why">Solve.</span></li>
+<li>•1 $2\cos^2 x° - 1 \ldots$ <span class="why">Use the double angle formula $\cos 2x = 2\cos^2 x - 1$.</span></li>
+<li>•2 $2\cos^2 x° - 3\cos x° + 1 = 0$ <span class="why">A quadratic in $\cos x°$. The "$= 0$" must appear.</span></li>
+<li>•3 $(2\cos x° - 1)(\cos x° - 1) = 0$ <span class="why">Start to solve: factorise.</span></li>
+<li>•4 $\cos x° = \tfrac12$ and $\cos x° = 1$ <span class="why">Equations in $\cos x°$ only.</span></li>
+<li>•5 $x = 0,\ 60,\ 300$ <span class="why">Process the solutions in the interval.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 9 · P1 · never divide by $\sin x$</p>
@@ -231,7 +232,7 @@ $$2\pi \text{ radians} = 360°, \qquad \pi \text{ radians} = 180°.$$
 <p>These four formulae are on the formulae list. You need to recognise when to use them, and use them fluently in both directions.</p>
 <div class="eq-grid">
   <div class="eq-card">$$\sin(A \pm B) = \sin A\cos B \pm \cos A\sin B$$<p>Sine: "sin cos, cos sin", same sign.</p></div>
-  <div class="eq-card">$$\cos(A \pm B) = \cos A\cos B \mp \sin A\sin B$$<p>Cosine: "cos cos, sin sin", <b>opposite</b> sign.</p></div>
+  <div class="eq-card">$$\cos(A \pm B) = \cos A\cos B \mp \sin A\sin B$$<p>Cosine: "cos cos, sin sin", <b>opposite</b> sign. $\mp$ means the opposite sign to the one you chose for $\pm$: $\cos(A + B)$ has $-$, $\cos(A - B)$ has $+$.</p></div>
   <div class="eq-card">$$\sin 2A = 2\sin A\cos A$$<p>Put $B = A$ in $\sin(A + B)$.</p></div>
   <div class="eq-card">$$\begin{aligned}\cos 2A &= \cos^2 A - \sin^2 A\\ &= 2\cos^2 A - 1\\ &= 1 - 2\sin^2 A\end{aligned}$$<p>Three versions, using $\sin^2 A + \cos^2 A = 1$.</p></div>
 </div>
@@ -300,7 +301,7 @@ $$a\cos x + b\sin x = k\cos(x - \alpha), \qquad k \gt 0.$$
 <ol>
 <li><strong>Expand</strong> the target form with the addition formula: $k\cos(x - \alpha) = k\cos x\cos\alpha + k\sin x\sin\alpha$.</li>
 <li><strong>Compare coefficients</strong> with $a\cos x + b\sin x$: $\ k\cos\alpha = a$ and $k\sin\alpha = b$.</li>
-<li><strong>Find $k$</strong>: $k = \sqrt{a^2 + b^2}$.</li>
+<li><strong>Find $k$</strong>: $k = \sqrt{a^2 + b^2}$. (Square and add the two equations: $k^2\cos^2\alpha + k^2\sin^2\alpha = a^2 + b^2$, and the left side is $k^2$ because $\sin^2\alpha + \cos^2\alpha = 1$.)</li>
 <li><strong>Find $\alpha$</strong>: $\tan\alpha = \frac{k\sin\alpha}{k\cos\alpha} = \frac{b}{a}$. Use the <em>signs</em> of $k\sin\alpha$ and $k\cos\alpha$ to pick the quadrant (CAST).</li>
 </ol>
 <div class="worked"><p class="worked-title">Worked example 14 · P2 · $\alpha$ in the fourth quadrant</p>
