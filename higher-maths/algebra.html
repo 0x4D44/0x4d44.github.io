@@ -19,7 +19,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
-      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="5" y="6" width="6" height="1" fill="#e0b23a"/><rect x="6" y="7" width="1" height="4" fill="#e0b23a"/><rect x="9" y="7" width="1" height="3" fill="#e0b23a"/><rect x="10" y="10" width="1" height="1" fill="#e0b23a"/></svg>
       <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
     </a>
     <div class="mast-tools">
@@ -128,6 +128,39 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 <li>So $x^2 + 2x + 3 = 0$ has no real roots, and $x = 1$ is the only real root. <span class="why">Communicate the conclusion.</span></li>
 </ol>
 </details></div>
+<h3>Two unknowns: a factor and a remainder</h3>
+<p>If a question gives you <em>two</em> facts about a polynomial with two unknown coefficients, each fact gives an equation. A factor $(x - a)$ means $f(a) = 0$; a remainder $R$ on dividing by $(x - a)$ means $f(a) = R$. Then solve the two equations simultaneously.</p>
+<div class="worked"><p class="worked-title">Worked example 4 · P1 · a factor and a remainder</p>
+<p>For $f(x) = 2x^3 + ax^2 + bx + 3$, $(x + 1)$ is a factor, and $-9$ is the remainder when $f(x)$ is divided by $(x - 2)$. <span class="q-part">(a)</span> Find $a$ and $b$. <span class="q-part">(b)</span> Hence solve $f(x) = 0$.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>•1 $f(-1) = 2(-1)^3 + a(-1)^2 + b(-1) + 3 = 0$ <span class="why">Strategy: the factor theorem gives an equation.</span></li>
+<li>•2 $a - b = -1$ <span class="why">Simplify the first equation.</span></li>
+<li>•3 $f(2) = 16 + 4a + 2b + 3 = -9 \Rightarrow 2a + b = -14$ <span class="why">The remainder theorem gives a second equation.</span></li>
+<li>•4 Add: $3a = -15$, so $a = -5$ <span class="why">Solve simultaneously.</span></li>
+<li>•5 $b = a + 1 = -4$ <span class="why">Substitute back.</span></li>
+<li>•6 Synthetic division by $(x + 1)$, trial root $-1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 2, -5, -4, 3 by -1: the bottom row is 2, -7, 3, 0"><div class="synth-cell k">−1</div><div class="synth-cell">2</div><div class="synth-cell">−5</div><div class="synth-cell">−4</div><div class="synth-cell">3</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">−2</div><div class="synth-cell">7</div><div class="synth-cell">−3</div><div class="synth-cell k sum"></div><div class="synth-cell sum">2</div><div class="synth-cell sum">−7</div><div class="synth-cell sum">3</div><div class="synth-cell sum rem zero">0</div></div></div> quadratic factor $2x^2 - 7x + 3$ <span class="why">Use the factor you know.</span></li>
+<li>•7 $f(x) = (x + 1)(2x - 1)(x - 3)$ <span class="why">Factorise fully.</span></li>
+<li>•8 $x = -1,\ \tfrac12,\ 3$ <span class="why">State the solutions.</span></li>
+</ol>
+</details></div>
+<h3>A polynomial from its graph</h3>
+<p>If a graph crosses the $x$-axis at $x = p$, then $(x - p)$ is a factor. So a cubic with roots $p$, $q$, $r$ is $y = k(x - p)(x - q)(x - r)$ for some number $k$. One more point on the curve (often the $y$-intercept) gives $k$.</p>
+<div class="worked"><p class="worked-title">Worked example 5 · P2 · a cubic from its graph</p>
+<figure class="diagram"><svg viewBox="0 0 360 220" style="max-width:380px" role="img" aria-label="A cubic curve crossing the x-axis at minus 2, 1 and 4, and the y-axis at 16.">
+<g class="stroke-ink" stroke-width="1.5"><line x1="10" y1="110" x2="350" y2="110"/><line x1="140" y1="8" x2="140" y2="212"/></g>
+<path d="M36.0 195.5 L38.0 186.7 L40.0 178.2 L42.0 170.1 L44.0 162.2 L46.0 154.7 L48.0 147.4 L50.0 140.5 L52.0 133.8 L54.0 127.4 L56.0 121.3 L58.0 115.5 L60.0 110.0 L62.0 104.7 L64.0 99.7 L66.0 95.0 L68.0 90.5 L70.0 86.3 L72.0 82.3 L74.0 78.6 L76.0 75.1 L78.0 71.8 L80.0 68.8 L82.0 65.9 L84.0 63.3 L86.0 61.0 L88.0 58.8 L90.0 56.8 L92.0 55.1 L94.0 53.5 L96.0 52.2 L98.0 51.0 L100.0 50.0 L102.0 49.2 L104.0 48.6 L106.0 48.1 L108.0 47.8 L110.0 47.7 L112.0 47.7 L114.0 47.9 L116.0 48.2 L118.0 48.6 L120.0 49.2 L122.0 50.0 L124.0 50.9 L126.0 51.9 L128.0 53.0 L130.0 54.2 L132.0 55.6 L134.0 57.0 L136.0 58.6 L138.0 60.2 L140.0 62.0 L142.0 63.8 L144.0 65.8 L146.0 67.8 L148.0 69.9 L150.0 72.0 L152.0 74.3 L154.0 76.5 L156.0 78.9 L158.0 81.3 L160.0 83.8 L162.0 86.2 L164.0 88.8 L166.0 91.4 L168.0 94.0 L170.0 96.6 L172.0 99.2 L174.0 101.9 L176.0 104.6 L178.0 107.3 L180.0 110.0 L182.0 112.7 L184.0 115.4 L186.0 118.1 L188.0 120.8 L190.0 123.4 L192.0 126.0 L194.0 128.6 L196.0 131.2 L198.0 133.8 L200.0 136.3 L202.0 138.7 L204.0 141.1 L206.0 143.5 L208.0 145.7 L210.0 148.0 L212.0 150.1 L214.0 152.2 L216.0 154.2 L218.0 156.2 L220.0 158.0 L222.0 159.8 L224.0 161.4 L226.0 163.0 L228.0 164.4 L230.0 165.8 L232.0 167.0 L234.0 168.1 L236.0 169.1 L238.0 170.0 L240.0 170.8 L242.0 171.4 L244.0 171.8 L246.0 172.1 L248.0 172.3 L250.0 172.3 L252.0 172.2 L254.0 171.9 L256.0 171.4 L258.0 170.8 L260.0 170.0 L262.0 169.0 L264.0 167.8 L266.0 166.5 L268.0 164.9 L270.0 163.2 L272.0 161.2 L274.0 159.0 L276.0 156.7 L278.0 154.1 L280.0 151.2 L282.0 148.2 L284.0 144.9 L286.0 141.4 L288.0 137.7 L290.0 133.7 L292.0 129.5 L294.0 125.0 L296.0 120.3 L298.0 115.3 L300.0 110.0 L302.0 104.5 L304.0 98.7 L306.0 92.6 L308.0 86.2 L310.0 79.5 L312.0 72.6 L314.0 65.3 L316.0 57.8 L318.0 49.9 L320.0 41.8 L322.0 33.3 L324.0 24.5" fill="none" class="s-sea" stroke-width="3"/>
+<g class="f-red"><circle cx="60" cy="110" r="4"/><circle cx="180" cy="110" r="4"/><circle cx="300" cy="110" r="4"/><circle cx="140" cy="62" r="4"/></g>
+<g font-size="14" font-weight="700" class="ink"><text x="46" y="128">−2</text><text x="184" y="128">1</text><text x="284" y="128">4</text><text x="146" y="66">(0, 16)</text><text x="340" y="104">x</text><text x="146" y="18">y</text></g>
+</svg></figure>
+<p>The cubic above crosses the $x$-axis at $-2$, $1$ and $4$, and the $y$-axis at $(0, 16)$. Find its equation.</p>
+<details><summary>Show solution</summary>
+<ol class="step-list">
+<li>•1 $y = k(x + 2)(x - 1)(x - 4)$ <span class="why">One factor for each root. Watch the signs: root $-2$ gives $(x + 2)$.</span></li>
+<li>•2 $16 = k(2)(-1)(-4) = 8k$ <span class="why">Substitute the known point $(0, 16)$.</span></li>
+<li>•3 $k = 2$, so $y = 2(x + 2)(x - 1)(x - 4)$ <span class="why">Expand only if the question asks for it: $y = 2x^3 - 6x^2 - 12x + 16$.</span></li>
+</ol>
+</details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In a question like the one above, "only a few candidates identified that the discriminant should be used to determine that a quadratic factor is <strong>impossible</strong> (rather than difficult) to factorise." Saying "it doesn't factorise" earns nothing: you must show $b^2 - 4ac \lt 0$. The same report saw candidates "looking for linear factors again" in a later part instead of building on their earlier work. If part (a) gave you a factor, use it in part (b).</p></div>
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"When I use synthetic division to show something is a factor, isn't the zero at the end enough?"</p><p><strong>Flight Lieutenant Murray:</strong> "The zero is your evidence, but the mark is for the <em>conclusion</em>. Write the sentence: 'remainder is 0, so $(x-2)$ is a factor.' Marking instructions for 'show that' questions expect the communication, not just the table."</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>use synthetic division (or substitution) to test a possible root and find the quotient;</li><li>factorise a cubic or quartic fully and solve the equation $f(x)=0$;</li><li>find an unknown coefficient from a given factor or remainder;</li><li>use the discriminant to show a quadratic factor has no real roots.</li></ul></div>
@@ -147,7 +180,7 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
   <p class="hint">Set $a$, $b$ and $c$. The blocks complete the square on $x^2 + \frac{b}{a}x$ (they can only show positive lengths, so they appear when $\frac{b}{a} \gt 0$). The algebra on the right works for any values, and the graph marks the turning point it predicts.</p>
 </div>
 
-<div class="worked"><p class="worked-title">Worked example 4 · P1 · $x^2$ coefficient not 1</p>
+<div class="worked"><p class="worked-title">Worked example 6 · P1 · $x^2$ coefficient not 1</p>
 <p>Express $2x^2 + 12x + 5$ in the form $a(x+p)^2 + q$, and state the coordinates of the turning point of $y = 2x^2 + 12x + 5$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -157,7 +190,7 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 </ol>
 <p>Turning point $(-3,\ -13)$. It is a minimum because $a = 2 \gt 0$.</p>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 5 · P1 · a negative $x^2$ coefficient</p>
+<div class="worked"><p class="worked-title">Worked example 7 · P1 · a negative $x^2$ coefficient</p>
 <p>Write $5 + 4x - x^2$ in the form $a(x+p)^2 + q$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -182,7 +215,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 
 <h3>Finding an unknown from the nature of the roots</h3>
 <p>A typical question gives a quadratic with an unknown $k$ and tells you about its roots. Write down the right condition on the discriminant and solve for $k$. Be careful: the condition may lead to a quadratic <em>inequality</em> in $k$.</p>
-<div class="worked"><p class="worked-title">Worked example 6 · P1 · equal roots</p>
+<div class="worked"><p class="worked-title">Worked example 8 · P1 · equal roots</p>
 <p>Find the values of $k$ for which $kx^2 - 6x + k = 0$ has equal roots.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -191,7 +224,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <li>$k^2 = 9 \Rightarrow k = 3$ or $k = -3$ <span class="why">Solve.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 7 · P1 · no real roots, so an inequality</p>
+<div class="worked"><p class="worked-title">Worked example 9 · P1 · no real roots, so an inequality</p>
 <p>Find the range of values of $k$ for which $x^2 + (k+1)x + 4 = 0$ has no real roots.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -214,7 +247,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <text x="84" y="120" text-anchor="end" font-size="15" class="ink">−2</text><text x="316" y="120" text-anchor="start" font-size="15" class="ink">4</text>
 <text x="200" y="202" text-anchor="middle" font-size="15" class="ink" font-weight="700">x² − 2x − 8 &gt; 0 when x &lt; −2 or x &gt; 4</text>
 </svg><figcaption>Open circles: the roots are not included, because the inequality is strict ($\gt$). For $\ge$ they would be included.</figcaption></figure>
-<div class="worked"><p class="worked-title">Worked example 8 · P1 · a downward parabola</p>
+<div class="worked"><p class="worked-title">Worked example 10 · P1 · a downward parabola</p>
 <p>Solve $6 + x - x^2 \ge 0$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -230,7 +263,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <section id="meet" class="prose">
 <h2 data-short="Where graphs meet">3 · Where graphs meet: intersections and tangents <span class="spec-tag">ALG · intersections</span></h2>
 <p>Two graphs meet where their $y$-values are equal. So to find the intersection of $y = f(x)$ and $y = g(x)$, solve $f(x) = g(x)$. Then substitute each $x$ back into either equation to get $y$.</p>
-<div class="worked"><p class="worked-title">Worked example 9 · P1 · a line and a parabola</p>
+<div class="worked"><p class="worked-title">Worked example 11 · P1 · a line and a parabola</p>
 <p>Find the points of intersection of $y = x^2 - 3x + 4$ and $y = x + 1$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -251,7 +284,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
   <h3 class="widget-title">Sighting the shot: when does a line just touch?</h3>
   <p class="hint">The curve is $y = x^2 + 4$. Move the line $y = mx + k$ and watch the quadratic $x^2 - mx + (4 - k) = 0$ that their meeting gives. Tangency happens exactly when its discriminant is zero.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 10 · P1 · show that a line is a tangent</p>
+<div class="worked"><p class="worked-title">Worked example 12 · P1 · show that a line is a tangent</p>
 <p>Show that the line $y = 4x - 5$ is a tangent to the curve $y = x^2 - 2x + 4$, and find the point of contact.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -291,7 +324,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
   <h3 class="widget-title">Two furnaces in a row: composite functions</h3>
   <p class="hint">Choose $f$ and $g$ and an input. The minecart carries the value through $g$ first, then $f$. Swap the order to see that $f(g(x))$ and $g(f(x))$ are usually different.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 11 · P1 · both orders</p>
+<div class="worked"><p class="worked-title">Worked example 13 · P1 · both orders</p>
 <p>$f(x) = 3x - 1$ and $g(x) = x^2 + 2$. Find (a) $f(g(x))$ and (b) $g(f(x))$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -299,7 +332,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <li>(b) $g(f(x)) = g(3x - 1) = (3x-1)^2 + 2 = 9x^2 - 6x + 3$ <span class="why">Now $f(x)$ goes into $g$.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 12 · P1 · domain of a composite</p>
+<div class="worked"><p class="worked-title">Worked example 14 · P1 · domain of a composite</p>
 <p>$f(x) = \dfrac{1}{x - 5}$ and $g(x) = x^2 + 1$. Find $f(g(x))$ and state a suitable domain.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -307,7 +340,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <li>$x^2 - 4 = 0$ when $x = \pm 2$, so the domain is $x \in \mathbb{R},\ x \ne \pm 2$ <span class="why">Exclude any value that makes the denominator zero.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 13 · P1 · using the range</p>
+<div class="worked"><p class="worked-title">Worked example 15 · P1 · using the range</p>
 <p>$f(x) = \log_2 x$ and $g(x) = 2 + \cos x$. Explain why $f(g(x))$ is defined for every real number $x$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -324,7 +357,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <li>Rearrange to make $x$ the subject.</li>
 <li>Swap the letters: replace $y$ with $x$, and write the result as $f^{-1}(x) = \dots$.</li>
 </ol>
-<div class="worked"><p class="worked-title">Worked example 14 · P1 · inverse of a rational function</p>
+<div class="worked"><p class="worked-title">Worked example 16 · P1 · inverse of a rational function</p>
 <p>$f(x) = \dfrac{2}{x - 1}$, $x \ne 1$. Find $f^{-1}(x)$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -364,7 +397,7 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <h3>Combining transformations: follow the points</h3>
 <p>In an exam you sketch the new graph by moving the <em>labelled</em> points: turning points, intercepts and any marked coordinates. Do the moves one at a time to each point. For $y = af(x + c) + d$: first shift the $x$-coordinate (subtract $c$), then multiply the $y$-coordinate by $a$, then add $d$ to it.</p>
 <p>With a number multiplying $x$ inside the bracket, $y = f(bx + c)$, a point at $x_0$ moves to $\dfrac{x_0 - c}{b}$: shift first, then squash. For example $y = f(2x)$ halves every $x$-coordinate, so the graph is squashed towards the $y$-axis. The chart-table transformer above uses this general rule.</p>
-<div class="worked"><p class="worked-title">Worked example 15 · P1 · two labelled points</p>
+<div class="worked"><p class="worked-title">Worked example 17 · P1 · two labelled points</p>
 <p>The graph of $y = f(x)$ has a maximum turning point at $(-1,\ 2)$ and a minimum turning point at $(1,\ -2)$. Sketch $y = 2f(x - 1) + 3$, showing the images of the turning points.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -402,7 +435,7 @@ $$y = \log_a x \iff x = a^y.$$
   <div class="eq-card">$$\log_a 1 = 0,\quad \log_a a = 1$$<p>Because $a^0 = 1$ and $a^1 = a$.</p></div>
 </div>
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Is $\log(x + y)$ the same as $\log x + \log y$?"</p><p><strong>Captain Grant:</strong> "No, and the purser would lose his job if it were. There is no law for the log of a sum. $\log_{10}(10 + 10) = \log_{10} 20 \approx 1.30$, but $\log_{10} 10 + \log_{10} 10 = 2$. The laws only turn a <em>sum of logs</em> into the <em>log of a product</em>."</p></div>
-<div class="worked"><p class="worked-title">Worked example 16 · P1 · simplify</p>
+<div class="worked"><p class="worked-title">Worked example 18 · P1 · simplify</p>
 <p>Evaluate (a) $\log_2 40 - \log_2 5$ and (b) $2\log_5 10 - \log_5 4$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -413,7 +446,7 @@ $$y = \log_a x \iff x = a^y.$$
 
 <h3>Solving log equations</h3>
 <p>Combine everything into a single log, then convert to exponential form using $\log_a x = y \iff x = a^y$. Finally check each answer: you cannot take the log of zero or a negative, so some algebraic solutions must be rejected.</p>
-<div class="worked"><p class="worked-title">Worked example 17 · P1 · reject a solution</p>
+<div class="worked"><p class="worked-title">Worked example 19 · P1 · reject a solution</p>
 <p>Solve $\log_3(x+1) + \log_3(x-1) = 1$, $x \gt 1$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -422,7 +455,7 @@ $$y = \log_a x \iff x = a^y.$$
 <li>$x^2 = 4 \Rightarrow x = 2$ (since $x \gt 1$, reject $x = -2$) <span class="why">Solve and use the domain.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 18 · P1 · a quotient</p>
+<div class="worked"><p class="worked-title">Worked example 20 · P1 · a quotient</p>
 <p>Solve $\log_2(x+5) - \log_2(x-2) = 3$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -435,7 +468,7 @@ $$y = \log_a x \iff x = a^y.$$
 
 <h3>Solving exponential equations</h3>
 <p>When the unknown is in a power, take logs of both sides (any base, but $\ln$ or $\log_{10}$ is on your calculator) and bring the power down.</p>
-<div class="worked"><p class="worked-title">Worked example 19 · P2 · unknown in the power</p>
+<div class="worked"><p class="worked-title">Worked example 21 · P2 · unknown in the power</p>
 <p>Solve (a) $5^x = 30$ and (b) $e^{2x} = 7$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -450,7 +483,7 @@ $$y = \log_a x \iff x = a^y.$$
   <h3 class="widget-title">After the broadside: a cooling gun barrel</h3>
   <p class="hint">After firing, the barrel's temperature is modelled by $T = 20 + 180e^{-kt}$ °C, $t$ minutes later. Set the cooling rate $k$ and the safe temperature for reloading. The widget solves for $t$ with logs, showing every line.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 20 · P2 · how long until it is safe?</p>
+<div class="worked"><p class="worked-title">Worked example 22 · P2 · how long until it is safe?</p>
 <p>The barrel temperature is $T = 20 + 180e^{-0.05t}$ °C. (a) What is the temperature just after firing? (b) How long does it take to cool to 50 °C?</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -487,7 +520,7 @@ $$y = \log_a x \iff x = a^y.$$
 <text x="311.9" y="211.0" font-size="13" class="f-red">x = −2</text>
 </svg></div>
 <figcaption>Left: worked example 21's graph. Right: worked example 22, $y = 3^x - 2$ (blue) and its inverse (red), mirror images in $y = x$.</figcaption></figure>
-<div class="worked"><p class="worked-title">Worked example 21 · P1 · identify a log function from its graph</p>
+<div class="worked"><p class="worked-title">Worked example 23 · P1 · identify a log function from its graph</p>
 <p>The graph of $y = \log_b(x - a)$ has the line $x = 2$ as an asymptote and passes through $(7, 1)$. Find $a$ and $b$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -497,7 +530,7 @@ $$y = \log_a x \iff x = a^y.$$
 </ol>
 <p>Check: the graph must also pass through $(3, 0)$, since $\log_5 1 = 0$. It does.</p>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 22 · P1 · sketch the inverse</p>
+<div class="worked"><p class="worked-title">Worked example 24 · P1 · sketch the inverse</p>
 <p>Sketch $y = 3^x - 2$ and, on the same axes, the graph of its inverse. Mark the asymptotes and two points on each graph.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -528,7 +561,7 @@ $$\log y = b\log x + \log a.$$
   <h3 class="widget-title">The Sailing Master's experiment: straightening the data</h3>
   <p class="hint">Pick a data set, then choose a pair of log axes. The points slide to their new positions. Only the right choice of axes lines them up, and then the line's gradient and intercept give $a$ and $b$.</p>
 </div>
-<div class="worked"><p class="worked-title">Worked example 23 · P1 · a power law</p>
+<div class="worked"><p class="worked-title">Worked example 25 · P1 · a power law</p>
 <p>The graph of $\log_2 y$ against $\log_2 x$ is a straight line through $(0,\ 3)$ and $(4,\ 11)$. Find $a$ and $b$ such that $y = ax^b$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -537,7 +570,7 @@ $$\log y = b\log x + \log a.$$
 <li>$y = 8x^2$, so $a = 8$ and $b = 2$ <span class="why">Remove the logs: both sides are $\log_2$ of something.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 24 · P1 · a power law from two points</p>
+<div class="worked"><p class="worked-title">Worked example 26 · P1 · a power law from two points</p>
 <p>The relationship $y = ax^b$ fits the data points $(2,\ 20)$ and $(8,\ 320)$. Find $a$ and $b$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -547,7 +580,7 @@ $$\log y = b\log x + \log a.$$
 </ol>
 <p>With less friendly numbers, take logs instead: $\log y = b\log x + \log a$ is a straight line in $(\log x, \log y)$. Its gradient is $b = \dfrac{\log 320 - \log 20}{\log 8 - \log 2}$, and then $\log a = \log 20 - b\log 2$. On a calculator paper, use $\ln$ or $\log_{10}$, either works.</p>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 25 · P1 · an exponential</p>
+<div class="worked"><p class="worked-title">Worked example 27 · P1 · an exponential</p>
 <p>The graph of $\log_3 y$ against $x$ is a straight line through $(0,\ 2)$ with gradient 1. Express $y$ in the form $y = ab^x$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -577,7 +610,7 @@ $$u_{n+1} = 0.85u_n + 40, \qquad u_0 = 100.$$
 $$L = \frac{b}{1 - a}.$$
 <p>For the water tank, $L = \dfrac{40}{1 - 0.85} = 266.\dot6$ litres. In the long run, the tank holds about 267 litres, whatever it started with.</p>
 <p>If $a \ge 1$ or $a \le -1$ the sequence does not, in general, converge to a limit. For $a \gt 1$ or $a \lt -1$ the terms run away from $\frac{b}{1-a}$ (growing without end, or swinging ever more wildly); for $a = -1$ they flip between two values for ever; for $a = 1$ they go up or down by $b$ each time. So $L = \frac{b}{1-a}$ is not a limit there, even when it gives a number. (Only the start $u_0 = \frac{b}{1-a}$ stays put, and then every term is the same.)</p>
-<div class="worked"><p class="worked-title">Worked example 26 · P1 · state why a limit exists</p>
+<div class="worked"><p class="worked-title">Worked example 28 · P1 · state why a limit exists</p>
 <p>A sequence is defined by $u_{n+1} = 0.6u_n + 12$. Explain why it has a limit, and find it.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -586,7 +619,7 @@ $$L = \frac{b}{1 - a}.$$
 <li>$L = \dfrac{12}{0.4} = 30$ <span class="why">Evaluate.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 27 · P1 · find the rule from three terms</p>
+<div class="worked"><p class="worked-title">Worked example 29 · P1 · find the rule from three terms</p>
 <p>A sequence satisfies $u_{n+1} = au_n + b$, with $u_1 = 4$, $u_2 = 10$ and $u_3 = 22$. Find $a$ and $b$.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
@@ -595,7 +628,7 @@ $$L = \frac{b}{1 - a}.$$
 <li>$b = 10 - 8 = 2$ <span class="why">Substitute back.</span></li>
 </ol>
 </details></div>
-<div class="worked"><p class="worked-title">Worked example 28 · P2 · when does it pass a target?</p>
+<div class="worked"><p class="worked-title">Worked example 30 · P2 · when does it pass a target?</p>
 <p>The tank model is $u_{n+1} = 0.85u_n + 40$, $u_0 = 100$. After how many days does the tank first hold more than 250 litres?</p>
 <details><summary>Show solution</summary>
 <p>Use your calculator's "Ans" key: type 100, then repeatedly enter <code>0.85 × Ans + 40</code>, counting the presses. Write the terms down so the marker can see your method.</p>

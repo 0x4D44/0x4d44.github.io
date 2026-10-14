@@ -176,7 +176,7 @@
     const ctl = controls(box);
     HM.slider(ctl, { label: "$b$", min: 1, max: 4, step: 1, value: b, oninput: (v) => { b = v; upd(); } });
     const NICE = [0, 0.5, Math.SQRT1_2, Math.sqrt(3) / 2, 1, 1 / Math.sqrt(3), Math.sqrt(3)];
-    const NICET = ["0", "\\tfrac12", "\\tfrac{1}{\\sqrt2}", "\\tfrac{\\sqrt3}{2}", "1", "\\tfrac{1}{\\sqrt3}", "\\sqrt3"];
+    const NICET = ["0", "\\tfrac{1}{2}", "\\tfrac{1}{\\sqrt2}", "\\tfrac{\\sqrt3}{2}", "1", "\\tfrac{1}{\\sqrt3}", "\\sqrt3"];
     const kTex = (v) => { const i = NICE.findIndex((n) => Math.abs(Math.abs(v) - n) < 0.004); return i < 0 ? N(v, 2) : (v < 0 && i ? "-" : "") + NICET[i]; };
     const kS = HM.slider(ctl, { label: "$k$", min: -1.2, max: 1.2, step: 0.005, value: k, fmt: (v) => kTex(v).replace(/\\tfrac\{([^}]*)\}\{([^}]*)\}/, "$1/$2").replace(/\\sqrt/g, "√"), oninput: (v) => { const i = NICE.findIndex((n) => Math.abs(Math.abs(v) - n) < 0.012); k = i < 0 ? v : Math.sign(v) * NICE[i]; upd(); } });
     const cv = canvasIn(box);
@@ -216,10 +216,12 @@
       const acute = fn === "tan" ? Math.atan(Math.abs(k)) / D2R : fn === "sin" ? Math.asin(Math.abs(k)) / D2R : Math.acos(Math.abs(k)) / D2R;
       const quads = { sin: k >= 0 ? "first and second" : "third and fourth", cos: k >= 0 ? "first and fourth" : "second and third", tan: k >= 0 ? "first and third" : "second and fourth" }[fn];
       const v = b === 1 ? "x" : `${b}x`;
+      // tan repeats every 180°, so one turn of the circle holds two solutions
+      const turn = fn === "tan" ? [...base, ...base.map((q) => q + 180)] : base;
       const axis = fn === "tan" ? k === 0 : k === 0 || Math.abs(k) === 1;
       let s = axis
-        ? `<p style="margin:0">$${lhs}$. This value is on an axis of the unit circle, not inside a quadrant, so CAST is not needed: read it from the graph. In one turn, $${v} = ${base.map((q) => fmtX(q)).join(",\\ ")}$`
-        : `<p style="margin:0">$${lhs}$. Acute angle $= ${fmtX(acute)}$; $\\${fn}$ is ${k > 0 ? "positive" : "negative"}, so use the ${quads} quadrants: $${v} = ${base.map((q) => fmtX(q)).join(",\\ ")}$`;
+        ? `<p style="margin:0">$${lhs}$. This value is on an axis of the unit circle, not inside a quadrant, so CAST is not needed: read it from the graph. In one turn, $${v} = ${turn.map((q) => fmtX(q)).join(",\\ ")}$`
+        : `<p style="margin:0">$${lhs}$. Acute angle $= ${fmtX(acute)}$; $\\${fn}$ is ${k > 0 ? "positive" : "negative"}, so use the ${quads} quadrants: $${v} = ${turn.map((q) => fmtX(q)).join(",\\ ")}$`;
       if (b > 1) s += `, then add $${fmtX(fn === "tan" ? 180 : 360)}$ until $${v}$ reaches $${units === "deg" ? 360 * b + "°" : b * 2 + "\\pi"}$: $${v} = ${S.map(fmtX).join(",\\ ")}$`;
       s += `.</p><p style="margin:4px 0 0"><b>Solutions:</b> $x = ${S.map((th) => fmtX(th / b)).join(",\\ ")}$${b > 1 ? ` (after dividing by ${b})` : ""}.</p>`;
       out.innerHTML = s; HM.math(out);

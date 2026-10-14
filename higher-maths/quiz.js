@@ -11,6 +11,7 @@
     "alg-poly": {
       title: "Polynomials",
       questions: [
+        { q: R`A cubic crosses the $x$-axis at $-1$, $2$ and $3$, and passes through $(0, -12)$. Its equation is…`, opts: [R`$y = 2(x + 1)(x - 2)(x - 3)$`, R`$y = -2(x + 1)(x - 2)(x - 3)$`, R`$y = -2(x - 1)(x + 2)(x + 3)$`, R`$y = (x + 1)(x - 2)(x - 3) - 12$`], a: 1, why: R`Roots give factors $(x + 1)(x - 2)(x - 3)$. At $x = 0$: $k(1)(-2)(-3) = 6k = -12$, so $k = -2$.` },
         { q: R`What is the remainder when $f(x) = x^3 - 2x^2 + 3x - 5$ is divided by $(x - 2)$?`, opts: [R`$-1$`, R`$0$`, R`$1$`, R`$11$`], a: 2, why: R`By the remainder theorem the remainder is $f(2) = 8 - 8 + 6 - 5 = 1$. Synthetic division with 2 gives the same: $1,\ 0,\ 3,\ 1$.` },
         { q: R`Which of these is a factor of $x^3 - 7x + 6$?`, opts: [R`$(x + 1)$`, R`$(x - 3)$`, R`$(x + 2)$`, R`$(x + 3)$`], a: 3, why: R`$f(-3) = -27 + 21 + 6 = 0$, so $(x+3)$ is a factor. The others give $f(-1) = f(3) = f(-2) = 12$. (Remember the 0 coefficient for the missing $x^2$ term.)` },
         { q: R`Synthetic division of $x^3 + 2x^2 - 5x - 6$ by $(x + 1)$ uses the trial root $-1$. What is the bottom row?`, opts: [R`$1,\ 3,\ -2,\ -8$`, R`$1,\ 1,\ -6,\ 0$`, R`$1,\ 1,\ -4,\ -2$`, R`$1,\ -1,\ -3,\ 3$`], a: 1, why: R`Bring down 1. $1 \times (-1) = -1$, $2 - 1 = 1$. $1 \times (-1) = -1$, $-5 - 1 = -6$. $-6 \times (-1) = 6$, $-6 + 6 = 0$. The first option is what you get by wrongly using $+1$.` },
@@ -264,12 +265,13 @@
         { q: R`$k\cos\alpha = -3$ and $k\sin\alpha = 4$, with $0° \le \alpha \lt 360°$. What is $\alpha$?`, opts: [R`$53.1°$`, R`$126.9°$`, R`$233.1°$`, R`$306.9°$`], a: 1, why: R`$\sin\alpha$ positive, $\cos\alpha$ negative: second quadrant. $\tan^{-1}\tfrac43 = 53.1°$, so $\alpha = 180° - 53.1° = 126.9°$.` },
         { q: R`What is the maximum value of $5\sin x - 12\cos x$?`, opts: [R`$5$`, R`$12$`, R`$13$`, R`$17$`], a: 2, why: R`It can be written as $13\sin(x - \alpha)$ with $13 = \sqrt{25 + 144}$, and the maximum of a wave of amplitude 13 is 13.` },
         { q: R`$\sqrt3\sin x + \cos x = 2\sin(x + \alpha)$. What is $\alpha$?`, opts: [R`$30°$`, R`$60°$`, R`$45°$`, R`$120°$`], a: 0, why: R`$2\sin(x + \alpha) = 2\sin x\cos\alpha + 2\cos x\sin\alpha$, so $2\cos\alpha = \sqrt3$ and $2\sin\alpha = 1$: $\alpha = 30°$.` },
-        { type: "open", q: R`Express $3\cos x° + 4\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$. Hence state its maximum value and the value of $x$, $0 \le x \lt 360$, at which it occurs.`, marks: 5, model: mi(
+        { type: "open", q: R`Express $3\cos x° + 4\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$. Hence state its maximum value and the value of $x$, $0 \le x \lt 360$, at which it occurs.`, marks: 6, model: mi(
           R`•1 expand: $k\cos x°\cos\alpha° + k\sin x°\sin\alpha°$`,
           R`•2 compare coefficients: $k\cos\alpha° = 3$, $k\sin\alpha° = 4$`,
           R`•3 $k = 5$`,
           R`•4 $\tan\alpha° = \tfrac43$, first quadrant, $\alpha = 53.1$`,
-          R`•5 maximum $5$ when $x = 53.1$`) },
+          R`•5 maximum value $5$`,
+          R`•6 when $x = 53.1$`) },
       ],
     },
 
@@ -343,12 +345,13 @@
         { q: R`What is the greatest value of $f(x) = x^2 - 4x$ on $0 \le x \le 5$?`, opts: [R`$-4$`, R`$0$`, R`$5$`, R`$45$`], a: 2, why: R`The only stationary point is the minimum $f(2) = -4$. The endpoints give $f(0) = 0$ and $f(5) = 5$. Greatest: 5.` },
         { q: R`In the copper-box problem, $V'(x) = 0$ at $x = 3$ and $x = 10$. Why is $x = 10$ rejected?`, opts: [R`It gives a minimum.`, R`The sheet is only 15 cm wide, so $15 - 2x$ would be negative.`, R`$V(10)$ is too large.`, R`The nature table is $-\ 0\ +$.`], a: 1, why: R`Context rules first: a corner square of 10 cm cannot be cut from a 15 cm sheet. The domain is $0 \lt x \lt 7.5$.` },
         { q: R`A rectangle has perimeter 20 m, so its area is $A = x(10 - x)$. Which $x$ gives the greatest area?`, opts: [R`$x = 10$`, R`$x = 2.5$`, R`$x = 5$`, R`$x = 20$`], a: 2, why: R`$A' = 10 - 2x = 0$ when $x = 5$, and $A'$ goes $+\ 0\ -$: a maximum. The best rectangle is a square.` },
-        { type: "open", q: R`The cost, in pounds, of running HMS Lodestone's dispatch boat on a voyage at speed $v$ knots is $C(v) = 200v + \dfrac{80000}{v}$, $v \gt 0$. Find the speed that minimises the cost, justify that it is a minimum, and find the least cost.`, marks: 5, model: mi(
+        { type: "open", q: R`The cost, in pounds, of running HMS Lodestone's dispatch boat on a voyage at speed $v$ knots is $C(v) = 200v + \dfrac{80000}{v}$, $v \gt 0$. Find the speed that minimises the cost, justify that it is a minimum, and find the least cost.`, marks: 6, model: mi(
           R`•1 $C'(v) = 200 - 80000v^{-2}$`,
           R`•2 set $C'(v) = 0$`,
           R`•3 $v^2 = 400 \Rightarrow v = 20$ knots`,
-          R`•4 nature table: $v$: $\to 20^-$, $20$, $\to 20^+$; $C'(v)$: $-$, $0$, $+$; slope ↘ → ↗; so a <b>minimum</b>`,
-          R`•5 $C(20) = 4000 + 4000 = £8000$`) },
+          R`•4 nature table: $v$: $\to 20^-$, $20$, $\to 20^+$; $C'(v)$: $-$, $0$, $+$; slope ↘ → ↗`,
+          R`•5 so $v = 20$ gives a <b>minimum</b>`,
+          R`•6 $C(20) = 4000 + 4000 = £8000$`) },
       ],
     },
     "calc-int": {

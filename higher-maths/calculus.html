@@ -19,7 +19,7 @@
 <header class="masthead">
   <div class="masthead-inner">
     <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
-      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="1" width="14" height="14" fill="#6b707a"/><rect x="2" y="2" width="12" height="12" fill="#4d525c"/><rect x="3" y="3" width="10" height="10" fill="#f4ecd8"/><rect x="7" y="3" width="2" height="5" fill="#c8102e"/><rect x="7" y="8" width="2" height="5" fill="#155457"/><rect x="3" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="9" y="7" width="4" height="2" fill="#5fa9b8"/><rect x="7" y="7" width="2" height="2" fill="#e0b23a"/></svg>
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="5" y="6" width="6" height="1" fill="#e0b23a"/><rect x="6" y="7" width="1" height="4" fill="#e0b23a"/><rect x="9" y="7" width="1" height="3" fill="#e0b23a"/><rect x="10" y="10" width="1" height="1" fill="#e0b23a"/></svg>
       <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
     </a>
     <div class="mast-tools">
@@ -105,7 +105,7 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 </ol>
 </details></div>
 <h3>Rates of change</h3>
-<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the minecart's displacement (its distance along the track from the start) after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Tutor's height, $\frac{dh}{dt}$ is its rate of climb.</p>
+<p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the minecart's displacement (its distance along the track from the start) after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Grob Tutor aircraft's height, $\frac{dh}{dt}$ is its rate of climb.</p>
 <div class="worked"><p class="worked-title">Worked example 4 · P1 · a velocity</p>
 <p>A minecart's displacement after $t$ seconds is $s = t^3 - 6t^2 + 9t$ metres. Find its velocity when $t = 4$.</p>
 <details><summary>Show solution</summary>
@@ -221,6 +221,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <g font-size="15" font-weight="700" class="ink" text-anchor="middle"><text x="100" y="160">maximum: + 0 −</text><text x="310" y="160">minimum: − 0 +</text><text x="535" y="160">rising inflection: + 0 +</text></g>
 </svg></div><figcaption>The signs are the signs of $f'(x)$ just before, at and just after the point. A falling point of inflection is $-\ 0\ -$.</figcaption></figure>
 <p>To find the nature of each stationary point, use a <dfn>nature table</dfn>: check the sign of $f'(x)$ on each side of it. A nature table is the standard method at Higher.</p>
+<p>In the table's top row, $\to -1^-$ means "a value of $x$ just less than $-1$", and $\to -1^+$ means "just more than $-1$". You only need the <em>sign</em> of $f'(x)$ there, so any convenient value close by will do.</p>
 <div class="worked"><p class="worked-title">Worked example 11 · P1 · stationary points of a cubic</p>
 <p>Find the stationary points of $y = x^3 - 3x^2 - 9x + 5$ and determine their nature.</p>
 <details><summary>Show solution</summary>
@@ -338,13 +339,15 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <p>So $x = 3$ gives a maximum. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</p>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 15 · P1 · a minimum</p>
-<p>An open-topped water tank has a square base of side $x$ metres and holds 32 m³. Its surface area is $A = x^2 + \dfrac{128}{x}$. Find the dimensions that use the least metal.</p>
+<p>An open-topped water tank has a square base of side $x$ metres and height $h$ metres, and holds 32 m³. (a) Show that its surface area is $A = x^2 + \dfrac{128}{x}$. (b) Find the dimensions that use the least metal.</p>
 <details><summary>Show solution</summary>
 <ol class="step-list">
-<li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
+<li>(a) Volume: $x^2h = 32$, so $h = \dfrac{32}{x^2}$ <span class="why">Use the fact you are given to remove the second variable.</span></li>
+<li>Area: base $x^2$ plus four sides of $xh$ (no top), so $A = x^2 + 4xh = x^2 + 4x \times \dfrac{32}{x^2} = x^2 + \dfrac{128}{x}$ <span class="why">Now $A$ is in terms of one variable: step 1 of the method.</span></li>
+<li>(b) <li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
 <li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
 <li>Nature table (below): $A'$ goes $-\ 0\ +$, so a minimum. <span class="why">Justify the nature.</span></li>
-<li>Base 4 m by 4 m, height $\frac{32}{16} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
+<li>Base 4 m by 4 m, height $h = \frac{32}{4^2} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
 </ol>
 <div class="table-wrap"><table class="nature-table">
 <thead><tr><th>$x$</th><th>$\to 4^-$</th><th>$4$</th><th>$\to 4^+$</th></tr></thead>

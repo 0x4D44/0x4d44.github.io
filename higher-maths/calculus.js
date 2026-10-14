@@ -19,16 +19,20 @@
      1. Sliding tangent + derived graph
      ===================================================================== */
   mount("w-deriv", (box) => {
+    // a gradient near zero keeps enough digits to show its sign
+    const G = (m) => (m !== 0 && Math.abs(m) < 0.005 ? N(m, 4) : N(m, 2));
     const FN = {
-      cubic: { tex: "f(x) = x^3 - 3x", dtex: "f'(x) = 3x^2 - 3", f: (x) => x * x * x - 3 * x, d: (x) => 3 * x * x - 3, x0: -2.5, x1: 2.5, y0: -5, y1: 5, dy0: -4, dy1: 12, tick: 1 },
-      quad: { tex: "f(x) = 4 - x^2", dtex: "f'(x) = -2x", f: (x) => 4 - x * x, d: (x) => -2 * x, x0: -3, x1: 3, y0: -5, y1: 5, dy0: -6, dy1: 6, tick: 1 },
-      sin: { tex: "f(x) = \\sin x", dtex: "f'(x) = \\cos x", f: Math.sin, d: Math.cos, x0: 0, x1: 2 * Math.PI, y0: -1.5, y1: 1.5, dy0: -1.5, dy1: 1.5, tick: Math.PI / 2, rad: true },
-      quart: { tex: "f(x) = \\tfrac14x^4 - x^3", dtex: "f'(x) = x^3 - 3x^2", f: (x) => x ** 4 / 4 - x ** 3, d: (x) => x ** 3 - 3 * x * x, x0: -1.5, x1: 4.2, y0: -8, y1: 3, dy0: -5, dy1: 8, tick: 1 },
+      cubic: { tex: "f(x) = x^3 - 3x", dtex: "f'(x) = 3x^2 - 3", f: (x) => x * x * x - 3 * x, d: (x) => 3 * x * x - 3, x0: -2.5, x1: 2.5, y0: -5, y1: 5, dy0: -4, dy1: 12, tick: 1, sp: [[-1, "-1"], [1, "1"]] },
+      quad: { tex: "f(x) = 4 - x^2", dtex: "f'(x) = -2x", f: (x) => 4 - x * x, d: (x) => -2 * x, x0: -3, x1: 3, y0: -5, y1: 5, dy0: -6, dy1: 6, tick: 1, sp: [[0, "0"]] },
+      sin: { tex: "f(x) = \\sin x", dtex: "f'(x) = \\cos x", f: Math.sin, d: Math.cos, x0: 0, x1: 2 * Math.PI, y0: -1.5, y1: 1.5, dy0: -1.5, dy1: 1.5, tick: Math.PI / 2, rad: true, sp: [[Math.PI / 2, "\\tfrac{\\pi}{2}"], [3 * Math.PI / 2, "\\tfrac{3\\pi}{2}"]] },
+      quart: { tex: "f(x) = \\tfrac14x^4 - x^3", dtex: "f'(x) = x^3 - 3x^2", f: (x) => x ** 4 / 4 - x ** 3, d: (x) => x ** 3 - 3 * x * x, x0: -1.5, x1: 4.2, y0: -8, y1: 3, dy0: -5, dy1: 8, tick: 1, sp: [[0, "0"], [3, "3"]] },
     };
     let key = "cubic", x = -1.8, full = false, auto = false;
     HM.choice(box, "Curve:", Object.entries(FN).map(([k, v]) => [k, `$${v.tex.replace("f(x) = ", "")}$`]), key, (v) => { key = v; x = FN[v].x0 + 0.3; xs.input.min = FN[v].x0; xs.input.max = FN[v].x1; xs.set(x); });
     const ctl = controls(box);
-    const xs = HM.slider(ctl, { label: "$x$", min: FN[key].x0, max: FN[key].x1, step: 0.01, value: x, fmt: (v) => N(v, 2), oninput: (v) => { x = v; sim.redraw(); info(); } });
+    const xs = HM.slider(ctl, { label: "$x$", min: FN[key].x0, max: FN[key].x1, step: 0.01, value: x, fmt: (v) => N(v, 2), oninput: (v) => { x = snapSP(v); sim.redraw(); info(); } });
+    // a slider stop within half a step of a stationary point means that point exactly
+    function snapSP(v) { const p = FN[key].sp.find(([q]) => Math.abs(v - q) < 0.006); return p ? p[0] : v; }
     const row = HM.el("div", { class: "btn-row" });
     const go = HM.el("button", { class: "btn small primary", type: "button" }, "▶ Sweep along the curve");
     const show = HM.el("button", { class: "btn small", type: "button", "aria-pressed": "false" }, "Show the whole of f′");
@@ -47,7 +51,7 @@
         const tf = F.rad ? (v) => ["0", "π/2", "π", "3π/2", "2π"][Math.round(v / (Math.PI / 2))] || "" : undefined;
         const P1 = HM.plot(ctx, b1, { x0: F.x0, x1: F.x1, y0: F.y0, y1: F.y1, xt: F.tick, yt: F.rad ? 0.5 : 1, C, xl: "x", yl: "y = f(x)", tf, ytf: (v) => (Math.abs(v % 1) < 1e-9 ? String(v).replace("-", "−") : "") });
         const P2 = HM.plot(ctx, b2, { x0: F.x0, x1: F.x1, y0: F.dy0, y1: F.dy1, xt: F.tick, yt: F.rad ? 0.5 : 2, C, xl: "x", yl: "y = f′(x)", tf, ytf: (v) => (Math.abs(v % 1) < 1e-9 ? String(v).replace("-", "−") : "") });
-        const m = F.d(x), y = F.f(x);
+        const m = F.sp.some(([q]) => q === x) ? 0 : F.d(x), y = F.f(x);
         HM.clip(ctx, b1, () => {
           HM.curve(ctx, P1, F.f, F.x0, F.x1, C.sea, 3);
           // the curve is coloured by the sign of the gradient up to x
@@ -63,13 +67,13 @@
           HM.dot(ctx, P2.X(x), P2.Y(m), C.violet, 6, C.card);
         });
         ctx.setLineDash([3, 3]); ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(P1.X(x), P1.Y(y)); ctx.lineTo(P2.X(x), Math.max(b2.y, Math.min(b2.y + b2.h, P2.Y(m)))); ctx.stroke(); ctx.setLineDash([]);
-        HM.label(ctx, `gradient ${N(m, 2)}`, Math.min(P1.X(x) + 10, S.w - 110), Math.max(P1.Y(y) - 16, 18), { bold: true, size: 13 });
-        cv.setAttribute("aria-label", `Top: the curve ${F.tex} with its tangent at x = ${N(x, 2)}, gradient ${N(m, 2)}. Bottom: the gradient plotted against x, which traces ${F.dtex}.`);
+        HM.label(ctx, `gradient ${G(m)}`, Math.min(P1.X(x) + 10, S.w - 110), Math.max(P1.Y(y) - 16, 18), { bold: true, size: 13 });
+        cv.setAttribute("aria-label", `Top: the curve ${F.tex} with its tangent at x = ${N(x, 2)}, gradient ${G(m)}. Bottom: the gradient plotted against x, which traces ${F.dtex}.`);
       },
     });
     function info() {
-      const F = FN[key], m = F.d(x);
-      out.innerHTML = `<p style="margin:0">$${F.tex}$, so $${F.dtex}$. At $x = ${N(x, 2)}$ the gradient is $${N(m, 2)}$: the curve is ${Math.abs(m) < 0.02 ? "<b>stationary</b> here: $f'(x) = 0$" : m > 0 ? "<b>increasing</b> ($f'(x) \\gt 0$, green)" : "<b>decreasing</b> ($f'(x) \\lt 0$, red)"}.</p>`;
+      const F = FN[key], sp = F.sp.find(([q]) => q === x), m = sp ? 0 : F.d(x);
+      out.innerHTML = `<p style="margin:0">$${F.tex}$, so $${F.dtex}$. At $x = ${sp ? sp[1] : N(x, 2)}$ the gradient is $${G(m)}$: the curve is ${sp ? "<b>stationary</b> here: $f'(x) = 0$" : m > 0 ? "<b>increasing</b> ($f'(x) \\gt 0$, green)" : "<b>decreasing</b> ($f'(x) \\lt 0$, red)"}.</p>`;
       HM.math(out);
     }
     info();
@@ -399,7 +403,7 @@
       const ks = [a, ...roots, b];
       const parts = ks.slice(1).map((x, i) => Fn.F(x) - Fn.F(ks[i]));
       const area = parts.reduce((t, v) => t + Math.abs(v), 0);
-      const fmt = (r) => { const q = r / Math.PI; if (Fn.rad && Math.abs(q - Math.round(q)) < 1e-6) return Math.round(q) === 1 ? "\\pi" : Math.round(q) + "\\pi"; return N(r, 3).replace("−", "-"); };
+      const fmt = (r) => { const q = r / Math.PI; if (Fn.rad && Math.abs(q - Math.round(q)) < 1e-6) { const r0 = Math.round(q); return r0 === 0 ? "0" : r0 === 1 ? "\\pi" : r0 === -1 ? "-\\pi" : r0 + "\\pi"; } return N(r, 3).replace("−", "-"); };
       if (roots.length) return `The curve crosses the $x$-axis at $x = ${roots.map(fmt).join(",\\ ")}$, inside the limits, so this integral is <b>not</b> the area: the parts above and below partly cancel. Split at the root${roots.length > 1 ? "s" : ""}: the parts are $${parts.map((v) => N(v, 3).replace("−", "-")).join(",\\ ")}$, so the area is $${parts.map((v) => N(Math.abs(v), 3)).join(" + ")} = ${N(area, 3)}$.`;
       return I < 0 ? `All of the curve here is below the axis: the integral is negative, and the area is its size, $${N(Math.abs(I), 3)}$.` : "All of the curve here is above the axis: the integral is the area.";
     }
