@@ -246,7 +246,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
   <p class="hint">Change the cubic's coefficients. The curve is green where it increases and red where it decreases. The widget finds the stationary points and fills in the nature table.</p>
 </div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"A few candidates did not write consistent lines of working", for example jumping between unequal expressions while factorising $3x^2 + 4x - 4$, and "inconsistencies prevented the responses that reached the correct factorised form from gaining full marks." Every line must equal the line before it.</p></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2025 course report</div><p>In 2025, on an optimisation question, "some candidates did not have solutions that met the minimum requirements for a nature table. Common errors included numerical errors when evaluating the derived function in a neighbourhood of the minimum and incorrect labelling within the nature table." A nature table needs: the $x$ values (stationary point and one on each side, or a neighbourhood like $\rightarrow 3 \rightarrow$), the sign of $f'(x)$ in each column, the slope arrows, and a conclusion naming the nature.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2025 course report</div><p>In 2025, on an optimisation question, "some candidates did not have solutions that met the minimum requirements for a nature table. Common errors included numerical errors when evaluating the derived function in a neighbourhood of the minimum and incorrect labelling within the nature table." (The derived function is $f'(x)$.) A nature table needs: the $x$ values (stationary point and one on each side, or a neighbourhood like $\rightarrow 3 \rightarrow$, which markers accept as shorthand for "just either side of 3"), the sign of $f'(x)$ in each column, the slope arrows, and a conclusion naming the nature.</p></div>
 
 <h3>Sketching a curve</h3>
 <p>In 2025 a question asked for a sketch of a cubic from given conditions, and the course report says "only a few candidates drew a cubic function and most candidates did not interpret the conditions stated in the question". Read every condition, mark each on the axes first, then join them with the right shape. To sketch $y = f(x)$, find and label:</p>
@@ -344,11 +344,12 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <ol class="step-list">
 <li>(a) Volume: $x^2h = 32$, so $h = \dfrac{32}{x^2}$ <span class="why">Use the fact you are given to remove the second variable.</span></li>
 <li>Area: base $x^2$ plus four sides of $xh$ (no top), so $A = x^2 + 4xh = x^2 + 4x \times \dfrac{32}{x^2} = x^2 + \dfrac{128}{x}$ <span class="why">Now $A$ is in terms of one variable: step 1 of the method.</span></li>
-<li>(b) <li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
+<li>(b) $A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
 <li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
 <li>Nature table (below): $A'$ goes $-\ 0\ +$, so a minimum. <span class="why">Justify the nature.</span></li>
 <li>Base 4 m by 4 m, height $h = \frac{32}{4^2} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
 </ol>
+<p>For the table, write $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$: the factor $\dfrac{2}{x^2}$ is always positive.</p>
 <div class="table-wrap"><table class="nature-table">
 <thead><tr><th>$x$</th><th>$\to 4^-$</th><th>$4$</th><th>$\to 4^+$</th></tr></thead>
 <tbody>
@@ -357,7 +358,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <tr><th scope="row">$A'(x)$</th><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">slope</th><td>↘</td><td>→</td><td>↗</td></tr>
 </tbody></table></div>
-<p>Here $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$. So $x = 4$ gives a minimum.</p>
+<p>So $x = 4$ gives a minimum.</p>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find greatest and least values on a closed interval, checking endpoints;</li><li>solve optimisation problems and justify the nature of the optimum;</li><li>solve problems about rates of change.</li></ul></div>
 <div class="check" data-check="calc-optim"></div>
@@ -460,7 +461,7 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 <li>The region is below the $x$-axis, so the integral is negative: the area is $\dfrac92 = 4.5$ square units. <span class="why">Communicate why the area is positive.</span></li>
 </ol>
 </details></div>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>A question just like this appeared in 2026. "Some candidates did not include '$dx$' in their statement of the definite integral." "Many candidates who calculated $\int_{-1}^{2}(x^2 - x - 2)\,dx$ did not effectively communicate that the area would be positive." And on Paper 2, "most candidates included additional lines of working instead of using their calculator efficiently".</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>A question just like this appeared in 2026. "Some candidates did not include '$dx$' in their statement of the definite integral." "Many candidates who calculated $\int_{-1}^{2}(x^2 - x - 2)\,dx$ did not effectively communicate that the area would be positive." And on Paper 2, "most candidates included additional lines of working instead of using their calculator efficiently". In Paper 2, write the integral and the substituted brackets, then let the calculator do the arithmetic.</p></div>
 
 <div class="worked"><p class="worked-title">Worked example 22 · P1 · a curve that crosses the axis</p>
 <p>Find the total area enclosed between $y = x^2 - 4x$, the $x$-axis and the lines $x = 0$ and $x = 5$.</p>
