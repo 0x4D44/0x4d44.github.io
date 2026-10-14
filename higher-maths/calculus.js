@@ -349,9 +349,14 @@
     HM.choice(box, "Curve:", Object.entries(FN).map(([k, v]) => [k, `$y = ${v.tex}$`]), key, (v) => { key = v; a = FN[v].a; b = FN[v].b; as.input.min = bs.input.min = FN[v].x0; as.input.max = bs.input.max = FN[v].x1; as.set(a); bs.set(b); });
     const ctl = controls(box);
     // on the sine curve, a slider stop within half a step of a multiple of pi/2 means that multiple exactly
+    // exact multiples of pi/2 shown as pi forms: k = 0..4 -> tex / plain text
+    const piK = (r) => { const k = r / (Math.PI / 2); return FN[key].rad && Math.abs(k - Math.round(k)) < 1e-9 ? Math.round(k) : null; };
+    const PI_TEX = ["0", "\\tfrac{\\pi}{2}", "\\pi", "\\tfrac{3\\pi}{2}", "2\\pi"], PI_TXT = ["0", "π/2", "π", "3π/2", "2π"];
+    const limTex = (r) => { const k = piK(r); return k !== null && k >= 0 && k <= 4 ? PI_TEX[k] : N(r, 2); };
+    const limTxt = (r) => { const k = piK(r); return k !== null && k >= 0 && k <= 4 ? PI_TXT[k] : N(r, 2); };
     const snap = (v) => { if (!FN[key].rad) return v; const m = Math.round(v / (Math.PI / 2)) * Math.PI / 2; return Math.abs(v - m) < 0.026 ? m : v; };
-    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => N(snap(v), 2), oninput: (v) => { a = Math.min(snap(v), b - 0.1); upd(); } });
-    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => N(snap(v), 2), oninput: (v) => { b = Math.max(snap(v), a + 0.1); upd(); } });
+    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => limTxt(snap(v)), oninput: (v) => { a = Math.min(snap(v), b - 0.1); upd(); } });
+    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => limTxt(snap(v)), oninput: (v) => { b = Math.max(snap(v), a + 0.1); upd(); } });
     const ns = HM.slider(ctl, { label: "number of strips", min: 1, max: 200, step: 1, value: n, oninput: (v) => { n = v; upd(); } });
     const go = HM.el("button", { class: "btn small primary", type: "button" }, "▶ More and more strips");
     box.append(HM.el("div", { class: "btn-row" }, go));
@@ -403,7 +408,7 @@
       let pos = 0, neg = 0;
       for (let i = 0; i < n; i++) { const y = Fn.f(a + (i + 0.5) * w) * w; if (y >= 0) pos += y; else neg += y; }
       const I = Fn.F(b) - Fn.F(a);
-      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${N(a, 2)}}^{${N(b, 2)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
+      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${limTex(a)}}^{${limTex(b)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
       HM.math(out);
     }
     upd();

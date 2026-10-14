@@ -151,7 +151,7 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 </ol>
 </details></div>
 <p>The trig rules on the formulae list are the chain rule in action: $\frac{d}{dx}\sin(3x - \frac{\pi}{4}) = \cos(3x - \frac{\pi}{4}) \times 3$.</p>
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the inside derivative</div><p>The most common chain-rule error is forgetting to multiply by the derivative of the inside. A quick check: if the inside is just $x$, the extra factor is 1 and you are back to the ordinary rule. If the inside is anything else, there <em>must</em> be an extra factor.</p><p>In 2025, on differentiating a composite function of the form $\sqrt{\ldots} + 3$, "most candidates did not differentiate '+3' correctly or did not apply the chain rule correctly". A constant added on the outside differentiates to 0. And "a few candidates attempted to expand their answer from part (a), which led to errors": use the chain rule instead.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the inside derivative</div><p>The most common chain-rule error is forgetting to multiply by the derivative of the inside. A quick check: if the inside is just $x$, the extra factor is 1 and you are back to the ordinary rule. If the inside is anything else, there <em>must</em> be an extra factor.</p><p>In 2025, on differentiating a composite function that ended in '+3', "most candidates did not differentiate '+3' correctly or did not apply the chain rule correctly". A constant added on the outside differentiates to 0. And "a few candidates attempted to expand their answer from part (a), which led to errors": use the chain rule instead.</p></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>differentiate $(ax + b)^n$ and other composites, including roots and negative powers;</li><li>differentiate $\sin(ax + b)$, $\cos(ax + b)$ and powers of $\sin x$ and $\cos x$.</li></ul></div>
 <div class="check" data-check="calc-chain"></div>
 </section>
@@ -324,9 +324,18 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>$V'(x) = 12x^2 - 156x + 360$ <span class="why">Differentiate.</span></li>
 <li>$12x^2 - 156x + 360 = 0 \Rightarrow 12(x^2 - 13x + 30) = 0 \Rightarrow 12(x - 3)(x - 10) = 0$ <span class="why">Set $V'(x) = 0$ and solve.</span></li>
 <li>$x = 3$ (reject $x = 10$: the sheet is only 15 cm wide, so $x \lt 7.5$) <span class="why">Use the context.</span></li>
-<li>$V'(2) = 96 \gt 0$, $V'(4) = -72 \lt 0$: $+\ 0\ -$, a maximum. <span class="why">Justify the nature.</span></li>
+<li>Nature table (below): $V'$ goes $+\ 0\ -$, so a maximum. <span class="why">Justify the nature.</span></li>
 <li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
 </ol>
+<div class="table-wrap"><table class="nature-table">
+<thead><tr><th>$x$</th><th>$\to 3^-$</th><th>$3$</th><th>$\to 3^+$</th></tr></thead>
+<tbody>
+<tr><th scope="row">$x - 3$</th><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">$x - 10$</th><td>−</td><td>−</td><td>−</td></tr>
+<tr><th scope="row">$V'(x)$</th><td>+</td><td>0</td><td>−</td></tr>
+<tr><th scope="row">slope</th><td>↗</td><td>→</td><td>↘</td></tr>
+</tbody></table></div>
+<p>So $x = 3$ gives a maximum. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</p>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 15 · P1 · a minimum</p>
 <p>An open-topped water tank has a square base of side $x$ metres and holds 32 m³. Its surface area is $A = x^2 + \dfrac{128}{x}$. Find the dimensions that use the least metal.</p>
@@ -334,9 +343,18 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <ol class="step-list">
 <li>$A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
 <li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
-<li>$A'(2) = 4 - 32 \lt 0$, $A'(8) = 16 - 2 \gt 0$: $-\ 0\ +$, a minimum. <span class="why">Nature table.</span></li>
+<li>Nature table (below): $A'$ goes $-\ 0\ +$, so a minimum. <span class="why">Justify the nature.</span></li>
 <li>Base 4 m by 4 m, height $\frac{32}{16} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
 </ol>
+<div class="table-wrap"><table class="nature-table">
+<thead><tr><th>$x$</th><th>$\to 4^-$</th><th>$4$</th><th>$\to 4^+$</th></tr></thead>
+<tbody>
+<tr><th scope="row">$x^3 - 64$</th><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">$\dfrac{2}{x^2}$</th><td>+</td><td>+</td><td>+</td></tr>
+<tr><th scope="row">$A'(x)$</th><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">slope</th><td>↘</td><td>→</td><td>↗</td></tr>
+</tbody></table></div>
+<p>Here $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$. So $x = 4$ gives a minimum.</p>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find greatest and least values on a closed interval, checking endpoints;</li><li>solve optimisation problems and justify the nature of the optimum;</li><li>solve problems about rates of change.</li></ul></div>
 <div class="check" data-check="calc-optim"></div>
