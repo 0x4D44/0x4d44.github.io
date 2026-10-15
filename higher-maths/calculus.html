@@ -72,18 +72,18 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 </ul></div>
 <div class="worked"><p class="worked-title">Worked example 1 · P1 · prepare, then differentiate</p>
 <p>Differentiate $y = 4x^3 - \dfrac{2}{x} + \sqrt{x}$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$y = 4x^3 - 2x^{-1} + x^{\frac12}$ <span class="why">Rewrite with powers of $x$.</span></li>
-<li>$\dfrac{dy}{dx} = 12x^2 + 2x^{-2} + \tfrac12x^{-\frac12}$ <span class="why">Differentiate each term. $-2 \times (-1) = +2$.</span></li>
-<li>$= 12x^2 + \dfrac{2}{x^2} + \dfrac{1}{2\sqrt{x}}$ <span class="why">Positive powers are tidier, though not required unless asked.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$y = 4x^3 - 2x^{-1} + x^{\frac12}$ <span class="why">Express in differentiable form: powers of $x$.</span></li>
+<li>$\dfrac{dy}{dx} = 12x^2 + 2x^{-2} \ldots$ <span class="why">Differentiate the first two terms. $-2 \times (-1) = +2$.</span></li>
+<li>$\ldots + \tfrac12x^{-\frac12}$, so $\dfrac{dy}{dx} = 12x^2 + 2x^{-2} + \tfrac12x^{-\frac12} = 12x^2 + \dfrac{2}{x^2} + \dfrac{1}{2\sqrt{x}}$ <span class="why">Differentiate the root term. Positive powers are tidier, though not required unless asked.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 2 · P1 · split the fraction</p>
 <p>$f(x) = \dfrac{2x^2 - 3}{x}$, $x \ne 0$. Find $f'(x)$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(x) = \dfrac{2x^2}{x} - \dfrac{3}{x} = 2x - 3x^{-1}$ <span class="why">Divide each term on top by $x$.</span></li>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(x) = \dfrac{2x^2}{x} - \dfrac{3}{x} = 2x - 3x^{-1}$ <span class="why">Express in differentiable form: divide each term on top by $x$.</span></li>
 <li>$f'(x) = 2 + 3x^{-2}$ <span class="why">Differentiate.</span></li>
 </ol>
 </details></div>
@@ -98,29 +98,31 @@ $$\text{if } f(x) = ax^n \text{ then } f'(x) = anx^{n-1}.$$
 <p>The formulae list gives $\frac{d}{dx}(\sin ax) = a\cos ax$ and $\frac{d}{dx}(\cos ax) = -a\sin ax$. These rules are only true in radians. The reason: for a small angle in radians, $\sin x \approx x$ (try $\sin 0.01 = 0.0099998$), so $y = \sin x$ leaves the origin with gradient exactly 1, matching $\cos 0 = 1$. In degrees, $\sin 1° \approx 0.01745$, and every trig derivative would carry an awkward extra factor of $\frac{\pi}{180}$.</p>
 <div class="worked"><p class="worked-title">Worked example 3 · P1 · trig derivative at an exact value</p>
 <p>$f(x) = 5\sin x - 3\cos x$. Find the exact value of $f'\left(\frac{\pi}{3}\right)$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f'(x) = 5\cos x + 3\sin x$ <span class="why">$-3 \times (-\sin x) = +3\sin x$.</span></li>
-<li>$f'\left(\tfrac{\pi}{3}\right) = 5 \times \tfrac12 + 3 \times \tfrac{\sqrt3}{2} = \dfrac{5 + 3\sqrt3}{2}$ <span class="why">Exact values.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\dfrac{d}{dx}(5\sin x) = 5\cos x$ <span class="why">Differentiate the first term.</span></li>
+<li>$\dfrac{d}{dx}(-3\cos x) = +3\sin x$, so $f'(x) = 5\cos x + 3\sin x$ <span class="why">Differentiate the second term: $-3 \times (-\sin x) = +3\sin x$.</span></li>
+<li>$f'\left(\tfrac{\pi}{3}\right) = 5 \times \tfrac12 + 3 \times \tfrac{\sqrt3}{2} = \dfrac{5 + 3\sqrt3}{2}$ <span class="why">Evaluate, using exact values.</span></li>
 </ol>
 </details></div>
 <h3>Rates of change</h3>
 <p>A derivative is a rate: $\frac{dy}{dx}$ is "how much $y$ changes per unit of $x$". If $s$ is the minecart's displacement (its distance along the track from the start) after $t$ seconds, then $\frac{ds}{dt}$ is its velocity. If $V$ is the volume of water in the tank, $\frac{dV}{dt}$ is how fast it is filling, and if $h$ is a Grob Tutor aircraft's height, $\frac{dh}{dt}$ is its rate of climb.</p>
 <div class="worked"><p class="worked-title">Worked example 4 · P1 · a velocity</p>
 <p>A minecart's displacement after $t$ seconds is $s = t^3 - 6t^2 + 9t$ metres. Find its velocity when $t = 4$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$v = \dfrac{ds}{dt} = 3t^2 - 12t + 9$ <span class="why">Velocity is the rate of change of displacement.</span></li>
-<li>$t = 4$: $v = 48 - 48 + 9 = 9$ m s$^{-1}$ <span class="why">Substitute.</span></li>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>$v = \dfrac{ds}{dt} = 3t^2 - 12t + 9$ <span class="why">Differentiate: velocity is the rate of change of displacement.</span></li>
+<li>$t = 4$: $v = 48 - 48 + 9 = 9$ m s$^{-1}$ <span class="why">Substitute and evaluate, with units.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 5 · P2 · the Tutor's climb</p>
-<p>For the first 20 seconds after it leaves the runway, a Grob Tutor's height is $h = 0.3t^2 - 0.01t^3$ metres, $t$ seconds after take-off. (a) Find its rate of climb when $t = 5$. (b) Find the greatest rate of climb in the first 20 seconds.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\dfrac{dh}{dt} = 0.6t - 0.03t^2$ <span class="why">Rate of climb is the rate of change of height.</span></li>
-<li>$t = 5$: $\dfrac{dh}{dt} = 3 - 0.75 = 2.25$ m s$^{-1}$ <span class="why">Substitute.</span></li>
-<li>(b) The rate $r = 0.6t - 0.03t^2$ is itself a function of $t$. $\dfrac{dr}{dt} = 0.6 - 0.06t = 0 \Rightarrow t = 10$ <span class="why">To find where the rate is greatest, differentiate the rate and set it to zero.</span></li>
+<p>For the first 20 seconds after it leaves the runway, a Grob Tutor's height is $h = 0.3t^2 - 0.01t^3$ metres, $t$ seconds after take-off. <span class="q-part">(a)</span> Find its rate of climb when $t = 5$. [2] <span class="q-part">(b)</span> Find the greatest rate of climb in the first 20 seconds. [4]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\dfrac{dh}{dt} = 0.6t - 0.03t^2$ <span class="why">Differentiate: rate of climb is the rate of change of height.</span></li>
+<li>$t = 5$: $\dfrac{dh}{dt} = 3 - 0.75 = 2.25$ m s$^{-1}$ <span class="why">Substitute and evaluate.</span></li>
+<li>(b) The rate $r = 0.6t - 0.03t^2$ is itself a function of $t$. $\dfrac{dr}{dt} = 0.6 - 0.06t$ <span class="why">Strategy: to find where the rate is greatest, differentiate the rate.</span></li>
+<li>$0.6 - 0.06t = 0 \Rightarrow t = 10$ <span class="why">Set to zero and solve.</span></li>
 <li>$\dfrac{dr}{dt}$ is positive before $t = 10$ and negative after, so $t = 10$ gives a maximum. At $t = 0$ and $t = 20$, $r = 0$. <span class="why">Justify the maximum, and check the endpoints of the interval.</span></li>
 <li>Greatest rate of climb: $r = 6 - 3 = 3$ m s$^{-1}$, at $t = 10$ s. <span class="why">Substitute $t = 10$ and answer in context.</span></li>
 </ol>
@@ -141,13 +143,17 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
   <p class="hint">Pick a composite function and a value of $x$. Each gear is labelled with its rate compared with the gear before it: $\frac{du}{dx}$, then $\frac{dy}{du}$. Multiply the two rates to get $\frac{dy}{dx}$, and compare it with the gradient measured directly from the graph.</p>
 </div>
 <div class="worked"><p class="worked-title">Worked example 6 · P1 · the chain rule four ways</p>
-<p>Differentiate (a) $(3x - 1)^5$, (b) $\sqrt{x^2 + 5}$, (c) $\dfrac{1}{(2x + 1)^3}$, (d) $\cos^3 x$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $5(3x - 1)^4 \times 3 = 15(3x - 1)^4$ <span class="why">Outside: power 5. Inside: $3x - 1$ differentiates to 3.</span></li>
-<li>(b) $(x^2 + 5)^{\frac12} \to \tfrac12(x^2 + 5)^{-\frac12} \times 2x = \dfrac{x}{\sqrt{x^2 + 5}}$ <span class="why">Rewrite the root as a power first.</span></li>
-<li>(c) $(2x + 1)^{-3} \to -3(2x + 1)^{-4} \times 2 = -6(2x + 1)^{-4}$ <span class="why">Negative power.</span></li>
-<li>(d) $(\cos x)^3 \to 3(\cos x)^2 \times (-\sin x) = -3\cos^2 x\sin x$ <span class="why">$\cos^3 x$ means $(\cos x)^3$: the inside is $\cos x$.</span></li>
+<p>Differentiate <span class="q-part">(a)</span> $(3x - 1)^5$ [2] <span class="q-part">(b)</span> $\sqrt{x^2 + 5}$ [2] <span class="q-part">(c)</span> $\dfrac{1}{(2x + 1)^3}$ [2] <span class="q-part">(d)</span> $\cos^3 x$ [2]</p>
+<details><summary>Show solution <span class="marks-n">[8 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $5(3x - 1)^4 \ldots$ <span class="why">Differentiate the outside: power 5, inside left alone.</span></li>
+<li>$\ldots \times 3 = 15(3x - 1)^4$ <span class="why">Multiply by the derivative of the inside: $3x - 1$ differentiates to 3.</span></li>
+<li>(b) $(x^2 + 5)^{\frac12} \to \tfrac12(x^2 + 5)^{-\frac12} \ldots$ <span class="why">Rewrite the root as a power first, then differentiate the outside.</span></li>
+<li>$\ldots \times 2x = \dfrac{x}{\sqrt{x^2 + 5}}$ <span class="why">Multiply by the derivative of the inside.</span></li>
+<li>(c) $(2x + 1)^{-3} \to -3(2x + 1)^{-4} \ldots$ <span class="why">Negative power: differentiate the outside.</span></li>
+<li>$\ldots \times 2 = -6(2x + 1)^{-4}$ <span class="why">Multiply by the derivative of the inside.</span></li>
+<li>(d) $(\cos x)^3 \to 3(\cos x)^2 \ldots$ <span class="why">$\cos^3 x$ means $(\cos x)^3$: differentiate the outside power.</span></li>
+<li>$\ldots \times (-\sin x) = -3\cos^2 x\sin x$ <span class="why">The inside is $\cos x$: multiply by its derivative.</span></li>
 </ol>
 </details></div>
 <p>The trig rules on the formulae list are the chain rule in action: $\frac{d}{dx}\sin(3x - \frac{\pi}{4}) = \cos(3x - \frac{\pi}{4}) \times 3$.</p>
@@ -177,10 +183,11 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 8 · P1 · working backwards from a gradient</p>
 <p>Find the points on $y = x^3 - 3x^2$ where the gradient of the tangent is 9.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$\dfrac{dy}{dx} = 3x^2 - 6x = 9$ <span class="why">Set the derivative equal to the gradient.</span></li>
-<li>$3x^2 - 6x - 9 = 0 \Rightarrow 3(x - 3)(x + 1) = 0 \Rightarrow x = 3$ or $x = -1$ <span class="why">Solve.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\dfrac{dy}{dx} = 3x^2 - 6x$ <span class="why">Differentiate.</span></li>
+<li>$3x^2 - 6x = 9$ <span class="why">Strategy: set the derivative equal to the gradient.</span></li>
+<li>$3x^2 - 6x - 9 = 0 \Rightarrow 3(x - 3)(x + 1) = 0 \Rightarrow x = 3$ or $x = -1$ <span class="why">Solve for $x$.</span></li>
 <li>$(3, 0)$ and $(-1, -4)$ <span class="why">Find each $y$ from the curve's equation.</span></li>
 </ol>
 </details></div>
@@ -190,21 +197,21 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <p>A function is <dfn>strictly increasing</dfn> where its graph goes up from left to right, which is where its gradient is positive: $f'(x) \gt 0$. It is <dfn>strictly decreasing</dfn> where $f'(x) \lt 0$.</p>
 <div class="worked"><p class="worked-title">Worked example 9 · P1 · find where a function decreases</p>
 <p>Find the values of $x$ for which $f(x) = 2x^3 - 3x^2 - 12x$ is strictly decreasing.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
 <li>$f'(x) = 6x^2 - 6x - 12$ <span class="why">Differentiate.</span></li>
-<li>$f'(x) \lt 0$ for strictly decreasing <span class="why">State the condition: it carries a mark.</span></li>
-<li>$6(x - 2)(x + 1) \lt 0$ <span class="why">Factorise.</span></li>
-<li>$-1 \lt x \lt 2$ <span class="why">The $\cup$-shaped parabola $f'$ is negative between its roots. Sketch it to check.</span></li>
+<li>$6x^2 - 6x - 12 \lt 0$ for strictly decreasing <span class="why">State the condition $f'(x) \lt 0$.</span></li>
+<li>$6(x - 2)(x + 1) \lt 0$, roots $x = -1$ and $x = 2$ <span class="why">Factorise and find the roots.</span></li>
+<li>$-1 \lt x \lt 2$ <span class="why">State the range: the $\cup$-shaped parabola $f'$ is negative between its roots. Sketch it to check.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 10 · P1 · never decreasing</p>
 <p>Show that $f(x) = x^3 + 3x^2 + 3x + 5$ is never decreasing.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
 <li>$f'(x) = 3x^2 + 6x + 3$ <span class="why">Differentiate.</span></li>
 <li>$= 3(x^2 + 2x + 1) = 3(x + 1)^2$ <span class="why">Factorise (or complete the square).</span></li>
-<li>$(x + 1)^2 \ge 0$ for all $x$, so $f'(x) \ge 0$ and $f$ is never decreasing. <span class="why">A square is never negative. Communicate.</span></li>
+<li>$(x + 1)^2 \ge 0$ for all $x$, so $f'(x) \ge 0$ and $f$ is never decreasing. <span class="why">Communicate: a square is never negative.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026 the function had derivative $f'(x) = 12x^2 - 24x$, and when asked where it was strictly decreasing, "some candidates did not state the necessary condition ($f'(x) \lt 0$ or $12x^2 - 24x \lt 0$)". Write the condition down before you solve it.</p></div>
@@ -221,25 +228,27 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <g font-size="15" font-weight="700" class="ink" text-anchor="middle"><text x="100" y="160">maximum: + 0 −</text><text x="310" y="160">minimum: − 0 +</text><text x="535" y="160">rising inflection: + 0 +</text></g>
 </svg></div><figcaption>The signs are the signs of $f'(x)$ just before, at and just after the point. A falling point of inflection is $-\ 0\ -$.</figcaption></figure>
 <p>To find the nature of each stationary point, use a <dfn>nature table</dfn>: check the sign of $f'(x)$ on each side of it. A nature table is the standard method at Higher.</p>
-<p>In the table's top row, $\to -1^-$ means "a value of $x$ just less than $-1$", and $\to -1^+$ means "just more than $-1$". You only need the <em>sign</em> of $f'(x)$ there, so any convenient value close by will do.</p>
+<p>In the table's top row, $\to -1$ means "a value of $x$ just less than $-1$", and $-1 \to$ means "just more than $-1$". You only need the <em>sign</em> of $f'(x)$ there, so any convenient value close by will do.</p>
 <div class="worked"><p class="worked-title">Worked example 11 · P1 · stationary points of a cubic</p>
 <p>Find the stationary points of $y = x^3 - 3x^2 - 9x + 5$ and determine their nature.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
+<ol class="step-list marks">
 <li>$\dfrac{dy}{dx} = 3x^2 - 6x - 9$ <span class="why">Differentiate.</span></li>
 <li>$3x^2 - 6x - 9 = 0$ <span class="why">Set the derivative to zero: this is the stationary-point condition.</span></li>
-<li>$3(x - 3)(x + 1) = 0 \Rightarrow x = -1$ or $x = 3$ <span class="why">Solve.</span></li>
-<li>$(-1, 10)$ and $(3, -22)$ <span class="why">Substitute into the original equation for $y$.</span></li>
-<li>Nature table (below): maximum turning point at $(-1, 10)$, minimum turning point at $(3, -22)$. <span class="why">Signs of $\frac{dy}{dx}$ either side.</span></li>
-</ol>
+<li>$3(x - 3)(x + 1) = 0 \Rightarrow x = -1$ or $x = 3$ <span class="why">Solve for $x$.</span></li>
+<li>$(-1, 10)$ and $(3, -22)$ <span class="why">Find the $y$-values: substitute into the original equation.</span></li>
+<li>Nature table:
 <div class="table-wrap"><table class="nature-table">
-<thead><tr><th>$x$</th><th>$\to -1^-$</th><th>$-1$</th><th>$\to -1^+$</th><th>$\to 3^-$</th><th>$3$</th><th>$\to 3^+$</th></tr></thead>
+<thead><tr><th>$x$</th><th>$\to -1$</th><th>$-1$</th><th>$-1 \to$</th><th>$\to 3$</th><th>$3$</th><th>$3 \to$</th></tr></thead>
 <tbody>
 <tr><th scope="row">$x - 3$</th><td>−</td><td>−</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">$x + 1$</th><td>−</td><td>0</td><td>+</td><td>+</td><td>+</td><td>+</td></tr>
 <tr><th scope="row">$\frac{dy}{dx}$</th><td>+</td><td>0</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">slope</th><td>↗</td><td>→</td><td>↘</td><td>↘</td><td>→</td><td>↗</td></tr>
 </tbody></table></div>
+<span class="why">Signs of $\frac{dy}{dx}$ either side of each stationary point.</span></li>
+<li>Maximum turning point at $(-1, 10)$, minimum turning point at $(3, -22)$. <span class="why">State the nature of each.</span></li>
+</ol>
 </details></div>
 <div class="widget" id="w-nature">
   <h3 class="widget-title">Rising and falling: a live nature table</h3>
@@ -256,14 +265,27 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>what happens for large positive and negative $x$: the highest power dominates. For $x^3$, $y \to +\infty$ as $x \to +\infty$ (read: $y$ grows without limit as $x$ grows) and $y \to -\infty$ as $x \to -\infty$; for $-x^4$, $y \to -\infty$ both ways.</li>
 </ul>
 <div class="worked"><p class="worked-title">Worked example 12 · P1 · a quartic with a point of inflection</p>
-<p>Sketch $y = x^4 - 4x^3$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>Roots: $x^3(x - 4) = 0 \Rightarrow (0, 0)$ and $(4, 0)$; $y$-intercept $(0, 0)$ <span class="why">Axes.</span></li>
-<li>$\dfrac{dy}{dx} = 4x^3 - 12x^2 = 4x^2(x - 3) = 0 \Rightarrow x = 0$ or $x = 3$ <span class="why">Stationary points: $(0, 0)$ and $(3, -27)$.</span></li>
-<li>Signs of $4x^2(x - 3)$: at $x = -1$: $-$; at $x = 1$: $-$; at $x = 4$: $+$ <span class="why">$4x^2$ is never negative, so the sign is the sign of $x - 3$.</span></li>
-<li>$(0, 0)$ is a falling point of inflection ($-\ 0\ -$); $(3, -27)$ is a minimum ($-\ 0\ +$). <span class="why">Nature.</span></li>
-<li>As $x \to \pm\infty$, $y \to +\infty$ ($x^4$ dominates). <span class="why">Ends of the graph.</span></li>
+<p>A curve has equation $y = x^4 - 4x^3$. <span class="q-part">(a)</span> Find the points where the curve meets the axes. [1] <span class="q-part">(b)</span> Find the stationary points and determine their nature. [6] <span class="q-part">(c)</span> Sketch the curve. [2]</p>
+<details><summary>Show solution <span class="marks-n">[9 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) Roots: $x^3(x - 4) = 0 \Rightarrow (0, 0)$ and $(4, 0)$; $y$-intercept $(0, 0)$ <span class="why">Factorise to find where the curve meets the axes.</span></li>
+<li>(b) $\dfrac{dy}{dx} = 4x^3 - 12x^2$ <span class="why">Differentiate.</span></li>
+<li>$4x^3 - 12x^2 = 0$ <span class="why">Set the derivative to zero.</span></li>
+<li>$4x^2(x - 3) = 0 \Rightarrow x = 0$ or $x = 3$ <span class="why">Solve for $x$.</span></li>
+<li>$(0, 0)$ and $(3, -27)$ <span class="why">Find the $y$-values: $81 - 108 = -27$.</span></li>
+<li>Signs of $4x^2(x - 3)$: at $x = -1$: $-$; at $x = 1$: $-$; at $x = 4$: $+$
+<div class="table-wrap"><table class="nature-table">
+<thead><tr><th>$x$</th><th>$\to 0$</th><th>$0$</th><th>$0 \to$</th><th>$\to 3$</th><th>$3$</th><th>$3 \to$</th></tr></thead>
+<tbody>
+<tr><th scope="row">$4x^2$</th><td>+</td><td>0</td><td>+</td><td>+</td><td>+</td><td>+</td></tr>
+<tr><th scope="row">$x - 3$</th><td>−</td><td>−</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">$\frac{dy}{dx}$</th><td>−</td><td>0</td><td>−</td><td>−</td><td>0</td><td>+</td></tr>
+<tr><th scope="row">slope</th><td>↘</td><td>→</td><td>↘</td><td>↘</td><td>→</td><td>↗</td></tr>
+</tbody></table></div>
+<span class="why">Nature table. $4x^2$ is never negative, so the sign of $\frac{dy}{dx}$ is the sign of $x - 3$.</span></li>
+<li>$(0, 0)$ is a falling point of inflection ($-\ 0\ -$); $(3, -27)$ is a minimum turning point ($-\ 0\ +$). <span class="why">State the nature of each.</span></li>
+<li>(c) Sketch (below) passing through $(0, 0)$ and $(4, 0)$, with the stationary points $(0, 0)$ and $(3, -27)$ marked. <span class="why">Roots and stationary points correctly placed and labelled.</span></li>
+<li>As $x \to \pm\infty$, $y \to +\infty$ ($x^4$ dominates), and the curve flattens at the origin without turning. <span class="why">Correct shape, including the ends of the graph.</span></li>
 </ol>
 <figure class="diagram" style="margin:.6em 0 0"><svg viewBox="0 0 360 230" style="max-width:360px" role="img" aria-label="Sketch of y equals x to the fourth minus 4 x cubed: it comes down from the top left, flattens at the origin (a falling point of inflection), falls to a minimum at (3, minus 27), and rises steeply through (4, 0).">
 <line x1="20" y1="60" x2="350" y2="60" class="stroke-ink" stroke-width="1.5"/><line x1="100" y1="10" x2="100" y2="225" class="stroke-ink" stroke-width="1.5"/>
@@ -295,12 +317,14 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 </div>
 <div class="worked"><p class="worked-title">Worked example 13 · P1 · an endpoint wins</p>
 <p>Find the greatest and least values of $f(x) = x^3 - 3x^2 - 9x + 5$ on the interval $-2 \le x \le 6$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>Stationary points at $x = -1$ and $x = 3$ (worked example 11), both inside the interval. <span class="why">$f'(x) = 3(x-3)(x+1) = 0$.</span></li>
-<li>$f(-1) = 10$, $f(3) = -22$ <span class="why">Values at the stationary points.</span></li>
-<li>$f(-2) = 3$, $f(6) = 216 - 108 - 54 + 5 = 59$ <span class="why">Values at the endpoints.</span></li>
-<li>Greatest value $59$ (at $x = 6$); least value $-22$ (at $x = 3$) <span class="why">Compare all four.</span></li>
+<details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f'(x) = 3x^2 - 6x - 9$ <span class="why">Differentiate (as in worked example 11).</span></li>
+<li>$3x^2 - 6x - 9 = 0$ <span class="why">Set the derivative to zero.</span></li>
+<li>$3(x - 3)(x + 1) = 0 \Rightarrow x = -1$ or $x = 3$, both inside the interval. <span class="why">Solve for $x$.</span></li>
+<li>$f(-1) = 10$, $f(3) = -22$ <span class="why">Evaluate $f$ at the stationary points.</span></li>
+<li>$f(-2) = -8 - 12 + 18 + 5 = 3$, $f(6) = 216 - 108 - 54 + 5 = 59$ <span class="why">Evaluate $f$ at the endpoints.</span></li>
+<li>Greatest value $59$ (at $x = 6$); least value $-22$ (at $x = 3$) <span class="why">Compare all four and state both values.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Few candidates checked the endpoints of the closed interval and only focused on the nature of stationary points." Others "obtained incorrect values when evaluating the function". Evaluate carefully, with brackets round negatives.</p></div>
@@ -320,45 +344,48 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 </div>
 <div class="worked"><p class="worked-title">Worked example 14 · P1 · the copper box</p>
 <p>The box above has volume $V(x) = x(24 - 2x)(15 - 2x) = 4x^3 - 78x^2 + 360x$. Find the value of $x$ that gives the greatest volume, and the greatest volume.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
+<ol class="step-list marks">
 <li>$V'(x) = 12x^2 - 156x + 360$ <span class="why">Differentiate.</span></li>
-<li>$12x^2 - 156x + 360 = 0 \Rightarrow 12(x^2 - 13x + 30) = 0 \Rightarrow 12(x - 3)(x - 10) = 0$ <span class="why">Set $V'(x) = 0$ and solve.</span></li>
-<li>$x = 3$ (reject $x = 10$: the sheet is only 15 cm wide, so $x \lt 7.5$) <span class="why">Use the context.</span></li>
-<li>Nature table (below): $V'$ goes $+\ 0\ -$, so a maximum. <span class="why">Justify the nature.</span></li>
-<li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
-</ol>
+<li>$12x^2 - 156x + 360 = 0$ <span class="why">Set $V'(x) = 0$.</span></li>
+<li>$12(x^2 - 13x + 30) = 0 \Rightarrow 12(x - 3)(x - 10) = 0 \Rightarrow x = 3$ (reject $x = 10$: the sheet is only 15 cm wide, so $x \lt 7.5$) <span class="why">Solve, using the context to reject a root.</span></li>
+<li>Nature table:
 <div class="table-wrap"><table class="nature-table">
-<thead><tr><th>$x$</th><th>$\to 3^-$</th><th>$3$</th><th>$\to 3^+$</th></tr></thead>
+<thead><tr><th>$x$</th><th>$\to 3$</th><th>$3$</th><th>$3 \to$</th></tr></thead>
 <tbody>
 <tr><th scope="row">$x - 3$</th><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">$x - 10$</th><td>−</td><td>−</td><td>−</td></tr>
 <tr><th scope="row">$V'(x)$</th><td>+</td><td>0</td><td>−</td></tr>
 <tr><th scope="row">slope</th><td>↗</td><td>→</td><td>↘</td></tr>
 </tbody></table></div>
-<p>So $x = 3$ gives a maximum. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</p>
+<span class="why">Justify the nature. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</span></li>
+<li>$V'$ goes $+\ 0\ -$, so $x = 3$ gives a maximum. <span class="why">State the nature.</span></li>
+<li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
+</ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 15 · P1 · a minimum</p>
-<p>An open-topped water tank has a square base of side $x$ metres and height $h$ metres, and holds 32 m³. (a) Show that its surface area is $A = x^2 + \dfrac{128}{x}$. (b) Find the dimensions that use the least metal.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<p>An open-topped water tank has a square base of side $x$ metres and height $h$ metres, and holds 32 m³. <span class="q-part">(a)</span> Show that its surface area is $A = x^2 + \dfrac{128}{x}$. [3] <span class="q-part">(b)</span> Find the dimensions that use the least metal. [6]</p>
+<details><summary>Show solution <span class="marks-n">[9 marks]</span></summary>
+<ol class="step-list marks">
 <li>(a) Volume: $x^2h = 32$, so $h = \dfrac{32}{x^2}$ <span class="why">Use the fact you are given to remove the second variable.</span></li>
-<li>Area: base $x^2$ plus four sides of $xh$ (no top), so $A = x^2 + 4xh = x^2 + 4x \times \dfrac{32}{x^2} = x^2 + \dfrac{128}{x}$ <span class="why">Now $A$ is in terms of one variable: step 1 of the method.</span></li>
+<li>Area: base $x^2$ plus four sides of $xh$ (no top), so $A = x^2 + 4xh$ <span class="why">Form an expression for the surface area.</span></li>
+<li>$A = x^2 + 4x \times \dfrac{32}{x^2} = x^2 + \dfrac{128}{x}$ <span class="why">Substitute and complete the proof. Now $A$ is in terms of one variable: step 1 of the method.</span></li>
 <li>(b) $A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
-<li>$2x - \dfrac{128}{x^2} = 0 \Rightarrow 2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Stationary point.</span></li>
-<li>Nature table (below): $A'$ goes $-\ 0\ +$, so a minimum. <span class="why">Justify the nature.</span></li>
-<li>Base 4 m by 4 m, height $h = \frac{32}{4^2} = 2$ m; least area 48 m² <span class="why">Answer the question asked.</span></li>
-</ol>
-<p>For the table, write $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$: the factor $\dfrac{2}{x^2}$ is always positive.</p>
+<li>$2x - \dfrac{128}{x^2} = 0$ <span class="why">Set the derivative to zero.</span></li>
+<li>$2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Solve for $x$.</span></li>
+<li>For the table, write $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$: the factor $\dfrac{2}{x^2}$ is always positive.
 <div class="table-wrap"><table class="nature-table">
-<thead><tr><th>$x$</th><th>$\to 4^-$</th><th>$4$</th><th>$\to 4^+$</th></tr></thead>
+<thead><tr><th>$x$</th><th>$\to 4$</th><th>$4$</th><th>$4 \to$</th></tr></thead>
 <tbody>
 <tr><th scope="row">$x^3 - 64$</th><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">$\dfrac{2}{x^2}$</th><td>+</td><td>+</td><td>+</td></tr>
 <tr><th scope="row">$A'(x)$</th><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">slope</th><td>↘</td><td>→</td><td>↗</td></tr>
 </tbody></table></div>
-<p>So $x = 4$ gives a minimum.</p>
+<span class="why">Nature table: justify the nature.</span></li>
+<li>$A'$ goes $-\ 0\ +$, so $x = 4$ gives a minimum. <span class="why">State the nature.</span></li>
+<li>Base 4 m by 4 m, height $h = \frac{32}{4^2} = 2$ m; least area $16 + 32 = 48$ m² <span class="why">Answer the question asked: the dimensions.</span></li>
+</ol>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>find greatest and least values on a closed interval, checking endpoints;</li><li>solve optimisation problems and justify the nature of the optimum;</li><li>solve problems about rates of change.</li></ul></div>
 <div class="check" data-check="calc-optim"></div>
@@ -377,12 +404,16 @@ $$\int f(x)\,dx = F(x) + C.$$
 </div>
 <p>As with differentiation, rewrite roots and fractions as powers of $x$ before you integrate. And check your answer by differentiating it: you should get back to the original.</p>
 <div class="worked"><p class="worked-title">Worked example 16 · P1 · indefinite integrals</p>
-<p>Find (a) $\displaystyle\int \left(\frac{3}{x^3} + \sqrt{x}\right)dx$, (b) $\displaystyle\int (2x + 1)^4\,dx$, (c) $\displaystyle\int 4\sin\left(2x - \tfrac{\pi}{3}\right)dx$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\displaystyle\int (3x^{-3} + x^{\frac12})\,dx = \frac{3x^{-2}}{-2} + \frac{x^{\frac32}}{\frac32} + C = -\frac{3}{2x^2} + \frac23x^{\frac32} + C$ <span class="why">Rewrite, then add one to each power.</span></li>
-<li>(b) $\dfrac{(2x + 1)^5}{2 \times 5} + C = \dfrac{(2x + 1)^5}{10} + C$ <span class="why">Divide by the new power and by $p = 2$.</span></li>
-<li>(c) $4 \times \left(-\tfrac12\right)\cos\left(2x - \tfrac{\pi}{3}\right) + C = -2\cos\left(2x - \tfrac{\pi}{3}\right) + C$ <span class="why">The integral of $\sin$ is $-\cos$, divided by the 2.</span></li>
+<p>Find <span class="q-part">(a)</span> $\displaystyle\int \left(\frac{3}{x^3} + \sqrt{x}\right)dx$ [3] <span class="q-part">(b)</span> $\displaystyle\int (2x + 1)^4\,dx$ [2] <span class="q-part">(c)</span> $\displaystyle\int 4\sin\left(2x - \tfrac{\pi}{3}\right)dx$ [2]</p>
+<details><summary>Show solution <span class="marks-n">[7 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\displaystyle\int (3x^{-3} + x^{\frac12})\,dx$ <span class="why">Express in integrable form: powers of $x$.</span></li>
+<li>$\dfrac{3x^{-2}}{-2} = -\dfrac{3}{2x^2}$ <span class="why">Integrate the first term: add one to the power, divide by the new power.</span></li>
+<li>$\dfrac{x^{\frac32}}{\frac32} = \tfrac23x^{\frac32}$, so the answer is $-\dfrac{3}{2x^2} + \dfrac23x^{\frac32} + C$ <span class="why">Integrate the second term, and include $+\,C$.</span></li>
+<li>(b) $\dfrac{(2x + 1)^5}{5} \ldots$ <span class="why">Integrate the power: add one, divide by the new power.</span></li>
+<li>$\ldots \times \dfrac12 = \dfrac{(2x + 1)^5}{10} + C$ <span class="why">Divide by $p = 2$ as well, and include $+\,C$.</span></li>
+<li>(c) $-\cos\left(2x - \tfrac{\pi}{3}\right) \ldots$ <span class="why">The integral of $\sin$ is $-\cos$.</span></li>
+<li>$4 \times \left(-\tfrac12\right)\cos\left(2x - \tfrac{\pi}{3}\right) + C = -2\cos\left(2x - \tfrac{\pi}{3}\right) + C$ <span class="why">Multiply by 4 and divide by the 2; include $+\,C$.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On an indefinite integral, "a few candidates did not include a constant of integration at an appropriate point in their solution". Every indefinite integral needs $+\,C$.</p></div>
@@ -395,18 +426,19 @@ $$\int f(x)\,dx = F(x) + C.$$
 </div>
 <div class="worked"><p class="worked-title">Worked example 17 · P1 · a curve from its gradient</p>
 <p>A curve has $\dfrac{dy}{dx} = 6x^2 - 2x$ and passes through $(1, 5)$. Find its equation.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$y = \displaystyle\int (6x^2 - 2x)\,dx = 2x^3 - x^2 + C$ <span class="why">Integrate. Include $C$.</span></li>
-<li>$5 = 2(1)^3 - (1)^2 + C \Rightarrow C = 4$ <span class="why">Use the point.</span></li>
-<li>$y = 2x^3 - x^2 + 4$ <span class="why">State the equation.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$y = \displaystyle\int (6x^2 - 2x)\,dx = 2x^3 \ldots$ <span class="why">Strategy: integrate the gradient. Integrate the first term.</span></li>
+<li>$y = 2x^3 - x^2 + C$ <span class="why">Integrate the second term. Include $C$.</span></li>
+<li>$5 = 2(1)^3 - (1)^2 + C$ <span class="why">Substitute the point $(1, 5)$.</span></li>
+<li>$C = 4$, so $y = 2x^3 - x^2 + 4$ <span class="why">Find $C$ and state the equation.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 18 · P1 · from a rate back to an amount</p>
 <p>Water is pumped into the ship's fresh-water tank at a rate of $\dfrac{dV}{dt} = 6t - t^2$ litres per minute, for $0 \le t \le 6$. The tank is empty at $t = 0$. How much water is in it after 3 minutes?</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$V = \displaystyle\int (6t - t^2)\,dt = 3t^2 - \tfrac13t^3 + C$ <span class="why">Integrate the rate to get the amount.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$V = \displaystyle\int (6t - t^2)\,dt = 3t^2 - \tfrac13t^3 + C$ <span class="why">Strategy and integration: integrate the rate to get the amount.</span></li>
 <li>$V = 0$ when $t = 0$, so $C = 0$ <span class="why">Use the starting condition to find $C$.</span></li>
 <li>$V = 3(3)^2 - \tfrac13(3)^3 = 27 - 9 = 18$ litres <span class="why">Substitute $t = 3$ and give the units.</span></li>
 </ol>
@@ -421,21 +453,28 @@ $$\int f(x)\,dx = F(x) + C.$$
 $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 <p>No $+\,C$ is needed, because it would cancel. Limits can be integers, fractions, surds or radians.</p>
 <div class="worked"><p class="worked-title">Worked example 19 · P1 · evaluate</p>
-<p>Evaluate (a) $\displaystyle\int_1^3 (3x^2 - 2x)\,dx$, (b) $\displaystyle\int_0^{\pi/4} 4\cos 2x\,dx$, (c) $\displaystyle\int_0^1 (2x + 1)^3\,dx$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\Big[x^3 - x^2\Big]_1^3 = (27 - 9) - (1 - 1) = 18$ <span class="why">Integrate, then top limit minus bottom limit, each in brackets.</span></li>
-<li>(b) $\Big[2\sin 2x\Big]_0^{\pi/4} = 2\sin\tfrac{\pi}{2} - 2\sin 0 = 2$ <span class="why">Radians. $\sin\frac{\pi}{2} = 1$.</span></li>
-<li>(c) $\left[\dfrac{(2x + 1)^4}{8}\right]_0^1 = \dfrac{81}{8} - \dfrac18 = 10$ <span class="why">$3^4 = 81$ and $1^4 = 1$.</span></li>
+<p>Evaluate <span class="q-part">(a)</span> $\displaystyle\int_1^3 (3x^2 - 2x)\,dx$ [2] <span class="q-part">(b)</span> $\displaystyle\int_0^{\pi/4} 4\cos 2x\,dx$ [3] <span class="q-part">(c)</span> $\displaystyle\int_0^1 (2x + 1)^3\,dx$ [3]</p>
+<details><summary>Show solution <span class="marks-n">[8 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\Big[x^3 - x^2\Big]_1^3$ <span class="why">Integrate.</span></li>
+<li>$(27 - 9) - (1 - 1) = 18$ <span class="why">Substitute and evaluate: top limit minus bottom limit, each in brackets.</span></li>
+<li>(b) $\Big[2\sin 2x\Big]_0^{\pi/4}$ <span class="why">Integrate: $4 \times \frac12 \sin 2x$.</span></li>
+<li>$2\sin\tfrac{\pi}{2} - 2\sin 0$ <span class="why">Substitute the limits. Radians.</span></li>
+<li>$= 2 \times 1 - 0 = 2$ <span class="why">Evaluate: $\sin\frac{\pi}{2} = 1$.</span></li>
+<li>(c) $\dfrac{(2x + 1)^4}{4} \ldots$ <span class="why">Integrate the power: add one, divide by the new power.</span></li>
+<li>$\ldots \times \dfrac12$: $\left[\dfrac{(2x + 1)^4}{8}\right]_0^1$ <span class="why">Divide by the derivative of the inside, 2.</span></li>
+<li>$\dfrac{81}{8} - \dfrac18 = 10$ <span class="why">Substitute and evaluate: $3^4 = 81$ and $1^4 = 1$.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 20 · P1 · fraction and surd limits</p>
-<p>Evaluate (a) $\displaystyle\int_{1/2}^{2} \frac{1}{x^2}\,dx$, (b) $\displaystyle\int_0^{\sqrt2} x^3\,dx$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\displaystyle\int_{1/2}^{2} x^{-2}\,dx = \Big[-x^{-1}\Big]_{1/2}^{2} = \Big[-\frac1x\Big]_{1/2}^{2}$ <span class="why">Rewrite as a power, integrate, and turn back into a fraction before substituting.</span></li>
-<li>$= \left(-\tfrac12\right) - \left(-2\right) = \tfrac32$ <span class="why">$\frac{1}{1/2} = 2$. Keep each substitution in brackets: the double negative is where marks go.</span></li>
-<li>(b) $\Big[\tfrac14x^4\Big]_0^{\sqrt2} = \tfrac14(\sqrt2)^4 - 0 = \tfrac14 \times 4 = 1$ <span class="why">$(\sqrt2)^4 = \left((\sqrt2)^2\right)^2 = 2^2 = 4$.</span></li>
+<p>Evaluate <span class="q-part">(a)</span> $\displaystyle\int_{1/2}^{2} \frac{1}{x^2}\,dx$ [3] <span class="q-part">(b)</span> $\displaystyle\int_0^{\sqrt2} x^3\,dx$ [2]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\displaystyle\int_{1/2}^{2} x^{-2}\,dx$ <span class="why">Express in integrable form: rewrite as a power.</span></li>
+<li>$\Big[-x^{-1}\Big]_{1/2}^{2} = \Big[-\frac1x\Big]_{1/2}^{2}$ <span class="why">Integrate, and turn back into a fraction before substituting.</span></li>
+<li>$= \left(-\tfrac12\right) - \left(-2\right) = \tfrac32$ <span class="why">Substitute and evaluate: $\frac{1}{1/2} = 2$. Keep each substitution in brackets: the double negative is where marks go.</span></li>
+<li>(b) $\Big[\tfrac14x^4\Big]_0^{\sqrt2}$ <span class="why">Integrate.</span></li>
+<li>$\tfrac14(\sqrt2)^4 - 0 = \tfrac14 \times 4 = 1$ <span class="why">Substitute and evaluate: $(\sqrt2)^4 = \left((\sqrt2)^2\right)^2 = 2^2 = 4$.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On a trig definite integral, a few candidates "attempted to expand the integrand in an invalid way or started to work in degrees before completing the integration", and some "did not calculate $\cos 0$ and $\cos\frac{\pi}{2}$ correctly without a calculator". The report also notes that "a few candidates did not use the formulae list effectively". The list gives you $\int\sin ax\,dx$: use it.</p></div>
@@ -453,11 +492,12 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 </ul>
 <div class="worked"><p class="worked-title">Worked example 21 · P2 · an area below the axis</p>
 <p>Calculate the area enclosed by the curve $y = x^2 - x - 2$ and the $x$-axis.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$x^2 - x - 2 = (x - 2)(x + 1) = 0 \Rightarrow x = -1$, $x = 2$ <span class="why">The limits are the roots.</span></li>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>$x^2 - x - 2 = (x - 2)(x + 1) = 0 \Rightarrow x = -1$, $x = 2$ <span class="why">Find the roots: they are the limits.</span></li>
 <li>$\displaystyle\int_{-1}^{2} (x^2 - x - 2)\,dx$ <span class="why">State the integral, including the $dx$.</span></li>
-<li>$= \left[\dfrac{x^3}{3} - \dfrac{x^2}{2} - 2x\right]_{-1}^{2} = \left(\dfrac83 - 2 - 4\right) - \left(-\dfrac13 - \dfrac12 + 2\right) = -\dfrac92$ <span class="why">Integrate and substitute. On Paper 2, key the brackets into your calculator; the arithmetic is shown here only so you can follow it.</span></li>
+<li>$= \left[\dfrac{x^3}{3} - \dfrac{x^2}{2} - 2x\right]_{-1}^{2}$ <span class="why">Integrate.</span></li>
+<li>$= \left(\dfrac83 - 2 - 4\right) - \left(-\dfrac13 - \dfrac12 + 2\right) = -\dfrac92$ <span class="why">Substitute and evaluate. On Paper 2, key the brackets into your calculator; the arithmetic is shown here only so you can follow it.</span></li>
 <li>The region is below the $x$-axis, so the integral is negative: the area is $\dfrac92 = 4.5$ square units. <span class="why">Communicate why the area is positive.</span></li>
 </ol>
 </details></div>
@@ -465,11 +505,12 @@ $$\int_a^b f(x)\,dx = \Big[F(x)\Big]_a^b = F(b) - F(a).$$
 
 <div class="worked"><p class="worked-title">Worked example 22 · P1 · a curve that crosses the axis</p>
 <p>Find the total area enclosed between $y = x^2 - 4x$, the $x$-axis and the lines $x = 0$ and $x = 5$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$x^2 - 4x = x(x - 4) = 0 \Rightarrow x = 0$ or $x = 4$ <span class="why">Find where the curve crosses the axis. $x = 4$ is between the limits, so split there.</span></li>
-<li>$\displaystyle\int_0^4 (x^2 - 4x)\,dx = \Big[\tfrac13x^3 - 2x^2\Big]_0^4 = \tfrac{64}{3} - 32 = -\tfrac{32}{3}$ <span class="why">Below the axis: negative.</span></li>
-<li>$\displaystyle\int_4^5 (x^2 - 4x)\,dx = \left(\tfrac{125}{3} - 50\right) - \left(\tfrac{64}{3} - 32\right) = -\tfrac{25}{3} + \tfrac{32}{3} = \tfrac73$ <span class="why">Above the axis: positive.</span></li>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>$x^2 - 4x = x(x - 4) = 0 \Rightarrow x = 0$ or $x = 4$ <span class="why">Strategy: find where the curve crosses the axis. $x = 4$ is between the limits, so split there.</span></li>
+<li>$\displaystyle\int (x^2 - 4x)\,dx = \tfrac13x^3 - 2x^2$ <span class="why">Integrate.</span></li>
+<li>$\displaystyle\int_0^4 (x^2 - 4x)\,dx = \Big[\tfrac13x^3 - 2x^2\Big]_0^4 = \tfrac{64}{3} - 32 = -\tfrac{32}{3}$ <span class="why">Evaluate the first part. Below the axis: negative.</span></li>
+<li>$\displaystyle\int_4^5 (x^2 - 4x)\,dx = \left(\tfrac{125}{3} - 50\right) - \left(\tfrac{64}{3} - 32\right) = -\tfrac{25}{3} + \tfrac{32}{3} = \tfrac73$ <span class="why">Evaluate the second part. Above the axis: positive.</span></li>
 <li>Total area $= \tfrac{32}{3} + \tfrac73 = \tfrac{39}{3} = 13$ square units <span class="why">Add the <em>sizes</em> of the two parts.</span></li>
 </ol>
 <p>A single integral from 0 to 5 gives $-\tfrac{32}{3} + \tfrac73 = -\tfrac{25}{3}$: the parts above and below cancel, which is not the area. Set the "planking" widget to this curve to see it.</p>
@@ -485,12 +526,14 @@ $$\int_a^b \big(f(x) - g(x)\big)\,dx \qquad\text{(upper minus lower).}$$
 </div>
 <div class="worked"><p class="worked-title">Worked example 23 · P1 · a line and a parabola</p>
 <p>Find the area enclosed by $y = x^2$ and $y = 2x + 3$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$x^2 = 2x + 3 \Rightarrow (x - 3)(x + 1) = 0 \Rightarrow x = -1$, $x = 3$ <span class="why">Limits from the intersections.</span></li>
-<li>$\displaystyle\int_{-1}^{3} \big(2x + 3 - x^2\big)\,dx$ <span class="why">The line is above the parabola between them (check $x = 0$: $3 \gt 0$).</span></li>
-<li>$= \left[x^2 + 3x - \dfrac{x^3}{3}\right]_{-1}^{3} = (9 + 9 - 9) - \left(1 - 3 + \dfrac13\right) = 9 + \dfrac53$ <span class="why">Integrate and evaluate.</span></li>
-<li>$= \dfrac{32}{3}$ square units <span class="why">Positive, as it must be for upper minus lower.</span></li>
+<details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
+<ol class="step-list marks">
+<li>$x^2 = 2x + 3 \Rightarrow x^2 - 2x - 3 = 0$ <span class="why">Strategy: equate the curves to find where they meet.</span></li>
+<li>$(x - 3)(x + 1) = 0 \Rightarrow x = -1$, $x = 3$ <span class="why">Solve: the limits come from the intersections.</span></li>
+<li>$\displaystyle\int_{-1}^{3} \big(2x + 3 - x^2\big)\,dx$ <span class="why">Upper minus lower: the line is above the parabola between them (check $x = 0$: $3 \gt 0$).</span></li>
+<li>$= \left[x^2 + 3x - \dfrac{x^3}{3}\right]_{-1}^{3}$ <span class="why">Integrate.</span></li>
+<li>$= (9 + 9 - 9) - \left(1 - 3 + \dfrac13\right)$ <span class="why">Substitute the limits.</span></li>
+<li>$= 9 + \dfrac53 = \dfrac{32}{3}$ square units <span class="why">Evaluate. Positive, as it must be for upper minus lower.</span></li>
 </ol>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>evaluate definite integrals with integer, fraction, surd or radian limits;</li><li>find the area between a curve and the $x$-axis, dealing with regions below the axis;</li><li>find the area between a line and a curve, or two curves.</li></ul></div>
