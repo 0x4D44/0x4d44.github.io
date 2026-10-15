@@ -361,8 +361,14 @@
     const limTex = (r) => { const k = piK(r); return k !== null && k >= 0 && k <= 4 ? PI_TEX[k] : N(r, 2); };
     const limTxt = (r) => { const k = piK(r); return k !== null && k >= 0 && k <= 4 ? PI_TXT[k] : N(r, 2); };
     const snap = (v) => { if (!FN[key].rad) return v; const m = Math.round(v / (Math.PI / 2)) * Math.PI / 2; return Math.abs(v - m) < 0.026 ? m : v; };
-    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => limTxt(snap(v)), oninput: (v) => { a = Math.min(snap(v), b - 0.1); upd(); } });
-    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => limTxt(snap(v)), oninput: (v) => { b = Math.max(snap(v), a + 0.1); upd(); } });
+    const as = HM.slider(ctl, { label: "lower limit $a$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: a, fmt: (v) => limTxt(snap(v)), oninput: (v) => { a = snap(v); if (a > b - 0.1) a = keepApart(as, b - 0.1, -1); upd(); } });
+    const bs = HM.slider(ctl, { label: "upper limit $b$", min: FN[key].x0, max: FN[key].x1, step: 0.05, value: b, fmt: (v) => limTxt(snap(v)), oninput: (v) => { b = snap(v); if (b < a + 0.1) b = keepApart(bs, a + 0.1, 1); upd(); } });
+    // a limit dragged past the other one stops a slider step short of it, and the thumb shows where it stopped
+    function keepApart(sl, lim, dir) {
+      sl.sync(lim);
+      if (dir * (+sl.input.value - lim) < -1e-9) sl.sync(+sl.input.value + dir * 0.05);
+      return snap(+sl.input.value);
+    }
     const ns = HM.slider(ctl, { label: "number of strips", min: 1, max: 200, step: 1, value: n, oninput: (v) => { n = v; upd(); } });
     const go = HM.el("button", { class: "btn small primary", type: "button" }, "▶ More and more strips");
     box.append(HM.el("div", { class: "btn-row" }, go));

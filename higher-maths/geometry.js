@@ -77,7 +77,9 @@
           ctx.beginPath(); ctx.moveTo(P.X(A[0]), P.Y(A[1])); ctx.lineTo(P.X(B[0]), P.Y(A[1])); ctx.lineTo(P.X(B[0]), P.Y(B[1])); ctx.stroke(); ctx.setLineDash([]);
           // keep "run" beside its own segment, on the side away from the line
           const rx0 = Math.min(P.X(A[0]), P.X(B[0])), rw = Math.abs(P.X(B[0]) - P.X(A[0]));
-          if (dx) HM.label(ctx, `run ${N(dx)}`, P.X((A[0] + B[0]) / 2), P.Y(A[1]) + (dy >= 0 ? 14 : -14), { align: "center", size: 12, col: C.gold, bold: true, avoid: true, bounds: { x: rx0 - 30, y: dy >= 0 ? P.Y(A[1]) + 2 : P.Y(A[1]) - 34, w: rw + 60, h: 32 } });
+          // below the run unless the line goes down from A, or there is no room below; above it otherwise
+          const below = (dy >= 0 || P.Y(A[1]) - 30 < bx.y) && P.Y(A[1]) + 30 < bx.y + bx.h;
+          if (dx) HM.label(ctx, `run ${N(dx)}`, P.X((A[0] + B[0]) / 2), P.Y(A[1]) + (below ? 14 : -14), { align: "center", size: 12, col: C.gold, bold: true, avoid: true, bounds: { x: rx0 - 30, y: below ? P.Y(A[1]) + 2 : P.Y(A[1]) - 34, w: rw + 60, h: 32 } });
           const nearR = P.X(B[0]) > bx.x + bx.w - 70; // near the right edge, put "rise" on the left of its segment
           if (dy) HM.label(ctx, `rise ${N(dy)}`, P.X(B[0]) + (nearR ? -6 : 6), P.Y((A[1] + B[1]) / 2), { size: 12, col: C.gold, bold: true, avoid: true, align: nearR ? "right" : "left" });
           if (mode === "perp") ext(A[0], A[1], -dy, dx, C.violet, 2.5, [8, 5]);
