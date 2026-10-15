@@ -54,7 +54,7 @@
       // the table: trial root | coefficients / products / sums. Shown up to step k.
       const n = cs.length;
       const g = HM.el("div", { class: "synth", style: `grid-template-columns: repeat(${n + 1}, auto)`, role: "table", "aria-label": "Synthetic division table" });
-      const cell = (t, cls) => HM.el("div", { class: "synth-cell" + (cls ? " " + cls : ""), role: "cell" }, t);
+      const cell = (t, cls) => HM.el("div", { class: "synth-cell" + (cls ? " " + cls : ""), role: "cell" }, typeof t === "string" || typeof t === "number" ? String(t).replace(/^-/, "−") : t);
       g.append(cell(N(r, 3), "k"), ...cs.map((c) => cell(N(c, 3))));
       g.append(cell("", "k"), ...cs.map((c, i) => cell(i && i <= k ? N(prods[i], 3) : "", i === k && k > 0 ? "hot" : "")));
       g.append(cell("", "k sum"), ...cs.map((c, i) => {
