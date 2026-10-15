@@ -577,6 +577,7 @@ h3 .katex, h4 .katex { font-size: 1em; }
 .mi td { vertical-align: middle; }
 .mi td:first-child { font: 700 .85rem var(--font-mono); color: var(--gold); white-space: nowrap; width: 2.6em; }
 .nature-table td, .nature-table th { text-align: center; }
+.nature-table th { white-space: nowrap; }
 .fn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 8px; }
 .fn-grid > div { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 8px 10px; }
 .pill { display: inline-block; font: 700 .72rem/1 var(--font-mono); padding: 3px 6px; border-radius: 10px; background: var(--paper-2); color: var(--ink-2); vertical-align: middle; }
