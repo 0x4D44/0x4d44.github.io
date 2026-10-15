@@ -722,7 +722,8 @@
   HM.slider = function (parent, o) {
     const id = "hms" + ++sliderSeq;
     const out = HM.el("output", { for: id, class: "slider-val" });
-    const input = HM.el("input", { type: "range", id, min: o.min, max: o.max, step: o.step || 1, value: o.value });
+    const input = HM.el("input", { type: "range", id, min: o.min, max: o.max, step: o.step || 1, value: o.value,
+      "aria-label": String(o.label).replace(/<[^>]*>/g, "").replace(/\\([a-zA-Z]+)/g, "$1").replace(/[${}^_]/g, "").replace(/\s+/g, " ").trim() });
     const wrap = HM.el("div", { class: "slider" },
       HM.el("label", { for: id }, HM.el("span", { class: "slider-name", html: o.label }), out), input);
     const show = () => { const t = (o.fmt ? o.fmt(+input.value) : HM.n(+input.value)) + (o.unit ? (o.unit === "°" ? "" : " ") + o.unit : ""); out.textContent = t; input.setAttribute("aria-valuetext", String(t).replace(/<[^>]*>/g, "")); };

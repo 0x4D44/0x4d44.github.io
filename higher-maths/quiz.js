@@ -438,7 +438,7 @@
           R`•1 expand: $k\cos x°\cos\alpha° + k\sin x°\sin\alpha°$`,
           R`•2 compare: $k\cos\alpha° = 2$, $k\sin\alpha° = -5$`,
           R`•3 $k = \sqrt{29}$`,
-          R`•4 $\tan\alpha° = -\tfrac52$, fourth quadrant: $\alpha = 291.8$`) },
+          R`•4 $\tan\alpha° = -\tfrac52$, and $k\sin\alpha° < 0$, $k\cos\alpha° > 0$, so fourth quadrant: $\alpha = 291.8$`) },
         { type: "open", q: R`Calculate the angle between $\mathbf{a} = \mathbf{i} - 2\mathbf{j} + 2\mathbf{k}$ and $\mathbf{b} = 4\mathbf{i} + 3\mathbf{k}$.`, marks: 5, model: mi(
           R`•1 $\mathbf{a}\cdot\mathbf{b} = 4 + 0 + 6 = 10$`,
           R`•2 $|\mathbf{a}| = \sqrt{1 + 4 + 4} = 3$`,
