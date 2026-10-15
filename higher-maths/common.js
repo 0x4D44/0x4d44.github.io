@@ -697,7 +697,7 @@
     const input = HM.el("input", { type: "range", id, min: o.min, max: o.max, step: o.step || 1, value: o.value });
     const wrap = HM.el("div", { class: "slider" },
       HM.el("label", { for: id }, HM.el("span", { class: "slider-name", html: o.label }), out), input);
-    const show = () => { const t = (o.fmt ? o.fmt(+input.value) : input.value) + (o.unit ? " " + o.unit : ""); out.textContent = t; input.setAttribute("aria-valuetext", String(t).replace(/<[^>]*>/g, "")); };
+    const show = () => { const t = (o.fmt ? o.fmt(+input.value) : HM.n(+input.value)) + (o.unit ? (o.unit === "°" ? "" : " ") + o.unit : ""); out.textContent = t; input.setAttribute("aria-valuetext", String(t).replace(/<[^>]*>/g, "")); };
     input.addEventListener("input", () => { show(); if (o.oninput) o.oninput(+input.value); });
     show();
     parent.append(wrap);
@@ -738,15 +738,24 @@
     const keep = (x, y, w, h) => { if (ctx._hmBoxes) ctx._hmBoxes.push({ x, y, w, h }); };
     keep(yAxisX - 2, box.y, 4, box.h); keep(box.x, xAxisY - 2, box.w, 4);
     const tf = o.tf || ((v) => (+v.toFixed(6) + "").replace("-", "−"));
-    ctx.textAlign = "center"; ctx.textBaseline = "top";
-    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ctx.fillText(tf(v), X(v), xAxisY + 3); const tw = ctx.measureText(tf(v)).width; keep(X(v) - tw / 2, xAxisY + 3, tw, fs); }
-    ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) { const s = (o.ytf || tf)(v), tw = ctx.measureText(s).width; ctx.fillText(s, yAxisX - 4, Y(v)); keep(yAxisX - 4 - tw, Y(v) - fs / 2, tw, fs); }
-    ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
-    if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(o.xl, box.x + box.w, xAxisY - 4); const w = ctx.measureText(o.xl).width; keep(box.x + box.w - w, xAxisY - 4 - fs, w, fs); }
-    if (o.yl) { ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(o.yl, yAxisX + 5, box.y); keep(yAxisX + 5, box.y, ctx.measureText(o.yl).width, fs); }
+    // tick numbers and axis titles; P.relabel() redraws them with a halo on top of busy plot content
+    const font0 = ctx.font;
+    const labels = (halo) => {
+      ctx.save(); ctx.font = font0; ctx.fillStyle = C.ink2;
+      const ft = (t, x, y) => { if (halo) { ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = C.card; ctx.strokeText(t, x, y); } ctx.fillText(t, x, y); };
+      const kp = halo ? () => {} : keep;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ft(tf(v), X(v), xAxisY + 3); const tw = ctx.measureText(tf(v)).width; kp(X(v) - tw / 2, xAxisY + 3, tw, fs); }
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) { const s = (o.ytf || tf)(v), tw = ctx.measureText(s).width; ft(s, yAxisX - 4, Y(v)); kp(yAxisX - 4 - tw, Y(v) - fs / 2, tw, fs); }
+      ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+      if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ft(o.xl, box.x + box.w, xAxisY - 4); const w = ctx.measureText(o.xl).width; kp(box.x + box.w - w, xAxisY - 4 - fs, w, fs); }
+      if (o.yl) { const w = ctx.measureText(o.yl).width, rt = yAxisX + 5 + w > box.x + box.w; ctx.textAlign = rt ? "right" : "left"; ctx.textBaseline = "top"; ft(o.yl, rt ? yAxisX - 5 : yAxisX + 5, box.y); kp(rt ? yAxisX - 5 - w : yAxisX + 5, box.y, w, fs); }
+      ctx.restore();
+    };
+    labels(false);
     ctx.restore();
-    return { X, Y };
+    return { X, Y, relabel: () => labels(true) };
   };
   /* arrow from (x1,y1) to (x2,y2) */
   HM.arrow = function (ctx, x1, y1, x2, y2, col, w = 2, head = 8) {
@@ -774,10 +783,17 @@
       const ch = ctx.canvas.height / (ctx.getTransform ? ctx.getTransform().d : 1);
       // o.bounds keeps the label inside a plot box (a clipped plot would otherwise cut it off)
       const B = o.bounds || { x: 0, y: 0, w: cw, h: ch };
-      const tries = [[0, 0], [0, -th], [0, th], [6, 4], [6, 14], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th], [-tw - 16, -2 * th], [-tw - 16, 2 * th]];
+      const tries = o.tries || [[0, 0], [0, -th], [0, th], [6, 4], [6, 14], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th], [-tw - 16, -2 * th], [-tw - 16, 2 * th], [-tw - 12, -th - 4], [6, -th - 4], [-tw - 12, th + 4], [6, th + 8]];
       const ok = tries.map(([dx, dy]) => [x + dx, y + dy]).find(([px, py]) => { const b = at(px, py); return b.x >= B.x && b.x + b.w <= B.x + B.w && b.y >= B.y && b.y + b.h <= B.y + B.h && !hit(b); });
       if (ok) [x, y] = ok;
-      else { const b0 = at(x, y); x += Math.max(B.x - b0.x, Math.min(0, B.x + B.w - (b0.x + b0.w))); y += Math.max(B.y - b0.y, Math.min(0, B.y + B.h - (b0.y + b0.h))); } // nowhere free: at least stay inside the bounds
+      else {
+        // nowhere free: take the in-bounds spot that overlaps least, clamped inside the bounds
+        const area = (b) => (ctx._hmBoxes || []).reduce((s, q) => s + Math.max(0, Math.min(b.x + b.w, q.x + q.w) - Math.max(b.x, q.x)) * Math.max(0, Math.min(b.y + b.h, q.y + q.h) - Math.max(b.y, q.y)), 0);
+        const clamp = ([px, py]) => { const b0 = at(px, py); return [px + Math.max(B.x - b0.x, Math.min(0, B.x + B.w - (b0.x + b0.w))), py + Math.max(B.y - b0.y, Math.min(0, B.y + B.h - (b0.y + b0.h)))]; };
+        let best = null, bestA = Infinity;
+        tries.forEach(([dx, dy]) => { const c = clamp([x + dx, y + dy]), a = area(at(c[0], c[1])); if (a < bestA - 0.5) { bestA = a; best = c; } });
+        [x, y] = best;
+      }
     }
     if (ctx._hmBoxes) ctx._hmBoxes.push(at(x, y));
     if (o.halo !== false) { ctx.lineWidth = 4; ctx.strokeStyle = o.haloCol || HM.css("--card"); ctx.lineJoin = "round"; ctx.strokeText(txt, x, y); }
