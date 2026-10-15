@@ -316,8 +316,8 @@
           R`•3 $m = 9 - 2 = 7$`,
           R`•4 $y - 0 = 7(x + 1)$, i.e. $y = 7x + 7$`) },
         { type: "open", q: R`Find the values of $x$ for which $f(x) = x^3 - 6x^2 + 9x$ is strictly decreasing.`, marks: 3, model: mi(
-          R`•1 $f'(x) = 3x^2 - 12x + 9$ and state $f'(x) \lt 0$`,
-          R`•2 factorise: $3(x - 1)(x - 3) \lt 0$`,
+          R`•1 $f'(x) = 3x^2 - 12x + 9$`,
+          R`•2 $f'(x) \lt 0$: $3(x - 1)(x - 3) \lt 0$, roots $1$ and $3$`,
           R`•3 $1 \lt x \lt 3$`) },
       ],
     },

@@ -613,3 +613,11 @@ figure.diagram svg.wide[data-minw="600"] { min-width: 600px; }
 .sorter-btns .btn[disabled] { opacity: 1; cursor: default; }
 .sorter-btns .btn.chosen { outline: 3px solid var(--gold); outline-offset: 2px; }
 .sorter-btns .btn.chosen::before { content: "▸ "; }
+
+/* multi-panel figures: on phones the panels stack (see stackPanels in common.js) instead of scrolling sideways */
+.panel-stack { display: none; }
+figure.diagram .panel-stack > svg:not(.katex svg) { display: block; width: 100%; height: auto; margin: 0 auto 10px; }
+@media (max-width: 560px) {
+  figure.has-stack .diagram-scroll, figure.has-stack .swipe-hint { display: none; }
+  figure.has-stack .panel-stack { display: block; }
+}

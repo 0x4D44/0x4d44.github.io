@@ -15,10 +15,10 @@
   const texBox = (box) => { const d = HM.el("div", { class: "tex-out", "aria-live": "polite" }); box.append(d); return d; };
   const controls = (box) => { const d = HM.el("div", { class: "sim-controls" }); box.append(d); return d; };
   /* a square grid plot that fits the canvas: returns { P, bx } */
-  function gridPlot(ctx, C, S, r, step = 1, labels = 2) {
+  function gridPlot(ctx, C, S, r, step = 1, labels = 2, cx = 0, cy = 0) {
     const side = Math.min(S.w - 40, S.h - 24);
     const bx = { x: (S.w - side) / 2 + 8, y: 8, w: side, h: side };
-    const P = HM.plot(ctx, bx, { x0: -r, x1: r, y0: -r, y1: r, xt: step, yt: step, C, xl: "x", yl: "y", tf: (v) => (v % labels ? "" : String(v).replace("-", "−")) });
+    const P = HM.plot(ctx, bx, { x0: cx - r, x1: cx + r, y0: cy - r, y1: cy + r, xt: step, yt: step, C, xl: "x", yl: "y", tf: (v) => (v % labels ? "" : String(v).replace("-", "−")) });
     return { P, bx };
   }
   /* gradient as exact TeX where it is a small fraction */
@@ -144,12 +144,17 @@
      2. Triangle: medians, altitudes, perpendicular bisectors
      ===================================================================== */
   mount("w-triangle", (box) => {
-    let V = [[3, -4], [1, -8], [9, -2]].map((p) => [p[0] - 2, p[1] + 5]); // the worked example, shifted to fit
-    V = [[3, -4], [1, -8], [9, -2]];
+    let V = [[3, -4], [1, -8], [9, -2]];
+    // the view is a 20-square window centred near the triangle (on even numbers, so the tick labels stay put);
+    // it moves only when a preset is chosen, never under a dragging finger
+    let cx = 0, cy = 0;
+    const centre = () => { const xs = V.map((p) => p[0]), ys = V.map((p) => p[1]); cx = 2 * Math.round((Math.min(...xs) + Math.max(...xs)) / 4); cy = 2 * Math.round((Math.min(...ys) + Math.max(...ys)) / 4); };
+    centre();
+    const clampV = (g) => [Math.max(cx - 9, Math.min(cx + 9, g[0])), Math.max(cy - 9, Math.min(cy + 9, g[1]))];
     let fam = "med";
     HM.choice(box, "Show:", [["med", "medians"], ["alt", "altitudes"], ["bis", "perpendicular bisectors"]], fam, (v) => { fam = v; sim.redraw(); info(); });
     const presets = HM.el("div", { class: "btn-row" });
-    const pre = (lab, pts) => { const b = HM.el("button", { class: "btn small", type: "button" }, lab); b.addEventListener("click", () => { V = pts.map((p) => [...p]); sim.redraw(); info(); }); presets.append(b); };
+    const pre = (lab, pts) => { const b = HM.el("button", { class: "btn small", type: "button" }, lab); b.addEventListener("click", () => { V = pts.map((p) => [...p]); centre(); sim.redraw(); info(); }); presets.append(b); };
     pre("Worked example", [[3, -4], [1, -8], [9, -2]]);
     pre("Right-angled", [[-4, -4], [4, -4], [-4, 4]]);
     pre("Obtuse", [[-6, -4], [6, -4], [-3, -1]]);
@@ -164,7 +169,7 @@
     [["←", -1, 0, "left"], ["→", 1, 0, "right"], ["↑", 0, 1, "up"], ["↓", 0, -1, "down"]].forEach(([t, dx, dy, w]) => {
       const b = HM.el("button", { class: "btn small", type: "button", "aria-label": `Move the vertex ${w} one square` }, t);
       b.addEventListener("click", () => {
-        const g = [Math.max(-9, Math.min(9, V[pick][0] + dx)), Math.max(-9, Math.min(9, V[pick][1] + dy))];
+        const g = clampV([V[pick][0] + dx, V[pick][1] + dy]);
         if (V.some((p, j) => j !== pick && p[0] === g[0] && p[1] === g[1])) return;
         V[pick] = g; sim.redraw(); info();
       });
@@ -196,7 +201,7 @@
     const sim = HM.sim(cv, {
       height: (w) => Math.min(480, Math.max(320, w * 0.64)),
       draw(ctx, t, dt, C, S) {
-        const { P, bx } = gridPlot(ctx, C, S, 10, 1, 2);
+        const { P, bx } = gridPlot(ctx, C, S, 10, 1, 2, cx, cy);
         Pm = P;
         const col = { med: C.sea, alt: C.red, bis: C.gold }[fam];
         const L = lines(), X = meet(L[0], L[1]);
@@ -214,13 +219,13 @@
           if (X) HM.dot(ctx, P.X(X[0]), P.Y(X[1]), C.violet, 7, C.card);
           V.forEach((p, i) => HM.dot(ctx, P.X(p[0]), P.Y(p[1]), C.ink, 7, C.card));
         });
-        V.forEach((p, i) => HM.label(ctx, "ABC"[i], P.X(p[0]) + 9, P.Y(p[1]) - 11, { bold: true, size: 15 }));
+        V.forEach((p, i) => HM.label(ctx, "ABC"[i], P.X(p[0]) + 9, P.Y(p[1]) - 11, { bold: true, size: 15, avoid: true }));
         cv.setAttribute("aria-label", `Triangle A(${V[0]}), B(${V[1]}), C(${V[2]}) with its three ${{ med: "medians", alt: "altitudes", bis: "perpendicular bisectors" }[fam]} meeting at one point.`);
       },
     });
     HM.drag(cv, sim, () => (Pm ? V.map((p, i) => ({ id: i, x: Pm.X(p[0]), y: Pm.Y(p[1]) })) : []), (id, x, y) => {
       const ux = Pm.X(1) - Pm.X(0), uy = Pm.Y(1) - Pm.Y(0);
-      const gx = Math.max(-9, Math.min(9, Math.round((x - Pm.X(0)) / ux))), gy = Math.max(-9, Math.min(9, Math.round((y - Pm.Y(0)) / uy)));
+      const [gx, gy] = clampV([Math.round((x - Pm.X(0)) / ux), Math.round((y - Pm.Y(0)) / uy)]);
       if (V.some((p, j) => j !== id && p[0] === gx && p[1] === gy)) return;
       V[id] = [gx, gy]; sim.redraw(); info();
     });
@@ -426,7 +431,19 @@
         // fit the cuboid and its axes inside the canvas at any angle: project at unit scale, then scale and centre the bounding box
         const c0 = [-3, -2, -1.5];
         const unit = view3(S, st.yaw, st.pitch, 1, 0, 0);
-        const ext = Object.values(V).concat([[7.5, 0, 0], [0, 5.5, 0], [0, 0, 4.5]]).map((p) => unit([p[0] + c0[0], p[1] + c0[1], p[2] + c0[2]]));
+        // an axis whose tip would land over the block (seen from behind it) is lengthened until its tip and label are clear
+        const sh = (p) => unit([p[0] + c0[0], p[1] + c0[1], p[2] + c0[2]]);
+        const box2 = ["O", "A", "B", "C", "D", "E", "F", "G"].map((k) => sh(V[k]));
+        const inside = (q) => { // inside the block's outline, with a margin for the label
+          const pts = box2.slice().sort((a, b) => a.x - b.x || a.y - b.y), cr = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+          const lo = [], hi = [];
+          for (const p of pts) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+          for (const p of pts.reverse()) { while (hi.length > 1 && cr(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); }
+          const hull = lo.slice(0, -1).concat(hi.slice(0, -1));
+          return hull.every((a, i) => { const b = hull[(i + 1) % hull.length], L = Math.hypot(b.x - a.x, b.y - a.y); return cr(a, b, q) / L > -0.9; });
+        };
+        const AXL = [7.5, 5.5, 4.5].map((L, i) => { const e = (l) => [0, 1, 2].map((j) => (j === i ? l : 0)); while (L < 12 && inside(sh(e(L)))) L += 0.5; return e(L); });
+        const ext = Object.values(V).concat(AXL).map((p) => unit([p[0] + c0[0], p[1] + c0[1], p[2] + c0[2]]));
         const x0 = Math.min(...ext.map((q) => q.x)), x1 = Math.max(...ext.map((q) => q.x)), y0 = Math.min(...ext.map((q) => q.y)), y1 = Math.max(...ext.map((q) => q.y));
         const k = Math.min(Math.min(S.w, S.h * 1.4) / 13, (S.w - 56) / (x1 - x0), (S.h - 56) / (y1 - y0));
         const pr = view3(S, st.yaw, st.pitch, k, S.w / 2 - k * (x0 + x1) / 2, S.h / 2 - k * (y0 + y1) / 2 + 6);
@@ -440,6 +457,12 @@
         ];
         const depth = (f) => f.pts.reduce((s, k) => s + P(V[k]).z, 0) / 4;
         faces.sort((a, b) => depth(b) - depth(a));
+        // the axes go in first, so the cuboid's faces sit in front of the parts behind it
+        const AX = [[AXL[0], "x"], [AXL[1], "y"], [AXL[2], "z"]];
+        AX.forEach(([e]) => { const a = P([0, 0, 0]), b = P(e); HM.arrow(ctx, a.x, a.y, b.x, b.y, C.ink2, 1.5, 7); });
+        // the corner furthest from the viewer is hidden behind the three faces in front of it
+        const CORN = ["O", "A", "B", "C", "D", "E", "F", "G"];
+        const hid = CORN.reduce((h, k) => (P(V[k]).z > P(V[h]).z ? k : h), "O");
         faces.forEach((f) => {
           const q = f.pts.map((k) => P(V[k]));
           ctx.globalAlpha = 0.72; ctx.fillStyle = f.col; ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
@@ -451,8 +474,12 @@
           for (let i = 1; i < nv; i++) { const s = i / nv; const p1 = P(a.map((v, j) => v + (d[j] - a[j]) * s)), p2 = P(b.map((v, j) => v + (d[j] - a[j]) * s)); ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
           ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); q.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.stroke();
         });
-        // axes from O
-        [[[7.5, 0, 0], "x"], [[0, 5.5, 0], "y"], [[0, 0, 4.5], "z"]].forEach(([e, l]) => { const a = P([0, 0, 0]), b = P(e); HM.arrow(ctx, a.x, a.y, b.x, b.y, C.ink2, 1.5, 7); HM.label(ctx, l, b.x + 6, b.y - 6, { size: 13, col: C.ink2, bold: true, avoid: true }); });
+        // hidden edges (the three meeting the hidden corner) dashed, as in a textbook drawing
+        const NB = { O: "ACD", A: "OBE", B: "ACF", C: "OBG", D: "OEG", E: "ADF", F: "BEG", G: "CDF" };
+        ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 1.5;
+        for (const n of NB[hid]) { const a = P(V[hid]), b = P(V[n]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        ctx.restore();
+        AX.forEach(([e, l]) => { const b = P(e); HM.label(ctx, l, b.x + 6, b.y - 6, { size: 13, col: C.ink2, bold: true, avoid: true }); });
         // the route, one edge at a time
         const R = ROUTES[route];
         const legs = R.path.length - 1;
@@ -464,9 +491,10 @@
           HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.red, 4, 12);
         }
         if (prog >= legs) { const pa = P(V[R.from]), pb = P(V[R.to]); ctx.setLineDash([7, 5]); HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.lode || C.sea, 3, 12); ctx.setLineDash([]); }
-        Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.dot(ctx, q.x, q.y, C.ink, 3.5); }); Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.label(ctx, k, q.x + 7, q.y - 9, { bold: true, size: 14, avoid: true }); });
+        Object.entries(V).forEach(([k, p]) => { const q = P(p); if (k === hid) ctx.globalAlpha = 0.5; HM.dot(ctx, q.x, q.y, C.ink, 3.5); ctx.globalAlpha = 1; });
+        Object.entries(V).forEach(([k, p]) => { const q = P(p); HM.label(ctx, k, q.x + 7, q.y - 9, { bold: true, size: 14, avoid: true, col: k === hid ? C.ink2 : undefined }); });
         if (prog >= legs && S.playing) S.pause();
-        cv.setAttribute("aria-label", `A 6 by 4 by 3 cuboid of blocks with vertices O, A, B, C on the bottom and D, E, F, G on top. The path ${R.path.join(" to ")} is drawn.`);
+        cv.setAttribute("aria-label", `A 6 by 4 by 3 cuboid of blocks with vertices O, A, B, C on the bottom and D, E, F, G on top; ${hid} is the hidden corner, at the back. The path ${R.path.join(" to ")} is drawn.`);
       },
     });
     rotDrag(cv, st, () => sim.redraw());

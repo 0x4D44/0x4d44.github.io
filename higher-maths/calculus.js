@@ -67,7 +67,7 @@
           HM.dot(ctx, P2.X(x), P2.Y(m), C.violet, 6, C.card);
         });
         ctx.setLineDash([3, 3]); ctx.strokeStyle = C.ink2; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(P1.X(x), P1.Y(y)); ctx.lineTo(P2.X(x), Math.max(b2.y, Math.min(b2.y + b2.h, P2.Y(m)))); ctx.stroke(); ctx.setLineDash([]);
-        HM.label(ctx, `gradient ${G(m)}`, Math.min(P1.X(x) + 10, S.w - 110), Math.max(P1.Y(y) - 16, 18), { bold: true, size: 13 });
+        HM.label(ctx, `gradient ${G(m)}`, Math.min(P1.X(x) + 10, S.w - 110), Math.max(P1.Y(y) - 16, 18), { bold: true, size: 13, avoid: true });
         cv.setAttribute("aria-label", `Top: the curve ${F.tex} with its tangent at x = ${N(x, 2)}, gradient ${G(m)}. Bottom: the gradient plotted against x, which traces ${F.dtex}.`);
       },
     });
@@ -189,11 +189,11 @@
       const sg = (v) => (Math.abs(v) < 1e-9 ? "0" : v > 0 ? "+" : "−");
       const arrow = (v) => (Math.abs(v) < 1e-9 ? "→" : v > 0 ? "↗" : "↘");
       const poly = HM.polyTex([a, b, c, d]);
-      let s = HM.tex(`y = ${poly},\\qquad \\frac{dy}{dx} = ${HM.polyTex([3 * a, 2 * b, c])}`, true);
+      let s = HM.tex(`\\begin{aligned} y &= ${poly} \\\\ \\frac{dy}{dx} &= ${HM.polyTex([3 * a, 2 * b, c])} \\end{aligned}`, true);
       if (!pts.length) s += `<p style="margin:0">$\\frac{dy}{dx} = 0$ has no real roots: its discriminant is $(${2 * b})^2 - 4(${3 * a})(${c}) = ${4 * b * b - 12 * a * c} \\lt 0$. So there are <b>no stationary points</b>. The cubic is always ${a > 0 ? "increasing" : "decreasing"}.</p>`;
       else {
         const cols = [];
-        pts.forEach((x) => { cols.push([`→ ${N(x, 2)}⁻`, fd(x - 0.01)], [N(x, 2), 0], [`→ ${N(x, 2)}⁺`, fd(x + 0.01)]); });
+        pts.forEach((x) => { cols.push([`→ ${N(x, 2)}`, fd(x - 0.01)], [N(x, 2), 0], [`${N(x, 2)} →`, fd(x + 0.01)]); });
         s += `<div class="table-wrap" style="margin:6px 0"><table class="nature-table"><thead><tr><th>$x$</th>${cols.map((c) => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody><tr><th scope="row">$\\frac{dy}{dx}$</th>${cols.map((c) => `<td>${sg(c[1])}</td>`).join("")}</tr><tr><th scope="row">slope</th>${cols.map((c) => `<td>${arrow(c[1])}</td>`).join("")}</tr></tbody></table></div>`;
         s += `<p style="margin:0">${pts.map((x) => { const l = fd(x - 0.01), r = fd(x + 0.01); const kind = l > 0 && r < 0 ? "maximum turning point" : l < 0 && r > 0 ? "minimum turning point" : l > 0 ? "rising point of inflection" : "falling point of inflection"; return `$(${N(x, 2)}, ${N(f(x), 2)})$: <b>${kind}</b>`; }).join("; ")}.</p>`;
       }
@@ -414,7 +414,7 @@
       let pos = 0, neg = 0;
       for (let i = 0; i < n; i++) { const y = Fn.f(a + (i + 0.5) * w) * w; if (y >= 0) pos += y; else neg += y; }
       const I = Fn.F(b) - Fn.F(a);
-      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${limTex(a)}}^{${limTex(b)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
+      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: ${Math.abs(neg) < 5e-4 ? `all green, total $${N(pos, 3)}$` : Math.abs(pos) < 5e-4 ? `all red, total $${N(neg, 3)}$` : `green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$`}.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${limTex(a)}}^{${limTex(b)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
       HM.math(out);
     }
     upd();
