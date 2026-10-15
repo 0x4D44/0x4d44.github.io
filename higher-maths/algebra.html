@@ -133,16 +133,16 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 <p>If a question gives you <em>two</em> facts about a polynomial with two unknown coefficients, each fact gives an equation. A factor $(x - a)$ means $f(a) = 0$; a remainder $R$ on dividing by $(x - a)$ means $f(a) = R$. Then solve the two equations simultaneously.</p>
 <div class="worked"><p class="worked-title">Worked example 4 · P1 · a factor and a remainder</p>
 <p>For $f(x) = 2x^3 + ax^2 + bx + 3$, $(x + 1)$ is a factor, and $-9$ is the remainder when $f(x)$ is divided by $(x - 2)$. <span class="q-part">(a)</span> Find $a$ and $b$. [5] <span class="q-part">(b)</span> Hence solve $f(x) = 0$. [3]</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>•1 $f(-1) = 2(-1)^3 + a(-1)^2 + b(-1) + 3 = 0$ <span class="why">Strategy: the factor theorem gives an equation.</span></li>
-<li>•2 $a - b = -1$ <span class="why">Simplify the first equation.</span></li>
-<li>•3 $f(2) = 16 + 4a + 2b + 3 = -9 \Rightarrow 2a + b = -14$ <span class="why">The remainder theorem gives a second equation.</span></li>
-<li>•4 Add: $3a = -15$, so $a = -5$ <span class="why">Solve simultaneously.</span></li>
-<li>•5 $b = a + 1 = -4$ <span class="why">Substitute back.</span></li>
-<li>•6 Synthetic division by $(x + 1)$, trial root $-1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 2, -5, -4, 3 by -1: the bottom row is 2, -7, 3, 0"><div class="synth-cell k">−1</div><div class="synth-cell">2</div><div class="synth-cell">−5</div><div class="synth-cell">−4</div><div class="synth-cell">3</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">−2</div><div class="synth-cell">7</div><div class="synth-cell">−3</div><div class="synth-cell k sum"></div><div class="synth-cell sum">2</div><div class="synth-cell sum">−7</div><div class="synth-cell sum">3</div><div class="synth-cell sum rem zero">0</div></div></div> quadratic factor $2x^2 - 7x + 3$ <span class="why">Use the factor you know.</span></li>
-<li>•7 $f(x) = (x + 1)(2x - 1)(x - 3)$ <span class="why">Factorise fully.</span></li>
-<li>•8 $x = -1,\ \tfrac12,\ 3$ <span class="why">State the solutions.</span></li>
+<details><summary>Show solution <span class="marks-n">[8 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(-1) = 2(-1)^3 + a(-1)^2 + b(-1) + 3 = 0$ <span class="why">Strategy: the factor theorem gives an equation.</span></li>
+<li>$a - b = -1$ <span class="why">Simplify the first equation.</span></li>
+<li>$f(2) = 16 + 4a + 2b + 3 = -9 \Rightarrow 2a + b = -14$ <span class="why">The remainder theorem gives a second equation.</span></li>
+<li>Add: $3a = -15$, so $a = -5$ <span class="why">Solve simultaneously.</span></li>
+<li>$b = a + 1 = -4$ <span class="why">Substitute back.</span></li>
+<li>Synthetic division by $(x + 1)$, trial root $-1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 2, -5, -4, 3 by -1: the bottom row is 2, -7, 3, 0"><div class="synth-cell k">−1</div><div class="synth-cell">2</div><div class="synth-cell">−5</div><div class="synth-cell">−4</div><div class="synth-cell">3</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">−2</div><div class="synth-cell">7</div><div class="synth-cell">−3</div><div class="synth-cell k sum"></div><div class="synth-cell sum">2</div><div class="synth-cell sum">−7</div><div class="synth-cell sum">3</div><div class="synth-cell sum rem zero">0</div></div></div> quadratic factor $2x^2 - 7x + 3$ <span class="why">Use the factor you know.</span></li>
+<li>$f(x) = (x + 1)(2x - 1)(x - 3)$ <span class="why">Factorise fully.</span></li>
+<li>$x = -1,\ \tfrac12,\ 3$ <span class="why">State the solutions.</span></li>
 </ol>
 </details></div>
 <h3>A polynomial from its graph</h3>
@@ -155,11 +155,11 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 <g font-size="14" font-weight="700" class="ink"><text x="67" y="128">−2</text><text x="173" y="128" text-anchor="end">1</text><text x="293" y="102" text-anchor="end">4</text><text x="150" y="50">(0, 16)</text><text x="340" y="104">x</text><text x="146" y="18">y</text></g><line x1="143" y1="59" x2="152" y2="54" class="s-muted" stroke-width="1"/>
 </svg></figure>
 <p>The cubic above crosses the $x$-axis at $-2$, $1$ and $4$, and the $y$-axis at $(0, 16)$. Find its equation.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>•1 $y = k(x + 2)(x - 1)(x - 4)$ <span class="why">One factor for each root. Watch the signs: root $-2$ gives $(x + 2)$.</span></li>
-<li>•2 $16 = k(2)(-1)(-4) = 8k$ <span class="why">Substitute the known point $(0, 16)$.</span></li>
-<li>•3 $k = 2$, so $y = 2(x + 2)(x - 1)(x - 4)$ <span class="why">Expand only if the question asks for it: $y = 2x^3 - 6x^2 - 12x + 16$.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$y = k(x + 2)(x - 1)(x - 4)$ <span class="why">One factor for each root. Watch the signs: root $-2$ gives $(x + 2)$.</span></li>
+<li>$16 = k(2)(-1)(-4) = 8k$ <span class="why">Substitute the known point $(0, 16)$.</span></li>
+<li>$k = 2$, so $y = 2(x + 2)(x - 1)(x - 4)$ <span class="why">Expand only if the question asks for it: $y = 2x^3 - 6x^2 - 12x + 16$.</span></li>
 </ol>
 </details></div>
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"When I use synthetic division to show something is a factor, isn't the zero at the end enough?"</p><p><strong>Flight Lieutenant Murray:</strong> "The zero is your evidence, but the mark is for the <em>conclusion</em>. Write the sentence: 'remainder is 0, so $(x-2)$ is a factor.' Marking instructions for 'show that' questions expect the communication, not just the table."</p></div>

@@ -708,14 +708,18 @@
           ctx.stroke();
           if (Math.abs(a) < 1) { const L = b / (1 - a); HM.dot(ctx, P1.X(L), P1.Y(L), C.gold, 6, C.card); }
         });
+        P1.relabel();
         HM.label(ctx, "cobweb", b1.x + b1.w - 4, b1.y + 10, { align: "right", size: 12, col: C.ink2, avoid: true });
         const P2 = HM.plot(ctx, b2, { x0: 0, x1: 30, y0: R[0], y1: R[1], xt: 5, yt: step, C, xl: "n", yl: "uₙ", tf: (v) => N(v, 0) });
         HM.clip(ctx, b2, () => {
           if (Math.abs(a) < 1) HM.curve(ctx, P2, () => b / (1 - a), 0, 30, C.gold, 1.5, { dash: [5, 4] });
           for (let i = 0; i <= n; i++) HM.dot(ctx, P2.X(i), P2.Y(us[i]), C.red, 3.5);
         });
+        P2.relabel();
         if (n >= 30 && S.playing) S.pause();
-        cv.setAttribute("aria-label", `Cobweb diagram and term plot for u(n+1) = ${a === 0 ? N(b) : `${N(a)} u(n) ${b < 0 ? "minus" : "plus"} ${N(Math.abs(b))}`}, starting at ${u0}. ${Math.abs(a) < 1 ? `The terms settle towards ${N(b / (1 - a), 1)}.` : "The terms do not settle."}`);
+        const fixed = (a === 1 && b === 0) || (a !== 1 && Math.abs(u0 - b / (1 - a)) < 1e-9);
+        const rule = a === 0 ? N(b) : `${N(a)} u(n)${b === 0 ? "" : ` ${b < 0 ? "minus" : "plus"} ${N(Math.abs(b))}`}`;
+        cv.setAttribute("aria-label", `Cobweb diagram and term plot for u(n+1) = ${rule}, starting at ${u0}. ${fixed ? `Every term equals ${N(u0)}.` : Math.abs(a) < 1 ? `The terms settle towards ${N(b / (1 - a), 1)}.` : "The terms do not settle."}`);
       },
     });
     function noLimit() {
