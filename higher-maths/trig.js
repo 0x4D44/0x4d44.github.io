@@ -178,7 +178,9 @@
     const NICE = [0, 0.5, Math.SQRT1_2, Math.sqrt(3) / 2, 1, 1 / Math.sqrt(3), Math.sqrt(3)];
     const NICET = ["0", "\\tfrac{1}{2}", "\\tfrac{1}{\\sqrt2}", "\\tfrac{\\sqrt3}{2}", "1", "\\tfrac{1}{\\sqrt3}", "\\sqrt3"];
     const kTex = (v) => { const i = NICE.findIndex((n) => Math.abs(Math.abs(v) - n) < 0.004); return i < 0 ? N(v, 2) : (v < 0 && i ? "-" : "") + NICET[i]; };
-    const kS = HM.slider(ctl, { label: "$k$", min: -1.2, max: 1.2, step: 0.005, value: k, fmt: (v) => kTex(v).replace(/\\tfrac\{([^}]*)\}\{([^}]*)\}/, "$1/$2").replace(/\\sqrt/g, "√"), oninput: (v) => { const i = NICE.findIndex((n) => Math.abs(Math.abs(v) - n) < 0.012); k = i < 0 ? v : Math.sign(v) * NICE[i]; upd(); } });
+    // the slider moves in steps of 0.01; a value within 0.012 of an exact value snaps to it, so the k shown is the k used
+    const snapK = (v) => { const i = NICE.findIndex((n) => Math.abs(Math.abs(v) - n) < 0.012); return i < 0 ? Math.round(v * 100) / 100 : Math.sign(v) * NICE[i]; };
+    const kS = HM.slider(ctl, { label: "$k$", min: -1.2, max: 1.2, step: 0.01, value: k, fmt: (v) => kTex(snapK(v)).replace(/\\tfrac\{([^}]*)\}\{([^}]*)\}/, "$1/$2").replace(/\\sqrt/g, "√"), oninput: (v) => { k = snapK(v); upd(); } });
     const cv = canvasIn(box);
     const out = texBox(box);
     const F = { sin: Math.sin, cos: Math.cos, tan: Math.tan };
@@ -355,7 +357,7 @@
       const lhs = `${co(a, "\\cos x", true)} ${co(b, "\\sin x", a === 0)}`.trim();
       const kc = kt === "1" ? "" : kt;
       const rhs = al === 0 ? `${kc}\\cos x^\\circ` : `${kc}\\cos(x - ${N(al, 1)})^\\circ`;
-      out.innerHTML = HM.tex(`${lhs} = k\\cos x\\cos\\alpha + k\\sin x\\sin\\alpha`, true) +
+      out.innerHTML = HM.tex(`\\begin{aligned} ${lhs} &= k\\cos x\\cos\\alpha \\\\ &\\quad + k\\sin x\\sin\\alpha \\end{aligned}`, true) +
         `<p style="margin:0">$k\\cos\\alpha = ${a}$, $k\\sin\\alpha = ${b}$, so $k = \\sqrt{${a < 0 ? `(${a})` : a}^2 + ${b < 0 ? `(${b})` : b}^2} = ${kt}${Number.isInteger(k) ? "" : ` \\approx ${N(k, 3)}`}$. ${a === 0 ? "$\\cos\\alpha = 0$ (so $\\tan\\alpha$ is undefined)" : `$\\tan\\alpha = \\frac{${b}}{${a}}$`}; ${qtxt}${acute !== null ? `, acute angle $${N(acute, 1)}°$` : ""}, so $\\alpha = ${N(al, 1)}°$.</p>` +
         HM.tex(`${lhs} = ${rhs}`, true) +
         `<p style="margin:0">Maximum $${kt}$ at $x = ${N(al, 1)}°$; minimum $-${kt}$ at $x = ${N((al + 180) % 360, 1)}°$.</p>`;

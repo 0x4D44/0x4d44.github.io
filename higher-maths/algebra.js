@@ -282,7 +282,7 @@
     const ctl = controls(box);
     let m = 2, k = 1;
     HM.slider(ctl, { label: "gradient $m$", min: -6, max: 6, step: 0.5, value: m, fmt: (v) => N(v), oninput: (v) => { m = v; sim.redraw(); info(); } });
-    const sk = HM.slider(ctl, { label: "intercept $k$", min: -6, max: 10, step: 0.0625, value: k, fmt: (v) => N(v), oninput: (v) => { k = v; sim.redraw(); info(); } });
+    const sk = HM.slider(ctl, { label: "intercept $k$", min: -6, max: 10, step: 0.0625, value: k, fmt: (v) => HM.fracTex(v, 16).replace(/\\tfrac\{(\d+)\}\{(\d+)\}/, "$1/$2").replace("-", "−"), oninput: (v) => { k = v; sim.redraw(); info(); } });
     const snap = HM.el("button", { class: "btn small", type: "button" }, "Make it a tangent");
     box.append(HM.el("div", { class: "btn-row" }, snap));
     const cv = canvasIn(box, "");
@@ -310,7 +310,7 @@
       const D = m * m - 4 * (4 - k);
       const z = Math.abs(D) < 1e-9;
       out.innerHTML = HM.tex(`x^2 + 4 = ${polyTex([m, k], "x", true)} \\;\\Rightarrow\\; ${polyTex([1, -m, 4 - k], "x", true)} = 0`, true) +
-        `<p style="margin:0">Discriminant $= (${N(-m).replace("−", "-")})^2 - 4(1)(${HM.fracTex(4 - k, 16)}) = ${z ? 0 : HM.fracTex(D, 16)}$: <b>${z ? "zero, so the line is a tangent" : D > 0 ? "positive, so the line cuts the curve at two points" : "negative, so the line misses the curve"}</b>.</p>`;
+        `<p style="margin:0">Discriminant $= (${HM.fracTex(-m, 16)})^2 - 4(1)(${HM.fracTex(4 - k, 16)}) = ${z ? 0 : HM.fracTex(D, 16)}$: <b>${z ? "zero, so the line is a tangent" : D > 0 ? "positive, so the line cuts the curve at two points" : "negative, so the line misses the curve"}</b>.</p>`;
       HM.math(out);
     }
     info();
@@ -386,7 +386,7 @@
       const outerK = order === "fg" ? fk : gk, innerK = order === "fg" ? gk : fk;
       const oN = order === "fg" ? "f" : "g", iN = order === "fg" ? "g" : "f";
       const v1 = FUNCS[innerK].f(x), v2 = FUNCS[outerK].f(v1);
-      out.innerHTML = HM.tex(`${oN}\\big(${iN}(x)\\big) = ${oN}\\left(${FUNCS[innerK].tex}\\right) = ${FUNCS[outerK].sub(FUNCS[innerK].tex)} = ${SIMPLE[outerK + "|" + innerK]}`, true) +
+      out.innerHTML = HM.tex(`\\begin{aligned} ${oN}\\big(${iN}(x)\\big) &= ${oN}\\left(${FUNCS[innerK].tex}\\right) \\\\ &= ${FUNCS[outerK].sub(FUNCS[innerK].tex)} \\\\ &= ${SIMPLE[outerK + "|" + innerK]} \\end{aligned}`, true) +
         `<p style="margin:0">With $x = ${x}$: $${iN}(${x}) = ${N(v1, 3).replace("−", "-")}$, then $${oN}(${N(v1, 3).replace("−", "-")}) = ${N(v2, 3).replace("−", "-")}$. ${iN === "g" ? "$g$ acts first because it is on the inside." : "Now $f$ is on the inside, so it acts first."}</p>`;
       HM.math(out);
       // with reduced motion there is no ride: draw the finished state (start = -1) straight away
@@ -708,14 +708,12 @@
           ctx.stroke();
           if (Math.abs(a) < 1) { const L = b / (1 - a); HM.dot(ctx, P1.X(L), P1.Y(L), C.gold, 6, C.card); }
         });
-        P1.relabel();
         HM.label(ctx, "cobweb", b1.x + b1.w - 4, b1.y + 10, { align: "right", size: 12, col: C.ink2, avoid: true });
         const P2 = HM.plot(ctx, b2, { x0: 0, x1: 30, y0: R[0], y1: R[1], xt: 5, yt: step, C, xl: "n", yl: "uₙ", tf: (v) => N(v, 0) });
         HM.clip(ctx, b2, () => {
           if (Math.abs(a) < 1) HM.curve(ctx, P2, () => b / (1 - a), 0, 30, C.gold, 1.5, { dash: [5, 4] });
           for (let i = 0; i <= n; i++) HM.dot(ctx, P2.X(i), P2.Y(us[i]), C.red, 3.5);
         });
-        P2.relabel();
         if (n >= 30 && S.playing) S.pause();
         const fixed = (a === 1 && b === 0) || (a !== 1 && Math.abs(u0 - b / (1 - a)) < 1e-9);
         const rule = a === 0 ? N(b) : `${N(a)} u(n)${b === 0 ? "" : ` ${b < 0 ? "minus" : "plus"} ${N(Math.abs(b))}`}`;

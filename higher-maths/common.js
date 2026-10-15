@@ -516,7 +516,31 @@
   if ("MutationObserver" in window) document.addEventListener("DOMContentLoaded", () => {
     const m = document.querySelector("main"); if (m) new MutationObserver(allMathEdges).observe(m, { childList: true, subtree: true });
   });
+  /* a multi-panel figure (svg[data-panels="0,200,400,600"], the panels' x boundaries in viewBox units) also gets a
+     stacked copy, one panel per row, that CSS shows on phones in place of the sideways-scrolling original */
+  let stacked = false;
+  function stackPanels() {
+    if (stacked) return; stacked = true;
+    document.querySelectorAll("svg[data-panels]").forEach((svg, n) => {
+      const xs = svg.dataset.panels.split(",").map(Number), vb = svg.viewBox.baseVal;
+      const stack = document.createElement("div");
+      stack.className = "panel-stack"; stack.setAttribute("role", "img"); stack.setAttribute("aria-label", svg.getAttribute("aria-label") || "");
+      for (let i = 0; i + 1 < xs.length; i++) {
+        const c = svg.cloneNode(true);
+        // keep ids unique: suffix each and repoint the references to it
+        c.querySelectorAll("[id]").forEach((el) => { const id = el.id, nu = `${id}-p${n}-${i}`; el.id = nu; c.querySelectorAll("*").forEach((u) => { for (const at of ["marker-start", "marker-end", "fill", "stroke", "clip-path", "mask", "href", "xlink:href"]) { const v = u.getAttribute(at); if (v && (v === "#" + id || v.includes(`url(#${id})`))) u.setAttribute(at, v.replace("#" + id, "#" + nu)); } }); });
+        c.removeAttribute("id"); c.removeAttribute("data-panels"); c.removeAttribute("data-minw"); c.removeAttribute("role"); c.removeAttribute("aria-label"); c.classList.remove("wide");
+        c.setAttribute("aria-hidden", "true"); c.setAttribute("focusable", "false");
+        c.setAttribute("viewBox", `${xs[i]} ${vb.y} ${xs[i + 1] - xs[i]} ${vb.height}`);
+        c.style.maxWidth = Math.round((xs[i + 1] - xs[i]) * 1.15) + "px";
+        stack.append(c);
+      }
+      const wrap = svg.closest(".diagram-scroll") || svg;
+      wrap.after(stack); wrap.closest("figure")?.classList.add("has-stack");
+    });
+  }
   function markScrollables() {
+    stackPanels();
     allMathEdges();
     document.querySelectorAll(".table-wrap, .diagram-scroll, pre").forEach((el) => {
       if (el.closest('[aria-hidden="true"]')) return;  // never make hidden content focusable
@@ -648,7 +672,10 @@
       ctx.setTransform(api.scale, 0, 0, api.scale, 0, 0);
       ctx.clearRect(0, 0, cfg.w, cfg.h);
       ctx._hmBoxes = []; // text drawn this frame, for labels that avoid each other
+      ctx._hmLate = []; // plot tick numbers, drawn after everything else
       cfg.draw(ctx, api.t, dt || 0, HM.colors(), api);
+      ctx.setTransform(api.scale, 0, 0, api.scale, 0, 0);
+      ctx._hmLate.forEach((f) => f()); ctx._hmLate = null;
     }
     function frame(now) {
       raf = 0;
@@ -738,24 +765,39 @@
     const keep = (x, y, w, h) => { if (ctx._hmBoxes) ctx._hmBoxes.push({ x, y, w, h }); };
     keep(yAxisX - 2, box.y, 4, box.h); keep(box.x, xAxisY - 2, box.w, 4);
     const tf = o.tf || ((v) => (+v.toFixed(6) + "").replace("-", "−"));
-    // tick numbers and axis titles; P.relabel() redraws them with a halo on top of busy plot content
-    const font0 = ctx.font;
-    const labels = (halo) => {
-      ctx.save(); ctx.font = font0; ctx.fillStyle = C.ink2;
-      const ft = (t, x, y) => { if (halo) { ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = C.card; ctx.strokeText(t, x, y); } ctx.fillText(t, x, y); };
-      const kp = halo ? () => {} : keep;
-      ctx.textAlign = "center"; ctx.textBaseline = "top";
-      if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; ft(tf(v), X(v), xAxisY + 3); const tw = ctx.measureText(tf(v)).width; kp(X(v) - tw / 2, xAxisY + 3, tw, fs); }
-      ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) { const s = (o.ytf || tf)(v), tw = ctx.measureText(s).width; ft(s, yAxisX - 4, Y(v)); kp(yAxisX - 4 - tw, Y(v) - fs / 2, tw, fs); }
-      ctx.fillStyle = C.ink; ctx.font = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
-      if (o.xl) { ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ft(o.xl, box.x + box.w, xAxisY - 4); const w = ctx.measureText(o.xl).width; kp(box.x + box.w - w, xAxisY - 4 - fs, w, fs); }
-      if (o.yl) { const w = ctx.measureText(o.yl).width, rt = yAxisX + 5 + w > box.x + box.w; ctx.textAlign = rt ? "right" : "left"; ctx.textBaseline = "top"; ft(o.yl, rt ? yAxisX - 5 : yAxisX + 5, box.y); kp(rt ? yAxisX - 5 - w : yAxisX + 5, box.y, w, fs); }
+    // tick numbers and axis titles. Inside an HM.sim frame they are drawn last, with a halo, over the plot's
+    // curves and dots; a tick number that a dot, a label or an axis title would cover is left out.
+    const font0 = ctx.font, fontB = `bold ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+    const items = [];
+    const add = (t, x, y, align, base, title) => {
+      ctx.font = title ? fontB : font0;
+      const w = ctx.measureText(t).width;
+      const bx = align === "center" ? x - w / 2 : align === "right" ? x - w : x, by = base === "top" ? y : base === "bottom" ? y - fs : y - fs / 2;
+      const box = { x: bx, y: by, w, h: fs };
+      items.push({ t, x, y, align, base, title, box }); keep(box.x, box.y, box.w, box.h);
+    };
+    if (o.xt) for (let v = Math.ceil(o.x0 / o.xt) * o.xt; v <= o.x1 + 1e-9; v += o.xt) { if (Math.abs(v) < 1e-9 && (o.y0 < 0 || (o.yt && o.y0 === 0 && Math.abs(yAxisX - X(0)) < 1))) continue; add(tf(v), X(v), xAxisY + 3, "center", "top"); }
+    if (o.yt) for (let v = Math.ceil(o.y0 / o.yt) * o.yt; v <= o.y1 + 1e-9; v += o.yt) add((o.ytf || tf)(v), yAxisX - 4, Y(v), "right", "middle");
+    ctx.font = fontB;
+    if (o.xl) add(o.xl, box.x + box.w, xAxisY - 4, "right", "bottom", true);
+    if (o.yl) { const w = ctx.measureText(o.yl).width, rt = yAxisX + 5 + w > box.x + box.w; add(o.yl, rt ? yAxisX - 5 : yAxisX + 5, box.y, rt ? "right" : "left", "top", true); }
+    const n0 = ctx._hmBoxes ? ctx._hmBoxes.length : 0; // boxes from n0 - items.length - 2 up to n0 are this plot's own
+    const over = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h;
+    const draw = (late) => {
+      ctx.save(); ctx.font = font0;
+      const others = late && ctx._hmBoxes ? ctx._hmBoxes.filter((q, i) => i < n0 - items.length - 2 || i >= n0) : [];
+      const titles = items.filter((it) => it.title).map((it) => it.box);
+      for (const it of items) {
+        if (!it.title && (others.some((q) => over(it.box, q)) || titles.some((q) => over(it.box, q)))) continue;
+        ctx.font = it.title ? fontB : font0; ctx.fillStyle = it.title ? C.ink : C.ink2; ctx.textAlign = it.align; ctx.textBaseline = it.base;
+        if (late) { ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = C.card; ctx.strokeText(it.t, it.x, it.y); }
+        ctx.fillText(it.t, it.x, it.y);
+      }
       ctx.restore();
     };
-    labels(false);
+    if (ctx._hmLate) ctx._hmLate.push(() => draw(true)); else draw(false);
     ctx.restore();
-    return { X, Y, relabel: () => labels(true) };
+    return { X, Y, relabel: () => {} };
   };
   /* arrow from (x1,y1) to (x2,y2) */
   HM.arrow = function (ctx, x1, y1, x2, y2, col, w = 2, head = 8) {
