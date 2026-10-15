@@ -400,10 +400,10 @@
      ===================================================================== */
   mount("w-inverse", (box) => {
     const FN = {
-      lin: { name: "$f(x) = 2x + 1$", f: (x) => 2 * x + 1, g: (x) => (x - 1) / 2, inv: "f^{-1}(x) = \\tfrac{x - 1}{2}", pts: [-2, 0, 1.5], x0: -6, x1: 6 },
-      exp: { name: "$f(x) = 2^x$", f: (x) => Math.pow(2, x), g: (x) => Math.log2(x), inv: "f^{-1}(x) = \\log_2 x", pts: [-1, 0, 1, 2], x0: -6, x1: 6 },
-      cube: { name: "$f(x) = x^3$", f: (x) => x * x * x, g: (x) => Math.cbrt(x), inv: "f^{-1}(x) = \\sqrt[3]{x}", pts: [-1.5, -1, 1, 1.5], x0: -6, x1: 6 },
-      rec: { name: "$f(x) = \\tfrac{2}{x - 1}$", f: (x) => 2 / (x - 1), g: (x) => 1 + 2 / x, inv: "f^{-1}(x) = 1 + \\tfrac{2}{x}", pts: [-1, 2, 3, 5], x0: -6, x1: 6 },
+      lin: { say: "f(x) = 2x + 1", name: "$f(x) = 2x + 1$", f: (x) => 2 * x + 1, g: (x) => (x - 1) / 2, inv: "f^{-1}(x) = \\tfrac{x - 1}{2}", pts: [-2, 0, 1.5], x0: -6, x1: 6 },
+      exp: { say: "f(x) = 2 to the power x", name: "$f(x) = 2^x$", f: (x) => Math.pow(2, x), g: (x) => Math.log2(x), inv: "f^{-1}(x) = \\log_2 x", pts: [-1, 0, 1, 2], x0: -6, x1: 6 },
+      cube: { say: "f(x) = x cubed", name: "$f(x) = x^3$", f: (x) => x * x * x, g: (x) => Math.cbrt(x), inv: "f^{-1}(x) = \\sqrt[3]{x}", pts: [-1.5, -1, 1, 1.5], x0: -6, x1: 6 },
+      rec: { say: "f(x) = 2 over (x minus 1)", name: "$f(x) = \\tfrac{2}{x - 1}$", f: (x) => 2 / (x - 1), g: (x) => 1 + 2 / x, inv: "f^{-1}(x) = 1 + \\tfrac{2}{x}", pts: [-1, 2, 3, 5], x0: -6, x1: 6 },
     };
     let key = "exp", start = null;
     HM.choice(box, "Function:", Object.entries(FN).map(([k, v]) => [k, v.name]), key, (v) => { key = v; start = null; sim.redraw(); info(); });
@@ -448,7 +448,7 @@
           else HM.label(ctx, `(${N(a, 2)}, ${N(b, 2)})`, P.X(a) + 6, P.Y(b) - 10, { avoid: true, bounds: bx, size: 12, col: C.sea });
         });
         if (ph >= 1 && S.playing) S.pause();
-        cv.setAttribute("aria-label", `Graph of ${F.name.replace(/\$/g, "")} in blue${ph ? " and its inverse in red, its reflection in the line y = x" : ""}. Marked points (a, b) on f become (b, a) on the inverse.`);
+        cv.setAttribute("aria-label", `Graph of ${F.say} in blue${ph ? " and its inverse in red, its reflection in the line y = x" : ""}. Marked points (a, b) on f become (b, a) on the inverse.`);
       },
     });
     function info() {
@@ -697,7 +697,9 @@
         const b1 = narrow ? { x: 46, y: 10, w: S.w - 60, h: S.h / 2 - 30 } : { x: 46, y: 10, w: S.w / 2 - 66, h: S.h - 32 };
         const b2 = narrow ? { x: 46, y: S.h / 2 + 10, w: S.w - 60, h: S.h / 2 - 32 } : { x: S.w / 2 + 30, y: 10, w: S.w / 2 - 44, h: S.h - 32 };
         const step = niceStep(R[1] - R[0]);
-        const P1 = HM.plot(ctx, b1, { x0: R[0], x1: R[1], y0: R[0], y1: R[1], xt: step, yt: step, C, xl: "uₙ", yl: "uₙ₊₁", tf: (v) => N(v, 0) });
+        // on a phone the x-axis has room for about half as many tick numbers
+        const xstep = narrow && R[1] - R[0] > 1000 ? niceStep((R[1] - R[0]) * 2) : step;
+        const P1 = HM.plot(ctx, b1, { x0: R[0], x1: R[1], y0: R[0], y1: R[1], xt: xstep, yt: step, C, xl: "uₙ", yl: "uₙ₊₁", tf: (v) => N(v, 0) });
         HM.clip(ctx, b1, () => {
           HM.curve(ctx, P1, (x) => x, R[0], R[1], C.muted, 1.5, { dash: [6, 4] });
           HM.curve(ctx, P1, (x) => a * x + b, R[0], R[1], C.sea, 2.5);
@@ -713,7 +715,7 @@
           for (let i = 0; i <= n; i++) HM.dot(ctx, P2.X(i), P2.Y(us[i]), C.red, 3.5);
         });
         if (n >= 30 && S.playing) S.pause();
-        cv.setAttribute("aria-label", `Cobweb diagram and term plot for u(n+1) = ${N(a)} u(n) + ${b}, starting at ${u0}. ${Math.abs(a) < 1 ? `The terms settle towards ${N(b / (1 - a), 1)}.` : "The terms do not settle."}`);
+        cv.setAttribute("aria-label", `Cobweb diagram and term plot for u(n+1) = ${a === 0 ? N(b) : `${N(a)} u(n) ${b < 0 ? "minus" : "plus"} ${N(Math.abs(b))}`}, starting at ${u0}. ${Math.abs(a) < 1 ? `The terms settle towards ${N(b / (1 - a), 1)}.` : "The terms do not settle."}`);
       },
     });
     function noLimit() {

@@ -502,6 +502,9 @@
     const max = el.scrollWidth - el.clientWidth;
     el.classList.toggle("more-l", max > 2 && el.scrollLeft > 2);
     el.classList.toggle("more-r", max > 2 && el.scrollLeft < max - 2);
+    // a scrolling equation must be reachable from the keyboard (not every browser makes scrollers focusable)
+    if (max > 2) { if (!el.hasAttribute("tabindex")) { el.setAttribute("tabindex", "0"); el.setAttribute("role", "group"); el.setAttribute("aria-label", "Scrollable equation"); } }
+    else if (el.getAttribute("aria-label") === "Scrollable equation") { el.removeAttribute("tabindex"); el.removeAttribute("role"); el.removeAttribute("aria-label"); }
   }
   let edgeQueued = false;
   function allMathEdges() {
@@ -774,6 +777,7 @@
       const tries = [[0, 0], [0, -th], [0, th], [6, 4], [6, 14], [-tw - 16, 0], [0, -2 * th], [0, 2 * th], [-tw - 16, -th], [-tw - 16, th], [-tw - 16, -2 * th], [-tw - 16, 2 * th]];
       const ok = tries.map(([dx, dy]) => [x + dx, y + dy]).find(([px, py]) => { const b = at(px, py); return b.x >= B.x && b.x + b.w <= B.x + B.w && b.y >= B.y && b.y + b.h <= B.y + B.h && !hit(b); });
       if (ok) [x, y] = ok;
+      else { const b0 = at(x, y); x += Math.max(B.x - b0.x, Math.min(0, B.x + B.w - (b0.x + b0.w))); y += Math.max(B.y - b0.y, Math.min(0, B.y + B.h - (b0.y + b0.h))); } // nowhere free: at least stay inside the bounds
     }
     if (ctx._hmBoxes) ctx._hmBoxes.push(at(x, y));
     if (o.halo !== false) { ctx.lineWidth = 4; ctx.strokeStyle = o.haloCol || HM.css("--card"); ctx.lineJoin = "round"; ctx.strokeText(txt, x, y); }
