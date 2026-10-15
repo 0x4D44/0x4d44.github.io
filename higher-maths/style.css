@@ -596,7 +596,7 @@ canvas.sim.draggable.dragging { cursor: grabbing; }
 .worked .q-part { font-weight: 700; color: var(--ink-2); }
 .synth { display: inline-grid; gap: 0; font: 600 1.05rem var(--font-mono); margin: 8px 0; border-collapse: collapse; }
 .synth-row { display: contents; }
-.synth-cell { min-width: 3.4em; padding: 6px 8px; text-align: right; border: 0; transition: background .3s; }
+.synth-cell { min-width: 3.4em; padding: 6px 8px; text-align: right; border: 0; white-space: nowrap; transition: background .3s; }
 .synth-cell.k { border-right: 2px solid var(--ink); }
 .synth-cell.sum { border-top: 2px solid var(--ink); }
 .synth-cell.hot { background: color-mix(in srgb, var(--gold-bright) 45%, transparent); }

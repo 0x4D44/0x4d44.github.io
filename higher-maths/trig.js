@@ -171,7 +171,7 @@
      ===================================================================== */
   mount("w-solve", (box) => {
     let fn = "cos", b = 2, k = Math.sqrt(3) / 2, units = "deg";
-    HM.choice(box, "Equation:", [["sin", "$\\sin bx = k$"], ["cos", "$\\cos bx = k$"], ["tan", "$\\tan bx = k$"]], fn, (v) => { fn = v; kS.input.min = fn === "tan" ? -3 : -1.2; kS.input.max = fn === "tan" ? 3 : 1.2; upd(); });
+    HM.choice(box, "Equation:", [["sin", "$\\sin bx = k$"], ["cos", "$\\cos bx = k$"], ["tan", "$\\tan bx = k$"]], fn, (v) => { fn = v; kS.input.min = fn === "tan" ? -3 : -1.2; kS.input.max = fn === "tan" ? 3 : 1.2; if (Math.abs(k) > +kS.input.max) kS.set(Math.sign(k) * +kS.input.max); else kS.sync(k); upd(); });
     HM.choice(box, "Interval:", [["deg", "$0 \\le x \\lt 360°$"], ["rad", "$0 \\le x \\lt 2\\pi$"]], units, (v) => { units = v; upd(); });
     const ctl = controls(box);
     HM.slider(ctl, { label: "$b$", min: 1, max: 4, step: 1, value: b, oninput: (v) => { b = v; upd(); } });

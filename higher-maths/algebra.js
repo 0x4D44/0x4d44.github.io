@@ -498,7 +498,8 @@
       height: (w) => (w < 560 ? 340 : 360),
       draw(ctx, t, dt, C, S) {
         const B = BASE[key];
-        const ph = HM.reduced ? (t - start > 0.01 ? 1 : 0) : Math.max(0, Math.min(1, (t - start) / 2));
+        // with reduced motion: hold the start graph for a moment, then jump straight to the result
+        const ph = HM.reduced ? (t - start > 0.8 ? 1 : 0) : Math.max(0, Math.min(1, (t - start) / 2));
         const e = ph < 0.5 ? 2 * ph * ph : 1 - Math.pow(-2 * ph + 2, 2) / 2;
         const sameSignB = Math.sign(from.b) === Math.sign(target.b);
         const bb = sameSignB ? 1 / lerp(1 / from.b, 1 / target.b, e) : (e < 0.5 ? from.b : target.b);
