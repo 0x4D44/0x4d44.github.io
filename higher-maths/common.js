@@ -489,6 +489,7 @@
 
   /* ---------- scrollable regions: keyboard-reachable, with an edge cue ---------- */
   function scrollLabel(el) {
+    if (el.matches(".synth-wrap")) return "synthetic division table";
     const tcap = el.querySelector("caption");
     const fig = el.closest("figure"), cap = fig && fig.querySelector("figcaption");
     if (tcap || cap) return (tcap || cap).textContent.trim().slice(0, 80);
@@ -542,7 +543,7 @@
   function markScrollables() {
     stackPanels();
     allMathEdges();
-    document.querySelectorAll(".table-wrap, .diagram-scroll, pre").forEach((el) => {
+    document.querySelectorAll(".table-wrap, .diagram-scroll, .synth-wrap, pre").forEach((el) => {
       if (el.closest('[aria-hidden="true"]')) return;  // never make hidden content focusable
       const over = el.scrollWidth - el.clientWidth > 2 || el.scrollHeight - el.clientHeight > 2;
       el.classList.toggle("is-scrollable", el.scrollWidth - el.clientWidth > 2);

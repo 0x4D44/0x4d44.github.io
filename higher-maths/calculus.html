@@ -55,7 +55,7 @@
 <p>The <dfn>derivative</dfn> of $f(x)$, written $f'(x)$ or $\dfrac{dy}{dx}$, is a new function that gives that gradient at every $x$. It also measures a <strong>rate of change</strong>: how fast $y$ is changing compared with $x$.</p>
 <div class="widget" id="w-deriv">
   <h3 class="widget-title">The gunner's sight: a tangent that slides along the curve</h3>
-  <p class="hint">Move the point along the curve. The red tangent shows the gradient there, and as the point moves, the lower graph plots that gradient against $x$: that is the graph of $f'(x)$. Watch what $f'$ does at turning points.</p>
+  <p class="hint">Move the point along the curve. The dark tangent line shows the gradient there, and as the point moves, the lower graph plots that gradient against $x$: that is the graph of $f'(x)$. Watch what $f'$ does at turning points.</p>
 </div>
 
 <h3>The rule for powers</h3>
@@ -346,7 +346,8 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <p>The box above has volume $V(x) = x(24 - 2x)(15 - 2x) = 4x^3 - 78x^2 + 360x$. Find the value of $x$ that gives the greatest volume, and the greatest volume.</p>
 <details><summary>Show solution <span class="marks-n">[6 marks]</span></summary>
 <ol class="step-list marks">
-<li>$V'(x) = 12x^2 - 156x + 360$ <span class="why">Differentiate.</span></li>
+<li>$V'(x) = 12x^2 \ldots$ <span class="why">Start to differentiate.</span></li>
+<li>$V'(x) = 12x^2 - 156x + 360$ <span class="why">Complete the differentiation.</span></li>
 <li>$12x^2 - 156x + 360 = 0$ <span class="why">Set $V'(x) = 0$.</span></li>
 <li>$12(x^2 - 13x + 30) = 0 \Rightarrow 12(x - 3)(x - 10) = 0 \Rightarrow x = 3$ (reject $x = 10$: the sheet is only 15 cm wide, so $x \lt 7.5$) <span class="why">Solve, using the context to reject a root.</span></li>
 <li>Nature table:
@@ -358,8 +359,8 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <tr><th scope="row">$V'(x)$</th><td>+</td><td>0</td><td>−</td></tr>
 <tr><th scope="row">slope</th><td>↗</td><td>→</td><td>↘</td></tr>
 </tbody></table></div>
-<span class="why">Justify the nature. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</span></li>
-<li>$V'$ goes $+\ 0\ -$, so $x = 3$ gives a maximum. <span class="why">State the nature.</span></li>
+$V'$ goes $+\ 0\ -$, so $x = 3$ gives a maximum.
+<span class="why">Verify the nature: the table and its conclusion earn one mark together. The table uses $V'(x) = 12(x - 3)(x - 10)$; the factor 12 is positive and does not change any sign.</span></li>
 <li>$V(3) = 3 \times 18 \times 9 = 486$ cm³ <span class="why">Answer in context, with units.</span></li>
 </ol>
 </details></div>
@@ -370,7 +371,8 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <li>(a) Volume: $x^2h = 32$, so $h = \dfrac{32}{x^2}$ <span class="why">Use the fact you are given to remove the second variable.</span></li>
 <li>Area: base $x^2$ plus four sides of $xh$ (no top), so $A = x^2 + 4xh$ <span class="why">Form an expression for the surface area.</span></li>
 <li>$A = x^2 + 4x \times \dfrac{32}{x^2} = x^2 + \dfrac{128}{x}$ <span class="why">Substitute and complete the proof. Now $A$ is in terms of one variable: step 1 of the method.</span></li>
-<li>(b) $A = x^2 + 128x^{-1} \Rightarrow A' = 2x - 128x^{-2}$ <span class="why">Rewrite, then differentiate.</span></li>
+<li>(b) $A = x^2 + 128x^{-1} \Rightarrow A' = 2x \ldots$ <span class="why">Rewrite, then start to differentiate.</span></li>
+<li>$A' = 2x - 128x^{-2}$ <span class="why">Complete the differentiation.</span></li>
 <li>$2x - \dfrac{128}{x^2} = 0$ <span class="why">Set the derivative to zero.</span></li>
 <li>$2x^3 = 128 \Rightarrow x^3 = 64 \Rightarrow x = 4$ <span class="why">Solve for $x$.</span></li>
 <li>For the table, write $A'(x) = \dfrac{2}{x^2}(x^3 - 64)$: the factor $\dfrac{2}{x^2}$ is always positive.
@@ -382,8 +384,8 @@ $$\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}, \qquad\text{or}\qquad \fra
 <tr><th scope="row">$A'(x)$</th><td>−</td><td>0</td><td>+</td></tr>
 <tr><th scope="row">slope</th><td>↘</td><td>→</td><td>↗</td></tr>
 </tbody></table></div>
-<span class="why">Nature table: justify the nature.</span></li>
-<li>$A'$ goes $-\ 0\ +$, so $x = 4$ gives a minimum. <span class="why">State the nature.</span></li>
+$A'$ goes $-\ 0\ +$, so $x = 4$ gives a minimum.
+<span class="why">Verify the nature: the table and its conclusion earn one mark together.</span></li>
 <li>Base 4 m by 4 m, height $h = \frac{32}{4^2} = 2$ m; least area $16 + 32 = 48$ m² <span class="why">Answer the question asked: the dimensions.</span></li>
 </ol>
 </details></div>

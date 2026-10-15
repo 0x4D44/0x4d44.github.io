@@ -621,3 +621,4 @@ figure.diagram .panel-stack > svg:not(.katex svg) { display: block; width: 100%;
   figure.has-stack .diagram-scroll, figure.has-stack .swipe-hint { display: none; }
   figure.has-stack .panel-stack { display: block; }
 }
+@media (max-width: 420px) { .synth-cell { min-width: 2.4em; padding: 4px 5px; } }

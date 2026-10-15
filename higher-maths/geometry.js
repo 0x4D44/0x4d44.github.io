@@ -384,7 +384,9 @@
       const x1 = p[0] * cyw - p[1] * syw, y1 = p[0] * syw + p[1] * cyw;
       // a slight oblique shear on depth: an edge pointing straight away from the viewer would
       // otherwise project onto the vertical and look parallel (or opposite) to the z-axis
-      return { x: cx + scale * (x1 + 0.28 * y1), y: cy - scale * (p[2] * cp + y1 * sp), z: y1 * cp - p[2] * sp };
+      // z is depth along the true viewing direction of this oblique view (the direction that projects to a single
+      // point), so the shear is included: hidden corners and face order then match the picture actually drawn
+      return { x: cx + scale * (x1 + 0.28 * y1), y: cy - scale * (p[2] * cp + y1 * sp), z: y1 - 0.28 * x1 - p[2] * sp / cp };
     };
   }
   function rotDrag(cv, st, redraw) {
@@ -424,6 +426,7 @@
     const ctl = controls(box);
     st.slider = HM.slider(ctl, { label: "turn the cuboid", min: 0, max: 359, step: 1, value: 326, unit: "°", oninput: turnInput(st, () => sim.redraw()) });
     const cv = canvasIn(box);
+    box.append(HM.el("p", { class: "drag-hint" }, "Drag the cuboid, or use the turn slider, to turn it. The slider skips the few angles where the picture would be edge-on. Dashed edges are hidden behind the block."));
     const out = texBox(box);
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 320 : 360),
@@ -479,6 +482,10 @@
         ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 1.5;
         for (const n of NB[hid]) { const a = P(V[hid]), b = P(V[n]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
         ctx.restore();
+        // the axes run from O: dash them over the block so a lengthened axis visibly starts at the origin
+        ctx.save(); ctx.setLineDash([3, 4]); ctx.strokeStyle = C.ink2; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.2;
+        AX.forEach(([e]) => { const a = P([0, 0, 0]), b = P(e); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+        ctx.restore();
         AX.forEach(([e, l]) => { const b = P(e); HM.label(ctx, l, b.x + 6, b.y - 6, { size: 13, col: C.ink2, bold: true, avoid: true }); });
         // the route, one edge at a time
         const R = ROUTES[route];
@@ -488,7 +495,11 @@
           if (prog <= i) break;
           const a = V[R.path[i]], b = V[R.path[i + 1]], s = Math.min(1, prog - i);
           const pa = P(a), pb = P(a.map((v, j) => v + (b[j] - v) * s));
+          // a leg along a hidden edge is behind the block: draw it faded and dashed
+          const behind = R.path[i] === hid || R.path[i + 1] === hid;
+          if (behind) { ctx.save(); ctx.globalAlpha = 0.55; ctx.setLineDash([8, 5]); }
           HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.red, 4, 12);
+          if (behind) ctx.restore();
         }
         if (prog >= legs) { const pa = P(V[R.from]), pb = P(V[R.to]); ctx.setLineDash([7, 5]); HM.arrow(ctx, pa.x, pa.y, pb.x, pb.y, C.lode || C.sea, 3, 12); ctx.setLineDash([]); }
         Object.entries(V).forEach(([k, p]) => { const q = P(p); if (k === hid) ctx.globalAlpha = 0.5; HM.dot(ctx, q.x, q.y, C.ink, 3.5); ctx.globalAlpha = 1; });
@@ -567,7 +578,7 @@
     ["$b_1$", "$b_2$", "$b_3$"].forEach((l, i) => mk(b, i, l));
     st.slider = HM.slider(ctl, { label: "turn the picture", min: 0, max: 359, step: 1, value: 40, unit: "°", oninput: turnInput(st, () => sim.redraw()) });
     const cv = canvasIn(box);
-    box.append(HM.el("p", { class: "drag-hint" }, "Drag the picture, or use the turn slider, to turn it."));
+    box.append(HM.el("p", { class: "drag-hint" }, "Drag the picture, or use the turn slider, to turn it. The slider skips the few angles where the picture would be edge-on."));
     const out = texBox(box);
     const sim = HM.sim(cv, {
       height: (w) => (w < 560 ? 300 : 340),

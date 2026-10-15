@@ -128,7 +128,7 @@
         { q: R`Which recurrence relation has a limit?`, opts: [R`$u_{n+1} = 1.1u_n - 3$`, R`$u_{n+1} = -1.5u_n$`, R`$u_{n+1} = -0.9u_n + 5$`, R`$u_{n+1} = 2u_n + 1$`], a: 2, why: R`A limit needs $-1 \lt a \lt 1$. Only $a = -0.9$ qualifies. Its terms zig-zag towards $L = \frac{5}{1.9}$.` },
         { q: R`A water butt loses 20% of its contents each day; then 30 litres of rain is added. Which recurrence relation models it?`, opts: [R`$u_{n+1} = 0.2u_n + 30$`, R`$u_{n+1} = 0.8u_n + 30$`, R`$u_{n+1} = 1.2u_n - 30$`, R`$u_{n+1} = 0.8u_n - 30$`], a: 1, why: R`Losing 20% keeps 80%, so multiply by 0.8. Then add 30.` },
         { q: R`$u_{n+1} = 0.5u_n + 4$ and $u_0 = 20$. What is $u_2$?`, opts: [R`$14$`, R`$11$`, R`$9.5$`, R`$8$`], a: 1, why: R`$u_1 = 10 + 4 = 14$, then $u_2 = 7 + 4 = 11$.` },
-        { type: "open", q: R`A sequence satisfies $u_{n+1} = au_n + b$ with $u_1 = 8$, $u_2 = 10$ and $u_3 = 11$. Find $a$ and $b$, explain why the sequence has a limit, and find it.`, marks: 4, model: mi(
+        { type: "open", q: R`A sequence satisfies $u_{n+1} = au_n + b$ with $u_1 = 8$, $u_2 = 10$ and $u_3 = 11$. (a) Find $a$ and $b$. [2] (b) Explain why the sequence has a limit. [1] (c) Find the limit. [1]`, marks: 4, model: mi(
           R`•1 form two equations: $10 = 8a + b$ and $11 = 10a + b$`,
           R`•2 solve: $a = \tfrac12$, $b = 6$`,
           R`•3 a limit exists because $-1 \lt \tfrac12 \lt 1$`,
@@ -265,7 +265,7 @@
         { q: R`$k\cos\alpha = -3$ and $k\sin\alpha = 4$, with $0° \le \alpha \lt 360°$. What is $\alpha$?`, opts: [R`$53.1°$`, R`$126.9°$`, R`$233.1°$`, R`$306.9°$`], a: 1, why: R`$\sin\alpha$ positive, $\cos\alpha$ negative: second quadrant. $\tan^{-1}\tfrac43 = 53.1°$, so $\alpha = 180° - 53.1° = 126.9°$.` },
         { q: R`What is the maximum value of $5\sin x - 12\cos x$?`, opts: [R`$5$`, R`$12$`, R`$13$`, R`$17$`], a: 2, why: R`It can be written as $13\sin(x - \alpha)$ with $13 = \sqrt{25 + 144}$, and the maximum of a wave of amplitude 13 is 13.` },
         { q: R`$\sqrt3\sin x + \cos x = 2\sin(x + \alpha)$. What is $\alpha$?`, opts: [R`$30°$`, R`$60°$`, R`$45°$`, R`$120°$`], a: 0, why: R`$2\sin(x + \alpha) = 2\sin x\cos\alpha + 2\cos x\sin\alpha$, so $2\cos\alpha = \sqrt3$ and $2\sin\alpha = 1$: $\alpha = 30°$.` },
-        { type: "open", q: R`Express $3\cos x° + 4\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$. Hence state its maximum value and the value of $x$, $0 \le x \lt 360$, at which it occurs.`, marks: 6, model: mi(
+        { type: "open", q: R`(a) Express $3\cos x° + 4\sin x°$ in the form $k\cos(x - \alpha)°$, where $k \gt 0$ and $0 \le \alpha \lt 360$. [4] (b) Hence state its maximum value and the value of $x$, $0 \le x \lt 360$, at which it occurs. [2]`, marks: 6, model: mi(
           R`•1 expand: $k\cos x°\cos\alpha° + k\sin x°\sin\alpha°$`,
           R`•2 compare coefficients: $k\cos\alpha° = 3$, $k\sin\alpha° = 4$`,
           R`•3 $k = 5$`,
@@ -346,11 +346,11 @@
         { q: R`In the copper-box problem, $V'(x) = 0$ at $x = 3$ and $x = 10$. Why is $x = 10$ rejected?`, opts: [R`It gives a minimum.`, R`The sheet is only 15 cm wide, so $15 - 2x$ would be negative.`, R`$V(10)$ is too large.`, R`The nature table is $-\ 0\ +$.`], a: 1, why: R`Context rules first: a corner square of 10 cm cannot be cut from a 15 cm sheet. The domain is $0 \lt x \lt 7.5$.` },
         { q: R`A rectangle has perimeter 20 m, so its area is $A = x(10 - x)$. Which $x$ gives the greatest area?`, opts: [R`$x = 10$`, R`$x = 2.5$`, R`$x = 5$`, R`$x = 20$`], a: 2, why: R`$A' = 10 - 2x = 0$ when $x = 5$, and $A'$ goes $+\ 0\ -$: a maximum. The best rectangle is a square.` },
         { type: "open", q: R`The cost, in pounds, of running HMS Lodestone's dispatch boat on a voyage at speed $v$ knots is $C(v) = 200v + \dfrac{80000}{v}$, $v \gt 0$. Find the speed that minimises the cost, justify that it is a minimum, and find the least cost.`, marks: 6, model: mi(
-          R`•1 $C'(v) = 200 - 80000v^{-2}$`,
-          R`•2 set $C'(v) = 0$`,
-          R`•3 $v^2 = 400 \Rightarrow v = 20$ knots`,
-          R`•4 nature table: $v$: $\to 20^-$, $20$, $\to 20^+$; $C'(v)$: $-$, $0$, $+$; slope ↘ → ↗`,
-          R`•5 so $v = 20$ gives a <b>minimum</b>`,
+          R`•1 start to differentiate: $C'(v) = 200 \ldots$`,
+          R`•2 complete: $C'(v) = 200 - 80000v^{-2}$`,
+          R`•3 set $C'(v) = 0$`,
+          R`•4 $v^2 = 400 \Rightarrow v = 20$ knots`,
+          R`•5 nature table: $v$: $\to 20$, $20$, $20 \to$; $C'(v)$: $-$, $0$, $+$; slope ↘ → ↗, so $v = 20$ gives a <b>minimum</b>`,
           R`•6 $C(20) = 4000 + 4000 = £8000$`) },
       ],
     },
@@ -421,7 +421,7 @@
           R`•2 $\sin x = -\tfrac12$ or $\sin x = 1$`,
           R`•3 $\sin x = -\tfrac12$: $x = \tfrac{7\pi}{6},\ \tfrac{11\pi}{6}$`,
           R`•4 $\sin x = 1$: $x = \tfrac{\pi}{2}$`) },
-        { type: "open", q: R`A sequence is defined by $u_{n+1} = \tfrac13u_n + 10$. (a) Explain why the sequence has a limit. (b) Find the limit.`, marks: 3, model: mi(
+        { type: "open", q: R`A sequence is defined by $u_{n+1} = \tfrac13u_n + 10$. (a) Explain why the sequence has a limit. [1] (b) Find the limit. [2]`, marks: 3, model: mi(
           R`•1 a limit exists because $-1 \lt \tfrac13 \lt 1$`,
           R`•2 $L = \tfrac13L + 10$ or $L = \dfrac{10}{1 - \frac13}$`,
           R`•3 $L = 15$`) },

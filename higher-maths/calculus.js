@@ -248,7 +248,7 @@
     let x = 2;
     const V = (x) => x * (L - 2 * x) * (W - 2 * x);
     const ctl = controls(box);
-    HM.slider(ctl, { label: "corner square $x$", min: 0.25, max: 7.25, step: 0.25, value: x, unit: "cm", fmt: (v) => N(v, 2), oninput: (v) => { x = v; fold0 = sim.t; if (!sim.playing && !HM.reduced) sim.play(); info(); } });
+    HM.slider(ctl, { label: "corner square $x$", min: 0.25, max: 7.25, step: 0.25, value: x, unit: "cm", fmt: (v) => N(v, 2), oninput: (v) => { x = v; fold0 = sim.t; if (!sim.playing && !HM.reduced) sim.play(); else sim.redraw(); info(); } });
     const best = HM.el("button", { class: "btn small", type: "button" }, "Jump to x = 3");
     box.append(HM.el("div", { class: "btn-row" }, best));
     const cv = canvasIn(box);
@@ -414,7 +414,8 @@
       let pos = 0, neg = 0;
       for (let i = 0; i < n; i++) { const y = Fn.f(a + (i + 0.5) * w) * w; if (y >= 0) pos += y; else neg += y; }
       const I = Fn.F(b) - Fn.F(a);
-      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: ${Math.abs(neg) < 5e-4 ? `all green, total $${N(pos, 3)}$` : Math.abs(pos) < 5e-4 ? `all red, total $${N(neg, 3)}$` : `green total $${N(pos, 3)}$, red total $${N(neg, 3)}$, so the signed sum is $${N(pos + neg, 3)}$`}.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${limTex(a)}}^{${limTex(b)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
+      const F3 = (v) => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(3).replace("-", "−"); // same 3 dp throughout
+      out.innerHTML = `<p style="margin:0">${n} strip${n > 1 ? "s" : ""}: ${Math.abs(neg) < 5e-4 ? `all green, total $${F3(pos)}$` : Math.abs(pos) < 5e-4 ? `all red, total $${F3(neg)}$` : `green total $${F3(pos)}$, red total $${F3(neg)}$, so the signed sum is $${F3(pos + neg)}$`}.</p><p style="margin:4px 0 0">Exact: $\\displaystyle\\int_{${limTex(a)}}^{${limTex(b)}} (${Fn.tex})\\,dx = ${N(I, 3)}$. ${verdict(Fn, I)}</p>`;
       HM.math(out);
     }
     upd();
