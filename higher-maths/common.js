@@ -425,6 +425,7 @@
             btn.classList.add("chosen"); btn.setAttribute("aria-pressed", "true");
             const ans = it.getAttribute("data-ans"), lc = ans.charAt(0).toLowerCase() + ans.slice(1);
             why.innerHTML = (ok ? `<span class='ok'>✔ Right: it ${lc}.</span> ` : `<span class='bad'>✘ Not quite: it ${lc}.</span> `) + (it.getAttribute("data-why") || "");
+            HM.math(why);
             done++; if (ok) right++;
             tally.textContent = `${right} of ${done} correct` + (done === items.length ? (right === items.length ? " — flawless!" : " — check the explanations for the ones you missed.") : "");
           });

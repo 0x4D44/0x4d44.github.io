@@ -129,8 +129,8 @@
         cv.setAttribute("aria-label", `Three gears: x drives u at du/dx = ${N(r1, 3)}, u drives y at dy/du = ${N(r2, 3)}, so y turns at dy/dx = ${N(r, 3)}.`);
       },
     });
-    // with reduced motion the gears stay still until asked to turn
-    if (HM.reduced) ctl.append(HM.playButton(sim, ["▶ Turn the gears", "❚❚ Stop"]));
+    // the gears turn on their own unless motion is reduced; either way this button starts and stops them
+    ctl.append(HM.playButton(sim, ["▶ Turn the gears", "❚❚ Stop"]));
     function info() {
       const F = FN[key], u = F.g(x), r1 = F.dg(x), r2 = F.df(u), r = r1 * r2;
       const h = 1e-5, num = (F.y(x + h) - F.y(x - h)) / (2 * h);

@@ -78,7 +78,8 @@
           // keep "run" beside its own segment, on the side away from the line
           const rx0 = Math.min(P.X(A[0]), P.X(B[0])), rw = Math.abs(P.X(B[0]) - P.X(A[0]));
           if (dx) HM.label(ctx, `run ${N(dx)}`, P.X((A[0] + B[0]) / 2), P.Y(A[1]) + (dy >= 0 ? 14 : -14), { align: "center", size: 12, col: C.gold, bold: true, avoid: true, bounds: { x: rx0 - 30, y: dy >= 0 ? P.Y(A[1]) + 2 : P.Y(A[1]) - 34, w: rw + 60, h: 32 } });
-          if (dy) HM.label(ctx, `rise ${N(dy)}`, P.X(B[0]) + 6, P.Y((A[1] + B[1]) / 2), { size: 12, col: C.gold, bold: true, avoid: true });
+          const nearR = P.X(B[0]) > bx.x + bx.w - 70; // near the right edge, put "rise" on the left of its segment
+          if (dy) HM.label(ctx, `rise ${N(dy)}`, P.X(B[0]) + (nearR ? -6 : 6), P.Y((A[1] + B[1]) / 2), { size: 12, col: C.gold, bold: true, avoid: true, align: nearR ? "right" : "left" });
           if (mode === "perp") ext(A[0], A[1], -dy, dx, C.violet, 2.5, [8, 5]);
           if (mode === "bis") { const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]; ext(M[0], M[1], -dy, dx, C.violet, 2.5, [8, 5]); HM.dot(ctx, P.X(M[0]), P.Y(M[1]), C.violet, 5); }
           HM.dot(ctx, P.X(A[0]), P.Y(A[1]), C.ink, 7, C.card); HM.dot(ctx, P.X(B[0]), P.Y(B[1]), C.ink, 7, C.card);
@@ -98,9 +99,16 @@
             HM.label(ctx, "θ", vx + 36 * c, vy - 36 * sn, { col: C.red, bold: true, align: "center", avoid: true, tries: [36, 48, 60, 72].map((r) => [(r - 36) * c, -(r - 36) * sn]) });
           }
         });
-        const up = B[1] >= A[1];
-        HM.label(ctx, `A(${N(A[0])}, ${N(A[1])})`, P.X(A[0]) - 10, P.Y(A[1]) + (up ? -16 : 16), { bold: true, align: "right" });
-        HM.label(ctx, `B(${N(B[0])}, ${N(B[1])})`, P.X(B[0]) + 10, P.Y(B[1]) + (up ? -16 : 16), { bold: true });
+        // each point's label goes on its own side, away from the other point, and flips inward at the frame's edges
+        const up = B[1] >= A[1], tA = `A(${N(A[0])}, ${N(A[1])})`, tB = `B(${N(B[0])}, ${N(B[1])})`;
+        const close = Math.abs(P.Y(A[1]) - P.Y(B[1])) < 40 && Math.abs(P.X(A[0]) - P.X(B[0])) < 120;
+        const lab = (t, q, left, dyy) => {
+          const w = t.length * 7.5, x = P.X(q[0]);
+          const goLeft = left ? x - 10 - w >= bx.x : x + 10 + w > bx.x + bx.w;
+          HM.label(ctx, t, x + (goLeft ? -10 : 10), P.Y(q[1]) + dyy, { bold: true, align: goLeft ? "right" : "left" });
+        };
+        lab(tA, A, true, close ? (up ? 16 : -16) : up ? -16 : 16);
+        lab(tB, B, false, close ? (up ? -16 : 16) : up ? -16 : 16);
         cv.setAttribute("aria-label", `Line through A(${A}) and B(${B}).`);
       },
     });
@@ -609,10 +617,10 @@
       const la2 = a.reduce((s, x) => s + x * x, 0), lb2 = b.reduce((s, x) => s + x * x, 0);
       const sq = (n) => (Number.isInteger(Math.sqrt(n)) ? `${Math.sqrt(n)}` : `\\sqrt{${n}}`);
       const p = (x) => (x < 0 ? `(${x})` : `${x}`);
-      const th = Math.acos(dot / Math.sqrt(la2 * lb2)) * 180 / Math.PI;
+      const cs = dot / Math.sqrt(la2 * lb2), th = Math.acos(Math.max(-1, Math.min(1, cs))) * 180 / Math.PI;
       out.innerHTML = HM.tex(`\\mathbf{a}\\cdot\\mathbf{b} = ${a.map((x, i) => `${x}(${b[i]})`).join(" + ").replace(/\+ -/g, "- ")} = ${dot}`, true) +
         HM.tex(`|\\mathbf{a}| = ${sq(la2)},\\quad |\\mathbf{b}| = ${sq(lb2)}`, true) + HM.tex(`\\cos\\theta = \\frac{${dot}}{${sq(la2)} \\times ${sq(lb2)}} \\Rightarrow \\theta = ${N(th, 1)}^\\circ`, true) +
-        `<p style="margin:0">${dot === 0 ? "<b>$\\mathbf{a}\\cdot\\mathbf{b} = 0$: the vectors are perpendicular.</b>" : dot > 0 ? "Positive scalar product: the angle is acute." : "Negative scalar product: the angle is obtuse."}</p>`;
+        `<p style="margin:0">${dot === 0 ? "<b>$\\mathbf{a}\\cdot\\mathbf{b} = 0$: the vectors are perpendicular.</b>" : Math.abs(cs) > 1 - 1e-12 ? (cs > 0 ? "$\\theta = 0°$: the vectors are parallel, pointing the same way." : "$\\theta = 180°$: the vectors are parallel, pointing opposite ways.") : dot > 0 ? "Positive scalar product: the angle is acute." : "Negative scalar product: the angle is obtuse."}</p>`;
       HM.math(out);
     }
     info();

@@ -224,9 +224,14 @@
       let s = axis
         ? `<p style="margin:0">$${lhs}$. This value is on an axis of the unit circle, not inside a quadrant, so CAST is not needed: read it from the graph. In one turn, $${v} = ${turn.map((q) => fmtX(q)).join(",\\ ")}$`
         : `<p style="margin:0">$${lhs}$. Acute angle $= ${fmtX(acute)}$; $\\${fn}$ is ${k > 0 ? "positive" : "negative"}, so use the ${quads} quadrants: $${v} = ${turn.map((q) => fmtX(q)).join(",\\ ")}$`;
-      if (b > 1) s += `, then add $${fmtX(fn === "tan" ? 180 : 360)}$ until $${v}$ reaches $${units === "deg" ? 360 * b + "°" : b * 2 + "\\pi"}$: $${v} = ${S.map(fmtX).join(",\\ ")}$`;
-      s += `.</p><p style="margin:4px 0 0"><b>Solutions:</b> $x = ${S.map((th) => fmtX(th / b)).join(",\\ ")}$${b > 1 ? ` (after dividing by ${b})` : ""}.</p>`;
+      if (b > 1) s += `, then add $${fmtX(fn === "tan" ? 180 : 360)}$ until $${v}$ reaches $${units === "deg" ? 360 * b + "°" : b * 2 + "\\pi"}$: ${wrapList(v, S.map(fmtX), ".")}`;
+      const tail = b > 1 ? ` (after dividing by ${b})` : "";
+      s += `${b > 1 ? "" : "."}</p><p style="margin:4px 0 0"><b>Solutions:</b> ${wrapList("x", S.map((th) => fmtX(th / b)), tail ? "" : ".")}${tail ? tail + "." : ""}</p>`;
       out.innerHTML = s; HM.math(out);
+    }
+    // "v = a, b, c" as one math run per value, so a long list wraps at the commas instead of scrolling sideways
+    function wrapList(v, xs, end = "") {
+      return xs.map((q, i) => `<span style="white-space:nowrap">$${i ? "" : v + " = "}${q}$${i < xs.length - 1 ? "," : end}</span>`).join(" ");
     }
     upd();
   });
@@ -245,43 +250,59 @@
       height: (w) => (w < 560 ? 520 : 330),
       draw(ctx, t, dt, C, S) {
         const narrow = S.w < 560;
-        const R = narrow ? Math.min(S.w - 90, 260) : Math.min(S.h - 60, 260);
-        const ox = 40, oy = narrow ? R + 40 : S.h - 30;
         const a = A * D2R, b = B * D2R;
+        // fit the construction to its frame: from the leftmost point (O or P) to the label column right of Q and P
+        // on a phone the two heights are named in a legend under the drawing, so no label column is reserved
+        const LW = narrow ? 0 : 92, GAP = 24;
+        const uL = Math.min(0, Math.cos(a + b)), uR = Math.max(Math.cos(b) * Math.cos(a), Math.cos(a + b), 1.08 * Math.cos(a));
+        const uT = Math.max(Math.sin(a + b), 1.08 * Math.sin(a));
+        const fw = narrow ? S.w : S.w * 0.6, fh = narrow ? S.h - 3 * 52 - 76 : S.h;
+        const R = Math.min(260, (fw - 36 - GAP - LW) / (uR - uL), (fh - 50) / uT);
+        const ox = 18 - uL * R, oy = narrow ? 24 + uT * R : S.h - 30;
         const Q = [ox + R * Math.cos(b) * Math.cos(a), oy - R * Math.cos(b) * Math.sin(a)];
         const Pp = [ox + R * Math.cos(a + b), oy - R * Math.sin(a + b)];
-        ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ox - 10, oy); ctx.lineTo(ox + R + 20, oy); ctx.stroke();
+        ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Math.min(ox, Pp[0]) - 10, oy); ctx.lineTo(Math.max(ox + R * uR, Q[0]) + GAP, oy); ctx.stroke();
         // ray at angle A (faint), OQ, QP
-        ctx.setLineDash([5, 4]); ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + (R + 20) * Math.cos(a), oy - (R + 20) * Math.sin(a)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.setLineDash([5, 4]); ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + 1.08 * R * Math.cos(a), oy - 1.08 * R * Math.sin(a)); ctx.stroke(); ctx.setLineDash([]);
         ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(Pp[0], Pp[1]); ctx.stroke();
         ctx.strokeStyle = C.sea; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(Q[0], Q[1]); ctx.stroke();
         ctx.strokeStyle = C.violet; ctx.beginPath(); ctx.moveTo(Q[0], Q[1]); ctx.lineTo(Pp[0], Pp[1]); ctx.stroke();
         // height of Q (sin A cos B) and the rise from Q to P (cos A sin B)
-        const hx = Pp[0] + 18 > Q[0] ? Math.max(Q[0], Pp[0]) + 24 : Q[0] + 24;
+        const hx = Math.max(Q[0], Pp[0]) + GAP;
         ctx.lineWidth = 6;
         ctx.strokeStyle = C.red; ctx.beginPath(); ctx.moveTo(hx, oy); ctx.lineTo(hx, Q[1]); ctx.stroke();
         ctx.strokeStyle = C.gold; ctx.beginPath(); ctx.moveTo(hx, Q[1]); ctx.lineTo(hx, Pp[1]); ctx.stroke();
         ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.strokeStyle = C.ink2;
         ctx.beginPath(); ctx.moveTo(Q[0], Q[1]); ctx.lineTo(hx, Q[1]); ctx.moveTo(Pp[0], Pp[1]); ctx.lineTo(hx, Pp[1]); ctx.stroke(); ctx.setLineDash([]);
         // angle arcs
-        ctx.lineWidth = 2.5; ctx.strokeStyle = C.sea; ctx.beginPath(); ctx.arc(ox, oy, 30, 0, -a, true); ctx.stroke();
-        ctx.strokeStyle = C.violet; ctx.beginPath(); ctx.arc(ox, oy, 42, -a, -a - b, true); ctx.stroke();
-        HM.label(ctx, "A", ox + 38 * Math.cos(a / 2), oy - 38 * Math.sin(a / 2), { bold: true, col: C.sea });
-        HM.label(ctx, "B", ox + 52 * Math.cos(a + b / 2), oy - 52 * Math.sin(a + b / 2), { bold: true, col: C.violet });
+        // arcs shrink when OQ is short (large B), so they stay inside the triangle
+        const rA = Math.max(14, Math.min(30, 0.5 * R * Math.cos(b))), rB = rA + 12;
+        ctx.lineWidth = 2.5; ctx.strokeStyle = C.sea; ctx.beginPath(); ctx.arc(ox, oy, rA, 0, -a, true); ctx.stroke();
+        ctx.strokeStyle = C.violet; ctx.beginPath(); ctx.arc(ox, oy, rB, -a, -a - b, true); ctx.stroke();
+        HM.label(ctx, "A", ox + (rA + 9) * Math.cos(a / 2), oy - (rA + 9) * Math.sin(a / 2), { bold: true, col: C.sea, align: "center" });
+        HM.label(ctx, "B", ox + (rB + 10) * Math.cos(a + b / 2), oy - (rB + 10) * Math.sin(a + b / 2), { bold: true, col: C.violet, align: "center" });
         HM.dot(ctx, Q[0], Q[1], C.sea, 4); HM.dot(ctx, Pp[0], Pp[1], C.ink, 5);
         HM.label(ctx, "1", (ox + Pp[0]) / 2 - 10, (oy + Pp[1]) / 2 - 6, { bold: true });
         HM.label(ctx, "cos B", (ox + Q[0]) / 2 + 8, (oy + Q[1]) / 2 + 12, { size: 12, col: C.sea, bold: true });
         HM.label(ctx, "sin B", (Q[0] + Pp[0]) / 2 + 6, (Q[1] + Pp[1]) / 2 - 4, { size: 12, col: C.violet, bold: true });
-        HM.label(ctx, "sin A cos B", hx + 8, (oy + Q[1]) / 2, { size: 12, col: C.red, bold: true });
-        HM.label(ctx, "cos A sin B", hx + 8, (Q[1] + Pp[1]) / 2, { size: 12, col: C.gold, bold: true });
+        if (narrow) {
+          [["sin A cos B (height of Q)", C.red], ["cos A sin B (rise from Q to P)", C.gold]].forEach(([t, col], i) => {
+            ctx.fillStyle = col; ctx.fillRect(20, oy + 18 + i * 20, 6, 14);
+            HM.label(ctx, t, 32, oy + 25 + i * 20, { size: 12, col, bold: true });
+          });
+        } else {
+          HM.label(ctx, "sin A cos B", hx + 8, (oy + Q[1]) / 2, { size: 12, col: C.red, bold: true });
+          HM.label(ctx, "cos A sin B", hx + 8, (Q[1] + Pp[1]) / 2, { size: 12, col: C.gold, bold: true });
+        }
         // bars
-        const bxp = narrow ? { x: 20, y: oy + 34, w: S.w - 40 } : { x: S.w * 0.62, y: 40, w: S.w * 0.36 };
+        const bxp = narrow ? { x: 20, y: oy + 78, w: S.w - 40 } : { x: S.w * 0.62, y: 40, w: S.w * 0.36 };
+        const bw = (v) => (bxp.w - 44) * v / 2; // longest bar (sin A + sin B < 2) still leaves room for its value
         const vals = [["sin(A + B)", Math.sin(a + b), C.ink], ["sin A cos B + cos A sin B", Math.sin(a) * Math.cos(b) + Math.cos(a) * Math.sin(b), C.grass], ["sin A + sin B  ✘", Math.sin(a) + Math.sin(b), C.red]];
         vals.forEach(([l, v, col], i) => {
           const y = bxp.y + i * 52;
           HM.label(ctx, l, bxp.x, y, { size: 12, bold: true });
-          ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.fillRect(bxp.x, y + 10, bxp.w * v / 2, 16); ctx.globalAlpha = 1;
-          HM.label(ctx, N(v, 4), bxp.x + bxp.w * v / 2 + 6, y + 18, { size: 12 });
+          ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.fillRect(bxp.x, y + 10, bw(v), 16); ctx.globalAlpha = 1;
+          HM.label(ctx, N(v, 4), bxp.x + bw(v) + 6, y + 18, { size: 12 });
         });
         cv.setAttribute("aria-label", `Construction for A = ${A} and B = ${B} degrees: the height of P, sin(A + B) = ${N(Math.sin(a + b), 4)}, is the sum of sin A cos B and cos A sin B. sin A + sin B would be ${N(Math.sin(a) + Math.sin(b), 4)}.`);
       },
