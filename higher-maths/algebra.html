@@ -94,24 +94,25 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 
 <div class="worked"><p class="worked-title">Worked example 1 · P1 · find a coefficient, then solve</p>
 <p>$(x - 3)$ is a factor of $f(x) = x^3 - 4x^2 + kx + 6$.</p>
-<p><span class="q-part">(a)</span> Find the value of $k$. <span class="q-part">(b)</span> Hence solve $f(x) = 0$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(3) = 27 - 36 + 3k + 6 = 3k - 3$ <span class="why">Use the factor theorem: substitute $x = 3$.</span></li>
-<li>$3k - 3 = 0 \Rightarrow k = 1$ <span class="why">$(x-3)$ is a factor, so $f(3) = 0$.</span></li>
-<li>Synthetic division by $(x - 3)$, trial root $3$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 1, -4, 1, 6 by 3: the bottom row is 1, -1, -2, 0"><div class="synth-cell k">3</div><div class="synth-cell">1</div><div class="synth-cell">−4</div><div class="synth-cell">1</div><div class="synth-cell">6</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">3</div><div class="synth-cell">−3</div><div class="synth-cell">−6</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−1</div><div class="synth-cell sum">−2</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x-3)(x^2 - x - 2)$ <span class="why">The bottom row, without the remainder, gives the quadratic factor's coefficients.</span></li>
-<li>$f(x) = (x-3)(x-2)(x+1)$, so $x = 3,\ 2$ or $-1$ <span class="why">Factorise fully, then state the roots.</span></li>
+<p><span class="q-part">(a)</span> Find the value of $k$. [2] <span class="q-part">(b)</span> Hence solve $f(x) = 0$. [3]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(3) = 27 - 36 + 3k + 6 = 3k - 3$ <span class="why">Strategy: use the factor theorem and substitute $x = 3$.</span></li>
+<li>$3k - 3 = 0 \Rightarrow k = 1$ <span class="why">$(x-3)$ is a factor, so $f(3) = 0$. Solve for $k$.</span></li>
+<li>Synthetic division by $(x - 3)$, trial root $3$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 1, -4, 1, 6 by 3: the bottom row is 1, -1, -2, 0"><div class="synth-cell k">3</div><div class="synth-cell">1</div><div class="synth-cell">−4</div><div class="synth-cell">1</div><div class="synth-cell">6</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">3</div><div class="synth-cell">−3</div><div class="synth-cell">−6</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−1</div><div class="synth-cell sum">−2</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x-3)(x^2 - x - 2)$ <span class="why">Find the quadratic factor: the bottom row, without the remainder, gives its coefficients.</span></li>
+<li>$f(x) = (x-3)(x-2)(x+1)$ <span class="why">Factorise fully.</span></li>
+<li>$x = 3,\ 2$ or $-1$ <span class="why">State the roots.</span></li>
 </ol>
 </details></div>
 
 <div class="worked"><p class="worked-title">Worked example 2 · P1 · a quartic</p>
 <p>Fully factorise $f(x) = x^4 - 2x^3 - 7x^2 + 8x + 12$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(-1) = 1 + 2 - 7 - 8 + 12 = 0$, so $(x+1)$ is a factor. <span class="why">Try factors of 12. $f(1) = 12$, not 0, so try $-1$.</span></li>
-<li>Synthetic division by $(x + 1)$, trial root $-1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(6, auto)" role="img" aria-label="Synthetic division of 1, -2, -7, 8, 12 by -1: the bottom row is 1, -3, -4, 12, 0"><div class="synth-cell k">−1</div><div class="synth-cell">1</div><div class="synth-cell">−2</div><div class="synth-cell">−7</div><div class="synth-cell">8</div><div class="synth-cell">12</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">−1</div><div class="synth-cell">3</div><div class="synth-cell">4</div><div class="synth-cell">−12</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−3</div><div class="synth-cell sum">−4</div><div class="synth-cell sum">12</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x+1)(x^3 - 3x^2 - 4x + 12)$ <span class="why">The quotient is a cubic. Keep going.</span></li>
-<li>For the cubic, $x = 2$ gives $8 - 12 - 8 + 12 = 0$. Synthetic division by $(x - 2)$, trial root $2$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 1, -3, -4, 12 by 2: the bottom row is 1, -1, -6, 0"><div class="synth-cell k">2</div><div class="synth-cell">1</div><div class="synth-cell">−3</div><div class="synth-cell">−4</div><div class="synth-cell">12</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">2</div><div class="synth-cell">−2</div><div class="synth-cell">−12</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−1</div><div class="synth-cell sum">−6</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$. <span class="why">Find a second factor.</span></li>
-<li>$f(x) = (x+1)(x-2)(x^2 - x - 6) = (x+1)(x-2)(x-3)(x+2)$ <span class="why">Factorise the last quadratic.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(-1) = 1 + 2 - 7 - 8 + 12 = 0$, so $(x+1)$ is a factor. <span class="why">Strategy: find a root by testing factors of 12. $f(1) = 12$, not 0, so try $-1$.</span></li>
+<li>Synthetic division by $(x + 1)$, trial root $-1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(6, auto)" role="img" aria-label="Synthetic division of 1, -2, -7, 8, 12 by -1: the bottom row is 1, -3, -4, 12, 0"><div class="synth-cell k">−1</div><div class="synth-cell">1</div><div class="synth-cell">−2</div><div class="synth-cell">−7</div><div class="synth-cell">8</div><div class="synth-cell">12</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">−1</div><div class="synth-cell">3</div><div class="synth-cell">4</div><div class="synth-cell">−12</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−3</div><div class="synth-cell sum">−4</div><div class="synth-cell sum">12</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x+1)(x^3 - 3x^2 - 4x + 12)$ <span class="why">Find the cubic quotient. Keep going.</span></li>
+<li>For the cubic, $x = 2$ gives $8 - 12 - 8 + 12 = 0$. Synthetic division by $(x - 2)$, trial root $2$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 1, -3, -4, 12 by 2: the bottom row is 1, -1, -6, 0"><div class="synth-cell k">2</div><div class="synth-cell">1</div><div class="synth-cell">−3</div><div class="synth-cell">−4</div><div class="synth-cell">12</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">2</div><div class="synth-cell">−2</div><div class="synth-cell">−12</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">−1</div><div class="synth-cell sum">−6</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x+1)(x-2)(x^2 - x - 6)$ <span class="why">Find a second factor and the quadratic factor.</span></li>
+<li>$f(x) = (x+1)(x-2)(x-3)(x+2)$ <span class="why">Factorise fully.</span></li>
 </ol>
 <p>Check with $x = 0$: $(1)(-2)(-3)(2) = 12$, which matches the constant term of $f(x)$.</p>
 </details></div>
@@ -120,9 +121,9 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 <p>Sometimes the quotient is a quadratic with no real roots. Then the polynomial has fewer real roots than its degree. To <em>prove</em> that the quadratic cannot be factorised, show that its discriminant is negative (see the <a href="#quad">next chapter</a>).</p>
 <div class="worked"><p class="worked-title">Worked example 3 · P1 · only one real root</p>
 <p>Show that $x^3 + x^2 + x - 3 = 0$ has only one real root.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(1) = 1 + 1 + 1 - 3 = 0$, so $x = 1$ is a root and $(x - 1)$ is a factor. <span class="why">Find one root.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(1) = 1 + 1 + 1 - 3 = 0$, so $x = 1$ is a root and $(x - 1)$ is a factor. <span class="why">Strategy: find one root.</span></li>
 <li>Synthetic division by $(x - 1)$, trial root $1$:<div class="synth-wrap"><div class="synth" style="grid-template-columns: repeat(5, auto)" role="img" aria-label="Synthetic division of 1, 1, 1, -3 by 1: the bottom row is 1, 2, 3, 0"><div class="synth-cell k">1</div><div class="synth-cell">1</div><div class="synth-cell">1</div><div class="synth-cell">1</div><div class="synth-cell">−3</div><div class="synth-cell k"></div><div class="synth-cell"></div><div class="synth-cell">1</div><div class="synth-cell">2</div><div class="synth-cell">3</div><div class="synth-cell k sum"></div><div class="synth-cell sum">1</div><div class="synth-cell sum">2</div><div class="synth-cell sum">3</div><div class="synth-cell sum rem zero">0</div></div></div>Remainder $0$, so $f(x) = (x-1)(x^2 + 2x + 3)$. <span class="why">Find the quadratic factor.</span></li>
 <li>For $x^2 + 2x + 3$: $b^2 - 4ac = 4 - 12 = -8 \lt 0$ <span class="why">Test the quadratic with the discriminant.</span></li>
 <li>So $x^2 + 2x + 3 = 0$ has no real roots, and $x = 1$ is the only real root. <span class="why">Communicate the conclusion.</span></li>
@@ -147,7 +148,7 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 </details></div>
 <h3>A polynomial from its graph</h3>
 <p>If a graph crosses the $x$-axis at $x = p$, then $(x - p)$ is a factor. So a cubic with roots $p$, $q$, $r$ is $y = k(x - p)(x - q)(x - r)$ for some number $k$. One more point on the curve (often the $y$-intercept) gives $k$.</p>
-<div class="worked"><p class="worked-title">Worked example 5 · P2 · a cubic from its graph</p>
+<div class="worked"><p class="worked-title">Worked example 5 · P1 · a cubic from its graph</p>
 <figure class="diagram"><svg viewBox="0 0 360 220" style="max-width:380px" role="img" aria-label="A cubic curve crossing the x-axis at minus 2, 1 and 4, and the y-axis at 16.">
 <g class="stroke-ink" stroke-width="1.5"><line x1="10" y1="110" x2="350" y2="110"/><line x1="140" y1="8" x2="140" y2="212"/></g>
 <path d="M36.0 195.5 L38.0 186.7 L40.0 178.2 L42.0 170.1 L44.0 162.2 L46.0 154.7 L48.0 147.4 L50.0 140.5 L52.0 133.8 L54.0 127.4 L56.0 121.3 L58.0 115.5 L60.0 110.0 L62.0 104.7 L64.0 99.7 L66.0 95.0 L68.0 90.5 L70.0 86.3 L72.0 82.3 L74.0 78.6 L76.0 75.1 L78.0 71.8 L80.0 68.8 L82.0 65.9 L84.0 63.3 L86.0 61.0 L88.0 58.8 L90.0 56.8 L92.0 55.1 L94.0 53.5 L96.0 52.2 L98.0 51.0 L100.0 50.0 L102.0 49.2 L104.0 48.6 L106.0 48.1 L108.0 47.8 L110.0 47.7 L112.0 47.7 L114.0 47.9 L116.0 48.2 L118.0 48.6 L120.0 49.2 L122.0 50.0 L124.0 50.9 L126.0 51.9 L128.0 53.0 L130.0 54.2 L132.0 55.6 L134.0 57.0 L136.0 58.6 L138.0 60.2 L140.0 62.0 L142.0 63.8 L144.0 65.8 L146.0 67.8 L148.0 69.9 L150.0 72.0 L152.0 74.3 L154.0 76.5 L156.0 78.9 L158.0 81.3 L160.0 83.8 L162.0 86.2 L164.0 88.8 L166.0 91.4 L168.0 94.0 L170.0 96.6 L172.0 99.2 L174.0 101.9 L176.0 104.6 L178.0 107.3 L180.0 110.0 L182.0 112.7 L184.0 115.4 L186.0 118.1 L188.0 120.8 L190.0 123.4 L192.0 126.0 L194.0 128.6 L196.0 131.2 L198.0 133.8 L200.0 136.3 L202.0 138.7 L204.0 141.1 L206.0 143.5 L208.0 145.7 L210.0 148.0 L212.0 150.1 L214.0 152.2 L216.0 154.2 L218.0 156.2 L220.0 158.0 L222.0 159.8 L224.0 161.4 L226.0 163.0 L228.0 164.4 L230.0 165.8 L232.0 167.0 L234.0 168.1 L236.0 169.1 L238.0 170.0 L240.0 170.8 L242.0 171.4 L244.0 171.8 L246.0 172.1 L248.0 172.3 L250.0 172.3 L252.0 172.2 L254.0 171.9 L256.0 171.4 L258.0 170.8 L260.0 170.0 L262.0 169.0 L264.0 167.8 L266.0 166.5 L268.0 164.9 L270.0 163.2 L272.0 161.2 L274.0 159.0 L276.0 156.7 L278.0 154.1 L280.0 151.2 L282.0 148.2 L284.0 144.9 L286.0 141.4 L288.0 137.7 L290.0 133.7 L292.0 129.5 L294.0 125.0 L296.0 120.3 L298.0 115.3 L300.0 110.0 L302.0 104.5 L304.0 98.7 L306.0 92.6 L308.0 86.2 L310.0 79.5 L312.0 72.6 L314.0 65.3 L316.0 57.8 L318.0 49.9 L320.0 41.8 L322.0 33.3 L324.0 24.5" fill="none" class="s-sea" stroke-width="3"/>
@@ -157,7 +158,7 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 <p>The cubic above crosses the $x$-axis at $-2$, $1$ and $4$, and the $y$-axis at $(0, 16)$. Find its equation.</p>
 <details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
 <ol class="step-list marks">
-<li>$y = k(x + 2)(x - 1)(x - 4)$ <span class="why">One factor for each root. Watch the signs: root $-2$ gives $(x + 2)$.</span></li>
+<li>$y = k(x + 2)(x - 1)(x - 4)$ <span class="why">Strategy: one factor for each root. Watch the signs: root $-2$ gives $(x + 2)$.</span></li>
 <li>$16 = k(2)(-1)(-4) = 8k$ <span class="why">Substitute the known point $(0, 16)$.</span></li>
 <li>$k = 2$, so $y = 2(x + 2)(x - 1)(x - 4)$ <span class="why">Expand only if the question asks for it: $y = 2x^3 - 6x^2 - 12x + 16$.</span></li>
 </ol>
@@ -181,22 +182,22 @@ $$2x^3 + x^2 - 13x + 6 = (x-2)(2x^2 + 5x - 3) = (x-2)(2x-1)(x+3).$$
 </div>
 
 <div class="worked"><p class="worked-title">Worked example 6 · P1 · $x^2$ coefficient not 1</p>
-<p>Express $2x^2 + 12x + 5$ in the form $a(x+p)^2 + q$, and state the coordinates of the turning point of $y = 2x^2 + 12x + 5$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$2(x^2 + 6x) + 5$ <span class="why">Take the $x^2$ coefficient out of the first two terms only.</span></li>
+<p><span class="q-part">(a)</span> Express $2x^2 + 12x + 5$ in the form $a(x+p)^2 + q$. [3] <span class="q-part">(b)</span> State the coordinates of the turning point of $y = 2x^2 + 12x + 5$. [1]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$2(x^2 + 6x) + 5$ <span class="why">Identify $a$: take the $x^2$ coefficient out of the first two terms only.</span></li>
 <li>$2\big[(x+3)^2 - 9\big] + 5$ <span class="why">Complete the square inside the bracket: half of 6 is 3, and subtract $3^2$.</span></li>
-<li>$2(x+3)^2 - 13$ <span class="why">Multiply out the outer bracket: $2 \times (-9) = -18$, and $-18 + 5 = -13$.</span></li>
+<li>$2(x+3)^2 - 13$ <span class="why">Process for $q$: $2 \times (-9) = -18$, and $-18 + 5 = -13$.</span></li>
+<li>Turning point $(-3,\ -13)$ <span class="why">State the turning point. It is a minimum because $a = 2 \gt 0$.</span></li>
 </ol>
-<p>Turning point $(-3,\ -13)$. It is a minimum because $a = 2 \gt 0$.</p>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 7 · P1 · a negative $x^2$ coefficient</p>
 <p>Write $5 + 4x - x^2$ in the form $a(x+p)^2 + q$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$-x^2 + 4x + 5 = -(x^2 - 4x) + 5$ <span class="why">Reorder, then take out $-1$. Inside, the sign of $4x$ flips.</span></li>
-<li>$-\big[(x-2)^2 - 4\big] + 5$ <span class="why">Half of $-4$ is $-2$.</span></li>
-<li>$-(x-2)^2 + 9$ <span class="why">$-1 \times (-4) = +4$, and $4 + 5 = 9$.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$-x^2 + 4x + 5 = -(x^2 - 4x) + 5$ <span class="why">Identify $a = -1$: reorder, then take out $-1$. Inside, the sign of $4x$ flips.</span></li>
+<li>$-\big[(x-2)^2 - 4\big] + 5$ <span class="why">Complete the square: half of $-4$ is $-2$.</span></li>
+<li>$-(x-2)^2 + 9$ <span class="why">Process for $q$: $-1 \times (-4) = +4$, and $4 + 5 = 9$.</span></li>
 </ol>
 <p>So $a = -1$, $p = -2$, $q = 9$, and the graph has a maximum turning point at $(2,\ 9)$.</p>
 </details></div>
@@ -217,21 +218,21 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <p>A typical question gives a quadratic with an unknown $k$ and tells you about its roots. Write down the right condition on the discriminant and solve for $k$. Be careful: the condition may lead to a quadratic <em>inequality</em> in $k$.</p>
 <div class="worked"><p class="worked-title">Worked example 8 · P1 · equal roots</p>
 <p>Find the values of $k$ for which $kx^2 - 6x + k = 0$ has equal roots.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$a = k,\ b = -6,\ c = k$ and equal roots means $b^2 - 4ac = 0$ <span class="why">State the condition.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$a = k,\ b = -6,\ c = k$ and equal roots means $b^2 - 4ac = 0$ <span class="why">Strategy: state the condition.</span></li>
 <li>$(-6)^2 - 4 \times k \times k = 36 - 4k^2 = 0$ <span class="why">Substitute. Brackets round the $-6$.</span></li>
-<li>$k^2 = 9 \Rightarrow k = 3$ or $k = -3$ <span class="why">Solve.</span></li>
+<li>$k^2 = 9 \Rightarrow k = 3$ or $k = -3$ <span class="why">Solve: both values.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 9 · P1 · no real roots, so an inequality</p>
 <p>Find the range of values of $k$ for which $x^2 + (k+1)x + 4 = 0$ has no real roots.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$b^2 - 4ac \lt 0$ <span class="why">The condition for no real roots.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$b^2 - 4ac \lt 0$ <span class="why">Strategy: the condition for no real roots.</span></li>
 <li>$(k+1)^2 - 4 \times 1 \times 4 \lt 0 \Rightarrow k^2 + 2k - 15 \lt 0$ <span class="why">Substitute and simplify: $k^2 + 2k + 1 - 16$.</span></li>
 <li>$(k+5)(k-3) \lt 0$: the parabola in $k$ has roots $-5$ and $3$. <span class="why">Factorise and find the roots.</span></li>
-<li>$-5 \lt k \lt 3$ <span class="why">It opens upwards, so it is below zero between the roots. Sketch it to be sure.</span></li>
+<li>$-5 \lt k \lt 3$ <span class="why">State the range. It opens upwards, so it is below zero between the roots. Sketch it to be sure.</span></li>
 </ol>
 </details></div>
 
@@ -249,10 +250,10 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 </svg><figcaption>Open circles: the roots are not included, because the inequality is strict ($\gt$). For $\ge$ they would be included.</figcaption></figure>
 <div class="worked"><p class="worked-title">Worked example 10 · P1 · a downward parabola</p>
 <p>Solve $6 + x - x^2 \ge 0$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$6 + x - x^2 = -(x^2 - x - 6) = -(x-3)(x+2)$, so the roots are $x = 3$ and $x = -2$. <span class="why">Find the roots.</span></li>
-<li>The coefficient of $x^2$ is negative, so the parabola is $\cap$-shaped and is on or above the axis between its roots. <span class="why">Sketch.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$6 + x - x^2 = -(x^2 - x - 6) = -(x-3)(x+2)$, so the roots are $x = 3$ and $x = -2$. <span class="why">Factorise and find the roots.</span></li>
+<li>The coefficient of $x^2$ is negative, so the parabola is $\cap$-shaped and is on or above the axis between its roots. <span class="why">Strategy: sketch (or a table of signs).</span></li>
 <li>$-2 \le x \le 3$ <span class="why">State the answer, including the roots because of $\ge$.</span></li>
 </ol>
 </details></div>
@@ -265,12 +266,12 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <p>Two graphs meet where their $y$-values are equal. So to find the intersection of $y = f(x)$ and $y = g(x)$, solve $f(x) = g(x)$. Then substitute each $x$ back into either equation to get $y$.</p>
 <div class="worked"><p class="worked-title">Worked example 11 · P1 · a line and a parabola</p>
 <p>Find the points of intersection of $y = x^2 - 3x + 4$ and $y = x + 1$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$x^2 - 3x + 4 = x + 1$ <span class="why">Equate the two expressions for $y$.</span></li>
-<li>$x^2 - 4x + 3 = 0 \Rightarrow (x-1)(x-3) = 0$ <span class="why">Rearrange to "$= 0$" and factorise.</span></li>
-<li>$x = 1$ or $x = 3$ <span class="why">Solve.</span></li>
-<li>$(1,\ 2)$ and $(3,\ 4)$ <span class="why">Substitute into $y = x + 1$, the simpler equation.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$x^2 - 3x + 4 = x + 1$ <span class="why">Strategy: equate the two expressions for $y$.</span></li>
+<li>$x^2 - 4x + 3 = 0$ <span class="why">Express in standard quadratic form, "$= 0$".</span></li>
+<li>$(x-1)(x-3) = 0 \Rightarrow x = 1$ or $x = 3$ <span class="why">Factorise and solve for $x$.</span></li>
+<li>$(1,\ 2)$ and $(3,\ 4)$ <span class="why">Find the $y$-values: substitute into $y = x + 1$, the simpler equation.</span></li>
 </ol>
 </details></div>
 <h3>Tangency: one point, equal roots</h3>
@@ -285,10 +286,10 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
   <p class="hint">The curve is $y = x^2 + 4$. Move the line $y = mx + k$ and watch the quadratic $x^2 - mx + (4 - k) = 0$ that their meeting gives. Tangency happens exactly when its discriminant is zero.</p>
 </div>
 <div class="worked"><p class="worked-title">Worked example 12 · P1 · show that a line is a tangent</p>
-<p>Show that the line $y = 4x - 5$ is a tangent to the curve $y = x^2 - 2x + 4$, and find the point of contact.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$x^2 - 2x + 4 = 4x - 5 \Rightarrow x^2 - 6x + 9 = 0$ <span class="why">Equate and rearrange.</span></li>
+<p><span class="q-part">(a)</span> Show that the line $y = 4x - 5$ is a tangent to the curve $y = x^2 - 2x + 4$. [3] <span class="q-part">(b)</span> Find the point of contact. [1]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$x^2 - 2x + 4 = 4x - 5 \Rightarrow x^2 - 6x + 9 = 0$ <span class="why">Strategy: equate, then rearrange to standard form.</span></li>
 <li>$b^2 - 4ac = 36 - 36 = 0$ <span class="why">Find the discriminant.</span></li>
 <li>The discriminant is zero, so there are equal roots and the line is a tangent. <span class="why">Communicate the conclusion.</span></li>
 <li>$(x-3)^2 = 0 \Rightarrow x = 3$, $y = 4(3) - 5 = 7$. Point of contact $(3,\ 7)$. <span class="why">Find the point.</span></li>
@@ -325,27 +326,30 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
   <p class="hint">Choose $f$ and $g$ and an input. The minecart carries the value through $g$ first, then $f$. Swap the order to see that $f(g(x))$ and $g(f(x))$ are usually different.</p>
 </div>
 <div class="worked"><p class="worked-title">Worked example 13 · P1 · both orders</p>
-<p>$f(x) = 3x - 1$ and $g(x) = x^2 + 2$. Find (a) $f(g(x))$ and (b) $g(f(x))$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $f(g(x)) = f(x^2 + 2) = 3(x^2 + 2) - 1 = 3x^2 + 5$ <span class="why">Replace every $x$ in $f$ with the whole of $g(x)$, in a bracket.</span></li>
-<li>(b) $g(f(x)) = g(3x - 1) = (3x-1)^2 + 2 = 9x^2 - 6x + 3$ <span class="why">Now $f(x)$ goes into $g$.</span></li>
+<p>$f(x) = 3x - 1$ and $g(x) = x^2 + 2$. Find <span class="q-part">(a)</span> $f(g(x))$ [2] and <span class="q-part">(b)</span> $g(f(x))$. [2]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $f(g(x)) = f(x^2 + 2) = 3(x^2 + 2) - 1$ <span class="why">Substitute: replace every $x$ in $f$ with the whole of $g(x)$, in a bracket.</span></li>
+<li>$= 3x^2 + 5$ <span class="why">Simplify.</span></li>
+<li>(b) $g(f(x)) = g(3x - 1) = (3x-1)^2 + 2$ <span class="why">Substitute: now $f(x)$ goes into $g$.</span></li>
+<li>$= 9x^2 - 6x + 3$ <span class="why">Expand and simplify.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 14 · P1 · domain of a composite</p>
-<p>$f(x) = \dfrac{1}{x - 5}$ and $g(x) = x^2 + 1$. Find $f(g(x))$ and state a suitable domain.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(g(x)) = \dfrac{1}{x^2 + 1 - 5} = \dfrac{1}{x^2 - 4}$ <span class="why">Substitute $g(x)$ into $f$ and simplify.</span></li>
-<li>$x^2 - 4 = 0$ when $x = \pm 2$, so the domain is $x \in \mathbb{R},\ x \ne \pm 2$ <span class="why">Exclude any value that makes the denominator zero.</span></li>
+<p>$f(x) = \dfrac{1}{x - 5}$ and $g(x) = x^2 + 1$. <span class="q-part">(a)</span> Find $f(g(x))$. [2] <span class="q-part">(b)</span> State a suitable domain for $f(g(x))$. [1]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(g(x)) = \dfrac{1}{(x^2 + 1) - 5}$ <span class="why">Substitute $g(x)$ into $f$.</span></li>
+<li>$= \dfrac{1}{x^2 - 4}$ <span class="why">Simplify.</span></li>
+<li>$x^2 - 4 = 0$ when $x = \pm 2$, so the domain is $x \in \mathbb{R},\ x \ne \pm 2$ <span class="why">State the domain: exclude any value that makes the denominator zero.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 15 · P1 · using the range</p>
 <p>$f(x) = \log_2 x$ and $g(x) = 2 + \cos x$. Explain why $f(g(x))$ is defined for every real number $x$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$-1 \le \cos x \le 1$, so the range of $g$ is $1 \le g(x) \le 3$. <span class="why">Find the range of the inner function.</span></li>
-<li>Every output of $g$ is positive, and $\log_2$ is defined for all positive inputs, so $f(g(x))$ is defined for all $x \in \mathbb{R}$. <span class="why">Link the range of $g$ to the domain of $f$.</span></li>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>$-1 \le \cos x \le 1$, so the range of $g$ is $1 \le g(x) \le 3$. <span class="why">Strategy: find the range of the inner function.</span></li>
+<li>Every output of $g$ is positive, and $\log_2$ is defined for all positive inputs, so $f(g(x))$ is defined for all $x \in \mathbb{R}$. <span class="why">Communicate: link the range of $g$ to the domain of $f$.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>On composite functions, "most candidates did not apply knowledge of the range of a function". The question to ask is always: <strong>what can come out of the inner function, and can the outer function cope with it?</strong></p></div>
@@ -359,8 +363,8 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 </ol>
 <div class="worked"><p class="worked-title">Worked example 16 · P1 · inverse of a rational function</p>
 <p>$f(x) = \dfrac{2}{x - 1}$, $x \ne 1$. Find $f^{-1}(x)$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
 <li>$y = \dfrac{2}{x-1} \Rightarrow x - 1 = \dfrac{2}{y}$ <span class="why">Start to rearrange: multiply by $(x-1)$, divide by $y$.</span></li>
 <li>$x = 1 + \dfrac{2}{y}$ <span class="why">Make $x$ the subject.</span></li>
 <li>$f^{-1}(x) = 1 + \dfrac{2}{x}$, $x \ne 0$ <span class="why">Swap the letters and write it as $f^{-1}(x)$.</span></li>
@@ -399,11 +403,11 @@ $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
 <p>With a number multiplying $x$ inside the bracket, $y = f(bx + c)$, a point at $x_0$ moves to $\dfrac{x_0 - c}{b}$: shift first, then squash. For example $y = f(2x)$ halves every $x$-coordinate, so the graph is squashed towards the $y$-axis. The chart-table transformer above uses this general rule.</p>
 <div class="worked"><p class="worked-title">Worked example 17 · P1 · two labelled points</p>
 <p>The graph of $y = f(x)$ has a maximum turning point at $(-1,\ 2)$ and a minimum turning point at $(1,\ -2)$. Sketch $y = 2f(x - 1) + 3$, showing the images of the turning points.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$f(x - 1)$: move right 1. $(-1, 2) \to (0, 2)$ and $(1, -2) \to (2, -2)$. <span class="why">Inside the bracket, $-1$ means right 1.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$f(x - 1)$: move right 1. $(-1, 2) \to (0, 2)$ and $(1, -2) \to (2, -2)$. <span class="why">Horizontal translation: inside the bracket, $-1$ means right 1.</span></li>
 <li>$2f(\dots)$: double each $y$. $(0, 2) \to (0, 4)$ and $(2, -2) \to (2, -4)$. <span class="why">Vertical stretch, scale factor 2.</span></li>
-<li>$+3$: up 3. Maximum $(0,\ 7)$, minimum $(2,\ -1)$. <span class="why">Draw the same shape through these points.</span></li>
+<li>$+3$: up 3. Maximum $(0,\ 7)$, minimum $(2,\ -1)$. <span class="why">Vertical translation: draw the same shape through these points, labelled.</span></li>
 </ol>
 <p>Since $a = 2$ is positive, the maximum is still a maximum. If $a$ were negative, the reflection would turn maxima into minima.</p>
 </details></div>
@@ -436,11 +440,14 @@ $$y = \log_a x \iff x = a^y.$$
 </div>
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Is $\log(x + y)$ the same as $\log x + \log y$?"</p><p><strong>Captain Grant:</strong> "No, and the purser would lose his job if it were. There is no law for the log of a sum. $\log_{10}(10 + 10) = \log_{10} 20 \approx 1.30$, but $\log_{10} 10 + \log_{10} 10 = 2$. The laws only turn a <em>sum of logs</em> into the <em>log of a product</em>."</p></div>
 <div class="worked"><p class="worked-title">Worked example 18 · P1 · simplify</p>
-<p>Evaluate (a) $\log_2 40 - \log_2 5$ and (b) $2\log_5 10 - \log_5 4$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\log_2 \frac{40}{5} = \log_2 8 = 3$ <span class="why">Subtracting logs divides; $2^3 = 8$.</span></li>
-<li>(b) $\log_5 10^2 - \log_5 4 = \log_5 \frac{100}{4} = \log_5 25 = 2$ <span class="why">Move the 2 up as a power first, then combine.</span></li>
+<p>Evaluate <span class="q-part">(a)</span> $\log_2 40 - \log_2 5$ [2] and <span class="q-part">(b)</span> $2\log_5 10 - \log_5 4$. [3]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\log_2 \frac{40}{5} = \log_2 8$ <span class="why">Use a log law: subtracting logs divides.</span></li>
+<li>$= 3$ <span class="why">Evaluate: $2^3 = 8$.</span></li>
+<li>(b) $\log_5 10^2 - \log_5 4 = \log_5 100 - \log_5 4$ <span class="why">Use the power law first: move the 2 up as a power.</span></li>
+<li>$= \log_5 \frac{100}{4} = \log_5 25$ <span class="why">Use the subtraction law to combine.</span></li>
+<li>$= 2$ <span class="why">Evaluate: $5^2 = 25$.</span></li>
 </ol>
 </details></div>
 
@@ -448,20 +455,21 @@ $$y = \log_a x \iff x = a^y.$$
 <p>Combine everything into a single log, then convert to exponential form using $\log_a x = y \iff x = a^y$. Finally check each answer: you cannot take the log of zero or a negative, so some algebraic solutions must be rejected.</p>
 <div class="worked"><p class="worked-title">Worked example 19 · P1 · reject a solution</p>
 <p>Solve $\log_3(x+1) + \log_3(x-1) = 1$, $x \gt 1$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
 <li>$\log_3\big((x+1)(x-1)\big) = 1$ <span class="why">Use a log law to make one log.</span></li>
 <li>$(x+1)(x-1) = 3^1 \Rightarrow x^2 - 1 = 3$ <span class="why">Convert to exponential form.</span></li>
-<li>$x^2 = 4 \Rightarrow x = 2$ (since $x \gt 1$, reject $x = -2$) <span class="why">Solve and use the domain.</span></li>
+<li>$x^2 = 4 \Rightarrow x = \pm 2$ <span class="why">Solve.</span></li>
+<li>$x = 2$ (since $x \gt 1$, reject $x = -2$) <span class="why">Use the domain to discard the invalid solution.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 20 · P1 · a quotient</p>
 <p>Solve $\log_2(x+5) - \log_2(x-2) = 3$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$\log_2 \dfrac{x+5}{x-2} = 3$ <span class="why">Subtracting logs divides.</span></li>
-<li>$\dfrac{x+5}{x-2} = 2^3 = 8$ <span class="why">Exponential form.</span></li>
-<li>$x + 5 = 8x - 16 \Rightarrow 7x = 21 \Rightarrow x = 3$ <span class="why">Check: $x - 2 = 1 \gt 0$, so both logs exist.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\log_2 \dfrac{x+5}{x-2} = 3$ <span class="why">Use a log law: subtracting logs divides.</span></li>
+<li>$\dfrac{x+5}{x-2} = 2^3 = 8$ <span class="why">Convert to exponential form.</span></li>
+<li>$x + 5 = 8x - 16 \Rightarrow 7x = 21 \Rightarrow x = 3$ <span class="why">Solve. Check: $x - 2 = 1 \gt 0$, so both logs exist.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>"Some candidates did not convert from logarithmic form to exponential form correctly, and some candidates incorrectly attempted to 'cancel out' logs." You can never cross out "log" from both sides of $\log_2(x+5) - \log_2(x-2) = 3$. Combine into one log, then use the definition.</p></div>
@@ -469,11 +477,13 @@ $$y = \log_a x \iff x = a^y.$$
 <h3>Solving exponential equations</h3>
 <p>When the unknown is in a power, take logs of both sides (any base, but $\ln$ or $\log_{10}$ is on your calculator) and bring the power down.</p>
 <div class="worked"><p class="worked-title">Worked example 21 · P2 · unknown in the power</p>
-<p>Solve (a) $5^x = 30$ and (b) $e^{2x} = 7$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $\ln 5^x = \ln 30 \Rightarrow x\ln 5 = \ln 30 \Rightarrow x = \dfrac{\ln 30}{\ln 5} = 2.11$ <span class="why">Take logs; the power comes down.</span></li>
-<li>(b) $2x = \ln 7 \Rightarrow x = \dfrac{\ln 7}{2} = 0.973$ <span class="why">$\ln$ undoes $e$ directly.</span></li>
+<p>Solve <span class="q-part">(a)</span> $5^x = 30$ [2] and <span class="q-part">(b)</span> $e^{2x} = 7$. [2]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\ln 5^x = \ln 30 \Rightarrow x\ln 5 = \ln 30$ <span class="why">Take logs of both sides; the power comes down.</span></li>
+<li>$x = \dfrac{\ln 30}{\ln 5} = 2.11$ <span class="why">Solve for $x$.</span></li>
+<li>(b) $2x = \ln 7$ <span class="why">Take natural logs: $\ln$ undoes $e$ directly.</span></li>
+<li>$x = \dfrac{\ln 7}{2} = 0.973$ <span class="why">Solve for $x$.</span></li>
 </ol>
 </details></div>
 
@@ -484,12 +494,13 @@ $$y = \log_a x \iff x = a^y.$$
   <p class="hint">After firing, the barrel's temperature is modelled by $T = 20 + 180e^{-kt}$ °C, $t$ minutes later. Set the cooling rate $k$ and the safe temperature for reloading. The widget solves for $t$ with logs, showing every line.</p>
 </div>
 <div class="worked"><p class="worked-title">Worked example 22 · P2 · how long until it is safe?</p>
-<p>The barrel temperature is $T = 20 + 180e^{-0.05t}$ °C. (a) What is the temperature just after firing? (b) How long does it take to cool to 50 °C?</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>(a) $t = 0$: $T = 20 + 180e^0 = 200$ °C <span class="why">$e^0 = 1$.</span></li>
-<li>(b) $20 + 180e^{-0.05t} = 50 \Rightarrow e^{-0.05t} = \dfrac{30}{180} = \dfrac16$ <span class="why">Isolate the exponential first.</span></li>
-<li>$-0.05t = \ln\dfrac16 \Rightarrow t = \dfrac{\ln 6}{0.05} = 35.8$ minutes <span class="why">Take natural logs. $\ln\frac16 = -\ln 6$.</span></li>
+<p>The barrel temperature is $T = 20 + 180e^{-0.05t}$ °C. <span class="q-part">(a)</span> What is the temperature just after firing? [1] <span class="q-part">(b)</span> How long does it take to cool to 50 °C? [3]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $t = 0$: $T = 20 + 180e^0 = 200$ °C <span class="why">Evaluate at $t = 0$: $e^0 = 1$.</span></li>
+<li>(b) $20 + 180e^{-0.05t} = 50 \Rightarrow e^{-0.05t} = \dfrac{30}{180} = \dfrac16$ <span class="why">Substitute and isolate the exponential first.</span></li>
+<li>$-0.05t = \ln\dfrac16$ <span class="why">Take natural logs to convert to logarithmic form.</span></li>
+<li>$t = \dfrac{\ln 6}{0.05} = 35.8$ minutes <span class="why">Solve for $t$: $\ln\frac16 = -\ln 6$.</span></li>
 </ol>
 </details></div>
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2026 course report</div><p>In 2026's question the model was $800e^{-0.124t} + 25$. "A few candidates gave 800 as the answer to part (a)": the starting value is $800e^0 + 25 = 825$, so do not drop the $+25$. Many "made errors when converting the equation from exponential form to logarithmic form". Isolate the exponential term <strong>before</strong> you take logs: $\ln(20 + 180e^{-0.05t})$ does not simplify.</p></div>
@@ -522,9 +533,9 @@ $$y = \log_a x \iff x = a^y.$$
 <figcaption>Left: the graph in the next worked example. Right: the one after it, $y = 3^x - 2$ (blue) and its inverse (red), mirror images in $y = x$.</figcaption></figure>
 <div class="worked"><p class="worked-title">Worked example 23 · P1 · identify a log function from its graph</p>
 <p>The graph of $y = \log_b(x - a)$ has the line $x = 2$ as an asymptote and passes through $(7, 1)$. Find $a$ and $b$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$a = 2$ <span class="why">$y = \log_b x$ has asymptote $x = 0$. Replacing $x$ by $x - a$ moves the graph $a$ to the right, so the asymptote is $x = a$.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$a = 2$ <span class="why">State $a$ from the asymptote: $y = \log_b x$ has asymptote $x = 0$. Replacing $x$ by $x - a$ moves the graph $a$ to the right, so the asymptote is $x = a$.</span></li>
 <li>$1 = \log_b(7 - 2) = \log_b 5$ <span class="why">Substitute the point $(7, 1)$.</span></li>
 <li>$b^1 = 5$, so $b = 5$ <span class="why">Convert to exponential form: $\log_b 5 = 1$ means $b^1 = 5$.</span></li>
 </ol>
@@ -532,12 +543,14 @@ $$y = \log_a x \iff x = a^y.$$
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 24 · P1 · sketch the inverse</p>
 <p>Sketch $y = 3^x - 2$ and, on the same axes, the graph of its inverse. Mark the asymptotes and two points on each graph.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$y = 3^x$ passes through $(0, 1)$ and $(1, 3)$ with asymptote $y = 0$. Moving it down 2 gives $(0, -1)$, $(1, 1)$ and asymptote $y = -2$. <span class="why">Transform the known points of the basic graph, $y = f(x) - 2$.</span></li>
-<li>The inverse is the reflection in $y = x$: swap every coordinate. It passes through $(-1, 0)$ and $(1, 1)$, with asymptote $x = -2$. <span class="why">Reflecting swaps $x$ and $y$, for the asymptote too.</span></li>
-<li>Its equation, if asked: $x = 3^y - 2 \Rightarrow y = \log_3(x + 2)$. <span class="why">Swap $x$ and $y$, then make $y$ the subject.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$y = 3^x$ passes through $(0, 1)$ and $(1, 3)$. Moving it down 2 gives an exponential curve through $(0, -1)$ and $(1, 1)$. <span class="why">Sketch $y = 3^x - 2$: transform the known points of the basic graph, $y = f(x) - 2$.</span></li>
+<li>$y = 3^x$ has asymptote $y = 0$, so $y = 3^x - 2$ has asymptote $y = -2$. <span class="why">Mark its asymptote.</span></li>
+<li>The inverse is the reflection in $y = x$: swap every coordinate. It passes through $(-1, 0)$ and $(1, 1)$. <span class="why">Sketch the inverse: reflecting swaps $x$ and $y$.</span></li>
+<li>Its asymptote is $x = -2$. <span class="why">Mark its asymptote: the swap applies to the asymptote too.</span></li>
 </ol>
+<p>Its equation, if asked: $x = 3^y - 2 \Rightarrow y = \log_3(x + 2)$. Swap $x$ and $y$, then make $y$ the subject.</p>
 </details></div>
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>identify a transformed exponential or log function from its graph, and sketch the inverse of one;</li><li>switch between $y = \log_a x$ and $x = a^y$;</li><li>use the three laws of logs to simplify and to solve equations, rejecting impossible solutions;</li><li>solve $a^x = b$ and $e^{kx} = b$ by taking logs;</li><li>use and find unknowns in exponential models;</li><li>sketch $y = a^x$ and $y = \log_a x$ as inverses of each other.</li></ul></div>
 <div class="check" data-check="alg-explog"></div>
@@ -563,30 +576,32 @@ $$\log y = b\log x + \log a.$$
 </div>
 <div class="worked"><p class="worked-title">Worked example 25 · P1 · a power law</p>
 <p>The graph of $\log_2 y$ against $\log_2 x$ is a straight line through $(0,\ 3)$ and $(4,\ 11)$. Find $a$ and $b$ such that $y = ax^b$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>Gradient $= \dfrac{11 - 3}{4 - 0} = 2$, intercept $= 3$, so $\log_2 y = 2\log_2 x + 3$ <span class="why">Find the line's equation.</span></li>
-<li>$\log_2 y = \log_2 x^2 + \log_2 2^3 = \log_2(8x^2)$ <span class="why">Write $3$ as $\log_2 8$ and combine.</span></li>
-<li>$y = 8x^2$, so $a = 8$ and $b = 2$ <span class="why">Remove the logs: both sides are $\log_2$ of something.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Gradient $= \dfrac{11 - 3}{4 - 0} = 2$ <span class="why">Find the gradient of the line.</span></li>
+<li>Intercept $= 3$, so $\log_2 y = 2\log_2 x + 3$ <span class="why">State the line's equation.</span></li>
+<li>$\log_2 y = \log_2 x^2 + \log_2 2^3 = \log_2(8x^2)$ <span class="why">Use the laws of logs: write $3$ as $\log_2 8$ and combine.</span></li>
+<li>$y = 8x^2$, so $a = 8$ and $b = 2$ <span class="why">State $a$ and $b$: remove the logs, since both sides are $\log_2$ of something.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 26 · P1 · a power law from two points</p>
 <p>The relationship $y = ax^b$ fits the data points $(2,\ 20)$ and $(8,\ 320)$. Find $a$ and $b$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$20 = a \times 2^b$ and $320 = a \times 8^b$ <span class="why">Substitute each point.</span></li>
-<li>$\dfrac{320}{20} = \dfrac{8^b}{2^b} \Rightarrow 16 = 4^b \Rightarrow b = 2$ <span class="why">Divide to eliminate $a$.</span></li>
-<li>$20 = a \times 2^2 \Rightarrow a = 5$, so $y = 5x^2$ <span class="why">Substitute back.</span></li>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$20 = a \times 2^b$ and $320 = a \times 8^b$ <span class="why">Strategy: substitute each point.</span></li>
+<li>$\dfrac{320}{20} = \dfrac{8^b}{2^b} \Rightarrow 16 = 4^b$ <span class="why">Divide to eliminate $a$.</span></li>
+<li>$b = 2$ <span class="why">Solve for $b$: $4^2 = 16$.</span></li>
+<li>$20 = a \times 2^2 \Rightarrow a = 5$, so $y = 5x^2$ <span class="why">Substitute back to find $a$.</span></li>
 </ol>
 <p>With less friendly numbers, take logs instead: $\log y = b\log x + \log a$ is a straight line in $(\log x, \log y)$. Its gradient is $b = \dfrac{\log 320 - \log 20}{\log 8 - \log 2}$, and then $\log a = \log 20 - b\log 2$. On a calculator paper, use $\ln$ or $\log_{10}$, either works.</p>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 27 · P1 · an exponential</p>
 <p>The graph of $\log_3 y$ against $x$ is a straight line through $(0,\ 2)$ with gradient 1. Express $y$ in the form $y = ab^x$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$\log_3 y = x + 2$ <span class="why">The line's equation.</span></li>
-<li>$y = 3^{x+2} = 3^2 \times 3^x = 9 \times 3^x$ <span class="why">Exponential form, then split the power.</span></li>
-<li>$a = 9$, $b = 3$ <span class="why">Compare with $ab^x$.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\log_3 y = x + 2$ <span class="why">State the line's equation.</span></li>
+<li>$y = 3^{x+2} = 3^2 \times 3^x = 9 \times 3^x$ <span class="why">Convert to exponential form, then split the power.</span></li>
+<li>$a = 9$, $b = 3$ <span class="why">State $a$ and $b$: compare with $ab^x$.</span></li>
 </ol>
 <p>Alternatively compare with $\log_3 y = x\log_3 b + \log_3 a$: $\log_3 b = 1$ gives $b = 3$, and $\log_3 a = 2$ gives $a = 9$.</p>
 </details></div>
@@ -612,28 +627,28 @@ $$L = \frac{b}{1 - a}.$$
 <p>If $a \ge 1$ or $a \le -1$ the sequence does not, in general, converge to a limit. For $a \gt 1$ or $a \lt -1$ the terms run away from $\frac{b}{1-a}$ (growing without end, or swinging ever more wildly); for $a = -1$ they flip between two values for ever; for $a = 1$ they go up or down by $b$ each time. So $L = \frac{b}{1-a}$ is not a limit there, even when it gives a number. (Only the start $u_0 = \frac{b}{1-a}$ stays put, and then every term is the same.)</p>
 <div class="worked"><p class="worked-title">Worked example 28 · P1 · state why a limit exists</p>
 <p>A sequence is defined by $u_{n+1} = 0.6u_n + 12$. Explain why it has a limit, and find it.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>A limit exists because $-1 \lt 0.6 \lt 1$. <span class="why">State the condition with the actual value of $a$.</span></li>
-<li>$L = 0.6L + 12$ or $L = \dfrac{12}{1 - 0.6}$ <span class="why">Set up the limit.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>A limit exists because $-1 \lt 0.6 \lt 1$. <span class="why">Communicate: state the condition with the actual value of $a$.</span></li>
+<li>$L = 0.6L + 12$ or $L = \dfrac{12}{1 - 0.6}$ <span class="why">Strategy: set up the limit.</span></li>
 <li>$L = \dfrac{12}{0.4} = 30$ <span class="why">Evaluate.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 29 · P1 · find the rule from three terms</p>
 <p>A sequence satisfies $u_{n+1} = au_n + b$, with $u_1 = 4$, $u_2 = 10$ and $u_3 = 22$. Find $a$ and $b$.</p>
-<details><summary>Show solution</summary>
-<ol class="step-list">
-<li>$10 = 4a + b$ and $22 = 10a + b$ <span class="why">Write the rule for $u_2$ and for $u_3$.</span></li>
-<li>Subtract: $12 = 6a \Rightarrow a = 2$ <span class="why">Solve simultaneously.</span></li>
-<li>$b = 10 - 8 = 2$ <span class="why">Substitute back.</span></li>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$10 = 4a + b$ and $22 = 10a + b$ <span class="why">Strategy: write the rule for $u_2$ and for $u_3$.</span></li>
+<li>Subtract: $12 = 6a \Rightarrow a = 2$ <span class="why">Solve simultaneously for $a$.</span></li>
+<li>$b = 10 - 8 = 2$ <span class="why">Substitute back to find $b$.</span></li>
 </ol>
 </details></div>
 <div class="worked"><p class="worked-title">Worked example 30 · P2 · when does it pass a target?</p>
 <p>The tank model is $u_{n+1} = 0.85u_n + 40$, $u_0 = 100$. After how many days does the tank first hold more than 250 litres?</p>
-<details><summary>Show solution</summary>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <p>Use your calculator's "Ans" key: type 100, then repeatedly enter <code>0.85 × Ans + 40</code>, counting the presses. Write the terms down so the marker can see your method.</p>
-<ol class="step-list">
-<li>$u_1 = 125$, $u_2 = 146.25$, $u_3 = 164.31$, … , $u_{14} = 249.54$, $u_{15} = 252.11$ <span class="why">Generate terms until you pass 250.</span></li>
+<ol class="step-list marks">
+<li>$u_1 = 125$, $u_2 = 146.25$, $u_3 = 164.31$, … , $u_{14} = 249.54$, $u_{15} = 252.11$ <span class="why">Strategy: generate terms until you pass 250.</span></li>
 <li>The tank first holds more than 250 litres after <b>15 days</b>. <span class="why">State the value of $n$ in context.</span></li>
 </ol>
 </details></div>
