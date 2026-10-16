@@ -742,7 +742,7 @@
     function summary() {
       const mx = sol.T.reduce((m, v, i) => (Math.abs(v) > Math.abs(sol.T[m]) ? i : m), 0);
       return `<b>All forces found.</b> Largest: member ${mnames[mx]} at ${F3(Math.abs(sol.T[mx]))} kN (${sol.T[mx] > 0 ? "tension" : "compression"}). Red members are pulled (tension), blue members are squeezed (compression).` +
-        (TRUSS_PRESETS[key].ropes.some((i) => sol.T[i] < -1e-6) ? ` <b class="bad">A rope has come out in compression: in real life that stay would go slack.</b>` : "") +
+        (model.ropes.some((i) => sol.T[i] < -1e-6) ? ` <b class="bad">A rope has come out in compression: in real life that stay would go slack.</b>` : "") +
         (sol.T.some((v) => Math.abs(v) < 1e-6) ? " A member showing 0 is a <b>zero-force member</b>: it carries nothing under this load, but it still stops the frame folding if the load moves." : "");
     }
     function explain(s) {
@@ -763,7 +763,7 @@
       const eq = (K, f, lab) => `${lab}: ${F3(K)} ${s.cols.map((c) => co(f(c), ` ${c.kind === "m" ? "F" : nm}<sub>${c.kind === "m" ? mnames[c.i] : c.d}</sub>`)).join(" ")} = 0`;
       h += `${eq(s.Kx, (c) => c.cx, "ΣF<sub>h</sub> = 0")}<br>${eq(s.Ky, (c) => c.cy, "ΣF<sub>v</sub> = 0")}<br>`;
       h += "<b>Solve:</b> " + s.cols.map((c) => c.kind === "m" ? `F<sub>${mnames[c.i]}</sub> = ${c.val >= 0 ? "+" : "−"}${F3(Math.abs(c.val))} kN → <b>${Math.abs(c.val) < 1e-6 ? "zero-force member" : c.val > 0 ? "tension (T)" : "compression (C)"}</b>` : `${nm}<sub>${c.d}</sub> = ${F3(Math.abs(c.val))} kN ${c.d === "y" ? (c.val >= 0 ? "↑" : "↓") : (c.val >= 0 ? "→" : "←")}`).join(" &nbsp;|&nbsp; ");
-      if (s.cols.some((c) => c.kind === "m" && P.ropes.includes(c.i) && c.val < -1e-6)) h += `<br><b class="bad">A rope in compression: it would go slack. This stay cannot work with this load.</b>`;
+      if (s.cols.some((c) => c.kind === "m" && model.ropes.includes(c.i) && c.val < -1e-6)) h += `<br><b class="bad">A rope in compression: it would go slack. This stay cannot work with this load.</b>`;
       if (!s.cols.length) h += `Everything here is already known: the joint just <b>checks</b> (residual ${F3(Math.hypot(...s.residual))} kN).`;
       return h;
     }
@@ -1299,7 +1299,7 @@
       height: (w) => (w >= 560 ? 300 : 330),
       draw(ctx, t, dt, C, Sd) {
         if (animating) { app += dt / 1.5; if (app >= 1) { app = 1; animating = false; setTimeout(() => sim.pause(), 0); } }
-        const r = R, wide = Sd.w >= 560;
+        const r = R || calc(), wide = Sd.w >= 560;
         const P1 = { x: 0, y: 0, w: wide ? Sd.w * 0.42 : Sd.w, h: wide ? Sd.h : 200 }, P2 = { x: wide ? P1.w : 0, y: wide ? 0 : 200, w: wide ? Sd.w - P1.w : Sd.w, h: wide ? Sd.h : Sd.h - 200 };
         // ---- the member
         const eased = app * app * (3 - 2 * app);
