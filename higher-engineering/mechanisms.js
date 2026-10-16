@@ -1454,7 +1454,7 @@
   });
 
   mount("w-ep", (box) => {
-    const SEQS = { e1: { label: "A+ B+ A− B−", seq: "A+ B+ A- B-" }, e2: { label: "A+ B+ B− A−", seq: "A+ B+ B- A-" } };
+    const SEQS = { e1: { label: "A+ B+ A− B−", seq: "A+ B+ A- B-" }, e2: { label: "A+ B+ C+ A− B− C−", seq: "A+ B+ C+ A- B- C-" } };
     let key = "e1", cont = false;
     const host = HE.el("div"); box.append(host);
     const sim = createSim(host, { mode: "ep" });
@@ -1463,7 +1463,7 @@
     const cb = HE.el("input", { type: "checkbox" }); cb.addEventListener("change", () => { cont = cb.checked; cfg(); });
     box.append(HE.el("div", { class: "btn-row" }, HE.el("label", { style: "display:flex;gap:6px;align-items:center" }, cb, "Use relay K1 to latch a continuous cycle (STOP releases it)")));
     box.append(note(box, "mec-why"));
-    box.lastChild.innerHTML = "Each coil's rung shows the contacts that must ALL be closed (AND). Because the electrical logic can include an interlock (for example <b>a1 · b0</b> for B+), the conflict that jams the pure-pneumatic version of A+ B+ B− A− never happens here.";
+    box.lastChild.innerHTML = "Each coil's rung shows the contacts that must ALL be closed (AND): the limit switch that says the last step has finished, plus an interlock on the cylinder's own opposite limit switch so that the two coils of one valve are never energised together. Sequences where one limit switch must trigger two different steps need relays to latch the stages, which this simplified circuit does not include.";
     function cfg() { sim.configure({ seq: SEQS[key].seq, cont }); }
     cfg();
   });

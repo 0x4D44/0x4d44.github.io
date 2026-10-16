@@ -153,3 +153,19 @@ figure.diagram svg.dg-svg, .dg-svg { display: block; width: 100%; height: auto; 
 .dg-wave.red { stroke: var(--dg-hi); }
 .dg-axis { stroke: var(--muted); stroke-width: 1.2; fill: none; }
 .dg-dash { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+
+/* ---------- hand-drawn figures and small helpers ---------- */
+.dg-ft { font: 600 12.5px var(--font-body); fill: var(--ink); }
+.dg-ft2 { font: 500 11px var(--font-body); fill: var(--muted); }
+.dg-fm { font: 700 11px var(--font-mono); fill: var(--ink); }
+.dg-fb { fill: var(--card); stroke: var(--ink-2); stroke-width: 2; }
+.dg-fb.a { fill: color-mix(in srgb, var(--gold-bright) 20%, var(--card)); }
+.dg-fb.b { fill: color-mix(in srgb, var(--sea) 14%, var(--card)); }
+.dg-fl { stroke: var(--ink-2); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.dg-ff { fill: var(--ink-2); stroke: none; }
+.dg-trio { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: end; }
+.dg-trio > div { min-width: 0; text-align: center; font-size: .9rem; }
+.dg-fade { animation: dg-fadein .5s ease both; }
+@keyframes dg-fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dg-fade { animation: none; } }
+:root[data-motion="reduce"] .dg-fade { animation: none; }

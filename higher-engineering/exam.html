@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam &amp; assignment &middot; Rivets, Relays &amp; Rigging</title>
+<meta name="description" content="Higher Engineering Science exam technique and the 50-mark assignment: how the 160 marks are won, the Data Booklet, answering well, test plans and evaluations, a revision map, and a timed mock paper with marking guidance.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="exam.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%233a1c0c'/%3E%3Crect x='5' y='1' width='6' height='14' fill='%23d9a04f'/%3E%3Crect x='1' y='5' width='14' height='6' fill='%23d9a04f'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23d9a04f'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%238a4210'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23c8102e'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz-systems.js"></script>
+<script src="quiz-analogue.js"></script>
+<script src="quiz-digital.js"></script>
+<script src="quiz-mechanisms.js"></script>
+<script src="quiz-structures.js"></script>
+<script src="quiz-exam.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Rivets, Relays and Rigging — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="4" height="16" fill="#d9a04f"/><rect x="0" y="6" width="16" height="4" fill="#d9a04f"/><rect x="2" y="2" width="12" height="12" fill="#d9a04f"/><rect x="1" y="3" width="14" height="10" fill="#d9a04f"/><rect x="3" y="1" width="10" height="14" fill="#d9a04f"/><rect x="4" y="4" width="8" height="8" fill="#8a4210"/><rect x="3" y="5" width="10" height="6" fill="#8a4210"/><rect x="5" y="3" width="6" height="10" fill="#8a4210"/><rect x="6" y="6" width="4" height="4" fill="#3a1c0c"/><rect x="7" y="7" width="2" height="2" fill="#c8102e"/></svg>
+      <span class="brand-text"><span class="brand-title">Rivets, Relays &amp; Rigging</span><span class="brand-sub">Higher Engineering Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="systems.html">Systems &amp; energy</a></li>
+        <li><a href="analogue.html">Analogue electronics</a></li>
+        <li><a href="digital.html">Digital &amp; programmable</a></li>
+        <li><a href="mechanisms.html">Drives &amp; pneumatics</a></li>
+        <li><a href="structures.html">Structures &amp; materials</a></li>
+        <li><a href="exam.html" aria-current="page">Exam &amp; assignment</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<!-- on the current deck's own page, give its nav link aria-current="page" -->
+
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The Admiralty Board · the Lieutenant's examination</p>
+<h1>The Lieutenant's examination: exam and assignment</h1>
+<p class="lede">Every officer on HMS Ratchet sat before the Admiralty Board once the rest of the training was done, and the Board did not ask what you knew. It asked what you could do, with the clock running and the Data Booklet on the table. This deck is that examination: how the 160 marks are won, what is (and is not) in the booklet, how to write answers that earn marks, how to survive the 50-mark assignment, a revision map, and a timed mock paper.</p>
+<div class="callout log"><div class="callout-title">⚓ Ship's log: Captain Callum Reid</div><p>"I have seen sound engineers fail an examination and middling ones pass it. The difference was never the engineering. The ones who passed read the question, did the working in order, wrote the unit, and spent their minutes where the marks were. Master Shipwright Kerr will show you how."</p></div>
+</div>
+
+<section id="assess" class="prose">
+<h2 data-short="How it is assessed">1 · How the course is assessed <span class="spec-tag">COURSE ASSESSMENT</span></h2>
+<p>Higher Engineering Science is graded A to D from <strong>one total</strong>: your question-paper mark plus your assignment mark, out of <strong>160</strong>. There is no separate pass for each part. That is good news, because a strong assignment can carry a weaker paper and the other way round. The awarding body is Qualifications Scotland, which took over from SQA on 1 February 2026; the course specification (version 2.0) and the Data Booklet (January 2026) are the documents in force.</p>
+<div class="quick-facts">
+  <div><b>160 marks</b><span>question paper + assignment, one grade</span></div>
+  <div><b>110 marks</b><span>question paper, 2 h 30 min (69%)</span></div>
+  <div><b>50 marks</b><span>assignment, 8 hours (31%)</span></div>
+  <div><b>1.36 min</b><span>per mark in the paper: 150 ÷ 110</span></div>
+</div>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 620 226" style="max-width:660px" role="img" aria-label="Bar chart of the 160 marks drawn to scale. The question paper is 110 marks, 69 per cent, made of Section 1 with 20 marks of short-answer questions and Section 2 with 90 marks of structured questions. The assignment is 50 marks, 31 per cent, over 8 hours, in five assessed skills with ranges: analysis 4 to 8, designing a solution 8 to 12, building the solution 8 to 12, testing 8 to 14, evaluation 8 to 14.">
+<g font-size="13" class="ink" text-anchor="middle">
+<text x="10" y="16" text-anchor="start" font-weight="700">Total: 160 marks (drawn to scale)</text>
+<rect x="10" y="24" width="412.5" height="40" class="f-sea s-sea" fill-opacity=".25" stroke-width="2.5"/>
+<text x="216" y="48" font-weight="700">Question paper: 110 marks · 2 h 30 min</text>
+<rect x="422.5" y="24" width="187.5" height="40" class="f-gold s-gold" fill-opacity=".25" stroke-width="2.5"/>
+<text x="516" y="48" font-weight="700">Assignment: 50</text>
+<rect x="10" y="74" width="75" height="40" class="f-violet s-violet" fill-opacity=".22" stroke-width="2"/>
+<text x="47" y="92" font-size="12" font-weight="700">Section 1</text><text x="47" y="107" font-size="12">20 marks</text>
+<rect x="85" y="74" width="337.5" height="40" class="f-sea s-sea" fill-opacity=".15" stroke-width="2"/>
+<text x="254" y="92" font-size="12" font-weight="700">Section 2: 90 marks</text><text x="254" y="107" font-size="12">structured questions</text>
+<text x="47" y="132" font-size="11" class="ink2">short answer</text>
+<text x="516" y="98" font-size="12">8 hours, closed book</text>
+<text x="516" y="112" font-size="12">five skills ↓</text>
+</g>
+<g font-size="12" class="ink" text-anchor="middle">
+<rect x="10" y="150" width="114" height="60" class="f-gold s-gold" fill-opacity=".25" stroke-width="2"/><text x="67" y="172" font-weight="700">Analysis</text><text x="67" y="192">4–8 marks</text>
+<rect x="131.5" y="150" width="114" height="60" class="f-gold s-gold" fill-opacity=".25" stroke-width="2"/><text x="188.5" y="172" font-weight="700">Designing</text><text x="188.5" y="192">8–12 marks</text>
+<rect x="253" y="150" width="114" height="60" class="f-gold s-gold" fill-opacity=".25" stroke-width="2"/><text x="310" y="172" font-weight="700">Building</text><text x="310" y="192">8–12 marks</text>
+<rect x="374.5" y="150" width="114" height="60" class="f-gold s-gold" fill-opacity=".25" stroke-width="2"/><text x="431.5" y="172" font-weight="700">Testing</text><text x="431.5" y="192">8–14 marks</text>
+<rect x="496" y="150" width="114" height="60" class="f-gold s-gold" fill-opacity=".25" stroke-width="2"/><text x="553" y="172" font-weight="700">Evaluation</text><text x="553" y="192">8–14 marks</text>
+</g>
+</svg></div><figcaption>Figure 1.1 · The 160 marks. The assignment's 50 marks are shared between five skills; each skill is worth a <em>range</em> of marks, not a fixed number.</figcaption></figure>
+
+<h3>The question paper: 110 marks, 2 hours 30 minutes</h3>
+<ul>
+<li><strong>Section 1</strong> is <strong>20 marks</strong> of short-answer questions. <strong>Section 2</strong> is <strong>90 marks</strong> of structured questions: a context, then parts (a), (b), (c)… that usually build on each other.</li>
+<li>The questions mix <strong>calculations</strong>, <strong>short or limited responses</strong> and <strong>extended responses</strong>. The specification says a proportion of the marks are for more challenging questions: ones that need you to interpret a bigger engineering context, to write a more detailed or justified description, to rearrange a formula, or to carry the result of one formula into the next.</li>
+<li>You are given the <strong>Data Booklet</strong> (formulae and data). The <strong>rounding instructions are on the front cover</strong> of the question paper: read them before you start.</li>
+<li>For programmable control you do <strong>not</strong> have to write code. If you draw a flowchart it must carry "sufficient and appropriate detail, such as input and output pin numbers and a delay unit".</li>
+</ul>
+
+<h3>Where the question-paper marks come from</h3>
+<p>The specification gives, for each area, a <strong>range</strong> of marks the paper may carry. The ranges overlap and the exact split changes from year to year, so treat them as a guide to <em>weight</em>, not a promise.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Area of the course</th><th class="num">Marks in the question paper</th><th>Learn it in</th></tr></thead>
+<tbody>
+<tr><td>Course themes: systems approach, energy and efficiency; engineering roles and disciplines; impacts of engineering</td><td class="num">10–17</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr><td>Analogue electronic control</td><td class="num">20–35</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr><td>Digital electronic control (including programmable control)</td><td class="num">15–25</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr><td>Drive systems and pneumatics</td><td class="num">10–20</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr><td>Structures and forces</td><td class="num">15–25</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr><td>Materials</td><td class="num">8–14</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+</tbody></table></div>
+<p>Add the bottom of each range and you get 78 marks; add the top and you get 136. The paper has exactly 110, so every paper sits somewhere in between. Two things follow. <strong>Analogue electronics is the heaviest area</strong> (up to 35 marks), and the 2024 course report says candidates "found analogue electronics more demanding". And <strong>no area can be skipped</strong>: even the smallest range, Materials, is worth up to 14 marks, and the course reports repeat that candidates must be prepared in all areas of the specification.</p>
+<div class="widget" id="w-plan">
+  <h3 class="widget-title">The quartermaster's revision plan</h3>
+  <p class="hint">Set how many hours you have, then rate your confidence in each area from 1 (very shaky) to 5 (very secure). The plan shares your hours in proportion to <em>(midpoint of the mark range) × (6 − confidence)</em>: more marks and less confidence both pull time towards an area. It is a rule of thumb for planning, not an official weighting.</p>
+</div>
+
+<h3>Timing: about 1.4 minutes per mark</h3>
+<p>The paper gives 150 minutes for 110 marks. That is $150 \div 110 = 1.3636\ldots$ minutes per mark, or about <strong>82 seconds a mark</strong>. Everything you do counts against it: reading, thinking, writing, drawing, checking. So a 2-mark question deserves about 2 min 44 s, and a 6-mark question about 8 min 11 s. If you split the paper in proportion to its marks, Section 1 (20 marks) takes about 27 minutes and Section 2 (90 marks) about 123 minutes. That is a planning guide, not a rule: you might finish Section 1 faster.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Marks</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">6</th><th class="num">10</th></tr></thead>
+<tbody><tr><td>Even-pace time</td><td class="num">1 min 22 s</td><td class="num">2 min 44 s</td><td class="num">4 min 5 s</td><td class="num">5 min 27 s</td><td class="num">8 min 11 s</td><td class="num">13 min 38 s</td></tr></tbody></table></div>
+<div class="widget" id="w-pace">
+  <h3 class="widget-title">The pace race</h3>
+  <p class="hint">The green line is the pace that finishes all 110 marks with your chosen checking time in hand. The orange line is your own pace. Press play to watch both dots run the clock, or drag the exam clock to scrub to any minute. Set your pace slower than the target to see marks left on the table.</p>
+</div>
+
+<h3>The assignment: 50 marks, 8 hours</h3>
+<p>The assignment is <strong>50 marks</strong> (31% of the total), set each year by Qualifications Scotland and marked externally. It is a problem-solving activity made of several tasks, done over <strong>8 hours</strong>, alone, in a supervised classroom, with no teacher help. Chapter 4 walks through it in detail. For now, remember the five skills and their mark ranges: <strong>Analysis 4–8</strong>, <strong>Designing a solution 8–12</strong>, <strong>Building the solution 8–12</strong>, <strong>Testing 8–14</strong> and <strong>Evaluation 8–14</strong>. Testing and evaluating together can be worth up to 28 of the 50 marks, and they are the skills the course reports say candidates find hardest.</p>
+
+<h3>Grade boundaries: what the marks have been</h3>
+<p>The grade boundary is the <strong>minimum total mark (out of 160)</strong> for each grade. It is set after the exams, from the evidence of how hard that year's paper and assignment turned out to be. Qualifications Scotland aims for a "notional" grade C at 50% of the marks (80 of 160) and a notional grade A at 70% (112 of 160), but adjusts the real boundaries up or down so that standards stay comparable. The three most recent years show the movement.</p>
+<div class="table-wrap"><table class="exm-data">
+<thead><tr><th>Minimum total mark</th><th class="num">2024</th><th class="num">2025</th><th class="num">2026</th></tr></thead>
+<tbody>
+<tr><td>A</td><td class="num">112 (70.0%)</td><td class="num">112 (70.0%)</td><td class="num">117 (73.1%)</td></tr>
+<tr><td>B</td><td class="num">95 (59.4%)</td><td class="num">96 (60.0%)</td><td class="num">103 (64.4%)</td></tr>
+<tr><td>C</td><td class="num">78 (48.8%)</td><td class="num">80 (50.0%)</td><td class="num">90 (56.3%)</td></tr>
+<tr><td>D</td><td class="num">61 (38.1%)</td><td class="num">64 (40.0%)</td><td class="num">76 (47.5%)</td></tr>
+<tr><td>Candidates awarded A / B / C / D / no award</td><td class="num">21.9 / 20.1 / 20.1 / 17.1 / 20.6%</td><td class="num">26.2 / 16.8 / 18.4 / 17.5 / 21.0%</td><td class="num">35.7 / 21.7 / 16.5 / 11.6 / 14.4%</td></tr>
+<tr><td>Resulted entries</td><td class="num">1,395</td><td class="num">1,399</td><td class="num">1,614</td></tr>
+</tbody></table></div>
+<p>Notice that the grade C boundary rose from 78 to 90 in two years, and the A boundary from 112 to 117. Nobody can know next year's boundary in advance, so the safe plan is to aim at the notional marks or higher: <strong>80 for a comfortable C, 112 for an A</strong>.</p>
+<div class="widget" id="w-grades">
+  <h3 class="widget-title">Results day: the same mark in three years</h3>
+  <p class="hint">The bars are drawn to scale from 0 to 160 marks. Each coloured block is a grade; the number above the join is the boundary. Set your question-paper and assignment marks, or press the results-day button to watch the total climb through the grades. The red dashed lines are the notional 50% and 70% marks.</p>
+</div>
+<h3>What the grade descriptions say</h3>
+<p>The course specification gives two descriptions. For <strong>grade C</strong>, candidates will typically have demonstrated "successful performance in relation to the skills, knowledge and understanding for the course". For <strong>grade A</strong>, they will typically have demonstrated "a consistently high level of performance" in relation to the same skills, knowledge and understanding. The word to notice is <em>consistently</em>: an A is not one brilliant question, it is a high standard held across all areas and across both components. That is why chapter 5 asks you to revise every area.</p>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If grade C was 80 marks in 2025, can I just revise the topics I like and aim for 80?"</p><p><strong>Master Shipwright Kerr:</strong> "You can try, but look at the table. In 2026 the C boundary was 90, ten marks higher. And look at the mark ranges: Analogue alone can be up to 35 marks, so if you skip it you are throwing away a third of the paper. Revise everywhere, then use the plan above to decide where the <em>extra</em> hours go."</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>state the structure of the paper (110 marks: Section 1 = 20 short-answer marks, Section 2 = 90 structured marks) and of the assignment (50 marks, five skills, 8 hours);</li><li>work out time per mark ($150 \div 110$) and pace yourself through the paper;</li><li>say how the grade is decided (one total out of 160) and why the boundaries move from year to year;</li><li>use the mark ranges to decide where to put revision time.</li></ul></div>
+<div class="check" data-check="exm-assess"></div>
+</section>
+
+<section id="booklet" class="prose">
+<h2 data-short="The Data Booklet">2 · The Data Booklet and the calculation layout <span class="spec-tag">EXAM SKILLS</span></h2>
+<p>Every candidate gets the <strong>Higher Engineering Science Data Booklet</strong> (Qualifications Scotland, January 2026) in the paper, and may use it in the assignment too. Its own preface makes three promises worth knowing. First, it holds the relationships and data for the concepts that may be assessed in written papers. Second, "all of the material contained in this booklet is likely to be examined at some time". Third, if you need <em>anything else</em>, "such information will be included in the question paper". So a number that is not in the booklet is either something you must <em>know</em>, or something the question will <em>give</em>.</p>
+
+<h3>What is in it, and what is not</h3>
+<div class="compare">
+<div class="exm-yes"><h4>In the booklet</h4><ul class="exm-compare-list">
+<li><strong>Quantities, symbols and units</strong>: including $n$ in "revs min⁻¹ or revs sec⁻¹", $\sigma$ in N m⁻² (Pa) and $\varepsilon$ with no unit.</li>
+<li><strong>Decimal prefixes</strong>: peta to pico.</li>
+<li><strong>Energy and power</strong>: $E_p, E_k, E_h, E_e, E_w$, $P = E/t$, $P = VI = V^2/R = I^2R$, $P = Fv$, $P = 2\pi nT$, efficiency; $g = 9{\cdot}8$ m s⁻², $c_{water} = 4180$ J kg⁻¹ K⁻¹.</li>
+<li><strong>Mechanisms</strong>: velocity ratio, the "speed × size" rule, $T = Fr$, $C = \pi d$, moments, equilibrium.</li>
+<li><strong>Pneumatic systems</strong>: $P = F/A$, $A = \pi r^2 = \pi d^2/4$.</li>
+<li><strong>Structures</strong>: stress, strain, $E_s = \frac12 Fx$, Young's modulus, factor of safety.</li>
+<li><strong>Properties of materials</strong>: a table of $E$, yield, ultimate tensile and compressive stress for fourteen entries.</li>
+<li><strong>Electrical and electronic</strong>: Ohm, series and parallel, Kirchhoff, voltage divider $V_1/V_2 = R_1/R_2$.</li>
+<li><strong>Transistors</strong>: $h_{FE} = I_c/I_b$ and $g_m = \Delta I_d/\Delta V_{gs}$.</li>
+<li><strong>Typical op-amp circuits</strong>: inverting, non-inverting, comparator, difference, summing, voltage follower.</li>
+</ul></div>
+<div class="exm-no"><h4>Not in the booklet: know it, or the question gives it</h4><ul class="exm-compare-list">
+<li>The base–emitter voltage of a transistor ($V_{BE}$, about 0·7 V). If a question needs it, it states it; say what value you used.</li>
+<li>MOSFET data: the threshold voltage, and the transfer characteristic ($I_D$ against $V_{GS}$) come <em>with the question</em>.</li>
+<li>Other specific heat capacities (the booklet gives water only), LDR and thermistor characteristics, data-sheet information.</li>
+<li>Logic gate symbols, truth tables, Boolean laws and NAND equivalents.</li>
+<li>Pneumatic and flowchart symbols, and the names of valves and drives.</li>
+<li>Trigonometry (resolving forces, triangles of forces) and Pythagoras.</li>
+<li>Definitions: brittleness, ductility, tension and compression, negative feedback, and the properties of materials.</li>
+<li>Conversions you must do yourself: rev/min to rev/s, mm² to m², kN to N.</li>
+</ul></div>
+</div>
+<p>The materials table needs special care. Several entries are <em>ranges</em> (stainless steels 190–200), some are blanks ("–": for example cast iron has no yield stress listed because it is brittle), and $E$ is in <strong>kN mm⁻²</strong> while stresses are in <strong>N mm⁻²</strong>. For mild steel, $E = 196$ kN mm⁻², yield stress 220 N mm⁻² and ultimate tensile stress 430 N mm⁻². A question will tell you which entry in a range to use, or give you the value outright.</p>
+
+<h3>How to use the booklet</h3>
+<ol>
+<li><strong>Name the unknown</strong> in the question, with its symbol.</li>
+<li><strong>List what you are given</strong>, with units. Convert now.</li>
+<li><strong>Find the relationship</strong> that has your unknown and your givens in it. Check the symbols match (is $n$ revs per <em>second</em>?).</li>
+<li><strong>Rearrange the symbols first</strong>, then substitute. The booklet prints each relationship one way: $h_{FE} = I_c/I_b$ becomes $I_b = I_c/h_{FE}$; $V_1/V_2 = R_1/R_2$ becomes $R_1 = R_2V_1/V_2$.</li>
+<li><strong>Use the diagram.</strong> In the booklet's op-amp pages, $V_i$ and $V_{ref}$ are marked on the circuit, so the comparator rule only makes sense with the diagram beside it.</li>
+</ol>
+<div class="widget" id="w-find">
+  <h3 class="widget-title">Find the formula: the speed game</h3>
+  <p class="hint">Ten random situations; pick the booklet relationship you would use. It covers every relationship in the booklet, from energy to op-amps. Afterwards the game tells you which booklet <em>section</em> it lives in, so you build a map in your head. Switch to "the same section" for harder wrong options.</p>
+</div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If I can do the sum in my head, why do I have to write out the formula and the substitution?"</p><p><strong>Master Shipwright Kerr:</strong> "Because a calculation is marked in steps, not just at the end. Typically there is a mark for the relationship, a mark for the substitution and a mark for the answer with its unit. If you slip on the arithmetic, the first two marks are still yours, as long as the examiner can <em>see</em> them. A bare wrong answer is worth nothing."</p></div>
+
+<h3>Units and prefixes: the quiet mark thief</h3>
+<p>Engineers lose more marks to a wrong power of ten than to a wrong formula. The booklet gives you the prefixes; you have to use them.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>Symbol</th><th>Multiply by</th><th>Prefix</th><th>Symbol</th><th>Multiply by</th></tr></thead>
+<tbody>
+<tr><td>peta</td><td>P</td><td>10¹⁵</td><td>milli</td><td>m</td><td>10⁻³</td></tr>
+<tr><td>tera</td><td>T</td><td>10¹²</td><td>micro</td><td>μ</td><td>10⁻⁶</td></tr>
+<tr><td>giga</td><td>G</td><td>10⁹</td><td>nano</td><td>n</td><td>10⁻⁹</td></tr>
+<tr><td>mega</td><td>M</td><td>10⁶</td><td>pico</td><td>p</td><td>10⁻¹²</td></tr>
+<tr><td>kilo</td><td>k</td><td>10³</td><td></td><td></td><td></td></tr>
+</tbody></table></div>
+<p>The conversions that catch people out are the ones with <em>squares</em> or <em>time</em>:</p>
+<div class="fn-grid">
+<div><b>Rotational speed</b><br>rev/min ÷ 60 = rev/s<br>1200 rev/min = 20 rev/s</div>
+<div><b>Area</b><br>1 mm² = 10⁻⁶ m²<br>(the factor is squared)</div>
+<div><b>Stress</b><br>1 N mm⁻² = 10⁶ N m⁻² = 1 MPa<br>$E$ in kN mm⁻² × 1000 = N mm⁻²</div>
+<div><b>Force and length</b><br>1 kN = 1000 N<br>1 mm = 10⁻³ m</div>
+</div>
+<div class="widget" id="w-units">
+  <h3 class="widget-title">Prefix and unit drill</h3>
+  <p class="hint">Ten conversions, typed answers. Write your answer as a plain number (4700), in e-notation (4.7e3) or as 4.7×10^3: all are accepted, but it must be exactly right.</p>
+</div>
+
+<h3>Rounding rules</h3>
+<ul>
+<li><strong>Never round in the middle.</strong> Keep the full calculator value (use the ANS or memory key) and round <em>only the final answer</em>. The 2024, 2025 and 2026 course reports all give this advice, and the 2026 report adds that rounding instructions are "on the front cover of the question paper". In 2024 "some candidates rounded intermediate calculated answers, which made their final answer incorrect".</li>
+<li><strong>Round to what the paper asks.</strong> If the front cover (or the question) says 3 significant figures, give 3. If you are practising and nothing is stated, use 3 significant figures.</li>
+<li><strong>Counting significant figures.</strong> Start at the first non-zero digit and count to the right: 0.00470 has three (4, 7, 0); 1870 has three or four, so write 1.87 kN if you mean three. Zeros at the front never count.</li>
+<li><strong>Use the π key.</strong> The 2024 report noted that "many candidates consistently used the π button on their calculators, which led them to more accurate final answers". Typing 3.14 is a rounded intermediate value.</li>
+<li><strong>Every final answer has a unit</strong>, and a sensible prefix: 1870 N or 1.87 kN, but not 1.87 N.</li>
+</ul>
+<div class="widget" id="w-round">
+  <h3 class="widget-title">The rounding trap</h3>
+  <p class="hint">A 1100 kg car at 18 m s⁻¹ brakes to rest; 80% of its kinetic energy goes into the brake discs (total mass 8.0 kg, specific heat capacity 490 J kg⁻¹ K⁻¹, as the question would state). Slide the number of figures kept in each intermediate answer and watch the final temperature rise.</p>
+</div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If I round to 3 significant figures as I go, my answer will still be accurate to 3 figures, won't it?"</p><p><strong>Master Shipwright Kerr:</strong> "No. Each rounding can nudge the last figure, and the nudges add up through a chain of steps. That is exactly what the widget shows. Rounding in the middle is the one thing all three course reports ask candidates not to do."</p></div>
+
+<h3>The full-marks layout</h3>
+<p>Write every calculation in the same three-line shape. The marks in the margin are a <em>typical allocation in the style of a 3-mark calculation</em> (our reading of the style, not an official marking scheme):</p>
+<div class="exm-layout">
+<div><span>•1 relationship</span><span>$P = 2\pi nT$</span></div>
+<div><span>•2 substitution</span><span>$P = 2\pi \times 20 \times 24$ <span style="color:var(--muted)">(after converting 1200 rev/min to 20 rev/s)</span></span></div>
+<div><span>•3 answer + unit</span><span>$P = 3020\ \mathrm{W}$ (3 s.f.), or $3.02\ \mathrm{kW}$</span></div>
+</div>
+<p>Try it. Choose the relationship, say what value of $n$ goes into it, then give the answer with its unit.</p>
+<div class="widget" id="w-layout">
+  <h3 class="widget-title">Mark my script: torque, speed and power</h3>
+  <p class="hint">Fill in the three lines of the layout above for a new set of numbers each time. The widget then awards the typical marks and explains any it withholds.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 1 · calculation · torque, speed and power</p>
+<p>A winch-drum motor delivers a torque of 24 N m at 1200 rev/min. Calculate its output power. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$P = 2\pi nT$ <span class="why">Relationship from the booklet; $n$ is revolutions per <em>second</em>.</span></li>
+<li>$n = 1200 \div 60 = 20\ \text{rev/s}$, so $P = 2\pi \times 20 \times 24$ <span class="why">Convert first, then substitute. Use the π key.</span></li>
+<li>$P = 3015.9\ldots = 3020\ \mathrm{W}$ (3 s.f.) <span class="why">Give the unit. $3.02\ \mathrm{kW}$ is equally good.</span></li>
+</ol>
+<p><em>Common slip:</em> leaving $n = 1200$ gives $2\pi \times 1200 \times 24 = 180\,956\ \mathrm{W}$, sixty times too big. A one-line sense check (a hand-held winch motor is not 180 kW) would have caught it.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · calculation · a chain with rounding</p>
+<p>A car of mass 1100 kg brakes from 18 m s⁻¹ to rest. 80% of its kinetic energy becomes heat in the brake discs, which have a total mass of 8.0 kg and a specific heat capacity of 490 J kg⁻¹ K⁻¹. Calculate the temperature rise of the discs. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>$E_k = \tfrac12 mv^2 = \tfrac12 \times 1100 \times 18^2 = 178\,200\ \mathrm{J}$ <span class="why">Kinetic energy: keep every digit.</span></li>
+<li>$E_h = 0.80 \times 178\,200 = 142\,560\ \mathrm{J}$ <span class="why">80% goes to the discs.</span></li>
+<li>$E_h = cm\Delta T$, so $\Delta T = \dfrac{E_h}{cm} = \dfrac{142\,560}{490 \times 8.0}$ <span class="why">Rearrange the symbols, then substitute.</span></li>
+<li>$\Delta T = 36.4\ \mathrm{K}$ (3 s.f.) <span class="why">Round once, at the very end. A 36.4 K rise is 36.4 °C.</span></li>
+</ol>
+<p><em>Common slip:</em> rounding $E_k$ to $178\,000$ and then $E_h$ to $142\,000$ gives $\Delta T = 36.2\ \mathrm{K}$: wrong in the third figure, which is the one that is marked.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 3 · calculation · stress, strain and a units trap</p>
+<p>A mild steel rod 2.5 m long and 12 mm in diameter carries a tensile load of 15 kN. Use the Data Booklet to calculate its extension. [5]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>$A = \dfrac{\pi d^2}{4} = \dfrac{\pi \times 12^2}{4} = 113.1\ \mathrm{mm^2}$ <span class="why">Area of the circular section; work in mm² because stress will be in N mm⁻².</span></li>
+<li>$\sigma = \dfrac{F}{A} = \dfrac{15\,000}{113.1\ldots} = 132.6\ \mathrm{N\,mm^{-2}}$ <span class="why">Convert 15 kN to 15 000 N. This is below the 220 N mm⁻² yield stress, so Young's modulus applies.</span></li>
+<li>$E = 196\ \mathrm{kN\,mm^{-2}} = 196\,000\ \mathrm{N\,mm^{-2}}$ <span class="why">From the materials table; convert kN to N so the units match the stress.</span></li>
+<li>$\varepsilon = \dfrac{\sigma}{E} = \dfrac{132.6\ldots}{196\,000} = 6.77 \times 10^{-4}$ <span class="why">Strain has no unit.</span></li>
+<li>$\Delta l = \varepsilon \times l = 6.7668 \times 10^{-4} \times 2500 = 1.69\ \mathrm{mm}$ <span class="why">Strain times original length (2.5 m = 2500 mm). Answer with its unit.</span></li>
+</ol>
+<p><em>Common slip:</em> using $E = 196$ without converting kN to N gives a strain 1000 times too big, and an extension of 1.7 m, which is obviously absurd for a 2.5 m rod carrying 15 kN.</p>
+</details></div>
+<div class="callout exam"><div class="callout-title">⚠ From the course reports</div><p>The 2024 report records that for a torque calculation on a drum, some candidates "did not use the radius of the drum", and in a strain-energy question "a few" lost the mark by not using "the correct units". The 2026 report names "not round intermediate values" as advice for teachers and candidates alike. These are not engineering mistakes. They are layout and habit mistakes, and the three-line layout prevents them.</p></div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>say what the Data Booklet contains, and what you must know or be given instead;</li><li>find any relationship quickly, and rearrange it before substituting;</li><li>convert prefixes, rev/min, mm², kN and kN mm⁻² correctly;</li><li>carry full values, round only at the end, use the π key and give a unit;</li><li>lay out every calculation as relationship, substitution, answer with unit.</li></ul></div>
+<div class="check" data-check="exm-databook"></div>
+</section>
+
+<section id="answering" class="prose">
+<h2 data-short="Answering well">3 · Answering well: command words, descriptions and calculations <span class="spec-tag">EXAM SKILLS</span></h2>
+<p>You can know the engineering and still lose marks by answering a different question from the one asked. The 2024 course report puts it plainly: "Questions requiring a detailed written response proved to be challenging, and often candidates provided a non-descriptive answer which lacked the detail required to achieve marks at this level." This chapter is about closing that gap.</p>
+
+<h3>Command words</h3>
+<p>The first word of a question tells you what shape of answer is wanted. These are working definitions for this site; read each question's own wording as well, because many say <em>how many</em> points to give (two roles, two adaptations, two examples).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Command word</th><th>What a full answer does</th><th>A good short example</th></tr></thead>
+<tbody>
+<tr><td><strong>State, name, identify, give</strong></td><td>A word, a phrase or a value. No explanation needed (and none earns extra).</td><td>"State the op-amp configuration." → "Inverting amplifier."</td></tr>
+<tr><td><strong>Describe</strong></td><td>Say what happens, in order, using the correct terms for the parts. Think: what changes first, what does it cause next?</td><td>"The LDR's resistance rises, so the voltage across it rises, so…"</td></tr>
+<tr><td><strong>Explain</strong></td><td>Give a <em>reason</em>: because, so, therefore. A point on its own is not an explanation.</td><td>"A base resistor is needed <em>to limit the base current</em>, which protects the transistor and sets the collector current."</td></tr>
+<tr><td><strong>Calculate, determine, find</strong></td><td>Relationship, substitution, answer with unit (see chapter 2).</td><td>$R_1 = R_2V_1/V_2 = 14.1\ \mathrm{k\Omega}$</td></tr>
+<tr><td><strong>Justify</strong></td><td>Choose, then back the choice with evidence or a calculation from the question.</td><td>"Aluminium alloy: its 250 N mm⁻² yield stress is above the working stress, and it is lighter."</td></tr>
+<tr><td><strong>Compare</strong></td><td>Say something about <em>both</em> things, against the <em>same</em> feature.</td><td>"A BJT is current-operated; a MOSFET is voltage-operated."</td></tr>
+<tr><td><strong>Evaluate</strong></td><td>Judge how well something meets its purpose, point by point, using evidence, and reach a verdict.</td><td>"Specification 2 was met: at 20 kΩ the gate voltage was 2.05 V, above the 2.0 V threshold."</td></tr>
+<tr><td><strong>Sketch, draw, complete</strong></td><td>Sketch: right shape, labelled axes with units, key points marked. Complete: fill in <em>only</em> what is missing, in the form the diagram or table already uses.</td><td>A truth table with every row; a graph labelled "stress (N mm⁻²)".</td></tr>
+<tr><td><strong>Suggest</strong></td><td>Apply what you know to a new situation. Give a sensible, workable idea with a reason.</td><td>"Replace the fixed resistor with a variable resistor to adjust the switching level."</td></tr>
+</tbody></table></div>
+
+<h3>Descriptive answers: point + reason</h3>
+<p>The commonest weak answer is a <em>statement of what happens</em> with no <em>because</em>. "The transistor switches on" is true, and worth almost nothing. A good descriptive answer is a chain in which every link is a cause and an effect:</p>
+<div class="exm-layout">
+<div><span>1 Change</span><span>what changes first (light falls, button pressed, voltage rises)</span></div>
+<div><span>2 Because</span><span>what that does to the next part (resistance rises, valve actuates)</span></div>
+<div><span>3 So</span><span>the effect on the circuit's signal (voltage across LDR rises above the threshold)</span></div>
+<div><span>4 Result</span><span>what the output does (MOSFET conducts, lamp lights)</span></div>
+</div>
+<p>Count the marks available and the links you are writing: a 3-mark description usually needs three separate, correct points. Don't repeat yourself, don't write the question back, and name each component by its proper name (LDR, comparator, solenoid valve, MOSFET).</p>
+<p>Sort these. Which answers would gain the mark, and which would lose it?</p>
+<div class="sorter" data-bins="Gains the mark|Loses the mark">
+<div data-ans="Loses the mark" data-why="A true statement with no reason. Say what makes the transistor switch on (the voltage reaching about 0·7 V so base current flows).">"The transistor turns on."</div>
+<div data-ans="Gains the mark" data-why="Change, because, so, result: every link is a cause and an effect, and the key terms are used.">"In the dark the LDR's resistance rises, so the voltage across it rises. When the gate voltage passes the threshold, the MOSFET conducts and current flows through the lamp."</div>
+<div data-ans="Loses the mark" data-why="'More efficient' is a claim with no engineering reason. Efficiency is output power ÷ input power; say which loss falls and why.">"This design is better because it is more efficient."</div>
+<div data-ans="Loses the mark" data-why="The terminology is missing: the report asks for '3/2 valves actuating, 5/2 valves changing state, and a piston instroking or outstroking'.">"The cylinder moves out when you press the button."</div>
+<div data-ans="Gains the mark" data-why="Names the valves, uses actuates / changes state / outstrokes, and gives the order.">"The push-button 3/2 valve actuates, so the 5/2 valve changes state, supply air reaches the cap end and the piston outstrokes."</div>
+<div data-ans="Gains the mark" data-why="A comparison with a reason: the gate draws almost no current, so no base resistor is needed.">"A MOSFET is voltage-operated: its gate draws almost no current, so a high-resistance divider can drive it directly. A BJT needs base current."</div>
+<div data-ans="Loses the mark" data-why="'Two roles' means two different, specific roles in the development phase. 'Designs things' could describe any engineer.">"A civil engineer designs things and makes sure they work."</div>
+</div>
+
+<h3>Describing pneumatic circuits: the exact words</h3>
+<p>Both the 2025 and 2026 reports single out pneumatic descriptions. The 2026 report says: "Candidates must use correct terminology, with a statement referring to 3/2 valves actuating, 5/2 valves changing state, and a piston instroking or outstroking." In 2026 "few candidates correctly described the full operation of the pneumatic circuit"; in 2025 "a few" used "appropriate terminology". So learn this vocabulary like a drill:</p>
+<ul>
+<li>a <strong>3/2 valve</strong> (three ports, two positions) <strong>actuates</strong> (is pressed, or its roller is struck);</li>
+<li>a <strong>5/2 valve</strong> (five ports, two positions) <strong>changes state</strong> when its pilot signal arrives, and changes back (spring return) when the pilot signal goes;</li>
+<li>air is <strong>supplied</strong> to one end of the cylinder while the other end <strong>exhausts</strong>;</li>
+<li>the <strong>piston outstrokes</strong> (rod extends) or <strong>instrokes</strong> (rod retracts).</li>
+</ul>
+<div class="widget" id="w-pneu">
+  <h3 class="widget-title">Watch the air: a 3/2 valve, a 5/2 valve and a cylinder</h3>
+  <p class="hint">A push-button 3/2 valve sends a pilot signal to a spring-return 5/2 valve that drives a double-acting cylinder. Hold the button, release it, or run the auto demo. The sentence under the picture says what is true now, in the words a marker wants. Then write your own description and test it for the key terms.</p>
+</div>
+<div class="worked"><p class="worked-title">Worked example 4 · description · the pneumatic circuit above</p>
+<p>Describe the operation of the circuit when the push button is pressed and then released. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>When the push button is pressed, the 3/2 valve actuates and supply air flows to the pilot port of the 5/2 valve. <span class="why">Name the valve, say it actuates, say where the air goes.</span></li>
+<li>The 5/2 valve changes state: supply air goes to the cap end of the cylinder and the rod end exhausts. <span class="why">Both halves: supply to one end, exhaust from the other.</span></li>
+<li>The piston outstrokes. <span class="why">The movement, in the right word.</span></li>
+<li>When the button is released, the 3/2 valve returns (spring) and the pilot air exhausts, so the 5/2 valve changes state back, air goes to the rod end and the piston instrokes. <span class="why">The return half of the sequence is often forgotten.</span></li>
+</ol>
+</details></div>
+
+<h3>Calculation technique</h3>
+<ol>
+<li>Underline the <strong>unknown</strong> and circle the <strong>numbers and units</strong>.</li>
+<li>Convert units <strong>before</strong> substituting (chapter 2).</li>
+<li>Write the <strong>relationship</strong> from the booklet, rearranged for the unknown.</li>
+<li>For multi-step questions, <strong>find the missing intermediate quantity first</strong>: the voltage drop across a resistor, the area of a tube, a reaction force.</li>
+<li>Substitute, calculate with <strong>full calculator values</strong>, and round only at the end.</li>
+<li>Write the <strong>unit</strong> and ask: is the size believable?</li>
+</ol>
+<p>The 2024 report records that in a base-current question "many candidates" did not "calculate the voltage drop over the base resistor", and in a MOSFET question "many" did not "calculate the drop over the solenoid", so could not find the drain current and then read $V_{GS}$ from the graph. Step 4 is the cure: <em>find the voltage across the resistor before you use Ohm's law on it</em>.</p>
+<div class="worked"><p class="worked-title">Worked example 5 · calculation · rearranging the voltage divider</p>
+<p>A voltage divider is built from a 12 V supply. The lower resistor $R_2$ is 4.7 kΩ and the output across it must be 3.0 V. Calculate the value of the upper resistor $R_1$. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$V_1 = 12 - 3.0 = 9.0\ \mathrm{V}$ <span class="why">$V_1$ in the booklet formula is the voltage across $R_1$, not the supply.</span></li>
+<li>$\dfrac{V_1}{V_2} = \dfrac{R_1}{R_2}$, so $R_1 = \dfrac{R_2 V_1}{V_2} = \dfrac{4700 \times 9.0}{3.0}$ <span class="why">Rearrange the symbols first, then substitute.</span></li>
+<li>$R_1 = 14\,100\ \Omega = 14.1\ \mathrm{k\Omega}$ <span class="why">With unit.</span></li>
+</ol>
+<p><em>Common slip:</em> using $V_1 = 12\ \mathrm{V}$ gives 18.8 kΩ. The 2024 report says that "many" found it "challenging to manipulate the voltage divider formula V1/V2=R1/R2 to find the value of R1".</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 6 · calculation · a transistor switching a load</p>
+<p>An npn transistor with $h_{FE} = 100$ must pass a collector current of 40 mA through a 120 Ω load on a 9.0 V supply. The base is fed from a 5.0 V logic output through a base resistor $R_b$. Take $V_{BE} = 0.7\ \mathrm{V}$ (the question would give this). Calculate (a) the base current needed, [2] (b) the value of $R_b$, [3] (c) the power dissipated between the collector and emitter. [2]</p>
+<details><summary>Show solution <span class="marks-n">[7 marks]</span></summary>
+<ol class="step-list marks">
+<li>$h_{FE} = \dfrac{I_c}{I_b}$, so $I_b = \dfrac{I_c}{h_{FE}} = \dfrac{0.040}{100}$ <span class="why">(a) Relationship and substitution, in amperes.</span></li>
+<li>$I_b = 0.00040\ \mathrm{A} = 0.40\ \mathrm{mA}$ <span class="why">(a) Answer with unit.</span></li>
+<li>$V_{R_b} = 5.0 - 0.7 = 4.3\ \mathrm{V}$ <span class="why">(b) The voltage across the base resistor: the supply minus the base–emitter drop.</span></li>
+<li>$R_b = \dfrac{V}{I} = \dfrac{4.3}{0.00040}$ <span class="why">(b) Ohm's law on the base resistor alone.</span></li>
+<li>$R_b = 10\,750\ \Omega \approx 10.8\ \mathrm{k\Omega}$ <span class="why">(b) With unit and sensible rounding.</span></li>
+<li>$V_{load} = IR = 0.040 \times 120 = 4.8\ \mathrm{V}$, so $V_{CE} = 9.0 - 4.8 = 4.2\ \mathrm{V}$ <span class="why">(c) The transistor takes whatever the load does not.</span></li>
+<li>$P = V_{CE}I_C = 4.2 \times 0.040 = 0.168\ \mathrm{W}$ <span class="why">(c) Power between collector and emitter. The 2026 report says few candidates calculated this.</span></li>
+</ol>
+<p>Check: with the transistor passing 40 mA, the load needs only 4.8 V, so the transistor is in its active region and $I_c = h_{FE}I_b$ is allowed. If the load tried to take more current than the supply could give, the transistor would saturate and $I_b$ would be "more than enough".</p>
+</details></div>
+<div class="worked"><p class="worked-title">Worked example 7 · calculation · moments and reactions</p>
+<p>A 5.0 m beam rests on a hinge at A (left) and a roller at B (right). Downward loads of 8 kN and 6 kN act 1.5 m and 4.0 m from A. Calculate the reactions at A and B. [4]</p>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 440 150" style="max-width:520px" role="img" aria-label="A horizontal beam 5.0 metres long, hinge support at the left end A and roller support at the right end B. A downward 8 kilonewton load acts 1.5 metres from A and a downward 6 kilonewton load acts 4.0 metres from A. Reaction arrows point upward at A and B.">
+<defs><marker id="ar7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-red"/></marker><marker id="ar7b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-sea"/></marker></defs>
+<rect x="40" y="60" width="360" height="10" class="f-paper2 stroke-ink" stroke-width="2"/>
+<path d="M40 70 L28 94 L52 94 Z" class="card stroke-ink" stroke-width="2"/><path d="M400 70 L388 90 L412 90 Z" class="card stroke-ink" stroke-width="2"/><circle cx="400" cy="95" r="5" class="card stroke-ink" stroke-width="2"/>
+<path d="M148 14 V57" class="s-red" stroke-width="3" marker-end="url(#ar7)" fill="none"/><path d="M328 14 V57" class="s-red" stroke-width="3" marker-end="url(#ar7)" fill="none"/>
+<path d="M40 136 V100" class="s-sea" stroke-width="3" marker-end="url(#ar7b)" fill="none"/><path d="M400 136 V104" class="s-sea" stroke-width="3" marker-end="url(#ar7b)" fill="none"/>
+<g font-size="13" class="ink" text-anchor="middle"><text x="148" y="10">8 kN</text><text x="328" y="10">6 kN</text><text x="52" y="132" text-anchor="start">R<tspan font-size="10" dy="3">A</tspan></text><text x="412" y="132" text-anchor="start">R<tspan font-size="10" dy="3">B</tspan></text><text x="28" y="108">A</text><text x="414" y="86" text-anchor="start">B</text>
+<text x="94" y="86" class="ink2" font-size="11">1.5 m</text><text x="260" y="86" class="ink2" font-size="11">4.0 m (from A)</text></g>
+<line x1="40" y1="82" x2="148" y2="82" class="stroke-ink" stroke-width="1" stroke-dasharray="3 2"/>
+</svg></div><figcaption>Figure 3.0 · The beam for worked example 7: loads in red, reactions in blue. A hinge gives two reaction components; a roller only one, perpendicular to its surface.</figcaption></figure>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Moments about A: $R_B \times 5.0 = (8 \times 1.5) + (6 \times 4.0)$ <span class="why">Take moments about the hinge so $R_A$ drops out. Every force is multiplied by its perpendicular distance (the 2024 report notes some candidates forgot the distance).</span></li>
+<li>$R_B = \dfrac{12 + 24}{5.0} = 7.2\ \mathrm{kN}$ upward <span class="why">Answer with unit and direction.</span></li>
+<li>$\Sigma F_v = 0$: $R_A + R_B = 8 + 6 = 14\ \mathrm{kN}$ <span class="why">Vertical equilibrium for the second unknown.</span></li>
+<li>$R_A = 14 - 7.2 = 6.8\ \mathrm{kN}$ upward <span class="why">Check by taking moments about B: $6.8 \times 5.0 = 34 = 8 \times 3.5 + 6 \times 1.0$. ✔</span></li>
+</ol>
+</details></div>
+
+<h3>Sketching and completing diagrams</h3>
+<p><strong>Truth tables.</strong> For $n$ inputs there are $2^n$ rows, written in <strong>binary counting order</strong> (000, 001, 010, …). Add a column for every internal signal, so each column is one gate's worth of work. The 2026 report says "most candidates developed a correct truth table"; the 2024 report notes that some lost a mark through an error with the output of the exclusive-OR gate.</p>
+<div class="table-wrap"><table class="nature-table">
+<caption>$Q = (A + B)\cdot\overline{C}$ worked column by column (+ is OR, · is AND, the overbar is NOT)</caption>
+<thead><tr><th>A</th><th>B</th><th>C</th><th>$A + B$</th><th>$\overline{C}$</th><th>$Q$</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+</tbody></table></div>
+<p><strong>Logic diagrams.</strong> Draw the gate symbols with straight lines, label every input and the output, and mark each junction where wires connect with a dot. When asked for a NAND-only version, remember that a NOT is a NAND with its inputs tied together, and that two NOTs in a row cancel. The 2025 report says "most candidates" drew NAND equivalents well.</p>
+<p><strong>Graphs.</strong> Label both axes with the <em>quantity and unit</em> (stress / N mm⁻², strain, I_D / mA), choose a scale that uses the grid, mark the key points on the curve (yield point, ultimate tensile strength, fracture) and join smoothly or in straight lines as the data demand. For "sketch a more brittle material", draw a curve with little or no yield region and a break at a smaller extension.</p>
+<p><strong>Free-body diagrams.</strong> Draw the body on its own, then every force acting on it as an arrow from where it acts. Label each arrow with its name and value. Use the right reaction for each support:</p>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="600" viewBox="0 0 640 270" style="max-width:700px" role="img" aria-label="Free-body diagram of a simply supported beam. A hinge at the left end has two reaction components, one vertical and one horizontal. A roller at the right end has one reaction, vertical, perpendicular to the surface it rolls on. A vertical point load F1 acts at distance x1 from the hinge. An angled load F2 at angle theta is shown resolved into a horizontal component F2 cosine theta and a vertical component F2 sine theta. A uniformly distributed load is shown as a row of small arrows, equivalent to one force of w times length acting at the centre of that length.">
+<defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-red"/></marker><marker id="ar3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-sea"/></marker><marker id="ar3c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-muted"/></marker></defs>
+<rect x="60" y="130" width="500" height="12" class="f-paper2 stroke-ink" stroke-width="2"/>
+<path d="M60 142 L45 172 L75 172 Z" class="card stroke-ink" stroke-width="2"/><line x1="35" y1="172" x2="85" y2="172" class="stroke-ink" stroke-width="2"/>
+<path d="M560 142 L546 168 L574 168 Z" class="card stroke-ink" stroke-width="2"/><circle cx="560" cy="175" r="6" class="card stroke-ink" stroke-width="2"/><line x1="540" y1="182" x2="580" y2="182" class="stroke-ink" stroke-width="2"/>
+<path d="M170 50 V126" class="s-red" stroke-width="3" fill="none" marker-end="url(#ar3)"/>
+<path d="M300 80 L350 126" class="s-red" stroke-width="3" fill="none" marker-end="url(#ar3)"/>
+<path d="M300 80 H350" class="s-muted" stroke-width="2" stroke-dasharray="4 3" fill="none" marker-end="url(#ar3c)"/><path d="M350 80 V126" class="s-muted" stroke-width="2" stroke-dasharray="4 3" fill="none" marker-end="url(#ar3c)"/>
+<path d="M470 100 H540" class="s-red" stroke-width="2" fill="none"/>
+<path d="M470 100 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar3)"/><path d="M490 100 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar3)"/><path d="M510 100 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar3)"/><path d="M530 100 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar3)"/>
+<path d="M60 232 V190" class="s-sea" stroke-width="3" fill="none" marker-end="url(#ar3b)"/>
+<path d="M54 120 H18" class="s-sea" stroke-width="3" fill="none" marker-end="url(#ar3b)"/>
+<path d="M560 232 V196" class="s-sea" stroke-width="3" fill="none" marker-end="url(#ar3b)"/>
+<g font-size="13" class="ink" text-anchor="middle">
+<text x="170" y="42">F₁</text><text x="276" y="76">F₂</text><text x="327" y="72" font-size="11" class="ink2">F₂ cos θ</text><text x="368" y="104" font-size="11" class="ink2" text-anchor="start">F₂ sin θ</text>
+<text x="505" y="90" font-size="12">UDL w (N/m)</text>
+<text x="90" y="226" text-anchor="start">R<tspan font-size="10" dy="3">Av</tspan></text><text x="28" y="108" text-anchor="start" font-size="12">R<tspan font-size="9" dy="3">Ah</tspan></text><text x="592" y="226" text-anchor="end">R<tspan font-size="10" dy="3">B</tspan></text>
+<text x="60" y="258" class="ink2" font-size="11">hinge: two components</text><text x="440" y="258" class="ink2" font-size="11">roller: one, perpendicular to its surface</text>
+</g>
+</svg></div><figcaption>Figure 3.1 · What to draw: loads in red, reactions in blue, components dashed. A UDL of $w$ N/m over a length $L$ is replaced by one force $wL$ acting at the middle of that length.</figcaption></figure>
+
+<h3>The mistakes the markers see</h3>
+<p>Everything below comes from the Qualifications Scotland and SQA course reports for 2024, 2025 and 2026. The reports use "most" for 70% or more of candidates, "many" for 50–69%, "some" for 25–49% and "few" for under 25%.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Area</th><th>What markers saw</th><th>Report</th><th>The fix</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">Analogue</td><td>"Many" found it "challenging to manipulate the voltage divider formula V1/V2=R1/R2 to find the value of R1".</td><td>2024</td><td>Work out the voltage across each resistor, then rearrange (worked example 5).</td></tr>
+<tr><td>Many did not calculate the voltage drop over the base resistor, or over the solenoid in a MOSFET circuit, so could not find the current.</td><td>2024</td><td>Resistor first; Ohm's law on it; then the transistor.</td></tr>
+<tr><td>Some described an advantage of the MOSFET over a BJT, and the meaning of threshold voltage; many did not calculate the drain–source current.</td><td>2025</td><td>Know both definitions in one sentence each; find the load current from the load drop.</td></tr>
+<tr><td>Few calculated the power dissipated between collector and emitter; few described the motor speed as the voltage dropped, or two adaptations to give a positive output.</td><td>2026</td><td>$P = V_{CE} I_C$; describe with cause and effect.</td></tr>
+<tr><td rowspan="2">Digital and programming</td><td>Digital electronics was a strength in 2024 (a very good drawing of logic from a Boolean expression); in 2025 "most" drew NAND equivalents well; in 2026 "most" developed a correct truth table.</td><td>2024–26</td><td>Keep doing it: this is where the marks are safest.</td></tr>
+<tr><td>In a program-fault question, "if pin 1 = 0 then pwm" was not credited unless the candidate also wrote "goto main" after it.</td><td>2024</td><td>Read the whole loop: where does the program go next?</td></tr>
+<tr><td rowspan="2">Drives and pneumatics</td><td>For a drum, "some" did not use the radius when finding torque. Few correctly described the full operation of a pneumatic circuit (2026); a few used appropriate terminology (2025).</td><td>2024, 2025, 2026</td><td>$T = Fr$ with radius; 3/2 valve actuates, 5/2 valve changes state, piston outstrokes/instrokes.</td></tr>
+<tr><td>Some marks lost to rounding intermediate answers (tank-filling time, bolt diameter, tube wall thickness).</td><td>2024</td><td>Keep full values to the end.</td></tr>
+<tr><td rowspan="2">Structures and materials</td><td>A few did not multiply forces by the distance from the fulcrum; node B (magnitude and nature) was found challenging; many did not calculate the magnitude or direction of reaction B; many did not identify the properties of material C.</td><td>2024, 2025</td><td>Moments = force × distance; state tension or compression; learn the properties.</td></tr>
+<tr><td>A few lost the strain-energy mark by not giving the correct units.</td><td>2024</td><td>Convert to N and m so $E_s$ is in joules.</td></tr>
+<tr><td>Engineering roles and impacts</td><td>"Many" did not give the "detail required for a Higher-level response" about an electronic engineer's specialised knowledge or a positive social impact (2024); many did not identify a structural engineer's skills (2025); few described two roles of a civil engineer in the development phase and two ways a mechanical engineer applies mathematics (2026).</td><td>2024–26</td><td>Be specific: name the task, the skill and why it matters.</td></tr>
+</tbody></table></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If my answer is right but short, doesn't the marker just give me the mark?"</p><p><strong>Flight Lieutenant Murray:</strong> "For a 'state' question, yes. For 'describe' and 'explain' the 2024 report says a "non-descriptive answer which lacked the detail required" does not. Count the marks: three marks means three separate things for the marker to tick."</p></div>
+
+<div class="widget" id="w-audit">
+  <h3 class="widget-title">Which marks am I leaving on the table?</h3>
+  <p class="hint">Rate yourself honestly on each habit the course reports flag. The audit lists your top five leaks and sends you to the right chapter or deck. Your ratings are saved in this browser only.</p>
+</div>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>read a command word and write the right shape of answer;</li><li>write a descriptive answer as a chain of change, because, so, result;</li><li>describe a pneumatic circuit using “3/2 valve actuates”, “5/2 valve changes state” and “piston instrokes / outstrokes”;</li><li>complete truth tables in binary order, and draw labelled graphs and free-body diagrams;</li><li>find the intermediate voltage, area or reaction first in a multi-step calculation.</li></ul></div>
+<div class="check" data-check="exm-answering"></div>
+</section>
+
+<section id="assignment" class="prose">
+<h2 data-short="The assignment">4 · The assignment: analyse, design, build, test, evaluate <span class="spec-tag">ASSIGNMENT · 50 MARKS</span></h2>
+<p>The assignment is 31% of your grade. It is the part of the course where you <em>behave like an engineer</em> instead of answering questions about one: you take a problem, analyse it, design a solution, build or simulate it, test it and judge it. And because the 2024, 2025 and 2026 course reports all say the same thing about it, you can plan for it very precisely.</p>
+
+<h3>The conditions</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Condition</th><th>What the specification says</th></tr></thead>
+<tbody>
+<tr><td>Time</td><td>8 hours, started once all the course content has been delivered.</td></tr>
+<tr><td>Who</td><td>You, alone. No group work.</td></tr>
+<tr><td>Where</td><td>A supervised classroom, so the work is demonstrably yours, without interruption by periods of teaching.</td></tr>
+<tr><td>Help</td><td>"Without any teacher or lecturer intervention or guidance" at any stage.</td></tr>
+<tr><td>Resources</td><td>Closed book: no notes, internet, exemplars or wall displays. The <strong>Data Booklet may be used</strong>.</td></tr>
+<tr><td>Evidence</td><td>Likely to include completed solutions, prints from simulation software, photographs of built models, and records of testing and evaluation. Everything is handed in on <strong>paper</strong>, even if you made it on a computer.</td></tr>
+<tr><td>Word count</td><td>None.</td></tr>
+<tr><td>Marking</td><td>Set by SQA / Qualifications Scotland each year and marked externally. Once handed in, it is not returned to you for more work.</td></tr>
+</tbody></table></div>
+
+<h3>The five skills and where the marks are</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Skill</th><th class="num">Marks</th><th>What it looks like</th><th>What the reports say</th></tr></thead>
+<tbody>
+<tr><td><strong>Analysis</strong></td><td class="num">4–8</td><td>Read the problem, pull out the specification, complete a control or system diagram.</td><td>2026: "most" achieved full marks analysing a specification and completing a control diagram.</td></tr>
+<tr><td><strong>Designing a solution</strong></td><td class="num">8–12</td><td>Calculate component values, draw circuits, logic diagrams, flowcharts; design a test plan.</td><td>2024–25: "most" achieved full marks designing and simulating an electronic circuit. 2025: "many" did not use the least number of logic gates by converting to NAND equivalents.</td></tr>
+<tr><td><strong>Building the solution</strong></td><td class="num">8–12</td><td>Simulate or construct it, with evidence.</td><td>2024 and 2025: candidates "performed exceptionally well" at building. 2025: many did not label substituted components or show orientation.</td></tr>
+<tr><td><strong>Testing</strong></td><td class="num">8–14</td><td>Plan tests, record actual results, amend.</td><td>2024: candidates "did not understand the difference between an expected resulted and the test to be carried out". 2026: some did not amend before the next test.</td></tr>
+<tr><td><strong>Evaluation</strong></td><td class="num">8–14</td><td>Judge the solution against the specification.</td><td>Every report: "the most demanding".</td></tr>
+</tbody></table></div>
+<p>The pattern is clear. Building and simulating are where candidates score well. <strong>Testing and evaluating are the skills where the marks are won and lost</strong>, and between them they can be worth up to 28 of the 50 marks. If you only practise building, you are practising the part you will probably already do well.</p>
+
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="600" viewBox="0 0 640 190" style="max-width:700px" role="img" aria-label="Flow diagram of the five assignment skills in order: Analysis, Designing, Building, Testing, Evaluation, each in a box with arrows between. A loop arrow runs from Testing back to Designing, labelled amend, then retest.">
+<defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-red"/></marker></defs>
+<g font-size="12" class="ink" text-anchor="middle">
+<rect x="10" y="30" width="104" height="64" class="f-gold s-gold" fill-opacity=".22" stroke-width="2.5"/><text x="62" y="54" font-weight="700" font-size="14">1 Analysis</text><text x="62" y="72">read the spec,</text><text x="62" y="86">control diagram</text>
+<rect x="134" y="30" width="104" height="64" class="f-gold s-gold" fill-opacity=".22" stroke-width="2.5"/><text x="186" y="54" font-weight="700" font-size="14">2 Designing</text><text x="186" y="72">calculate, draw,</text><text x="186" y="86">plan the tests</text>
+<rect x="258" y="30" width="104" height="64" class="f-gold s-gold" fill-opacity=".22" stroke-width="2.5"/><text x="310" y="54" font-weight="700" font-size="14">3 Building</text><text x="310" y="72">simulate / build,</text><text x="310" y="86">clear evidence</text>
+<rect x="382" y="30" width="104" height="64" class="f-sea s-sea" fill-opacity=".22" stroke-width="2.5"/><text x="434" y="54" font-weight="700" font-size="14">4 Testing</text><text x="434" y="72">expected vs</text><text x="434" y="86">actual, amend</text>
+<rect x="506" y="30" width="104" height="64" class="f-sea s-sea" fill-opacity=".22" stroke-width="2.5"/><text x="558" y="54" font-weight="700" font-size="14">5 Evaluation</text><text x="558" y="72">each spec point,</text><text x="558" y="86">with evidence</text>
+</g>
+<g class="s-red" stroke-width="2.5" fill="none"><path d="M114 62 H131" marker-end="url(#ar4)"/><path d="M238 62 H255" marker-end="url(#ar4)"/><path d="M362 62 H379" marker-end="url(#ar4)"/><path d="M486 62 H503" marker-end="url(#ar4)"/>
+<path d="M434 94 V140 H186 V97" marker-end="url(#ar4)"/></g>
+<text x="310" y="160" text-anchor="middle" font-size="12" class="ink">a failed test sends you back: amend, then retest</text>
+<text x="558" y="120" text-anchor="middle" font-size="11" class="ink2">hardest marks</text><path d="M558 98 V108" class="s-red" stroke-width="1.5"/>
+</svg></div><figcaption>Figure 4.1 · The assignment is a cycle, not a conveyor belt. Testing leads back to designing when a result fails.</figcaption></figure>
+
+<h3>Evidence the marker can read</h3>
+<ul>
+<li><strong>Clear photographs and screenshots.</strong> The 2026 report asks that they are "clear, so that components are easily identified"; the 2025 report warns that unclear ones risk "text being unreadable or cut off, or components and connections not being clear". Zoom in, fill the frame, check the printout before you hand in.</li>
+<li><strong>Label substituted components and show orientation.</strong> If the simulator has no LDR and you used a variable resistor set to 20 kΩ, <em>write that on the diagram</em>. Mark the legs or terminals of polarised parts (diode, transistor, LED, electrolytic capacitor) so the marker can see which way round they are. In 2025 "many" lost marks here, and some building with real parts did not make pipes "easily identifiable and followed".</li>
+<li><strong>Use the software to match the task.</strong> Read each task carefully: the 2025 report warns that a task may look like a past one but have "significant differences".</li>
+</ul>
+
+<h3>Test plans: the test is not the expected result</h3>
+<p>A test plan is a table with at least these columns: <strong>the test</strong> (what you do), <strong>the expected result</strong> (what you predict will happen, with a value and unit or a clear state), and, as you carry the tests out, <strong>the actual result</strong> and <strong>the amendment</strong>. In 2024 candidates "did not understand the difference between an expected resulted and the test to be carried out". Here is the difference:</p>
+<div class="compare">
+<div><h4>The test (an action)</h4><p>"Set the LDR to 20 kΩ and measure the gate voltage."</p></div>
+<div><h4>The expected result (a prediction)</h4><p>"The gate voltage is about 2.05 V, above the 2.0 V threshold, so the lamp just switches on."</p></div>
+</div>
+<p>The expected result is worked out <em>before</em> you test, from your design calculation. If the actual result does not match it, you have found a fault in the circuit or in your calculation, and that is the whole point. And then: <strong>make the amendment before the next test</strong>. The 2026 report says some candidates "carried out the planned tests and recorded the actual results" but "did not make appropriate amendments before moving onto the next test, as instructed".</p>
+
+<h3>Evaluating: one specification point at a time</h3>
+<p>The 2025 report says candidates "did not refer to the performance, testing and amendments made to meet each specification point". The 2026 report says some "stated that all specification points were met, when the performance of their amended flowchart did not provide evidence to support this". The cure is a fixed sentence pattern for <strong>each</strong> point:</p>
+<div class="exm-layout">
+<div><span>1 The point</span><span>name the specification point (S2: lamp switches on at 20 kΩ)</span></div>
+<div><span>2 The evidence</span><span>quote your actual result, with value and unit, and say where it is (test 2, screenshot 3)</span></div>
+<div><span>3 The verdict</span><span>met, partly met or not met, by comparing evidence with the specification</span></div>
+<div><span>4 The amendment</span><span>if not fully met: what you changed, or what you would change, and why</span></div>
+</div>
+<p>Never write "all the specification points were met" unless each one has been shown separately. Evidence means <em>actual performance</em> (what the circuit, program or structure really did), not what it should have done.</p>
+
+<h3>Counting integrated circuits, not gates</h3>
+<p>In 2026 "many candidates" "did not refer to factors such as manufacture and/or cost in relation to the number of Integrated Circuits used" and focused on "the number of gates used for each design, instead of the Integrated Circuits found in the data sheets provided". In 2025, "many" did not use the least number of logic gates possible by converting to NAND equivalents. A chip contains several gates of one type, so what costs money is the number of <em>chips</em>.</p>
+<div class="worked"><p class="worked-title">Worked example 8 · design · fewest gates versus fewest chips</p>
+<p>A circuit has $X = A \cdot B + C$. Compare an AND/OR design with a NAND-only design, using the data sheet fact that a 7400-series quad 2-input NAND has four gates, a quad 2-input AND has four gates and a quad 2-input OR has four gates. Which design needs fewer chips? [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>AND/OR design: one AND gate ($A\cdot B$) and one OR gate (with $C$): <strong>2 gates</strong>. <span class="why">The fewest gates.</span></li>
+<li>But an AND and an OR are different gate types, so they need <strong>2 chips</strong> (a quad AND and a quad OR), each mostly unused. <span class="why">Count chips from the data sheet.</span></li>
+<li>NAND-only: $X = \overline{\overline{A\cdot B}\cdot\overline{C}}$, built from NAND($A$, $B$), NAND($C$, $C$) as a NOT, and a final NAND of the two: <strong>3 gates</strong>. <span class="why">Double inversion removed; a NAND with tied inputs is a NOT.</span></li>
+<li>All three are NAND gates, so they fit in <strong>1 chip</strong> (a quad 2-input NAND has four gates, one left spare). <span class="why">The NAND design uses more gates but fewer chips, and chips are what cost money and board space. Conclusion: the NAND-only design is cheaper to make.</span></li>
+</ol>
+</details></div>
+
+<h3>Structures in the assignment</h3>
+<p>The 2026 report notes that "most candidates correctly identified the vertical reactions" in a structures task but "many did not correctly identify whether each support could withstand the reaction force". The task has a final step: <strong>compare each reaction with the capacity of its support, and state a clear conclusion for each support</strong>.</p>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"I built the circuit and it worked. Why can't I just write 'all the specification points were met'?"</p><p><strong>Flight Lieutenant Murray:</strong> "Because the marker cannot see your lab. They can only see your evidence. 'It worked' is a claim; '2.05 V at the gate with the LDR at 20 kΩ, lamp lit, screenshot 3' is evidence. And if a test failed and you wrote 'all met', the marker can see the contradiction. Judge each point separately."</p></div>
+
+<h3>A practice mini-assignment: the chart-table night lantern</h3>
+<div class="callout scope"><div class="callout-title">Practice material, invented for this site</div><p>The task below is a small invented practice assignment. It is <strong>not</strong> a past assignment and it is not marked by Qualifications Scotland. Its marks and stages show the shape of the real thing; a real assignment has several tasks and is much longer. Real past and specimen assignments are on the Higher Engineering Science subject page of the Qualifications Scotland website.</p></div>
+<p><strong>The problem.</strong> HMS Ratchet's navigator wants a lamp over the chart table that comes on by itself at dusk and stays off in daylight.</p>
+<p><strong>Given.</strong> Supply 9 V. LDR: about 2 kΩ in bright daylight, 20 kΩ at dusk, 100 kΩ in the dark. Lamp: 60 mA at 9 V. n-channel enhancement MOSFET: threshold gate–source voltage 2.0 V; the lamp is fully on (60 mA) when $V_{GS}$ is 4.0 V or more. (A real question gives data like this in a data sheet or graph.)</p>
+<p><strong>Specification.</strong></p>
+<ol>
+<li><strong>S1</strong> The lamp is off in bright daylight (LDR about 2 kΩ).</li>
+<li><strong>S2</strong> The lamp switches on when the LDR reaches about 20 kΩ (dusk).</li>
+<li><strong>S3</strong> In the dark (LDR 100 kΩ) the lamp is fully bright, drawing 60 mA.</li>
+<li><strong>S4</strong> The control circuit works from the single 9 V battery and uses no more than three components besides the lamp and battery.</li>
+</ol>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 460 300" style="max-width:500px" role="img" aria-label="Circuit schematic of the night lantern. A 9 volt supply rail runs along the top and 0 volts along the bottom. On the left a 68 kilohm fixed resistor and an LDR are in series between the rails, forming a voltage divider. The junction between them, which is the voltage across the LDR, connects to the gate of an n-channel enhancement MOSFET. The MOSFET's drain connects through the lamp to the 9 volt rail and its source connects to 0 volts.">
+<defs><marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-red"/></marker></defs>
+<g class="stroke-ink" stroke-width="2" fill="none">
+<path d="M60 30 H290"/><path d="M60 270 H290"/>
+<path d="M100 30 V60"/><rect x="90" y="60" width="20" height="50" class="card"/><path d="M100 110 V150"/>
+<path d="M100 150 V170"/><rect x="90" y="170" width="20" height="50" class="card"/><path d="M100 220 V270"/>
+<path d="M100 150 H224"/><path d="M232 122 V178"/>
+<path d="M244 120 V136 M244 142 V158 M244 164 V180"/>
+<path d="M244 128 H290 V100"/><path d="M244 172 H290 V270"/><path d="M290 30 V60"/>
+<circle cx="290" cy="80" r="20" class="card"/><path d="M276 66 L304 94 M304 66 L276 94"/>
+<path d="M224 150 H232"/><path d="M244 150 H250"/>
+</g>
+<path d="M250 172 L258 167 V177 Z" class="f-red"/>
+<circle cx="100" cy="150" r="4" class="ink" fill="currentColor"/>
+<path d="M150 158 L116 182" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar5)"/><path d="M158 174 L120 198" class="s-red" stroke-width="2" fill="none" marker-end="url(#ar5)"/>
+<g font-size="13" class="ink">
+<text x="60" y="22">+9 V</text><text x="60" y="288">0 V</text>
+<text x="122" y="90">R = 68 kΩ</text><text x="124" y="124" font-size="11" class="ink2">fixed resistor</text>
+<text x="124" y="226">LDR</text>
+<text x="122" y="246" font-size="11" class="ink2">gate voltage =</text><text x="122" y="260" font-size="11" class="ink2">voltage across LDR</text>
+<text x="300" y="100" font-size="12">lamp</text><text x="300" y="116" font-size="11" class="ink2">60 mA</text>
+<text x="300" y="196" font-size="12">n-channel MOSFET</text><text x="300" y="211" font-size="11" class="ink2">drain top, source bottom</text>
+</g>
+</svg></div><figcaption>Figure 4.2 · The night lantern. The LDR is at the bottom of the divider, so in the dark its resistance rises and so does the gate voltage.</figcaption></figure>
+
+<details open><summary><strong>Stage 1 · Analysis (4–8 marks in a real assignment)</strong></summary>
+<p>Turn each specification point into a <em>number or a state you can test</em>. Draw the control diagram: <em>input</em> (LDR in a divider: light level in, voltage out) → <em>process</em> (MOSFET as a voltage-operated switch with a threshold of 2.0 V) → <em>output</em> (lamp: on or off). Note what the specification does <em>not</em> say, such as a gate current, so you can see why a MOSFET fits: its gate draws almost no current, so it does not load the divider.</p></details>
+<details><summary><strong>Stage 2 · Designing (8–12 marks)</strong></summary>
+<p>At dusk the LDR is 20 kΩ and the gate must reach the 2.0 V threshold. The LDR therefore has 2.0 V across it, so the fixed resistor has $9.0 - 2.0 = 7.0\ \mathrm{V}$. From $V_1/V_2 = R_1/R_2$: $R = \dfrac{20\,\mathrm{k\Omega} \times 7.0}{2.0} = 70\ \mathrm{k\Omega}$. Choose the nearest standard value you have, 68 kΩ. <strong>Predict</strong> each case: bright daylight gives $9 \times 2/(68+2) = 0.26\ \mathrm{V}$ (off); dusk gives $9 \times 20/(68+20) = 2.05\ \mathrm{V}$ (just on); dark gives $9 \times 100/(68+100) = 5.36\ \mathrm{V}$, above 4.0 V so the lamp is fully on. These predictions become the <em>expected results</em> in your test plan.</p></details>
+<details><summary><strong>Stage 3 · Building or simulating (8–12 marks)</strong></summary>
+<p>Build it in the simulator with a variable resistor standing in for the LDR. Your evidence: a clear screenshot of the whole circuit with every value shown, <em>a note that the variable resistor substitutes for the LDR</em>, the MOSFET's gate, drain and source clearly identifiable, and meters placed where you will read them. Print it large enough to read.</p></details>
+<details><summary><strong>Stage 4 · Testing (8–14 marks)</strong></summary>
+<p>Use the builder below. For every row: an action in the first box, a prediction (with value and unit, or a state) in the second, the measured number in the third, pass or fail, and an amendment <em>before the next test</em> if it failed.</p></details>
+<div class="widget" id="w-testplan">
+  <h3 class="widget-title">Test-plan builder</h3>
+  <p class="hint">The three rows are the night lantern's tests, with the expected results from the design above. Write the actual results as you "test", mark pass or fail, and add an amendment to any failed test. The prompts under each row check structure (an action, a predicted value, an amendment) and tell you what is missing. Press "Load a weak plan to fix" to see the 2024 mistake: a test written where the expected result belongs.</p>
+</div>
+<details><summary><strong>Stage 5 · Evaluation (8–14 marks)</strong></summary>
+<p>Write one evaluation for each of S1 to S4 using the four-part pattern above (the point, the evidence, the verdict, the amendment). Use the checker below on your sentences.</p></details>
+<div class="widget" id="w-evalcheck">
+  <h3 class="widget-title">The evaluation sentence checker</h3>
+  <p class="hint">Write your own evaluation of each specification point (or load the weak and stronger examples to compare). The tool highlights evidence words (orange), verdict words (blue) and amendment words, and ticks off the four parts. It looks for keywords and structure only. It does not mark your work.</p>
+</div>
+<p>The weak example fails exactly where the course reports say candidates fail: "the circuit worked well" gives no evidence, "so this was met" gives no value, and "all the specification points were met" is a blanket claim. The stronger example quotes a measured value, says where the evidence is, gives a verdict, and, for the point that was only partly met, records what was changed and retested.</p>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>list the assignment conditions (8 hours, alone, supervised, closed book with the Data Booklet allowed, evidence on paper) and the five skills with their mark ranges;</li><li>produce clear, labelled evidence that shows substituted components and orientation;</li><li>write a test plan that keeps the test, the expected result, the actual result and the amendment apart;</li><li>evaluate each specification point separately using evidence from actual performance;</li><li>count integrated circuits (not gates) and convert to NAND equivalents;</li><li>check each support against its reaction force.</li></ul></div>
+<div class="check" data-check="exm-assignment"></div>
+</section>
+
+<section id="plan" class="prose">
+<h2 data-short="Revision map">5 · Revision map and study plan <span class="spec-tag">REVISION</span></h2>
+<p>Revision works when it is sorted by <em>marks at stake</em> and by <em>what you can already do</em>. This table maps every part of the course to its mark range, its deck on this site, and the skills the course specification says you must be able to show.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Topic</th><th class="num">Marks</th><th>Deck</th><th>You must be able to…</th></tr></thead>
+<tbody>
+<tr><td>Systems, energy &amp; efficiency; engineering roles; impacts</td><td class="num">10–17</td><td><a href="systems.html">Systems &amp; energy</a></td><td>draw system, sub-system and control diagrams; explain negative feedback, closed-loop, two-state and proportional control; carry out energy audits and efficiency calculations; describe engineers' roles, impacts, sustainability and emerging technologies</td></tr>
+<tr><td>Analogue electronic control</td><td class="num">20–35</td><td><a href="analogue.html">Analogue electronics</a></td><td>design voltage dividers with LDRs and thermistors; use BJTs as current amplifiers and calculate $h_{FE}$; design n-channel MOSFET switches; compare BJT and MOSFET; use the six op-amp configurations</td></tr>
+<tr><td>Digital electronic control</td><td class="num">15–25</td><td><a href="digital.html">Digital &amp; programmable</a></td><td>use AND, OR, NOT, NAND, NOR and EOR (up to four inputs); write Boolean expressions and truth tables; convert to NAND; control a motor with PWM; draw flowcharts with pin numbers and delays, using loops and analogue inputs</td></tr>
+<tr><td>Drive systems &amp; pneumatics</td><td class="num">10–20</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td><td>calculate gear trains, belts, chains, rack and pinion, worm drives; use $T = Fr$ and $P = 2\pi nT$; describe couplings, bearings, brakes and clutches; sequence pneumatic and electro-pneumatic circuits</td></tr>
+<tr><td>Structures &amp; forces</td><td class="num">15–25</td><td><a href="structures.html">Structures &amp; materials</a></td><td>draw free-body diagrams; resolve forces; find beam reactions with hinges, rollers, angled loads and UDLs; find the size and nature of forces in frames</td></tr>
+<tr><td>Materials</td><td class="num">8–14</td><td><a href="structures.html">Structures &amp; materials</a></td><td>read stress–strain graphs; define six material properties; calculate stress, strain, $E$, factor of safety and strain energy; explain strain gauges</td></tr>
+<tr><td>Assignment (all five skills)</td><td class="num">50</td><td>this deck, chapter 4</td><td>analyse, design, build, test and evaluate, with clear evidence</td></tr>
+</tbody></table></div>
+<p>Open each group below and tick the skills you can do <em>without looking anything up</em>. Your ticks are saved in this browser, and the revision plan in chapter 1 can use them to set your confidence levels.</p>
+<div class="widget" id="w-map">
+  <h3 class="widget-title">The revision map</h3>
+</div>
+<h3>A study plan that works</h3>
+<ol>
+<li><strong>Diagnose.</strong> Do the pre-flight check at the end of each deck and tick the map above honestly. Weak areas are where the next marks are.</li>
+<li><strong>Weight.</strong> Use the plan in chapter 1: marks range and confidence together decide the hours. Analogue electronics is usually the first call on your time, because it is both the largest area and the one the 2024 report found most demanding.</li>
+<li><strong>Drill the foundations in short bursts.</strong> Ten minutes a day on the formula game, the prefix drill and the three-line calculation layout builds speed that no amount of reading builds.</li>
+<li><strong>Practise whole questions, to time.</strong> The mock papers in chapter 6 are a start. Past papers, past assignments, specimen papers and marking instructions are published on the Higher Engineering Science subject page of the Qualifications Scotland website, and the course reports advise using them.</li>
+<li><strong>Practise the assignment skills you will be marked on.</strong> Write test plans and evaluations for circuits you simulate. Do not only practise building.</li>
+<li><strong>Review mistakes by type.</strong> After each practice question, mark it against the audit habits in chapter 3: was it knowledge, units, rounding, or a missing reason?</li>
+</ol>
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>say how many marks each area of the course may carry;</li><li>name the deck that teaches each area, and what you must be able to do in it;</li><li>turn your confidence and the mark ranges into a revision plan.</li></ul></div>
+<div class="check" data-check="exm-plan"></div>
+</section>
+<section id="mock" class="prose">
+<h2 data-short="Mock paper">6 · Mock paper: practise under the clock <span class="spec-tag">PRACTICE</span></h2>
+<div class="callout exam"><div class="callout-title">Read this first: these questions are invented</div><p>Every question below was written for this site as practice. They are <strong>not</strong> past paper questions, not specimen questions, and not a prediction of what will be asked. The mark allocations are the typical allocation for this kind of question, not official marking instructions. Use the published past papers and marking instructions on the Qualifications Scotland subject page for the real thing.</p></div>
+<p>The structure follows the paper the course reports describe: a short Section 1 of 20 marks, then a longer Section 2 of 90 marks. Here you sit a scaled-down version of each. Use the timers: the pace calculation in chapter 1 gives about 82 seconds a mark, so 20 marks is 27 minutes and 30 marks is 41 minutes. Cover the Data Booklet formulae if you can, but have the booklet open as you would in the exam. Mark yourself honestly, one mark per bullet in each marking list.</p>
+
+<h3>Section 1 · 20 marks · 27 minutes</h3>
+<p>Short questions, no choice. Write each answer with the working and the unit, then open the marking list.</p>
+<div class="exam-timer" data-minutes="27" data-label="Section 1 timer"></div>
+<div class="check" data-check="exm-mock1"></div>
+
+<h3>Section 2 · three extended questions · 10 marks each · 41 minutes</h3>
+<p>One question from each of three areas. Start the timer, and do not stop it to look things up.</p>
+<div class="exam-timer" data-minutes="41" data-label="Section 2 timer"></div>
+
+<div class="exm-q-block"><h3>Question A · analogue electronics · 10 marks</h3>
+<p>The lamp on the Admiralty Board's chart table switches on when a sensor voltage $V_2$ rises above a reference voltage $V_1$. A difference amplifier compares them. Its output drives the base of an npn transistor through a resistor $R_b$, and the transistor switches a 6.0 V, 60 mA lamp from a 9 V supply.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 560 240" style="max-width:640px" role="img" aria-label="Circuit for Question A. Two inputs, V1 equal to 2.80 volts and V2 equal to 3.10 volts, go through 10 kilohm input resistors to a difference amplifier with a 47 kilohm feedback resistor. The amplifier output goes through a resistor Rb to the base of an npn transistor. The transistor's collector connects through a 6 volt 60 milliamp lamp to the 9 volt rail and its emitter to 0 volts.">
+<g class="stroke-ink" stroke-width="2" fill="none">
+<path d="M20 90 H60"/><rect x="60" y="80" width="56" height="20" class="card"/><path d="M116 90 H134 V100 H150"/>
+<path d="M20 150 H60"/><rect x="60" y="140" width="56" height="20" class="card"/><path d="M116 150 H134 V138 H150"/>
+<path d="M150 80 L250 119 L150 158 Z" class="card"/>
+<path d="M134 100 V50 H170"/><rect x="170" y="40" width="64" height="20" class="card"/><path d="M234 50 H280 V119"/>
+<path d="M134 138 V200 H170"/><rect x="170" y="190" width="64" height="20" class="card"/><path d="M234 200 H260"/><path d="M260 190 V210"/><path d="M252 210 H268"/>
+<path d="M250 119 H320"/><rect x="320" y="109" width="56" height="20" class="card"/><path d="M376 119 H410"/>
+<path d="M410 90 V148"/><path d="M410 119 L450 100"/><path d="M410 119 L450 150"/>
+<path d="M450 40 V70"/><rect x="438" y="70" width="24" height="26" class="card"/><path d="M450 96 V100"/>
+<path d="M450 150 V212"/><path d="M450 40 H520"/><path d="M440 212 H520"/>
+</g>
+<g font-size="12" class="ink">
+<text x="6" y="72">V1 = 2.80 V</text><text x="6" y="132">V2 = 3.10 V</text>
+<text x="72" y="94">10 kΩ</text><text x="72" y="154">10 kΩ</text>
+<text x="176" y="34">Rf = 47 kΩ</text><text x="176" y="228">47 kΩ</text>
+<text x="330" y="123">Rb</text><text x="472" y="80">6.0 V lamp,</text><text x="472" y="95">60 mA</text>
+<text x="462" y="170">npn: V<tspan font-size="9" dy="3">BE</tspan><tspan dy="-3"> = 0.7 V</tspan></text>
+<text x="462" y="188">h<tspan font-size="9" dy="3">FE</tspan><tspan dy="-3"> (min) = 120</tspan></text>
+<text x="456" y="34">+9 V</text><text x="456" y="206">0 V</text>
+</g></svg></div><figcaption>Question A. Not to scale. V<sub>1</sub> goes to the inverting input (top), V<sub>2</sub> to the non-inverting input (bottom).</figcaption></figure>
+<p>(a) The amplifier gain for the difference is $R_f / R_i$. Calculate the output voltage $V_o$. [2]<br>
+(b) The lamp is fully on. Calculate the minimum base current needed to saturate the transistor. [2]<br>
+(c) Calculate the value of $R_b$ that gives this base current when $V_o$ is as in (a). [3]<br>
+(d) Calculate the power dissipated in the transistor while the lamp is fully on, taking the lamp as 6.0 V. [1]<br>
+(e) Explain why $R_b$ is needed between the amplifier and the transistor base. [2]</p>
+<div class="check" data-check="exm-mock2a"></div></div>
+
+<div class="exm-q-block"><h3>Question B · structures · 10 marks</h3>
+<p>A 6.0 m beam is pinned (hinged) at A and rests on a roller at B. It carries a 12 kN vertical load 2.0 m from A, a 20 kN load acting 30° below the horizontal at 4.0 m from A, pushing towards B, and a uniformly distributed load of 4 kN m⁻¹ along the whole length.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 560 230" style="max-width:640px" role="img" aria-label="Beam for Question B. A horizontal beam 6.0 metres long is hinged at A on the left and on a roller at B on the right. A 12 kilonewton downward load acts 2.0 metres from A. A 20 kilonewton load acts at 4.0 metres from A, pointing down and to the right at 30 degrees below the horizontal. A uniformly distributed load of 4 kilonewtons per metre acts along the whole beam.">
+<defs><marker id="ar8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="f-red"/></marker></defs>
+<g class="stroke-ink" stroke-width="2" fill="none">
+<rect x="40" y="110" width="480" height="12" class="card"/>
+<path d="M40 122 L24 150 H56 Z" class="card"/><circle cx="500" cy="134" r="12" class="card"/><path d="M480 146 H520"/>
+</g>
+<g class="s-red" stroke-width="2.5" fill="none">
+<path d="M120 50 V104" marker-end="url(#ar8)"/>
+<path d="M360 60 L410 89" marker-end="url(#ar8)"/>
+</g>
+<g class="s-sea" stroke-width="1.5" fill="none"><path d="M60 80 V108" marker-end="url(#ar8)"/><path d="M130 80 V108"/><path d="M200 80 V108"/><path d="M270 80 V108"/><path d="M340 80 V108"/><path d="M410 80 V108"/><path d="M480 80 V108"/><path d="M40 78 H520"/></g>
+<g font-size="12" class="ink" text-anchor="middle">
+<text x="120" y="42">12 kN</text><text x="360" y="52">20 kN</text><text x="395" y="78" font-size="11">30°</text>
+<text x="280" y="68" class="ink2">4 kN/m over 6.0 m</text>
+<text x="40" y="178">A (hinge)</text><text x="500" y="178">B (roller)</text>
+<text x="160" y="205" class="ink2">2.0 m</text><text x="360" y="205" class="ink2">4.0 m from A</text>
+<path d="M40 190 H280" class="stroke-ink" stroke-width="1" fill="none"/>
+</g></svg></div><figcaption>Question B. Not to scale. Loads only are shown; the reactions are for you to find.</figcaption></figure>
+<p>(a) Resolve the 20 kN force into vertical and horizontal components. [2]<br>
+(b) Calculate the total of the uniformly distributed load, and state where it acts. [1]<br>
+(c) Take moments about A to calculate the reaction at B. [3]<br>
+(d) Calculate the vertical reaction at A. [2]<br>
+(e) State the horizontal reaction at A, and calculate the magnitude of the resultant reaction at A. [2]</p>
+<div class="check" data-check="exm-mock2b"></div></div>
+
+<div class="exm-q-block"><h3>Question C · drives and pneumatics · 10 marks</h3>
+<p>A winch motor delivers 5.0 N m at 1440 rev/min to gear A. The compound gear train has gear A (18 teeth) meshing with gear B (72 teeth); gear C (20 teeth) is fixed to the same shaft as B and meshes with gear D (60 teeth) on the output shaft. The gear train is 85% efficient. A double-acting cylinder (bore 63 mm, piston rod 20 mm) then lifts a guard at an air pressure of 6.0 × 10⁵ Pa.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg class="wide" data-minw="500" viewBox="0 0 520 220" style="max-width:600px" role="img" aria-label="Side view of a compound gear train. Gear A with 18 teeth on the motor shaft meshes with gear B with 72 teeth. Gear C with 20 teeth shares a shaft with gear B and meshes with gear D with 60 teeth on the output shaft. A separate small drawing shows a double-acting cylinder with a piston rod.">
+<g class="stroke-ink" stroke-width="2" fill="none">
+<circle cx="236" cy="110" r="72" class="card"/><circle cx="140" cy="110" r="52" class="card"/><circle cx="140" cy="110" r="24" class="card"/><circle cx="70" cy="110" r="22" class="card"/>
+<path d="M14 110 H48"/><path d="M308 110 H336"/>
+<rect x="360" y="85" width="120" height="50" class="card"/><path d="M360 110 H340"/><path d="M420 110 H500"/><path d="M420 90 V130"/>
+</g>
+<g font-size="12" class="ink" text-anchor="middle">
+<text x="70" y="114">A 18T</text><text x="140" y="80">B 72T</text><text x="140" y="114">C 20T</text><text x="262" y="114">D 60T</text>
+<text x="31" y="100" class="ink2">motor</text><text x="322" y="100" class="ink2">out</text>
+<text x="420" y="76">bore 63 mm, rod 20 mm</text><text x="420" y="154" class="ink2">6.0 × 10⁵ Pa</text>
+</g></svg></div><figcaption>Question C. Gears drawn schematically; C is drawn inside B but is a separate, smaller gear on the same shaft.</figcaption></figure>
+<p>(a) Calculate the output speed and the velocity ratio of the gear train. [3]<br>
+(b) Calculate the output torque of the gear train. [3]<br>
+(c) Calculate the force the cylinder exerts on the outstroke and on the instroke. [4]</p>
+<div class="check" data-check="exm-mock2c"></div></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>finish a 20-mark short-answer section in about 27 minutes by spending about 82 seconds a mark;</li><li>give each answer a formula, a substitution, a result and a unit;</li><li>mark your own work against a marking list, one bullet at a time, and decide which mistake type cost you most.</li></ul></div>
+
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="structures.html">← Structures &amp; materials</a>
+  <a class="btn primary" href="index.html#ranks">Back to the briefing: check your rank →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Engineering Science course specification (version 2.0, September 2018) and the Higher data booklet (Qualifications Scotland, January 2026), which Qualifications Scotland confirms are current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Ratchet</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script defer src="exam.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
