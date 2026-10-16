@@ -946,7 +946,7 @@
     weak.addEventListener("click", () => put(["The circuit worked well in daylight.", "It switches on at dusk, so this was met.", "The lamp was bright in the dark.", "All the specification points were met."]));
     strong.addEventListener("click", () => put([
       "S1 was met: with the LDR set to 2 kΩ the simulation showed 0.26 V at the gate, below the 2.0 V threshold, and the lamp stayed off (screenshot 1).",
-      "S2 was only partly met: at 20 kΩ the measured gate voltage was 1.9 V, just under the 2.0 V threshold, so the lamp stayed off. I changed the fixed resistor from 82 kΩ to 68 kΩ, retested, and measured 2.05 V with the lamp just lit.",
+      "S2 was only partly met: at 20 kΩ the measured gate voltage was 1.76 V, just under the 2.0 V threshold, so the lamp stayed off. I changed the fixed resistor from 82 kΩ to 68 kΩ, retested, and measured 2.05 V with the lamp just lit.",
       "S3 was met: at 100 kΩ the gate voltage was 5.36 V and the multimeter read 60 mA through the lamp.",
       "S4 was met: it runs from one 9 V battery, and apart from the lamp and battery it needs only three components (resistor, LDR, MOSFET).",
     ]));

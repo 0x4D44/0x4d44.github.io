@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital &amp; programmable control &middot; Rivets, Relays &amp; Rigging</title>
+<meta name="description" content="Higher Engineering Science digital electronic control: logic gates, truth tables, Boolean expressions, NAND equivalents and ICs, microcontroller flowcharts, loops, delays and pulse-width modulation, with animated widgets.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="digital.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%233a1c0c'/%3E%3Crect x='5' y='1' width='6' height='14' fill='%23d9a04f'/%3E%3Crect x='1' y='5' width='14' height='6' fill='%23d9a04f'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23d9a04f'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%238a4210'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23c8102e'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz-systems.js"></script>
+<script src="quiz-analogue.js"></script>
+<script src="quiz-digital.js"></script>
+<script src="quiz-mechanisms.js"></script>
+<script src="quiz-structures.js"></script>
+<script src="quiz-exam.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Rivets, Relays and Rigging — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="4" height="16" fill="#d9a04f"/><rect x="0" y="6" width="16" height="4" fill="#d9a04f"/><rect x="2" y="2" width="12" height="12" fill="#d9a04f"/><rect x="1" y="3" width="14" height="10" fill="#d9a04f"/><rect x="3" y="1" width="10" height="14" fill="#d9a04f"/><rect x="4" y="4" width="8" height="8" fill="#8a4210"/><rect x="3" y="5" width="10" height="6" fill="#8a4210"/><rect x="5" y="3" width="6" height="10" fill="#8a4210"/><rect x="6" y="6" width="4" height="4" fill="#3a1c0c"/><rect x="7" y="7" width="2" height="2" fill="#c8102e"/></svg>
+      <span class="brand-text"><span class="brand-title">Rivets, Relays &amp; Rigging</span><span class="brand-sub">Higher Engineering Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="systems.html">Systems &amp; energy</a></li>
+        <li><a href="analogue.html">Analogue electronics</a></li>
+        <li><a href="digital.html" aria-current="page">Digital &amp; programmable</a></li>
+        <li><a href="mechanisms.html">Drives &amp; pneumatics</a></li>
+        <li><a href="structures.html">Structures &amp; materials</a></li>
+        <li><a href="exam.html">Exam &amp; assignment</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">The Signal Locker · digital electronic control and programmable control</p>
+<h1>Digital &amp; programmable control</h1>
+<p class="lede">Digital electronic control is the part of the course where a careful, tidy method earns nearly all the marks. The question-paper range for digital electronic control (which includes programmable control) is 15 to 25 marks. The 2024 course report said "Candidates performed very well in areas such as digital electronics and structures calculations", so the marks are there to be taken, and the ones that are lost are lost to small, avoidable slips. This deck shows you the slips.</p>
+<p>Master Shipwright Morag Kerr has led 1805 (Blockhaven) Squadron below decks on HMS Ratchet to the Signal Locker. Along one wall hang the Popham flag lockers and the signal lamps. On the other wall is the ship's redstone relay board, a panel of torches, repeaters and dust. "Everything in this room," she says, "is a code built from things that are either one way or the other. A flag is hoisted or it is not. A lamp is lit or it is dark. Learn to think in two states and you can describe, build and program the whole ship's control system."</p>
+<p>The deck has six chapters: logic gates (chapter 1), going between specifications, truth tables, Boolean expressions and diagrams (chapter 2), NAND equivalents and counting ICs (chapter 3), programmable control with microcontrollers (chapter 4), pulse-width modulation (chapter 5) and putting it all together the way an exam question does (chapter 6). Every chapter ends with a pre-flight check. Work through the widgets: they are there because watching a circuit or a program <em>run</em> teaches more than reading about it.</p>
+</div>
+
+<section id="gates" class="prose">
+<h2 data-short="Logic gates">1 · Digital vs analogue, and logic gates <span class="spec-tag">DIGITAL · logic functions</span></h2>
+
+<h3>Two kinds of signal</h3>
+<p>An <dfn>analogue</dfn> signal can take <em>any</em> value in a range. The voltage from a temperature sensor, the depth read from a sounding line and the pressure in a boiler are all analogue: they change smoothly, and every tiny change matters. A <dfn>digital</dfn> signal can take only a small, fixed set of values. In digital electronics that set is nearly always <em>two</em> values: <strong>1</strong> (high, ON, true, often about +5 V) and <strong>0</strong> (low, OFF, false, about 0 V).</p>
+<p>The Signal Locker is full of digital codes. A Popham signal flag is either at the masthead or it is not. A signal lamp is lit or dark, and a lamp flashing a pattern of long and short is a digital message. In the game, a redstone torch or repeater is digital (powered or not), whereas redstone dust, whose strength runs from 0 to 15, behaves like an analogue signal: it carries a level, not just a yes or no.</p>
+
+<figure class="diagram"><svg viewBox="0 0 440 124" style="max-width:640px" role="img" aria-label="Two waveforms. The analogue one is a smooth wave that takes every value between its minimum and maximum. The digital one jumps between two levels, 1 and 0, in a pattern 1 0 1 1 0 1 0 0."><g><path class="dg-axis" d="M20 50 H200"/><path class="dg-wave alt" d="M20.0 50.0L21.5 47.1L23.0 44.2L24.5 41.3L26.0 38.6L27.5 36.0L29.0 33.5L30.5 31.3L32.0 29.2L33.5 27.3L35.0 25.8L36.5 24.4L38.0 23.4L39.5 22.6L41.0 22.2L42.5 22.0L44.0 22.2L45.5 22.6L47.0 23.4L48.5 24.4L50.0 25.8L51.5 27.3L53.0 29.2L54.5 31.3L56.0 33.5L57.5 36.0L59.0 38.6L60.5 41.3L62.0 44.2L63.5 47.1L65.0 50.0L66.5 52.9L68.0 55.8L69.5 58.7L71.0 61.4L72.5 64.0L74.0 66.5L75.5 68.7L77.0 70.8L78.5 72.7L80.0 74.2L81.5 75.6L83.0 76.6L84.5 77.4L86.0 77.8L87.5 78.0L89.0 77.8L90.5 77.4L92.0 76.6L93.5 75.6L95.0 74.2L96.5 72.7L98.0 70.8L99.5 68.7L101.0 66.5L102.5 64.0L104.0 61.4L105.5 58.7L107.0 55.8L108.5 52.9L110.0 50.0L111.5 47.1L113.0 44.2L114.5 41.3L116.0 38.6L117.5 36.0L119.0 33.5L120.5 31.3L122.0 29.2L123.5 27.3L125.0 25.8L126.5 24.4L128.0 23.4L129.5 22.6L131.0 22.2L132.5 22.0L134.0 22.2L135.5 22.6L137.0 23.4L138.5 24.4L140.0 25.8L141.5 27.3L143.0 29.2L144.5 31.3L146.0 33.5L147.5 36.0L149.0 38.6L150.5 41.3L152.0 44.2L153.5 47.1L155.0 50.0L156.5 52.9L158.0 55.8L159.5 58.7L161.0 61.4L162.5 64.0L164.0 66.5L165.5 68.7L167.0 70.8L168.5 72.7L170.0 74.2L171.5 75.6L173.0 76.6L174.5 77.4L176.0 77.8L177.5 78.0L179.0 77.8L180.5 77.4L182.0 76.6L183.5 75.6L185.0 74.2L186.5 72.7L188.0 70.8L189.5 68.7L191.0 66.5L192.5 64.0L194.0 61.4L195.5 58.7L197.0 55.8L198.5 52.9L200.0 50.0"/><text class="dg-ft" x="110" y="110" text-anchor="middle">Analogue: any value, always changing</text></g><g transform="translate(220 0)"><path class="dg-axis" d="M20 50 H200"/><path class="dg-wave" d="M20 22L42.5 22L42.5 22L42.5 78L65 78L65 78L65 22L87.5 22L87.5 22L87.5 22L110 22L110 22L110 78L132.5 78L132.5 78L132.5 22L155 22L155 22L155 78L177.5 78L177.5 78L177.5 78L200 78"/><text class="dg-fm" x="20" y="18" text-anchor="end">1</text><text class="dg-fm" x="20" y="86" text-anchor="end">0</text><text class="dg-ft" x="110" y="110" text-anchor="middle">Digital: only 0 or 1</text></g></svg><figcaption>An analogue signal (left) takes every value in a range. A digital signal (right) takes only two: 1 and 0.</figcaption></figure>
+
+<p>Why bother with only two values? Because a two-valued signal is easy to protect. If the receiver only has to decide "is this nearer 0 or nearer 1?", a bit of noise on the wire does not matter. Try the widget below: it sends the same message through the same fog of noise on an analogue link and on a digital link.</p>
+
+<div class="widget" id="w-noise">
+  <h3 class="widget-title">Signal Locker: a message through fog (analogue vs digital)</h3>
+  <p class="hint">Drag the noise slider. Watch the orange trace (analogue) pick up every wobble, and the green bars (the digital receiver's decisions) stay perfect until the noise passes half the signal swing.</p>
+</div>
+
+<div class="callout def"><div class="callout-title">📘 Logic levels and truth tables</div>
+<p>A <dfn>logic gate</dfn> is a circuit that turns one or more digital inputs into one digital output according to a fixed rule. A <dfn>truth table</dfn> lists every possible combination of inputs and the output each one gives. With $n$ inputs there are $2^n$ rows: 4 rows for two inputs, 8 for three, 16 for four. By convention the rows are written in <strong>binary counting order</strong>, with the first input as the leftmost digit: 000, 001, 010, 011, 100, and so on. Keep to that order so that nobody (including the marker) can lose their place.</p></div>
+
+<h3>The six gates</h3>
+<p>The course asks for six gates: AND, OR, NOT, NAND, NOR and EOR, with up to four inputs. A gate's <em>shape</em> tells you its job. AND has a flat back and a rounded front. OR has a curved back that comes to a point. NOT is a triangle. A small circle (a <dfn>bubble</dfn>) on an output means "inverted", so NAND is "AND with a NOT on the end", and NOR is "OR with a NOT on the end". EOR (exclusive OR, also written XOR) is an OR with an extra curved line at the back.</p>
+
+<div class="table-wrap"><table class="dg-gatetable"><caption class="sr-only">The six logic gates</caption><thead><tr><th scope="col">Gate</th><th scope="col">Symbol</th><th scope="col">Expression</th><th scope="col">Meaning</th><th scope="col">Truth table</th></tr></thead><tbody><tr><th scope="row">NOT</th><td class="sym"><svg class="dg-svg" viewBox="0 0 172 44" style="max-width:150px" role="img" aria-label="NOT gate symbol"><g transform="translate(8,22)"><path class="dg-wire" data-net="A" d="M36,0 H45 V0 H67"/><path class="dg-wire" data-net="Q" d="M106,0 H130"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(67,0)"><path class="dg-body" d="M0,-14 L30,0 L0,14 Z"/><circle class="dg-bub" cx="34.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="134" cy="0" r="4"/><text class="dg-lab" x="142" y="5">Q</text></g></svg></td><td>$Q = \overline{A}$</td><td>The output is the <b>opposite</b> of the input. It has one input only.</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td class="q one">1</td></tr><tr data-row="1"><td>1</td><td class="q">0</td></tr></tbody></table></td></tr><tr><th scope="row">AND</th><td class="sym"><svg class="dg-svg" viewBox="0 0 192 90" style="max-width:150px" role="img" aria-label="AND gate symbol"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H74"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H74"/><path class="dg-wire" data-net="Q" d="M126,27 H150"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(74,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/></g><circle class="dg-term" data-net="Q" cx="154" cy="27" r="4"/><text class="dg-lab" x="162" y="32">Q</text></g></svg></td><td>$Q = A \cdot B$</td><td>The output is 1 only when <b>all</b> the inputs are 1.</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td>0</td><td class="q">0</td></tr><tr data-row="1"><td>0</td><td>1</td><td class="q">0</td></tr><tr data-row="2"><td>1</td><td>0</td><td class="q">0</td></tr><tr data-row="3"><td>1</td><td>1</td><td class="q one">1</td></tr></tbody></table></td></tr><tr><th scope="row">OR</th><td class="sym"><svg class="dg-svg" viewBox="0 0 192 90" style="max-width:150px" role="img" aria-label="OR gate symbol"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H80.8"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H80.8"/><path class="dg-wire" data-net="Q" d="M126,27 H150"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(74,27)"><path class="dg-body" d="M0,-20 Q28.6,-20 52,0 Q28.6,20 0,20 Q18,0 0,-20 Z"/></g><circle class="dg-term" data-net="Q" cx="154" cy="27" r="4"/><text class="dg-lab" x="162" y="32">Q</text></g></svg></td><td>$Q = A + B$</td><td>The output is 1 when <b>any</b> input is 1 (one, several, or all).</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td>0</td><td class="q">0</td></tr><tr data-row="1"><td>0</td><td>1</td><td class="q one">1</td></tr><tr data-row="2"><td>1</td><td>0</td><td class="q one">1</td></tr><tr data-row="3"><td>1</td><td>1</td><td class="q one">1</td></tr></tbody></table></td></tr><tr><th scope="row">NAND</th><td class="sym"><svg class="dg-svg" viewBox="0 0 201 90" style="max-width:150px" role="img" aria-label="NAND gate symbol"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H74"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H74"/><path class="dg-wire" data-net="Q" d="M135,27 H159"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(74,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="163" cy="27" r="4"/><text class="dg-lab" x="171" y="32">Q</text></g></svg></td><td>$Q = \overline{A \cdot B}$</td><td>An AND followed by a NOT: the output is 0 only when <b>all</b> inputs are 1.</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td>0</td><td class="q one">1</td></tr><tr data-row="1"><td>0</td><td>1</td><td class="q one">1</td></tr><tr data-row="2"><td>1</td><td>0</td><td class="q one">1</td></tr><tr data-row="3"><td>1</td><td>1</td><td class="q">0</td></tr></tbody></table></td></tr><tr><th scope="row">NOR</th><td class="sym"><svg class="dg-svg" viewBox="0 0 201 90" style="max-width:150px" role="img" aria-label="NOR gate symbol"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H80.8"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H80.8"/><path class="dg-wire" data-net="Q" d="M135,27 H159"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(74,27)"><path class="dg-body" d="M0,-20 Q28.6,-20 52,0 Q28.6,20 0,20 Q18,0 0,-20 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="163" cy="27" r="4"/><text class="dg-lab" x="171" y="32">Q</text></g></svg></td><td>$Q = \overline{A + B}$</td><td>An OR followed by a NOT: the output is 1 only when <b>every</b> input is 0.</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td>0</td><td class="q one">1</td></tr><tr data-row="1"><td>0</td><td>1</td><td class="q">0</td></tr><tr data-row="2"><td>1</td><td>0</td><td class="q">0</td></tr><tr data-row="3"><td>1</td><td>1</td><td class="q">0</td></tr></tbody></table></td></tr><tr><th scope="row">EOR (exclusive OR)</th><td class="sym"><svg class="dg-svg" viewBox="0 0 192 90" style="max-width:150px" role="img" aria-label="EOR gate symbol"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H73.8"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H73.8"/><path class="dg-wire" data-net="Q" d="M126,27 H150"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(74,27)"><path class="dg-body" d="M0,-20 Q28.6,-20 52,0 Q28.6,20 0,20 Q18,0 0,-20 Z"/><path class="dg-extra" d="M-7,-20 Q11,0 -7,20"/></g><circle class="dg-term" data-net="Q" cx="154" cy="27" r="4"/><text class="dg-lab" x="162" y="32">Q</text></g></svg></td><td>$Q = A \oplus B$</td><td>The output is 1 when the two inputs are <b>different</b>: one is 1 but not both.</td><td><table class="dg-tt"><caption class="sr-only">Truth table for Q</caption><thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col" class="q">Q</th></tr></thead><tbody><tr data-row="0"><td>0</td><td>0</td><td class="q">0</td></tr><tr data-row="1"><td>0</td><td>1</td><td class="q one">1</td></tr><tr data-row="2"><td>1</td><td>0</td><td class="q one">1</td></tr><tr data-row="3"><td>1</td><td>1</td><td class="q">0</td></tr></tbody></table></td></tr></tbody></table></div>
+
+<p>AND, OR, NAND and NOR can have two, three or four inputs. NOT always has one. EOR has two. A three-input AND gate is 1 only if all three inputs are 1. A four-input NOR gate is 1 only if all four inputs are 0. The rules never change, only the number of rows in the table.</p>
+
+<div class="widget" id="w-gates">
+  <h3 class="widget-title">Gate lab: pick a gate, flip the switches</h3>
+  <p class="hint">Press the switches to set each input to 0 or 1. Red wires carry a 1 and little dots flow along them. The truth-table row you have set lights up. Try <em>Quiz me</em> to predict the output before it is shown.</p>
+</div>
+
+<div class="callout tip"><div class="callout-title">🪔 Aside: is a redstone torch a NOT gate?</div>
+<p>Yes, and it is the best everyday NOT gate there is. A redstone torch sits on a block. When the block has power the torch goes <em>out</em>, and when the block has no power the torch is <em>lit</em>. Input 1 gives output 0; input 0 gives output 1. Run two input wires into the <em>same</em> block, with one torch on it, and you have a NOR gate: the block is powered if either input is on (that is an OR), and the torch then goes out (that is the NOT). Real chips do exactly the same job with transistors. (A torch also takes a moment, about a tenth of a second, to change. Real gates take a few nanoseconds, but they too are not instant.)</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"OR gives 1 when either input is 1, so why does 1 and 1 give 0 for an EOR? Isn't 'either' the same as OR?"</p><p><strong>Master Shipwright Kerr:</strong> "In everyday English 'either' sometimes means 'one or the other but not both', and that is the EOR. An ordinary OR means 'one or the other or both'. The E stands for <em>exclusive</em>: it excludes the case where both are on. Remember it as 'the inputs are different'. Two switches at the same position give 0; two in different positions give 1. That is why a lantern with a switch at each end of the gun deck is an EOR."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 1 · <span class="pill">Identify</span> · naming a gate from its truth table</p>
+<p>A gate has inputs $A$ and $B$ and output $Q$. Its truth table is:</p>
+<div class="table-wrap"><table class="dg-tt"><thead><tr><th>A</th><th>B</th><th class="q">Q</th></tr></thead><tbody><tr><td>0</td><td>0</td><td class="q">0</td></tr><tr><td>0</td><td>1</td><td class="q">1</td></tr><tr><td>1</td><td>0</td><td class="q">1</td></tr><tr><td>1</td><td>1</td><td class="q">0</td></tr></tbody></table></div>
+<p>(a) Name the gate and give a reason. (b) A second gate gives $Q = 0$ only when $A = 1$ and $B = 1$, and $Q = 1$ for every other row. Name it.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>The gate is an <strong>EOR</strong> (exclusive OR). <span class="why">Typical mark: correct name.</span></li>
+<li>The output is 1 only when the inputs are different. <span class="why">A reason is needed. "Not OR" is wrong: an OR would give 1 for the last row, but here the last row is 0.</span></li>
+<li>(b) <strong>NAND</strong>. <span class="why">AND would give 1 only for the last row; this gate is the opposite of that in every row.</span></li>
+</ol>
+<p class="why">Common slip: calling the first gate an OR because the first three rows match. Always check the row where both inputs are 1.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · <span class="pill">Truth table</span> · a three-input gate</p>
+<p>Complete the truth table for a three-input NOR gate with inputs $A$, $B$ and $C$.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>Write all eight rows in binary order: 000, 001, 010, 011, 100, 101, 110, 111. <span class="why">Eight rows because $2^3 = 8$.</span></li>
+<li>A NOR is an OR followed by a NOT, so the output is 1 only when <em>no</em> input is 1. That is the first row only: $Q = 1$ for 000.</li>
+<li>Every other row has at least one 1 on its inputs, so $Q = 0$ for the other seven rows.</li>
+</ol>
+<div class="table-wrap"><table class="dg-tt"><thead><tr><th>A</th><th>B</th><th>C</th><th class="q">Q</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td class="q one">1</td></tr><tr><td>0</td><td>0</td><td>1</td><td class="q">0</td></tr><tr><td>0</td><td>1</td><td>0</td><td class="q">0</td></tr><tr><td>0</td><td>1</td><td>1</td><td class="q">0</td></tr><tr><td>1</td><td>0</td><td>0</td><td class="q">0</td></tr><tr><td>1</td><td>0</td><td>1</td><td class="q">0</td></tr><tr><td>1</td><td>1</td><td>0</td><td class="q">0</td></tr><tr><td>1</td><td>1</td><td>1</td><td class="q">0</td></tr></tbody></table></div>
+</details></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the EOR row</div><p>The 2026 course report said "Most candidates developed a correct truth table." The marks that are still lost are lost to slips, and the commonest slip with this gate is writing 1 for the row where both EOR inputs are 1. (That is our own advice, not a quotation from the report.) Before you move on, say it aloud: <em>EOR is 1 when the inputs differ.</em></p></div><p>The 2026 course report said "Most candidates developed a correct truth table." The 2024 report records a mark lost by "some candidates" who "made an error with the output from the exclusive OR gate" when completing a truth table from a logic diagram. The usual cause is writing 1 for the row where both EOR inputs are 1. Before you move on, say it aloud: <em>EOR is 1 when the inputs differ.</em></p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>explain the difference between an analogue and a digital signal, and say why digital signals resist noise;</li><li>recognise the symbols for AND, OR, NOT, NAND, NOR and EOR, with up to four inputs;</li><li>write the truth table of any of them, in binary order, and say what each does in plain English;</li><li>name a real device that behaves like each gate.</li></ul></div>
+<div class="check" data-check="dig-gates"></div>
+</section>
+
+<section id="bool" class="prose">
+<h2 data-short="Spec to circuit">2 · From specification to truth table, expression and diagram <span class="spec-tag">DIGITAL · design and analysis</span></h2>
+
+<p>A control problem arrives as a sentence: "the alarm sounds if the hatch is open and the master switch is on". Your job is to turn the sentence into something you can build. There is a fixed route, and it can be walked in either direction. Learn the route and a whole page of exam marks becomes mechanical.</p>
+
+<figure class="diagram"><svg viewBox="0 0 430 290" style="max-width:560px" role="img" aria-label="A five-step flow from a written specification to a truth table, then a Boolean expression, then a logic diagram, then the NAND equivalent. Notes on each arrow say what is done at that step."><rect class="dg-fb b" x="20" y="8" width="170" height="34" rx="4"/><text class="dg-ft" x="105" y="30" text-anchor="middle">Written specification</text><rect class="dg-fb b" x="20" y="70" width="170" height="34" rx="4"/><text class="dg-ft" x="105" y="92" text-anchor="middle">Truth table</text><rect class="dg-fb b" x="20" y="132" width="170" height="34" rx="4"/><text class="dg-ft" x="105" y="154" text-anchor="middle">Boolean expression</text><rect class="dg-fb b" x="20" y="194" width="170" height="34" rx="4"/><text class="dg-ft" x="105" y="216" text-anchor="middle">Logic diagram</text><rect class="dg-fb a" x="20" y="256" width="170" height="34" rx="4"/><text class="dg-ft" x="105" y="278" text-anchor="middle">NAND equivalent</text><path class="dg-fl" d="M105 42 L105 70"/><path class="dg-ff" d="M105 70 L108.1,62.6 L101.9,62.6 Z"/><text class="dg-ft2" x="205" y="60" text-anchor="start">decide the output for every row</text><path class="dg-fl" d="M105 104 L105 132"/><path class="dg-ff" d="M105 132 L108.1,124.6 L101.9,124.6 Z"/><text class="dg-ft2" x="205" y="122" text-anchor="start">AND term per row where Q = 1, then OR</text><path class="dg-fl" d="M105 166 L105 194"/><path class="dg-ff" d="M105 194 L108.1,186.6 L101.9,186.6 Z"/><text class="dg-ft2" x="205" y="184" text-anchor="start">work from the output gate back to the inputs</text><path class="dg-fl" d="M105 228 L105 256"/><path class="dg-ff" d="M105 256 L108.1,248.6 L101.9,248.6 Z"/><text class="dg-ft2" x="205" y="246" text-anchor="start">swap, cancel double NOTs, count ICs</text></svg><figcaption>The route from a sentence to a circuit. Each arrow can also be followed backwards: a diagram gives an expression, an expression gives a table.</figcaption></figure>
+
+<div class="callout def"><div class="callout-title">📘 The notation used in this deck</div>
+<p>Boolean expressions describe a circuit in algebra. This deck uses: <strong>AND</strong> as a dot, $A \cdot B$; <strong>OR</strong> as a plus, $A + B$; <strong>NOT</strong> as a bar over the top, $\overline{A}$; and <strong>EOR</strong> as a circled plus, $A \oplus B$. A bar over a longer expression inverts all of it, so $\overline{A \cdot B}$ is a NAND and $\overline{A + B}$ is a NOR. AND binds tighter than OR, exactly like multiplication before addition: $A \cdot B + C$ means $(A \cdot B) + C$. Check which symbols the question paper uses and write in its style, but always make the meaning unmistakable, with brackets if in doubt.</p></div>
+
+<h3>Specification to truth table</h3>
+<p>Give every input a letter and decide what 1 means for each (switch pressed, hatch open, temperature too high). Write all $2^n$ input rows in binary order. Then, for each row, read the specification and decide whether the output should be 1 or 0. This is the slow, careful step, and the one where the most thought goes. Do it row by row, never in your head all at once.</p>
+
+<h3>Truth table to Boolean expression: sum of products</h3>
+<p>The reliable method is the <dfn>sum of products</dfn>. Look only at the rows where $Q = 1$. For each such row, write an AND term that is true for that row alone: use the input as it is where the row has a 1, and the inverted input (with a bar) where the row has a 0. Then OR all these terms together. Finally, if the question asks for it or if it saves gates, simplify.</p>
+<p>The reason it works: each AND term is "switched on" by exactly one row, and the OR collects every row that must give 1. Nothing else can make the output 1.</p>
+
+<h3>Expression to logic diagram, and diagram to expression</h3>
+<p>To draw a circuit from an expression, work from the right (the output) backwards: the last operation is the gate nearest the output. $Q = A \cdot \overline{B} + C$ ends with an OR, whose inputs are the product $A \cdot \overline{B}$ (an AND, fed by $A$ and a NOT of $B$) and the plain input $C$. To go the other way, from a diagram to an expression, label the output of every gate with the expression it produces, starting at the inputs and working along. Each wire carries an expression until you reach $Q$.</p>
+
+<div class="widget" id="w-trainer">
+  <h3 class="widget-title">Spec-to-circuit trainer</h3>
+  <p class="hint">Choose a scenario from the Signal Locker. Fill in the truth table row by row, build the sum of products, then see the circuit drawn and tested against your table.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Why not just write down the expression straight from the sentence?"</p><p><strong>Master Shipwright Kerr:</strong> "Sometimes you can, if the sentence is short. But sentences hide traps: 'not both', 'unless', 'at least one'. The truth table makes you decide every case, so nothing is left to luck. And the table is what the examiner's marking instruction checks first. Do the table, then the expression comes out of it like a key out of a lock."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 3 · <span class="pill">Table to expression</span> · sum of products</p>
+<p>A circuit has inputs $A$, $B$, $C$ and output $Q$. $Q = 1$ for the input combinations 001, 011 and 111 only. Write an expression for $Q$, and simplify it.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>One AND term per row where $Q = 1$. Row 001: $A=0, B=0, C=1$ gives $\overline{A} \cdot \overline{B} \cdot C$. Row 011: $\overline{A} \cdot B \cdot C$. Row 111: $A \cdot B \cdot C$. <span class="why">Inverted where the row has a 0.</span></li>
+<li>OR them: $Q = \overline{A}\cdot\overline{B}\cdot C + \overline{A}\cdot B\cdot C + A\cdot B\cdot C$. <span class="why">This is the unsimplified answer, and it is correct.</span></li>
+<li>Simplify. The first two terms differ only in $B$, so $\overline{A}\cdot C\cdot(\overline{B}+B) = \overline{A}\cdot C$. That leaves $Q = \overline{A}\cdot C + B\cdot C = C\cdot(\overline{A} + B)$.</li>
+</ol>
+<p class="why">Check by testing a row: 101 gives $C=1$ but $\overline{A}+B = 0+0 = 0$, so $Q = 0$, which matches the table (101 is not in the list).</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 4 · <span class="pill">Diagram to expression</span></p>
+<p>An EOR gate takes $A$ and $B$ and gives $X$. A NOR gate takes $C$ and $D$ and gives $Y$. An AND gate takes $X$ and $Y$ and gives $Q$. Write the expression for $Q$.</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>Label each gate output: $X = A \oplus B$ and $Y = \overline{C + D}$.</li>
+<li>The last gate is an AND of $X$ and $Y$: $Q = (A \oplus B)\cdot\overline{C + D}$. <span class="why">Use brackets so the EOR is clearly a unit; without them the dot and the circled plus could be misread.</span></li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 5 · <span class="pill">Four inputs</span> · the hatch alarm</p>
+<p>A lamp $Q$ must light when the master switch $A$ is on, the pressure switch $D$ is <em>not</em> on, and at least one of the switches $B$ or $C$ is on. (a) Write the expression. (b) Give the sum of products from the truth table.</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Three conditions joined by "and": $Q = A \cdot (B + C) \cdot \overline{D}$. <span class="why">"At least one of B or C" is an OR; "not on" is the bar.</span></li>
+<li>The table has 16 rows. $Q = 1$ needs $A = 1$ and $D = 0$ with $B$ or $C$ on: rows 1010, 1100 and 1110. <span class="why">Order the inputs A, B, C, D.</span></li>
+<li>Sum of products: $Q = A\cdot\overline{B}\cdot C\cdot\overline{D} + A\cdot B\cdot\overline{C}\cdot\overline{D} + A\cdot B\cdot C\cdot\overline{D}$.</li>
+<li>Compare: the factorised form needs one OR, one AND of three, and one NOT. The sum of products needs far more. Always look for the shorter form when the question asks you to minimise.</li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 6 · <span class="pill">Expression to diagram</span></p>
+<p>Draw a logic diagram for $Q = A \cdot \overline{B} + C$.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>The output is a two-input OR. One input is $C$ directly. <span class="why">The last operation in the expression is the plus.</span></li>
+<li>The other input comes from a two-input AND of $A$ and $\overline{B}$.</li>
+<li>$\overline{B}$ comes from a NOT gate on input $B$.</li>
+</ol>
+<figure class="diagram"><svg class="dg-svg" viewBox="0 0 366 158" style="max-width:420px" role="img" aria-label="Logic diagram for Q equals A AND NOT B, OR C"><g transform="translate(8,32)"><path class="dg-wire" data-net="B" d="M36,54 H45 V54 H81"/><path class="dg-wire" data-net="A" d="M36,0 H52 V-12 H129 V17 H158"/><path class="dg-wire" data-net="nB" d="M120,54 H136 V37 H158"/><path class="dg-wire" data-net="X" d="M210,27 H219 V57.5 H254.8"/><path class="dg-wire" data-net="C" d="M36,108 H59 V-18 H226 V77.5 H254.8"/><path class="dg-wire" data-net="Q" d="M300,67.5 H324"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><path class="dg-wire" data-net="C" d="M34,108 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><text class="dg-lab" x="20" y="113" text-anchor="end">C</text><circle class="dg-term" data-net="C" cx="30" cy="108" r="4"/><g class="dg-gate" data-gate="g1" data-out="nB" transform="translate(81,54)"><path class="dg-body" d="M0,-14 L30,0 L0,14 Z"/><circle class="dg-bub" cx="34.5" cy="0" r="4.5"/><text class="dg-tag" x="11" y="25" text-anchor="middle">NOT</text></g><text class="dg-net" x="124" y="48">nB</text><g class="dg-gate" data-gate="g2" data-out="X" transform="translate(158,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><text class="dg-tag" x="26" y="31" text-anchor="middle">AND</text></g><text class="dg-net" x="214" y="21">X</text><g class="dg-gate" data-gate="g3" data-out="Q" transform="translate(248,67.5)"><path class="dg-body" d="M0,-20 Q28.6,-20 52,0 Q28.6,20 0,20 Q18,0 0,-20 Z"/><text class="dg-tag" x="26" y="31" text-anchor="middle">OR</text></g><circle class="dg-term" data-net="Q" cx="328" cy="67.5" r="4"/><text class="dg-lab" x="336" y="72.5">Q</text></g></svg><figcaption>Q = A·B̄ + C.</figcaption></figure>
+<p class="why">Label every input and the output, and leave the gate symbols clear. Do not let wires cross unless they must, and mark any junction with a dot.</p>
+</details></div>
+
+<div class="widget" id="w-tracer">
+  <h3 class="widget-title">Diagram-to-expression tracer</h3>
+  <p class="hint">Pick a circuit. Press <em>Next step</em> and the tracer lights a gate, writes the expression on its output wire, and builds up the full expression for $Q$. Then complete the truth table.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 7 · <span class="pill">Truth table from a diagram</span> · with an EOR</p>
+<p>The circuit has an EOR gate on inputs $A$ and $B$ (output $X$), a NOT gate on $C$ (output $Y$), and an AND gate on $X$ and $Y$ (output $Q$). Complete the truth table with columns $A$, $B$, $C$, $X$, $Y$, $Q$.</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Write the eight input rows in binary order, then fill the intermediate columns one at a time. <span class="why">Extra columns for internal wires are the safest way to avoid slips.</span></li>
+<li>$X = A \oplus B$ is 1 when $A$ and $B$ differ. $Y = \overline{C}$.</li>
+<li>$Q = X \cdot Y$ is 1 only when $X = 1$ and $Y = 1$.</li>
+</ol>
+<div class="table-wrap"><table class="dg-tt"><thead><tr><th>A</th><th>B</th><th>C</th><th>X</th><th>Y</th><th class="q">Q</th></tr></thead><tbody>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td class="q">0</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td class="q">0</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td class="q one">1</td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td class="q">0</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td class="q one">1</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td class="q">0</td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td class="q">0</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td class="q">0</td></tr>
+</tbody></table></div>
+</details></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the logic-diagram marks</div><p>The 2026 report said "Most candidates developed a correct truth table." Marks in this area are won on method, so show it: the table, then the expression, then the diagram. Give every intermediate wire its own column in a truth table, and read the EOR as "inputs differ". The report also says candidates were weaker at descriptive answers; where a question asks you to <em>state</em> or <em>explain</em>, write a sentence, not a symbol.</p></div><p>The 2026 report said "Most candidates developed a correct truth table, wrote a correct Boolean equation" for the capstan-style logic question. The marks are won on method, so show it: the table, then the expression, then the diagram. The 2024 report noted an error in the "output from the exclusive OR gate", and the lesson is the same as chapter 1: give every intermediate wire its own column and read the EOR as "inputs differ".</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>turn a written specification into a truth table with up to four inputs;</li><li>write the sum of products from a truth table, in the notation above, and simplify where it is easy;</li><li>draw a logic diagram from an expression, and write the expression for a diagram;</li><li>complete a truth table from a logic diagram, including intermediate columns.</li></ul></div>
+<div class="check" data-check="dig-bool"></div>
+</section>
+
+<section id="nand" class="prose">
+<h2 data-short="NAND &amp; ICs">3 · NAND equivalents, universality and counting ICs <span class="spec-tag">DIGITAL · NAND equivalents</span></h2>
+
+<p>Every circuit in chapter 2 used a mixture of gate types. A real board built that way would need several different chips, most of them mostly empty. It is cheaper and tidier to build the whole circuit from a single kind of gate. That kind is the <strong>NAND</strong>, and the reason is a remarkable fact.</p>
+
+<h3>NAND is universal</h3>
+<p>Any logic function at all can be built from NAND gates alone. A NAND gate is therefore called a <dfn>universal gate</dfn>. (NOR is universal too, but the course asks for NAND.) Three small recipes are all you need.</p>
+<ul>
+<li><strong>NOT from a NAND:</strong> join the inputs together. With $A$ on both inputs, $\overline{A \cdot A} = \overline{A}$.</li>
+<li><strong>AND from NANDs:</strong> a NAND followed by a NOT (a NAND with its inputs tied). Two NANDs.</li>
+<li><strong>OR from NANDs:</strong> invert each input first, then NAND them: $\overline{\overline{A}\cdot\overline{B}} = A + B$. Three NANDs. This is De Morgan's rule in action: "NOT (NOT A AND NOT B)" is just "A OR B".</li>
+</ul>
+
+<figure class="diagram"><div class="dg-trio"><div><svg class="dg-svg" viewBox="0 0 194 56" style="max-width:230px" role="img" aria-label="NOT made from one NAND with its inputs tied together"><g transform="translate(8,28)"><path class="dg-wire" data-net="A" d="M36,0 H45 V-10 H67"/><path class="dg-wire" data-net="A" d="M36,0 H45 V10 H67"/><circle class="dg-dot" data-net="A" cx="45" cy="0" r="2.6"/><path class="dg-wire" data-net="Q" d="M128,0 H152"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><g class="dg-gate" data-gate="g1" data-out="Q" transform="translate(67,0)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="156" cy="0" r="4"/><text class="dg-lab" x="164" y="5">Q</text></g></svg><p>NOT: 1 NAND</p></div><div><svg class="dg-svg" viewBox="0 0 293 90" style="max-width:230px" role="img" aria-label="AND made from two NANDs: a NAND then a tied NAND"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H74"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H74"/><path class="dg-wire" data-net="X" d="M135,27 H144 V17 H166"/><path class="dg-wire" data-net="X" d="M135,27 H144 V37 H166"/><circle class="dg-dot" data-net="X" cx="144" cy="27" r="2.6"/><path class="dg-wire" data-net="Q" d="M227,27 H251"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="X" transform="translate(74,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate" data-gate="g2" data-out="Q" transform="translate(166,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="255" cy="27" r="4"/><text class="dg-lab" x="263" y="32">Q</text></g></svg><p>AND: 2 NANDs</p></div><div><svg class="dg-svg" viewBox="0 0 300 110" style="max-width:230px" role="img" aria-label="OR made from three NANDs: each input inverted by a tied NAND, then a NAND"><g transform="translate(8,28)"><path class="dg-wire" data-net="A" d="M36,0 H45 V-10 H74"/><path class="dg-wire" data-net="A" d="M36,0 H45 V10 H74"/><path class="dg-wire" data-net="B" d="M36,54 H52 V44 H74"/><path class="dg-wire" data-net="B" d="M36,54 H52 V64 H74"/><path class="dg-wire" data-net="nA" d="M135,0 H144 V17 H173"/><path class="dg-wire" data-net="nB" d="M135,54 H151 V37 H173"/><circle class="dg-dot" data-net="A" cx="45" cy="0" r="2.6"/><circle class="dg-dot" data-net="B" cx="52" cy="54" r="2.6"/><path class="dg-wire" data-net="Q" d="M234,27 H258"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="nA" transform="translate(74,0)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate" data-gate="g2" data-out="nB" transform="translate(74,54)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate" data-gate="g3" data-out="Q" transform="translate(173,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="262" cy="27" r="4"/><text class="dg-lab" x="270" y="32">Q</text></g></svg><p>OR: 3 NANDs</p></div></div><figcaption>The three building blocks. A NAND with its inputs tied is a NOT.</figcaption></figure>
+
+<h3>The double-inversion trick</h3>
+<p>To convert a whole circuit, you do not need to be clever. Follow a fixed routine:</p>
+<ol class="step-list">
+<li><strong>Swap every gate</strong> for its NAND version: an AND becomes a NAND followed by a NOT; an OR becomes inverted inputs into a NAND; a NOR gets an extra NOT after it; a NOT becomes a tied NAND.</li>
+<li><strong>Where two NOTs sit directly in series, cancel both.</strong> A NOT of a NOT is the original signal, so a pair of bubbles on a wire can be removed without changing the function. This is the <dfn>double-inversion trick</dfn>, and it is where most of the saving comes from.</li>
+<li><strong>Merge duplicates.</strong> If two NOTs invert the same signal, one will do.</li>
+<li><strong>Count</strong> the gates, then the chips.</li>
+</ol>
+
+<figure class="diagram"><div class="dg-trio" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr))"><div><svg class="dg-svg" viewBox="0 0 498 162" style="max-width:330px" role="img" aria-label="A.B + C after every gate is swapped for NANDs: there are two NOT gates in series on one wire"><g transform="translate(8,26)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H81"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H81"/><path class="dg-wire" data-net="X_n" d="M142,27 H151 V17 H180"/><path class="dg-wire" data-net="X_n" d="M142,27 H151 V37 H180"/><path class="dg-wire" data-net="X" d="M241,27 H250 V17 H272"/><path class="dg-wire" data-net="X" d="M241,27 H250 V37 H272"/><path class="dg-wire" data-net="C" d="M36,108 H59 V98 H81"/><path class="dg-wire" data-net="C" d="M36,108 H59 V118 H81"/><path class="dg-wire" data-net="Q_i1" d="M333,27 H342 V57.5 H371"/><path class="dg-wire" data-net="Q_i2" d="M142,108 H158 V-12 H349 V77.5 H371"/><circle class="dg-dot" data-net="X_n" cx="151" cy="27" r="2.6"/><circle class="dg-dot" data-net="X" cx="250" cy="27" r="2.6"/><circle class="dg-dot" data-net="C" cx="59" cy="108" r="2.6"/><path class="dg-wire" data-net="Q" d="M432,67.5 H456"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><path class="dg-wire" data-net="C" d="M34,108 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><text class="dg-lab" x="20" y="113" text-anchor="end">C</text><circle class="dg-term" data-net="C" cx="30" cy="108" r="4"/><g class="dg-gate fresh" data-gate="n1" data-out="X_n" transform="translate(81,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate fresh" data-gate="n2" data-out="X" transform="translate(180,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate fresh" data-gate="n3" data-out="Q_i1" transform="translate(272,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate fresh" data-gate="n4" data-out="Q_i2" transform="translate(81,108)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate fresh" data-gate="n5" data-out="Q" transform="translate(371,67.5)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="460" cy="67.5" r="4"/><text class="dg-lab" x="468" y="72.5">Q</text></g></svg><p>After swapping: 5 gates, two NOTs in series</p></div><div><svg class="dg-svg" viewBox="0 0 307 154" style="max-width:330px" role="img" aria-label="The same circuit after cancelling the pair of NOTs: three NAND gates"><g transform="translate(8,18)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H81"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H81"/><path class="dg-wire" data-net="C" d="M36,108 H59 V98 H81"/><path class="dg-wire" data-net="C" d="M36,108 H59 V118 H81"/><path class="dg-wire" data-net="X_n" d="M142,27 H151 V57.5 H180"/><path class="dg-wire" data-net="Q_i2" d="M142,108 H158 V77.5 H180"/><circle class="dg-dot" data-net="C" cx="59" cy="108" r="2.6"/><path class="dg-wire" data-net="Q" d="M241,67.5 H265"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><path class="dg-wire" data-net="C" d="M34,108 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><text class="dg-lab" x="20" y="113" text-anchor="end">C</text><circle class="dg-term" data-net="C" cx="30" cy="108" r="4"/><g class="dg-gate" data-gate="n1" data-out="X_n" transform="translate(81,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate" data-gate="n4" data-out="Q_i2" transform="translate(81,108)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><g class="dg-gate" data-gate="n5" data-out="Q" transform="translate(180,67.5)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="269" cy="67.5" r="4"/><text class="dg-lab" x="277" y="72.5">Q</text></g></svg><p>After cancelling the double inversion: 3 gates</p></div></div><figcaption>The double-inversion trick on $Q = A \cdot B + C$: the pair of NOT gates in the middle cancels, leaving three NANDs.</figcaption></figure>
+
+<div class="widget" id="w-nand">
+  <h3 class="widget-title">NAND converter: step by step, with a gate and IC counter</h3>
+  <p class="hint">Pick a circuit. Press <em>Next step</em> to swap the gates, add the double inversions, cancel the pairs and merge duplicates. The truth table is checked after every step to prove the function has not changed. New gates are shaded gold.</p>
+</div>
+
+<h3>Minimising gates and counting ICs</h3>
+<p>The assignment and the question paper both reward <em>the least number of logic gates possible by converting to NAND equivalents</em>. The 2025 report says some candidates "did not use the least number of logic gates possible by converting to NAND equivalents". The routine above is how you get there.</p>
+<p>Gates come in <dfn>integrated circuits</dfn> (ICs): small black chips with several identical gates inside. The common 7400 series are in 14-pin packages, with pin 14 to the +supply and pin 7 to 0 V. Three of them matter for NAND work:</p>
+<table class="dg-gatetable"><thead><tr><th scope="col">Chip</th><th scope="col">Contains</th><th scope="col">Gates per chip</th></tr></thead><tbody>
+<tr><td>7400</td><td>quad 2-input NAND</td><td>4 gates, 2 inputs each</td></tr>
+<tr><td>7410</td><td>triple 3-input NAND</td><td>3 gates, 3 inputs each</td></tr>
+<tr><td>7420</td><td>dual 4-input NAND</td><td>2 gates, 4 inputs each</td></tr>
+</tbody></table>
+<p>Other chips in the family, such as the 7404 (hex NOT) and the 7408, 7432, 7402 and 7486 (quad 2-input AND, OR, NOR and EOR), exist too. <strong>Check the data sheet the question gives you.</strong> The question may list different chips, and you must use what it lists.</p>
+
+<figure class="diagram"><svg viewBox="0 0 370 206" style="max-width:560px" role="img" aria-label="Three 14-pin integrated circuit packages side by side: the 7400 holds four 2-input NAND gates, the 7410 three 3-input NAND gates, and the 7420 two 4-input NAND gates. Pin 7 is 0 volts and pin 14 is the positive supply on each."><rect class="dg-fb" x="7" y="30" width="10" height="9"/><rect class="dg-fb" x="92" y="30" width="10" height="9"/><rect class="dg-fb" x="7" y="50" width="10" height="9"/><rect class="dg-fb" x="92" y="50" width="10" height="9"/><rect class="dg-fb" x="7" y="70" width="10" height="9"/><rect class="dg-fb" x="92" y="70" width="10" height="9"/><rect class="dg-fb" x="7" y="90" width="10" height="9"/><rect class="dg-fb" x="92" y="90" width="10" height="9"/><rect class="dg-fb" x="7" y="110" width="10" height="9"/><rect class="dg-fb" x="92" y="110" width="10" height="9"/><rect class="dg-fb" x="7" y="130" width="10" height="9"/><rect class="dg-fb" x="92" y="130" width="10" height="9"/><rect class="dg-fb" x="7" y="150" width="10" height="9"/><rect class="dg-fb" x="92" y="150" width="10" height="9"/><path class="dg-fb a" d="M14 22 H50 A8 8 0 0 0 66 22 H95 V170 H14 Z"/><text class="dg-fm" x="54" y="58" text-anchor="middle">7400</text><text class="dg-ft2" x="54" y="74" text-anchor="middle">quad 2-input</text><text class="dg-ft2" x="54" y="88" text-anchor="middle">NAND</text><text class="dg-ft" x="54" y="112" text-anchor="middle">4 gates</text><text class="dg-ft2" x="54" y="128" text-anchor="middle">2 inputs each</text><text class="dg-ft2" x="4" y="183" text-anchor="end">7</text><text class="dg-ft2" x="108" y="183" text-anchor="start">14</text><text class="dg-ft2" x="54" y="194" text-anchor="middle">pin 7 = 0 V, pin 14 = +V</text><rect class="dg-fb" x="125" y="30" width="10" height="9"/><rect class="dg-fb" x="210" y="30" width="10" height="9"/><rect class="dg-fb" x="125" y="50" width="10" height="9"/><rect class="dg-fb" x="210" y="50" width="10" height="9"/><rect class="dg-fb" x="125" y="70" width="10" height="9"/><rect class="dg-fb" x="210" y="70" width="10" height="9"/><rect class="dg-fb" x="125" y="90" width="10" height="9"/><rect class="dg-fb" x="210" y="90" width="10" height="9"/><rect class="dg-fb" x="125" y="110" width="10" height="9"/><rect class="dg-fb" x="210" y="110" width="10" height="9"/><rect class="dg-fb" x="125" y="130" width="10" height="9"/><rect class="dg-fb" x="210" y="130" width="10" height="9"/><rect class="dg-fb" x="125" y="150" width="10" height="9"/><rect class="dg-fb" x="210" y="150" width="10" height="9"/><path class="dg-fb a" d="M132 22 H168 A8 8 0 0 0 184 22 H213 V170 H132 Z"/><text class="dg-fm" x="172" y="58" text-anchor="middle">7410</text><text class="dg-ft2" x="172" y="74" text-anchor="middle">triple 3-input</text><text class="dg-ft2" x="172" y="88" text-anchor="middle">NAND</text><text class="dg-ft" x="172" y="112" text-anchor="middle">3 gates</text><text class="dg-ft2" x="172" y="128" text-anchor="middle">3 inputs each</text><text class="dg-ft2" x="122" y="183" text-anchor="end">7</text><text class="dg-ft2" x="226" y="183" text-anchor="start">14</text><text class="dg-ft2" x="172" y="194" text-anchor="middle">pin 7 = 0 V, pin 14 = +V</text><rect class="dg-fb" x="243" y="30" width="10" height="9"/><rect class="dg-fb" x="328" y="30" width="10" height="9"/><rect class="dg-fb" x="243" y="50" width="10" height="9"/><rect class="dg-fb" x="328" y="50" width="10" height="9"/><rect class="dg-fb" x="243" y="70" width="10" height="9"/><rect class="dg-fb" x="328" y="70" width="10" height="9"/><rect class="dg-fb" x="243" y="90" width="10" height="9"/><rect class="dg-fb" x="328" y="90" width="10" height="9"/><rect class="dg-fb" x="243" y="110" width="10" height="9"/><rect class="dg-fb" x="328" y="110" width="10" height="9"/><rect class="dg-fb" x="243" y="130" width="10" height="9"/><rect class="dg-fb" x="328" y="130" width="10" height="9"/><rect class="dg-fb" x="243" y="150" width="10" height="9"/><rect class="dg-fb" x="328" y="150" width="10" height="9"/><path class="dg-fb a" d="M250 22 H286 A8 8 0 0 0 302 22 H331 V170 H250 Z"/><text class="dg-fm" x="290" y="58" text-anchor="middle">7420</text><text class="dg-ft2" x="290" y="74" text-anchor="middle">dual 4-input</text><text class="dg-ft2" x="290" y="88" text-anchor="middle">NAND</text><text class="dg-ft" x="290" y="112" text-anchor="middle">2 gates</text><text class="dg-ft2" x="290" y="128" text-anchor="middle">4 inputs each</text><text class="dg-ft2" x="240" y="183" text-anchor="end">7</text><text class="dg-ft2" x="344" y="183" text-anchor="start">14</text><text class="dg-ft2" x="290" y="194" text-anchor="middle">pin 7 = 0 V, pin 14 = +V</text></svg><figcaption>The three NAND chips. Count gates first, then divide by the gates per chip, rounding up.</figcaption></figure>
+
+<p>Two rules govern the count. First, a gate with fewer inputs than the chip offers can still be used by tying the spare inputs to a used one: a 7410 gate with all three inputs joined works as a NOT. Second, a chip is bought whole. Five 2-input NANDs need two 7400s, even though the second chip is almost empty. The cost of a design is the number of <em>chips</em>, not the number of gates, and the 2026 report said that candidates "did not refer to factors such as manufacture and/or cost in relation to the number of Integrated Circuits used" because they counted gates instead. When a question asks about cost or manufacture, say that fewer ICs means a smaller circuit board, fewer soldered joints, less power, and a lower cost.</p>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If I use a 4-input NAND from a 7420 as a NOT, is that cheating?"</p><p><strong>Master Shipwright Kerr:</strong> "No. Tying the inputs together is exactly how you use a gate that is bigger than you need. But think about the count: a 7420 holds only two gates. If you need three 4-input gates, you need two chips. Always tot up the gates of each size, and then divide into chips."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 8 · <span class="pill">NAND equivalent</span> · three gates</p>
+<p>Convert $Q = A \cdot B + C$ (an AND feeding an OR) to NAND gates only, using the least number of gates. How many 7400 chips are needed?</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Swap: the AND becomes NAND plus NOT. The OR becomes a NAND with a NOT on each input. <span class="why">That is five gates before tidying.</span></li>
+<li>The AND's output NOT and the OR's input NOT sit in series on one wire: <strong>cancel the pair</strong>. What remains is $X = \overline{A\cdot B}$ and $\overline{C}$ going into the final NAND.</li>
+<li>$Q = \overline{X \cdot \overline{C}}$. The gates are: $X$ = NAND($A$, $B$); $\overline{C}$ = NAND($C$, $C$); $Q$ = NAND($X$, $\overline{C}$). <strong>3 gates</strong>.</li>
+<li>All are 2-input NANDs, and a 7400 holds four. So <strong>one 7400</strong>.</li>
+</ol>
+<p class="why">Check by De Morgan: $\overline{\overline{A\cdot B}\cdot\overline{C}} = A\cdot B + C$. ✔</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 9 · <span class="pill">ICs</span> · the capstan enable line</p>
+<p>The capstan ENABLE signal is $E = A\cdot B\cdot C\cdot\overline{D}$, an AND of four terms (one of them inverted). Build it from NAND gates and state the number of gates and ICs, using the 7400 (quad 2-input) and the 7420 (dual 4-input).</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>Invert $D$ with a NAND with its inputs tied: $\overline{D}$ = NAND($D$, $D$). <span class="why">1 gate (2-input).</span></li>
+<li>A four-input NAND of $A$, $B$, $C$, $\overline{D}$ gives $u = \overline{A\cdot B\cdot C\cdot\overline{D}}$. <span class="why">1 gate (4-input).</span></li>
+<li>An AND is a NAND followed by a NOT, so tie the inputs of one more NAND: $E$ = NAND($u$, $u$). <span class="why">1 gate (2-input).</span></li>
+<li>Total: <strong>3 gates</strong>. Two of them are 2-input (one 7400) and one is 4-input (one 7420). So <strong>2 ICs</strong>.</li>
+</ol>
+<p class="why">Mind the trap: "3 gates" is not the same question as "2 ICs". The 2026 report says candidates counted gates instead of chips. Answer exactly what is asked, and say which chips.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 10 · <span class="pill">EOR</span> · the four-NAND exclusive OR</p>
+<p>Show that an EOR gate can be made from four 2-input NANDs.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$X = \overline{A\cdot B}$ (NAND of $A$ and $B$).</li>
+<li>$P = \overline{A\cdot X}$ and $R = \overline{B\cdot X}$ (two more NANDs, each taking one input and $X$).</li>
+<li>$Q = \overline{P\cdot R}$. Test: $A=B=0$ gives $X=1$, $P=R=1$, so $Q=0$. $A=1, B=0$ gives $X=1$, $P=0$, $R=1$, so $Q=1$. $A=B=1$ gives $X=0$, $P=R=1$, so $Q=0$. ✔ EOR.</li>
+</ol>
+<figure class="diagram"><svg class="dg-svg" viewBox="0 0 420 127.5" style="max-width:440px" role="img" aria-label="An EOR made from four NAND gates"><g transform="translate(8,32)"><path class="dg-wire" data-net="A" d="M36,0 H45 V17 H88"/><path class="dg-wire" data-net="B" d="M36,54 H52 V37 H88"/><path class="dg-wire" data-net="A" d="M36,0 H59 V-12 H158 V3.5 H194"/><path class="dg-wire" data-net="X" d="M149,27 H165 V23.5 H194"/><path class="dg-wire" data-net="B" d="M36,54 H66 V-18 H172 V57.5 H194"/><path class="dg-wire" data-net="X" d="M149,27 H165 V77.5 H194"/><path class="dg-wire" data-net="P" d="M255,13.5 H264 V30.5 H293"/><path class="dg-wire" data-net="R" d="M255,67.5 H271 V50.5 H293"/><circle class="dg-dot" data-net="A" cx="45" cy="0" r="2.6"/><circle class="dg-dot" data-net="B" cx="52" cy="54" r="2.6"/><circle class="dg-dot" data-net="X" cx="165" cy="27" r="2.6"/><path class="dg-wire" data-net="Q" d="M354,40.5 H378"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,54 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="59" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="54" r="4"/><g class="dg-gate" data-gate="g1" data-out="X" transform="translate(88,27)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><text class="dg-net" x="153" y="21">X</text><g class="dg-gate" data-gate="g2" data-out="P" transform="translate(194,13.5)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><text class="dg-net" x="259" y="7.5">P</text><g class="dg-gate" data-gate="g3" data-out="R" transform="translate(194,67.5)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><text class="dg-net" x="259" y="61.5">R</text><g class="dg-gate" data-gate="g4" data-out="Q" transform="translate(293,40.5)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="Q" cx="382" cy="40.5" r="4"/><text class="dg-lab" x="390" y="45.5">Q</text></g></svg><figcaption>An exclusive OR from four NANDs (one 7400).</figcaption></figure>
+<p class="why">One 7400 holds exactly these four gates, which is why this circuit is a favourite.</p>
+</details></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · counting</div><p>Show your working in two numbers: the number of <em>gates</em> after conversion and the number of <em>chips</em> they sit in, naming each chip. If the data sheet the question gives you lists different chips from the ones in this chapter, use the question's list. And if the question says "least number", look again for a double inversion you can cancel.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>say why NAND is universal, and build NOT, AND and OR from NANDs;</li><li>convert any circuit of up to four inputs to NAND equivalents using the double-inversion trick;</li><li>count the gates after conversion and the ICs they need from a data sheet;</li><li>explain, in terms of cost and manufacture, why fewer ICs is better.</li></ul></div>
+<div class="check" data-check="dig-nand"></div>
+</section>
+
+<section id="prog" class="prose">
+<h2 data-short="Programmable control">4 · Programmable control: microcontrollers, flowcharts and pseudo-code <span class="spec-tag">PROGRAMMABLE · control routines</span></h2>
+
+<p>Logic gates are wired to do one job for ever. A <dfn>microcontroller</dfn> is a tiny computer on a chip that can be given a different job just by changing its program. It is the brain of a washing machine, a car's engine management, and the Signal Locker's lamp panel. For the course you meet it as a block with <strong>inputs</strong>, a <strong>process</strong> (the program) and <strong>outputs</strong>: the systems-approach model again.</p>
+
+<figure class="diagram"><svg viewBox="0 0 470 176" style="max-width:700px" role="img" aria-label="Block diagram: inputs on the left, digital pins in1 to in4 and analogue pins an1 to an4 through an analogue to digital converter; the microcontroller in the middle running the program; outputs on the right, pins out1 to out4, on or off or PWM."><rect class="dg-fb b" x="10" y="20" width="110" height="140" rx="4"/><text class="dg-fm" x="65" y="42" text-anchor="middle">INPUTS</text><text class="dg-ft" x="65" y="70" text-anchor="middle">in1 to in4</text><text class="dg-ft2" x="65" y="87" text-anchor="middle">digital: 0 or 1</text><text class="dg-ft" x="65" y="104" text-anchor="middle">an1 to an4</text><text class="dg-ft2" x="65" y="121" text-anchor="middle">analogue, via ADC</text><text class="dg-ft" x="65" y="138" text-anchor="middle">(0 to 255)</text><rect class="dg-fb a" x="170" y="20" width="130" height="140" rx="4"/><text class="dg-fm" x="235" y="42" text-anchor="middle">MICROCONTROLLER</text><text class="dg-ft" x="235" y="80" text-anchor="middle">runs the program:</text><text class="dg-ft2" x="235" y="98" text-anchor="middle">decisions, loops,</text><text class="dg-ft2" x="235" y="113" text-anchor="middle">delays, scaling</text><text class="dg-fm" x="235" y="138" text-anchor="middle">main: ... goto main</text><rect class="dg-fb b" x="350" y="20" width="110" height="140" rx="4"/><text class="dg-fm" x="405" y="42" text-anchor="middle">OUTPUTS</text><text class="dg-ft" x="405" y="70" text-anchor="middle">out1 to out4</text><text class="dg-ft2" x="405" y="87" text-anchor="middle">on or off</text><text class="dg-ft" x="405" y="104" text-anchor="middle">or PWM</text><text class="dg-ft2" x="405" y="121" text-anchor="middle">lamp, buzzer,</text><text class="dg-ft" x="405" y="138" text-anchor="middle">motor</text><path class="dg-fl" d="M120 90 L166 90"/><path class="dg-ff" d="M166 90 L158.6,86.9 L158.6,93.1 Z"/><path class="dg-fl" d="M300 90 L346 90"/><path class="dg-ff" d="M346 90 L338.6,86.9 L338.6,93.1 Z"/></svg><figcaption>A microcontroller is the process block of the systems approach: inputs, program, outputs.</figcaption></figure>
+
+<h3>Inputs, outputs and pin numbers</h3>
+<p>The course uses control routines with up to <strong>four inputs and four outputs</strong>. Digital inputs read 0 or 1 (a switch, a push button, a logic board's output). <dfn>Analogue inputs</dfn> read a voltage and turn it into a number using an ADC, an <em>analogue-to-digital converter</em>. In this deck a very common 8-bit ADC gives a reading from 0 to 255, where 0 is 0 V and 255 is the full supply voltage. (Check the range in the question: it may use 0 to 1023 for a 10-bit ADC.) Each pin has a number, and a flowchart must name it. In this deck the pins are written <code>in1</code> to <code>in4</code> (digital inputs), <code>an1</code> to <code>an4</code> (analogue inputs) and <code>out1</code> to <code>out4</code> (outputs).</p>
+<div class="widget" id="w-adc">
+  <h3 class="widget-title">The ADC staircase</h3>
+  <p class="hint">Move the slider to change the input voltage. The converter turns it into a whole number: a staircase, not a smooth line. Watch how a small number of steps loses detail.</p>
+</div>
+
+<h3>Flowcharts</h3>
+<p>A flowchart shows the program as boxes joined by arrows. The standard shapes are: a rounded <strong>terminal</strong> (START and END), a <strong>parallelogram</strong> for input and output, a <strong>rectangle</strong> for a process (a calculation or a delay), and a <strong>diamond</strong> for a decision with one arrow in and two out, labelled Yes and No. The flow always follows the arrows.</p>
+<figure class="diagram"><svg viewBox="0 0 300 162" style="max-width:520px" role="img" aria-label="The four flowchart symbols: a rounded terminal labelled START, a parallelogram for input and output, a rectangle for a process or delay, and a diamond for a decision with Yes and No exits."><rect class="dg-fb" x="20" y="14" width="96" height="30" rx="15"/><text class="dg-fm" x="68" y="34" text-anchor="middle">START</text><text class="dg-ft2" x="68" y="62" text-anchor="middle">Terminal: start or end</text><path class="dg-fb b" d="M168 14 H262 L250 44 H156 Z"/><text class="dg-fm" x="209" y="34" text-anchor="middle">Output 1 = 1</text><text class="dg-ft2" x="209" y="62" text-anchor="middle">Input or output (with pin)</text><rect class="dg-fb" x="20" y="92" width="110" height="32" rx="1"/><text class="dg-fm" x="75" y="113" text-anchor="middle">Wait 0.5 s</text><text class="dg-ft2" x="75" y="144" text-anchor="middle">Process: calculation, delay</text><path class="dg-fb a" d="M209 84 L262 108 L209 132 L156 108 Z"/><text class="dg-fm" x="209" y="112" text-anchor="middle">Input 1 = 1?</text><text class="dg-ft2" x="209" y="150" text-anchor="middle">Decision: Yes and No exits</text><text class="dg-ft2" x="270" y="104" text-anchor="start">Yes</text><text class="dg-ft2" x="209" y="146" text-anchor="middle"></text></svg><figcaption>Flowchart symbols. Pin numbers go in the input and output boxes, and every delay has a unit.</figcaption></figure>
+<p>The course documents say that a flowchart needs "sufficient and appropriate detail, such as input and output pin numbers and a delay unit". In other words, write <em>Output 1 = 1</em>, never "turn on the lamp"; write <em>Wait 0.5 s</em>, never "wait".</p>
+
+<h3>Pseudo-code and loops</h3>
+<p>You do not have to write code in the exam, but you do read it and write a simplified, English-like version of a program called <dfn>pseudo-code</dfn>. A program normally runs from top to bottom and then stops. To keep a control system alive it has to <strong>loop</strong> back:</p>
+<ul>
+<li>An <dfn>infinite loop</dfn> repeats for ever. It is written with a label at the top and a jump at the bottom: <code>main:</code> ... <code>goto main</code>. A flowchart does the same with an arrow from the last box back to the first box (after START). Almost every control program is an infinite loop, because the controller must go on watching its inputs as long as the power is on. A program without that return runs once and stops.</li>
+<li>A <dfn>finite loop</dfn> repeats a set number of times, controlled by a counter variable: set $n = 0$; each pass add 1; leave the loop when the test fails. "Flash five times" is a finite loop.</li>
+<li>A <dfn>delay</dfn> pauses the program. It must have a <strong>unit</strong>: <code>wait 0.5 s</code> or <code>wait 200 ms</code>, never just <code>wait 2</code>.</li>
+</ul>
+
+<h3>Decisions: logic and arithmetic</h3>
+<p>A decision tests a condition and branches. A <em>logic decision</em> tests an input pin: <code>if in1 = 1</code>. Conditions may be combined with AND, OR and NOT: <code>if in1 = 1 and in2 = 0</code>. An <em>arithmetic decision</em> compares a number: <code>if an1 &gt; 153</code>, or <code>if n &lt; 5</code>. Analogue readings are usually scaled first. To change a 0 to 255 reading into a temperature from 0 to 100 °C, the program calculates $\text{temp} = \text{an1} \times 100 \div 255$.</p>
+
+<div class="widget" id="w-exec">
+  <h3 class="widget-title">Program executor: flowchart and pseudo-code side by side</h3>
+  <p class="hint">Choose a program. Set the inputs, press <em>Step</em> to run one box at a time (or <em>Run</em>), and watch the current box, the line of pseudo-code, the variables and the output lamps.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"What is the difference between a flowchart and pseudo-code? Do I need both?"</p><p><strong>Master Shipwright Kerr:</strong> "They say the same thing in two ways. You will be asked for whichever the question wants, or asked to read one and produce the other. The flowchart is better for seeing the loops; the pseudo-code is quicker to write. Practise changing one into the other until it is automatic."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 11 · <span class="pill">Flowchart</span> · the gun-port alarm</p>
+<p>A red lamp (output 1) must flash, and a buzzer (output 2) must sound, whenever a port lid is open (input 1 = 1) and the gun has not been run out (input 2 = 0). Otherwise both are off. Describe the flowchart.</p>
+<details><summary>Show solution <span class="marks-n">[5 marks]</span></summary>
+<ol class="step-list marks">
+<li>START, then an infinite loop that returns to the decision. <span class="why">Mark for the return arrow.</span></li>
+<li>Decision: <em>Input 1 = 1 AND Input 2 = 0?</em> with Yes and No both labelled.</li>
+<li>Yes: Output 2 = 1 (buzzer on), Output 1 = 1 (lamp on), Wait 0.5 s, Output 1 = 0, Wait 0.5 s, and back to the decision. <span class="why">Delays carry units.</span></li>
+<li>No: Output 1 = 0 and Output 2 = 0, and back to the decision.</li>
+</ol>
+<figure class="diagram"><div class="dg-flowbox"><svg class="dg-flowsvg" viewBox="0 0 603.4 503" style="max-width:603px" role="img" aria-label="Flowchart: Gun-port alarm"><defs><marker id="ar-sgun" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="dg-arrowhead"/></marker></defs><g transform="translate(43.4,29)"><path class="dg-edge" d="M196,15 L196,40.5" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M196,107.5 L196,132" marker-end="url(#ar-sgun)"/><text class="dg-elab" x="189" y="121.5" text-anchor="end">Yes</text><path class="dg-edge" d="M268.4,74 L460.6,74 L460.6,58" marker-end="url(#ar-sgun)"/><text class="dg-elab" x="276.4" y="69">No</text><path class="dg-edge" d="M196,164 L196,206" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M196,238 L196,280" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M196,312 L196,354" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M196,386 L196,428" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M138,444 L-29.4,444 L-29.4,40.7 L196,40.7 L196,40.5" marker-end="url(#ar-sgun)"/><path class="dg-edge" d="M460.6,58 L460.6,40.7 L196,40.7 L196,40.5" marker-end="url(#ar-sgun)"/><g class="dg-node dg-term" data-node="n0" transform="translate(196,0)"><rect class="dg-shape" x="-48" y="-15" width="96" height="30" rx="15"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">START</tspan></text></g><g class="dg-node dg-dec" data-node="n1" transform="translate(196,74)"><path class="dg-shape" d="M0,-33.5 L72.38,0 L0,33.5 L-72.38,0 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="-3">in1 = 1 AND</tspan><tspan x="0" y="12">in2 = 0 ?</tspan></text></g><g class="dg-node dg-io" data-node="n2" transform="translate(196,148)"><path class="dg-shape" d="M-77,-16 H89 L77,16 H-89 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">out2 = 1 (buzzer ON)</tspan></text></g><g class="dg-node dg-io" data-node="n3" transform="translate(196,222)"><path class="dg-shape" d="M-69.8,-16 H81.8 L69.8,16 H-81.8 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">out1 = 1 (lamp ON)</tspan></text></g><g class="dg-node dg-proc" data-node="n4" transform="translate(196,296)"><rect class="dg-shape" x="-58" y="-16" width="116" height="32"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">Wait 0.5 s</tspan></text></g><g class="dg-node dg-io" data-node="n5" transform="translate(196,370)"><path class="dg-shape" d="M-73.4,-16 H85.4 L73.4,16 H-85.4 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">out1 = 0 (lamp OFF)</tspan></text></g><g class="dg-node dg-proc" data-node="n5b" transform="translate(196,444)"><rect class="dg-shape" x="-58" y="-16" width="116" height="32"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">Wait 0.5 s</tspan></text></g><g class="dg-node dg-io" data-node="n6" transform="translate(460.6,74)"><path class="dg-shape" d="M-73.4,-16 H85.4 L73.4,16 H-85.4 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">out1 = 0 , out2 = 0</tspan></text></g></g></svg></div><figcaption>The gun-port alarm flowchart.</figcaption></figure>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 12 · <span class="pill">Finite loop</span> · flash five times</p>
+<p>Write pseudo-code that flashes the lamp on output 1 exactly five times (0.5 s on, 0.5 s off) and then stops.</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<pre class="dg-code">n = 0
+repeat:
+  out1 = 1
+  wait 0.5 s
+  out1 = 0
+  wait 0.5 s
+  n = n + 1
+  if n &lt; 5 then goto repeat
+(end of program)</pre>
+<ol class="step-list marks">
+<li>The counter starts at 0 before the loop.</li>
+<li>Each pass flashes once and adds 1 to $n$.</li>
+<li>The test is <code>n &lt; 5</code>: after five flashes $n = 5$, the test fails, and the program leaves the loop. <span class="why">With <code>n &lt;= 5</code> there would be six flashes. Test the first and last pass in your head.</span></li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 13 · <span class="pill">Analogue scaling</span> · a temperature alarm</p>
+<p>A temperature sensor on an1 gives 0 to 255 for 0 to 100 °C. (a) The ADC reads 150. What is the temperature? (b) The alarm must trip above 60 °C. What reading is the threshold?</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\text{temp} = 150 \times 100 \div 255 = 58.8\ ^\circ\text{C}$. <span class="why">Multiply first, then divide, and round only at the end.</span></li>
+<li>(b) $\text{reading} = 60 \times 255 \div 100 = 153$. So the test is <code>an1 &gt; 153</code>, or equivalently <code>temp &gt; 60</code> after scaling.</li>
+<li>So 150 is just below the trip point, as the answer to (a) shows.</li>
+</ol>
+</details></div>
+
+<div class="widget" id="w-fault">
+  <h3 class="widget-title">Fault-finding challenge: find the bug</h3>
+  <p class="hint">Each program below has a specification and a listing. Press the lines you think are wrong, then press Check. Typical faults: a missing <code>goto main</code>, a wrong pin number, a comparison the wrong way round, a missing unit, and a loop that runs once too often.</p>
+</div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · flowchart detail</div><p>The course documents say a flowchart needs "sufficient and appropriate detail, such as input and output pin numbers and a delay unit". The 2026 report also says some candidates "stated that all specification points were met, when the performance of their amended flowchart did not provide evidence to support this". If you are asked to amend a program and test it, state what you changed, what test you ran, and what result you expected and observed.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>describe a microcontroller as inputs, process and outputs, with digital and analogue (ADC) inputs;</li><li>draw and read a flowchart using the standard symbols, with pin numbers and delay units;</li><li>write and read pseudo-code, including <code>main: … goto main</code> infinite loops and counted finite loops;</li><li>write decisions using logic and arithmetic, and scale an analogue reading;</li><li>find and fix errors in a program.</li></ul></div>
+<div class="check" data-check="dig-prog"></div>
+</section>
+
+<section id="pwm" class="prose">
+<h2 data-short="PWM">5 · Pulse-width modulation <span class="spec-tag">PROGRAMMABLE · motor control</span></h2>
+
+<p>A microcontroller pin is digital: it can be fully ON (5 V) or fully OFF (0 V), and nothing in between. How, then, can it run a motor slowly? By switching the motor on and off so fast that the motor sees only the average. This is <dfn>pulse-width modulation</dfn> (PWM). The ship's lamp dimmers in the Signal Locker work the same way.</p>
+
+<figure class="diagram"><svg viewBox="0 0 430 256" style="max-width:640px" role="img" aria-label="Three PWM waveforms on a 5 volt supply. At 25 percent duty the signal is high for a quarter of each period, average 1.25 volts. At 50 percent it is high for half, average 2.5 volts. At 75 percent it is high for three quarters, average 3.75 volts. A dashed line marks each average."><path class="dg-wave" d="M56 62 V20 H71 V62 H116 V20 H131 V62 H176 V20 H191 V62 H236 V20 H251 V62 H296"/><path class="dg-dash" d="M56 51.5 H302"/><text class="dg-ft2" x="46" y="34" text-anchor="end">5 V</text><text class="dg-ft2" x="46" y="66" text-anchor="end">0 V</text><text class="dg-fm" x="310" y="40" text-anchor="start">duty 25 %</text><text class="dg-ft2" x="310" y="56" text-anchor="start">average 1.25 V</text><path class="dg-wave" d="M56 136 V94 H86 V136 H116 V94 H146 V136 H176 V94 H206 V136 H236 V94 H266 V136 H296"/><path class="dg-dash" d="M56 115 H302"/><text class="dg-ft2" x="46" y="108" text-anchor="end">5 V</text><text class="dg-ft2" x="46" y="140" text-anchor="end">0 V</text><text class="dg-fm" x="310" y="114" text-anchor="start">duty 50 %</text><text class="dg-ft2" x="310" y="130" text-anchor="start">average 2.50 V</text><path class="dg-wave" d="M56 210 V168 H101 V210 H116 V168 H161 V210 H176 V168 H221 V210 H236 V168 H281 V210 H296"/><path class="dg-dash" d="M56 178.5 H302"/><text class="dg-ft2" x="46" y="182" text-anchor="end">5 V</text><text class="dg-ft2" x="46" y="214" text-anchor="end">0 V</text><text class="dg-fm" x="310" y="188" text-anchor="start">duty 75 %</text><text class="dg-ft2" x="310" y="204" text-anchor="start">average 3.75 V</text><path class="dg-axis" d="M56 232 H296"/><text class="dg-fm" x="86" y="248" text-anchor="middle">T</text><text class="dg-ft2" x="296" y="248" text-anchor="end">time</text></svg><figcaption>PWM at 25 %, 50 % and 75 % duty on a 5 V supply. The dashed line is the average that the motor feels.</figcaption></figure>
+
+<h3>Duty cycle and average voltage</h3>
+<p>A PWM signal repeats every <strong>period</strong> $T$. Within each period it is ON for a time $t_{on}$. The fraction of the period it is on is the <dfn>duty cycle</dfn> $D$, quoted as a percentage:</p>
+<p>$$D = \frac{t_{on}}{T} \qquad V_{avg} = D \times V_s \qquad f = \frac{1}{T}$$</p>
+<p>A 50 % duty cycle on a 12 V supply gives an average of 6 V; 25 % gives 3 V; 100 % is permanently on. The pulses must be fast enough that the motor's inertia smooths them: a frequency of hundreds of hertz or more. ($f = 1/T$ is the one PWM relation that appears in the Higher data booklet; the duty-cycle and average-voltage relations are not listed, so learn them.)</p>
+
+<div class="widget" id="w-pwm">
+  <h3 class="widget-title">PWM scope: duty cycle, average voltage and motor speed</h3>
+  <p class="hint">Move the duty slider and watch the scope trace, the average-voltage line and the spinning motor. Then try <em>Describe the speed</em> to see how an exam answer is built.</p>
+</div>
+
+<h3>The motor driver</h3>
+<p>A microcontroller pin supplies only a few milliamps, far too little for a motor. The pin therefore drives the base (or gate) of a transistor, and the transistor switches the motor current from the supply. A diode connected across the motor (a <em>flyback</em> diode) protects the transistor from the voltage spike when the motor current is switched off.</p>
+<figure class="diagram"><svg viewBox="0 0 300 220" style="max-width:420px" role="img" aria-label="Motor driver schematic: the positive supply rail feeds the motor, which connects to the collector of an NPN transistor. A diode is connected across the motor, cathode to the rail. The emitter goes to zero volts and the base is driven from the microcontroller PWM pin."><path class="dg-fl" d="M40 20 H250"/><text class="dg-fm" x="30" y="24" text-anchor="end">+Vs</text><path class="dg-fl" d="M150 20 V50"/><circle class="dg-fb b" cx="150" cy="75" r="25"/><text class="dg-fm" x="150" y="80" text-anchor="middle">M</text><path class="dg-fl" d="M150 100 V130"/><path class="dg-fl" d="M200 20 V52 M200 52 L190 76 H210 Z M190 80 H210 M200 80 V130 H150"/><path class="dg-fl" d="M200 52 V52"/><path class="dg-ff" d="M200 76 L190 52 H210 Z"/><path class="dg-fl" d="M190 76 H210"/><text class="dg-ft2" x="222" y="68" text-anchor="start">flyback</text><text class="dg-ft2" x="222" y="82" text-anchor="start">diode</text><path class="dg-fl" d="M150 130 V140"/><circle class="dg-fb" cx="140" cy="165" r="22"/><path class="dg-fl" d="M150 140 L132 156 M132 170 V160 M132 174 L150 192 V204 M120 148 V182 M70 165 H120"/><path class="dg-ff" d="M150 192 L142 186 L148 182 Z"/><rect class="dg-fb" x="70" y="157" width="0" height="0"/><text class="dg-ft2" x="30" y="150" text-anchor="end">PWM pin</text><text class="dg-ft2" x="30" y="164" text-anchor="end">(out1)</text><path class="dg-fl" d="M36 168 H70"/><path class="dg-fl" d="M110 204 H190 M150 204 V204"/><text class="dg-fm" x="100" y="208" text-anchor="end">0 V</text><text class="dg-ft2" x="222" y="170" text-anchor="start">NPN transistor:</text><text class="dg-ft2" x="222" y="184" text-anchor="start">the switch</text></svg><figcaption>A PWM motor driver. The pin switches the transistor, the transistor switches the motor, and the diode absorbs the turn-off spike.</figcaption></figure>
+
+<h3>Why PWM, not a series resistor?</h3>
+<p>You could slow a motor with a resistor in series with it. It works, but the resistor wastes power: the voltage the motor does not get is dropped across the resistor, and the current through it makes heat. At the same current, the fraction of the supply power wasted is the fraction of the voltage dropped. PWM switches the transistor fully on or fully off, so the transistor itself dissipates almost nothing, and nearly all the power drawn from the supply goes to the motor.</p>
+
+<div class="callout tip"><div class="callout-title">🪔 Aside: dimming a redstone lamp</div><p>In Minecraft you can imitate PWM with a redstone clock that pulses a lamp faster than you can see: a longer pulse makes the lamp seem brighter. Real PWM is the same idea at thousands of pulses a second.</p></div>
+
+<h3>Describing the speed of the motor</h3>
+<p>The 2026 course report said that few candidates "correctly described the speed of the motor as the voltage dropped". An answer needs three linked statements: the quantity that changes (the duty cycle, or the average voltage), the effect on the current or torque, and the effect on the speed of the motor, with direction. For example: <em>as the duty cycle falls, the average voltage across the motor falls, so less current flows and less torque is produced, so the motor slows down; at a very low duty cycle the torque cannot overcome friction and the motor stops.</em></p>
+
+<div class="worked"><p class="worked-title">Worked example 14 · <span class="pill">Average voltage</span></p>
+<p>A 12 V supply drives a motor through a PWM output at a duty cycle of 60 %. Calculate the average voltage across the motor.</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>$V_{avg} = D \times V_s = 0.60 \times 12$.</li>
+<li>$V_{avg} = 7.2\ \text{V}$. <span class="why">Unit needed.</span></li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 15 · <span class="pill">Period and duty</span></p>
+<p>A scope shows a PWM signal that is high for 2 ms and has a frequency of 250 Hz. Calculate the period and the duty cycle. Separately: a 9 V supply gives an average of 4.5 V; what is the duty cycle?</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$T = 1/f = 1/250 = 4\ \text{ms}$.</li>
+<li>$D = t_{on}/T = 2/4 = 50\ \%$.</li>
+<li>Separately: $D = V_{avg}/V_s = 4.5/9 = 50\ \%$, so on a 250 Hz signal $t_{on} = 2$ ms. Both routes agree.</li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 16 · <span class="pill">Program</span> · scaling a dial to a duty cycle</p>
+<p>A speed dial on an1 reads 0 to 255. The program calculates duty = an1 × 100 ÷ 255 and sends it to the PWM on output 1 from a 12 V supply. The dial reads 192. Find the duty cycle and the average voltage.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$\text{duty} = 192 \times 100 \div 255 = 75.3\ \%$.</li>
+<li>$V_{avg} = 0.753 \times 12 = 9.04\ \text{V}$.</li>
+<li>Keep the unrounded duty in the second step. <span class="why">The 2024 report notes that rounding intermediate answers made some final answers wrong.</span></li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 17 · <span class="pill">Efficiency</span> · PWM against a series resistor</p>
+<p>A motor needs 7.2 V at 0.50 A from a 12 V supply. (a) Find the power wasted if a series resistor is used. (b) Compare with PWM.</p>
+<details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
+<ol class="step-list marks">
+<li>The resistor drops $12 - 7.2 = 4.8$ V.</li>
+<li>Power wasted: $P = VI = 4.8 \times 0.50 = 2.4$ W. The supply provides $12 \times 0.50 = 6.0$ W, so $2.4/6.0 = 40\ \%$ is wasted as heat.</li>
+<li>With PWM at $D = 7.2/12 = 60\ \%$ the transistor is either fully on or fully off, so it wastes almost nothing (a small switching loss). Almost all of the supply power is delivered to the motor.</li>
+<li>PWM is therefore more efficient, and the circuit runs cooler.</li>
+</ol>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 18 · <span class="pill">Describe</span> · the speed as the voltage drops</p>
+<p>The duty cycle is reduced from 80 % to 40 %. Describe what happens to the motor.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>The average voltage across the motor halves, because $V_{avg} = D \times V_s$.</li>
+<li>Less current flows and less torque is produced, so the motor slows down.</li>
+<li>The motor runs slower, in steady running at about half its previous speed, and below a low duty cycle it stops because the torque cannot overcome friction.</li>
+</ol>
+<p class="why">Say "slows down" and "average voltage falls", in that order, and give the cause between them.</p>
+</details></div>
+
+<div class="widget" id="w-exec2">
+  <h3 class="widget-title">PWM and scaling programs</h3>
+  <p class="hint">Run the dial program and the fan program, which turns a temperature reading into a motor speed. Watch the PWM duty and the scaled variables as the inputs change.</p>
+</div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · PWM</div><p>The 2024 report said candidates often gave "a non-descriptive answer which lacked the detail required to achieve marks at this level". A PWM answer that says only "it goes slower" is non-descriptive. Name the duty cycle, the average voltage and the direction of every change.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>define duty cycle and calculate the average voltage and the on-time from the period or frequency;</li><li>explain why PWM is more efficient than a series resistor for speed control;</li><li>describe the speed of the motor as the voltage drops (or rises);</li><li>read and write a program that uses PWM with an analogue input scaled to a duty cycle.</li></ul></div>
+<div class="check" data-check="dig-pwm"></div>
+</section>
+
+<section id="exam" class="prose">
+<h2 data-short="Exam practice">6 · Putting it together: an exam-style question <span class="spec-tag">DIGITAL + PROGRAMMABLE</span></h2>
+
+<p>Exam questions in this area join the chapters together. A specification becomes a truth table, then an expression, then a NAND circuit, and the output of that circuit is read by a microcontroller program that drives a motor. Here is a question in that style, set on the capstan of HMS Ratchet. Try it on paper before you open the solution.</p>
+
+<div class="callout crew"><div class="callout-title">🎖 The capstan interlock</div><p>The capstan motor may run only if: the pawls are lifted clear ($A$ = 1), the guard rail is in place ($B$ = 1), and the heave button is pressed ($C$ = 1), and <em>not</em> if the emergency stop is pressed ($D$ = 1). When the motor runs, a running lamp is on and the motor speed is set by a speed dial.</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 19 · <span class="pill">Exam style</span> · the capstan interlock</p>
+<p>(a) State the Boolean expression for the ENABLE signal $E$. (b) Draw the logic diagram. (c) Convert it to NAND gates and say how many gates and ICs are needed. (d) ENABLE is connected to input 1 of a microcontroller. The speed dial is on analogue input 1 (0 to 255), the motor is on output 1 and the lamp on output 2. Draw a flowchart that runs the motor with PWM at a duty cycle of dial × 100 ÷ 255 % while ENABLE is 1 and switches both outputs off otherwise.</p>
+<details><summary>Show solution <span class="marks-n">[13 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) $E = A \cdot B \cdot C \cdot \overline{D}$. <span class="why">1 mark. Only one row of the 16-row truth table, 1110, gives $E = 1$.</span></li>
+<li>(b) One 4-input AND, with $D$ passing through a NOT. <figure class="diagram"><svg class="dg-svg" viewBox="0 0 297 270" style="max-width:420px" role="img" aria-label="Capstan enable: a four input AND with a NOT on D"><g transform="translate(8,38)"><path class="dg-wire" data-net="D" d="M36,210 H45 V210 H88"/><path class="dg-wire" data-net="A" d="M36,0 H52 V-12 H136 V84 H179"/><path class="dg-wire" data-net="B" d="M36,70 H59 V-18 H143 V98 H179"/><path class="dg-wire" data-net="C" d="M36,140 H66 V-24 H150 V112 H179"/><path class="dg-wire" data-net="nD" d="M127,210 H157 V126 H179"/><path class="dg-wire" data-net="E" d="M231,105 H255"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,70 H36"/><path class="dg-wire" data-net="C" d="M34,140 H36"/><path class="dg-wire" data-net="D" d="M34,210 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="75" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="70" r="4"/><text class="dg-lab" x="20" y="145" text-anchor="end">C</text><circle class="dg-term" data-net="C" cx="30" cy="140" r="4"/><text class="dg-lab" x="20" y="215" text-anchor="end">D</text><circle class="dg-term" data-net="D" cx="30" cy="210" r="4"/><g class="dg-gate" data-gate="g1" data-out="nD" transform="translate(88,210)"><path class="dg-body" d="M0,-14 L30,0 L0,14 Z"/><circle class="dg-bub" cx="34.5" cy="0" r="4.5"/><text class="dg-tag" x="11" y="25" text-anchor="middle">NOT</text></g><g class="dg-gate" data-gate="g2" data-out="E" transform="translate(179,105)"><path class="dg-body" d="M0,-28 H24 A28,28 0 0 1 24,28 H0 Z"/><text class="dg-tag" x="26" y="39" text-anchor="middle">AND</text></g><circle class="dg-term" data-net="E" cx="259" cy="105" r="4"/><text class="dg-lab" x="267" y="110">E</text></g></svg><figcaption>E = A·B·C·D̄ as an AND and a NOT.</figcaption></figure> <span class="why">2 marks: AND with four inputs; NOT on $D$.</span></li>
+<li>(c) NAND version: $\overline{D}$ from a tied NAND, a 4-input NAND of $A, B, C, \overline{D}$, and a tied NAND to restore the AND. <figure class="diagram"><svg class="dg-svg" viewBox="0 0 420 276" style="max-width:460px" role="img" aria-label="Capstan enable built from three NAND gates"><g transform="translate(8,38)"><path class="dg-wire" data-net="D" d="M36,210 H45 V200 H88"/><path class="dg-wire" data-net="D" d="M36,210 H45 V220 H88"/><path class="dg-wire" data-net="A" d="M36,0 H52 V-12 H158 V84 H201"/><path class="dg-wire" data-net="B" d="M36,70 H59 V-18 H165 V98 H201"/><path class="dg-wire" data-net="C" d="M36,140 H66 V-24 H172 V112 H201"/><path class="dg-wire" data-net="nD" d="M149,210 H179 V126 H201"/><path class="dg-wire" data-net="u" d="M262,105 H271 V95 H293"/><path class="dg-wire" data-net="u" d="M262,105 H271 V115 H293"/><circle class="dg-dot" data-net="D" cx="45" cy="210" r="2.6"/><circle class="dg-dot" data-net="u" cx="271" cy="105" r="2.6"/><path class="dg-wire" data-net="E" d="M354,105 H378"/><path class="dg-wire" data-net="A" d="M34,0 H36"/><path class="dg-wire" data-net="B" d="M34,70 H36"/><path class="dg-wire" data-net="C" d="M34,140 H36"/><path class="dg-wire" data-net="D" d="M34,210 H36"/><text class="dg-lab" x="20" y="5" text-anchor="end">A</text><circle class="dg-term" data-net="A" cx="30" cy="0" r="4"/><text class="dg-lab" x="20" y="75" text-anchor="end">B</text><circle class="dg-term" data-net="B" cx="30" cy="70" r="4"/><text class="dg-lab" x="20" y="145" text-anchor="end">C</text><circle class="dg-term" data-net="C" cx="30" cy="140" r="4"/><text class="dg-lab" x="20" y="215" text-anchor="end">D</text><circle class="dg-term" data-net="D" cx="30" cy="210" r="4"/><g class="dg-gate" data-gate="g1" data-out="nD" transform="translate(88,210)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><text class="dg-net" x="153" y="204">nD</text><g class="dg-gate" data-gate="g2" data-out="u" transform="translate(201,105)"><path class="dg-body" d="M0,-28 H24 A28,28 0 0 1 24,28 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><text class="dg-net" x="266" y="99">u</text><g class="dg-gate" data-gate="g3" data-out="E" transform="translate(293,105)"><path class="dg-body" d="M0,-20 H32 A20,20 0 0 1 32,20 H0 Z"/><circle class="dg-bub" cx="56.5" cy="0" r="4.5"/></g><circle class="dg-term" data-net="E" cx="382" cy="105" r="4"/><text class="dg-lab" x="390" y="110">E</text></g></svg><figcaption>The same function from three NANDs: 2 ICs.</figcaption></figure> <strong>3 gates, 2 ICs</strong> (one 7400 for the two 2-input gates and one 7420 for the 4-input gate). <span class="why">4 marks including the correct reasoning on ICs: a gate count alone does not answer "how many ICs".</span></li>
+<li>(d) Flowchart: START, then a loop. Decision "Input 1 = 1?" Yes: duty = an1 × 100 ÷ 255, then PWM output 1 = duty and output 2 = 1. No: PWM output 1 = 0 and output 2 = 0. Both paths return to the decision. <figure class="diagram"><div class="dg-flowbox"><svg class="dg-flowsvg" viewBox="0 0 605 288.5" style="max-width:605px" role="img" aria-label="Flowchart: Capstan drive"><defs><marker id="ar-scapstan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="dg-arrowhead"/></marker></defs><g transform="translate(43.4,29)"><path class="dg-edge" d="M196,15 L196,48" marker-end="url(#ar-scapstan)"/><path class="dg-edge" d="M196,100 L196,132" marker-end="url(#ar-scapstan)"/><text class="dg-elab" x="189" y="114" text-anchor="end">Yes</text><path class="dg-edge" d="M257.2,74 L480.2,74 L480.2,50.5" marker-end="url(#ar-scapstan)"/><text class="dg-elab" x="265.2" y="69">No</text><path class="dg-edge" d="M196,164 L196,198.5" marker-end="url(#ar-scapstan)"/><path class="dg-edge" d="M117.8,222 L-29.4,222 L-29.4,37 L196,37 L196,48" marker-end="url(#ar-scapstan)"/><path class="dg-edge" d="M480.2,50.5 L480.2,37 L196,37 L196,48" marker-end="url(#ar-scapstan)"/><g class="dg-node dg-term" data-node="n0" transform="translate(196,0)"><rect class="dg-shape" x="-48" y="-15" width="96" height="30" rx="15"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">START</tspan></text></g><g class="dg-node dg-dec" data-node="n1" transform="translate(196,74)"><path class="dg-shape" d="M0,-26 L61.22,0 L0,26 L-61.22,0 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">in1 = 1 ?</tspan></text></g><g class="dg-node dg-proc" data-node="n2" transform="translate(196,148)"><rect class="dg-shape" x="-96.2" y="-16" width="192.4" height="32"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="4.5">duty = an1 × 100 ÷ 255</tspan></text></g><g class="dg-node dg-io" data-node="n3" transform="translate(196,222)"><path class="dg-shape" d="M-66.2,-23.5 H78.2 L66.2,23.5 H-78.2 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="-3">PWM out1 = duty %</tspan><tspan x="0" y="12">out2 = 1</tspan></text></g><g class="dg-node dg-io" data-node="n4" transform="translate(480.2,74)"><path class="dg-shape" d="M-55.400000000000006,-23.5 H67.4 L55.400000000000006,23.5 H-67.4 Z"/><text class="dg-ntxt" text-anchor="middle"><tspan x="0" y="-3">PWM out1 = 0 %</tspan><tspan x="0" y="12">out2 = 0</tspan></text></g></g></svg></div><figcaption>The capstan flowchart: one decision, scaling, PWM and a lamp, in an infinite loop.</figcaption></figure> <span class="why">6 marks. They go for the loop, correct pin numbers, the decision, the scaling, both branches and the lamp.</span></li>
+</ol>
+</details></div>
+
+<div class="widget" id="w-capstan">
+  <h3 class="widget-title">The capstan board: logic plus microcontroller</h3>
+  <p class="hint">Flip the four switches and watch the NAND logic board decide ENABLE. Then turn the speed dial and see what the microcontroller does with it. The flowchart shows which boxes ran.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 20 · <span class="pill">Calculation</span> · the dial</p>
+<p>The dial reads 191 and the supply is 12 V. Find the average voltage across the capstan motor.</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>$D = 191 \times 100 \div 255 = 74.9\ \%$.</li>
+<li>$V_{avg} = 0.749 \times 12 = 8.99\ \text{V}$.</li>
+<li>If $E = 0$ the answer would be 0 V, whatever the dial says: the logic board has the final say. <span class="why">This shows why the NAND board and the program belong to one system.</span></li>
+</ol>
+</details></div>
+
+<h3>Technique for descriptive answers</h3>
+<p>Not every mark is a calculation. The 2024 report said "Questions requiring a detailed written response proved to be challenging". Some rules for descriptions in this topic:</p>
+<ul>
+<li>Use the words of the question and of the component: "duty cycle", "average voltage", "the output goes high", "the loop returns to the start".</li>
+<li>Give the cause, the link, and the effect, in that order: <em>because</em> the duty falls, <em>so</em> the average voltage falls, <em>so</em> the motor slows.</li>
+<li>For a test, write the input you set, the output you expect, and what you saw. Never write only "it worked".</li>
+</ul>
+
+<h3>Mistakes markers see</h3>
+<p>These are drawn from the course reports (the quotations) and from the checks in this deck.</p>
+<ul>
+<li>Counting gates when the question asks for ICs. The 2026 report: candidates "did not refer to factors such as manufacture and/or cost in relation to the number of Integrated Circuits used".</li>
+<li>Not minimising. The 2025 report: some "did not use the least number of logic gates possible by converting to NAND equivalents".</li>
+<li>Claiming everything works. The 2026 report: some "stated that all specification points were met, when the performance of their amended flowchart did not provide evidence to support this".</li>
+<li>A flowchart with no pin numbers or no delay unit, or with no way back to the start.</li>
+<li>A non-descriptive answer for the motor speed: few "correctly described the speed of the motor as the voltage dropped".</li>
+<li>Rounding too early, which can make a final answer wrong (2024).</li>
+</ul>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · the final check</div><p>Before you hand in a digital answer, ask four questions. Does my truth table have every row, in order? Does my expression match the table? Is my NAND count right for gates <em>and</em> for chips? Does my flowchart have pin numbers, units and a loop?</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>take a specification through truth table, expression, logic diagram and NAND equivalent;</li><li>count gates and ICs from a data sheet;</li><li>connect a logic output to a microcontroller flowchart that uses PWM and scaling;</li><li>write a descriptive answer with cause, link and effect.</li></ul></div>
+<div class="check" data-check="dig-exam"></div>
+
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="analogue.html">← Analogue electronics</a>
+  <a class="btn primary" href="mechanisms.html">Next deck: Drives &amp; pneumatics →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Engineering Science course specification (version 2.0, September 2018) and the Higher data booklet (Qualifications Scotland, January 2026), which Qualifications Scotland confirms are current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Ratchet</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script defer src="digital.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
