@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Systems, Energy &amp; Impacts &middot; Rivets, Relays &amp; Rigging</title>
+<meta name="description" content="Higher Engineering Science: engineering roles and disciplines, the systems approach, feedback and control, energy and efficiency, calculation craft, and the impacts of engineering, with animated widgets and worked examples.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="systems.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%233a1c0c'/%3E%3Crect x='5' y='1' width='6' height='14' fill='%23d9a04f'/%3E%3Crect x='1' y='5' width='14' height='6' fill='%23d9a04f'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23d9a04f'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%238a4210'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23c8102e'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz-systems.js"></script>
+<script src="quiz-analogue.js"></script>
+<script src="quiz-digital.js"></script>
+<script src="quiz-mechanisms.js"></script>
+<script src="quiz-structures.js"></script>
+<script src="quiz-exam.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Rivets, Relays and Rigging — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="4" height="16" fill="#d9a04f"/><rect x="0" y="6" width="16" height="4" fill="#d9a04f"/><rect x="2" y="2" width="12" height="12" fill="#d9a04f"/><rect x="1" y="3" width="14" height="10" fill="#d9a04f"/><rect x="3" y="1" width="10" height="14" fill="#d9a04f"/><rect x="4" y="4" width="8" height="8" fill="#8a4210"/><rect x="3" y="5" width="10" height="6" fill="#8a4210"/><rect x="5" y="3" width="6" height="10" fill="#8a4210"/><rect x="6" y="6" width="4" height="4" fill="#3a1c0c"/><rect x="7" y="7" width="2" height="2" fill="#c8102e"/></svg>
+      <span class="brand-text"><span class="brand-title">Rivets, Relays &amp; Rigging</span><span class="brand-sub">Higher Engineering Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="systems.html" aria-current="page">Systems &amp; energy</a></li>
+        <li><a href="analogue.html">Analogue electronics</a></li>
+        <li><a href="digital.html">Digital &amp; programmable</a></li>
+        <li><a href="mechanisms.html">Drives &amp; pneumatics</a></li>
+        <li><a href="structures.html">Structures &amp; materials</a></li>
+        <li><a href="exam.html">Exam &amp; assignment</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="sy-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="ink"/></marker>
+<marker id="sy-ar-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-red"/></marker>
+<marker id="sy-ar-sea" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-sea"/></marker>
+<marker id="sy-ar-grass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-grass"/></marker>
+</defs></svg>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">Place on the ship · the quarterdeck, the great wheel and the captain's cabin</p>
+<h1>Systems, energy &amp; the impact of engineering</h1>
+<p class="lede">Before you can design a circuit, a gearbox or a truss, you need the big picture: what engineers actually do, how to break a problem into a <em>system</em>, how a machine corrects its own mistakes, and how to count energy honestly. This deck is the foundation for everything else, and it is worth <strong>10 to 17 marks</strong> in the question paper (the spec's range for this theme). It also feeds the calculation habits you will use in every other deck.</p>
+<div class="callout scope"><p><strong>What this deck covers.</strong> Engineering roles and disciplines; the systems approach and control diagrams; negative feedback, closed-loop, two-state and proportional control; energy audits, the energy formulae and efficiency; manipulating and combining formulae; the social, economic and environmental impacts of engineering, sustainability and emerging technologies. A table at the end maps every chapter to the course specification.</p></div>
+<div class="callout log"><div class="callout-title">⚓ Orders from the quarterdeck</div>
+<p>Flight Lieutenant Alba Murray has marched 1805 (Blockhaven) Squadron up the gangway of <em>HMS Ratchet</em>, a 74-gun ship of the line built entirely of blocks: iron-block fittings, redstone wiring, pistons on every gun-port. Captain Callum Reid greets the squadron on the quarterdeck. "The ship is being refitted," he says. "Master Shipwright Kerr will show you how a refit is really run, from the great wheel in the stern to the stove in my cabin. Cadet Sergeant Rahman, you look as if you have a question already."</p></div>
+</div>
+
+<section id="roles" class="prose">
+<h2 data-short="Engineers &amp; roles">1 · What engineers do: disciplines, phases and teamwork <span class="spec-tag">ROLES &amp; DISCIPLINES</span></h2>
+
+<p><dfn>Engineering</dfn> is using science and mathematics to solve practical problems, then building and testing the solution so that it works safely, affordably and reliably. An <dfn>engineer</dfn> is the person who takes responsibility for making that happen. Notice the three constraints hiding in that sentence: <em>safe</em>, <em>affordable</em>, <em>reliable</em>. Engineering is rarely about the perfect answer. It is about the best answer that can actually be built, within a budget, on time, and without hurting anyone.</p>
+<p>The course asks about the <strong>role of the professional engineer within a project</strong>, including <strong>communication and team working</strong>, and the <strong>skills and specialist knowledge</strong> required. Let us take those in turn.</p>
+
+<h3>Engineering disciplines</h3>
+<p>Nobody can be expert in everything, so engineering is split into <dfn>disciplines</dfn>. Each discipline has its own specialist knowledge (what the engineer knows) and its own typical tasks (what the engineer does). Big projects need several disciplines working together, because real machines mix mechanics, electricity, structures and software.</p>
+<div class="table-wrap"><table>
+<caption>Main engineering disciplines in the Higher course, with a ship-board and a real-world example of each.</caption>
+<thead><tr><th>Discipline</th><th>Specialist knowledge</th><th>Typical tasks</th><th>On <em>HMS Ratchet</em></th></tr></thead>
+<tbody>
+<tr><th scope="row">Mechanical</th><td>Forces, motion, energy, drive systems, materials, pneumatics and hydraulics</td><td>Designs gears, shafts, pumps, engines and the way they fit together; calculates speeds, torques and powers</td><td>The capstan and gun-tackle gearing; the pistons on the gun-ports</td></tr>
+<tr><th scope="row">Electrical and electronic</th><td>Circuits, power supplies, sensors, transistors, op-amps, motors</td><td>Designs circuits and wiring; selects components; tests and fault-finds</td><td>The redstone wiring, signal lamps and the comparator that watches the bilge</td></tr>
+<tr><th scope="row">Civil and structural</th><td>Forces in structures, loads, foundations, materials in compression and tension</td><td>Designs bridges, towers, dams and buildings; checks that supports can carry the loads</td><td>The dock bridge, the masts, shrouds and stays</td></tr>
+<tr><th scope="row">Software and control</th><td>Programming, logic, flowcharts, feedback and control theory</td><td>Writes the program that reads sensors and decides what the outputs do</td><td>The autopilot that holds the ship's heading</td></tr>
+<tr><th scope="row">Environmental</th><td>Pollution, waste, energy use, ecosystems, regulations</td><td>Assesses and reduces the effect of a project on air, water and land</td><td>Checking what the ship's bilge water and smoke do to the harbour</td></tr>
+<tr><th scope="row">Chemical and materials</th><td>Properties of materials, corrosion, fuels, manufacturing processes</td><td>Chooses and develops materials; designs processes that make or treat them</td><td>Oak against iron against copper sheathing on the hull</td></tr>
+</tbody></table></div>
+<p>The line between disciplines is blurred in practice. A <dfn>mechatronics</dfn> engineer works across mechanical, electronic and software work at once; a modern robot arm needs all three. When an exam question names a discipline, answer from that discipline's knowledge: ask yourself "what does a civil engineer know that nobody else on the team does?"</p>
+
+<h3>The phases of a project</h3>
+<p>A project does not go straight from idea to finished product. Engineers work through <dfn>phases</dfn>. Different organisations name them differently, but the logic is always the same: understand the need, work out a solution, make it, prove it works, then keep it working.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 210" role="img" aria-label="Five boxes in a row joined by arrows: 1 Identify the need and analyse, 2 Design, 3 Develop and build, 4 Test, 5 Evaluate and maintain. A long return arrow runs from Test back to Design and another from Evaluate back to Identify the need, showing that engineering is iterative.">
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="8" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="73" y="80" class="ink">1 Identify the need</text><text x="73" y="100" class="ink">and analyse</text>
+<rect x="160" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="225" y="90" class="ink">2 Design</text>
+<rect x="312" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="377" y="80" class="ink">3 Develop</text><text x="377" y="100" class="ink">and build</text>
+<rect x="464" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="529" y="90" class="ink">4 Test</text>
+<rect x="616" y="50" width="136" height="70" rx="4" class="sy-box"/><text x="684" y="80" class="ink">5 Evaluate</text><text x="684" y="100" class="ink">and maintain</text>
+</g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M140 85 H156"/><path d="M292 85 H308"/><path d="M444 85 H460"/><path d="M596 85 H612"/></g>
+<path d="M529 122 V170 H225 V124" class="s-red" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-red)"/>
+<text x="377" y="190" font-size="13" class="f-red" text-anchor="middle" font-weight="700">test fails a requirement: redesign</text>
+<path d="M684 48 V20 H73 V46" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-sea)"/>
+<text x="378" y="14" font-size="13" class="f-sea" text-anchor="middle" font-weight="700">evaluation shows a new need: start again</text>
+</svg></div>
+<figcaption>The project phases. The arrows going backwards matter as much as the ones going forwards: designs fail tests, and finished products reveal new needs.</figcaption></figure>
+<div class="table-wrap"><table>
+<caption>What happens in each phase, with example engineering tasks.</caption>
+<thead><tr><th>Phase</th><th>What is being done</th><th>Example tasks</th></tr></thead>
+<tbody>
+<tr><th scope="row">Identify the need and analyse</th><td>Find out exactly what the problem is and what the solution must achieve</td><td>Interview the users; write a specification (a list of measurable requirements); research existing solutions; estimate cost and risk</td></tr>
+<tr><th scope="row">Design</th><td>Create and choose a solution on paper or on screen</td><td>Sketch and model options; calculate sizes, loads and powers; choose materials and components; simulate; produce drawings</td></tr>
+<tr><th scope="row">Develop and build</th><td>Turn the design into a real prototype or product</td><td>Manufacture parts; assemble and wire; write and load the program; supervise construction on site</td></tr>
+<tr><th scope="row">Test</th><td>Prove that it meets the specification</td><td>Plan tests with expected results; take measurements; record and compare results; fix faults</td></tr>
+<tr><th scope="row">Evaluate and maintain</th><td>Judge how well it works and keep it working</td><td>Compare performance with each specification point; suggest improvements; inspect, service and repair in use</td></tr>
+</tbody></table></div>
+
+<h3>Communication and team working</h3>
+<p>No engineer works alone on a large project. A bridge needs civil engineers for the structure, mechanical engineers for any moving span, electrical engineers for the lighting and drives, and software engineers for the control system. Each depends on the others' work, so the places where one discipline meets another (the <em>interfaces</em>) are where mistakes most often creep in.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 700 300" role="img" aria-label="Hub and spoke diagram. A central circle labelled Project, with the client and specification, is joined by double-headed arrows to six boxes: mechanical, electrical and electronic, civil and structural, software and control, environmental, and materials. Labels on the arrows name the information exchanged: drawings, specifications, test reports and meetings.">
+<circle cx="350" cy="150" r="52" class="sy-box"/><text x="350" y="146" font-size="15" font-weight="700" text-anchor="middle" class="ink">Project</text><text x="350" y="166" font-size="12" text-anchor="middle" class="ink2">client + specification</text>
+<g class="s-ink" stroke-width="2" marker-start="url(#sy-ar)" marker-end="url(#sy-ar)" fill="none">
+<path d="M310 118 L190 66"/><path d="M350 98 V54"/><path d="M390 118 L510 66"/><path d="M310 182 L190 236"/><path d="M350 202 V246"/><path d="M390 182 L510 236"/></g>
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="60" y="38" width="130" height="40" rx="3" class="sy-box"/><text x="125" y="63" class="ink">Mechanical</text>
+<rect x="285" y="12" width="130" height="40" rx="3" class="sy-box"/><text x="350" y="37" class="ink">Electrical</text>
+<rect x="510" y="38" width="130" height="40" rx="3" class="sy-box"/><text x="575" y="63" class="ink">Civil / structural</text>
+<rect x="60" y="222" width="130" height="40" rx="3" class="sy-box"/><text x="125" y="247" class="ink">Software / control</text>
+<rect x="285" y="248" width="130" height="40" rx="3" class="sy-box"/><text x="350" y="273" class="ink">Environmental</text>
+<rect x="510" y="222" width="130" height="40" rx="3" class="sy-box"/><text x="575" y="247" class="ink">Materials</text></g>
+<g font-size="12" class="f-sea" font-weight="700"><text x="218" y="100">drawings</text><text x="436" y="100">specifications</text><text x="204" y="214">test reports</text><text x="432" y="214">meetings</text></g>
+</svg></div>
+<figcaption>Information flows both ways between every discipline and the project as a whole. Good communication means the right information, in a form the other discipline understands, at the right time.</figcaption></figure>
+<p>Engineers communicate through: <strong>drawings and models</strong> (the shared picture of what will be built), <strong>specifications</strong> (what it must achieve), <strong>reports and test records</strong> (evidence that it does), <strong>meetings</strong> (to settle disagreements early), and <strong>written and spoken updates to clients</strong> who are not engineers and need plain language. Good <dfn>team working</dfn> means agreeing roles, sharing information promptly, respecting each other's expertise, meeting deadlines others depend on, and being honest about problems instead of hiding them.</p>
+<p>Why does this matter for results? A mechanical engineer who changes the size of a motor without telling the electrical engineer may leave the cables too thin for the new current. A civil engineer who is not told about a heavier machine may under-design the floor beneath it. Communication prevents expensive, sometimes dangerous, errors.</p>
+
+<h3>Skills and specialist knowledge</h3>
+<p>Two different things are sampled. <dfn>Specialist knowledge</dfn> is the discipline's content: a civil engineer's knowledge of how a beam bends, an electronic engineer's knowledge of how a transistor switches. <dfn>Skills</dfn> are the abilities used on any project: problem solving, mathematics, using CAD and simulation software, drawing and reading drawings, practical building and testing, communication, planning and managing time and money, and working safely.</p>
+
+<div class="widget" id="w-who">
+  <h3 class="widget-title">Muster roll: who does what on the refit?</h3>
+  <p class="hint">Master Shipwright Kerr reads out a task. Decide which discipline would take the lead on it. Several disciplines might help, but one is the natural owner. The explanation tells you why.</p>
+  <div class="sorter" data-bins="Mechanical|Electrical|Civil|Software|Environmental|Materials">
+    <div data-ans="Civil" data-why="Checking that supports can carry a load is structural work: the civil or structural engineer's specialist knowledge of forces and reactions.">Check that the new dock bridge can carry the weight of a fully loaded ammunition cart.</div>
+    <div data-ans="Software" data-why="Deciding what the outputs do when the inputs change is the job of a control program, which is the software and control engineer's work.">Write the program that makes the autopilot turn the rudder when the heading drifts.</div>
+    <div data-ans="Mechanical" data-why="Gear ratios, torque and power transmission are mechanical engineering: choosing the right drive for the job.">Choose the gear ratio that lets one sailor raise the anchor with the capstan.</div>
+    <div data-ans="Electrical" data-why="Selecting a transistor, resistor values and wiring to switch the bilge pump motor is electronic design.">Design the transistor circuit that switches on the bilge-pump motor.</div>
+    <div data-ans="Environmental" data-why="Assessing and reducing the effect on the harbour water is an environmental engineer's role.">Measure what the ship's discharge is doing to the harbour and propose a way to reduce it.</div>
+    <div data-ans="Materials" data-why="Comparing properties and corrosion behaviour to pick a hull sheathing is the materials engineer's specialist job.">Recommend whether copper or iron sheathing will last longer in salt water.</div>
+    <div data-ans="Mechanical" data-why="A mechanical engineer sizes the cylinders and checks the force P = F/A that each piston can deliver.">Work out the piston diameter needed to push a gun-port shutter closed.</div>
+    <div data-ans="Civil" data-why="Masts, shrouds and stays are structures: the forces in them are the structural engineer's calculation.">Calculate the tension in the forestay when the wind fills the sails.</div>
+  </div>
+</div>
+
+<h3>How to write a Higher answer about an engineer's role</h3>
+<p>Questions in this area ask you to <em>describe</em> or <em>explain</em> a role in a named project. The 2026 course report records that few candidates "described two roles of a civil engineer in the development phase" and that few "described two examples of how a mechanical engineer may apply mathematics in the design of the drive system". The pattern is clear: when a question asks for <em>two</em>, many candidates give one, or give the same one twice in different words. Use this recipe for every role mark:</p>
+<div class="callout def"><div class="callout-title">📘 The role + how/why recipe</div>
+<ol>
+<li><strong>Role</strong>: state a specific task this discipline does in the project, in this phase.</li>
+<li><strong>How or why</strong>: say <em>how</em> they do it (a method, a calculation, a tool) or <em>why</em> it matters (what goes wrong without it).</li>
+<li><strong>Two means two</strong>: if the question says "two roles", write two separate, clearly different paragraphs. Number them.</li>
+<li><strong>Use the context</strong>: name parts of the actual project. "Checks that the pier foundations can support the turbine tower" beats "makes sure it is safe".</li>
+</ol></div>
+<p>A bare job title earns nothing ("the civil engineer designs the structure" is a role with no how/why and no context). Compare the weak and strong versions in the widget below, which builds role answers for four projects.</p>
+
+<div class="widget" id="w-role">
+  <h3 class="widget-title">Role-answer builder: two roles, each with a how or why</h3>
+  <p class="hint">Pick a project and a discipline. The builder shows two different roles and marks up the parts of each: <span class="sy-tag sy-r">role</span> <span class="sy-tag sy-h">how / why</span> <span class="sy-tag sy-c">project context</span>. Then compare with the weak version.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 1 · Description · two roles of an engineer</p>
+<p>A tidal turbine array is to be installed in a Scottish sea channel. Describe two roles of an electrical engineer during the <em>design</em> phase of the project. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Role 1: designs the generator, converter and control electronics. <span class="why">A specific task in the right phase.</span></li>
+<li>How/why 1: calculates the voltage and current from the turbine's rated power so that cables and electronics are sized to carry it without overheating. <span class="why">The method (calculation from rated power) and the reason (overheating).</span></li>
+<li>Role 2: designs the sensing and protection circuits for the turbine. <span class="why">A different task, so it is worth a different mark.</span></li>
+<li>How/why 2: uses sensors for speed and temperature and a circuit that switches the turbine off if limits are exceeded, so that a fault does not destroy the generator. <span class="why">Linked to the context: salt water, remote location.</span></li>
+</ol>
+<p><strong>Common slips.</strong> Writing "designs the electrics" twice; describing <em>testing</em> (a later phase) when asked for design; or writing only the role with no method or reason.</p>
+</details></div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · Description · mathematics in engineering</p>
+<p>Describe two examples of how a mechanical engineer may apply mathematics in the design of the capstan drive on <em>HMS Ratchet</em>. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Example 1: uses the velocity ratio of the gear train, input speed ÷ output speed, <span class="why">Name the mathematics.</span></li>
+<li>to choose gears so the capstan turns slowly enough for one sailor to control the load while the motor runs at its efficient speed. <span class="why">Say what the result is used for.</span></li>
+<li>Example 2: calculates the torque the drive must deliver, using $T = Fr$ with the anchor's weight and the drum radius, <span class="why">A second, different calculation.</span></li>
+<li>to check that the shaft and the motor are strong enough to lift the anchor without failing. <span class="why">The reason it matters.</span></li>
+</ol>
+</details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Is an engineer just somebody who builds things? Why do the exam answers always want maths?"</p><p><strong>Master Shipwright Kerr:</strong> "Building is the end of the job, not the whole of it. Before a single block is placed, somebody has to know that the mast will bear the sail and that the motor will lift the anchor. That knowing is calculation. An engineer who cannot show the numbers can only guess, and a ship of the line is a poor place to guess."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>name the main engineering disciplines and say what specialist knowledge each brings to a project;</li>
+<li>describe the phases of a project and give example tasks for each;</li>
+<li>explain why communication and team working matter and give examples of how engineers communicate;</li>
+<li>distinguish specialist knowledge from general skills;</li>
+<li>write "role + how/why" answers, with the number of roles the question asks for, linked to the project.</li></ul></div>
+<div class="check" data-check="sys-roles"></div>
+</section>
+
+<section id="approach" class="prose">
+<h2 data-short="Systems approach">2 · The systems approach: sub-systems, block diagrams and control diagrams <span class="spec-tag">SYSTEMS APPROACH</span></h2>
+
+<p>Engineers tame complicated machines with one idea: do not look at the whole thing at once. Draw a boundary round the part you care about, and ask three questions. <strong>What goes in? What happens to it? What comes out?</strong> That is the <dfn>systems approach</dfn>.</p>
+<div class="callout def"><div class="callout-title">📘 System, sub-system, input, process, output</div>
+<ul>
+<li>A <dfn>system</dfn> is a collection of parts that work together to do a job. It has a boundary: what is inside is the system, and what is outside is its surroundings.</li>
+<li>A <dfn>sub-system</dfn> is a smaller system inside a bigger one, with a job of its own. A sub-system can itself contain smaller sub-systems.</li>
+<li>An <dfn>input</dfn> is what enters the system (energy, material, information or a signal). The <dfn>process</dfn> is what the system does to it. The <dfn>output</dfn> is what leaves.</li>
+</ul></div>
+<p>The great wheel on the quarterdeck is a good example. Input: the helmsman turns the wheel through some angle. Process: the steering gear converts that movement into force on the rudder. Output: the rudder angle. But the steering gear is made of smaller parts (wheel, linkage, hydraulic pump, rudder) and each of those is a sub-system when you zoom in.</p>
+
+<h3>Block (system) diagrams</h3>
+<p>A <dfn>block diagram</dfn> (also called a system diagram) shows a system as labelled boxes joined by arrows. Each box is a sub-system and states what it <em>does</em>. Each arrow shows what passes between the boxes, and the arrow head shows the direction. It deliberately leaves out how each box works inside, so that you can see the structure.</p>
+<ul>
+<li>Draw the flow from left (inputs) to right (outputs), and label the arrows if the thing carried is not obvious (for example "water level signal").</li>
+<li>Name each block by its <em>function</em> ("detects water level", "switches pump") rather than only by a part ("float").</li>
+<li>Keep one box for one job. If a box does two things, split it.</li>
+</ul>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 230" role="img" aria-label="A system boundary drawn as a dashed rectangle labelled Bilge pumping system. Inside, four blocks in a row: Level sensor, Switching circuit, Pump motor and Pump with pipework. Arrows join them left to right. Input: water in the bilge enters the sensor. Output: water leaves the pump to the sea. A battery supplies energy to the switching circuit and motor.">
+<rect x="150" y="20" width="460" height="150" rx="6" fill="none" class="s-sea" stroke-width="2.4" stroke-dasharray="8 5"/>
+<text x="165" y="42" font-size="13" font-weight="700" class="f-sea">System: bilge pumping</text>
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="164" y="66" width="100" height="56" rx="3" class="sy-box"/><text x="214" y="91" class="ink">Level</text><text x="214" y="108" class="ink">sensor</text>
+<rect x="284" y="66" width="100" height="56" rx="3" class="sy-box"/><text x="334" y="91" class="ink">Switching</text><text x="334" y="108" class="ink">circuit</text>
+<rect x="404" y="66" width="90" height="56" rx="3" class="sy-box"/><text x="449" y="91" class="ink">Pump</text><text x="449" y="108" class="ink">motor</text>
+<rect x="512" y="66" width="86" height="56" rx="3" class="sy-box"/><text x="555" y="91" class="ink">Pump +</text><text x="555" y="108" class="ink">pipework</text></g>
+<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M70 94 H160"/><path d="M266 94 H280"/><path d="M386 94 H400"/><path d="M496 94 H508"/><path d="M600 94 H700"/></g>
+<text x="66" y="78" font-size="12" class="ink2">INPUT</text><text x="66" y="118" font-size="12" class="ink2">water in the</text><text x="66" y="133" font-size="12" class="ink2">bilge</text>
+<text x="650" y="78" font-size="12" class="ink2" text-anchor="middle">OUTPUT</text><text x="650" y="118" font-size="12" class="ink2" text-anchor="middle">water out</text><text x="650" y="133" font-size="12" class="ink2" text-anchor="middle">to the sea</text>
+<rect x="320" y="184" width="120" height="30" rx="3" class="sy-box"/><text x="380" y="204" font-size="13" font-weight="700" text-anchor="middle" class="ink">Battery (energy)</text>
+<path d="M350 184 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"/><path d="M425 184 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"/>
+</svg></div>
+<figcaption>A system diagram for an automatic bilge pump. The dashed line is the system boundary. Each box is a sub-system with one job, and the arrows show what flows between them (signals in black, electrical energy in red).</figcaption></figure>
+
+<h3>Complex systems</h3>
+<p>A <dfn>complex system</dfn> has several sub-systems that work together, and often interact. The whole ship is one: propulsion, steering, electrical supply, fire-fighting and bilge pumping are each a system, and each is part of the ship system. Engineers draw the big picture first, then a separate diagram for each sub-system, then for the sub-systems inside those. This is called working <em>top-down</em>, and it lets a team share out the work: each discipline takes the sub-systems it is expert in, agreeing the arrows between them.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 260" role="img" aria-label="Top-down system hierarchy. At the top a box labelled HMS Ratchet, whole ship. Below it, four sub-system boxes: Propulsion, Steering, Electrical supply, Bilge and fire pumping. Each has smaller boxes underneath: Propulsion has sails and rigging, shaft and propeller drive; Steering has wheel and helm, rudder gear; Electrical supply has generator and battery; Bilge has sensor, pump.">
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="280" y="10" width="200" height="40" rx="3" class="sy-box"/><text x="380" y="35" class="ink">HMS Ratchet (whole ship)</text>
+<rect x="20" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="95" y="119" class="ink">Propulsion</text>
+<rect x="210" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="285" y="119" class="ink">Steering</text>
+<rect x="400" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="475" y="119" class="ink">Electrical supply</text>
+<rect x="590" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="665" y="119" class="ink">Bilge &amp; fire pumping</text>
+</g>
+<g class="s-ink" stroke-width="2" fill="none"><path d="M380 50 V72 H95 V95"/><path d="M380 72 H285 V95"/><path d="M380 72 H475 V95"/><path d="M380 72 H665 V95"/></g>
+<g font-size="12" text-anchor="middle">
+<rect x="20" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="95" y="190" class="ink">Sails + rigging</text>
+<rect x="20" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="95" y="232" class="ink">Auxiliary drive</text>
+<rect x="210" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="285" y="190" class="ink">Wheel + helm</text>
+<rect x="210" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="285" y="232" class="ink">Rudder gear</text>
+<rect x="400" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="475" y="190" class="ink">Generator</text>
+<rect x="400" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="475" y="232" class="ink">Battery bank</text>
+<rect x="590" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="665" y="190" class="ink">Level sensor</text>
+<rect x="590" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="665" y="232" class="ink">Pump + motor</text></g>
+<g class="s-muted" stroke-width="1.6" fill="none"><path d="M95 133 V170"/><path d="M95 156 V212"/><path d="M285 133 V170"/><path d="M285 156 V212"/><path d="M475 133 V170"/><path d="M475 156 V212"/><path d="M665 133 V170"/><path d="M665 156 V212"/></g>
+</svg></div>
+<figcaption>Top-down view of a complex system: the whole ship, its sub-systems, and the parts inside each one. Each level can be drawn as its own block diagram.</figcaption></figure>
+
+<h3>Control diagrams</h3>
+<p>Some systems need to <em>control</em> something: keep a temperature, a water level or a heading at a wanted value. A <dfn>control diagram</dfn> is a block diagram that shows how. The basic form is still input &rarr; process &rarr; output, but each block now has a name from control engineering.</p>
+<div class="table-wrap"><table>
+<caption>The blocks of a control diagram. The names vary a little between books; the jobs do not.</caption>
+<thead><tr><th>Block</th><th>Job</th><th>Helm example</th></tr></thead>
+<tbody>
+<tr><th scope="row">Input (desired value, set point)</th><td>What we want the output to be</td><td>The heading the captain orders, say 090°</td></tr>
+<tr><th scope="row">Comparator (error detector, summing junction)</th><td>Subtracts the measured output from the desired value to give the <dfn>error</dfn></td><td>Desired heading minus actual heading</td></tr>
+<tr><th scope="row">Controller</th><td>Decides what to do about the error</td><td>The autopilot: how much rudder for this error</td></tr>
+<tr><th scope="row">Actuator (drive)</th><td>Turns the controller's decision into physical action</td><td>The hydraulic rudder motor</td></tr>
+<tr><th scope="row">Process (plant)</th><td>The thing being controlled</td><td>The ship and its rudder</td></tr>
+<tr><th scope="row">Output</th><td>What actually results</td><td>The actual heading</td></tr>
+<tr><th scope="row">Sensor (feedback transducer)</th><td>Measures the output and turns it into a signal the comparator can use</td><td>The compass</td></tr>
+</tbody></table></div>
+<p>A <dfn>disturbance</dfn> is anything unwanted that pushes the output away from the desired value: a gust of wind, a wave, a change in load. Disturbances are why we need control at all. Without them, we could just set the rudder once.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 400" role="img" aria-label="Two control diagrams. Top: open loop. Desired value goes into a controller, then an actuator, then a process, giving the output, with no path back. A disturbance arrow enters the process. Bottom: closed loop. Desired value and a negative feedback signal go into a comparator circle marked plus and minus, which outputs the error to the controller, then actuator, then process, giving the output. A sensor takes the output and returns it to the comparator. A disturbance enters the process.">
+<text x="12" y="20" font-size="14" font-weight="700" class="f-red">OPEN LOOP: no information comes back</text>
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="150" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="205" y="78" class="ink">Controller</text>
+<rect x="300" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="355" y="78" class="ink">Actuator</text>
+<rect x="450" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="505" y="78" class="ink">Process</text></g>
+<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M40 73 H146"/><path d="M262 73 H296"/><path d="M412 73 H446"/><path d="M562 73 H720"/></g>
+<text x="40" y="60" font-size="12" class="ink2">desired value</text><text x="720" y="60" font-size="12" class="ink2" text-anchor="end">output</text>
+<path d="M505 18 V46" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="515" y="30" font-size="12" class="f-red" font-weight="700">disturbance</text>
+<line x1="20" y1="136" x2="740" y2="136" class="s-line" stroke-width="2" stroke-dasharray="3 5"/>
+<text x="12" y="166" font-size="14" font-weight="700" class="f-grass">CLOSED LOOP: the output is measured and fed back</text>
+<g font-size="13" font-weight="700" text-anchor="middle">
+<circle cx="150" cy="233" r="18" class="sy-box"/>
+<rect x="215" y="210" width="110" height="46" rx="3" class="sy-box"/><text x="270" y="238" class="ink">Controller</text>
+<rect x="355" y="210" width="100" height="46" rx="3" class="sy-box"/><text x="405" y="238" class="ink">Actuator</text>
+<rect x="485" y="210" width="100" height="46" rx="3" class="sy-box"/><text x="535" y="238" class="ink">Process</text>
+<rect x="355" y="320" width="130" height="46" rx="3" class="sy-box"/><text x="420" y="348" class="ink">Sensor</text></g>
+<text x="150" y="228" font-size="15" font-weight="700" text-anchor="middle" class="ink">+</text><text x="150" y="246" font-size="17" font-weight="700" text-anchor="middle" class="ink">−</text>
+<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M40 233 H130"/><path d="M168 233 H211"/><path d="M327 233 H351"/><path d="M457 233 H481"/><path d="M587 233 H720"/></g>
+<text x="40" y="218" font-size="12" class="ink2">desired value</text><text x="720" y="218" font-size="12" class="ink2" text-anchor="end">output</text>
+<text x="190" y="224" font-size="12" class="f-red" font-weight="700" text-anchor="middle">error</text>
+<path d="M640 233 V343 H487" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
+<path d="M353 343 H150 V253" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
+<circle cx="640" cy="233" r="4" class="ink"/>
+<text x="560" y="336" font-size="12" class="ink2" text-anchor="middle">actual output</text><text x="250" y="336" font-size="12" class="ink2" text-anchor="middle">measured signal (feedback)</text>
+<path d="M535 168 V206" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="545" y="184" font-size="12" class="f-red" font-weight="700">disturbance</text>
+</svg></div>
+<figcaption>Open loop (top) sends a command and hopes. Closed loop (bottom) measures the output, subtracts it from the desired value at the comparator, and acts on the difference. The minus sign at the comparator is what makes the feedback <em>negative</em>.</figcaption></figure>
+
+<div class="widget" id="w-blocks">
+  <h3 class="widget-title">Drawing-office drill: assemble the control diagram</h3>
+  <p class="hint">Choose a ship system. Press a block in the bank to pick it up, then press the empty slot where it belongs (press a filled slot to take the block back). When every slot is full, press <b>Check</b>. Two blocks in each bank are decoys.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 3 · Description · labelling a control system</p>
+<p>The stove in the captain's cabin is fitted with a thermostat. The captain sets the temperature he wants. A temperature sensor measures the cabin temperature. A circuit compares the two and switches the stove's fuel valve. Name the part of the system that performs each function in a control diagram. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Input / desired value: the temperature set by the captain. <span class="why">What we want the output to be.</span></li>
+<li>Sensor (feedback): the temperature sensor, measuring the cabin temperature. <span class="why">It sits in the feedback path and measures the output.</span></li>
+<li>Comparator / error detector: the circuit that compares set and measured temperatures. <span class="why">It finds the error.</span></li>
+<li>Actuator: the fuel valve; process: the cabin air being heated; output: the actual cabin temperature. <span class="why">The valve acts on the process and the temperature is what results.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"A timer switches the stove on for ten minutes every hour. That is a system. Why isn't it good enough?"</p><p><strong>Master Shipwright Kerr:</strong> "It is a system, but an open-loop one. The timer does not know the cabin temperature. On a cold night the cabin is too cool; on a warm day it is too hot. Only a sensor that feeds the actual temperature back lets the system react to what really happens."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>define system, sub-system, input, process and output, and draw a block diagram for a described system;</li>
+<li>describe a complex system as several sub-systems and draw its structure;</li>
+<li>draw and label an open-loop and a closed-loop control diagram, including comparator, sensor and disturbance;</li>
+<li>identify the block that performs each function in a described situation.</li></ul></div>
+<div class="check" data-check="sys-systems"></div>
+</section>
+
+<section id="feedback" class="prose">
+<h2 data-short="Feedback &amp; control">3 · Feedback and control: error, two-state and proportional <span class="spec-tag">FEEDBACK &amp; CONTROL</span></h2>
+
+<p>Captain Reid orders the helmsman to hold a heading of 090°. A cross-wind pushes the bow round. A good helmsman notices the compass drifting, <em>compares</em> it with 090°, and turns the wheel to bring it back. That sequence (measure, compare, correct) is exactly what a closed-loop control system does automatically. This chapter explains how it works and why it works better than just setting the wheel and hoping.</p>
+
+<h3>Open loop and closed loop</h3>
+<div class="compare">
+<div><h4>Open loop</h4><p>The controller acts on the input only. It never checks the result.</p><ul><li>Simple and cheap; nothing to go wrong in a feedback path.</li><li>Cannot correct for disturbances or for its own inaccuracy.</li><li>Fine when the process is predictable: a timer on a lamp, a fixed fuse on a signal gun.</li></ul></div>
+<div><h4>Closed loop</h4><p>The output is measured and fed back so that the controller acts on the <em>error</em>.</p><ul><li>Corrects for disturbances automatically.</li><li>Needs a sensor and a comparator, so costs more and is more complex.</li><li>Can become unstable if badly designed (it can oscillate).</li></ul></div>
+</div>
+
+<h3>Error and error detection</h3>
+<div class="callout def"><div class="callout-title">📘 Error</div>
+<p>$$\text{error} = \text{desired value} - \text{actual value}$$</p>
+<p>The <dfn>error</dfn> is the gap between what we want and what we have. Its <em>sign</em> tells you which way to correct: with desired 090° and actual 084° the error is $+6^\circ$ (turn towards a larger heading); if actual is 096° the error is $-6^\circ$ (turn the other way). When the error is zero, the controller has nothing to do.</p></div>
+<p>The block that works out the error is the <dfn>comparator</dfn> or <dfn>error detector</dfn> (drawn as a circle with a $+$ and a $-$, a <em>summing junction</em>). In an electronic controller it is built from op-amps: a <em>comparator</em> circuit gives a two-state answer, "above or below the reference", and a <em>difference amplifier</em> gives an output proportional to the difference between two voltages, $V_o = \frac{R_f}{R_i}(V_2 - V_1)$. You will build both in the <a href="analogue.html">analogue electronics deck</a>; for now, remember that "error detection" is the subtraction in the feedback loop.</p>
+
+<h3>The role of negative feedback</h3>
+<p>Feedback is called <dfn>negative</dfn> when the fed-back signal is <em>subtracted</em> from the input at the comparator, so a rise in the output reduces the drive that caused it. Negative feedback is <strong>self-correcting</strong>: if the output goes too high, the error goes negative and the controller pushes the output back down; if it goes too low, the opposite happens. That is why it reduces the effect of disturbances and keeps the output near the desired value.</p>
+<p><dfn>Positive feedback</dfn> adds the fed-back signal to the input, so a rise in the output increases the drive that caused it. The output runs away from the starting value until something limits it (a microphone placed next to its own loudspeaker squeals; a snowball rolling down a slope grows faster as it grows). Positive feedback is not useful for holding a value steady, but engineers use it deliberately where a fast, decisive change or a latched state is wanted, for example in latches and oscillators.</p>
+
+<h3>Two-state control</h3>
+<p>The simplest closed-loop controller has only two outputs: fully <strong>on</strong> or fully <strong>off</strong>. A cabin thermostat is the classic example. When the temperature falls below the lower limit the stove goes on; when it rises above the upper limit the stove goes off.</p>
+<p>Why does the temperature never sit exactly at the target? Because of <em>delay</em>. The air heats up after the stove goes on, and keeps heating a little after it goes off. The temperature <strong>overshoots</strong> the upper limit, then cools and <strong>undershoots</strong> the lower limit. The result is a continual swing called <dfn>hunting</dfn> (or cycling). A gap between the switch-on and switch-off values (the <dfn>switching band</dfn> or hysteresis) stops the stove clicking on and off many times a second, but makes the swing larger.</p>
+<ul>
+<li><strong>Advantages:</strong> simple, cheap, robust, and easy to design and set up; efficient for slow processes where small swings do not matter.</li>
+<li><strong>Disadvantages:</strong> the output is never steady, only swinging about the target; the actuator is slammed fully on and off, so it wears out faster; a narrow band means rapid switching, a wide one means large swings.</li>
+</ul>
+
+<h3>Proportional control</h3>
+<p>A <dfn>proportional</dfn> controller makes the output <em>proportional to the error</em>:</p>
+$$\text{controller output} = K_p \times \text{error}$$
+<p>where $K_p$ is the <dfn>gain</dfn>. A big error gets a big correction, a small error a small one, and as the error shrinks the correction fades smoothly. This avoids the violent on-off action and (for moderate gain) settles without hunting.</p>
+<p>There is a catch called <dfn>steady-state offset</dfn>. Suppose a steady cross-wind needs a constant 6° of rudder to hold the ship on course. A proportional controller only gives rudder when there is an error, so a rudder of 6° requires an error of $6 \div K_p$ degrees. The ship therefore settles <em>slightly off</em> the desired heading and stays there. The offset is
+$$\text{offset} = \frac{\text{output needed to cancel the disturbance}}{K_p}.$$
+Raising the gain shrinks the offset, but a high gain over-reacts: the output overshoots and the loop starts to oscillate. Good control is a compromise, and more advanced controllers (which you do not need for Higher) add extra terms to remove the offset.</p>
+
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 270" role="img" aria-label="Two graphs of controller output against error. Left: two-state control with hysteresis. The output is off for negative errors and on for positive errors, switching at plus and minus the band, drawn as a step with a small gap. Right: proportional control. The output is a straight sloping line through the origin, flat at the maximum output (saturation) at each end.">
+<g font-size="12" class="ink2">
+<line x1="40" y1="220" x2="350" y2="220" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="195" y1="240" x2="195" y2="30" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
+<text x="352" y="238" text-anchor="end">error</text><text x="200" y="28">output</text>
+<text x="90" y="212" text-anchor="middle">off</text><text x="300" y="70" text-anchor="middle">on (full)</text><text x="195" y="260" text-anchor="middle" class="ink2">TWO-STATE (with switching band)</text>
+<line x1="235" y1="214" x2="235" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="235" y="240" text-anchor="middle">+band</text>
+<line x1="155" y1="214" x2="155" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="155" y="240" text-anchor="middle">−band</text></g>
+<path d="M60 220 H235 V66 H340" class="s-red" stroke-width="3" fill="none"/>
+<path d="M340 66 H155 V220 H60" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4"/>
+<text x="214" y="150" font-size="12" class="f-red" text-anchor="start">error rising</text><text x="150" y="150" font-size="12" class="f-sea" text-anchor="end">error falling</text>
+<g font-size="12" class="ink2">
+<line x1="410" y1="140" x2="730" y2="140" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="570" y1="240" x2="570" y2="30" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
+<text x="732" y="158" text-anchor="end">error</text><text x="575" y="28">output</text>
+<text x="570" y="260" text-anchor="middle">PROPORTIONAL (gain = slope)</text>
+<text x="660" y="62" text-anchor="middle">upper limit (saturation)</text><text x="480" y="228" text-anchor="middle">lower limit</text></g>
+<path d="M420 210 H500 L640 70 H720" class="s-red" stroke-width="3" fill="none"/>
+<text x="598" y="124" font-size="12" class="f-red" font-weight="700">output = Kp × error</text>
+</svg></div>
+<figcaption>Two-state control gives an all-or-nothing response, with a switching band so it does not flutter. Proportional control gives a response in proportion to the error, up to the limit the actuator can deliver.</figcaption></figure>
+
+<div class="table-wrap"><table>
+<caption>Open loop, two-state and proportional compared.</caption>
+<thead><tr><th></th><th>Open loop</th><th>Two-state (closed loop)</th><th>Proportional (closed loop)</th></tr></thead>
+<tbody>
+<tr><th scope="row">Uses feedback?</th><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><th scope="row">Response to error</th><td>None: it never sees the error</td><td>Fully on or fully off</td><td>Output grows in proportion to the error</td></tr>
+<tr><th scope="row">Typical behaviour after a disturbance</th><td>Output drifts away and stays wrong</td><td>Hunts: swings about the target</td><td>Settles with a small offset; high gain can oscillate</td></tr>
+<tr><th scope="row">Cost / complexity</th><td>Lowest</td><td>Low</td><td>Higher</td></tr>
+<tr><th scope="row">Example</th><td>A timer-controlled lamp</td><td>A cabin thermostat</td><td>An autopilot or cruise control</td></tr>
+</tbody></table></div>
+
+<div class="widget" id="w-helm">
+  <h3 class="widget-title">The great wheel: one gust, three kinds of helmsman</h3>
+  <p class="hint">The ship starts on its desired heading (0°, the dashed line). At 8 s a steady gust starts to turn the bow. <b style="color:var(--redstone)">Open loop</b> fixes the rudder amidships and does nothing. <b style="color:var(--amber)">Two-state</b> puts the rudder fully over one way or the other. <b style="color:var(--sea)">Proportional</b> sets the rudder in proportion to the error. Change the gain and the gust size and watch what each controller does. The simulation runs faster than real time.</p>
+</div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2024 course report</div><p>On a two-state control question, the report says many candidates were "unable to relate to the situation described". Do not write a general essay on thermostats. Read the situation, and use its words: <em>which</em> quantity switches the actuator, at <em>what</em> values, and what the output does between them.</p></div>
+
+<div class="widget" id="w-ctrl-sort">
+  <h3 class="widget-title">Which kind of control is on watch?</h3>
+  <p class="hint">Classify each situation. Decide first: is the output measured and fed back? If so, does the controller give only on/off, or a graded response?</p>
+  <div class="sorter" data-bins="Open loop|Two-state|Proportional">
+    <div data-ans="Open loop" data-why="A fuse burns for a fixed time whatever happens; nothing is measured and fed back.">A signal-gun fuse is cut to burn for 30 seconds, then fires.</div>
+    <div data-ans="Two-state" data-why="The stove is fully on or fully off, switching at set temperatures: closed loop, on/off.">The cabin stove switches fully on below 18 °C and fully off above 22 °C.</div>
+    <div data-ans="Proportional" data-why="The rudder angle is graded: it grows in proportion to the error.">The autopilot sets the rudder angle to 1.5 times the heading error in degrees.</div>
+    <div data-ans="Open loop" data-why="There is no temperature sensor, so the oven cannot react to its actual temperature.">The galley oven's heater runs for 10 minutes on a timer, whatever the oven temperature.</div>
+    <div data-ans="Two-state" data-why="Full speed above the float level, stopped below it: on/off action from a measured level.">The bilge pump runs at full speed when a float switch senses water, and stops when the water falls.</div>
+    <div data-ans="Proportional" data-why="The drive voltage is larger when the measured speed is further below target: output proportional to error.">A winch motor's drive voltage rises the further the tachometer reading is below the target speed.</div>
+  </div>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 4 · Calculation · error and proportional output</p>
+<p>A boiler in the galley has a proportional pressure controller. The desired pressure is 6.0 bar and the pressure sensor reads 5.2 bar. The controller opens the fuel valve by 25 % for each 1.0 bar of error. Calculate the error and the valve opening. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>error $= 6.0 - 5.2$ <span class="why">Error is desired minus actual.</span></li>
+<li>error $= 0.8$ bar <span class="why">Positive: the pressure is too low and needs more fuel.</span></li>
+<li>valve opening $= 25 \times 0.8 = 20\ \%$ <span class="why">Gain 25 % per bar times the error. State the unit.</span></li>
+</ol>
+<p><strong>Common slip.</strong> Subtracting the other way round (actual minus desired) gives $-0.8$ bar, which would seem to close the valve. Always desired minus actual.</p></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 5 · Description · a two-state situation</p>
+<p>The cabin stove is switched on when the temperature falls to 18 °C and switched off when it rises to 22 °C. Explain why the cabin temperature is not steady, and state one advantage of this type of control. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>This is two-state control: the stove is either fully on or fully off. <span class="why">Identify the type, using the situation.</span></li>
+<li>After the stove switches off at 22 °C the temperature keeps rising slightly, then falls to 18 °C; after switching on at 18 °C it keeps falling slightly before it rises. The temperature therefore swings (hunts) between about 18 °C and 22 °C and is never constant. <span class="why">The reason: lag in the heating, plus the switching band. Use the 18 and 22 from the question.</span></li>
+<li>Advantage: simple and cheap, since the thermostat only needs to switch on and off. <span class="why">One clear advantage, in a few words.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 6 · Calculation · steady-state offset</p>
+<p>The autopilot is a proportional controller with a gain of 1.5° of rudder per degree of heading error. The desired heading is 090°. <span class="q-part">(a)</span> The actual heading is 084°. Calculate the rudder angle. [2] <span class="q-part">(b)</span> A steady cross-wind means that 6° of rudder is needed to hold a steady course. Calculate the heading error when the ship settles. [2] <span class="q-part">(c)</span> The gain is doubled. State the effect on the heading error and one possible disadvantage. [2]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>(a) error $= 090 - 084 = 6^\circ$, so rudder $= 1.5 \times 6 = 9^\circ$ <span class="why">Error first, then multiply by the gain.</span></li>
+<li>(b) the controller must output 6°, so error $= 6 \div 1.5$ <span class="why">Rearrange output $= K_p \times$ error.</span></li>
+<li>error $= 4^\circ$ <span class="why">The ship settles 4° off course: steady-state offset.</span></li>
+<li>(c) the error halves, to $6 \div 3.0 = 2^\circ$ <span class="why">Offset is inversely proportional to gain.</span></li>
+<li>a disadvantage of high gain: the rudder over-reacts, so the heading overshoots and may oscillate (become unstable). <span class="why">The trade-off in a sentence.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If more gain shrinks the offset, why not make the gain enormous and be done with it?"</p><p><strong>Flight Lieutenant Murray:</strong> "Because the ship takes time to respond. A huge gain means a tiny error produces a big rudder, and by the time the ship has turned, it has gone past the target, so the controller swings the rudder hard the other way. Try it on the widget: push the gain to the top and watch the heading swing. Control is a trade between a small offset and a calm response."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>distinguish open-loop from closed-loop control and state an advantage and a disadvantage of each;</li>
+<li>calculate error as desired minus actual and interpret its sign;</li>
+<li>explain that negative feedback is subtracted and is self-correcting, and say what positive feedback does;</li>
+<li>describe two-state control, hunting and the switching band, relating it to the situation in the question;</li>
+<li>describe proportional control, calculate its output, and explain steady-state offset and the effect of gain.</li></ul></div>
+<div class="check" data-check="sys-feedback"></div>
+</section>
+
+<section id="energy" class="prose">
+<h2 data-short="Energy &amp; efficiency">4 · Energy and efficiency: audits, formulae and combining them <span class="spec-tag">ENERGY &amp; EFFICIENCY</span></h2>
+
+<p>Every machine on <em>HMS Ratchet</em> takes energy in, does something useful with some of it, and lets the rest escape. Engineers account for that energy the way a purser accounts for rations: carefully, and to the last joule. This chapter gives you the vocabulary, the formulae from the Data Booklet and, most importantly, the habit of <strong>combining</strong> them to solve a problem.</p>
+
+<h3>Energy, power and conversion</h3>
+<div class="callout def"><div class="callout-title">📘 Energy and power</div>
+<p><dfn>Energy</dfn> is the capacity to do work. It is measured in <strong>joules (J)</strong>. Energy cannot be created or destroyed; it can only be <em>converted</em> from one form to another or transferred. <dfn>Power</dfn> is the rate at which energy is transferred or converted. It is measured in <strong>watts (W)</strong>, where $1\ \text{W} = 1\ \text{J s}^{-1}$.</p>
+$$P = \frac{E}{t}$$
+<p>A 60 W lantern converts 60 joules of electrical energy every second.</p></div>
+<p>Energy comes in many forms: <strong>chemical</strong> (fuel, batteries, food), <strong>electrical</strong>, <strong>kinetic</strong> (moving objects), <strong>gravitational potential</strong> (height), <strong>elastic or strain</strong> (a stretched rope, a compressed spring), <strong>thermal</strong> (heat), <strong>light</strong>, <strong>sound</strong> and <strong>nuclear</strong>. Machines are chains of conversions.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 170" role="img" aria-label="An energy conversion chain with five boxes joined by arrows: fuel (chemical energy), boiler (thermal energy), turbine (kinetic energy), generator (electrical energy), lamp (light energy and wasted thermal energy). Thin downward arrows from each stage show energy lost as heat to the surroundings.">
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="10" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="70" y="55" class="ink">Fuel</text><text x="70" y="73" font-size="11" class="ink2">chemical</text>
+<rect x="160" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="220" y="55" class="ink">Boiler</text><text x="220" y="73" font-size="11" class="ink2">thermal</text>
+<rect x="310" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="370" y="55" class="ink">Turbine</text><text x="370" y="73" font-size="11" class="ink2">kinetic</text>
+<rect x="460" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="520" y="55" class="ink">Generator</text><text x="520" y="73" font-size="11" class="ink2">electrical</text>
+<rect x="610" y="30" width="130" height="56" rx="3" class="sy-box"/><text x="675" y="55" class="ink">Lamp</text><text x="675" y="73" font-size="11" class="ink2">light</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M132 58 H156"/><path d="M282 58 H306"/><path d="M432 58 H456"/><path d="M582 58 H606"/></g>
+<g class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"><path d="M220 88 V130"/><path d="M370 88 V130"/><path d="M520 88 V130"/><path d="M675 88 V130"/></g>
+<text x="380" y="154" font-size="13" font-weight="700" text-anchor="middle" class="f-red">wasted energy: heat (and sound) spreads into the surroundings at every stage</text>
+</svg></div>
+<figcaption>Energy is conserved along the chain, but at each stage some becomes low-grade heat that cannot usefully be recovered. That is why the final useful output is always less than the first input.</figcaption></figure>
+
+<h3>Energy audits and efficiency</h3>
+<p>An <dfn>energy audit</dfn> lists, for a device or system: the energy (or power) <strong>input</strong>; the <strong>useful output</strong>; the <strong>wasted output</strong> (the <dfn>losses</dfn>); and the <strong>efficiency</strong>. Because energy is conserved, the outputs always add up to the input:
+$$E_{in} = E_{useful} + E_{wasted}.$$
+Efficiency says what fraction of the input ends up as useful output:</p>
+$$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
+<p>(<em>$\eta$</em> is the Greek letter "eta".) Both forms are in the Data Booklet. The power form works because over the same time $t$, $E = Pt$ on both top and bottom, and the $t$ cancels. Efficiency has no unit. Give it as a decimal (0.76) or a percentage (76 %), and make sure it is never above 1 (100 %): a machine cannot give out more energy than it takes in.</p>
+<div class="table-wrap"><table>
+<caption>An energy audit of a signal lantern on HMS Ratchet.</caption>
+<thead><tr><th>Path</th><th class="num">Power (W)</th><th class="num">Percentage of input</th><th>Useful?</th></tr></thead>
+<tbody>
+<tr><th scope="row">Electrical input</th><td class="num">60</td><td class="num">100 %</td><td>(input)</td></tr>
+<tr><th scope="row">Light output</th><td class="num">3</td><td class="num">5 %</td><td>Useful</td></tr>
+<tr><th scope="row">Heat from the bulb</th><td class="num">57</td><td class="num">95 %</td><td>Wasted</td></tr>
+<tr><th scope="row">Efficiency</th><td colspan="3">$\eta = 3 \div 60 = 0.05 = 5\ \%$</td></tr>
+</tbody></table></div>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 190" role="img" aria-label="A machine drawn as a box. A thick arrow labelled energy in enters from the left. A thick arrow labelled useful energy out leaves to the right. A thinner red arrow labelled wasted energy leaves downwards. The caption inside the box gives efficiency equals useful energy out divided by energy in.">
+<rect x="250" y="40" width="260" height="90" rx="4" class="sy-box"/>
+<text x="380" y="78" font-size="15" font-weight="700" text-anchor="middle" class="ink">MACHINE</text><text x="380" y="102" font-size="13" text-anchor="middle" class="ink2">efficiency = E(out) ÷ E(in)</text>
+<path d="M60 85 H246" class="s-ink" stroke-width="14" fill="none"/><path d="M246 70 L262 85 L246 100 Z" class="ink"/>
+<path d="M514 85 H650" class="s-grass" stroke-width="10" fill="none"/><path d="M650 72 L668 85 L650 98 Z" class="f-grass"/>
+<path d="M440 132 V160" class="s-red" stroke-width="5" fill="none"/><path d="M432 158 L440 176 L448 158 Z" class="f-red"/>
+<text x="60" y="64" font-size="13" font-weight="700" class="ink">energy in, E(in)</text>
+<text x="560" y="64" font-size="13" font-weight="700" class="f-grass">useful energy out</text>
+<text x="456" y="168" font-size="13" font-weight="700" class="f-red">wasted energy (heat, sound, friction)</text>
+</svg></div>
+<figcaption>Arrow widths drawn in proportion: most of the energy in is useful here. The three arrows always balance.</figcaption></figure>
+
+<div class="widget" id="w-sankey">
+  <h3 class="widget-title">Energy-flow gauge: the capstan's electric motor</h3>
+  <p class="hint">A Sankey diagram draws energy flow as bands whose width is proportional to the power. Set the input power and how much is lost in each path. The useful band is what is left. Watch the efficiency change, and read the audit table.</p>
+</div>
+
+<h3>The energy formulae</h3>
+<p>The Data Booklet gives you these. You are not asked to remember them, but you must know <em>which</em> one to pick and what each symbol means.</p>
+<div class="eq-grid">
+<div class="eq-card"><p><strong>Work done</strong></p>$$E_w = Fd$$<p>$F$ in newtons (N), distance $d$ in metres (m) <em>in the direction of the force</em>. Energy in J.</p></div>
+<div class="eq-card"><p><strong>Kinetic energy</strong></p>$$E_k = \tfrac12 mv^2$$<p>Mass $m$ in kg, speed $v$ in m s⁻¹. Note the square: double the speed, four times the energy.</p></div>
+<div class="eq-card"><p><strong>Gravitational potential energy</strong></p>$$E_p = mgh$$<p>$g = 9.8\ \text{m s}^{-2}$, $h$ is the height <em>change</em> in metres. Energy in J.</p></div>
+<div class="eq-card"><p><strong>Electrical energy</strong></p>$$E_e = VIt$$<p>Voltage $V$ in volts, current $I$ in amperes, time $t$ in <em>seconds</em>.</p></div>
+<div class="eq-card"><p><strong>Heat energy</strong></p>$$E_h = cm\Delta T$$<p>Specific heat capacity $c$ (water: 4180 J kg⁻¹ K⁻¹), mass $m$ in kg, temperature change $\Delta T$ in K or °C (the same size).</p></div>
+<div class="eq-card"><p><strong>Power</strong></p>$$P = \frac{E}{t}$$<p>Also $P = VI$, $P = I^2R$, $P = V^2/R$ for electrical power, and $P = Fv$ for mechanical power.</p></div>
+</div>
+<p>Notice that $E_w = Fd$ is the bridge between forces and energy: lifting an object of weight $mg$ through a height $h$ requires work $Fd = mg \times h$, which is exactly $E_p$. And a force acting through a distance to speed something up, or to slow it with friction, links to $E_k$ and $E_h$.</p>
+
+<div class="widget" id="w-bench">
+  <h3 class="widget-title">The armourer's bench: feel the size of a joule</h3>
+  <p class="hint">Choose a formula, move the sliders, and read the substitution and the answer. The bar compares the answer with the energy in a cannonball, a lifted anchor, a kettle boil and so on.</p>
+</div>
+
+<h3>Conservation of energy in motion</h3>
+<p>When nothing wastes energy, kinetic and potential energy simply swap. A lantern swinging at the end of a rope is highest (all $E_p$, no $E_k$) at the ends of its swing, and fastest (all $E_k$, minimum $E_p$) at the bottom. With friction in the pivot and air resistance, some of the energy becomes heat $E_h$ on every swing, and the swings die away. The total never changes.</p>
+<div class="widget" id="w-pend">
+  <h3 class="widget-title">The swinging lantern: energy changes form but is never lost</h3>
+  <p class="hint">Release the lantern from any angle. The bars show potential, kinetic and heat energy. With no friction the potential and kinetic bars always add to the same total; with friction, the heat bar grows and the swing dies away.</p>
+</div>
+
+<h3>Combining formulae: the method</h3>
+<p>Most Higher energy questions chain two or more formulae. The route is always the same.</p>
+<ol>
+<li><strong>Draw the energy story.</strong> What form is the energy in at the start, and at the end? Name the conversions.</li>
+<li><strong>Calculate the energy (or power) of the useful stage</strong> with the formula that fits it ($E_p$, $E_k$, $E_h$, $E_w$ ...).</li>
+<li><strong>Link to the input</strong> with efficiency, $E_e = VIt$, or $P = E/t$.</li>
+<li><strong>Rearrange before you substitute</strong>, and keep full calculator values until the last line.</li>
+<li><strong>Check units</strong> (J, W, s, kg, m) and say what your answer means.</li>
+</ol>
+
+<div class="worked"><p class="worked-title">Worked example 7 · Calculation · the chain pump</p>
+<p>The chain pump lifts 2400 kg of water through a height of 3.5 m in 60 s. The electric motor driving it takes an input power of 1.8 kW. Calculate (a) the useful output power of the pump and (b) the efficiency of the system. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$E_p = mgh = 2400 \times 9.8 \times 3.5$ <span class="why">The useful output is the gain in potential energy of the water.</span></li>
+<li>$E_p = 82\,320\ \text{J}$, so $P_{out} = E/t = 82\,320 \div 60 = 1372\ \text{W}$ <span class="why">Power is energy per second. Keep the full value: 1372 W.</span></li>
+<li>$\eta = P_{out} \div P_{in} = 1372 \div 1800$ <span class="why">Convert 1.8 kW to 1800 W first so both powers are in the same unit.</span></li>
+<li>$\eta = 0.762$ (76.2 %) <span class="why">No unit. Under 1, as it must be.</span></li>
+</ol>
+<p><strong>Common slip.</strong> Leaving the input as 1.8 (kW) against an output in W, which makes the efficiency 1000 times too small.</p></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 8 · Calculation · regenerative braking</p>
+<p>An electric launch of mass 1800 kg is travelling at 6.0 m s⁻¹ and brakes to rest. A regenerative braking system converts 40 % of its kinetic energy into electrical energy stored in a battery. (a) Calculate the energy stored in the battery. [3] (b) For how long could this energy power a 25 W lamp? [2] (c) State what happens to the rest of the kinetic energy. [1]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$E_k = \tfrac12 mv^2 = \tfrac12 \times 1800 \times 6.0^2 = 32\,400\ \text{J}$ <span class="why">Square the speed before multiplying.</span></li>
+<li>energy stored $= 0.40 \times 32\,400 = 12\,960\ \text{J}$ <span class="why">40 % is a factor of 0.40 of the kinetic energy: the efficiency of the recovery.</span></li>
+<li>$t = E/P = 12\,960 \div 25 = 518.4\ \text{s}$, about 520 s (8.6 minutes) <span class="why">Rearranged from $P = E/t$. Unit: seconds.</span></li>
+<li>The remaining 60 % becomes heat (in the brakes, motor, wiring and surroundings). <span class="why">Energy is conserved: it is not lost, but wasted as heat.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 9 · Calculation · electric heater and water</p>
+<p>An electric heater of power 3.0 kW heats 2.0 kg of water from 15 °C to 65 °C. 85 % of the electrical energy supplied becomes heat in the water. (Specific heat capacity of water = 4180 J kg⁻¹ K⁻¹.) (a) Calculate the energy gained by the water. [2] (b) Calculate the electrical energy supplied. [2] (c) Calculate how long the heater is switched on. [1]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\Delta T = 65 - 15 = 50\ \text{K}$ and $E_h = cm\Delta T = 4180 \times 2.0 \times 50 = 418\,000\ \text{J}$ <span class="why">Heat gained by the water is the useful output.</span></li>
+<li>$E_{in} = E_{out} \div \eta = 418\,000 \div 0.85 = 491\,765\ \text{J}$ (4.9 × 10⁵ J) <span class="why">Rearranged from $\eta = E_{out}/E_{in}$.</span></li>
+<li>$t = E/P = 491\,765 \div 3000 = 164\ \text{s}$ <span class="why">$E_e = Pt$ with $P = VI$ folded in. Use 3000 W, not 3.0.</span></li>
+</ol>
+<p><strong>Common slip.</strong> Using the input energy 491 765 J in $E_h = cm\Delta T$ to find a temperature rise. The water only gets the useful part.</p></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 10 · Calculation · raising the anchor</p>
+<p>The capstan raises an anchor and chain of total mass 1400 kg through 6.0 m in 80 s. The electric motor takes 1.8 kW. Calculate (a) the work done on the anchor, (b) the useful output power, (c) the efficiency, and (d) the energy wasted. [6]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$F = mg = 1400 \times 9.8 = 13\,720\ \text{N}$ <span class="why">The force needed to lift the load at steady speed equals its weight.</span></li>
+<li>$E_w = Fd = 13\,720 \times 6.0 = 82\,320\ \text{J}$ <span class="why">Work done is force times distance moved.</span></li>
+<li>$P_{out} = E/t = 82\,320 \div 80 = 1029\ \text{W}$ <span class="why">The useful power.</span></li>
+<li>$\eta = 1029 \div 1800 = 0.572$ (57.2 %) <span class="why">Efficiency from the powers.</span></li>
+<li>$E_{in} = P_{in}t = 1800 \times 80 = 144\,000\ \text{J}$ <span class="why">Energy the motor takes in.</span></li>
+<li>$E_{wasted} = 144\,000 - 82\,320 = 61\,680\ \text{J}$ <span class="why">Input minus useful output: friction, motor heating.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 11 · Calculation · conservation of energy</p>
+<p>A cannonball falls freely from the main yard, 12 m above the deck. Ignoring air resistance, calculate its speed on reaching the deck. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>all $E_p$ becomes $E_k$: $mgh = \tfrac12 mv^2$ <span class="why">Equate the two energies.</span></li>
+<li>the mass cancels: $v = \sqrt{2gh} = \sqrt{2 \times 9.8 \times 12}$ <span class="why">The answer does not depend on the mass, which is why it was not given.</span></li>
+<li>$v = 15\ \text{m s}^{-1}$ (15.3 m s⁻¹ before rounding) <span class="why">Two or three significant figures; units m s⁻¹.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"The energy 'wasted' by the motor: where does it go? Is it destroyed?"</p><p><strong>Master Shipwright Kerr:</strong> "Never destroyed. It becomes heat in the motor windings and bearings, a little sound and vibration, and spreads into the air of the ship. That energy still exists, but it is spread so thin and so cool that you cannot use it. We call it wasted because it is no longer useful, not because it has vanished."</p></div>
+<div class="callout tip"><div class="callout-title">💡 Exam tip</div><p>Braking is an $E_k$ to $E_h$ conversion: the brake pads and discs warm up. A question that tells you how much of the kinetic energy appears as heat in a given mass of metal is asking you to equate $\tfrac12 mv^2$ (times the fraction) with $cm\Delta T$. Watch for two <em>different</em> masses: the moving vehicle and the metal being heated.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>name forms of energy and describe conversions; state that energy is conserved;</li>
+<li>complete an energy audit: inputs, useful outputs, wasted outputs, efficiency;</li>
+<li>use $E_w = Fd$, $P = E/t$, $E_k$, $E_p$, $E_e = VIt$ and $E_h = cm\Delta T$ with correct units;</li>
+<li>calculate efficiency from energies or powers, and use it backwards to find the input;</li>
+<li>combine two or three of these formulae to solve a multi-stage problem.</li></ul></div>
+<div class="check" data-check="sys-energy"></div>
+</section>
+
+<section id="calc" class="prose">
+<h2 data-short="Calculation craft">5 · Calculation craft: formulae, units, prefixes and rounding <span class="spec-tag">CALCULATIONS</span></h2>
+
+<p>Marks are lost in engineering calculations far more often by small slips than by not knowing the physics: a unit left unconverted, a formula rearranged wrongly, an answer rounded too early. The specification asks you to be able to <strong>manipulate and combine given formulae</strong>, and this chapter makes that a reliable routine. The same routine serves every other deck.</p>
+
+<h3>Transposing a formula</h3>
+<p>To <dfn>transpose</dfn> (rearrange) a formula, do the same thing to both sides until the quantity you want stands alone. Think of a balance: what you do to one pan, you do to the other.</p>
+<div class="table-wrap"><table>
+<caption>Rearrangements you will use repeatedly.</caption>
+<thead><tr><th>Start</th><th>To find</th><th>Rearranged</th><th>Steps</th></tr></thead>
+<tbody>
+<tr><th scope="row">$P = E/t$</th><td>$E$ or $t$</td><td>$E = Pt$; $t = E/P$</td><td>Multiply both sides by $t$; then divide by $P$</td></tr>
+<tr><th scope="row">$E_p = mgh$</th><td>$h$</td><td>$h = \dfrac{E_p}{mg}$</td><td>Divide both sides by $mg$</td></tr>
+<tr><th scope="row">$E_k = \tfrac12 mv^2$</th><td>$v$</td><td>$v = \sqrt{\dfrac{2E_k}{m}}$</td><td>Multiply by 2, divide by $m$, then square root</td></tr>
+<tr><th scope="row">$E_h = cm\Delta T$</th><td>$\Delta T$</td><td>$\Delta T = \dfrac{E_h}{cm}$</td><td>Divide by $cm$ (both are multiplied)</td></tr>
+<tr><th scope="row">$\eta = E_{out}/E_{in}$</th><td>$E_{in}$</td><td>$E_{in} = \dfrac{E_{out}}{\eta}$</td><td>Multiply by $E_{in}$, then divide by $\eta$</td></tr>
+<tr><th scope="row">$\dfrac{V_1}{V_2} = \dfrac{R_1}{R_2}$</th><td>$R_1$</td><td>$R_1 = \dfrac{R_2 V_1}{V_2}$</td><td>Multiply both sides by $R_2$</td></tr>
+</tbody></table></div>
+<p>The last row comes from the analogue deck. The 2024 course report says that many candidates found it "challenging to manipulate the voltage divider formula $V_1/V_2 = R_1/R_2$ to find the value of $R_1$". It is the same skill as every other row: multiply both sides by $R_2$ to leave $R_1$ alone.</p>
+
+<h3>Combining formulae</h3>
+<p>When one stage of a problem feeds the next, you can either calculate a number at each stage, or <em>substitute one formula into another</em> and calculate once. The second is often shorter and always avoids rounding trouble. For the pump, with efficiency $\eta = \dfrac{mgh}{Pt}$ you can find the mass moved in one step. For electrical power, $P = VI$ and $V = IR$ combine into $P = I^2R$.</p>
+<div class="callout tip"><div class="callout-title">💡 Algebra first, numbers last</div><p>Rearrange the formula (or combined formula) for the unknown <em>before</em> you put any numbers in. You then do a single calculation on the calculator and there is no intermediate value to round.</p></div>
+
+<h3>Units and decimal prefixes</h3>
+<p>Formulae only work when every quantity is in its <strong>base unit</strong>: kilograms, metres, seconds, newtons, volts, amperes, ohms. Whenever you see a prefix, a minute, a millimetre or a rev/min, convert before you substitute.</p>
+<div class="table-wrap"><table>
+<caption>Decimal prefixes from the Data Booklet that you will meet in this course. Note the symbol for micro is the Greek letter mu, written u in plain text.</caption>
+<thead><tr><th>Prefix</th><th>pico</th><th>nano</th><th>micro</th><th>milli</th><th>kilo</th><th>mega</th><th>giga</th><th>tera</th></tr></thead>
+<tbody><tr><th scope="row">Symbol</th><td>p</td><td>n</td><td>µ</td><td>m</td><td>k</td><td>M</td><td>G</td><td>T</td></tr>
+<tr><th scope="row">Multiply by</th><td>$10^{-12}$</td><td>$10^{-9}$</td><td>$10^{-6}$</td><td>$10^{-3}$</td><td>$10^{3}$</td><td>$10^{6}$</td><td>$10^{9}$</td><td>$10^{12}$</td></tr></tbody></table></div>
+<p><strong>Traps worth memorising:</strong></p>
+<ul>
+<li><strong>Area</strong> converts by the <em>square</em> of the length factor: $1\ \text{mm}^2 = (10^{-3}\ \text{m})^2 = 10^{-6}\ \text{m}^2$, not $10^{-3}$. So $50\ \text{mm}^2 = 5.0 \times 10^{-5}\ \text{m}^2$.</li>
+<li><strong>Rotational speed</strong>: formulae with $n$ want revolutions per <em>second</em>. Divide rev/min by 60: $47\ \text{rev/min} = 0.783\ \text{rev/s}$.</li>
+<li><strong>Time</strong>: minutes and hours must be turned into seconds for $E = Pt$ and $E_e = VIt$.</li>
+<li><strong>Stress</strong>: $1\ \text{N mm}^{-2} = 1\ \text{MPa} = 10^6\ \text{N m}^{-2}$. Keep $F$ in N and area in mm² for answers in N mm⁻², or in m² for pascals; never mix.</li>
+<li><strong>The Data Booklet prints decimal points as raised dots</strong> ("9·8", "0·7"). They are ordinary decimal points.</li>
+</ul>
+<p>To check a conversion, ask: should the number get <em>bigger</em> or <em>smaller</em>? Going from mm to m (a bigger unit) makes the number smaller. Going from kN to N (a smaller unit) makes the number bigger.</p>
+
+<div class="widget" id="w-units">
+  <h3 class="widget-title">The conversion drill: units and prefixes</h3>
+  <p class="hint">Type the converted value as an ordinary number (no units, no powers of ten: write 0.0047, not 4.7×10⁻³). The checker accepts small rounding differences. Try to get a streak of five.</p>
+</div>
+
+<h3>Significant figures, and never rounding too early</h3>
+<p>A <dfn>significant figure</dfn> is a digit that carries information. Leading zeros do not count (0.0047 has two), trailing zeros after a decimal point do (4.70 has three). Round the <strong>final answer</strong> to the number of significant figures the question asks for; the rounding instructions are printed on the front cover of the question paper. If no instruction applies, three significant figures is a sensible, safe choice, and it is never worth giving more than the data justify.</p>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2024 and 2026 course reports</div>
+<p>The 2024 report says: "Some candidates rounded intermediate calculated answers, which made their final answer incorrect." The 2026 report advises candidates to "not round intermediate values during calculation and only apply rounding to the final answer". The 2024 report also notes that "many candidates consistently used the π button on their calculators". Use the π key, never 3.14 or 22/7, unless the question tells you to.</p></div>
+<p>Why does early rounding hurt? Every rounded value carries a small error, and later steps can <em>magnify</em> it: squaring doubles the percentage error, dividing by a number close to another can inflate it, and a sum of several small errors can push the final digit across a rounding boundary. The widget lets you see this happen on a real chain of calculations.</p>
+<div class="widget" id="w-round">
+  <h3 class="widget-title">The honest purser: what rounding too early costs</h3>
+  <p class="hint">Pick a problem. The left column keeps every calculator digit; the right column rounds each intermediate value to the number of significant figures you choose (and, optionally, uses 3.14 for π). Compare the final answers.</p>
+</div>
+<p>Use your calculator's memory: store each answer (the <kbd>Ans</kbd> key or a letter memory) and recall it, rather than retyping a rounded figure. When you write working down, you may write the intermediate value to a few figures for the marker to read, but go on using the full value on the calculator.</p>
+
+<div class="worked"><p class="worked-title">Worked example 12 · Calculation · rearranging first</p>
+<p>A hoist on the gun deck lifts a load through 5.0 m in 40 s. The motor input power is 3.0 kW and the system is 65 % efficient. Calculate the mass of the load. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\eta = \dfrac{P_{out}}{P_{in}} = \dfrac{mgh/t}{P_{in}}$ <span class="why">Combine: $P_{out} = E_p/t = mgh/t$.</span></li>
+<li>$m = \dfrac{\eta P_{in} t}{gh}$ <span class="why">Transpose for $m$ before any numbers go in.</span></li>
+<li>$m = \dfrac{0.65 \times 3000 \times 40}{9.8 \times 5.0}$ <span class="why">$P_{in}$ in W; $\eta$ as a decimal.</span></li>
+<li>$m = 1591.8\ldots = 1590\ \text{kg}$ (3 s.f.) <span class="why">One calculation, one rounding, unit kg.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 13 · Calculation · prefixes and time</p>
+<p>A signal lamp draws 250 mA from a 24 V supply for 45 minutes. Calculate the electrical energy used, in kilojoules. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$I = 250 \times 10^{-3} = 0.250\ \text{A}$ and $t = 45 \times 60 = 2700\ \text{s}$ <span class="why">Convert mA to A and minutes to seconds before substituting.</span></li>
+<li>$E_e = VIt = 24 \times 0.250 \times 2700 = 16\,200\ \text{J}$ <span class="why">The formula, correct substitution, answer in joules.</span></li>
+<li>$E = 16.2\ \text{kJ}$ <span class="why">Convert as requested: divide by 1000.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 14 · Calculation · transposing the divider formula</p>
+<p>In a voltage divider, $R_2 = 4.7\ \text{k}\Omega$. The voltage across $R_1$ is 2.4 V and across $R_2$ is 3.6 V. Calculate $R_1$. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\dfrac{V_1}{V_2} = \dfrac{R_1}{R_2}$, so $R_1 = \dfrac{R_2 V_1}{V_2}$ <span class="why">Transpose first: multiply both sides by $R_2$.</span></li>
+<li>$R_1 = \dfrac{4700 \times 2.4}{3.6} = 3133.3\ \Omega$ <span class="why">$R_2$ is converted to ohms. $V_1$ and $V_2$ are both in volts, so their unit cancels.</span></li>
+<li>$R_1 = 3.13\ \text{k}\Omega$ (3 s.f.) <span class="why">Sense-check: $R_1$ should be smaller than $R_2$, because $V_1$ is smaller than $V_2$. It is.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 15 · Calculation · the cost of rounding early</p>
+<p>A winch drum of diameter 0.35 m turns at 47 rev/min and pulls a rope with a force of 5600 N. The winch is 82 % efficient. Calculate the electrical energy it takes in during 5.0 minutes. Then repeat the calculation rounding each intermediate value to 2 significant figures, with $\pi = 3.14$, and compare. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$n = 47 \div 60 = 0.78333\ldots\ \text{rev/s}$ and $v = \pi d n = \pi \times 0.35 \times 0.78333\ldots = 0.86132\ \text{m s}^{-1}$ <span class="why">The rim speed of the drum is the rope speed. Keep the full values on the calculator.</span></li>
+<li>$P_{out} = Fv = 5600 \times 0.86132\ldots = 4823.4\ \text{W}$ <span class="why">Mechanical power at the rope.</span></li>
+<li>$P_{in} = P_{out} \div \eta = 4823.4 \div 0.82 = 5882.2\ \text{W}$ and $E_{in} = P_{in}t = 5882.2 \times 300 = 1\,764\,656\ \text{J}$ <span class="why">$t = 5.0 \times 60 = 300$ s.</span></li>
+<li>Final answer: $E_{in} = 1.76 \times 10^6\ \text{J}$ (3 s.f.). <span class="why">Rounding only at the end.</span></li>
+</ol>
+<p><strong>The rounded-early version</strong> gives $n = 0.78$, $v = 3.14 \times 0.35 \times 0.78 = 0.857 \to 0.86$, $P_{out} = 4816 \to 4800$, $P_{in} = 5853 \to 5900$, and $E_{in} = 1\,770\,000\ \text{J} = 1.77 \times 10^6\ \text{J}$. The last digit is wrong, even though every step "looked" accurate. That is the mark lost.</p></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"The Data Booklet says g is 9·8. My calculator physics book says 9.81. Which do I use?"</p><p><strong>Master Shipwright Kerr:</strong> "Use the Data Booklet's 9.8 m s⁻² in this course, exactly as printed: it is the value the question was set with. Using 9.81 gives an answer a fraction of a percent different, which is usually still inside the marker's tolerance, but there is no reason to risk it. The booklet is your reference; follow it."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>transpose any formula in the Data Booklet, and combine two formulae by substitution;</li>
+<li>convert units and decimal prefixes (p, n, µ, m, k, M, G, T), including mm² to m², rev/min to rev/s and minutes to seconds;</li>
+<li>quote an answer to the right number of significant figures, with its unit;</li>
+<li>carry full calculator values and round only at the end; use the π key.</li></ul></div>
+<div class="check" data-check="sys-calc"></div>
+</section>
+
+<section id="impacts" class="prose">
+<h2 data-short="Impacts &amp; sustainability">6 · The impacts of engineering: social, economic, environmental, sustainable <span class="spec-tag">IMPACTS</span></h2>
+
+<p>Every engineering project changes the world a little. A bridge changes how people travel, a wind farm changes what the sea horizon looks like, a robot changes who does a job. Captain Reid puts it bluntly: "A ship that sinks the harbour's fishing is a poor ship, however fast she sails." The course asks you to weigh <strong>social and economic impacts</strong> (positive and negative), <strong>environmental impacts</strong> (positive and negative), the <strong>sustainability</strong> of solutions, and <strong>emerging technologies</strong> and their impact. Marks here are earned by <em>balanced, specific, explained</em> points, not by slogans.</p>
+
+<h3>Three kinds of impact, each with two sides</h3>
+<div class="table-wrap"><table>
+<caption>Impacts of engineering. Every project has both positive (+) and negative (−) effects; a Higher answer says which it is describing.</caption>
+<thead><tr><th>Type</th><th>What it means</th><th>Typical positive (+)</th><th>Typical negative (−)</th></tr></thead>
+<tbody>
+<tr><th scope="row">Social</th><td>Effects on people and communities: health, safety, quality of life, jobs and skills, access to services</td><td>Safer travel; clean power for homes; better access to services; new skilled jobs</td><td>Noise, visual intrusion or disruption during construction; loss of traditional jobs; unequal access to the benefits</td></tr>
+<tr><th scope="row">Economic</th><td>Effects on money: costs, savings, income, investment, trade</td><td>Jobs and investment locally; lower running costs; new industries and exports</td><td>High upfront cost; loss of income where an old industry shuts; costs of maintenance or decommissioning passed on to users or taxpayers</td></tr>
+<tr><th scope="row">Environmental</th><td>Effects on air, water, land and living things</td><td>Lower carbon emissions; less waste; habitat protected by cleaner processes</td><td>Pollution; habitat disturbance; resource use; waste at the end of life</td></tr>
+</tbody></table></div>
+<p>A few real Scottish anchors show both sides. The <strong>Falkirk Wheel</strong> replaced a flight of locks with one rotating boat lift, linking two canals, which brought back through-travel and visitors (positive social and economic) but needed a large construction project and materials (cost, resource use). An <strong>offshore wind farm</strong> such as Beatrice in the Moray Firth generates electricity with no fuel burned (positive environmental), but its construction and the cables disturb the sea bed and marine life (negative environmental), and the jobs it creates have to be weighed against the cost of building and connecting it.</p>
+
+<h3>Sustainability and life-cycle thinking</h3>
+<div class="callout def"><div class="callout-title">📘 Sustainability</div>
+<p>A solution is <dfn>sustainable</dfn> if it meets present needs without using up resources or damaging the environment in a way that stops future generations meeting theirs. It has three strands that must be balanced: <strong>environmental</strong> (does it harm the planet?), <strong>economic</strong> (can it be afforded over its whole life?) and <strong>social</strong> (is it fair and does it serve people?).</p></div>
+<p>To judge sustainability, engineers look at the <dfn>life cycle</dfn> of a product, from raw material to grave, and ask where the impacts occur at each stage.</p>
+<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 270" role="img" aria-label="A life-cycle loop. Boxes in a ring: 1 Extract raw materials, 2 Manufacture, 3 Transport and install, 4 Use and maintain, 5 End of life. From End of life, arrows lead to Reuse, Recycle back into materials, and Disposal as waste. Each stage lists a typical question: energy and resources used, waste and emissions in making, transport distance, running energy and lifetime, and what happens afterwards.">
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="10" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="78" y="55" class="ink">1 Extract raw</text><text x="78" y="72" class="ink">materials</text>
+<rect x="170" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="238" y="55" class="ink">2 Manufacture</text><text x="238" y="72" font-size="11" class="ink2">making the parts</text>
+<rect x="330" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="398" y="55" class="ink">3 Transport</text><text x="398" y="72" class="ink">and install</text>
+<rect x="490" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="558" y="55" class="ink">4 Use and</text><text x="558" y="72" class="ink">maintain</text>
+<rect x="640" y="30" width="110" height="56" rx="3" class="sy-box"/><text x="695" y="55" class="ink">5 End of</text><text x="695" y="72" class="ink">life</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M148 58 H166"/><path d="M308 58 H326"/><path d="M468 58 H486"/><path d="M628 58 H636"/></g>
+<g font-size="11" class="ink2" text-anchor="middle"><text x="78" y="106">energy, land, mining</text><text x="238" y="106">emissions, waste, cost</text><text x="398" y="106">distance, fuel, disruption</text><text x="558" y="106">running energy, lifetime</text><text x="695" y="106">what happens now?</text></g>
+<g font-size="13" font-weight="700" text-anchor="middle">
+<rect x="560" y="150" width="100" height="36" rx="3" class="sy-box"/><text x="610" y="173" class="f-grass">Reuse</text>
+<rect x="440" y="204" width="130" height="40" rx="3" class="sy-box"/><text x="505" y="229" class="f-grass">Recycle</text>
+<rect x="640" y="204" width="110" height="40" rx="3" class="sy-box"/><text x="695" y="229" class="f-red">Disposal</text></g>
+<path d="M695 110 V150 L662 168" class="s-grass" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-grass)"/>
+<path d="M640 170 L560 168" class="s-grass" stroke-width="0" fill="none"/>
+<path d="M690 130 V200" class="s-red" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-red)"/>
+<path d="M440 224 H78 V112" class="s-grass" stroke-width="2.2" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-grass)"/>
+<path d="M608 150 C608 120 520 118 500 100" class="s-grass" stroke-width="2.2" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-grass)"/>
+<text x="260" y="244" font-size="12" class="f-grass" text-anchor="middle" font-weight="700">recycled material returns to manufacture, so less is mined</text>
+</svg></div>
+<figcaption>The life cycle of a product. Impacts occur at every stage. Reuse and recycling turn a straight line into a loop, cutting the demand for new raw materials and for the energy to extract them.</figcaption></figure>
+<ul>
+<li><strong>Renewable</strong> resources are replaced naturally on a human timescale (wind, tidal, solar, sustainably grown timber); <strong>non-renewable</strong> resources are used up much faster than they form (coal, oil, gas, most metal ores). Renewable does not mean harmless: it is a statement about the <em>source</em>, not about the whole life cycle.</li>
+<li><strong>Design for the whole life.</strong> A longer-lasting, repairable product with a lower running energy can be more sustainable even if it costs more to make. Using fewer parts and fewer different materials makes recycling easier.</li>
+<li><strong>Recycling</strong> reduces the raw material and energy needed, and avoids waste going to landfill, but collection, sorting and reprocessing also cost energy and money.</li>
+<li>The energy used to make something is sometimes called its <dfn>embodied energy</dfn>. A product with a large embodied energy needs a long life to pay it back.</li>
+</ul>
+
+<h3>Emerging technologies</h3>
+<p>An <dfn>emerging technology</dfn> is one that is new, or still developing quickly, so that its full effects are not yet known. Because they are new, the best answers weigh benefits against risks and say what is still uncertain. These are examples, with a balanced view. Every claim below is deliberately general.</p>
+<div class="table-wrap"><table>
+<caption>Balanced impacts of six emerging technologies.</caption>
+<thead><tr><th>Technology</th><th>Positive impacts</th><th>Negative impacts</th></tr></thead>
+<tbody>
+<tr><th scope="row">Electric and autonomous vehicles</th><td>No exhaust emissions where the vehicle is used; quieter streets; autonomous control could reduce crashes caused by human error</td><td>Batteries need mined materials and energy to make; charging needs generating capacity; jobs in driving and in engine manufacture may be lost; questions about who is responsible in a crash</td></tr>
+<tr><th scope="row">Offshore wind and tidal power</th><td>Renewable electricity with no fuel and no operating emissions; new manufacturing and maintenance jobs</td><td>High installation and connection cost; effects on sea-bed habitat, birds and fishing; output varies with weather or tide, so storage or back-up is needed</td></tr>
+<tr><th scope="row">Hydrogen as a fuel</th><td>Burning or using it in a fuel cell produces water at the point of use; can store energy for long periods</td><td>Most hydrogen today is made using fossil fuels; producing it from water needs a lot of electricity; storing and moving it needs special, costly equipment</td></tr>
+<tr><th scope="row">Robotics and automation</th><td>Safer (robots take over dangerous work); consistent quality; new skilled jobs designing and maintaining them</td><td>Routine jobs lost; high capital cost; workers need retraining; dependence on technical failure-prone systems</td></tr>
+<tr><th scope="row">3D printing (additive manufacturing)</th><td>Makes complex shapes with little waste; parts made on demand, close to where they are needed; quick prototyping</td><td>Slow for mass production; limited materials and sizes; plastics may be hard to recycle; energy used by the printer</td></tr>
+<tr><th scope="row">Battery storage</th><td>Stores surplus renewable energy for use when demand is high; supports electric transport</td><td>Needs mined and processed materials; limited lifetime; end-of-life recycling is still being developed; cost</td></tr>
+</tbody></table></div>
+
+<div class="widget" id="w-weigh">
+  <h3 class="widget-title">Weighing the impacts: the captain's ledger</h3>
+  <p class="hint">Choose a technology. For each statement, decide the <b>type</b> of impact (social, economic or environmental) and whether the effect is <b>positive</b> or <b>negative</b>. Then press <b>Check</b>.</p>
+</div>
+
+<h3>How to write a Higher extended answer</h3>
+<p>The 2024 course report says that questions needing a detailed written response "proved to be challenging, and often candidates provided a non-descriptive answer which lacked the detail required to achieve marks at this level". The cure is a structure that forces detail. Use <strong>point, explanation, consequence</strong> for every impact you describe:</p>
+<div class="callout def"><div class="callout-title">📘 Point &rarr; Explanation &rarr; Consequence</div>
+<ol>
+<li><strong>Point</strong>: state the impact and its <em>type</em> (social, economic, environmental) and whether it is positive or negative.</li>
+<li><strong>Explanation</strong>: say <em>how or why</em> it happens, in the context of the technology named in the question.</li>
+<li><strong>Consequence</strong>: say what follows for people, money or the environment, and for whom.</li></ol>
+<p>Aim for balance: when the question says "discuss" or "evaluate", include at least one positive and one negative, and finish with a short judgement.</p></div>
+<div class="compare">
+<div><h4>Weak</h4><p>"Wind turbines are good for the environment and give people jobs, but some people don't like them."</p><p><span class="bad">Why it scores poorly:</span> three vague slogans, nothing explained, nothing specific to the question.</p></div>
+<div><h4>Strong</h4><p>"Offshore wind turbines generate electricity without burning fuel <em>(point: positive environmental)</em>, so the electricity they supply replaces power from gas-fired power stations that release carbon dioxide <em>(explanation)</em>. This lowers the carbon emissions of the national grid and slows climate change <em>(consequence)</em>."</p></div>
+</div>
+
+<div class="widget" id="w-answer">
+  <h3 class="widget-title">The model-answer builder: point, explanation, consequence</h3>
+  <p class="hint">Choose a technology and a positive or negative impact. The builder lays out a full-mark style paragraph in three coloured parts, and a one-line improvement tip. Use it as a pattern, then write your own for a different impact.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 16 · Extended response · discuss an impact</p>
+<p>A company proposes to replace the diesel engine of a coastal ferry with a battery-electric drive charged from the grid. Discuss the possible impacts of this change. [6]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks, typical allocation: mark points like these]</span></summary>
+<ol class="step-list marks">
+<li>Environmental (+): no exhaust emissions or fuel burned while sailing, so local air quality in the harbour improves and carbon dioxide is cut, especially if the grid electricity is largely renewable. <span class="why">Point, explanation and consequence in one sentence.</span></li>
+<li>Social (+): the ferry is quieter and has less engine vibration and fumes, so passengers and nearby residents have a more pleasant journey. <span class="why">Names who benefits.</span></li>
+<li>Economic (+): electricity per mile may cost less than diesel, and an electric drive has fewer moving parts, so servicing costs fall. <span class="why">Running cost and maintenance.</span></li>
+<li>Economic (−): the batteries and charging equipment at the pier are expensive to buy and to install, so the up-front cost is high. <span class="why">The cost that has to be set against the savings.</span></li>
+<li>Environmental (−): batteries need mined materials and energy to make, and at the end of their life must be recycled or disposed of, and the grid electricity may not all be renewable. <span class="why">Life-cycle thinking.</span></li>
+<li>Social (−) or judgement: the range per charge may limit the routes and crossings, and engine-room jobs may change. A final judgement such as "overall beneficial on a short, regular route if the electricity is renewable" completes the answer. <span class="why">A balanced conclusion.</span></li>
+</ol>
+<p><strong>Common slips.</strong> Only positives, or only negatives; saying "it's green" without explaining; forgetting the life cycle of the battery.</p></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 17 · Description · sustainability of a material</p>
+<p>Two materials are being considered for the hull sheathing of a new research vessel: aluminium alloy, which can be recycled, and a plastic composite, which is difficult to recycle. Compare the sustainability of the two. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Manufacture: producing aluminium from ore uses a lot of energy, and extraction mines a non-renewable resource; the composite also needs energy and (often) oil-derived raw materials. <span class="why">Both have impacts at the start of the life cycle.</span></li>
+<li>Use: both are corrosion-resistant if properly treated, so a long service life is possible, which spreads the impacts of making them over many years. <span class="why">Lifetime counts.</span></li>
+<li>End of life: the aluminium can be recycled into new metal, so less new ore is mined and less energy is used than starting from ore. <span class="why">Recycling closes the loop.</span></li>
+<li>The composite is hard to separate and recycle, so more of it is likely to end up as waste. Overall aluminium is the more sustainable choice at end of life, though its manufacturing energy is high. <span class="why">A reasoned judgement that mentions both sides.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If wind power is renewable, how can a wind farm have a negative environmental impact?"</p><p><strong>Captain Reid:</strong> "Renewable describes where the energy comes from: the wind will never run out. It does not mean the project costs the environment nothing. Steel and concrete for the foundations have to be produced, cables are laid across the sea bed, and birds and marine life can be disturbed. When you weigh the impacts, you weigh the whole life cycle, not just the fuel."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>describe social, economic and environmental impacts of an engineering project, positive <em>and</em> negative;</li>
+<li>explain sustainability using life-cycle thinking, renewable and non-renewable resources, and recycling;</li>
+<li>give balanced examples of emerging technologies (electric and autonomous vehicles, offshore wind and tidal, hydrogen, robotics, 3D printing, battery storage) and their impacts;</li>
+<li>write extended answers as point, explanation, consequence, with balance and a judgement.</li></ul></div>
+<div class="check" data-check="sys-impacts"></div>
+</section>
+
+<section id="map" class="prose">
+<h2 data-short="Spec map">Course map · where each spec item is taught <span class="spec-tag">CROSS-REFERENCE</span></h2>
+<p>This deck covers the themes that the course specification groups under the systems approach, energy and efficiency, calculations, engineering roles and disciplines, and impacts of engineering. The question paper samples these themes in <strong>10 to 17 marks</strong>. The table maps each specification item to the chapter, widget and worked examples in this deck.</p>
+<div class="table-wrap"><table>
+<caption>Specification items for this deck, and where they are taught.</caption>
+<thead><tr><th>Specification item</th><th>Chapter</th><th>Widgets</th><th>Worked examples</th></tr></thead>
+<tbody>
+<tr><th scope="row">Complex system, sub-system and control diagrams</th><td><a href="#approach">2</a></td><td>Assemble the control diagram</td><td>3</td></tr>
+<tr><th scope="row">Role of negative feedback</th><td><a href="#feedback">3</a></td><td>The great wheel</td><td>5, 6</td></tr>
+<tr><th scope="row">Closed-loop, two-state and proportional feedback</th><td><a href="#feedback">3</a></td><td>The great wheel; which kind of control</td><td>4, 5, 6</td></tr>
+<tr><th scope="row">Using error detection in a closed-loop system</th><td><a href="#feedback">3</a> (and the <a href="analogue.html">analogue deck</a>)</td><td>The great wheel</td><td>4, 6</td></tr>
+<tr><th scope="row">Energy audits: inputs, outputs, losses, efficiency</th><td><a href="#energy">4</a></td><td>Energy-flow gauge</td><td>7, 9, 10</td></tr>
+<tr><th scope="row">$E_w = Fd$, $P = E/t$, $E_k$, $E_p$, $E_e = VIt$, $E_h = cm\Delta T$; $\eta = E_{out}/E_{in} = P_{out}/P_{in}$</th><td><a href="#energy">4</a></td><td>Armourer's bench; swinging lantern</td><td>7 to 11</td></tr>
+<tr><th scope="row">Manipulating and combining formulae</th><td><a href="#calc">5</a> and <a href="#energy">4</a></td><td>Honest purser; conversion drill</td><td>8, 9, 12 to 15</td></tr>
+<tr><th scope="row">Structural problems using trigonometry and simultaneous equations</th><td colspan="3">Taught in the <a href="structures.html">structures deck</a>; the calculation habits of chapter 5 apply.</td></tr>
+<tr><th scope="row">Role of the professional engineer within a project, including communication and team working</th><td><a href="#roles">1</a></td><td>Role-answer builder</td><td>1, 2</td></tr>
+<tr><th scope="row">Skills and specialist knowledge required; disciplines</th><td><a href="#roles">1</a></td><td>Muster roll sorter</td><td>1, 2</td></tr>
+<tr><th scope="row">Social and economic impacts (positive and negative)</th><td><a href="#impacts">6</a></td><td>Captain's ledger; model-answer builder</td><td>16</td></tr>
+<tr><th scope="row">Environmental impacts (positive and negative)</th><td><a href="#impacts">6</a></td><td>Captain's ledger; model-answer builder</td><td>16, 17</td></tr>
+<tr><th scope="row">Sustainability of solutions</th><td><a href="#impacts">6</a></td><td>Model-answer builder</td><td>17</td></tr>
+<tr><th scope="row">Emerging technologies and their impact</th><td><a href="#impacts">6</a></td><td>Captain's ledger</td><td>16</td></tr>
+</tbody></table></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="index.html">← Briefing</a>
+  <a class="btn primary" href="analogue.html">Next deck: analogue electronics →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Engineering Science course specification (version 2.0, September 2018) and the Higher data booklet (Qualifications Scotland, January 2026), which Qualifications Scotland confirms are current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Ratchet</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script defer src="systems.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

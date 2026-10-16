@@ -1,0 +1,155 @@
+/* Digital & programmable control: the Signal Locker.  Everything is prefixed dg- and uses the
+   shared theme variables, so the light and dark themes both work. */
+:root {
+  --dg-hi: #c9261a;          /* a powered wire: redstone */
+  --dg-lo: #8b8068;          /* an unpowered wire */
+  --dg-on-hi: #fff;
+  --dg-flowc: #ffd9a0;
+  --dg-cur: #b04a12;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --dg-hi: #ff6a5c; --dg-lo: #7d7765; --dg-on-hi: #1b0a08; --dg-flowc: #fff1d2; --dg-cur: #ffa062; }
+}
+:root[data-theme="dark"] { --dg-hi: #ff6a5c; --dg-lo: #7d7765; --dg-on-hi: #1b0a08; --dg-flowc: #fff1d2; --dg-cur: #ffa062; }
+
+/* ---------- logic diagrams ---------- */
+figure.diagram svg.dg-svg, .dg-svg { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; }
+.dg-wire { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dg-wire.lo { stroke: var(--dg-lo); }
+.dg-wire.hi { stroke: var(--dg-hi); stroke-width: 3.2; }
+.dg-dot { fill: var(--ink-2); }
+.dg-dot.lo { fill: var(--dg-lo); }
+.dg-dot.hi { fill: var(--dg-hi); }
+.dg-body { fill: var(--card); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+.dg-extra { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.dg-bub { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
+.dg-gate.on .dg-body { fill: color-mix(in srgb, var(--dg-hi) 17%, var(--card)); }
+.dg-gate.fresh .dg-body { fill: color-mix(in srgb, var(--gold-bright) 38%, var(--card)); }
+.dg-gate.hl .dg-body, .dg-gate.hl .dg-bub { stroke: var(--violet); stroke-width: 3.6; }
+.dg-gate.hl .dg-extra { stroke: var(--violet); stroke-width: 3.6; }
+.dg-gate.hl .dg-body { fill: color-mix(in srgb, var(--violet) 18%, var(--card)); }
+.dg-tag { font: 600 9.5px var(--font-mono); fill: var(--muted); }
+.dg-lab { font: 700 14px var(--font-body); fill: var(--ink); }
+.dg-net { font: 600 10px var(--font-mono); fill: var(--muted); }
+.dg-term { fill: var(--card); stroke: var(--ink-2); stroke-width: 2; }
+.dg-term.hi { fill: var(--dg-hi); stroke: var(--dg-hi); }
+.dg-term.lo { stroke: var(--dg-lo); }
+.dg-val { font: 700 11px var(--font-mono); fill: var(--ink); pointer-events: none; }
+.dg-val.hi { fill: var(--dg-on-hi); }
+.dg-flow { fill: none; stroke: var(--dg-flowc); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 11; opacity: 0; animation: dg-flow .9s linear infinite; pointer-events: none; }
+.dg-flow.hi { opacity: 1; }
+@keyframes dg-flow { to { stroke-dashoffset: -11.1; } }
+.dg-paused .dg-flow, .dg-paused .dg-spin { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .dg-flow { animation: none; opacity: 0 !important; } .dg-spin { animation: none !important; } }
+
+/* ---------- flowcharts ---------- */
+.dg-flowsvg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.dg-shape { fill: var(--card); stroke: var(--ink); stroke-width: 1.8; stroke-linejoin: round; }
+.dg-term .dg-shape { fill: var(--paper-2); }
+.dg-dec .dg-shape { fill: color-mix(in srgb, var(--gold-bright) 16%, var(--card)); }
+.dg-io .dg-shape { fill: color-mix(in srgb, var(--sea) 12%, var(--card)); }
+.dg-node.cur .dg-shape { stroke: var(--dg-cur); stroke-width: 4.2; fill: color-mix(in srgb, var(--gold-bright) 42%, var(--card)); }
+.dg-ntxt { font: 600 12.5px var(--font-mono); fill: var(--ink); }
+.dg-edge { fill: none; stroke: var(--ink-2); stroke-width: 1.8; stroke-linejoin: round; }
+.dg-arrowhead { fill: var(--ink-2); }
+.dg-elab { font: 700 11px var(--font-body); fill: var(--muted); }
+
+/* ---------- truth tables ---------- */
+.dg-tt { border-collapse: collapse; font: 600 .92rem var(--font-mono); margin: .4em 0; }
+.dg-tt th, .dg-tt td { border: 1.5px solid var(--line); padding: 3px 9px; text-align: center; min-width: 2.1em; }
+.dg-tt thead th { background: var(--paper-2); color: var(--ink); }
+.dg-tt th.q, .dg-tt td.q { border-left: 3px solid var(--ink-2); }
+.dg-tt tr.cur td { background: color-mix(in srgb, var(--gold-bright) 40%, transparent); }
+.dg-tt tr.cur td.q { background: color-mix(in srgb, var(--dg-hi) 22%, transparent); }
+.dg-tt td.one { color: var(--dg-hi); }
+.dg-tt td.ok { background: color-mix(in srgb, var(--grass) 25%, transparent); }
+.dg-tt td.bad { background: color-mix(in srgb, var(--redstone) 25%, transparent); }
+.dg-tt button.cell { font: inherit; min-width: 44px; min-height: 36px; padding: 2px 6px; background: var(--paper); color: var(--ink); border: 2px solid var(--line); border-radius: 2px; cursor: pointer; }
+.dg-tt button.cell[data-v="1"] { background: color-mix(in srgb, var(--dg-hi) 22%, var(--paper)); border-color: var(--dg-hi); }
+.dg-tt button.cell[data-v="0"] { background: var(--paper-2); }
+.dg-tt button.cell.ok { border-color: var(--grass); }
+.dg-tt button.cell.bad { border-color: var(--redstone); border-style: dashed; }
+.dg-tt .row-txt { text-align: left; font: .8rem var(--font-body); color: var(--ink-2); min-width: 12em; }
+.dg-ttwrap { overflow-x: auto; max-width: 100%; }
+
+/* ---------- widget furniture ---------- */
+.dg-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 760px) { .dg-cols { grid-template-columns: minmax(0, 1fr); } }
+.dg-tog-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; align-items: center; }
+.dg-tog { font: 700 .95rem var(--font-mono); min-width: 74px; min-height: 44px; padding: 4px 10px; cursor: pointer; background: var(--paper-2); color: var(--ink); border: 2px solid var(--line); border-radius: 22px; display: inline-flex; gap: 6px; align-items: center; justify-content: center; }
+.dg-tog::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--dg-lo); border: 2px solid var(--ink-2); box-sizing: border-box; }
+.dg-tog[aria-pressed="true"] { background: color-mix(in srgb, var(--dg-hi) 22%, var(--paper)); border-color: var(--dg-hi); }
+.dg-tog[aria-pressed="true"]::before { background: var(--dg-hi); border-color: var(--dg-hi); box-shadow: 0 0 6px var(--dg-hi); }
+.dg-stage { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 8px; overflow-x: auto; }
+.dg-stage .dg-svg { min-width: 0; }
+.dg-eq { padding: 6px 10px; background: var(--paper); border: 2px dashed var(--line); border-radius: 2px; overflow-x: auto; min-height: 2.4em; }
+.dg-eq .katex-display { margin: .2em 0; }
+.dg-say { margin: 6px 0; padding: 8px 10px; background: var(--paper-2); border-left: 4px solid var(--sea); font-size: .95rem; }
+.dg-count { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); gap: 6px; margin: 8px 0; }
+.dg-count > div { background: var(--paper); border: 2px solid var(--line); padding: 6px 8px; border-radius: 2px; min-width: 0; }
+.dg-count b { display: block; font: 700 1.25rem var(--font-mono); color: var(--ink); }
+.dg-count span { font-size: .78rem; color: var(--muted); }
+.dg-count .up b { color: var(--redstone); }
+.dg-count .down b { color: var(--grass); }
+.dg-steps { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.dg-steps .pip { font: 700 .75rem var(--font-mono); padding: 3px 8px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--muted); }
+.dg-steps .pip.cur { background: var(--navy-2); color: #fff; border-color: var(--navy); }
+.dg-steps .pip.done { color: var(--ink); border-color: var(--ink-2); }
+.dg-pill { display: inline-block; font: 700 .72rem/1 var(--font-mono); padding: 3px 7px; border-radius: 10px; background: var(--paper-2); color: var(--ink-2); }
+.dg-ok { color: var(--grass); font-weight: 700; }
+.dg-bad { color: var(--redstone); font-weight: 700; }
+.dg-note { font-size: .86rem; color: var(--muted); }
+
+/* ---------- the program runner ---------- */
+.dg-run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 860px) { .dg-run { grid-template-columns: minmax(0, 1fr); } }
+.dg-flowbox { max-height: 440px; overflow: auto; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px; }
+.dg-flowbox .dg-flowsvg { min-width: 0; }
+.dg-code { margin: 0; max-height: 300px; overflow: auto; font-size: .8rem; white-space: pre; }
+.dg-code .ln { color: #8d95a8; user-select: none; }
+.dg-code .hl { background: rgba(255, 214, 90, .26); display: inline-block; width: 100%; }
+.dg-pins { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; margin: 8px 0; }
+.dg-pin { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px 8px; min-width: 0; font-size: .86rem; }
+.dg-pin b { font: 700 .8rem var(--font-mono); display: block; color: var(--ink-2); }
+.dg-pin .led { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--dg-lo); border: 2px solid var(--ink-2); vertical-align: -3px; margin-right: 6px; box-sizing: border-box; }
+.dg-pin .led.on { background: var(--dg-hi); border-color: var(--dg-hi); box-shadow: 0 0 8px var(--dg-hi); }
+.dg-pin .led.buzz.on { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.dg-vars { font: .82rem var(--font-mono); color: var(--ink-2); margin: 4px 0; min-height: 1.4em; }
+.dg-status { margin: 6px 0; padding: 6px 10px; border-left: 4px solid var(--sea); background: var(--paper-2); font-size: .92rem; min-height: 2.4em; }
+.dg-status.stopped { border-left-color: var(--redstone); }
+.dg-motor { display: block; width: 84px; height: 84px; margin: 2px auto; }
+.dg-spin { transform-box: fill-box; transform-origin: center; animation: dg-rot var(--dur, 1s) linear infinite; }
+@keyframes dg-rot { to { transform: rotate(360deg); } }
+.dg-faultline { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
+.dg-faultline button { font: inherit; text-align: left; flex: 1; background: transparent; border: 2px solid transparent; border-radius: 2px; color: var(--code-ink); padding: 3px 6px; cursor: pointer; white-space: pre; min-height: 32px; }
+.dg-faultline button[aria-pressed="true"] { border-color: var(--gold-bright); background: rgba(255, 214, 90, .18); }
+.dg-faultline button.found { border-color: #8cc96a; background: rgba(140, 201, 106, .2); }
+.dg-faultline button.false { border-color: #ff6a5c; background: rgba(255, 106, 92, .18); }
+.dg-faultline button.missed { border-color: #ffd65a; border-style: dashed; }
+.dg-faultline .ln { color: #8d95a8; min-width: 2ch; user-select: none; }
+.dg-scope { display: block; width: 100%; height: auto; }
+.dg-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 6px; margin: 8px 0; }
+.dg-kpi > div { background: var(--paper); border: 2px solid var(--line); padding: 6px 8px; border-radius: 2px; min-width: 0; }
+.dg-kpi b { display: block; font: 700 1.05rem var(--font-mono); color: var(--ink); }
+.dg-kpi span { font-size: .78rem; color: var(--muted); }
+.dg-bar { height: 12px; background: var(--paper-2); border: 1.5px solid var(--line); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.dg-bar > i { display: block; height: 100%; background: var(--dg-hi); }
+.dg-bar.g > i { background: var(--grass); }
+.dg-quiz-q { font-weight: 700; margin: 4px 0; }
+.dg-flags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+
+/* ---------- static figure helpers ---------- */
+.dg-gatetable { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.dg-gatetable th, .dg-gatetable td { border: 1.5px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; }
+.dg-gatetable thead th { background: var(--paper-2); }
+.dg-gatetable td svg { display: block; width: 100%; max-width: 120px; height: auto; }
+.dg-gatetable .mini { font: 600 .82rem var(--font-mono); white-space: pre; margin: 0; }
+.dg-sym { fill: none; stroke: var(--ink); stroke-width: 2; }
+.dg-symfill { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
+.dg-sw { font: 700 12px var(--font-body); fill: var(--ink); }
+.dg-small { font: 600 11px var(--font-body); fill: var(--ink-2); }
+.dg-wave { fill: none; stroke: var(--sea); stroke-width: 2.4; }
+.dg-wave.alt { stroke: var(--lode); }
+.dg-wave.red { stroke: var(--dg-hi); }
+.dg-axis { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+.dg-dash { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }

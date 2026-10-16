@@ -1,0 +1,101 @@
+/* Exam & assignment deck: extra styles (everything is prefixed exm-, colours come from style.css variables) */
+
+/* revision-plan rows */
+.exm-plan { display: grid; gap: 10px; margin: 10px 0; }
+.exm-plan-row { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+.exm-plan-row h4 { margin: 0; font-size: .98rem; }
+.exm-plan-row h4 a { color: inherit; }
+.exm-scale { position: relative; height: 16px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 2px; }
+.exm-scale > i { position: absolute; top: 0; bottom: 0; background: var(--sea); opacity: .85; border-radius: 1px; }
+.exm-scale > b { position: absolute; top: -2px; bottom: -2px; width: 3px; background: var(--ink); }
+.exm-scale-cap { font-size: .8rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.exm-hours { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.exm-hours-bar { height: 18px; background: var(--lode); border-radius: 2px; min-width: 2px; transition: width .35s ease; }
+.exm-hours-num { font: 700 .92rem var(--font-mono); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .exm-hours-bar { transition: none; } }
+
+/* find-the-formula game */
+.exm-hud { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .9rem; color: var(--ink-2); margin: 6px 0; }
+.exm-hud b { font-family: var(--font-mono); color: var(--ink); }
+
+/* calculation script */
+.exm-script { display: grid; gap: 8px; margin: 8px 0; }
+.exm-script > label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; font-size: .92rem; }
+.exm-script .exm-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.exm-script input[type="number"], .exm-script input[type="text"] { max-width: 11em; }
+.exm-tag { display: inline-block; font: 700 .78rem var(--font-mono); color: var(--gold); margin-right: .4em; }
+.exm-marklist { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }
+.exm-marklist li { padding: 6px 10px; border-left: 5px solid var(--line); background: var(--paper-2); font-size: .93rem; }
+.exm-marklist li.ok { border-left-color: var(--grass); }
+.exm-marklist li.no { border-left-color: var(--redstone); }
+.exm-layout { margin: 1em 0; border: 2px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+.exm-layout > div { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; padding: 8px 12px; align-items: baseline; border-top: 1px solid var(--line); }
+.exm-layout > div:first-child { border-top: 0; }
+.exm-layout > div > span:first-child { font: 700 .78rem var(--font-mono); color: var(--gold); }
+@media (max-width: 480px) { .exm-layout > div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+/* rounding trap */
+.exm-twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; margin: 8px 0; }
+.exm-twocol > div { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 8px 10px; min-width: 0; }
+.exm-twocol h4 { margin: 0 0 4px; font-size: .92rem; }
+.exm-twocol p { margin: .15em 0; font: 600 .88rem var(--font-mono); overflow-wrap: anywhere; }
+.exm-verdict { font-weight: 700; padding: 6px 10px; border-left: 5px solid var(--line); background: var(--paper-2); }
+.exm-verdict.bad { border-left-color: var(--redstone); }
+.exm-verdict.good { border-left-color: var(--grass); }
+
+/* terminology chips, audit, eval checker */
+.exm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; padding: 0; list-style: none; }
+.exm-chips li { font-size: .86rem; padding: 4px 9px; border: 2px solid var(--line); border-radius: 99px; background: var(--paper); }
+.exm-chips li.ok { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 14%, var(--paper)); }
+.exm-chips li.no { border-color: var(--redstone); }
+.exm-chips li.na { color: var(--muted); border-style: dashed; }
+.exm-audit { display: grid; gap: 8px; margin: 8px 0; }
+.exm-audit fieldset { border: 2px solid var(--line); border-radius: var(--radius); padding: 6px 10px 8px; margin: 0; min-width: 0; background: var(--card); }
+.exm-audit legend { font-weight: 700; font-size: .92rem; padding: 0 4px; }
+.exm-audit .exm-habit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 6px 0; border-top: 1px dashed var(--line); }
+.exm-audit .exm-habit:first-of-type { border-top: 0; }
+.exm-habit p { margin: 0; font-size: .92rem; }
+.exm-habit .src { color: var(--muted); font-size: .78rem; }
+.exm-prio { margin: 8px 0; padding-left: 1.2em; }
+.exm-prio li { margin: .3em 0; }
+
+/* test-plan builder */
+.exm-tp-row { background: var(--card); border: 2px solid var(--line); border-left: 6px solid var(--sea); border-radius: var(--radius); padding: 8px 10px; margin: 8px 0; min-width: 0; }
+.exm-tp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 6px 10px; }
+.exm-tp-grid label { display: grid; gap: 2px; font-size: .84rem; color: var(--ink-2); min-width: 0; }
+.exm-tp-grid textarea, .exm-tp-grid input, .exm-tp-grid select { width: 100%; max-width: none; box-sizing: border-box; font: .9rem var(--font-body); }
+.exm-tp-grid textarea { min-height: 3.6em; resize: vertical; }
+.exm-flags { margin: 6px 0 0; padding-left: 1.1em; font-size: .86rem; color: var(--ink-2); }
+.exm-flags li.ok { color: var(--grass); }
+.exm-flags li.warn { color: var(--redstone); }
+
+.exm-ev { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 8px 10px; margin: 8px 0; min-width: 0; }
+.exm-ev h4 { margin: 0 0 4px; font-size: .95rem; }
+.exm-ev textarea { width: 100%; max-width: none; box-sizing: border-box; min-height: 5em; font: .95rem var(--font-body); }
+.exm-hl { font-size: .93rem; line-height: 1.6; padding: 6px 8px; background: var(--paper-2); border-radius: 2px; margin: 6px 0; min-height: 1.6em; overflow-wrap: anywhere; }
+.exm-hl mark { background: color-mix(in srgb, var(--gold-bright) 55%, transparent); color: inherit; padding: 0 2px; border-radius: 2px; }
+.exm-hl mark.v { background: color-mix(in srgb, var(--sea) 30%, transparent); }
+.exm-hl mark.k { background: color-mix(in srgb, var(--lode) 28%, transparent); }
+
+/* revision map */
+.exm-map { display: grid; gap: 10px; margin: 10px 0; }
+.exm-map details { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 0 12px; min-width: 0; }
+.exm-map summary { cursor: pointer; padding: 10px 0; font-weight: 700; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.exm-map summary .m { font: 600 .8rem var(--font-mono); color: var(--gold); }
+.exm-map summary .p { font: 600 .8rem var(--font-mono); color: var(--muted); margin-left: auto; }
+.exm-map ul { list-style: none; padding: 0; margin: 0 0 10px; }
+.exm-map li { padding: 4px 0; }
+.exm-map label { display: flex; gap: 8px; align-items: flex-start; font-size: .93rem; cursor: pointer; }
+.exm-map input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--grass); }
+.exm-meter { height: 14px; background: var(--paper-2); border: 2px solid var(--line); border-radius: 2px; overflow: hidden; margin: 6px 0; }
+.exm-meter > i { display: block; height: 100%; background: var(--grass); transition: width .3s; }
+@media (prefers-reduced-motion: reduce) { .exm-meter > i { transition: none; } }
+
+/* booklet map and misc tables */
+.exm-yes { border-top: 6px solid var(--grass) !important; }
+.exm-no { border-top: 6px solid var(--redstone) !important; }
+.exm-compare-list { margin: 0; padding-left: 1.1em; font-size: .92rem; }
+.exm-compare-list li { margin: .15em 0; }
+.exm-q-block { border: 2px solid var(--line); border-left: 8px solid var(--redstone); border-radius: var(--radius); background: var(--card); padding: 8px 14px; margin: 1.2em 0; }
+.exm-q-block h3 { margin-top: 0; }
+.exm-data td, .exm-data th { white-space: nowrap; }

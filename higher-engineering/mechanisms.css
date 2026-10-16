@@ -1,0 +1,85 @@
+/* Drive systems & pneumatics: styles for the Engine Deck (everything is namespaced mec-… / .sy) */
+
+/* ISO-style pneumatic symbols and circuit simulators */
+.sy .ln { fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sy .ln.thin { stroke-width: 1.2; }
+.sy .ln.dash { stroke-dasharray: 5 4; }
+.sy .ln.sig { stroke: var(--muted); stroke-dasharray: 5 4; }
+.sy .ln.sig.on { stroke: var(--lode); stroke-width: 2.6; }
+.sy .ln.sig.bad { stroke: var(--redstone); stroke-width: 2.8; }
+.sy .ln.elec { stroke: var(--muted); }
+.sy .ln.elec.on { stroke: var(--gold-bright); stroke-width: 2.8; }
+.sy .ln.air { stroke: var(--muted); stroke-width: 1.7; }
+.sy .ln.air.p { stroke: var(--sea); stroke-width: 2.8; }
+.sy .ln.air.e { stroke: var(--muted); stroke-width: 1.7; opacity: .75; }
+.sy .ln.air.flow { stroke-dasharray: 7 7; }
+.sy .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.7; }
+.sy .box.act { fill: color-mix(in srgb, var(--sea) 14%, var(--card)); }
+.sy .env { fill: var(--paper-2); stroke: var(--line); stroke-width: 1.2; }
+.sy .pth { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linecap: round; }
+.sy .pth.hd { fill: var(--muted); stroke: none; }
+.sy .pth.sup.on { stroke: var(--sea); stroke-width: 2.6; }
+.sy .pth.hd.sup.on { fill: var(--sea); stroke: none; }
+.sy .pth.exh.on { stroke: var(--ink-2); stroke-width: 2; }
+.sy .pth.hd.exh.on { fill: var(--ink-2); stroke: none; }
+.sy .pth.blk { stroke: var(--ink); stroke-width: 2; }
+.sy .fillc { fill: var(--card); }
+.sy .fillink { fill: var(--ink); }
+.sy .sy-t { font-family: var(--font-body); font-size: 12px; fill: var(--ink); }
+.sy .sy-t.sm { font-size: 10.5px; fill: var(--ink-2); }
+.sy .sy-t.b { font-weight: 700; }
+.sy .sy-t.sg { fill: var(--lode); font-weight: 700; }
+.sy .sy-t.bad { fill: var(--redstone); font-weight: 700; }
+.sy .cham { fill: transparent; }
+.sy .cham.p { fill: color-mix(in srgb, var(--sea) 32%, transparent); }
+.sy .cyl { fill: var(--card); stroke: var(--ink); stroke-width: 1.8; }
+.sy .pist { fill: var(--ink-2); stroke: var(--ink); stroke-width: 1; }
+.sy .rod { fill: var(--muted); stroke: var(--ink); stroke-width: 1.2; }
+.sy .lv { fill: var(--card); stroke: var(--ink); stroke-width: 1.6; }
+.sy .lv.on { fill: color-mix(in srgb, var(--lode) 40%, var(--card)); stroke: var(--lode); stroke-width: 2.4; }
+.sy .puff { fill: var(--muted); opacity: 0; }
+.sy .coil { fill: var(--card); stroke: var(--ink); stroke-width: 1.7; }
+.sy .coil.on { fill: var(--gold-bright); stroke: var(--lode); stroke-width: 2.4; }
+.sy .contact { stroke: var(--ink); stroke-width: 2; fill: none; }
+.sy .contact.on { stroke: var(--lode); stroke-width: 3; }
+.sy .rail { stroke: var(--ink); stroke-width: 3; }
+.sy .rail.on { stroke: var(--lode); }
+.sy .cam { fill: var(--redstone); }
+
+.mec-scroll { overflow-x: auto; }
+.mec-scroll > svg { min-width: 760px; }
+.mec-scroll.narrow > svg { min-width: 640px; }
+.mec-svg { display: block; width: 100%; height: auto; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
+
+/* status strips and chips */
+.mec-status { margin: 8px 0 0; padding: 8px 10px; background: var(--paper-2); border-left: 5px solid var(--sky); border-radius: 2px; font-size: .93rem; min-height: 2.9em; }
+.mec-status.bad { border-left-color: var(--redstone); }
+.mec-status.good { border-left-color: var(--grass); }
+.mec-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mec-chip { font: 700 .78rem var(--font-mono); padding: 3px 7px; border-radius: 10px; border: 2px solid var(--line); background: var(--paper); color: var(--muted); }
+.mec-chip.on { border-color: var(--lode); color: var(--ink); background: color-mix(in srgb, var(--lode) 22%, var(--card)); }
+.mec-chip.bad { border-color: var(--redstone); color: var(--redstone); }
+.mec-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mec-step { font: 700 .9rem var(--font-mono); padding: 4px 9px; border: 2px solid var(--line); border-radius: 3px; background: var(--paper); }
+.mec-step.now { border-color: var(--lode); background: color-mix(in srgb, var(--lode) 25%, var(--card)); }
+.mec-step.done { border-color: var(--grass); color: var(--grass); }
+.mec-opt-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 6px 12px; align-items: center; margin: 4px 0; }
+.mec-opt-row label { font-size: .9rem; }
+.mec-opt-row select { width: 100%; max-width: 100%; }
+@media (max-width: 520px) { .mec-opt-row { grid-template-columns: minmax(0, 1fr); } }
+.mec-rank { display: grid; grid-template-columns: minmax(0, 9.5em) minmax(0, 1fr) 2.6em; gap: 8px; align-items: center; margin: 5px 0; font-size: .9rem; }
+.mec-rank .bar { height: 18px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.mec-rank .bar i { display: block; height: 100%; background: var(--lode); }
+.mec-rank.top .bar i { background: var(--grass); }
+.mec-rank.top b { color: var(--grass); }
+.mec-req { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 4px 14px; margin: 8px 0; }
+.mec-req label { display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; cursor: pointer; }
+.mec-req input { margin-top: .3em; flex: 0 0 auto; }
+.mec-why { font-size: .88rem; color: var(--ink-2); margin: 6px 0 0; }
+.mec-tabs-note { font-size: .86rem; color: var(--muted); }
+.mec-eq { font: 700 .95rem var(--font-mono); background: var(--paper); border: 2px dashed var(--line); border-radius: 3px; padding: 6px 9px; margin: 8px 0; overflow-wrap: anywhere; }
+table.mec-t td, table.mec-t th { font-size: .88rem; }
+table.mec-t th { background: var(--paper-2); }
+.mec-glyph { display: inline-block; vertical-align: middle; }
+dfn.k { font-style: normal; }
+.mec-deckart { display: block; width: 100%; max-width: 420px; margin: 8px auto; }

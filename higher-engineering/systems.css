@@ -1,0 +1,62 @@
+/* Systems & energy deck: extras. Every colour comes from the shared theme variables so dark mode works. */
+svg .sy-box { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
+.sy-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: .84em; line-height: 1.4; border: 1px solid transparent; }
+.sy-tag.sy-r, .sy-r > .sy-t { background: color-mix(in srgb, var(--redstone) 16%, var(--card)); border-color: color-mix(in srgb, var(--redstone) 55%, var(--card)); }
+.sy-tag.sy-h, .sy-h > .sy-t { background: color-mix(in srgb, var(--sea) 16%, var(--card)); border-color: color-mix(in srgb, var(--sea) 55%, var(--card)); }
+.sy-tag.sy-c, .sy-c > .sy-t { background: color-mix(in srgb, var(--gold-bright) 28%, var(--card)); border-color: color-mix(in srgb, var(--gold) 55%, var(--card)); }
+.sy-pec .sy-p { background: color-mix(in srgb, var(--redstone) 14%, var(--card)); }
+.sy-pec .sy-e { background: color-mix(in srgb, var(--sea) 14%, var(--card)); }
+.sy-pec .sy-q { background: color-mix(in srgb, var(--grass) 16%, var(--card)); }
+.sy-pec span[class^="sy-"] { padding: 1px 3px; border-radius: 2px; }
+.sy-ans { margin: 8px 0; padding: 10px 12px; background: var(--paper); border: 2px dashed var(--line); border-radius: 2px; }
+.sy-ans ol { margin: .3em 0; padding-left: 1.3em; }
+.sy-ans li { margin: .5em 0; }
+.sy-weak { margin: 8px 0 0; padding: 8px 10px; border-left: 4px solid var(--muted); background: var(--paper-2); font-size: .92rem; }
+.sy-ctx { background: color-mix(in srgb, var(--gold-bright) 28%, var(--card)); border-radius: 2px; padding: 0 2px; }
+.sy-seg-wrap { display: flex; flex-direction: column; gap: 2px; }
+
+/* control-diagram assembler */
+.sy-bank { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; padding: 8px; background: var(--paper-2); border: 2px dashed var(--line); border-radius: 2px; min-height: 52px; }
+.sy-block { font: 600 .84rem/1.25 var(--font-body); padding: 7px 9px; min-height: 40px; cursor: pointer; text-align: left; color: var(--ink); background: var(--card); border: 2px solid var(--navy-2); border-radius: 2px; box-shadow: 2px 2px 0 rgba(58,28,12,.2); max-width: 100%; }
+.sy-block[aria-pressed="true"] { background: var(--navy-2); color: #fff; }
+.sy-loop { display: flex; flex-wrap: wrap; align-items: stretch; gap: 4px; margin: 10px 0 6px; }
+.sy-slot { flex: 1 1 118px; min-width: 0; min-height: 76px; padding: 6px 8px; cursor: pointer; text-align: left; font: .84rem/1.25 var(--font-body); color: var(--ink); background: var(--paper); border: 2px dashed var(--muted); border-radius: 2px; display: flex; flex-direction: column; gap: 3px; }
+.sy-slot small { font: 700 .68rem/1.2 var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.sy-slot.filled { border-style: solid; border-color: var(--navy-2); background: var(--card); font-weight: 600; }
+.sy-slot.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 14%, var(--card)); }
+.sy-slot.wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 11%, var(--card)); }
+.sy-arr { align-self: center; flex: 0 0 auto; font: 700 1.2rem var(--font-mono); color: var(--navy-2); }
+.sy-arr::before { content: "→"; }
+.sy-fb { margin: 4px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.sy-fb .sy-slot { flex: 0 1 260px; }
+.sy-fbnote { align-self: center; font-size: .84rem; color: var(--ink-2); flex: 1 1 200px; }
+@media (max-width: 640px) {
+  .sy-loop { flex-direction: column; }
+  .sy-slot { flex: 1 1 auto; min-height: 58px; }
+  .sy-arr { align-self: flex-start; padding-left: 12px; }
+  .sy-arr::before { content: "↓"; }
+}
+
+/* energy bench scale */
+.sy-scale { display: grid; gap: 4px; margin: 8px 0; }
+.sy-scale-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 8px; align-items: center; font-size: .84rem; }
+.sy-scale-row .bar { height: 14px; background: var(--muted); border-radius: 1px; min-width: 3px; }
+.sy-scale-row.me .bar { background: var(--redstone); }
+.sy-scale-row.me { font-weight: 700; }
+.sy-scale-row .val { font: .8rem var(--font-mono); color: var(--ink-2); margin-left: 6px; }
+.sy-barwrap { display: flex; align-items: center; min-width: 0; }
+
+/* quiz and weigh cards */
+.sy-stmt { padding: 8px 10px; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; margin: 8px 0; }
+.sy-stmt.right { border-color: var(--grass); }
+.sy-stmt.wrong { border-color: var(--redstone); }
+.sy-stmt-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.sy-stmt-row label { display: flex; flex-direction: column; gap: 2px; font-size: .78rem; color: var(--muted); }
+.sy-stmt .why { font-size: .88rem; margin-top: 6px; color: var(--ink-2); }
+.sy-drill-q { font-size: 1.15rem; font-weight: 700; margin: 8px 0; }
+.sy-roundtab td.num, .sy-roundtab th.num { white-space: nowrap; }
+.sy-roundtab .diff { color: var(--redstone); font-weight: 700; }
+.sy-roundtab .same { color: var(--grass); font-weight: 700; }
+
+/* KaTeX keeps a hidden MathML copy that is absolutely positioned; contain it inside scrolling table wrappers */
+.table-wrap { position: relative; }

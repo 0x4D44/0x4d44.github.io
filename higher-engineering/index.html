@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rivets, Relays &amp; Rigging &middot; Higher Engineering Science</title>
+<meta name="description" content="A complete, interactive guide to Higher Engineering Science (course C823 76, Scotland), taught by an Air Cadet squadron aboard a block-built ship of the line: systems and energy, analogue and digital electronics, drives and pneumatics, structures and materials, the exam and the assignment.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="index.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%233a1c0c'/%3E%3Crect x='5' y='1' width='6' height='14' fill='%23d9a04f'/%3E%3Crect x='1' y='5' width='14' height='6' fill='%23d9a04f'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23d9a04f'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%238a4210'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23c8102e'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz-systems.js"></script>
+<script src="quiz-analogue.js"></script>
+<script src="quiz-digital.js"></script>
+<script src="quiz-mechanisms.js"></script>
+<script src="quiz-structures.js"></script>
+<script src="quiz-exam.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Rivets, Relays and Rigging — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="4" height="16" fill="#d9a04f"/><rect x="0" y="6" width="16" height="4" fill="#d9a04f"/><rect x="2" y="2" width="12" height="12" fill="#d9a04f"/><rect x="1" y="3" width="14" height="10" fill="#d9a04f"/><rect x="3" y="1" width="10" height="14" fill="#d9a04f"/><rect x="4" y="4" width="8" height="8" fill="#8a4210"/><rect x="3" y="5" width="10" height="6" fill="#8a4210"/><rect x="5" y="3" width="6" height="10" fill="#8a4210"/><rect x="6" y="6" width="4" height="4" fill="#3a1c0c"/><rect x="7" y="7" width="2" height="2" fill="#c8102e"/></svg>
+      <span class="brand-text"><span class="brand-title">Rivets, Relays &amp; Rigging</span><span class="brand-sub">Higher Engineering Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html" aria-current="page">Briefing</a></li>
+        <li><a href="systems.html">Systems &amp; energy</a></li>
+        <li><a href="analogue.html">Analogue electronics</a></li>
+        <li><a href="digital.html">Digital &amp; programmable</a></li>
+        <li><a href="mechanisms.html">Drives &amp; pneumatics</a></li>
+        <li><a href="structures.html">Structures &amp; materials</a></li>
+        <li><a href="exam.html">Exam &amp; assignment</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <canvas id="hero-canvas" width="960" height="240" role="img" aria-label="Animated pixel-art banner. HMS Ratchet, a block-built 74-gun ship of the line, moored beside a dock. A gear train turns on the foredeck, the ship's wheel corrects a gust of wind, redstone dust carries pulses to a row of lamps counting in binary, and a truss bridge flexes as a minecart crosses. Overhead the squadron's Grob Tutor tows banners showing engineering formulae and obeys each one literally."></canvas>
+  <button type="button" id="hero-pause" class="hero-pause">Pause animation</button>
+</div>
+
+<div class="layout">
+<aside class="toc" aria-label="Chapters"></aside>
+<main id="main">
+<div class="prose">
+<p class="kicker">Briefing room · read before your first watch</p>
+<h1>Welcome aboard, Cadet.</h1>
+<p class="lede">This is a complete, interactive guide to <strong>Higher Engineering Science</strong>, the Scottish course that treats engineering as <em>technology</em>, <em>science</em> and <em>mathematics</em> working together. It is for anyone in S5 or S6 who has enjoyed National 5 Engineering Science, wants to design and understand real systems (circuits, drives, frames, programs) and would like to see how a mechanism, a transistor and a truss all come down to a few clear ideas. It covers every skill in the course specification, one deck at a time, with diagrams, simulations you can drive, worked examples set out the way markers like, and a short check at the end of each chapter.</p>
+<p>You will learn it with <strong>1805 (Blockhaven) Squadron</strong>, the Air Cadets who already wrote up <a href="../higher-maths/">Higher Maths</a>, <a href="../higher-physics/">Higher Physics</a> and <a href="../higher-computing/">Higher Computing Science</a>. This time they are posted to <em>HMS Ratchet</em>, a 74-gun ship of the line built entirely from Minecraft blocks: iron-block fittings, redstone wiring and pistons. A ship of the line is a floating engineering project. Its capstan is a gear train, its steering is a feedback loop, its signal lamps are a binary code, its masts are a structure under load, and its pumps and guns run on pistons and valves. Every one of those turns up in this course.</p>
+</div>
+
+<section id="course" class="prose">
+<h2 data-short="The course at a glance">The course at a glance</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr><th scope="row">Qualification</th><td>Higher Engineering Science, course code C823 76, SCQF level 6, 24 SCQF credit points</td></tr>
+<tr><th scope="row">Study time</th><td>About 160 hours of learning, including time to prepare for assessment</td></tr>
+<tr><th scope="row">Usually taken</th><td>S5 or S6. The recommended entry is National 5 Engineering Science (or equivalent). Higher leads on to HNC and HND courses, apprenticeships and engineering degrees.</td></tr>
+<tr><th scope="row">Awarding body</th><td>Qualifications Scotland, which replaced SQA on 1 February 2026. This site follows the <b>course specification version 2.0 (September 2018)</b> and the <b>Higher Data Booklet (January 2026)</b>. Qualifications Scotland says these documents remain current.</td></tr>
+<tr><th scope="row">Assessment</th><td>Two parts, 160 marks in all: a <b>question paper</b> (110 marks, exam hall) and an <b>assignment</b> (50 marks, done in class). Your grade, A to D, comes from the total.</td></tr>
+<tr><th scope="row">What it is about</th><td>Analysing engineering problems, designing, simulating, building, testing and evaluating solutions, and knowing how engineers work and what their work does to society and the environment.</td></tr>
+</tbody></table></div>
+
+<h3>Three course themes, six decks</h3>
+<p>The course specification groups everything under three themes: <em>engineering contexts and challenges</em> (the systems approach, energy and efficiency, the roles of engineers, and the impacts of engineering), <em>electronics and control</em> (analogue, digital and programmable) and <em>mechanisms and structures</em>. The question paper then samples six areas. This site gives each area a deck, and adds a deck for the exam and the assignment. The mark figures on each card are the question-paper ranges printed in the specification.</p>
+<div class="deck-grid">
+  <a class="deck-card" href="systems.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#3a1c0c"/><rect x="2" y="4" width="5" height="5" fill="#d9a04f"/><rect x="9" y="4" width="5" height="5" fill="#8d949c"/><rect x="7" y="6" width="2" height="1" fill="#f4ecd8"/><rect x="11" y="9" width="1" height="4" fill="#ff4b3a"/><rect x="4" y="12" width="8" height="1" fill="#ff4b3a"/><rect x="4" y="9" width="1" height="4" fill="#ff4b3a"/><rect x="3" y="10" width="3" height="1" fill="#ff4b3a"/><rect x="7" y="14" width="2" height="1" fill="#f4ecd8"/></svg><span class="marks">Question paper: 10–17 marks · closed-loop thinking</span><h3>Systems &amp; energy</h3><p>The systems approach and feedback, energy and efficiency, the engineer's roles, and the impacts of engineering on people and planet.</p></a>
+  <a class="deck-card" href="analogue.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1c2a3a"/><rect x="1" y="8" width="14" height="1" fill="#4a5a6c"/><rect x="2" y="6" width="1" height="2" fill="#d9a04f"/><rect x="3" y="5" width="2" height="1" fill="#d9a04f"/><rect x="5" y="6" width="1" height="2" fill="#d9a04f"/><rect x="6" y="8" width="1" height="2" fill="#d9a04f"/><rect x="7" y="10" width="2" height="1" fill="#d9a04f"/><rect x="9" y="8" width="1" height="2" fill="#d9a04f"/><rect x="10" y="6" width="1" height="2" fill="#d9a04f"/><rect x="11" y="5" width="2" height="1" fill="#d9a04f"/><rect x="13" y="6" width="1" height="2" fill="#d9a04f"/><rect x="1" y="13" width="14" height="1" fill="#ff4b3a"/></svg><span class="marks">Question paper: 20–35 marks · the biggest area</span><h3>Analogue electronics</h3><p>Voltage dividers and sensors, the bipolar transistor, the MOSFET, and op-amps in six configurations.</p></a>
+  <a class="deck-card" href="digital.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#24140e"/><rect x="1" y="11" width="3" height="1" fill="#ff4b3a"/><rect x="4" y="5" width="1" height="7" fill="#ff4b3a"/><rect x="4" y="5" width="4" height="1" fill="#ff4b3a"/><rect x="8" y="5" width="1" height="7" fill="#ff4b3a"/><rect x="8" y="11" width="3" height="1" fill="#ff4b3a"/><rect x="11" y="5" width="1" height="7" fill="#ff4b3a"/><rect x="11" y="5" width="4" height="1" fill="#ff4b3a"/><rect x="2" y="2" width="1" height="2" fill="#f4ecd8"/><rect x="6" y="2" width="1" height="1" fill="#f4ecd8"/><rect x="6" y="3" width="1" height="1" fill="#24140e"/><rect x="10" y="2" width="1" height="2" fill="#f4ecd8"/></svg><span class="marks">Question paper: 15–25 marks</span><h3>Digital &amp; programmable</h3><p>Logic gates, truth tables, Boolean algebra and NAND designs, then programmable control: flowcharts, loops, delays, PWM and analogue inputs.</p></a>
+  <a class="deck-card" href="mechanisms.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#3a1c0c"/><rect x="4" y="6" width="6" height="6" fill="#d9a04f"/><rect x="5" y="5" width="4" height="8" fill="#d9a04f"/><rect x="3" y="7" width="8" height="4" fill="#d9a04f"/><rect x="6" y="8" width="2" height="2" fill="#3a1c0c"/><rect x="10" y="2" width="4" height="4" fill="#8d949c"/><rect x="11" y="1" width="2" height="6" fill="#8d949c"/><rect x="9" y="3" width="6" height="2" fill="#8d949c"/><rect x="11" y="3" width="2" height="2" fill="#3a1c0c"/></svg><span class="marks">Question paper: 10–20 marks</span><h3>Drives &amp; pneumatics</h3><p>Gear trains, belts, chains, rack and pinion, worm drives, couplings, bearings, brakes, torque and power, then pneumatic and electro-pneumatic sequences.</p></a>
+  <a class="deck-card" href="structures.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1c2a3a"/><path d="M2 12.5 L8 3.5 L14 12.5 Z" fill="none" stroke="#d9a04f" stroke-width="1"/><rect x="2" y="12" width="12" height="1" fill="#8d949c"/><rect x="8" y="4" width="1" height="8" fill="#8d949c"/><rect x="8" y="1" width="1" height="2" fill="#ff4b3a"/><rect x="7" y="2" width="3" height="1" fill="#ff4b3a"/><rect x="1" y="12" width="2" height="2" fill="#ff4b3a"/><rect x="13" y="12" width="2" height="2" fill="#ff4b3a"/></svg><span class="marks">Question paper: structures 15–25 · materials 8–14 marks</span><h3>Structures &amp; materials</h3><p>Forces in equilibrium, moments, beam reactions, frames by nodal analysis, then stress, strain, Young's modulus, factor of safety and strain energy.</p></a>
+  <a class="deck-card" href="exam.html"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="16" height="16" fill="#1d4f2b"/><rect x="3" y="1" width="1" height="14" fill="#c8c8c8"/><rect x="4" y="2" width="9" height="9" fill="#f2c200"/><polygon points="4,2 13,2 4,11" fill="#c8102e"/></svg><span class="marks">Question paper 110 · assignment 50 marks</span><h3>Exam &amp; assignment</h3><p>The Data Booklet, rounding and units, descriptive-answer technique, a mock paper, and how to earn the 50 assignment marks.</p></a>
+</div>
+<p>The ranges are the specification's, not a mark scheme. They overlap and do not add up to a single figure: the smallest ends sum to 78 and the largest to 136, and the paper is exactly 110 marks. In any one year the real split falls somewhere inside the ranges, so no area is safe to skip. A single question often mixes areas too: a power-and-efficiency calculation can sit inside a drive-system question.</p>
+
+<h3>How you are assessed</h3>
+<figure class="diagram" aria-labelledby="as-cap">
+  <p class="px-label"><b>Question paper</b> · 110 marks · 2 hours 30 minutes · exam hall</p>
+  <div class="assess-row">
+    <div style="flex:20;background:#8a6510"><b>Section 1 · 20</b>Short answer</div>
+    <div style="flex:90;background:var(--bg-sea)"><b>Section 2 · 90</b>Structured questions</div>
+  </div>
+  <p class="px-label"><b>Assignment</b> · 50 marks · 8 hours · supervised classroom</p>
+  <div class="assess-row" style="max-width:calc(50 / 110 * 100%);min-width:12em">
+    <div style="flex:1;background:var(--bg-green)"><b>Assignment · 50</b>Analyse, design, build, test, evaluate</div>
+  </div>
+  <figcaption id="as-cap">Bar lengths are to scale. 160 marks in total: the question paper is 69% of it and the assignment 31%. The question paper gives you about 1.4 minutes per mark.</figcaption>
+</figure>
+<ul>
+<li><strong>Question paper</strong> (2 hours 30 minutes, 110 marks), set and marked by Qualifications Scotland. <b>Section 1</b> has 20 marks of short-answer questions. <b>Section 2</b> has 90 marks of structured questions. Expect calculations, short or limited responses and extended responses. The Data Booklet is supplied, and the rounding instructions are printed on the front cover of the paper. You do not have to write code in a programmable-control question, but a flowchart must have enough detail: input and output pin numbers and a delay unit.</li>
+<li><strong>Assignment</strong> (50 marks), set each year by Qualifications Scotland and marked externally. You work on your own, for 8 hours, in a supervised classroom, with no teacher guidance. It is closed-book apart from the Data Booklet. It is a problem-solving activity made of several tasks, which may be linked by a theme. Your evidence goes in on paper: completed solutions, simulation printouts, photographs of your built models, and records of your testing and evaluation. There is no word count.</li>
+</ul>
+<div class="table-wrap"><table>
+<caption>The five assignment skills and the mark range the specification gives each. The ranges allow the balance to change from year to year; the total is always 50.</caption>
+<thead><tr><th>Skill</th><th class="num">Marks</th></tr></thead>
+<tbody>
+<tr><td>Analysis</td><td class="num">4–8</td></tr>
+<tr><td>Designing a solution</td><td class="num">8–12</td></tr>
+<tr><td>Building the solution</td><td class="num">8–12</td></tr>
+<tr><td>Testing</td><td class="num">8–14</td></tr>
+<tr><td>Evaluation</td><td class="num">8–14</td></tr>
+</tbody></table></div>
+
+<h3>Grade boundaries, 2024 to 2026</h3>
+<div class="table-wrap"><table class="gb">
+<caption>From the course reports for 2024 and 2025 (published by SQA) and 2026 (Qualifications Scotland). Each cell is the minimum mark out of 160 (question paper plus assignment together), the same mark as a percentage of 160, and the share of candidates who gained that grade. Entries: 1,395 in 2024, 1,399 in 2025, 1,614 in 2026.</caption>
+<thead><tr><th rowspan="2">Grade</th><th colspan="3" class="grp">2026</th><th colspan="3" class="grp">2025</th><th colspan="3" class="grp">2024</th></tr>
+<tr><th class="num">Min</th><th class="num">≈ %</th><th class="num">Cands</th><th class="num">Min</th><th class="num">≈ %</th><th class="num">Cands</th><th class="num">Min</th><th class="num">≈ %</th><th class="num">Cands</th></tr></thead>
+<tbody>
+<tr><td>A</td><td class="num">117</td><td class="num">73%</td><td class="num">35.7%</td><td class="num">112</td><td class="num">70%</td><td class="num">26.2%</td><td class="num">112</td><td class="num">70%</td><td class="num">21.9%</td></tr>
+<tr><td>B</td><td class="num">103</td><td class="num">64%</td><td class="num">21.7%</td><td class="num">96</td><td class="num">60%</td><td class="num">16.8%</td><td class="num">95</td><td class="num">59%</td><td class="num">20.1%</td></tr>
+<tr><td>C</td><td class="num">90</td><td class="num">56%</td><td class="num">16.5%</td><td class="num">80</td><td class="num">50%</td><td class="num">18.4%</td><td class="num">78</td><td class="num">49%</td><td class="num">20.1%</td></tr>
+<tr><td>D</td><td class="num">76</td><td class="num">48%</td><td class="num">11.6%</td><td class="num">64</td><td class="num">40%</td><td class="num">17.5%</td><td class="num">61</td><td class="num">38%</td><td class="num">17.1%</td></tr>
+<tr><td>No award</td><td class="num">–</td><td class="num">–</td><td class="num">14.4%</td><td class="num">–</td><td class="num">–</td><td class="num">21.0%</td><td class="num">–</td><td class="num">–</td><td class="num">20.6%</td></tr>
+</tbody></table></div>
+<p>Grade C or better went to 74.0% of candidates in 2026, 61.5% in 2025 and 62.2% in 2024. The 2026 course report explains that Qualifications Scotland aims to set assessments so that a competent candidate scores at least 50% of the marks (the notional grade C boundary) and a well-prepared, very competent candidate at least 70% (the notional grade A boundary), then holds a boundary meeting to make the final decision. Compare that with the table: the grade A boundary was exactly 70% of 160 in 2024 and 2025, and 73% in 2026. Boundaries move, so aim to be well clear of them rather than just on them.</p>
+<div class="callout exam"><div class="callout-title">⚠ From the course reports</div>
+<p>The 2024 course report says candidates “performed very well in areas such as digital electronics and structures calculations, but found analogue electronics more demanding. Questions requiring a detailed written response proved to be challenging, and often candidates provided a non-descriptive answer which lacked the detail required to achieve marks at this level.” For the assignment, the 2026 report says “candidates found the skills of evaluating and testing the most demanding”; the 2025 report said the same of evaluating. This site spends extra time on exactly those two things: analogue electronics, and explaining and evaluating in words.</p></div>
+<p>Look for the <span style="color:var(--redstone);font-weight:700">⚠ Exam lookout</span> boxes in each deck. The ones headed “From the course report” use only wording that the 2024, 2025 and 2026 reports actually contain.</p>
+</section>
+
+<section id="how" class="prose">
+<h2 data-short="How to use this site">How to use this site</h2>
+<ol>
+<li><strong>Work through the decks in order if you can.</strong> Start with Systems &amp; energy: feedback, energy and efficiency come back everywhere. Then do Analogue before Digital &amp; programmable, because motor control and PWM use transistors. Drives &amp; pneumatics and Structures &amp; materials are largely independent of the electronics, so you can take them in either order. Finish with Exam &amp; assignment.</li>
+<li><strong>Keep the Data Booklet open beside you.</strong> The exam gives you the booklet, so you do not need to memorise the formulae in it. You do need to know which one to use, what each symbol means, and which units go in. The decks quote each formula in the form the booklet prints it, so you get used to the symbols the exam uses. Notice what is <em>not</em> in the booklet (for example the base–emitter voltage, 0·7 V): the question will give it to you, and the worked examples say so.</li>
+<li><strong>Play with every widget.</strong> Drag the sliders, press the buttons, drive the circuit or the mechanism. Before you change anything, <em>predict</em> what will happen, then check. That habit is what handles an unfamiliar exam question.</li>
+<li><strong>Try the worked examples yourself first.</strong> Cover the solution, write your own working, then open it. The marks are shown as •1, •2 … in the order a marker would look for them, with the total beside “Show solution”. These are <em>typical mark allocations</em>, written to show what earns marks. They are not reproductions of official marking instructions.</li>
+<li><strong>Follow the calculation rules every time.</strong> Never round part-way through: carry the full calculator value and round only the final answer (to the number of significant figures asked for, or three if none is stated). Use the π key. Write the unit on every final answer, and convert (rev/min to rev/s, mm² to m², kN to N) before you substitute.</li>
+<li><strong>Pass the ✈ pre-flight check</strong> at the end of each chapter. Multiple-choice questions mark themselves. For open questions you write your answer, reveal the marking list and mark yourself honestly.</li>
+<li><strong>Practise writing, not just calculating.</strong> Descriptions and evaluations are where marks go missing. In pneumatics, for instance, say that a 3/2 valve <em>actuates</em>, that a 5/2 valve <em>changes state</em>, and that a piston <em>instrokes</em> or <em>outstrokes</em>. The Exam &amp; assignment deck covers this too.</li>
+</ol>
+<div class="callout tip"><div class="callout-title">✎ A good habit for the assignment</div><p>Photographs and screenshots must be clear, and every claim in your evaluation should point to evidence: a test result, an amendment you made, or a specification point you can show was met. “It all worked” earns nothing without that evidence.</p></div>
+</section>
+
+<section id="ranks" class="prose">
+<h2 data-short="Your rank">Your rank</h2>
+<p>Every pre-flight check you pass counts towards promotion through the Air Cadet ranks, from Cadet to Cadet Warrant Officer. Progress is saved in this browser only. Nothing is sent anywhere.</p>
+<p class="readout" data-progress-text style="font-family:var(--font-body)"></p>
+<div class="rank-ladder" data-rank-ladder></div>
+<div class="btn-row"><button class="btn small danger" type="button" id="reset-progress">Reset my progress</button></div>
+</section>
+
+<section id="mashup" class="prose">
+<h2 data-short="Decoding the theme">Decoding the theme</h2>
+<p>The squadron, the ship and the blocks are scenery. They are there to give you something to picture, and every one of them maps to a real idea in the course. Here is the decoder.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>You'll see…</th><th>…which stands for</th></tr></thead>
+<tbody>
+<tr><td>🔴 Redstone dust, strength 0 to 15</td><td>An <b>analogue signal</b>: a quantity that can take a whole range of values, such as a voltage from a sensor (<a href="analogue.html">Analogue electronics</a>).</td></tr>
+<tr><td>🔦 Redstone torches and repeaters</td><td><b>Digital</b> on/off signals. A redstone torch inverts its input, so it is a <b>NOT gate</b>; wire several and you build the other gates (<a href="digital.html">Digital &amp; programmable</a>).</td></tr>
+<tr><td>🧮 The redstone comparator block</td><td>The <b>comparator</b>: a circuit that compares one signal with another and says which is bigger. In the course it is an op-amp (<a href="analogue.html">Analogue electronics</a>).</td></tr>
+<tr><td>🚩 Signal flags and signal lamps (Popham's code, Trafalgar)</td><td><b>Digital codes</b>. A row of lit and unlit lamps is a binary number, which is what a microcontroller sends and reads (<a href="digital.html">Digital &amp; programmable</a>).</td></tr>
+<tr><td>🟫 Pistons</td><td><b>Pneumatic cylinders</b>: a piston pushed by air, controlled by valves and switches (<a href="mechanisms.html">Drives &amp; pneumatics</a>).</td></tr>
+<tr><td>⚓ Capstan, windlass, chain pump, gun tackles, steering gear</td><td><b>Drive systems</b>: gears, belts, chains, worm drives, torque and power (<a href="mechanisms.html">Drives &amp; pneumatics</a>).</td></tr>
+<tr><td>⛏ Hoppers and minecarts</td><td><b>Systems and flows</b>: inputs, processes, outputs and feedback, and the energy that is carried or lost along the way (<a href="systems.html">Systems &amp; energy</a>).</td></tr>
+<tr><td>🪵 Masts, shrouds, stays and the dock bridge</td><td><b>Structures</b>: members in tension and compression, supports, reactions and loads (<a href="structures.html">Structures &amp; materials</a>).</td></tr>
+<tr><td>🧱 Oak, iron blocks and copper sheathing</td><td><b>Materials</b>: strength, stiffness, ductility, brittleness and the factor of safety (<a href="structures.html">Structures &amp; materials</a>).</td></tr>
+<tr><td>✈ The Air Cadets and the Grob Tutor: propeller pitch, glider and wing spars</td><td>A drive system with a rotating shaft (power and torque), and beams carrying loads. The Tutor also tows the formula banners across the top of this page.</td></tr>
+<tr><td>📜 The Admiralty's lieutenant's examination</td><td>Your <b>exam</b>, and the Master Shipwright's assignment (<a href="exam.html">Exam &amp; assignment</a>).</td></tr>
+</tbody></table></div>
+<p><b>The premise.</b> HMS <em>Ratchet</em> is a 74-gun ship of the line, built block by block, with iron-block fittings, redstone wiring and pistons in her rigging, steering gear and gun deck. The squadron has been posted aboard to learn how the ship works, and her crew know that a ship of the line is only as good as its engineering. There is no safe place to guess: if the steering feedback fails, if a shroud is overloaded or if a signal is misread, the whole ship pays.</p>
+<p><b>The crew you will meet.</b> <strong>Flight Lieutenant Alba Murray</strong> is the squadron's officer in charge. <strong>Captain Callum Reid</strong> commands HMS <em>Ratchet</em>. <strong>Master Shipwright Morag Kerr</strong> is the ship's chief engineer, and your teacher in these decks. <strong>Cadet Sergeant Jamie Rahman</strong> asks the questions you are probably thinking: look for the violet <b>🎖 Cadet Sergeant Rahman asks…</b> boxes, each of which tackles a common misconception.</p>
+<p><b>The banner at the top of this page</b> is a small engineering demonstration of its own. Watch the gears on the foredeck turn (a 12-tooth gear driving an 8-tooth one, so a velocity ratio of 1.5), the wheel correct a gust (<em>error</em>, then <em>correction</em>), the redstone pulse lose one level of signal strength per block until the repeater restores it, the lamps count pulses in binary, and the dock bridge flex as the minecart crosses. Overhead, the Tutor towing each banner obeys its formula <em>literally</em>. Pause it with the button if you want to study a frame.</p>
+<p>Companion sites in the same series: <a href="../higher-maths/">Higher Maths</a> (<em>Chart, Compass &amp; Calculus</em>), <a href="../higher-physics/">Higher Physics</a> (<em>Shot, Spark &amp; Starlight</em>) and <a href="../higher-computing/">Higher Computing Science</a> (<em>Blocks, Wings &amp; Broadsides</em>). Engineering Science borrows from all three.</p>
+</section>
+
+<section id="glossary" class="prose">
+<h2 data-short="Ship's glossary">Ship's glossary</h2>
+<p>Plain-English meanings of the terms used across the course, with the deck where each is taught. Type in the box to filter, choose a deck, or click a column heading to sort.</p>
+<div class="gloss-tools">
+  <label class="gloss-field">Search the glossary <input type="search" id="gloss-q" autocomplete="off" placeholder="e.g. torque"></label>
+  <label class="gloss-field">Deck <select id="gloss-deck">
+    <option value="">All decks</option>
+    <option value="systems">Systems &amp; energy</option>
+    <option value="analogue">Analogue electronics</option>
+    <option value="digital">Digital &amp; programmable</option>
+    <option value="mechanisms">Drives &amp; pneumatics</option>
+    <option value="structures">Structures &amp; materials</option>
+    <option value="exam">Exam &amp; assignment</option>
+  </select></label>
+  <p class="gloss-count" id="gloss-count" role="status" aria-live="polite"></p>
+</div>
+<div class="table-wrap"><table class="gloss-table" id="gloss-table">
+<thead><tr><th scope="col" class="sortable" aria-sort="ascending"><button type="button" data-sort="term">Term</button></th><th scope="col">Meaning in plain English</th><th scope="col" class="sortable" aria-sort="none"><button type="button" data-sort="deck">Deck</button></th></tr></thead>
+<tbody>
+<tr data-deck="mechanisms"><th scope="row">3/2 valve, 5/2 valve</th><td>Pneumatic valves named by ports and positions. A 3/2 valve has 3 ports (supply, outlet, exhaust) and 2 positions; a 5/2 valve has 5 ports and 2 positions. Say that a 3/2 valve <em>actuates</em> and a 5/2 valve <em>changes state</em>.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="systems"><th scope="row">Actuator</th><td>An output device that makes something move or change: a motor, a solenoid, a pneumatic cylinder. It is the sub-system at the output end of a control system.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="digital"><th scope="row">ADC (analogue-to-digital converter)</th><td>Turns a changing voltage into a whole number the microcontroller can work with. More bits mean finer steps. In a program you compare or scale that number to make a decision.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Amplifier gain, <i>A</i><sub>v</sub></th><td>Output voltage divided by input voltage for an op-amp circuit: <i>A</i><sub>v</sub> = <i>V</i><sub>o</sub> ÷ <i>V</i><sub>i</sub>. A negative gain means the output is upside down compared with the input.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Annulus</th><td>The ring-shaped area left when you cut a small circle out of a bigger one. On the instroke of a double-acting cylinder, air pushes on the annulus: the piston area minus the piston-rod area.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="exam"><th scope="row">Assignment</th><td>The 50-mark practical part of the course: eight hours, on your own, in a supervised classroom, marked by Qualifications Scotland. You analyse, design, build, test and evaluate.</td><td><a href="exam.html">Exam &amp; assignment</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Base, collector, emitter</th><td>The three legs of a bipolar transistor. A small current into the base controls a much larger current from collector to emitter (when the transistor is in its active region).</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Bearing</th><td><b>Engineering sense:</b> a part that supports a rotating shaft and lets it turn with little friction. Radial bearings carry loads at right angles to the shaft; thrust bearings carry loads along it. Plain, journal, ball and roller bearings are the types in the course. <b>Navigation sense:</b> a compass direction, such as 045°. (Both appear aboard.)</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">BJT (bipolar junction transistor)</th><td>A current-operated transistor. In the course it is the npn type, used as a current amplifier or a switch. It needs a base resistor to set the base current.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Brake</th><td>Uses friction to slow a moving part. The kinetic energy does not vanish: it becomes heat (<i>E</i><sub>h</sub> = <i>cm</i>Δ<i>T</i>).</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Brittleness</th><td>Breaking suddenly with almost no stretching first. Cast iron and glass are brittle. A brittle material has no yield point.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="systems"><th scope="row">Closed-loop system</th><td>A system that measures its own output and feeds that back to the input, so it can correct itself. A system with no such measurement is open-loop.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Clutch</th><td>Uses friction to join two shafts so that one can drive the other, and to let them separate again.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Comparator</th><td>An op-amp circuit with no feedback resistor that compares the input voltage with a reference. As printed in the Data Booklet: if <i>V</i><sub>i</sub> is less than <i>V</i><sub>ref</sub> the output saturates positively; if it is more, negatively.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Compound gear train</th><td>A train in which two gears sit on one shaft. The overall velocity ratio is the product of the ratios of each pair.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Compression</th><td>A force that squashes or pushes a member. In a frame, a member in compression pushes on its joint (the arrow points towards the joint).</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Concurrent forces</th><td>Forces whose lines of action all pass through one point. Their moments about that point are zero, so only the forces themselves need balancing.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Coupling</th><td>Joins two shafts so that torque passes from one to the other. A rigid coupling needs the shafts perfectly in line; a flexible coupling allows a little misalignment.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="exam"><th scope="row">Data Booklet</th><td>The booklet of formulae and data that Qualifications Scotland gives you in the exam (and you may use in the assignment). Learn where things are in it before the day.</td><td><a href="exam.html">Exam &amp; assignment</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Drain, source</th><td>Two terminals of a MOSFET. When the MOSFET is switched on, current flows from the drain to the source (for an n-channel device).</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Ductility</th><td>Able to be stretched a long way, for example drawn into a wire, before it breaks. Copper and mild steel are ductile.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="digital"><th scope="row">Duty cycle</th><td>The fraction of each PWM period for which the output is high, as a percentage. A higher duty cycle gives a higher average voltage and a faster motor.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="systems"><th scope="row">Efficiency, η</th><td>Useful output divided by input, for energy or for power: η = <i>E</i><sub>out</sub> ÷ <i>E</i><sub>in</sub> = <i>P</i><sub>out</sub> ÷ <i>P</i><sub>in</sub>. It is never more than 1 (100%). The difference is lost, usually as heat.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="structures"><th scope="row">Elasticity</th><td>A material returns to its original shape when the load is removed. Beyond the elastic limit it does not.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="digital"><th scope="row">EOR (exclusive-OR)</th><td>A gate whose output is 1 when its two inputs are <i>different</i>, and 0 when they are the same.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="structures"><th scope="row">Equilibrant</th><td>The one force that exactly balances a set of forces. It is equal in size to the resultant and opposite in direction.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Equilibrium</th><td>Nothing is accelerating or turning: the forces balance in both directions and the moments balance. In the Data Booklet: ΣF<sub>h</sub> = 0, ΣF<sub>v</sub> = 0, ΣM = 0.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="systems"><th scope="row">Error</th><td>In a feedback system, the difference between the value you want (the set point) and the value you measure. Control acts to reduce it to zero.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="structures"><th scope="row">Factor of safety</th><td>Ultimate load ÷ safe working load, or equivalently ultimate stress ÷ safe working stress. It has no unit. A factor of 3 means the structure is designed to carry a third of what would break it.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="systems"><th scope="row">Feedback</th><td>Sending some of a system's output back to its input. It can oppose a change (negative feedback) or reinforce it (positive feedback).</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="digital"><th scope="row">Flowchart</th><td>A diagram of the steps of a program using standard symbols (terminator, process, decision, input/output). For a programmable-control question give pin numbers and the unit of every delay.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Flyback (protection) diode</th><td>A diode connected across a relay coil, solenoid or motor. When the current is switched off, the coil makes a high-voltage spike; the diode gives it somewhere to go so the transistor survives.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Free-body diagram</th><td>A sketch of one object, on its own, with every force acting on it drawn as an arrow. It is the first step in every statics problem.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="digital analogue"><th scope="row">Gate</th><td><b>Digital sense:</b> a logic gate, such as AND, OR, NOT, NAND, NOR or EOR. <b>Analogue sense:</b> the control terminal of a MOSFET, which draws practically no current. Same word, two different devices.</td><td><a href="digital.html">Digital &amp; programmable</a> · <a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">hFE (current gain)</th><td>The current gain of a bipolar transistor: <i>h</i><sub>FE</sub> = <i>I</i><sub>c</sub> ÷ <i>I</i><sub>b</sub>. It applies in the active region, not when the load limits the collector current.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Hinge (pin) support</th><td>Holds a beam in place but lets it turn. It can push in any direction, so it gives two reaction components: one horizontal and one vertical.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Idler gear</th><td>A gear placed between the driver and the driven gear. It reverses the direction of rotation but does not change the velocity ratio, because its teeth count cancels out.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="digital"><th scope="row">Infinite loop, finite loop</th><td>An infinite loop repeats for ever (the program jumps back to a label such as <code>main</code>). A finite loop repeats a set number of times, controlled by a counter or a for/next loop.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="digital"><th scope="row">Integrated circuit (IC)</th><td>A chip holding several gates. A quad 2-input NAND chip holds four NAND gates. When you minimise a logic design, count the chips, not just the gates.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Limit switch</th><td>A switch or valve operated by a moving part when it reaches the end of its travel. It tells a sequence control that the cylinder has finished its stroke.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Malleability</th><td>Able to be hammered or rolled into thin sheets without cracking. Gold and copper are malleable.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Moment</th><td>The turning effect of a force about a point: <i>M</i> = <i>Fx</i>, where <i>x</i> is the <i>perpendicular</i> distance from the point to the line of the force. Unit: N m.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="analogue"><th scope="row">MOSFET</th><td>A voltage-operated transistor. In the course it is the n-channel enhancement-mode type, used as a switch. It conducts when the gate–source voltage is above the threshold voltage.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="digital"><th scope="row">NAND equivalent</th><td>A circuit that does the job of another logic function using only NAND gates. A NAND with its inputs tied is a NOT; a NAND followed by a NOT is an AND.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="systems"><th scope="row">Negative feedback</th><td>Feedback that opposes change: the output is subtracted from the target. It makes a system steady and accurate. It is the heart of a closed-loop control system.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="structures"><th scope="row">Nodal analysis (method of joints)</th><td>Finding the force in every member of a frame by balancing the forces at each joint, one joint at a time. You give the size and whether each member is in tension (T) or compression (C).</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Op-amp (operational amplifier)</th><td>A very high-gain voltage amplifier with an inverting (−) and a non-inverting (+) input. Add resistors and it becomes an inverting, non-inverting, difference or summing amplifier, a voltage follower, or (with none) a comparator.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Plasticity</th><td>A material stays permanently deformed after the load is removed. It happens once the load goes beyond the elastic limit.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Pneumatic cylinder</th><td>A piston in a tube, moved by compressed air. A single-acting cylinder is pushed out by air and returned by a spring; a double-acting cylinder is pushed both ways by air.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="systems"><th scope="row">Positive feedback</th><td>Feedback that reinforces change: the output adds to the input. Left alone it runs away to an extreme, so it is used for latches and alarms, not for steady control.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="systems"><th scope="row">Power</th><td>The rate of transferring energy: <i>P</i> = <i>E</i> ÷ <i>t</i>. Electrical: <i>P</i> = <i>VI</i>. Mechanical: <i>P</i> = <i>Fv</i>, and for a rotating shaft <i>P</i> = 2π<i>nT</i> with <i>n</i> in revolutions per <em>second</em>.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="systems"><th scope="row">Proportional control</th><td>A closed-loop method in which the size of the correction is in proportion to the size of the error. Compare two-state (on/off) control.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="digital"><th scope="row">PWM (pulse-width modulation)</th><td>Switching an output on and off very fast at a fixed frequency and varying how long it stays on in each cycle. The average voltage, and so a motor's speed, follows the duty cycle.</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Rack and pinion</th><td>A pinion (small gear) turning against a straight toothed bar (the rack). It turns rotation into straight-line motion. Rack speed = π × pinion diameter × pinion speed.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Reaction</th><td>The force with which a support pushes back on a structure. For a structure at rest, the reactions balance the loads.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Resultant</th><td>The single force that has the same effect as a set of forces acting together.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Roller support</th><td>Supports a structure but can roll along a surface. It can push only at right angles to that surface, so it gives one reaction component.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Saturation</th><td>When an output cannot go any further. An op-amp output sits close to its positive or negative supply rail. A transistor is saturated when the load, not the base current, limits the collector current.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="exam"><th scope="row">SCQF</th><td>The Scottish Credit and Qualifications Framework. Higher courses sit at level 6; Higher Engineering Science carries 24 SCQF credit points.</td><td><a href="exam.html">Exam &amp; assignment</a></td></tr>
+<tr data-deck="structures"><th scope="row">Strain energy, <i>E</i><sub>s</sub></th><td>The energy stored in a stretched material: <i>E</i><sub>s</sub> = ½<i>Fx</i>. It is the area under the load–extension graph. Use newtons and <em>metres</em> to get joules.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Strain gauge</th><td>A thin metal foil grid whose resistance changes when it is stretched. Put it in a voltage divider or bridge to turn strain into a voltage. A dummy gauge cancels the effect of temperature.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Strain, ε</th><td>Extension divided by original length: ε = Δ<i>l</i> ÷ <i>l</i>. It has no unit.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Stress, σ</th><td>Force per unit cross-section area: σ = <i>F</i> ÷ <i>A</i>. One newton per square millimetre (N mm⁻²) is one megapascal (MPa).</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="systems"><th scope="row">Sub-system</th><td>A smaller part of a bigger system that does one job and has its own input, process and output. Control diagrams are drawn as sub-systems joined by arrows.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="systems"><th scope="row">Sustainability</th><td>Meeting today's needs without stopping future generations from meeting theirs. Judge an engineering solution by its materials, energy use, lifetime and what happens to it at the end.</td><td><a href="systems.html">Systems &amp; energy</a></td></tr>
+<tr data-deck="structures"><th scope="row">Tension</th><td>A force that pulls or stretches. In a frame, a member in tension pulls on its joint (the arrow points away from the joint).</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Threshold voltage</th><td>The gate–source voltage at which a MOSFET starts to conduct between drain and source. Below it the MOSFET is off; the gate voltage must exceed it to switch the load on.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Torque</th><td>The turning effect of a force about the axis of a shaft: <i>T</i> = <i>Fr</i>, where <i>r</i> is the radius. Unit: N m. Use the <em>radius</em>, not the diameter.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Transconductance, <i>g</i><sub>m</sub></th><td>For a MOSFET: how much the drain current changes for each volt change in gate–source voltage, <i>g</i><sub>m</sub> = Δ<i>I</i><sub>d</sub> ÷ Δ<i>V</i><sub>gs</sub>. It is the slope of the transfer characteristic.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Transducer</th><td>A device that changes energy from one form to another. Input transducers (sensors) such as an LDR or a thermistor detect the world; output transducers such as a motor, lamp or buzzer act on it.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="digital"><th scope="row">Truth table</th><td>A table listing the output for every possible combination of inputs, written in binary order (000, 001, 010 …).</td><td><a href="digital.html">Digital &amp; programmable</a></td></tr>
+<tr data-deck="structures"><th scope="row">UDL (uniformly distributed load)</th><td>A load spread evenly along a length, in N per metre. Treat it as one force, <i>w</i> × length, acting at the centre of the loaded length.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Velocity ratio (VR)</th><td>Input speed ÷ output speed. For gears it equals teeth on the driven gear ÷ teeth on the driver. VR greater than 1 slows the output down and raises its torque.</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="analogue"><th scope="row">Voltage divider</th><td>Two resistors in series across a supply, with the output taken from between them. In the Data Booklet: <i>V</i><sub>1</sub> ÷ <i>V</i><sub>2</sub> = <i>R</i><sub>1</sub> ÷ <i>R</i><sub>2</sub>. Replace one resistor with an LDR or thermistor to make a sensor.</td><td><a href="analogue.html">Analogue electronics</a></td></tr>
+<tr data-deck="mechanisms"><th scope="row">Worm and wheel, worm and nut</th><td>A worm is a screw thread. Against a wheel, one turn of the worm moves the wheel on by its number of starts, so VR = teeth on wheel ÷ starts, and it usually cannot be driven backwards. Against a nut, one turn moves the nut on by one pitch (lead).</td><td><a href="mechanisms.html">Drives &amp; pneumatics</a></td></tr>
+<tr data-deck="structures"><th scope="row">Yield point, ultimate tensile strength</th><td>On a mild steel stress–strain graph, yield is where it begins to stretch a lot for little extra stress; the ultimate tensile strength is the highest stress reached, after which the specimen necks and breaks.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+<tr data-deck="structures"><th scope="row">Young's modulus, <i>E</i></th><td>How stiff a material is: <i>E</i> = σ ÷ ε. It is the slope of the straight (elastic) part of the stress–strain graph. The Data Booklet table gives <i>E</i> in kN mm⁻², so convert carefully.</td><td><a href="structures.html">Structures &amp; materials</a></td></tr>
+</tbody></table></div>
+<p id="gloss-none" class="gloss-none" hidden>No term matches. Try a shorter search or choose “All decks”.</p>
+<h3>Ship and Minecraft words</h3>
+<p>None of these is part of the course. They are period and game flavour, explained so they never get in the way.</p>
+<dl class="glossary">
+<dt>Ship of the line</dt><dd>A big warship of Nelson's era with several gun decks, built to fight in a line of battle. A 74-gun ship carried about that many cannon, most of them on two gun decks.</dd>
+<dt>Capstan, windlass</dt><dd>A capstan is an upright drum turned with bars to haul in the anchor cable; a windlass does the same job on a horizontal drum. Both are drives: a small force on a long bar becomes a big force on the cable.</dd>
+<dt>Gun tackle</dt><dd>Ropes and pulleys (blocks) used to run a heavy gun in and out.</dd>
+<dt>Chain pump</dt><dd>A pump worked by a chain of discs hauling water up a pipe from the bilge.</dd>
+<dt>Shroud, stay</dt><dd>Ropes that hold a mast steady. Shrouds run from the mast down to the ship's sides; stays run fore and aft. They are always in tension.</dd>
+<dt>Yard, yardarm</dt><dd>The horizontal pole across a mast from which a sail hangs.</dd>
+<dt>Sheathing</dt><dd>A covering of thin copper sheet over the underwater part of a hull, to keep out shipworm and weed.</dd>
+<dt>Popham's code</dt><dd>The system of coloured signal flags used by the Royal Navy in Nelson's time, in which each flag stood for a number, so a hoist of flags spelled a message in code.</dd>
+<dt>Redstone</dt><dd>Minecraft's wiring material. Redstone dust carries a signal with a strength from 0 to 15, falling by one for each block it travels; a repeater restores it.</dd>
+<dt>Piston</dt><dd>In Minecraft, a block that pushes other blocks when powered. In this course, think of a pneumatic cylinder.</dd>
+<dt>Air Cadets, squadron, flight</dt><dd>The RAF Air Cadets is a youth organisation for 12 to 20 year olds. Cadets belong to a numbered squadron, divided into flights.</dd>
+<dt>Grob Tutor</dt><dd>The small two-seat aircraft in which Air Cadets get flying experience.</dd>
+<dt>Watch, night watch</dt><dd>A sailor's spell of duty. “Night watch” is also this site's dark-mode button.</dd>
+<dt>Blockhaven, 1805 Squadron</dt><dd>The made-up Minecraft town and Air Cadet squadron of this site. 1805 is the year of Trafalgar.</dd>
+</dl>
+</section>
+
+<section id="sources" class="prose">
+<h2 data-short="Sources">Sources and official documents</h2>
+<p>All course content on this site is checked against these official documents. Always treat them as the final word, and download them from the Qualifications Scotland website (the successor to SQA's):</p>
+<ul>
+<li><b>Higher Engineering Science course specification</b>, version 2.0, September 2018: the list of skills, knowledge and understanding on which every chapter is based, and the structure of the question paper and assignment.</li>
+<li><b>Higher Engineering Science Data Booklet</b>, Qualifications Scotland, January 2026: every formula and data table that you are given in the exam.</li>
+<li><b>Course reports for 2024, 2025 and 2026</b>: the source of every “From the course report” box and of the grade boundaries above.</li>
+<li>The specimen question paper, specimen assignment, past papers and marking instructions, which this site does not reproduce.</li>
+</ul>
+<nav class="next-deck" aria-label="Deck navigation">
+  <span></span>
+  <a class="btn primary" href="systems.html">Report to the Master Shipwright: start Systems &amp; energy →</a>
+</nav>
+</section>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Engineering Science course specification (version 2.0, September 2018) and the Higher data booklet (Qualifications Scotland, January 2026), which Qualifications Scotland confirms are current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Ratchet</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-maths/">Chart, Compass &amp; Calculus</a> (Higher Maths), <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> (Higher Physics) and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> (Higher Computing Science) cover the other three Highers.</p>
+  </div>
+</footer>
+<script defer src="hero.js"></script>
+<script>
+document.getElementById("reset-progress").addEventListener("click", () => {
+  if (!confirm("Reset every pre-flight check and your rank?")) return;
+  HE.state.checks = {};
+  try { localStorage.setItem("he-higher.v1", JSON.stringify(HE.state)); } catch (e) {}
+  HE.paintRank();
+  HE.toast("Progress reset. Back to Cadet.");
+});
+/* the glossary: filter by text and deck, sort by term or deck */
+(function () {
+  const table = document.getElementById("gloss-table"); if (!table) return;
+  const body = table.tBodies[0], rows = [...body.rows];
+  const q = document.getElementById("gloss-q"), sel = document.getElementById("gloss-deck"), count = document.getElementById("gloss-count"), none = document.getElementById("gloss-none");
+  const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  rows.forEach((r) => { r._text = norm(r.textContent); r._term = norm(r.cells[0].textContent); r._deck = r.getAttribute("data-deck"); });
+  function apply() {
+    const needle = norm(q.value.trim()), deck = sel.value;
+    let n = 0;
+    rows.forEach((r) => {
+      const ok = (!needle || r._text.includes(needle)) && (!deck || r._deck.split(" ").includes(deck));
+      r.hidden = !ok; if (ok) n++;
+    });
+    count.textContent = n === rows.length ? `Showing all ${rows.length} terms.` : `Showing ${n} of ${rows.length} terms.`;
+    none.hidden = n > 0;
+  }
+  q.addEventListener("input", apply); sel.addEventListener("change", apply);
+  const order = ["systems", "analogue", "digital", "mechanisms", "structures", "exam"];
+  table.querySelectorAll("button[data-sort]").forEach((b) => b.addEventListener("click", () => {
+    const key = b.getAttribute("data-sort"), th = b.parentElement, asc = th.getAttribute("aria-sort") !== "ascending";
+    table.querySelectorAll("th.sortable").forEach((h) => h.setAttribute("aria-sort", "none"));
+    th.setAttribute("aria-sort", asc ? "ascending" : "descending");
+    const dk = (r) => order.indexOf(r._deck.split(" ")[0]);
+    rows.sort((a, c) => (key === "term" ? a._term.localeCompare(c._term) : dk(a) - dk(c) || a._term.localeCompare(c._term)) * (asc ? 1 : -1));
+    rows.forEach((r) => body.append(r));
+  }));
+  apply();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
