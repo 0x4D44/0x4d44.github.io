@@ -1,0 +1,79 @@
+/* Analogue electronic control — extras for the Redstone Room.
+   Everything is namespaced (.ana-… and svg .a…) and uses the shared CSS variables, so dark mode just works. */
+
+/* ---------- schematic vocabulary for the static SVG figures ---------- */
+svg .aw { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+svg .adot { fill: var(--ink); }
+svg .aterm { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
+svg .abody { fill: var(--card); stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; }
+svg .abody2 { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+svg .aoutline { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+svg .afill { fill: var(--ink); stroke: none; }
+svg .acur { fill: none; stroke: var(--redstone); stroke-width: 2.4; stroke-linecap: round; }
+svg .acurf { fill: var(--redstone); stroke: none; }
+svg .avol { fill: none; stroke: var(--sea); stroke-width: 2.2; stroke-linecap: round; }
+svg .avolf { fill: var(--sea); stroke: none; }
+svg .alight { fill: none; stroke: var(--amber, #b86a00); stroke-width: 2; stroke-linecap: round; }
+svg .alightf { fill: var(--amber, #b86a00); stroke: none; }
+svg .agrid { fill: none; stroke: var(--line); stroke-width: 1; opacity: .7; }
+svg .adash { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 5 4; }
+svg .acurve { fill: none; stroke: var(--redstone); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+svg .acurve2 { fill: none; stroke: var(--sea); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+svg .agold { fill: none; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 6 4; }
+svg .ashade { fill: var(--gold); opacity: .22; }
+svg .abox { fill: var(--card); stroke: var(--navy-2); stroke-width: 2.4; }
+svg .abox-in { fill: var(--paper-2); stroke: var(--sea); stroke-width: 2.4; }
+svg .abox-out { fill: var(--paper-2); stroke: var(--redstone); stroke-width: 2.4; }
+svg .ablue { fill: var(--sea); }
+svg .asea-t { fill: var(--sea); font-weight: 700; }
+svg .ared-t { fill: var(--redstone); font-weight: 700; }
+svg .agold-t { fill: var(--amber, #b86a00); font-weight: 700; }
+svg .agreen-t { fill: var(--grass); font-weight: 700; }
+:root[data-theme="dark"] svg .agold-t { fill: var(--gold); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) svg .agold-t { fill: var(--gold); } }
+
+figure.diagram.ana-narrow svg { max-width: 420px; }
+figure.diagram.ana-mid svg { max-width: 520px; }
+.ana-sixgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 12px; margin: 1em 0; }
+.ana-sixgrid > figure { margin: 0; }
+.ana-sixgrid figcaption b { color: var(--ink); }
+
+/* ---------- widget furniture ---------- */
+.ana-eq { font-size: 1.02rem; margin: 6px 0; overflow-x: auto; }
+.ana-eq .katex-display { margin: .3em 0; }
+.ana-steps { list-style: none; margin: 8px 0; padding: 0; counter-reset: ana; }
+.ana-steps li { counter-increment: ana; position: relative; padding: 6px 10px 6px 2.4em; margin: 4px 0; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
+.ana-steps li::before { content: counter(ana); position: absolute; left: 8px; top: 6px; font: 700 .85rem var(--font-mono); color: var(--gold); }
+.ana-steps li.hid { display: none; }
+.ana-ok { color: var(--grass); font-weight: 700; }
+.ana-bad { color: var(--redstone); font-weight: 700; }
+.ana-chip { display: inline-block; font: 700 .8rem var(--font-mono); padding: 2px 8px; border: 2px solid var(--line); border-radius: 2px; background: var(--paper); margin: 0 4px 0 0; }
+.ana-chip.on { background: var(--grass); color: #10230a; border-color: var(--grass); }
+.ana-chip.off { background: var(--paper-2); color: var(--muted); }
+.ana-chip.warn { background: var(--amber, #b86a00); color: #fff; border-color: var(--amber, #b86a00); }
+.ana-chip.bad { background: var(--redstone); color: #fff; border-color: var(--redstone); }
+:root[data-theme="dark"] .ana-chip.on { color: #10230a; }
+:root[data-theme="dark"] .ana-chip.bad, :root[data-theme="dark"] .ana-chip.warn { color: #1a0d05; }
+.ana-in { display: inline-flex; align-items: center; gap: 6px; margin: 4px 10px 4px 0; font-size: .92rem; }
+.ana-in input[type="number"] { width: 7.2em; }
+.ana-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0; }
+.ana-pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr)); gap: 6px; margin: 10px 0; counter-reset: pipe; }
+.ana-pipeline > div { position: relative; background: var(--paper); border: 2px solid var(--line); border-top: 5px solid var(--sea); padding: 6px 8px; min-width: 0; border-radius: 2px; }
+.ana-pipeline > div b { display: block; font: 700 .95rem var(--font-mono); overflow-wrap: anywhere; }
+.ana-pipeline > div span { font-size: .78rem; color: var(--muted); }
+.ana-pipeline > div.hot { border-top-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 10%, var(--paper)); }
+.ana-pipeline > div.live { border-top-color: var(--grass); }
+.ana-bar { height: 16px; background: var(--paper-2); border: 2px solid var(--line); border-radius: 2px; position: relative; overflow: hidden; }
+.ana-bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--redstone); transition: width .15s; }
+.ana-redstone { display: grid; gap: 8px; margin: 8px 0; }
+.ana-rs-row { display: grid; grid-template-columns: 7.5em 1fr 2.4em; align-items: center; gap: 8px; font-size: .9rem; }
+.ana-rs-cells { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; }
+.ana-rs-cells i { display: block; height: 18px; background: var(--paper-2); border: 1px solid var(--line); }
+.ana-rs-cells i.lit { background: var(--redstone); border-color: var(--redstone); }
+.ana-table-note { font-size: .84rem; color: var(--muted); margin: 0; }
+.ana-tt td, .ana-tt th { text-align: center; }
+@media (max-width: 520px) {
+  .ana-rs-row { grid-template-columns: 5.6em 1fr 2em; font-size: .84rem; }
+  .ana-in input[type="number"] { width: 6.2em; }
+}
+@media (prefers-reduced-motion: reduce) { .ana-bar > i { transition: none; } }
