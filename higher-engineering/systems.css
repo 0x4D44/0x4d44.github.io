@@ -60,3 +60,8 @@ svg .sy-box { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
 
 /* KaTeX keeps a hidden MathML copy that is absolutely positioned; contain it inside scrolling table wrappers */
 .table-wrap { position: relative; }
+
+.sim-note:empty{display:none}
+.sy-tag{display:inline}
+.sy-roundtab th, .sy-roundtab td { padding: 5px 6px; }
+@media (max-width: 520px) { .sy-roundtab { font-size: .82rem; } .sy-roundtab .hint { display: none; } }

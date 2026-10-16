@@ -90,7 +90,7 @@
     function show() {
       if (!ROLES[proj].disc[disc]) { disc = Object.keys(ROLES[proj].disc)[0]; drawDisc(); }
       const rs = ROLES[proj].disc[disc];
-      const lis = rs.map(([r, h], i) => `<li><strong>Role ${i + 1}.</strong> <span class="sy-tag sy-r">${ctx(r)}</span> <span class="sy-tag sy-h">${ctx(h)}</span>.</li>`).join("");
+      const lis = rs.map(([r, h], i) => `<li><strong>Role ${i + 1}.</strong> <span class="sy-tag sy-r">${ctx(r)}</span> <span class="sy-tag sy-h">${ctx(h)}.</span></li>`).join("");
       out.innerHTML = `<p style="margin:0"><strong>${disc} engineer, ${ROLES[proj].name}: two roles in the design phase</strong></p><ol>${lis}</ol>` +
         `<p class="sy-weak"><strong>The weak version:</strong> "The ${disc.toLowerCase()} engineer designs the ${ROLES[proj].name.toLowerCase()}." This names a job title but says no specific task, no method and no reason, and it is the same sentence however many roles are asked for. The strong version above names two different tasks, and gives each a method or a reason tied to the project (highlighted in gold).</p>`;
     }
@@ -249,7 +249,7 @@
       cells.forEach((c, i) => {
         const ys = recent.map((p) => p.y[i]);
         const lo = Math.min(...ys), hi = Math.max(...ys);
-        c.textContent = `${HE.n(last.y[i], 1)}° now; last 15 s: ${HE.n(lo, 1)}° to ${HE.n(hi, 1)}°`;
+        c.innerHTML = `${HE.n(last.y[i], 1)}°<small style="display:block;font-weight:400">last 15 s: ${HE.n(lo, 0)} to ${HE.n(hi, 0)}°</small>`;
       });
       gustBtn.textContent = "Gust: " + (M.gust ? "on" : "off");
       gustBtn.setAttribute("aria-pressed", M.gust ? "true" : "false");
@@ -345,11 +345,11 @@
     }
     function table() {
       const p = paths();
-      const rows = [["Useful output (rope and anchor)", p.useful, "Useful"], ["Heat in the motor windings", p.loss[0], "Wasted"], ["Friction in gears and bearings", p.loss[1], "Wasted"], ["Sound and vibration", p.loss[2], "Wasted"]];
-      tw.innerHTML = `<table><caption>Energy audit of the capstan motor (energy per minute = power × 60 s).</caption><thead><tr><th>Path</th><th class="num">Power (kW)</th><th class="num">% of input</th><th class="num">Energy in 60 s (kJ)</th><th>Role</th></tr></thead><tbody>` +
-        `<tr><th scope="row">Electrical input</th><td class="num">${N(P.pin, 2)}</td><td class="num">100</td><td class="num">${N(P.pin * 60, 0)}</td><td>Input</td></tr>` +
-        rows.map(([n, v, r]) => `<tr><th scope="row">${n}</th><td class="num">${N(v, 2)}</td><td class="num">${N(v / P.pin * 100, 1)}</td><td class="num">${N(v * 60, 0)}</td><td>${r}</td></tr>`).join("") +
-        `<tr><th scope="row">Check: useful + wasted</th><td class="num">${N(p.useful + p.loss.reduce((a, b) => a + b, 0), 2)}</td><td class="num">100</td><td class="num">${N(P.pin * 60, 0)}</td><td>= input</td></tr></tbody></table>`;
+      const rows = [["Useful output", p.useful, "Useful"], ["Motor heat", p.loss[0], "Wasted"], ["Friction", p.loss[1], "Wasted"], ["Sound", p.loss[2], "Wasted"]];
+      tw.innerHTML = `<table><caption>Energy audit of the capstan motor (energy per minute = power × 60 s).</caption><thead><tr><th>Path</th><th class="num">Power (kW)</th><th class="num">% of input</th><th class="num">kJ in 60 s</th></tr></thead><tbody>` +
+        `<tr><th scope="row">Electrical input</th><td class="num">${N(P.pin, 2)}</td><td class="num">100</td><td class="num">${N(P.pin * 60, 0)}</td></tr>` +
+        rows.map(([n, v, r]) => `<tr><th scope="row">${n}</th><td class="num">${N(v, 2)}</td><td class="num">${N(v / P.pin * 100, 1)}</td><td class="num">${N(v * 60, 0)}</td></tr>`).join("") +
+        `<tr><th scope="row">Useful + wasted</th><td class="num">${N(p.useful + p.loss.reduce((a, b) => a + b, 0), 2)}</td><td class="num">100</td><td class="num">${N(P.pin * 60, 0)}</td></tr></tbody></table>`;
       eff.textContent = `${N(p.useful / P.pin, 3)} (${N(p.useful / P.pin * 100, 1)} %)`;
       warn.textContent = p.capped ? "The three losses together cannot exceed 95 % of the input, so they have been scaled down to fit." : "";
       cv.setAttribute("aria-label", `Sankey diagram: ${N(P.pin, 1)} kilowatts in; ${N(p.useful, 2)} useful; losses ${N(p.loss[0], 2)} heat, ${N(p.loss[1], 2)} friction, ${N(p.loss[2], 2)} sound. Efficiency ${N(p.useful / P.pin * 100, 1)} percent.`);
@@ -360,7 +360,7 @@
     };
     sim = HE.sim(cv, {
       loop: true,
-      height: (w) => (w < 480 ? 300 : 300),
+      height: () => 270,
       draw(ctx, t, dt, C, S) {
         ctx.fillStyle = C.card; ctx.fillRect(0, 0, S.w, S.h);
         const p = paths();
@@ -663,9 +663,10 @@
     function show() {
       const Pb = PROBS[key]; intro.textContent = Pb.intro;
       const ex = [], rd = [];
-      Pb.steps.forEach((s, i) => { ex.push(s[2](ex, Math.PI)); rd.push(roundSF(s[2](rd, pi314 ? 3.14 : Math.PI), sf)); });
-      const rows = Pb.steps.map((s, i) => `<tr><th scope="row">${HE.esc(s[0])}<br><span class="hint" style="margin:0">${HE.esc(s[1])}</span></th><td class="num">${HE.fmt(ex[i], 7)}</td><td class="num">${HE.fmt(rd[i], 7)}</td></tr>`).join("");
-      tw.innerHTML = `<table class="sy-roundtab"><caption>Left: every calculator digit kept. Right: each value rounded to ${sf} significant figure${sf > 1 ? "s" : ""} before it is used again${pi314 ? ", with π = 3.14" : ""}.</caption><thead><tr><th>Step</th><th class="num">Full precision</th><th class="num">Rounded at each step</th></tr></thead><tbody>${rows}</tbody></table>`;
+      const last = Pb.steps.length - 1;
+      Pb.steps.forEach((s, i) => { ex.push(s[2](ex, Math.PI)); const v = s[2](rd, pi314 ? 3.14 : Math.PI); rd.push(i < last ? roundSF(v, sf) : v); });
+      const rows = Pb.steps.map((s, i) => `<tr><th scope="row">${HE.esc(s[0])}<br><span class="hint" style="margin:0">${HE.esc(s[1])}</span></th><td class="num">${HE.fmt(ex[i], 7)}</td><td class="num">${HE.fmt(rd[i], i < last ? sf : 7)}</td></tr>`).join("");
+      tw.innerHTML = `<table class="sy-roundtab"><caption>Left: every calculator digit kept. Right: each value rounded to ${sf} significant figure${sf > 1 ? "s" : ""} before it is used again${pi314 ? ", with π = 3.14" : ""}.</caption><thead><tr><th>Step</th><th class="num">Exact</th><th class="num">Rounded steps</th></tr></thead><tbody>${rows}</tbody></table>`;
       const L = ex.length - 1, a = ex[L], b = rd[L], err = Math.abs(b - a) / Math.abs(a) * 100;
       const a3 = HE.fmt(a, 3), b3 = HE.fmt(b, 3), same = a3 === b3;
       verdict.innerHTML = `Final answer to 3 s.f.: <b>${a3}</b> (full precision) against <b>${b3}</b> (rounded steps). Difference: ${N(err, 2)} %. ` +

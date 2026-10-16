@@ -138,15 +138,15 @@
 <div class="widget" id="w-who">
   <h3 class="widget-title">Muster roll: who does what on the refit?</h3>
   <p class="hint">Master Shipwright Kerr reads out a task. Decide which discipline would take the lead on it. Several disciplines might help, but one is the natural owner. The explanation tells you why.</p>
-  <div class="sorter" data-bins="Mechanical|Electrical|Civil|Software|Environmental|Materials">
-    <div data-ans="Civil" data-why="Checking that supports can carry a load is structural work: the civil or structural engineer's specialist knowledge of forces and reactions.">Check that the new dock bridge can carry the weight of a fully loaded ammunition cart.</div>
-    <div data-ans="Software" data-why="Deciding what the outputs do when the inputs change is the job of a control program, which is the software and control engineer's work.">Write the program that makes the autopilot turn the rudder when the heading drifts.</div>
-    <div data-ans="Mechanical" data-why="Gear ratios, torque and power transmission are mechanical engineering: choosing the right drive for the job.">Choose the gear ratio that lets one sailor raise the anchor with the capstan.</div>
-    <div data-ans="Electrical" data-why="Selecting a transistor, resistor values and wiring to switch the bilge pump motor is electronic design.">Design the transistor circuit that switches on the bilge-pump motor.</div>
-    <div data-ans="Environmental" data-why="Assessing and reducing the effect on the harbour water is an environmental engineer's role.">Measure what the ship's discharge is doing to the harbour and propose a way to reduce it.</div>
-    <div data-ans="Materials" data-why="Comparing properties and corrosion behaviour to pick a hull sheathing is the materials engineer's specialist job.">Recommend whether copper or iron sheathing will last longer in salt water.</div>
-    <div data-ans="Mechanical" data-why="A mechanical engineer sizes the cylinders and checks the force P = F/A that each piston can deliver.">Work out the piston diameter needed to push a gun-port shutter closed.</div>
-    <div data-ans="Civil" data-why="Masts, shrouds and stays are structures: the forces in them are the structural engineer's calculation.">Calculate the tension in the forestay when the wind fills the sails.</div>
+  <div class="sorter" data-bins="Is mechanical work|Is electrical work|Is civil work|Is software work|Is environmental work|Is materials work">
+    <div data-ans="Is civil work" data-why="Checking that supports can carry a load is structural work: the civil or structural engineer's specialist knowledge of forces and reactions.">Check that the new dock bridge can carry the weight of a fully loaded ammunition cart.</div>
+    <div data-ans="Is software work" data-why="Deciding what the outputs do when the inputs change is the job of a control program, which is the software and control engineer's work.">Write the program that makes the autopilot turn the rudder when the heading drifts.</div>
+    <div data-ans="Is mechanical work" data-why="Gear ratios, torque and power transmission are mechanical engineering: choosing the right drive for the job.">Choose the gear ratio that lets one sailor raise the anchor with the capstan.</div>
+    <div data-ans="Is electrical work" data-why="Selecting a transistor, resistor values and wiring to switch the bilge pump motor is electronic design.">Design the transistor circuit that switches on the bilge-pump motor.</div>
+    <div data-ans="Is environmental work" data-why="Assessing and reducing the effect on the harbour water is an environmental engineer's role.">Measure what the ship's discharge is doing to the harbour and propose a way to reduce it.</div>
+    <div data-ans="Is materials work" data-why="Comparing properties and corrosion behaviour to pick a hull sheathing is the materials engineer's specialist job.">Recommend whether copper or iron sheathing will last longer in salt water.</div>
+    <div data-ans="Is mechanical work" data-why="A mechanical engineer sizes the cylinders and checks the force P = F/A that each piston can deliver.">Work out the piston diameter needed to push a gun-port shutter closed.</div>
+    <div data-ans="Is civil work" data-why="Masts, shrouds and stays are structures: the forces in them are the structural engineer's calculation.">Calculate the tension in the forestay when the wind fills the sails.</div>
   </div>
 </div>
 
@@ -407,13 +407,13 @@ Raising the gain shrinks the offset, but a high gain over-reacts: the output ove
 <div class="widget" id="w-ctrl-sort">
   <h3 class="widget-title">Which kind of control is on watch?</h3>
   <p class="hint">Classify each situation. Decide first: is the output measured and fed back? If so, does the controller give only on/off, or a graded response?</p>
-  <div class="sorter" data-bins="Open loop|Two-state|Proportional">
-    <div data-ans="Open loop" data-why="A fuse burns for a fixed time whatever happens; nothing is measured and fed back.">A signal-gun fuse is cut to burn for 30 seconds, then fires.</div>
-    <div data-ans="Two-state" data-why="The stove is fully on or fully off, switching at set temperatures: closed loop, on/off.">The cabin stove switches fully on below 18 °C and fully off above 22 °C.</div>
-    <div data-ans="Proportional" data-why="The rudder angle is graded: it grows in proportion to the error.">The autopilot sets the rudder angle to 1.5 times the heading error in degrees.</div>
-    <div data-ans="Open loop" data-why="There is no temperature sensor, so the oven cannot react to its actual temperature.">The galley oven's heater runs for 10 minutes on a timer, whatever the oven temperature.</div>
-    <div data-ans="Two-state" data-why="Full speed above the float level, stopped below it: on/off action from a measured level.">The bilge pump runs at full speed when a float switch senses water, and stops when the water falls.</div>
-    <div data-ans="Proportional" data-why="The drive voltage is larger when the measured speed is further below target: output proportional to error.">A winch motor's drive voltage rises the further the tachometer reading is below the target speed.</div>
+  <div class="sorter" data-bins="Is open loop|Is two-state|Is proportional">
+    <div data-ans="Is open loop" data-why="A fuse burns for a fixed time whatever happens; nothing is measured and fed back.">A signal-gun fuse is cut to burn for 30 seconds, then fires.</div>
+    <div data-ans="Is two-state" data-why="The stove is fully on or fully off, switching at set temperatures: closed loop, on/off.">The cabin stove switches fully on below 18 °C and fully off above 22 °C.</div>
+    <div data-ans="Is proportional" data-why="The rudder angle is graded: it grows in proportion to the error.">The autopilot sets the rudder angle to 1.5 times the heading error in degrees.</div>
+    <div data-ans="Is open loop" data-why="There is no temperature sensor, so the oven cannot react to its actual temperature.">The galley oven's heater runs for 10 minutes on a timer, whatever the oven temperature.</div>
+    <div data-ans="Is two-state" data-why="Full speed above the float level, stopped below it: on/off action from a measured level.">The bilge pump runs at full speed when a float switch senses water, and stops when the water falls.</div>
+    <div data-ans="Is proportional" data-why="The drive voltage is larger when the measured speed is further below target: output proportional to error.">A winch motor's drive voltage rises the further the tachometer reading is below the target speed.</div>
   </div>
 </div>
 

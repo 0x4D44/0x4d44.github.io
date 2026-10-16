@@ -207,7 +207,7 @@ abbr[title] { text-decoration: underline dotted; }
 hr { border: 0; border-top: 2px dashed var(--line); margin: 2em 0; }
 
 /* ---------- tables ---------- */
-.table-wrap { overflow-x: auto; margin: 1em 0; -webkit-overflow-scrolling: touch; }
+.table-wrap { overflow-x: auto; position: relative; margin: 1em 0; -webkit-overflow-scrolling: touch; }
 table { border-collapse: collapse; width: 100%; font-size: .93rem; background: var(--card); }
 th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
 th { background: var(--paper-2); font-weight: 700; }
