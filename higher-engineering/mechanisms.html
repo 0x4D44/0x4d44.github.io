@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Drive systems &amp; pneumatics &middot; Rivets, Relays &amp; Rigging</title>
-<meta name="description" content="At least 80 characters describing this deck in plain words.">
+<meta name="description" content="Higher Engineering Science: torque and power, gear trains, belts, chains, worm drives, couplings, bearings, brakes and clutches, then pneumatic and electro-pneumatic circuits with live simulators and worked examples.">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <link rel="stylesheet" href="style.css">
@@ -38,36 +38,650 @@
         <li><a href="systems.html">Systems &amp; energy</a></li>
         <li><a href="analogue.html">Analogue electronics</a></li>
         <li><a href="digital.html">Digital &amp; programmable</a></li>
-        <li><a href="mechanisms.html">Drives &amp; pneumatics</a></li>
+        <li><a href="mechanisms.html" aria-current="page">Drives &amp; pneumatics</a></li>
         <li><a href="structures.html">Structures &amp; materials</a></li>
         <li><a href="exam.html">Exam &amp; assignment</a></li>
       </ul>
     </nav>
   </div>
 </header>
-<!-- on the current deck's own page, give its nav link aria-current="page" -->
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="mx-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="ink"/></marker>
+<marker id="mx-ar-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-red"/></marker>
+<marker id="mx-ar-sea" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-sea"/></marker>
+</defs></svg>
 
 <div class="layout">
 <aside class="toc" aria-label="Chapters"></aside>
 <main id="main">
 <div class="prose">
-<p class="kicker">Place on the ship · deck topic</p>
-<h1>T</h1>
-<p class="lede">…</p>
+<p class="kicker">Place on the ship · the Engine Deck, below the waterline</p>
+<h1>Drive systems &amp; pneumatics</h1>
+<p class="lede">A ship of the line does not move, hoist, steer or fire by wishing. Somewhere below the gun-decks a motor turns a shaft, a train of gears or a belt turns the shaft into the speed and force you actually need, and a piston pushed by compressed air does the last bit of work. This deck follows that path from the capstan to the gun-port piston. It is worth <strong>10 to 20 marks</strong> in the question paper, and it is full of calculations and of descriptions that candidates throw away by being vague.</p>
+<div class="callout scope"><p><strong>What this deck covers.</strong> Torque, power and efficiency of rotating machines; simple, idler and compound gear trains; belt, chain, rack and pinion, worm and wheel, and worm and nut drives; couplings, bearings, brakes and clutches; pneumatic cylinders, valves and symbols; sequential circuits of up to three cylinders; and electro-pneumatic circuits with relays and limit switches.</p></div>
+<div class="callout log"><div class="callout-title">⚓ Orders from the Engine Deck</div>
+<p>Flight Lieutenant Alba Murray leads 1805 (Blockhaven) Squadron down a ladder into the warm, oily dark of the Engine Deck on <em>HMS Ratchet</em>. A great capstan stands in the middle, its bars pushed by a crew of redstone-powered motors. Along the side, rows of iron-block pistons wait behind the gun-ports. Master Shipwright Morag Kerr wipes her hands on a rag. "Every machine on this ship is a chain of four questions," she says. "How hard does it turn? How fast? How do we change that to suit the job? And what keeps it from tearing itself apart? Answer those and you can engineer anything below decks."</p></div>
 </div>
 
-<section id="s0" class="prose"><h2 data-short="w-capstan">0 · w-capstan</h2><div class="widget" id="w-capstan"><h3 class="widget-title">w-capstan</h3></div></section>
-<section id="s1" class="prose"><h2 data-short="w-gear">1 · w-gear</h2><div class="widget" id="w-gear"><h3 class="widget-title">w-gear</h3></div></section>
-<section id="s2" class="prose"><h2 data-short="w-drives">2 · w-drives</h2><div class="widget" id="w-drives"><h3 class="widget-title">w-drives</h3></div></section>
-<section id="s3" class="prose"><h2 data-short="w-select">3 · w-select</h2><div class="widget" id="w-select"><h3 class="widget-title">w-select</h3></div></section>
-<section id="s4" class="prose"><h2 data-short="w-brake">4 · w-brake</h2><div class="widget" id="w-brake"><h3 class="widget-title">w-brake</h3></div></section>
-<section id="s5" class="prose"><h2 data-short="w-clutch">5 · w-clutch</h2><div class="widget" id="w-clutch"><h3 class="widget-title">w-clutch</h3></div></section>
-<section id="s6" class="prose"><h2 data-short="w-valve">6 · w-valve</h2><div class="widget" id="w-valve"><h3 class="widget-title">w-valve</h3></div></section>
-<section id="s7" class="prose"><h2 data-short="w-cyl">7 · w-cyl</h2><div class="widget" id="w-cyl"><h3 class="widget-title">w-cyl</h3></div></section>
-<section id="s8" class="prose"><h2 data-short="w-seq">8 · w-seq</h2><div class="widget" id="w-seq"><h3 class="widget-title">w-seq</h3></div></section>
-<section id="s9" class="prose"><h2 data-short="w-ep">9 · w-ep</h2><div class="widget" id="w-ep"><h3 class="widget-title">w-ep</h3></div></section>
-<section id="s10" class="prose"><h2 data-short="w-build">10 · w-build</h2><div class="widget" id="w-build"><h3 class="widget-title">w-build</h3></div></section>
-<figure class="diagram"><div class="mec-scroll narrow" data-mec="circuit-ab"></div></figure><figure class="diagram"><div class="mec-scroll" data-mec="symbols"></div></figure><figure class="diagram"><div data-mec="valve-states"></div></figure><figure class="diagram"><div data-mec="ladder-ep"></div></figure><figure class="diagram"><div data-mec="step-abc"></div></figure>
+<section id="torque" class="prose">
+<h2 data-short="Torque, power &amp; rotation">1 · Torque, power and rotation <span class="spec-tag">DRIVE SYSTEMS</span></h2>
+
+<p>A force pushing in a straight line makes things speed up. A force acting <em>round</em> an axis makes things spin, and the quantity that measures how strongly it does so is <dfn>torque</dfn>. Push a spanner at the end of its handle and the nut turns easily. Push the same force close to the nut and nothing happens. The force is identical, so what changed is the distance from the axis.</p>
+<div class="callout def"><div class="callout-title">📘 Torque</div>
+<p>Torque is the turning effect of a force about an axis. For a force $F$ acting at right angles to a radius $r$:</p>
+$$T = Fr$$
+<p>$T$ is in newton metres (N m), $F$ in newtons (N) and $r$ in metres (m). The $r$ is the <strong>perpendicular distance from the axis to the line of the force</strong>. For a rope wound on a drum it is the <em>radius</em> of the drum (to the rope), and half the diameter.</p></div>
+<p>You have met this formula before as a moment, $M = Fx$ in the Data Booklet, and it really is the same thing: a force multiplied by a perpendicular distance. We tend to say "moment" when something is held still (a beam balancing) and "torque" when something is being turned (a shaft delivering power).</p>
+
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 700 250" style="max-width:700px" role="img" aria-label="Two drawings of torque. Left: a spanner on a nut with a downward force F at the far end of the handle, and a dimension line marked r showing the distance from the nut's axis to the force. Right: a cable wound on a drum with a downward load force F on the cable. A solid line marked r runs from the centre of the drum to the cable and a dashed line marked d, crossed in red, shows the diameter that must not be used in T equals F r.">
+<g class="mx-c">
+<circle cx="70" cy="110" r="22" class="mx2"/><circle cx="70" cy="110" r="3" class="ink"/>
+<rect x="60" y="98" width="270" height="24" rx="10" class="mxb"/>
+<path d="M322 52 V94" class="mx-red" marker-end="url(#mx-ar-red)"/>
+<text x="322" y="44" class="mx-r">F = 40 N</text>
+<path d="M70 168 H322" class="mx-ln" marker-start="url(#mx-ar)" marker-end="url(#mx-ar)"/>
+<path d="M70 126 V176 M322 126 V176" class="mx-th"/>
+<text x="196" y="190" class="mx-t">r = 0.25 m</text>
+<text x="196" y="222" class="mx-s">T = Fr = 40 × 0.25 = 10 N m</text>
+</g>
+<g class="mx-c">
+<circle cx="520" cy="110" r="62" class="mx2"/><circle cx="520" cy="110" r="5" class="ink"/>
+<path d="M520 110 H582" class="mx-ln" marker-end="url(#mx-ar)"/>
+<text x="552" y="102" class="mx-t">r</text>
+<path d="M458 80 H582" class="mx-dash"/>
+<text x="520" y="72" class="mx-r">d: not this one</text>
+<path d="M582 110 V212" class="mx-ln"/>
+<path d="M582 150 V204" class="mx-red" marker-end="url(#mx-ar-red)"/>
+<rect x="566" y="206" width="32" height="26" class="mxb"/>
+<text x="632" y="176" class="mx-r">F = 1500 N</text>
+<text x="450" y="222" class="mx-s" text-anchor="middle">T = Fr, with r = d ÷ 2</text>
+</g>
+</svg></div>
+<figcaption>Torque is a force times a perpendicular distance. On a drum, that distance is the radius, which is half the diameter. Using the diameter doubles the answer and loses the marks.</figcaption></figure>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2024 course report</div>
+<p>The 2024 course report says some candidates "did not use the radius of the drum" in a torque calculation. If the question gives a <em>diameter</em>, halve it first. Write "$r = d \div 2 = \dots$ m" as its own line so that the marker can see you did.</p></div>
+
+<h3>Rotational speed, and the unit trap</h3>
+<p>Machines are described by how many times they turn in a given time. Motors are usually quoted in <strong>revolutions per minute</strong> (rev/min, or "rpm"), but the Data Booklet formula for power wants <strong>revolutions per second</strong>. The symbol is $n$ in both cases and the booklet lists the two units, so you must read which one a formula needs.</p>
+$$n_{\text{rev/s}} = \frac{n_{\text{rev/min}}}{60}$$
+<p>So 1200 rev/min is 20 rev/s. This conversion is the commonest slip in the whole deck. Make it the first line of any power calculation.</p>
+
+<h3>Power in a rotating shaft</h3>
+<p>Power is work done per second. Take a shaft turning at $n$ revolutions per second against a torque $T$. In one revolution, a force $F$ at radius $r$ moves through a distance equal to the circumference, $2\pi r$, so the work done is $F \times 2\pi r = 2\pi T$. In one second there are $n$ revolutions, so</p>
+$$P = 2\pi n T$$
+<p>with $P$ in watts, $n$ in rev/s and $T$ in N m. The straight-line version, also in the booklet, is $P = Fv$. The two agree because the rim speed is $v = \pi d n = 2\pi r n$ (the circumference $C = \pi d$ times $n$ turns per second).</p>
+<div class="eq-grid">
+<div class="eq-card"><p><strong>Torque</strong></p>$$T = Fr$$<p>$r$ is the radius. Units N m.</p></div>
+<div class="eq-card"><p><strong>Shaft power</strong></p>$$P = 2\pi n T$$<p>$n$ in rev/s: divide rev/min by 60.</p></div>
+<div class="eq-card"><p><strong>Linear power</strong></p>$$P = Fv$$<p>$v$ in m s⁻¹. Rim speed $v = \pi d n$.</p></div>
+<div class="eq-card"><p><strong>Efficiency</strong></p>$$\eta = \frac{P_{out}}{P_{in}}$$<p>Between 0 and 1, or as a percentage. Never above 100%.</p></div>
+</div>
+<p>Efficiency was met in the first deck as useful energy out over energy in. Because power is energy per second, the same ratio works with powers. Everything you take out of a drive is less than what you put in: the rest is lost as heat in gear teeth, bearings and belts.</p>
+
+<div class="worked"><p class="worked-title">Worked example 1 · Calculation · torque on a capstan drum</p>
+<p>A rope on the <em>HMS Ratchet</em> capstan drum pulls with a force of 1500 N. The drum has a diameter of 400 mm. Calculate the torque the capstan shaft must supply. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$r = d \div 2 = 0.400 \div 2 = 0.200$ m. <span class="why">The radius. Diameter in mm must also become metres.</span></li>
+<li>$T = Fr = 1500 \times 0.200 = 300$ N m. <span class="why">Substitute and give the unit. Using $d$ would give 600 N m and score nothing for the final answer.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · Calculation · speed of a motor</p>
+<p>A motor delivers a power of 2.4 kW at a torque of 38 N m. Calculate its rotational speed in rev/min. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$P = 2\pi n T$, so $n = \dfrac{P}{2\pi T} = \dfrac{2400}{2\pi \times 38}$. <span class="why">Rearrange first, then substitute. 2.4 kW is 2400 W.</span></li>
+<li>$n = 10.05\ldots$ rev/s. <span class="why">Keep the full calculator value; do not round yet.</span></li>
+<li>$n = 10.05\ldots \times 60 = 603$ rev/min. <span class="why">Convert to what the question asked for. Round only here.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 3 · Calculation · efficiency of a hoist</p>
+<p>A motor turns at 1200 rev/min with a torque of 40 N m. It drives a hoist that lifts a load of 24 kN at a steady speed of 0.15 m s⁻¹. Calculate the efficiency of the hoist. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$n = 1200 \div 60 = 20$ rev/s. <span class="why">Convert before using $P = 2\pi nT$.</span></li>
+<li>$P_{in} = 2\pi n T = 2\pi \times 20 \times 40 = 5026.5$ W (keep the full value). <span class="why">Power into the hoist.</span></li>
+<li>$P_{out} = Fv = 24000 \times 0.15 = 3600$ W. <span class="why">Useful power: lifting force times speed, with 24 kN written as 24 000 N.</span></li>
+<li>$\eta = P_{out} \div P_{in} = 3600 \div 5026.5\ldots = 0.716$, or 71.6%. <span class="why">Output over input. A value above 1 would tell you that you have swapped them.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-capstan"><h3 class="widget-title">⚓ The capstan: torque, speed and power</h3>
+<p class="hint">Set the pull on the rope (drag the rope end, or use the slider), the drum diameter and the drum speed, and watch the radius, torque, power and rim speed change. Check that the power from $2\pi nT$ matches the power from $Fv$.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"The motor plate says 1450 rpm. Can I put 1450 straight into P = 2πnT?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "You can, and the answer will be sixty times too big. The booklet's $n$ in that formula is revolutions per <em>second</em>. Divide by sixty first, every time. If your motor comes out at forty megawatts, you forgot."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>calculate torque with $T = Fr$, using the <em>radius</em> (half the diameter) in metres;</li>
+<li>convert rev/min to rev/s and back;</li>
+<li>calculate power with $P = 2\pi nT$ and $P = Fv$, and efficiency as $P_{out} \div P_{in}$;</li>
+<li>keep full calculator values until the last line.</li></ul></div>
+
+<div class="check" data-check="mec-torque"></div>
+</section>
+
+<section id="gears" class="prose">
+<h2 data-short="Gear trains">2 · Gear trains <span class="spec-tag">DRIVE SYSTEMS</span></h2>
+
+<p>A motor is happiest turning fast with modest torque. A capstan needs to turn slowly with enormous torque. Something has to sit between them and trade speed for torque, and the oldest and most reliable thing for the job is a <dfn>gear train</dfn>: wheels with interlocking teeth, so that one cannot turn without the other, and with no slipping at all.</p>
+<p>The wheel that receives power from the motor is the <dfn>driver</dfn> (or input gear). The wheel it turns is the <dfn>driven</dfn> gear (the output). Two gears can only mesh if their teeth are the same size, so the number of teeth is proportional to the diameter. That is why the Data Booklet can say "size" and leave you to use teeth or diameter, whichever the question gives.</p>
+
+<h3>The velocity ratio</h3>
+<div class="callout def"><div class="callout-title">📘 Velocity ratio (VR)</div>
+<p>$$\text{VR} = \frac{\text{speed of input}}{\text{speed of output}}$$ and, from the booklet, <strong>input speed × input size = output speed × output size</strong>. For a single pair of gears this makes</p>
+$$\text{VR} = \frac{\text{teeth on driven gear}}{\text{teeth on driver gear}}$$
+<p>A VR greater than 1 is a <em>reduction</em> (the output turns slower than the input); a VR below 1 is a speed-up.</p></div>
+<p>Why does a big driven gear turn slowly? Because for every tooth that passes the meeting point on the small driver, one tooth passes on the driven wheel. A 20-tooth driver must make three whole turns for a 60-tooth driven gear to make one.</p>
+
+<h3>Torque and the trade-off</h3>
+<p>In an ideal gearbox nothing is lost, so the power in equals the power out. Since $P = 2\pi nT$, if the speed falls by a factor of three, the torque must rise by a factor of three. Real gear trains lose some power as heat, so the torque rises by a little less. For a drive with efficiency $\eta$:</p>
+$$T_{out} = T_{in} \times \text{VR} \times \eta$$
+<p>This is a consequence of $P = 2\pi nT$ and $\eta = P_{out} \div P_{in}$, not a separate booklet formula, so be ready to show it from those two if you are asked. You never get something for nothing: a reduction gear multiplies torque only by giving up speed.</p>
+
+<h3>Idlers, and which way it turns</h3>
+<p>Two meshing gears turn in <strong>opposite directions</strong>. If a third gear is placed between them it turns opposite to the first, so the third turns the <em>same way</em> as the first. This middle gear is an <dfn>idler</dfn>. Its job is to change the direction, or to bridge a gap between shafts that are too far apart. It does <strong>not</strong> change the velocity ratio: the idler's teeth are counted on both sides, so they cancel.</p>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 720 380" style="max-width:720px" role="img" aria-label="Three gear trains. One: a simple pair, a 20 tooth driver A turning clockwise meshing with a 60 tooth driven gear B turning anticlockwise, so the directions are opposite. Two: a 24 tooth driver A, a 36 tooth idler I and a 48 tooth driven gear B in a row, with A and B turning the same way and the idler reversing twice. Three: a compound train seen from the side, with 15 tooth gear A on the input shaft meshing with 45 tooth gear B, 20 tooth gear C locked to B on the middle shaft meshing with 50 tooth gear D on the output shaft, giving a velocity ratio of 7.5 in the same direction.">
+<g class="mx-c"><text x="14" y="18" class="mx-s" text-anchor="start">1 Simple pair</text><circle cx="70" cy="85" r="20" class="mx"/><circle cx="70" cy="85" r="20" class="mx-teeth"/><circle cx="70" cy="85" r="3" class="ink"/><text x="70" y="59" class="mx-t">A</text><circle cx="150" cy="85" r="60" class="mx"/><circle cx="150" cy="85" r="60" class="mx-teeth"/><circle cx="150" cy="85" r="3" class="ink"/><text x="150" y="90" class="mx-t">B</text><path d="M38.1 73.4 A34 34 0 0 1 96.0 63.1" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M206.7 37.4 A74 74 0 0 0 80.5 59.7" class="mx-sea" marker-end="url(#mx-ar-sea)"/><text x="270" y="70" class="mx-s" text-anchor="start">A: 20T driver</text><text x="270" y="90" class="mx-s" text-anchor="start">B: 60T driven</text><text x="270" y="110" class="mx-s" text-anchor="start">opposite directions</text><text x="14" y="228" class="mx-s" text-anchor="start">2 Idler between driver and driven</text><circle cx="52" cy="300" r="24" class="mx"/><circle cx="52" cy="300" r="24" class="mx-teeth"/><circle cx="52" cy="300" r="3" class="ink"/><text x="52" y="270" class="mx-t">A</text><circle cx="112" cy="300" r="36" class="mx"/><circle cx="112" cy="300" r="36" class="mx-teeth"/><circle cx="112" cy="300" r="3" class="ink"/><text x="112" y="305" class="mx-t">I</text><circle cx="196" cy="300" r="48" class="mx"/><circle cx="196" cy="300" r="48" class="mx-teeth"/><circle cx="196" cy="300" r="3" class="ink"/><text x="196" y="305" class="mx-t">B</text><path d="M18.2 287.7 A36 36 0 0 1 79.6 276.9" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M148.8 269.1 A48 48 0 0 0 66.9 283.6" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M139.6 279.5 A60 60 0 0 1 242.0 261.4" class="mx-sea" marker-end="url(#mx-ar-sea)"/><text x="262" y="285" class="mx-s" text-anchor="start">A: 24T driver</text><text x="262" y="305" class="mx-s" text-anchor="start">I: 36T idler</text><text x="262" y="325" class="mx-s" text-anchor="start">B: 48T driven</text><text x="262" y="345" class="mx-s" text-anchor="start">same direction</text><text x="380" y="18" class="mx-s" text-anchor="start">3 Compound train (side view)</text><path d="M400 96 V176 M490 96 V248 M595 168 V248" class="mx-ln" style="stroke-width:4"/><rect x="377.5" y="130" width="45" height="14" class="mxb"/><rect x="422.5" y="130" width="135" height="14" class="mxb"/><rect x="460" y="200" width="60" height="14" class="mxb"/><rect x="520" y="200" width="150" height="14" class="mxb"/><text x="400" y="122" class="mx-t">A 15T</text><text x="520" y="122" class="mx-t">B 45T</text><text x="540" y="238" class="mx-t">D 50T</text><text x="428" y="230" class="mx-t">C 20T</text><text x="400" y="88" class="mx-s">input shaft</text><text x="520" y="68" class="mx-s">B and C locked together on one shaft</text><text x="595" y="260" class="mx-s">output shaft</text><text x="530" y="300" class="mx-t">VR = (45 ÷ 15) × (50 ÷ 20) = 7.5</text><text x="530" y="324" class="mx-s">same direction as the input</text><text x="530" y="344" class="mx-s">(two meshes: reverse, reverse)</text></g></svg></div>
+<figcaption>Three gear trains. In the simple pair and in the idler train, each mesh reverses the direction of rotation. In the compound train, gears B and C are fixed to the same shaft and turn together.</figcaption></figure>
+
+<h3>Compound trains</h3>
+<p>A single pair of gears can give a reduction of 5:1 or so before the big gear becomes absurdly large. A bigger reduction in a small space uses a <dfn>compound train</dfn>: two gears are fixed to the same shaft (B and C in the figure) so they turn at the same speed. The first pair reduces the speed, then the second pair reduces it again. The velocity ratios <em>multiply</em>:</p>
+$$\text{VR} = \frac{\text{teeth}_B}{\text{teeth}_A} \times \frac{\text{teeth}_D}{\text{teeth}_C}$$
+<p>With two meshes, a compound train of this kind turns its output the <em>same way</em> as its input. Count the meshes to find the direction: an even number gives the same direction, an odd number the opposite.</p>
+
+<div class="worked"><p class="worked-title">Worked example 4 · Calculation · a simple pair</p>
+<p>A motor turning at 1500 rev/min drives a 20-tooth gear that meshes with a 60-tooth gear. The input torque is 12 N m and the efficiency of the gears is 90%. Calculate the output speed and the output torque. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\text{VR} = 60 \div 20 = 3$. <span class="why">Driven over driver. A reduction, so the output is slower.</span></li>
+<li>Output speed $= 1500 \div 3 = 500$ rev/min. <span class="why">Output speed is input speed divided by VR. No need to convert to rev/s here.</span></li>
+<li>$T_{out} = T_{in} \times \text{VR} \times \eta = 12 \times 3 \times 0.90$. <span class="why">The torque is multiplied by the VR but cut by the efficiency.</span></li>
+<li>$T_{out} = 32.4$ N m. <span class="why">An ideal gear train would give 36 N m; the 10% loss takes off 3.6 N m.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 5 · Calculation · a train with an idler</p>
+<p>A 24-tooth driver gear meshes with a 36-tooth idler, which meshes with a 48-tooth output gear. The driver turns at 600 rev/min clockwise. Calculate the output speed and state its direction. Explain what the idler does. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\text{VR} = 48 \div 24 = 2$. <span class="why">Only the first and last gears count. The idler's 36 teeth cancel.</span></li>
+<li>Output speed $= 600 \div 2 = 300$ rev/min. <span class="why">Divide by the velocity ratio.</span></li>
+<li>Direction: clockwise, the same as the driver. <span class="why">Two meshes, so two reversals.</span></li>
+<li>The idler only changes the direction of rotation (and bridges the distance); it does not change the speed or the VR. <span class="why">The explanation mark. Say what it does and what it does not do.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 6 · Calculation · a compound train</p>
+<p>A compound train has a 15-tooth gear A on the input shaft meshing with a 45-tooth gear B. A 20-tooth gear C is fixed to the same shaft as B and meshes with a 50-tooth gear D on the output shaft. The input shaft turns at 1800 rev/min with a torque of 5 N m. The efficiency of the whole train is 85%. Calculate the output speed and torque, and say which way the output turns relative to the input. [5]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$\text{VR} = \dfrac{45}{15} \times \dfrac{50}{20} = 3 \times 2.5 = 7.5$. <span class="why">Multiply the VR of each stage. Do not add them.</span></li>
+<li>Output speed $= 1800 \div 7.5 = 240$ rev/min. <span class="why">Input speed over VR.</span></li>
+<li>$T_{out} = 5 \times 7.5 \times 0.85$. <span class="why">Torque is multiplied by the VR and by the efficiency.</span></li>
+<li>$T_{out} = 31.875 \approx 31.9$ N m. <span class="why">Keep 31.875 in the calculator; round at the end.</span></li>
+<li>Same direction as the input. <span class="why">Two meshes (A with B, C with D), so the direction reverses twice.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-gear"><h3 class="widget-title">⚙ Gear-train builder</h3>
+<p class="hint">Choose a simple, idler or compound train, then change the tooth counts and the input speed. The gears mesh and turn at the correct relative speeds. Compare the output speed, torque and direction with your own calculation. The animation has a pause button.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"If I put a bigger idler in the middle, doesn't the output go slower?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "Try it in the builder. Drag the idler from 20 teeth to 60 and watch the output speed. The idler's rim moves exactly as fast as the driver's rim and the driven gear's rim, so it is only a messenger carrying the same rim speed across. Only the first and the last gear decide the ratio."</p></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · describing the benefit</div>
+<p>If a question asks why a reduction gearbox is used, a bare "to slow it down" earns little. Say that the gears <em>reduce the speed and increase the torque</em>, and say why that suits the job: the motor runs at its efficient speed while the load gets the high torque it needs.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>calculate the VR of a simple, idler and compound train, and the output speed;</li>
+<li>find the output torque with an efficiency, and explain the speed-for-torque trade-off;</li>
+<li>say what an idler changes and what it does not;</li>
+<li>work out the direction of the output by counting meshes.</li></ul></div>
+
+<div class="check" data-check="mec-gears"></div>
+</section>
+
+<section id="drives" class="prose">
+<h2 data-short="Belts, chains &amp; worms">3 · Belts, chains, racks and worms <span class="spec-tag">DRIVE SYSTEMS</span></h2>
+
+<p>Gears are not always the right answer. The shafts may be far apart, the machine may need to turn a corner, or the output may need to move in a straight line rather than spin. The Higher course names five other drives you must be able to select and calculate: <strong>belt, chain, rack and pinion, worm and wheel, and worm and nut</strong>. Master Shipwright Kerr's rule is to ask three questions of any job: how far apart are the shafts, does the speed ratio have to be exact, and what should happen if the load jams?</p>
+
+<h3>Belt drives</h3>
+<p>A belt joins two <dfn>pulleys</dfn> and carries the drive by <strong>friction</strong> between the belt and the pulley rim. It is cheap, quiet, needs no lubricating oil and copes with shafts a long way apart. It also has a built-in safety feature: if the load jams, the belt slips and the motor is not wrecked. The same slipping is its weakness, because the output can lag behind the input by an unpredictable amount.</p>
+<p>The velocity ratio comes from the pulley <em>diameters</em>, using the booklet relationship <strong>input speed × input size = output speed × output size</strong>, where "size" is the diameter. The speed of the belt itself is the rim speed of either pulley, $v = \pi d n$ with $n$ in rev/s.</p>
+<ul>
+<li><strong>Flat belt.</strong> A simple band of leather or rubberised fabric on smooth pulleys. It is simple and gentle but needs high tension to grip, and it slips most readily.</li>
+<li><strong>V-belt.</strong> The belt has a trapezoid section and sits in a V-shaped groove. The sides wedge in, so it grips far harder at a given tension and carries more power. It can still slip.</li>
+<li><strong>Toothed (timing) belt.</strong> The inside of the belt has teeth that fit grooves in the pulley. It cannot slip, so the speed ratio is exact, and it needs less tension. That precision is why it is used to keep two parts of a machine in step. It gives up the "safety slip".</li>
+</ul>
+<p>An <dfn>open belt</dfn> makes both pulleys turn the same way. A <dfn>crossed belt</dfn> is twisted into a figure of eight and makes them turn in opposite directions, but the two sides rub against one another where they cross, so the belt wears faster.</p>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 700 256" style="max-width:700px" role="img" aria-label="Two belt drives. Left: an open belt joins a small driver pulley and a larger driven pulley with two straight parallel-ish tangent lines, and both pulleys turn clockwise, the same way. Right: a crossed belt joins the same two pulleys with the straight lengths crossing over in the middle, so the driver turns clockwise and the driven pulley turns anticlockwise, the opposite way.">
+<g class="mx-c"><path d="M56.4 94.2 L242.9 68.5 A52 52 0 1 1 242.9 171.5 L56.4 145.8 A26 26 0 0 1 56.4 94.2" class="mx-ln" style="stroke-width:3.2"/><circle cx="60" cy="120" r="26" class="mx2"/><circle cx="60" cy="120" r="3" class="ink"/><text x="60" y="168" class="mx-s">driver</text><circle cx="250" cy="120" r="52" class="mx2"/><circle cx="250" cy="120" r="3" class="ink"/><text x="250" y="194" class="mx-s">driven</text><path d="M45.0 114.5 A16 16 0 0 1 72.3 109.7" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M218.1 108.4 A34 34 0 0 1 276.0 98.1" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M420.7 96.3 L578.7 167.4 A52 52 0 1 0 578.7 72.6 L420.7 143.7 A26 26 0 1 1 420.7 96.3" class="mx-ln" style="stroke-width:3.2"/><circle cx="410" cy="120" r="26" class="mx2"/><circle cx="410" cy="120" r="3" class="ink"/><text x="410" y="168" class="mx-s">driver</text><circle cx="600" cy="120" r="52" class="mx2"/><circle cx="600" cy="120" r="3" class="ink"/><text x="600" y="194" class="mx-s">driven</text><path d="M395.0 114.5 A16 16 0 0 1 422.3 109.7" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M568.1 131.6 A34 34 0 0 0 631.9 131.6" class="mx-sea" marker-end="url(#mx-ar-sea)"/><text x="155" y="224" class="mx-t">Open belt</text><text x="155" y="244" class="mx-s">same direction, belt stays flat</text><text x="505" y="224" class="mx-t">Crossed belt</text><text x="505" y="244" class="mx-s">opposite direction, belt rubs where it crosses</text><text x="350" y="22" class="mx-s">speed ratio set by the pulley diameters: input speed × input diameter = output speed × output diameter</text></g></svg></div>
+<figcaption>An open belt keeps the direction of rotation. A crossed belt reverses it, at the cost of rubbing at the crossing point.</figcaption></figure>
+
+<h3>Chain drives</h3>
+<p>A roller chain runs over toothed wheels called <dfn>sprockets</dfn>. Like a toothed belt, it is a <strong>positive drive</strong>: the rollers sit in the teeth, so there is no slip and the speed ratio is exact. The ratio uses the <em>teeth</em> on the sprockets, with the same rule as for gears:</p>
+$$\text{VR} = \frac{\text{teeth on driven sprocket}}{\text{teeth on driver sprocket}}$$
+<p>Chains carry far more torque than a belt of the same width and survive oil, heat and dirt, but they are noisier, they need lubrication, and they stretch as the pins wear. Both sprockets turn the same way. A bicycle is the obvious chain drive, and so is the chain-pump on the lower deck.</p>
+
+<h3>Turning rotation into a straight line</h3>
+<p>Two drives change <em>rotation</em> into <em>linear</em> motion. In a <dfn>rack and pinion</dfn>, a toothed wheel (the pinion) meshes with a straight toothed bar (the rack). One turn of the pinion moves the rack through one circumference of the pinion, so the rack's speed is $v = \pi d n$, where $d$ is the diameter of the pinion. It is quick, direct and reversible, which is exactly what a ship's steering gear needs.</p>
+<p>In a <dfn>worm and nut</dfn> (or lead screw), a threaded rod, the worm, turns inside a nut that is stopped from rotating, so the nut slides along the rod. The <dfn>lead</dfn> is how far the nut advances in one turn of the screw. The nut speed is therefore $v = \text{lead} \times n$. It moves slowly, with great force and fine control, which suits a vice, a jack or the stern gate of a dock.</p>
+
+<h3>Worm and wheel</h3>
+<p>A <dfn>worm</dfn> is a screw-shaped gear that meshes with a toothed <dfn>worm wheel</dfn> at right angles to it. For each turn of a one-start worm, the wheel advances by one tooth. So</p>
+$$\text{VR} = \frac{\text{teeth on the wheel}}{\text{number of starts on the worm}}$$
+<p>A single worm and wheel can give a reduction of 30:1 or more in a small space, which would take a compound gear train several stages. With a shallow thread the load usually cannot turn the worm backwards, so a worm drive can hold a load without a brake, a handy property for a hoist. The price is efficiency: the teeth slide on each other instead of rolling, so more energy is lost as heat. The torque formula is the same as for any gear train, $T_{out} = T_{in} \times \text{VR} \times \eta$, but $\eta$ may be much lower than for gears.</p>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 720 220" style="max-width:720px" role="img" aria-label="Three drives that change rotation into other motion or turn a corner. Left: a pinion gear turning clockwise on top of a toothed rack, which moves to the left in a straight line. Middle: a worm, a threaded cylinder lying on its side, meshing with the teeth at the bottom of a worm wheel with 30 teeth. Right: a threaded rod with a nut on it, and an arrow showing that the nut moves along the rod by one lead for each turn.">
+<g class="mx-c"><circle cx="110" cy="80" r="34" class="mx"/><circle cx="110" cy="80" r="34" class="mx-teeth"/><circle cx="110" cy="80" r="3" class="ink"/><text x="110" y="85" class="mx-t"></text><text x="110" y="85" class="mx-t">pinion</text><path d="M14 118 H226" class="mx-teeth"/><rect x="14" y="121" width="212" height="22" class="mxb"/><path d="M64.9 63.6 A48 48 0 0 1 146.8 49.1" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M180 166 H50" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="115" y="188" class="mx-s">rack moves v = πdn</text><text x="115" y="20" class="mx-t">Rack and pinion</text><text x="115" y="208" class="mx-s">turning to straight-line motion</text><text x="365" y="20" class="mx-t">Worm and wheel</text><circle cx="365" cy="88" r="50" class="mx"/><circle cx="365" cy="88" r="50" class="mx-teeth"/><circle cx="365" cy="88" r="3" class="ink"/><text x="365" y="62" class="mx-s">wheel, 30 teeth</text><path d="M270 150 H292 M438 150 H460" class="mx-ln" style="stroke-width:4"/><rect x="292" y="139" width="146" height="24" rx="3" class="mxb"/><path d="M300 139 l8 24 M312 139 l8 24 M324 139 l8 24 M336 139 l8 24 M348 139 l8 24 M360 139 l8 24 M372 139 l8 24 M384 139 l8 24 M396 139 l8 24 M408 139 l8 24 M420 139 l8 24" class="mx-th"/><text x="365" y="188" class="mx-s">worm, 1 start: one turn of the worm</text><text x="365" y="206" class="mx-s">moves the wheel on by one tooth</text><text x="610" y="20" class="mx-t">Worm and nut (lead screw)</text><rect x="506" y="100" width="204" height="24" class="mx"/><path d="M512 100 l8 24 M524 100 l8 24 M536 100 l8 24 M548 100 l8 24 M560 100 l8 24 M572 100 l8 24 M584 100 l8 24 M596 100 l8 24 M608 100 l8 24 M620 100 l8 24 M632 100 l8 24 M644 100 l8 24 M656 100 l8 24 M668 100 l8 24 M680 100 l8 24 M692 100 l8 24 M704 100 l8 24" class="mx-th"/><rect x="586" y="82" width="50" height="60" rx="3" class="mxb"/><text x="611" y="116" class="mx-s" style="font-weight:700">nut</text><path d="M596 166 H664" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="610" y="188" class="mx-s">nut moves one lead per turn</text><text x="610" y="206" class="mx-s">v = lead × n</text></g></svg></div>
+<figcaption>Three drives that are not simple gears: rack and pinion, worm and wheel, and worm and nut.</figcaption></figure>
+
+<div class="table-wrap"><table class="mec-worked-table">
+<caption>Choosing a drive: what each one does well and badly.</caption>
+<thead><tr><th>Drive</th><th>Output</th><th>Strengths</th><th>Weaknesses</th><th>Ratio from</th></tr></thead>
+<tbody>
+<tr><th scope="row">Flat belt</th><td>Rotation</td><td>Cheap, quiet, long distances, slips safely on overload</td><td>Slips, so ratio not exact; needs high tension</td><td>Pulley diameters</td></tr>
+<tr><th scope="row">V-belt</th><td>Rotation</td><td>More grip and power than flat; quiet</td><td>Still slips; wears</td><td>Pulley diameters</td></tr>
+<tr><th scope="row">Toothed belt</th><td>Rotation</td><td>No slip, exact ratio, light tension, no oil</td><td>No overload slip; dearer</td><td>Teeth on pulleys</td></tr>
+<tr><th scope="row">Chain</th><td>Rotation</td><td>No slip, high torque, tolerates dirt and heat</td><td>Noisy, needs oil, stretches</td><td>Teeth on sprockets</td></tr>
+<tr><th scope="row">Gears</th><td>Rotation</td><td>Compact, exact ratio, efficient</td><td>Shafts must be close; noise; cost of cutting teeth</td><td>Teeth</td></tr>
+<tr><th scope="row">Rack and pinion</th><td>Straight line</td><td>Direct, quick, reversible</td><td>Rack needs a long straight guide; can be driven backwards</td><td>$v = \pi d n$</td></tr>
+<tr><th scope="row">Worm and wheel</th><td>Rotation at 90°</td><td>Large ratio in one stage; often self-locking</td><td>Low efficiency, heat</td><td>Wheel teeth ÷ starts</td></tr>
+<tr><th scope="row">Worm and nut</th><td>Straight line</td><td>Great force, fine control, self-locking</td><td>Slow; low efficiency; wears</td><td>$v = \text{lead} \times n$</td></tr>
+</tbody></table></div>
+
+<div class="worked"><p class="worked-title">Worked example 7 · Calculation · a belt drive</p>
+<p>A motor pulley of diameter 80 mm turns at 1440 rev/min and drives a belt on a pulley of diameter 240 mm. Calculate the speed of the driven pulley in rev/min and the speed of the belt in m s⁻¹. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$1440 \times 80 = n_{out} \times 240$. <span class="why">The booklet relationship with sizes as diameters. The units of diameter cancel, so mm is fine.</span></li>
+<li>$n_{out} = 480$ rev/min. <span class="why">VR is 3, a reduction.</span></li>
+<li>Belt speed: $n = 1440 \div 60 = 24$ rev/s, $v = \pi d n = \pi \times 0.080 \times 24$. <span class="why">Rim speed of the driver; the diameter must be in metres here.</span></li>
+<li>$v = 6.03$ m s⁻¹. <span class="why">Both pulleys have the same rim speed if the belt does not slip. If it did slip, the driven pulley would turn slower than 480 rev/min.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 8 · Calculation · rack and pinion</p>
+<p>The steering rack of a ship's boat is driven by a pinion of diameter 40 mm turning at 90 rev/min. Calculate the speed of the rack, and the time taken for a stroke of 450 mm. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$n = 90 \div 60 = 1.5$ rev/s. <span class="why">Convert, for use in a formula with SI units.</span></li>
+<li>$v = \pi d n = \pi \times 0.040 \times 1.5 = 0.1885$ m s⁻¹. <span class="why">The rack moves one circumference per turn.</span></li>
+<li>$t = \dfrac{\text{distance}}{v} = \dfrac{0.450}{0.1885\ldots}$. <span class="why">Use the unrounded speed from the calculator.</span></li>
+<li>$t = 2.39$ s. <span class="why">Rounded only at the end.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 9 · Calculation · worm and wheel</p>
+<p>A one-start worm turning at 1200 rev/min drives a worm wheel with 30 teeth. (a) Calculate the speed of the wheel. (b) The worm is replaced by a two-start worm. Calculate the new wheel speed. (c) With the one-start worm, the input torque is 2 N m and the efficiency is 40%. Calculate the output torque. [5]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>(a) $\text{VR} = 30 \div 1 = 30$, so wheel speed $= 1200 \div 30 = 40$ rev/min. <span class="why">Wheel teeth over starts. One mark for the VR, one for the speed.</span></li>
+<li>(b) $\text{VR} = 30 \div 2 = 15$, so wheel speed $= 1200 \div 15 = 80$ rev/min. <span class="why">A two-start worm moves the wheel two teeth per turn, so the wheel goes twice as fast.</span></li>
+<li>(c) $T_{out} = T_{in} \times \text{VR} \times \eta = 2 \times 30 \times 0.40$. <span class="why">Use the VR of the one-start drive.</span></li>
+<li>$T_{out} = 24$ N m. <span class="why">The low efficiency costs a lot of torque: an ideal worm drive would give 60 N m.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 10 · Calculation · lead screw</p>
+<p>A worm and nut has a lead of 5 mm and the screw turns at 300 rev/min. Calculate the speed of the nut, and the time to move it 400 mm. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Nut speed $= \text{lead} \times n = 5 \times 300 = 1500$ mm/min $= 25$ mm s⁻¹. <span class="why">One lead per turn. Convert the minutes to seconds with care.</span></li>
+<li>$t = 400 \div 25$. <span class="why">Distance over speed.</span></li>
+<li>$t = 16$ s. <span class="why">With the unit.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-drives"><h3 class="widget-title">⛓ The drive workshop</h3>
+<p class="hint">Pick a drive and turn the dials. Belt: open or crossed, with an optional slip. Chain, rack, worm and screw: watch the output move at the speed the formula predicts. Every read-out is the same number you would calculate by hand. Use the pause button to freeze the animation.</p></div>
+
+<div class="widget" id="w-select"><h3 class="widget-title">🎯 Choose the drive</h3>
+<p class="hint">Tick the requirements of a job and see which drives score best and why. There is rarely one right answer; the skill is giving a reason for each choice.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"A chain never slips, so why would anyone ever pick a belt?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "Because sometimes slipping is the point. If the capstan jams on a snagged cable, a belt slips and saves the motor. A chain would stall it or snap. A belt is also quiet and needs no oil. Choose by the job, not by the best single property."</p></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · selecting a drive</div>
+<p>Selection questions mark a <em>property linked to the situation</em>. "The chain is strong" is weak. "A chain does not slip, so the winch keeps the exact speed ratio even when heavily loaded" names a property and says why it matters here.</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>calculate belt and chain speeds and ratios, and belt rim speed $v = \pi d n$;</li>
+<li>distinguish flat, V and toothed belts, and open from crossed belts;</li>
+<li>calculate rack speed, worm and wheel ratios (teeth ÷ starts) and worm and nut speed;</li>
+<li>select a drive for a job and justify it with a property and a reason.</li></ul></div>
+
+<div class="check" data-check="mec-drives"></div>
+</section>
+
+<section id="couplings" class="prose">
+<h2 data-short="Couplings, bearings, brakes">4 · Couplings, bearings, brakes and clutches <span class="spec-tag">DRIVE SYSTEMS</span></h2>
+
+<p>A drive is more than the gears. Shafts must be joined, held in place so they can turn freely, slowed down when needed, and connected and disconnected from the motor. The course asks for the <em>purpose</em> of each of these parts, so for each one you need a clear, specific sentence: what it does and why the machine needs it.</p>
+
+<h3>Couplings: joining shafts</h3>
+<p>A <dfn>coupling</dfn> joins the end of one shaft to the end of another so that torque passes from the first to the second. There are two families.</p>
+<ul>
+<li><strong>Rigid coupling.</strong> The two shafts are locked together as if they were one long shaft, for example by two bolted flanges. It transmits torque without any give or backlash, but it only works if the shafts are lined up almost perfectly. Any misalignment bends the shafts at every turn, overloading the bearings and causing vibration and fatigue cracks.</li>
+<li><strong>Flexible coupling.</strong> An elastic element (rubber, a spring, a toothed spider) sits between the two halves. It tolerates small misalignment, absorbs shock loads and damps vibration, so it protects the motor and the gearbox. It is slightly less stiff in twisting, and the elastic part wears out.</li>
+</ul>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 600 186" style="max-width:640px" role="img" aria-label="Two shaft couplings seen from the side. Left: a rigid flanged coupling, two flanges bolted face to face joining two shafts that lie on one straight centre line. Right: a flexible coupling, two hubs with a rubber element between them, joining two shafts whose centre lines are slightly offset and at a small angle.">
+<g class="mx-c"><text x="150" y="18" class="mx-t">Rigid flanged coupling</text><rect x="20" y="70" width="95" height="30" class="mxb"/><rect x="185" y="70" width="95" height="30" class="mxb"/><rect x="115" y="42" width="35" height="86" class="mx2"/><rect x="150" y="42" width="35" height="86" class="mx2"/><circle cx="150" cy="56" r="5" class="mx"/><circle cx="150" cy="114" r="5" class="mx"/><path d="M10 85 H290" class="mx-dash"/><text x="150" y="152" class="mx-s">two shafts become one stiff shaft</text><text x="150" y="172" class="mx-s">shafts must be lined up exactly</text><text x="450" y="18" class="mx-t">Flexible coupling</text><rect x="320" y="70" width="95" height="30" class="mxb"/><rect x="494" y="80" width="95" height="30" class="mxb" transform="rotate(4 540 95)"/><rect x="415" y="42" width="34" height="86" class="mx2"/><rect x="465" y="50" width="29" height="86" class="mx2" transform="rotate(4 480 93)"/><rect x="449" y="52" width="16" height="76" class="mx-air" style="fill:var(--lode);opacity:.6"/><path d="M310 85 H430" class="mx-dash"/><path d="M470 95 H600" class="mx-dash"/><text x="450" y="152" class="mx-s">rubber element takes up small misalignment</text><text x="450" y="172" class="mx-s">and softens shocks and vibration</text></g></svg></div>
+<figcaption>A rigid coupling needs perfect alignment. A flexible coupling forgives small errors and absorbs shock.</figcaption></figure>
+
+<h3>Bearings: holding a shaft while it turns</h3>
+<p>A shaft cannot just hang in the air, and it cannot rub directly on its frame without wearing out and wasting power. A <dfn>bearing</dfn> supports the shaft, keeps it in the right position, and reduces friction. Bearings are named by the direction of the load they carry.</p>
+<ul>
+<li>A <dfn>radial bearing</dfn> carries loads <em>across</em> the shaft, at right angles to its axis. The weight of the shaft, the pull of a belt and the force on a gear tooth all load a shaft radially.</li>
+<li>A <dfn>thrust bearing</dfn> carries loads <em>along</em> the shaft, parallel to its axis. A propeller pushes its shaft along; a worm drive pushes the worm sideways along its own shaft; the vertical spindle of a capstan carries the weight of everything above it.</li>
+</ul>
+<p>The course lists four kinds you should know:</p>
+<ul>
+<li><strong>Plain (or journal) bearing.</strong> The shaft (the journal) turns inside a sleeve of soft metal or plastic, ideally on a thin film of oil. It is simple, cheap, quiet and copes well with shocks. It has more friction when starting, and it needs oil or a self-lubricating material.</li>
+<li><strong>Ball bearing.</strong> Hardened balls roll between an inner and an outer ring. Rolling friction is much lower than sliding friction, so it suits high speeds. The balls touch the rings at points, so it is best for light and medium loads.</li>
+<li><strong>Roller bearing.</strong> Cylinders replace the balls. They touch the rings along a line instead of at a point, so they spread the load and carry heavier radial loads than a ball bearing of the same size.</li>
+<li><strong>Thrust bearing.</strong> Balls or rollers between two flat rings to carry <em>axial</em> load. A radial bearing is a poor choice for this job.</li>
+</ul>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 640 240" style="max-width:680px" role="img" aria-label="Four bearings. Plain or journal bearing: a shaft inside a sleeve, with a radial load arrow across the shaft. Ball bearing: an inner ring and an outer ring with eight balls between, with a radial load arrow. Roller bearing, drawn in section: a cylindrical roller between two rings, giving line contact. Thrust bearing, drawn in section: balls between two flat rings on a shaft, with an arrow showing the load along the axis of the shaft.">
+<g class="mx-c"><circle cx="80" cy="100" r="58" class="mx2"/><circle cx="80" cy="100" r="44" class="mx"/><circle cx="80" cy="103" r="40" class="mxb"/><circle cx="80" cy="103" r="4" class="ink"/><path d="M80 6 V80" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="80" y="194" class="mx-t">Plain (journal)</text><text x="80" y="212" class="mx-s">shaft turns in a sleeve</text><text x="80" y="229" class="mx-s">on a film of oil</text><circle cx="240" cy="100" r="58" class="mx2"/><circle cx="240" cy="100" r="48" class="mx"/><circle cx="279.0" cy="100.0" r="8" class="mxb"/><circle cx="267.6" cy="127.6" r="8" class="mxb"/><circle cx="240.0" cy="139.0" r="8" class="mxb"/><circle cx="212.4" cy="127.6" r="8" class="mxb"/><circle cx="201.0" cy="100.0" r="8" class="mxb"/><circle cx="212.4" cy="72.4" r="8" class="mxb"/><circle cx="240.0" cy="61.0" r="8" class="mxb"/><circle cx="267.6" cy="72.4" r="8" class="mxb"/><circle cx="240" cy="100" r="31" class="mx2"/><circle cx="240" cy="100" r="16" class="mx"/><path d="M240 6 V80" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="240" y="194" class="mx-t">Ball</text><text x="240" y="212" class="mx-s">balls roll between rings</text><text x="240" y="229" class="mx-s">point contact, low friction</text><rect x="340" y="42" width="120" height="16" class="mx2"/><rect x="340" y="142" width="120" height="16" class="mx2"/><rect x="374" y="58" width="52" height="84" class="mxb"/><rect x="340" y="100" width="0" height="0"/><path d="M340 100 H460" class="mx-dash"/><path d="M400 6 V38" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="400" y="194" class="mx-t">Roller</text><text x="400" y="212" class="mx-s">cylinders roll between rings</text><text x="400" y="229" class="mx-s">line contact, carries more load</text><rect x="550" y="14" width="20" height="150" class="mxb"/><rect x="498" y="84" width="52" height="12" class="mx2"/><rect x="570" y="84" width="52" height="12" class="mx2"/><rect x="498" y="116" width="52" height="12" class="mx2"/><rect x="570" y="116" width="52" height="12" class="mx2"/><circle cx="524" cy="106" r="9" class="mxb"/><circle cx="596" cy="106" r="9" class="mxb"/><path d="M600 40 V78" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="570" y="34" class="mx-r">axial load</text><text x="560" y="194" class="mx-t">Thrust</text><text x="560" y="212" class="mx-s">balls between flat rings</text><text x="560" y="229" class="mx-s">carries load along the shaft</text><text x="116" y="22" class="mx-r" style="text-anchor:start">radial load</text></g></svg></div>
+<figcaption>Plain, ball, roller and thrust bearings. The first three mainly carry radial load; the thrust bearing carries load along the shaft.</figcaption></figure>
+
+<h3>Friction on purpose: brakes and clutches</h3>
+<p>Friction is usually the enemy: it wastes power in bearings and gear teeth, and turns it to heat. In brakes and clutches it is the whole point. Both work by pressing two surfaces together so that friction forces act between them.</p>
+<h4>Brakes</h4>
+<p>A <dfn>brake</dfn> slows a moving machine by pressing a friction pad on a rotating disc or drum. The friction force turns the kinetic energy of the machine into <strong>heat</strong>. Because that is all the energy the machine had, the numbers can be large: the brake discs of a heavy vehicle may glow. The temperature rise of the brake discs follows the booklet's heating formula $E_h = cm\Delta T$, and the energy comes from $E_k = \tfrac12 mv^2$:</p>
+$$\tfrac12 m_{vehicle} v^2 = c\, m_{disc}\, \Delta T$$
+<p>If the discs are too small the temperature rises too far and the brake <em>fades</em>, losing its grip. That is why heavy vehicles have big, ventilated discs, and why engineers choose disc materials that have a high specific heat capacity $c$ and survive high temperature. The Data Booklet lists $c$ only for water, so an exam question that needs the value for steel has to give it to you.</p>
+<h4>Clutches</h4>
+<p>A <dfn>clutch</dfn> connects and disconnects a driving shaft from a driven shaft. A spring presses a lined friction plate on the driven shaft against a spinning plate on the driving shaft. At first the plates are moving at different speeds, so they <strong>slip</strong>: the friction drags the driven shaft up to speed gently, and the slipping makes heat. When both shafts reach the same speed they <strong>lock</strong> together, and the drive passes through with no more slip, as long as the load torque is smaller than the most torque the friction can carry. If the load is too large, the clutch slips all the time and overheats. Engineers model the torque capacity of a plate with two friction faces as $2\mu F r$ (friction coefficient, clamping force, mean radius). That is a model for understanding, not a Data Booklet formula.</p>
+<p>Because it slips before it locks, a clutch lets a heavy machine start gently instead of jerking, and lets the motor be disconnected while it keeps running.</p>
+
+<div class="worked"><p class="worked-title">Worked example 11 · Calculation · heating of brake discs</p>
+<p>A vehicle of mass 1200 kg is travelling at 15 m s⁻¹ and brakes to a stop. All the kinetic energy is converted into heat in four steel brake discs, each of mass 3 kg. The specific heat capacity of steel is 490 J kg⁻¹ K⁻¹. Calculate the temperature rise of the discs. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$E_k = \tfrac12 mv^2 = \tfrac12 \times 1200 \times 15^2 = 135\,000$ J. <span class="why">The energy that has to go somewhere.</span></li>
+<li>Mass of discs $= 4 \times 3 = 12$ kg. <span class="why">All four share the heat. Using one disc's mass is the common slip.</span></li>
+<li>$E_h = cm\Delta T$, so $\Delta T = \dfrac{135000}{490 \times 12}$. <span class="why">Rearrange and substitute, using the same energy as the answer to the first step.</span></li>
+<li>$\Delta T = 23.0$ K (22.96 to four figures). <span class="why">A temperature rise is in K or °C; the same size either way.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 12 · Description · couplings and bearings</p>
+<p>A conveyor on the lower deck is driven by an electric motor through a worm and wheel gearbox. (a) State why a flexible coupling is used between the motor and the gearbox. (b) State why a thrust bearing is fitted on the worm shaft. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>(a) A flexible coupling allows for small misalignment between the motor shaft and the gearbox shaft. <span class="why">The function.</span></li>
+<li>It also absorbs shock loads and vibration, so that the motor and the gearbox are not damaged when the conveyor starts or jams. <span class="why">The reason, in this situation.</span></li>
+<li>(b) The teeth of a worm push the worm sideways, along its own shaft, so there is an axial load. <span class="why">Say where the load comes from.</span></li>
+<li>A thrust bearing is designed to carry load along the shaft, so the worm stays in position and does not wear the motor's bearings. <span class="why">What the thrust bearing does and why a radial bearing would not be enough.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-brake"><h3 class="widget-title">🔥 Brake heating</h3>
+<p class="hint">Set the mass and speed of the load, the mass of each brake disc and how many discs share the work. Press the button to brake: the discs glow and the thermometer shows the temperature rise from $E_h = cm\Delta T$. Make a single small disc and see how fast the temperature climbs. The value of $c$ for steel is stated; in the exam it would be given.</p></div>
+
+<div class="widget" id="w-clutch"><h3 class="widget-title">🔗 The clutch: slip, then lock</h3>
+<p class="hint">Engage the clutch with different clamping forces and load torques. While the plates slip, the output shaft accelerates and heat is made. When the speeds match, they lock. If the friction cannot carry the load, the clutch slips for ever.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"We have spent a whole term reducing friction. Why would an engineer want more of it in a brake?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "Friction is a tool. In a bearing it wastes power, so you fight it with oil and balls. In a brake you want it to do work against the motion, and in a clutch you want just enough to carry the torque. The skill is putting it where you want it, and leaving it out where you don't."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>distinguish rigid and flexible couplings and give a purpose of each;</li>
+<li>distinguish radial from thrust bearings and describe plain, ball and roller bearings;</li>
+<li>explain that brakes and clutches use friction on purpose, and what happens to the energy;</li>
+<li>calculate the temperature rise of a brake with $E_k = \tfrac12 mv^2$ and $E_h = cm\Delta T$;</li>
+<li>explain why a clutch slips and then locks.</li></ul></div>
+
+<div class="check" data-check="mec-couplings"></div>
+</section>
+
+<section id="pneu1" class="prose">
+<h2 data-short="Pneumatics I: parts">5 · Pneumatics I: air, cylinders and valves <span class="spec-tag">PNEUMATICS</span></h2>
+
+<p>Behind every gun-port on <em>HMS Ratchet</em> there is a piston that slams the port lid open and shut, and in the redstone world of Blockhaven those pistons are really <dfn>pneumatic cylinders</dfn>: tubes in which compressed air pushes a piston. <dfn>Pneumatics</dfn> is the use of compressed air to do work and to carry signals. It is clean, quick, safe from sparks and easy to organise into sequences, which is why you find it in packing machines, clamps, doors and production lines.</p>
+
+<h3>The compressed-air system</h3>
+<p>A compressor squeezes air into an <dfn>air receiver</dfn>, a tank that stores it and smooths out pulses. The air then passes through an air preparation unit (often called <dfn>FRL</dfn>): a <em>filter</em> to remove dirt and water, a <em>regulator</em> that sets a steady working pressure, and sometimes a <em>lubricator</em> that adds a mist of oil to protect the valves and seals. Valves then direct the air to the <dfn>actuators</dfn>, the parts that do the work, usually cylinders. Used air is simply let out through an exhaust (with a silencer) into the atmosphere.</p>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 740 190" style="max-width:740px" role="img" aria-label="Block diagram of a compressed-air system from left to right: a motor-driven compressor, an air receiver with a drain, an air preparation unit with filter, regulator and lubricator, a 5/2 directional control valve with an exhaust to atmosphere, and a double-acting cylinder with a piston rod.">
+<g class="mx-c"><circle cx="52" cy="90" r="36" class="mx"/><text x="52" y="95" class="mx-t">Comp.</text><text x="52" y="146" class="mx-s">compressor</text><text x="52" y="164" class="mx-s">(motor-driven)</text><rect x="130" y="62" width="96" height="56" rx="6" class="mx"/><text x="178.0" y="95.0" class="mx-t">Receiver</text><text x="178.0" y="138" class="mx-s">stores air, cools it</text><text x="178" y="182" class="mx-s">drain water here</text><path d="M178 118 V134" class="mx-ln" marker-end="url(#mx-ar)"/><rect x="268" y="62" width="92" height="56" rx="6" class="mx"/><text x="314.0" y="95.0" class="mx-t">FRL</text><text x="314.0" y="138" class="mx-s">filter, regulator,</text><text x="314" y="164" class="mx-s">lubricator (air prep.)</text><rect x="402" y="62" width="86" height="56" rx="6" class="mx"/><text x="445.0" y="95.0" class="mx-t">5/2 valve</text><text x="445.0" y="138" class="mx-s">directs the air</text><rect x="530" y="72" width="130" height="36" class="mx2"/><rect x="530" y="72" width="130" height="36" class="mx"/><rect x="580" y="75" width="12" height="30" class="mxb"/><rect x="660" y="84" width="60" height="12" class="mxb"/><text x="595" y="64" class="mx-t">Cylinder</text><text x="595" y="146" class="mx-s">turns air pressure into force</text><path d="M88 90 H128" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M226 90 H266" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M360 90 H400" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M488 90 H528" class="mx-sea" marker-end="url(#mx-ar-sea)"/><path d="M445 62 V30" class="mx-ln" marker-end="url(#mx-ar)"/><text x="445" y="22" class="mx-s">exhaust to atmosphere</text></g></svg></div>
+<figcaption>From compressor to cylinder. Air is stored, cleaned, regulated, directed by a valve and finally exhausted to the atmosphere.</figcaption></figure>
+
+<h3>Cylinders</h3>
+<p>A <dfn>single-acting cylinder</dfn> has one air port. Air pushes the piston out, and a spring pushes it back when the air is released. A <dfn>double-acting cylinder</dfn> has two ports, one at each end, and air drives the piston <em>both</em> ways. It needs a valve that can feed one end while exhausting the other. When the piston rod moves out, the cylinder <strong>outstrokes</strong>. When it moves back in, it <strong>instrokes</strong>. These two words are the correct terminology, and the examiners ask for them.</p>
+
+<h3>Valves: ports and positions</h3>
+<p>A <dfn>directional control valve</dfn> is named by two numbers: the number of <em>ports</em> (connections) and the number of <em>positions</em> (states). On the symbol, each position is a box, and arrows inside the box show which ports are connected.</p>
+<ul>
+<li>A <strong>3/2 valve</strong> has three ports (1 supply, 2 outlet, 3 exhaust) and two positions. In one position the supply is blocked and the outlet vents to exhaust; in the other the supply is connected to the outlet. It is used to feed a single-acting cylinder, or as a <em>signal</em> valve (a button or a limit switch). When something pushes it into its other position, we say the 3/2 valve <strong>actuates</strong>.</li>
+<li>A <strong>5/2 valve</strong> has five ports (1 supply, 2 and 4 outlets, 3 and 5 exhausts) and two positions. In one position, supply goes to outlet 4 and outlet 2 exhausts; in the other position, supply goes to outlet 2 and outlet 4 exhausts. It runs a double-acting cylinder: one outlet feeds one end while the other vents. When it flips, we say the 5/2 valve <strong>changes state</strong>.</li>
+</ul>
+<p>Each end of a valve symbol shows what moves it. A <em>push-button</em>, a <em>lever</em> or a <em>roller</em> (an idler wheel pushed by a cam or by a piston rod) acts by hand or mechanical contact. A <em>pilot</em> is a small air signal that pushes the valve. A <em>spring</em> returns it. Port numbers 12 and 14 label the pilot lines: in this deck, air at <strong>pilot 14</strong> joins supply 1 to outlet 4 (cylinder outstrokes), and air at <strong>pilot 12</strong> joins 1 to 2 (cylinder instrokes). A valve with a pilot at both ends and no spring has <strong>memory</strong>: it stays in whichever state it was last pushed to, even after the signal goes away.</p>
+<figure class="diagram"><div class="mec-scroll" data-mec="valve-states"></div>
+<figcaption>Valve states. A 3/2 valve is either feeding its outlet or venting it. A 5/2 valve swaps which of its two outlets is fed.</figcaption></figure>
+<figure class="diagram"><div class="mec-scroll" data-mec="symbols"></div>
+<figcaption>The ISO-style symbols used in this deck. This is the set of symbols to be able to read and, from memory, draw.</figcaption></figure>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · terminology</div>
+<p>The 2026 course report advises that "candidates must use correct terminology, with a statement referring to 3/2 valves actuating, 5/2 valves changing state, and a piston instroking or outstroking." Never write "the valve opens" or "the cylinder goes forward". Write <em>actuates</em>, <em>changes state</em>, <em>outstrokes</em> and <em>instrokes</em>.</p></div>
+
+<h3>Flow control</h3>
+<p>Air is compressible, so a loaded cylinder can lurch. A <dfn>flow control valve</dfn> (a one-way restrictor) is a narrow gap in the air line, with a one-way valve beside it so that air can bypass the restriction in one direction. Fit it so that it restricts the <em>exhaust</em> air from the cylinder and the piston moves more smoothly, at a speed you can set. Without it, a piston will slam into its end stop.</p>
+
+<h3>Force from a cylinder</h3>
+<p>Pressure is force per unit area. The Data Booklet gives $P = F/A$ and $A = \pi r^2 = \pi d^2 / 4$. Rearranged for force: $F = PA$. Pressure must be in pascals (N m⁻²) and area in m². Air pressures are quoted in <strong>bar</strong>, and 1 bar is $10^5$ Pa. Gauge pressures are the pressures above the atmosphere, and those are the ones used for force calculations.</p>
+<p>On the <strong>outstroke</strong>, air pushes on the full face of the piston, so $A = \pi D^2 / 4$ where $D$ is the bore (the inside diameter). On the <strong>instroke</strong>, the piston rod takes up part of the face, so air acts only on a ring (the annulus) of area $\pi (D^2 - d^2)/4$ where $d$ is the rod diameter. The same pressure therefore gives a smaller force on the instroke. Real cylinders also lose some force to friction in the seals, so choose a cylinder with a margin.</p>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 720 330" style="max-width:720px" role="img" aria-label="Two sections through a double-acting cylinder. Top: on the outstroke air enters the cap end and pushes on the whole piston face, area pi D squared over four, giving force F equals pressure times area; the end view shows the full circle shaded. Bottom: on the instroke air enters the rod end and acts on a ring-shaped area around the piston rod, pi times D squared minus d squared, over four; the end view shows a shaded ring, so the instroke force is smaller for the same pressure.">
+<g class="mx-c"><text x="14" y="16" class="mx-t" style="text-anchor:start">Outstroke: air pressure acts on the whole piston face</text><rect x="90" y="50" width="380" height="60" class="mx"/><rect x="92" y="52" width="208" height="56" class="mx-air"/><rect x="300" y="52" width="14" height="56" class="mxb"/><rect x="314" y="68" width="276" height="24" class="mxb"/><rect x="470" y="48" width="8" height="64" class="mx2"/><rect x="82" y="48" width="8" height="64" class="mx2"/><path d="M118 28 V46" class="mx-sea" marker-end="url(#mx-ar-sea)"/><text x="150" y="40" class="mx-s">air in (cap end)</text><path d="M440 46 V30" class="mx-ln" marker-end="url(#mx-ar)"/><text x="440" y="24" class="mx-s">exhaust</text><circle cx="650" cy="80" r="34" class="mx-air" style="fill:var(--sea);opacity:.35"/><circle cx="650" cy="80" r="34" class="mx-ln"/><text x="650" y="142" class="mx-s">A = πD² ÷ 4</text><path d="M520 110 H590" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="520" y="128" class="mx-r" style="text-anchor:start">F = P × A</text><text x="14" y="196" class="mx-t" style="text-anchor:start">Instroke: the rod takes up space, so air acts on a ring (the annulus)</text><rect x="90" y="226" width="380" height="60" class="mx"/><rect x="144" y="228" width="324" height="16" class="mx-air"/><rect x="144" y="268" width="324" height="16" class="mx-air"/><rect x="130" y="228" width="14" height="56" class="mxb"/><rect x="144" y="244" width="446" height="24" class="mxb"/><rect x="470" y="224" width="8" height="64" class="mx2"/><rect x="82" y="224" width="8" height="64" class="mx2"/><path d="M440 206 V224" class="mx-sea" marker-end="url(#mx-ar-sea)"/><text x="380" y="218" class="mx-s">air in (rod end)</text><path d="M118 222 V206" class="mx-ln" marker-end="url(#mx-ar)"/><text x="150" y="214" class="mx-s">exhaust</text><circle cx="650" cy="256" r="34" class="mx-air" style="fill:var(--sea);opacity:.35"/><circle cx="650" cy="256" r="12" class="mx"/><circle cx="650" cy="256" r="34" class="mx-ln"/><circle cx="650" cy="256" r="12" class="mx-ln"/><text x="650" y="318" class="mx-s">A = π(D² − d²) ÷ 4</text><path d="M540 296 H470" class="mx-red" marker-end="url(#mx-ar-red)"/><text x="540" y="314" class="mx-r" style="text-anchor:start">F smaller</text></g></svg></div>
+<figcaption>The piston rod reduces the area that air can push on during the instroke, so the instroke force is smaller than the outstroke force.</figcaption></figure>
+
+<div class="worked"><p class="worked-title">Worked example 13 · Calculation · force from a cylinder</p>
+<p>A double-acting cylinder has a bore of 50 mm and a piston rod of diameter 20 mm. It is supplied with air at a gauge pressure of 6 bar. Calculate the force on (a) the outstroke and (b) the instroke. [5]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$P = 6 \times 10^5$ Pa. <span class="why">Bar converted to pascals.</span></li>
+<li>(a) $A = \pi D^2/4 = \pi \times 0.050^2 / 4 = 1.9635 \times 10^{-3}$ m². <span class="why">Diameter converted to metres before squaring.</span></li>
+<li>$F = PA = 6 \times 10^5 \times 1.9635\ldots \times 10^{-3} = 1178$ N. <span class="why">Outstroke force.</span></li>
+<li>(b) $A = \pi (D^2 - d^2)/4 = \pi (0.050^2 - 0.020^2)/4 = 1.6493 \times 10^{-3}$ m². <span class="why">The annulus: bore squared minus rod squared.</span></li>
+<li>$F = 6 \times 10^5 \times 1.6493\ldots \times 10^{-3} = 990$ N (989.6). <span class="why">Smaller than on the outstroke.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 14 · Calculation · choosing a bore</p>
+<p>A cylinder must push with a force of 900 N on its outstroke using air at 5 bar gauge. Calculate the minimum bore, and choose a cylinder from the standard bores 32 mm, 40 mm, 50 mm and 63 mm. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>$A = F/P = 900 \div (5 \times 10^5) = 1.8 \times 10^{-3}$ m². <span class="why">Rearranged, with the pressure in pascals.</span></li>
+<li>$D = \sqrt{4A/\pi}$, so $D = \sqrt{4 \times 1.8 \times 10^{-3} \div \pi}$. <span class="why">Rearranged from $A = \pi D^2/4$.</span></li>
+<li>$D = 0.0479$ m $= 47.9$ mm. <span class="why">The smallest bore that would give exactly 900 N, with no allowance for friction.</span></li>
+<li>Choose the 50 mm cylinder. <span class="why">The next size up that is available, which also gives a margin for friction. 40 mm is too small, and 63 mm is bigger than needed.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-valve"><h3 class="widget-title">🔀 Valve explorer</h3>
+<p class="hint">Choose a 3/2 or 5/2 valve and operate it. The valve box slides like a spool, the live air path is drawn, and the cylinder instrokes or outstrokes. Watch how the exhaust and supply swap round.</p></div>
+
+<div class="widget" id="w-cyl"><h3 class="widget-title">🧰 Cylinder force and speed</h3>
+<p class="hint">Change the bore, rod, pressure and load. The gauge, the force from $F = PA$ and the stroke all update. Push the load beyond what the cylinder can supply and it stalls. Compare the outstroke with the instroke.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"The gauge reads 6 bar on both strokes. Why is the cylinder weaker when it comes in?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "Same pressure, smaller area. The rod is in the way on the rod side, so the air has less to push on. $F = PA$ every time, but $A$ is smaller for the instroke. Put the larger force on the job that needs it."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>sketch the parts of a compressed-air system and say what each does;</li>
+<li>name 3/2 and 5/2 valves, their ports and their actuators, and read and draw the symbols;</li>
+<li>use the words <em>actuates</em>, <em>changes state</em>, <em>outstrokes</em> and <em>instrokes</em> correctly;</li>
+<li>calculate cylinder force with $F = PA$, including the annulus area on the instroke;</li>
+<li>explain what a flow control valve is for.</li></ul></div>
+
+<div class="check" data-check="mec-pneu1"></div>
+</section>
+
+<section id="pneu2" class="prose">
+<h2 data-short="Pneumatics II: sequences">6 · Pneumatics II: sequential circuits <span class="spec-tag">PNEUMATICS</span></h2>
+
+<p>A machine rarely needs one piston doing one job. A stamping press needs a clamp to close <em>before</em> the stamp comes down and to open <em>after</em> it goes back. That kind of ordered behaviour is a <dfn>sequence</dfn>, and the course asks you to analyse and draw circuits for sequences of up to <strong>three cylinders</strong>.</p>
+
+<h3>Writing a sequence</h3>
+<p>The sequence is written with the cylinder letters and a sign: <strong>A+</strong> means cylinder A outstrokes and <strong>A−</strong> means it instrokes. So <strong>A+ B+ A− B−</strong> reads: A outstrokes, then B outstrokes, then A instrokes, then B instrokes. Each of these four events is a <em>step</em>. Only one step happens at a time, and the next step does not begin until the previous one has finished.</p>
+<p>How does the circuit know a step has finished? Each cylinder has a <dfn>limit valve</dfn> at each end of its stroke: a 3/2 valve with a roller that the piston rod trips as it arrives. They are named after their cylinder and position: <strong>a0</strong> is pressed when cylinder A is fully in and <strong>a1</strong> when it is fully out, and so on for b0, b1, c0 and c1.</p>
+
+<h3>The rule that builds the circuit</h3>
+<div class="callout def"><div class="callout-title">📘 The chain rule</div>
+<ul>
+<li>Give each cylinder a double-pilot 5/2 valve (it has memory). Pilot 14 makes it outstroke and pilot 12 makes it instroke.</li>
+<li>Each step is started by the limit valve at the <strong>end of the step before it</strong>. That limit valve supplies the pilot that starts the next step.</li>
+<li>The <strong>first step</strong> also needs the START button, in series with the limit valve that says the machine is in its rest position, so that the sequence only begins from a safe start.</li></ul></div>
+<p>For A+ B+ A− B− this gives four pilot signals, one for each step:</p>
+<div class="table-wrap"><table class="mec-worked-table">
+<caption>Pilot signals for A+ B+ A− B−. Each step is triggered by the end of the step before it.</caption>
+<thead><tr><th>Step</th><th>Pilot that fires</th><th>Signal comes from</th><th>Because the previous step was</th></tr></thead>
+<tbody>
+<tr><td>1 · A+</td><td>A, pilot 14</td><td>START and b0</td><td>B− (B fully in), at rest</td></tr>
+<tr><td>2 · B+</td><td>B, pilot 14</td><td>a1</td><td>A+ (A fully out)</td></tr>
+<tr><td>3 · A−</td><td>A, pilot 12</td><td>b1</td><td>B+ (B fully out)</td></tr>
+<tr><td>4 · B−</td><td>B, pilot 12</td><td>a0</td><td>A− (A fully in)</td></tr>
+</tbody></table></div>
+<figure class="diagram"><div class="mec-scroll narrow" data-mec="circuit-ab"></div>
+<figcaption>The circuit for A+ B+ A− B− at rest. Valves A and B are double-pilot 5/2 valves. Roller valves a0, a1, b0 and b1 are tripped by the piston rods; START is a push-button 3/2 valve.</figcaption></figure>
+<p>A <dfn>displacement–step diagram</dfn> shows the same thing as a graph: the position of each piston plotted against the step number. A rising line is an outstroke, a falling line an instroke.</p>
+<figure class="diagram"><div class="mec-scroll narrow" data-mec="step-ab"></div>
+<figcaption>Displacement–step diagram for A+ B+ A− B−. Only one cylinder moves in each step.</figcaption></figure>
+
+<div class="widget" id="w-seq"><h3 class="widget-title">🔧 The circuit simulator: pneumatic sequences</h3>
+<p class="hint">Pick a sequence and press START. Air lines turn blue when pressurised, signal lines turn orange when a limit valve is feeding a pilot, the valve boxes slide as they change state, and the pistons move. Use Step to go one stage at a time. Try the second sequence without the one-way rollers and see what jams, then fit them.</p></div>
+
+<h3>When signals collide</h3>
+<p>Now try the sequence <strong>A+ B+ B− A−</strong>. It looks harmless, but with plain rollers it jams. Look at what a1 is doing: A outstrokes and presses a1, which fires pilot 14 of B. B outstrokes and presses b1, and now B needs to <em>return</em> with pilot 12, but a1 is still pressed because A has not moved, so pilot 14 is still pressurised too. Valve B has air on <strong>both</strong> of its pilot lines at once and cannot change state. The same happens at the start: b0 is pressed, so pilot 12 of A is live when we try to start with pilot 14.</p>
+<p>The cure is to <strong>remove the old signal before the new one arrives</strong>. A <dfn>one-way trip (idle-return) roller</dfn> on a limit valve operates only when the piston passes it in one direction, so the signal is a short <em>pulse</em> rather than a signal that is held for as long as the piston sits there. Fitting one-way rollers on a1 and b0 turns the held signals into pulses, and the circuit runs. Other cures exist (reversing valves, cascade circuits, timers), and a question will tell you which one it wants. The principle is always the same: two opposing pilot signals must never be on together.</p>
+
+<h3>Three cylinders</h3>
+<p>The method does not change when you add a third cylinder. For <strong>A+ B+ C+ A− B− C−</strong>, six steps need six pilot signals in a chain: START·c0 fires A+, a1 fires B+, b1 fires C+, c1 fires A−, a0 fires B−, and b0 fires C−. Notice that every limit valve is used once, in order, and that each signal fires the step that follows the one it ends.</p>
+<figure class="diagram"><div class="mec-scroll" data-mec="circuit-abc"></div>
+<figcaption>The circuit for A+ B+ C+ A− B− C−. Six double-pilot connections, each from the end of the previous step.</figcaption></figure>
+<figure class="diagram"><div class="mec-scroll narrow" data-mec="step-abc"></div>
+<figcaption>Displacement–step diagram for A+ B+ C+ A− B− C−.</figcaption></figure>
+
+<div class="worked"><p class="worked-title">Worked example 15 · Description · the operation of a circuit</p>
+<p>Describe the operation of the pneumatic circuit shown above for the sequence A+ B+ A− B−, starting from rest with both pistons instroked. [6]</p>
+<details><summary>Show solution <span class="marks-n">[6 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>When the START push-button (3/2 valve) is pressed, it actuates; with b0 already pressed, air is supplied to pilot 14 of 5/2 valve A. <span class="why">Name the valve, the verb actuates, and the pilot port.</span></li>
+<li>5/2 valve A changes state and air is supplied to the cap end of cylinder A, so piston A outstrokes. <span class="why">The valve changes state, the piston outstrokes.</span></li>
+<li>At the end of its stroke piston A actuates roller valve a1, which supplies air to pilot 14 of valve B. <span class="why">The end of one step starts the next. Say which limit valve.</span></li>
+<li>5/2 valve B changes state and piston B outstrokes. <span class="why">Same pattern for step 2.</span></li>
+<li>Piston B actuates b1, which supplies pilot 12 of valve A; valve A changes state and piston A instrokes. <span class="why">Step 3: the other pilot, the other direction.</span></li>
+<li>Piston A actuates a0, which supplies pilot 12 of valve B; valve B changes state and piston B instrokes, and b0 is pressed again. The cycle stops until START is pressed again. <span class="why">Step 4, then the end condition.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 16 · Description · a signal conflict</p>
+<p>A circuit is built for A+ B+ B− A− using plain roller limit valves and double-pilot 5/2 valves. When B has outstroked, the circuit stops. Explain why, and state one change that would fix it. [4]</p>
+<details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Roller valve a1 is still actuated because piston A is still fully outstroked. <span class="why">Identify the signal that is being held.</span></li>
+<li>So pilot 14 of valve B still has air when b1 sends air to pilot 12 of valve B. <span class="why">Both ends of the valve are pressurised.</span></li>
+<li>Valve B has opposing signals, so it cannot change state and piston B cannot instroke. <span class="why">The consequence, in the right words.</span></li>
+<li>Fit a one-way trip (idle-return) roller to a1, so that it gives only a short pulse as A outstrokes and the signal has gone by the time b1 operates. <span class="why">A change that removes the held signal.</span></li>
+</ol></details></div>
+
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · describing the operation of a circuit</div>
+<p>The 2026 course report says few candidates "correctly described the full operation of the pneumatic circuit", and the 2025 report that a few "used appropriate terminology when describing the operation of the pneumatic circuit". Describe it <em>step by step in order</em>. In every step name the limit valve, say "actuates", name the pilot port, say that the 5/2 valve "changes state", and finish with "outstrokes" or "instrokes". Do not skip a step, and do not stop at the second cylinder.</p></div>
+
+<div class="widget" id="w-build"><h3 class="widget-title">🛠 Build it yourself</h3>
+<p class="hint">Choose a challenge. For every pilot port, pick the limit valve that should feed it. Check your answers, then test the circuit you have built in the simulator below and watch whether it works.</p></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"Why not just wire a1 straight to the A− pilot? That's the valve that's pressed when A has finished going out."</p>
+<p><strong>Master Shipwright Kerr:</strong> "Because that would send A straight back in without waiting for B. A signal must come from the end of the step <em>before</em> the one it starts, not from the end of the step it belongs to. Say the sequence out loud, step by step, and draw the arrow from each finished step to the next."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>write a sequence using A+ and A− and name the limit valves a0, a1, b0, b1, c0 and c1;</li>
+<li>apply the chain rule to draw the pilot connections for up to three cylinders;</li>
+<li>draw and read a displacement–step diagram;</li>
+<li>describe the operation of a circuit, step by step, with correct terminology;</li>
+<li>spot a signal conflict and explain a one-way trip roller as the cure.</li></ul></div>
+
+<div class="check" data-check="mec-pneu2"></div>
+</section>
+
+<section id="ep" class="prose">
+<h2 data-short="Electro-pneumatics">7 · Electro-pneumatics <span class="spec-tag">PNEUMATICS</span></h2>
+
+<p>In a pure pneumatic circuit, air does the work <em>and</em> carries the signals. That is neat for small machines, but long air lines are slow to respond, and changing a sequence means re-plumbing. <dfn>Electro-pneumatic</dfn> (EP) control keeps compressed air for the heavy work and moves the control into electricity: switches and relays make the decisions, and the electricity only talks to the air through a <em>solenoid valve</em>.</p>
+
+<h3>The new parts</h3>
+<ul>
+<li><strong>Solenoid valve.</strong> A 5/2 valve whose pilot is replaced by a <dfn>solenoid</dfn>, a coil that becomes an electromagnet when current flows and pushes the valve spool. A <em>single-solenoid</em> valve springs back when the coil is switched off. A <em>double-solenoid</em> valve has a coil at each end (labelled Y1 and Y2, for example) and has memory, like the double-pilot valve of the last chapter.</li>
+<li><strong>Relay.</strong> An electromagnetic switch. A small current through the relay <em>coil</em> (for example K1) closes or opens one or more <em>contacts</em> in other circuits. It lets a small switch control a heavier load, gives several contacts from one signal, and can <em>latch</em> itself on.</li>
+<li><strong>Limit switch and reed switch.</strong> These replace the roller limit valves. A <em>limit switch</em> is a mechanical switch pressed by the piston rod. A <em>reed switch</em> is a sealed pair of metal reeds in a glass tube, fixed to the cylinder barrel; a magnet in the piston pulls the reeds together as it passes, closing the contact with no mechanical contact.</li>
+<li><strong>Push-buttons.</strong> START (S1) is normally open; STOP (S2) is normally closed so that pressing it breaks the circuit.</li>
+</ul>
+
+<h3>The ladder diagram</h3>
+<p>The electrical control circuit is drawn as a <dfn>ladder diagram</dfn>: two vertical <em>rails</em>, positive on the left and 0 V on the right, with a horizontal <em>rung</em> for each output. Each rung has switch contacts in series, which behave as AND (all must be closed), and sometimes switches in parallel, which behave as OR, followed by a coil on the right. When the contacts are closed, current flows through the coil, and it operates.</p>
+<p>The step-by-step logic is identical to the pneumatic chain rule. Replace "limit valve supplies pilot" with "limit switch energises coil". For A+ B+ A− B− with a double-solenoid valve on each cylinder:</p>
+<ul>
+<li><strong>Y1</strong> (A+): START S1 in series with b0 (and a0 as an <em>interlock</em>).</li>
+<li><strong>Y3</strong> (B+): a1, with b0 as an interlock.</li>
+<li><strong>Y2</strong> (A−): b1, with a1 as an interlock.</li>
+<li><strong>Y4</strong> (B−): a0, with b1 as an interlock.</li>
+</ul>
+<p>An <dfn>interlock</dfn> is an extra contact in series that only lets a coil be energised if the cylinder is in a safe position for it. Here it uses the cylinder's own opposite limit switch, so that the two coils of one valve are never energised together, which would push the spool two ways at once and burn out the coil.</p>
+<figure class="diagram"><div class="mec-scroll narrow" data-mec="ladder-ep"></div>
+<figcaption>The circuit and the ladder diagram for A+ B+ A− B− using double-solenoid valves and reed switches. Each rung shows the contacts that must all be closed before its coil is energised.</figcaption></figure>
+
+<h3>Latching: a relay that holds itself on</h3>
+<p>Often the machine should keep cycling after one press of START. A relay K1 does this with a <dfn>latch</dfn>: one of its own contacts is wired in <em>parallel</em> with START, so once K1 is energised, its contact keeps the rung live even after START is released. A normally closed STOP button in series with the rung breaks the latch. This "hold-on" circuit appears in almost every machine controller, and it is exactly what the simulator's "latch a continuous cycle" option uses.</p>
+
+<div class="widget" id="w-ep"><h3 class="widget-title">⚡ The electro-pneumatic simulator</h3>
+<p class="hint">Press START (S1) and watch the ladder diagram: when a rung's contacts are all closed the coil lights, the solenoid moves the valve, the piston moves, and the reed switch at the end of its stroke closes the next rung. Switch on the latch to run continuously and press STOP (S2) to end it.</p></div>
+
+<h3>Choosing between pneumatic, electro-pneumatic and electronic</h3>
+<div class="table-wrap"><table>
+<caption>How the three kinds of control compare.</caption>
+<thead><tr><th>Control</th><th>Advantages</th><th>Disadvantages</th></tr></thead>
+<tbody>
+<tr><th scope="row">Pure pneumatic</th><td>No electricity at the machine, so no sparks and no electric shock; safe in explosive, wet or dirty places; simple, robust parts; clean exhaust (only air)</td><td>Signals slow over long air lines; changing the sequence means re-plumbing; compressed air is expensive to make and leaks waste energy</td></tr>
+<tr><th scope="row">Electro-pneumatic</th><td>Fast signals over long distances; easy to change, add interlocks, timers and latches; compact control panels; fewer long air lines</td><td>Needs both an electrical and an air supply; wiring, relays and switches can fail; sparks and electrical hazard in some environments</td></tr>
+<tr><th scope="row">Electronic or programmable (PLC, microcontroller)</th><td>Very flexible: reprogram instead of rewiring; many inputs and outputs; can read analogue sensors and log data</td><td>Needs a programmer and a protected supply; electronics can be damaged by dirt, water, heat and electrical noise</td></tr>
+</tbody></table></div>
+<p>Compared with an electric motor or solenoid actuator, a pneumatic cylinder gives quick, powerful linear motion from a light, cheap actuator, and its exhaust is just air with no oil or fumes at the machine. The honest drawbacks are that compressing air wastes much of the energy as heat, leaks are costly, and the force available is limited by the air pressure. A paint-spraying booth full of solvent vapour is a good example of where pneumatic control may be preferred: a spark from a switch or motor could start a fire, and an air cylinder cannot make one.</p>
+
+<div class="worked"><p class="worked-title">Worked example 17 · Description · an electro-pneumatic circuit</p>
+<p>The circuit shown above uses double-solenoid 5/2 valves, with solenoids Y1 and Y2 on valve A and Y3 and Y4 on valve B, and reed switches a0, a1, b0 and b1. Describe the operation of the circuit for the sequence A+ B+ A− B−. [5]</p>
+<details><summary>Show solution <span class="marks-n">[5 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>When START S1 is pressed, with b0 closed, solenoid Y1 is energised; the 5/2 valve A changes state and piston A outstrokes. <span class="why">The first rung's contacts, the coil, the valve changing state and the outstroke.</span></li>
+<li>At the end of the stroke reed switch a1 closes; Y3 is energised, valve B changes state and piston B outstrokes. <span class="why">Each switch at the end of a step energises the next coil.</span></li>
+<li>Reed switch b1 closes and Y2 is energised: valve A changes state and piston A instrokes. <span class="why">The other coil of the same valve returns A.</span></li>
+<li>Reed switch a0 closes, Y4 is energised, valve B changes state and piston B instrokes. <span class="why">Step four, and the sequence is complete.</span></li>
+<li>b0 closes again, and the circuit waits for START to be pressed again. <span class="why">Note the end state and the restart condition.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 18 · Discussion · why pneumatics may be preferred</p>
+<p>A cutting machine in a flour mill is currently moved by electric solenoid actuators. Give two reasons why pneumatic cylinders may be preferred, and one disadvantage of changing. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks, typical allocation]</span></summary>
+<ol class="step-list marks">
+<li>Pneumatic cylinders do not make sparks, so there is no risk of igniting the flour dust in the air. <span class="why">A property linked to the situation, with the reason.</span></li>
+<li>Air cylinders are simple, rugged and can be washed down; the exhaust is only clean air, so there is no oil or fumes to contaminate the product. <span class="why">A second, different reason.</span></li>
+<li>Disadvantage: compressed air is energy-intensive to produce, and leaks waste it, so the running cost is higher. <span class="why">An honest drawback, which is what the third mark needs.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div>
+<p class="q">"If the switches are all electrical now, why do we still bother with the air at all?"</p>
+<p><strong>Master Shipwright Kerr:</strong> "Because wires carry signals well but muscle badly. Air gives a light, quick, powerful push from a cheap cylinder, with no sparks. Use electricity to think and air to push. The solenoid valve is the translator between them."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
+<li>explain what a solenoid valve, relay, limit switch and reed switch do;</li>
+<li>read a ladder diagram and say which coil is energised when;</li>
+<li>describe the operation of an electro-pneumatic circuit step by step;</li>
+<li>explain a latching relay and an interlock;</li>
+<li>compare pneumatic, electro-pneumatic and electronic control, with an advantage and disadvantage of each.</li></ul></div>
+
+<div class="check" data-check="mec-ep"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="digital.html">← Digital &amp; programmable</a>
+  <a class="btn" href="index.html">Briefing</a>
+  <a class="btn primary" href="structures.html">Next deck: Structures &amp; materials →</a>
+</nav>
+</section>
 </main>
 </div>
 

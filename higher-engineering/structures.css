@@ -1,0 +1,32 @@
+/* Structures, forces & materials: styles for the Rigging Loft (everything is namespaced str-… / #fig-…) */
+
+/* every wide diagram carries its own minimum width; only 500 and 600 are defined in style.css, so cover the rest */
+figure.diagram svg.wide[data-minw="560"], figure.diagram svg.wide[data-minw="620"] { min-width: 600px; }
+
+/* two canvases side by side in the Frame Table: the structure and the joint diagram */
+.str-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px; margin: 8px 0; align-items: start; }
+.str-pair canvas.sim { width: 100%; max-width: 100%; }
+@media (max-width: 700px) { .str-pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* option rows and groups of controls */
+.str-opts { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 6px 0; align-items: center; }
+.str-opts > * { min-width: 0; }
+.str-group { border: 2px solid var(--line); border-radius: 2px; margin: 8px 0; padding: 4px 10px 8px; background: color-mix(in srgb, var(--paper) 60%, var(--card)); min-width: 0; }
+.str-group > legend { font: 700 .82rem var(--font-pixel); color: var(--navy-2); padding: 0 6px; }
+:root[data-theme="dark"] .str-group > legend { color: var(--sky); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .str-group > legend { color: var(--sky); } }
+
+/* working boxes (KaTeX output under a widget) */
+.str-work { font-size: .95rem; overflow-x: auto; max-width: 100%; }
+.str-work p { margin: .35em 0; }
+.str-work table { margin: .4em 0; }
+.str-check { margin: .5em 0 0; padding: 6px 8px; border-left: 4px solid var(--grass); background: color-mix(in srgb, var(--grass) 10%, transparent); font-size: .9rem; overflow-wrap: anywhere; }
+td.str-c { color: var(--sea); font-weight: 700; }
+
+/* the widgets: canvases never force the page wider */
+#w-polygon canvas.sim, #w-hang canvas.sim, #w-beam canvas.sim, #w-tensile canvas.sim, #w-sizing canvas.sim, #w-gauge canvas.sim { max-width: 100%; }
+#w-units .math-in { width: 8em; max-width: 100%; }
+#w-draw figure.diagram { padding: 6px; }
+
+/* the tables of figures stay on their row when there is room, scroll when there is not */
+.nature-table td:first-child { text-align: left; }

@@ -101,8 +101,7 @@ figure.diagram svg.dg-svg, .dg-svg { display: block; width: 100%; height: auto; 
 .dg-note { font-size: .86rem; color: var(--muted); }
 
 /* ---------- the program runner ---------- */
-.dg-run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-@media (max-width: 860px) { .dg-run { grid-template-columns: minmax(0, 1fr); } }
+.dg-run { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
 .dg-flowbox { max-height: 440px; overflow: auto; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px; }
 .dg-flowbox .dg-flowsvg { min-width: 0; }
 .dg-code { margin: 0; max-height: 300px; overflow: auto; font-size: .8rem; white-space: pre; }
