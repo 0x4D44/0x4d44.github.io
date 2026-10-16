@@ -1158,7 +1158,6 @@
         ctx.restore();
         const eShow = st.mode === "broken" ? st.ep : st.e;
         cap(ctx, `Gauge length: ${HE.fmt(L0 * (1 + eShow), 4)} mm (started at ${L0} mm)${zoom ? "   picture stretched ×" + HE.fmt(K, 2) : ""}`, 14, 112, { size: 12, col: C.ink2 });
-        cap(ctx, "grip", 29, cy + 44, { size: 10, col: C.muted, align: "center", halo: false });
         // load cell arrows
         const Fk = st.s * A0 / 1000;
         cap(ctx, `${HE.fmt(Fk, 3)} kN`, S.w - 14, 20, { align: "right", bold: true, size: 14, col: C.lode });
