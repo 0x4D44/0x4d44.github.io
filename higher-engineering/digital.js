@@ -947,7 +947,7 @@
           ctx.fillStyle = C.paper2; ctx.fillRect(mx, y0, pw, ph);
           ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.strokeRect(mx, y0, pw, ph);
           HE.label(ctx, title, mx + 6, y0 + 11, { size: 12, bold: true, col: C.ink2 });
-          fn(y0 + 22, ph - 28);
+          fn(y0 + 28, ph - 34);
         };
         const X = (i) => mx + 4 + (i / (N - 1)) * (pw - 8);
         const trace = (arr, y, h, col, w, dash) => {
@@ -1292,6 +1292,7 @@
 (function () {
   "use strict";
   if (typeof window === "undefined" || !window.HE || !window.Dig) return;
+  const tex = (node, src, display) => { node.innerHTML = HE.tex(src, !!display); };
   const HE = window.HE, Dig = window.Dig, el = HE.el;
   const $ = (id) => document.getElementById(id);
   let seq = 0;
