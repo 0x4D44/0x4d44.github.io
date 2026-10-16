@@ -88,19 +88,18 @@
 
 <h3>The phases of a project</h3>
 <p>A project does not go straight from idea to finished product. Engineers work through <dfn>phases</dfn>. Different organisations name them differently, but the logic is always the same: understand the need, work out a solution, make it, prove it works, then keep it working.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 210" role="img" aria-label="Five boxes in a row joined by arrows: 1 Identify the need and analyse, 2 Design, 3 Develop and build, 4 Test, 5 Evaluate and maintain. A long return arrow runs from Test back to Design and another from Evaluate back to Identify the need, showing that engineering is iterative.">
-<g font-size="14" font-weight="700" text-anchor="middle">
-<rect x="8" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="73" y="80" class="ink">1 Identify the need</text><text x="73" y="100" class="ink">and analyse</text>
-<rect x="160" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="225" y="90" class="ink">2 Design</text>
-<rect x="312" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="377" y="80" class="ink">3 Develop</text><text x="377" y="100" class="ink">and build</text>
-<rect x="464" y="50" width="130" height="70" rx="4" class="sy-box"/><text x="529" y="90" class="ink">4 Test</text>
-<rect x="616" y="50" width="136" height="70" rx="4" class="sy-box"/><text x="684" y="80" class="ink">5 Evaluate</text><text x="684" y="100" class="ink">and maintain</text>
-</g>
-<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M140 85 H156"/><path d="M292 85 H308"/><path d="M444 85 H460"/><path d="M596 85 H612"/></g>
-<path d="M529 122 V170 H225 V124" class="s-red" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-red)"/>
-<text x="377" y="190" font-size="13" class="f-red" text-anchor="middle" font-weight="700">test fails a requirement: redesign</text>
-<path d="M684 48 V20 H73 V46" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-sea)"/>
-<text x="378" y="14" font-size="13" class="f-sea" text-anchor="middle" font-weight="700">evaluation shows a new need: start again</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 440 440" style="max-width:480px" role="img" aria-label="Five boxes stacked top to bottom joined by arrows: 1 Identify the need and analyse, 2 Design, 3 Develop and build, 4 Test, 5 Evaluate and maintain. A red dashed return arrow runs from Test back up to Design, and a blue dashed return arrow from Evaluate and maintain back up to Identify the need, showing that engineering is iterative.">
+<g font-size="15" font-weight="700" text-anchor="middle">
+<rect x="110" y="14" width="220" height="52" rx="4" class="sy-box"/><text x="220" y="36" class="ink">1 Identify the need</text><text x="220" y="55" class="ink">and analyse</text>
+<rect x="110" y="94" width="220" height="52" rx="4" class="sy-box"/><text x="220" y="126" class="ink">2 Design</text>
+<rect x="110" y="174" width="220" height="52" rx="4" class="sy-box"/><text x="220" y="196" class="ink">3 Develop</text><text x="220" y="215" class="ink">and build</text>
+<rect x="110" y="254" width="220" height="52" rx="4" class="sy-box"/><text x="220" y="286" class="ink">4 Test</text>
+<rect x="110" y="334" width="220" height="52" rx="4" class="sy-box"/><text x="220" y="356" class="ink">5 Evaluate</text><text x="220" y="375" class="ink">and maintain</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M220 68 V90"/><path d="M220 148 V170"/><path d="M220 228 V250"/><path d="M220 308 V330"/></g>
+<path d="M108 280 H58 V120 H106" class="s-red" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-red)"/>
+<text transform="translate(40 200) rotate(-90)" font-size="13" class="f-red" text-anchor="middle" font-weight="700">test fails: redesign</text>
+<path d="M332 360 H392 V40 H336" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-sea)"/>
+<text transform="translate(414 200) rotate(90)" font-size="13" class="f-sea" text-anchor="middle" font-weight="700">new need found: start again</text>
 </svg></div>
 <figcaption>The project phases. The arrows going backwards matter as much as the ones going forwards: designs fail tests, and finished products reveal new needs.</figcaption></figure>
 <div class="table-wrap"><table>
@@ -116,18 +115,18 @@
 
 <h3>Communication and team working</h3>
 <p>No engineer works alone on a large project. A bridge needs civil engineers for the structure, mechanical engineers for any moving span, electrical engineers for the lighting and drives, and software engineers for the control system. Each depends on the others' work, so the places where one discipline meets another (the <em>interfaces</em>) are where mistakes most often creep in.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 700 300" role="img" aria-label="Hub and spoke diagram. A central circle labelled Project, with the client and specification, is joined by double-headed arrows to six boxes: mechanical, electrical and electronic, civil and structural, software and control, environmental, and materials. Labels on the arrows name the information exchanged: drawings, specifications, test reports and meetings.">
-<circle cx="350" cy="150" r="52" class="sy-box"/><text x="350" y="146" font-size="15" font-weight="700" text-anchor="middle" class="ink">Project</text><text x="350" y="166" font-size="12" text-anchor="middle" class="ink2">client + specification</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 480 340" style="max-width:560px" role="img" aria-label="Hub and spoke diagram. A central circle labelled Project, with the client and specification, is joined by double-headed arrows to six boxes: mechanical, electrical and electronic, civil and structural, software and control, environmental, and materials. Notes name the information exchanged: drawings, specifications, test reports and meetings.">
+<circle cx="240" cy="170" r="56" class="sy-box"/><text x="240" y="166" font-size="17" font-weight="700" text-anchor="middle" class="ink">Project</text><text x="240" y="186" font-size="12" text-anchor="middle" class="ink2">client + specification</text>
 <g class="s-ink" stroke-width="2" marker-start="url(#sy-ar)" marker-end="url(#sy-ar)" fill="none">
-<path d="M310 118 L190 66"/><path d="M350 98 V54"/><path d="M390 118 L510 66"/><path d="M310 182 L190 236"/><path d="M350 202 V246"/><path d="M390 182 L510 236"/></g>
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="60" y="38" width="130" height="40" rx="3" class="sy-box"/><text x="125" y="63" class="ink">Mechanical</text>
-<rect x="285" y="12" width="130" height="40" rx="3" class="sy-box"/><text x="350" y="37" class="ink">Electrical</text>
-<rect x="510" y="38" width="130" height="40" rx="3" class="sy-box"/><text x="575" y="63" class="ink">Civil / structural</text>
-<rect x="60" y="222" width="130" height="40" rx="3" class="sy-box"/><text x="125" y="247" class="ink">Software / control</text>
-<rect x="285" y="248" width="130" height="40" rx="3" class="sy-box"/><text x="350" y="273" class="ink">Environmental</text>
-<rect x="510" y="222" width="130" height="40" rx="3" class="sy-box"/><text x="575" y="247" class="ink">Materials</text></g>
-<g font-size="12" class="f-sea" font-weight="700"><text x="218" y="100">drawings</text><text x="436" y="100">specifications</text><text x="204" y="214">test reports</text><text x="432" y="214">meetings</text></g>
+<path d="M196 134 L120 66"/><path d="M240 114 V66"/><path d="M284 134 L360 66"/><path d="M196 206 L120 274"/><path d="M240 226 V274"/><path d="M284 206 L360 274"/></g>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="10" y="14" width="150" height="46" rx="3" class="sy-box"/><text x="85" y="42" class="ink">Mechanical</text>
+<rect x="165" y="14" width="150" height="46" rx="3" class="sy-box"/><text x="240" y="42" class="ink">Electrical</text>
+<rect x="320" y="14" width="150" height="46" rx="3" class="sy-box"/><text x="395" y="42" class="ink">Civil / structural</text>
+<rect x="10" y="280" width="150" height="46" rx="3" class="sy-box"/><text x="85" y="308" class="ink">Software / control</text>
+<rect x="165" y="280" width="150" height="46" rx="3" class="sy-box"/><text x="240" y="308" class="ink">Environmental</text>
+<rect x="320" y="280" width="150" height="46" rx="3" class="sy-box"/><text x="395" y="308" class="ink">Materials</text></g>
+<g font-size="13" class="f-sea" font-weight="700"><text x="22" y="116">drawings</text><text x="458" y="116" text-anchor="end">specifications</text><text x="22" y="236">test reports</text><text x="458" y="236" text-anchor="end">meetings</text></g>
 </svg></div>
 <figcaption>Information flows both ways between every discipline and the project as a whole. Good communication means the right information, in a form the other discipline understands, at the right time.</figcaption></figure>
 <p>Engineers communicate through: <strong>drawings and models</strong> (the shared picture of what will be built), <strong>specifications</strong> (what it must achieve), <strong>reports and test records</strong> (evidence that it does), <strong>meetings</strong> (to settle disagreements early), and <strong>written and spoken updates to clients</strong> who are not engineers and need plain language. Good <dfn>team working</dfn> means agreeing roles, sharing information promptly, respecting each other's expertise, meeting deadlines others depend on, and being honest about problems instead of hiding them.</p>
@@ -220,43 +219,41 @@
 <li>Name each block by its <em>function</em> ("detects water level", "switches pump") rather than only by a part ("float").</li>
 <li>Keep one box for one job. If a box does two things, split it.</li>
 </ul>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 230" role="img" aria-label="A system boundary drawn as a dashed rectangle labelled Bilge pumping system. Inside, four blocks in a row: Level sensor, Switching circuit, Pump motor and Pump with pipework. Arrows join them left to right. Input: water in the bilge enters the sensor. Output: water leaves the pump to the sea. A battery supplies energy to the switching circuit and motor.">
-<rect x="150" y="20" width="460" height="150" rx="6" fill="none" class="s-sea" stroke-width="2.4" stroke-dasharray="8 5"/>
-<text x="165" y="42" font-size="13" font-weight="700" class="f-sea">System: bilge pumping</text>
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="164" y="66" width="100" height="56" rx="3" class="sy-box"/><text x="214" y="91" class="ink">Level</text><text x="214" y="108" class="ink">sensor</text>
-<rect x="284" y="66" width="100" height="56" rx="3" class="sy-box"/><text x="334" y="91" class="ink">Switching</text><text x="334" y="108" class="ink">circuit</text>
-<rect x="404" y="66" width="90" height="56" rx="3" class="sy-box"/><text x="449" y="91" class="ink">Pump</text><text x="449" y="108" class="ink">motor</text>
-<rect x="512" y="66" width="86" height="56" rx="3" class="sy-box"/><text x="555" y="91" class="ink">Pump +</text><text x="555" y="108" class="ink">pipework</text></g>
-<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M70 94 H160"/><path d="M266 94 H280"/><path d="M386 94 H400"/><path d="M496 94 H508"/><path d="M600 94 H700"/></g>
-<text x="66" y="78" font-size="12" class="ink2">INPUT</text><text x="66" y="118" font-size="12" class="ink2">water in the</text><text x="66" y="133" font-size="12" class="ink2">bilge</text>
-<text x="650" y="78" font-size="12" class="ink2" text-anchor="middle">OUTPUT</text><text x="650" y="118" font-size="12" class="ink2" text-anchor="middle">water out</text><text x="650" y="133" font-size="12" class="ink2" text-anchor="middle">to the sea</text>
-<rect x="320" y="184" width="120" height="30" rx="3" class="sy-box"/><text x="380" y="204" font-size="13" font-weight="700" text-anchor="middle" class="ink">Battery (energy)</text>
-<path d="M350 184 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"/><path d="M425 184 V126" class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"/>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 520 290" style="max-width:600px" role="img" aria-label="A system boundary drawn as a dashed rectangle labelled Bilge pumping system. Inside, four blocks in a row: Level sensor, Switching circuit, Pump motor and Pump with pipework. Arrows join them left to right. Input: water in the bilge enters the sensor from above. Output: water leaves the pump to the sea below. A battery below supplies energy to the switching circuit and the motor.">
+<rect x="8" y="46" width="504" height="120" rx="6" fill="none" class="s-sea" stroke-width="2.4" stroke-dasharray="8 5"/>
+<text x="18" y="66" font-size="13" font-weight="700" class="f-sea">System boundary: bilge pumping</text>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="22" y="86" width="100" height="56" rx="3" class="sy-box"/><text x="72" y="110" class="ink">Level</text><text x="72" y="128" class="ink">sensor</text>
+<rect x="148" y="86" width="100" height="56" rx="3" class="sy-box"/><text x="198" y="110" class="ink">Switching</text><text x="198" y="128" class="ink">circuit</text>
+<rect x="274" y="86" width="100" height="56" rx="3" class="sy-box"/><text x="324" y="110" class="ink">Pump</text><text x="324" y="128" class="ink">motor</text>
+<rect x="400" y="86" width="100" height="56" rx="3" class="sy-box"/><text x="450" y="110" class="ink">Pump +</text><text x="450" y="128" class="ink">pipework</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M124 114 H144"/><path d="M250 114 H270"/><path d="M376 114 H396"/><path d="M72 20 V82"/><path d="M450 144 V210"/></g>
+<text x="82" y="34" font-size="13" font-weight="700" class="ink2">INPUT: water in the bilge</text>
+<text x="440" y="228" font-size="13" font-weight="700" class="ink2" text-anchor="end">OUTPUT: water out to the sea</text>
+<rect x="168" y="224" width="140" height="34" rx="3" class="sy-box"/><text x="238" y="246" font-size="14" font-weight="700" text-anchor="middle" class="ink">Battery (energy)</text>
+<path d="M198 222 V146" class="s-red" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-red)"/><path d="M280 222 V146" class="s-red" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-red)"/>
 </svg></div>
 <figcaption>A system diagram for an automatic bilge pump. The dashed line is the system boundary. Each box is a sub-system with one job, and the arrows show what flows between them (signals in black, electrical energy in red).</figcaption></figure>
 
 <h3>Complex systems</h3>
 <p>A <dfn>complex system</dfn> has several sub-systems that work together, and often interact. The whole ship is one: propulsion, steering, electrical supply, fire-fighting and bilge pumping are each a system, and each is part of the ship system. Engineers draw the big picture first, then a separate diagram for each sub-system, then for the sub-systems inside those. This is called working <em>top-down</em>, and it lets a team share out the work: each discipline takes the sub-systems it is expert in, agreeing the arrows between them.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 260" role="img" aria-label="Top-down system hierarchy. At the top a box labelled HMS Ratchet, whole ship. Below it, four sub-system boxes: Propulsion, Steering, Electrical supply, Bilge and fire pumping. Each has smaller boxes underneath: Propulsion has sails and rigging, shaft and propeller drive; Steering has wheel and helm, rudder gear; Electrical supply has generator and battery; Bilge has sensor, pump.">
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="280" y="10" width="200" height="40" rx="3" class="sy-box"/><text x="380" y="35" class="ink">HMS Ratchet (whole ship)</text>
-<rect x="20" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="95" y="119" class="ink">Propulsion</text>
-<rect x="210" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="285" y="119" class="ink">Steering</text>
-<rect x="400" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="475" y="119" class="ink">Electrical supply</text>
-<rect x="590" y="95" width="150" height="38" rx="3" class="sy-box"/><text x="665" y="119" class="ink">Bilge &amp; fire pumping</text>
-</g>
-<g class="s-ink" stroke-width="2" fill="none"><path d="M380 50 V72 H95 V95"/><path d="M380 72 H285 V95"/><path d="M380 72 H475 V95"/><path d="M380 72 H665 V95"/></g>
-<g font-size="12" text-anchor="middle">
-<rect x="20" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="95" y="190" class="ink">Sails + rigging</text>
-<rect x="20" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="95" y="232" class="ink">Auxiliary drive</text>
-<rect x="210" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="285" y="190" class="ink">Wheel + helm</text>
-<rect x="210" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="285" y="232" class="ink">Rudder gear</text>
-<rect x="400" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="475" y="190" class="ink">Generator</text>
-<rect x="400" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="475" y="232" class="ink">Battery bank</text>
-<rect x="590" y="170" width="150" height="30" rx="3" class="sy-box"/><text x="665" y="190" class="ink">Level sensor</text>
-<rect x="590" y="212" width="150" height="30" rx="3" class="sy-box"/><text x="665" y="232" class="ink">Pump + motor</text></g>
-<g class="s-muted" stroke-width="1.6" fill="none"><path d="M95 133 V170"/><path d="M95 156 V212"/><path d="M285 133 V170"/><path d="M285 156 V212"/><path d="M475 133 V170"/><path d="M475 156 V212"/><path d="M665 133 V170"/><path d="M665 156 V212"/></g>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 480 360" style="max-width:560px" role="img" aria-label="Top-down system hierarchy. At the top a box labelled HMS Ratchet, whole ship. Below it, four sub-system boxes in two rows: Propulsion, containing sails and rigging and auxiliary drive; Steering, containing wheel and helm and rudder gear; Electrical supply, containing generator and battery bank; and Bilge and fire pumping, containing level sensor and pump with motor.">
+<rect x="140" y="8" width="200" height="38" rx="3" class="sy-box"/><text x="240" y="32" font-size="15" font-weight="700" text-anchor="middle" class="ink">HMS Ratchet (whole ship)</text>
+<g class="s-ink" stroke-width="2" fill="none"><path d="M240 46 V60"/><path d="M120 60 H360"/><path d="M120 60 V76"/><path d="M360 60 V76"/><path d="M120 190 V206" stroke="none"/></g>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="10" y="76" width="220" height="116" rx="4" fill="none" class="s-muted" stroke-width="2"/><text x="120" y="98" class="ink">Propulsion</text>
+<rect x="30" y="108" width="180" height="32" rx="3" class="sy-box"/><text x="120" y="130" font-size="13" class="ink">Sails + rigging</text>
+<rect x="30" y="148" width="180" height="32" rx="3" class="sy-box"/><text x="120" y="170" font-size="13" class="ink">Auxiliary drive</text>
+<rect x="250" y="76" width="220" height="116" rx="4" fill="none" class="s-muted" stroke-width="2"/><text x="360" y="98" class="ink">Steering</text>
+<rect x="270" y="108" width="180" height="32" rx="3" class="sy-box"/><text x="360" y="130" font-size="13" class="ink">Wheel + helm</text>
+<rect x="270" y="148" width="180" height="32" rx="3" class="sy-box"/><text x="360" y="170" font-size="13" class="ink">Rudder gear</text>
+<rect x="10" y="210" width="220" height="116" rx="4" fill="none" class="s-muted" stroke-width="2"/><text x="120" y="232" class="ink">Electrical supply</text>
+<rect x="30" y="242" width="180" height="32" rx="3" class="sy-box"/><text x="120" y="264" font-size="13" class="ink">Generator</text>
+<rect x="30" y="282" width="180" height="32" rx="3" class="sy-box"/><text x="120" y="304" font-size="13" class="ink">Battery bank</text>
+<rect x="250" y="210" width="220" height="116" rx="4" fill="none" class="s-muted" stroke-width="2"/><text x="360" y="232" class="ink">Bilge + fire pumping</text>
+<rect x="270" y="242" width="180" height="32" rx="3" class="sy-box"/><text x="360" y="264" font-size="13" class="ink">Level sensor</text>
+<rect x="270" y="282" width="180" height="32" rx="3" class="sy-box"/><text x="360" y="304" font-size="13" class="ink">Pump + motor</text></g>
+<text x="240" y="350" font-size="12" class="ink2" text-anchor="middle">level 0: the ship · level 1: sub-systems · level 2: parts inside each</text>
 </svg></div>
 <figcaption>Top-down view of a complex system: the whole ship, its sub-systems, and the parts inside each one. Each level can be drawn as its own block diagram.</figcaption></figure>
 
@@ -275,32 +272,33 @@
 <tr><th scope="row">Sensor (feedback transducer)</th><td>Measures the output and turns it into a signal the comparator can use</td><td>The compass</td></tr>
 </tbody></table></div>
 <p>A <dfn>disturbance</dfn> is anything unwanted that pushes the output away from the desired value: a gust of wind, a wave, a change in load. Disturbances are why we need control at all. Without them, we could just set the rudder once.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 400" role="img" aria-label="Two control diagrams. Top: open loop. Desired value goes into a controller, then an actuator, then a process, giving the output, with no path back. A disturbance arrow enters the process. Bottom: closed loop. Desired value and a negative feedback signal go into a comparator circle marked plus and minus, which outputs the error to the controller, then actuator, then process, giving the output. A sensor takes the output and returns it to the comparator. A disturbance enters the process.">
-<text x="12" y="20" font-size="14" font-weight="700" class="f-red">OPEN LOOP: no information comes back</text>
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="150" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="205" y="78" class="ink">Controller</text>
-<rect x="300" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="355" y="78" class="ink">Actuator</text>
-<rect x="450" y="50" width="110" height="46" rx="3" class="sy-box"/><text x="505" y="78" class="ink">Process</text></g>
-<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M40 73 H146"/><path d="M262 73 H296"/><path d="M412 73 H446"/><path d="M562 73 H720"/></g>
-<text x="40" y="60" font-size="12" class="ink2">desired value</text><text x="720" y="60" font-size="12" class="ink2" text-anchor="end">output</text>
-<path d="M505 18 V46" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="515" y="30" font-size="12" class="f-red" font-weight="700">disturbance</text>
-<line x1="20" y1="136" x2="740" y2="136" class="s-line" stroke-width="2" stroke-dasharray="3 5"/>
-<text x="12" y="166" font-size="14" font-weight="700" class="f-grass">CLOSED LOOP: the output is measured and fed back</text>
-<g font-size="13" font-weight="700" text-anchor="middle">
-<circle cx="150" cy="233" r="18" class="sy-box"/>
-<rect x="215" y="210" width="110" height="46" rx="3" class="sy-box"/><text x="270" y="238" class="ink">Controller</text>
-<rect x="355" y="210" width="100" height="46" rx="3" class="sy-box"/><text x="405" y="238" class="ink">Actuator</text>
-<rect x="485" y="210" width="100" height="46" rx="3" class="sy-box"/><text x="535" y="238" class="ink">Process</text>
-<rect x="355" y="320" width="130" height="46" rx="3" class="sy-box"/><text x="420" y="348" class="ink">Sensor</text></g>
-<text x="150" y="228" font-size="15" font-weight="700" text-anchor="middle" class="ink">+</text><text x="150" y="246" font-size="17" font-weight="700" text-anchor="middle" class="ink">−</text>
-<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M40 233 H130"/><path d="M168 233 H211"/><path d="M327 233 H351"/><path d="M457 233 H481"/><path d="M587 233 H720"/></g>
-<text x="40" y="218" font-size="12" class="ink2">desired value</text><text x="720" y="218" font-size="12" class="ink2" text-anchor="end">output</text>
-<text x="190" y="224" font-size="12" class="f-red" font-weight="700" text-anchor="middle">error</text>
-<path d="M640 233 V343 H487" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
-<path d="M353 343 H150 V253" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
-<circle cx="640" cy="233" r="4" class="ink"/>
-<text x="560" y="336" font-size="12" class="ink2" text-anchor="middle">actual output</text><text x="250" y="336" font-size="12" class="ink2" text-anchor="middle">measured signal (feedback)</text>
-<path d="M535 168 V206" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="545" y="184" font-size="12" class="f-red" font-weight="700">disturbance</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 520 400" style="max-width:640px" role="img" aria-label="Two control diagrams. Top: open loop. Desired value goes into a controller, then an actuator, then a process, giving the output, with no path back. A disturbance arrow enters the process. Bottom: closed loop. Desired value and a negative feedback signal go into a comparator circle marked plus and minus, which outputs the error to the controller, then actuator, then process, giving the output. A sensor takes the output and returns it to the comparator. A disturbance enters the process.">
+<text x="6" y="18" font-size="14" font-weight="700" class="f-red">OPEN LOOP: no information comes back</text>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="96" y="66" width="100" height="46" rx="3" class="sy-box"/><text x="146" y="94" class="ink">Controller</text>
+<rect x="226" y="66" width="90" height="46" rx="3" class="sy-box"/><text x="271" y="94" class="ink">Actuator</text>
+<rect x="346" y="66" width="90" height="46" rx="3" class="sy-box"/><text x="391" y="94" class="ink">Process</text></g>
+<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M12 89 H92"/><path d="M198 89 H222"/><path d="M318 89 H342"/><path d="M438 89 H512"/></g>
+<text x="12" y="76" font-size="13" class="ink2">desired</text><text x="12" y="108" font-size="13" class="ink2">value</text><text x="470" y="76" font-size="13" class="ink2" text-anchor="middle">output</text>
+<path d="M391 30 V62" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="402" y="44" font-size="13" class="f-red" font-weight="700">disturbance</text>
+<line x1="10" y1="142" x2="510" y2="142" class="s-line" stroke-width="2" stroke-dasharray="3 5"/>
+<text x="6" y="172" font-size="14" font-weight="700" class="f-grass">CLOSED LOOP: output measured, fed back</text>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<circle cx="52" cy="256" r="18" class="sy-box"/>
+<rect x="104" y="233" width="100" height="46" rx="3" class="sy-box"/><text x="154" y="261" class="ink">Controller</text>
+<rect x="228" y="233" width="90" height="46" rx="3" class="sy-box"/><text x="273" y="261" class="ink">Actuator</text>
+<rect x="342" y="233" width="90" height="46" rx="3" class="sy-box"/><text x="387" y="261" class="ink">Process</text>
+<rect x="196" y="334" width="110" height="46" rx="3" class="sy-box"/><text x="251" y="362" class="ink">Sensor</text></g>
+<text x="52" y="251" font-size="15" font-weight="700" text-anchor="middle" class="ink">+</text><text x="52" y="270" font-size="18" font-weight="700" text-anchor="middle" class="ink">−</text>
+<g class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"><path d="M10 256 H32"/><path d="M72 256 H100"/><path d="M206 256 H224"/><path d="M320 256 H338"/><path d="M434 256 H512"/></g>
+<text x="8" y="214" font-size="13" class="ink2">desired</text><text x="8" y="229" font-size="13" class="ink2">value</text>
+<text x="86" y="244" font-size="12" class="f-red" font-weight="700" text-anchor="middle">error</text>
+<text x="470" y="244" font-size="13" class="ink2" text-anchor="middle">output</text>
+<path d="M470 256 V357 H308" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
+<path d="M194 357 H52 V276" class="s-ink" stroke-width="2.2" fill="none" marker-end="url(#sy-ar)"/>
+<circle cx="470" cy="256" r="4" class="ink"/>
+<text x="396" y="350" font-size="12" class="ink2" text-anchor="middle">actual output</text><text x="124" y="350" font-size="12" class="ink2" text-anchor="middle">measured (feedback)</text>
+<path d="M387 192 V229" class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"/><text x="398" y="208" font-size="13" class="f-red" font-weight="700">disturbance</text>
 </svg></div>
 <figcaption>Open loop (top) sends a command and hopes. Closed loop (bottom) measures the output, subtracts it from the desired value at the comparator, and acts on the difference. The minus sign at the comparator is what makes the feedback <em>negative</em>.</figcaption></figure>
 
@@ -366,25 +364,28 @@ $$\text{controller output} = K_p \times \text{error}$$
 $$\text{offset} = \frac{\text{output needed to cancel the disturbance}}{K_p}.$$
 Raising the gain shrinks the offset, but a high gain over-reacts: the output overshoots and the loop starts to oscillate. Good control is a compromise, and more advanced controllers (which you do not need for Higher) add extra terms to remove the offset.</p>
 
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 270" role="img" aria-label="Two graphs of controller output against error. Left: two-state control with hysteresis. The output is off for negative errors and on for positive errors, switching at plus and minus the band, drawn as a step with a small gap. Right: proportional control. The output is a straight sloping line through the origin, flat at the maximum output (saturation) at each end.">
-<g font-size="12" class="ink2">
-<line x1="40" y1="220" x2="350" y2="220" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="195" y1="240" x2="195" y2="30" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
-<text x="352" y="238" text-anchor="end">error</text><text x="200" y="28">output</text>
-<text x="90" y="212" text-anchor="middle">off</text><text x="300" y="70" text-anchor="middle">on (full)</text><text x="195" y="260" text-anchor="middle" class="ink2">TWO-STATE (with switching band)</text>
-<line x1="235" y1="214" x2="235" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="235" y="240" text-anchor="middle">+band</text>
-<line x1="155" y1="214" x2="155" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="155" y="240" text-anchor="middle">−band</text></g>
-<path d="M60 220 H235 V66 H340" class="s-red" stroke-width="3" fill="none"/>
-<path d="M340 66 H155 V220 H60" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4"/>
-<text x="214" y="150" font-size="12" class="f-red" text-anchor="start">error rising</text><text x="150" y="150" font-size="12" class="f-sea" text-anchor="end">error falling</text>
-<g font-size="12" class="ink2">
-<line x1="410" y1="140" x2="730" y2="140" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="570" y1="240" x2="570" y2="30" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
-<text x="732" y="158" text-anchor="end">error</text><text x="575" y="28">output</text>
-<text x="570" y="260" text-anchor="middle">PROPORTIONAL (gain = slope)</text>
-<text x="660" y="62" text-anchor="middle">upper limit (saturation)</text><text x="480" y="228" text-anchor="middle">lower limit</text></g>
-<path d="M420 210 H500 L640 70 H720" class="s-red" stroke-width="3" fill="none"/>
-<text x="598" y="124" font-size="12" class="f-red" font-weight="700">output = Kp × error</text>
-</svg></div>
-<figcaption>Two-state control gives an all-or-nothing response, with a switching band so it does not flutter. Proportional control gives a response in proportion to the error, up to the limit the actuator can deliver.</figcaption></figure>
+<div class="two-col">
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 360 280" role="img" aria-label="Graph of controller output against error for two-state control with a switching band. The output is off for negative errors and fully on for positive errors. It switches on when the error rises above plus the band and off when the error falls below minus the band, drawn as two offset steps.">
+<g font-size="13" class="ink2">
+<line x1="20" y1="220" x2="345" y2="220" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="180" y1="250" x2="180" y2="24" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
+<text x="344" y="238" text-anchor="end">error</text><text x="186" y="26">output</text>
+<text x="80" y="210" text-anchor="middle">off</text><text x="290" y="66" text-anchor="middle">fully on</text><text x="180" y="272" text-anchor="middle" font-weight="700">TWO-STATE</text>
+<line x1="230" y1="214" x2="230" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="230" y="240" text-anchor="middle">+band</text>
+<line x1="130" y1="214" x2="130" y2="226" class="stroke-ink" stroke-width="1.5"/><text x="130" y="240" text-anchor="middle">−band</text></g>
+<path d="M40 220 H230 V70 H340" class="s-red" stroke-width="3" fill="none"/>
+<path d="M340 70 H130 V220 H40" class="s-sea" stroke-width="2.4" fill="none" stroke-dasharray="6 4"/>
+<text x="238" y="150" font-size="12" class="f-red">error rising</text><text x="122" y="150" font-size="12" class="f-sea" text-anchor="end">error falling</text>
+</svg></div><figcaption>Two-state control: all or nothing, with a switching band so the output does not flutter.</figcaption></figure>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 360 280" role="img" aria-label="Graph of controller output against error for proportional control. The output is a straight sloping line through the origin, flat at a lower limit for large negative errors and flat at an upper limit (saturation) for large positive errors. The slope of the line is the gain.">
+<g font-size="13" class="ink2">
+<line x1="20" y1="140" x2="345" y2="140" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/><line x1="180" y1="250" x2="180" y2="24" class="stroke-ink" stroke-width="1.8" marker-end="url(#sy-ar)"/>
+<text x="344" y="158" text-anchor="end">error</text><text x="186" y="26">output</text>
+<text x="180" y="272" text-anchor="middle" font-weight="700">PROPORTIONAL</text>
+<text x="280" y="62" text-anchor="middle">upper limit</text><text x="82" y="212" text-anchor="middle">lower limit</text></g>
+<path d="M30 200 H110 L250 80 H340" class="s-red" stroke-width="3" fill="none"/>
+<text x="196" y="170" font-size="13" class="f-red" font-weight="700">output = Kp × error</text>
+</svg></div><figcaption>Proportional control: output proportional to error (the slope is the gain), up to the limit the actuator can deliver.</figcaption></figure>
+</div>
 
 <div class="table-wrap"><table>
 <caption>Open loop, two-state and proportional compared.</caption>
@@ -468,16 +469,16 @@ Raising the gain shrinks the offset, but a high gain over-reacts: the output ove
 $$P = \frac{E}{t}$$
 <p>A 60 W lantern converts 60 joules of electrical energy every second.</p></div>
 <p>Energy comes in many forms: <strong>chemical</strong> (fuel, batteries, food), <strong>electrical</strong>, <strong>kinetic</strong> (moving objects), <strong>gravitational potential</strong> (height), <strong>elastic or strain</strong> (a stretched rope, a compressed spring), <strong>thermal</strong> (heat), <strong>light</strong>, <strong>sound</strong> and <strong>nuclear</strong>. Machines are chains of conversions.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 170" role="img" aria-label="An energy conversion chain with five boxes joined by arrows: fuel (chemical energy), boiler (thermal energy), turbine (kinetic energy), generator (electrical energy), lamp (light energy and wasted thermal energy). Thin downward arrows from each stage show energy lost as heat to the surroundings.">
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="10" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="70" y="55" class="ink">Fuel</text><text x="70" y="73" font-size="11" class="ink2">chemical</text>
-<rect x="160" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="220" y="55" class="ink">Boiler</text><text x="220" y="73" font-size="11" class="ink2">thermal</text>
-<rect x="310" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="370" y="55" class="ink">Turbine</text><text x="370" y="73" font-size="11" class="ink2">kinetic</text>
-<rect x="460" y="30" width="120" height="56" rx="3" class="sy-box"/><text x="520" y="55" class="ink">Generator</text><text x="520" y="73" font-size="11" class="ink2">electrical</text>
-<rect x="610" y="30" width="130" height="56" rx="3" class="sy-box"/><text x="675" y="55" class="ink">Lamp</text><text x="675" y="73" font-size="11" class="ink2">light</text></g>
-<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M132 58 H156"/><path d="M282 58 H306"/><path d="M432 58 H456"/><path d="M582 58 H606"/></g>
-<g class="s-red" stroke-width="2" fill="none" marker-end="url(#sy-ar-red)"><path d="M220 88 V130"/><path d="M370 88 V130"/><path d="M520 88 V130"/><path d="M675 88 V130"/></g>
-<text x="380" y="154" font-size="13" font-weight="700" text-anchor="middle" class="f-red">wasted energy: heat (and sound) spreads into the surroundings at every stage</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 420 430" style="max-width:460px" role="img" aria-label="An energy conversion chain with five boxes stacked top to bottom joined by arrows: fuel (chemical energy), boiler (thermal energy), turbine (kinetic energy), generator (electrical energy), lamp (light energy). A red arrow to the right of each stage shows energy lost as heat to the surroundings.">
+<g font-size="15" font-weight="700" text-anchor="middle">
+<rect x="30" y="10" width="190" height="52" rx="3" class="sy-box"/><text x="125" y="33" class="ink">Fuel</text><text x="125" y="52" font-size="12" class="ink2">chemical energy</text>
+<rect x="30" y="94" width="190" height="52" rx="3" class="sy-box"/><text x="125" y="117" class="ink">Boiler</text><text x="125" y="136" font-size="12" class="ink2">thermal energy</text>
+<rect x="30" y="178" width="190" height="52" rx="3" class="sy-box"/><text x="125" y="201" class="ink">Turbine</text><text x="125" y="220" font-size="12" class="ink2">kinetic energy</text>
+<rect x="30" y="262" width="190" height="52" rx="3" class="sy-box"/><text x="125" y="285" class="ink">Generator</text><text x="125" y="304" font-size="12" class="ink2">electrical energy</text>
+<rect x="30" y="346" width="190" height="52" rx="3" class="sy-box"/><text x="125" y="369" class="ink">Lamp</text><text x="125" y="388" font-size="12" class="ink2">light energy (useful)</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M125 64 V90"/><path d="M125 148 V174"/><path d="M125 232 V258"/><path d="M125 316 V342"/></g>
+<g class="s-red" stroke-width="2.4" fill="none" marker-end="url(#sy-ar-red)"><path d="M222 120 H280"/><path d="M222 204 H280"/><path d="M222 288 H280"/><path d="M222 372 H280"/></g>
+<g font-size="13" font-weight="700" class="f-red"><text x="286" y="116">wasted heat</text><text x="286" y="200">wasted heat</text><text x="286" y="284">wasted heat</text><text x="286" y="368">wasted heat</text><text x="286" y="384" font-size="12">(and sound)</text></g>
 </svg></div>
 <figcaption>Energy is conserved along the chain, but at each stage some becomes low-grade heat that cannot usefully be recovered. That is why the final useful output is always less than the first input.</figcaption></figure>
 
@@ -496,15 +497,15 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 <tr><th scope="row">Heat from the bulb</th><td class="num">57</td><td class="num">95 %</td><td>Wasted</td></tr>
 <tr><th scope="row">Efficiency</th><td colspan="3">$\eta = 3 \div 60 = 0.05 = 5\ \%$</td></tr>
 </tbody></table></div>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 190" role="img" aria-label="A machine drawn as a box. A thick arrow labelled energy in enters from the left. A thick arrow labelled useful energy out leaves to the right. A thinner red arrow labelled wasted energy leaves downwards. The caption inside the box gives efficiency equals useful energy out divided by energy in.">
-<rect x="250" y="40" width="260" height="90" rx="4" class="sy-box"/>
-<text x="380" y="78" font-size="15" font-weight="700" text-anchor="middle" class="ink">MACHINE</text><text x="380" y="102" font-size="13" text-anchor="middle" class="ink2">efficiency = E(out) ÷ E(in)</text>
-<path d="M60 85 H246" class="s-ink" stroke-width="14" fill="none"/><path d="M246 70 L262 85 L246 100 Z" class="ink"/>
-<path d="M514 85 H650" class="s-grass" stroke-width="10" fill="none"/><path d="M650 72 L668 85 L650 98 Z" class="f-grass"/>
-<path d="M440 132 V160" class="s-red" stroke-width="5" fill="none"/><path d="M432 158 L440 176 L448 158 Z" class="f-red"/>
-<text x="60" y="64" font-size="13" font-weight="700" class="ink">energy in, E(in)</text>
-<text x="560" y="64" font-size="13" font-weight="700" class="f-grass">useful energy out</text>
-<text x="456" y="168" font-size="13" font-weight="700" class="f-red">wasted energy (heat, sound, friction)</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 520 220" style="max-width:600px" role="img" aria-label="A machine drawn as a box. A thick arrow labelled energy in enters from the left. A thick green arrow labelled useful energy out leaves to the right. A thinner red arrow labelled wasted energy leaves downwards. The box says efficiency equals energy out divided by energy in.">
+<rect x="170" y="50" width="180" height="90" rx="4" class="sy-box"/>
+<text x="260" y="88" font-size="16" font-weight="700" text-anchor="middle" class="ink">MACHINE</text><text x="260" y="112" font-size="13" text-anchor="middle" class="ink2">η = E(out) ÷ E(in)</text>
+<path d="M20 95 H152" class="s-ink" stroke-width="14" fill="none"/><path d="M152 81 L168 95 L152 109 Z" class="ink"/>
+<path d="M352 95 H470" class="s-grass" stroke-width="10" fill="none"/><path d="M470 82 L488 95 L470 108 Z" class="f-grass"/>
+<path d="M300 142 V176" class="s-red" stroke-width="5" fill="none"/><path d="M292 174 L300 192 L308 174 Z" class="f-red"/>
+<text x="20" y="72" font-size="14" font-weight="700" class="ink">energy in, E(in)</text>
+<text x="500" y="72" font-size="14" font-weight="700" class="f-grass" text-anchor="end">useful energy out</text>
+<text x="316" y="188" font-size="14" font-weight="700" class="f-red">wasted energy</text><text x="316" y="206" font-size="12" class="f-red">(heat, sound, friction)</text>
 </svg></div>
 <figcaption>Arrow widths drawn in proportion: most of the energy in is useful here. The three arrows always balance.</figcaption></figure>
 
@@ -737,25 +738,24 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 <div class="callout def"><div class="callout-title">📘 Sustainability</div>
 <p>A solution is <dfn>sustainable</dfn> if it meets present needs without using up resources or damaging the environment in a way that stops future generations meeting theirs. It has three strands that must be balanced: <strong>environmental</strong> (does it harm the planet?), <strong>economic</strong> (can it be afforded over its whole life?) and <strong>social</strong> (is it fair and does it serve people?).</p></div>
 <p>To judge sustainability, engineers look at the <dfn>life cycle</dfn> of a product, from raw material to grave, and ask where the impacts occur at each stage.</p>
-<figure class="diagram"><div class="diagram-scroll"><svg viewBox="0 0 760 270" role="img" aria-label="A life-cycle loop. Boxes in a ring: 1 Extract raw materials, 2 Manufacture, 3 Transport and install, 4 Use and maintain, 5 End of life. From End of life, arrows lead to Reuse, Recycle back into materials, and Disposal as waste. Each stage lists a typical question: energy and resources used, waste and emissions in making, transport distance, running energy and lifetime, and what happens afterwards.">
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="10" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="78" y="55" class="ink">1 Extract raw</text><text x="78" y="72" class="ink">materials</text>
-<rect x="170" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="238" y="55" class="ink">2 Manufacture</text><text x="238" y="72" font-size="11" class="ink2">making the parts</text>
-<rect x="330" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="398" y="55" class="ink">3 Transport</text><text x="398" y="72" class="ink">and install</text>
-<rect x="490" y="30" width="136" height="56" rx="3" class="sy-box"/><text x="558" y="55" class="ink">4 Use and</text><text x="558" y="72" class="ink">maintain</text>
-<rect x="640" y="30" width="110" height="56" rx="3" class="sy-box"/><text x="695" y="55" class="ink">5 End of</text><text x="695" y="72" class="ink">life</text></g>
-<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M148 58 H166"/><path d="M308 58 H326"/><path d="M468 58 H486"/><path d="M628 58 H636"/></g>
-<g font-size="11" class="ink2" text-anchor="middle"><text x="78" y="106">energy, land, mining</text><text x="238" y="106">emissions, waste, cost</text><text x="398" y="106">distance, fuel, disruption</text><text x="558" y="106">running energy, lifetime</text><text x="695" y="106">what happens now?</text></g>
-<g font-size="13" font-weight="700" text-anchor="middle">
-<rect x="560" y="150" width="100" height="36" rx="3" class="sy-box"/><text x="610" y="173" class="f-grass">Reuse</text>
-<rect x="440" y="204" width="130" height="40" rx="3" class="sy-box"/><text x="505" y="229" class="f-grass">Recycle</text>
-<rect x="640" y="204" width="110" height="40" rx="3" class="sy-box"/><text x="695" y="229" class="f-red">Disposal</text></g>
-<path d="M695 110 V150 L662 168" class="s-grass" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-grass)"/>
-<path d="M640 170 L560 168" class="s-grass" stroke-width="0" fill="none"/>
-<path d="M690 130 V200" class="s-red" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-red)"/>
-<path d="M440 224 H78 V112" class="s-grass" stroke-width="2.2" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-grass)"/>
-<path d="M608 150 C608 120 520 118 500 100" class="s-grass" stroke-width="2.2" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-grass)"/>
-<text x="260" y="244" font-size="12" class="f-grass" text-anchor="middle" font-weight="700">recycled material returns to manufacture, so less is mined</text>
+<figure class="diagram"><div class="diagram-scroll fit"><svg viewBox="0 0 440 440" style="max-width:480px" role="img" aria-label="A life-cycle diagram. Five stages stacked top to bottom with arrows: 1 Extract raw materials, 2 Manufacture, 3 Transport and install, 4 Use and maintain, 5 End of life. From End of life three routes lead right: Reuse, which returns to Use; Recycle, which returns to the start so less is mined; and Disposal as waste. Each stage has a note on its typical impacts.">
+<g font-size="15" font-weight="700" text-anchor="middle">
+<rect x="10" y="10" width="190" height="46" rx="3" class="sy-box"/><text x="105" y="38" class="ink">1 Extract raw materials</text>
+<rect x="10" y="94" width="190" height="46" rx="3" class="sy-box"/><text x="105" y="122" class="ink">2 Manufacture</text>
+<rect x="10" y="178" width="190" height="46" rx="3" class="sy-box"/><text x="105" y="206" class="ink">3 Transport + install</text>
+<rect x="10" y="262" width="190" height="46" rx="3" class="sy-box"/><text x="105" y="290" class="ink">4 Use and maintain</text>
+<rect x="10" y="346" width="190" height="46" rx="3" class="sy-box"/><text x="105" y="374" class="ink">5 End of life</text></g>
+<g class="s-ink" stroke-width="2.4" fill="none" marker-end="url(#sy-ar)"><path d="M105 58 V90"/><path d="M105 142 V174"/><path d="M105 226 V258"/><path d="M105 310 V342"/></g>
+<g font-size="12" class="ink2"><text x="12" y="74">energy, land, mining</text><text x="12" y="158">emissions, waste, cost</text><text x="12" y="242">distance, fuel, disruption</text><text x="12" y="326">running energy, lifetime</text></g>
+<g font-size="14" font-weight="700" text-anchor="middle">
+<rect x="270" y="262" width="100" height="40" rx="3" class="sy-box"/><text x="320" y="288" class="f-grass">Reuse</text>
+<rect x="270" y="318" width="100" height="40" rx="3" class="sy-box"/><text x="320" y="344" class="f-grass">Recycle</text>
+<rect x="270" y="374" width="100" height="40" rx="3" class="sy-box"/><text x="320" y="400" class="f-red">Disposal</text></g>
+<path d="M202 364 H224 V282 H266" class="s-grass" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-grass)"/>
+<path d="M224 364 V338 H266" class="s-grass" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-grass)"/>
+<path d="M224 364 V394 H266" class="s-red" stroke-width="2.2" fill="none" marker-end="url(#sy-ar-red)"/>
+<path d="M370 338 H418 V33 H204" class="s-grass" stroke-width="2.2" fill="none" stroke-dasharray="6 4" marker-end="url(#sy-ar-grass)"/>
+<text transform="translate(432 190) rotate(90)" font-size="12" class="f-grass" text-anchor="middle" font-weight="700">recycled material returns: less is mined</text>
 </svg></div>
 <figcaption>The life cycle of a product. Impacts occur at every stage. Reuse and recycling turn a straight line into a loop, cutting the demand for new raw materials and for the energy to extract them.</figcaption></figure>
 <ul>
