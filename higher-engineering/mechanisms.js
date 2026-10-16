@@ -1120,7 +1120,7 @@
     function ready() { return st.rows.every((r) => r.pos < 0.02 && !r.moving); }
     function sig(name, t) {
       if (name === "start") return st.startOn(t);
-      const c = name[0].toUpperCase(), e = +name[1], r = st.byName[c], at = e ? r.pos >= 0.98 : r.pos <= 0.02;
+      const c = name[0].toUpperCase(), e = +name[1], r = st.byName[c], at = e ? r.pos >= 0.999 : r.pos <= 0.001;
       if (!at) return false;
       if (cfg.oneWay.has(name)) return t - (st.arrived[name] == null ? -1e9 : st.arrived[name]) < 0.5;
       return true;
@@ -1248,11 +1248,11 @@
     function reset() {
       running = false; stopOnEvent = false;
       st.rows.forEach((r) => { r.pos = 0; r.v = 0; r.d = 0; r.moving = false; });
-      st.t = 0; st.startUntil = -1; st.ptr = 0; st.moveLog = []; st.done = []; st.arrived = {}; st.conflict = {}; st.cycles = 0; st.contLatch = false; st.k1 = false; st.idleAnnounced = false;
+      st.t = 0; st.startUntil = -1; st.ptr = 0; st.moveLog = []; st.done = []; st.confLog = {}; st.stuck = false; st.rows.forEach((r) => { r._at0 = true; r._at1 = false; }); st.arrived = {}; st.conflict = {}; st.cycles = 0; st.contLatch = false; st.k1 = false; st.idleAnnounced = false;
       status.className = "mec-status"; status.innerHTML = "At rest: every piston is instroked and the valves are in their rest states. Press <b>START</b> (or Step).";
-      paint(0); if (api.onstate) api.onstate();
+      evalSignals(0); paint(0); if (api.onstate) api.onstate();
     }
-    function start() { st.startUntil = st.t + 0.45; st.idleAnnounced = false; if (cfg.cont) st.contLatch = true; run(true); }
+    function start() { st.startUntil = st.t + 1.0; st.stuck = false; st.confLog = {}; st.idleAnnounced = false; if (cfg.cont) st.contLatch = true; run(true); }
     function run(on) { if (on && !running) { running = true; last = 0; if (!raf) raf = requestAnimationFrame(frame); } else if (!on) { running = false; } if (api.onstate) api.onstate(); }
     function step() {
       stopOnEvent = true;
@@ -1266,20 +1266,24 @@
       paint(dt);
       if (running) raf = requestAnimationFrame(frame);
     }
+    function evalSignals(t) {
+      const on = {};
+      Object.keys(cfg.pilots).forEach((key) => { on[key] = cfg.pilots[key].every((n) => sig(n, t)); });
+      st.on = on;
+      st.rows.forEach((r) => {
+        const kL = ep ? r.yL : r.kL, kR = ep ? r.yR : r.kR;
+        r.sa = !!on[kL]; r.sb = !!on[kR]; r.conf = r.sa && r.sb;
+      });
+    }
     function update(dt) {
       st.t += dt;
       const t = st.t;
       // edge detection for arrival pulses
-      st.rows.forEach((r) => { [0, 1].forEach((e) => { const nm = r.name.toLowerCase() + e, at = e ? r.pos >= 0.98 : r.pos <= 0.02; if (at && !r["_at" + e]) st.arrived[nm] = t; r["_at" + e] = at; }); });
+      st.rows.forEach((r) => { [0, 1].forEach((e) => { const nm = r.name.toLowerCase() + e, at = e ? r.pos >= 0.999 : r.pos <= 0.001; if (at && !r["_at" + e]) st.arrived[nm] = t; r["_at" + e] = at; }); });
       // signals
-      const on = {};
-      Object.keys(cfg.pilots).forEach((key) => { on[key] = cfg.pilots[key].every((n) => sig(n, t)); });
-      st.on = on;
+      evalSignals(t);
       st.rows.forEach((r, i) => {
-        const kL = ep ? r.yL : r.kL, kR = ep ? r.yR : r.kR, a = !!on[kL], b = !!on[kR];
-        r.sa = a; r.sb = b;
-        if (a && b) { r.conf = true; }
-        else { r.conf = false; if (a) r.v = 1; else if (b) r.v = 0; }
+        if (r.conf) st.confLog[r.name] = true; else if (r.sa) r.v = 1; else if (r.sb) r.v = 0;
         // spool tween
         const sp = 5 * dt;
         r.d += clamp(r.v - r.d, -sp, sp);
@@ -1300,15 +1304,13 @@
         const e = cfg.seq[st.ptr], lab = e[0] + (e[1] > 0 ? "+" : "−");
         if (m === lab) { st.ptr++; if (st.ptr >= cfg.seq.length) { st.ptr = 0; st.cycles++; } }
       }
-      // idle?
+      // idle? either the cycle has finished, or the circuit has jammed
       const anyMoving = st.rows.some((r) => r.moving) || st.rows.some((r) => Math.abs(r.d - r.v) > 0.02);
-      const conflicts = st.rows.filter((r) => r.conf);
-      if (!anyMoving && t > st.startUntil + 0.2) {
-        if (conflicts.length) { running = running; }
-        const atHome = st.rows.every((r) => r.pos < 0.02);
-        if (atHome && st.ptr === 0 && !cfg.cont && st.moveLog.length && !conflicts.length) { running = false; stopOnEvent = false; st.idleAnnounced = true; }
-        if (conflicts.length && t > st.startUntil + 0.8 && !cfg.cont) { running = false; stopOnEvent = false; }
-      }
+      if (!anyMoving && t > st.startUntil + 0.3) {
+        const atHome = st.rows.every((r) => r.pos < 0.02), cycleDone = atHome && st.ptr === 0 && st.moveLog.length > 0;
+        if (cycleDone) { st.idleT = 0; if (!cfg.cont) { running = false; stopOnEvent = false; } }
+        else { st.idleT = (st.idleT || 0) + dt; if (st.idleT > 0.8) { running = false; stopOnEvent = false; st.stuck = true; } }
+      } else st.idleT = 0;
       if (api.onstate) api.onstate();
     }
     function paint(dt) {
@@ -1346,7 +1348,11 @@
       const conf = st.rows.filter((r) => r.conf);
       let msg = "", cls = "mec-status";
       const mv = st.rows.filter((r) => r.moving);
-      if (conf.length) {
+      if (st.stuck) {
+        const cl = Object.keys(st.confLog);
+        msg = cl.length ? `<b>Jammed.</b> Valve ${cl.join(", ")} had ${ep ? "both solenoids energised" : "both pilot lines (14 and 12) pressurised"} at the same time, so it could not change state, and when the START signal went away nothing else could happen.` + (ep ? "" : " A one-way trip (idle-return) roller on the limit valve that is held pressed gives only a short pulse and removes the conflict.") : `<b>Stopped.</b> After ${st.moveLog.length ? st.moveLog.join(" ") : "no movement"} no pilot signal arrives, so no valve can change state.`;
+        cls += " bad";
+      } else if (conf.length) {
         msg = `<b>Signal conflict on valve ${conf.map((r) => r.name).join(", ")}:</b> both ${ep ? "solenoids are energised" : "pilot lines (14 and 12) are pressurised"} at once. The valve cannot change state, so the sequence is stuck.` + (ep ? "" : " The usual fix is a one-way trip (idle-return) roller on the limit valve that is still held pressed.");
         cls += " bad";
       } else if (mv.length) {
@@ -1361,7 +1367,7 @@
       } else msg = "At rest: every piston is instroked. Press <b>START</b> (or Step).";
       if (status._m !== msg || status.className !== cls) { status.innerHTML = msg; status.className = cls; status._m = msg; }
     }
-    const sigPlain = (name) => { const c = name[0].toUpperCase(), e = +name[1], r = st.byName[c]; return r && (e ? r.pos >= 0.98 : r.pos <= 0.02) && (!cfg.oneWay.has(name) || (st.t - (st.arrived[name] == null ? -1e9 : st.arrived[name])) < 0.5); };
+    const sigPlain = (name) => { const c = name[0].toUpperCase(), e = +name[1], r = st.byName[c]; return r && (e ? r.pos >= 0.999 : r.pos <= 0.001) && (!cfg.oneWay.has(name) || (st.t - (st.arrived[name] == null ? -1e9 : st.arrived[name])) < 0.5); };
     Object.assign(api, {
       configure, reset, start, step, run, paint: () => paint(0),
       get running() { return running; }, get state() { return st; }, get moveLog() { return st ? st.moveLog : []; },
