@@ -927,9 +927,10 @@
   /* Static ISO symbol sheet for chapter 5 */
   function symbolSheet(svgHost) {
     const g = sv("g", { class: "sy" }); svgHost.append(g);
-    const cell = (cx, cy, label, draw, sub) => {
+    const cell = (cx, cy, label, draw, sub, ly) => {
+      ly = ly || 78;
       const c = sv("g", { transform: `translate(${cx} ${cy})` }); g.append(c); draw(c);
-      c.append(txt(0, 78, label, "b")); if (sub) c.append(txt(0, 92, sub, "sm"));
+      c.append(txt(0, ly, label, "b")); if (sub) c.append(txt(0, ly + 14, sub, "sm"));
     };
     // 1 compressor
     cell(70, 20, "Compressor", (c) => { c.append(sv("circle", { cx: 0, cy: 22, r: 22, class: "ln fillc" }), sv("polygon", { points: "-8,32 8,32 0,10", class: "ln fillc" }), pth("M22 22 h22"), sv("circle", { cx: -42, cy: 22, r: 13, class: "ln fillc" }), txt(-42, 26, "M", "b"), pth("M-29 22 h7")); }, "with its motor");
@@ -951,19 +952,18 @@
     cell(110, 150, "Single-acting cylinder", (c) => { const cy = cylinder({ x: -70, y: 0, len: 110, h: 36, single: true, pos: 0.0 }); c.append(cy.g); }, "spring return");
     cell(330, 150, "Double-acting cylinder", (c) => { const cy = cylinder({ x: -70, y: 0, len: 110, h: 36, pos: 0.0 }); c.append(cy.g); }, "air pushes both ways");
     // 3/2 pb
-    cell(560, 130, "3/2 valve, push-button, spring return", (c) => { const v = valve({ type: "32", x: -23, y: 20, left: "push", right: "spring", d: 0 }); v.setD(0); c.append(v.g); }, "normally closed (shown at rest)");
+    cell(560, 130, "3/2 valve, push-button, spring return", (c) => { const v = valve({ type: "32", x: -23, y: 20, left: "push", right: "spring", d: 0 }); v.setD(0); c.append(v.g); }, "normally closed (shown at rest)", 112);
     // row 3
-    cell(70, 290, "3/2 valve, roller (limit valve)", (c) => { const v = valve({ type: "32", x: -23, y: 20, left: "roller", right: "spring", d: 0 }); c.append(v.g); }, "operated by a cam on the rod");
-    cell(250, 290, "5/2 valve, pilot both sides", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "pilot", right: "pilot", d: 0, lblL: "14", lblR: "12" }); c.append(v.g); }, "memory valve: stays where it was put");
-    cell(440, 290, "5/2 valve, pilot / spring", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "pilot", right: "spring", d: 0, lblL: "14" }); c.append(v.g); }, "spring returns it when pilot goes");
-    cell(640, 290, "5/2 valve, solenoid / spring", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "sol", right: "spring", d: 0, lblL: "Y1" }); c.append(v.g); }, "electro-pneumatic");
+    cell(100, 290, "3/2 valve, roller", (c) => { const v = valve({ type: "32", x: -23, y: 20, left: "roller", right: "spring", d: 0 }); c.append(v.g); }, "limit valve, tripped by a cam on the rod", 112);
+    cell(290, 290, "5/2 valve, pilot both sides", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "pilot", right: "pilot", d: 0, lblL: "14", lblR: "12" }); c.append(v.g); }, "memory valve: stays where it was put", 112);
+    cell(480, 290, "5/2 valve, pilot / spring", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "pilot", right: "spring", d: 0, lblL: "14" }); c.append(v.g); }, "spring returns it when pilot goes", 112);
+    cell(680, 290, "5/2 valve, solenoid / spring", (c) => { const v = valve({ type: "52", x: -23, y: 20, left: "sol", right: "spring", d: 0, lblL: "Y1" }); c.append(v.g); }, "electro-pneumatic", 112);
     // row 4
-    cell(110, 430, "One-way flow control valve", (c) => {
+    cell(110, 440, "One-way flow control valve", (c) => {
       c.append(sv("rect", { x: -40, y: 6, width: 80, height: 40, class: "ln fillc" }), pth("M-40 26 h-14 M40 26 h14"));
       c.append(pth("M-26 14 q8 12 0 24 M-14 14 q-8 12 0 24", "thin"), pth("M-30 40 L-8 12 M-8 12 l-1 6 M-8 12 l-6 -1", "thin"));
       c.append(sv("circle", { cx: 14, cy: 26, r: 4, class: "ln fillc" }), pth("M24 18 l-8 8 l8 8", "thin"));
     }, "restrictor + check valve");
-    cell(330, 430, "Shuttle (OR) / AND valves", (c) => { c.append(txt(0, 28, "(not needed in this course)", "sm")); });
   }
 
   /* ================================================================
@@ -1547,7 +1547,7 @@
     const id = slot.getAttribute("data-mec");
     try {
       if (id === "symbols") {
-        const svg = sv("svg", { viewBox: "0 0 800 500", class: "sy mec-svg", role: "img", "aria-label": "A sheet of ISO-style pneumatic symbols: compressor, air receiver, filter regulator lubricator unit, pressure gauge, exhaust, single-acting and double-acting cylinders, 3/2 push-button and roller valves, 5/2 pilot, pilot/spring and solenoid valves, and a one-way flow control valve." });
+        const svg = sv("svg", { viewBox: "0 0 800 530", class: "sy mec-svg", role: "img", "aria-label": "A sheet of ISO-style pneumatic symbols: compressor, air receiver, filter regulator lubricator unit, pressure gauge, exhaust, single-acting and double-acting cylinders, 3/2 push-button and roller valves, 5/2 pilot, pilot/spring and solenoid valves, and a one-way flow control valve." });
         slot.append(svg); symbolSheet(svg);
       } else if (id === "valve-states") {
         const svg = sv("svg", { viewBox: "0 0 780 190", class: "sy mec-svg", role: "img", "aria-label": "Four valve symbols showing which ports are connected. A 3/2 valve at rest: supply closed, outlet to exhaust. The same 3/2 valve actuated: supply to outlet. A 5/2 valve in one state: 1 to 4 and 2 to 3. The 5/2 valve in its other state: 1 to 2 and 4 to 5." });
