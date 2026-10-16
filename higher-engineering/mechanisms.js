@@ -1292,7 +1292,7 @@
         if (spoolDone) {
           const goal = r.v ? 1 : 0;
           if (Math.abs(goal - r.pos) > 1e-6) {
-            r.pos += clamp(goal - r.pos, -dt * 0.5, dt * 0.5); r.moving = true;
+            r.pos += clamp(goal - r.pos, -dt * 0.5, dt * 0.5); r.moving = true; if (Math.abs(goal - r.pos) < 0.0015) r.pos = goal;
             if (Math.abs(goal - r.pos) < 1e-6) { r.pos = goal; r.moving = false; st.moveLog.push(r.name + (goal ? "+" : "−")); if (stopOnEvent) { running = false; stopOnEvent = false; } }
           } else r.moving = false;
         } else r.moving = false;
@@ -1370,10 +1370,11 @@
     const sigPlain = (name) => { const c = name[0].toUpperCase(), e = +name[1], r = st.byName[c]; return r && (e ? r.pos >= 0.999 : r.pos <= 0.001) && (!cfg.oneWay.has(name) || (st.t - (st.arrived[name] == null ? -1e9 : st.arrived[name])) < 0.5); };
     Object.assign(api, {
       configure, reset, start, step, run, paint: () => paint(0),
-      get running() { return running; }, get state() { return st; }, get moveLog() { return st ? st.moveLog : []; },
       setSpeed(v) { cfg.speed = v; }, setCont(v) { cfg.cont = v; if (!v && st) st.contLatch = false; if (ep) { buildLadder(); } },
       idle() { return !running && !st.rows.some((r) => r.moving); },
     });
+    Object.defineProperties(api, { running: { get: () => running, enumerable: true }, state: { get: () => st, enumerable: true }, moveLog: { get: () => (st ? st.moveLog : []), enumerable: true } });
+    host.__sim = api;
     return api;
   }
   /* motion (displacement–step) diagram as inline SVG */
