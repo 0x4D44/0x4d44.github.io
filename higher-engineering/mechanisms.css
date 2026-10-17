@@ -102,3 +102,9 @@ svg .mx-c { text-anchor: middle; }
 /* the circuit figures reuse the simulator's drawing code but are not interactive */
 [data-mec] .mec-steps, [data-mec] .mec-chips, [data-mec] .mec-status { display: none; }
 .mec-worked-table td, .mec-worked-table th { text-align: center; }
+
+/* phones: keep hand-drawn figures at a readable scale and let them swipe */
+@media (max-width: 600px) {
+  .diagram-scroll.fit > svg { min-width: 620px; }
+}
+svg .mx-h { paint-order: stroke; stroke: var(--card); stroke-width: 4px; stroke-linejoin: round; }

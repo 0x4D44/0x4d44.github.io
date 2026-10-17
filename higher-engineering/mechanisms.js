@@ -697,12 +697,12 @@
         ctx.save(); ctx.beginPath(); ctx.arc(ex1, fy, R * 0.62, 0, TAU); ctx.clip(); ctx.restore();
         const dsc = (cx, a, col) => { ctx.fillStyle = C.card; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R * 0.45, 0, TAU); ctx.fill(); ctx.stroke(); ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { const th = a + k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(th) * R * 0.45, cy + Math.sin(th) * R * 0.45); ctx.stroke(); } };
         dsc(ex1 - 0, st.a1, C.lode); dsc(ex2 + 0, st.a2, C.grass);
-        HE.label(ctx, "input plate", x1 + 16, cy - R - 14, { align: "right", size: 12, bold: true, col: C.lode });
-        HE.label(ctx, "output plate", ox - 2, cy - R - 14, { align: "left", size: 12, bold: true, col: C.grass });
-        HE.label(ctx, F(st.wi * 60 / TAU, 3), ex1, cy + R * 0.45 + 16, { align: "center", size: 12, col: C.lode });
-        HE.label(ctx, F(st.wo * 60 / TAU, 3), ex2, cy + R * 0.45 + 16, { align: "center", size: 12, col: C.grass });
-        HE.label(ctx, "rev/min", (ex1 + ex2) / 2, cy + R * 0.45 + 32, { align: "center", size: 12, col: C.ink2 });
-        HE.label(ctx, !st.engaged ? "disengaged: output stationary" : st.locked ? "LOCKED: both plates at one speed" : "SLIPPING: friction drags the output up to speed", w / 2, 14, { align: "center", bold: true, size: 12, col: st.locked ? C.grass : C.red });
+        HE.label(ctx, "input plate", x1 + 16, cy - R - 14, { align: "right", size: 13, bold: true, col: C.lode });
+        HE.label(ctx, "output plate", ox - 2, cy - R - 14, { align: "left", size: 13, bold: true, col: C.grass });
+        HE.label(ctx, F(st.wi * 60 / TAU, 3), ex1, cy + R * 0.45 + 16, { align: "center", size: 13, col: C.lode });
+        HE.label(ctx, F(st.wo * 60 / TAU, 3), ex2, cy + R * 0.45 + 16, { align: "center", size: 13, col: C.grass });
+        HE.label(ctx, "rev/min", (ex1 + ex2) / 2, cy + R * 0.45 + 32, { align: "center", size: 13, col: C.ink2 });
+        HE.label(ctx, !st.engaged ? "disengaged: output stationary" : st.locked ? "LOCKED: both plates at one speed" : "SLIPPING: friction drags the output up to speed", w / 2, 14, { align: "center", bold: true, size: 13, col: st.locked ? C.grass : C.red });
         // heat glow on lining when slipping
         if (st.engaged && !st.locked) { ctx.fillStyle = "rgba(255,120,30,.55)"; ctx.fillRect(x1 + 24, cy - R + 3, 4, 2 * R - 6); }
       },
@@ -1574,7 +1574,7 @@
     } catch (e) { console.error("figure", id, e); }
   });
   /* keyboard access: every horizontally scrolling figure box is a focusable, labelled region */
-  const tag = () => document.querySelectorAll(".mec-scroll").forEach((el) => {
+  const tag = () => document.querySelectorAll(".mec-scroll, .diagram-scroll").forEach((el) => {
     if (el.getAttribute("tabindex") === null) el.setAttribute("tabindex", "0");
     if (!el.getAttribute("role")) el.setAttribute("role", "region");
     if (!el.getAttribute("aria-label")) {
