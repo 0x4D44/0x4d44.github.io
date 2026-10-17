@@ -98,7 +98,7 @@
         { type: "open", q: R`A piston of diameter 50 mm is supplied with air at $5.0 \times 10^5$ Pa. Calculate the force on the outstroke. [2]`, marks: 2, model: mi(
           R`•1 $A = \pi \times 0.025^2 = 1.963 \times 10^{-3}\ \mathrm{m^2}$ and $F = pA$`,
           R`•2 $F = 982$ N (981.7 N)`) },
-        { type: "open", q: R`A 10 mm diameter steel rod carries a tensile force of 18 kN. Calculate the stress in the rod. [2]`, marks: 2, model: mi(
+        { type: "open", q: R`A 10 mm diameter high-tensile steel rod carries a tensile force of 18 kN. Calculate the stress in the rod. [2]`, marks: 2, model: mi(
           R`•1 $A = \pi \times 5^2 = 78.54\ \mathrm{mm^2}$ and $\sigma = F/A$`,
           R`•2 $\sigma = 18\,000 / 78.54 = 229\ \mathrm{N\,mm^{-2}}$ (229.2)`) },
         { type: "open", q: R`Define the property "ductility". [1]`, marks: 1, model: mi(

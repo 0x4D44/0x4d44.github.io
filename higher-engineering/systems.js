@@ -670,7 +670,7 @@
       const L = ex.length - 1, a = ex[L], b = rd[L], err = Math.abs(b - a) / Math.abs(a) * 100;
       const a3 = HE.fmt(a, 3), b3 = HE.fmt(b, 3), same = a3 === b3;
       verdict.innerHTML = `Final answer to 3 s.f.: <b>${a3}</b> (full precision) against <b>${b3}</b> (rounded steps). Difference: ${N(err, 2)} %. ` +
-        (same ? "<span class='same'>Same to 3 s.f. this time</span>, but only by luck: try fewer figures or switch problem." : "<span class='diff'>Different. That is a lost mark.</span> Each early rounding added a small error and the later steps carried it along.");
+        (same ? "<span class='same'>Same to 3 s.f. this time</span>, but only by luck: try fewer figures or switch problem." : "<span class='diff'>Different. That could cost the accuracy mark.</span> Each early rounding added a small error and the later steps carried it along.");
     }
     show();
   });

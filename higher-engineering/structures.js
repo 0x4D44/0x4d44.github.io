@@ -1366,11 +1366,11 @@
      ===================================================================== */
   mount("w-gauge", (box) => {
     const G = { load: 50, mode: "fixed", dT: 0, gain: 500 };
-    const R0 = 120, GF = 2, Vs = 5, alpha = 0.002, epsMax = 1000e-6;
+    const R0 = 120, GF = 2, Vs = 5, alpha = 0.002, /* exaggerated for the demo */ epsMax = 1000e-6;
     HE.choice(box, "Circuit:", [["fixed", "one gauge + fixed resistor"], ["dummy", "one gauge + dummy gauge"], ["pair", "tension + compression gauges"]], "fixed", (v) => { G.mode = v; sim.redraw(); info(); });
     const ctl = controls(box, "Beam load, temperature and amplifier gain");
     HE.slider(ctl, { label: "Load on the beam", min: 0, max: 100, step: 5, value: G.load, unit: "%", oninput: (v) => { G.load = v; sim.redraw(); info(); } });
-    HE.slider(ctl, { label: "Temperature rise (gauges and beam)", min: 0, max: 20, step: 1, value: 0, unit: "K", oninput: (v) => { G.dT = v; sim.redraw(); info(); } });
+    HE.slider(ctl, { label: "Temperature rise (effect exaggerated for the demo)", min: 0, max: 20, step: 1, value: 0, unit: "K", oninput: (v) => { G.dT = v; sim.redraw(); info(); } });
     HE.slider(ctl, { label: "Difference amplifier gain R_f/R_i", min: 100, max: 1000, step: 50, value: G.gain, oninput: (v) => { G.gain = v; sim.redraw(); info(); } });
     const cv = canvasIn(box, "A beam bending under load with a strain gauge on its tension face and another on its compression face, and the voltage divider that turns the resistance change into a voltage.");
     const out = texBox(box);
@@ -1454,8 +1454,8 @@
       const r = calc(), dR = r.Rt - R0 * (1 + alpha * G.dT);
       const base = Vs * R0 / (2 * R0);
       out.innerHTML = `<p><b>Gauge:</b> R = ${R0} Ω unstrained, gauge factor ${GF} (given: it is not in the Data Booklet, so an exam question will state it), so ΔR/R = GF × ε = ${GF} × ${HE.fmt(r.eps, 3)} = ${HE.fmt(GF * r.eps, 3)}, i.e. the tension gauge rises by ${F3(R0 * GF * r.eps)} Ω.</p>` +
-        `<p><b>Divider:</b> V = 5 × ${F3(r.Rbot, 5)} ÷ (${F3(r.Rtop, 5)} + ${F3(r.Rbot, 5)}) = <b>${HE.fmt(r.V, 5)} V</b> (unloaded it would be 2.5000 V). <b>Amplifier:</b> V<sub>o</sub> = (R<sub>f</sub>/R<sub>i</sub>)(V<sub>2</sub> − V<sub>1</sub>) = ${G.gain} × (${HE.fmt(r.V, 5)} − 2.5) = <b>${HE.fmt(r.VoRaw, 3)} V</b>${r.sat ? ` <b class="bad">but the amplifier cannot swing beyond its supply rails (±${Vs / 2} V), so the output is saturated at ${HE.fmt(r.Vo, 3)} V. Lower the gain.</b>` : ""}.</p>` +
-        (G.dT > 0 && G.mode === "fixed" ? `<p class="bad">Heating the gauge changes its resistance too, and the fixed resistor does not follow: the "load reading" is wrong by ${HE.fmt(Math.abs(r.VoRaw - G.gain * (Vs * R0 * (1 + GF * r.eps) / (R0 + R0 * (1 + GF * r.eps)) - 2.5)), 3)} V. Try the dummy gauge.</p>`
+        `<p><b>Divider:</b> V = 5 × ${F3(r.Rbot, 5)} ÷ (${F3(r.Rtop, 5)} + ${F3(r.Rbot, 5)}) = <b>${HE.fmt(r.V, 5)} V</b> (unloaded it would be 2.5000 V). <b>Amplifier:</b> ${r.sat ? `<b class="bad">The amplifier is saturated: the output sits at ${r.Vo > 0 ? "+" : "−"}${Vs / 2} V (its supply rail) whatever the strain, so the reading is meaningless. Lower the gain.</b>` : `V<sub>o</sub> = (R<sub>f</sub>/R<sub>i</sub>)(V<sub>2</sub> − V<sub>1</sub>) = ${G.gain} × (${HE.fmt(r.V, 5)} − 2.5) = <b>${HE.fmt(r.Vo, 3)} V</b>.`}</p>` +
+        (G.dT > 0 && G.mode === "fixed" ? `<p class="bad">Heating the gauge changes its resistance too (the demo exaggerates the temperature coefficient so you can see it), and the fixed resistor does not follow: the "load reading" is ${r.sat ? "meaningless because the amplifier is saturated" : "wrong by " + HE.fmt(Math.abs(r.Vo - Math.max(-Vs / 2, Math.min(Vs / 2, G.gain * (Vs * R0 * (1 + GF * r.eps) / (R0 + R0 * (1 + GF * r.eps)) - 2.5)))), 3) + " V"}. Try the dummy gauge.</p>`
           : G.dT > 0 && G.mode === "dummy" ? `<p class="ok">The dummy gauge sits on an unloaded piece at the same temperature. Both gauges change by the same factor, so the divider ratio, and the output, ignore the heat. That is temperature compensation.</p>`
             : G.mode === "pair" ? `<p class="hint">The compression gauge falls while the tension gauge rises, so the output moves twice as much, and a temperature change that raises both cancels in the divider.</p>` : "");
     }
