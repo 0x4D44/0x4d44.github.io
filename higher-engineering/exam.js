@@ -761,7 +761,7 @@
      9. Which marks am I leaving on the table? (self-audit)
      ===================================================================== */
   const HABITS = [
-    ["calc", "I carry full calculator values through a calculation and round only the final answer.", "2024, 2025 and 2026 reports", "Calculations", "exam.html#booklet"],
+    ["calc", "I carry full calculator values through a calculation and round only the final answer.", "2025 and 2026 reports; 2024 records marks lost", "Calculations", "exam.html#booklet"],
     ["calc", "I use the π key on the calculator, not 3.14.", "2024 report", "Calculations", "exam.html#booklet"],
     ["calc", "I write the relationship, then the substitution, then the answer with its unit.", "marking style", "Calculations", "exam.html#booklet"],
     ["calc", "I convert units first (rev/min to rev/s, mm² to m², kN to N, kN mm⁻² to N mm⁻²).", "booklet conventions", "Calculations", "exam.html#booklet"],
@@ -772,12 +772,12 @@
     ["ana", "I work out power in a transistor as V_CE × I_C.", "2026 report", "Analogue", "analogue.html"],
     ["desc", "Every descriptive point has a reason with it (not just 'it switches on').", "2024 report", "Descriptive answers", "exam.html#answering"],
     ["desc", "In pneumatic answers I say '3/2 valve actuates', '5/2 valve changes state', 'piston instrokes/outstrokes'.", "2025 and 2026 reports", "Descriptive answers", "exam.html#answering"],
-    ["desc", "I give the number of points asked for (two roles, two adaptations) and make each one different.", "2026 report", "Descriptive answers", "exam.html#answering"],
+    ["desc", "I give the number of points asked for (two roles, two adaptations).", "2026 report", "Descriptive answers", "exam.html#answering"],
     ["asg", "My assignment screenshots and photos are clear, with components labelled and orientation shown.", "2025 and 2026 reports", "Assignment", "exam.html#assignment"],
     ["asg", "In a test plan I keep the test (what I do) separate from the expected result (what should happen).", "2024 report", "Assignment", "exam.html#assignment"],
     ["asg", "When a test fails I amend the design before the next test.", "2026 report", "Assignment", "exam.html#assignment"],
     ["asg", "My evaluation takes each specification point in turn and cites actual test evidence.", "2025 and 2026 reports", "Assignment", "exam.html#assignment"],
-    ["asg", "I count integrated circuits, not gates, and convert to NAND equivalents.", "2025 and 2026 reports", "Assignment", "digital.html"],
+    ["asg", "I count integrated circuits, not gates, and convert to NAND equivalents.", "2026 report (ICs); 2025 (NAND minimisation)", "Assignment", "digital.html"],
     ["asg", "I check whether each support can withstand its reaction force.", "2026 report", "Assignment", "structures.html"],
   ];
   mount("w-audit", (box) => {

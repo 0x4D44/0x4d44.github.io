@@ -91,7 +91,7 @@
       if (!ROLES[proj].disc[disc]) { disc = Object.keys(ROLES[proj].disc)[0]; drawDisc(); }
       const rs = ROLES[proj].disc[disc];
       const lis = rs.map(([r, h], i) => `<li><strong>Role ${i + 1}.</strong> <span class="sy-tag sy-r">${ctx(r)}</span> <span class="sy-tag sy-h">${ctx(h)}.</span></li>`).join("");
-      out.innerHTML = `<p style="margin:0"><strong>${disc} engineer, ${ROLES[proj].name}: two roles in the design phase</strong></p><ol>${lis}</ol>` +
+      out.innerHTML = `<p style="margin:0"><strong>${disc} engineer, ${ROLES[proj].name}: where does each role sit in the project?</strong></p><ol>${lis}</ol>` +
         `<p class="sy-weak"><strong>The weak version:</strong> "The ${disc.toLowerCase()} engineer designs the ${ROLES[proj].name.toLowerCase()}." This names a job title but says no specific task, no method and no reason, and it is the same sentence however many roles are asked for. The strong version above names two different tasks, and gives each a method or a reason tied to the project (highlighted in gold).</p>`;
     }
     drawDisc(); show();
@@ -223,7 +223,7 @@
     const M = helmModel();
     const COL = (C) => [C.red, HE.css("--amber") || "#b86a00", C.sea];
     const NAMES = ["Open loop", "Two-state", "Proportional"];
-    const canvas = canvasIn(box, "Three compass dials and a graph of heading error against time for open-loop, two-state and proportional control after a gust of wind.");
+    const canvas = canvasIn(box, "Three compass dials and a graph of heading ψ in degrees against time for open-loop, two-state and proportional control after a gust of wind.");
     const ctl = controls(box);
     let sim;
     HE.slider(ctl, { label: "Proportional gain K<sub>p</sub> (° rudder per ° error)", min: 0.2, max: 4, step: 0.1, value: M.P.Kp, fmt: (v) => N(v, 1), oninput: (v) => { M.P.Kp = v; note(); } });
@@ -278,7 +278,7 @@
         // plot
         const top = cy + R + 34, box2 = { x: 46, y: top, w: S.w - 46 - 12, h: S.h - top - 34 };
         const t0 = Math.max(0, M.t - HELM.win), t1 = t0 + HELM.win;
-        const Pl = HE.plot(ctx, box2, { x0: t0, x1: t1, y0: -10, y1: 20, xt: 10, yt: 10, xl: "time (s)", yl: "heading error (°)", C, tf: (v) => String(Math.round(v)).replace("-", "−") });
+        const Pl = HE.plot(ctx, box2, { x0: t0, x1: t1, y0: -10, y1: 20, xt: 10, yt: 10, xl: "time (s)", yl: "heading ψ (°)", C, tf: (v) => String(Math.round(v)).replace("-", "−") });
         // gust shading
         HE.clip(ctx, box2, () => {
           ctx.fillStyle = C.line; ctx.globalAlpha = 0.35;
@@ -472,8 +472,8 @@
       B.s.forEach(([k]) => (v[k] = vals[key + k]));
       const E = B.f(v);
       sub.innerHTML = HE.tex(B.tex(v) + ` = ${sciTex(E, 3)}\\ \\text{J}`, true);
-      const all = REFS.map(([n, e]) => ({ n, e })).concat([{ n: "Your answer", e: Math.max(E, 1), me: true }]).sort((a, b) => a.e - b.e);
-      scale.innerHTML = all.map((r) => `<div class="sy-scale-row${r.me ? " me" : ""}"><span>${HE.esc(r.n)}</span><span class="sy-barwrap"><span class="bar" style="width:${Math.max(2, Math.log10(r.e) / 6 * 80)}%"></span><span class="val">${HE.fmt(r.e, 3)} J</span></span></div>`).join("");
+      const all = REFS.map(([n, e]) => ({ n, e })).concat([{ n: "Your answer", e: Math.max(E, 0), me: true }]).sort((a, b) => a.e - b.e);
+      scale.innerHTML = all.map((r) => `<div class="sy-scale-row${r.me ? " me" : ""}"><span>${HE.esc(r.n)}</span><span class="sy-barwrap"><span class="bar" style="width:${Math.max(2, Math.log10(Math.max(r.e, 1)) / 6 * 80)}%"></span><span class="val">${HE.fmt(r.e, 3)} J</span></span></div>`).join("");
     }
     HE.choice(pick, "Formula", Object.entries(BENCH).map(([k, v]) => [k, v.name]), key, (v) => { key = v; build(); });
     build();
@@ -680,14 +680,14 @@
      ===================================================================== */
   const TECH = {
     wind: { name: "Offshore wind farm", s: [
-      ["The nearby port wins a contract to build and service the turbines, bringing investment and work.", ["Economic"], "+", "Money flowing into a local economy is an economic effect (the jobs themselves also have a social side)."],
+      ["The nearby port wins a contract to build and service the turbines, bringing investment and work.", ["Economic", "Social"], "+", "Money flowing into a local economy is an economic effect (the jobs themselves also have a social side)."],
       ["Electricity is generated without burning fuel, so carbon dioxide emissions from the grid fall.", ["Environmental"], "+", "Reduced emissions are an environmental benefit."],
       ["Driving foundations into the sea bed and laying cables disturbs habitats, and piling noise can harm marine mammals.", ["Environmental"], "-", "Harm to wildlife and habitats is a negative environmental effect, even for a renewable project."],
       ["Some residents feel that the turbines spoil the view of the coast.", ["Social"], "-", "Effects on people's enjoyment of their surroundings are social."],
       ["The cost of building and connecting the farm is very high, and is paid back only over many years.", ["Economic"], "-", "A large up-front cost is a negative economic effect."]] },
     ev: { name: "Electric and autonomous vehicles", s: [
       ["No exhaust gases are released where the car is driven, so local air pollution falls.", ["Environmental"], "+", "Cleaner air where the vehicle runs is an environmental benefit (it also benefits health)."],
-      ["Batteries need mined metals and a lot of energy to make, and are hard to recycle.", ["Environmental"], "-", "Resource use and waste are negative environmental effects."],
+      ["Battery materials need mined metals and a lot of energy to make, and need specialist recycling.", ["Environmental"], "-", "Resource use and waste are negative environmental effects."],
       ["Taxi and lorry-driving jobs may disappear as vehicles drive themselves.", ["Social", "Economic"], "-", "Job losses affect people (social) and incomes (economic); either type is accepted."],
       ["Autonomous control can react faster than a tired driver, which could reduce crashes and injuries.", ["Social"], "+", "Fewer injuries and deaths is a social benefit."],
       ["Electricity usually costs less than fuel per mile, so owners save money on running costs.", ["Economic"], "+", "Lower running costs are an economic benefit."]] },

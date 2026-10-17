@@ -1381,8 +1381,9 @@
       if (G.mode === "fixed") { Rtop = R0; Rbot = Rt; topName = "fixed resistor"; botName = "tension gauge"; }
       else if (G.mode === "dummy") { Rtop = Rd; Rbot = Rt; topName = "dummy gauge"; botName = "tension gauge"; }
       else { Rtop = Rc; Rbot = Rt; topName = "compression gauge"; botName = "tension gauge"; }
-      const V = Vs * Rbot / (Rtop + Rbot), Vo = G.gain * (V - Vs / 2);
-      return { eps, Rt, Rc, Rd, Rtop, Rbot, topName, botName, V, Vo };
+      const V = Vs * Rbot / (Rtop + Rbot), VoRaw = G.gain * (V - Vs / 2);
+      const rail = Vs / 2, Vo = Math.max(-rail, Math.min(rail, VoRaw)), sat = Math.abs(VoRaw) > rail + 1e-12;
+      return { eps, Rt, Rc, Rd, Rtop, Rbot, topName, botName, V, Vo, VoRaw, sat };
     };
     const sim = HE.sim(cv, {
       height: (w) => (w >= 560 ? 330 : 520),
@@ -1444,17 +1445,17 @@
         cap(ctx, "+", cx + 137, ay - 11, { size: 13, bold: true }); cap(ctx, "−", cx + 137, ay + 12, { size: 13, bold: true });
         line(ctx, cx + 118, ay + 12, cx + 130, ay + 12, C.ink, 2);
         cap(ctx, "2.5 V ref", cx + 118, ay + 30, { size: 11, col: C.ink2, align: "right", avoid: true });
-        cap(ctx, `Vo = ${HE.fmt(r.Vo, 3)} V`, ax + 20, ay - 34, { align: "right", bold: true, size: 13, col: C.lode, avoid: true });
+        cap(ctx, `Vo = ${HE.fmt(r.Vo, 3)} V${r.sat ? " (SATURATED)" : ""}`, ax + 20, ay - 34, { align: "right", bold: true, size: 13, col: C.lode, avoid: true });
         cap(ctx, "difference amplifier", cx + 150, ay + 44, { size: 11, col: C.muted, avoid: true });
-        cv.setAttribute("aria-label", `Strain gauge demonstration. Load ${G.load} percent, temperature rise ${G.dT} kelvin. Divider voltage ${r.V.toFixed(5)} volts, amplifier output ${r.Vo.toFixed(3)} volts.`);
+        cv.setAttribute("aria-label", `Strain gauge demonstration. Load ${G.load} percent, temperature rise ${G.dT} kelvin. Divider voltage ${r.V.toFixed(5)} volts, amplifier output ${r.Vo.toFixed(3)} volts${r.sat ? ", saturated at the supply rail" : ""}.`);
       },
     });
     function info() {
       const r = calc(), dR = r.Rt - R0 * (1 + alpha * G.dT);
       const base = Vs * R0 / (2 * R0);
-      out.innerHTML = `<p><b>Gauge:</b> R = ${R0} Ω unstrained, gauge factor ${GF} (this demo's value; an exam question will give any number you need), so ΔR/R = GF × ε = ${GF} × ${HE.fmt(r.eps, 3)} = ${HE.fmt(GF * r.eps, 3)}, i.e. the tension gauge rises by ${F3(R0 * GF * r.eps)} Ω.</p>` +
-        `<p><b>Divider:</b> V = 5 × ${F3(r.Rbot, 5)} ÷ (${F3(r.Rtop, 5)} + ${F3(r.Rbot, 5)}) = <b>${HE.fmt(r.V, 5)} V</b> (unloaded it would be 2.5000 V). <b>Amplifier:</b> V<sub>o</sub> = (R<sub>f</sub>/R<sub>i</sub>)(V<sub>2</sub> − V<sub>1</sub>) = ${G.gain} × (${HE.fmt(r.V, 5)} − 2.5) = <b>${HE.fmt(r.Vo, 3)} V</b>.</p>` +
-        (G.dT > 0 && G.mode === "fixed" ? `<p class="bad">Heating the gauge changes its resistance too, and the fixed resistor does not follow: the "load reading" is wrong by ${HE.fmt(Math.abs(r.Vo - G.gain * (Vs * R0 * (1 + GF * r.eps) / (R0 + R0 * (1 + GF * r.eps)) - 2.5)), 3)} V. Try the dummy gauge.</p>`
+      out.innerHTML = `<p><b>Gauge:</b> R = ${R0} Ω unstrained, gauge factor ${GF} (given: it is not in the Data Booklet, so an exam question will state it), so ΔR/R = GF × ε = ${GF} × ${HE.fmt(r.eps, 3)} = ${HE.fmt(GF * r.eps, 3)}, i.e. the tension gauge rises by ${F3(R0 * GF * r.eps)} Ω.</p>` +
+        `<p><b>Divider:</b> V = 5 × ${F3(r.Rbot, 5)} ÷ (${F3(r.Rtop, 5)} + ${F3(r.Rbot, 5)}) = <b>${HE.fmt(r.V, 5)} V</b> (unloaded it would be 2.5000 V). <b>Amplifier:</b> V<sub>o</sub> = (R<sub>f</sub>/R<sub>i</sub>)(V<sub>2</sub> − V<sub>1</sub>) = ${G.gain} × (${HE.fmt(r.V, 5)} − 2.5) = <b>${HE.fmt(r.VoRaw, 3)} V</b>${r.sat ? ` <b class="bad">but the amplifier cannot swing beyond its supply rails (±${Vs / 2} V), so the output is saturated at ${HE.fmt(r.Vo, 3)} V. Lower the gain.</b>` : ""}.</p>` +
+        (G.dT > 0 && G.mode === "fixed" ? `<p class="bad">Heating the gauge changes its resistance too, and the fixed resistor does not follow: the "load reading" is wrong by ${HE.fmt(Math.abs(r.VoRaw - G.gain * (Vs * R0 * (1 + GF * r.eps) / (R0 + R0 * (1 + GF * r.eps)) - 2.5)), 3)} V. Try the dummy gauge.</p>`
           : G.dT > 0 && G.mode === "dummy" ? `<p class="ok">The dummy gauge sits on an unloaded piece at the same temperature. Both gauges change by the same factor, so the divider ratio, and the output, ignore the heat. That is temperature compensation.</p>`
             : G.mode === "pair" ? `<p class="hint">The compression gauge falls while the tension gauge rises, so the output moves twice as much, and a temperature change that raises both cancels in the divider.</p>` : "");
     }
@@ -1524,7 +1525,7 @@
 <line x1="${s(3) - 30}" y1="${by - 66}" x2="${s(3)}" y2="${by - 10}" style="stroke:var(--lode)" marker-end="url(#str-ah-lode)"/>
 <g stroke-width="2" style="stroke:var(--sea)"><rect x="${s(4)}" y="${by - 52}" width="${2 * 78}" height="1" /><line x1="${s(4)}" y1="${by - 52}" x2="${s(4)}" y2="${by - 10}" marker-end="url(#str-ah-sea)"/><line x1="${s(4.5)}" y1="${by - 52}" x2="${s(4.5)}" y2="${by - 10}" marker-end="url(#str-ah-sea)"/><line x1="${s(5)}" y1="${by - 52}" x2="${s(5)}" y2="${by - 10}" marker-end="url(#str-ah-sea)"/><line x1="${s(5.5)}" y1="${by - 52}" x2="${s(5.5)}" y2="${by - 10}" marker-end="url(#str-ah-sea)"/><line x1="${s(6)}" y1="${by - 52}" x2="${s(6)}" y2="${by - 10}" marker-end="url(#str-ah-sea)"/></g></g>
 <g data-l="3" font-size="14" font-weight="700"><text x="${s(1.5) + 8}" y="${by - 62}" class="ink" style="fill:var(--lode)">12 kN</text><text x="${s(3) - 72}" y="${by - 66}" style="fill:var(--lode)">10 kN</text><text x="${s(4) + 6}" y="${by - 60}" style="fill:var(--sea)">4 kN/m</text></g>
-<g data-l="4" stroke-width="3.5" fill="none" style="stroke:var(--grass)"><line x1="${s(0)}" y1="${by + 90}" x2="${s(0)}" y2="${by + 40}" marker-end="url(#str-ah-grass)"/><line x1="${s(6)}" y1="${by + 94}" x2="${s(6)}" y2="${by + 46}" marker-end="url(#str-ah-grass)"/><line x1="${s(0) - 48}" y1="${by}" x2="${s(0) - 12}" y2="${by}" marker-end="url(#str-ah-grass)"/></g>
+<g data-l="4" stroke-width="3.5" fill="none" style="stroke:var(--grass)"><line x1="${s(0)}" y1="${by + 90}" x2="${s(0)}" y2="${by + 40}" marker-end="url(#str-ah-grass)"/><line x1="${s(6)}" y1="${by + 94}" x2="${s(6)}" y2="${by + 46}" marker-end="url(#str-ah-grass)"/><line x1="${s(0) - 12}" y1="${by}" x2="${s(0) - 48}" y2="${by}" marker-end="url(#str-ah-grass)"/></g>
 <g data-l="4" font-size="14" font-weight="700" style="fill:var(--grass)"><text x="${s(0) + 8}" y="${by + 80}">A<tspan font-size="10" dy="4">y</tspan></text><text x="${s(6) + 8}" y="${by + 84}">B</text><text x="${s(0) - 62}" y="${by - 8}">A<tspan font-size="10" dy="4">x</tspan></text></g>
 <g data-l="5" font-size="12" class="ink2"><g stroke="var(--ink-2)" stroke-width="1.2"><line x1="${s(0)}" y1="${by + 118}" x2="${s(6)}" y2="${by + 118}"/><line x1="${s(0)}" y1="${by + 112}" x2="${s(0)}" y2="${by + 124}"/><line x1="${s(6)}" y1="${by + 112}" x2="${s(6)}" y2="${by + 124}"/><line x1="${s(0)}" y1="${by + 102}" x2="${s(1.5)}" y2="${by + 102}"/><line x1="${s(0)}" y1="${by + 98}" x2="${s(0)}" y2="${by + 106}"/><line x1="${s(1.5)}" y1="${by + 98}" x2="${s(1.5)}" y2="${by + 106}"/><line x1="${s(0)}" y1="${by + 138}" x2="${s(3)}" y2="${by + 138}"/><line x1="${s(0)}" y1="${by + 134}" x2="${s(0)}" y2="${by + 142}"/><line x1="${s(3)}" y1="${by + 134}" x2="${s(3)}" y2="${by + 142}"/></g>
 <text x="${s(3)}" y="${by + 114}" text-anchor="middle">6 m</text><text x="${s(0.75)}" y="${by + 98}" text-anchor="middle">1.5 m</text><text x="${s(1.5)}" y="${by + 134}" text-anchor="middle">3 m</text>

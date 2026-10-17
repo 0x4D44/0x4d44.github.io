@@ -57,7 +57,7 @@
         { q: R`Which flowchart symbol is used for a decision?`, opts: [R`Rounded rectangle`, R`Parallelogram`, R`Rectangle`, R`Diamond`], a: 3, why: R`The diamond has one entry and two exits, labelled Yes and No.` },
         { q: R`What is wrong with the line <code>wait 2</code>?`, opts: [R`Nothing`, R`It has no unit: it must say <code>wait 2 s</code>`, R`2 is too long`, R`It must be in capitals`], a: 1, why: R`A delay needs a unit, seconds or milliseconds, for the flowchart to have sufficient detail.` },
         { q: R`A counter $n$ starts at 0 and each pass of a loop adds 1. The loop repeats while <code>n &lt; 3</code>. How many passes are there?`, opts: [R`2`, R`3`, R`4`, R`Infinite`], a: 1, why: R`After pass 1, $n=1$; after pass 2, $n=2$; after pass 3, $n=3$, and the test fails. Three passes.` },
-        { type: "open", q: R`Write pseudo-code or describe a flowchart for this: while push button 1 (input 1) is pressed, the motor on output 2 is on for 3 seconds and then off, and the system goes on checking the button for as long as it is powered.`, marks: 5, model: mi(
+        { type: "open", q: R`Describe a flowchart (or write pseudo-code as practice) for this: while push button 1 (input 1) is pressed, the motor on output 2 is on for 3 seconds and then off, and the system goes on checking the button for as long as it is powered.`, marks: 5, model: mi(
           R`A loop that returns to the start, for example <code>main: … goto main</code>. <strong>[1]</strong>`,
           R`A decision on input 1 = 1 (Yes and No handled). <strong>[1]</strong>`,
           R`Output 2 = 1. <strong>[1]</strong>`,
