@@ -1,12 +1,12 @@
 /* Briefing-room hero for "Rivets, Relays & Rigging": a low-resolution pixel scene (320 x 80,
    scaled up crisply) of HMS Ratchet, a 74-gun ship of the line built from Minecraft blocks,
    moored beside a dock. The engineering does the moving:
-     - a two-gear train on the forecastle (12 teeth driving 8: velocity ratio 1.5, turning the other way)
+     - a two-gear train on the forecastle (12-tooth driver turning an 8-tooth driven gear: VR = driven/driver = 8/12 = 0.67, the other way)
      - the ship's wheel under closed-loop feedback: a gust pushes the heading off (error),
        the wheel turns against it (correction), the error dies away
      - redstone dust carrying a pulse: signal strength 15 falling by one a block, a repeater
        restoring it, and a row of lamps counting the arriving pulses in binary
-     - a Pratt-truss dock bridge that flexes (and changes its tension and compression) as a minecart crosses
+     - a Warren-truss dock bridge that flexes (and changes its tension and compression) as a minecart crosses
    Then the running joke: eight passes by the squadron's Grob Tutor, towing a banner with a
    formula, and obeying each law literally:
      V=IR (the resistor halves its current: it slows) - P=2*pi*n*T (n in rev/min, not rev/s: it
@@ -157,7 +157,7 @@
     const phiB = Math.PI - Math.PI / NB - phiA * NA / NB;         // B turns the other way, NA/NB times as fast, teeth into gaps
     gear(176, 31 + sy, NA, 6, phiA, BRASS, BRASS_L);
     gear(186, 31 + sy, NB, 4, phiB, IRON, IRON_L);
-    text("VR 1.5", 170, 18 + sy, "#fff0c0");
+    text("VR 0.67", 168, 18 + sy, "#fff0c0");
   }
 
   /* ---------- the ship's wheel under closed-loop feedback ---------- */
@@ -224,22 +224,20 @@
     text("PULSES", 285, 25, "#e0c9a0");
   }
 
-  /* ---------- the dock bridge: a Pratt truss that flexes as a minecart crosses ---------- */
+  /* ---------- the dock bridge: a Warren truss that flexes as a minecart crosses ---------- */
   function bridge(t) {
     const L = 48, X0 = 9, PW = 8, per = 11, ph = (t % per) / per, tri = ph < 0.5 ? ph * 2 : 2 - ph * 2;
     const cx = 2 + tri * 62, a = clamp(cx - X0, 0, L);
     const dl = (x) => { let xx = x, aa = a; if (xx > aa) { xx = L - xx; aa = L - aa; } const b = L - aa; return 3.4 * (b * xx * (L * L - b * b - xx * xx) / (6 * L)) / (L * L * L / 48); };
     const B = [], T = [];
-    for (let i = 0; i <= 6; i++) { const d = dl(PW * i); B.push([X0 + PW * i, 46 + d]); if (i >= 1 && i <= 5) T.push([X0 + PW * i, 37 + 0.9 * d]); }
+    for (let i = 0; i <= 6; i++) { const d = dl(PW * i); B.push([X0 + PW * i, 46 + d]); T.push([X0 + PW * i, 37 + 0.9 * d]); }
     const web = "#aab1b9";
-    line(B[0][0], B[0][1], T[0][0], T[0][1], web); line(B[6][0], B[6][1], T[4][0], T[4][1], web);
-    for (let i = 0; i < 5; i++) line(T[i][0], T[i][1], B[i + 1][0], B[i + 1][1], web);
-    line(T[0][0], T[0][1], B[2][0], B[2][1], web); line(T[1][0], T[1][1], B[3][0], B[3][1], web);
-    line(T[4][0], T[4][1], B[4][0], B[4][1], web); line(T[3][0], T[3][1], B[3][0], B[3][1], web);
+    // Warren truss: equilateral-style zig-zag of diagonals, no verticals; top joints at 1, 3, 5
+    for (let i = 0; i < 6; i += 2) { line(B[i][0], B[i][1], T[i + 1][0], T[i + 1][1], web); line(T[i + 1][0], T[i + 1][1], B[i + 2][0], B[i + 2][1], web); }
     const load = clamp(dl(L / 2) / 3.4, 0, 1), tens = load > 0.15 ? "#8fd4ff" : "#6fb0d6", comp = load > 0.15 ? "#ff8a5c" : "#d9805a";
-    for (let i = 0; i < 4; i++) line(T[i][0], T[i][1], T[i + 1][0], T[i + 1][1], comp, 2);
+    for (let i = 1; i < 5; i += 2) line(T[i][0], T[i][1], T[i + 2][0], T[i + 2][1], comp, 2);
     for (let i = 0; i < 6; i++) { line(B[i][0], B[i][1], B[i + 1][0], B[i + 1][1], tens, 2); }
-    B.concat(T).forEach(([x, y]) => px(x - 1, y - 1, 3, 3, BRASS_L));              // pinned joints
+    [B[0], B[2], B[4], B[6], T[1], T[3], T[5]].forEach(([x, y]) => px(x - 1, y - 1, 3, 3, BRASS_L));              // pinned joints
     text("C", 29, 28, "#ffb090"); text("T", 29, 52, "#9ad8ff");
     // the minecart and its iron load
     const x = cx, yd = x >= X0 && x <= X0 + L ? 46 + dl(x - X0) : 47;
