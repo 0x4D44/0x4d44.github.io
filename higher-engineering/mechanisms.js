@@ -1138,7 +1138,7 @@
       const n = cfg.cyls.length, H = 62 + n * ROWH, W = 840;
       svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, class: "sy mec-svg", role: "img", "aria-label": (ep ? "Electro-pneumatic" : "Pneumatic") + " circuit for the sequence " + cfg.seq.map((s) => s[0] + (s[1] > 0 ? "+" : "−")).join(" ") + ". The air lines are coloured when pressurised; valves slide when they change state; pistons move." });
       scroller.append(svg);
-      svg.append(txt(20, 14, ep ? "compressed air supply (6 bar)   ·   solenoids Y1, Y2, … are wired in the ladder diagram below" : "compressed air supply (6 bar)", "sm", "start"));
+      svg.append(txt(20, 14, "compressed air supply (6 bar)", "sm", "start"));
       svg.append(pth(`M16 18 V${H - 40}`, "air p"));
       rows = []; st = { rows: [], byName: {}, arrived: {}, t: 0, startUntil: -1, ptr: 0, done: [], conflict: {}, cycles: 0, moveLog: [], startOn: (t) => (cfg.cont && st.contLatch) || t < st.startUntil, contLatch: false, k1: false };
       cfg.cyls.forEach((c, i) => {
@@ -1551,9 +1551,9 @@
         const svg = sv("svg", { viewBox: "0 0 800 530", class: "sy mec-svg", role: "img", "aria-label": "A sheet of ISO-style pneumatic symbols: compressor, air receiver, filter regulator lubricator unit, pressure gauge, exhaust, single-acting and double-acting cylinders, 3/2 push-button and roller valves, 5/2 pilot, pilot/spring and solenoid valves, and a one-way flow control valve." });
         slot.append(svg); symbolSheet(svg);
       } else if (id === "valve-states") {
-        const svg = sv("svg", { viewBox: "0 0 780 190", class: "sy mec-svg", role: "img", "aria-label": "Four valve symbols showing which ports are connected. A 3/2 valve at rest: supply closed, outlet to exhaust. The same 3/2 valve actuated: supply to outlet. A 5/2 valve in one state: 1 to 4 and 2 to 3. The 5/2 valve in its other state: 1 to 2 and 4 to 5." });
+        const svg = sv("svg", { viewBox: "0 0 860 190", class: "sy mec-svg", role: "img", "aria-label": "Four valve symbols showing which ports are connected. A 3/2 valve at rest: supply closed, outlet to exhaust. The same 3/2 valve actuated: supply to outlet. A 5/2 valve in one state: 1 to 4 and 2 to 3. The 5/2 valve in its other state: 1 to 2 and 4 to 5." });
         slot.append(svg);
-        const items = [["3/2 at rest", "32", 0, "push", "spring", 20], ["3/2 actuated", "32", 1, "push", "spring", 215], ["5/2 first state", "52", 1, "pilot", "pilot", 410], ["5/2 other state", "52", 0, "pilot", "pilot", 600]];
+        const items = [["3/2 at rest", "32", 0, "push", "spring", 20], ["3/2 actuated", "32", 1, "push", "spring", 215], ["5/2 first state", "52", 1, "pilot", "pilot", 400], ["5/2 other state", "52", 0, "pilot", "pilot", 650]];
         items.forEach(([lab, type, d, l, r, x]) => {
           const g = sv("g"); svg.append(g);
           const v = valve({ type, x: x + 56, y: 56, left: l, right: r, d, lblL: type === "52" ? "14" : "", lblR: type === "52" ? "12" : "" });
@@ -1573,4 +1573,15 @@
       }
     } catch (e) { console.error("figure", id, e); }
   });
+  /* keyboard access: every horizontally scrolling figure box is a focusable, labelled region */
+  const tag = () => document.querySelectorAll(".mec-scroll").forEach((el) => {
+    if (el.getAttribute("tabindex") === null) el.setAttribute("tabindex", "0");
+    if (!el.getAttribute("role")) el.setAttribute("role", "region");
+    if (!el.getAttribute("aria-label")) {
+      const w = el.closest(".widget"), fg = el.closest("figure");
+      const base = w ? (w.querySelector(".widget-title") || {}).textContent : fg ? ((fg.querySelector("figcaption") || {}).textContent || "").split(".")[0] : "";
+      el.setAttribute("aria-label", ((base || "Diagram").trim().slice(0, 80)) + " (scrollable)");
+    }
+  });
+  tag(); new MutationObserver(tag).observe(document.body, { childList: true, subtree: true });
 })();

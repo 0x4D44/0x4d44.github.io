@@ -80,7 +80,7 @@
     c.fillStyle = "rgba(255,230,190,.10)";
     for (let y = 6; y < SEA; y += 8) for (let x = 4; x < W; x += 8) c.fillRect(x, y, 1, 1);
     // a Minecraft square sun, low and copper
-    px(234, 30, 9, 9, "#ffe9a6"); px(236, 28, 5, 13, "#ffe9a6"); px(232, 32, 13, 5, "#ffe9a6");
+    px(222, 8, 7, 7, "#ffe9a6"); px(224, 6, 3, 11, "#ffe9a6"); px(220, 10, 11, 3, "#ffe9a6");
     // distant blocky headland
     for (let x = 196; x < 320; x += 4) { const h = 3 + (hash(x >> 2, 5) % 4); px(x, SEA - h - 2, 4, h, "#6d5a52"); }
     for (let x = 0; x < 70; x += 4) { const h = 2 + (hash(x >> 2, 9) % 4); px(x, SEA - h - 8, 4, h, "#6d5a52"); }
@@ -157,7 +157,6 @@
     const phiB = Math.PI - Math.PI / NB - phiA * NA / NB;         // B turns the other way, NA/NB times as fast, teeth into gaps
     gear(176, 31 + sy, NA, 6, phiA, BRASS, BRASS_L);
     gear(186, 31 + sy, NB, 4, phiB, IRON, IRON_L);
-    text("VR 0.67", 168, 18 + sy, "#fff0c0");
   }
 
   /* ---------- the ship's wheel under closed-loop feedback ---------- */
@@ -186,13 +185,11 @@
     px(cx - 1, cy - 1, 2, 2, BRASS_L);
     // the error gauge: set point at the centre, a red marker for the heading error
     const gy = 19 + sy;
-    text("ERR", 72, 12 + sy, "#fff0c0");
     px(72, gy + 1, 22, 1, IRON_DD); px(83, gy - 1, 1, 5, BRASS_L);
     px(83 + clamp(Math.round(loop.h * 2.2), -10, 10) - 1, gy - 1, 3, 4, flick(t, 6) && Math.abs(loop.h) > 2 ? "#ffb09a" : "#ff3a2a");
     if (Math.abs(g) > 0.02) {
       const dirn = g > 0 ? 1 : -1;
       for (let i = 0; i < 6; i++) { const x = ((t * 70 * dirn + i * 17) % 44 + 44) % 44 + 56; px(x, 12 + i * 3 + sy, 6, 1, "rgba(255,255,255,.65)"); }
-      text("GUST", 96, 6 + sy, "#ffffff");
     }
   }
 
@@ -212,16 +209,12 @@
     const rl = head > 14 && head < 17;
     px(DX + 45 - 1, 48, 5, 4, BRASS); px(DX + 45, 47, 1, 1, rl ? "#ff5a3a" : "#7a1f18"); px(DX + 47, 47, 1, 1, rl ? "#ff5a3a" : "#7a1f18");
     const hi = Math.floor(head);
-    if (hi >= 1 && hi < NB && hi !== 15) text(String(strengthOf(hi)), DX + 3 * hi - (strengthOf(hi) > 9 ? 3 : 1), 42, "#ffd7cf");
-    if (hi >= 14 && hi <= 16) text("15", DX + 45 - 3, 42, "#ffd7cf");
     // the lamp board counts arriving pulses in binary
     const n = Math.max(0, Math.floor((t - 25.5 / SP) / PER) + 1) & 255;
     for (let i = 0; i < 8; i++) {
       const on = (n >> (7 - i)) & 1, x = 285 + i * 4;
       px(x, 38, 3, 3, on ? "#ffd55a" : "#3b2c14"); if (on) px(x, 38, 3, 1, "#fff2b0");
     }
-    text(String(n), 285, 31, "#fff0c0");
-    text("PULSES", 285, 25, "#e0c9a0");
   }
 
   /* ---------- the dock bridge: a Warren truss that flexes as a minecart crosses ---------- */
@@ -238,7 +231,6 @@
     for (let i = 1; i < 5; i += 2) line(T[i][0], T[i][1], T[i + 2][0], T[i + 2][1], comp, 2);
     for (let i = 0; i < 6; i++) { line(B[i][0], B[i][1], B[i + 1][0], B[i + 1][1], tens, 2); }
     [B[0], B[2], B[4], B[6], T[1], T[3], T[5]].forEach(([x, y]) => px(x - 1, y - 1, 3, 3, BRASS_L));              // pinned joints
-    text("C", 29, 28, "#ffb090"); text("T", 29, 52, "#9ad8ff");
     // the minecart and its iron load
     const x = cx, yd = x >= X0 && x <= X0 + L ? 46 + dl(x - X0) : 47;
     px(x - 3, yd - 4, 7, 3, IRON); px(x - 3, yd - 4, 7, 1, IRON_L); px(x - 2, yd - 6, 5, 2, BRASS);
@@ -343,7 +335,6 @@
       px(147, 5, 2, 28, IRON_D); px(152, 5, 2, 28, IRON_D);
       const col = hot > 0 ? (flick(t, 12) ? "#ff7a3a" : "#ffb25a") : BRASS_L;
       let yy = 7; for (let k = 0; k < 8; k++) { line(150 + (k % 2 ? 2 : -2), yy, 150 + (k % 2 ? -2 : 2), yy + 3, col); yy += 3; }
-      text("R", 155, 6, "#fff0c0");
     }
     if (i === 2) {   // the exponentially growing envelope of the error
       for (let x = 0; x < W; x += 3) { const uu = (x + 20) / 36; if (uu > CRASH || uu > u) continue; const e = 1.4 * Math.exp(0.4 * uu); px(x, 26 - e, 1, 1, "rgba(255,120,100,.8)"); px(x, 26 + e, 1, 1, "rgba(255,120,100,.8)"); }
@@ -355,7 +346,6 @@
     }
     if (i === 4) {   // the rails, the ideal sine and the clipped output
       for (let x = 0; x < W; x += 4) { px(x, 17, 2, 1, "rgba(255,90,70,.85)"); px(x, 39, 2, 1, "rgba(255,90,70,.85)"); }
-      text("+VCC", 250, 11, "#ffc0b0"); text("-VCC", 250, 41, "#ffc0b0");
       for (let x = 0; x < W; x += 2) px(x, 28 + 18 * Math.sin(x / 18), 1, 1, "rgba(255,255,255,.3)");
     }
     if (i === 5) {   // eight levels and the ideal curve
@@ -369,11 +359,11 @@
       for (let e = 0; e <= 0.5; e += 0.01) px(gx + e * 60, gy + 22 - sig7(e) * 20, 1, 1, "#ffb25a");
       const live = u < P.tear;
       if (live) { const e = eps7(u); px(gx + e * 60 - 1, gy + 22 - sig7(e) * 20 - 1, 3, 3, "#ff3a2a"); }
-      else { px(gx + 0.5 * 60 - 1, gy + 22 - 20 - 1, 3, 3, "#ff3a2a"); text("X", gx + 18, gy + 3, "#ff9a8a"); }
+      else { px(gx + 0.5 * 60 - 1, gy + 22 - 20 - 1, 3, 3, "#ff3a2a");  }
     }
     if (i === 7) {   // the circle the loop should have made, and the gap
       for (let k = 0; k < 64; k++) { const a = k * Math.PI / 32; if (k % 2) px(LC + LR * Math.sin(a), LY + LR * Math.cos(a), 1, 1, "rgba(255,255,255,.4)"); }
-      if (u > LU1 + LDUR) { const ex = LC + LR * Math.sin(LA), ey = LY + LR * Math.cos(LA); line(ex, ey + 2, LC, LY + LR + 2, "#ff4b3a"); px(LC - 25, LY + LR - 9, 14, 7, "rgba(20,12,6,.8)"); text("GAP", LC - 23, LY + LR - 8, "#ff9a8a"); }
+      if (u > LU1 + LDUR) { const ex = LC + LR * Math.sin(LA), ey = LY + LR * Math.cos(LA); line(ex, ey + 2, LC, LY + LR + 2, "#ff4b3a");  }
     }
   }
   function readoutFor(P, i, u) {
@@ -435,10 +425,8 @@
     dust(t);
     const { P, u, i } = passAt(t);
     // the label of the law being flown
-    px(2, 2, [...P.label].length * 4 + 3, 9, "rgba(20,12,6,.72)"); text(P.label, 4, 4, "#fff0c0");
     under(P, i, u, t, sy);
     overlay(P, i, u, t, sy);
-    readoutFor(P, i, u);
   }
   /* ---------- the loop, pause, off-screen and reduced-motion handling ---------- */
   let t0 = performance.now(), raf = 0, running = true, tPaused = 0, last = 0;

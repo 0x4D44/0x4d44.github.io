@@ -130,8 +130,8 @@ nav.decks { flex-basis: 100%; }
 nav.decks ul { list-style-type: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px; }
 nav.decks li { margin: 0; }
 nav.decks a {
-  display: block; padding: 8px 12px; color: #e9e4d4; text-decoration: none;
-  font: 500 .92rem/1.2 var(--font-pixel); border-radius: 3px 3px 0 0;
+  display: block; padding: 8px 7px; color: #e9e4d4; text-decoration: none;
+  font: 500 .84rem/1.2 var(--font-pixel); border-radius: 3px 3px 0 0;
 }
 nav.decks a:hover, nav.decks a:focus-visible { background: rgba(255,255,255,.14); color: #fff; }
 nav.decks a[aria-current="page"] { background: var(--paper); color: var(--ink); }
