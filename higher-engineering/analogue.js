@@ -345,8 +345,9 @@
         fb.innerHTML = `<span class="ana-ok">Correct.</span> $R$ = ${N(chal.R, 2)} kΩ. Now move the sliders and see $V_{out}$ land on ${chal.Vt} V (set the fixed-resistor slider to about ${N(chal.R, 1)} kΩ).`;
         sRf.set(posOf(clamp(chal.R * 1000, 1e3, 1e6), 1e3, 1e6));
       } else {
-        const ratioHint = Math.abs(v - 1 / chal.R) < 0.03 / chal.R || Math.abs(v - chal.R * (chal.pos === "bottom" ? chal.Vt / (chal.Vs - chal.Vt) : (chal.Vs - chal.Vt) / chal.Vt) / 1) < 0.03 * chal.R
-          ? " That is what you get with the ratio the wrong way up: check which resistor is which." : "";
+        const flip = chal.pos === "bottom" ? chal.rs * chal.Vt / (chal.Vs - chal.Vt) : chal.rs * (chal.Vs - chal.Vt) / chal.Vt;
+        const ratioHint = Math.abs(v - flip) <= 0.03 * flip ? " That is what you get with the ratio the wrong way up: check which resistor is which."
+          : Math.abs(v - chal.rs) <= 0.03 * chal.rs ? " You copied the sensor's resistance; you need the other resistor." : "";
         fb.innerHTML = `<span class="ana-bad">Not quite.</span>${ratioHint} Remember the biggest resistor takes the biggest share of the voltage. Try <b>Show steps</b>.`;
       }
       HE.math(fb);
@@ -908,7 +909,7 @@
       const ok = q.abs ? Math.abs(v - q.ans) <= 0.05 : Math.abs(v - q.ans) <= q.tol * Math.abs(q.ans);
       if (ok) fb.innerHTML = `<span class="ana-ok">Correct:</span> ${N(q.ans, 2)}${q.unit}. Press <b>Try it on the scope</b> to see it.`;
       else if (q.type === "sat" && Math.abs(v + q.ans) < 0.05) fb.innerHTML = `<span class="ana-bad">Check the sign.</span> An inverting amplifier turns a positive input into a negative output.`;
-      else if (q.type !== "sat" && Math.abs(v - (q.type === "inv" ? q.ans + 10 : q.ans - 10)) < 0.01 * q.ans) fb.innerHTML = `<span class="ana-bad">So close.</span> Check whether the gain formula has the "1 +" in it for this circuit.`;
+      else if (q.type !== "sat" && Math.abs(v - (q.type === "inv" ? q.ans - 10 : q.ans + 10)) <= 0.5) fb.innerHTML = q.type === "inv" ? `<span class="ana-bad">So close.</span> There is no "1 +" in the inverting formula: the gain is just Rf / Ri.` : `<span class="ana-bad">So close.</span> Check the "1 +" in the non-inverting formula: the gain is 1 + Rf / Ri, so Rf is (gain − 1) × Ri.`;
       else fb.innerHTML = `<span class="ana-bad">Not quite.</span> Write the Booklet formula first, then substitute. Try <b>Show steps</b>.`;
     });
     tryB.addEventListener("click", () => {
