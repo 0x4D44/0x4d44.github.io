@@ -953,7 +953,7 @@
       return {
         cards: [card("temperature", N(st.T, 0) + " °C", "live"), card("thermistor resistance (falls as it heats)" + (st.T % 10 ? " (interpolated)" : ""), fmtR(Rth)), card("divider output Vi", fmtV(Vi)), card(`comparator: Vi ${on ? "<" : ">"} Vref (4.5 V)`, Vo ? "+9 V" : "0 V", "hot"),
           card("base current (RB = 10 kΩ)", fmtI(Ib)), card("relay coil current (max 50 mA)", fmtI(Ic)), card("fan", run ? "RUNNING" : "OFF", run ? "live" : "")],
-        text: on ? `At ${N(st.T, 0)} °C the thermistor has fallen to ${fmtR(Rth)}, so Vi (${N(Vi, 2)} V) is below Vref (4.5 V). The comparator output saturates positive, a base current of ${fmtI(Ib)} flows through RB, the transistor saturates, the coil carries ${fmtI(Ic)}, the relay closes and the fan runs.`
+        text: on ? `At ${N(st.T, 0)} °C the thermistor has fallen to ${fmtR(Rth)}, so Vi (${N(Vi, 2)} V) has reached or fallen below Vref (4.5 V). The comparator output saturates positive, a base current of ${fmtI(Ib)} flows through RB, the transistor saturates, the coil carries ${fmtI(Ic)}, the relay closes and the fan runs.`
           : `At ${N(st.T, 0)} °C the thermistor is still ${fmtR(Rth)}, so Vi (${N(Vi, 2)} V) is above Vref (4.5 V). The comparator output is at its low rail, no base current flows, the transistor is off, the relay is open and the fan is stopped. The fan switches on at 50 °C.`,
       };
     }

@@ -507,7 +507,7 @@
     }
     const energies = () => {
       const Ep = m * g * L * (1 - Math.cos(th)), Ek = 0.5 * m * (L * om) * (L * om);
-      return { Ep, Ek, Q: Math.max(0, E0 - Ep - Ek) };
+      return { Ep, Ek, Q: (E0 - Ep - Ek) < 0.05 ? 0 : E0 - Ep - Ek };
     };
     sim = HE.sim(cv, {
       loop: true,
