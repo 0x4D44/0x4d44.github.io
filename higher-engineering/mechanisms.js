@@ -403,7 +403,7 @@
       HE.arrow(ctx, w / 2 - sg * 40, yRoot - 40, w / 2 + sg * 40, yRoot - 40, C.grass, 4, 12);
       HE.label(ctx, "rack: v = " + F(v, 3) + " m/s", w / 2, yRoot - 56, { align: "center", bold: true, col: C.grass });
       curvedArrow(ctx, cx, cy, Math.max(12, rp * 0.5), !p.flip, C.ink);
-      HE.label(ctx, "pinion d = " + p.d + " mm", cx, cy + rp + 16, { align: "center", bold: true, col: C.lode });
+      HE.label(ctx, "pinion d = " + p.d + " mm", cx, Math.min(cy + rp + 16, 244), { align: "center", bold: true, col: C.lode });
     }
     function drawWorm(ctx, C, s) {
       const w = s.w, h = s.h, p = P.worm;
