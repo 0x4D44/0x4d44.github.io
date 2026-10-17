@@ -695,12 +695,12 @@
         const ex1 = w * 0.76, ex2 = w * 0.9;
         ctx.save(); ctx.fillStyle = C.card; ctx.beginPath(); ctx.arc(ex1, fy - 0, R * 0.62, 0, TAU); ctx.fill(); ctx.restore();
         ctx.save(); ctx.beginPath(); ctx.arc(ex1, fy, R * 0.62, 0, TAU); ctx.clip(); ctx.restore();
-        const dsc = (cx, a, col) => { ctx.fillStyle = C.card; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R * 0.55, 0, TAU); ctx.fill(); ctx.stroke(); ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { const th = a + k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(th) * R * 0.55, cy + Math.sin(th) * R * 0.55); ctx.stroke(); } };
+        const dsc = (cx, a, col) => { ctx.fillStyle = C.card; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R * 0.45, 0, TAU); ctx.fill(); ctx.stroke(); ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { const th = a + k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(th) * R * 0.45, cy + Math.sin(th) * R * 0.45); ctx.stroke(); } };
         dsc(ex1 - 0, st.a1, C.lode); dsc(ex2 + 0, st.a2, C.grass);
-        HE.label(ctx, "input plate", x1 + 18, cy - R - 14, { align: "center", size: 12, bold: true, col: C.lode });
-        HE.label(ctx, "output plate", ox + 8, cy - R - 14, { align: "center", size: 12, bold: true, col: C.grass });
-        HE.label(ctx, F(st.wi * 60 / TAU, 3) + " rev/min", ex1, cy + R * 0.55 + 16, { align: "center", size: 12, col: C.lode });
-        HE.label(ctx, F(st.wo * 60 / TAU, 3) + " rev/min", ex2, cy + R * 0.55 + 16, { align: "center", size: 12, col: C.grass });
+        HE.label(ctx, "input plate", x1 + 16, cy - R - 14, { align: "right", size: 12, bold: true, col: C.lode });
+        HE.label(ctx, "output plate", ox - 2, cy - R - 14, { align: "left", size: 12, bold: true, col: C.grass });
+        HE.label(ctx, F(st.wi * 60 / TAU, 3) + " rev/min", ex1, cy + R * 0.45 + 16, { align: "center", size: 12, col: C.lode });
+        HE.label(ctx, F(st.wo * 60 / TAU, 3) + " rev/min", ex2, cy + R * 0.45 + 16, { align: "center", size: 12, col: C.grass });
         HE.label(ctx, !st.engaged ? "disengaged: output stationary" : st.locked ? "LOCKED: both plates at one speed" : "SLIPPING: friction drags the output up to speed", w / 2, 14, { align: "center", bold: true, size: 12, col: st.locked ? C.grass : C.red });
         // heat glow on lining when slipping
         if (st.engaged && !st.locked) { ctx.fillStyle = "rgba(255,120,30,.55)"; ctx.fillRect(x1 + 24, cy - R + 3, 4, 2 * R - 6); }
