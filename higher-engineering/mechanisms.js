@@ -403,7 +403,7 @@
       HE.arrow(ctx, w / 2 - sg * 40, yRoot - 40, w / 2 + sg * 40, yRoot - 40, C.grass, 4, 12);
       HE.label(ctx, "rack: v = " + F(v, 3) + " m/s", w / 2, yRoot - 56, { align: "center", bold: true, col: C.grass });
       curvedArrow(ctx, cx, cy, Math.max(12, rp * 0.5), !p.flip, C.ink);
-      HE.label(ctx, "pinion d = " + p.d + " mm", cx, Math.min(cy + rp + 16, 244), { align: "center", bold: true, col: C.lode });
+      HE.label(ctx, "pinion d = " + p.d + " mm", cx, cy + rp + 16, { align: "center", bold: true, col: C.lode });
     }
     function drawWorm(ctx, C, s) {
       const w = s.w, h = s.h, p = P.worm;
@@ -668,7 +668,7 @@
           }
         }
         if (dt) { st.a1 += st.wi * dt * 0.2; st.a2 += st.wo * dt * 0.2; paintRo(); }
-        const cy = h * 0.5, x1 = w * 0.25, x2 = w * 0.62, R = Math.min(h * 0.36, w * 0.14);
+        const cy = h * 0.5, x1 = w * 0.25, x2 = w * 0.62, R = Math.min(h * 0.30, w * 0.14);
         const gap = st.engaged ? 0 : 22;
         const plate = (cx, a, colr, lab, off) => {
           ctx.save(); ctx.translate(cx + off, cy); ctx.rotate(a);
@@ -697,8 +697,8 @@
         ctx.save(); ctx.beginPath(); ctx.arc(ex1, fy, R * 0.62, 0, TAU); ctx.clip(); ctx.restore();
         const dsc = (cx, a, col) => { ctx.fillStyle = C.card; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R * 0.45, 0, TAU); ctx.fill(); ctx.stroke(); ctx.lineWidth = 3; for (let k = 0; k < 4; k++) { const th = a + k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(th) * R * 0.45, cy + Math.sin(th) * R * 0.45); ctx.stroke(); } };
         dsc(ex1 - 0, st.a1, C.lode); dsc(ex2 + 0, st.a2, C.grass);
-        HE.label(ctx, "input plate", x1 + 16, cy - R - 14, { align: "right", size: 13, bold: true, col: C.lode });
-        HE.label(ctx, "output plate", ox - 2, cy - R - 14, { align: "left", size: 13, bold: true, col: C.grass });
+        HE.label(ctx, "input plate", x1 + 16, cy - R - 12, { align: "right", size: 13, bold: true, col: C.lode });
+        HE.label(ctx, "output plate", ox - 2, cy - R - 12, { align: "left", size: 13, bold: true, col: C.grass });
         HE.label(ctx, F(st.wi * 60 / TAU, 3), ex1, cy + R * 0.45 + 16, { align: "center", size: 13, col: C.lode });
         HE.label(ctx, F(st.wo * 60 / TAU, 3), ex2, cy + R * 0.45 + 16, { align: "center", size: 13, col: C.grass });
         HE.label(ctx, "rev/min", (ex1 + ex2) / 2, cy + R * 0.45 + 32, { align: "center", size: 13, col: C.ink2 });

@@ -65,3 +65,8 @@ svg .sy-box { fill: var(--card); stroke: var(--ink); stroke-width: 2; }
 .sy-tag{display:inline}
 .sy-roundtab th, .sy-roundtab td { padding: 5px 6px; }
 @media (max-width: 520px) { .sy-roundtab { font-size: .82rem; } .sy-roundtab .hint { display: none; } }
+
+/* phone legibility: keep figure text >= ~9px by letting the figure scroll sideways instead of shrinking */
+@media (max-width: 600px) {
+  .diagram-scroll.fit > svg { min-width: 600px; }
+}
