@@ -501,7 +501,7 @@
         m = `One turn of a ${p.starts}-start worm moves the wheel on by ${p.starts} tooth${p.starts > 1 ? "s" : ""}. $\\text{VR} = \\dfrac{${p.teeth}}{${p.starts}} = ${F(VR, 3)}$, so the wheel turns at ${p.n} ÷ ${F(VR, 3)} = <b>${rpmText(nout)}</b>. A single stage gives a huge reduction at 90°. Efficiency is low (the thread slides), so only part of the torque gain survives.`;
       } else {
         const v = p.lead * (p.n / 60);
-        ro.set("v", F(v, 3) + " mm/s"); ro.set("vmm", F(v * 60, 3) + " mm/min"); ro.set("t", F(400 / v, 3) + " s"); ro.set("dir", "no (the screw holds the load)");
+        ro.set("v", F(v, 3) + " mm/s"); ro.set("vmm", F(v * 60, 3) + " mm/min"); ro.set("t", F(400 / v, 3) + " s"); ro.set("dir", "usually not with a shallow thread (steep leads and ball screws can back-drive)");
         m = `The nut advances one <b>lead</b> (here the pitch of a single-start thread, ${p.lead} mm) per turn: ${p.lead} mm × ${F(p.n / 60, 4)} rev/s = ${F(v, 3)} mm/s. Reverse the screw and the nut reverses.`;
       }
       msg.innerHTML = m; HE.math(msg); sim.redraw();
@@ -534,7 +534,7 @@
       "Gears mesh directly: strong and exact, but the shafts must be close together.",
       "Rack and pinion turns rotation into a straight line (and back again) with an exact relationship.",
       "Worm and wheel: a big reduction in one stage, shafts at 90°, and usually non-reversible, so it holds a load.",
-      "Worm and nut (lead screw): slow, strong, precise straight-line motion that holds the load.",
+      "Worm and nut (lead screw): slow, strong, precise straight-line motion that usually holds the load with a shallow thread.",
     ];
     box.append(HE.el("p", { class: "hint" }, "Tick the requirements of the job. Each drive scores 0, 1 or 2 per requirement (2 = a natural fit). This is a teaching guide, not a rule: the exam will tell you what the drive must do."));
     const grid = HE.el("div", { class: "mec-req", role: "group", "aria-label": "Requirements" });
