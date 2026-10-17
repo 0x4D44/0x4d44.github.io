@@ -322,7 +322,7 @@ $$h_{FE} = \frac{I_C}{I_B}\qquad\text{so}\qquad I_C = h_{FE} \times I_B$$
 <li>If the load is a coil (relay, motor, solenoid), add the flyback diode.</li>
 </ol>
 
-<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2024 and 2026 course reports</div><p>The 2024 report says that in the base-current question some candidates "did not calculate the voltage drop over the base resistor" (Q8(c)). Our guess at the cause: they divided the whole supply by $R_B$, forgetting that 0.7 V is taken by the transistor. (The same report says that many candidates "did not calculate" the base current at all, Q10(a)(ii).) And in 2026 "few candidates correctly calculated the power dissipated between the collector and emitter in the transistor". The next two worked examples are those two questions. Do them until they are routine.</p></div>
+<div class="callout exam"><div class="callout-title">⚠ Exam lookout · from the 2024 and 2026 course reports</div><p>The 2024 report says that in the base-current question some candidates "did not calculate the voltage drop over the base resistor" (Q8(c)). Our guess at the cause: they divided the whole supply by $R_B$, forgetting that 0.7 V is taken by the transistor. (Q10(a)(ii) of the same report: "Many candidates did not demonstrate a good understanding of how to calculate the base current.") And in 2026 "few candidates correctly calculated the power dissipated between the collector and emitter in the transistor". The next two worked examples are those two questions. Do them until they are routine.</p></div>
 
 <div class="worked"><p class="worked-title">Worked example 7 · Calculation · $h_{FE}$</p>
 <p>(a) A transistor passes a collector current of 30 mA when the base current is 0.25 mA. Calculate its current gain. (b) A different transistor has $h_{FE} = 200$. What base current gives a collector current of 30 mA?</p>
@@ -481,7 +481,7 @@ $$g_m = \frac{\Delta I_D}{\Delta V_{GS}}$$
 <ol class="step-list">
 <li><strong>No current flows into either input.</strong> The input resistance is so high that the inputs only sense voltage and take no current from whatever is connected to them.</li>
 <li><strong>The gain without feedback is enormous.</strong> A difference of a few millivolts between the inputs is enough to swing the output all the way to a limit.</li>
-<li><strong>The output can never go beyond the supply rails.</strong> It <dfn>saturates</dfn> at about $+V_{CC}$ or $-V_{CC}$. Real op-amps stop slightly inside the rails, but the course treats them as reaching $\pm V_{CC}$ unless you are told otherwise. State this assumption if it matters.</li>
+<li><strong>The output can never go beyond the supply rails.</strong> It <dfn>saturates</dfn> at about $+V_{CC}$ or $-V_{CC}$. Real op-amps stop slightly inside the rails, but the course treats them as reaching $\pm V_{CC}$ unless you are told otherwise. (This "saturation" is not the same as a transistor being saturated: here it just means the output has hit its supply limit.) State this assumption if it matters.</li>
 </ol>
 <p>The Redstone Room has a good model of rule 2. A redstone <strong>comparator</strong> block looks at a signal strength entering the back and one entering the side, and compares them. In "compare" mode it passes the back signal only if it is at least as strong as the side signal; otherwise it gives nothing. In "subtract" mode it outputs the back strength minus the side strength. The first is a two-state decision, like the op-amp comparator. The second is a proportional subtraction, like the difference amplifier.</p>
 <div class="widget" id="w-ana-redstone">
@@ -531,7 +531,7 @@ $$g_m = \frac{\Delta I_D}{\Delta V_{GS}}$$
 <p>The formulae run in reverse as design tools. To get a gain of $-8$ from an inverting amplifier with $R_i = 4.7\ \text{k}\Omega$, you need $R_f / R_i = 8$ so $R_f = 8 \times 4.7 = 37.6\ \text{k}\Omega$. For a non-inverting amplifier with gain 6 and $R_i = 2.2\ \text{k}\Omega$, $1 + R_f/R_i = 6$ so $R_f = 5 R_i = 11\ \text{k}\Omega$. Note the "$1 +$" in the second case: it is $A_v - 1$ times $R_i$.</p>
 
 <div class="worked"><p class="worked-title">Worked example 14 · Calculation · inverting amplifier and saturation</p>
-<p class="hint">(The gain formula is derived here; it is also used in the Systems deck.)</p>
+<p class="hint">(The gain formula is given in the Data Booklet; it is also used in the Systems deck.)</p>
 <p>An inverting amplifier has $R_i = 10\ \text{k}\Omega$ and $R_f = 47\ \text{k}\Omega$ and is supplied with $\pm 9.0$ V. Calculate the output voltage when the input is (a) 0.50 V and (b) 2.5 V.</p>
 <details><summary>Show solution <span class="marks-n">[4 marks]</span></summary>
 <ol class="step-list marks">

@@ -947,11 +947,11 @@
 
     function card(title, value, cls) { return HE.el("div", { class: cls || "", role: "listitem" }, HE.el("b", null, value), HE.el("span", null, title)); }
     function fan() {
-      const Rth = ntcR(st.T), Rfix = 3600, Vi = 9 * Rth / (Rfix + Rth), Vref = 4.5, on = Vi < Vref, Vo = on ? 9 : 0;
+      const Rth = ntcR(st.T), Rfix = 3600, Vi = 9 * Rth / (Rfix + Rth), Vref = 4.5, on = Vi <= Vref + 1e-9, Vo = on ? 9 : 0;
       const Rb = 10000, Ib = on ? (Vo - 0.7) / Rb : 0, Ic = Math.min(100 * Ib, 9 / 180);
       const run = on && Ic > 0.045;
       return {
-        cards: [card("temperature", N(st.T, 0) + " °C", "live"), card("thermistor resistance (falls as it heats)", fmtR(Rth)), card("divider output Vi", fmtV(Vi)), card(`comparator: Vi ${on ? "<" : ">"} Vref (4.5 V)`, Vo ? "+9 V" : "0 V", "hot"),
+        cards: [card("temperature", N(st.T, 0) + " °C", "live"), card("thermistor resistance (falls as it heats)" + (st.T % 10 ? " (interpolated)" : ""), fmtR(Rth)), card("divider output Vi", fmtV(Vi)), card(`comparator: Vi ${on ? "<" : ">"} Vref (4.5 V)`, Vo ? "+9 V" : "0 V", "hot"),
           card("base current (RB = 10 kΩ)", fmtI(Ib)), card("relay coil current (max 50 mA)", fmtI(Ic)), card("fan", run ? "RUNNING" : "OFF", run ? "live" : "")],
         text: on ? `At ${N(st.T, 0)} °C the thermistor has fallen to ${fmtR(Rth)}, so Vi (${N(Vi, 2)} V) is below Vref (4.5 V). The comparator output saturates positive, a base current of ${fmtI(Ib)} flows through RB, the transistor saturates, the coil carries ${fmtI(Ic)}, the relay closes and the fan runs.`
           : `At ${N(st.T, 0)} °C the thermistor is still ${fmtR(Rth)}, so Vi (${N(Vi, 2)} V) is above Vref (4.5 V). The comparator output is at its low rail, no base current flows, the transistor is off, the relay is open and the fan is stopped. The fan switches on at 50 °C.`,
