@@ -151,7 +151,7 @@
 </div>
 
 <h3>How to write a Higher answer about an engineer's role</h3>
-<p>Questions in this area ask you to <em>describe</em> or <em>explain</em> a role in a named project. The 2026 course report records that few candidates "described two roles of a civil engineer in the development phase" and that few "described two examples of how a mechanical engineer may apply mathematics in the design of the drive system". The pattern is clear: when a question asks for <em>two</em>, many candidates give one, or give the same one twice in different words. Use this recipe for every role mark:</p>
+<p>Questions in this area ask you to <em>describe</em> or <em>explain</em> a role in a named project. The 2026 course report records that few candidates "described two roles of a civil engineer in the development phase" and that few "described two examples of how a mechanical engineer may apply mathematics in the design of the drive system". Our advice: when a question asks for <em>two</em>, many candidates give one, or give the same one twice in different words. Use this recipe for every role mark:</p>
 <div class="callout def"><div class="callout-title">📘 The role + how/why recipe</div>
 <ol>
 <li><strong>Role</strong>: state a specific task this discipline does in the project, in this phase.</li>
@@ -342,7 +342,7 @@
 <div class="callout def"><div class="callout-title">📘 Error</div>
 <p>$$\text{error} = \text{desired value} - \text{actual value}$$</p>
 <p>The <dfn>error</dfn> is the gap between what we want and what we have. Its <em>sign</em> tells you which way to correct: with desired 090° and actual 084° the error is $+6^\circ$ (turn towards a larger heading); if actual is 096° the error is $-6^\circ$ (turn the other way). When the error is zero, the controller has nothing to do.</p></div>
-<p>The block that works out the error is the <dfn>comparator</dfn> or <dfn>error detector</dfn> (drawn as a circle with a $+$ and a $-$, a <em>summing junction</em>). In an electronic controller it is built from op-amps: a <em>comparator</em> circuit gives a two-state answer, "above or below the reference", and a <em>difference amplifier</em> gives an output proportional to the difference between two voltages, $V_o = \frac{R_f}{R_i}(V_2 - V_1)$. You will build both in the <a href="analogue.html">analogue electronics deck</a>; for now, remember that "error detection" is the subtraction in the feedback loop.</p>
+<p>The block that works out the error is the <dfn>comparator</dfn> or <dfn>error detector</dfn> (drawn as a circle with a $+$ and a $-$, a <em>summing junction</em>). In an electronic controller it is often built from op-amps (the comparator block is often built from a comparator op-amp circuit, so the same word names two different things: a block in the diagram, and a circuit that can make it): a <em>comparator</em> circuit gives a two-state answer, "above or below the reference", and a <em>difference amplifier</em> gives an output proportional to the difference between two voltages, $V_o = \frac{R_f}{R_i}(V_2 - V_1)$ (derived in the Analogue deck, chapter 4). You will build both in the <a href="analogue.html">analogue electronics deck</a>; for now, remember that "error detection" is the subtraction in the feedback loop.</p>
 
 <h3>The role of negative feedback</h3>
 <p>Feedback is called <dfn>negative</dfn> when the fed-back signal is <em>subtracted</em> from the input at the comparator, so a rise in the output reduces the drive that caused it. Negative feedback is <strong>self-correcting</strong>: if the output goes too high, the error goes negative and the controller pushes the output back down; if it goes too low, the opposite happens. That is why it reduces the effect of disturbances and keeps the output near the desired value.</p>
@@ -501,13 +501,13 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 <rect x="170" y="50" width="180" height="90" rx="4" class="sy-box"/>
 <text x="260" y="88" font-size="16" font-weight="700" text-anchor="middle" class="ink">MACHINE</text><text x="260" y="112" font-size="13" text-anchor="middle" class="ink2">η = E(out) ÷ E(in)</text>
 <path d="M20 95 H152" class="s-ink" stroke-width="14" fill="none"/><path d="M152 81 L168 95 L152 109 Z" class="ink"/>
-<path d="M352 95 H470" class="s-grass" stroke-width="10" fill="none"/><path d="M470 82 L488 95 L470 108 Z" class="f-grass"/>
-<path d="M300 142 V176" class="s-red" stroke-width="5" fill="none"/><path d="M292 174 L300 192 L308 174 Z" class="f-red"/>
+<path d="M352 95 H470" class="s-grass" stroke-width="4" fill="none"/><path d="M470 87 L488 95 L470 103 Z" class="f-grass"/>
+<path d="M300 142 V176" class="s-red" stroke-width="11" fill="none"/><path d="M288 174 L300 194 L312 174 Z" class="f-red"/>
 <text x="20" y="72" font-size="14" font-weight="700" class="ink">energy in, E(in)</text>
 <text x="500" y="72" font-size="14" font-weight="700" class="f-grass" text-anchor="end">useful energy out</text>
 <text x="316" y="188" font-size="14" font-weight="700" class="f-red">wasted energy</text><text x="316" y="206" font-size="12" class="f-red">(heat, sound, friction)</text>
 </svg></div>
-<figcaption>Arrow widths drawn in proportion: most of the energy in is useful here. The three arrows always balance.</figcaption></figure>
+<figcaption>Arrow widths are indicative only. The three arrows always balance: energy in = useful out + wasted. For the 60 W lantern above, only 5 % becomes light and 95 % is wasted as heat.</figcaption></figure>
 
 <div class="widget" id="w-sankey">
   <h3 class="widget-title">Energy-flow gauge: the capstan's electric motor</h3>
@@ -528,14 +528,14 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 
 <div class="widget" id="w-bench">
   <h3 class="widget-title">The armourer's bench: feel the size of a joule</h3>
-  <p class="hint">Choose a formula, move the sliders, and read the substitution and the answer. The bar compares the answer with the energy in a cannonball, a lifted anchor, a kettle boil and so on.</p>
+  <p class="hint">Choose a formula, move the sliders, and read the substitution and the answer. The bars compare your answer with everyday references: lifting 1 kg by 1 m, a 24 V lamp for a minute, warming water, a launch stopping, and heating a kilogram of water to boiling. The scale is logarithmic, so each step along is ten times more.</p>
 </div>
 
 <h3>Conservation of energy in motion</h3>
 <p>When nothing wastes energy, kinetic and potential energy simply swap. A lantern swinging at the end of a rope is highest (all $E_p$, no $E_k$) at the ends of its swing, and fastest (all $E_k$, minimum $E_p$) at the bottom. With friction in the pivot and air resistance, some of the energy becomes heat $E_h$ on every swing, and the swings die away. The total never changes.</p>
 <div class="widget" id="w-pend">
   <h3 class="widget-title">The swinging lantern: energy changes form but is never lost</h3>
-  <p class="hint">Release the lantern from any angle. The bars show potential, kinetic and heat energy. With no friction the potential and kinetic bars always add to the same total; with friction, the heat bar grows and the swing dies away.</p>
+  <p class="hint">Release the lantern from any angle. The bars show potential, kinetic and heat energy. With no friction the potential and kinetic bars always add to the same total; with friction, the heat bar grows and the swing dies away. The motion is calculated step by step, so a very small drift in the total is possible.</p>
 </div>
 
 <h3>Combining formulae: the method</h3>
@@ -708,7 +708,7 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 </ol>
 <p><strong>The rounded-early version</strong> gives $n = 0.78$, $v = 3.14 \times 0.35 \times 0.78 = 0.857 \to 0.86$, $P_{out} = 4816 \to 4800$, $P_{in} = 5853 \to 5900$, and $E_{in} = 1\,770\,000\ \text{J} = 1.77 \times 10^6\ \text{J}$. The last digit is wrong, even though every step "looked" accurate. That is the mark lost.</p></details></div>
 
-<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"The Data Booklet says g is 9·8. My calculator physics book says 9.81. Which do I use?"</p><p><strong>Master Shipwright Kerr:</strong> "Use the Data Booklet's 9.8 m s⁻² in this course, exactly as printed: it is the value the question was set with. Using 9.81 gives an answer a fraction of a percent different, which is usually still inside the marker's tolerance, but there is no reason to risk it. The booklet is your reference; follow it."</p></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"The Data Booklet says g is 9·8. My calculator physics book says 9.81. Which do I use?"</p><p><strong>Master Shipwright Kerr:</strong> "Use the Data Booklet's 9.8 m s⁻² in this course, exactly as printed: it is the value the question was set with. Using 9.81 gives an answer a fraction of a percent different, but use g = 9.8 N kg⁻¹ as given in the Data Booklet and you will always match the question. The booklet is your reference; follow it."</p></div>
 
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul>
 <li>transpose any formula in the Data Booklet, and combine two formulae by substitution;</li>
@@ -791,7 +791,7 @@ $$\eta = \frac{E_{out}}{E_{in}} = \frac{P_{out}}{P_{in}}$$
 <li><strong>Point</strong>: state the impact and its <em>type</em> (social, economic, environmental) and whether it is positive or negative.</li>
 <li><strong>Explanation</strong>: say <em>how or why</em> it happens, in the context of the technology named in the question.</li>
 <li><strong>Consequence</strong>: say what follows for people, money or the environment, and for whom.</li></ol>
-<p>Aim for balance: when the question says "discuss" or "evaluate", include at least one positive and one negative, and finish with a short judgement.</p></div>
+<p>Aim for balance. <em>Discuss</em> means weigh up more than one side of an issue, so when the question says "discuss" or "evaluate", include at least one positive and one negative, and finish with a short judgement.</p></div>
 <div class="compare">
 <div><h4>Weak</h4><p>"Wind turbines are good for the environment and give people jobs, but some people don't like them."</p><p><span class="bad">Why it scores poorly:</span> three vague slogans, nothing explained, nothing specific to the question.</p></div>
 <div><h4>Strong</h4><p>"Offshore wind turbines generate electricity without burning fuel <em>(point: positive environmental)</em>, so the electricity they supply replaces power from gas-fired power stations that release carbon dioxide <em>(explanation)</em>. This lowers the carbon emissions of the national grid and slows climate change <em>(consequence)</em>."</p></div>
