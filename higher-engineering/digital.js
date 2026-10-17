@@ -1584,7 +1584,7 @@
   /* =====================================================================
      4. Capstan: logic board + microcontroller
      ===================================================================== */
-  const CAP = { inputs: ["A", "B", "C", "D"], gates: [{ type: "NAND", in: ["D", "D"], out: "nD" }, { type: "NAND", in: ["A", "B", "C", "nD"], out: "u" }, { type: "NAND", in: ["u", "u"], out: "E" }], outputs: ["E"] };
+  const CAP = { inputs: ["A", "B", "C", "D"], gates: [{ type: "NAND", in: ["D", "D"], out: "nD" }, { type: "NAND", in: ["A", "B", "C", "nD"], out: "X" }, { type: "NAND", in: ["X", "X"], out: "E" }], outputs: ["E"] };
   mount("w-capstan", (box) => {
     const vals = { A: 1, B: 1, C: 0, D: 0 };
     let dial = 150;
