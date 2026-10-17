@@ -168,3 +168,8 @@ figure.diagram svg.dg-svg, .dg-svg { display: block; width: 100%; height: auto; 
 @keyframes dg-fadein { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .dg-fade { animation: none; } }
 :root[data-motion="reduce"] .dg-fade { animation: none; }
+
+/* phone legibility: gate symbols keep a readable size (their table scrolls), and 0/1 values grow */
+.dg-gatetable td.sym { min-width: 170px; }
+.dg-gatetable td.sym svg { min-width: 170px; }
+@media (max-width: 600px) { .dg-stage .dg-val { font-size: 15px; } }
