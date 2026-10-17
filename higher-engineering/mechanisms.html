@@ -288,7 +288,7 @@ $$\text{VR} = \frac{\text{teeth on the wheel}}{\text{number of starts on the wor
 <tr><th scope="row">Gears</th><td>Rotation</td><td>Compact, exact ratio, efficient</td><td>Shafts must be close; noise; cost of cutting teeth</td><td>Teeth</td></tr>
 <tr><th scope="row">Rack and pinion</th><td>Straight line</td><td>Direct, quick, reversible</td><td>Rack needs a long straight guide; can be driven backwards</td><td>$v = \pi d n$</td></tr>
 <tr><th scope="row">Worm and wheel</th><td>Rotation at 90°</td><td>Large ratio in one stage; often self-locking</td><td>Low efficiency, heat</td><td>Wheel teeth ÷ starts</td></tr>
-<tr><th scope="row">Worm and nut</th><td>Straight line</td><td>Great force, fine control, self-locking</td><td>Slow; low efficiency; wears</td><td>$v = \text{lead} \times n$</td></tr>
+<tr><th scope="row">Worm and nut</th><td>Straight line</td><td>Great force, fine control; usually self-locking with a shallow thread (steep leads and ball screws can back-drive)</td><td>Slow; low efficiency; wears</td><td>$v = \text{lead} \times n$</td></tr>
 </tbody></table></div>
 
 <div class="worked"><p class="worked-title">Worked example 7 · Calculation · a belt drive</p>
@@ -589,11 +589,12 @@ $$\tfrac12 m_{vehicle} v^2 = c\, m_{disc}\, \Delta T$$
 <figcaption>Displacement–step diagram for A+ B+ A− B−. Only one cylinder moves in each step.</figcaption></figure>
 
 <div class="widget" id="w-seq"><h3 class="widget-title">🔧 The circuit simulator: pneumatic sequences</h3>
-<p class="hint">Pick a sequence and press START. Air lines turn blue when pressurised, signal lines turn orange when a limit valve is feeding a pilot, the valve boxes slide as they change state, and the pistons move. Use Step to go one stage at a time. Try the second sequence without the one-way rollers and see what jams, then fit them.</p></div>
+<p class="hint">Pick a sequence and press START. Air lines turn blue when pressurised, signal lines turn orange when a limit valve is feeding a pilot, the valve boxes slide as they change state, and the pistons move. Use Step to go one stage at a time. Try the second sequence without the one-way rollers: it jams at the very start, before anything moves. Then fit them.</p></div>
 
 <h3>When signals collide</h3>
-<p>Now try the sequence <strong>A+ B+ B− A−</strong>. It looks harmless, but with plain rollers it jams. Look at what a1 is doing: A outstrokes and presses a1, which fires pilot 14 of B. B outstrokes and presses b1, and now B needs to <em>return</em> with pilot 12, but a1 is still pressed because A has not moved, so pilot 14 is still pressurised too. Valve B has air on <strong>both</strong> of its pilot lines at once and cannot change state. The same happens at the start: b0 is pressed, so pilot 12 of A is live when we try to start with pilot 14.</p>
-<p>The cure is to <strong>remove the old signal before the new one arrives</strong>. A <dfn>one-way trip (idle-return) roller</dfn> on a limit valve operates only when the piston passes it in one direction, so the signal is a short <em>pulse</em> rather than a signal that is held for as long as the piston sits there. Fitting one-way rollers on a1 and b0 turns the held signals into pulses, and the circuit runs. Other cures exist (reversing valves, cascade circuits, timers), and a question will tell you which one it wants. The principle is always the same: two opposing pilot signals must never be on together.</p>
+<p>Now try the sequence <strong>A+ B+ B− A−</strong>. It looks harmless, but with plain rollers it jams, and it jams <em>at the start</em>. At rest, piston B is instroked and holding limit valve b0 pressed, so b0 is feeding pilot 12 of valve A. When START sends air to pilot 14 of valve A, pilot 12 is already live. Valve A has air on <strong>both</strong> of its pilot lines and cannot change state, so nothing moves. That is the first conflict.</p>
+<p>There is a second one waiting. Suppose the start were cured: A outstrokes and presses a1, which fires pilot 14 of B. B outstrokes and presses b1, and B now needs to <em>return</em> with pilot 12. But a1 is still pressed because A has not moved, so pilot 14 of B is still pressurised too, and valve B is again jammed by opposing signals.</p>
+<p>The cure is to <strong>remove the old signal before the new one arrives</strong>. A <dfn>one-way trip (idle-return) roller</dfn> on a limit valve operates only when the piston passes it in one direction, so the signal is a short <em>pulse</em> rather than a signal that is held for as long as the piston sits there. Fitting one-way rollers on <strong>both a1 and b0</strong> turns the two held signals into pulses, and the circuit runs. One roller alone is not enough: with a one-way roller on a1 only, the circuit still jams at the start. Other cures exist (reversing valves, cascade circuits, timers), and a question will tell you which one it wants. The principle is always the same: two opposing pilot signals must never be on together.</p>
 
 <h3>Three cylinders</h3>
 <p>The method does not change when you add a third cylinder. For <strong>A+ B+ C+ A− B− C−</strong>, six steps need six pilot signals in a chain: START·c0 fires A+, a1 fires B+, b1 fires C+, c1 fires A−, a0 fires B−, and b0 fires C−. Notice that every limit valve is used once, in order, and that each signal fires the step that follows the one it ends.</p>
@@ -615,13 +616,13 @@ $$\tfrac12 m_{vehicle} v^2 = c\, m_{disc}\, \Delta T$$
 </ol></details></div>
 
 <div class="worked"><p class="worked-title">Worked example 17 · Description · a signal conflict</p>
-<p>A circuit is built for A+ B+ B− A− using plain roller limit valves and double-pilot 5/2 valves. When B has outstroked, the circuit stops. Explain why, and state one change that would fix it. [4]</p>
+<p>A circuit is built for A+ B+ B− A− using plain roller limit valves and double-pilot 5/2 valves. When START is pressed, nothing moves. Explain why, say where a second conflict would arise, and state the change that fixes both. [4]</p>
 <details><summary>Show solution <span class="marks-n">[4 marks, typical allocation]</span></summary>
 <ol class="step-list marks">
-<li>Roller valve a1 is still actuated because piston A is still fully outstroked. <span class="why">Identify the signal that is being held.</span></li>
-<li>So pilot 14 of valve B still has air when b1 sends air to pilot 12 of valve B. <span class="why">Both ends of the valve are pressurised.</span></li>
-<li>Valve B has opposing signals, so it cannot change state and piston B cannot instroke. <span class="why">The consequence, in the right words.</span></li>
-<li>Fit a one-way trip (idle-return) roller to a1, so that it gives only a short pulse as A outstrokes and the signal has gone by the time b1 operates. <span class="why">A change that removes the held signal.</span></li>
+<li>At rest, piston B is instroked, so roller valve b0 is actuated and supplies pilot 12 of valve A. <span class="why">Identify the signal that is being held at the start.</span></li>
+<li>START supplies pilot 14 of valve A at the same time, so valve A has opposing signals, cannot change state, and piston A cannot outstroke. <span class="why">The first conflict, with its consequence in the right words.</span></li>
+<li>Later, a1 stays actuated (piston A is still outstroked) and keeps pilot 14 of valve B live when b1 sends air to pilot 12, so valve B cannot change state for B to instroke. <span class="why">The second conflict.</span></li>
+<li>Fit one-way trip (idle-return) rollers to both b0 and a1, so each gives only a short pulse and the old signal has gone before the new one arrives. <span class="why">A change that removes both held signals. A roller on a1 alone would still jam at the start.</span></li>
 </ol></details></div>
 
 <div class="callout exam"><div class="callout-title">⚠ Exam lookout · describing the operation of a circuit</div>
@@ -666,7 +667,7 @@ $$\tfrac12 m_{vehicle} v^2 = c\, m_{disc}\, \Delta T$$
 <li><strong>Y2</strong> (A−): b1, with a1 as an interlock.</li>
 <li><strong>Y4</strong> (B−): a0, with b1 as an interlock.</li>
 </ul>
-<p>An <dfn>interlock</dfn> is an extra contact in series that only lets a coil be energised if the cylinder is in a safe position for it. Here it uses the cylinder's own opposite limit switch, so that the two coils of one valve are never energised together, which would push the spool two ways at once and burn out the coil.</p>
+<p>An <dfn>interlock</dfn> is an extra contact in series that only lets a coil be energised if the cylinder is in a safe position for it. Here it uses the cylinder's own opposite limit switch, so that the two coils of one valve are never energised together, which would put opposing signals on the spool, so the valve could not change state reliably.</p>
 <figure class="diagram"><div class="mec-scroll narrow" data-mec="ladder-ep"></div>
 <figcaption>The circuit and the ladder diagram for A+ B+ A− B− using double-solenoid valves and reed switches. Each rung shows the contacts that must all be closed before its coil is energised.</figcaption></figure>
 
