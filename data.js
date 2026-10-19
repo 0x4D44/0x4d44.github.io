@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "higher-graphic-communication",
+    title: "Planes, Plans & Pennants",
+    tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. HMS Vellum's Plan Room, Minecraft blocks and Air Cadets carry the diagrams and animated widgets. Vanilla JavaScript, canvas and SVG.",
+    url: "https://0x4d44.github.io/higher-graphic-communication/",
+    illustration: "ill-higher-graphics",
+    date: "2026-10-19T20:00:00",
+    year: 2026,
+    readingMin: 240,
+    words: 48000,
+    tags: ["design", "engineering"],
+    real: true,
+  },
+  {
     slug: "higher-maths",
     title: "Chart, Compass & Calculus",
     tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and two timed mini-papers. The Blockhaven Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and self-hosted KaTeX.",
@@ -1915,7 +1928,7 @@ window.ESSAYS = [
 // and technical write-ups (including code walkthroughs *about* games/sims).
 window.TAG_GROUPS = [
   { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
-  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "music", "work", "food"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "music", "work", "food", "design"] },
 ];
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.
@@ -1989,6 +2002,9 @@ window.COLLECTIONS = [
     blurb: "Engines, motors, turbines and the power plants behind them.",
     slugs: ["higher-engineering", "the-grid", "ic-engine", "cruise-propulsion", "traction-motors",
       "mercury-arc-rectifiers", "hydro", "fifty-hertz", "chief-engineer"] },
+  { id: "drawing", name: "The Drawing Office", icon: "ill-higher-graphics",
+    blurb: "How things are drawn, modelled, laid out and printed — from third-angle projection to the colour bar.",
+    slugs: ["higher-graphic-communication"] },
   { id: "built", name: "The Built World", icon: "ill-road",
     blurb: "The civil engineering underfoot and overhead — how the everyday built environment is made, loaded and worn out.",
     slugs: ["road-wear"] },
