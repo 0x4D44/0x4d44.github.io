@@ -619,7 +619,7 @@
       };
       step();
     });
-    rst.addEventListener("click", () => { Object.keys(S).forEach((k) => { S[k] = false; btns[k].setAttribute("aria-pressed", "false"); }); P = init(); hole = { c: [100, 80], r: 18 }; draw(); });
+    rst.addEventListener("click", () => { list.forEach(([k]) => { S[k] = false; btns[k].setAttribute("aria-pressed", "false"); }); P = init(); hole = { c: [100, 80], r: 18 }; draw(); });
     solve(); draw();
   });
 
@@ -1025,6 +1025,7 @@
     const sim = HG.sim(canvas, {
       w: 640, h: 340, height: (w) => Math.round(Math.min(360, Math.max(260, w * 0.55))),
       draw(ctx, time, dt, C, s) {
+        if (!sol) return;
         if (s.playing) { cam.yaw += dt * 0.3; if (counting) { acc += dt; if (acc > 0.45) { acc = 0; S.k++; const n = S.show === "v" ? sol.v.length : S.show === "e" ? edges.length : sol.f.length; if (S.k >= n) { S.k = n; counting = false; } } } }
         const V = fitView(cam, s.w, s.h, 0.95, [0, 0, 0], 0.52);
         const list = E3.prepare(mesh, V);
