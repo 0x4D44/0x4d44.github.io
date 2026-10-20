@@ -21,6 +21,7 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
   const DEG = Math.PI / 180;
+  const SHADE = "#17120c"; // shading always darkens towards near-black, in either theme
 
   /* ---- colour helpers: theme colours arrive as #hex strings ---- */
   function rgb(c) {
@@ -335,7 +336,7 @@
           const d = dot(f.n, cm.t);
           if (d <= 1e-6) return;
           const k = 0.35 + 0.65 * Math.max(0, dot(f.n, L));
-          const col = f.tag === "cut" ? mix(C.card, C.lode, 0.55) : mix(C.ink, base, 0.25 + 0.75 * k);
+          const col = f.tag === "cut" ? mix(C.card, C.lode, 0.55) : mix(SHADE, base, 0.25 + 0.75 * k);
           fillPoly(ctx, f.pts.map(P), col, col, 0.8);
         });
         M3.viewEdges(F, E, cm.t).vis.forEach(([a, b]) => seg(ctx, P(a), P(b), C.ink, 1.6));
@@ -438,7 +439,7 @@
         } else { fillPoly(ctx, g.P.map(PP), alpha(C.lode, 0.14)); pline(ctx, g.P.map(PP), C.ink, 2.2, null, true); }
         seg(ctx, PP([-R - 8, 0]), PP([R + 8, 0]), C.sea, 1, DASH.centre);
         seg(ctx, PP([0, -R - 8]), PP([0, R + 8]), C.sea, 1, DASH.centre);
-        lab(ctx, "PLAN", PP([-R - 6, R + 6])[0], PP([-R - 6, R + 6])[1], { size: 11, bold: true, col: C.muted });
+        lab(ctx, "PLAN", PP([-R - 12, 0])[0], PP([-R - 12, 0])[1] - 12, { size: 11, bold: true, col: C.muted, align: "right" });
         // faint projectors between plan and elevation
         ctx.save(); ctx.strokeStyle = alpha(C.muted, 0.35); ctx.lineWidth = 0.8; ctx.setLineDash([2, 3]); ctx.beginPath();
         g.P.forEach(([x]) => { const a = PP([x, -R]), c2 = Q([x, zc(x)]); ctx.moveTo(a[0], a[1] + 3); ctx.lineTo(c2[0], c2[1] - 3); });
@@ -1136,14 +1137,14 @@
       const Q = (p) => { const q = P0(p); return [cx + q[0] * s, cy - q[1] * s]; };
       const { T, m } = transforms(st.u);
       const curved = st.type === "cyl" || st.type === "cone";
-      const outside = mix(C.card, C.gold, 0.35), inside = mix(C.ink, C.gold, 0.55);
+      const outside = mix(C.card, C.gold, 0.35), inside = mix(SHADE, C.gold, 0.55);
       const list = G.faces.map((f, i) => { const pts = f.pts.map((p) => tApply(T[i], p)); return { i, pts, n: mv(T[i].R, f.n), d: dot(M3.centroid(pts), cm.t) }; });
       list.sort((a, b) => a.d - b.d);
       const n = G.n, seamA = (m + Math.floor((n - 1) / 2) + 1) % n;
       for (const f of list) {
         const front = dot(f.n, cm.t) > 0;
         const k = 0.45 + 0.55 * Math.abs(dot(f.n, L));
-        const col = front ? mix(C.ink, outside, 0.35 + 0.65 * k) : mix(C.ink, inside, 0.5 + 0.4 * k);
+        const col = front ? mix(SHADE, outside, 0.35 + 0.65 * k) : mix(SHADE, inside, 0.5 + 0.4 * k);
         const sp = f.pts.map(Q);
         fillPoly(ctx, sp, col, col, 0.9);
         // edges belonging to this face, drawn now so that nearer faces cover them
@@ -1185,8 +1186,8 @@
       const all = B.concat(Cc).concat(radial ? [[0, 0]] : []);
       const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
       const lo = [Math.min(...xs), Math.min(...ys)], hi = [Math.max(...xs), Math.max(...ys)];
-      const s = Math.min((A.w - 30) / (hi[0] - lo[0] || 1), (A.h - 70) / (hi[1] - lo[1] || 1));
-      const ox = A.x + A.w / 2 - (lo[0] + hi[0]) / 2 * s, oy = A.y + 28 + (A.h - 70) / 2 + (lo[1] + hi[1]) / 2 * s;
+      const s = Math.min((A.w - 30) / (hi[0] - lo[0] || 1), (A.h - 90) / (hi[1] - lo[1] || 1));
+      const ox = A.x + A.w / 2 - (lo[0] + hi[0]) / 2 * s, oy = A.y + 46 + (A.h - 90) / 2 + (lo[1] + hi[1]) / 2 * s;
       const Q = (p) => [ox + p[0] * s, oy - p[1] * s];
       const poly = B.map(Q).concat(Cc.slice().reverse().map(Q));
       fillPoly(ctx, poly, mix(C.card, C.gold, 0.25));
@@ -1197,7 +1198,7 @@
       }
       pline(ctx, B.map(Q), C.ink, 2.2); pline(ctx, Cc.map(Q), C.ink, 2.2);
       seg(ctx, Q(B[0]), Q(Cc[0]), C.ink, 2.2); seg(ctx, Q(B[B.length - 1]), Q(Cc[Cc.length - 1]), C.ink, 2.2);
-      if (radial) { dot2(ctx, ...Q([0, 0]), C.lode, 3.5); lab(ctx, "apex", Q([0, 0])[0] + 6, Q([0, 0])[1] - 8, { size: 11, col: C.lode }); }
+      if (radial) { dot2(ctx, ...Q([0, 0]), C.lode, 3.5); lab(ctx, "apex", Q([0, 0])[0] + 8, Q([0, 0])[1] + 4, { size: 11, col: C.lode }); }
       // dimensions
       const yB = Math.min(...ys);
       if (!radial) {
@@ -1205,7 +1206,7 @@
         HG.arrow(ctx, (a[0] + b[0]) / 2, a[1] + 16, a[0], a[1] + 16, C.red, 1.2, 7); HG.arrow(ctx, (a[0] + b[0]) / 2, a[1] + 16, b[0], b[1] + 16, C.red, 1.2, 7);
         lab(ctx, `${N(B[B.length - 1][0])} mm`, (a[0] + b[0]) / 2, a[1] + 30, { size: 12, bold: true, align: "center", col: C.red });
       } else {
-        lab(ctx, `sector angle ${N(total / DEG)}°`, Q([0, 0])[0], Q([0, 0])[1] - 22, { size: 12, bold: true, align: "center", col: C.red });
+        lab(ctx, `sector angle ${N(st.type === "cone" ? 360 * (st.D / 2) / Math.hypot(st.H, st.D / 2) : total / DEG)}°`, Q([0, 0])[0], Q([0, 0])[1] - 16, { size: 12, bold: true, align: "center", col: C.red });
       }
     }
     function info() {
@@ -1298,11 +1299,11 @@
             if (has(c.p[0] + n[0], c.p[1] + n[1], c.p[2] + n[2])) continue;
             const pts = quad.map((d) => Pp(add(c.p, d)));
             const tone = 0.55 + 0.45 * Math.max(0, dot(n, Lgt));
-            const col = n[2] > 0 && c.m === "hull" ? mix(C.ink, mix(C.card, C.dirt, 0.45), tone) : mix(C.ink, COL[c.m], tone);
+            const col = n[2] > 0 && c.m === "hull" ? mix(SHADE, mix(C.card, C.dirt, 0.45), tone) : mix(SHADE, COL[c.m], tone);
             fillPoly(ctx, pts, col, alpha(C.ink, 0.55), 1);
             // decorations lie on this face, so they are drawn now and nearer blocks can cover them
-            if (n[1] === -1) for (const pc of ports) if (pc[0] - 0.5 === c.p[0] && pc[2] - 0.5 === c.p[2] && c.p[1] === 0) fillPoly(ctx, circ(pc, [1, 0, 0], [0, 0, 1], 0.32), mix(C.ink, C.red, 0.3), C.ink, 1.2);
-            if (n[2] === 1 && c.p[0] === 3 && c.p[1] === 1 && c.p[2] === 1) fillPoly(ctx, circ(hatch, [1, 0, 0], [0, 1, 0], 0.4), mix(C.ink, C.dirt, 0.4), C.ink, 1.2);
+            if (n[1] === -1) for (const pc of ports) if (pc[0] - 0.5 === c.p[0] && pc[2] - 0.5 === c.p[2] && c.p[1] === 0) fillPoly(ctx, circ(pc, [1, 0, 0], [0, 0, 1], 0.32), mix(SHADE, C.red, 0.3), C.ink, 1.2);
+            if (n[2] === 1 && c.p[0] === 3 && c.p[1] === 1 && c.p[2] === 1) fillPoly(ctx, circ(hatch, [1, 0, 0], [0, 1, 0], 0.4), mix(SHADE, C.dirt, 0.4), C.ink, 1.2);
           }
         }
         // axis key: how a unit step along each axis lands, with angle and scale
@@ -1366,7 +1367,7 @@
         const pt = (w, dd, h) => g.scr(g.P3(w, dd, h));
         // horizon, ground line
         seg(ctx, [0, g.hy], [S.w, g.hy], C.sea, 1.5);
-        lab(ctx, "HL (eye level)", 30, g.hy - 10, { size: 11, bold: true, col: C.sea });
+        lab(ctx, "HL (eye level)", S.w / 2, g.hy - 10, { size: 11, bold: true, col: C.sea, align: "center" });
         seg(ctx, [0, g.gy], [S.w, g.gy], alpha(C.muted, 0.7), 1, [6, 4]);
         lab(ctx, "GL", S.w - 24, g.gy - 9, { size: 11, col: C.muted });
         // faces, back to front: hidden faces skipped (the block is convex)
@@ -1390,7 +1391,7 @@
           const cen = M3.centroid(P);
           if (dot(f.n, mul(cen, -1)) <= 0) return;
           const tone = 0.5 + 0.5 * Math.max(0, dot(f.n, Lg));
-          fillPoly(ctx, P.map(g.scr), mix(C.ink, mix(C.card, C.grass, 0.45), tone), C.ink, 2);
+          fillPoly(ctx, P.map(g.scr), mix(SHADE, mix(C.card, C.grass, 0.45), tone), C.ink, 2);
           // block grid: each unit block shrinks with distance, exactly
           ctx.save(); ctx.strokeStyle = alpha(C.ink, 0.45); ctx.lineWidth = 0.9; ctx.beginPath();
           const lim = { w: W, dd: D, h: Hh };
@@ -1432,7 +1433,7 @@
       t += eyeB > st.H + 0.05 ? `Eye level is ${N(eyeB)} blocks up, above the block: a <b>bird's-eye view</b>, so you see the top.` : eyeB < -0.05 ? "Eye level is below the base: a <b>worm's-eye view</b>, so you see the underside." : "Eye level cuts through the block, so you see neither its top nor its bottom.";
       if (st.mode === "two") {
         t += ` These vanishing points mean the block is turned ${N(g.be / DEG, 0)}° to the picture plane and you stand ${N(g.d / g.b)} block-widths from it.`;
-        if (g.d < 2.4 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
+        if (g.d < 1.6 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
       }
       note.innerHTML = t;
       cv.setAttribute("aria-label", note.textContent);
