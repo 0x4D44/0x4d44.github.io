@@ -11,7 +11,7 @@
 .as-plan-table { font-size: .86rem; }
 .as-plan-table td, .as-plan-table th { padding: 5px 7px; }
 .as-sheet-grid, .as-poster-grid { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 14px; align-items: start; }
-@media (max-width: 760px) { .as-sheet-grid, .as-poster-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .as-sheet-grid, .as-poster-grid { grid-template-columns: minmax(0, 1fr); } .as-sheet-grid .as-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 0 10px; } }
 .as-fs { border: 2px solid var(--line); border-radius: 2px; margin: 0 0 8px; padding: 6px 10px 8px; min-width: 0; }
 .as-fs legend { font-weight: 700; font-size: .86rem; padding: 0 4px; }
 .as-cb { display: flex; gap: 6px; align-items: flex-start; font-size: .9rem; line-height: 1.35; padding: 3px 0; cursor: pointer; }
@@ -40,3 +40,4 @@
 .as-mock-task th { background: var(--navy-2); color: #fff; }
 .as-group { font: 700 .9rem var(--font-pixel); color: var(--lode); margin: 10px 0 2px; }
 .as-muster { position: relative; }
+@media (max-width: 560px) { .as-mock .as-area { display: none; } .as-mock .seg { flex-wrap: wrap; } }

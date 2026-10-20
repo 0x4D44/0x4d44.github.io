@@ -482,11 +482,11 @@
      ===================================================================== */
   mount("w-constrain", (box) => {
     // four corners of a profile, deliberately a little wonky; each point has 2 degrees of freedom
-    const init = () => [[40, 30], [150, 40], [160, 120], [30, 110]];
+    const init = () => [[40, 30], [200, 42], [212, 180], [28, 168]];
     let P = init();
-    let hole = { c: [100, 80], r: 18 };
+    let hole = { c: [140, 110], r: 18 };
     const S = { fixed: false, perp: false, par1: false, par2: false, lenAB: false, lenAD: false, dia: false, conc: false };
-    const LAB = 110, LAD = 75, HOLE_R = 15;
+    const LAD = 120, HOLE_R = 15;
     const W = 360, H = 250;
     const svg = HG.svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "cad-sketch", role: "img", "aria-label": "Sketch with constraints" });
     box.append(HG.el("div", { class: "cad-sketch-wrap" }, svg));
@@ -496,7 +496,7 @@
       ["perp", "Perpendicular (AD ⊥ AB)", 1, "AD is forced to 90° to AB."],
       ["par1", "Parallel (DC ∥ AB)", 1, "DC must run parallel to AB."],
       ["par2", "Parallel (BC ∥ AD)", 1, "BC must run parallel to AD."],
-      ["lenAD", "Linear (AD = 75)", 1, "A linear dimension fixes the length of AD."],
+      ["lenAD", "Linear (AD = 120)", 1, "A linear dimension fixes the length of AD."],
       ["dia", "Diameter (hole Ø30)", 1, "A diameter dimension fixes the size of the circle."],
       ["conc", "Concentric (hole on centre mark)", 2, "The circle shares its centre with the centre mark of the profile: its centre can no longer move."],
     ];
@@ -518,7 +518,7 @@
     // solve by repeated projection: each constraint nudges the free points until all agree
     function solve(pin) {
       for (let it = 0; it < 80; it++) {
-        if (S.fixed) { P[0] = [40, 30]; P[1] = [150, 30]; }
+        if (S.fixed) { P[0] = [40, 30]; P[1] = [200, 30]; }
         const free = (i) => !(S.fixed && i < 2) && i !== pin;
         const setLen = (i, j, L) => {
           const d = sub(P[j], P[i]), l = Math.hypot(...d) || 1, e = (l - L) / l;
@@ -566,7 +566,7 @@
       if (S.perp) glyph(pts[0], "⊥", 14, -10);
       if (S.par1) { glyph(mid(0, 1), "∥", 0, 16); glyph(mid(3, 2), "∥", 0, -8); }
       if (S.par2) { glyph(mid(0, 3), "∥", -12, 4); glyph(mid(1, 2), "∥", 12, 4); }
-      if (S.lenAD) glyph(mid(0, 3), "75", -26, 4);
+      if (S.lenAD) glyph(mid(0, 3), "120", -28, 4);
       if (S.dia) glyph(hc, "Ø30", 0, -hole.r - 6);
       if (S.conc) glyph(hc, "◎", hole.r + 10, 4);
       ["A", "B", "C", "D"].forEach((l, i) => {
@@ -619,7 +619,7 @@
       };
       step();
     });
-    rst.addEventListener("click", () => { list.forEach(([k]) => { S[k] = false; btns[k].setAttribute("aria-pressed", "false"); }); P = init(); hole = { c: [100, 80], r: 18 }; draw(); });
+    rst.addEventListener("click", () => { list.forEach(([k]) => { S[k] = false; btns[k].setAttribute("aria-pressed", "false"); }); P = init(); hole = { c: [140, 110], r: 18 }; draw(); });
     solve(); draw();
   });
 
@@ -1152,7 +1152,7 @@
     }
     const sim = HG.sim(canvas, {
       w: 420, h: 300, height: (w) => Math.round(Math.min(330, Math.max(240, w * 0.7))),
-      draw(ctx, time, dt, C, s) { const V = fitView(cam, s.w, s.h, 72, [0, 0, 20], 0.56); paint(ctx, E3.prepare(mesh, V), C, { lw: 1, grid: false }); },
+      draw(ctx, time, dt, C, s) { const V = fitView(cam, s.w, s.h, 72, [0, 0, 20], 0.56); paint(ctx, E3.prepare(mesh, V), C, { lw: 1, grid: false }); if (!mesh.length) HG.label(ctx, "Every feature is suppressed: nothing to show", s.w / 2, s.h / 2, { align: "center", size: 13, col: C.muted }); },
     });
     orbit(canvas, cam, () => sim.redraw());
     renderTree(); renderEdit(); regen();
@@ -1169,7 +1169,7 @@
     const pin0 = E3.lathe([[0, 0], [7.6, 0], [7.6, 40], [13, 40], [13, 46], [0, 46]], 32, "gold");
     const DOF = ["Tx", "Ty", "Tz", "Rx", "Ry", "Rz"];
     const RM = { centre: ["Tx", "Ty", "Rx", "Ry"], mate: ["Tz", "Rx", "Ry"], offset: ["Tz", "Rx", "Ry"], orient: ["Rz"] };
-    const free = { arm: { Tx: 75, Ty: -55, Tz: 75, Rx: 18, Ry: -12, Rz: 70 }, pin: { Tx: -60, Ty: 45, Tz: 95, Rx: -20, Ry: 15, Rz: 0 } };
+    const free = { arm: { Tx: 75, Ty: -55, Tz: 75, Rx: 18, Ry: -12, Rz: 70 }, pin: { Tx: -60, Ty: 45, Tz: 55, Rx: -20, Ry: 15, Rz: 0 } };
     const S = { arm: new Set(), pin: new Set(), off: 4, armMode: null, orientA: 30 };
     const cur = { arm: { ...free.arm }, pin: { ...free.pin } };
     const cam = { yaw: -0.55, pitch: 0.38 };
@@ -1329,9 +1329,9 @@
     function scene() {
       const L = S.lift;
       return {
-        sph: { c: [-30, 10, 22 + L], r: 22 },
-        box: { a: [8, -18, L], b: [48, 22, 40 + L] },
-        cyl: { c: [-2, 52, L], r: 14, h: 30 },
+        sph: { c: [-42, 4, 22 + L], r: 22 },
+        box: { a: [0, -20, L], b: [40, 20, 40 + L] },
+        cyl: { c: [70, 40, L], r: 14, h: 30 },
       };
     }
     const sub = E3.sub, dot = E3.dot, add = E3.add, mul = E3.mul, norm = E3.norm;
@@ -1349,7 +1349,7 @@
       if (d[2] < -1e-9) { const t = -o[2] / d[2]; if (t > 1e-3 && t < best.t) { const p = add(o, mul(d, t)); if (Math.abs(p[0]) < 140 && Math.abs(p[1]) < 140) best = { t, n: [0, 0, 1], id: "deck" }; } }
       return best;
     }
-    const cam = { eye: [150, -170, 110], look: [0, 10, 18] };
+    const cam = { eye: [190, -230, 150], look: [8, 10, 12] };
     function render(q, done, quick) {
       const my = ++job;
       const W = quick ? Math.min(RW[q], 150) : RW[q], H = Math.round(W * 0.6);
@@ -1432,13 +1432,19 @@
       // label anchors computed from the same geometry
       const toScreen = (p) => { const v = sub(p, cam.eye), z = dot(v, fwd); return [(dot(v, rt) / z / fov + 1) / 2, (1 - dot(v, up) / z / (fov * H / W)) / 2]; };
       const sp = sc.sph, hl = norm(add(Ld, norm(sub(cam.eye, sp.c))));
+      // shade: the limb of the sphere on the side away from the light, as the camera sees it
+      const vc = norm(sub(cam.eye, sp.c)), nl = mul(Ld, -1), limb = norm(sub(nl, mul(vc, dot(nl, vc))));
+      // cast shadow: the first candidate ground point that is in shadow and that the camera can actually see
+      const cands = [];
+      if (Ld[2] > 0) [sp.c, [sc.box.a[0], sc.box.a[1], sc.box.b[2]], [sc.box.b[0], sc.box.a[1], sc.box.b[2]], [sc.box.a[0], sc.box.b[1], sc.box.b[2]], [sc.box.b[0], sc.box.b[1], sc.box.b[2]], [sc.cyl.c[0], sc.cyl.c[1], sc.cyl.c[2] + sc.cyl.h]].forEach((q) => { const t = q[2] / Ld[2]; const g = [q[0] - Ld[0] * t * 0.85, q[1] - Ld[1] * t * 0.85, 0]; cands.push(g); });
+      const shadowPt = cands.find((g) => { const dv = sub(g, cam.eye), L = E3.len(dv), h = hitScene(cam.eye, norm(dv), sc); if (!h.id || h.id !== "deck" || Math.abs(h.t - L) > 1) return false; return hitScene(add(g, [0, 0, 0.05]), Ld, sc).id && hitScene(add(g, [0, 0, 0.05]), Ld, sc).id !== "deck"; }) || null;
       const shadowC = Ld[2] > 0 ? (() => { const t = sp.c[2] / Ld[2]; return [sp.c[0] - Ld[0] * t, sp.c[1] - Ld[1] * t, 0]; })() : null;
       info = {
         light: toScreen(add(cam.look, mul(Ld, 90))),
         highlight: toScreen(add(sp.c, mul(hl, sp.r))),
-        shade: toScreen(add(sp.c, mul(norm([-Ld[0], -Ld[1], -Ld[2] * 0.2]), sp.r * 0.9))),
-        shadow: shadowC ? toScreen(shadowC) : null,
-        refl: toScreen([sc.box.a[0] + 2, (sc.box.a[1] + sc.box.b[1]) / 2, sc.box.b[2] * 0.55]),
+        shade: toScreen(add(sp.c, mul(limb, sp.r * 0.8))),
+        shadow: shadowPt ? toScreen(shadowPt) : null,
+        refl: toScreen(add(sp.c, mul(norm(add(vc, [0, 0, -0.9])), sp.r * 0.97))),
       };
       step();
     }

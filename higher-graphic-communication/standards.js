@@ -829,6 +829,7 @@
     const sl = HG.slider(ctl, { label: "Explode", min: 0, max: 100, step: 1, value: 60, unit: "%", fmt: (v) => String(v), oninput: (v) => { e = v / 100; sim.redraw(); say(); } });
     const out = note(box);
     let target = null;
+    const pz = (p) => p.at + p.ex(e);
     const sim = HG.sim(cv, {
       height: (w) => clamp(w * 0.95, 340, 600),
       draw(ctx, t, dt, Cc, S2) {
@@ -838,7 +839,6 @@
         if (mode === "iso") iso(ctx, Cc, S2, sc, cx, Z); else sec(ctx, Cc, S2, sc, cx, Z);
       },
     });
-    const pz = (p) => p.at + p.ex(e);
     function iso(ctx, Cc, S2, sc, cx, Z0) {
       const b = 0.5, sb = Math.sin(b), cb = Math.cos(b), a = 0.62;
       const Y = (z) => Z0(z, cb);
