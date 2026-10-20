@@ -1,1 +1,14 @@
-/* forms page styles */
+/* Forms & pictorials: tone classes for the generated figures, and widget furniture. */
+svg .fm-t1 { fill: color-mix(in srgb, var(--sea) 14%, var(--card)); stroke: color-mix(in srgb, var(--sea) 14%, var(--card)); }
+svg .fm-t2 { fill: color-mix(in srgb, var(--sea) 38%, var(--card)); stroke: color-mix(in srgb, var(--sea) 38%, var(--card)); }
+svg .fm-t3 { fill: color-mix(in srgb, var(--sea) 66%, var(--card)); stroke: color-mix(in srgb, var(--sea) 66%, var(--card)); }
+svg .fm-cut { fill: color-mix(in srgb, var(--lode) 45%, var(--card)); stroke: color-mix(in srgb, var(--lode) 45%, var(--card)); }
+svg .fm-l1 { fill: #eef1e6; } svg .fm-l2 { fill: #9aa88a; } svg .fm-l3 { fill: #3d4a35; }
+svg polygon.fm-t1, svg polygon.fm-t2, svg polygon.fm-t3 { stroke-width: 0.7; }
+.tg-own { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: .9rem; }
+.tg-own input, .fm-faults input { width: 18px; height: 18px; accent-color: var(--lode); }
+.tg-out { font-size: .84rem; }
+.fm-faults { border: 2px solid var(--line); border-radius: 2px; margin: 10px 0 4px; padding: 6px 10px 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 4px 14px; }
+.fm-faults legend { font-weight: 700; font-size: .9rem; padding: 0 4px; }
+.fm-faults label { display: flex; align-items: flex-start; gap: 6px; font-size: .9rem; min-height: 30px; }
+#w-forms canvas, #w-light canvas { touch-action: pan-y; }

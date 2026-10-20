@@ -207,7 +207,7 @@
     P(g.J, cutPath, "st-nostroke").setAttribute("fill", `url(#${hb})`);
     P(base, "M368 256 V238 H390 V172 H450 V238 H472 V256 Z", "st-k st-nofill");
     L(base, 407, 172, 407, 256, "st-k"); L(base, 433, 172, 433, 256, "st-k");
-    L(base, 420, 164, 420, 264, "st-c");
+    L(base, 420, 164, 420, 264, "st-c"); L(base, 407, 172, 433, 172, "st-k"); L(base, 407, 256, 433, 256, "st-k");
     T(base, 420, 280, "SECTION A–A", 15);
     // panel 3: a development with fold lines
     P(base, "M110 340 H170 V380 H210 V440 H170 V480 H110 V440 H70 V380 H110 Z", "st-k st-nofill");
@@ -392,10 +392,10 @@
       });
       T(g, 520, 52, "worst-case spread", 13, "end", "muted"); T(g, 520, 68, `(×${mag} magnified)`, 13, "end", "muted");
       // a strip of the last edge's actual errors
-      const sy = 30, sx0 = 60, sx1 = 330, lim = 4 * 0.5;
+      const sy = 40, sx0 = 60, sx1 = 330, lim = 4 * 0.5;
       L(g, sx0, sy, sx1, sy, "st-n");
       [-2, -1, 0, 1, 2].forEach((v) => { const x = sx0 + (v + lim) / (2 * lim) * (sx1 - sx0); L(g, x, sy - 4, x, sy + 4, "st-n"); T(g, x, sy + 18, (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v), 12, "middle", "muted"); });
-      T(g, sx0 - 6, sy + 5, "error of last edge (mm)", 12, "end", "muted");
+      T(g, sx0 - 10, sy - 10, "where the last edge ended, error in mm:", 12, "start", "muted");
       errs.forEach((e) => { const x = sx0 + (e + lim) / (2 * lim) * (sx1 - sx0); C(g, x, sy, 3, "st-dot"); });
       svg.setAttribute("aria-label", `A stepped part with features at 30, 55, 80 and 120 millimetres from the datum, dimensioned in ${style} style, each dimension plus or minus ${tol.toFixed(2)} millimetres.`);
       const spread = errs.length ? `${errs.length} part${errs.length > 1 ? "s" : ""} made: the last edge ended between ${sgn2(Math.min(...errs))} and ${sgn2(Math.max(...errs))} mm of 120.` : "";
@@ -461,15 +461,15 @@
       const g = S("g"); svg.append(g);
       const y0 = 150, kk = 1100, Y = (dev) => y0 - dev * kk;
       L(g, 40, y0, 520, y0, "st-k");
-      T(g, 44, y0 - 8, `zero line: nominal size Ø${NOM}.00`, 14, "start", "muted");
-      R(g, 140, Math.min(Y(st.hu), Y(st.hl)), 120, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
-      R(g, 300, Math.min(Y(st.su), Y(st.sl)), 120, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
-      T(g, 200, 318, "HOLE tolerance zone", 15, "middle", "st-sea"); T(g, 360, 318, "SHAFT tolerance zone", 15, "middle", "st-red");
-      T(g, 136, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, 136, Y(st.hl) + 5, hMin.toFixed(2), 14, "end");
-      T(g, 424, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, 424, Y(st.sl) + 5, sMin.toFixed(2), 14, "start");
+      T(g, 44, y0 - 8, "zero line", 13, "start", "muted"); T(g, 44, y0 + 18, `Ø${NOM}.00`, 13, "start", "muted");
+      R(g, 200, Math.min(Y(st.hu), Y(st.hl)), 100, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
+      R(g, 340, Math.min(Y(st.su), Y(st.sl)), 100, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
+      T(g, 250, 318, "HOLE zone", 15, "middle", "st-sea"); T(g, 390, 318, "SHAFT zone", 15, "middle", "st-red");
+      T(g, 196, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, 196, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 ? 18 : 5), hMin.toFixed(2), 14, "end");
+      T(g, 444, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, 444, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 18 : 5), sMin.toFixed(2), 14, "start");
       [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 30, Y(v), 40, Y(v), "st-n"); T(g, 28, Y(v) + 4, sgn2(v), 11, "end", "muted"); });
       if (pair) {
-        L(g, 140, Y(pair.h - NOM), 260, Y(pair.h - NOM), "st-k st-sea-s"); L(g, 300, Y(pair.s - NOM), 420, Y(pair.s - NOM), "st-k st-red-s");
+        L(g, 200, Y(pair.h - NOM), 300, Y(pair.h - NOM), "st-k st-sea-s"); L(g, 340, Y(pair.s - NOM), 440, Y(pair.s - NOM), "st-k st-red-s");
       }
       svg.setAttribute("aria-label", `Tolerance zones magnified: hole from ${hMin.toFixed(2)} to ${hMax.toFixed(2)} mm, shaft from ${sMin.toFixed(2)} to ${sMax.toFixed(2)} mm. A ${kind} fit.`);
       const hn = notation(st.hu, st.hl), sn = notation(st.su, st.sl);
@@ -834,7 +834,7 @@
       height: (w) => clamp(w * 0.95, 340, 600),
       draw(ctx, t, dt, Cc, S2) {
         if (target !== null && S2.playing) { const d = target - e, step = dt * 0.7; if (Math.abs(d) <= step) { e = target; target = null; setTimeout(() => sim.pause(), 0); } else e += Math.sign(d) * step; sl.sync(Math.round(e * 100)); }
-        const zmin = -62, zmax = 84 + 222, sc = Math.min((S2.h - 30) / (zmax - zmin + 60), (S2.w - 150) / 130);
+        const zmin = -22 - 40 * e, zmax = 84 + 222 * e + 20, sc = Math.min((S2.h - 30) / (zmax - zmin + 60), (S2.w - 150) / 130);
         const cx = S2.w / 2 - 40, Z = (z, sb) => S2.h - 18 - (z - zmin) * sc * sb;
         if (mode === "iso") iso(ctx, Cc, S2, sc, cx, Z); else sec(ctx, Cc, S2, sc, cx, Z);
       },
@@ -968,7 +968,7 @@
     const realIn = E("input", { type: "number", min: 1, max: 1000000, step: 1, value: real, "aria-label": "Real length in millimetres" });
     row.append(E("label", null, "Object ", objSel), E("label", null, "Real length (mm) ", realIn), E("label", null, "Scale ", scSel));
     box.append(row);
-    const svg = svgBox("0 0 560 300", "");
+    const svg = svgBox("0 0 560 270", "");
     box.append(svg);
     const out = note(box);
     const row2 = E("div", { class: "btn-row" });
@@ -996,11 +996,11 @@
       T(g, sx + 14, sy + 100, `drawn length ${fmtLen(drawn)}`, 15, "start");
       if (!fits) T(g, 548, sy + 68, "off the sheet", 13, "end", "st-red");
       // scale bar: a round real length drawn about 100 mm long
-      const realBar = nice(100 * b / a), drawnBar = realBar * a / b, px = drawnBar * k, y = 250;
+      const realBar = nice(100 * b / a), drawnBar = realBar * a / b, px = drawnBar * k, y = 222;
       for (let i = 0; i < 5; i++) R(g, sx + 10 + i * px / 5, y, px / 5, 8, i % 2 ? "st-sheet" : "st-barfill");
       for (let i = 0; i <= 5; i++) { const x = sx + 10 + i * px / 5; L(g, x, y, x, y + 14, "st-n"); }
       T(g, sx + 10, y + 30, "0", 13); T(g, sx + 10 + px, y + 30, fmtLen(realBar), 13);
-      T(g, sx + 10 + px / 2, y - 8, `scale bar for ${a}:${b} (real sizes)`, 13, "middle", "muted");
+      T(g, sx + 10, y - 10, `scale bar for ${a}:${b}, marked in real sizes`, 13, "start", "muted");
       const m = +measIn.value || 0;
       measOut.textContent = `→ real length = ${m} × ${b}/${a} = ${fmtLen(m * b / a)}`;
       svg.setAttribute("aria-label", `At ${a}:${b}, a real length of ${fmtLen(real)} is drawn ${fmtLen(drawn)} long, which ${fits ? "fits" : "does not fit"} across an A3 sheet.`);

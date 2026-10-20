@@ -94,3 +94,4 @@ svg .st-sdotted { stroke-dasharray: 1.2 2.4; stroke-linecap: round; }
 .st-gallery svg { width: 84px; height: 84px; margin: 0 auto; display: block; }
 .st-gallery figcaption { margin: 2px 0 0; font-size: .8rem; color: var(--ink-2); line-height: 1.25; }
 .st-gallery h4 { grid-column: 1 / -1; margin: .6em 0 0; }
+.widget .sim-note:empty { display: none; }
