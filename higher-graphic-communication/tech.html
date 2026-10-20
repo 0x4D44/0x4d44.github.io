@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Technology &amp; society &middot; Planes, Plans &amp; Pennants</title>
-<meta name="description" content="TODO: an 80-300 character description of this page for Higher Graphic Communication (Digital technology, file management, and the impact of graphic communication).">
+<meta name="description" content="Higher Graphic Communication: digital input and output devices, resolution, file management, cloud computing and storage, digital rights management, the advantages and limitations of CAD, impact on industry and society, and safe working practices.">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="tech.css">
@@ -49,11 +49,983 @@
 <aside class="toc" aria-label="Chapters"></aside>
 <main id="main">
 <!--MAIN-START-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<marker id="tc-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="ink"/></marker>
+<marker id="tc-ar-sea" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-sea"/></marker>
+<marker id="tc-ar-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-red"/></marker>
+<marker id="tc-ar-grass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="f-grass"/></marker>
+</defs></svg>
+
 <div class="prose">
-<p class="kicker">TODO kicker</p>
+<p class="kicker">The Signal Room · digital technology in graphic communication</p>
 <h1>Technology &amp; society</h1>
-<p class="lede">TODO</p>
+<p class="lede">Every drawing, poster and model the Plan Room makes has to be captured, stored, shared, protected and finally output to paper, screen or plastic. This deck covers the hardware, software and networks behind that work, the law and the locks that protect it, the way it has changed industry and everyday life, and how to stay safe in a graphics studio.</p>
+<div class="callout scope"><p><strong>What this deck covers.</strong> In the course specification this is <em>Using technology in graphic communication</em> (file management, cloud computing, cloud storage, digital rights management, digital input and output devices, advantages and limitations of CAD) and <em>Graphic communication technology and society</em> (the paperless office, use of recycled materials, CAD as it supports manufacturing and other industries, DTP in marketing and promotional activities, remote working, communication crossing international boundaries), plus the safe working practices that support studio work. In the question paper, <strong>digital technology in graphic communication is worth 4 to 12 marks</strong>. A table at the end maps each chapter to the specification.</p></div>
+<div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>Do not treat this as the "easy" topic. From the 2025 course report: "Some candidates found Digital Technology in Graphic Communication questions to be very demanding." Five separate question parts touched it. The marks are short (often 1 or 2 each), but they need a precise point, linked to the scenario in the question.</p></div>
+<div class="callout log"><div class="callout-title">⚓ Orders from the quarterdeck</div>
+<p>Captain Isobel Grant leads 1805 (Blockhaven) Squadron down a ladder behind the Plan Room on <em>HMS Vellum</em>. "This is the Signal Room," she says. "A hundred years ago it held flags and a signal lamp. Today it holds the ship's computers, scanners, printers and the link to the Admiralty archive in the cloud. The job has not changed: get the right message to the right person, quickly, without anyone else reading or copying it." Flight Lieutenant Alba Murray hands out logbooks. Master Shipwright Euan Fraser is already arguing with a printer. Cadet Sergeant Jamie Rahman has his hand up.</p></div>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 170" role="img" aria-label="Four stages of naval signalling. A flag hoist sends a message only as far as the eye can see. A flashing lamp reaches further at night. A telegraph wire carries messages between ports. The cloud reaches any device on the internet, anywhere in the world, instantly.">
+<g transform="translate(0,0)">
+<rect x="4" y="8" width="92" height="112" rx="4" class="tc-box"/>
+<line x1="30" y1="22" x2="30" y2="110" class="tc-stroke" stroke-width="3"/>
+<rect x="32" y="24" width="30" height="18" fill="#d4147a"/><rect x="32" y="42" width="30" height="18" fill="#f7d117"/><rect x="47" y="42" width="15" height="18" fill="#00a3d9"/>
+<polygon points="32,62 72,70 32,78" fill="#00a3d9"/>
+</g>
+<g transform="translate(100,0)">
+<rect x="4" y="8" width="92" height="112" rx="4" class="tc-box"/>
+<rect x="22" y="52" width="30" height="34" rx="3" class="tc-dark"/>
+<circle cx="52" cy="69" r="10" fill="#f7d117"/>
+<path d="M64 60 L88 50 M66 69 L90 69 M64 78 L88 88" class="tc-stroke" stroke-width="2"/>
+</g>
+<g transform="translate(200,0)">
+<rect x="4" y="8" width="92" height="112" rx="4" class="tc-box"/>
+<line x1="20" y1="40" x2="20" y2="105" class="tc-stroke" stroke-width="3"/><line x1="80" y1="40" x2="80" y2="105" class="tc-stroke" stroke-width="3"/>
+<path d="M20 44 Q50 62 80 44" class="tc-stroke" fill="none" stroke-width="1.5"/>
+<text x="50" y="86" text-anchor="middle" class="ink mono" font-size="14">· — ·</text>
+</g>
+<g transform="translate(300,0)">
+<rect x="4" y="8" width="92" height="112" rx="4" class="tc-box"/>
+<path d="M24 62 a14 14 0 0 1 16 -18 a18 18 0 0 1 32 4 a12 12 0 0 1 2 24 h-48 a11 11 0 0 1 -2 -10z" class="tc-cloud"/>
+<rect x="20" y="88" width="20" height="14" rx="2" class="tc-dark"/><rect x="62" y="86" width="14" height="20" rx="2" class="tc-dark"/>
+<line x1="30" y1="88" x2="40" y2="74" class="s-sea" stroke-width="2"/><line x1="69" y1="86" x2="62" y2="74" class="s-sea" stroke-width="2"/>
+</g>
+<text x="50" y="140" text-anchor="middle" class="ink" font-size="14" font-weight="700">Flags</text>
+<text x="150" y="140" text-anchor="middle" class="ink" font-size="14" font-weight="700">Lamp</text>
+<text x="250" y="140" text-anchor="middle" class="ink" font-size="14" font-weight="700">Telegraph</text>
+<text x="350" y="140" text-anchor="middle" class="ink" font-size="14" font-weight="700">Cloud</text>
+<text x="50" y="160" text-anchor="middle" class="muted" font-size="13">line of sight</text>
+<text x="150" y="160" text-anchor="middle" class="muted" font-size="13">a few miles</text>
+<text x="250" y="160" text-anchor="middle" class="muted" font-size="13">port to port</text>
+<text x="350" y="160" text-anchor="middle" class="muted" font-size="13">anywhere, now</text>
+</svg>
+<figcaption>The Signal Room's history in four panels. Each step carried messages further and faster. Each also raised the same two questions this deck keeps asking: who else can read it, and what happens when the link fails?</figcaption>
+</figure>
 </div>
+
+<section id="devices" class="prose">
+<h2 data-short="Devices &amp; resolution">1 · Hardware, software and networks <span class="spec-tag">TECH · input &amp; output devices</span></h2>
+
+<p>A <dfn>graphic communication system</dfn> is the set of equipment and programs a designer uses to create, store, share and output graphics. It has three parts.</p>
+<ul>
+<li><dfn>Hardware</dfn> is the physical equipment: the computer itself, and the devices plugged into it.</li>
+<li><dfn>Software</dfn> is the programs that run on the hardware: CAD (computer-aided design) for 2D drawings and 3D models, DTP (desktop publishing) for page layouts, image-editing software for photographs, and rendering software for realistic illustrations.</li>
+<li>A <dfn>network</dfn> is two or more computers connected so they can share files, printers and an internet connection. A <dfn>LAN</dfn> (local area network) links machines in one building, such as a studio. A <dfn>WAN</dfn> (wide area network) links sites that are far apart; the internet is the largest WAN.</li>
+</ul>
+<p>An <dfn>input device</dfn> puts information into the computer. An <dfn>output device</dfn> takes information out of it, in a form people can see or hold. The processor in between does the work, and storage keeps the results.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 270" role="img" aria-label="A graphic communication system. Input devices on the left (scanner, digital camera, graphics tablet, 3D scanner, mouse and keyboard) send data to the computer in the centre, which runs CAD, DTP and image-editing software. Output devices on the right (monitor, printers, plotter, 3D printer, laser and vinyl cutters) receive it. Below, the computer connects to local storage and, through a network, to cloud storage and other designers.">
+<text x="62" y="18" text-anchor="middle" class="ink" font-size="14" font-weight="700">INPUT</text>
+<text x="338" y="18" text-anchor="middle" class="ink" font-size="14" font-weight="700">OUTPUT</text>
+<g font-size="13">
+<rect x="6" y="28" width="112" height="150" rx="4" class="tc-box"/>
+<text x="16" y="50" class="ink">Scanner</text><text x="16" y="74" class="ink">Digital camera</text><text x="16" y="98" class="ink">Graphics tablet</text><text x="16" y="122" class="ink">3D scanner</text><text x="16" y="146" class="ink">Mouse, keyboard</text><text x="16" y="168" class="ink">Touchscreen</text>
+<rect x="282" y="28" width="112" height="150" rx="4" class="tc-box"/>
+<text x="292" y="50" class="ink">Monitor</text><text x="292" y="74" class="ink">Inkjet / laser</text><text x="292" y="98" class="ink">Plotter</text><text x="292" y="122" class="ink">3D printer</text><text x="292" y="146" class="ink">Laser cutter</text><text x="292" y="168" class="ink">Vinyl cutter</text>
+</g>
+<rect x="142" y="52" width="116" height="100" rx="4" class="tc-box2"/>
+<text x="200" y="76" text-anchor="middle" class="ink" font-size="14" font-weight="700">Computer</text>
+<text x="200" y="98" text-anchor="middle" class="ink2" font-size="13">processor + RAM</text>
+<text x="200" y="118" text-anchor="middle" class="ink2" font-size="13">CAD · DTP</text>
+<text x="200" y="136" text-anchor="middle" class="ink2" font-size="13">image editing</text>
+<line x1="120" y1="102" x2="138" y2="102" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="260" y1="102" x2="278" y2="102" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="170" y1="154" x2="110" y2="208" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)" marker-start="url(#tc-ar)"/>
+<line x1="230" y1="154" x2="290" y2="208" class="s-sea" stroke-width="2" marker-end="url(#tc-ar-sea)" marker-start="url(#tc-ar-sea)"/>
+<rect x="30" y="212" width="140" height="48" rx="4" class="tc-box"/>
+<text x="100" y="232" text-anchor="middle" class="ink" font-size="13" font-weight="700">Local storage</text>
+<text x="100" y="250" text-anchor="middle" class="ink2" font-size="13">SSD, hard drive, USB</text>
+<rect x="230" y="212" width="160" height="48" rx="4" class="tc-box"/>
+<text x="310" y="232" text-anchor="middle" class="ink" font-size="13" font-weight="700">Network (LAN / WAN)</text>
+<text x="310" y="250" text-anchor="middle" class="ink2" font-size="13">cloud, other designers</text>
+</svg>
+<figcaption>Input → process → output, with storage and a network. Exam questions usually give you a scenario and ask which device suits it, or what one device offers that another does not.</figcaption>
+</figure>
+
+<h3>Digital input devices</h3>
+<p>The question is always "what does the designer need to get into the computer?" A flat drawing, a photograph, a hand movement, or a solid object each needs a different device.</p>
+<div class="table-wrap"><table>
+<caption>Common input devices in graphic communication. "Strength" and "limitation" are what you would write in an exam answer, linked to a scenario.</caption>
+<thead><tr><th>Device</th><th>What it captures</th><th>Strengths</th><th>Limitations</th></tr></thead>
+<tbody>
+<tr><th scope="row">Flatbed scanner</th><td>Flat originals (sketches, old drawings, printed photographs) as a raster image</td><td>Even lighting and no perspective distortion, because the original lies flat on glass; resolution can be set high for detail</td><td>Only as big as its glass (A4 or A3 typically); slow for many sheets; 3D objects come out flat</td></tr>
+<tr><th scope="row">Digital camera</th><td>Photographs of scenes, products and sites</td><td>Captures 3D scenes and big objects; instant review and re-shoot; no film costs; images ready to edit and share</td><td>Lighting and perspective can distort a flat drawing; file sizes are large at high resolution</td></tr>
+<tr><th scope="row">Graphics tablet and stylus</th><td>Hand movement as lines and strokes</td><td>Pressure-sensitive pen varies line weight and tone like a pencil; feels natural for freehand sketching and rendering</td><td>Takes practice (with a separate tablet you look at the screen, not your hand); a pen display costs more</td></tr>
+<tr><th scope="row">Touchscreen</th><td>Finger or pen touches on the display</td><td>Draw, zoom and rotate directly on the image; portable on a tablet</td><td>A finger is less precise than a stylus; screens are small</td></tr>
+<tr><th scope="row">Mouse and keyboard</th><td>Pointer position, clicks and typed values</td><td>Precise selection and exact typed dimensions in CAD; cheap</td><td>Poor for freehand drawing: a mouse has no pressure sensitivity</td></tr>
+<tr><th scope="row">3D mouse</th><td>Push, pull and twist movements of a cap</td><td>Orbits, pans and zooms a CAD model with one hand while the other hand uses the normal mouse</td><td>Extra cost; only useful for 3D work</td></tr>
+<tr><th scope="row">3D scanner</th><td>The surface of a real object, as millions of measured points</td><td>Captures complex curved shapes that would take hours to measure by hand; used for reverse engineering and repairs</td><td>Expensive; shiny, dark or see-through surfaces scan badly; the point data must be cleaned up before use</td></tr>
+</tbody></table></div>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 150" role="img" aria-label="Reverse engineering with a 3D scanner, in four steps: a real object, a point cloud of measured surface points, a mesh joining the points into triangles, and a CAD model or 3D print.">
+<g font-size="13">
+<rect x="4" y="10" width="88" height="96" rx="4" class="tc-box"/>
+<path d="M30 92 Q26 60 40 40 Q52 26 64 40 Q72 54 64 70 Q60 82 66 92 Z" fill="#c9a14a" class="tc-stroke" stroke-width="1.5"/>
+<circle cx="50" cy="48" r="3" class="tc-dark"/>
+<rect x="106" y="10" width="88" height="96" rx="4" class="tc-box"/>
+
+<path d="M132 92 Q128 60 142 40 Q154 26 166 40 Q174 54 166 70 Q162 82 168 92" fill="none" class="s-sea" stroke-width="2.4" stroke-dasharray="1 4" stroke-linecap="round"/>
+<path d="M140 82 Q138 62 148 48 Q156 40 162 50" fill="none" class="s-sea" stroke-width="2.4" stroke-dasharray="1 4" stroke-linecap="round"/>
+<rect x="208" y="10" width="88" height="96" rx="4" class="tc-box"/>
+<path d="M234 92 L230 60 L244 40 L256 34 L268 40 L274 54 L268 70 L270 92 Z M230 60 L256 34 L268 54 Z M244 40 L268 54 L230 60 M230 60 L268 70 L234 92 M268 70 L270 92 M256 34 L274 54 M234 92 L268 54" fill="none" class="s-violet" stroke-width="1.2"/>
+<rect x="310" y="10" width="86" height="96" rx="4" class="tc-box"/>
+<path d="M336 92 Q332 60 346 40 Q358 26 370 40 Q378 54 370 70 Q366 82 372 92 Z" class="tc-solid" stroke-width="1.5"/>
+<path d="M336 92 L372 92" class="tc-stroke" stroke-width="2"/>
+<line x1="93" y1="58" x2="104" y2="58" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="195" y1="58" x2="206" y2="58" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="297" y1="58" x2="308" y2="58" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<text x="48" y="124" text-anchor="middle" class="ink">Object</text>
+<text x="150" y="124" text-anchor="middle" class="ink">Point cloud</text>
+<text x="252" y="124" text-anchor="middle" class="ink">Mesh</text>
+<text x="353" y="124" text-anchor="middle" class="ink">CAD / print</text>
+<text x="200" y="144" text-anchor="middle" class="muted">a 3D scanner measures; software joins the points into surfaces</text>
+</g>
+</svg>
+<figcaption>The ship's figurehead is cracked. Rather than measure every curve by hand, Euan scans it, turns the point cloud into a mesh, and uses that as the base for a CAD model of a replacement.</figcaption>
+</figure>
+
+<h3>Resolution: pixels per inch and dots per inch</h3>
+<p>A <dfn>raster image</dfn> (a photograph or a scan) is a grid of tiny coloured squares called <dfn>pixels</dfn>. Its <dfn>pixel dimensions</dfn> are how many pixels wide and tall it is, for example 3000 × 2000. Multiply them and divide by a million to get <dfn>megapixels</dfn>: 3000 × 2000 = 6 000 000 pixels, or 6 megapixels.</p>
+<p><dfn>Resolution</dfn> is how tightly those pixels are packed when the image is shown or printed:</p>
+<ul>
+<li><dfn>ppi</dfn> (pixels per inch) describes an image or a screen: how many pixels sit along one inch.</li>
+<li><dfn>dpi</dfn> (dots per inch) describes a printer or a scanner: how many dots of ink, or samples, it makes along one inch.</li>
+</ul>
+<p>The same pixels spread over a bigger print make each pixel bigger. Once each pixel is large enough to see, edges turn into a staircase (<dfn>pixelation</dfn>). A common rule for prints looked at close up, such as a leaflet, is about <strong>300 ppi at the final printed size</strong>. Large posters seen from across a room can use less, because the eye cannot pick out the pixels from a distance. Vector graphics (shapes stored as maths, such as SVG and DXF) have no pixels, so they stay sharp at any size. That is why logos are kept as vectors (see <a href="dtp.html">Design &amp; DTP</a> for raster and vector file types).</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 210" role="img" aria-label="The same curved edge of a pennant drawn on a coarse pixel grid and on a fine one. With 6 pixels across the square, the curve becomes a visible staircase. With 18 pixels across the same square, the steps are small and the curve looks smooth.">
+<g id="tc-ppi-a"></g><g id="tc-ppi-b"></g>
+<text x="100" y="196" text-anchor="middle" class="ink" font-size="13">low ppi: big pixels, stepped edge</text>
+<text x="300" y="196" text-anchor="middle" class="ink" font-size="13">high ppi: small pixels, smooth</text>
+</svg>
+<figcaption>Both squares are the same printed size. Only the number of pixels packed into them changes. (Both grids are drawn by this page's script from the same curve, so the comparison is fair.)</figcaption>
+</figure>
+
+<div class="worked"><p class="worked-title">Worked example 1 · how many pixels does an A4 print need?</p>
+<p>The Plan Room wants to print a photograph of <em>HMS Vellum</em> to fill an A4 sheet (210 mm × 297 mm) at 300 ppi. Calculate the pixel dimensions needed. There are 25.4 mm in one inch. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>Width: 210 ÷ 25.4 = 8.27 inches, and 8.27 × 300 = 2480 pixels. <span class="why">Convert the printed size to inches, then multiply by the pixels per inch.</span></li>
+<li>Height: 297 ÷ 25.4 = 11.69 inches, and 11.69 × 300 = 3508 pixels. So the photograph needs at least 2480 × 3508 pixels (about 8.7 megapixels). <span class="why">A smaller image would have to be stretched, and each pixel would print bigger than 1/300 inch.</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-dpi">
+<h3 class="widget-title">Resolution lab: will this photograph print sharply?</h3>
+<p class="hint">Set the pixel width of the image and the width it will print at. The magnifier shows a 10 mm square of the print exactly as the pixels would fall, and the readouts show the effective resolution and the uncompressed file size.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"So is dpi the same as ppi? People seem to use them for the same thing."</p><p><strong>Master Shipwright Fraser:</strong> "People do mix them up, and you won't lose a mark for it in ordinary use. But strictly, ppi is about the image or the screen: pixels. Dpi is about the printer or scanner: dots of ink, or samples. An inkjet printer makes several tiny dots of cyan, magenta, yellow and black to build the colour of one pixel, so a 1200 dpi printer is not printing 1200 pixels per inch. If you scan at 600 dpi, though, you get a 600 ppi image. That's the one place they line up."</p></div>
+
+<h3>Digital output devices</h3>
+<p>Output devices turn the file into something people can see or hold. Two big families: <strong>2D output</strong> (screens and printers) and <strong>3D output</strong> (machines that make or cut real objects). The machines that cut and engrave follow <em>vector paths</em>, so they need vector or CAD files, not photographs.</p>
+<div class="table-wrap"><table>
+<caption>Common output devices. As with inputs, choose by scenario: size, quantity, quality, material and cost.</caption>
+<thead><tr><th>Device</th><th>Produces</th><th>Strengths</th><th>Limitations</th></tr></thead>
+<tbody>
+<tr><th scope="row">Monitor</th><td>The on-screen image, made of red, green and blue light (RGB)</td><td>Instant; zoom, rotate and edit; high resolution; colour-calibrated monitors show colours reliably</td><td>Screen RGB colours can look different from print CMYK, so check printed proofs</td></tr>
+<tr><th scope="row">Inkjet printer</th><td>Prints by spraying tiny droplets of ink</td><td>Excellent photo quality and colour; cheap to buy; good for single proofs</td><td>Slow; ink is expensive per page; wet ink can smudge</td></tr>
+<tr><th scope="row">Laser printer</th><td>Prints by fusing toner powder onto the paper with heat</td><td>Fast; low cost per page for large quantities; crisp text; dry when it leaves the printer</td><td>Dearer to buy; colour photographs less rich than a good inkjet</td></tr>
+<tr><th scope="row">Plotter / large-format printer</th><td>Large prints from a roll: A1 and A0 drawings, posters, banners</td><td>Huge sizes in one piece; accurate lines for engineering and building drawings</td><td>Expensive; takes up space; overkill for A4 work</td></tr>
+<tr><th scope="row">Projector</th><td>An enlarged screen image on a wall</td><td>Whole team or client sees the design together</td><td>Colours wash out in bright rooms; lower detail than a monitor</td></tr>
+<tr><th scope="row">3D printer</th><td>A solid model built up layer by layer (an <dfn>additive</dfn> process)</td><td>Physical prototypes straight from CAD; complex shapes that are hard to machine; little waste</td><td>Slow; visible layer lines; limited size and materials; parts may need supports removed</td></tr>
+<tr><th scope="row">Laser cutter</th><td>Cuts or engraves sheet material (card, acrylic, plywood) along vector paths</td><td>Very accurate and repeatable; engraves text and logos; batch production of identical parts</td><td>Fumes need extraction; fire risk; only flat sheet; some plastics must never be cut</td></tr>
+<tr><th scope="row">Vinyl cutter</th><td>Cuts shapes and lettering from self-adhesive vinyl with a small blade</td><td>Signs, vehicle graphics, stickers and stencils; cheap to run</td><td>Only single-colour shapes per sheet; fine detail is hard to weed (peel)</td></tr>
+<tr><th scope="row">CNC router or mill</th><td>Cuts a shape out of a solid block or sheet with a spinning tool (a <dfn>subtractive</dfn> process)</td><td>Strong parts in wood, plastics or metal; accurate</td><td>Waste material; needs CAM programming and guarding</td></tr>
+</tbody></table></div>
+
+<p><strong>Inkjet or laser?</strong> This comparison comes up often. Think about the job: one high-quality colour photograph proof suits an inkjet; three hundred copies of a text-heavy brief suit a laser. When you compare, say what differs <em>and</em> what that means for this job: "The laser printer has a lower cost per page, so printing 300 briefing sheets would be cheaper."</p>
+
+<h3>Digital photography</h3>
+<p>Digital cameras replaced film in graphic work because each photograph is a file the moment it is taken. Typical benefits, each worth a mark only when linked to its result:</p>
+<ul>
+<li>The photographer can <strong>review the image on the camera's screen</strong> and re-shoot at once, so a poor shot does not have to wait for film to be developed.</li>
+<li>Images can be <strong>shared instantly</strong> by email or cloud, so a client abroad can approve them the same day.</li>
+<li>One memory card or drive can <strong>store thousands of images</strong>, with no physical storage space needed.</li>
+<li>On screen, the image can be <strong>enlarged to inspect detail</strong>, and viewed without any light in the room.</li>
+<li>Images can be <strong>edited</strong> (cropped, colour-corrected, retouched) and <strong>placed straight into</strong> DTP layouts, websites and CAD renders.</li>
+</ul>
+<p>The catches: high-resolution files are large and fill storage quickly; images are easy to copy, which raises the rights problem in chapter 4; and an image with too few pixels cannot be enlarged without pixelation.</p>
+
+<div class="widget" id="w-device">
+<h3 class="widget-title">Signal Room requisitions: pick the right device</h3>
+<p class="hint">Each order describes a job. Choose the device you would requisition. The feedback explains the best choice, and why the tempting alternatives are weaker.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 2 · describe (2 marks)</p>
+<p>A designer is producing freehand concept sketches for a new range of ship's lanterns. Describe two advantages of using a graphics tablet and stylus rather than a mouse. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The stylus is pressure-sensitive, so pressing harder gives a thicker or darker line, letting the designer vary line weight and tone as they would with a pencil. <span class="why">A feature (pressure sensitivity) and what it does for sketching.</span></li>
+<li>Holding a pen is a natural drawing action, so freehand curves on the lanterns are smoother and more controlled than lines dragged with a mouse. <span class="why">A second, different feature. Two versions of "it's easier" would only earn one mark, if any.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 3 · explain (2 marks)</p>
+<p>Explain why a 3D scanner would be used to help design a replacement for the damaged figurehead on <em>HMS Vellum</em>. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The scanner measures millions of points on the carved, curved surface of the figurehead (cause), so its complex shape is captured accurately without measuring each curve by hand (effect). <span class="why">Cause and effect, in the context of the figurehead.</span></li>
+<li>The scan can be converted into a mesh and imported into CAD (cause), so the designer can repair the damaged area digitally and 3D print or machine a replacement that matches the original (effect). <span class="why">A second linked point. "It's quicker" on its own, with no cause, earns nothing.</span></li>
+</ol></details></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>name input and output devices and say what each captures or produces;</li><li>choose a device for a scenario and justify the choice against an alternative;</li><li>explain resolution (ppi, dpi, megapixels) and why too few pixels causes pixelation;</li><li>describe the benefits and limitations of digital photography.</li></ul></div>
+<div class="check" data-check="tech-devices"></div>
+</section>
+
+<section id="files" class="prose">
+<h2 data-short="File management">2 · File management <span class="spec-tag">TECH · file management</span></h2>
+<p><dfn>File management</dfn> is how you name, organise, store, protect and share digital files so that you, and everyone you work with, can always find the right version. A design project can produce hundreds of files: research photographs, sketches, CAD parts, assemblies, drawings, renders, DTP layouts and proofs. Poor file management wastes time and causes expensive mistakes, such as sending a manufacturer last week's drawing.</p>
+<p>The Plan Room's rule is Captain Grant's: "If a signal cannot be found when it is needed, it was never sent."</p>
+
+<h3>Naming conventions</h3>
+<p>A <dfn>naming convention</dfn> is an agreed pattern that every file name follows. A good convention means anyone can tell what a file is without opening it, and files sort into a sensible order.</p>
+<div class="compare">
+<div><h4>Good habits</h4><ul>
+<li>Describe the content: <code>vellum_lantern_body_v03.ipt</code></li>
+<li>Use the same order every time: project, item, stage, version</li>
+<li>Write dates year first, <code>2026-03-14</code>, so they sort in date order</li>
+<li>Pad version numbers: <code>v01, v02 … v10</code>, so v10 does not sort before v2</li>
+<li>Use underscores or hyphens, not spaces or symbols, so files transfer cleanly between systems and to the web</li>
+</ul></div>
+<div><h4>Bad habits</h4><ul>
+<li><code>IMG_4032.jpg</code>: says nothing about the content</li>
+<li><code>poster final FINAL (2).pdf</code>: which is really final?</li>
+<li><code>new drawing.dwg</code>: there will soon be ten of them</li>
+<li><code>14/3/26 hull.ipt</code>: slashes are not allowed in many file systems</li>
+<li>Different people using different patterns on the same project</li>
+</ul></div>
+</div>
+
+<h3>Folder structure</h3>
+<p>A <dfn>folder structure</dfn> (or directory hierarchy) is the tree of folders the files live in. A good one mirrors how the project works, so files are grouped by stage and type, and it is the same for every project, so people know where to look. It should not be so deep that files are buried six clicks down.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 250" role="img" aria-label="A folder tree for a project. The top folder is the project, Vellum lantern. Inside are numbered folders: 01 research, 02 preliminary, 03 production with sub-folders for CAD and drawings, 04 promotional, and 05 admin. Numbering keeps the folders in the order of the design process.">
+<g font-size="13" class="ink">
+<rect x="8" y="8" width="184" height="26" rx="3" class="tc-folder"/><text x="18" y="26" font-weight="700">VEL-lantern/</text>
+<path d="M24 34 V232 M24 52 H44 M24 82 H44 M24 112 H44 M24 202 H44 M24 232 H44 M60 120 V176 M60 146 H80 M60 176 H80" class="tc-stroke" fill="none" stroke-width="1.5"/>
+<rect x="44" y="40" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="57">01_research/</text>
+<rect x="44" y="70" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="87">02_preliminary/</text>
+<rect x="44" y="100" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="117">03_production/</text>
+<rect x="80" y="134" width="124" height="24" rx="3" class="tc-folder"/><text x="88" y="151">CAD_parts/</text>
+<rect x="80" y="164" width="124" height="24" rx="3" class="tc-folder"/><text x="88" y="181">drawings/</text>
+<rect x="44" y="190" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="207">04_promotional/</text>
+<rect x="44" y="220" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="237">05_admin/</text>
+</g>
+<g font-size="13" class="ink2">
+<text x="222" y="57">photos, mood boards</text>
+<text x="222" y="87">sketches, thumbnails</text>
+<text x="222" y="151">.ipt parts, .iam</text>
+<text x="222" y="181">PDFs for the yard</text>
+<text x="222" y="207">renders, posters</text>
+<text x="222" y="237">brief, client emails</text>
+</g>
+</svg>
+<figcaption>Numbered folders follow the design process: research, preliminary, production, promotional. Every project in the Plan Room uses the same tree, so a new crew member knows where to look.</figcaption>
+</figure>
+
+<h3>Version control</h3>
+<p><dfn>Version control</dfn> means keeping track of each saved state of a file, so you can see what changed, who changed it, and go back if a change was wrong. There are three common ways to do it.</p>
+<ul>
+<li><strong>Numbered versions by hand:</strong> save as <code>_v01</code>, <code>_v02</code> and so on, never overwriting. Simple, but relies on everyone being careful.</li>
+<li><strong>Version history in cloud storage:</strong> the service keeps earlier versions automatically, with the date and the person who saved each one (chapter 3).</li>
+<li><strong>Product data management (PDM)</strong> software, used with CAD in industry: files are <em>checked out</em> to one person to edit and <em>checked in</em> again, so two people cannot overwrite each other's changes to the same part, and every revision is logged.</li>
+</ul>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 160" role="img" aria-label="A version timeline. Version 1 is the first layout, version 2 changes the colour scheme, version 3 changes the headline, and version 4 is approved by the client. Each version is a separate file, so the designer can go back to version 2 if the client prefers the old colours.">
+<line x1="20" y1="62" x2="384" y2="62" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<g font-size="13">
+<g><rect x="16" y="30" width="70" height="64" rx="3" class="tc-box"/><rect x="24" y="38" width="54" height="22" fill="#00a3d9"/><text x="51" y="84" text-anchor="middle" class="ink mono">v01</text></g>
+<g><rect x="106" y="30" width="70" height="64" rx="3" class="tc-box"/><rect x="114" y="38" width="54" height="22" fill="#d4147a"/><text x="141" y="84" text-anchor="middle" class="ink mono">v02</text></g>
+<g><rect x="196" y="30" width="70" height="64" rx="3" class="tc-box"/><rect x="204" y="38" width="54" height="22" fill="#d4147a"/><rect x="204" y="38" width="54" height="7" fill="#f7d117"/><text x="231" y="84" text-anchor="middle" class="ink mono">v03</text></g>
+<g><rect x="286" y="30" width="70" height="64" rx="3" class="tc-box" stroke-width="3"/><rect x="294" y="38" width="54" height="22" fill="#d4147a"/><rect x="294" y="38" width="54" height="7" fill="#f7d117"/><text x="321" y="84" text-anchor="middle" class="ink mono">v04 ✔</text></g>
+<text x="51" y="112" text-anchor="middle" class="ink2">first layout</text>
+<text x="141" y="112" text-anchor="middle" class="ink2">new colours</text>
+<text x="231" y="112" text-anchor="middle" class="ink2">new headline</text>
+<text x="321" y="112" text-anchor="middle" class="ink2">approved</text>
+<text x="200" y="146" text-anchor="middle" class="muted">VEL_poster_v01.indd … VEL_poster_v04.indd: never overwrite, never "final"</text>
+</g>
+</svg>
+<figcaption>Each version is kept. If the client says "go back to the blue", v01 is still there, and the history shows exactly what changed at each step.</figcaption>
+</figure>
+
+<h3>Back-ups</h3>
+<p>A <dfn>back-up</dfn> is a separate copy of your files kept so they can be restored if the original is lost, damaged, deleted or encrypted by malicious software. A <dfn>full back-up</dfn> copies everything; an <dfn>incremental back-up</dfn> copies only what has changed since the last back-up, which is quicker and uses less space. Back-ups should be automatic and regular, and you should test that you can actually restore from them.</p>
+<p>A widely used guide is the <dfn>3-2-1 rule</dfn>: keep <strong>3</strong> copies of important data, on <strong>2</strong> different types of storage, with <strong>1</strong> copy off-site (away from the building, for example in cloud storage). One fire, flood, theft or failed drive then cannot destroy every copy.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 180" role="img" aria-label="The 3-2-1 back-up rule. Three copies: the working copy on the studio computer, a copy on an external drive, and a copy in cloud storage. Two types of storage: the computer and external drive are local disks, the cloud is a remote service. One copy is off-site, in the cloud, safe from a studio fire or theft.">
+<g font-size="13">
+<rect x="6" y="20" width="112" height="70" rx="4" class="tc-box"/>
+<rect x="34" y="32" width="56" height="34" rx="2" class="tc-dark"/><rect x="54" y="66" width="16" height="8" class="tc-dark"/>
+<text x="62" y="86" text-anchor="middle" class="ink">working copy</text>
+<rect x="132" y="20" width="112" height="70" rx="4" class="tc-box"/>
+<rect x="164" y="34" width="48" height="34" rx="5" class="tc-dark"/><circle cx="200" cy="58" r="3" fill="#8cc96a"/>
+<text x="188" y="86" text-anchor="middle" class="ink">external drive</text>
+<rect x="268" y="20" width="126" height="70" rx="4" class="tc-box"/>
+<path d="M300 66 a12 12 0 0 1 12 -16 a16 16 0 0 1 30 2 a11 11 0 0 1 4 22 h-40 a9 9 0 0 1 -6 -8z" class="tc-cloud"/>
+<text x="331" y="86" text-anchor="middle" class="ink">cloud copy</text>
+<path d="M4 102 H248" class="tc-stroke" stroke-width="1.5"/><path d="M264 102 H396" class="s-sea" stroke-width="1.5"/>
+<text x="126" y="122" text-anchor="middle" class="ink2">on site: two local disks</text>
+<text x="330" y="122" text-anchor="middle" class="f-sea">off site</text>
+<text x="200" y="150" text-anchor="middle" class="ink" font-weight="700">3 copies · 2 types of storage · 1 off site</text>
+<text x="200" y="170" text-anchor="middle" class="muted">a fire in the studio destroys two copies; the cloud copy survives</text>
+</g>
+</svg>
+<figcaption>The 3-2-1 rule. Note that the external drive must not live in the same bag as the laptop: if both are stolen together they count as one risk.</figcaption>
+</figure>
+
+<h3>File size and compression</h3>
+<p>For a raster image, the file size before compression depends on the number of pixels and how much colour information each pixel stores. A full-colour RGB image uses 3 bytes per pixel (one each for red, green and blue), so a 3000 × 2000 photograph is 3000 × 2000 × 3 = 18 000 000 bytes, about 18 MB. Double the width and height and the size goes up <em>four</em> times. A vector file's size depends instead on how many shapes it holds, and a CAD assembly's on how many parts and features it has.</p>
+<p><dfn>Compression</dfn> makes files smaller so they store and transfer faster.</p>
+<ul>
+<li><dfn>Lossless compression</dfn> (PNG, TIFF with LZW, ZIP archives) shrinks the file but restores every pixel exactly. Use it for logos, drawings, and files still being edited.</li>
+<li><dfn>Lossy compression</dfn> (JPEG) throws away detail the eye is unlikely to notice, giving much smaller files. Too much compression causes blocky <dfn>artefacts</dfn>, and each re-save as JPEG loses a little more. Use it for finished photographs on websites and in emails.</li>
+</ul>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 170" role="img" aria-label="Lossless and lossy compression of the same small image. The original has a sharp diagonal edge between a dark hull and pale sky. After lossless compression the restored image is identical. After heavy lossy compression the edge is blurred into blocks of in-between colours, called artefacts.">
+<g id="tc-comp"></g>
+<g font-size="13">
+<text x="66" y="150" text-anchor="middle" class="ink">original</text>
+<text x="200" y="150" text-anchor="middle" class="ink">lossless (PNG)</text>
+<text x="334" y="150" text-anchor="middle" class="ink">heavy lossy (JPEG)</text>
+<text x="200" y="166" text-anchor="middle" class="muted">identical ← same pixels | smaller file but blocky edges →</text>
+</g>
+</svg>
+<figcaption>The lossy panel imitates what heavy JPEG compression does: it averages colours in small blocks, so a crisp edge smears. The lossless panel is pixel-for-pixel the original.</figcaption>
+</figure>
+
+<h3>File formats and file transfer</h3>
+<p>The format decides which software can open a file and what it keeps. A <dfn>native format</dfn> belongs to one package (such as a particular CAD program's part file) and keeps everything, including the modelling tree. A <dfn>neutral format</dfn> such as <strong>STEP</strong> or <strong>IGES</strong> can be opened by almost any CAD package, so it is used to send 3D models to a client or manufacturer who uses different software, although the feature history usually does not come across. <strong>DXF</strong> does the same job for 2D drawings, and <strong>3DS</strong> carries 3D models into rendering and animation software. For proofs, a <strong>PDF</strong> shows a layout the same on any computer, with fonts embedded. The <a href="cad.html">CAD deck</a> and the <a href="dtp.html">Design &amp; DTP deck</a> cover these formats in detail.</p>
+<p><dfn>File transfer</dfn> means moving files between people or places. Email suits small files but has attachment limits. A cloud <strong>share link</strong> suits large files and can be limited to named people, set to view-only, or made to expire. A USB drive works without internet but can be lost or carry malware. Whatever the route, send the version the receiver can open (often a neutral format or PDF), name it clearly, and check large files arrived complete.</p>
+
+<div class="worked"><p class="worked-title">Worked example 4 · state and explain (1 + 1 marks)</p>
+<p>The Plan Room has modelled a new capstan in its CAD package. The shipyard that will make it uses a different CAD package. (a) State a file format the Plan Room should use to send the model. [1] (b) Explain why this format is suitable. [1]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>(a) STEP (or IGES). <span class="why">A neutral 3D format. DXF is 2D, so it would not carry the solid model.</span></li>
+<li>(b) It is a neutral format that can be opened by almost any CAD package, so the shipyard can open the capstan model even though it uses different software. <span class="why">The feature (neutral, widely readable) and its effect in this context (the shipyard can open it).</span></li>
+</ol></details></div>
+
+<div class="widget" id="w-files">
+<h3 class="widget-title">Tidy the Admiralty archive</h3>
+<p class="hint">A messy download folder has landed in the Signal Room. For each file, choose the folder it belongs in and the best new name, then press Inspect. Below, audit three back-up plans against the 3-2-1 rule.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"Why not just call it <code>final</code> when it's finished?"</p><p><strong>Flight Lieutenant Murray:</strong> "Because nothing is ever final. The client always wants one more change, and then you've got <code>final2</code>, <code>final_REAL</code> and <code>final_use_this</code>. A version number always goes up by one, so the highest number is the newest. If you need to mark the approved one, record that in the project log or a status field, not in the file name."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>describe a good naming convention and folder structure, and say why each helps;</li><li>explain version control and how it lets a designer go back;</li><li>describe back-up strategies, including off-site copies;</li><li>explain what affects file size, and lossy versus lossless compression;</li><li>choose a suitable file format and transfer method for a scenario.</li></ul></div>
+<div class="check" data-check="tech-files"></div>
+</section>
+
+<section id="cloud" class="prose">
+<h2 data-short="Cloud computing &amp; storage">3 · Cloud computing and cloud storage <span class="spec-tag">TECH · cloud</span></h2>
+<p>"The cloud" is not in the sky. It is rows of computers called <dfn>servers</dfn>, in large buildings called <dfn>data centres</dfn>, owned by a provider and reached over the internet. The specification separates two ideas.</p>
+<div class="callout def"><div class="callout-title">Definitions</div>
+<p><dfn>Cloud storage</dfn>: keeping files on a provider's remote servers instead of (or as well as) on your own device, so they can be reached from any device with an internet connection and a login.</p>
+<p><dfn>Cloud computing</dfn>: using a provider's remote servers to run software and do processing over the internet. Examples in graphics: a CAD package that runs in a web browser, design software rented by subscription and licensed online, and <dfn>cloud rendering</dfn>, where a photo-realistic render is calculated on powerful remote servers instead of tying up the designer's own computer for hours.</p></div>
+<p>Most cloud storage services also <dfn>synchronise</dfn> (sync) files: when you save a file in a synced folder, the new version is uploaded, and every other device signed in to the same account downloads it automatically.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 230" role="img" aria-label="How cloud storage works. Three devices, a studio computer, a laptop at home and a tablet at a client's office, connect through the internet to a provider's data centre. The data centre keeps copies of each file on several servers, and often in a second data centre too, so one hardware failure does not lose the file.">
+<g font-size="13">
+<rect x="6" y="150" width="96" height="58" rx="4" class="tc-box"/><rect x="34" y="160" width="40" height="26" rx="2" class="tc-dark"/><text x="54" y="202" text-anchor="middle" class="ink">studio PC</text>
+<rect x="152" y="150" width="96" height="58" rx="4" class="tc-box"/><rect x="178" y="162" width="44" height="22" rx="2" class="tc-dark"/><rect x="172" y="184" width="56" height="5" class="tc-dark"/><text x="200" y="202" text-anchor="middle" class="ink">laptop, home</text>
+<rect x="298" y="150" width="96" height="58" rx="4" class="tc-box"/><rect x="332" y="158" width="28" height="34" rx="3" class="tc-dark"/><text x="346" y="202" text-anchor="middle" class="ink">client tablet</text>
+<path d="M150 104 a20 20 0 0 1 22 -26 a28 28 0 0 1 54 2 a20 20 0 0 1 6 38 h-74 a17 17 0 0 1 -8 -14z" class="tc-cloud"/>
+<text x="196" y="108" text-anchor="middle" class="ink" font-weight="700">internet</text>
+<line x1="60" y1="148" x2="160" y2="116" class="s-sea" stroke-width="2" marker-start="url(#tc-ar-sea)" marker-end="url(#tc-ar-sea)"/>
+<line x1="200" y1="148" x2="200" y2="122" class="s-sea" stroke-width="2" marker-start="url(#tc-ar-sea)" marker-end="url(#tc-ar-sea)"/>
+<line x1="340" y1="148" x2="236" y2="116" class="s-sea" stroke-width="2" marker-start="url(#tc-ar-sea)" marker-end="url(#tc-ar-sea)"/>
+<line x1="200" y1="76" x2="200" y2="56" class="s-sea" stroke-width="2" marker-start="url(#tc-ar-sea)" marker-end="url(#tc-ar-sea)"/>
+<rect x="60" y="6" width="280" height="48" rx="4" class="tc-box2"/>
+<g class="tc-dark"><rect x="76" y="14" width="22" height="32"/><rect x="104" y="14" width="22" height="32"/><rect x="132" y="14" width="22" height="32"/></g>
+<g fill="#8cc96a"><circle cx="87" cy="22" r="2"/><circle cx="115" cy="22" r="2"/><circle cx="143" cy="22" r="2"/></g>
+<text x="248" y="27" text-anchor="middle" class="ink" font-weight="700">data centre</text>
+<text x="248" y="45" text-anchor="middle" class="ink2">copies on several servers</text>
+</g>
+</svg>
+<figcaption>One file, many devices. The provider keeps several copies on different servers (and usually in more than one data centre), so a single failed disk does not lose your work.</figcaption>
+</figure>
+
+<h3>Benefits of cloud storage and cloud computing</h3>
+<p>These are the points markers look for. Each one is written as a cause and an effect, which is how you should write it in the exam, set in the scenario of the question.</p>
+<div class="table-wrap"><table>
+<caption>Benefits, with the cause (what the cloud does) and the effect (what that means for a design team).</caption>
+<thead><tr><th>Benefit</th><th>Cause</th><th>Effect for the design team</th></tr></thead>
+<tbody>
+<tr><th scope="row">Remote access</th><td>Files sit on internet servers, not one machine</td><td>Designers can open them from anywhere in the world, so they can work from home, a client's office or another country</td></tr>
+<tr><th scope="row">Collaboration and sharing</th><td>Several people can be given access to the same folder or file</td><td>Team members and clients work on, or comment on, the current version without emailing copies back and forth</td></tr>
+<tr><th scope="row">Back-up and restoration</th><td>The provider keeps copies and earlier versions</td><td>Work survives a lost or broken laptop, and an older version can be restored after a mistake</td></tr>
+<tr><th scope="row">Version history</th><td>Each save is recorded with a date and the person who made it</td><td>The team can see who changed what, and roll back</td></tr>
+<tr><th scope="row">No physical space</th><td>Storage is in the provider's data centre</td><td>No plan chests, filing cabinets or racks of drives in the studio, and more storage can be bought as the business grows</td></tr>
+<tr><th scope="row">Encryption</th><td>Files can be encrypted as they travel and while stored</td><td>Anyone who intercepts the data cannot read it without the key</td></tr>
+<tr><th scope="row">Processing power (cloud computing)</th><td>Heavy jobs such as rendering run on remote servers</td><td>The designer's own computer stays free, and a modest laptop can produce high-quality renders</td></tr>
+</tbody></table></div>
+
+<h3>Limitations</h3>
+<ul>
+<li><strong>Internet dependence.</strong> No connection, no files (unless copies are kept offline). A slow connection makes uploading large CAD assemblies or high-resolution images tediously slow.</li>
+<li><strong>Security.</strong> If an account's password is guessed or stolen (for example through a fake "phishing" email), an intruder can read, copy or delete everything. Strong passwords and two-step sign-in reduce the risk.</li>
+<li><strong>Privacy and control.</strong> The files are on someone else's computers, possibly in another country with different laws. A client may forbid confidential designs being stored this way.</li>
+<li><strong>Ongoing cost.</strong> Storage and software are usually rented by monthly or yearly subscription, which over time can cost more than buying a drive.</li>
+<li><strong>Reliance on the provider.</strong> If the service has an outage, changes its prices or closes, the business is affected.</li>
+<li><strong>Sync spreads mistakes.</strong> A file deleted or overwritten on one device is deleted or overwritten on all of them. Sync is not the same as a back-up, though version history and a deleted-files bin can rescue you.</li>
+</ul>
+<p>Security is a <dfn>shared responsibility</dfn>: the provider protects the data centre and its servers, but the user must protect the account (passwords, two-step sign-in, care with share links).</p>
+
+<div class="widget" id="w-cloud">
+<h3 class="widget-title">Cloud signalling: two designers, one file</h3>
+<p class="hint">Euan works in the Plan Room aboard ship; Alba works ashore at squadron headquarters. Both sync the same poster file. Save changes, cut the ship's internet link, delete by mistake, lose a laptop overboard, and restore from the version history. Watch what the cloud does, and what it cannot do.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If everything syncs to the cloud, why would I need a back-up as well?"</p><p><strong>Captain Grant:</strong> "Because sync copies your mistakes as faithfully as your work. Delete a folder on your laptop and the cloud deletes it from mine a second later. What saves you is the version history and the bin, and those only keep things for a limited time. That's why the 3-2-1 rule still applies: a separate back-up that sync cannot touch."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 5 · describe (2 marks)</p>
+<p>A design studio in Inverness is producing a set of promotional graphics with a printing company in Belfast. Describe two benefits of storing the project files in cloud storage. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The files can be accessed remotely from anywhere with an internet connection, so the printers in Belfast can open the artwork without it being posted or emailed. <span class="why">Remote access, set in the scenario.</span></li>
+<li>The cloud keeps earlier versions and back-up copies, so if the studio's computer fails or a file is overwritten, the work can be restored. <span class="why">A different benefit (restoration). "It's easy to share" and "you can collaborate" are close to the same point, so pick two that are clearly different.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 6 · explain (2 marks)</p>
+<p>Explain one limitation of the studio relying on cloud storage. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>Cause: cloud storage can only be reached through an internet connection… <span class="why">The reason the problem happens.</span></li>
+<li>…so if the studio's connection fails, or is slow, the designers cannot open or upload the large artwork files, and the job could miss the printer's deadline. <span class="why">The effect, in context. "You need the internet" alone is the cause without the effect, and would usually earn one mark at most.</span></li>
+</ol></details></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>define cloud storage and cloud computing and give a graphics example of each;</li><li>describe at least five benefits with their effects;</li><li>explain at least four limitations, including internet dependence and security;</li><li>explain why sync is not the same as a back-up.</li></ul></div>
+<div class="check" data-check="tech-cloud"></div>
+</section>
+
+<section id="rights" class="prose">
+<h2 data-short="Digital rights &amp; IP">4 · Digital rights management and intellectual property <span class="spec-tag">TECH · digital rights management</span></h2>
+<p>A graphic is easy to copy: one click saves it, and the copy is perfect. That is a problem for the people who made it, because their income depends on others paying to use their work. This chapter is about the law that says who owns a design, and the technical locks that make copying harder.</p>
+
+<h3>Intellectual property</h3>
+<p><dfn>Intellectual property</dfn> (IP) is something created by someone's mind (a drawing, photograph, logo, design, invention or piece of software) that the law treats as property belonging to its owner. The owner can sell it, license it, or take action against people who use it without permission. The main kinds you need to recognise:</p>
+<div class="table-wrap"><table>
+<caption>Kinds of intellectual property relevant to graphic communication (UK).</caption>
+<thead><tr><th>Protection</th><th>Covers</th><th>How you get it</th></tr></thead>
+<tbody>
+<tr><th scope="row">Copyright ©</th><td>Original creative work: drawings, photographs, illustrations, layouts, written text, software</td><td>Automatic in the UK as soon as the work is created and recorded; no registration. For artistic works it lasts for the creator's life plus 70 years</td></tr>
+<tr><th scope="row">Trade mark ™ / ®</th><td>Signs that identify a business: logos, brand names, slogans</td><td>Can be registered (®) to give strong legal protection for the brand</td></tr>
+<tr><th scope="row">Registered design</th><td>The appearance of a product: its shape, pattern, colour or decoration</td><td>Registered with the Intellectual Property Office</td></tr>
+<tr><th scope="row">Patent</th><td>A new invention: how something works</td><td>Applied for and granted; the invention must be new and not obvious</td></tr>
+</tbody></table></div>
+<p>A <dfn>licence</dfn> is permission from the owner to use their work, on stated conditions. Buying a stock photograph usually buys a licence to use it in certain ways, not ownership of the photograph. Fonts and CAD software are also licensed: a licence may limit how many computers a font is installed on, and an education licence for CAD software usually forbids commercial work. <dfn>Passing off</dfn> someone else's image or design as your own, or using it without the agreed payment, takes income and credit from its owner.</p>
+
+<h3>Digital rights management</h3>
+<p><dfn>Digital rights management</dfn> (DRM) is the use of technology to control how digital content is used once it has been distributed: whether it can be copied, printed, edited, shared or opened at all. The law says what you may do; DRM tries to make it physically hard to do anything else. Methods a graphics business might use:</p>
+<ul>
+<li><dfn>Watermarking</dfn>: placing a visible logo, name or "PROOF" mark over an image, usually semi-transparent, or hiding an invisible <dfn>digital watermark</dfn> in the pixel data that identifies the owner even after copying.</li>
+<li><strong>Low-resolution previews</strong>: putting only small, low-ppi versions online, so a copy cannot be printed well. The full-resolution file is sent only after payment.</li>
+<li><dfn>Encryption</dfn>: scrambling a file with a key, so only someone with the key can read it.</li>
+<li><strong>Password protection and permissions</strong>: a PDF proof can require a password to open, or block printing, copying or editing.</li>
+<li><strong>Licence keys and online activation</strong>: CAD and DTP software checks that each copy has been paid for before it runs.</li>
+<li><strong>Metadata</strong>: copyright notices and the creator's name stored inside the file's information fields. Easy to strip, but useful as evidence.</li>
+</ul>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 140" role="img" aria-label="Encryption. A readable drawing file is scrambled using a key into unreadable data. The scrambled data travels over the internet. Only a person holding the matching key can turn it back into the readable drawing. Anyone who intercepts it in transit sees only gibberish.">
+<g font-size="13">
+<rect x="6" y="26" width="80" height="64" rx="4" class="tc-box"/>
+<path d="M20 74 L36 44 L52 74 Z M56 74 h20 v-24 h-20z" fill="none" class="s-sea" stroke-width="2"/>
+<text x="46" y="108" text-anchor="middle" class="ink">readable file</text>
+<rect x="160" y="26" width="80" height="64" rx="4" class="tc-box2"/>
+<text x="200" y="52" text-anchor="middle" class="ink mono">7f#Q@x</text><text x="200" y="72" text-anchor="middle" class="ink mono">%k2!Lz</text>
+<text x="200" y="108" text-anchor="middle" class="ink">scrambled data</text>
+<rect x="314" y="26" width="80" height="64" rx="4" class="tc-box"/>
+<path d="M328 74 L344 44 L360 74 Z M364 74 h20 v-24 h-20z" fill="none" class="s-sea" stroke-width="2"/>
+<text x="354" y="108" text-anchor="middle" class="ink">readable again</text>
+<line x1="90" y1="58" x2="156" y2="58" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="244" y1="58" x2="310" y2="58" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<g fill="#e0b23a" stroke="#7a5808" stroke-width="1"><circle cx="122" cy="40" r="7"/><rect x="128" y="38" width="16" height="4"/><circle cx="278" cy="40" r="7"/><rect x="284" y="38" width="16" height="4"/></g>
+<text x="124" y="80" text-anchor="middle" class="ink2">key</text><text x="278" y="80" text-anchor="middle" class="ink2">key</text>
+<text x="200" y="132" text-anchor="middle" class="muted">intercepted on the way? the thief sees only the middle box</text>
+</g>
+</svg>
+<figcaption>Encryption protects a file while it is stored or sent. It does not stop someone who legitimately opens the file from copying what they see, which is why it is combined with watermarks and licences.</figcaption>
+</figure>
+
+<h3>Why it matters to designers and companies</h3>
+<ul>
+<li><strong>Income:</strong> photographers, illustrators and studios are paid when their work is licensed. Free copies mean lost sales.</li>
+<li><strong>Reputation and brand:</strong> a company logo copied onto poor-quality or offensive products damages trust in the real company.</li>
+<li><strong>Evidence:</strong> a watermark, metadata or a dated version history helps prove who made a design first, if there is ever a dispute.</li>
+<li><strong>Advertising:</strong> a visible watermark carries the company's name with every shared copy.</li>
+<li><strong>Your own risk:</strong> using an image you have no licence for can lead to a demand for payment or legal action, so designers must check the rights for every image, font and model they use.</li>
+</ul>
+
+<div class="widget" id="w-watermark">
+<h3 class="widget-title">Watermark workshop: protect the figurehead photograph</h3>
+<p class="hint">Choose where the watermark goes, how strong it is and how big. Then try the thief's tools. The readouts are measured from the image itself: how much of the watermark survives each crop, and how much of the picture it hides.</p>
+</div>
+
+<h3>What would stop theft? A sorting drill</h3>
+<p>Classify each measure. Legal protection gives the owner the right to act; a technical barrier makes copying harder; some popular ideas give little real protection.</p>
+<div class="sorter" data-bins="Gives legal protection|Is a technical barrier|Gives little real protection">
+<div data-ans="Gives legal protection" data-why="Copyright arises automatically when the work is created. It does not stop copying, but it gives the owner the right to demand payment or take action.">Copyright in an original illustration</div>
+<div data-ans="Is a technical barrier" data-why="A semi-transparent mark across the subject spoils any copy and identifies the owner. It is hard to remove cleanly.">A semi-transparent watermark across the middle of a photograph</div>
+<div data-ans="Gives little real protection" data-why="A tiny mark in the corner disappears with one crop. It identifies the owner only until someone trims the edge.">A small watermark tucked in one corner</div>
+<div data-ans="Is a technical barrier" data-why="Without the key the file is unreadable, so an intercepted or stolen copy is useless.">Encrypting a confidential CAD file before emailing it</div>
+<div data-ans="Gives legal protection" data-why="A licence sets out exactly what a buyer may do; using the image outside those terms breaks the agreement.">A licence agreement for a stock image</div>
+<div data-ans="Is a technical barrier" data-why="A 72 ppi preview looks fine on screen but pixelates badly when printed, so the full file must be bought.">Putting only a small, low-resolution preview on the website</div>
+<div data-ans="Gives little real protection" data-why="Anyone can still take a screenshot. It mainly annoys honest visitors.">Disabling right-click on a website</div>
+<div data-ans="Is a technical barrier" data-why="The PDF opens for viewing, but printing and editing are blocked without the owner's password.">A PDF proof with printing and editing permissions turned off</div>
+</div>
+
+<div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>When asked why a company watermarks its images, "to stop theft" is not enough. The 2024 marking instructions said not to accept "theft" or "stealing" without a description. Say <em>what</em> the watermark prevents and <em>why that matters</em>: it identifies the image as the company's intellectual property; it stops others selling or passing off the image as their own; it stops the image being used without payment; it advertises the company wherever the image is shared.</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 7 · explain (2 marks)</p>
+<p>The Plan Room sells prints of its ship illustrations through a website. Explain why the illustrations shown on the website are watermarked. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The watermark marks each illustration as the Plan Room's intellectual property, so other people cannot sell or pass off the illustrations as their own work. <span class="why">Ownership, with the specific misuse it prevents.</span></li>
+<li>A copy taken from the website carries the watermark across it, so it cannot be used without paying for a clean, licensed version, which protects the Plan Room's income. <span class="why">A second, different point: payment. (The watermark also advertises the Plan Room wherever the image is shared, an alternative second point.)</span></li>
+</ol></details></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>explain intellectual property and copyright, and recognise trade marks, registered designs and patents;</li><li>explain what a licence is;</li><li>describe DRM methods: watermarking, low-resolution previews, encryption, password permissions, licence keys;</li><li>explain why protecting digital rights matters to designers and companies.</li></ul></div>
+<div class="check" data-check="tech-drm"></div>
+</section>
+
+<section id="cad" class="prose">
+<h2 data-short="CAD: pros &amp; cons">5 · Advantages and limitations of CAD <span class="spec-tag">TECH · advantages and limitations of CAD</span></h2>
+<p>The course asks you to know the <em>relative merits</em> of manual and computer-aided methods. <dfn>Manual graphics</dfn> are produced by hand with pencils, pens, markers, a drawing board and instruments. <dfn>CAD</dfn> (computer-aided design) produces drawings and 3D models with software. Neither is "better" in every case: sketching on paper is still the fastest way to get an idea down, and the assignment's preliminary sketches are done by hand. But for production drawings and models that will change, be shared and be manufactured, CAD wins in most ways. You must also know its costs.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 230" role="img" aria-label="Changing one dimension. Manually, the length of the capstan bar changes from 120 to 140, so the elevation, plan and end elevation must each be erased and redrawn by hand, along with their dimensions. In parametric CAD, the designer edits one dimension in the model's sketch, and the 3D model and every linked 2D view and dimension update automatically.">
+<g font-size="13">
+<text x="98" y="18" text-anchor="middle" class="ink" font-weight="700">Manual</text>
+<text x="302" y="18" text-anchor="middle" class="ink" font-weight="700">Parametric CAD</text>
+<line x1="200" y1="6" x2="200" y2="224" class="s-line" stroke-width="2"/>
+<rect x="8" y="30" width="180" height="150" rx="4" class="tc-box"/>
+<rect x="22" y="48" width="70" height="26" class="tc-solid"/><rect x="22" y="96" width="70" height="26" class="tc-solid"/><rect x="118" y="48" width="26" height="26" class="tc-solid"/>
+<g class="f-red" font-size="18" font-weight="700"><text x="98" y="68">✎</text><text x="98" y="116">✎</text><text x="150" y="68">✎</text></g>
+<text x="98" y="150" text-anchor="middle" class="ink2">erase and redraw every</text>
+<text x="98" y="168" text-anchor="middle" class="ink2">view and dimension</text>
+<rect x="212" y="30" width="180" height="150" rx="4" class="tc-box"/>
+<rect x="222" y="40" width="64" height="32" rx="3" class="tc-box2"/><text x="254" y="61" text-anchor="middle" class="ink mono">L = 140</text>
+<path d="M310 46 l40 0 l14 -10 l-40 0 z M310 46 v22 h40 v-22 M350 68 l14 -10 v-22" class="tc-solidline" stroke-width="1.5"/>
+<line x1="288" y1="56" x2="306" y2="56" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
+<rect x="226" y="110" width="54" height="20" class="tc-solid"/><rect x="292" y="110" width="54" height="20" class="tc-solid"/><rect x="358" y="110" width="20" height="20" class="tc-solid"/>
+<line x1="330" y1="74" x2="254" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/><line x1="332" y1="74" x2="318" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/><line x1="340" y1="74" x2="366" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/>
+<text x="302" y="150" text-anchor="middle" class="ink2">edit one value; the model,</text>
+<text x="302" y="168" text-anchor="middle" class="ink2">views and dimensions update</text>
+<text x="200" y="210" text-anchor="middle" class="muted">the client wants the capstan bar 140 long instead of 120</text>
+</g>
+</svg>
+<figcaption>Parametric and associative CAD: the 2D drawing views are linked to the 3D model, so a change to the model updates every view. By hand, every view is redrawn and every dimension rechecked.</figcaption>
+</figure>
+
+<div class="compare">
+<div><h3>Advantages of CAD</h3><ul>
+<li><strong>Accuracy:</strong> exact sizes are typed in, and snaps and constraints lock geometry, so parts fit when made.</li>
+<li><strong>Editing:</strong> parametric models and associative drawings update automatically, so changes are quick and consistent.</li>
+<li><strong>Re-use:</strong> parts, features and whole drawings can be copied, mirrored, arrayed or reused in a new project.</li>
+<li><strong>Libraries:</strong> standard parts (bolts, bearings, symbols) are inserted from a library instead of being drawn.</li>
+<li><strong>Visualisation:</strong> photo-realistic renders show a client the product before it exists, and can be used in promotional material.</li>
+<li><strong>Simulation and testing:</strong> stress, motion and clash (interference) checks find problems before anything is made.</li>
+<li><strong>Collaboration:</strong> files can be shared instantly worldwide, and several designers can work on parts of one assembly.</li>
+<li><strong>Manufacture:</strong> the model feeds CAM, CNC machines and 3D printers directly.</li>
+<li><strong>Standards:</strong> templates hold the title block, layers, line types and dimension styles, so every drawing matches the conventions.</li>
+<li><strong>Storage:</strong> thousands of drawings fit on a drive or in the cloud; no plan chests.</li>
+</ul></div>
+<div><h3>Limitations of CAD</h3><ul>
+<li><strong>Cost:</strong> powerful computers, software licences or subscriptions, and output devices are expensive.</li>
+<li><strong>Training:</strong> staff need time and money to learn the software, and keep learning as it updates.</li>
+<li><strong>Dependence:</strong> no power, hardware or software means no work; crashes and corrupt files can lose hours.</li>
+<li><strong>Compatibility:</strong> native files may not open in another package; neutral formats like STEP lose the feature history.</li>
+<li><strong>Security:</strong> digital files are easy to copy, steal or hack, and malware can destroy them, so back-ups and protection are needed.</li>
+<li><strong>Health:</strong> long hours at a screen can cause eye strain and posture problems (chapter 7).</li>
+<li><strong>Early ideas:</strong> CAD can be slower than a quick freehand sketch for getting first ideas down.</li>
+</ul></div>
+</div>
+
+<h3>Sort them: advantage or limitation?</h3>
+<p>Each statement describes a situation. Decide whether it shows an advantage or a limitation of CAD.</p>
+<div class="sorter" data-bins="Is an advantage of CAD|Is a limitation of CAD">
+<div data-ans="Is an advantage of CAD" data-why="Associative drawings update from the model: one edit changes every view, with no redrawing.">The client changes the height of a lantern, and all six drawing views update when one dimension is edited.</div>
+<div data-ans="Is a limitation of CAD" data-why="File compatibility: the native file needs converting to a neutral format, and the feature history is usually lost.">The shipyard cannot open the Plan Room's native part files because it uses a different CAD package.</div>
+<div data-ans="Is an advantage of CAD" data-why="Library and stock components save drawing time and are made to standard sizes.">Standard M8 bolts are dropped into the assembly from the parts library.</div>
+<div data-ans="Is a limitation of CAD" data-why="Cost of licences and hardware is a real barrier, especially for small businesses.">A small studio must pay a yearly subscription for every seat of its CAD software.</div>
+<div data-ans="Is an advantage of CAD" data-why="Interference (clash) detection finds the problem in the virtual model, before any material is cut.">A clash check shows the gun carriage axle hits the deck bracket before anything is made.</div>
+<div data-ans="Is a limitation of CAD" data-why="Dependence on hardware and power: with no back-up, work is lost.">A power cut during a long modelling session corrupts the file, and the last back-up is a day old.</div>
+<div data-ans="Is an advantage of CAD" data-why="Rendered visualisation lets a client see the product, and use the image to promote it, before it exists.">A photo-realistic render of the new figurehead goes on the recruitment poster before it is carved.</div>
+<div data-ans="Is a limitation of CAD" data-why="Training time and cost: new staff are not productive at once.">A new draughtsman needs several weeks of training before producing drawings to the Plan Room's standard.</div>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 8 · explain (2 marks)</p>
+<p>The Plan Room produced orthographic drawings of a capstan from a 3D CAD model. The customer then asked for the capstan to be taller. Explain one advantage of using CAD rather than manual drawing in this situation. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The drawing views are associative (linked) to the parametric 3D model, so when the height dimension in the model is edited… <span class="why">Cause: the feature of CAD that matters here.</span></li>
+<li>…every view and its dimensions update automatically, so the new drawings are produced quickly and with no risk of one view being missed or drawn inconsistently. <span class="why">Effect, in the context of the change the customer asked for. "CAD is faster" alone has no cause and no context.</span></li>
+</ol></details></div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If CAD is so much better, why do we still have to sketch by hand?"</p><p><strong>Master Shipwright Fraser:</strong> "Because a pencil costs nothing, needs no power, goes anywhere, and is quickest for getting an idea out of your head. On the quarterdeck, in front of the captain, I sketch. Back in the Plan Room, I model. Manual and CAD have different jobs, and a good designer uses each where it fits. That comparison is exactly the kind of thing the exam asks."</p></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>compare manual and CAD methods for a given task;</li><li>explain at least five advantages of CAD, each with its effect;</li><li>explain at least four limitations of CAD;</li><li>explain why parametric, associative CAD makes changes fast and consistent.</li></ul></div>
+<div class="check" data-check="tech-cad"></div>
+</section>
+
+<section id="impact" class="prose">
+<h2 data-short="Impact on society">6 · Impact on industry and society <span class="spec-tag">TECH · technology and society</span></h2>
+<p>The specification lists six ways CAD and graphic communication technologies have changed industry and society. For each, know <em>what</em> changed, <em>who</em> it affected, and the <em>benefits and drawbacks</em>. In the exam, every impact must be explained as a cause leading to an effect.</p>
+
+<h3>The paperless office</h3>
+<p>The <dfn>paperless office</dfn> is a workplace that creates, shares, approves and stores documents digitally instead of on paper. Drawings are viewed on screen and marked up digitally; proofs go out as PDFs; filing cabinets become folders on a server or in the cloud. True "zero paper" is rare, so think of it as an aim to reduce paper.</p>
+<div class="compare">
+<div><h4>Benefits</h4><ul>
+<li>Lower costs: less spent on paper, ink and toner, printers and their servicing.</li>
+<li>Smaller workspaces: no plan chests or filing rooms, so less office space is needed.</li>
+<li>Faster sharing and easier collaboration: a document reaches every team member at once.</li>
+<li>Easier remote working: files are reachable from home or abroad.</li>
+<li>Faster searching: a file is found by name or content in seconds.</li>
+<li>Improved corporate image: the company is seen as modern and environmentally responsible.</li>
+</ul></div>
+<div><h4>Drawbacks</h4><ul>
+<li>Cost of the hardware, software and training to set it up.</li>
+<li>Dependence on power, devices and networks: no system, no documents.</li>
+<li>Security risks: hacking, malware and accidental deletion, so back-ups are essential.</li>
+<li>Screen fatigue: some checking (such as proofreading) is easier on paper.</li>
+<li>Devices and data centres still use energy, so the environmental gain is not "free".</li>
+</ul></div>
+</div>
+
+<div class="widget" id="w-paperless">
+<h3 class="widget-title">Paperless office calculator</h3>
+<p class="hint">Estimate what a studio prints in a year, and what going paperless could save. Every assumption is shown and can be changed: the results are only as good as the assumptions.</p>
+</div>
+
+<h3>Use of recycled materials</h3>
+<p>Graphic products have physical outputs: leaflets, posters, packaging, models, signs. Technology affects how much material they use and where it comes from.</p>
+<ul>
+<li><strong>Recycled paper and card:</strong> printing on recycled stock reduces the trees felled and the energy and water used compared with making paper from new pulp. Look for certification (such as FSC, the Forest Stewardship Council) showing responsibly sourced fibre.</li>
+<li><strong>Digital proofing:</strong> checking layouts on screen and as PDFs means fewer test prints are wasted.</li>
+<li><strong>Virtual prototyping:</strong> testing a CAD model on screen means fewer physical prototypes are made and thrown away.</li>
+<li><strong>Nesting:</strong> CAM software arranges parts tightly on a sheet before laser cutting or CNC routing, so less offcut is wasted.</li>
+<li><strong>Recycled filament and sheet:</strong> 3D printing filament and acrylic sheet can be made from recycled plastic.</li>
+<li><strong>Design for recycling:</strong> designers can choose single materials, avoid laminating card with plastic film, and print recycling symbols on packaging so it can be sorted.</li>
+</ul>
+<p>Trade-offs exist: recycled paper can be less bright and may cost more for some grades, and recycling itself uses energy and transport.</p>
+
+<h3>CAD as it supports manufacturing and other industries</h3>
+<p><dfn>CAM</dfn> (computer-aided manufacture) uses the CAD model to generate the instructions (toolpaths) that drive CNC machines, laser cutters and 3D printers. The route from design to product has become largely digital.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 200" role="img" aria-label="From CAD to product. A designer in Scotland makes a CAD model and exports a STEP file. The file goes by cloud to a manufacturer in another country, where CAM software creates toolpaths for a CNC machine or a 3D printer. The finished parts are shipped back. Along the way a rapid prototype is 3D printed for testing.">
+<g font-size="13">
+<rect x="6" y="20" width="110" height="64" rx="4" class="tc-box"/><text x="61" y="44" text-anchor="middle" class="ink" font-weight="700">CAD model</text><text x="61" y="64" text-anchor="middle" class="ink2">Plan Room,</text><text x="61" y="78" text-anchor="middle" class="ink2">Scotland</text>
+<rect x="145" y="20" width="110" height="64" rx="4" class="tc-box2"/><text x="200" y="44" text-anchor="middle" class="ink" font-weight="700">STEP file</text><text x="200" y="64" text-anchor="middle" class="ink2">sent via</text><text x="200" y="78" text-anchor="middle" class="ink2">the cloud</text>
+<rect x="284" y="20" width="110" height="64" rx="4" class="tc-box"/><text x="339" y="44" text-anchor="middle" class="ink" font-weight="700">CAM</text><text x="339" y="64" text-anchor="middle" class="ink2">toolpaths,</text><text x="339" y="78" text-anchor="middle" class="ink2">manufacturer</text>
+<rect x="284" y="118" width="110" height="56" rx="4" class="tc-box"/><text x="339" y="142" text-anchor="middle" class="ink" font-weight="700">CNC / laser</text><text x="339" y="162" text-anchor="middle" class="ink2">parts made</text>
+<rect x="145" y="118" width="110" height="56" rx="4" class="tc-box"/><text x="200" y="142" text-anchor="middle" class="ink" font-weight="700">Shipped</text><text x="200" y="162" text-anchor="middle" class="ink2">to assembly</text>
+<rect x="6" y="118" width="110" height="56" rx="4" class="tc-box2"/><text x="61" y="142" text-anchor="middle" class="ink" font-weight="700">3D-printed</text><text x="61" y="162" text-anchor="middle" class="ink2">prototype first</text>
+<line x1="118" y1="52" x2="141" y2="52" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="257" y1="52" x2="280" y2="52" class="s-sea" stroke-width="2" marker-end="url(#tc-ar-sea)"/>
+<line x1="339" y1="86" x2="339" y2="114" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="282" y1="146" x2="259" y2="146" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
+<line x1="61" y1="86" x2="61" y2="114" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
+<text x="200" y="194" text-anchor="middle" class="muted">one digital model drives prototyping, manufacture and promotion</text>
+</g>
+</svg>
+<figcaption>A digital thread: the same CAD data is prototyped, sent abroad as a neutral file, turned into machine instructions, and made. Design and manufacture no longer need to be in the same country.</figcaption>
+</figure>
+<p>Effects on industry:</p>
+<ul>
+<li><strong>Rapid prototyping:</strong> a 3D-printed model can be in a designer's hand within hours, so ideas are tested and improved sooner and products reach the market faster.</li>
+<li><strong>Accuracy and consistency:</strong> CNC machines follow the CAD geometry exactly, so parts are identical and fit first time, with less waste.</li>
+<li><strong>Global supply chains:</strong> a design can be emailed or shared to a factory anywhere, so companies can manufacture where costs or skills suit them best.</li>
+<li><strong>Customisation:</strong> because changes are easy in CAD and 3D printing needs no special tooling, one-off or personalised products (such as medical implants or prosthetics shaped to a patient) are practical.</li>
+<li><strong>Jobs and skills:</strong> fewer manual drafting jobs, more jobs needing CAD, CAM and IT skills, so workers need retraining.</li>
+</ul>
+<p>Other industries rely on CAD too: architecture and construction (building models, site plans and walk-through visualisations, with building information modelling sharing one model between architects, engineers and builders); engineering; product design; film, television and games (3D models and animation); fashion and textiles; and medicine (models made from scans to plan surgery).</p>
+
+<h3>DTP in marketing and promotional activities</h3>
+<p><dfn>Desktop publishing</dfn> (DTP) software lets one person design and lay out print and screen documents (posters, leaflets, adverts, social media graphics, menus, packaging) on an ordinary computer. Before DTP, this needed specialist typesetters, paste-up artists and printers.</p>
+<ul>
+<li><strong>In-house production:</strong> even a small business can create its own promotional material, so marketing costs fall and campaigns can start quickly.</li>
+<li><strong>Quick changes:</strong> prices, dates or images can be updated and reprinted, or reposted online, the same day, so promotions respond to events.</li>
+<li><strong>Consistent branding:</strong> master pages, templates and colour swatches keep the logo, colours and fonts the same across every product, which builds a recognisable brand.</li>
+<li><strong>Many channels from one design:</strong> one layout can be exported for print (CMYK, with bleed) and for screens (RGB) and social media.</li>
+<li><strong>Targeted and personalised material:</strong> versions can be made for different audiences, regions or languages.</li>
+<li><strong>Drawbacks:</strong> easy tools mean more low-quality design from untrained users; the market is crowded, so material must work harder to stand out; and traditional print trades have lost jobs.</li>
+</ul>
+
+<h3>Remote working</h3>
+<p><dfn>Remote working</dfn> means doing your job away from the company's office, often at home, connected by the internet. Cloud storage, cloud-based software, video calls and shared screens make it possible for designers.</p>
+<div class="compare">
+<div><h4>For the designer</h4><ul>
+<li>No commute: time and travel costs saved, and less pollution.</li>
+<li>Flexible hours fit family and life.</li>
+<li>Can live far from the company, including in rural areas.</li>
+<li>But: isolation; harder to separate work and home; must set up a safe workstation at home; relies on a good internet connection.</li>
+</ul></div>
+<div><h4>For the company and society</h4><ul>
+<li>Smaller offices, so lower rent and energy costs.</li>
+<li>Can recruit talent from anywhere, not just within commuting distance.</li>
+<li>Fewer cars on the road at rush hour.</li>
+<li>But: harder to supervise and support staff; security of company files on home networks; spontaneous teamwork is harder.</li>
+</ul></div>
+</div>
+
+<h3>Communication crossing international boundaries</h3>
+<p>Graphics travel across countries and languages more than ever. Technology helps in several ways.</p>
+<ul>
+<li><strong>Instant sharing:</strong> email, cloud storage and video calls let teams and clients in different countries review the same design at the same time.</li>
+<li><strong>Working across time zones:</strong> a team in one country can pass work to a team in another at the end of its day, so a project can progress around the clock.</li>
+<li><strong>Standards and conventions:</strong> drawings follow agreed standards (such as BS and ISO conventions for line types, projection and dimensions), so an engineer anywhere can read them without translation.</li>
+<li><strong>Graphics instead of words:</strong> pictograms, icons, assembly diagrams and exploded views explain a product without any language, which is why flat-pack instructions are often wordless.</li>
+<li><strong>Neutral file formats:</strong> STEP, IGES, DXF and PDF let companies using different software exchange work.</li>
+<li><strong>Translation and localisation:</strong> DTP layouts can be quickly produced in several languages from one master design.</li>
+</ul>
+<p>Designers must also be culturally aware. Colours, symbols, gestures and images can carry different meanings in different countries, so promotional graphics are checked for each market.</p>
+
+<div class="widget" id="w-impact">
+<h3 class="widget-title">Cause-and-effect builder</h3>
+<p class="hint">"Explain" questions need a cause <em>and</em> an effect. Choose a topic, then one cause and one effect. The builder joins them into an answer sentence and tells you whether they really link.</p>
+</div>
+
+<div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>From the 2025 course report: "Most candidates continue to struggle with this command word and only give the effect, without the cause." In this chapter that looks like "the paperless office saves money" (effect only). Give the cause: "less paper, ink and toner are bought, <em>so</em> the company's running costs fall."</p></div>
+
+<div class="worked"><p class="worked-title">Worked example 9 · explain (2 marks)</p>
+<p>A Scottish furniture company sends its CAD models to a factory overseas. Explain one way CAD supports the company's manufacturing. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The CAD model can be exported as a neutral STEP file and shared through the cloud with the overseas factory… <span class="why">Cause: what the technology allows.</span></li>
+<li>…where CAM software uses it to generate toolpaths for CNC machines, so the parts are made accurately to the design without the drawings being re-created, and without the designers travelling. <span class="why">Effect for the company's manufacturing.</span></li>
+</ol></details></div>
+
+<div class="worked"><p class="worked-title">Worked example 10 · describe (2 marks)</p>
+<p>Describe two ways that DTP software has changed how a small café promotes itself. [2]</p>
+<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks">
+<li>The owner can design menus and posters in-house, so there is no need to pay a design agency or specialist printer for every change. <span class="why">One way, with its consequence.</span></li>
+<li>A template with the café's logo, colours and fonts keeps every poster and social media post consistent, so customers recognise the brand. <span class="why">A second, different way.</span></li>
+</ol></details></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>explain the benefits and drawbacks of the paperless office;</li><li>explain how technology supports the use of recycled materials and reduces waste;</li><li>explain how CAD supports manufacturing (CAM, CNC, 3D printing, prototyping, global supply chains) and other industries;</li><li>explain the impact of DTP on marketing and promotion;</li><li>explain the benefits and drawbacks of remote working;</li><li>explain how graphics and technology help communication across international boundaries.</li></ul></div>
+<div class="check" data-check="tech-impact"></div>
+</section>
+
+<section id="safety" class="prose">
+<h2 data-short="Safe working">7 · Safe working practices in graphic studios <span class="spec-tag">TECH · safe working</span></h2>
+<p>A graphics studio looks safe: no lathes, no furnaces. But people spend long hours at screens, use very sharp blades, spray solvent adhesives, and run laser cutters and 3D printers. The specification asks you to know the <em>safe working practices and systems</em> that support graphic work in studios and other working environments.</p>
+
+<h3>The systems behind safe work</h3>
+<ul>
+<li><strong>The law.</strong> In the UK the <dfn>Health and Safety at Work etc. Act 1974</dfn> requires employers to protect the health and safety of employees and others, and requires employees to take reasonable care and co-operate. The <dfn>Display Screen Equipment (DSE) Regulations</dfn> cover people who use screens regularly: employers must assess workstations, plan breaks or changes of activity, and provide eye tests on request. <dfn>COSHH</dfn> (Control of Substances Hazardous to Health) covers chemicals such as solvent adhesives and sprays.</li>
+<li><strong>Risk assessment.</strong> A <dfn>hazard</dfn> is anything that could cause harm; a <dfn>risk</dfn> is how likely that harm is, and how bad. A risk assessment identifies the hazards, decides who might be harmed and how, evaluates the risks and sets control measures, records the findings, and is reviewed regularly.</li>
+<li><strong>Training and induction.</strong> Nobody uses a laser cutter, guillotine or spray booth until they have been shown how.</li>
+<li><strong>Safety information.</strong> Safety data sheets for chemicals, signs on machines, fire exits marked and kept clear, first aid kits, and a clear procedure for reporting accidents.</li>
+</ul>
+
+<h3>Workstation ergonomics</h3>
+<p><dfn>Ergonomics</dfn> is designing the workplace to fit the human body. A badly set-up workstation causes neck, back and wrist pain, and eye strain, over months of work.</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 290" role="img" aria-label="A well set-up computer workstation, side view. The top of the screen is at or slightly below eye level, about an arm's length away. The chair is adjustable with back support for the lower back. Forearms are roughly horizontal with wrists straight. Thighs are roughly horizontal with feet flat on the floor or a footrest. The screen is placed side-on to the window to avoid glare.">
+<g font-size="13">
+<line x1="10" y1="268" x2="390" y2="268" class="tc-stroke" stroke-width="2"/>
+<rect x="190" y="150" width="190" height="8" class="tc-dark"/><rect x="360" y="158" width="8" height="110" class="tc-dark"/>
+<rect x="300" y="72" width="10" height="66" class="tc-dark"/><rect x="290" y="138" width="40" height="12" class="tc-dark"/>
+<rect x="298" y="78" width="4" height="54" fill="#00a3d9"/>
+<path d="M90 268 L100 222 M130 268 L120 222 M110 222 V200" class="tc-stroke" stroke-width="4"/>
+<rect x="70" y="190" width="90" height="12" rx="3" class="tc-dark"/>
+<path d="M76 190 L70 110" class="tc-stroke" stroke-width="6" stroke-linecap="round"/>
+<g class="tc-person">
+<circle cx="150" cy="70" r="16"/>
+<path d="M140 88 L120 180 L176 186 L184 262 L200 262 L194 176 L130 166 Z"/>
+<path d="M140 96 L160 140 L232 146 L232 154 L154 150 L130 110 Z"/>
+</g>
+<rect x="226" y="144" width="40" height="6" class="tc-dark"/>
+<line x1="166" y1="66" x2="296" y2="80" class="s-sea" stroke-width="1.5" stroke-dasharray="5 4"/>
+<line x1="160" y1="40" x2="300" y2="40" class="s-red" stroke-width="1.5" marker-start="url(#tc-ar-red)" marker-end="url(#tc-ar-red)"/>
+<text x="230" y="34" text-anchor="middle" class="f-red">about an arm's length</text>
+</g>
+<g font-size="13" class="ink">
+<text x="318" y="70">top of screen</text><text x="318" y="86">at or just</text><text x="318" y="102">below eye level</text>
+<text x="196" y="182">forearms level,</text><text x="196" y="198">wrists straight</text>
+<text x="8" y="100">back support</text><text x="8" y="116">(lumbar)</text>
+<text x="210" y="240">feet flat on floor</text><text x="210" y="256">or footrest</text>
+<text x="8" y="160">adjustable</text><text x="8" y="176">height chair</text>
+</g>
+</svg>
+<figcaption>A well set-up workstation. Also: place the screen side-on to windows to avoid glare and reflections, use blinds, keep the keyboard and mouse close, and take short breaks or change activity regularly.</figcaption>
+</figure>
+
+<ul>
+<li><strong>Screen:</strong> top at or just below eye level, about an arm's length away, tilted to avoid reflections. A laptop used for long periods needs a stand with a separate keyboard and mouse, otherwise the user looks down all day.</li>
+<li><strong>Chair:</strong> adjustable height and back, supporting the lower back; feet flat on the floor or on a footrest.</li>
+<li><strong>Keyboard, mouse, tablet:</strong> close enough that the elbows stay by the sides and wrists stay straight.</li>
+<li><strong>Lighting:</strong> enough light to see paper work without glare on the screen; no bright window directly behind or in front of the screen.</li>
+<li><strong>Breaks:</strong> short, regular breaks or changes of task, and looking into the distance from time to time, reduce eye strain and muscle fatigue.</li>
+</ul>
+
+<h3>Electrical safety and the room</h3>
+<ul>
+<li>Trailing cables across walkways are a trip hazard: route them along walls or under covers.</li>
+<li>Do not overload sockets or plug extension leads into other extension leads; overheating can start a fire.</li>
+<li>Keep drinks away from computers, printers and power strips.</li>
+<li>Electrical equipment should be checked regularly (portable appliance testing) and damaged cables taken out of use.</li>
+<li>Keep fire exits and walkways clear; store heavy items such as paper boxes low down, not on high shelves.</li>
+</ul>
+
+<h3>Manual tools: knives, rules and mats</h3>
+<p>Craft knives and scalpels cause more studio injuries than any machine. Safe practice:</p>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 210" role="img" aria-label="Safe cutting with a craft knife, seen from above. The card lies on a self-healing cutting mat. A metal safety rule with a raised finger guard holds the card. The hand pressing the rule is behind the guard, on the far side from the blade. The knife is drawn along the metal edge, away from the body, in several light strokes.">
+<g font-size="13">
+<rect x="10" y="10" width="380" height="170" rx="6" fill="#3f7426" opacity=".85"/>
+<g stroke="#a5d68a" stroke-width=".8" opacity=".6"><path d="M10 40 H390 M10 70 H390 M10 100 H390 M10 130 H390 M10 160 H390 M50 10 V180 M100 10 V180 M150 10 V180 M200 10 V180 M250 10 V180 M300 10 V180 M350 10 V180"/></g>
+<rect x="60" y="40" width="270" height="110" class="tc-cardsheet"/>
+<rect x="40" y="72" width="320" height="26" rx="2" fill="#b9c0c9" stroke="#404650" stroke-width="1.5"/>
+<path d="M40 72 h320 v-8 h-320 z" fill="#8a919b" stroke="#404650" stroke-width="1.2"/>
+<ellipse cx="200" cy="58" rx="34" ry="18" fill="#e3b58f" stroke="#7a5532" stroke-width="1.5"/>
+<path d="M174 52 q8 -16 16 0 M190 50 q8 -18 16 0 M206 52 q8 -14 14 2" fill="none" stroke="#7a5532" stroke-width="1.5"/>
+<path d="M300 104 L250 104" stroke="#1d1a14" stroke-width="5" stroke-linecap="round"/><path d="M250 104 l-14 -3 l0 6 z" fill="#c8ccd2" stroke="#404650"/>
+<line x1="226" y1="122" x2="120" y2="122" stroke="#f7d117" stroke-width="2.5" marker-end="url(#tc-ar)"/>
+</g>
+<g font-size="13" class="ink">
+<text x="16" y="200">self-healing mat</text>
+<text x="146" y="200">metal safety rule</text>
+<text x="290" y="200">blade outside the rule</text>
+</g>
+<text x="128" y="140" font-size="13" fill="#fff" font-weight="700">cut away from you</text>
+</svg>
+<figcaption>The fingers press down behind the rule's raised guard, on the opposite side from the blade. If the blade slips, it meets steel, not skin.</figcaption>
+</figure>
+<ul>
+<li>Cut on a <strong>self-healing cutting mat</strong>, never on a desk or your lap.</li>
+<li>Guide the blade along a <strong>metal safety rule</strong> (ideally with a finger guard). A plastic or wooden rule can be sliced, and the blade can ride over it.</li>
+<li>Keep fingers behind the rule, on the far side from the blade, and <strong>cut away from your body</strong> in several light strokes, not one heavy one.</li>
+<li>Use a <strong>sharp blade</strong>: a blunt one needs more force, and slips. Snap or change blades with the proper tool and put old blades in a <strong>sharps container</strong>.</li>
+<li>Retract or cover the blade when you put the knife down, and carry it pointing down.</li>
+<li>Rotary trimmers and guillotines: keep the blade guard in place and fingers clear of the cutting line.</li>
+</ul>
+
+<h3>Adhesives, sprays and machines</h3>
+<ul>
+<li><strong>Spray adhesives and fixatives:</strong> the solvents give off fumes and are flammable. Use them in a spray booth or a well-ventilated area, away from flames and heat, and follow the safety data sheet (a mask may be needed). Spray inside a box or onto scrap paper to control overspray.</li>
+<li><strong>Laser cutters:</strong> never leave one running unattended, because the material can catch fire. Keep the lid closed, use the fume extraction, and cut only approved materials: some plastics, such as PVC, release toxic gases.</li>
+<li><strong>3D printers:</strong> the nozzle and bed are hot enough to burn; let them cool before removing prints. Use in a ventilated space, as some filaments give off fumes.</li>
+<li><strong>Vinyl cutters and plotters:</strong> keep fingers clear of the moving head and blade.</li>
+<li><strong>Storage:</strong> flammable sprays and solvents in a metal cabinet; heavy materials low down; sharp tools in a rack or drawer, not loose on a bench.</li>
+</ul>
+
+<div class="widget" id="w-studio">
+<h3 class="widget-title">Studio inspection: find the hazards</h3>
+<p class="hint">Inspect the Plan Room annexe. Select anything that looks wrong (or right). Each item is a button: tap it, or tab to it and press Enter. Six hazards hide among things that are being done properly.</p>
+</div>
+
+<div class="worked"><p class="worked-title">Worked example 11 · describe (3 marks)</p>
+<p>A graphic designer spends most of the day working at a computer. Describe three ways the workstation can be set up to reduce the risk to the designer's health. [3]</p>
+<details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
+<ol class="step-list marks">
+<li>The monitor is positioned with its top at or just below eye level, about an arm's length away, so the designer does not bend the neck to see it. <span class="why">Screen position, with its benefit.</span></li>
+<li>An adjustable chair is set so that the lower back is supported and the feet rest flat on the floor or a footrest, which reduces back strain. <span class="why">Chair and posture.</span></li>
+<li>The screen is placed side-on to the window, with blinds, so there is no glare on the screen to cause eye strain. <span class="why">Lighting. Regular breaks would also be accepted as a working practice.</span></li>
+</ol></details></div>
+
+<div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>describe the systems that support safe working: legislation, risk assessment, training, information;</li><li>describe a well set-up display screen workstation;</li><li>describe the safe use of craft knives, rules and mats;</li><li>describe precautions for spray adhesives, laser cutters, 3D printers and electrical equipment.</li></ul></div>
+<div class="check" data-check="tech-safety"></div>
+</section>
+
+<section id="exam" class="prose">
+<h2 data-short="Exam practice">8 · Exam practice: state, describe, explain <span class="spec-tag">TECH · exam technique</span></h2>
+<p>Technology questions are short, but they are precise. The command word tells you what kind of answer earns the mark. These are the meanings used in the marking instructions.</p>
+<div class="table-wrap"><table>
+<caption>Command words. The marking principles are those published in the 2024 question paper marking instructions.</caption>
+<thead><tr><th>Command word</th><th>What the marker wants</th><th>Example of a full answer</th></tr></thead>
+<tbody>
+<tr><th scope="row">State / Name / Identify</th><td>A short, correct fact. No explanation needed.</td><td>"STEP."</td></tr>
+<tr><th scope="row">Describe</th><td>A statement of characteristics or features, not just a one-word list. One mark per relevant point, in the context of the question.</td><td>"Files can be opened from any device with an internet connection, so a designer can work from home."</td></tr>
+<tr><th scope="row">Explain</th><td>Relate cause and effect, in the context of the question. An effect with no cause rarely earns the mark.</td><td>"Because less paper and toner are bought (cause), the studio's running costs fall (effect)."</td></tr>
+<tr><th scope="row">Compare</th><td>Similarities and/or differences between two things, in context.</td><td>"A laser printer has a lower cost per page than an inkjet, so it is cheaper for 300 copies."</td></tr>
+</tbody></table></div>
+
+<figure class="diagram">
+<svg viewBox="0 0 400 150" role="img" aria-label="The anatomy of an explain answer. A cause box, saying what the technology does, joins with the word so to an effect box, saying what happens as a result, and both sit inside a context frame, the scenario in the question. One cause linked to one effect, in context, is one mark.">
+<rect x="4" y="4" width="392" height="120" rx="6" fill="none" class="s-violet" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="16" y="24" class="f-violet" font-size="13" font-weight="700">CONTEXT: the scenario in the question</text>
+<rect x="20" y="40" width="140" height="66" rx="4" class="tc-box"/>
+<text x="90" y="64" text-anchor="middle" class="ink" font-size="14" font-weight="700">CAUSE</text>
+<text x="90" y="84" text-anchor="middle" class="ink2" font-size="13">what the technology</text><text x="90" y="100" text-anchor="middle" class="ink2" font-size="13">does or allows</text>
+<rect x="240" y="40" width="140" height="66" rx="4" class="tc-box"/>
+<text x="310" y="64" text-anchor="middle" class="ink" font-size="14" font-weight="700">EFFECT</text>
+<text x="310" y="84" text-anchor="middle" class="ink2" font-size="13">what happens as</text><text x="310" y="100" text-anchor="middle" class="ink2" font-size="13">a result, for whom</text>
+<line x1="162" y1="73" x2="236" y2="73" class="s-red" stroke-width="2.5" marker-end="url(#tc-ar-red)"/>
+<text x="199" y="65" text-anchor="middle" class="f-red" font-size="14" font-weight="700">so…</text>
+<text x="200" y="144" text-anchor="middle" class="muted" font-size="13">cause + effect + context = one "explain" mark</text>
+</svg>
+<figcaption>Connect the two halves with a linking word: <em>so</em>, <em>which means</em>, <em>therefore</em>, <em>as a result</em>. If your sentence makes sense without the cause, it is probably only an effect.</figcaption>
+</figure>
+
+<h3>The common errors in this topic</h3>
+<ol>
+<li><strong>Effect without cause.</strong> "It saves time." Why? What does the technology do that saves time?</li>
+<li><strong>Vague comparatives.</strong> "It is faster", "it is easier", "it is better quality", with no context. Faster than what, at what task?</li>
+<li><strong>Repeating one point twice.</strong> "You can share files" and "you can collaborate" are close together; for two marks, give two clearly different benefits.</li>
+<li><strong>Ignoring the scenario.</strong> If the question is about a printing company in Belfast, mention the printers in Belfast.</li>
+<li><strong>Bare buzzwords.</strong> "Theft", "security", "the environment" need a description of what is protected or what changes.</li>
+<li><strong>Wrong device or format.</strong> DXF for a 3D solid model; a laser cutter for a photograph; a plotter for 300 A4 leaflets.</li>
+</ol>
+
+<div class="worked"><p class="worked-title">Model answers · a mixed set</p>
+<p>Six short questions in the style of the paper. Try each before opening the answer.</p>
+<details><summary>(a) State one input device suitable for capturing an existing hand-drawn A3 hull plan. <span class="marks-n">[1 mark]</span></summary>
+<ol class="step-list marks"><li>An A3 flatbed scanner. <span class="why">The original is flat, so a scanner gives even lighting with no perspective distortion. A camera could also work but is weaker.</span></li></ol></details>
+<details><summary>(b) Describe one benefit of the paperless office to a design company. <span class="marks-n">[1 mark]</span></summary>
+<ol class="step-list marks"><li>Drawings and documents are stored digitally, so no space is needed for plan chests and filing cabinets, allowing a smaller, cheaper office. <span class="why">A feature and its consequence.</span></li></ol></details>
+<details><summary>(c) Explain why a designer would export a logo as an SVG rather than a JPEG for use on a vinyl cutter. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>SVG is a vector format, which stores the logo as mathematically defined paths… <span class="why">Cause.</span></li><li>…so the vinyl cutter's blade can follow those paths, and the logo stays sharp at any size; a JPEG is made of pixels, which give no cutting outline and blur when enlarged. <span class="why">Effect, in the context of cutting.</span></li></ol></details>
+<details><summary>(d) Explain one disadvantage of remote working for a graphic design company. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>Company files are opened on home computers and home networks, which may not be as well protected as the office network… <span class="why">Cause.</span></li><li>…so there is a greater risk of confidential client designs being hacked, copied or lost. <span class="why">Effect for the company.</span></li></ol></details>
+<details><summary>(e) Describe two safe working practices when using spray adhesive to mount a presentation board. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>Use the spray in a spray booth or well-ventilated area, so the solvent fumes are not breathed in. <span class="why">Ventilation.</span></li><li>Keep it away from naked flames and heat sources, because the propellant and solvent are flammable. <span class="why">A second, different practice. Spraying into a box to control overspray is another.</span></li></ol></details>
+<details><summary>(f) Explain how cloud storage allows a design team in different countries to collaborate. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>All team members are given access to the same shared folder on the provider's servers, and changes sync to everyone… <span class="why">Cause.</span></li><li>…so each designer always opens the latest version, and team members can comment on or continue the work as soon as a colleague in another time zone saves it. <span class="why">Effect for the team.</span></li></ol></details>
+</div>
+
+<div class="widget" id="w-markit">
+<h3 class="widget-title">Be the marker</h3>
+<p class="hint">Read the question and a candidate's answer. Award the marks you think it earns, then compare with the marker's verdict and reasoning.</p>
+</div>
+
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"How long should a two-mark explain answer be?"</p><p><strong>Flight Lieutenant Murray:</strong> "Two linked sentences, or one long sentence with two links. Not a paragraph. Each mark needs a reason and a result, in the question's setting. If you've written forty words and there's no 'so' or 'because' in it, stop and check you've given a cause."</p></div>
+
+<div class="check" data-check="tech-exam"></div>
+
+<h3>Where this deck meets the specification</h3>
+<div class="table-wrap"><table>
+<caption>Course specification items (Using technology in graphic communication; Graphic communication technology and society; Safe working) and where each is taught in this deck.</caption>
+<thead><tr><th>Specification item</th><th>Chapter</th><th>Widgets and examples</th></tr></thead>
+<tbody>
+<tr><td>Hardware and software computer systems and networks; digital input and output devices</td><td><a href="#devices">1</a></td><td>Resolution lab; requisitions; worked examples 1–3</td></tr>
+<tr><td>File management</td><td><a href="#files">2</a></td><td>Tidy the archive; worked example 4</td></tr>
+<tr><td>Cloud computing; cloud storage</td><td><a href="#cloud">3</a></td><td>Cloud signalling; worked examples 5–6</td></tr>
+<tr><td>Digital rights management</td><td><a href="#rights">4</a></td><td>Watermark workshop; sorting drill; worked example 7</td></tr>
+<tr><td>Advantages and limitations of CAD (and the merits of manual methods)</td><td><a href="#cad">5</a></td><td>Advantage or limitation sorter; worked example 8</td></tr>
+<tr><td>The paperless office; recycled materials; CAD supporting manufacturing and other industries; DTP in marketing; remote working; communication crossing international boundaries</td><td><a href="#impact">6</a></td><td>Paperless calculator; cause-and-effect builder; worked examples 9–10</td></tr>
+<tr><td>Safe working practices and systems in studios and other working environments</td><td><a href="#safety">7</a></td><td>Studio inspection; worked example 11</td></tr>
+<tr><td>Command words and exam technique</td><td><a href="#exam">8</a></td><td>Be the marker; model answers</td></tr>
+</tbody></table></div>
+
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="dtp.html">← Design &amp; DTP</a>
+  <a class="btn primary" href="assignment.html">To the assignment →</a>
+</nav>
+</section>
 <!--MAIN-END-->
 </main>
 </div>
