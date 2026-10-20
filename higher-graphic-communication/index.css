@@ -1,1 +1,31 @@
-/* index page styles */
+/* Briefing room (index) styles: mark-range bars, the glossary tools, the course map and the hero crop. */
+.hg-ranges { display: grid; gap: 10px; }
+.hg-scale { display: flex; justify-content: space-between; margin: 0 calc(3.4rem + 8px) 0 0; font: 600 .74rem var(--font-mono); color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.hg-range { display: grid; grid-template-columns: minmax(0, 1fr) 3.4rem; grid-template-areas: "name name" "track num"; gap: 2px 8px; align-items: center; }
+.hg-rname { grid-area: name; font-size: .9rem; color: var(--ink); }
+.hg-track { grid-area: track; position: relative; height: 16px; background: linear-gradient(90deg, var(--line) 0 1px, transparent 1px) 0 0 / calc(500% / var(--max)) 100% repeat-x, var(--paper-2); border: 1px solid var(--line); }
+.hg-bar { position: absolute; top: 2px; bottom: 2px; left: calc(var(--lo) / var(--max) * 100%); width: calc((var(--hi) - var(--lo)) / var(--max) * 100%); }
+.hg-rnum { grid-area: num; font: 700 .85rem var(--font-mono); text-align: right; }
+.gloss-tools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin: 1em 0 .6em; }
+.gloss-field { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; min-width: 0; }
+.gloss-field input, .gloss-field select {
+  font: 400 1rem var(--font-body); padding: 6px 10px; min-height: 42px; width: min(100%, 270px);
+  border: 2px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--ink);
+}
+.gloss-count { margin: 0; font-size: .88rem; color: var(--muted); flex: 1 1 12em; align-self: center; }
+.gloss-table tbody th { width: 11em; }
+.gloss-table td:last-child { font-size: .86rem; min-width: 7em; }
+.gloss-none { font-weight: 700; color: var(--redstone); }
+.hg-map td:last-child { white-space: nowrap; font: 600 .8rem var(--font-mono); }
+.hg-map tr.grp th { background: var(--navy-2); color: #fff; font-family: var(--font-pixel); }
+.deck-card svg { display: block; margin-bottom: 6px; }
+.deck-card .marks { display: block; line-height: 1.35; }
+@media (max-width: 560px) {
+  /* crop the banner to its middle 200 pixels, where every stage keeps its drawing and caption */
+  .hero canvas { aspect-ratio: 5 / 2; max-height: none; }
+  .gloss-table, .gloss-table tbody, .gloss-table tr, .gloss-table tbody th, .gloss-table td { display: block; width: auto; }
+  .gloss-table thead { display: none; }
+  .gloss-table tbody tr { border-top: 2px solid var(--line); padding: 8px 10px; background: var(--card); }
+  .gloss-table tbody th, .gloss-table td { border: 0; background: none; padding: 0 0 3px; min-width: 0; }
+  .gloss-table tbody th { font-family: var(--font-pixel); width: auto; }
+}

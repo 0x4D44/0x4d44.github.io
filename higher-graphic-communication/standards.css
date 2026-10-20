@@ -1,1 +1,96 @@
-/* standards page styles */
+/* Standards & views — the Plan Room's own drawing styles (prefixed st- to stay out of the other decks' way).
+   Line weights follow the course's Appendix 2: thick for outlines, thin for everything else. */
+.st-svg { display: block; width: 100%; height: auto; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; margin: 6px 0; }
+figure.diagram svg.st-fig { max-width: 620px; }
+svg .st-k { stroke: var(--ink); stroke-width: 2.6; fill: none; stroke-linecap: butt; stroke-linejoin: miter; }
+svg .st-thicker { stroke-width: 3.6; }
+svg .st-n { stroke: var(--ink); stroke-width: 1.1; fill: none; }
+svg .st-h { stroke: var(--ink); stroke-width: 1.2; fill: none; stroke-dasharray: 7 4; }
+svg .st-k.st-h { stroke-width: 2.6; }
+svg .st-c, svg .st-cp { stroke: var(--ink); stroke-width: 1; fill: none; stroke-dasharray: 18 4 2 4; }
+svg .st-f { stroke: var(--ink); stroke-width: 1.1; fill: none; stroke-dasharray: 18 4 2 3 2 4; }
+svg .st-brk { stroke: var(--ink); stroke-width: 1.1; fill: none; }
+svg .st-nofill { fill: none; }
+svg .st-nostroke { stroke: none; }
+svg .st-card { fill: var(--card); }
+svg .st-ah { fill: var(--ink); stroke: none; }
+svg .st-ah-lode { fill: var(--lode); stroke: none; }
+svg .st-hatchline { stroke: var(--ink); stroke-width: 1; }
+svg .st-frame { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; }
+svg .st-lode-s { stroke: var(--lode); }
+svg .st-lode-t { fill: var(--lode); font-weight: 700; }
+svg .st-sea { fill: var(--sea); font-weight: 700; }
+svg .st-red { fill: var(--redstone); font-weight: 700; }
+svg .st-sea-s { stroke: var(--sea); }
+svg .st-red-s { stroke: var(--redstone); }
+svg .st-proj { stroke: var(--lode); stroke-width: 1; stroke-dasharray: 3 3; opacity: .8; }
+svg .st-removed { fill: var(--lode); opacity: .12; stroke: none; }
+svg .st-band { fill: var(--lode); opacity: .28; stroke: none; }
+svg .st-dot { fill: var(--lode); opacity: .55; }
+svg .st-hole { fill: var(--sea); opacity: .45; stroke: var(--sea); stroke-width: 1.5; }
+svg .st-shaft { fill: var(--redstone); opacity: .4; stroke: var(--redstone); stroke-width: 1.5; }
+svg .st-sheet { fill: var(--card); stroke: var(--ink-2); stroke-width: 1.2; }
+svg .st-barfill { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+svg .st-objbar { fill: var(--sea); opacity: .7; }
+svg .st-objbar.st-over { fill: var(--redstone); }
+svg .st-arrowline { stroke: var(--lode); stroke-width: 2.2; }
+svg .st-fa { fill: color-mix(in srgb, var(--card) 85%, var(--sky)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+svg .st-fb { fill: color-mix(in srgb, var(--paper-2) 70%, var(--sky)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+svg .st-fc { fill: color-mix(in srgb, var(--paper-2) 45%, var(--navy-2)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+svg .st-hatchfill { fill: var(--ink); }
+
+/* line-type sheet: the selected feature glows magenta */
+svg .st-on line, svg .st-on path, svg .st-on rect, svg .st-on circle { stroke: var(--lode) !important; }
+svg .st-on .st-ah, svg .st-on polygon { fill: var(--lode); }
+svg .st-on text { fill: var(--lode); }
+svg .st-leader { stroke: var(--muted); stroke-width: 1; }
+svg .st-leaddot { fill: var(--muted); }
+svg .st-lab { fill: var(--card); stroke: var(--navy-2); stroke-width: 2; }
+svg .st-labt { fill: var(--navy-2); font-weight: 700; }
+svg .st-labg { cursor: pointer; }
+svg .st-labg.st-on .st-lab { fill: var(--lode); stroke: var(--lode) !important; }
+svg .st-labg.st-on .st-labt { fill: #fff; }
+svg .st-labg.st-on .st-leader { stroke: var(--lode) !important; }
+.st-letters .btn[aria-pressed="true"] { background: var(--lode); }
+.st-letters .btn.st-done::after { content: " ✓"; }
+.st-q { font-weight: 700; margin: 8px 0 6px; }
+.st-opts { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.st-opts .seg-btn.st-right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 18%, var(--paper)); }
+.st-opts .seg-btn.st-wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 14%, var(--paper)); }
+.st-spot .st-svg { max-width: 420px; }
+
+/* match-the-view */
+.st-views-top .st-svg { max-width: 360px; margin: 6px auto; }
+.st-optgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+@media (min-width: 700px) { .st-optgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.st-optbtn { position: relative; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 4px; cursor: pointer; min-height: 44px; }
+.st-optbtn:hover { border-color: var(--sky); }
+.st-optbtn .st-svg { border: 0; margin: 0; background: transparent; }
+.st-optbtn.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 14%, var(--paper)); }
+.st-optbtn.wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 12%, var(--paper)); }
+.st-optlet { position: absolute; left: 6px; top: 4px; font: 700 .85rem var(--font-mono); color: var(--ink-2); }
+
+/* fit table */
+.st-stack { display: inline-flex; flex-direction: column; line-height: 1.1; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.st-fit-table td { vertical-align: middle; }
+
+/* scale calculator */
+.st-scale-row label { display: flex; flex-direction: column; gap: 2px; font-size: .85rem; }
+.st-scale-row select, .st-scale-row input { max-width: 100%; }
+.widget input[type="number"] { width: 9em; }
+
+/* building symbols */
+.st-symstage { display: flex; justify-content: center; min-height: 160px; align-items: center; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; margin: 6px 0; }
+svg.st-sym { display: block; }
+svg .st-sk { stroke: var(--ink); stroke-width: 1.8; fill: none; }
+svg .st-sn { stroke: var(--ink); stroke-width: 1.2; fill: none; }
+svg .st-sfill { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+svg .st-sdot { fill: var(--ink); }
+svg .st-sdotline { stroke-dasharray: 1.5 2; }
+svg .st-sdotted { stroke-dasharray: 1.2 2.4; stroke-linecap: round; }
+.st-symtext { font-family: var(--font-body); }
+.st-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 118px), 1fr)); gap: 8px; margin: 1em 0; }
+.st-gallery figure { margin: 0; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 6px; text-align: center; }
+.st-gallery svg { width: 84px; height: 84px; margin: 0 auto; display: block; }
+.st-gallery figcaption { margin: 2px 0 0; font-size: .8rem; color: var(--ink-2); line-height: 1.25; }
+.st-gallery h4 { grid-column: 1 / -1; margin: .6em 0 0; }

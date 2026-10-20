@@ -1025,7 +1025,7 @@
     const sim = HG.sim(canvas, {
       w: 640, h: 340, height: (w) => Math.round(Math.min(360, Math.max(260, w * 0.55))),
       draw(ctx, time, dt, C, s) {
-        if (sim && sim.playing) { cam.yaw += dt * 0.3; if (counting) { acc += dt; if (acc > 0.45) { acc = 0; S.k++; const n = S.show === "v" ? sol.v.length : S.show === "e" ? edges.length : sol.f.length; if (S.k >= n) { S.k = n; counting = false; } } } }
+        if (s.playing) { cam.yaw += dt * 0.3; if (counting) { acc += dt; if (acc > 0.45) { acc = 0; S.k++; const n = S.show === "v" ? sol.v.length : S.show === "e" ? edges.length : sol.f.length; if (S.k >= n) { S.k = n; counting = false; } } } }
         const V = fitView(cam, s.w, s.h, 0.95, [0, 0, 0], 0.52);
         const list = E3.prepare(mesh, V);
         paint(ctx, list, C, { lw: 1.4 });
@@ -1485,9 +1485,9 @@
           { id: "sweep", t: "Extrude along the path (sweep) the Ø30 profile along the whole path.", after: ["prof"] },
           { id: "flare", t: "On the end face, sketch a Ø50 circle and loft from it to a Ø80 circle on a work plane offset 40.", after: ["sweep"] },
           { id: "shell", t: "Shell the part, wall thickness 2, removing both end faces.", after: ["flare"] },
-          { id: "hole", t: "On the flat face of the mouth's rim, sketch one Ø4 circle on a PCD of 65.", after: ["shell"] },
+          { id: "hole", t: "On the work plane at the end of the mouth, sketch one Ø4 circle on a PCD of 65.", after: ["shell"] },
           { id: "array", t: "Radial array the Ø4 circle 6 times round 360° (60° apart) about the axis of the mouth.", after: ["hole"] },
-          { id: "cut", t: "Extrude subtract the six circles through the rim (through all).", after: ["array"] },
+          { id: "cut", t: "Extrude subtract the six circles by 25, back through the flared wall.", after: ["array"] },
         ],
         decoys: [
           { id: "x1", t: "Make the tube shape and bend it.", why: "Too vague to earn a mark: name the command (extrude along a path) and give the sizes." },

@@ -1,1 +1,116 @@
-/* cad page styles */
+/* cad page styles (all selectors prefixed cad-) */
+.cad-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; margin: 1em 0; }
+.cad-gallery .cad-card { margin: 0; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 6px 8px 8px; }
+.cad-card svg { display: block; width: 100%; height: auto; }
+.cad-card figcaption { font-size: .86rem; line-height: 1.35; margin-top: 4px; color: var(--ink-2); }
+figure.diagram > svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; }
+.cadf { stroke-width: .6; stroke-linejoin: round; }
+.cad-edge { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-linecap: round; }
+.cad-svg-line { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.cad-svg-wire { fill: none; stroke: var(--sea); stroke-width: 1.4; }
+.cad-svg-prof { fill: none; stroke: var(--lode); stroke-width: 2.4; }
+.cad-svg-cl { fill: none; stroke: var(--lode); stroke-width: 1.4; stroke-dasharray: 12 3 2 3; }
+.cad-svg-path { fill: none; stroke: var(--lode); stroke-width: 2; stroke-dasharray: 12 3 2 3; }
+.cad-svg-wp { fill: color-mix(in srgb, var(--sky) 18%, transparent); stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.cad-svg-arrow, .cad-svg-arrowl { fill: none; stroke: var(--redstone); stroke-width: 2.2; }
+.cad-svg-dim { fill: none; stroke: var(--redstone); stroke-width: 1.6; }
+.cad-svg-thin { fill: none; stroke: var(--muted); stroke-width: 1; }
+.cad-svg-lead { fill: none; stroke: var(--ink); stroke-width: 1.1; }
+svg .lode { fill: var(--lode); } svg .sea { fill: var(--sea); } svg .red { fill: var(--redstone); }
+/* widgets */
+.cad-canvas { touch-action: none; }
+.cad-orbit { cursor: grab; }
+.cad-sketch-wrap { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
+.cad-sketch { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; touch-action: none; }
+.cad-sketch text { font-family: var(--font-body); }
+.cad-sk-base { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 3; }
+.cad-sk-new { fill: none; stroke: var(--lode); stroke-width: 2.6; stroke-linejoin: round; }
+.cad-sk-seed { fill: var(--lode); }
+.cad-sk-gone { fill: none; stroke: var(--redstone); stroke-width: 2; stroke-dasharray: 3 4; }
+.cad-sk-dim { stroke: var(--redstone); stroke-width: 1.5; }
+.cad-sk-cl { fill: none; stroke: var(--sea); stroke-width: 1.4; stroke-dasharray: 12 3 2 3; }
+.cad-sk-pcd { fill: none; stroke: var(--sea); stroke-width: 1.2; stroke-dasharray: 12 3 2 3; }
+.cad-pt { fill: var(--card); stroke: var(--ink); stroke-width: 2; cursor: grab; }
+.cad-pt-fixed { fill: var(--redstone); stroke: var(--ink); stroke-width: 1.5; }
+.cad-cons-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.cad-asm-btns { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 4px; margin: 8px 0; }
+.cad-asm-btns .seg-btn, .cad-cons-row .seg-btn { text-align: left; }
+/* modelling tree */
+.cad-tree-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 10px; align-items: start; }
+@media (max-width: 700px) { .cad-tree-grid { grid-template-columns: minmax(0, 1fr); } }
+.cad-tree { background: var(--paper); border: 2px solid var(--line); padding: 6px; font-size: .86rem; }
+.cad-tree-root { font-weight: 700; padding: 2px 4px; }
+.cad-tree-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 2px 0 2px calc(10px + var(--d, 0) * 14px); border-left: 2px dotted var(--line); margin-left: 6px; }
+.cad-tree-name { flex: 1 1 160px; min-width: 0; text-align: left; font: inherit; color: var(--ink); background: none; border: 1px solid transparent; padding: 4px 6px; cursor: pointer; border-radius: 2px; min-height: 32px; }
+.cad-tree-name[aria-pressed="true"] { border-color: var(--lode); background: color-mix(in srgb, var(--lode) 12%, transparent); }
+.cad-tree-item.is-sup .cad-tree-name { color: var(--muted); text-decoration: line-through; }
+.cad-tree-why { flex-basis: 100%; font-size: .78rem; color: var(--muted); padding-left: 6px; }
+.cad-sup { min-height: 30px !important; padding: 4px 7px !important; }
+.cad-datum { color: var(--ink-2); padding-left: 10px; }
+.cad-elev-fig { margin: 8px 0 0; }
+.cad-elev { display: block; width: 100%; max-width: 420px; height: auto; background: var(--paper); border: 2px solid var(--line); }
+.cad-elev-fig figcaption { font-size: .82rem; color: var(--muted); }
+.cad-el-out { fill: none; stroke: var(--ink); stroke-width: 2.2; }
+.cad-el-hid { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 5 3; }
+.cad-el-cl { stroke: var(--sea); stroke-width: 1.1; stroke-dasharray: 12 3 2 3; }
+.cad-el-dim { stroke: var(--ink-2); stroke-width: 1; }
+/* answer builder */
+.cad-plan { list-style: decimal; padding-left: 1.8em; margin: 8px 0; display: grid; gap: 6px; }
+.cad-plan-item { background: var(--paper); border: 2px solid var(--line); padding: 6px 8px; border-radius: 2px; }
+.cad-plan-item.is-out { opacity: .6; }
+.cad-plan-item.is-out .cad-plan-text { text-decoration: line-through; }
+.cad-plan-item.good { border-color: var(--grass); }
+.cad-plan-item.bad { border-color: var(--redstone); }
+.cad-plan-text { display: block; overflow-wrap: anywhere; }
+.cad-plan-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.cad-plan-why { display: block; font-size: .85rem; color: var(--ink-2); margin-top: 4px; }
+/* generated shade tones: each mixes the theme colour towards white (lit) or black (shaded) */
+.cad-sea-0{fill:color-mix(in srgb,var(--sea),#000 50%);stroke:color-mix(in srgb,var(--sea),#000 50%)}
+.cad-sea-1{fill:color-mix(in srgb,var(--sea),#000 35%);stroke:color-mix(in srgb,var(--sea),#000 35%)}
+.cad-sea-2{fill:color-mix(in srgb,var(--sea),#000 20%);stroke:color-mix(in srgb,var(--sea),#000 20%)}
+.cad-sea-3{fill:color-mix(in srgb,var(--sea),#000 5%);stroke:color-mix(in srgb,var(--sea),#000 5%)}
+.cad-sea-4{fill:color-mix(in srgb,var(--sea),#fff 13%);stroke:color-mix(in srgb,var(--sea),#fff 13%)}
+.cad-sea-5{fill:color-mix(in srgb,var(--sea),#fff 33%);stroke:color-mix(in srgb,var(--sea),#fff 33%)}
+.cad-sea-6{fill:color-mix(in srgb,var(--sea),#fff 52%);stroke:color-mix(in srgb,var(--sea),#fff 52%)}
+.cad-gold-0{fill:color-mix(in srgb,var(--gold),#000 50%);stroke:color-mix(in srgb,var(--gold),#000 50%)}
+.cad-gold-1{fill:color-mix(in srgb,var(--gold),#000 35%);stroke:color-mix(in srgb,var(--gold),#000 35%)}
+.cad-gold-2{fill:color-mix(in srgb,var(--gold),#000 20%);stroke:color-mix(in srgb,var(--gold),#000 20%)}
+.cad-gold-3{fill:color-mix(in srgb,var(--gold),#000 5%);stroke:color-mix(in srgb,var(--gold),#000 5%)}
+.cad-gold-4{fill:color-mix(in srgb,var(--gold),#fff 13%);stroke:color-mix(in srgb,var(--gold),#fff 13%)}
+.cad-gold-5{fill:color-mix(in srgb,var(--gold),#fff 33%);stroke:color-mix(in srgb,var(--gold),#fff 33%)}
+.cad-gold-6{fill:color-mix(in srgb,var(--gold),#fff 52%);stroke:color-mix(in srgb,var(--gold),#fff 52%)}
+.cad-lode-0{fill:color-mix(in srgb,var(--lode),#000 50%);stroke:color-mix(in srgb,var(--lode),#000 50%)}
+.cad-lode-1{fill:color-mix(in srgb,var(--lode),#000 35%);stroke:color-mix(in srgb,var(--lode),#000 35%)}
+.cad-lode-2{fill:color-mix(in srgb,var(--lode),#000 20%);stroke:color-mix(in srgb,var(--lode),#000 20%)}
+.cad-lode-3{fill:color-mix(in srgb,var(--lode),#000 5%);stroke:color-mix(in srgb,var(--lode),#000 5%)}
+.cad-lode-4{fill:color-mix(in srgb,var(--lode),#fff 13%);stroke:color-mix(in srgb,var(--lode),#fff 13%)}
+.cad-lode-5{fill:color-mix(in srgb,var(--lode),#fff 33%);stroke:color-mix(in srgb,var(--lode),#fff 33%)}
+.cad-lode-6{fill:color-mix(in srgb,var(--lode),#fff 52%);stroke:color-mix(in srgb,var(--lode),#fff 52%)}
+.cad-grass-0{fill:color-mix(in srgb,var(--grass),#000 50%);stroke:color-mix(in srgb,var(--grass),#000 50%)}
+.cad-grass-1{fill:color-mix(in srgb,var(--grass),#000 35%);stroke:color-mix(in srgb,var(--grass),#000 35%)}
+.cad-grass-2{fill:color-mix(in srgb,var(--grass),#000 20%);stroke:color-mix(in srgb,var(--grass),#000 20%)}
+.cad-grass-3{fill:color-mix(in srgb,var(--grass),#000 5%);stroke:color-mix(in srgb,var(--grass),#000 5%)}
+.cad-grass-4{fill:color-mix(in srgb,var(--grass),#fff 13%);stroke:color-mix(in srgb,var(--grass),#fff 13%)}
+.cad-grass-5{fill:color-mix(in srgb,var(--grass),#fff 33%);stroke:color-mix(in srgb,var(--grass),#fff 33%)}
+.cad-grass-6{fill:color-mix(in srgb,var(--grass),#fff 52%);stroke:color-mix(in srgb,var(--grass),#fff 52%)}
+.cad-muted-0{fill:color-mix(in srgb,var(--muted),#000 50%);stroke:color-mix(in srgb,var(--muted),#000 50%)}
+.cad-muted-1{fill:color-mix(in srgb,var(--muted),#000 35%);stroke:color-mix(in srgb,var(--muted),#000 35%)}
+.cad-muted-2{fill:color-mix(in srgb,var(--muted),#000 20%);stroke:color-mix(in srgb,var(--muted),#000 20%)}
+.cad-muted-3{fill:color-mix(in srgb,var(--muted),#000 5%);stroke:color-mix(in srgb,var(--muted),#000 5%)}
+.cad-muted-4{fill:color-mix(in srgb,var(--muted),#fff 13%);stroke:color-mix(in srgb,var(--muted),#fff 13%)}
+.cad-muted-5{fill:color-mix(in srgb,var(--muted),#fff 33%);stroke:color-mix(in srgb,var(--muted),#fff 33%)}
+.cad-muted-6{fill:color-mix(in srgb,var(--muted),#fff 52%);stroke:color-mix(in srgb,var(--muted),#fff 52%)}
+.cad-sky-0{fill:color-mix(in srgb,var(--sky),#000 50%);stroke:color-mix(in srgb,var(--sky),#000 50%)}
+.cad-sky-1{fill:color-mix(in srgb,var(--sky),#000 35%);stroke:color-mix(in srgb,var(--sky),#000 35%)}
+.cad-sky-2{fill:color-mix(in srgb,var(--sky),#000 20%);stroke:color-mix(in srgb,var(--sky),#000 20%)}
+.cad-sky-3{fill:color-mix(in srgb,var(--sky),#000 5%);stroke:color-mix(in srgb,var(--sky),#000 5%)}
+.cad-sky-4{fill:color-mix(in srgb,var(--sky),#fff 13%);stroke:color-mix(in srgb,var(--sky),#fff 13%)}
+.cad-sky-5{fill:color-mix(in srgb,var(--sky),#fff 33%);stroke:color-mix(in srgb,var(--sky),#fff 33%)}
+.cad-sky-6{fill:color-mix(in srgb,var(--sky),#fff 52%);stroke:color-mix(in srgb,var(--sky),#fff 52%)}
+.cad-red-0{fill:color-mix(in srgb,var(--redstone),#000 50%);stroke:color-mix(in srgb,var(--redstone),#000 50%)}
+.cad-red-1{fill:color-mix(in srgb,var(--redstone),#000 35%);stroke:color-mix(in srgb,var(--redstone),#000 35%)}
+.cad-red-2{fill:color-mix(in srgb,var(--redstone),#000 20%);stroke:color-mix(in srgb,var(--redstone),#000 20%)}
+.cad-red-3{fill:color-mix(in srgb,var(--redstone),#000 5%);stroke:color-mix(in srgb,var(--redstone),#000 5%)}
+.cad-red-4{fill:color-mix(in srgb,var(--redstone),#fff 13%);stroke:color-mix(in srgb,var(--redstone),#fff 13%)}
+.cad-red-5{fill:color-mix(in srgb,var(--redstone),#fff 33%);stroke:color-mix(in srgb,var(--redstone),#fff 33%)}
+.cad-red-6{fill:color-mix(in srgb,var(--redstone),#fff 52%);stroke:color-mix(in srgb,var(--redstone),#fff 52%)}
