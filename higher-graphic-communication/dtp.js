@@ -431,7 +431,7 @@
     ig.append(S("rect", { x: 190, y: 226, width: 84, height: 54, fill: "#bfe1f5" }));
     const sg = a(S("g")); sg.append(S("rect", { x: 190, y: 266, width: 84, height: 14, fill: "#1d5d8f" })); ship(sg, 202, 228, 1);
     // 5 caption next to inset (proximity)
-    a(S("text", { x: 232, y: 297, "font-size": 10.5, fill: P.ink, "text-anchor": "middle", text: "Cadets aboard HMS Vellum" }));
+    a(S("text", { x: 190, y: 297, "font-size": 10.5, fill: P.ink, text: "Aboard HMS Vellum" }));
     // 7 three steps on a three-column grid
     [["1", "FLY", 16], ["2", "BUILD", 109], ["3", "LEAD", 202]].forEach(([n, h, x]) => {
       a(S("circle", { cx: x + 12, cy: 322, r: 11, fill: P.navy }));
@@ -452,7 +452,7 @@
     { n: 2, px: 20, py: 58, r: [0, 44, 300, 74], ans: "Contrast", opts: ["Texture", "Contrast", "Rhythm", "Depth"], d: "The title is white reverse text on a dark navy band: light against dark.", why: "The strongest difference in value on the page: white on navy. That difference is contrast, and it is what makes the title readable from a distance." },
     { n: 3, px: 60, py: 145, r: [16, 126, 268, 140], ans: "Dominance", opts: ["White space", "Alignment", "Dominance", "Rhythm"], d: "The aircraft photograph is by far the largest item, filling about a third of the page.", why: "One item much larger than all others becomes the focal point: that is dominance. The eye lands here first." },
     { n: 4, px: 266, py: 236, r: [186, 222, 92, 62], ans: "Depth", opts: ["Alignment", "Rhythm", "Texture", "Depth"], d: "The ship photo overlaps the corner of the main photo, has a drop shadow and a warm red-orange frame.", why: "Overlap, a drop shadow and an advancing warm frame make the inset seem to sit in front of the main photo: depth." },
-    { n: 5, px: 290, py: 300, r: [180, 286, 106, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
+    { n: 5, px: 174, py: 294, r: [180, 286, 106, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
     { n: 6, px: 291, py: 205, r: [228, 156, 70, 222], ans: "Line", opts: ["Line", "Texture", "Balance", "Value"], d: "A dotted red line curves from the aircraft's nose down the right-hand side to the date panel.", why: "This is the element line, used to lead the eye: it takes the viewer from the aircraft to the date." },
     { n: 7, px: 150, py: 342, r: [16, 308, 268, 46], ans: "Grid structure", opts: ["Depth", "Texture", "Dominance", "Grid structure"], d: "The three activities sit in three equal columns; their left edges line up with the photo, the inset and the date panel above and below.", why: "Items placed in equal columns on a common framework are using grid structure. (The repeated number-and-heading format is also rhythm, but the columns are the grid.)" },
     { n: 8, px: 220, py: 377, r: [16, 362, 190, 30], ans: "Emphasis", opts: ["Emphasis", "Texture", "Rhythm", "Line"], d: "The date and time are in navy bold text on a yellow panel, the only yellow block on the lower half.", why: "A bright accent panel makes the date stand out from everything near it: emphasis on the information parents need." },
