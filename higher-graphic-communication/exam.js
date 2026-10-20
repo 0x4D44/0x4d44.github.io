@@ -637,15 +637,6 @@
       g.append(S("path", { d: "M190 276 H270 M190 256 H270", ...thin("5 3") }));
       g.append(S("path", { d: "M184 266 H276", ...thin("10 3 2 3") }));
       g.append(S("path", { d: "M186 224 L266 144", class: "s-muted", fill: "none", "stroke-width": 1, "stroke-dasharray": "6 4" }));
-      // isometric pictorial: back faces culled, the rest painted far to near
-      const d = [1, -1, 1];
-      const faces = [];
-      for (let i = 0; i < P.length; i++) {
-        const q = side(i), [a, b] = [P[i], P[(i + 1) % P.length]];
-        const n = [b[1] - a[1], 0, -(b[0] - a[0])]; // outward normal of an edge of a counter-clockwise (x, z) profile
-        if (n[0] * d[0] + n[2] * d[2] > 0) faces.push({ q, f: FEAT.find((f) => f.poly && f.poly === undefined) });
-      }
-      return faces;
     }
     function draw() {
       svg.innerHTML = "";
@@ -685,7 +676,7 @@
         });
         svg.insertBefore(pl, hi);
       }
-      // isometric
+      // isometric pictorial: back faces culled (outward normal of a counter-clockwise (x, z) profile edge), the rest painted far to near
       const isoG = S("g", {}); svg.append(isoG);
       const cam = [1, -1, 1];
       const list = [{ id: "front", q: P.map(([x, z]) => [x, 0, z]) }];
