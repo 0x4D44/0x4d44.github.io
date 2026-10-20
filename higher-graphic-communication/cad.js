@@ -1469,9 +1469,9 @@
           const li = P(info.light); const lx = Math.max(20, Math.min(s.w - 20, li[0])), ly = Math.max(16, Math.min(s.h - 16, li[1]));
           HG.label(ctx, "☀ light source", lx, ly, { size: 13, bold: true, col: "#1d1a14", haloCol: "#fffaf0", align: "center" });
           lab(info.highlight, "highlight", -40, -24);
-          lab(info.shade, "shade", -46, 18);
+          lab(info.shade, "shade", 26, -46);
           if (S.shadows) lab(info.shadow, "cast shadow", -30, 34);
-          if (S.mat !== "matte") lab(info.refl, "reflection", 40, -30);
+          if (S.mat !== "matte") lab(info.refl, "reflection", -50, 34);
         }
       },
     });
