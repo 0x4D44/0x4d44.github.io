@@ -362,7 +362,7 @@
     const st = { shape: "hex", rot: 0, th: 35 };
     HG.choice(box, "Mast section:", [["sq", "Square"], ["hex", "Hexagon"], ["oct", "Octagon"], ["cyl", "Circle (cylinder)"]], st.shape, (v) => { st.shape = v; play.reset(); });
     const ctl = controls(box);
-    HG.slider(ctl, { label: "Cutting plane angle θ", min: 15, max: 55, step: 1, value: st.th, unit: "°", oninput: (v) => { st.th = v; play.reset(); } });
+    HG.slider(ctl, { label: "Cutting plane angle θ", min: 30, max: 60, step: 1, value: st.th, unit: "°", oninput: (v) => { st.th = v; play.reset(); } });
     HG.slider(ctl, { label: "Turn the mast about its axis", min: 0, max: 90, step: 1, value: st.rot, unit: "°", oninput: (v) => { st.rot = v; play.reset(); } });
     const cv = canvasIn(box, "");
     const note = noteIn(box);
@@ -380,18 +380,18 @@
     }
     function geom(th) {
       const t = th * DEG, tn = Math.tan(t);
-      const u = [Math.cos(t), -Math.sin(t)], nn = [Math.sin(t), Math.cos(t)], D = R + 24;
+      const u = [Math.cos(t), -Math.sin(t)], nn = [Math.sin(t), Math.cos(t)], D = R + 60;
       const P = pts();
       const C = P.map(([x]) => [x, h - x * tn]);
       const A = P.map(([x, y], i) => [C[i][0] + nn[0] * (D + y), C[i][1] + nn[1] * (D + y)]);
       return { t, tn, u, nn, D, P, C, A };
     }
-    const Pz = H + 22 + R;
+    const Pz = 205;
     let play = null;
     let box0 = null;
     function sheetBox() {
       let x0 = -R - 8, x1 = R + 8, z0 = -6, z1 = Pz + R + 10;
-      for (const th of [15, 30, 45, 55]) {
+      for (const th of [30, 40, 50, 60]) {
         const g = geom(th);
         for (const sgn of [-1, 1]) for (const yy of [-R - 14, R + 14]) {
           const x = sgn * R, cz = h - x * g.tn;
@@ -402,7 +402,7 @@
       return { x0, x1, z0, z1 };
     }
     const sim = HG.sim(cv, {
-      height: (w) => Math.round(w * 0.86),
+      height: (w) => Math.round(Math.min(w * 1.05, 640)),
       draw(ctx, tt, dt, C, S) {
         if (play) play.tick(dt);
         const pr = play ? play.prog : 5;
