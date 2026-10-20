@@ -1,1 +1,94 @@
-/* exam page styles */
+/* exam page styles (Exam drill: the Courts-Martial Room). All selectors are prefixed ex-. */
+.ex-pace-grid { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 14px; align-items: center; }
+@media (max-width: 640px) { .ex-pace-grid { grid-template-columns: minmax(0, 1fr); } .ex-pace-dial { max-width: 300px; margin: 0 auto; } }
+.ex-dial { display: block; width: 100%; height: auto; }
+.ex-one-col { grid-template-columns: minmax(0, 1fr); }
+.ex-total { font-size: .92rem; margin: 6px 0; }
+.ex-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .84rem; color: var(--ink-2); margin: 6px 0; }
+.ex-legend i, .ex-bar-track i { display: inline-block; }
+.ex-legend i { width: 12px; height: 12px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--ink); }
+.sw-violet { background: color-mix(in srgb, var(--violet) 55%, var(--card)); }
+.sw-sea { background: color-mix(in srgb, var(--sea) 55%, var(--card)); }
+.sw-grass { background: color-mix(in srgb, var(--grass) 55%, var(--card)); }
+.sw-gold { background: color-mix(in srgb, var(--gold) 55%, var(--card)); }
+.sw-red { background: color-mix(in srgb, var(--redstone) 55%, var(--card)); }
+.sw-muted { background: color-mix(in srgb, var(--muted) 40%, var(--card)); }
+.ex-conv { font-size: .95rem; margin: 4px 0 0; }
+
+/* explain ladder and verdicts */
+.ex-q-stem { font-weight: 700; margin: 8px 0; }
+.ex-lines { display: grid; gap: 10px; }
+.ex-line { display: grid; gap: 6px; padding: 8px 10px; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; min-width: 0; }
+.ex-line label { display: grid; gap: 2px; font-size: .85rem; color: var(--ink-2); min-width: 0; }
+.ex-line select { width: 100%; font-family: var(--font-body) !important; font-size: .9rem !important; white-space: normal; }
+.ex-line-n { font: 700 .85rem var(--font-pixel); color: var(--navy-2); }
+.ex-said { margin: 2px 0 0; font-style: italic; font-size: .92rem; color: var(--ink); }
+.ex-said:empty { display: none; }
+.ex-verdict { font-size: .93rem; margin: 6px 0; }
+.ex-verdict:empty { display: none; }
+.ex-lines-out { padding-left: 1.1em; margin: 4px 0; }
+.ex-lines-out li { margin: 4px 0; }
+.ex-lines-out .ok-line b { color: var(--grass); }
+.ex-lines-out .bad-line b { color: var(--redstone); }
+.ex-vcard { background: var(--paper); border: 2px solid var(--line); border-left: 6px solid var(--violet); padding: 8px 12px; border-radius: 2px; }
+.ex-vq { margin: 0 0 4px; font-size: .92rem; }
+.ex-va { margin: 0; font-size: 1.02rem; font-style: italic; }
+
+/* flashcards and matching */
+.ex-card { position: relative; min-height: 150px; background: var(--paper); border: 3px solid var(--navy-2); border-radius: 4px; padding: 26px 16px 12px; text-align: center; box-shadow: 3px 3px 0 rgba(42,23,64,.18); }
+.ex-card hr { margin: 10px 0; }
+.ex-card-tag { position: absolute; left: 8px; top: 6px; font: 600 .72rem var(--font-mono); color: var(--muted); }
+.ex-card-term { font: 700 1.3rem/1.25 var(--font-pixel); margin: 6px 0; color: var(--ink); }
+.ex-card-def { font-size: 1.02rem; margin: 6px 0; }
+.ex-cardstat { font-size: .84rem; color: var(--ink-2); margin: 6px 0 0; }
+.ex-boxbar { display: flex; height: 8px; margin-top: 4px; border: 1px solid var(--line); background: var(--paper-2); }
+.ex-boxbar i { display: block; min-width: 0; }
+.ex-boxbar .b0 { background: var(--redstone); } .ex-boxbar .b1 { background: var(--gold); } .ex-boxbar .b2 { background: var(--sea); } .ex-boxbar .b3 { background: var(--violet); } .ex-boxbar .b4 { background: var(--grass); }
+.ex-match { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 8px; margin: 8px 0; }
+.ex-match-col { display: grid; gap: 6px; align-content: start; }
+.ex-m-btn { text-align: left; font: inherit; font-size: .88rem; line-height: 1.3; padding: 7px 8px; min-height: 40px; cursor: pointer; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; overflow-wrap: anywhere; }
+.ex-m-btn[aria-pressed="true"] { border-color: var(--navy-2); background: color-mix(in srgb, var(--violet) 18%, var(--paper)); }
+.ex-m-btn.done { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 16%, var(--paper)); cursor: default; }
+.ex-m-btn.miss { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 14%, var(--paper)); }
+.ex-match-col .ex-m-btn[data-s="t"] { font-weight: 700; }
+
+/* modelling plan */
+.ex-sub { font: 700 .88rem var(--font-pixel); margin: 10px 0 4px; color: var(--ink-2); }
+.ex-pool { display: grid; gap: 5px; }
+.ex-step { text-align: left; font: inherit; font-size: .88rem; line-height: 1.35; padding: 6px 8px; cursor: pointer; color: var(--ink); background: var(--paper); border: 2px dashed var(--line); border-radius: 2px; }
+.ex-step:hover { border-color: var(--violet); }
+.ex-plan { margin: 0; padding-left: 1.6em; display: grid; gap: 5px; }
+.ex-plan li { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; background: var(--paper); border: 2px solid var(--line); padding: 5px 8px; border-radius: 2px; font-size: .88rem; }
+.ex-plan li.ex-empty { display: list-item; border-style: dashed; }
+.ex-step-t { flex: 1 1 220px; min-width: 0; }
+.ex-step-b { display: flex; gap: 4px; }
+.ex-step-b .btn { min-width: 34px; }
+
+/* trace widget */
+.ex-trace-wrap { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px; }
+.ex-trace { display: block; width: 100%; height: auto; max-width: 560px; margin: 0 auto; }
+
+/* symbol quick-recall */
+.ex-sym { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; align-items: center; margin-top: 6px; }
+@media (max-width: 560px) { .ex-sym { grid-template-columns: minmax(0, 1fr); } }
+.ex-sym-pic { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px; }
+.ex-sym-pic svg { display: block; width: 100%; height: auto; max-width: 240px; margin: 0 auto; }
+.ex-sym-opts { display: grid; gap: 6px; }
+
+/* the mini-paper and the court */
+.ex-q { margin: 1.6em 0; padding: 4px 14px 10px; background: var(--card); border: 2px solid var(--line); border-left: 8px solid var(--navy-2); border-radius: var(--radius); }
+.ex-q h3 { margin-top: .6em; }
+.ex-parts { padding-left: 1.6em; }
+.ex-parts li { margin: .45em 0; }
+.ex-court-q { border-top: 2px dashed var(--line); padding-top: 8px; margin-top: 10px; }
+.ex-court-q h4 { margin: .2em 0 .4em; }
+.ex-court-part { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px 10px; margin: 8px 0; }
+.ex-court-h { margin: 0; }
+.ex-mi { margin: 4px 0; padding-left: 1.2em; font-size: .9rem; }
+.ex-results { background: var(--paper); border: 2px solid var(--navy-2); border-radius: 2px; padding: 8px 12px; }
+.ex-bars { display: grid; gap: 6px; margin: 8px 0; }
+.ex-bar-row { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr) 3.4em; gap: 8px; align-items: center; font-size: .88rem; }
+.ex-bar-track { display: block; height: 16px; background: var(--paper-2); border: 1px solid var(--line); }
+.ex-bar-track i { display: block; height: 100%; }
+.ex-bar-n { font: 700 .85rem var(--font-mono); text-align: right; }
+.ex-bscale { display: block; width: 100%; max-width: 460px; height: auto; margin: 6px 0; }

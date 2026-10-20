@@ -19,7 +19,7 @@
     set(v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode: this visit only */ } },
   });
   const hm = (h) => { const m = Math.round(h * 60); return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`; };
-  const short = (h) => { const m = Math.round(h * 60); return m % 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m / 60} h`; };
+  const short = (h) => { const m = Math.round(h * 60); return m % 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m / 60}h`; };
   /* an SVG drawn in real pixels: viewBox follows the box width, so labels stay readable on phones */
   function fluid(host, heightOf, draw) {
     const svg = S("svg", { class: "as-fluid", role: "img", focusable: "false" });
@@ -145,9 +145,9 @@
       const rows = t.map((x, i) => {
         const ratio = hs[i] / sh[i];
         const v = ratio < 0.8 ? "<span class='bad'>short of its marks</span>" : ratio > 1.5 ? "<span class='lode'>generous</span>" : "<span class='ok'>in proportion</span>";
-        return `<tr><td><strong>${x[0]}</strong> <span class="as-muted">${x[1]}</span></td><td class="num">${x[2]} (${Math.round(x[2] / totM * 100)}%)</td><td class="num">${hm(hs[i])} (${Math.round(hs[i] / TOTAL * 100)}%)</td><td class="num">${hm(sh[i])}</td><td class="num">${hm(x[3])}</td><td class="num">${HG.n(x[2] / hs[i], 1)}</td><td>${v}</td></tr>`;
+        return `<tr><td><strong>${x[0]}</strong> <span class="as-muted">${x[1]}</span></td><td class="num">${x[2]} (${Math.round(x[2] / totM * 100)}%)</td><td class="num">${short(hs[i])} (${Math.round(hs[i] / TOTAL * 100)}%)</td><td class="num">${short(sh[i])}</td><td class="num">${short(x[3])}</td><td class="num">${HG.n(x[2] / hs[i], 1)}</td><td>${v}</td></tr>`;
       }).join("");
-      tableBox.innerHTML = `<table class="as-plan-table"><thead><tr><th>Task</th><th class="num">Marks</th><th class="num">Your time</th><th class="num">By marks</th><th class="num">Brief</th><th class="num">Marks / hour</th><th>Verdict</th></tr></thead><tbody>${rows}</tbody></table>`;
+      tableBox.innerHTML = `<table class="as-plan-table"><thead><tr><th>Task</th><th class="num">Marks</th><th class="num">Your time</th><th class="num">By marks</th><th class="num">Brief</th><th class="num">Marks per h</th><th>Verdict</th></tr></thead><tbody>${rows}</tbody></table>`;
       const msgs = [];
       t.forEach((x, i) => {
         if (x[2] / totM >= 0.2 && hs[i] < 0.8 * sh[i]) msgs.push(`<p class="bad">⚠ ${x[0]} carries ${x[2]} marks (${Math.round(x[2] / totM * 100)}%) but gets only ${hm(hs[i])}. Its share of the marks would earn it about ${hm(sh[i])}: you are under-allocating a big-mark task by ${hm(sh[i] - hs[i])}.</p>`);
@@ -527,7 +527,8 @@
     box.append(host);
     const out = el("div", { class: "as-score", "aria-live": "polite" });
     box.append(out);
-    const view = fluid(host, (w) => { u = Math.max(14, Math.min(26, (w - 8) / 19)); return u * 17.6; }, () => draw());
+    let view = null;
+    view = fluid(host, (w) => { u = Math.max(14, Math.min(26, (w - 8) / 19)); return u * 17.6; }, () => { if (view) draw(); });
     function layout() {
       const ex = 7 * u, ey = 1 * u + OD * u + 1.6 * u; // elevation top
       L = { ex, top: ey, eg: ey + OH * u, plan: { x: ex, y: ey - 1.4 * u - OD * u }, end: { x: ex + OW * u + 1.4 * u, y: ey } };
