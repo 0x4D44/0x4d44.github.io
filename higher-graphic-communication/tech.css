@@ -88,8 +88,8 @@ svg .tc-cardsheet { fill: #f4efe2; stroke: #6d6250; stroke-width: 1.5; }
 .tc-studio .badge { font: 700 13px var(--font-body); }
 .tc-found { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
 .tc-found li { padding: 6px 10px; background: var(--paper); border-left: 4px solid var(--line); font-size: .9rem; }
-.tc-found li.bad { border-left-color: var(--redstone); }
-.tc-found li.good { border-left-color: var(--grass); }
+.tc-found li.tc-bad { border-left-color: var(--redstone); }
+.tc-found li.tc-good { border-left-color: var(--grass); }
 
 /* marker */
 .tc-cand { font-size: .98rem; padding: 10px 12px; background: var(--paper); border: 2px solid var(--line); border-left: 6px solid var(--gold); margin: 8px 0; font-style: italic; }

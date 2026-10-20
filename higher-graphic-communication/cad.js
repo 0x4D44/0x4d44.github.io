@@ -1535,9 +1535,9 @@
         const up = HG.el("button", { type: "button", class: "btn small", "aria-label": "Move up: " + s.t, disabled: i === 0 ? true : null }, "▲");
         const dn = HG.el("button", { type: "button", class: "btn small", "aria-label": "Move down: " + s.t, disabled: i === order.length - 1 ? true : null }, "▼");
         const x = HG.el("button", { type: "button", class: "btn small", "aria-pressed": out.has(id) ? "true" : "false", "aria-label": (out.has(id) ? "Put back: " : "Leave out: ") + s.t }, out.has(id) ? "↩ Put back" : "✕ Leave out");
-        up.addEventListener("click", () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); listEl.children[i - 1].querySelector("button").focus(); });
-        dn.addEventListener("click", () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); listEl.children[i + 1].querySelectorAll("button")[1].focus(); });
-        x.addEventListener("click", () => { out.has(id) ? out.delete(id) : out.add(id); draw(); });
+        up.addEventListener("click", () => { if (i < 1 || !up.isConnected) return; [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); listEl.children[i - 1].querySelector("button").focus(); });
+        dn.addEventListener("click", () => { if (i >= order.length - 1 || !dn.isConnected) return; [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); listEl.children[i + 1].querySelectorAll("button")[1].focus(); });
+        x.addEventListener("click", () => { if (!x.isConnected) return; out.has(id) ? out.delete(id) : out.add(id); draw(); });
         li.append(HG.el("span", { class: "cad-plan-text" }, s.t), HG.el("span", { class: "cad-plan-btns" }, up, dn, x));
         if (marks && marks[id] && marks[id].why) li.append(HG.el("span", { class: "cad-plan-why" }, marks[id].why));
         listEl.append(li);

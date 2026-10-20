@@ -79,7 +79,7 @@
         const S0 = s.h - 40, x0 = 14, y0 = 12;
         const cells = Math.max(1, Math.min(140, Math.round(cellsF)));
         const c = S0 / cells;
-        const inside = (u, v) => (u + 0.25) ** 2 + (v - 1.25) ** 2 < 1.05 ** 2 || (u > 0.62 && v < 0.3 + (u - 0.62) * 0.4);
+        const inside = (u, v) => (u + 0.25) ** 2 + (v - 1.25) ** 2 < 1.05 ** 2;
         for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) {
           ctx.fillStyle = inside((i + 0.5) / cells, (j + 0.5) / cells) ? "#d4147a" : "#f4efe2";
           ctx.fillRect(x0 + i * c, y0 + j * c, c + 0.5, c + 0.5);
@@ -107,9 +107,9 @@
     const update = () => {
       const ppi = px / (mm / 25.4), hPx = Math.round(px * 2 / 3), need = Math.ceil(mm / 25.4 * 300);
       const mb = px * hPx * 3 / 1e6;
-      const verdict = ppi >= 300 ? ["Sharp at close viewing", "ok"] : ppi >= 150 ? ["Fine for a poster seen from a distance; soft close up", ""] : ["Visible pixelation: find a bigger image or print smaller", "bad"];
+      const verdict = ppi >= 300 ? ["Sharp", "ok", "sharp even close up"] : ppi >= 150 ? ["Poster only", "", "fine from a distance, soft close up"] : ["Pixelated", "bad", "find a bigger image or print smaller"];
       ro.innerHTML = `<div><b>${n0(ppi)} ppi</b><span>effective resolution on paper</span></div>
-        <div><b class="${verdict[1]}">${verdict[0]}</b><span>verdict (300 ppi rule for close viewing)</span></div>
+        <div><b class="${verdict[1]}">${verdict[0]}</b><span>${verdict[2]}</span></div>
         <div><b>${n0(need)} px</b><span>width needed for 300 ppi</span></div>
         <div><b>${HG.n(px * hPx / 1e6, 1)} MP · ${HG.n(mb, 1)} MB</b><span>3:2 image (${n0(px)} × ${n0(hPx)}), uncompressed RGB</span></div>`;
       note.textContent = `${n0(px)} pixels spread over ${mm} mm (${HG.n(mm / 25.4, 2)} inches) gives ${n0(px)} ÷ ${HG.n(mm / 25.4, 2)} = ${n0(ppi)} pixels per inch. Halving the print width doubles the ppi; doubling the pixel width and height quadruples the file size.`;
@@ -117,7 +117,7 @@
       sim.redraw();
     };
     HG.slider(ctl, { label: "Image width (pixels)", min: 400, max: 6000, step: 100, value: px, fmt: (v) => n0(v), oninput: (v) => { px = v; update(); } });
-    HG.slider(ctl, { label: "Printed width (mm)", min: 50, max: 840, step: 10, value: mm, unit: "mm", fmt: (v) => String(v), oninput: (v) => { mm = v; update(); } });
+    HG.slider(ctl, { label: "Printed width (mm)", min: 50, max: 840, step: 1, value: mm, unit: "mm", fmt: (v) => String(v), oninput: (v) => { mm = v; update(); } });
     const row = el("div", { class: "btn-row" });
     [["A4 width (210 mm)", 210], ["A3 width (297 mm)", 297], ["A1 width (594 mm)", 594]].forEach(([t, v]) => {
       const b = el("button", { class: "btn small", type: "button" }, t);
@@ -179,7 +179,7 @@
       btns[k].setAttribute("aria-pressed", "true");
       o.best.forEach((b) => btns[b].classList.add("best"));
       if (o.best.includes(k)) { score++; setFb(out, `<span class="ok">✔ Best choice.</span> ${o.why}`, "good"); }
-      else if (o.ok[k]) { btns[k].classList.add("ok2"); setFb(out, `<span class="bad">◐ Possible, but not the best.</span> ${o.ok[k]} <strong>Best:</strong> ${DEV[o.best[0]]}. ${o.why}`, ""); }
+      else if (o.ok[k]) { btns[k].classList.add("ok2"); setFb(out, `<strong>Possible, but not the best.</strong> ${o.ok[k]} <strong>Best:</strong> ${DEV[o.best[0]]}. ${o.why}`, ""); }
       else { btns[k].classList.add("wrong"); setFb(out, `<span class="bad">✘ Not suitable.</span> A ${DEV[k].toLowerCase()} does not do this job. <strong>Best:</strong> ${DEV[o.best[0]]}. ${o.why}`, "poor"); }
       next.disabled = i >= ORDERS.length - 1;
       tally.textContent = `${score} of ${done} best choices` + (i === ORDERS.length - 1 ? (score === ORDERS.length ? " — a perfect requisition record!" : " — all orders filled. Start again to improve.") : "");
@@ -311,7 +311,7 @@
     const design = (n) => (n ? st.vers[n - 1].design : []);
     const newDesign = (base) => { const d = base.concat(PAL[colourN++ % PAL.length]); return d.length > 4 ? d.slice(-4) : d; };
     function send(from, to, colour, then) {
-      if (HG.reduced) { then(); syncUI(); return; }
+      if (HG.reduced || !sim.visible) { then(); syncUI(); return; }
       packets.push({ from, to, t: 0, colour, then });
       sim.play();
     }
@@ -457,7 +457,7 @@
           ctx.fillRect(x - 8, y - 6, 16, 12); ctx.strokeRect(x - 8, y - 6, 16, 12);
         });
         const doneP = packets.filter((q) => q.t >= 1);
-        if (doneP.length) { packets = packets.filter((q) => q.t < 1); doneP.forEach((q) => q.then()); syncUI(); }
+        if (doneP.length) { packets = packets.filter((q) => q.t < 1); setTimeout(() => { doneP.forEach((q) => q.then()); syncUI(); }, 0); }
         if (!packets.length && s.playing) setTimeout(() => { if (!packets.length) s.pause(); }, 0);
       },
     });
@@ -533,11 +533,10 @@
     });
     function update() {
       const m = measure();
-      const vis = m.survive * cfg.op / 100;
-      const protect = m.kept === 0 ? "None: the crop removed it" : vis < 0.12 ? "Weak: faint or mostly cropped" : m.survive > 0.6 && cfg.op >= 25 ? "Strong: survives and is visible" : "Partial";
-      ro.innerHTML = `<div><b>${Math.round(m.survive * 100)}%</b><span>of the watermark survives the ${cfg.crop === "none" ? "uncropped image" : "crop"}</span></div>
+            const protect = m.kept === 0 ? "None: the crop removed it" : cfg.op < 20 || m.kept < 600 ? "Weak: too faint or too little left" : cfg.crop === "none" ? "Visible: now try a thief's tool" : "Survives the crop";
+      ro.innerHTML = `<div><b>${Math.round(m.survive * 100)}%</b><span>of the watermark lies inside the ${cfg.crop === "none" ? "uncropped image" : "crop"}</span></div>
         <div><b>${Math.round(m.hide * 100)}%</b><span>of the ship hidden (coverage × opacity)</span></div>
-        <div><b class="${/Strong/.test(protect) ? "ok" : /None|Weak/.test(protect) ? "bad" : ""}">${protect}</b><span>protection after the thief's tool</span></div>`;
+        <div><b class="${/Survives/.test(protect) ? "ok" : /None|Weak/.test(protect) ? "bad" : ""}">${protect}</b><span>protection after the thief's tool</span></div>`;
       note.textContent = cfg.pos === "corner"
         ? "A corner mark barely touches the picture, but one crop to the subject removes it completely. It protects only against lazy copying."
         : cfg.pos === "centre"
@@ -727,7 +726,7 @@
       const k = found.size;
       g.append(S("circle", { cx: it.x + it.r * 0.7, cy: it.y - it.r * 0.7, r: 10, fill: it.bad ? "#b3261e" : "#3f7426" }), S("text", { x: it.x + it.r * 0.7, y: it.y - it.r * 0.7 + 4.5, "text-anchor": "middle", class: "badge", fill: "#fff", text: String(k) }));
       g.setAttribute("aria-label", `${k}. ${it.name}: ${it.bad ? "hazard" : "good practice"}`);
-      list.append(el("li", { class: it.bad ? "bad" : "good", html: `<b>${k}. ${it.bad ? "⚠ Hazard" : "✔ Good practice"}: ${HG.esc(it.name)}.</b> ${HG.esc(it.fix)}` }));
+      list.append(el("li", { class: it.bad ? "tc-bad" : "tc-good", html: `<b>${k}. ${it.bad ? "⚠ Hazard" : "✔ Good practice"}: ${HG.esc(it.name)}.</b> ${HG.esc(it.fix)}` }));
       const nb = ITEMS.filter((i) => i.bad && found.has(i.id)).length;
       ro.textContent = `Hazards found: ${nb} of ${NB}` + (nb === NB ? (quietly ? "" : " — inspection complete. Well spotted.") : "");
     }
