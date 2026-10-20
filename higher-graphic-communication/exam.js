@@ -607,7 +607,7 @@
     const pts = (a) => a.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ");
     const area2 = (a) => { let s = 0; for (let i = 0; i < a.length; i++) { const [x0, y0] = a[i], [x1, y1] = a[(i + 1) % a.length]; s += x0 * y1 - x1 * y0; } return Math.abs(s) / 2; };
     let sel = "incline", proj = true;
-    const svg = svgBox("0 0 420 372", "", "ex-trace");
+    const svg = svgBox("0 48 420 326", "", "ex-trace");
     const fig = el("div", { class: "ex-trace-wrap" }, svg);
     const btns = el("div", { class: "seg", role: "group", "aria-label": "Feature" }, el("span", { class: "seg-label" }, "Feature:"));
     const bmap = {};
@@ -699,9 +699,9 @@
       hp.style.cursor = "pointer"; hp.addEventListener("click", () => { sel = "hole"; draw(); });
       isoG.append(hp);
       // labels
-      const lab = (x, y, t, a = "middle") => svg.append(S("text", { x, y, "text-anchor": a, "font-size": 13, "font-weight": 700, class: "ink", text: t }));
-      lab(90, 132, "PLAN"); lab(90, 368, "ELEVATION"); lab(230, 368, "END ELEVATION"); lab(345, 210, "PICTORIAL"); lab(345, 226, "(isometric)");
-      svg.lastChild.setAttribute("font-weight", "400"); svg.lastChild.setAttribute("font-size", "12");
+      const lab = (x, y, t, a = "middle") => svg.append(S("text", { x, y, "text-anchor": a, "font-size": 16, "font-weight": 700, class: "ink", text: t }));
+      lab(90, 132, "PLAN"); lab(90, 368, "ELEVATION"); lab(230, 368, "END ELEVATION"); lab(345, 212, "PICTORIAL"); lab(345, 230, "(isometric)");
+      svg.lastChild.setAttribute("font-weight", "400"); svg.lastChild.setAttribute("font-size", "14");
       Object.entries(bmap).forEach(([k, b]) => b.setAttribute("aria-pressed", String(k === sel)));
       note.innerHTML = `<b>${f.name}.</b> ${f.note}`;
       svg.setAttribute("aria-label", `Third-angle plan, elevation and end elevation of an L-shaped block with an inclined face and a hole, with an isometric pictorial. Highlighted: ${f.name}. ${f.note}`);

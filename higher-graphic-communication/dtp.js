@@ -80,7 +80,7 @@
         { x: 30, y: 16, opts: ["Title flowed along a curved path that follows the aircraft's climb, adding movement and linking the words to the image.", "Curvy writing.", "The title uses a hanging indent so that it curves."] },
         { x: 70, y: 62, opts: ["Aircraft full cropped to remove its background, so it sits straight on the poster and text can wrap round its outline.", "Plane picture.", "Aircraft square cropped to remove its outline."] },
         { x: 32, y: 133, opts: ["Three small photos aligned on one left edge with equal gaps between them, so they read as a set and give unity.", "Small pictures down the side.", "The small photos are the dominant item."] },
-        { x: 88, y: 125, opts: ["A narrow text column on the right balances the heavy image block on the left: asymmetrical balance.", "Writing on the right.", "The text column gives the layout symmetrical balance."] }] },
+        { x: 116, y: 108, opts: ["A narrow text column on the right balances the heavy image block on the left: asymmetrical balance.", "Writing on the right.", "The text column gives the layout symmetrical balance."] }] },
     { name: "C · Grid of three", items: [
       { k: "img", x: 8, y: 8, w: 32, h: 34 }, { k: "img", x: 44, y: 8, w: 32, h: 34 }, { k: "img", x: 80, y: 8, w: 32, h: 34 },
       { k: "title", x: 8, y: 50, w: 104, h: 22, t: "OPEN EVENING" }, { k: "text1", x: 8, y: 80, w: 104, h: 40 },
@@ -151,7 +151,7 @@
     const panel = E("div", { class: "dp-ann", "aria-live": "polite" });
     const dev = E("button", { class: "btn primary small", type: "button", disabled: true }, "✎ Develop into a visual");
     const restart = E("button", { class: "btn small", type: "button" }, "↺ Start again");
-    const tally = E("p", { class: "readout", "aria-live": "polite" });
+    const tally = E("p", { class: "sim-note", "aria-live": "polite" });
     const list = E("ol", { class: "dp-ann-list" });
     side.append(pinRow, panel, E("div", { class: "btn-row" }, dev, restart), tally, list);
     stage.append(E("div", { class: "dp-thumb-frame" }, big), side);
@@ -176,9 +176,9 @@
       if (t > 0) { const gv = S("g", { opacity: String(t) }); drawThumb(gv, L, "visual"); big.append(gv); }
       L.pins.forEach((p, k) => {
         const a = answers[k];
-        const c = S("circle", { cx: p.x, cy: p.y, r: 6, fill: a == null ? P.red : a ? "#2e7a2e" : "#8a3a1a", stroke: "#fff", "stroke-width": 1.2, class: "dp-pin-dot", "data-k": k });
+        const px = 116; const c = S("circle", { cx: px, cy: p.y, r: 6, fill: a == null ? P.red : a ? "#2e7a2e" : "#8a3a1a", stroke: "#fff", "stroke-width": 1.2, class: "dp-pin-dot", "data-k": k });
         c.addEventListener("click", () => openPin(k));
-        big.append(c, S("text", { x: p.x, y: p.y + 3, "font-size": 8, "font-weight": 700, fill: "#fff", "text-anchor": "middle", "pointer-events": "none", text: String(k + 1) }));
+        big.append(c, S("text", { x: px, y: p.y + 3, "font-size": 8, "font-weight": 700, fill: "#fff", "text-anchor": "middle", "pointer-events": "none", text: String(k + 1) }));
       });
       big.setAttribute("aria-label", `${L.name}: ${t >= 1 ? "developed into a coloured visual" : "pencil thumbnail"} with four numbered annotation pins.`);
     }
@@ -449,13 +449,13 @@
   }
   const HOTS = [
     { n: 1, px: 150, py: 34, r: [0, 0, 300, 40], ans: "Rhythm", opts: ["Rhythm", "Dominance", "Texture", "Alignment"], d: "Nine pennants are repeated at equal spacing in a red, yellow, blue sequence along the top edge.", why: "Repetition at regular intervals is rhythm: it sets up a pattern that leads the eye across the top of the poster." },
-    { n: 2, px: 30, py: 82, r: [0, 44, 300, 74], ans: "Contrast", opts: ["Texture", "Contrast", "Rhythm", "Depth"], d: "The title is white reverse text on a dark navy band: light against dark.", why: "The strongest difference in value on the page: white on navy. That difference is contrast, and it is what makes the title readable from a distance." },
+    { n: 2, px: 20, py: 58, r: [0, 44, 300, 74], ans: "Contrast", opts: ["Texture", "Contrast", "Rhythm", "Depth"], d: "The title is white reverse text on a dark navy band: light against dark.", why: "The strongest difference in value on the page: white on navy. That difference is contrast, and it is what makes the title readable from a distance." },
     { n: 3, px: 60, py: 145, r: [16, 126, 268, 140], ans: "Dominance", opts: ["White space", "Alignment", "Dominance", "Rhythm"], d: "The aircraft photograph is by far the largest item, filling about a third of the page.", why: "One item much larger than all others becomes the focal point: that is dominance. The eye lands here first." },
     { n: 4, px: 266, py: 236, r: [186, 222, 92, 62], ans: "Depth", opts: ["Alignment", "Rhythm", "Texture", "Depth"], d: "The ship photo overlaps the corner of the main photo, has a drop shadow and a warm red-orange frame.", why: "Overlap, a drop shadow and an advancing warm frame make the inset seem to sit in front of the main photo: depth." },
-    { n: 5, px: 186, py: 300, r: [180, 286, 106, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
-    { n: 6, px: 280, py: 266, r: [228, 156, 70, 222], ans: "Line", opts: ["Line", "Texture", "Balance", "Value"], d: "A dotted red line curves from the aircraft's nose down the right-hand side to the date panel.", why: "This is the element line, used to lead the eye: it takes the viewer from the aircraft to the date." },
+    { n: 5, px: 290, py: 300, r: [180, 286, 106, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
+    { n: 6, px: 291, py: 205, r: [228, 156, 70, 222], ans: "Line", opts: ["Line", "Texture", "Balance", "Value"], d: "A dotted red line curves from the aircraft's nose down the right-hand side to the date panel.", why: "This is the element line, used to lead the eye: it takes the viewer from the aircraft to the date." },
     { n: 7, px: 150, py: 342, r: [16, 308, 268, 46], ans: "Grid structure", opts: ["Depth", "Texture", "Dominance", "Grid structure"], d: "The three activities sit in three equal columns; their left edges line up with the photo, the inset and the date panel above and below.", why: "Items placed in equal columns on a common framework are using grid structure. (The repeated number-and-heading format is also rhythm, but the columns are the grid.)" },
-    { n: 8, px: 30, py: 377, r: [16, 362, 190, 30], ans: "Emphasis", opts: ["Emphasis", "Texture", "Rhythm", "Line"], d: "The date and time are in navy bold text on a yellow panel, the only yellow block on the lower half.", why: "A bright accent panel makes the date stand out from everything near it: emphasis on the information parents need." },
+    { n: 8, px: 220, py: 377, r: [16, 362, 190, 30], ans: "Emphasis", opts: ["Emphasis", "Texture", "Rhythm", "Line"], d: "The date and time are in navy bold text on a yellow panel, the only yellow block on the lower half.", why: "A bright accent panel makes the date stand out from everything near it: emphasis on the information parents need." },
     { n: 9, px: 150, py: 412, r: [0, 400, 300, 24], ans: "Texture", opts: ["Dominance", "Texture", "Emphasis", "Alignment"], d: "A strip of Minecraft grass blocks runs along the bottom edge, filled with a pixelated grass and dirt pattern.", why: "A pattern that suggests a surface (grass and soil blocks) is visual texture, applied with a textured fill." },
     { n: 10, px: 9, py: 300, r: [12, 126, 8, 266], ans: "Alignment", opts: ["Depth", "Alignment", "Texture", "Dominance"], d: "The left edges of the main photo, the first activity and the date panel all sit on one line, 16 units in from the page edge.", why: "Lining items up along a common edge is alignment. It makes the layout look ordered and planned." },
   ];
@@ -856,7 +856,7 @@
     [[60, 72, 90, 8, "#d9a900"], [110, 57, 18, 7, "#9fd3f5"], [52, 48, 8, 4, P.red], [80, 82, 50, 4, "#b89300"], [88, 86, 6, 12, "#555"], [132, 86, 6, 12, "#555"], [156, 66, 3, 12, "#555"]].forEach(([x, y, w, h, f]) => sv.append(S("rect", { x, y, width: w, height: h, fill: f })));
     fl.append(sv);
     const copy = "Every Tuesday and Thursday evening the squadron meets on the gun deck of HMS Vellum. Cadets learn to fly in the Grob Tutor trainer, to read a map and a signal flag, and to build anything from a cutter to a castle on the ship's Minecraft server. Summer camps take cadets to air stations across the country, and the best get the chance to go solo in a glider. You do not need any experience: just curiosity, a sense of adventure and the will to work as a team. Parents are welcome at the open evening to meet the staff and ask questions about uniform, costs and safety.";
-    page.append(fl, E("p", null, copy));
+    page.append(fl, E("p", null, copy), E("p", null, "Uniform is provided once you have enrolled, and most activities are free or heavily subsidised. Cadets work towards classification badges, first aid and radio qualifications, and the Duke of Edinburgh's Award, and many go on to lead others as non-commissioned cadets. Come aboard on the fourth of November at seven o'clock and see for yourself."));
     const note = E("p", { class: "sim-note", "aria-live": "polite" });
     box.append(page, note);
     const W = 200, H = 140;
@@ -961,20 +961,15 @@
       // each panel shows the badge enlarged "zoom" times, centred on a point near the red pennant's tip
       const view = (x0, paint) => { ctx.save(); ctx.beginPath(); ctx.rect(x0 + 10, 10, half - 20, size); ctx.clip(); ctx.fillStyle = "#fffdf6"; ctx.fillRect(x0 + 10, 10, half - 20, size); paint(x0 + half / 2, 10 + size / 2); ctx.restore(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.strokeRect(x0 + 10, 10, half - 20, size); };
       const focus = [0.7, 0.42]; // focus point as a fraction of the badge
-      const D = size * 0.9 * zoom; // displayed badge diameter-box
-      view(0, (cx, cy) => {
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(off, cx - D * focus[0] * (zoom > 1 ? 1 : 0) - (zoom > 1 ? 0 : D / 2), cy - D * focus[1] * (zoom > 1 ? 1 : 0) - (zoom > 1 ? 0 : D / 2), D, D);
-      });
-      view(half, (cx, cy) => {
-        const ox = zoom > 1 ? cx - D * focus[0] : cx - D / 2, oy = zoom > 1 ? cy - D * focus[1] : cy - D / 2;
-        badgeVector(ctx, ox + D / 2, oy + D / 2, D * 0.46);
-      });
+      const D = 44 * zoom; // displayed badge size: about the stored size at ×1
+      const big = D > size * 0.9, fx = big ? focus[0] : 0.5, fy = big ? focus[1] : 0.5;
+      view(0, (cx, cy) => { ctx.imageSmoothingEnabled = false; ctx.drawImage(off, cx - D * fx, cy - D * fy, D, D); });
+      view(half, (cx, cy) => { const ox = cx - D * fx, oy = cy - D * fy; badgeVector(ctx, ox + D / 2, oy + D / 2, D * 0.46); });
       HG.label(ctx, `Raster (${RES} × ${RES} px) × ${zoom}`, w / 4, h - 22, { align: "center", bold: true });
       HG.label(ctx, `Vector × ${zoom}`, (3 * w) / 4, h - 22, { align: "center", bold: true });
     } });
     const sl = E("div", { class: "sim-controls" }); box.append(sl);
-    HG.slider(sl, { label: "Zoom", min: 1, max: 12, step: 1, value: 1, unit: "×", fmt: (v) => String(v), oninput: (v) => { zoom = v; sim.redraw(); say(); } });
+    HG.slider(sl, { label: "Zoom", min: 1, max: 16, step: 1, value: 1, unit: "×", fmt: (v) => String(v), oninput: (v) => { zoom = v; sim.redraw(); say(); } });
     const zn = E("p", { class: "sim-note", "aria-live": "polite" }); box.append(zn);
     function say() {
       const t = zoom === 1 ? "At normal size the two look alike." : zoom < 4 ? "The raster's curved edges are starting to show steps." : `Each stored pixel is now a block ${zoom}× bigger: the raster is pixelated, while the vector is redrawn from its curves and stays sharp.`;
@@ -1150,14 +1145,14 @@
      12. Proof builder: bleed, crop marks, guillotine
      ===================================================================== */
   mount("w-proof", (box) => {
-    const st = { bleed: false, crop: true, reg: true, drift: 1.5 };
+    const st = { bleed: false, crop: true, reg: true, drift: 4 };
     const W = 148, H = 210, B = 3; // an A5 poster, 3 mm bleed
     const tg = E("div", { class: "btn-row" });
     const tog = (label, key) => { const b = E("button", { class: "seg-btn", type: "button", "aria-pressed": String(st[key]) }, label); b.addEventListener("click", () => { st[key] = !st[key]; b.setAttribute("aria-pressed", String(st[key])); cut = null; draw(); }); tg.append(b); };
     tog("Bleed (3 mm)", "bleed"); tog("Crop marks", "crop"); tog("Registration marks", "reg");
     box.append(tg);
     const sl = E("div", { class: "sim-controls" }); box.append(sl);
-    HG.slider(sl, { label: "Guillotine drift", min: -3, max: 3, step: 0.5, value: st.drift, unit: "mm", fmt: (v) => (v > 0 ? "+" : "") + HG.n(v, 1), oninput: (v) => { st.drift = v; cut = null; draw(); } });
+    HG.slider(sl, { label: "Guillotine drift", min: -6, max: 6, step: 0.5, value: st.drift, unit: "mm", fmt: (v) => (v > 0 ? "+" : "") + HG.n(v, 1), oninput: (v) => { st.drift = v; cut = null; draw(); } });
     const trim = E("button", { class: "btn primary small", type: "button" }, "✂ Trim the stack");
     box.append(E("div", { class: "btn-row" }, trim));
     const grid = E("div", { class: "dp-proof-grid" });

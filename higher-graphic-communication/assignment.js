@@ -173,7 +173,7 @@
     const on = new Set(["chain", "diameter", "name", "title", "lel", "lplan", "hidden"]);
     const grid = el("div", { class: "as-sheet-grid" });
     const form = el("div", { class: "as-checks" });
-    const right = el("div");
+    const right = el("div", { class: "as-right" });
     grid.append(form, right);
     box.append(grid);
     const cbs = {};
@@ -251,7 +251,7 @@
         const have = g.items.filter(([k2]) => on.has(k2)), miss = g.items.filter(([k2]) => !on.has(k2));
         const ok = g.rule === "all" ? miss.length === 0 : have.length >= g.rule;
         let why;
-        if (g.rule === "all") why = ok ? "every one is there" : "missing: " + miss.map((x) => x[1].toLowerCase()).join(", ");
+        if (g.rule === "all") why = ok ? "every one is there" : "missing: " + miss.map((x) => x[1]).join(", ");
         else why = ok ? `${have.length} of 8 present (three needed)` : `only ${have.length} of 8: add ${g.rule - have.length} more`;
         return { g, ok, why };
       });
@@ -270,7 +270,7 @@
     const st = { structure: false, link: true, logo: true, cmyk: true, images: false, copy: true, fonts: 1, ep: 1, dtp: 1, impact: 1 };
     const grid = el("div", { class: "as-poster-grid" });
     const form = el("div", { class: "as-checks" });
-    const right = el("div", { class: "as-poster-right" });
+    const right = el("div", { class: "as-right as-poster-right" });
     grid.append(form, right);
     box.append(grid);
     const cb = (key, label) => {
@@ -423,7 +423,7 @@
       return { lit, rq, site, f, spread };
     }
     const sim = HG.sim(cv, {
-      w: 640, h: 400, height: (w) => Math.round(w * 0.6),
+      w: 640, h: 480, height: (w) => Math.round(w * 0.72),
       draw(ctx, t, dt, C, api) {
         if (api.playing) { st.az = (st.az + dt * 40) % 360; }
         const W = api.w, H = api.h, bs = st.res;
@@ -432,7 +432,7 @@
         const o = octx;
         o.setTransform(sc, 0, 0, sc, 0, 0);
         o.fillStyle = "#cfd8e3"; o.fillRect(0, 0, W, H);
-        const u = Math.min(W / 9.6, H / 6.2), cx = W / 2, cy = H * 0.5;
+        const u = Math.min(W / 11, H / 9.2), cx = W / 2, cy = H / 2 + 1.3 * u;
         const Pj = (x, y, z) => [cx + (x - y) * 0.866 * u, cy + (x + y) * 0.5 * u - z * u];
         const Lv = lightVec();
         const shade = (rgb, k) => `rgb(${rgb.map((c) => Math.round(Math.max(0, Math.min(255, c * k)))).join(",")})`;
@@ -475,8 +475,8 @@
           });
           if (b.name === "crate") { const a = Pj(x1, y0 + 0.1, z0 + 0.15), c = Pj(x1, y1 - 0.1, z1 - 0.15); o.strokeStyle = "rgba(60,35,10,.6)"; o.beginPath(); o.moveTo(a[0], a[1]); o.lineTo(c[0], c[1]); o.stroke(); }
         });
-        // grain: noise falls as 1 / sqrt(samples)
-        const amp = 0.5 / Math.sqrt(SAMPLES[st.samp]) * 255;
+        // grain: noise falls as samples rise
+        const amp = 0.6 / Math.pow(SAMPLES[st.samp], 0.75) * 255;
         if (amp > 9) {
           const img = o.getImageData(0, 0, off.width, off.height), d = img.data;
           let seed = 1234567;
@@ -528,9 +528,9 @@
     const out = el("div", { class: "as-score", "aria-live": "polite" });
     box.append(out);
     let view = null;
-    view = fluid(host, (w) => { u = Math.max(14, Math.min(26, (w - 8) / 19)); return u * 17.6; }, () => { if (view) draw(); });
+    view = fluid(host, (w) => { u = Math.max(14, Math.min(26, (w - 8) / 20.2)); return u * 18.4; }, () => { if (view) draw(); });
     function layout() {
-      const ex = 7 * u, ey = 1 * u + OD * u + 1.6 * u; // elevation top
+      const ex = 7 * u, ey = 1.7 * u + OD * u + 1.6 * u; // elevation top
       L = { ex, top: ey, eg: ey + OH * u, plan: { x: ex, y: ey - 1.4 * u - OD * u }, end: { x: ex + OW * u + 1.4 * u, y: ey } };
     }
     const pos = (k) => ({ x: L[k].x + st[k].dx * u, y: L[k].y + st[k].dy * u, s: st[k].s });
@@ -545,7 +545,7 @@
       const planX = [0, OU, HX - HR, HX + HR, OW].map((x) => p.x + x * u * p.s);
       const hy = [0, OT, OH].map((z) => L.eg - z * u);
       const endY = [0, OT, OH].map((z) => e.y + OH * u * e.s - z * u * e.s);
-      const W = view.w, Hh = u * 17.6;
+      const W = view.w, Hh = u * 18.4;
       vx.forEach((x, i) => svg.append(ln(x, 4, x, Hh - 4, { c: Math.abs(planX[i] - x) <= tol ? C.grass : C.muted, w: 1, dash: "3 4" })));
       hy.forEach((y, i) => svg.append(ln(4, y, W - 4, y, { c: Math.abs(endY[i] - y) <= tol ? C.grass : C.muted, w: 1, dash: "3 4" })));
       // elevation (fixed)
@@ -588,7 +588,7 @@
       const ck = (ok, txt) => `<li>${ok ? "<span class='ok'>✔</span>" : "<span class='bad'>✘</span>"} ${txt}</li>`;
       const lines = [
         ck(planAbove, planAbove ? "Plan above the elevation: third angle." : planBelow ? "Plan below the elevation: that is the first-angle position." : "Move the plan clear of the elevation, above it."),
-        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) > tol ? `${HG.n(Math.abs(p.x - L.ex) / u * 10, 0)} mm ${p.x > L.ex ? "too far right" : "too far left"}` : "position fine"}${propP ? "" : `, and sketched at ${Math.round(p.s * 100)}% size`}.`),
+        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) > tol ? `${Math.abs(p.x - L.ex) < 0.6 * u ? "a little" : "well"} ${p.x > L.ex ? "too far right" : "too far left"}` : "position fine"}${propP ? "" : `, and sketched at ${Math.round(p.s * 100)}% size`}.`),
         ck(endRight, endRight ? "End elevation on the right: correct for the view from the right." : endLeft ? "The view from the right belongs on the right in third angle." : "Move the end elevation clear of the elevation."),
         ck(endAl, endAl ? "End elevation aligned: the horizontal projectors meet its edges." : "End elevation out of line with the elevation's heights."),
         ck(propP && propE, propP && propE ? "Fair proportions: depth in the plan equals width in the end elevation." : "Proportion: a view is sketched too big or too small (projectors cannot all meet)."),
@@ -598,7 +598,7 @@
       out.innerHTML = `<p class="readout">2025 Task 3-style marks (elevation and plan): ${mk} / 4</p><ul class="as-reslist">${lines.join("")}</ul><p class="as-muted">The elevation's own mark is given here, because it is drawn for you.</p>`;
       svg.setAttribute("aria-label", `Third-angle layout. ${[planAbove ? "Plan above" : "Plan not above", planAl ? "aligned" : "not aligned", endRight ? "end elevation on the right" : "end elevation not on the right", endAl ? "aligned" : "not aligned"].join(", ")}. Score ${mk} of 4.`);
     }
-    function clamp(k) { st[k].dx = Math.max(-7, Math.min(7, st[k].dx)); st[k].dy = Math.max(-6.5, Math.min(7, st[k].dy)); }
+    function clamp(k) { st[k].dx = Math.max(-7, Math.min(k === "plan" ? 6 : 0.6, st[k].dx)); st[k].dy = k === "plan" ? Math.max(-1, Math.min(7.2, st[k].dy)) : Math.max(-6.6, Math.min(6, st[k].dy)); }
     let drag = null, grab = null;
     view.svg.addEventListener("pointerdown", (ev) => {
       const g = ev.target.closest && ev.target.closest(".as-drag");
@@ -657,7 +657,7 @@
     tw.append(table);
     const reset = el("button", { class: "btn small", type: "button" }, "↺ Clear my marks");
     box.append(sum, tw, el("div", { class: "btn-row" }, reset));
-    const head = el("thead", null, el("tr", null, el("th", null, "Criterion"), el("th", null, "Area"), el("th", null, "Your mark")));
+    const head = el("thead", null, el("tr", null, el("th", null, "Criterion"), el("th", { class: "as-area" }, "Area"), el("th", null, "Your mark")));
     const body = el("tbody");
     table.append(head, body);
     let lastTask = "";
@@ -671,7 +671,7 @@
         g.append(b);
       }
       cell.append(g);
-      body.append(el("tr", null, el("td", null, label, el("span", { class: "as-muted" }, ` /${max}`)), el("td", null, area), cell));
+      body.append(el("tr", null, el("td", null, label, el("span", { class: "as-muted" }, ` /${max}`)), el("td", { class: "as-area" }, area), cell));
     });
     reset.addEventListener("click", () => { Object.keys(got).forEach((k) => delete got[k]); keep.set(got); body.querySelectorAll(".seg").forEach((g) => g.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", i === 0 ? "true" : "false"))); paint(); });
     function paint() {
