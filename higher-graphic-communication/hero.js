@@ -473,7 +473,7 @@
     const V = isoView(IS.ox, IS.oy, IS.s), step = 2.6 / FULL.items;
     render(FULL, V, "shade", { edges: true, off: (f) => { const k = (u - 0.15 - f.it * step) / 0.25; return k < 0 ? null : (1 - ease(k)) * 6; } });
     // the isometric axes: 30 degrees each side of the vertical
-    const ax = 252, ay = 70;
+    const ax = 234, ay = 70;
     line(ax, ay, ax + 12, ay - 7, CL); line(ax, ay, ax - 12, ay - 7, CL); line(ax, ay, ax, ay - 12, CL);
     label("30°", ax + 9, ay - 5, CL);
     tag("ISOMETRIC");
