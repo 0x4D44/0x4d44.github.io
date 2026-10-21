@@ -719,6 +719,51 @@
     return `<path d="M${x} ${y} L${(bx - uy * 3).toFixed(1)} ${(by + ux * 3).toFixed(1)} L${(bx + uy * 3).toFixed(1)} ${(by - ux * 3).toFixed(1)} Z" class="ink"/>`;
   };
   const hex = (cx, cy, r) => [0, 60, 120, 180, 240, 300].map((a) => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)].map((v) => v.toFixed(1)).join(",")).join(" ");
+  /* Building symbols, drawn to the same 60 × 60 geometry as the Standards deck's symbol set, so both decks agree. */
+  const BLD = (function () {
+    const k = "ex-sk", n = "ex-sn";
+    const line = (x1, y1, x2, y2, c = k) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${c}"/>`;
+    const rect = (x, y, w, h, c = k) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="${c}"/>`;
+    const circ = (x, y, r, c = k) => `<circle cx="${x}" cy="${y}" r="${r}" class="${c}"/>`;
+    const path = (d, c = k) => `<path d="${d}" class="${c}"/>`;
+    const dotf = (x, y, r = 1.8) => `<circle cx="${x}" cy="${y}" r="${r}" class="ex-sdot"/>`;
+    const arr = (x1, x2, y) => { const d = Math.sign(x2 - x1); return line(x1, y, x2, y) + path(`M${x2 - 4 * d} ${y - 3.5} L${x2} ${y} L${x2 - 4 * d} ${y + 3.5}`); };
+    const txt = (x, y, t, fs, a = "middle") => `<text x="${x}" y="${y}" font-size="${fs}" text-anchor="${a}" class="ink">${t}</text>`;
+    let conc = "";
+    [[12, 23], [19, 33], [27, 26], [35, 36], [43, 24], [48, 34], [22, 38], [40, 30], [15, 31], [31, 22]].forEach(([x, y], i) => { conc += i % 3 === 0 ? path(`M${x} ${y + 2.5} L${x + 2.5} ${y - 2} L${x + 5} ${y + 2.5} Z`, n) : dotf(x, y, 1.3); });
+    const S = [
+      ["Lamp", circ(30, 30, 11) + line(22.2, 22.2, 37.8, 37.8) + line(37.8, 22.2, 22.2, 37.8), "A circle with a diagonal cross in it."],
+      ["Switch", circ(27, 37, 4.5) + line(29.5, 33.3, 35, 23), "A small circle with a short line leaning away from it."],
+      ["Socket", path("M38 21 A9 9 0 0 0 38 39") + line(21, 30, 29, 30), "A half circle (open to the right) with a short stem on the left."],
+      ["Radiator", line(6, 30, 54, 30, n) + rect(16, 27, 28, 6, "ex-sfill"), "A thick solid bar on a thin line."],
+      ["Heated towel rail", circ(15, 33, 5) + circ(45, 33, 5) + line(20, 30, 40, 30) + line(20, 36, 40, 36) + line(15, 21, 15, 28) + line(45, 21, 45, 28), "Two small circles joined by a double-line bar, each with a short stub on top."],
+      ["Shower tray", rect(13, 13, 34, 34) + circ(43, 17, 1.8), "A square with a small circle (the waste) in one corner."],
+      ["Bath", rect(4, 17, 52, 26) + rect(8, 21, 44, 18) + circ(48, 30, 1.8), "A rectangle inside a rectangle, with the waste near one end."],
+      ["Wash basin", rect(17, 17, 26, 24) + rect(21, 21, 18, 15) + circ(30, 25, 1.8), "A small square inside a square, the waste at the top of the inner one."],
+      ["Sink", rect(13, 22, 34, 20) + circ(30, 26, 2.2), "A single rectangle with the waste near the top edge."],
+      ["WC", rect(23, 12, 14, 36) + line(23, 20, 37, 20), "A tall narrow rectangle with a line across near the top (the cistern)."],
+      ["Sinktop", rect(5, 18, 50, 24) + [22, 27, 33, 39].map((y) => line(9, y, 30, y)).join("") + rect(33, 22, 19, 16) + circ(48, 30, 1.8), "A rectangle with drainer lines on one side and a sink (rectangle and waste) on the other."],
+      ["Concrete", line(8, 18, 52, 18, n) + line(8, 42, 52, 42, n) + conc, "Dots and small triangles (the aggregate) between two lines."],
+      ["Brickwork", line(18, 20, 52, 20, n) + line(8, 40, 44, 40, n) + [0, 1, 2, 3].map((i) => line(8 + 9 * i, 40, 28 + 9 * i, 20, n)).join(""), "Parallel diagonal lines (45°) between two lines."],
+      ["Wood (sawn, any type)", rect(14, 22, 32, 16, n) + line(14, 22, 46, 38, n) + line(14, 38, 46, 22, n), "A rectangle with both diagonals drawn: a cross through the section."],
+      ["Insulation board", line(6, 20, 54, 20, n) + line(6, 40, 54, 40, n) + path("M8 22 C12 22 12 38 18 38 C24 38 24 22 30 22 C36 22 36 38 42 38 C48 38 48 22 52 22", n), "A wavy line looping between two lines."],
+      ["Blockwork", line(6, 20, 54, 20, n) + line(6, 40, 54, 40, n) + line(8, 18, 31, 42, n) + line(8, 42, 31, 18, n) + line(29, 18, 52, 42, n) + line(29, 42, 52, 18, n), "Large crosses (two X shapes) between two lines."],
+      ["Door", line(20, 48, 20, 16) + path("M20 16 A32 32 0 0 1 52 48", n), "A straight line (the door leaf) with a quarter-circle arc showing its swing."],
+      ["Window — fixed", rect(16, 16, 28, 28) + txt(30, 35.5, "F", 14), "A square marked F."],
+      ["Window — hinged at side", rect(16, 16, 28, 28) + line(44, 16, 16, 30, n) + line(16, 30, 44, 44, n), "Two lines meet at the middle of one side: the point marks the hinged side."],
+      ["Window — hinged at top", rect(16, 16, 28, 28) + line(16, 44, 30, 16, n) + line(30, 16, 44, 44, n), "The two lines meet at the middle of the top: hinged at the top."],
+      ["Window — hinged at bottom", rect(16, 16, 28, 28) + line(16, 16, 30, 44, n) + line(30, 44, 44, 16, n), "The two lines meet at the middle of the bottom: hinged at the bottom."],
+      ["Window — pivoted, horizontal axis", rect(16, 16, 28, 28) + path("M30 16 L44 30 L30 44 L16 30 Z", n) + line(8, 30, 52, 30, n), "A diamond in a square, with a horizontal line (the pivot axis) running through and past both sides."],
+      ["Window — sliding horizontally", rect(15, 14, 30, 32) + line(30, 14, 30, 46) + arr(18, 28, 30) + arr(42, 32, 30), "Two panes, with arrows pointing towards the centre line between them."],
+      ["Drainage", rect(16, 16, 28, 28) + circ(30, 28.5, 8.5) + line(8, 28.5, 52, 28.5, "ex-sn ex-sdotline") + line(30, 28.5, 30, 52, "ex-sn ex-sdotline"), "A square containing a circle, with dotted lines running out from it."],
+      ["North point", circ(30, 30, 13) + line(30, 43, 30, 17) + line(30, 17, 18.7, 23.5) + line(30, 17, 41.3, 23.5), "A circle with an upward arrow: the arrow points north."],
+      ["Existing tree", circ(30, 31, 12) + dotf(24, 25, 1.8), "A circle with a dot near its top-left."],
+      ["Existing tree — to be removed", circ(30, 31, 12, "ex-sk ex-sdotted") + dotf(35, 26, 1.8), "A dotted circle with a dot inside."],
+      ["Proposed tree", circ(30, 30, 12) + line(30, 22, 30, 38) + line(22, 30, 38, 30), "A circle with a plus sign in it."],
+      ["Contours", path("M24 12 C30 26 40 26 54 31", n) + path("M22 26 C26 38 34 35 54 37", n) + path("M20 44 C26 52 40 46 54 47", n) + txt(18, 14, "20", 9, "end") + txt(18, 29, "15", 9, "end") + txt(16, 47, "10", 9, "end"), "Lines joining points of equal height, each marked with its height."],
+    ];
+    return S.map(([name, g, note]) => ({ cat: "bld", name, note, svg: `<svg x="30" y="0" width="100" height="100" viewBox="0 0 60 60">${g}</svg>` }));
+  })();
   const SYM = [
     // line types and conventions
     { cat: "line", name: "Outline", note: "Continuous thick: visible edges and outlines.", svg: ln("M15 50 H145", 4) },
@@ -745,22 +790,8 @@
     { cat: "dim", name: "Symmetrical tolerance", note: "Nominal size ± the same allowance each way: here 39.9 to 40.1.", svg: ln("M20 30 V80 M140 30 V80 M20 72 H140", 1) + ah(20, 72, -1, 0) + ah(140, 72, 1, 0) + tx(80, 64, "40 ± 0.1", 'text-anchor="middle"') },
     { cat: "dim", name: "Asymmetrical tolerance", note: "Nominal size with different upper and lower allowances.", svg: ln("M20 30 V80 M140 30 V80 M20 72 H140", 1) + ah(20, 72, -1, 0) + ah(140, 72, 1, 0) + tx(64, 64, "40", 'text-anchor="middle"') + `<text x="74" y="54" font-size="11" class="ink">+0.2</text><text x="74" y="67" font-size="11" class="ink">−0.1</text>` },
     { cat: "dim", name: "Common tolerance", note: "The upper limit written above the lower limit.", svg: ln("M20 24 V80 M140 24 V80 M20 72 H140", 1) + ah(20, 72, -1, 0) + ah(140, 72, 1, 0) + tx(80, 50, "40.2", 'text-anchor="middle"') + tx(80, 66, "39.8", 'text-anchor="middle"') },
-    // building symbols (Appendix 2, from the British Standard)
-    { cat: "bld", name: "Lamp", note: "A circle with a diagonal cross inside it.", svg: `<circle cx="80" cy="50" r="22" class="stroke-ink" fill="none" stroke-width="2"/>` + ln("M64.4 34.4 L95.6 65.6 M95.6 34.4 L64.4 65.6", 2) },
-    { cat: "bld", name: "Switch", note: "A small circle with an angled line ending in a short tick.", svg: `<circle cx="60" cy="70" r="6" class="stroke-ink" fill="none" stroke-width="2"/>` + ln("M64.2 65.8 L100 30 L108 38", 2) },
-    { cat: "bld", name: "Door", note: "A gap in the wall with the door leaf and the arc of its swing.", svg: `<rect x="6" y="74" width="34" height="8" class="ink"/><rect x="106" y="74" width="48" height="8" class="ink"/>` + ln("M40 78 V12", 2.2) + `<path d="M40 12 A66 66 0 0 1 106 78" class="stroke-ink" fill="none" stroke-width="1.2"/>` },
-    { cat: "bld", name: "Window — fixed", note: "A window frame with no opening lines: it does not open.", svg: `<rect x="40" y="14" width="80" height="72" class="stroke-ink f-card" stroke-width="2"/><rect x="47" y="21" width="66" height="58" class="stroke-ink" fill="none" stroke-width="1.2"/>` },
-    { cat: "bld", name: "Window — hinged at side", note: "Opening lines meet at a point on the hinged side (here the left).", svg: `<rect x="40" y="14" width="80" height="72" class="stroke-ink f-card" stroke-width="2"/><rect x="47" y="21" width="66" height="58" class="stroke-ink" fill="none" stroke-width="1.2"/>` + ln("M113 21 L47 50 L113 79", 1.2) },
-    { cat: "bld", name: "Window — hinged at top", note: "Opening lines meet at a point on the top edge, where the hinge is.", svg: `<rect x="40" y="14" width="80" height="72" class="stroke-ink f-card" stroke-width="2"/><rect x="47" y="21" width="66" height="58" class="stroke-ink" fill="none" stroke-width="1.2"/>` + ln("M47 79 L80 21 L113 79", 1.2) },
-    { cat: "bld", name: "Window — hinged at bottom", note: "Opening lines meet at a point on the bottom edge, where the hinge is.", svg: `<rect x="40" y="14" width="80" height="72" class="stroke-ink f-card" stroke-width="2"/><rect x="47" y="21" width="66" height="58" class="stroke-ink" fill="none" stroke-width="1.2"/>` + ln("M47 21 L80 79 L113 21", 1.2) },
-    { cat: "bld", name: "Window — sliding horizontally", note: "An arrow shows the sash slides sideways.", svg: `<rect x="40" y="14" width="80" height="72" class="stroke-ink f-card" stroke-width="2"/><rect x="47" y="21" width="66" height="58" class="stroke-ink" fill="none" stroke-width="1.2"/>` + ln("M56 50 H100", 1.6) + ah(106, 50, 1, 0) },
-    { cat: "bld", name: "Wood (sawn)", note: "Sawn timber in section: a rectangle with both diagonals.", svg: `<rect x="30" y="28" width="100" height="44" class="stroke-ink f-card" stroke-width="2"/>` + ln("M30 28 L130 72 M130 28 L30 72", 1.2) },
-    { cat: "bld", name: "Brickwork", note: "Brickwork in section: thin diagonal hatching.", svg: `<rect x="30" y="24" width="100" height="52" class="stroke-ink f-card" stroke-width="2"/><svg x="30" y="24" width="100" height="52" viewBox="0 0 100 52">${ln(Array.from({ length: 20 }, (_, k) => `M${k * 9 - 52} 52 l52 -52`).join(" "), 1)}</svg>` },
-    { cat: "bld", name: "Concrete", note: "Concrete in section: small triangles (aggregate) and dots.", svg: `<rect x="30" y="24" width="100" height="52" class="stroke-ink f-card" stroke-width="2"/>` + [[44, 40], [70, 34], [100, 44], [56, 62], [88, 64], [116, 60], [112, 32]].map(([x, y]) => `<path d="M${x} ${y} l6 -8 l5 9 Z" class="stroke-ink" fill="none" stroke-width="1"/>`).join("") + [[40, 56], [62, 46], [80, 52], [96, 34], [104, 68], [122, 46], [48, 70], [76, 70], [86, 40]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.4" class="ink"/>`).join("") },
-    { cat: "bld", name: "North point", note: "An arrow marked N showing the direction of north on a site plan.", svg: `<circle cx="80" cy="56" r="26" class="stroke-ink" fill="none" stroke-width="1.4"/><path d="M80 26 L90 70 L80 62 L70 70 Z" class="ink"/>` + tx(80, 18, "N", 'text-anchor="middle" font-weight="700"') },
-    { cat: "bld", name: "Contours", note: "Lines joining points of equal ground height, labelled with their levels.", svg: ln("M10 30 C40 18 70 42 100 28 S140 24 150 30 M10 55 C40 43 70 67 100 53 S140 49 150 55 M10 80 C40 68 70 92 100 78 S140 74 150 80", 1.4) + `<text x="128" y="22" font-size="11" class="ink">11.0</text><text x="128" y="47" font-size="11" class="ink">10.5</text><text x="128" y="72" font-size="11" class="ink">10.0</text>` },
-    { cat: "bld", name: "Bath", note: "A long rectangle with a rounded inner tub and the plug hole at one end.", svg: `<rect x="20" y="24" width="120" height="52" class="stroke-ink f-card" stroke-width="2"/><rect x="28" y="31" width="104" height="38" rx="17" class="stroke-ink" fill="none" stroke-width="1.4"/><circle cx="40" cy="50" r="3" class="stroke-ink" fill="none" stroke-width="1.2"/>` },
-    { cat: "bld", name: "WC", note: "The cistern against the wall and the oval bowl in front of it.", svg: `<rect x="22" y="32" width="24" height="36" class="stroke-ink f-card" stroke-width="2"/><path d="M46 36 H76 A34 20 0 0 1 76 64 H46" class="stroke-ink f-card" stroke-width="2"/><ellipse cx="78" cy="50" rx="22" ry="11" class="stroke-ink" fill="none" stroke-width="1.2"/>` },
+    // building symbols: the same drawings as the Standards deck (standards.js), from Appendix 2 of the course specification
+    ...BLD,
   ];
   const CAT_LBL = { all: "All", line: "Line types", dim: "Dimensioning & tolerances", bld: "Building symbols" };
   mount("w-symbols", (box) => {

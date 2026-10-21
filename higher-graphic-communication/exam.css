@@ -92,3 +92,10 @@
 .ex-bar-track i { display: block; height: 100%; }
 .ex-bar-n { font: 700 .85rem var(--font-mono); text-align: right; }
 .ex-bscale { display: block; width: 100%; max-width: 460px; height: auto; margin: 6px 0; }
+/* building symbols: same geometry as the Standards deck */
+svg .ex-sk { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+svg .ex-sn { stroke: var(--ink); stroke-width: 1; fill: none; }
+svg .ex-sfill { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+svg .ex-sdot { fill: var(--ink); }
+svg .ex-sdotline { stroke-dasharray: 1.5 2; }
+svg .ex-sdotted { stroke-dasharray: 1.2 2.4; stroke-linecap: round; }
