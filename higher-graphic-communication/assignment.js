@@ -55,7 +55,7 @@
     const PRESETS = {
       y2025: { label: "2025 task", tasks: [["Task 1", "production", 20, 3], ["Task 2", "render, layouts, poster", 26, 4], ["Task 3", "sketching", 4, 1]] },
       y2018: { label: "2018 specimen", tasks: [["Task 1", "production", 20, 3], ["Task 2", "render, layouts, table talker", 21, 3], ["Task 3", "sketch, scene render", 9, 2]] },
-      mock: { label: "Vellum mock", tasks: [["Task A", "production", 18, 3], ["Task B", "render, layouts, poster", 24, 3.75], ["Task C", "two sketches", 8, 1.25]] },
+      mock: { label: "Vellum mock", tasks: [["Task A", "production", 18, 3], ["Task B", "render, layouts, poster", 24, 3.5], ["Task C", "two sketches", 8, 1.5]] },
     };
     const TOTAL = 8, STEP = 0.25, MIN = 0.25;
     let preset = "y2025", d = [3, 7]; // boundaries in hours
@@ -106,7 +106,7 @@
       row(130, 24, sh, "In proportion to marks");
       row(182, 24, t.map((x) => x[3]), "Suggested in the brief");
       handles = d.map((v, i) => {
-        const g = S("g", { class: "as-handle", tabindex: "0", role: "slider", "aria-label": `Divider between ${t[i][0]} and ${t[i + 1][0]}`, "aria-valuemin": 0, "aria-valuemax": TOTAL, "aria-valuenow": v.toFixed(2), "aria-valuetext": `${t[i][0]} ${i ? "ends" : "ends"} at ${hm(v)} into the 8 hours` });
+        const g = S("g", { class: "as-handle", tabindex: "0", role: "slider", "aria-label": `Divider between ${t[i][0]} and ${t[i + 1][0]}`, "aria-valuemin": 0, "aria-valuemax": TOTAL, "aria-valuenow": v.toFixed(2), "aria-valuetext": `${t[i][0]} ends and ${t[i + 1][0]} begins at ${hm(v)} into the 8 hours` });
         g.append(S("rect", { x: X(v) - 8, y: 24, width: 16, height: 58, rx: 3, fill: C.card, stroke: C.ink, "stroke-width": 2 }));
         g.append(S("line", { x1: X(v) - 2, y1: 40, x2: X(v) - 2, y2: 66, stroke: C.ink, "stroke-width": 1.5 }));
         g.append(S("line", { x1: X(v) + 2, y1: 40, x2: X(v) + 2, y2: 66, stroke: C.ink, "stroke-width": 1.5 }));
@@ -208,21 +208,21 @@
     const P = (d, w = 2, extra = {}) => S("path", { d, fill: "none", stroke: "currentColor", "stroke-width": w, "stroke-linejoin": "round", ...extra });
     const arrowDefs = S("defs", null,
       S("marker", { id: "as-sh-arr", viewBox: "0 0 10 10", refX: 9.5, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, S("path", { d: "M0,1.5 L10,5 L0,8.5 z", fill: "currentColor" })),
-      S("pattern", { id: "as-sh-hatch", patternUnits: "userSpaceOnUse", width: 6, height: 6, patternTransform: "rotate(45)" }, S("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "currentColor", "stroke-width": 1 })));
+      S("pattern", { id: "as-sh-hatchpat", patternUnits: "userSpaceOnUse", width: 6, height: 6, patternTransform: "rotate(45)" }, S("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "currentColor", "stroke-width": 1 })));
     const dimL = (x1, y1, x2, y2) => L(x1, y1, x2, y2, 0.9, { "marker-start": "url(#as-sh-arr)", "marker-end": "url(#as-sh-arr)" });
     const DASH = { "stroke-dasharray": "6 4" }, CHAIN = { "stroke-dasharray": "14 3 2 3" };
     svg.append(arrowDefs,
       S("rect", { x: 6, y: 6, width: 588, height: 412, fill: "none", stroke: "currentColor", "stroke-width": 1 }),
       S("rect", { x: 14, y: 14, width: 572, height: 396, fill: "none", stroke: "currentColor", "stroke-width": 2 }),
-      // plan (with a filleted back-left corner, a step, a chamfer edge and a hole)
-      P("M75,70 L260,70 L260,170 L60,170 L60,85 A15,15 0 0 1 75,70 Z"), L(150, 70, 150, 170, 2), L(135, 70, 135, 170, 2), S("circle", { cx: 205, cy: 120, r: 12, fill: "none", stroke: "currentColor", "stroke-width": 2 }),
+      // plan (with a filleted front-left corner, a step, a chamfer edge and a hole)
+      P("M60,70 L260,70 L260,170 L75,170 A15,15 0 0 1 60,155 Z"), L(150, 70, 150, 170, 2), L(135, 70, 135, 170, 2), S("circle", { cx: 205, cy: 120, r: 12, fill: "none", stroke: "currentColor", "stroke-width": 2 }),
       // elevation: L-profile with a 45° chamfer on the upright
       P("M60,300 L260,300 L260,260 L150,260 L150,215 L135,200 L60,200 Z"),
       // end elevation (view from the right)
       P("M300,200 L400,200 L400,300 L300,300 Z"), L(300, 260, 400, 260, 2), L(300, 215, 400, 215, 2),
       // section A–A through the hole: base cut (hatched when ticked), upright beyond
       P("M440,200 L540,200 L540,260 L440,260 Z"), L(440, 215, 540, 215, 2),
-      k("hatch", S("path", { d: "M440,260 L478,260 L478,300 L440,300 Z M502,260 L540,260 L540,300 L502,300 Z", fill: "url(#as-sh-hatch)", stroke: "none" })),
+      k("hatch", S("path", { d: "M440,260 L478,260 L478,300 L440,300 Z M502,260 L540,260 L540,300 L502,300 Z", fill: "url(#as-sh-hatchpat)", stroke: "none" })),
       P("M440,260 L478,260 L478,300 L440,300 Z"), P("M502,260 L540,260 L540,300 L502,300 Z"),
       // detail B: circle on plan + enlarged view
       S("circle", { cx: 205, cy: 120, r: 26, fill: "none", stroke: "currentColor", "stroke-width": 1, "stroke-dasharray": "4 3" }), T(236, 100, "B"),
@@ -234,15 +234,15 @@
     svg.append(
       k("hidden", L(193, 260, 193, 300, 1.4, DASH), L(217, 260, 217, 300, 1.4, DASH), L(338, 260, 338, 300, 1.4, DASH), L(362, 260, 362, 300, 1.4, DASH)),
       k("centre", L(205, 252, 205, 308, 0.8, CHAIN), L(185, 120, 225, 120, 0.8, CHAIN), L(205, 100, 205, 140, 0.8, CHAIN), L(350, 252, 350, 308, 0.8, CHAIN), L(490, 252, 490, 308, 0.8, CHAIN), L(464, 110, 536, 110, 0.8, CHAIN), L(500, 74, 500, 146, 0.8, CHAIN)),
-      k("cut", L(205, 185, 205, 318, 0.9, CHAIN), L(205, 180, 205, 192, 3), L(205, 312, 205, 324, 3), P("M205,186 L188,186 M193,182 L188,186 L193,190", 1.6), P("M205,318 L188,318 M193,314 L188,318 L193,322", 1.6), T(182, 183, "A", { a: "end" }), T(182, 323, "A", { a: "end" })),
-      k("chain", L(60, 305, 60, 340, .8), L(150, 305, 150, 340, .8), L(205, 305, 205, 340, .8), L(260, 305, 260, 340, .8), dimL(60, 334, 150, 334), dimL(150, 334, 205, 334), dimL(205, 334, 260, 334), T(105, 329, "90"), T(177, 329, "55"), T(232, 329, "55")),
+      k("cut", L(205, 185, 205, 318, 0.9, CHAIN), L(205, 180, 205, 192, 3), L(205, 312, 205, 324, 3), P("M205,186 L188,186 M193,182 L188,186 L193,190", 1.6), P("M205,318 L188,318 M193,314 L188,318 L193,322", 1.6), T(184, 182, "A", { a: "end" }), T(184, 328, "A", { a: "end" })),
+      k("chain", L(60, 80, 60, 30, .8), L(150, 66, 150, 30, .8), L(205, 92, 205, 30, .8, CHAIN), L(260, 66, 260, 30, .8), dimL(60, 36, 150, 36), dimL(150, 36, 205, 36), dimL(205, 36, 260, 36), T(105, 31, "90"), T(177, 31, "55"), T(232, 31, "55")),
       k("parallel", L(55, 260, 22, 260, .8), L(55, 200, 18, 200, .8), L(55, 300, 18, 300, .8), dimL(40, 300, 40, 260), dimL(26, 300, 26, 200), T(36, 280, "40", { rot: 1 }), T(22, 250, "100", { rot: 1 })),
-      k("radial", P("M40,52 L64,74", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(22, 52, 40, 52, .9), T(30, 47, "R15")),
-      k("diameter", P("M248,46 L213,112", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(248, 46, 266, 46, .9), T(270, 50, "Ø24", { a: "start" })),
+      k("radial", P("M44,186 L64.4,165.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(16, 186, 44, 186, .9), T(24, 182, "R15")),
+      k("diameter", P("M290,95 L216.5,116.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(290, 95, 306, 95, .9), T(309, 99, "Ø24", { a: "start" })),
       k("angular", L(150, 215, 150, 186, .8), S("path", { d: "M150,189 A26,26 0 0 0 131.6,196.6", fill: "none", stroke: "currentColor", "stroke-width": 0.9, "marker-start": "url(#as-sh-arr)", "marker-end": "url(#as-sh-arr)" }), T(118, 185, "45°")),
-      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(160, 58, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:1)", { w: 700 })),
-      k("name", T(336, 345, "NAME  A. Cadet", { a: "start", fs: 12 })), k("title", T(336, 365, "TITLE  Carriage body", { a: "start", fs: 12 })), k("project", T(336, 385, "PROJECT  HMS Vellum guns", { a: "start", fs: 12 })),
-      k("scale", T(336, 405, "SCALE 1:5", { a: "start", fs: 12 })), k("date", T(410, 405, "DATE 03/27", { a: "start", fs: 12 })), k("mm", T(476, 345, "ALL SIZES IN mm", { a: "start", fs: 12 })), k("tol", T(476, 365, "TOL ±0.5 UNLESS", { a: "start", fs: 12 })),
+      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(160, 188, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:5)", { w: 700 })),
+      k("name", T(336, 345, "NAME  A. Cadet", { a: "start", fs: 12 })), k("title", T(336, 365, "TITLE  Carriage body", { a: "start", fs: 12 })), k("project", T(336, 385, "PROJECT  Vellum guns", { a: "start", fs: 12 })),
+      k("scale", T(336, 405, "SCALE 1:5", { a: "start", fs: 12 })), k("date", T(476, 405, "DATE 03/27", { a: "start", fs: 12 })), k("mm", T(476, 345, "ALL SIZES IN mm", { a: "start", fs: 12 })), k("tol", T(476, 365, "GENERAL TOL ±0.5", { a: "start", fs: 12 })),
       k("symbol", S("g", { transform: "translate(498,374) scale(.42)" }, P("M0,0 L30,8 L30,30 L0,38 Z", 3), S("circle", { cx: 66, cy: 19, r: 18, fill: "none", stroke: "currentColor", "stroke-width": 3 }), S("circle", { cx: 66, cy: 19, r: 10, fill: "none", stroke: "currentColor", "stroke-width": 3 }))),
     );
     function paint() {
@@ -354,7 +354,7 @@
         ["Skill and visual impact", s.impact, 3, "Fewer things, aligned to a grid, one dominant item, white space left on purpose, and a clean finish."],
       ];
       const tot = items.reduce((a, x) => a + x[1], 0);
-      const gaps = items.filter((x) => x[1] < x[2]).map((x) => ({ name: x[0], gap: x[2] - x[1], tip: x[3] }));
+      const gaps = items.filter((x) => x[1] < x[2]).map((x, i) => ({ name: x[0], gap: x[2] - x[1], tip: x[3], i })).sort((a, b) => b.gap - a.gap || a.i - b.i);
       out.innerHTML = `<p class="readout">Your 2(c) self-mark: ${tot} / 11</p><div class="as-bar" aria-hidden="true"><i style="width:${tot / 11 * 100}%"></i></div>` +
         `<table class="as-mini"><tbody>${items.map((x) => `<tr><td>${x[0]}</td><td class="num">${x[1]} / ${x[2]}</td></tr>`).join("")}</tbody></table>` +
         (gaps.length ? `<p><strong>Next fix:</strong> ${gaps[0].name} (up to ${gaps[0].gap} mark${gaps[0].gap > 1 ? "s" : ""}). ${gaps[0].tip}</p>` : `<p class="ok">Full marks on every criterion, as you judged it. Now ask someone else to judge it the same way.</p>`);
@@ -378,7 +378,7 @@
     box.append(ctr);
     const rd = el("div", { class: "as-score", "aria-live": "polite" });
     const redraw = () => { sim.redraw(); };
-    HG.slider(ctr, { label: "Light direction (round)", min: 0, max: 355, step: 5, value: st.az, unit: "°", oninput: (v) => { st.az = v; redraw(); } });
+    const sAz = HG.slider(ctr, { label: "Light direction (round)", min: 0, max: 355, step: 5, value: st.az, unit: "°", oninput: (v) => { st.az = v; redraw(); } });
     HG.slider(ctr, { label: "Light height", min: 5, max: 85, step: 1, value: st.el, unit: "°", oninput: (v) => { st.el = v; redraw(); } });
     HG.slider(ctr, { label: "Fill (ambient) light", min: 0, max: 0.8, step: 0.05, value: st.fill, fmt: (v) => Math.round(v * 100) + "%", oninput: (v) => { st.fill = v; redraw(); } });
     HG.slider(ctr, { label: "Exposure", min: 0.4, max: 1.8, step: 0.05, value: st.inten, fmt: (v) => "×" + HG.n(v, 2), oninput: (v) => { st.inten = v; redraw(); } });
@@ -412,6 +412,7 @@
         if (st.el > 75) probs.push("light from almost straight overhead flattens the sides");
         if (st.el < 12) probs.push("light so low the shadows stretch across the scene");
         if (spread < 0.25) probs.push("faces differ only a little in tone");
+        if (st.floating) probs.push("the shadows are detached from the floating models");
         lit = probs.length ? [1, "Good: shadows and tone are there, but " + probs.join("; ") + "."] : [2, "Skilled: faces in clearly different tones, attached shadows, sensible exposure."];
       }
       const s = SAMPLES[st.samp];
@@ -422,10 +423,16 @@
       const site = st.floating ? [0, "Not sited: the models float, and their shadows have come away from them."] : [1, "Sited: every model rests on the deck and its shadow touches its base."];
       return { lit, rq, site, f, spread };
     }
+    let lastSync = 0, lastKey = "";
     const sim = HG.sim(cv, {
+      onstate(playing) { rd.setAttribute("aria-live", playing ? "off" : "polite"); if (!playing) report(false); },
       w: 640, h: 480, height: (w) => Math.round(w * 0.72),
       draw(ctx, t, dt, C, api) {
-        if (api.playing) { st.az = (st.az + dt * 40) % 360; }
+        if (api.playing) {
+          st.az = (st.az + dt * 40) % 360;
+          // keep the slider in step with the orbit, a few times a second rather than every frame
+          if (t - lastSync > 0.25) { lastSync = t; sAz.sync(Math.round(st.az / 5) * 5 % 360); }
+        }
         const W = api.w, H = api.h, bs = st.res;
         const sc = bs === 1 ? Math.min(2, api.scale) : 1 / bs;
         off.width = Math.max(1, Math.round(W * sc)); off.height = Math.max(1, Math.round(H * sc));
@@ -491,16 +498,22 @@
         const lp = [cx + (Lv[0] - Lv[1]) * 0.866 * u * 3.6, cy + (Lv[0] + Lv[1]) * 0.5 * u * 3.6 - Lv[2] * u * 3.2];
         HG.dot(ctx, Math.max(14, Math.min(W - 14, lp[0])), Math.max(14, Math.min(H - 14, lp[1])), "#ffd23f", 8, "#5a4300");
         HG.label(ctx, "light", Math.max(14, Math.min(W - 14, lp[0])) + 12, Math.max(14, Math.min(H - 14, lp[1])), { size: 12, haloCol: "#ffffff", col: "#222" });
-        report();
+        report(api.playing);
       },
     });
     const play = HG.playButton(sim, ["▶ Orbit the light", "❚❚ Stop orbit"]);
     row.append(play);
-    function report() {
+    function report(playing) {
       const a = assess();
+      const az = Math.round(st.az / 5) * 5 % 360;
+      const key = [a.lit[0], a.lit[1], a.rq[0], a.site[0]].join("|");
+      if (key !== lastKey) {
+        lastKey = key;
       const li = (lab, r, max) => `<li><strong>${lab}: ${r[0]} / ${max}</strong> · ${r[1]}</li>`;
       rd.innerHTML = `<ul class="as-reslist">${li("Lighting, highlights, shadows", a.lit, 2)}${li("Render quality", a.rq, 2)}${li("Siting", a.site, 1)}</ul>`;
-      cv.setAttribute("aria-label", `Rendered deck scene with a crate and a gun-carriage block. Light from ${st.az} degrees round and ${st.el} degrees up; shadows ${st.shadows ? "on" : "off"}; models ${st.floating ? "floating" : "resting on the deck"}; ${SAMPLES[st.samp]} samples; ${BLOCK[st.res].toLowerCase()}. Lighting ${a.lit[0]} of 2, render quality ${a.rq[0]} of 2.`);
+      }
+      if (playing) return; // the canvas description is re-stated once the orbit stops
+      cv.setAttribute("aria-label", `Rendered deck scene with a crate and a gun-carriage block. Light from ${az} degrees round and ${st.el} degrees up; shadows ${st.shadows ? "on" : "off"}; models ${st.floating ? "floating" : "resting on the deck"}; ${SAMPLES[st.samp]} samples; ${BLOCK[st.res].toLowerCase()}. Lighting ${a.lit[0]} of 2, render quality ${a.rq[0]} of 2.`);
     }
     report();
   });
@@ -598,7 +611,13 @@
       out.innerHTML = `<p class="readout">2025 Task 3-style marks (elevation and plan): ${mk} / 4</p><ul class="as-reslist">${lines.join("")}</ul><p class="as-muted">The elevation's own mark is given here, because it is drawn for you.</p>`;
       svg.setAttribute("aria-label", `Third-angle layout. ${[planAbove ? "Plan above" : "Plan not above", planAl ? "aligned" : "not aligned", endRight ? "end elevation on the right" : "end elevation not on the right", endAl ? "aligned" : "not aligned"].join(", ")}. Score ${mk} of 4.`);
     }
-    function clamp(k) { st[k].dx = Math.max(-7, Math.min(k === "plan" ? 6 : 0.6, st[k].dx)); st[k].dy = k === "plan" ? Math.max(-1, Math.min(7.2, st[k].dy)) : Math.max(-6.6, Math.min(6, st[k].dy)); }
+    function clamp(k) {
+      // keep each view inside the drawing area, computed from the layout, so every mistake (plan below, end view on the left) is reachable
+      layout();
+      const W = view.w / u, H = 18.4, sz = k === "plan" ? [OW, OD] : [OD, OH], s0 = st[k].s, x0 = L[k].x / u, y0 = L[k].y / u;
+      st[k].dx = Math.max(0.2 - x0, Math.min(W - 0.2 - sz[0] * s0 - x0, st[k].dx));
+      st[k].dy = Math.max((k === "plan" ? 1.2 : 0.2) - y0, Math.min(H - (k === "plan" ? 0.3 : 1.3) - sz[1] * s0 - y0, st[k].dy));
+    }
     let drag = null, grab = null;
     view.svg.addEventListener("pointerdown", (ev) => {
       const g = ev.target.closest && ev.target.closest(".as-drag");
@@ -620,9 +639,9 @@
     view.svg.addEventListener("pointerup", end); view.svg.addEventListener("pointercancel", end);
     bRe.addEventListener("click", () => {
       const r = (a, b) => a + Math.random() * (b - a);
-      st.plan = { dx: r(-1.5, 1.5), dy: Math.random() < 0.3 ? 6.4 : r(-0.6, 0.2), s: Math.round(r(0.85, 1.15) * 100) / 100 };
-      st.end = { dx: Math.random() < 0.3 ? -12 : r(-0.2, 0.8), dy: r(-1, 1), s: Math.round(r(0.85, 1.15) * 100) / 100 };
-      st.end.dx = Math.max(-7, st.end.dx);
+      st.plan = { dx: r(-1.5, 1.5), dy: Math.random() < 0.3 ? 10.2 : r(-0.6, 0.2), s: Math.round(r(0.85, 1.15) * 100) / 100 };
+      st.end = { dx: Math.random() < 0.3 ? -13.5 : r(-0.2, 0.5), dy: r(-1, 1), s: Math.round(r(0.85, 1.15) * 100) / 100 };
+      clamp("plan"); clamp("end");
       sP.sync(Math.round(st.plan.s * 100)); sE.sync(Math.round(st.end.s * 100)); draw();
     });
     bShow.addEventListener("click", () => {
@@ -640,7 +659,7 @@
     const ROWS = [
       ["A", A, "a1", "A(a) Body modelled accurately", 1, 0], ["A", A, "a2", "A(a) Three related views, data-sheet orientation", 1, 0], ["A", A, "a3", "A(a) Hidden detail", 1, 1], ["A", A, "a4", "A(a) Dimensions for manufacture", 1, 0],
       ["A", A, "b1", "A(b) Truck: revolve and radial array accurate", 1, 0], ["A", A, "b2", "A(b) Plan with hidden detail", 1, 1], ["A", A, "b3", "A(b) Sectional elevation, hatched correctly", 1, 0], ["A", A, "b4", "A(b) Detail view of the bore, 3+ dimensions", 1, 1],
-      ["A", A, "c1", "A(c) Assembly accurate, no gaps or overlaps", 1, 0], ["A", A, "c2", "A(c) Sectional end elevation, axle not hatched", 1, 0], ["A", A, "c3", "A(c) Stepped section correct", 1, 0], ["A", A, "c4", "A(c) Enlarged view of truck on axle", 1, 1],
+      ["A", A, "c1", "A(c) Assembly accurate, no gaps or overlaps", 1, 0], ["A", A, "c2", "A(c) Sectional end elevation, axle not hatched", 1, 0], ["A", A, "c3", "A(c) Sectional elevation Y–Y correct", 1, 0], ["A", A, "c4", "A(c) Enlarged view of truck on axle", 1, 1],
       ["A", A, "d1", "A(d) Exploded isometric line drawing", 1, 0], ["A", A, "d2", "A(d) Alignment, spacing and order", 1, 0],
       ["A", A, "e1", "A(e) Every dimension type used", 1, 1], ["A", A, "e2", "A(e) Template items", 1, 1], ["A", A, "e3", "A(e) Every view type labelled", 1, 1], ["A", A, "e4", "A(e) Line types correct", 1, 1],
       ["B", P, "ba1", "B(a) Models sited on the deck, scaled", 1, 1], ["B", P, "ba2", "B(a) Materials as specified", 1, 1], ["B", P, "ba3", "B(a) Crest decal on the bulkhead", 1, 1], ["B", P, "ba4", "B(a) Lighting, highlights, shadows", 2, 0], ["B", P, "ba5", "B(a) Render quality", 2, 0],
@@ -695,7 +714,7 @@
       ["Kit", "I know how to print A3 from both CAD and DTP software, and how long a full-quality render takes on a school computer."],
       ["Kit", "Sketching kit packed: pencils, eraser, a straight edge. No circle templates, no compasses."],
       ["Production", "I can generate projected views, a full section, a stepped section and a detail view from a model without help."],
-      ["Production", "Hatching: 45°, adjacent parts different, no hatching on webs, shafts, bolts, nuts or washers."],
+      ["Production", "Hatching: 45°, adjacent parts different, no hatching on webs, shafts, bolts, nuts or washers when they are cut lengthways."],
       ["Production", "I can apply chain, parallel, radial, diameter and angular dimensions and label every view."],
       ["Production", "I can constrain an assembly with no gaps or overlaps and produce an exploded isometric line drawing."],
       ["Promotional", "I can place STEP files, apply materials and a decal, and set a camera to match a given viewpoint."],

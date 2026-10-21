@@ -338,7 +338,7 @@
     ctl.append(sl);
     // the sketch: an L-shaped bracket profile, in mm, origin at its bottom-left corner
     const L = [[0, 0], [80, 0], [80, 20], [30, 20], [30, 60], [0, 60]];
-    const ox = 70, oy = 200, k = 1.6; // mm to svg units
+    let ox = 70, oy = 200, k = 1.6; // mm to svg units, set per tool so each sketch fills the pad
     const P = ([x, y]) => [ox + x * k, oy - y * k];
     const pathOf = (pts, close = true) => "M" + pts.map((p) => P(p).map((v) => v.toFixed(1)).join(" ")).join(" L") + (close ? " Z" : "");
     function poly(pts, cls, extra = {}) { return HG.svg("path", { d: pathOf(pts, extra.open ? false : true), class: cls, ...extra.attrs }); }
@@ -388,6 +388,7 @@
       const g = (el) => svg.append(el);
       const t = S.tool;
       let msg = "", label = "";
+      [ox, oy, k] = { offset: [70, 205, 2.3], mirror: [180, 210, 2.2], linear: [30, 210, 2], box: [30, 210, 2], radial: [0, 0, 2.4], fillet: [80, 215, 2.4], chamfer: [80, 215, 2.4], trim: [70, 225, 2.3], extend: [70, 225, 2.3] }[t];
       if (t === "offset") {
         g(poly(L, "cad-sk-base"));
         const o = offsetOut(L, S.d);
@@ -422,7 +423,7 @@
           : `Box array: a grid of ${S.n} × ${rows} = ${cnt} instances, ${S.sp} mm apart in both directions (rows and columns).${15 + span + 4 > 150 || 15 + (rows - 1) * S.sp + 4 > 70 ? " Some copies run off the plate: reduce the count or the spacing." : ""}`;
         label = `${t === "linear" ? "Linear" : "Box"} array of ${cnt} holes`;
       } else if (t === "radial") {
-        const c0 = P([40, 40]);
+        const c0 = [130, 125];
         g(HG.svg("circle", { cx: c0[0], cy: c0[1], r: 46 * k, class: "cad-sk-base" }));
         g(HG.svg("circle", { cx: c0[0], cy: c0[1], r: 30 * k, class: "cad-sk-pcd" }));
         const full = S.ang >= 360, step = full ? 360 / S.n : S.ang / (S.n - 1);
@@ -432,7 +433,7 @@
         }
         g(HG.svg("line", { x1: c0[0] - 8, y1: c0[1], x2: c0[0] + 8, y2: c0[1], class: "cad-sk-cl" }));
         g(HG.svg("line", { x1: c0[0], y1: c0[1] - 8, x2: c0[0], y2: c0[1] + 8, class: "cad-sk-cl" }));
-        g(txt(c0[0] + 128, 40, "PCD 60", "ink2"));
+        g(txt(c0[0] + 30 * k * 0.71 + 40, c0[1] - 30 * k * 0.71 - 6, "PCD 60", "ink2", "start"));
         msg = full
           ? `Radial array of ${S.n} round the full 360°: the angle between neighbours is 360 ÷ ${S.n} = ${N(step, 2)}°, because the last copy would land on the first.`
           : `Radial array of ${S.n} through a total angle of ${S.ang}°: the first and last instances sit at the ends of the arc, so there are ${S.n - 1} gaps and the angle between neighbours is ${S.ang} ÷ ${S.n - 1} = ${N(step, 2)}°.`;
@@ -440,13 +441,14 @@
       } else if (t === "fillet" || t === "chamfer") {
         const v = t === "fillet" ? S.r : S.c;
         const res = corners(L, v, t);
-        g(poly(L, "cad-sk-base"));
-        g(poly(res.out, "cad-sk-new"));
-        const inner = res.info.find((q) => q.concave);
+        // CAD refuses when the set-backs at the two ends of any line add up to more than the line's length
+        const clash = L.map((p, i) => { const q = L[(i + 1) % L.length], len = Math.hypot(q[0] - p[0], q[1] - p[1]); return { len, need: res.info[i].t + res.info[(i + 1) % L.length].t }; }).find((e) => e.need > e.len + 1e-9);
+        g(poly(L, clash ? "cad-sk-new" : "cad-sk-base"));
+        if (!clash) g(poly(res.out, "cad-sk-new"));
         msg = t === "fillet"
           ? `Fillet replaces each corner with an arc of radius ${v} mm, tangent to both lines. At a 90° corner the arc starts ${v} mm back along each line (set-back = r ÷ tan 45° = r). The inside corner (concave) gets a fillet too: that is the one that strengthens a bracket.`
           : `Chamfer cuts each corner with a straight line, ${v} mm back along both lines: an equal-distance chamfer, so the cut is at 45° and its length is ${v} × √2 = ${N(v * Math.SQRT2, 1)} mm.`;
-        if (inner && inner.t > 20) msg += " Careful: the set-back is now longer than the shortest line, so a CAD package would refuse.";
+        if (clash) msg = `⚠ CAD would refuse: the ${N(clash.len, 0)} mm line would need ${N(clash.need, 0)} mm of set-back (${v} mm at each end), more than its length, so the two ${t}s would cross. The profile is left unchanged. Reduce the ${t === "fillet" ? "radius" : "distance"} to ${N(clash.len / 2, 0)} mm or less.`;
         label = `${t === "fillet" ? "Fillet radius" : "Chamfer distance"} ${v} mm on every corner of the L profile`;
       } else if (t === "trim" || t === "extend") {
         // two crossing construction lines, a horizontal one that stops short, and a boundary
