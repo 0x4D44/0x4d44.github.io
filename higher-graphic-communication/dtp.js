@@ -74,8 +74,8 @@
         { x: 86, y: 155, opts: ["Date in a yellow accent panel gives it emphasis, so parents notice when the open evening is.", "Date at the bottom.", "The yellow date is a receding colour, so it stands out."] }] },
     { name: "B · Diagonal climb", items: [
       { k: "fullcrop", x: 0, y: 26, w: 120, h: 70 }, { k: "pathtitle", x: 4, y: 4, w: 90, h: 26, t: "JOIN THE SQUADRON" },
-      { k: "logo", x: 100, y: 4, w: 14, h: 14 }, { k: "img", x: 8, y: 102, w: 48, h: 18 }, { k: "img", x: 8, y: 124, w: 48, h: 18 },
-      { k: "img", x: 8, y: 146, w: 48, h: 18 }, { k: "text1", x: 64, y: 102, w: 48, h: 50 }, { k: "date", x: 64, y: 154, w: 48, h: 12 }],
+      { k: "logo", x: 100, y: 4, w: 14, h: 14 }, { k: "img", x: 8, y: 106, w: 48, h: 17 }, { k: "img", x: 8, y: 127, w: 48, h: 17 },
+      { k: "img", x: 8, y: 148, w: 48, h: 17 }, { k: "text1", x: 64, y: 102, w: 48, h: 50 }, { k: "date", x: 64, y: 154, w: 48, h: 12 }],
       pins: [
         { x: 98, y: 28, opts: ["Title flowed along a curved path that follows the aircraft's climb, adding movement and linking the words to the image.", "Curvy writing.", "The title uses a hanging indent so that it curves."] },
         { x: 70, y: 62, opts: ["Aircraft full cropped to remove its background, so it sits straight on the poster's own background and its diagonal gives the layout movement.", "Plane picture.", "Aircraft square cropped to remove its outline."] },
@@ -112,11 +112,11 @@
         else {
           const id = "dp-tp-" + Math.random().toString(36).slice(2, 7);
           g.append(S("path", { id, d: `M${x + 2} ${y + 22} Q${x + 46} ${y - 6} ${x + 92} ${y + 10}`, fill: "none" }));
-          const t = S("text", { "font-size": 9.5, "font-weight": 700, fill: P.navy }); const tp = S("textPath", { href: "#" + id, text: it.t }); t.append(tp); g.append(t);
+          const t = S("text", { "font-size": 8.5, "font-weight": 700, fill: P.navy }); const tp = S("textPath", { href: "#" + id, textLength: 92, lengthAdjust: "spacingAndGlyphs", text: it.t }); t.append(tp); g.append(t);
         }
       } else if (it.k === "title") {
         if (sk) line(`M${x + 6} ${y + 12} q9 -7 18 0 t18 0 t18 0 t18 0 t18 0`, 2.2);
-        else g.append(S("text", { x: x + w / 2, y: y + 16, "font-size": 15, "font-weight": 700, fill: P.red, "text-anchor": "middle", text: it.t }));
+        else g.append(S("text", { x: x + w / 2, y: y + 16, "font-size": 12.5, "font-weight": 700, fill: P.red, "text-anchor": "middle", text: it.t }));
       } else if (it.k === "pennants") {
         for (let i = 0; i < 3; i++) {
           const px = x + 6 + i * 36;
@@ -380,7 +380,7 @@
       const x = Math.max(70, Math.min(186, 170 - 60 * d));
       sideV.append(S("path", { d: `M24 70 L${x} 44 M24 70 L${x} 96`, stroke: C.muted, "stroke-dasharray": "3 3", "stroke-width": 1 }));
       sideV.append(S("rect", { x: x - 4, y: 44, width: 8, height: 52, fill: F, stroke: C.ink, "stroke-width": 1 }));
-      sideV.append(S("text", { x, y: 38, "font-size": 11, fill: C.ink, "text-anchor": "middle", text: "shape" }));
+      sideV.append(S("text", { x: x > 160 ? x - 8 : x, y: 38, "font-size": 11, fill: C.ink, "text-anchor": x > 160 ? "end" : "middle", text: "shape" }));
     }
     function dDraw() {
       const target = Math.max(-1, Math.min(1, (warmth(fg) - warmth(bgc)) / 2));
@@ -1234,7 +1234,7 @@
           const e = st.bleed ? B : 0, hs = { fill: "#d4147a", "fill-opacity": 0.55 };
           if (d > 0) { res.append(S("rect", { x: W + e - d, y: 0, width: d - e, height: H, ...hs }), S("rect", { x: 0, y: H + e - d, width: W, height: d - e, ...hs })); }
           else { res.append(S("rect", { x: 0, y: 0, width: -d - e, height: H, ...hs }), S("rect", { x: 0, y: 0, width: W, height: -d - e, ...hs })); }
-          res.append(S("text", { x: W / 2, y: H / 2, "font-size": 11, "font-weight": 700, fill: "#fff", stroke: "#d4147a", "stroke-width": 3, "paint-order": "stroke", "text-anchor": "middle", text: `white sliver ${HG.n(sliver, 1)} mm (magenta)` }));
+          ["white sliver", `${HG.n(sliver, 1)} mm`].forEach((t, k) => res.append(S("text", { x: W / 2, y: H / 2 + k * 16, "font-size": 13, "font-weight": 700, fill: "#fff", stroke: "#d4147a", "stroke-width": 3, "paint-order": "stroke", "text-anchor": "middle", text: t })));
         }
         const side = d > 0 ? "right and bottom" : "left and top";
         const msg = sliver > 0 ? `Trimmed ${HG.n(Math.abs(d), 1)} mm off line with ${st.bleed ? "only 3 mm of" : "no"} bleed: a white sliver ${HG.n(sliver, 1)} mm wide shows along the ${side} edges. Every poster in the stack is spoiled.` :
