@@ -189,7 +189,8 @@
       for (const e of E) {
         const f1 = F[e.f[0]], f2 = e.f.length > 1 ? F[e.f[1]] : null;
         const d1 = dot(f1.n, t), d2 = f2 ? dot(f2.n, t) : -1;
-        const crease = !f2 || dot(f1.n, f2.n) < cc;
+        // the edges of a cut face are always real edges, however shallow the cut
+        const crease = !f2 || f1.tag === "cut" || f2.tag === "cut" || dot(f1.n, f2.n) < cc;
         const a = d1 > 1e-6, b = f2 ? d2 > 1e-6 : false;
         if (a || b) { if (crease || a !== b) vis.push([e.a, e.b]); }
         else if (crease) hid.push([e.a, e.b]);
@@ -1350,15 +1351,15 @@
      8. Perspective builder: one and two vanishing points, true geometry
      ===================================================================== */
   mount("w-perspective", (box) => {
-    const st = { mode: "two", hy: 0.36, v1: 0.95, v2: 0.05, x0: 0.5, gy: 0.82, vx: 0.5, dk: 0.9, W: 4, D: 3, H: 2 };
+    const st = { mode: "two", hy: 0.36, v1: 0.9, v2: 0.1, x0: 0.5, gy: 0.82, vx: 0.5, dk: 0.9, W: 4, D: 3, H: 2 };
     HG.choice(box, "Perspective:", [["two", "Two-point"], ["one", "One-point"]], st.mode, (v) => { st.mode = v; sim.redraw(); info(); });
     const ctl = controls(box);
     HG.slider(ctl, { label: "Width (blocks)", min: 1, max: 6, step: 1, value: st.W, oninput: (v) => { st.W = v; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Depth (blocks)", min: 1, max: 6, step: 1, value: st.D, oninput: (v) => { st.D = v; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Height (blocks)", min: 1, max: 5, step: 1, value: st.H, oninput: (v) => { st.H = v; sim.redraw(); info(); } });
     const hS = HG.slider(ctl, { label: "Horizon (eye level) height", min: 5, max: 95, step: 1, value: 100 - st.hy * 100, unit: "%", oninput: (v) => { st.hy = 1 - v / 100; sim.redraw(); info(); } });
-    const v2S = HG.slider(ctl, { label: "Left vanishing point (two-point)", min: 0, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; sim.redraw(); info(); } });
-    const v1S = HG.slider(ctl, { label: "Right vanishing point (two-point)", min: 55, max: 100, step: 1, value: st.v1 * 100, unit: "%", oninput: (v) => { st.v1 = v / 100; sim.redraw(); info(); } });
+    const v2S = HG.slider(ctl, { label: "Left vanishing point (two-point)", min: 10, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; sim.redraw(); info(); } });
+    const v1S = HG.slider(ctl, { label: "Right vanishing point (two-point)", min: 55, max: 90, step: 1, value: st.v1 * 100, unit: "%", oninput: (v) => { st.v1 = v / 100; sim.redraw(); info(); } });
     const vxS = HG.slider(ctl, { label: "Vanishing point position (one-point)", min: 2, max: 98, step: 1, value: st.vx * 100, unit: "%", oninput: (v) => { st.vx = v / 100; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Viewing distance (one-point)", min: 40, max: 200, step: 5, value: st.dk * 100, unit: "%", oninput: (v) => { st.dk = v / 100; sim.redraw(); info(); } });
     const cv = canvasIn(box, "");
@@ -1389,7 +1390,7 @@
         const pt = (w, dd, h) => g.scr(g.P3(w, dd, h));
         // horizon, ground line
         seg(ctx, [0, g.hy], [S.w, g.hy], C.sea, 1.5);
-        lab(ctx, "HL (eye level)", S.w / 2, g.hy - 10, { size: 11, bold: true, col: C.sea, align: "center" });
+        lab(ctx, "HL (eye level)", S.w * 0.3, g.hy + 12, { size: 11, bold: true, col: C.sea, align: "center" });
         seg(ctx, [0, g.gy], [S.w, g.gy], alpha(C.muted, 0.7), 1, [6, 4]);
         lab(ctx, "GL", S.w - 24, g.gy - 9, { size: 11, col: C.muted });
         // faces, back to front: hidden faces skipped (the block is convex)
@@ -1441,8 +1442,9 @@
     }, (id, x, y) => {
       const w = sim.w, h = sim.h;
       if (id === "hl") st.hy = clamp(y / h, 0.05, 0.95);
-      if (id === "v1") st.v1 = clamp(x / w, st.x0 + 0.06, 1);
-      if (id === "v2") st.v2 = clamp(x / w, 0, st.x0 - 0.06);
+      // VPs stay clear of the horizon handle at the left edge
+      if (id === "v1") st.v1 = clamp(x / w, st.x0 + 0.06, 0.9);
+      if (id === "v2") st.v2 = clamp(x / w, 0.1, st.x0 - 0.06);
       if (id === "vx") { st.vx = clamp(x / w, 0.02, 0.98); st.hy = clamp(y / h, 0.05, 0.95); }
       if (id === "foot") { st.x0 = clamp((st.mode === "two" ? x : x + st.W * geo.b / 2) / w, st.mode === "two" ? st.v2 + 0.06 : 0.1, st.mode === "two" ? st.v1 - 0.06 : 0.9); st.gy = clamp(y / h, 0.15, 0.97); }
  vxS.sync(Math.round(st.vx * 100));
@@ -1591,8 +1593,9 @@
         for (let k = 0; k <= 40; k++) { const t = k / 40 * 2.08 * Math.PI, wob = 1 + r() * 0.05; const q = [c[0] + rr * wob * Math.cos(t), c[1] + rr * wob * Math.sin(t)]; k ? ctx.lineTo(...q) : ctx.moveTo(...q); }
         ctx.stroke(); ctx.restore();
         hand(c[0] - rr - 7, c[1], c[0] + rr + 7, c[1], C.sea, 1, [12, 3, 2, 3]); hand(c[0], c[1] - rr - 7, c[0], c[1] + rr + 7, C.sea, 1, [12, 3, 2, 3]);
-        lab(ctx, "PLAN", px + Lx * s / 2, py - 10, { size: 11, bold: true, col: C.muted, align: "center" });
-        lab(ctx, "ELEVATION", ex + Lx * s / 2, ey + 14, { size: 11, bold: true, col: C.muted, align: "center" });
+        lab(ctx, "PLAN", px + Lx * s / 2, first ? py + Dy * s + 14 : py - 10, { size: 11, bold: true, col: C.muted, align: "center" });
+        // label each view on its outer side, so the labels never meet between the views
+        lab(ctx, "ELEVATION", ex + Lx * s / 2, first ? elevTop - 10 : ey + 14, { size: 11, bold: true, col: C.muted, align: "center" });
         lab(ctx, "CADET'S SKETCH", 8, (Lo.wide ? 0 : Lo.ph) + 10, { size: 11, bold: true, col: C.muted });
       },
     });
