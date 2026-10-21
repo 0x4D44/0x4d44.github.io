@@ -84,7 +84,7 @@
     "0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111", "4": "101101111001001",
     "5": "111100111001111", "6": "111100111101111", "7": "111001001001001", "8": "111101111101111", "9": "111101111001111",
     "-": "000000111000000", "+": "000010111010000", ".": "000000000000010", ":": "000010000010000", ",": "000000000010100",
-    "&": "010101010101011", " ": "000000000000000",
+    "&": "010101010101011", "°": "010101010000000", " ": "000000000000000",
   };
   const textW = (s) => s.length * 4 - 1;
   function text(s, x, y, col) {
@@ -187,7 +187,7 @@
   // third angle: elevation looks from the front (-y) with the bow to the right; the plan (from above) sits
   // ABOVE it with the front edge nearest the elevation; the end elevation (from the bow, +x) sits to the RIGHT
   // with the front edge nearest the elevation
-  const S = 1.2, EX = 92, EY = 72, PY = 20, NX = 176;
+  const S = 1.2, EX = 92, EY = 71, PY = 20, NX = 176;
   const ORTHO = {
     elev: { P: (p) => [EX + p[0] * S, EY - p[2] * S], d: [0, 1, 0] },
     plan: { P: (p) => [EX + p[0] * S, PY - p[1] * S], d: [0, 0, -1] },
@@ -398,28 +398,33 @@
 
   // 3. third-angle orthographic projection
   const INK = "#2a1740", THIN = "#8a7aa8", CL = "#a3236b", HID = "#2f5fa8", SHEET = "#f4eddc";
-  const sheet = layer(() => {
-    px(0, 0, W, H, SHEET);
-    for (let i = 0; i < 200; i++) px(hash(i, 5) % W, hash(i, 6) % H, 1, 1, "rgba(120,100,70,.10)");
-    outline([[2, 1], [317, 1], [317, 78], [2, 78]], THIN);
-    // title block with the third-angle projection symbol
-    outline([[212, 46], [269, 46], [269, 78], [212, 78]], INK);
-    px(212, 56, 58, 1, INK);
-    label("HMS VELLUM", 216, 49);
-    label("PLAN ROOM", 6, 5, THIN);
-    label("DRG 1805", 6, 72, THIN);
-    // symbol: a frustum (narrow end to the right) and, to its right, its end view seen from that narrow end
-    line(217, 59, 217, 69, INK); line(226, 61, 226, 67, INK); line(217, 59, 226, 61, INK); line(217, 69, 226, 67, INK);
-    circle(237, 64, 5, INK); circle(237, 64, 3, INK);
-    line(214, 64, 245, 64, CL, [5, 1, 1, 1]); line(237, 57, 237, 71, CL, [5, 1, 1, 1]);
-    label("3RD", 248, 59); label("ANGLE", 248, 66);
-  });
+  // the sheet, with the title block placed so it stays inside the phone crop (x 60 to 260) when narrow
+  function makeSheet(x0) {
+    return layer(() => {
+      px(0, 0, W, H, SHEET);
+      for (let i = 0; i < 200; i++) px(hash(i, 5) % W, hash(i, 6) % H, 1, 1, "rgba(120,100,70,.10)");
+      outline([[2, 1], [317, 1], [317, 78], [2, 78]], THIN);
+      outline([[x0, 46], [x0 + 55, 46], [x0 + 55, 78], [x0, 78]], INK);
+      px(x0, 56, 56, 1, INK);
+      label("HMS VELLUM", x0 + 4, 49);
+      label("PLAN ROOM", 6, 5, THIN);
+      label("DRG 1805", 6, 70, THIN);
+      // symbol: a frustum (narrow end to the right) and, to its right, its end view seen from that narrow end
+      const sx = x0 + 4;
+      line(sx, 59, sx, 69, INK); line(sx + 8, 61, sx + 8, 67, INK); line(sx, 59, sx + 8, 61, INK); line(sx, 69, sx + 8, 67, INK);
+      circle(x0 + 23, 64, 5, INK); circle(x0 + 23, 64, 3, INK);
+      line(x0 + 2, 64, x0 + 30, 64, CL, [5, 1, 1, 1]); line(x0 + 23, 57, x0 + 23, 71, CL, [5, 1, 1, 1]);
+      label("3RD", x0 + 32, 59); label("ANGLE", x0 + 32, 66);
+    });
+  }
+  const sheetWide = makeSheet(212), sheetNarrow = makeSheet(204);
+  const narrowMQ = window.matchMedia ? matchMedia("(max-width: 560px)") : null;
   function reveal(k, x, y, w, h, fn) {
     if (k <= 0) return;
     c.save(); c.beginPath(); c.rect(x, y, w * k, h); c.clip(); fn(); c.restore();
   }
   function drawOrtho(u) {
-    c.drawImage(sheet, 0, 0);
+    c.drawImage(narrowMQ && narrowMQ.matches ? sheetNarrow : sheetWide, 0, 0);
     const k1 = ease((u - 0.2) / 1.0), k2 = ease((u - 1.2) / 0.5), k3 = ease((u - 1.5) / 0.9), k4 = ease((u - 2.4) / 0.6), k5 = ease((u - 2.9) / 0.8);
     // projection lines: up from the elevation into the plan, across from the elevation to the end elevation
     if (k2 > 0) [0, 9, 11.5, 21.5, 31.5, 40, 43, 51].forEach((x) => { const X = EX + x * S; line(X, 31, X, 31 - k2 * 20, THIN, [1, 1]); });
@@ -440,8 +445,8 @@
       r(3, 37, -3.5, 3.5);
     });
     if (k3 >= 1) label("PLAN", 64, 18);
-    if (k1 >= 1) label("ELEVATION", 116 - textW("ELEVATION") / 2, 74);
-    if (k5 >= 1) label("END ELEVATION", NX - textW("END ELEVATION") / 2 + 3, 74);
+    if (k1 >= 1) label("ELEVATION", 116 - textW("ELEVATION") / 2, 73);
+    if (k5 >= 1) label("END ELEVATION", NX - textW("END ELEVATION") / 2 + 1, 73);
     if (k7 >= 1) { label("HIDDEN", 216, 14, HID); line(214, 16, 131, 24, HID, [1, 2]); label("CENTRE LINE", 196, 30, CL); line(194, 32, 178, 38, CL, [1, 2]); }
     tag("THIRD ANGLE ORTHOGRAPHIC");
   }
@@ -470,7 +475,7 @@
     // the isometric axes: 30 degrees each side of the vertical
     const ax = 252, ay = 70;
     line(ax, ay, ax + 12, ay - 7, CL); line(ax, ay, ax - 12, ay - 7, CL); line(ax, ay, ax, ay - 12, CL);
-    label("30", ax + 9, ay - 5, CL);
+    label("30°", ax + 9, ay - 5, CL);
     tag("ISOMETRIC");
   }
   function drawExploded(u) {
@@ -542,10 +547,10 @@
         line(x + sx * (6 + o), y, x + sx * (12 + o), y, ck);
         line(x, y + sy * (5 + o), x, y + sy * (9 + o), ck);
       });
-      regMark(62 - o, 40); regMark(258 + o, 40);
+      regMark(66 - o, 40); regMark(254 + o, 40);
       CMYK.forEach((col, i) => { px(128 + i * 8, 73 + o, 7, 5, col); px(160 + i * 8, 73 + o, 7, 5, col); c.globalAlpha = 1; });
       c.globalAlpha = 0.5; CMYK.forEach((col, i) => px(160 + i * 8, 73 + o, 7, 5, "#f7f3ea")); c.globalAlpha = 1;
-      if (m >= 1) { label("BLEED", 77, 73, "#7a5c96"); label("CROP", 224, 73, "#7a5c96"); label("PROOF 1", 4, 72, "#7a5c96"); label("CMYK", 262, 72, "#7a5c96"); }
+      if (m >= 1) { label("BLEED", 77, 73, "#7a5c96"); label("CROP", 224, 73, "#7a5c96"); label("PROOF 1", 80, 2, "#7a5c96"); label("CMYK", 222, 2, "#7a5c96"); }
     }
     tag("PRINT: BLEED + CROP");
   }

@@ -29,3 +29,7 @@
   .gloss-table tbody th, .gloss-table td { border: 0; background: none; padding: 0 0 3px; min-width: 0; }
   .gloss-table tbody th { font-family: var(--font-pixel); width: auto; }
 }
+/* phones: the pause button sits below the banner, not over the drawing */
+@media (max-width: 560px) {
+  .hero-pause { position: static; display: block; margin: 4px 8px 4px auto; }
+}

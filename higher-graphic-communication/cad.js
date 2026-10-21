@@ -458,8 +458,8 @@
           // a line that overshoots the vertical at x = 70
           g(poly([[-20, 40], [70, 40]], "cad-sk-new", { open: true }));
           g(poly([[-20, 40], [0, 40]], "cad-sk-gone", { open: true }));
-          g(poly([[70, 0], [70, 60]], "cad-sk-new", { open: true }));
-          g(poly([[70, 60], [70, 80]], "cad-sk-gone", { open: true }));
+          g(poly([[70, 0], [70, 40]], "cad-sk-new", { open: true }));
+          g(poly([[70, 40], [70, 80]], "cad-sk-gone", { open: true }));
           g(txt(P([-10, 40])[0], P([-10, 40])[1] - 8, "trimmed", "muted"));
           msg = "Trim removes the part of a line on one side of an intersection: you pick the piece to delete and it is cut back exactly to the line it crosses (the dashed overshoots go). Sketch quickly with overlapping lines, then trim to tidy the profile so it is a single closed loop.";
           label = "Trim: overshooting line ends removed back to the intersection";
@@ -488,7 +488,7 @@
     let P = init();
     let hole = { c: [140, 110], r: 18 };
     const S = { fixed: false, perp: false, par1: false, par2: false, lenAB: false, lenAD: false, dia: false, conc: false };
-    const LAD = 120, HOLE_R = 15;
+    const LAD = 120, HOLE_R = 15, CON = [118, 104]; // the construction circle's fixed centre
     let fixedAt = [[40, 30], [200, 42]];
     const W = 360, H = 250;
     const svg = HG.svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "cad-sketch", role: "img", "aria-label": "Sketch with constraints" });
@@ -501,7 +501,7 @@
       ["par2", "Parallel (BC ∥ AD)", 1, "BC must run parallel to AD."],
       ["lenAD", "Linear (AD = 120)", 1, "A linear dimension fixes the length of AD."],
       ["dia", "Diameter (hole Ø30)", 1, "A diameter dimension fixes the size of the circle."],
-      ["conc", "Concentric (hole with the construction circle)", 2, "The hole is made concentric with a dashed construction circle drawn round the profile's centre: the two share one centre, so the hole's centre can no longer move."],
+      ["conc", "Concentric (hole with the fixed construction circle)", 2, "The hole is made concentric with the dashed construction circle, which is itself fixed in place: the two share one centre, so the hole's centre can no longer move."],
     ];
     const btns = {};
     list.forEach(([k, lab]) => {
@@ -544,7 +544,7 @@
         if (S.lenAD) setLen(0, 3, LAD);
       }
       if (S.dia) hole.r = HOLE_R;
-      if (S.conc && pin !== "c") hole.c = centreMark();
+      if (S.conc && pin !== "c") hole.c = CON.slice();
     }
     const centreMark = () => [(P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4];
     function dof() {
@@ -561,7 +561,9 @@
       const hc = X(hole.c);
       g(HG.svg("circle", { cx: hc[0], cy: hc[1], r: hole.r, class: "cad-sk-new" }));
       const cm = X(centreMark());
-      g(HG.svg("circle", { cx: cm[0], cy: cm[1], r: 30, class: "cad-sk-pcd" }));
+      const cc = X(CON);
+      g(HG.svg("circle", { cx: cc[0], cy: cc[1], r: 30, class: "cad-sk-pcd" }));
+      g(HG.svg("text", { x: cc[0] + 24, y: cc[1] - 26, "font-size": 12, class: "muted halo", text: "fixed construction circle" }));
       g(HG.svg("path", { d: `M${cm[0] - 7} ${cm[1]} h14 M${cm[0]} ${cm[1] - 7} v14`, class: "cad-sk-cl" }));
       // constraint glyphs
       const mid = (i, j) => [(pts[i][0] + pts[j][0]) / 2, (pts[i][1] + pts[j][1]) / 2];
@@ -841,7 +843,7 @@
     const cam = { yaw: -0.7, pitch: 0.5 };
     const canvas = canvasIn(box, "Modelling edits");
     const ctl = HG.el("div"); box.append(ctl);
-    HG.choice(ctl, "Edit on the four vertical edges", [["none", "None"], ["fillet", "Fillet (regular)"], ["vfillet", "Fillet (irregular)"], ["chamfer", "Chamfer (regular)"], ["uchamfer", "Chamfer (irregular)"]], S.edit, (v) => { S.edit = v; controlsFor(); rebuild(); });
+    HG.choice(ctl, "Edit on the four vertical edges", [["none", "None"], ["fillet", "Fillet (regular)"], ["vfillet", "Fillet (irregular)"], ["chamfer", "Chamfer (regular)"], ["uchamfer", "Chamfer (irregular)"]], S.edit, (v) => { S.edit = v; if (v === "uchamfer" && S.a === S.b) S.b = Math.max(2, S.a - 4); controlsFor(); rebuild(); });
     const sl = HG.el("div", { class: "sim-controls" }); ctl.append(sl);
     const sh = HG.el("div", { class: "sim-controls" }); ctl.append(sh);
     const shellBtn = HG.el("button", { type: "button", class: "seg-btn", "aria-pressed": "false" }, "Shell: remove the top face");
@@ -899,9 +901,9 @@
         fillet: `A regular fillet: every selected edge is rounded with the same ${S.r1} mm radius all the way along.`,
         vfillet: `An irregular (variable) fillet: the radius changes along the edge, from ${S.r1} mm at the bottom to ${S.r2} mm at the top.`,
         chamfer: `A regular chamfer: the edge is cut back the same ${S.a} mm on both faces, so the bevel is at 45°.`,
-        uchamfer: `An irregular chamfer: two different distances (${S.a} mm and ${S.b} mm), so the bevel is not at 45°.`,
+        uchamfer: S.a === S.b ? `These two distances are equal (${S.a} mm), so this is actually a regular 45° chamfer: make them different to see an irregular one.` : `An irregular chamfer: two different distances (${S.a} mm and ${S.b} mm), so the bevel is not at 45°.`,
       }[e];
-      msg.textContent = parts + (S.shell ? ` Shell hollows the solid, leaving walls ${S.t} mm thick everywhere and removing the face you pick (the top), so you can see inside. The fillets and chamfers carry through to the inside walls.` : "");
+      msg.textContent = parts + (S.shell ? ` Shell hollows the solid, leaving walls ${S.t} mm thick everywhere and removing the face you pick (the top), so you can see inside.` + (e === "none" ? "" : rounded ? ` The ${e.includes("fillet") ? "fillets" : "chamfers"} carry through to the inside walls (smaller by the wall thickness).` : ` The radius is no bigger than the wall thickness, so the inside corners come out sharp.`) : "");
       canvas.setAttribute("aria-label", msg.textContent);
       sim.redraw();
     }
@@ -1000,7 +1002,7 @@
     solids.hex.f.push([5, 4, 3, 2, 1, 0], [6, 7, 8, 9, 10, 11]);
     for (let i = 0; i < 6; i++) solids.hex.f.push([i, (i + 1) % 6, (i + 1) % 6 + 6, i + 6]);
     const S = { solid: "cube", show: "v", k: 0 };
-    const cam = { yaw: -0.7, pitch: 0.45 };
+    const cam = { yaw: -2.35, pitch: 0.45 }; // viewer at +x +y +z, so the chamfered corner (1, 1, 1) faces you
     const canvas = canvasIn(box, "Vertices, edges and faces");
     const ctl = HG.el("div"); box.append(ctl);
     HG.choice(ctl, "Solid", Object.entries(solids).map(([k, s]) => [k, s.name]), S.solid, (v) => { S.solid = v; S.k = 0; setup(); });
@@ -1044,7 +1046,7 @@
         ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1;
         edges.forEach(([a, b]) => { const A = P(sol.v[a]), B = P(sol.v[b]); ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); });
         ctx.restore();
-        const lab = (i, p) => { HG.dot(ctx, p[0], p[1], C.lode, 4); HG.label(ctx, String(i + 1), p[0] + 6, p[1] - 8, { col: C.lode, size: 13, bold: true }); };
+        const lab = (i, p) => { HG.dot(ctx, p[0], p[1], C.lode, 4); HG.label(ctx, String(i + 1), p[0] + 6, p[1] - 8, { col: C.lode, size: 13, bold: true, avoid: true }); };
         if (S.show === "v") sol.v.slice(0, S.k).forEach((q, i) => lab(i, P(q)));
         if (S.show === "e") edges.slice(0, S.k).forEach(([a, b], i) => { const A = P(sol.v[a]), B = P(sol.v[b]); ctx.save(); ctx.strokeStyle = C.lode; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore(); lab(i, [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]); });
         if (S.show === "f") sol.f.slice(0, S.k).forEach((f, i) => { const q = f.reduce((s2, k) => E3.add(s2, sol.v[k]), [0, 0, 0]).map((v) => v / f.length); lab(i, P(q)); });
@@ -1181,7 +1183,8 @@
       if (boss) {
         const bl = X(P.W / 2 - P.B / 2), br = X(P.W / 2 + P.B / 2), bt = Y(top);
         hdim(bl, br, bt, bt, bt - 16, "Ø" + P.B);
-        vdim(Y(top - P.H), bt, br, br, X(P.W) + 22, String(P.H));
+        // the lower extension line starts beyond the plate, so it never runs along the plate's outline
+        vdim(Y(top - P.H), bt, base ? X(P.W) : br, br, X(P.W) + 22, String(P.H));
       }
       void z0;
       draw2d.setAttribute("aria-label", `Elevation: plate ${P.W} wide and ${P.T} thick` + (boss ? `, boss diameter ${P.B} and ${P.H} high` : "") + ", with dimensions.");
@@ -1362,7 +1365,7 @@
     HG.slider(sl, { label: "Lift the models off the deck", min: 0, max: 20, step: 1, value: S.lift, unit: "mm", oninput: (v) => { S.lift = v; go(true); } });
     const msg = note(box);
     // scene (mm): deck z = 0; a cannonball, a crate and a capstan drum
-    const RW = { draft: 96, medium: 200, high: 360 };
+    const RW = { draft: 96, medium: 240, high: 640 };
     const off = document.createElement("canvas");
     let img = null, job = 0, info = {};
     function scene() {
@@ -1491,7 +1494,7 @@
     function go(quick) {
       clearTimeout(qt);
       if (quick) { render(S.quality, null, true); qt = setTimeout(() => render(S.quality), 280); } else render(S.quality);
-      const qtxt = { draft: "Draft: low resolution, so you can see the pixels (pixelation), and only three samples of the light per point, so the soft shadow edges come out speckled (grain).", medium: "Medium: twice the resolution and six light samples: sharper, but a little grain is still visible in the soft shadow edges.", high: "High: full resolution, smoothed edges (4 samples per pixel) and ten shadow samples, so there is no pixelation or grain. It takes longest." }[S.quality];
+      const qtxt = { draft: "Draft: low resolution, so you can see the pixels (pixelation), and only three samples of the light per point, so the soft shadow edges come out speckled (grain).", medium: "Medium: twice the resolution and six light samples: sharper, but a little grain is still visible in the soft shadow edges.", high: "High: the highest resolution in this lab, smoothed edges (4 samples per pixel) and ten light samples, so there is no visible pixelation or grain. It takes longest, so it fills in a few rows at a time." }[S.quality];
       const mt = { matte: "Matte: light scatters evenly; no highlight and no reflection.", gloss: "Gloss: a bright, sharp highlight and a faint reflection of the scene.", metal: "Metal: strong reflections of its surroundings, tinted by the metal's colour, and a tight highlight." }[S.mat];
       msg.textContent = `${mt} ${qtxt}` + (S.lift > 0 ? ` The models are ${S.lift} mm above the deck: their shadows have pulled away from them, which tells the viewer at once that they are floating.` : "") + (!S.shadows ? " Without shadows, nothing seems to sit on the deck." : "");
       canvas.setAttribute("aria-label", `Rendered scene: a cannonball, a crate and a capstan drum on a deck. Light from ${S.az}° round and ${S.el}° high. ${msg.textContent}`);
@@ -1541,13 +1544,13 @@
         ],
       },
       spring: {
-        title: "Lantern hook spring: helix",
+        title: "Bell-rope spring: helix",
         steps: [
           { id: "ax", t: "On the XZ plane, draw a vertical axis (centre line) through the origin.", after: [] },
           { id: "pr", t: "On the same plane, sketch a Ø4 circle with its centre 18 from the axis.", after: ["ax"] },
           { id: "hx", t: "Use the helix (coil) command: profile = the Ø4 circle, axis = the centre line.", after: ["pr"] },
           { id: "pp", t: "Set pitch 12 and number of revolutions 9 (overall length 108).", after: ["hx"] },
-          { id: "end", t: "On a work plane perpendicular to the axis at the top end of the coil, sketch a Ø4 circle centred on the end of the wire and extrude it 20 upwards to form the hook's leg.", after: ["pp"] },
+          { id: "end", t: "Sketch a path from the top end of the wire: a straight line 20 long, parallel to the axis. Extrude the Ø4 end of the wire along this path to form a straight leg.", after: ["pp"] },
         ],
         decoys: [
           { id: "y1", t: "Set the helix to 12 rotations of pitch.", why: "Mixes up the terms: pitch is a distance (12 mm); revolutions is a count (9). The report says many candidates misused exactly these words." },
@@ -1565,10 +1568,10 @@
     const show = HG.el("button", { class: "btn small", type: "button" }, "Show a model answer");
     br.append(check, again, show); box.append(br);
     const res = HG.el("div", { class: "sim-note", "aria-live": "polite" }); box.append(res);
+    let seed = 7; // carried between shuffles, so "Shuffle again" gives a new order
     function shuffle() {
       const t = tasks[key];
       order = t.steps.concat(t.decoys).map((s) => s.id);
-      let seed = key === "vent" ? 7 : 3;
       for (let i = order.length - 1; i > 0; i--) { seed = (seed * 9301 + 49297) % 233280; const j = Math.floor(seed / 233280 * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
       out = new Set(); res.innerHTML = "Order the steps with the arrows. Leave out any step that would not earn a mark."; draw();
     }
