@@ -67,7 +67,7 @@
     HG.choice(ctrls, "Task:", Object.entries(PRESETS).map(([k, v]) => [k, v.label]), preset, (k) => { preset = k; const s = share(); go([q(s[0]), q(s[0] + s[1])]); });
     const bShare = el("button", { class: "btn small", type: "button" }, "Share time by marks");
     const bBrief = el("button", { class: "btn small", type: "button" }, "Use the brief's times");
-    const bEven = el("button", { class: "btn small", type: "button" }, "Even thirds");
+    const bEven = el("button", { class: "btn small", type: "button" }, "Roughly even thirds");
     box.append(el("div", { class: "btn-row" }, bShare, bBrief, bEven));
     const wrap = el("div", { class: "as-plan-svg" });
     box.append(wrap);
@@ -93,7 +93,9 @@
           const xa = X(a), xb = X(a + v);
           svg.append(S("rect", { x: xa, y, width: Math.max(0, xb - xa), height: h, fill: cols[i], "fill-opacity": thick ? 0.3 : 0.18, stroke: cols[i], "stroke-width": thick ? 2 : 1.5 }));
           const txt = thick ? `${t[i][0].replace("Task ", "T")} · ${short(v)}` : short(v);
-          if (xb - xa > txt.length * 7 + 6) svg.append(S("text", { x: (xa + xb) / 2, y: y + h / 2 + 5, "text-anchor": "middle", ...font(13, thick ? 700 : 400), text: txt }));
+          const tiny = thick ? t[i][0].replace("Task ", "T") : "";
+          const shown = xb - xa > txt.length * 7 + 6 ? txt : (tiny && xb - xa >= 20 ? tiny : "");
+          if (shown) svg.append(S("text", { x: (xa + xb) / 2, y: y + h / 2 + 5, "text-anchor": "middle", ...font(13, thick ? 700 : 400), text: shown }));
           a += v;
         });
       };
@@ -107,7 +109,7 @@
       row(182, 24, t.map((x) => x[3]), "Suggested in the brief");
       handles = d.map((v, i) => {
         const g = S("g", { class: "as-handle", tabindex: "0", role: "slider", "aria-label": `Divider between ${t[i][0]} and ${t[i + 1][0]}`, "aria-valuemin": 0, "aria-valuemax": TOTAL, "aria-valuenow": v.toFixed(2), "aria-valuetext": `${t[i][0]} ends and ${t[i + 1][0]} begins at ${hm(v)} into the 8 hours` });
-        g.append(S("rect", { x: X(v) - 8, y: 24, width: 16, height: 58, rx: 3, fill: C.card, stroke: C.ink, "stroke-width": 2 }));
+        g.append(S("rect", { x: X(v) - 8, y: 29, width: 16, height: 54, rx: 3, fill: C.card, stroke: C.ink, "stroke-width": 2 }));
         g.append(S("line", { x1: X(v) - 2, y1: 40, x2: X(v) - 2, y2: 66, stroke: C.ink, "stroke-width": 1.5 }));
         g.append(S("line", { x1: X(v) + 2, y1: 40, x2: X(v) + 2, y2: 66, stroke: C.ink, "stroke-width": 1.5 }));
         g.addEventListener("keydown", (e) => {
@@ -225,7 +227,7 @@
       k("hatch", S("path", { d: "M440,260 L478,260 L478,300 L440,300 Z M502,260 L540,260 L540,300 L502,300 Z", fill: "url(#as-sh-hatchpat)", stroke: "none" })),
       P("M440,260 L478,260 L478,300 L440,300 Z"), P("M502,260 L540,260 L540,300 L502,300 Z"),
       // detail B: circle on plan + enlarged view
-      S("circle", { cx: 205, cy: 120, r: 26, fill: "none", stroke: "currentColor", "stroke-width": 1, "stroke-dasharray": "4 3" }), T(236, 100, "B"),
+      S("circle", { cx: 205, cy: 120, r: 26, fill: "none", stroke: "currentColor", "stroke-width": 1 }), T(236, 100, "B"),
       S("circle", { cx: 500, cy: 110, r: 56, fill: "none", stroke: "currentColor", "stroke-width": 1.2 }), S("circle", { cx: 500, cy: 110, r: 24, fill: "none", stroke: "currentColor", "stroke-width": 2 }),
       // title block
       S("rect", { x: 330, y: 330, width: 256, height: 80, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }),
@@ -235,12 +237,12 @@
       k("hidden", L(193, 260, 193, 300, 1.4, DASH), L(217, 260, 217, 300, 1.4, DASH), L(338, 260, 338, 300, 1.4, DASH), L(362, 260, 362, 300, 1.4, DASH)),
       k("centre", L(205, 252, 205, 308, 0.8, CHAIN), L(185, 120, 225, 120, 0.8, CHAIN), L(205, 100, 205, 140, 0.8, CHAIN), L(350, 252, 350, 308, 0.8, CHAIN), L(490, 252, 490, 308, 0.8, CHAIN), L(464, 110, 536, 110, 0.8, CHAIN), L(500, 74, 500, 146, 0.8, CHAIN)),
       k("cut", L(205, 185, 205, 318, 0.9, CHAIN), L(205, 180, 205, 192, 3), L(205, 312, 205, 324, 3), P("M205,186 L188,186 M193,182 L188,186 L193,190", 1.6), P("M205,318 L188,318 M193,314 L188,318 L193,322", 1.6), T(184, 182, "A", { a: "end" }), T(184, 328, "A", { a: "end" })),
-      k("chain", L(60, 80, 60, 30, .8), L(150, 66, 150, 30, .8), L(205, 92, 205, 30, .8, CHAIN), L(260, 66, 260, 30, .8), dimL(60, 36, 150, 36), dimL(150, 36, 205, 36), dimL(205, 36, 260, 36), T(105, 31, "90"), T(177, 31, "55"), T(232, 31, "55")),
+      k("chain", L(60, 66, 60, 30, .8), L(150, 66, 150, 30, .8), L(205, 92, 205, 30, .8, CHAIN), L(260, 66, 260, 30, .8), dimL(60, 36, 150, 36), dimL(150, 36, 205, 36), dimL(205, 36, 260, 36), T(105, 31, "90"), T(177, 31, "55"), T(232, 31, "55")),
       k("parallel", L(55, 260, 22, 260, .8), L(55, 200, 18, 200, .8), L(55, 300, 18, 300, .8), dimL(40, 300, 40, 260), dimL(26, 300, 26, 200), T(36, 280, "40", { rot: 1 }), T(22, 250, "100", { rot: 1 })),
       k("radial", P("M44,186 L64.4,165.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(16, 186, 44, 186, .9), T(24, 182, "R15")),
       k("diameter", P("M290,95 L216.5,116.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(290, 95, 306, 95, .9), T(309, 99, "Ø24", { a: "start" })),
       k("angular", L(150, 215, 150, 186, .8), S("path", { d: "M150,189 A26,26 0 0 0 131.6,196.6", fill: "none", stroke: "currentColor", "stroke-width": 0.9, "marker-start": "url(#as-sh-arr)", "marker-end": "url(#as-sh-arr)" }), T(118, 185, "45°")),
-      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(232, 190, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:5)", { w: 700 })),
+      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(232, 62, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:5)", { w: 700 })),
       k("name", T(336, 345, "NAME  A. Cadet", { a: "start", fs: 12 })), k("title", T(336, 365, "TITLE  Carriage body", { a: "start", fs: 12 })), k("project", T(336, 385, "PROJECT  Vellum guns", { a: "start", fs: 12 })),
       k("scale", T(336, 405, "SCALE 1:5", { a: "start", fs: 12 })), k("date", T(476, 405, "DATE 03/27", { a: "start", fs: 12 })), k("mm", T(476, 345, "ALL SIZES IN mm", { a: "start", fs: 12 })), k("tol", T(476, 365, "GENERAL TOL ±0.5", { a: "start", fs: 12 })),
       k("symbol", S("g", { transform: "translate(498,374) scale(.42)" }, P("M0,0 L30,8 L30,30 L0,38 Z", 3), S("circle", { cx: 66, cy: 19, r: 18, fill: "none", stroke: "currentColor", "stroke-width": 3 }), S("circle", { cx: 66, cy: 19, r: 10, fill: "none", stroke: "currentColor", "stroke-width": 3 }))),
@@ -349,8 +351,8 @@
         ["Link to planning", s.link ? 1 : 0, 1, "Build the final from one of your thumbnails, so the marker can see the plan grow."],
         ["Logo, colours, images, copy", s.logo && s.cmyk && s.images && s.copy ? 1 : 0, 1, "This mark needs all four: " + [["logo", s.logo], ["three CMYK colours", s.cmyk], ["three images", s.images], ["copy text", s.copy]].filter((x) => !x[1]).map((x) => x[0]).join(", ") + " missing."],
         ["Contrasting fonts", s.fonts === 2 ? 1 : 0, 1, "Pair a strong display face for the headline with a plain face for copy, and use each consistently."],
-        ["Elements and principles from 2(b)", s.ep, 2, "Make each named element or principle obvious: a real focal point for emphasis, a real grid for alignment."],
-        ["DTP techniques from 2(b)", s.dtp, 2, "Each named technique should do a visible job (reverse to lift a headline, text wrap round a shape)."],
+        ["Elements and principles from 2(b)", s.link ? s.ep : 0, 2, s.link ? "Make each named element or principle obvious: a real focal point for emphasis, a real grid for alignment." : "These marks are for the choices you identified in 2(b): with no link to your planning, the board scores them 0. Build from a thumbnail."],
+        ["DTP techniques from 2(b)", s.link ? s.dtp : 0, 2, s.link ? "Each named technique should do a visible job (reverse to lift a headline, text wrap round a shape)." : "Again, the techniques must be the ones you named in 2(b): link the final to your thumbnails."],
         ["Skill and visual impact", s.impact, 3, "Fewer things, aligned to a grid, one dominant item, white space left on purpose, and a clean finish."],
       ];
       const tot = items.reduce((a, x) => a + x[1], 0);
@@ -370,7 +372,7 @@
      4 · The lighting rig: lighting and render-quality ladders
      ================================================================ */
   mount("w-light", (box) => {
-    const st = { az: 125, el: 42, fill: 0.25, inten: 1, shadows: true, floating: false, samp: 3, res: 1 };
+    const st = { az: 30, el: 40, fill: 0.25, inten: 1, shadows: true, floating: false, samp: 3, res: 1 };
     const SAMPLES = [1, 4, 16, 64, 256], BLOCK = { 6: "Screen-sized, stretched to A3", 3: "Medium", 1: "Print size (A3 at 300 ppi)" };
     const cv = el("canvas", { class: "sim", role: "img", "aria-label": "Rendered deck scene" });
     box.append(cv);
@@ -378,7 +380,7 @@
     box.append(ctr);
     const rd = el("div", { class: "as-score", "aria-live": "polite" });
     const redraw = () => { sim.redraw(); };
-    const sAz = HG.slider(ctr, { label: "Light direction (round)", min: 0, max: 355, step: 5, value: st.az, unit: "°", oninput: (v) => { st.az = v; redraw(); } });
+    const sAz = HG.slider(ctr, { label: "Light direction (across the open side)", min: 0, max: 90, step: 5, value: st.az, unit: "°", oninput: (v) => { st.az = v; redraw(); } });
     HG.slider(ctr, { label: "Light height", min: 5, max: 85, step: 1, value: st.el, unit: "°", oninput: (v) => { st.el = v; redraw(); } });
     HG.slider(ctr, { label: "Fill (ambient) light", min: 0, max: 0.8, step: 0.05, value: st.fill, fmt: (v) => Math.round(v * 100) + "%", oninput: (v) => { st.fill = v; redraw(); } });
     HG.slider(ctr, { label: "Exposure", min: 0.4, max: 1.8, step: 0.05, value: st.inten, fmt: (v) => "×" + HG.n(v, 2), oninput: (v) => { st.inten = v; redraw(); } });
@@ -409,6 +411,8 @@
         if (maxB > 1.15) probs.push("over-exposed (faces burn out to white)");
         if (maxB < 0.5) probs.push("under-exposed (too dark)");
         if (st.fill < 0.1) probs.push("no fill light, so shadows are pure black");
+        if (Math.min(...f) < 0.2) probs.push("a visible face is almost black");
+        if (dot([1, 0, 0], Lv) <= 0 && dot([0, 1, 0], Lv) <= 0) probs.push("backlit: the faces you see are in shadow");
         if (st.el > 75) probs.push("light from almost straight overhead flattens the sides");
         if (st.el < 12) probs.push("light so low the shadows stretch across the scene");
         if (spread < 0.25) probs.push("faces differ only a little in tone");
@@ -423,15 +427,15 @@
       const site = st.floating ? [0, "Not sited: the models float, and their shadows have come away from them."] : [1, "Sited: every model rests on the deck and its shadow touches its base."];
       return { lit, rq, site, f, spread };
     }
-    let lastSync = 0, lastKey = "";
+    let lastSync = 0, lastKey = "", orbit = Math.acos(1 - st.az / 45);
     const sim = HG.sim(cv, {
-      onstate(playing) { rd.setAttribute("aria-live", playing ? "off" : "polite"); if (!playing) report(false); },
+      onstate(playing) { if (playing) orbit = Math.acos(Math.max(-1, Math.min(1, 1 - st.az / 45))); rd.setAttribute("aria-live", playing ? "off" : "polite"); if (!playing) report(false); },
       w: 640, h: 480, height: (w) => Math.round(w * 0.72),
       draw(ctx, t, dt, C, api) {
         if (api.playing) {
-          st.az = (st.az + dt * 40) % 360;
+          orbit += dt * 0.7; st.az = 45 - 45 * Math.cos(orbit);
           // keep the slider in step with the orbit, a few times a second rather than every frame
-          if (t - lastSync > 0.25) { lastSync = t; sAz.sync(Math.round(st.az / 5) * 5 % 360); }
+          if (t - lastSync > 0.25) { lastSync = t; sAz.sync(Math.round(st.az / 5) * 5); }
         }
         const W = api.w, H = api.h, bs = st.res;
         const sc = bs === 1 ? Math.min(2, api.scale) : 1 / bs;
@@ -531,8 +535,8 @@
     HG.choice(segs, "Hidden detail:", [[true, "Shown"], [false, "Left out"]], st.hidden, (v) => { st.hidden = v; draw(); });
     const ctr = el("div", { class: "sim-controls" });
     box.append(ctr);
-    const sP = HG.slider(ctr, { label: "Plan sketched at", min: 80, max: 120, step: 1, value: Math.round(st.plan.s * 100), unit: "%", oninput: (v) => { st.plan.s = v / 100; draw(); } });
-    const sE = HG.slider(ctr, { label: "End elevation sketched at", min: 80, max: 120, step: 1, value: Math.round(st.end.s * 100), unit: "%", oninput: (v) => { st.end.s = v / 100; draw(); } });
+    const sP = HG.slider(ctr, { label: "Plan depth sketched at", min: 80, max: 120, step: 1, value: Math.round(st.plan.s * 100), unit: "%", oninput: (v) => { st.plan.s = v / 100; draw(); } });
+    const sE = HG.slider(ctr, { label: "End elevation height sketched at", min: 80, max: 120, step: 1, value: Math.round(st.end.s * 100), unit: "%", oninput: (v) => { st.end.s = v / 100; draw(); } });
     const bRe = el("button", { class: "btn small", type: "button" }, "↺ Re-sketch");
     const bShow = el("button", { class: "btn small primary", type: "button" }, "Show me");
     box.append(el("div", { class: "btn-row" }, bRe, bShow));
@@ -555,7 +559,7 @@
       const p = pos("plan"), e = pos("end"), tol = 0.22 * u;
       // projectors from the elevation
       const vx = [0, OU, HX - HR, HX + HR, OW].map((x) => L.ex + x * u);
-      const planX = [0, OU, HX - HR, HX + HR, OW].map((x) => p.x + x * u * p.s);
+      const planX = [0, OU, HX - HR, HX + HR, OW].map((x) => p.x + x * u); // the plan's width is projected, so only its depth can be mis-sketched
       const hy = [0, OT, OH].map((z) => L.eg - z * u);
       const endY = [0, OT, OH].map((z) => e.y + OH * u * e.s - z * u * e.s);
       const W = view.w, Hh = u * 18.4;
@@ -569,19 +573,19 @@
       svg.append(el0);
       // plan (draggable)
       const gp = S("g", { class: "as-drag", tabindex: "0", role: "button", "aria-label": "Plan view. Drag, or use the arrow keys, to move it." , "data-k": "plan" });
-      const ps = u * p.s;
-      gp.append(S("rect", { x: p.x, y: p.y, width: OW * ps, height: OD * ps, fill: C.card, "fill-opacity": 0.85, stroke: C.sea, "stroke-width": 2.4 }));
-      gp.append(ln(p.x + OU * ps, p.y, p.x + OU * ps, p.y + OD * ps, { c: C.sea, w: 2.4 }));
-      gp.append(S("circle", { cx: p.x + HX * ps, cy: p.y + OD * ps / 2, r: HR * ps, fill: "none", stroke: C.sea, "stroke-width": 2.4 }));
-      gp.append(S("text", { x: p.x + OW * ps / 2, y: p.y - 6, "text-anchor": "middle", "font-size": 13, fill: C.sea, "font-weight": 700, text: "PLAN" }));
+      const ps = u * p.s; // depth scale only
+      gp.append(S("rect", { x: p.x, y: p.y, width: OW * u, height: OD * ps, fill: C.card, "fill-opacity": 0.85, stroke: C.sea, "stroke-width": 2.4 }));
+      gp.append(ln(p.x + OU * u, p.y, p.x + OU * u, p.y + OD * ps, { c: C.sea, w: 2.4 }));
+      gp.append(S("ellipse", { cx: p.x + HX * u, cy: p.y + OD * ps / 2, rx: HR * u, ry: HR * ps, fill: "none", stroke: C.sea, "stroke-width": 2.4 }));
+      gp.append(S("text", { x: p.x + OW * u / 2, y: p.y - 6, "text-anchor": "middle", "font-size": 13, fill: C.sea, "font-weight": 700, text: "PLAN" }));
       svg.append(gp);
       // end elevation from the right (draggable): front face on its left
       const ge = S("g", { class: "as-drag", tabindex: "0", role: "button", "aria-label": "End elevation, the view from the right. Drag, or use the arrow keys, to move it.", "data-k": "end" });
-      const es = u * e.s;
-      ge.append(S("rect", { x: e.x, y: e.y, width: OD * es, height: OH * es, fill: C.card, "fill-opacity": 0.85, stroke: C.red, "stroke-width": 2.4 }));
-      ge.append(ln(e.x, e.y + (OH - OT) * es, e.x + OD * es, e.y + (OH - OT) * es, { c: C.red, w: 2.4 }));
-      if (st.hidden) [OD / 2 - HR, OD / 2 + HR].forEach((x) => ge.append(ln(e.x + x * es, e.y + (OH - OT) * es, e.x + x * es, e.y + OH * es, { c: C.red, w: 1.5, dash: "5 4" })));
-      ge.append(S("text", { x: e.x + OD * es / 2, y: e.y + OH * es + 18, "text-anchor": "middle", "font-size": 13, fill: C.red, "font-weight": 700, text: "END ELEV." }));
+      const es = u * e.s; // height scale only
+      ge.append(S("rect", { x: e.x, y: e.y, width: OD * u, height: OH * es, fill: C.card, "fill-opacity": 0.85, stroke: C.red, "stroke-width": 2.4 }));
+      ge.append(ln(e.x, e.y + (OH - OT) * es, e.x + OD * u, e.y + (OH - OT) * es, { c: C.red, w: 2.4 }));
+      if (st.hidden) [OD / 2 - HR, OD / 2 + HR].forEach((x) => ge.append(ln(e.x + x * u, e.y + (OH - OT) * es, e.x + x * u, e.y + OH * es, { c: C.red, w: 1.5, dash: "5 4" })));
+      ge.append(S("text", { x: e.x + OD * u / 2, y: e.y + OH * es + 18, "text-anchor": "middle", "font-size": 13, fill: C.red, "font-weight": 700, text: "END ELEV." }));
       svg.append(ge);
       [gp, ge].forEach((g) => {
         g.addEventListener("keydown", (ev) => {
@@ -594,17 +598,18 @@
       });
       // checks
       const planAbove = p.y + OD * ps < L.top - 0.2 * u, planBelow = p.y > L.eg + 0.2 * u;
-      const planAl = Math.abs(p.x - L.ex) <= tol && Math.abs(p.s - 1) <= 0.06;
-      const endRight = e.x > L.ex + OW * u + 0.2 * u, endLeft = e.x + OD * es < L.ex - 0.2 * u;
+      const planAl = Math.abs(p.x - L.ex) <= tol;
+      const endRight = e.x > L.ex + OW * u + 0.2 * u, endLeft = e.x + OD * u < L.ex - 0.2 * u;
       const endAl = Math.abs(e.y + OH * es - L.eg) <= tol && Math.abs(e.s - 1) <= 0.06;
       const propP = Math.abs(p.s - 1) <= 0.06, propE = Math.abs(e.s - 1) <= 0.06;
       const ck = (ok, txt) => `<li>${ok ? "<span class='ok'>✔</span>" : "<span class='bad'>✘</span>"} ${txt}</li>`;
       const lines = [
         ck(planAbove, planAbove ? "Plan above the elevation: third angle." : planBelow ? "Plan below the elevation: that is the first-angle position." : "Move the plan clear of the elevation, above it."),
-        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) > tol ? `${Math.abs(p.x - L.ex) < 0.6 * u ? "a little" : "well"} ${p.x > L.ex ? "too far right" : "too far left"}` : "position fine"}${propP ? "" : `, and sketched at ${Math.round(p.s * 100)}% size`}.`),
+        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) < 0.6 * u ? "a little" : "well"} ${p.x > L.ex ? "too far right" : "too far left"}, so the vertical projectors miss its edges.`),
         ck(endRight, endRight ? "End elevation on the right: correct for the view from the right." : endLeft ? "The view from the right belongs on the right in third angle." : "Move the end elevation clear of the elevation."),
         ck(endAl, endAl ? "End elevation aligned: the horizontal projectors meet its edges." : "End elevation out of line with the elevation's heights."),
-        ck(propP && propE, propP && propE ? "Fair proportions: depth in the plan equals width in the end elevation." : "Proportion: a view is sketched too big or too small (projectors cannot all meet)."),
+        ck(propP, propP ? "Plan to fair proportions: its depth matches the end elevation's width." : `Plan out of proportion: its depth is sketched at ${Math.round(p.s * 100)}% of the true depth.`),
+        ck(propE, propE ? "End elevation to fair proportions: its height matches the elevation." : `End elevation out of proportion: its height is sketched at ${Math.round(e.s * 100)}%, so its edges cannot all meet the projectors.`),
         ck(st.hidden, st.hidden ? "Hidden detail of the hole shown dashed." : "Hidden detail left out: the hole inside the base is invisible."),
       ];
       const mk = 1 + (propP ? 1 : 0) + (planAbove && planAl ? 1 : 0) + (st.hidden ? 1 : 0);
@@ -658,8 +663,8 @@
     const A = "Production", P = "Promotional", R = "Preliminary";
     const ROWS = [
       ["A", A, "a1", "A(a) Body modelled accurately", 1, 0], ["A", A, "a2", "A(a) Three related views, data-sheet orientation", 1, 0], ["A", A, "a3", "A(a) Hidden detail", 1, 1], ["A", A, "a4", "A(a) Dimensions for manufacture", 1, 0],
-      ["A", A, "b1", "A(b) Truck: revolve and radial array accurate", 1, 0], ["A", A, "b2", "A(b) Plan with hidden detail", 1, 1], ["A", A, "b3", "A(b) Sectional elevation, hatched correctly", 1, 0], ["A", A, "b4", "A(b) Detail view of the bore, 3+ dimensions", 1, 1],
-      ["A", A, "c1", "A(c) Assembly accurate, no gaps or overlaps", 1, 0], ["A", A, "c2", "A(c) Sectional end elevation, axle not hatched", 1, 0], ["A", A, "c3", "A(c) Sectional elevation Y–Y correct", 1, 0], ["A", A, "c4", "A(c) Enlarged view of truck on axle", 1, 1],
+      ["A", A, "b1", "A(b) Truck: revolve and radial array accurate", 1, 0], ["A", A, "b2", "A(b) Elevation with centre lines and pitch circle", 1, 1], ["A", A, "b3", "A(b) Sectional end elevation, hatched correctly", 1, 0], ["A", A, "b4", "A(b) Detail view of the bore, 3+ dimensions", 1, 0],
+      ["A", A, "c1", "A(c) Assembly accurate, no gaps or overlaps", 1, 0], ["A", A, "c2", "A(c) Sectional end elevation, axle not hatched", 1, 0], ["A", A, "c3", "A(c) Sectional elevation Y–Y correct", 1, 0], ["A", A, "c4", "A(c) Enlarged view of truck on axle", 1, 0],
       ["A", A, "d1", "A(d) Exploded isometric line drawing", 1, 0], ["A", A, "d2", "A(d) Alignment, spacing and order", 1, 0],
       ["A", A, "e1", "A(e) Every dimension type used", 1, 1], ["A", A, "e2", "A(e) Template items", 1, 1], ["A", A, "e3", "A(e) Every view type labelled", 1, 1], ["A", A, "e4", "A(e) Line types correct", 1, 1],
       ["B", P, "ba1", "B(a) Models sited on the deck, scaled", 1, 1], ["B", P, "ba2", "B(a) Materials as specified", 1, 1], ["B", P, "ba3", "B(a) Crest decal on the bulkhead", 1, 1], ["B", P, "ba4", "B(a) Lighting, highlights, shadows", 2, 0], ["B", P, "ba5", "B(a) Render quality", 2, 0],
@@ -700,7 +705,7 @@
       const bar = (n, m) => `<span class="as-bar as-bar-inline" aria-hidden="true"><i style="width:${m ? n / m * 100 : 0}%"></i></span>`;
       sum.innerHTML = `<p class="readout">Total: ${tot[0]} / 50 (${Math.round(tot[0] / 50 * 100)}%)</p>` +
         `<div class="as-tally">${tasks.map(([t, v]) => `<div><b>Task ${t}: ${v[0]} / ${v[1]}</b>${bar(v[0], v[1])}</div>`).join("")}${areas.map(([a, v]) => `<div><b>${a}: ${v[0]} / ${v[1]}</b>${bar(v[0], v[1])}</div>`).join("")}</div>` +
-        (quick.length ? `<p><strong>Win back first:</strong> ${quick.map((r) => r[3].replace(/^\S+ /, "") + (r[5] ? " (quick: a habit, not a skill)" : "")).join("; ")}.</p>` : `<p class="ok">Every mark awarded. Ask a classmate to mark it too: honest self-marking is harder than it looks.</p>`);
+        (quick.length ? `<p><strong>Win back first:</strong> ${quick.map((r) => r[3] + (r[5] ? " (quick: a habit, not a skill)" : "")).join("; ")}.</p>` : `<p class="ok">Every mark awarded. Ask a classmate to mark it too: honest self-marking is harder than it looks.</p>`);
     }
     paint();
   });

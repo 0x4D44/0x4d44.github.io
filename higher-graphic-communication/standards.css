@@ -45,8 +45,8 @@ svg .st-on .st-ah, svg .st-on polygon { fill: var(--lode); }
 svg .st-on text { fill: var(--lode); }
 svg .st-leader { stroke: var(--muted); stroke-width: 1; }
 svg .st-leaddot { fill: var(--muted); }
-svg .st-lab { fill: var(--card); stroke: var(--navy-2); stroke-width: 2; }
-svg .st-labt { fill: var(--navy-2); font-weight: 700; }
+svg .st-lab { fill: var(--card); stroke: var(--ink-2); stroke-width: 2; }
+svg .st-labt { fill: var(--ink); font-weight: 700; }
 svg .st-labg { cursor: pointer; }
 svg .st-labg.st-on .st-lab { fill: var(--lode); stroke: var(--lode) !important; }
 svg .st-labg.st-on .st-labt { fill: #fff; }
