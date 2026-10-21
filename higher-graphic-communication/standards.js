@@ -465,17 +465,18 @@
       const g = S("g"); svg.append(g);
       // a narrower drawing on phones keeps the labels readable
       const nar = (svg.clientWidth || box.clientWidth || 600) < 520;
-      const VW = nar ? 380 : 560, hx = nar ? 150 : 200, sx = nar ? 240 : 340, zw = nar ? 60 : 100;
+      const VW = nar ? 380 : 560, hx = nar ? 146 : 200, sx = nar ? 236 : 340, zw = nar ? 56 : 100;
       svg.setAttribute("viewBox", `0 0 ${VW} 330`);
       const y0 = 150, kk = 1100, Y = (dev) => y0 - dev * kk;
       L(g, 56, y0, VW - 14, y0, "st-k");
-      T(g, 58, y0 - 8, "zero line", 13, "start", "muted"); T(g, 58, y0 + 18, `Ø${NOM}.00`, 13, "start", "muted");
+      const fs = nar ? 16 : 14;
+      if (nar) T(g, 58, y0 - 8, "zero line", 15, "start", "muted"); else { T(g, 58, y0 - 8, "zero line", 13, "start", "muted"); T(g, 58, y0 + 18, `Ø${NOM}.00`, 13, "start", "muted"); }
       R(g, hx, Math.min(Y(st.hu), Y(st.hl)), zw, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
       R(g, sx, Math.min(Y(st.su), Y(st.sl)), zw, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
-      T(g, hx + zw / 2, 318, "HOLE", 15, "middle", "st-sea"); T(g, sx + zw / 2, 318, "SHAFT", 15, "middle", "st-red");
-      T(g, hx - 4, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, hx - 4, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 || Math.abs(st.hl) < 0.012 ? 19 : 5), hMin.toFixed(2), 14, "end");
-      T(g, sx + zw + 4, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, sx + zw + 4, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 18 : 5), sMin.toFixed(2), 14, "start");
-      [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 46, Y(v), 56, Y(v), "st-n"); T(g, 44, Y(v) + 4, sgn2(v), 12, "end", "muted"); });
+      T(g, hx + zw / 2, 318, "HOLE", nar ? 17 : 15, "middle", "st-sea"); T(g, sx + zw / 2, 318, "SHAFT", nar ? 17 : 15, "middle", "st-red");
+      T(g, hx - 4, Y(st.hu) + 5, hMax.toFixed(2), fs, "end"); T(g, hx - 4, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 || Math.abs(st.hl) < 0.012 ? 20 : 5), hMin.toFixed(2), fs, "end");
+      T(g, sx + zw + 4, Y(st.su) + 5, sMax.toFixed(2), fs, "start"); T(g, sx + zw + 4, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 20 : 5), sMin.toFixed(2), fs, "start");
+      [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 46, Y(v), 56, Y(v), "st-n"); T(g, 44, Y(v) + 4, sgn2(v), nar ? 14 : 12, "end", "muted"); });
       if (pair) {
         L(g, hx, Y(pair.h - NOM), hx + zw, Y(pair.h - NOM), "st-k st-sea-s"); L(g, sx, Y(pair.s - NOM), sx + zw, Y(pair.s - NOM), "st-k st-red-s");
       }
