@@ -44,7 +44,7 @@
      ===================================================================== */
   mount("w-pace", (box) => {
     const marks = { cad: 25, interp: 20, tech: 8, std: 10, dtp: 27 };
-    let check = 10, clock = 45;
+    let check = 10, read = 5, clock = 45;
     const svg = svgBox("0 0 300 300", "", "ex-dial");
     const wrap = el("div", { class: "ex-pace-grid" });
     const left = el("div", { class: "ex-pace-dial" }, svg);
@@ -58,6 +58,7 @@
     right.append(total);
     const ctl2 = el("div", { class: "sim-controls" });
     box.append(ctl2);
+    HG.slider(ctl2, { label: "Minutes reading at the start", min: 0, max: 15, step: 1, value: read, unit: "min", oninput: (v) => { read = v; draw(); } });
     HG.slider(ctl2, { label: "Minutes held back for checking", min: 0, max: 20, step: 1, value: check, unit: "min", oninput: (v) => { check = v; draw(); } });
     HG.slider(ctl2, { label: "Exam clock", min: 0, max: 150, step: 1, value: clock, unit: "min", oninput: (v) => { clock = v; draw(); } });
     const legend = el("div", { class: "ex-legend" });
@@ -82,13 +83,15 @@
     }
     function draw() {
       const tot = AREAS.reduce((s, a) => s + marks[a.id], 0);
-      const work = 150 - check, per = work / 90;
+      const work = 150 - read - check, per = work / 90, perDial = work / Math.max(tot, 90);
       total.innerHTML = tot === 90 ? `<span class="ok">Total: 90 marks ✔</span> a possible paper.` : `<span class="bad">Total: ${tot} marks.</span> The paper is always 90: ${tot > 90 ? "lower" : "raise"} an area by ${Math.abs(tot - 90)}.`;
       svg.innerHTML = "";
       svg.append(HG.svg("circle", { cx: 150, cy: 150, r: 124, class: "f-card stroke-ink", "stroke-width": "2" }));
-      let m = 0;
-      AREAS.forEach((a) => { const t = marks[a.id] * per; const s = sector(m, m + t, 118, a.cls); if (s) svg.append(s); m += t; });
-      // anything left over (a total under 90) shows as an unplanned gap; the checking time is grey
+      // reading time first (grey), then each area's share of the answering time, then checking (grey).
+      // A total over 90 is squeezed into the answering time; a total under 90 leaves an unplanned gap.
+      const s0 = sector(0, read, 118, "muted"); if (s0) svg.append(s0);
+      let m = read;
+      AREAS.forEach((a) => { const t = marks[a.id] * perDial; const s = sector(m, m + t, 118, a.cls); if (s) svg.append(s); m += t; });
       const s2 = sector(m, 150 - check, 118, "paper2"); if (s2 && tot < 90) svg.append(s2);
       const s3 = sector(150 - check, 150, 118, "muted"); if (s3) svg.append(s3);
       for (let k = 0; k < 150; k += 10) {
@@ -100,22 +103,24 @@
       const [hx, hy] = pt(ang(clock), 114);
       svg.append(HG.svg("line", { x1: 150, y1: 150, x2: hx, y2: hy, class: "s-red", "stroke-width": 3.5, "stroke-linecap": "round" }));
       svg.append(HG.svg("circle", { cx: 150, cy: 150, r: 5, class: "f-red" }));
-      const banked = Math.min(90, clock / per);
+      const banked = Math.min(90, Math.max(0, clock - read) / per);
       svg.append(HG.svg("text", { x: 150, y: 134, "text-anchor": "middle", "font-size": 13, class: "ink2", text: `minute ${clock}` }));
       svg.append(HG.svg("text", { x: 150, y: 176, "text-anchor": "middle", "font-size": 22, "font-weight": 700, class: "ink", text: `${N(banked, 0)}/90` }));
       svg.append(HG.svg("text", { x: 150, y: 194, "text-anchor": "middle", "font-size": 12, class: "ink2", text: "marks banked" }));
-      svg.setAttribute("aria-label", `Exam dial of 150 minutes. ${AREAS.map((a) => `${a.short} ${marks[a.id]} marks, ${N(marks[a.id] * per, 0)} minutes`).join("; ")}; checking ${check} minutes. Clock hand at minute ${clock}: about ${N(banked, 0)} of 90 marks should be banked.`);
+      svg.setAttribute("aria-label", `Exam dial of 150 minutes. ${AREAS.map((a) => `${a.short} ${marks[a.id]} marks, ${N(marks[a.id] * per, 0)} minutes`).join("; ")}; reading ${read} minutes; checking ${check} minutes. Clock hand at minute ${clock}: about ${N(banked, 0)} of 90 marks should be banked.`);
       legend.innerHTML = "";
       AREAS.forEach((a) => legend.append(el("span", null, el("i", { class: `sw-${a.cls}` }), `${a.short}: ${N(marks[a.id] * per, 1)} min`)));
-      legend.append(el("span", null, el("i", { class: "sw-muted" }), `Checking: ${check} min`));
+      legend.append(el("span", null, el("i", { class: "sw-muted" }), `Reading: ${read} min · checking: ${check} min`));
       ro.innerHTML = "";
       ro.append(
         el("div", null, el("b", null, mmss(per)), el("span", null, "per mark at this plan")),
         el("div", null, el("b", null, `${N(banked, 0)} marks`), el("span", null, `target banked by minute ${clock}`)),
         el("div", null, el("b", null, `${N(work, 0)} min`), el("span", null, "answering time")),
       );
-      note.textContent = clock >= work
-        ? `From minute ${work} you are in your checking time: every part should already have an answer.`
+      note.textContent = clock < read
+        ? `Minutes 0 to ${read}: read every question and flag the quick marks. Answering starts at minute ${read}.`
+        : clock >= 150 - check
+        ? `From minute ${150 - check} you are in your checking time: every part should already have an answer.`
         : `At minute ${clock} you should be about ${N(banked, 0)} marks in. If you are well behind, write the points you are sure of in the part you are stuck on and move on.`;
       conv.innerHTML = `<b>${qm} mark${qm > 1 ? "s" : ""}</b> at this pace: <b>${mmss(qm * per)}</b>. At the full 1 min 40 s a mark: ${mmss(qm * 150 / 90)}.`;
     }
@@ -130,9 +135,9 @@
       name: "Emphasis on a title",
       q: "Explain how emphasis has been created on the title “HMS VELLUM” on the open-day poster. [2]",
       causes: [
-        { t: "The title is set in a large, bold font, much bigger than any other text", g: "size" },
+        { t: "The title is set in a large, bold font: the largest heading text on the poster", g: "size" },
         { t: "The title is reversed out: white letters on the navy band", g: "rev" },
-        { t: "Nothing else shares the top band, so space surrounds the title", g: "space" },
+        { t: "Space is left around the title within the navy band", g: "space" },
         { t: "The body text is set in two columns", bad: "True, but it is about the body text. It cannot cause emphasis on the title." },
         { t: "The poster uses navy and magenta", bad: "Too general: it does not say what was done to the title, or where." },
       ],
@@ -150,11 +155,11 @@
       causes: [
         { t: "The two-column grid and guides are set up once on the master page", g: "grid" },
         { t: "The running headline and folio are placed on the master page", g: "head" },
-        { t: "The master page is applied to every page as a template", g: "grid" },
+        { t: "The master page is applied to every page as a template", g: "tmpl" },
         { t: "The brochure has eight pages", bad: "That is the situation, not something the designer did." },
       ],
       effects: [
-        { t: "so every page has the same layout, giving consistency (unity) across the brochure", g: "same" },
+        { t: "so every page has the same layout, giving consistency (unity) across the brochure", g: "same", needs: ["grid", "tmpl"] },
         { t: "so items do not have to be placed again on each page, which saves the designer time", g: "time" },
         { t: "so the page numbers appear, and stay correct, on every page automatically", g: "num", needs: ["head"] },
         { t: "which makes it a better brochure", bad: "Better how? Say what the reader or designer gains." },
@@ -242,7 +247,7 @@
     { q: "Explain the use of white space.", a: "It makes the layout look clean and uncluttered.", v: "effect", fix: "Wide margins and the empty area round the logo (cause) stop the layout feeling crowded and make the logo stand out (effect)." },
     { q: "Explain why cloud storage helps the designers.", a: "The files are kept on a remote server accessed over the internet.", v: "cause", fix: "The files are kept on a remote server reached over the internet (cause), so the designers in Leith and Portsmouth can open the latest version and work on it together (effect)." },
     { q: "Explain how value has been used.", a: "A darker (low value) navy is used behind the title, so the white text stands out against it.", v: "both", fix: "Already complete: the low-value navy (cause) makes the white title contrast and stand out (effect)." },
-    { q: "Explain why a radial array was used for the holes.", a: "So they are all exactly evenly spaced.", v: "effect", fix: "One hole was copied 6 times over 360° about the centre axis (cause), so the holes are exactly evenly spaced and all change if the first is edited (effect)." },
+    { q: "Explain why a radial array was used for the holes.", a: "So they are all exactly evenly spaced.", v: "effect", fix: "A radial array made 6 instances of the hole over 360° about the centre axis (cause), so the holes are exactly evenly spaced and all change if the first is edited (effect)." },
     { q: "Explain why a sans serif font was used for the body text.", a: "It is a sans serif font with plain strokes.", v: "cause", fix: "The plain sans serif strokes (cause) keep the small body text clear and easy to read on screen (effect)." },
     { q: "Explain why parallel dimensioning was used.", a: "Every size is measured from the same datum edge, so an error in one size does not add on to the others.", v: "both", fix: "Already complete: measuring from one datum (cause) avoids accumulated error (effect)." },
   ];
@@ -514,7 +519,7 @@
     { id: "s7", t: "Radial array the hole: 3 instances over 360° about the centre axis.", mark: true, deps: ["s6"] },
     { id: "s7v", t: "Copy the hole round the block.", vague: "s7", why: "Which command, how many copies, over what angle, about which axis? Name the radial array and give its values." },
     { id: "s8", t: "Fillet the top and bottom outer edges R3.", mark: true, deps: ["s2"] },
-    { id: "d1", t: "Shell the block, wall thickness 3 mm, removing the top face.", wrong: "The deadeye is solid wood: a shell would hollow it. No mark is taken away (positive marking), but it wastes time and changes the model the later steps act on." },
+    { id: "d1", t: "Shell the block, wall thickness 3 mm, removing the top face.", wrong: "The deadeye is solid wood: a shell would hollow it. The model would no longer match the component, so the steps that follow may not be credited, and it costs time." },
     { id: "d2", t: "Loft between the Ø80 circle and a Ø14 circle on a plane offset 30 mm.", wrong: "A loft would make a tapering solid. The deadeye is a straight-sided disc: extrude it." },
   ];
   mount("w-cadplan", (box) => {
@@ -854,20 +859,20 @@
      ===================================================================== */
   const PAPER = [
     { q: 1, part: "1(a)", area: "dtp", marks: 2, mi: ["A: drop cap (1)", "B: pull quote (1)"] },
-    { q: 1, part: "1(b)", area: "dtp", marks: 2, mi: ["Any two, each a cause linked to an effect (1 each):", "the title is in a large, bold font, the biggest on the poster, so it is the first thing the viewer sees", "the title is reversed out (white on the navy band), so it contrasts strongly and stands out from the rest", "the title has space round it with nothing else in the top band, so the eye goes straight to it", "Not accepted: 'creates emphasis' as the effect; an effect with no cause"] },
+    { q: 1, part: "1(b)", area: "dtp", marks: 2, mi: ["Any two, each a cause linked to an effect (1 each):", "the title is in a large, bold font, the largest heading text on the poster, so it is the first thing the viewer sees", "the title is reversed out (white on the navy band), so it contrasts strongly and stands out from the rest", "space is left round the title within the navy band, so it is not crowded and the eye goes straight to it", "Not accepted: 'creates emphasis' as the effect; an effect with no cause"] },
     { q: 1, part: "1(c)", area: "dtp", marks: 2, mi: ["Any two developed points (1 each):", "the body text is set in two equal columns with a gutter (and a column rule) between them", "the image spans the full width of both columns", "the drop cap, body text and image all align to the left edge of column 1 / the same margins", "the pull quote sits within the width of column 2", "A bare 'it uses a grid' or 'two columns' with no description earns at most one point"] },
     { q: 1, part: "1(d)", area: "dtp", marks: 1, mi: ["The colour is printed beyond where the sheet will be cut (cause), so no thin white edge shows if the trimming is slightly out (effect) (1)"] },
     { q: 1, part: "1(e)", area: "dtp", marks: 2, mi: ["Any two (1 each):", "the navy band is repeated at the top and the foot of the poster", "magenta is repeated in the title, the drop cap, the pull-quote rules and the small squares in the footer", "the same font family is used for the title and the footer text", "consistent margins and alignment to the grid tie the parts together"] },
-    { q: 2, part: "2(a)", area: "cad", marks: 6, mi: ["On a plane through the axis (e.g. XY), sketch the half profile: radius 30 at the breech tapering to radius 22 at 225, then the ring radius 26 for the last 15 (240 overall) (1)", "Revolve the profile 360° about the centre axis (1)", "On the muzzle face, sketch a Ø20 circle concentric with the axis (1)", "Extrude-subtract the Ø20 circle 200 deep into the barrel (1)", "On the plane through the axis, sketch a Ø16 circle centred on the axis 100 from the breech (1)", "Extrude the Ø16 circle symmetrically, 96 in total (48 each way), adding it to form both trunnions (1)", "Alternative: one trunnion extruded 48 from the mid-plane, then mirrored about it, earns the last mark"] },
+    { q: 2, part: "2(a)", area: "cad", marks: 6, mi: ["On a plane through the axis (e.g. XY), sketch the half profile: radius 30 at the breech tapering to radius 22 at 225, then the ring radius 26 for the last 15 (240 overall) (1)", "Revolve the profile 360° about the centre axis (1)", "On the plane through the axis, sketch a Ø16 circle centred on the axis 100 from the breech (1)", "Extrude the Ø16 circle symmetrically, 96 in total (48 each way), adding it to form both trunnions (1)", "On the muzzle face, sketch a Ø20 circle concentric with the axis (1)", "Extrude-subtract the Ø20 circle 200 deep into the barrel (1)", "Order matters: the bore reaches past the trunnions (200 deep from the muzzle passes 100 from the breech), so cut the bore after adding the trunnions, or the trunnion extrusion fills it", "Alternative for the trunnions: extrude one trunnion 48 from the mid-plane, then mirror it about that plane; the bore is still cut afterwards"] },
     { q: 2, part: "2(b)", area: "cad", marks: 2, mi: ["In the modelling tree, select and edit the sketch (or the extrude-subtract feature) of the bore (1)", "Change the Ø20 dimension to Ø24; the model updates (1)", "No marks for modelling the barrel again from scratch"] },
-    { q: 2, part: "2(c)", area: "cad", marks: 2, mi: ["Any two (1 each), naming the constraint and the features:", "centre axis: a trunnion and its semicircular bearing cut-out", "mate: the trunnion's cylindrical face to the bearing face (or tangent)", "mate or offset: the barrel's side (or the trunnion's shoulder) to the inside face of the carriage cheek", "orientate: the barrel axis at a set angle (elevation) to the carriage base"] },
+    { q: 2, part: "2(c)", area: "cad", marks: 2, mi: ["Any two different constraints (1 each), naming the features:", "centre axis: the trunnion and its semicircular bearing cut-out", "mate (or offset): the trunnion's shoulder (where it meets the barrel) to the inside face of the carriage cheek, centring the barrel between the cheeks", "orientate: the barrel axis at a set angle (its elevation) to the carriage base", "Alternative to centre axis: tangent between the trunnion's curved face and the bearing's curved face"] },
     { q: 3, part: "3(a)", area: "interp", marks: 3, mi: ["X: plan (1)", "Y: elevation (1)", "Z: end elevation (1)"] },
     { q: 3, part: "3(b)", area: "interp", marks: 2, mi: ["Horizontal run 90 − 40 = 50 and vertical rise 45 − 15 = 30 (1)", "True length = √(50² + 30²) = √3400 = 58.3 mm (1)"] },
     { q: 3, part: "3(c)", area: "interp", marks: 2, mi: ["(i) L: the edge where the flat top meets the sloping face (1)", "(ii) M: the sides of the groove under the chock, hidden from above (1)"] },
+    { q: 3, part: "3(d)", area: "interp", marks: 1, mi: ["An auxiliary view, projected square to (at right angles to) the sloping face (1)"] },
     { q: 4, part: "4(a)", area: "std", marks: 2, mi: ["A: hidden detail line (1)", "B: centre line (1)"] },
     { q: 4, part: "4(b)", area: "std", marks: 2, mi: ["Largest: 40.1 mm (1)", "Smallest: 39.9 mm (1)"] },
-    { q: 4, part: "4(c)", area: "std", marks: 1, mi: ["Symmetrical tolerance (1)"] },
-    { q: 4, part: "4(d)", area: "std", marks: 1, mi: ["Lamp (1)"] },
+    { q: 4, part: "4(c)", area: "std", marks: 1, mi: ["Lamp (1)"] },
     { q: 5, part: "5(a)", area: "tech", marks: 2, mi: ["Any two different benefits, described in context (1 each):", "draughtsmen in Leith, Portsmouth or on board can open the files from anywhere with an internet connection (remote working)", "several people can share and work on the same, latest version (collaboration)", "earlier versions are kept and can be restored (back-up)", "no physical storage space is needed for the files", "files can be protected with encryption and access controls"] },
     { q: 5, part: "5(b)", area: "tech", marks: 2, mi: ["Any two linked points (1 each):", "DRM controls who can open the chart files, so only paying customers can use them", "DRM can stop copying, printing or sharing, so the charts are not passed on free", "this protects the Plan Room's intellectual property and its income from sales"] },
   ];
