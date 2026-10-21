@@ -68,28 +68,28 @@
       { k: "pennants", x: 8, y: 94, w: 104, h: 12 }, { k: "text2", x: 8, y: 112, w: 104, h: 30 },
       { k: "date", x: 8, y: 148, w: 72, h: 14 }, { k: "logo", x: 96, y: 148, w: 16, h: 16 }],
       pins: [
-        { x: 60, y: 13, opts: ["White reverse text on a navy band across the full width gives strong contrast, so the title is read first from across a corridor.", "Big title at the top.", "The navy band gives the title texture."] },
-        { x: 60, y: 60, opts: ["Aircraft photo square cropped and made the largest item, so it dominates and shows at once that the poster is about flying.", "Photo goes here.", "The photo is white space, so the page looks clean."] },
-        { x: 60, y: 100, opts: ["Three pennants repeated at equal spacing create rhythm, leading the eye across the page towards the text.", "Some flags as decoration.", "The pennants are the grid structure because they are triangles."] },
-        { x: 44, y: 155, opts: ["Date in a yellow accent panel gives it emphasis, so parents notice when the open evening is.", "Date at the bottom.", "The yellow date is a receding colour, so it stands out."] }] },
+        { x: 116, y: 13, opts: ["White reverse text on a navy band across the full width gives strong contrast, so the title is read first from across a corridor.", "Big title at the top.", "The navy band gives the title texture."] },
+        { x: 110, y: 36, opts: ["Aircraft photo square cropped and made the largest item, so it dominates and shows at once that the poster is about flying.", "Photo goes here.", "The photo is white space, so the page looks clean."] },
+        { x: 116, y: 100, opts: ["Three pennants repeated at equal spacing create rhythm, leading the eye across the page towards the text.", "Some flags as decoration.", "The pennants are the grid structure because they are triangles."] },
+        { x: 86, y: 155, opts: ["Date in a yellow accent panel gives it emphasis, so parents notice when the open evening is.", "Date at the bottom.", "The yellow date is a receding colour, so it stands out."] }] },
     { name: "B · Diagonal climb", items: [
-      { k: "fullcrop", x: 0, y: 26, w: 120, h: 70 }, { k: "pathtitle", x: 6, y: 4, w: 108, h: 26, t: "JOIN THE SQUADRON" },
+      { k: "fullcrop", x: 0, y: 26, w: 120, h: 70 }, { k: "pathtitle", x: 4, y: 4, w: 90, h: 26, t: "JOIN THE SQUADRON" },
       { k: "logo", x: 100, y: 4, w: 14, h: 14 }, { k: "img", x: 8, y: 102, w: 48, h: 18 }, { k: "img", x: 8, y: 124, w: 48, h: 18 },
       { k: "img", x: 8, y: 146, w: 48, h: 18 }, { k: "text1", x: 64, y: 102, w: 48, h: 50 }, { k: "date", x: 64, y: 154, w: 48, h: 12 }],
       pins: [
-        { x: 30, y: 16, opts: ["Title flowed along a curved path that follows the aircraft's climb, adding movement and linking the words to the image.", "Curvy writing.", "The title uses a hanging indent so that it curves."] },
-        { x: 70, y: 62, opts: ["Aircraft full cropped to remove its background, so it sits straight on the poster and text can wrap round its outline.", "Plane picture.", "Aircraft square cropped to remove its outline."] },
-        { x: 32, y: 133, opts: ["Three small photos aligned on one left edge with equal gaps between them, so they read as a set and give unity.", "Small pictures down the side.", "The small photos are the dominant item."] },
+        { x: 98, y: 28, opts: ["Title flowed along a curved path that follows the aircraft's climb, adding movement and linking the words to the image.", "Curvy writing.", "The title uses a hanging indent so that it curves."] },
+        { x: 70, y: 62, opts: ["Aircraft full cropped to remove its background, so it sits straight on the poster's own background and its diagonal gives the layout movement.", "Plane picture.", "Aircraft square cropped to remove its outline."] },
+        { x: 62, y: 111, opts: ["Three small photos aligned on one left edge with equal gaps between them, so they read as a set and give unity.", "Small pictures down the side.", "The small photos are the dominant item."] },
         { x: 116, y: 108, opts: ["A narrow text column on the right balances the heavy image block on the left: asymmetrical balance.", "Writing on the right.", "The text column gives the layout symmetrical balance."] }] },
     { name: "C · Grid of three", items: [
       { k: "img", x: 8, y: 8, w: 32, h: 34 }, { k: "img", x: 44, y: 8, w: 32, h: 34 }, { k: "img", x: 80, y: 8, w: 32, h: 34 },
       { k: "title", x: 8, y: 50, w: 104, h: 22, t: "OPEN EVENING" }, { k: "text1", x: 8, y: 80, w: 104, h: 40 },
       { k: "banner", x: 0, y: 128, w: 120, h: 20, t: "4 NOV · 7PM" }, { k: "logo", x: 52, y: 152, w: 16, h: 16 }],
       pins: [
-        { x: 60, y: 25, opts: ["Three equal photos sit on a three-column grid, aligned top and bottom, giving the page a neat, ordered start.", "Three pictures.", "The three photos create depth because they are the same size."] },
-        { x: 60, y: 61, opts: ["Large red sans serif title with white space above and below, so it stands out between the photos and the text.", "Title in the middle.", "Title in red, a cool colour, to look calm."] },
-        { x: 60, y: 100, opts: ["Copy text fully justified in one column so both edges line up with the photos above, reinforcing the grid.", "Text here.", "Text justified so that it becomes a drop cap."] },
-        { x: 60, y: 138, opts: ["Full-width navy banner with yellow reverse text at the foot makes the date stand out and balances the photos at the top.", "Date banner.", "The banner is a pull quote."] }] },
+        { x: 116, y: 25, opts: ["Three equal photos sit on a three-column grid, aligned top and bottom, giving the page a neat, ordered start.", "Three pictures.", "The three photos create depth because they are the same size."] },
+        { x: 116, y: 61, opts: ["Large red sans serif title with white space above and below, so it stands out between the photos and the text.", "Title in the middle.", "Title in red, a cool colour, to look calm."] },
+        { x: 116, y: 100, opts: ["Copy text fully justified in one column so both edges line up with the photos above, reinforcing the grid.", "Text here.", "Text justified so that it becomes a drop cap."] },
+        { x: 116, y: 138, opts: ["Full-width navy banner with yellow reverse text at the foot makes the date stand out and balances the photos at the top.", "Date banner.", "The banner is a pull quote."] }] },
   ];
   function drawThumb(g, L, mode) {
     // mode "sketch": pencil conventions; "visual": colour
@@ -108,10 +108,10 @@
         if (sk) { line(`M${x + 8} ${y + 52} L${x + 100} ${y + 14} L${x + 108} ${y + 20} L${x + 22} ${y + 62} Z M${x + 50} ${y + 36} L${x + 66} ${y + 6} L${x + 74} ${y + 8} L${x + 64} ${y + 32} M${x + 48} ${y + 44} L${x + 70} ${y + 66}`, 1.4); }
         else { const gg = S("g", { transform: `translate(${x + 10} ${y + 58}) rotate(-24)` }); aircraft(gg, 0, 0, 1.25); g.append(gg); }
       } else if (it.k === "pathtitle") {
-        if (sk) line(`M${x + 2} ${y + 22} Q${x + 50} ${y - 6} ${x + 92} ${y + 12}`, 1.8);
+        if (sk) line(`M${x + 2} ${y + 22} Q${x + 46} ${y - 6} ${x + 92} ${y + 10}`, 1.8);
         else {
           const id = "dp-tp-" + Math.random().toString(36).slice(2, 7);
-          g.append(S("path", { id, d: `M${x + 2} ${y + 22} Q${x + 50} ${y - 6} ${x + 96} ${y + 12}`, fill: "none" }));
+          g.append(S("path", { id, d: `M${x + 2} ${y + 22} Q${x + 46} ${y - 6} ${x + 92} ${y + 10}`, fill: "none" }));
           const t = S("text", { "font-size": 9.5, "font-weight": 700, fill: P.navy }); const tp = S("textPath", { href: "#" + id, text: it.t }); t.append(tp); g.append(t);
         }
       } else if (it.k === "title") {
@@ -176,7 +176,7 @@
       if (t > 0) { const gv = S("g", { opacity: String(t) }); drawThumb(gv, L, "visual"); big.append(gv); }
       L.pins.forEach((p, k) => {
         const a = answers[k];
-        const px = 116; const c = S("circle", { cx: px, cy: p.y, r: 6, fill: a == null ? P.red : a ? "#2e7a2e" : "#8a3a1a", stroke: "#fff", "stroke-width": 1.2, class: "dp-pin-dot", "data-k": k });
+        const px = p.x; const c = S("circle", { cx: px, cy: p.y, r: 6, fill: a == null ? P.red : a ? "#2e7a2e" : "#8a3a1a", stroke: "#fff", "stroke-width": 1.2, class: "dp-pin-dot", "data-k": k });
         c.addEventListener("click", () => openPin(k));
         big.append(c, S("text", { x: px, y: p.y + 3, "font-size": 8, "font-weight": 700, fill: "#fff", "text-anchor": "middle", "pointer-events": "none", text: String(k + 1) }));
       });
@@ -301,7 +301,7 @@
     function draw() {
       const bc = val < 0 ? shade(WHEEL[base][1], -val / 100) : tint(WHEEL[base][1], val / 100);
       const idx = schemeIdx();
-      wedges.forEach((w, i) => w.setAttribute("opacity", idx.includes(i) ? "1" : "0.35"));
+      wedges.forEach((w, i) => w.setAttribute("opacity", idx.includes(i) ? "1" : (document.documentElement.getAttribute("data-theme") === "dark" || (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) ? "0.55" : "0.4"));
       centre.setAttribute("fill", bc); ctext.setAttribute("fill", textOn(bc)); ctext.textContent = WHEEL[base][0];
       drawRing();
       baseName.textContent = `Base: ${WHEEL[base][0]} (${isWarm(base) ? "warm" : "cool"})`;
@@ -340,6 +340,7 @@
       note.textContent = msg + " The CMYK figures use the simple formula K = 1 − max(R, G, B); real print software converts through a colour profile, so its numbers differ a little.";
     }
     draw();
+    document.addEventListener("hm-theme", draw);
 
     /* --- advancing and receding --- */
     box.append(E("h4", { class: "dp-sub" }, "Advancing and receding"));
@@ -376,7 +377,7 @@
       sideV.append(S("text", { x: 24, y: 96, "font-size": 11, fill: C.ink2, "text-anchor": "middle", text: "you" }));
       sideV.append(S("rect", { x: 196, y: 24, width: 8, height: 96, fill: B, stroke: C.ink, "stroke-width": 1 }));
       sideV.append(S("text", { x: 200, y: 134, "font-size": 11, fill: C.ink2, "text-anchor": "middle", text: "page" }));
-      const x = 150 - 70 * d;
+      const x = Math.max(70, Math.min(186, 170 - 60 * d));
       sideV.append(S("path", { d: `M24 70 L${x} 44 M24 70 L${x} 96`, stroke: C.muted, "stroke-dasharray": "3 3", "stroke-width": 1 }));
       sideV.append(S("rect", { x: x - 4, y: 44, width: 8, height: 52, fill: F, stroke: C.ink, "stroke-width": 1 }));
       sideV.append(S("text", { x, y: 38, "font-size": 11, fill: C.ink, "text-anchor": "middle", text: "shape" }));
@@ -427,7 +428,7 @@
     a(S("path", { d: "M16 250 Q150 242 284 254 V266 H16 Z", fill: "#1d5d8f" }));
     const ac = a(S("g", { transform: "translate(70 168) rotate(-8)" })); aircraft(ac, 0, 0, 2.3);
     // 6 flight path (line)
-    a(S("path", { d: "M232 162 C 292 160, 292 230, 291 300 S 280 352, 214 372", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-dasharray": "2 5", "stroke-linecap": "round" }));
+    a(S("path", { d: "M232 162 C 294 160, 296 220, 294 260 L 294 300 S 282 352, 214 372", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-dasharray": "2 5", "stroke-linecap": "round" }));
     a(S("path", { d: "M220 365 L210 374 L223 377", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-linecap": "round" }));
     // 4 inset photo with drop shadow (depth)
     const ig = a(S("g", { filter: "url(#dp-hs-sh)" }));
@@ -435,7 +436,7 @@
     ig.append(S("rect", { x: 206, y: 226, width: 74, height: 54, fill: "#bfe1f5" }));
     const sg = a(S("g")); sg.append(S("rect", { x: 206, y: 266, width: 74, height: 14, fill: "#1d5d8f" })); ship(sg, 213, 228, 1);
     // 5 caption next to inset (proximity)
-    a(S("text", { x: 202, y: 297, "font-size": 10.5, fill: P.ink, text: "Aboard HMS Vellum" }));
+    a(S("text", { x: 202, y: 297, "font-size": 9.5, fill: P.ink, text: "Aboard HMS Vellum" }));
     // 7 three steps on a three-column grid
     [["1", "FLY", 16], ["2", "BUILD", 109], ["3", "LEAD", 202]].forEach(([n, h, x]) => {
       a(S("circle", { cx: x + 12, cy: 322, r: 11, fill: P.navy }));
@@ -534,7 +535,7 @@
     ["inset", "The ship photo overlaps the main photo and has a drop shadow"],
     ["frame", "The ship photo has a warm red-orange frame against the cool blue sky"],
     ["pennants", "The pennants are repeated at equal spacing along the top"],
-    ["colours", "Only navy, red and yellow are used throughout the poster"],
+    ["colours", "The same red, yellow and blue are repeated in the pennants, headings, date panel and badge"],
     ["caption", "The caption sits directly beneath the ship photo"],
   ];
   const EFFECTS = [
@@ -619,7 +620,16 @@
     ctl.append(tg);
     const svg = S("svg", { class: "dp-grid-svg", role: "img" });
     const mv = E("div", { class: "btn-row", role: "group", "aria-label": "Move the pull-quote box" });
-    const moveBy = (dx, dy) => { const L = geo(); place((st.qx ?? L.x0) + dx, (st.qy ?? L.y0 + L.ch * 0.62) + dy); };
+    const moveBy = (dx, dy) => {
+      const L = geo(), x = st.qx ?? L.x0, y = st.qy ?? L.y0 + L.ch * 0.62;
+      if (st.snap && dx) {
+        // with snap on, a sideways step jumps to the next column edge rather than snapping back
+        const edges = []; for (let i = 0; i < L.n; i++) edges.push(L.colX(i));
+        const nx = dx > 0 ? edges.find((e) => e > x + 0.5) : [...edges].reverse().find((e) => e < x - 0.5);
+        place(nx ?? x, y); return;
+      }
+      place(x + dx, y + (st.snap && dy ? Math.sign(dy) * 5 : dy));
+    };
     [["◀", -4, 0, "left"], ["▶", 4, 0, "right"], ["▲", 0, -4, "up"], ["▼", 0, 4, "down"]].forEach(([t, dx, dy, w]) => { const b = E("button", { class: "btn small", type: "button", "aria-label": "Move pull-quote box " + w }, t); b.addEventListener("click", () => moveBy(dx, dy)); mv.append(b); });
     const snapMsg = E("span", { class: "hint", style: "margin:0" });
     mv.append(snapMsg);
@@ -654,7 +664,7 @@
       if (stop) stop();
       if (animate && from) stop = tween(450, (t) => { cur = { title: lerpBox(from.title, T.title, t), image: lerpBox(from.image, T.image, t), cols: T.cols.map((c, i) => lerpBox(from.cols[i], c, t)) }; paint(L); });
       else { cur = T; paint(L); }
-      const words = Math.round(L.cw / 2.1 / 5.5); // about 2.1 mm per character at 10 pt, ~5.5 characters a word
+      const words = Math.round(L.cw / 1.5 / 5.5); // about 1.5 mm per character at 10 pt, ~5.5 characters a word
       rd.innerHTML = "";
       [["Page", `${st.size} ${st.orient}, ${L.W} × ${L.H} mm`], ["Content width", `${HG.n(L.W - 2 * L.m, 1)} mm`], ["Column width", `${HG.n(L.cw, 1)} mm`], ["Words per line (10 pt)", `about ${words}`]].forEach(([a, b]) => rd.append(E("div", null, E("span", null, a), E("b", null, b))));
       note.textContent = `Column width = (page width − 2 × margin − (columns − 1) × gutter) ÷ columns = (${L.W} − ${2 * L.m} − ${(L.n - 1) * L.g}) ÷ ${L.n} = ${HG.n(L.cw, 1)} mm. ` +
@@ -664,13 +674,15 @@
     function snapTo(L, x, y) {
       // snap the quote box's left edge to a column edge and its top to a baseline (5 mm) within 4 mm
       const qw = L.cw, edges = []; for (let i = 0; i < L.n; i++) edges.push(L.colX(i));
-      let sx = x, sy = y, msg = "free placement: edges do not line up with the grid";
+      let sx = x, sy = y, xs = null, ys = false;
       if (st.snap) {
         const ex = edges.reduce((b, e) => (Math.abs(e - x) < Math.abs(b - x) ? e : b), edges[0]);
         const by = L.y0 + Math.round((y - L.y0) / 5) * 5;
-        if (Math.abs(ex - x) <= 4) { sx = ex; msg = `snapped to the left edge of column ${edges.indexOf(ex) + 1}`; }
-        if (Math.abs(by - y) <= 4) { sy = by; msg += ", top on a baseline"; }
+        if (Math.abs(ex - x) <= 4) { sx = ex; xs = edges.indexOf(ex) + 1; }
+        if (Math.abs(by - y) <= 4) { sy = by; ys = true; }
       }
+      const msg = !st.snap ? "Snap off: free placement, so the box's edges need not line up with the grid." :
+        xs && ys ? `Snapped: left edge on column ${xs}, top on a baseline.` : xs ? `Snapped: left edge on column ${xs}.` : ys ? "Top snapped to a baseline; left edge not near a column edge." : "Not near a guide, so nothing snapped.";
       sx = Math.max(0, Math.min(L.W - qw, sx)); sy = Math.max(0, Math.min(L.H - 24, sy));
       return { sx, sy, msg };
     }
@@ -723,7 +735,7 @@
      6. Anatomy of a page
      ===================================================================== */
   const ANAT = [
-    ["Header", [12, 6, 276, 28], "The area at the top of every page, set on the master page. Here it holds the running headline and a rule."],
+    ["Header", [20, 6, 260, 28], "The area at the top of every page, set on the master page. Here it holds the running headline and a rule."],
     ["Running headline", [60, 10, 180, 16], "The publication's name repeated at the top of every page, so readers always know where they are."],
     ["Rule", [20, 29, 260, 4], "A printed line used to separate areas: here it divides the header from the page content."],
     ["Title", [20, 40, 260, 36], "The main name of the document: the largest text."],
@@ -735,10 +747,10 @@
     ["Pull quote", [160, 196, 120, 52], "A short extract from the article, enlarged between rules to catch the eye."],
     ["Caption", [160, 176, 120, 14], "Text beneath the image explaining what it shows."],
     ["Hanging indent", [160, 254, 120, 46], "Numbered list: each first line starts at the left, and the following lines are indented, so the numbers stand out."],
-    ["Reverse text", [12, 306, 276, 28], "White text on a dark navy panel: high contrast that draws attention to the results time."],
-    ["Footer", [12, 388, 276, 30], "The area at the bottom of every page, holding the squadron name and page number."],
+    ["Reverse text", [20, 306, 260, 28], "White text on a dark navy panel: high contrast that draws attention to the results time."],
+    ["Footer", [20, 388, 260, 30], "The area at the bottom of every page, holding the squadron name and page number."],
     ["Folio", [262, 396, 22, 20], "The page number."],
-    ["Margin", [0, 0, 300, 424], "The clear border between the page edge and the content: here 20 units on each side."],
+    ["Margin", [0, 0, 300, 424], "The clear border between the page edge and the content: here 20 units on each side. The header and footer sit in the top and bottom margins, as they usually do."],
   ];
   mount("w-anatomy", (box) => {
     const svg = S("svg", { viewBox: "0 0 300 424", class: "dp-anat-svg", role: "img", "aria-label": "A page from the regatta programme with a header and running headline, title, heading, two columns of text with a drop cap, an indent, a column rule, an image with caption, a pull quote, a numbered list with hanging indents, a reverse-text panel and a footer with the folio." });
@@ -758,7 +770,7 @@
     a(S("rect", { x: 160, y: 198, width: 120, height: 1.6, fill: P.red })); a(S("rect", { x: 160, y: 244, width: 120, height: 1.6, fill: P.red }));
     a(S("text", { x: 220, y: 219, "font-size": 15, "font-style": "italic", fill: P.red, "text-anchor": "middle", text: "“A sea of flags" })); a(S("text", { x: 220, y: 237, "font-size": 15, "font-style": "italic", fill: P.red, "text-anchor": "middle", text: "from bow to stern”" }));
     [256, 278].forEach((y, i) => { a(S("text", { x: 160, y: y + 4, "font-size": 10, "font-weight": 700, fill: P.navy, text: (i + 1) + "." })); a(S("rect", { x: 172, y, width: 108, height: 3, fill: "#8a8478" })); a(S("rect", { x: 172, y: y + 8, width: 96, height: 3, fill: "#8a8478" })); });
-    a(S("rect", { x: 12, y: 306, width: 276, height: 28, fill: P.navy }));
+    a(S("rect", { x: 20, y: 306, width: 260, height: 28, fill: P.navy }));
     a(S("text", { x: 150, y: 324, "font-size": 12, "font-weight": 700, fill: "#fff", "text-anchor": "middle", text: "RESULTS ON THE QUARTERDECK AT 4PM" }));
     lines(20, 344, 376, 260);
     a(S("rect", { x: 20, y: 392, width: 260, height: 1, fill: P.grey }));
@@ -861,7 +873,7 @@
     const sv = S("svg", { viewBox: "0 0 200 140", preserveAspectRatio: "none", "aria-hidden": "true" });
     sv.append(S("rect", { width: 200, height: 140, fill: "#9fc6e4" }), S("rect", { y: 100, width: 200, height: 40, fill: "#9a9a92" }), S("rect", { x: 4, y: 20, width: 40, height: 80, fill: "#7d6a58" }), S("rect", { x: 10, y: 30, width: 28, height: 70, fill: "#6a5848" }), S("rect", { x: 166, y: 76, width: 30, height: 26, fill: P.red }), S("rect", { x: 174, y: 68, width: 12, height: 8, fill: "#555" }));
     sv.append(S("polygon", { points: PLANE_OUT.map((p) => p.join(",")).join(" "), fill: P.yellow }));
-    [[60, 72, 90, 8, "#d9a900"], [110, 57, 18, 7, "#9fd3f5"], [52, 48, 8, 4, P.red], [80, 82, 50, 4, "#b89300"], [88, 86, 6, 12, "#555"], [132, 86, 6, 12, "#555"], [156, 66, 3, 12, "#555"]].forEach(([x, y, w, h, f]) => sv.append(S("rect", { x, y, width: w, height: h, fill: f })));
+    [[60, 72, 90, 8, "#d9a900"], [110, 57, 18, 7, "#3d6e8f"], [52, 48, 8, 4, P.red], [80, 82, 50, 4, "#b89300"], [88, 86, 6, 12, "#555"], [132, 86, 6, 12, "#555"], [156, 66, 3, 12, "#555"]].forEach(([x, y, w, h, f]) => sv.append(S("rect", { x, y, width: w, height: h, fill: f })));
     fl.append(sv);
     const copy = "Every Tuesday and Thursday evening the squadron meets on the gun deck of HMS Vellum. Cadets learn to fly in the Grob Tutor trainer, to read a map and a signal flag, and to build anything from a cutter to a castle on the ship's Minecraft server. Summer camps take cadets to air stations across the country, and the best get the chance to go solo in a glider. You do not need any experience: just curiosity, a sense of adventure and the will to work as a team. Parents are welcome at the open evening to meet the staff and ask questions about uniform, costs and safety.";
     page.append(fl, E("p", null, copy), E("p", null, "Uniform is provided once you have enrolled, and most activities are free or heavily subsidised. Cadets work towards classification badges, first aid and radio qualifications, and the Duke of Edinburgh's Award, and many go on to lead others as non-commissioned cadets. Come aboard on the fourth of November at seven o'clock and see for yourself."));
@@ -869,13 +881,18 @@
     box.append(page, note);
     const W = 200, H = 140;
     function rectPts(x0, y0, x1, y1) {
-      // the crop rectangle, written with the same number of points as the aircraft outline so the shape can morph
-      return PLANE_OUT.map(([x, y]) => {
-        const c = [Math.max(x0, Math.min(x1, x)), Math.max(y0, Math.min(y1, y))];
-        const d = [c[0] - x0, x1 - c[0], c[1] - y0, y1 - c[1]], k = d.indexOf(Math.min(...d));
-        if (k === 0) c[0] = x0; else if (k === 1) c[0] = x1; else if (k === 2) c[1] = y0; else c[1] = y1;
-        return c;
-      });
+      // the crop rectangle as the same number of points as the aircraft outline (so CSS can morph between them):
+      // the four corners, with the remaining points spread along each edge in proportion to its length
+      const N = PLANE_OUT.length, w = x1 - x0, h = y1 - y0, per = 2 * (w + h);
+      const n = [w, h, w, h].map((L) => Math.max(1, Math.round((N - 4) * L / per)));
+      while (n.reduce((a, b) => a + b, 0) > N - 4) n[n.indexOf(Math.max(...n))]--;
+      while (n.reduce((a, b) => a + b, 0) < N - 4) n[n.indexOf(Math.min(...n))]++;
+      const C = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], out = [];
+      for (let e = 0; e < 4; e++) {
+        const [ax, ay] = C[e], [bx, by] = C[(e + 1) % 4];
+        for (let k = 0; k <= n[e]; k++) out.push([ax + (bx - ax) * k / (n[e] + 1), ay + (by - ay) * k / (n[e] + 1)]);
+      }
+      return out;
     }
     function apply() {
       let pts, x0, y0, x1, y1;
@@ -1212,6 +1229,13 @@
         const wrap = S("g", { "clip-path": "url(#dp-proof-clip)" }); wrap.append(S("rect", { width: W, height: H, fill: "#ffffff" }), g); res.append(wrap);
         res.append(S("rect", { width: W, height: H, fill: "none", stroke: C.line }));
         const sliver = st.bleed ? Math.max(0, Math.abs(d) - B) : Math.abs(d);
+        if (sliver > 0) {
+          // mark the unprinted sliver in magenta so it can be seen at this size
+          const e = st.bleed ? B : 0, hs = { fill: "#d4147a", "fill-opacity": 0.55 };
+          if (d > 0) { res.append(S("rect", { x: W + e - d, y: 0, width: d - e, height: H, ...hs }), S("rect", { x: 0, y: H + e - d, width: W, height: d - e, ...hs })); }
+          else { res.append(S("rect", { x: 0, y: 0, width: -d - e, height: H, ...hs }), S("rect", { x: 0, y: 0, width: W, height: -d - e, ...hs })); }
+          res.append(S("text", { x: W / 2, y: H / 2, "font-size": 11, "font-weight": 700, fill: "#fff", stroke: "#d4147a", "stroke-width": 3, "paint-order": "stroke", "text-anchor": "middle", text: `white sliver ${HG.n(sliver, 1)} mm (magenta)` }));
+        }
         const side = d > 0 ? "right and bottom" : "left and top";
         const msg = sliver > 0 ? `Trimmed ${HG.n(Math.abs(d), 1)} mm off line with ${st.bleed ? "only 3 mm of" : "no"} bleed: a white sliver ${HG.n(sliver, 1)} mm wide shows along the ${side} edges. Every poster in the stack is spoiled.` :
           d === 0 ? "A perfect cut. (In real trimming you cannot rely on this.)" : `Trimmed ${HG.n(Math.abs(d), 1)} mm off line, but the colour runs ${B} mm past the trim, so the cut still lands on printed colour: no white edge.`;
