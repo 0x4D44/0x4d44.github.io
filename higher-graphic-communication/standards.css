@@ -98,3 +98,5 @@ svg .st-sdotted { stroke-dasharray: 1.2 2.4; stroke-linecap: round; }
 svg .st-plansym * { vector-effect: non-scaling-stroke; }
 svg .st-plansym .st-sk { stroke-width: 1.5; }
 svg .st-plansym .st-sn { stroke-width: 1; }
+.st-letters .btn { font-family: var(--font-mono); font-size: .95rem; text-shadow: none; }
+.st-fit-table small { color: var(--muted); }
