@@ -553,7 +553,9 @@
         <div><b>${HG.n(m.hide * 100, 1)}%</b><span>of the ship lies under the lettering, at ${cfg.op}% opacity</span></div>
         <div><b class="${/Survives/.test(protect) ? "ok" : /None|Weak/.test(protect) ? "bad" : ""}">${protect}</b><span>protection after the thief's tool</span></div>`;
       note.textContent = cfg.pos === "corner"
-        ? "A corner mark barely touches the picture, but one crop to the subject removes it completely. It protects only against lazy copying."
+        ? (m.hide > 0
+          ? `At this angle and size the corner mark reaches the ship (${HG.n(m.hide * 100, 1)}% of it lies under the lettering), but a crop to the subject still removes most of the mark. It protects only against lazy copying.`
+          : "A corner mark does not touch the ship at all, so one crop to the subject removes it completely. It protects only against lazy copying.")
         : cfg.pos === "centre"
           ? "Across the subject, the mark survives a crop, because the thief wants the ship. The cost is that it also hides part of the picture: a trade-off between protection and showing the work."
           : "Tiling repeats the mark everywhere, so no crop can remove it. Stock-photo libraries do this on previews, then sell the clean, full-resolution file under licence.";
