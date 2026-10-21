@@ -489,6 +489,7 @@
     let hole = { c: [140, 110], r: 18 };
     const S = { fixed: false, perp: false, par1: false, par2: false, lenAB: false, lenAD: false, dia: false, conc: false };
     const LAD = 120, HOLE_R = 15;
+    let fixedAt = [[40, 30], [200, 42]];
     const W = 360, H = 250;
     const svg = HG.svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "cad-sketch", role: "img", "aria-label": "Sketch with constraints" });
     box.append(HG.el("div", { class: "cad-sketch-wrap" }, svg));
@@ -500,12 +501,12 @@
       ["par2", "Parallel (BC ∥ AD)", 1, "BC must run parallel to AD."],
       ["lenAD", "Linear (AD = 120)", 1, "A linear dimension fixes the length of AD."],
       ["dia", "Diameter (hole Ø30)", 1, "A diameter dimension fixes the size of the circle."],
-      ["conc", "Concentric (hole on centre mark)", 2, "The circle shares its centre with the centre mark of the profile: its centre can no longer move."],
+      ["conc", "Concentric (hole with the construction circle)", 2, "The hole is made concentric with a dashed construction circle drawn round the profile's centre: the two share one centre, so the hole's centre can no longer move."],
     ];
     const btns = {};
     list.forEach(([k, lab]) => {
       const b = HG.el("button", { type: "button", class: "seg-btn", "aria-pressed": "false" }, lab);
-      b.addEventListener("click", () => { S[k] = !S[k]; b.setAttribute("aria-pressed", S[k] ? "true" : "false"); solve(); draw(); });
+      b.addEventListener("click", () => { S[k] = !S[k]; if (k === "fixed" && S.fixed) fixedAt = [P[0].slice(), P[1].slice()]; b.setAttribute("aria-pressed", S[k] ? "true" : "false"); solve(); draw(); });
       btns[k] = b; row.append(b);
     });
     box.append(row);
@@ -520,7 +521,7 @@
     // solve by repeated projection: each constraint nudges the free points until all agree
     function solve(pin) {
       for (let it = 0; it < 80; it++) {
-        if (S.fixed) { P[0] = [40, 30]; P[1] = [200, 30]; }
+        if (S.fixed) { P[0] = fixedAt[0].slice(); P[1] = fixedAt[1].slice(); }
         const free = (i) => !(S.fixed && i < 2) && i !== pin;
         const setLen = (i, j, L) => {
           const d = sub(P[j], P[i]), l = Math.hypot(...d) || 1, e = (l - L) / l;
@@ -560,6 +561,7 @@
       const hc = X(hole.c);
       g(HG.svg("circle", { cx: hc[0], cy: hc[1], r: hole.r, class: "cad-sk-new" }));
       const cm = X(centreMark());
+      g(HG.svg("circle", { cx: cm[0], cy: cm[1], r: 30, class: "cad-sk-pcd" }));
       g(HG.svg("path", { d: `M${cm[0] - 7} ${cm[1]} h14 M${cm[0]} ${cm[1] - 7} v14`, class: "cad-sk-cl" }));
       // constraint glyphs
       const mid = (i, j) => [(pts[i][0] + pts[j][0]) / 2, (pts[i][1] + pts[j][1]) / 2];
@@ -570,7 +572,7 @@
       if (S.par2) { glyph(mid(0, 3), "∥", -12, 4); glyph(mid(1, 2), "∥", 12, 4); }
       if (S.lenAD) glyph(mid(0, 3), "120", -28, 4);
       if (S.dia) glyph(hc, "Ø30", 0, -hole.r - 6);
-      if (S.conc) glyph(hc, "◎", hole.r + 10, 4);
+      if (S.conc) glyph(hc, "◎", hole.r + 12, 4);
       ["A", "B", "C", "D"].forEach((l, i) => {
         const fixed = S.fixed && i < 2;
         g(HG.svg("circle", { cx: pts[i][0], cy: pts[i][1], r: 6, class: fixed ? "cad-pt-fixed" : "cad-pt" }));
@@ -653,14 +655,14 @@
     box.append(btnRow, ro);
     const msg = note(box);
     box.append(HG.el("p", { class: "drag-hint" }, "Drag the model to turn it."));
-    let mesh = [], extras = () => {}, radius = 80, target = [0, 0, 0], ro2 = null;
+    let mesh = [], extrasPre = () => {}, extras = () => {}, radius = 80, target = [0, 0, 0], ro2 = null;
 
     function buildControls() {
       sl.innerHTML = ""; ro.innerHTML = "";
       const m = S.mode, o = S[{ extrude: "ex", revolve: "rev", loft: "loft", sweep: "sw", helix: "hx" }[m]];
       const add = (key, label, min, max, step, unit) => HG.slider(sl, { label, min, max, step, value: o[key], unit, oninput: (v) => { o[key] = v; if (m === "helix") syncHelix(key); t = 1; rebuild(); sim.redraw(); } });
       if (m === "extrude") { add("w", "Profile width", 20, 90, 5, "mm"); add("h", "Profile height", 20, 70, 5, "mm"); add("d", "Extrude distance", 10, 100, 5, "mm"); ro2 = readouts(ro, [["a", "Profile area"], ["v", "Volume = area × distance"]]); }
-      if (m === "revolve") { add("R", "Profile centre to axis", 15, 60, 1, "mm"); add("a", "Profile radius", 4, 20, 1, "mm"); add("ang", "Angle of revolution", 30, 360, 15, "°"); ro2 = readouts(ro, [["d", "Outside diameter"], ["v", "Volume (Pappus)"]]); }
+      if (m === "revolve") { add("R", "Profile centre to axis", 15, 60, 1, "mm"); add("a", "Profile radius", 4, 20, 1, "mm"); add("ang", "Angle of revolution", 30, 360, 15, "°"); ro2 = readouts(ro, [["d", "Outside diameter"], ["v", "Volume = area × distance travelled"]]); }
       if (m === "loft") { add("s", "Bottom square side", 30, 100, 5, "mm"); add("d", "Top profile size", 10, 90, 5, "mm"); add("h", "Work plane offset", 30, 110, 5, "mm"); HG.choice(sl, "Top profile", [["circle", "Circle"], ["square", "Square"], ["hex", "Hexagon"]], o.top, (v) => { o.top = v; t = 1; rebuild(); sim.redraw(); }); ro2 = readouts(ro, [["p", "Profiles"], ["h", "Distance between planes"]]); }
       if (m === "sweep") { add("L1", "Path: vertical length", 20, 110, 5, "mm"); add("R", "Path: bend radius", 10, 50, 5, "mm"); add("L2", "Path: horizontal length", 20, 110, 5, "mm"); add("d", "Profile diameter", 6, 40, 2, "mm"); ro2 = readouts(ro, [["pl", "Path length"], ["v", "Volume ≈ area × path length"]]); }
       if (m === "helix") {
@@ -683,7 +685,7 @@
     const zUp = (prof, z) => prof.map(([x, y]) => [x, y, z]);
     function rebuild() {
       const m = S.mode;
-      extras = () => {};
+      extras = () => {}; extrasPre = () => {};
       if (m === "extrude") {
         const o = S.ex, prof = E3.rect(o.w, o.h), d = Math.max(0.5, o.d * t);
         mesh = E3.prism(prof, 0, d, "sea");
@@ -704,8 +706,9 @@
         const prof = E3.circle(Math.min(o.a, o.R - 1), 18, o.R, 0).map(([r, z]) => [r, z]);
         mesh = E3.lathe(prof, segs, "gold", 0, ang * D2R, true);
         radius = o.R + o.a + 10; target = [0, 0, 0];
+        // the axis is drawn before the model, so the model hides the part of it that is behind
+        extrasPre = (ctx, V, C) => line3(ctx, V, [[0, 0, -radius * 0.9], [0, 0, radius * 0.9]], C.lode, 1.6, CHAIN);
         extras = (ctx, V, C) => {
-          line3(ctx, V, [[0, 0, -radius * 0.9], [0, 0, radius * 0.9]], C.lode, 1.6, CHAIN);
           const a = V.proj([0, 0, radius * 0.9]); HG.label(ctx, "axis", a[0] + 6, a[1], { col: C.lode, size: 13 });
           line3(ctx, V, prof.map(([r, z]) => [r, 0, z]).concat([[prof[0][0], 0, prof[0][1]]]), C.lode, 2.5);
         };
@@ -732,7 +735,7 @@
           line3(ctx, V, wp, C.muted, 1, [5, 4]);
           const a = V.proj(wp[1]); HG.label(ctx, `work plane, offset ${o.h}`, a[0] - 4, a[1] - 10, { col: C.ink2, size: 12, align: "right" });
         };
-        ro2.p.textContent = `${o.s} square → ${o.top === "circle" ? "Ø" + o.d + " circle" : o.top === "square" ? o.d + " square" : o.d + " A/C hexagon"}`;
+        ro2.p.textContent = `${o.s} square → ${o.top === "circle" ? "Ø" + o.d + " circle" : o.top === "square" ? o.d + " square" : o.d + " across corners hexagon"}`;
         ro2.h.textContent = `${o.h} mm`;
         msg.textContent = `Loft blends between two (or more) closed profiles drawn on separate work planes. Here a ${o.s} mm square on the base plane changes smoothly into a ${o.top === "circle" ? "circle" : o.top === "square" ? "smaller square" : "hexagon"} on a work plane offset ${o.h} mm above it. No single profile describes the shape: every cross-section is different.`;
       }
@@ -780,8 +783,8 @@
         }
         mesh = E3.orient(E3.skin(rings, { capStart: true, capEnd: true, mat: "gold" }));
         radius = Math.max(o.R * 1.6, o.L * 0.62) + 10; target = [0, 0, o.L / 2];
+        extrasPre = (ctx, V, C) => line3(ctx, V, [[0, 0, -10], [0, 0, o.L + 12]], C.lode, 1.6, CHAIN);
         extras = (ctx, V, C) => {
-          line3(ctx, V, [[0, 0, -10], [0, 0, o.L + 12]], C.lode, 1.6, CHAIN);
           line3(ctx, V, zUp(prof.map(([x, y]) => [o.R + x, 0]), 0).map(([x, , z], i) => [x, 0, prof[i][1]]).concat([[o.R + prof[0][0], 0, prof[0][1]]]), C.lode, 2.5);
           // pitch marker between the first two coils on the near side
           const a = V.proj([o.R + o.d, 0, 0]), b = V.proj([o.R + o.d, 0, o.p]);
@@ -808,6 +811,7 @@
         if (spin && !building) cam.yaw += dt * 0.35;
         const V = fitView(cam, s.w, s.h, radius, target);
         const list = E3.prepare(mesh, V);
+        extrasPre(ctx, V, C);
         paint(ctx, list, C, { lw: 1.2 });
         extras(ctx, V, C);
       },
@@ -884,9 +888,12 @@
       E3.adjacency(mesh);
       const e = S.edit;
       const flatSides = e === "none" ? 4 : 8; // 4 sides plus 4 rounds or 4 chamfer faces
-      const faces = flatSides + 2 + (S.shell ? flatSides : 0);
+      // outer sides + bottom + (top, or rim + inner walls + inner floor when shelled)
+      const rounded = e === "fillet" ? S.r1 > S.t : e === "vfillet" ? Math.max(S.r1, S.r2) > S.t : e !== "none";
+      const inner = rounded ? flatSides : 4;
+      const faces = S.shell ? flatSides + 1 + 1 + inner + 1 : flatSides + 2;
       ro.vol.textContent = `${N(vol / 1000, 1)} cm³`;
-      ro.faces.textContent = String(S.shell ? faces : flatSides + 2);
+      ro.faces.textContent = String(faces);
       const parts = {
         none: "A plain 90 × 60 × 45 block: 6 faces, 12 edges, 8 vertices.",
         fillet: `A regular fillet: every selected edge is rounded with the same ${S.r1} mm radius all the way along.`,
@@ -919,7 +926,7 @@
     HG.choice(ctl, "Tool body B", [["cyl", "Cylinder"], ["sphere", "Sphere"], ["box", "Block"]], S.tool, (v) => { S.tool = v; rebuild(); });
     const sl = controls(box);
     HG.slider(sl, { label: "Move B along the block", min: 2, max: 22, step: 1, value: S.x, unit: "blocks", oninput: (v) => { S.x = v; rebuild(); } });
-    HG.slider(sl, { label: "Size of B (radius)", min: 2, max: 7, step: 1, value: S.r, unit: "blocks", oninput: (v) => { S.r = v; rebuild(); } });
+    HG.slider(sl, { label: "Size of B", min: 2, max: 7, step: 1, value: S.r, unit: "blocks", oninput: (v) => { S.r = v; rebuild(); } });
     const ghostBtn = HG.el("button", { type: "button", class: "seg-btn", "aria-pressed": "true" }, "Show B as a ghost outline");
     ghostBtn.addEventListener("click", () => { S.ghost = !S.ghost; ghostBtn.setAttribute("aria-pressed", S.ghost ? "true" : "false"); sim.redraw(); });
     box.append(HG.el("div", { class: "seg" }, ghostBtn));
@@ -1077,7 +1084,7 @@
     box.append(wrap);
     const edit = HG.el("div", { class: "sim-controls" });
     box.append(edit);
-    const draw2d = HG.svg("svg", { viewBox: "0 0 360 150", class: "cad-elev", role: "img", "aria-label": "Associated elevation" });
+    const draw2d = HG.svg("svg", { viewBox: "0 0 400 200", class: "cad-elev", role: "img", "aria-label": "Associated elevation" });
     box.append(HG.el("figure", { class: "cad-elev-fig" }, draw2d, HG.el("figcaption", null, "The associated drawing: an elevation of the same part, dimensioned. It updates with the model.")));
     const msg = note(box);
     const cam = { yaw: -0.7, pitch: 0.55 };
@@ -1085,7 +1092,7 @@
     function renderTree() {
       treeBox.innerHTML = "";
       treeBox.append(HG.el("div", { class: "cad-tree-root" }, "▣ Bracket.part"), HG.el("div", { class: "cad-tree-item cad-datum" }, "⌖ Origin: XY, XZ, YZ planes, axes, centre point"));
-      feats.forEach((f) => {
+      ["e1", "s1", "e2", "s2", "c3", "s3", "c4", "s4", "a4"].map((id) => feats.find((g) => g.id === id)).forEach((f) => {
         const by = isSup(f), depth = f.kind === "sketch" ? 1 : 0;
         const item = HG.el("div", { class: "cad-tree-item" + (by ? " is-sup" : "") + (sel === f.id ? " is-sel" : ""), style: `--d:${depth}` });
         const pick = HG.el("button", { type: "button", class: "cad-tree-name", "aria-pressed": sel === f.id ? "true" : "false" }, (f.kind === "sketch" ? "✎ " : "◆ ") + f.name);
@@ -1138,19 +1145,46 @@
     }
     function drawElev(base, boss, bore, hole, arr) {
       draw2d.innerHTML = "";
-      const s = Math.min(240 / P.W, 100 / (P.T + P.H)), ox = 60, oy = 128;
+      const top = (base ? P.T : 0) + (boss ? P.H : 0);
+      const s = Math.min(250 / P.W, 120 / Math.max(top, P.T)), ox = 70, oy = 160;
       const g = (e) => draw2d.append(e);
-      const R = (x, y, w, h, cls) => g(HG.svg("rect", { x: ox + x * s, y: oy - (y + h) * s, width: w * s, height: h * s, class: cls }));
-      const Lh = (x1, y1, x2, y2, cls) => g(HG.svg("line", { x1: ox + x1 * s, y1: oy - y1 * s, x2: ox + x2 * s, y2: oy - y2 * s, class: cls }));
+      const X = (x) => ox + x * s, Y = (y) => oy - y * s;
+      const R = (x, y, w, h, cls) => g(HG.svg("rect", { x: X(x), y: Y(y + h), width: w * s, height: h * s, class: cls }));
+      const Lh = (x1, y1, x2, y2, cls) => g(HG.svg("line", { x1: X(x1), y1: Y(y1), x2: X(x2), y2: Y(y2), class: cls }));
+      const ln = (x1, y1, x2, y2, cls) => g(HG.svg("line", { x1, y1, x2, y2, class: cls }));
+      const head = (x, y, dx, dy) => { const L = 7, w = 2.6, px = -dy, py = dx; g(HG.svg("path", { d: `M${x} ${y}L${x - dx * L + px * w} ${y - dy * L + py * w}L${x - dx * L - px * w} ${y - dy * L - py * w}Z`, class: "cad-el-arrow" })); };
+      const txt = (x, y, str, anchor = "middle") => g(HG.svg("text", { x, y, "font-size": 13, "text-anchor": anchor, class: "ink halo", text: str }));
+      // horizontal dimension between screen x1 and x2, features at screen ys (extension lines start 3 px clear of them)
+      const hdim = (x1, x2, yf1, yf2, yl, str) => {
+        const up = yl < Math.min(yf1, yf2), d = up ? -1 : 1;
+        ln(x1, yf1 + 3 * d, x1, yl + 4 * d, "cad-el-dim"); ln(x2, yf2 + 3 * d, x2, yl + 4 * d, "cad-el-dim");
+        ln(x1, yl, x2, yl, "cad-el-dim"); head(x1, yl, -1, 0); head(x2, yl, 1, 0);
+        txt((x1 + x2) / 2, yl - 4, str);
+      };
+      const vdim = (y1, y2, xf1, xf2, xl, str) => {
+        const left = xl < Math.min(xf1, xf2), d = left ? -1 : 1;
+        ln(xf1 + 3 * d, y1, xl + 4 * d, y1, "cad-el-dim"); ln(xf2 + 3 * d, y2, xl + 4 * d, y2, "cad-el-dim");
+        ln(xl, y1, xl, y2, "cad-el-dim"); head(xl, y1, 0, 1); head(xl, y2, 0, -1);
+        txt(xl + (left ? -5 : 5), (y1 + y2) / 2 + 4, str, left ? "end" : "start");
+      };
+      if (!base && !boss) { txt(200, 100, "Nothing to draw: every feature is suppressed"); return; }
       if (base) R(0, 0, P.W, P.T, "cad-el-out");
-      if (boss) R(P.W / 2 - P.B / 2, base ? P.T : P.T, P.B, P.H, "cad-el-out");
-      if (bore) { const top = boss ? P.T + P.H : P.T; Lh(P.W / 2 - P.d / 2, base ? 0 : P.T, P.W / 2 - P.d / 2, top, "cad-el-hid"); Lh(P.W / 2 + P.d / 2, base ? 0 : P.T, P.W / 2 + P.d / 2, top, "cad-el-hid"); }
-      Lh(P.W / 2, -6, P.W / 2, (boss ? P.T + P.H : P.T) + 6, "cad-el-cl");
-      if (hole && base) { const xs = arr ? [P.inset, P.W - P.inset] : [P.inset]; xs.forEach((x) => { Lh(x - P.h / 2, 0, x - P.h / 2, P.T, "cad-el-hid"); Lh(x + P.h / 2, 0, x + P.h / 2, P.T, "cad-el-hid"); }); }
-      const t = (x, y, str) => g(HG.svg("text", { x, y, "font-size": 13, "text-anchor": "middle", class: "ink2", text: str }));
-      if (base) { Lh(0, -9, P.W, -9, "cad-el-dim"); t(ox + P.W * s / 2, oy + 9 * s + 14, String(P.W)); g(HG.svg("text", { x: ox - 8, y: oy - P.T * s / 2 + 4, "font-size": 13, "text-anchor": "end", class: "ink2", text: String(P.T) })); }
-      if (boss) { t(ox + P.W * s / 2, oy - (P.T + P.H) * s - 6, "Ø" + P.B); g(HG.svg("text", { x: ox + P.W * s + 8, y: oy - (P.T + P.H / 2) * s + 4, "font-size": 13, class: "ink2", text: String(P.H) })); }
-      draw2d.setAttribute("aria-label", `Elevation: plate ${P.W} wide and ${P.T} thick` + (boss ? `, boss diameter ${P.B} and ${P.H} high` : "") + ".");
+      if (boss) R(P.W / 2 - P.B / 2, base ? P.T : 0, P.B, P.H, "cad-el-out");
+      const z0 = base ? 0 : P.T;
+      if (bore && (boss || base)) { Lh(P.W / 2 - P.d / 2, base ? 0 : P.T, P.W / 2 - P.d / 2, top, "cad-el-hid"); Lh(P.W / 2 + P.d / 2, base ? 0 : P.T, P.W / 2 + P.d / 2, top, "cad-el-hid"); }
+      Lh(P.W / 2, -4, P.W / 2, top + 4, "cad-el-cl");
+      if (hole && base) { const xs = arr ? [P.inset, P.W - P.inset] : [P.inset]; xs.forEach((x) => { Lh(x - P.h / 2, 0, x - P.h / 2, P.T, "cad-el-hid"); Lh(x + P.h / 2, 0, x + P.h / 2, P.T, "cad-el-hid"); Lh(x, -3, x, P.T + 3, "cad-el-cl"); }); }
+      if (base) {
+        hdim(X(0), X(P.W), Y(0), Y(0), Y(0) + 24, String(P.W));
+        vdim(Y(0), Y(P.T), X(0), X(0), X(0) - 22, String(P.T));
+      }
+      if (boss) {
+        const bl = X(P.W / 2 - P.B / 2), br = X(P.W / 2 + P.B / 2), bt = Y(top);
+        hdim(bl, br, bt, bt, bt - 16, "Ø" + P.B);
+        vdim(Y(top - P.H), bt, br, br, X(P.W) + 22, String(P.H));
+      }
+      void z0;
+      draw2d.setAttribute("aria-label", `Elevation: plate ${P.W} wide and ${P.T} thick` + (boss ? `, boss diameter ${P.B} and ${P.H} high` : "") + ", with dimensions.");
     }
     const sim = HG.sim(canvas, {
       w: 420, h: 300, height: (w) => Math.round(Math.min(330, Math.max(240, w * 0.7))),
@@ -1199,7 +1233,7 @@
     });
     const sl = controls(box);
     const offS = HG.slider(sl, { label: "Offset distance (arm above base)", min: -6, max: 12, step: 1, value: S.off, unit: "mm", oninput: (v) => { S.off = v; sync(); kick(); } });
-    HG.slider(sl, { label: "Orientate angle", min: 0, max: 90, step: 5, value: S.orientA, unit: "°", oninput: (v) => { S.orientA = v; sync(); kick(); } });
+    HG.slider(sl, { label: "Orientate angle", min: 0, max: 90, step: 5, value: S.orientA, unit: "°", oninput: (v) => { S.orientA = v; const ob = bEls.find(([, p2, c2]) => p2 === "arm" && c2 === "orient"); if (ob) ob[0].textContent = `Arm: orientate (${v}° to the base edge)`; sync(); kick(); } });
     const ro = readouts(box, [["base", "Base"], ["arm", "Arm: degrees of freedom"], ["pin", "Pin: degrees of freedom"], ["fit", "Arm to base"]]);
     const msg = note(box);
     const br = HG.el("div", { class: "btn-row" });
@@ -1221,6 +1255,9 @@
       return t;
     }
     function sync() {
+      // the pin's centre axis is the arm's hole: it cannot be used until the arm's hole is on the base's axis
+      if (!S.arm.has("centre")) S.pin.delete("centre");
+      bEls.forEach(([b, part, c]) => { if (part === "pin" && c === "centre") { b.disabled = !S.arm.has("centre"); b.title = b.disabled ? "Centre-axis the arm first: the pin goes through both holes" : ""; } });
       bEls.forEach(([b, part, c]) => b.setAttribute("aria-pressed", has(part, c) ? "true" : "false"));
       const a = 6 - removed("arm").size, p = 6 - removed("pin").size;
       ro.base.textContent = "Grounded (0 DOF)";
@@ -1284,7 +1321,7 @@
         all._adj = false;
         const V = fitView(cam, s.w, s.h, 82, [10, 0, 35], 0.55);
         E3.adjacency(all);
-        paint(ctx, E3.prepare(all, V), C, { lw: 1.1 });
+        paint(ctx, E3.prepare(all, V, { bias: (f) => (f.mat === "muted" ? 15 : 0) }), C, { lw: 1.1 });
         // the shared axis
         line3(ctx, V, [[0, 0, -12], [0, 0, 100]], C.lode, 1.3, CHAIN);
         // a mark on the pin head shows its spin
@@ -1362,7 +1399,7 @@
       const fwd = norm(sub(cam.look, cam.eye)), rt = norm(E3.cross(fwd, [0, 0, 1])), up = E3.cross(rt, fwd);
       const fov = 0.62, Ld = norm([Math.cos(S.az * D2R) * Math.cos(S.el * D2R), Math.sin(S.az * D2R) * Math.cos(S.el * D2R), Math.sin(S.el * D2R)]);
       const lr = Math.max(...Object.values(sc).map(() => 0)) + 0.06; // light's angular size (soft shadows)
-      const spp = q === "high" && !quick ? 4 : 1, shs = q === "draft" ? 1 : q === "medium" ? 3 : quick ? 2 : 10;
+      const spp = q === "high" && !quick ? 4 : 1, shs = q === "draft" ? 3 : q === "medium" ? 6 : quick ? 2 : 10;
       const lt = norm(E3.cross(Ld, [0, 0, 1])), lu = E3.cross(lt, Ld);
       const rnd = (() => { let s = 12345; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
       const C = HG.colors();
@@ -1454,7 +1491,7 @@
     function go(quick) {
       clearTimeout(qt);
       if (quick) { render(S.quality, null, true); qt = setTimeout(() => render(S.quality), 280); } else render(S.quality);
-      const qtxt = { draft: "Draft: low resolution (you can see the pixels) and one shadow sample, so soft shadow edges come out speckled: grain.", medium: "Medium: sharper, but shadow edges still a little grainy.", high: "High: full resolution, smoothed edges (4 samples per pixel) and ten shadow samples, so there is no pixelation or grain. It takes longest." }[S.quality];
+      const qtxt = { draft: "Draft: low resolution, so you can see the pixels (pixelation), and only three samples of the light per point, so the soft shadow edges come out speckled (grain).", medium: "Medium: twice the resolution and six light samples: sharper, but a little grain is still visible in the soft shadow edges.", high: "High: full resolution, smoothed edges (4 samples per pixel) and ten shadow samples, so there is no pixelation or grain. It takes longest." }[S.quality];
       const mt = { matte: "Matte: light scatters evenly; no highlight and no reflection.", gloss: "Gloss: a bright, sharp highlight and a faint reflection of the scene.", metal: "Metal: strong reflections of its surroundings, tinted by the metal's colour, and a tight highlight." }[S.mat];
       msg.textContent = `${mt} ${qtxt}` + (S.lift > 0 ? ` The models are ${S.lift} mm above the deck: their shadows have pulled away from them, which tells the viewer at once that they are floating.` : "") + (!S.shadows ? " Without shadows, nothing seems to sit on the deck." : "");
       canvas.setAttribute("aria-label", `Rendered scene: a cannonball, a crate and a capstan drum on a deck. Light from ${S.az}° round and ${S.el}° high. ${msg.textContent}`);
@@ -1496,7 +1533,7 @@
           { id: "shell", t: "Shell the part, wall thickness 2, removing both end faces.", after: ["flare"] },
           { id: "hole", t: "On the work plane at the end of the mouth, sketch one Ø4 circle on a PCD of 65.", after: ["shell"] },
           { id: "array", t: "Radial array the Ø4 circle 6 times round 360° (60° apart) about the axis of the mouth.", after: ["hole"] },
-          { id: "cut", t: "Extrude subtract the six circles by 25, back through the flared wall.", after: ["array"] },
+          { id: "cut", t: "Extrude subtract the six circles by 30, back through the flared wall.", after: ["array"] },
         ],
         decoys: [
           { id: "x1", t: "Make the tube shape and bend it.", why: "Too vague to earn a mark: name the command (extrude along a path) and give the sizes." },
@@ -1510,7 +1547,7 @@
           { id: "pr", t: "On the same plane, sketch a Ø4 circle with its centre 18 from the axis.", after: ["ax"] },
           { id: "hx", t: "Use the helix (coil) command: profile = the Ø4 circle, axis = the centre line.", after: ["pr"] },
           { id: "pp", t: "Set pitch 12 and number of revolutions 9 (overall length 108).", after: ["hx"] },
-          { id: "end", t: "On the end face of the coil, sketch a Ø4 circle and extrude it 20 straight up to form the hook's leg.", after: ["pp"] },
+          { id: "end", t: "On a work plane perpendicular to the axis at the top end of the coil, sketch a Ø4 circle centred on the end of the wire and extrude it 20 upwards to form the hook's leg.", after: ["pp"] },
         ],
         decoys: [
           { id: "y1", t: "Set the helix to 12 rotations of pitch.", why: "Mixes up the terms: pitch is a distance (12 mm); revolutions is a count (9). The report says many candidates misused exactly these words." },
