@@ -21,7 +21,7 @@
       title: "2D tools and constraints",
       questions: [
         { q: "Which 2D tool copies a profile at a set distance so that every line stays parallel to the original?", opts: ["Mirror", "Offset", "Extend", "Project edge"], a: 1, why: "Offset makes a parallel copy at a set distance: ideal for wall thicknesses and rims." },
-        { q: "Eight holes are arrayed radially through a total angle of 270°, with holes at both ends of the arc. What is the angle between neighbouring holes?", opts: ["33.75°", "38.57°", "45°", "30°"], a: 1, why: "Eight holes have seven gaps along the arc: 270 ÷ 7 ≈ 38.57°. 270 ÷ 8 would be right only for a full circle's logic, where the last copy meets the first." },
+        { q: "Eight holes are arrayed radially through a total angle of 270°, with holes at both ends of the arc. What is the angle between neighbouring holes?", opts: ["33.75°", "38.57°", "45°", "30°"], a: 1, why: "Eight holes have seven gaps along the arc: 270 ÷ 7 ≈ 38.57°. Dividing by 8 treats it like a full circle, where the last copy would land on the first." },
         { q: "Which constraint makes two circles share the same centre?", opts: ["Tangent", "Fixed", "Concentric", "Parallel"], a: 2, why: "Concentric circles share one centre point. Tangent circles touch at one point." },
         { q: "What does the <em>project edge</em> tool do?", opts: ["Extends a line to meet a boundary", "Copies an existing edge of the model onto the current sketch plane", "Draws a projection line between orthographic views", "Rounds a corner"], a: 1, why: "Project edge brings existing model geometry into the sketch, so new profiles line up exactly with what is already there." },
         { q: "A sketch is <em>fully constrained</em> when…", opts: ["it has been extruded", "every line has a dimension", "nothing in it can move except by changing one of its constraints", "it contains only straight lines"], a: 2, why: "A fully constrained sketch has no degrees of freedom left: it changes only when you edit a constraint." },
@@ -115,10 +115,10 @@
         { q: "Which step would earn a mark in a \"describe how to model\" answer?", opts: ["Make the base", "Extrude the shape", "On the XY plane, sketch a 90 × 60 rectangle and extrude it 12", "Use CAD to model the base accurately"], a: 2, why: "It names the plane, the profile with sizes, the command and the distance. The others could not be followed." },
         { q: "In a modelling plan, which order is workable?", opts: ["Extrude, then sketch the profile", "Radial array the hole, then sketch the hole", "Shell the body, then cut the holes through its walls", "Fillet the edges, then create the solid"], a: 2, why: "Each step needs what it is built on: a profile before its feature, a solid before its edits, and shell before holes." },
         { q: "A question says: do not use radial array. Six holes are equally spaced round a full circle. What must you state instead?", opts: ["The pitch", "The angle between instances: 60°", "The number of revolutions", "The PCD only"], a: 1, why: "Without the array you position each copy, so give the angle between them: 360 ÷ 6 = 60°." },
-        { type: "open", q: "A drum for the capstan is a cylinder Ø200 and 300 long, with a Ø260 × 20 flange at each end and a Ø40 hole through its axis. Describe how it could be modelled using 3D CAD.", marks: 5, model: mi(
-          "On the XY plane, sketch a Ø200 circle and extrude it 300;",
+        { type: "open", q: "A drum for the capstan is a Ø200 barrel, 300 long between the flanges, with a Ø260 × 20 flange at each end and a Ø40 hole through its axis. Describe how it could be modelled using 3D CAD.", marks: 5, model: mi(
+          "On the XY plane, sketch a Ø200 circle and extrude it 300 (the barrel);",
           "On one end face, sketch a Ø260 circle concentric with the drum and extrude it 20 (outwards);",
-          "Mirror the flange about a work plane at mid-length (offset 150), or repeat on the other end face;",
+          "Mirror the flange about a work plane at the barrel's mid-length (offset 150), or repeat on the other end face;",
           "On an end face, sketch a Ø40 circle concentric with the drum;",
           "Extrude subtract the Ø40 circle through all.",
           "Alternative: revolve the half cross-section (with all sizes) 360° about the axis, earning the equivalent marks.") },
