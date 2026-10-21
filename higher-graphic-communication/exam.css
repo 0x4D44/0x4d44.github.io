@@ -72,7 +72,7 @@
 .ex-sym { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; align-items: center; margin-top: 6px; }
 @media (max-width: 560px) { .ex-sym { grid-template-columns: minmax(0, 1fr); } }
 .ex-sym-pic { background: var(--paper); border: 2px solid var(--line); border-radius: 2px; padding: 6px; }
-.ex-sym-pic svg { display: block; width: 100%; height: auto; max-width: 240px; margin: 0 auto; }
+.ex-sym-pic > svg { display: block; width: 100%; height: auto; max-width: 240px; margin: 0 auto; }
 .ex-sym-opts { display: grid; gap: 6px; }
 
 /* the mini-paper and the court */

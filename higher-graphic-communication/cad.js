@@ -456,7 +456,7 @@
         base.forEach(([a, b]) => g(poly([a, b], "cad-sk-base", { open: true })));
         if (t === "trim") {
           // a line that overshoots the vertical at x = 70
-          g(poly([[-20, 40], [70, 40]], "cad-sk-new", { open: true }));
+          g(poly([[0, 40], [70, 40]], "cad-sk-new", { open: true }));
           g(poly([[-20, 40], [0, 40]], "cad-sk-gone", { open: true }));
           g(poly([[70, 0], [70, 40]], "cad-sk-new", { open: true }));
           g(poly([[70, 40], [70, 80]], "cad-sk-gone", { open: true }));
@@ -1002,7 +1002,7 @@
     solids.hex.f.push([5, 4, 3, 2, 1, 0], [6, 7, 8, 9, 10, 11]);
     for (let i = 0; i < 6; i++) solids.hex.f.push([i, (i + 1) % 6, (i + 1) % 6 + 6, i + 6]);
     const S = { solid: "cube", show: "v", k: 0 };
-    const cam = { yaw: -2.35, pitch: 0.45 }; // viewer at +x +y +z, so the chamfered corner (1, 1, 1) faces you
+    const cam = { yaw: -2.0, pitch: 0.45 }; // viewer at +x +y +z, so the chamfered corner (1, 1, 1) faces you
     const canvas = canvasIn(box, "Vertices, edges and faces");
     const ctl = HG.el("div"); box.append(ctl);
     HG.choice(ctl, "Solid", Object.entries(solids).map(([k, s]) => [k, s.name]), S.solid, (v) => { S.solid = v; S.k = 0; setup(); });

@@ -455,23 +455,29 @@
       const sym = Math.abs(u + l) < 1e-9 ? `${NOM} ± ${tr(half)}` : `${tr(mid)} ± ${tr(half)} <small>(the nominal size moves to the middle of the limits)</small>`;
       return { common: `<span class="st-stack"><span>${(NOM + u).toFixed(2)}</span><span>${(NOM + l).toFixed(2)}</span></span>`, asym: `${NOM} <span class="st-stack"><span>${sgn2(u) || "0"}</span><span>${sgn2(l) || "0"}</span></span>`, sym };
     }
+    let rzT = 0;
+    window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(draw, 150); });
     function draw() {
       const hMax = NOM + st.hu, hMin = NOM + st.hl, sMax = NOM + st.su, sMin = NOM + st.sl;
       const maxC = hMax - sMin, minC = hMin - sMax;
       const kind = minC >= -1e-9 ? "clearance" : maxC <= 1e-9 ? "interference" : "transition";
       svg.innerHTML = "";
       const g = S("g"); svg.append(g);
+      // a narrower drawing on phones keeps the labels readable
+      const nar = (svg.clientWidth || box.clientWidth || 600) < 520;
+      const VW = nar ? 380 : 560, hx = nar ? 150 : 200, sx = nar ? 240 : 340, zw = nar ? 60 : 100;
+      svg.setAttribute("viewBox", `0 0 ${VW} 330`);
       const y0 = 150, kk = 1100, Y = (dev) => y0 - dev * kk;
-      L(g, 40, y0, 520, y0, "st-k");
-      T(g, 44, y0 - 8, "zero line", 13, "start", "muted"); T(g, 44, y0 + 18, `Ø${NOM}.00`, 13, "start", "muted");
-      R(g, 200, Math.min(Y(st.hu), Y(st.hl)), 100, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
-      R(g, 340, Math.min(Y(st.su), Y(st.sl)), 100, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
-      T(g, 250, 318, "HOLE zone", 15, "middle", "st-sea"); T(g, 390, 318, "SHAFT zone", 15, "middle", "st-red");
-      T(g, 196, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, 196, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 || Math.abs(st.hl) < 0.012 ? 19 : 5), hMin.toFixed(2), 14, "end");
-      T(g, 444, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, 444, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 18 : 5), sMin.toFixed(2), 14, "start");
-      [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 30, Y(v), 40, Y(v), "st-n"); T(g, 28, Y(v) + 4, sgn2(v), 11, "end", "muted"); });
+      L(g, 56, y0, VW - 14, y0, "st-k");
+      T(g, 58, y0 - 8, "zero line", 13, "start", "muted"); T(g, 58, y0 + 18, `Ø${NOM}.00`, 13, "start", "muted");
+      R(g, hx, Math.min(Y(st.hu), Y(st.hl)), zw, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
+      R(g, sx, Math.min(Y(st.su), Y(st.sl)), zw, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
+      T(g, hx + zw / 2, 318, "HOLE", 15, "middle", "st-sea"); T(g, sx + zw / 2, 318, "SHAFT", 15, "middle", "st-red");
+      T(g, hx - 4, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, hx - 4, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 || Math.abs(st.hl) < 0.012 ? 19 : 5), hMin.toFixed(2), 14, "end");
+      T(g, sx + zw + 4, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, sx + zw + 4, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 18 : 5), sMin.toFixed(2), 14, "start");
+      [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 46, Y(v), 56, Y(v), "st-n"); T(g, 44, Y(v) + 4, sgn2(v), 12, "end", "muted"); });
       if (pair) {
-        L(g, 200, Y(pair.h - NOM), 300, Y(pair.h - NOM), "st-k st-sea-s"); L(g, 340, Y(pair.s - NOM), 440, Y(pair.s - NOM), "st-k st-red-s");
+        L(g, hx, Y(pair.h - NOM), hx + zw, Y(pair.h - NOM), "st-k st-sea-s"); L(g, sx, Y(pair.s - NOM), sx + zw, Y(pair.s - NOM), "st-k st-red-s");
       }
       svg.setAttribute("aria-label", `Tolerance zones magnified: hole from ${hMin.toFixed(2)} to ${hMax.toFixed(2)} mm, shaft from ${sMin.toFixed(2)} to ${sMax.toFixed(2)} mm. A ${kind} fit.`);
       const hn = notation(st.hu, st.hl), sn = notation(st.su, st.sl);
@@ -885,8 +891,11 @@
         if (it.b) { ctx.beginPath(); ctx.ellipse(cx, yt, it.b * sc, it.b * sb * sc, 0, 0, Math.PI * 2); ctx.fillStyle = "#2a2430"; ctx.fill(); }
         ctx.restore();
       });
+      axisOver(ctx, Cc, cx, Y(zmaxOf() + 14), Y(pz(PARTS[5]) - 14));
       balloons(ctx, Cc, (p) => Y(pz(p) + (p.sol[0].z0 + p.sol[p.sol.length - 1].z1) / 2), (p) => cx + p.sol[p.sol.length - 1].R * sc * 0.92, cx + 90 * sc + 40);
     }
+    /* the common centre line again, faintly, over the parts, so it reads through the whole stack */
+    function axisOver(ctx, Cc, x, y0, y1) { ctx.save(); ctx.globalAlpha = 0.45; ctx.strokeStyle = Cc.ink; ctx.lineWidth = 1; ctx.setLineDash([14, 3, 2, 3]); ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke(); ctx.restore(); }
     /* balloons with leaders (a leader ending on a surface ends in a dot), kept at least 28 px apart */
     function balloons(ctx, Cc, yOf, xOf, bx) {
       let lastY = -1e9;
@@ -947,6 +956,7 @@
       const nut = PARTS[5], zn = pz(nut), ns = nut.sol[0];
       ctx.save(); ctx.fillStyle = Cc.card; ctx.fillRect(X(-ns.R), Y(zn + ns.z1), 2 * ns.R * sc, (ns.z1 - ns.z0) * sc); ctx.restore();
       box2(-ns.R, ns.R, zn + ns.z0, zn + ns.z1); line(-ns.R / 2, zn + ns.z0, -ns.R / 2, zn + ns.z1, 1.4); line(ns.R / 2, zn + ns.z0, ns.R / 2, zn + ns.z1, 1.4);
+      axisOver(ctx, Cc, cx, Y(zmaxOf() + 12), Y(pz(PARTS[5]) - 14));
       balloons(ctx, Cc, (q) => Y(pz(q) + (q.sol[0].z0 + q.sol[q.sol.length - 1].z1) / 2), (q) => X(q.sol[q.sol.length - 1].R * 0.6), cx + 90 * sc + 40);
       HG.label(ctx, e < 0.02 ? "SECTIONED ASSEMBLY" : "EXPLODED SECTIONAL ELEVATION", 10, S2.h - 10, { size: 12, bold: true, align: "left", col: Cc.ink });
     }
