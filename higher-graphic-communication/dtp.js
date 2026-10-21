@@ -238,7 +238,7 @@
     ["violet", "#6a2c8e"], ["blue-violet", "#3f3d99"], ["blue", "#1f5fae"], ["blue-green", "#0f8f8a"], ["green", "#2e9e3e"], ["yellow-green", "#a3c93a"]];
   const wrap12 = (i) => ((i % 12) + 12) % 12;
   const isWarm = (i) => wrap12(i) <= 5;
-  const warmth = (i) => Math.cos((wrap12(i) - 3) * Math.PI / 6); // +1 at red-orange, -1 at blue-green
+  const warmth = (i) => { const k = wrap12(i); return k === 5 ? 0.5 : k === 11 ? -0.5 : k <= 4 ? 1 : -1; }; // the deck's warm and cool halves; red-violet and yellow-green are borderline
   const wedge = (cx, cy, R, r, i) => {
     const a0 = (-105 + i * 30) * Math.PI / 180, a1 = (-75 + i * 30) * Math.PI / 180;
     const p = (a, rr) => `${(cx + rr * Math.cos(a)).toFixed(2)} ${(cy + rr * Math.sin(a)).toFixed(2)}`;
@@ -250,8 +250,12 @@
     const wsv = S("svg", { viewBox: "0 0 240 240", class: "dp-wheel", role: "img" });
     const wedges = WHEEL.map(([n, c], i) => {
       const p = S("path", { d: wedge(120, 120, 112, 56, i), fill: c, stroke: "#fff", "stroke-width": 1.5, class: "dp-wedge" });
+      p.append(S("title", { text: n }));
       p.addEventListener("click", () => setBase(i));
-      wsv.append(p); return p;
+      wsv.append(p);
+      const a = (-90 + i * 30) * Math.PI / 180, ab = n.split("-").map((w) => w[0].toUpperCase()).join("");
+      wsv.append(S("text", { x: 120 + 84 * Math.cos(a), y: 120 + 84 * Math.sin(a) + 4, "font-size": 11, "font-weight": 700, "text-anchor": "middle", fill: textOn(c), "pointer-events": "none", text: ab }));
+      return p;
     });
     const over = S("g", { "pointer-events": "none" }); wsv.append(over);
     const centre = S("circle", { cx: 120, cy: 120, r: 46, fill: WHEEL[base][1], stroke: "#fff", "stroke-width": 3 }); wsv.append(centre);
@@ -289,10 +293,10 @@
     function drawRing() {
       over.innerHTML = "";
       const offs = scheme === "harmony" ? [-1, 0, 1] : [0, 6];
-      const pts = offs.map((o) => { const a = (ringAngle + o * 30 - 90) * Math.PI / 180; return [120 + 84 * Math.cos(a), 120 + 84 * Math.sin(a)]; });
+      const pts = offs.map((o) => { const a = (ringAngle + o * 30 - 90) * Math.PI / 180; return [120 + 104 * Math.cos(a), 120 + 104 * Math.sin(a)]; });
       if (pts.length === 2) over.append(S("path", { d: `M${pts[0][0]} ${pts[0][1]} L${pts[1][0]} ${pts[1][1]}`, stroke: "#16141a", "stroke-width": 2.5, "stroke-dasharray": "5 4" }));
-      else over.append(S("path", { d: `M${pts[0][0]} ${pts[0][1]} A84 84 0 0 1 ${pts[2][0]} ${pts[2][1]}`, fill: "none", stroke: "#16141a", "stroke-width": 3 }));
-      pts.forEach(([x, y], k) => over.append(S("circle", { cx: x, cy: y, r: k === (pts.length === 3 ? 1 : 0) ? 9 : 7, fill: "#fff", stroke: "#16141a", "stroke-width": 2.5 })));
+      else over.append(S("path", { d: `M${pts[0][0]} ${pts[0][1]} A104 104 0 0 1 ${pts[2][0]} ${pts[2][1]}`, fill: "none", stroke: "#16141a", "stroke-width": 3 }));
+      pts.forEach(([x, y], k) => over.append(S("circle", { cx: x, cy: y, r: k === (pts.length === 3 ? 1 : 0) ? 7 : 5.5, fill: "#fff", stroke: "#16141a", "stroke-width": 2.5 })));
     }
     function draw() {
       const bc = val < 0 ? shade(WHEEL[base][1], -val / 100) : tint(WHEEL[base][1], val / 100);
@@ -427,11 +431,11 @@
     a(S("path", { d: "M220 365 L210 374 L223 377", fill: "none", stroke: P.red, "stroke-width": 2.5, "stroke-linecap": "round" }));
     // 4 inset photo with drop shadow (depth)
     const ig = a(S("g", { filter: "url(#dp-hs-sh)" }));
-    ig.append(S("rect", { x: 186, y: 222, width: 92, height: 62, fill: "#ec4a24" }));
-    ig.append(S("rect", { x: 190, y: 226, width: 84, height: 54, fill: "#bfe1f5" }));
-    const sg = a(S("g")); sg.append(S("rect", { x: 190, y: 266, width: 84, height: 14, fill: "#1d5d8f" })); ship(sg, 202, 228, 1);
+    ig.append(S("rect", { x: 202, y: 222, width: 82, height: 62, fill: "#ec4a24" }));
+    ig.append(S("rect", { x: 206, y: 226, width: 74, height: 54, fill: "#bfe1f5" }));
+    const sg = a(S("g")); sg.append(S("rect", { x: 206, y: 266, width: 74, height: 14, fill: "#1d5d8f" })); ship(sg, 213, 228, 1);
     // 5 caption next to inset (proximity)
-    a(S("text", { x: 190, y: 297, "font-size": 10.5, fill: P.ink, text: "Aboard HMS Vellum" }));
+    a(S("text", { x: 202, y: 297, "font-size": 10.5, fill: P.ink, text: "Aboard HMS Vellum" }));
     // 7 three steps on a three-column grid
     [["1", "FLY", 16], ["2", "BUILD", 109], ["3", "LEAD", 202]].forEach(([n, h, x]) => {
       a(S("circle", { cx: x + 12, cy: 322, r: 11, fill: P.navy }));
@@ -451,11 +455,11 @@
     { n: 1, px: 150, py: 34, r: [0, 0, 300, 40], ans: "Rhythm", opts: ["Rhythm", "Dominance", "Texture", "Alignment"], d: "Nine pennants are repeated at equal spacing in a red, yellow, blue sequence along the top edge.", why: "Repetition at regular intervals is rhythm: it sets up a pattern that leads the eye across the top of the poster." },
     { n: 2, px: 20, py: 58, r: [0, 44, 300, 74], ans: "Contrast", opts: ["Texture", "Contrast", "Rhythm", "Depth"], d: "The title is white reverse text on a dark navy band: light against dark.", why: "The strongest difference in value on the page: white on navy. That difference is contrast, and it is what makes the title readable from a distance." },
     { n: 3, px: 60, py: 145, r: [16, 126, 268, 140], ans: "Dominance", opts: ["White space", "Alignment", "Dominance", "Rhythm"], d: "The aircraft photograph is by far the largest item, filling about a third of the page.", why: "One item much larger than all others becomes the focal point: that is dominance. The eye lands here first." },
-    { n: 4, px: 266, py: 236, r: [186, 222, 92, 62], ans: "Depth", opts: ["Alignment", "Rhythm", "Texture", "Depth"], d: "The ship photo overlaps the corner of the main photo, has a drop shadow and a warm red-orange frame.", why: "Overlap, a drop shadow and an advancing warm frame make the inset seem to sit in front of the main photo: depth." },
-    { n: 5, px: 174, py: 294, r: [180, 286, 106, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
+    { n: 4, px: 266, py: 236, r: [202, 222, 82, 62], ans: "Depth", opts: ["Alignment", "Rhythm", "Texture", "Depth"], d: "The ship photo overlaps the corner of the main photo, has a drop shadow and a warm red-orange frame.", why: "Overlap, a drop shadow and an advancing warm frame make the inset seem to sit in front of the main photo: depth." },
+    { n: 5, px: 184, py: 294, r: [198, 286, 92, 16], ans: "Unity/proximity", opts: ["Dominance", "Unity/proximity", "Depth", "Texture"], d: "The caption sits directly beneath the ship photo, close to it and away from other text.", why: "Placing related items close together so they read as one group is proximity, a way of creating unity." },
     { n: 6, px: 291, py: 205, r: [228, 156, 70, 222], ans: "Line", opts: ["Line", "Texture", "Balance", "Value"], d: "A dotted red line curves from the aircraft's nose down the right-hand side to the date panel.", why: "This is the element line, used to lead the eye: it takes the viewer from the aircraft to the date." },
-    { n: 7, px: 150, py: 342, r: [16, 308, 268, 46], ans: "Grid structure", opts: ["Depth", "Texture", "Dominance", "Grid structure"], d: "The three activities sit in three equal columns; their left edges line up with the photo, the inset and the date panel above and below.", why: "Items placed in equal columns on a common framework are using grid structure. (The repeated number-and-heading format is also rhythm, but the columns are the grid.)" },
-    { n: 8, px: 220, py: 377, r: [16, 362, 190, 30], ans: "Emphasis", opts: ["Emphasis", "Texture", "Rhythm", "Line"], d: "The date and time are in navy bold text on a yellow panel, the only yellow block on the lower half.", why: "A bright accent panel makes the date stand out from everything near it: emphasis on the information parents need." },
+    { n: 7, px: 150, py: 342, r: [16, 308, 268, 46], ans: "Grid structure", opts: ["Depth", "Texture", "Dominance", "Grid structure"], d: "The three activities sit in three equal columns. The first column lines up with the left edges of the main photo and the date panel, and the third with the left edge of the inset photo.", why: "Items placed in equal columns on a common framework are using grid structure. (The repeated number-and-heading format is also rhythm, but the columns are the grid.)" },
+    { n: 8, px: 220, py: 377, r: [16, 362, 190, 30], ans: "Emphasis", opts: ["Emphasis", "Texture", "Rhythm", "Line"], d: "The date and time are in navy bold text on a yellow panel, the only large yellow block on the lower half.", why: "A bright accent panel makes the date stand out from everything near it: emphasis on the information parents need." },
     { n: 9, px: 150, py: 412, r: [0, 400, 300, 24], ans: "Texture", opts: ["Dominance", "Texture", "Emphasis", "Alignment"], d: "A strip of Minecraft grass blocks runs along the bottom edge, filled with a pixelated grass and dirt pattern.", why: "A pattern that suggests a surface (grass and soil blocks) is visual texture, applied with a textured fill." },
     { n: 10, px: 9, py: 300, r: [12, 126, 8, 266], ans: "Alignment", opts: ["Depth", "Alignment", "Texture", "Dominance"], d: "The left edges of the main photo, the first activity and the date panel all sit on one line, 16 units in from the page edge.", why: "Lining items up along a common edge is alignment. It makes the layout look ordered and planned." },
   ];
@@ -540,13 +544,17 @@
     ["layers", "giving a layered, three-dimensional look to a flat page"],
     ["belong", "so the viewer sees the items as belonging together in one planned design"],
     ["group", "so the viewer reads the related items as a group"],
-    ["creates", "which creates emphasis"],
+    ["creates", "which creates emphasis"], // text updated to name the question's principle
     ["lopsided", "so the layout looks lopsided"],
   ];
   const XQ = {
-    emphasis: { q: "Explain how emphasis has been achieved in the recruitment poster.", causes: ["date", "title", "photo", "path"], effects: ["stand", "order"] },
+    emphasis: { q: "Explain how emphasis has been achieved in the recruitment poster.", causes: ["date", "title", "path"], effects: ["stand", "order"] },
     depth: { q: "Explain how depth has been created in the recruitment poster.", causes: ["inset", "frame"], effects: ["forward", "layers"] },
-    unity: { q: "Explain how unity has been achieved in the recruitment poster.", causes: ["pennants", "colours", "caption"], effects: ["belong", "group"] },
+    unity: { q: "Explain how unity has been achieved in the recruitment poster.", causes: ["colours", "caption"], effects: ["belong", "group"] },
+  };
+  const MISFIT = {
+    emphasis: { photo: "✘ 0: making one item far larger than everything else is dominance (the main focal point of the whole poster). Emphasis questions want how particular items, such as the date or title, are made to stand out." },
+    unity: { pennants: "✘ 0: repeating the pennants at equal spacing is rhythm. For unity, point to what ties the whole design together: a consistent colour scheme, or related items grouped together." },
   };
   mount("w-explain", (box) => {
     let qk = "emphasis";
@@ -560,21 +568,21 @@
       const res = E("p", { class: "dp-xres", "aria-live": "polite" });
       const wrap = E("div", { class: "dp-xrow" }, E("p", { class: "dp-xlab" }, `Mark •${k + 1}`), E("label", null, E("span", { class: "dp-cause" }, "Cause"), c), E("label", null, E("span", { class: "dp-effect" }, "Effect"), e), out, res);
       box.append(wrap);
-      const upd = () => { const ct = CAUSES.find((x) => x[0] === c.value)[1], et = EFFECTS.find((x) => x[0] === e.value)[1]; out.innerHTML = c.value === "none" ? `<span class="dp-effect">${HG.esc(et.replace(/^so |^which |^giving /, (m) => m[0].toUpperCase() + m.slice(1)))}.</span>` : `<span class="dp-cause">${HG.esc(ct)}</span>, <span class="dp-effect">${HG.esc(et)}.</span>`; res.textContent = ""; };
+      const upd = () => { const ct = CAUSES.find((x) => x[0] === c.value)[1], et = e.value === "creates" ? `which creates ${qk}` : EFFECTS.find((x) => x[0] === e.value)[1]; out.innerHTML = c.value === "none" ? `<span class="dp-effect">${HG.esc(et.replace(/^so |^which |^giving /, (m) => m[0].toUpperCase() + m.slice(1)))}.</span>` : `<span class="dp-cause">${HG.esc(ct)}</span>, <span class="dp-effect">${HG.esc(et)}.</span>`; res.textContent = ""; };
       c.addEventListener("change", upd); e.addEventListener("change", upd);
       return { c, e, res, upd };
     });
     const markBtn = E("button", { class: "btn primary small", type: "button" }, "✔ Mark my answer");
     const total = E("p", { class: "readout", "aria-live": "polite" });
     box.append(E("div", { class: "btn-row" }, markBtn), total);
-    function reset() { qline.textContent = XQ[qk].q; rows.forEach((r) => { r.c.value = "none"; r.e.value = "creates"; r.upd(); }); total.textContent = ""; }
+    function reset() { rows.forEach((r) => { const o = [...r.e.options].find((x) => x.value === "creates"); if (o) o.textContent = `which creates ${qk}`; }); qline.textContent = XQ[qk].q; rows.forEach((r) => { r.c.value = "none"; r.e.value = "creates"; r.upd(); }); total.textContent = ""; }
     markBtn.addEventListener("click", () => {
       const Q = XQ[qk]; let sum = 0; const used = new Set();
       rows.forEach((r, k) => {
         const c = r.c.value, e = r.e.value; let ok = false, why;
         if (c === "none") why = "✘ 0: an effect with no cause. The marker cannot tell which feature you mean.";
-        else if (!Q.causes.includes(c)) why = `✘ 0: that feature does not create ${qk}. Re-read the question.`;
-        else if (e === "creates") why = "✘ 0: \"creates emphasis\" names a design principle, not an effect on the viewer. Say what happens to the viewer.";
+        else if (!Q.causes.includes(c)) why = (MISFIT[qk] && MISFIT[qk][c]) || `✘ 0: that feature does not create ${qk}. Re-read the question.`;
+        else if (e === "creates") why = `✘ 0: "creates ${qk}" names the design principle, not an effect on the viewer. Say what happens to the viewer.`;
         else if (!Q.effects.includes(e)) why = `✘ 0: the effect does not fit ${qk}. Say what ${qk} does to the viewer.`;
         else if (used.has(c)) why = "✘ 0: the same cause as the first mark. A second mark needs a different feature.";
         else { ok = true; why = "✔ 1 mark: a relevant cause linked to its effect."; }
@@ -720,8 +728,8 @@
     ["Rule", [20, 29, 260, 4], "A printed line used to separate areas: here it divides the header from the page content."],
     ["Title", [20, 40, 260, 36], "The main name of the document: the largest text."],
     ["Heading", [20, 80, 170, 20], "The name of this article. It is smaller than the title but larger and bolder than body text."],
-    ["Drop cap", [20, 104, 26, 30], "An enlarged first letter dropping over three lines, to show the reader where the text starts."],
-    ["Indent", [20, 196, 24, 10], "The first line of the new paragraph starts further in, marking the paragraph break."],
+    ["Drop cap", [20, 104, 26, 24], "An enlarged first letter dropping over three lines, to show the reader where the text starts."],
+    ["Indent", [20, 199, 16, 9], "The first line of the new paragraph starts further in, marking the paragraph break."],
     ["Column rule", [147, 104, 6, 196], "A vertical line printed in the gutter between the two columns."],
     ["Gutter", [140, 104, 20, 196], "The gap between the two columns that keeps their text apart."],
     ["Pull quote", [160, 196, 120, 52], "A short extract from the article, enlarged between rules to catch the eye."],
@@ -740,9 +748,9 @@
     a(S("rect", { x: 20, y: 30, width: 260, height: 1.6, fill: P.red }));
     a(S("text", { x: 20, y: 70, "font-size": 30, "font-weight": 700, fill: P.navy, text: "REGATTA DAY" }));
     a(S("text", { x: 20, y: 95, "font-size": 15, "font-weight": 700, fill: P.red, text: "The Great Race" }));
-    a(S("text", { x: 21, y: 132, "font-size": 38, "font-weight": 700, fill: P.navy, "font-family": "Georgia, 'DejaVu Serif', serif", text: "T" }));
+    a(S("text", { x: 21, y: 127, "font-size": 31, "font-weight": 700, fill: P.navy, style: "font-family:Georgia,'DejaVu Serif','Liberation Serif',serif", text: "T" }));
     const lines = (x, y0, y1, w, skip) => { for (let y = y0, k = 0; y <= y1; y += 8, k++) { if (skip && skip(y)) continue; const ind = skip && skip.ind ? skip.ind(y) : 0; a(S("rect", { x: x + ind, y, width: (k % 6 === 5 ? w * 0.6 : w) - ind, height: 3, fill: "#8a8478" })); } };
-    const dc = (y) => (y < 134 ? 28 : 0); const f1 = () => false; f1.ind = (y) => (y < 134 ? 28 : y === 200 ? 14 : 0);
+    const dc = (y) => (y < 134 ? 28 : 0); const f1 = () => false; f1.ind = (y) => (y < 130 ? 28 : y === 202 ? 14 : 0); // drop cap over three lines; indent on the new paragraph
     lines(20, 106, 296, 120, f1);
     a(S("rect", { x: 149.3, y: 104, width: 1.4, height: 196, fill: P.grey }));
     a(S("rect", { x: 160, y: 106, width: 120, height: 66, fill: P.blue })); a(S("path", { d: "M160 158 Q220 150 280 160 V172 H160 Z", fill: "#1d5d8f" })); ship(svg, 196, 118, 0.8);
@@ -961,7 +969,7 @@
       // each panel shows the badge enlarged "zoom" times, centred on a point near the red pennant's tip
       const view = (x0, paint) => { ctx.save(); ctx.beginPath(); ctx.rect(x0 + 10, 10, half - 20, size); ctx.clip(); ctx.fillStyle = "#fffdf6"; ctx.fillRect(x0 + 10, 10, half - 20, size); paint(x0 + half / 2, 10 + size / 2); ctx.restore(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.strokeRect(x0 + 10, 10, half - 20, size); };
       const focus = [0.7, 0.42]; // focus point as a fraction of the badge
-      const D = 44 * zoom; // displayed badge size: about the stored size at ×1
+      const D = RES * zoom; // at ×1 the raster is drawn at its stored size, one pixel per screen pixel
       const big = D > size * 0.9, fx = big ? focus[0] : 0.5, fy = big ? focus[1] : 0.5;
       view(0, (cx, cy) => { ctx.imageSmoothingEnabled = false; ctx.drawImage(off, cx - D * fx, cy - D * fy, D, D); });
       view(half, (cx, cy) => { const ox = cx - D * fx, oy = cy - D * fy; badgeVector(ctx, ox + D / 2, oy + D / 2, D * 0.46); });
@@ -969,10 +977,10 @@
       HG.label(ctx, `Vector × ${zoom}`, (3 * w) / 4, h - 22, { align: "center", bold: true });
     } });
     const sl = E("div", { class: "sim-controls" }); box.append(sl);
-    HG.slider(sl, { label: "Zoom", min: 1, max: 16, step: 1, value: 1, unit: "×", fmt: (v) => String(v), oninput: (v) => { zoom = v; sim.redraw(); say(); } });
+    HG.slider(sl, { label: "Zoom", min: 1, max: 24, step: 1, value: 1, unit: "×", fmt: (v) => String(v), oninput: (v) => { zoom = v; sim.redraw(); say(); } });
     const zn = E("p", { class: "sim-note", "aria-live": "polite" }); box.append(zn);
     function say() {
-      const t = zoom === 1 ? "At normal size the two look alike." : zoom < 4 ? "The raster's curved edges are starting to show steps." : `Each stored pixel is now a block ${zoom}× bigger: the raster is pixelated, while the vector is redrawn from its curves and stays sharp.`;
+      const t = zoom === 1 ? "At ×1 the raster is shown at its stored size (24 × 24 pixels), so the two look alike." : zoom < 4 ? "The raster's curved edges are starting to show steps." : `Each stored pixel is now a block ${zoom}× bigger: the raster is pixelated, while the vector is redrawn from its curves and stays sharp.`;
       zn.textContent = t; cv.setAttribute("aria-label", `Squadron badge zoomed ${zoom} times: raster on the left, vector on the right. ${t}`);
     }
     say();
@@ -1117,7 +1125,7 @@
     HG.slider(sl, { label: "Misregistration", min: 0, max: 6, step: 0.5, value: 0, unit: "px", fmt: (v) => HG.n(v, 1), oninput: (v) => { mis = v; sim.redraw(); say(); } });
     const note = E("p", { class: "sim-note", "aria-live": "polite" }); box.append(note);
     function say() {
-      const t = printed === 0 ? "Four plates, each a greyscale map of one ink, calculated from the poster's colours. The sheet is blank." :
+      const t = printed === 0 ? "Four plates, each a map of how much of one ink is needed, calculated from the poster's colours and shown here in that ink's colour. The sheet is blank." :
         printed < 4 ? `Printed so far: ${INKS.slice(0, printed).map((x) => x[0]).join(", ")}. Each ink adds to (multiplies with) those below it.` :
         mis === 0 ? "All four inks printed in register: the registration marks look like single black targets and the edges are crisp." :
         `Misregistered by ${HG.n(mis, 1)} px: each ink lands in a slightly different place, so coloured fringes appear on every edge and the registration marks split into four coloured targets. The press must be adjusted.`;

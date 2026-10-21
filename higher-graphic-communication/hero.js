@@ -7,7 +7,7 @@
      3. ORTHOGRAPHIC    third-angle projection: elevation, then the PLAN projected up and placed ABOVE it,
                         then the END ELEVATION (seen from the bow, the right-hand end) placed to the RIGHT,
                         with projection lines, a 45-degree mitre line, chain centre lines, dashed hidden
-                        detail (the lower hull steps under the deck, in the plan) and the third-angle symbol
+                        detail (the middle hull step under the deck, in the plan) and the third-angle symbol
      4. ISOMETRIC       true 30-degree isometric, built block by block on isometric grid paper
      5. EXPLODED        hull, decks, masts and sails separate along one vertical axis, with chain lines on it
      6. RENDER          the model sited on the sea: a light source, shading, a cast shadow and a reflection
@@ -403,16 +403,16 @@
     for (let i = 0; i < 200; i++) px(hash(i, 5) % W, hash(i, 6) % H, 1, 1, "rgba(120,100,70,.10)");
     outline([[2, 1], [317, 1], [317, 78], [2, 78]], THIN);
     // title block with the third-angle projection symbol
-    outline([[260, 46], [317, 46], [317, 78], [260, 78]], INK);
-    px(260, 56, 58, 1, INK);
-    label("HMS VELLUM", 264, 49);
+    outline([[212, 46], [269, 46], [269, 78], [212, 78]], INK);
+    px(212, 56, 58, 1, INK);
+    label("HMS VELLUM", 216, 49);
     label("PLAN ROOM", 6, 5, THIN);
     label("DRG 1805", 6, 72, THIN);
     // symbol: a frustum (narrow end to the right) and, to its right, its end view seen from that narrow end
-    line(265, 59, 265, 69, INK); line(274, 61, 274, 67, INK); line(265, 59, 274, 61, INK); line(265, 69, 274, 67, INK);
-    circle(285, 64, 5, INK); circle(285, 64, 3, INK);
-    line(262, 64, 293, 64, CL, [5, 1, 1, 1]); line(285, 57, 285, 71, CL, [5, 1, 1, 1]);
-    label("3RD", 296, 59); label("ANGLE", 296, 66);
+    line(217, 59, 217, 69, INK); line(226, 61, 226, 67, INK); line(217, 59, 226, 61, INK); line(217, 69, 226, 67, INK);
+    circle(237, 64, 5, INK); circle(237, 64, 3, INK);
+    line(214, 64, 245, 64, CL, [5, 1, 1, 1]); line(237, 57, 237, 71, CL, [5, 1, 1, 1]);
+    label("3RD", 248, 59); label("ANGLE", 248, 66);
   });
   function reveal(k, x, y, w, h, fn) {
     if (k <= 0) return;
@@ -442,7 +442,7 @@
     if (k3 >= 1) label("PLAN", 64, 18);
     if (k1 >= 1) label("ELEVATION", 116 - textW("ELEVATION") / 2, 74);
     if (k5 >= 1) label("END ELEVATION", NX - textW("END ELEVATION") / 2 + 3, 74);
-    if (k7 >= 1) { label("HIDDEN", 216, 14, HID); line(214, 16, 150, 23, HID, [1, 2]); label("CENTRE LINE", 196, 30, CL); line(194, 32, 186, 38, CL, [1, 2]); }
+    if (k7 >= 1) { label("HIDDEN", 216, 14, HID); line(214, 16, 131, 24, HID, [1, 2]); label("CENTRE LINE", 196, 30, CL); line(194, 32, 178, 38, CL, [1, 2]); }
     tag("THIRD ANGLE ORTHOGRAPHIC");
   }
 
@@ -545,7 +545,7 @@
       regMark(62 - o, 40); regMark(258 + o, 40);
       CMYK.forEach((col, i) => { px(128 + i * 8, 73 + o, 7, 5, col); px(160 + i * 8, 73 + o, 7, 5, col); c.globalAlpha = 1; });
       c.globalAlpha = 0.5; CMYK.forEach((col, i) => px(160 + i * 8, 73 + o, 7, 5, "#f7f3ea")); c.globalAlpha = 1;
-      if (m >= 1) { label("BLEED", 77, 73, "#7a5c96"); label("CROP", 224, 73, "#7a5c96"); label("PROOF 1", 4, 72, "#7a5c96"); label("CMYK", 290, 72, "#7a5c96"); }
+      if (m >= 1) { label("BLEED", 77, 73, "#7a5c96"); label("CROP", 224, 73, "#7a5c96"); label("PROOF 1", 4, 72, "#7a5c96"); label("CMYK", 262, 72, "#7a5c96"); }
     }
     tag("PRINT: BLEED + CROP");
   }
