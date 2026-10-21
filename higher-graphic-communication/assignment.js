@@ -93,9 +93,9 @@
           const xa = X(a), xb = X(a + v);
           svg.append(S("rect", { x: xa, y, width: Math.max(0, xb - xa), height: h, fill: cols[i], "fill-opacity": thick ? 0.3 : 0.18, stroke: cols[i], "stroke-width": thick ? 2 : 1.5 }));
           const txt = thick ? `${t[i][0].replace("Task ", "T")} · ${short(v)}` : short(v);
-          const tiny = thick ? t[i][0].replace("Task ", "T") : "";
+          const tiny = thick ? t[i][0].replace("Task ", "T") : txt.replace(/^(\d+)h(\d\d)$/, "$1h$2");
           const shown = xb - xa > txt.length * 7 + 6 ? txt : (tiny && xb - xa >= 20 ? tiny : "");
-          if (shown) svg.append(S("text", { x: (xa + xb) / 2, y: y + h / 2 + 5, "text-anchor": "middle", ...font(13, thick ? 700 : 400), text: shown }));
+          if (shown) svg.append(S("text", { x: (xa + xb) / 2, y: y + h / 2 + 5, "text-anchor": "middle", ...font(shown === txt ? 13 : 11, thick ? 700 : 400), text: shown }));
           a += v;
         });
       };
@@ -242,7 +242,7 @@
       k("radial", P("M44,186 L64.4,165.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(16, 186, 44, 186, .9), T(24, 182, "R15")),
       k("diameter", P("M290,95 L216.5,116.6", 0.9, { "marker-end": "url(#as-sh-arr)" }), L(290, 95, 306, 95, .9), T(309, 99, "Ø24", { a: "start" })),
       k("angular", L(150, 215, 150, 186, .8), S("path", { d: "M150,189 A26,26 0 0 0 131.6,196.6", fill: "none", stroke: "currentColor", "stroke-width": 0.9, "marker-start": "url(#as-sh-arr)", "marker-end": "url(#as-sh-arr)" }), T(118, 185, "45°")),
-      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(232, 62, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:5)", { w: 700 })),
+      k("lel", T(160, 362, "ELEVATION", { w: 700 })), k("lplan", T(110, 62, "PLAN", { w: 700 })), k("lend", T(350, 322, "END ELEVATION", { w: 700 })), k("lsec", T(490, 322, "SECTION A–A", { w: 700 })), k("ldet", T(500, 184, "DETAIL B (2:5)", { w: 700 })),
       k("name", T(336, 345, "NAME  A. Cadet", { a: "start", fs: 12 })), k("title", T(336, 365, "TITLE  Carriage body", { a: "start", fs: 12 })), k("project", T(336, 385, "PROJECT  Vellum guns", { a: "start", fs: 12 })),
       k("scale", T(336, 405, "SCALE 1:5", { a: "start", fs: 12 })), k("date", T(476, 405, "DATE 03/27", { a: "start", fs: 12 })), k("mm", T(476, 345, "ALL SIZES IN mm", { a: "start", fs: 12 })), k("tol", T(476, 365, "GENERAL TOL ±0.5", { a: "start", fs: 12 })),
       k("symbol", S("g", { transform: "translate(498,374) scale(.42)" }, P("M0,0 L30,8 L30,30 L0,38 Z", 3), S("circle", { cx: 66, cy: 19, r: 18, fill: "none", stroke: "currentColor", "stroke-width": 3 }), S("circle", { cx: 66, cy: 19, r: 10, fill: "none", stroke: "currentColor", "stroke-width": 3 }))),
@@ -357,6 +357,7 @@
       ];
       const tot = items.reduce((a, x) => a + x[1], 0);
       const gaps = items.filter((x) => x[1] < x[2]).map((x, i) => ({ name: x[0], gap: x[2] - x[1], tip: x[3], i })).sort((a, b) => b.gap - a.gap || a.i - b.i);
+      if (!s.link) { const k = gaps.findIndex((g) => g.name === "Link to planning"); if (k > 0) gaps.unshift(...gaps.splice(k, 1)); gaps[0].tip += " Ticking it also unlocks up to 4 more marks for the elements, principles and DTP techniques you chose in 2(b)."; }
       out.innerHTML = `<p class="readout">Your 2(c) self-mark: ${tot} / 11</p><div class="as-bar" aria-hidden="true"><i style="width:${tot / 11 * 100}%"></i></div>` +
         `<table class="as-mini"><tbody>${items.map((x) => `<tr><td>${x[0]}</td><td class="num">${x[1]} / ${x[2]}</td></tr>`).join("")}</tbody></table>` +
         (gaps.length ? `<p><strong>Next fix:</strong> ${gaps[0].name} (up to ${gaps[0].gap} mark${gaps[0].gap > 1 ? "s" : ""}). ${gaps[0].tip}</p>` : `<p class="ok">Full marks on every criterion, as you judged it. Now ask someone else to judge it the same way.</p>`);
@@ -505,7 +506,7 @@
         report(api.playing);
       },
     });
-    const play = HG.playButton(sim, ["▶ Orbit the light", "❚❚ Stop orbit"]);
+    const play = HG.playButton(sim, ["▶ Sweep the light", "❚❚ Stop the sweep"]);
     row.append(play);
     function report(playing) {
       const a = assess();
@@ -605,7 +606,7 @@
       const ck = (ok, txt) => `<li>${ok ? "<span class='ok'>✔</span>" : "<span class='bad'>✘</span>"} ${txt}</li>`;
       const lines = [
         ck(planAbove, planAbove ? "Plan above the elevation: third angle." : planBelow ? "Plan below the elevation: that is the first-angle position." : "Move the plan clear of the elevation, above it."),
-        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) < 0.6 * u ? "a little" : "well"} ${p.x > L.ex ? "too far right" : "too far left"}, so the vertical projectors miss its edges.`),
+        ck(planAl, planAl ? "Plan projected and aligned: every vertical projector meets its edge." : `Plan out of line: ${Math.abs(p.x - L.ex) < 0.6 * u ? "a little" : "well"} to the ${p.x > L.ex ? "right" : "left"} of the projectors, so they miss its edges.`),
         ck(endRight, endRight ? "End elevation on the right: correct for the view from the right." : endLeft ? "The view from the right belongs on the right in third angle." : "Move the end elevation clear of the elevation."),
         ck(endAl, endAl ? "End elevation aligned: the horizontal projectors meet its edges." : "End elevation out of line with the elevation's heights."),
         ck(propP, propP ? "Plan to fair proportions: its depth matches the end elevation's width." : `Plan out of proportion: its depth is sketched at ${Math.round(p.s * 100)}% of the true depth.`),

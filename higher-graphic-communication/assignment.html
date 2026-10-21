@@ -261,9 +261,9 @@
 <text x="317.9" y="320" font-size="14" class="ink halo" text-anchor="start">Part 1 · bed</text>
 <text x="254" y="170" font-size="14" class="ink halo" text-anchor="start">Part 2 · peg</text>
 <text x="254" y="52" font-size="14" class="ink halo" text-anchor="start">Part 3 · cap</text>
-<line x1="143" y1="200" x2="167" y2="200" stroke="currentColor" stroke-width="1"/>
-<text x="140" y="204" font-size="14" class="ink halo" text-anchor="end">centre line</text>
-<text x="140" y="222" font-size="14" class="ink halo" text-anchor="end">(explosion axis)</text>
+<line x1="143" y1="245" x2="168" y2="245" stroke="currentColor" stroke-width="1"/>
+<text x="140" y="249" font-size="14" class="ink halo" text-anchor="end">centre line</text>
+<text x="140" y="267" font-size="14" class="ink halo" text-anchor="end">(explosion axis)</text>
 </svg><figcaption>Figure 2.3 · An exploded isometric of a three-part item. Every part moves along the one axis on which it assembles, in assembly order, with clear gaps. The thin chain line is the shared centre line. It is drawn as a plain line drawing, as the 2025 brief required for 1(c).</figcaption></figure>
 
 <h3>Dimensioning to British Standard conventions</h3>
@@ -528,7 +528,7 @@
 <p><dfn>Pixelation</dfn> means you can see the square pixels: the image was output at too low a resolution for the size it is printed. An A3 sheet is 420 × 297 mm, which at a print resolution of 300 pixels per inch (ppi) needs about 4961 × 3508 pixels: a screen-sized 1920 × 1080 image stretched to A3 is far too coarse. A <dfn>ray-traced</dfn> render works out the light by following many rays through each pixel; each round of rays is a <dfn>sample</dfn> (some software calls them passes), and the more samples it averages, the smoother the result. <dfn>Grain</dfn> (or noise) is the speckle left when too few samples have been calculated: let the render run longer, or raise its quality setting. And a <strong>screen grab</strong> of the modelling window is not a render at all: the brief ruled it out.</p>
 <div class="widget" id="w-light">
   <h3 class="widget-title">The lighting rig: what earns the 2 + 2</h3>
-  <p class="hint">A small deck scene with a crate and a gun-carriage block. Move the light round and up, change the fill light, switch shadows, lift the models off the deck, and change the render's samples and output resolution. The panel applies simple rules taken from the marking descriptors (faces must differ in tone, shadows must be on and attached, exposure must be sensible, no visible pixels or grain) to suggest which rung each ladder would reach. It is a teaching model of the descriptors, not how a marker judges a real render. Press play to orbit the light.</p>
+  <p class="hint">A small deck scene with a crate and a gun-carriage block. Move the light across the open side of the deck and up, change the fill light, switch shadows, lift the models off the deck, and change the render's samples and output resolution. The panel applies simple rules taken from the marking descriptors (faces must differ in tone, shadows must be on and attached, exposure must be sensible, no visible pixels or grain) to suggest which rung each ladder would reach. It is a teaching model of the descriptors, not how a marker judges a real render. Press play to sweep the light.</p>
 </div>
 <div class="callout logbook"><div class="callout-title">Render checklist before you print</div><ul class="lessons">
 <li>Every model in the scene? Every one resting on a surface, none overlapping?</li>
@@ -689,7 +689,7 @@
 <rect x="380" y="55" width="20" height="70"/>
 <rect x="260" y="200" width="130" height="15"/>
 </g>
-<g stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"><line x1="107.5" y1="40" x2="107.5" y2="120"/><line x1="122.5" y1="40" x2="122.5" y2="120"/><line x1="40" y1="185" x2="190" y2="185"/><line x1="380" y1="62.5" x2="400" y2="62.5"/><line x1="380" y1="72.5" x2="400" y2="72.5"/><line x1="380" y1="73.75" x2="400" y2="73.75"/><line x1="380" y1="106.25" x2="400" y2="106.25"/><line x1="380" y1="107.5" x2="400" y2="107.5"/><line x1="380" y1="117.5" x2="400" y2="117.5"/></g>
+<g stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"><line x1="107.5" y1="40" x2="107.5" y2="120"/><line x1="122.5" y1="40" x2="122.5" y2="120"/><line x1="40" y1="185" x2="190" y2="185"/><line x1="380" y1="62.5" x2="400" y2="62.5"/><line x1="380" y1="73.75" x2="400" y2="73.75"/><line x1="380" y1="82.5" x2="400" y2="82.5"/><line x1="380" y1="97.5" x2="400" y2="97.5"/><line x1="380" y1="106.25" x2="400" y2="106.25"/><line x1="380" y1="107.5" x2="400" y2="107.5"/><line x1="380" y1="117.5" x2="400" y2="117.5"/></g>
 <g stroke="currentColor" stroke-width=".8" stroke-dasharray="10 3 2 3"><line x1="115" y1="34" x2="115" y2="126"/><line x1="102" y1="205" x2="128" y2="205"/><line x1="250" y1="90" x2="330" y2="90"/><line x1="290" y1="50" x2="290" y2="130"/><line x1="375" y1="90" x2="405" y2="90"/><line x1="252" y1="207.5" x2="398" y2="207.5"/><circle cx="290" cy="90" r="22.5" fill="none"/></g>
 <g stroke="currentColor" stroke-width=".9" stroke-dasharray="12 3 2 3"><line x1="115" y1="160" x2="115" y2="240"/><line x1="30" y1="80" x2="200" y2="80"/></g>
 <g stroke="currentColor" stroke-width="3"><line x1="115" y1="158" x2="115" y2="168"/><line x1="115" y1="232" x2="115" y2="242"/><line x1="24" y1="80" x2="34" y2="80"/><line x1="196" y1="80" x2="206" y2="80"/></g>
@@ -712,9 +712,9 @@
 <text x="236" y="182" text-anchor="start">30</text><text x="236" y="222" text-anchor="start">50</text>
 <text x="14" y="155">R20</text><text x="146" y="147" text-anchor="start">Ø30</text>
 <text x="20" y="66">Y</text><text x="210" y="66">Y</text><text x="94" y="157">X</text><text x="94" y="252">X</text>
-<text x="390" y="34">40</text><g font-size="11"><text x="290" y="137">ELEVATION</text><text x="390" y="137">END ELEVATION</text></g><text x="232" y="36">Ø140</text><text x="290" y="145">Ø30 bore · 6 × Ø20, PCD 90</text>
+<text x="390" y="34">40</text><g font-size="11"><text x="290" y="137">ELEVATION</text><text x="392" y="137">END ELEVATION</text></g><text x="232" y="36">Ø140</text><text x="290" y="154">Ø30 bore · 6 × Ø20, PCD 90</text>
 <text x="325" y="232">260</text><text x="408" y="212" text-anchor="start">Ø30</text>
-<g font-weight="700"><text x="115" y="280">PART 1 · CARRIAGE BODY</text><text x="300" y="168">PART 2 · TRUCK (× 2)</text><text x="325" y="258">PART 3 · AXLE</text></g>
+<g font-weight="700"><text x="115" y="280">PART 1 · CARRIAGE BODY</text><text x="300" y="174">PART 2 · TRUCK (× 2)</text><text x="325" y="258">PART 3 · AXLE</text></g>
 </g>
 <text x="436" y="290" font-size="12" text-anchor="end" class="ink2">Sizes in mm · third angle</text>
 </svg></div><figcaption>Figure 6.2 · The mock brief's data sheet (original). Cutting plane X–X on the elevation passes through the axle hole, so in the assembled end elevation the axle is cut lengthways; Y–Y on the plan runs along the slot.</figcaption></figure>
