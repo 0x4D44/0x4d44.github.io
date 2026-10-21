@@ -284,6 +284,11 @@
       cv.setAttribute("aria-label", note.textContent);
     }
 
+    function extent() {
+      const all = []; F.forEach((f) => all.push(...f.pts));
+      const r = (i, fn) => fn(...all.map((p) => p[i]));
+      return { x0: r(0, Math.min), x1: r(0, Math.max), y0: r(1, Math.min), y1: r(1, Math.max), z0: r(2, Math.min), z1: r(2, Math.max) };
+    }
     function drawView(ctx, C, v, cx, cy, s, title) {
       const P = (p) => { const q = proj(v, p); return [cx + q[0] * s, cy - q[1] * s]; };
       if (cap) {
@@ -299,8 +304,7 @@
         const ext = (f.w + 9) * s;
         if (v === M3.VIEWS.plan) { seg(ctx, [cx - ext, cy], [cx + ext, cy], C.sea, 1, DASH.centre); seg(ctx, [cx, cy - ext], [cx, cy + ext], C.sea, 1, DASH.centre); }
         else {
-          const top = st.form === "sph" ? 36 + 45 : H0 + 8;
-          const bot = st.form === "sph" ? 36 - 45 : -8;
+          const bb = extent(), top = bb.z1 + 8, bot = bb.z0 - 8;
           seg(ctx, P([0, 0, bot]), P([0, 0, top]), C.sea, 1, DASH.centre);
           if (st.form === "sph") seg(ctx, P(add([0, 0, 36], mul(v.r, -(f.w + 9)))), P(add([0, 0, 36], mul(v.r, f.w + 9))), C.sea, 1, DASH.centre);
         }
@@ -317,10 +321,11 @@
         ctx.beginPath(); ctx.moveTo(pw, 6); ctx.lineTo(pw, S.h - 6); ctx.moveTo(6, ph); ctx.lineTo(S.w - 6, ph); ctx.stroke(); ctx.restore();
         const plan = [pw / 2, ph / 2 + 8], elev = [pw / 2, ph * 1.5 + zc * s + 4], end = [pw * 1.5, ph * 1.5 + zc * s + 4];
         // faint projection lines tie the views together
-        const bx = FORMS[st.form].w * s;
+        // projected from the solid's real extremes, so they always start and end on the drawing
+        const bb = extent();
         ctx.save(); ctx.strokeStyle = alpha(C.muted, 0.35); ctx.lineWidth = 0.8; ctx.setLineDash([2, 3]); ctx.beginPath();
-        for (const sx of [-bx, bx]) { ctx.moveTo(plan[0] + sx, plan[1] + bx + 4); ctx.lineTo(elev[0] + sx, elev[1] - H0 * s - 4); }
-        for (const zz of [0, H0]) { ctx.moveTo(elev[0] + bx + 6, elev[1] - zz * s); ctx.lineTo(end[0] - bx - 4, end[1] - zz * s); }
+        for (const x of [bb.x0, bb.x1]) { ctx.moveTo(plan[0] + x * s, plan[1] - bb.y0 * s + 4); ctx.lineTo(elev[0] + x * s, elev[1] - bb.z1 * s - 4); }
+        for (const z of [bb.z0, bb.z1]) { ctx.moveTo(elev[0] + bb.x1 * s + 4, elev[1] - z * s); ctx.lineTo(end[0] + bb.y0 * s - 4, end[1] - z * s); }
         ctx.stroke(); ctx.restore();
         drawView(ctx, C, M3.VIEWS.plan, plan[0], plan[1], s, "");
         drawView(ctx, C, M3.VIEWS.elev, elev[0], elev[1], s, "");
@@ -370,7 +375,7 @@
     const stageNote = HG.el("p", { class: "hint", "aria-live": "polite" });
     const STAGES = ["Number each corner in the plan and find the same points on the cut line in the elevation.",
       "Project from every point on the cut line at 90° to it.",
-      "Draw a centre line (the auxiliary datum, often labelled X1Y1) parallel to the cut line.",
+      "Draw the auxiliary centre line (a datum) parallel to the cut line, a convenient distance away.",
       "Transfer each width from the plan, measured from the plan's centre line, along its projector (dividers do this).",
       "Join the points in order. That is the true shape. Hatch it, because it is a cut surface."];
 
@@ -451,7 +456,7 @@
           if (f(0) < (i + 1) / n - 1e-9) return;
           dot2(ctx, ...PP(p), C.gold, 3); dot2(ctx, ...Q(g.C[i]), C.gold, 3);
           if (!cyl) {
-            const o = unit([p[0], p[1], 0]); const lp = PP([p[0] + o[0] * 8, p[1] + o[1] * 8]);
+            const o = unit([p[0], p[1], 0]); const lp = PP([p[0] + o[0] * 9, p[1] + o[1] * 9 + (Math.abs(o[1]) < 0.3 ? 6 : 0)]);
             lab(ctx, String(i + 1), lp[0], lp[1], { size: 11, bold: true, align: "center", col: C.gold });
           }
         });
@@ -464,7 +469,7 @@
           const k = f(2);
           seg(ctx, Q([a0[0] - g.u[0] * half * k, a0[1] - g.u[1] * half * k]), Q([a0[0] + g.u[0] * half * k, a0[1] + g.u[1] * half * k]), C.sea, 1.2, DASH.centre);
           const xl = Q([a0[0] + g.u[0] * half, a0[1] + g.u[1] * half]);
-          if (k > 0.9) lab(ctx, "X1Y1", xl[0] + 4, xl[1], { size: 11, col: C.sea });
+          if (k > 0.9) lab(ctx, "auxiliary centre line", xl[0] + 4, xl[1], { size: 11, col: C.sea });
           seg(ctx, PP([-R - 8, 0]), PP([R + 8, 0]), C.gold, 1.6, DASH.centre);
         }
         // stage 4: widths transferred from the plan
@@ -682,7 +687,7 @@
       const angle = (a, b) => Math.acos(clamp(Math.abs(a[0] * b[0] + a[1] * b[1]), 0, 1)) / DEG;
       const lines = [];
       if (m === "corner") {
-        lines.push(`Distance from C to line 1 = ${N(Cc[1] - g.K[1], 2)} mm = R ✔`, `Distance from C to line 2 = ${N(st.R, 2)} mm = R ✔`);
+        lines.push(`Distance from C to line 1 = ${N(Cc[1] - g.K[1], 2)} mm = R ✔`, `Distance from C to line 2 = ${N((Cc[0] - g.K[0]) * Math.sin(st.alpha * DEG) - (Cc[1] - g.K[1]) * Math.cos(st.alpha * DEG), 2)} mm = R ✔`);
         lines.push(`CT₁ ⟂ line 1 and CT₂ ⟂ line 2: angle between arc and line at each tangent point = ${N(angle(tanAt(Cc, g.T1), [1, 0]), 2)}° and ${N(angle(tanAt(Cc, g.T2), g.d2), 2)}°`);
       } else if (m === "line") {
         lines.push(`C is ${N(Cc[1] - st.line, 2)} mm above the deck = R ✔`, `|CO₁| = ${N(dist(Cc, st.O1), 2)} mm = R + r₁ = ${st.R + st.r1} mm ✔`);
@@ -745,7 +750,7 @@
         const Q = (p) => [cx + p[0] * s, cy - p[1] * s];
         const ell = []; for (let k = 0; k <= 120; k++) { const t = k / 120 * 2 * Math.PI; ell.push(Q([a * Math.cos(t), b * Math.sin(t)])); }
         // axes (thin chain lines), always
-        seg(ctx, Q([-a - 8, 0]), Q([a + 8, 0]), C.sea, 1, DASH.centre); seg(ctx, Q([0, -a - 8]), Q([0, a + 8]), C.sea, 1, DASH.centre);
+        seg(ctx, Q([-a - 8, 0]), Q([a + 8, 0]), C.sea, 1, DASH.centre); seg(ctx, Q([0, -b - 8]), Q([0, b + 8]), C.sea, 1, DASH.centre);
         if (st.mode === "conc") {
           const f = (k) => clamp(pr - k, 0, 1), n = st.n;
           const circ = (r, k) => { const p = []; for (let i = 0; i <= 96 * k; i++) { const t = i / 96 * 2 * Math.PI; p.push(Q([r * Math.cos(t), r * Math.sin(t)])); } pline(ctx, p, C.muted, 1.1); };
@@ -893,6 +898,10 @@
     };
     const gens = () => { const n = st.br === "cyl" ? 12 : 8; const g = []; for (let k = 0; k < n; k++) g.push(brPoint(k / n)); return g; };
     // a point on the line of intersection, seen from the front: hidden if either solid is in front of it
+    // in the elevation the line of intersection is straight unless a curved surface meets a face seen at an angle
+    const straightOnly = () => st.br === "sq" || st.mast === "sq" || (st.mast === "cyl" && st.r === st.S && st.e === 0);
+    // is any of the mast between this point and the viewer (who is towards −y)?
+    const behindMast = (x, y) => { const M = MAST[st.mast], lim = 2 * M.Y(st.S) + 2; for (let k = 0.25; k < lim; k += 0.5) if (M.inside(x, y - k, st.S)) return true; return false; };
     const hiddenElev = (x, y, z) => MAST[st.mast].inside(x, y - 0.05, st.S) || brInside(y - 0.05, z);
     const sim = HG.sim(cv, {
       height: (w) => Math.round(w * 0.86),
@@ -947,15 +956,25 @@
         lab(ctx, "END ELEVATION", EN(0, -3)[0], EN(0, -3)[1] + 2, { size: 11, bold: true, col: C.muted, align: "center", base: "top" });
         // the barrel in the elevation: its outline beyond the mast
         for (const sg of [-1, 1]) {
+          // top and bottom outlines of the barrel: each sample is visible unless the mast stands in front of it
+          const edgesY = st.br === "sq" ? [st.e - st.r, st.e + st.r] : [st.e];
           for (const zz of [z0 - st.r, z0 + st.r]) {
-            let xs = M.X(st.e, Sz);
-            if (st.br === "sq") xs = Math.min(M.X(st.e - st.r, Sz), M.X(st.e + st.r, Sz), M.X(st.e, Sz));
-            seg(ctx, Q(sg * xs, zz), Q(sg * L, zz), C.ink, 2.1);
+            let run = [], cur = null;
+            const flush = () => { if (run.length > 1 && cur) pline(ctx, run, cur === "hid" ? C.ink2 : C.ink, cur === "hid" ? 1.1 : 2.1, cur === "hid" ? DASH.hidden : null); };
+            for (let x = 0; x <= L + 1e-6; x += 0.5) {
+              const there = edgesY.filter((y) => x >= M.X(y, Sz) - 1e-9);
+              let c = null;
+              if (there.length) c = there.some((y) => !behindMast(x, y)) ? "vis" : "hid";
+              if (c !== cur) { const last = run[run.length - 1]; flush(); run = c && cur && last ? [last] : []; cur = c; }
+              if (c) run.push(Q(sg * x, zz));
+            }
+            flush();
           }
           seg(ctx, Q(sg * L, z0 - st.r), Q(sg * L, z0 + st.r), C.ink, 2.1);
           seg(ctx, Q(sg * (M.X(st.e, Sz) - 4), z0), Q(sg * (L + 6), z0), C.sea, 1, DASH.centre);
         }
         seg(ctx, Q(0, -6), Q(0, H + 6), C.sea, 1, DASH.centre);
+        seg(ctx, EN(0, -6), EN(0, H + 6), C.sea, 1, DASH.centre);
         // mitre line between the plan and the end elevation
         seg(ctx, Q(EX - YM, PZ - YM), Q(EX + YM, PZ + YM), alpha(C.muted, 0.8), 1);
         lab(ctx, "45° mitre", Q(EX + YM * 0.55, PZ + YM * 0.55)[0] + 6, Q(EX + YM * 0.55, PZ + YM * 0.55)[1], { size: 11, col: C.muted });
@@ -1004,19 +1023,21 @@
           }
         }
         const gi = Math.min(ng, Math.floor(pr));
-        stageNote.textContent = done ? "Finished: the red points, joined by a smooth curve, give the line of intersection (magenta). Parts behind the mast or the barrel are hidden detail." :
+        stageNote.textContent = done ? (straightOnly() ? "Finished: here every part of the line of intersection is straight, so the red points are joined with straight lines (magenta). Parts behind the mast or the timber are hidden detail." : "Finished: the red points, joined by a smooth curve, give the line of intersection (magenta). Parts behind the mast or the barrel are hidden detail.") :
           `Generator ${Math.min(ng, gi + 1)}: from its point on the barrel's end view, project up to the mitre, across to the plan (where it meets the mast), then down to the elevation. Where that meets the horizontal from the end view is a point on the curve.`;
       },
     });
     function info() {
       const M = MAST[st.mast];
       let t = `A ${st.br === "cyl" ? "cylindrical barrel" : "square timber"} (${st.br === "cyl" ? "radius" : "half-width"} ${st.r} mm) passes through a ${M.name}${st.e ? `, its axis offset ${Math.abs(st.e)} mm ${st.e < 0 ? "towards you" : "away from you"}` : ", axes meeting"}. `;
-      if (st.mast === "sq" && st.br === "cyl") t += "It meets flat faces seen edge-on, so in the elevation the line of intersection is a straight line on the mast's outline.";
-      else if (st.mast === "cyl" && st.br === "cyl" && st.r === st.S && st.e === 0) t += "<b>Equal diameters with axes that meet:</b> the curves flatten into straight lines in the elevation. That special case is worth remembering.";
-      else if (st.mast === "cyl" && st.br === "cyl") t += "Two cylinders meet in a curve. The smaller the barrel compared with the mast, the flatter the curve.";
-      else if (st.br === "sq" && st.mast === "cyl") t += "The timber's flat top and bottom meet the curved mast in curves that are seen edge-on, as straight lines, in the elevation.";
-      else t += "Flat faces meet flat faces in straight lines; the curved barrel meets each flat face in a curve (part of an ellipse).";
-      if (st.e) t += " With the offset, the curve is no longer symmetrical front to back, and part of it is hidden.";
+      const pair = st.mast + "/" + st.br;
+      if (pair === "cyl/cyl") t += st.r === st.S && st.e === 0 ? "<b>Equal diameters with axes that meet:</b> the curves flatten into straight lines in the elevation. That special case is worth remembering." : "Two cylinders meet in a curve. The smaller the barrel compared with the mast, the flatter the curve.";
+      if (pair === "sq/cyl") t += "The round barrel meets the mast's flat side faces, which are seen edge-on in the elevation, so there the line of intersection is a straight line along the mast's outline.";
+      if (pair === "dia/cyl") t += "The round barrel meets two sloping flat faces on each side. Each meeting is part of an ellipse, seen in the elevation as two curves that meet on the mast's front corner line.";
+      if (pair === "hex/cyl") t += "The round barrel meets the sloping flat faces of the hexagon. Each meeting is part of an ellipse, seen as curves in the elevation that meet where the faces meet.";
+      if (pair === "cyl/sq") t += "The timber's flat top and bottom meet the round mast in curves, but those curves lie in horizontal planes, seen edge-on as straight lines in the elevation. Its upright sides meet the mast in vertical straight lines.";
+      if (pair === "sq/sq" || pair === "dia/sq" || pair === "hex/sq") t += "Flat faces meet flat faces, so every part of the line of intersection is a straight line: plot the corner points and join them with straight lines.";
+      if (st.e) t += " With the offset the intersection is no longer symmetrical front to back, and parts of it, and of the barrel's outline, are hidden behind the mast.";
       note.innerHTML = t;
       cv.setAttribute("aria-label", "Plan, elevation and end elevation of the interpenetration. " + note.textContent);
     }
@@ -1048,7 +1069,7 @@
     HG.choice(box, "Solid:", Object.entries(TYPES).map(([k, v]) => [k, v]), st.type, (v) => { st.type = v; rebuild(); });
     HG.choice(box, "Cut:", [["none", "None"], ["par", "Parallel to base"], ["inc", "Inclined"]], st.cut, (v) => { st.cut = v; rebuild(); });
     const ctl = controls(box);
-    HG.slider(ctl, { label: "Base size (diameter or across corners)", min: 30, max: 80, step: 2, value: st.D, unit: "mm", oninput: (v) => { st.D = v; rebuild(); } });
+    HG.slider(ctl, { label: "Base size: diameter, side (pyramid) or across corners (hexagon)", min: 30, max: 80, step: 2, value: st.D, unit: "mm", oninput: (v) => { st.D = v; rebuild(); } });
     HG.slider(ctl, { label: "Height", min: 40, max: 110, step: 2, value: st.H, unit: "mm", oninput: (v) => { st.H = v; rebuild(); } });
     HG.slider(ctl, { label: "Cut height", min: 30, max: 85, step: 1, value: st.cpos * 100, unit: "%", oninput: (v) => { st.cpos = v / 100; rebuild(); } });
     HG.slider(ctl, { label: "Cut angle (inclined)", min: 5, max: 35, step: 1, value: st.cang, unit: "°", oninput: (v) => { st.cang = v; rebuild(); } });
@@ -1064,7 +1085,7 @@
 
     function build() {
       const t = st.type, radial = t === "pyr" || t === "cone", n = t === "hex" ? 6 : t === "pyr" ? 4 : 48;
-      const Rb = st.D / 2, H = st.H;
+      const Rb = t === "pyr" ? st.D / Math.SQRT2 : st.D / 2, H = st.H;
       const base = M3.ngon(n, Rb, t === "pyr" ? 45 : t === "hex" ? 0 : 90 + 180 / n).map(([x, y]) => [x, y, 0]);
       const apex = [0, 0, H];
       const top = base.map((b) => (radial ? apex : [b[0], b[1], H]));
@@ -1204,7 +1225,7 @@
       if (!radial) {
         const a = Q([B[0][0], yB]), b = Q([B[B.length - 1][0], yB]);
         HG.arrow(ctx, (a[0] + b[0]) / 2, a[1] + 16, a[0], a[1] + 16, C.red, 1.2, 7); HG.arrow(ctx, (a[0] + b[0]) / 2, a[1] + 16, b[0], b[1] + 16, C.red, 1.2, 7);
-        lab(ctx, `${N(B[B.length - 1][0])} mm`, (a[0] + b[0]) / 2, a[1] + 30, { size: 12, bold: true, align: "center", col: C.red });
+        lab(ctx, `${N(st.type === "cyl" ? Math.PI * st.D : B[B.length - 1][0])} mm`, (a[0] + b[0]) / 2, a[1] + 30, { size: 12, bold: true, align: "center", col: C.red });
       } else {
         lab(ctx, `sector angle ${N(st.type === "cone" ? 360 * (st.D / 2) / Math.hypot(st.H, st.D / 2) : total / DEG)}°`, Q([0, 0])[0], Q([0, 0])[1] - 16, { size: 12, bold: true, align: "center", col: C.red });
       }
@@ -1214,10 +1235,10 @@
       let s = "";
       if (t === "hex") s = `<b>Parallel-line development.</b> Six faces in a strip: length = perimeter = 6 × side = 6 × ${N(R)} = <b>${N(6 * R)} mm</b>. The edges between faces are fold lines (thin, long dash double dot).`;
       if (t === "cyl") s = `<b>Parallel-line development.</b> The curved surface rolls out into a rectangle: length = circumference = π × D = π × ${D} = <b>${N(Math.PI * D)} mm</b>, height ${H} mm. No fold lines: a curved surface is rolled, not folded. The thin lines are generators used to plot the cut.`;
-      if (t === "pyr") { const Ls = Math.hypot(H, R); s = `<b>Radial-line development.</b> Four triangles fan out from the apex. Each sloping edge must be drawn at its <b>true length</b>: √(H² + (half the diagonal)²) = √(${H}² + ${N(R)}²) = <b>${N(Ls)} mm</b>. Base side ${N(R * Math.SQRT2)} mm.`; }
+      if (t === "pyr") { const hd = D / Math.SQRT2, Ls = Math.hypot(H, hd); s = `<b>Radial-line development.</b> Four triangles fan out from the apex. Base ${D} × ${D} mm. Each sloping corner edge must be drawn at its <b>true length</b>: √(H² + (half the diagonal)²) = √(${H}² + ${N(hd)}²) = <b>${N(Ls)} mm</b>.`; }
       if (t === "cone") { const Ls = Math.hypot(H, R); s = `<b>Radial-line development.</b> A sector of a circle. Slant height L = √(H² + R²) = √(${H}² + ${N(R)}²) = <b>${N(Ls)} mm</b>. Sector angle = 360° × R ÷ L = 360 × ${N(R)} ÷ ${N(Ls)} = <b>${N(360 * R / Ls)}°</b>. The arc length equals the base circumference, π × ${D} = ${N(Math.PI * D)} mm.`; }
-      if (st.cut === "par") s += (G.radial ? ` Cut parallel to the base, the frustum's top edge is an arc of radius ${N(Math.hypot(st.H, st.D / 2) * (1 - st.cpos))} mm about the same apex.` : " Cut parallel to the base, the top edge stays straight.");
-      if (st.cut === "inc") s += G.radial ? " Cut at an angle, each generator's cut point must be found at its true length (project it across to the outside generator in the elevation) before swinging it round on the net." : " Cut at an angle, each generator keeps its own height: transfer the heights across from the elevation.";
+      if (st.cut === "par") s += t === "cone" ? ` Cut parallel to the base, the frustum's top edge is an arc of radius ${N(Math.hypot(st.H, st.D / 2) * (1 - st.cpos))} mm about the same apex.` : t === "pyr" ? ` Cut parallel to the base, each corner edge is cut ${N(Math.hypot(st.H, st.D / Math.SQRT2) * (1 - st.cpos))} mm (true length) from the apex.` : " Cut parallel to the base, the top edge stays straight.";
+      if (st.cut === "inc") s += t === "cone" ? " Cut at an angle, each generator's cut point must be found at its true distance from the apex (project it horizontally across to the outside generator in the elevation, the one seen at true length) before swinging it round on the net." : t === "pyr" ? " Cut at an angle, the corner edges are not at true length in the elevation: find each edge's true length by rotation (chapter 2), mark the cut point on it, and use that true distance from the apex on the net." : " Cut at an angle, each generator keeps its own height: transfer the heights across from the elevation.";
       note.innerHTML = s;
       cv.setAttribute("aria-label", TYPES[st.type] + " unfolding into its development. " + note.textContent);
     }
@@ -1336,8 +1357,9 @@
     HG.slider(ctl, { label: "Depth (blocks)", min: 1, max: 6, step: 1, value: st.D, oninput: (v) => { st.D = v; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Height (blocks)", min: 1, max: 5, step: 1, value: st.H, oninput: (v) => { st.H = v; sim.redraw(); info(); } });
     const hS = HG.slider(ctl, { label: "Horizon (eye level) height", min: 5, max: 95, step: 1, value: 100 - st.hy * 100, unit: "%", oninput: (v) => { st.hy = 1 - v / 100; sim.redraw(); info(); } });
-    const v2S = HG.slider(ctl, { label: "Left vanishing point", min: 0, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; if (st.mode === "one") st.vx = v / 100 + 0.25; sim.redraw(); info(); } });
+    const v2S = HG.slider(ctl, { label: "Left vanishing point (two-point)", min: 0, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; sim.redraw(); info(); } });
     const v1S = HG.slider(ctl, { label: "Right vanishing point (two-point)", min: 55, max: 100, step: 1, value: st.v1 * 100, unit: "%", oninput: (v) => { st.v1 = v / 100; sim.redraw(); info(); } });
+    const vxS = HG.slider(ctl, { label: "Vanishing point position (one-point)", min: 2, max: 98, step: 1, value: st.vx * 100, unit: "%", oninput: (v) => { st.vx = v / 100; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Viewing distance (one-point)", min: 40, max: 200, step: 5, value: st.dk * 100, unit: "%", oninput: (v) => { st.dk = v / 100; sim.redraw(); info(); } });
     const cv = canvasIn(box, "");
     box.append(HG.el("p", { class: "drag-hint" }, "Drag the vanishing points along the horizon, the HL handle at the left to raise or lower eye level, and the foot of the leading edge to move the block."));
@@ -1423,7 +1445,7 @@
       if (id === "v2") st.v2 = clamp(x / w, 0, st.x0 - 0.06);
       if (id === "vx") { st.vx = clamp(x / w, 0.02, 0.98); st.hy = clamp(y / h, 0.05, 0.95); }
       if (id === "foot") { st.x0 = clamp((st.mode === "two" ? x : x + st.W * geo.b / 2) / w, st.mode === "two" ? st.v2 + 0.06 : 0.1, st.mode === "two" ? st.v1 - 0.06 : 0.9); st.gy = clamp(y / h, 0.15, 0.97); }
-      hS.sync(Math.round(100 - st.hy * 100)); v1S.sync(Math.round(st.v1 * 100)); v2S.sync(Math.round(st.v2 * 100));
+ vxS.sync(Math.round(st.vx * 100));
       sim.redraw(); info();
     });
     function info() {
@@ -1441,6 +1463,7 @@
     info();
   });
 
+
   /* =====================================================================
      8b. Spot the faults: a cadet's Task 3 style orthographic sketch
      ===================================================================== */
@@ -1453,8 +1476,15 @@
       ["hidden", "Hidden detail is missing"],
       ["lines", "Construction lines are as heavy as the outlines"],
     ];
-    let seed = 7, faults = new Set();
+    let seed = (Date.now() % 2147483646) + 1, faults = new Set(), sketchSeed = 1;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const cv = canvasIn(box, "");
+    const form = HG.el("fieldset", { class: "fm-faults" }, HG.el("legend", null, "Tick every fault you can see:"));
+    FAULTS.forEach(([id, txt]) => form.append(HG.el("label", null, HG.el("input", { type: "checkbox", value: id }), " " + txt)));
+    box.append(form);
+    const res = HG.el("div", { class: "output-box", "aria-live": "polite" });
+    rowIn(box, btn("Check my audit", check, "primary"), btn("↺ New sketch", newSketch));
+    box.append(res);
     function newSketch() {
       faults = new Set();
       const pool = FAULTS.map((f) => f[0]);
@@ -1466,17 +1496,9 @@
       }
       if (rnd() < 0.12) faults.clear(); // now and then, a sketch with nothing wrong
       form.querySelectorAll("input").forEach((i) => (i.checked = false));
-      res.innerHTML = ""; sketchSeed = Math.floor(rnd() * 1e6); sim.redraw();
-      cv.setAttribute("aria-label", "A freehand orthographic sketch of a stepped block with a drilled hole: an elevation and a plan. Find the faults.");
+      res.innerHTML = ""; sketchSeed = 1 + Math.floor(rnd() * 1e6); sim.redraw();
+      cv.setAttribute("aria-label", "Left or top: a pictorial of a stepped block, 80 by 40 by 30 millimetres, with a step 30 long and 15 high at one end and a 16 millimetre hole drilled through. Beside it, a cadet's freehand elevation and plan of the block. Find the faults.");
     }
-    let sketchSeed = 1;
-    const cv = canvasIn(box, "");
-    const form = HG.el("fieldset", { class: "fm-faults" }, HG.el("legend", null, "Tick every fault you can see:"));
-    FAULTS.forEach(([id, txt]) => form.append(HG.el("label", null, HG.el("input", { type: "checkbox", value: id }), " " + txt)));
-    box.append(form);
-    const res = HG.el("div", { class: "output-box", "aria-live": "polite" });
-    rowIn(box, btn("Check my audit", check, "primary"), btn("↺ New sketch", newSketch));
-    box.append(res);
     function check() {
       const ticked = new Set([...form.querySelectorAll("input:checked")].map((i) => i.value));
       const lines = FAULTS.map(([id, txt]) => {
@@ -1487,27 +1509,62 @@
         return null;
       }).filter(Boolean);
       const marks = 4 - (faults.has("elev") ? 1 : 0) - (faults.has("plan") ? 1 : 0) - (faults.has("first") || faults.has("align") ? 1 : 0) - (faults.has("hidden") ? 1 : 0);
+      const why = { elev: "the elevation is drawn about 48 high for 80 long; the block is 30 high", plan: "the plan is about 22 deep; the block is 40 deep", first: "in third angle the plan goes above the elevation", align: "the plan's ends do not line up with the elevation's", hidden: "the drilled hole needs two dashed lines in the elevation", lines: "construction lines should be light" };
       res.innerHTML = (lines.length ? lines.join("<br>") : "<span class='ok'>✔ Nothing wrong, and you did not invent a fault.</span>") +
+        ([...faults].length ? "<br>Why: " + [...faults].map((f) => why[f]).join("; ") + "." : "") +
         `<br><b>Against the four marking points used for the 2025 Task 3</b> (elevation in proportion, plan in proportion, third angle projected and aligned, accurate hidden detail) this sketch would earn about <b>${marks}/4</b>.` +
         (faults.has("lines") ? " Heavy construction lines are not one of those four points, but they make the drawing hard to read: keep them light." : "");
     }
+    // one layout function, used both to size the canvas and to draw it
+    function layout(w) {
+      const wide = w >= 560;
+      const vw = wide ? w * 0.6 : w, pw = wide ? w - vw : w, ph = wide ? 0 : 170;
+      const s = Math.min((vw - 50) / 96, 3.4);
+      const viewsH = 30 + (40 + 14 + 48) * s + 20;
+      return { wide, vw, pw, ph, s, viewsH, h: Math.round(wide ? Math.max(viewsH, 260) : ph + viewsH) };
+    }
     const sim = HG.sim(cv, {
-      height: (w) => Math.round(Math.min(520, w * 0.95)),
+      height: (w) => layout(w).h,
       draw(ctx, tt, dt, C, S) {
         let sd = sketchSeed;
         const r = () => { sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646 - 0.5; };
-        const f = faults;
-        // the object: block 80 × 40 × 30 with a step 30 long and 15 high at the right; Ø16 hole through, 25 from the left
-        const Lx = 80, Dy = f.has("plan") ? 26 : 40, Hz = f.has("elev") ? 52 : 30, step = 15 * Hz / 30;
-        const planLx = f.has("plan") ? 64 : Lx;
-        const s = Math.min((S.w - 40) / 110, (S.h - 40) / 145);
-        const ex = (S.w - Lx * s) / 2, gap = 14;
+        const f = faults, Lo = layout(S.w);
+        ctx.fillStyle = isDark() ? "#23262e" : "#fbf8ef"; ctx.fillRect(0, 0, S.w, S.h);
+        // ---- the reference pictorial, with the true sizes ----
+        {
+          const px0 = Lo.wide ? Lo.vw : 0, py0 = 0, pw = Lo.pw, ph = Lo.wide ? S.h : Lo.ph;
+          const c30 = Math.cos(30 * DEG);
+          const I0 = (x, y, z) => [(x + y) * c30, -((y - x) * 0.5 + z)];
+          const cs = []; for (const x of [0, 80]) for (const y of [0, 40]) for (const z of [0, 30]) cs.push(I0(x, y, z));
+          const lx = Math.min(...cs.map((q) => q[0])), hx = Math.max(...cs.map((q) => q[0])), ly = Math.min(...cs.map((q) => q[1])), hy = Math.max(...cs.map((q) => q[1]));
+          const k = Math.min((pw - 70) / (hx - lx), (ph - 60) / (hy - ly));
+          const ox = px0 + pw / 2 - (lx + hx) / 2 * k, oy = py0 + 22 + (ph - 40) / 2 - (ly + hy) / 2 * k;
+          const I = (x, y, z) => { const q = I0(x, y, z); return [ox + q[0] * k, oy + q[1] * k]; };
+          const E = (a, b2) => seg(ctx, I(...a), I(...b2), C.ink, 1.8);
+          // visible edges, seen from the step end (x = 80) and the front (y = 0)
+          [[[0, 0, 0], [80, 0, 0]], [[80, 0, 0], [80, 0, 15]], [[80, 0, 15], [50, 0, 15]], [[50, 0, 15], [50, 0, 30]], [[50, 0, 30], [0, 0, 30]], [[0, 0, 30], [0, 0, 0]],
+            [[80, 0, 0], [80, 40, 0]], [[80, 40, 0], [80, 40, 15]], [[80, 40, 15], [80, 0, 15]], [[50, 0, 15], [50, 40, 15]], [[80, 40, 15], [50, 40, 15]],
+            [[50, 40, 15], [50, 40, 30]], [[50, 0, 30], [50, 40, 30]], [[0, 0, 30], [0, 40, 30]], [[0, 40, 30], [50, 40, 30]]].forEach(([a, b2]) => E(a, b2));
+          const hole = []; for (let i = 0; i <= 40; i++) { const t = i / 40 * 2 * Math.PI; hole.push(I(25 + 8 * Math.cos(t), 20 + 8 * Math.sin(t), 30)); }
+          pline(ctx, hole, C.ink, 1.6);
+          const mid = (a, b2) => { const p = I(...a), q = I(...b2); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; };
+          const t = (txt, p, dx, dy, al) => lab(ctx, txt, p[0] + dx, p[1] + dy, { size: 11, bold: true, col: C.red, align: al || "center" });
+          t("80", mid([0, 0, 0], [80, 0, 0]), -6, 12);
+          t("40", mid([80, 0, 0], [80, 40, 0]), 14, 8, "left");
+          t("30", mid([0, 0, 0], [0, 0, 30]), -6, 0, "right");
+          t("step 30 × 15", I(65, 0, 15), 0, -10);
+          t("Ø16 through", I(25, 20, 30), 0, -24);
+          lab(ctx, "THE BLOCK (mm)", px0 + pw / 2, py0 + 12, { size: 11, bold: true, col: C.muted, align: "center" });
+        }
+        // ---- the cadet's sketch ----
+        const Lx = 80, Dy = f.has("plan") ? 22 : 40, Hz = f.has("elev") ? 48 : 30, step = 15 * Hz / 30;
+        const s = Lo.s, top = (Lo.wide ? 0 : Lo.ph) + 26;
+        const ex = (Lo.vw - Lx * s) / 2 - 10, gap = 14;
         const first = f.has("first");
-        const elevTop = first ? 24 + Hz * s : 24 + Dy * s + gap * s;
-        const ey = elevTop + Hz * s; // elevation base
-        const shift = f.has("align") ? 17 : 0;
-        const py = first ? ey + gap * s : 24; // plan's top edge
-        const px = ex + shift * s;
+        const py = first ? top + Hz * s + gap * s : top;
+        const elevTop = first ? top : top + Dy * s + gap * s;
+        const ey = elevTop + Hz * s;
+        const px = ex + (f.has("align") ? 17 : 0) * s;
         const pen = C.ink, light = f.has("lines") ? C.ink : alpha(C.ink2, 0.45), lw = f.has("lines") ? 2.2 : 0.8;
         const hand = (x1, y1, x2, y2, col, w, dash) => {
           const L2 = Math.hypot(x2 - x1, y2 - y1) || 1, ux = (x2 - x1) / L2, uy = (y2 - y1) / L2, o1 = 2 + r() * 3, o2 = 1 + r() * 3;
@@ -1517,29 +1574,26 @@
           ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.setLineDash(dash || []);
           ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.bezierCurveTo(m1[0], m1[1], m2[0], m2[1], b2[0], b2[1]); ctx.stroke(); ctx.restore();
         };
-        // pencil paper
-        ctx.fillStyle = isDark() ? "#23262e" : "#fbf8ef"; ctx.fillRect(0, 0, S.w, S.h);
-        // construction lines: projectors between the views, extended
-        for (const x of [0, 25 - 8, 25 + 8, 50, Lx]) hand(ex + x * s, Math.min(py, elevTop) - 8, ex + x * s, Math.max(ey, py + Dy * s) + 8, light, lw);
+        const yTop = Math.min(py, elevTop), yBot = Math.max(ey, py + Dy * s);
+        for (const x of [0, 17, 33, 50, Lx]) hand(ex + x * s, yTop - 8, ex + x * s, yBot + 8, light, lw);
         hand(ex - 14, ey, ex + Lx * s + 14, ey, light, lw);
-        // elevation outline (thick, firm)
         const E = (x, z) => [ex + x * s, ey - z * s];
         const prof = [[0, 0], [Lx, 0], [Lx, step], [50, step], [50, Hz], [0, Hz]];
         prof.forEach((p, i) => { const q = prof[(i + 1) % prof.length]; hand(...E(...p), ...E(...q), pen, 2.4); });
         if (!f.has("hidden")) { hand(...E(17, 0), ...E(17, Hz), pen, 1.2, [6, 4]); hand(...E(33, 0), ...E(33, Hz), pen, 1.2, [6, 4]); }
         hand(...E(25, -6), ...E(25, Hz + 6), C.sea, 1, [12, 3, 2, 3]);
-        // plan
-        const Pp = (x, y) => [px + x * s * planLx / Lx, py + y * s];
+        const Pp = (x, y) => [px + x * s, py + y * s];
         const rect = [[0, 0], [Lx, 0], [Lx, Dy], [0, Dy]];
         rect.forEach((p, i) => { const q = rect[(i + 1) % 4]; hand(...Pp(...p), ...Pp(...q), pen, 2.4); });
         hand(...Pp(50, 0), ...Pp(50, Dy), pen, 2.4);
-        const c = Pp(25, Dy / 2), rr = 8 * s * planLx / Lx;
+        const c = Pp(25, Dy / 2), rr = 8 * s;
         ctx.save(); ctx.strokeStyle = pen; ctx.lineWidth = 2.2; ctx.beginPath();
         for (let k = 0; k <= 40; k++) { const t = k / 40 * 2.08 * Math.PI, wob = 1 + r() * 0.05; const q = [c[0] + rr * wob * Math.cos(t), c[1] + rr * wob * Math.sin(t)]; k ? ctx.lineTo(...q) : ctx.moveTo(...q); }
         ctx.stroke(); ctx.restore();
         hand(c[0] - rr - 7, c[1], c[0] + rr + 7, c[1], C.sea, 1, [12, 3, 2, 3]); hand(c[0], c[1] - rr - 7, c[0], c[1] + rr + 7, C.sea, 1, [12, 3, 2, 3]);
-        lab(ctx, "PLAN", px + Lx * s + 8, py + 10, { size: 11, bold: true, col: C.muted });
-        lab(ctx, "ELEVATION", ex + Lx * s + 8, elevTop + 10, { size: 11, bold: true, col: C.muted });
+        lab(ctx, "PLAN", px + Lx * s / 2, py - 10, { size: 11, bold: true, col: C.muted, align: "center" });
+        lab(ctx, "ELEVATION", ex + Lx * s / 2, ey + 14, { size: 11, bold: true, col: C.muted, align: "center" });
+        lab(ctx, "CADET'S SKETCH", 8, (Lo.wide ? 0 : Lo.ph) + 10, { size: 11, bold: true, col: C.muted });
       },
     });
     newSketch();
