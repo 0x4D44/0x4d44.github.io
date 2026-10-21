@@ -546,7 +546,6 @@
       if (S.dia) hole.r = HOLE_R;
       if (S.conc && pin !== "c") hole.c = CON.slice();
     }
-    const centreMark = () => [(P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4];
     function dof() {
       let d = 8 + 3; // four points + a circle (centre x, y and radius)
       list.forEach(([k, , n]) => { if (S[k]) d -= n; });
@@ -560,8 +559,7 @@
       g(HG.svg("path", { d: "M" + pts.map((p) => p.join(" ")).join(" L") + " Z", class: "cad-sk-new" }));
       const hc = X(hole.c);
       g(HG.svg("circle", { cx: hc[0], cy: hc[1], r: hole.r, class: "cad-sk-new" }));
-      const cm = X(centreMark());
-      const cc = X(CON);
+      const cc = X(CON), cm = cc; // the centre cross marks the construction circle's fixed centre
       g(HG.svg("circle", { cx: cc[0], cy: cc[1], r: 30, class: "cad-sk-pcd" }));
       g(HG.svg("text", { x: cc[0] + 24, y: cc[1] - 26, "font-size": 12, class: "muted halo", text: "fixed construction circle" }));
       g(HG.svg("path", { d: `M${cm[0] - 7} ${cm[1]} h14 M${cm[0]} ${cm[1] - 7} v14`, class: "cad-sk-cl" }));
@@ -573,7 +571,7 @@
       if (S.par1) { glyph(mid(0, 1), "∥", 0, 16); glyph(mid(3, 2), "∥", 0, -8); }
       if (S.par2) { glyph(mid(0, 3), "∥", -12, 4); glyph(mid(1, 2), "∥", 12, 4); }
       if (S.lenAD) glyph(mid(0, 3), "120", -28, 4);
-      if (S.dia) glyph(hc, "Ø30", 0, -hole.r - 6);
+      if (S.dia) glyph(hc, "Ø30", 0, -hole.r - 22);
       if (S.conc) glyph(hc, "◎", hole.r + 12, 4);
       ["A", "B", "C", "D"].forEach((l, i) => {
         const fixed = S.fixed && i < 2;
@@ -1046,7 +1044,7 @@
         ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1;
         edges.forEach(([a, b]) => { const A = P(sol.v[a]), B = P(sol.v[b]); ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); });
         ctx.restore();
-        const lab = (i, p) => { HG.dot(ctx, p[0], p[1], C.lode, 4); HG.label(ctx, String(i + 1), p[0] + 6, p[1] - 8, { col: C.lode, size: 13, bold: true, avoid: true }); };
+        const lab = (i, p) => { HG.dot(ctx, p[0], p[1], C.lode, 4); HG.label(ctx, String(i + 1), p[0] + 6, p[1] - 8, { col: C.lode, size: 13, bold: true, avoid: true, tries: [[0, 0], [0, 16], [-24, 0], [-24, 16], [0, -12], [-24, -12], [8, 6]] }); };
         if (S.show === "v") sol.v.slice(0, S.k).forEach((q, i) => lab(i, P(q)));
         if (S.show === "e") edges.slice(0, S.k).forEach(([a, b], i) => { const A = P(sol.v[a]), B = P(sol.v[b]); ctx.save(); ctx.strokeStyle = C.lode; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); ctx.restore(); lab(i, [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]); });
         if (S.show === "f") sol.f.slice(0, S.k).forEach((f, i) => { const q = f.reduce((s2, k) => E3.add(s2, sol.v[k]), [0, 0, 0]).map((v) => v / f.length); lab(i, P(q)); });
@@ -1550,7 +1548,7 @@
           { id: "pr", t: "On the same plane, sketch a Ø4 circle with its centre 18 from the axis.", after: ["ax"] },
           { id: "hx", t: "Use the helix (coil) command: profile = the Ø4 circle, axis = the centre line.", after: ["pr"] },
           { id: "pp", t: "Set pitch 12 and number of revolutions 9 (overall length 108).", after: ["hx"] },
-          { id: "end", t: "Sketch a path from the top end of the wire: a straight line 20 long, parallel to the axis. Extrude the Ø4 end of the wire along this path to form a straight leg.", after: ["pp"] },
+          { id: "end", t: "On a work plane perpendicular to the axis through the top end of the wire, sketch a Ø4 circle centred on the end of the wire and extrude it 20 upwards (join) to form the leg.", after: ["pp"] },
         ],
         decoys: [
           { id: "y1", t: "Set the helix to 12 rotations of pitch.", why: "Mixes up the terms: pitch is a distance (12 mm); revolutions is a count (9). The report says many candidates misused exactly these words." },
