@@ -60,7 +60,7 @@
 <p class="kicker">The Signal Room · digital technology in graphic communication</p>
 <h1>Technology &amp; society</h1>
 <p class="lede">Every drawing, poster and model the Plan Room makes has to be captured, stored, shared, protected and finally output to paper, screen or plastic. This deck covers the hardware, software and networks behind that work, the law and the locks that protect it, the way it has changed industry and everyday life, and how to stay safe in a graphics studio.</p>
-<div class="callout scope"><p><strong>What this deck covers.</strong> In the course specification this is <em>Using technology in graphic communication</em> (file management, cloud computing, cloud storage, digital rights management, digital input and output devices, advantages and limitations of CAD) and <em>Graphic communication technology and society</em> (the paperless office, use of recycled materials, CAD as it supports manufacturing and other industries, DTP in marketing and promotional activities, remote working, communication crossing international boundaries), plus the safe working practices that support studio work. In the question paper, <strong>digital technology in graphic communication is worth 4 to 12 marks</strong>. A table at the end maps each chapter to the specification.</p></div>
+<div class="callout scope"><p><strong>What this deck covers.</strong> In the course specification this is <em>Using technology in graphic communication</em> (file management, cloud computing, cloud storage, digital rights management, digital input and output devices, advantages and limitations of CAD) and <em>Graphic communication technology and society</em> (the paperless office, use of recycled materials, CAD as it supports manufacturing and other industries, DTP in marketing and promotional activities, remote working, communication crossing international boundaries), plus the safe working practices that support studio work (which the specification places in the assignment column, not the question paper). In the question paper, <strong>digital technology in graphic communication is worth 4 to 12 marks</strong>. A table at the end maps each chapter to the specification.</p></div>
 <div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>Do not treat this as the "easy" topic. From the 2025 course report: "Some candidates found Digital Technology in Graphic Communication questions to be very demanding." Five separate question parts touched it. The marks are short (often 1 or 2 each), but they need a precise point, linked to the scenario in the question.</p></div>
 <div class="callout log"><div class="callout-title">⚓ Orders from the quarterdeck</div>
 <p>Captain Isobel Grant leads 1805 (Blockhaven) Squadron down a ladder behind the Plan Room on <em>HMS Vellum</em>. "This is the Signal Room," she says. "A hundred years ago it held flags and a signal lamp. Today it holds the ship's computers, scanners, printers and the link to the Admiralty archive in the cloud. The job has not changed: get the right message to the right person, quickly, without anyone else reading or copying it." Flight Lieutenant Alba Murray hands out logbooks. Master Shipwright Euan Fraser is already arguing with a printer. Cadet Sergeant Jamie Rahman has his hand up.</p></div>
@@ -209,8 +209,8 @@
 <p>The Plan Room wants to print a photograph of <em>HMS Vellum</em> to fill an A4 sheet (210 mm × 297 mm) at 300 ppi. Calculate the pixel dimensions needed. There are 25.4 mm in one inch. [2]</p>
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
-<li>Width: 210 ÷ 25.4 = 8.27 inches, and 8.27 × 300 = 2480 pixels. <span class="why">Convert the printed size to inches, then multiply by the pixels per inch.</span></li>
-<li>Height: 297 ÷ 25.4 = 11.69 inches, and 11.69 × 300 = 3508 pixels. So the photograph needs at least 2480 × 3508 pixels (about 8.7 megapixels). <span class="why">A smaller image would have to be stretched, and each pixel would print bigger than 1/300 inch.</span></li>
+<li>Width: 210 ÷ 25.4 = 8.268 inches, and 8.268 × 300 = 2480.3, so round up to 2481 pixels. <span class="why">Convert the printed size to inches, then multiply by the pixels per inch.</span></li>
+<li>Height: 297 ÷ 25.4 = 11.693 inches, and 11.693 × 300 = 3507.9, so 3508 pixels. The photograph needs about 2480 × 3508 pixels (strictly 2481 × 3508, about 8.7 megapixels). <span class="why">A smaller image would have to be stretched, and each pixel would print bigger than 1/300 inch.</span></li>
 </ol></details></div>
 
 <div class="widget" id="w-dpi">
@@ -218,7 +218,7 @@
 <p class="hint">Set the pixel width of the image and the width it will print at. The magnifier shows a 10 mm square of the print exactly as the pixels would fall, and the readouts show the effective resolution and the uncompressed file size.</p>
 </div>
 
-<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"So is dpi the same as ppi? People seem to use them for the same thing."</p><p><strong>Master Shipwright Fraser:</strong> "People do mix them up, and you won't lose a mark for it in ordinary use. But strictly, ppi is about the image or the screen: pixels. Dpi is about the printer or scanner: dots of ink, or samples. An inkjet printer makes several tiny dots of cyan, magenta, yellow and black to build the colour of one pixel, so a 1200 dpi printer is not printing 1200 pixels per inch. If you scan at 600 dpi, though, you get a 600 ppi image. That's the one place they line up."</p></div>
+<div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"So is dpi the same as ppi? People seem to use them for the same thing."</p><p><strong>Master Shipwright Fraser:</strong> "People do use them loosely in everyday speech. But strictly, ppi is about the image or the screen: pixels. Dpi is about the printer or scanner: dots of ink, or samples. An inkjet printer makes several tiny dots of cyan, magenta, yellow and black to build the colour of one pixel, so a 1200 dpi printer is not printing 1200 pixels per inch. If you scan at 600 dpi, though, you get a 600 ppi image. That's the one place they line up."</p></div>
 
 <h3>Digital output devices</h3>
 <p>Output devices turn the file into something people can see or hold. Two big families: <strong>2D output</strong> (screens and printers) and <strong>3D output</strong> (machines that make or cut real objects). The machines that cut and engrave follow <em>vector paths</em>, so they need vector or CAD files, not photographs.</p>
@@ -284,7 +284,7 @@
 <p>A <dfn>naming convention</dfn> is an agreed pattern that every file name follows. A good convention means anyone can tell what a file is without opening it, and files sort into a sensible order.</p>
 <div class="compare">
 <div><h4>Good habits</h4><ul>
-<li>Describe the content: <code>vellum_lantern_body_v03.ipt</code></li>
+<li>Describe the content: <code>VEL_lantern_body_v03.ipt</code></li>
 <li>Use the same order every time: project, item, stage, version</li>
 <li>Write dates year first, <code>2026-03-14</code>, so they sort in date order</li>
 <li>Pad version numbers: <code>v01, v02 … v10</code>, so v10 does not sort before v2</li>
@@ -305,7 +305,7 @@
 <figure class="diagram">
 <svg viewBox="0 0 400 250" role="img" aria-label="A folder tree for a project. The top folder is the project, Vellum lantern. Inside are numbered folders: 01 research, 02 preliminary, 03 production with sub-folders for CAD and drawings, 04 promotional, and 05 admin. Numbering keeps the folders in the order of the design process.">
 <g font-size="13" class="ink">
-<rect x="8" y="8" width="184" height="26" rx="3" class="tc-folder"/><text x="18" y="26" font-weight="700">VEL-lantern/</text>
+<rect x="8" y="8" width="184" height="26" rx="3" class="tc-folder"/><text x="18" y="26" font-weight="700">VEL_lantern/</text>
 <path d="M24 34 V232 M24 52 H44 M24 82 H44 M24 112 H44 M24 202 H44 M24 232 H44 M60 120 V176 M60 146 H80 M60 176 H80" class="tc-stroke" fill="none" stroke-width="1.5"/>
 <rect x="44" y="40" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="57">01_research/</text>
 <rect x="44" y="70" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="87">02_preliminary/</text>
@@ -361,18 +361,18 @@
 <svg viewBox="0 0 400 180" role="img" aria-label="The 3-2-1 back-up rule. Three copies: the working copy on the studio computer, a copy on an external drive, and a copy in cloud storage. Two types of storage: the computer and external drive are local disks, the cloud is a remote service. One copy is off-site, in the cloud, safe from a studio fire or theft.">
 <g font-size="13">
 <rect x="6" y="20" width="112" height="70" rx="4" class="tc-box"/>
-<rect x="34" y="32" width="56" height="34" rx="2" class="tc-dark"/><rect x="54" y="66" width="16" height="8" class="tc-dark"/>
+<rect x="36" y="26" width="52" height="30" rx="2" class="tc-dark"/><rect x="54" y="56" width="16" height="6" class="tc-dark"/>
 <text x="62" y="86" text-anchor="middle" class="ink">working copy</text>
 <rect x="132" y="20" width="112" height="70" rx="4" class="tc-box"/>
-<rect x="164" y="34" width="48" height="34" rx="5" class="tc-dark"/><circle cx="200" cy="58" r="3" fill="#8cc96a"/>
+<rect x="164" y="28" width="48" height="32" rx="5" class="tc-dark"/><circle cx="200" cy="50" r="3" fill="#8cc96a"/>
 <text x="188" y="86" text-anchor="middle" class="ink">external drive</text>
 <rect x="268" y="20" width="126" height="70" rx="4" class="tc-box"/>
-<path d="M300 66 a12 12 0 0 1 12 -16 a16 16 0 0 1 30 2 a11 11 0 0 1 4 22 h-40 a9 9 0 0 1 -6 -8z" class="tc-cloud"/>
+<path d="M300 60 a12 12 0 0 1 12 -16 a16 16 0 0 1 30 2 a11 11 0 0 1 4 22 h-40 a9 9 0 0 1 -6 -8z" class="tc-cloud"/>
 <text x="331" y="86" text-anchor="middle" class="ink">cloud copy</text>
 <path d="M4 102 H248" class="tc-stroke" stroke-width="1.5"/><path d="M264 102 H396" class="s-sea" stroke-width="1.5"/>
 <text x="126" y="122" text-anchor="middle" class="ink2">on site: two local disks</text>
 <text x="330" y="122" text-anchor="middle" class="f-sea">off site</text>
-<text x="200" y="150" text-anchor="middle" class="ink" font-weight="700">3 copies · 2 types of storage · 1 off site</text>
+<text x="200" y="150" text-anchor="middle" class="ink" font-weight="700">3 copies · 2 types (local disk, cloud) · 1 off site</text>
 <text x="200" y="170" text-anchor="middle" class="muted">a fire in the studio destroys two copies; the cloud copy survives</text>
 </g>
 </svg>
@@ -495,12 +495,13 @@
 </ol></details></div>
 
 <div class="worked"><p class="worked-title">Worked example 6 · explain (2 marks)</p>
-<p>Explain one limitation of the studio relying on cloud storage. [2]</p>
+<p>Explain two limitations of the studio relying on cloud storage. [2]</p>
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
-<li>Cause: cloud storage can only be reached through an internet connection… <span class="why">The reason the problem happens.</span></li>
-<li>…so if the studio's connection fails, or is slow, the designers cannot open or upload the large artwork files, and the job could miss the printer's deadline. <span class="why">The effect, in context. "You need the internet" alone is the cause without the effect, and would usually earn one mark at most.</span></li>
-</ol></details></div>
+<li>Cloud storage can only be reached through an internet connection (cause), so if the studio's connection fails or is slow, the designers cannot open or upload the large artwork files and the job could miss the printer's deadline (effect). <span class="why">One cause linked to one effect, in context: 1 mark.</span></li>
+<li>The files sit on another company's servers behind a password (cause), so if a designer's password is stolen in a phishing email, an intruder could copy or delete the client's artwork (effect). <span class="why">A second, different cause–effect pair: the second mark. "You need the internet" on its own is a cause with no effect, and earns nothing.</span></li>
+</ol>
+<p>In the marking instructions for a two-mark "explain", one cause with its effect gains 1 mark. That is why a two-mark explain answer needs <strong>two</strong> linked pairs.</p></details></div>
 
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>define cloud storage and cloud computing and give a graphics example of each;</li><li>describe at least five benefits with their effects;</li><li>explain at least four limitations, including internet dependence and security;</li><li>explain why sync is not the same as a back-up.</li></ul></div>
 <div class="check" data-check="tech-cloud"></div>
@@ -521,7 +522,7 @@
 <tr><th scope="row">Registered design</th><td>The appearance of a product: its shape, pattern, colour or decoration</td><td>Registered with the Intellectual Property Office</td></tr>
 <tr><th scope="row">Patent</th><td>A new invention: how something works</td><td>Applied for and granted; the invention must be new and not obvious</td></tr>
 </tbody></table></div>
-<p>A <dfn>licence</dfn> is permission from the owner to use their work, on stated conditions. Buying a stock photograph usually buys a licence to use it in certain ways, not ownership of the photograph. Fonts and CAD software are also licensed: a licence may limit how many computers a font is installed on, and an education licence for CAD software usually forbids commercial work. <dfn>Passing off</dfn> someone else's image or design as your own, or using it without the agreed payment, takes income and credit from its owner.</p>
+<p>A <dfn>licence</dfn> is permission from the owner to use their work, on stated conditions. Buying a stock photograph usually buys a licence to use it in certain ways, not ownership of the photograph. Fonts and CAD software are also licensed: a licence may limit how many computers a font is installed on, and an education licence for CAD software usually forbids commercial work. Presenting someone else's image or design as your own, or using it without the agreed payment, takes income and credit from its owner.</p>
 
 <h3>Digital rights management</h3>
 <p><dfn>Digital rights management</dfn> (DRM) is the use of technology to control how digital content is used once it has been distributed: whether it can be copied, printed, edited, shared or opened at all. The law says what you may do; DRM tries to make it physically hard to do anything else. Methods a graphics business might use:</p>
@@ -575,7 +576,7 @@
 <div class="sorter" data-bins="Gives legal protection|Is a technical barrier|Gives little real protection">
 <div data-ans="Gives legal protection" data-why="Copyright arises automatically when the work is created. It does not stop copying, but it gives the owner the right to demand payment or take action.">Copyright in an original illustration</div>
 <div data-ans="Is a technical barrier" data-why="A semi-transparent mark across the subject spoils any copy and identifies the owner. It is hard to remove cleanly.">A semi-transparent watermark across the middle of a photograph</div>
-<div data-ans="Gives little real protection" data-why="A tiny mark in the corner disappears with one crop. It identifies the owner only until someone trims the edge.">A small watermark tucked in one corner</div>
+<div data-ans="Gives little real protection" data-why="Watermarking is a DRM barrier, but a tiny corner mark is a weak one: it disappears with one crop, and identifies the owner only until someone trims the edge.">A small watermark tucked in one corner</div>
 <div data-ans="Is a technical barrier" data-why="Without the key the file is unreadable, so an intercepted or stolen copy is useless.">Encrypting a confidential CAD file before emailing it</div>
 <div data-ans="Gives legal protection" data-why="A licence sets out exactly what a buyer may do; using the image outside those terms breaks the agreement.">A licence agreement for a stock image</div>
 <div data-ans="Is a technical barrier" data-why="A 72 ppi preview looks fine on screen but pixelates badly when printed, so the full file must be bought.">Putting only a small, low-resolution preview on the website</div>
@@ -583,14 +584,14 @@
 <div data-ans="Is a technical barrier" data-why="The PDF opens for viewing, but printing and editing are blocked without the owner's password.">A PDF proof with printing and editing permissions turned off</div>
 </div>
 
-<div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>When asked why a company watermarks its images, "to stop theft" is not enough. The 2024 marking instructions said not to accept "theft" or "stealing" without a description. Say <em>what</em> the watermark prevents and <em>why that matters</em>: it identifies the image as the company's intellectual property; it stops others selling or passing off the image as their own; it stops the image being used without payment; it advertises the company wherever the image is shared.</p></div>
+<div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>When asked why a company watermarks its images, "to stop theft" is not enough. The 2024 marking instructions said not to accept "theft" or "stealing" without a description. Say <em>what</em> the watermark prevents and <em>why that matters</em>: it identifies the image as the company's intellectual property; it makes it harder for others to sell the image or present it as their own; it discourages use of the image without payment; it advertises the company wherever the image is shared.</p></div>
 
 <div class="worked"><p class="worked-title">Worked example 7 · explain (2 marks)</p>
 <p>The Plan Room sells prints of its ship illustrations through a website. Explain why the illustrations shown on the website are watermarked. [2]</p>
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
-<li>The watermark marks each illustration as the Plan Room's intellectual property, so other people cannot sell or pass off the illustrations as their own work. <span class="why">Ownership, with the specific misuse it prevents.</span></li>
-<li>A copy taken from the website carries the watermark across it, so it cannot be used without paying for a clean, licensed version, which protects the Plan Room's income. <span class="why">A second, different point: payment. (The watermark also advertises the Plan Room wherever the image is shared, an alternative second point.)</span></li>
+<li>The watermark marks each illustration as the Plan Room's intellectual property, which makes it harder for other people to sell the illustrations or present them as their own work. <span class="why">Ownership, with the specific misuse it prevents.</span></li>
+<li>A copy taken from the website carries the watermark across it, which discourages anyone from using it without paying for a clean, licensed version, protecting the Plan Room's income. <span class="why">A second, different point: payment. (The watermark also advertises the Plan Room wherever the image is shared, an alternative second point.)</span></li>
 </ol></details></div>
 
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>explain intellectual property and copyright, and recognise trade marks, registered designs and patents;</li><li>explain what a licence is;</li><li>describe DRM methods: watermarking, low-resolution previews, encryption, password permissions, licence keys;</li><li>explain why protecting digital rights matters to designers and companies.</li></ul></div>
@@ -599,28 +600,31 @@
 
 <section id="cad" class="prose">
 <h2 data-short="CAD: pros &amp; cons">5 · Advantages and limitations of CAD <span class="spec-tag">TECH · advantages and limitations of CAD</span></h2>
-<p>The course asks you to know the <em>relative merits</em> of manual and computer-aided methods. <dfn>Manual graphics</dfn> are produced by hand with pencils, pens, markers, a drawing board and instruments. <dfn>CAD</dfn> (computer-aided design) produces drawings and 3D models with software. Neither is "better" in every case: sketching on paper is still the fastest way to get an idea down, and the assignment's preliminary sketches are done by hand. But for production drawings and models that will change, be shared and be manufactured, CAD wins in most ways. You must also know its costs.</p>
+<p>The course asks you to know the <em>relative merits</em> of manual and computer-aided methods. <dfn>Manual graphics</dfn> are produced by hand with pencils, pens, markers, a drawing board and instruments. <dfn>CAD</dfn> (computer-aided design) produces drawings and 3D models with software. Neither is "better" in every case: sketching is still the fastest way to get an idea down, and the assignment's preliminary sketches must be done freehand: on paper, or digitally with only a straight-edge tool (the 2025 course report points out that circle tools work like compasses and are not allowed). But for production drawings and models that will change, be shared and be manufactured, CAD wins in most ways. You must also know its costs.</p>
 
 <figure class="diagram">
-<svg viewBox="0 0 400 230" role="img" aria-label="Changing one dimension. Manually, the length of the capstan bar changes from 120 to 140, so the elevation, plan and end elevation must each be erased and redrawn by hand, along with their dimensions. In parametric CAD, the designer edits one dimension in the model's sketch, and the 3D model and every linked 2D view and dimension update automatically.">
+<svg viewBox="0 0 400 230" role="img" aria-label="Changing one dimension. Both panels show third-angle layout: plan above the elevation, end elevation to the right of the elevation. Manually, the length of the capstan bar changes from 120 to 140, so the elevation, plan and end elevation must each be erased and redrawn by hand, along with their dimensions. In parametric CAD, the designer edits one dimension in the model's sketch, and the 3D model and every linked 2D view and dimension update automatically.">
 <g font-size="13">
 <text x="98" y="18" text-anchor="middle" class="ink" font-weight="700">Manual</text>
 <text x="302" y="18" text-anchor="middle" class="ink" font-weight="700">Parametric CAD</text>
-<line x1="200" y1="6" x2="200" y2="224" class="s-line" stroke-width="2"/>
-<rect x="8" y="30" width="180" height="150" rx="4" class="tc-box"/>
-<rect x="22" y="48" width="70" height="26" class="tc-solid"/><rect x="22" y="96" width="70" height="26" class="tc-solid"/><rect x="118" y="48" width="26" height="26" class="tc-solid"/>
-<g class="f-red" font-size="18" font-weight="700"><text x="98" y="68">✎</text><text x="98" y="116">✎</text><text x="150" y="68">✎</text></g>
-<text x="98" y="150" text-anchor="middle" class="ink2">erase and redraw every</text>
-<text x="98" y="168" text-anchor="middle" class="ink2">view and dimension</text>
-<rect x="212" y="30" width="180" height="150" rx="4" class="tc-box"/>
-<rect x="222" y="40" width="64" height="32" rx="3" class="tc-box2"/><text x="254" y="61" text-anchor="middle" class="ink mono">L = 140</text>
-<path d="M310 46 l40 0 l14 -10 l-40 0 z M310 46 v22 h40 v-22 M350 68 l14 -10 v-22" class="tc-solidline" stroke-width="1.5"/>
-<line x1="288" y1="56" x2="306" y2="56" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
-<rect x="226" y="110" width="54" height="20" class="tc-solid"/><rect x="292" y="110" width="54" height="20" class="tc-solid"/><rect x="358" y="110" width="20" height="20" class="tc-solid"/>
-<line x1="330" y1="74" x2="254" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/><line x1="332" y1="74" x2="318" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/><line x1="340" y1="74" x2="366" y2="106" class="s-grass" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/>
-<text x="302" y="150" text-anchor="middle" class="ink2">edit one value; the model,</text>
-<text x="302" y="168" text-anchor="middle" class="ink2">views and dimensions update</text>
-<text x="200" y="210" text-anchor="middle" class="muted">the client wants the capstan bar 140 long instead of 120</text>
+<line x1="200" y1="6" x2="200" y2="184" class="s-line" stroke-width="2"/>
+<rect x="8" y="30" width="180" height="154" rx="4" class="tc-box"/>
+<rect x="22" y="42" width="84" height="22" class="tc-solid"/>
+<rect x="22" y="74" width="84" height="30" class="tc-solid"/><rect x="116" y="74" width="22" height="30" class="tc-solid"/>
+<g class="f-red" font-size="18" font-weight="700"><text x="108" y="60">✎</text><text x="76" y="124">✎</text><text x="142" y="98">✎</text></g>
+<text x="98" y="152" text-anchor="middle" class="ink2">erase and redraw every</text>
+<text x="98" y="170" text-anchor="middle" class="ink2">view and dimension</text>
+<rect x="212" y="30" width="180" height="154" rx="4" class="tc-box"/>
+<rect x="220" y="38" width="64" height="26" rx="3" class="tc-box2"/><text x="252" y="56" text-anchor="middle" class="ink mono">L = 140</text>
+<path d="M314 52 l46 0 l12 -10 l-46 0 z M314 52 v14 h46 v-14 M360 66 l12 -10 v-14" class="tc-solidline" stroke-width="1.5"/>
+<line x1="286" y1="52" x2="310" y2="52" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
+<rect x="232" y="88" width="70" height="14" class="tc-solid"/>
+<rect x="232" y="108" width="70" height="20" class="tc-solid"/><rect x="310" y="108" width="14" height="20" class="tc-solid"/>
+<path d="M340 70 Q340 96 330 112" class="s-grass" fill="none" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/>
+<text x="350" y="104" class="f-grass" font-size="12" font-weight="700">auto</text>
+<text x="302" y="152" text-anchor="middle" class="ink2">edit one value; model,</text>
+<text x="302" y="170" text-anchor="middle" class="ink2">views, dimensions update</text>
+<text x="200" y="210" text-anchor="middle" class="muted">client: capstan bar 140 long, not 120</text>
 </g>
 </svg>
 <figcaption>Parametric and associative CAD: the 2D drawing views are linked to the 3D model, so a change to the model updates every view. By hand, every view is redrawn and every dimension rechecked.</figcaption>
@@ -664,11 +668,11 @@
 </div>
 
 <div class="worked"><p class="worked-title">Worked example 8 · explain (2 marks)</p>
-<p>The Plan Room produced orthographic drawings of a capstan from a 3D CAD model. The customer then asked for the capstan to be taller. Explain one advantage of using CAD rather than manual drawing in this situation. [2]</p>
+<p>The Plan Room produced orthographic drawings of a capstan from a 3D CAD model. The customer then asked for the capstan bar to be 140 long instead of 120. Explain two advantages of using CAD rather than manual drawing in this situation. [2]</p>
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
-<li>The drawing views are associative (linked) to the parametric 3D model, so when the height dimension in the model is edited… <span class="why">Cause: the feature of CAD that matters here.</span></li>
-<li>…every view and its dimensions update automatically, so the new drawings are produced quickly and with no risk of one view being missed or drawn inconsistently. <span class="why">Effect, in the context of the change the customer asked for. "CAD is faster" alone has no cause and no context.</span></li>
+<li>The drawing views are associative (linked) to the parametric 3D model (cause), so editing the bar's length dimension once updates every view and its dimensions automatically, with no view missed or drawn inconsistently (effect). <span class="why">One linked cause and effect, in the context of the change: 1 mark.</span></li>
+<li>The model is already a 3D solid (cause), so the longer bar can be checked for clashes with the deck fittings, and re-rendered for the customer, before anything is made (effect). <span class="why">A second, different pair. "CAD is faster" alone has no cause and no context, and earns nothing.</span></li>
 </ol></details></div>
 
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If CAD is so much better, why do we still have to sketch by hand?"</p><p><strong>Master Shipwright Fraser:</strong> "Because a pencil costs nothing, needs no power, goes anywhere, and is quickest for getting an idea out of your head. On the quarterdeck, in front of the captain, I sketch. Back in the Plan Room, I model. Manual and CAD have different jobs, and a good designer uses each where it fits. That comparison is exactly the kind of thing the exam asks."</p></div>
@@ -735,7 +739,7 @@
 <line x1="339" y1="86" x2="339" y2="114" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
 <line x1="282" y1="146" x2="259" y2="146" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
 <line x1="61" y1="86" x2="61" y2="114" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
-<text x="200" y="194" text-anchor="middle" class="muted">one digital model drives prototyping, manufacture and promotion</text>
+<text x="200" y="194" text-anchor="middle" class="muted">one digital model drives prototyping and manufacture</text>
 </g>
 </svg>
 <figcaption>A digital thread: the same CAD data is prototyped, sent abroad as a neutral file, turned into machine instructions, and made. Design and manufacture no longer need to be in the same country.</figcaption>
@@ -798,11 +802,11 @@
 <div class="callout exam"><div class="callout-title">⚑ Exam lookout</div><p>From the 2025 course report: "Most candidates continue to struggle with this command word and only give the effect, without the cause." In this chapter that looks like "the paperless office saves money" (effect only). Give the cause: "less paper, ink and toner are bought, <em>so</em> the company's running costs fall."</p></div>
 
 <div class="worked"><p class="worked-title">Worked example 9 · explain (2 marks)</p>
-<p>A Scottish furniture company sends its CAD models to a factory overseas. Explain one way CAD supports the company's manufacturing. [2]</p>
+<p>A Scottish furniture company sends its CAD models to a factory overseas. Explain two ways CAD supports the company's manufacturing. [2]</p>
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
-<li>The CAD model can be exported as a neutral STEP file and shared through the cloud with the overseas factory… <span class="why">Cause: what the technology allows.</span></li>
-<li>…where CAM software uses it to generate toolpaths for CNC machines, so the parts are made accurately to the design without the drawings being re-created, and without the designers travelling. <span class="why">Effect for the company's manufacturing.</span></li>
+<li>The CAD model is exported as a neutral STEP file and shared through the cloud (cause), so the overseas factory can open it in its own software and generate CNC toolpaths with CAM, making parts accurately without the drawings being re-created (effect). <span class="why">One linked pair: 1 mark.</span></li>
+<li>A prototype can be 3D printed straight from the same model (cause), so the company can check the look and fit of a new chair in days, before the factory tools up for production (effect). <span class="why">A second, different pair: the second mark.</span></li>
 </ol></details></div>
 
 <div class="worked"><p class="worked-title">Worked example 10 · describe (2 marks)</p>
@@ -820,6 +824,7 @@
 <section id="safety" class="prose">
 <h2 data-short="Safe working">7 · Safe working practices in graphic studios <span class="spec-tag">TECH · safe working</span></h2>
 <p>A graphics studio looks safe: no lathes, no furnaces. But people spend long hours at screens, use very sharp blades, spray solvent adhesives, and run laser cutters and 3D printers. The specification asks you to know the <em>safe working practices and systems</em> that support graphic work in studios and other working environments.</p>
+<div class="callout scope"><p><strong>Where this is assessed.</strong> Safe working appears only in the <em>assignment</em> column of the course specification, not in the question-paper column. You apply it whenever you cut, mount, spray or print during your work; the worked example and check in this chapter are practice for that, not a forecast of exam questions.</p></div>
 
 <h3>The systems behind safe work</h3>
 <ul>
@@ -854,7 +859,7 @@
 </g>
 <g font-size="13" class="ink">
 <text x="314" y="70">screen top</text><text x="314" y="86">at or just</text><text x="314" y="102">below eye</text><text x="314" y="118">level</text>
-<text x="196" y="182">forearms level,</text><text x="196" y="198">wrists straight</text>
+<text x="214" y="178">forearms level,</text><text x="214" y="194">wrists straight</text>
 <text x="8" y="130">back support</text><text x="8" y="146">(lumbar)</text><path d="M84 142 L106 152" class="tc-stroke" stroke-width="1"/>
 <text x="210" y="240">feet flat on floor</text><text x="210" y="256">or footrest</text>
 <text x="8" y="214">adjustable</text><text x="8" y="230">height chair</text><path d="M84 222 L130 214" class="tc-stroke" stroke-width="1"/>
@@ -881,7 +886,7 @@
 </ul>
 
 <h3>Manual tools: knives, rules and mats</h3>
-<p>Craft knives and scalpels cause more studio injuries than any machine. Safe practice:</p>
+<p>Craft knives and scalpels are the sharpest tools in most graphics studios, and a slip can cause a deep cut in a moment. Safe practice:</p>
 
 <figure class="diagram">
 <svg viewBox="0 0 400 210" role="img" aria-label="Safe cutting with a craft knife, seen from above. The card lies on a self-healing cutting mat. A metal safety rule with a raised finger guard holds the card. The hand pressing the rule is behind the guard, on the far side from the blade. The knife is drawn along the metal edge, away from the body, in several light strokes.">
@@ -928,7 +933,7 @@
 <p class="hint">Inspect the Plan Room annexe. Select anything that looks wrong (or right). Each item is a button: tap it, or tab to it and press Enter. Six hazards hide among things that are being done properly.</p>
 </div>
 
-<div class="worked"><p class="worked-title">Worked example 11 · describe (3 marks)</p>
+<div class="worked"><p class="worked-title">Practice question 11 · describe (3 marks) · safe working is assignment-column content</p>
 <p>A graphic designer spends most of the day working at a computer. Describe three ways the workstation can be set up to reduce the risk to the designer's health. [3]</p>
 <details><summary>Show solution <span class="marks-n">[3 marks]</span></summary>
 <ol class="step-list marks">
@@ -945,12 +950,12 @@
 <h2 data-short="Exam practice">8 · Exam practice: state, describe, explain <span class="spec-tag">TECH · exam technique</span></h2>
 <p>Technology questions are short, but they are precise. The command word tells you what kind of answer earns the mark. These are the meanings used in the marking instructions.</p>
 <div class="table-wrap"><table>
-<caption>Command words. The marking principles are those published in the 2024 question paper marking instructions.</caption>
+<caption>Command words. Describe, explain and compare follow the general marking principles published in the 2024 question paper marking instructions; the first row is this site's summary.</caption>
 <thead><tr><th>Command word</th><th>What the marker wants</th><th>Example of a full answer</th></tr></thead>
 <tbody>
-<tr><th scope="row">State / Name / Identify</th><td>A short, correct fact. No explanation needed.</td><td>"STEP."</td></tr>
+<tr><th scope="row">State / Name / Identify</th><td>A short, correct fact. No explanation needed. (This row is this site's own gloss: the marking instructions define only describe, explain and compare.)</td><td>"STEP."</td></tr>
 <tr><th scope="row">Describe</th><td>A statement of characteristics or features, not just a one-word list. One mark per relevant point, in the context of the question.</td><td>"Files can be opened from any device with an internet connection, so a designer can work from home."</td></tr>
-<tr><th scope="row">Explain</th><td>Relate cause and effect, in the context of the question. An effect with no cause rarely earns the mark.</td><td>"Because less paper and toner are bought (cause), the studio's running costs fall (effect)."</td></tr>
+<tr><th scope="row">Explain</th><td>Relate cause and effect and/or define relationships, in the context of the question. In a two-mark explain, one cause with its effect gains 1 mark; an effect with no cause rarely earns anything.</td><td>"Because less paper and toner are bought (cause), the studio's running costs fall (effect)."</td></tr>
 <tr><th scope="row">Compare</th><td>Similarities and/or differences between two things, in context.</td><td>"A laser printer has a lower cost per page than an inkjet, so it is cheaper for 300 copies."</td></tr>
 </tbody></table></div>
 
@@ -982,19 +987,19 @@
 </ol>
 
 <div class="worked"><p class="worked-title">Model answers · a mixed set</p>
-<p>Six short questions in the style of the paper. Try each before opening the answer.</p>
+<p>Six short practice questions. Try each before opening the answer. Question (e) is on safe working, which the specification lists in the assignment column rather than the question paper, so treat it as practice for your own knowledge, not as a typical paper question. In every two-mark "explain", each mark needs its own cause linked to its own effect.</p>
 <details><summary>(a) State one input device suitable for capturing an existing hand-drawn A3 hull plan. <span class="marks-n">[1 mark]</span></summary>
 <ol class="step-list marks"><li>An A3 flatbed scanner. <span class="why">The original is flat, so a scanner gives even lighting with no perspective distortion. A camera could also work but is weaker.</span></li></ol></details>
 <details><summary>(b) Describe one benefit of the paperless office to a design company. <span class="marks-n">[1 mark]</span></summary>
 <ol class="step-list marks"><li>Drawings and documents are stored digitally, so no space is needed for plan chests and filing cabinets, allowing a smaller, cheaper office. <span class="why">A feature and its consequence.</span></li></ol></details>
-<details><summary>(c) Explain why a designer would export a logo as an SVG rather than a JPEG for use on a vinyl cutter. <span class="marks-n">[2 marks]</span></summary>
-<ol class="step-list marks"><li>SVG is a vector format, which stores the logo as mathematically defined paths… <span class="why">Cause.</span></li><li>…so the vinyl cutter's blade can follow those paths, and the logo stays sharp at any size; a JPEG is made of pixels, which give no cutting outline and blur when enlarged. <span class="why">Effect, in the context of cutting.</span></li></ol></details>
-<details><summary>(d) Explain one disadvantage of remote working for a graphic design company. <span class="marks-n">[2 marks]</span></summary>
-<ol class="step-list marks"><li>Company files are opened on home computers and home networks, which may not be as well protected as the office network… <span class="why">Cause.</span></li><li>…so there is a greater risk of confidential client designs being hacked, copied or lost. <span class="why">Effect for the company.</span></li></ol></details>
-<details><summary>(e) Describe two safe working practices when using spray adhesive to mount a presentation board. <span class="marks-n">[2 marks]</span></summary>
+<details><summary>(c) Explain two reasons a designer would export a logo as an SVG rather than a JPEG for use on a vinyl cutter. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>SVG is a vector format that stores the logo as defined paths (cause), so the vinyl cutter's blade has an outline to follow; a JPEG is a grid of pixels with no cutting path (effect). <span class="why">One linked pair: 1 mark.</span></li><li>Vector shapes are recalculated at any size (cause), so the logo can be cut small for a sticker or large for a van without becoming blurred or pixelated (effect). <span class="why">A second, different pair.</span></li></ol></details>
+<details><summary>(d) Explain two disadvantages of remote working for a graphic design company. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>Company files are opened on home computers and networks that may be less well protected than the office's (cause), so there is a greater risk of confidential client designs being hacked, copied or lost (effect). <span class="why">One linked pair: 1 mark.</span></li><li>Designers are not in the same room (cause), so managers find it harder to supervise, and quick face-to-face help on a tricky layout is lost, which can slow projects (effect). <span class="why">A second, different pair.</span></li></ol></details>
+<details><summary>(e) Practice (assignment-column content): describe two safe working practices when using spray adhesive to mount a presentation board. <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks"><li>Use the spray in a spray booth or well-ventilated area, so the solvent fumes are not breathed in. <span class="why">Ventilation.</span></li><li>Keep it away from naked flames and heat sources, because the propellant and solvent are flammable. <span class="why">A second, different practice. Spraying into a box to control overspray is another.</span></li></ol></details>
-<details><summary>(f) Explain how cloud storage allows a design team in different countries to collaborate. <span class="marks-n">[2 marks]</span></summary>
-<ol class="step-list marks"><li>All team members are given access to the same shared folder on the provider's servers, and changes sync to everyone… <span class="why">Cause.</span></li><li>…so each designer always opens the latest version, and team members can comment on or continue the work as soon as a colleague in another time zone saves it. <span class="why">Effect for the team.</span></li></ol></details>
+<details><summary>(f) Explain two ways cloud storage helps a design team in different countries to collaborate. <span class="marks-n">[2 marks]</span></summary>
+<ol class="step-list marks"><li>All team members share one folder on the provider's servers and changes sync to everyone (cause), so each designer always opens the latest version instead of an emailed copy (effect). <span class="why">One linked pair: 1 mark.</span></li><li>The service keeps a version history (cause), so if a colleague in another time zone overwrites a layout overnight, the earlier version can be restored the next morning without waiting for them (effect). <span class="why">A second, different pair.</span></li></ol></details>
 </div>
 
 <div class="widget" id="w-markit">

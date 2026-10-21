@@ -658,7 +658,7 @@
       rd.innerHTML = "";
       [["Page", `${st.size} ${st.orient}, ${L.W} × ${L.H} mm`], ["Content width", `${HG.n(L.W - 2 * L.m, 1)} mm`], ["Column width", `${HG.n(L.cw, 1)} mm`], ["Words per line (10 pt)", `about ${words}`]].forEach(([a, b]) => rd.append(E("div", null, E("span", null, a), E("b", null, b))));
       note.textContent = `Column width = (page width − 2 × margin − (columns − 1) × gutter) ÷ columns = (${L.W} − ${2 * L.m} − ${(L.n - 1) * L.g}) ÷ ${L.n} = ${HG.n(L.cw, 1)} mm. ` +
-        (L.cw < 30 ? "These columns are very narrow: only a few words fit on a line, so text breaks awkwardly and hyphenates a lot." : L.cw > 120 ? "These lines are very long: the eye struggles to find the start of the next line. More columns would help." : "A comfortable measure for body text.");
+        (L.cw < 30 ? "These columns are very narrow: only a few words fit on a line, so text breaks awkwardly and hyphenates a lot." : L.cw > 120 ? "These lines are very long: the eye struggles to find the start of the next line. More columns would help." : "A comfortable line length for body text.");
       svg.setAttribute("aria-label", `${st.size} ${st.orient} page, ${L.n} column${L.n > 1 ? "s" : ""} of ${HG.n(L.cw, 1)} mm, margins ${L.m} mm, gutters ${L.g} mm. The title spans all columns, the image spans ${Math.round(T.image[2] / (L.cw + L.g)) || 1}, and placeholder text fills the rest.`);
     }
     function snapTo(L, x, y) {
@@ -886,7 +886,7 @@
       fl.style.clipPath = poly; fl.style.shapeOutside = poly;
       fl.style.shapeMargin = st.mode === "full" ? "8px" : "6px";
       sls.forEach((s) => (s.input.disabled = st.mode === "full"));
-      const lab = { orig: "The original photo: hangar wall, fuel bowser and apron compete with the aircraft. Text wraps round the whole rectangular frame.", square: `Square crop: ${100 - (st.r - st.l)}% of the width and ${100 - (st.b - st.t)}% of the height trimmed away. The edges are still straight, so the text wraps round a rectangle, and some background remains.`, full: "Full crop: the outline of the aircraft has been followed exactly and all the background removed. The aircraft now sits straight on the page, and the text wraps tightly round its shape." }[st.mode];
+      const lab = { orig: "The original photo: hangar wall, fuel tanker and apron compete with the aircraft. Text wraps round the whole rectangular frame.", square: `Square crop: ${100 - (st.r - st.l)}% of the width and ${100 - (st.b - st.t)}% of the height trimmed away. The edges are still straight, so the text wraps round a rectangle, and some background remains.`, full: "Full crop: the outline of the aircraft has been followed exactly and all the background removed. The aircraft now sits straight on the page, and the text wraps tightly round its shape." }[st.mode];
       note.textContent = lab;
       fl.setAttribute("aria-label", lab);
     }
