@@ -14,6 +14,8 @@ figure.diagram > svg { display: block; width: 100%; max-width: 560px; height: au
 .cad-svg-wp { fill: color-mix(in srgb, var(--sky) 18%, transparent); stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
 .cad-svg-arrow, .cad-svg-arrowl { fill: none; stroke: var(--redstone); stroke-width: 2.2; }
 .cad-svg-dim { fill: none; stroke: var(--redstone); stroke-width: 1.6; }
+.cad-svg-dimk { fill: none; stroke: var(--ink-2); stroke-width: 1; }
+svg .cad-svg-ah { fill: var(--ink-2); }
 .cad-svg-thin { fill: none; stroke: var(--muted); stroke-width: 1; }
 .cad-svg-lead { fill: none; stroke: var(--ink); stroke-width: 1.1; }
 svg .lode { fill: var(--lode); } svg .sea { fill: var(--sea); } svg .red { fill: var(--redstone); }
@@ -54,6 +56,7 @@ svg .lode { fill: var(--lode); } svg .sea { fill: var(--sea); } svg .red { fill:
 .cad-el-hid { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 5 3; }
 .cad-el-cl { stroke: var(--sea); stroke-width: 1.1; stroke-dasharray: 12 3 2 3; }
 .cad-el-dim { stroke: var(--ink-2); stroke-width: 1; }
+.cad-el-arrow { fill: var(--ink-2); }
 /* answer builder */
 .cad-plan { list-style: decimal; padding-left: 1.8em; margin: 8px 0; display: grid; gap: 6px; }
 .cad-plan-item { background: var(--paper); border: 2px solid var(--line); padding: 6px 8px; border-radius: 2px; }
