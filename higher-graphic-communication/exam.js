@@ -47,7 +47,7 @@
     let check = 10, read = 5, clock = 45;
     const svg = svgBox("0 0 300 300", "", "ex-dial");
     const wrap = el("div", { class: "ex-pace-grid" });
-    const left = el("div", { class: "ex-pace-dial" }, svg);
+    const left = el("div", { class: "ex-pace-dial" }, svg, el("p", { class: "ex-dialnote" }, "The dial shows each area's total time, not the order: real questions mix the areas."));
     const right = el("div");
     wrap.append(left, right);
     box.append(wrap);
@@ -107,9 +107,9 @@
       svg.append(HG.svg("text", { x: 150, y: 134, "text-anchor": "middle", "font-size": 13, class: "ink2", text: `minute ${clock}` }));
       svg.append(HG.svg("text", { x: 150, y: 176, "text-anchor": "middle", "font-size": 22, "font-weight": 700, class: "ink", text: `${N(banked, 0)}/90` }));
       svg.append(HG.svg("text", { x: 150, y: 194, "text-anchor": "middle", "font-size": 12, class: "ink2", text: "marks banked" }));
-      svg.setAttribute("aria-label", `Exam dial of 150 minutes. ${AREAS.map((a) => `${a.short} ${marks[a.id]} marks, ${N(marks[a.id] * per, 0)} minutes`).join("; ")}; reading ${read} minutes; checking ${check} minutes. Clock hand at minute ${clock}: about ${N(banked, 0)} of 90 marks should be banked.`);
+      svg.setAttribute("aria-label", `Exam dial of 150 minutes. ${AREAS.map((a) => `${a.short} ${marks[a.id]} marks, ${N(marks[a.id] * perDial, 0)} minutes`).join("; ")}; reading ${read} minutes; checking ${check} minutes. Clock hand at minute ${clock}: about ${N(banked, 0)} of 90 marks should be banked.`);
       legend.innerHTML = "";
-      AREAS.forEach((a) => legend.append(el("span", null, el("i", { class: `sw-${a.cls}` }), `${a.short}: ${N(marks[a.id] * per, 1)} min`)));
+      AREAS.forEach((a) => legend.append(el("span", null, el("i", { class: `sw-${a.cls}` }), `${a.short}: ${N(marks[a.id] * perDial, 1)} min`)));
       legend.append(el("span", null, el("i", { class: "sw-muted" }), `Reading: ${read} min · checking: ${check} min`));
       ro.innerHTML = "";
       ro.append(
@@ -132,25 +132,26 @@
      ===================================================================== */
   const SCEN = [
     {
-      name: "Emphasis on a title",
-      q: "Explain how emphasis has been created on the title “HMS VELLUM” on the open-day poster. [2]",
+      name: "Emphasis on a pull quote",
+      q: "Explain how emphasis has been created on the pull quote in the second column of the open-day poster. [2]",
       causes: [
-        { t: "The title is set in a large, bold font: the largest heading text on the poster", g: "size" },
-        { t: "The title is reversed out: white letters on the navy band", g: "rev" },
-        { t: "Space is left around the title within the navy band", g: "space" },
-        { t: "The body text is set in two columns", bad: "True, but it is about the body text. It cannot cause emphasis on the title." },
-        { t: "The poster uses navy and magenta", bad: "Too general: it does not say what was done to the title, or where." },
+        { t: "The quote is set larger than the body text, in italics", g: "size" },
+        { t: "Magenta rules above and below frame the quote", g: "rules" },
+        { t: "Space is left above and below the quote, setting it apart from the body text", g: "space" },
+        { t: "The title is reversed out in the navy band", bad: "True, but it is about the title. It cannot cause emphasis on the pull quote." },
+        { t: "The poster uses navy and magenta", bad: "Too general: it does not say what was done to the quote, or where." },
       ],
       effects: [
-        { t: "so the title is the first thing the viewer's eye is drawn to", g: "first" },
-        { t: "which makes it stand out from everything else on the poster", g: "out" },
-        { t: "creating a hierarchy, so the title is read before the date and the body text", g: "hier" },
+        { t: "so it catches the eye of a reader skimming the poster", g: "first" },
+        { t: "which makes it stand out from the grey body text around it", g: "out" },
+        { t: "drawing the reader into the text around it", g: "hier" },
         { t: "which creates emphasis", bad: "This repeats the question. In the 2024 marking instructions, emphasis itself was not accepted as the effect." },
         { t: "which looks nice", bad: "Too vague: say what it does for the reader." },
       ],
     },
     {
       name: "Master page",
+      distinctEffects: true,
       q: "Explain why the designer used a master page for the Plan Room's eight-page brochure. [2]",
       causes: [
         { t: "The two-column grid and guides are set up once on the master page", g: "grid" },
@@ -221,7 +222,7 @@
         else if (c.bad) msg = `The cause does not fit: ${c.bad}`;
         else if (e.bad) msg = `The effect does not earn it: ${e.bad}`;
         else if (e.needs && !e.needs.includes(c.g)) msg = "Both halves are good, but they do not link: that effect does not follow from that cause.";
-        else if (usedC.has(c.g) || usedE.has(e.g)) msg = "A linked pair, but it repeats the point of line 1. A second mark needs a different point.";
+        else if (usedC.has(c.g) || (s.distinctEffects && usedE.has(e.g))) msg = usedC.has(c.g) ? "A linked pair, but it repeats line 1's cause in other words. A second mark needs a second, different cause." : "A linked pair, but in this question the effect is the point, and it repeats line 1's. A second mark needs a different benefit.";
         else { ok = true; msg = "Linked cause and effect, in context: 1 mark."; usedC.add(c.g); usedE.add(e.g); }
         if (ok) total++;
         return el("li", { class: ok ? "ok-line" : "bad-line" }, el("b", null, `Line ${i + 1}: ${ok ? "✔ 1 mark" : "✘ 0"}`), " ", msg);
@@ -376,7 +377,7 @@
     C("Accent colour", "A small amount of a contrasting colour used to draw attention.", "dtp"),
     C("Advancing colours", "Warm colours (reds, oranges) that seem to come towards the viewer.", "dtp"),
     C("Receding colours", "Cool colours (blues, greens) that seem to move away from the viewer.", "dtp"),
-    C("Harmony (colour)", "Colours next to each other on the colour wheel, which sit together calmly.", "dtp"),
+    C("Harmony (colour)", "Colours next to each other on the colour wheel (adjacent, or analogous, colours), creating a calm, unified feel.", "dtp"),
     // Standards
     C("Third-angle projection", "The system in which the plan is drawn above the elevation and the end elevation on the side it is viewed from.", "std"),
     C("Hidden detail line", "A thin dashed line that shows edges you cannot see from the viewing direction.", "std"),
@@ -767,7 +768,7 @@
       ["Proposed tree", circ(30, 30, 12) + line(30, 22, 30, 38) + line(22, 30, 38, 30), "A circle with a plus sign in it."],
       ["Contours", path("M24 12 C30 26 40 26 54 31", n) + path("M22 26 C26 38 34 35 54 37", n) + path("M20 44 C26 52 40 46 54 47", n) + txt(18, 14, "20", 9, "end") + txt(18, 29, "15", 9, "end") + txt(16, 47, "10", 9, "end"), "Lines joining points of equal height, each marked with its height."],
     ];
-    return S.map(([name, g, note]) => ({ cat: "bld", name, note, svg: `<svg x="30" y="0" width="100" height="100" viewBox="0 0 60 60">${g}</svg>` }));
+    return S.map(([name, g, note]) => ({ cat: "bld", name, note, vb: "-18 0 96 60", svg: g }));
   })();
   const SYM = [
     // line types and conventions
@@ -825,7 +826,7 @@
         return;
       }
       const s = round[i];
-      pic.innerHTML = `<svg viewBox="0 0 160 100" role="img" aria-label="Symbol ${i + 1} of ${round.length}. Name it from the options.">${s.svg}</svg>`;
+      pic.innerHTML = `<svg viewBox="${s.vb || "0 0 160 100"}" role="img" aria-label="Symbol ${i + 1} of ${round.length}. Name it from the options.">${s.svg}</svg>`;
       const others = shuffle(SYM.filter((x) => x.cat === s.cat && x.name !== s.name)).slice(0, 3);
       opts.innerHTML = "";
       shuffle([s, ...others]).forEach((o) => {
@@ -860,9 +861,9 @@
   const PAPER = [
     { q: 1, part: "1(a)", area: "dtp", marks: 2, mi: ["A: drop cap (1)", "B: pull quote (1)"] },
     { q: 1, part: "1(b)", area: "dtp", marks: 2, mi: ["Any two, each a cause linked to an effect (1 each):", "the title is in a large, bold font, the largest heading text on the poster, so it is the first thing the viewer sees", "the title is reversed out (white on the navy band), so it contrasts strongly and stands out from the rest", "space is left round the title within the navy band, so it is not crowded and the eye goes straight to it", "Not accepted: 'creates emphasis' as the effect; an effect with no cause"] },
-    { q: 1, part: "1(c)", area: "dtp", marks: 2, mi: ["Any two developed points (1 each):", "the body text is set in two equal columns with a gutter (and a column rule) between them", "the image spans the full width of both columns", "the drop cap, body text and image all align to the left edge of column 1 / the same margins", "the pull quote sits within the width of column 2", "A bare 'it uses a grid' or 'two columns' with no description earns at most one point"] },
+    { q: 1, part: "1(c)", area: "dtp", marks: 2, mi: ["Any two developed points (1 each):", "the body text is set in two equal columns with a gutter (and a column rule) between them", "the image spans the full width of both columns", "the drop cap, body text and image all align to the left edge of column 1 / the same margins", "the pull quote sits within the width of column 2", "A bare 'it uses a grid' earns no mark: each point must say how the grid organises the page"] },
     { q: 1, part: "1(d)", area: "dtp", marks: 1, mi: ["The colour is printed beyond where the sheet will be cut (cause), so no thin white edge shows if the trimming is slightly out (effect) (1)"] },
-    { q: 1, part: "1(e)", area: "dtp", marks: 2, mi: ["Any two (1 each):", "the navy band is repeated at the top and the foot of the poster", "magenta is repeated in the title, the drop cap, the pull-quote rules and the small squares in the footer", "the same font family is used for the title and the footer text", "consistent margins and alignment to the grid tie the parts together"] },
+    { q: 1, part: "1(e)", area: "dtp", marks: 2, mi: ["Any two (1 each):", "the navy band is repeated at the top and the foot of the poster", "magenta is repeated in OPEN DAY, the drop cap, the pull-quote rules and the footer squares", "the same font family is used for the title and the footer text", "consistent margins and alignment to the grid tie the parts together"] },
     { q: 2, part: "2(a)", area: "cad", marks: 6, mi: ["On a plane through the axis (e.g. XY), sketch the half profile: radius 30 at the breech tapering to radius 22 at 225, then the ring radius 26 for the last 15 (240 overall) (1)", "Revolve the profile 360° about the centre axis (1)", "On the plane through the axis, sketch a Ø16 circle centred on the axis 100 from the breech (1)", "Extrude the Ø16 circle symmetrically, 96 in total (48 each way), adding it to form both trunnions (1)", "On the muzzle face, sketch a Ø20 circle concentric with the axis (1)", "Extrude-subtract the Ø20 circle 200 deep into the barrel (1)", "Order matters: the bore reaches past the trunnions (200 deep from the muzzle passes 100 from the breech), so cut the bore after adding the trunnions, or the trunnion extrusion fills it", "Alternative for the trunnions: extrude one trunnion 48 from the mid-plane, then mirror it about that plane; the bore is still cut afterwards"] },
     { q: 2, part: "2(b)", area: "cad", marks: 2, mi: ["In the modelling tree, select and edit the sketch (or the extrude-subtract feature) of the bore (1)", "Change the Ø20 dimension to Ø24; the model updates (1)", "No marks for modelling the barrel again from scratch"] },
     { q: 2, part: "2(c)", area: "cad", marks: 2, mi: ["Any two different constraints (1 each), naming the features:", "centre axis: the trunnion and its semicircular bearing cut-out", "mate (or offset): the trunnion's shoulder (where it meets the barrel) to the inside face of the carriage cheek, centring the barrel between the cheeks", "orientate: the barrel axis at a set angle (its elevation) to the carriage base", "Alternative to centre axis: tangent between the trunnion's curved face and the bearing's curved face"] },
