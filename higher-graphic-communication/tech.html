@@ -207,10 +207,10 @@
 
 <div class="worked"><p class="worked-title">Worked example 1 · how many pixels does an A4 print need?</p>
 <p>The Plan Room wants to print a photograph of <em>HMS Vellum</em> to fill an A4 sheet (210 mm × 297 mm) at 300 ppi. Calculate the pixel dimensions needed. There are 25.4 mm in one inch. [2]</p>
-<details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
+<details><summary>Show solution <span class="marks-n">[2 marks: 1 for each dimension]</span></summary>
 <ol class="step-list marks">
-<li>Width: 210 ÷ 25.4 = 8.268 inches, and 8.268 × 300 = 2480.3, so round up to 2481 pixels. <span class="why">Convert the printed size to inches, then multiply by the pixels per inch.</span></li>
-<li>Height: 297 ÷ 25.4 = 11.693 inches, and 11.693 × 300 = 3507.9, so 3508 pixels. The photograph needs about 2480 × 3508 pixels (strictly 2481 × 3508, about 8.7 megapixels). <span class="why">A smaller image would have to be stretched, and each pixel would print bigger than 1/300 inch.</span></li>
+<li>Width: 210 ÷ 25.4 = 8.268 inches, and 8.268 × 300 = 2480.3, so 2480 pixels (rounded to whole pixels). <span class="why">Convert the printed size to inches, then multiply by the pixels per inch.</span></li>
+<li>Height: 297 ÷ 25.4 = 11.693 inches, and 11.693 × 300 = 3507.9, so 3508 pixels. The photograph needs 2480 × 3508 pixels (about 8.7 megapixels). <span class="why">A smaller image would have to be stretched, and each pixel would print bigger than 1/300 inch.</span></li>
 </ol></details></div>
 
 <div class="widget" id="w-dpi">
@@ -234,7 +234,7 @@
 <tr><th scope="row">3D printer</th><td>A solid model built up layer by layer (an <dfn>additive</dfn> process)</td><td>Physical prototypes straight from CAD; complex shapes that are hard to machine; little waste</td><td>Slow; visible layer lines; limited size and materials; parts may need supports removed</td></tr>
 <tr><th scope="row">Laser cutter</th><td>Cuts or engraves sheet material (card, acrylic, plywood) along vector paths</td><td>Very accurate and repeatable; engraves text and logos; batch production of identical parts</td><td>Fumes need extraction; fire risk; only flat sheet; some plastics must never be cut</td></tr>
 <tr><th scope="row">Vinyl cutter</th><td>Cuts shapes and lettering from self-adhesive vinyl with a small blade</td><td>Signs, vehicle graphics, stickers and stencils; cheap to run</td><td>Only single-colour shapes per sheet; fine detail is hard to weed (peel)</td></tr>
-<tr><th scope="row">CNC router or mill</th><td>Cuts a shape out of a solid block or sheet with a spinning tool (a <dfn>subtractive</dfn> process)</td><td>Strong parts in wood, plastics or metal; accurate</td><td>Waste material; needs CAM programming and guarding</td></tr>
+<tr><th scope="row">CNC router or mill</th><td>A machine tool driven by coded instructions (<dfn>CNC</dfn>, computer numerical control). Cuts a shape out of a solid block or sheet with a spinning tool (a <dfn>subtractive</dfn> process)</td><td>Strong parts in wood, plastics or metal; accurate</td><td>Waste material; needs CAM (computer-aided manufacture: software that turns the CAD model into machine instructions, chapter 6) and guarding</td></tr>
 </tbody></table></div>
 
 <p><strong>Inkjet or laser?</strong> This comparison comes up often. Think about the job: one high-quality colour photograph proof suits an inkjet; three hundred copies of a text-heavy brief suit a laser. When you compare, say what differs <em>and</em> what that means for this job: "The laser printer has a lower cost per page, so printing 300 briefing sheets would be cheaper."</p>
@@ -310,7 +310,7 @@
 <rect x="44" y="40" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="57">01_research/</text>
 <rect x="44" y="70" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="87">02_preliminary/</text>
 <rect x="44" y="100" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="117">03_production/</text>
-<rect x="80" y="134" width="124" height="24" rx="3" class="tc-folder"/><text x="88" y="151">CAD_parts/</text>
+<rect x="80" y="134" width="124" height="24" rx="3" class="tc-folder"/><text x="88" y="151">CAD/</text>
 <rect x="80" y="164" width="124" height="24" rx="3" class="tc-folder"/><text x="88" y="181">drawings/</text>
 <rect x="44" y="190" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="207">04_promotional/</text>
 <rect x="44" y="220" width="160" height="24" rx="3" class="tc-folder"/><text x="52" y="237">05_admin/</text>
@@ -318,7 +318,7 @@
 <g font-size="13" class="ink2">
 <text x="222" y="57">photos, mood boards</text>
 <text x="222" y="87">sketches, thumbnails</text>
-<text x="222" y="151">.ipt parts, .iam</text>
+<text x="222" y="151">parts + assemblies</text>
 <text x="222" y="181">PDFs for the yard</text>
 <text x="222" y="207">renders, posters</text>
 <text x="222" y="237">brief, client emails</text>
@@ -394,10 +394,11 @@
 <text x="66" y="150" text-anchor="middle" class="ink">original</text>
 <text x="200" y="150" text-anchor="middle" class="ink">lossless (PNG)</text>
 <text x="334" y="150" text-anchor="middle" class="ink">heavy lossy (JPEG)</text>
-<text x="200" y="166" text-anchor="middle" class="muted">identical ← same pixels | smaller file but blocky edges →</text>
+<text x="200" y="166" text-anchor="middle" class="muted">restored exactly</text>
+<text x="334" y="166" text-anchor="middle" class="muted">smaller, blocky edge</text>
 </g>
 </svg>
-<figcaption>The lossy panel imitates what heavy JPEG compression does: it averages colours in small blocks, so a crisp edge smears. The lossless panel is pixel-for-pixel the original.</figcaption>
+<figcaption>The lossy panel imitates what heavy JPEG compression does: it averages colours in small blocks, so a crisp edge smears. The lossless panel is pixel-for-pixel the original. (Simplified: real JPEG works on 8 × 8 pixel blocks.)</figcaption>
 </figure>
 
 <h3>File formats and file transfer</h3>
@@ -499,9 +500,9 @@
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
 <li>Cloud storage can only be reached through an internet connection (cause), so if the studio's connection fails or is slow, the designers cannot open or upload the large artwork files and the job could miss the printer's deadline (effect). <span class="why">One cause linked to one effect, in context: 1 mark.</span></li>
-<li>The files sit on another company's servers behind a password (cause), so if a designer's password is stolen in a phishing email, an intruder could copy or delete the client's artwork (effect). <span class="why">A second, different cause–effect pair: the second mark. "You need the internet" on its own is a cause with no effect, and earns nothing.</span></li>
+<li>The files sit on another company's servers behind a password (cause), so if a designer's password is stolen in a phishing email, an intruder could copy or delete the client's artwork (effect). <span class="why">A second, different cause–effect pair: the second mark. "You need the internet" on its own is a cause with no effect, and is unlikely to be enough.</span></li>
 </ol>
-<p>In the marking instructions for a two-mark "explain", one cause with its effect gains 1 mark. That is why a two-mark explain answer needs <strong>two</strong> linked pairs.</p></details></div>
+<p>The general principle for "explain" is to relate cause and effect in context. In some 2024 explain questions (for example 3(f)) the marking instructions said one cause with an effect gains 1 mark. So this site's safe advice for a two-mark explain is two different linked pairs, as above.</p></details></div>
 
 <div class="callout logbook"><div class="callout-title">✔ Logbook: you must be able to…</div><ul><li>define cloud storage and cloud computing and give a graphics example of each;</li><li>describe at least five benefits with their effects;</li><li>explain at least four limitations, including internet dependence and security;</li><li>explain why sync is not the same as a back-up.</li></ul></div>
 <div class="check" data-check="tech-cloud"></div>
@@ -519,8 +520,8 @@
 <tbody>
 <tr><th scope="row">Copyright ©</th><td>Original creative work: drawings, photographs, illustrations, layouts, written text, software</td><td>Automatic in the UK as soon as the work is created and recorded; no registration. For artistic works it lasts for the creator's life plus 70 years</td></tr>
 <tr><th scope="row">Trade mark ™ / ®</th><td>Signs that identify a business: logos, brand names, slogans</td><td>Can be registered (®) to give strong legal protection for the brand</td></tr>
-<tr><th scope="row">Registered design</th><td>The appearance of a product: its shape, pattern, colour or decoration</td><td>Registered with the Intellectual Property Office</td></tr>
-<tr><th scope="row">Patent</th><td>A new invention: how something works</td><td>Applied for and granted; the invention must be new and not obvious</td></tr>
+<tr><th scope="row">Registered design</th><td>The appearance of a product: its shape, pattern, colour or decoration</td><td>Registered with the Intellectual Property Office. Without registering, the shape of a product can still be protected automatically, for a shorter time, by unregistered design right</td></tr>
+<tr><th scope="row">Patent</th><td>A new invention: how something works</td><td>Applied for and granted; the invention must be new, inventive (not obvious) and capable of industrial application</td></tr>
 </tbody></table></div>
 <p>A <dfn>licence</dfn> is permission from the owner to use their work, on stated conditions. Buying a stock photograph usually buys a licence to use it in certain ways, not ownership of the photograph. Fonts and CAD software are also licensed: a licence may limit how many computers a font is installed on, and an education licence for CAD software usually forbids commercial work. Presenting someone else's image or design as your own, or using it without the agreed payment, takes income and credit from its owner.</p>
 
@@ -602,6 +603,7 @@
 <h2 data-short="CAD: pros &amp; cons">5 · Advantages and limitations of CAD <span class="spec-tag">TECH · advantages and limitations of CAD</span></h2>
 <p>The course asks you to know the <em>relative merits</em> of manual and computer-aided methods. <dfn>Manual graphics</dfn> are produced by hand with pencils, pens, markers, a drawing board and instruments. <dfn>CAD</dfn> (computer-aided design) produces drawings and 3D models with software. Neither is "better" in every case: sketching is still the fastest way to get an idea down, and the assignment's preliminary sketches must be done freehand: on paper, or digitally with only a straight-edge tool (the 2025 course report points out that circle tools work like compasses and are not allowed). But for production drawings and models that will change, be shared and be manufactured, CAD wins in most ways. You must also know its costs.</p>
 
+<p>Most 3D CAD is <dfn>parametric</dfn>: the model is built from sketches and features whose dimensions and constraints drive the geometry, so changing a dimension changes the shape. Drawings made from the model are <dfn>associative</dfn>: they stay linked to it. The <a href="cad.html">CAD deck</a> covers how models are built.</p>
 <figure class="diagram">
 <svg viewBox="0 0 400 230" role="img" aria-label="Changing one dimension. Both panels show third-angle layout: plan above the elevation, end elevation to the right of the elevation. Manually, the length of the capstan bar changes from 120 to 140, so the elevation, plan and end elevation must each be erased and redrawn by hand, along with their dimensions. In parametric CAD, the designer edits one dimension in the model's sketch, and the 3D model and every linked 2D view and dimension update automatically.">
 <g font-size="13">
@@ -609,25 +611,27 @@
 <text x="302" y="18" text-anchor="middle" class="ink" font-weight="700">Parametric CAD</text>
 <line x1="200" y1="6" x2="200" y2="184" class="s-line" stroke-width="2"/>
 <rect x="8" y="30" width="180" height="154" rx="4" class="tc-box"/>
-<rect x="22" y="42" width="84" height="22" class="tc-solid"/>
-<rect x="22" y="74" width="84" height="30" class="tc-solid"/><rect x="116" y="74" width="22" height="30" class="tc-solid"/>
-<g class="f-red" font-size="18" font-weight="700"><text x="108" y="60">✎</text><text x="76" y="124">✎</text><text x="142" y="98">✎</text></g>
+<rect x="22" y="42" width="72" height="22" class="tc-solid"/>
+<rect x="22" y="74" width="72" height="30" class="tc-solid"/><rect x="104" y="74" width="22" height="30" class="tc-solid"/>
+<line x1="22" y1="116" x2="94" y2="116" class="tc-stroke" stroke-width="1" marker-start="url(#tc-ar)" marker-end="url(#tc-ar)"/><text x="100" y="121" class="ink mono">120</text>
+<g class="f-red" font-size="18" font-weight="700"><text x="98" y="60">✎</text><text x="130" y="98">✎</text><text x="132" y="124">✎</text></g>
 <text x="98" y="152" text-anchor="middle" class="ink2">erase and redraw every</text>
 <text x="98" y="170" text-anchor="middle" class="ink2">view and dimension</text>
 <rect x="212" y="30" width="180" height="154" rx="4" class="tc-box"/>
 <rect x="220" y="38" width="64" height="26" rx="3" class="tc-box2"/><text x="252" y="56" text-anchor="middle" class="ink mono">L = 140</text>
 <path d="M314 52 l46 0 l12 -10 l-46 0 z M314 52 v14 h46 v-14 M360 66 l12 -10 v-14" class="tc-solidline" stroke-width="1.5"/>
 <line x1="286" y1="52" x2="310" y2="52" class="s-grass" stroke-width="2" marker-end="url(#tc-ar-grass)"/>
-<rect x="232" y="88" width="70" height="14" class="tc-solid"/>
-<rect x="232" y="108" width="70" height="20" class="tc-solid"/><rect x="310" y="108" width="14" height="20" class="tc-solid"/>
-<path d="M340 70 Q340 96 330 112" class="s-grass" fill="none" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/>
-<text x="346" y="104" class="f-grass" font-size="13" font-weight="700">auto</text>
-<text x="302" y="152" text-anchor="middle" class="ink2">edit one value; model,</text>
-<text x="302" y="170" text-anchor="middle" class="ink2">views, dimensions update</text>
+<rect x="226" y="84" width="84" height="14" class="tc-solid"/>
+<rect x="226" y="104" width="84" height="20" class="tc-solid"/><rect x="320" y="104" width="14" height="20" class="tc-solid"/>
+<line x1="226" y1="134" x2="310" y2="134" class="tc-stroke" stroke-width="1" marker-start="url(#tc-ar)" marker-end="url(#tc-ar)"/><text x="316" y="139" class="ink mono">140</text>
+<path d="M352 70 Q352 92 336 102" class="s-grass" fill="none" stroke-width="1.5" marker-end="url(#tc-ar-grass)"/>
+<text x="356" y="96" class="f-grass" font-size="13" font-weight="700">auto</text>
+<text x="302" y="158" text-anchor="middle" class="ink2">edit one value; model,</text>
+<text x="302" y="174" text-anchor="middle" class="ink2">views, dimensions update</text>
 <text x="200" y="210" text-anchor="middle" class="muted">client: capstan bar 140 long, not 120</text>
 </g>
 </svg>
-<figcaption>Parametric and associative CAD: the 2D drawing views are linked to the 3D model, so a change to the model updates every view. By hand, every view is redrawn and every dimension rechecked.</figcaption>
+<figcaption>Both panels are drawn to the same scale, so the CAD bar (140) is visibly longer than the manual one (120). Parametric and associative CAD: the 2D drawing views are linked to the 3D model, so a change to the model updates every view. By hand, every view is redrawn and every dimension rechecked.</figcaption>
 </figure>
 
 <div class="compare">
@@ -672,7 +676,7 @@
 <details><summary>Show solution <span class="marks-n">[2 marks]</span></summary>
 <ol class="step-list marks">
 <li>The drawing views are associative (linked) to the parametric 3D model (cause), so editing the bar's length dimension once updates every view and its dimensions automatically, with no view missed or drawn inconsistently (effect). <span class="why">One linked cause and effect, in the context of the change: 1 mark.</span></li>
-<li>The model is already a 3D solid (cause), so the longer bar can be checked for clashes with the deck fittings, and re-rendered for the customer, before anything is made (effect). <span class="why">A second, different pair. "CAD is faster" alone has no cause and no context, and earns nothing.</span></li>
+<li>The model is already a 3D solid (cause), so the longer bar can be checked for clashes with the deck fittings, and re-rendered for the customer, before anything is made (effect). <span class="why">A second, different pair. "CAD is faster" alone has no cause and no context: too vague to rely on.</span></li>
 </ol></details></div>
 
 <div class="callout crew"><div class="callout-title">🎖 Cadet Sergeant Rahman asks…</div><p class="q">"If CAD is so much better, why do we still have to sketch by hand?"</p><p><strong>Master Shipwright Fraser:</strong> "Because a pencil costs nothing, needs no power, goes anywhere, and is quickest for getting an idea out of your head. On the quarterdeck, in front of the captain, I sketch. Back in the Plan Room, I model. Manual and CAD have different jobs, and a good designer uses each where it fits. That comparison is exactly the kind of thing the exam asks."</p></div>
@@ -733,7 +737,7 @@
 <rect x="284" y="20" width="110" height="64" rx="4" class="tc-box"/><text x="339" y="44" text-anchor="middle" class="ink" font-weight="700">CAM</text><text x="339" y="64" text-anchor="middle" class="ink2">toolpaths,</text><text x="339" y="78" text-anchor="middle" class="ink2">manufacturer</text>
 <rect x="284" y="118" width="110" height="56" rx="4" class="tc-box"/><text x="339" y="142" text-anchor="middle" class="ink" font-weight="700">CNC / laser</text><text x="339" y="162" text-anchor="middle" class="ink2">parts made</text>
 <rect x="145" y="118" width="110" height="56" rx="4" class="tc-box"/><text x="200" y="142" text-anchor="middle" class="ink" font-weight="700">Shipped</text><text x="200" y="162" text-anchor="middle" class="ink2">to assembly</text>
-<rect x="6" y="118" width="110" height="56" rx="4" class="tc-box2"/><text x="61" y="142" text-anchor="middle" class="ink" font-weight="700">3D-printed</text><text x="61" y="162" text-anchor="middle" class="ink2">prototype first</text>
+<rect x="6" y="118" width="110" height="56" rx="4" class="tc-box2"/><text x="61" y="142" text-anchor="middle" class="ink" font-weight="700">3D prototype</text><text x="61" y="162" text-anchor="middle" class="ink2">before production</text>
 <line x1="118" y1="52" x2="141" y2="52" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
 <line x1="257" y1="52" x2="280" y2="52" class="s-sea" stroke-width="2" marker-end="url(#tc-ar-sea)"/>
 <line x1="339" y1="86" x2="339" y2="114" class="tc-stroke" stroke-width="2" marker-end="url(#tc-ar)"/>
@@ -889,7 +893,7 @@
 <p>Craft knives and scalpels are the sharpest tools in most graphics studios, and a slip can cause a deep cut in a moment. Safe practice:</p>
 
 <figure class="diagram">
-<svg viewBox="0 0 400 210" role="img" aria-label="Safe cutting with a craft knife, seen from above. The card lies on a self-healing cutting mat. A metal safety rule with a raised finger guard holds the card. The hand pressing the rule is behind the guard, on the far side from the blade. The knife is drawn along the metal edge, away from the body, in several light strokes.">
+<svg viewBox="0 0 400 230" role="img" aria-label="Safe cutting with a craft knife, seen from above. The card lies on a self-healing cutting mat. A metal safety rule with a raised finger guard holds the card. The hand pressing the rule is behind the guard; the blade runs along the opposite side of the rule from the fingers, in several light strokes.">
 <g font-size="13">
 <rect x="10" y="10" width="380" height="170" rx="6" fill="#3f7426" opacity=".85"/>
 <g stroke="#a5d68a" stroke-width=".8" opacity=".6"><path d="M10 40 H390 M10 70 H390 M10 100 H390 M10 130 H390 M10 160 H390 M50 10 V180 M100 10 V180 M150 10 V180 M200 10 V180 M250 10 V180 M300 10 V180 M350 10 V180"/></g>
@@ -902,9 +906,11 @@
 <line x1="226" y1="122" x2="120" y2="122" stroke="#f7d117" stroke-width="2.5" marker-end="url(#tc-ar)"/>
 </g>
 <g font-size="13" class="ink">
-<text x="66" y="200" text-anchor="middle">self-healing mat</text>
-<text x="200" y="200" text-anchor="middle">metal safety rule</text>
-<text x="330" y="200" text-anchor="middle">blade on the far side</text>
+<path d="M44 192 L28 168 M150 192 L130 98 M300 192 L262 108" class="tc-stroke" stroke-width="1" fill="none"/>
+<text x="54" y="206" text-anchor="middle">self-healing mat</text>
+<text x="156" y="206" text-anchor="middle">metal safety rule</text>
+<text x="304" y="206" text-anchor="middle">blade on the opposite</text>
+<text x="304" y="222" text-anchor="middle">side from the fingers</text>
 </g>
 <text x="196" y="142" text-anchor="middle" font-size="13" fill="#1d1a14" font-weight="700">light strokes along the rule</text>
 </svg>
@@ -950,12 +956,12 @@
 <h2 data-short="Exam practice">8 · Exam practice: state, describe, explain <span class="spec-tag">TECH · exam technique</span></h2>
 <p>Technology questions are short, but they are precise. The command word tells you what kind of answer earns the mark. These are the meanings used in the marking instructions.</p>
 <div class="table-wrap"><table>
-<caption>Command words. Describe, explain and compare follow the general marking principles published in the 2024 question paper marking instructions; the first row is this site's summary.</caption>
+<caption>Command words. The describe, explain and compare definitions are the general marking principles in the 2024 question paper marking instructions. The first row, and the advice in the explain row, are this site's own summary.</caption>
 <thead><tr><th>Command word</th><th>What the marker wants</th><th>Example of a full answer</th></tr></thead>
 <tbody>
 <tr><th scope="row">State / Name / Identify</th><td>A short, correct fact. No explanation needed. (This row is this site's own gloss: the marking instructions define only describe, explain and compare.)</td><td>"STEP."</td></tr>
 <tr><th scope="row">Describe</th><td>A statement of characteristics or features, not just a one-word list. One mark per relevant point, in the context of the question.</td><td>"Files can be opened from any device with an internet connection, so a designer can work from home."</td></tr>
-<tr><th scope="row">Explain</th><td>Relate cause and effect and/or define relationships, in the context of the question. In a two-mark explain, one cause with its effect gains 1 mark; an effect with no cause rarely earns anything.</td><td>"Because less paper and toner are bought (cause), the studio's running costs fall (effect)."</td></tr>
+<tr><th scope="row">Explain</th><td>The published principle: relate cause and effect and/or define relationships, in the context of the question. In some 2024 explain questions (for example 3(f), "explain emphasis") the marking instructions said one example of a cause with an effect gains 1 mark. This site's advice: give both halves for every mark you want, to be safe.</td><td>"Because less paper and toner are bought (cause), the studio's running costs fall (effect)."</td></tr>
 <tr><th scope="row">Compare</th><td>Similarities and/or differences between two things, in context.</td><td>"A laser printer has a lower cost per page than an inkjet, so it is cheaper for 300 copies."</td></tr>
 </tbody></table></div>
 
@@ -987,7 +993,7 @@
 </ol>
 
 <div class="worked"><p class="worked-title">Model answers · a mixed set</p>
-<p>Six short practice questions. Try each before opening the answer. Question (e) is on safe working, which the specification lists in the assignment column rather than the question paper, so treat it as practice for your own knowledge, not as a typical paper question. In every two-mark "explain", each mark needs its own cause linked to its own effect.</p>
+<p>Six short practice questions. Try each before opening the answer. Question (e) is on safe working, which the specification lists in the assignment column rather than the question paper, so treat it as practice for your own knowledge, not as a typical paper question. This site's safe advice for a two-mark "explain": give each mark its own cause linked to its own effect.</p>
 <details><summary>(a) State one input device suitable for capturing an existing hand-drawn A3 hull plan. <span class="marks-n">[1 mark]</span></summary>
 <ol class="step-list marks"><li>An A3 flatbed scanner. <span class="why">The original is flat, so a scanner gives even lighting with no perspective distortion. A camera could also work but is weaker.</span></li></ol></details>
 <details><summary>(b) Describe one benefit of the paperless office to a design company. <span class="marks-n">[1 mark]</span></summary>
@@ -1022,7 +1028,7 @@
 <tr><td>Digital rights management</td><td><a href="#rights">4</a></td><td>Watermark workshop; sorting drill; worked example 7</td></tr>
 <tr><td>Advantages and limitations of CAD (and the merits of manual methods)</td><td><a href="#cad">5</a></td><td>Advantage or limitation sorter; worked example 8</td></tr>
 <tr><td>The paperless office; recycled materials; CAD supporting manufacturing and other industries; DTP in marketing; remote working; communication crossing international boundaries</td><td><a href="#impact">6</a></td><td>Paperless calculator; cause-and-effect builder; worked examples 9–10</td></tr>
-<tr><td>Safe working practices and systems in studios and other working environments</td><td><a href="#safety">7</a></td><td>Studio inspection; worked example 11</td></tr>
+<tr><td>Safe working practices and systems in studios and other working environments</td><td><a href="#safety">7</a></td><td>Studio inspection; practice question 11</td></tr>
 <tr><td>Command words and exam technique</td><td><a href="#exam">8</a></td><td>Be the marker; model answers</td></tr>
 </tbody></table></div>
 
