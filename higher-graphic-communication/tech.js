@@ -107,7 +107,7 @@
     const update = () => {
       const ppi = px / (mm / 25.4), hPx = Math.round(px * 2 / 3), need = Math.ceil(mm / 25.4 * 300);
       const mb = px * hPx * 3 / 1e6;
-      const verdict = ppi >= 300 ? ["Sharp", "ok", "sharp even close up"] : ppi >= 150 ? ["Poster only", "", "fine from a distance, soft close up"] : ["Pixelated", "bad", "find a bigger image or print smaller"];
+      const verdict = ppi >= 300 ? ["Sharp", "ok", "sharp even close up"] : ppi >= 150 ? ["Soft close up", "", "OK only if viewed from a distance"] : ["Pixelated", "bad", "find a bigger image or print smaller"];
       ro.innerHTML = `<div><b>${n0(ppi)} ppi</b><span>effective resolution on paper</span></div>
         <div><b class="${verdict[1]}">${verdict[0]}</b><span>${verdict[2]}</span></div>
         <div><b>${n0(need)} px</b><span>width needed for 300 ppi</span></div>
@@ -195,14 +195,14 @@
   mount("w-files", (box) => {
     const FOLDERS = ["01_research", "02_preliminary", "03_production/CAD_parts", "03_production/drawings", "04_promotional", "05_admin"];
     const FILES = [
-      { f: "IMG_4032.jpg", what: "photo of the old lanterns on deck", dir: 0, names: ["VEL-lantern_existing-deck_01.jpg", "lantern photo.jpg", "IMG_4032_final.jpg"], why: "Research photograph. The new name says project, content and a number; the camera's IMG_4032 says nothing." },
-      { f: "scan0001.pdf", what: "scanned thumbnail sketches", dir: 1, names: ["sketches!!.pdf", "VEL-lantern_thumbnails_v01.pdf", "scan0001 (copy).pdf"], why: "Preliminary work. Avoid symbols such as ! and the word 'copy'." },
-      { f: "body.ipt", what: "CAD part: the lantern body", dir: 2, names: ["lantern final FINAL.ipt", "body new.ipt", "VEL-lantern_body_v03.ipt"], why: "A CAD part belongs with the other parts. A version number always rises, so it beats 'final' or 'new'." },
-      { f: "lantern drawing for yard.pdf", what: "the PDF drawing for the shipyard", dir: 3, names: ["VEL-lantern_GA-drawing_v02.pdf", "drawing for yard 14/3.pdf", "lantern drawing.pdf"], why: "Production drawings. A slash in '14/3' is illegal in many file systems." },
-      { f: "render3.png", what: "night-time render of the lantern", dir: 4, names: ["render3 good one.png", "VEL-lantern_render-night_v01.png", "Render.png"], why: "Promotional graphics. 'good one' will not mean anything in a month." },
-      { f: "poster final FINAL (2).indd", what: "the DTP poster layout", dir: 4, names: ["poster final FINAL (3).indd", "poster.indd", "VEL-lantern_poster_v05.indd"], why: "Promotional. Replace the 'final FINAL (2)' trap with a version number." },
-      { f: "email from Captain.txt", what: "the design brief from Captain Grant", dir: 5, names: ["VEL-lantern_brief_2026-03-14.txt", "email from captain 14-3-26.txt", "important.txt"], why: "Admin. A year-first date (2026-03-14) sorts in date order." },
-      { f: "Untitled-1.jpg", what: "a mood board of ship lanterns", dir: 0, names: ["Untitled-1 moodboard.jpg", "VEL-lantern_moodboard_01.jpg", "mood board for lantern project new.jpg"], why: "Research. Short, consistent and descriptive." },
+      { f: "IMG_4032.jpg", what: "photo of the old lanterns on deck", dir: 0, names: ["VEL_lantern_deck-photo_v01.jpg", "lantern photo.jpg", "IMG_4032_final.jpg"], why: "Research photograph. The new name says project, content and a number; the camera's IMG_4032 says nothing." },
+      { f: "scan0001.pdf", what: "scanned thumbnail sketches", dir: 1, names: ["sketches!!.pdf", "VEL_lantern_thumbnails_v01.pdf", "scan0001 (copy).pdf"], why: "Preliminary work. Avoid symbols such as ! and the word 'copy'." },
+      { f: "body.ipt", what: "CAD part: the lantern body", dir: 2, names: ["lantern final FINAL.ipt", "body new.ipt", "VEL_lantern_body_v03.ipt"], why: "A CAD part belongs with the other parts. A version number always rises, so it beats 'final' or 'new'." },
+      { f: "lantern drawing for yard.pdf", what: "the PDF drawing for the shipyard", dir: 3, names: ["VEL_lantern_GA-drawing_v02.pdf", "drawing for yard 14/3.pdf", "lantern drawing.pdf"], why: "Production drawings. A slash in '14/3' is illegal in many file systems." },
+      { f: "render3.png", what: "night-time render of the lantern", dir: 4, names: ["render3 good one.png", "VEL_lantern_render-night_v01.png", "Render.png"], why: "Promotional graphics. 'good one' will not mean anything in a month." },
+      { f: "poster final FINAL (2).indd", what: "the DTP poster layout", dir: 4, names: ["poster final FINAL (3).indd", "poster.indd", "VEL_lantern_poster_v05.indd"], why: "Promotional. Replace the 'final FINAL (2)' trap with a version number." },
+      { f: "email from Captain.txt", what: "the design brief from Captain Grant", dir: 5, names: ["VEL_lantern_brief_2026-03-14.txt", "email from captain 14-3-26.txt", "important.txt"], why: "Admin. A year-first date (2026-03-14) sorts in date order." },
+      { f: "Untitled-1.jpg", what: "a mood board of ship lanterns", dir: 0, names: ["Untitled-1 moodboard.jpg", "VEL_lantern_moodboard_v01.jpg", "mood board for lantern project new.jpg"], why: "Research. Short, consistent and descriptive." },
     ];
     const rows = el("div");
     const tree = el("div", { class: "tc-tree", "aria-live": "polite", "aria-label": "Resulting folder tree" });
@@ -219,9 +219,9 @@
       [dirS, nameS].forEach((s) => s.addEventListener("change", drawTree));
       sel.push({ dirS, nameS, res, row }); rows.append(row);
     });
-    const bestName = (it) => it.names.findIndex((n) => /^VEL-lantern_/.test(n));
+    const bestName = (it) => it.names.findIndex((n) => /^VEL_lantern_/.test(n));
     function drawTree() {
-      const lines = ["VEL-lantern/"];
+      const lines = ["VEL_lantern/"];
       FOLDERS.forEach((f, j) => {
         const inF = FILES.map((it, k) => [it, sel[k]]).filter(([, s]) => s.dirS.value === String(j));
         lines.push("├─ " + f + "/");
@@ -246,10 +246,10 @@
 
     // ---- back-up audit ----
     const STORE = [
-      { id: "laptop", t: "Working copy on the laptop's internal drive", type: "laptop disk", off: false, fixed: true },
-      { id: "usb", t: "USB stick kept in the laptop bag", type: "USB flash", off: false, note: "It travels with the laptop: one theft or one dropped bag loses both." },
-      { id: "ext", t: "External hard drive on the studio shelf", type: "external disk", off: false },
-      { id: "home", t: "Second external drive kept at home", type: "external disk", off: true },
+      { id: "laptop", t: "Working copy on the laptop's internal drive", type: "local disk", off: false, fixed: true },
+      { id: "usb", t: "USB stick kept in the laptop bag", type: "USB flash drive", off: false, note: "It travels with the laptop: one theft or one dropped bag loses both." },
+      { id: "ext", t: "External hard drive on the studio shelf", type: "local disk", off: false },
+      { id: "home", t: "Second external drive kept at home", type: "local disk", off: true },
       { id: "cloud", t: "Cloud storage with version history", type: "cloud", off: true },
     ];
     const panel = el("div", { class: "tc-panel" }, el("h4", null, "Back-up audit: does the plan meet 3-2-1?"));
@@ -262,15 +262,15 @@
       grid.append(el("label", null, cb, el("span", null, s.t)));
       return cb;
     });
-    panel.append(el("p", { class: "hint" }, "Tick where copies of the lantern project are kept."), grid, tal, msg);
+    panel.append(el("p", { class: "hint" }, "Tick where copies of the lantern project are kept. As in the figure above, a laptop drive and external drives all count as one type: local disk."), grid, tal, msg);
     box.append(panel);
     function audit() {
       const on = STORE.filter((s, k) => cbs[k].checked);
       // the USB stick in the laptop bag is not an independent copy: it shares the laptop's fate
       const copies = on.length, types = new Set(on.map((s) => s.type)).size, off = on.some((s) => s.off);
-      const indep = on.filter((s) => s.id !== "usb").length + (on.some((s) => s.id === "usb") ? 0 : 0);
+      const indep = on.filter((s) => s.id !== "usb").length;
       const pass = [copies >= 3, types >= 2, off];
-      tal.innerHTML = `<span class="${pass[0] ? "pass" : "fail"}">${copies} cop${copies === 1 ? "y" : "ies"} ${pass[0] ? "✔" : "✘"} (need 3)</span><span class="${pass[1] ? "pass" : "fail"}">${types} storage type${types === 1 ? "" : "s"} ${pass[1] ? "✔" : "✘"} (need 2)</span><span class="${pass[2] ? "pass" : "fail"}">off-site ${pass[2] ? "✔" : "✘"} (need 1)</span>`;
+      tal.innerHTML = `<span class="${pass[0] ? "pass" : "fail"}">${copies} cop${copies === 1 ? "y" : "ies"} ${pass[0] ? "✔" : "✘"} (need 3)</span><span class="${pass[1] ? "pass" : "fail"}">${types} storage type${types === 1 ? "" : "s"} ${pass[1] ? "✔" : "✘"} (need 2: ${[...new Set(on.map((s) => s.type))].join(", ")})</span><span class="${pass[2] ? "pass" : "fail"}">off-site ${pass[2] ? "✔" : "✘"} (need 1)</span>`;
       let t = pass.every(Boolean) ? "<span class='ok'>Meets 3-2-1.</span> A fire, theft or failed drive cannot take every copy." : "<span class='bad'>Does not meet 3-2-1 yet.</span> " + (!pass[2] ? "Every copy is in one place: a studio fire or burglary could take them all. " : "") + (!pass[0] ? "Add another copy. " : "");
       if (on.some((s) => s.id === "usb")) t += " Note: " + STORE[1].note + (indep < 3 ? " Treat it as weak protection." : "");
       setFb(msg, t, pass.every(Boolean) ? "good" : "poor");
@@ -284,9 +284,13 @@
   mount("w-cloud", (box) => {
     const PAL = ["#d4147a", "#00a3d9", "#f7d117", "#3f7426", "#52308a", "#e07020", "#15121c"];
     const NAME = { E: "Euan (ship)", A: "Alba (ashore)" };
+    const HIS = { E: "his", A: "her" };
     let st, colourN, packets = [];
+    // each laptop: des = the design on its screen now; ver = the cloud version it last matched;
+    // offline = it has edits made while the link was down; base = the version those edits started from
+    const dev = () => ({ has: true, online: true, ver: null, des: null, offline: false, base: null });
     function fresh() {
-      st = { vers: [], cur: null, bin: false, conflict: null, E: { has: true, online: true, ver: null, pend: null }, A: { has: true, online: true, ver: null, pend: null } };
+      st = { vers: [], cur: null, bin: false, conflicts: [], E: dev(), A: dev() };
       colourN = 0; packets = [];
     }
     fresh();
@@ -304,37 +308,40 @@
     const loseBtn = B("Euan's laptop goes overboard", () => loseOrNew());
     const restSel = el("select", { "aria-label": "Version to restore" });
     r1.append(B("Euan saves a change", () => save("E"), "primary"), B("Alba saves a change", () => save("A"), "primary"), linkBtn);
-    r2.append(B("Alba deletes the file", () => del()), loseBtn, restSel, B("Restore this version", () => restore()), B("↺ Reset", () => { fresh(); syncUI(); say("Reset: no file yet. Euan or Alba, save something."); }));
+    r2.append(B("Alba deletes the file", () => del()), loseBtn, restSel, B("Restore this version", () => restore()), B("↺ Reset", () => { fresh(); log.innerHTML = ""; syncUI(); say("Reset: no file yet. Euan or Alba, save something."); }));
     box.append(r1, r2, el("p", { class: "px-label" }, "Signal log"), log);
 
     const say = (t) => { log.prepend(el("li", { html: t })); while (log.children.length > 8) log.lastChild.remove(); };
-    const design = (n) => (n ? st.vers[n - 1].design : []);
-    const newDesign = (base) => { const d = base.concat(PAL[colourN++ % PAL.length]); return d.length > 4 ? d.slice(-4) : d; };
+    const design = (n) => (n ? st.vers[n - 1].design : null);
+    const top = (des) => (des && des.length ? des[des.length - 1] : "#888");
+    const newDesign = (base) => { const d = (base || []).concat(PAL[colourN++ % PAL.length]); return d.length > 4 ? d.slice(-4) : d; };
     function send(from, to, colour, then) {
       if (HG.reduced || !sim.visible) { then(); syncUI(); return; }
       packets.push({ from, to, t: 0, colour, then });
       sim.play();
     }
-    function other(k) { return k === "E" ? "A" : "E"; }
+    // the cloud pushes its current state down to every online laptop except the sender
     function broadcast(except) {
       ["E", "A"].forEach((k) => {
         const d = st[k];
         if (k === except || !d.has) return;
-        if (!d.online) { say(`${NAME[k]} is offline, so their copy is now out of date. It will update when the link returns.`); return; }
-        send("C", k, st.cur ? design(st.cur).slice(-1)[0] : "#888", () => { d.ver = st.bin ? null : st.cur; });
+        if (!d.online) { say(`${NAME[k]} is offline, so ${HIS[k]} copy is now out of date. It will catch up when the link returns.`); return; }
+        const v = st.cur;
+        send("C", k, st.bin ? "#888" : top(design(v)), () => { d.ver = st.bin ? null : v; d.des = st.bin ? null : design(v); });
       });
     }
-    function upload(k, des, base) {
+    // an upload; only edits made while offline can conflict, because an online laptop is always in step
+    function upload(k, des, wasOffline, base) {
       const d = st[k];
-      send(k, "C", des.slice(-1)[0], () => {
-        if (st.cur !== null && base !== st.cur && !st.bin) {
-          st.conflict = { by: k, design: des };
-          d.pend = null; d.ver = st.cur;
-          say(`<b>Conflict!</b> ${NAME[k]} edited v${base || "?"} offline, but the cloud already has v${st.cur}. The service keeps both: the offline edit is saved as a separate <em>conflicted copy</em>, and someone has to merge the changes by hand.`);
-          syncUI(); broadcast(null); return;
+      send(k, "C", top(des), () => {
+        if (wasOffline && st.cur !== null && base !== st.cur && !st.bin) {
+          st.conflicts.push({ by: k, design: des });
+          d.ver = st.cur; d.des = design(st.cur);
+          say(`<b>Conflict!</b> ${NAME[k]} edited ${base ? "v" + base : "the file"} while offline, but meanwhile the cloud moved on to v${st.cur}. The service keeps both: the offline edit is saved as a separate <em>conflicted copy</em>, and someone has to merge the changes by hand.`);
+          syncUI(); return;
         }
         st.vers.push({ n: st.vers.length + 1, by: k, design: des, note: "" });
-        st.cur = st.vers.length; st.bin = false; d.ver = st.cur; d.pend = null;
+        st.cur = st.vers.length; st.bin = false; d.ver = st.cur;
         say(`${NAME[k]} saved <b>v${st.cur}</b>. It uploads to the cloud, then syncs down to the other laptop.`);
         syncUI(); broadcast(k);
       });
@@ -342,10 +349,12 @@
     function save(k) {
       const d = st[k];
       if (!d.has) { say(`${NAME[k]} has no laptop to work on.`); return; }
-      const base = d.pend ? d.pend.design : design(d.ver);
-      const des = newDesign(base);
-      if (d.online) upload(k, des, d.ver);
-      else { d.pend = { design: des, base: d.pend ? d.pend.base : d.ver }; say(`${NAME[k]} saved a change, but there is no internet aboard: it waits on the laptop, <b>unsynced</b>. Only this laptop has it.`); }
+      d.des = newDesign(d.des); // the change shows on this laptop at once
+      if (d.online) upload(k, d.des, false, null);
+      else {
+        if (!d.offline) { d.offline = true; d.base = d.ver; }
+        say(`${NAME[k]} saved a change, but there is no internet: it waits on the laptop, <b>unsynced</b>. Only this laptop has it.`);
+      }
       syncUI();
     }
     function toggleLink() {
@@ -354,14 +363,15 @@
       if (!d.online) say("The ship's internet link is down. Euan can keep working on his local copy, but nothing reaches the cloud.");
       else {
         say("The link is back.");
-        if (d.has && d.pend) upload("E", d.pend.design, d.pend.base);
-        else if (d.has && d.ver !== (st.bin ? null : st.cur)) send("C", "E", "#888", () => { d.ver = st.bin ? null : st.cur; say("Euan's laptop catches up with the latest version."); });
+        if (d.has && d.offline) { const base = d.base; d.offline = false; d.base = null; upload("E", d.des, true, base); }
+        else if (d.has && d.ver !== (st.bin ? null : st.cur)) send("C", "E", top(design(st.cur)), () => { d.ver = st.bin ? null : st.cur; d.des = st.bin ? null : design(st.cur); say("Euan's laptop catches up with the latest version."); });
       }
       syncUI();
     }
     function del() {
-      if (!st.A.has || st.A.ver === null) { say("Alba has no copy of the file to delete."); return; }
-      st.A.ver = null;
+      const A = st.A;
+      if (!A.has || !A.des) { say("Alba has no copy of the file to delete."); return; }
+      A.ver = null; A.des = null;
       send("A", "C", "#888", () => {
         st.bin = true;
         say("Alba deleted the poster by mistake. Sync obeys: the file goes to the cloud's <b>bin</b>, and is deleted from Euan's laptop too. Sync is not a back-up! Restore a version to rescue it.");
@@ -380,13 +390,16 @@
     function loseOrNew() {
       const d = st.E;
       if (d.has) {
-        const lost = !!d.pend;
-        d.has = false; d.ver = null; d.pend = null;
+        const lost = d.offline;
+        Object.assign(d, { has: false, ver: null, des: null, offline: false, base: null });
         say("Euan's laptop has gone over the side. " + (lost ? "<b>His unsynced edit is gone for ever</b>: it existed only on that laptop." : "Every saved version is safe in the cloud.") + " Press the button again to sign in on a new laptop.");
       } else {
-        d.has = true; d.online = true; d.ver = null;
-        say("Euan signs in on a new laptop. The files download from the cloud, so work continues.");
-        if (st.cur && !st.bin) send("C", "E", design(st.cur).slice(-1)[0], () => { d.ver = st.cur; });
+        d.has = true;
+        if (!d.online) { say("Euan signs in on a new laptop, but the ship's link is still down, so nothing can download yet."); }
+        else {
+          say("Euan signs in on a new laptop. The files download from the cloud, so work continues.");
+          if (st.cur && !st.bin) { const v = st.cur; send("C", "E", top(design(v)), () => { d.ver = v; d.des = design(v); }); }
+        }
       }
       syncUI();
     }
@@ -397,16 +410,16 @@
       vlist.innerHTML = "";
       if (!st.vers.length) vlist.append(el("li", null, "(empty: nobody has saved yet)"));
       st.vers.forEach((v) => {
-        const sw = el("span", { class: "sw", style: `background:${v.design.slice(-1)[0]}` });
+        const sw = el("span", { class: "sw", style: `background:${top(v.design)}` });
         vlist.append(el("li", { class: v.n === st.cur && !st.bin ? "cur" : "" }, sw, `v${v.n} · ${v.by === "R" ? v.note : "by " + NAME[v.by]}` + (v.n === st.cur ? (st.bin ? " (in the bin)" : " (current)") : "")));
       });
-      if (st.conflict) vlist.append(el("li", null, el("span", { class: "sw", style: `background:${st.conflict.design.slice(-1)[0]}` }), `poster (${NAME[st.conflict.by]}'s conflicted copy)`));
+      st.conflicts.forEach((c) => vlist.append(el("li", null, el("span", { class: "sw", style: `background:${top(c.design)}` }), `poster (${NAME[c.by]}'s conflicted copy)`)));
       const keep = restSel.value;
       restSel.innerHTML = "";
       if (!st.vers.length) restSel.append(el("option", { value: "" }, "no versions"));
       st.vers.forEach((v) => restSel.append(el("option", { value: v.n }, `v${v.n}`)));
       if (keep && st.vers.length >= +keep) restSel.value = keep; else if (st.vers.length) restSel.value = st.vers.length > 1 ? st.vers.length - 1 : 1;
-      const desc = (k) => { const d = st[k]; return !d.has ? "no laptop" : d.pend ? "an unsynced edit" : d.ver ? "v" + d.ver : "no file"; };
+      const desc = (k) => { const d = st[k]; return !d.has ? "no laptop" : d.offline ? "an unsynced edit" : d.ver ? "v" + d.ver : d.des ? "a change being uploaded" : "no file"; };
       cv.setAttribute("aria-label", `Cloud holds ${st.cur ? "v" + st.cur + (st.bin ? " in the bin" : "") : "nothing yet"}. Euan's laptop: ${desc("E")}, ${st.E.online ? "online" : "offline"}. Alba's laptop: ${desc("A")}.`);
       sim.redraw();
     }
@@ -420,33 +433,29 @@
       height: (w) => (w < 460 ? 280 : 300),
       draw(ctx, t, dt, C, s) {
         const P = pos(s);
-        // links
         ["E", "A"].forEach((k) => {
           const d = st[k], a = P[k], c = P.C;
           ctx.save(); ctx.strokeStyle = d.online && d.has ? C.sea : C.red; ctx.lineWidth = 2; ctx.setLineDash(d.online && d.has ? [] : [6, 5]);
           ctx.beginPath(); ctx.moveTo(a.x, a.y - 40); ctx.lineTo(c.x + (k === "E" ? -30 : 30), c.y + 26); ctx.stroke(); ctx.restore();
-          if (!d.online || !d.has) { const mx = (a.x + c.x) / 2, my = (a.y - 40 + c.y + 26) / 2; HG.label(ctx, "✕ no link", mx, my, { size: 12, align: "center", col: C.red, bold: true }); }
+          if (!d.online) { const mx = (a.x + c.x) / 2, my = (a.y - 40 + c.y + 26) / 2; HG.label(ctx, "✕ no link", mx, my, { size: 12, align: "center", col: C.red, bold: true }); }
         });
-        // cloud
         const c = P.C;
         ctx.save(); ctx.fillStyle = C.paper2; ctx.strokeStyle = C.sea; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(c.x - 34, c.y + 6, 22, Math.PI * 0.5, Math.PI * 1.5); ctx.arc(c.x - 6, c.y - 14, 28, Math.PI, Math.PI * 1.9); ctx.arc(c.x + 32, c.y + 2, 24, Math.PI * 1.3, Math.PI * 0.5); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
-        if (st.cur) flag(ctx, c.x - 14, c.y - 18, 28, 20, design(st.cur), C);
+        if (st.cur && !st.bin) flag(ctx, c.x - 14, c.y - 18, 28, 20, design(st.cur), C);
         HG.label(ctx, st.cur ? (st.bin ? `v${st.cur} in bin` : `cloud: v${st.cur}`) : "cloud: empty", c.x, c.y + 18, { size: 12, align: "center", bold: true });
-        // devices
         ["E", "A"].forEach((k) => {
           const d = st[k], p = P[k];
-          if (!d.has) { HG.label(ctx, "🌊 no laptop", p.x, p.y, { size: 13, align: "center", col: C.muted }); }
+          if (!d.has) HG.label(ctx, "no laptop", p.x, p.y, { size: 13, align: "center", col: C.muted });
           else {
             ctx.fillStyle = C.ink2; ctx.fillRect(p.x - 44, p.y - 38, 88, 56); ctx.fillRect(p.x - 54, p.y + 18, 108, 7);
             ctx.fillStyle = C.paper; ctx.fillRect(p.x - 39, p.y - 33, 78, 46);
-            const des = d.pend ? d.pend.design : d.ver ? design(d.ver) : null;
-            if (des) flag(ctx, p.x - 22, p.y - 26, 44, 32, des, C); else HG.label(ctx, "no file", p.x, p.y - 10, { size: 12, align: "center", col: C.muted, halo: false });
+            if (d.des) flag(ctx, p.x - 22, p.y - 26, 44, 32, d.des, C); else HG.label(ctx, "no file", p.x, p.y - 10, { size: 12, align: "center", col: C.muted, halo: false });
           }
           HG.label(ctx, NAME[k], p.x, p.y + 40, { size: 13, align: "center", bold: true });
-          HG.label(ctx, !d.has ? "" : d.pend ? "unsynced edit!" : d.ver ? `has v${d.ver}` + (st.cur && d.ver !== st.cur ? " (old)" : "") : "", p.x, p.y + 58, { size: 12, align: "center", col: d.pend ? C.red : C.ink2 });
+          const sub = !d.has ? "" : d.offline ? "unsynced edit!" : d.ver ? `has v${d.ver}` + (st.cur && d.ver !== st.cur ? " (old)" : "") : d.des ? "uploading…" : "";
+          HG.label(ctx, sub, p.x, p.y + 58, { size: 12, align: "center", col: d.offline ? C.red : C.ink2 });
         });
-        // packets
         packets.forEach((q) => {
           q.t += dt / 0.9;
           const a = q.from === "C" ? { x: P.C.x, y: P.C.y + 20 } : { x: P[q.from].x, y: P[q.from].y - 40 };
@@ -457,6 +466,7 @@
           ctx.fillRect(x - 8, y - 6, 16, 12); ctx.strokeRect(x - 8, y - 6, 16, 12);
         });
         const doneP = packets.filter((q) => q.t >= 1);
+        // finish arrivals outside the paint, so their redraws do not nest inside this one
         if (doneP.length) { packets = packets.filter((q) => q.t < 1); setTimeout(() => { doneP.forEach((q) => q.then()); syncUI(); }, 0); }
         if (!packets.length && s.playing) setTimeout(() => { if (!packets.length) s.pause(); }, 0);
       },
@@ -609,7 +619,7 @@
       paperless: { name: "Paperless office", ctx: "a design studio",
         c: [["c1", "drawings and proofs are stored and shared as digital files"], ["c2", "far less paper, ink and toner is bought"], ["c3", "plan chests and filing cabinets are no longer needed"]],
         e: [["e1", "the studio's running costs fall"], ["e2", "a smaller, cheaper office can be used"], ["e3", "the whole team can open the same file at once, wherever they are"], ["e4", "it is better for everyone"]],
-        L: { c1: ["e3"], c2: ["e1"], c3: ["e2", "e1"] } },
+        L: { c1: ["e3", "e2", "e1"], c2: ["e1"], c3: ["e2", "e1"] } },
       recycled: { name: "Recycled materials", ctx: "a packaging company",
         c: [["c1", "packaging is printed on recycled card"], ["c2", "CAM software nests the nets tightly on each sheet before cutting"], ["c3", "designs are tested as CAD models before any prototype is made"]],
         e: [["e1", "fewer trees are felled and less energy goes into making new card"], ["e2", "less offcut is wasted from every sheet"], ["e3", "fewer physical prototypes are thrown away"], ["e4", "it helps the environment"]],
@@ -617,7 +627,7 @@
       cadmfg: { name: "CAD in manufacturing", ctx: "a bicycle-parts maker",
         c: [["c1", "the CAD model is sent as a STEP file and turned into CNC toolpaths by CAM software"], ["c2", "a prototype is 3D printed straight from the CAD model"], ["c3", "a clash check is run on the assembly in CAD"]],
         e: [["e1", "parts are machined exactly to the design, so they fit first time"], ["e2", "the design can be tested in the hand within hours, so it reaches the market sooner"], ["e3", "interference is found before any metal is cut, saving scrapped parts"], ["e4", "it is much faster"]],
-        L: { c1: ["e1"], c2: ["e2"], c3: ["e3"] } },
+        L: { c1: ["e1"], c2: ["e2"], c3: ["e3", "e1"] } },
       dtp: { name: "DTP in marketing", ctx: "a small café",
         c: [["c1", "the owner can lay out menus and posters in-house with DTP software"], ["c2", "a master page holds the logo, colours and fonts"], ["c3", "one layout can be exported for print and for social media"]],
         e: [["e1", "there is no agency fee for every price change"], ["e2", "every item looks consistent, so customers recognise the brand"], ["e3", "the same promotion reaches customers on paper and online"], ["e4", "the posters look nicer"]],
@@ -625,7 +635,7 @@
       remote: { name: "Remote working", ctx: "a graphic designer",
         c: [["c1", "project files are kept in cloud storage and meetings are held by video call"], ["c2", "the designer does not travel to the office each day"], ["c3", "company files are opened over a home internet connection"]],
         e: [["e1", "the designer can work from home or anywhere with internet access"], ["e2", "commuting time, cost and pollution are cut"], ["e3", "there is a greater risk of client designs being hacked or lost"], ["e4", "working is more convenient"]],
-        L: { c1: ["e1"], c2: ["e2"], c3: ["e3"] } },
+        L: { c1: ["e1", "e2"], c2: ["e2"], c3: ["e3"] } },
       global: { name: "International communication", ctx: "a furniture company selling worldwide",
         c: [["c1", "assembly instructions use pictograms and exploded views instead of words"], ["c2", "drawings follow BS/ISO conventions for projection, lines and dimensions"], ["c3", "a team in Scotland hands work to a team in another time zone at the end of each day"]],
         e: [["e1", "customers in any country can assemble the product without translation"], ["e2", "an engineer in any country reads the drawing correctly"], ["e3", "the project progresses around the clock and finishes sooner"], ["e4", "everyone can understand it"]],
@@ -688,11 +698,11 @@
     svg.append(R(0, 0, 560, 290, "f-paper2"), R(0, 290, 560, 50, "f-muted", { opacity: 0.35 }), P("M0 290 H560", "tc-stroke", { "stroke-width": 2 }));
     // window (closed) and bench with spray can and sharps bin
     svg.append(R(14, 34, 110, 100, "tc-box"), P("M69 34 V134 M14 84 H124", "tc-stroke", { "stroke-width": 2 }), R(10, 210, 140, 8, "tc-dark"), R(18, 218, 6, 72, "tc-dark"), R(136, 218, 6, 72, "tc-dark"));
-    svg.append(S("text", { x: 69, y: 150, "text-anchor": "middle", class: "muted", "font-size": 12, text: "window shut" }));
+    svg.append(S("text", { x: 69, y: 158, "text-anchor": "middle", class: "ink2", "font-size": 20, text: "window shut" }));
     svg.append(R(40, 180, 14, 30, "f-red"), R(42, 174, 10, 6, "tc-dark"), S("circle", { cx: 70, cy: 168, r: 14, fill: "#cfd6e6", opacity: 0.85 }), S("circle", { cx: 84, cy: 160, r: 10, fill: "#cfd6e6", opacity: 0.7 }), R(70, 196, 50, 14, "tc-cardsheet"));
     svg.append(R(112, 180, 20, 30, "f-gold"), R(110, 176, 24, 6, "tc-dark"));
     // first aid kit
-    svg.append(R(146, 60, 28, 26, "tc-box"), P("M160 64 V82 M151 73 H169", "", { stroke: "#3f7426", "stroke-width": 4 }));
+    svg.append(R(146, 60, 28, 26, "", { fill: "#2f7d32", stroke: "#1d1a14", "stroke-width": 1.5 }), P("M160 64 V82 M151 73 H169", "", { stroke: "#ffffff", "stroke-width": 5 }));
     // desk with laptop and hunched person
     svg.append(R(170, 210, 190, 8, "tc-dark"), R(178, 218, 6, 72, "tc-dark"), R(346, 218, 6, 72, "tc-dark"));
     svg.append(P("M246 210 l40 0 l-6 -26 l-40 0 z", "tc-dark"), R(242, 206, 50, 4, "tc-dark"));
@@ -704,7 +714,7 @@
     // trailing cable to right wall socket
     svg.append(P("M352 304 Q400 330 450 312 T548 280", "tc-stroke", { fill: "none", "stroke-width": 2.5 }), R(540, 270, 12, 16, "tc-box"));
     // fire exit door, extinguisher, boxes
-    svg.append(R(480, 110, 66, 180, "f-grass", { opacity: 0.8 }), S("text", { x: 513, y: 132, "text-anchor": "middle", fill: "#fff", "font-size": 13, "font-weight": 700, text: "EXIT" }));
+    svg.append(R(480, 110, 66, 180, "f-grass", { opacity: 0.8 }), S("text", { x: 513, y: 136, "text-anchor": "middle", fill: "#fff", "font-size": 20, "font-weight": 700, text: "EXIT" }));
     svg.append(R(445, 198, 14, 34, "f-red"), R(447, 192, 10, 6, "tc-dark"));
     svg.append(R(486, 234, 46, 28, "tc-folder"), R(492, 262, 50, 28, "tc-folder"), R(494, 210, 34, 24, "tc-folder"));
     const hots = [];
@@ -724,7 +734,7 @@
       found.add(it.id);
       g.classList.add(it.bad ? "found-bad" : "found-good");
       const k = found.size;
-      g.append(S("circle", { cx: it.x + it.r * 0.7, cy: it.y - it.r * 0.7, r: 10, fill: it.bad ? "#b3261e" : "#3f7426" }), S("text", { x: it.x + it.r * 0.7, y: it.y - it.r * 0.7 + 4.5, "text-anchor": "middle", class: "badge", fill: "#fff", text: String(k) }));
+      g.append(S("circle", { cx: it.x + it.r * 0.7, cy: it.y - it.r * 0.7, r: 13, fill: it.bad ? "#b3261e" : "#3f7426" }), S("text", { x: it.x + it.r * 0.7, y: it.y - it.r * 0.7 + 6.5, "text-anchor": "middle", class: "badge", fill: "#fff", text: String(k) }));
       g.setAttribute("aria-label", `${k}. ${it.name}: ${it.bad ? "hazard" : "good practice"}`);
       list.append(el("li", { class: it.bad ? "tc-bad" : "tc-good", html: `<b>${k}. ${it.bad ? "⚠ Hazard" : "✔ Good practice"}: ${HG.esc(it.name)}.</b> ${HG.esc(it.fix)}` }));
       const nb = ITEMS.filter((i) => i.bad && found.has(i.id)).length;
@@ -748,14 +758,14 @@
   mount("w-markit", (box) => {
     const Q = [
       { q: "Explain one benefit of cloud storage for a design team. [2]", m: 2, a: "It is quicker.", k: 0, why: "No cause, no context, and 'quicker' at what? 0 marks." },
-      { q: "Explain one benefit of cloud storage for a design team. [2]", m: 2, a: "Files are stored on remote servers, so a designer can open the latest version from home or a client's office, without carrying a USB stick.", k: 2, why: "Cause (remote servers) linked to an effect (open from anywhere), with context. 2 marks." },
+      { q: "Explain one benefit of cloud storage for a design team. [2]", m: 2, a: "Files are stored on remote servers, so a designer can open the latest version from home or a client's office, without carrying a USB stick.", k: 1, why: "One cause (remote servers) linked to one effect (open from anywhere), in context. The 2024 marking instructions give 1 mark for one cause with its effect in a two-mark explain, so a second, different pair is needed for 2 marks." },
       { q: "Explain why a company watermarks images on its website. [2]", m: 2, a: "To stop theft.", k: 0, why: "Bare 'theft' with no description: the 2024 marking instructions did not accept it. 0 marks." },
-      { q: "Explain why a company watermarks images on its website. [2]", m: 2, a: "It shows the images are the company's intellectual property, so others cannot pass them off as their own. It also stops them being used without payment.", k: 2, why: "Two different, described points. 2 marks." },
+      { q: "Explain why a company watermarks images on its website. [2]", m: 2, a: "It shows the images are the company's intellectual property, so it is harder for others to present them as their own. It also discourages use without payment.", k: 2, why: "Two different, described points. 2 marks." },
       { q: "Describe two benefits of the paperless office. [2]", m: 2, a: "Less paper and toner are bought, so running costs fall. It is also cheaper.", k: 1, why: "The first sentence is a described benefit: 1 mark. 'It is also cheaper' repeats the same point, so it earns nothing more. Give two clearly different benefits." },
       { q: "Describe two benefits of the paperless office. [2]", m: 2, a: "Less paper, ink and toner are bought, which reduces costs. Documents are stored digitally, so no space is needed for filing cabinets.", k: 2, why: "Two different, described benefits. 2 marks." },
       { q: "State one input device that would capture a 3D object for reverse engineering. [1]", m: 1, a: "A 3D scanner.", k: 1, why: "A 'state' question needs only the correct name. 1 mark." },
       { q: "Explain one advantage of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "A laser printer is better quality.", k: 0, why: "Not reliably true (inkjets are excellent for photographs), and no cause or context. The relevant points are speed and cost per page for large runs. 0 marks." },
-      { q: "Explain one advantage of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "Toner has a lower cost per page than inkjet cartridges, so printing 500 leaflets costs less.", k: 2, why: "Cause (cost per page of toner) and effect in context (500 leaflets cheaper). 2 marks." },
+      { q: "Explain one advantage of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "Toner has a lower cost per page than inkjet cartridges, so printing 500 leaflets costs less.", k: 1, why: "One cause (cost per page) with its effect in context (500 leaflets cheaper): 1 mark under the 2024 rule for explain. A second pair, e.g. laser printers are faster, so the run is finished the same afternoon, would earn the second mark." },
     ];
     let i = 0, agree = 0, done = 0;
     const qP = el("p", { class: "tc-q" }), aP = el("p", { class: "tc-cand" });
