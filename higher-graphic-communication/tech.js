@@ -45,7 +45,7 @@
     const g = $("tc-comp");
     if (g) {
       const N = 8, cs = 13, top = 26;
-      const dark = [42, 23, 64], sky = [159, 211, 232];
+      const dark = [82, 48, 138], sky = [159, 211, 232];
       const orig = [];
       for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) orig.push(j + i * 0.5 > 5.2 ? dark : sky);
       const draw = (x0, px) => {
@@ -108,7 +108,9 @@
       const ppi = px / (mm / 25.4), hPx = Math.round(px * 2 / 3), need = Math.ceil(mm / 25.4 * 300);
       const mb = px * hPx * 3 / 1e6;
       const verdict = ppi >= 300 ? ["Sharp", "ok", "sharp even close up"] : ppi >= 150 ? ["Soft close up", "", "OK only if viewed from a distance"] : ["Pixelated", "bad", "find a bigger image or print smaller"];
+      const across = ppi * 10 / 25.4;
       ro.innerHTML = `<div><b>${n0(ppi)} ppi</b><span>effective resolution on paper</span></div>
+        <div><b>${HG.n(across, 1)} pixels</b><span>across 10 mm of the print${across > 140 ? " (finer than the screen can show: the magnifier is drawn at 140 across)" : ""}</span></div>
         <div><b class="${verdict[1]}">${verdict[0]}</b><span>${verdict[2]}</span></div>
         <div><b>${n0(need)} px</b><span>width needed for 300 ppi</span></div>
         <div><b>${HG.n(px * hPx / 1e6, 1)} MP · ${HG.n(mb, 1)} MB</b><span>3:2 image (${n0(px)} × ${n0(hPx)}), uncompressed RGB</span></div>`;
@@ -193,7 +195,7 @@
      2. File management: tidy the archive, and a 3-2-1 back-up audit
      ===================================================================== */
   mount("w-files", (box) => {
-    const FOLDERS = ["01_research", "02_preliminary", "03_production/CAD_parts", "03_production/drawings", "04_promotional", "05_admin"];
+    const FOLDERS = ["01_research", "02_preliminary", "03_production/CAD", "03_production/drawings", "04_promotional", "05_admin"];
     const FILES = [
       { f: "IMG_4032.jpg", what: "photo of the old lanterns on deck", dir: 0, names: ["VEL_lantern_deck-photo_v01.jpg", "lantern photo.jpg", "IMG_4032_final.jpg"], why: "Research photograph. The new name says project, content and a number; the camera's IMG_4032 says nothing." },
       { f: "scan0001.pdf", what: "scanned thumbnail sketches", dir: 1, names: ["sketches!!.pdf", "VEL_lantern_thumbnails_v01.pdf", "scan0001 (copy).pdf"], why: "Preliminary work. Avoid symbols such as ! and the word 'copy'." },
@@ -267,12 +269,13 @@
     function audit() {
       const on = STORE.filter((s, k) => cbs[k].checked);
       // the USB stick in the laptop bag is not an independent copy: it shares the laptop's fate
-      const copies = on.length, types = new Set(on.map((s) => s.type)).size, off = on.some((s) => s.off);
-      const indep = on.filter((s) => s.id !== "usb").length;
+      // the USB stick travels in the laptop bag, so it is not counted as an independent copy or type
+      const real = on.filter((s) => s.id !== "usb");
+      const copies = real.length, types = new Set(real.map((s) => s.type)).size, off = real.some((s) => s.off);
       const pass = [copies >= 3, types >= 2, off];
-      tal.innerHTML = `<span class="${pass[0] ? "pass" : "fail"}">${copies} cop${copies === 1 ? "y" : "ies"} ${pass[0] ? "✔" : "✘"} (need 3)</span><span class="${pass[1] ? "pass" : "fail"}">${types} storage type${types === 1 ? "" : "s"} ${pass[1] ? "✔" : "✘"} (need 2: ${[...new Set(on.map((s) => s.type))].join(", ")})</span><span class="${pass[2] ? "pass" : "fail"}">off-site ${pass[2] ? "✔" : "✘"} (need 1)</span>`;
-      let t = pass.every(Boolean) ? "<span class='ok'>Meets 3-2-1.</span> A fire, theft or failed drive cannot take every copy." : "<span class='bad'>Does not meet 3-2-1 yet.</span> " + (!pass[2] ? "Every copy is in one place: a studio fire or burglary could take them all. " : "") + (!pass[0] ? "Add another copy. " : "");
-      if (on.some((s) => s.id === "usb")) t += " Note: " + STORE[1].note + (indep < 3 ? " Treat it as weak protection." : "");
+      tal.innerHTML = `<span class="${pass[0] ? "pass" : "fail"}">${copies} independent cop${copies === 1 ? "y" : "ies"} ${pass[0] ? "✔" : "✘"} (need 3)</span><span class="${pass[1] ? "pass" : "fail"}">${types} storage type${types === 1 ? "" : "s"} ${pass[1] ? "✔" : "✘"} (need 2: ${[...new Set(real.map((s) => s.type))].join(", ")})</span><span class="${pass[2] ? "pass" : "fail"}">off-site ${pass[2] ? "✔" : "✘"} (need 1)</span>`;
+      let t = pass.every(Boolean) ? "<span class='ok'>Meets 3-2-1.</span> A fire, theft or failed drive cannot take every copy." : "<span class='bad'>Does not meet 3-2-1 yet.</span> " + (!pass[2] ? "Every copy is in one place: a studio fire or burglary could take them all. " : "") + (!pass[0] ? "Add another copy. " : "") + (!pass[1] ? "All copies are on the same kind of storage: add a different type, such as cloud. " : "");
+      if (on.some((s) => s.id === "usb")) t += " Note: the USB stick is not counted. " + STORE[1].note;
       setFb(msg, t, pass.every(Boolean) ? "good" : "poor");
     }
     audit();
@@ -325,7 +328,7 @@
       ["E", "A"].forEach((k) => {
         const d = st[k];
         if (k === except || !d.has) return;
-        if (!d.online) { say(`${NAME[k]} is offline, so ${HIS[k]} copy is now out of date. It will catch up when the link returns.`); return; }
+        if (!d.online) { if (!st.bin) say(`${NAME[k]} is offline, so ${HIS[k]} copy is now out of date. It will catch up when the link returns.`); return; }
         const v = st.cur;
         send("C", k, st.bin ? "#888" : top(design(v)), () => { d.ver = st.bin ? null : v; d.des = st.bin ? null : design(v); });
       });
@@ -374,7 +377,8 @@
       A.ver = null; A.des = null;
       send("A", "C", "#888", () => {
         st.bin = true;
-        say("Alba deleted the poster by mistake. Sync obeys: the file goes to the cloud's <b>bin</b>, and is deleted from Euan's laptop too. Sync is not a back-up! Restore a version to rescue it.");
+        const eNow = st.E.online && st.E.has;
+        say("Alba deleted the poster by mistake. Sync obeys: the file goes to the cloud's <b>bin</b>, " + (eNow ? "and is deleted from Euan's laptop too." : st.E.has ? "and will be deleted from Euan's laptop when he next syncs." : "and Euan has no laptop to sync to.") + " Sync is not a back-up! Restore a version to rescue it.");
         syncUI(); broadcast("A");
       });
       syncUI();
@@ -504,7 +508,7 @@
       g.textBaseline = "middle";
       const tw = g.measureText(TXT).width;
       const one = (x, y) => { g.save(); g.translate(x, y); g.rotate(cfg.ang * Math.PI / 180); g.textAlign = "center"; g.fillText(TXT, 0, 0); g.restore(); };
-      if (cfg.pos === "corner") { g.textAlign = "right"; g.fillText(TXT, W - 10, H - 10 - cfg.size / 2); }
+      if (cfg.pos === "corner") one(W - 12 - tw / 2 * Math.cos(cfg.ang * Math.PI / 180), H - 12 - cfg.size / 2 + tw / 2 * Math.sin(cfg.ang * Math.PI / 180));
       else if (cfg.pos === "centre") one(W / 2, H / 2);
       else { const sx = tw + 40, sy = cfg.size * 3; let r = 0; for (let y = sy / 2; y < H + sy; y += sy, r++) for (let x = (r % 2) * sx / 2 - sx / 2; x < W + sx; x += sx) one(x, y); }
       g.restore();
@@ -587,7 +591,7 @@
       bars.innerHTML = `<div class="tc-bar"><span>Printed now</span><div class="trk"><div class="fill" style="width:100%"></div></div></div>
         <div class="tc-bar"><span>Printed after</span><div class="trk"><div class="fill after" style="width:${before ? (after / before) * 100 : 0}%"></div></div></div>`;
       ro.innerHTML = `<div><b>${n0(before)} → ${n0(after)}</b><span>A4 sheets a year</span></div>
-        <div><b>${n0(saved / 500)} reams</b><span>saved (500 sheets each)</span></div>
+        <div><b>${n0(saved / 500)} reams</b><span>saved (500 sheets each): in the Plan Room\'s Minecraft terms, ${n0(saved / 500)} paper blocks not crafted</span></div>
         <div><b>${HG.n(saved * g / 1000, 0)} kg</b><span>of paper saved</span></div>
         <div><b>${HG.n(saved * MM_PER_SHEET / 1000, 2)} m</b><span>height of the saved stack</span></div>
         <div><b>£${n0(cost(saved))}</b><span>paper + ink saved a year</span></div>
@@ -651,9 +655,12 @@
     const sent = el("div", { class: "tc-sentence", "aria-live": "polite" });
     const out = fb();
     box.append(ctxP, el("p", { class: "px-label" }, "1 · Cause: what the technology does"), cBox, el("p", { class: "px-label" }, "2 · Effect: what happens as a result"), eBox, sent, out);
-    function chips(holder, list, cur, set) {
+    // a fixed shuffle per topic, so the matching pair is not simply "same position", and the vague option moves
+    const order = (list, seed) => list.map((x, i) => [x, Math.sin((i + 1) * 12.9898 + seed * 78.233) * 43758.5453 % 1]).sort((a, b) => a[1] - b[1]).map((x) => x[0]);
+    const seedOf = (k) => [...k].reduce((a, c) => a + c.charCodeAt(0), 0);
+    function chips(holder, list, cur, set, seed) {
       holder.innerHTML = "";
-      list.forEach(([id, t]) => {
+      order(list, seed).forEach(([id, t]) => {
         const b = el("button", { type: "button", "aria-pressed": id === cur ? "true" : "false" }, t);
         b.addEventListener("click", () => { set(id === cur ? null : id); draw(); });
         holder.append(b);
@@ -662,8 +669,8 @@
     function draw() {
       const o = T[topic];
       ctxP.textContent = `Context: ${o.ctx}. Build one "explain" mark.`;
-      chips(cBox, o.c, cause, (x) => (cause = x));
-      chips(eBox, o.e, effect, (x) => (effect = x));
+      chips(cBox, o.c, cause, (x) => (cause = x), seedOf(topic));
+      chips(eBox, o.e, effect, (x) => (effect = x), seedOf(topic) + 7);
       const ct = cause && o.c.find((x) => x[0] === cause)[1], et = effect && o.e.find((x) => x[0] === effect)[1];
       sent.innerHTML = `For ${HG.esc(o.ctx)}: ` + (ct ? `<span class="c">${HG.esc(ct)}</span>` : "<em>[cause?]</em>") + ", so " + (et ? `<span class="e">${HG.esc(et)}</span>` : "<em>[effect?]</em>") + ".";
       if (!effect && !cause) { out.innerHTML = ""; out.className = "tc-fb"; return; }
@@ -699,8 +706,8 @@
     svg.append(R(0, 0, 560, 290, "f-paper2"), R(0, 290, 560, 50, "f-muted", { opacity: 0.35 }), P("M0 290 H560", "tc-stroke", { "stroke-width": 2 }));
     // window (closed) and bench with spray can and sharps bin
     svg.append(R(14, 34, 110, 100, "tc-box"), P("M69 34 V134 M14 84 H124", "tc-stroke", { "stroke-width": 2 }), R(10, 210, 140, 8, "tc-dark"), R(18, 218, 6, 72, "tc-dark"), R(136, 218, 6, 72, "tc-dark"));
-    svg.append(S("text", { x: 69, y: 158, "text-anchor": "middle", class: "ink2", "font-size": 20, text: "window shut" }));
-    svg.append(R(40, 180, 14, 30, "f-red"), R(42, 174, 10, 6, "tc-dark"), S("circle", { cx: 70, cy: 168, r: 14, fill: "#cfd6e6", opacity: 0.85 }), S("circle", { cx: 84, cy: 160, r: 10, fill: "#cfd6e6", opacity: 0.7 }), R(70, 196, 50, 14, "tc-cardsheet"));
+    svg.append(S("text", { x: 69, y: 154, "text-anchor": "middle", class: "ink2", "font-size": 20, text: "window shut" }));
+    svg.append(R(40, 180, 14, 30, "f-red"), R(42, 174, 10, 6, "tc-dark"), S("circle", { cx: 72, cy: 180, r: 12, fill: "#cfd6e6", opacity: 0.85 }), S("circle", { cx: 90, cy: 185, r: 9, fill: "#cfd6e6", opacity: 0.7 }), R(70, 196, 50, 14, "tc-cardsheet"));
     svg.append(R(112, 180, 20, 30, "f-gold"), R(110, 176, 24, 6, "tc-dark"));
     // first aid kit
     svg.append(R(146, 60, 28, 26, "", { fill: "#2f7d32", stroke: "#1d1a14", "stroke-width": 1.5 }), P("M160 64 V82 M151 73 H169", "", { stroke: "#ffffff", "stroke-width": 5 }));
@@ -758,15 +765,15 @@
      ===================================================================== */
   mount("w-markit", (box) => {
     const Q = [
-      { q: "Explain one benefit of cloud storage for a design team. [2]", m: 2, a: "It is quicker.", k: 0, why: "No cause, no context, and 'quicker' at what? 0 marks." },
-      { q: "Explain one benefit of cloud storage for a design team. [2]", m: 2, a: "Files are stored on remote servers, so a designer can open the latest version from home or a client's office, without carrying a USB stick.", k: 1, why: "One cause (remote servers) linked to one effect (open from anywhere), in context. The 2024 marking instructions give 1 mark for one cause with its effect in a two-mark explain, so a second, different pair is needed for 2 marks." },
+      { q: "Explain two benefits of cloud storage for a design team. [2]", m: 2, a: "It is quicker.", k: 0, why: "No cause, no context, and 'quicker' at what? 0 marks." },
+      { q: "Explain two benefits of cloud storage for a design team. [2]", m: 2, a: "Files are stored on remote servers, so a designer can open the latest version from home or a client's office, without carrying a USB stick.", k: 1, why: "One cause (remote servers) linked to one effect (open from anywhere), in context: 1 mark. The question asks for two benefits, and only one is given. The 2024 marking instructions\' guidance for question 3(f) ('explain emphasis', 'explain value') gave 1 mark for each cause–effect example; this site applies the same safe rule here." },
       { q: "Explain why a company watermarks images on its website. [2]", m: 2, a: "To stop theft.", k: 0, why: "Bare 'theft' with no description: the 2024 marking instructions did not accept it. 0 marks." },
       { q: "Explain why a company watermarks images on its website. [2]", m: 2, a: "It shows the images are the company's intellectual property, so it is harder for others to present them as their own. It also discourages use without payment.", k: 2, why: "Two different, described points. 2 marks." },
       { q: "Describe two benefits of the paperless office. [2]", m: 2, a: "Less paper and toner are bought, so running costs fall. It is also cheaper.", k: 1, why: "The first sentence is a described benefit: 1 mark. 'It is also cheaper' repeats the same point, so it earns nothing more. Give two clearly different benefits." },
       { q: "Describe two benefits of the paperless office. [2]", m: 2, a: "Less paper, ink and toner are bought, which reduces costs. Documents are stored digitally, so no space is needed for filing cabinets.", k: 2, why: "Two different, described benefits. 2 marks." },
       { q: "State one input device that would capture a 3D object for reverse engineering. [1]", m: 1, a: "A 3D scanner.", k: 1, why: "A 'state' question needs only the correct name. 1 mark." },
-      { q: "Explain one advantage of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "A laser printer is better quality.", k: 0, why: "Not reliably true (inkjets are excellent for photographs), and no cause or context. The relevant points are speed and cost per page for large runs. 0 marks." },
-      { q: "Explain one advantage of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "Toner has a lower cost per page than inkjet cartridges, so printing 500 leaflets costs less.", k: 1, why: "One cause (cost per page) with its effect in context (500 leaflets cheaper): 1 mark under the 2024 rule for explain. A second pair, e.g. laser printers are faster, so the run is finished the same afternoon, would earn the second mark." },
+      { q: "Explain two advantages of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "A laser printer is better quality.", k: 0, why: "Not reliably true (inkjets are excellent for photographs), and no cause or context. The relevant points are speed and cost per page for large runs. 0 marks." },
+      { q: "Explain two advantages of a laser printer over an inkjet printer for printing 500 leaflets. [2]", m: 2, a: "Toner has a lower cost per page than inkjet cartridges, so printing 500 leaflets costs less.", k: 1, why: "One cause (cost per page) with its effect in context (500 leaflets cheaper): 1 mark. Only one advantage is given; a second, e.g. laser printers are faster, so the run is finished the same afternoon, would earn the second. The 2024 marking instructions\' guidance for question 3(f) ('explain emphasis', 'explain value') gave 1 mark for each cause–effect example; this site applies the same safe rule here." },
     ];
     let i = 0, agree = 0, done = 0;
     const qP = el("p", { class: "tc-q" }), aP = el("p", { class: "tc-cand" });
