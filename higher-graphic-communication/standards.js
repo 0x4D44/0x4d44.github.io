@@ -196,7 +196,7 @@
     L(g.C, 140, 150, 140, 246, "st-c"); L(g.C, 114, 78, 166, 78, "st-c"); L(g.C, 140, 54, 140, 102, "st-c");
     [60, 122, 158, 220].forEach((x) => L(g.D, x, 113, x, 155, "st-n"));
     L(g.I, 60, 240, 60, 268, "st-n"); L(g.I, 220, 240, 220, 268, "st-n"); L(g.I, 60, 262, 220, 262, "st-n");
-    AH(g.I, 60, 262, Math.PI); AH(g.I, 220, 262, 0); T(g.I, 140, 256, "160", 16);
+    AH(g.I, 60, 262, Math.PI); AH(g.I, 220, 262, 0); T(g.I, 100, 256, "160", 16);
     // panel 2: bush plan with cutting plane, and section A-A
     C(base, 420, 92, 52, "st-k st-nofill"); C(base, 420, 92, 30, "st-k st-nofill"); C(base, 420, 92, 13, "st-k st-nofill");
     L(base, 420, 34, 420, 150, "st-c");
@@ -225,7 +225,7 @@
     P(g.H, zz, "st-k st-nofill");
     ITEMS.forEach(([k]) => svg.append(g[k]));
     // labels with leaders
-    const LAB = { A: [28, 198, 58, 198], B: [252, 212, 160, 212], C: [252, 128, 143, 149], D: [28, 134, 58, 134], E: [532, 52, 484, 90], F: [240, 350, 160, 381], G: [360, 520, 362, 440], H: [430, 535, 468, 505], I: [252, 262, 196, 262], J: [532, 205, 462, 246] };
+    const LAB = { A: [28, 198, 58, 198], B: [252, 212, 160, 212], C: [252, 128, 140, 149], D: [28, 134, 58, 134], E: [532, 52, 484, 90], F: [240, 350, 160, 381], G: [360, 520, 362, 440], H: [430, 535, 468, 505], I: [252, 262, 196, 262], J: [532, 205, 462, 246] };
     const labs = {};
     Object.entries(LAB).forEach(([k, [lx, ly, tx, ty]]) => {
       const lg = S("g", { class: "st-labg" });
@@ -363,7 +363,7 @@
       d += ` V${yb} Z`;
       P(g, d, "st-k st-nofill");
       const topAt = (i) => Math.max(i > 0 ? HT[i - 1] : 0, i < HT.length ? HT[i] : 0);
-      const levels = style === "parallel" ? [168, 138, 108, 78] : [168];
+      const levels = style === "parallel" ? [190, 165, 140, 115] : [168];
       const extTop = style === "parallel" ? (i) => levels[i - 1] - 8 : () => 160;
       FEAT.forEach((f, i) => { const y0 = yb - topAt(i) * hk - 5; L(g, X(f), y0, X(f), i === 0 ? (style === "parallel" ? levels[3] - 8 : 160) : extTop(i), "st-n"); });
       if (style === "chain") {
@@ -378,7 +378,7 @@
           T(g, (X(0) + X(FEAT[i])) / 2, y - 6, String(FEAT[i]), 17);
         }
       } else {
-        L(g, X(0), 168, X(FEAT[FEAT.length - 1]), 168, "st-n");
+        L(g, X(0), 168, X(FEAT[FEAT.length - 1]), 168, "st-n"); C(g, X(0), 168, 4, "st-n st-card");
         for (let i = 1; i < FEAT.length; i++) { AH(g, X(FEAT[i]), 168, 0); T(g, X(FEAT[i]) - 4, 160, String(FEAT[i]), 17, "end"); }
       }
       T(g, X(0), yb + 22, "datum", 14, "middle", "muted");
@@ -450,7 +450,9 @@
     box.append(tbl);
     const out = note(box);
     function notation(u, l) {
-      const sym = Math.abs(u + l) < 1e-9 && u > 0 ? `${NOM} ± ${u.toFixed(2)}` : "not possible (the deviations are not equal and opposite)";
+      const tr = (v) => { let t = v.toFixed(3); if (t.endsWith("0")) t = t.slice(0, -1); return t; };
+      const mid = NOM + (u + l) / 2, half = (u - l) / 2;
+      const sym = Math.abs(u + l) < 1e-9 ? `${NOM} ± ${tr(half)}` : `${tr(mid)} ± ${tr(half)} <small>(the nominal size moves to the middle of the limits)</small>`;
       return { common: `<span class="st-stack"><span>${(NOM + u).toFixed(2)}</span><span>${(NOM + l).toFixed(2)}</span></span>`, asym: `${NOM} <span class="st-stack"><span>${sgn2(u) || "0"}</span><span>${sgn2(l) || "0"}</span></span>`, sym };
     }
     function draw() {
@@ -465,7 +467,7 @@
       R(g, 200, Math.min(Y(st.hu), Y(st.hl)), 100, Math.max(3, Math.abs(Y(st.hl) - Y(st.hu))), "st-hole");
       R(g, 340, Math.min(Y(st.su), Y(st.sl)), 100, Math.max(3, Math.abs(Y(st.sl) - Y(st.su))), "st-shaft");
       T(g, 250, 318, "HOLE zone", 15, "middle", "st-sea"); T(g, 390, 318, "SHAFT zone", 15, "middle", "st-red");
-      T(g, 196, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, 196, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 ? 18 : 5), hMin.toFixed(2), 14, "end");
+      T(g, 196, Y(st.hu) + 5, hMax.toFixed(2), 14, "end"); T(g, 196, Y(st.hl) + (Math.abs(st.hu - st.hl) < 0.012 || Math.abs(st.hl) < 0.012 ? 19 : 5), hMin.toFixed(2), 14, "end");
       T(g, 444, Y(st.su) + 5, sMax.toFixed(2), 14, "start"); T(g, 444, Y(st.sl) + (Math.abs(st.su - st.sl) < 0.012 ? 18 : 5), sMin.toFixed(2), 14, "start");
       [0.1, 0.05, -0.05, -0.1].forEach((v) => { L(g, 30, Y(v), 40, Y(v), "st-n"); T(g, 28, Y(v) + 4, sgn2(v), 11, "end", "muted"); });
       if (pair) {
@@ -683,7 +685,7 @@
       last = mi + tgt;
       const [name, M] = MODELS[mi];
       drawPic(M);
-      pic.setAttribute("aria-label", `An isometric pictorial view of a block-built ${name}, with arrows E (elevation, from the front), P (plan, from above) and L (end elevation, from the left).`);
+      pic.setAttribute("aria-label", `A pictorial view of a block-built ${name}, with arrows E (elevation, from the front), P (plan, from above) and L (end elevation, from the left).`);
       const correct = viewEdges(viewDef(M, tgt));
       const cands = [];
       const why = {};
@@ -723,7 +725,7 @@
      ===================================================================== */
   mount("w-section", (box) => {
     const k = 2, cx = 280, pcy = 140, base = 430;
-    const R1 = 50, R2 = 28, rB = 12, pB = 38, rh = 6, H1 = 14, TOP = 60, DX = 72, DY = 58, DT = 16, HR = 10, HH = 21;
+    const R1 = 50, R2 = 28, rB = 12, pB = 38, rh = 6, H1 = 14, TOP = 60, DX = 72, DY = 58, DT = 16, HR = 10, HH = 21, NR = 9, NB = -24;
     let s = 0, bolts = true;
     const row = E("div", { class: "btn-row" });
     box.append(row);
@@ -731,7 +733,7 @@
     const sl = HG.slider(ctl, { label: "Position of cutting plane A–A (from the centre)", min: -45, max: 45, step: 1, value: s, unit: "mm", fmt: (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v), oninput: (v) => { s = v; draw(); } });
     [["Through the centre", 0], ["Through a bolt", 3], ["Behind the bore", 20], ["In front of the boss", -36]].forEach(([n, v]) => { const b = E("button", { class: "btn small", type: "button" }, n); b.addEventListener("click", () => sl.set(v)); row.append(b); });
     HG.choice(box, "Bolts:", [[true, "fitted"], [false, "removed"]], bolts, (v) => { bolts = v; draw(); });
-    const svg = svgBox("0 0 560 500", "");
+    const svg = svgBox("0 0 560 516", "");
     box.append(svg);
     const out = note(box);
     const chord = (r, d) => (Math.abs(d) < r ? Math.sqrt(r * r - d * d) : 0);
@@ -782,21 +784,25 @@
       if (bolts) {
         [-pB, pB].forEach((xc) => {
           if (Math.abs(s) < rh) {
-            P(g, `M${SX(xc - rh)} ${SY(-DT)} V${SY(H1)} H${SX(xc - HR)} V${SY(HH)} H${SX(xc + HR)} V${SY(H1)} H${SX(xc + rh)} V${SY(-DT)} Z`, "st-k st-card");
+            P(g, `M${SX(xc - rh)} ${SY(NB - 3)} V${SY(H1)} H${SX(xc - HR)} V${SY(HH)} H${SX(xc + HR)} V${SY(H1)} H${SX(xc + rh)} V${SY(NB - 3)} Z`, "st-k st-card");
+            R(g, SX(xc - NR), SY(-DT), 2 * NR * k, (NB + DT) * -k, "st-k st-card");
+            L(g, SX(xc - NR / 2), SY(-DT), SX(xc - NR / 2), SY(NB), "st-n"); L(g, SX(xc + NR / 2), SY(-DT), SX(xc + NR / 2), SY(NB), "st-n");
             L(g, SX(xc), SY(-DT - 3), SX(xc), SY(HH + 3), "st-c");
           } else if (s < HR) {
             const w = s <= 0 ? HR : chord(HR, s);
             R(g, SX(xc - w), SY(HH), 2 * w * k, (HH - H1) * k, "st-k st-card");
+            const wn = s <= 0 ? NR : chord(NR, s);
+            if (wn > 0) R(g, SX(xc - wn), SY(-DT), 2 * wn * k, (NB + DT) * -k, "st-k st-card");
           }
         });
-        boltNote = Math.abs(s) < rh ? " The plane runs along both bolts, so they are drawn whole and <b>not hatched</b>: hatching a bolt lengthways would tell the reader nothing." : s < HR ? " The bolt heads stand above the flange behind the plane, so you see them in outline." : " The bolts are in front of the plane, so they were removed with the front half.";
+        boltNote = Math.abs(s) < rh ? " The plane runs along both bolts, so they and their nuts are drawn whole and <b>not hatched</b>: hatching a bolt lengthways would tell the reader nothing." : s < HR ? " The bolt heads (above the flange) and nuts (below the deck) are behind the plane, so you see them in outline." : " The bolts are in front of the plane, so they were removed with the front half.";
       }
       L(g, SX(0), SY(-DT - 8), SX(0), SY(TOP + 8), "st-c");
       // projectors from the plane in the plan to the section
       const xs = new Set();
       bands.forEach((b) => b.cut.forEach(([x0, x1]) => { xs.add(x0.toFixed(2)); xs.add(x1.toFixed(2)); }));
       xs.forEach((x) => { const xv = +x; if (Math.abs(xv) > DX - 0.5) return; L(g, PX(xv), PY(s), SX(xv), SY(TOP) - 6, "st-proj"); });
-      T(g, cx, 488, "SECTION A–A", 16);
+      T(g, cx, 506, "SECTION A–A", 16);
       const cutParts = bands.filter((b) => b.cut.length).map((b) => ({ deck: "the deck plank", flange: "the flange", body: "the boss" }[b.name]));
       const bore = Math.abs(s) < rB ? " It passes through the bore, so the bore shows as a gap between two hatched faces, with the far rim of the bore drawn across the gap." : " It misses the bore, which is hidden inside the solid, so the bore is simply not drawn (hidden detail is left out of a section).";
       out.innerHTML = `The plane cuts ${cutParts.length ? cutParts.join(", ").replace(/, ([^,]*)$/, " and $1") : "nothing"}. Bush and deck are different parts, so their hatching runs in <b>different directions</b> (and here at a different spacing).${bore}${boltNote}${s <= -R2 ? " The boss is wholly behind the plane: it is seen, not cut, so it has no hatching." : s >= R2 ? " The boss is wholly in front of the plane, so it went with the removed half." : ""}`;
@@ -827,13 +833,13 @@
     box.append(cv);
     const ctl = controls(box);
     const sl = HG.slider(ctl, { label: "Explode", min: 0, max: 100, step: 1, value: 60, unit: "%", fmt: (v) => String(v), oninput: (v) => { e = v / 100; sim.redraw(); say(); } });
-    const out = note(box);
+    const out = HG.quiet(note(box));
     let target = null;
     const pz = (p) => p.at + p.ex(e);
     const sim = HG.sim(cv, {
       height: (w) => clamp(w * 0.95, 340, 600),
       draw(ctx, t, dt, Cc, S2) {
-        if (target !== null && S2.playing) { const d = target - e, step = dt * 0.7; if (Math.abs(d) <= step) { e = target; target = null; setTimeout(() => sim.pause(), 0); } else e += Math.sign(d) * step; sl.sync(Math.round(e * 100)); }
+        if (target !== null && S2.playing) { const d = target - e, step = dt * 0.7; if (Math.abs(d) <= step) { e = target; target = null; setTimeout(() => sim.pause(), 0); } else e += Math.sign(d) * step; sl.sync(Math.round(e * 100)); say(); }
         const zmin = -22 - 40 * e, zmax = 84 + 222 * e + 20, sc = Math.min((S2.h - 30) / (zmax - zmin + 60), (S2.w - 150) / 130);
         const cx = S2.w / 2 - 40, Z = (z, sb) => S2.h - 18 - (z - zmin) * sc * sb;
         if (mode === "iso") iso(ctx, Cc, S2, sc, cx, Z); else sec(ctx, Cc, S2, sc, cx, Z);
@@ -851,8 +857,8 @@
       segs.forEach(([z0, z1]) => { if (z1 - z0 > 0.2) items.push({ p: sp, z0, z1, R: 10, b: 0, shank: true }); });
       items.sort((u, v) => u.z0 - v.z0 || (u.shank ? -1 : 1));
       // centre line first, so the parts hide it
-      ctx.save(); ctx.strokeStyle = Cc.ink2; ctx.lineWidth = 0.9; ctx.setLineDash([14, 3, 2, 3]);
-      ctx.beginPath(); ctx.moveTo(cx, Y(zmaxOf() + 14)); ctx.lineTo(cx, Y(pz(PARTS[5]) - 30)); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = Cc.ink; ctx.lineWidth = 1.2; ctx.setLineDash([14, 3, 2, 3]);
+      ctx.beginPath(); ctx.moveTo(cx, Y(zmaxOf() + 14)); ctx.lineTo(cx, Y(pz(PARTS[5]) - 14)); ctx.stroke(); ctx.restore();
       items.forEach((it) => {
         const rx = it.R * sc, ry = it.R * sb * sc, yb = Y(it.z0), yt = Y(it.z1);
         const tone = it.p.n === 1 ? [150, 150, 158] : it.p.n === 2 ? [176, 126, 74] : it.p.n === 4 || it.p.n === 5 ? [120, 124, 132] : [196, 170, 92];
@@ -879,10 +885,12 @@
         if (it.b) { ctx.beginPath(); ctx.ellipse(cx, yt, it.b * sc, it.b * sb * sc, 0, 0, Math.PI * 2); ctx.fillStyle = "#2a2430"; ctx.fill(); }
         ctx.restore();
       });
-      // balloons with leaders (a leader ending on a surface ends in a dot)
-      const bx = cx + 90 * sc + 40;
+      balloons(ctx, Cc, (p) => Y(pz(p) + (p.sol[0].z0 + p.sol[p.sol.length - 1].z1) / 2), (p) => cx + p.sol[p.sol.length - 1].R * sc * 0.92, cx + 90 * sc + 40);
+    }
+    /* balloons with leaders (a leader ending on a surface ends in a dot), kept at least 28 px apart */
+    function balloons(ctx, Cc, yOf, xOf, bx) {
       let lastY = -1e9;
-      const labs = [0, 1, 2, 3, 4, 5].map((i) => { const p = PARTS[i]; const zm = pz(p) + (p.sol[0].z0 + p.sol[p.sol.length - 1].z1) / 2; return { p, y: Y(zm), x: cx + p.sol[p.sol.length - 1].R * sc * 0.92 }; }).sort((u, v) => u.y - v.y);
+      const labs = PARTS.map((p) => ({ p, y: yOf(p), x: xOf(p) })).sort((u, v) => u.y - v.y);
       labs.forEach((l) => { l.by = Math.max(l.y, lastY + 28); lastY = l.by; });
       labs.forEach((l) => {
         ctx.save(); ctx.strokeStyle = Cc.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(bx - 12, l.by); ctx.stroke();
@@ -896,8 +904,8 @@
     function sec(ctx, Cc, S2, sc, cx, Z0) {
       const Y = (z) => Z0(z, 1);
       const X = (x) => cx + x * sc;
-      ctx.save(); ctx.strokeStyle = Cc.ink2; ctx.lineWidth = 0.9; ctx.setLineDash([14, 3, 2, 3]);
-      ctx.beginPath(); ctx.moveTo(cx, Y(zmaxOf() + 12)); ctx.lineTo(cx, Y(pz(PARTS[5]) - 30)); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = Cc.ink; ctx.lineWidth = 1.2; ctx.setLineDash([14, 3, 2, 3]);
+      ctx.beginPath(); ctx.moveTo(cx, Y(zmaxOf() + 12)); ctx.lineTo(cx, Y(pz(PARTS[5]) - 14)); ctx.stroke(); ctx.restore();
       const hatch = (x0, x1, z0, z1, ang, gap) => {
         ctx.save(); ctx.beginPath(); ctx.rect(X(x0), Y(z1), (x1 - x0) * sc, (z1 - z0) * sc); ctx.clip();
         ctx.strokeStyle = Cc.ink; ctx.lineWidth = 0.8; ctx.beginPath();
@@ -939,8 +947,8 @@
       const nut = PARTS[5], zn = pz(nut), ns = nut.sol[0];
       ctx.save(); ctx.fillStyle = Cc.card; ctx.fillRect(X(-ns.R), Y(zn + ns.z1), 2 * ns.R * sc, (ns.z1 - ns.z0) * sc); ctx.restore();
       box2(-ns.R, ns.R, zn + ns.z0, zn + ns.z1); line(-ns.R / 2, zn + ns.z0, -ns.R / 2, zn + ns.z1, 1.4); line(ns.R / 2, zn + ns.z0, ns.R / 2, zn + ns.z1, 1.4);
-      PARTS.forEach((q) => { const zm = pz(q) + (q.sol[0].z0 + q.sol[q.sol.length - 1].z1) / 2; HG.label(ctx, String(q.n), X(q.sol[0].R) + 26, Y(zm), { size: 13, bold: true, col: Cc.lode }); });
-      HG.label(ctx, e < 0.02 ? "SECTIONED ASSEMBLY" : "EXPLODED SECTIONAL ELEVATION", cx, S2.h - 8, { size: 12, bold: true, align: "center", col: Cc.ink2 });
+      balloons(ctx, Cc, (q) => Y(pz(q) + (q.sol[0].z0 + q.sol[q.sol.length - 1].z1) / 2), (q) => X(q.sol[q.sol.length - 1].R * 0.6), cx + 90 * sc + 40);
+      HG.label(ctx, e < 0.02 ? "SECTIONED ASSEMBLY" : "EXPLODED SECTIONAL ELEVATION", 10, S2.h - 10, { size: 12, bold: true, align: "left", col: Cc.ink });
     }
     const add = (n, v) => { const b = E("button", { class: "btn small", type: "button" }, n); b.addEventListener("click", () => { if (HG.reduced) { e = v; sl.sync(Math.round(v * 100)); sim.redraw(); say(); return; } target = v; sim.play(); }); row.append(b); };
     add("Assemble", 0); add("Explode", 1);
@@ -968,7 +976,7 @@
     const realIn = E("input", { type: "number", min: 1, max: 1000000, step: 1, value: real, "aria-label": "Real length in millimetres" });
     row.append(E("label", null, "Object ", objSel), E("label", null, "Real length (mm) ", realIn), E("label", null, "Scale ", scSel));
     box.append(row);
-    const svg = svgBox("0 0 560 270", "");
+    const svg = svgBox("0 0 560 390", "");
     box.append(svg);
     const out = note(box);
     const row2 = E("div", { class: "btn-row" });
@@ -988,7 +996,7 @@
       const g = S("g"); svg.append(g);
       // an A3 landscape sheet, 420 mm wide, drawn 400 px wide
       const k = 400 / 420, sx = 20, sy = 20;
-      R(g, sx, sy, 420 * k, 297 * k * 0.55, "st-sheet");
+      R(g, sx, sy, 420 * k, 297 * k, "st-sheet");
       T(g, sx + 6, sy + 18, "A3 sheet, landscape: 420 mm wide", 13, "start", "muted");
       const fits = drawn <= 400;
       const len = Math.min(drawn, 520 / k) * k;
@@ -996,7 +1004,7 @@
       T(g, sx + 14, sy + 100, `drawn length ${fmtLen(drawn)}`, 15, "start");
       if (!fits) T(g, 548, sy + 68, "off the sheet", 13, "end", "st-red");
       // scale bar: a round real length drawn about 100 mm long
-      const realBar = nice(100 * b / a), drawnBar = realBar * a / b, px = drawnBar * k, y = 222;
+      const realBar = nice(100 * b / a), drawnBar = realBar * a / b, px = drawnBar * k, y = sy + 297 * k + 46;
       for (let i = 0; i < 5; i++) R(g, sx + 10 + i * px / 5, y, px / 5, 8, i % 2 ? "st-sheet" : "st-barfill");
       for (let i = 0; i <= 5; i++) { const x = sx + 10 + i * px / 5; L(g, x, y, x, y + 14, "st-n"); }
       T(g, sx + 10, y + 30, "0", 13); T(g, sx + 10 + px, y + 30, fmtLen(realBar), 13);
