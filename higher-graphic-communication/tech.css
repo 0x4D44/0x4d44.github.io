@@ -94,3 +94,6 @@ svg .tc-cardsheet { fill: #f4efe2; stroke: #6d6250; stroke-width: 1.5; }
 /* marker */
 .tc-cand { font-size: .98rem; padding: 10px 12px; background: var(--paper); border: 2px solid var(--line); border-left: 6px solid var(--gold); margin: 8px 0; font-style: italic; }
 .tc-q { font-weight: 700; margin: 6px 0; }
+
+/* phones: a little less figure padding so 13-unit SVG text renders at 11px or more */
+@media (max-width: 560px) { figure.diagram { padding: 6px 4px; } }

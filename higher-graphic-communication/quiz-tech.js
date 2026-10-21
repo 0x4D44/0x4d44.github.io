@@ -49,8 +49,8 @@
         { q: "Which watermark placement is hardest for a thief to remove by cropping?", opts: ["A small mark in one corner", "A mark tiled across the whole image", "A mark in the file name", "No watermark, but a high-resolution file"], a: 1, why: "Tiling repeats the mark everywhere, so no crop of the useful picture escapes it." },
         { q: "What is digital rights management?", opts: ["A list of a company's staff", "Technology that controls how digital content can be copied, printed, edited or opened", "A type of raster file", "A CAD assembly constraint"], a: 1, why: "DRM covers watermarks, encryption, password permissions, licence keys and similar technical controls." },
         { type: "open", q: "A photographer sells prints through her website. Explain why she watermarks the images shown online.", marks: 2, model: mi(
-          "The watermark identifies the images as her intellectual property, so others cannot pass them off or sell them as their own",
-          "A copied image carries the mark, so it cannot be used without paying for a clean licensed version, protecting her income (or: it advertises her name wherever the image is shared). 'To stop theft' alone, with no description, does not earn a mark") },
+          "The watermark identifies the images as her intellectual property, which makes it harder for others to sell them or present them as their own",
+          "A copied image carries the mark, which discourages use without paying for a clean licensed version, protecting her income (or: it advertises her name wherever the image is shared). 'To stop theft' alone, with no description, does not earn a mark") },
       ],
     },
     "tech-cad": {

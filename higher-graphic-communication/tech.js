@@ -521,7 +521,8 @@
         if (x >= R.x && x < R.x + R.w && y >= R.y && y < R.y + R.h) kept++;
         if (x >= SUBJ.x && x < SUBJ.x + SUBJ.w && y >= SUBJ.y && y < SUBJ.y + SUBJ.h) subj++;
       }
-      return { survive: tot ? kept / tot : 0, hide: subj / (SUBJ.w * SUBJ.h) * cfg.op / 100, kept };
+      // absolute measures: how much of what the thief keeps is covered, and how much of the ship lies under the mark
+      return { cover: kept / (R.w * R.h), hide: subj / (SUBJ.w * SUBJ.h), kept, area: R.w * R.h / (W * H) };
     }
     const cv = el("canvas", { class: "sim", role: "img", "aria-label": "Photograph of HMS Vellum with a watermark" });
     box.append(cv);
@@ -544,15 +545,15 @@
     function update() {
       const m = measure();
             const protect = m.kept === 0 ? "None: the crop removed it" : cfg.op < 20 || m.kept < 600 ? "Weak: too faint or too little left" : cfg.crop === "none" ? "Visible: now try a thief's tool" : "Survives the crop";
-      ro.innerHTML = `<div><b>${Math.round(m.survive * 100)}%</b><span>of the watermark lies inside the ${cfg.crop === "none" ? "uncropped image" : "crop"}</span></div>
-        <div><b>${Math.round(m.hide * 100)}%</b><span>of the ship hidden (coverage × opacity)</span></div>
+      ro.innerHTML = `<div><b>${HG.n(m.cover * 100, 1)}%</b><span>of the ${cfg.crop === "none" ? "picture" : "cropped picture (" + Math.round(m.area * 100) + "% of the original)"} covered by watermark lettering</span></div>
+        <div><b>${HG.n(m.hide * 100, 1)}%</b><span>of the ship lies under the lettering, at ${cfg.op}% opacity</span></div>
         <div><b class="${/Survives/.test(protect) ? "ok" : /None|Weak/.test(protect) ? "bad" : ""}">${protect}</b><span>protection after the thief's tool</span></div>`;
       note.textContent = cfg.pos === "corner"
         ? "A corner mark barely touches the picture, but one crop to the subject removes it completely. It protects only against lazy copying."
         : cfg.pos === "centre"
           ? "Across the subject, the mark survives a crop, because the thief wants the ship. The cost is that it also hides part of the picture: a trade-off between protection and showing the work."
           : "Tiling repeats the mark everywhere, so no crop can remove it. Stock-photo libraries do this on previews, then sell the clean, full-resolution file under licence.";
-      cv.setAttribute("aria-label", `Photograph of HMS Vellum with a ${cfg.pos} watermark at ${cfg.op}% opacity. ${Math.round(m.survive * 100)}% of the watermark survives; ${Math.round(m.hide * 100)}% of the ship hidden.`);
+      cv.setAttribute("aria-label", `Photograph of HMS Vellum with a ${cfg.pos} watermark at ${cfg.op}% opacity. ${HG.n(m.cover * 100, 1)}% of the kept picture is covered by lettering; ${HG.n(m.hide * 100, 1)}% of the ship lies under it.`);
       sim.redraw();
     }
     HG.choice(ctl, "Position", [["corner", "Corner"], ["centre", "Centre"], ["tiled", "Tiled"]], cfg.pos, (v) => { cfg.pos = v; update(); });
