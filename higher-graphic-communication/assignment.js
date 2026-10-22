@@ -93,7 +93,7 @@
           const xa = X(a), xb = X(a + v);
           svg.append(S("rect", { x: xa, y, width: Math.max(0, xb - xa), height: h, fill: cols[i], "fill-opacity": thick ? 0.3 : 0.18, stroke: cols[i], "stroke-width": thick ? 2 : 1.5 }));
           const txt = thick ? `${t[i][0].replace("Task ", "T")} · ${short(v)}` : short(v);
-          const tiny = thick ? t[i][0].replace("Task ", "T") : txt.replace(/^(\d+)h(\d\d)$/, "$1h$2");
+          const tiny = thick ? t[i][0].replace("Task ", "T") : "";
           const shown = xb - xa > txt.length * 7 + 6 ? txt : (tiny && xb - xa >= 20 ? tiny : "");
           if (shown) svg.append(S("text", { x: (xa + xb) / 2, y: y + h / 2 + 5, "text-anchor": "middle", ...font(shown === txt ? 13 : 11, thick ? 700 : 400), text: shown }));
           a += v;
