@@ -1457,7 +1457,7 @@
       t += eyeB > st.H + 0.05 ? `Eye level is ${N(eyeB)} blocks up, above the block: a <b>bird's-eye view</b>, so you see the top.` : eyeB < -0.05 ? "Eye level is below the base: a <b>worm's-eye view</b>, so you see the underside." : "Eye level cuts through the block, so you see neither its top nor its bottom.";
       if (st.mode === "two") {
         t += ` These vanishing points mean the block is turned ${N(g.be / DEG, 0)}° to the picture plane and you stand ${N(g.d / g.b)} block-widths from it (taking your line of sight through the leading edge).`;
-        if (g.d < 1.4 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
+        if (g.d < 1.4 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Move the VPs further apart.</span>";
       }
       note.innerHTML = t;
       cv.setAttribute("aria-label", note.textContent);
@@ -1769,11 +1769,11 @@
           tag(sphInfo.sh, "cast shadow", sphInfo.sh[0] + 12, sphInfo.sh[1] + 26);
           ctx.restore();
           if (faceInfo.length) {
-            // the faces are labelled on the faces themselves
-            const sorted = faceInfo.slice().sort((a, b) => b.t - a.t);
-            lab(ctx, "light face", sorted[0].c[0], sorted[0].c[1], { size: 11, bold: true, align: "center" });
-            lab(ctx, "dark face", sorted[sorted.length - 1].c[0], sorted[sorted.length - 1].c[1], { size: 11, bold: true, align: "center" });
-            labelsOut.push("light face", "dark face");
+            // face labels stack in the bottom-left corner, away from the sun; leaders run to the faces
+            const lt = faceInfo.slice().sort((x, y) => y.t - x.t), pair = [[lt[0], "light face"], [lt[lt.length - 1], "dark face"]].sort((x, y) => x[0].c[1] - y[0].c[1]);
+            ctx.save(); ctx.font = 'bold 11px "Atkinson Hyperlegible", system-ui, sans-serif';
+            pair.forEach(([f, txt], i) => tag(f.c, txt, 8, S.h - 32 + i * 16));
+            ctx.restore();
           }
         }
       },
