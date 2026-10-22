@@ -910,7 +910,7 @@
         if (play) play.tick(dt);
         const M = MAST[st.mast], Sz = st.S, YM = 50;
         const PZ = H + 16 + YM, EX = L + 20 + YM;
-        const bx0 = -L - 6, bx1 = EX + YM + 6, bz0 = -6, bz1 = PZ + YM + 6;
+        const bx0 = -L - 6, bx1 = EX + YM + 6, bz0 = -22, bz1 = PZ + YM + 6;
         const s = Math.min((S.w - 12) / (bx1 - bx0), (S.h - 12) / (bz1 - bz0));
         const ox = (S.w - (bx1 - bx0) * s) / 2 - bx0 * s, oy = S.h - (S.h - (bz1 - bz0) * s) / 2 + bz0 * s;
         const Q = (x, z) => [ox + x * s, oy - z * s];
@@ -978,7 +978,7 @@
         seg(ctx, EN(0, -6), EN(0, H + 6), C.sea, 1, DASH.centre);
         // mitre line between the plan and the end elevation
         seg(ctx, Q(EX - YM, PZ - YM), Q(EX + YM, PZ + YM), alpha(C.muted, 0.8), 1);
-        lab(ctx, "45° mitre", Q(EX + YM * 0.55, PZ + YM * 0.55)[0] + 6, Q(EX + YM * 0.55, PZ + YM * 0.55)[1], { size: 11, col: C.muted });
+        { const mp = Q(EX + YM * 0.45, PZ + YM * 0.45); lab(ctx, "45° mitre", Math.min(mp[0] - 6, S.w - 4), mp[1] - 2, { size: 11, col: C.muted, align: "right" }); }
         // ---------- construction from the generators ----------
         const G = gens();
         G.forEach(([y, z], k) => {
@@ -1351,19 +1351,19 @@
      8. Perspective builder: one and two vanishing points, true geometry
      ===================================================================== */
   mount("w-perspective", (box) => {
-    const st = { mode: "two", hy: 0.36, v1: 0.9, v2: 0.1, x0: 0.5, gy: 0.82, vx: 0.5, dk: 0.9, W: 4, D: 3, H: 2 };
+    const st = { mode: "two", hy: 0.36, v1: 0.85, v2: 0.15, x0: 0.5, gy: 0.82, vx: 0.5, dk: 0.9, W: 4, D: 3, H: 2 };
     HG.choice(box, "Perspective:", [["two", "Two-point"], ["one", "One-point"]], st.mode, (v) => { st.mode = v; sim.redraw(); info(); });
     const ctl = controls(box);
     HG.slider(ctl, { label: "Width (blocks)", min: 1, max: 6, step: 1, value: st.W, oninput: (v) => { st.W = v; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Depth (blocks)", min: 1, max: 6, step: 1, value: st.D, oninput: (v) => { st.D = v; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Height (blocks)", min: 1, max: 5, step: 1, value: st.H, oninput: (v) => { st.H = v; sim.redraw(); info(); } });
     const hS = HG.slider(ctl, { label: "Horizon (eye level) height", min: 5, max: 95, step: 1, value: 100 - st.hy * 100, unit: "%", oninput: (v) => { st.hy = 1 - v / 100; sim.redraw(); info(); } });
-    const v2S = HG.slider(ctl, { label: "Left vanishing point (two-point)", min: 10, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; sim.redraw(); info(); } });
-    const v1S = HG.slider(ctl, { label: "Right vanishing point (two-point)", min: 55, max: 90, step: 1, value: st.v1 * 100, unit: "%", oninput: (v) => { st.v1 = v / 100; sim.redraw(); info(); } });
+    const v2S = HG.slider(ctl, { label: "Left vanishing point (two-point)", min: 0, max: 45, step: 1, value: st.v2 * 100, unit: "%", oninput: (v) => { st.v2 = v / 100; sim.redraw(); info(); } });
+    const v1S = HG.slider(ctl, { label: "Right vanishing point (two-point)", min: 55, max: 100, step: 1, value: st.v1 * 100, unit: "%", oninput: (v) => { st.v1 = v / 100; sim.redraw(); info(); } });
     const vxS = HG.slider(ctl, { label: "Vanishing point position (one-point)", min: 2, max: 98, step: 1, value: st.vx * 100, unit: "%", oninput: (v) => { st.vx = v / 100; sim.redraw(); info(); } });
     HG.slider(ctl, { label: "Viewing distance (one-point)", min: 40, max: 200, step: 5, value: st.dk * 100, unit: "%", oninput: (v) => { st.dk = v / 100; sim.redraw(); info(); } });
     const cv = canvasIn(box, "");
-    box.append(HG.el("p", { class: "drag-hint" }, "Drag the vanishing points along the horizon, the HL handle at the left to raise or lower eye level, and the foot of the leading edge to move the block."));
+    box.append(HG.el("p", { class: "drag-hint" }, "Drag the vanishing points along the horizon, the blue handle on the horizon to raise or lower eye level, and the foot of the leading edge to move the block."));
     const note = noteIn(box);
     let geo = null;
     function camera(S) {
@@ -1430,21 +1430,21 @@
         // handles
         const hd = (x, y, txt, col) => { dot2(ctx, x, y, col, 7); ctx.save(); ctx.strokeStyle = C.card; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 7, 0, 2 * Math.PI); ctx.stroke(); ctx.restore(); lab(ctx, txt, x, y - 16, { size: 12, bold: true, align: "center", col }); };
         if (st.mode === "two") { hd(g.V1, g.hy, "VP1", C.lode); hd(g.V2, g.hy, "VP2", C.lode); } else hd(g.VX, g.hy, "VP", C.lode);
-        hd(12, g.hy, "", C.sea);
+        hd(S.w * 0.3, g.hy, "", C.sea); // the horizon's own handle, clear of the default VPs
         dot2(ctx, f0[0], f0[1], C.red, 6);
       },
     });
     HG.drag(cv, sim, () => {
       const g = geo; if (!g) return [];
-      const h = [{ x: 12, y: g.hy, id: "hl" }, { x: st.mode === "two" ? g.X0 : g.X0, y: g.gy, id: "foot" }];
+      const h = [{ x: sim.w * 0.3, y: g.hy, id: "hl" }, { x: st.mode === "two" ? g.X0 : g.X0, y: g.gy, id: "foot" }];
       if (st.mode === "two") h.push({ x: g.V1, y: g.hy, id: "v1" }, { x: g.V2, y: g.hy, id: "v2" }); else h.push({ x: g.VX, y: g.hy, id: "vx" });
       return h;
     }, (id, x, y) => {
       const w = sim.w, h = sim.h;
       if (id === "hl") st.hy = clamp(y / h, 0.05, 0.95);
       // VPs stay clear of the horizon handle at the left edge
-      if (id === "v1") st.v1 = clamp(x / w, st.x0 + 0.06, 0.9);
-      if (id === "v2") st.v2 = clamp(x / w, 0.1, st.x0 - 0.06);
+      if (id === "v1") st.v1 = clamp(x / w, st.x0 + 0.06, 1);
+      if (id === "v2") st.v2 = clamp(x / w, 0, st.x0 - 0.06);
       if (id === "vx") { st.vx = clamp(x / w, 0.02, 0.98); st.hy = clamp(y / h, 0.05, 0.95); }
       if (id === "foot") { st.x0 = clamp((st.mode === "two" ? x : x + st.W * geo.b / 2) / w, st.mode === "two" ? st.v2 + 0.06 : 0.1, st.mode === "two" ? st.v1 - 0.06 : 0.9); st.gy = clamp(y / h, 0.15, 0.97); }
  vxS.sync(Math.round(st.vx * 100));
@@ -1456,7 +1456,7 @@
       let t = st.mode === "two" ? "<b>Two-point perspective.</b> The block is turned to the picture plane, so both sets of horizontal edges run to vanishing points on the horizon; verticals stay vertical. " : "<b>One-point perspective.</b> The front face is parallel to the picture plane, so it is drawn true shape; only the edges going away from you converge, to a single vanishing point on the horizon. ";
       t += eyeB > st.H + 0.05 ? `Eye level is ${N(eyeB)} blocks up, above the block: a <b>bird's-eye view</b>, so you see the top.` : eyeB < -0.05 ? "Eye level is below the base: a <b>worm's-eye view</b>, so you see the underside." : "Eye level cuts through the block, so you see neither its top nor its bottom.";
       if (st.mode === "two") {
-        t += ` These vanishing points mean the block is turned ${N(g.be / DEG, 0)}° to the picture plane and you stand ${N(g.d / g.b)} block-widths from it.`;
+        t += ` These vanishing points mean the block is turned ${N(g.be / DEG, 0)}° to the picture plane and you stand ${N(g.d / g.b)} block-widths from it (taking your line of sight through the leading edge).`;
         if (g.d < 1.6 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
       }
       note.innerHTML = t;
@@ -1734,7 +1734,7 @@
               hi: best((n) => dot(n, unit(add(L, cm.t)))),
               core: best((n) => -Math.abs(dot(n, L) + 0.25) * 3 + dot(n, cm.t)),
               refl: best((n) => -n[2] * 2 - Math.max(0, dot(n, L)) * 4 + dot(n, cm.t) * 0.5),
-              sh: Q(sc),
+              sh: Q(sc), c: c0, R,
             };
           }
         }
@@ -1746,15 +1746,34 @@
         HG.arrow(ctx, sunC[0] + dl[0] * 14, sunC[1] + dl[1] * 14, sunC[0] + dl[0] * 50, sunC[1] + dl[1] * 50, C.gold, 2.5, 9);
         labelsOut = [];
         if (st.labels && sphInfo) {
-          const tag = (p, txt, dx, dy) => { if (!p) return; seg(ctx, p, [p[0] + dx, p[1] + dy], C.ink, 1); dot2(ctx, ...p, C.ink, 2.2); lab(ctx, txt, p[0] + dx, p[1] + dy, { size: 11, bold: true, align: dx < 0 ? "right" : "left", avoid: true }); labelsOut.push(txt); };
-          if (st.mat === "gloss" || st.mat === "metal") tag(sphInfo.hi, "highlight", 24, -26);
-          tag(sphInfo.core, "core shadow", 30, 12);
-          tag(sphInfo.refl, "reflected light", 28, 26);
-          tag(sphInfo.sh, "cast shadow", 20, 30);
+          // fixed label slots beside the sphere; each leader runs to where its label really is
+          const { c: sc0, R: sR } = sphInfo;
+          ctx.save(); ctx.font = 'bold 11px "Atkinson Hyperlegible", system-ui, sans-serif';
+          const tag = (p, txt, lx, ly) => {
+            if (!p) return;
+            const w = ctx.measureText(txt).width;
+            let al = "left";
+            if (lx + w > S.w - 4) { lx = S.w - 4; al = "right"; }
+            if (lx < 4) { lx = 4; al = "left"; }
+            ly = clamp(ly, 10, S.h - 8);
+            const x0 = al === "left" ? lx : lx - w, x1 = x0 + w;
+            seg(ctx, p, [p[0] <= x0 ? x0 - 3 : p[0] >= x1 ? x1 + 3 : x0 - 3, ly], C.ink, 1);
+            dot2(ctx, ...p, C.ink, 2.2);
+            lab(ctx, txt, lx, ly, { size: 11, bold: true, align: al });
+            labelsOut.push(txt);
+          };
+          const rx = sc0[0] + sR + 10;
+          if (st.mat === "gloss" || st.mat === "metal") tag(sphInfo.hi, "highlight", rx, sc0[1] - sR * 0.75);
+          tag(sphInfo.core, "core shadow", rx, sc0[1] - sR * 0.1);
+          tag(sphInfo.refl, "reflected light", rx, sc0[1] + sR * 0.55);
+          tag(sphInfo.sh, "cast shadow", sphInfo.sh[0] + 12, sphInfo.sh[1] + 26);
+          ctx.restore();
           if (faceInfo.length) {
+            // the faces are labelled on the faces themselves
             const sorted = faceInfo.slice().sort((a, b) => b.t - a.t);
-            tag(sorted[0].c, "light face", -26, -22);
-            tag(sorted[sorted.length - 1].c, "dark face", -26, 24);
+            lab(ctx, "light face", sorted[0].c[0], sorted[0].c[1], { size: 11, bold: true, align: "center" });
+            lab(ctx, "dark face", sorted[sorted.length - 1].c[0], sorted[sorted.length - 1].c[1], { size: 11, bold: true, align: "center" });
+            labelsOut.push("light face", "dark face");
           }
         }
       },
