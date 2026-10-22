@@ -1457,7 +1457,7 @@
       t += eyeB > st.H + 0.05 ? `Eye level is ${N(eyeB)} blocks up, above the block: a <b>bird's-eye view</b>, so you see the top.` : eyeB < -0.05 ? "Eye level is below the base: a <b>worm's-eye view</b>, so you see the underside." : "Eye level cuts through the block, so you see neither its top nor its bottom.";
       if (st.mode === "two") {
         t += ` These vanishing points mean the block is turned ${N(g.be / DEG, 0)}° to the picture plane and you stand ${N(g.d / g.b)} block-widths from it (taking your line of sight through the leading edge).`;
-        if (g.d < 1.6 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
+        if (g.d < 1.4 * Math.max(st.W, st.D) * g.b) t += " <span class='bad'>The VPs are close together: the block looks stretched and distorted. Spread them out, even off the page.</span>";
       }
       note.innerHTML = t;
       cv.setAttribute("aria-label", note.textContent);
