@@ -79,7 +79,7 @@ select{max-width:100%;min-width:0}
 input[type=checkbox]{width:20px;height:20px;accent-color:var(--cyan)}
 .ctl label{min-height:32px}
 .onion{flex-wrap:wrap}
-.stat div{background:color-mix(in srgb,var(--bg) 60%,var(--panel))}
+.stat div{background:var(--panel)}
 input[type=range]{height:28px;accent-color:var(--cyan);min-width:120px;max-width:100%}
 input[type=text]{min-width:0;max-width:100%}
 .log{font:13px/1.5 var(--mono);background:color-mix(in srgb,var(--bg) 70%,var(--panel));border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:3.4em;color:var(--ink);overflow-wrap:anywhere}
@@ -88,11 +88,11 @@ input[type=text]{min-width:0;max-width:100%}
 .note{font:12px var(--mono);color:var(--dim)}
 svg{display:block;max-width:100%;height:auto}
 .svgbox{overflow-x:auto}
-.svgbox svg{min-width:560px}
+.svgbox svg{min-width:600px}
 .hint{display:none;font:11px var(--mono);color:var(--dim);margin:4px 0}
 @media(max-width:620px){.hint{display:block}}
 svg text{font-family:var(--mono)}
-.svgbox{background:#0000001f;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.svgbox{background:color-mix(in srgb,var(--bg) 55%,var(--panel));border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .pk{filter:drop-shadow(0 0 5px currentColor)}
 .tbl{width:100%;border-collapse:collapse;font:12.5px var(--mono)}
 .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;overflow-wrap:anywhere}
@@ -123,7 +123,7 @@ svg text{font-family:var(--mono)}
 .stat{display:flex;gap:10px;flex-wrap:wrap}
 .stat div{flex:1 1 120px;background:#0000002a;border:1px solid var(--line);border-radius:9px;padding:9px 11px}
 .stat b{display:block;font:800 22px var(--sans);color:var(--cyan)}
-.stat span{font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.stat span{line-height:1.3;display:block;font:11px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
 .meter{height:12px;border-radius:99px;background:#0000003a;overflow:hidden;border:1px solid var(--line)}
 .meter i{display:block;height:100%;background:linear-gradient(90deg,var(--mag),var(--amber),var(--lime));transition:width .25s}
 .glossary dt{font:700 14px var(--mono);color:var(--cyan);margin-top:14px}
@@ -131,5 +131,5 @@ svg text{font-family:var(--mono)}
 .takeaways li{margin:.5em 0}
 footer{padding:50px 0 80px;color:var(--dim);font:13px var(--mono)}
 .sr{position:absolute;left:-9999px}
-@media(max-width:560px){body{font-size:16px}.bar .in{gap:8px}.lab .body{padding:10px}}
+@media(max-width:560px){button,select,input[type=text]{min-height:40px}input[type=checkbox]{width:24px;height:24px}body{font-size:16px}.bar .in{gap:8px}.lab .body{padding:10px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
