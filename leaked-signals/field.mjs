@@ -40,7 +40,7 @@ export function buildField(jdNow, windowLy, opts = {}) {
       for (let j = 0; j < az; j++) {
         const th = ((j + off) / az) * 2 * Math.PI;
         const el = C.sampleElevation(rnd, src);
-        push(o, C.fanDirection(fr, th, el), age, si, b * Math.max(0.15, Math.sqrt(C.elevGain(el))), KIND.tv);
+        push(o, C.fanDirection(fr, th, el), age, si, b * Math.max(0.05, Math.sqrt(C.elevGain(el))), KIND.tv);
       }
     }
   });

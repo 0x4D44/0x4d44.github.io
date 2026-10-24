@@ -35,6 +35,11 @@ try {
     await p.evaluate(() => window.__leak.seek(20));
     const a = await p.evaluate(() => window.__leak.state.T), c = await p.evaluate(() => (window.__leak.seek(20), window.__leak.state.T));
     assert.equal(a, c, "seek deterministic");
+    await p.evaluate(() => window.__leak.seek(46));
+    await p.waitForTimeout(700);
+    const ov = await p.evaluate(() => { const c = document.querySelector("#caption").getBoundingClientRect(), d = document.querySelector("#dock").getBoundingClientRect(); return { c: c.bottom, d: d.top, on: document.querySelector("#caption").classList.contains("on") }; });
+    assert.ok(ov.on && ov.c <= ov.d + 2, `caption overlaps dock at ${vp.width}px: ${JSON.stringify(ov)}`);
+    for (const f of ["leaked-signals-tour.mp4", "poster.jpg"]) { const r = await p.request.get(`http://localhost:${port}/leaked-signals/${f}`); assert.equal(r.status(), 200, f); }
     assert.deepEqual(errs, [], "console errors / failed requests");
     await p.close();
   }

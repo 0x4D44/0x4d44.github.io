@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leaked Signals</title>
-<meta name="description" content="Every TV broadcast since 1936 is still travelling outward at the speed of light. An interactive simulator of the expanding bubble, fan by fan, and who in the galaxy could be watching.">
+<meta name="description" content="Every TV broadcast since the mid-1930s is still travelling outward at the speed of light. An interactive simulator of the expanding bubble, fan by fan, and who in the galaxy could be watching.">
 <style>
 :root{
   --bg:#05070d; --bg2:#0a0f1a; --panel:#0b1120; --line:#1b2740; --ink:#dfe7f5; --dim:#8a98b5; --faint:#5a6783;
   --amber:#ffb454; --cyan:#58d6ff; --rose:#ff6b9a; --green:#7be0a0; --radius:10px;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
-:root[data-theme="light"]{ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#7b88a3; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; }
-@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#7b88a3; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; } }
+:root[data-theme="light"]{ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; }
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; } }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);-webkit-text-size-adjust:100%}
 body{min-height:100vh;display:flex;flex-direction:column}
@@ -34,7 +34,7 @@ button,select,input{font:inherit;color:inherit}
 #ov{pointer-events:none}
 #hud{position:absolute;left:12px;top:10px;font:12px var(--mono);color:#d4dff5;background:rgba(5,7,13,.55);padding:4px 8px;border-radius:6px;pointer-events:none;line-height:1.5;text-shadow:0 1px 3px #000}
 #hud b{color:var(--amber);font-weight:600}
-#caption{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;max-width:min(720px,92%);text-align:center;font-size:17px;line-height:1.35;color:#fff;
+#caption{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;max-width:min(720px,92%);text-align:center;font-size:17px;line-height:1.35;color:#fff;
   background:rgba(5,8,16,.72);padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);opacity:0;transition:opacity .4s;pointer-events:none}
 #caption.on{opacity:1}
 .dock{position:absolute;left:0;right:0;bottom:0;padding:8px 12px 10px;background:linear-gradient(transparent,rgba(5,7,13,.92) 40%);display:grid;gap:6px;color:#cfd9ee}
@@ -86,9 +86,11 @@ video{width:100%;border-radius:9px;background:#000;display:block}
   .app{grid-template-columns:minmax(0,1fr)}
   .stage{min-height:0;height:64vh}
   .panel{border-left:0;border-top:1px solid var(--line)}
-  #caption{font-size:14px;bottom:128px}
+  #caption{font-size:13px;bottom:236px;max-width:94%}
+  .dock input[type=range]{height:28px} .chip,.dock .btn,.dock select{min-height:34px}
   .top{padding-left:120px}
 }
+.dock select{color:var(--ink);background:var(--bg2)}
 @media (max-width:520px){ .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
 @media (prefers-reduced-motion:reduce){ #caption{transition:none} }
 .video .top,.video .panel,.video .foot,.video .dock{display:none!important}
@@ -99,8 +101,9 @@ video{width:100%;border-radius:9px;background:#000;display:block}
 <body>
 <header class="top">
   <h1>Leaked <b>Signals</b></h1>
-  <span class="sub">Every TV broadcast since 1936 is still on its way somewhere. Where, and who could watch?</span>
+  <span class="sub">Every TV broadcast since the mid-1930s is still on its way somewhere. Where, and who could watch?</span>
   <button class="btn amber" id="btnTour" type="button">&#9654; Guided tour</button>
+  <button class="btn" id="themeBtn" type="button" aria-label="Switch light or dark theme">&#9680; Light / dark</button>
 </header>
 <main class="app">
   <section class="stage" id="stage" aria-label="Interactive 3D simulation of Earth's radio leakage">
