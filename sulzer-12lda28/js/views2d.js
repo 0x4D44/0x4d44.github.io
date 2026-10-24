@@ -195,7 +195,7 @@ export function drawPowerChart(canvas, eng, variant) {
     const v = VARIANTS[id]; ctx.strokeStyle = cols[id]; ctx.lineWidth = id === variant ? 3.2 : 1.4; ctx.globalAlpha = id === variant ? 1 : 0.6;
     ctx.beginPath(); for (let r = IDLE_RPM; r <= v.rpm; r += 5) { const y = Y(engineBhp(r, id)); r === IDLE_RPM ? ctx.moveTo(X(r), y) : ctx.lineTo(X(r), y); } ctx.stroke();
     ctx.globalAlpha = 1; ctx.fillStyle = cols[id]; ctx.beginPath(); ctx.arc(X(v.rpm), Y(v.bhp), 4, 0, 6.3); ctx.fill();
-    txt(ctx, v.name.replace("12LDA28-", "") + ` ${v.bhp}`, X(v.rpm) + 7, Y(v.bhp) + 4, { c: cols[id], f: "11px system-ui" });
+    txt(ctx, v.name.replace("12LDA28-", "") + ` ${v.bhp}`, X(v.rpm) + 7, Y(v.bhp) + 4 + ({ A: 13, B: 2, C: -6, Cd: 1 }[id] || 0), { c: cols[id], f: "11px system-ui" });
   }
   // torque (right axis), for selected variant
   const tmax = 40000; const T = (t) => y0 + ph - (t / tmax) * ph;
@@ -207,9 +207,9 @@ export function drawPowerChart(canvas, eng, variant) {
     const bhp = eng.running ? eng.bhp : 0, x = X(Math.min(xmax, Math.max(xmin, eng.rpm)));
     ctx.strokeStyle = "#ffffff55"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + ph); ctx.stroke();
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, Y(bhp), 5, 0, 6.3); ctx.fill();
-    txt(ctx, `${Math.round(eng.rpm)} rpm · ${Math.round(bhp)} bhp`, x + 8, Y(bhp) - 8, { f: "12px ui-monospace, monospace" });
+    txt(ctx, `${Math.round(eng.rpm)} rpm · ${Math.round(bhp)} bhp`, x > x0 + pw * 0.6 ? x - 8 : x + 8, Y(bhp) - 8, { a: x > x0 + pw * 0.6 ? "right" : "left", f: "12px ui-monospace, monospace" });
   }
-  txt(ctx, "ESTIMATED shape between idle and rated: P ∝ n^1.6", x0, h - 4, { c: COL.accent, f: "10px system-ui" });
+  txt(ctx, "ESTIMATED shape between idle and rated: P ∝ n^1.6", x0 + 8, y0 + 12, { c: COL.accent, f: "10px system-ui" });
 }
 
 export function drawTeChart(canvas, loco) {
@@ -250,10 +250,10 @@ export function drawChain(canvas) {
   const st = [
     ["Fuel burned", 100, "#c9a227", "heat in fuel = 100%"],
     ["Engine shaft", 40, "#ff6b3d", "~40% brake thermal efficiency (E)"],
-    ["Main generator input", 37.2, "#e8b84a", "after ~100 kW of auxiliaries (E)"],
+    ["Main generator input", 37.2, "#e8b84a", "after ~95 bhp auxiliaries (E)"],
     ["Generator output", 35.0, "#46c28a", "~94% (E)"],
-    ["Traction-motor shafts", 31.9, "#4aa8ff", "~91% (E) (motor 354 hp / 409 V x 710 A)"],
-    ["Rail (drawbar)", 31.4, "#9aa6ff", "~98% gears -> ~2,025 hp at rail (E)"],
+    ["Traction-motor shafts", 31.9, "#4aa8ff", "~91% (E)"],
+    ["Rail (drawbar)", 31.4, "#9aa6ff", "~98% gears; ~2,025 hp (E)"],
   ];
   const x0 = 150, pw = w - x0 - 16, rh = (h - 12) / st.length;
   st.forEach(([n, v, c, note], i) => {
