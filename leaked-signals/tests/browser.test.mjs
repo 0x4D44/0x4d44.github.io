@@ -36,6 +36,10 @@ try {
     const a = await p.evaluate(() => window.__leak.state.T), c = await p.evaluate(() => (window.__leak.seek(20), window.__leak.state.T));
     assert.equal(a, c, "seek deterministic");
     if (vp.width > 600) for (let t = 1; t < 64; t += 3) { const n = await p.evaluate(t => { window.__leak.seek(t); return window.__leak.info().n; }, t); assert.ok(n > 500, `tour frame t=${t} is empty (n=${n})`); }
+    await p.click("#tab-broadcasts"); await p.evaluate(() => window.__leak.selectBroadcast(document.querySelector("#bList [data-b]:last-child").dataset.b));
+    await p.waitForTimeout(600);
+    const sc = await p.evaluate(() => [document.querySelector("#panel").scrollTop, document.querySelector(".app").scrollTop, document.scrollingElement.scrollTop]);
+    assert.ok(sc[0] === 0 && sc[1] === 0, "panel/app must not be scrolled: " + sc);
     await p.evaluate(() => window.__leak.seek(46));
     await p.waitForTimeout(700);
     const ov = await p.evaluate(() => { const c = document.querySelector("#caption").getBoundingClientRect(), d = document.querySelector("#dock").getBoundingClientRect(); return { c: c.bottom, d: d.top, on: document.querySelector("#caption").classList.contains("on") }; });

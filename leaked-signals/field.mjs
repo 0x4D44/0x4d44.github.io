@@ -89,7 +89,7 @@ export function buildBroadcast(b, jdNow, az = 220) {
   const src = siteById[b.site];
   const t0 = C.jdFromUnixMs(Date.parse(b.start)), t1 = t0 + b.mins / 1440;
   const rnd = C.mulberry32(C.hashStr(b.id));
-  const n = Math.max(6, Math.min(90, Math.round(b.mins / 2)));
+  const n = Math.max(6, Math.min(165, Math.round(b.mins / 2)));
   const out = [];
   for (let k = 0; k < n; k++) {
     const jd = t0 + ((k + 0.5) / n) * (t1 - t0);
@@ -97,8 +97,9 @@ export function buildBroadcast(b, jdNow, az = 220) {
     const o = [eh[0] * C.AU_LY, eh[1] * C.AU_LY, eh[2] * C.AU_LY], age = (jdNow - jd) / C.DAYS_PER_YEAR;
     for (let j = 0; j < az; j++) {
       const th = ((j + rnd()) / az) * 2 * Math.PI;
-      const d = C.fanDirection(fr, th, C.sampleElevation(rnd, src));
-      out.push(o[0], o[1], o[2], d[0], d[1], d[2], age, -2, 1, KIND.pick);
+      const el = C.sampleElevation(rnd, src), d = C.fanDirection(fr, th, el);
+      // y = -2 - fraction of the broadcast elapsed (gl.mjs ramps blue -> magenta); weight follows the mast pattern
+      out.push(o[0], o[1], o[2], d[0], d[1], d[2], age, -2 - k / (n - 1), Math.max(0.05, Math.sqrt(C.elevGain(el))), KIND.pick);
     }
   }
   return { n: out.length / STRIDE, data: new Float32Array(out), jdRef: jdNow, t0, t1 };

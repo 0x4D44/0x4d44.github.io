@@ -28,12 +28,15 @@ button,select,input{font:inherit;color:inherit}
 .btn:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 400px;flex:1;min-height:0}
 @media (min-width:981px){ body{height:100vh;height:100dvh} .app{overflow:hidden} .panel{overflow:hidden} .stage{min-height:0!important} }
+.panel,.app{overscroll-behavior:contain}
 .stage{position:relative;min-height:520px;background:radial-gradient(ellipse at 50% 45%,#0b1226 0%,#05070d 70%);overflow:hidden;touch-action:none;user-select:none}
 :root[data-theme="light"] .stage{background:#05070d}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #ov{pointer-events:none}
 #hud{position:absolute;left:12px;top:10px;font:12px var(--mono);color:#d4dff5;background:rgba(5,7,13,.55);padding:4px 8px;border-radius:6px;pointer-events:none;line-height:1.5;text-shadow:0 1px 3px #000}
 #hud b{color:var(--amber);font-weight:600}
+#hlNote{position:absolute;right:12px;top:12px;max-width:min(300px,46%);background:rgba(5,7,13,.82);border:1px solid #27385a;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.4;color:#dfe7f5;z-index:2}
+#hlNote b.s{color:#4099ff}#hlNote b.e{color:#ff66e6}
 #caption{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;max-width:min(720px,92%);text-align:center;font-size:17px;line-height:1.35;color:#fff;
   background:rgba(5,8,16,.72);padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);opacity:0;transition:opacity .4s;pointer-events:none}
 #caption.on{opacity:1}
@@ -93,6 +96,8 @@ video{width:100%;border-radius:9px;background:#000;display:block}
 .dock select{color:var(--ink);background:var(--bg2)}
 @media (max-width:520px){ .dock{padding:6px 8px 8px;gap:4px} .dock .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .dock .row>*{flex:0 0 auto} .dock .row input[type=range]{flex:1 0 110px} .stage{height:70vh} #caption{bottom:150px} .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
 @media (prefers-reduced-motion:reduce){ #caption{transition:none} }
+.video #hlNote{display:none}
+@media (max-width:980px){#hlNote{top:auto;bottom:236px;left:8px;right:auto;max-width:60%;font-size:11px}}
 .video .top,.video .panel,.video .foot,.video .dock{display:none!important}
 .video body{height:100vh} .video .app{grid-template-columns:minmax(0,1fr)} .video .stage{height:100vh;min-height:0}
 .video #caption{font-size:22px;max-width:70%;bottom:44px} .video #hud{font-size:15px}
@@ -110,6 +115,7 @@ video{width:100%;border-radius:9px;background:#000;display:block}
     <canvas id="gl" aria-hidden="true"></canvas>
     <canvas id="ov" aria-hidden="true"></canvas>
     <div id="hud" aria-live="off"></div>
+    <div id="hlNote" aria-live="polite" hidden></div>
     <div id="caption" role="status" aria-live="polite"></div>
     <div class="dock" id="dock"></div>
   </section>
