@@ -684,7 +684,10 @@ function selectBroadcast(id, fly = true) {
   $("#bFly").onclick = () => flyToBroadcast(b);
   $("#bRewind").onclick = () => { stopTour(); S.T = clamp(C.yearFromJd(t0), T_MIN, T_MAX); S.logR = -4.4; S.playing = true; $("#spd").value = 0; S.speed = 1 / 365.25 / 1; dirty = true; syncDock(); };
   $$("#bDetail [data-star]").forEach(x => x.onclick = () => { selectStar(+x.dataset.star, { switchTab: true }); focusStar(+x.dataset.star); });
-  $("#bDetail").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  { // scroll only the tab body: scrollIntoView would also scroll the overflow:hidden panel and strand its tabs
+    const d = $("#bDetail"), tb = d.closest(".tabbody");
+    if (tb) { const r = d.getBoundingClientRect(), tr = tb.getBoundingClientRect(); if (r.top < tr.top || r.bottom > tr.bottom) tb.scrollTo({ top: tb.scrollTop + r.top - tr.top - 8, behavior: "smooth" }); }
+  }
   if (fly) flyToBroadcast(b);
 }
 function flyToBroadcast(b) {
@@ -825,6 +828,8 @@ function tick(now) {
 }
 let lastKpi = 0, lastListen = 0;
 buildDock(); buildPanel(); syncDock();
+// the panel and app shell are overflow:hidden on desktop; never let anything scroll them (only .tabbody scrolls)
+for (const el of [$("#panel"), $(".app")]) el.addEventListener("scroll", () => { if (el.scrollTop) el.scrollTop = 0; });
 $("#foot").innerHTML = `Leaked Signals &middot; a simulation, not a measurement. The physics is real; the transmitter table is a model.`;
 $("#themeBtn").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light"; drawAnatomyNow(); renderListen(); };
 // listening to a star changes with the date, so refresh the listen panel when the date is dragged
