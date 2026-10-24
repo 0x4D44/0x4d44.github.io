@@ -61,7 +61,7 @@ varying float vS; varying float vSz;
 void main(){
   gl_Position = uVP * vec4(aP, 1.0);
   vS = aS.y; vSz = aS.x;
-  gl_PointSize = aS.x * uScale * (aS.y > 0.5 ? 1.8 : 1.0);
+  gl_PointSize = aS.x * uScale * (aS.y > 1.5 ? 2.0 : aS.y > 0.5 ? 1.35 : 1.0);
 }`;
 const FS_STAR = `
 precision mediump float; varying float vS; varying float vSz;
@@ -69,7 +69,7 @@ void main(){
   vec2 q = gl_PointCoord - 0.5; float d = length(q) * 2.0;
   float a = smoothstep(1.0, 0.15, d);
   vec3 c = vS > 1.5 ? vec3(1.0, 0.9, 0.35) : vS > 0.5 ? vec3(1.0, 0.72, 0.3) : vec3(0.78, 0.86, 1.0);
-  float k = vS > 0.5 ? 1.0 : min(1.0, 0.35 + vSz * 0.14);
+  float k = vS > 1.5 ? 1.0 : vS > 0.5 ? 0.75 : min(0.85, 0.25 + vSz * 0.1);
   gl_FragColor = vec4(c * a * k, a * k);
 }`;
 
@@ -128,7 +128,7 @@ export function createRenderer(canvas) {
       gl.uniform1f(U.gain, s.gain); gl.uniform1f(U.phys, s.phys); gl.uniform1f(U.r0, s.r0 || 10); gl.uniform1f(U.rmax, s.rmax); gl.uniform1f(U.dim, s.dim ?? 1);
       gl.uniform3fv(U.pal, pal);
       if (nMain) { bindPts(bufMain); gl.drawArrays(gl.POINTS, 0, nMain); }
-      if (nHl && s.hlDT != null) { bindPts(bufHl); gl.uniform1f(U.dt, s.hlDT); gl.uniform1f(U.gain, 1.6); gl.uniform1f(U.dim, 1); gl.drawArrays(gl.POINTS, 0, nHl); }
+      if (nHl && s.hlDT != null) { bindPts(bufHl); gl.uniform1f(U.dt, s.hlDT); gl.uniform1f(U.gain, 1.1); gl.uniform1f(U.dim, 1); gl.drawArrays(gl.POINTS, 0, nHl); }
     },
   };
 }

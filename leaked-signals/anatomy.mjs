@@ -10,11 +10,11 @@ function rotate(p, yaw, pitch) {
 const sph = (ra, dec, r = 1) => [r * Math.cos(dec) * Math.cos(ra), r * Math.cos(dec) * Math.sin(ra), r * Math.sin(dec)];
 
 export function drawAnatomy(cv, a, col) {
-  const c = cv.getContext("2d"), W = cv.width, H = cv.height, R = Math.min(W, H) * 0.4, cx = W / 2, cy = H / 2;
+  const c = cv.getContext("2d"), K = 2, W = cv.width, H = cv.height, R = Math.min(W, H) * 0.4, cx = W / 2, cy = H / 2;
   c.clearRect(0, 0, W, H);
   const P = p => { const q = rotate(p, a.yaw, a.pitch); return [cx + q[0] * R, cy - q[2] * R, q[1]]; };
   const poly = (pts, color, width, dash = []) => {
-    c.strokeStyle = color; c.lineWidth = width; c.setLineDash(dash);
+    c.strokeStyle = color; c.lineWidth = width * K; c.setLineDash(dash);
     let pen = false, last = null;
     c.beginPath();
     for (const p of pts) { const q = P(p); if (!pen) { c.moveTo(q[0], q[1]); pen = true; } else c.lineTo(q[0], q[1]); last = q; }
@@ -30,12 +30,12 @@ export function drawAnatomy(cv, a, col) {
     poly(pts, color, w, dash);
   };
   // sphere outline
-  c.strokeStyle = col.line; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
+  c.strokeStyle = col.line; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
   // equator
   circ([0, 0, 1], Math.PI / 2, col.line, 1.2);
   // axis
   poly([[0, 0, -1.15], [0, 0, 1.15]], col.dim, 1, [2, 4]);
-  c.fillStyle = col.dim; c.font = "12px ui-monospace,monospace";
+  c.fillStyle = col.dim; c.font = "bold 22px ui-monospace,monospace";
   const np = P([0, 0, 1.15]); c.fillText("N pole", np[0] + 5, np[1]);
   const lat = a.lat * D2R, ra = a.hour * 15 * D2R;
   const zen = sph(ra, lat);
@@ -51,7 +51,7 @@ export function drawAnatomy(cv, a, col) {
   if (a.soft > 0) { circ(zen, Math.PI / 2 + a.soft * D2R, col.amber, 1, [4, 3]); circ(zen, Math.PI / 2 - 0.5 * D2R, col.amber, 1, [4, 3]); }
   // zenith point and the mast
   const z = P(zen);
-  c.fillStyle = col.cyan; c.beginPath(); c.arc(z[0], z[1], 5, 0, 7); c.fill(); c.fillStyle = col.ink; c.fillText("mast zenith", z[0] + 8, z[1] - 6);
+  c.fillStyle = col.cyan; c.beginPath(); c.arc(z[0], z[1], 9, 0, 7); c.fill(); c.fillStyle = col.ink; c.fillText("mast zenith", z[0] + 8, z[1] - 6);
   const lo = Math.max(-90, -(90 - Math.abs(a.lat))).toFixed(0), hi = Math.min(90, 90 - Math.abs(a.lat)).toFixed(0);
   return `At latitude <b>${a.lat}°</b> the fan can only ever point at declinations between <b>${lo}°</b> and <b>+${hi}°</b> (plus a degree or two of beam). `
     + `Right now the mast's zenith is at RA ${a.hour.toFixed(1)}h, Dec ${a.lat}°, so the fan is the amber circle. Over 24 sidereal hours it sweeps the whole band between the white dotted circles.`;

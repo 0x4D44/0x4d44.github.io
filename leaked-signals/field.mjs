@@ -8,7 +8,7 @@ import { ALL_SOURCES, BEACONS, siteById } from "./sites.mjs";
 export const STRIDE = 10; // origin3 dir3 | age0, src, intensity, kind
 export const KIND = { tv: 0, pick: 1, radar: 2, beacon: 3 };
 
-function brightness(w) { return Math.max(0.1, Math.min(1, (Math.log10(Math.max(w, 1)) - 3.5) / 3)); }
+function brightness(w) { return Math.max(0.4, Math.min(1, (Math.log10(Math.max(w, 1)) - 3.0) / 3)); }
 
 /**
  * @param jdNow reference observer time (julian date)
@@ -39,7 +39,8 @@ export function buildField(jdNow, windowLy, opts = {}) {
       const off = rnd();
       for (let j = 0; j < az; j++) {
         const th = ((j + off) / az) * 2 * Math.PI;
-        push(o, C.fanDirection(fr, th, C.sampleElevation(rnd, src)), age, si, b, KIND.tv);
+        const el = C.sampleElevation(rnd, src);
+        push(o, C.fanDirection(fr, th, el), age, si, b * Math.max(0.15, Math.sqrt(C.elevGain(el))), KIND.tv);
       }
     }
   });
