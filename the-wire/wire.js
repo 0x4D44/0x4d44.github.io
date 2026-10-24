@@ -50,6 +50,7 @@
     const box = H('div', { class: 'svgbox' });
     const svg = S('svg', { viewBox: '0 0 ' + vb[0] + ' ' + vb[1], role: 'img', 'aria-label': label }, box);
     parent.append(box);
+    parent.append(H('div', { class: 'hint', text: '← diagram scrolls sideways →' }));
     return svg;
   }
   // A packet that glides along a polyline of points. Returns promise; element removed after unless keep.

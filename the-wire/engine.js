@@ -17,7 +17,7 @@
   // ---------- Ethernet frame ----------
   function parseMac(s) {
     const p = String(s).trim().split(/[:\-]/);
-    if (p.length !== 6) return null;
+    if (p.length !== 6 || !p.every((x) => /^[0-9a-fA-F]{1,2}$/.test(x))) return null;
     const b = p.map((x) => parseInt(x, 16));
     return b.some((x) => !(x >= 0 && x <= 255)) ? null : b;
   }
@@ -98,10 +98,12 @@
   // ---------- Learning switch ----------
   // sw = {table:{mac:port}, ports:[...]}. Returns {out:[ports], flood:bool, learned:bool}.
   function switchForward(sw, inPort, src, dst, isHub) {
+    src = String(src).toLowerCase(); dst = String(dst).toLowerCase();
     const all = sw.ports.filter((p) => p !== inPort);
     if (isHub) return { out: all, flood: true, learned: false };
     let learned = false;
-    if (!/^ff:ff/i.test(src) && sw.table[src] !== inPort) { sw.table[src] = inPort; learned = true; }
+    const sm = parseMac(src);
+    if (sm && !(sm[0] & 1) && sw.table[src] !== inPort) { sw.table[src] = inPort; learned = true; }
     const known = sw.table[dst];
     if (/^ff:ff:ff:ff:ff:ff$/i.test(dst) || known == null) return { out: all, flood: true, learned };
     if (known === inPort) return { out: [], flood: false, learned, filtered: true };
@@ -114,15 +116,16 @@
     const labels = name.toLowerCase().replace(/\.$/, '').split('.').filter(Boolean);
     if (labels.length < 2) return null;
     const tld = labels[labels.length - 1];
-    const zone = labels.slice(-2).join('.');
+    const SLD = ['co', 'org', 'ac', 'gov', 'com', 'net'];
+    const zone = (labels.length >= 3 && SLD.includes(labels[labels.length - 2]) && tld.length === 2 ? labels.slice(-3) : labels.slice(-2)).join('.');
     const h = hash(zone);
     const ans = type === 'AAAA' ? '2001:db8:' + (h & 0xffff).toString(16) + '::' + ((h >>> 16) & 0xffff).toString(16)
       : type === 'MX' ? '10 mail.' + zone + '.'
-      : '203.0.' + (((h >>> 8) & 255) % 250 + 1) + '.' + ((h & 255) % 250 + 1);
+      : '198.51.100.' + ((h & 255) % 250 + 1);
     return {
       name: labels.join('.'), type, tld, zone, answer: ans, ttl: 300,
       steps: [
-        { to: 'root', q: labels.join('.') + '. ' + type + ' ?', a: 'Not me. Ask .' + tld + ' — a.' + tld + '-servers.net (referral, NS record)', kind: 'referral' },
+        { to: 'root', q: labels.join('.') + '. ' + type + ' ?', a: 'Not me. Ask the .' + tld + ' name servers (referral: NS records + glue)', kind: 'referral' },
         { to: 'tld', q: labels.join('.') + '. ' + type + ' ?', a: 'Not me. ' + zone + ' is run by ns1.' + zone + ' (referral + glue A record)', kind: 'referral' },
         { to: 'auth', q: labels.join('.') + '. ' + type + ' ?', a: labels.join('.') + '. 300 IN ' + type + ' ' + ans + '   (authoritative answer)', kind: 'answer' },
       ],
@@ -133,7 +136,7 @@
   const L1_OVERHEAD = 8 + 14 + 4 + 12;  // preamble+SFD, header, FCS, inter-frame gap
   function efficiency(mtu, opts) {
     opts = opts || {};
-    const tcpHdr = (opts.hdr == null ? 40 : opts.hdr) + (opts.vlan ? 0 : 0);
+    const tcpHdr = opts.hdr == null ? 40 : opts.hdr;
     const l1 = L1_OVERHEAD + (opts.vlan ? 4 : 0);
     const payload = mtu - tcpHdr;
     const wire = mtu + l1;
@@ -167,7 +170,7 @@
     const push = (e) => { e.n = seq++; ev.push(e); ev.sort((a, b) => a.t - b.t || a.n - b.n); };
     cfg.writes.forEach((w) => push({ t: w.t, type: 'write', size: w.size }));
     const segs = []; const marks = [];
-    let buf = 0, sent = 0, acked = 0, recv = 0, pend = 0, timer = null, done = null;
+    let buf = 0, sent = 0, acked = 0, recv = 0, pend = 0, pendBytes = 0, timer = null, done = null;
     const sendData = (t) => {
       while (buf > 0) {
         const inflight = sent - acked;
@@ -181,17 +184,17 @@
         push({ t: t + d, type: 'data', bytes: n, end: sent });
       }
     };
-    const sendAck = (t, why) => { segs.push({ from: 's', t0: t, t1: t + d, bytes: 0, kind: 'ack', why }); push({ t: t + d, type: 'ack', val: recv }); pend = 0; timer = null; };
+    const sendAck = (t, why) => { segs.push({ from: 's', t0: t, t1: t + d, bytes: 0, kind: 'ack', why }); push({ t: t + d, type: 'ack', val: recv }); pend = 0; pendBytes = 0; timer = null; };
     let guard = 0;
-    while (ev.length && guard++ < 1000) {
+    while (ev.length && guard++ < 50000) {
       const e = ev.shift();
       if (e.type === 'write') { buf += e.size; sendData(e.t); }
       else if (e.type === 'data') {
-        recv += e.bytes; pend++;
+        recv += e.bytes; pend++; pendBytes += e.bytes;
         if (cfg.reqBytes && recv >= cfg.reqBytes && done == null) {
           segs.push({ from: 's', t0: e.t, t1: e.t + d, bytes: 100, kind: 'reply' });
-          push({ t: e.t + d, type: 'reply', val: recv }); pend = 0; timer = null;
-        } else if (!cfg.delack || pend >= 2) sendAck(e.t, pend >= 2 ? 'second segment' : 'immediate');
+          push({ t: e.t + d, type: 'reply', val: recv }); pend = 0; pendBytes = 0; timer = null;
+        } else if (!cfg.delack || pendBytes >= 2 * mss) sendAck(e.t, cfg.delack ? 'two full segments' : 'immediate');
         else if (timer == null) { timer = e.t + DA; push({ t: timer, type: 'timer', at: timer }); }
       } else if (e.type === 'timer') {
         if (timer === e.at && pend > 0) sendAck(e.t, 'delayed-ACK timer (' + DA + ' ms)');
@@ -206,8 +209,9 @@
   }
 
   // ---------- CSMA/CD backoff ----------
+  const MAX_ATTEMPTS = 16;
   function backoffSlots(attempt, rnd) { const k = Math.min(attempt, 10); return Math.floor(rnd() * Math.pow(2, k)); }
 
-  const api = { crc32, parseMac, fmtMac, utf8, buildFrame, checkFcs, ip2n, n2ip, maskOf, parseCidr, subnetInfo, sameSubnet, lookup, switchForward, dnsPlan, hash, efficiency, pps, pathMtu, simTcp, backoffSlots, L1_OVERHEAD };
+  const api = { crc32, parseMac, fmtMac, utf8, buildFrame, checkFcs, ip2n, n2ip, maskOf, parseCidr, subnetInfo, sameSubnet, lookup, switchForward, dnsPlan, hash, efficiency, pps, pathMtu, simTcp, backoffSlots, MAX_ATTEMPTS, L1_OVERHEAD };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.WireEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);

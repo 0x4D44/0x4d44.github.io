@@ -22,7 +22,7 @@
     const M = { A: 'aa:aa:aa:00:00:0a', R0: 'bb:bb:bb:00:00:00', R1: 'bb:bb:bb:00:00:01', B: 'cc:cc:cc:00:00:0b', C: 'dd:dd:dd:00:00:0c', ISP: 'ee:ee:ee:00:00:01' };
     const DST = { B: ['10.0.0.20', 'B', nB, P.B], C: ['192.168.1.30', 'C', nC, P.C], N: ['8.8.8.8', 'N', nN, P.N] };
     let who = 'B', step = 0, steps = [], busy = false;
-    const log = H('div', { class: 'log' }), hdr = H('tbody'), rt = H('tbody'), ctr = H('span', { class: 'note' });
+    const log = H('div', { class: 'log', 'aria-live': 'polite' }), hdr = H('tbody'), rt = H('tbody'), ctr = H('span', { class: 'note' });
     function plan() {
       const [ip, k, , pos] = DST[who]; const local = k === 'C';
       const l = E.lookup(ROUTES, ip), r = ROUTES[l.best];
@@ -40,7 +40,7 @@
       const via = r.via === 'link' ? ip : r.via, out = r.dev;
       const dm2 = who === 'B' ? M.B : M.ISP;
       steps.push({ t: [r.via === 'link' ? 'Destination is directly connected on ' + out + ', so the router ARPs for ' + ip + ' itself (same dance as before, on the other LAN).' : 'Next hop is ' + via + ' out of ' + out + ' — router ARPs for ' + via + ', the ISP’s router, not for 8.8.8.8 (which is far away and unreachable by ARP).'], f: { smac: M.R1, dmac: 'ff:ff:ff:ff:ff:ff', sip: '(ARP request)', dip: via, ttl: '—' }, hl: l, anim: async () => { await fly(svg, [P.R, pos], { color: 'var(--mag)', label: 'ARP?', dur: 700 }); await fly(svg, [pos, P.R], { color: 'var(--lime)', label: 'ARP!', dur: 700 }); } });
-      steps.push({ t: ['The router builds a ', H('b', { text: 'brand-new frame' }), ': source MAC is now the router’s outgoing interface, destination MAC is the next hop. The IP addresses did not change at all — only the TTL did. MACs live for one hop; IPs live end to end.'], f: mk(M.R1, dm2, 63, '192.168.1.10'), ch: ['smac', 'dmac'], hl: l, anim: async () => { await fly(svg, [P.R, pos], { color: 'var(--amber)', label: 'IP→' + ip.split('.').pop(), dur: 1000 }); flash(DST[who][2].r, 'var(--lime)'); } });
+      steps.push({ t: ['The router builds a ', H('b', { text: 'brand-new frame' }), ': source MAC is now the router’s outgoing interface, destination MAC is the next hop. The IP addresses did not change — only the TTL did. (Going to the real Internet, a home router would also rewrite the private source address via NAT; this lab leaves that out.) MACs live for one hop; IPs live end to end.'], f: mk(M.R1, dm2, 63, '192.168.1.10'), ch: ['smac', 'dmac'], hl: l, anim: async () => { await fly(svg, [P.R, pos], { color: 'var(--amber)', label: 'IP→' + ip.split('.').pop(), dur: 1000 }); flash(DST[who][2].r, 'var(--lime)'); } });
       steps.push({ t: ['Delivered after 2 L2 hops and 1 L3 hop. Every further router repeats the strip-lookup-rewrite routine. If TTL hit 0 the router would drop it and send ICMP “time exceeded” — which is how traceroute works.'], f: mk(M.R1, dm2, 63, '192.168.1.10'), hl: l, anim: null, end: true });
     }
     function render() {
@@ -73,7 +73,7 @@
       [['network', i.network + '/' + i.len], ['mask', i.mask], ['broadcast', i.broadcast], ['usable hosts', i.hosts + ' (' + i.first + ' – ' + i.last + ')']].forEach((r) => tb.append(H('tr', null, H('td', { text: r[0] }), H('td', { text: r[1] }))));
     }
     inp.addEventListener('input', draw);
-    const lin = H('input', { type: 'text', value: '10.1.2.77', style: 'width:150px', 'aria-label': 'destination IP' }), lt = H('tbody'), lm = H('div', { class: 'log' });
+    const lin = H('input', { type: 'text', value: '10.1.2.77', style: 'width:150px', 'aria-label': 'destination IP' }), lt = H('tbody'), lm = H('div', { class: 'log', 'aria-live': 'polite' });
     const R2 = [{ cidr: '0.0.0.0/0' }, { cidr: '10.0.0.0/8' }, { cidr: '10.1.0.0/16' }, { cidr: '10.1.2.0/24' }, { cidr: '192.168.0.0/16' }];
     function drawL() {
       const r = E.lookup(R2, lin.value); lt.innerHTML = '';
@@ -96,7 +96,7 @@
     const root = node(svg, ...P.root, 110, 44, 'Root  .', '13 server names', 'var(--amber)'), tld = node(svg, ...P.tld, 100, 44, 'TLD', '.com / .uk', 'var(--vio)'), auth = node(svg, ...P.auth, 120, 44, 'Authoritative', 'ns1.example.com', 'var(--lime)');
     const N = { root, tld, auth };
     const cache = {}; let clock = 0, busy = false, runId = 0;
-    const log = H('div', { class: 'log' }, 'Type a name and press Resolve. Then resolve it again, and a sibling name (e.g. mail.example.com).'), ctb = H('tbody');
+    const log = H('div', { class: 'log', 'aria-live': 'polite' }, 'Type a name and press Resolve. Then resolve it again, and a sibling name (e.g. mail.example.com).'), ctb = H('tbody');
     const inp = H('input', { type: 'text', value: 'www.example.com', style: 'width:190px', 'aria-label': 'domain name' });
     let type = 'A';
     const fmtT = (s) => (s >= 86400 ? Math.round(s / 86400) + ' d' : s >= 3600 ? Math.round(s / 3600) + ' h' : s + ' s');
@@ -146,7 +146,7 @@
       const e = E.efficiency(mtu, { vlan }), base = E.efficiency(1500, { vlan });
       const sc = W / WIN; let x = 10; const y = 52, h = 34;
       S('text', { x: 10, y: 24, 'font-size': 12, fill: 'var(--dim)' }, g, 'The same ' + WIN + ' bytes of wire time, filled with ' + mtu + '-byte-MTU frames (red = overhead you pay every frame):');
-      const segs = [['gap', E.L1_OVERHEAD - 8 - 4 - 14 - 0, 'var(--line)'], ['pre', 8, 'var(--dim)'], ['hdr', 14 + (vlan ? 4 : 0), 'var(--red)'], ['ip', 40, 'var(--red)'], ['data', e.payload, 'var(--cyan)'], ['fcs', 4, 'var(--red)']];
+      const segs = [['gap', 12, 'var(--line)'], ['pre', 8, 'var(--dim)'], ['hdr', 14 + (vlan ? 4 : 0), 'var(--red)'], ['ip', 40, 'var(--red)'], ['data', e.payload, 'var(--cyan)'], ['fcs', 4, 'var(--red)']];
       const full = Math.floor(WIN / e.wire); let used = 0;
       for (let f = 0; f < full; f++) { segs.forEach((s) => { const w = Math.max(.7, s[1] * sc); S('rect', { x, y, width: w, height: h, fill: s[2], opacity: s[0] === 'data' ? .55 : .95 }, g); x += s[1] * sc; }); used += e.wire; }
       const rem = WIN - used; if (rem > 0) S('rect', { x, y, width: rem * sc, height: h, fill: 'none', stroke: 'var(--line)', 'stroke-dasharray': '3 3' }, g);
@@ -175,7 +175,7 @@
       const stop = r.ok ? 3 : r.at;
       for (let i = 0; i <= stop; i++) {
         if (!r.ok && i === stop) { await fly(svg, [[X[i] + 35, 60], [(X[i] + X[i + 1]) / 2 - 30, 60]], { color: 'var(--red)', label: size + ' B', dur: 700 }); note('✗ dropped (DF set)', 'var(--red)'); await fly(svg, [[(X[i] + X[i + 1]) / 2 - 30, 90], [X[i] , 90], [X[0], 90]], { color: 'var(--amber)', label: 'ICMP 3/4', dur: 1100 }); break; }
-        const m = links[i] || 0; await fly(svg, [[X[i], 60], [X[i + 1] || X[i], 60]], { color: 'var(--cyan)', label: (i >= 1 && r.pieces && !df ? 'frags' : size + ' B'), dur: 650 });
+        const m = links[i] || 0; await fly(svg, [[X[i], 60], [X[i + 1] || X[i], 60]], { color: 'var(--cyan)', label: (i >= 1 && r.pieces && r.pieces.length > 1 ? 'frags' : size + ' B'), dur: 650 });
       }
       log.innerHTML = '';
       if (!r.ok) log.append(H('b', { text: 'Result: ' }), r.log[r.log.length - 1], ' A well-behaved sender then lowers its packet size (PMTU discovery). If a firewall eats that ICMP message, the connection hangs forever on big packets — the infamous “PMTU black hole”: small requests work, large transfers stall.');
@@ -195,7 +195,7 @@
       bulk: { name: 'Bulk upload: 6 × 3000 B writes', writes: Array.from({ length: 6 }, (_, i) => ({ t: i * 0.5, size: 3000 })), reqBytes: 0 },
     };
     const st = { sc: 'wwr', rtt: 20, nagle: true, delack: true };
-    const holder = H('div'), tbl = H('tbody'), log = H('div', { class: 'log' });
+    const holder = H('div'), tbl = H('tbody'), log = H('div', { class: 'log', 'aria-live': 'polite' });
     const doneOf = (r) => (r.done != null ? r.done : Math.max(0, ...r.segs.filter((s) => s.kind === 'data').map((s) => s.t1)));
     const run = (o) => E.simTcp({ writes: SC[st.sc].writes, reqBytes: SC[st.sc].reqBytes, rtt: st.rtt, nagle: o.n, delack: o.d });
     function draw() {
@@ -218,7 +218,7 @@
       S('line', { x1: 40, x2: VW - 10, y1: y(dn), y2: y(dn), stroke: 'var(--amber)', 'stroke-width': 1.4 }, q);
       S('text', { x: VW - 12, y: y(dn) - 5, 'text-anchor': 'end', 'font-size': 11, 'font-weight': 700, fill: 'var(--amber)' }, q, (r.done != null ? 'reply received ' : 'last byte delivered ') + dn.toFixed(1) + ' ms');
       log.textContent = st.nagle && st.delack && st.sc === 'wwr' ? 'The classic trap: Nagle will not send the body until the header is ACKed; the server will not ACK until its 40 ms delayed-ACK timer fires (it has nothing to reply with yet). Two sensible features, one bad interaction. Turn either off and the stall vanishes.'
-        : !st.nagle && st.sc === 'typing' ? 'TCP_NODELAY: every keystroke becomes its own 41-byte-overhead packet. Great latency, wasteful on a slow link.' : st.nagle && st.sc === 'typing' ? 'Nagle at work: while one keystroke is unACKed, the next ones queue up and ride together in a single segment.' : r.dataSegs + ' data segment' + (r.dataSegs === 1 ? '' : 's') + ' sent.';
+        : !st.nagle && st.sc === 'typing' ? 'TCP_NODELAY: every keystroke becomes its own 40-byte-overhead packet. Great latency, wasteful on a slow link.' : st.nagle && st.sc === 'typing' ? 'Nagle at work: while one keystroke is unACKed, the next ones queue up and ride together in a single segment.' : r.dataSegs + ' data segment' + (r.dataSegs === 1 ? '' : 's') + ' sent.';
       tbl.innerHTML = '';
       [[true, true], [true, false], [false, true], [false, false]].forEach(([n, d]) => { const rr = run({ n, d }); tbl.append(H('tr', { class: n === st.nagle && d === st.delack ? 'hl' : '' }, H('td', { text: n ? 'on' : 'off (NODELAY)' }), H('td', { text: d ? 'on' : 'off' }), H('td', { text: String(rr.dataSegs) }), H('td', { text: doneOf(rr).toFixed(1) + ' ms' }))); });
     }
