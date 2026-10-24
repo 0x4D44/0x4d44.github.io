@@ -61,7 +61,8 @@ const cssCol = cc => { const c = ccColour[cc]; return `rgb(${c.map(x => Math.rou
 
 const jdOf = () => C.jdFromYear(S.T);
 const R_VIEW = () => Math.pow(10, S.logR);
-const EDGE = () => Math.max(0, S.T - 1936.83);          // bubble radius, ly
+const FIRST_TV = Math.min(...SITES.map(s => s.start));
+const EDGE = () => Math.max(0, S.T - FIRST_TV);          // bubble radius, ly
 
 // ---------- DOM scaffolding ----------
 const glc = $("#gl"), ov = $("#ov"), stage = $("#stage"), octx = ov.getContext("2d");
@@ -96,7 +97,10 @@ function rebuild() {
   const t0 = performance.now();
   const W = Math.min(Math.max(wantWindow() * 1.15, 0.0008), Math.max(EDGE(), 0.0008));
   const fine = W < 0.02, mid = W < 3;
-  field = buildField(jdOf(), W, { rings: fine ? 190 : mid ? 170 : 150, az: fine ? 110 : mid ? 80 : 56, filter: sourceFilter });
+  const az = fine ? 110 : mid ? 80 : 56;
+  const nSrc = Math.max(1, ALL_SOURCES.filter(x => x.kind !== "radar" && sourceFilter(x) && C.erpW(x, S.T) > 0).length);
+  const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 150, 1400);   // fewer sources -> finer time resolution
+  field = buildField(jdOf(), W, { rings, az, filter: sourceFilter });
   fieldKey = soloKey();
   R.setField(field);
   lastBuildMs = performance.now() - t0;
@@ -162,6 +166,9 @@ function resize() {
 new ResizeObserver(resize).observe(stage);
 
 // ---------- frame ----------
+const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+const zoomGain = () => 1 - 0.8 * sstep(-1.0, 2.1, S.logR);     // fewer photons per point once thousands overlap
+const zoomSize = () => 2.6 - 1.7 * sstep(-3.6, -0.5, S.logR);  // each ray is a visible dot at AU scales
 function frame() {
   if (R && !tourSeeking && needsRebuild()) {
     clearTimeout(rebuildTimer);
@@ -173,7 +180,7 @@ function frame() {
   const cam = camera();
   if (R) {
     R.draw({
-      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size, gain: S.gain, phys: S.phys ? 1 : 0, r0: 12,
+      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain(), phys: S.phys ? 1 : 0, r0: 12,
       rmax: 1e9, stars: S.stars, dim: S.hl ? 0.35 : 1,
       hlDT: hlField ? (jdOf() - hlField.jdRef) / C.DAYS_PER_YEAR : null,
     });
@@ -221,9 +228,9 @@ function drawOverlay(cam) {
     octx.setLineDash([]);
     // equatorial plane & ecliptic great circles at the bubble edge
     if (edge > r * 0.05) {
-      octx.strokeStyle = "rgba(88,214,255,.28)"; circle3([0, 0, 0], [1, 0, 0], [0, 1, 0], edge, 160);
+      octx.strokeStyle = "rgba(88,214,255,.14)"; circle3([0, 0, 0], [1, 0, 0], [0, 1, 0], edge, 160);
       const e = 23.4393 * C.D2R;
-      octx.strokeStyle = "rgba(255,180,84,.22)"; octx.setLineDash([6, 5]);
+      octx.strokeStyle = "rgba(255,180,84,.12)"; octx.setLineDash([6, 5]);
       circle3([0, 0, 0], [1, 0, 0], [0, Math.cos(e), Math.sin(e)], edge, 160); octx.setLineDash([]);
       const q = project(VP, [edge, 0, 0], W, H);
       if (q[2] > 0) label(`first TV, ${(S.T - edge).toFixed(1)}`, q[0] + 6, q[1] + 12, "#58d6ff", "left", 11);
@@ -246,11 +253,11 @@ function drawOverlay(cam) {
     const d = C.radec2vec(b.ra, b.dec), p = [d[0] * age, d[1] * age, d[2] * age], q = project(VP, p, W, H);
     if (q[2] <= 0 || q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) continue;
     octx.strokeStyle = "#5affd8"; octx.lineWidth = 1.5; octx.beginPath(); octx.arc(q[0], q[1], 7, 0, 7); octx.stroke();
-    label(`${b.name} → ${b.targetName}`, q[0] + 11, q[1] + 4, "#5affd8", "left", 11);
+    label(b.name, q[0] + 11, q[1] + 4, "#5affd8", "left", 11);
   }
   // stars
   if (S.stars && S.labels) {
-    const used = [], maxLabels = W < 620 ? 8 : 16;
+    const used = [], maxLabels = W < 620 ? 6 : 11;
     let n = 0;
     const rLim = Math.max(r * 1.6, 3);
     for (const i of NAMED) {
@@ -259,6 +266,7 @@ function drawOverlay(cam) {
       if (ly > rLim && S.star !== i) continue;
       const q = project(VP, [STAR_VEC[3 * i], STAR_VEC[3 * i + 1], STAR_VEC[3 * i + 2]], W, H);
       if (q[2] <= 0 || q[0] < 4 || q[0] > W - 60 || q[1] < 14 || q[1] > H - 100) continue;
+      { const oq = project(VP, [0, 0, 0], W, H); if (Math.hypot(q[0] - oq[0], q[1] - oq[1]) < 48) continue; }
       if (used.some(u => Math.abs(u[0] - q[0]) < 90 && Math.abs(u[1] - q[1]) < 14)) continue;
       used.push(q); n++;
       label(STARS.names[i], q[0] + 6, q[1] - 5, "#9fb4dc", "left", 11);
@@ -414,11 +422,11 @@ function selectStar(i, o = {}) {
 }
 function focusStar(i) {
   const v = C.radec2vec(STARS.ra[i], STARS.dec[i]);
-  animateTo({ logR: Math.log10(Math.max(STARS.ly[i] * 1.5, 0.5)), yaw: Math.atan2(v[1], v[0]) + 0.6, pitch: Math.asin(v[2]) * 0.6 + 0.2 });
+  animateTo({ logR: Math.log10(Math.max(STARS.ly[i] * 1.6, 0.5)), yaw: Math.atan2(v[1], v[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(v[2]) + 0.2, -1.4, 1.4) });
 }
 
 // ---------- panel ----------
-const TABS = [["explore", "Explore"], ["listen", "Listen"], ["broadcasts", "Broadcasts"], ["anatomy", "Anatomy"], ["about", "Method & video"]];
+const TABS = [["explore", "Explore"], ["listen", "Listen"], ["broadcasts", "Broadcasts"], ["anatomy", "Anatomy"], ["about", "Method"]];
 function buildPanel() {
   $("#tabs").innerHTML = TABS.map(([id, n]) => `<button role="tab" id="tab-${id}" aria-controls="body-${id}" aria-selected="${id === S.tab}" data-tab="${id}" type="button">${n}</button>`).join("");
   $("#bodies").innerHTML = TABS.map(([id]) => `<div class="tabbody" role="tabpanel" id="body-${id}" aria-labelledby="tab-${id}" ${id === S.tab ? "" : "hidden"}></div>`).join("");
@@ -444,7 +452,7 @@ function renderExplore() {
   const el = $("#body-explore");
   el.innerHTML = `
   <h2>The idea</h2>
-  <p>Television transmitters spray signals along the horizon. Those that clear the ionosphere (VHF/UHF, from the mid-1930s) leave the planet and never stop. Every dot here is a piece of a real wavefront, placed by the real rotation of the Earth at the moment it was sent. <span class="dim">Drag to orbit, scroll or pinch to zoom, click a star to listen as it.</span></p>
+  <p>Television transmitters spray signals along the horizon. Those that clear the ionosphere (VHF/UHF, from the mid-1930s) leave the planet and never stop. Every dot is a sample of a wavefront, sent at a random moment and azimuth and aimed using the Earth's real orientation at that moment. <span class="dim">Drag to orbit, scroll or pinch to zoom, click a star to listen as it.</span></p>
   <div class="kpi" id="kpi"></div>
   <h2>Whose signals</h2>
   <div class="chips" id="ccChips"></div>
@@ -458,9 +466,9 @@ function renderExplore() {
     <button class="chip" type="button" data-toggle="grid" aria-pressed="${S.grid}">Grid &amp; rings</button>
     <button class="chip" type="button" data-toggle="phys" aria-pressed="${S.phys}" title="Dim each wavefront as 1/r², like the real inverse-square law">Physical dimming</button>
   </div>
-  <details><summary>What am I looking at?</summary>
-    <p><b>Colour</b> is the country. <b>Dense bands</b> are where fans cross the sky; the sky near Earth's poles is dark because a mast at 54°N never aims its horizon beam above declination +36°. <b>Thin streaks</b> along the ecliptic are planetary radar (Arecibo, Goldstone). <b>Teal rings</b> are one broadcast, selected in Broadcasts. <b>Amber stars</b> are catching a fan right now.</p>
-    <p>At the very closest zoom you can see individual fans leaving, a few minutes apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
+  <details open><summary>What am I looking at?</summary>
+    <p><b>Colour</b> is the country. <b>Dense bands</b> are where fans cross the sky; the sky near the celestial poles is dim because a mast at 54°N can only reach declinations between −36° and +36°. <b>Thin streaks</b> along the ecliptic are planetary radar (Arecibo, Goldstone). <b>Teal dots</b> are one broadcast, selected in Broadcasts. <b>Amber stars</b> are catching a fan right now.</p>
+    <p>At the very closest zoom you can see individual fans leaving, about two minutes of airtime apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
   </details>
   <p class="faint">${ALL_SOURCES.length} sources (${SITES.length} TV sites, ${RADARS.length} radars) &middot; ${STARS.n.toLocaleString()} stars within 100 ly &middot; <span id="buildMs"></span></p>`;
   const chips = $("#ccChips");
@@ -493,7 +501,7 @@ function sourceRows(i, jdT) {
     if (s.kind === "radar") continue;
     const r = C.receptionFrom(s, jdE, STARS.ra[i], STARS.dec[i]);
     if (r.blocked) continue;
-    if (r.el > 12) continue;
+    if (r.el > 3) continue;
     rows.push({ s, ...r, jdE });
   }
   return rows.sort((a, b) => b.w - a.w);
@@ -534,13 +542,13 @@ function renderListen(full) {
   const topNow = rows.filter(r => r.w > 0).slice(0, 5);
   const strongest = topNow[0];
   let verdict = "";
-  if (!inside) verdict = `<div class="verdict">The bubble has not reached ${esc(starName(i))} yet. It is ${fmtLy(ly)} light-years out, and television began ${fmtLy(S.T - 1936.83)} years ago, so the first broadcasts arrive in <b>${(1936.83 + ly).toFixed(0)}</b>.</div>`;
+  if (!inside) verdict = `<div class="verdict">The bubble has not reached ${esc(starName(i))} yet. It is ${fmtLy(ly)} light-years out, and television began ${fmtLy(S.T - FIRST_TV)} years ago, so the first broadcasts arrive in <b>${(FIRST_TV + ly).toFixed(0)}</b>.</div>`;
   else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.</div>`;
   else {
     const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
     const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the signal arrives with ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW effective power, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "nothing"}.</div>`;
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "nothing"}.</div>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -669,13 +677,14 @@ function selectBroadcast(id, fly = true) {
   $("#bFly").onclick = () => flyToBroadcast(b);
   $("#bRewind").onclick = () => { stopTour(); S.T = clamp(C.yearFromJd(t0), T_MIN, T_MAX); S.logR = -4.4; S.playing = true; $("#spd").value = 0; S.speed = 1 / 365.25 / 1; dirty = true; syncDock(); };
   $$("#bDetail [data-star]").forEach(x => x.onclick = () => { selectStar(+x.dataset.star, { switchTab: true }); focusStar(+x.dataset.star); });
+  $("#bDetail").scrollIntoView({ block: "nearest", behavior: "smooth" });
   if (fly) flyToBroadcast(b);
 }
 function flyToBroadcast(b) {
   const t0 = C.jdFromUnixMs(Date.parse(b.start)), age = (jdOf() - t0) / C.DAYS_PER_YEAR, src = siteById[b.site];
   if (age <= 0) { animateTo({ T: Math.min(T_MAX, C.yearFromJd(t0) + 5) }); return; }
   const fr = C.siteFrame(src.lat, src.lon, t0 + b.mins / 2880), d = C.fanDirection(fr, 0.8, 0.5);
-  animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + 0.5, pitch: Math.asin(d[2]) * 0.5 + 0.3 });
+  animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(d[2]) + 0.25, -1.4, 1.4) });
 }
 
 // ----- Anatomy -----
@@ -716,17 +725,19 @@ function renderAbout() {
   <video id="demoVideo" controls preload="none" poster="poster.jpg" playsinline aria-label="Demo: a tour of Earth's radio leakage"><source src="leaked-signals-tour.mp4" type="video/mp4"></video>
   <p class="faint">Rendered frame by frame from this very simulator (the Guided tour button plays the same script live).</p>
   <h2>How it works</h2>
-  <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe about 4° wide, plus a 0.2% floor of sidelobe scatter. The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
+  <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe a few degrees wide (Gaussian, σ = 4°), plus a 0.2% floor of sidelobe scatter. The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
   <p><b>Propagation.</b> A ray never changes direction. A piece sent <i>a</i> years ago is exactly <i>a</i> light-years from where Earth was then; Earth's own 1 AU orbit is included so the innermost spirals are offset correctly.</p>
   <p><b>Hearing.</b> A star at declination δ hears a mast at latitude φ only when the star is within the lobe of its horizon, which can only happen if |δ| ≤ 90° − |φ| (+ the lobe's few degrees). That gives the band structure, the twice-daily rising/setting windows, and a 3 min 56 s daily drift.</p>
   <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 300 K (galactic background at VHF). No atmosphere, interference or intervening medium.</p>
   <details><summary>What is approximate or invented</summary>
     <ul>
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
-      <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF and radar are.</li>
+      <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF television (one representative mast per city) and two planetary radars are modelled; FM, air-traffic and military radar are not.</li>
+      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Arrival times ignore Earth's ±8 light-minutes offset from the Sun. Dates after today extrapolate: stations are assumed to stay on air.</li>
+      <li>Each mast's power is a fleet average (peak power times a time-of-day activity factor), and effective radiated power is treated as isotropic equivalent.</li>
       <li>After the digital switch-over a transmitter is modelled at 8% of its analogue power and its signal is noise-like.</li>
       <li>Radar runs are random draws of the real pattern (planets near the ecliptic, a few per cent duty), not a log of actual observations. Arecibo Message and the other deliberate beams use the target's transit as the time of day.</li>
-      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 distinct stars). Proper motion is ignored (changes a position by &lt;0.01% of a shell radius).</li>
+      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 distinct stars). Proper motion is ignored (under 0.5% of a star's distance over 90 years, even for Barnard's Star).</li>
       <li>Programme times are the best known UT times, some approximate by a quarter-hour.</li>
     </ul></details>
   <details><summary>Further reading</summary>
@@ -748,7 +759,6 @@ function tourState(t) {
     logR: L(a.logR, b.logR), yaw: L(a.yaw, b.yaw) + (a.spin || 0) * (t - a.t), pitch: L(a.pitch, b.pitch),
     T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap,
   };
-  if (a.dT != null || b.dT != null) st.T = nowY + L(a.dT || 0, b.dT || 0);
   return st;
 }
 function applyTour(t) {
@@ -777,7 +787,7 @@ window.__leak = {
   seek(t) { tourSeeking = true; applyTour(t); if (R && needsRebuild()) rebuild(); frame(); tourSeeking = false; },
   tourLength: TOUR_LEN,
   state: S, info: () => ({ n: field ? field.n : 0, windowLy: field ? field.windowLy : 0, heard: heardCount, glOk: !!R, buildMs: lastBuildMs }),
-  set(o) { Object.assign(S, o); lastHeardT = -1; dirty = true; frame(); },
+  set(o) { Object.assign(S, o); lastHeardT = -1; dirty = true; syncDock(); frame(); },
   selectBroadcast, selectStar, setTab, rebuild: () => { rebuild(); frame(); }, draw: frame,
   stars: STARS, core: C,
 };

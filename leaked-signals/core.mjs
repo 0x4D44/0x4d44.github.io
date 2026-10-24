@@ -105,7 +105,7 @@ export function erpW(site, year) {
   if (year < site.start || (site.end != null && year >= site.end)) return 0;
   if (site.gaps) for (const [a, b] of site.gaps) if (year >= a && year < b) return 0;
   const f = smooth((year - site.start) / site.ramp);
-  let w = site.erp0 * Math.pow(site.erpMax / site.erp0, f) * 1000;
+  let w = site.erp0 * Math.pow(site.erpMax / site.erp0, f) * (site.kind === "radar" ? 1 : 1000);
   if (site.analogOff != null && year >= site.analogOff) w *= site.digitalFactor ?? 0.08;
   return w;
 }

@@ -13,7 +13,7 @@ export const SITES = [
   T("gb-sutton", "Sutton Coldfield", "GB", 52.590, -1.822, 1949.96, 34, 1000, 25, { analogOff: 2011.9 }),
   T("gb-holme", "Holme Moss", "GB", 53.533, -1.858, 1951.78, 45, 1000, 25, { analogOff: 2012.0 }),
   T("gb-kirk", "Kirk o'Shotts", "GB", 55.867, -3.800, 1952.2, 45, 600, 25, { analogOff: 2010.0 }),
-  T("gb-wenvoe", "Wenvoe", "GB", 51.462, -3.265, 1952.9, 45, 500, 25, { analogOff: 2009.7 }),
+  T("gb-wenvoe", "Wenvoe", "GB", 51.462, -3.265, 1952.62, 45, 500, 25, { analogOff: 2009.7 }),
   T("ie-dublin", "Dublin - Kippure", "IE", 53.116, -6.340, 1961.99, 50, 400, 20, { analogOff: 2012.9 }),
   // --- Germany, France, Benelux, Alps
   T("de-berlin", "Berlin - Witzleben/Fernsehturm", "DE", 52.503, 13.277, 1935.2, 8, 800, 40, { gaps: [[1944.8, 1952.9]], analogOff: 2003.6 }),
@@ -85,7 +85,7 @@ export const BEACONS = [
   { id: "arecibo-1974", name: "Arecibo Message", date: [1974, 11, 16], site: "radar-arecibo", ra: 250.423, dec: 36.460, targetName: "Globular cluster M13", targetLy: 22200, mins: 3, eirp: 2e13,
     blurb: "169 seconds of binary, 1,679 bits, aimed at M13. It will arrive in about 22,000 years." },
   { id: "doritos-2008", name: "Doritos advert", date: [2008, 6, 12], site: { lat: 78.153, lon: 16.029, name: "EISCAT Svalbard" }, ra: 164.866, dec: 40.43, targetName: "47 Ursae Majoris", targetLy: 45.9, mins: 8, eirp: 2e10,
-    blurb: "A 30-second crisp advert, beamed at a Sun-like star with a planet. It arrives in 2049." },
+    blurb: "A 30-second crisp advert, beamed at a Sun-like star with a planet. It arrives in the early 2050s." },
   { id: "mfe-2008", name: "A Message From Earth", date: [2008, 10, 9], site: { lat: 45.189, lon: 33.186, name: "Yevpatoria RT-70" }, ra: 229.858, dec: -7.722, targetName: "Gliese 581", targetLy: 20.4, mins: 20, eirp: 1e12,
     blurb: "501 messages chosen on social media, aimed at a red dwarf with candidate planets. It arrives in 2029." },
 ];
