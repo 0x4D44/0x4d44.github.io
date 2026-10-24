@@ -16,7 +16,7 @@ export const CONF = {
 export const VARIANTS = {
   A: {
     id: "A", name: "12LDA28-A", rpm: 750, bhp: 2300, intercooled: false,
-    use: "Early Class 46 / pre-production Peaks (D1-D10 era) and test engines",
+    use: "BR Class 44 'Peaks' (D1-D10) and test engines",
     note: "Not intercooled. Quoted as 2,300 bhp (one archive says 2,200).",
     conf: "M",
   },
@@ -50,14 +50,14 @@ export const SPEC = [
   ["Mean effective pressure", "about 11.6 bar at 2,580 bhp / 750 rpm", "E"],
   ["Mean piston speed", "9.0 m/s at 750 rpm (9.6 m/s at 800)", "E"],
   ["Firing frequency", "75 firings per second at 750 rpm (6 per revolution per engine)", "H"],
-  ["Crank to generator gearing", "about 1 : 1.44 (generator turns about 1,080 to 1,150 rpm)", "M"],
+  ["Crank to generator gearing", "about 1 : 1.44 (generator about 1,080 rpm at 750 engine rpm; a 1,150 rpm rating matches the 800 rpm as-built Class 47)", "M"],
   ["Structure", "Welded steel-plate crankcase with welded-in cast-steel transverse girders; main bearings held by adjustable wedges", "M"],
   ["Turbocharging", "Exhaust-gas turbocharger by de Havilland (Sulzer-designed, blade-shedding trouble cured with wire damping); charge air 16-18 psi (about 2.1 bar abs) at full power; air-to-water intercooler on B and C.", "M"],
   ["Governor", "Vickers Hydraulics, to a Sulzer design: flyweights driven from the camshaft; overspeed trip on the other end of the camshaft", "M"],
   ["Crankshafts", "Two, by Mitchell Shackleton, 7 main bearings each (Glacier bearings), joined by synchronising gears", "M"],
   ["Pistons and liners", "Two-piece oil-cooled pistons with both scraper rings below the gudgeon pin; centrifugally cast Sheepbridge liners", "M"],
   ["Cylinder heads", "Separate head per cylinder, two valves each (one inlet, one exhaust); austenitic-steel exhaust valves", "M"],
-  ["Speed range", "325 to 750 rpm: idle 325 rpm (365 with train heating), full power 750 rpm; progressive all-speed governor (BR driver's manual B.R.33003/262)", "H"],
+  ["Speed range", "325 to 750 rpm: idle 325/365 rpm (the manual gives both without saying when each applies), full power 750 rpm; progressive all-speed governor (BR driver's manual B.R.33003/262)", "H"],
   ["Derating logic", "Cutting speed from 800 to 750 rpm reduced stress by about 11%; crankshaft phase angles and balance weights were also altered after welded-crankcase fractures (derbysulzers, citing 1960s papers)", "M"],
   ["Fluids (Class 45/46)", "Cooling water 346 gal, lube oil 200 gal at 50 psi full power, fuel 840 gal; auxiliaries 95 bhp", "H"],
   ["Dry mass", "40,000 lb (18.1 t) including generator and gears, per a period table (probably an early rating)", "M"],
@@ -89,18 +89,21 @@ export const GEOM = {
 
 // Controller (throttle) -> engine speed and power.
 // Sulzer locomotives have an all-speed governor, so power rises smoothly with
-// controller position. Idle speeds of 330/380/400 rpm come from a forum.
+// controller position. Idle is 325/365 rpm per the Class 47 manual.
 // Shape: P = Prated * (n/nrated)^1.6 on the load line (ESTIMATE).
 export const IDLE_RPM = 325; // BR 33003/262: "Idling speed 325/365 r.p.m."
 export function rpmFromThrottle(t, variantRpm = 750) {
   // t: 0..1
   return IDLE_RPM + (variantRpm - IDLE_RPM) * Math.min(1, Math.max(0, t));
 }
+// Idle shows auxiliaries only: BR service data gives about 95 bhp for the Class 45 (assumed for the others; estimate).
+export const AUX_BHP = 95;
 export function engineBhp(rpm, variant) {
   const v = VARIANTS[variant] || VARIANTS.Cd;
-  if (rpm <= IDLE_RPM + 5) return 90; // auxiliaries only
+  if (rpm <= IDLE_RPM + 5) return AUX_BHP;
   const f = Math.pow(rpm / v.rpm, 1.6);
-  return Math.max(90, v.bhp * f);
+  const p = v.bhp * f, k = Math.min(1, (rpm - IDLE_RPM) / 90); // eased up from the idle load (modelled)
+  return Math.max(AUX_BHP, AUX_BHP + (p - AUX_BHP) * k);
 }
 export function torqueNm(rpm, bhp) {
   if (rpm < 1) return 0;
@@ -113,7 +116,7 @@ export function bmepBar(rpm, bhp) {
   return (2 * P) / (Vs * (rpm / 60)) / 1e5;
 }
 
-// Locomotive (Class 47 figures; sourced).
+// Locomotive (Class 47 figures; mostly sourced; railFraction is an estimate).
 export const CONTROLLER = ["OFF", "ON", "1/4", "1/2", "3/4", "FULL"]; // BR 33003/262: only ON and 1/4 are notched
 export const LOCO = {
   genRatedKw: 1798, motorHp: 354, motors: 6, gearRatio: 66 / 17, wheelM: 1.143,

@@ -13,7 +13,7 @@ window.__sulzer = { eng, state, audio };
 function badge(c) { const k = CONF[c]; return `<span class="badge ${k.css}" title="${k.label}">${k.label}</span>`; }
 $("heroStats").innerHTML = [
   ["2,580 bhp", "derated Class 47 rating"], ["750 rpm", "full speed, 325 idle"], ["280 × 360", "bore × stroke, mm"],
-  ["266 L", "swept volume"], ["75 Hz", "firing frequency at full power"], ["12", "cylinders, two banks"],
+  ["266 L", "swept volume (calculated, E)"], ["75 Hz", "firing frequency at full power"], ["12", "cylinders, two banks"],
 ].map(([a, b]) => `<div class="stat"><b>${a}</b><span>${b}</span></div>`).join("");
 $("specTable").innerHTML = SPEC.map(([k, v, c]) => `<div><dl style="margin:0"><dt>${k}${badge(c)}</dt><dd>${v}</dd></dl></div>`).join("");
 
@@ -24,12 +24,15 @@ function ctlName(v) {
   return Math.round(v) + "%";
 }
 function throttleFromCtl(v) { return v < 10 ? 0 : (v - 10) / 90; }
+let ctlPointer = false;
+$("ctl").addEventListener("pointerdown", () => (ctlPointer = true));
+addEventListener("pointerup", () => (ctlPointer = false));
 $("ctl").addEventListener("input", (e) => {
   let v = +e.target.value;
-  for (const p of [10, 25]) if (Math.abs(v - p) <= 2) v = p; // only ON and 1/4 are notched in the real controller
+  if (ctlPointer) for (const p of [10, 25]) if (Math.abs(v - p) <= 2) v = p; // only ON and 1/4 are notched in the real controller (pointer only: keys must step through)
   e.target.value = v; setCtl(v);
 });
-function setCtl(v) { state.ctl = v; $("ctlName").textContent = ctlName(v); eng.setThrottle(throttleFromCtl(v)); }
+function setCtl(v) { state.ctl = v; $("ctl").setAttribute("aria-valuetext", ctlName(v)); $("ctlName").textContent = ctlName(v); eng.setThrottle(throttleFromCtl(v)); }
 window.__sulzer.setCtl = setCtl;
 
 $("btnStart").addEventListener("click", () => {
@@ -63,7 +66,7 @@ async function init3d() {
         const tip = $("tip");
         if (!id) { tip.hidden = true; return; }
         const r = canvas.getBoundingClientRect(); tip.hidden = false; tip.textContent = PART_INFO[id].name;
-        tip.style.left = Math.min(r.width - 200, e.clientX - r.left + 14) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+        tip.style.left = Math.max(0, Math.min(r.width - 200, e.clientX - r.left + 14)) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
       },
     });
     state.view = view; window.__sulzer.view = view; view.setXray(true);
@@ -84,11 +87,11 @@ async function init3d() {
 function showPart(id, INFO) {
   const p = INFO[id]; if (!p) return;
   $("info").innerHTML = `<h3>${p.name} ${badge(p.conf)}</h3><p>${p.text}</p>`;
-  document.querySelectorAll("#partlist button").forEach((b) => b.classList.toggle("on", b.dataset.p === id));
+  document.querySelectorAll("#partlist button").forEach((b) => { b.classList.toggle("on", b.dataset.p === id); b.setAttribute("aria-pressed", b.dataset.p === id); });
 }
 
 // ---------- readouts ----------
-const RO = [["rpm", "r_rpm"], ["Power bhp", "r_bhp"], ["Power kW", "r_kw"], ["Torque kNm", "r_tq"], ["BMEP bar", "r_bmep"], ["Boost psi", "r_boost"], ["Firing Hz", "r_fire"], ["Piston m/s", "r_pist"], ["Generator rpm", "r_gen"], ["Cycle angle", "r_ang"]];
+const RO = [["rpm", "r_rpm"], ["Power bhp", "r_bhp"], ["Power kW", "r_kw"], ["Torque kNm", "r_tq"], ["BMEP bar", "r_bmep"], ["Boost psi (modelled)", "r_boost"], ["Firing Hz", "r_fire"], ["Piston m/s", "r_pist"], ["Generator rpm", "r_gen"], ["Cycle angle", "r_ang"]];
 $("readouts").innerHTML = RO.map(([l, id]) => `<div class="ro"><span>${l}</span><b id="${id}">0</b></div>`).join("");
 function updateReadouts() {
   const rpm = eng.rpm, bhp = eng.running ? eng.bhp : 0;
@@ -138,7 +141,7 @@ function drawSpectrum(canvas) {
     ctx.lineTo(x0 + pw, y0 + ph); ctx.closePath(); ctx.fillStyle = "rgba(232,184,74,0.35)"; ctx.fill(); ctx.strokeStyle = COL.accent; ctx.stroke();
   }
   if (fc > 1) {
-    const marks = [[fc * 3, "bank firing", "#7ec8ff"], [fc * 6, "firing", COL.accent2], [fc * 12, "2nd", COL.accent2], [fc * 36, "gear mesh", "#46c28a"]];
+    const marks = [[fc * 3, "bank firing", "#7ec8ff"], [fc * 6, "firing", COL.accent2], [fc * 12, "2nd", COL.accent2], [fc * 36, "gear mesh (est.)", "#46c28a"]];
     marks.forEach(([f, n, c], i) => { if (f > fmax) return; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(f), y0 + 6); ctx.lineTo(X(f), y0 + ph); ctx.stroke(); ctx.fillStyle = c; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.fillText(n + " " + f.toFixed(0), X(f), y0 + 4 + (i % 2) * 12); });
     const tf = 700 + Math.max(0, eng.boost - 1) / 1.1 * 3600; if (eng.running) { ctx.strokeStyle = "#b08bff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(tf), y0 + 20); ctx.lineTo(X(tf), y0 + ph); ctx.stroke(); ctx.fillStyle = "#b08bff"; ctx.fillText("turbo", X(tf), y0 + 16); }
   }
@@ -169,7 +172,7 @@ function frame(now) {
   if (state.visible.cvChain) drawChain($("cvChain"));
   if (state.visible.cvSpec) drawSpectrum($("cvSpec"));
   if (!eng.running && !eng.cranking && eng.rpm < 3 && !$("bar").disabled) { /* barring: slider drives theta */ } else $("bar").value = Math.round(((eng.theta % 720) + 720) % 720);
-  audioT += dt; if (audioT > 0.03) { audioT = 0; if (audio.on) { audio.update(eng); audio.gain.gain.value = eng.timeScale < 0.99 ? 0 : audio.vol; } }
+  audioT += dt; if (audioT > 0.03) { audioT = 0; if (audio.on) { audio.update(eng); audio.gain.gain.value = eng.timeScale < 0.99 ? 0 : audio.vol; $("btnSound").textContent = eng.timeScale < 0.99 ? "Sound paused (slow motion)" : "Sound on"; } }
   requestAnimationFrame(frame);
 }
 init3d().then(() => requestAnimationFrame(frame));

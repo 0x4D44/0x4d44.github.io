@@ -35,7 +35,7 @@ h3{font-size:1.05rem}
 .btn:hover{border-color:var(--accent)}
 .btn:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn.primary{background:var(--accent);color:#1a1405;border-color:var(--accent)}
-.btn.primary[aria-pressed="true"]{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.btn.primary[aria-pressed="true"]{background:#c23a18;border-color:#c23a18;color:#fff}
 
 .cab{position:sticky;top:50px;z-index:40;display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;padding:10px var(--gut);background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .cab .ctl{flex:1 1 280px;min-width:240px}
@@ -128,7 +128,10 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
   .brand-sub{display:none}
   .steps{grid-template-columns:minmax(0,1fr)}
   .hero{padding:48px var(--gut) 40px}
-  .cab{position:static}
+  .cab{top:46px;gap:6px 10px;padding:6px var(--gut)}
+  .cab .sel,.cab .snd,.cab .marks{display:none}
+  .cab .ctl{flex:1 1 150px;min-width:140px}
+  .cab .gauge{padding:2px 8px}
   .stage{height:62vh}
   .loco-read{grid-template-columns:repeat(2,1fr)}
   .spec{grid-template-columns:minmax(0,1fr)}

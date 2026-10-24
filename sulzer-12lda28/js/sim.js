@@ -101,7 +101,7 @@ export class Engine {
   setThrottle(t) { this.throttle = Math.min(1, Math.max(0, t)); }
   get bhp() { return this.running ? engineBhp(this.rpm, this.variant) : 0; }
   get load() { return this.running ? Math.min(1, this.bhp / VARIANTS[this.variant].bhp) : 0; }
-  get boost() { return 1 + 1.1 * Math.pow(Math.max(0, (this.rpm - 350) / (this.rated - 350)), 1.5) * (this.running ? 1 : 0); }
+  get boost() { return 1 + (VARIANTS[this.variant].intercooled && this.variant !== "B" ? 0.85 : 1.1) * Math.pow(Math.max(0, (this.rpm - 350) / (this.rated - 350)), 1.5) * (this.running ? 1 : 0); }
   // Advance by dt real seconds.
   step(dt) {
     this.t += dt;
