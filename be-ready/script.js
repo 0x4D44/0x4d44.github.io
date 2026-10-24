@@ -36,7 +36,7 @@
       { say: "A battery or wind-up F M radio, with your station frequencies written down." },
       { say: "A charged power bank for your phone." },
       { say: "And some cash, because cards and cash machines may not work." },
-      { say: "To report a power cut, call one oh five. Save it now. And find your load block letter at powercut one oh five dot com, because emergency rota cuts would last around three hours at a time.", cap: "To report a power cut, call 105. Save it now. Find your load block letter at powercut105.com: emergency rota cuts would last around three hours at a time." }
+      { say: "To report a power cut, call one oh five. Save it now. And find your load block letter at powercut one oh five dot com, because, in a national energy shortage, emergency rota cuts would last around three hours at a time.", cap: "To report a power cut, call 105. Save it now. Find your load block letter at powercut105.com: in a national energy shortage, rota cuts would last around three hours at a time." }
     ] },
     { id: "warm", title: "Warmth, health and paperwork", lines: [
       { say: "Homes cool quickly once the heating stops. Keep blankets, sleeping bags and warm clothes handy, close the doors to unused rooms, and draw the curtains." },
@@ -45,12 +45,12 @@
       { say: "If you qualify, join the Priority Services Register. Households with a child under five can be eligible." }
     ] },
     { id: "stove", title: "The wood stove", lines: [
-      { say: "Now, the wood burning stove. Can it help? Yes. It needs no electricity, so it can heat a room, boil water, and cook simple food." },
+      { say: "Now, the wood burning stove. Can it help? Yes, if it is properly installed and swept, and you have a working carbon monoxide alarm. It needs no electricity, so it can heat a room, boil water, and, if your manual allows it, cook simple food." },
       { say: "But treat it as safety equipment. Have the chimney swept at least twice a year when you burn wood. Fit battery carbon monoxide alarms in the stove room and near the bedrooms." },
-      { say: "Burn only dry wood, with a moisture content of twenty percent or less. In cold weather, expect to burn eight to ten kilos a day, so for three days, store about thirty.", cap: "Burn only dry wood: 20% moisture or less. In cold weather, expect 8-10 kg a day; for three days, store about 30 kg." },
+      { say: "Burn only dry wood, with a moisture content of twenty percent or less. As a rough estimate, expect to burn eight to ten kilos a day in cold weather, so for three days, store about thirty.", cap: "Burn only dry wood: 20% moisture or less. Rough estimate: 8-10 kg a day in cold weather; for three days, about 30 kg." },
       { say: "Check whether your stove is linked to radiators or hot water. If a pump needs electricity, ask your installer whether it's safe to light in a power cut." },
-      { say: "Use the flat top for a kettle, soup, porridge, rice and pasta. Cook on hot embers rather than roaring flames, and fill a flask while you're at it." },
-      { say: "And never bring a barbecue, camping stove or generator indoors. Carbon monoxide can't be seen or smelled." }
+      { say: "If the manual allows cooking on top, use the flat top for a kettle, soup, porridge, rice and pasta. Keep children back, watch for boiling over, and fill a flask while you're at it." },
+      { say: "And never bring a barbecue, camping stove or generator indoors. Carbon monoxide can't be seen or smelled. If an alarm sounds, get everyone outside and call nine nine nine." }
     ] },
     { id: "stretch", title: "The stretch list", lines: [
       { say: "When you want a bigger buffer, there's a stretch list. A week of water and food. A water filter and tablets. A large power bank or a solar panel." },
@@ -59,8 +59,8 @@
     ] },
     { id: "outro", title: "What to do tonight", lines: [
       { say: "Everything here is on the page, with a checklist that remembers your progress, a calculator for your household, and every source." },
-      { say: "Start tonight. Put eighteen litres of water in the cupboard, and a torch by the bed." },
-      { say: "For the official advice, visit gov dot U K slash Be Ready.", cap: "Official advice: GOV.UK/BeReady" }
+      { say: "Start tonight. Put away three litres of water per person per day, so eighteen for two, and a torch by the bed." },
+      { say: "This is an independent, unofficial summary. For the official advice, visit gov dot U K slash Be Ready.", cap: "Unofficial summary. Official advice: GOV.UK/BeReady" }
     ] }
   ];
   if (typeof module !== "undefined" && module.exports) module.exports = S; else root.BR_SCRIPT = S;

@@ -127,7 +127,7 @@
     { id: "router", n: "Wi-Fi router, 8 W", unit: "hours", wh: 8, def: 0, perHour: true },
     { id: "laptop", n: "Laptop, ~45 W", unit: "hours", wh: 45, def: 0, perHour: true },
     { id: "cpap", n: "CPAP machine, ~30 W (check yours)", unit: "hours", wh: 30, def: 0, perHour: true },
-    { id: "fridge", n: "Fridge-freezer, ~1,000 Wh a day", unit: "days", wh: 1000, def: 0, perHour: false }
+    { id: "fridge", n: "Fridge-freezer, ~600 Wh a day (check its label)", unit: "days", wh: 600, def: 0, perHour: false }
   ];
   function renderDevs() {
     $("#devs").innerHTML = '<div class="dev"><span class="h">Device</span><span class="h">Per day</span><span class="h">Unit</span></div>' + DEVICES.map(function (d) {
@@ -142,7 +142,7 @@
     var stats = [
       [fmt(wh) + " Wh", "per day"],
       [fmt(tot) + " Wh", "for " + days + " days (usable battery capacity needed)"],
-      [wh ? (70 * 0.8 / wh).toFixed(1) + " days" : "—", "from a 20,000 mAh power bank (~70 Wh, 80% usable)"],
+      [wh ? (50 / wh).toFixed(1) + " days" : "—", "from a 20,000 mAh power bank (~74 Wh rated, ~50 Wh usable)"],
       [wh ? (500 * 0.85 / wh).toFixed(1) + " days" : "—", "from a 500 Wh power station (85% usable)"]
     ];
     $("#powerOut").innerHTML = stats.map(function (s) { return '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>"; }).join("");

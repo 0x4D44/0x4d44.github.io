@@ -1,5 +1,7 @@
 // Renders be-ready-explainer.mp4: Piper TTS narration + deterministic Playwright frames + synthesised music bed.
 //   PIPER_PY=/path/to/python PIPER_MODEL=/path/to/voice.onnx node tools/build-video.mjs [--work DIR] [--fps 15] [--scale 0.92] [--frames-only|--audio-only]
+// Parts: scene.html (1280x720 frame renderer, window.setT(t)), make-audio.py (narration + pad mix), ../script.js (narration, also the page transcript).
+// The Piper voice (en_GB-alan-medium) is not in the repo; --work defaults to ../.video-work (git-ignored); --retts re-speaks cached lines.
 // Needs: python3 + piper-tts + numpy, ffmpeg, playwright (global is fine). Output: ../be-ready-explainer.mp4 and ../poster.jpg
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";

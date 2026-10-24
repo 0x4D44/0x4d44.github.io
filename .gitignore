@@ -9,3 +9,6 @@
 node_modules/
 package-lock.json
 mos-6502/tests/vendor/
+
+# be-ready video build scratch
+be-ready/.video-work/
