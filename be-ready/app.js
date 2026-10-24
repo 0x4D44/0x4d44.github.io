@@ -50,7 +50,7 @@
     ];
     $("#calcOut").innerHTML = stats.map(function (s) { return '<div class="stat"><b>' + s[0] + "</b><span>" + s[1] + "</span></div>"; }).join("");
     var notes = [];
-    if (h.babies) notes.push("Babies: choose ready-to-feed formula; about " + fmt(h.babies * 1 * h.days) + " L extra water set aside for sterilising and washing bottles.");
+    if (h.babies) notes.push("Babies: choose ready-to-feed formula; about " + fmt(h.babies * 3 * h.days) + " L extra water (3 L a day each, included in the comfortable total) for sterilising and washing bottles.");
     if (h.dogs || h.cats) notes.push("Pets: about " + fmt(h.dogs * 1 * h.days + h.cats * 0.25 * h.days) + " L extra for animals.");
     if (c.people === 0) notes.push("Enter at least one adult or child to see the numbers.");
     $("#calcNote").textContent = notes.join(" ");
@@ -98,6 +98,12 @@
       $(".cnt", d).textContent = "(" + done + "/" + all.length + ")";
       if (q && vis.length) d.open = true;
     });
+    var nm = $("#noMatch");
+    if (nm) {
+      var any = $$("#cats .item").some(function (li) { return !li.hidden; });
+      nm.hidden = any;
+      nm.textContent = (!q && filter === "todo") ? "Everything is ticked. Well done." : "No items match. Clear the search or pick \u201cAll\u201d.";
+    }
   }
   function ringSVG(pct, label, sub, title) {
     var r = 48, C = 2 * Math.PI * r;
@@ -209,11 +215,12 @@
     if (Q.wood !== "yes") fix.push("Buy or season dry logs: a moisture meter reading of 20% or less. Wet wood smokes, tars the flue and gives little heat.");
     if (Q.air !== "yes") fix.push("Check the manual for the air supply the stove needs; don't run extractor fans or cooker hoods while it burns.");
     if (Q.fire !== "yes") fix.push("Test smoke alarms and put a fire blanket or small extinguisher near the stove and in the kitchen.");
-    var boiler = Q.boiler === "yes" || Q.boiler === "unsure";
+    var boiler = Q.boiler !== "no";
     var html = "";
-    if (boiler) html += '<div class="warn"><b>Check your boiler stove first.</b> If it feeds radiators or a hot-water cylinder, its pump or valves might need electricity. Ask your installer in writing whether it is safe to light without power, and what protects it from overheating. Until you know, don\'t rely on it in a power cut.</div>';
+    if (boiler) html += '<div class="warn"><b>' + (Q.boiler ? "Check your boiler stove first." : "Answer the boiler question.") + '</b> If it feeds radiators or a hot-water cylinder, its pump or valves might need electricity. Ask your installer in writing whether it is safe to light without power, and what protects it from overheating. Until you know, don\'t rely on it in a power cut.</div>';
     if (danger) html += '<div class="warn"><b>Priority:</b> no working CO alarm means you cannot know if the stove is safe. Fix that first.</div>';
     if (fix.length) html += '<div class="tip"><b>Fix before you rely on it (' + fix.length + ')</b><ul>' + fix.map(function (f) { return "<li>" + f + "</li>"; }).join("") + "</ul></div>";
+    else if (boiler) html += '<div class="note"><b>Not cleared yet.</b> Nothing else is outstanding, but the boiler question decides whether the stove is safe in a power cut.</div>';
     else html += '<div class="ok"><b>Looking good.</b> On what you\'ve told us, your stove is a solid part of your plan. Light a trial fire this autumn to be sure.</div>';
     html += doCook ? '<div class="ok"><b>Cooking:</b> a flat hot top means you can boil water (1 minute rolling for purification), make soup, porridge, rice and pasta. Use heavy pans and embers, not flames.</div>'
       : '<div class="note"><b>Cooking:</b> ' + (Q.top === "no" ? "without a usable top, treat the stove as heat only and plan to cook outdoors on a camping stove or barbecue." : "check the manual; some stoves forbid cooking or have glass tops.") + "</div>";
