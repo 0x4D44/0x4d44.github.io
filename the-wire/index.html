@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Down the Wire</title>
+<meta name="description" content="An interactive guide to how Ethernet, switching, VLANs, routing, DNS, jumbo frames and Nagle's algorithm actually work.">
+<link rel="stylesheet" href="wire.css">
+</head>
+<body>
+<div class="bar"><div class="in">
+  <nav aria-label="Chapters">
+    <a href="#wire">1 Wire</a><a href="#frame">2 Frame</a><a href="#switch">3 Switch</a><a href="#vlan">4 VLAN</a><a href="#route">5 Route</a><a href="#dns">6 DNS</a><a href="#mtu">7 MTU</a><a href="#nagle">8 Nagle</a><a href="#wrap">9 Recap</a>
+  </nav>
+  <button class="theme" type="button" aria-label="Toggle light or dark theme">☀ light</button>
+</div><div class="progress"></div></div>
+
+<header class="hero">
+  <canvas aria-hidden="true"></canvas>
+  <div class="txt">
+    <div class="eyebrow">An interactive field guide · 9 chapters · 10 labs</div>
+    <h1>Down<br>the <em>Wire</em></h1>
+    <p class="lede">Every click you make becomes a few hundred bytes in a stranger’s fibre. Follow them: from a voltage on a cable to a frame, through switches and VLANs, across routers, past DNS, and into the strange corners where a “helpful” algorithm adds forty milliseconds.</p>
+    <div class="stats"><span><b>64–1522</b> bytes per classic frame</span><span><b>48-bit</b> MAC addresses</span><span><b>4096</b> VLANs</span><span><b>40 ms</b> of avoidable pain</span></div>
+    <a class="cta" href="#wire">Start at the cable ↓</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="chap" id="wire">
+  <div class="num">01 · THE WIRE</div>
+  <h2>One cable, everyone shouting</h2>
+  <div class="prose">
+    <p>Ethernet began in 1973 at Xerox PARC as a single coaxial cable that every computer tapped into. Anyone could talk at any time, and anyone could hear everything. That is not a recipe for good manners, so Bob Metcalfe’s design added a few: <b>listen before you talk</b> (carrier sense), <b>listen while you talk</b> (collision detection), and if you hear a clash, <b>stop, wait a random time and try again</b>.</p>
+    <p>The wait is the clever part. After the first collision each station picks a random slot from 0–1; after the second, 0–3; then 0–7, and so on, doubling up to 1023. Two stations rarely keep picking the same number, and crowds thin themselves out automatically. This is <em>CSMA/CD</em>, and it is a cousin of the exponential backoff your own TCP stack uses when the network is congested.</p>
+  </div>
+  <div id="w-bus"></div>
+  <div class="callout"><b>Why you can mostly forget this.</b> Modern Ethernet is full-duplex: each link is one point-to-point cable with separate transmit and receive pairs, so nothing can collide, and CSMA/CD is switched off. What survived is the <em>frame format</em> and the addressing — and that has barely changed since 1980, scaling from 10 Mb/s to 800 Gb/s.</div>
+</section>
+
+<section class="chap" id="frame">
+  <div class="num">02 · THE FRAME</div>
+  <h2>A letter with a very strict envelope</h2>
+  <div class="prose">
+    <p>Everything on Ethernet travels as a <b>frame</b>. Layer 2 does not know what is in the envelope; it only knows who it is from and who it is for. The addresses are 48-bit <b>MAC addresses</b>, usually written as six hex bytes. At the end, a 32-bit checksum lets the receiver detect damage.</p>
+    <p>Below is a real, live-built frame. Click any field to see what it does and where its bytes sit. Tick the VLAN box to insert an 802.1Q tag, then flip a bit in transit and watch the checksum catch it.</p>
+  </div>
+  <div id="w-frame"></div>
+  <div class="callout"><b>Payload size.</b> The classic maximum payload is 1500 bytes — the <b>MTU</b>. A 64-byte minimum, 1518 maximum (1522 with a VLAN tag) frame was set by 1980s memory and error-rate arguments. We will break that rule in chapter 7.</div>
+</section>
+
+<section class="chap" id="switch">
+  <div class="num">03 · SWITCHING</div>
+  <h2>The switch that learns by eavesdropping</h2>
+  <div class="prose">
+    <p>A <b>hub</b> repeats every bit out of every port: it is the shared coax in a box. A <b>switch</b> is smarter, and it needs no configuration to be. It keeps a table mapping MAC address to port, and fills it purely by watching <em>source</em> addresses go by.</p>
+    <p>The rules are three lines: (1) note which port each source MAC arrived on; (2) if the destination is in the table, send it out that port only; (3) if it is unknown, or is a broadcast, <b>flood</b> to every other port. Entries age out after a few minutes, so a laptop that moves does not stay lost.</p>
+  </div>
+  <div id="w-switch"></div>
+  <div class="callout"><b>Loops.</b> Because flooded frames carry no hop count, a cable loop between switches makes them circulate forever and multiply — a broadcast storm that can take down a building. Spanning Tree Protocol exists to switch off just enough links to keep the topology a tree.</div>
+</section>
+
+<section class="chap" id="vlan">
+  <div class="num">04 · VLANS &amp; TAGGING</div>
+  <h2>Many networks, one set of cables</h2>
+  <div class="prose">
+    <p>Floods are the price of switching: every broadcast reaches every port. A <b>VLAN</b> carves one physical switch into several virtual ones, each its own <em>broadcast domain</em>. Staff, guests and cameras can share the same hardware and never hear each other’s broadcasts — or traffic.</p>
+    <p>Hosts plug into <b>access ports</b>, each assigned to exactly one VLAN, and know nothing about it. Between switches runs a <b>trunk</b>: one cable carrying many VLANs at once. To tell them apart on that shared cable, the sending switch inserts the <b>802.1Q tag</b> (the 4 bytes from chapter 2) with the VLAN ID, and the receiving switch removes it before delivering to the access port.</p>
+  </div>
+  <div id="w-vlan"></div>
+  <div class="callout"><b>Crossing VLANs.</b> Two VLANs are two separate networks; getting from one to the other needs a router (or a layer-3 switch). That is a feature: it is where you place firewall rules. Also worth knowing — one VLAN on a trunk can be the “native” one, sent <em>untagged</em>; mismatching it between two ends is a classic misconfiguration.</div>
+</section>
+
+<section class="chap" id="route">
+  <div class="num">05 · IP, ARP &amp; ROUTING</div>
+  <h2>MACs are for neighbours; IPs are for the world</h2>
+  <div class="prose">
+    <p>A MAC address says <em>which card on this wire</em>; it has no geography. An <b>IP address</b> says <em>which network, then which host</em>, and that structure is what lets routers forward packets across the planet with tables of a few hundred thousand prefixes instead of billions of hosts.</p>
+    <p>Before sending, a host asks one question: <b>is the destination in my subnet?</b> It ANDs the address with its mask. Same network → <b>ARP</b> (“who has this IP?”, broadcast on the LAN) and deliver straight there. Different → send to the <b>default gateway</b>, which is just a router’s MAC address on the same LAN. At each router the Ethernet frame is torn off, the TTL is reduced, the destination is looked up (<b>longest prefix match</b>) and a new Ethernet frame is built for the next hop.</p>
+    <p>So: <b>IP addresses stay the same end to end; MAC addresses change at every hop.</b> Step through it.</p>
+  </div>
+  <div id="w-route"></div>
+  <div id="w-subnet"></div>
+</section>
+
+<section class="chap" id="dns">
+  <div class="num">06 · DNS</div>
+  <h2>The phone book with no front cover</h2>
+  <div class="prose">
+    <p>Humans type <code>www.example.com</code>; routers only understand numbers. <b>DNS</b> bridges them with a distributed, hierarchical database. No one server knows everything. The name is read right to left: the <b>root</b> knows who runs <code>.com</code>; the <b>.com servers</b> know who runs <code>example.com</code>; that zone’s <b>authoritative server</b> knows the actual address.</p>
+    <p>Your device does not do that walk. It asks a <b>recursive resolver</b> (your ISP’s, or 1.1.1.1, or 8.8.8.8) over UDP port 53, and the resolver does the legwork and <b>caches</b> everything, each record for its <b>TTL</b>. That is why the second lookup is nearly free, and why DNS changes can take time to “propagate”: you are waiting for caches to expire.</p>
+  </div>
+  <div id="w-dns"></div>
+  <div class="callout"><b>Try this.</b> Resolve <code>www.example.com</code> (cold: root, TLD, authoritative). Resolve <code>mail.example.com</code> — it skips straight to the authoritative server. Resolve a different <code>.com</code> name — only the root is skipped. Then press +60 s a few times and re-resolve the first name after its 300 s TTL expires.</div>
+  <div class="prose"><p>DNS is plain text by default, so anyone on the path can read and forge it. <b>DNSSEC</b> adds signatures to prove answers are authentic; <b>DoH / DoT</b> encrypt the query to the resolver. Large answers outgrow UDP and fall back to TCP — a quiet reminder that protocols are glued together by fallbacks.</p></div>
+</section>
+
+<section class="chap" id="mtu">
+  <div class="num">07 · MTU &amp; JUMBO FRAMES</div>
+  <h2>Why nine thousand bytes is a controversy</h2>
+  <div class="prose">
+    <p>Every frame pays a fixed toll: 8 bytes of preamble, 14 of header, 4 of checksum, a 12-byte idle gap, and 40 more for IP and TCP headers. At 1500 bytes of MTU that is about 5% overhead. Bigger frames spread the toll thinner — but the larger gain is for the <em>computers</em>: each packet costs an interrupt, a trip through the kernel and a lookup, so a 9000-byte <b>jumbo frame</b> means roughly six times fewer of them for the same data. That is why storage networks and data-centre backbones love jumbo frames.</p>
+  </div>
+  <div id="w-mtu"></div>
+  <div class="prose">
+    <h3>The catch: every hop must agree</h3>
+    <p>The MTU is per link. A jumbo frame that meets a 1500-byte link must be <b>fragmented</b> or <b>dropped</b>. Routers fragment IPv4 packets only if the sender allowed it; most modern stacks set the <b>DF</b> bit and rely on the router replying with an ICMP “fragmentation needed” message so the sender can shrink — <i>Path MTU Discovery</i>. When a firewall blocks that ICMP, you get a baffling failure: pings and logins work, big downloads hang.</p>
+  </div>
+  <div id="w-pmtu"></div>
+  <div class="callout"><b>Rule of thumb.</b> Enable jumbo frames only inside a network you control end to end, set every device on the path (including switches and VLANs) to match, and test with <code>ping -M do -s 8972 host</code> on Linux (8972 + 28 bytes of headers = 9000). Tunnels and VPNs steal bytes — which is why you see MTUs like 1420 or 1400.</div>
+</section>
+
+<section class="chap" id="nagle">
+  <div class="num">08 · TCP, NAGLE &amp; DELAYED ACK</div>
+  <h2>When two good ideas make 40 ms of nothing</h2>
+  <div class="prose">
+    <p>Ethernet and IP deliver packets and shrug; <b>TCP</b> turns that into a reliable byte stream. It is also where tiny writes become a problem. Typing one character into a remote shell would send a 41-byte header-wrapped packet for 1 byte of data. In 1984 John Nagle proposed a fix: <b>if there is unacknowledged data in flight, hold new small writes and send them together when the ACK comes back.</b> One tiny packet in flight at a time; the network is never flooded with them, and on a slow link the batches get bigger automatically.</p>
+    <p>On the other side, TCP receivers use <b>delayed ACK</b>: instead of acknowledging every segment immediately, wait up to ~40 ms (Linux) or 200 ms (some stacks) in the hope of piggy-backing the ACK on a reply, or ACKing two segments with one packet.</p>
+    <p>Each is sensible alone. Together: a program writes a small header, then its body, then waits for a reply. Nagle sends the header and <em>holds the body until the header is ACKed</em>. The receiver holds the ACK <em>waiting for more data</em>. Nobody moves until the delayed-ACK timer expires. Run it below, then switch either feature off.</p>
+  </div>
+  <div id="w-nagle"></div>
+  <div class="callout"><b>The fix.</b> Best: write the request in a single call (build the buffer, then send once). Otherwise set <code>TCP_NODELAY</code> on the socket, which disables Nagle — nearly every latency-sensitive client (HTTP libraries, databases, RPC frameworks) does so. Linux’s <code>TCP_QUICKACK</code> addresses the receiver side. Keep Nagle on for bulk transfers and interactive tools on slow links, where it earns its keep.</div>
+</section>
+
+<section class="chap" id="wrap">
+  <div class="num">09 · RECAP</div>
+  <h2>The whole journey, in one breath</h2>
+  <div class="prose">
+    <ol class="takeaways">
+      <li><b>DNS</b> turns <code>www.example.com</code> into an IP address, with caching at every layer.</li>
+      <li><b>TCP</b> chops your data into segments no larger than the MSS (MTU − 40), with Nagle and delayed ACK deciding <em>when</em> the small ones go.</li>
+      <li><b>IP</b> asks “is that in my subnet?” and picks a next hop, via ARP for its MAC.</li>
+      <li><b>Ethernet</b> wraps it in a frame — dst MAC, src MAC, optional VLAN tag, type, payload, CRC.</li>
+      <li>A <b>switch</b> learns MACs and forwards within a VLAN; a <b>trunk</b> carries tagged frames between switches.</li>
+      <li>A <b>router</b> strips the frame, decrements TTL, matches the longest prefix and builds a fresh frame for the next link. Repeat until delivered.</li>
+    </ol>
+    <dl class="glossary">
+      <dt>MAC address</dt><dd>48-bit link-layer address; meaningful only on one LAN.</dd>
+      <dt>Broadcast domain</dt><dd>All devices that receive each other’s broadcasts. One VLAN = one broadcast domain.</dd>
+      <dt>Access / trunk port</dt><dd>Untagged single-VLAN port for hosts / tagged multi-VLAN port between switches.</dd>
+      <dt>ARP</dt><dd>Resolves an IPv4 address to a MAC on the local link. (IPv6 uses Neighbour Discovery.)</dd>
+      <dt>TTL</dt><dd>Hop budget in the IP header, cut by one per router, preventing eternal loops.</dd>
+      <dt>MTU / MSS</dt><dd>Largest IP packet a link carries / largest TCP payload in one segment (MTU − 40 for IPv4).</dd>
+      <dt>TCP_NODELAY</dt><dd>Socket option that turns Nagle’s algorithm off.</dd>
+      <dt>FCS</dt><dd>Frame Check Sequence: the CRC-32 at the end of a frame.</dd>
+    </dl>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">Down the Wire · vanilla JS, SVG &amp; canvas on a tested logic engine. Simplified for teaching: real switches age entries, real resolvers validate, real TCP has many more timers.</div></footer>
+
+<script src="engine.js"></script>
+<script src="wire.js"></script>
+<script src="widgets.js"></script>
+<script src="widgets2.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
