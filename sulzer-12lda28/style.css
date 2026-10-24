@@ -130,7 +130,12 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
   .hero{padding:48px var(--gut) 40px}
   html{scroll-padding-top:172px}
   .cab{top:55px;gap:6px 10px;padding:6px var(--gut)}
-  .cab .sel,.cab .snd,.cab .marks{display:none}
+  .cab .marks{display:none}
+  .cab .sel,.cab .snd{flex:1 1 45%}
+  .cab{position:static}
+  .btn,.sel select,.snd button{min-height:44px}
+  input[type=range]{min-height:32px}
+  input[type=checkbox]{width:22px;height:22px}
   .cab .ctl{flex:1 1 150px;min-width:140px}
   .cab .gauge{padding:2px 8px}
   .cab .ctl{flex-basis:100%}

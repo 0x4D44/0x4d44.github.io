@@ -49,7 +49,7 @@ export const SPEC = [
   ["Power", "2,300 bhp (A); 2,500 bhp (B); 2,750 bhp at 800 rpm as built, then 2,580 bhp (1,920 kW; BR manual rounds to 2,600 hp) at 750 rpm (C)", "H"],
   ["Mean effective pressure", "about 11.6 bar at 2,580 bhp / 750 rpm", "E"],
   ["Mean piston speed", "9.0 m/s at 750 rpm (9.6 m/s at 800)", "E"],
-  ["Firing frequency", "75 firings per second at 750 rpm (6 per revolution per engine)", "H"],
+  ["Firing frequency", "75 firings per second at 750 rpm (6 per revolution per engine; derived)", "E"],
   ["Crank to generator gearing", "about 1 : 1.44 (generator about 1,080 rpm at 750 engine rpm; a 1,150 rpm rating matches the 800 rpm as-built Class 47)", "M"],
   ["Structure", "Welded steel-plate crankcase with welded-in cast-steel transverse girders; main bearings held by adjustable wedges", "M"],
   ["Turbocharging", "Exhaust-gas turbocharger by de Havilland (Sulzer-designed, blade-shedding trouble cured with wire damping); charge air 16-18 psi (about 2.1 bar abs) at full power; air-to-water intercooler on B and C.", "M"],
