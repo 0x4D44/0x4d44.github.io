@@ -346,7 +346,7 @@ export class EngineView {
     this.explode = v; this.applyExplode();
     const cur = this.camera.position.clone().sub(this.controls.target);
     const last = this._exLast ?? 0;
-    if (Math.abs(last - v) > 1e-6) { this.camera.position.copy(this.controls.target).add(cur.setLength(Math.min(this.controls.maxDistance, cur.length() * (1 + 0.55 * v) / (1 + 0.55 * last)))); }
+    if (Math.abs(last - v) > 1e-6) { this.camera.position.copy(this.controls.target).add(cur.setLength(Math.min(this.controls.maxDistance, cur.length() * (1 + 0.8 * v) / (1 + 0.8 * last)))); }
     this._exLast = v;
   }
 
@@ -408,7 +408,10 @@ export class EngineView {
 
   resize() {
     const w = this.canvas.clientWidth || 800, h = this.canvas.clientHeight || 500;
-    this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h, false); this.camera.aspect = w / h;
+    const portrait = w / h < 0.9; // pull back on tall phone canvases so the engine fits
+    if (portrait !== this._portrait) { this._portrait = portrait; const d = this.camera.position.clone().sub(this.controls.target); d.multiplyScalar(portrait ? 1.7 : 1 / 1.7); this.camera.position.copy(this.controls.target).add(d); }
+    this.camera.updateProjectionMatrix();
   }
 
   // Update animated state from the Engine

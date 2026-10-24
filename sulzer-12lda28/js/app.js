@@ -91,7 +91,7 @@ function showPart(id, INFO) {
 }
 
 // ---------- readouts ----------
-const RO = [["rpm", "r_rpm"], ["Power bhp", "r_bhp"], ["Power kW", "r_kw"], ["Torque kNm", "r_tq"], ["BMEP bar", "r_bmep"], ["Boost psi (modelled)", "r_boost"], ["Firing Hz", "r_fire"], ["Piston m/s", "r_pist"], ["Generator rpm", "r_gen"], ["Cycle angle", "r_ang"]];
+const RO = [["rpm", "r_rpm"], ["Power bhp (modelled)", "r_bhp"], ["Power kW", "r_kw"], ["Torque kNm", "r_tq"], ["BMEP bar", "r_bmep"], ["Boost psi (modelled)", "r_boost"], ["Firing Hz", "r_fire"], ["Piston m/s", "r_pist"], ["Generator rpm", "r_gen"], ["Cycle angle", "r_ang"]];
 $("readouts").innerHTML = RO.map(([l, id]) => `<div class="ro"><span>${l}</span><b id="${id}">0</b></div>`).join("");
 function updateReadouts() {
   const rpm = eng.rpm, bhp = eng.running ? eng.bhp : 0;
@@ -175,4 +175,6 @@ function frame(now) {
   audioT += dt; if (audioT > 0.03) { audioT = 0; if (audio.on) { audio.update(eng); audio.gain.gain.value = eng.timeScale < 0.99 ? 0 : audio.vol; $("btnSound").textContent = eng.timeScale < 0.99 ? "Sound paused (slow motion)" : "Sound on"; } }
   requestAnimationFrame(frame);
 }
+fetch("video/script.json").then((r) => r.json()).then((j) => { $("transcript").innerHTML = j.scenes.map((s) => `<h4>${s.title}</h4><p>${s.text}</p>`).join(""); }).catch(() => {});
+setCtl(0);
 init3d().then(() => requestAnimationFrame(frame));
