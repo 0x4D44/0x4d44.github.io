@@ -75,7 +75,9 @@ function subtitleAt(s, t) {
 }
 const CTLN = [[0, "OFF"], [10, "ON"], [25, "1/4"], [50, "1/2"], [75, "3/4"], [100, "FULL"]];
 let lastExplode = -1, lastMode = "", lastScene = "";
-const place = (el, x, y, w, h) => { el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w + "px"; el.style.height = h + "px"; };
+const ZOOM = 1.35; // charts are drawn at a smaller logical size and scaled up, so their text stays legible at 720p
+Object.defineProperty(window, "devicePixelRatio", { value: ZOOM });
+const place = (el, x, y, w, h) => { el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w / ZOOM + "px"; el.style.height = h / ZOOM + "px"; el.style.transform = `scale(${ZOOM})`; el.style.transformOrigin = "0 0"; };
 
 window.renderFrame = (t) => {
   simTo(t);
@@ -91,7 +93,7 @@ window.renderFrame = (t) => {
     view._hl = s.focus ? { id: s.focus, until: Infinity } : null;
   }
   $("slow").textContent = (eng.timeScale < 0.99 && is3d) ? `shown at ${eng.timeScale < 0.1 ? Math.round(eng.timeScale * 100) + "%" : eng.timeScale * 100 + "%"} speed; sound is real time` : "";
-  const hudHtml = `<b>${Math.round(eng.rpm)}</b> rpm<small>${Math.round(eng.bhp)} bhp</small>`;
+  const hudHtml = `<b>${Math.round(eng.rpm)}</b> rpm<small>${Math.round(eng.bhp)} bhp (modelled)</small>`;
   $("hud").innerHTML = hudHtml;
   $("ctlbar").innerHTML = s.controller ? CTLN.map(([p, n]) => `<span class="${ctl >= p - 2 && ctl < (CTLN.find(([q]) => q > p) || [999])[0] - 2 ? "on" : ""}">${n}</span>`).join("") : "";
   $("hint").textContent = "";
@@ -130,7 +132,7 @@ window.renderFrame = (t) => {
     else if (s.mode === "power") {
       place(c1, 40, 120, 800, 420); drawPowerChart(c1, eng, eng.variant); side.style.display = "block";
       side.style.right = "40px"; side.style.width = "360px";
-      side.innerHTML = ["A", "B", "C", "Cd"].map((k) => `<div class="row ${s.variants && eng.variant === k ? "cur" : ""}"><span>${VARIANTS[k].name.replace("12LDA28-", "")}</span><b>${VARIANTS[k].bhp} bhp @ ${VARIANTS[k].rpm}</b></div>`).join("") + `<div class="row"><span>Now</span><b>${Math.round(eng.bhp)} bhp</b></div>`;
+      side.innerHTML = ["A", "B", "C", "Cd"].map((k) => `<div class="row ${s.variants && eng.variant === k ? "cur" : ""}"><span>${VARIANTS[k].name.replace("12LDA28-", "")}</span><b>${VARIANTS[k].bhp} bhp @ ${VARIANTS[k].rpm}</b></div>`).join("") + `<div class="row"><span>Now</span><b>${Math.round(eng.bhp)} bhp (modelled)</b></div>`;
     }
     else if (s.mode === "te") {
       place(c1, 40, 120, 800, 420); drawTeChart(c1, loco); side.style.display = "block"; side.style.width = "360px"; side.style.right = "40px";

@@ -1,54 +1,486 @@
 {
-  "startEngineAt": 1.0,
-  "scenes": [
-    {"id":"intro","mode":"3d","title":"Sulzer 12LDA28","sub":"The engine behind the Peaks and the Brush Type 4",
-     "text":"From nineteen fifty-nine, British Rail ordered hundreds of locomotives powered by a single engine: the Sulzer twelve L D A twenty-eight. It hauled the Peaks, the Class forty-four, forty-five and forty-six, and the Brush Type Four, now known as the Class forty-seven. Here is how it works.",
-     "cam":[[78,44,88,6,4,0],[44,30,52,6,4,0]],"ctl":[[0,0],[1,10]]},
-    {"id":"layout","mode":"3d","title":"Not a V: two inline sixes",
-     "text":"Twelve cylinders, but not in a V. It is two separate inline sixes in one welded frame, each with its own crankshaft. Bore two hundred and eighty millimetres, stroke three hundred and sixty. About twenty-two litres a cylinder, and roughly two hundred and sixty-six in all, calculated from bore and stroke.",
-     "cam":[[44,30,52,6,4,0],[-46,24,46,6,4,0]],"ctl":[[0,10],[1,10]],
-     "facts":["280 x 360 mm bore x stroke","about 22 L per cylinder, 266 L total (calculated)","750 rpm full speed, 325 rpm idle"]},
-    {"id":"gears","mode":"3d","title":"Gears to a generator","focus":"gears","explode":0.25,
-     "text":"The two crankshafts are tied together by synchronising gears, which step the speed up by one point four four to drive the main generator. The generator feeds electric traction motors. The engine never touches the wheels.",
-     "cam":[[50,14,24,14,4,0],[62,18,12,16,4,0]],"ctl":[[0,10],[1,25]]},
-    {"id":"explode","mode":"3d","title":"Pulled apart",
-     "text":"Pull it apart and the layers appear. Crankcase, blocks and liners, heads with their valves, pistons and connecting rods, camshafts, injection pumps, and the turbochargers and intercoolers on top.",
-     "cam":[[44,30,52,6,4,0],[62,42,74,6,8,0]],"explode":[0,1],"ctl":[[0,25],[1,25]]},
-    {"id":"cycle","mode":"cyl","ts":0.06,"title":"Four strokes, two turns",
-     "text":"Each cylinder works in four strokes over two turns of the crankshaft. Intake: the piston falls and the inlet valve admits air, pushed in by the turbocharger. Compression: both valves shut, and the rising piston squeezes the air to a small fraction of its volume, heating it far above the ignition point of diesel. Power: fuel is injected just before top dead centre and burns, and the pressure drives the piston down. Exhaust: the exhaust valve opens, and the piston sweeps out the burnt gas.",
-     "ctl":[[0,25],[1,25]]},
-    {"id":"valves","mode":"wheel","ts":0.06,"title":"Valve timing (estimated)",
-     "text":"The valve timing on this site is an engineering estimate, not Sulzer data. We could not find a primary source. Inlet and exhaust overlap around top dead centre, so that boost air can flush the cylinder.",
-     "ctl":[[0,25],[1,25]]},
-    {"id":"firing","mode":"time","ts":0.25,"title":"About one power stroke every 60 degrees",
-     "text":"Twelve cylinders share seven hundred and twenty degrees, so on average a power stroke begins every sixty degrees, if the firing is evenly spaced. At full speed, seven hundred and fifty revolutions a minute, that is seventy-five firings every second: a seventy-five hertz note. The firing order shown is an assumption. No source we reached gives it.",
-     "ctl":[[0,25],[1,60]]},
-    {"id":"turbo","mode":"3d","title":"Turbocharger and intercooler","focus":"turbo","explode":0.4,
-     "text":"Exhaust gas spins a de Havilland turbocharger, which compresses the air to roughly two bar absolute on the Peaks, sixteen to eighteen pounds gauge. On the B and C engines, an intercooler cools that air, packing in more oxygen. The A, in the Class forty-four, had no intercooler, which is the likely reason it makes less power. That is an inference from the six-cylinder engine, not stated for the twelve.",
-     "cam":[[44,30,52,6,4,0],"focus"],"camHold":0.4,"ctl":[[0,50],[1,80]]},
-    {"id":"sound","mode":"3d","title":"The sound","sub":"Synthesised from the engine events",
-     "text":"The sound comes from the same machinery: the thump of each firing, the exhaust puffs, the valve ticks, the turbocharger whine rising with load, and the hum of the gear train. The synthesiser on the site builds the note from those events, cylinder by cylinder.",
-     "cam":[[95,8,0,6,4,0],[44,30,52,6,4,0]],"ctl":[[0,10],[0.5,60],[1,100]]},
-    {"id":"variants","mode":"power","title":"Three ratings","variants":[[0,"A"],[0.28,"B"],[0.52,"C"],[0.8,"Cd"]],
-     "text":"Three ratings. The A: two thousand three hundred horsepower, in the Class forty-four. The B: two thousand five hundred at seven hundred and fifty revolutions, in Classes forty-five and forty-six, with intercooling. The C, in the Class forty-seven, was built for two thousand seven hundred and fifty at eight hundred, and later derated to about two thousand five hundred and eighty at seven hundred and fifty.",
-     "ctl":[[0,60],[1,100]]},
-    {"id":"curve","mode":"power","title":"Power delivery",
-     "text":"Power rises with speed. The rated points are sourced; the curve between idle and full speed is a modelled shape, and is labelled as one. As the driver opens the controller, the engine climbs this line.",
-     "ctl":[[0,10],[0.85,100],[1,100]]},
-    {"id":"controller","mode":"3d","title":"The power controller","controller":true,
-     "text":"The driver's power controller has positions off, on, quarter, half, three quarters and full. The governor turns that demand into fuel, and the engine speed follows. Idle is about three hundred and twenty-five revolutions a minute.",
-     "cam":[[44,30,52,6,4,0],[44,24,60,6,4,0]],"ctl":[[0,0],[0.17,10],[0.35,25],[0.55,50],[0.75,75],[0.92,100],[1,100]]},
-    {"id":"te","mode":"te","title":"At the rail",
-     "text":"At the rail, a Class forty-seven gives sixty-two thousand pounds of tractive effort at the start, and thirty thousand pounds continuous at twenty-six miles an hour. Roughly four-fifths of the engine's power reaches the rail. That figure is our estimate.",
-     "ctl":[[0,10],[0.1,100],[1,100]]},
-    {"id":"chain","mode":"chain","title":"Fuel to rail",
-     "text":"From fuel to rail: engine, generator, six traction motors, gears and wheels. An electric transmission, which is why one diesel engine can start a heavy train.",
-     "ctl":[[0,100],[1,100]]},
-    {"id":"sources","mode":"sources","title":"What we know, and what we do not",
-     "text":"Every figure on the site carries a badge: well sourced, single source, weak source, or estimate. The best sources were the British Railways driver's manuals. The gaps, such as valve timing, firing order, compression ratio and peak pressure, are marked as estimates.",
-     "ctl":[[0,100],[0.4,60],[1,25]]},
-    {"id":"outro","mode":"3d","title":"Start it. Slow it down. Pull it apart.","sub":"0x4d44.github.io/sulzer-12lda28","outro":true,
-     "text":"Start it, slow it down, pull it apart, and listen. It is all on the Sulzer page of the almanac. Thanks for watching.",
-     "cam":[[62,42,74,6,8,0],[44,30,52,6,4,0]],"explode":[1,0],"ctl":[[0,25],[1,10]]}
-  ]
+ "startEngineAt": 1.0,
+ "scenes": [
+  {
+   "id": "intro",
+   "mode": "3d",
+   "title": "Sulzer 12LDA28",
+   "sub": "The engine behind the Peaks and the Brush Type 4",
+   "text": "From nineteen fifty-nine, British Rail ordered hundreds of locomotives powered by a single engine: the Sulzer twelve L D A twenty-eight. It hauled the Peaks, the Class forty-four, forty-five and forty-six, and the Brush Type Four, now known as the Class forty-seven. Here is how it works.",
+   "cam": [
+    [
+     78,
+     44,
+     88,
+     6,
+     4,
+     0
+    ],
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ]
+   ],
+   "ctl": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     10
+    ]
+   ]
+  },
+  {
+   "id": "layout",
+   "mode": "3d",
+   "title": "Not a V: two inline sixes",
+   "text": "Twelve cylinders, but not in a V. It is two separate inline sixes in one welded frame, each with its own crankshaft. Bore two hundred and eighty millimetres, stroke three hundred and sixty. About twenty-two litres a cylinder, and roughly two hundred and sixty-six in all, calculated from bore and stroke.",
+   "cam": [
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ],
+    [
+     -46,
+     24,
+     46,
+     6,
+     4,
+     0
+    ]
+   ],
+   "ctl": [
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     10
+    ]
+   ],
+   "facts": [
+    "280 x 360 mm bore x stroke",
+    "about 22 L per cylinder, 266 L total (calculated)",
+    "750 rpm full speed, 325 rpm idle"
+   ]
+  },
+  {
+   "id": "gears",
+   "mode": "3d",
+   "title": "Gears to a generator",
+   "focus": "gears",
+   "explode": 0.25,
+   "text": "The two crankshafts are tied together by synchronising gears, which step the speed up by one point four four to drive the main generator. The generator feeds electric traction motors. The engine never touches the wheels.",
+   "cam": [
+    [
+     50,
+     14,
+     24,
+     14,
+     4,
+     0
+    ],
+    [
+     62,
+     18,
+     12,
+     16,
+     2,
+     0
+    ]
+   ],
+   "ctl": [
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     25
+    ]
+   ]
+  },
+  {
+   "id": "explode",
+   "mode": "3d",
+   "title": "Pulled apart",
+   "text": "Pull it apart and the layers appear. Crankcase, blocks and liners, heads with their valves, pistons and connecting rods, camshafts, injection pumps, and the turbochargers and intercoolers on top.",
+   "cam": [
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ],
+    [
+     66,
+     46,
+     84,
+     6,
+     8,
+     0
+    ]
+   ],
+   "explode": [
+    0,
+    1
+   ],
+   "ctl": [
+    [
+     0,
+     25
+    ],
+    [
+     1,
+     25
+    ]
+   ]
+  },
+  {
+   "id": "cycle",
+   "mode": "cyl",
+   "ts": 0.06,
+   "title": "Four strokes, two turns",
+   "text": "Each cylinder works in four strokes over two turns of the crankshaft. Intake: the piston falls and the inlet valve admits air, pushed in by the turbocharger. Compression: both valves shut, and the rising piston squeezes the air to a small fraction of its volume, heating it far above the ignition point of diesel. Power: fuel is injected just before top dead centre and burns, and the pressure drives the piston down. Exhaust: the exhaust valve opens, and the piston sweeps out the burnt gas.",
+   "ctl": [
+    [
+     0,
+     25
+    ],
+    [
+     1,
+     25
+    ]
+   ]
+  },
+  {
+   "id": "valves",
+   "mode": "wheel",
+   "ts": 0.06,
+   "title": "Valve timing (estimated)",
+   "text": "The valve timing on this site is an engineering estimate, not Sulzer data. We could not find a primary source. Inlet and exhaust overlap around top dead centre, so that boost air can flush the cylinder.",
+   "ctl": [
+    [
+     0,
+     25
+    ],
+    [
+     1,
+     25
+    ]
+   ]
+  },
+  {
+   "id": "firing",
+   "mode": "time",
+   "ts": 0.25,
+   "title": "About one power stroke every 60 degrees",
+   "text": "Twelve cylinders share seven hundred and twenty degrees, so on average a power stroke begins every sixty degrees, if the firing is evenly spaced. At full speed, seven hundred and fifty revolutions a minute, that is seventy-five firings every second: a seventy-five hertz note. The firing order shown is an assumption. No source we reached gives it.",
+   "ctl": [
+    [
+     0,
+     25
+    ],
+    [
+     1,
+     60
+    ]
+   ]
+  },
+  {
+   "id": "turbo",
+   "mode": "3d",
+   "title": "Turbocharger and intercooler",
+   "focus": "turbo",
+   "explode": 0.4,
+   "text": "Exhaust gas spins a de Havilland turbocharger, which compresses the air to roughly two bar absolute on the Peaks, sixteen to eighteen pounds gauge. On the B and C engines, an intercooler cools that air, packing in more oxygen. The A, in the Class forty-four, had no intercooler, which is the likely reason it makes less power. That is an inference from the six-cylinder engine, not stated for the twelve.",
+   "cam": [
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ],
+    "focus"
+   ],
+   "camHold": 0.4,
+   "ctl": [
+    [
+     0,
+     50
+    ],
+    [
+     1,
+     80
+    ]
+   ]
+  },
+  {
+   "id": "sound",
+   "mode": "3d",
+   "title": "The sound",
+   "sub": "Synthesised from the engine events",
+   "text": "The sound comes from the same machinery: the thump of each firing, the exhaust puffs, the valve ticks, the turbocharger whine rising with load, and the hum of the gear train. The synthesiser on the site builds the note from those events, cylinder by cylinder.",
+   "cam": [
+    [
+     95,
+     8,
+     0,
+     6,
+     4,
+     0
+    ],
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ]
+   ],
+   "ctl": [
+    [
+     0,
+     10
+    ],
+    [
+     0.5,
+     60
+    ],
+    [
+     1,
+     100
+    ]
+   ]
+  },
+  {
+   "id": "variants",
+   "mode": "power",
+   "title": "Three ratings",
+   "variants": [
+    [
+     0,
+     "A"
+    ],
+    [
+     0.28,
+     "B"
+    ],
+    [
+     0.52,
+     "C"
+    ],
+    [
+     0.8,
+     "Cd"
+    ]
+   ],
+   "text": "Three ratings. The A: two thousand three hundred horsepower, in the Class forty-four. The B: two thousand five hundred at seven hundred and fifty revolutions, in Classes forty-five and forty-six, with intercooling. The C, in the Class forty-seven, was built for two thousand seven hundred and fifty at eight hundred, and later derated to about two thousand five hundred and eighty at seven hundred and fifty.",
+   "ctl": [
+    [
+     0,
+     60
+    ],
+    [
+     1,
+     100
+    ]
+   ]
+  },
+  {
+   "id": "curve",
+   "mode": "power",
+   "title": "Power delivery",
+   "text": "Power rises with speed. The rated points are sourced; the curve between idle and full speed is a modelled shape, and is labelled as one. As the driver opens the controller, the engine climbs this line.",
+   "ctl": [
+    [
+     0,
+     10
+    ],
+    [
+     0.85,
+     100
+    ],
+    [
+     1,
+     100
+    ]
+   ]
+  },
+  {
+   "id": "controller",
+   "mode": "3d",
+   "title": "The power controller",
+   "controller": true,
+   "text": "The driver's power controller has positions off, on, quarter, half, three quarters and full. The governor turns that demand into fuel, and the engine speed follows. Idle is about three hundred and twenty-five revolutions a minute.",
+   "cam": [
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ],
+    [
+     44,
+     24,
+     60,
+     6,
+     4,
+     0
+    ]
+   ],
+   "ctl": [
+    [
+     0,
+     0
+    ],
+    [
+     0.08,
+     10
+    ],
+    [
+     0.18,
+     25
+    ],
+    [
+     0.28,
+     50
+    ],
+    [
+     0.36,
+     75
+    ],
+    [
+     0.44,
+     100
+    ],
+    [
+     0.7,
+     100
+    ],
+    [
+     0.82,
+     0
+    ],
+    [
+     1,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "te",
+   "mode": "te",
+   "title": "At the rail",
+   "text": "At the rail, a Class forty-seven gives sixty-two thousand pounds of tractive effort at the start, and thirty thousand pounds continuous at twenty-six miles an hour. Roughly four-fifths of the engine's power reaches the rail. That figure is our estimate.",
+   "ctl": [
+    [
+     0,
+     10
+    ],
+    [
+     0.1,
+     100
+    ],
+    [
+     1,
+     100
+    ]
+   ]
+  },
+  {
+   "id": "chain",
+   "mode": "chain",
+   "title": "Fuel to rail",
+   "text": "From fuel to rail: engine, generator, six traction motors, gears and wheels. An electric transmission, which is why one diesel engine can start a heavy train.",
+   "ctl": [
+    [
+     0,
+     100
+    ],
+    [
+     1,
+     100
+    ]
+   ]
+  },
+  {
+   "id": "sources",
+   "mode": "sources",
+   "title": "What we know, and what we do not",
+   "text": "Every figure on the site carries a badge: well sourced, single source, weak source, or estimate. The best sources were the British Railways driver's manuals. The gaps, such as valve timing, firing order, compression ratio and peak pressure, are marked as estimates.",
+   "ctl": [
+    [
+     0,
+     100
+    ],
+    [
+     0.4,
+     60
+    ],
+    [
+     1,
+     25
+    ]
+   ]
+  },
+  {
+   "id": "outro",
+   "mode": "3d",
+   "title": "Start it. Slow it down. Pull it apart.",
+   "sub": "0x4d44.github.io/sulzer-12lda28",
+   "outro": true,
+   "text": "Start it, slow it down, pull it apart, and listen. It is all on the Sulzer page of the almanac. Thanks for watching.",
+   "cam": [
+    [
+     66,
+     46,
+     84,
+     6,
+     8,
+     0
+    ],
+    [
+     44,
+     30,
+     52,
+     6,
+     4,
+     0
+    ]
+   ],
+   "explode": [
+    1,
+    0
+   ],
+   "ctl": [
+    [
+     0,
+     25
+    ],
+    [
+     1,
+     10
+    ]
+   ]
+  }
+ ]
 }

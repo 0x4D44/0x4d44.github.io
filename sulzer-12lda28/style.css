@@ -128,12 +128,15 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
   .brand-sub{display:none}
   .steps{grid-template-columns:minmax(0,1fr)}
   .hero{padding:48px var(--gut) 40px}
-  .cab{top:46px;gap:6px 10px;padding:6px var(--gut)}
+  html{scroll-padding-top:172px}
+  .cab{top:55px;gap:6px 10px;padding:6px var(--gut)}
   .cab .sel,.cab .snd,.cab .marks{display:none}
   .cab .ctl{flex:1 1 150px;min-width:140px}
   .cab .gauge{padding:2px 8px}
+  .cab .ctl{flex-basis:100%}
   .stage{height:62vh}
   .loco-read{grid-template-columns:repeat(2,1fr)}
   .spec{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.transcript{margin:14px 0 0;max-width:68rem}.transcript summary{cursor:pointer;color:var(--accent)}.transcript h4{margin:1em 0 .2em}.transcript p{margin:0;color:var(--dim)}
