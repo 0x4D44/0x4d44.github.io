@@ -1518,7 +1518,7 @@ window.ESSAYS = [
   {
     slug: "be-ready",
     title: "Be Ready",
-    tagline: "The UK Government's 3-day emergency checklist made tickable, plus a stretch list: how much water to store, how to purify it, power, cooking, and whether your wood-burning stove can heat and cook through a power cut. With a 5-minute narrated explainer.",
+    tagline: "The UK Government's 3-day emergency checklist made tickable, plus a stretch list: how much water to store, how to purify it, power, cooking, and whether your wood-burning stove can heat and cook through a power cut. With a 5½-minute narrated explainer.",
     url: "https://0x4d44.github.io/be-ready/",
     illustration: "ill-beready",
     date: "2026-10-24T22:00:00",

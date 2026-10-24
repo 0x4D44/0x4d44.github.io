@@ -222,7 +222,7 @@
     if (fix.length) html += '<div class="tip"><b>Fix before you rely on it (' + fix.length + ')</b><ul>' + fix.map(function (f) { return "<li>" + f + "</li>"; }).join("") + "</ul></div>";
     else if (boiler) html += '<div class="note"><b>Not cleared yet.</b> Nothing else is outstanding, but the boiler question decides whether the stove is safe in a power cut.</div>';
     else html += '<div class="ok"><b>Looking good.</b> On what you\'ve told us, your stove is a solid part of your plan. Light a trial fire this autumn to be sure.</div>';
-    html += doCook ? '<div class="ok"><b>Cooking:</b> a flat hot top means you can boil water (1 minute rolling for purification), make soup, porridge, rice and pasta. Use heavy pans and embers, not flames.</div>'
+    html += doCook ? '<div class="ok"><b>Cooking:</b> a flat hot top means you can boil water (1 minute rolling for purification), make soup, porridge, rice and pasta. Use heavy, flat-based pans on the flat top only, with the door closed and the fire burning cleanly. Do not cook in the embers or open the door unless your manual explicitly allows it.</div>'
       : '<div class="note"><b>Cooking:</b> ' + (Q.top === "no" ? "without a usable top, treat the stove as heat only and plan to cook outdoors on a camping stove or barbecue." : "check the manual; some stoves forbid cooking or have glass tops.") + "</div>";
     el.innerHTML = html;
   }
