@@ -1942,6 +1942,19 @@ window.ESSAYS = [
     tags: ["software", "engineering"],
     real: true,
   },
+  {
+    slug: "sulzer-12lda28",
+    title: "Sulzer 12LDA28",
+    tagline: "The twelve-cylinder engine under the Peaks and the Brush Type 4. Start it, slow it to a crawl, pull it apart in 3D, hear it synthesised cylinder by cylinder, and read its power curves, with every figure badged as sourced or estimated. Includes a five-minute narrated film.",
+    url: "https://0x4d44.github.io/sulzer-12lda28/",
+    illustration: "ill-sulzer",
+    date: "2026-10-24T12:00:00",
+    year: 1959,
+    readingMin: 8,
+    words: 1446,
+    tags: ["simulation", "engineering", "rail"],
+    real: true,
+  },
 ];
 
 // Filter vocabulary, split into two axes for the grouped filter row:
@@ -2036,7 +2049,7 @@ window.COLLECTIONS = [
     slugs: ["road-wear"] },
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
-    slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",
+    slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "ecml", "ecml-timeline", "br1955",
       "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",

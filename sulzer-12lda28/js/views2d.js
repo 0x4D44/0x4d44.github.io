@@ -88,9 +88,9 @@ export function drawCylinder(canvas, eng, sel) {
   // right-hand: p-theta chart
   const px0 = split + 24, pw = w - px0 - 14, ph = h - 70, py0 = 28;
   ctx.fillStyle = COL.panel; rr(ctx, px0 - 10, py0 - 18, pw + 18, ph + 56, 8); ctx.fill();
-  txt(ctx, "Cylinder pressure over the 720° cycle (illustrative)", px0, py0 - 4, { c: COL.dim, f: "11px system-ui" });
+  txt(ctx, "Cylinder pressure over the 720° cycle (ESTIMATED shape and values)", px0, py0 - 4, { c: COL.dim, f: "11px system-ui" });
   const load = eng.running ? eng.load : 0.0, boost = Math.max(1.0, eng.boost || 1);
-  const pmax = 110;
+  const pmax = 130;
   const X = (a) => px0 + (a / 720) * pw, Y = (p) => py0 + ph - (p / pmax) * ph;
   ctx.strokeStyle = COL.line; ctx.lineWidth = 1;
   for (let p = 0; p <= 100; p += 25) { ctx.beginPath(); ctx.moveTo(px0, Y(p)); ctx.lineTo(px0 + pw, Y(p)); ctx.stroke(); txt(ctx, p + "", px0 - 3, Y(p) + 3, { a: "right", c: COL.dim, f: "10px system-ui" }); }
@@ -171,7 +171,7 @@ export function drawTimeline(canvas, eng) {
     txt(ctx, `${(r + 1)}`, 8, y + rh * 0.68, { c: COL.dim, f: "10px system-ui" });
   });
   ctx.strokeStyle = COL.line; for (let a = 0; a <= 720; a += 60) { const x = left + (a / 720) * pw; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + rows * rh); ctx.stroke(); txt(ctx, a + "°", x, top + rows * rh + 14, { a: "center", c: COL.dim, f: "10px system-ui" }); }
-    txt(ctx, "one cycle = 720° of crank rotation (two revolutions); one cylinder fires every 60°", left, 14, { c: COL.dim, f: "11px system-ui" });
+    txt(ctx, "one cycle = 720° of crank rotation (two revolutions); on average one cylinder fires every 60° (even spacing assumed)", left, 14, { c: COL.dim, f: "11px system-ui" });
   const x = left + (th720 / 720) * pw; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x, top + rows * rh + 2); ctx.stroke();
 }
 
@@ -231,9 +231,9 @@ export function drawTeChart(canvas, loco) {
   for (let v = 0; v <= 95; v += 1) { const r = resistanceLbf(v, loco.trainT); v ? ctx.lineTo(X(v), Y(r)) : ctx.moveTo(X(v), Y(r)); } ctx.stroke(); ctx.setLineDash([]);
   // sourced points
   ctx.fillStyle = COL.good; [[0, 62000], [10.5, 62000], [26, 30000]].forEach(([v, t]) => { ctx.beginPath(); ctx.arc(X(v), Y(t), 5, 0, 6.3); ctx.fill(); });
-  txt(ctx, "62,000 lbf to 10.5 mph", X(11) + 6, Y(62000) - 6, { c: COL.good, f: "11px system-ui" });
+  txt(ctx, "62,000 lbf to 10.5 mph (manual); model plateau runs to ~12 mph", X(11) + 6, Y(62000) - 6, { c: COL.good, f: "11px system-ui" });
   txt(ctx, "30,000 lbf continuous at 26 mph", X(26) + 8, Y(30000) - 8, { c: COL.good, f: "11px system-ui" });
-  txt(ctx, "train resistance", X(70), Y(resistanceLbf(70, loco.trainT)) - 8, { c: COL.dim, f: "11px system-ui" });
+  txt(ctx, "train resistance (ESTIMATE)", X(70), Y(resistanceLbf(70, loco.trainT)) - 8, { c: COL.dim, f: "11px system-ui" });
   txt(ctx, "● BR manual B.R.33003/262 (sourced)   — rail power ≈ 78.5% of engine (ESTIMATE)", x0, h - 4, { c: COL.dim, f: "10px system-ui" });
   // live
   const x = X(Math.min(98, loco.mph)); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, Y(Math.min(ymax, loco.te)), 6, 0, 6.3); ctx.fill();
@@ -252,7 +252,7 @@ export function drawChain(canvas) {
     ["Engine shaft", 40, "#ff6b3d", "~40% brake thermal efficiency (E)"],
     ["Main generator input", 37.2, "#e8b84a", "after ~100 kW of auxiliaries (E)"],
     ["Generator output", 35.0, "#46c28a", "~94% (E)"],
-    ["Traction-motor shafts", 31.9, "#4aa8ff", "~91% (motor 354 hp / 409 V x 710 A)"],
+    ["Traction-motor shafts", 31.9, "#4aa8ff", "~91% (E) (motor 354 hp / 409 V x 710 A)"],
     ["Rail (drawbar)", 31.4, "#9aa6ff", "~98% gears -> ~2,025 hp at rail (E)"],
   ];
   const x0 = 150, pw = w - x0 - 16, rh = (h - 12) / st.length;

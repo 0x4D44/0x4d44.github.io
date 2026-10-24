@@ -25,18 +25,18 @@ export const PART_INFO = {
   liner: { name: "Cylinder liner", conf: "M", text: "Centrifugally cast iron liners (Sheepbridge Stokes) 280 mm bore, with upper sealing rings. Coolant flows around the outside; early engines used magnesium-alloy anti-corrosion elements." },
   piston: { name: "Piston", conf: "M", text: "A two-piece oil-cooled piston introduced by Sulzer in 1955, with both scraper rings below the gudgeon pin. Lubricating oil cools the crown and drains through six unstressed holes. Stroke 360 mm; mean piston speed 9 m/s at 750 rpm." },
   rod: { name: "Connecting rod", conf: "E", text: "Transmits the gas force to the crankpin. The exact rod type was not found in a source; a plain rod is shown. Rod length is assumed at 720 mm." },
-  crank: { name: "Crankshaft (x2)", conf: "M", text: "One crankshaft per bank, made by Mitchell Shackleton, with seven main bearings (Glacier) and six throws. Throws are at 0, 120, 240, 240, 120, 0 degrees for the firing order 1-5-3-6-2-4. The two crankshafts are tied together by synchronising gears." },
+  crank: { name: "Crankshaft (x2)", conf: "E", text: "One crankshaft per bank, made by Mitchell Shackleton, with seven main bearings (Glacier) and six throws. The throw angles drawn here are an assumption tied to the assumed firing order. The two crankshafts are tied together by synchronising gears." },
   head: { name: "Cylinder head", conf: "M", text: "A separate head for every cylinder with two valves (one inlet, one exhaust) and a central injector. Direct injection into the piston crown." },
   valveIn: { name: "Inlet valve", conf: "M", text: "Admits pressurised charge air from the turbocharger and intercooler. Opens roughly 60 degrees before TDC (estimated timing)." },
   valveEx: { name: "Exhaust valve", conf: "M", text: "Austenitic-steel exhaust valve (the original high-tensile valves were replaced for durability). Opens roughly 50 degrees before BDC (estimated timing)." },
   injector: { name: "Injector and fuel pump", conf: "E", text: "Each cylinder has its own injection pump (makers included Bryce Berger, CAV, Wilson, Kyle) driven from the camshaft, feeding a nozzle in the head. Fuel is injected about 22 degrees before TDC (estimated)." },
   cam: { name: "Camshaft and pushrods", conf: "M", text: "Each bank has a camshaft turning at half crank speed, with an inlet and exhaust lobe per cylinder. The governor flyweights are driven from the camshaft, with the overspeed trip on its other end." },
   exhaust: { name: "Exhaust manifold", conf: "L", text: "Collects exhaust from each cylinder and feeds the turbocharger turbine. Whether it was a pulse or constant-pressure arrangement was not found; a simple collector is drawn." },
-  inlet: { name: "Charge-air manifold", conf: "L", text: "Carries boosted air from the intercooler to the inlet valves. Charge air pressure is 16 to 18 lb/sq in at full power on the 12LDA28-A/B (BR service data)." },
+  inlet: { name: "Charge-air manifold", conf: "M", text: "Carries boosted air from the intercooler to the inlet valves. Charge air pressure is 16 to 18 lb/sq in at full power on the Peaks (A/B); the Class 47 manual asks for at least 12 lb/sq in." },
   turbo: { name: "Turbocharger", conf: "M", text: "Exhaust-gas turbocharger by de Havilland to a Sulzer design. Early blades shed after 8,000 to 12,000 miles; wire damping and a peg impeller drive cured it. Its compressor feeds an air-to-water intercooler (fitted on the B and C engines)." },
-  cooler: { name: "Charge-air cooler", conf: "M", text: "Air-to-water intercooler between turbocharger and inlet manifold. Cooler, denser air allows more fuel and so more power: the step from 2,300 bhp (A) to 2,500 bhp (B)." },
-  gears: { name: "Synchronising gears", conf: "M", text: "Spur gearing with a step-up ratio of 1 : 1.44 ties the two crankshafts together and drives the central generator shaft at about 1,080 rpm when the engine turns 750." },
-  generator: { name: "Main generator (Brush TG160-60)", conf: "M", text: "A DC generator rated about 1,800 kW at 1,150 rpm feeds six traction motors. On the Class 47 it sits directly on the engine underbed." },
+  cooler: { name: "Charge-air cooler", conf: "M", text: "Air-to-water intercooler between turbocharger and inlet manifold. Cooler, denser air allows more fuel and so more power. Intercooling raised the six-cylinder 6LDA28 from 1,160 to 1,250 hp and probably accounts for most of the A to B step (an inference)." },
+  gears: { name: "Synchronising gears", conf: "M", text: "Spur gearing with a step-up ratio of 1 : 1.44 ties the two crankshafts together and drives the central generator shaft at about 1,080 rpm when the engine turns 750 (a 1,150 rpm rating matches 800 engine rpm; single source)." },
+  generator: { name: "Main generator (Brush TG160-60)", conf: "M", text: "A DC generator rated about 1,800 kW (Class 47 data; other units differ) feeds six traction motors. On the Class 47 it sits directly on the engine underbed." },
   governor: { name: "Governor and overspeed trip", conf: "M", text: "Vickers Hydraulics unit to a Sulzer design, driven from the camshaft and sensing speed by simple flyweights. An all-speed governor: controller position sets the speed, and power follows." },
 };
 
@@ -342,7 +342,13 @@ export class EngineView {
       g.position.set(g.userData.base.x + v[0] * this.explode, g.userData.base.y + v[1] * this.explode, g.userData.base.z + sz * v[2] * this.explode);
     }
   }
-  setExplode(v) { this.explode = v; this.applyExplode(); }
+  setExplode(v) {
+    this.explode = v; this.applyExplode();
+    const cur = this.camera.position.clone().sub(this.controls.target);
+    const last = this._exLast ?? 0;
+    if (Math.abs(last - v) > 1e-6) { this.camera.position.copy(this.controls.target).add(cur.setLength(Math.min(this.controls.maxDistance, cur.length() * (1 + 0.55 * v) / (1 + 0.55 * last)))); }
+    this._exLast = v;
+  }
 
   setSection(on) {
     this.renderer.localClippingEnabled = false;
@@ -386,9 +392,10 @@ export class EngineView {
   _pick() {
     const ray = new THREE.Raycaster(), v = new THREE.Vector2();
     const set = (e) => { const r = this.canvas.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(v, this.camera); };
-    const hit = () => { const h = ray.intersectObjects(this.pickables.filter((m) => m.visible && m.parent && m.parent.visible), false); return h.length ? h[0].object : null; };
+    const hit = () => { const h = ray.intersectObjects(this.pickables.filter((m) => m.visible && m.parent && m.parent.visible), false); const solid = h.find((x) => !(x.object.material && x.object.material.transparent && x.object.material.opacity < 0.5)); return h.length ? (solid || h[0]).object : null; };
     let down = null;
     this.canvas.addEventListener("pointerdown", (e) => { down = [e.clientX, e.clientY]; });
+    this.canvas.addEventListener("pointercancel", () => { down = null; });
     this.canvas.addEventListener("pointerup", (e) => {
       if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return; set(e); const m = hit();
       if (m) { this.selected = m.userData.part; this.onSelect(m.userData.part); this.highlight(m.userData.part, 1500); }
