@@ -31,9 +31,9 @@ function fmtDur(d) { // days -> text
 const qs = new URLSearchParams(location.search);
 if (qs.has("video")) document.documentElement.classList.add("video");
 const NOW_YEAR = qs.has("t") ? +qs.get("t") : C.yearFromJd(C.jdFromUnixMs(Date.now()));
-const T_MIN = 1936.0, T_MAX = Math.floor(NOW_YEAR) + 100;
+const T_MIN = 1934.9, T_MAX = Math.floor(NOW_YEAR) + 100;
 const S = {
-  T: NOW_YEAR, logR: 2.1, yaw: 0.7, pitch: 0.38, size: 1.7, gain: 0.9, phys: false,
+  T: NOW_YEAR, logR: 2.1, yaw: 0.7, pitch: 0.38, size: 1.7, gain: 0.55, phys: false,
   stars: true, labels: true, grid: true, solo: null, hl: null, star: null, rx: "fast", tsys: 300, tier: "picture",
   playing: false, speed: 1, tab: "explore", driftSite: null,
 };
@@ -83,6 +83,11 @@ if (!R) {
 let field = null, fieldKey = "", hlField = null, hlId = null, rebuildTimer = 0, lastBuildMs = 0;
 const sourceFilter = src => !S.solo || S.solo.has(src.kind === "radar" ? "RADAR" : src.cc);
 const soloKey = () => (S.solo ? [...S.solo].sort().join(",") : "*");
+const EDGE_SEL = () => { // bubble radius of the selected countries only (HUD and first-TV marker)
+  if (!S.solo || !S.solo.size) return EDGE();
+  const st = SITES.filter(sourceFilter).map(s => s.start);
+  return st.length ? Math.max(0, S.T - Math.min(...st)) : EDGE();
+};
 function wantWindow() { return Math.min(Math.max(EDGE(), 0.0005), Math.max(R_VIEW() * 2.6, 0.0004)); }
 function needsRebuild() {
   if (!field) return true;
@@ -121,7 +126,7 @@ function ensureHighlight() {
 
 // ---------- listening state: which stars are lit right now ----------
 let heardCount = 0, lastHeardT = -1;
-const HEAR_HI = 2.5;
+const HEAR_HI = 3;
 function updateHeard(force) {
   if (!R) return;
   if (!force && Math.abs(S.T - lastHeardT) < 0.00015) return;
@@ -305,7 +310,7 @@ function soloLats() {
 const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°, ${STARS.dec[i].toFixed(1)}°)`;
 
 function updateHud() {
-  const edge = EDGE(), jd = jdOf();
+  const edge = EDGE_SEL(), jd = jdOf();
   $("#hud").innerHTML = `<b>${C.fmtUTC(jd, false)}</b> &nbsp; bubble radius <b>${fmtLy(edge)} ly</b><br>` +
     `view ${fmtDist(R_VIEW())} &nbsp; ${field ? (field.n / 1000).toFixed(0) + "k wavefront points" : ""}` +
     `<br>${S.stars && starsInside() > 0 ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
@@ -549,7 +554,7 @@ function renderListen(full) {
     const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
     const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "nothing"}.</div>`;
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "no other source on the list"}.</div><p class="dim">Idealised: the full geometric area of each dish is assumed to work at VHF/UHF with perfect efficiency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -667,7 +672,8 @@ function selectBroadcast(id, fly = true) {
   const age = (jdOf() - t0) / C.DAYS_PER_YEAR, src = siteById[b.site];
   const hits = listenerCache[id] || (listenerCache[id] = broadcastListeners(b, STARS));
   const lit = hits.filter(h => h.arrive <= jdOf()), pend = hits.filter(h => h.arrive > jdOf());
-  const named = hits.filter(h => STARS.names[h.i]).slice(0, 8);
+  const oddName = n => /^(WISE|2MASS|G \d|LP |LHS|LSPM|[a-z]{3} [A-Z]{3} [AB])/.test(n);
+  const named = hits.filter(h => STARS.names[h.i]).sort((a, b) => oddName(STARS.names[a.i]) - oddName(STARS.names[b.i])).slice(0, 8);
   $("#bDetail").innerHTML = `<h2>${esc(b.title)}</h2>
     <p>${esc(b.note)}</p>
     <div class="kpi"><div><b>${age > 0 ? fmtDist(age) : "—"}</b><span>from Earth now</span></div><div><b>${hits.length}</b><span>catalogued stars in its fan</span></div><div><b>${lit.length}</b><span>already received it</span></div></div>
@@ -726,7 +732,7 @@ function renderAbout() {
   <video id="demoVideo" controls preload="none" poster="poster.jpg" playsinline aria-label="Demo: a tour of Earth's radio leakage"><source src="leaked-signals-tour.mp4" type="video/mp4"></video>
   <p class="faint">Rendered frame by frame from this very simulator (the Guided tour button plays the same script live).</p>
   <h2>How it works</h2>
-  <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe a few degrees wide (Gaussian, σ = 4°), plus a 0.2% floor of sidelobe scatter. The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
+  <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe a few degrees wide (Gaussian, σ = 4°), plus a 2% share of rays scattered isotropically upward at low intensity (sidelobes). The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
   <p><b>Propagation.</b> A ray never changes direction. A piece sent <i>a</i> years ago is exactly <i>a</i> light-years from where Earth was then; Earth's own 1 AU orbit is included so the innermost spirals are offset correctly.</p>
   <p><b>Hearing.</b> A star at declination δ hears a mast at latitude φ only when the star is within the lobe of its horizon, which can only happen if |δ| ≤ 90° − |φ| (+ the lobe's few degrees). That gives the band structure, the twice-daily rising/setting windows, and a 3 min 56 s daily drift.</p>
   <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 300 K (galactic background at VHF). No atmosphere, interference or intervening medium.</p>
@@ -734,7 +740,7 @@ function renderAbout() {
     <ul>
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
       <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF television (one representative mast per city) and two planetary radars are modelled; FM, air-traffic and military radar are not.</li>
-      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Arrival times ignore Earth's ±8 light-minutes offset from the Sun. Dates after today extrapolate: stations are assumed to stay on air.</li>
+      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
       <li>Each mast's power is a fleet average (peak power times a time-of-day activity factor), and effective radiated power is treated as isotropic equivalent.</li>
       <li>After the digital switch-over a transmitter is modelled at 8% of its analogue power and its signal is noise-like.</li>
       <li>Radar runs are random draws of the real pattern (planets near the ecliptic, a few per cent duty), not a log of actual observations. Arecibo Message and the other deliberate beams use the target's transit as the time of day.</li>
@@ -742,7 +748,7 @@ function renderAbout() {
       <li>Programme times are the best known UT times, some approximate by a quarter-hour.</li>
     </ul></details>
   <details><summary>Further reading</summary>
-    <ul><li>Sullivan, Brown &amp; Wetherill (1978), "Eavesdropping: the radio signature of the Earth", <i>Science</i> 199.</li><li>Forgan, Heller &amp; Hippke (2017), "Earth's radio leakage" style analyses of detectability and ionospheric cut-offs.</li><li>NASA/JPL on Voyager 1 reaching one light-day from Earth (around November 2026).</li></ul></details>
+    <ul><li>Sullivan, Brown &amp; Wetherill (1978), "Eavesdropping: the radio signature of the Earth", <i>Science</i> 199.</li><li>NASA/JPL on Voyager 1 reaching one light-day from Earth (around November 2026).</li></ul></details>
   <p class="faint">Keys: arrows orbit, +/- zoom, space plays time.</p>`;
 }
 
@@ -819,8 +825,8 @@ function tick(now) {
 }
 let lastKpi = 0, lastListen = 0;
 buildDock(); buildPanel(); syncDock();
-$("#foot").innerHTML = `Leaked Signals &middot; a simulation, not a measurement. The physics is real; the transmitter table is a model. &middot; <a href="#" id="themeBtn">toggle light/dark panel</a>`;
-$("#themeBtn").onclick = e => { e.preventDefault(); const r = document.documentElement; r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light"; drawAnatomyNow(); renderListen(); };
+$("#foot").innerHTML = `Leaked Signals &middot; a simulation, not a measurement. The physics is real; the transmitter table is a model.`;
+$("#themeBtn").onclick = () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light"; drawAnatomyNow(); renderListen(); };
 // listening to a star changes with the date, so refresh the listen panel when the date is dragged
 $("#tSlider").addEventListener("change", () => renderListen());
 resize(); rebuild(); updateHeard(true); frame();

@@ -221,7 +221,7 @@ export function gauss(rnd) { let u = 0, v = 0; while (!u) u = rnd(); while (!v) 
 /** Sample an emission elevation (deg) from the mast lobe (93%) or the isotropic-ish leak floor (7%). */
 export function sampleElevation(rnd, site) {
   const dip = horizonDip(site.h || 300);
-  if (rnd() < 0.07) {
+  if (rnd() < 0.02) {
     const lo = Math.sin(-dip * D2R);
     return Math.asin(lo + rnd() * (1 - lo)) * R2D;
   }

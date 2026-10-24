@@ -1518,7 +1518,7 @@ window.ESSAYS = [
   {
     slug: "leaked-signals",
     title: "Leaked Signals",
-    tagline: "Every TV broadcast since 1936 is still on its way somewhere. A live simulator of Earth's radio leakage: horizon fans by country, the spin spiral, 10,000 real stars and who could actually watch.",
+    tagline: "Every TV broadcast since the mid-1930s is still on its way somewhere. A live simulator of Earth's radio leakage: horizon fans by country, the spin spiral, 10,000 real stars and who could actually watch.",
     url: "https://0x4d44.github.io/leaked-signals/",
     illustration: "ill-leak",
     date: "2026-10-24T12:00:00",
