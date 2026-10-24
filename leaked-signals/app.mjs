@@ -217,7 +217,7 @@ function label(text, x, y, color = "#cfd9ee", align = "left", size = 12) {
 function drawOverlay(cam) {
   octx.setTransform(DPR, 0, 0, DPR, 0, 0);
   octx.clearRect(0, 0, W, H);
-  const edge = EDGE(), r = cam.r;
+  const edge = EDGE_SEL(), r = cam.r;
   // polar axis
   if (S.grid) {
     octx.lineWidth = 1; octx.setLineDash([2, 4]); octx.strokeStyle = "rgba(160,180,220,.22)";
@@ -241,8 +241,7 @@ function drawOverlay(cam) {
       const q = project(VP, [edge, 0, 0], W, H);
       if (q[2] > 0) label(`first TV, ${(S.T - edge).toFixed(1)}`, q[0] + 6, q[1] + 12, "#58d6ff", "left", 11);
       // reachable-declination limit circles for a single selected latitude
-      const lats = soloLats();
-      for (const lat of lats) {
+      for (const { lat, rad: edge } of limitRefs()) {
         const dlim = (90 - Math.abs(lat)) * C.D2R, rr = edge * Math.cos(dlim);
         octx.strokeStyle = "rgba(255,180,84,.55)"; octx.setLineDash([3, 3]);
         for (const sgn of [1, -1]) circle3([0, 0, sgn * edge * Math.sin(dlim)], [1, 0, 0], [0, 1, 0], rr, 120);
@@ -287,8 +286,17 @@ function drawOverlay(cam) {
     const o = project(VP, [0, 0, 0], W, H), q2 = q;
     if (o[2] > 0 && q2[2] > 0) { octx.strokeStyle = "rgba(255,211,107,.25)"; octx.lineWidth = 1; octx.setLineDash([3, 4]); octx.beginPath(); octx.moveTo(o[0], o[1]); octx.lineTo(q2[0], q2[1]); octx.stroke(); octx.setLineDash([]); }
   }
-  // Earth marker
-  const o = project(VP, [0, 0, 0], W, H);
+  // selected broadcast: the horizon circle at its start (blue) and end (magenta); the belt lies between them
+  if (S.hl) {
+    const b = BROADCASTS.find(x => x.id === S.hl), src = siteById[b.site], t0 = C.jdFromUnixMs(Date.parse(b.start));
+    for (const [jd, col] of [[t0, "rgba(64,153,255,.8)"], [t0 + b.mins / 1440, "rgba(255,102,230,.8)"]]) {
+      const age = (jdOf() - jd) / C.DAYS_PER_YEAR; if (age <= 0) continue;
+      const fr = C.siteFrame(src.lat, src.lon, jd);
+      octx.strokeStyle = col; octx.lineWidth = 1.5; octx.setLineDash([]); circle3([0, 0, 0], fr.e, fr.n, age, 160);
+    }
+  }
+  // Earth marker (wavefronts are centred on Earth's actual heliocentric position)
+  const eh = C.earthHelio(jdOf()), o = project(VP, [eh[0] * C.AU_LY, eh[1] * C.AU_LY, eh[2] * C.AU_LY], W, H);
   if (o[2] > 0) { octx.fillStyle = "#6fd0ff"; octx.beginPath(); octx.arc(o[0], o[1], 3, 0, 7); octx.fill(); label("Earth", o[0] + 6, o[1] - 6, "#6fd0ff", "left", 11); }
   // highlighted broadcast label on the shell
   if (S.hl) {
@@ -301,15 +309,33 @@ function drawOverlay(cam) {
     }
   }
 }
-function soloLats() {
-  const lats = [];
-  if (S.solo && S.solo.size === 1) { const cc = [...S.solo][0]; const s = SITES.filter(x => x.cc === cc); if (s.length) lats.push(s.reduce((a, x) => a + x.lat, 0) / s.length); }
-  if (S.hl) lats.push(siteById[BROADCASTS.find(x => x.id === S.hl).site].lat);
-  return lats.slice(0, 1);
+/** Latitude and shell radius the "beams end" circles refer to: the selected broadcast wins over a single country. */
+function limitRefs() {
+  if (S.hl) {
+    const b = BROADCASTS.find(x => x.id === S.hl), t0 = C.jdFromUnixMs(Date.parse(b.start));
+    const rad = (jdOf() - (t0 + b.mins / 2880)) / C.DAYS_PER_YEAR;
+    return rad > 0 ? [{ lat: siteById[b.site].lat, rad }] : [];
+  }
+  if (S.solo && S.solo.size === 1) {
+    const cc = [...S.solo][0], s = SITES.filter(x => x.cc === cc);
+    if (s.length) return [{ lat: s.reduce((a, x) => a + x.lat, 0) / s.length, rad: EDGE_SEL() }];
+  }
+  return [];
 }
 const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°, ${STARS.dec[i].toFixed(1)}°)`;
 
+let _hlNoteKey = null;
+function updateHlNote() {
+  const el = $("#hlNote"); if (!el) return;
+  const key = S.hl || "";
+  if (key === _hlNoteKey) return; _hlNoteKey = key;
+  if (!S.hl) { el.hidden = true; return; }
+  const b = BROADCASTS.find(x => x.id === S.hl), src = siteById[b.site], lat = src.lat;
+  el.innerHTML = `<b>${esc(b.title)}</b><br>Each ring is one instant of the broadcast: a mast sends in every direction along its horizon, so one instant is a full 360° circle, tilted by the latitude (${lat.toFixed(1)}°). The Earth turned ${(b.mins * 0.25068).toFixed(0)}° while it aired, so the circle swung from <b class="s">blue</b> (start) to <b class="e">magenta</b> (end). The signal fills the belt between them, within about ±${(90 - Math.abs(lat)).toFixed(0)}° of the equator; a few stray dots higher up are sidelobe leakage.`;
+  el.hidden = false;
+}
 function updateHud() {
+  updateHlNote();
   const edge = EDGE_SEL(), jd = jdOf();
   $("#hud").innerHTML = `<b>${C.fmtUTC(jd, false)}</b> &nbsp; bubble radius <b>${fmtLy(edge)} ly</b><br>` +
     `view ${fmtDist(R_VIEW())} &nbsp; ${field ? (field.n / 1000).toFixed(0) + "k wavefront points" : ""}` +
