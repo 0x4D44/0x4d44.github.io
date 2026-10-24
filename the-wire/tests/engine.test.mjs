@@ -30,16 +30,17 @@ test('longest prefix match', () => {
   assert.deepEqual(E.lookup(r, '10.1.2.3').matches, [0, 1, 2]);
 });
 test('switch learns, floods unknown, unicasts known, filters same-port', () => {
+  const A = '02:00:00:00:00:0a', B = '02:00:00:00:00:0b', C = '02:00:00:00:00:0c';
   const sw = { table: {}, ports: [1, 2, 3, 4] };
-  let r = E.switchForward(sw, 1, 'a', 'b'); assert.deepEqual(r.out, [2, 3, 4]); assert.equal(r.flood, true);
-  r = E.switchForward(sw, 2, 'b', 'a'); assert.deepEqual(r.out, [1]); assert.equal(r.flood, false);
-  r = E.switchForward(sw, 1, 'a', 'b'); assert.deepEqual(r.out, [2]);
-  r = E.switchForward(sw, 1, 'a', 'ff:ff:ff:ff:ff:ff'); assert.equal(r.flood, true);
-  assert.equal(E.switchForward(sw, 1, 'c', 'a').filtered, true);
-  assert.equal(E.switchForward(sw, 1, 'a', 'b', true).flood, true);
+  let r = E.switchForward(sw, 1, A, B); assert.deepEqual(r.out, [2, 3, 4]); assert.equal(r.flood, true);
+  r = E.switchForward(sw, 2, B, A); assert.deepEqual(r.out, [1]); assert.equal(r.flood, false);
+  r = E.switchForward(sw, 1, A, B); assert.deepEqual(r.out, [2]);
+  r = E.switchForward(sw, 1, A, 'ff:ff:ff:ff:ff:ff'); assert.equal(r.flood, true);
+  assert.equal(E.switchForward(sw, 1, C, A).filtered, true);
+  assert.equal(E.switchForward(sw, 1, A, B, true).flood, true);
 });
 test('dns plan', () => {
-  const p = E.dnsPlan('www.example.co.uk', 'A'); assert.equal(p.tld, 'uk'); assert.equal(p.zone, 'co.uk'); assert.equal(p.steps.length, 3);
+  const p = E.dnsPlan('www.example.co.uk', 'A'); assert.equal(p.tld, 'uk'); assert.equal(p.zone, 'example.co.uk'); assert.equal(p.steps.length, 3);
   assert.equal(E.dnsPlan('localhost', 'A'), null); assert.equal(E.dnsPlan('a.b.com', 'A').answer, E.dnsPlan('a.b.com', 'A').answer);
 });
 test('jumbo frames are more efficient and need fewer packets', () => {
@@ -68,5 +69,45 @@ test('delayed ack off removes the stall even with nagle', () => {
 });
 test('backoff range doubles and caps at 2^10', () => {
   assert.equal(E.backoffSlots(1, () => 0.999), 1); assert.equal(E.backoffSlots(3, () => 0.999), 7); assert.equal(E.backoffSlots(15, () => 0.99999), 1023);
+});
+test('switch: case-insensitive, never learns multicast source', () => {
+  const sw = { table: {}, ports: [1, 2] };
+  E.switchForward(sw, 1, 'AA:00:00:00:00:01', 'x'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
+  E.switchForward(sw, 1, '01:00:5e:00:00:01', 'x'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
+  E.switchForward(sw, 2, 'aa:00:00:00:00:01', 'x'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
+});
+test('parseMac rejects junk; subnet edge cases', () => {
+  assert.equal(E.parseMac('12zz:00:00:00:00:01'), null); assert.equal(E.parseMac('1:2:3:4:5'), null);
+  assert.equal(E.subnetInfo('10.0.0.0/31').hosts, 2); assert.equal(E.subnetInfo('0.0.0.0/0').size, 4294967296); assert.equal(E.parseCidr('1.2.3.4/33'), null);
+});
+test('nagle exact timing: 80 ms for write-write-read at 20 ms RTT; MSS-based ack', () => {
+  const r = E.simTcp({ writes: [{ t: 0, size: 60 }, { t: 0.3, size: 200 }], reqBytes: 260, rtt: 20, nagle: true, delack: true });
+  assert.equal(r.done, 80);
+  const big = E.simTcp({ writes: [{ t: 0, size: 3000 }], rtt: 20, nagle: false, delack: true });
+  assert.ok(big.segs.some((s) => s.kind === 'ack' && s.why === 'two full segments'));
+});
+test('fragments are 8-byte aligned and sum to the payload', () => {
+  const f = E.pathMtu([1500], 8000, false); const pay = f.pieces.map((x) => x - 20);
+  assert.equal(pay.reduce((a, b) => a + b, 0), 7980); pay.slice(0, -1).forEach((x) => assert.equal(x % 8, 0));
+});
+test('switch: case-insensitive, never learns multicast source', () => {
+  const sw = { table: {}, ports: [1, 2] };
+  E.switchForward(sw, 1, 'AA:00:00:00:00:01', 'x'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
+  E.switchForward(sw, 1, '01:00:5e:00:00:01', 'x'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
+  E.switchForward(sw, 2, 'aa:00:00:00:00:01', 'x'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
+});
+test('parseMac rejects junk; subnet edge cases', () => {
+  assert.equal(E.parseMac('12zz:00:00:00:00:01'), null); assert.equal(E.parseMac('1:2:3:4:5'), null);
+  assert.equal(E.subnetInfo('10.0.0.0/31').hosts, 2); assert.equal(E.subnetInfo('0.0.0.0/0').size, 4294967296); assert.equal(E.parseCidr('1.2.3.4/33'), null);
+});
+test('nagle exact timing: 80 ms for write-write-read at 20 ms RTT; MSS-based ack', () => {
+  const r = E.simTcp({ writes: [{ t: 0, size: 60 }, { t: 0.3, size: 200 }], reqBytes: 260, rtt: 20, nagle: true, delack: true });
+  assert.equal(r.done, 80);
+  const big = E.simTcp({ writes: [{ t: 0, size: 3000 }], rtt: 20, nagle: false, delack: true });
+  assert.ok(big.segs.some((s) => s.kind === 'ack' && s.why === 'two full segments'));
+});
+test('fragments are 8-byte aligned and sum to the payload', () => {
+  const f = E.pathMtu([1500], 8000, false); const pay = f.pieces.map((x) => x - 20);
+  assert.equal(pay.reduce((a, b) => a + b, 0), 7980); pay.slice(0, -1).forEach((x) => assert.equal(x % 8, 0));
 });
 console.log(n + ' tests passed');

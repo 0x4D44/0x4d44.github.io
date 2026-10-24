@@ -15,7 +15,7 @@
     const A = node(svg, X0, 130, 70, 34, 'A', 'station', 'var(--mag)'), B = node(svg, X1, 130, 70, 34, 'B', 'station', 'var(--cyan)');
     line(svg, [X0, 113], [X0, Y + 5]); line(svg, [X1, 113], [X1, Y + 5]);
     const boom = S('text', { x: 320, y: 40, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 800, fill: 'var(--red)', opacity: 0 }, svg, 'COLLISION');
-    const log = H('div', { class: 'log' }, 'Pick a scenario. On a shared wire, every station hears every frame — so they must take turns.');
+    const log = H('div', { class: 'log', 'aria-live': 'polite' }, 'Pick a scenario. On a shared wire, every station hears every frame — so they must take turns.');
     let run = 0;
     const say = (h) => { log.innerHTML = ''; log.append(...[].concat(h)); };
     const bar = (x0, x1, c) => S('rect', { x: Math.min(x0, x1), y: Y - 9, width: Math.abs(x1 - x0), height: 18, rx: 4, fill: c, opacity: .85 }, sig);
@@ -39,6 +39,7 @@
         say(['Signals overlap → voltage garbage. Both detect it, send a 32-bit ', H('b', { text: 'jam' }), ' so everyone notices, and stop. ', 'Backoff #' + att + ': each picks 0–' + (Math.pow(2, Math.min(att, 10)) - 1) + ' slots (51.2 µs each). A picked ', H('b', { text: sa }), ', B picked ', H('b', { text: sb }), '.']);
         await sleep(1700); if (my !== run) return;
         if (sa !== sb) break;
+        if (att >= E.MAX_ATTEMPTS) { say('16 collisions in a row: “excessive collisions” — the NIC gives up and reports an error to the OS.'); return; }
         say('Tie! Same slot → collide again, and the range doubles (binary exponential backoff).'); att++; await sleep(1300); if (my !== run) return;
       }
       boom.setAttribute('opacity', 0); sig.innerHTML = '';
@@ -65,7 +66,7 @@
       fcs: 'A CRC-32 over everything from destination MAC to payload. The receiver recomputes it; any mismatch and the frame is silently dropped — Ethernet does not retransmit, that is TCP’s job. Try flipping a bit below.',
     };
     const st = { dst: BC, src: '02:00:00:00:00:0a', text: 'Hello, wire!', vlan: false, vid: 10, pcp: 5, et: 0x0800, sel: 'dst', flip: null };
-    const fields = H('div', { class: 'fseg' }), hexg = H('div', { class: 'hexgrid', 'aria-label': 'frame bytes in hexadecimal' }), why = H('div', { class: 'log' }), sum = H('div', { class: 'stat' }), onion = H('div', { class: 'onion' });
+    const fields = H('div', { class: 'fseg' }), hexg = H('div', { class: 'hexgrid', 'aria-label': 'frame bytes in hexadecimal' }), why = H('div', { class: 'log', 'aria-live': 'polite' }), sum = H('div', { class: 'stat' }), onion = H('div', { class: 'onion' });
     function draw() {
       const f = E.buildFrame({ dst: st.dst, src: st.src, vlan: st.vlan ? { vid: +st.vid || 0, pcp: +st.pcp } : null, ethertype: st.et, payload: E.utf8(st.text) });
       let bytes = f.bytes.slice(); let flipIdx = -1;
@@ -91,18 +92,18 @@
       if (st.sel === 'tag') extra = ' → this tag says VLAN ' + st.vid + ', priority ' + st.pcp + '.';
       why.innerHTML = ''; why.append(H('b', { text: sf.name + ': ' }), WHY[sf.id] + extra);
       sum.innerHTML = '';
-      [[f.bytes.length + ' B', 'frame as captured'], [f.wire + ' B', 'on the wire (+preamble, +12 gap)'], [(1500 - 0) + ' B', 'default max payload (MTU)']].forEach((x) => sum.append(H('div', null, H('b', { text: x[0] }), H('span', { text: x[1] }))));
+      [[f.bytes.length + ' B', 'frame incl. FCS (as on the NIC)'], [f.wire + ' B', 'on the wire (+preamble, +12 gap)'], [(1500 - 0) + ' B', 'default max payload (MTU)']].forEach((x) => sum.append(H('div', null, H('b', { text: x[0] }), H('span', { text: x[1] }))));
       sum.append(H('div', null, H('b', { class: ok ? 'ok' : 'bad', text: ok ? '✓ FCS good' : '✗ FCS mismatch' }), H('span', { text: ok ? 'receiver accepts' : 'receiver silently drops' })));
       const plen = E.utf8(st.text).length;
       onion.innerHTML = ''; onion.append(H('div', { text: 'Ethernet 14' }), st.vlan ? H('div', { text: 'VLAN 4', style: 'color:var(--amber)' }) : null, H('div', { text: 'IPv4 20' }), H('div', { text: 'TCP 20' }), H('div', { class: 'pl', text: '“' + st.text + '” (' + plen + ' B)' }), H('div', { text: 'FCS 4' }));
     }
     const inp = (k, w, ph) => H('input', { type: 'text', value: st[k], style: 'width:' + w + 'px', 'aria-label': ph, oninput: (e) => { st[k] = e.target.value; draw(); } });
     b.append(H('div', { class: 'ctl' },
-      H('label', null, 'dst', inp('dst', 150, 'destination MAC')), H('label', null, 'src', inp('src', 150, 'source MAC')),
+      H('label', null, 'dst', inp('dst', 180, 'destination MAC')), H('label', null, 'src', inp('src', 180, 'source MAC')),
       H('label', null, 'type', sel([['2048', 'IPv4 0800'], ['2054', 'ARP 0806'], ['34525', 'IPv6 86DD']], '2048', (v) => { st.et = +v; draw(); }))),
     H('div', { class: 'ctl' }, H('label', null, 'payload', H('input', { type: 'text', value: st.text, maxlength: 120, style: 'width:230px', 'aria-label': 'payload text', oninput: (e) => { st.text = e.target.value; draw(); } })),
       H('label', null, H('input', { type: 'checkbox', onchange: (e) => { st.vlan = e.target.checked; draw(); } }), '802.1Q tag'),
-      H('label', null, 'VID', H('input', { type: 'text', value: '10', style: 'width:60px', 'aria-label': 'VLAN ID', oninput: (e) => { st.vid = Math.max(0, Math.min(4095, parseInt(e.target.value, 10) || 0)); draw(); } }))),
+      H('label', null, 'VID', H('input', { type: 'text', value: '10', style: 'width:60px', 'aria-label': 'VLAN ID', oninput: (e) => { st.vid = Math.max(1, Math.min(4094, parseInt(e.target.value, 10) || 1)); draw(); } }))),
     fields, hexg, why, H('div', { style: 'height:10px' }), sum, onion,
     H('div', { class: 'ctl', style: 'margin-top:12px' }, H('button', { onclick: () => { st.flip = Math.floor(Math.random() * 1000) + 1; draw(); } }, '⚡ flip one bit in transit'), H('button', { onclick: () => { st.flip = null; draw(); } }, 'repair the wire'), H('span', { class: 'note' }, 'the red-outlined byte is the damaged one')));
     draw();
@@ -122,7 +123,7 @@
     });
     const sw = { table: {}, ports: [1, 2, 3, 4] };
     let hub = false, src = 'A', dst = 'B', busy = false;
-    const tb = H('tbody'), log = H('div', { class: 'log' }, 'The switch starts knowing nothing. Send A → B and watch what it does.');
+    const tb = H('tbody'), log = H('div', { class: 'log', 'aria-live': 'polite' }, 'The switch starts knowing nothing. Send A → B and watch what it does.');
     const portHost = (p) => Object.keys(port).find((k) => port[k] === p);
     function table(hl) {
       tb.innerHTML = ''; const ms = Object.keys(sw.table);
@@ -186,7 +187,7 @@
     });
     function paint() { Object.keys(hp).forEach((k) => { hn[k].r.style.stroke = VC[vlan[k]]; lbl[k].style.fill = VC[vlan[k]]; lbl[k].textContent = 'access · ' + VN[vlan[k]]; lines[k].style.stroke = VC[vlan[k]]; }); }
     paint();
-    const log = H('div', { class: 'log' }, 'Each coloured host is on an access port for one VLAN. Click a host to move its port to another VLAN. Then send a frame.');
+    const log = H('div', { class: 'log', 'aria-live': 'polite' }, 'Each coloured host is on an access port for one VLAN. Click a host to move its port to another VLAN. Then send a frame.');
     let from = 'L1', to = 'R1', busy = false;
     const names = Object.keys(hp).map((k) => [k, k]);
     const say = (...x) => { log.innerHTML = ''; log.append(...x.flat()); };
@@ -194,6 +195,7 @@
       if (busy) return; busy = true;
       const v = vlan[from], col = VC[v];
       const targets = bc ? Object.keys(hp).filter((h) => h !== from) : [to];
+      if (!bc && to === from) { say('Pick a different destination.'); busy = false; return; }
       const same = targets.filter((h) => vlan[h] === v);
       const lab = (bc ? 'bcast' : from + '→' + to);
       await fly(svg, [hp[from], swp(from)], { color: col, label: lab });

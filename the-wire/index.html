@@ -21,7 +21,7 @@
     <div class="eyebrow">An interactive field guide · 9 chapters · 10 labs</div>
     <h1>Down<br>the <em>Wire</em></h1>
     <p class="lede">Every click you make becomes a few hundred bytes in a stranger’s fibre. Follow them: from a voltage on a cable to a frame, through switches and VLANs, across routers, past DNS, and into the strange corners where a “helpful” algorithm adds forty milliseconds.</p>
-    <div class="stats"><span><b>64–1522</b> bytes per classic frame</span><span><b>48-bit</b> MAC addresses</span><span><b>4096</b> VLANs</span><span><b>40 ms</b> of avoidable pain</span></div>
+    <div class="stats"><span><b>64–1522</b> bytes per classic frame</span><span><b>48-bit</b> MAC addresses</span><span><b>4094</b> usable VLANs</span><span><b>40 ms</b> of avoidable pain</span></div>
     <a class="cta" href="#wire">Start at the cable ↓</a>
   </div>
 </header>
@@ -47,7 +47,7 @@
     <p>Below is a real, live-built frame. Click any field to see what it does and where its bytes sit. Tick the VLAN box to insert an 802.1Q tag, then flip a bit in transit and watch the checksum catch it.</p>
   </div>
   <div id="w-frame"></div>
-  <div class="callout"><b>Payload size.</b> The classic maximum payload is 1500 bytes — the <b>MTU</b>. Frames run from 64 to 1518 bytes (1522 with a VLAN tag), limits set by 1980s memory and error-rate arguments. We will break that rule in chapter 7.</div>
+  <div class="callout"><b>Payload size.</b> The classic maximum payload is 1500 bytes — the <b>MTU</b>. Frames run from 64 to 1518 bytes (1522 with a VLAN tag). The 64-byte floor exists so a sender is still transmitting when a collision from the far end of the wire arrives; the 1500-byte ceiling was a 1980s memory and fairness compromise. We will break that rule in chapter 7.</div>
 </section>
 
 <section class="chap" id="switch">
@@ -76,7 +76,7 @@
   <div class="num">05 · IP, ARP &amp; ROUTING</div>
   <h2>MACs are for neighbours; IPs are for the world</h2>
   <div class="prose">
-    <p>A MAC address says <em>which card on this wire</em>; it has no geography. An <b>IP address</b> says <em>which network, then which host</em>, and that structure is what lets routers forward packets across the planet with tables of a few hundred thousand prefixes instead of billions of hosts.</p>
+    <p>A MAC address says <em>which card on this wire</em>; it has no geography. An <b>IP address</b> says <em>which network, then which host</em>, and that structure is what lets routers forward packets across the planet with tables of about a million prefixes instead of billions of hosts.</p>
     <p>Before sending, a host asks one question: <b>is the destination in my subnet?</b> It ANDs the address with its mask. Same network → <b>ARP</b> (“who has this IP?”, broadcast on the LAN) and deliver straight there. Different → send to the <b>default gateway</b>, which is just a router’s MAC address on the same LAN. At each router the Ethernet frame is torn off, the TTL is reduced, the destination is looked up (<b>longest prefix match</b>) and a new Ethernet frame is built for the next hop.</p>
     <p>So: <b>IP addresses stay the same end to end; MAC addresses change at every hop.</b> Step through it.</p>
   </div>
@@ -120,7 +120,7 @@
     <p>Each is sensible alone. Together: a program writes a small header, then its body, then waits for a reply. Nagle sends the header and <em>holds the body until the header is ACKed</em>. The receiver holds the ACK <em>waiting for more data</em>. “Small” here means less than one full segment (the MSS, about 1460 bytes), and the stall needs this write-write-read pattern: if the second write fills a segment, or the receiver has data to send back, nothing waits. Otherwise nobody moves until the delayed-ACK timer expires. Run it below, then switch either feature off.</p>
   </div>
   <div id="w-nagle"></div>
-  <div class="callout"><b>The fix.</b> Best: write the request in a single call (build the buffer, then send once). Otherwise set <code>TCP_NODELAY</code> on the socket, which disables Nagle — nearly every latency-sensitive client (HTTP libraries, databases, RPC frameworks) does so. Linux’s <code>TCP_QUICKACK</code> addresses the receiver side. Keep Nagle on for bulk transfers and interactive tools on slow links, where it earns its keep.</div>
+  <div class="callout"><b>The fix.</b> Best: write the request in a single call (build the buffer, then send once). Otherwise set <code>TCP_NODELAY</code> on the socket, which disables Nagle — nearly every latency-sensitive client (HTTP libraries, databases, RPC frameworks) does so. Linux’s <code>TCP_QUICKACK</code> addresses the receiver side (and a fresh Linux connection starts in quick-ACK mode, so the stall tends to appear a few round trips in). Keep Nagle on for bulk transfers and interactive tools on slow links, where it earns its keep.</div>
 </section>
 
 <section class="chap" id="wrap">

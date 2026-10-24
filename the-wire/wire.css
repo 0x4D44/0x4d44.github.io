@@ -73,12 +73,20 @@ button:hover{border-color:var(--cyan)}
 button.pri{background:var(--cyan);color:#04121a;border-color:var(--cyan)}
 button.on{border-color:var(--cyan);color:var(--cyan)}
 button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+select{max-width:100%;min-width:0}
+.ctl>*{max-width:100%}
+.bar nav{mask-image:linear-gradient(90deg,#000 88%,transparent)}
 input[type=range]{accent-color:var(--cyan);min-width:120px;max-width:100%}
 input[type=text]{min-width:0;max-width:100%}
-.log{font:13px/1.5 var(--mono);background:#0000002e;border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:3.4em;color:var(--ink);overflow-wrap:anywhere}
+.log{font:13px/1.5 var(--mono);background:color-mix(in srgb,var(--bg) 70%,var(--panel));border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:3.4em;color:var(--ink);overflow-wrap:anywhere}
 .log b{color:var(--cyan)}
+.log{}
 .note{font:12px var(--mono);color:var(--dim)}
 svg{display:block;max-width:100%;height:auto}
+.svgbox{overflow-x:auto}
+.svgbox svg{min-width:560px}
+.hint{display:none;font:11px var(--mono);color:var(--dim);margin:4px 0}
+@media(max-width:620px){.hint{display:block}}
 svg text{font-family:var(--mono)}
 .svgbox{background:#0000001f;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .pk{filter:drop-shadow(0 0 5px currentColor)}
