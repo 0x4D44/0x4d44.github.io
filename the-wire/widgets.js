@@ -36,7 +36,7 @@
       let att = 1, sa, sb;
       for (;;) {
         sa = E.backoffSlots(att, Math.random); sb = E.backoffSlots(att, Math.random);
-        say(['Signals overlap → voltage garbage. Both detect it, send a 32-bit ', H('b', { text: 'jam' }), ' so everyone notices, and stop. ', 'Backoff #' + att + ': each picks 0–' + (Math.pow(2, Math.min(att, 10)) - 1) + ' slots (51.2 µs each). A picked ', H('b', { text: sa }), ', B picked ', H('b', { text: sb }), '.']);
+        say(['Signals overlap → voltage garbage. Both detect it, send a 32-bit ', H('b', { text: 'jam' }), ' so everyone notices, and stop. ', 'Backoff #' + att + ': each picks 0–' + (Math.pow(2, Math.min(att, 10)) - 1) + ' slots (51.2 µs each at 10 Mb/s). A picked ', H('b', { text: sa }), ', B picked ', H('b', { text: sb }), '.']);
         await sleep(1700); if (my !== run) return;
         if (sa !== sb) break;
         if (att >= E.MAX_ATTEMPTS) { say('16 collisions in a row: “excessive collisions” — the NIC gives up and reports an error to the OS.'); return; }
@@ -95,7 +95,7 @@
       [[f.bytes.length + ' B', 'frame incl. FCS (as on the NIC)'], [f.wire + ' B', 'on the wire (+preamble, +12 gap)'], [(1500 - 0) + ' B', 'default max payload (MTU)']].forEach((x) => sum.append(H('div', null, H('b', { text: x[0] }), H('span', { text: x[1] }))));
       sum.append(H('div', null, H('b', { class: ok ? 'ok' : 'bad', text: ok ? '✓ FCS good' : '✗ FCS mismatch' }), H('span', { text: ok ? 'receiver accepts' : 'receiver silently drops' })));
       const plen = E.utf8(st.text).length;
-      onion.innerHTML = ''; onion.append(H('div', { text: 'Ethernet 14' }), st.vlan ? H('div', { text: 'VLAN 4', style: 'color:var(--amber)' }) : null, H('div', { text: 'IPv4 20' }), H('div', { text: 'TCP 20' }), H('div', { class: 'pl', text: '“' + st.text + '” (' + plen + ' B)' }), H('div', { text: 'FCS 4' }));
+      onion.innerHTML = ''; onion.append(...[H('div', { text: 'Ethernet 14' }), st.vlan ? H('div', { text: 'VLAN 4', style: 'color:var(--amber)' }) : null, H('div', { text: 'IPv4 20' }), H('div', { text: 'TCP 20' }), H('div', { class: 'pl', text: '“' + st.text + '” (' + plen + ' B)' }), H('div', { text: 'FCS 4' })].filter(Boolean));
     }
     const inp = (k, w, ph) => H('input', { type: 'text', value: st[k], style: 'width:' + w + 'px', 'aria-label': ph, oninput: (e) => { st[k] = e.target.value; draw(); } });
     b.append(H('div', { class: 'ctl' },
@@ -181,7 +181,7 @@
     Object.keys(hp).forEach((k) => {
       hn[k] = node(svg, hp[k][0], hp[k][1], 78, 40, k, '', VC[vlan[k]]);
       hn[k].g.style.cursor = 'pointer'; hn[k].g.setAttribute('tabindex', 0); hn[k].g.setAttribute('role', 'button'); hn[k].g.setAttribute('aria-label', 'host ' + k + ', click to change its VLAN');
-      lbl[k] = S('text', { x: hp[k][0], y: hp[k][1] + 14, 'text-anchor': 'middle', 'font-size': 9.5, 'font-weight': 700, fill: VC[vlan[k]] }, svg);
+      lbl[k] = S('text', { x: hp[k][0], y: hp[k][1] + 14, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: VC[vlan[k]] }, svg);
       const cyc = () => { vlan[k] = vlan[k] === 10 ? 20 : vlan[k] === 20 ? 30 : 10; paint(); };
       hn[k].g.addEventListener('click', cyc); hn[k].g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cyc(); } });
     });

@@ -16,7 +16,9 @@
 
   // ---------- Ethernet frame ----------
   function parseMac(s) {
-    const p = String(s).trim().split(/[:\-]/);
+    const str = String(s).trim();
+    if (/:/.test(str) && /-/.test(str)) return null;
+    const p = str.split(/[:\-]/);
     if (p.length !== 6 || !p.every((x) => /^[0-9a-fA-F]{1,2}$/.test(x))) return null;
     const b = p.map((x) => parseInt(x, 16));
     return b.some((x) => !(x >= 0 && x <= 255)) ? null : b;
@@ -31,16 +33,16 @@
     const src = parseMac(o.src) || [0, 0, 0, 0, 0, 0];
     const tagged = !!o.vlan;
     const minPay = tagged ? 42 : 46;
-    let pay = (o.payload || []).slice();
+    let pay = (o.payload || []).slice(0, 1500);
     const padded = Math.max(0, minPay - pay.length);
     while (pay.length < minPay) pay.push(0);
-    const et = o.ethertype == null ? 0x0800 : o.ethertype;
+    const et = (o.ethertype == null ? 0x0800 : o.ethertype) & 0xFFFF;
     const fields = [];
     fields.push({ id: 'pre', name: 'Preamble + SFD', bytes: [0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xD5], onWire: true });
     fields.push({ id: 'dst', name: 'Destination MAC', bytes: dst });
     fields.push({ id: 'src', name: 'Source MAC', bytes: src });
     if (tagged) {
-      const vid = o.vlan.vid & 0xFFF, pcp = (o.vlan.pcp || 0) & 7;
+      const vid = Math.max(1, Math.min(4094, o.vlan.vid | 0)), pcp = (o.vlan.pcp || 0) & 7;
       const tci = (pcp << 13) | vid;
       fields.push({ id: 'tag', name: '802.1Q tag', bytes: [0x81, 0x00, tci >> 8, tci & 0xFF] });
     }
@@ -98,7 +100,9 @@
   // ---------- Learning switch ----------
   // sw = {table:{mac:port}, ports:[...]}. Returns {out:[ports], flood:bool, learned:bool}.
   function switchForward(sw, inPort, src, dst, isHub) {
-    src = String(src).toLowerCase(); dst = String(dst).toLowerCase();
+    const cs = parseMac(src), cd = parseMac(dst);
+    if (!cs || !cd) return { out: [], flood: false, learned: false, invalid: true };
+    src = fmtMac(cs); dst = fmtMac(cd);
     const all = sw.ports.filter((p) => p !== inPort);
     if (isHub) return { out: all, flood: true, learned: false };
     let learned = false;
@@ -114,9 +118,10 @@
   function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function dnsPlan(name, type) {
     const labels = name.toLowerCase().replace(/\.$/, '').split('.').filter(Boolean);
-    if (labels.length < 2) return null;
+    if (labels.length < 2 || labels.some((l) => !/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(l)) || /^\d+$/.test(labels[labels.length - 1])) return null;
+    if (['A', 'AAAA', 'MX'].indexOf(type) < 0) return null;
     const tld = labels[labels.length - 1];
-    const SLD = ['co', 'org', 'ac', 'gov', 'com', 'net'];
+    const SLD = ['co', 'org', 'ac', 'gov', 'com', 'net', 'edu', 'ne', 'or', 'me', 'ltd', 'plc', 'nhs', 'sch', 'mil', 'id', 'go', 'gob', 'nom'];
     const zone = (labels.length >= 3 && SLD.includes(labels[labels.length - 2]) && tld.length === 2 ? labels.slice(-3) : labels.slice(-2)).join('.');
     const h = hash(zone);
     const ans = type === 'AAAA' ? '2001:db8:' + (h & 0xffff).toString(16) + '::' + ((h >>> 16) & 0xffff).toString(16)
@@ -138,6 +143,7 @@
     opts = opts || {};
     const tcpHdr = opts.hdr == null ? 40 : opts.hdr;
     const l1 = L1_OVERHEAD + (opts.vlan ? 4 : 0);
+    mtu = Math.max(tcpHdr + 1, mtu);
     const payload = mtu - tcpHdr;
     const wire = mtu + l1;
     return { payload, wire, eff: payload / wire, framesPerGB: Math.ceil(1e9 / payload) };
@@ -153,6 +159,7 @@
         if (s <= m) { next.push(s); continue; }
         if (df) return { ok: false, at: i, mtu: m, log: out.concat(['link ' + (i + 1) + ': ' + s + ' B > MTU ' + m + ' with DF set — dropped, ICMP "fragmentation needed (MTU ' + m + ')" sent back']) };
         const per = Math.floor((m - 20) / 8) * 8;
+        if (per < 8) return { ok: false, at: i, mtu: m, log: out.concat(['link ' + (i + 1) + ': MTU ' + m + ' is too small to carry any IP fragment']) };
         let left = s - 20;
         while (left > 0) { const d = Math.min(per, left); next.push(d + 20); left -= d; }
         out.push('link ' + (i + 1) + ': ' + s + ' B split to fit MTU ' + m);

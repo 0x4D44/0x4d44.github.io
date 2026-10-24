@@ -72,9 +72,9 @@ test('backoff range doubles and caps at 2^10', () => {
 });
 test('switch: case-insensitive, never learns multicast source', () => {
   const sw = { table: {}, ports: [1, 2] };
-  E.switchForward(sw, 1, 'AA:00:00:00:00:01', 'x'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
-  E.switchForward(sw, 1, '01:00:5e:00:00:01', 'x'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
-  E.switchForward(sw, 2, 'aa:00:00:00:00:01', 'x'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
+  E.switchForward(sw, 1, 'AA:00:00:00:00:01', '02:00:00:00:00:99'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
+  E.switchForward(sw, 1, '01:00:5e:00:00:01', '02:00:00:00:00:99'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
+  E.switchForward(sw, 2, 'aa:00:00:00:00:01', '02:00:00:00:00:99'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
 });
 test('parseMac rejects junk; subnet edge cases', () => {
   assert.equal(E.parseMac('12zz:00:00:00:00:01'), null); assert.equal(E.parseMac('1:2:3:4:5'), null);
@@ -92,9 +92,9 @@ test('fragments are 8-byte aligned and sum to the payload', () => {
 });
 test('switch: case-insensitive, never learns multicast source', () => {
   const sw = { table: {}, ports: [1, 2] };
-  E.switchForward(sw, 1, 'AA:00:00:00:00:01', 'x'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
-  E.switchForward(sw, 1, '01:00:5e:00:00:01', 'x'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
-  E.switchForward(sw, 2, 'aa:00:00:00:00:01', 'x'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
+  E.switchForward(sw, 1, 'AA:00:00:00:00:01', '02:00:00:00:00:99'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:02', 'aa:00:00:00:00:01').out, [1]);
+  E.switchForward(sw, 1, '01:00:5e:00:00:01', '02:00:00:00:00:99'); assert.equal(sw.table['01:00:5e:00:00:01'], undefined);
+  E.switchForward(sw, 2, 'aa:00:00:00:00:01', '02:00:00:00:00:99'); assert.equal(sw.table['aa:00:00:00:00:01'], 2);
 });
 test('parseMac rejects junk; subnet edge cases', () => {
   assert.equal(E.parseMac('12zz:00:00:00:00:01'), null); assert.equal(E.parseMac('1:2:3:4:5'), null);
@@ -109,5 +109,17 @@ test('nagle exact timing: 80 ms for write-write-read at 20 ms RTT; MSS-based ack
 test('fragments are 8-byte aligned and sum to the payload', () => {
   const f = E.pathMtu([1500], 8000, false); const pay = f.pieces.map((x) => x - 20);
   assert.equal(pay.reduce((a, b) => a + b, 0), 7980); pay.slice(0, -1).forEach((x) => assert.equal(x % 8, 0));
+});
+test('robustness: canonical MACs, dns validation, tiny MTU, vid clamp, ethertype mask', () => {
+  const sw = { table: {}, ports: [1, 2] };
+  E.switchForward(sw, 1, 'AA-BB-CC-DD-EE-02', '02:00:00:00:00:99'); assert.deepEqual(E.switchForward(sw, 2, '02:00:00:00:00:09', 'aa:bb:cc:dd:ee:02').out, [1]);
+  assert.equal(E.switchForward(sw, 1, 'zz', '02:00:00:00:00:09').invalid, true);
+  assert.equal(E.parseMac('aa:bb-cc:dd-ee:ff'), null);
+  assert.equal(E.dnsPlan('www.unimelb.edu.au', 'A').zone, 'unimelb.edu.au'); assert.equal(E.dnsPlan('1.2.3.4', 'A'), null);
+  assert.equal(E.dnsPlan('bad name!.com', 'A'), null); assert.equal(E.dnsPlan('a.com', 'TXT'), null);
+  assert.equal(E.pathMtu([20], 100, false).ok, false);
+  assert.ok(Number.isFinite(E.efficiency(10).framesPerGB));
+  const f = E.buildFrame({ dst: 'ff:ff:ff:ff:ff:ff', src: '02:00:00:00:00:01', vlan: { vid: 4095 }, ethertype: 0x12345, payload: new Array(2000).fill(1) });
+  assert.equal(f.bytes.length, 14 + 4 + 1500 + 4); assert.ok(f.bytes.every((x) => x >= 0 && x < 256)); assert.equal(f.bytes[15], 4094 & 255);
 });
 console.log(n + ' tests passed');
