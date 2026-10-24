@@ -91,7 +91,7 @@ video{width:100%;border-radius:9px;background:#000;display:block}
   .top{padding-left:120px}
 }
 .dock select{color:var(--ink);background:var(--bg2)}
-@media (max-width:520px){ .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:520px){ .dock{padding:6px 8px 8px;gap:4px} .dock .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .dock .row>*{flex:0 0 auto} .dock .row input[type=range]{flex:1 0 110px} .stage{height:70vh} #caption{bottom:150px} .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
 @media (prefers-reduced-motion:reduce){ #caption{transition:none} }
 .video .top,.video .panel,.video .foot,.video .dock{display:none!important}
 .video body{height:100vh} .video .app{grid-template-columns:minmax(0,1fr)} .video .stage{height:100vh;min-height:0}
