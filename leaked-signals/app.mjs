@@ -29,6 +29,7 @@ function fmtDur(d) { // days -> text
 
 // ---------- state ----------
 const qs = new URLSearchParams(location.search);
+if (qs.has("video")) document.documentElement.classList.add("video");
 const NOW_YEAR = qs.has("t") ? +qs.get("t") : C.yearFromJd(C.jdFromUnixMs(Date.now()));
 const T_MIN = 1936.0, T_MAX = Math.floor(NOW_YEAR) + 100;
 const S = {
@@ -307,7 +308,7 @@ function updateHud() {
   const edge = EDGE(), jd = jdOf();
   $("#hud").innerHTML = `<b>${C.fmtUTC(jd, false)}</b> &nbsp; bubble radius <b>${fmtLy(edge)} ly</b><br>` +
     `view ${fmtDist(R_VIEW())} &nbsp; ${field ? (field.n / 1000).toFixed(0) + "k wavefront points" : ""}` +
-    `<br>${S.stars ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
+    `<br>${S.stars && starsInside() > 0 ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
 }
 let _inside = 0, _insideT = -1;
 function starsInside() { if (Math.abs(S.T - _insideT) > 0.01) { _insideT = S.T; const e = EDGE(); _inside = 0; for (let i = 0; i < STARS.n; i++) if (STARS.ly[i] <= e) _inside++; } return _inside; }
@@ -552,7 +553,7 @@ function renderListen(full) {
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
-    return `<tr><td><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cssCol(r.s.cc)};margin-right:5px"></span>${esc(r.s.name)}</td><td class="mono">${r.el.toFixed(1)}</td><td class="mono">${C.fmtUTC(r.jdE, false)} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}</td><td>${p ? `<span class="tag ok">${esc(p.title)}</span>` : (C.isAnalogue(r.s, C.yearFromJd(r.jdE)) ? "" : `<span class="tag">digital</span>`)}</td></tr>`;
+    return `<tr><td><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cssCol(r.s.cc)};margin-right:5px"></span>${esc(r.s.name)}</td><td class="mono">${(Math.abs(r.el) < 0.05 ? 0 : r.el).toFixed(1)}</td><td class="mono">${C.fmtUTC(r.jdE, false)} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}</td><td>${p ? `<span class="tag ok">${esc(p.title)}</span>` : (C.isAnalogue(r.s, C.yearFromJd(r.jdE)) ? "" : `<span class="tag">digital</span>`)}</td></tr>`;
   }).join("")}</tbody></table>` : "";
   body.innerHTML = `
   <h2>${esc(starName(i))}</h2>
@@ -672,7 +673,7 @@ function selectBroadcast(id, fly = true) {
     <div class="kpi"><div><b>${age > 0 ? fmtDist(age) : "—"}</b><span>from Earth now</span></div><div><b>${hits.length}</b><span>catalogued stars in its fan</span></div><div><b>${lit.length}</b><span>already received it</span></div></div>
     <p class="dim">Sent ${b.start.replace("T", " ").slice(0, 16)} UT from ${esc(src.name)} (lat ${src.lat.toFixed(1)}°), lasting ${b.mins} min. Its fan reaches declinations within ±${(90 - Math.abs(src.lat)).toFixed(0)}° of the equator; it sweeps ${(b.mins / 1440 * 360.98).toFixed(0)}° of sky while it airs.</p>
     <div class="chips"><button class="chip" type="button" id="bFly">Fly to its shell</button><button class="chip" type="button" id="bRewind">Replay from the transmitter</button></div>
-    ${named.length ? `<h2>Some listeners</h2><div class="list">${named.map(h => `<button class="item" type="button" data-star="${h.i}"><div class="t">${esc(STARS.names[h.i])} <span class="tag">${fmtLy(h.ly)} ly</span></div><div class="m">${h.arrive <= jdOf() ? "received " : "arrives "}${C.fmtUTC(h.arrive, false)} &middot; in its beam for ~${h.secs < 90 ? h.secs.toFixed(0) + " s" : (h.secs / 60).toFixed(0) + " min"} &middot; ${h.el.toFixed(1)}° above the mast's horizon</div></button>`).join("")}</div>` : `<div class="note">No named star sits in this fan. ${hits.length} fainter catalogued stars do.</div>`}
+    ${named.length ? `<h2>Some listeners</h2><div class="list">${named.map(h => `<button class="item" type="button" data-star="${h.i}"><div class="t">${esc(STARS.names[h.i])} <span class="tag">${fmtLy(h.ly)} ly</span></div><div class="m">${h.arrive <= jdOf() ? "received " : "arrives "}${C.fmtUTC(h.arrive, false)} &middot; in its beam for ~${h.secs < 90 ? h.secs.toFixed(0) + " s" : (h.secs / 60).toFixed(0) + " min"} &middot; ${Math.abs(h.el).toFixed(1)}° ${h.el < -0.05 ? "below" : "above"} the mast's horizon</div></button>`).join("")}</div>` : `<div class="note">No named star sits in this fan. ${hits.length} fainter catalogued stars do.</div>`}
     ${pend.length ? `<p class="dim">${pend.length} stars are still to receive it, the nearest in ${C.fmtUTC(pend[0].arrive, false)}.</p>` : ""}`;
   $("#bFly").onclick = () => flyToBroadcast(b);
   $("#bRewind").onclick = () => { stopTour(); S.T = clamp(C.yearFromJd(t0), T_MIN, T_MAX); S.logR = -4.4; S.playing = true; $("#spd").value = 0; S.speed = 1 / 365.25 / 1; dirty = true; syncDock(); };
@@ -755,8 +756,16 @@ function tourState(t) {
   const span = Math.max(1e-6, b.t - a.t), u = a === b ? 0 : (t - a.t) / span, e = u * u * (3 - 2 * u);
   const L = (x, y) => x + (y - x) * e;
   const nowY = NOW_YEAR;
+  const orient = k => {                       // a keyframe that names a star looks at it from the far side of Earth
+    if (!k.star) return k;
+    const i = starByName(k.star); if (i == null) return k;
+    const v = C.radec2vec(STARS.ra[i], STARS.dec[i]);
+    return { ...k, yaw: Math.atan2(v[1], v[0]) + Math.PI + 0.3, pitch: clamp(-Math.asin(v[2]) + 0.15, -1.4, 1.4) };
+  };
+  const oa = orient(a), ob = orient(b);
+  let dy = ob.yaw - oa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
   const st = {
-    logR: L(a.logR, b.logR), yaw: L(a.yaw, b.yaw) + (a.spin || 0) * (t - a.t), pitch: L(a.pitch, b.pitch),
+    logR: L(a.logR, b.logR), yaw: oa.yaw + dy * e + (a.spin || 0) * (t - a.t), pitch: L(oa.pitch, ob.pitch),
     T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap,
   };
   return st;
@@ -787,7 +796,7 @@ window.__leak = {
   seek(t) { tourSeeking = true; applyTour(t); if (R && needsRebuild()) rebuild(); frame(); tourSeeking = false; },
   tourLength: TOUR_LEN,
   state: S, info: () => ({ n: field ? field.n : 0, windowLy: field ? field.windowLy : 0, heard: heardCount, glOk: !!R, buildMs: lastBuildMs }),
-  set(o) { Object.assign(S, o); lastHeardT = -1; dirty = true; syncDock(); frame(); },
+  set(o) { Object.assign(S, o); if (!Number.isFinite(S.T)) S.T = NOW_YEAR; S.T = clamp(S.T, T_MIN - 1, T_MAX); S.logR = clamp(Number.isFinite(S.logR) ? S.logR : 2, -4.7, 3); lastHeardT = -1; dirty = true; syncDock(); frame(); },
   selectBroadcast, selectStar, setTab, rebuild: () => { rebuild(); frame(); }, draw: frame,
   stars: STARS, core: C,
 };

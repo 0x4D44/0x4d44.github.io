@@ -22,6 +22,7 @@ try {
     const p = await b.newPage({ viewport: vp }), errs = [];
     p.on("console", m => { if (m.type() === "error") errs.push(m.text()); });
     p.on("pageerror", e => errs.push(e.message));
+    p.on("response", r => { if (r.status() >= 400) errs.push("HTTP " + r.status() + " " + r.url()); });
     await p.goto(`http://localhost:${port}/leaked-signals/`, { waitUntil: "load" });
     await p.waitForFunction(() => window.__leak && window.__leak.info().n > 1000, null, { timeout: 30000 });
     const info = await p.evaluate(() => window.__leak.info());
@@ -34,7 +35,7 @@ try {
     await p.evaluate(() => window.__leak.seek(20));
     const a = await p.evaluate(() => window.__leak.state.T), c = await p.evaluate(() => (window.__leak.seek(20), window.__leak.state.T));
     assert.equal(a, c, "seek deterministic");
-    assert.deepEqual(errs.filter(e => !/404/.test(e)), [], "console errors");
+    assert.deepEqual(errs, [], "console errors / failed requests");
     await p.close();
   }
   console.log("leaked-signals browser test: ok");
