@@ -79,7 +79,7 @@ execFileSync("python3", [join(HERE, "make-audio.py"), join(WORK, "timeline.json"
 const out = join(ROOT, "be-ready-explainer.mp4");
 execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", join(WORK, "frames", "%05d.jpg"), "-i", join(WORK, "mix.wav"),
   "-c:v", "libx264", "-preset", "medium", "-crf", "24", "-pix_fmt", "yuv420p", "-r", String(FPS), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-  "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "-shortest", out], { stdio: "inherit" });
+  "-c:a", "aac", "-ar", "48000", "-b:a", "128k", "-movflags", "+faststart", "-shortest", out], { stdio: "inherit" });
 const stove = TL.scenes.find((s) => s.id === "stove");
 copyFileSync(join(WORK, "frames", String(Math.round((stove.lines[2].start + 3) * FPS)).padStart(5, "0") + ".jpg"), join(ROOT, "poster.jpg"));
 console.log("wrote", out);
