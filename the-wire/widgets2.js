@@ -18,7 +18,7 @@
     line(svg, P.A, P.C, { stroke: 'var(--cyan)', 'stroke-width': 4 });
     const nA = node(svg, ...P.A, 110, 46, 'Host A', '192.168.1.10', 'var(--cyan)'), nR = node(svg, ...P.R, 110, 70, 'ROUTER', 'eth0 .1 · eth1 .1', 'var(--mag)');
     const nB = node(svg, ...P.B, 120, 46, 'Server B', '10.0.0.20', 'var(--amber)'), nC = node(svg, ...P.C, 120, 40, 'Host C', '192.168.1.30', 'var(--cyan)'), nN = node(svg, ...P.N, 120, 46, 'Internet', '8.8.8.8', 'var(--vio)');
-    S('text', { x: 190, y: 138, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--cyan)' }, svg, '192.168.1.0/24'); S('text', { x: 460, y: 100, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--amber)' }, svg, '10.0.0.0/24'); S('text', { x: 450, y: 215, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--vio)' }, svg, 'WAN eth2');
+    S('text', { x: 190, y: 138, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--cyan)' }, svg, '192.168.1.0/24'); S('text', { x: 460, y: 100, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--amber)' }, svg, '10.0.0.0/24'); S('text', { x: 450, y: 215, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--vio)' }, svg, 'WAN eth2');
     const M = { A: 'aa:aa:aa:00:00:0a', R0: 'bb:bb:bb:00:00:00', R1: 'bb:bb:bb:00:00:01', B: 'cc:cc:cc:00:00:0b', C: 'dd:dd:dd:00:00:0c', ISP: 'ee:ee:ee:00:00:01' };
     const DST = { B: ['10.0.0.20', 'B', nB, P.B], C: ['192.168.1.30', 'C', nC, P.C], N: ['8.8.8.8', 'N', nN, P.N] };
     let who = 'B', step = 0, steps = [], busy = false;
@@ -55,7 +55,7 @@
       if (d > 0 && steps[step].anim) { busy = true; await steps[step].anim(); busy = false; }
     }
     function reset() { plan(); step = 0; render(); }
-    b.append(H('div', { class: 'ctl' }, H('label', null, 'destination', sel([['B', 'Server B 10.0.0.20 (via router)'], ['N', 'Internet 8.8.8.8 (default route)'], ['C', 'Host C 192.168.1.30 (same LAN)']], 'B', (v) => { who = v; reset(); })),
+    b.append(H('div', { class: 'ctl' }, H('label', null, 'destination', sel([['B', 'Server B (via router)'], ['N', 'Internet (default route)'], ['C', 'Host C (same LAN)']], 'B', (v) => { who = v; reset(); })),
       H('button', { onclick: () => go(-1) }, '◀ back'), H('button', { class: 'pri', onclick: () => go(1) }, 'next ▶'), H('button', { onclick: reset }, '↺ restart'), ctr), log,
     H('div', { class: 'grid2', style: 'margin-top:12px' }, H('div', null, H('h3', { text: 'Frame header now', style: 'margin-top:0' }), H('div', { class: 'tblwrap' }, H('table', { class: 'tbl' }, hdr))),
       H('div', null, H('h3', { text: 'Router’s table (amber = matches, green = winner)', style: 'margin-top:0' }), H('div', { class: 'tblwrap' }, H('table', { class: 'tbl' }, H('thead', null, H('tr', null, H('th', { text: 'prefix' }), H('th', { text: 'via' }), H('th', { text: 'dev' }))), rt)))));
@@ -190,9 +190,9 @@
   /* ===== 8. Nagle ===== */
   reg(() => lab('w-nagle', 'Lab 8 · Nagle, delayed ACK and the 40 ms stall', (b) => {
     const SC = {
-      wwr: { name: 'Write–write–read (header, then body, then wait)', writes: [{ t: 0, size: 60 }, { t: 0.3, size: 200 }], reqBytes: 260 },
-      typing: { name: 'Typing: 12 keystrokes, 15 ms apart', writes: Array.from({ length: 12 }, (_, i) => ({ t: i * 15, size: 1 })), reqBytes: 0 },
-      bulk: { name: 'Bulk upload: 6 × 3000 B writes', writes: Array.from({ length: 6 }, (_, i) => ({ t: i * 0.5, size: 3000 })), reqBytes: 0 },
+      wwr: { name: 'Write-write-read (header+body)', writes: [{ t: 0, size: 60 }, { t: 0.3, size: 200 }], reqBytes: 260 },
+      typing: { name: 'Typing (12 keystrokes)', writes: Array.from({ length: 12 }, (_, i) => ({ t: i * 15, size: 1 })), reqBytes: 0 },
+      bulk: { name: 'Bulk upload (6 × 3 kB)', writes: Array.from({ length: 6 }, (_, i) => ({ t: i * 0.5, size: 3000 })), reqBytes: 0 },
     };
     const st = { sc: 'wwr', rtt: 20, nagle: true, delack: true };
     const holder = H('div'), tbl = H('tbody'), log = H('div', { class: 'log', 'aria-live': 'polite' });
@@ -204,16 +204,16 @@
       const svg = svgIn(holder, [VW, VH], 'Sequence diagram of the TCP exchange'); const q = svg;
       S('text', { x: xc, y: 20, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: 'var(--cyan)' }, q, 'Client'); S('text', { x: xs, y: 20, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: 'var(--lime)' }, q, 'Server');
       line(q, [xc, y0], [xc, VH - 20], { 'stroke-width': 2 }); line(q, [xs, y0], [xs, VH - 20], { 'stroke-width': 2 });
-      for (let t = 0; t <= T; t += T > 150 ? 50 : 20) { S('text', { x: 8, y: y(t) + 4, 'font-size': 10, fill: 'var(--dim)' }, q, t + ' ms'); S('line', { x1: 50, x2: VW - 10, y1: y(t), y2: y(t), stroke: 'var(--line)', 'stroke-width': .5, 'stroke-dasharray': '2 4' }, q); }
+      for (let t = 0; t <= T; t += T > 150 ? 50 : 20) { S('text', { x: 8, y: y(t) + 4, 'font-size': 11, fill: 'var(--dim)' }, q, t + ' ms'); S('line', { x1: 50, x2: VW - 10, y1: y(t), y2: y(t), stroke: 'var(--line)', 'stroke-width': .5, 'stroke-dasharray': '2 4' }, q); }
       r.segs.forEach((s) => {
         const a = s.from === 'c' ? [xc, y(s.t0)] : [xs, y(s.t0)], z = s.from === 'c' ? [xs, y(s.t1)] : [xc, y(s.t1)];
         const col = s.kind === 'data' ? 'var(--cyan)' : s.kind === 'ack' ? 'var(--lime)' : 'var(--mag)';
         S('line', { x1: a[0], y1: a[1], x2: z[0], y2: z[1], stroke: col, 'stroke-width': 2.4, 'stroke-dasharray': s.kind === 'ack' ? '5 4' : '' }, q);
         S('circle', { cx: z[0], cy: z[1], r: 3, fill: col }, q);
         const mx = (a[0] + z[0]) / 2, my = (a[1] + z[1]) / 2;
-        S('text', { x: mx, y: my - 5, 'text-anchor': 'middle', 'font-size': 10, fill: col }, q, s.kind === 'data' ? s.bytes + ' B' : s.kind === 'ack' ? 'ACK' : 'reply');
+        S('text', { x: mx, y: my - 5, 'text-anchor': 'middle', 'font-size': 11, fill: col }, q, s.kind === 'data' ? s.bytes + ' B' : s.kind === 'ack' ? 'ACK' : 'reply');
       });
-      r.marks.forEach((m) => S('text', { x: xc - 8, y: y(m.t) + 4, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--amber)' }, q, 'Nagle holds ' + m.buf + ' B'));
+      r.marks.forEach((m) => S('text', { x: xc - 8, y: y(m.t) + 16, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--amber)' }, q, 'Nagle holds ' + m.buf + ' B'));
       const dn = doneOf(r);
       S('line', { x1: 40, x2: VW - 10, y1: y(dn), y2: y(dn), stroke: 'var(--amber)', 'stroke-width': 1.4 }, q);
       S('text', { x: VW - 12, y: y(dn) - 5, 'text-anchor': 'end', 'font-size': 11, 'font-weight': 700, fill: 'var(--amber)' }, q, (r.done != null ? 'reply received ' : 'last byte delivered ') + dn.toFixed(1) + ' ms');
