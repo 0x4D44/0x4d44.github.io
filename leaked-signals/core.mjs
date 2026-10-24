@@ -91,7 +91,7 @@ export function fanDirection(frame, thetaRad, elDeg) {
 
 // ---------- the transmitter model ----------
 // Vertical pattern of a broadcast mast: a lobe centred just below the horizon (typical beam tilt),
-// with a -27 dB floor standing for sidelobes, nulls-fill and building/ground scatter.
+// with a -27 dB gain floor (plus 2% of rays drawn isotropically) standing for sidelobes, nulls-fill and building/ground scatter.
 export const LOBE = { peakEl: -0.5, sigma: 4.0, floor: 2e-3 };
 export function elevGain(elDeg, lobe = LOBE) {
   const x = (elDeg - lobe.peakEl) / lobe.sigma;
@@ -218,7 +218,7 @@ export function mulberry32(a) {
 export const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 export function gauss(rnd) { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
-/** Sample an emission elevation (deg) from the mast lobe (93%) or the isotropic-ish leak floor (7%). */
+/** Sample an emission elevation (deg) from the mast lobe (98%) or the isotropic-ish leak floor (2%). */
 export function sampleElevation(rnd, site) {
   const dip = horizonDip(site.h || 300);
   if (rnd() < 0.02) {

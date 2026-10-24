@@ -495,7 +495,7 @@ function renderExplore() {
 }
 function updateKpi() {
   const k = $("#kpi"); if (!k) return;
-  const e = EDGE();
+  const e = EDGE_SEL();
   k.innerHTML = `<div><b>${fmtLy(e)}</b><span>bubble radius, ly</span></div><div><b>${starsInside().toLocaleString()}</b><span>stars inside it</span></div><div><b>${heardCount}</b><span>in a fan right now</span></div>`;
   const m = $("#buildMs"); if (m) m.textContent = `last rebuild ${lastBuildMs.toFixed(0)} ms`;
 }
@@ -759,7 +759,7 @@ function tourState(t) {
   let a = TOUR_KEYS[0], b = TOUR_KEYS[TOUR_KEYS.length - 1];
   for (let k = 0; k < TOUR_KEYS.length; k++) if (TOUR_KEYS[k].t <= t) a = TOUR_KEYS[k];
   for (let k = TOUR_KEYS.length - 1; k >= 0; k--) if (TOUR_KEYS[k].t >= t) b = TOUR_KEYS[k];
-  const span = Math.max(1e-6, b.t - a.t), u = a === b ? 0 : (t - a.t) / span, e = u * u * (3 - 2 * u);
+  const span = Math.max(1e-6, b.t - a.t), u = a === b ? 0 : b.cut ? 0 : (t - a.t) / span, e = u * u * (3 - 2 * u);
   const L = (x, y) => x + (y - x) * e;
   const nowY = NOW_YEAR;
   const orient = k => {                       // a keyframe that names a star looks at it from the far side of Earth
