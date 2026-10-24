@@ -187,7 +187,7 @@ function frame() {
   if (R) {
     R.draw({
       vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain(), phys: S.phys ? 1 : 0, r0: 12,
-      rmax: 1e9, stars: S.stars, dim: S.hl ? 0.35 : 1,
+      rmax: 1e9, stars: S.stars, dim: S.hl ? 0.12 : 1,
       hlDT: hlField ? (jdOf() - hlField.jdRef) / C.DAYS_PER_YEAR : null,
     });
   }
@@ -659,7 +659,7 @@ function drawRanges(ly) {
 function renderBroadcasts() {
   const el = $("#body-broadcasts");
   el.innerHTML = `<h2>Chase a programme</h2>
-  <p>Pick a broadcast to light its wavefront and see which stars lay in its fan. The shell is only minutes thick; the rings you see in the view are the programme itself.</p>
+  <p>Pick a broadcast to light its wavefront and see which stars lay in its fan. The shell is as thick as the programme is long in light-time (a 2-hour show is a shell 2 light-hours deep). Seen from outside, a mast sends power in every compass direction at once, so one instant is a full ring; the Earth turns while the show airs, so the ring smears into a belt that never leaves ±(90° − latitude) of the celestial equator. Stray dots toward the poles are the 2% of energy that leaks upward.</p>
   <div class="list" id="bList">${BROADCASTS.map(b => `<button class="item" type="button" data-b="${b.id}"><div class="t">${esc(b.title)}<span class="tag ${b.status === "missing" ? "missing" : b.status === "live" ? "live" : "ok"}">${b.status === "missing" ? "wiped" : b.status === "live" ? "never recorded" : "survives"}</span></div><div class="m">${b.start.slice(0, 10)} &middot; ${esc(siteById[b.site].name)}</div></button>`).join("")}</div>
   <div id="bDetail"></div>`;
   $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) selectBroadcast(b.dataset.b); };

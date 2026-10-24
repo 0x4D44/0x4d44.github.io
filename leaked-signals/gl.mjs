@@ -40,7 +40,7 @@ void main(){
   vec3 p = aO + aD * r;
   gl_Position = uVP * vec4(p, 1.0);
   float kind = aM.w;
-  vec3 col = aM.y >= 0.0 ? uPal[int(aM.y + 0.5)] : (aM.y < -1.5 ? vec3(0.35, 1.0, 0.85) : vec3(1.0, 0.45, 0.7));
+  vec3 col = aM.y >= 0.0 ? uPal[int(aM.y + 0.5)] : (aM.y < -1.5 ? vec3(1.0, 0.95, 0.55) : vec3(1.0, 0.45, 0.7));
   float fade = mix(1.0, 1.0 / (1.0 + r * r / (uR0 * uR0)), uPhys);
   float sz = uSize * (kind > 2.5 ? 3.2 : kind > 1.5 ? 2.0 : kind > 0.5 ? 1.7 : 1.0);
   float a = aM.z * uGain * fade * (kind > 0.5 ? 1.0 : uDim);

@@ -89,7 +89,7 @@ export function buildBroadcast(b, jdNow, az = 220) {
   const src = siteById[b.site];
   const t0 = C.jdFromUnixMs(Date.parse(b.start)), t1 = t0 + b.mins / 1440;
   const rnd = C.mulberry32(C.hashStr(b.id));
-  const n = Math.max(6, Math.min(90, Math.round(b.mins / 2)));
+  const n = Math.max(6, Math.min(165, Math.round(b.mins / 2)));
   const out = [];
   for (let k = 0; k < n; k++) {
     const jd = t0 + ((k + 0.5) / n) * (t1 - t0);
