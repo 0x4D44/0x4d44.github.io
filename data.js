@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "the-wire",
+    title: "Down the Wire",
+    tagline: "How Ethernet really works, as ten hands-on labs: build a frame byte by byte, watch a switch learn, tag VLANs across a trunk, follow a packet through a router, resolve a name down the DNS tree, see what jumbo frames buy, and trigger Nagle's 40 ms stall. Vanilla JS, SVG and canvas on a tested engine.",
+    url: "https://0x4d44.github.io/the-wire/",
+    illustration: "ill-wire",
+    date: "2026-10-24T12:00:00",
+    year: 1973,
+    readingMin: 30,
+    words: 2400,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "higher-graphic-communication",
     title: "Planes, Plans & Pennants",
     tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. HMS Vellum's Plan Room, Minecraft blocks and Air Cadets carry the diagrams and animated widgets. Vanilla JavaScript, canvas and SVG.",
@@ -1968,7 +1981,7 @@ window.COLLECTIONS = [
   { id: "tools", name: "Tools", icon: "ill-caliper",
     blurb: "Small practical instruments that run in the browser.",
     slugs: ["tellylist-setup", "wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
-      "token-predictor", "midi-observatory", "cowork"] },
+      "token-predictor", "midi-observatory", "cowork", "the-wire"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
     slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
@@ -2020,7 +2033,7 @@ window.COLLECTIONS = [
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
     slugs: ["higher-computing", "f1gp-internals", "mos-6502", "winrisk", "mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
-      "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier",
+      "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier", "the-wire",
       "constellation"] },
   { id: "cabinet", name: "The Cabinet", icon: "ill-sleeve",
     blurb: "The comic, the con and other curiosities.",
