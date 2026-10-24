@@ -16,6 +16,7 @@ const { chromium } = createRequire(import.meta.url)("playwright");
 await mkdir(join(out, "frames"), { recursive: true });
 const b = await chromium.launch({ args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const p = await b.newPage({ viewport: { width: W, height: H } });
+await p.route("**/almanac-back.js", rt => rt.abort());
 // fixed 'now' so the video is reproducible
 await p.goto(`http://localhost:${port}/leaked-signals/?t=2026.8&video=1`, { waitUntil: "load" });
 await p.waitForFunction(() => window.__leak && window.__leak.info().n > 1000, null, { timeout: 60000 });
