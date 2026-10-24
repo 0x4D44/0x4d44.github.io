@@ -162,4 +162,9 @@ code,kbd{font-family:var(--mono);font-size:.88em;background:var(--bg2);padding:1
   .item input{appearance:auto}
   .item .d{color:#333}
   .hero{padding:0}
+  .hero,.cat>summary::after{display:none!important}
+  .cat{break-inside:auto}.item{break-inside:avoid}
+  .badge.gov{background:none!important;color:#000!important;border:1px solid #000}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+@media (max-width:700px){.item label{min-height:44px}.item input{width:26px;height:26px}.quiz label{min-height:40px;padding:8px 4px}nav.sec a{min-height:40px}}
