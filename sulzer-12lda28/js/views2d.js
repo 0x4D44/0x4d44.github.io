@@ -207,7 +207,7 @@ export function drawPowerChart(canvas, eng, variant) {
     const bhp = eng.running ? eng.bhp : 0, x = X(Math.min(xmax, Math.max(xmin, eng.rpm)));
     ctx.strokeStyle = "#ffffff55"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + ph); ctx.stroke();
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, Y(bhp), 5, 0, 6.3); ctx.fill();
-    txt(ctx, `${Math.round(eng.rpm)} rpm · ${Math.round(bhp)} bhp`, x > x0 + pw * 0.6 ? x - 8 : x + 8, Y(bhp) - 8, { a: x > x0 + pw * 0.6 ? "right" : "left", f: "12px ui-monospace, monospace" });
+    txt(ctx, `${Math.round(eng.rpm)} rpm · ${Math.round(bhp)} bhp`, x0 + 8, y0 + 30, { f: "12px ui-monospace, monospace" });
   }
   txt(ctx, "ESTIMATED shape between idle and rated: P ∝ n^1.6", x0 + 8, y0 + 12, { c: COL.accent, f: "10px system-ui" });
 }
@@ -233,11 +233,11 @@ export function drawTeChart(canvas, loco) {
   ctx.fillStyle = COL.good; [[0, 62000], [10.5, 62000], [26, 30000]].forEach(([v, t]) => { ctx.beginPath(); ctx.arc(X(v), Y(t), 5, 0, 6.3); ctx.fill(); });
   txt(ctx, w < 520 ? "62,000 lbf to 10.5 mph" : "62,000 lbf to 10.5 mph (manual); model plateau runs to ~12 mph", X(11) + 6, Y(62000) - 6, { c: COL.good, f: "11px system-ui" });
   txt(ctx, w < 520 ? "30,000 lbf at 26 mph" : "30,000 lbf continuous at 26 mph", X(26) + 8, Y(30000) - 8, { c: COL.good, f: "11px system-ui" });
-  txt(ctx, w < 520 ? "resistance (E)" : "train resistance (ESTIMATE)", X(w < 520 ? 62 : 70), Y(resistanceLbf(70, loco.trainT)) - 8, { c: COL.dim, f: "11px system-ui" });
-  txt(ctx, w < 520 ? "● BR manual (sourced); rail ≈ 78.5% (E)" : "● BR manual B.R.33003/262 (sourced)   — rail power ≈ 78.5% of engine (ESTIMATE)", x0, h - 4, { c: COL.dim, f: "10px system-ui" });
+  txt(ctx, w < 520 ? "resistance (E)" : "train resistance (ESTIMATE)", X(96), Y(resistanceLbf(70, loco.trainT)) + 20, { c: COL.dim, a: "right", f: "11px system-ui" });
+  txt(ctx, w < 520 ? "● BR manual (sourced); rail ≈ 78.5% (E)" : "● BR manual B.R.33003/262 (sourced)   — rail power ≈ 78.5% of engine (ESTIMATE)", x0 + pw, y0 + 12, { c: COL.dim, a: "right", f: "10px system-ui" });
   // live
   const x = X(Math.min(98, loco.mph)); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, Y(Math.min(ymax, loco.te)), 6, 0, 6.3); ctx.fill();
-  txt(ctx, `${loco.mph.toFixed(0)} mph · ${Math.round(loco.te).toLocaleString()} lbf`, x + 10, Y(Math.min(ymax, loco.te)) + 4, { f: "12px ui-monospace, monospace" });
+  txt(ctx, `${loco.mph.toFixed(0)} mph · ${Math.round(loco.te).toLocaleString()} lbf`, x0 + pw, y0 + ph * 0.45, { a: "right", f: "12px ui-monospace, monospace" });
 }
 export function resistanceLbf(mph, trainT = 400) {
   const w = LOCO.weightT + trainT; // tonnes
