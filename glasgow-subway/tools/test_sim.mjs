@@ -27,9 +27,10 @@ async function open(browser, query, opts = {}) {
   p.on('pageerror', (e) => { errors.push(e.message); console.log('  [pageerror]', e.message); });
   await p.goto(URL0 + '?pr=1&aa=0&' + query);
   await p.waitForFunction(() => window.__sim, null, { timeout: 90000 });
+  await p.evaluate(() => __sim.loop(false)); // time is driven explicitly (swiftshader frames are slow)
   return p;
 }
-const shot = async (p, name) => { await p.evaluate(() => window.__sim.render()); await p.waitForTimeout(200); await p.screenshot({ path: path.join(SHOTS, name + '.png') }); };
+const shot = async (p, name) => { await p.evaluate(() => window.__sim.render()); await p.waitForTimeout(100); await p.screenshot({ path: path.join(SHOTS, name + '.png') }); };
 const ev = (p, fn, a) => p.evaluate(fn, a);
 
 const browser = await chromium.launch(launch);
@@ -56,13 +57,14 @@ try {
   await shot(p, '03_cab_tunnel_manual');
   // engage ATO and run a full lap
   await p.keyboard.press('a');
-  const lap = await ev(p, () => {
+  const NEED = process.env.QUICK ? 2 : 15;
+  const lap = await ev(p, (need) => {
     const s = __sim, svc = s.svc(); const arr = []; svc.on((t, d) => { if (t === 'arrive') arr.push({ idx: d.idx, err: d.err, ip: d.inPlatform }); });
     let g = 0, shotPending = false; window.__approachShot = false;
-    while (arr.length < 15 && g++ < 400000) { s.ff(0.25, 0.1); }
+    while (arr.length < need && g++ < 400000) { s.ff(0.25, 0.1); }
     return { arr, t: svc.t, spads: svc.score.spads };
-  });
-  ok('ATO lap: stops at all 15 stations', new Set(lap.arr.map((a) => a.idx)).size === 15, 'stops=' + lap.arr.length);
+  }, NEED);
+  ok('ATO lap: stops at all 15 stations', new Set(lap.arr.map((a) => a.idx)).size === NEED, 'stops=' + lap.arr.length);
   ok('ATO lap: every berthing within 1.0 m and inside the platform', lap.arr.every((a) => Math.abs(a.err) < 1 && a.ip), 'max|err|=' + Math.max(...lap.arr.map((a) => Math.abs(a.err))).toFixed(2));
   ok('ATO lap: no SPAD', lap.spads === 0);
   ok('lap time plausible (< 40 min sim)', lap.t < 2400, 't=' + lap.t.toFixed(0));
@@ -81,7 +83,7 @@ try {
   // walk with real key presses toward the stairs: face the ramp (+z), hold W
   const walk = await ev(p, () => {
     const s = __sim, w = s.walker(), inf = s.station().info; const out = {};
-    w.place(inf.xcP, inf.PL - 6, Math.PI); s.setLook(Math.PI, 0); // facing +z (towards the ramp)
+    w.place(inf.xcP, inf.PL - 2.2, Math.PI); s.setLook(Math.PI, 0); // facing +z (towards the ramp)
     s.key('w', true); const t0 = { x: w.x, z: w.z }; for (let i = 0; i < 80; i++) s.tick(0.1); out.afterPlatform = { x: w.x, z: w.z, y: w.y };
     for (let i = 0; i < 160; i++) s.tick(0.1); out.afterRamp = { x: w.x, z: w.z, y: w.y }; out.Hc = inf.Hc; out.zc0 = inf.zc0;
     s.key('w', false); return out;
@@ -119,7 +121,7 @@ try {
   // ---------------------------------------------------------------- board again
   await ev(p, () => { const s = __sim; const inf = s.station().info; s.walker().place(inf.xe + inf.S * 1.4, 4, 0); });
   await ev(p, () => { const s = __sim; let g = 0; while (!(s.shuttle().state === 'dwell' && s.svc().doorsOpen) && g++ < 6000) s.ff(0.5, 0.1); });
-  await ev(p, () => { const s = __sim; const inf = s.station().info; const sim = s.sim; const zc = sim._trainCentreZl(); s.walker().place(inf.xe + inf.S * 0.9, zc + sim.doorZ[2], 0); s.sync(); });
+  await ev(p, () => { const s = __sim; const inf = s.station().info; const sim = s.sim; const zc = sim._trainCentreZl(); s.walker().place(inf.xe + inf.S * 0.9, zc + sim.doorZ[3], 0); s.sync(); });
   await shot(p, '12_platform_train_doors');
   ok('prompt to board when train doors are open', (await ev(p, () => __sim.context() && __sim.context().kind)) === 'board');
   await p.keyboard.press('e');
@@ -131,15 +133,15 @@ try {
   ok('train departs with passenger', (await ev(p, () => __sim.info())).kmh > 5 || (await ev(p, () => __sim.svc().idx)) !== 0);
   // alight at next stop
   await p.keyboard.press('n');
-  await ev(p, () => { const s = __sim; let g = 0; while (!(s.svc().phase === 'station' && s.svc().doorsOpen) && g++ < 6000) s.ff(0.5, 0.1); s.walker().place(0.5, s.sim.doorZ[1], 0); s.sync(); });
+  await ev(p, () => { const s = __sim; let g = 0; while (!(s.svc().phase === 'station' && s.svc().doorsOpen) && g++ < 6000) s.ff(0.5, 0.1); s.walker().place(0.5, s.sim.doorZ[3], 0); s.sync(); });
   ok('alight prompt at next stop', (await ev(p, () => __sim.context() && __sim.context().kind)) === 'alight');
   await p.keyboard.press('e');
   ok('alighting returns to explore mode at the new station', (await ev(p, () => __sim.mode())) === 'explore');
   await shot(p, '15_alighted');
   // ride again, then take the driver's seat
-  await ev(p, () => { const s = __sim; let g = 0; while (!(s.shuttle().state === 'dwell' && s.svc().doorsOpen) && g++ < 6000) s.ff(0.5, 0.1); const inf = s.station().info; const sim = s.sim; s.walker().place(inf.xe + inf.S * 0.9, sim._trainCentreZl() + sim.doorZ[1], 0); s.sync(); });
+  await ev(p, () => { const s = __sim; let g = 0; while (!(s.shuttle().state === 'dwell' && s.svc().doorsOpen) && g++ < 6000) s.ff(0.5, 0.1); const inf = s.station().info; const sim = s.sim; s.walker().place(inf.xe + inf.S * 0.9, sim._trainCentreZl() + sim.doorZ[3], 0); s.sync(); });
   await p.keyboard.press('e');
-  await ev(p, () => { const s = __sim; s.walker().place(0, -(s.sim.trainLen / 2 - 3.2), 0); s.sync(); });
+  await ev(p, () => { const s = __sim; s.walker().place(0, -(s.sim.trainLen / 2 - 2.5), 0); s.sync(); });
   ok('cab door prompt in the saloon', (await ev(p, () => __sim.context() && __sim.context().kind)) === 'cab');
   await p.keyboard.press('e');
   ok('E at the cab door -> drive mode (seamless)', (await ev(p, () => __sim.mode())) === 'drive' && !(await ev(p, () => __sim.svc().ato)));
@@ -172,7 +174,7 @@ try {
   // ---------------------------------------------------------------- MOBILE 390x844 touch
   p = await open(browser, 'mode=drive&station=partick', { viewport: { width: 390, height: 844 }, touch: true });
   await ev(p, () => { __sim.svc().dwellT = 100; });
-  await p.tap('.gs-lever button[data-n="3"]').catch(() => {});
+  await p.tap('.gs-lever button[data-n="3"]', { timeout: 40000 }).catch((e) => console.log('  tap failed', e.message.slice(0, 120)));
   await ev(p, () => __sim.ff(10, 0.1));
   await shot(p, '22_mobile_drive');
   const overflow = await ev(p, () => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));

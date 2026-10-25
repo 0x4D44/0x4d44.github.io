@@ -27,13 +27,13 @@ export async function loadTunnelTemplate(THREE, GLTFLoader, url) {
 export class TunnelView {
   constructor(THREE, tpl, scene) {
     this.THREE = THREE; this.scene = scene;
-    this.N = 340; this.NL = Math.ceil(this.N / LAMP_EVERY) + 3;
+    this.N = 230; this.NL = Math.ceil(this.N / LAMP_EVERY) + 3;
     this.group = new THREE.Group(); this.group.name = 'tunnel'; scene.add(this.group);
     this.plain = this._pool(tpl.parts.seg_plain, this.N);
     this.lamp = this._pool(tpl.parts.seg_lamp || tpl.parts.seg_iron_lamp || tpl.parts.seg_plain, this.NL);
     this.head = -1e9; this.skip = [];
     this.lights = [];
-    for (let i = 0; i < 3; i++) { const l = new THREE.PointLight(0xffc27a, 14, 16, 1.6); l.userData.lamp = -1; this.group.add(l); this.lights.push(l); }
+    for (let i = 0; i < 2; i++) { const l = new THREE.PointLight(0xffc27a, 14, 16, 1.6); l.userData.lamp = -1; this.group.add(l); this.lights.push(l); }
     this._m = new THREE.Matrix4(); this._pa = {}; this._pb = {};
     this.zero = new THREE.Matrix4().makeScale(0, 0, 0);
   }
@@ -74,14 +74,14 @@ export class TunnelView {
     if (isLamp) {
       for (const im of this.lamp) { if (hidden) im.setMatrixAt(lslot, this.zero); else { tmp.multiplyMatrices(m, im.userData.local); im.setMatrixAt(lslot, tmp); } im.instanceMatrix.needsUpdate = true; }
       if (!hidden) {
-        const li = Math.floor(k / LAMP_EVERY), light = this.lights[((li % 3) + 3) % 3];
+        const li = Math.floor(k / LAMP_EVERY), light = this.lights[((li % 2) + 2) % 2];
         light.position.set(m.elements[12] + rx * 1.3 + 0 * ux, m.elements[13] + 2.0, m.elements[14] + rz * 1.3);
         light.userData.lamp = li;
       }
     }
   }
   update(track, s) {
-    const kEnd = Math.floor((s + 125) / RING), kStart = Math.floor((s - 55) / RING);
+    const kEnd = Math.floor((s + 95) / RING), kStart = Math.floor((s - 30) / RING);
     if (this.head < kStart - 5 || this.head > kEnd + 5 || this.track !== track) {
       this.track = track; this.head = kStart - 1;
       for (const im of [...this.plain, ...this.lamp]) for (let i = 0; i < im.count; i++) im.setMatrixAt(i, this.zero);

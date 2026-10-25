@@ -20,6 +20,7 @@ export function simAvailable() {
 }
 
 export async function startSim(ctx) {
+  if (ctx && ctx.mode === 'walk') ctx = Object.assign({}, ctx, { mode: 'explore' });
   const sim = new Sim(ctx);
   await sim.init();
   return sim.handle;
@@ -57,7 +58,6 @@ class Sim {
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.02);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
-    this.scene.add(this.camera);
     this.scene.add(new THREE.AmbientLight(0x8a7a66, 2.6));
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene);
     this.trainView = new TrainView(THREE, trainTpl.scene, {});
@@ -66,7 +66,7 @@ class Sim {
     this.tms = new Tms(THREE); this.tms.attach(this.trainView);
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
-    this.saloonLights = []; for (let i = 0; i < 2; i++) { const l = new THREE.PointLight(0xfff4e0, 5, 12, 1.4); this.scene.add(l); this.saloonLights.push(l); }
+    this.poolLights = []; for (let i = 0; i < 5; i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
     this.crowd = new Crowd(THREE, 120); this.scene.add(this.crowd.group);
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
@@ -152,6 +152,7 @@ class Sim {
 
   // ------------------------------------------------------------------ modes
   async go(sel) {
+    if (sel.mode === 'walk') sel = Object.assign({}, sel, { mode: 'explore' });
     Object.assign(this.sel, sel);
     this.hud.closeModal(); this.audio.start();
     const idx = this.track.stops.findIndex((s) => s.station === this.sel.station);
@@ -233,7 +234,7 @@ class Sim {
 
   _setupTrainWalker() {
     const w = this.walker; const obs = [];
-    const half = this.trainLen / 2 - 3.2;
+    const half = this.trainLen / 2 - 2.5;
     const gaps = this.doorZ.map((z) => [z - 0.85, z + 0.85]).sort((a, b) => a[0] - b[0]);
     let z0 = -half; const segs = [];
     for (const [a, b] of gaps) { if (a > z0 + 0.3) segs.push([z0, a]); z0 = Math.max(z0, b); }
@@ -362,7 +363,7 @@ class Sim {
     this.sigRed = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff2a1a })); this.sigRed.position.set(0, 2.58, -0.11);
     this.sigGreen = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0x23ff6a })); this.sigGreen.position.set(0, 2.24, -0.11);
     g.add(this.sigRed, this.sigGreen);
-    this.sigLight = new THREE.PointLight(0xff2a1a, 3, 9, 1.6); this.sigLight.position.set(0, 2.4, -0.6); g.add(this.sigLight);
+    this.sigLight = { color: new THREE.Color() };
     return { group: g };
   }
 
@@ -502,7 +503,7 @@ class Sim {
       }
       if (!msg) { const sh = this.shuttle; if (sh.state === 'wait') msg = `Next train in ${fmtTime(sh.timer)}`; else if (sh.state === 'arriving') msg = `Train approaching ${fmtDist(Math.max(0, svc.distToStop))}`; }
     } else if (this.mode === 'ride') {
-      if (w.z < -(this.trainLen / 2 - 3.6)) { this.context = { kind: 'cab' }; msg = '<kbd>E</kbd> Take the driver\'s seat'; }
+      if (w.z < -(this.trainLen / 2 - 2.6)) { this.context = { kind: 'cab' }; msg = '<kbd>E</kbd> Take the driver\'s seat'; }
       else if (svc.phase === 'station' && svc.doorsOpen && (this.alightNext || true)) {
         const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.6) && Math.abs(w.x) > 0.45;
         if (nearDoor) { this.context = { kind: 'alight' }; msg = `<kbd>E</kbd> Step off at ${svc.station.name}`; }
@@ -610,8 +611,7 @@ class Sim {
       this.headlight.target.position.copy(front).addScaledVector(fwd, 40);
       this.headlight.intensity = this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160;
       this.cabLight.position.copy(front).add(new THREE.Vector3(0, 0.4, 0)).addScaledVector(fwd, -0.2);
-      const mid = this.trainView.cars[Math.floor(this.trainView.cars.length / 2)];
-      this.saloonLights.forEach((l, i) => { l.position.set(0, 2.3, (i ? 1 : -1) * 5).applyMatrix4(mid.matrix); });
+      this._lightPool();
       this._camera(front, q, dt);
     } else {
       const w = this.walker; cam.position.set(w.x, w.y + w.eye + Math.sin(w.bob) * 0.03, w.z);
@@ -633,6 +633,17 @@ class Sim {
     let late = null;
     if (this.mode === 'drive' && svc.schedule) { const sched = svc.schedule.arr[svc.idx] + svc.lap * svc.schedule.period + (svc.t0 || 0); late = svc.phase === 'station' ? (svc.stopStatus && svc.stopStatus.late) : Math.max(svc.t - sched, -999); if (late != null && svc.phase !== 'station' && late < 0) late = null; }
     this.hud.update(info, { title, distText, sub, late });
+  }
+
+  _lightPool() {
+    const cam = this.camera.position, THREE = this.THREE, cands = [];
+    const v = this._lp || (this._lp = new THREE.Vector3());
+    for (const sv of this.stationViews.values()) for (const d of sv.lights) { v.set(d.x, d.y, d.z); sv.group.localToWorld(v); cands.push({ x: v.x, y: v.y, z: v.z, d, dist: v.distanceToSquared(cam) }); }
+    // saloon lights ride with the train
+    const mid = this.trainView.cars[Math.floor(this.trainView.cars.length / 2)];
+    for (const zz of [-5, 5]) { v.set(0, 2.3, zz).applyMatrix4(mid.matrix); cands.push({ x: v.x, y: v.y, z: v.z, d: { c: 0xfff4e0, i: this.ctxKind === 'train' ? 5 : 2.5, d: 12 }, dist: v.distanceToSquared(cam) }); }
+    cands.sort((a, b) => a.dist - b.dist);
+    this.poolLights.forEach((l, i) => { const c = cands[i]; if (c) { l.position.set(c.x, c.y, c.z); l.color.set(c.d.c); l.intensity = c.d.i; l.distance = c.d.d; } else l.intensity = 0; });
   }
 
   _signal(svc) {
@@ -692,6 +703,8 @@ class Sim {
       enterStreet: () => this.enterStreet(), leaveStreet: () => this.leaveStreet(), alight: () => this._alight(), board: () => this._boardTrain(), takeCab: () => this._takeCab(),
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
       timeScale: (k) => { this.timeScale = k; },
+      loop: (on) => { if (on) this.renderer.setAnimationLoop((t) => this.frame(t)); else this.renderer.setAnimationLoop(null); },
+      stats: () => ({ calls: this.renderer.info.render.calls, tris: this.renderer.info.render.triangles, geos: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures }),
     };
   }
 

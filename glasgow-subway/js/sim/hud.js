@@ -17,7 +17,8 @@ const CSS = `
 .gs-prompt kbd,.gs-help kbd{background:#e8741a;color:#111;border-radius:4px;padding:1px 6px;font:600 12px monospace}
 .gs-dial{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:176px;height:176px;pointer-events:none}
 .gs-lever{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:3px;pointer-events:none;width:92px}
-.gs-lever button{pointer-events:auto;padding:4px 6px;min-height:30px;text-align:left}
+.gs-root .gs-lever button,.gs-root .gs-doors button,.gs-root .gs-btns button{pointer-events:auto!important}
+.gs-lever button{padding:4px 6px;min-height:30px;text-align:left}
 .gs-lever .eb{background:rgba(140,20,20,.9);border-color:#ff7a7a;font-weight:700}
 .gs-doors{position:absolute;left:10px;bottom:10px;display:grid;grid-template-columns:repeat(2,auto);gap:5px;pointer-events:none;max-width:200px}
 .gs-doors button{pointer-events:auto}
@@ -36,7 +37,8 @@ const CSS = `
 .gs-row{display:flex;flex-wrap:wrap;gap:6px}.gs-row button{flex:0 0 auto}
 .gs-panel select{font:inherit;background:#18212f;color:#f4efe3;border:1px solid #445;border-radius:8px;padding:7px;width:100%;pointer-events:auto}
 .gs-help table{border-collapse:collapse;width:100%}.gs-help td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top}.gs-help td:first-child{white-space:nowrap;width:1%}
-.gs-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s}
+.gs-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none!important;transition:opacity .45s}
+.gs-root .gs-cross,.gs-root .gs-toast,.gs-root .gs-card,.gs-root .gs-top,.gs-root .gs-dial,.gs-root .gs-lever,.gs-root .gs-doors,.gs-root .gs-score,.gs-root .gs-btns{pointer-events:none!important}
 .gs-fade.on{opacity:1}
 .gs-vig{position:absolute;left:50%;top:110px;transform:translateX(-50%);padding:10px 16px;border-radius:8px;background:rgba(160,20,20,.9);font-weight:700;display:none;pointer-events:auto;cursor:pointer}
 @media (max-width:640px){

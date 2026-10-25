@@ -8,7 +8,7 @@ import { Labels } from './labels.js';
 import { clamp, debounce, store } from './util.js';
 
 export const QUALITY = {
-  low:  { aa: false, pixelRatio: 1, tubeSegs: 10, tubeStep: 14, trains: 4, arrows: 1, chunkRadius: 2300, chunkParallel: 2, fog: 1.2 },
+  low:  { aa: false, pixelRatio: 1, tubeSegs: 10, tubeStep: 14, trains: 4, arrows: 1, chunkRadius: 3800, chunkParallel: 2, fog: 1.2 },
   med:  { aa: true, pixelRatio: 1.25, tubeSegs: 14, tubeStep: 9, trains: 6, arrows: 1, chunkRadius: 5000, chunkParallel: 3, fog: 1 },
   high: { aa: true, pixelRatio: 2, tubeSegs: 22, tubeStep: 6, trains: 8, arrows: 1, chunkRadius: Infinity, chunkParallel: 4, fog: 0.85 },
 };
@@ -78,9 +78,9 @@ export class App {
     const cs = getComputedStyle(document.documentElement); const lw = parseFloat(cs.getPropertyValue('--lw')) || 0, rw = parseFloat(cs.getPropertyValue('--rw')) || 0;
     const W = Math.max(300, innerWidth - lw - rw - 40), H = Math.max(300, innerHeight - (innerWidth < 900 ? 330 : 160)); const aspect = W / H; const cam = this.env.camera;
     const vf = (innerWidth / innerHeight < 0.8 ? 62 : 48) * Math.PI / 180; const tv = Math.tan(vf / 2);
-    const polar = innerWidth / innerHeight < 0.8 ? 0.72 : 1.0; const xs = this.stations.map((s) => s.x), zs = this.stations.map((s) => s.z);
+    const polar = innerWidth / innerHeight < 0.8 ? 0.7 : 0.92; const xs = this.stations.map((s) => s.x), zs = this.stations.map((s) => s.z);
     const halfX = (Math.max(...xs) - Math.min(...xs)) / 2 + 250, halfZ = ((Math.max(...zs) - Math.min(...zs)) / 2 + 250) * Math.cos(Math.PI / 2 - polar) / 1.0 + 80;
-    const hp = innerHeight; const dist = Math.max(1800, Math.max(halfX * hp / (tv * W), halfZ * hp / (tv * H)) * 1.05);
+    const hp = innerHeight; const dist = Math.max(1800, Math.max(halfX * hp / (tv * W), halfZ * hp / (tv * H)) * 1.22);
     return { target: c, dist, polar, azim: -0.42 * 0 };
   }
   resize() {
@@ -96,7 +96,7 @@ export class App {
   }
   applyXray(v) {
     if (Math.abs(v - this.state.xray) < 1e-4) return;
-    this.state.xray = v; this.city.setXray(v); this.ug.setXray(v); this.emit('xray', v); this.onHashSave();
+    this.state.xray = v; this.env.setDim(v); this.city.setXray(v); this.ug.setXray(v); this.emit('xray', v); this.onHashSave();
   }
   setLight(name) { this.state.light = name; this.env.setPreset(name); this.emit('light', name); this.onHashSave(); }
   setExaggeration(k) { this.state.exag = k; this.ug.setExaggeration(k); this.rebuildCrossingLabels(); this.emit('exag', k); this.onHashSave(); }
