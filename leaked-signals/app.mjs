@@ -499,7 +499,7 @@ function renderExplore() {
     <button class="chip" type="button" data-toggle="phys" aria-pressed="${S.phys}" title="Dim each wavefront as 1/r², like the real inverse-square law">Physical dimming</button>
   </div>
   <details open><summary>What am I looking at?</summary>
-    <p><b>Colour</b> is the country. <b>Dense bands</b> are where fans cross the sky; the sky near the celestial poles is dim because a mast at 54°N can only reach declinations between −36° and +36°. <b>Thin streaks</b> along the ecliptic are planetary radar (Arecibo, Goldstone). <b>Teal dots</b> are one broadcast, selected in Broadcasts. <b>Amber stars</b> are catching a fan right now.</p>
+    <p><b>Colour</b> is the country. <b>Dense bands</b> are where fans cross the sky; the sky near the celestial poles is dim because a mast at 54°N can only reach declinations between −36° and +36°. <b>Thin streaks</b> along the ecliptic are planetary radar (Arecibo, Goldstone). <b>Blue-to-magenta dots</b> are one broadcast (blue = start, magenta = end), selected in Broadcasts. <b>Amber stars</b> are catching a fan right now.</p>
     <p>At the very closest zoom you can see individual fans leaving, about two minutes of airtime apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
   </details>
   <p class="faint">${ALL_SOURCES.length} sources (${SITES.length} TV sites, ${RADARS.length} radars) &middot; ${STARS.n.toLocaleString()} stars within 100 ly &middot; <span id="buildMs"></span></p>`;

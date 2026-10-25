@@ -27,7 +27,7 @@ button,select,input{font:inherit;color:inherit}
 .btn.amber{border-color:var(--amber);color:var(--amber)}
 .btn:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 400px;flex:1;min-height:0}
-@media (min-width:981px){ body{height:100vh;height:100dvh} .app{overflow:hidden} .panel{overflow:hidden} .stage{min-height:0!important} }
+@media (min-width:981px){ body{height:100vh;height:100dvh} .app{overflow:hidden;grid-template-rows:minmax(0,1fr)} .panel{overflow:hidden} .stage{min-height:0!important} }
 .panel,.app{overscroll-behavior:contain}
 .stage{position:relative;min-height:520px;background:radial-gradient(ellipse at 50% 45%,#0b1226 0%,#05070d 70%);overflow:hidden;touch-action:none;user-select:none}
 :root[data-theme="light"] .stage{background:#05070d}
@@ -49,7 +49,9 @@ button,select,input{font:inherit;color:inherit}
 .tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
 .tabs button{flex:1 0 auto;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;cursor:pointer;color:var(--dim);font-weight:560;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--amber)}
-.tabbody{padding:12px 14px 20px;overflow:auto;flex:1;min-height:0}
+#bodies{flex:1;min-height:0;display:flex;flex-direction:column}
+.tabbody{padding:12px 14px 20px;overflow-y:scroll;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:var(--faint) transparent}
+.tabbody::-webkit-scrollbar{width:10px}.tabbody::-webkit-scrollbar-thumb{background:var(--faint);border-radius:6px;border:2px solid var(--panel)}.tabbody::-webkit-scrollbar-track{background:transparent}
 .tabbody[hidden]{display:none}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);margin:16px 0 6px;font-weight:600}
 h2:first-child{margin-top:0}
