@@ -29,7 +29,7 @@ const THEMES = {
   },
   neon: {
     shoulder: 4.0, kerb: [0xff2bd6, 0x19e6ff], wallBase: "#1c2036", wallAccent: "#19e6ff", wallText: ["NEON DOCKS", "APEX KARTS", "NITRO", "ZAP-X"],
-    asphalt: "#23232e", line: "#8defff", padColor: "#ff3df0", padColor2: "#19e6ff",
+    asphalt: "#2e2e3c", line: "#8defff", padColor: "#ff3df0", padColor2: "#19e6ff",
     ground: "#1a1b26", groundVar: 6, shoulderCol: "#2b2d3d",
     fog: [0x120a2c, 70, 560],
     hemi: [0x5a5ab8, 0x1a1530, 1.25], sun: { color: 0x93a4ff, i: 1.1, dir: [0.3, 0.7, 0.45] },
@@ -367,7 +367,7 @@ export function createTrack(id) {
     g.fillStyle = theme.wallAccent; g.fillRect(0, 128 * 0.78, 1024, 128 * 0.22);        // base band (u 0..0.22) is at canvas bottom
     g.fillStyle = "rgba(0,0,0,0.18)";
     for (let x = 0; x < 1024; x += 256) g.fillRect(x, 0, 3, 128);
-    g.fillStyle = def.theme === "neon" ? "#e8fbff" : theme.wallAccent; g.font = "900 38px Arial Black, Impact, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center";
+    g.fillStyle = def.theme === "neon" ? "#e8fbff" : theme.wallAccent; g.font = "900 31px Arial Black, Impact, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center";
     theme.wallText.forEach((t, i) => { g.fillText(t, 128 + i * 256, 54); });
     g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(0, 0, 1024, 14);     // top cap
     noiseFill(g, 1024, 128, rng, 1800, 0.08, 255, 0, 2);
@@ -482,7 +482,7 @@ function buildEnvironment(track, theme, def) {
   const dir = new THREE.Vector3(...theme.sun.dir).normalize();
   const phi = (Math.atan2(dir.z, -dir.x) + TAU) % TAU, el = Math.asin(dir.y);
   const sx = (phi / TAU) * W, sy = (1 - (0.5 + el / Math.PI)) * H;
-  if (sky.stars) { for (let i = 0; i < 700; i++) { const y = rng() * H * 0.48; g.fillStyle = `rgba(255,255,255,${0.2 + rng() * 0.8})`; const s = rng() < 0.1 ? 3 : 1.5; g.fillRect(rng() * W, y, s, s); } }
+  if (sky.stars) { for (let i = 0; i < 700; i++) { const y = rng() * H * 0.48; g.fillStyle = `rgba(255,255,255,${0.2 + rng() * 0.8})`; const s = rng() < 0.05 ? 2 : 1; g.fillRect(rng() * W, y, s, s); } }
   // clouds (wrap-safe)
   const cloud = (x, y, w, h, a) => { for (const ox of [-W, 0, W]) { const rg = g.createRadialGradient(x + ox, y, 0, x + ox, y, w); rg.addColorStop(0, `rgba(255,255,255,${a})`); rg.addColorStop(1, "rgba(255,255,255,0)"); g.save(); g.translate(0, y); g.scale(1, h / w); g.translate(0, -y); g.fillStyle = rg; g.fillRect(x + ox - w, y - w, 2 * w, 2 * w); g.restore(); } };
   g.save(); g.globalCompositeOperation = def.theme === "neon" ? "lighter" : "source-over";
@@ -845,14 +845,14 @@ function sceneSnow(track, X, K) {
   pp.push(part(new THREE.ConeGeometry(0.6, 1.5, 6), mat(0, 8.2, 0), 0xf2f8ff));
   const pineGeo = bake(pp);
   const pines = [];
-  const lakeC = (() => { for (const c of scatter(60, 120, 400, { pad: 380 })) { if (nearest(c.x, c.z) > 100 && Math.hypot(c.x - cx, c.z - cz) > 100) return c; } return { x: cx, z: b.maxZ + 220 }; })();
+  const lakeC = (() => { for (const c of scatter(200, 100, 400, { pad: 200 }).sort((a, b) => Math.hypot(a.x - cx, a.z - cz) - Math.hypot(b.x - cx, b.z - cz))) { if (nearest(c.x, c.z) > 100) return c; } return { x: cx, z: b.maxZ + 220 }; })();
   const inLake = (x, z) => Math.hypot(x - lakeC.x, z - lakeC.z) < 82;
   for (let s = 8; s < L; s += 9 + rng() * 8) for (const side of [-1, 1]) {
     const a = at(s, side * (wallDist + R(7, 16)));
     if (nearest(a.x, a.z) < wallDist + 5 || inLake(a.x, a.z)) continue;
     pines.push({ x: a.x, z: a.z, ry: rng() * 6, sx: R(0.85, 1.5), sy: R(0.9, 1.7), c: pick([0xffffff, 0xd8ecd8, 0xc8e0d4, 0xeaf6ff]) });
   }
-  for (const p of scatter(420, wallDist + 10, 400, { filter: (x, z) => !inLake(x, z), sep: 6 })) pines.push({ x: p.x, z: p.z, ry: rng() * 6, sx: R(0.9, 1.8), sy: R(0.9, 2.0), c: pick([0xffffff, 0xd8ecd8, 0xc8e0d4, 0xeaf6ff]) });
+  for (const p of scatter(650, wallDist + 10, 400, { filter: (x, z) => !inLake(x, z), sep: 6 })) pines.push({ x: p.x, z: p.z, ry: rng() * 6, sx: R(0.9, 1.8), sy: R(0.9, 2.0), c: pick([0xffffff, 0xd8ecd8, 0xc8e0d4, 0xeaf6ff]) });
   instanced(pineGeo, lam({ vertexColors: true }), pines, "pines"); blobShadows(pines, 2.6);
 
   // rocks
@@ -890,7 +890,7 @@ function sceneSnow(track, X, K) {
   instanced(snowman, lam({ vertexColors: true }), sm, "snowmen");
 
   // distant snowy mountains (instanced pyramids with caps)
-  const mg = bake([part(new THREE.ConeGeometry(1, 1, 7), mat(0, 0.5, 0), 0x6d7f93), part(new THREE.ConeGeometry(0.42, 0.45, 7), mat(0, 0.8, 0, 1.0, 1, 1.0), 0xffffff)]);
+  const mg = bake([part(new THREE.ConeGeometry(1, 1, 7), mat(0, 0.5, 0), 0x8fa3b8), part(new THREE.ConeGeometry(0.5, 0.5, 7), mat(0, 0.75, 0), 0xffffff)]);
   const mts = ringAround(34, 470, 640).map((m) => ({ x: m.x, z: m.z, y: -4, sx: R(110, 240), sy: R(130, 300), sz: R(110, 240), ry: rng() * 6, c: pick([0xffffff, 0xe6eef7, 0xcfdcea]) }));
   instanced(mg, lam({ vertexColors: true }), mts, "mountains");
 
@@ -983,7 +983,7 @@ function sceneNeon(track, X, K) {
   if (glowPos.length) addGlow(glowPos, 0xfff0c0, 7);
   if (poolPts.length) {
     const pg = new THREE.PlaneGeometry(30, 30).rotateX(-Math.PI / 2);
-    const pm = basic({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    const pm = basic({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.8, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
     instanced(pg, pm, poolPts, "light-pools");
   }
   // crane warning lights (blink)
