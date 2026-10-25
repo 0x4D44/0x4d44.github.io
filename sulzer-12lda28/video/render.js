@@ -72,6 +72,7 @@ const wrapSubs = (text) => {
     const mid = x.length / 2; let best = -1;
     for (const m of x.matchAll(/[,;:] /g)) if (best < 0 || Math.abs(m.index - mid) < Math.abs(best - mid)) best = m.index;
     if (best < 0) return [x];
+    if (best < 40 || x.length - best < 42) return [x];
     return [...split(x.slice(0, best + 1)), ...split(x.slice(best + 2))];
   };
   return text.match(/[^.?!]+[.?!]+/g).flatMap((x) => split(x.trim()));

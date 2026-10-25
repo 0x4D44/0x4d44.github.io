@@ -56,7 +56,7 @@ export function pistonDown(phiDeg) {
 // In-cylinder pressure (bar absolute) vs cycle angle alpha. Illustrative p-theta trace:
 // polytropic compression from inlet closing, a Wiebe-type burn starting just before TDC
 // (heat addition scales the polytrope), expansion, exhaust blow-down at exhaust opening.
-const CR = 12.5, NPOLY = 1.33;
+const CR = 12.5, NPOLY = 1.37;
 const volRel = (ang) => 1 / (CR - 1) + pistonDown(ang) / GEOM.stroke;
 export function burnFraction(alpha) {
   // alpha in degrees after firing TDC; combustion from about -10 to +35 deg
