@@ -36,6 +36,11 @@ try {
     const a = await p.evaluate(() => window.__leak.state.T), c = await p.evaluate(() => (window.__leak.seek(20), window.__leak.state.T));
     assert.equal(a, c, "seek deterministic");
     if (vp.width > 600) for (let t = 1; t < 64; t += 3) { const n = await p.evaluate(t => { window.__leak.seek(t); return window.__leak.info().n; }, t); assert.ok(n > 500, `tour frame t=${t} is empty (n=${n})`); }
+    if (vp.width > 600) for (const t of ["explore", "broadcasts", "about"]) {
+      await p.click(`#tab-${t}`);
+      const m = await p.evaluate(t => { const tb = document.querySelector(`#body-${t}`); tb.scrollTop = 1e6; return { sh: tb.scrollHeight, ch: tb.clientHeight, bottom: tb.getBoundingClientRect().bottom, win: innerHeight, last: tb.lastElementChild.getBoundingClientRect().bottom }; }, t);
+      assert.ok(m.bottom <= m.win + 1 && m.sh > m.ch && m.last <= m.bottom + 1, `panel ${t} cannot scroll to its end: ${JSON.stringify(m)}`);
+    }
     await p.click("#tab-broadcasts"); await p.evaluate(() => window.__leak.selectBroadcast(document.querySelector("#bList [data-b]:last-child").dataset.b));
     await p.waitForTimeout(600);
     const sc = await p.evaluate(() => [document.querySelector("#panel").scrollTop, document.querySelector(".app").scrollTop, document.scrollingElement.scrollTop]);
