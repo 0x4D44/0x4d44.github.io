@@ -276,7 +276,7 @@ export class UI {
     if (!scope) return;
     const k = e.key, active = document.activeElement;
     const inScope = active && scope.contains(active) ? active : null;
-    const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", a: "left", A: "left", d: "right", D: "right", w: "up", W: "up", s: "down", S: "down" };
+    const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", ",": "left", ".": "right", a: "up", A: "up", z: "down", Z: "down" };
     const isRange = inScope && inScope.type === "range";
     if (dirs[k]) {
       if (isRange && (dirs[k] === "left" || dirs[k] === "right") && k.startsWith("Arrow")) return; // native slider adjust
@@ -355,7 +355,7 @@ export class UI {
         <button class="ak-btn menu" data-nav data-act="how">How to Play</button>
         <button class="ak-btn menu" data-nav data-act="best">Best Times</button>
       </div>
-      <div class="ak-ver">ARROWS / WASD + ENTER &middot; ESC = BACK</div>`, "ak-main ak-dim-l");
+      <div class="ak-ver">ARROWS + ENTER &middot; ESC = BACK</div>`, "ak-main ak-dim-l");
     el.addEventListener("click", (e) => {
       const a = e.target.closest("[data-act]")?.dataset.act; if (!a) return;
       this._snd("ui-select");
@@ -495,15 +495,16 @@ export class UI {
 
   /* ----- how to play ----- */
   _openHow() {
-    const keys = [["W A S D / Arrows", "Accelerate, brake, steer"], ["Space / Shift", "Hold to drift; release for a mini-turbo"], ["E / Ctrl / Enter", "Use item"], ["C / Backspace", "Look behind"], ["Esc / P", "Pause"]];
+    const keys = [["A", "Accelerate"], ["Z", "Brake / reverse"], [", / .", "Steer left / right (or Arrow keys)"], ["Space", "Hold to drift; release for a mini-turbo"], ["Enter", "Use item"], ["C", "Look behind"], ["Esc / P", "Pause"]];
     const touch = [["Left pad", "Steer (throttle is automatic)"], ["DRIFT", "Hold while turning"], ["ITEM", "Use your item"], ["BRAKE", "Brake / reverse"]];
+    const pad = [["Stick / D-pad", "Steer"], ["RT / A", "Accelerate"], ["LT / B", "Brake"], ["RB or LB", "Drift"], ["X / Y", "Use item"], ["Start", "Pause"]];
     const row = (a) => a.map(([k, d]) => `<div>${k.split(" / ").map((x) => `<kbd>${esc(x)}</kbd>`).join("")}</div><span class="d">${esc(d)}</span>`).join("");
     const desc = { boost: "Instant speed burst.", triple: "Three bursts, one at a time.", banana: "Drop it behind you. Rivals spin.", green: "Bounces off walls, spins what it hits.", homing: "Locks on to the kart ahead.", shield: "Blocks one hit for 8 seconds.", shock: "Spins every kart ahead of you." };
     const el = node(`${this._hdr("How to Play", "Guide")}
       <div class="ak-body" style="min-height:0"><div class="ak-panel ak-col ak-scroll">
         <div class="ak-how">
-          <div><h4 class="ak-disp">KEYBOARD</h4><div class="ak-keys">${row(keys)}</div><h4 class="ak-disp" style="margin-top:14px">TOUCH</h4><div class="ak-keys">${row(touch)}</div>
-            <ul class="ak-tips"><li><b>Drift</b> through corners: blue, orange, then pink sparks mean a bigger boost.</li><li>Grass slows you. Hit <b>boost pads</b> for free speed.</li><li>Hit <b>GO!</b> with the throttle down for a rocket start.</li></ul></div>
+          <div><h4 class="ak-disp">KEYBOARD</h4><div class="ak-keys">${row(keys)}</div><h4 class="ak-disp" style="margin-top:14px">TOUCH</h4><div class="ak-keys">${row(touch)}</div><h4 class="ak-disp" style="margin-top:14px">GAMEPAD</h4><div class="ak-keys">${row(pad)}</div>
+            <ul class="ak-tips"><li><b>Drift</b> through corners: blue, orange, then pink sparks mean a bigger boost.</li><li>Grass slows you. Hit <b>boost pads</b> for free speed.</li><li>Watch for <b>bridges and crossings</b>: some tracks have hills and cross over themselves.</li><li>Hit <b>GO!</b> with the throttle down for a rocket start.</li></ul></div>
           <div><h4 class="ak-disp">ITEMS</h4><div class="ak-items" style="grid-template-columns:1fr">${Object.values(ITEMS).map((i) => `<div class="ak-item">${itemIcon(i.id)}<div><b>${esc(i.name)}</b><span>${esc(desc[i.id] || "")}</span></div></div>`).join("")}</div></div>
         </div>
       </div></div>
