@@ -6,7 +6,7 @@
 import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText } from './gfx.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 
-export const PY = 0.95;           // platform surface above rail head
+export const PY = 0.8;           // platform surface above rail head
 export const EDGE = 1.5;          // track centre to platform edge
 export const END_PAD = 5;         // room beyond platform ends
 

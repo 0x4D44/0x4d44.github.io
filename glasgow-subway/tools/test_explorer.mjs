@@ -47,8 +47,9 @@ async function run(name, vp, mobile) {
   await ctx.close();
 }
 try {
-  await run('desktop', { width: 1440, height: 900 }, false);
-  await run('mobile', { width: 390, height: 844 }, true);
+  const only = process.env.ONLY;
+  if (!only || only === 'desktop') await run('desktop', { width: 1440, height: 900 }, false);
+  if (!only || only === 'mobile') await run('mobile', { width: 390, height: 844 }, true);
 } catch (e) { console.error(e); fails++; }
 await browser.close(); server.close();
 console.log(fails ? `FAILED (${fails})` : 'ALL PASSED', 'screens in', out);

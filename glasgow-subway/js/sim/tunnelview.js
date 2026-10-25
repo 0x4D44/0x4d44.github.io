@@ -1,25 +1,26 @@
 // Tunnel: instances models/tunnel_segment.glb rings (0.62 m) along the track in a window around the train.
 // Falls back to procedural rings. Rings inside station spans are hidden (the station vault replaces them).
-export const RING = 0.62;
-export const LAMP_EVERY = 10;
+export const RING = 0.61;
+export const LAMP_EVERY = 8;
 
 export async function loadTunnelTemplate(THREE, GLTFLoader, url) {
   try {
     const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
+    gltf.scene.updateMatrixWorld(true);
     const parts = {};
-    for (const name of ['seg_iron', 'seg_lamp', 'seg_iron_lamp', 'seg_plain']) {
+    for (const name of ['seg_plain', 'seg_lamp', 'seg_iron', 'seg_iron_lamp']) {
       const n = gltf.scene.getObjectByName(name); if (!n) continue;
       const meshes = []; n.traverse((o) => { if (o.isMesh) meshes.push(o); });
       parts[name] = meshes;
     }
-    if (!parts.seg_iron) throw new Error('no seg_iron');
+    if (!parts.seg_plain) throw new Error('no seg_iron');
     return { parts, ok: true };
   } catch (e) {
     console.warn('[sim] tunnel_segment.glb unavailable, procedural rings', e && e.message);
     const geo = new THREE.CylinderGeometry(1.68, 1.68, RING, 20, 1, true); geo.rotateX(Math.PI / 2); geo.translate(0, 1.2, 0);
     const mat = new THREE.MeshLambertMaterial({ color: 0x555a60, side: THREE.BackSide });
     const m = new THREE.Mesh(geo, mat);
-    return { parts: { seg_iron: [m], seg_lamp: [m] }, ok: false };
+    return { parts: { seg_plain: [m], seg_lamp: [m] }, ok: false };
   }
 }
 
@@ -28,8 +29,8 @@ export class TunnelView {
     this.THREE = THREE; this.scene = scene;
     this.N = 340; this.NL = Math.ceil(this.N / LAMP_EVERY) + 3;
     this.group = new THREE.Group(); this.group.name = 'tunnel'; scene.add(this.group);
-    this.plain = this._pool(tpl.parts.seg_iron, this.N);
-    this.lamp = this._pool(tpl.parts.seg_lamp || tpl.parts.seg_iron_lamp || tpl.parts.seg_iron, this.NL);
+    this.plain = this._pool(tpl.parts.seg_plain, this.N);
+    this.lamp = this._pool(tpl.parts.seg_lamp || tpl.parts.seg_iron_lamp || tpl.parts.seg_plain, this.NL);
     this.head = -1e9; this.skip = [];
     this.lights = [];
     for (let i = 0; i < 3; i++) { const l = new THREE.PointLight(0xffc27a, 14, 16, 1.6); l.userData.lamp = -1; this.group.add(l); this.lights.push(l); }
@@ -44,8 +45,7 @@ export class TunnelView {
       const zero = new THREE.Matrix4().makeScale(0, 0, 0);
       for (let i = 0; i < n; i++) im.setMatrixAt(i, zero);
       // apply the node's own transform baked into instance matrices
-      im.userData.local = m.matrix.clone();
-      m.updateMatrix(); im.userData.local = m.matrix.clone();
+      m.updateMatrixWorld(true); im.userData.local = m.matrixWorld.clone();
       this.group.add(im); out.push(im);
     }
     return out;
