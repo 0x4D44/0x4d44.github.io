@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sulzer 12LDA28</title>
+<meta name="description" content="An interactive study of the Sulzer 12LDA28 diesel engine that powered British Rail's Class 47 and the Peaks: a 3D exploded view you can run, power curves, firing and valve timing, and a synthesised engine sound.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f141b'/%3E%3Cpath d='M6 20h20M9 20v-8h4v8M15 20v-11h4v11M21 20v-8h4v8' stroke='%23e8b84a' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+</head>
+<body>
+<header class="topnav" id="top">
+  <a class="brand" href="#hero"><span class="brand-mark">12LDA28</span><span class="brand-sub">Sulzer</span></a>
+  <nav>
+    <a href="#explore">Explore</a><a href="#cycle">How it works</a><a href="#timing">Timing</a><a href="#power">Power</a><a href="#sound">Sound</a><a href="#video">Film</a><a href="#sources">Sources</a>
+  </nav>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">British Rail · Class 44 / 45 / 46 / 47 · 1959 to today</p>
+    <h1>Sulzer <em>12LDA28</em></h1>
+    <p class="lede">Two six-cylinder engines in one welded frame, geared together, breathing through exhaust turbochargers and pushing about <strong>2,600 horsepower</strong> into a Brush generator. It hauled the Peaks and the Brush Type 4s for forty years. This page lets you start it, slow it down, pull it apart, and hear it.</p>
+    <div class="hero-stats" id="heroStats"></div>
+    <div class="hero-cta"><a class="btn primary" href="#explore">Start the engine</a><a class="btn" href="#video">Watch the 5-minute film</a></div>
+  </div>
+</section>
+
+<div class="cab" id="cab" role="region" aria-label="Driver's controls">
+  <button class="btn primary" id="btnStart" aria-pressed="false">Start engine</button>
+  <div class="ctl">
+    <label for="ctl">Power controller <b id="ctlName">OFF</b></label>
+    <input type="range" id="ctl" min="0" max="100" step="1" value="0" aria-label="Power controller">
+    <div class="marks"><span>OFF</span><span>ON</span><span>1/4</span><span>1/2</span><span>3/4</span><span>FULL</span></div>
+  </div>
+  <div class="gauge"><span>rpm</span><b id="gRpm">0</b></div>
+  <div class="gauge"><span>bhp</span><b id="gBhp">0</b></div>
+  <label class="sel">Engine
+    <select id="selVariant" aria-label="Engine variant">
+      <option value="A">12LDA28-A · 2,300 bhp</option><option value="B">12LDA28-B · 2,500 bhp</option>
+      <option value="C">12LDA28-C · 2,750 bhp @ 800</option><option value="Cd" selected>12LDA28-C derated · 2,580 bhp</option>
+    </select>
+  </label>
+  <label class="sel">Speed
+    <select id="selSlow" aria-label="Time scale">
+      <option value="1">Real time</option><option value="0.1">1/10</option><option value="0.02">1/50</option><option value="0.005">1/200</option>
+    </select>
+  </label>
+  <div class="snd">
+    <button class="btn" id="btnSound" aria-pressed="false">Sound off</button>
+    <input type="range" id="vol" min="0" max="100" value="70" aria-label="Volume">
+    <select id="selMic" aria-label="Listening position"><option value="0">In the cab</option><option value="1" selected>Engine room</option><option value="2">Trackside</option></select>
+  </div>
+</div>
+
+<main>
+<section id="explore" class="block">
+  <h2>The engine, running</h2>
+  <p class="sub">Drag to orbit, scroll to zoom, click any part to learn what it does. Bring the engine up with the power controller, then pull it apart.</p>
+  <div class="explorer">
+    <div class="stage">
+      <canvas id="gl" role="img" aria-label="3D model of the Sulzer 12LDA28. Drag to orbit, scroll to zoom, click a part for details; the part list below does the same."></canvas>
+      <div class="stage-note" id="glNote"></div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="viewbar">
+        <button data-view="iso">Iso</button><button data-view="front">Front</button><button data-view="side">End</button><button data-view="top">Top</button><button data-view="gen">Generator end</button><button data-view="free">Free end</button>
+      </div>
+    </div>
+    <aside class="panel">
+      <div class="sliders">
+        <label>Explode <input type="range" id="explode" min="0" max="100" value="0"></label>
+        <label class="chk"><input type="checkbox" id="chkSection"> Cut-away</label>
+        <label class="chk"><input type="checkbox" id="chkXray" checked> See-through</label>
+        <label class="chk"><input type="checkbox" id="chkSpin"> Auto-orbit</label>
+        <label id="barWrap">Turn by hand <input type="range" id="bar" min="0" max="720" value="0" disabled></label>
+      </div>
+      <div class="readouts" id="readouts"></div>
+      <div class="info" id="info" aria-live="polite"><h3>Select a part</h3><p>Click the engine, or choose below.</p></div>
+      <div class="partlist" id="partlist"></div>
+    </aside>
+  </div>
+  <p class="callout"><b>Reading the model.</b> Gas colour shows each cylinder's stroke: <i class="sw intake"></i>intake, <i class="sw comp"></i>compression, <i class="sw power"></i>power, <i class="sw exh"></i>exhaust. Glowing ports show open valves. The two banks run on separate crankshafts; the gear train at the right-hand end ties them to the generator. The twin-bank layout, bore and stroke and the part makers are from period sources; the exact parts layout is a faithful simplification.</p>
+</section>
+
+<section id="cycle" class="block alt">
+  <h2>How it works</h2>
+  <p class="sub">A four-stroke diesel does four jobs over two turns of the crankshaft. Here is one cylinder doing them.</p>
+  <div class="cols">
+    <div class="card wide">
+      <div class="row-tools"><label>Bank <select id="cylBank"><option value="0">A</option><option value="1">B</option></select></label><label>Cylinder <select id="cylNum"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label><span class="hint">Slow the engine down (Speed menu above) to follow each stroke.</span></div>
+      <canvas id="cvCyl" class="cv" style="height:420px" aria-label="Single cylinder cut-away with pressure chart"></canvas>
+    </div>
+  </div>
+  <div class="steps">
+    <article><i class="n intake">1</i><h3>Intake</h3><p>The inlet valve opens and the piston falls. The air is not drawn in but <em>pushed</em>: the turbocharger, driven by the exhaust, compresses it to roughly 2 bar absolute (16 to 18 lb/sq in gauge at full power on the Peaks; the Class 47 manual asks for at least 12), and the intercooler cools it so more oxygen fits in the cylinder.</p></article>
+    <article><i class="n comp">2</i><h3>Compression</h3><p>Both valves shut and the piston rises, squeezing the air to a small fraction of its volume. Compression heats it far above the fuel's ignition temperature. The ratio is not published in any source we found; about 12 to 13 to 1 is typical of the class.</p></article>
+    <article><i class="n power">3</i><h3>Power</h3><p>Just before top dead centre the pump forces fuel through the injector nozzle straight into the hot air. It ignites on its own. Pressure spikes to roughly 100 to 120 bar (an estimate; no source found) and pushes the piston down, 360 mm, delivering the work.</p></article>
+    <article><i class="n exh">4</i><h3>Exhaust</h3><p>The exhaust valve opens before the bottom of the stroke, so the pressure blows down into the manifold and spins the turbocharger turbine. The rising piston sweeps out the remainder. Inlet and exhaust overlap around top dead centre, letting boost air flush the cylinder.</p></article>
+  </div>
+  <div class="cols two">
+    <article class="card"><h3>Why two engines in one?</h3>
+      <p>The 12LDA28 is <strong>twin-bank</strong>: two independent six-cylinder inline engines side by side, each in its own crankcase and block and each with its own seven-bearing crankshaft. Synchronising gears at the generator end join them and step the speed up by about 1 to 1.44, so the generator turns near 1,080 rpm while the engine turns 750 (a 1,150 rpm rating matches the 800 rpm as-built Class 47). On average one cylinder fires every 60° of crank rotation (even spacing is assumed), which is <strong>75 power strokes per second</strong> at full speed.</p></article>
+    <article class="card"><h3>The all-speed governor</h3>
+      <p>Class 47 drivers had no numbered notches. The power controller has only OFF, ON, ¼, ½, ¾ and FULL, with ON and ¼ notched. Moving it changes a signal to the Vickers-built, Sulzer-designed governor, whose flyweights are driven from the camshaft. The governor moves the fuel racks and, through the load regulator, the generator field, so the engine holds its speed at any handle position while the load follows. Idle is 325 rpm (the manual also quotes 365 and does not say when each applies); full power is 750.</p></article>
+  </div>
+</section>
+
+<section id="timing" class="block">
+  <h2>Timing</h2>
+  <p class="sub">Twelve cylinders, 720° per cycle, one power stroke every 60°. The firing order shown is an assumption; the valve timing is an engineering estimate. Both are labelled as such.</p>
+  <div class="cols two">
+    <div class="card"><h3>Firing sequence</h3><canvas id="cvTime" class="cv" style="height:360px" aria-label="Twelve-cylinder firing timeline"></canvas>
+      <p class="note">Rows are cylinders sorted by when they fire. Orange bars are power strokes; they stagger evenly across the cycle. <b>Assumed</b> order per bank: 1-5-3-6-2-4, bank B following bank A by 60°. No source we reached states the real order.</p></div>
+    <div class="card"><h3>Valve and injection timing</h3><canvas id="cvWheel" class="cv" style="height:360px" aria-label="Valve timing wheel"></canvas>
+      <p class="note">The wheel shows one 720° cycle. Inlet opens 60° before TDC and closes 40° after BDC; exhaust opens 50° before BDC and closes 50° after TDC; injection starts about 22° before TDC. <b>Estimate</b>: typical 1960s medium-speed practice, not Sulzer data.</p></div>
+  </div>
+</section>
+
+<section id="power" class="block alt">
+  <h2>Power</h2>
+  <p class="sub">What the engine delivers, and what reaches the rail. Use the controller above; the white dots are live.</p>
+  <div class="cols two">
+    <div class="card"><h3>Engine: power and torque against speed</h3><canvas id="cvPower" class="cv" role="img" aria-label="Engine power and torque against speed" style="height:360px"></canvas>
+      <p class="note">Rated points are sourced. The curve between idle and rated speed is a modelled shape. The 2,750 bhp at 800 rpm and 2,580 bhp at 750 rpm ratings have the same torque (about 24 kNm) and mean effective pressure (about 11.6 bar): the derating was a speed cut, which derbysulzers, citing 1960s papers, credits with an 11% reduction in stress.</p></div>
+    <div class="card"><h3>Locomotive: tractive effort against speed</h3><canvas id="cvTe" class="cv" role="img" aria-label="Locomotive tractive effort against speed" style="height:360px"></canvas>
+      <div class="loco-tools"><label>Train <input type="range" id="train" min="0" max="900" step="50" value="400"> <b id="trainV">400 t</b></label><button class="btn" id="locoReset">Reset to rest</button></div>
+      <div class="loco-read" id="locoRead"></div></div>
+  </div>
+  <div class="card"><h3>From fuel to rail</h3><canvas id="cvChain" class="cv" role="img" aria-label="Energy chain from fuel to rail" style="height:250px"></canvas>
+    <p class="note">The traction chain figures (1,798 kW generator, six 354 hp motors, 17:66 gearing, 3 ft 9 in wheels) are sourced; the stage efficiencies are estimates. The result, about 2,025 hp at the rail from 2,580 hp at the engine, matches published Class 45 and 46 figures.</p></div>
+  <div class="cols two">
+    <article class="card"><h3>Sourced locomotive limits (BR driver's manual)</h3>
+      <table class="tbl"><tbody>
+        <tr><td>Maximum tractive effort</td><td>62,000 lbf up to 10.5 mph</td></tr>
+        <tr><td>Continuous tractive effort</td><td>30,000 lbf at 26 mph</td></tr>
+        <tr><td>Maximum speed</td><td>95 mph</td></tr>
+        <tr><td>Generator (series-parallel)</td><td>2,130 A continuous</td></tr>
+        <tr><td>Starting current limit</td><td>3,500 A, 2 min in any hour</td></tr>
+        <tr><td>Fuel</td><td>850 gal (main tank)</td></tr>
+        <tr><td>Weight</td><td>about 114 tons</td></tr>
+      </tbody></table></article>
+    <article class="card"><h3>The variants</h3>
+      <table class="tbl"><thead><tr><th>Engine</th><th>Rating</th><th>Fitted to</th></tr></thead><tbody>
+        <tr><td>12LDA28-A</td><td>2,300 bhp @ 750</td><td>Class 44 (not intercooled)</td></tr>
+        <tr><td>12LDA28-B</td><td>2,500 bhp @ 750</td><td>Class 45, 46 (intercooled)</td></tr>
+        <tr><td>12LDA28-C</td><td>2,750 bhp @ 800</td><td>Class 47 as built</td></tr>
+        <tr><td>12LDA28-C</td><td>2,580 bhp @ 750</td><td>Class 47 from c.1965</td></tr>
+      </tbody></table></article>
+  </div>
+</section>
+
+<section id="sound" class="block">
+  <h2>Sound</h2>
+  <p class="sub">The sound here is synthesised from the engine's own events: each cylinder's firing, blow-down, valve closing and injection, plus the turbocharger. Turn Sound on in the controls bar.</p>
+  <div class="cols two">
+    <div class="card"><h3>What you are hearing</h3><canvas id="cvSpec" class="cv" role="img" aria-label="Engine sound spectrum" style="height:300px"></canvas>
+      <p class="note" id="specNote"></p></div>
+    <article class="card"><h3>Anatomy of the note</h3>
+      <ul class="list">
+        <li><b>Firing frequency.</b> Twelve cylinders fire every two revolutions: 6 × rpm/60. At 750 rpm that is <b>75 Hz</b>; at 325 rpm idle, 32.5 Hz, the lumpy tickover.</li>
+        <li><b>Half order.</b> The two banks are not perfectly matched, so energy appears at the bank firing rate, half the firing frequency.</li>
+        <li><b>Combustion knock.</b> A short burst per firing, strongest at light load where the delayed ignition is abrupt.</li>
+        <li><b>Exhaust blow-down.</b> A low puff when each exhaust valve opens, shaped by the manifold.</li>
+        <li><b>Gear mesh.</b> A gear-train whine at tooth-mesh frequency. The tooth count is not published: 36 teeth (450 Hz at 750 rpm) is an assumed value (estimate).</li>
+        <li><b>Turbocharger.</b> A rising whine as boost builds; the exhaust-driven rotor sings between about 0.7 and 4 kHz in this model.</li>
+      </ul>
+      <p class="note">No recording of the original engine is used; no measured spectrum was available in the sources. The model is tuned by ear to the structure above.</p>
+    </article>
+  </div>
+</section>
+
+<section id="video" class="block alt">
+  <h2>The 5-minute film</h2>
+  <p class="sub">A narrated explainer built from this site's own 3D model and charts.</p>
+  <div class="videowrap"><video id="film" controls preload="metadata" poster="media/poster.jpg" playsinline><source src="media/sulzer-12lda28.mp4" type="video/mp4"><track kind="captions" srclang="en" label="English" src="media/sulzer-12lda28.vtt"></video></div>
+  <details class="transcript"><summary>Read the transcript</summary><div id="transcript"></div></details>
+</section>
+
+<section id="sources" class="block">
+  <h2>Sources and confidence</h2>
+  <p class="sub">Every number on this site is tagged. <span class="badge h">Well sourced</span> <span class="badge m">Single source</span> <span class="badge l">Weak source</span> <span class="badge e">Estimate</span></p>
+  <div class="spec" id="specTable"></div>
+  <div class="cols two">
+    <article class="card"><h3>Primary and technical sources</h3>
+      <ul class="list">
+        <li>British Railways, <i>Brush Sulzer 2600 H.P. Class 47 and 2650 H.P. Class 48 Diesel-Electric Locomotives</i>, B.R.33003/262 (February 1969), driver's manual. <a href="https://archive.org/details/br.-33003-262-brush-sulzer-2600-h.-p.-class-47-and-2650-h.-p.-class-48-diesel-el">archive.org</a></li>
+        <li>British Railways, <i>B.R./Sulzer/Crompton Parkinson 2500 H.P. Class 45</i>, B.R.33003/246 (December 1968). <a href="https://archive.org/details/br-33003-246-b.-r.-sulzer-crompton-parkinson-2500-h.-p.-class-45-diesel-electric">archive.org</a></li>
+        <li>Derby Sulzers, engine histories and BR service data (12LDA28C, Class 45 and 24 detail pages), summarising 1960s technical papers. <a href="https://www.derbysulzers.com/12LDA28C.html">derbysulzers.com</a></li>
+        <li>Stratford 47 Group, Class 47 technical specification (generator, motors, gearing). <a href="https://www.stratford47group.co.uk/html/Technical%20Specification.html">stratford47group.co.uk</a></li>
+        <li>Science Museum Group, Vickers-built 6LDA28 record; Vickers report "Type 12 LDA 28 Sulzer Traction Engines for BRB" (c.1965; held, not online). <a href="https://collection.sciencemuseumgroup.org.uk/objects/co207786/sulzer-diesel-engine">collection.sciencemuseumgroup.org.uk</a></li>
+        <li>Wikipedia, British Rail Classes <a href="https://en.wikipedia.org/wiki/British_Rail_Class_44">44</a>, <a href="https://en.wikipedia.org/wiki/British_Rail_Class_45">45</a>, <a href="https://en.wikipedia.org/wiki/British_Rail_Class_46">46</a>, <a href="https://en.wikipedia.org/wiki/British_Rail_Class_47">47</a> (secondary).</li><li>Derby Sulzers, <a href="https://www.derbysulzers.com/class45detail.html">Class 45 detail</a> (charge-air pressure, auxiliary load, fluid quantities). <b>Method:</b> an Estimate badge means the figure was derived or assumed here (for example 266 L, 11.6 bar, 9.0 m/s).</li>
+      </ul></article>
+    <article class="card"><h3>What we could not find</h3>
+      <ul class="list" id="gaps">
+        <li>Compression ratio, peak firing pressure and injection pressure.</li>
+        <li>Firing order and cylinder numbering; valve and injection timing.</li>
+        <li>Turbocharger model and pressure ratio (the maker, de Havilland, is reported).</li>
+        <li>Intermediate engine speeds for each controller position (only idle 325/365 and full 750 are documented).</li>
+        <li>Field-weakening points; specific fuel consumption; fan and train-heating loads.</li>
+        <li>Any recording or spectrum of the original engine.</li>
+      </ul>
+      <p class="note">The primary sources for these gaps probably sit in the Sulzer instruction book and the 1965 Vickers report. Where this site shows a figure for them it is an estimate, tagged as such.</p></article>
+  </div>
+  <p class="foot">Built as a vanilla-JS page with Three.js and Web Audio; no build step. Not affiliated with Sulzer, Brush or British Rail.</p>
+</section>
+</main>
+<script type="module" src="js/app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
