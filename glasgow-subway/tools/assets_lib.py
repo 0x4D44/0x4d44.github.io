@@ -208,7 +208,7 @@ class M:
         """Quad with UV (0,0)-(1,1) across its corners p0=BL p1=BR p2=TR p3=TL (for runtime canvas textures)."""
         f = self.quad(p0, p1, p2, p3, m)
         uvl = self.bm.loops.layers.uv.verify()
-        for l, uv in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): l[uvl].uv = uv
+        for l, uv in zip(f.loops, ((1, 0), (0, 0), (0, 1), (1, 1))): l[uvl].uv = uv   # u reversed so text reads correctly seen from the face front
         f.tag = True
         return f
     def poly(self, pts, m):

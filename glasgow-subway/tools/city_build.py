@@ -721,3 +721,180 @@ LM = None
 if not NO_LM:
     import city_landmarks
     LM = city_landmarks
+
+
+# ================================================================= MAIN
+LMS = LM.build(TR, D, log) if LM else []
+skip_ids = set(LANDMARK_IDS.keys())
+for l in LMS: skip_ids |= l["skip"]
+ITEMS = prep_buildings(skip_ids)
+log("building items", len(ITEMS))
+by_chunk = {}
+for it in ITEMS:
+    c = it[0].centroid; by_chunk.setdefault(chunk_of(c.x, c.y), []).append(it)
+lm_chunk = {}
+for l in LMS: lm_chunk.setdefault(chunk_of(l["cx"], l["cy"]), []).append(l)
+tree_by_chunk = {}
+for g, t, i in D["tree"]:
+    tree_by_chunk.setdefault(chunk_of(g.x, g.y), []).append((g.x, g.y, "a" if hash01(i, 1) < 0.5 else ("b" if hash01(i, 1) < 0.8 else "c"), 0.8 + 0.6 * hash01(i, 2), hash01(i, 3) * 6.28))
+bridge_by_chunk = {}
+for g, t, i in W["bridges"]:
+    m = g.interpolate(0.5, normalized=True); bridge_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i, "road"))
+for g, t, i in W["rbridges"]:
+    m = g.interpolate(0.5, normalized=True); bridge_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i, "rail"))
+rail_by_chunk = {}
+for g, t, i in W["rails"]:
+    m = g.interpolate(0.5, normalized=True); rail_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i))
+TMESH = {}
+def tree_obj_mesh(kind):
+    if kind not in TMESH:
+        Bf = make_tree_blender_mesh(kind); P, C, U, T, M = Bf.arrays()
+        me = bpy.data.meshes.new("green_tree_" + kind)
+        me.vertices.add(len(P)); me.vertices.foreach_set("co", P.ravel()); me.loops.add(len(T) * 3); me.polygons.add(len(T))
+        me.loops.foreach_set("vertex_index", T.ravel().astype(np.int32)); me.polygons.foreach_set("loop_start", (np.arange(len(T)) * 3).astype(np.int32))
+        me.polygons.foreach_set("loop_total", np.full(len(T), 3, np.int32)); me.polygons.foreach_set("use_smooth", np.zeros(len(T), bool)); me.update()
+        ca = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT"); ca.data.foreach_set("color", C.ravel()); me.color_attributes.active_color = ca
+        me.materials.append(MATS["mat_tree"]); TMESH[kind] = me
+    return TMESH[kind]
+
+def procedural_trees(ci, cj, bounds):
+    rng = random.Random(ci * 1000 + cj); res = []
+    x0, y0, x1, y1 = bounds
+    for kind, dens in (("wood", 1 / 170.0), ("scrub", 1 / 600.0), ("park", 1 / 1500.0), ("cemetery", 1 / 1000.0), ("garden", 1 / 3000.0), ("grass", 1 / 6000.0)):
+        g = W["green"].get(kind)
+        if g is None or g.is_empty: continue
+        cg = shapely.clip_by_rect(g, x0, y0, x1, y1)
+        if cg.is_empty: continue
+        n = int(cg.area * dens)
+        if n <= 0: continue
+        n = min(n, 1800)
+        xs = np.array([rng.uniform(x0, x1) for _ in range(n * 3)]); ys = np.array([rng.uniform(y0, y1) for _ in range(n * 3)])
+        ok = shapely.contains_xy(cg, xs, ys)
+        xs, ys = xs[ok][:n], ys[ok][:n]
+        if len(xs):
+            ok2 = ~shapely.contains_xy(W["bld_union"], xs, ys) & ~shapely.contains_xy(W["road_all"], xs, ys)
+            xs, ys = xs[ok2], ys[ok2]
+        for x, y in zip(xs, ys):
+            k = "conifer" if (kind == "wood" and rng.random() < 0.3) else rng.choice(["a", "b", "c"])
+            res.append((float(x), float(y), k, 0.7 + 0.8 * rng.random(), rng.random() * 6.28))
+    return res
+
+BCOL = {"A1": lin((0.15, 0.15, 0.16)), "A2": lin((0.19, 0.19, 0.20)), "B": lin((0.23, 0.23, 0.24)), "C": lin((0.29, 0.28, 0.27))}
+RAILC = lin((0.55, 0.55, 0.58)); BALC = lin((0.30, 0.29, 0.28)); PAVC = lin((0.55, 0.53, 0.50)); PARKC = lin((0.36, 0.36, 0.37))
+WATC = lin((0.17, 0.30, 0.36))
+manifest = []
+exp_args = dict(export_format="GLB", export_vertex_color="ACTIVE", export_apply=False, export_yup=True, export_texcoords=True, export_normals=True, export_extras=False, export_cameras=False, export_lights=False)
+stats = {"tri": 0}
+
+def build_chunk(ci, cj):
+    b = chunk_bounds(ci, cj); x0, y0, x1, y1 = b
+    fine = is_fine(ci, cj); step = 1 if fine else 2
+    coll = bpy.data.collections.new("chunk_%d_%d" % (ci, cj)); bpy.context.scene.collection.children.link(coll)
+    objs = []; tris = {}; made = []
+    def finish(name, ob, B, layer):
+        if ob is not None: tris[layer] = tris.get(layer, 0) + B.tris(); made.append(ob)
+    # terrain
+    TB, N, st = terrain_chunk(ci, cj)
+    finish("terrain", make_object("terrain_%d_%d" % (ci, cj), TB, ["terrain"], coll, N), TB, "terrain")
+    # buildings
+    BB = Buf(); slotmap = {"stone": 0, "glass": 1, "plain": 2, "roof": 3}
+    sfn = lambda x, y: 1 if is_fine(*chunk_of(x, y)) else 2
+    for p, t, i, isp in by_chunk.get((ci, cj), []):
+        try: parts, kind = building_geom(p, t, i, isp, sfn)
+        except Exception as ex:
+            log("bld fail", i, ex); continue
+        for slot, P, T, C, U in parts:
+            BB.add(P, T, C, U, slotmap[slot])
+    finish("buildings", make_object("buildings_%d_%d" % (ci, cj), BB, ["stone", "glass", "plain", "roof"], coll), BB, "buildings")
+    # roads
+    RB = Buf(); clip = lambda g: shapely.clip_by_rect(g, x0, y0, x1, y1)
+    for k, zo in (("A1", 0.30), ("A2", 0.30), ("B", 0.30), ("C", 0.30)):
+        g = clip(W["road_" + k])
+        if not g.is_empty:
+            B2 = ground_poly_mesh([g], b, 90, zo, step, BCOL[k], 0); 
+            if not B2.empty(): RB.add(*B2.arrays()[0:1], B2.arrays()[3], B2.arrays()[1], None, 0)
+    g = clip(W["pave"])
+    if not g.is_empty:
+        B2 = ground_poly_mesh([g], b, 120, 0.42, step, PAVC, 1)
+        if not B2.empty(): P, C, U, T, M = B2.arrays(); RB.add(P, T, C, None, 1)
+    g = clip(W["parking"])
+    if not g.is_empty:
+        B2 = ground_poly_mesh([g], b, 120, 0.28, step, PARKC, 0)
+        if not B2.empty(): P, C, U, T, M = B2.arrays(); RB.add(P, T, C, None, 0)
+    for g, t, i, kind in bridge_by_chunk.get((ci, cj), []):
+        if kind == "road":
+            Bd = Buf(); Bs = Buf()
+            try: bridge_mesh(g, t, step, kind, Bd, Bs)
+            except Exception as ex: log("bridge fail", i, ex); continue
+            for BBx, mi in ((Bd, 0), (Bs, 2)):
+                if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RB.add(P, T, C, None, mi)
+    # rail bridges go to the rail buffer below
+    finish("roads", make_object("roads_%d_%d" % (ci, cj), RB, ["road", "pave", "bridge"], coll), RB, "roads")
+    # rail
+    RL = Buf()
+    g = clip(W["ballast"])
+    if not g.is_empty:
+        B2 = ground_poly_mesh([g], b, 80, 0.26, step, BALC, 0, 10.0)
+        if not B2.empty(): P, C, U, T, M = B2.arrays(); RL.add(P, T, C, None, 0)
+    for g, t, i in rail_by_chunk.get((ci, cj), []):
+        rb = ribbon(np.asarray(g.coords), 1.5, 5.0)
+        if rb is None: continue
+        Lf, Rf, Cc, s = rb; n = len(s)
+        z = TR.h(Cc[:, 0], Cc[:, 1], step) + 0.38
+        for E in (Lf, Rf):
+            d = Cc - E; d /= (np.linalg.norm(d, axis=1, keepdims=True) + 1e-9); E2 = E + d * 0.16
+            Pq = np.concatenate([np.c_[E, z], np.c_[E2, z]]); tri = []
+            for k in range(n - 1): tri += [[k, n + k, n + k + 1], [k, n + k + 1, k + 1]]
+            RL.add(Pq, flip_up(Pq, np.array(tri)), RAILC, None, 0)
+    for g, t, i, kind in bridge_by_chunk.get((ci, cj), []):
+        if kind == "rail":
+            Bd = Buf(); Bs = Buf()
+            try: bridge_mesh(g, t, step, kind, Bd, Bs)
+            except Exception as ex: log("rbridge fail", i, ex); continue
+            for BBx in (Bd, Bs):
+                if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RL.add(P, T, C, None, 0)
+    finish("rail", make_object("rail_%d_%d" % (ci, cj), RL, ["rail"], coll), RL, "rail")
+    # water
+    WB = Buf(); g = clip(W["water_union"])
+    if not g.is_empty:
+        for p in polys_of(g):
+            r = tri_polygon(p, 500, 25.0, b)
+            if r is None: continue
+            V, T = r; z = TR.wl(V[:, 0], V[:, 1]) - 0.05
+            P = np.stack([V[:, 0], V[:, 1], z], 1); WB.add(P, flip_up(P, np.asarray(T, np.int64)), WATC, None, 0)
+    finish("water", make_object("water_%d_%d" % (ci, cj), WB, ["water"], coll), WB, "water")
+    # green
+    GB = Buf()
+    for k, G in W["green"].items():
+        g = clip(G)
+        if g.is_empty: continue
+        B2 = ground_poly_mesh([g], b, 150, GREEN_Z[k], step, lin(GREEN_COL[k]), 0, 16.0)
+        if not B2.empty(): P, C, U, T, M = B2.arrays(); GB.add(P, T, C, None, 0)
+    finish("green", make_object("green_%d_%d" % (ci, cj), GB, ["green"], coll), GB, "green")
+    # trees
+    trs = [t for t in tree_by_chunk.get((ci, cj), []) if x0 <= t[0] < x1 and y0 <= t[1] < y1] + procedural_trees(ci, cj, b)
+    ntree = 0
+    for k, (x, y, kind, sc, rot) in enumerate(trs):
+        ob = bpy.data.objects.new("green_tree_%s.%d" % (kind, k), tree_obj_mesh(kind)); ob.location = (x, y, float(TR.h(x, y, step)) - 0.1)
+        ob.rotation_euler = (0, 0, rot); ob.scale = (sc, sc, sc * (0.9 + 0.3 * ((k * 37) % 10) / 10)); coll.objects.link(ob); made.append(ob); ntree += 1
+    tris["trees"] = ntree
+    # landmarks
+    for l in lm_chunk.get((ci, cj), []):
+        ob = make_object("landmarks_" + l["name"], l["B"], l["slots"], coll)
+        if ob is not None: made.append(ob); tris["landmarks"] = tris.get("landmarks", 0) + l["B"].tris()
+    fn = "city_%d_%d.glb" % (ci, cj)
+    bpy.ops.export_scene.gltf(filepath=os.path.join(RAW, fn), collection=coll.name, **exp_args)
+    # cleanup
+    for ob in made:
+        me = ob.data; bpy.data.objects.remove(ob)
+        if me.users == 0 and not me.name.startswith("green_tree_"): bpy.data.meshes.remove(me)
+    bpy.data.collections.remove(coll)
+    x_min, x_max = x0, x1
+    manifest.append({"file": "city/" + fn if False else fn, "ci": ci, "cj": cj, "minX": x0, "maxX": x1, "minZ": -y1, "maxZ": -y0, "tris": int(sum(v for k, v in tris.items() if k != "trees")), "trees": tris["trees"], "layers": tris})
+
+todo = [(i, j) for j in range(NCZ) for i in range(NCX) if ONLY is None or (i, j) in ONLY]
+for n, (ci, cj) in enumerate(todo):
+    build_chunk(ci, cj)
+    if n % 6 == 0: log("chunk", ci, cj, "%d/%d" % (n + 1, len(todo)), manifest[-1]["tris"])
+json.dump({"chunks": manifest, "chunk": CH, "origin": {"minX": CX0, "minZ": CZ0}}, open(os.path.join(RAW, "manifest_raw.json"), "w"))
+log("done")
