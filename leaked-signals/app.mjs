@@ -833,13 +833,16 @@ function applyTour(t) {
   dirty = true; syncDock();
 }
 function startTour() {
-  S.playing = false; tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
+  S.playing = false; hideHint(); tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
 }
 function stopTour() {
   if (!tourPlaying) return;
   tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-$("#btnTour").onclick = () => (tourPlaying ? stopTour() : startTour());
+const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+hintEl.onclick = () => { hideHint(); startTour(); };
+stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
+$("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
 
 // deterministic API for the video renderer & tests
 window.__leak = {

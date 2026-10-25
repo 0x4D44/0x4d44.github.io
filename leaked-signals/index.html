@@ -28,6 +28,10 @@ button,select,input{font:inherit;color:inherit}
 .btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 11px;cursor:pointer;min-height:32px}
 .btn:hover{border-color:var(--cyan)} .btn[aria-pressed="true"],.btn.on{background:color-mix(in srgb,var(--cyan) 18%,var(--panel));border-color:var(--cyan)}
 .btn.amber{border-color:var(--amber);color:var(--amber)}
+#btnTour{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:600} :root[data-theme="dark"] #btnTour,:root:not([data-theme="light"]) #btnTour{color:#1a1000}
+#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:100px;background:rgba(5,8,16,.88);color:#ffd9a0;border:1px solid var(--amber);border-radius:999px;padding:9px 16px;font:600 14px var(--sans,system-ui);cursor:pointer;z-index:3;min-height:44px;max-width:92%}
+#hint[hidden],.video #hint{display:none}
+.stage:has(#caption.on) #hint{display:none}
 .btn:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 400px;flex:1;min-height:0}
 @media (min-width:981px){ body{height:100vh;height:100dvh} .app{overflow:hidden;grid-template-rows:minmax(0,1fr)} .panel{overflow:hidden} .stage{min-height:0!important} }
@@ -97,9 +101,12 @@ video{width:100%;border-radius:9px;background:#000;display:block}
   #caption{font-size:13px;bottom:236px;max-width:94%}
   .dock input[type=range]{height:44px} .chip,.dock .btn,.dock select,.tabs button,#tabs button{min-height:44px}
   .top{padding-left:120px}
+  header .btn,input,select,.play,#playBtn{min-height:44px}
+  #hint{bottom:240px}
+  #hud{left:118px;top:6px;font-size:11px;max-width:calc(100% - 126px)}
 }
 .dock select{color:var(--ink);background:var(--bg2)}
-@media (max-width:520px){ .dock{padding:6px 8px 8px;gap:4px} .dock .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .dock .row>*{flex:0 0 auto} .dock .row input[type=range]{flex:1 0 110px} .stage{height:70vh} #caption{bottom:150px} .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:520px){ .dock{padding:6px 8px 8px;gap:4px} .dock .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .dock .row>*{flex:0 0 auto} .dock .row input[type=range]{flex:1 0 110px} .stage{height:58vh;position:sticky;top:0;z-index:5} #caption{bottom:150px} #hint{bottom:154px} .dock .row{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:24px} .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
 @media (prefers-reduced-motion:reduce){ #caption{transition:none} }
 .video #hlNote{display:none}
 .stage:has(#caption.on) #hlNote{display:none}
@@ -119,15 +126,16 @@ video{width:100%;border-radius:9px;background:#000;display:block}
 </header>
 <main class="app">
   <section class="stage" id="stage" aria-label="Interactive 3D simulation of Earth's radio leakage">
-    <canvas id="gl" aria-hidden="true"></canvas>
+    <canvas id="gl" role="img" aria-label="Wavefront point cloud of Earth's leaked TV signals in 3D"></canvas>
     <canvas id="ov" aria-hidden="true"></canvas>
     <div id="hud" aria-live="off"></div>
     <div id="hlNote" aria-live="polite" hidden></div>
+    <button id="hint" type="button">&#9654; New here? Take the 60-second guided tour</button>
     <div id="caption" role="status" aria-live="polite"></div>
     <div class="dock" id="dock"></div>
   </section>
   <aside class="panel" id="panel">
-    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <nav class="tabs" role="tablist" aria-label="Simulator sections" id="tabs"></nav>
     <div id="bodies"></div>
   </aside>
 </main>
