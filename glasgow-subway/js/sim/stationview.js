@@ -142,7 +142,7 @@ export function buildStation(THREE, o) {
 
   // ------------ columns (island centreline) and benches
   const columns = [];
-  if (island) for (let z = -PL + 4; z <= PL - 4; z += 7) {
+  if (island) for (let z = -PL + 4; z <= PL - 9; z += 7) {
     Bv.box(xcP - 0.22, PY, z - 0.22, xcP + 0.22, ceilY(xcP), z + 0.22, col(style.dado).map((v) => v * 0.9), 1);
     Bl.box(xcP - 0.25, PY + 1.2, z - 0.25, xcP + 0.25, PY + 1.32, z + 0.25, cTrim, 1);
     obstacles.push({ x0: xcP - 0.3, x1: xcP + 0.3, z0: z - 0.3, z1: z + 0.3, y: PY });
@@ -152,6 +152,7 @@ export function buildStation(THREE, o) {
   for (let z = -PL + 7.5; z <= PL - 3; z += 14) {
     const bx = island ? xcP + S * 0.0 : xo - S * 0.35;
     const bz = island ? z + 3.5 : z;
+    if (island && bz > PL - 4.5) continue;
     Bv.box(bx - 0.28, PY + 0.42, bz - 1.0, bx + 0.28, PY + 0.5, bz + 1.0, [0.55, 0.38, 0.2], 1);
     Bv.box(bx - 0.25, PY, bz - 0.9, bx + 0.25, PY + 0.42, bz - 0.8, [0.2, 0.2, 0.22], 1); Bv.box(bx - 0.25, PY, bz + 0.8, bx + 0.25, PY + 0.42, bz + 0.9, [0.2, 0.2, 0.22], 1);
     obstacles.push({ x0: bx - 0.35, x1: bx + 0.35, z0: bz - 1.05, z1: bz + 1.05, y: PY });
@@ -193,7 +194,7 @@ export function buildStation(THREE, o) {
 
   // ------------ lamps
   // collect lights
-  const addLight = (x, y, z, c = 0xffe3b0, i = 9, d = 28) => { const l = new THREE.PointLight(c, i, d, 1.4); l.position.set(x, y, z); group.add(l); lights.push(l); return l; };
+  const addLight = (x, y, z, c = 0xffe3b0, i = 9, d = 28) => { lights.push({ x, y, z, c, i, d }); };
   addLight(xc0, wallH + 1, -PL * 0.5); addLight(xc0, wallH + 1, PL * 0.5);
 
   // ------------ ramp (escalators + stairs)

@@ -35,6 +35,8 @@ export class TrainView {
     root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root);
     this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
+    const wz = new THREE.Vector3(), worldDoorZ = {};
+    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; } });
     const carNodes = root.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
     if (!this.carInfo.length) this.carInfo = [{ node: null, zc: -this.length / 4, len: this.length / 2 }, { node: null, zc: this.length / 4, len: this.length / 2 }];
@@ -59,8 +61,8 @@ export class TrainView {
       if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
     }
     // door opening centres in root coordinates (one leaf per opening, centre of the opening = leaf closed pos)
-    const ref = this.doorsR.length ? this.doorsR : this.doorsL;
-    for (const d of ref) this.doorZ.push(d.z0 + this.carInfo[d.n._car || 0].zc);
+    const refKey = this.doorsR.length ? 'door_R_' : 'door_L_';
+    for (let i = 0; i < 40 && worldDoorZ[refKey + i] != null; i++) this.doorZ.push(worldDoorZ[refKey + i]);
     this.cabEye = this.byName.cab_eye || null;
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;

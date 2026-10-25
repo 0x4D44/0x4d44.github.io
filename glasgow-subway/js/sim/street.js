@@ -31,7 +31,7 @@ export async function buildStreet(THREE, o) {
     const N = 48, S = 280, geo = new THREE.PlaneGeometry(S, S, N, N); geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position, colr = [];
     for (let i = 0; i < pos.count; i++) { const x = ex + pos.getX(i), z = ez + pos.getZ(i); pos.setXYZ(i, x, gh(x, z) - 0.05, z); const v = 0.85 + rng() * 0.1; colr.push(0.36 * v, 0.42 * v, 0.3 * v); }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); geo.computeVertexNormals();
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); geo.computeVertexNormals(); geo.computeBoundingSphere();
     group.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })));
     // pavement plaza + road
     const plaza = new THREE.Mesh(new THREE.CircleGeometry(24, 40), new THREE.MeshLambertMaterial({ color: 0x8c8a86 })); plaza.rotation.x = -Math.PI / 2; plaza.position.set(ex, y0 + 0.02, ez); group.add(plaza);
@@ -44,8 +44,8 @@ export async function buildStreet(THREE, o) {
     }, { repeat: true });
     const roofM = new THREE.MeshLambertMaterial({ color: 0x4d4b52 });
     for (let i = 0; i < 26; i++) {
-      const a = rng() * Math.PI * 2, r = 38 + rng() * 90; const bx = ex + Math.cos(a) * r, bz = ez + Math.sin(a) * r;
-      if (Math.abs(bx - (ex + 22)) < 12) continue;
+      const a = rng() * Math.PI * 2, r = 46 + rng() * 90; const bx = ex + Math.cos(a) * r, bz = ez + Math.sin(a) * r;
+      if (Math.abs(bx - (ex + 22)) < 12 || Math.abs(bx - ex) < 22 && bz > ez - 30) continue;
       const w = 16 + rng() * 14, d = 12 + rng() * 10, h = 15 + rng() * 14;
       const t = stoneTex.clone(); t.needsUpdate = true; t.repeat.set(w / 14, h / 14);
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ map: t, color: new THREE.Color().setHSL(0.07 + rng() * 0.04, 0.3, 0.55 + rng() * 0.15) }));

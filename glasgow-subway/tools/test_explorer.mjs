@@ -28,7 +28,7 @@ async function run(name, vp, mobile) {
   await page.goto(url); await page.evaluate(() => window.__explorer.ready).catch((e) => errs.push('ready: ' + e.message));
   await page.waitForFunction(() => window.__explorer?.state?.ready, null, { timeout: 120000 });
   await page.evaluate(() => window.__explorer.whenCityLoaded(Infinity)); await page.waitForTimeout(1500);
-  const shot = async (n) => { await page.waitForTimeout(900); await page.screenshot({ path: path.join(out, `${name}-${n}.png`) }); };
+  const shot = async (n) => { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(out, `${name}-${n}.png`), timeout: 240000 }); };
   const noOverflow = async (label) => { const o = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, bw: document.body.scrollWidth })); check(o.sw - o.cw <= 1 && o.bw - o.cw <= 1, `${name} no horizontal overflow (${label}) ${JSON.stringify(o)}`); };
   const topLeft = async () => { const bad = await page.evaluate(() => [...document.querySelectorAll('button,a,input,select,[tabindex]')].filter((e) => { const r = e.getBoundingClientRect(); if (!r.width || !r.height || getComputedStyle(e).visibility === 'hidden' || e.closest('[hidden]')) return false; return r.left < 109 && r.top < 41 && r.right > 0 && r.bottom > 0; }).map((e) => e.id || e.className)); check(bad.length === 0, `${name} nothing interactive under back pill ${bad}`); };
   const ex = () => page.evaluate(() => window.__explorer);

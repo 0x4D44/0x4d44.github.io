@@ -100,7 +100,7 @@ def init_materials():
     mat("mat_terrain", rough=1.0)
     mat("mat_road", rough=0.95); mat("mat_pavement", rough=0.9); mat("mat_bridge", rough=0.8, metal=0.1)
     mat("mat_rail", rough=0.8, metal=0.3)
-    mat("mat_water", (0.20, 0.34, 0.40), rough=0.08, metal=0.0)
+    mat("mat_water", (0.9, 0.95, 1.0), rough=0.35, metal=0.0)
     mat("mat_green", rough=1.0)
     mat("mat_wall_stone", tex=ft, rough=0.9); mat("mat_wall_glass", tex=fg, rough=0.25, metal=0.35)
     mat("mat_wall_plain", rough=0.85); mat("mat_roof", rough=0.85)
@@ -294,15 +294,15 @@ def prep_world():
     allroad = unary_union([A, Bg, Cg])
     wu = W["water_union"]
     for k, v in (("A1", A1), ("A2", A2), ("B", Bg), ("C", Cg)):
-        W["road_" + k] = v.difference(wu).buffer(0)
+        W["road_" + k] = v.difference(wu).buffer(0).simplify(0.4)
     allroad = unary_union([W["road_A1"], W["road_A2"], W["road_B"], W["road_C"]])
     W["road_all"] = allroad
     # buildings union (for pavement cutouts)
     W["bld_union"] = unary_union([p for g, t, i in D["building"] for p in polys_of(g) if p.is_valid and p.area > 8]).buffer(0.2)
     ped = unary_union(groups["P"]) if groups["P"] else Polygon()
     ring = unary_union([A2.buffer(2.8), Bg.buffer(2.4), unary_union(groups["A"] and [A1.buffer(0.5)] or [Polygon()])]) if True else None
-    pave = unary_union([ring, ped]).difference(allroad).difference(W["bld_union"]).difference(wu)
-    pave = pave.buffer(0)
+    pave = unary_union([ring, ped]).difference(allroad).difference(wu)
+    pave = pave.buffer(0).simplify(0.5)
     W["pave"] = pave
     # rails
     rails = []; rbridges = []
@@ -313,7 +313,7 @@ def prep_world():
             rbridges.append((g, t, i)); continue
         rails.append((g, t, i))
     W["rails"] = rails; W["rbridges"] = rbridges
-    W["ballast"] = unary_union([g.buffer(1.6 if t.get("service") in ("yard", "siding", "spur") else 2.2, quad_segs=2) for g, t, i in rails]).difference(wu).buffer(0)
+    W["ballast"] = unary_union([g.buffer(1.6 if t.get("service") in ("yard", "siding", "spur") else 2.2, quad_segs=2) for g, t, i in rails]).difference(wu).buffer(0).simplify(0.4)
     # green
     gk = {}
     for g, t, i in D["green"]:
@@ -331,7 +331,7 @@ def bridge_mesh(g, t, step, kind, B_deck, B_struct, width=None, name=None):
     pts = np.asarray(g.coords)
     if width is None:
         width = road_width(t) + 1.0 if kind == "road" else 5.5
-    rb = ribbon(pts, width, 5.0)
+    rb = ribbon(pts, width, 9.0)
     if rb is None: return
     L, R, Cc, s = rb
     n = len(s)
@@ -443,6 +443,9 @@ def prep_buildings(skip_ids):
         if i in skip_ids: continue
         for p in polys_of(g):
             if not p.is_valid or p.area < 10: continue
+            cc = p.centroid
+            if p.area < 130 and math.hypot(cc.x - CENTRE[0], cc.y - CENTRE[1]) > 2700 and "height" not in t: continue
+            if p.area < 64 and (math.hypot(cc.x - CENTRE[0], cc.y - CENTRE[1]) > 1500 or p.area < 22) and i not in ("x",) and "height" not in t and "building:levels" not in t: continue
             if t.get("building") == "no": continue
             cov = 0
             if tree is not None:
@@ -511,7 +514,7 @@ def building_geom(p, t, i, is_part, step_fn):
     kind, h, mh, central, b = building_style(p, t, i, is_part)
     r = hash01(i, 11)
     # footprint prepare
-    p = shapely.simplify(p, 0.45) if p.area > 60 else p
+    p = shapely.simplify(p, 0.7) if p.area > 60 else p
     p = shapely.geometry.polygon.orient(p, 1.0)
     pts = np.asarray(p.exterior.coords)
     sx = np.asarray(p.exterior.coords)[:, 0]; sy = np.asarray(p.exterior.coords)[:, 1]
@@ -598,7 +601,7 @@ def building_geom(p, t, i, is_part, step_fn):
                 du = (halfL - np.abs(u)) / halfW
                 return ztop + ph * np.clip(np.minimum(dv, du if halfL > halfW else dv), 0, 1)
             # subdivide footprint with a grid of Steiner points via triangle for exactness
-            r_ = tri_polygon(p, max(2.0, p.area / 40.0), 1.5)
+            r_ = tri_polygon(p, max(4.0, p.area / 9.0), 4.0)
             if r_ is None:
                 V, T = earcut_poly(p); z = np.full(len(V), ztop)
             else:
@@ -781,7 +784,7 @@ def procedural_trees(ci, cj, bounds):
 
 BCOL = {"A1": lin((0.15, 0.15, 0.16)), "A2": lin((0.19, 0.19, 0.20)), "B": lin((0.23, 0.23, 0.24)), "C": lin((0.29, 0.28, 0.27))}
 RAILC = lin((0.55, 0.55, 0.58)); BALC = lin((0.30, 0.29, 0.28)); PAVC = lin((0.55, 0.53, 0.50)); PARKC = lin((0.36, 0.36, 0.37))
-WATC = lin((0.17, 0.30, 0.36))
+WATC = lin((0.20, 0.38, 0.46))
 manifest = []
 exp_args = dict(export_format="GLB", export_vertex_color="ACTIVE", export_apply=False, export_yup=True, export_texcoords=True, export_normals=True, export_extras=False, export_cameras=False, export_lights=False)
 stats = {"tri": 0}
@@ -811,15 +814,15 @@ def build_chunk(ci, cj):
     for k, zo in (("A1", 0.30), ("A2", 0.30), ("B", 0.30), ("C", 0.30)):
         g = clip(W["road_" + k])
         if not g.is_empty:
-            B2 = ground_poly_mesh([g], b, 90, zo, step, BCOL[k], 0); 
+            B2 = ground_poly_mesh([g], b, 500, zo, step, BCOL[k], 0, 28.0); 
             if not B2.empty(): RB.add(*B2.arrays()[0:1], B2.arrays()[3], B2.arrays()[1], None, 0)
     g = clip(W["pave"])
     if not g.is_empty:
-        B2 = ground_poly_mesh([g], b, 120, 0.42, step, PAVC, 1)
+        B2 = ground_poly_mesh([g], b, 900, 0.42, step, PAVC, 1, 30.0)
         if not B2.empty(): P, C, U, T, M = B2.arrays(); RB.add(P, T, C, None, 1)
     g = clip(W["parking"])
     if not g.is_empty:
-        B2 = ground_poly_mesh([g], b, 120, 0.28, step, PARKC, 0)
+        B2 = ground_poly_mesh([g], b, 900, 0.28, step, PARKC, 0, 30.0)
         if not B2.empty(): P, C, U, T, M = B2.arrays(); RB.add(P, T, C, None, 0)
     for g, t, i, kind in bridge_by_chunk.get((ci, cj), []):
         if kind == "road":
@@ -834,10 +837,10 @@ def build_chunk(ci, cj):
     RL = Buf()
     g = clip(W["ballast"])
     if not g.is_empty:
-        B2 = ground_poly_mesh([g], b, 80, 0.26, step, BALC, 0, 10.0)
+        B2 = ground_poly_mesh([g], b, 500, 0.26, step, BALC, 0, 20.0)
         if not B2.empty(): P, C, U, T, M = B2.arrays(); RL.add(P, T, C, None, 0)
     for g, t, i in rail_by_chunk.get((ci, cj), []):
-        rb = ribbon(np.asarray(g.coords), 1.5, 5.0)
+        rb = ribbon(np.asarray(g.coords), 1.5, 9.0)
         if rb is None: continue
         Lf, Rf, Cc, s = rb; n = len(s)
         z = TR.h(Cc[:, 0], Cc[:, 1], step) + 0.38
@@ -868,7 +871,7 @@ def build_chunk(ci, cj):
     for k, G in W["green"].items():
         g = clip(G)
         if g.is_empty: continue
-        B2 = ground_poly_mesh([g], b, 150, GREEN_Z[k], step, lin(GREEN_COL[k]), 0, 16.0)
+        B2 = ground_poly_mesh([g], b, 500, GREEN_Z[k], step, lin(GREEN_COL[k]), 0, 16.0)
         if not B2.empty(): P, C, U, T, M = B2.arrays(); GB.add(P, T, C, None, 0)
     finish("green", make_object("green_%d_%d" % (ci, cj), GB, ["green"], coll), GB, "green")
     # trees

@@ -113,7 +113,7 @@ export class City {
   whenLoaded(n = Infinity, timeoutMs = 60000) {
     return new Promise((res) => {
       const t0 = performance.now();
-      const chk = () => { if (!this.manifest || this.loaded + this.failed >= Math.min(n, this.total) || performance.now() - t0 > timeoutMs) res(); else setTimeout(chk, 100); };
+      const chk = () => { const elig = this.chunks.filter((c) => c.dist < this.quality.chunkRadius).length || this.total; if (!this.manifest || this.loaded + this.failed >= Math.min(n, elig) || performance.now() - t0 > timeoutMs) res(); else setTimeout(chk, 100); };
       chk();
     });
   }

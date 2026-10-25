@@ -3,11 +3,12 @@ import * as THREE from 'three';
 import { lerp } from './util.js';
 
 export const PRESETS = {
-  day:   { top: '#4f8fd0', mid: '#a9c9e6', hor: '#dfe9ef', fog: '#c9d9e4', fogD: 0.00011, sun: '#fff0d8', sunI: 2.6, sunEl: 48, sunAz: 215, hemiS: '#cfe3ff', hemiG: '#5b5a50', hemiI: 1.0, exp: 1.0, glow: 0.35, stars: 0, emis: 0 },
+  day:   { top: '#4f8fd0', mid: '#a9c9e6', hor: '#dfe9ef', fog: '#c9d9e4', fogD: 0.00015, sun: '#fff0d8', sunI: 2.6, sunEl: 48, sunAz: 215, hemiS: '#cfe3ff', hemiG: '#5b5a50', hemiI: 1.0, exp: 1.0, glow: 0.35, stars: 0, emis: 0 },
   dusk:  { top: '#24305f', mid: '#8a5a7a', hor: '#f29a58', fog: '#b5806f', fogD: 0.00014, sun: '#ff9250', sunI: 2.0, sunEl: 9, sunAz: 250, hemiS: '#a99bd0', hemiG: '#3b2d32', hemiI: 0.75, exp: 1.0, glow: 0.55, stars: 0.35, emis: 0.25 },
   night: { top: '#02040b', mid: '#0a1428', hor: '#17284a', fog: '#0a1426', fogD: 0.00016, sun: '#7f9bd8', sunI: 0.5, sunEl: 35, sunAz: 140, hemiS: '#3a4a7a', hemiG: '#11131c', hemiI: 0.55, exp: 1.1, glow: 0.9, stars: 1, emis: 0.6 },
 };
 
+const DARK = { top: new THREE.Color('#05070b'), mid: new THREE.Color('#0b1018'), hor: new THREE.Color('#141b26') };
 const SKY_V = `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
 const SKY_F = `varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 hor; uniform vec3 sunDir; uniform vec3 sunCol;
 void main(){ float h = clamp(vDir.y,-0.2,1.0); vec3 c = mix(hor, mid, smoothstep(0.0,0.28,h)); c = mix(c, top, smoothstep(0.2,0.9,h));
@@ -60,16 +61,16 @@ export function createEnv(canvas, quality) {
   };
   function flat(p) { const o = {}; for (const k in p) o[k] = (typeof p[k] === 'string') ? new THREE.Color(p[k]) : p[k]; return o; }
   function sunDir(c) { const el = THREE.MathUtils.degToRad(c.sunEl), az = THREE.MathUtils.degToRad(c.sunAz); return new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)); }
-  function apply() {
+  function apply(skip) {
     const c = env.cur; const u = skyMat.uniforms;
-    u.top.value.copy(c.top); u.mid.value.copy(c.mid); u.hor.value.copy(c.hor); u.sunDir.value.copy(sunDir(c)); u.sunCol.value.copy(c.sun);
-    scene.fog.color.copy(c.fog); scene.fog.density = c.fogD * env.fogScale;
+    const d = env.dim * 0.82; u.top.value.copy(c.top).lerp(DARK.top, d); u.mid.value.copy(c.mid).lerp(DARK.mid, d); u.hor.value.copy(c.hor).lerp(DARK.hor, d); u.sunDir.value.copy(sunDir(c)); u.sunCol.value.copy(c.sun);
+    scene.fog.color.copy(c.fog).lerp(DARK.hor, d); scene.fog.density = c.fogD * env.fogScale;
     hemi.color.copy(c.hemiS); hemi.groundColor.copy(c.hemiG); hemi.intensity = c.hemiI;
     sun.color.copy(c.sun); sun.intensity = c.sunI; renderer.toneMappingExposure = c.exp;
     stars.material.opacity = c.stars; env.glow = c.glow; env.emis = c.emis;
-    env.listeners.forEach((f) => f(c));
+    if (skip !== true) env.listeners.forEach((f) => f(c));
   }
-  env.fogScale = 1; env.refresh = apply;
+  env.fogScale = 1; env.dim = 0; env.setDim = (v) => { env.dim = v; apply(true); }; env.refresh = apply;
   env.setPreset('day', true);
   return env;
 }
