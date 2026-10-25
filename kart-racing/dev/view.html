@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8"><title>track viewer</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}#hud{position:fixed;left:8px;bottom:8px;color:#fff;font:12px monospace;text-shadow:0 0 3px #000}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
+<canvas id="c"></canvas><div id="hud"></div>
+<script type="module">
+import * as THREE from "three";
+import { createTrack } from "../track.js";
+import { TRACK_DEFS } from "../trackdefs.js";
+import { runChecks } from "./checks.js";
+const q = new URLSearchParams(location.search);
+const errors = []; window.addEventListener("error", e => errors.push(String(e.message)));
+const ce = console.error; console.error = (...a) => { errors.push(a.join(" ")); ce(...a); };
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(1);
+const W = +(q.get("w") || innerWidth), Hh = +(q.get("h") || innerHeight);
+renderer.setSize(W, Hh);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, W / Hh, 0.3, 2500);
+const id = q.get("track") || TRACK_DEFS[0].id;
+const t0 = performance.now();
+const track = createTrack(id);
+const buildMs = performance.now() - t0;
+const dispose = track.setupScene(scene, renderer);
+scene.add(track.group);
+const kart = new THREE.Group();
+const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 2.8), new THREE.MeshLambertMaterial({ color: 0xe63946 })); body.position.y = 0.55; kart.add(body);
+const helm = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 8), new THREE.MeshLambertMaterial({ color: 0xffffff })); helm.position.set(0, 1.2, -0.2); kart.add(helm);
+for (const [x, z] of [[-0.9, 1], [0.9, 1], [-0.9, -1], [0.9, -1]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.3, 10).rotateZ(Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x111111 })); w.position.set(x, 0.35, z); kart.add(w); }
+scene.add(kart);
+function placeKart(s, lat) { const sp = track.sample(s); kart.position.set(sp.pos.x + sp.right.x * lat, 0, sp.pos.z + sp.right.z * lat); kart.rotation.y = Math.atan2(sp.tangent.x, sp.tangent.z); }
+const H = { THREE, track, scene, camera, renderer, kart, placeKart, errors, buildMs, id };
+window.H = H;
+const FOG = scene.fog;
+function view(o) {
+  const s = o.s ?? 0; scene.fog = o.mode === "top" ? null : FOG;
+  if (o.mode === "top") {
+    const b = track.bounds, cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2, span = Math.max(b.maxX - b.minX, b.maxZ - b.minZ) + 80;
+    camera.fov = 45; camera.updateProjectionMatrix();
+    const h = span / (2 * Math.tan(THREE.MathUtils.degToRad(22.5)));
+    camera.position.set(cx, h, cz + 0.001); camera.up.set(0, 0, -1); camera.lookAt(cx, 0, cz); 
+  } else if (o.mode === "chase") {
+    camera.up.set(0, 1, 0); camera.fov = o.fov || 75; camera.updateProjectionMatrix();
+    const lat = o.lat ?? track.aiLine(s); placeKart(s, lat); const sp = track.sample(s - (o.back ?? 6.5));
+    camera.position.set(sp.pos.x + sp.right.x * lat, o.h ?? 3.0, sp.pos.z + sp.right.z * lat); const la = track.sample(s + 12); camera.lookAt(la.pos.x + la.right.x * lat, 1.0, la.pos.z + la.right.z * lat);
+  } else if (o.mode === "orbit") {
+    camera.up.set(0, 1, 0); camera.fov = o.fov || 55; camera.updateProjectionMatrix();
+    const sp = track.sample(s); const a = o.ang ?? 0.8, r = o.r ?? 60;
+    placeKart(s, track.aiLine(s));
+    camera.position.set(sp.pos.x + Math.sin(a) * r, o.h ?? 30, sp.pos.z + Math.cos(a) * r); camera.lookAt(sp.pos.x, 2, sp.pos.z);
+  } else if (o.mode === "pos") {
+    camera.up.set(0, 1, 0); camera.fov = o.fov || 60; camera.updateProjectionMatrix();
+    camera.position.set(...o.from); camera.lookAt(...o.to);
+  }
+  render(0);
+}
+function render(dt) { track.update(dt, performance.now() / 1000); renderer.render(scene, camera); }
+H.view = view; H.render = render; H.runChecks = () => runChecks(H);
+view({ mode: q.get("mode") || "top", s: +(q.get("s") || 0) });
+if (q.get("live")) { (function loop() { requestAnimationFrame(loop); render(1 / 60); })(); }
+document.getElementById("hud").textContent = id + " L=" + track.length.toFixed(0) + " build=" + buildMs.toFixed(0) + "ms";
+window.__ready = true;
+</script>
