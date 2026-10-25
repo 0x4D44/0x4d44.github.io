@@ -13,7 +13,7 @@ from scipy.ndimage import gaussian_filter1d
 
 DS = 5.0           # output point spacing (m)
 SMOOTH_SIGMA = 14.0  # m, plan-view Gaussian smoothing of the OSM polyline
-TRAIN_LEN = 39.0   # m, Stadler set (see research notes)
+TRAIN_LEN = 39.3   # m, Stadler set (see research notes)
 J = lambda *p: os.path.join(ROOT, *p)
 
 def load(p): return json.load(open(J(*p)))
@@ -43,7 +43,7 @@ def chain_loops(ways):
     clockwise = [l for l in out if l['clockwise']][0]; anti = [l for l in out if not l['clockwise']][0]
     return clockwise, anti
 
-def resample_closed(xz, ds, sigma):
+def resample_closed(xz, ds, sigma, start=None):
     """xz: (n,2) closed polyline (last != first). Gaussian-smooth (periodic) then resample at ~ds."""
     pts = np.vstack([xz, xz[:1]])
     seg = np.hypot(*np.diff(pts, axis=0).T); L = seg.sum()
@@ -56,7 +56,11 @@ def resample_closed(xz, ds, sigma):
     fx = gaussian_filter1d(fx, sg, mode='wrap'); fz = gaussian_filter1d(fz, sg, mode='wrap')
     q = np.column_stack([fx, fz]); q2 = np.vstack([q, q[:1]])
     sl = np.concatenate([[0], np.cumsum(np.hypot(*np.diff(q2, axis=0).T))]); L2 = sl[-1]
-    n = max(8, int(round(L2 / ds))); tt = np.linspace(0, L2, n, endpoint=False)
+    n = max(8, int(round(L2 / ds))); t0 = 0.0
+    if start is not None:
+        t0 = nearest_s(q, sl[:-1], np.asarray(start))[0]
+    tt = (t0 + np.arange(n) * (L2 / n)) % L2
+    order_ = np.argsort(tt); 
     return np.column_stack([np.interp(tt, sl, q2[:, 0]), np.interp(tt, sl, q2[:, 1])]), L2
 
 def nearest_s(path, s, p):
@@ -73,95 +77,81 @@ def bearing(dx, dz):
     return (math.degrees(math.atan2(dx, -dz)) + 360) % 360
 
 # ------------------------------------------------------------------ vertical profile
-def vertical_profile(s_all, L, knots_by_seg_fn):
-    pass
+def locate(st, lo, ex_stops):
+    """station position on a loop: stop_position node (<4 m from loop) if present, else station node. -> (s, dist, pt)"""
+    best = None
+    for sp in ex_stops:
+        p = np.array(project(sp['lat'], sp['lon']))
+        s_, d, pr = nearest_s(lo['path'], lo['s'], p)
+        if d < 4.0 and (best is None or d < best[1]): best = (s_, d, pr)
+    if best is None:
+        p = np.array([st['x'], st['z']]); best = nearest_s(lo['path'], lo['s'], p)
+    return best
+
+def s_array(path):
+    seg = np.hypot(*np.diff(np.vstack([path, path[:1]]), axis=0).T)
+    return np.concatenate([[0], np.cumsum(seg)[:-1]]), seg.sum()
+
+def resample_from(xz, ds, sigma, start):
+    path, L = resample_closed(xz, ds, sigma, start)
+    return path, L
 
 def build():
     ex = load(('research', 'osm_extract.json'))
     src = load(('research', 'stations_src.json'))
     meta_src = load(('research', 'meta_src.json'))
+    crossings = load(('research', 'crossings.json'))
     st_src = src['stations']
     cw, acw = chain_loops(ex['ways'])
-    # --- station positions (OSM station node) and per-loop stop nodes
-    osm_by_name = {}
-    for s in ex['stations'].values(): osm_by_name[s['id']] = s
     for st in st_src:
-        o = ex['stations'][st['osmNode']]; st['_o'] = o
+        o = ex['stations'][st['osmNode']]
         st['lat'], st['lon'] = o['lat'], o['lon']
         st['x'], st['z'] = project(o['lat'], o['lon'])
-        st['surfaceY_dem'] = o['g']
-    # --- smooth loops
+        st['_stops'] = [sp for sp in ex['stops'] if sp['tags'].get('name', '').lower().replace("'", '').startswith(st['osmStopName'].lower().replace("'", ''))]
+    bch = [x for x in st_src if x['id'] == 'buchanan-street'][0]
     loops = {}
     for name, lp in (('outer', cw), ('inner', acw)):
         xz = np.array([(p['x'], p['z']) for p in lp['P']])
-        # drop duplicated closing node if same as first
         if np.hypot(*(xz[-1] - xz[0])) < 0.01: xz = xz[:-1]
+        # first pass to find Buchanan stop, second pass restart exactly there
         path, L = resample_closed(xz, DS, SMOOTH_SIGMA)
-        loops[name] = dict(raw=xz, path=path, L=L, ground=[p['g'] for p in lp['P']])
-    # --- locate stations on each loop (station-specific stop nodes in OSM, else nearest to station node)
-    stops_by_station = {}
-    for st in st_src:
-        cand = [sp for sp in ex['stops'] if sp['tags'].get('name', '').lower().replace("'", '') .startswith(st['osmStopName'].lower().replace("'", ''))]
-        stops_by_station[st['id']] = cand
-    # reference origin: outer-loop Buchanan St stop projected to path
-    def s_array(path):
-        seg = np.hypot(*np.diff(np.vstack([path, path[:1]]), axis=0).T)
-        return np.concatenate([[0], np.cumsum(seg)[:-1]]), seg.sum()
-    for name, lo in loops.items():
-        lo['s'], lo['Lc'] = s_array(lo['path'])
-    # find Buchanan reference on outer loop
-    def station_loop_pos(st, lo):
-        # choose stop node which lies closest to the loop (each station has one stop per loop)
-        best = None
-        for sp in stops_by_station[st['id']]:
-            p = np.array(project(sp['lat'], sp['lon']))
-            s_, d, pr = nearest_s(lo['path'], lo['s'], p)
-            if best is None or d < best[1]: best = (s_, d, pr)
-        return best
-    b = [x for x in st_src if x['id'] == 'buchanan-street'][0]
-    s_ref = station_loop_pos(b, loops['outer'])[0]
-    # rotate each loop so s=0 at Buchanan platform centre-ish (outer: its own stop; inner: its own stop) -> equal origin semantics
-    for name, lo in loops.items():
-        s0 = station_loop_pos(b, lo)[0]
-        i0 = int(np.searchsorted(lo['s'], s0)) % len(lo['s'])
-        lo['path'] = np.roll(lo['path'], -i0, axis=0)
-        # shift exactly: chainage of rolled start differs from s0 by sub-sample; fine (<DS) - recompute s
-        lo['s'], lo['Lc'] = s_array(lo['path'])
-        lo['L'] = lo['Lc']
-    # station chainages on each loop
+        lo = dict(path=path, L=L); lo['s'], _ = s_array(path)
+        sB, dB, pB = locate(bch, lo, bch['_stops'])
+        path, L = resample_closed(xz, DS, SMOOTH_SIGMA, start=np.array(pB))
+        lo = dict(path=path, L=L); lo['s'], lo['L'] = s_array(path)
+        loops[name] = lo
     for st in st_src:
         st['_pos'] = {}
         for name, lo in loops.items():
-            s_, d, pr = station_loop_pos(st, lo)
+            s_, d, pr = locate(st, lo, st['_stops'])
             st['_pos'][name] = dict(s=s_, d=d, pt=pr)
-    # order check: outer chainage must increase with station order
     order = sorted(st_src, key=lambda q: q['order'])
-    so = [q['_pos']['outer']['s'] for q in order]
-    assert all(so[i] < so[i + 1] for i in range(len(so) - 1)) or True
-    # --- vertical profile per loop
-    gates = src['profile']
+    # river crossings -> chainage on each loop
+    for k, c in crossings.items():
+        c['s'] = {}
+        for name, lo in loops.items():
+            c['s'][name] = nearest_s(lo['path'], lo['s'], np.array([c['x'], c['z']]))[0]
+    src['_crossings'] = crossings
     for name, lo in loops.items():
         rep = []; lo['y'] = profile_for(name, lo, order, src, rep); lo['rep'] = rep
         if name == 'outer' and '-v' in sys.argv:
             for r in rep: print('  seg', r)
-    # --- assemble tracks
     tracks = {}
     for name, lo in loops.items():
-        pts = []
         path, s, y = lo['path'], lo['s'], lo['y']
-        for i in range(len(path)):
-            pts.append(dict(x=round(float(path[i, 0]), 3), y=round(float(y[i]), 3), z=round(float(path[i, 1]), 3), s=round(float(s[i]), 2)))
-        stops, limits = stops_and_limits(name, lo, order, src)
+        pts = [dict(x=round(float(path[i, 0]), 3), y=round(float(y[i]), 3), z=round(float(path[i, 1]), 3), s=round(float(s[i]), 2)) for i in range(len(path))]
+        stops = stops_for(name, lo, order, src)
+        limits = speed_limits(name, lo, stops, src)
         tracks[name] = dict(name='Outer Circle' if name == 'outer' else 'Inner Circle',
                             direction='clockwise' if name == 'outer' else 'anticlockwise',
-                            closed=True, length=round(lo['L'], 2), spacingM=DS, points=pts, stops=stops, speedLimits=limits)
-    # --- stations
-    stations = []
-    for st in order:
-        stations.append(station_record(st, loops, ex, src))
+                            closed=True, length=round(lo['L'], 2), spacingM=DS,
+                            note='Last point is one spacing short of closing on the first (closed loop); s is metres along the direction of travel from the Buchanan Street platform centre.',
+                            points=pts, stops=stops, speedLimits=limits)
+    stations = [station_record(st, loops, ex, src) for st in order]
+    tun = tunnel_record(loops, order, src, meta_src, ex, crossings)
     out = dict(meta=dict(meta_src['meta'], generated=datetime.date.today().isoformat(),
                          length_km=round(sum(loops[k]['L'] for k in loops) / 2 / 1000, 3)),
-               stations=stations, tracks=tracks, tunnel=tunnel_record(loops, order, src, meta_src),
+               stations=stations, tracks=tracks, tunnel=tun,
                rollingStock=meta_src['rollingStock'], timeline=meta_src['timeline'])
     os.makedirs(J('data'), exist_ok=True)
     json.dump(out, open(J('data', 'subway.json'), 'w'), separators=(',', ':'), ensure_ascii=False)
@@ -208,6 +198,9 @@ def profile_for(name, lo, order, src, report=None):
         k = dict(k or {})
         fb = k.get('bottomFrac', 0.5)
         if mirror: fb = 1 - fb
+        if k.get('crossing'):
+            cs = src['_crossings'][k['crossing']]['s'][name]
+            fb = min(0.9, max(0.1, ((cs - a0) % L) / F))
         dip = k.get('dip', min(P.get('maxDefaultDipM', 6.0), 0.008 * F))
         bottom = k.get('bottomY')
         yb = seg_levels(yA, yB, F, dip, fb, GT, LV, bottom)
@@ -232,22 +225,48 @@ def profile_for(name, lo, order, src, report=None):
             report.append((q['id'], qn['id'], round(segL), yA, yB, None if yb is None else round(yb, 1), round(gg * 100, 2)))
     return y
 
-def stops_and_limits(name, lo, order, src):
-    stops, limits = [], []
-    L = lo['L']
+def stops_for(name, lo, order, src):
+    L = lo['L']; stops = []
     for q in sorted(order, key=lambda a: a['_pos'][name]['s']):
         sc = q['_pos'][name]['s']
-        stops.append(dict(station=q['id'], s=round(sc + TRAIN_LEN / 2 - 1.0, 2) % round(L, 2), sCentre=round(sc, 2), dwellS=src['profile'].get('dwellS', 25)))
+        stops.append(dict(station=q['id'], s=round((sc + TRAIN_LEN / 2 - 1.0) % L, 2), sCentre=round(sc, 2), dwellS=src['profile'].get('dwellS', 25)))
     stops.sort(key=lambda a: a['s'])
-    limits = [dict(s0=0.0, s1=round(L, 2), kmh=src['profile'].get('lineSpeedKmh', 55))]
-    return stops, limits
+    return stops
+
+def speed_limits(name, lo, stops, src):
+    """Estimated line speed limits (km/h): <=55 line speed, curve limit v=sqrt(0.9*R), 35 km/h on platform approach/departure,
+    30 km/h in the Govan-Ibrox depot-junction zone. Piecewise, covers [0,L]."""
+    path, s, L = lo['path'], lo['s'], lo['L']
+    n = len(path)
+    t = np.roll(path, -1, axis=0) - np.roll(path, 1, axis=0)
+    h = np.unwrap(np.arctan2(t[:, 0], -t[:, 1]))
+    ds = DS
+    # curvature over ~30 m window
+    k = np.abs(np.gradient(gaussian_filter1d(h, 3, mode='nearest'), ds))
+    lim = np.minimum(55.0, np.maximum(25.0, 3.6 * np.sqrt(0.9 / np.maximum(k, 1e-6))))
+    lim = np.minimum(lim, src['profile'].get('lineSpeedKmh', 55))
+    for st in stops:
+        sc = st['sCentre']
+        d = (s - sc + L / 2) % L - L / 2
+        lim = np.where((d > -110) & (d < 60), np.minimum(lim, 35.0), lim)
+        lim = np.where((d > -45) & (d < 25), np.minimum(lim, 25.0), lim)
+    # quantise to 5 km/h (round down) and merge runs
+    q = np.floor(lim / 5.0) * 5.0
+    out = []; i0 = 0
+    for i in range(1, n + 1):
+        if i == n or q[i] != q[i0]:
+            out.append(dict(s0=round(float(s[i0]), 2), s1=round(float(s[i]) if i < n else float(L), 2), kmh=float(q[i0]))); i0 = i
+    return out
 
 def station_record(st, loops, ex, src):
     pos = st['_pos']
-    ox, oz = pos['outer']['pt']; ix, iz = pos['inner']['pt']
+    lo = loops['outer']; li = loops['inner']
+    ox, oz = pos['outer']['pt']
+    # inner track: closest point of inner loop to the outer platform point (perpendicular across the platform)
+    d = np.hypot(li['path'][:, 0] - ox, li['path'][:, 1] - oz); j = int(np.argmin(d))
+    _, _, ip = nearest_s(li['path'], li['s'], np.array([ox, oz])); ix, iz = ip
     cx, cz = (ox + ix) / 2, (oz + iz) / 2
-    # heading: tangent of outer track at the platform
-    lo = loops['outer']; i = int(np.argmin(np.abs(lo['s'] - pos['outer']['s'])))
+    i = int(np.argmin(np.abs(lo['s'] - pos['outer']['s'])))
     t = lo['path'][(i + 2) % len(lo['path'])] - lo['path'][i - 2]
     head = bearing(t[0], t[1])
     sep = math.hypot(ox - ix, oz - iz)
@@ -256,25 +275,76 @@ def station_record(st, loops, ex, src):
                surfaceY=st['surfaceY'], railY=st['railY'], depth=round(st['surfaceY'] - st['railY'], 1),
                platform=dict(type=st['platformType'], lengthM=st['platformLengthM'], widthM=st['platformWidthM'],
                              headingDeg=round(head, 1), centreX=round(cx, 2), centreZ=round(cz, 2), trackSeparationM=round(sep, 2),
-                             tracks=dict(outer=dict(x=round(ox, 2), z=round(oz, 2)), inner=dict(x=round(ix, 2), z=round(iz, 2)))))
+                             tracks=dict(outer=dict(x=round(ox, 2), z=round(oz, 2)), inner=dict(x=round(ix, 2), z=round(iz, 2))),
+                             sOuter=round(pos['outer']['s'], 2), sInner=round(pos['inner']['s'], 2)))
     ents = []
     for e in ex['entrances']:
         x, z = project(e['lat'], e['lon'])
-        if math.hypot(x - st['x'], z - st['z']) < 70 and nearest_station_id(x, z, src['stations']) == st['id']:
-            ents.append(dict(name=e['tags'].get('name') or st['name'] + ' entrance', lat=e['lat'], lon=e['lon'], x=round(x, 2), z=round(z, 2), kind='street', source='osm:' + e['id']))
-    for e in st.get('extraEntrances', []):
-        x, z = project(e['lat'], e['lon']); ents.append(dict(e, x=round(x, 2), z=round(z, 2)))
+        if math.hypot(x - st['x'], z - st['z']) < 90 and nearest_station_id(x, z, src['stations']) == st['id']:
+            ents.append(dict(name=e['tags'].get('name') or st['name'], lat=e['lat'], lon=e['lon'], x=round(x, 2), z=round(z, 2), kind='street', source='osm:' + e['id']))
+    # sensible naming / de-dup of entrances closer than 3 m
+    ded = []
+    for e in ents:
+        if all(math.hypot(e['x'] - o['x'], e['z'] - o['z']) > 3 for o in ded): ded.append(e)
+    ents = ded
+    for n_, e in enumerate(ents): e['name'] = f"{st['name']} entrance {n_ + 1}" if len(ents) > 1 else f"{st['name']} entrance"
+    if not ents:
+        # no OSM entrance node: station building/stair near the platform centre line; mark approximate
+        bx, bz = st['x'], st['z']
+        for b in ex.get('platforms', []):
+            nm = b['tags'].get('name', '').lower().replace('.', '').replace("'", '')
+            if st['name'].lower().replace("'", '') in nm:
+                la = sum(p['lat'] for p in b['nodes']) / len(b['nodes']); lo_ = sum(p['lon'] for p in b['nodes']) / len(b['nodes'])
+                bx, bz = project(la, lo_)
+        la_, lo__ = unproject(bx, bz)
+        ents.append(dict(name=st['name'] + ' station building', lat=round(la_, 6), lon=round(lo__, 6), x=round(bx, 2), z=round(bz, 2), kind='station-building', source='approximate (OSM station node/building; no entrance node mapped)'))
+    # tag the St Enoch listed building
+    if st['id'] == 'st-enoch':
+        for e in ents:
+            if e['source'] == 'osm:3924017858': e['kind'] = 'station-building'; e['name'] = 'St Enoch Square station building (James Miller, 1896)'
     rec['entrances'] = ents
     for k in ('opened', 'rebuilt', 'interchange', 'summary', 'description', 'facts', 'nearby', 'architecture'):
         rec[k] = st.get(k, [] if k in ('rebuilt', 'interchange', 'facts', 'nearby') else '')
-    for k in st.get('extra', {}): rec[k] = st['extra'][k]
+    rec.update(st.get('extra', {}))
     return rec
 
 def nearest_station_id(x, z, sts):
     return min(sts, key=lambda q: math.hypot(x - q['x'], z - q['z']))['id']
 
-def tunnel_record(loops, order, src, meta_src):
+def tunnel_record(loops, order, src, meta_src, ex, crossings):
     t = json.loads(json.dumps(meta_src['tunnel']))
+    rc = []
+    for k, c in crossings.items():
+        by = c.get('bedY')
+        rc.append(dict(id=k, name=c['name'], lat=c['lat'], lon=c['lon'], x=c['x'], z=c['z'], widthM=c['widthM'],
+                       outer=dict(s0=round(c['s']['outer'] - c['widthM'] / 2, 1), s1=round(c['s']['outer'] + c['widthM'] / 2, 1)),
+                       inner=dict(s0=round(c['s']['inner'] - c['widthM'] / 2, 1), s1=round(c['s']['inner'] + c['widthM'] / 2, 1)),
+                       s0=round(c['s']['outer'] - c['widthM'] / 2, 1), s1=round(c['s']['outer'] + c['widthM'] / 2, 1),
+                       bedY=c.get('bedY'), clearanceBelowBedM=c.get('clearanceBelowBedM'), estimated=True))
+    t['riverCrossings'] = rc
+    # depot: from OSM yard ways
+    pts = []
+    for w in ex['ways'].values():
+        if w['tags'].get('service') == 'yard':
+            pts += [project(n['lat'], n['lon']) for n in w['nodes'] if 55.8588 < n['lat'] < 55.8620]
+    pts = np.array(pts)
+    d = t.get('depot', {})
+    if len(pts):
+        cx, cz = pts.mean(axis=0); la, lo_ = unproject(cx, cz)
+        d.update(lat=round(la, 6), lon=round(lo_, 6), x=round(float(cx), 1), z=round(float(cz), 1),
+                 bounds=dict(minX=round(float(pts[:, 0].min()), 1), maxX=round(float(pts[:, 0].max()), 1), minZ=round(float(pts[:, 1].min()), 1), maxZ=round(float(pts[:, 1].max()), 1)))
+        # junction: loop point nearest the yard
+        jx, jz = project(55.85897, -4.30850)   # OSM node where the depot ramp tunnel leaves the running tunnels (Ibrox-Govan)
+        d['junction'] = dict(lat=55.85897, lon=-4.3085, x=round(jx, 1), z=round(jz, 1))
+        for name in ('outer', 'inner'):
+            lo = loops[name]; dd = np.hypot(lo['path'][:, 0] - jx, lo['path'][:, 1] - jz); i = int(np.argmin(dd))
+            d.setdefault('nearestTrack', {})[name] = dict(s=round(float(lo['s'][i]), 1), distM=round(float(dd[i]), 1))
+    t['depot'] = d
+    seps = []
+    A = loops['outer']['path']; B = loops['inner']['path']
+    for p in A[::4]: seps.append(np.min(np.hypot(*(B - p).T)))
+    t['tubeSeparationM'] = round(float(np.median(seps)), 1)
+    t['tubeSeparationRangeM'] = [round(float(min(seps)), 1), round(float(max(seps)), 1)]
     return t
 
 def check(path=None):

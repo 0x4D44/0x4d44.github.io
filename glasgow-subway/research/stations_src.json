@@ -3,367 +3,694 @@
   {
    "id": "buchanan-street",
    "name": "Buchanan Street",
-   "order": 0,
    "osmNode": "29751010",
    "osmStopName": "Buchanan Street",
    "surfaceY": 28.7,
-   "railY": 17.7,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformType": "split",
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "National Rail: Glasgow Queen Street (travelator)",
+    "Bus: Buchanan Bus Station"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980,
+    1999
    ],
-   "interchange": [
-    "Subway"
+   "summary": "The Subway's busiest station sits under pedestrianised Buchanan Street, with a moving walkway to Queen Street railway station. Built with one island platform, it gained a side platform in the 1977-80 rebuild.",
+   "description": "Buchanan Street serves the city's main shopping thoroughfare and is the busiest station on the Subway (2.48 million passengers recorded in 2024). It opened with the line on 14 December 1896 with a single island platform serving both tracks.\n\nThe 1977-80 modernisation added a side platform. A glass wall now separates the island platform from the train boarding at the side platform, and each platform has a single stairway up to the ticket hall, which causes congestion in the peaks. Together with St Enoch it is one of only two stations with an underground ticket hall. The original street building on the east side of Buchanan Street was demolished to make way for the travelator to Queen Street mainline station; the remains of the old stairwell now serve as the entrance to the ticket hall at the end of that passage.\n\nWhen Buchanan Street was pedestrianised in 1977, two new entrances were built in the middle of the former roadway, the northern one with escalators and the southern with a staircase. Both canopies were replaced in 1999; the northern canopy is made entirely of structural glass. The station was closed during the 2002 Glasgow floods, with trains passing through without stopping.",
+   "facts": [
+    "Busiest station on the Subway: 2.48 million passengers in 2024.",
+    "A moving walkway links the ticket hall to Queen Street station, the only 'direct' Subway-mainline link apart from Partick.",
+    "The northern street canopy is built entirely of structural glass (beams, columns, walls and roof).",
+    "In 2002 floods closed the station while trains kept running through it.",
+    "Mainline Buchanan Street station (closed 1967) was over 500 m away and never connected to the Subway."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Glasgow Queen Street station",
+    "Buchanan Galleries",
+    "Glasgow Royal Concert Hall",
+    "Buchanan Bus Station",
+    "Buchanan Street shopping precinct"
+   ],
+   "architecture": "Underground ticket hall with two pedestrian-street entrance canopies (1977, reglazed 1999); island platform plus added side platform separated by a glass screen; the old east-side surface building is gone.",
+   "extra": {
+    "nearestStreet": "Buchanan Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 0,
+   "railY": 15.7,
+   "platformLengthM": 45
   },
   {
    "id": "st-enoch",
    "name": "St Enoch",
-   "order": 1,
    "osmNode": "29751009",
    "osmStopName": "St Enoch",
    "surfaceY": 15.9,
-   "railY": 6.9,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformType": "side",
+   "platformWidthM": 3.0,
+   "interchange": [
+    "Subway",
+    "National Rail: Glasgow Central and Argyle Street (short walk)",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980,
+    2008
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Home of the Subway's most distinctive building: James Miller's red-sandstone Flemish-Renaissance station of 1896, now Category A listed and a coffee shop. The station below was rebuilt from scratch in the late 1970s and is the deepest in the city centre.",
+   "description": "The surface building at St Enoch Square was designed by James Miller in 1896 in ornate Flemish Renaissance style in red sandstone. It housed the booking office and, upstairs, the headquarters of the Glasgow District Subway Company. It is Category A listed.\n\nSt Enoch is one of only two stations (with Partick) completely rebuilt from scratch in the 1977-80 modernisation. Because the listed building could not be demolished, its foundations were removed and a concrete box was built beneath it for the enlarged station and underground ticket hall; the building sat for a time on a precast platform above an empty void, then on the new station's concrete pillars. It was a travel information centre until 2008 and became a Caffe Nero in 2009.\n\nSt Enoch is the only station needing two escalator rides to reach the platforms because of its depth, and (with Govan) one of two that is wheelchair accessible. The modernised station has side platforms. The station is roughly halfway between Glasgow Central and Argyle Street railway stations and is the last station before the Subway dives under the River Clyde on the outer circle.",
+   "facts": [
+    "Designed by James Miller (1896); the building also held the company's offices.",
+    "The listed station building was jacked onto a precast platform in the 1970s while the station below was rebuilt.",
+    "The only station needing two escalator rides to reach the platforms.",
+    "Its upper rooms were the headquarters of the Glasgow District Subway Company.",
+    "Next to the Clyde crossing: trains dive at roughly 1 in 18-20 beneath the river toward Bridge Street."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "St Enoch Square",
+    "St Enoch Centre",
+    "Glasgow Central station",
+    "Argyle Street",
+    "Merchant City"
+   ],
+   "architecture": "Red sandstone Flemish Renaissance building (James Miller, 1896, Category A); concrete box station beneath it with underground ticket hall; side platforms.",
+   "extra": {
+    "nearestStreet": "St Enoch Square",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 1,
+   "railY": -0.1,
+   "platformLengthM": 45
   },
   {
    "id": "bridge-street",
    "name": "Bridge Street",
-   "order": 2,
    "osmNode": "29751011",
    "osmStopName": "Bridge Street",
    "surfaceY": 9.7,
-   "railY": 1.7,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus (main south-side interchange)"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "The first station south of the Clyde, serving Laurieston, Tradeston and the western Gorbals. It keeps its original island platform and is the main Subway-bus interchange for the south side.",
+   "description": "Bridge Street station is at 67 Eglinton Street and serves Laurieston, Tradeston and the western fringe of the Gorbals. It opened on 14 December 1896 and was comprehensively modernised in 1977-80 while keeping the original island platform layout.\n\nFor a short time after opening it was an interchange with the adjacent Bridge Street railway station on the Glasgow and Paisley Joint Railway, which closed in the early 1900s. Today it is the main interchange between the Subway and buses to and from the south side. One of the system's five traction sub-stations stands at Bridge Street.\n\nThe tunnel between St Enoch and here is one of two Clyde crossings; it was driven under compressed air and was among the steepest on the line.",
+   "facts": [
+    "Short-lived interchange with Bridge Street railway station (Glasgow & Paisley Joint Railway).",
+    "Houses one of the five Subway traction sub-stations.",
+    "About 378,000 gate entries a year in 2018-19."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Citizens Theatre",
+    "O2 Academy Glasgow",
+    "Glasgow Sheriff Court",
+    "Glasgow Central Mosque",
+    "Buchanan Wharf"
+   ],
+   "architecture": "1980 rebuild; island platform; compact street-level entrance on Eglinton Street.",
+   "extra": {
+    "nearestStreet": "Eglinton Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 2,
+   "railY": 2.7,
+   "platformLengthM": 45
   },
   {
    "id": "west-street",
    "name": "West Street",
-   "order": 3,
    "osmNode": "30004633",
    "osmStopName": "West Street",
    "surfaceY": 11.6,
-   "railY": 2.6,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
-   "opened": "1896-12-14",
-   "rebuilt": [
-    1977
-   ],
+   "platformWidthM": 3.2,
    "interchange": [
     "Subway"
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1980
+   ],
+   "summary": "The quietest station on the network, in the Tradeston industrial area. Its steam cable-haulage engine house once stood between here and Shields Road.",
+   "description": "West Street (281 West Street, Tradeston) serves Tradeston and Kingston and has been the least used station on the Subway, with under 100,000 boardings a year by 2012. Post-war reconstruction left it in an isolated industrial area; it was one of the original Park and Ride stations until its car park closed on 16 February 2008 for the M74 enabling works.\n\nThe station keeps its original island platform. The 1896 steam power station that drove the endless cables stood between West Street and Shields Road. It would become a major interchange if the proposed Glasgow Crossrail were built, and the Clyde Metro proposals also note a possible new West Street rail station.",
+   "facts": [
+    "Least busy Subway station: 96,593 per SPT 2013-14 figures (104,709 in 2019).",
+    "The 1896 cable power station was sited between West Street and Shields Road.",
+    "Mentioned in Cliff Hanley's 'The Glasgow Underground'."
+   ],
+   "nearby": [
+    "Tradeston",
+    "Kingston",
+    "Kingston Bridge approaches",
+    "Clyde Walkway"
+   ],
+   "architecture": "Island platform; small 1980 surface building.",
+   "extra": {
+    "nearestStreet": "West Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 3,
+   "railY": 3.1,
+   "platformLengthM": 45
   },
   {
    "id": "shields-road",
    "name": "Shields Road",
-   "order": 4,
    "osmNode": "30004634",
    "osmStopName": "Shields Road",
    "surfaceY": 13.5,
-   "railY": 3.5,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus",
+    "Park and Ride (839 spaces)"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Actually on Scotland Street, not Shields Road. Beside the M8, with a large Park and Ride and Mackintosh's Scotland Street School Museum nearby.",
+   "description": "Shields Road station (30 Cornwall Street, Kingston) is actually on Scotland Street, and renaming has been considered. It serves Pollokshields and Kingston from an industrial area cut off by the M8 and the Kingston Bridge approach roads.\n\nA Park and Ride car park with 839 spaces (rebuilt to over 800 spaces, finished September 2006) generates most of its trips. The Subway tunnels run directly beneath Scotland Street. The 1896 cable winding plant was close by on the line between here and West Street.\n\nNearby is Charles Rennie Mackintosh's Scotland Street School Museum.",
+   "facts": [
+    "On Scotland Street, not Shields Road.",
+    "Park and Ride with 839 spaces.",
+    "About 511,000 entries in 2019."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Scotland Street School Museum (Mackintosh)",
+    "M8 / Kingston Bridge",
+    "Kingston"
+   ],
+   "architecture": "Island platform; 1980 station building with attached Park and Ride.",
+   "extra": {
+    "nearestStreet": "Scotland Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 4,
+   "railY": 5.5,
+   "platformLengthM": 45
   },
   {
    "id": "kinning-park",
    "name": "Kinning Park",
-   "order": 5,
    "osmNode": "29776247",
    "osmStopName": "Kinning Park",
    "surfaceY": 8.8,
-   "railY": 0.8,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
-   "opened": "1896-12-14",
-   "rebuilt": [
-    1977
-   ],
+   "platformWidthM": 3.2,
    "interchange": [
     "Subway"
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1980
+   ],
+   "summary": "The shallowest station on the system, beside the M8 near Plantation Park. The line is barely 7 ft below the surface hereabouts - the shallowest point of the whole circle lies between here and Cessnock.",
+   "description": "Kinning Park serves the Kinning Park Industrial Estate and Plantation Park, with the M8 motorway alongside; a footbridge across the M8 has long been planned. It is the shallowest station on the Subway.\n\nHistorical sources put the shallowest point of the whole circle at about 7 ft (2.1 m) below the surface between Kinning Park and Cessnock, where the tunnels were built cut-and-cover. One of the five traction sub-stations (Cornwall Street) is on this stretch.\n\nThe station keeps its original island platform; new ticket barriers arrived on 10 July 2013.",
+   "facts": [
+    "Shallowest station on the Subway.",
+    "Shallowest point of the circle: ~7 ft below surface, between Kinning Park and Cessnock.",
+    "Cornwall Street traction sub-station is near here."
+   ],
+   "nearby": [
+    "Plantation Park",
+    "M8 motorway",
+    "Kinning Park Industrial Estate"
+   ],
+   "architecture": "Island platform; low 1980 station building.",
+   "extra": {
+    "nearestStreet": "Cornwall Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 5,
+   "railY": 3.8,
+   "platformLengthM": 45
   },
   {
    "id": "cessnock",
    "name": "Cessnock",
-   "order": 6,
    "osmNode": "6468337467",
    "osmStopName": "Cessnock",
    "surfaceY": 11.9,
-   "railY": 2.9,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980,
+    1989
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Entered through the basement of a tenement by Alexander 'Greek' Thomson, with no escalators and the Subway's last pre-modernisation livery and signage. Two iron arches mark the steps down.",
+   "description": "Cessnock serves the eastern part of Ibrox and the Cessnock area, and is the nearest station to Festival Park and the Glasgow Science Centre/BBC Scotland campus. The entrance is at the east end of Walmer Crescent and passes under residential housing: you descend steps from a tenement basement, just below street level.\n\nWith Kelvinhall, it kept its pre-modernisation surface entrance, and it is the only station to retain its pre-modernisation livery and signage. In 1989, during restoration of the adjoining Alexander Thomson building, two metal arches bearing the station name were added over the steps; plans to remove them in a later refurbishment were dropped after public opposition.\n\nThere are no escalators; the island platform is original.",
+   "facts": [
+    "Entrance is in a tenement basement beside a building by Alexander 'Greek' Thomson.",
+    "Only station keeping its pre-modernisation livery and signage.",
+    "Public opposition saved the 1989 iron arches."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Walmer Crescent (Thomson)",
+    "Festival Park",
+    "Glasgow Science Centre",
+    "BBC Scotland",
+    "STV Studios",
+    "SEC Centre"
+   ],
+   "architecture": "Tenement-basement entrance with iron arches; stairs only; original-style island platform and retained signage.",
+   "extra": {
+    "nearestStreet": "Paisley Road West",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 6,
+   "railY": 3.9,
+   "platformLengthM": 45
   },
   {
    "id": "ibrox",
    "name": "Ibrox",
-   "order": 7,
    "osmNode": "29580729",
    "osmStopName": "Ibrox",
    "surfaceY": 8.6,
-   "railY": 0.6,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformType": "side",
+   "platformWidthM": 3.0,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980,
+    2014
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Rangers' station: Copland Road until 1977, with an extra Woodville Street entrance opened on match days. Rebuilt with side platforms; upgraded 2014.",
+   "description": "Ibrox opened as Copland Road and took its present name in 1977. It serves Ibrox and the home of Rangers F.C. Ibrox Stadium is close by. Surface buildings were replaced during the modernisation and the platform layout is described as side platforms (earlier island). A further upgrade opened in January 2014.\n\nOn match days the station is extremely busy; the main entrance remains on Copland Road and an additional entrance on Woodville Street opens to absorb the crowd. Otherwise it is quiet, with around half a million boardings a year (1.1 million in 2018).\n\nThe Broomloan depot connection leaves the running tunnels between Ibrox and Govan.",
+   "facts": [
+    "Named Copland Road until 1977.",
+    "Extra Woodville Street entrance opens on match days.",
+    "Broomloan depot connection is just west on the way to Govan."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Ibrox Stadium (Rangers FC)",
+    "Copland Road",
+    "Bellahouston"
+   ],
+   "architecture": "Post-1980 surface building; side platforms; upgraded 2014.",
+   "extra": {
+    "nearestStreet": "Copland Road",
+    "disputedPlatformLayout": "Wikipedia station page says side platforms; the Subway page and others list an island layout. Treated as side.",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 7,
+   "railY": 0.6,
+   "platformLengthM": 45
   },
   {
    "id": "govan",
    "name": "Govan",
-   "order": 8,
    "osmNode": "29580730",
    "osmStopName": "Govan",
    "surfaceY": 7.8,
-   "railY": 0.8,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformType": "side",
+   "platformWidthM": 3.0,
+   "interchange": [
+    "Subway",
+    "Bus: Govan bus station"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Govan Cross until 1977 and home of the Subway's depot. Rebuilt with side platforms after cracks in the roof closed the system early in 1977; step-free, with a lift and escalator.",
+   "description": "Govan (737 Govan Road) opened as Govan Cross. In March 1977 cracks appeared in the station roof, suspending service until 2 May, and further cracking brought the final closure of the old Subway forward by eight days to 21 May 1977. The rebuilt station replaced the single island platform with two side platforms and reopened on 16 April 1980.\n\nIt has a lift and escalator, step-free access, and is one of two wheelchair-accessible stations (with St Enoch). It adjoins Govan bus station (six stands), and the Subway link to Partick is the only rail link across the Clyde west of the city centre, making it one of the busiest stations.\n\nJust south lies Broomloan Depot, the only part of the system above ground, where the original cable-era workshops stood; trains were once lifted by crane onto the rails.",
+   "facts": [
+    "Opened as Govan Cross; renamed Govan in 1980.",
+    "Roof cracks in March 1977 forced the closure of the whole system.",
+    "Only part of the Subway above ground, Broomloan Depot, is just to the south.",
+    "Subway link to Partick is the only rail crossing of the Clyde west of the city centre."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Govan Old Parish Church",
+    "Govan bus station",
+    "Broomloan Depot",
+    "Govan Town Hall"
+   ],
+   "architecture": "1980 station with side platforms, lift and escalator; Govan bus station adjacent.",
+   "extra": {
+    "nearestStreet": "Govan Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 8,
+   "railY": 1.3,
+   "platformLengthM": 45
   },
   {
    "id": "partick",
    "name": "Partick",
-   "order": 9,
    "osmNode": "3844585991",
    "osmStopName": "Partick",
    "surfaceY": 11.6,
-   "railY": 0.6,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
-   "opened": "1896-12-14",
-   "rebuilt": [
-    1977
-   ],
+   "platformType": "side",
+   "platformWidthM": 3.0,
    "interchange": [
-    "Subway"
+    "Subway",
+    "National Rail: Partick (North Clyde and Argyle lines)",
+    "Bus: Partick bus station"
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "opened": "1980-04-16",
+   "rebuilt": [
+    2009,
+    2013
+   ],
+   "summary": "The only Subway station with a direct National Rail interchange. Opened in 1980 to replace Merkland Street, with the bus station sandwiched between the Subway below and the railway above.",
+   "description": "Partick station opened on 16 April 1980, replacing Merkland Street station some 25 m to the south-west, which closed with the old Subway on 21 May 1977. It was one of two stations built entirely from scratch in the modernisation and is the only Subway station connected directly to a National Rail station (North Clyde and Argyle lines).\n\nAt ground level is Partick bus station, above the Subway platforms and beneath the railway. The rail station was redeveloped from 2005 and reopened on 31 March 2009; the Subway platforms were renovated in 2012-13 for GBP 1.2 million. It has two side platforms, escalators but no lift (space for lifts has been safeguarded).\n\nThe Merkland Street 'ghost station' is still visible to drivers as a long straight, humped, large-diameter tunnel section.",
+   "facts": [
+    "Only Subway station with a direct National Rail interchange.",
+    "Replaced Merkland Street, the system's only ghost station.",
+    "Bus station sits between the Subway below and the railway above."
+   ],
+   "nearby": [
+    "Partick railway station",
+    "Partick bus station",
+    "Dumbarton Road",
+    "Kelvin Hall"
+   ],
+   "architecture": "Late-1970s box station beneath the railway embankment; side platforms; escalators.",
+   "extra": {
+    "nearestStreet": "Merkland Street",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 9,
+   "railY": 1.6,
+   "platformLengthM": 45
   },
   {
    "id": "kelvinhall",
    "name": "Kelvinhall",
-   "order": 10,
    "osmNode": "26766905",
    "osmStopName": "Kelvinhall",
    "surfaceY": 15.4,
-   "railY": 3.4,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Formerly Partick Cross. Entered from Dumbarton Road along a narrow arcade of shops below flats - one of two stations to keep its pre-modernisation entrance, with no escalators.",
+   "description": "Kelvinhall (7 Dalcross Path) was called Partick Cross until 1977 and was renamed after the nearby Kelvin Hall; the unrelated Kelvin Hall railway station closed in 1964. The entrance is off Dumbarton Road, at the end of a narrow arcade of shops below flats, and is barely visible from the street without signage.\n\nRenovation was less extensive than at most stations; with Cessnock it kept its original entrance and surface building, and it keeps its original island platform and has no escalators. It is one of two stations serving Kelvingrove Park and the Kelvingrove Art Gallery and Museum area.",
+   "facts": [
+    "Renamed from Partick Cross in 1977.",
+    "Entrance is an arcade of shops under flats - the last 'shopfront' Subway entrance.",
+    "No escalators."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Kelvingrove Art Gallery and Museum",
+    "Kelvingrove Park",
+    "Kelvin Hall",
+    "University of Glasgow"
+   ],
+   "architecture": "Retained pre-modernisation shopfront entrance and stair; original island platform.",
+   "extra": {
+    "nearestStreet": "Dumbarton Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 10,
+   "railY": 5.4,
+   "platformLengthM": 45
   },
   {
    "id": "hillhead",
    "name": "Hillhead",
-   "order": 11,
    "osmNode": "26997597",
    "osmStopName": "Hillhead",
    "surfaceY": 28.5,
-   "railY": 14.5,
-   "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformType": "split",
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980,
+    2012
    ],
-   "interchange": [
-    "Subway"
+   "summary": "The West End's station on Byres Road: first to be modernised (2011-12), with an Alasdair Gray ceramic mural. Deep under the hill, with an island and a side platform.",
+   "description": "Hillhead is the principal Subway station serving the West End, on Byres Road, near the University of Glasgow and Botanic Gardens, with 1.86 million boardings a year.\n\nOriginally a single island platform, it gained an additional side platform and a larger ticket office with escalators in 1977-80. It was the first station in SPT's modernisation: a GBP 1.5 million refit with new escalators, tiling, wayfinding and a new ticket office finished in 2012. Alasdair Gray and Nichol Wheatley's ceramic mural of the surrounding district was unveiled on 16 September 2012.\n\nThe tunnels around Hillhead are the deepest of the circle: historical sources cite about 115 ft (35 m) here and some 155 ft (47 m) below Glasgow Street, near the Kelvin crossing. A traction sub-station (Byres Road) stands here.",
+   "facts": [
+    "First station in SPT's 2010s modernisation (completed 2012).",
+    "Alasdair Gray ceramic mural, unveiled 16 September 2012.",
+    "Deepest tunnels of the circle are beneath Hillhead (about 35-47 m)."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "University of Glasgow",
+    "Botanic Gardens",
+    "Byres Road",
+    "Ashton Lane",
+    "Hunterian Museum"
+   ],
+   "architecture": "Wide ticket hall with two escalators and a staircase; island platform plus side platform with a perspex barrier.",
+   "extra": {
+    "nearestStreet": "Byres Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 11,
+   "railY": 8.5,
+   "platformLengthM": 45
   },
   {
    "id": "kelvinbridge",
    "name": "Kelvinbridge",
-   "order": 12,
    "osmNode": "26997547",
    "osmStopName": "Kelvinbridge",
    "surfaceY": 19.2,
-   "railY": 7.2,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus",
+    "Park and Ride"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "The deepest station on the Subway, beside the River Kelvin; pumps run continuously against seepage. The 1980 rebuild reversed the entrance onto Great Western Road.",
+   "description": "Kelvinbridge serves Woodlands, Woodside and Hillhead and is named after the bridge over the River Kelvin. It is the deepest station on the system because of its proximity to the river, and seepage means pumps run continuously. It is also the busiest station to keep its original island platform.\n\nIt was originally reached through a tenement block on South Woodside Road, with an external cast-iron staircase down from Kelvinbridge to Great Western Road. The 1977-80 rebuild reversed the entrance: a new surface ticket hall opened with its main entrance on Great Western Road, reached by a glass-enclosed escalator; the old entrance became an emergency exit. The car park sits on the former goods yard of Kelvinbridge railway station.\n\nThe tunnels cross the River Kelvin just west of the station.",
+   "facts": [
+    "Deepest station on the Subway; constantly pumped.",
+    "Before 1977 it was the only station with a lift (withdrawn in the rebuild).",
+    "Park and Ride on the old Kelvinbridge railway goods yard."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Kelvingrove Park",
+    "River Kelvin",
+    "Great Western Road",
+    "Woodlands"
+   ],
+   "architecture": "1980 glass-enclosed escalator entrance on Great Western Road; old cast-iron stair retained as emergency exit.",
+   "extra": {
+    "nearestStreet": "Great Western Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 12,
+   "railY": 1.2,
+   "platformLengthM": 45
   },
   {
    "id": "st-georges-cross",
    "name": "St George's Cross",
-   "order": 13,
    "osmNode": "29751012",
    "osmStopName": "St Georges Cross",
    "surfaceY": 27.0,
-   "railY": 16.0,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1971,
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "Its surface building was rebuilt in 1971 for the Inner Ring Road (M8), the only station rebuilt before the 1977-80 modernisation, then re-clad in the new corporate style.",
+   "description": "St George's Cross serves Woodside and Woodlands and the eastern end of Great Western Road. It keeps its original island platform. The area around the Cross was reconfigured by the M8 Inner Ring Road, and the surface buildings were demolished and rebuilt in 1971; this concrete-aggregate-clad building was re-clad during modernisation in the dark brown brick and orange tiling of the new corporate style.\n\nThe junction itself has been realigned and carries far less traffic than before.",
+   "facts": [
+    "Only station substantially rebuilt before the 1977-80 modernisation (1971).",
+    "About 544,000 boardings in 2011-12."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Great Western Road",
+    "Charing Cross",
+    "Woodlands",
+    "Park Circus"
+   ],
+   "architecture": "Rebuilt 1971 in concrete aggregate, then re-clad in brown brick/orange tile (1980).",
+   "extra": {
+    "nearestStreet": "Great Western Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 13,
+   "railY": 17.0,
+   "platformLengthM": 45
   },
   {
    "id": "cowcaddens",
    "name": "Cowcaddens",
-   "order": 14,
    "osmNode": "7295641225",
    "osmStopName": "Cowcaddens",
    "surfaceY": 30.9,
-   "railY": 19.9,
    "platformType": "island",
-   "platformLengthM": 45,
-   "platformWidthM": 6,
+   "platformWidthM": 3.2,
+   "interchange": [
+    "Subway",
+    "Bus"
+   ],
    "opened": "1896-12-14",
    "rebuilt": [
-    1977
+    1980
    ],
-   "interchange": [
-    "Subway"
+   "summary": "The Garnethill station for the Glasgow School of Art area. By 1972 its entrance was the only building left standing after the Comprehensive Development Area demolitions.",
+   "description": "Cowcaddens serves Cowcaddens, Garnethill and Dundasvale on the north side of the city centre. Its original entrance was part of a shop unit in a tenement. After the area was declared a Comprehensive Development Area in the 1960s and the surrounding buildings demolished, the station entrance was by 1972 the only structure left standing.\n\nThe 1977-80 rebuild added a new surface ticket hall and escalators but kept the original island platform. It was marginally the closest Subway stop to the old Buchanan Street railway station (closed 1967). The Dundasvale traction sub-station is here.",
+   "facts": [
+    "By 1972 the entrance was the only building standing in the area.",
+    "Near the Glasgow School of Art, the Royal Conservatoire and Chinatown."
    ],
-   "summary": "",
-   "description": "",
-   "facts": [],
-   "nearby": [],
-   "architecture": ""
+   "nearby": [
+    "Royal Conservatoire of Scotland",
+    "Glasgow School of Art",
+    "Glasgow Kelvin College",
+    "Tenement House",
+    "Chinatown"
+   ],
+   "architecture": "1980 ticket hall with escalators; original island platform.",
+   "extra": {
+    "nearestStreet": "Cowcaddens Road",
+    "estimated": [
+     "depth",
+     "platformLengthM",
+     "platformWidthM"
+    ],
+    "source": "see research/NOTES"
+   },
+   "order": 14,
+   "railY": 19.9,
+   "platformLengthM": 45
   }
  ],
- "segments": {},
+ "segments": {
+  "st-enoch>bridge-street": {
+   "crossing": "clyde-central",
+   "bottomY": -8.1,
+   "dip": 0
+  },
+  "govan>partick": {
+   "crossing": "clyde-govan",
+   "bottomY": -8.1,
+   "dip": 0
+  },
+  "hillhead>kelvinbridge": {
+   "bottomFrac": 0.3,
+   "bottomY": -3.5
+  },
+  "kinning-park>cessnock": {
+   "dip": 0
+  },
+  "cowcaddens>buchanan-street": {
+   "dip": 1.5
+  }
+ },
  "profile": {
-  "platformFlatHalfM": 30,
+  "platformFlatHalfM": 22,
+  "verticalCurveM": 60,
+  "designGradient": 0.052,
+  "maxDefaultDipM": 5.0,
   "dwellS": 25,
   "lineSpeedKmh": 55
  }

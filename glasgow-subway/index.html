@@ -14,7 +14,7 @@
 </script>
 </head>
 <body>
-<div id="stage"><canvas id="gl" tabindex="0" aria-label="Interactive 3D map of central Glasgow and the Subway tunnels beneath it. Drag to orbit, scroll to zoom, W A S D to move."></canvas></div>
+<div id="stage"><canvas id="gl" aria-label="Interactive 3D map of central Glasgow and the Subway tunnels beneath it. Drag to orbit, scroll to zoom, W A S D to move."></canvas></div>
 <div id="labels"></div>
 
 <header id="topbar">
@@ -29,7 +29,7 @@
 
 <div id="gauge" hidden role="status"></div>
 <div id="xraybar">
-  <button id="xraytoggle" type="button" aria-pressed="false" title="Toggle x-ray (X)"><span aria-hidden="true">&#9680;</span> X-ray</button>
+  <button id="xraytoggle" type="button" aria-pressed="false" title="Toggle x-ray (X)"><span class="half" aria-hidden="true"></span> X-ray</button>
   <span class="lbl">Streets</span><input id="xrayrange" type="range" min="0" max="100" value="0" aria-label="X-ray: fade the ground and buildings to reveal the tunnels"><span class="lbl">Tunnels</span>
 </div>
 <div id="minimap"><canvas aria-label="Plan map of the loop; click to move the view"></canvas><button id="compass" type="button" aria-label="Reset to north up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L17 14 L12 11.5 L7 14 Z" fill="#ff7a1f"/><path d="M12 22 L7 14 L12 11.5 L17 14 Z" fill="#8b857a"/></svg><b>N</b></button></div>

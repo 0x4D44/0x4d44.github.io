@@ -59,7 +59,7 @@ export class City {
     for (const m of r.mats) {
       const b = m.userData.base; m.opacity = b.opacity * f;
       const solid = f > 0.985 && !b.transparent;
-      if (m.transparent !== !solid) { m.transparent = !solid; }
+      if (m.transparent !== !solid) { m.transparent = !solid; m.needsUpdate = true; }
       m.depthWrite = solid ? b.depthWrite : false;
       if (r.layer === 'buildings' || r.layer === 'landmarks') { if (m.emissive) { m.emissive.setRGB(0.5 * night, 0.34 * night, 0.14 * night); m.emissiveIntensity = 0.35; } }
     }

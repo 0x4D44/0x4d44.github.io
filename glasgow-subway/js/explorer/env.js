@@ -12,8 +12,9 @@ const SKY_V = `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Po
 const SKY_F = `varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 hor; uniform vec3 sunDir; uniform vec3 sunCol;
 void main(){ float h = clamp(vDir.y,-0.2,1.0); vec3 c = mix(hor, mid, smoothstep(0.0,0.28,h)); c = mix(c, top, smoothstep(0.2,0.9,h));
  c = mix(c, hor*0.6, smoothstep(0.0,-0.2,vDir.y)); float s = max(dot(normalize(vDir), sunDir),0.0); c += sunCol*(pow(s,600.0)*1.2 + pow(s,12.0)*0.18);
- gl_FragColor = vec4(c,1.0); #include <tonemapping_fragment>
- #include <colorspace_fragment>
+ gl_FragColor = vec4(c,1.0);
+#include <tonemapping_fragment>
+#include <colorspace_fragment>
 }`;
 
 export function createEnv(canvas, quality) {

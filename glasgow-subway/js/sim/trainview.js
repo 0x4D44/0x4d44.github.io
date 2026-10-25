@@ -32,7 +32,7 @@ export class TrainView {
     this.THREE = THREE;
     const root = template.clone(true);
     root.updateMatrixWorld(true);
-    this.carLen = 13.8; this.pivot = [-6.9, 6.9];
+    this.carLen = 13.92; this.pivot = [-6.96, 6.96];
     this.cars = [new THREE.Group(), new THREE.Group()];
     this.cars.forEach((g, i) => { g.name = 'carGroup' + i; g.matrixAutoUpdate = false; });
     this.byName = {};
@@ -63,13 +63,13 @@ export class TrainView {
     this.pose = {};
     this._m = new THREE.Matrix4(); this._v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.doorsOpenL = 0; this.doorsOpenR = 0;
-    this.length = 27.6;
-    this.frontOffset = 13.8; // front overhang from model centre
+    this.length = 27.84;
+    this.frontOffset = 13.92; // front overhang from model centre
   }
 
   /** Make the cab shell hide from the player's view when inside (not needed: back-face culling). */
   setDoors(L, R) {
-    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 0.62 * f; };
+    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 0.65 * f; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 
@@ -103,7 +103,7 @@ export class TrainView {
   /** World position + basis of the cab eye (after place()). */
   eyeWorld(outPos, outQuat) {
     const g = this.cars[0];
-    outPos.copy(this.eyeLocal).applyMatrix4(g.matrix);
+    if (this.cabEye) this.cabEye.getWorldPosition(outPos); else outPos.copy(this.eyeLocal).applyMatrix4(g.matrix);
     if (outQuat) outQuat.setFromRotationMatrix(this._m.extractRotation(g.matrix));
   }
   dispose() { this.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }

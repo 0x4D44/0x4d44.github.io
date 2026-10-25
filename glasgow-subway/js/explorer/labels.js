@@ -23,6 +23,7 @@ export class Labels {
       if (!it.w) { it.w = it.el.offsetWidth || 90; it.h = it.el.offsetHeight || 24; }
       if (show) {
         const r = { x0: x - it.w / 2 - 3, x1: x + it.w / 2 + 3, y0: y - it.h - 3, y1: y + 3 };
+        if (show && it.kind === 'station' && x - it.w / 2 < 114 && y - it.h < 50) show = false;
         const forced = it.id === selectedId || it.id === hoverId;
         if (!forced && rects.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0)) show = false;
         else rects.push(r);
