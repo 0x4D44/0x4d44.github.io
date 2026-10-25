@@ -56,7 +56,7 @@ class Sim {
     ]);
     this.kit = kitTpl; this.kioskTpl = kioskTpl;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
-    this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.02);
+    this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
     this.scene.add(new THREE.AmbientLight(0x8a7a66, 2.6));
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene);
@@ -180,7 +180,7 @@ class Sim {
     this.mode = 'drive'; this.ctxKind = 'train'; this.look.yaw = 0; this.look.pitch = -0.05; this.hud.setMode('drive');
     this.svc.ato = false; this.svc.lever = 0; this.svc.autoDoors = this.svc.diff.autoDoors;
     this.hud.toast('Drive: W/S power & brake, O/P doors, A for ATO. H for help.', 'info', 5);
-    this.scene.fog.density = 0.02;
+    this.scene.fog.density = 0.026;
   }
 
   enterRide(fresh = false) {
@@ -189,7 +189,7 @@ class Sim {
     this._setupTrainWalker();
     if (fresh) this.walker.place(0.0, -2.0, 0);
     this.look.yaw = 0; this.look.pitch = 0;
-    this.scene.fog.density = 0.02;
+    this.scene.fog.density = 0.026;
     this.hud.toast('Riding as a passenger. WASD to walk, N: get off at next stop, E at the front: driver\'s cab.', 'info', 5);
   }
 
@@ -216,7 +216,7 @@ class Sim {
       w.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + doorZ, -inf.S * Math.PI / 2);
     } else {
       w.place(inf.xe + inf.S * 1.9, 4, 0);
-      w.yaw = -inf.S * Math.PI / 2; this.look.yaw = w.yaw;
+      w.yaw = Math.PI; this.look.yaw = w.yaw;
     }
     this.look.pitch = 0;
   }
@@ -284,7 +284,7 @@ class Sim {
     this.walker.place(inf.S * 0.45, dz, inf.S > 0 ? Math.PI / 2 : -Math.PI / 2);
     this.walker.yaw = -inf.S * -Math.PI / 2 * 0 + (inf.S > 0 ? Math.PI / 2 : -Math.PI / 2) * -1;
     svc.ato = true; svc.autoDoors = true; svc.dwellT = Math.max(svc.dwellT, svc.stop.dwellS - 5);
-    this.shuttle.state = 'none'; this.crowd.clear(); this.scene.fog.density = 0.02;
+    this.shuttle.state = 'none'; this.crowd.clear(); this.scene.fog.density = 0.026;
     this.hud.toast('All aboard. N: alight at next stop. Walk to the front cab and press E to drive.', 'info', 5);
   }
   _alight() {
@@ -599,7 +599,8 @@ class Sim {
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
       this.trainView.place(track, tr.s);
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
-      this.tunnel.update(track, tr.s - this.trainLen / 2);
+      if (this.mode === 'explore') { if (this._tw !== 'x') { this.tunnel.setWindow(60, 45); this._tw = 'x'; } this.tunnel.update(track, track.stops[this.exploreIdx].sc); }
+      else { if (this._tw !== 'd') { this.tunnel.setWindow(75, 22); this._tw = 'd'; } this.tunnel.update(track, tr.s - this.trainLen / 2); }
       for (const v of this.stationViews.values()) v.update(this.time);
       this.crowd.update(dt, this.time, (x, z, y) => y);
       this._signal(svc);

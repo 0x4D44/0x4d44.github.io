@@ -68,8 +68,10 @@ export async function buildStreet(THREE, o) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(5, 3.3, 3), new THREE.MeshLambertMaterial({ color: 0xe8741a })); b.position.set(ex, y0 + 1.65, ez + 1); group.add(b);
   }
   const center = new THREE.Vector3(ex, y0, ez);
+  let spawn = { x: ex + (kiosk ? -1.5 : 0), z: ez - 7.5, yaw: Math.PI, y: y0 };
+  if (kiosk) { const sp = kiosk.localToWorld(new THREE.Vector3(0, 0, 9)); const dx = ex - sp.x, dz = ez - sp.z; spawn = { x: sp.x, z: sp.z, yaw: Math.atan2(-dx, -dz), y: gh(sp.x, sp.z) }; }
   return {
-    scene, ground: gh, spawn: { x: ex + (kiosk ? -1.5 : 0), z: ez - 7.5, yaw: Math.PI, y: y0 }, stair: stairPos, center, radius: 85,
+    scene, ground: gh, spawn, stair: stairPos, center, radius: 85,
     update(t) {}, dispose() { scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); },
   };
 }

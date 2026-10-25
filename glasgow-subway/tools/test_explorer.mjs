@@ -38,18 +38,30 @@ async function run(name, vp, mobile) {
   await page.evaluate(() => window.__explorer.setXray(1)); await shot('2-xray');
   await page.evaluate(async () => { const e = window.__explorer; e.app.setExaggeration(1); await e.flyToStation(e.app.stations[7].id, { xray: 1, dur: 0.1 }); }); await shot('3-station-xray');
   await page.evaluate(() => { window.__explorer.setXray(0); window.__explorer.selectStation(window.__explorer.app.stations[0].id, { fly: false }); window.__explorer.app.rig.setView(window.__explorer.app.stationView(window.__explorer.app.stations[0].id)); }); await shot('4-station-surface'); await noOverflow('station');
-  await page.evaluate(() => { window.__explorer.setLight('night'); window.__explorer.setXray(0.7); window.__explorer.app.selectStation(null); window.__explorer.setView(window.__explorer.app.heroView); }); await page.waitForTimeout(500); await shot('5-night');
-  await page.evaluate(() => { window.__explorer.setLight('day'); window.__explorer.toggleProfile(true); }); await shot('6-profile'); await noOverflow('profile');
+  await page.evaluate(() => { window.__explorer.setLight('night', true); window.__explorer.setXray(0.7); window.__explorer.app.selectStation(null); window.__explorer.setView(window.__explorer.app.heroView); }); await page.waitForTimeout(500); await shot('5-night');
+  await page.evaluate(() => { window.__explorer.setLight('day', true); window.__explorer.toggleProfile(true); }); await shot('6-profile'); await noOverflow('profile');
   await page.evaluate(() => { window.__explorer.ui.showPane('view'); window.__explorer.ui.showPane('line'); }); await shot('7-line');
   await page.evaluate(() => window.__explorer.startTour()); await page.waitForTimeout(6000); await shot('8-tour'); await page.evaluate(() => window.__explorer.stopTour());
   await noOverflow('end');
   check(errs.length === 0, `${name} no console errors` + (errs.length ? '\n  ' + errs.slice(0, 8).join('\n  ') : ''));
   await ctx.close();
 }
+async function hashTest() {
+  const ctx = await browser.newContext({ viewport: { width: 1000, height: 700 } }); const page = await ctx.newPage(); const errs = [];
+  page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); }); page.on('pageerror', (e) => errs.push(e.message));
+  await page.addInitScript(() => localStorage.setItem('gsx.quality', '"low"'));
+  await page.goto(url + '#station=ibrox&xray=1&light=night&ex=2'); await page.waitForFunction(() => window.__explorer?.state?.ready, null, { timeout: 120000 });
+  const st = await page.evaluate(() => { const s = window.__explorer.state; return { sel: s.selected, xray: s.xray, light: s.light, exag: s.exag }; });
+  check(st.sel === 'ibrox' && st.xray === 1 && st.light === 'night' && st.exag === 2, 'hash state restored ' + JSON.stringify(st));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  check(await page.evaluate(() => window.__explorer.state.selected) === null, 'Escape deselects');
+  check(errs.length === 0, 'hash page no console errors ' + errs.join('|')); await ctx.close();
+}
 try {
   const only = process.env.ONLY;
   if (!only || only === 'desktop') await run('desktop', { width: 1440, height: 900 }, false);
   if (!only || only === 'mobile') await run('mobile', { width: 390, height: 844 }, true);
+  if (!only || only === 'hash') await hashTest();
 } catch (e) { console.error(e); fails++; }
 await browser.close(); server.close();
 console.log(fails ? `FAILED (${fails})` : 'ALL PASSED', 'screens in', out);

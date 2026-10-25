@@ -45,7 +45,7 @@ const CSS = `
  .gs-dial{width:132px;height:132px;bottom:6px}.gs-lever{width:76px;bottom:6px;right:6px}.gs-lever button{min-height:26px;padding:2px 5px;font-size:12px}
  .gs-doors{bottom:6px;left:6px;max-width:150px}.gs-doors button{padding:4px 6px;min-height:32px;font-size:12px}
  .gs-score{display:none}.gs-top{left:116px}.gs-card{padding:5px 9px}.gs-next b{font-size:14px}.gs-prompt{bottom:30%}
- .gs-log{width:70vw}
+ .gs-log{width:70vw}.gs-toast{top:118px;font-size:12px}
 }
 `;
 
