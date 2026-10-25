@@ -37,7 +37,7 @@ async function boot() {
   Object.assign(window.__explorer, {
     app, ui, state: app.state, notes: data.notes,
     flyToStation: (id, opts) => app.flyToStation(id, opts), selectStation: (id, o) => app.selectStation(id, o),
-    setXray: (v) => app.setXrayInstant(v), setLight: (n) => app.setLight(n), setExaggeration: (k) => app.setExaggeration(k),
+    setXray: (v) => app.setXrayInstant(v), setLight: (n, i) => app.setLight(n, i), setExaggeration: (k) => app.setExaggeration(k),
     setQuality: (q) => app.setQuality(q), hero: () => app.hero(), city: app.city, ug: app.ug, rig: app.rig,
     whenCityLoaded: (n) => app.city.whenLoaded(n), startTour: () => ui.tour.start(), stopTour: () => ui.tour.stop(),
     toggleProfile: (f) => ui.toggleProfile(f), setView: (v) => app.rig.setView(v),

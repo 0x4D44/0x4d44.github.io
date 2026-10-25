@@ -56,6 +56,8 @@ export class App {
     // marker used by the long-section chart
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false })); this.marker.renderOrder = 20; this.marker.visible = false; this.env.scene.add(this.marker);
     this.env.listeners.push(() => this.city.applyAll());
+    const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#6f7a68', roughness: 1 }));
+    fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
     progress(0.86, 'Placing the stations');
     // initial view
     this.heroView = this.makeHero(); this.rig.setView(this.heroView);
@@ -96,9 +98,9 @@ export class App {
   }
   applyXray(v) {
     if (Math.abs(v - this.state.xray) < 1e-4) return;
-    this.state.xray = v; this.env.setDim(v); this.city.setXray(v); this.ug.setXray(v); this.emit('xray', v); this.onHashSave();
+    this.state.xray = v; this.env.setDim(v); this.farGround && (this.farGround.visible = v < 0.3); this.city.setXray(v); this.ug.setXray(v); this.emit('xray', v); this.onHashSave();
   }
-  setLight(name) { this.state.light = name; this.env.setPreset(name); this.emit('light', name); this.onHashSave(); }
+  setLight(name, instant = false) { this.state.light = name; this.env.setPreset(name, instant); this.emit('light', name); this.onHashSave(); }
   setExaggeration(k) { this.state.exag = k; this.ug.setExaggeration(k); this.rebuildCrossingLabels(); this.emit('exag', k); this.onHashSave(); }
   setLayer(name, on) {
     if (name === 'tunnels' || name === 'stations') this.ug.setVisible(name, on);
