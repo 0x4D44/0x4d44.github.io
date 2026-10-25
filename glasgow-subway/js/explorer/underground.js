@@ -145,7 +145,7 @@ export class Underground {
         if (!Number.isFinite(e.x)) continue; const eg = this.ground(e.x, e.z); const top = new THREE.Vector3(e.x, eg + 0.5, e.z);
         const dir = new THREE.Vector3().subVectors(vault, top); const len = dir.length(); if (len < 1) continue;
         const cyl = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, len, 6), shaftMat); cyl.position.copy(top).addScaledVector(dir, 0.5); cyl.quaternion.setFromUnitVectors(Z, dir.normalize()); cyl.renderOrder = 1; this.stationsG.add(cyl);
-        const cap = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 1.2, 12), ringMat); cap.position.copy(top); cap.renderOrder = 6; this.stationsG.add(cap);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 1.0, 12), ringMat); cap.position.copy(top); cap.renderOrder = 6; this.stationsG.add(cap);
       }
       // beacon + ground ring + pick volume
       const beam = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 160, 10, 1, true), beamMat); beam.position.set(st.x, g + 80, st.z); beam.renderOrder = 6; this.stationsG.add(beam);
