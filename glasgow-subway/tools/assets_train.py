@@ -166,8 +166,8 @@ def build_car(idx, yc, s, root):
                 bg.cyl((sx * 0.50, ay, 0.30), 0.34, 0.03, 'steel_dark', axis='x', seg=24)     # flange
             bg.box((0, ay, 0.38), (0.5, 0.35, 0.3), 'steel_dark')                          # traction motor / gearbox
         for sx in (-1, 1):
-            bg.box((sx * 1.00, 0.55, 0.30), (0.12, 0.35, 0.05), 'conductor_rail')          # current collector shoe
-            bg.box((sx * 0.92, 0.55, 0.36), (0.20, 0.06, 0.05), 'steel_dark')
+            bg.box((sx * 0.92, 0.55, 0.15), (0.14, 0.35, 0.05), 'conductor_rail')          # current collector shoe
+            bg.box((sx * 0.92, 0.55, 0.30), (0.04, 0.06, 0.30), 'steel_dark')
         bg.to_obj(f'car_{idx}_bogie_{"a" if by < 0 else "b"}', parent=car, loc=(0, yc + s * by, 0))
     # --- coupler at free end
     # --- build cab (nose) at +s end
@@ -325,6 +325,38 @@ def build_train():
     empty('cab_light_rear', loc=(0, -unit_y - 5.55, 2.55), parent=root)
     return root
 
+def build_lod():
+    reset()
+    root = group('train')
+    unit_y = HALF + GAP
+    for idx, (yc, sg) in enumerate(((unit_y, 1), (-unit_y, -1))):
+        car = group(f'car_{idx}', parent=root)
+        m = M()
+        prof = [(-1.15, 0.55), (1.15, 0.55), (1.15, 2.2), (0.95, 2.5), (0.5, 2.68), (-0.5, 2.68), (-0.95, 2.5), (-1.15, 2.2)]
+        a, b = sorted((yc - HALF, yc + HALF - 0.8))
+        if sg > 0: a, b = yc - HALF, yc + HALF - 0.8
+        else: a, b = yc - HALF + 0.8, yc + HALF
+        m.prism_y(prof, a, b, 'subway_orange')
+        nz = yc + sg * (HALF - 0.8)
+        m.prism_y([(-1.15, 0.55), (1.15, 0.55), (1.15, 2.2), (-1.15, 2.2)], *sorted((nz, yc + sg * (HALF - 0.1))), 'subway_orange') if False else None
+        m.box((0, yc + sg * (HALF - 0.4), 1.4), (2.0, 0.8, 1.7), 'subway_orange')
+        m.box((0, yc + sg * (HALF - 0.04), 1.75), (1.7, 0.05, 0.7), 'glass_window')
+        for sx in (-1, 1):
+            m.box((sx * 1.16, yc, 1.7), (0.02, CAR_L - 3.0, 0.65), 'glass_window')
+        m.box((0, yc, 0.62), (2.0, CAR_L - 0.3, 0.22), 'livery_grey')
+        m.box((0, yc, 2.74), (0.9, 5.0, 0.08), 'livery_grey')
+        m.to_obj(f'car_{idx}_body', parent=car)
+        bm_ = M()
+        for by in (yc - HALF + 1.9, yc + HALF - 2.2):
+            bm_.box((0, by, 0.30), (1.5, 1.6, 0.5), 'steel_dark')
+        bm_.to_obj(f'car_{idx}_bogies', parent=car)
+    top = unit_y + 6.72 + 0.05
+    empty('couple_front', loc=(0, top + 0.1, 0.62), parent=root); empty('couple_rear', loc=(0, -(top + 0.1), 0.62), parent=root)
+    empty('headlight_L', loc=(-0.62, unit_y + 6.77, 0.98), parent=root); empty('headlight_R', loc=(0.62, unit_y + 6.77, 0.98), parent=root)
+    return root
+
 if __name__ == '__main__':
     build_train()
     export('train.glb')
+    build_lod()
+    export('train_lod.glb')

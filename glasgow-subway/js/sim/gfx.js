@@ -74,9 +74,9 @@ export function tileTexture(THREE, base, grout = '#c9c3b2', rows = 8, seed = 1, 
   const rng = mulberry32(seed);
   return canvasTex(THREE, 256, 256, (g, w, h) => {
     g.fillStyle = grout; g.fillRect(0, 0, w, h);
-    const tw = w / rows, th = h / (rows / 2);
+    const tw = w / rows, th = h / rows;
     const col = new (globalThis.OffscreenCanvas ? OffscreenCanvas : Object)(1, 1);
-    for (let y = 0; y < rows / 2; y++) for (let x = 0; x < rows; x++) {
+    for (let y = 0; y < rows; y++) for (let x = 0; x < rows; x++) {
       const j = (rng() - 0.5) * 14;
       g.fillStyle = base; g.fillRect(x * tw + 1, y * th + 1, tw - 2, th - 2);
       g.fillStyle = `rgba(${j > 0 ? 255 : 0},${j > 0 ? 255 : 0},${j > 0 ? 255 : 0},${Math.abs(j) / 160})`;

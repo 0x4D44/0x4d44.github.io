@@ -72,7 +72,7 @@ export class Service {
   get stop() { return this.stops[this.idx]; }
   get station() { return this.stationById.get(this.stop.station) || { name: this.stop.station, id: this.stop.station, platform: {} }; }
   get platSide() { return this.sideOf[this.idx]; }
-  get pf() { return platformInterval({ s: this.targetU }, this.stock.lengthM, this.station.platform && this.station.platform.lengthM || this.defaultPlatLen); }
+  get pf() { return platformInterval({ s: this.targetU, sc: this.targetU - this.stop.cabOff }, this.stock.lengthM, this.station.platform && this.station.platform.lengthM || this.defaultPlatLen); }
   get doorsClosed() { return this.doors.L === 0 && this.doors.R === 0; }
   get doorsOpen() { return this.doors.L > 0.98 || this.doors.R > 0.98; }
   get distToStop() { return this.targetU - this.train.s; }

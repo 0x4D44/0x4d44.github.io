@@ -58,7 +58,13 @@ export class Track {
     this.X = X; this.Y = Y; this.Z = Z;
     // stops / limits in internal chainage
     const platLen = this.opts.platformLen, trainLen = this.opts.trainLen;
-    this.stops = (raw.stops || []).map((st, i) => ({ ...st, index: i, s: wrapL(this._mapRaw(st.s), L), dwellS: st.dwellS || 25 }));
+    this.stops = (raw.stops || []).map((st, i) => {
+      const sm = wrapL(this._mapRaw(st.s), L);
+      let sc = st.sCentre != null && !this.opts.ignoreCentre ? wrapL(this._mapRaw(st.sCentre), L) : sm - trainLen / 2;
+      let off = wrapL(sm - sc, L); if (off > L / 2) off -= L;
+      if (!(off > 5 && off < 30)) { sc = sm - trainLen / 2; off = trainLen / 2; }
+      return { ...st, index: i, s: sm, sc: wrapL(sc, L), cabOff: off, dwellS: st.dwellS || 25 };
+    });
     this.limitsRaw = (raw.speedLimits || []).map((q) => ({ s0: wrapL(this._mapRaw(q.s0), L), s1: wrapL(this._mapRaw(q.s1), L), kmh: q.kmh }));
     if (this.opts.straighten) this._straighten(trainLen, platLen);
     this._tangents();
@@ -71,7 +77,7 @@ export class Track {
     const half = Math.max(platLen, trainLen + 6) / 2 + 22, fade = 45;
     const R0 = { X: X.slice(), Y: Y.slice(), Z: Z.slice() };
     for (const st of this.stops) {
-      const sc = st.s - trainLen / 2;
+      const sc = st.s - st.cabOff;
       const k0 = Math.round(wrapL(sc, L) / ds) % n;
       const kk = Math.round(30 / ds);
       const a = (k0 - kk + n) % n, b = (k0 + kk) % n;

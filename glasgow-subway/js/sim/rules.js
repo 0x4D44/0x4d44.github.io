@@ -10,7 +10,7 @@ export const DIFFICULTY = {
 /** Platform interval along chainage for a stop whose mark is the cab/front position. */
 export function platformInterval(stop, trainLen, platLen) {
   const len = Math.max(platLen || 0, trainLen + 6);
-  const centre = stop.s - trainLen / 2;
+  const centre = stop.sc != null ? stop.sc : stop.s - trainLen / 2;
   return { start: centre - len / 2, end: centre + len / 2, centre, len };
 }
 
