@@ -1,0 +1,370 @@
+{
+ "stations": [
+  {
+   "id": "buchanan-street",
+   "name": "Buchanan Street",
+   "order": 0,
+   "osmNode": "29751010",
+   "osmStopName": "Buchanan Street",
+   "surfaceY": 28.7,
+   "railY": 17.7,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "st-enoch",
+   "name": "St Enoch",
+   "order": 1,
+   "osmNode": "29751009",
+   "osmStopName": "St Enoch",
+   "surfaceY": 15.9,
+   "railY": 6.9,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "bridge-street",
+   "name": "Bridge Street",
+   "order": 2,
+   "osmNode": "29751011",
+   "osmStopName": "Bridge Street",
+   "surfaceY": 9.7,
+   "railY": 1.7,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "west-street",
+   "name": "West Street",
+   "order": 3,
+   "osmNode": "30004633",
+   "osmStopName": "West Street",
+   "surfaceY": 11.6,
+   "railY": 2.6,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "shields-road",
+   "name": "Shields Road",
+   "order": 4,
+   "osmNode": "30004634",
+   "osmStopName": "Shields Road",
+   "surfaceY": 13.5,
+   "railY": 3.5,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "kinning-park",
+   "name": "Kinning Park",
+   "order": 5,
+   "osmNode": "29776247",
+   "osmStopName": "Kinning Park",
+   "surfaceY": 8.8,
+   "railY": 0.8,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "cessnock",
+   "name": "Cessnock",
+   "order": 6,
+   "osmNode": "6468337467",
+   "osmStopName": "Cessnock",
+   "surfaceY": 11.9,
+   "railY": 2.9,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "ibrox",
+   "name": "Ibrox",
+   "order": 7,
+   "osmNode": "29580729",
+   "osmStopName": "Ibrox",
+   "surfaceY": 8.6,
+   "railY": 0.6,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "govan",
+   "name": "Govan",
+   "order": 8,
+   "osmNode": "29580730",
+   "osmStopName": "Govan",
+   "surfaceY": 7.8,
+   "railY": 0.8,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "partick",
+   "name": "Partick",
+   "order": 9,
+   "osmNode": "3844585991",
+   "osmStopName": "Partick",
+   "surfaceY": 11.6,
+   "railY": 0.6,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "kelvinhall",
+   "name": "Kelvinhall",
+   "order": 10,
+   "osmNode": "26766905",
+   "osmStopName": "Kelvinhall",
+   "surfaceY": 15.4,
+   "railY": 3.4,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "hillhead",
+   "name": "Hillhead",
+   "order": 11,
+   "osmNode": "26997597",
+   "osmStopName": "Hillhead",
+   "surfaceY": 28.5,
+   "railY": 14.5,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "kelvinbridge",
+   "name": "Kelvinbridge",
+   "order": 12,
+   "osmNode": "26997547",
+   "osmStopName": "Kelvinbridge",
+   "surfaceY": 19.2,
+   "railY": 7.2,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "st-georges-cross",
+   "name": "St George's Cross",
+   "order": 13,
+   "osmNode": "29751012",
+   "osmStopName": "St Georges Cross",
+   "surfaceY": 27.0,
+   "railY": 16.0,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  },
+  {
+   "id": "cowcaddens",
+   "name": "Cowcaddens",
+   "order": 14,
+   "osmNode": "7295641225",
+   "osmStopName": "Cowcaddens",
+   "surfaceY": 30.9,
+   "railY": 19.9,
+   "platformType": "island",
+   "platformLengthM": 45,
+   "platformWidthM": 6,
+   "opened": "1896-12-14",
+   "rebuilt": [
+    1977
+   ],
+   "interchange": [
+    "Subway"
+   ],
+   "summary": "",
+   "description": "",
+   "facts": [],
+   "nearby": [],
+   "architecture": ""
+  }
+ ],
+ "segments": {},
+ "profile": {
+  "platformFlatHalfM": 30,
+  "dwellS": 25,
+  "lineSpeedKmh": 55
+ }
+}

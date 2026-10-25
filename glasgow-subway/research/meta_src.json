@@ -1,0 +1,32 @@
+{
+ "meta": {
+  "name": "Glasgow Subway",
+  "operator": "Strathclyde Partnership for Transport (SPT)",
+  "opened": "1896-12-14",
+  "stations": 15,
+  "gauge_mm": 1220,
+  "tunnel_diameter_m": 3.35,
+  "sources": [
+   {
+    "title": "Glasgow Subway - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Glasgow_Subway"
+   },
+   {
+    "title": "OpenStreetMap (railway=subway ways)",
+    "url": "https://www.openstreetmap.org"
+   }
+  ]
+ },
+ "tunnel": {
+  "innerDiameterM": 3.35,
+  "tubeSeparationM": 8,
+  "lining": "cast iron / concrete segmental",
+  "riverCrossings": [],
+  "depot": {}
+ },
+ "rollingStock": {
+  "current": {},
+  "history": []
+ },
+ "timeline": []
+}

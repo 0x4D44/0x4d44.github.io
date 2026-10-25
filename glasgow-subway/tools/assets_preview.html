@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asset preview</title>
+<style>html,body{margin:0;height:100%;background:#20242a;overflow:hidden}#i{position:fixed;left:8px;bottom:8px;color:#9ab;font:12px monospace;white-space:pre}</style>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head><body><div id="i"></div>
+<script type="module">
+// Dev tool for models/*.glb.  ?f=train.glb&cam=x,y,z&look=x,y,z&fov=60&hide=prefix,prefix&amb=1&lamp=1&orbit=1&fog=0
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const q = new URLSearchParams(location.search);
+const num = (s, d) => (s ? s.split(',').map(Number) : d);
+const W = innerWidth, H = innerHeight;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+r.setSize(W, H); r.setPixelRatio(1); document.body.appendChild(r.domElement);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(+q.get('bg') ? 0x20242a : 0x2a2f36);
+const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 60), W / H, 0.03, 500);
+cam.position.set(...num(q.get('cam'), [10, 4, 10]));
+const look = new THREE.Vector3(...num(q.get('look'), [0, 1.2, 0])); cam.lookAt(look);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x555560, +(q.get('amb') ?? 1.2)));
+const sun = new THREE.DirectionalLight(0xffffff, +(q.get('sun') ?? 1.5)); sun.position.set(5, 10, 6); scene.add(sun);
+if (+(q.get('lamp') ?? 0)) { const p = new THREE.PointLight(0xfff0d0, +q.get('lamp') * 8, 30, 1.2); p.position.copy(cam.position); scene.add(p); }
+for (const s of (q.get('pl') || '').split(';').filter(Boolean)) { const [x, y, z, k] = s.split(',').map(Number); const p = new THREE.PointLight(0xfff0d0, k * 8, 30, 1.2); p.position.set(x, y, z); scene.add(p); }
+if (q.get('grid') !== '0') { const g = new THREE.GridHelper(40, 40, 0x445, 0x334); g.position.y = -0.001; scene.add(g); }
+const hide = (q.get('hide') || '').split(',').filter(Boolean);
+const info = { nodes: [], tris: 0 };
+new GLTFLoader().load('/models/' + (q.get('f') || 'train.glb'), (g) => {
+  g.scene.traverse((o) => {
+    info.nodes.push(o.name);
+    if (hide.some((h) => o.name.startsWith(h))) o.visible = false;
+    if (o.isMesh) { const i = o.geometry.index; info.tris += (i ? i.count : o.geometry.attributes.position.count) / 3; }
+  });
+  scene.add(g.scene);
+  const box = new THREE.Box3().setFromObject(g.scene); info.bbox = [box.min.toArray(), box.max.toArray()];
+  window.__info = info; window.__scene = g.scene; window.__ready = true;
+  document.getElementById('i').textContent = `${q.get('f')}  tris:${info.tris | 0}  bbox:${info.bbox.map(a => a.map(v => v.toFixed(2)).join(',')).join(' -> ')}`;
+  if (q.get('orbit')) { const c = new OrbitControls(cam, r.domElement); c.target.copy(look); c.update(); (function l() { requestAnimationFrame(l); r.render(scene, cam); })(); }
+  else r.render(scene, cam);
+}, undefined, (e) => { window.__err = String(e); window.__ready = true; });
+</script></body></html>
