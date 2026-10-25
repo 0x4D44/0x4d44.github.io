@@ -142,7 +142,7 @@ function drawSpectrum(canvas) {
   }
   if (fc > 1) {
     const marks = [[fc * 3, "bank firing", "#7ec8ff"], [fc * 6, "firing", COL.accent2], [fc * 12, "2nd", COL.accent2], [fc * 36, "gear mesh (est.)", "#46c28a"]];
-    marks.forEach(([f, n, c], i) => { if (f > fmax) return; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(f), y0 + 6); ctx.lineTo(X(f), y0 + ph); ctx.stroke(); ctx.fillStyle = c; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.fillText(n + " " + f.toFixed(0), X(f), y0 + 4 + (i % 2) * 12); });
+    marks.forEach(([f, n, c], i) => { if (f > fmax) return; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(f), y0 + 6); ctx.lineTo(X(f), y0 + ph); ctx.stroke(); ctx.fillStyle = c; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.fillText(n + " " + f.toFixed(0), X(f), y0 + 4 + (i % 4) * 12); });
     const tf = 700 + Math.max(0, eng.boost - 1) / 1.1 * 3600; if (eng.running) { ctx.strokeStyle = "#b08bff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(tf), y0 + 20); ctx.lineTo(X(tf), y0 + ph); ctx.stroke(); ctx.fillStyle = "#b08bff"; ctx.fillText("turbo", X(tf), y0 + 16); }
   }
   $("specNote").textContent = fc > 1 ? `At ${Math.round(rpm)} rpm the firing frequency is ${(fc * 6).toFixed(1)} Hz.${audio.on ? "" : " Switch Sound on to see the live spectrum."}` : "Start the engine to see where its sound energy sits.";
