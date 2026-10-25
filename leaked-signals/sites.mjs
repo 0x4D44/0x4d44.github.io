@@ -9,7 +9,7 @@ const T = (id, name, cc, lat, lon, start, erp0, erpMax, ramp, o = {}) =>
 
 export const SITES = [
   // --- United Kingdom & Ireland
-  T("gb-london", "London - Alexandra/Crystal Palace", "GB", 51.594, -0.1305, 1936.83, 17, 1000, 28, { gaps: [[1939.67, 1946.44]], analogOff: 2012.3 }),
+  T("gb-london", "London - Alexandra/Crystal Palace", "GB", 51.594, -0.1305, 1936.837, 17, 1000, 28, { gaps: [[1939.67, 1946.44]], analogOff: 2012.3 }),
   T("gb-sutton", "Sutton Coldfield", "GB", 52.590, -1.822, 1949.96, 34, 1000, 25, { analogOff: 2011.9 }),
   T("gb-holme", "Holme Moss", "GB", 53.533, -1.858, 1951.78, 45, 1000, 25, { analogOff: 2012.0 }),
   T("gb-kirk", "Kirk o'Shotts", "GB", 55.867, -3.800, 1952.2, 45, 600, 25, { analogOff: 2010.0 }),
