@@ -15,7 +15,7 @@ const CSS = `
 .gs-toast.show{opacity:1}.gs-toast.warn{border-color:#ffb36b;color:#ffd89a}.gs-toast.bad{border-color:#ff5a4a;color:#ff9a8f;background:rgba(60,10,10,.88)}
 .gs-prompt{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);padding:9px 18px;border-radius:10px;background:rgba(10,14,22,.82);border:1px solid #ffb36b;font-weight:600;display:none;pointer-events:auto;cursor:pointer;text-align:center;max-width:90vw}
 .gs-prompt kbd,.gs-help kbd{background:#e8741a;color:#111;border-radius:4px;padding:1px 6px;font:600 12px monospace}
-.gs-dial{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:200px;height:200px;pointer-events:none}
+.gs-dial{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:176px;height:176px;pointer-events:none}
 .gs-lever{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:3px;pointer-events:none;width:92px}
 .gs-lever button{pointer-events:auto;padding:4px 6px;min-height:30px;text-align:left}
 .gs-lever .eb{background:rgba(140,20,20,.9);border-color:#ff7a7a;font-weight:700}

@@ -19,7 +19,7 @@ void main(){ float h = clamp(vDir.y,-0.2,1.0); vec3 c = mix(hor, mid, smoothstep
 
 export function createEnv(canvas, quality) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: quality.aa, powerPreference: 'high-performance', alpha: false });
-  renderer.setPixelRatio(quality.pixelRatio);
+  renderer.setPixelRatio(Math.min(quality.pixelRatio, devicePixelRatio || 1));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();

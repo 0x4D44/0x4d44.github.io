@@ -302,7 +302,7 @@ export class Service {
     if (this.schedule) {
       const sched = this.schedule.dep[this.idx] + this.lap * this.schedule.period + (this.t0 || 0);
       const late = this.t - sched;
-      if (this.role === 'player') {
+      if (this.role === 'player' && !this.ato) {
         if (late < -6) this._penalty(Math.min(60, Math.round(-late)), 'Early departure ' + Math.round(-late) + 's', 'time');
         else if (Math.abs(late) <= 10) this._award(25, 'On-time departure', 'time');
       }
