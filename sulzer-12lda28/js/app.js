@@ -34,6 +34,10 @@ $("ctl").addEventListener("input", (e) => {
 });
 function setCtl(v) { state.ctl = v; $("ctl").setAttribute("aria-valuetext", ctlName(v)); $("ctlName").textContent = ctlName(v); eng.setThrottle(throttleFromCtl(v)); }
 window.__sulzer.setCtl = setCtl;
+// compact controller for narrow screens: shown once the full cab bar has scrolled out of view
+$("miniCtl").addEventListener("input", (e) => { $("ctl").value = e.target.value; $("ctl").dispatchEvent(new Event("input")); });
+$("miniStart").addEventListener("click", () => $("btnStart").click());
+new IntersectionObserver(([en]) => { $("mini").hidden = en.isIntersecting; }, { threshold: 0 }).observe($("cab"));
 
 $("btnStart").addEventListener("click", () => {
   if (eng.running || eng.cranking) { eng.stop(); setCtl(0); $("ctl").value = 0; } else { eng.start(); }
@@ -95,6 +99,7 @@ const RO = [["rpm", "r_rpm"], ["Power bhp (modelled)", "r_bhp"], ["Power kW", "r
 $("readouts").innerHTML = RO.map(([l, id]) => `<div class="ro"><span>${l}</span><b id="${id}">0</b></div>`).join("");
 function updateReadouts() {
   const rpm = eng.rpm, bhp = eng.running ? eng.bhp : 0;
+  $("miniRpm").textContent = Math.round(rpm) + " rpm"; $("miniCtl").value = state.ctl; $("miniStart").textContent = $("btnStart").textContent;
   $("r_rpm").textContent = Math.round(rpm); $("gRpm").textContent = Math.round(rpm); $("gBhp").textContent = Math.round(bhp);
   $("r_bhp").textContent = Math.round(bhp); $("r_kw").textContent = Math.round(bhp * 0.7457);
   $("r_tq").textContent = (bhp ? torqueNm(rpm, bhp) / 1000 : 0).toFixed(1);
@@ -142,7 +147,7 @@ function drawSpectrum(canvas) {
   }
   if (fc > 1) {
     const marks = [[fc * 3, "bank firing", "#7ec8ff"], [fc * 6, "firing", COL.accent2], [fc * 12, "2nd", COL.accent2], [fc * 36, "gear mesh (est.)", "#46c28a"]];
-    marks.forEach(([f, n, c], i) => { if (f > fmax) return; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(f), y0 + 6); ctx.lineTo(X(f), y0 + ph); ctx.stroke(); ctx.fillStyle = c; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.fillText(n + " " + f.toFixed(0), X(f), y0 + 4 + (i % 4) * 12); });
+    marks.forEach(([f, n, c], i) => { if (f > fmax) return; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(f), y0 + 6); ctx.lineTo(X(f), y0 + ph); ctx.stroke(); ctx.fillStyle = c; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.fillText(n + " " + f.toFixed(0), X(f), y0 + 4 + i * 13); });
     const tf = 700 + Math.max(0, eng.boost - 1) / 1.1 * 3600; if (eng.running) { ctx.strokeStyle = "#b08bff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(tf), y0 + 20); ctx.lineTo(X(tf), y0 + ph); ctx.stroke(); ctx.fillStyle = "#b08bff"; ctx.fillText("turbo", X(tf), y0 + 16); }
   }
   $("specNote").textContent = fc > 1 ? `At ${Math.round(rpm)} rpm the firing frequency is ${(fc * 6).toFixed(1)} Hz.${audio.on ? "" : " Switch Sound on to see the live spectrum."}` : "Start the engine to see where its sound energy sits.";
