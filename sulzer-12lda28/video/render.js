@@ -88,6 +88,21 @@ const ZOOM = 1.35; // charts are drawn at a smaller logical size and scaled up, 
 Object.defineProperty(window, "devicePixelRatio", { value: ZOOM });
 const place = (el, x, y, w, h) => { el.style.left = x + "px"; el.style.top = y + "px"; el.style.width = w / ZOOM + "px"; el.style.height = h / ZOOM + "px"; el.style.transform = `scale(${ZOOM})`; el.style.transformOrigin = "0 0"; };
 
+
+// Cycle angle (bank A cyl 1: theta == alpha) paced to the narration: intro, intake, compression, power, exhaust.
+const STROKE_START = { Intake: 360, Compression: 540, Power: 0, Exhaust: 180 };
+function cycleAlpha(s, t) {
+  const chunks = wrapSubs(s.text), tot = chunks.reduce((a, x) => a + x.length, 0), g = clamp01((t - s.nar) / s.dur);
+  const groups = []; let acc = 0;
+  for (const x of chunks) {
+    const w = x.match(/^(Intake|Compression|Power|Exhaust):/), a0 = acc / tot; acc += x.length;
+    if (w || !groups.length) groups.push({ base: w ? STROKE_START[w[1]] : 300, span: w ? 180 : 60, a0, a1: acc / tot });
+    else groups[groups.length - 1].a1 = acc / tot;
+  }
+  const grp = groups.find((q) => g <= q.a1) || groups[groups.length - 1];
+  return (grp.base + grp.span * clamp01((g - grp.a0) / (grp.a1 - grp.a0))) % 720;
+}
+
 window.renderFrame = (t) => {
   simTo(t);
   const s = sceneAt(t), f = clamp01((t - s.start) / (s.end - s.start));
@@ -132,7 +147,12 @@ window.renderFrame = (t) => {
     c1.style.display = "block";
     const sel = { bank: 0, cyl: 1 };
     const side = $("side");
-    if (s.mode === "cyl") { place(c1, 40, 120, 1200, 420); drawCylinder(c1, eng, sel); }
+    if (s.mode === "cyl") {
+      place(c1, 40, 120, 1200, 420);
+      const th0 = eng.theta;
+      if (s.id === "cycle") eng.theta = cycleAlpha(s, t); // walk the cylinder through the strokes in the order they are narrated
+      drawCylinder(c1, eng, sel); eng.theta = th0;
+    }
     else if (s.mode === "wheel") {
       place(c1, 40, 120, 640, 420); drawWheel(c1, eng, sel); side.style.display = "block";
       side.innerHTML = [["Exhaust opens", TIMING.exhOpen + "°"], ["Exhaust closes", TIMING.exhClose + "°"], ["Inlet opens", TIMING.inOpen + "°"], ["Inlet closes", TIMING.inClose + "°"], ["Injection starts", TIMING.injStart + "°"], ["Status", "ESTIMATE"]].map(([a, b]) => `<div class="row"><span>${a}</span><b>${b}</b></div>`).join("");
