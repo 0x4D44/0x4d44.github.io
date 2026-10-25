@@ -170,8 +170,8 @@ export function drawTimeline(canvas, eng) {
     txt(ctx, `${b ? "B" : "A"}${c}`, left - 8, y + rh * 0.68, { a: "right", f: "600 11px ui-monospace, monospace", c: b ? "#7ec8ff" : "#ffb98a" });
     txt(ctx, `${(r + 1)}`, 8, y + rh * 0.68, { c: COL.dim, f: "10px system-ui" });
   });
-  ctx.strokeStyle = COL.line; for (let a = 0; a <= 720; a += 60) { const x = left + (a / 720) * pw; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + rows * rh); ctx.stroke(); txt(ctx, a + "°", x, top + rows * rh + 14, { a: "center", c: COL.dim, f: "10px system-ui" }); }
-    txt(ctx, "one cycle = 720° of crank rotation (two revolutions); on average one cylinder fires every 60° (even spacing assumed)", left, 14, { c: COL.dim, f: "11px system-ui" });
+  ctx.strokeStyle = COL.line; for (let a = 0; a <= 720; a += 60) { const x = left + (a / 720) * pw; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + rows * rh); ctx.stroke(); if (w >= 520 || a % 120 === 0) txt(ctx, a + "°", x, top + rows * rh + 14, { a: "center", c: COL.dim, f: "10px system-ui" }); }
+    txt(ctx, w < 520 ? "720° cycle; even 60° spacing assumed" : "one cycle = 720° of crank rotation (two revolutions); on average one cylinder fires every 60° (even spacing assumed)", left, 14, { c: COL.dim, f: "11px system-ui" });
   const x = left + (th720 / 720) * pw; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x, top + rows * rh + 2); ctx.stroke();
 }
 
@@ -231,10 +231,10 @@ export function drawTeChart(canvas, loco) {
   for (let v = 0; v <= 95; v += 1) { const r = resistanceLbf(v, loco.trainT); v ? ctx.lineTo(X(v), Y(r)) : ctx.moveTo(X(v), Y(r)); } ctx.stroke(); ctx.setLineDash([]);
   // sourced points
   ctx.fillStyle = COL.good; [[0, 62000], [10.5, 62000], [26, 30000]].forEach(([v, t]) => { ctx.beginPath(); ctx.arc(X(v), Y(t), 5, 0, 6.3); ctx.fill(); });
-  txt(ctx, "62,000 lbf to 10.5 mph (manual); model plateau runs to ~12 mph", X(11) + 6, Y(62000) - 6, { c: COL.good, f: "11px system-ui" });
-  txt(ctx, "30,000 lbf continuous at 26 mph", X(26) + 8, Y(30000) - 8, { c: COL.good, f: "11px system-ui" });
-  txt(ctx, "train resistance (ESTIMATE)", X(70), Y(resistanceLbf(70, loco.trainT)) - 8, { c: COL.dim, f: "11px system-ui" });
-  txt(ctx, "● BR manual B.R.33003/262 (sourced)   — rail power ≈ 78.5% of engine (ESTIMATE)", x0, h - 4, { c: COL.dim, f: "10px system-ui" });
+  txt(ctx, w < 520 ? "62,000 lbf to 10.5 mph" : "62,000 lbf to 10.5 mph (manual); model plateau runs to ~12 mph", X(11) + 6, Y(62000) - 6, { c: COL.good, f: "11px system-ui" });
+  txt(ctx, w < 520 ? "30,000 lbf at 26 mph" : "30,000 lbf continuous at 26 mph", X(26) + 8, Y(30000) - 8, { c: COL.good, f: "11px system-ui" });
+  txt(ctx, w < 520 ? "resistance (E)" : "train resistance (ESTIMATE)", X(w < 520 ? 62 : 70), Y(resistanceLbf(70, loco.trainT)) - 8, { c: COL.dim, f: "11px system-ui" });
+  txt(ctx, w < 520 ? "● BR manual (sourced); rail ≈ 78.5% (E)" : "● BR manual B.R.33003/262 (sourced)   — rail power ≈ 78.5% of engine (ESTIMATE)", x0, h - 4, { c: COL.dim, f: "10px system-ui" });
   // live
   const x = X(Math.min(98, loco.mph)); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, Y(Math.min(ymax, loco.te)), 6, 0, 6.3); ctx.fill();
   txt(ctx, `${loco.mph.toFixed(0)} mph · ${Math.round(loco.te).toLocaleString()} lbf`, x + 10, Y(Math.min(ymax, loco.te)) + 4, { f: "12px ui-monospace, monospace" });
