@@ -28,79 +28,78 @@ function proceduralTrain(THREE) {
 }
 
 export class TrainView {
+  /** Generic over the number of cars / doors in the GLB (car_0..car_N, door_L_i / door_R_i). */
   constructor(THREE, template, ctx) {
     this.THREE = THREE;
     const root = template.clone(true);
     root.updateMatrixWorld(true);
-    this.carLen = 13.92; this.pivot = [-6.96, 6.96];
-    this.cars = [new THREE.Group(), new THREE.Group()];
-    this.cars.forEach((g, i) => { g.name = 'carGroup' + i; g.matrixAutoUpdate = false; });
+    const box = new THREE.Box3().setFromObject(root);
+    this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
+    const carNodes = root.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
+    if (!this.carInfo.length) this.carInfo = [{ node: null, zc: -this.length / 4, len: this.length / 2 }, { node: null, zc: this.length / 4, len: this.length / 2 }];
+    this.cars = this.carInfo.map((c, i) => { const g = new THREE.Group(); g.name = 'carGroup' + i; g.matrixAutoUpdate = false; return g; });
     this.byName = {};
-    const kids = [...root.children];
-    for (const k of kids) {
-      let ci = k.position.z < 0 ? 0 : 1;
-      if (/_rear$|car_1|taillight|couple_rear/.test(k.name)) ci = 1;
-      if (/^car_0|cab_light$|headlight|couple_front/.test(k.name) && !/rear/.test(k.name)) ci = 0;
-      k.position.z -= this.pivot[ci];
+    const nearest = (z) => { let bi = 0, bd = 1e9; this.carInfo.forEach((c, i) => { const d = Math.abs(c.zc - z); if (d < bd) { bd = d; bi = i; } }); return bi; };
+    for (const k of [...root.children]) {
+      const m = /^car_(\d+)/.exec(k.name);
+      const ci = m && this.carInfo[+m[1]] ? +m[1] : nearest(k.position.z || 0);
+      k.position.z -= this.carInfo[ci].zc; k._car = ci;
       this.cars[ci].add(k);
     }
     this.root = new THREE.Group(); this.root.name = 'trainView';
-    this.root.add(this.cars[0], this.cars[1]);
+    this.cars.forEach((g) => this.root.add(g));
     this.root.traverse((o) => { if (o.name) this.byName[o.name] = o; });
-    this.doorsL = [], this.doorsR = [];
-    for (let i = 0; i < 8; i++) {
+    this.doorsL = []; this.doorsR = []; this.doorZ = [];
+    for (let i = 0; i < 40; i++) {
       const l = this.byName['door_L_' + i], r = this.byName['door_R_' + i];
-      if (l) this.doorsL.push({ n: l, z0: l.position.z, dir: i % 2 === 0 ? -1 : 1 });
-      if (r) this.doorsR.push({ n: r, z0: r.position.z, dir: i % 2 === 0 ? -1 : 1 });
+      if (!l && !r) break;
+      const dir = i % 2 === 0 ? -1 : 1;
+      if (l) this.doorsL.push({ n: l, z0: l.position.z, dir });
+      if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
+    }
+    // door opening centres in root coordinates (pairs 2k,2k+1)
+    const ref = this.doorsR.length ? this.doorsR : this.doorsL;
+    for (let i = 0; i + 1 < ref.length; i += 2) {
+      const a = ref[i].n, b = ref[i + 1].n;
+      const za = a.position.z + this.carInfo[a._car || 0].zc, zb = b.position.z + this.carInfo[b._car || 0].zc;
+      this.doorZ.push((za + zb) / 2);
     }
     this.cabEye = this.byName.cab_eye || null;
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;
-    this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : new THREE.Vector3(0, 1.98, -12.15 - this.pivot[0]);
-    // collect lights nodes
-    this.lights = [];
-    root.traverse((o) => { if (o.isMesh && o.material) { o.frustumCulled = false; } });
-    this.pose = {};
-    this._m = new THREE.Matrix4(); this._v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
-    this.doorsOpenL = 0; this.doorsOpenR = 0;
-    this.length = 27.84;
-    this.frontOffset = 13.92; // front overhang from model centre
+    this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : new THREE.Vector3(0, 1.98, this.zMin + 1.8);
+    root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this._m = new THREE.Matrix4();
+    this.bogie = this.carInfo.map((c) => Math.max(2, c.len * 0.34));
+    const bA = this.byName['car_0_bogie_a'], bB = this.byName['car_0_bogie_b'];
+    if (bA && bB) { const half = Math.abs(bA.position.z - bB.position.z) / 2; this.bogie = this.carInfo.map(() => half); }
   }
 
-  /** Make the cab shell hide from the player's view when inside (not needed: back-face culling). */
   setDoors(L, R) {
     const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 0.65 * f; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 
-  /** Pose both cars given chainage of the FRONT of the train and a Track. */
-  place(track, sFront, out) {
-    const T = this.THREE, p = this._p || (this._p = [{}, {}, {}, {}]);
-    // car centres in chainage: front car centre = sFront - 6.9 - (13.8 - 13.8) ; model front at sFront
-    const cA = sFront - this.carLen / 2;          // front car centre
-    const cB = sFront - this.carLen * 1.5 - 0.1;  // rear car centre
-    this._poseCar(track, this.cars[0], cA);
-    this._poseCar(track, this.cars[1], cB);
+  /** Pose all cars given chainage of the FRONT tip of the train and a Track. */
+  place(track, sFront) {
+    this.carInfo.forEach((c, i) => {
+      const sc = sFront - (c.zc - this.zMin);
+      this._poseCar(track, this.cars[i], sc, this.bogie[i]);
+    });
     this.root.updateMatrixWorld(true);
   }
-  _poseCar(track, g, sc) {
-    const T = this.THREE, a = track.pose(sc + 4.7, this._pa || (this._pa = {})), b = track.pose(sc - 4.7, this._pb || (this._pb = {}));
+  _poseCar(track, g, sc, hb) {
+    const a = track.pose(sc + hb, this._pa || (this._pa = {})), b = track.pose(sc - hb, this._pb || (this._pb = {}));
     const fx = a.x - b.x, fy = a.y - b.y, fz = a.z - b.z, fl = Math.hypot(fx, fy, fz) || 1;
     const f = [fx / fl, fy / fl, fz / fl];
-    // right = f x up
-    let rx = -f[2], ry = 0, rz = f[0]; // cross(f,(0,1,0)) = (fy*0 - fz*1, fz*0 - fx*0, fx*1 - fy*0) -> (-fz,0,fx)
-    const rl = Math.hypot(rx, rz) || 1; rx /= rl; rz /= rl;
-    // up = right x f
-    const ux = ry * f[2] - rz * f[1], uy = rz * f[0] - rx * f[2], uz = rx * f[1] - ry * f[0];
-    // basis: X = right, Y = up, Z = -f
-    const m = g.matrix;
-    m.set(rx, ux, -f[0], (a.x + b.x) / 2,
-          ry, uy, -f[1], (a.y + b.y) / 2,
-          rz, uz, -f[2], (a.z + b.z) / 2,
-          0, 0, 0, 1);
+    let rx = -f[2], rz = f[0]; const rl = Math.hypot(rx, rz) || 1; rx /= rl; rz /= rl;
+    const ux = -rz * f[1], uy = rz * f[0] - rx * f[2], uz = rx * f[1];
+    g.matrix.set(rx, ux, -f[0], (a.x + b.x) / 2, 0, uy, -f[1], (a.y + b.y) / 2, rz, uz, -f[2], (a.z + b.z) / 2, 0, 0, 0, 1);
     g.matrixWorldNeedsUpdate = true;
   }
-  /** World position + basis of the cab eye (after place()). */
+  /** car index + car-local z for a root-frame z */
+  carAt(z) { let bi = 0, bd = 1e9; this.carInfo.forEach((c, i) => { const d = Math.abs(c.zc - z); if (d < bd) { bd = d; bi = i; } }); return bi; }
   eyeWorld(outPos, outQuat) {
     const g = this.cars[0];
     if (this.cabEye) this.cabEye.getWorldPosition(outPos); else outPos.copy(this.eyeLocal).applyMatrix4(g.matrix);

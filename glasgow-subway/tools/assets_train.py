@@ -5,9 +5,12 @@ import math, sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from assets_lib import *
 
-W = 1.15            # half width of body (2.30 m wide)
+W = 1.16            # half width of body (2.32 m wide)
 FLOOR = 0.80        # floor top above rail head
-CAR_L = 13.5; GAP = 0.2
+CAR_L = 13.5; GAP = 0.17
+CAR_LENS = [10.5, 8.9, 8.9, 10.5]   # 4-car articulated set, total ~39.3 m
+DOORS_END = [-1.0]; DOORS_MID = [-2.2, 2.2]
+ZSHIFT = -0.105     # whole body (not bogies) lowered: floor 0.695 m, roof apex 2.615 m
 HALF = CAR_L / 2
 CAB_Y = 4.5         # cab partition (car-local y)
 ROOF = [(1.15, 2.2), (0.95, 2.5), (0.5, 2.68), (0.0, 2.72), (-0.5, 2.68), (-0.95, 2.5), (-1.15, 2.2)]
@@ -16,7 +19,12 @@ DOOR_W = 1.3
 DOOR_Z0, DOOR_Z1 = 0.80, 2.10
 SPEC = dict(length=2 * CAR_L + 2 * GAP + 0.4, width=2 * W, height=2.72)
 
-def build_car(idx, yc, s, root):
+def build_car(idx, yc, s, root, L, DOORS, has_cab):
+    HALF = L / 2; CAR_L = L
+    CAB_Y = HALF - 2.25 if has_cab else HALF
+    ROOFEND = HALF - 0.85 if has_cab else HALF
+    dy = HALF - 6.75
+    lights = []
     """s=+1: cab at +Y end (front car); s=-1: cab at -Y end (rear car)."""
     def P(x, y, z): return (x, yc + s * y, z)
     car = group(f'car_{idx}', parent=root)
@@ -29,7 +37,7 @@ def build_car(idx, yc, s, root):
             edges += [d - DOOR_W / 2, d + DOOR_W / 2]
         edges += [CAB_Y]
         # solid segments: edges[0..1], [2..3], [4..5]
-        segs = [(edges[0], edges[1]), (edges[2], edges[3]), (edges[4], edges[5])]
+        segs = [(edges[2 * k], edges[2 * k + 1]) for k in range(len(DOORS) + 1)]
         for (a, b) in segs:
             ym = (a + b) / 2; L = b - a
             ext.box(P(x, ym, 1.075 - 0.0), (0.06, L, 0.55 + 0.0), 'subway_orange')       # lower panel z0.80..1.35 (+skirt below)
@@ -53,7 +61,7 @@ def build_car(idx, yc, s, root):
             sal.box(P(sg * (W - 0.08), d, 2.15), (0.02, DOOR_W, 0.10), 'interior_wall')
             sal.box(P(sg * (W - 0.55), d, FLOOR + 0.005), (0.7, DOOR_W, 0.01), 'tactile_yellow')   # door threshold zone
     # --- floor & underframe
-    sal.box(P(0, -0.1, FLOOR - 0.04), (2 * W - 0.1, CAR_L - 0.2, 0.08), 'floor_grey')
+    sal.box(P(0, -0.1 if has_cab else 0, FLOOR - 0.04), (2 * W - 0.1, CAR_L - 0.2, 0.08), 'floor_grey')
     ext.box(P(0, 0, 0.66), (2 * W - 0.12, CAR_L - 0.3, 0.18), 'livery_grey')
     # equipment boxes under floor (between bogies)
     for yy in (-1.3, 0.0, 1.3):
@@ -65,26 +73,30 @@ def build_car(idx, yc, s, root):
     def roof_strip(M_, prof, y0, y1, m):
         a, b = sorted((yc + s * y0, yc + s * y1))
         M_.strip_y(prof, a, b, m)
-    roof_strip(ext, ROOF, -HALF, 5.9, 'livery_white')
+    roof_strip(ext, ROOF, -HALF, ROOFEND, 'livery_white')
     inner = [(x * 0.96, z - 0.08) for x, z in ROOF]
     roof_strip(sal, inner, -HALF, CAB_Y, 'interior_ceiling')
     # roof equipment (HVAC pods)
-    for yy in (-3.5, 0.6):
-        ext.box(P(0, yy, 2.74), (0.9, 1.8, 0.08), 'livery_grey')
-    # --- gangway end (y=-HALF): end wall with aperture, bellows
-    for sgx in (-1, 1):
-        ext.box(P(sgx * 0.85, -HALF + 0.03, 1.5), (0.6, 0.06, 1.4), 'steel_dark')
-    ext.box(P(0, -HALF + 0.03, 2.16), (2.3, 0.06, 0.1), 'steel_dark')
-    bel = [(-0.62, 0.62 + 0.0), (0.62, 0.62), (0.62, 2.1), (-0.62, 2.1)]
-    ext.prism_y([(-0.7, 0.62), (0.7, 0.62), (0.7, 2.25), (-0.7, 2.25)], *sorted((yc - s * HALF, yc - s * (HALF + GAP))), 'rubber_black', cap=False)
-    # --- saloon cab partition at y=CAB_Y : glazed with door opening
-    for sgx in (-1, 1):
-        sal.box(P(sgx * 0.80, CAB_Y, 1.5), (0.7, 0.05, 1.4), 'interior_wall')
-    sal.box(P(0, CAB_Y, 2.15), (1.0, 0.05, 0.1), 'interior_wall')
-    sal.box(P(0, CAB_Y, 0.9), (0.92, 0.05, 0.1), 'interior_wall')
-    gls.box(P(0, CAB_Y, 1.55), (0.9, 0.03, 0.6), 'glass_clear')
+    for yy in (-HALF * 0.45, HALF * 0.25):
+        ext.box(P(0, yy, 2.72), (0.9, 1.8, 0.04), 'livery_grey')
+    # --- gangway ends: end wall with aperture + bellows (cab cars: one end; middle cars: both)
+    for e in ((-1,) if has_cab else (-1, 1)):
+        for sgx in (-1, 1):
+            ext.box(P(sgx * 0.85, e * (HALF - 0.03), 1.5), (0.6, 0.06, 1.4), 'steel_dark')
+        ext.box(P(0, e * (HALF - 0.03), 2.16), (2.3, 0.06, 0.1), 'steel_dark')
+        ext.prism_y([(-0.7, 0.62), (0.7, 0.62), (0.7, 2.25), (-0.7, 2.25)], *sorted((yc + s * e * HALF, yc + s * e * (HALF + GAP / 2))), 'rubber_black', cap=False)
+    if has_cab:
+        # glazed cab partition with door opening
+        for sgx in (-1, 1):
+            sal.box(P(sgx * 0.80, CAB_Y, 1.5), (0.7, 0.05, 1.4), 'interior_wall')
+        sal.box(P(0, CAB_Y, 2.15), (1.0, 0.05, 0.1), 'interior_wall')
+        sal.box(P(0, CAB_Y, 0.9), (0.92, 0.05, 0.1), 'interior_wall')
+        gls.box(P(0, CAB_Y, 1.55), (0.9, 0.03, 0.6), 'glass_clear')
     # --- seating (longitudinal benches) in the three bays
-    bays = [(-HALF + 0.35, DOORS[0] - DOOR_W / 2 - 0.1), (DOORS[0] + DOOR_W / 2 + 0.1, DOORS[1] - DOOR_W / 2 - 0.1), (DOORS[1] + DOOR_W / 2 + 0.1, CAB_Y - 0.15)]
+    be = [-HALF + 0.35]
+    for d in DOORS: be += [d - DOOR_W / 2 - 0.1, d + DOOR_W / 2 + 0.1]
+    be.append(CAB_Y - (0.15 if has_cab else 0.35))
+    bays = [(be[i], be[i + 1]) for i in range(0, len(be), 2)]
     for (a, b) in bays:
         L = b - a; ym = (a + b) / 2
         for sg in (-1, 1):
@@ -108,11 +120,11 @@ def build_car(idx, yc, s, root):
     for xx in (-0.45, 0.45):
         sal.cyl(P(xx, (-HALF + CAB_Y) / 2, 2.38), 0.016, CAB_Y + HALF - 0.6, 'pole_yellow', axis='y', seg=8)
     # --- strip lights on ceiling + panels
-    for k in range(5):
+    for k in range(max(2, int((CAB_Y + HALF - 1.0) // 2.4))):
         yy = -HALF + 1.4 + k * 2.4
-        sal.box(P(0, yy, 2.61), (0.22, 1.4, 0.03), 'strip_light')
+        sal.box(P(0, yy, 2.61), (0.22, 1.4, 0.03), 'strip_light'); lights.append(yc + s * yy)
     # info screens / adverts above windows
-    for yy in (-5.0, -2.0, 3.0):
+    for yy in (-HALF + 1.5, (CAB_Y - HALF) / 2, CAB_Y - 1.5):
         sal.box(P(0.0, yy, 2.45), (0.5, 0.5, 0.01), 'sign_blank') if False else None
         for sg in (-1, 1):
             sal.box(P(sg * (W - 0.09), yy, 2.24), (0.01, 0.7, 0.14), 'sign_blank')
@@ -136,9 +148,9 @@ def build_car(idx, yc, s, root):
     for sgx, nm in ((-1, 'L'), (1, 'R')):
         for di, d in enumerate(DOORS):
             k = (idx * len(DOORS) + di) * 2
-            for half in (0, 1):
-                w_leaf = DOOR_W / 2
-                yl = d + (w_leaf / 2 if half == 0 else -w_leaf / 2)   # car-local centre (half 0 = towards cab end of opening)
+            for half in (0,):
+                w_leaf = DOOR_W - 0.1
+                yl = d   # car-local centre (half 0 = towards cab end of opening)
                 # world front/rear half: front half has larger world y
                 wy = yc + s * yl
                 lm = M()
@@ -154,7 +166,7 @@ def build_car(idx, yc, s, root):
                 o.parent = None
                 nodes.setdefault(nm, []).append((wy, o))
     # --- end bogies
-    for by in (-HALF + 1.9, HALF - 2.2):   # car-local y
+    for by in (-HALF + 1.9, HALF - 1.9):   # car-local y
         bg = M()
         for sx in (-1, 1):
             bg.box((sx * 0.80, 0, 0.45), (0.1, 2.1, 0.22), 'steel_dark')                  # side frames
@@ -171,11 +183,13 @@ def build_car(idx, yc, s, root):
         bg.to_obj(f'car_{idx}_bogie_{"a" if by < 0 else "b"}', parent=car, loc=(0, yc + s * by, 0))
     # --- coupler at free end
     # --- build cab (nose) at +s end
-    build_cab(idx, yc, s, car, ext, cab, gls, P)
+    if has_cab:
+        build_cab(idx, yc, s, car, ext, cab, gls, lambda x, y, z: P(x, y + dy, z))
     ext.to_obj(f'car_{idx}_exterior', parent=car, smooth=False)
     sal.to_obj(f'car_{idx}_saloon', parent=car)
     gls.to_obj(f'car_{idx}_glass', parent=car)
-    cab.to_obj(f'car_{idx}_cab', parent=car)
+    if has_cab: cab.to_obj(f'car_{idx}_cab', parent=car)
+    nodes['_lights'] = lights
     return nodes
 
 def build_cab(idx, yc, s, car, ext, cab, gls, P):
@@ -198,7 +212,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P):
         dm.box((sg * 0.003, 0, 0.18), (0.045, 0.6, 0.55), 'glass_window')
         dm.box((-sg * 0.03, 0, 0), (0.01, 0.9, 1.3), 'interior_wall')
         # hinge empty at front edge of door, mesh offset so it rotates about the hinge
-        wy_hinge = yc + s * 5.8
+        wy_hinge = P(0, 5.8, 0)[1]
         nm = 'L' if (sg * s) < 0 else 'R'
         # world naming: unit-forward-left is world -X for front car; for the rear car (facing -Y) its left is world +X
         # => 'cab_door_L' (front) at -X ; rear cab: 'cab_door_L_rear' at +X
@@ -229,11 +243,11 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P):
     ext._tag(fs, 'livery_white')
     # headlights / tail lights
     front = (s > 0) if True else True
-    lm = 'headlight' if idx == 0 else 'taillight'
+    lm = 'headlight' if s > 0 else 'taillight'
     for sg in (-1, 1):
         ext.cyl(P(sg * 0.62, NOSE + 0.005, 0.98), 0.07, 0.03, lm, axis='y', seg=12)
-        ext.cyl(P(sg * 0.62, NOSE + 0.005, 0.80), 0.04, 0.03, 'taillight' if idx == 0 else 'headlight', axis='y', seg=10)
-    nm = 'headlight' if idx == 0 else 'taillight'
+        ext.cyl(P(sg * 0.62, NOSE + 0.005, 0.80), 0.04, 0.03, 'taillight' if s > 0 else 'headlight', axis='y', seg=10)
+    nm = 'headlight' if s > 0 else 'taillight'
     empty(f'{nm}_L', loc=P(-0.62 * (1 if s > 0 else -1), NOSE + 0.05, 0.98), parent=car)
     empty(f'{nm}_R', loc=P(0.62 * (1 if s > 0 else -1), NOSE + 0.05, 0.98), parent=car)
     # roundel on nose
@@ -289,70 +303,76 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P):
         o = sm.to_obj(name, parent=car, uv=False)
         return o
     screen_desc = []
-    sfx = '' if idx == 0 else '_rear'
+    sfx = '' if s > 0 else '_rear'
     screen(f'cab_screen{sfx}', (0.0, 5.99, 1.355), 0.40, 0.25, math.radians(35) * -1 if False else math.radians(65), 'screen_blank')
     screen(f'cab_speedo{sfx}', (0.50, 6.02, 1.34), 0.18, 0.12, math.radians(65), 'screen_blank')
     # cab_eye
-    empty('cab_eye' if idx == 0 else 'cab_eye_rear', loc=P(0, 5.20, 1.98), parent=car, kind='SPHERE', size=0.08)
+    empty('cab_eye' if s > 0 else 'cab_eye_rear', loc=P(0, 5.20, 1.98), parent=car, kind='SPHERE', size=0.08)
+
+def layout():
+    total = sum(CAR_LENS) + GAP * (len(CAR_LENS) - 1)
+    out = []; y = total / 2
+    for i, L in enumerate(CAR_LENS):
+        out.append((y - L / 2, L, +1 if i < 2 else -1, DOORS_END if i in (0, 3) else DOORS_MID, i in (0, 3)))
+        y -= L + GAP
+    return total, out
 
 def build_train():
+    import re
     reset()
     root = group('train')
-    unit_y = HALF + GAP   # centre of each car
-    n0 = build_car(0, unit_y + 0.0, +1, root)
-    n1 = build_car(1, -unit_y, -1, root)
-    # collect door leaves; assign names per world side by world y descending (front first)
-    # only 2 cars * 2 openings * 2 leaves = 8 per side
+    total, cars = layout()
+    nodes = []; lights = []
+    for i, (yc, L, s, doors, cab) in enumerate(cars):
+        n = build_car(i, yc, s, root, L, doors, cab); lights += n.pop('_lights'); nodes.append(n)
     for nm in ('L', 'R'):
-        leaves = n0.get(nm, []) + n1.get(nm, [])
+        leaves = [t for n in nodes for t in n.get(nm, [])]
         leaves.sort(key=lambda t: -t[0])
         for i, (wy, o) in enumerate(leaves):
-            o.name = f'door_{nm}_{i}'; o.data.name = o.name
-            o.parent = root
-    # opening direction note: leaf i even -> front half of opening? verify by comparing pairs
-    # couplers
-    front_y = unit_y + HALF + 0.0
-    top = unit_y + 6.72 + 0.05
-    empty('couple_front', loc=(0, top + 0.1, 0.62), parent=root, kind='ARROWS', size=0.3)
-    empty('couple_rear', loc=(0, -(top + 0.1), 0.62), parent=root, kind='ARROWS', size=0.3)
-    # interior lights
-    k = 0
-    for idc, (yc, s) in enumerate(((unit_y, 1), (-unit_y, -1))):
-        for j in range(5):
-            yy = -HALF + 1.4 + j * 2.4
-            empty(f'interior_light_{k}', loc=(0, yc + s * yy, 2.55), parent=root); k += 1
-    empty('cab_light', loc=(0, unit_y + 5.55, 2.55), parent=root)
-    empty('cab_light_rear', loc=(0, -unit_y - 5.55, 2.55), parent=root)
+            o.name = f'door_{nm}_{i}'; o.data.name = o.name; o.parent = root
+    nose = cars[0][0] + cars[0][1] / 2 - 0.03
+    empty('couple_front', loc=(0, nose + 0.25, 0.62), parent=root, kind='ARROWS', size=0.3)
+    empty('couple_rear', loc=(0, -(nose + 0.25), 0.62), parent=root, kind='ARROWS', size=0.3)
+    for k, wy in enumerate(sorted(lights, reverse=True)):
+        empty(f'interior_light_{k}', loc=(0, wy, 2.55), parent=root)
+    dy0 = cars[0][1] / 2 - 6.75
+    empty('cab_light', loc=(0, cars[0][0] + 5.55 + dy0, 2.55), parent=root)
+    empty('cab_light_rear', loc=(0, cars[3][0] - (5.55 + dy0), 2.55), parent=root)
+    # lower the whole body (not bogies): floor 0.695 m above rail head
+    for o in list(bpy.data.objects):
+        if re.match(r'^car_\d$', o.name) or 'bogie' in o.name or o is root: continue
+        if o.parent is root or (o.parent is not None and re.match(r'^car_\d$', o.parent.name)):
+            o.location.z += ZSHIFT
     return root
 
 def build_lod():
     reset()
     root = group('train')
-    unit_y = HALF + GAP
-    for idx, (yc, sg) in enumerate(((unit_y, 1), (-unit_y, -1))):
+    total, cars = layout()
+    prof = [(-W, 0.55), (W, 0.55), (W, 2.2), (0.95, 2.5), (0.5, 2.68), (-0.5, 2.68), (-0.95, 2.5), (-W, 2.2)]
+    for idx, (yc, L, sg, doors, cab) in enumerate(cars):
+        HALF_ = L / 2
         car = group(f'car_{idx}', parent=root)
         m = M()
-        prof = [(-1.15, 0.55), (1.15, 0.55), (1.15, 2.2), (0.95, 2.5), (0.5, 2.68), (-0.5, 2.68), (-0.95, 2.5), (-1.15, 2.2)]
-        a, b = sorted((yc - HALF, yc + HALF - 0.8))
-        if sg > 0: a, b = yc - HALF, yc + HALF - 0.8
-        else: a, b = yc - HALF + 0.8, yc + HALF
-        m.prism_y(prof, a, b, 'subway_orange')
-        nz = yc + sg * (HALF - 0.8)
-        m.prism_y([(-1.15, 0.55), (1.15, 0.55), (1.15, 2.2), (-1.15, 2.2)], *sorted((nz, yc + sg * (HALF - 0.1))), 'subway_orange') if False else None
-        m.box((0, yc + sg * (HALF - 0.4), 1.4), (2.0, 0.8, 1.7), 'subway_orange')
-        m.box((0, yc + sg * (HALF - 0.04), 1.75), (1.7, 0.05, 0.7), 'glass_window')
+        if cab:
+            a, b = (yc - HALF_, yc + HALF_ - 0.8) if sg > 0 else (yc - HALF_ + 0.8, yc + HALF_)
+            m.prism_y(prof, a, b, 'subway_orange')
+            m.box((0, yc + sg * (HALF_ - 0.4), 1.4), (2.0, 0.8, 1.7), 'subway_orange')
+            m.box((0, yc + sg * (HALF_ - 0.04), 1.75), (1.7, 0.05, 0.7), 'glass_window')
+        else:
+            m.prism_y(prof, yc - HALF_, yc + HALF_, 'subway_orange')
         for sx in (-1, 1):
-            m.box((sx * 1.16, yc, 1.7), (0.02, CAR_L - 3.0, 0.65), 'glass_window')
-        m.box((0, yc, 0.62), (2.0, CAR_L - 0.3, 0.22), 'livery_grey')
-        m.box((0, yc, 2.74), (0.9, 5.0, 0.08), 'livery_grey')
-        m.to_obj(f'car_{idx}_body', parent=car)
+            m.box((sx * (W + 0.01), yc, 1.7), (0.02, L - 3.0, 0.65), 'glass_window')
+        m.box((0, yc, 0.62), (2.0, L - 0.3, 0.22), 'livery_grey')
+        m.box((0, yc, 2.72), (0.9, L * 0.5, 0.04), 'livery_grey')
+        o = m.to_obj(f'car_{idx}_body', parent=car); o.location.z = ZSHIFT
         bm_ = M()
-        for by in (yc - HALF + 1.9, yc + HALF - 2.2):
+        for by in (yc - HALF_ + 1.9, yc + HALF_ - 1.9):
             bm_.box((0, by, 0.30), (1.5, 1.6, 0.5), 'steel_dark')
         bm_.to_obj(f'car_{idx}_bogies', parent=car)
-    top = unit_y + 6.72 + 0.05
-    empty('couple_front', loc=(0, top + 0.1, 0.62), parent=root); empty('couple_rear', loc=(0, -(top + 0.1), 0.62), parent=root)
-    empty('headlight_L', loc=(-0.62, unit_y + 6.77, 0.98), parent=root); empty('headlight_R', loc=(0.62, unit_y + 6.77, 0.98), parent=root)
+    nose = cars[0][0] + cars[0][1] / 2 - 0.03
+    empty('couple_front', loc=(0, nose + 0.25, 0.62 + ZSHIFT), parent=root); empty('couple_rear', loc=(0, -(nose + 0.25), 0.62 + ZSHIFT), parent=root)
+    empty('headlight_L', loc=(-0.62, nose + 0.05, 0.98 + ZSHIFT), parent=root); empty('headlight_R', loc=(0.62, nose + 0.05, 0.98 + ZSHIFT), parent=root)
     return root
 
 if __name__ == '__main__':
