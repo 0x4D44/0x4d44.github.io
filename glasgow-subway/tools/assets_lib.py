@@ -204,6 +204,13 @@ class M:
     def quad(self, p0, p1, p2, p3, m):
         vs = [self.bm.verts.new(Vector(p)) for p in (p0, p1, p2, p3)]
         f = self.bm.faces.new(vs); self._tag([f], m); return f
+    def quad_uv(self, p0, p1, p2, p3, m):
+        """Quad with UV (0,0)-(1,1) across its corners p0=BL p1=BR p2=TR p3=TL (for runtime canvas textures)."""
+        f = self.quad(p0, p1, p2, p3, m)
+        uvl = self.bm.loops.layers.uv.verify()
+        for l, uv in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): l[uvl].uv = uv
+        f.tag = True
+        return f
     def poly(self, pts, m):
         vs = [self.bm.verts.new(Vector(p)) for p in pts]
         f = self.bm.faces.new(vs); self._tag([f], m); return f
@@ -256,6 +263,7 @@ class M:
 def auto_uv(bm, scale=1.0):
     uvl = bm.loops.layers.uv.verify()
     for f in bm.faces:
+        if f.tag: continue
         n = f.normal; ax = max(range(3), key=lambda i: abs(n[i]))
         for l in f.loops:
             p = l.vert.co

@@ -74,8 +74,8 @@ export function buildSchedule(runTimes, dwells, slack = 1.06, startDep = 0) {
     arr[k] = dep[k - 1] + runTimes[k - 1] * slack;
     dep[k] = arr[k] + dwells[k];
   }
-  const period = dep[n - 1] + runTimes[n - 1] * slack - arr[0] - 0 - (dep[0] - arr[0]) + (dep[0] - arr[0]);
-  return { arr, dep, period: dep[n - 1] + runTimes[n - 1] * slack - dep[0] };
+  const period = dep[n - 1] + runTimes[n - 1] * slack + dwells[0] - dep[0];
+  return { arr, dep, period };
 }
 
 export function schedTime(schedule, k, lap, which) {

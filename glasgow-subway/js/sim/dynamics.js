@@ -95,7 +95,7 @@ export class Train {
     let vNew = v + a * dt;
     if (vNew < 0) vNew = 0;
     // holding brake: when stopped, no power and not enough traction to climb grade -> stay put
-    if (v < 0.03 && a <= 0.02 && ((this.holding && cmd <= 0) || wantB > 0.05 || this.ebLatched)) vNew = 0;
+    if (v < 0.03 && ((this.holding && cmd <= 0) || wantB > 0.05 || this.ebLatched) && !(wantP > 0.05)) vNew = 0;
     const vmax = (this.dir < 0 ? 8 * KMH : st.maxKmh * 1.15 * KMH);
     if (vNew > vmax) vNew = vmax;
     const aAct = (vNew - v) / (dt || 1);
