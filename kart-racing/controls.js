@@ -5,7 +5,7 @@ const CSS = `
 .kt-touch{position:fixed;inset:0;z-index:30;pointer-events:none;display:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;font-family:"Arial Black",Impact,system-ui,sans-serif}
 .kt-touch.kt-on{display:block}
 .kt-touch *{box-sizing:border-box;touch-action:none;-webkit-tap-highlight-color:transparent}
-.kt-steer{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:min(46vw,250px);height:92px;pointer-events:auto;border-radius:46px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));border:2px solid rgba(255,255,255,.35);backdrop-filter:blur(2px)}
+.kt-steer{position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));width:min(42vw,250px);height:92px;pointer-events:auto;border-radius:46px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));border:2px solid rgba(255,255,255,.35);backdrop-filter:blur(2px)}
 .kt-steer::before,.kt-steer::after{content:"";position:absolute;top:50%;width:0;height:0;border-style:solid;transform:translateY(-50%);opacity:.55}
 .kt-steer::before{left:16px;border-width:11px 16px 11px 0;border-color:transparent #fff transparent transparent}
 .kt-steer::after{right:16px;border-width:11px 0 11px 16px;border-color:transparent transparent transparent #fff}
@@ -15,7 +15,7 @@ const CSS = `
 .kt-btn.kt-down{transform:scale(.92);filter:brightness(1.35)}
 .kt-drift{right:max(14px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));width:108px;height:108px;font-size:19px;background:radial-gradient(circle at 35% 30%,#ffb04a,#ef5a12 75%)}
 .kt-item{right:calc(max(14px,env(safe-area-inset-right)) + 16px);bottom:calc(max(18px,env(safe-area-inset-bottom)) + 124px);width:78px;height:78px;font-size:15px;background:radial-gradient(circle at 35% 30%,#9ef0ff,#1396c8 75%)}
-.kt-brake{right:calc(max(14px,env(safe-area-inset-right)) + 124px);bottom:max(18px,env(safe-area-inset-bottom));width:70px;height:70px;font-size:13px;background:radial-gradient(circle at 35% 30%,#ff7b7b,#c2262f 75%)}
+.kt-brake{right:calc(max(14px,env(safe-area-inset-right)) + 116px);bottom:max(18px,env(safe-area-inset-bottom));width:64px;height:64px;font-size:13px;background:radial-gradient(circle at 35% 30%,#ff7b7b,#c2262f 75%)}
 @media (max-height:480px){
  .kt-steer{height:74px;border-radius:37px;width:min(40vw,230px)}
  .kt-knob{width:52px;height:52px;margin:-26px 0 0 -26px}

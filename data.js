@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "kart-racing",
+    title: "Apex Karts",
+    tagline: "A 3D arcade kart racer: eight drivers, three tracks from sunset coast to neon docks, drift-boost handling, seven power-ups, AI rivals and a three-race Grand Prix. Procedural Three.js, synthesised audio, keyboard, gamepad or touch; no assets, no build.",
+    url: "https://0x4d44.github.io/kart-racing/",
+    illustration: "ill-kart",
+    date: "2026-10-25T21:30:00",
+    year: 2026,
+    tags: ["games", "simulation", "transport"],
+    real: true,
+  },
+  {
     slug: "the-wire",
     title: "Down the Wire",
     tagline: "How Ethernet really works, as ten hands-on labs: build a frame byte by byte, watch a switch learn, tag VLANs across a trunk, follow a packet through a router, resolve a name down the DNS tree, see what jumbo frames buy, and trigger Nagle's 40 ms stall. Vanilla JS, SVG and canvas on a tested engine.",
@@ -2023,7 +2034,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "kart-racing", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "pigeon-protocol", "bunched",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
