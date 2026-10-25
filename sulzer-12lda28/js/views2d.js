@@ -82,20 +82,20 @@ export function drawCylinder(canvas, eng, sel) {
   ctx.fillStyle = "#d9b24a"; ctx.beginPath(); ctx.arc(cpx, cpy, 8, 0, 6.3); ctx.fill();
   ctx.fillStyle = "#c0c6cc"; ctx.beginPath(); ctx.arc(cx, crankY, 11, 0, 6.3); ctx.fill();
   // title
-  txt(ctx, `Bank ${b ? "B" : "A"} · cylinder ${c}`, 12, 20, { f: "600 13px system-ui" });
+  txt(ctx, w < 520 ? `${b ? "B" : "A"}${c}` : `Bank ${b ? "B" : "A"} · cylinder ${c}`, 12, 20, { f: "600 13px system-ui" });
   txt(ctx, `${STROKE_NAME[s]} stroke`, 12, 38, { c: STROKE_COL[s], f: "700 15px system-ui" });
-  txt(ctx, `${alpha.toFixed(0)}° / 720°`, split - 8, 20, { a: "right", f: "13px ui-monospace, monospace", c: COL.dim });
+  txt(ctx, `${alpha.toFixed(0)}° / 720°`, split - 8, w < 520 ? 56 : 20, { a: "right", f: "13px ui-monospace, monospace", c: COL.dim });
   // right-hand: p-theta chart
   const px0 = split + 24, pw = w - px0 - 14, ph = h - 70, py0 = 28;
   ctx.fillStyle = COL.panel; rr(ctx, px0 - 10, py0 - 18, pw + 18, ph + 56, 8); ctx.fill();
-  txt(ctx, "Cylinder pressure over the 720° cycle (ESTIMATED shape and values)", px0, py0 - 4, { c: COL.dim, f: "11px system-ui" });
+  txt(ctx, w < 520 ? "Pressure vs cycle (ESTIMATED)" : "Cylinder pressure over the 720° cycle (ESTIMATED shape and values)", px0, py0 - 4, { c: COL.dim, f: "11px system-ui" });
   const load = eng.running ? eng.load : 0.0, boost = Math.max(1.0, eng.boost || 1);
   const pmax = 130;
   const X = (a) => px0 + (a / 720) * pw, Y = (p) => py0 + ph - (p / pmax) * ph;
   ctx.strokeStyle = COL.line; ctx.lineWidth = 1;
   for (let p = 0; p <= 100; p += 25) { ctx.beginPath(); ctx.moveTo(px0, Y(p)); ctx.lineTo(px0 + pw, Y(p)); ctx.stroke(); txt(ctx, p + "", px0 - 3, Y(p) + 3, { a: "right", c: COL.dim, f: "10px system-ui" }); }
   [0, 180, 360, 540, 720].forEach((a) => { ctx.beginPath(); ctx.moveTo(X(a), py0); ctx.lineTo(X(a), py0 + ph); ctx.stroke(); txt(ctx, a + "°", X(a), py0 + ph + 14, { a: "middle" === "x" ? "center" : "center", c: COL.dim, f: "10px system-ui" }); });
-  [[0, "Power"], [180, "Exhaust"], [360, "Intake"], [540, "Compression"]].forEach(([a, n], i) => { ctx.fillStyle = STROKE_COL[i] + "22"; ctx.fillRect(X(a), py0, pw / 4, ph); txt(ctx, n, X(a) + pw / 8, py0 + ph + 30, { a: "center", c: STROKE_COL[i], f: "11px system-ui" }); });
+  [[0, "Power"], [180, "Exhaust"], [360, "Intake"], [540, w < 520 ? "Compr." : "Compression"]].forEach(([a, n], i) => { ctx.fillStyle = STROKE_COL[i] + "22"; ctx.fillRect(X(a), py0, pw / 4, ph); txt(ctx, n, X(a) + pw / 8, py0 + ph + 30, { a: "center", c: STROKE_COL[i], f: "11px system-ui" }); });
   ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.beginPath();
   for (let a = 0; a <= 720; a += 2) { const p = cylinderPressureBar(a % 720, Math.max(0.05, load), boost * 1.0 + (eng.running ? 0 : 0)); a ? ctx.lineTo(X(a), Y(Math.min(pmax, p))) : ctx.moveTo(X(a), Y(Math.min(pmax, p))); }
   ctx.stroke();
@@ -108,7 +108,7 @@ export function drawCylinder(canvas, eng, sel) {
     ctx.strokeStyle = col; ctx.beginPath(); for (let a = 0; a <= 720; a += 3) { const y = py0 + ph - fn(a) * 30; a ? ctx.lineTo(X(a), y) : ctx.moveTo(X(a), y); } ctx.stroke();
   }
   txt(ctx, "inlet lift", X(TIMING.inOpen + 150), py0 + ph - 34, { c: COL.intake, f: "10px system-ui", a: "center" });
-  txt(ctx, "exhaust lift", X(TIMING.exhOpen + 140), py0 + ph - 34, { c: "#e08a3c", f: "10px system-ui", a: "center" });
+  txt(ctx, "exhaust lift", X(TIMING.exhOpen + 140), py0 + ph - 46, { c: "#e08a3c", f: "10px system-ui", a: "center" });
 }
 function arrow(ctx, x1, y1, x2, y2, col) {
   ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
@@ -260,6 +260,6 @@ export function drawChain(canvas) {
     const y = 6 + i * rh;
     txt(ctx, n, x0 - 8, y + rh * 0.55, { a: "right", f: "12px system-ui", c: COL.ink });
     ctx.fillStyle = c + "cc"; rr(ctx, x0, y + 4, (v / 100) * pw, rh - 10, 5); ctx.fill();
-    txt(ctx, `${v.toFixed(v < 10 || v % 1 ? 1 : 0)}%  ${note}`, x0 + 8, y + rh * 0.58, { f: "11px system-ui", c: "#0b0f14" });
+    txt(ctx, `${v.toFixed(v < 10 || v % 1 ? 1 : 0)}%${w < 520 ? "" : "  " + note}`, x0 + 8, y + rh * 0.58, { f: "11px system-ui", c: "#0b0f14" });
   });
 }
