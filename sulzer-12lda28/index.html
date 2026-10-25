@@ -32,7 +32,7 @@
   <div class="ctl">
     <label for="ctl">Power controller <b id="ctlName">OFF</b></label>
     <input type="range" id="ctl" min="0" max="100" step="1" value="0" aria-label="Power controller">
-    <div class="marks"><span>OFF</span><span>ON</span><span>1/4</span><span>1/2</span><span>3/4</span><span>FULL</span></div>
+    <div class="marks" aria-hidden="true"><span style="left:0">OFF</span><span style="left:10%">ON</span><span style="left:25%">1/4</span><span style="left:50%">1/2</span><span style="left:75%">3/4</span><span style="left:100%">FULL</span></div>
   </div>
   <div class="gauge"><span>rpm</span><b id="gRpm">0</b></div>
   <div class="gauge"><span>bhp</span><b id="gBhp">0</b></div>
@@ -53,6 +53,8 @@
     <select id="selMic" aria-label="Listening position"><option value="0">In the cab</option><option value="1" selected>Engine room</option><option value="2">Trackside</option></select>
   </div>
 </div>
+
+<div class="mini" id="mini" hidden><button class="btn primary" id="miniStart" type="button">Start engine</button><input type="range" id="miniCtl" min="0" max="100" step="1" value="0" aria-label="Power controller (compact)"><b id="miniRpm">0 rpm</b></div>
 
 <main>
 <section id="explore" class="block">
@@ -100,7 +102,7 @@
   </div>
   <div class="cols two">
     <article class="card"><h3>Why two engines in one?</h3>
-      <p>The 12LDA28 is <strong>twin-bank</strong>: two independent six-cylinder inline engines side by side, each in its own crankcase and block and each with its own seven-bearing crankshaft. Synchronising gears at the generator end join them and step the speed up by about 1 to 1.44, so the generator turns near 1,080 rpm while the engine turns 750 (a 1,150 rpm rating matches the 800 rpm as-built Class 47). On average one cylinder fires every 60° of crank rotation (even spacing is assumed), which is <strong>75 power strokes per second</strong> at full speed.</p></article>
+      <p>The 12LDA28 is <strong>twin-bank</strong>: two independent six-cylinder inline engines side by side, built into one welded steel frame, each with its own seven-bearing crankshaft. Synchronising gears at the generator end join them and step the speed up by about 1 to 1.44, so the generator turns near 1,080 rpm while the engine turns 750 (a 1,150 rpm rating matches the 800 rpm as-built Class 47). On average one cylinder fires every 60° of crank rotation (even spacing is assumed), which is <strong>75 power strokes per second</strong> at full speed.</p></article>
     <article class="card"><h3>The all-speed governor</h3>
       <p>Class 47 drivers had no numbered notches. The power controller has only OFF, ON, ¼, ½, ¾ and FULL, with ON and ¼ notched. Moving it changes a signal to the Vickers-built, Sulzer-designed governor, whose flyweights are driven from the camshaft. The governor moves the fuel racks and, through the load regulator, the generator field, so the engine holds its speed at any handle position while the load follows. Idle is 325 rpm (the manual also quotes 365 and does not say when each applies); full power is 750.</p></article>
   </div>
