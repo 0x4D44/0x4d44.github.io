@@ -5,7 +5,7 @@ import math, sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from assets_lib import *
 
-PLAT_H = 0.80
+PLAT_H = 0.695
 
 def item(root, name, m, **kw):
     return m.to_obj(name, parent=root, **kw)

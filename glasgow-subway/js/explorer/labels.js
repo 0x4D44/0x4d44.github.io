@@ -8,7 +8,7 @@ export class Labels {
     const el = kind === 'station'
       ? h('button.lab.st', { type: 'button', 'aria-label': aria || text, on: { click: () => onClick?.(id), pointerenter: () => onHover?.(id), pointerleave: () => onHover?.(null), focus: () => onHover?.(id), blur: () => onHover?.(null) } }, h('span.n', { text: num }), h('span.t', { text }))
       : h('div.lab.' + kind, { 'aria-hidden': 'true' }, h('span.t', { text }));
-    this.el.append(el);
+    el.classList.add('off'); this.el.append(el);
     const it = { id, kind, el, pos, priority, w: 0, h: 0, shown: false, boost: 0 }; this.items.push(it); return it;
   }
   clear(kind) { this.items = this.items.filter((it) => { if (!kind || it.kind === kind) { it.el.remove(); return false; } return true; }); }

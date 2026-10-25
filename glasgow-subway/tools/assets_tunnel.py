@@ -131,20 +131,20 @@ def build_vault(kind, rib=False, endcap=False):
             add_track(m, tx, y0, y1, pads=(-0.4, 0.4))
         # platform(s)
         if kind == 'island':
-            m.bbox((-pw, y0, FLOOR_Z), (pw, y1, 0.80 - 0.02), 'platform_stone')
-            m.bbox((-pw + 0.02, y0, 0.78), (pw - 0.02, y1, 0.80), 'platform_floor')
+            m.bbox((-pw, y0, FLOOR_Z), (pw, y1, 0.695 - 0.02), 'platform_stone')
+            m.bbox((-pw + 0.02, y0, 0.675), (pw - 0.02, y1, 0.695), 'platform_floor')
             for sg in (-1, 1):
-                m.bbox((sg * (pw - 0.12) - 0.06, y0, 0.80), (sg * (pw - 0.12) + 0.06, y1, 0.81), 'edge_white')
-                m.bbox((min(sg * 1.45, sg * 1.83), y0, 0.80), (max(sg * 1.45, sg * 1.83), y1, 0.815), 'tactile_yellow')
+                m.bbox((sg * (pw - 0.12) - 0.06, y0, 0.695), (sg * (pw - 0.12) + 0.06, y1, 0.705), 'edge_white')
+                m.bbox((min(sg * 1.45, sg * 1.83), y0, 0.695), (max(sg * 1.45, sg * 1.83), y1, 0.710), 'tactile_yellow')
                 # tiled platform face
-                m.quad((sg * pw, y0, FLOOR_Z), (sg * pw, y1, FLOOR_Z), (sg * pw, y1, 0.78), (sg * pw, y0, 0.78), 'tile_white')
+                m.quad((sg * pw, y0, FLOOR_Z), (sg * pw, y1, FLOOR_Z), (sg * pw, y1, 0.675), (sg * pw, y0, 0.675), 'tile_white')
         else:
             for sg in (-1, 1):
                 x0 = sg * 3.25; x1 = sg * half
-                m.bbox((min(x0, x1), y0, FLOOR_Z), (max(x0, x1), y1, 0.78), 'platform_stone')
-                m.bbox((min(x0, x1), y0, 0.78), (max(x0, x1), y1, 0.80), 'platform_floor')
-                m.bbox((min(sg * 3.2, sg * 3.32), y0, 0.80), (max(sg * 3.2, sg * 3.32), y1, 0.81), 'edge_white')
-                m.bbox((min(sg * 3.4, sg * 3.8), y0, 0.80), (max(sg * 3.4, sg * 3.8), y1, 0.815), 'tactile_yellow')
+                m.bbox((min(x0, x1), y0, FLOOR_Z), (max(x0, x1), y1, 0.675), 'platform_stone')
+                m.bbox((min(x0, x1), y0, 0.675), (max(x0, x1), y1, 0.695), 'platform_floor')
+                m.bbox((min(sg * 3.2, sg * 3.32), y0, 0.695), (max(sg * 3.2, sg * 3.32), y1, 0.705), 'edge_white')
+                m.bbox((min(sg * 3.4, sg * 3.8), y0, 0.695), (max(sg * 3.4, sg * 3.8), y1, 0.710), 'tactile_yellow')
         # ceiling light fittings
         lx = (-1.6, 1.6, -3.9, 3.9) if kind == 'island' else (-3.9, 3.9, -2.0, 2.0)
         for xx in lx[:2] if kind == 'island' else lx[:2]:

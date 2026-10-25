@@ -14,11 +14,11 @@ export function stockFrom(rs) {
     p.cars = num(c.cars) || p.cars;
     p.lengthM = num(c.length_m) || num(c.lengthM) || p.lengthM;
     p.tareT = num(c.mass_t) || num(c.massT) || p.tareT;
-    p.capacity = num(c.capacity) || p.capacity;
+    p.capacity = num(c.capacity) || (c.capacity && num(c.capacity.total)) || p.capacity;
     p.maxKmh = Math.min(70, num(c.max_speed_kmh) || p.maxKmh);
     const a = num(c.accel) || num(c.accel_ms2); if (a && a < 2) p.accel = a;
-    const d = num(c.decel) || num(c.decel_ms2); if (d && d < 2) p.decel = d;
-    p.emergencyDecel = Math.max(p.decel * 1.3, 1.2);
+    const d = num(c.decel) || num(c.decel_ms2) || num(c.decel_service_ms2); if (d && d < 2) p.decel = d;
+    p.emergencyDecel = num(c.decel_emergency_ms2) || Math.max(p.decel * 1.3, 1.2);
   }
   return p;
 }

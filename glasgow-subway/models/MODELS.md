@@ -1,5 +1,14 @@
 # models/ - Glasgow Subway 3D assets (A3)
 
+> **REVISION 2 (per A1 research): train is now a 4-CAR articulated set, 39.3 m long (bbox z +-19.88 incl. couplers), 2.32 m wide, 2.64 m high, floor height 0.695 m.**
+> - `train.glb`: cars `car_0..car_3` (car_0 front/cab at -Z, car_3 rear/cab at +Z; car_1, car_2 are cab-less middle cars), open gangways (bellows) between cars.
+> - **Doors: `door_L_0..5` / `door_R_0..5` (6 per side, front->rear). One leaf per opening (1.2 m wide, 1.3 m tall); every leaf slides toward the REAR: open = translate +1.2 m along world Z** (x = +-1.15, y centre 1.35). Doors: 1 per end car, 2 per middle car.
+> - `cab_eye` now (0, 1.88, -18.10); `cab_eye_rear` (0, 1.88, +18.10); `cab_door_L/R` hinges at z=-18.70 (rear: +18.70); `headlight_L/R` z=-19.67, `taillight_L/R` z=+19.67; `couple_front/rear` z=-/+19.88, y=0.51; `cab_light(_rear)` z=-/+18.45; `interior_light_0..11` (12 along the saloon, y=2.44).
+> - `cab_screen`, `cab_speedo` (+`_rear`) unchanged conventions (UV 0..1 canvas quads).
+> - Floor and platform top are 0.695 m above rail head: `tunnel_station_vault.glb` platforms (edge strip 0.705, tactile 0.710) and `station_kit.glb` (`platform_end_ramp`) updated. Wheels/bogies unchanged (radius 0.30).
+> - `train_lod.glb` also 4 cars (`car_N_body`, `car_N_bogies`), ~40 KB. `train.glb` ~1.3 MB, ~19.5k tris.
+> Older numbers below that mention 2 cars, 0.80 m floor, door_*_0..7 or cab_eye z=-12.15 are SUPERSEDED by this block.
+
 All files are glTF 2.0 binary, built headless in Blender (bpy) by `tools/assets_*.py` (rebuild all: `<venv>/bin/python tools/assets_build.py`).
 Units: metres. glTF/three.js axes: +Y up, **nose / direction of travel = -Z** (Blender +Y). +X = right of the direction of travel.
 Origin of track models: on the track centre-line **at rail-head level** (y=0 = top of running rails), x=0 between the rails.
@@ -10,7 +19,7 @@ Dev preview: `tools/assets_preview.html?f=train.glb&cam=x,y,z&look=x,y,z&only=pr
 
 Real-world basis (estimates marked ~): track gauge 4 ft (1220 mm); inner tunnel bore 3.35 m (nominal 11 ft); stock is small. The Stadler unit here is modelled
 as a **2-car, ~27.8 m, 2.30 m wide, 2.72 m high (rail head to roof; +0.06 roof pods)** train (~ estimates; real cars are driverless, the cab is a notional driving cab).
-Floor height 0.80 m above rail head; platform top 0.80 m; platform edge gap ~0.10 m. Fit check: train max roof corner clears the 3.35 m bore (axis at +1.20 m).
+Floor height 0.695 m above rail head; platform top 0.695 m; platform edge gap ~0.10 m. Fit check: train max roof corner clears the 3.35 m bore (axis at +1.20 m).
 Power: two conductor rails at x=+-0.92 m (top height +0.12 m) with bogie collector shoes (~ stylised; exact Subway arrangement not verified).
 
 ## train.glb  (~830 KB, ~12k tris)   train_lod.glb (~22 KB, 248 tris)
