@@ -20,7 +20,7 @@ addEventListener('resize', () => renderer.setSize(innerWidth, innerHeight, false
 let subway;
 try { subway = await (await fetch('../data/subway.json')).json(); } catch (e) { console.warn('subway.json missing, using fixture'); subway = (await import('../js/sim/fixture.mjs')).makeFixture(); }
 try { await terrain.loadTerrain(); } catch (e) { console.warn('terrain missing'); }
-window.__ctx = { THREE, renderer, canvas, container: document.getElementById('hud'), subway, terrain, startStation: q.get('station') || undefined, line: q.get('line') || 'outer', mode: q.get('mode') || undefined, difficulty: q.get('diff') || undefined, assetBase: '../', onExit() { console.log('[harness] onExit'); } };
+window.__ctx = { THREE, renderer, canvas, container: document.getElementById('hud'), subway, terrain, startStation: q.get('station') || undefined, line: q.get('line') || 'outer', mode: q.get('mode') || undefined, difficulty: q.get('diff') || undefined, quality: q.get('q') || undefined, assetBase: '../', onExit() { console.log('[harness] onExit'); } };
 window.__sim = null;
 window.__simReady = startSim(window.__ctx).then((h) => { window.__handle = h; return h; }).catch((e) => { console.error('startSim failed', e); throw e; });
 </script></body></html>

@@ -59,15 +59,18 @@ class Sim {
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
     this.scene.add(new THREE.AmbientLight(0x8a7a66, 2.6));
-    this.tunnel = new TunnelView(THREE, tunTpl, this.scene);
+    this.quality = this._detectQuality();
+    this.savedPR = r.getPixelRatio();
+    try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
+    this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
     this.trainView = new TrainView(THREE, trainTpl.scene, {});
     this.scene.add(this.trainView.root);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
     this.tms = new Tms(THREE); this.tms.attach(this.trainView);
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
-    this.poolLights = []; for (let i = 0; i < 5; i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
-    this.crowd = new Crowd(THREE, 120); this.scene.add(this.crowd.group);
+    this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
+    this.crowd = new Crowd(THREE, this.quality === 'low' ? 45 : 110, this.peopleVariants); this.scene.add(this.crowd.group);
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -87,6 +90,15 @@ class Sim {
     this.renderer.setAnimationLoop((t) => this.frame(t));
     if (this.ctx.mode || this.ctx.startStation) this.go({ mode: this.ctx.mode || 'drive', station: this.sel.station, line: this.line, diff: this.diffId });
     else this.openMenu('start');
+  }
+
+  _detectQuality() {
+    const q = this.ctx.quality; if (q === 'low' || q === 'high') return q;
+    try {
+      const coarse = matchMedia('(pointer:coarse)').matches, small = Math.min(innerWidth, innerHeight) < 600;
+      const weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+      return coarse || small || weak ? 'low' : 'high';
+    } catch (e) { return 'high'; }
   }
 
   async _opt(path) {
@@ -704,6 +716,7 @@ class Sim {
       enterStreet: () => this.enterStreet(), leaveStreet: () => this.leaveStreet(), alight: () => this._alight(), board: () => this._boardTrain(), takeCab: () => this._takeCab(),
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
       timeScale: (k) => { this.timeScale = k; },
+      quality: () => this.quality,
       loop: (on) => { if (on) this.renderer.setAnimationLoop((t) => this.frame(t)); else this.renderer.setAnimationLoop(null); },
       stats: () => ({ calls: this.renderer.info.render.calls, tris: this.renderer.info.render.triangles, geos: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures }),
     };
@@ -719,7 +732,7 @@ class Sim {
     for (const v of this.stationViews.values()) v.dispose();
     this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     if (this.street) this.street.dispose();
-    const r = this.renderer, s = this.saved; if (s) { r.setClearColor(s.clear, s.alpha); r.toneMapping = s.tm; r.toneMappingExposure = s.exp; }
+    const r = this.renderer, s = this.saved; try { if (this.savedPR) r.setPixelRatio(this.savedPR); } catch (e) {} if (s) { r.setClearColor(s.clear, s.alpha); r.toneMapping = s.tm; r.toneMappingExposure = s.exp; }
     if (window.__sim && window.__sim.sim === this) delete window.__sim;
   }
 }
