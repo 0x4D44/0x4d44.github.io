@@ -1516,6 +1516,19 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "be-ready",
+    title: "Be Ready",
+    tagline: "The UK Government's 3-day emergency checklist made tickable, plus a stretch list: how much water to store, how to purify it, power, cooking, and whether your wood-burning stove can heat and cook through a power cut. With a 5½-minute narrated explainer.",
+    url: "https://0x4d44.github.io/be-ready/",
+    illustration: "ill-beready",
+    date: "2026-10-24T22:00:00",
+    year: 2026,
+    readingMin: 26,
+    words: 5400,
+    tags: ["software", "safety"],
+    real: true,
+  },
+  {
     slug: "leaked-signals",
     title: "Leaked Signals",
     tagline: "Every TV broadcast since the mid-1930s is still on its way somewhere. A live simulator of Earth's radio leakage: horizon fans by country, the spin spiral, 10,000 real stars and who could actually watch.",
@@ -1967,7 +1980,7 @@ window.ESSAYS = [
 // and technical write-ups (including code walkthroughs *about* games/sims).
 window.TAG_GROUPS = [
   { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
-  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "music", "work", "food", "design"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "music", "work", "food", "design", "safety"] },
 ];
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.
@@ -1994,7 +2007,7 @@ window.TAGS = ["all", ...window.TAG_GROUPS.flatMap(g => g.tags)];
 window.COLLECTIONS = [
   { id: "life", name: "Life", icon: "ill-flange",
     blurb: "Personal development, questionable wellness and the long road to becoming oneself — preferably with a washer.",
-    slugs: ["social-situations", "master-flanger"] },
+    slugs: ["social-situations", "master-flanger", "be-ready"] },
   { id: "language", name: "Learn a Language", icon: "ill-kotoba",
     blurb: "Japanese and Spanish, taught properly.",
     slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
@@ -2006,7 +2019,7 @@ window.COLLECTIONS = [
     slugs: ["recipes"] },
   { id: "tools", name: "Tools", icon: "ill-caliper",
     blurb: "Small practical instruments that run in the browser.",
-    slugs: ["tellylist-setup", "wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
+    slugs: ["be-ready", "tellylist-setup", "wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",

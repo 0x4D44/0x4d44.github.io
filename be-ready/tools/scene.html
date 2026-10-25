@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<title>Be Ready - video scene renderer</title>
+<style>
+:root{--bg1:#0a1c1f;--bg2:#12363a;--ink:#f6f1e4;--dim:#b9cbc8;--amber:#f2a93b;--teal:#58cfd2;--red:#ff8a7a;--green:#8fdc98}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:#0a1c1f;font-family:Inter,"Liberation Sans",sans-serif;color:var(--ink)}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,var(--bg2),var(--bg1) 70%)}
+.glow{position:absolute;border-radius:50%;filter:blur(60px);opacity:.28}
+#brand{position:absolute;left:44px;top:26px;font:700 20px Inter;letter-spacing:.2em;color:var(--amber)}
+#stitle{position:absolute;right:44px;top:26px;font:600 20px Inter;color:var(--dim);letter-spacing:.04em}
+#main{position:absolute;left:44px;right:44px;top:80px;height:490px}
+#capwrap{position:absolute;left:0;right:0;bottom:24px;display:flex;justify-content:center;padding:0 60px}
+#cap{max-width:1160px;text-align:center;font:500 26px/1.32 Inter;background:rgba(5,14,16,.78);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 24px;color:#fff;min-height:64px;display:flex;align-items:center;justify-content:center}
+#prog{position:absolute;left:0;bottom:0;height:6px;width:100%;background:rgba(255,255,255,.08);display:flex;gap:3px}
+#prog i{display:block;height:100%;background:rgba(255,255,255,.18);position:relative;flex:1}
+#prog i b{position:absolute;left:0;top:0;height:100%;background:var(--amber);width:0}
+.r{opacity:0}
+h1,h2,.serif{font-family:"Bitstream Charter",Charter,"DejaVu Serif",serif}
+.big{font:700 120px/1 "Bitstream Charter",Charter,serif}
+.h2{font:700 56px/1.1 "Bitstream Charter",Charter,serif}
+.h3{font:700 34px/1.2 Inter}
+.p{font:500 30px/1.35 Inter;color:var(--dim)}
+.row{display:flex;gap:22px;align-items:stretch;justify-content:center;flex-wrap:nowrap}
+.col{display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center}
+.card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:22px 26px}
+.card .ic{font-size:64px;line-height:1.1}
+.card .h3{margin-top:6px}
+.amber{color:var(--amber)} .teal{color:var(--teal)} .red{color:var(--red)} .green{color:var(--green)}
+.pill{display:inline-block;padding:8px 18px;border-radius:999px;font:700 24px Inter;background:rgba(242,169,59,.16);border:1px solid var(--amber);color:var(--amber)}
+.abs{position:absolute}
+.tank{position:relative;width:200px;height:300px;border:5px solid var(--teal);border-radius:16px 16px 28px 28px;overflow:hidden;background:rgba(88,207,210,.07)}
+.tank .w{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#58cfd2,#2a8a95);height:0}
+.tank .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 54px Inter;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+table.t{border-collapse:collapse;font:600 30px Inter}
+table.t td,table.t th{padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.15);text-align:center}
+table.t th{color:var(--dim);font-size:22px;letter-spacing:.08em;text-transform:uppercase}
+.step{width:220px;text-align:center}
+.step .n{font:800 22px Inter;color:var(--amber);letter-spacing:.2em}
+.flame{transform-origin:50% 100%}
+.bar{height:26px;border-radius:13px;background:rgba(255,255,255,.1);overflow:hidden;width:520px}
+.bar b{display:block;height:100%;background:linear-gradient(90deg,var(--amber),#ffd27a);width:0}
+.check{font:600 31px/1.3 Inter;display:flex;gap:14px;align-items:flex-start}
+.check i{font-style:normal;color:var(--green);font-weight:800}
+.warnbox{border:2px solid var(--red);background:rgba(255,138,122,.1);border-radius:18px;padding:16px 24px;font:600 30px/1.3 Inter}
+</style></head>
+<body><div id="stage">
+  <div class="glow" style="left:-120px;top:-100px;width:520px;height:520px;background:#1f8a90" id="g1"></div>
+  <div class="glow" style="right:-140px;bottom:-60px;width:560px;height:560px;background:#c97d1c;opacity:.18" id="g2"></div>
+  <div id="brand">BE READY</div><div id="stitle"></div>
+  <div id="main"></div>
+  <div id="capwrap"><div id="cap"></div></div>
+  <div id="prog"></div>
+</div>
+<script src="../script.js"></script>
+<script>
+/* ---------- timeline injected by the builder: TL = {total, scenes:[{start,end,lines:[{start,end}]}]} ---------- */
+var TL = window.TL, S = window.BR_SCRIPT;
+var clamp = function (x, a, b) { return Math.max(a, Math.min(b, x)); };
+var ease = function (x) { return 1 - Math.pow(1 - clamp(x, 0, 1), 3); };
+
+/* ---------- scene visuals. data-l = line index at which the element appears ---------- */
+var V = {
+title: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;right:0;top:0;text-align:center"><div class="row" style="gap:28px">' +
+  ['⚡|Power cut','⛈️|Storm','🌊|Flood','🚰|Water main'].map(function (s, i) { s = s.split('|'); return '<div class="card r2" data-d="' + (i * 0.7) + '" data-l="0" style="width:250px"><div class="ic">' + s[0] + '</div><div class="h3">' + s[1] + '</div></div>'; }).join('') + '</div></div>' +
+  '<div class="abs r" data-l="1" style="left:0;right:0;top:250px;text-align:center"><div class="h2">Not dramatic. <span class="amber">Inconvenient.</span></div><div class="p" style="margin-top:12px">...and they can last longer than you expect.</div></div>' +
+  '<div class="abs r ex" data-l="2" style="left:0;right:0;top:0;height:470px;background:#0e2a2d;border-radius:24px;display:flex;align-items:center;justify-content:center;gap:60px">' +
+    '<div class="big amber" style="font-size:200px">3</div><div class="col" style="align-items:flex-start"><div class="h2">days of supplies</div><div class="p">UK Government advice: help reaches those most in need first</div></div></div>' +
+  '<div class="abs r ex" data-l="3" style="left:0;right:0;top:0;height:470px;background:#0e2a2d;border-radius:24px;display:flex;align-items:center;justify-content:center;gap:50px">' +
+    '<div style="font-size:150px">🔥</div><div class="col" style="align-items:flex-start"><div class="h2">Can the wood stove<br>keep us <span class="amber">warm and fed?</span></div><div class="p">A few weekends of work. Starts now.</div></div></div>'; },
+steps: function () { return '<div class="row" style="margin-top:20px;flex-wrap:wrap;gap:20px">' + [
+  ['0', 'Pace yourself', '🐢', 'No need to buy it all at once'],
+  ['1', 'Check cupboards', '🗄️', 'You own half of it already'],
+  ['2', 'Note what\'s missing', '📝', 'Medicines, formula, pet food'],
+  ['3', 'Add one or two items', '🛒', 'Each time you shop'],
+  ['4', 'Review every 6 months', '🔔', 'Dates and household changes']].map(function (s, i) {
+  return '<div class="card step r" data-l="' + s[0] + '" style="margin-top:' + (i % 2 ? 40 : 0) + 'px"><div class="n">' + (i ? 'STEP ' + i : 'FIRST') + '</div><div class="ic" style="font-size:72px;margin:8px 0">' + s[2] + '</div><div class="h3">' + s[1] + '</div><div class="p" style="font-size:22px;margin-top:6px">' + s[3] + '</div></div>'; }).join('') + '</div>'; },
+water: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;top:20px"><div class="row"><div class="tank"><div class="w fill" data-p="0.55" data-l="0"></div><div class="lbl">💧</div></div></div></div>' +
+  '<div class="abs r ex" data-l="1" style="left:300px;top:10px;width:820px"><div class="p">Government figure</div><div class="big amber"><span class="count" data-v="3" data-l="1">0</span> <span style="font-size:60px">litres</span></div><div class="h3" style="margin:6px 0 14px">per person, per day, for 3 days</div>' +
+    '<table class="t"><tr><th>People</th><th>Drinking water</th></tr><tr><td>1</td><td class="amber">9 L</td></tr><tr><td>2</td><td class="amber">18 L</td></tr><tr><td>4</td><td class="amber">36 L</td></tr></table></div>' +
+  '<div class="abs r ex" data-l="2" style="left:300px;top:10px;width:820px;background:#0b2326;border-radius:20px;padding:30px 40px;height:470px"><div class="p">Cooking, washing, a little flushing</div><div class="big teal">~10 L</div><div class="h3" style="margin:6px 0">per person per day (comfortable)</div><div class="p" style="margin-top:14px">+ extra for 🍼 babies · 🩺 medical kit · 🐕 pets</div></div>' +
+  '<div class="abs r ex" data-l="3" style="left:300px;top:10px;width:820px;background:#0b2326;border-radius:20px;padding:30px 40px;height:470px"><div class="h2">Store it right</div><div class="col" style="align-items:flex-start;margin-top:18px"><div class="check"><i>✓</i>Sealed bottles or food-grade containers</div><div class="check"><i>✓</i>Cool, dark place, off the floor</div><div class="check"><i>✓</i>Date it · swap every <b class="amber">6 months</b></div></div></div>' +
+  '<div class="abs r ex" data-l="4" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;padding:24px"><div class="h2" style="margin-bottom:22px">Running short? Make it safe</div><div class="row" style="gap:16px">' +
+    [['1','Filter','🧺','through a clean cloth'],['2','Boil','♨️','rolling boil, 1 full minute'],['or','Tablets','💊','follow the label']].map(function (s, i) { return '<div class="card step r2" data-d="' + (i * 1.2) + '" data-l="4" style="width:330px"><div class="n">' + (s[0] === 'or' ? 'OR' : 'STEP ' + s[0]) + '</div><div style="font-size:72px;margin:6px 0">' + s[2] + '</div><div class="h3">' + s[1] + '</div><div class="p" style="font-size:22px">' + s[3] + '</div></div>'; }).join('') + '</div></div>' +
+  '<div class="abs r ex" data-l="5" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:40px"><div style="font-size:130px">🌧️</div><div><div class="h2 red">Water butt ≠ drinking water</div><div class="p" style="margin-top:12px">Keep rainwater for flushing and plants</div></div></div>'; },
+food: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;right:0;top:20px;text-align:center"><div class="row" style="gap:30px">' + [['🥫','No fridge'],['🔥','No cooking'],['📅','3 days']].map(function (s) { return '<div class="card" style="width:300px"><div class="ic" style="font-size:90px">' + s[0] + '</div><div class="h3">' + s[1] + '</div></div>'; }).join('') + '</div></div>' +
+  '<div class="abs r ex" data-l="1" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;padding:26px"><div class="h2" style="margin-bottom:16px">What to stock</div><div class="row" style="flex-wrap:wrap;gap:16px">' + ['🥫 Tinned meat &amp; fish','🥕 Tinned veg','🥜 Nuts','🍇 Dried fruit','🥄 Tin opener!'].map(function (x) { return '<div class="card h3" style="font-size:30px">' + x + '</div>'; }).join('') + '</div><div class="p" style="margin-top:22px;text-align:center">Buy what you actually eat.</div></div>' +
+  '<div class="abs r ex" data-l="2" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;text-align:center;padding-top:30px"><div class="p">Planning figure</div><div class="big amber"><span class="count" data-v="2000" data-l="2">0</span></div><div class="h3">calories per adult per day</div><div class="p" style="margin-top:26px">🥜 peanut butter · 🥣 oats · 🍚 rice</div></div>' +
+  '<div class="abs r ex" data-l="3" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;padding:30px"><div class="h2" style="margin-bottom:24px">The fridge clock</div>' +
+    '<div class="p" style="margin-bottom:6px">Fridge, door shut: ~4 hours</div><div class="bar"><b class="fill2" data-p="0.17" data-l="3"></b></div>' +
+    '<div class="p" style="margin:18px 0 6px">Full freezer: ~48 hours (half full: 24)</div><div class="bar"><b class="fill2" data-p="1" data-l="3"></b></div>' +
+    '<div class="h3 amber" style="margin-top:26px">Eat fridge food first.</div></div>'; },
+power: function () { return '' +
+  '<div class="row" style="margin-top:6px;gap:18px">' + [['0','🔦','Torch','+ spare batteries. Safer than candles'],['1','📻','FM radio','battery or wind-up'],['2','🔋','Power bank','charged'],['3','💷','Cash','coins and notes']].map(function (s) {
+    return '<div class="card step r" data-l="' + s[0] + '" style="width:270px;height:240px"><div class="ic" style="font-size:84px">' + s[1] + '</div><div class="h3" style="margin-top:8px">' + s[2] + '</div><div class="p" style="font-size:22px;margin-top:4px">' + s[3] + '</div></div>'; }).join('') + '</div>' +
+  '<div class="abs r" data-l="4" style="left:0;right:0;top:262px;height:208px;background:#0b2326;border-radius:22px;display:flex;align-items:center;justify-content:space-around;padding:0 30px;border:2px solid var(--amber)"><div class="col"><div class="p">Report a power cut</div><div class="big amber" style="font-size:120px">105</div></div><div class="col" style="align-items:flex-start"><div class="h3">Know your load block letter</div><div class="p">powercut105.com</div><div class="p" style="font-size:24px">Rota cuts: around 3 hours at a time</div></div></div>'; },
+warm: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;right:0;top:0;height:230px"><div class="row" style="gap:22px"><div class="card" style="width:330px"><div class="ic">🧣</div><div class="h3">Blankets, layers</div></div><div class="card" style="width:330px"><div class="ic">🚪</div><div class="h3">Close doors</div></div><div class="card" style="width:330px"><div class="ic">🪟</div><div class="h3">Curtains drawn</div></div></div></div>' +
+  '<div class="abs r" data-l="1" style="left:0;top:250px;width:620px"><div class="card"><div class="ic">🩹</div><div class="h3">First aid + medicines</div><div class="p" style="font-size:24px;margin-top:6px">Repeat prescription <b class="amber">5 working days</b> before you run out</div></div></div>' +
+  '<div class="abs r" data-l="2" style="left:640px;top:250px;width:556px"><div class="card"><div class="ic">🗂️</div><div class="h3">Paper copies</div><div class="p" style="font-size:24px;margin-top:6px">IDs, insurance, phone numbers, medication doses</div></div></div>' +
+  '<div class="abs r ex" data-l="3" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;display:flex;align-items:center;justify-content:center;gap:40px"><div style="font-size:120px">🛡️</div><div><div class="h2">Priority Services Register</div><div class="p" style="margin-top:12px">Energy &amp; water suppliers. Households with a child under 5 can be eligible.</div><div class="pill" style="margin-top:16px">thepsr.co.uk</div></div></div>'; },
+stove: function () {
+  var stove = '<svg viewBox="0 0 300 420" width="300" height="420" style="display:block">' +
+   '<rect x="40" y="380" width="220" height="20" rx="4" fill="#2a3a3c"/><rect x="60" y="110" width="180" height="270" rx="14" fill="#232c2e" stroke="#556" stroke-width="3"/>' +
+   '<rect x="50" y="96" width="200" height="22" rx="6" fill="#39464a"/><rect x="132" y="0" width="36" height="98" fill="#39464a"/>' +
+   '<rect x="86" y="160" width="128" height="120" rx="10" fill="#0a0d0e" stroke="#777" stroke-width="3"/>' +
+   '<g id="fl" transform="translate(150 280)"><path class="flame" id="f1" d="M-34 0 C-44 -40 -14 -52 -18 -86 C4 -64 10 -44 4 -20 C16 -30 26 -48 20 -74 C46 -48 46 -12 34 0Z" fill="#ff8a1f"/><path class="flame" id="f2" d="M-16 0 C-22 -22 -6 -30 -8 -52 C6 -38 8 -22 4 0Z" fill="#ffd27a"/></g>' +
+   '<g id="steam" opacity="0"><ellipse cx="150" cy="70" rx="40" ry="10" fill="#fff" opacity=".0"/></g>' +
+   '<rect x="86" y="40" width="40" height="56" rx="8" fill="#9aa7aa" id="kettle" opacity="0"/>' +
+   '</svg>';
+  return '' +
+  '<div class="abs" style="left:10px;top:10px">' + stove + '</div>' +
+  '<div class="abs r ex" data-l="0" style="left:360px;top:0;width:800px"><div class="h2">Yes, if it&rsquo;s safe: <span class="amber">heat, hot water, simple cooking</span></div><div class="p" style="margin-top:12px">No electricity needed. Boiler stoves with pumps: ask your installer first.</div><div class="row" style="justify-content:flex-start;margin-top:26px;gap:16px"><div class="card"><div class="ic">🏠</div><div class="h3">Heat</div></div><div class="card"><div class="ic">♨️</div><div class="h3">Boil water</div></div><div class="card"><div class="ic">🍲</div><div class="h3">Cook</div></div></div></div>' +
+  '<div class="abs r ex" data-l="1" style="left:360px;top:0;width:800px"><div class="h2">Treat it as <span class="red">safety equipment</span></div><div class="col" style="align-items:flex-start;margin-top:22px"><div class="check"><i>✓</i>Sweep <b class="amber">twice a year</b> when burning wood</div><div class="check"><i>✓</i>Battery <b class="amber">CO alarms</b>: stove room + bedrooms</div><div class="check"><i>✓</i>Registered installer, paperwork</div></div></div>' +
+  '<div class="abs r ex" data-l="2" style="left:360px;top:0;width:800px"><div class="h2">Dry wood only</div><div class="row" style="justify-content:flex-start;gap:24px;margin-top:20px"><div class="card"><div class="big teal" style="font-size:80px">≤20%</div><div class="p" style="font-size:22px">moisture</div></div><div class="card"><div class="big amber" style="font-size:80px">8-10<span style="font-size:36px"> kg</span></div><div class="p" style="font-size:22px">per cold day</div></div><div class="card"><div class="big amber" style="font-size:80px">~30<span style="font-size:36px"> kg</span></div><div class="p" style="font-size:22px">for 3 days</div></div></div></div>' +
+  '<div class="abs r ex" data-l="3" style="left:360px;top:0;width:800px"><div class="warnbox">⚠️ Linked to radiators or hot water? A pump may need electricity. Ask your installer if it is safe to light in a power cut.</div></div>' +
+  '<div class="abs r ex" data-l="4" style="left:360px;top:0;width:800px"><div class="h2">On the flat top</div><div class="row" style="justify-content:flex-start;flex-wrap:wrap;margin-top:20px;gap:14px">' + ['🫖 Kettle','🥣 Porridge','🍲 Soup','🍚 Rice &amp; pasta','🧉 Fill a flask'].map(function (x) { return '<div class="card h3">' + x + '</div>'; }).join('') + '</div><div class="p" style="margin-top:18px">Flat top only. Check your manual first.</div></div>' +
+  '<div class="abs r ex" data-l="5" style="left:360px;top:0;width:800px"><div class="warnbox" style="font-size:36px">🚫 Never indoors:<br>barbecue · camping stove · generator</div><div class="p" style="margin-top:16px">Carbon monoxide can\'t be seen or smelled.</div></div>'; },
+stretch: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;right:0;top:0"><div class="h2" style="text-align:center;margin-bottom:18px">Stretch list</div><div class="row" style="flex-wrap:wrap;gap:16px">' + ['💧 A week of water','🥫 A week of food','🧪 Filter + tablets','🔋 Big power bank','☀️ Solar panel'].map(function (x) { return '<div class="card h3" style="font-size:26px">' + x + '</div>'; }).join('') + '</div></div>' +
+  '<div class="abs r" data-l="1" style="left:0;right:0;top:300px"><div class="row" style="flex-wrap:wrap;gap:16px">' + ['🍳 Camping stove (outdoors)','🚽 Emergency toilet kit','🎒 Grab bag by the door'].map(function (x) { return '<div class="card h3" style="font-size:26px">' + x + '</div>'; }).join('') + '</div></div>' +
+  '<div class="abs r" data-l="2" style="left:0;right:0;top:330px;text-align:center"><div class="h2">Know your <span class="amber">neighbours</span></div><div class="p">Resilience is mostly people.</div></div>'; },
+outro: function () { return '' +
+  '<div class="abs r" data-l="0" style="left:0;right:0;top:0"><div class="h2" style="text-align:center;margin-bottom:20px">On the page</div><div class="row" style="gap:18px">' + [['✅','Checklist','remembers your progress'],['🧮','Calculator','for your household'],['🔥','Stove check','and fuel estimator'],['🔗','Sources','every one linked']].map(function (s) { return '<div class="card" style="width:270px"><div class="ic">' + s[0] + '</div><div class="h3">' + s[1] + '</div><div class="p" style="font-size:22px">' + s[2] + '</div></div>'; }).join('') + '</div></div>' +
+  '<div class="abs r" data-l="1" style="left:0;right:0;top:300px"><div class="row" style="gap:24px"><div class="card" style="width:420px;text-align:center"><div class="big amber" style="font-size:90px">18 L</div><div class="p" style="font-size:24px">of water in the cupboard</div></div><div class="card" style="width:420px;text-align:center"><div class="ic" style="font-size:90px">🔦</div><div class="p" style="font-size:24px">a torch by the bed</div></div></div></div>' +
+  '<div class="abs r ex" data-l="2" style="left:0;right:0;top:0;height:470px;background:#0b2326;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px"><div class="p">Official advice</div><div class="big amber" style="font-size:96px">GOV.UK/BeReady</div><div class="p">Also: ready.scot</div></div>'; }
+};
+
+/* ---------- build ---------- */
+var main = document.getElementById('main'), cap = document.getElementById('cap'), stitle = document.getElementById('stitle'), prog = document.getElementById('prog');
+var sceneEls = S.map(function (sc, i) {
+  var d = document.createElement('div'); d.className = 'scene'; d.style.cssText = 'position:absolute;left:0;top:0;right:0;bottom:0;display:none'; d.innerHTML = V[sc.id](); main.appendChild(d); return d; });
+prog.innerHTML = S.map(function (sc, i) { return '<i style="flex:' + (TL.scenes[i].end - TL.scenes[i].start) + '"><b></b></i>'; }).join('');
+var progBars = Array.prototype.slice.call(prog.querySelectorAll('b'));
+
+window.setT = function (t) {
+  var si = 0; for (var i = 0; i < TL.scenes.length; i++) if (t >= TL.scenes[i].start) si = i;
+  var sc = TL.scenes[si], rel = t - sc.start;
+  sceneEls.forEach(function (e, i) { e.style.display = i === si ? 'block' : 'none'; });
+  stitle.textContent = S[si].title;
+  // active line
+  var li = -1; for (var j = 0; j < sc.lines.length; j++) if (t >= sc.lines[j].start - 0.05) li = j;
+  var cur = li >= 0 ? S[si].lines[li] : null;
+  cap.textContent = cur && t <= sc.lines[li].end + 0.4 ? (cur.cap || cur.say) : '';
+  cap.parentNode.style.opacity = cap.textContent ? 1 : 0;
+  // reveal elements: show the element for line n from its start; hide when a later "exclusive" full-panel appears
+  var els = sceneEls[si].querySelectorAll('.r');
+  Array.prototype.forEach.call(els, function (el) {
+    var n = parseInt(el.getAttribute('data-l'), 10), st = sc.lines[n] ? sc.lines[n].start : 0;
+    var p = ease((t - st) / 0.55);
+    el.style.opacity = p; el.style.transform = 'translateY(' + ((1 - p) * 18) + 'px)';
+    if (el.classList.contains('ex') && li !== n) el.style.opacity = 0;
+  });
+  // sub-staggered children
+  Array.prototype.forEach.call(sceneEls[si].querySelectorAll('.r2'), function (el) {
+    var n = parseInt(el.getAttribute('data-l'), 10), d = parseFloat(el.getAttribute('data-d') || '0'), st = (sc.lines[n] ? sc.lines[n].start : 0) + d;
+    var p = ease((t - st) / 0.5); el.style.opacity = p; el.style.transform = 'translateY(' + ((1 - p) * 14) + 'px)';
+  });
+  Array.prototype.forEach.call(sceneEls[si].querySelectorAll('.count'), function (el) {
+    var n = parseInt(el.getAttribute('data-l'), 10), st = sc.lines[n].start + 0.2, v = parseFloat(el.getAttribute('data-v'));
+    el.textContent = Math.round(v * ease((t - st) / 1.6)).toLocaleString('en-GB');
+  });
+  Array.prototype.forEach.call(sceneEls[si].querySelectorAll('.fill'), function (el) {
+    var n = parseInt(el.getAttribute('data-l'), 10), st = sc.lines[n].start; el.style.height = (100 * parseFloat(el.getAttribute('data-p')) * ease((t - st) / 2.5)) + '%';
+  });
+  Array.prototype.forEach.call(sceneEls[si].querySelectorAll('.fill2'), function (el) {
+    var n = parseInt(el.getAttribute('data-l'), 10), st = sc.lines[n].start + 0.3; el.style.width = (100 * parseFloat(el.getAttribute('data-p')) * ease((t - st) / 1.8)) + '%';
+  });
+  // stove flames
+  var f1 = document.getElementById('f1'), f2 = document.getElementById('f2');
+  if (f1) {
+    var a = 1 + 0.10 * Math.sin(t * 9) + 0.06 * Math.sin(t * 17 + 1), b = 1 + 0.14 * Math.sin(t * 12 + 2);
+    f1.setAttribute('transform', 'scale(' + (1 + 0.03 * Math.sin(t * 7)) + ' ' + a + ')'); f2.setAttribute('transform', 'scale(' + (1 + 0.04 * Math.sin(t * 11)) + ' ' + b + ')');
+  }
+  // glows drift
+  document.getElementById('g1').style.transform = 'translate(' + (Math.sin(t / 7) * 30) + 'px,' + (Math.cos(t / 9) * 20) + 'px)';
+  document.getElementById('g2').style.transform = 'translate(' + (Math.cos(t / 8) * 30) + 'px,' + (Math.sin(t / 6) * 20) + 'px)';
+  // progress
+  progBars.forEach(function (b, i) { var s = TL.scenes[i]; b.style.width = (100 * clamp((t - s.start) / (s.end - s.start), 0, 1)) + '%'; });
+};
+window.__ready = true;
+</script></body></html>

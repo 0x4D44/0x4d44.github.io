@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Be Ready</title>
+<meta name="description" content="An interactive, source-linked emergency preparedness guide for a UK household: the Government's 3-day checklist, a stretch list, water storage and purification, power, cooking, and how to use a wood-burning stove safely.">
+<link rel="stylesheet" href="style.css">
+<script>
+/* apply the saved theme before first paint */
+try{var t=localStorage.getItem("br.theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}
+</script>
+</head>
+<body>
+<a class="skip" href="#checklist">Skip to the checklist</a>
+
+<div class="top">
+  <div class="brand">Be Ready <small>household emergency guide</small></div>
+  <button class="btn" id="themeBtn" type="button" aria-label="Toggle light and dark theme">Theme</button>
+  <button class="btn" id="printBtn" type="button">Print checklist</button>
+</div>
+
+<nav class="sec" aria-label="Sections">
+  <ul>
+    <li><a href="#calc">Your household</a></li>
+    <li><a href="#checklist">Checklist</a></li>
+    <li><a href="#water">Water</a></li>
+    <li><a href="#power">Power</a></li>
+    <li><a href="#cooking">Cooking</a></li>
+    <li><a href="#stove">Wood stove</a></li>
+    <li><a href="#whenithappens">When it happens</a></li>
+    <li><a href="#video">Video</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ul>
+</nav>
+
+<header class="hero wrap">
+  <div class="herogrid">
+    <div>
+      <div class="kicker">UK Government advice, made doable</div>
+      <h1>Three days, ready.</h1>
+      <p class="lede">The Government's advice is to be able to look after your household for <b>3 days</b> while help reaches those who need it most. This guide turns the official checklist into something you can tick off, adds a <b>stretch list</b> for when you want more buffer, and answers the question: <b>can our wood-burning stove heat the house and cook?</b> (Yes, with conditions &mdash; see the <a href="#stove">stove guide</a>.)</p>
+      <p><a class="btn primary" href="#calc" style="text-decoration:none;display:inline-block">Start: size it for your household</a>
+         <a class="btn" href="#video" style="text-decoration:none;display:inline-block">Watch the 5&frac12;-minute explainer</a></p>
+      <p class="small">Unofficial summary. Items tagged <span class="badge gov">Gov</span> come from the official checklist; <span class="badge stretch">Stretch</span> and <span class="badge ext">Guide</span> go beyond it. Always check <a href="https://www.gov.uk/BeReady">GOV.UK/BeReady</a> and <a href="https://ready.scot">Ready Scotland</a> for the current wording.</p>
+    </div>
+    <div class="rings" aria-label="Your progress">
+      <div class="ring" id="ringCore"></div>
+      <div class="ring stretch" id="ringStretch"></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="calc" class="first">
+  <h2>1. Size it for your household</h2>
+  <p>Tell the page who lives with you. Quantities in the checklist, the water guide and the fuel estimate update automatically. Your answers and ticks stay in <em>this browser only</em>.</p>
+  <div class="card">
+    <div class="calc" id="calcForm">
+      <label>Adults<input type="number" id="in_adults" min="0" max="20" value="2" inputmode="numeric"></label>
+      <label>Children<input type="number" id="in_children" min="0" max="20" value="0" inputmode="numeric"></label>
+      <label>Babies on formula<input type="number" id="in_babies" min="0" max="10" value="0" inputmode="numeric"></label>
+      <label>Dogs<input type="number" id="in_dogs" min="0" max="10" value="0" inputmode="numeric"></label>
+      <label>Cats<input type="number" id="in_cats" min="0" max="10" value="0" inputmode="numeric"></label>
+      <label>Days to cover<select id="in_days"><option value="3" selected>3 (Government advice)</option><option value="7">7 (stretch)</option><option value="14">14 (serious stretch)</option></select></label>
+    </div>
+    <div class="out" id="calcOut" aria-live="polite"></div>
+    <p class="small" id="calcNote"></p>
+  </div>
+</section>
+
+<section id="checklist">
+  <h2>2. The checklist</h2>
+  <p>Don't try to do it in a weekend. The official advice is to <b>check your cupboards first, note what's missing, pick up an item or two on each shop, and set a reminder every six months</b> to check dates.</p>
+  <div class="filters noprint" role="group" aria-label="Filter the checklist">
+    <button class="btn" type="button" data-f="all" aria-pressed="true">All</button>
+    <button class="btn" type="button" data-f="core" aria-pressed="false">Gov core</button>
+    <button class="btn" type="button" data-f="stretch" aria-pressed="false">Stretch</button>
+    <button class="btn" type="button" data-f="todo" aria-pressed="false">Still to do</button>
+    <input type="search" id="q" placeholder="Search (e.g. torch, formula)" aria-label="Search the checklist">
+    <button class="btn" type="button" id="resetBtn">Clear ticks</button>
+  </div>
+  <p id="noMatch" role="status" hidden></p>
+<div id="cats"></div>
+</section>
+
+<section id="water">
+  <h2>3. Water: how much, and how to make more</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>How much to store</h3>
+      <p><span class="badge gov">Gov</span> <b>3 litres of drinking water per person per day, for 3 days.</b> That's 9 L each, 18 L for two, 36 L for four. The Government says <em>more</em> is needed for cooking and washing, and extra for formula, medical devices and pets.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Level</th><th>Per person / day</th><th>What it covers</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge gov">Gov</span> Drinking</td><td>3 L</td><td>Official minimum. Drinking only.</td></tr>
+          <tr><td>Practical</td><td>5 L</td><td>Drinking, tea, simple cooking, handwashing.</td></tr>
+          <tr><td>Comfortable</td><td>10 L</td><td>Adds a strip-wash and a little toilet flushing.</td></tr>
+          <tr><td>Humanitarian</td><td>15 L</td><td>The standard aid agencies plan to (Sphere handbook). Not realistic to store, but a useful target to <em>make</em> with a stream or butt plus treatment.</td></tr>
+        </tbody></table></div>
+      <p class="small">The 5 / 10 / 15 L levels are planning guidance rather than UK Government figures; the calculator above uses 10 L for the &ldquo;comfortable&rdquo; line.</p>
+    </div>
+    <div class="card">
+      <h3>Storing it</h3>
+      <ul>
+        <li>Sealed shop bottles are simplest. For tap-filled containers use <b>clean, food-grade</b> ones (old fizzy-drink bottles are fine; milk jugs are not).</li>
+        <li>Cool, dark, off the floor, away from fuel and chemicals.</li>
+        <li>Label with the date; <b>swap every 6 months</b> (the official kit-review interval).</li>
+        <li>Mix sizes: a few 5&ndash;10 L containers for kitchen use, 1.5&ndash;2 L bottles to carry and share.</li>
+        <li>Short of space? The Government's own suggestion is to <b>boil or tablet-treat other sources</b> rather than store everything.</li>
+        <li>Planned interruption? Scottish Water must give <b>at least 48 hours' notice</b> of planned interruptions of 4 hours or more; fill containers, a bath for flushing only.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Making water safe</h3>
+  <div class="warn"><b>Rainwater from a water butt is not safe to drink</b> (official advice). Use it for flushing toilets and plants. If you have no other choice, filter it and boil it for a full minute, accepting some risk from roof contaminants.</div>
+  <div class="tw"><table>
+    <thead><tr><th>Method</th><th>How</th><th>Deals with</th><th>Doesn't deal with</th></tr></thead>
+    <tbody>
+      <tr><td><b>1. Settle &amp; filter</b> <span class="badge gov">Gov</span></td><td>Let cloudy water stand, then pour through a clean cloth, coffee filter or clean sock-in-a-funnel. Do this <i>before</i> boiling or tablets.</td><td>Grit and sediment (helps the next steps work).</td><td>Germs and chemicals.</td></tr>
+      <tr><td><b>2. Boil</b> <span class="badge ext">Guide</span></td><td>Be Ready says boiling or tablets make water safer. Standard guidance (US EPA / WHO) is a <b>rolling boil for 1 minute</b> (or boil a kettle until it switches off). Let it cool covered. On the stove top, a lidded pan or kettle is quickest.</td><td>Bacteria, viruses, protozoa.</td><td>Chemicals, nitrates, fuel &mdash; boiling concentrates them.</td></tr>
+      <tr><td><b>3. Purification tablets</b> <span class="badge gov">Gov</span></td><td>Chlorine dioxide or chlorine tablets (camping shops). <b>Follow the label</b> &mdash; strengths vary. Typically 30 minutes; chlorine-dioxide tablets need up to 4 hours to deal with Cryptosporidium. Cold water slows them: warm it slightly or use the label&rsquo;s cold-water time.</td><td>Bacteria, viruses; chlorine dioxide also protozoa.</td><td>Chemical contamination; poor against cloudy water unless filtered first.</td></tr>
+      <tr><td><b>4. Portable filter</b> <span class="badge ext">Guide</span></td><td>Hollow-fibre or ceramic, rated 0.2 micron or finer. Pump or squeeze. Back-flush as instructed.</td><td>Bacteria and protozoa.</td><td>Viruses (unless sold as a &ldquo;purifier&rdquo;), chemicals. A jug filter (Brita) does <b>not</b> make unsafe water safe.</td></tr>
+      <tr><td><b>5. Plain household bleach</b> <span class="badge ext">Guide</span></td><td>Last resort. Use plain household bleach labelled sodium hypochlorite only &mdash; no &ldquo;thick&rdquo;, gel, scented or added-cleaner products &mdash; and check the % on the label. If the label says under 5%, or gives only a range, don&rsquo;t use it &mdash; boil instead. At 6% use about <b>2 drops per litre</b> (4 if cloudy); at 5% about 3 (6 if cloudy). Measure with a dropper or syringe, stir, wait <b>30 minutes</b>; it should smell faintly of chlorine (if not, repeat once and wait 15 more minutes). Bleach weakens with age: use a fresh bottle. Non-official (US EPA).</td><td>Bacteria and most viruses.</td><td>Cryptosporidium, chemicals. If unsure, boil instead.</td></tr>
+    </tbody></table></div>
+  <p class="small">Bleach dosing follows US EPA emergency-disinfection guidance converted to drops per litre; no UK government page gives a drops figure. Treat it as a last resort, and prefer boiling.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Emergency sources already in your house</h3>
+      <ul>
+        <li><b>Mains-fed taps</b> may keep running after a power cut &mdash; fill kettles, pans, bath (for flushing) <i>immediately</i> if a water interruption is announced.</li>
+        <li><b>Hot-water cylinder</b> &mdash; last resort only, and <b>not if a stove or boiler heats it</b>. If your stove has a back boiler or is connected to the cylinder, do not drain it. Otherwise, with all heating off and the water cold, draw from the lowest drain valve only if your installer or manual says it is safe for your system (never on an unvented, mains-pressure cylinder). It can scald and may be stale: boil for at least 1 minute before drinking. Bottled and stored water come first.</li>
+        <li><b>Freezer ice and cold-water pipes</b> if the supply is not yet off.</li>
+        <li><b>Cistern water</b> (the tank, not the bowl) is for flushing only unless you know it's clean.</li>
+        <li>Soft and fizzy drinks are fine to drink (official advice).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Using the water well</h3>
+      <ul>
+        <li><b>Bottled water only for</b> drinking, handwashing and food preparation (official).</li>
+        <li><b>Handwashing:</b> fill a large clean bowl with water plus soap or disinfectant; use as little water as you can.</li>
+        <li><b>Flushing:</b> pour a bucket (about 5&ndash;8 L of non-drinking water) quickly into the bowl.</li>
+        <li><b>Babies:</b> ready-to-feed formula is safest; powder only with freshly boiled water.</li>
+        <li><b>Scotland:</b> Scottish Water 0800 0778 778. For an unplanned interruption of <b>12 hours or more</b>, Scottish Water must provide an alternative supply (Citizens Advice Scotland); planned interruptions of 4 hours or more need at least 48 hours&rsquo; notice. Registered on the PSR? They should arrange it for you.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="power">
+  <h2>4. Power: lights, comms and the fridge</h2>
+  <p><span class="badge gov">Gov</span> The official minimum is a <b>torch</b>, a <b>battery or wind-up FM radio</b>, a <b>charged power bank</b>, <b>cash</b>, and the numbers written down. Everything else here is stretch.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Your power budget</h3>
+      <p class="small">Enter how many hours (or charges) a day you'd want each thing. Typical draws shown.</p>
+      <div id="devs"></div>
+      <div class="out" id="powerOut" aria-live="polite"></div>
+    </div>
+    <div class="card">
+      <h3>What to buy, in order</h3>
+      <ol>
+        <li><b>Torches &amp; a head torch each</b> &mdash; cheap, vital.</li>
+        <li><b>A radio</b> (wind-up/solar/AA). Mobile networks and broadband may fail or be jammed.</li>
+        <li><b>Power banks.</b> A 20,000 mAh bank is about 74 Wh rated, roughly 50 Wh usable: about three phone charges. Keep them topped up each month.</li>
+        <li><b>Rechargeable lanterns</b> over candles (torches are safer than candles, and fire services warn about candle fires).</li>
+        <li><b>A portable power station</b> (300&ndash;1000 Wh) if you need the router, laptop or medical kit. Recharge from solar, the car, or a generator.</li>
+        <li><b>A fridge-freezer typically uses 0.3&ndash;1 kWh a day</b> depending on age (check its label). That's beyond most batteries; plan to eat fridge food first instead (see below).</li>
+      </ol>
+      <div class="tip"><b>Solar in Scotland:</b> in winter, a 100 W panel might give 50&ndash;150 Wh on a decent day. Useful for phones and lights; not a heating or cooking plan.</div>
+    </div>
+  </div>
+
+  <h3>The fridge and freezer clock <span class="badge gov">FSA</span></h3>
+  <div class="grid3">
+    <div class="card"><b>Fridge</b><br>Stays cold about <b>4 hours</b> with the door shut. Under 8&deg;C is acceptable during a power cut. Above that, eat chilled food within 4 hours.</div>
+    <div class="card"><b>Freezer</b><br>Full: about <b>48 hours</b>. Half full: about <b>24 hours</b>. Keep it closed. Don't refreeze thawed food.</div>
+    <div class="card"><b>Cold outside?</b><br>Below 8&deg;C you can keep food outside in a sealed box, out of sun and away from animals. Cook thawing meat first.</div>
+  </div>
+
+  <h3>Generators: read before buying</h3>
+  <div class="warn"><b>Never run a generator, barbecue or camping stove indoors, in a garage, or near windows, doors or vents.</b> Carbon monoxide has no smell and kills quickly. A fan does not make indoor use safe. Never plug a generator into a wall socket: it can energise the grid and kill utility workers. A changeover switch must be fitted by a competent electrician (with your network operator told); otherwise run RCD-protected extension leads from the generator outdoors. Keep it several metres from windows, doors and vents, sheltered from rain but open to fresh air (never inside a shed), on dry ground. Follow the maker&rsquo;s manual.</div>
+  <ul>
+    <li>Petrol at home is limited to 30 litres in total, in approved, labelled containers (plastic up to 10 L, metal up to 20 L), kept in a shed or garage &mdash; never in living areas or near the stove or boiler. Let a hot generator cool and refuel it outdoors. Check with your fire and rescue service.</li>
+    <li>A small inverter generator (1&ndash;2 kW) is quiet enough for neighbours and efficient with fuel; it will run a fridge and some lighting, not a kettle plus anything.</li>
+    <li>Run it long enough to keep the fridge below 8&deg;C (use a fridge thermometer) and keep the freezer closed. The fridge is only safe for about 4 hours without power, so plan around that rather than a fixed timetable.</li>
+  </ul>
+
+  <h3>Communications</h3>
+  <ul>
+    <li>Report a cut: <b>105</b> (England, Scotland, Wales) &middot; <b>03457 643643</b> (Northern Ireland). Emergencies: <b>999</b> or <b>112</b>; emergency calls can roam onto other networks.</li>
+    <li>Find your <b>load block letter</b> at <a href="https://powercut105.com">powercut105.com</a> or on your bill. In the unlikely event of a national energy shortage, emergency rota disconnections would last around three hours at a time.</li>
+    <li>Digital landlines (broadband voice) die with the power. Ask your provider about a free battery backup (at least one hour). Cordless handsets also need mains power.</li>
+    <li>Register on the <b>Priority Services Register</b>: <a href="https://www.thepsr.co.uk">thepsr.co.uk</a>. Households with children under 5 can be eligible.</li>
+  </ul>
+</section>
+
+<section id="cooking">
+  <h2>5. Cooking and eating without the grid</h2>
+  <div class="note"><b>The official advice is no-cook food.</b> Electric and induction cookers will not work in a power cut; gas cookers may (Food Standards Agency) &mdash; check your own model. The Government&rsquo;s list is food that needs "no refrigeration or cooking". Cooking is a stretch &mdash; and your wood stove makes it a very easy one.</div>
+  <div class="tw"><table>
+    <thead><tr><th>Method</th><th>Indoors?</th><th>Good for</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><b>Tinned / no-cook food</b> <span class="badge gov">Gov</span></td><td>Yes</td><td>Everything for 3 days</td><td>Tin opener! Eat chilled food first.</td></tr>
+      <tr><td><b>Wood-stove top</b></td><td>Yes (if stove is installed correctly)</td><td>Kettles, soup, porridge, rice, pasta, stews, toast, flatbreads on the flat top</td><td>Needs a flat hot top. See the <a href="#stove">stove guide</a>. Also boils water for purification.</td></tr>
+      <tr><td><b>Gas hob</b></td><td>Yes, ventilated</td><td>Boiling, frying</td><td>Many gas hobs can be lit with a match or lighter if the clicker is dead &mdash; check your manual (some need the knob held in). If you smell gas, light nothing, open windows and call 0800 111 999. Ventilate while cooking. <b>Never use a hob or oven to heat a room.</b></td></tr>
+      <tr><td><b>Camping stove (gas)</b></td><td><b>No &mdash; outdoors</b></td><td>Boiling, one-pot meals</td><td>Produces carbon monoxide. Keep spare cartridges; store them cool and upright, outside living space.</td></tr>
+      <tr><td><b>Barbecue / charcoal</b></td><td><b>Never indoors</b></td><td>Outdoor cooking in a pinch</td><td>Charcoal embers give off CO for hours. Never bring one inside to heat or "finish off".</td></tr>
+      <tr><td><b>Thermos</b></td><td>Yes</td><td>Hot drinks, instant soup, baby bottles, keeping rice warm</td><td>Boil once, use for hours.</td></tr>
+    </tbody></table></div>
+
+  <h3>Food planner</h3>
+  <p class="small">Tap + / &minus; to build a larder. Approximate calories per item are shown. The target is adults 2,000 kcal and children 1,500 kcal per day (planning figures, not Government figures).</p>
+  <div class="card">
+    <div id="foodList"></div>
+    <div class="out" id="foodOut" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="stove">
+  <h2>6. Your wood-burning stove</h2>
+  <div class="ok"><b>Short answer: yes.</b> A wood stove needs no electricity, so it can heat a room, boil water (which also makes it a water-purification tool) and cook simple food through a multi-day power cut. It is probably the single best resilience asset in the house &mdash; <b>provided it is safe, dry-fuelled and not dependent on a pump</b>.</div>
+  <p class="small">The official Be Ready pages don't address wood stoves. What follows is synthesised from HETAS (the solid-fuel competent-person body), Woodsure's Ready to Burn scheme, fire-and-rescue carbon-monoxide guidance and the official power-cut advice. It is not an installer's sign-off: your stove's manual and your installer have the last word.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Heating</h3>
+      <ul>
+        <li>One stove heats <b>one zone</b>, not a whole house. Set up a &ldquo;warm room&rdquo;; bring bedding in; close other doors and curtains (official advice).</li>
+        <li>Typical stoves are 4&ndash;8 kW. In cold weather, expect to burn about <b>8&ndash;10 kg of dry logs a day</b> to keep one room warm for ~10 hours (use the estimator below).</li>
+        <li>A heat-powered stove fan moves warm air with no electricity.</li>
+        <li>Keep the glass door closed while the fire burns. Don't over-fire: stay within the manual's limits.</li>
+        <li>Wet or cold pipes can freeze: open cupboard doors to warm pipes; drip a tap if you're sure supply is on.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Cooking on it</h3>
+      <ul>
+        <li>Most stoves have a <b>flat steel/cast-iron top</b> that's hot enough to boil a kettle in 15&ndash;25 minutes and simmer a pot.</li>
+        <li>Use heavy, flat-based pans (cast iron, thick steel). Thin aluminium and non-stick are poor and can be damaged.</li>
+        <li>Cook on the <b>flat top only</b>, with the fire burning cleanly &mdash; not a smoky start-up or a roaring flame. The hot spot is above the firebox; cooler towards the sides. Check your manual allows cooking on top. Do not open the door to cook in the embers unless the manual explicitly allows it.</li>
+        <li><b>Burns and scalds:</b> secure the kettle lid, keep children and pets back, watch for boil-over, use oven gloves and never leave pans unattended.</li>
+        <li>Use for: <b>kettle, porridge, soup, rice, pasta, tinned stews, toast, flatbreads</b>. Avoid deep-frying and anything that flares fat.</li>
+        <li>Check the manual: some stoves forbid cooking, or have a glass-top; those are heat-only.</li>
+        <li>Boil water for 1 full minute to purify; fill a flask while you're at it.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Is your stove ready? A 2-minute check</h3>
+  <div class="quiz card" id="quiz"></div>
+  <div id="verdict" aria-live="polite"></div>
+
+  <h3>The big three risks</h3>
+  <div class="grid3">
+    <div class="card"><b>1. Carbon monoxide</b><br>Colourless, odourless. Fit <b>battery</b> CO alarms (EN 50291) in the stove room and by bedrooms; test monthly. Place at head height, 1&ndash;3 m from the stove (not right beside it), and replace at the end-of-life date. <b>If an alarm sounds:</b> stop adding fuel, open doors, get everyone outside and stay out. Call 999 (and the Gas Emergency line, 0800 111 999, if you smell gas) &mdash; always if anyone has headache, dizziness, nausea or drowsiness. Do not use the stove again until a HETAS-registered installer has checked it. Never run extractors that fight the stove for air.</div>
+    <div class="card"><b>2. Chimney fires</b><br>Caused by wet wood, restricted airflow and infrequent sweeping. HETAS: sweep <b>at least twice a year when burning wood</b> (before the season and after heavy use). If it roars or glows: close the air controls, leave, call 999.</div>
+    <div class="card"><b>3. Back boilers &amp; pumps</b><br>If the stove also heats radiators or hot water, a <b>pump, valve or thermal store may need electricity</b>. A pump-dependent system with no power can overheat dangerously. Ask your installer <i>now</i> whether yours is safe to light without power and what the heat-leak arrangement is.</div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3>Fuel estimator</h3>
+      <div class="calc">
+        <label>Average heat output (kW)<input type="number" id="f_kw" min="1" max="12" step="0.5" value="3"></label>
+        <label>Hours burning per day<input type="number" id="f_h" min="1" max="24" value="10"></label>
+        <label>Days<input type="number" id="f_d" min="1" max="30" value="3"></label>
+      </div>
+      <div class="out" id="fuelOut" aria-live="polite"></div>
+      <p class="small">Rule of thumb: dry wood (&le;20% moisture) holds ~4 kWh/kg, a modern stove turns ~75% of that into room heat, so each kWh of heat needs about 0.33 kg. Real use varies a lot with the stove, the draught, and the cold.</p>
+    </div>
+    <div class="card">
+      <h3>Wood that works</h3>
+      <ul>
+        <li><b>Moisture 20% or less</b> (Woodsure Ready to Burn). Check with a meter on a freshly split face.</li>
+        <li>Seasoning is slow: roughly 12&ndash;24 months split and stacked under cover, air moving through. Kiln-dried logs work now.</li>
+        <li><b>Never</b> burn painted/treated wood, chipboard, pallets with chemicals, plastics, rubbish or driftwood. Never use petrol, paraffin or lighter fluid.</li>
+        <li>Coal and house coal: only authorised smokeless fuel if your stove and area require it. Smoke control area rules still apply in an emergency &mdash; check with your council.</li>
+        <li>Ash: cold ash in a metal bin with a lid, outdoors, away from walls. Embers can stay live for days.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="dodont" style="margin-top:16px">
+    <div class="ok"><b>Do</b>
+      <ul>
+        <li>Light a trial fire in autumn. Find out what's missing before the storm.</li>
+        <li>Keep a stack of kindling, firelighters and matches somewhere dry.</li>
+        <li>Open the stove's air supply fully when lighting; turn it down only once the fire is burning well.</li>
+        <li>Use heat-proof gloves and keep a fire guard if children or pets are around.</li>
+        <li>Keep a fire blanket and extinguisher nearby; test smoke alarms.</li>
+        <li>Check on neighbours &mdash; offer a warm room if you have one.</li>
+      </ul></div>
+    <div class="warn"><b>Don't</b>
+      <ul>
+        <li>Don't leave a stove unattended with the door open, or run it all night with the air shut right down.</li>
+        <li>Don't dry washing on or within clearance distance of the stove.</li>
+        <li>Don't block vents or seal the room up completely; the fire needs air.</li>
+        <li>Don't use a barbecue, camping stove or generator indoors as a "backup".</li>
+        <li>Don't light a pump-dependent boiler stove without your installer's say-so.</li>
+        <li>Don't put sleeping people alone in a room with a smouldering fire and no CO alarm.</li>
+      </ul></div>
+  </div>
+</section>
+
+<section id="whenithappens">
+  <h2>7. When it actually happens</h2>
+  <ol class="tl">
+    <li><h3>First 15 minutes</h3><ul>
+      <li>Check whether it's just your house (look at the fuse board and neighbours' windows).</li>
+      <li>Report it: <b>105</b> or your network's website. Keep away from power lines.</li>
+      <li>Turn off ovens, irons, fires, fryers; unplug TVs and PCs to avoid a surge when it returns.</li>
+      <li>Torch out. No candles if you can avoid them. Radio on.</li>
+      <li>Fill kettles and a few pans with water now &mdash; a power cut sometimes becomes a water cut.</li>
+    </ul></li>
+    <li><h3>First 4 hours</h3><ul>
+      <li>Keep fridge and freezer doors shut.</li>
+      <li>Light the stove if it's cold. Choose the warm room; close doors; curtains shut.</li>
+      <li>Charge the phone from the power bank only as needed; set it to low-power mode; stop scrolling.</li>
+      <li>Check on neighbours, especially anyone elderly, with a baby, or with medical equipment.</li>
+    </ul></li>
+    <li><h3>Day 1</h3><ul>
+      <li>Eat fridge food first; then freezer; then tins. Cook what's thawed.</li>
+      <li>Boil a kettle on the stove into thermoses; use the stove top to cook a hot meal.</li>
+      <li>Follow updates by radio: network operator, council, Ready Scotland / GOV.UK.</li>
+      <li>Check the CO alarm works and has not sounded. Headache, dizziness, nausea or drowsiness is a possible carbon monoxide sign: put the stove out, get everyone outside and call 999. Never block the stove&rsquo;s air vents.</li>
+    </ul></li>
+    <li><h3>Day 2&ndash;3</h3><ul>
+      <li>Ration water by use: bottled for drinking and cooking; stored/treated water for washing and flushing.</li>
+      <li>Check batteries. Rotate who sleeps in the warmest room if needed.</li>
+      <li>If you can't stay warm or safe, go to your meeting point, a neighbour, or a council rest centre. Take your grab bag.</li>
+      <li>Medical problem or danger to life: <b>999</b>.</li>
+    </ul></li>
+    <li><h3>When the power returns</h3><ul>
+      <li>Switch appliances on gradually. Check fridge-freezer food (FSA guidance above).</li>
+      <li>Run the cold kitchen tap until discoloured water clears after a water outage.</li>
+      <li>Replace what you used the same week. Note what you wished you'd had.</li>
+    </ul></li>
+  </ol>
+</section>
+
+<section id="video">
+  <h2>8. The 5&frac12;-minute explainer</h2>
+  <p>A narrated walk-through of the whole guide: the Government's 3-day checklist, water, power, food and the wood stove.</p>
+  <div class="video">
+    <video id="vid" controls preload="metadata" poster="poster.jpg" playsinline>
+      <source src="be-ready-explainer.mp4" type="video/mp4">
+      Your browser can't play this video. The transcript is below.
+    </video>
+  </div>
+  <details class="tr"><summary>Read the transcript</summary><div id="transcript"></div></details>
+</section>
+
+<section id="sources">
+  <h2>Sources &amp; honesty</h2>
+  <p>Official advice (tagged <span class="badge gov">Gov</span>) comes from:</p>
+  <ul class="src">
+    <li><a href="https://beready.campaign.gov.uk/be-ready-for-emergencies/">GOV.UK Be Ready: Be ready for emergencies</a> &mdash; 3-day kit, plan, Priority Services Register.</li>
+    <li><a href="https://beready.campaign.gov.uk/wp-content/uploads/sites/252/2026/10/Be-Ready-Checklist_English.pdf">Be Ready Checklist (PDF)</a></li>
+    <li><a href="https://beready.campaign.gov.uk/be-informed-about-hazards/power-cuts">Be Ready: Power cuts</a> &mdash; 105, load block letters, rota cuts, torches, radios.</li>
+    <li><a href="https://beready.campaign.gov.uk/be-informed-about-hazards/water-supply-interruptions-or-outages">Be Ready: Water supply interruptions or outages</a> &mdash; 3 L / person / day, tablets, boiling, rainwater warning.</li>
+    <li><a href="https://ready.scot/">Ready Scotland</a> and its <a href="https://ready.campaign.gov.scot/emergency-kit">emergency kit</a> page.</li>
+    <li><a href="https://food.gov.uk/safety-hygiene/food-safety-in-a-power-cut-advice-for-consumers">Food Standards Agency: food safety in a power cut</a> &middot; <a href="https://www.foodstandards.gov.scot/consumers/food-safety/at-home/power-cuts">Food Standards Scotland</a></li>
+    <li><a href="https://scottishwater.co.uk/Help-and-Resources/FAQs/Water-FAQs/Water-Supply-FAQs">Scottish Water: water supply FAQs</a> &middot; <a href="https://www.citizensadvice.org.uk/scotland/consumer/water/your-water-supply/interruptions-to-your-water-supply/">Citizens Advice Scotland: interruptions</a></li>
+  </ul>
+  <p>Beyond the official pages (tagged <span class="badge ext">Guide</span> or <span class="badge stretch">Stretch</span>):</p>
+  <ul class="src">
+    <li><a href="https://www.hetas.co.uk/consumer">HETAS</a> &mdash; sweeping at least twice a year when burning wood, registered installers.</li>
+    <li><a href="https://www.woodsure.co.uk/">Woodsure Ready to Burn</a> &mdash; logs at 20% moisture or less.</li>
+    <li><a href="https://www.hseni.gov.uk/news/carbon-monoxide-dangers-heating-appliances-and-generators-used-indoors">HSENI: carbon monoxide dangers of heating appliances and generators used indoors</a> &middot; <a href="https://www.westernpower.co.uk/power-cut-information/power-cut-advice/safety-first/">Western Power: safety first</a></li>
+    <li><a href="https://www.epa.gov/ground-water-and-drinking-water/emergency-disinfection-drinking-water">US EPA: emergency disinfection of drinking water</a> (boiling time and bleach dosing).</li>
+  </ul>
+  <div class="tip"><b>Honest limits.</b> This page is an independent, unofficial summary made in October 2026. Government guidance changes; check GOV.UK/BeReady and Ready Scotland for the current version. The stove, generator and water-treatment sections are general guidance, not a substitute for your appliance manual, your installer, your fire service or a medical professional. In an emergency, call <b>999</b>.</div>
+</section>
+
+<footer>Built for the almanac. Your ticks and household numbers are saved only in this browser (localStorage) and are never sent anywhere.</footer>
+</main>
+
+<script src="content.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
