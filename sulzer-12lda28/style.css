@@ -145,3 +145,5 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .transcript{margin:14px 0 0;max-width:68rem}.transcript summary{cursor:pointer;color:var(--accent)}.transcript h4{margin:1em 0 .2em}.transcript p{margin:0;color:var(--dim)}
+@media (max-width:900px){.cab{position:static}html{scroll-padding-top:70px}}
+@media (pointer:coarse){.viewbar button,.partlist button,.topnav nav a{min-height:40px}.snd select,.cab select{min-height:40px}}
