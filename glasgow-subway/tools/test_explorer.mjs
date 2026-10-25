@@ -38,7 +38,7 @@ async function run(name, vp, mobile) {
   await page.evaluate(() => window.__explorer.setXray(1)); await shot('2-xray');
   await page.evaluate(async () => { const e = window.__explorer; e.app.setExaggeration(1); await e.flyToStation(e.app.stations[7].id, { xray: 1, dur: 0.1 }); }); await shot('3-station-xray');
   await page.evaluate(() => { window.__explorer.setXray(0); window.__explorer.selectStation(window.__explorer.app.stations[0].id, { fly: false }); window.__explorer.app.rig.setView(window.__explorer.app.stationView(window.__explorer.app.stations[0].id)); }); await shot('4-station-surface'); await noOverflow('station');
-  await page.evaluate(() => { window.__explorer.setLight('night'); window.__explorer.setXray(0.7); window.__explorer.app.selectStation(null); window.__explorer.hero(); }); await page.waitForTimeout(3500); await shot('5-night');
+  await page.evaluate(() => { window.__explorer.setLight('night'); window.__explorer.setXray(0.7); window.__explorer.app.selectStation(null); window.__explorer.setView(window.__explorer.app.heroView); }); await page.waitForTimeout(500); await shot('5-night');
   await page.evaluate(() => { window.__explorer.setLight('day'); window.__explorer.toggleProfile(true); }); await shot('6-profile'); await noOverflow('profile');
   await page.evaluate(() => { window.__explorer.ui.showPane('view'); window.__explorer.ui.showPane('line'); }); await shot('7-line');
   await page.evaluate(() => window.__explorer.startTour()); await page.waitForTimeout(6000); await shot('8-tour'); await page.evaluate(() => window.__explorer.stopTour());

@@ -61,7 +61,7 @@ export class City {
       const solid = f > 0.985 && !b.transparent;
       if (m.transparent !== !solid) { m.transparent = !solid; m.needsUpdate = true; }
       m.depthWrite = solid ? b.depthWrite : false;
-      if (r.layer === 'buildings' || r.layer === 'landmarks') { if (m.emissive) { m.emissive.setRGB(0.5 * night, 0.34 * night, 0.14 * night); m.emissiveIntensity = 0.35; } }
+      if (r.layer === 'buildings' || r.layer === 'landmarks') { if (m.emissive) { m.emissive.setRGB(0.3 * night, 0.22 * night, 0.1 * night); m.emissiveIntensity = 0.25; } }
     }
   }
   applyAll() { for (const r of this.recs) this.applyRec(r); }

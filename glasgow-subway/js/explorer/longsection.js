@@ -34,7 +34,7 @@ export class LongSection {
   resize() {
     const p = this.canvas.parentElement; const w = Math.max(200, p.clientWidth), h = Math.max(120, p.clientHeight); const dpr = Math.min(2, devicePixelRatio || 1);
     this.canvas.width = w * dpr; this.canvas.height = h * dpr; this.canvas.style.width = w + 'px'; this.canvas.style.height = h + 'px';
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); this.w = w; this.h = h; this.m = { l: 42, r: 12, t: 12, b: 64 }; this.draw();
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); this.w = w; this.h = h; this.m = { l: 42, r: 12, t: 24, b: 64 }; this.draw();
   }
   draw() {
     const c = this.ctx, { w, h, m } = this; if (!w) return; const css = getComputedStyle(document.documentElement);
@@ -45,7 +45,7 @@ export class LongSection {
     c.lineWidth = 1; c.strokeStyle = line; c.fillStyle = dim; c.textAlign = 'right'; c.textBaseline = 'middle';
     for (let y = Math.ceil(this.yMin / 10) * 10; y <= this.yMax; y += 10) { c.globalAlpha = y === 0 ? 0.9 : 0.4; c.beginPath(); c.moveTo(m.l, py(y) + 0.5); c.lineTo(w - m.r, py(y) + 0.5); c.stroke(); c.globalAlpha = 1; c.fillText(y + ' m', m.l - 6, py(y)); }
     // river crossings
-    for (const r of this.cross) { const x0 = px(Math.max(0, r.s0)), x1 = px(Math.min(this.L, r.s1)); c.fillStyle = 'rgba(80,170,220,.22)'; c.fillRect(x0, m.t, Math.max(2, x1 - x0), h - m.t - m.b); c.fillStyle = 'rgba(150,215,245,.9)'; c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText('Clyde', (x0 + x1) / 2, m.t + 2); }
+    for (const r of this.cross) { const x0 = px(Math.max(0, r.s0)), x1 = px(Math.min(this.L, r.s1)); c.fillStyle = 'rgba(80,170,220,.22)'; c.fillRect(x0, m.t, Math.max(2, x1 - x0), h - m.t - m.b); c.fillStyle = 'rgba(150,215,245,.9)'; c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText('Clyde', (x0 + x1) / 2, m.t + 1); }
     // water level
     c.setLineDash([4, 4]); c.strokeStyle = 'rgba(90,170,220,.7)'; c.beginPath(); c.moveTo(m.l, py(this.waterY)); c.lineTo(w - m.r, py(this.waterY)); c.stroke(); c.setLineDash([]);
     // ground fill
@@ -66,7 +66,7 @@ export class LongSection {
     }
     // x axis
     c.fillStyle = dim; c.textAlign = 'center'; c.textBaseline = 'top'; c.font = '11px system-ui, sans-serif';
-    for (let km = 0; km * 1000 <= this.L; km++) { const x = px(km * 1000); c.fillText(km + ' km', x, 2 + h - 14 - 0); c.fillStyle = line; c.fillRect(x, h - m.b + 2, 1, 4); c.fillStyle = dim; }
+    for (let km = 0; km * 1000 <= this.L; km++) { const x = px(km * 1000); c.fillText(km + ' km', x, 4); c.fillStyle = line; c.fillRect(x, m.t - 6, 1, 5); c.fillStyle = dim; }
     // cursor
     if (this.cursorS != null) {
       const x = px(this.cursorS), i = this.info(this.cursorS); c.strokeStyle = '#fff'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 0.5, m.t); c.lineTo(x + 0.5, h - m.b); c.stroke();

@@ -12,7 +12,7 @@ export function zoneHeight(z, x, zz) {
 const inZone = (z, x, zz, m = 0) => x >= z.x0 - m && x <= z.x1 + m && zz >= z.z0 - m && zz <= z.z1 + m;
 
 export class Walker {
-  constructor() { this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
+  constructor() { this.eye = EYE; this.radius = RADIUS; this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
   setWorld(zones, obstacles) { this.zones = zones; this.obstacles = obstacles; }
   place(x, z, yaw = this.yaw) { this.x = x; this.z = z; this.yaw = yaw; this.y = this.heightAt(x, z, 1e9); }
   heightAt(x, z, nearY) {
@@ -29,7 +29,7 @@ export class Walker {
     for (const o of this.obstacles) {
       if (!o.tall && Math.abs(o.y - y) > 1.2) continue;
       const cx = clamp(x, o.x0, o.x1), cz = clamp(z, o.z0, o.z1);
-      if ((x - cx) ** 2 + (z - cz) ** 2 < RADIUS * RADIUS) return true;
+      if ((x - cx) ** 2 + (z - cz) ** 2 < this.radius * this.radius) return true;
     }
     return false;
   }
@@ -59,5 +59,5 @@ export class Walker {
     this.speed = moved;
     this.bob += moved * dt * 4.2;
   }
-  eyeY() { return this.y + EYE + Math.sin(this.bob) * 0.025 * Math.min(1, this.speed / 1.5); }
+  eyeY() { return this.y + this.eye + Math.sin(this.bob) * 0.025 * Math.min(1, this.speed / 1.5); }
 }

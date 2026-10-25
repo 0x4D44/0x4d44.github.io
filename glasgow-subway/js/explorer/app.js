@@ -75,11 +75,17 @@ export class App {
   }
   makeHero() {
     const c = this.centre.clone(); c.y = this.ground(c.x, c.z);
-    return { target: c, dist: Math.max(2600, this.span * 1.55), polar: 1.0, azim: -0.42 };
+    const cs = getComputedStyle(document.documentElement); const lw = parseFloat(cs.getPropertyValue('--lw')) || 0, rw = parseFloat(cs.getPropertyValue('--rw')) || 0;
+    const W = Math.max(300, innerWidth - lw - rw - 40), H = Math.max(300, innerHeight - (innerWidth < 900 ? 330 : 160)); const aspect = W / H; const cam = this.env.camera;
+    const vf = (innerWidth / innerHeight < 0.8 ? 62 : 48) * Math.PI / 180; const tv = Math.tan(vf / 2);
+    const polar = innerWidth / innerHeight < 0.8 ? 0.72 : 1.0; const xs = this.stations.map((s) => s.x), zs = this.stations.map((s) => s.z);
+    const halfX = (Math.max(...xs) - Math.min(...xs)) / 2 + 250, halfZ = ((Math.max(...zs) - Math.min(...zs)) / 2 + 250) * Math.cos(Math.PI / 2 - polar) / 1.0 + 80;
+    const hp = innerHeight; const dist = Math.max(1800, Math.max(halfX * hp / (tv * W), halfZ * hp / (tv * H)) * 1.05);
+    return { target: c, dist, polar, azim: -0.42 * 0 };
   }
   resize() {
     const p = this.canvas.parentElement; const w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight);
-    this.env.renderer.setPixelRatio(this.quality.pixelRatio); this.env.setSize(w, h); this.w = w; this.h = h;
+    this.env.renderer.setPixelRatio(Math.min(this.quality.pixelRatio, devicePixelRatio || 1)); this.env.setSize(w, h); this.w = w; this.h = h;
     this.env.camera.fov = w / h < 0.8 ? 62 : 48; this.env.camera.updateProjectionMatrix();
   }
 

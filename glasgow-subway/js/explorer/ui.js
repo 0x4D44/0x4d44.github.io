@@ -15,7 +15,7 @@ export class UI {
     this.mq = matchMedia('(max-width: 899px)');
     this.buildTopbar(); this.buildPanes(); this.buildDocks(); this.buildXrayBar(); this.buildMinimap(); this.buildTip(); this.buildSimDialog();
     this.bindApp(); this.bindKeys();
-    this.mq.addEventListener('change', () => this.layout()); this.layout();
+    this.mq.addEventListener('change', () => this.layout()); this.layout(); this.setSheet('peek');
     this.renderStationList(); this.updateSelected(null);
   }
   toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.remove('on'), ms); }
@@ -93,7 +93,7 @@ export class UI {
           line,
         ),
         h('div.actions.row',
-          h('button.btn.ghost', { type: 'button', on: { click: () => { a.setXrayAnimated(1); a.flyToStation(st.id, { xray: 1 }); } } }, '◐ Look underground'),
+          h('button.btn.ghost', { type: 'button', on: { click: () => { a.setXrayAnimated(1); a.flyToStation(st.id, { xray: 1 }); } } }, 'Look underground'),
           h('button.btn.ghost', { type: 'button', on: { click: () => a.flyToStation(st.id, { xray: 0 }) } }, 'Street view'),
         ),
         h('div.sec', h('h4', { text: 'The station' }), ...paras(st.description)),

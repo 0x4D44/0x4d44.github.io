@@ -6,7 +6,7 @@
 import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText } from './gfx.js';
 import { hashStr, mulberry32, clamp } from './util.js';
 
-export const PY = 0.8;           // platform surface above rail head
+export const PY = 0.695;           // platform surface above rail head
 export const EDGE = 1.5;          // track centre to platform edge
 export const END_PAD = 5;         // room beyond platform ends
 
@@ -282,10 +282,10 @@ export function buildStation(THREE, o) {
   // benches
   for (const z of [cz0 + 3, cz0 + 17]) { Bv.box(cx - 6.4, Hc + 0.42, z, cx - 5.4, Hc + 0.5, z + 2, [0.5, 0.36, 0.2], 1); obstacles.push({ x0: cx - 6.5, x1: cx - 5.3, z0: z - 0.05, z1: z + 2.05, y: Hc }); }
   // concourse signs
-  const way = (txt, bg) => canvasTex(THREE, 512, 128, (g, w, h) => { g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '600 64px Arial'; g.textBaseline = 'middle'; g.fillText(txt, 130, 66); drawRoundel(g, 64, 64, 40, style.accent); });
+  const way = (txt, bg) => canvasTex(THREE, 512, 128, (g, w, h) => { g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; let fs = 64; g.font = `600 ${fs}px Arial`; while (g.measureText(txt).width > w - 150 && fs > 20) { fs -= 4; g.font = `600 ${fs}px Arial`; } g.textBaseline = 'middle'; g.fillText(txt, 130, 66); drawRoundel(g, 64, 64, 40, style.accent); });
   plane(rc, Hc + 3.4, cz1 - 0.05, 0, -1, 3.2, 0.8, new THREE.MeshBasicMaterial({ map: way('Way out', '#14532d'), side: THREE.DoubleSide }));
   plane(rc, Hc + 3.9, cz0 + 0.05, 0, 1, 3.4, 0.85, new THREE.MeshBasicMaterial({ map: way('Platforms', '#0f2a4a'), side: THREE.DoubleSide }));
-  plane(cx, Hc + 3.1, gz + 0.1, 0, 1, 4.2, 0.7, new THREE.MeshBasicMaterial({ map: way('Tickets - Gates', '#6b2020'), side: THREE.DoubleSide }));
+  plane(cx, Hc + 3.1, gz - 0.1, 0, -1, 4.2, 0.7, new THREE.MeshBasicMaterial({ map: way('Tickets - Gates', '#6b2020'), side: THREE.DoubleSide }));
   // station name big board on concourse side wall + info panels
   const nameBig = new THREE.MeshBasicMaterial({ map: nameTex, side: THREE.DoubleSide });
   plane(cxb - 0.04, Hc + 2.9, cz0 + 8, -1, 0, 4.0, 1.0, nameBig);

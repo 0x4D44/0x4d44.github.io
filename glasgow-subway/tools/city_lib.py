@@ -116,8 +116,44 @@ def densify_ring(coords, L, bounds=None, Lb=5.0):
     return out
 
 
+import subprocess, sys, pickle, struct
+_worker = None
+def _start():
+    global _worker
+    _worker = subprocess.Popen([sys.executable if "venv" in sys.executable else os.environ.get("TRI_PY", sys.executable), "-I", os.path.join(os.path.dirname(os.path.abspath(__file__)), "city_trisrv.py")],
+                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def tri_safe(A, sw):
+    """Run triangle in a child process (it can segfault on odd input); restart on crash."""
+    global _worker
+    for attempt in range(2):
+        if _worker is None or _worker.poll() is not None: _start()
+        try:
+            b = pickle.dumps((A, sw)); _worker.stdin.write(struct.pack("<I", len(b)) + b); _worker.stdin.flush()
+            h = _worker.stdout.read(4)
+            if len(h) < 4: raise EOFError
+            return pickle.loads(_worker.stdout.read(struct.unpack("<I", h)[0]))
+        except (EOFError, BrokenPipeError, OSError):
+            _worker = None; sw = "pQ"
+    return None
+
 def tri_polygon(poly, maxarea, seglen=12.0, bounds=None, minarea=0.3):
     """Constrained-Delaunay triangulate a shapely polygon (with holes) with interior Steiner points. -> (V (n,2), T (m,3))"""
+    if poly.is_empty or poly.area < minarea: return None
+    try:
+        import shapely
+        poly = shapely.set_precision(poly, 0.05)
+        if not poly.is_valid: poly = shapely.make_valid(poly)
+        ps = polys_of(poly)
+        if len(ps) != 1: 
+            # handle multi: triangulate pieces and merge
+            res = [tri_polygon(q, maxarea, seglen, bounds, minarea) for q in ps]
+            res = [r for r in res if r is not None]
+            if not res: return None
+            V = np.concatenate([r[0] for r in res]); off = 0; T = []
+            for r in res: T.append(np.asarray(r[1]) + off); off += len(r[0])
+            return V, np.concatenate(T)
+        poly = ps[0]
+    except Exception: pass
     if poly.is_empty or poly.area < minarea: return None
     verts = []; segs = []; holes = []
     def add_ring(r):
@@ -142,13 +178,11 @@ def tri_polygon(poly, maxarea, seglen=12.0, bounds=None, minarea=0.3):
             hp = Polygon(it).representative_point(); holes.append((hp.x, hp.y))
     A = dict(vertices=np.array(verts, np.float64), segments=np.array(segs, np.int32))
     if holes: A["holes"] = np.array(holes, np.float64)
-    try:
-        r = triangle.triangulate(A, "pQa%.1f" % maxarea)
-    except Exception:
-        try: r = triangle.triangulate(A, "pQ")
-        except Exception: return None
-    if "triangles" not in r or len(r["triangles"]) == 0: return None
-    return r["vertices"], r["triangles"]
+    if os.environ.get("TRI_DUMP"):
+        import pickle; pickle.dump((A, maxarea), open(os.environ["TRI_DUMP"], "wb"))
+    r = tri_safe(A, "pQa%.1f" % maxarea)
+    if r is None or len(r[1]) == 0: return None
+    return r[0], r[1]
 
 
 def earcut_poly(poly):

@@ -54,17 +54,13 @@ export class TrainView {
     for (let i = 0; i < 40; i++) {
       const l = this.byName['door_L_' + i], r = this.byName['door_R_' + i];
       if (!l && !r) break;
-      const dir = i % 2 === 0 ? -1 : 1;
+      const dir = 1; // revision 2: every leaf slides 1.2 m toward the rear
       if (l) this.doorsL.push({ n: l, z0: l.position.z, dir });
       if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
     }
-    // door opening centres in root coordinates (pairs 2k,2k+1)
+    // door opening centres in root coordinates (one leaf per opening, centre of the opening = leaf closed pos)
     const ref = this.doorsR.length ? this.doorsR : this.doorsL;
-    for (let i = 0; i + 1 < ref.length; i += 2) {
-      const a = ref[i].n, b = ref[i + 1].n;
-      const za = a.position.z + this.carInfo[a._car || 0].zc, zb = b.position.z + this.carInfo[b._car || 0].zc;
-      this.doorZ.push((za + zb) / 2);
-    }
+    for (const d of ref) this.doorZ.push(d.z0 + this.carInfo[d.n._car || 0].zc);
     this.cabEye = this.byName.cab_eye || null;
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;
@@ -77,7 +73,7 @@ export class TrainView {
   }
 
   setDoors(L, R) {
-    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 0.65 * f; };
+    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 1.2 * f; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 

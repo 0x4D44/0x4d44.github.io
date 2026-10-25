@@ -123,8 +123,8 @@ export class Underground {
     this.glass = glassMat; this.glassSel = glassMat.clone(); this.glassSel.color.set('#ffd9a8'); this.glassSel.opacity = 0.3;
     const slabMat = new THREE.MeshStandardMaterial({ color: '#d9d2c4', roughness: 0.8, emissive: '#6b5a40', emissiveIntensity: 0.5 });
     const shaftMat = new THREE.MeshBasicMaterial({ color: '#ffb067', transparent: true, opacity: 0.5, depthWrite: false });
-    const beamMat = new THREE.MeshBasicMaterial({ color: '#ff8a3a', transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending });
-    const ringMat = new THREE.MeshBasicMaterial({ color: '#ffb067', transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    const beamMat = new THREE.MeshBasicMaterial({ color: '#ff8a3a', transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
+    const ringMat = new THREE.MeshBasicMaterial({ color: '#ffb067', transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
     const pickMat = new THREE.MeshBasicMaterial({ visible: false });
     for (const m of [edgeMat, glassMat, slabMat, shaftMat, beamMat, ringMat, pickMat]) m.userData.shared = false;
     const Z = new THREE.Vector3(0, 1, 0);
@@ -148,8 +148,8 @@ export class Underground {
         const cap = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 1.2, 12), ringMat); cap.position.copy(top); cap.renderOrder = 6; this.stationsG.add(cap);
       }
       // beacon + ground ring + pick volume
-      const beam = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 160, 10, 1, true), beamMat); beam.position.set(st.x, g + 80, st.z); beam.renderOrder = 6; this.stationsG.add(beam);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(18, 24, 40), ringMat.clone()); ring.rotation.x = -Math.PI / 2; ring.position.set(st.x, g + 1, st.z); ring.renderOrder = 6; ring.material.userData.shared = false; this.stationsG.add(ring);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 160, 10, 1, true), beamMat); beam.position.set(st.x, g + 80, st.z); beam.renderOrder = 6; this.stationsG.add(beam);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(15, 17.5, 48), ringMat.clone()); ring.rotation.x = -Math.PI / 2; ring.position.set(st.x, g + 1, st.z); ring.renderOrder = 6; ring.material.userData.shared = false; this.stationsG.add(ring);
       const pick = new THREE.Mesh(new THREE.CylinderGeometry(16, 16, 200, 8), pickMat); pick.position.set(st.x, g + 90, st.z); pick.userData.station = st.id; this.stationsG.add(pick); this.pickMeshes.push(pick);
       this.stationInfo.set(st.id, { st, surface: new THREE.Vector3(st.x, g, st.z), vault: new THREE.Vector3(cx, ym + 2, cz), box, edges, beam, ring, pick, heading: pl.headingDeg ?? 90, depth: st.depth ?? (g - railY) });
     }
@@ -187,12 +187,12 @@ export class Underground {
     const sc = Math.max(1, camDist / 1400), boost = Math.max(0, camDist * 0.0034 - this.R);
     this.uni.uBoost.value = this.xray > 0.02 ? Math.min(boost, 32) : 0;
     // stations: beacons scale with distance so they remain visible
-    const bs = clamp(camDist / 650, 1, 10); const t = performance.now() / 1000;
+    const bs = clamp(camDist / 650, 1, 6); const t = performance.now() / 1000;
     for (const [id, i] of this.stationInfo) {
       const sel = id === this.selected, hov = id === this.hovered;
       i.beam.scale.set(bs * (sel ? 1.8 : 1), 1, bs * (sel ? 1.8 : 1));
-      i.beam.material.opacity = sel ? 0.7 : hov ? 0.55 : 0.32;
-      const rs = clamp(camDist / 900, 1, 8) * (sel ? 1.15 + 0.1 * Math.sin(t * 3) : 1);
+      i.beam.material.opacity = (sel ? 0.6 : hov ? 0.5 : 0.25) * clamp(camDist / 600, 0.3, 1);
+      const rs = clamp(camDist / 1500, 1, 4) * (sel ? 1.15 + 0.1 * Math.sin(t * 3) : 1);
       i.ring.scale.set(rs, rs, 1); i.pick.scale.set(clamp(camDist / 500, 1, 12), 1, clamp(camDist / 500, 1, 12));
     }
     if (!this.live.visible) return;
