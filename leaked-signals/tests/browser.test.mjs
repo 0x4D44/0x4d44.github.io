@@ -45,6 +45,10 @@ try {
     await p.waitForTimeout(600);
     const sc = await p.evaluate(() => [document.querySelector("#panel").scrollTop, document.querySelector(".app").scrollTop, document.scrollingElement.scrollTop]);
     assert.ok(sc[0] === 0 && sc[1] === 0, "panel/app must not be scrolled: " + sc);
+    const hl = await p.evaluate(async () => { await new Promise(r => setTimeout(r, 800)); const n = document.querySelector("#hlNote"); const on = !n.hidden; document.querySelector("#hlClose")?.click(); await new Promise(r => setTimeout(r, 300)); return { on, hl: window.__leak.state.hl, hidden: n.hidden }; });
+    assert.ok(hl.on && hl.hl === null && hl.hidden, "highlight explainer should show, and its close button should clear it: " + JSON.stringify(hl));
+    await p.click("#tab-explore"); await p.click("#exStars [data-star]");
+    assert.equal(await p.evaluate(() => document.querySelector("#tab-listen").getAttribute("aria-selected")), "true", "Explore star chip should open Listen");
     await p.evaluate(() => window.__leak.seek(46));
     await p.waitForTimeout(700);
     const ov = await p.evaluate(() => { const c = document.querySelector("#caption").getBoundingClientRect(), d = document.querySelector("#dock").getBoundingClientRect(); return { c: c.bottom, d: d.top, on: document.querySelector("#caption").classList.contains("on") }; });

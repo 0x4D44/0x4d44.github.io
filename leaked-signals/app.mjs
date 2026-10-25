@@ -187,7 +187,7 @@ function frame() {
   const cam = camera();
   if (R) {
     R.draw({
-      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain(), phys: S.phys ? 1 : 0, r0: 12,
+      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain() * tourBoost, phys: S.phys ? 1 : 0, r0: 12,
       rmax: 1e9, stars: S.stars, dim: S.hl ? 0.12 : 1,
       hlDT: hlField ? (jdOf() - hlField.jdRef) / C.DAYS_PER_YEAR : null,
     });
@@ -495,6 +495,9 @@ function renderExplore() {
   <h2>Whose signals</h2>
   <div class="chips" id="ccChips"></div>
   <p class="faint" style="margin-top:6px">Pick one or more. Choose a single country to see where its beams end on the sky.</p>
+  <h2>Listen as a star</h2>
+  <div class="chips" id="exStars">${["Proxima Centauri", "Sirius", "Tau Ceti", "Vega", "Barnard's Star"].map(n => starByName(n) != null ? `<button class="chip" type="button" data-star="${starByName(n)}">${esc(n)}</button>` : "").join("")}</div>
+  <p class="faint" style="margin-top:6px">Opens the Listen tab: which of our broadcasts that star can hear, and when.</p>
   <h2>Look</h2>
   <div class="field"><label for="sSize">Point size</label><input type="range" id="sSize" min="0.8" max="4" step="0.1" value="${S.size}"></div>
   <div class="field"><label for="sGain">Brightness</label><input type="range" id="sGain" min="0.1" max="3" step="0.05" value="${S.gain}"></div>
@@ -509,6 +512,7 @@ function renderExplore() {
     <p>At the very closest zoom you can see individual fans leaving, about two minutes of airtime apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
   </details>
   <p class="faint">${ALL_SOURCES.length} sources (${SITES.length} TV sites, ${RADARS.length} radars) &middot; ${STARS.n.toLocaleString()} stars within 100 ly &middot; <span id="buildMs"></span></p>`;
+  $("#exStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); setTab("listen"); } };
   const chips = $("#ccChips");
   chips.innerHTML = `<button class="chip" type="button" data-cc="*" aria-pressed="true">All</button>` + ccList().map(({ cc }) =>
     `<button class="chip" type="button" data-cc="${cc}" aria-pressed="false"><span class="dot" style="background:${cssCol(cc)}"></span>${cc}</button>`).join("") +
@@ -650,7 +654,8 @@ function drawDrift(i, jdT, rows) {
   sel.onchange = e => { S.driftSite = e.target.value; drawDrift(i, jdT, rows); };
   const cv = $("#driftCv"), c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
-  const s = siteById[S.driftSite]; if (!s) return;
+  const s = siteById[S.driftSite];
+  if (!s) { c.fillStyle = css("--dim"); c.textAlign = "left"; c.fillText("No transmitter ever has this star on its horizon.", 10, 40); c.fillText("It is circumpolar or never rises for every site.", 10, 62); return; }
   const x0 = 40, x1 = Wd - 10, y0 = 10, y1 = Hd - 24;
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "right";
   for (let h = 0; h <= 24; h += 6) { const y = y1 - (h / 24) * (y1 - y0); c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke(); c.fillText(String(h).padStart(2, "0") + "h", x0 - 4, y + 4); }
@@ -792,7 +797,7 @@ function renderAbout() {
 }
 
 // ---------- tour (also driven by the video renderer) ----------
-let tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
+let tourBoost = 1, tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
 function tourState(t) {
   t = clamp(t, 0, TOUR_LEN);
   let a = TOUR_KEYS[0], b = TOUR_KEYS[TOUR_KEYS.length - 1];
@@ -811,13 +816,13 @@ function tourState(t) {
   let dy = ob.yaw - oa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
   const st = {
     logR: L(a.logR, b.logR), yaw: oa.yaw + dy * e + (a.spin || 0) * (t - a.t), pitch: L(oa.pitch, ob.pitch),
-    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap,
+    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap, boost: a.boost || 1,
   };
   return st;
 }
 function applyTour(t) {
   const st = tourState(t);
-  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T;
+  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T; tourBoost = st.boost;
   const sk = st.solo ? st.solo.join(",") : "*";
   if (sk !== soloKey()) { S.solo = st.solo ? new Set(st.solo) : null; $$("#ccChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cc === "*" ? !S.solo : !!(S.solo && S.solo.has(c.dataset.cc)))); }
   if (st.hl !== S.hl) { S.hl = st.hl || null; hlId = null; }
@@ -832,7 +837,7 @@ function startTour() {
 }
 function stopTour() {
   if (!tourPlaying) return;
-  tourPlaying = false; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
+  tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
 $("#btnTour").onclick = () => (tourPlaying ? stopTour() : startTour());
 
