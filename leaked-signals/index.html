@@ -1,18 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leaked Signals</title>
 <meta name="description" content="Every TV broadcast since the mid-1930s is still travelling outward at the speed of light. An interactive simulator of the expanding bubble, fan by fan, and who in the galaxy could be watching.">
 <style>
 :root{
-  --bg:#05070d; --bg2:#0a0f1a; --panel:#0b1120; --line:#1b2740; --ink:#dfe7f5; --dim:#8a98b5; --faint:#5a6783;
+  --bg:#05070d; --bg2:#0a0f1a; --panel:#0b1120; --line:#1b2740; --ink:#dfe7f5; --dim:#8a98b5; --faint:#7f8cab;
   --amber:#ffb454; --cyan:#58d6ff; --rose:#ff6b9a; --green:#7be0a0; --radius:10px;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
-:root[data-theme="light"]{ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; }
-@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#b86a00; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; } }
+:root[data-theme="light"]{ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#8f5200; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; }
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ --bg:#eef2f9; --bg2:#e2e8f3; --panel:#f7f9fd; --line:#c9d3e6; --ink:#101a2e; --dim:#4b5a78; --faint:#5f6c86; --amber:#8f5200; --cyan:#0a74a8; --rose:#c2325f; --green:#1c8a4a; } }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);-webkit-text-size-adjust:100%}
 body{min-height:100vh;display:flex;flex-direction:column}
@@ -99,6 +102,8 @@ video{width:100%;border-radius:9px;background:#000;display:block}
 @media (max-width:520px){ .dock{padding:6px 8px 8px;gap:4px} .dock .row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .dock .row>*{flex:0 0 auto} .dock .row input[type=range]{flex:1 0 110px} .stage{height:70vh} #caption{bottom:150px} .dock .lab{min-width:70px} .kpi{grid-template-columns:repeat(2,1fr)} }
 @media (prefers-reduced-motion:reduce){ #caption{transition:none} }
 .video #hlNote{display:none}
+.stage:has(#caption.on) #hlNote{display:none}
+@media (max-width:980px){#hlNote .more{display:none}}
 @media (max-width:980px){#hlNote{top:auto;bottom:236px;left:8px;right:auto;max-width:60%;font-size:11px}}
 .video .top,.video .panel,.video .foot,.video .dock{display:none!important}
 .video body{height:100vh} .video .app{grid-template-columns:minmax(0,1fr)} .video .stage{height:100vh;min-height:0}
