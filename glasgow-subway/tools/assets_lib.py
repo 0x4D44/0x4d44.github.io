@@ -45,7 +45,7 @@ PALETTE = {
     'glass_black':     ('#07090b', 0.4, 0.08, None, 0, 1, None),
     'seat_moquette':   ('#ffffff', 0.0, 0.95, None, 0, 1, 'moquette_ring'),
     'floor_dark':      ('#6a6c70', 0.0, 0.75, None, 0, 1, 'rubber'),
-    'floor_light':     ('#cfd0d3', 0.0, 0.75, None, 0, 1, 'rubber'),
+    'floor_light':     ('#9b9ca0', 0.0, 0.75, None, 0, 1, 'rubber'),
     'orange_pole':     ('#f26b1d', 0.35, 0.35, None, 0, 1, None),
     'plastic_dark':    ('#2b2d31', 0.0, 0.5, None, 0, 1, None),
     'sos_green':       ('#169a45', 0.0, 0.5, '#169a45', 0.8, 1, None),
@@ -141,7 +141,9 @@ _TEXMAP = {   # palette texture key -> (albedo key, normal key or None, normal s
     'ring_concrete': ('ring_concrete', 'n_ring_concrete', 1.0), 'ring_iron': ('ring_iron', 'n_ring_iron', 1.0),
     'roundel': ('roundel', None, 0), 'name_board': ('name_board', None, 0), 'safety_atlas': ('safety_atlas', None, 0),
     'adverts': ('adverts', None, 0), 'route_map': ('route_map', None, 0),
-    'grooves': ('grooves', 'n_grooves', 1.0),
+    'grooves': ('grooves', 'n_grooves', 1.0), 'enamel': ('enamel', 'n_enamel', 0.8), 'lozenge': ('lozenge', 'n_lozenge', 1.0),
+    'timber': ('timber', None, 0), 'danger': ('danger', None, 0), 'mesh': ('mesh', None, 0),
+    'art_hillhead': ('art_hillhead', None, 0), 'art_govan': ('art_govan', None, 0), 'art_partick': ('art_partick', None, 0), 'art_kelvinhall': ('art_kelvinhall', None, 0),
     'blank': (None, None, 0),
 }
 _imgcache = {}
@@ -154,6 +156,17 @@ def load_img(key, data=False):
     img.pack()
     _imgcache[key] = img
     return img
+
+def new_mat(name, hexc_, metal=0.0, rough=0.6, em=None, es=0.0, alpha=1.0, tex=None):
+    """Register a runtime material variant (e.g. a per-station tint)."""
+    PALETTE[name] = (hexc_, metal, rough, em, es, alpha, tex)
+
+def register_tex(key, albedo, normal=None, nstrength=1.0):
+    import assets_tex
+    assets_tex.build_all()
+    assets_tex._done[key] = albedo
+    if normal: assets_tex._done['n_' + key] = normal
+    _TEXMAP[key] = (key, ('n_' + key) if normal else None, nstrength)
 
 def mat(name):
     if name in _matcache: return _matcache[name]

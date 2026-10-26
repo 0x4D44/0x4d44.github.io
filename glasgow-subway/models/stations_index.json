@@ -1,0 +1,389 @@
+{
+ "frame": "hall origin = hall centre on the centre line at rail-head level; tracks along Z; train centred on the hall centre; hall z in [-27,27], platforms z in [-22.5,22.5]; band sides: outer(orange)=+x, inner(charcoal)=-x",
+ "stations": {
+  "bridge-street": {
+   "hall": "station_bridge-street.glb",
+   "entrance": "station_bridge-street_entrance.glb",
+   "info": "station_bridge-street.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "buchanan-street": {
+   "hall": "station_buchanan-street.glb",
+   "entrance": "station_buchanan-street_entrance.glb",
+   "info": "station_buchanan-street.json",
+   "type": "split",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ],
+    [
+     4.09,
+     7.45
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    7.45
+   ],
+   "ceilingY": 3.795,
+   "coved": false,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "cessnock": {
+   "hall": "station_cessnock.glb",
+   "entrance": "station_cessnock_entrance.glb",
+   "info": "station_cessnock.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "cowcaddens": {
+   "hall": "station_cowcaddens.glb",
+   "entrance": "station_cowcaddens_entrance.glb",
+   "info": "station_cowcaddens.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "govan": {
+   "hall": "station_govan.glb",
+   "entrance": "station_govan_entrance.glb",
+   "info": "station_govan.json",
+   "type": "side",
+   "trackX": [
+    -2.755,
+    2.755
+   ],
+   "platforms": [
+    [
+     -8.0,
+     -4.0
+    ],
+    [
+     4.0,
+     8.0
+    ]
+   ],
+   "hallHalfWidth": [
+    8.0,
+    8.0
+   ],
+   "ceilingY": 4.095,
+   "coved": false,
+   "psd": true,
+   "platformTopY": 0.695
+  },
+  "hillhead": {
+   "hall": "station_hillhead.glb",
+   "entrance": "station_hillhead_entrance.glb",
+   "info": "station_hillhead.json",
+   "type": "split",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ],
+    [
+     4.09,
+     8.2
+    ]
+   ],
+   "hallHalfWidth": [
+    5.0,
+    8.2
+   ],
+   "ceilingY": 3.895,
+   "coved": false,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "ibrox": {
+   "hall": "station_ibrox.glb",
+   "entrance": "station_ibrox_entrance.glb",
+   "info": "station_ibrox.json",
+   "type": "side",
+   "trackX": [
+    -2.255,
+    2.255
+   ],
+   "platforms": [
+    [
+     -7.0,
+     -3.5
+    ],
+    [
+     3.5,
+     7.0
+    ]
+   ],
+   "hallHalfWidth": [
+    7.0,
+    7.0
+   ],
+   "ceilingY": 3.995,
+   "coved": false,
+   "psd": true,
+   "platformTopY": 0.695
+  },
+  "kelvinbridge": {
+   "hall": "station_kelvinbridge.glb",
+   "entrance": "station_kelvinbridge_entrance.glb",
+   "info": "station_kelvinbridge.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.995,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "kelvinhall": {
+   "hall": "station_kelvinhall.glb",
+   "entrance": "station_kelvinhall_entrance.glb",
+   "info": "station_kelvinhall.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.795,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "kinning-park": {
+   "hall": "station_kinning-park.glb",
+   "entrance": "station_kinning-park_entrance.glb",
+   "info": "station_kinning-park.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.695,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "partick": {
+   "hall": "station_partick.glb",
+   "entrance": "station_partick_entrance.glb",
+   "info": "station_partick.json",
+   "type": "side",
+   "trackX": [
+    -2.955,
+    2.955
+   ],
+   "platforms": [
+    [
+     -8.0,
+     -4.2
+    ],
+    [
+     4.2,
+     8.0
+    ]
+   ],
+   "hallHalfWidth": [
+    8.0,
+    8.0
+   ],
+   "ceilingY": 4.095,
+   "coved": false,
+   "psd": true,
+   "platformTopY": 0.695
+  },
+  "shields-road": {
+   "hall": "station_shields-road.glb",
+   "entrance": "station_shields-road_entrance.glb",
+   "info": "station_shields-road.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "st-enoch": {
+   "hall": "station_st-enoch.glb",
+   "entrance": "station_st-enoch_entrance.glb",
+   "info": "station_st-enoch.json",
+   "type": "side",
+   "trackX": [
+    -3.755,
+    3.755
+   ],
+   "platforms": [
+    [
+     -9.0,
+     -5.0
+    ],
+    [
+     5.0,
+     9.0
+    ]
+   ],
+   "hallHalfWidth": [
+    9.0,
+    9.0
+   ],
+   "ceilingY": 4.295,
+   "coved": false,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "st-georges-cross": {
+   "hall": "station_st-georges-cross.glb",
+   "entrance": "station_st-georges-cross_entrance.glb",
+   "info": "station_st-georges-cross.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  },
+  "west-street": {
+   "hall": "station_west-street.glb",
+   "entrance": "station_west-street_entrance.glb",
+   "info": "station_west-street.json",
+   "type": "island",
+   "trackX": [
+    -2.845,
+    2.845
+   ],
+   "platforms": [
+    [
+     -1.6,
+     1.6
+    ]
+   ],
+   "hallHalfWidth": [
+    4.25,
+    4.25
+   ],
+   "ceilingY": 3.895,
+   "coved": true,
+   "psd": false,
+   "platformTopY": 0.695
+  }
+ }
+}

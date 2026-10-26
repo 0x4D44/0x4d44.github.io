@@ -1,0 +1,152 @@
+{
+ "note": "Train-local coordinates as in train.glb (three.js: nose = -Z, +Y up, x across). Heights are above the FLOOR, y_floor=0.695 above rail head.",
+ "floorY": 0.695,
+ "bodyWidth": 2.31,
+ "interiorHalfWidthAtFloor": 1.085,
+ "ceilingApexY": 2.572,
+ "roofApexY": 2.642,
+ "aisleHalfWidth": 0.62,
+ "aisleNote": "benches occupy |x| in [0.62, 1.085] along benchZRanges; between benches (door vestibules, gangways) the walkable half-width is 0.62 m with poles at |x|=0.58 near doors, 1.085 m clear in door vestibules only below y=floor+1.4",
+ "headroomVsX": [
+  [
+   0,
+   1.877
+  ],
+  [
+   0.2,
+   1.858
+  ],
+  [
+   0.4,
+   1.801
+  ],
+  [
+   0.58,
+   1.709
+  ],
+  [
+   0.62,
+   1.682
+  ],
+  [
+   0.8,
+   1.525
+  ],
+  [
+   0.95,
+   1.316
+  ],
+  [
+   1.0,
+   1.213
+  ],
+  [
+   1.05,
+   1.065
+  ],
+  [
+   1.085,
+   0.792
+  ]
+ ],
+ "headroomFormula": "h(x) = 1.487 + sqrt(1.085^2 - x^2) - 0.695 for |x|<=1.085  (ceiling y minus floor)",
+ "minStandingHeadroom": 1.75,
+ "minStandingNote": "an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise",
+ "gangway": {
+  "width": 1.3,
+  "archApexY": 2.1,
+  "halfWidth": 0.65
+ },
+ "cars": [
+  {
+   "index": 0,
+   "centreZ": -13.455,
+   "length": 12.4,
+   "hasCab": true,
+   "benchZRanges": [
+    [
+     -9.555,
+     -7.805
+    ],
+    [
+     -14.355,
+     -10.955
+    ],
+    [
+     -16.555,
+     -15.755
+    ]
+   ],
+   "doorZ": [
+    -10.255,
+    -15.055
+   ],
+   "doorWidth": 1.3
+  },
+  {
+   "index": 1,
+   "centreZ": -3.585,
+   "length": 7.0,
+   "hasCab": false,
+   "benchZRanges": [
+    [
+     -3.085,
+     -0.635
+    ],
+    [
+     -6.535,
+     -4.485
+    ]
+   ],
+   "doorZ": [
+    -3.785
+   ],
+   "doorWidth": 1.3
+  },
+  {
+   "index": 2,
+   "centreZ": 3.585,
+   "length": 7.0,
+   "hasCab": false,
+   "benchZRanges": [
+    [
+     0.635,
+     3.085
+    ],
+    [
+     4.485,
+     6.535
+    ]
+   ],
+   "doorZ": [
+    3.785
+   ],
+   "doorWidth": 1.3
+  },
+  {
+   "index": 3,
+   "centreZ": 13.455,
+   "length": 12.4,
+   "hasCab": true,
+   "benchZRanges": [
+    [
+     7.805,
+     9.555
+    ],
+    [
+     10.955,
+     14.355
+    ],
+    [
+     15.755,
+     16.555
+    ]
+   ],
+   "doorZ": [
+    10.255,
+    15.055
+   ],
+   "doorWidth": 1.3
+  }
+ ]
+}
