@@ -56,7 +56,7 @@ export class App {
     // marker used by the long-section chart
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false })); this.marker.renderOrder = 20; this.marker.visible = false; this.env.scene.add(this.marker);
     this.env.listeners.push(() => this.city.applyAll());
-    const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#6f7a68', roughness: 1 }));
+    const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d9b78' }));
     fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
     progress(0.86, 'Placing the stations');
     // initial view
