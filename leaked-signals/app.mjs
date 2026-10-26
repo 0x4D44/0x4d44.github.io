@@ -552,7 +552,7 @@ function updateKpi() {
 function sourceRows(i, jdT) {
   const ly = STARS.ly[i], jdE = jdT - ly * C.DAYS_PER_YEAR, rows = [];
   for (const s of ALL_SOURCES) {
-    if (s.kind === "radar") continue;
+    if (s.kind === "radar" || !sourceFilter(s)) continue;
     const r = C.receptionFrom(s, jdE, STARS.ra[i], STARS.dec[i]);
     if (r.blocked) continue;
     if (r.el > 3) continue;
@@ -598,7 +598,7 @@ function renderListen(full) {
   const strongest = topNow[0];
   let verdict = "";
   if (!inside) verdict = `<div class="verdict">The bubble has not reached ${esc(starName(i))} yet. It is ${fmtLy(ly)} light-years out, and television began ${fmtLy(S.T - FIRST_TV)} years ago, so the first broadcasts arrive in <b>${(FIRST_TV + ly).toFixed(0)}</b>.</div>`;
-  else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.</div>`;
+  else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.${S.solo ? " (Only the countries you have selected are counted.)" : ""}</div>`;
   else {
     const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
