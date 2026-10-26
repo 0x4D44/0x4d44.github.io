@@ -173,7 +173,7 @@
         ["io_uring, bpf, userfaultfd, mount family, unshare/setns and module loading are denied", 2],
         ["Profile re-recorded and tested after runtime or dependency upgrades", 1]]],
       ["Filesystem", [
-        ["Root filesystem read-only; scratch is a small tmpfs with noexec,nosuid,nodev", 3],
+        ["Root filesystem read-only; writable scratch is size-limited and, where the platform allows, noexec,nosuid,nodev", 3],
         ["Landlock, AppArmor or SELinux confines file access", 3],
         ["No docker.sock, host / /proc /sys /etc mounts, raw devices or host namespaces", 4]]],
       ["Resources", [
@@ -184,28 +184,32 @@
         ["No network, or default-deny ingress and egress policy", 3],
         ["Service-account tokens and cloud metadata not reachable unless needed", 2]]],
       ["Boundary and host", [
-        ["Untrusted code runs behind gVisor or a microVM (Kata, Firecracker), not a plain shared-kernel container", 4],
+        ["Code you do not trust runs behind gVisor or a microVM (Kata, Firecracker), not a plain shared-kernel container (mark n/a for your own trusted services)", 4],
         ["Host kernel patched; unprivileged BPF off, kptr_restrict, yama ptrace set", 3],
         ["Unused kernel features disabled (io_uring, unprivileged user namespaces, modules)", 2],
         ["Runtime detection or enforcement in place (Falco, Tetragon, audit logs)", 1]]]
     ];
-    var KEY = "hardening.audit.v1", state = {};
+    var KEY = "hardening.audit.v2", state = {};
     try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
-    var total = 0;
     G.forEach(function (g, gi) {
       var h = document.createElement("h4"); h.textContent = g[0]; root.appendChild(h);
       var d = document.createElement("div"); d.className = "chk"; root.appendChild(d);
       g[1].forEach(function (it, ii) {
-        total += it[1];
         var id = gi + "-" + ii, l = document.createElement("label");
-        l.innerHTML = "<input type=\"checkbox\" data-w=\"" + it[1] + "\" data-k=\"" + id + "\"" + (state[id] ? " checked" : "") + "><span>" + esc(it[0]) + "</span>";
+        l.innerHTML = "<input type=\"checkbox\" data-w=\"" + it[1] + "\" data-k=\"" + id + "\"" + (state[id] === 1 ? " checked" : "") + (state[id] === 2 ? " disabled" : "") + "><span>" + esc(it[0]) +
+          " <label style=\"display:inline;white-space:nowrap;font-size:12px;color:var(--muted)\"><input type=\"checkbox\" class=\"na\" data-k=\"" + id + "\"" + (state[id] === 2 ? " checked" : "") + "> n/a</label></span>";
         d.appendChild(l);
       });
     });
-    function calc() {
-      var s = 0; state = {};
-      [].forEach.call(root.querySelectorAll("input"), function (c) { if (c.checked) { s += +c.dataset.w; state[c.dataset.k] = 1; } });
-      var pct = Math.round(s / total * 100);
+    function calc(ev) {
+      var s = 0, total = 0; state = {};
+      [].forEach.call(root.querySelectorAll("input:not(.na)"), function (c) {
+        var na = root.querySelector("input.na[data-k=\"" + c.dataset.k + "\"]");
+        if (na.checked) { c.checked = false; c.disabled = true; state[c.dataset.k] = 2; return; }
+        c.disabled = false; total += +c.dataset.w;
+        if (c.checked) { s += +c.dataset.w; state[c.dataset.k] = 1; }
+      });
+      var pct = total ? Math.round(s / total * 100) : 0;
       $("au-score").textContent = pct + "%";
       $("au-meter").style.width = pct + "%";
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { }
