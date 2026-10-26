@@ -4,7 +4,7 @@ import { mulberry32, hashStr, clamp } from './util.js';
 import { canvasTex } from './gfx.js';
 
 export async function buildStreet(THREE, o) {
-  const { entrance, station, terrain, GLTFLoader, kioskTpl, base } = o;
+  const { entrance, station, terrain, GLTFLoader, kioskTpl, base, newEntrance } = o;
   const scene = new THREE.Scene();
   const sky = new THREE.Color(0xa9c4dc); scene.background = sky; scene.fog = new THREE.Fog(0xb7cadb, 60, 380);
   scene.add(new THREE.HemisphereLight(0xdbe9ff, 0x6a6258, 1.25));
@@ -57,6 +57,26 @@ export async function buildStreet(THREE, o) {
   let stairPos = new THREE.Vector3(ex, y0, ez + 2), kiosk = null;
   if (kioskTpl) {
     kiosk = kioskTpl.clone(true); kiosk.position.set(ex, y0 + 0.03, ez); kiosk.rotation.y = Math.PI / 2; group.add(kiosk);
+    if (newEntrance) {
+      // pick the orientation whose approach (7.5 m in front of the fascia, local -Z) is the clearest of nearby city buildings
+      const bld = []; group.traverse((m) => { if (m.isMesh && /^buildings?/.test(m.name)) bld.push(m); });
+      group.updateMatrixWorld(true);
+      let best = Math.PI / 2, bestScore = -1, bestDist = 7.5; const rc = new THREE.Raycaster();
+      const dirs = []; for (let k = 0; k < 8; k++) dirs.push(new THREE.Vector3(Math.cos(k * Math.PI / 4), 0, Math.sin(k * Math.PI / 4)));
+      const probe = (from, dir, far) => { rc.set(from, dir); rc.far = far; const h = bld.length ? rc.intersectObjects(bld, false) : []; return h.length ? h[0].distance : far; };
+      for (let k = 0; k < 16; k++) {
+        const rot = k * Math.PI / 8; kiosk.rotation.y = rot; kiosk.updateMatrixWorld(true);
+        for (const dist of [7.5, 6, 9]) {
+          const P = kiosk.localToWorld(new THREE.Vector3(0, 1.6, -dist)); const C = kiosk.localToWorld(new THREE.Vector3(0, 1.6, 0));
+          const toC = C.clone().sub(P), dC = toC.length(); toC.normalize();
+          const los = probe(P, toC, dC) >= dC - 0.6;                       // can see the entrance from the spawn point
+          const clear = Math.min(...dirs.map((d) => probe(P, d, 6)));       // not standing against a facade
+          const score = (los ? 10 : 0) + clear + (dist === 7.5 ? 0.2 : 0);
+          if (score > bestScore) { bestScore = score; best = rot; bestDist = dist; }
+        }
+      }
+      kiosk.rotation.y = best; kiosk.userData.spawnDist = bestDist;
+    }
     kiosk.updateMatrixWorld(true);
     const sw = kiosk.getObjectByName('stair_top'); if (sw) { stairPos = new THREE.Vector3(); sw.getWorldPosition(stairPos); }
     // station name plates
@@ -69,7 +89,7 @@ export async function buildStreet(THREE, o) {
   }
   const center = new THREE.Vector3(ex, y0, ez);
   let spawn = { x: ex + (kiosk ? -1.5 : 0), z: ez - 7.5, yaw: Math.PI, y: y0 };
-  if (kiosk) { const sp = kiosk.localToWorld(new THREE.Vector3(0, 0, 9)); const dx = ex - sp.x, dz = ez - sp.z; spawn = { x: sp.x, z: sp.z, yaw: Math.atan2(-dx, -dz), y: gh(sp.x, sp.z) }; }
+  if (kiosk) { const sp = kiosk.localToWorld(new THREE.Vector3(0, 0, newEntrance ? -(kiosk.userData.spawnDist || 7.5) : 9)); const dx = ex - sp.x, dz = ez - sp.z; spawn = { x: sp.x, z: sp.z, yaw: Math.atan2(-dx, -dz), y: gh(sp.x, sp.z) }; }
   return {
     scene, ground: gh, spawn, stair: stairPos, center, radius: 85,
     update(t) {}, dispose() { scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); },

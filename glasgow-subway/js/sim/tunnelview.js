@@ -53,7 +53,7 @@ export class TunnelView {
       const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
       const nx0 = -Math.cos(a0), ny0 = -Math.sin(a0), nx1 = -Math.cos(a1), ny1 = -Math.sin(a1);   // smooth inward normals
       const b = tpos.length / 3, vr = L / RING;
-      tpos.push(Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, -L / 2, Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, -L / 2, Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, L / 2, Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, L / 2);
+      tpos.push(Math.cos(a0) * R, 1.225 + Math.sin(a0) * R, -L / 2, Math.cos(a1) * R, 1.225 + Math.sin(a1) * R, -L / 2, Math.cos(a1) * R, 1.225 + Math.sin(a1) * R, L / 2, Math.cos(a0) * R, 1.225 + Math.sin(a0) * R, L / 2);
       tnor.push(nx0, ny0, 0, nx1, ny1, 0, nx1, ny1, 0, nx0, ny0, 0);
       tuv.push(i / n, 0, (i + 1) / n, 0, (i + 1) / n, vr, i / n, vr);
       tidx.push(b, b + 1, b + 2, b, b + 2, b + 3);

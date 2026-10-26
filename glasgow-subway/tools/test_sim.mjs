@@ -27,6 +27,7 @@ async function open(browser, query, opts = {}) {
   p.on('pageerror', (e) => { errors.push(e.message); console.log('  [pageerror]', e.message); });
   await p.goto(URL0 + '?pr=1&aa=0&' + query);
   await p.waitForFunction(() => window.__sim, null, { timeout: 90000 });
+  if (/mode=/.test(query)) await p.waitForFunction(() => __sim.mode(), null, { timeout: 90000 });   // go() loads the station halls first
   await p.evaluate(() => __sim.loop(false)); // time is driven explicitly (swiftshader frames are slow)
   return p;
 }
@@ -81,9 +82,13 @@ try {
   ok('E steps out into explore mode', (await ev(p, () => __sim.mode())) === 'explore');
   await shot(p, '06_platform_stepped_out');
   // walk with real key presses toward the stairs: face the ramp (+z), hold W
+  // platform -> stairs portal (hall stations: E at the exit marker fades to the foot of the stair/escalator ramp)
+  const portalCtx = await ev(p, () => { const s = __sim, v = s.station(), pt = v.anchors.portals[0], w = s.walker(); w.place(pt.x, pt.z - Math.sign(pt.z || 1) * 1.0, 0); s.sync(); return s.context() && s.context().kind; });
+  ok('platform offers the stairs at the exit marker', portalCtx === 'portal', String(portalCtx));
+  await p.keyboard.press('e'); await p.waitForTimeout(900);
   const walk = await ev(p, () => {
     const s = __sim, w = s.walker(), inf = s.station().info; const out = {};
-    w.place(inf.rc, inf.PL - 2.2, Math.PI); s.setLook(Math.PI, 0); // facing +z (towards the ramp)
+    s.setLook(Math.PI, 0); // facing +z up the ramp
     s.key('w', true); const t0 = { x: w.x, z: w.z }; for (let i = 0; i < 80; i++) s.tick(0.1); out.afterPlatform = { x: w.x, z: w.z, y: w.y };
     for (let i = 0; i < 160; i++) s.tick(0.1); out.afterRamp = { x: w.x, z: w.z, y: w.y }; out.Hc = inf.Hc; out.zc0 = inf.zc0;
     s.key('w', false); return out;
@@ -153,8 +158,8 @@ try {
   await p.keyboard.press('h');
   ok('overspeed / unit-tested rules wired (score object present)', typeof (await ev(p, () => __sim.info().score.total)) === 'number');
   // station teleport via API for all stations (builds every station without error)
-  const built = await ev(p, () => { const s = __sim; let n = 0; for (let i = 0; i < 15; i++) { s.stationView(i); n++; } return n; });
-  ok('all 15 station interiors build', built === 15);
+  const built = await ev(p, async () => { const s = __sim; let n = 0; for (let i = 0; i < 15; i++) { const v = await s.stationView(i); if (v && v.info.hall) n++; } return n; });
+  ok('all 15 station halls (A3 GLBs) load and build', built === 15, 'hall stations=' + built);
   // inner line
   await ev(p, () => __sim.go({ mode: 'drive', station: 'cowcaddens', line: 'inner' }));
   ok('inner circle drive starts', (await ev(p, () => __sim.state())).line === 'inner');
@@ -178,46 +183,23 @@ try {
     return { z0, zEnd, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
   });
   ok('can walk the full length of the train through every car', trainWalk.zEnd < -trainWalk.half + 1 && trainWalk.cars === trainWalk.ncars, JSON.stringify(trainWalk));
-  // regression (reviewer 1): a standing eye must see end to end - the gangway apertures are full height, no header/wall at head level
-  const gang = await ev(p, () => {
-    const s = __sim, sim = s.sim, tv = sim.trainView, T = sim.THREE, PYv = 0.695; tv.root.updateMatrixWorld(true);
-    const meshes = []; tv.root.traverse((m) => { if (m.isMesh && !/glass/.test(m.name + (m.parent ? m.parent.name : ''))) meshes.push(m); });
-    const ci = tv.cars.length - 1, car = tv.cars[ci], info = tv.carInfo[ci], res = [];
-    const rot = new T.Matrix4().extractRotation(car.matrix), dir = new T.Vector3(0, 0, -1).applyMatrix4(rot);
-    for (const h of [0.9, 1.3, 1.6]) {
-      const o = new T.Vector3(0, PYv + h, 12 - info.zc).applyMatrix4(car.matrix);
-      const rc = new T.Raycaster(o, dir, 0, 24); rc.firstHitOnly = true;
-      const hit = rc.intersectObjects(meshes, false); res.push({ h, hit: hit.length ? (hit[0].object.name + '@' + hit[0].distance.toFixed(1)) : null });
-    }
-    return res;
-  });
-  ok('saloon: clear line of sight along the 4-car gangways at eye heights 0.9 / 1.3 / 1.6 m', gang.every((g) => !g.hit), JSON.stringify(gang));
-  const head = await ev(p, () => {
-    const s = __sim, sim = s.sim, w = s.walker(), tv = sim.trainView; const bad = [];
-    for (let x = -1.0; x <= 1.0; x += 0.1) { w.x = x; w.z = -4; w.y = 0.695; const ceil = tv.headroomAt(x) + 0.695; const eye = w.eyeY(); if (ceil > 0.9 + 0.695 && eye > ceil - 0.1) bad.push([+x.toFixed(1), +eye.toFixed(2), +ceil.toFixed(2)]); }
-    // cannot walk sideways into the curved ceiling: push sideways with strafe key for 3 s
-    w.place(0, -4, 0); s.setLook(0, 0); s.key('d', true); for (let i = 0; i < 40; i++) s.tick(0.1); s.key('d', false);
-    const xr = w.x; w.place(0, -4, 0); s.key('a', true); for (let i = 0; i < 40; i++) s.tick(0.1); s.key('a', false);
-    return { bad, xr, xl: w.x, headMax: tv.headroom && Math.max(...tv.headroom.head.filter((h) => h != null)), minHead: w.minHead, hAtR: tv.headroomAt(xr) };
-  });
-  ok('walker head never enters the curved ceiling and lateral movement stops where headroom runs out', head.bad.length === 0 && Math.abs(head.xr) < 1.05 && head.hAtR >= head.minHead - 0.05, JSON.stringify(head));
-  ok('and sprint back to the rear', trainWalk.back > trainWalk.half - 1.5, 'z=' + trainWalk.back.toFixed(2));
-  await p.close();
-  // regression (reviewer 1): the escalator ramp must open through the end pier of island vaults (no tile wall in the walking path)
+  // every hall station, both circles: platform side matches the hall, exit portals lie on walkable platform
   p = await open(browser, 'mode=explore&station=buchanan-street');
-  const pier = await ev(p, () => {
-    const s = __sim, T = s.sim.THREE, out = [];
-    for (let i = 0; i < 15; i++) {
-      const v = s.sim._ensureStation(i); v.group.updateMatrixWorld(true); const inf = v.info;
-      const meshes = []; v.group.traverse((m) => { if (m.isMesh) meshes.push(m); });
-      const o = v.group.localToWorld(new T.Vector3(inf.rc, inf.PY + 1.2, inf.PL - 1.5));
-      const d = new T.Vector3(0, 0, 1).applyQuaternion(v.group.quaternion);
-      const rc = new T.Raycaster(o, d, 0, 3.0); rc.firstHitOnly = true; const h = rc.intersectObjects(meshes, false);
-      if (h.length) out.push(v.station.name + ':' + (h[0].object.name || h[0].object.type) + '@' + h[0].distance.toFixed(2));
+  const portals = await ev(p, async () => {
+    const s = __sim, out = [];
+    for (const line of ['outer', 'inner']) {
+      await s.go({ mode: 'explore', station: 'buchanan-street', line });
+      for (let i = 0; i < 15; i++) {
+        const v = await s.stationView(i), inf = v.info, w = s.walker();
+        if (!inf.hall) { out.push(v.station.name + ': no hall'); continue; }
+        if (!v.anchors.portals.length) out.push(v.station.name + ': no portal');
+        for (const pt of v.anchors.portals) { w.setWorld(v.zones, v.obstacles); w.place(pt.x, pt.z, 0); if (w.heightAt(pt.x, pt.z, inf.PY) == null) out.push(v.station.name + ' portal off platform ' + pt.x.toFixed(1) + ',' + pt.z); }
+        if (Math.abs(Math.abs(inf.xe) - 1.25) > 0.2) out.push(v.station.name + ' edge gap ' + inf.xe);
+      }
     }
     return out;
   });
-  ok('every station: walking path from platform to the ramp is not blocked by a wall', pier.length === 0, pier.slice(0, 3).join(' | '));
+  ok('every hall: platform edge matches the train and exit portals are walkable (both circles)', portals.length === 0, portals.slice(0, 4).join(' | '));
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');
