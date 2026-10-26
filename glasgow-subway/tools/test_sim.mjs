@@ -192,7 +192,16 @@ try {
     return res;
   });
   ok('saloon: clear line of sight along the 4-car gangways at eye heights 0.9 / 1.3 / 1.6 m', gang.every((g) => !g.hit), JSON.stringify(gang));
-  ok('and sprint back to the rear', (await ev(p, () => __sim.walker().z)) > trainWalk.half - 1.5);
+  const head = await ev(p, () => {
+    const s = __sim, sim = s.sim, w = s.walker(), tv = sim.trainView; const bad = [];
+    for (let x = -1.0; x <= 1.0; x += 0.1) { w.x = x; w.z = -4; w.y = 0.695; const ceil = tv.headroomAt(x) + 0.695; const eye = w.eyeY(); if (ceil > 0.9 + 0.695 && eye > ceil - 0.1) bad.push([+x.toFixed(1), +eye.toFixed(2), +ceil.toFixed(2)]); }
+    // cannot walk sideways into the curved ceiling: push sideways with strafe key for 3 s
+    w.place(0, -4, 0); s.setLook(0, 0); s.key('d', true); for (let i = 0; i < 40; i++) s.tick(0.1); s.key('d', false);
+    const xr = w.x; w.place(0, -4, 0); s.key('a', true); for (let i = 0; i < 40; i++) s.tick(0.1); s.key('a', false);
+    return { bad, xr, xl: w.x, headMax: tv.headroom && Math.max(...tv.headroom.head.filter((h) => h != null)), minHead: w.minHead, hAtR: tv.headroomAt(xr) };
+  });
+  ok('walker head never enters the curved ceiling and lateral movement stops where headroom runs out', head.bad.length === 0 && Math.abs(head.xr) < 1.05 && head.hAtR >= head.minHead - 0.05, JSON.stringify(head));
+  ok('and sprint back to the rear', trainWalk.back > trainWalk.half - 1.5, 'z=' + trainWalk.back.toFixed(2));
   await p.close();
   // regression (reviewer 1): the escalator ramp must open through the end pier of island vaults (no tile wall in the walking path)
   p = await open(browser, 'mode=explore&station=buchanan-street');
@@ -217,6 +226,8 @@ try {
     const bad = [];
     for (let i = 0; i < 15; i++) { const r = await ev(p, (k) => __sim.sweep(k, { step: 1.0, range: 70 }), i); if (r.hits.length) bad.push(`${r.station}(${r.island ? 'island' : 'side'}):${r.hits.length}x ${r.hits[0].mesh}@${r.hits[0].pt.join(',')}`); }
     ok(`swept train volume intersects no solid station mesh - ${line} circle, all 15 stations`, bad.length === 0, bad.slice(0, 3).join(' | '));
+    const cv = await ev(p, () => __sim.sweepCurves(8));
+    ok(`train does not poke through the tunnel lining on the 8 tightest curves (<= 12 grazing rays of ~1500) - ${line} circle`, cv.every((c) => c.hits <= 12), JSON.stringify(cv.filter((c) => c.hits)));
   }
   await p.close();
   p = await open(browser, 'mode=explore&station=hillhead&diff=easy');

@@ -2,7 +2,7 @@
 import math, sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 from assets_lib import *
-from assets_station import signboard, roundel
+from assets_kit import signboard, roundel
 
 # ---------------------------------------------------------------- entrance kiosk
 def build_kiosk():

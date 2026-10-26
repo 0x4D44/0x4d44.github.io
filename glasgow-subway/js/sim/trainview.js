@@ -75,6 +75,33 @@ export class TrainView {
     if (bA && bB) { const half = Math.abs(bA.position.z - bB.position.z) / 2; this.bogie = this.carInfo.map(() => half); }
   }
 
+  /** Measures the interior ceiling height (m above rail head) vs lateral x by casting rays up through the middle cars.
+   *  Returns { xs[], head[] } where head = height of the lowest surface above PY+1.2, or null if none. */
+  computeHeadroom(floorY = 0.695) {
+    const THREE = this.THREE, rc = new THREE.Raycaster(); rc.firstHitOnly = true;
+    // put the cars into the root frame temporarily
+    this.cars.forEach((g, i) => { g.matrix.makeTranslation(0, 0, this.carInfo[i].zc); g.matrixWorldNeedsUpdate = true; });
+    this.root.updateMatrixWorld(true);
+    const meshes = []; this.root.traverse((m) => { if (m.isMesh && /(saloon|exterior|cab)(_\d+)?$/.test(m.name || '') || /(saloon|exterior|cab)$/.test((m.parent && m.parent.name) || '')) meshes.push(m); });
+    const mid = this.carInfo.slice(1, -1).length ? this.carInfo.slice(1, -1) : this.carInfo;
+    const zs = []; for (const c of mid) for (const f of [-0.3, -0.15, 0.15, 0.3]) zs.push(c.zc + f * c.len);
+    const xs = [], head = [];
+    for (let x = -1.15; x <= 1.1501; x += 0.05) {
+      let best = Infinity;
+      for (const z of zs) { rc.set(new THREE.Vector3(x, floorY + 1.2, z), new THREE.Vector3(0, 1, 0)); rc.near = 0; rc.far = 3; const h = rc.intersectObjects(meshes, false); if (h.length) best = Math.min(best, h[0].point.y); }
+      xs.push(+x.toFixed(3)); head.push(isFinite(best) ? best : null);
+    }
+    this.headroom = head.some((h) => h != null) ? { xs, head, floorY } : null;
+    return this.headroom;
+  }
+  /** max head height above the floor at lateral x (interpolated); 0 outside the carbody */
+  headroomAt(x) {
+    const h = this.headroom; if (!h) return 9;
+    const ax = Math.abs(x); const f = (ax - h.xs[0] * 0) ; 
+    const t = (x - h.xs[0]) / 0.05, i = Math.floor(t); if (i < 0 || i >= h.xs.length - 1) return 0;
+    const a = h.head[i], b = h.head[i + 1]; if (a == null || b == null) return 0;
+    return (a + (b - a) * (t - i)) - h.floorY;
+  }
   setDoors(L, R) {
     const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 1.2 * f; };
     move(this.doorsL, L); move(this.doorsR, R);

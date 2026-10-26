@@ -66,6 +66,7 @@ class Sim {
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
     this.trainView = new TrainView(THREE, trainTpl.scene, {});
     this.scene.add(this.trainView.root);
+    this.trainView.computeHeadroom(PY);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
     this.tms = new Tms(THREE); this.tms.attach(this.trainView);
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
@@ -222,7 +223,7 @@ class Sim {
 
   _setupStationWalker(view, fromRide) {
     const w = this.walker, inf = view.info;
-    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.62; w.radius = 0.3;
+    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.62; w.radius = 0.3; w.headroomFn = null;
     this.activeStation = view;
     if (fromRide) {
       const doorZ = this._nearestDoorZ();
@@ -247,10 +248,10 @@ class Sim {
 
   _setupTrainWalker() {
     // Whole 4-car train is one walkable corridor (open gangways). Generous aisle, door recesses, no seat colliders.
-    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.62, x1: 0.62, z0: -half, z1: half, y: PY, name: 'aisle' }];
+    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.5, x1: 0.5, z0: -half, z1: half, y: PY, name: 'aisle' }];
     for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
     w.setWorld(zones, []);
-    w.heightFn = null; w.eye = 1.5; w.radius = 0.2;
+    w.heightFn = null; w.eye = 1.6; w.radius = 0.2; w.headroomFn = (x) => this.trainView.headroomAt(x); w.minHead = 1.5;
     this.ctxKind = 'train';
   }
 
@@ -264,7 +265,7 @@ class Sim {
     if (!this.street) { this.hud.setFade(false); this.fadeLock = false; return; }
     this.mode = 'street'; this.ctxKind = 'street'; this.hud.setMode('street');
     const w = this.walker, st = this.street;
-    w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.65; w.radius = 0.3;
+    w.headroomFn = null; w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.65; w.radius = 0.3;
     w.place(st.spawn.x, st.spawn.z, st.spawn.yaw); w.y = st.spawn.y;
     this.look.pitch = 0;
     this.hud.toast(`Street level: ${stn.name}. Walk back to the stairwell to descend.`, 'info', 5);
@@ -298,7 +299,7 @@ class Sim {
     this.mode = 'explore'; this.ctxKind = 'station'; this.hud.setMode('explore');
     this.exploreIdx = idx; this.shuttle.idx = idx; this.shuttle.state = 'dwell'; this.shuttle.streamed = false; this.scene.fog.density = 0.006;
     const view = this._ensureStation(idx, true);
-    this.walker.heightFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.62; this.walker.radius = 0.3; this.activeStation = view;
+    this.walker.heightFn = null; this.walker.headroomFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.62; this.walker.radius = 0.3; this.activeStation = view;
     const inf = view.info;
     this.walker.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + doorZ, -inf.S * Math.PI / 2); this.look.yaw = this.walker.yaw; this.look.pitch = 0;
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
@@ -755,6 +756,36 @@ class Sim {
     return { hits, poses, samples: this._sweepPts.length, station: view.station.name, side: view.info.S, island: view.info.island };
   }
 
+  /** Sweeps the train through the n tightest curves of the current line against the tunnel lining meshes. */
+  sweepCurves(n = 8, o = {}) {
+    const THREE = this.THREE, tv = this.trainView, track = this.track, L = track.length;
+    if (!this._sweepPts) this.sweepStation(0, { range: 1 });
+    // pick the n tightest-curvature spots (at least 150 m apart), outside station spans
+    const cands = []; for (let s = 0; s < L; s += 4) cands.push([s, Math.abs(track.curvature(s))]);
+    cands.sort((a, b) => b[1] - a[1]);
+    const picks = []; for (const [s, k] of cands) { if (picks.length >= n) break; if (this.tunnel._skipped(s, L)) continue; if (picks.every((p) => Math.abs(((p.s - s + L / 2) % L + L) % L - L / 2) > 150)) picks.push({ s, k }); }
+    const rc = new THREE.Raycaster(); rc.firstHitOnly = true;
+    const out = [], wv = new THREE.Vector3(), dv = new THREE.Vector3();
+    for (const pk of picks) {
+      const hits = []; let prev = null, worst = 0;
+      for (let d = -22; d <= 22; d += o.step || 1.5) {
+        const sF = pk.s + tv.length / 2 + d;
+        tv.place(track, sF); this.tunnel.reset(); this.tunnel.update(track, sF - 1.8);
+        this.tunnel.group.updateMatrixWorld(true);
+        const meshes = []; this.tunnel.group.traverse((m) => { if (m.isMesh) meshes.push(m); });
+        const cur = this._sweepPts.map((p) => { const ci = tv.carAt(p.z); return wv.set(p.x, p.y, p.z - tv.carInfo[ci].zc).applyMatrix4(tv.cars[ci].matrix).clone(); });
+        if (prev) for (let k = 0; k < cur.length; k++) {
+          dv.subVectors(cur[k], prev[k]); const len = dv.length(); if (len < 1e-6) continue; dv.normalize();
+          rc.set(prev[k], dv); rc.near = 0; rc.far = len + 0.02;
+          const h = rc.intersectObjects(meshes, false); if (h.length) hits.push({ d, k, mesh: h[0].object.name || h[0].object.geometry.type });
+        }
+        prev = cur;
+      }
+      out.push({ s: +pk.s.toFixed(0), R: +(1 / Math.max(pk.k, 1e-6)).toFixed(0), hits: hits.length, first: hits[0] });
+    }
+    return out;
+  }
+
   // ------------------------------------------------------------------ misc
   getState() {
     const svc = this.svc; if (!svc) return {};
@@ -776,7 +807,9 @@ class Sim {
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
       timeScale: (k) => { this.timeScale = k; },
       quality: () => this.quality,
+      headroom: () => this.trainView.headroom,
       sweep: (i, opts) => this.sweepStation(i, opts),
+      sweepCurves: (n, opts) => this.sweepCurves(n, opts),
       loop: (on) => { if (on) this.renderer.setAnimationLoop((t) => this.frame(t)); else this.renderer.setAnimationLoop(null); },
       stats: () => ({ calls: this.renderer.info.render.calls, tris: this.renderer.info.render.triangles, geos: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures }),
     };

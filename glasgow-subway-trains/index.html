@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glasgow Subway Trains and Power</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="An engineering deep-dive into four generations of Glasgow Subway trains, and the 600 V DC power system that feeds them, with modelled performance charts.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar" id="bar">
+  <a class="btn3d" href="../glasgow-subway/" title="Open the interactive 3D Subway explorer"><span aria-hidden="true">&#9654;</span> Explore the Subway in 3D</a>
+  <nav aria-label="Sections">
+    <a href="#generations">Generations</a>
+    <a href="#machines">Machines</a>
+    <a href="#power">Power</a>
+    <a href="#perf">Performance</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#checks">Checks</a>
+    <a href="#sources">Sources</a>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- HERO -->
+<section class="hero wrap" aria-labelledby="h-title">
+  <div class="hero-text">
+    <p class="kicker">Engineering notes &middot; Glasgow Subway</p>
+    <h1 id="h-title">Small trains,<br><em>big current</em></h1>
+    <p class="lede">The Subway is a 10.5 km circle of two single-bore tunnels, each only 3.35 m across. Four generations of train have squeezed through them: a steel rope and a steam engine, a third rail, orange cars with automatic driving, and now a four-car, driverless-ready Stadler. This page looks at the machines, at the 600 V DC system behind them, and at what a lap of the circle costs in energy.</p>
+    <p class="cta-row">
+      <a class="btn primary" href="../glasgow-subway/">Explore the Subway in 3D</a>
+      <a class="btn" href="#generations">Compare the generations</a>
+    </p>
+    <ul class="stats" aria-label="Key figures">
+      <li><b>600 V</b><span>DC, third rail</span></li>
+      <li><b>3.35 m</b><span>tunnel bore</span></li>
+      <li><b>820 kW</b><span>peak at wheel</span></li>
+      <li><b>58 km/h</b><span>top speed</span></li>
+      <li><b>5</b><span>traction substations</span></li>
+      <li><b>~310</b><span>passengers per train</span></li>
+    </ul>
+  </div>
+  <figure class="hero-art">
+    <svg id="heroArt" viewBox="0 0 420 420" role="img" aria-labelledby="heroCap"></svg>
+    <figcaption id="heroCap">The Stadler train in a 3.35 m tunnel, end-on, drawn to scale. The gap to the lining at the widest point is only a few tens of centimetres.</figcaption>
+  </figure>
+</section>
+
+<p class="wrap legend" aria-label="Confidence key"><b>Confidence key</b>
+  <span class="cf H" aria-hidden="true"></span> high: manufacturer or two sources agree
+  <span class="cf M" aria-hidden="true"></span> medium: one good source
+  <span class="cf L" aria-hidden="true"></span> low: estimate, inference or model
+  <span class="nk">n/k</span> not known
+</p>
+
+<!-- GENERATIONS -->
+<section id="generations" class="wrap" aria-labelledby="h-gen">
+  <h2 id="h-gen">Four generations, one tunnel</h2>
+  <p class="intro">Every Subway train has been shaped by the same two numbers: a 3.35 m bore and a 4 ft gauge. Pick any two generations to see them at the same scale, in the tunnel they must share.</p>
+
+  <div class="comparator" id="comparator">
+    <div class="ctrl">
+      <label>Left <select id="cmpA"></select></label>
+      <label>Right <select id="cmpB"></select></label>
+      <fieldset class="seg"><legend class="vh">View</legend>
+        <label><input type="radio" name="cmpView" value="section" checked><span>End-on in tunnel</span></label>
+        <label><input type="radio" name="cmpView" value="side"><span>Side elevation</span></label>
+      </fieldset>
+    </div>
+    <div class="cmp-stage">
+      <svg id="cmpSvg" role="img" aria-labelledby="cmpDesc"></svg>
+      <p id="cmpDesc" class="cap"></p>
+    </div>
+    <div id="cmpBars" class="bars" aria-label="Side by side measures"></div>
+  </div>
+
+  <h3>The comparison table</h3>
+  <p class="hint">Scroll sideways on a small screen. Each value carries a confidence mark. Where the numbers are my own derivations they say so.</p>
+  <div class="tablewrap" tabindex="0" role="region" aria-label="Generation comparison table, scrollable">
+    <table id="genTable" class="gen"></table>
+  </div>
+</section>
+
+<!-- MACHINES -->
+<section id="machines" class="wrap" aria-labelledby="h-mach">
+  <h2 id="h-mach">The machines</h2>
+
+  <article class="machine" id="m-cable">
+    <header><span class="era e-cable">1896-1935</span><h3>Cable gripper cars</h3></header>
+    <div class="cols">
+      <div>
+        <p>The 1896 Subway had no motors at all. A single power house on Scotland Street, between West Street and Shields Road stations, drove two endless steel cables, one per tunnel, at roughly 12.5 mph (some accounts say up to 15 mph). Each rope was 1.5 inches thick and about 36,300 ft (11 km) long, a little longer than the 6.5 mile circuit it served. It ran over about 1,700 sheaves per tunnel, a few inches above the rails, and never stopped while the line was open.</p>
+        <p>Two horizontal Corliss steam engines (42 in bore, 6 ft stroke, about 1,500 hp each, 55 rpm) turned 14 ft grooved drums through a 25 ft, 50-ton flywheel, with eight Lancashire boilers and mechanical stokers behind them. One engine was a spare. A Tension Run 193 ft long, now a listed structure, let a weighted carriage take up the stretch. Four small dynamos supplied the car lighting.</p>
+        <p>The car carried a <b>gripper</b>: a steel-faced clamp under the leading bogie that the driver closed on the passing rope with a handwheel. Closing it hauled the car at cable speed; opening it let the car coast to a stop in the station. The cars (about 9 t, 48 seats, 40 ft long) ran in pairs with a 5 t trailer. There was no rail link to the workshops, so cars were craned in and out at Govan. Headway was 3.5 minutes.</p>
+      </div>
+      <aside class="facts">
+        <dl>
+          <dt>Cable</dt><dd>1.5 in steel, 36,300 ft, ~57 t each <i class="cf M"></i></dd>
+          <dt>Engines</dt><dd>2 x ~1,500 hp, one spare <i class="cf H"></i></dd>
+          <dt>Speed</dt><dd>12.5-15 mph <i class="cf M"></i></dd>
+          <dt>Car</dt><dd>9 t, 48 seats <i class="cf H"></i></dd>
+          <dt>Headway</dt><dd>3.5 min <i class="cf H"></i></dd>
+          <dt>Grade at Clyde</dt><dd>1 in 18 to 1 in 23 <i class="cf M"></i></dd>
+        </dl>
+      </aside>
+    </div>
+  </article>
+
+  <article class="machine" id="m-electric">
+    <header><span class="era e-electric">1935-1977</span><h3>Electrified cars</h3></header>
+    <div class="cols">
+      <div>
+        <p>Glasgow Corporation bought the Subway in 1923 and spent a decade deciding what to do with it. A third rail was proposed in 1924 so that night work would not interrupt day service. In 1934 the newest gripper car, No. 60, had its wheelbase stretched by 6 inches to take two 60 hp motors and was tested with a 10-ton load. Orders followed for 19 cars and 38 power bogies, with Metropolitan-Vickers traction equipment, Westinghouse air brakes, air-operated doors and Hurst Nelson underframes.</p>
+        <p>The inner circle went electric on 31 March 1935; the last cable-hauled train ran on 30 November 1935. The conversion cost about GBP 120,000. Power came from Pinkston power station through existing <b>tramway substations</b> (Dalhousie Street, Kinning Park and Partick), then down cables to the tunnel. The old pick-up wheels became skids. Interior lighting was still taken from two wall-mounted T-iron rails until 1977. The crew fell from three to two.</p>
+        <p>These cars, the "Shoogly Train", lasted until the line closed in 1977. Motor ratings per car, top speed and the rail layout are the things I could not establish from open sources.</p>
+      </div>
+      <aside class="facts">
+        <dl>
+          <dt>Supply</dt><dd>600 V DC third rail <i class="cf H"></i></dd>
+          <dt>Test car</dt><dd>2 x 60 hp <i class="cf M"></i></dd>
+          <dt>First order</dt><dd>19 cars, 38 power bogies <i class="cf M"></i></dd>
+          <dt>Cost</dt><dd>GBP 120,000 <i class="cf M"></i></dd>
+          <dt>Source of power</dt><dd>Pinkston + 3 tram substations <i class="cf M"></i></dd>
+        </dl>
+      </aside>
+    </div>
+  </article>
+
+  <article class="machine" id="m-mc">
+    <header><span class="era e-mc">1980-2024</span><h3>Metro-Cammell &ldquo;Clockwork Orange&rdquo;</h3></header>
+    <div class="cols">
+      <div>
+        <p>The 1977-80 rebuild closed the Subway for almost three years and replaced nearly everything. Metro-Cammell of Washwood Heath built 33 cars between 1977 and 1979. Each is 12.58 m long, 2.34 m wide and 2.65 m high and weighs about 20 t. Power cars have a cab at one end and four GEC traction motors. They ran as two-car married sets; in 1992 eight centre trailers from Hunslet of Leeds built some sets up to three cars, giving the 37.74 m, 270-passenger trains familiar until 2024. Exactly how many sets were 2-car and how many 3-car is not clear from the sources.</p>
+        <p>The fleet came with <b>automatic train operation</b>: the driver closed the doors and pressed a button, and the train accelerated, cruised and stopped itself at the platform. Line speed was about 54 km/h. ABB at Derby refurbished the power cars in 1993-95, and the 1996 resignalling brought computer interlocking (VPI). Power came from five substations around the circle (Broomloan Depot, Byres Road, Dundasvale, Bridge Street and Cornwall Street); the network can run a full service with any one out.</p>
+        <p>What I could not find: motor ratings, the control gear (resistance, chopper or otherwise), brake type, and whether any braking energy was returned to the rail. Treat any claim on those as unverified.</p>
+      </div>
+      <aside class="facts">
+        <dl>
+          <dt>Cars</dt><dd>33 + 8 trailers <i class="cf H"></i></dd>
+          <dt>Length</dt><dd>12.58 m per car <i class="cf M"></i></dd>
+          <dt>Mass</dt><dd>~20 t per car <i class="cf L"></i></dd>
+          <dt>Motors</dt><dd>4 per power car (GEC) <i class="cf M"></i></dd>
+          <dt>Capacity</dt><dd>270 (3 cars) <i class="cf H"></i></dd>
+          <dt>Top speed</dt><dd>54 km/h <i class="cf M"></i></dd>
+        </dl>
+      </aside>
+    </div>
+  </article>
+
+  <article class="machine" id="m-stadler">
+    <header><span class="era e-stadler">2023-</span><h3>Stadler METRO</h3></header>
+    <div class="cols">
+      <div>
+        <p>SPT awarded Stadler and Ansaldo STS (now Hitachi Rail) a GBP 200 m contract in March 2016 for 17 four-car trains, signalling, telecoms, an operations control centre and platform screen doors, inside a GBP 288 m modernisation. The trains were built at Altenrhein, shown at InnoTrans in 2018, first delivered in May 2019 and entered service on 11 December 2023. The Metro-Cammell fleet ended on 28 June 2024.</p>
+        <p>The train is two identical <b>half-trains</b> joined by a Scharfenberg coupler, with an open gangway throughout. Each half has a power car on two motored bogies and a trailer car whose single bogie sits at the centre of the set: Bo&prime;Bo&prime; + 2&prime; + 2&prime; + Bo&prime;Bo&prime;, twelve axles in all with eight driven. Bogies have a wheelbase of just 1,650 mm, pneumatic suspension, resilient wheels (540 mm new, 480 mm worn) and radial steering. Small wheels let the floor sit at 695 mm so the gangways are level.</p>
+        <p>Each driven axle has a water-cooled, three-phase asynchronous motor (TSA TMW 28-23-4, 68 kW) through a 10.06:1 two-stage gearbox, fed by redundant water-cooled IGBT converters from ABB. Braking is regenerative. The CBTC system (Hitachi) tracks each train by tachometer and trackside balises, and the train can start, stop and operate its doors itself; the temporary driver&rsquo;s cab will go once unattended operation is approved.</p>
+      </div>
+      <aside class="facts">
+        <dl>
+          <dt>Length</dt><dd>39.25-39.51 m <i class="cf H"></i></dd>
+          <dt>Section</dt><dd>2.309 x 2.642 m <i class="cf H"></i></dd>
+          <dt>Seats</dt><dd>104 + 6 tip-up <i class="cf H"></i></dd>
+          <dt>Standing</dt><dd>200 at 6/m2 <i class="cf H"></i></dd>
+          <dt>Power at wheel</dt><dd>520 kW cont. / 820 kW max <i class="cf H"></i></dd>
+          <dt>Tractive effort</dt><dd>130 kN to 23 km/h <i class="cf H"></i></dd>
+          <dt>Tare mass</dt><dd>~67 t (derived) <i class="cf L"></i></dd>
+        </dl>
+      </aside>
+    </div>
+    <details class="whatchanged">
+      <summary>What did the new trains change?</summary>
+      <table class="mini">
+        <thead><tr><th scope="col">Item</th><th scope="col">Metro-Cammell</th><th scope="col">Stadler</th></tr></thead>
+        <tbody>
+          <tr><td>Train length</td><td>37.74 m (3 cars)</td><td>39.25 m (4 cars)</td></tr>
+          <tr><td>Passengers</td><td>270</td><td>310 (+15%)</td></tr>
+          <tr><td>Gangway</td><td>cars separate</td><td>open throughout</td></tr>
+          <tr><td>Drive</td><td>GEC motors; type n/k</td><td>AC induction, IGBT converters</td></tr>
+          <tr><td>Braking energy</td><td>not documented</td><td>regenerative</td></tr>
+          <tr><td>Control</td><td>ATO, driver closes doors</td><td>CBTC + ATO, UTO-capable</td></tr>
+          <tr><td>Headway floor</td><td>about 4 min</td><td>as little as 90 s under UTO (design intent)</td></tr>
+          <tr><td>Climate</td><td>not documented</td><td>ventilation system; first air-conditioned Subway train (press)</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </article>
+</section>
+
+<!-- POWER -->
+<section id="power" class="wrap" aria-labelledby="h-pow">
+  <h2 id="h-pow">The power system</h2>
+  <p class="intro">Today&rsquo;s Subway is supplied at 600 V DC through a conductor rail beside the track. The current path is conventional for a third-rail metro: positive rail, train, running rails, negative feeder cables, substation. The numbers around it are partly known, partly inferred, and the charts below are labelled which is which.</p>
+
+  <h3>Collecting the current</h3>
+  <div class="figrow">
+    <figure>
+      <svg id="railFig" viewBox="0 0 520 300" role="img" aria-labelledby="railCap"></svg>
+      <figcaption id="railCap"><b>Schematic, not to scale in detail.</b> A conductor (third) rail sits alongside the 4 ft gauge running rails and is touched by a sliding shoe on the bogie. The lateral offset and height of the live rail, and whether the shoe touches its top or its side, were not established from open sources. Whether a fourth (negative) rail exists is not documented: SPT papers mention &ldquo;negative feeder&rdquo; cables, which fits return through the running rails.</figcaption>
+    </figure>
+    <div class="note">
+      <h4>What we know</h4>
+      <ul>
+        <li>600 V DC, third rail, collected by shoe (skid since 1935) <i class="cf H"></i></li>
+        <li>Gauge 4 ft (1,219-1,220 mm) <i class="cf H"></i></li>
+        <li>Warning legend &ldquo;DANGER LIVE RAIL&rdquo; stencilled on the tunnel wall (photographs) <i class="cf M"></i></li>
+        <li>Rail polarity: positive live rail, negative running rails <i class="cf L"></i> (standard practice; not stated for the Subway)</li>
+        <li>Traction negative feeder cables replaced at Byres Road and Dundasvale 2023 <i class="cf H"></i></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>From the grid to the wheel</h3>
+  <figure class="flow">
+    <svg id="flowFig" viewBox="0 0 1000 440" role="img" aria-labelledby="flowCap"></svg>
+    <figcaption id="flowCap">Power flow, left to right. Solid arrows are the motoring path, dashed are regeneration. Ratings and the HV voltage are shown only where a source exists; the rest are labelled as estimates.</figcaption>
+  </figure>
+  <ul class="plain">
+    <li><b>Grid to substation.</b> A tender notice describes the DC system as fed from an 11 kV or 6.6 kV supply and rectified to 600 V DC, with five substations, one inside the depot <i class="cf L"></i>. SPT&rsquo;s 2023 paper confirms it has analysed &ldquo;the supporting High Voltage supply network&rdquo; for compliance with modern standards <i class="cf H"></i>. The connection point and utility are not stated.</li>
+    <li><b>Rectification.</b> Each substation steps the HV down and rectifies it. Their ratings are not published. For scale: one Stadler train takes about 1 MW (1.7 kA at 600 V) while accelerating, and the chart below shows 3 to 5 trains doing so at once on a busy lap. A rating of a few MW per substation would therefore be reasonable, but this is my estimate <i class="cf L"></i>.</li>
+    <li><b>Redundancy.</b> The network can run a full service of six trains per circle with one substation inoperative (Wikipedia, as of the legacy fleet) <i class="cf M"></i>. Try the outage tool below.</li>
+    <li><b>Regeneration.</b> Rail Engineer says the IGBT drive provides regenerative braking <i class="cf H"></i>. In a DC network only a train that is accelerating nearby can absorb it, and a diode rectifier substation cannot send power back to the grid. SPT&rsquo;s paper says &ldquo;the capturing and storage of regeneration braking energy is being assessed&rdquo; as part of the substation design <i class="cf H"></i>.</li>
+    <li><b>History.</b> 1896-1935 the energy source was coal under eight Lancashire boilers at Scotland Street. In 1935 it became a share of the city&rsquo;s tramway supply from Pinkston power station. The five-substation arrangement appears to belong to the 1977-80 rebuild, but I found no date.</li>
+  </ul>
+
+  <h3>The five substations around the loop</h3>
+  <p class="hint">Positions are credible estimates: each is placed at the station its name belongs to (Broomloan at the depot). No survey of the buildings was found. Select a substation to take it out of service.</p>
+  <div class="loopbox">
+    <div class="loopmap">
+      <svg id="loopSvg" viewBox="0 0 760 590" role="group" aria-label="Plan of the Subway circle with five traction substations"></svg>
+    </div>
+    <div class="loopside">
+      <div id="subBtns" class="subBtns" role="group" aria-label="Substation outage selector"></div>
+      <div id="subOut" class="subOut" role="status" aria-live="polite"></div>
+      <p class="hint">Colour along the outer circle: distance to the nearest live substation by track. The drop figure is <b>illustrative</b>: one train drawing 1 MW at mid-gap, fed from both ends, with an assumed 0.035 ohm/km for conductor rail plus running rails.</p>
+    </div>
+  </div>
+
+  <h3>Energy: what a lap costs</h3>
+  <p class="intro">This is the model result, not a measurement. It uses the Stadler datasheet figures, a modelled gradient profile, and the assumptions listed under the sliders.</p>
+  <div class="ctlgrid" id="simCtl"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="netbox" id="netbox"></div>
+</section>
+
+<!-- PERFORMANCE -->
+<section id="perf" class="wrap" aria-labelledby="h-perf">
+  <h2 id="h-perf">Performance</h2>
+  <p class="intro">The line is a roller-coaster. Stations sit at the top of small humps (about 1 in 40) so the train climbs into each platform and drops out of it, and the three river crossings dip to 1 in 18 or 1 in 20. The charts below model the Stadler train on the outer circle. Every curve here is <b>modelled</b> (low confidence), not measured.</p>
+
+  <h3>One lap of the outer circle</h3>
+  <div class="chartbox" id="chLoop"></div>
+  <p class="cap">Top: rail level (modelled vertical profile; real gradients are steeper at the rivers). Middle: speed against the assumed limit (55 km/h on the straight, 35 and 25 km/h around stations; limits are estimates from the Explorer). Bottom: power at the train&rsquo;s shoe, positive when drawing, negative when regenerating. Use arrow keys on the chart.</p>
+
+  <h3>Tractive effort and acceleration against speed</h3>
+  <div class="chartbox" id="chTE"></div>
+  <p class="cap">Constant 130 kN up to 23 km/h, then constant power (820 kW at wheel). The dashed line is running resistance plus a 5% gradient at the chosen load; where it crosses the effort curve is the speed a train could hold on that gradient (the real limit is 58 km/h). Numbers: Stadler datasheet. Resistance: estimate.</p>
+
+  <h3>Speed-time diagram for one stop</h3>
+  <div class="ctl"><label>Run <select id="stopSel"></select></label></div>
+  <div class="chartbox" id="chStop"></div>
+  <p class="cap" id="stopCap"></p>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline" class="wrap" aria-labelledby="h-tl">
+  <h2 id="h-tl">Timeline, 1890-2026</h2>
+  <p class="hint">Scroll along the strip or press the arrow keys when it is focused. Select an event for detail.</p>
+  <div class="tl-scroll" id="tlScroll" tabindex="0" role="region" aria-label="Timeline strip, scrollable"><div class="tl" id="tl"></div></div>
+  <div class="tl-detail" id="tlDetail" role="status" aria-live="polite"></div>
+</section>
+
+<!-- CHECKS -->
+<section id="checks" class="wrap" aria-labelledby="h-chk">
+  <h2 id="h-chk">How the numbers were checked</h2>
+  <p class="intro">No single source covers the Subway in depth, and the sources disagree. These cross-checks are what I did to decide what to believe.</p>
+  <ol class="checks">
+    <li><b>Stadler motor power.</b> Wikipedia lists 4 x 68 kW = 272 kW. But the train has eight driven axles (two half-trains, each with a Bo&prime;Bo&prime; power car), so the whole train has 8 x 68 = 544 kW of motors. Stadler&rsquo;s datasheet says 520 kW continuous at the wheel, 95.6% of 544 kW, which is a believable transmission efficiency. So 272 kW is one half-train.</li>
+    <li><b>Peak power and tractive effort.</b> 130 kN at 23 km/h (6.39 m/s) is 831 kW. The datasheet says 820 kW maximum at the wheel. They agree to 1.3%.</li>
+    <li><b>Mass.</b> No tare mass was published. The drive supplier lists a 7.5 t axle load; with twelve axles, that is 90 t at crush load. Subtract 310 passengers at 75 kg (23 t) and the tare is about 67 t. Check: 130 kN divided by 90 t with 8% for rotating parts gives 1.34 m/s2, matching the datasheet&rsquo;s 1.3 m/s2 gross starting acceleration. Label: derived, low.</li>
+    <li><b>Old train length.</b> Three Metro-Cammell cars at 12.58 m is 37.74 m, which is the figure Rail Engineer gives. The 39.24 m sometimes quoted for the old stock is really the new train.</li>
+    <li><b>Seats and standing.</b> 104 + 6 + 200 = 310, which matches Rail Engineer&rsquo;s 310. Rolling Stock World reports 116 seats and 204 standing, a slightly different count, so a range of 310-322 is fair.</li>
+    <li><b>Cable length.</b> Each cable is 36,300 ft (6.9 miles) against a 6.5 mile circuit: one endless loop with a tension run, not an out-and-back. The 57 t weight is on the heavy side for 1.5 in rope; I rate it medium.</li>
+    <li><b>Contract value.</b> Most sources say GBP 200 m for trains and signalling; one Wikipedia passage says GBP 280 m. The 200 m figure is repeated by Railway Gazette and Rail Engineer.</li>
+    <li><b>Lap time.</b> The model gives about 22.4 minutes for a lap with 25 s dwells. Published sources say a circuit takes about 24 minutes. The 7% difference is plausible: the model has no timetable margin or restrictions.</li>
+    <li><b>Where I could not verify.</b> Substation ratings and exact positions; the regeneration capability of the 1980 fleet; the rail layout detail; tunnel ventilation arrangements; the annual energy bill. These are left as unknown or flagged as estimates.</li>
+  </ol>
+
+  <h3>What I did not find</h3>
+  <p>No open source gives the Subway&rsquo;s tunnel ventilation arrangements, the stray-current control scheme, or annual traction energy. In general a 3.35 m bore with a 2.3 m wide train has a very high blockage ratio, so each train acts as a piston and pushes air through stations and shafts; and in a wet tunnel with rail return, insulated running rails and negative feeders are the usual tools to hold stray current down. Both statements are general engineering, not Subway facts. SPT papers do mention 21 pumping stations dealing with groundwater, and earthing studies for the substations.</p>
+</section>
+
+<!-- GLOSSARY / SOURCES -->
+<section id="glossary" class="wrap" aria-labelledby="h-gl">
+  <h2 id="h-gl">Glossary</h2>
+  <dl class="gloss" id="gloss"></dl>
+</section>
+
+<section id="sources" class="wrap" aria-labelledby="h-src">
+  <h2 id="h-src">Sources and confidence</h2>
+  <p class="hint">Reliability of each source is marked as for the data. Search-summary reads are labelled low.</p>
+  <ol class="srcs" id="srcList"></ol>
+</section>
+
+</main>
+
+<footer class="foot wrap">
+  <p><a href="../glasgow-subway/">Explore the Subway in 3D</a> &middot; <a href="../">Back to the Almanac</a></p>
+  <p>Loop geometry from the sibling Explorer (OpenStreetMap-derived). Vertical profile, performance curves, energy and substation positions are models or estimates, as marked. Not affiliated with SPT, Stadler or Hitachi.</p>
+</footer>
+
+<div id="tip" class="tip" role="presentation" hidden></div>
+
+<script defer src="geo.js"></script>
+<script defer src="data.js"></script>
+<script defer src="sim.js"></script>
+<script defer src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
