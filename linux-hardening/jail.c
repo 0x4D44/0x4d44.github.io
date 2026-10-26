@@ -17,17 +17,31 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#if !defined(__x86_64__)
+#error "the seccomp filter below is x86-64 only; other architectures need their own arch check and syscall numbers"
+#endif
 #ifndef AUDIT_ARCH_X86_64
 #define AUDIT_ARCH_X86_64 0xC000003E
 #endif
+
+/* Our own copy of the attribute struct and ABI 6 constants, so the build does not depend on
+   how new the installed kernel headers are (older headers lack the "scoped" field). */
+struct ll_attr { __u64 handled_access_fs, handled_access_net, scoped; };
+#define LL_SCOPE_ABSTRACT_UNIX_SOCKET (1ULL << 0)
+#define LL_SCOPE_SIGNAL               (1ULL << 1)
 
 static void die(const char *m) { perror(m); exit(1); }
 
 /* ---- Landlock: read+exec under /usr /bin /lib /lib64 /etc, nothing else ---- */
 static int landlock(void) {
-    struct landlock_ruleset_attr ra = { 0 };
+    struct ll_attr ra = { 0 };
     int abi = syscall(SYS_landlock_create_ruleset, NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
     if (abi < 1) { fprintf(stderr, "landlock unavailable (%d)\n", abi); return -1; }
+    /* "Fail closed" means Landlock is present. To insist on a minimum ABI (4 = TCP rules,
+       6 = signal and abstract-socket scoping), set JAIL_REQUIRE_ABI=N. */
+    const char *req = getenv("JAIL_REQUIRE_ABI");
+    if (req && abi < atoi(req)) { fprintf(stderr, "landlock ABI %d < required %s\n", abi, req); return -1; }
+    fprintf(stderr, "landlock ABI %d\n", abi);
     __u64 ro = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR;
     __u64 all = ro | LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_REMOVE_DIR |
         LANDLOCK_ACCESS_FS_REMOVE_FILE | LANDLOCK_ACCESS_FS_MAKE_CHAR | LANDLOCK_ACCESS_FS_MAKE_DIR |
@@ -44,8 +58,10 @@ static int landlock(void) {
     /* ABI 4+: handle TCP bind/connect and add no rules => no TCP at all. */
     if (abi >= 4) ra.handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP;
 #endif
-    size_t sz = sizeof ra;
-    if (abi < 4) sz = offsetof(struct landlock_ruleset_attr, handled_access_fs) + sizeof ra.handled_access_fs;
+    /* ABI 6+: no abstract Unix sockets, and no signals to processes outside this domain. */
+    if (abi >= 6) ra.scoped = LL_SCOPE_ABSTRACT_UNIX_SOCKET | LL_SCOPE_SIGNAL;
+    /* A kernel rejects an attribute struct bigger than the one it knows. */
+    size_t sz = abi >= 6 ? sizeof ra : abi >= 4 ? offsetof(struct ll_attr, scoped) : offsetof(struct ll_attr, handled_access_net);
     int rs = syscall(SYS_landlock_create_ruleset, &ra, sz, 0);
     if (rs < 0) die("landlock_create_ruleset");
     /* /etc is granted wholesale for the demo; a real profile lists single files. */
