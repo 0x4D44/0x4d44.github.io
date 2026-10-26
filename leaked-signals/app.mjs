@@ -35,7 +35,7 @@ const NOW_YEAR = qs.has("t") ? +qs.get("t") : C.yearFromJd(C.jdFromUnixMs(Date.n
 const T_MIN = 1934.9, T_MAX = Math.floor(NOW_YEAR) + 100;
 const S = {
   T: NOW_YEAR, logR: 2.1, yaw: 0.7, pitch: 0.38, size: 1.7, gain: 0.55, phys: false,
-  stars: true, labels: true, grid: true, solo: null, hl: null, star: null, rx: "fast", tsys: 300, tier: "picture",
+  stars: true, labels: true, grid: true, solo: null, hl: null, star: null, rx: "fast", tsys: 1000, tier: "picture",
   playing: false, speed: 1, tab: "explore", driftSite: null,
 };
 const STARS = window.LEAK_STARS;
@@ -600,10 +600,10 @@ function renderListen(full) {
   if (!inside) verdict = `<div class="verdict">The bubble has not reached ${esc(starName(i))} yet. It is ${fmtLy(ly)} light-years out, and television began ${fmtLy(S.T - FIRST_TV)} years ago, so the first broadcasts arrive in <b>${(FIRST_TV + ly).toFixed(0)}</b>.</div>`;
   else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.${S.solo ? " (Only the countries you have selected are counted.)" : ""}</div>`;
   else {
-    const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
+    const eirp = strongest.w, analog = C.isAnalogue(strongest.s, C.yearFromJd(jdE)), cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys).filter(id => analog || id !== "carrier");
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
-    const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
+    const can = cleared.includes(S.tier), noCarrier = !analog && S.tier === "carrier";
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">In principle, with <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.${noCarrier ? " This transmitter had gone digital by then, so there is no steady carrier tone to find." : ""}</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -625,7 +625,7 @@ function renderListen(full) {
   <div class="field"><label for="rxSel">Receiver</label><select id="rxSel">${C.RECEIVERS.map(r => `<option value="${r.id}"${r.id === S.rx ? " selected" : ""}>${esc(r.name)}</option>`).join("")}</select></div>
   <div class="field"><label for="tierSel">Goal</label><select id="tierSel">${C.TIERS.map(t => `<option value="${t.id}"${t.id === S.tier ? " selected" : ""}>${esc(t.name)}</option>`).join("")}</select></div>
   <canvas class="chart" id="rangeCv" width="560" height="210"></canvas>
-  <p class="faint">Horizontal range at which each receiver clears SNR for a 1 MW transmitter (system noise ${S.tsys} K, VHF sky). Dashed line: this star. Inverse-square law and kTB noise only; no atmosphere, no interference.</p>`;
+  <p class="faint">Horizontal range at which each receiver clears SNR for a 1 MW transmitter (system noise ${S.tsys.toLocaleString()} K, about the galactic sky at 100 MHz). Dashed line: this star. Inverse-square law and kTB noise only; no atmosphere, no interference.</p>`;
   $("#rxSel").onchange = e => { S.rx = e.target.value; renderListen(); };
   $("#tierSel").onchange = e => { S.tier = e.target.value; renderListen(); };
   drawStrip(i, jdT, rows);
@@ -797,7 +797,7 @@ function renderAbout() {
   <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe a few degrees wide (Gaussian, σ = 4°), plus a 2% share of rays scattered isotropically upward at low intensity (sidelobes). The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
   <p><b>Propagation.</b> A ray never changes direction. A piece sent <i>a</i> years ago is exactly <i>a</i> light-years from where Earth was then; Earth's own 1 AU orbit is included so the innermost spirals are offset correctly.</p>
   <p><b>Hearing.</b> A star at declination δ hears a mast at latitude φ only when the star is within the lobe of its horizon, which can only happen if |δ| ≤ 90° − |φ| (+ the lobe's few degrees). That gives the band structure, the twice-daily rising/setting windows, and a 3 min 56 s daily drift.</p>
-  <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 300 K (galactic background at VHF). No atmosphere, interference or intervening medium.</p>
+  <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 1,000 K (the galactic sky alone is roughly 60&middot;&lambda;<sup>2.55</sup> K, about 900 K at 100 MHz; UHF is quieter, 50 MHz noisier). No atmosphere, interference or intervening medium.</p>
   <details><summary>What is approximate or invented</summary>
     <ul>
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
