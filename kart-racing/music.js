@@ -11,7 +11,7 @@ import { THEMES, RACE_THEMES, compileTheme } from "./music-data.js";
 
 const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
-const LEVEL = 0.62;               // master output level of the engine
+const LEVEL = 0.7;               // master output level of the engine
 const LOOKAHEAD = 0.16;           // seconds scheduled ahead while visible
 const LOOKAHEAD_HIDDEN = 1.4;     // timers are throttled in background tabs
 
@@ -24,7 +24,7 @@ function hr(a, b, c) {            // deterministic hash -> [0,1)
 
 // default bus settings (themes can override via theme.mix[name])
 const BUSES = {
-  kick: { g: 0.7, hp: 30 },
+  kick: { g: 0.6, hp: 30 },
   snare: { g: 0.8, rev: 0.2, dly: 0.04 },
   hat: { g: 0.5, rev: 0.05 },
   perc: { g: 0.7, rev: 0.2 },
@@ -171,7 +171,7 @@ export class MusicEngine {
     S.nextTime = t0;
 
     // master chain: sum -> saturation -> compressor -> limiter -> DC/sub filter -> fade -> out
-    S.sum = N(c.createGain());
+    S.sum = N(c.createGain()); S.sum.gain.value = 0.34;
     const sat = N(c.createWaveShaper());
     const curve = new Float32Array(2049);
     for (let i = 0; i < curve.length; i++) { const x = (i / 1024 - 1) * 1.0; curve[i] = Math.tanh(x * 1.25) / 1.25 * 1.05; }
@@ -326,6 +326,7 @@ export class MusicEngine {
 
   _play(S, e, t, sd, idx) {
     const th = S.th, P = th.patch, gs = S.gstep, int = S.int;
+    if (this._solo && e.p !== this._solo) return;     // dev hook: solo one part
     const drum = e.p === "d";
     const jit = (hr(gs, idx, 2) - 0.5) * 2 * (drum ? 0.0015 : 0.005);
     const vh = 1 + (hr(gs, idx, 1) - 0.5) * (drum ? 0.12 : 0.18);
