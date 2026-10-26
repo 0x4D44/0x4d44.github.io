@@ -9,10 +9,18 @@ const PANES = {
 };
 const LAYERS = [['buildings', 'Buildings'], ['roads', 'Roads'], ['water', 'River & water'], ['parks', 'Parks'], ['tunnels', 'Tunnels & trains'], ['stations', 'Stations'], ['labels', 'Labels']];
 
+/** One-line list subtitle: platform type plus the most useful interchange. */
+function stationBlurb(s) {
+  const ic = (Array.isArray(s.interchange) ? s.interchange : []).filter((x) => x !== 'Subway'); const has = (re) => ic.some((x) => re.test(x));
+  const pt = s.platform?.type ? s.platform.type[0].toUpperCase() + s.platform.type.slice(1) + ' platform' : 'Platforms';
+  const x = [has(/national rail/i) ? 'Rail' : null, has(/park and ride/i) ? 'P&R' : null, has(/bus/i) ? 'Bus' : null].filter(Boolean);
+  return x.length ? `${pt} \u00b7 ${x.join(' + ')}` : `${pt} \u00b7 ${s.depth != null ? fmt(s.depth) + ' m deep' : 'Subway only'}`;
+}
+
 export class UI {
   constructor(app) {
     this.app = app; this.sub = app.subway; this.panes = {}; this.layerState = {};
-    this.mq = matchMedia('(max-width: 899px)');
+    this.mq = matchMedia('(max-width: 899px), (max-height: 520px)');
     this.buildTopbar(); this.buildPanes(); this.buildDocks(); this.buildXrayBar(); this.buildMinimap(); this.buildTip(); this.buildSimDialog();
     this.bindApp(); this.bindKeys();
     this.mq.addEventListener('change', () => this.layout()); this.layout(); this.setSheet('peek');
@@ -57,7 +65,7 @@ export class UI {
   renderStationList() {
     const list = this.filterStations(); this.filtered = list; const max = Math.max(...this.sub.stations.map((s) => s.depth || 0), 1);
     this.listEl.replaceChildren(...list.map((s) => h('li', h('button.sti', { type: 'button', 'data-id': s.id, 'aria-label': `${s.name}, ${fmt(s.depth)} metres below street`, on: { click: () => this.app.selectStation(s.id, { fly: true }), pointerenter: () => this.app.setHover(s.id), pointerleave: () => this.app.setHover(null), focus: () => this.app.setHover(s.id), blur: () => this.app.setHover(null) } },
-      h('span.num', { text: s.order + 1 }), h('span.nm', h('b', { text: s.name }), h('i', { text: (s.interchange || []).filter((x) => x !== 'Subway').join(' / ') || (s.platform?.type ? s.platform.type + ' platform' : '') })),
+      h('span.num', { text: s.order + 1 }), h('span.nm', h('b', { text: s.name }), h('i', { text: stationBlurb(s) })),
       h('span.dp', { title: 'Depth to rail head below street' }, h('span.bar', h('span', { style: { width: ((s.depth || 0) / max) * 100 + '%' } })), h('em', { text: fmt(s.depth) + ' m' }))))));
     this.countEl.textContent = list.length === this.sub.stations.length ? `${list.length} stations` : `${list.length} of ${this.sub.stations.length}`;
     if (!list.length) this.listEl.append(h('li.none', { text: 'No station matches that search.' }));
@@ -209,7 +217,7 @@ export class UI {
     dock ||= this.activeDocks().find((d) => d.ids.includes(id)); if (!dock) return;
     dock.active = id;
     for (const pid of dock.ids) { const on = pid === id; this.panes[pid].hidden = !on; const t = $(`[data-pane="${pid}"]`, dock.tabs); t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; }
-    if (dock === this.sheet && this.sheetState === 'peek') this.setSheet('half');
+    if (dock === this.sheet && this.sheetState === 'peek' && !this.app.state.tour) this.setSheet('half');
     if (id === 'profile') requestAnimationFrame(() => this.ls?.resize());
   }
   setSheet(s) { this.sheetState = s; $('#sheet').dataset.state = s; $('#sheet .grab').setAttribute('aria-expanded', String(s !== 'peek')); requestAnimationFrame(() => this.ls?.resize()); }
@@ -294,7 +302,7 @@ export class UI {
   }
   updateSelected(id) {
     const st = id ? this.app.byId.get(id) : null; this.renderStation(st); this.markSelectedInList(); this.ls?.setSelected(id); this.updateGauge();
-    if (st) { this.showPane('station', this.mq.matches ? this.sheet : this.right); if (this.mq.matches) this.setSheet('half'); this.listEl.querySelector(`.sti[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' }); $('#pane-station').scrollTop = 0; }
+    if (st) { this.showPane('station', this.mq.matches ? this.sheet : this.right); if (this.mq.matches && !this.app.state.tour) this.setSheet('half'); this.listEl.querySelector(`.sti[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' }); $('#pane-station').scrollTop = 0; }
     const dlgSel = $('#sd-st'); if (dlgSel && id) dlgSel.value = id;
   }
   updateGauge() {
