@@ -180,6 +180,27 @@ def tex_moquette(n=256, seed=11):
     alb = 0.78 + weave + dia * -0.28 + dot * 0.12 + pnoise(n, n, 20, seed, 3) * 0.04
     return save('moquette', grey3(alb)), save('n_moquette', normalmap(weave * 3 + dia * 0.5, 2.0))
 
+def tex_moquette_ring(n=256, seed=13):
+    """Colour seat moquette per research: charcoal ground, overlapping lavender/grey ring motifs, small orange rings. Tileable."""
+    rng = np.random.default_rng(seed)
+    S = n * 2
+    im = Image.new('RGB', (S, S), (75, 79, 87)); d = ImageDraw.Draw(im)
+    def ring(cx, cy, r, w, col):
+        for ox in (-S, 0, S):
+            for oy in (-S, 0, S):
+                d.ellipse((cx + ox - r, cy + oy - r, cx + ox + r, cy + oy + r), outline=col, width=w)
+    for i in range(14):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(26, 50)), 5, (169, 167, 194) if i % 3 else (199, 199, 214))
+    for i in range(10):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(30, 56)), 4, (52, 55, 62))
+    for i in range(16):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(8, 14)), 4, (242, 140, 27))
+    a = np.array(im.resize((n, n), Image.LANCZOS)).astype(float) / 255
+    ys, xs = np.mgrid[0:n, 0:n]
+    weave = (np.sin(xs * 1.6) * np.sin(ys * 1.6)) * 0.035
+    a = a + weave[..., None] + pnoise(n, n, 20, seed, 3)[..., None] * 0.03
+    return save('moquette_ring', a)
+
 def tex_ceiling_panel(n=256, seed=12):
     ys, xs = np.mgrid[0:n, 0:n]
     alb = np.full((n, n), 0.92)
@@ -344,7 +365,7 @@ def build_all():
     t['brick'], t['n_brick'] = tex_brick()
     t['iron'] = tex_iron(); t['plaster'] = tex_plaster(); t['wood'] = tex_wood(); t['paint'] = tex_paint()
     t['rubber'], t['n_rubber'] = tex_floor_rubber()
-    t['moquette'], t['n_moquette'] = tex_moquette()
+    t['moquette'], t['n_moquette'] = tex_moquette(); t['moquette_ring'] = tex_moquette_ring()
     t['ceiling_panel'] = tex_ceiling_panel(); t['grooves'], t['n_grooves'] = tex_grooves()
     t['roundel'] = tex_roundel(); t['name_board'] = tex_name_board(); t['safety_atlas'] = tex_safety_atlas()
     t['adverts'] = tex_adverts(); t['route_map'] = tex_route_map()

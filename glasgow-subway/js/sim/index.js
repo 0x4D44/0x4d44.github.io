@@ -7,7 +7,7 @@ import { buildSchedule, DIFFICULTY } from './rules.js';
 import { KMH, clamp, wrapL, fmtDist, fmtTime, mulberry32 } from './util.js';
 import { loadTrainTemplate, TrainView } from './trainview.js';
 import { loadTunnelTemplate, TunnelView } from './tunnelview.js';
-import { buildStation, placeStation, PY } from './stationview.js';
+import { buildStation, placeStation, stationHalfLength, PY } from './stationview.js';
 import { Walker } from './walker.js';
 import { Crowd } from './people.js';
 import { SimAudio } from './audio.js';
@@ -50,12 +50,12 @@ class Sim {
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     this.GLTFLoader = GLTFLoader;
     this.saved = { clear: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha(), tm: r.toneMapping, exp: r.toneMappingExposure };
-    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl] = await Promise.all([
+    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl, vaultTpl] = await Promise.all([
       loadTrainTemplate(THREE, GLTFLoader, this.url('models/train.glb')),
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
-      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'),
+      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'), this._opt('models/tunnel_station_vault.glb'),
     ]);
-    this.kit = kitTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
@@ -125,9 +125,9 @@ class Sim {
     // tunnel skip spans
     const spans = this.track.stops.map((st) => {
       const stn = this.stations[this.stationIdx.get(st.station)] || {};
-      const PL = Math.max((stn.platform && stn.platform.lengthM) || 45, this.trainLen + 6) / 2;
-      return [wrapL(st.sc - PL - 5.2, this.track.length), wrapL(st.sc + PL + 5.2, this.track.length)].concat([PL * 2 + 10.4]);
-    }).map(([a, b, len]) => [a, a + len]);
+      const half = stationHalfLength(stn, this.trainLen, !!this.vaultTpl) + 0.02;
+      return [wrapL(st.sc - half, this.track.length), wrapL(st.sc - half, this.track.length) + 2 * half];
+    });
     this.tunnel.setSkips(spans); this.tunnel.track = null;
     this.svc = this._newService(startIdx);
   }
@@ -320,7 +320,7 @@ class Sim {
     const si = this.stationIdx.get(stop.station); const station = this.stations[si];
     const tmp = new Service({ track: this.track, stock: this.stock, stations: this.stations, startIdx: stopIdx, placeAtStop: false, lineKey: this.line });
     const side = tmp.sideOf[stopIdx];
-    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit });
+    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl });
     placeStation(THREE, v, stop); v.stopIdx = stopIdx; v.station = station;
     this._decorateStation(v);
     this.scene.add(v.group); this.stationViews.set(stopIdx, v);
@@ -721,7 +721,7 @@ class Sim {
       const stride = Math.max(1, Math.ceil(hull.length / 28));
       this._sweepPts = []; for (const z of zs) hull.forEach((h, k) => { if (k % stride === 0) this._sweepPts.push(new THREE.Vector3(h[0], h[1], z)); });
     }
-    const meshes = []; view.group.traverse((m) => { if (m.isMesh && !m.isInstancedMesh) meshes.push(m); });
+    const meshes = []; view.group.traverse((m) => { if (m.isMesh) meshes.push(m); });
     const rc = new THREE.Raycaster(); rc.firstHitOnly = true;
     const step = o.step || 1.0, range = o.range || 70;
     const prev = [], hits = []; const wv = new THREE.Vector3(), dv = new THREE.Vector3();
