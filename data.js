@@ -163,7 +163,7 @@ window.ESSAYS = [
     date: "2026-10-26T12:00:00",
     year: 2026,
     readingMin: 50,
-    words: 10400,
+    words: 11000,
     tags: ["software", "engineering"],
     real: true,
   },
