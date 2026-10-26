@@ -53,6 +53,6 @@ export function drawAnatomy(cv, a, col) {
   const z = P(zen);
   c.fillStyle = col.cyan; c.beginPath(); c.arc(z[0], z[1], 9, 0, 7); c.fill(); c.fillStyle = col.ink; c.fillText("mast zenith", z[0] + 8, z[1] - 6);
   const lo = Math.max(-90, -(90 - Math.abs(a.lat))).toFixed(0), hi = Math.min(90, 90 - Math.abs(a.lat)).toFixed(0);
-  return `At latitude <b>${a.lat}°</b> the fan can only ever point at declinations between <b>${lo}°</b> and <b>+${hi}°</b> (plus a degree or two of beam). `
+  return `At latitude <b>${a.lat}°</b> the fan can only ever point at declinations between <b>${lo}°</b> and <b>+${hi}°</b> (plus several degrees of beam width and a faint scatter of sidelobes beyond). `
     + `Right now the mast's zenith is at RA ${a.hour.toFixed(1)}h, Dec ${a.lat}°, so the fan is the amber circle. Over 24 sidereal hours it sweeps the whole band between the white dotted circles.`;
 }

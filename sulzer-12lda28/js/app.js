@@ -56,6 +56,8 @@ $("btnSound").addEventListener("click", async () => {
 });
 $("vol").addEventListener("input", (e) => audio.setVolume((+e.target.value / 100) * 1.2));
 $("selMic").addEventListener("change", (e) => audio.setMic(+e.target.value));
+$("selSrc").addEventListener("change", (e) => audio.setSource(e.target.value));
+audio.onready = () => { $("selSrc").hidden = false; };
 $("bar").addEventListener("input", (e) => { eng.theta = +e.target.value; });
 
 // ---------- 3D ----------
