@@ -1,5 +1,7 @@
 // jail.c - minimal "no fork, read-only filesystem" launcher. A demonstration, not a profile.
-// Fails CLOSED: if Landlock or seccomp cannot be installed, the program is not run.
+// Refuses to run if Landlock or seccomp cannot be installed. By default an older Landlock ABI
+// is accepted (no TCP rules below ABI 4, no scoping below ABI 6): set JAIL_REQUIRE_ABI=6 for untrusted code.
+// Run it as an unprivileged user.
 // Build: gcc -O2 -Wall -o jail jail.c      Run: ./jail /bin/echo hello
 #define _GNU_SOURCE
 #include <errno.h>
@@ -24,9 +26,8 @@
 #define AUDIT_ARCH_X86_64 0xC000003E
 #endif
 
-/* Our own copy of the attribute struct and ABI 6 constants, so the build does not depend on
-   how new the installed kernel headers are (older headers lack the "scoped" field). */
-/* Rights added after ABI 1, defined here for the same reason. */
+/* Our own copy of the attribute struct and the rights added after ABI 1, so the build does not
+   depend on how new the installed kernel headers are (older headers lack the "scoped" field). */
 #define LL_FS_REFER      (1ULL << 13)   /* ABI 2 */
 #define LL_FS_TRUNCATE   (1ULL << 14)   /* ABI 3 */
 #define LL_FS_IOCTL_DEV  (1ULL << 15)   /* ABI 5 */
@@ -43,7 +44,7 @@ static int landlock(void) {
     struct ll_attr ra = { 0 };
     int abi = syscall(SYS_landlock_create_ruleset, NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
     if (abi < 1) { fprintf(stderr, "landlock unavailable (%d)\n", abi); return -1; }
-    /* "Fail closed" means Landlock is present. To insist on a minimum ABI (4 = TCP rules,
+    /* Landlock must be present. To insist on a minimum ABI (4 = TCP rules,
        6 = signal and abstract-socket scoping), set JAIL_REQUIRE_ABI=N. */
     const char *req = getenv("JAIL_REQUIRE_ABI");
     if (req) {
@@ -65,7 +66,7 @@ static int landlock(void) {
     if (abi >= 4) ra.handled_access_net = LL_NET_BIND_TCP | LL_NET_CONNECT_TCP;
     /* ABI 6+: no abstract Unix sockets, and no signals to processes outside this domain. */
     if (abi >= 6) ra.scoped = LL_SCOPE_ABSTRACT_UNIX_SOCKET | LL_SCOPE_SIGNAL;
-    /* A kernel rejects an attribute struct bigger than the one it knows. */
+    /* Pass only the fields this kernel knows: it rejects non-zero bytes beyond its own struct size (E2BIG). */
     size_t sz = abi >= 6 ? sizeof ra : abi >= 4 ? offsetof(struct ll_attr, scoped) : offsetof(struct ll_attr, handled_access_net);
     int rs = syscall(SYS_landlock_create_ruleset, &ra, sz, 0);
     if (rs < 0) die("landlock_create_ruleset");
@@ -127,7 +128,7 @@ int main(int argc, char **argv) {
        that are already open, so a leaked directory fd would be a hole in the fence. */
     if (syscall(SYS_close_range, 3, ~0U, 0)) die("close_range");
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) die("no_new_privs");
-    if (landlock() < 0) return 1;           /* fail closed */
+    if (landlock() < 0) return 1;           /* refuse to run */
     seccomp_nofork();                       /* dies on failure */
     /* Note: /proc and /dev are not granted, so the child cannot read /proc/self either. */
     /* Run with a clean environment so secrets and LD_* variables do not leak in. */
