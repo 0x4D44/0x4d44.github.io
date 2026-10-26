@@ -26,6 +26,11 @@
 
 /* Our own copy of the attribute struct and ABI 6 constants, so the build does not depend on
    how new the installed kernel headers are (older headers lack the "scoped" field). */
+#ifdef LANDLOCK_ACCESS_FS_TRUNCATE
+#define LANDLOCK_ACCESS_FS_TRUNCATE_OR_0 LANDLOCK_ACCESS_FS_TRUNCATE
+#else
+#define LANDLOCK_ACCESS_FS_TRUNCATE_OR_0 0
+#endif
 struct ll_attr { __u64 handled_access_fs, handled_access_net, scoped; };
 #define LL_SCOPE_ABSTRACT_UNIX_SOCKET (1ULL << 0)
 #define LL_SCOPE_SIGNAL               (1ULL << 1)
@@ -40,7 +45,11 @@ static int landlock(void) {
     /* "Fail closed" means Landlock is present. To insist on a minimum ABI (4 = TCP rules,
        6 = signal and abstract-socket scoping), set JAIL_REQUIRE_ABI=N. */
     const char *req = getenv("JAIL_REQUIRE_ABI");
-    if (req && abi < atoi(req)) { fprintf(stderr, "landlock ABI %d < required %s\n", abi, req); return -1; }
+    if (req) {
+        char *end; long need = strtol(req, &end, 10);
+        if (*req == 0 || *end || need < 1 || need > 99) { fprintf(stderr, "bad JAIL_REQUIRE_ABI\n"); return -1; }
+        if (abi < need) { fprintf(stderr, "landlock ABI %d < required %ld\n", abi, need); return -1; }
+    }
     fprintf(stderr, "landlock ABI %d\n", abi);
     __u64 ro = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR;
     __u64 all = ro | LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_REMOVE_DIR |
@@ -71,6 +80,16 @@ static int landlock(void) {
         pb.parent_fd = open(dirs[i], O_PATH | O_CLOEXEC);
         if (pb.parent_fd < 0) continue;     /* path absent on this distro: skip */
         if (syscall(SYS_landlock_add_rule, rs, LANDLOCK_RULE_PATH_BENEATH, &pb, 0)) die("add_rule");
+        close(pb.parent_fd);
+    }
+    /* Single devices that ordinary programs expect: shell redirects, randomness. */
+    static const struct { const char *path; int write; } devs[] = { { "/dev/null", 1 }, { "/dev/urandom", 0 } };
+    for (unsigned i = 0; i < sizeof devs / sizeof *devs; i++) {
+        struct landlock_path_beneath_attr pb = { .allowed_access = LANDLOCK_ACCESS_FS_READ_FILE };
+        if (devs[i].write) pb.allowed_access |= LANDLOCK_ACCESS_FS_WRITE_FILE | (all & LANDLOCK_ACCESS_FS_TRUNCATE_OR_0);
+        pb.parent_fd = open(devs[i].path, O_PATH | O_CLOEXEC);
+        if (pb.parent_fd < 0) continue;
+        if (syscall(SYS_landlock_add_rule, rs, LANDLOCK_RULE_PATH_BENEATH, &pb, 0)) die("add_rule dev");
         close(pb.parent_fd);
     }
     if (syscall(SYS_landlock_restrict_self, rs, 0)) die("landlock_restrict_self");
