@@ -189,29 +189,32 @@
         ["Unused kernel features disabled (io_uring, unprivileged user namespaces, modules)", 2],
         ["Runtime detection or enforcement in place (Falco, Tetragon, audit logs)", 1]]]
     ];
-    var KEY = "hardening.audit.v2", state = {};
+    var KEY = "hardening.audit.v3", state = {};
     try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
     G.forEach(function (g, gi) {
       var h = document.createElement("h4"); h.textContent = g[0]; root.appendChild(h);
       var d = document.createElement("div"); d.className = "chk"; root.appendChild(d);
       g[1].forEach(function (it, ii) {
-        var id = gi + "-" + ii, l = document.createElement("label");
-        l.innerHTML = "<input type=\"checkbox\" data-w=\"" + it[1] + "\" data-k=\"" + id + "\"" + (state[id] === 1 ? " checked" : "") + (state[id] === 2 ? " disabled" : "") + "><span>" + esc(it[0]) +
-          " <label style=\"display:inline;white-space:nowrap;font-size:12px;color:var(--muted)\"><input type=\"checkbox\" class=\"na\" data-k=\"" + id + "\"" + (state[id] === 2 ? " checked" : "") + "> n/a</label></span>";
-        d.appendChild(l);
+        var id = gi + "-" + ii, st = state[id] || {}, row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = "<label><input type=\"checkbox\" class=\"yes\" data-w=\"" + it[1] + "\" data-k=\"" + id + "\"" + (st.c ? " checked" : "") + "><span>" + esc(it[0]) + "</span></label>" +
+          "<label class=\"na-l\"><input type=\"checkbox\" class=\"na\" data-k=\"" + id + "\"" + (st.n ? " checked" : "") + "> n/a</label>";
+        d.appendChild(row);
       });
     });
-    function calc(ev) {
-      var s = 0, total = 0; state = {};
-      [].forEach.call(root.querySelectorAll("input:not(.na)"), function (c) {
-        var na = root.querySelector("input.na[data-k=\"" + c.dataset.k + "\"]");
-        if (na.checked) { c.checked = false; c.disabled = true; state[c.dataset.k] = 2; return; }
-        c.disabled = false; total += +c.dataset.w;
-        if (c.checked) { s += +c.dataset.w; state[c.dataset.k] = 1; }
+    function calc() {
+      var s = 0, total = 0, skipped = 0; state = {};
+      [].forEach.call(root.querySelectorAll("input.yes"), function (c) {
+        var k = c.dataset.k, w = +c.dataset.w, na = root.querySelector("input.na[data-k=\"" + k + "\"]").checked;
+        c.disabled = na;
+        if (c.checked || na) state[k] = { c: c.checked ? 1 : 0, n: na ? 1 : 0 };
+        if (na) { skipped += w; return; }
+        total += w; if (c.checked) s += w;
       });
       var pct = total ? Math.round(s / total * 100) : 0;
       $("au-score").textContent = pct + "%";
       $("au-meter").style.width = pct + "%";
+      var ex = $("au-excl"); if (ex) ex.textContent = skipped ? "Left out as n/a: " + skipped + " of " + (total + skipped) + " points. Your score is out of " + total + "." : "";
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { }
     }
     root.addEventListener("change", calc);
