@@ -49,6 +49,7 @@ try {
     assert.ok(hl.on && hl.hl === null && hl.hidden, "highlight explainer should show, and its close button should clear it: " + JSON.stringify(hl));
     await p.click("#tab-explore"); await p.click("#exStars [data-star]");
     assert.equal(await p.evaluate(() => document.querySelector("#tab-listen").getAttribute("aria-selected")), "true", "Explore star chip should open Listen");
+    for (const t of [3, 30, 50]) { await p.evaluate(t => window.__leak.seek(t), t); const ms = await p.evaluate(() => window.__leak.info().buildMs); assert.ok(ms < 4000, `field rebuild at tour t=${t} took ${ms} ms`); }
     await p.evaluate(() => window.__leak.seek(46));
     await p.waitForTimeout(700);
     const ov = await p.evaluate(() => { const c = document.querySelector("#caption").getBoundingClientRect(), d = document.querySelector("#dock").getBoundingClientRect(); return { c: c.bottom, d: d.top, on: document.querySelector("#caption").classList.contains("on") }; });

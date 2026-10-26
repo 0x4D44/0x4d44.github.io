@@ -111,7 +111,8 @@ video{width:100%;border-radius:9px;background:#000;display:block}
 .video #hlNote{display:none}
 .stage:has(#caption.on) #hlNote{display:none}
 @media (max-width:980px){#hlNote .more{display:none}}
-@media (max-width:980px){#hlNote{top:auto;bottom:236px;left:8px;right:auto;max-width:60%;font-size:11px}}
+@media (max-width:980px){#hlNote{top:64px;bottom:auto;left:8px;right:8px;max-width:none;font-size:11px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
+@media (max-width:520px){.top .sub{display:none} .stage{height:55vh} #tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none} #tabs button{flex:0 0 auto;padding-left:10px;padding-right:10px} #hud{max-height:3.6em;overflow:hidden}}
 .video .top,.video .panel,.video .foot,.video .dock{display:none!important}
 .video body{height:100vh} .video .app{grid-template-columns:minmax(0,1fr)} .video .stage{height:100vh;min-height:0}
 .video #caption{font-size:22px;max-width:70%;bottom:44px} .video #hud{font-size:15px}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locked Room: Review Log</title>
+<meta name="description" content="The review rubric and round-by-round scores for The Locked Room, with what each reviewer found and what changed.">
+<link rel="stylesheet" href="hardening.css">
+</head>
+<body>
+<header class="mast">0x4D44 Almanac &middot; Review log</header>
+<main>
+<h1 style="font-size:clamp(32px,7vw,48px)">Review log</h1>
+<p class="dek">How <a href="./">The Locked Room</a> is reviewed, and how each round scored.</p>
+<h2>Method</h2>
+<p>An independent AI reviewer, given no knowledge of earlier rounds, reads the whole page and its code, verifies a sample of at least 30 factual claims (some by running code, some from documentation), tests the interactive widgets, and scores eight criteria from 0 to 10. Each verified error deducts from technical accuracy (critical 2, major 1, minor 0.3). The bar: weighted score above 9.0 and no criterion below 8. Reviews are by an AI model and sometimes had no web access, so they are a filter, not an audit.</p>
+<h2>Rubric</h2>
+<div class="scroll"><table>
+<thead><tr><th>#</th><th>Criterion</th><th>Weight</th><th>A 10 looks like</th></tr></thead>
+<tbody>
+<tr><td>1</td><td class="n">Technical accuracy</td><td>25%</td><td class="w">Every claim is correct, version numbers and semantics included; hedged where uncertain; nothing misleading.</td></tr>
+<tr><td>2</td><td class="n">Coverage and depth</td><td>20%</td><td class="w">All requested topics (Landlock, seccomp, resource limits, no-fork, sandboxes, unikernels, eBPF, Firecracker, cut-down Linux, language choice and dependency reduction) covered with mechanism, limits and trade-offs, not name-drops.</td></tr>
+<tr><td>3</td><td class="n">Actionability</td><td>15%</td><td class="w">A reader can apply it: correct commands, configs and code, ordering, and pitfalls.</td></tr>
+<tr><td>4</td><td class="n">Security judgement</td><td>15%</td><td class="w">States limits and bypasses plainly, defence-in-depth framing, correct threat-model reasoning, no false assurance.</td></tr>
+<tr><td>5</td><td class="n">Plain English and structure</td><td>10%</td><td class="w">Follows the <a href="https://www.plainenglish.co.uk/how-to-write-in-plain-english">Plain English Campaign guide</a>: sentences average 15 to 20 words, active verbs, "you" and "we", everyday words, jargon explained at first use, lists for runs of items. Logical flow and easy to scan. Free of stock AI phrasing: "not X but Y" contrasts, "honest"/"truth" framing, vivid filler metaphors, em dashes.</td></tr>
+<tr><td>6</td><td class="n">Interactive and visual aids</td><td>5%</td><td class="w">Widgets and diagrams are correct and teach something that prose cannot.</td></tr>
+<tr><td>7</td><td class="n">Engineering quality</td><td>5%</td><td class="w">Works on phone and desktop, light and dark; accessible; no console errors; code samples compile.</td></tr>
+<tr><td>8</td><td class="n">Sourcing and verifiability</td><td>5%</td><td class="w">Claims can be traced to documentation, CVE records or papers; examples are tested rather than merely asserted.</td></tr>
+</tbody></table></div>
+
+<h2>Log</h2>
+<div class="scroll"><table id="review-log">
+<thead><tr><th>Round</th><th>Weighted score</th><th>Lowest criterion</th><th>Main findings and what changed</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>7.7</td><td>Sourcing 5.5</td><td class="w">Launcher failed open; review note over-claimed; no inline sources; cgroup recipe incomplete; Landlock ABI table stopped at 7; Firecracker device list dated; no library-level sandboxing; no recent CVEs. All addressed in v2.</td></tr>
+<tr><td>2</td><td>8.0</td><td>Sourcing 7.0</td><td class="w">A false hardening claim (<code>PR_SET_DUMPABLE</code> before exec is reset by <code>execve</code>, verified by test); Landlock ABI 8/9 vague; audit scorecard had no N/A and rewarded microVMs for everyone; several minor imprecisions (perf_event_paranoid, rustls "pure Rust", gVisor start-up wording, removed syscall); review log inside the article. Addressed in v3.</td></tr>
+<tr><td>3</td><td>8.2</td><td>Sourcing 6.5</td><td class="w">Landlock does not restrict pathname Unix sockets (ABI 8 and earlier); we tested it and corrected the article. The launcher now blocks TCP on ABI 4 and later, and a new box lists what it still does not stop. Also added: a wall-clock watchdog, Go and JVM seccomp advice, vsock and virtio-fs host surface, a fixed audit widget (n/a keeps your ticks and shows the excluded points), and a plain-English rewrite.</td></tr>
+<tr><td>4</td><td>8.3</td><td>Sourcing 7.2</td><td class="w">The launcher claimed scoping it did not apply: it now sets ABI 6 scoping (using its own struct, since old headers lack it), prints the ABI and has a strict mode. Systemd unit and cgroup recipe made safer. Landlock ABI 8 and 9 stated with links and an admission that release numbers are unconfirmed. Added a summary, a verified-on date, Kubernetes notes, a sandbox-testing note and fixes to two widgets.</td></tr>
+<tr><td>5</td><td>8.2</td><td>Plain English 7.0, Sourcing 7.0</td><td class="w">The summary box overclaimed what the launcher does. The cgroup recipe fails inside a container. A reference link had a typo. The earlier rewrite made prose choppy (mean 12.8 words, many fragments). We fixed the first three, added <code>/dev/null</code> and strict ABI parsing to the launcher, a note on getting a seccomp profile, softer wording on gVisor and network claims, a clamp notice in the fork widget, and a second plain-English pass. We also removed stock AI phrasing and added it to the rubric. The bar is not yet met, and the page says so.</td></tr>
+<tr><td>6</td><td>8.3</td><td>Technical accuracy 7.8</td><td class="w">We had said Landlock does not restrict <code>ptrace</code>. It does, on every ABI, and we tested it. The syscall count was wrong (about 370, not 450). The launcher could skip rights when built against old kernel headers, so it now defines them itself, handles ioctl on devices (ABI 5), and runs with a cleared environment. We also corrected the summary box, the cargo-deny key, Kubernetes storage advice, and the remaining "not X, but Y" phrasing.</td></tr>
+<tr><td>7</td><td>8.5</td><td>Plain English 7.3</td><td class="w">The text said <code>timeout</code> cannot stop children; we now report what we saw and name <code>cgroup.kill</code> as the complete stop. We had put cosign and <code>cargo vet</code> on the same footing. We had called the launcher "fail closed" while it accepts old Landlock ABIs by default; the wording and the summary box now say so. Smaller fixes: the <code>RLIMIT_NPROC</code> check points, contrast phrases, the audit item that bundled four controls, and the default Landlock widget path.</td></tr>
+<tr><td>8</td><td>8.6</td><td>Plain English 7.4</td><td class="w">We rewrote the remaining contrast phrases and stock wording, and defined more terms in the glossary. The "checked against documentation" line now says we checked from memory, because the documentation sites were out of reach. We added notes on allowlist filters, descriptor inheritance, and <code>SystemCallErrorNumber</code> in the systemd example. Still open: claim-level source links and the terse table cells.</td></tr>
+<tr><td>9</td><td>8.5</td><td>Sourcing 7.0</td><td class="w">The reviewer ran the launcher and all five widgets and found no errors, but could not trace the figures to sources. We added a short list of what we tested and what comes from memory, fixed the <code>--network none</code> wording (loopback remains), cut the lock metaphor from the opening, defined more terms, and removed a stray screenshot. Still open: claim-level source links, and worked allowlist and Firecracker examples.</td></tr>
+</tbody></table></div>
+<p><a href="./">&larr; Back to the article</a></p>
+</main>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
