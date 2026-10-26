@@ -1,0 +1,78 @@
+{
+ "id": "results",
+ "bpm": 108,
+ "introBars": 4,
+ "bodyBars": 16,
+ "tailBars": 4,
+ "secPerBar": 2.2222222222222223,
+ "introSec": 8.88888888888889,
+ "bodySec": 35.55555555555556,
+ "stems": [
+  "base",
+  "boost",
+  "lead",
+  "extra"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "timp|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "timp"
+  },
+  "brassP|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "brassP"
+  },
+  "pad|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "pad"
+  },
+  "fan|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "fan"
+  },
+  "fan_dbl|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "fan"
+  },
+  "horns|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "horns"
+  },
+  "bass|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "bass"
+  },
+  "piano|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "piano"
+  },
+  "flute|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "flute"
+  },
+  "violin|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "violin"
+  },
+  "vibes|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "vibes"
+  }
+ }
+}

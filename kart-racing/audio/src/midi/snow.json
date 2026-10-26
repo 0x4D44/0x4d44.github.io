@@ -1,0 +1,123 @@
+{
+ "id": "snow",
+ "bpm": 140,
+ "introBars": 4,
+ "bodyBars": 40,
+ "tailBars": 4,
+ "secPerBar": 1.7142857142857142,
+ "introSec": 6.857142857142857,
+ "bodySec": 68.57142857142857,
+ "stems": [
+  "base",
+  "extra",
+  "lead",
+  "boost"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "pizz|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "pizz"
+  },
+  "timp|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "timp"
+  },
+  "celesta|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "celesta"
+  },
+  "horn|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "horn"
+  },
+  "bass|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "bass"
+  },
+  "ostv|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "ostv"
+  },
+  "pad|extra": {
+   "ch": 2,
+   "stem": "extra",
+   "part": "pad"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "celm|extra": {
+   "ch": 3,
+   "stem": "extra",
+   "part": "celm"
+  },
+  "swell|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "swell"
+  },
+  "violin|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "violin"
+  },
+  "pad|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "pad"
+  },
+  "ostc|extra": {
+   "ch": 4,
+   "stem": "extra",
+   "part": "ostc"
+  },
+  "trumpet|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "trumpet"
+  },
+  "trumpet_dbl|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "trumpet"
+  },
+  "stab|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "stab"
+  },
+  "gtr|boost": {
+   "ch": 3,
+   "stem": "boost",
+   "part": "gtr"
+  },
+  "celm|lead": {
+   "ch": 3,
+   "stem": "lead",
+   "part": "celm"
+  },
+  "flute|lead": {
+   "ch": 4,
+   "stem": "lead",
+   "part": "flute"
+  },
+  "gtr|base": {
+   "ch": 4,
+   "stem": "base",
+   "part": "gtr"
+  }
+ }
+}
