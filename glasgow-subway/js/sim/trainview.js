@@ -94,8 +94,11 @@ export class TrainView {
     this.headroom = head.some((h) => h != null) ? { xs, head, floorY } : null;
     return this.headroom;
   }
+  setWalkable(j) { this.walk = j; }
   /** max head height above the floor at lateral x (interpolated); 0 outside the carbody */
   headroomAt(x) {
+    const wk = this.walk && this.walk.headroomVsX;
+    if (wk) { const ax = Math.abs(x); if (ax >= wk[wk.length - 1][0]) return 0; for (let i = 0; i < wk.length - 1; i++) if (ax <= wk[i + 1][0]) { const f = (ax - wk[i][0]) / (wk[i + 1][0] - wk[i][0]); return wk[i][1] + (wk[i + 1][1] - wk[i][1]) * f; } return 0; }
     const h = this.headroom; if (!h) return 9;
     const ax = Math.abs(x); const f = (ax - h.xs[0] * 0) ; 
     const t = (x - h.xs[0]) / 0.05, i = Math.floor(t); if (i < 0 || i >= h.xs.length - 1) return 0;
