@@ -71,7 +71,7 @@ class Sim {
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
-    this.crowd = new Crowd(THREE, this.quality === 'low' ? 45 : 110, this.peopleVariants); this.scene.add(this.crowd.group);
+    this.crowd = new Crowd(THREE, this.quality === 'low' ? 28 : 110, this.peopleVariants); this.scene.add(this.crowd.group);
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -320,7 +320,7 @@ class Sim {
     const si = this.stationIdx.get(stop.station); const station = this.stations[si];
     const tmp = new Service({ track: this.track, stock: this.stock, stations: this.stations, startIdx: stopIdx, placeAtStop: false, lineKey: this.line });
     const side = tmp.sideOf[stopIdx];
-    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl });
+    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl, low: this.quality === 'low' });
     placeStation(THREE, v, stop); v.stopIdx = stopIdx; v.station = station;
     this._decorateStation(v);
     this.scene.add(v.group); this.stationViews.set(stopIdx, v);
@@ -639,6 +639,7 @@ class Sim {
       this.cabLight.position.copy(front).add(new THREE.Vector3(0, 0.4, 0)).addScaledVector(fwd, -0.2);
       this._lightPool();
       this._camera(front, q, dt);
+      if ((this._cullT = (this._cullT || 0) - dt) <= 0) { this._cullT = 0.3; this.trainView.cull(cam.position, this.mode, this.quality === 'low'); }
     } else {
       const w = this.walker; cam.position.set(w.x, w.y + w.eye + Math.sin(w.bob) * 0.03, w.z);
       cam.rotation.set(this.look.pitch, w.yaw, 0, 'YXZ');

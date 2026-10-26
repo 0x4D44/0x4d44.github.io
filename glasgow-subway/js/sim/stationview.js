@@ -41,6 +41,7 @@ export function buildStation(THREE, o) {
   // ---- textured A3 vault (models/tunnel_station_vault.glb): sections instanced along the platform
   const vname = island ? 'vault_island' : 'vault_side';
   const VP = { sec: kitParts(THREE, o.vault, vname), rib: kitParts(THREE, o.vault, vname + '_rib'), end: kitParts(THREE, o.vault, vname + '_end') };
+  if (o.low) for (const k of ['sec', 'rib']) if (VP[k]) VP[k] = VP[k].filter((p) => !/^(sleeper|conductor_rail|plastic_black|steel_dark)$/.test(Array.isArray(p.mat) ? '' : p.mat.name));   // low tier: drop track furniture detail
   const useVault = !!(VP.sec && VP.end);
   const PLraw = Math.max(st.platform && st.platform.lengthM || 45, trainLen + 6) / 2;
   const PL = useVault ? Math.ceil(PLraw / 0.6) * 0.6 : PLraw;
@@ -69,7 +70,7 @@ export function buildStation(THREE, o) {
   const Hc = clamp(depth * 0.55, 5.2, 8.5);  // concourse floor
   const Hs = Math.max(Hc + 3.2, depth);      // street level (relative)
   const rampZ0 = zE + (useVault ? 0.3 : 0), slope = 0.56, Lr = (Hc - PY) / slope, rampZ1 = rampZ0 + Lr;
-  const zc0 = rampZ1, conL = 22, conW = 9;   // concourse half width conW
+  const hs = seed >>> 0, zc0 = rampZ1, conL = 20 + (hs % 7), conW = 7 + ((hs >>> 4) % 4);   // concourse length / half width vary per station
   const exitZ0 = zc0 + conL, Ls = (Hs - Hc) / 0.52, exitZ1 = exitZ0 + Ls;
 
   const group = new THREE.Group(); group.name = 'station_' + st.id;
@@ -314,6 +315,16 @@ export function buildStation(THREE, o) {
   plane(rc, Hc + 3.4, cz1 - 0.05, 0, -1, 3.2, 0.8, new THREE.MeshBasicMaterial({ map: way('Way out', '#14532d'), side: THREE.DoubleSide }));
   plane(rc, Hc + 3.9, cz0 + 0.05, 0, 1, 3.4, 0.85, new THREE.MeshBasicMaterial({ map: way('Platforms', '#0f2a4a'), side: THREE.DoubleSide }));
   plane(cx, Hc + 3.1, gz - 0.1, 0, -1, 4.2, 0.7, new THREE.MeshBasicMaterial({ map: way('Tickets - Gates', '#6b2020'), side: THREE.DoubleSide }));
+  // interchange stations: a row of columns and a rail interchange sign; shallow stations get a bare low ceiling look through fewer lamps
+  const rail = (st.interchange || []).find((x) => /National Rail/i.test(x));
+  if (rail) {
+    for (let z = cz0 + 4; z < cz1 - 3; z += 6) for (const lx of [cx - 4.4, cx + 4.4]) {
+      Bv.box(lx - 0.25, Hc, z - 0.25, lx + 0.25, Hc + cH, z + 0.25, col(style.dado).map((v) => v * 0.8), 1);
+      Bl.box(lx - 0.27, Hc + 1.1, z - 0.27, lx + 0.27, Hc + 1.2, z + 0.27, cTrim, 1);
+      obstacles.push({ x0: lx - 0.3, x1: lx + 0.3, z0: z - 0.3, z1: z + 0.3, y: Hc });
+    }
+    plane(cx, Hc + 3.45, cz0 + 12.5, 0, 1, 4.2, 0.7, new THREE.MeshBasicMaterial({ map: way(rail.replace(/^National Rail:?\s*/i, 'Rail: '), '#1a3a6b'), side: THREE.DoubleSide }));
+  }
   // station name big board on concourse side wall + info panels
   const nameBig = new THREE.MeshBasicMaterial({ map: nameTex, side: THREE.DoubleSide });
   plane(cxb - 0.04, Hc + 2.9, cz0 + 8, -1, 0, 4.0, 1.0, nameBig);

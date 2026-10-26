@@ -60,6 +60,14 @@ async function hashTest() {
   check(st.sel === 'ibrox' && st.xray === 1 && st.light === 'night' && st.exag === 2, 'hash state restored ' + JSON.stringify(st));
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   check(await page.evaluate(() => window.__explorer.state.selected) === null, 'Escape deselects');
+  const subs = await page.evaluate(() => [...document.querySelectorAll('#dock-left .sti .nm i')].map((e) => e.textContent));
+  check(subs.length === 15 && subs.every((t) => t.length > 8 && t !== 'Bus'), 'station list subtitles are meaningful one-liners ' + JSON.stringify(subs.slice(0, 3)));
+  const fg = await page.evaluate(() => { const e = window.__explorer; e.setLight('day', true); const d = e.app.farGround.material.color.getHex(); e.setLight('night', true); return { day: d, night: e.app.farGround.material.color.getHex() }; });
+  const lum = (c) => ((c >> 16) & 255) + ((c >> 8) & 255) + (c & 255);
+  check(lum(fg.night) < lum(fg.day) * 0.5, 'far ground is dimmed at night ' + JSON.stringify(fg));
+  await page.evaluate(() => { location.hash = '#view=0,0,0,999999,5,0'; window.__explorer.app.applyHash(); });
+  const vw = await page.evaluate(() => window.__explorer.rig.getView());
+  check(vw.dist <= 6500.5 && vw.polar <= 1.53, 'hash view is clamped ' + JSON.stringify({ d: vw.dist, p: vw.polar }));
   check(errs.length === 0, 'hash page no console errors ' + errs.join('|')); await ctx.close();
 }
 try {

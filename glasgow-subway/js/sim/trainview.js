@@ -97,6 +97,16 @@ export class TrainView {
     g.matrix.set(rx, ux, -f[0], (a.x + b.x) / 2, 0, uy, -f[1], (a.y + b.y) / 2, rz, uz, -f[2], (a.z + b.z) / 2, 0, 0, 0, 1);
     g.matrixWorldNeedsUpdate = true;
   }
+  /** Distance based detail: hides saloon/cab interiors and bogies of cars the camera cannot meaningfully see. */
+  cull(camPos, mode, low) {
+    const R = { drive: low ? 14 : 30, ride: low ? 24 : 1e9, explore: low ? 22 : 1e9 }[mode] ?? 1e9;
+    const Rb = mode === 'explore' ? (low ? 18 : 45) : 0;       // bogies only matter seen from the platform
+    this.cars.forEach((g, i) => {
+      const e = g.matrix.elements, d = Math.hypot(e[12] - camPos.x, e[13] - camPos.y, e[14] - camPos.z);
+      for (const nm of ['car_' + i + '_saloon', 'car_' + i + '_cab']) { const n = this.byName[nm]; if (n) n.visible = d < R || (nm.endsWith('cab') && i === 0 && mode === 'drive'); }
+      for (const nm of ['car_' + i + '_bogie_a', 'car_' + i + '_bogie_b']) { const n = this.byName[nm]; if (n) n.visible = d < Rb; }
+    });
+  }
   /** car index + car-local z for a root-frame z */
   carAt(z) { let bi = 0, bd = 1e9; this.carInfo.forEach((c, i) => { const d = Math.abs(c.zc - z); if (d < bd) { bd = d; bi = i; } }); return bi; }
   eyeWorld(outPos, outQuat) {

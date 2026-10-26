@@ -150,8 +150,8 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     nl = max(2, int((CAB_Y + HALF - 1.0) // 2.4))
     for k in range(nl):
         yy = -HALF + 1.4 + k * 2.4
-        sal.box(P(0, yy, 2.545), (0.18, 1.6, 0.014), 'strip_light'); lights.append(yc + s * yy)
-    sal.box(P(0, (-HALF + CAB_Y) / 2, 2.55), (0.18, CAB_Y + HALF - 0.8, 0.008), 'strip_light')
+        sal.box(P(0, yy, 2.545), (0.045, 1.6, 0.014), 'strip_light'); lights.append(yc + s * yy)
+    sal.box(P(0, (-HALF + CAB_Y) / 2, 2.552), (0.03, CAB_Y + HALF - 0.8, 0.004), 'strip_light')
     for sg in (-1, 1):
         for (a, b) in segs:
             if b - a < 2.0: continue
@@ -226,9 +226,9 @@ def build_bay(sal, P, a, b, cfg, end_a=False, end_b=False):
         sal.box(P(xc - sg * 0.215, (a + b) / 2, FLOOR + 0.20), (0.012, L - 0.02, 0.38), 'plastic_dark')                           # dark grey front panel
         sal.box(P(sg * (W - 0.12 - 0.06), (a + b) / 2, FLOOR + 0.52), (0.05, L, 0.12), 'plastic_dark')                           # back-rest base
         for yy, flag in ((a, end_a), (b, end_b)):
-            sal.box(P(xc - sg * 0.02, yy, FLOOR + 0.5), (0.46, 0.04, 1.0), 'plastic_dark')                                        # moulded end panel
+            sal.box(P(xc - sg * 0.02, yy, FLOOR + 0.36), (0.46, 0.04, 0.62), 'plastic_dark')                                        # moulded end panel
             if flag:
-                sal.box(P(xc - sg * 0.02, yy + (0.03 if yy == a else -0.03), FLOOR + 1.28), (0.40, 0.012, 0.5), 'glass_clear')    # perspex draught screen
+                sal.box(P(xc - sg * 0.02, yy + (0.03 if yy == a else -0.03), FLOOR + 1.0), (0.40, 0.012, 0.56), 'glass_clear')    # perspex draught screen
 
 def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y):
     def Y(t): return HALF - t                    # car-local y at distance t behind the nose tip
