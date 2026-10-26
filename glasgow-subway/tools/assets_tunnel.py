@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from assets_lib import *
 
 R = 1.675               # bore inner radius (3.35 m inner diameter)
-ZC = 1.20               # bore axis height above rail head
+ZC = 1.225              # bore axis height above rail head (rail head 0.45 m above the invert; research/train-dimensions.md)
 RING = 0.61             # one ring length (2 ft)
 FLOOR_Z = -0.18         # concrete track slab top
 GAUGE_IN = 0.610        # half of 1220 mm

@@ -2005,6 +2005,19 @@ window.ESSAYS = [
     tags: ["simulation", "rail", "history", "engineering"],
     real: true,
   },
+  {
+    slug: "glasgow-subway-trains",
+    title: "Under Glasgow: The Trains",
+    tagline: "Four generations of Glasgow Subway rolling stock compared, from the 1896 cable gripper cars to the 2020s Stadler sets: traction, braking, the 600 V DC power system and its substations, and an interactive lap model of what a train draws.",
+    url: "https://0x4d44.github.io/glasgow-subway-trains/",
+    illustration: "ill-motor",
+    date: "2026-10-26T22:00:00",
+    year: 1896,
+    readingMin: 20,
+    words: 5400,
+    tags: ["rail", "engineering", "history"],
+    real: true,
+  },
 ];
 
 // Filter vocabulary, split into two axes for the grouped filter row:
@@ -2101,7 +2114,7 @@ window.COLLECTIONS = [
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "ecml", "ecml-timeline", "br1955",
       "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
-      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway"] },
+      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway", "glasgow-subway-trains"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
     slugs: ["f1gp-internals", "mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "chasing-dosbox-x", "mddosem-win16",

@@ -46,14 +46,14 @@ export class TunnelView {
     this.setWindow(this.ahead, this.behind);
   }
   _buildFar() {
-    const THREE = this.THREE, L = FAR_LEN, R = 1.78, n = 18;
+    const THREE = this.THREE, L = FAR_LEN, R = 1.95, n = 18;
     // far lining: textured with the same ring_concrete map as the near GLB rings (u = once round the bore, v = one ring per 0.61 m)
     const tpos = [], tnor = [], tuv = [], tidx = [];
     for (let i = 0; i < n; i++) {
       const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
       const nx0 = -Math.cos(a0), ny0 = -Math.sin(a0), nx1 = -Math.cos(a1), ny1 = -Math.sin(a1);   // smooth inward normals
       const b = tpos.length / 3, vr = L / RING;
-      tpos.push(Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, -L / 2, Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, -L / 2, Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, L / 2, Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, L / 2);
+      tpos.push(Math.cos(a0) * R, 1.225 + Math.sin(a0) * R, -L / 2, Math.cos(a1) * R, 1.225 + Math.sin(a1) * R, -L / 2, Math.cos(a1) * R, 1.225 + Math.sin(a1) * R, L / 2, Math.cos(a0) * R, 1.225 + Math.sin(a0) * R, L / 2);
       tnor.push(nx0, ny0, 0, nx1, ny1, 0, nx1, ny1, 0, nx0, ny0, 0);
       tuv.push(i / n, 0, (i + 1) / n, 0, (i + 1) / n, vr, i / n, vr);
       tidx.push(b, b + 1, b + 2, b, b + 2, b + 3);
