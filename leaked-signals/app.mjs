@@ -47,6 +47,12 @@ for (let i = 0; i < STARS.n; i++) {
 const starSize = v => (v == null ? 2.4 : Math.max(2.4, Math.min(8, 6.2 - 0.45 * v)));
 const NAMED = Object.keys(STARS.names).map(Number).sort((a, b) => ((STARS.v[a] ?? 99) - (STARS.v[b] ?? 99)) || STARS.ly[a] - STARS.ly[b]);
 const starByName = n => { for (const k in STARS.names) if (STARS.names[k] === n) return +k; return null; };
+function findStar(q) {
+  q = q.trim().toLowerCase(); if (!q) return null;
+  const ks = Object.keys(STARS.names);
+  const k = ks.find(k => STARS.names[k].toLowerCase() === q) ?? ks.find(k => STARS.names[k].toLowerCase().startsWith(q)) ?? ks.find(k => STARS.names[k].toLowerCase().includes(q));
+  return k == null ? null : +k;
+}
 
 // colours per country
 const CC_COL = { GB: [1, .71, .33], US: [.35, .84, 1], DE: [1, .42, .6], FR: [.56, .62, 1], RU: [1, .36, .3], JP: [1, .5, .85], AU: [.5, 1, .55], IT: [.5, .9, .4], ES: [1, .85, .3], CA: [.85, .55, 1], BR: [.2, 1, .6], IN: [1, .6, .2], CN: [1, .25, .25] };
@@ -140,7 +146,7 @@ function updateHeard(force) {
   for (let i = 0; i < STARS.n; i++) {
     st[2 * i] = starSize(STARS.v[i]);
     const ly = STARS.ly[i];
-    if (ly > EDGE()) continue;
+    if (ly > EDGE_SEL()) continue;
     const jdE = jdT - ly * C.DAYS_PER_YEAR;
     const g = C.gmstDeg(jdE) - STARS.ra[i], cg = Math.cos(g * C.D2R), sg = Math.sin(g * C.D2R);
     const sd = Math.sin(STARS.dec[i] * C.D2R), cd = Math.cos(STARS.dec[i] * C.D2R);
@@ -329,7 +335,7 @@ function limitRefs() {
   }
   return [];
 }
-const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°, ${STARS.dec[i].toFixed(1)}°)`;
+const starName = i => STARS.names[i] || `Unnamed star at RA ${(STARS.ra[i] / 15).toFixed(1)}h, Dec ${STARS.dec[i].toFixed(0)}°`;
 
 let _hlNoteKey = null;
 function updateHlNote() {
@@ -352,7 +358,8 @@ function updateHud() {
     `<br>${S.stars && starsInside() > 0 ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
 }
 let _inside = 0, _insideT = -1;
-function starsInside() { if (Math.abs(S.T - _insideT) > 0.01) { _insideT = S.T; const e = EDGE(); _inside = 0; for (let i = 0; i < STARS.n; i++) if (STARS.ly[i] <= e) _inside++; } return _inside; }
+let _insideKey = "";
+function starsInside() { if (Math.abs(S.T - _insideT) > 0.01 || _insideKey !== soloKey()) { _insideT = S.T; _insideKey = soloKey(); const e = EDGE_SEL(); _inside = 0; for (let i = 0; i < STARS.n; i++) if (STARS.ly[i] <= e) _inside++; } return _inside; }
 
 // ---------- input ----------
 const ptr = { down: false, x: 0, y: 0, moved: 0, pts: new Map(), pinch: 0 };
@@ -458,7 +465,7 @@ function stepAnim(now) {
 
 // ---------- selection ----------
 function selectStar(i, o = {}) {
-  S.star = i; lastHeardT = -1; dirty = true;
+  hideHint(); S.star = i; lastHeardT = -1; dirty = true;
   if (o.switchTab) setTab("listen");
   renderListen(true);
 }
@@ -482,7 +489,7 @@ function buildPanel() {
   renderAnatomy();
 }
 function setTab(id, focus) {
-  S.tab = id;
+  S.tab = id; hideHint();
   $$("#tabs button").forEach(b => { const on = b.dataset.tab === id; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
   $$(".tabbody").forEach(b => b.hidden = b.id !== "body-" + id);
   if (id === "listen") renderListen(true);
@@ -572,10 +579,11 @@ function renderListen(full) {
     <h2>Pick a listener</h2>
     <div class="field"><label for="starSearch">Star</label><input id="starSearch" type="search" list="starlist" placeholder="Sirius, Tau Ceti, Vega…" autocomplete="off"></div>
     <datalist id="starlist">${NAMED.slice(0, 600).map(k => `<option value="${esc(STARS.names[k])}"></option>`).join("")}</datalist>
+    <p class="faint" id="starMsg" role="status"></p>
     <div class="chips" id="quickStars">${["Proxima Centauri", "Sirius", "Tau Ceti", "Vega", "Epsilon Eridani", "Altair", "Fomalhaut", "Arcturus", "Pollux", "Barnard's Star"].map(n => starByName(n) != null ? `<button class="chip" type="button" data-star="${starByName(n)}">${esc(n)}</button>` : "").join("")}</div>
     <p class="faint">Or click any star in the view.</p>
     <div id="listenBody"></div>`;
-    $("#starSearch").onchange = e => { const k = starByName(e.target.value.trim()); if (k != null) { selectStar(k); focusStar(k); } };
+    $("#starSearch").onchange = e => { const k = findStar(e.target.value), m = $("#starMsg"); if (k != null) { m.textContent = ""; selectStar(k); focusStar(k); } else if (e.target.value.trim()) m.textContent = `No star called "${e.target.value.trim()}" in the catalogue of named stars within 100 light-years (Polaris and Betelgeuse are farther out).`; };
     $("#quickStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); } };
   }
   const body = $("#listenBody");
@@ -656,7 +664,7 @@ function drawDrift(i, jdT, rows) {
   const ly = STARS.ly[i];
   const cand = ALL_SOURCES.filter(s => s.kind !== "radar" && C.erpW(s, C.yearFromJd(jdT - ly * C.DAYS_PER_YEAR)) > 0 && Math.abs(STARS.dec[i]) <= 90 - Math.abs(s.lat) + 3);
   if (!S.driftSite || !cand.find(s => s.id === S.driftSite)) S.driftSite = (cand.find(s => s.id === "gb-london") || cand[0] || {}).id;
-  sel.innerHTML = cand.map(s => `<option value="${s.id}"${s.id === S.driftSite ? " selected" : ""}>${esc(s.name)}</option>`).join("") || `<option>none: this star is circumpolar for every site</option>`;
+  sel.innerHTML = cand.map(s => `<option value="${s.id}"${s.id === S.driftSite ? " selected" : ""}>${esc(s.name)}</option>`).join("") || `<option>none: no site ever has this star on its horizon</option>`;
   sel.onchange = e => { S.driftSite = e.target.value; drawDrift(i, jdT, rows); };
   const cv = $("#driftCv"), c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
@@ -687,7 +695,7 @@ function drawRanges(ly) {
   const x0 = 250, x1 = Wd - 10, lo = -6, hi = 5; // log10 ly
   const X = v => x0 + ((Math.log10(v) - lo) / (hi - lo)) * (x1 - x0);
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "center";
-  for (let e = lo; e <= hi; e += 1) { const x = x0 + ((e - lo) / (hi - lo)) * (x1 - x0); c.beginPath(); c.moveTo(x, 4); c.lineTo(x, Hd - 22); c.stroke(); if (e % 2 === 0 || e === hi) c.fillText(e === 0 ? "1 ly" : e === -5 ? "1 AU" : `10^${e}`, x, Hd - 8); }
+  for (let e = lo; e <= hi; e += 1) { const x = x0 + ((e - lo) / (hi - lo)) * (x1 - x0); c.beginPath(); c.moveTo(x, 4); c.lineTo(x, Hd - 22); c.stroke(); if (e % 2 === 0 || e === hi) c.fillText(e === 0 ? "1 ly" : `10^${e}`, x, Hd - 8); }
   const rowH = (Hd - 28) / C.RECEIVERS.length;
   C.RECEIVERS.forEach((r, k) => {
     const y = 4 + k * rowH, rg = C.rangeLy(1e6, r.area, tier, S.tsys), xr = clamp(X(rg), x0, x1);
@@ -708,7 +716,7 @@ function renderBroadcasts() {
   <h2>Messages sent on purpose</h2>
   <p>Unlike the leaked programmes, these were aimed at a particular star. They travel as a narrow beam, so a single ray rather than a fan.</p>
   <div class="list" id="msgList">${BEACONS.map(m => { const y = m.date[0] + (m.date[1] - 0.5) / 12, s = beaconSite(m); return `<button class="item" type="button" data-m="${m.id}"><div class="t">${esc(m.name)}<span class="tag ok">${esc(m.targetName)}</span></div><div class="m">sent ${m.date[0]} from ${esc(s.name)} &middot; ${fmtLy(m.targetLy)} ly &middot; arrives about <b>${Math.round(y + m.targetLy).toLocaleString()}</b></div><div class="m">${esc(m.blurb)}</div></button>`; }).join("")}</div>`;
-  $("#msgList").onclick = e => { const b = e.target.closest("[data-m]"); if (!b) return; const m = BEACONS.find(x => x.id === b.dataset.m), d = C.radec2vec(m.ra, m.dec), age = (jdOf() - beaconJd(m)) / C.DAYS_PER_YEAR; if (age > 0) animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(d[2]) + 0.25, -1.4, 1.4) }); };
+  $("#msgList").onclick = e => { const b = e.target.closest("[data-m]"); if (!b) return; const m = BEACONS.find(x => x.id === b.dataset.m), d = C.radec2vec(m.ra, m.dec), age = (jdOf() - beaconJd(m)) / C.DAYS_PER_YEAR; if (age > 0) animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(d[2]) + 0.25, -1.4, 1.4) }); else animateTo({ T: Math.min(T_MAX, m.date[0] + 1) }); };
   $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) { if (b.dataset.b === S.hl) clearBroadcast(); else selectBroadcast(b.dataset.b); } };
 }
 const listenerCache = {};
@@ -716,7 +724,7 @@ function clearBroadcast() {
   S.hl = null; hlId = null; dirty = true; $$("#bList .item").forEach(b => b.classList.remove("sel")); const d = $("#bDetail"); if (d) d.innerHTML = ""; _hlNoteKey = null; updateHlNote();
 }
 function selectBroadcast(id, fly = true) {
-  S.hl = id; hlId = null; dirty = true;
+  hideHint(); S.hl = id; hlId = null; dirty = true;
   $$("#bList .item").forEach(b => b.classList.toggle("sel", b.dataset.b === id));
   const b = BROADCASTS.find(x => x.id === id), t0 = C.jdFromUnixMs(Date.parse(b.start));
   const age = (jdOf() - t0) / C.DAYS_PER_YEAR, src = siteById[b.site];
@@ -842,14 +850,18 @@ function applyTour(t) {
   if (st.cap) { cap.textContent = st.cap; cap.classList.add("on"); } else cap.classList.remove("on");
   dirty = true; syncDock();
 }
+let preTour = null;
 function startTour() {
+  preTour = { solo: S.solo, hl: S.hl, star: S.star };
   S.playing = false; hideHint(); tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
 }
 function stopTour() {
   if (!tourPlaying) return;
+  if (preTour) { S.solo = preTour.solo; S.hl = preTour.hl; S.star = preTour.star; hlId = null; lastHeardT = -1; $$("#ccChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cc === "*" ? !S.solo : !!(S.solo && S.solo.has(c.dataset.cc)))); preTour = null; }
   tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+const hintEl = $("#hint");
+function hideHint() { hintEl.hidden = true; }
 hintEl.onclick = () => { hideHint(); startTour(); };
 stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
 $("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
