@@ -176,7 +176,8 @@ def build_vault(kind, rib=False, endcap=False):
                 f[m.fx] = 1
         m.strip_y(inner[1:-1], -0.2, 0.2, 'concrete_dark', toward=(0.0, 1.5))
         pier = 1.35 if kind == 'island' else 0.6
-        m.bbox((-pier, -0.2, FLOOR_Z), (pier, 0.2, 4.9), 'tile_cream')
+        # island: the escalator/stair ramp leaves through the centre of the pier, so only a lintel above the 2.7 m opening remains
+        m.bbox((-pier, -0.2, 0.695 + 2.72 if kind == 'island' else FLOOR_Z), (pier, 0.2, 4.9), 'tile_cream')
         m.quad((-half, -0.2, FLOOR_Z), (half, -0.2, FLOOR_Z), (half, 0.2, FLOOR_Z), (-half, 0.2, FLOOR_Z), 'concrete_dark')
         if kind == 'island':
             m.bbox((-pw, -0.2, FLOOR_Z), (pw, 0.2, 0.695 - 0.02), 'platform_stone')

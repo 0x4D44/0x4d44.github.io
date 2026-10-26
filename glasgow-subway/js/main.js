@@ -44,4 +44,4 @@ async function boot() {
   });
   resolveReady(window.__explorer);
 }
-boot().catch((e) => { console.error(e); if (!$('#nogl').hidden) return; $('#loadmsg').textContent = 'Sorry - the explorer failed to start: ' + e.message; $('#loading').classList.add('failed'); rejectReady(e); });
+boot().catch((e) => { if (!$('#nogl').hidden) { console.info('[explorer] ' + e.message); return; } console.error(e); $('#loadmsg').textContent = 'Sorry - the explorer failed to start: ' + e.message; $('#loading').classList.add('failed'); rejectReady(e); });

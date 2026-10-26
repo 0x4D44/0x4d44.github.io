@@ -178,7 +178,37 @@ try {
     return { z0, zEnd, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
   });
   ok('can walk the full length of the train through every car', trainWalk.zEnd < -trainWalk.half + 1 && trainWalk.cars === trainWalk.ncars, JSON.stringify(trainWalk));
+  // regression (reviewer 1): a standing eye must see end to end - the gangway apertures are full height, no header/wall at head level
+  const gang = await ev(p, () => {
+    const s = __sim, sim = s.sim, tv = sim.trainView, T = sim.THREE, PYv = 0.695; tv.root.updateMatrixWorld(true);
+    const meshes = []; tv.root.traverse((m) => { if (m.isMesh && !/glass/.test(m.name + (m.parent ? m.parent.name : ''))) meshes.push(m); });
+    const ci = tv.cars.length - 1, car = tv.cars[ci], info = tv.carInfo[ci], res = [];
+    const rot = new T.Matrix4().extractRotation(car.matrix), dir = new T.Vector3(0, 0, -1).applyMatrix4(rot);
+    for (const h of [0.9, 1.3, 1.6]) {
+      const o = new T.Vector3(0, PYv + h, 12 - info.zc).applyMatrix4(car.matrix);
+      const rc = new T.Raycaster(o, dir, 0, 24); rc.firstHitOnly = true;
+      const hit = rc.intersectObjects(meshes, false); res.push({ h, hit: hit.length ? (hit[0].object.name + '@' + hit[0].distance.toFixed(1)) : null });
+    }
+    return res;
+  });
+  ok('saloon: clear line of sight along the 4-car gangways at eye heights 0.9 / 1.3 / 1.6 m', gang.every((g) => !g.hit), JSON.stringify(gang));
   ok('and sprint back to the rear', (await ev(p, () => __sim.walker().z)) > trainWalk.half - 1.5);
+  await p.close();
+  // regression (reviewer 1): the escalator ramp must open through the end pier of island vaults (no tile wall in the walking path)
+  p = await open(browser, 'mode=explore&station=buchanan-street');
+  const pier = await ev(p, () => {
+    const s = __sim, T = s.sim.THREE, out = [];
+    for (let i = 0; i < 15; i++) {
+      const v = s.sim._ensureStation(i); v.group.updateMatrixWorld(true); const inf = v.info;
+      const meshes = []; v.group.traverse((m) => { if (m.isMesh) meshes.push(m); });
+      const o = v.group.localToWorld(new T.Vector3(inf.rc, inf.PY + 1.2, inf.PL - 1.5));
+      const d = new T.Vector3(0, 0, 1).applyQuaternion(v.group.quaternion);
+      const rc = new T.Raycaster(o, d, 0, 3.0); rc.firstHitOnly = true; const h = rc.intersectObjects(meshes, false);
+      if (h.length) out.push(v.station.name + ':' + (h[0].object.name || h[0].object.type) + '@' + h[0].distance.toFixed(2));
+    }
+    return out;
+  });
+  ok('every station: walking path from platform to the ramp is not blocked by a wall', pier.length === 0, pier.slice(0, 3).join(' | '));
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');
