@@ -91,7 +91,7 @@ export const GEOM = {
 // Sulzer locomotives have an all-speed governor, so power rises smoothly with
 // controller position. Idle is 325/365 rpm per the Class 47 manual.
 // Shape: P = Prated * (n/nrated)^1.6 on the load line (ESTIMATE).
-export const IDLE_RPM = 325; // BR 33003/262: "Idling speed 325/365 r.p.m."
+export const IDLE_RPM = 390; // BR 33003/262 gives "325/365 r.p.m."; 8 Class 47 recordings idle at 385-394 (measured from audio), so 390 is used
 export function rpmFromThrottle(t, variantRpm = 750) {
   // t: 0..1
   return IDLE_RPM + (variantRpm - IDLE_RPM) * Math.min(1, Math.max(0, t));
