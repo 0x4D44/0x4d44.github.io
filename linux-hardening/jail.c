@@ -26,11 +26,12 @@
 
 /* Our own copy of the attribute struct and ABI 6 constants, so the build does not depend on
    how new the installed kernel headers are (older headers lack the "scoped" field). */
-#ifdef LANDLOCK_ACCESS_FS_TRUNCATE
-#define LANDLOCK_ACCESS_FS_TRUNCATE_OR_0 LANDLOCK_ACCESS_FS_TRUNCATE
-#else
-#define LANDLOCK_ACCESS_FS_TRUNCATE_OR_0 0
-#endif
+/* Rights added after ABI 1, defined here for the same reason. */
+#define LL_FS_REFER      (1ULL << 13)   /* ABI 2 */
+#define LL_FS_TRUNCATE   (1ULL << 14)   /* ABI 3 */
+#define LL_FS_IOCTL_DEV  (1ULL << 15)   /* ABI 5 */
+#define LL_NET_BIND_TCP    (1ULL << 0)  /* ABI 4 */
+#define LL_NET_CONNECT_TCP (1ULL << 1)
 struct ll_attr { __u64 handled_access_fs, handled_access_net, scoped; };
 #define LL_SCOPE_ABSTRACT_UNIX_SOCKET (1ULL << 0)
 #define LL_SCOPE_SIGNAL               (1ULL << 1)
@@ -56,17 +57,12 @@ static int landlock(void) {
         LANDLOCK_ACCESS_FS_REMOVE_FILE | LANDLOCK_ACCESS_FS_MAKE_CHAR | LANDLOCK_ACCESS_FS_MAKE_DIR |
         LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_MAKE_SOCK | LANDLOCK_ACCESS_FS_MAKE_FIFO |
         LANDLOCK_ACCESS_FS_MAKE_BLOCK | LANDLOCK_ACCESS_FS_MAKE_SYM;
-#ifdef LANDLOCK_ACCESS_FS_REFER
-    if (abi >= 2) all |= LANDLOCK_ACCESS_FS_REFER;
-#endif
-#ifdef LANDLOCK_ACCESS_FS_TRUNCATE
-    if (abi >= 3) all |= LANDLOCK_ACCESS_FS_TRUNCATE;
-#endif
+    if (abi >= 2) all |= LL_FS_REFER;
+    if (abi >= 3) all |= LL_FS_TRUNCATE;
+    if (abi >= 5) all |= LL_FS_IOCTL_DEV;   /* no ioctl on device files opened later */
     ra.handled_access_fs = all;             /* handle everything => deny everything by default */
-#ifdef LANDLOCK_ACCESS_NET_CONNECT_TCP
     /* ABI 4+: handle TCP bind/connect and add no rules => no TCP at all. */
-    if (abi >= 4) ra.handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP;
-#endif
+    if (abi >= 4) ra.handled_access_net = LL_NET_BIND_TCP | LL_NET_CONNECT_TCP;
     /* ABI 6+: no abstract Unix sockets, and no signals to processes outside this domain. */
     if (abi >= 6) ra.scoped = LL_SCOPE_ABSTRACT_UNIX_SOCKET | LL_SCOPE_SIGNAL;
     /* A kernel rejects an attribute struct bigger than the one it knows. */
@@ -86,7 +82,7 @@ static int landlock(void) {
     static const struct { const char *path; int write; } devs[] = { { "/dev/null", 1 }, { "/dev/urandom", 0 } };
     for (unsigned i = 0; i < sizeof devs / sizeof *devs; i++) {
         struct landlock_path_beneath_attr pb = { .allowed_access = LANDLOCK_ACCESS_FS_READ_FILE };
-        if (devs[i].write) pb.allowed_access |= LANDLOCK_ACCESS_FS_WRITE_FILE | (all & LANDLOCK_ACCESS_FS_TRUNCATE_OR_0);
+        if (devs[i].write) pb.allowed_access |= LANDLOCK_ACCESS_FS_WRITE_FILE | (all & LL_FS_TRUNCATE);
         pb.parent_fd = open(devs[i].path, O_PATH | O_CLOEXEC);
         if (pb.parent_fd < 0) continue;
         if (syscall(SYS_landlock_add_rule, rs, LANDLOCK_RULE_PATH_BENEATH, &pb, 0)) die("add_rule dev");
@@ -134,6 +130,8 @@ int main(int argc, char **argv) {
     if (landlock() < 0) return 1;           /* fail closed */
     seccomp_nofork();                       /* dies on failure */
     /* Note: /proc and /dev are not granted, so the child cannot read /proc/self either. */
-    execv(argv[1], argv + 1);               /* exec is still allowed: it replaces, not creates */
-    die("execv");
+    /* Run with a clean environment so secrets and LD_* variables do not leak in. */
+    char *env[] = { "PATH=/usr/bin:/bin", NULL };
+    execve(argv[1], argv + 1, env);         /* exec is still allowed: it replaces, not creates */
+    die("execve");
 }
