@@ -40,7 +40,13 @@ static int landlock(void) {
     if (abi >= 3) all |= LANDLOCK_ACCESS_FS_TRUNCATE;
 #endif
     ra.handled_access_fs = all;             /* handle everything => deny everything by default */
-    int rs = syscall(SYS_landlock_create_ruleset, &ra, sizeof ra, 0);
+#ifdef LANDLOCK_ACCESS_NET_CONNECT_TCP
+    /* ABI 4+: handle TCP bind/connect and add no rules => no TCP at all. */
+    if (abi >= 4) ra.handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP;
+#endif
+    size_t sz = sizeof ra;
+    if (abi < 4) sz = offsetof(struct landlock_ruleset_attr, handled_access_fs) + sizeof ra.handled_access_fs;
+    int rs = syscall(SYS_landlock_create_ruleset, &ra, sz, 0);
     if (rs < 0) die("landlock_create_ruleset");
     /* /etc is granted wholesale for the demo; a real profile lists single files. */
     const char *dirs[] = { "/usr", "/bin", "/lib", "/lib64", "/etc" };

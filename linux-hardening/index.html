@@ -160,6 +160,7 @@
   <li><strong>Cover the unhappy paths.</strong> Startup, shutdown, error handling, log rotation, DNS failures and signal handling all call syscalls that the happy path never does. A profile built from one test run is the classic source of production <code>SIGSYS</code> crashes.</li>
   <li><strong>Prefer <code>ERRNO</code> in production for optional calls, <code>KILL_PROCESS</code> for never-legitimate ones.</strong> Libraries probe for features and handle <code>ENOSYS</code>/<code>EPERM</code> gracefully; they do not handle being killed.</li>
   <li><strong>Re-record on every runtime change.</strong> A new libc, a new Go or Rust release, or a new library can start using different syscalls (<code>clone3</code>, <code>faccessat2</code>, <code>statx</code>, <code>rseq</code>).</li>
+  <li><strong>Go and the JVM need extra care.</strong> Go starts many threads and uses <code>clone</code> with several flags, <code>sigaltstack</code>, <code>futex</code>, <code>epoll</code> and <code>madvise</code>, so a filter that forbids <code>clone</code> breaks it. Record the profile with a real build and allow thread-style <code>clone</code> only. The JVM also maps writable-and-executable memory for its JIT, so it cannot run with <code>MemoryDenyWriteExecute</code>, and it reads <code>/proc/self</code> and <code>/sys/fs/cgroup</code> at start-up. Test both under load, not just at launch.</li>
   <li><strong>Tooling:</strong> libseccomp (C, with Python/Go/Rust bindings), the Rust <code>seccompiler</code> crate (written for Firecracker), systemd's named syscall sets (<code>systemd-analyze syscall-filter</code>), and in Kubernetes the Security Profiles Operator, which can record profiles.</li>
 </ol>
 
@@ -200,7 +201,7 @@
   <li><strong>Across stacked rulesets, rules intersect.</strong> Each <code>restrict_self</code> adds a layer (up to 16); an access must be allowed by <em>every</em> layer. A child can narrow the policy it inherited but never widen it.</li>
   <li><strong>Not retroactive.</strong> File descriptors opened <em>before</em> <code>restrict_self</code> keep working. That is a feature (open what you need, then lock down) and a hazard (do not leak a directory fd into the sandbox).</li>
   <li><strong>Mount topology is frozen.</strong> A Landlocked process cannot mount, unmount or <code>pivot_root</code>.</li>
-  <li><strong>Gaps.</strong> There is no right for <code>chmod</code>, <code>chown</code>, <code>stat</code> or <code>utime</code>-style metadata operations in the original ABIs, and the network side covers TCP only (not UDP or raw sockets). On the ABIs through 7, connecting to a <em>pathname</em> Unix socket is not mediated (only abstract sockets, via scoping), so a sandboxed process may still reach a daemon's socket such as the Docker socket if the filesystem rules let it traverse to it; ABI 9 (see the table) is where a right for this arrives. Pair Landlock with seccomp to cover what it does not.</li>
+  <li><strong>Gaps.</strong> There is no right for <code>chmod</code>, <code>chown</code>, <code>stat</code> or <code>utime</code>-style metadata operations in the original ABIs, and the network side covers TCP only (not UDP or raw sockets). <strong>Connecting to a <em>pathname</em> Unix socket is not mediated at all on ABIs 1 to 8</strong>, whatever filesystem rules you wrote: <code>connect()</code> to <code>/var/run/docker.sock</code> or a D-Bus or systemd socket succeeds if the file's own permissions allow it. Only <em>abstract</em> sockets are covered, through ABI 6 scoping. A proposed ABI 9 right (see the table) targets this. Until then, deny <code>socket(AF_UNIX)</code> in seccomp, or run in a mount namespace where such sockets do not exist. Pair Landlock with seccomp to cover what it does not.</li>
   <li><strong>It must be on.</strong> Check <code>cat /sys/kernel/security/lsm</code> for <code>landlock</code> (kernel built with <code>CONFIG_SECURITY_LANDLOCK</code>, and listed in <code>lsm=</code>). Probe the ABI at runtime; do not assume.</li>
 </ul>
 
@@ -280,6 +281,8 @@ echo 256M  &gt; /sys/fs/cgroup/jail/memory.max
 echo 0     &gt; /sys/fs/cgroup/jail/memory.swap.max
 echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the workload from it</code></pre>
 <p>The <code>systemd-run --user</code> line needs the user manager to have the <code>memory</code>, <code>pids</code>, <code>cpu</code> and <code>io</code> controllers delegated, which many distributions do not do by default for user sessions; check <code>cat /sys/fs/cgroup/user.slice/user-$UID.slice/user@$UID.service/cgroup.controllers</code>.</p>
+<h3>A time limit</h3>
+<p>No rlimit bounds wall-clock time. <code>RLIMIT_CPU</code> counts CPU seconds only, so a process that sleeps or waits on a pipe never trips it. Run a watchdog outside the sandbox. Start the job in its own cgroup, set a timer, and when it fires write <code>1</code> to <code>cgroup.kill</code>. With systemd, set <code>RuntimeMaxSec=</code> on the unit. Without either, <code>timeout --kill-after=5 30 ./job</code> is the minimum, but it only signals one process, so it will not stop children.</p>
 <div class="callout warn"><b class="t">What limits do not cover</b>
 <p>No cgroup controller shapes network bandwidth (use <code>tc</code>, or eBPF-based tools); disk <em>space</em> needs filesystem quotas (XFS project quotas, a size-limited <code>tmpfs</code>) and inode limits; and shared kernel resources such as the dentry cache or kernel keyrings can still be a cross-tenant side channel. Memory limits also do not stop a cache- or timing-based side channel.</p></div>
 
@@ -552,7 +555,7 @@ MemoryMax=256M
 TasksMax=64
 LimitNOFILE=256
 LimitCORE=0</code></pre>
-<p><code>MemoryDenyWriteExecute=yes</code> breaks JIT-compiling runtimes (Node, JVM, .NET, PyPy); drop it for those. <code>DynamicUser=yes</code> allocates a throwaway UID, which also makes <code>RLIMIT_NPROC</code> meaningful.</p>
+<p><code>MemoryDenyWriteExecute=yes</code> breaks JIT-compiling runtimes (Node, JVM, .NET, PyPy); drop it for those. <code>DynamicUser=yes</code> gives the service a temporary UID that no other service shares. That makes <code>RLIMIT_NPROC</code>, which counts per UID, a real limit for that service.</p>
 
 <h2 id="vm"><small>12 &middot; Changing the boundary</small>A different kernel: gVisor, Kata, Firecracker</h2>
 <p class="cap" style="margin:0 0 12px">References: <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md">Firecracker design</a> &middot; <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/jailer.md">Firecracker jailer</a> &middot; <a href="https://gvisor.dev/docs/architecture_guide/security/">gVisor security model</a> &middot; <a href="https://katacontainers.io/">Kata Containers</a></p>
@@ -575,7 +578,7 @@ LimitCORE=0</code></pre>
   <li><strong>Fast and small.</strong> Documented targets (from the project's <a href="https://www.usenix.org/conference/nsdi20/presentation/agache">NSDI 2020 paper</a> and README): boot to <code>init</code> in about 125 ms and under 5 MiB of VMM memory overhead per microVM, so a VM per request or per function becomes affordable.</li>
   <li><strong>A VMM that is itself sandboxed.</strong> The <em>jailer</em> puts the Firecracker process in a chroot with its own namespaces and cgroups, drops privileges, and applies a seccomp filter that differs per thread type (API, VMM and vCPU threads). That is all the layers from this page, applied to the thing that guards the boundary.</li>
   <li><strong>Rate limiters</strong> on network and block devices bound how much a noisy guest can hurt its neighbours.</li>
-  <li><strong>vsock</strong> gives host-guest communication without a network.</li>
+  <li><strong>vsock</strong> gives host-guest communication without a network. It is still host attack surface: the host-side code that parses what the guest sends has had bugs. The same applies to virtio-fs and any other shared-folder device, which hand the guest a path into the host file system. Share as little as you can, read-only where possible.</li>
   <li><strong>Snapshots</strong> allow millisecond starts by resuming a saved memory image, but cloned snapshots duplicate guest state, including random-number-generator state. Entropy must be refreshed on resume (for example through the VM Generation ID mechanism) or two guests may generate identical "random" values.</li>
 </ul>
 <pre><code># boot args typical of a Firecracker guest
@@ -610,7 +613,7 @@ init=/app</code></pre>
 </ol>
 
 <div class="scroll"><table>
-<thead><tr><th>Remove (<code>=n</code>)</th><th>Why</th></tr></thead>
+<thead><tr><th>Remove (<code>=n</code>) <span class="tag">guest kernel only</span></th><th>Why</th></tr></thead>
 <tbody>
 <tr><td class="w"><code>CONFIG_BPF_SYSCALL</code>, <code>CONFIG_IO_URING</code>, <code>CONFIG_USERFAULTFD</code>, <code>CONFIG_PERF_EVENTS</code></td><td class="w">Four of the most exploited interfaces of recent years.</td></tr>
 <tr><td class="w"><code>CONFIG_COMPAT</code>, <code>CONFIG_X86_X32_ABI</code></td><td class="w">Removes the 32-bit and x32 syscall ABIs: the alternative-ABI filter bypass vanishes. It also breaks every 32-bit binary, so check your userland first.</td></tr>
@@ -713,7 +716,7 @@ strip = true
 
 [dependencies]
 tokio = { version = "1", default-features = false, features = ["rt", "net", "io-util"] }
-rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 
 # deny.toml (cargo-deny)
 [advisories]
@@ -732,7 +735,7 @@ cargo geiger</code></pre>
 
 <h3>Hardening C and C++ when you cannot move</h3>
 <ul>
-  <li>Compile with <code>-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie -Wl,-z,relro,-z,now -fcf-protection</code> and (clang) <code>-ftrivial-auto-var-init=zero</code>; for C++ enable the standard library's checks (<code>-D_GLIBCXX_ASSERTIONS</code> for libstdc++; libc++ uses <code>_LIBCPP_HARDENING_MODE</code>). Caveats: <code>_FORTIFY_SOURCE=3</code> needs glibc 2.34+ and GCC 12+ (or recent clang); <code>-fcf-protection</code> is x86 only (arm64 uses <code>-mbranch-protection=standard</code>).</li>
+  <li>Compile with <code>-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie -Wl,-z,relro,-z,now -fcf-protection</code> and <code>-ftrivial-auto-var-init=zero</code> (clang, and GCC 12 and later); for C++ enable the standard library's checks (<code>-D_GLIBCXX_ASSERTIONS</code> for libstdc++; libc++ uses <code>_LIBCPP_HARDENING_MODE</code>). Caveats: <code>_FORTIFY_SOURCE=3</code> needs glibc 2.34+ and GCC 12+ (or recent clang); <code>-fcf-protection</code> is x86 only (arm64 uses <code>-mbranch-protection=standard</code>).</li>
   <li>Use a hardened allocator (<code>scudo</code>, GrapheneOS's <code>hardened_malloc</code>) and run tests under AddressSanitizer/UBSan and a fuzzer.</li>
   <li>Isolate the parsers: the sandbox launchers of section 11 are the main tool.</li>
 </ul>
@@ -816,7 +819,13 @@ static int landlock(void) {
     if (abi &gt;= 3) all |= LANDLOCK_ACCESS_FS_TRUNCATE;
 #endif
     ra.handled_access_fs = all;             /* handle everything =&gt; deny everything by default */
-    int rs = syscall(SYS_landlock_create_ruleset, &amp;ra, sizeof ra, 0);
+#ifdef LANDLOCK_ACCESS_NET_CONNECT_TCP
+    /* ABI 4+: handle TCP bind/connect and add no rules =&gt; no TCP at all. */
+    if (abi &gt;= 4) ra.handled_access_net = LANDLOCK_ACCESS_NET_BIND_TCP | LANDLOCK_ACCESS_NET_CONNECT_TCP;
+#endif
+    size_t sz = sizeof ra;
+    if (abi &lt; 4) sz = offsetof(struct landlock_ruleset_attr, handled_access_fs) + sizeof ra.handled_access_fs;
+    int rs = syscall(SYS_landlock_create_ruleset, &amp;ra, sz, 0);
     if (rs &lt; 0) die("landlock_create_ruleset");
     /* /etc is granted wholesale for the demo; a real profile lists single files. */
     const char *dirs[] = { "/usr", "/bin", "/lib", "/lib64", "/etc" };
@@ -873,6 +882,16 @@ int main(int argc, char **argv) {
     die("execv");
 }
 </code></pre></div>
+<div class="callout warn"><b class="t">What this launcher does NOT stop</b>
+<ul>
+<li><strong>Unix sockets.</strong> It does not block <code>connect()</code> to pathname sockets. A process that can reach <code>systemd --user</code>, D-Bus or <code>dockerd</code> can ask that service to start a process for it. Fix: deny <code>socket(AF_UNIX)</code> in seccomp, or hide those sockets with a mount namespace.</li>
+<li><strong>Network beyond TCP.</strong> TCP is blocked on ABI 4 and later. UDP, raw and netlink sockets are not. Filter the <code>socket</code> arguments, or use a network namespace.</li>
+<li><strong>Same-user neighbours.</strong> Only Yama and namespaces limit <code>ptrace</code> and signals to your other processes. Set <code>dev.tty.legacy_tiocsti=0</code> (kernel 6.2 and later) and use <code>setsid</code> to stop keystroke injection through a shared terminal.</li>
+<li><strong><code>execve</code> is allowed.</strong> Anything in the readable directories can run, including a shell or an interpreter.</li>
+<li><strong>The <code>/etc</code> grant is too wide.</strong> A real profile names the exact files the workload needs.</li>
+<li><strong>No time limit.</strong> A busy loop runs forever. Add a watchdog (section 5).</li>
+</ul></div>
+
 <div class="callout warn"><b class="t">Where this example stops</b>
 <p>It is x86-64 only and omits steps 1 to 3 (it relies on the caller to be unprivileged). It grants <code>/etc</code> wholesale (list single files in real use) and lets every syscall except process creation through, which is a deliberately small demonstration, not a production profile. A real allowlist, built as in section 3, is much tighter. With libseccomp you would write <code>seccomp_init(SCMP_ACT_ERRNO(EPERM))</code>, add allowed rules, and get arch handling for free.</p></div>
 
@@ -901,6 +920,7 @@ int main(int argc, char **argv) {
 <div class="widget" id="w-audit">
   <div class="score" id="au-score" role="status" aria-live="polite" aria-label="Audit score">0%</div>
   <div class="meter"><div id="au-meter" style="width:0"></div></div>
+  <p id="au-excl"></p>
   <div id="au-groups"></div>
   <div class="row"><button id="au-reset" class="alt">Reset</button></div>
 </div>

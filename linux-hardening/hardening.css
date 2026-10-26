@@ -129,3 +129,8 @@ details summary { cursor: pointer; font-weight: 600; }
   h2 { font-size: 24px; }
 }
 footer { margin-top: 70px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--muted); }
+.chk .item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.chk .item label:first-child { grid-template-columns: 22px minmax(0, 1fr); }
+.chk .na-l { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
+.chk .na-l input { margin: 0; }
+#au-excl { font: 12.5px/1.4 var(--mono); color: var(--muted); margin: 4px 0 0; }
