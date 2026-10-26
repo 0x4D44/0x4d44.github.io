@@ -29,6 +29,7 @@ async function boot() {
   else { app.setXrayInstant(0); }
   app.emit('xray', app.state.xray);
   progress(0.9, 'Loading the first streets');
+  await app.city.whenNearLoaded(app.rig.target, app.rig.distance < 1500 ? 600 : 900, 25000);
   await app.city.whenLoaded(Math.min(6, app.city.total || 1), 25000);
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   progress(1, 'Ready'); $('#loading').classList.add('done'); setTimeout(() => ($('#loading').hidden = true), 700);

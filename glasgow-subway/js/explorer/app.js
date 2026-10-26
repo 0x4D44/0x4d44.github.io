@@ -132,7 +132,7 @@ export class App {
   stationView(id, { xray = this.state.xray, dist, angle = 0.65 } = {}) {
     const f = this.ug.focus(id, xray > 0.5); if (!f) return null;
     const p = f.point.clone(); if (xray > 0.5) p.y += 2;
-    return { target: p, dist: dist ?? (xray > 0.5 ? 150 : 260), polar: xray > 0.5 ? 1.0 : 0.95, azim: -THREE.MathUtils.degToRad(f.heading) + angle };
+    return { target: p, dist: dist ?? (xray > 0.5 ? 150 : 300), polar: xray > 0.5 ? 1.0 : 1.08, azim: -THREE.MathUtils.degToRad(f.heading) + angle };
   }
   hero(dur = 2.6) { return this.rig.flyTo(this.heroView, dur); }
   flyToView(v, dur) { return this.rig.flyTo(v, dur); }
