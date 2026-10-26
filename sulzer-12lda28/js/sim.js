@@ -56,7 +56,7 @@ export function pistonDown(phiDeg) {
 // In-cylinder pressure (bar absolute) vs cycle angle alpha. Illustrative p-theta trace:
 // polytropic compression from inlet closing, a Wiebe-type burn starting just before TDC
 // (heat addition scales the polytrope), expansion, exhaust blow-down at exhaust opening.
-const CR = 12.5, NPOLY = 1.33;
+const CR = 12.5, NPOLY = 1.37;
 const volRel = (ang) => 1 / (CR - 1) + pistonDown(ang) / GEOM.stroke;
 export function burnFraction(alpha) {
   // alpha in degrees after firing TDC; combustion from about -10 to +35 deg
@@ -108,13 +108,17 @@ export class Engine {
     if (this.cranking) {
       this.crankT += dt;
       // Main generator motors the engine up to ~100 rpm, then fuel is admitted.
-      this.targetRpm = Math.min(110, 20 + this.crankT * 60);
-      if (this.crankT > 3.2) { this.cranking = false; this.running = true; }
+      this.targetRpm = Math.min(160, 40 + this.crankT * 90); // measured: generator motors it at 120-180 rpm for 1-2 s
+      if (this.crankT > 1.8) { this.cranking = false; this.running = true; }
     } else if (this.running) {
       this.targetRpm = rpmFromThrottle(this.throttle, this.rated);
     } else this.targetRpm = 0;
-    const tau = this.running ? (this.targetRpm > this.rpm ? 1.6 : 1.2) : (this.cranking ? 0.5 : 1.5);
-    this.rpm += (this.targetRpm - this.rpm) * (1 - Math.exp(-dt / tau));
+    // Measured on Class 47 recordings: notching up runs at ~50-85 rpm/s (peak ~140), notching down in driver steps of -150 to -230 rpm/s.
+    const diff = this.targetRpm - this.rpm;
+    if (this.running || (this.cranking && diff > 0)) {
+      const rate = Math.min(diff > 0 ? 80 : 190, Math.abs(diff) / 0.6);
+      this.rpm += Math.sign(diff) * Math.min(Math.abs(diff), rate * dt);
+    } else this.rpm += diff * (1 - Math.exp(-dt / (this.cranking ? 0.5 : 1.5)));
     if (this.rpm < 0.5 && !this.cranking && !this.running) this.rpm = 0;
     this.theta += this.rpm * 6 * dt * this.timeScale; // 6 deg per rpm-second
     if (this.theta > 1e7) this.theta -= 1e7 - (1e7 % 720);

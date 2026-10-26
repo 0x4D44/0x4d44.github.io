@@ -1,253 +1,249 @@
 WEBVTT
 
 1
-00:00:01.300 --> 00:00:08.054
-From nineteen fifty-nine, British Rail ordered hundreds of locomotives powered by a single engine:
+00:00:01.300 --> 00:00:10.641
+From nineteen fifty-nine, British Rail ordered hundreds of locomotives powered by a single engine: the Sulzer twelve L D A twenty-eight.
 
 2
-00:00:08.054 --> 00:00:10.605
-the Sulzer twelve L D A twenty-eight.
-
-3
-00:00:10.605 --> 00:00:15.291
+00:00:10.641 --> 00:00:15.311
 It hauled the Peaks, the Class forty-four, forty-five and forty-six,
 
-4
-00:00:15.291 --> 00:00:19.427
+3
+00:00:15.311 --> 00:00:19.432
 and the Brush Type Four, now known as the Class forty-seven.
 
-5
-00:00:19.427 --> 00:00:20.874
+4
+00:00:19.432 --> 00:00:20.874
 Here is how it works.
 
-6
+5
 00:00:22.074 --> 00:00:24.397
 Twelve cylinders, but not in a V.
 
-7
+6
 00:00:24.397 --> 00:00:30.169
 It is two separate inline sixes in one welded frame, each with its own crankshaft.
 
-8
+7
 00:00:30.169 --> 00:00:35.237
 Bore two hundred and eighty millimetres, stroke three hundred and sixty.
 
-9
+8
 00:00:35.237 --> 00:00:43.262
 About twenty-two litres a cylinder, and roughly two hundred and sixty-six in all, calculated from bore and stroke.
 
-10
+9
 00:00:44.463 --> 00:00:48.611
 The two crankshafts are tied together by synchronising gears,
 
-11
+10
 00:00:48.611 --> 00:00:53.711
 which step the speed up by one point four four to drive the main generator.
 
-12
+11
 00:00:53.711 --> 00:00:56.771
 The generator feeds electric traction motors.
 
-13
+12
 00:00:56.771 --> 00:00:59.219
 The engine never touches the wheels.
 
-14
+13
 00:01:00.419 --> 00:01:02.942
 Pull it apart and the layers appear.
 
-15
+14
 00:01:02.942 --> 00:01:08.759
 Crankcase, blocks and liners, heads with their valves, pistons and connecting rods,
 
-16
+15
 00:01:08.759 --> 00:01:13.945
 camshafts, injection pumps, and the turbochargers and intercoolers on top.
 
-17
+16
 00:01:15.145 --> 00:01:19.833
 Each cylinder works in four strokes over two turns of the crankshaft.
 
-18
+17
 00:01:19.833 --> 00:01:25.744
 Intake: the piston falls and the inlet valve admits air, pushed in by the turbocharger.
 
-19
+18
 00:01:25.744 --> 00:01:32.810
 Compression: both valves shut, and the rising piston squeezes the air to a small fraction of its volume,
 
-20
+19
 00:01:32.810 --> 00:01:36.207
 heating it far above the ignition point of diesel.
 
-21
+20
 00:01:36.207 --> 00:01:43.205
 Power: fuel is injected just before top dead centre and burns, and the pressure drives the piston down.
 
-22
+21
 00:01:43.205 --> 00:01:48.233
 Exhaust: the exhaust valve opens, and the piston sweeps out the burnt gas.
 
-23
+22
 00:01:49.433 --> 00:01:54.429
 The valve timing on this site is an engineering estimate, not Sulzer data.
 
-24
+23
 00:01:54.429 --> 00:01:56.792
 We could not find a primary source.
 
-25
+24
 00:01:56.792 --> 00:02:02.935
 Inlet and exhaust overlap around top dead centre, so that boost air can flush the cylinder.
 
-26
+25
 00:02:04.135 --> 00:02:08.138
 Twelve cylinders share seven hundred and twenty degrees,
 
-27
+26
 00:02:08.138 --> 00:02:14.429
 so on average a power stroke begins every sixty degrees, if the firing is evenly spaced.
 
-28
+27
 00:02:14.429 --> 00:02:18.718
 At full speed, seven hundred and fifty revolutions a minute,
 
-29
+28
 00:02:18.718 --> 00:02:23.651
 that is seventy-five firings every second: a seventy-five hertz note.
 
-30
+29
 00:02:23.651 --> 00:02:26.510
 The firing order shown is an assumption.
 
-31
+30
 00:02:26.510 --> 00:02:28.655
 No source we reached gives it.
 
-32
+31
 00:02:29.856 --> 00:02:32.940
 Exhaust gas spins a de Havilland turbocharger,
 
-33
+32
 00:02:32.940 --> 00:02:39.645
 which compresses the air to roughly two bar absolute on the Peaks, sixteen to eighteen pounds gauge.
 
-34
+33
 00:02:39.645 --> 00:02:44.875
 On the B and C engines, an intercooler cools that air, packing in more oxygen.
 
-35
+34
 00:02:44.875 --> 00:02:51.512
 The A, in the Class forty-four, had no intercooler, which is the likely reason it makes less power.
 
-36
+35
 00:02:51.512 --> 00:02:56.675
 That is an inference from the six-cylinder engine, not stated for the twelve.
 
-37
+36
 00:02:57.875 --> 00:03:03.435
 The sound comes from the same machinery: the thump of each firing, the exhaust puffs,
 
-38
+37
 00:03:03.435 --> 00:03:09.191
 the valve ticks, the turbocharger whine rising with load, and the hum of the gear train.
 
-39
+38
 00:03:09.191 --> 00:03:14.686
 The synthesiser on the site builds the note from those events, cylinder by cylinder.
 
-40
+39
 00:03:15.886 --> 00:03:16.858
 Three ratings.
 
-41
+40
 00:03:16.858 --> 00:03:21.716
 The A: two thousand three hundred horsepower, in the Class forty-four.
 
-42
+41
 00:03:21.716 --> 00:03:26.712
 The B: two thousand five hundred at seven hundred and fifty revolutions,
 
-43
+42
 00:03:26.712 --> 00:03:30.529
 in Classes forty-five and forty-six, with intercooling.
 
-44
+43
 00:03:30.529 --> 00:03:37.539
 The C, in the Class forty-seven, was built for two thousand seven hundred and fifty at eight hundred,
 
-45
+44
 00:03:37.539 --> 00:03:43.854
 and later derated to about two thousand five hundred and eighty at seven hundred and fifty.
 
-46
+45
 00:03:45.054 --> 00:03:46.581
 Power rises with speed.
 
-47
+46
 00:03:46.581 --> 00:03:54.017
 The rated points are sourced; the curve between idle and full speed is a modelled shape, and is labelled as one.
 
-48
+47
 00:03:54.017 --> 00:03:58.266
 As the driver opens the controller, the engine climbs this line.
 
-49
+48
 00:03:59.467 --> 00:04:05.852
 The driver's power controller has positions off, on, quarter, half, three quarters and full.
 
-50
+49
 00:04:05.852 --> 00:04:10.780
 The governor turns that demand into fuel, and the engine speed follows.
 
-51
+50
 00:04:10.780 --> 00:04:15.291
 Idle is about three hundred and twenty-five revolutions a minute.
 
-52
+51
 00:04:16.491 --> 00:04:22.969
 At the rail, a Class forty-seven gives sixty-two thousand pounds of tractive effort at the start,
 
-53
+52
 00:04:22.969 --> 00:04:27.376
 and thirty thousand pounds continuous at twenty-six miles an hour.
 
-54
+53
 00:04:27.376 --> 00:04:31.316
 Roughly four-fifths of the engine's power reaches the rail.
 
-55
+54
 00:04:31.316 --> 00:04:33.186
 That figure is our estimate.
 
-56
+55
 00:04:34.386 --> 00:04:39.736
 From fuel to rail: engine, generator, six traction motors, gears and wheels.
 
-57
+56
 00:04:39.736 --> 00:04:45.439
 An electric transmission, which is why one diesel engine can start a heavy train.
 
-58
+57
 00:04:46.639 --> 00:04:53.119
 Every figure on the site carries a badge: well sourced, single source, weak source, or estimate.
 
-59
+58
 00:04:53.119 --> 00:04:57.169
 The best sources were the British Railways driver's manuals.
 
-60
+59
 00:04:57.169 --> 00:05:04.391
 The gaps, such as valve timing, firing order, compression ratio and peak pressure, are marked as estimates.
 
-61
+60
 00:05:05.590 --> 00:05:09.119
 Start it, slow it down, pull it apart, and listen.
 
-62
+61
 00:05:09.119 --> 00:05:12.224
 It is all on the Sulzer page of the almanac.
 
-63
+62
 00:05:12.224 --> 00:05:13.636
 Thanks for watching.

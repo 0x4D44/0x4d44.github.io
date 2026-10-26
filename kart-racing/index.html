@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1226">
+<title>Apex Karts</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #0a1226; color: #fff;
+    font-family: "Arial Black", Impact, system-ui, sans-serif; touch-action: none; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #0a1226; outline: none; }
+  #ui { position: fixed; inset: 0; z-index: 10; overflow: hidden; }
+  #controls { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+  #boot { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, #16264d, #0a1226 70%); font-style: italic; letter-spacing: .08em; transition: opacity .35s; }
+  #boot b { font-size: clamp(28px, 8vw, 64px); text-shadow: 0 3px 0 #ff7b1c; }
+  #boot span { margin-top: 14px; font: 14px system-ui, sans-serif; opacity: .7; letter-spacing: .2em; }
+  #boot.gone { opacity: 0; pointer-events: none; }
+  #fatal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 24px;
+    text-align: center; background: #0a1226; font: 16px/1.5 system-ui, sans-serif; }
+  #fatal div { max-width: 520px; }
+  #fx-flash { position: fixed; inset: 0; z-index: 8; pointer-events: none; background: #fff; opacity: 0; transition: opacity .35s ease-out; }
+</style>
+</head>
+<body>
+<canvas id="game" tabindex="-1"></canvas>
+<div id="controls"></div>
+<div id="ui"></div>
+<div id="fx-flash"></div>
+<div id="boot"><b>APEX KARTS</b><span id="boot-msg">LOADING</span></div>
+<div id="fatal"><div id="fatal-msg">Apex Karts needs WebGL, which is not available in this browser.</div></div>
+<noscript><p style="position:fixed;inset:0;z-index:70;background:#0a1226;color:#fff;padding:24px;font:16px system-ui">Apex Karts needs JavaScript and WebGL to run.</p></noscript>
+<script type="module" src="main.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

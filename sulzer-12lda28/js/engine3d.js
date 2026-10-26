@@ -21,7 +21,7 @@ const X0 = -2.5 * PITCH;                          // cylinder 1 x
 
 export const PART_INFO = {
   crankcase: { name: "Crankcase and sump", conf: "M", text: "A welded steel-plate fabrication, crankcase and sump made as one piece, with welded-in cast-steel transverse girders carrying the main bearings. Main bearings are held by adjustable wedges rather than studded caps. It is the structural backbone: the whole engine and generator sit on a common underbed." },
-  block: { name: "Cylinder block", conf: "M", text: "A second welded fabrication carrying the water jacket. The 12LDA28 is built as two six-cylinder engines side by side, each in an integral crankcase and block." },
+  block: { name: "Cylinder block", conf: "M", text: "A second welded fabrication carrying the water jacket. The 12LDA28 is built as two six-cylinder engines side by side, both banks sharing the one welded frame." },
   liner: { name: "Cylinder liner", conf: "M", text: "Centrifugally cast iron liners (Sheepbridge Stokes) 280 mm bore, with upper sealing rings. Coolant flows around the outside; early engines used magnesium-alloy anti-corrosion elements." },
   piston: { name: "Piston", conf: "M", text: "A two-piece oil-cooled piston introduced by Sulzer in 1955, with both scraper rings below the gudgeon pin. Lubricating oil cools the crown and drains through six unstressed holes. Stroke 360 mm; mean piston speed 9 m/s at 750 rpm." },
   rod: { name: "Connecting rod", conf: "E", text: "Transmits the gas force to the crankpin. The exact rod type was not found in a source; a plain rod is shown. Rod length is assumed at 720 mm." },
@@ -118,7 +118,7 @@ export class EngineView {
     this.scene.background = new THREE.Color(0x0d1117);
     this.scene.fog = new THREE.Fog(0x0d1117, 90, 220);
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 400);
-    this.camera.position.set(44, 30, 52);
+    this.camera.position.set(52, 35, 62);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.target.set(6, 4, 0); this.controls.enableDamping = true; this.controls.dampingFactor = 0.08;
     this.controls.maxDistance = 160; this.controls.minDistance = 8;
