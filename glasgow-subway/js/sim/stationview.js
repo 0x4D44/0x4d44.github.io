@@ -264,7 +264,6 @@ export function buildStation(THREE, o) {
   addLight(rc, PY + 3.4, rampZ0 + Lr * 0.5, 0xffe9c0, 7, 20);
   if (useVault) {
     Bf.quad([rc - rampW / 2, PY, rampZ0 + 0.01], [rc + rampW / 2, PY, rampZ0 + 0.01], [rc + rampW / 2, PY, PL], [rc - rampW / 2, PY, PL], [0, 0, rampW, (rampZ0 - PL)], [1, 1, 1]);
-    if (island) obstacles.push({ x0: xcP - 1.1, x1: xcP + 1.1, z0: PL - 0.2, z1: zE + 0.1, y: PY });   // central pier of the open end frame
   }
   zones.push({ kind: 'flat', x0: pxa, x1: pxb, z0: -PL, z1: useVault ? rampZ0 + 0.01 : zE, y: PY, name: 'platform' });
   // opening neck between room and ramp is covered by ramp zone start

@@ -160,12 +160,15 @@ def tex_paint(n=256, seed=9):
     return save('paint', grey3(0.92 + pn))
 
 def tex_floor_rubber(n=256, seed=10):
+    """Speckled vinyl floor (research: dark grey speckled), fine stud texture."""
+    rng = np.random.default_rng(seed)
     ys, xs = np.mgrid[0:n, 0:n]
-    c = 16
+    c = 8
     cx, cy = (xs % c) - c / 2 + 0.5, (ys % c) - c / 2 + 0.5
-    dome = np.clip(1 - (np.hypot(cx, cy) / 5.0) ** 2, 0, None)
-    alb = 0.55 + dome * 0.18 + pnoise(n, n, 12, seed, 3) * 0.05
-    return save('rubber', grey3(alb)), save('n_rubber', normalmap(np.sqrt(dome), 3.0))
+    dome = np.clip(1 - (np.hypot(cx, cy) / 3.2) ** 2, 0, None)
+    speck = (rng.random((n, n)) > 0.93) * 0.18 - (rng.random((n, n)) > 0.95) * 0.12
+    alb = 0.62 + dome * 0.06 + speck + pnoise(n, n, 12, seed, 3) * 0.04
+    return save('rubber', grey3(alb)), save('n_rubber', normalmap(np.sqrt(dome), 1.5))
 
 def tex_moquette(n=256, seed=11):
     """Woven seat fabric with a small geometric pattern; greyscale (tinted by material colour).  Pattern: staggered 'flecks' + diamonds."""
@@ -189,12 +192,12 @@ def tex_moquette_ring(n=256, seed=13):
         for ox in (-S, 0, S):
             for oy in (-S, 0, S):
                 d.ellipse((cx + ox - r, cy + oy - r, cx + ox + r, cy + oy + r), outline=col, width=w)
-    for i in range(14):
-        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(26, 50)), 5, (169, 167, 194) if i % 3 else (199, 199, 214))
-    for i in range(10):
-        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(30, 56)), 4, (52, 55, 62))
-    for i in range(16):
-        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(8, 14)), 4, (242, 140, 27))
+    for i in range(40):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(12, 24)), 3, (169, 167, 194) if i % 3 else (199, 199, 214))
+    for i in range(28):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(14, 26)), 3, (52, 55, 62))
+    for i in range(44):
+        ring(rng.integers(0, S), rng.integers(0, S), int(rng.integers(4, 7)), 3, (242, 140, 27))
     a = np.array(im.resize((n, n), Image.LANCZOS)).astype(float) / 255
     ys, xs = np.mgrid[0:n, 0:n]
     weave = (np.sin(xs * 1.6) * np.sin(ys * 1.6)) * 0.035
@@ -214,18 +217,15 @@ def _txt(draw, xy, s, f, fill, anchor='mm'):
     draw.text(xy, s, font=f, fill=fill, anchor=anchor)
 
 def roundel_img(size=256):
-    """SPT Subway roundel: orange disc ring, white field, navy bar with white 'SUBWAY'. RGBA."""
+    """SPT Subway roundel per the photo research: orange ring, white ring, charcoal disc with a white 'S'; word 'Subway' in orange beneath. RGBA."""
     S = size * 2
     im = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    c = S / 2
-    d.ellipse((2, 2, S - 2, S - 2), fill=(232, 102, 26, 255))
-    d.ellipse((S * 0.11, S * 0.11, S * 0.89, S * 0.89), fill=(246, 244, 236, 255))
-    d.rectangle((0, S * 0.39, S, S * 0.61), fill=(24, 44, 110, 255))
-    _txt(d, (c, c), 'SUBWAY', font(int(S * 0.15)), (255, 255, 255, 255))
-    # mask the bar to the disc
-    mask = Image.new('L', (S, S), 0); ImageDraw.Draw(mask).ellipse((2, 2, S - 2, S - 2), fill=255)
-    a = np.array(im); a[..., 3] = np.minimum(a[..., 3], np.array(mask))
-    return Image.fromarray(a).resize((size, size), Image.LANCZOS)
+    D = S * 0.80; cx = S / 2; cy = D / 2 + 2
+    def disc(r, col): d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=col)
+    disc(D / 2, (240, 98, 24, 255)); disc(D / 2 * 0.80, (246, 246, 242, 255)); disc(D / 2 * 0.66, (52, 56, 64, 255))
+    _txt(d, (cx, cy + 4), 'S', font(int(D * 0.55)), (255, 255, 255, 255))
+    _txt(d, (cx, S * 0.91), 'Subway', font(int(S * 0.13)), (240, 98, 24, 255))
+    return im.resize((size, size), Image.LANCZOS)
 
 def tex_roundel():
     p = os.path.join(TEX, 'roundel.png'); roundel_img(256).save(p, optimize=True); return p

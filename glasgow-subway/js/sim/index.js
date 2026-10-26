@@ -247,7 +247,7 @@ class Sim {
 
   _setupTrainWalker() {
     // Whole 4-car train is one walkable corridor (open gangways). Generous aisle, door recesses, no seat colliders.
-    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.72, x1: 0.72, z0: -half, z1: half, y: PY, name: 'aisle' }];
+    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.62, x1: 0.62, z0: -half, z1: half, y: PY, name: 'aisle' }];
     for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
     w.setWorld(zones, []);
     w.heightFn = null; w.eye = 1.5; w.radius = 0.2;
@@ -363,12 +363,21 @@ class Sim {
 
   _makeSignal() {
     const THREE = this.THREE, g = new THREE.Group();
+    const head = this.kit && this.kit.getObjectByName('signal_head');
+    if (head) {
+      const c = head.clone(true); g.add(c);
+      const lamps = {};
+      c.traverse((o) => { if (o.isMesh && o.material && /^button_(red|green|amber)$/.test(o.material.name)) { o.material = o.material.clone(); lamps[o.material.name] = o.material; } });
+      this.sigSet = (green) => { if (lamps.button_red) lamps.button_red.emissiveIntensity = green ? 0.04 : 2.2; if (lamps.button_green) lamps.button_green.emissiveIntensity = green ? 2.2 : 0.04; if (lamps.button_amber) lamps.button_amber.emissiveIntensity = 0.04; };
+      this.sigSet(false);
+      return { group: g };
+    }
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 8), new THREE.MeshLambertMaterial({ color: 0x222428 })); post.position.y = 1.3; g.add(post);
     const box = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.8, 0.2), new THREE.MeshLambertMaterial({ color: 0x15171a })); box.position.set(0, 2.4, 0); g.add(box);
-    this.sigRed = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff2a1a })); this.sigRed.position.set(0, 2.58, -0.11);
-    this.sigGreen = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0x23ff6a })); this.sigGreen.position.set(0, 2.24, -0.11);
-    g.add(this.sigRed, this.sigGreen);
-    this.sigLight = { color: new THREE.Color() };
+    const red = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff2a1a })); red.position.set(0, 2.58, -0.11);
+    const green = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshBasicMaterial({ color: 0x23ff6a })); green.position.set(0, 2.24, -0.11);
+    g.add(red, green);
+    this.sigSet = (gr) => { red.visible = !gr; green.visible = gr; };
     return { group: g };
   }
 
@@ -672,7 +681,7 @@ class Sim {
     g.position.set(p.x + rx * 1.75, p.y - 0.1, p.z + rz * 1.75);
     g.rotation.y = Math.atan2(-p.tx, -p.tz) + Math.PI;
     const green = svc.signalGreen && svc.phase !== 'run';
-    const gr = svc.signalGreen; this.sigRed.visible = !gr; this.sigGreen.visible = gr; this.sigLight.color.set(gr ? 0x23ff6a : 0xff2a1a);
+    this.sigSet(!!svc.signalGreen);
   }
 
   _camera(front, q, dt) {
@@ -754,12 +763,12 @@ class Sim {
     window.__sim = {
       sim: this,
       state: () => this.getState(), info: () => this.svc.info(), svc: () => this.svc,
-      go: (sel) => this.go(sel), tick: (dt) => this.tick(dt), ff: (s, st) => this.fastForward(s, st), sync: () => this.sync(0.016),
+      go: (sel) => this.go(sel), tick: (dt) => this.tick(dt), ff: (s, st) => this.fastForward(s, st), sync: () => { this._mgrT = 0; this.sync(0.016); },
       ato: (on) => this.svc.setAto(on), key: (k, down = true) => this._key({ key: k, code: k, repeat: false, preventDefault() {}, target: document.body }, down),
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
-      stationView: (i) => this._ensureStation(i), render: () => { this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
+      stationView: (i) => this._ensureStation(i), render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
       setLook: (y, p) => { this.look.yaw = y; this.look.pitch = p; },
       enterStreet: () => this.enterStreet(), leaveStreet: () => this.leaveStreet(), alight: () => this._alight(), board: () => this._boardTrain(), takeCab: () => this._takeCab(),
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
