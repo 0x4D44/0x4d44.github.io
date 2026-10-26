@@ -528,25 +528,27 @@ function buildTerrain(track) {
     return ynear + Math.max(-lim, Math.min(lim, v - ynear));
   };
   const corr = (x, z, out) => {
-    let wmax = 0, sw = 0, sy = 0; const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
+    let wmax = 0, sw = 0, sy = 0, dn = 1e9, yn = 0; const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
     for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) {
       const arr = cells.get(ck(cx + a, cz + c)); if (!arr) continue;
       for (let q = 0; q < arr.length; q++) {
         const i = arr[q], dx = x - px[i], dz = z - pz[i], d = Math.sqrt(dx * dx + dz * dz);
         if (d >= D0 + BL) continue;
+        if (d < dn) { dn = d; yn = py[i] - 0.12 - 1.8 * (1 - cor[i]); }
         const wt = (d <= D0 ? 1 : 1 - sm(D0, D0 + BL, d)) * cor[i];
         if (wt <= 0) continue;
         if (wt > wmax) wmax = wt;
         const k = wt / ((d + 2) * (d + 2) * (d + 2) * (d + 2)); sw += k; sy += k * py[i];
       }
     }
-    out[0] = wmax; out[1] = sw > 0 ? sy / sw : 0;
+    out[0] = wmax; out[1] = sw > 0 ? sy / sw : 0; out[2] = dn; out[3] = yn;
   };
-  const tmp = [0, 0];
+  const tmp = [0, 0, 0, 0];
   const height = (x, z) => {
     corr(x, z, tmp);
     let h = bg(x, z);
     if (tmp[0] > 0) h += (tmp[1] - 0.12 - h) * tmp[0];
+    if (tmp[2] <= wallDist + 1.0 && h > tmp[3]) h = tmp[3];   // never above the road surface inside the walls
     if (lake) { const dl = Math.hypot(x - lake.x, z - lake.z); if (dl < lake.r + 26) { const ly = lake.y; h += (ly - 0.35 - h) * (1 - sm(lake.r - 4, lake.r + 26, dl)); } }
     if (shore) {
       if (shore.kind === "sea") h = -3 + (h + 3) * sm(shore.z - 2, shore.z + 42, z);
@@ -1073,7 +1075,7 @@ function sceneSnow(track, X, K) {
       t.copy(rk).lerp(sn, Math.min(1, Math.max(0, (y - 0.5) / 0.18))); cl[i * 3] = t.r; cl[i * 3 + 1] = t.g; cl[i * 3 + 2] = t.b;
     }
     mgeo.setAttribute("color", new THREE.BufferAttribute(cl, 3)); mgeo.computeVertexNormals(); }
-  const minTrackDist = (x, z) => { let d = 1e9; for (let i = 0; i < N; i += 2) { const dd = Math.hypot(x - C.px[i], z - C.pz[i]); if (dd < d) d = dd; } return d; };
+  const minTrackDist = (x, z) => { let d = 1e9; for (let i = 0; i < C.N; i += 2) { const dd = Math.hypot(x - C.px[i], z - C.pz[i]); if (dd < d) d = dd; } return d; };
   const mts = [];
   for (let k = 0; k < 30; k++) {
     const a = (k / 30) * TAU + R(-0.08, 0.08), sx = R(90, 170), sy = R(120, 230), sz = sx * R(0.8, 1.2);
@@ -1208,8 +1210,10 @@ function sceneNeon(track, X, K) {
   // skyline of lit towers around the harbour
   const wt = stripedTex((g, w, h) => { g.fillStyle = "#0b0a1c"; g.fillRect(0, 0, w, h); for (let y = 4; y < h; y += 8) for (let x = 3; x < w; x += 8) { if (rng() < 0.55) { g.fillStyle = rng() < 0.7 ? "#ffe9a8" : rng() < 0.5 ? "#19e6ff" : "#ff2bd6"; g.fillRect(x, y, 4, 4); } } }, 128, 256);
   const bGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-  const towers = ringAround(46, 400, 560).filter((t) => t.z < quayZ + 30).map((t) => ({ x: t.x, z: t.z, sx: R(26, 60), sy: R(70, 190), sz: R(26, 60), ry: R(0, 3), c: pick([0xffffff, 0xcfd6ff, 0xe8c8ff]) }));
-  instanced(bGeo, basic({ map: wt }), towers, "skyline");
+  const mtd = (x, z) => { let d = 1e9; for (let i = 0; i < C.N; i += 2) { const dd = Math.hypot(x - C.px[i], z - C.pz[i]); if (dd < d) d = dd; } return d; };
+  const towers = ringAround(60, 400, 700).filter((t) => t.z < quayZ + 30).map((t) => ({ x: t.x, z: t.z, sx: R(26, 60), sy: R(70, 190), sz: R(26, 60), ry: R(0, 3), c: pick([0xffffff, 0xcfd6ff, 0xe8c8ff]) }));
+  const towersOk = towers.filter((t) => mtd(t.x, t.z) > Math.max(t.sx, t.sz) * 0.75 + wallDist + 60);
+  instanced(bGeo, basic({ map: wt }), towersOk, "skyline");
   // wall-top neon strips are baked into the wall texture; add glowing kerb-height edge lights
   { const edge = []; for (let i = 0; i < C.N; i += 4) for (const side of [-1, 1]) { const lat = side * (wallDist - 0.05); edge.push(C.px[i] - C.tz[i] * lat, C.py[i] + 1.12, C.pz[i] + C.tx[i] * lat); } addGlow(edge, 0x19e6ff, 2.2); }
 }
