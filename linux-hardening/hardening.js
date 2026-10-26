@@ -135,7 +135,7 @@
       ["mem", "--memory=256m --memory-swap=256m", true, "memory.max with no swap: an allocation bomb is OOM-killed inside the container."],
       ["cpu", "--cpus=0.5", true, "cpu.max quota: a spinning workload cannot starve neighbours."],
       ["ulim", "--ulimit nofile=256:256 --ulimit core=0", true, "Bounded descriptors; no core dumps leaking memory."],
-      ["net", "--network=none", true, "Empty network namespace: no network interface for the workload to use, so it cannot send data out over the network or reach other hosts. Use a default-deny policy if it needs the network."],
+      ["net", "--network=none", true, "Empty network namespace: only a loopback interface, which reaches nothing outside the container, so it cannot send data out over the network or reach other hosts. Use a default-deny policy if it needs the network."],
       ["ipc", "--ipc=none", true, "No shared-memory or IPC with the host."],
       ["gv", "--runtime=runsc", false, "gVisor: syscalls are handled by a user-space kernel, so the host kernel is no longer directly exposed (requires gVisor installed)."]
     ];
