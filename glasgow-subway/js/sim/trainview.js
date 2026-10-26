@@ -37,13 +37,14 @@ export class TrainView {
     this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
     const wz = new THREE.Vector3(), worldDoorZ = {};
     root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; } });
-    const carNodes = root.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const top = (root.children.length === 1 && root.children[0].name === 'train') ? root.children[0] : root;
+    const carNodes = top.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
     if (!this.carInfo.length) this.carInfo = [{ node: null, zc: -this.length / 4, len: this.length / 2 }, { node: null, zc: this.length / 4, len: this.length / 2 }];
     this.cars = this.carInfo.map((c, i) => { const g = new THREE.Group(); g.name = 'carGroup' + i; g.matrixAutoUpdate = false; return g; });
     this.byName = {};
     const nearest = (z) => { let bi = 0, bd = 1e9; this.carInfo.forEach((c, i) => { const d = Math.abs(c.zc - z); if (d < bd) { bd = d; bi = i; } }); return bi; };
-    for (const k of [...root.children]) {
+    for (const k of [...top.children]) {
       const m = /^car_(\d+)/.exec(k.name);
       const ci = m && this.carInfo[+m[1]] ? +m[1] : nearest(k.position.z || 0);
       k.position.z -= this.carInfo[ci].zc; k._car = ci;

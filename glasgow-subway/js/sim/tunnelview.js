@@ -9,7 +9,7 @@ export async function loadTunnelTemplate(THREE, GLTFLoader, url) {
     const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
     gltf.scene.updateMatrixWorld(true);
     const parts = {};
-    for (const name of ['seg_plain', 'seg_lamp', 'seg_iron', 'seg_iron_lamp']) {
+    for (const name of ['seg_plain', 'seg_lamp', 'seg_iron', 'seg_iron_lamp', 'seg_mouth']) {
       const n = gltf.scene.getObjectByName(name); if (!n) continue;
       const meshes = []; n.traverse((o) => { if (o.isMesh) meshes.push(o); });
       parts[name] = meshes;
@@ -114,6 +114,18 @@ export class TunnelView {
   }
   setSkips(spans) { this.skip = spans; this.reset(); }
   reset() { this.head = -1e9; this.farHead = -1e9; }
+  /** 0 = no collar, 1 = ring just before a station span (collar faces the station), 2 = just after it. returns [kind, slot] */
+  _mouthKind(s, L) {
+    if (!this.mouth) return [0, 0];
+    for (let i = 0; i < this.skip.length; i++) {
+      const [a, b] = this.skip[i];
+      let d = a - s; d -= Math.floor(d / L) * L;                  // distance from s forward to span start
+      if (d > 0 && d <= RING * 1.01) return [1, 0 + 2 * (i % 2)];
+      let e = s - b; e -= Math.floor(e / L) * L;                  // distance from span end forward to s
+      if (e > 0 && e <= RING * 1.01) return [2, 1 + 2 * (i % 2)];
+    }
+    return [0, 0];
+  }
   _skipped(s, L) {
     for (const [a, b] of this.skip) { let d = s - a; d -= Math.floor(d / L) * L; if (d <= b - a) return true; }
     return false;
@@ -123,6 +135,7 @@ export class TunnelView {
     const isLamp = ((k % LAMP_EVERY) + LAMP_EVERY) % LAMP_EVERY === 0;
     const slot = ((k % this.N) + this.N) % this.N;
     const hidden = this._skipped(s, L);
+    const [mk, mslot] = this._mouthKind(s, L);
     const a = track.pose(s + 0.01, this._pa), b = track.pose(s - 0.01, this._pb);
     const fx = a.x - b.x, fy = a.y - b.y, fz = a.z - b.z, fl = Math.hypot(fx, fy, fz) || 1;
     const f = [fx / fl, fy / fl, fz / fl];
@@ -132,8 +145,9 @@ export class TunnelView {
     m.set(rx, ux, -f[0], (a.x + b.x) / 2, 0, uy, -f[1], (a.y + b.y) / 2, rz, uz, -f[2], (a.z + b.z) / 2, 0, 0, 0, 1);
     const lslot = ((Math.floor(k / LAMP_EVERY) % this.NL) + this.NL) % this.NL;
     const tmp = new THREE.Matrix4();
-    for (const im of this.plain) { if (hidden || isLamp) im.setMatrixAt(slot, this.zero); else { tmp.multiplyMatrices(m, im.userData.local); im.setMatrixAt(slot, tmp); } im.instanceMatrix.needsUpdate = true; }
-    if (isLamp) {
+    if (mk && !hidden) { const rot = new THREE.Matrix4().makeRotationY(mk === 1 ? Math.PI : 0); for (const im of this.mouth) { tmp.multiplyMatrices(m, rot).multiply(im.userData.local); im.setMatrixAt(mslot, tmp); im.instanceMatrix.needsUpdate = true; } }
+    for (const im of this.plain) { if (hidden || isLamp || mk) im.setMatrixAt(slot, this.zero); else { tmp.multiplyMatrices(m, im.userData.local); im.setMatrixAt(slot, tmp); } im.instanceMatrix.needsUpdate = true; }
+    if (isLamp && !mk) {
       for (const im of this.lamp) { if (hidden) im.setMatrixAt(lslot, this.zero); else { tmp.multiplyMatrices(m, im.userData.local); im.setMatrixAt(lslot, tmp); } im.instanceMatrix.needsUpdate = true; }
       if (!hidden) {
         const li = Math.floor(k / LAMP_EVERY), light = this.lights[((li % 2) + 2) % 2];
